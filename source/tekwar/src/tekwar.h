@@ -121,7 +121,8 @@ extern short recsyncangvel[16384][2];                    // Les 09/30/95
 extern short recsyncbits[16384][2];
 
      //Miscellaneous variables
-extern unsigned char tempbuf[];
+extern char tempbuf[];
+extern uint8_t packetbuf[];
 extern char boardfilename[80];
 extern short screenpeek, oldmousebstatus, brightness;
 extern short screensize, screensizeflag;
@@ -795,7 +796,7 @@ void playerdropitems(int snum);
 #define   PROJECTILECLIP      1
 #define   CLIFFCLIP           2
 
-extern spritetype     pickup;
+extern uspritetype     pickup;
 
 void ambushyell(short sn, short ext);
 void androidexplosion(int i);

@@ -1423,7 +1423,7 @@ PostSetupSectorObject(void)
 
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == INT32_MAX)
+        if (SO_EMPTY(sop))
             continue;
         FindMainSector(sop);
     }
@@ -1437,7 +1437,7 @@ PlayerOnObject(short sectnum_match)
     SECTOR_OBJECTp sop;
 
     // place each sector object on the track
-    //for (i = 0; (SectorObject[i].xmid != INT32_MAX) && (i < MAX_SECTOR_OBJECTS); i++)
+    //for (i = 0; !SO_EMPTY(&SectorObject[i]) && (i < MAX_SECTOR_OBJECTS); i++)
     for (i = 0; (i < MAX_SECTOR_OBJECTS); i++)
     {
         sop = &SectorObject[i];
@@ -1471,7 +1471,7 @@ PlaceSectorObjectsOnTracks(void)
         SECTOR_OBJECTp sop = &SectorObject[i];
         TRACK_POINTp tpoint = NULL;
 
-        if (sop->xmid == INT32_MAX)
+        if (SO_EMPTY(sop))
             continue;
 
 
@@ -1631,11 +1631,6 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
 
     if (TEST(sop->flags, SOBJ_DONT_ROTATE))
     {
-        if (!gs.InterpolateSO || CommEnabled)
-        {
-            pp->oposx = pp->posx;
-            pp->oposy = pp->posy;
-        }
         UpdatePlayerSprite(pp);
         return;
     }
@@ -1681,12 +1676,6 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
     pp->camq16ang = NORM_Q16ANGLE(pp->camq16ang);
     pp->q16ang = NORM_Q16ANGLE(pp->RevolveQ16Ang + fix16_from_int(pp->RevolveDeltaAng));
 
-    if (!gs.InterpolateSO || CommEnabled)
-    {
-        pp->oq16ang = pp->q16ang;
-        pp->oposx = pp->posx;
-        pp->oposy = pp->posy;
-    }
     UpdatePlayerSprite(pp);
 }
 
@@ -1941,8 +1930,6 @@ PlayerPart:
                     pp->SpriteP->z = pp->loz;
                 }
             }
-            if (!gs.InterpolateSO || CommEnabled)
-                pp->oposz = pp->posz;
         }
         else
         {
@@ -2091,7 +2078,7 @@ DetectSectorObject(SECTORp sectph)
     // move all points to nx,ny
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
 
         for (sectp = sop->sectp, j = 0; *sectp; sectp++, j++)
@@ -2119,7 +2106,7 @@ DetectSectorObjectByWall(WALLp wph)
     // move all points to nx,ny
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
 
         for (sectp = sop->sectp, j = 0; *sectp; sectp++, j++)

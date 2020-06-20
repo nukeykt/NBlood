@@ -1337,7 +1337,7 @@ DoSectorObjectKillMatch(short match)
 
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == INT32_MAX)
+        if (SO_EMPTY(sop))
             continue;
 
         if (sop->match_event == match)
@@ -3184,7 +3184,6 @@ void movelava(char *dapic)
 
     for (x = LAVASIZ - 1; x >= 0; x--)
     {
-        FAKETIMERHANDLER();
         offs = (x + 1) * (LAVASIZ + 2) + 1;
         ptr = (char *)((x << LAVALOGSIZ) + (intptr_t) dapic);
 
@@ -3309,7 +3308,7 @@ DoSector(void)
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
 
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
 
 

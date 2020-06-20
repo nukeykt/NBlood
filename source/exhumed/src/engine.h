@@ -43,6 +43,11 @@ enum
 #define kMaxStatus   1024
 //#define MAXPSKYTILES 256
 
+typedef spritetype SPRITE;
+typedef sectortype SECTOR;
+typedef walltype WALL;
+
+
 inline int Sin(int angle)
 {
     return sintable[angle & kAngleMask];

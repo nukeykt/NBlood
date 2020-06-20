@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "move.h"
 #include "trigdat.h"
 #include "gun.h"
+#include "save.h"
 #include <string.h>
 #include <assert.h>
 
@@ -243,7 +244,7 @@ int BuildSnake(short nPlayer, short zVal)
             }
         }
 
-        D3PlayFX(StaticSound[kSound6], var_24);
+        D3PlayFX(StaticSound[kSoundCobraSprite], var_24);
     }
 
     return nSprite;
@@ -420,4 +421,38 @@ SEARCH_ENEMY:
             break;
         }
     }
+}
+
+class SnakeLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void SnakeLoadSave::Load()
+{
+    Read(&nSnakeCount, sizeof(nSnakeCount));
+    Read(&nSnakesFree, sizeof(nSnakesFree));
+    Read(SnakeFree, sizeof(SnakeFree));
+    Read(nPlayerSnake, sizeof(nPlayerSnake));
+    Read(SnakeList, sizeof(SnakeList));
+    Read(nSnakePlayer, sizeof(nSnakePlayer));
+}
+
+void SnakeLoadSave::Save()
+{
+    Write(&nSnakeCount, sizeof(nSnakeCount));
+    Write(&nSnakesFree, sizeof(nSnakesFree));
+    Write(SnakeFree, sizeof(SnakeFree));
+    Write(nPlayerSnake, sizeof(nPlayerSnake));
+    Write(SnakeList, sizeof(SnakeList));
+    Write(nSnakePlayer, sizeof(nSnakePlayer));
+}
+
+static SnakeLoadSave* myLoadSave;
+
+void SnakeLoadSaveConstruct()
+{
+    myLoadSave = new SnakeLoadSave();
 }

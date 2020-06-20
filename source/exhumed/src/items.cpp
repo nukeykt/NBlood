@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "anims.h"
 #include "player.h"
 #include "exhumed.h"
+#include "light.h"
 #include "lighting.h"
 #include "sound.h"
 #include "status.h"
@@ -28,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "init.h"
 #include "input.h"
 #include "object.h"
+#include "save.h"
 
 struct AnimInfo
 {
@@ -189,7 +191,7 @@ void UseEye(short nPlayer)
     if (nPlayer == nLocalPlayer)
     {
         ItemFlash();
-        D3PlayFX(StaticSound[kSound31], nSprite);
+        D3PlayFX(StaticSound[kSoundItemUse], nSprite);
     }
 }
 
@@ -201,7 +203,7 @@ void UseMask(short nPlayer)
     if (nPlayer == nLocalPlayer)
     {
         SetAirFrame();
-        D3PlayFX(StaticSound[kSound31], PlayerList[nPlayer].nSprite);
+        D3PlayFX(StaticSound[kSoundItemUse], PlayerList[nPlayer].nSprite);
     }
 }
 
@@ -224,7 +226,7 @@ void UseHeart(short nPlayer)
     {
         ItemFlash();
         SetHealthFrame(1);
-        D3PlayFX(StaticSound[kSound31], PlayerList[nPlayer].nSprite);
+        D3PlayFX(StaticSound[kSoundItemUse], PlayerList[nPlayer].nSprite);
     }
 }
 
@@ -238,7 +240,7 @@ void UseScarab(short nPlayer)
     if (nPlayer == nLocalPlayer)
     {
         ItemFlash();
-        D3PlayFX(StaticSound[kSound31], PlayerList[nPlayer].nSprite);
+        D3PlayFX(StaticSound[kSoundItemUse], PlayerList[nPlayer].nSprite);
     }
 }
 
@@ -250,7 +252,7 @@ void UseHand(short nPlayer)
     if (nPlayer == nLocalPlayer)
     {
         ItemFlash();
-        D3PlayFX(StaticSound[kSound31], PlayerList[nPlayer].nSprite);
+        D3PlayFX(StaticSound[kSoundItemUse], PlayerList[nPlayer].nSprite);
     }
 }
 
@@ -494,4 +496,32 @@ void DoRegenerates()
             nFirstRegenerate = -1;
         }
     }
+}
+
+class ItemsLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void ItemsLoadSave::Load()
+{
+    Read(&nRegenerates, sizeof(nRegenerates));
+    Read(&nFirstRegenerate, sizeof(nFirstRegenerate));
+    Read(&nMagicCount, sizeof(nMagicCount));
+}
+
+void ItemsLoadSave::Save()
+{
+    Write(&nRegenerates, sizeof(nRegenerates));
+    Write(&nFirstRegenerate, sizeof(nFirstRegenerate));
+    Write(&nMagicCount, sizeof(nMagicCount));
+}
+
+static ItemsLoadSave* myLoadSave;
+
+void ItemsLoadSaveConstruct()
+{
+    myLoadSave = new ItemsLoadSave();
 }

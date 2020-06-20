@@ -74,9 +74,6 @@
     <ClCompile Include="..\..\source\build\src\kplib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\build\src\lunatic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\build\src\lz4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -431,6 +428,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\build\include\screentext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\rev.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -129,6 +129,7 @@ void FX_InitCvars(void)
         { "snd_sdl_audiodriver", "select SDL audio driver (platform-specific)",
           (void *)SDLAudioDriverName, CVAR_STRING | CVAR_FUNCPTR, 0, sizeof(SDLAudioDriverName) - 1 },
 #endif
+        { "snd_lazyalloc", "use lazy sound allocations", (void*) &MV_LazyAlloc, CVAR_BOOL, 0, 1 },
     };
 
     for (auto& i : cvars_audiolib)

@@ -27,11 +27,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "vfs.h"
 #include "gamestructures.h"
 
-#ifdef LUNATIC
-int32_t g_noResetVars;
-LUNATIC_CB void (*A_ResetVars)(int32_t spriteNum);
-#else
-
 gamevar_t   aGameVars[MAXGAMEVARS];
 gamearray_t aGameArrays[MAXGAMEARRAYS];
 int32_t     g_gameVarCount   = 0;
@@ -817,12 +812,10 @@ static intptr_t *Gv_GetVarDataPtr(const char *szGameLabel)
 
     return &(var.global);
 }
-#endif  // !defined LUNATIC
 
 void Gv_ResetSystemDefaults(void)
 {
     // call many times...
-#if !defined LUNATIC
     char aszBuf[64];
 
     //AddLog("ResetWeaponDefaults");
@@ -885,7 +878,6 @@ void Gv_ResetSystemDefaults(void)
     g_weaponVarID    = Gv_GetVarIndex("WEAPON");
     g_worksLikeVarID = Gv_GetVarIndex("WORKSLIKE");
     g_zRangeVarID    = Gv_GetVarIndex("ZRANGE");
-#endif
 
     for (auto & tile : g_tile)
         if (tile.defproj)
@@ -1052,32 +1044,12 @@ static int32_t G_StaticToDynamicSound(int32_t const sound)
     }
 }
 
-// Initialize WEAPONx_* gamevars. Since for Lunatic, they reside on the C side,
-// they're set directly. In C-CON, a new CON variable is defined together with
-// its initial value.
-#ifdef LUNATIC
-# define ADDWEAPONVAR(Weapidx, Membname) do { \
-    int32_t j; \
-    for (j=0; j<MAXPLAYERS; j++) \
-        g_playerWeapon[j][Weapidx].Membname = weapondefaults[Weapidx].Membname; \
-} while (0)
-#else
-# define ADDWEAPONVAR(Weapidx, Membname) do { \
+// Initialize WEAPONx_* gamevars
+#define ADDWEAPONVAR(Weapidx, Membname) do { \
     Bsprintf(aszBuf, "WEAPON%d_" #Membname, Weapidx); \
     Bstrupr(aszBuf); \
     Gv_NewVar(aszBuf, weapondefaults[Weapidx].Membname, GAMEVAR_PERPLAYER | GAMEVAR_SYSTEM); \
 } while (0)
-#endif
-
-// After CON translation, get not-overridden members from weapondefaults[] back
-// into the live arrays! (That is, g_playerWeapon[][] for Lunatic, WEAPONx_*
-// gamevars on the CON side in C-CON.)
-#ifdef LUNATIC
-# define POSTADDWEAPONVAR(Weapidx, Membname) ADDWEAPONVAR(Weapidx, Membname)
-#else
-// NYI
-# define POSTADDWEAPONVAR(Weapidx, Membname) do {} while (0)
-#endif
 
 // Finish a default weapon member after CON translation. If it was not
 // overridden from CON itself (see example at g_weaponOverridden[]), we set
@@ -1086,7 +1058,6 @@ static int32_t G_StaticToDynamicSound(int32_t const sound)
     if (!g_weaponOverridden[i].Membname) \
     { \
         weapondefaults[i].Membname = G_StaticToDynamic##What(weapondefaults[i].Membname); \
-        POSTADDWEAPONVAR(i, Membname); \
     } \
 } while (0)
 
@@ -1113,17 +1084,13 @@ void Gv_FinalizeWeaponDefaults(void)
 #undef FINISH_WEAPON_DEFAULT_SOUND
 #undef FINISH_WEAPON_DEFAULT_TILE
 #undef FINISH_WEAPON_DEFAULT_X
-#undef POSTADDWEAPONVAR
 
-#if !defined LUNATIC
 static int32_t lastvisinc;
-#endif
 
 static void Gv_AddSystemVars(void)
 {
     // only call ONCE
 
-#if !defined LUNATIC
     // special vars for struct access
     // KEEPINSYNC gamedef.h: enum QuickStructureAccess_t (including order)
     Gv_NewVar("sprite",         -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
@@ -1142,7 +1109,6 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("input",          -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("tiledata",       -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("paldata",        -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
-#endif
 
 #ifndef EDUKE32_STANDALONE
     if (NAM_WW2GI)
@@ -1214,21 +1180,6 @@ static void Gv_AddSystemVars(void)
         ADDWEAPONVAR(i, TotalTime);
         ADDWEAPONVAR(i, WorksLike);
     }
-
-#ifdef LUNATIC
-    for (int i=0; i<MAXPLAYERS; i++)
-    {
-        auto ps = g_player[i].ps;
-
-        ps->pipebombControl = NAM_WW2GI ? PIPEBOMB_TIMER : PIPEBOMB_REMOTE;
-        ps->pipebombLifetime = NAM_GRENADE_LIFETIME;
-        ps->pipebombLifetimeVar = NAM_GRENADE_LIFETIME_VAR;
-
-        ps->tripbombControl = TRIPBOMB_TRIPWIRE;
-        ps->tripbombLifetime = NAM_GRENADE_LIFETIME;
-        ps->tripbombLifetimeVar = NAM_GRENADE_LIFETIME_VAR;
-    }
-#else
 
 #ifndef EDUKE32_STANDALONE
     Gv_NewVar("GRENADE_LIFETIME",      NAM_GRENADE_LIFETIME,                    GAMEVAR_SYSTEM | GAMEVAR_PERPLAYER);
@@ -1303,11 +1254,11 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("ydim",                  (intptr_t)&ydim,                         GAMEVAR_SYSTEM | GAMEVAR_INT32PTR | GAMEVAR_READONLY);
     Gv_NewVar("yxaspect",              (intptr_t)&yxaspect,                     GAMEVAR_SYSTEM | GAMEVAR_INT32PTR | GAMEVAR_READONLY);
 
-# ifdef USE_OPENGL
+#ifdef USE_OPENGL
     Gv_NewVar("rendmode", (intptr_t)&rendmode, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_INT32PTR);
-# else
+#else
     Gv_NewVar("rendmode", 0, GAMEVAR_READONLY | GAMEVAR_SYSTEM);
-# endif
+#endif
 
     // SYSTEM_GAMEARRAY
     Gv_NewArray("gotpic",            (void *)&gotpic[0],              MAXTILES,   GAMEARRAY_SYSTEM | GAMEARRAY_BITMAP);
@@ -1315,33 +1266,22 @@ static void Gv_AddSystemVars(void)
     Gv_NewArray("show2dsector",      (void *)&show2dsector[0],        MAXSECTORS, GAMEARRAY_SYSTEM | GAMEARRAY_BITMAP);
     Gv_NewArray("tilesizx",          (void *)&tilesiz[0].x,           MAXTILES,   GAMEARRAY_SYSTEM | GAMEARRAY_STRIDE2 | GAMEARRAY_READONLY | GAMEARRAY_INT16);
     Gv_NewArray("tilesizy",          (void *)&tilesiz[0].y,           MAXTILES,   GAMEARRAY_SYSTEM | GAMEARRAY_STRIDE2 | GAMEARRAY_READONLY | GAMEARRAY_INT16);
-#endif
 }
 
 #undef ADDWEAPONVAR
 
 void Gv_Init(void)
 {
-#if !defined LUNATIC
     // already initialized
     if (aGameVars[0].flags)
         return;
-#else
-    static int32_t inited=0;
-    if (inited)
-        return;
-    inited = 1;
-#endif
 
     // Set up weapon defaults, g_playerWeapon[][].
     Gv_AddSystemVars();
-#if !defined LUNATIC
     Gv_InitWeaponPointers();
-#endif
     Gv_ResetSystemDefaults();
 }
 
-#if !defined LUNATIC
 void Gv_InitWeaponPointers(void)
 {
     char aszBuf[64];
@@ -1457,12 +1397,11 @@ void Gv_RefreshPointers(void)
     aGameVars[Gv_GetVarIndex("ydim")].global              = (intptr_t)&ydim;
     aGameVars[Gv_GetVarIndex("yxaspect")].global          = (intptr_t)&yxaspect;
 
-# ifdef USE_OPENGL
+#ifdef USE_OPENGL
     aGameVars[Gv_GetVarIndex("rendmode")].global = (intptr_t)&rendmode;
-# endif
+#endif
 
     aGameArrays[Gv_GetArrayIndex("gotpic")].pValues = (intptr_t *)&gotpic[0];
     aGameArrays[Gv_GetArrayIndex("tilesizx")].pValues = (intptr_t *)&tilesiz[0].x;
     aGameArrays[Gv_GetArrayIndex("tilesizy")].pValues = (intptr_t *)&tilesiz[0].y;
 }
-#endif

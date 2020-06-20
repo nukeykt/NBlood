@@ -1197,6 +1197,21 @@ static void mdloadvbos(md3model_t *m)
 #endif
 
 //--------------------------------------- MD2 LIBRARY BEGINS ---------------------------------------
+static void md2free(md2model_t *m)
+{
+    if (!m)
+        return;
+
+    Xfree(m->texid);
+    Xfree(m->skinfn);
+    Xfree(m->basepath);
+    Xfree(m->uv);
+    Xfree(m->tris);
+    Xfree(m->glcmds);
+    Xfree(m->frames);
+    Xfree(m);
+}
+
 static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
 {
     md2model_t *m;
@@ -1212,7 +1227,8 @@ static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
     m = (md2model_t *)Xcalloc(1,sizeof(md2model_t));
     m->mdnum = 2; m->scale = .01f;
 
-    kread(fil,(char *)&head,sizeof(md2head_t));
+    if (kread_and_test(fil,(char *)&head,sizeof(md2head_t))) { Xfree(m); return nullptr; }
+
 #if B_BIG_ENDIAN != 0
     head.id = B_LITTLE32(head.id);                 head.vers = B_LITTLE32(head.vers);
     head.skinxsiz = B_LITTLE32(head.skinxsiz);     head.skinysiz = B_LITTLE32(head.skinysiz);
@@ -1242,24 +1258,17 @@ static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
     m->uv = (md2uv_t *)Xmalloc(head.numuv*sizeof(md2uv_t));
 
     klseek(fil,head.ofsframes,SEEK_SET);
-    if (kread(fil,(char *)m->frames,m->numframes*m->framebytes) != m->numframes*m->framebytes)
-        { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
-
+    if (kread_and_test(fil,(char *)m->frames,m->numframes*m->framebytes)) { md2free(m); return nullptr; } 
     if (m->numglcmds > 0)
     {
-        klseek(fil,head.ofsglcmds,SEEK_SET);
-        if (kread(fil,(char *)m->glcmds,m->numglcmds*sizeof(int32_t)) != (int32_t)(m->numglcmds*sizeof(int32_t)))
-            { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
+        klseek(fil, head.ofsglcmds, SEEK_SET);
+        if (kread_and_test(fil, (char *)m->glcmds, m->numglcmds * sizeof(int32_t))) { md2free(m); return nullptr; }
     }
 
-    klseek(fil,head.ofstris,SEEK_SET);
-    if (kread(fil,(char *)m->tris,head.numtris*sizeof(md2tri_t)) != (int32_t)(head.numtris*sizeof(md2tri_t)))
-        { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
-
-    klseek(fil,head.ofsuv,SEEK_SET);
-    if (kread(fil,(char *)m->uv,head.numuv*sizeof(md2uv_t)) != (int32_t)(head.numuv*sizeof(md2uv_t)))
-        { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
-
+    klseek(fil, head.ofstris, SEEK_SET);
+    if (kread_and_test(fil, (char *)m->tris, head.numtris * sizeof(md2tri_t))) { md2free(m); return nullptr; } 
+    klseek(fil, head.ofsuv, SEEK_SET);
+    if (kread_and_test(fil, (char *)m->uv, head.numuv * sizeof(md2uv_t))) { md2free(m); return nullptr; } 
 #if B_BIG_ENDIAN != 0
     {
         char *f = (char *)m->frames;
@@ -1307,8 +1316,7 @@ static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
     if (m->numskins > 0)
     {
         klseek(fil,head.ofsskins,SEEK_SET);
-        if (kread(fil,m->skinfn,64*m->numskins) != 64*m->numskins)
-            { Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
+        if (kread_and_test(fil,m->skinfn,64*m->numskins)) { md2free(m); return nullptr; }
     }
 
     m->texid = (GLuint *)Xcalloc(ournumskins, sizeof(GLuint) * HICTINT_MEMORY_COMBINATIONS);
@@ -1437,7 +1445,7 @@ static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
     m3->vbos = NULL;
 
     // die MD2 ! DIE !
-    Xfree(m->texid); Xfree(m->skinfn); Xfree(m->basepath); Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m);
+    md2free(m);
 
     return ((md2model_t *)m3);
 }
@@ -1481,6 +1489,7 @@ static inline void quicksort(uint16_t *indexes, float *depths, int32_t first, in
 // END OF QUICKSORT LIB
 
 //--------------------------------------- MD3 LIBRARY BEGINS ---------------------------------------
+static void md3free(md3model_t *m);
 
 static md3model_t *md3load(buildvfs_kfd fil)
 {
@@ -1494,7 +1503,7 @@ static md3model_t *md3load(buildvfs_kfd fil)
 
     m->muladdframes = NULL;
 
-    kread(fil,&m->head,SIZEOF_MD3HEAD_T);
+    if (kread_and_test(fil, &m->head, SIZEOF_MD3HEAD_T)) { md3free(m); return nullptr; }
 
 #if B_BIG_ENDIAN != 0
     m->head.id = B_LITTLE32(m->head.id);             m->head.vers = B_LITTLE32(m->head.vers);
@@ -1505,7 +1514,7 @@ static md3model_t *md3load(buildvfs_kfd fil)
     m->head.eof = B_LITTLE32(m->head.eof);
 #endif
 
-    if ((m->head.id != IDP3_MAGIC) && (m->head.vers != 15)) { Xfree(m); return 0; } //"IDP3"
+    if ((m->head.id != IDP3_MAGIC) && (m->head.vers != 15)) { md3free(m); return nullptr; }
 
     m->numskins = m->head.numskins; //<- dead code?
     m->numframes = m->head.numframes;
@@ -1514,14 +1523,14 @@ static md3model_t *md3load(buildvfs_kfd fil)
 
     klseek(fil,m->head.ofsframes,SEEK_SET); i = m->head.numframes*sizeof(md3frame_t);
     m->head.frames = (md3frame_t *)Xmalloc(i);
-    kread(fil,m->head.frames,i);
+    if (kread_and_test(fil,m->head.frames,i)) { md3free(m); return nullptr; }
 
     if (m->head.numtags == 0) m->head.tags = NULL;
     else
     {
         klseek(fil,m->head.ofstags,SEEK_SET); i = m->head.numtags*sizeof(md3tag_t);
         m->head.tags = (md3tag_t *)Xmalloc(i);
-        kread(fil,m->head.tags,i);
+        if (kread_and_test(fil,m->head.tags,i)) { md3free(m); return nullptr; }
     }
 
     klseek(fil,m->head.ofssurfs,SEEK_SET);
@@ -1554,7 +1563,8 @@ static md3model_t *md3load(buildvfs_kfd fil)
     for (surfi=0; surfi<m->head.numsurfs; surfi++)
     {
         s = &m->head.surfs[surfi];
-        klseek(fil,ofsurf,SEEK_SET); kread(fil,s,SIZEOF_MD3SURF_T);
+        klseek(fil,ofsurf,SEEK_SET);
+        if (kread_and_test(fil,s,SIZEOF_MD3SURF_T)) { md3free(m); return nullptr; }
 
 #if B_BIG_ENDIAN != 0
         {
@@ -1584,10 +1594,10 @@ static md3model_t *md3load(buildvfs_kfd fil)
         s->uv      = (md3uv_t *)(((intptr_t)s->shaders)+leng[1]);
         s->xyzn    = (md3xyzn_t *)(((intptr_t)s->uv)+leng[2]);
 
-        klseek(fil,offs[0],SEEK_SET); kread(fil,s->tris   ,leng[0]);
-        klseek(fil,offs[1],SEEK_SET); kread(fil,s->shaders,leng[1]);
-        klseek(fil,offs[2],SEEK_SET); kread(fil,s->uv     ,leng[2]);
-        klseek(fil,offs[3],SEEK_SET); kread(fil,s->xyzn   ,leng[3]);
+        klseek(fil,offs[0],SEEK_SET); if (kread_and_test(fil,s->tris   ,leng[0])) { md3free(m); return nullptr; }
+        klseek(fil,offs[1],SEEK_SET); if (kread_and_test(fil,s->shaders,leng[1])) { md3free(m); return nullptr; }
+        klseek(fil,offs[2],SEEK_SET); if (kread_and_test(fil,s->uv     ,leng[2])) { md3free(m); return nullptr; }
+        klseek(fil,offs[3],SEEK_SET); if (kread_and_test(fil,s->xyzn   ,leng[3])) { md3free(m); return nullptr; }
 
 #if B_BIG_ENDIAN != 0
         {
@@ -2256,7 +2266,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (alphahackarray[globalpicnum] != 0)
             al=alphahackarray[globalpicnum] * (1.f/255.f);
         glEnable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        // glEnable(GL_ALPHA_TEST);
         glAlphaFunc(GL_GREATER,al);
     }
     else
@@ -2588,7 +2598,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     }
     //------------
 
-    if (m->usesalpha) glDisable(GL_ALPHA_TEST);
+    // if (m->usesalpha) glDisable(GL_ALPHA_TEST);
 
     glDisable(GL_CULL_FACE);
 //    glPopAttrib();

@@ -55,10 +55,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "m32script.h"
 #include "m32def.h"
 
-#ifdef LUNATIC
-# include "lunatic_editor.h"
-#endif
-
 #include <signal.h>
 
 // Workaround for namespace pollution in <sys/stat.h> introduced in MinGW 4.8.
@@ -96,10 +92,6 @@ static int32_t spnoclip=1;
 
 static char const *default_tiles_cfg = "tiles.cfg";
 static int32_t pathsearchmode_oninit;
-
-#ifdef LUNATIC
-static L_State g_EmState;
-#endif
 
 #pragma pack(push,1)
 sound_t g_sounds[MAXSOUNDS];
@@ -2688,6 +2680,10 @@ static int32_t m32gettile(int32_t idInitialTile)
         {
             g_mouseBits &= ~32;
             iTopLeftTile += (nXTiles*scrollamount);
+        }
+        else if (bstatus&48 && scrollmode)
+        {
+            g_mouseBits &= ~48;
         }
 
         mtile = tileNum = searchx/zoomsz + ((searchy-moffset)/zoomsz)*nXTiles + iTopLeftTile;
@@ -7593,12 +7589,6 @@ static void Keys2d(void)
     {
         FuncMenu();
     }
-#ifdef LUNATIC
-    else if (keystatus[KEYSC_SEMI] && PRESSED_KEYSC(F))  // ; F
-    {
-        LuaFuncMenu();
-    }
-#endif
     else if (!eitherALT && PRESSED_KEYSC(F))
     {
         if (pointhighlight < 16384 && tcursectornum>=0 && graphicsmode)
@@ -8001,19 +7991,12 @@ static void G_ShowParameterHelp(void)
 extern char forcegl;
 #endif
 
-#ifdef LUNATIC
-char const * const * g_argv;
-#endif
-
 static void G_CheckCommandLine(int32_t argc, char const * const * argv)
 {
     int32_t i = 1, j, maxlen=0, *lengths;
     const char *c, *k;
 
     mapster32_fullpath = argv[0];
-#ifdef LUNATIC
-    g_argv = argv;
-#endif
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
     // pre-form the default 10 clipmaps
@@ -8891,34 +8874,6 @@ static void SaveInHistory(const char *commandstr)
     }
 }
 
-#ifdef LUNATIC
-static int osdcmd_lua(osdcmdptr_t parm)
-{
-    // Should be used like
-    // lua "lua code..."
-    // (the quotes making the whole string passed as one argument)
-
-    int32_t ret;
-
-    if (parm->numparms != 1)
-        return OSDCMD_SHOWHELP;
-
-    if (!L_IsInitialized(&g_EmState))
-    {
-        OSD_Printf("Lua state is not initialized.\n");
-        return OSDCMD_OK;
-    }
-
-    ret = L_RunString(&g_EmState, parm->parms[0], -1, "console");
-    if (ret != 0)
-        OSD_Printf("Error running the Lua code (error code %d)\n", ret);
-    else
-        SaveInHistory(parm->raw);
-
-    return OSDCMD_OK;
-}
-#endif
-
 // M32 script vvv
 static int osdcmd_include(osdcmdptr_t parm)
 {
@@ -9141,9 +9096,6 @@ static int32_t registerosdcommands(void)
     OSD_RegisterFunction("tint", "tint <pal> <r> <g> <b> <flags>: queries or sets hightile tinting", osdcmd_tint);
 #endif
 
-#ifdef LUNATIC
-    OSD_RegisterFunction("lua", "lua \"Lua code...\": runs Lua code", osdcmd_lua);
-#endif
     // M32 script
     OSD_RegisterFunction("include", "include <filenames...>: compiles one or more M32 script files", osdcmd_include);
     OSD_RegisterFunction("do", "do (m32 script ...): executes M32 script statements", osdcmd_do);
@@ -9991,22 +9943,6 @@ int32_t ExtPostStartupWindow(void)
     ReadHelpFile("m32help.hlp");
 
     G_InitMultiPsky(CLOUDYOCEAN, MOONSKY1, BIGORBIT1, LA);
-
-#ifdef LUNATIC
-    if (Em_CreateState(&g_EmState) == 0)
-    {
-        extern const char luaJIT_BC__defs_editor[];
-
-        int32_t i = L_RunString(&g_EmState, luaJIT_BC__defs_editor,
-                                LUNATIC_DEFS_M32_BC_SIZE, "_defs_editor.lua");
-        if (i != 0)
-        {
-            Em_DestroyState(&g_EmState);
-            initprintf("Lunatic: Error preparing global Lua state (code %d)\n", i);
-            return -1;
-        }
-    }
-#endif
 
     return 0;
 }

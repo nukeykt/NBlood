@@ -61,7 +61,6 @@ enum MV_Errors
     MV_NotInstalled,
     MV_DriverError,
     MV_NoVoices,
-    MV_NoMem,
     MV_VoiceNotFound,
     MV_InvalidFile,
 };

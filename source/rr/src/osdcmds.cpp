@@ -1454,6 +1454,9 @@ int32_t registerosdcommands(void)
         { "in_mouseflip", "invert vertical mouse movement", (void *)&ud.mouseflip, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "toggles vertical mouse view", (void *)&g_myAimMode, CVAR_BOOL, 0, 1 },
 
+        { "in_mousexscale", "scale modifier for mouse x axis", (void *)&CONTROL_MouseAxesScale[0], CVAR_INT, 1, 65536 },
+        { "in_mouseyscale", "scale modifier for mouse y axis", (void *)&CONTROL_MouseAxesScale[1], CVAR_INT, 1, 65536 },
+
         { "mus_enabled", "enables/disables music", (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
         { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, ASS_NumSoundCards },
         { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },

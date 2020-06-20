@@ -22,13 +22,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "engine.h"
 #include "player.h"
 #include "sound.h"
+#include "save.h"
+#include "status.h"
 #include <string.h>
 #include <assert.h>
-
-short LinkCount = -1;
-short SwitchCount = -1;
-
-int8_t LinkMap[kMaxLinks][8];
 
 struct Switch
 {
@@ -43,11 +40,14 @@ struct Switch
     short field_10;
     uint16_t field_12;
     short field_14;
-    char pad[10];
+//  char pad[10];
 };
 
-Switch SwitchData[kMaxSwitches];
+short LinkCount = -1;
+short SwitchCount = -1;
 
+int8_t LinkMap[kMaxLinks][8];
+Switch SwitchData[kMaxSwitches];
 
 
 void InitLink()
@@ -535,8 +535,37 @@ void FuncSwPressWall(int a, int, int nRun)
             short nSector = SwitchData[nSwitch].nSector; // CHECKME - where is this set??
 
             PlayFXAtXYZ(StaticSound[nSwitchSound], wall[nWall].x, wall[nWall].y, 0, nSector);
-
             return;
         }
     }
+}
+
+class SwitchLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void SwitchLoadSave::Load()
+{
+    Read(&LinkCount, sizeof(LinkCount));
+    Read(&SwitchCount, sizeof(SwitchCount));
+    Read(LinkMap, sizeof(LinkMap));
+    Read(SwitchData, sizeof(SwitchData));
+}
+
+void SwitchLoadSave::Save()
+{
+    Write(&LinkCount, sizeof(LinkCount));
+    Write(&SwitchCount, sizeof(SwitchCount));
+    Write(LinkMap, sizeof(LinkMap));
+    Write(SwitchData, sizeof(SwitchData));
+}
+
+static SwitchLoadSave* myLoadSave;
+
+void SwitchLoadSaveConstruct()
+{
+    myLoadSave = new SwitchLoadSave();
 }

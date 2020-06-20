@@ -165,9 +165,6 @@ typedef struct mapundo_
 extern mapundo_t *mapstate;
 
 extern void FuncMenu(void);
-#ifdef LUNATIC
-extern void LuaFuncMenu(void);
-#endif
 
 // editor side view
 extern int32_t m32_sideview;

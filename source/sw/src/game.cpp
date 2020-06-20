@@ -127,12 +127,11 @@ SWBOOL Global_PLock = FALSE;
 #endif
 
 // 12 was original source release. For future releases increment by two.
-int GameVersion = 15;
+int GameVersion = 19;
 
 char DemoText[3][64];
 int DemoTextYstart = 0;
 
-SWBOOL DoubleInitAWE32 = FALSE;
 int Follow_posx=0,Follow_posy=0;
 
 SWBOOL NoMeters = FALSE;
@@ -2043,89 +2042,6 @@ TenScreen(void)
 */
 // CTW REMOVED END
 
-void
-TitleLevel(void)
-{
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    int i;
-
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
-//    unsigned char backup_pal[256*3];
-//    unsigned char pal[PAL_SIZE];
-    //GetPaletteFromVESA(pal);
-    //memcpy(backup_pal, pal, PAL_SIZE);
-
-    videoClearViewableArea(0L);
-    videoNextPage();
-
-//    int fin;
-//    if ((fin = kopen4load("title.pal", 0)) != -1)
-//        {
-//        kread(fin, pal, PAL_SIZE);
-//        kclose(fin);
-//        SetPaletteToVESA(pal);
-//        }
-
-//    clearview(0);
-//    nextpage();
-
-    //FadeOut(0, 0);
-    ready2send = 0;
-    totalclock = 0;
-    ototalclock = 0;
-
-    rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    videoNextPage();
-    //FadeIn(0, 3);
-
-    ResetKeys();
-    while (TRUE)
-    {
-        handleevents();
-        OSD_DispatchQueued();
-
-        // taken from top of faketimerhandler
-        // limits checks to max of 40 times a second
-        if (totalclock >= ototalclock + synctics)
-        {
-            //void MNU_CheckForMenusAnyKey( void );
-
-            ototalclock += synctics;
-            //MNU_CheckForMenusAnyKey();
-        }
-
-        //if (UsingMenus)
-        //    MNU_DrawMenu();
-
-        //drawscreen as fast as you can
-        rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-
-        videoNextPage();
-
-        if (totalclock > 5*120 || KeyPressed())
-        {
-            DemoMode = TRUE;
-            DemoPlaying = TRUE;
-            break;
-        }
-    }
-
-    palookup[0] = palook_bak;
-
-//    clearview(0);
-//    nextpage();
-    //SetPaletteToVESA(backup_pal);
-
-    // put up a blank screen while loading
-//    clearview(0);
-//    nextpage();
-}
-
-
 void DrawMenuLevelScreen(void)
 {
     renderFlushPerms();
@@ -2404,37 +2320,6 @@ MenuLevel(void)
     InMenuLevel = FALSE;
     videoClearViewableArea(0L);
     videoNextPage();
-}
-
-void
-SceneLevel(void)
-{
-    SWBOOL dp_bak;
-    SWBOOL dm_bak;
-    FILE *fin;
-#define CINEMATIC_DEMO_FILE "$scene.dmo"
-
-    // make sure it exists
-    if ((fin = fopen(CINEMATIC_DEMO_FILE,"rb")) == NULL)
-        return;
-    else
-        fclose(fin);
-
-    strcpy(DemoFileName,CINEMATIC_DEMO_FILE);
-
-    dp_bak = DemoPlaying;
-    dm_bak = DemoMode;
-
-    DemoMode = TRUE;
-    DemoPlaying = TRUE;
-    DemoOverride = TRUE;
-    InitLevel();
-    DemoOverride = FALSE;
-
-    ScenePlayBack();
-    TerminateLevel();
-    DemoMode = dm_bak;
-    DemoPlaying = dp_bak;
 }
 
 void
@@ -2994,8 +2879,6 @@ GameIntro(void)
     {
         LogoLevel();
         //CreditsLevel();
-        //SceneLevel();
-        //TitleLevel();
         IntroAnimLevel();
         IntroAnimCount = 0;
     }
@@ -3309,6 +3192,10 @@ RunLevel(void)
             ExitLevel = FALSE;
             break;
         }
+
+        timerUpdateClock();
+        while (ready2send && (totalclock >= ototalclock + synctics))
+            UpdateInputs();
     }
 
     ready2send = 0;
@@ -3605,6 +3492,26 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     SW_ExtInit();
+
+    for (cnt = 1; cnt < argc; ++cnt)
+    {
+        char const * arg = argv[cnt];
+        if (*arg != '/' && *arg != '-')
+            continue;
+        ++arg;
+
+        if (Bstrncasecmp(arg, "j", 1) == 0 && !SW_SHAREWARE)
+        {
+            if (strlen(arg) > 1)
+            {
+                const char * dir = arg+1;
+                int err = addsearchpath(dir);
+                if (err < 0)
+                    buildprintf("Failed adding %s for game data: %s\n", dir,
+                                err==-1 ? "not a directory" : "no such directory");
+            }
+        }
+    }
 
     // hackish since SW's init order is a bit different right now
     if (G_CheckCmdSwitch(argc, argv, "-addon0"))
@@ -5339,12 +5246,15 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     }
     else
     {
+        fix16_t prevcamq16ang = pp->camq16ang, prevcamq16horiz = pp->camq16horiz;
         void DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel);
         void DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel);
         if (TEST(pp->Flags2, PF2_INPUT_CAN_TURN))
             DoPlayerTurn(pp, &pp->camq16ang, q16angvel);
         if (TEST(pp->Flags2, PF2_INPUT_CAN_AIM))
             DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
+        pp->oq16ang += pp->camq16ang - prevcamq16ang;
+        pp->oq16horiz += pp->camq16horiz - prevcamq16horiz;
     }
 
     loc->vel += vel;

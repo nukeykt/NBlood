@@ -34,12 +34,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "menu.h"
 #include "keyboard.h"
 #include "cd.h"
-#include "cdaudio.h"
 #include "typedefs.h"
 #include "map.h"
 #include "move.h"
 #include "sound.h"
 #include "engine.h"
+#include "save.h"
 #include "trigdat.h"
 #include "runlist.h"
 #include <string.h>
@@ -61,24 +61,18 @@ short nQuake[kMaxPlayers] = { 0 };
 
 short nChunkTotal = 0;
 
-fix16_t nCameraa;
-fix16_t nCamerapan;
 short nViewTop;
-short bClip = kFalse;
 short nViewBottom;
 short nViewRight;
-short besttarget;
 short nViewLeft;
+short bClip = kFalse;
 short bCamera = kFalse;
 
 int gFov;
-
 short nViewy;
 
-int viewz;
-
+short besttarget;
 short enemy;
-
 short nEnemyPal = 0;
 
 #define MAXINTERPOLATIONS MAXSPRITES
@@ -371,6 +365,11 @@ void DrawView(int smoothRatio)
     fix16_t nAngle;
     fix16_t pan;
 
+    fix16_t nCameraa;
+    fix16_t nCamerapan;
+
+    int viewz;
+
 #if 0
     if (bgpages <= 0)
     {
@@ -624,6 +623,8 @@ void DrawView(int smoothRatio)
                 if (!bFullScreen) {
                     MaskStatus();
                 }
+
+                DrawSnakeCamStatus();
             }
         }
     }
@@ -654,4 +655,58 @@ void Clip()
     }
 
     bClip = kTrue;
+}
+
+class ViewLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void ViewLoadSave::Load()
+{
+    Read(nDestVertPan, sizeof(nDestVertPan));
+    Read(dVertPan, sizeof(dVertPan));
+    Read(nVertPan, sizeof(nVertPan));
+    Read(&nCamerax, sizeof(nCamerax));
+    Read(&nCameray, sizeof(nCameray));
+    Read(&nCameraz, sizeof(nCameraz));
+    Read(&bTouchFloor, sizeof(bTouchFloor));
+    Read(nQuake, sizeof(nQuake));
+    Read(&nChunkTotal, sizeof(nChunkTotal));
+    Read(&besttarget, sizeof(besttarget));
+
+    // TODO - view vars?
+
+    Read(&bCamera, sizeof(bCamera));
+    Read(&enemy, sizeof(enemy));
+    Read(&nEnemyPal, sizeof(nEnemyPal));
+}
+
+void ViewLoadSave::Save()
+{
+    Write(nDestVertPan, sizeof(nDestVertPan));
+    Write(dVertPan, sizeof(dVertPan));
+    Write(nVertPan, sizeof(nVertPan));
+    Write(&nCamerax, sizeof(nCamerax));
+    Write(&nCameray, sizeof(nCameray));
+    Write(&nCameraz, sizeof(nCameraz));
+    Write(&bTouchFloor, sizeof(bTouchFloor));
+    Write(nQuake, sizeof(nQuake));
+    Write(&nChunkTotal, sizeof(nChunkTotal));
+    Write(&besttarget, sizeof(besttarget));
+
+    // TODO - view vars?
+
+    Write(&bCamera, sizeof(bCamera));
+    Write(&enemy, sizeof(enemy));
+    Write(&nEnemyPal, sizeof(nEnemyPal));
+}
+
+static ViewLoadSave* myLoadSave;
+
+void ViewLoadSaveConstruct()
+{
+    myLoadSave = new ViewLoadSave();
 }

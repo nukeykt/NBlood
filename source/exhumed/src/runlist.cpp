@@ -49,6 +49,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "lighting.h"
 #include <assert.h>
 
+#include "save.h"
+
 //#define kFuncMax	0x260000 // the number 38 stored in the high word of an int
 #define kFuncMax		39
 #define kMaxRunStack	200
@@ -1648,7 +1650,7 @@ void runlist_DamageEnemy(int nSprite, int nSprite2, short nDamage)
     runlist_SendMessageToRunRec(nRun, (nSprite2 & 0xFFFF) | 0x80000, nDamage * 4);
 
     // is there now one less creature? (has one died)
-    if (nPreCreaturesLeft > nCreaturesLeft&& nSprite2 > -1)
+    if (nPreCreaturesLeft > nCreaturesLeft && nSprite2 > -1)
     {
         if (sprite[nSprite2].statnum != 100) {
             return;
@@ -1678,4 +1680,58 @@ void runlist_DamageEnemy(int nSprite, int nSprite2, short nDamage)
             nTauntTimer[nPlayer] = RandomSize(3) + 3;
         }
     }
+}
+
+class RunListLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void RunListLoadSave::Load()
+{
+    Read(&RunCount, sizeof(RunCount));
+    Read(&nRadialSpr, sizeof(nRadialSpr));
+    Read(&nStackCount, sizeof(nStackCount));
+    Read(&word_966BE, sizeof(word_966BE));
+    Read(&ChannelList, sizeof(ChannelList));
+    Read(&ChannelLast, sizeof(ChannelLast));
+    Read(&nRadialOwner, sizeof(nRadialOwner));
+    Read(&nDamageRadius, sizeof(nDamageRadius));
+    Read(&nRadialDamage, sizeof(nRadialDamage));
+    Read(&RunChain, sizeof(RunChain));
+    Read(&NewRun, sizeof(NewRun));
+
+    Read(sRunStack, sizeof(sRunStack[0]) * nStackCount);
+    Read(RunFree, sizeof(RunFree));
+    Read(sRunChannels, sizeof(sRunChannels));
+    Read(RunData, sizeof(RunData));
+}
+
+void RunListLoadSave::Save()
+{
+    Write(&RunCount, sizeof(RunCount));
+    Write(&nRadialSpr, sizeof(nRadialSpr));
+    Write(&nStackCount, sizeof(nStackCount));
+    Write(&word_966BE, sizeof(word_966BE));
+    Write(&ChannelList, sizeof(ChannelList));
+    Write(&ChannelLast, sizeof(ChannelLast));
+    Write(&nRadialOwner, sizeof(nRadialOwner));
+    Write(&nDamageRadius, sizeof(nDamageRadius));
+    Write(&nRadialDamage, sizeof(nRadialDamage));
+    Write(&RunChain, sizeof(RunChain));
+    Write(&NewRun, sizeof(NewRun));
+
+    Write(sRunStack, sizeof(sRunStack[0]) * nStackCount);
+    Write(RunFree, sizeof(RunFree));
+    Write(sRunChannels, sizeof(sRunChannels));
+    Write(RunData, sizeof(RunData));
+}
+
+static RunListLoadSave* myLoadSave;
+
+void RunListLoadSaveConstruct()
+{
+    myLoadSave = new RunListLoadSave();
 }

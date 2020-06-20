@@ -2023,6 +2023,8 @@ void SetupMouseMenu(CGameMenuItemChain *pItem)
     itemOptionsControlMouseAimFlipped.at20 = gMouseAimingFlipped;
     itemOptionsControlMouseAimMode.at20 = gMouseAiming;
     itemOptionsControlMouseVerticalAim.at20 = gMouseAim;
+    itemOptionsControlMouseXScale.nValue = CONTROL_MouseAxesScale[0];
+    itemOptionsControlMouseYScale.nValue = CONTROL_MouseAxesScale[1];
 }
 
 void PreDrawControlMouse(CGameMenuItem *pItem)

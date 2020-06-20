@@ -7,6 +7,7 @@
 
 #include "compat.h"
 #include "pragmas.h"
+#include "vfs.h"
 
 #define MAXWADS 4096
 #define MAXPOINTS 8192
@@ -313,7 +314,7 @@ void parsescript(void)
         Bprintf("Could not find %s\n",scriptname);
         exit(0);
     }
-    filpos = 0; fileng = filelength(filhandle);
+    filpos = 0; fileng = buildvfs_length(filhandle);
     while (readline() != 0)
     {
         i = 0; j = 0; lasti = 0;

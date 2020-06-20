@@ -968,30 +968,15 @@ AddSyncInfoToPacket(int *j)
     }
 }
 
+void faketimerhandler(void) { ; }
+
 void
-faketimerhandler(void)
+UpdateInputs(void)
 {
     int i, j, k;
     PLAYERp pp;
     void getinput(SW_PACKET *, SWBOOL);
     extern SWBOOL BotMode;
-
-#if 0
-    if (KEY_PRESSED(KEYSC_PERIOD))
-    {
-        extern unsigned int MoveThingsCount;
-        MoveThingsCount++;
-        MoveThingsCount--;
-        return;
-    }
-#endif
-
-    timerUpdateClock();
-    if ((totalclock < ototalclock + synctics))
-        return;
-
-    if (!ready2send)
-        return;
 
     ototalclock += synctics;
 

@@ -50,10 +50,10 @@ uint32_t MV_MixMonoStereo(struct VoiceNode * const voice, uint32_t length)
 
         position += rate;
 
-        *dest = MIX_SAMPLES<D>((SCALE_SAMPLE((isample0 + isample1) >> 1, fix16_fast_trunc_mul(volume, voice->LeftVolume))), *dest);
+        *dest = MIX_SAMPLES<D>((SCALE_SAMPLE((isample0 + isample1) >> 1, fix16_fast_trunc_mul(volume, voice->PannedVolume.Left))), *dest);
         dest++;
 
-        voice->LeftVolume = SMOOTH_VOLUME(voice->LeftVolume, voice->LeftVolumeDest);
+        voice->PannedVolume.Left = SMOOTH_VOLUME(voice->PannedVolume.Left, voice->GoalVolume.Left);
     }
     while (--length);
 
@@ -80,13 +80,12 @@ uint32_t MV_MixStereoStereo(struct VoiceNode * const voice, uint32_t length)
 
         position += rate;
 
-        *dest = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, fix16_fast_trunc_mul(volume, voice->LeftVolume)), *dest);
+        *dest = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, fix16_fast_trunc_mul(volume, voice->PannedVolume.Left)), *dest);
         *(dest + (MV_RightChannelOffset / sizeof(*dest)))
-            = MIX_SAMPLES<D>(SCALE_SAMPLE(isample1, fix16_fast_trunc_mul(volume, voice->RightVolume)), *(dest + (MV_RightChannelOffset / sizeof(*dest))));
+            = MIX_SAMPLES<D>(SCALE_SAMPLE(isample1, fix16_fast_trunc_mul(volume, voice->PannedVolume.Right)), *(dest + (MV_RightChannelOffset / sizeof(*dest))));
         dest += 2;
 
-        voice->LeftVolume = SMOOTH_VOLUME(voice->LeftVolume, voice->LeftVolumeDest);
-        voice->RightVolume = SMOOTH_VOLUME(voice->RightVolume, voice->RightVolumeDest);
+        voice->PannedVolume = { SMOOTH_VOLUME(voice->PannedVolume.Left, voice->GoalVolume.Left), SMOOTH_VOLUME(voice->PannedVolume.Right, voice->GoalVolume.Right) };
     }
     while (--length);
 

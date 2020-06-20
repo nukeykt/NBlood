@@ -25,5 +25,6 @@ void StartfadeCDaudio();
 int StepFadeCDaudio();
 bool CDplaying();
 void StopCD();
+int fadecdaudio();
 
 #endif

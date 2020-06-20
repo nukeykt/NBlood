@@ -6778,8 +6778,6 @@ SpriteControl(void)
 #endif
     }
 
-    FAKETIMERHANDLER();
-
     // Items and skip2 things
     if (MoveSkip2 == 0)
     {
@@ -6801,8 +6799,6 @@ SpriteControl(void)
             }
         }
     }
-
-    FAKETIMERHANDLER();
 
     if (MoveSkip2 == 0)                 // limit to 20 times a second
     {
@@ -6858,9 +6854,6 @@ SpriteControl(void)
         }
     }
 
-    FAKETIMERHANDLER();
-
-
     // Skip4 things
     if (MoveSkip4 == 0)                 // limit to 10 times a second
     {
@@ -6882,8 +6875,6 @@ SpriteControl(void)
             }
         }
     }
-
-    FAKETIMERHANDLER();
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_NO_STATE], i, nexti)
     {

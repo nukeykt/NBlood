@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "object.h"
 #include "sound.h"
 #include "trigdat.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxAnubis  80
@@ -46,8 +47,6 @@ struct Anubis
 };
 
 Anubis AnubisList[kMaxAnubis];
-
-short AnubisCount  = -1;
 
 static actionSeq ActionSeq[] = {
     { 0,  0 },
@@ -67,21 +66,22 @@ static actionSeq ActionSeq[] = {
     { 43, 1 },
 };
 
+short AnubisCount = 0;
 short nAnubisDrum = 0;
 
 
 void InitAnubis()
 {
-    AnubisCount = kMaxAnubis;
+    AnubisCount = 0;
     nAnubisDrum = 1;
 }
 
 int BuildAnubis(int nSprite, int x, int y, int z, int nSector, int nAngle, uint8_t bIsDrummer)
 {
-    AnubisCount--;
     short nAnubis = AnubisCount;
+    AnubisCount++;
 
-    if (nAnubis < 0) {
+    if (nAnubis >= kMaxAnubis) {
         return -1;
     }
 
@@ -213,7 +213,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
 
                         if (nTarget >= 0)
                         {
-                            D3PlayFX(StaticSound[kSound8], nSprite);
+                            D3PlayFX(StaticSound[kSoundAnubisICU], nSprite);
                             AnubisList[nAnubis].nAction = 1;
                             AnubisList[nAnubis].nFrame = 0;
                             AnubisList[nAnubis].nTarget = nTarget;
@@ -466,7 +466,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     else
                     {
                         // loc_259B5:
-                        D3PlayFX(StaticSound[kSound39], nSprite);
+                        D3PlayFX(StaticSound[kSoundAnubisHit], nSprite);
                     }
                 }
                 else
@@ -494,4 +494,32 @@ void FuncAnubis(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class AnubisLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void AnubisLoadSave::Load()
+{
+    Read(&AnubisCount, sizeof(AnubisCount));
+    Read(&nAnubisDrum, sizeof(nAnubisDrum));
+    Read(AnubisList, sizeof(AnubisList[0]) * AnubisCount);
+}
+
+void AnubisLoadSave::Save()
+{
+    Write(&AnubisCount, sizeof(AnubisCount));
+    Write(&nAnubisDrum, sizeof(nAnubisDrum));
+    Write(AnubisList, sizeof(AnubisList[0]) * AnubisCount);
+}
+
+static AnubisLoadSave* myLoadSave;
+
+void AnubisLoadSaveConstruct()
+{
+    myLoadSave = new AnubisLoadSave();
 }

@@ -74,9 +74,6 @@
     <ClCompile Include="..\..\source\exhumed\src\cd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\exhumed\src\cdaudio.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -119,9 +116,6 @@
     <ClCompile Include="..\..\source\exhumed\src\lion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\exhumed\src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -144,9 +138,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\object.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\exhumed\src\paul.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\player.cpp">
@@ -209,11 +200,11 @@
     <ClCompile Include="..\..\source\exhumed\src\ramses.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\source\exhumed\src\cdaudio.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -281,9 +272,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\exhumed\src\paul.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\player.h">
@@ -398,6 +386,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\ramses.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\common_game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

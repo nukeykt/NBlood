@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "init.h"
 #include "exhumed.h"
 #include "move.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxRats    50
@@ -386,4 +387,36 @@ void FuncRat(int a, int nDamage, int nRun)
             break;
         }
     }
+}
+
+class RatLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void RatLoadSave::Load()
+{
+    Read(&nMinChunk, sizeof(nMinChunk));
+    Read(&nPlayerPic, sizeof(nPlayerPic));
+    Read(&nRatCount, sizeof(nRatCount));
+    Read(&nMaxChunk, sizeof(nMaxChunk));
+    Read(RatList, sizeof(RatList[0]) * nRatCount);
+}
+
+void RatLoadSave::Save()
+{
+    Write(&nMinChunk, sizeof(nMinChunk));
+    Write(&nPlayerPic, sizeof(nPlayerPic));
+    Write(&nRatCount, sizeof(nRatCount));
+    Write(&nMaxChunk, sizeof(nMaxChunk));
+    Write(RatList, sizeof(RatList[0]) * nRatCount);
+}
+
+static RatLoadSave* myLoadSave;
+
+void RatLoadSaveConstruct()
+{
+    myLoadSave = new RatLoadSave();
 }

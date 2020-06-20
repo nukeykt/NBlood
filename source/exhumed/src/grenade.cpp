@@ -30,12 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "lighting.h"
 #include "sequence.h"
 #include "random.h"
+#include "save.h"
 #include <assert.h>
-
-int nGrenadeCount = 0;
-int nGrenadesFree;
-
-short GrenadeFree[kMaxGrenades];
 
 struct Grenade
 {
@@ -52,6 +48,10 @@ struct Grenade
     int y;
 };
 
+int nGrenadeCount = 0;
+int nGrenadesFree;
+
+short GrenadeFree[kMaxGrenades];
 Grenade GrenadeList[kMaxGrenades];
 
 
@@ -90,7 +90,7 @@ void BounceGrenade(short nGrenade, short nAngle)
     GrenadeList[nGrenade].x = (Cos(nAngle) >> 5) * GrenadeList[nGrenade].field_10;
     GrenadeList[nGrenade].y = (Sin(nAngle) >> 5) * GrenadeList[nGrenade].field_10;
 
-    D3PlayFX(StaticSound[kSound3], GrenadeList[nGrenade].nSprite);
+    D3PlayFX(StaticSound[kSoundGrenadeDrop], GrenadeList[nGrenade].nSprite);
 }
 
 int ThrowGrenade(short nPlayer, int UNUSED(edx), int UNUSED(ebx), int ecx, int push1)
@@ -382,13 +382,13 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
 
                         GrenadeList[nGrenade].field_0 = (uint8_t)totalmoves; // limit to 8bits?
 
-                        D3PlayFX(StaticSound[kSound3], nGrenadeSprite);
+                        D3PlayFX(StaticSound[kSoundGrenadeDrop], nGrenadeSprite);
 
                         sprite[nGrenadeSprite].zvel = -(zVel >> 1);
 
                         if (sprite[nGrenadeSprite].zvel > -1280)
                         {
-                            D3PlayFX(StaticSound[kSound5], nGrenadeSprite);
+                            D3PlayFX(StaticSound[kSoundGrenadeRoll], nGrenadeSprite);
                             GrenadeList[nGrenade].field_0 = 0;
                             GrenadeList[nGrenade].field_2 = 0;
                             sprite[nGrenadeSprite].zvel = 0;
@@ -433,4 +433,36 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
             break;
         }
     }
+}
+
+class GrenadeLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void GrenadeLoadSave::Load()
+{
+    Read(&nGrenadeCount, sizeof(nGrenadeCount));
+    Read(&nGrenadesFree, sizeof(nGrenadesFree));
+
+    Read(GrenadeFree, sizeof(GrenadeFree));
+    Read(GrenadeList, sizeof(GrenadeList));
+}
+
+void GrenadeLoadSave::Save()
+{
+    Write(&nGrenadeCount, sizeof(nGrenadeCount));
+    Write(&nGrenadesFree, sizeof(nGrenadesFree));
+
+    Write(GrenadeFree, sizeof(GrenadeFree));
+    Write(GrenadeList, sizeof(GrenadeList));
+}
+
+static GrenadeLoadSave* myLoadSave;
+
+void GrenadeLoadSaveConstruct()
+{
+    myLoadSave = new GrenadeLoadSave();
 }

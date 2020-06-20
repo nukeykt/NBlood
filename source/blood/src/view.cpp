@@ -3415,7 +3415,10 @@ RORHACKOTHER:
                 if (ror_status[i] != TestBitString(gotpic, 4080 + i))
                     do_ror_hack = true;
             if (do_ror_hack)
+            {
+                spritesortcnt = 0;
                 goto RORHACKOTHER;
+            }
             memcpy(otherMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, bakMirrorGotpic, 2);
             viewProcessSprites(vd8, vd4, vd0, v50, gInterpolate);
@@ -3503,6 +3506,7 @@ RORHACK:
         if (do_ror_hack)
         {
             gView->pSprite->cstat = bakCstat;
+            spritesortcnt = 0;
             goto RORHACK;
         }
         sub_5571C(1);

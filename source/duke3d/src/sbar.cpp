@@ -530,13 +530,7 @@ static int32_t G_GetInvOn(const DukePlayer_t *p)
 
 static int32_t G_GetMorale(int32_t p_i, int32_t snum)
 {
-#if !defined LUNATIC
     return Gv_GetVarByLabel("PLR_MORALE", -1, p_i, snum);
-#else
-    UNREFERENCED_PARAMETER(p_i);
-    UNREFERENCED_PARAMETER(snum);
-    return -1;
-#endif
 }
 
 static inline void rotatesprite_althud(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum, int8_t dashade, char dapalnum, int32_t dastat)
@@ -1049,11 +1043,7 @@ void G_DrawBackground(void)
         //        Gv_SetVar(g_iReturnVarID,tilesizx[MENUTILE]==320&&tilesizy[MENUTILE]==200?MENUTILE:BIGHOLE, -1, -1);
         bgtile = VM_OnEventWithReturn(EVENT_GETMENUTILE, g_player[screenpeek].ps->i, screenpeek, bgtile);
         // MENU_TILE: is the menu tile tileable?
-#if !defined LUNATIC
         if (Gv_GetVarByLabel("MENU_TILE", !fstilep, -1, -1))
-#else
-        if (!fstilep)
-#endif
         {
             if ((unsigned) bgtile < MAXTILES)
                 for (y=y1; y<y2; y+=tilesiz[bgtile].y)

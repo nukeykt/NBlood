@@ -46,10 +46,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "android.h"
 #endif
 
-#ifdef LUNATIC
-# include "lunatic_game.h"
-#endif
-
 #include "vfs.h"
 
 // Uncomment to prevent anything except mirrors from drawing. It is sensible to
@@ -79,14 +75,11 @@ const char* AppTechnicalName = APPBASENAME;
 
 int32_t g_quitDeadline = 0;
 
-#ifdef LUNATIC
-camera_t g_camera;
-#else
 int32_t g_cameraDistance = 0, g_cameraClock = 0;
-#endif
 static int32_t g_quickExit;
 
 char boardfilename[BMAX_PATH] = {0}, currentboardfilename[BMAX_PATH] = {0};
+char previousboardfilename[BMAX_PATH] = {0};
 
 int32_t voting = -1;
 int32_t vote_map = -1, vote_episode = -1;
@@ -291,10 +284,6 @@ int32_t A_CheckInventorySprite(spritetype *s)
 
 void G_GameExit(const char *msg)
 {
-#ifdef LUNATIC
-    El_PrintTimes();
-    El_DestroyState(&g_ElState);
-#endif
     if (*msg != 0 && g_player[myconnectindex].ps != NULL)
         g_player[myconnectindex].ps->palette = BASEPAL;
 
@@ -757,7 +746,8 @@ static void G_ReadGLFrame(void)
 
 void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 {
-    auto const pPlayer = g_player[playerNum].ps;
+    auto const &thisPlayer = g_player[playerNum];
+    auto const  pPlayer    = thisPlayer.ps;
 
     int const viewingRange = viewingrange;
 
@@ -973,8 +963,8 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                                      pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
 
             CAMERA(pos) = camVect;
-
-            if (pPlayer->wackedbyactor >= 0)
+            
+            if (thisPlayer.smoothcamera)
             {
                 CAMERA(q16ang)   = pPlayer->oq16ang
                                  + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
@@ -1221,7 +1211,6 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
 void G_DumpDebugInfo(void)
 {
-#if !defined LUNATIC
     static char const s_WEAPON[] = "WEAPON";
     int32_t i,j,x;
     //    buildvfs_FILE fp = buildvfs_fopen_write("condebug.log");
@@ -1289,7 +1278,6 @@ void G_DumpDebugInfo(void)
     }
     Gv_DumpValues();
 //    buildvfs_fclose(fp);
-#endif
     saveboard("debug.map", &g_player[myconnectindex].ps->pos, fix16_to_int(g_player[myconnectindex].ps->q16ang),
               g_player[myconnectindex].ps->cursectnum);
 }
@@ -1298,7 +1286,6 @@ void G_DumpDebugInfo(void)
 // else only if it equals 0.
 static int32_t G_InitActor(int32_t i, int32_t tilenum, int32_t set_movflag_uncond)
 {
-#if !defined LUNATIC
     if (g_tile[tilenum].execPtr)
     {
         SH(i) = *(g_tile[tilenum].execPtr);
@@ -1310,25 +1297,6 @@ static int32_t G_InitActor(int32_t i, int32_t tilenum, int32_t set_movflag_uncon
 
         return 1;
     }
-#else
-    if (El_HaveActor(tilenum))
-    {
-        // ^^^ C-CON takes precedence for now.
-        const el_actor_t *a = &g_elActors[tilenum];
-        auto movflagsptr = &AC_MOVFLAGS(&sprite[i], &actor[i]);
-
-        SH(i) = a->strength;
-        AC_ACTION_ID(actor[i].t_data) = a->act.id;
-        AC_MOVE_ID(actor[i].t_data) = a->mov.id;
-        Bmemcpy(&actor[i].ac, &a->act.ac, sizeof(struct action));
-        Bmemcpy(&actor[i].mv, &a->mov.mv, sizeof(struct move));
-
-        if (set_movflag_uncond || *movflagsptr == 0)
-            *movflagsptr = a->movflags;
-
-        return 1;
-    }
-#endif
 
     return 0;
 }
@@ -1385,13 +1353,7 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
     spriteext[newSprite]    = {};
     spritesmooth[newSprite] = {};
 
-#if defined LUNATIC
-    if (!g_noResetVars)
-#endif
-        A_ResetVars(newSprite);
-#if defined LUNATIC
-    g_noResetVars = 0;
-#endif
+    A_ResetVars(newSprite);
 
     if (VM_HaveEvent(EVENT_EGS))
     {
@@ -3827,11 +3789,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
     {
         int32_t switchpic;
         int32_t curframe;
-#if !defined LUNATIC
         int32_t scrofs_action;
-#else
-        int32_t startframe, viewtype;
-#endif
         //is the perfect time to animate sprites
         auto const t = &tsprite[j];
         const int32_t i = t->owner;
@@ -3878,12 +3836,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         const int32_t sect = pSprite->sectnum;
 
         curframe = AC_CURFRAME(actor[i].t_data);
-#if !defined LUNATIC
         scrofs_action = AC_ACTION_ID(actor[i].t_data);
-#else
-        startframe = actor[i].ac.startframe;
-        viewtype = actor[i].ac.viewtype;
-#endif
         switchpic = pSprite->picnum;
         // Some special cases because dynamictostatic system can't handle
         // addition to constants.
@@ -4137,12 +4090,10 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
             {
                 // Display APLAYER sprites with action PSTAND when viewed through
                 // a camera.  Not implemented for Lunatic.
-#if !defined LUNATIC
                 const intptr_t *aplayer_scr = g_tile[APLAYER].execPtr;
                 // [0]=strength, [1]=actionofs, [2]=moveofs
 
                 scrofs_action = aplayer_scr[1];
-#endif
                 curframe = 0;
             }
 #endif
@@ -4237,15 +4188,11 @@ PALONLY:
 
         if (G_TileHasActor(pSprite->picnum))
         {
-#if !defined LUNATIC
             if ((unsigned)scrofs_action + ACTION_PARAM_COUNT > (unsigned)g_scriptSize)
                 goto skip;
 
             int32_t viewtype = apScript[scrofs_action + ACTION_VIEWTYPE];
             uint16_t const action_flags = apScript[scrofs_action + ACTION_FLAGS];
-#else
-            uint16_t const action_flags = actor[i].ac.flags;
-#endif
 
             int const invertp = viewtype < 0;
             l = klabs(viewtype);
@@ -4298,11 +4245,7 @@ PALONLY:
                 }
             }
 
-#if !defined LUNATIC
             t->picnum += frameOffset + apScript[scrofs_action + ACTION_STARTFRAME] + viewtype*curframe;
-#else
-            t->picnum += frameOffset + startframe + viewtype*curframe;
-#endif
             // XXX: t->picnum can be out-of-bounds by bad user code.
 
             if (viewtype > 0)
@@ -4317,9 +4260,7 @@ PALONLY:
         /* completemirror() already reverses the drawn frame, so the above isn't necessary.
          * Even Polymost's and Polymer's mirror seems to function correctly this way. */
 
-#if !defined LUNATIC
 skip:
-#endif
         // Night vision goggles tsprite tinting.
         // XXX: Currently, for the splitscreen mod, sprites will be pal6-colored iff the first
         // player has nightvision on.  We should pass stuff like "from which player is this view
@@ -4402,11 +4343,7 @@ skip:
                 }
             }
 
-#ifdef LUNATIC
-        bool const haveAction = false; // FIXME!
-#else
         bool const haveAction = scrofs_action != 0 && (unsigned)scrofs_action + ACTION_PARAM_COUNT <= (unsigned)g_scriptSize;
-#endif
 
         switch (DYNAMICTILEMAP(pSprite->picnum))
         {
@@ -4541,9 +4478,6 @@ skip:
             G_DoEventAnimSprites(j);
     }
 
-#ifdef LUNATIC
-    VM_OnEvent(EVENT_ANIMATEALLSPRITES);
-#endif
 #ifdef DEBUGGINGAIDS
     g_spriteStat.numonscreen = spritesortcnt;
 #endif
@@ -4595,6 +4529,7 @@ void G_InitTimer(int32_t ticspersec)
     {
         timerUninit();
         timerInit(ticspersec);
+        timerSetCallback(gameTimerHandler);
         g_timerTicsPerSecond = ticspersec;
     }
 }
@@ -5850,23 +5785,39 @@ int loaddefinitions_game(const char *fileName, int32_t firstPass)
     return 0;
 }
 
-
-
-void G_UpdateAppTitle(void)
+void G_UpdateAppTitle(char const * const name /*= nullptr*/)
 {
-    if (g_gameNamePtr)
+    Bsprintf(tempbuf, APPNAME " %s", s_buildRev);
+
+    if (name != nullptr)
+    {
+        if (g_gameNamePtr)
+#ifdef EDUKE32_STANDALONE
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", name, g_gameNamePtr);
+#else
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s - %s", name, g_gameNamePtr, tempbuf);
+#endif
+        else
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", name, tempbuf);
+    }
+    else if (g_gameNamePtr)
     {
 #ifdef EDUKE32_STANDALONE
-        Bstrcpy(tempbuf, g_gameNamePtr);
+        Bstrncpyz(apptitle, g_gameNamePtr, sizeof(apptitle));
 #else
-        Bsprintf(tempbuf, "%s - " APPNAME, g_gameNamePtr);
+        Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", g_gameNamePtr, tempbuf);
 #endif
-        wm_setapptitle(tempbuf);
     }
     else
     {
-        wm_setapptitle(APPNAME);
+#ifdef EDUKE32_STANDALONE
+        Bstrncpyz(apptitle, APPNAME, sizeof(apptitle));
+#else
+        Bstrncpyz(apptitle, tempbuf, sizeof(apptitle));
+#endif
     }
+
+    wm_setapptitle(apptitle);
 }
 
 static void G_FreeHashAnim(const char * /*string*/, intptr_t key)
@@ -5905,7 +5856,6 @@ static void G_Cleanup(void)
     {
         Xfree(g_sounds[i].filename);
     }
-#if !defined LUNATIC
     if (label != (char *)&sprite[0]) Xfree(label);
     if (labelcode != (int32_t *)&sector[0]) Xfree(labelcode);
     Xfree(apScript);
@@ -5919,7 +5869,6 @@ static void G_Cleanup(void)
     hash_free(&h_arrays);
     hash_free(&h_labels);
     hash_free(&h_gamefuncs);
-#endif
 
     hash_loop(&h_dukeanim, G_FreeHashAnim);
     hash_free(&h_dukeanim);
@@ -5960,21 +5909,15 @@ void G_Shutdown(void)
 
 static void G_CompileScripts(void)
 {
-#if !defined LUNATIC
     int32_t psm = pathsearchmode;
 
     label     = (char *)&sprite[0];     // V8: 16384*44/64 = 11264  V7: 4096*44/64 = 2816
     labelcode = (int32_t *)&sector[0];  // V8: 4096*40/4 = 40960    V7: 1024*40/4 = 10240
     labeltype = (uint8_t *)&wall[0];    // V8: 16384*32 = 524288    V7: 8192*32/4 = 262144
-#endif
 
     if (g_scriptNamePtr != NULL)
         Bcorrectfilename(g_scriptNamePtr,0);
 
-#if defined LUNATIC
-    Gv_Init();
-    C_InitProjectiles();
-#else
     // if we compile for a V7 engine wall[] should be used for label names since it's bigger
     pathsearchmode = 1;
 
@@ -6004,7 +5947,6 @@ static void G_CompileScripts(void)
 
     VM_OnEvent(EVENT_INIT);
     pathsearchmode = psm;
-#endif
 }
 
 static inline void G_CheckGametype(void)
@@ -6086,52 +6028,6 @@ static void A_InitEnemyFlags(void)
 
 static void G_SetupGameButtons(void);
 
-#ifdef LUNATIC
-// Will be used to store CON code translated to Lua.
-int32_t g_elCONSize;
-char *g_elCON;  // NOT 0-terminated!
-
-LUNATIC_EXTERN void El_SetCON(const char *conluacode)
-{
-    int32_t slen = Bstrlen(conluacode);
-
-    g_elCON = (char *)Xmalloc(slen);
-
-    g_elCONSize = slen;
-    Bmemcpy(g_elCON, conluacode, slen);
-}
-
-void El_CreateGameState(void)
-{
-    int32_t i;
-
-    El_DestroyState(&g_ElState);
-
-    if ((i = El_CreateState(&g_ElState, "game")))
-    {
-        initprintf("Lunatic: Error initializing global ELua state (code %d)\n", i);
-    }
-    else
-    {
-        extern const char luaJIT_BC__defs_game[];
-
-        if ((i = L_RunString(&g_ElState, luaJIT_BC__defs_game,
-                             LUNATIC_DEFS_BC_SIZE, "_defs_game.lua")))
-        {
-            initprintf("Lunatic: Error preparing global ELua state (code %d)\n", i);
-            El_DestroyState(&g_ElState);
-        }
-    }
-
-    if (i)
-        G_GameExit("Failure setting up Lunatic!");
-
-# if !defined DEBUGGINGAIDS
-    El_ClearErrors();
-# endif
-}
-#endif
-
 // Throw in everything here that needs to be called after a Lua game state
 // recreation (or on initial startup in a non-Lunatic build.)
 void G_PostCreateGameState(void)
@@ -6176,11 +6072,6 @@ static void G_Startup(void)
     if (engineInit())
         G_FatalEngineInitError();
 
-#ifdef LUNATIC
-    El_CreateGameState();
-    C_InitQuotes();
-#endif
-
     G_InitDynamicTiles();
     G_InitDynamicSounds();
 
@@ -6188,11 +6079,6 @@ static void G_Startup(void)
     G_InitMultiPsky(CLOUDYOCEAN, MOONSKY1, BIGORBIT1, LA);
     Gv_FinalizeWeaponDefaults();
     G_PostCreateGameState();
-#ifdef LUNATIC
-    // NOTE: This is only effective for CON-defined EVENT_INIT. See EVENT_INIT
-    // not in _defs_game.lua.
-    VM_OnEvent(EVENT_INIT);
-#endif
     if (g_netServer || ud.multimode > 1) G_CheckGametype();
 
     if (g_noSound) ud.config.SoundToggle = 0;
@@ -6394,9 +6280,7 @@ static int G_EndOfLevel(void)
 void app_crashhandler(void)
 {
     G_CloseDemoWrite();
-#if !defined LUNATIC
     VM_ScriptInfo(insptr, 64);
-#endif
     G_GameQuit();
 }
 
@@ -6408,41 +6292,73 @@ static int32_t check_filename_casing(void)
 }
 #endif
 
-#ifdef LUNATIC
-const char *g_sizes_of_what[] = {
-    "sectortype", "walltype", "spritetype", "spriteext_t",
-    "actor_t", "DukePlayer_t", "playerdata_t",
-    "user_defs", "tiledata_t", "weapondata_t",
-    "projectile_t",
-};
-int32_t g_sizes_of[] = {
-    sizeof(sectortype), sizeof(walltype), sizeof(spritetype), sizeof(spriteext_t),
-    sizeof(actor_t), sizeof(DukePlayer_t), sizeof(playerdata_t),
-    sizeof(user_defs), sizeof(tiledata_t), sizeof(weapondata_t),
-    sizeof(projectile_t)
-};
-
-DukePlayer_t *g_player_ps[MAXPLAYERS];
-#endif
-
 void G_MaybeAllocPlayer(int32_t pnum)
 {
     if (g_player[pnum].ps == NULL)
         g_player[pnum].ps = (DukePlayer_t *)Xcalloc(1, sizeof(DukePlayer_t));
     if (g_player[pnum].input == NULL)
         g_player[pnum].input = (input_t *)Xcalloc(1, sizeof(input_t));
-
-#ifdef LUNATIC
-    g_player_ps[pnum] = g_player[pnum].ps;
-    g_player[pnum].ps->wa.idx = pnum;
-#endif
 }
 
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
 EDUKE32_STATIC_ASSERT(sizeof(actor_t)%4 == 0);
 EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t)%4 == 0);
 
-int app_main(int argc, char const * const * argv)
+#ifndef NETCODE_DISABLE
+void Net_DedicatedServerStdin(void)
+{
+# ifndef _WIN32
+    // stdin -> OSD input for dedicated server
+    if (g_networkMode == NET_DEDICATED_SERVER)
+    {
+        int32_t nb;
+        char ch;
+        static uint32_t bufpos = 0;
+        static char buf[128];
+# ifndef GEKKO
+        int32_t flag = 1;
+        ioctl(0, FIONBIO, &flag);
+# endif
+        if ((nb = read(0, &ch, 1)) > 0 && bufpos < sizeof(buf))
+        {
+            if (ch != '\n')
+                buf[bufpos++] = ch;
+
+            if (ch == '\n' || bufpos >= sizeof(buf)-1)
+            {
+                buf[bufpos] = 0;
+                OSD_Dispatch(buf);
+                bufpos = 0;
+            }
+        }
+    }
+# endif
+}
+#endif
+
+void G_DrawFrame(void)
+{
+    if (!g_saveRequested)
+    {
+        // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
+        CONTROL_BindsEnabled = !!(g_player[myconnectindex].ps->gm & (MODE_GAME|MODE_DEMO));
+
+        G_HandleLocalKeys();
+        OSD_DispatchQueued();
+        P_GetInput(myconnectindex);
+    }
+
+    int const smoothRatio = calc_smoothratio(totalclock, ototalclock);
+
+    G_DrawRooms(screenpeek, smoothRatio);
+    if (videoGetRenderMode() >= REND_POLYMOST)
+        G_DrawBackground();
+    G_DisplayRest(smoothRatio);
+    videoNextPage();
+    S_Update();
+}
+
+int app_main(int argc, char const* const* argv)
 {
 #ifndef NETCODE_DISABLE
     if (enet_initialize() != 0)
@@ -6495,7 +6411,7 @@ int app_main(int argc, char const * const * argv)
                      BGetTime,
                      GAME_onshowosd);
 
-    wm_setapptitle(APPNAME);
+    G_UpdateAppTitle();
 
     initprintf(HEAD2 " %s\n", s_buildRev);
     PrintBuildInfo();
@@ -7019,19 +6935,12 @@ MAIN_LOOP_RESTART:
 
                     ototalclock += TICSPERFRAME;
 
-                    auto const moveClock = totalclock;
-
                     if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1))
                         && (myplayer.gm & MODE_GAME))
                     {
                         Net_GetPackets();
                         G_DoMoveThings();
                     }
-
-                    // computing a tic is taking too long.
-                    // rather than tightly spinning here, go draw a frame since we're fucked anyway
-                    if ((int)(totalclock - moveClock) >= (TICSPERFRAME >> 1))
-                        break;
                 }
                 while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= TICSPERFRAME);
 
@@ -7044,8 +6953,6 @@ MAIN_LOOP_RESTART:
                 g_gameUpdateAvgTime
                 = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
             } while (0);
-
-            S_Update();
         }
 
         G_DoCheats();
@@ -7069,50 +6976,12 @@ MAIN_LOOP_RESTART:
             {
                 // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
                 CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
-
 #ifndef NETCODE_DISABLE
-# ifndef _WIN32
-                // stdin -> OSD input for dedicated server
-                if (g_networkMode == NET_DEDICATED_SERVER)
-                {
-                    int32_t nb;
-                    char ch;
-                    static uint32_t bufpos = 0;
-                    static char buf[128];
-# ifndef GEKKO
-                    int32_t flag = 1;
-                    ioctl(0, FIONBIO, &flag);
-# endif
-                    if ((nb = read(0, &ch, 1)) > 0 && bufpos < sizeof(buf))
-                    {
-                        if (ch != '\n')
-                            buf[bufpos++] = ch;
-
-                        if (ch == '\n' || bufpos >= sizeof(buf)-1)
-                        {
-                            buf[bufpos] = 0;
-                            OSD_Dispatch(buf);
-                            bufpos = 0;
-                        }
-                    }
-                }
-                else
-# endif
+                Net_DedicatedServerStdin();
 #endif
-                    G_HandleLocalKeys();
-
-                OSD_DispatchQueued();
-
-                P_GetInput(myconnectindex);
             }
 
-            int const smoothRatio = calc_smoothratio(totalclock, ototalclock);
-
-            G_DrawRooms(screenpeek, smoothRatio);
-            if (videoGetRenderMode() >= REND_POLYMOST)
-                G_DrawBackground();
-            G_DisplayRest(smoothRatio);
-            videoNextPage();
+            G_DrawFrame();
 
             if (gameUpdate)
                 g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
@@ -7124,7 +6993,6 @@ MAIN_LOOP_RESTART:
         if (g_saveRequested)
         {
             KB_FlushKeyboardQueue();
-            videoNextPage();
 
             g_screenCapture = 1;
             G_DrawRooms(myconnectindex, 65536);

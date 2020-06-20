@@ -29,13 +29,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "player.h"
 #include "sound.h"
 #include "names.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxQueens  1
 #define kMaxEggs    10
 #define kMaxTails   7
-
-short QueenCount = 0;
 
 static actionSeq ActionSeq[] = {
     {0,  0},
@@ -70,17 +69,6 @@ static actionSeq EggSeq[] = {
     {9,  0},
     {23, 1},
 };
-
-int nQHead = 0;
-
-short nEggsFree;
-short nHeadVel;
-short nVelShift;
-
-short tailspr[kMaxTails];
-short nEggFree[kMaxEggs];
-
-short QueenChan[kMaxQueens];
 
 struct Queen
 {
@@ -120,6 +108,17 @@ struct Head
     short field_E;
 };
 
+short QueenCount = 0;
+int nQHead = 0;
+
+short nEggsFree;
+short nHeadVel;
+short nVelShift;
+
+short tailspr[kMaxTails];
+short nEggFree[kMaxEggs];
+
+short QueenChan[kMaxQueens];
 Egg QueenEgg[kMaxEggs];
 Queen QueenList[kMaxQueens];
 Head QueenHead;
@@ -1377,7 +1376,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                                 sprite[nChunkSprite].xrepeat = 100;
 
                                 PlayFXAtXYZ(
-                                    StaticSound[kSound40],
+                                    StaticSound[kSoundFishDies],
                                     sprite[nSprite].x,
                                     sprite[nSprite].y,
                                     sprite[nSprite].z,
@@ -1477,4 +1476,58 @@ void FuncQueen(int a, int nDamage, int nRun)
             break;
         }
     }
+}
+
+class QueenLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void QueenLoadSave::Load()
+{
+    Read(&QueenCount, sizeof(QueenCount));
+    Read(&nQHead, sizeof(nQHead));
+    Read(&nEggsFree, sizeof(nEggsFree));
+    Read(&nHeadVel, sizeof(nHeadVel));
+    Read(&nVelShift, sizeof(nVelShift));
+    Read(tailspr, sizeof(tailspr));
+    Read(nEggFree, sizeof(nEggFree));
+    Read(QueenChan, sizeof(QueenChan));
+    Read(QueenEgg, sizeof(QueenEgg));
+    Read(QueenList, sizeof(QueenList));
+    Read(&QueenHead, sizeof(QueenHead));
+    Read(MoveQX, sizeof(MoveQX));
+    Read(MoveQY, sizeof(MoveQY));
+    Read(MoveQZ, sizeof(MoveQZ));
+    Read(MoveQS, sizeof(MoveQS));
+    Read(MoveQA, sizeof(MoveQA));
+}
+
+void QueenLoadSave::Save()
+{
+    Write(&QueenCount, sizeof(QueenCount));
+    Write(&nQHead, sizeof(nQHead));
+    Write(&nEggsFree, sizeof(nEggsFree));
+    Write(&nHeadVel,  sizeof(nHeadVel));
+    Write(&nVelShift, sizeof(nVelShift));
+    Write(tailspr, sizeof(tailspr));
+    Write(nEggFree,  sizeof(nEggFree));
+    Write(QueenChan, sizeof(QueenChan));
+    Write(QueenEgg, sizeof(QueenEgg));
+    Write(QueenList,  sizeof(QueenList));
+    Write(&QueenHead, sizeof(QueenHead));
+    Write(MoveQX, sizeof(MoveQX));
+    Write(MoveQY, sizeof(MoveQY));
+    Write(MoveQZ, sizeof(MoveQZ));
+    Write(MoveQS, sizeof(MoveQS));
+    Write(MoveQA, sizeof(MoveQA));
+}
+
+static QueenLoadSave* myLoadSave;
+
+void QueenLoadSaveConstruct()
+{
+    myLoadSave = new QueenLoadSave();
 }

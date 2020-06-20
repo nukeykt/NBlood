@@ -49,7 +49,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mummy.h"
 #include "fish.h"
 #include "lion.h"
-#include "light.h"
 #include "move.h"
 #include "lavadude.h"
 #include "rex.h"
@@ -59,15 +58,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "wasp.h"
 #include "scorp.h"
 #include "rat.h"
-#include "cdaudio.h"
 #include "serial.h"
 #include "network.h"
 #include "random.h"
 #include "items.h"
 #include "trigdat.h"
 #include "record.h"
+#include "light.h"
 #include "lighting.h"
 #include "grpscan.h"
+#include "save.h"
 #include <string.h>
 #include <cstdio> // for printf
 #include <cstdlib>
@@ -435,11 +435,11 @@ const char *gString[] =
     "HI SWEETIE, I LOVE YOU",
     "",
     "",
-    "SNAKE CAM ENABLED",
     "FLASHES TOGGLED",
+    "",
+    "",
+    "",
     "FULL MAP",
-    "",
-    "",
     "",
     "",
     "",
@@ -447,356 +447,9 @@ const char *gString[] =
     "",
 };
 
-static char g_rootDir[BMAX_PATH];
-
-struct grpfile_t const *g_selectedGrp;
-
-int32_t g_gameType = GAMEFLAG_POWERSLAVE;
-
-// g_gameNamePtr can point to one of: grpfiles[].name (string literal), string
-// literal, malloc'd block (XXX: possible leak)
-const char *g_gameNamePtr = NULL;
-
-// grp handling
-
-static const char *defaultgamegrp = "STUFF.DAT";
-static const char *defaultdeffilename = "exhumed.def";
-
-// g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
-char *g_grpNamePtr = NULL;
-
-void clearGrpNamePtr(void)
-{
-    Xfree(g_grpNamePtr);
-    // g_grpNamePtr assumed to be assigned to right after
-}
-
-const char *G_DefaultGrpFile(void)
-{
-    return defaultgamegrp;
-}
-const char *G_DefaultDefFile(void)
-{
-    return defaultdeffilename;
-}
-
-const char *G_GrpFile(void)
-{
-    return (g_grpNamePtr == NULL) ? G_DefaultGrpFile() : g_grpNamePtr;
-}
-
-const char *G_DefFile(void)
-{
-    return (g_defNamePtr == NULL) ? G_DefaultDefFile() : g_defNamePtr;
-}
-
 int32_t g_commandSetup = 0;
 int32_t g_noSetup = 0;
 int32_t g_noAutoLoad = 0;
-int g_useCwd;
-int32_t g_groupFileHandle;
-
-static struct strllist *CommandPaths, *CommandGrps;
-
-void G_ExtPreInit(int32_t argc,char const * const * argv)
-{
-    g_useCwd = G_CheckCmdSwitch(argc, argv, "-usecwd");
-
-#ifdef _WIN32
-    GetModuleFileName(NULL,g_rootDir,BMAX_PATH);
-    Bcorrectfilename(g_rootDir,1);
-    //buildvfs_chdir(g_rootDir);
-#else
-    buildvfs_getcwd(g_rootDir,BMAX_PATH);
-    strcat(g_rootDir,"/");
-#endif
-}
-
-void G_ExtInit(void)
-{
-    char cwd[BMAX_PATH];
-
-#ifdef EDUKE32_OSX
-    char *appdir = Bgetappdir();
-    addsearchpath(appdir);
-    Xfree(appdir);
-#endif
-
-#ifdef USE_PHYSFS
-    strncpy(cwd, PHYSFS_getBaseDir(), ARRAY_SIZE(cwd));
-    cwd[ARRAY_SIZE(cwd)-1] = '\0';
-#else
-    if (buildvfs_getcwd(cwd, ARRAY_SIZE(cwd)) && Bstrcmp(cwd, "/") != 0)
-#endif
-        addsearchpath(cwd);
-
-    // TODO:
-    if (CommandPaths)
-    {
-        int32_t i;
-        struct strllist *s;
-        while (CommandPaths)
-        {
-            s = CommandPaths->next;
-            i = addsearchpath(CommandPaths->str);
-            if (i < 0)
-            {
-                initprintf("Failed adding %s for game data: %s\n", CommandPaths->str,
-                           i==-1 ? "not a directory" : "no such directory");
-            }
-
-            Xfree(CommandPaths->str);
-            Xfree(CommandPaths);
-            CommandPaths = s;
-        }
-    }
-
-#if defined(_WIN32) && !defined(EDUKE32_STANDALONE)
-    if (buildvfs_exists("user_profiles_enabled"))
-#else
-    if (g_useCwd == 0 && !buildvfs_exists("user_profiles_disabled"))
-#endif
-    {
-        char *homedir;
-        int32_t asperr;
-
-        if ((homedir = Bgethomedir()))
-        {
-            Bsnprintf(cwd, ARRAY_SIZE(cwd), "%s/"
-#if defined(_WIN32)
-                      APPNAME
-#elif defined(GEKKO)
-                      "apps/" APPBASENAME
-#else
-                      ".config/" APPBASENAME
-#endif
-                      ,homedir);
-            asperr = addsearchpath(cwd);
-            if (asperr == -2)
-            {
-                if (buildvfs_mkdir(cwd,S_IRWXU) == 0) asperr = addsearchpath(cwd);
-                else asperr = -1;
-            }
-            if (asperr == 0)
-                buildvfs_chdir(cwd);
-            Xfree(homedir);
-        }
-    }
-}
-
-void G_ScanGroups(void)
-{
-    ScanGroups();
-
-    g_selectedGrp = NULL;
-
-    char const * const currentGrp = G_GrpFile();
-
-    for (grpfile_t const *fg = foundgrps; fg; fg=fg->next)
-    {
-        if (!Bstrcasecmp(fg->filename, currentGrp))
-        {
-            g_selectedGrp = fg;
-            break;
-        }
-    }
-
-    if (g_selectedGrp == NULL)
-        g_selectedGrp = foundgrps;
-}
-
-static int32_t G_TryLoadingGrp(char const * const grpfile)
-{
-    int32_t i;
-
-    if ((i = initgroupfile(grpfile)) == -1)
-        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
-    else
-        initprintf("Using \"%s\" as main game data file.\n", grpfile);
-
-    return i;
-}
-
-static int32_t G_LoadGrpDependencyChain(grpfile_t const * const grp)
-{
-    if (!grp)
-        return -1;
-
-    if (grp->type->dependency && grp->type->dependency != grp->type->crcval)
-        G_LoadGrpDependencyChain(FindGroup(grp->type->dependency));
-
-    int32_t const i = G_TryLoadingGrp(grp->filename);
-
-    return i;
-}
-
-void G_LoadGroups(int32_t autoload)
-{
-    if (g_modDir[0] != '/')
-    {
-        char cwd[BMAX_PATH];
-
-        Bstrcat(g_rootDir, g_modDir);
-        addsearchpath(g_rootDir);
-        //        addsearchpath(mod_dir);
-
-        char path[BMAX_PATH];
-
-        if (buildvfs_getcwd(cwd, BMAX_PATH))
-        {
-            Bsnprintf(path, sizeof(path), "%s/%s", cwd, g_modDir);
-            if (!Bstrcmp(g_rootDir, path))
-            {
-                if (addsearchpath(path) == -2)
-                    if (buildvfs_mkdir(path, S_IRWXU) == 0)
-                        addsearchpath(path);
-            }
-        }
-
-#ifdef USE_OPENGL
-        Bsnprintf(path, sizeof(path), "%s/%s", g_modDir, TEXCACHEFILE);
-        Bstrcpy(TEXCACHEFILE, path);
-#endif
-    }
-
-    const char *grpfile;
-    int32_t i;
-
-    if ((i = G_LoadGrpDependencyChain(g_selectedGrp)) != -1)
-    {
-        grpfile = g_selectedGrp->filename;
-
-        clearGrpNamePtr();
-        g_grpNamePtr = dup_filename(grpfile);
-
-        grpinfo_t const * const type = g_selectedGrp->type;
-
-        g_gameType = type->game;
-        g_gameNamePtr = type->name;
-
-        if (type->defname && g_defNamePtr == NULL)
-            g_defNamePtr = dup_filename(type->defname);
-    }
-    else
-    {
-        grpfile = G_GrpFile();
-        i = G_TryLoadingGrp(grpfile);
-    }
-
-    if (autoload)
-    {
-        G_LoadGroupsInDir("autoload");
-
-        if (i != -1)
-            G_DoAutoload(grpfile);
-    }
-
-    if (g_modDir[0] != '/')
-        G_LoadGroupsInDir(g_modDir);
-
-    loaddefinitions_game(G_DefFile(), TRUE);
-
-    struct strllist *s;
-
-    int const bakpathsearchmode = pathsearchmode;
-    pathsearchmode = 1;
-
-    while (CommandGrps)
-    {
-        int32_t j;
-
-        s = CommandGrps->next;
-
-        if ((j = initgroupfile(CommandGrps->str)) == -1)
-            initprintf("Could not find file \"%s\".\n", CommandGrps->str);
-        else
-        {
-            g_groupFileHandle = j;
-            initprintf("Using file \"%s\" as game data.\n", CommandGrps->str);
-            if (autoload)
-                G_DoAutoload(CommandGrps->str);
-        }
-
-        Xfree(CommandGrps->str);
-        Xfree(CommandGrps);
-        CommandGrps = s;
-    }
-    pathsearchmode = bakpathsearchmode;
-}
-
-//////////
-
-void G_AddGroup(const char *buffer)
-{
-    char buf[BMAX_PATH];
-
-    struct strllist *s = (struct strllist *)Xcalloc(1,sizeof(struct strllist));
-
-    Bstrcpy(buf, buffer);
-
-    if (Bstrchr(buf,'.') == 0)
-        Bstrcat(buf,".grp");
-
-    s->str = Xstrdup(buf);
-
-    if (CommandGrps)
-    {
-        struct strllist *t;
-        for (t = CommandGrps; t->next; t=t->next) ;
-        t->next = s;
-        return;
-    }
-    CommandGrps = s;
-}
-
-void G_AddPath(const char *buffer)
-{
-    struct strllist *s = (struct strllist *)Xcalloc(1,sizeof(struct strllist));
-    s->str = Xstrdup(buffer);
-
-    if (CommandPaths)
-    {
-        struct strllist *t;
-        for (t = CommandPaths; t->next; t=t->next) ;
-        t->next = s;
-        return;
-    }
-    CommandPaths = s;
-}
-
-//////////
-
-// loads all group (grp, zip, pk3/4) files in the given directory
-void G_LoadGroupsInDir(const char *dirname)
-{
-    static const char *extensions[] = { "*.grp", "*.zip", "*.ssi", "*.pk3", "*.pk4" };
-    char buf[BMAX_PATH];
-    fnlist_t fnlist = FNLIST_INITIALIZER;
-
-    for (auto & extension : extensions)
-    {
-        BUILDVFS_FIND_REC *rec;
-
-        fnlist_getnames(&fnlist, dirname, extension, -1, 0);
-
-        for (rec=fnlist.findfiles; rec; rec=rec->next)
-        {
-            Bsnprintf(buf, sizeof(buf), "%s/%s", dirname, rec->name);
-            initprintf("Using group file \"%s\".\n", buf);
-            initgroupfile(buf);
-        }
-
-        fnlist_clearnames(&fnlist);
-    }
-}
-
-void G_DoAutoload(const char *dirname)
-{
-    char buf[BMAX_PATH];
-
-    Bsnprintf(buf, sizeof(buf), "autoload/%s", dirname);
-    G_LoadGroupsInDir(buf);
-}
 
 //////////
 
@@ -975,12 +628,10 @@ void CopyTileToBitmap(short nSrcTile, short nDestTile, int xPos, int yPos);
 void DoTitle();
 
 // void TestSaveLoad();
-void EraseScreen(int nVal);
 void LoadStatus();
 int FindGString(const char *str);
 void MySetView(int x1, int y1, int x2, int y2);
 void mysetbrightness(char al);
-void FadeIn();
 
 char sHollyStr[40];
 
@@ -997,8 +648,6 @@ short bFullScreen;
 short nSnakeCam = -1;
 
 short nBestLevel;
-
-short nLocalSpr;
 short levelnew = 1;
 
 int nNetPlayerCount = 0;
@@ -1037,15 +686,13 @@ short nCodeMax = 0;
 short nCodeIndex = 0;
 
 short levelnum = -1;
-//short nScreenWidth = 320;
-//short nScreenHeight = 200;
+
 int moveframes;
 int flash;
 int localclock;
 int totalmoves;
 
 short nCurBodyNum = 0;
-
 short nBodyTotal = 0;
 
 short textpages;
@@ -1062,20 +709,16 @@ short nFirstPassword = 0;
 short nFirstPassInfo = 0;
 short nPasswordCount = 0;
 
-short word_964B0 = 0;
-
-short word_9AC30 = 0;
-
-short word_96E3C = 0;
-short word_96E3E = -1;
-short word_96E40 = 0;
+// short word_964B0 = 0;
+// short word_9AC30 = 0;
+// short word_96E3C = 0;
+// short word_96E3E = -1;
+// short word_96E40 = 0;
+// short word_CB326;
 
 short nGamma = 0;
 
-short word_CB326;
-
 short screensize;
-
 short bSnakeCam = kFalse;
 short bRecord = kFalse;
 short bPlayback = kFalse;
@@ -1091,8 +734,8 @@ short nItemTextIndex;
 
 short scan_char = 0;
 
-int nStartLevel;
-int nTimeLimit;
+// int nStartLevel;
+// int nTimeLimit;
 
 int bVanilla = 0;
 
@@ -1266,6 +909,11 @@ void DoPassword(int nPassword)
             break;
         }
 
+        case 1: // KIMBERLY
+        {
+            break;
+        }
+
         case 2: // LOBOCOP
         {
             lLocalCodes |= kButtonCheatGuns;
@@ -1278,9 +926,10 @@ void DoPassword(int nPassword)
             break;
         }
 
-        case 4:
+        case 4: // LOBOLITE
         {
-            if (bDoFlashes == kFalse) {
+            if (bDoFlashes == kFalse)
+            {
                 bDoFlashes = kTrue;
             }
             else {
@@ -1289,57 +938,61 @@ void DoPassword(int nPassword)
             break;
         }
 
-        case 5:
+        case 5: // LOBOPICK
         {
             lLocalCodes |= kButtonCheatKeys;
             break;
         }
 
-        case 6:
+        case 6: // LOBOSLIP
         {
             if (!nNetPlayerCount)
             {
                 if (bSlipMode == kFalse)
                 {
                     bSlipMode = kTrue;
-                    StatusMessage(300, "Slip mode %s", "ON");
+                    StatusMessage(300, "Slip mode ON");
                 }
                 else {
                     bSlipMode = kFalse;
-                    StatusMessage(300, "Slip mode %s", "OFF");
+                    StatusMessage(300, "Slip mode OFF");
                 }
             }
             break;
         }
 
-        case 7:
+        case 7: // LOBOSNAKE
         {
             if (!nNetPlayerCount)
             {
-                if (bSnakeCam == kFalse) {
+                if (bSnakeCam == kFalse)
+                {
                     bSnakeCam = kTrue;
+                    StatusMessage(750, "SNAKE CAM ENABLED");
                 }
-                else {
+                else
+                {
                     bSnakeCam = kFalse;
+                    StatusMessage(750, "SNAKE CAM DISABLED");
                 }
             }
             break;
         }
 
-        case 8:
+        case 8: // LOBOSPHERE
         {
             GrabMap();
             bShowTowers = kTrue;
             break;
         }
 
-        case 9:
+        case 9: // LOBOSWAG
         {
-            lLocalCodes |= kButtonCheatItems; // LOBOSWAG
+            lLocalCodes |= kButtonCheatItems;
             break;
         }
 
-        case 10:
+        case 10: // LOBOXY
         {
             if (bCoordinates == kFalse) {
                 bCoordinates = kTrue;
@@ -1813,8 +1466,28 @@ EDUKE32_STATIC_ASSERT(sizeof(demo_input) == 36);
 
 void WritePlaybackInputs()
 {
-    fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
-    fwrite(&sPlayerInput[nLocalPlayer], sizeof(PlayerInput), 1, vcrfp);
+    demo_input output;
+    output.moveframes = moveframes;
+    output.xVel = sPlayerInput[nLocalPlayer].xVel;
+    output.yVel = sPlayerInput[nLocalPlayer].yVel;
+    output.nAngle = fix16_to_int(sPlayerInput[nLocalPlayer].nAngle >> 2);
+    output.buttons = sPlayerInput[nLocalPlayer].buttons;
+    output.nTarget = sPlayerInput[nLocalPlayer].nTarget;
+    output.horizon = fix16_to_int(sPlayerInput[nLocalPlayer].horizon);
+    output.nItem = sPlayerInput[nLocalPlayer].nItem;
+    output.h = sPlayerInput[nLocalPlayer].h;
+    output.i = sPlayerInput[nLocalPlayer].i;
+
+    if (!fwrite(&output, 1, sizeof(output), vcrfp))
+    {
+        fclose(vcrfp);
+        vcrfp = NULL;
+        bRecord = kFalse;
+        return;
+    }
+
+    //fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
+    //fwrite(&sPlayerInput[nLocalPlayer], sizeof(PlayerInput), 1, vcrfp);
 }
 
 uint8_t ReadPlaybackInputs()
@@ -1856,7 +1529,7 @@ void SetHiRes()
 void DoClockBeep()
 {
     for (int i = headspritestat[407]; i != -1; i = nextspritestat[i]) {
-        PlayFX2(StaticSound[kSound74], i);
+        PlayFX2(StaticSound[kSoundTick1], i);
     }
 }
 
@@ -1945,8 +1618,6 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
 #endif
     return clamp(tabledivide64(65536*elapsedFrames*30, rfreq), 0, 65536);
 }
-
-int r_showfps;
 
 #define COLOR_RED redcol
 #define COLOR_WHITE whitecol
@@ -2617,6 +2288,7 @@ int app_main(int argc, char const* const* argv)
 
     nBestLevel = 0;
 
+    LoadSaveSetup();
     UpdateScreenSize();
 
     EraseScreen(overscanindex);
@@ -2772,8 +2444,6 @@ LOOP3:
             fadecdaudio();
         }
 
-        CheckCD();
-
         if (levelnew == kMap20)
         {
             lCountDown = 81000;
@@ -2789,11 +2459,12 @@ LOOP3:
         }
         levelnew = -1;
     }
+    /* don't restore mid level savepoint if re-entering just completed level
     if (nNetPlayerCount == 0 && lastlevel == levelnum)
     {
         RestoreSavePoint(nLocalPlayer, &initx, &inity, &initz, &initsect, &inita);
     }
-
+    */
     lastlevel = levelnum;
 
     for (i = 0; i < nTotalPlayers; i++)
@@ -3139,7 +2810,6 @@ void mydeletesprite(int nSprite)
     }
 }
 
-
 void KeyFn1()
 {
     menu_DoPlasma();
@@ -3462,17 +3132,17 @@ int myprintext(int x, int y, const char *str, int shade)
     return x;
 }
 
-void EraseScreen(int nVal)
+void EraseScreen(int nClearColour)
 {
-    if (nVal == -1) {
-        nVal = overscanindex;
+    if (nClearColour == -1) {
+        nClearColour = overscanindex;
     }
 
-    videoClearScreen(nVal);
+    videoClearScreen(nClearColour);
 #if 0
     for (int i = 0; i < numpages; i++)
     {
-        videoClearScreen(nVal);
+        videoClearScreen(nClearColour);
         videoNextPage();
     }
 #endif

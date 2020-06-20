@@ -17,6 +17,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 
 #include "random.h"
+#include "save.h"
 
 static int randseed = 0x1010101;
 
@@ -70,4 +71,28 @@ int RandomSize(int nSize)
     }
 
     return randSize;
+}
+
+class RandomLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void RandomLoadSave::Load()
+{
+    Read(&randseed, sizeof(randseed));
+}
+
+void RandomLoadSave::Save()
+{
+    Write(&randseed, sizeof(randseed));
+}
+
+static RandomLoadSave* myLoadSave;
+
+void RandomLoadSaveConstruct()
+{
+    myLoadSave = new RandomLoadSave();
 }

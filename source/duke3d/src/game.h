@@ -127,32 +127,12 @@ void A_DeleteSprite(int spriteNum);
 
 static inline int32_t G_GetLogoFlags(void)
 {
-#if !defined LUNATIC
     return Gv_GetVarByLabel("LOGO_FLAGS",255, -1, -1);
-#else
-    extern int32_t g_logoFlags;
-    return g_logoFlags;
-#endif
 }
 
-#ifdef LUNATIC
-typedef struct {
-    vec3_t pos;
-    int32_t dist, clock;
-    fix16_t q16horiz, q16ang;
-    int16_t sect;
-} camera_t;
-
-extern camera_t g_camera;
-
-# define CAMERA(Membname) (g_camera.Membname)
-# define CAMERADIST (g_camera.dist)
-# define CAMERACLOCK (g_camera.clock)
-#else
-# define CAMERA(Membname) (ud.camera ## Membname)
-# define CAMERADIST g_cameraDistance
-# define CAMERACLOCK g_cameraClock
-#endif
+#define CAMERA(Membname) (ud.camera ## Membname)
+#define CAMERADIST g_cameraDistance
+#define CAMERACLOCK g_cameraClock
 
 #endif
 
@@ -167,7 +147,6 @@ extern camera_t g_camera;
 
 #define MAX_ARRAYRANGE_VALUES 32
 
-// KEEPINSYNC lunatic/_defs_game.lua
 typedef struct ud_setup_s {
     int32_t usejoystick;
     int32_t usemouse;
@@ -180,9 +159,7 @@ typedef struct ud_setup_s {
 } ud_setup_t;
 
 typedef struct {
-#if !defined LUNATIC
     vec3_t camerapos;
-#endif
     int32_t const_visibility,uw_framerate;
     int32_t camera_time,folfvel,folavel,folx,foly,fola;
     int32_t reccnt,crosshairscale;
@@ -221,10 +198,8 @@ typedef struct {
 
     int32_t fov;
 
-#if !defined LUNATIC
     fix16_t cameraq16ang, cameraq16horiz;
     int16_t camerasect;
-#endif
     int16_t pause_on,from_bonus;
     int16_t camerasprite,last_camsprite;
     int16_t last_level,secretlevel;
@@ -303,6 +278,7 @@ extern user_defs ud;
 extern const char *s_buildDate;
 
 extern char boardfilename[BMAX_PATH], currentboardfilename[BMAX_PATH];
+extern char previousboardfilename[BMAX_PATH];
 #define USERMAPMUSICFAKEVOLUME MAXVOLUMES
 #define USERMAPMUSICFAKELEVEL (MAXLEVELS-1)
 #define USERMAPMUSICFAKESLOT ((USERMAPMUSICFAKEVOLUME * MAXLEVELS) + USERMAPMUSICFAKELEVEL)
@@ -328,10 +304,8 @@ extern float r_ambientlight;
 extern int32_t g_BenchmarkMode;
 extern int32_t g_Debug;
 extern int32_t g_Shareware;
-#if !defined LUNATIC
 extern int32_t g_cameraClock;
 extern int32_t g_cameraDistance;
-#endif
 extern int32_t g_crosshairSum;
 extern int32_t g_doQuickSave;
 extern int32_t g_levelTextTime;
@@ -365,9 +339,6 @@ void Yax_SetBunchZs(int32_t sectnum, int32_t cf, int32_t daz);
 #define Yax_SetBunchZs(sectnum, cf, daz)
 #endif
 
-#ifdef LUNATIC
-void El_CreateGameState(void);
-#endif
 void G_PostCreateGameState(void);
 
 void A_SpawnCeilingGlass(int spriteNum,int sectNum,int glassCnt);
@@ -397,7 +368,7 @@ void G_GameQuit(void);
 void G_GetCrosshairColor(void);
 void G_HandleLocalKeys(void);
 void G_HandleSpecialKeys(void);
-void G_UpdateAppTitle(void);
+void G_UpdateAppTitle(char const * const name = nullptr);
 void G_PrintGameQuotes(int32_t snum);
 //void G_SE40(int32_t smoothratio);
 void G_SetCrosshairColor(int32_t r,int32_t g,int32_t b);
@@ -406,6 +377,7 @@ void G_UpdatePlayerFromMenu(void);
 void M32RunScript(const char *s);
 void P_DoQuote(int32_t q,DukePlayer_t *p);
 void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set);
+void G_DrawFrame(void);
 
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?
@@ -580,10 +552,6 @@ static inline int G_GetMusicIdx(const char *str)
 }
 
 extern void G_PrintCurrentMusic(void);
-
-#ifdef LUNATIC
-void El_SetCON(const char *conluacode);
-#endif
 
 EXTERN_INLINE_HEADER void G_SetStatusBarScale(int32_t sc);
 

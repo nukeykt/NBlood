@@ -30,10 +30,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "vfs.h"
 
-#ifdef LUNATIC
-# include "lunatic_game.h"
-#endif
-
 static uint8_t precachehightile[2][(MAXTILES+7)>>3];
 static int32_t g_precacheCount;
 
@@ -667,9 +663,6 @@ void P_MoveToRandomSpawnPoint(int playerNum)
 static inline void P_ResetTintFade(DukePlayer_t *const pPlayer)
 {
     pPlayer->pals.f = 0;
-#ifdef LUNATIC
-    pPlayer->palsfadeprio = 0;
-#endif
 }
 
 void P_ResetMultiPlayer(int playerNum)
@@ -692,7 +685,6 @@ void P_ResetMultiPlayer(int playerNum)
 
     s.pos = p.pos;
 
-    updatesector(p.pos.x, p.pos.y, &p.cursectnum);
     setsprite(p.i, &tmpvect);
 
     s.clipdist = 64;
@@ -746,7 +738,8 @@ void P_ResetMultiPlayer(int playerNum)
 
 void P_ResetPlayer(int playerNum)
 {
-    auto &p = *g_player[playerNum].ps;
+    auto &thisPlayer = g_player[playerNum];
+    auto &p          = *thisPlayer.ps;
 
     ud.show_help  = 0;
     ud.showallmap = 0;
@@ -846,9 +839,10 @@ void P_ResetPlayer(int playerNum)
                      ? PWEAPON(playerNum, p.curr_weapon, TotalTime)
                      : 0;
 
-    g_player[playerNum].horizRecenter    = 0;
-    g_player[playerNum].horizSkew        = 0;
-    g_player[playerNum].horizAngleAdjust = 0;
+    thisPlayer.smoothcamera     = false;
+    thisPlayer.horizRecenter    = false;
+    thisPlayer.horizSkew        = 0;
+    thisPlayer.horizAngleAdjust = 0;
 
     P_UpdateScreenPal(&p);
     VM_OnEvent(EVENT_RESETPLAYER, p.i, playerNum);
@@ -1346,9 +1340,7 @@ static void prelevel(int g)
     for (int nextSprite, SPRITES_OF_STAT_SAFE(STAT_DEFAULT, i, nextSprite))
     {
         A_ResetVars(i);
-#if !defined LUNATIC
         A_LoadActor(i);
-#endif
         VM_OnEvent(EVENT_LOADACTOR, i);
 
         A_MaybeProcessEffector(i);
@@ -1447,11 +1439,9 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 
     Menu_Close(0);
 
-#if !defined LUNATIC
     Gv_ResetVars();
     Gv_InitWeaponPointers();
     Gv_RefreshPointers();
-#endif
     Gv_ResetSystemDefaults();
 
     for (int i=0; i < (MAXVOLUMES*MAXLEVELS); i++)
@@ -1475,13 +1465,6 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
     }
 
     display_mirror = 0;
-
-#ifdef LUNATIC
-    // NOTE: Lunatic state creation is relatively early. No map has yet been loaded.
-    // XXX: What about the cases where G_EnterLevel() is called without a preceding G_NewGame()?
-    El_CreateGameState();
-    G_PostCreateGameState();
-#endif
 
     VM_OnEvent(EVENT_NEWGAME, g_player[screenpeek].ps->i, screenpeek);
 }
@@ -1579,7 +1562,7 @@ static void G_CollectSpawnPoints(int gameMode)
 
         p.oq16ang = p.q16ang = fix16_from_int(s.ang);
 
-        updatesector(s.x, s.y, &p.cursectnum);
+        p.cursectnum = s.sectnum;
 
         pindex++;
 
@@ -1931,31 +1914,7 @@ int G_EnterLevel(int gameMode)
 
     ud.screen_size = ssize;
 
-    if (Menu_HaveUserMap())
-    {
-        if (g_gameNamePtr)
-#ifdef EDUKE32_STANDALONE
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", boardfilename, g_gameNamePtr);
-#else
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s - " APPNAME, boardfilename, g_gameNamePtr);
-#endif
-        else
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - " APPNAME, boardfilename);
-    }
-    else
-    {
-        if (g_gameNamePtr)
-#ifdef EDUKE32_STANDALONE
-            Bsprintf(apptitle,"%s - %s",m.name,g_gameNamePtr);
-#else
-            Bsprintf(apptitle, "%s - %s - " APPNAME, m.name, g_gameNamePtr);
-#endif
-        else
-            Bsprintf(apptitle,"%s - " APPNAME,m.name);
-    }
-
-    Bstrcpy(tempbuf,apptitle);
-    wm_setapptitle(tempbuf);
+    G_UpdateAppTitle(Menu_HaveUserMap() ? boardfilename : m.name);
 
     auto   &p0 = *g_player[0].ps;
     int16_t playerAngle;
@@ -2066,6 +2025,7 @@ int G_EnterLevel(int gameMode)
     G_ResetTimers(0);  // Here we go
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
+    Bmemcpy(previousboardfilename, boardfilename, BMAX_PATH);
 
     G_CheckIfStateless();
 
@@ -2106,7 +2066,6 @@ void G_FreeMapState(int levelNum)
     if (board.savedstate == NULL)
         return;
 
-#if !defined LUNATIC
     for (int j=0; j<g_gameVarCount; j++)
     {
         if (aGameVars[j].flags & GAMEVAR_NORESET)
@@ -2121,9 +2080,6 @@ void G_FreeMapState(int levelNum)
         if (aGameArrays[j].flags & GAMEARRAY_RESTORE)
             ALIGNED_FREE_AND_NULL(board.savedstate->arrays[j]);
     }
-#else
-    Xfree(board.savedstate->savecode);
-#endif
 
     ALIGNED_FREE_AND_NULL(board.savedstate);
 }

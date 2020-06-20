@@ -21,9 +21,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "compat.h"
 
+enum
+{
+    kPalNormal = 0,
+    kPalNoDim,
+    kPalTorch,
+    kPalNoTorch,
+    kPalBrite,
+    kPalRedBrite,
+    kPalGreenBrite,
+    kPalNormal2,
+    kPalNoDim2,
+    kPalTorch2,
+    kPalNoTorch2,
+    kPalBrite2
+};
+
 void MyLoadPalette();
 int LoadPaletteLookups();
 void WaitVBL();
+int DoFadeIn();
+void StartFadeIn();
+void FadeIn();
+void FadeOut(int bFadeMusic);
+void RestorePalette();
+void TintPalette(int a, int b, int c);
+void GrabPalette();
+void BlackOut();
 void SetGreenPal();
 void RestoreGreenPal();
 void FixPalette();

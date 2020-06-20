@@ -47,9 +47,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "grenade.h"
 #include "menu.h"
 #include "cd.h"
-#include "cdaudio.h"
 #include "map.h"
 #include "sound.h"
+#include "save.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -142,11 +142,12 @@ short nGrenadePlayer[50];
 
 short word_D282A[32];
 
-
 short PlayerCount;
 
 short nNetStartSprites;
 short nCurStartSprite;
+
+short nLocalSpr;
 
 /*
 typedef struct
@@ -160,6 +161,9 @@ fixed     droll;
 } ControlInfo;
 */
 
+extern void testsave();
+extern void testload();
+
 void PlayerInterruptKeys()
 {
     ControlInfo info;
@@ -170,6 +174,19 @@ void PlayerInterruptKeys()
     if (mouseaiming) {
         aimmode = 0;
     }
+
+    #if 0
+    if (keystatus[sc_J])
+    {
+        keystatus[sc_J] = 0;
+        testsave();
+    }
+    if (keystatus[sc_K])
+    {
+        keystatus[sc_K] = 0;
+        testload();
+    }
+    #endif
 
     if (BUTTON(gamefunc_Mouse_Aiming))
     {
@@ -572,13 +589,21 @@ void feebtag(int x, int y, int z, int nSector, short *nSprite, int nVal2, int nV
 
                 if (nStat >= 900 && !(sprite[i].cstat & 0x8000))
                 {
-                    int xDiff = sprite[i].x - x;
-                    int yDiff = sprite[i].y - y;
+                    uint32_t xDiff = klabs(sprite[i].x - x);
+                    uint32_t yDiff = klabs(sprite[i].y - y);
                     int zDiff = sprite[i].z - z;
 
                     if (zDiff < 5120 && zDiff > -25600)
                     {
-                        int theSqrt = ksqrt(xDiff * xDiff + yDiff * yDiff);
+                        uint32_t diff = xDiff * xDiff + yDiff * yDiff;
+
+                        if (diff > INT_MAX)
+                        {
+                            OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+                            diff = INT_MAX; 
+                        }
+
+                        int theSqrt = ksqrt(diff);
 
                         if (theSqrt < nVal3 && (nStat != 950 && nStat != 949 || !(var_14 & 1)) && (nStat != 912 && nStat != 913 || !(var_20 & 2)))
                         {
@@ -1056,7 +1081,7 @@ void ShootStaff(int nPlayer)
 void PlayAlert(const char *str)
 {
     StatusMessage(300, str);
-    PlayLocalSound(StaticSound[kSound63], 0);
+    PlayLocalSound(StaticSound[kSoundSawOn], 0);
 }
 
 void DoKenTest()
@@ -1192,7 +1217,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
                                 nPlayerSwear[nPlayer]--;
                                 if (nPlayerSwear[nPlayer] <= 0)
                                 {
-                                    D3PlayFX(StaticSound[kSound52], nDopple);
+                                    D3PlayFX(StaticSound[kSoundJonHit3], nDopple);
                                     nPlayerSwear[nPlayer] = RandomSize(3) + 4;
                                 }
                             }
@@ -1334,7 +1359,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
 
             if (sprite[nPlayerSprite].zvel >= 6500 && zVel < 6500)
             {
-                D3PlayFX(StaticSound[kSound17], 0);
+                D3PlayFX(StaticSound[kSoundJonFall], 0);
             }
 
             // loc_1A4E6
@@ -1500,7 +1525,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
                         }
                         else
                         {
-                            D3PlayFX(StaticSound[kSound27] | 0x2000, nPlayerSprite);
+                            D3PlayFX(StaticSound[kSoundJonHLand] | 0x2000, nPlayerSprite);
                         }
                     }
                 }
@@ -1547,7 +1572,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
                                     short nBlock = sector[nPlayerPushSect[nPlayer]].extra;
                                     int nBlockSprite = sBlockInfo[nBlock].nSprite;
 
-                                    D3PlayFX(StaticSound[kSound23], nBlockSprite | 0x4000);
+                                    D3PlayFX(StaticSound[kSoundAmbientStone], nBlockSprite | 0x4000);
                                 }
                                 else
                                 {
@@ -1646,7 +1671,7 @@ loc_1AB8E:
                         else
                         {
                             sprite[nPlayerSprite].z = var_FC - 256;
-                            D3PlayFX(StaticSound[kSound42], nPlayerSprite);
+                            D3PlayFX(StaticSound[kSoundJonWade], nPlayerSprite);
                         }
                     }
                 }
@@ -1731,7 +1756,7 @@ loc_1AB8E:
                                     BuildStatusAnim(132, 0);
                                 }
 
-                                D3PlayFX(StaticSound[kSound30], nPlayerSprite);
+                                D3PlayFX(StaticSound[kSoundJonScuba], nPlayerSprite);
 
                                 PlayerList[nPlayer].nAir = 100;
                             }
@@ -1740,7 +1765,7 @@ loc_1AB8E:
                                 PlayerList[nPlayer].nAir -= 25;
                                 if (PlayerList[nPlayer].nAir > 0)
                                 {
-                                    D3PlayFX(StaticSound[kSound25], nPlayerSprite);
+                                    D3PlayFX(StaticSound[kSoundBubbleHigh], nPlayerSprite);
                                 }
                                 else
                                 {
@@ -1760,11 +1785,11 @@ loc_1AB8E:
 
                                     if (PlayerList[nPlayer].nHealth < 300)
                                     {
-                                        D3PlayFX(StaticSound[kSound79], nPlayerSprite);
+                                        D3PlayFX(StaticSound[kSoundJonAir2], nPlayerSprite);
                                     }
                                     else
                                     {
-                                        D3PlayFX(StaticSound[kSound19], nPlayerSprite);
+                                        D3PlayFX(StaticSound[kSoundJonAir1], nPlayerSprite);
                                     }
                                 }
                             }
@@ -1801,7 +1826,7 @@ loc_1AB8E:
                     {
                         if (SectDepth[nTmpSectNum] && !SectSpeed[nTmpSectNum] && !SectDamage[nTmpSectNum])
                         {
-                            D3PlayFX(StaticSound[kSound42], nPlayerSprite);
+                            D3PlayFX(StaticSound[kSoundJonWade], nPlayerSprite);
                         }
                     }
 
@@ -1810,7 +1835,7 @@ loc_1AB8E:
                     {
                         if (PlayerList[nPlayer].nAir < 50)
                         {
-                            D3PlayFX(StaticSound[kSound14], nPlayerSprite);
+                            D3PlayFX(StaticSound[kSoundJonGasp], nPlayerSprite);
                         }
 
                         nBreathTimer[nPlayer] = 1;
@@ -2262,7 +2287,7 @@ do_default_b:
 
                                 if (nBreathTimer[nPlayer] < 89)
                                 {
-                                    D3PlayFX(StaticSound[kSound13], nPlayerSprite);
+                                    D3PlayFX(StaticSound[kSoundJonBubbleNest], nPlayerSprite);
                                 }
 
                                 nBreathTimer[nPlayer] = 90;
@@ -2370,7 +2395,7 @@ do_default_b:
 
                                     AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
 
-                                    var_88 = StaticSound[kSound72];
+                                    var_88 = StaticSound[kSoundWeapon];
                                 }
 
                                 if (var_40 == 2) {
@@ -2432,7 +2457,7 @@ do_default_b:
 
                                     AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
 
-                                    var_88 = StaticSound[kSound72];
+                                    var_88 = StaticSound[kSoundWeapon];
                                 }
 
                                 if (var_40 == 2) {
@@ -2494,7 +2519,7 @@ do_default_b:
 
                                     AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
 
-                                    var_88 = StaticSound[kSound72];
+                                    var_88 = StaticSound[kSoundWeapon];
                                 }
 
                                 if (var_40 == 2) {
@@ -2556,7 +2581,7 @@ do_default_b:
 
                                     AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
 
-                                    var_88 = StaticSound[kSound72];
+                                    var_88 = StaticSound[kSoundWeapon];
                                 }
 
                                 if (var_40 == 2) {
@@ -2618,7 +2643,7 @@ do_default_b:
 
                                     AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
 
-                                    var_88 = StaticSound[kSound72];
+                                    var_88 = StaticSound[kSoundWeapon];
                                 }
 
                                 if (var_40 == 2) {
@@ -2680,7 +2705,7 @@ do_default_b:
 
                                     AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
 
-                                    var_88 = StaticSound[kSound72];
+                                    var_88 = StaticSound[kSoundWeapon];
                                 }
 
                                 if (var_40 == 2) {
@@ -3363,4 +3388,118 @@ loc_1BD2E:
             return;
         }
     }
+}
+
+class PlayerLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void PlayerLoadSave::Load()
+{
+    Read(&nBreathTimer[nLocalPlayer], sizeof(nBreathTimer[nLocalPlayer]));
+    Read(&nPlayerSwear[nLocalPlayer], sizeof(nPlayerSwear[nLocalPlayer]));
+    Read(&nPlayerPushSect[nLocalPlayer], sizeof(nPlayerPushSect[nLocalPlayer]));
+    Read(&nDeathType[nLocalPlayer], sizeof(nDeathType[nLocalPlayer]));
+    Read(&nPlayerScore[nLocalPlayer], sizeof(nPlayerScore[nLocalPlayer]));
+    Read(&nPlayerColor[nLocalPlayer], sizeof(nPlayerColor[nLocalPlayer]));
+    Read(&nPlayerDY[nLocalPlayer], sizeof(nPlayerDY[nLocalPlayer]));
+    Read(&nPlayerDX[nLocalPlayer], sizeof(nPlayerDX[nLocalPlayer]));
+    Read(&playerNames[nLocalPlayer], sizeof(playerNames[nLocalPlayer]));
+    Read(&nPistolClip[nLocalPlayer], sizeof(nPistolClip[nLocalPlayer]));
+    Read(&nXDamage[nLocalPlayer], sizeof(nXDamage[nLocalPlayer]));
+    Read(&nYDamage[nLocalPlayer], sizeof(nYDamage[nLocalPlayer]));
+    Read(&nDoppleSprite[nLocalPlayer], sizeof(nDoppleSprite[nLocalPlayer]));
+    Read(&namelen[nLocalPlayer], sizeof(namelen[nLocalPlayer]));
+    Read(&nPlayerOldWeapon[nLocalPlayer], sizeof(nPlayerOldWeapon[nLocalPlayer]));
+    Read(&nPlayerClip[nLocalPlayer], sizeof(nPlayerClip[nLocalPlayer]));
+    Read(&nPlayerPushSound[nLocalPlayer], sizeof(nPlayerPushSound[nLocalPlayer]));
+    Read(&nTauntTimer[nLocalPlayer], sizeof(nTauntTimer[nLocalPlayer]));
+    Read(&nPlayerTorch[nLocalPlayer], sizeof(nPlayerTorch[nLocalPlayer]));
+    Read(&nPlayerWeapons[nLocalPlayer], sizeof(nPlayerWeapons[nLocalPlayer]));
+    Read(&nPlayerLives[nLocalPlayer], sizeof(nPlayerLives[nLocalPlayer]));
+    Read(&nPlayerItem[nLocalPlayer], sizeof(nPlayerItem[nLocalPlayer]));
+    Read(&PlayerList[nLocalPlayer], sizeof(PlayerList[nLocalPlayer]));
+    Read(&nPlayerInvisible[nLocalPlayer], sizeof(nPlayerInvisible[nLocalPlayer]));
+    Read(&nPlayerDouble[nLocalPlayer], sizeof(nPlayerDouble[nLocalPlayer]));
+    Read(&nPlayerViewSect[nLocalPlayer], sizeof(nPlayerViewSect[nLocalPlayer]));
+    Read(&nPlayerFloorSprite[nLocalPlayer], sizeof(nPlayerFloorSprite[nLocalPlayer]));
+    Read(&sPlayerSave[nLocalPlayer], sizeof(nPlayerFloorSprite[nLocalPlayer]));
+    Read(&totalvel[nLocalPlayer], sizeof(totalvel[nLocalPlayer]));
+    Read(&eyelevel[nLocalPlayer], sizeof(eyelevel[nLocalPlayer]));
+    Read(&oeyelevel[nLocalPlayer], sizeof(oeyelevel[nLocalPlayer]));
+    Read(&nNetStartSprite[nLocalPlayer], sizeof(nNetStartSprite[nLocalPlayer]));
+
+    Read(&nStandHeight, sizeof(nStandHeight));
+
+    Read(&nPlayerGrenade[nLocalPlayer], sizeof(nPlayerGrenade[nLocalPlayer]));
+    Read(nGrenadePlayer, sizeof(nGrenadePlayer));
+
+    Read(word_D282A, sizeof(word_D282A));
+
+    Read(&PlayerCount, sizeof(PlayerCount));
+
+    Read(&nNetStartSprites, sizeof(nNetStartSprites));
+    Read(&nCurStartSprite, sizeof(nCurStartSprite));
+
+    Read(&nLocalSpr, sizeof(nLocalSpr));
+}
+
+void PlayerLoadSave::Save()
+{
+    Write(&nBreathTimer[nLocalPlayer], sizeof(nBreathTimer[nLocalPlayer]));
+    Write(&nPlayerSwear[nLocalPlayer], sizeof(nPlayerSwear[nLocalPlayer]));
+    Write(&nPlayerPushSect[nLocalPlayer], sizeof(nPlayerPushSect[nLocalPlayer]));
+    Write(&nDeathType[nLocalPlayer], sizeof(nDeathType[nLocalPlayer]));
+    Write(&nPlayerScore[nLocalPlayer], sizeof(nPlayerScore[nLocalPlayer]));
+    Write(&nPlayerColor[nLocalPlayer], sizeof(nPlayerColor[nLocalPlayer]));
+    Write(&nPlayerDY[nLocalPlayer], sizeof(nPlayerDY[nLocalPlayer]));
+    Write(&nPlayerDX[nLocalPlayer], sizeof(nPlayerDX[nLocalPlayer]));
+    Write(&playerNames[nLocalPlayer], sizeof(playerNames[nLocalPlayer]));
+    Write(&nPistolClip[nLocalPlayer], sizeof(nPistolClip[nLocalPlayer]));
+    Write(&nXDamage[nLocalPlayer], sizeof(nXDamage[nLocalPlayer]));
+    Write(&nYDamage[nLocalPlayer], sizeof(nYDamage[nLocalPlayer]));
+    Write(&nDoppleSprite[nLocalPlayer], sizeof(nDoppleSprite[nLocalPlayer]));
+    Write(&namelen[nLocalPlayer], sizeof(namelen[nLocalPlayer]));
+    Write(&nPlayerOldWeapon[nLocalPlayer], sizeof(nPlayerOldWeapon[nLocalPlayer]));
+    Write(&nPlayerClip[nLocalPlayer], sizeof(nPlayerClip[nLocalPlayer]));
+    Write(&nPlayerPushSound[nLocalPlayer], sizeof(nPlayerPushSound[nLocalPlayer]));
+    Write(&nTauntTimer[nLocalPlayer], sizeof(nTauntTimer[nLocalPlayer]));
+    Write(&nPlayerTorch[nLocalPlayer], sizeof(nPlayerTorch[nLocalPlayer]));
+    Write(&nPlayerWeapons[nLocalPlayer], sizeof(nPlayerWeapons[nLocalPlayer]));
+    Write(&nPlayerLives[nLocalPlayer], sizeof(nPlayerLives[nLocalPlayer]));
+    Write(&nPlayerItem[nLocalPlayer], sizeof(nPlayerItem[nLocalPlayer]));
+    Write(&PlayerList[nLocalPlayer], sizeof(PlayerList[nLocalPlayer]));
+    Write(&nPlayerInvisible[nLocalPlayer], sizeof(nPlayerInvisible[nLocalPlayer]));
+    Write(&nPlayerDouble[nLocalPlayer], sizeof(nPlayerDouble[nLocalPlayer]));
+    Write(&nPlayerViewSect[nLocalPlayer], sizeof(nPlayerViewSect[nLocalPlayer]));
+    Write(&nPlayerFloorSprite[nLocalPlayer], sizeof(nPlayerFloorSprite[nLocalPlayer]));
+    Write(&sPlayerSave[nLocalPlayer], sizeof(nPlayerFloorSprite[nLocalPlayer]));
+    Write(&totalvel[nLocalPlayer], sizeof(totalvel[nLocalPlayer]));
+    Write(&eyelevel[nLocalPlayer], sizeof(eyelevel[nLocalPlayer]));
+    Write(&oeyelevel[nLocalPlayer], sizeof(oeyelevel[nLocalPlayer]));
+    Write(&nNetStartSprite[nLocalPlayer], sizeof(nNetStartSprite[nLocalPlayer]));
+
+    Write(&nStandHeight, sizeof(nStandHeight));
+
+    Write(&nPlayerGrenade[nLocalPlayer], sizeof(nPlayerGrenade[nLocalPlayer]));
+    Write(nGrenadePlayer, sizeof(nGrenadePlayer));
+
+    Write(word_D282A, sizeof(word_D282A));
+
+    Write(&PlayerCount, sizeof(PlayerCount));
+
+    Write(&nNetStartSprites, sizeof(nNetStartSprites));
+    Write(&nCurStartSprite, sizeof(nCurStartSprite));
+
+    Write(&nLocalSpr, sizeof(nLocalSpr));
+}
+
+static PlayerLoadSave* myLoadSave;
+
+void PlayerLoadSaveConstruct()
+{
+    myLoadSave = new PlayerLoadSave();
 }
