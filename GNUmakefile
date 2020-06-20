@@ -975,6 +975,7 @@ n64_objs := \
     reality.cpp \
     reality_player.cpp \
     reality_render.cpp \
+    reality_sound.cpp \
     reality_util.cpp \
 
 n64_cflags :=
