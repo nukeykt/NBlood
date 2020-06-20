@@ -68,9 +68,6 @@ static unsigned int threadQueueTimer;
 static int          threadQueueTicks;
 #define THREAD_QUEUE_INTERVAL 20    // 1/20 sec
 
-static std::vector<alsa_mididevinfo_t> const nullDevice = { { "No Devices Found", 0, 0, } };
-static std::vector<alsa_mididevinfo_t> validDevices;
-
 int ALSADrv_GetError(void) { return ErrorCode; }
 
 const char *ALSADrv_ErrorString(int ErrorNumber)
@@ -297,20 +294,6 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
         ErrorCode = ALSAErr_AllocQueue;
         return ALSAErr_Error;
     }
-    
-    ALSADrv_MIDI_ListPorts();
-    auto it = validDevices.begin();
-    for (; it != validDevices.end(); ++it)
-        if ((it->clntid == ALSA_ClientID) && (it->portid == ALSA_PortID))
-            break;
-
-    if (it == validDevices.end())
-    {
-        ALSADrv_MIDI_Shutdown();
-        MV_Printf("ALSA device not found\n");
-        ErrorCode = ALSAErr_DeviceNotFound;
-        return ALSAErr_Error;
-    }
 
     result = snd_seq_connect_to(seq, seq_port, ALSA_ClientID, ALSA_PortID);
     if (result < 0)
@@ -348,11 +331,6 @@ void ALSADrv_MIDI_Shutdown(void)
     seq_queue = -1;
     seq_port  = -1;
     seq       = 0;
-
-    for (auto &device : validDevices)
-        DO_FREE_AND_NULL(device.name);
-
-    validDevices.clear();
 }
 
 int ALSADrv_MIDI_StartPlayback(void)
@@ -460,12 +438,9 @@ void ALSADrv_MIDI_QueueStop(void)
 
 std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts(void)
 {
-    if (validDevices.size())
-        return validDevices;
-
     int result;
     bool requiredInit;
-    static bool devicesFound = false;
+    std::vector<alsa_mididevinfo_t> devices;
 
     if (seq == 0)
     {
@@ -475,7 +450,7 @@ std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts(void)
         if (result < 0)
         {
             MV_Printf("ALSA snd_seq_open err %d\n", result);
-            return nullDevice;
+            return devices;
         }
     }
     else
@@ -511,11 +486,9 @@ std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts(void)
                 != (SND_SEQ_PORT_CAP_WRITE|SND_SEQ_PORT_CAP_SUBS_WRITE))
                 continue;
 
-            validDevices.push_back({ Xstrdup(snd_seq_port_info_get_name(pinfo)),
+            devices.push_back({ Xstrdup(snd_seq_port_info_get_name(pinfo)),
                                      snd_seq_port_info_get_client(pinfo),
                                      snd_seq_port_info_get_port(pinfo) });
-
-            devicesFound = true;
         }
     }
 
@@ -527,5 +500,5 @@ std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts(void)
         seq = 0;
     }
 
-    return (devicesFound) ? validDevices : nullDevice;
+    return devices;
 }

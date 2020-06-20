@@ -1207,7 +1207,7 @@ static MenuEntry_t **MEL_SAVE;
 
 #ifdef __linux__
 static int32_t alsadevice;
-static std::vector<alsa_mididevinfo_t> const alsadevices = ALSADrv_MIDI_ListPorts();
+static std::vector<alsa_mididevinfo_t> alsadevices;
 #endif
 
 static int32_t soundrate, soundvoices, musicdevice, opl3stereo;
@@ -3315,6 +3315,9 @@ static void Menu_RefreshSoundProperties()
 
 #if !defined(EDUKE32_RETAIL_MENU) && defined (__linux__)
     MEOS_SOUND_ALSADEVICE.numOptions = 0;
+    alsadevices = ALSADrv_MIDI_ListPorts();
+    if (alsadevices.size() == 0)
+        alsadevices = { { Xstrdup("No Devices Found"), 0, 0, } };
     for (alsa_mididevinfo_t device : alsadevices)
     {
         MEOSN_SOUND_ALSADEVICE[MEOS_SOUND_ALSADEVICE.numOptions] = device.name;
@@ -3323,7 +3326,7 @@ static void Menu_RefreshSoundProperties()
             alsadevice = MEOS_SOUND_ALSADEVICE.numOptions;
 
         MEOS_SOUND_ALSADEVICE.numOptions += 1;
-    }    
+    }
 #endif
     soundrate    = ud.config.MixRate;
     soundvoices  = ud.config.NumVoices;
