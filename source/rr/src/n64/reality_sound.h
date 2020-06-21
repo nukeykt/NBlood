@@ -53,10 +53,19 @@ struct rt_env_t {
     uint16_t pad;
 };
 
+struct rt_key_t {
+    uint8_t velocitymin;
+    uint8_t velocitymax;
+    uint8_t keymin;
+    uint8_t keymax;
+    uint8_t keybase;
+    uint8_t detune;
+};
+
 struct rt_sound_t {
-    uint32_t env_offset;
-    uint32_t key_offset;
-    uint32_t wav_offset;
+    rt_env_t *env;
+    rt_key_t *key;
+    rt_wave_t *wave;
     uint8_t sample_pan;
     uint8_t sample_volume;
     uint16_t flags;
@@ -77,7 +86,7 @@ struct rt_instrument_t {
     uint8_t vib_delay;
     int16_t bend_range;
     int16_t sound_count;
-    rt_sound_t *sounds_offset;
+    rt_sound_t **sounds;
 };
 
 struct rt_bank_t {
