@@ -29,10 +29,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamestructures.h"
 #include "input.h"
 #include "menus.h"
+#include "microprofile.h"
 #include "osdcmds.h"
 #include "savegame.h"
 #include "scriplib.h"
-
 #include "vfs.h"
 
 #if KRANDDEBUG
@@ -41,6 +41,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #else
 # define GAMEEXEC_INLINE inline
 # define GAMEEXEC_STATIC static
+#endif
+
+#if MICROPROFILE_ENABLED
+extern MicroProfileToken g_eventTokens[MAXEVENTS];
+extern MicroProfileToken g_actorTokens[MAXTILES];
+extern MicroProfileToken g_statnumTokens[MAXSTATUS];
+#if 0
+extern MicroProfileToken g_instTokens[CON_END];
+#endif
 #endif
 
 vmstate_t vm;
@@ -131,6 +140,8 @@ static inline void VM_DummySprite(void)
 static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int const spriteNum, int const playerNum,
                                                        int const playerDist = -1, int32_t returnValue = 0)
 {
+    MICROPROFILE_SCOPE_TOKEN(g_eventTokens[eventNum]);
+
     vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0,
                                    &sprite[spriteNum&(MAXSPRITES-1)],
                                    &actor[spriteNum&(MAXSPRITES-1)].t_data[0],
@@ -411,6 +422,8 @@ void A_GetZLimits(int const spriteNum)
 
 void A_Fall(int const spriteNum)
 {
+    MICROPROFILE_SCOPEI("VM", EDUKE32_FUNCTION, MP_AUTO);
+
     auto const pSprite = &sprite[spriteNum];
     int spriteGravity = g_spriteGravity;
 
@@ -586,6 +599,8 @@ static int32_t A_GetWaterZOffset(int spritenum);
 
 GAMEEXEC_STATIC void VM_Move(void)
 {
+    MICROPROFILE_SCOPEI("VM", EDUKE32_FUNCTION, MP_AUTO);
+
     auto const movflagsptr = &AC_MOVFLAGS(vm.pSprite, &actor[vm.spriteNum]);
     // NOTE: test against -1 commented out and later revived in source history
     // XXX: Does its presence/absence break anything? Where are movflags with all bits set created?
@@ -920,6 +935,8 @@ static int32_t A_GetWaterZOffset(int const spriteNum)
 
 static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 {
+    MICROPROFILE_SCOPEI("VM", EDUKE32_FUNCTION, MP_AUTO);
+
     int spriteGravity = g_spriteGravity;
 
     pSprite->xoffset = pSprite->yoffset = 0;
@@ -1318,8 +1335,13 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 #endif
         int32_t tw = *insptr;
         g_tw = tw;
-
-        eval(VM_DECODE_INST(tw))
+        
+        int const decoded = VM_DECODE_INST(tw);
+#if 0 && defined CON_USE_COMPUTED_GOTO
+        // this is broken without CON_USE_COMPUTED_GOTO because it never goes out of scope
+        MICROPROFILE_SCOPE_TOKEN(g_instTokens[decoded]);
+#endif
+        eval(decoded)
         {
             vInstruction(CON_LEFTBRACE):
             {
@@ -1363,6 +1385,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] = insptr[1];
                 insptr += 2;
                 dispatch();
+
 #ifdef CON_DISCRETE_VAR_ACCESS
             vInstruction(CON_IFVARE_GLOBAL):
                 insptr++;
@@ -2630,10 +2653,18 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     auto const pEnd  = insptr + *insptr;
                     auto const pNext = ++insptr;
 
-                    auto execute = [&](int index) {
+                    auto execute = [&](int const index) {
                         Gv_SetVar(returnVar, index);
                         insptr = pNext;
                         VM_Execute();
+                        return !!(vm.flags & VM_RETURN);
+                    };
+
+                    auto spriteexecute = [&](int const index) {
+                        {
+                            MICROPROFILE_SCOPE_TOKEN(g_statnumTokens[sprite[index].statnum]);
+                            execute(index);
+                        }
                         return !!(vm.flags & VM_RETURN);
                     };
 
@@ -2645,7 +2676,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 if (sprite[jj].statnum == MAXSTATUS)
                                     continue;
 
-                                if (execute(jj))
+                                if (spriteexecute(jj))
                                     return;
                             }
                             break;
@@ -2654,8 +2685,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             for (native_t statNum = 0; statNum < MAXSTATUS; ++statNum)
                             {
                                 for (native_t kk, SPRITES_OF_STAT_SAFE(statNum, jj, kk))
-                                    if (execute(jj))
+                                {
+                                    if (spriteexecute(jj))
                                         return;
+                                }
                             }
                             break;
 
@@ -2663,8 +2696,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             for (native_t sectNum = 0; sectNum < numsectors; ++sectNum)
                             {
                                 for (native_t kk, SPRITES_OF_SECT_SAFE(sectNum, jj, kk))
-                                    if (execute(jj))
+                                {
+                                    if (spriteexecute(jj))
                                         return;
+                                }
                             }
                             break;
 
@@ -2704,8 +2739,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t kk, SPRITES_OF_SECT_SAFE(nIndex, jj, kk))
-                                if (execute(jj))
+                            {
+                                if (spriteexecute(jj))
                                     return;
+                            }
                             break;
 
                         case ITER_SPRITESOFSTATUS:
@@ -2713,8 +2750,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t kk, SPRITES_OF_STAT_SAFE(nIndex, jj, kk))
-                                if (execute(jj))
+                            {
+                                if (spriteexecute(jj))
                                     return;
+                            }
                             break;
 
                         case ITER_WALLSOFSECTOR:
@@ -6298,6 +6337,8 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     vmstate_t const tempvm
     = { spriteNum, playerNum, playerDist, 0, &sprite[spriteNum], &actor[spriteNum].t_data[0], g_player[playerNum].ps, &actor[spriteNum] };
     vm = tempvm;
+
+    MICROPROFILE_SCOPE_TOKEN(g_actorTokens[vm.pSprite->picnum]);
 
 #ifndef NETCODE_DISABLE
     if (g_netClient)

@@ -11,6 +11,7 @@ ifeq ($(FURY),1)
     RETAIL_MENU := 1
     STANDALONE := 1
     USE_LIBVPX := 0
+    MICROPROFILE := 0
 endif
 
 ### Platform and Toolchain Configuration
@@ -772,6 +773,9 @@ ifneq (0,$(USE_PHYSFS))
     COMPILERFLAGS += -I$(physfs_inc) -DUSE_PHYSFS
 endif
 
+ifneq (0,$(MICROPROFILE))
+  COMPILERFLAGS += -DMICROPROFILE_ENABLED=1
+endif
 
 ##### Recipes
 

@@ -22,25 +22,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define game_c_
 
-#include "duke3d.h"
+#include "anim.h"
+#include "cheats.h"
+#include "cmdline.h"
+#include "colmatch.h"
 #include "communityapi.h"
 #include "compat.h"
-#include "renderlayer.h"
-#include "osdfuncs.h"
-#include "osdcmds.h"
 #include "crc32.h"
-#include "network.h"
-#include "menus.h"
-#include "savegame.h"
-#include "anim.h"
 #include "demo.h"
+#include "duke3d.h"
 #include "input.h"
-#include "colmatch.h"
-#include "cheats.h"
+#include "menus.h"
+#include "microprofile.h"
+#include "network.h"
+#include "osdcmds.h"
+#include "osdfuncs.h"
+#include "palette.h"
+#include "renderlayer.h"
+#include "savegame.h"
 #include "sbar.h"
 #include "screens.h"
-#include "cmdline.h"
-#include "palette.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -574,6 +575,8 @@ static void G_SE40(int32_t smoothratio)
 
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz, int32_t smoothratio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     if ((gotpic[MIRROR>>3]&pow2char[MIRROR&7])
 #ifdef POLYMER
         && (videoGetRenderMode() != REND_POLYMER)
@@ -707,6 +710,8 @@ static void G_ClearGotMirror()
 #ifdef USE_OPENGL
 static void G_ReadGLFrame(void)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     // Save OpenGL screenshot with Duke3D palette
     // NOTE: maybe need to move this to the engine...
     
@@ -746,6 +751,8 @@ static void G_ReadGLFrame(void)
 
 void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     auto const &thisPlayer = g_player[playerNum];
     auto const  pPlayer    = thisPlayer.ps;
 
@@ -3659,6 +3666,8 @@ static inline void G_DoEventAnimSprites(int tspriteNum)
 
 void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothratio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     UNREFERENCED_PARAMETER(ourz);
     int32_t j, frameOffset, playerNum;
     intptr_t l;
@@ -6337,6 +6346,8 @@ void Net_DedicatedServerStdin(void)
 
 void G_DrawFrame(void)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     if (!g_saveRequested)
     {
         // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
@@ -6353,6 +6364,17 @@ void G_DrawFrame(void)
     if (videoGetRenderMode() >= REND_POLYMOST)
         G_DrawBackground();
     G_DisplayRest(smoothRatio);
+
+#if MICROPROFILE_ENABLED
+    for (auto &gv : aGameVars)
+    {
+        if ((gv.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK)) == 0)
+        {            
+            MICROPROFILE_COUNTER_SET(gv.szLabel, gv.global);
+        }
+    }
+#endif
+
     videoNextPage();
     S_Update();
 }

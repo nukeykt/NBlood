@@ -14,6 +14,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "kplib.h"
 #include "mdsprite.h"
 #include "polymost.h"
+#include "microprofile.h"
 #include "tilepacker.h"
 
 extern char textfont[2048], smalltextfont[2048];
@@ -6713,6 +6714,8 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
 
 void polymost_drawrooms()
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (videoGetRenderMode() == REND_CLASSIC) return;
 
     polymost_outputGLDebugMessage(3, "polymost_drawrooms()");

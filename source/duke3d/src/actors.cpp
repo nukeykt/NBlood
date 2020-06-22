@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #endif
 
 #include "duke3d.h"
+#include "microprofile.h"
 
 #if KRANDDEBUG
 # define ACTOR_STATIC
@@ -1679,7 +1680,7 @@ next_sprite:
 }
 
 ACTOR_STATIC void G_MoveFallers(void)
-{
+{    
     int spriteNum = headspritestat[STAT_FALLER];
 
     while (spriteNum >= 0)
@@ -1776,7 +1777,7 @@ next_sprite:
 }
 
 ACTOR_STATIC void G_MoveStandables(void)
-{
+{    
     int spriteNum = headspritestat[STAT_STANDABLE], j, switchPic;
 
     while (spriteNum >= 0)
@@ -8969,31 +8970,64 @@ void G_MoveWorld(void)
     extern double g_moveActorsTime, g_moveWorldTime;
     const double worldTime = timerGetHiTicks();
 
+    MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
+
     VM_OnEvent(EVENT_PREWORLD);
-
     G_DoEventGame(EVENT_PREGAME);
-
     G_RecordOldSpritePos();
 
-    G_MoveZombieActors();     //ST 2
-    G_MoveWeapons();          //ST 4
-    G_MoveTransports();       //ST 9
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveZombieActors", MP_YELLOW2);
+        G_MoveZombieActors();  //ST 2
+    }
 
-    G_MovePlayers();          //ST 10
-    G_MoveFallers();          //ST 12
-    G_MoveMisc();             //ST 5
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveWeapons", MP_YELLOW3);
+        G_MoveWeapons();  //ST 4
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveTransports", MP_YELLOW4);
+        G_MoveTransports();  //ST 9
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MovePlayers", MP_YELLOW);
+        G_MovePlayers();  //ST 10
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveFallers", MP_YELLOW2);
+        G_MoveFallers();  //ST 12
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveMisc", MP_YELLOW3);
+        G_MoveMisc();  //ST 5
+    }
 
     const double actorsTime = timerGetHiTicks();
 
-    G_MoveActors();           //ST 1
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveActors", MP_YELLOW4);
+        G_MoveActors();  //ST 1
+    }
 
     g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetHiTicks()-actorsTime);
 
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
     G_DoEffectorLights();
-    G_MoveEffectors();        //ST 3
-    G_MoveStandables();       //ST 6
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveEffectors", MP_YELLOW);
+        G_MoveEffectors();  //ST 3
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveStandables", MP_YELLOW2);
+        G_MoveStandables();  //ST 6
+    }
 
 
     VM_OnEvent(EVENT_WORLD);
@@ -9002,7 +9036,11 @@ void G_MoveWorld(void)
 
     G_RefreshLights();
     G_DoSectorAnimations();
-    G_MoveFX();               //ST 11
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveFX", MP_YELLOW3);
+        G_MoveFX();  //ST 11
+    }
 
     g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetHiTicks()-worldTime);
 }

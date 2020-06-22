@@ -35,6 +35,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "savegame.h"
 #include "vfs.h"
 
+#include "microprofile.h"
+
+#if MICROPROFILE_ENABLED
+MicroProfileToken g_eventTokens[MAXEVENTS];
+MicroProfileToken g_actorTokens[MAXTILES];
+MicroProfileToken g_statnumTokens[MAXSTATUS];
+#if 0
+MicroProfileToken g_instTokens[CON_END];
+#endif
+#endif
+
 #define LINE_NUMBER (g_lineNumber << 12)
 
 int32_t g_scriptVersion = 13; // 13 = 1.3D-style CON files, 14 = 1.4/1.5 style CON files
@@ -6187,6 +6198,19 @@ void scriptInitTables()
         inthash_add(&h_actorvar, actorvar.x, actorvar.y, 0);
 }
 
+static int C_GetLabelIndex(int32_t val, int type)
+{
+    for (int i=0;i<g_labelCnt;i++)
+        if (labelcode[i] == val && (labeltype[i] & type) != 0)
+            return i;
+
+    for (int i=0;i<g_labelCnt;i++)
+        if (labelcode[i] == val)
+            return i;
+
+    return -1;
+}
+
 void C_Compile(const char *fileName)
 {
     Bmemset(apScriptEvents, 0, sizeof(apScriptEvents));
@@ -6327,6 +6351,42 @@ void C_Compile(const char *fileName)
         C_PrintStats();
 
     C_InitQuotes();
+
+#if MICROPROFILE_ENABLED
+    for (int i=0; i<MAXEVENTS; i++)
+    {
+        if (VM_HaveEvent(i))
+            g_eventTokens[i] = MicroProfileGetToken("CON VM Events", EventNames[i], MP_AUTO, MicroProfileTokenTypeCpu);
+    }
+
+#if 0
+    for (int i=0; i<CON_END; i++)
+    {
+        Bassert(VM_GetKeywordForID(i) != nullptr);
+        g_instTokens[i] = MicroProfileGetToken("CON VM Instructions", VM_GetKeywordForID(i), MP_AUTO, MicroProfileTokenTypeCpu);
+    }
+#endif
+
+    for (int i=0; i<MAXTILES; i++)
+    {
+        if (G_TileHasActor(i))
+        {
+            int const index = C_GetLabelIndex(i, LABEL_ACTOR);
+
+            if (index != -1)
+                Bsprintf(tempbuf,"%s (%d)", label+(index<<6), i);
+            else Bsprintf(tempbuf,"unnamed (%d)", i);
+
+            g_actorTokens[i] = MicroProfileGetToken("CON VM Actors", tempbuf, MP_AUTO, MicroProfileTokenTypeCpu);
+        }
+    }
+
+    for (int i=0; i<MAXSTATUS; i++)
+    {
+        Bsprintf(tempbuf,"statnum%d", i);
+        g_statnumTokens[i] = MicroProfileGetToken("CON VM Actors", tempbuf, MP_AUTO, MicroProfileTokenTypeCpu);
+    }
+#endif
 }
 
 void C_ReportError(int error)

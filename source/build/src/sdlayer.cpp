@@ -42,6 +42,9 @@
 #include "vfs.h"
 #include "communityapi.h"
 
+#define MICROPROFILE_IMPL
+#include "microprofile.h"
+
 #if SDL_MAJOR_VERSION >= 2
 static SDL_version linked;
 #else
@@ -446,6 +449,11 @@ int SDL_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
+    MicroProfileOnThreadCreate("Main");
+    MicroProfileSetForceEnable(true);
+    MicroProfileSetEnableAllGroups(true);
+    MicroProfileSetForceMetaCounters(true);
+
 #ifdef __ANDROID__
     if (setjmp(eduke32_exit_jmp_buf))
     {
@@ -1421,6 +1429,8 @@ static void destroy_window_resources()
 /* We should NOT destroy the window surface. This is done automatically
    when SDL_DestroyWindow or SDL_SetVideoMode is called.             */
 
+    MicroProfileGpuShutdown();
+
 #if SDL_MAJOR_VERSION >= 2
     if (sdl_context)
         SDL_GL_DeleteContext(sdl_context);
@@ -1687,6 +1697,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
+    MicroProfileGpuInitGL();
+
     return 0;
 }
 #endif
@@ -1831,7 +1843,10 @@ void videoShowFrame(int32_t w)
         }
 
         if ((r_glfinish == 1 && r_finishbeforeswap == 1) || vsync_renderlayer == 2)
+        {
+            MICROPROFILE_SCOPEI("Engine", "glFinish", MP_GREEN);
             glFinish();
+        }
 
 #ifdef _WIN32
         if (vsync_renderlayer == 2)
@@ -1842,7 +1857,10 @@ void videoShowFrame(int32_t w)
 
             // TODO: use timing information to determine swap time and just busy loop ourselves for more timing control
             if (swapTime < nextSwapTime)
+            {
+                MICROPROFILE_SCOPEI("Engine", "waitForVBlank", MP_GREEN2);
                 windowsWaitForVBlank();
+            }
             else if (swapTime - nextSwapTime >= swapInterval)
                 nextSwapTime += swapInterval;
 
@@ -1850,10 +1868,18 @@ void videoShowFrame(int32_t w)
         }
 #endif
 
-        SDL_GL_SwapWindow(sdl_window);
+        {
+            MICROPROFILE_SCOPEI("Engine", "SDL_GL_SwapWindow", MP_GREEN3);
+            SDL_GL_SwapWindow(sdl_window);
+        }
 
         if (r_glfinish == 1 && r_finishbeforeswap == 0 && vsync_renderlayer != 2)
+        {
+            MICROPROFILE_SCOPEI("Engine", "glFinish2", MP_GREEN4);
             glFinish();
+        }
+
+        MicroProfileFlip();
 
         return;
     }
@@ -1878,6 +1904,8 @@ void videoShowFrame(int32_t w)
         sdl_surface = SDL_GetWindowSurface(sdl_window);
         SDL_UpdateWindowSurface(sdl_window);
     }
+
+    MicroProfileFlip();
 }
 #endif
 //
