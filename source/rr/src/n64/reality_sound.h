@@ -103,10 +103,11 @@ struct rt_CTL_t {
     uint16_t bank_count;
     rt_bank_t **bank;
 };
-
-extern rt_CTL_t *soundCtl, *musicCtl;
-
-rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset);
-
 #pragma pack(pop)
+
+// extern rt_CTL_t *soundCtl, *musicCtl;
+// 
+// rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset);
+void RT_InitSound(void);
+int RT_LoadSound(int num);
 

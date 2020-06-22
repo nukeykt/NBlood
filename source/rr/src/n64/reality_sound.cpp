@@ -1,8 +1,10 @@
 #include "compat.h"
+#include "../duke3d.h"
 #include "reality.h"
 #include "reality_sound.h"
 
 rt_CTL_t *soundCtl, *musicCtl;
+rt_instrument_t *soundInfo;
 
 static rt_env_t *RT_LoadEnv(uint32_t ctlOffset, uint32_t envOffset)
 {
@@ -90,6 +92,8 @@ static rt_wave_t *RT_LoadWave(uint32_t ctlOffset, uint32_t waveOffset, uint32_t 
     wave->len = B_BIG32(wave->len);
     read(rt_group, &wave->type, sizeof(wave->type));
     read(rt_group, &wave->flags, sizeof(wave->flags));
+    uint16_t pad;
+    read(rt_group, &pad, sizeof(pad));
     switch (wave->type)
     {
     case 0: // ADPCM
@@ -100,8 +104,10 @@ static rt_wave_t *RT_LoadWave(uint32_t ctlOffset, uint32_t waveOffset, uint32_t 
         read(rt_group, &bookOffset, sizeof(bookOffset));
         bookOffset = B_BIG32(bookOffset);
         wave->adpcm = (rt_adpcm_wave_t*)Xcalloc(1, sizeof(rt_adpcm_wave_t));
-        wave->adpcm->loop = RT_LoadADPCMLoop(ctlOffset, loopOffset);
-        wave->adpcm->book = RT_LoadADPCMBook(ctlOffset, bookOffset);
+        if (loopOffset)
+            wave->adpcm->loop = RT_LoadADPCMLoop(ctlOffset, loopOffset);
+        if (bookOffset)
+            wave->adpcm->book = RT_LoadADPCMBook(ctlOffset, bookOffset);
         break;
     }
     case 1: // RAW
@@ -110,7 +116,8 @@ static rt_wave_t *RT_LoadWave(uint32_t ctlOffset, uint32_t waveOffset, uint32_t 
         read(rt_group, &loopOffset, sizeof(loopOffset));
         loopOffset = B_BIG32(loopOffset);
         wave->raw = (rt_raw_wave_t*)Xcalloc(1, sizeof(rt_raw_wave_t));
-        wave->raw->loop = RT_LoadRAWLoop(ctlOffset, loopOffset);
+        if (loopOffset)
+            wave->raw->loop = RT_LoadRAWLoop(ctlOffset, loopOffset);
         break;
     }
     }
@@ -160,7 +167,7 @@ static rt_instrument_t *RT_LoadInstrument(uint32_t ctlOffset, uint32_t instOffse
     inst->sound_count = B_BIG16(inst->sound_count);
     uint32_t *soundOffset = (uint32_t*)Xcalloc(inst->sound_count, sizeof(uint32_t));
     read(rt_group, soundOffset, sizeof(uint32_t) * inst->sound_count);
-    inst->sounds = (rt_sound_t**)Xcalloc(1, sizeof(rt_sound_t*));
+    inst->sounds = (rt_sound_t**)Xcalloc(inst->sound_count, sizeof(rt_sound_t*));
     for (int i = 0; i < inst->sound_count; i++)
     {
         inst->sounds[i] = RT_LoadSound(ctlOffset, B_BIG32(soundOffset[i]), tblOffset);
@@ -187,9 +194,10 @@ static rt_bank_t *RT_LoadBank(uint32_t ctlOffset, uint32_t bankOffset, uint32_t 
     instOffset = (uint32_t*)Xcalloc(bank->inst_count, sizeof(uint32_t));
     read(rt_group, instOffset, sizeof(uint32_t) * bank->inst_count);
 
-    bank->inst = (rt_instrument_t**)Xcalloc(1, sizeof(rt_instrument_t*));
+    bank->inst = (rt_instrument_t**)Xcalloc(bank->inst_count, sizeof(rt_instrument_t*));
 
-    bank->perc = RT_LoadInstrument(ctlOffset, percOffset, tblOffset);
+    if (percOffset)
+        bank->perc = RT_LoadInstrument(ctlOffset, percOffset, tblOffset);
     for (int i = 0; i < bank->inst_count; i++)
     {
         bank->inst[i] = RT_LoadInstrument(ctlOffset, B_BIG32(instOffset[i]), tblOffset);
@@ -217,6 +225,7 @@ rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
     uint32_t *bank_offset = (uint32_t*)Xcalloc(ctl->bank_count, sizeof(uint32_t));
     read(rt_group, bank_offset, sizeof(uint32_t) * ctl->bank_count);
     // Load banks
+    ctl->bank = (rt_bank_t**)Xcalloc(ctl->bank_count, sizeof(rt_bank_t*));
     for (int i = 0; i < ctl->bank_count; i++)
     {
         ctl->bank[i] = RT_LoadBank(ctlOffset, B_BIG32(bank_offset[i]), tblOffset);
@@ -225,3 +234,37 @@ rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
     return ctl;
 }
 
+void RT_InitSound(void)
+{
+    static const uint32_t soundCtlOffset = 0x5fe770;
+    static const uint32_t soundTblOffset = 0x60b330;
+    static const uint32_t musicCtlOffset = 0x7bbfc0;
+    static const uint32_t musicTblOffset = 0x7bd580;
+    soundCtl = RT_LoadCTL(soundCtlOffset, soundTblOffset);
+    // musicCtl = RT_LoadCTL(musicCtlOffset, musicTblOffset);
+    if (soundCtl && soundCtl->bank[0] && soundCtl->bank[0]->inst_count > 0)
+        soundInfo = soundCtl->bank[0]->inst[0];
+
+    if (soundInfo)
+        g_highestSoundIdx = soundInfo->sound_count;
+}
+
+int RT_LoadSound(int num)
+{
+    if (!soundCtl)
+        return 0;
+    if (num < 0 || num >= soundInfo->sound_count)
+        return 0;
+    
+    auto &snd = g_sounds[num];
+    rt_sound_t *sound = soundInfo->sounds[num];
+    g_sounds[num].m |= SF_REALITY_INTERNAL;
+    lseek(rt_group, sound->wave->base, SEEK_SET);
+    int l = sound->wave->len;
+    g_soundlocks[num] = 200;
+    snd.siz = sound->wave->len;
+    g_cache.allocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
+    l = read(rt_group, snd.ptr, l);
+
+    return l;
+}

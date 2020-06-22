@@ -73,6 +73,9 @@ void S_SoundStartup(void)
         g_soundlocks[i] = 199;
     }
 
+    if (REALITY)
+        RT_InitSound();
+
     S_PrecacheSounds();
 
     FX_SetVolume(ud.config.FXVolume);
@@ -455,8 +458,11 @@ void S_Cleanup(void)
 // returns number of bytes read
 int32_t S_LoadSound(int num)
 {
-    if ((unsigned)num > (unsigned)g_highestSoundIdx || EDUKE32_PREDICT_FALSE(g_sounds[num].filename == NULL))
+    if ((unsigned)num > (unsigned)g_highestSoundIdx)
         return 0;
+
+    if (REALITY && g_sounds[num].filename == NULL)
+        return RT_LoadSound(num);
 
     auto &snd = g_sounds[num];
 
