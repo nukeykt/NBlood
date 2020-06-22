@@ -1,15 +1,15 @@
 # ensure dinput.h can be found before running
 
 %.o: %.c
-	gcc -I../../include -Wall -Wextra -c $< -o $@
+	$(PREFIX)gcc -I../../include -Wall -Wextra -c $< -o $@
 
 lib%.a: %.def %.o
-	dlltool -k --output-lib $@ --def $*.def
-	ar r $@ $*.o
-	ranlib $@
+	$(PREFIX)dlltool -k --output-lib $@ -d $*.def
+	$(PREFIX)ar r $@ $*.o
+	$(PREFIX)ranlib $@
 
 lib%.a: %.def
-	dlltool -k --output-lib $@ --def $<
+	$(PREFIX)dlltool -k --output-lib $@ -d $<
 
 
 
@@ -26,21 +26,21 @@ libdsound.a libdxguid.a libdxguid_sdl.a
 
 
 libdxguid_sdl.a : dxguid_sdl.o
-	ar -r libdxguid_sdl.a dxguid_sdl.o
-	ranlib libdxguid_sdl.a
+	$(PREFIX)ar -r libdxguid_sdl.a dxguid_sdl.o
+	$(PREFIX)ranlib libdxguid_sdl.a
 
 libdxguid.a : dxguid.o
-	ar -r libdxguid.a dxguid.o
-	ranlib libdxguid.a
+	$(PREFIX)ar -r libdxguid.a dxguid.o
+	$(PREFIX)ranlib libdxguid.a
 
 libdinput_custom.a : dinput.o
-	ar r libdinput_custom.a dinput.o
-	ranlib libdinput_custom.a
+	$(PREFIX)ar r libdinput_custom.a dinput.o
+	$(PREFIX)ranlib libdinput_custom.a
 
 libdinput8.a : dinput8.def dinput.o
-	dlltool -k --output-lib libdinput8.a --def dinput8.def
-	ar r libdinput8.a dinput.o
-	ranlib libdinput8.a
+	$(PREFIX)dlltool -k --output-lib libdinput8.a -d dinput8.def
+	$(PREFIX)ar r libdinput8.a dinput.o
+	$(PREFIX)ranlib libdinput8.a
 
 
 

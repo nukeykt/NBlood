@@ -652,14 +652,14 @@ static FORCE_INLINE int32_t atoi_safe(const char *str) { return (int32_t)Bstrtol
 #define Batol(str) (strtol(str, NULL, 10))
 #define Batof(str) (strtod(str, NULL))
 
-#if defined BITNESS64 && (defined __SSE2__ || defined _MSC_VER)
+#if defined BITNESS64 && (defined __SSE2__ || defined _MSC_VER) && !defined(_M_ARM64)
 #include <emmintrin.h>
 static FORCE_INLINE int32_t Blrintf(const float x)
 {
     __m128 xx = _mm_load_ss(&x);
     return _mm_cvtss_si32(xx);
 }
-#elif defined (_MSC_VER)
+#elif defined(_MSC_VER) && !defined(_M_ARM64)
 static FORCE_INLINE int32_t Blrintf(const float x)
 {
     int n;
