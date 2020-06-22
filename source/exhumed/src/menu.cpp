@@ -2479,7 +2479,7 @@ LABEL_28:
 
     EraseScreen(-1);
     tileLoad(kTileLoboLaptop);
-    FadeOut(0);
+// FIXME - Revert this when fixing fades    FadeOut(0);
     MySetView(nViewLeft, nViewTop, nViewRight, nViewBottom);
     MaskStatus();
 }
