@@ -309,7 +309,7 @@ typedef uint32_t MicroProfileProcessIdType;
 #define MICROPROFILE_COUNTER_SUB(name, count) do { static MicroProfileToken MICROPROFILE_TOKEN_PASTE(g_mp_counter,__LINE__) = MicroProfileGetCounterToken(name); MicroProfileCounterAdd(MICROPROFILE_TOKEN_PASTE(g_mp_counter,__LINE__), -(int64_t)count); } while(0)
 #define MICROPROFILE_COUNTER_SET(name, count) do { static MicroProfileToken MICROPROFILE_TOKEN_PASTE(g_mp_counter,__LINE__) = MicroProfileGetCounterToken(name); MicroProfileCounterSet(MICROPROFILE_TOKEN_PASTE(g_mp_counter,__LINE__), count); } while(0)
 #define MICROPROFILE_COUNTER_SET_LIMIT(name, count) do { static MicroProfileToken MICROPROFILE_TOKEN_PASTE(g_mp_counter,__LINE__) = MicroProfileGetCounterToken(name); MicroProfileCounterSetLimit(MICROPROFILE_TOKEN_PASTE(g_mp_counter,__LINE__), count); } while(0)
-#define MICROPROFILE_COUNTER_CONFIG(name, type, limit, flags) MicroProfileCounterConfig(name, type, limit, flags
+#define MICROPROFILE_COUNTER_CONFIG(name, type, limit, flags) MicroProfileCounterConfig(name, type, limit, flags)
 
 #ifndef MICROPROFILE_USE_THREAD_NAME_CALLBACK
 #define MICROPROFILE_USE_THREAD_NAME_CALLBACK 0
@@ -1675,8 +1675,10 @@ inline uint16_t MicroProfileGetGroupIndex(MicroProfileToken t)
 #define snprintf _snprintf
 #endif
 
+#if defined _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4244)
+#endif
 int64_t MicroProfileTicksPerSecondCpu()
 {
     static int64_t nTicksPerSecond = 0;	
@@ -1717,7 +1719,6 @@ inline void MicroProfileThreadJoin(MicroProfileThread* pThread)
 #error WinSock.h has already been included; microprofile requires WinSock2
 #endif
 #include <WinSock2.h>
-#pragma comment(lib, "ws2_32.lib")
 #define MP_INVALID_SOCKET(f) (f == INVALID_SOCKET)
 #endif
 
@@ -1799,7 +1800,7 @@ void MicroProfileInit()
     if(bOnce)
     {
         bOnce = false;
-        memset(&S, 0, sizeof(S));
+        memset((void *)&S, 0, sizeof(S));
         S.nMemUsage = sizeof(S);
         for(int i = 0; i < MICROPROFILE_MAX_GROUPS; ++i)
         {
@@ -1914,7 +1915,7 @@ MicroProfileThreadLog* MicroProfileCreateThreadLog(const char* pName)
     if(!pLog)
         return nullptr;
 
-    memset(pLog, 0, sizeof(*pLog));
+    memset((void *)pLog, 0, sizeof(*pLog));
     pLog->nLogIndex = nLogIndex;
     int len = (int)strlen(pName);
     int maxlen = sizeof(pLog->ThreadName)-1;
@@ -3342,7 +3343,7 @@ int MicroProfileFormatCounter(int eFormat, int64_t nCounter, char* pOut, uint32_
         }
         else
         {
-            nLen = snprintf(pOut, nBufferSize - 1, "%lld%s", (long long)nCounter, pExt[nShift]);
+            nLen = snprintf(pOut, nBufferSize - 1, "%" PRIi64 "%s", (int64_t)nCounter, pExt[nShift]);
         }
         nLen = strlen(pOut);
     }
@@ -3512,7 +3513,7 @@ void MicroProfileDumpCsv(MicroProfileWriteCallback CB, void* Handle, int nMaxFra
     {
         if(S.MetaCounters[j].pName)
         {
-            MicroProfilePrintf(CB, Handle, "\"%s\",%f,%lld,%lld\n",S.MetaCounters[j].pName, S.MetaCounters[j].nSumAggregate / (float)nAggregateFrames, (long long)S.MetaCounters[j].nSumAggregateMax, (long long)S.MetaCounters[j].nSumAggregate);
+            MicroProfilePrintf(CB, Handle, "\"%s\",%f,%" PRIi64 ",%" PRIi64 "\n",S.MetaCounters[j].pName, S.MetaCounters[j].nSumAggregate / (float)nAggregateFrames, (int64_t)S.MetaCounters[j].nSumAggregateMax, (int64_t)S.MetaCounters[j].nSumAggregate);
         }
     }
 }
@@ -3550,7 +3551,7 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
     MicroProfilePrintf(CB, Handle, "var DumpHost = '%s';\n", pHost ? pHost : "");
     time_t CaptureTime;
     time(&CaptureTime);
-    MicroProfilePrintf(CB, Handle, "var DumpUtcCaptureTime = %ld;\n", CaptureTime);
+    MicroProfilePrintf(CB, Handle, "var DumpUtcCaptureTime = %" PRIi64 ";\n", CaptureTime);
     MicroProfilePrintf(CB, Handle, "var AggregateInfo = {'Frames':%d, 'Time':%f};\n", S.nAggregateFrames, fAggregateMs);
 
     //categories
@@ -3729,18 +3730,18 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
         char FormattedLimit[64];
         MicroProfileFormatCounter(S.CounterInfo[i].eFormat, nCounter, Formatted, sizeof(Formatted)-1);
         MicroProfileFormatCounter(S.CounterInfo[i].eFormat, S.CounterInfo[i].nLimit, FormattedLimit, sizeof(FormattedLimit)-1);
-        MicroProfilePrintf(CB, Handle, "MakeCounter(%d, %d, %d, %d, %d, '%s', %lld, %lld, %lld, '%s', %lld, '%s', %d, %f, %f, [",
+        MicroProfilePrintf(CB, Handle, "MakeCounter(%d, %d, %d, %d, %d, '%s', %" PRIi64 ", %" PRIi64 ", %" PRIi64 ", '%s', %" PRIi64 ", '%s', %d, %f, %f, [",
             i,
             S.CounterInfo[i].nParent,
             S.CounterInfo[i].nSibling,
             S.CounterInfo[i].nFirstChild,
             S.CounterInfo[i].nLevel,
             S.CounterInfo[i].pName,
-            (long long)nCounter,
-            (long long)nCounterMin,
-            (long long)nCounterMax,
+            (int64_t)nCounter,
+            (int64_t)nCounterMin,
+            (int64_t)nCounterMax,
             Formatted,
-            (long long)nLimit,
+            (int64_t)nLimit,
             FormattedLimit,
             S.CounterInfo[i].eFormat == MICROPROFILE_COUNTER_FORMAT_BYTES ? 1 : 0, 
             fCounterPrc,
@@ -4007,10 +4008,10 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
         const char* p1 = i < nNumThreadsBase && S.Pool[i] ? S.Pool[i]->ThreadName : "?";
         const char* p2 = pProcessName ? pProcessName : "?";
 
-        MicroProfilePrintf(CB, Handle, "%lld:{\'tid\':%lld,\'pid\':%lld,\'t\':\'%s\',\'p\':\'%s\'},",
-            (long long)Threads[i].nThreadId,
-            (long long)Threads[i].nThreadId,
-            (long long)Threads[i].nProcessId,
+        MicroProfilePrintf(CB, Handle, "%" PRIi64 ":{\'tid\':%" PRIi64 ",\'pid\':%" PRIi64 ",\'t\':\'%s\',\'p\':\'%s\'},",
+            (int64_t)Threads[i].nThreadId,
+            (int64_t)Threads[i].nThreadId,
+            (int64_t)Threads[i].nProcessId,
             p1, p2
             );
     }
@@ -4216,11 +4217,11 @@ void MicroProfileCompressedWriteSocket(void* Handle, size_t nSize, const char* p
 {
     MicroProfileCompressedSocketState* pState = (MicroProfileCompressedSocketState*)Handle;
     mz_stream& Stream = pState->Stream;
-    const unsigned char* pDeflateInEnd = Stream.next_in + Stream.avail_in;
-    const unsigned char* pDeflateInStart = &pState->DeflateIn[0];
-    const unsigned char* pDeflateInRealEnd = &pState->DeflateIn[MICROPROFILE_COMPRESS_CHUNK];	
+    unsigned char* pDeflateInEnd = const_cast<unsigned char *>(Stream.next_in) + Stream.avail_in;
+    unsigned char* pDeflateInStart = &pState->DeflateIn[0];
+    unsigned char* pDeflateInRealEnd = &pState->DeflateIn[MICROPROFILE_COMPRESS_CHUNK];	
     pState->nSize += nSize;
-    if(nSize <= pDeflateInRealEnd - pDeflateInEnd)
+    if(nSize <= (size_t)(pDeflateInRealEnd - pDeflateInEnd))
     {
         memcpy((void*)pDeflateInEnd, pData, nSize);
         Stream.avail_in += nSize;
@@ -4230,7 +4231,7 @@ void MicroProfileCompressedWriteSocket(void* Handle, size_t nSize, const char* p
     int Flush = 0;
     while(nSize)
     {
-        pDeflateInEnd = Stream.next_in + Stream.avail_in;
+        pDeflateInEnd = const_cast<unsigned char *>(Stream.next_in) + Stream.avail_in;
         if(Flush)
         {
             pState->nFlushes++;
@@ -4245,7 +4246,7 @@ void MicroProfileCompressedWriteSocket(void* Handle, size_t nSize, const char* p
                     pState->nMemmoveBytes += Stream.avail_in;
                 }
                 Stream.next_in = pDeflateInStart;
-                pDeflateInEnd = Stream.next_in + Stream.avail_in;
+                pDeflateInEnd = const_cast<unsigned char *>(Stream.next_in) + Stream.avail_in;
             }
         }
         size_t nSpace = pDeflateInRealEnd - pDeflateInEnd;
@@ -4511,7 +4512,7 @@ uint32_t MicroProfileWebServerPort()
 
 #if MICROPROFILE_CONTEXT_SWITCH_TRACE
 //functions that need to be implemented per platform.
-void* MicroProfileTraceThread(void* unused);
+void* MicroProfileTraceThread(void*);
 
 void MicroProfileContextSwitchTraceStart()
 {
@@ -4607,7 +4608,6 @@ uint32_t MicroProfileContextSwitchGatherThreads(uint32_t nContextSwitchStart, ui
 
 #if defined(_WIN32)
 #include <psapi.h>
-#pragma comment(lib, "psapi.lib")
 
 const char* MicroProfileGetProcessName(MicroProfileProcessIdType nId, char* Buffer, uint32_t nSize)
 {
@@ -4621,7 +4621,7 @@ const char* MicroProfileGetProcessName(MicroProfileProcessIdType nId, char* Buff
     return nullptr;
 }
 
-void* MicroProfileTraceThread(void* unused)
+void* MicroProfileTraceThread(void*)
 {
     while(!S.bContextSwitchStop)
     {
@@ -4822,7 +4822,7 @@ bool MicroProfileGetGpuTickReference(int64_t* pOutCpu, int64_t* pOutGpu)
     void MicroProfileGpuInitState##API() \
     { \
         MP_ASSERT(!S.GPU.Shutdown); \
-        memset(&g_MicroProfileGPU_##API, 0, sizeof(g_MicroProfileGPU_##API)); \
+        memset((void *)&g_MicroProfileGPU_##API, 0, sizeof(g_MicroProfileGPU_##API)); \
         S.GPU.Shutdown = MicroProfileGpuShutdown##API; \
         S.GPU.Flip = MicroProfileGpuFlip##API; \
         S.GPU.InsertTimer = MicroProfileGpuInsertTimer##API; \
@@ -5649,7 +5649,7 @@ MICROPROFILE_GPU_STATE_IMPL(VK)
 
 #undef S
 
-#ifdef _WIN32
+#if defined _MSC_VER
 #pragma warning(pop)
 #endif
 
