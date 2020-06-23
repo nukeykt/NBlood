@@ -486,9 +486,10 @@ std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts(void)
                 != (SND_SEQ_PORT_CAP_WRITE|SND_SEQ_PORT_CAP_SUBS_WRITE))
                 continue;
 
-            devices.push_back({ Xstrdup(snd_seq_port_info_get_name(pinfo)),
+            devices.push_back(alsa_mididevinfo_t(
+                                     snd_seq_port_info_get_name(pinfo),
                                      snd_seq_port_info_get_client(pinfo),
-                                     snd_seq_port_info_get_port(pinfo) });
+                                     snd_seq_port_info_get_port(pinfo)));
         }
     }
 

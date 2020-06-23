@@ -3317,8 +3317,8 @@ static void Menu_RefreshSoundProperties()
     MEOS_SOUND_ALSADEVICE.numOptions = 0;
     alsadevices = ALSADrv_MIDI_ListPorts();
     if (alsadevices.size() == 0)
-        alsadevices = { { Xstrdup("No Devices Found"), 0, 0, } };
-    for (alsa_mididevinfo_t device : alsadevices)
+        alsadevices = { alsa_mididevinfo_t("No Devices Found", 0, 0) };
+    for (alsa_mididevinfo_t &device : alsadevices)
     {
         MEOSN_SOUND_ALSADEVICE[MEOS_SOUND_ALSADEVICE.numOptions] = device.name;
 
