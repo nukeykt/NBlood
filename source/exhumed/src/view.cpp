@@ -196,10 +196,7 @@ static void analyzesprites()
                 int vcos = Cos(nAngle);
                 int vsin = Sin(nAngle);
 
-
                 int edx = ((vcos * yval) + (xval * vsin)) >> 14;
-
-
                 int ebx = klabs(((vcos * xval) - (yval * vsin)) >> 14);
 
                 if (!ebx)
@@ -223,6 +220,18 @@ static void analyzesprites()
                     }
                 }
             }
+        }
+
+        if (tilehasmodelorvoxel(pTSprite->picnum, pTSprite->pal) && !(spriteext[nSprite].flags & SPREXT_NOTMD))
+        {
+            int const nRootTile = pTSprite->picnum;
+            int const nVoxel = tiletovox[pTSprite->picnum];
+
+            if (nVoxel != -1 && ((voxrotate[nVoxel >> 3] & pow2char[nVoxel & 7]) != 0 || (picanm[nRootTile].extra & 7) == 7))
+                pTSprite->ang = (pTSprite->ang + ((int)totalclock << 3)) & kAngleMask;
+
+            if (pTSprite->picnum == 736) // invincibility sprite needs to always face player
+                pTSprite->ang = getangle(nCamerax - pTSprite->x, nCameray - pTSprite->y); // TODO - CHECKME: have to set pSprite not PTSprite here or angle won't change??
         }
     }
     if (besttarget != -1)

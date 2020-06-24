@@ -102,7 +102,7 @@ int BuildAnim(int nSprite, int val, int val2, int x, int y, int z, int nSector, 
     sprite[nSprite].clipdist = 10;
     sprite[nSprite].xrepeat = nRepeat;
     sprite[nSprite].yrepeat = nRepeat;
-    sprite[nSprite].picnum = 1;
+    //sprite[nSprite].picnum = 1;
     sprite[nSprite].ang = 0;
     sprite[nSprite].xoffset = 0;
     sprite[nSprite].yoffset = 0;
