@@ -680,9 +680,10 @@ static const vec2_t varvartable[] =
     { CON_XORVARVAR,         CON_XORVAR },
 };
 
-#ifdef CON_DISCRETE_VAR_ACCESS
 static const vec2_t globalvartable[] =
 {
+    { CON_SETVAR,         CON_SETVAR_GLOBAL },
+#ifdef CON_DISCRETE_VAR_ACCESS
     { CON_IFVARA,         CON_IFVARA_GLOBAL },
     { CON_IFVARAE,        CON_IFVARAE_GLOBAL },
     { CON_IFVARAND,       CON_IFVARAND_GLOBAL },
@@ -708,15 +709,17 @@ static const vec2_t globalvartable[] =
     { CON_MULVAR,         CON_MULVAR_GLOBAL },
     { CON_ORVAR,          CON_ORVAR_GLOBAL },
     { CON_RANDVAR,        CON_RANDVAR_GLOBAL },
-    { CON_SETVAR,         CON_SETVAR_GLOBAL },
     { CON_SHIFTVARL,      CON_SHIFTVARL_GLOBAL },
     { CON_SHIFTVARR,      CON_SHIFTVARR_GLOBAL },
     { CON_SUBVAR,         CON_SUBVAR_GLOBAL },
     { CON_XORVAR,         CON_XORVAR_GLOBAL },
+#endif
 };
 
 static const vec2_t playervartable[] =
 {
+    { CON_SETVAR,         CON_SETVAR_PLAYER },
+#ifdef CON_DISCRETE_VAR_ACCESS
     { CON_IFVARA,         CON_IFVARA_PLAYER },
     { CON_IFVARAE,        CON_IFVARAE_PLAYER },
     { CON_IFVARAND,       CON_IFVARAND_PLAYER },
@@ -742,15 +745,17 @@ static const vec2_t playervartable[] =
     { CON_MULVAR,         CON_MULVAR_PLAYER },
     { CON_ORVAR,          CON_ORVAR_PLAYER },
     { CON_RANDVAR,        CON_RANDVAR_PLAYER },
-    { CON_SETVAR,         CON_SETVAR_PLAYER },
     { CON_SHIFTVARL,      CON_SHIFTVARL_PLAYER },
     { CON_SHIFTVARR,      CON_SHIFTVARR_PLAYER },
     { CON_SUBVAR,         CON_SUBVAR_PLAYER },
     { CON_XORVAR,         CON_XORVAR_PLAYER },
+#endif
 };
 
 static const vec2_t actorvartable[] =
 {
+    { CON_SETVAR,         CON_SETVAR_ACTOR },
+#ifdef CON_DISCRETE_VAR_ACCESS
     { CON_IFVARA,         CON_IFVARA_ACTOR },
     { CON_IFVARAE,        CON_IFVARAE_ACTOR },
     { CON_IFVARAND,       CON_IFVARAND_ACTOR },
@@ -776,28 +781,23 @@ static const vec2_t actorvartable[] =
     { CON_MULVAR,         CON_MULVAR_ACTOR },
     { CON_ORVAR,          CON_ORVAR_ACTOR },
     { CON_RANDVAR,        CON_RANDVAR_ACTOR },
-    { CON_SETVAR,         CON_SETVAR_ACTOR },
     { CON_SHIFTVARL,      CON_SHIFTVARL_ACTOR },
     { CON_SHIFTVARR,      CON_SHIFTVARR_ACTOR },
     { CON_SUBVAR,         CON_SUBVAR_ACTOR },
     { CON_XORVAR,         CON_XORVAR_ACTOR },
-};
 #endif
+};
 
 static inthashtable_t h_varvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(varvartable)) };
-#ifdef CON_DISCRETE_VAR_ACCESS
 static inthashtable_t h_globalvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(globalvartable)) };
 static inthashtable_t h_playervar = { NULL, INTHASH_SIZE(ARRAY_SIZE(playervartable)) };
 static inthashtable_t h_actorvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(actorvartable)) };
-#endif
 
 static inthashtable_t *const inttables[] = {
     &h_varvar,
-#ifdef CON_DISCRETE_VAR_ACCESS
     &h_globalvar,
     &h_playervar,
     &h_actorvar,
-#endif
 };
 
 
@@ -2388,7 +2388,6 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
 {
     int opcode = -1;
 
-#ifdef CON_DISCRETE_VAR_ACCESS
     if (ins[1] < MAXGAMEVARS)
     {
         switch (aGameVars[ins[1] & (MAXGAMEVARS - 1)].flags & (GAMEVAR_USER_MASK | GAMEVAR_PTR_MASK))
@@ -2404,7 +2403,6 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
                 break;
         }
     }
-#endif
 
     if (opcode != -1)
     {
@@ -6179,7 +6177,6 @@ void scriptInitTables()
     for (auto &varvar : varvartable)
         inthash_add(&h_varvar, varvar.x, varvar.y, 0);
 
-#ifdef CON_DISCRETE_VAR_ACCESS
     for (auto &globalvar : globalvartable)
         inthash_add(&h_globalvar, globalvar.x, globalvar.y, 0);
 
@@ -6188,7 +6185,6 @@ void scriptInitTables()
 
     for (auto &actorvar : actorvartable)
         inthash_add(&h_actorvar, actorvar.x, actorvar.y, 0);
-#endif
 }
 
 void C_Compile(const char *fileName)

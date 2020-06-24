@@ -1348,6 +1348,21 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             }
             dispatch();
 
+            vInstruction(CON_SETVAR_GLOBAL):
+                insptr++;
+                aGameVars[*insptr].global = insptr[1];
+                insptr += 2;
+                dispatch();
+            vInstruction(CON_SETVAR_ACTOR):
+                insptr++;
+                aGameVars[*insptr].pValues[vm.spriteNum & (MAXSPRITES-1)] = insptr[1];
+                insptr += 2;
+                dispatch();
+            vInstruction(CON_SETVAR_PLAYER):
+                insptr++;
+                aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] = insptr[1];
+                insptr += 2;
+                dispatch();
 #ifdef CON_DISCRETE_VAR_ACCESS
             vInstruction(CON_IFVARE_GLOBAL):
                 insptr++;
@@ -1425,11 +1440,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
-            vInstruction(CON_SETVAR_GLOBAL):
-                insptr++;
-                aGameVars[*insptr].global = insptr[1];
-                insptr += 2;
-                dispatch();
             vInstruction(CON_ADDVAR_GLOBAL):
                 insptr++;
                 aGameVars[*insptr].global += insptr[1];
@@ -1547,11 +1557,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
-            vInstruction(CON_SETVAR_ACTOR):
-                insptr++;
-                aGameVars[*insptr].pValues[vm.spriteNum & (MAXSPRITES-1)] = insptr[1];
-                insptr += 2;
-                dispatch();
             vInstruction(CON_ADDVAR_ACTOR):
                 insptr++;
                 aGameVars[*insptr].pValues[vm.spriteNum & (MAXSPRITES-1)] += insptr[1];
@@ -1669,11 +1674,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
-            vInstruction(CON_SETVAR_PLAYER):
-                insptr++;
-                aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] = insptr[1];
-                insptr += 2;
-                dispatch();
             vInstruction(CON_ADDVAR_PLAYER):
                 insptr++;
                 aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] += insptr[1];
