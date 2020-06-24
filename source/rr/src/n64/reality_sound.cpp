@@ -5,6 +5,7 @@
 
 rt_CTL_t *soundCtl, *musicCtl;
 rt_instrument_t *soundInfo;
+rt_soundinstance_t rt_soundinstance[MAXRTSOUNDINSTANCES];
 
 static rt_env_t *RT_LoadEnv(uint32_t ctlOffset, uint32_t envOffset)
 {
@@ -208,7 +209,7 @@ static rt_bank_t *RT_LoadBank(uint32_t ctlOffset, uint32_t bankOffset, uint32_t 
     return bank;
 }
 
-rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
+static rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
 {
     rt_CTL_t *ctl = (rt_CTL_t*)Xcalloc(1, sizeof(rt_CTL_t));
     lseek(rt_group, ctlOffset, SEEK_SET);
@@ -216,7 +217,7 @@ rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
     ctl->signature = B_BIG16(ctl->signature);
     read(rt_group, &ctl->bank_count, sizeof(ctl->bank_count));
     ctl->bank_count = B_BIG16(ctl->bank_count);
-    if (ctl->signature != signature || ctl->bank_count <= 0)
+    if (ctl->signature != CTLSIGNATURE || ctl->bank_count <= 0)
     {
         initprintf("Error loading sound bank %x\n", ctlOffset);
         Xfree(ctl);
@@ -247,6 +248,8 @@ void RT_InitSound(void)
 
     if (soundInfo)
         g_highestSoundIdx = soundInfo->sound_count;
+
+    memset(rt_soundinstance, 0, sizeof(rt_soundinstance));
 }
 
 int RT_LoadSound(int num)
@@ -267,4 +270,114 @@ int RT_LoadSound(int num)
     l = read(rt_group, snd.ptr, l);
 
     return l;
+}
+
+void RT_Decode8(char *in, int16_t *out, int index, int16_t *pred1, int16_t lastsmp[8])
+{
+    static int16_t itable[16] = {
+        0, 1, 2, 3, 4, 5, 6, 7,
+        -8, -7, -6, -5, -4, -3, -2, -1,
+    };
+    int16_t tmp[8];
+    int total = 0;
+    int16_t *pred2 = (pred1 + 8);
+    for (int i = 0; i < 8; i++)
+        tmp[i] = itable[(i&1) ? (*in++ & 0xf) : ((*in >> 4) & 0xf)] << index;
+    
+    for (int i = 0; i < 8; i++)
+    {
+        total = (pred1[i] * lastsmp[6]);
+        total += (pred2[i] * lastsmp[7]);
+        if (i > 0)
+        {
+            for (int x = i - 1; x > -1; x--)
+            {
+                total += tmp[((i - 1) - x)] * pred2[x];
+            }
+        }
+
+        int result = ((tmp[i] << 0xb) + total) >> 0xb;
+        out[i] = clamp(result, INT16_MIN, INT16_MAX);
+    }
+    // update the last sample set for subsequent iterations
+    memcpy(lastsmp, out, sizeof(int16_t)*8);
+}
+
+void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
+{
+    auto snd = (rt_soundinstance_t*)userdata;
+    if (snd->endofdata)
+    {
+        *ptr = nullptr;
+        *length = 0;
+        snd->status = 0;
+        return;
+    }
+    if (snd->rtsound->wave->adpcm)
+    {
+        int16_t out[16];
+        *ptr = (char*)snd->buf;
+        auto predictors = snd->rtsound->wave->adpcm->book->predictors;
+        auto wavelen = snd->rtsound->wave->len;
+        int i;
+        for (i = 0; i < RTSNDBLOCKSIZE;)
+        {
+            int index = (*snd->ptr >> 4) & 0xf;
+            int pred = (*snd->ptr) & 0xf;
+
+            int16_t *pred1 = &predictors[pred * 16];
+
+            RT_Decode8(++snd->ptr, &out[0], index, pred1, snd->lastsmp);
+            snd->ptr += 4;
+
+            RT_Decode8(snd->ptr, &out[8], index, pred1, snd->lastsmp);
+            snd->ptr += 4;
+
+            for (int x = 0; x < 16; x++)
+            {
+                snd->buf[i] = (out[x] >> 8) ^ 128;
+                i++;
+            }
+            if (snd->ptr >= snd->snd + wavelen)
+            {
+                snd->endofdata = 1;
+                break;
+            }
+        }
+        *length = i;
+    }
+    else
+    {
+        *length = 0;
+    }
+}
+
+rt_soundinstance_t *RT_FindSoundSlot(int snum)
+{
+    if (!soundCtl)
+        return nullptr;
+    if (snum < 0 || snum >= soundInfo->sound_count)
+        return nullptr;
+    rt_sound_t *rtsound = soundInfo->sounds[snum];
+    for (int i = 0; i < MAXRTSOUNDINSTANCES; i++)
+    {
+        auto snd = &rt_soundinstance[i];
+        if (!snd->status)
+        {
+            memset(snd, 0, sizeof(rt_soundinstance_t));
+            snd->status = 1;
+            snd->ptr = snd->snd = g_sounds[snum].ptr;
+            snd->rtsound = rtsound;
+            return snd;
+        }
+    }
+    return nullptr;
+}
+
+void RT_FreeSoundSlot(rt_soundinstance_t *snd)
+{
+    if (!snd)
+        return;
+
+    snd->status = 0;
 }

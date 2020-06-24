@@ -2,9 +2,9 @@
 
 #include "compat.h"
 
-#pragma pack(push, 1)
-
-const uint16_t signature = 0x4231; // B1
+#define RTSNDBLOCKSIZE 1152
+#define MAXRTSOUNDINSTANCES 256
+#define CTLSIGNATURE 0x4231 // B1
 
 struct rt_adpcm_book_t {
     uint32_t order;
@@ -103,11 +103,19 @@ struct rt_CTL_t {
     uint16_t bank_count;
     rt_bank_t **bank;
 };
-#pragma pack(pop)
 
-// extern rt_CTL_t *soundCtl, *musicCtl;
-// 
-// rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset);
+struct rt_soundinstance_t {
+    int status;
+    int endofdata;
+    char *snd;
+    char *ptr;
+    rt_sound_t *rtsound;
+    int16_t lastsmp[8];
+    char buf[RTSNDBLOCKSIZE];
+};
+
 void RT_InitSound(void);
 int RT_LoadSound(int num);
-
+void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata);
+rt_soundinstance_t *RT_FindSoundSlot(int snum);
+void RT_FreeSoundSlot(rt_soundinstance_t* snd);
