@@ -67,16 +67,18 @@ static void Demo_RestoreModes(int32_t menu)
 
 void Demo_PrepareWarp(void)
 {
-    if (!g_demo_paused)
-    {
-        g_demo_soundToggle = ud.config.SoundToggle;
-        ud.config.SoundToggle = 0;
-    }
-
     FX_StopAllSounds();
     S_ClearSoundLocks();
 }
 
+static void Demo_SetAllClocks(int32_t clocktime)
+{
+    totalclock = ototalclock = lockclock = clocktime;
+    
+    // reset menu transition
+    m_animation.start = 0;
+    m_animation.length = 0;
+}
 
 static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
 {
@@ -125,7 +127,7 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
     ud.god = ud.cashman = ud.eog = ud.showallmap = 0;
     ud.noclip = ud.scrollmode = ud.overhead_on = 0; //= ud.pause_on = 0;
 
-    totalclock = ototalclock = lockclock = 0;
+    Demo_SetAllClocks(0);
 
     return 1;
 }
@@ -478,9 +480,7 @@ int32_t G_PlaybackDemo(void)
     static int32_t in_menu = 0;
     //    static int32_t tmpdifftime=0;
 
-    totalclock = 0;
-    ototalclock = 0;
-    lockclock = 0;
+    Demo_SetAllClocks(0);
 
     if (ready2send)
         return 0;
@@ -512,6 +512,7 @@ RECHECK:
     if (foundemo == 0)
     {
         ud.recstat = 0;
+        g_player[myconnectindex].ps->gm &= ~MODE_DEMO;
 
         if (g_whichDemo > 1)
         {
@@ -597,7 +598,7 @@ RECHECK:
                         klseek(g_demo_recFilePtr, lastsyncofs, SEEK_SET);
                         ud.reccnt = 0;
 
-                        totalclock = ototalclock = lockclock = lastsyncclock;
+                        Demo_SetAllClocks(lastsyncclock);
                     }
                     else CORRUPT(-1);
                 }
@@ -615,7 +616,7 @@ RECHECK:
                         //                        ud.god = ud.cashman = ud.eog = ud.showallmap = 0;
                         //                        ud.noclip = ud.scrollmode = ud.overhead_on = ud.pause_on = 0;
 
-                        totalclock = ototalclock = lockclock = 0;
+                        Demo_SetAllClocks(0);
                     }
                     else CORRUPT(0);
                 }
@@ -704,10 +705,7 @@ nextdemo_nomenu:
                         kclose(g_demo_recFilePtr); g_demo_recFilePtr = buildvfs_kfd_invalid;
 
                         if (g_demo_goalCnt>0)
-                        {
                             g_demo_goalCnt=0;
-                            ud.config.SoundToggle = g_demo_soundToggle;
-                        }
 
                         if (Demo_IsProfiling())  // don't reset g_demo_profile if it's < 0
                             Demo_FinishProfile();
@@ -764,16 +762,18 @@ nextdemo_nomenu:
 //                    OSD_Printf("t:%d, l+T:%d; cnt:%d, goal:%d%s", totalclock, (lockclock+TICSPERFRAME),
 //                               g_demo_cnt, g_demo_goalCnt, g_demo_cnt>=g_demo_goalCnt?" ":"\n");
                     if (g_demo_cnt>=g_demo_goalCnt)
-                    {
                         g_demo_goalCnt = 0;
-                        ud.config.SoundToggle = g_demo_soundToggle;
-                    }
                 }
             }
         }
         else if (foundemo && g_demo_paused)
         {
+            // problem: this locks menu animations as well, should probably be overhauled
             totalclock = lockclock;
+
+            // bandaid fix for menu lockup
+            m_animation.start = 0;
+            m_animation.length = 0;
         }
 
         if (Demo_IsProfiling())

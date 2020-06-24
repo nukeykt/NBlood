@@ -6496,14 +6496,12 @@ next_most:
         if ((cstat & 8) && (tspr->cstat&48) != 0) off.y = -off.y;
         tspr->z -= off.y * tspr->yrepeat << 2;
 
-        if ((sprite[spritenum].cstat&CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
-        {
-            const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
-            const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
+        const float xfactor = (tspr->cstat&48) != 16 ? (256.f/320.f) : 1.f;
+        const int32_t xv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047]*xfactor);
+        const int32_t yv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047]*xfactor);
 
-            tspr->x -= mulscale16(xv, off.x);
-            tspr->y -= mulscale16(yv, off.x);
-        }
+        tspr->x -= mulscale16(xv, off.x);
+        tspr->y -= mulscale16(yv, off.x);
 
         globvis = globalvisibility;
         if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));

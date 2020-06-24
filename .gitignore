@@ -80,6 +80,7 @@ texturecache
 /platform/Windows/Build/
 /platform/Windows/x64/
 /platform/Windows/Win32/
+/platform/Windows/ARM64/
 *.exp
 *.lib
 perl.exe.stackdump

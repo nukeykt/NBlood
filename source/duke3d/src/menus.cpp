@@ -2419,6 +2419,14 @@ static void Menu_Pre(MenuID_t cm)
         ud.m_player_skill = M_SKILL.currentEntry+1;
         break;
 
+    case MENU_NEWGAMECUSTOM:
+        ud.m_newgamecustom = M_NEWGAMECUSTOM.currentEntry;
+        break;
+
+    case MENU_NEWGAMECUSTOMSUB:
+        ud.m_newgamecustomsub = M_NEWGAMECUSTOMSUB.currentEntry;
+        break;
+
     default:
         break;
     }
@@ -4841,7 +4849,7 @@ void Menu_Open(uint8_t playerID)
 void Menu_Close(uint8_t playerID)
 {
     auto & gm = g_player[playerID].ps->gm;
-    if (gm & MODE_GAME)
+    if (gm & (MODE_GAME | MODE_DEMO))
     {
         if (gm & MODE_MENU)
             I_ClearAllInput();
@@ -4867,8 +4875,7 @@ void Menu_Close(uint8_t playerID)
 
         walock[TILE_SAVESHOT] = CACHE1D_FREE;
         G_UpdateScreenArea();
-        if (!ud.pause_on)
-            S_PauseSounds(false);
+        S_PauseSounds(ud.pause_on || (ud.recstat == 2 && g_demo_paused));
     }
 }
 

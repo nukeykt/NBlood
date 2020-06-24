@@ -1,0 +1,30 @@
+Instructions for Building EDuke32's Library Dependencies Targeting ARM64
+========================================================================
+
+First, follow these instructions: http://wiki.eduke32.com/wiki/Building_EDuke32_on_Windows
+
+Dependencies
+------------
+Install vcpkg from https://github.com/microsoft/vcpkg. Using MinGW is currently problematic with ARM64, so vcpkg is the best option. For convenience, add the vcpkg directory to your PATH.
+
+Build the dependencies: vcpkg install libogg:arm64-windows-static libvorbis:arm64-windows-static libflac:arm64-windows-static libvpx:arm64-windows-static sdl2:arm64-windows-static sdl2-mixer:arm64-windows-static
+
+Next, you must copy the built libraries from [vcpkg]\installed\arm64-windows-static\lib into platform\Windows\lib\ARM64, and rename them as follows:
+FLAC.lib -> libFLAC.a
+ogg.lib -> libogg.a
+SDL2.lib -> libSDL2.a
+manual-link\SDL2main.lib -> libSDL2main.a
+vorbis.lib -> libvorbis.a
+vorbisfile.lib -> libvorbisfile.a
+vpxmt.lib -> libvpx.a
+
+dsound, dxguid, and dxguid_sdl
+-------------------------------------------------
+
+These files will be compiled with https://github.com/mstorsjo/llvm-mingw. Download and extract it in an MSYS2 environment, and add llvm-mingw/bin to your MSYS PATH.
+
+Once you have everything set up, proceed as follows:
+
+cd eduke32/platform/Windows/src/dxlibs
+make PREFIX=aarch64-w64-mingw32
+cp *.a ../../lib/ARM64
