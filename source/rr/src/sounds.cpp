@@ -426,6 +426,8 @@ void S_Cleanup(void)
             continue;
         }
 
+        RT_FreeSoundSlotId(num);
+
         int const vidx = num & (MAXSOUNDINSTANCES - 1);
 
         num = (num - vidx) / MAXSOUNDINSTANCES;
@@ -749,27 +751,22 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         return -1;
     }
 
-    // XXX: why is 'right' 0?
-    // Ambient MUSICANDSFX always start playing using the 3D routines!
-    int const ambsfxp = S_IsAmbientSFX(spriteNum);
     int voice = FX_Ok;
     if (REALITY && (snd.m & SF_REALITY_INTERNAL))
     {
-        auto rtsnd = RT_FindSoundSlot(sndNum);
+        auto rtsnd = RT_FindSoundSlot(sndNum, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
         if (rtsnd)
         {
-            voice = FX_StartDemandFeedPlayback(RT_SoundDecode, 8, 1, 8000, pitch, sndist >> 6, sndist >> 6, 0, snd.pr,
-                /*snd.volume*/fix16_one, (sndNum * MAXSOUNDINSTANCES) + sndSlot, rtsnd);
+            voice = FX_StartDemandFeedPlayback3D(RT_SoundDecode, 8, 1, 8000, pitch, sndang >> 4, sndist >> 6,
+                                                 snd.pr, /*snd.volume*/fix16_one, (sndNum * MAXSOUNDINSTANCES) + sndSlot, rtsnd);
             if (voice <= FX_Ok)
                 RT_FreeSoundSlot(rtsnd);
         }
     }
     else
     {
-        voice = (repeatp && !ambsfxp) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, sndist >> 6, sndist >> 6, 0, snd.pr,
-                                                snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot)
-                                      : FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
-                                                  snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
+        voice = FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
+                          snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
     }
 
     if (voice <= FX_Ok)
@@ -796,7 +793,7 @@ int S_PlaySound(int num)
 
     sound_t & snd = g_sounds[num];
 
-    if (EDUKE32_PREDICT_FALSE((unsigned)num > (unsigned)g_highestSoundIdx || snd.filename == NULL || snd.ptr == NULL))
+    if (EDUKE32_PREDICT_FALSE((unsigned)num > (unsigned)g_highestSoundIdx || (!(snd.m & SF_REALITY_INTERNAL) && snd.filename == NULL) || snd.ptr == NULL))
     {
         OSD_Printf("WARNING: invalid sound #%d\n",num);
         return -1;
@@ -818,10 +815,28 @@ int S_PlaySound(int num)
         return -1;
     }
 
-    int const voice = (snd.m & SF_LOOP) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
-                                                  LOUDESTVOLUME, snd.siz, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum)
-                                        : FX_Play3D(snd.ptr, snd.siz, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
-                                                    (num * MAXSOUNDINSTANCES) + sndnum);
+    int voice = FX_Ok;
+    
+    if (REALITY && (snd.m & SF_REALITY_INTERNAL))
+    {
+        auto rtsnd = RT_FindSoundSlot(num, (num * MAXSOUNDINSTANCES) + sndnum);
+        if (rtsnd)
+        {
+            voice = (snd.m & SF_LOOP) ? FX_StartDemandFeedPlayback(RT_SoundDecode, 8, 1, 8000, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
+                                                                   LOUDESTVOLUME, snd.pr, /*snd.volume*/fix16_one, (num * MAXSOUNDINSTANCES) + sndnum, rtsnd)
+                                      : FX_StartDemandFeedPlayback3D(RT_SoundDecode, 8, 1, 8000, pitch, 0, 255 - LOUDESTVOLUME, snd.pr, /*snd.volume*/fix16_one,
+                                                                     (num * MAXSOUNDINSTANCES) + sndnum, rtsnd);
+            if (voice <= FX_Ok)
+                RT_FreeSoundSlot(rtsnd);
+        }
+    }
+    else
+    {
+        voice = (snd.m & SF_LOOP) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
+                                            LOUDESTVOLUME, snd.pr, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum)
+                                  : FX_Play3D(snd.ptr, snd.siz, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
+                                              (num * MAXSOUNDINSTANCES) + sndnum);
+    }
 
     if (voice <= FX_Ok)
     {

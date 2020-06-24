@@ -1048,3 +1048,24 @@ int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
 
     return voice->handle;
 }
+
+int MV_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
+    int pitchoffset, int angle, int distance, int priority, fix16_t volume, intptr_t callbackval, void* userdata)
+{
+    if (!MV_Installed)
+        return MV_SetErrorCode(MV_NotInstalled);
+
+    if (distance < 0)
+    {
+        distance  = -distance;
+        angle    += MV_NUMPANPOSITIONS / 2;
+    }
+
+    int const vol = MIX_VOLUME(distance);
+
+    // Ensure angle is within 0 - 127
+    angle &= MV_MAXPANPOSITION;
+
+    return MV_StartDemandFeedPlayback(function, bitdepth, channels, rate, pitchoffset, max(0, 255 - distance),
+        MV_PanTable[ angle ][ vol ].left, MV_PanTable[ angle ][ vol ].right, priority, volume, callbackval, userdata);
+}

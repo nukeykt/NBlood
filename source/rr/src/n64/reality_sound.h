@@ -107,6 +107,7 @@ struct rt_CTL_t {
 struct rt_soundinstance_t {
     int status;
     int endofdata;
+    int id;
     char *snd;
     char *ptr;
     rt_sound_t *rtsound;
@@ -117,5 +118,6 @@ struct rt_soundinstance_t {
 void RT_InitSound(void);
 int RT_LoadSound(int num);
 void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata);
-rt_soundinstance_t *RT_FindSoundSlot(int snum);
-void RT_FreeSoundSlot(rt_soundinstance_t* snd);
+rt_soundinstance_t *RT_FindSoundSlot(int snum, int id);
+void RT_FreeSoundSlot(rt_soundinstance_t *snd);
+void RT_FreeSoundSlotId(int id);

@@ -3,6 +3,11 @@
 #include "reality.h"
 #include "reality_sound.h"
 
+//
+// Uses info and snippets from this code:
+// https://github.com/jombo23/N64-Tools/blob/master/N64%20Sound%20Tool/N64SoundListToolUpdated/N64SoundLibrary/N64AIFCAudio.cpp
+//
+
 rt_CTL_t *soundCtl, *musicCtl;
 rt_instrument_t *soundInfo;
 rt_soundinstance_t rt_soundinstance[MAXRTSOUNDINSTANCES];
@@ -46,7 +51,7 @@ static rt_adpcm_loop_t *RT_LoadADPCMLoop(uint32_t ctlOffset, uint32_t loopOffset
     read(rt_group, &loop->count, sizeof(loop->count));
     loop->count = B_BIG32(loop->count);
     read(rt_group, &loop->state, sizeof(loop->state));
-    for (int i = 0; i < 22; i++)
+    for (int i = 0; i < 16; i++)
     {
         loop->state[i] = B_BIG16(loop->state[i]);
     }
@@ -171,7 +176,17 @@ static rt_instrument_t *RT_LoadInstrument(uint32_t ctlOffset, uint32_t instOffse
     inst->sounds = (rt_sound_t**)Xcalloc(inst->sound_count, sizeof(rt_sound_t*));
     for (int i = 0; i < inst->sound_count; i++)
     {
-        inst->sounds[i] = RT_LoadSound(ctlOffset, B_BIG32(soundOffset[i]), tblOffset);
+        soundOffset[i] = B_BIG32(soundOffset[i]);
+    }
+
+    for (int gap = inst->sound_count / 2; gap > 0; gap /= 2)
+        for (int i = gap; i < inst->sound_count; i++)
+            for (int j = i - gap; j >= 0 && soundOffset[j] > soundOffset[j + gap]; j -= gap)
+                swap(&soundOffset[j], &soundOffset[j + gap]);
+
+    for (int i = 0; i < inst->sound_count; i++)
+    {
+        inst->sounds[i] = RT_LoadSound(ctlOffset, soundOffset[i], tblOffset);
     }
     Xfree(soundOffset);
     return inst;
@@ -310,7 +325,7 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
     {
         *ptr = nullptr;
         *length = 0;
-        snd->status = 0;
+        RT_FreeSoundSlot(snd);
         return;
     }
     if (snd->rtsound->wave->adpcm)
@@ -352,7 +367,7 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
     }
 }
 
-rt_soundinstance_t *RT_FindSoundSlot(int snum)
+rt_soundinstance_t *RT_FindSoundSlot(int snum, int id)
 {
     if (!soundCtl)
         return nullptr;
@@ -368,6 +383,7 @@ rt_soundinstance_t *RT_FindSoundSlot(int snum)
             snd->status = 1;
             snd->ptr = snd->snd = g_sounds[snum].ptr;
             snd->rtsound = rtsound;
+            snd->id = id;
             return snd;
         }
     }
@@ -380,4 +396,14 @@ void RT_FreeSoundSlot(rt_soundinstance_t *snd)
         return;
 
     snd->status = 0;
+}
+
+void RT_FreeSoundSlotId(int id)
+{
+    for (int i = 0; i < MAXSOUNDINSTANCES; i++)
+    {
+        auto snd = &rt_soundinstance[i];
+        if (snd->status && snd->id == id)
+            RT_FreeSoundSlot(snd);
+    }
 }
