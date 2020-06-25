@@ -84,6 +84,44 @@ void RT_Init(void)
 
 }
 
+struct {
+    int volume, level;
+    const char *filename;
+} rt_musicdefs[] = {
+    MAXVOLUMES, 0, "grabbag.mid",
+    MAXVOLUMES, 1, "briefing.mid",
+    0, 0, "stalker.mid",
+    0, 1, "dethtoll.mid",
+    0, 2, "streets.mid",
+    0, 3, "watrwld1.mid",
+    0, 4, "thecall.mid",
+    0, 5, "snake1.mid",
+    0, 6, "snake1.mid",
+    0, 7, "prepd.mid",
+    0, 8, "futurmil.mid",
+    0, 9, "storm.mid",
+    0, 10, "gutwrnch.mid",
+    0, 11, "robocrep.mid",
+    0, 12, "stalag.mid",
+    0, 13, "pizzed.mid",
+    0, 14, "alienz.mid",
+    0, 15, "xplasma.mid",
+    0, 16, "alfredh.mid",
+    0, 17, "alfredh.mid",
+    0, 18, "intents.mid",
+    0, 19, "inhiding.mid",
+    0, 20, "fatcmdr.mid",
+    0, 21, "names.mid",
+    0, 22, "subway.mid",
+    0, 23, "invader.mid",
+    0, 24, "gotham.mid",
+    0, 25, "233c.mid",
+    0, 26, "lordofla.mid",
+    0, 27, "urban.mid",
+    0, 28, "restrict.mid",
+    0, 29, "whomp.mid",
+};
+
 #define RT_QUOTES 131
 
 int RT_PrepareScript(void)
@@ -190,6 +228,11 @@ int RT_PrepareScript(void)
         }
     }
     Bfree(quote_table);
+
+    for (int i = 0; i < ARRAY_SIZE(rt_musicdefs); i++)
+    {
+        C_DefineMusic(rt_musicdefs[i].volume, rt_musicdefs[i].level, rt_musicdefs[i].filename);
+    }
 
     return 0;
 }
