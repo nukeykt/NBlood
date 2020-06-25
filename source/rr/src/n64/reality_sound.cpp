@@ -12,6 +12,8 @@ rt_CTL_t *soundCtl, *musicCtl;
 rt_instrument_t *soundInfo;
 rt_soundinstance_t rt_soundinstance[MAXRTSOUNDINSTANCES];
 
+int16_t rt_soundrate[MAXSOUNDS];
+
 static rt_env_t *RT_LoadEnv(uint32_t ctlOffset, uint32_t envOffset)
 {
     rt_env_t *env = (rt_env_t*)Xcalloc(1, sizeof(rt_env_t));
@@ -265,6 +267,57 @@ void RT_InitSound(void)
         g_highestSoundIdx = soundInfo->sound_count;
 
     memset(rt_soundinstance, 0, sizeof(rt_soundinstance));
+
+    static const uint32_t soundvoOffset = 0xb4990;
+    static const uint32_t soundpeOffset = 0xb4be8;
+    static const uint32_t soundpsOffset = 0xb4e40;
+    static const uint32_t soundmOffset = 0xb5098;
+    static const uint32_t soundrateOffset = 0x8a4a8;
+    int16_t *tempshort = (int16_t*)tempbuf;
+    lseek(rt_group, soundvoOffset, SEEK_SET);
+    read(rt_group, tempshort, soundInfo->sound_count * sizeof(int16_t));
+    for (int i = 0; i < soundInfo->sound_count; i++)
+    {
+        if (g_sounds[i].filename == nullptr)
+        {
+            g_sounds[i].vo = B_BIG16(tempshort[i]);
+            g_sounds[i].pr = 200; // FIXME
+            g_sounds[i].volume = fix16_one;
+        }
+    }
+    lseek(rt_group, soundpeOffset, SEEK_SET);
+    read(rt_group, tempshort, soundInfo->sound_count * sizeof(int16_t));
+    for (int i = 0; i < soundInfo->sound_count; i++)
+    {
+        if (g_sounds[i].filename == nullptr)
+            g_sounds[i].pe = B_BIG16(tempshort[i]);
+    }
+    lseek(rt_group, soundpsOffset, SEEK_SET);
+    read(rt_group, tempshort, soundInfo->sound_count * sizeof(int16_t));
+    for (int i = 0; i < soundInfo->sound_count; i++)
+    {
+        if (g_sounds[i].filename == nullptr)
+            g_sounds[i].ps = B_BIG16(tempshort[i]);
+    }
+    lseek(rt_group, soundmOffset, SEEK_SET);
+    read(rt_group, tempbuf, soundInfo->sound_count * sizeof(uint8_t));
+    for (int i = 0; i < soundInfo->sound_count; i++)
+    {
+        if (g_sounds[i].filename == nullptr)
+        {
+            g_sounds[i].m = tempbuf[i];
+            g_sounds[i].m &= ~SF_ONEINST_INTERNAL;
+            if (g_sounds[i].m & SF_LOOP)
+                g_sounds[i].m |= SF_ONEINST_INTERNAL;
+            g_sounds[i].m |= SF_REALITY_INTERNAL;
+        }
+    }
+    lseek(rt_group, soundrateOffset, SEEK_SET);
+    read(rt_group, rt_soundrate, soundInfo->sound_count * sizeof(int16_t));
+    for (int i = 0; i < soundInfo->sound_count; i++)
+    {
+        rt_soundrate[i] = B_BIG16(rt_soundrate[i]);
+    }
 }
 
 int RT_LoadSound(int num)
@@ -276,7 +329,6 @@ int RT_LoadSound(int num)
     
     auto &snd = g_sounds[num];
     rt_sound_t *sound = soundInfo->sounds[num];
-    g_sounds[num].m |= SF_REALITY_INTERNAL;
     lseek(rt_group, sound->wave->base, SEEK_SET);
     int l = sound->wave->len;
     g_soundlocks[num] = 200;

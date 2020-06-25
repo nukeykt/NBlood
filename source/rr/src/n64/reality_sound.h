@@ -115,6 +115,8 @@ struct rt_soundinstance_t {
     char buf[RTSNDBLOCKSIZE];
 };
 
+extern int16_t rt_soundrate[];
+
 void RT_InitSound(void);
 int RT_LoadSound(int num);
 void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata);
