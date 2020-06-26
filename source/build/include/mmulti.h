@@ -16,10 +16,10 @@ extern int connecthead, connectpoint2[MAXMULTIPLAYERS];
 extern char syncstate;
 extern int natfree; //Addfaz NatFree
 
-int initmultiplayersparms(int argc, char **argv);
+int initmultiplayersparms(int argc, const char * const *argv);
 int initmultiplayerscycle(void);
 
-void mmulti_initmultiplayers(int argc, char **argv, char damultioption, char dacomrateoption, char dapriority);
+void mmulti_initmultiplayers(int argc, const char * const *argv, char damultioption, char dacomrateoption, char dapriority);
 void mmulti_setpackettimeout(int datimeoutcount, int daresendagaincount);
 void mmulti_uninitmultiplayers(void);
 void mmulti_sendlogon(void);
@@ -29,7 +29,7 @@ void mmulti_sendpacket(int other, unsigned char *bufptr, int messleng);
 int mmulti_getpacket(int *other, unsigned char *bufptr);
 void mmulti_flushpackets(void);
 void mmulti_generic(int other, unsigned char *bufptr, int messleng, int command);
-int isvalidipaddress(char *st);
+int isvalidipaddress(const char *st);
 
 void nfIncCP(void); //Addfaz NatFree
 int nfCheckHF(int other); //Addfaz NatFree

@@ -302,7 +302,7 @@ int netread(int *other, char *dabuf, int bufsiz)  //0:no packets in buffer
     return(1);
 }
 
-int isvalidipaddress(char *st)
+int isvalidipaddress(const char *st)
 {
     int i, bcnt, num;
 
@@ -405,7 +405,7 @@ static void initmultiplayers_reset(void)
 // 192.168.1.2     game /n1 192.168.1.100  game /n1 192.168.1.100 192.168.1.4
 // 192.168.1.100   game 192.168.1.2 /n1    game 192.168.1.2 /n1 192.168.1.4
 // 192.168.1.4                             game 192.168.1.2 192.168.1.100 /n1
-int initmultiplayersparms(int argc, char **argv)
+int initmultiplayersparms(int argc, const char * const *argv)
 {
     int i, j, daindex, portnum = NETPORT;
     char *st;
@@ -562,7 +562,7 @@ int initmultiplayerscycle(void)
     return 1;
 }
 
-void mmulti_initmultiplayers(int argc, char **argv, char damultioption, char dacomrateoption, char dapriority)
+void mmulti_initmultiplayers(int argc, const char * const *argv, char damultioption, char dacomrateoption, char dapriority)
 {
     UNREFERENCED_PARAMETER(damultioption);
     UNREFERENCED_PARAMETER(dacomrateoption);
