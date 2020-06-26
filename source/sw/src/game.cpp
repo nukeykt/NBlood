@@ -933,7 +933,7 @@ InitGame(int32_t argc, char const * const * argv)
     // sets numplayers, connecthead, connectpoint2, myconnectindex
 
     if (!firstnet)
-        initsingleplayers();
+        initmultiplayers(0, NULL, 0, 0, 0);
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
         NetBroadcastMode = (networkmode == MMULTI_MODE_P2P);
