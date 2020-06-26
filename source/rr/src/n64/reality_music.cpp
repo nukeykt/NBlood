@@ -304,25 +304,28 @@ void RT_AdvanceNotes(void)
     }
 }
 
+int serviceTimer = 0;
+
 void RT_MusicService(void)
 {
     auto routinebuf = MV_GetMusicRoutineBuffer();
     int16_t *buffer = (int16_t*)routinebuf.buffer;
     int sampless = routinebuf.size / (MV_Channels *2);
 
-    for (int i = 0; i < 5; i++)
-    {
-        for (int j = 0; j < 16; j++)
-        {
-            if (!tracks[j].seq)
-                continue;
-            RT_TrackAdvance(&tracks[j]);
-        }
-        RT_AdvanceNotes();
-    }
-
     for (int j = 0; j < sampless; j++)
     {
+        while (serviceTimer >= MV_MixRate)
+        {
+            for (int j = 0; j < 16; j++)
+            {
+                if (!tracks[j].seq)
+                    continue;
+                RT_TrackAdvance(&tracks[j]);
+            }
+            RT_AdvanceNotes();
+            serviceTimer -= MV_MixRate;
+        }
+        serviceTimer += (1000000LL * seqDivision / seqTempo);
         int left = 0, right = 0;
         for (int i = 0; i < RTMUSICVOICES; i++)
         {
