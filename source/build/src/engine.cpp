@@ -8543,8 +8543,6 @@ int32_t enginePreInit(void)
 #endif
     preinitcalled = 1;
 
-    MicroProfileWebServerStart();
-
     return 0;
 }
 
@@ -11092,6 +11090,17 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     }
 #endif
 #endif
+
+#if MICROPROFILE_ENABLED == 1
+    static int webServerStarted;
+
+    if (!webServerStarted)
+    {
+        webServerStarted = true;
+        MicroProfileWebServerStart();
+    }
+#endif
+
     qsetmode = 200;
     return 0;
 }

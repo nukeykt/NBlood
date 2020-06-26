@@ -6365,7 +6365,7 @@ void G_DrawFrame(void)
         G_DrawBackground();
     G_DisplayRest(smoothRatio);
 
-#if MICROPROFILE_ENABLED
+#if MICROPROFILE_ENABLED != 0
     for (auto &gv : aGameVars)
     {
         if ((gv.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK)) == 0)

@@ -1429,7 +1429,9 @@ static void destroy_window_resources()
 /* We should NOT destroy the window surface. This is done automatically
    when SDL_DestroyWindow or SDL_SetVideoMode is called.             */
 
+#if MICROPROFILE_ENABLED != 0
     MicroProfileGpuShutdown();
+#endif
 
 #if SDL_MAJOR_VERSION >= 2
     if (sdl_context)
@@ -1697,7 +1699,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
+#if MICROPROFILE_ENABLED != 0
     MicroProfileGpuInitGL();
+#endif
 
     return 0;
 }

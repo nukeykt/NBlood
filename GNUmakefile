@@ -11,7 +11,6 @@ ifeq ($(FURY),1)
     RETAIL_MENU := 1
     STANDALONE := 1
     USE_LIBVPX := 0
-    MICROPROFILE := 0
 endif
 
 ### Platform and Toolchain Configuration

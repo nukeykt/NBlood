@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "microprofile.h"
 
-#if MICROPROFILE_ENABLED
+#if MICROPROFILE_ENABLED != 0
 MicroProfileToken g_eventTokens[MAXEVENTS];
 MicroProfileToken g_actorTokens[MAXTILES];
 MicroProfileToken g_statnumTokens[MAXSTATUS];
@@ -6198,6 +6198,7 @@ void scriptInitTables()
         inthash_add(&h_actorvar, actorvar.x, actorvar.y, 0);
 }
 
+#if MICROPROFILE_ENABLED != 0
 static int C_GetLabelIndex(int32_t val, int type)
 {
     for (int i=0;i<g_labelCnt;i++)
@@ -6210,6 +6211,7 @@ static int C_GetLabelIndex(int32_t val, int type)
 
     return -1;
 }
+#endif
 
 void C_Compile(const char *fileName)
 {
@@ -6352,7 +6354,7 @@ void C_Compile(const char *fileName)
 
     C_InitQuotes();
 
-#if MICROPROFILE_ENABLED
+#if MICROPROFILE_ENABLED != 0
     for (int i=0; i<MAXEVENTS; i++)
     {
         if (VM_HaveEvent(i))

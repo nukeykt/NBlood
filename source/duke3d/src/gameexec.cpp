@@ -43,7 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # define GAMEEXEC_STATIC static
 #endif
 
-#if MICROPROFILE_ENABLED
+#if MICROPROFILE_ENABLED != 0
 extern MicroProfileToken g_eventTokens[MAXEVENTS];
 extern MicroProfileToken g_actorTokens[MAXTILES];
 extern MicroProfileToken g_statnumTokens[MAXSTATUS];

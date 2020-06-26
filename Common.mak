@@ -366,7 +366,7 @@ PROFILER := 0
 # For debugging with Valgrind + GDB, see
 # http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.gdbserver
 ALLOCACHE_AS_MALLOC := 0
-
+MICROPROFILE := 0
 
 ##### Settings overrides and implicit cascades
 
