@@ -10,6 +10,7 @@
 #include "reality_player.h"
 #include "reality_render.h"
 #include "reality_sound.h"
+#include "reality_music.h"
 #include "reality_util.h"
 
 extern buildvfs_kfd rt_group;

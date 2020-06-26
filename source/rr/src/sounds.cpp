@@ -330,6 +330,12 @@ void S_PlayLevelMusicOrNothing(unsigned int m)
 
 int S_TryPlaySpecialMusic(unsigned int m)
 {
+    if (REALITY && m == MUS_INTRO)
+    {
+        RT_PlaySong();
+        S_SetMusicIndex(m);
+        return 0;
+    }
     if (RR)
         return 1;
     char const * musicfn = g_mapInfo[m].musicfn;
@@ -761,7 +767,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         auto rtsnd = RT_FindSoundSlot(sndNum, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
         if (rtsnd)
         {
-            voice = FX_StartDemandFeedPlayback3D(RT_SoundDecode, 8, 1, rt_soundrate[sndNum] + pitch, 0, sndang >> 4, sndist >> 6,
+            voice = FX_StartDemandFeedPlayback3D(RT_SoundDecode, 16, 1, rt_soundrate[sndNum] + pitch, 0, sndang >> 4, sndist >> 6,
                                                  snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot, rtsnd);
             if (voice <= FX_Ok)
                 RT_FreeSoundSlot(rtsnd);
@@ -826,9 +832,9 @@ int S_PlaySound(int num)
         auto rtsnd = RT_FindSoundSlot(num, (num * MAXSOUNDINSTANCES) + sndnum);
         if (rtsnd)
         {
-            voice = (snd.m & SF_LOOP) ? FX_StartDemandFeedPlayback(RT_SoundDecode, 8, 1, rt_soundrate[num] + pitch, 0, LOUDESTVOLUME, LOUDESTVOLUME,
+            voice = (snd.m & SF_LOOP) ? FX_StartDemandFeedPlayback(RT_SoundDecode, 16, 1, rt_soundrate[num] + pitch, 0, LOUDESTVOLUME, LOUDESTVOLUME,
                                                                    LOUDESTVOLUME, snd.pr, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum, rtsnd)
-                                      : FX_StartDemandFeedPlayback3D(RT_SoundDecode, 8, 1, rt_soundrate[num] + pitch, pitch, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
+                                      : FX_StartDemandFeedPlayback3D(RT_SoundDecode, 16, 1, rt_soundrate[num] + pitch, 0, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
                                                                      (num * MAXSOUNDINSTANCES) + sndnum, rtsnd);
             if (voice <= FX_Ok)
                 RT_FreeSoundSlot(rtsnd);

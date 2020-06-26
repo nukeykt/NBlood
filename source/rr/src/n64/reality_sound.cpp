@@ -8,7 +8,7 @@
 // https://github.com/jombo23/N64-Tools/blob/master/N64%20Sound%20Tool/N64SoundListToolUpdated/N64SoundLibrary/N64AIFCAudio.cpp
 //
 
-rt_CTL_t *soundCtl, *musicCtl;
+rt_CTL_t *soundCtl;
 rt_instrument_t *soundInfo;
 rt_soundinstance_t rt_soundinstance[MAXRTSOUNDINSTANCES];
 
@@ -226,7 +226,7 @@ static rt_bank_t *RT_LoadBank(uint32_t ctlOffset, uint32_t bankOffset, uint32_t 
     return bank;
 }
 
-static rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
+rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset)
 {
     rt_CTL_t *ctl = (rt_CTL_t*)Xcalloc(1, sizeof(rt_CTL_t));
     lseek(rt_group, ctlOffset, SEEK_SET);
@@ -256,15 +256,16 @@ void RT_InitSound(void)
 {
     static const uint32_t soundCtlOffset = 0x5fe770;
     static const uint32_t soundTblOffset = 0x60b330;
-    static const uint32_t musicCtlOffset = 0x7bbfc0;
-    static const uint32_t musicTblOffset = 0x7bd580;
     soundCtl = RT_LoadCTL(soundCtlOffset, soundTblOffset);
-    // musicCtl = RT_LoadCTL(musicCtlOffset, musicTblOffset);
     if (soundCtl && soundCtl->bank[0] && soundCtl->bank[0]->inst_count > 0)
         soundInfo = soundCtl->bank[0]->inst[0];
 
-    if (soundInfo)
-        g_highestSoundIdx = soundInfo->sound_count;
+    RT_MusicInit();
+
+    if (!soundInfo)
+        return;
+    
+    g_highestSoundIdx = soundInfo->sound_count;
 
     memset(rt_soundinstance, 0, sizeof(rt_soundinstance));
 
@@ -388,7 +389,7 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
         int i;
         for (i = 0; i < RTSNDBLOCKSIZE; i++)
         {
-            if (snd->outleft == 0)
+            while (snd->outleft == 0)
             {
                 if (snd->loop && snd->samples + 16 > snd->loop_end)
                 {
@@ -420,13 +421,14 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
                         snd->ptr = snd->snd + b * 9;
                         snd->outleft = s;
                         snd->outptr = 16 - s;
-                        snd->samples = snd->loop_start;
+                        snd->samples = b * 16;
                     }
                 }
                 else
                 {
                     if (snd->ptr >= snd->snd + snd->rtsound->wave->len)
                     {
+                        snd->endofdata = 1;
                         break;
                     }
                     int index = (*snd->ptr >> 4) & 0xf;
@@ -445,7 +447,7 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
                     snd->outptr = 0;
                 }
             }
-            snd->buf[i] = (snd->out[snd->outptr++] >> 8) ^ 128;
+            snd->buf[i] = snd->out[snd->outptr++];
             snd->outleft--;
         }
         *length = i;

@@ -190,6 +190,7 @@
     <ClInclude Include="..\..\source\rr\src\menus.h" />
     <ClInclude Include="..\..\source\rr\src\n64\reality.h" />
     <ClInclude Include="..\..\source\rr\src\n64\reality_defs.h" />
+    <ClInclude Include="..\..\source\rr\src\n64\reality_music.h" />
     <ClInclude Include="..\..\source\rr\src\n64\reality_player.h" />
     <ClInclude Include="..\..\source\rr\src\n64\reality_render.h" />
     <ClInclude Include="..\..\source\rr\src\n64\reality_sound.h" />
@@ -246,6 +247,7 @@
     <ClCompile Include="..\..\source\rr\src\mdump.cpp" />
     <ClCompile Include="..\..\source\rr\src\menus.cpp" />
     <ClCompile Include="..\..\source\rr\src\n64\reality.cpp" />
+    <ClCompile Include="..\..\source\rr\src\n64\reality_music.cpp" />
     <ClCompile Include="..\..\source\rr\src\n64\reality_player.cpp" />
     <ClCompile Include="..\..\source\rr\src\n64\reality_render.cpp" />
     <ClCompile Include="..\..\source\rr\src\n64\reality_sound.cpp" />

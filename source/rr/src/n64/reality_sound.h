@@ -69,6 +69,9 @@ struct rt_sound_t {
     uint8_t sample_pan;
     uint8_t sample_volume;
     uint16_t flags;
+
+    char *ptr;
+    char lock;
 };
 
 struct rt_instrument_t {
@@ -120,11 +123,12 @@ struct rt_soundinstance_t {
     int16_t lastsmp[16];
     int16_t loopstate[16];
     int16_t out[16];
-    char buf[RTSNDBLOCKSIZE];
+    int16_t buf[RTSNDBLOCKSIZE];
 };
 
 extern int16_t rt_soundrate[];
 
+rt_CTL_t *RT_LoadCTL(uint32_t ctlOffset, uint32_t tblOffset);
 void RT_InitSound(void);
 int RT_LoadSound(int num);
 void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata);
