@@ -2,7 +2,7 @@
 
 #include "compat.h"
 
-#define RTSNDBLOCKSIZE 1152
+#define RTSNDBLOCKSIZE 1024
 #define MAXRTSOUNDINSTANCES 256
 #define CTLSIGNATURE 0x4231 // B1
 
@@ -16,7 +16,7 @@ struct rt_adpcm_loop_t {
     uint32_t start;
     uint32_t end;
     uint32_t count;
-    uint16_t state[16];
+    int16_t state[16];
     uint32_t unknown1;
 };
 
@@ -108,10 +108,18 @@ struct rt_soundinstance_t {
     int status;
     int endofdata;
     int id;
+    int loop;
+    int loop_start;
+    int loop_end;
     char *snd;
     char *ptr;
+    int samples;
+    int outleft;
+    int outptr;
     rt_sound_t *rtsound;
-    int16_t lastsmp[8];
+    int16_t lastsmp[16];
+    int16_t loopstate[16];
+    int16_t out[16];
     char buf[RTSNDBLOCKSIZE];
 };
 

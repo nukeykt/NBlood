@@ -913,7 +913,12 @@ void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
             if (EDUKE32_PREDICT_FALSE(spriteNum >= 0 && voice.id <= FX_Ok))
                 initprintf(OSD_ERROR "S_ChangeSoundPitch(): bad voice %d for sound ID %d!\n", voice.id, soundNum);
             else if (voice.id > FX_Ok && FX_SoundActive(voice.id))
-                FX_SetPitch(voice.id, pitchoffset);
+            {
+                if (g_sounds[spriteNum].m & SF_REALITY_INTERNAL)
+                    FX_SetFrequency(voice.id, rt_soundrate[soundNum] + pitchoffset);
+                else
+                    FX_SetPitch(voice.id, pitchoffset);
+            }
             break;
         }
     }

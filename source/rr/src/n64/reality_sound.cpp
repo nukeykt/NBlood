@@ -382,34 +382,71 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
     }
     if (snd->rtsound->wave->adpcm)
     {
-        int16_t out[16];
         *ptr = (char*)snd->buf;
         auto predictors = snd->rtsound->wave->adpcm->book->predictors;
         auto wavelen = snd->rtsound->wave->len;
         int i;
-        for (i = 0; i < RTSNDBLOCKSIZE;)
+        for (i = 0; i < RTSNDBLOCKSIZE; i++)
         {
-            int index = (*snd->ptr >> 4) & 0xf;
-            int pred = (*snd->ptr) & 0xf;
-
-            int16_t *pred1 = &predictors[pred * 16];
-
-            RT_Decode8(++snd->ptr, &out[0], index, pred1, snd->lastsmp);
-            snd->ptr += 4;
-
-            RT_Decode8(snd->ptr, &out[8], index, pred1, snd->lastsmp);
-            snd->ptr += 4;
-
-            for (int x = 0; x < 16; x++)
+            if (snd->outleft == 0)
             {
-                snd->buf[i] = (out[x] >> 8) ^ 128;
-                i++;
+                if (snd->loop && snd->samples + 16 > snd->loop_end)
+                {
+                    if (snd->samples < snd->loop_end)
+                    {
+                        int todo = snd->loop_end - snd->samples;
+                        int index = (*snd->ptr >> 4) & 0xf;
+                        int pred = (*snd->ptr) & 0xf;
+
+                        int16_t *pred1 = &predictors[pred * 16];
+
+                        RT_Decode8(++snd->ptr, &snd->out[0], index, pred1, snd->lastsmp);
+                        snd->ptr += 4;
+
+                        RT_Decode8(snd->ptr, &snd->out[8], index, pred1, snd->lastsmp);
+                        snd->ptr += 4;
+                        snd->outleft = todo;
+                        snd->samples += todo;
+                        snd->outptr = 0;
+                    }
+                    else
+                    {
+                        if (snd->loop > 0)
+                            snd->loop--;
+                        Bmemcpy(snd->out, snd->loopstate, 16 * sizeof(int16_t));
+                        Bmemcpy(snd->lastsmp, snd->loopstate+8, 8 * sizeof(int16_t));
+                        int b = (snd->loop_start / 16) + 1;
+                        int s = b * 16 - snd->loop_start;
+                        snd->ptr = snd->snd + b * 9;
+                        snd->outleft = s;
+                        snd->outptr = 16 - s;
+                        snd->samples = snd->loop_start;
+                    }
+                }
+                else
+                {
+                    if (snd->ptr >= snd->snd + snd->rtsound->wave->len)
+                    {
+                        break;
+                    }
+                    int index = (*snd->ptr >> 4) & 0xf;
+                    int pred = (*snd->ptr) & 0xf;
+
+                    int16_t *pred1 = &predictors[pred * 16];
+
+                    RT_Decode8(++snd->ptr, &snd->out[0], index, pred1, snd->lastsmp);
+                    snd->ptr += 4;
+
+                    RT_Decode8(snd->ptr, &snd->out[8], index, pred1, snd->lastsmp);
+                    snd->ptr += 4;
+
+                    snd->outleft = 16;
+                    snd->samples += 16;
+                    snd->outptr = 0;
+                }
             }
-            if (snd->ptr >= snd->snd + wavelen)
-            {
-                snd->endofdata = 1;
-                break;
-            }
+            snd->buf[i] = (snd->out[snd->outptr++] >> 8) ^ 128;
+            snd->outleft--;
         }
         *length = i;
     }
@@ -436,6 +473,14 @@ rt_soundinstance_t *RT_FindSoundSlot(int snum, int id)
             snd->ptr = snd->snd = g_sounds[snum].ptr;
             snd->rtsound = rtsound;
             snd->id = id;
+            if (rtsound->wave->adpcm && rtsound->wave->adpcm->loop)
+            {
+                snd->loop = rtsound->wave->adpcm->loop->count;
+                snd->loop_start = rtsound->wave->adpcm->loop->start;
+                snd->loop_end = rtsound->wave->adpcm->loop->end;
+            }
+            // if (rtsound->wave->raw && rtsound->wave->raw->loop)
+            //     snd->loop = rtsound->wave->raw->loop->count;
             return snd;
         }
     }
