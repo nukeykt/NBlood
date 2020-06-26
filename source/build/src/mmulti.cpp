@@ -71,6 +71,7 @@ static char simlagfif[MAXPLAYERS][SIMLAG+1][MAXPAKSIZ+2];
 #pragma message("\n\nWARNING! INTENTIONAL PACKET LOSS SIMULATION IS ENABLED!\nREMEMBER TO CHANGE SIMMIS&SIMLAG to 0 before RELEASE!\n\n")
 #endif
 
+int networkmode = -1;
 int myconnectindex, numplayers;
 int connecthead, connectpoint2[MAXPLAYERS];
 
@@ -85,7 +86,7 @@ static char pakmem[4194304]; static int pakmemi = 1;
 #define NETPORT 0x5bd9
 static SOCKET mysock;
 static int myip, myport = NETPORT, otherip[MAXPLAYERS], otherport[MAXPLAYERS];
-static int snatchip = 0, snatchport = 0, danetmode = 255, netready = 0;
+static int snatchip = 0, snatchport = 0, netready = 0;
 
 #ifdef _WIN32
 int wsainitialized = 0;
@@ -411,7 +412,7 @@ int initmultiplayersparms(int argc, const char * const *argv)
     char *st;
 
     initmultiplayers_reset();
-    danetmode = 255; daindex = 0;
+    networkmode = -1; daindex = 0;
 
 //    if (!argv) return 0;
     // go looking for the port, if specified
@@ -447,7 +448,7 @@ int initmultiplayersparms(int argc, const char * const *argv)
                 numplayers = 2;
                 if (argv[i][2] == '0')
                 {
-                    danetmode = 0;
+                    networkmode = MMULTI_MODE_MS;
                     if ((argv[i][3] == ':') && (argv[i][4] >= '0') && (argv[i][4] <= '9'))
                     {
                         numplayers = (argv[i][4]-'0');
@@ -458,7 +459,7 @@ int initmultiplayersparms(int argc, const char * const *argv)
                 }
                 else if (argv[i][2] == '1')
                 {
-                    danetmode = 1;
+                    networkmode = MMULTI_MODE_P2P;
                     myconnectindex = daindex; daindex++;
                     printf("mmulti: Peer-to-peer mode\n");
                 }
@@ -470,7 +471,7 @@ int initmultiplayersparms(int argc, const char * const *argv)
         st = strdup(argv[i]); if (!st) break;
         if (isvalidipaddress(st))
         {
-            if ((danetmode == 1) && (daindex == myconnectindex)) daindex++;
+            if ((networkmode == MMULTI_MODE_P2P) && (daindex == myconnectindex)) daindex++;
             for (j=0;st[j];j++)
             {
                 if (st[j] == ':')
@@ -490,7 +491,7 @@ int initmultiplayersparms(int argc, const char * const *argv)
                     { pt = htons((unsigned short)atol(&st[j+1])); st[j] = 0; break; }
             if ((lph = gethostbyname(st)))
             {
-                if ((danetmode == 1) && (daindex == myconnectindex)) daindex++;
+                if ((networkmode == MMULTI_MODE_P2P) && (daindex == myconnectindex)) daindex++;
                 otherip[daindex] = *(int *)lph->h_addr;
                 otherport[daindex] = pt;
                 printf("mmulti: Player %d at %s:%d (%s)\n",daindex,
@@ -501,8 +502,8 @@ int initmultiplayersparms(int argc, const char * const *argv)
         }
         free(st);
     }
-    if ((danetmode == 255) && (daindex)) { numplayers = 2; danetmode = 0; } //an IP w/o /n# defaults to /n0
-    if ((numplayers >= 2) && (daindex) && (!danetmode)) myconnectindex = 1;
+    if ((networkmode == -1) && (daindex)) { numplayers = 2; networkmode = MMULTI_MODE_MS; } //an IP w/o /n# defaults to /n0
+    if ((numplayers >= 2) && (daindex) && (networkmode == MMULTI_MODE_MS)) myconnectindex = 1;
     if (daindex > numplayers) numplayers = daindex;
 
     //for(i=0;i<numplayers;i++)
@@ -512,7 +513,6 @@ int initmultiplayersparms(int argc, const char * const *argv)
     for (i=0;i<numplayers-1;i++) connectpoint2[i] = i+1;
     connectpoint2[numplayers-1] = -1;
 
-    //    return (((!danetmode) && (numplayers >= 2)) || (numplayers == 2));
     return (numplayers >= 2);
 }
 
@@ -689,7 +689,7 @@ int mmulti_getpacket(int *retother, unsigned char *bufptr)
         for (i=connecthead;i>=0;i=connectpoint2[i])
         {
             if (i != myconnectindex) dosendpackets(i);
-            if ((!danetmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
+            if ((networkmode == MMULTI_MODE_MS) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
         }
     }
 
@@ -836,7 +836,7 @@ int mmulti_getpacket(int *retother, unsigned char *bufptr)
                 return(messleng);
             }
         }
-        if ((!danetmode) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
+        if ((networkmode == MMULTI_MODE_MS) && (myconnectindex != connecthead)) break; //slaves in M/S mode only send to master
     }
 
     return(0);

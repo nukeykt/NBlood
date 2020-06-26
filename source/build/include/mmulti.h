@@ -11,7 +11,9 @@
 
 #define MAXMULTIPLAYERS 16
 
-extern int myconnectindex, numplayers;
+enum { MMULTI_MODE_MS = 0, MMULTI_MODE_P2P };
+
+extern int myconnectindex, numplayers, networkmode;
 extern int connecthead, connectpoint2[MAXMULTIPLAYERS];
 extern char syncstate;
 extern int natfree; //Addfaz NatFree
