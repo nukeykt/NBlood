@@ -3567,7 +3567,7 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
                         if (*insptr > 0)
                         {
                             if ((newHealth - *insptr) < (pPlayer->max_player_health >> 2) && newHealth >= (pPlayer->max_player_health >> 2))
-                                A_PlaySound(DUKE_GOTHEALTHATLOW, pPlayer->i);
+                                A_PlaySound(184, pPlayer->i);
                             pPlayer->last_extra = newHealth;
                         }
 

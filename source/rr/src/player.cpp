@@ -4937,11 +4937,11 @@ static int32_t P_DoCounters(int playerNum)
                     if (playerNum == screenpeek || GTFLAGS(GAMETYPE_COOPSOUND))
                     {
                         if ((REALITY ? krand2() : rand())&1)
-                            A_PlaySound(DUKE_CRACK,pPlayer->i);
-                        else A_PlaySound(DUKE_CRACK2,pPlayer->i);
+                            A_PlaySound(REALITY ? 165 : DUKE_CRACK,pPlayer->i);
+                        else A_PlaySound(REALITY ? 26 : DUKE_CRACK2,pPlayer->i);
                     }
 
-                A_PlaySound(DUKE_CRACK_FIRST, pPlayer->i);
+                A_PlaySound(REALITY ? 172 : DUKE_CRACK_FIRST, pPlayer->i);
             }
         }
         else if (pPlayer->knuckle_incs == 22 || TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_FIRE))

@@ -1841,7 +1841,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
                 if (!REALITY && weaponNum == DN64TILE2599)
                     break;
                 A_SpawnWallGlass(spriteNum, wallNum, 70);
-                A_PlaySound(GLASS_HEAVYBREAK, spriteNum);
+                A_PlaySound(REALITY ? 18: GLASS_HEAVYBREAK, spriteNum);
                 pWall->cstat &= ~16;
                 pWall->overpicnum = MIRRORBROKE;
                 return;

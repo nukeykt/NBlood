@@ -1655,7 +1655,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                     {
                         pSprite->owner = -2;
                         g_player[p].ps->on_crane = spriteNum;
-                        A_PlaySound(RR ? 390 : DUKE_GRUNT,g_player[p].ps->i);
+                        A_PlaySound(RR ? 390 : (REALITY ? 31: DUKE_GRUNT),g_player[p].ps->i);
                         g_player[p].ps->q16ang = fix16_from_int(pSprite->ang+1024);
                     }
                     else
@@ -2986,7 +2986,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                             if (sprite[moveSprite].picnum == APLAYER)
                             {
                                 int const playerNum = P_Get(moveSprite);
-                                A_PlaySound(REALITY ? 1 :PISTOL_BODYHIT, moveSprite);
+                                A_PlaySound(REALITY ? 1 : PISTOL_BODYHIT, moveSprite);
 
                                 if (pSprite->picnum == SPIT)
                                 {
@@ -6960,7 +6960,7 @@ jib_code:
                     if (REALITY && sprite[spriteNum].picnum == BLOODPOOL && sprite[spriteNum].xrepeat >= 30)
                     {
                         if ((krand2()&255) < 16)
-                            A_PlaySound(0x104, pPlayer->i);
+                            A_PlaySound(260, pPlayer->i);
                     }
                     pPlayer->footprintpal   = pSprite->pal;
                     pPlayer->footprintshade = pSprite->shade;

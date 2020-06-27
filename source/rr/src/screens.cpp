@@ -928,7 +928,8 @@ void G_DisplayRest(int32_t smoothratio)
     }
 #endif  // USE_OPENGL
 
-    palaccum_add(&tint, &pp->pals, pp->pals.f);
+    if (!REALITY)
+        palaccum_add(&tint, &pp->pals, pp->pals.f);
 #ifdef SPLITSCREEN_MOD_HACKS
     if (pp2)
         palaccum_add(&tint, &pp2->pals, pp2->pals.f);

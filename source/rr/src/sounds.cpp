@@ -394,6 +394,12 @@ void S_StopMusic(void)
 {
     MusicPaused = 0;
 
+    if (REALITY && g_musicIndex == MUS_INTRO)
+    {
+        RT_StopSong();
+        return;
+    }
+
     if (MusicIsWaveform && MusicVoice >= 0)
     {
         FX_StopSound(MusicVoice);

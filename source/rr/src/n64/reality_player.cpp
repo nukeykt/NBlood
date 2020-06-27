@@ -1017,7 +1017,7 @@ void RT_P_ProcessWeapon(int playerNum)
 
             if (++(*weaponFrame) >= 5)
             {
-                if (pPlayer->ammo_amount[PISTOL_WEAPON] <= 0 || (pPlayer->ammo_amount[PISTOL_WEAPON]%12))
+                if (pPlayer->ammo_amount[pPlayer->curr_weapon] <= 0 || (pPlayer->ammo_amount[pPlayer->curr_weapon]%12))
                 {
                     (*weaponFrame) = 0;
                     P_CheckWeapon(pPlayer);
@@ -1062,7 +1062,7 @@ void RT_P_ProcessWeapon(int playerNum)
                 pPlayer->ammo_amount[SHOTGUN_WEAPON]--;
                 pPlayer->dn64_370 = 8;
 
-                A_PlaySound(SHOTGUN_FIRE, pPlayer->i);
+                A_PlaySound(80, pPlayer->i);
 
                 lastvisinc = (int32_t) totalclock + 32;
                 pPlayer->visibility = 0;
@@ -1264,6 +1264,8 @@ void RT_P_ProcessWeapon(int playerNum)
                 pPlayer->visibility = 0;
                 lastvisinc = (int32_t) totalclock;
                 A_Shoot(pPlayer->i, DN64TILE3841);
+                FX_StopSound(pPlayer->dn_388);
+                pPlayer->dn_388 = 0;
                 if (pPlayer->hbomb_hold_delay < 66)
                     A_PlaySound(264, pPlayer->i);
                 else

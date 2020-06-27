@@ -1998,7 +1998,7 @@ static void postloadplayer(int32_t savegamep)
         ud.recstat = 0;
 
         if (g_player[myconnectindex].ps->jetpack_on)
-            A_PlaySound(DUKE_JETPACK_IDLE, g_player[myconnectindex].ps->i);
+            A_PlaySound(REALITY ? 39 : DUKE_JETPACK_IDLE, g_player[myconnectindex].ps->i);
     }
 
     //3

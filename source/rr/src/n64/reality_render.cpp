@@ -3318,6 +3318,11 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     RT_DisplayExplosions();
 
     RT_EnablePolymost();
+
+    auto pal = &g_player[screenpeek].ps->pals;
+
+    fullscreen_tint_gl(clamp(pal->r * 4, 0, 255), clamp(pal->g * 4, 0, 255),
+                       clamp(pal->b * 4, 0, 255), clamp(pal->f * 4, 0, 255));
 }
 
 void RT_MS_Reset(void)

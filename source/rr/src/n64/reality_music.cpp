@@ -1,6 +1,7 @@
 #include "compat.h"
 #include "multivoc.h"
 #include "reality.h"
+#include "../duke3d.h"
 
 extern int MV_Channels, MV_MixRate;
 
@@ -381,6 +382,7 @@ void RT_MusicService(void)
                 }
                 float volume = voice->vel * voice->chan->volume * voice->rsnd->sample_volume / (128.f * 128.f * 256.f) * 0.5f;
                 volume *= voice->envVol / 128.f;
+                volume *= ud.config.MusicVolume / 256.f;
                 int pan = voice->chan->pan + (voice->rsnd->sample_pan - 64);
                 if (pan < 0)
                     pan = 0;
@@ -488,16 +490,26 @@ void RT_PlaySong(void)
     if (!musicCtl || !seqBuffer)
         return;
 
+    memset(voicePool, 0, sizeof(voicePool));
+    memset(channel, 0, sizeof(channel));
     seqTempo = 650050;
     for (int i = 0; i < 16; i++)
     {
-        tracks[i].ptr = tracks[i].seq;
-        if (tracks[i].ptr)
+        auto track = &tracks[i];
+        auto seq = track->seq;
+        memset(track, 0, sizeof(trackinfo_t));
+        track->ptr = track->seq = seq;
+        if (track->ptr)
         {
-            tracks[i].counter = RT_ReadMidiDelay(&tracks[i]);
-            tracks[i].status = 1;
+            track->counter = RT_ReadMidiDelay(track);
+            track->status = 1;
         }
-        tracks[i].altPattern = nullptr;
+        track->altPattern = nullptr;
     }
     MV_HookMusicRoutine(RT_MusicService);
+}
+
+void RT_StopSong(void)
+{
+    MV_UnhookMusicRoutine();
 }
