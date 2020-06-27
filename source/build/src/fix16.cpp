@@ -1,4 +1,6 @@
 #include "fix16.h"
+
+#include "pragmas.h"
 #include "fix16_int64.h"
 
 /* Subtraction and addition with overflow detection.
@@ -147,7 +149,7 @@ FIXMATH_FUNC_ATTRS fix16_t fix16_div(fix16_t a, fix16_t b)
     if (divider & 0xFFF00000)
     {
         uint32_t shifted_div = ((divider >> 17) + 1);
-        quotient = remainder / shifted_div;
+        quotient = divideu32(remainder, shifted_div);
         remainder -= ((uint64_t)quotient * divider) >> 17;
     }
 
@@ -166,7 +168,7 @@ FIXMATH_FUNC_ATTRS fix16_t fix16_div(fix16_t a, fix16_t b)
         remainder <<= shift;
         bit_pos -= shift;
 
-        uint32_t div = remainder / divider;
+        uint32_t div = divideu32(remainder, divider);
         remainder = remainder % divider;
         quotient += div << bit_pos;
 
