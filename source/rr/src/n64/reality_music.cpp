@@ -35,6 +35,7 @@ struct channel_t {
     int volume;
     int pan;
     int program;
+    int sustain;
 };
 
 enum {
@@ -43,8 +44,17 @@ enum {
     VS_ACTIVE
 };
 
+enum {
+    VE_ATTACK = 0,
+    VE_DECAY,
+    VE_SUSTAIN,
+    VE_RELEASE
+};
+
 struct voice_t {
     int status;
+    int vel;
+    rt_sound_t *rsnd;
     rt_soundinstance_t decodeState;
     int duration;
     double phase;
@@ -53,6 +63,11 @@ struct voice_t {
     uint32_t length;
     channel_t *chan;
     int note;
+    double envVol;
+    double envStep;
+    double envTarget;
+    int envTimer;
+    int envState;
 };
 
 channel_t channel[16];
@@ -124,13 +139,19 @@ void RT_ChanNoteOn(channel_t *chan, int note, int vel, int duration, int perc)
         snd->loop_end = rsnd->wave->adpcm->loop->end;
     }
 
+    voice->vel = vel;
+    voice->rsnd = rsnd;
     voice->chan = chan;
     voice->note = note;
     voice->duration = duration;
     voice->status = VS_ACTIVE;
+    voice->envState = VE_ATTACK;
+    voice->envVol = 0.0;
+    voice->envTarget = rsnd->env->attack_volume;
+    voice->envTimer = MV_MixRate * (rsnd->env->attack_time / 1000000.0);
+    voice->envStep = (double)(voice->envTarget - voice->envVol) / (double)voice->envTimer;
 
-
-    voice->step = pow(RTSEMITONE, note - rsnd->key->keybase) * musicCtl->bank[0]->rate / MV_MixRate;
+    voice->step = pow(RTSEMITONE, note - rsnd->key->keybase + rsnd->key->detune / 100.0) * musicCtl->bank[0]->rate / MV_MixRate;
 }
 
 void RT_ChanNoteOff(channel_t *chan, int note)
@@ -141,6 +162,11 @@ void RT_ChanNoteOff(channel_t *chan, int note)
         if (voice->status == VS_ACTIVE && voice->chan == chan && voice->note == note)
         {
             voice->status = VS_RELEASED;
+            
+            voice->envState = VE_RELEASE;
+            voice->envTarget = 0.0;
+            voice->envTimer = MV_MixRate * (voice->rsnd->env->release_time / 1000000.0);
+            voice->envStep = (double)(voice->envTarget - voice->envVol) / (double)voice->envTimer;
         }
     }
 }
@@ -202,11 +228,6 @@ void RT_TrackAdvance(trackinfo_t *track)
 {
     if (!track->status)
         return;
-    if (track->counter > 0)
-    {
-        track->counter--;
-        return;
-    }
     while(track->counter == 0)
     {
         uint8_t cmd = RT_ReadMidiByte(track);
@@ -263,6 +284,15 @@ void RT_TrackAdvance(trackinfo_t *track)
             {
             case 0xb0: // Control
                 b2 = RT_ReadMidiByte(track);
+                switch (b1)
+                {
+                case 7:
+                    chan->volume = b2;
+                    break;
+                case 10:
+                    chan->pan = b2;
+                    break;
+                }
                 break;
             case 0xc0: // Program change
                 chan->program = b1;
@@ -287,6 +317,7 @@ void RT_TrackAdvance(trackinfo_t *track)
         }
         track->counter = RT_ReadMidiDelay(track);
     }
+    track->counter--;
 }
 
 void RT_AdvanceNotes(void)
@@ -299,6 +330,11 @@ void RT_AdvanceNotes(void)
             if (--voice->duration == 0)
             {
                 voice->status = VS_RELEASED;
+
+                voice->envState = VE_RELEASE;
+                voice->envTarget = 0.0;
+                voice->envTimer = MV_MixRate * (voice->rsnd->env->release_time / 1000000.0);
+                voice->envStep = (double)(voice->envTarget - voice->envVol) / (double)voice->envTimer;
             }
         }
     }
@@ -341,9 +377,18 @@ void RT_MusicService(void)
                         continue;
                     }
                 }
-                left += *voice->ptr * 0.1;
-                right += *voice->ptr * 0.1;
+                float volume = voice->vel * voice->chan->volume * voice->rsnd->sample_volume / (128.f * 128.f * 256.f) * 0.2f;
+                volume *= voice->envVol / 128.f;
+                int s1 = *voice->ptr;
+                int s2 = 0;
+                if (voice->length <= 1)
+                    s2 = s1; // FIXME
+                else
+                    s2 = *(voice->ptr + 1);
                 int64_t cphase = (int64_t)voice->phase;
+                double interp = voice->phase - cphase;
+                left += (s2 * interp + s1 * (1.0 - interp)) * volume;
+                right += (s2 * interp + s1 * (1.0 - interp)) * volume;
                 voice->phase += voice->step;
                 int todo = (int64_t)voice->phase - cphase;
                 while (todo > 0)
@@ -362,6 +407,33 @@ void RT_MusicService(void)
                             break;
                         }
                     }
+                }
+
+                if (--voice->envTimer <= 0)
+                {
+                    if (voice->envState == VE_ATTACK)
+                    {
+                        voice->envState = VE_DECAY;
+                        voice->envVol = voice->envTarget;
+                        voice->envTarget = voice->rsnd->env->decay_volume;
+                        voice->envTimer = MV_MixRate * (voice->rsnd->env->decay_time / 1000000.0);
+                        voice->envStep = (double)(voice->envTarget - voice->envVol) / (double)voice->envTimer;
+                    }
+                    else if (voice->envState == VE_DECAY)
+                    {
+                        voice->envState = VE_SUSTAIN;
+                        voice->envVol = voice->envTarget;
+                        voice->envStep = 0;
+                        voice->envTimer = 0;
+                    }
+                    else if (voice->envState == VE_RELEASE)
+                    {
+                        voice->status = VS_FREE;
+                    }
+                }
+                else
+                {
+                    voice->envVol += voice->envStep;
                 }
             }
         }
