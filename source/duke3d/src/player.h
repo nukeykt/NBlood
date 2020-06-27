@@ -309,6 +309,7 @@ extern int32_t          g_numObituaries;
 extern int32_t          g_numSelfObituaries;
 extern int32_t          mouseyaxismode;
 extern int32_t          ticrandomseed;
+extern double           g_lastInputTicks;
 
 #define SHOOT_HARDCODED_ZVEL INT32_MIN
 

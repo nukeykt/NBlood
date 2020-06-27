@@ -2994,8 +2994,9 @@ enddisplayweapon:
 #define MAXANGVEL     1024
 #define MAXHORIZVEL   256
 
-int32_t g_myAimMode = 0, g_myAimStat = 0, g_oldAimStat = 0;
+int32_t g_myAimMode, g_myAimStat, g_oldAimStat;
 int32_t mouseyaxismode = -1;
+double g_lastInputTicks;
 
 enum inputlock_t
 {
@@ -3108,13 +3109,15 @@ void P_GetInput(int const playerNum)
     input.svel -= info.dx * keyMove / analogExtent;
     input.fvel -= info.dz * keyMove / analogExtent;
 
-    static double lastInputTicks;
-    auto const    currentHiTicks    = timerGetHiTicks();
-    double const  elapsedInputTicks = currentHiTicks - lastInputTicks;
+    auto const currentHiTicks    = timerGetHiTicks();
+    double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
 
-    lastInputTicks = currentHiTicks;
+    if (!g_lastInputTicks)
+        elapsedInputTicks = 0;
 
-    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / elapsedInputTicks); };
+    g_lastInputTicks = currentHiTicks;
+
+    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
 
     if (BUTTON(gamefunc_Strafe))
     {
@@ -3351,7 +3354,8 @@ void P_GetInput(int const playerNum)
     if (thisPlayer.horizSkew)
         pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float(thisPlayer.horizSkew))));
 
-    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
 }
 
 static int32_t P_DoCounters(int playerNum)
