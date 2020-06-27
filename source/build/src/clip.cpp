@@ -1590,8 +1590,11 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
                 if ((tempint ^ tempint2) < 0)
                 {
-                    if (enginecompatibilitymode == ENGINE_19961112)
+                    if (enginecompatibilitymode == ENGINE_EDUKE32)
+                        clipupdatesector(vec, sectnum, rad);
+                    else if (enginecompatibilitymode == ENGINE_19961112)
                         updatesector(pos->x, pos->y, sectnum);
+
                     return clipReturn;
                 }
             }
