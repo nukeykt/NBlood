@@ -29,7 +29,7 @@ struct trackinfo_t {
 
 trackinfo_t tracks[16];
 
-#define RTMUSICVOICES 32
+#define RTMUSICVOICES 64
 
 struct channel_t {
     int volume;
@@ -73,6 +73,8 @@ struct voice_t {
 channel_t channel[16];
 
 voice_t voicePool[RTMUSICVOICES];
+
+float pantable[128];
 
 voice_t *RT_FindFreeVoice(void)
 {
@@ -377,8 +379,13 @@ void RT_MusicService(void)
                         continue;
                     }
                 }
-                float volume = voice->vel * voice->chan->volume * voice->rsnd->sample_volume / (128.f * 128.f * 256.f) * 0.2f;
+                float volume = voice->vel * voice->chan->volume * voice->rsnd->sample_volume / (128.f * 128.f * 256.f) * 0.5f;
                 volume *= voice->envVol / 128.f;
+                int pan = voice->chan->pan + (voice->rsnd->sample_pan - 64);
+                if (pan < 0)
+                    pan = 0;
+                if (pan > 127)
+                    pan = 127;
                 int s1 = *voice->ptr;
                 int s2 = 0;
                 if (voice->length <= 1)
@@ -387,8 +394,8 @@ void RT_MusicService(void)
                     s2 = *(voice->ptr + 1);
                 int64_t cphase = (int64_t)voice->phase;
                 double interp = voice->phase - cphase;
-                left += (s2 * interp + s1 * (1.0 - interp)) * volume;
-                right += (s2 * interp + s1 * (1.0 - interp)) * volume;
+                left += (s2 * interp + s1 * (1.0 - interp)) * volume * pantable[127 - pan];
+                right += (s2 * interp + s1 * (1.0 - interp)) * volume * pantable[pan];
                 voice->phase += voice->step;
                 int todo = (int64_t)voice->phase - cphase;
                 while (todo > 0)
@@ -469,6 +476,11 @@ void RT_MusicInit(void)
     }
     seqDivision = *(uint32_t*)&seqBuffer[64];
     seqDivision = B_BIG32(seqDivision);
+
+    for (int i = 0; i < 128; i++)
+    {
+        pantable[i] = sinf((fPI / 2.f) * i / 128.f);
+    }
 }
 
 void RT_PlaySong(void)
