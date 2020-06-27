@@ -733,7 +733,7 @@ static float vp_scale = 1.f;
 static float rt_globaldepth;
 static int rt_fxtile = 0;
 
-void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, int flags)
+void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, int flags, int aspectCorrection = true)
 {
     int xflip = (flags & 4) != 0;
     int yflip = (flags & 8) != 0;
@@ -752,6 +752,16 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
 
     if (sizx < 1.f && sizy < 1.f)
         return;
+
+    float xdim43 = ydim * (4.f / 3.f);
+    float scly = ydim / 240.f;
+    float sclx = scly;
+    float xo = (xdim - xdim43) * 0.5f;
+    if (!aspectCorrection)
+    {
+        xo = 0;
+        x *= ((float)xdim / (float)ydim) * (240.f / 320.f);
+    }
 
     float x1 = x - sizx;
     float x2 = x + sizx;
@@ -797,12 +807,12 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, 320.f, 240.f, 0, -1.f, 1.f);
+    glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
-    glTexCoord2f(u1, v1); glVertex3f(x1, y1, -rt_globaldepth);
-    glTexCoord2f(u2, v1); glVertex3f(x2, y1, -rt_globaldepth);
-    glTexCoord2f(u2, v2); glVertex3f(x2, y2, -rt_globaldepth);
-    glTexCoord2f(u1, v2); glVertex3f(x1, y2, -rt_globaldepth);
+    glTexCoord2f(u1, v1); glVertex3f(x1 * sclx + xo, y1 * scly, -rt_globaldepth);
+    glTexCoord2f(u2, v1); glVertex3f(x2 * sclx + xo, y1 * scly, -rt_globaldepth);
+    glTexCoord2f(u2, v2); glVertex3f(x2 * sclx + xo, y2 * scly, -rt_globaldepth);
+    glTexCoord2f(u1, v2); glVertex3f(x1 * sclx + xo, y2 * scly, -rt_globaldepth);
     glEnd();
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -905,7 +915,7 @@ void RT_SetupMatrix(void)
     glScalef(0.5f, 0.5f, 0.5f);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    bgluPerspective(60.f, 4.f/3.f, 5.f, 16384.f);
+    bgluPerspective(60.f, (float)xdim/(float)ydim, 5.f, 16384.f);
     bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
     glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
     RT_LookVectorCalc(dx, dy, dz);
@@ -1738,7 +1748,7 @@ void RT_DrawSpriteFace(float x, float y, float z, int pn)
 
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, rt_tspriteptr->xrepeat * tt * 4.f, rt_tspriteptr->yrepeat * tt * 4.f,
-        rt_tspritepicnum, rt_tspriteptr->cstat);
+        rt_tspritepicnum, rt_tspriteptr->cstat, 0);
     //RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, 4.f, 4.f,
     //    rt_tspriteptr->picnum, rt_tspriteptr->cstat);
 }
@@ -2923,7 +2933,7 @@ void RT_DisplayExplosions(void)
             }
             glColor4f(1.f, 1.f, 1.f, alpha * (1.f/255.f));
             RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, s.scale * tt * 4.f, s.scale * tt * 4.f,
-                0xe4a, s.orientation);
+                0xe4a, s.orientation, 0);
         }
     }
 }
@@ -3802,12 +3812,15 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, 320.f, 240.f, 0, -1.f, 1.f);
+    float xdim43 = ydim * (4.f / 3.f);
+    float scl = ydim / 240.f;
+    float xo = (xdim - xdim43) * 0.5f;
+    glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
-    glTexCoord2f(u1, v1); glVertex2f(x1, y1);
-    glTexCoord2f(u2, v1); glVertex2f(x2, y1);
-    glTexCoord2f(u2, v2); glVertex2f(x2, y2);
-    glTexCoord2f(u1, v2); glVertex2f(x1, y2);
+    glTexCoord2f(u1, v1); glVertex2f(x1 * scl + xo, y1 * scl);
+    glTexCoord2f(u2, v1); glVertex2f(x2 * scl + xo, y1 * scl);
+    glTexCoord2f(u2, v2); glVertex2f(x2 * scl + xo, y2 * scl);
+    glTexCoord2f(u1, v2); glVertex2f(x1 * scl + xo, y2 * scl);
     glEnd();
 }
 
