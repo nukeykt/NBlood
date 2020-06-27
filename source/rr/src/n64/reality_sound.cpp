@@ -447,6 +447,8 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
                     snd->outptr = 0;
                 }
             }
+            if (snd->endofdata)
+                break;
             snd->buf[i] = snd->out[snd->outptr++];
             snd->outleft--;
         }
