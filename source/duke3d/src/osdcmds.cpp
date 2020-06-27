@@ -1624,7 +1624,7 @@ int32_t registerosdcommands(void)
         { "in_mousemode", "DEPRECATED: vertical mouse aiming" CVAR_BOOL_OPTSTR, (void *)&g_myAimMode, CVAR_BOOL, 0, 1 },
 
         {
-            "in_mousebias", "emulates the original mouse code's weighting of input towards whichever axis is moving the most at any given time",
+            "in_mousebias", "DEPRECATED: emulates the original mouse code's weighting of input towards whichever axis is moving the most at any given time",
             (void *)&ud.config.MouseBias, CVAR_INT, 0, 32
         },
 
