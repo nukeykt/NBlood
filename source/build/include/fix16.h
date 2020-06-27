@@ -137,39 +137,6 @@ extern fix16_t fix16_lerp16(fix16_t inArg0, fix16_t inArg1, uint16_t inFract) FI
 extern fix16_t fix16_lerp32(fix16_t inArg0, fix16_t inArg1, uint32_t inFract) FIXMATH_FUNC_ATTRS;
 
 
-
-/*! Returns the sine of the given fix16_t.
-*/
-extern fix16_t fix16_sin_parabola(fix16_t inAngle) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the sine of the given fix16_t.
-*/
-extern fix16_t fix16_sin(fix16_t inAngle) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the cosine of the given fix16_t.
-*/
-extern fix16_t fix16_cos(fix16_t inAngle) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the tangent of the given fix16_t.
-*/
-extern fix16_t fix16_tan(fix16_t inAngle) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the arcsine of the given fix16_t.
-*/
-extern fix16_t fix16_asin(fix16_t inValue) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the arccosine of the given fix16_t.
-*/
-extern fix16_t fix16_acos(fix16_t inValue) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the arctangent of the given fix16_t.
-*/
-extern fix16_t fix16_atan(fix16_t inValue) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the arctangent of inY/inX.
-*/
-extern fix16_t fix16_atan2(fix16_t inY, fix16_t inX) FIXMATH_FUNC_ATTRS;
-
 static const fix16_t fix16_rad_to_deg_mult = 3754936;
 static inline fix16_t fix16_rad_to_deg(fix16_t radians)
     { return fix16_mul(radians, fix16_rad_to_deg_mult); }
@@ -179,31 +146,10 @@ static inline fix16_t fix16_deg_to_rad(fix16_t degrees)
     { return fix16_mul(degrees, fix16_deg_to_rad_mult); }
 
 
-
-/*! Returns the square root of the given fix16_t.
-*/
-extern fix16_t fix16_sqrt(fix16_t inValue) FIXMATH_FUNC_ATTRS;
-
 /*! Returns the square of the given fix16_t.
 */
 static inline fix16_t fix16_sq(fix16_t x)
     { return fix16_mul(x, x); }
-
-/*! Returns the exponent (e^) of the given fix16_t.
-*/
-extern fix16_t fix16_exp(fix16_t inValue) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the natural logarithm of the given fix16_t.
- */
-extern fix16_t fix16_log(fix16_t inValue) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the base 2 logarithm of the given fix16_t.
- */
-extern fix16_t fix16_log2(fix16_t x) FIXMATH_FUNC_ATTRS;
-
-/*! Returns the saturated base 2 logarithm of the given fix16_t.
- */
-extern fix16_t fix16_slog2(fix16_t x) FIXMATH_FUNC_ATTRS;
 
 /*! Convert fix16_t value to a string.
  * Required buffer length for largest values is 13 bytes.
