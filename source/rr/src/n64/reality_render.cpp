@@ -725,6 +725,12 @@ void RT_GLInit(void)
     glLinkProgram(rt_shaderprogram);
 }
 
+void RT_ProjectionCorrect(void)
+{
+    float factor = 240.f / (240.f - 32.f);
+    glScalef(factor, factor, 1.f);
+}
+
 static float x_vs = 160.f;
 static float y_vs = 120.f;
 static float x_vt = 160.f;
@@ -807,6 +813,7 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
+    RT_ProjectionCorrect();
     glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(u1, v1); glVertex3f(x1 * sclx + xo, y1 * scly, -rt_globaldepth);
@@ -851,7 +858,7 @@ void RT_DisplaySky(void)
     rt_globaldepth = 0.f;
     setfxcolor(rt_sky_color[1][0], rt_sky_color[1][1], rt_sky_color[1][2], rt_sky_color[0][0], rt_sky_color[0][1], rt_sky_color[0][2]);
     glDisable(GL_BLEND);
-    RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f, 103.f, 3976, 0);
+    RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f * ((float)xdim / float(ydim)) * (240.f/320.f), 103.f, 3976, 0);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
 }
@@ -875,8 +882,6 @@ void RT_EnablePolymost()
 }
 
 static GLfloat rt_projmatrix[16];
-
-
 static vec3f_t rt_look[2];
 
 void RT_LookVectorCalc(float dx, float dy, float dz)
@@ -914,10 +919,16 @@ void RT_SetupMatrix(void)
     glLoadIdentity();
     glScalef(0.5f, 0.5f, 0.5f);
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    bgluPerspective(60.f, (float)xdim/(float)ydim, 5.f, 16384.f);
-    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
-    glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
+    for (int i = 0; i < 2; i++)
+    {
+        glLoadIdentity();
+        if (i == 1)
+            RT_ProjectionCorrect();
+        bgluPerspective(60.f, (float)xdim/(float)ydim, 5.f, 16384.f);
+        bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+        if (i == 0)
+            glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
+    }
     RT_LookVectorCalc(dx, dy, dz);
 }
 
@@ -2377,7 +2388,7 @@ int visiblesectors[MAXSECTORS];
 void RT_ScanSectors(int sectnum)
 {
     float viewhorizang = RT_GetAngle(rt_globalhoriz - 100.f, 128.f) * (-180.f / fPI);
-    float viewrange = fabs(viewhorizang) * (29.f / 46.f) + 35.f;
+    float viewrange = 88.f/*fabs(viewhorizang) * (29.f / 46.f) + 35.f*/;
     float viewangle = RT_AngleMod(-rt_globalang / (1024.f/180.f) + 90.f);
     float viewangler1 = viewangle + viewrange;
     float viewangler2 = viewangle - viewrange;
@@ -3812,6 +3823,8 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+
+    RT_ProjectionCorrect();
     float xdim43 = ydim * (4.f / 3.f);
     float scl = ydim / 240.f;
     float xo = (xdim - xdim43) * 0.5f;
