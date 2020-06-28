@@ -75,10 +75,8 @@ FIXMATH_FUNC_ATTRS fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
         if (~upper)
                 return FIX16_OVERFLOW;
 
-        #ifndef FIXMATH_NO_ROUNDING
         // This adjustment is required in order to round -1/2 correctly
         product--;
-        #endif
     }
     else
     {
@@ -86,14 +84,10 @@ FIXMATH_FUNC_ATTRS fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
                 return FIX16_OVERFLOW;
     }
 
-    #ifdef FIXMATH_NO_ROUNDING
-    return product >> 16;
-    #else
     fix16_t result = product >> 16;
     result += (product & 0x8000) >> 15;
 
     return result;
-    #endif
 }
 
 /* Wrapper around fix16_mul to add saturating arithmetic. */
@@ -179,10 +173,8 @@ FIXMATH_FUNC_ATTRS fix16_t fix16_div(fix16_t a, fix16_t b)
         bit_pos--;
     }
 
-    #ifndef FIXMATH_NO_ROUNDING
     // Quotient is always positive so rounding is easy
     quotient++;
-    #endif
 
     fix16_t result = quotient >> 1;
 
