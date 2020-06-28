@@ -1121,15 +1121,15 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         {
             g_screenCapture = 0;
 
-            tileInvalidate(TILE_SAVESHOT, 0, 255);
-
             if (videoGetRenderMode() == REND_CLASSIC)
                 renderRestoreTarget();
 #ifdef USE_OPENGL
             else
+            {
                 G_ReadGLFrame();
+                tileInvalidate(TILE_SAVESHOT, 0, 255);
+            }
 #endif
-            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
         else if (screenTilting)
         {
@@ -5001,6 +5001,8 @@ FAKE_F3:
                 g_quickload = &sv;
                 G_SavePlayerMaybeMulti(sv);
             }
+
+            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
 
         if (BUTTON(gamefunc_Third_Person_View))
@@ -7021,8 +7023,8 @@ MAIN_LOOP_RESTART:
 
             G_SavePlayerMaybeMulti(g_lastautosave, true);
             g_quickload = &g_lastautosave;
-
             g_saveRequested = false;
+            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
 
         if (myplayer.gm & MODE_DEMO)
