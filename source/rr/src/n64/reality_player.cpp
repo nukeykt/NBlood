@@ -1059,7 +1059,7 @@ void RT_P_ProcessWeapon(int playerNum)
                     A_Shoot(pPlayer->i, DN64TILE2596);
                     A_Shoot(pPlayer->i, DN64TILE2596);
                 }
-                pPlayer->ammo_amount[SHOTGUN_WEAPON]--;
+                pPlayer->ammo_amount[pPlayer->curr_weapon]--;
                 pPlayer->dn64_370 = 8;
 
                 A_PlaySound(80, pPlayer->i);

@@ -3345,6 +3345,8 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
 
     fullscreen_tint_gl(clamp(pal->r * 4, 0, 255), clamp(pal->g * 4, 0, 255),
                        clamp(pal->b * 4, 0, 255), clamp(pal->f * 4, 0, 255));
+
+    glColor4f(1.f, 1.f, 1.f, 1.f);
 }
 
 void RT_MS_Reset(void)
@@ -3671,7 +3673,7 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
     {
         globalcolorgreen = (globalcolorgreen * 384) >> 8;
         globalcolorred = (globalcolorred * 171) >> 8;
-        globalcolorblue = (globalcolorblue * 384) >> 8;
+        globalcolorblue = (globalcolorblue * 171) >> 8;
         shade = (shade + 512) / 3;
     }
     globalcolorred = (shade * globalcolorred) / 256;

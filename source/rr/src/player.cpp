@@ -831,7 +831,7 @@ growspark_rr:
                         }
                     }
 
-                    if (!RR || sector[hitData.sect].lotag != ST_1_ABOVE_WATER)
+                    if (!REALITY && (!RR || sector[hitData.sect].lotag != ST_1_ABOVE_WATER))
                         A_Spawn(spawnedSprite, SMALLSMOKE);
                 }
 
@@ -1286,7 +1286,7 @@ growspark_rr:
                     Zvel = fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 81;
 
                 if (projecTile2 == RPG)
-                    A_PlaySound(RPG_SHOOT, spriteNum);
+                    A_PlaySound(REALITY ? 6 : RPG_SHOOT, spriteNum);
                 else if (RRRA)
                 {
                     if (projecTile == RPG2)
@@ -1358,7 +1358,7 @@ growspark_rr:
             pReturn->extra += (krand2() & 7);
             if (REALITY)
             {
-                if (projecTile == RPG)
+                if (projecTile2 == RPG)
                     pReturn->yvel = (playerNum >= 0 && otherSprite >= 0) ? otherSprite : -1;  // RPG_YVEL
                 if (projecTile == DN64TILE2606)
                 {

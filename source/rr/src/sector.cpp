@@ -3674,7 +3674,11 @@ void P_HandleKeys(int playerNum)
     uint32_t playerBits = g_player[playerNum].inputBits->bits;
     if (sprite[pPlayer->i].extra <= 0)
         return;
-    if (pPlayer->aim_mode)
+
+    int const aimMode = pPlayer->aim_mode;
+
+    pPlayer->aim_mode = (playerBits>>SK_AIMMODE)&1;
+    if (pPlayer->aim_mode < aimMode)
         pPlayer->return_to_center = 9;
     
     if (TEST_SYNC_KEY(playerBits, SK_QUICK_KICK) && pPlayer->quick_kick == 0)
