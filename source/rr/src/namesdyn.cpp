@@ -3108,6 +3108,22 @@ void G_InitDynamicTiles(void)
         WeaponPickupSprites[12] = FIRSTGUNSPRITE;
         WeaponPickupSprites[13] = SHOTGUNSPRITE;
         WeaponPickupSprites[14] = DEVISTATORSPRITE;
+
+        g_blimpSpawnItems[0] = RPGSPRITE;
+        g_blimpSpawnItems[1] = CHAINGUNSPRITE;
+        g_blimpSpawnItems[2] = RPGAMMO;
+        g_blimpSpawnItems[3] = DEVISTATORAMMO;
+        g_blimpSpawnItems[4] = DEVISTATORAMMO;
+        g_blimpSpawnItems[5] = JETPACK;
+        g_blimpSpawnItems[6] = SHIELD;
+        g_blimpSpawnItems[7] = FIRSTAID;
+        g_blimpSpawnItems[8] = STEROIDS;
+        g_blimpSpawnItems[9] = DEVISTATORAMMO;
+        g_blimpSpawnItems[10] = DEVISTATORAMMO;
+        g_blimpSpawnItems[11] = DEVISTATORSPRITE;
+        g_blimpSpawnItems[12] = DEVISTATORAMMO;
+        g_blimpSpawnItems[13] = FREEZESPRITE;
+        g_blimpSpawnItems[14] = FREEZEAMMO;
     }
     else
     {

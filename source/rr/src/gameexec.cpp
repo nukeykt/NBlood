@@ -455,11 +455,22 @@ void A_Fall(int const spriteNum)
 #endif
        )
     {
-        if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER && pSprite->zvel > 3122)
-            pSprite->zvel = 3144;
-        if (pSprite->zvel < 6144)
+        if (REALITY)
+        {
             pSprite->zvel += spriteGravity;
-        else pSprite->zvel = 6144;
+            if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER && pSprite->zvel > 3072)
+                pSprite->zvel = 3072;
+            if (pSprite->zvel > 6144)
+                pSprite->zvel = 6144;
+        }
+        else
+        {
+            if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER && pSprite->zvel > 3122)
+                pSprite->zvel = 3144;
+            if (pSprite->zvel < 6144)
+                pSprite->zvel += spriteGravity;
+            else pSprite->zvel = 6144;
+        }
         pSprite->z += pSprite->zvel;
     }
 
@@ -798,21 +809,43 @@ GAMEEXEC_STATIC void VM_Move(void)
             {
                 if (!RR && vm.pSprite->picnum == COMMANDER)
                 {
-                    int32_t nSectorZ;
-                    // NOTE: COMMANDER updates both actor[].floorz and
-                    // .ceilingz regardless of its zvel.
-                    vm.pActor->floorz = nSectorZ = VM_GetFlorZOfSlope();
-                    if (vm.pSprite->z > nSectorZ-ZOFFSET3)
+                    if (REALITY)
                     {
-                        vm.pSprite->z = nSectorZ-ZOFFSET3;
-                        vm.pSprite->zvel = 0;
-                    }
+                        int32_t nSectorZ;
+                        // NOTE: COMMANDER updates both actor[].floorz and
+                        // .ceilingz regardless of its zvel.
+                        vm.pActor->ceilingz = nSectorZ = VM_GetCeilZOfSlope();
+                        if (vm.pSprite->z < nSectorZ+(80<<8))
+                        {
+                            vm.pSprite->z = nSectorZ+(80<<8);
+                            vm.pSprite->zvel = 0;
+                        }
 
-                    vm.pActor->ceilingz = nSectorZ = VM_GetCeilZOfSlope();
-                    if (vm.pSprite->z < nSectorZ+(80<<8))
+                        vm.pActor->floorz = nSectorZ = VM_GetFlorZOfSlope();
+                        if (vm.pSprite->z > nSectorZ-ZOFFSET3)
+                        {
+                            vm.pSprite->z = nSectorZ-ZOFFSET3;
+                            vm.pSprite->zvel = 0;
+                        }
+                    }
+                    else
                     {
-                        vm.pSprite->z = nSectorZ+(80<<8);
-                        vm.pSprite->zvel = 0;
+                        int32_t nSectorZ;
+                        // NOTE: COMMANDER updates both actor[].floorz and
+                        // .ceilingz regardless of its zvel.
+                        vm.pActor->floorz = nSectorZ = VM_GetFlorZOfSlope();
+                        if (vm.pSprite->z > nSectorZ-ZOFFSET3)
+                        {
+                            vm.pSprite->z = nSectorZ-ZOFFSET3;
+                            vm.pSprite->zvel = 0;
+                        }
+
+                        vm.pActor->ceilingz = nSectorZ = VM_GetCeilZOfSlope();
+                        if (vm.pSprite->z < nSectorZ+(80<<8))
+                        {
+                            vm.pSprite->z = nSectorZ+(80<<8);
+                            vm.pSprite->zvel = 0;
+                        }
                     }
                 }
                 else
@@ -1026,6 +1059,8 @@ static void VM_AddInventory(DukePlayer_t * const pPlayer, int const itemNum, int
     {
         int16_t & shield_amount = pPlayer->inv_amount[GET_SHIELD];
         shield_amount = min(shield_amount + nAmount, pPlayer->max_shield_amount);
+        if (REALITY)
+            pPlayer->inven_icon = ICON_SHIELD;
         break;
     }
 
@@ -1208,7 +1243,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             // where they crashed into the ground when killed
             if (!(pSprite->picnum == APLAYER && pSprite->extra > 0) && pSprite->pal != 1 && pSprite->picnum != DRONE)
             {
-                A_PlaySound(SQUISHED,spriteNum);
+                A_PlaySound(REALITY ? 44 : SQUISHED,spriteNum);
                 if (hitSprite)
                 {
                     A_DoGuts(spriteNum,JIBS6,5);
@@ -1232,7 +1267,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
                 changespritesect(spriteNum, newsect);
 
             if (!DEER)
-                A_PlaySound(THUD, spriteNum);
+                A_PlaySound(REALITY ? 124 : THUD, spriteNum);
         }
     }
 
@@ -1979,7 +2014,9 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 }
                 insptr++;
                 if (!RR || ((g_spriteExtra[vm.spriteNum] < 1 || g_spriteExtra[vm.spriteNum] == 128) && A_CheckSpriteFlags(vm.spriteNum, SFLAG_KILLCOUNT)))
+                {
                     P_AddKills(pPlayer, *insptr);
+                }
                 insptr++;
                 vm.pActor->actorstayput = -1;
                 continue;
@@ -2298,10 +2335,20 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
 
             case CON_IFWASWEAPON:
-            case CON_IFSPAWNEDBY:
+            {
                 insptr++;
-                VM_CONDITIONAL(vm.pActor->picnum == *insptr);
+                int picnum = vm.pActor->picnum;
+                if (REALITY)
+                {
+                    if (picnum == DN64TILE2599 || picnum == RPG)
+                        picnum = RADIUSEXPLOSION;
+                    if (picnum == DN64TILE2598 || picnum == DN64TILE2597)
+                        picnum = SHOTSPARK1;
+                }
+
+                VM_CONDITIONAL(picnum == *insptr);
                 continue;
+            }
 
             case CON_IFAI:
                 insptr++;
@@ -2512,6 +2559,11 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
             case CON_GUTS:
                 A_DoGuts(vm.spriteNum, *(insptr + 1), *(insptr + 2));
                 insptr += 3;
+                continue;
+
+            case CON_IFSPAWNEDBY:
+                insptr++;
+                VM_CONDITIONAL(vm.pActor->picnum == *insptr);
                 continue;
 
             case CON_SLAPPLAYER:
@@ -3492,7 +3544,10 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
 
             case RT_CON_ADDKILLS:
                 insptr++;
-                P_AddKills(pPlayer, *insptr);
+                if (sprite[vm.spriteNum].picnum == DN64TILE3805 || sprite[vm.spriteNum].picnum == DN64TILE3797 || sprite[vm.spriteNum].picnum == DN64TILE3821)
+                    pPlayer->dn64_36e += *insptr;
+                else
+                    P_AddKills(pPlayer, *insptr);
                 insptr++;
                 vm.pActor->actorstayput = -1;
                 continue;
@@ -3522,6 +3577,7 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
 
             case RT_CON_ENDOFGAME:
                 insptr++;
+                g_earthquakeTime = *insptr;
                 pPlayer->timebeforeexit  = *insptr++;
                 pPlayer->customexitsound = -1;
                 ud.eog                   = 1;
@@ -3599,10 +3655,17 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
                 continue;
 
             case RT_CON_IFWASWEAPON:
-            case RT_CON_IFSPAWNEDBY:
+            {
                 insptr++;
-                RT_VM_CONDITIONAL(vm.pActor->picnum == *insptr);
+                int picnum = vm.pActor->picnum;
+                if (picnum == DN64TILE2599 || picnum == RPG)
+                    picnum = RADIUSEXPLOSION;
+                if (picnum == DN64TILE2598 || picnum == DN64TILE2597)
+                    picnum = SHOTSPARK1;
+
+                VM_CONDITIONAL(picnum == *insptr);
                 continue;
+            }
 
             case RT_CON_IFAI:
                 insptr++;
@@ -3628,17 +3691,21 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
                 insptr++;
                 {
                     int debrisTile = *insptr++;
+                    int count = (*insptr) / numplayers;
+
+                    if (count < 1)
+                        count = 1;
 
                     if ((unsigned)vm.pSprite->sectnum < MAXSECTORS)
-                        for (native_t cnt = (*insptr) - 1; cnt >= 0; cnt--)
+                        for (native_t cnt = count - 1; cnt >= 0; cnt--)
                         {
                             int const tileOffset = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? 0 : (krand2() % 3);
 
                             int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2(), r5 = krand2(), r6 = krand2(), r7 = krand2(), r8 = krand2();
-                            int const spriteNum = A_InsertSprite(vm.pSprite->sectnum, vm.pSprite->x + (r8 & 255) - 128,
-                                                                 vm.pSprite->y + (r7 & 255) - 128, vm.pSprite->z - (8 << 8) - (r6 & 8191),
-                                                                 debrisTile + tileOffset, vm.pSprite->shade, 32 + (r5 & 15), 32 + (r4 & 15),
-                                                                 r3 & 2047, (r2 & 127) + 32, -(r1 & 2047), vm.spriteNum, 5);
+                            int const spriteNum = A_InsertSprite(vm.pSprite->sectnum, vm.pSprite->x + (r1 & 255) - 128,
+                                                                 vm.pSprite->y + (r2 & 255) - 128, vm.pSprite->z - (8 << 8) - (r3 & 8191),
+                                                                 debrisTile + tileOffset, vm.pSprite->shade, 32 + (r4 & 15), 32 + (r5 & 15),
+                                                                 r6 & 2047, (r7 & 127) + 32, -(r8 & 2047), vm.spriteNum, 5);
 
                             sprite[spriteNum].yvel = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? g_blimpSpawnItems[cnt % 14] : -1;
                             sprite[spriteNum].pal  = vm.pSprite->pal;
@@ -3736,7 +3803,7 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
                     || ((moveFlags & pjetpack) && pPlayer->jetpack_on)
                     || ((moveFlags & ponsteroids) && pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400)
                     || ((moveFlags & ponground) && pPlayer->on_ground)
-                    || ((moveFlags & palive) && sprite[pPlayer->i].xrepeat > 32 && sprite[pPlayer->i].extra > 0 && pPlayer->timebeforeexit == 0)
+                    || ((moveFlags & palive) && sprite[pPlayer->i].xrepeat > 32 && sprite[pPlayer->i].extra > 0)
                     || ((moveFlags & pdead) && sprite[pPlayer->i].extra <= 0))
                     nResult = 1;
                 else if ((moveFlags & pfacing))
@@ -3761,6 +3828,11 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
             case RT_CON_GUTS:
                 A_DoGuts(vm.spriteNum, *(insptr + 1), *(insptr + 2));
                 insptr += 3;
+                continue;
+
+            case RT_CON_IFSPAWNEDBY:
+                insptr++;
+                RT_VM_CONDITIONAL(vm.pActor->picnum == *insptr);
                 continue;
 
             case RT_CON_WACKPLAYER:
@@ -3824,7 +3896,7 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
             case RT_CON_IFBULLETNEAR: RT_VM_CONDITIONAL(A_Dodge(vm.pSprite) == 1); continue;
 
             case RT_CON_IFRESPAWN:
-                if (A_CheckEnemySprite(vm.pSprite))
+                if (A_CheckEnemySprite(vm.pSprite) || A_CheckCorpseSprite(vm.pSprite))
                     RT_VM_CONDITIONAL(ud.respawn_monsters);
                 else if (A_CheckInventorySprite(vm.pSprite))
                     RT_VM_CONDITIONAL(ud.respawn_inventory);

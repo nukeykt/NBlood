@@ -7704,6 +7704,7 @@ static void A_InitEnemyFlags(void)
         int SolidEnemies[] = { BOSS1, BOSS2, BOSS3, RECON, ROTATEGUN };
         int NoWaterDipEnemies[] = { OCTABRAIN, COMMANDER, DRONE };
         int GreenSlimeFoodEnemies[] = { LIZTROOP, LIZMAN, PIGCOP, NEWBEAST };
+        int CorpseSprites[] = { LIZTROOPDSPRITE, 1957, PIGCOPDEADSPRITE, LIZMANDEADSPRITE, 2685, 2809, 4689 };
 
         for (bssize_t i=GREENSLIME; i<=GREENSLIME+7; i++)
             SETFLAG(i, SFLAG_HARDCODED_BADGUY|SFLAG_BADGUY_TILE);
@@ -7719,6 +7720,9 @@ static void A_InitEnemyFlags(void)
 
         for (bssize_t i=ARRAY_SIZE(GreenSlimeFoodEnemies)-1; i>=0; i--)
             SETFLAG(GreenSlimeFoodEnemies[i], SFLAG_GREENSLIMEFOOD);
+
+        for (bssize_t i=ARRAY_SIZE(CorpseSprites)-1; i>=0; i--)
+            SETFLAG(CorpseSprites[i], SFLAG_CORPSE);
     }
     else
     {
