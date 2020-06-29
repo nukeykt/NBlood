@@ -4721,6 +4721,15 @@ void P_CheckSectors(int playerNum)
 {
     DukePlayer_t *const pPlayer = g_player[playerNum].ps;
 
+    if (REALITY && pPlayer->cursectnum == -1)
+    {
+        if (sprite[pPlayer->i].extra <= 0 || ud.noclip)
+            return;
+        P_QuickKill(pPlayer);
+        A_PlaySound(44, pPlayer->i);
+        return;
+    }
+
     if (pPlayer->cursectnum > -1)
     {
         sectortype *const pSector = &sector[pPlayer->cursectnum];
@@ -4735,6 +4744,8 @@ void P_CheckSectors(int playerNum)
                 return;
 
             case UINT16_MAX:
+                // if (REALITY && ud.multimode > 1 && ud.coop == 0 && dukematch_mode != 1)
+                //     break;
                 pSector->lotag = 0;
                 for (bssize_t TRAVERSE_CONNECT(playerNum))
                     g_player[playerNum].ps->gm = MODE_EOL;
@@ -4759,6 +4770,8 @@ void P_CheckSectors(int playerNum)
                 return;
 
             case UINT16_MAX-1:
+                // if (REALITY && ud.multimode > 1 && ud.coop == 0 && dukematch_mode != 1)
+                //     break;
                 pSector->lotag           = 0;
                 pPlayer->timebeforeexit  = GAMETICSPERSEC * 8;
                 pPlayer->customexitsound = pSector->hitag;
@@ -4784,7 +4797,7 @@ void P_CheckSectors(int playerNum)
     if (pPlayer->gm &MODE_TYPE || sprite[pPlayer->i].extra <= 0)
         return;
 
-    if (ud.cashman && TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_OPEN))
+    if (!REALITY && ud.cashman && TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_OPEN))
     {
         if (RR && !RRRA)
             g_canSeePlayer = -1;
@@ -4907,7 +4920,7 @@ void P_CheckSectors(int playerNum)
             if (nearSprite == -1 && nearWall == -1 && nearSector == -1)
                 neartag(pPlayer->pos.x, pPlayer->pos.y, pPlayer->pos.z+ZOFFSET2, sprite[pPlayer->i].sectnum, intang, &nearSector,
                     &nearWall, &nearSprite, &nearDist, 1280, 1, our_neartag_blacklist);
-            if (nearSprite == -1 && nearWall == -1 && nearSector == -1)
+            if (!REALITY && nearSprite == -1 && nearWall == -1 && nearSector == -1)
             {
                 neartag(pPlayer->pos.x, pPlayer->pos.y, pPlayer->pos.z+ZOFFSET2, sprite[pPlayer->i].sectnum, intang, &nearSector,
                     &nearWall, &nearSprite, &nearDist, 1280, 3, our_neartag_blacklist);
@@ -5024,7 +5037,7 @@ void P_CheckSectors(int playerNum)
                 if (pPlayer->last_pissed_time == 0)
                 {
                     if (ud.lockout == 0)
-                        A_PlaySound(RR ? 435 : DUKE_URINATE, pPlayer->i);
+                        A_PlaySound(RR ? 435 : (REALITY ? 23 : DUKE_URINATE), pPlayer->i);
 
                     pPlayer->last_pissed_time = GAMETICSPERSEC * 220;
                     pPlayer->transporter_hold = 29 * 2;
@@ -5043,12 +5056,12 @@ void P_CheckSectors(int playerNum)
                     else if (sprite[pPlayer->i].extra < pPlayer->max_player_health)
                         sprite[pPlayer->i].extra = pPlayer->max_player_health;
                 }
-                else if (!A_CheckSoundPlaying(nearSprite,RR ? DUKE_GRUNT : FLUSH_TOILET))
+                else if (!A_CheckSoundPlaying(nearSprite,RR ? DUKE_GRUNT : (REALITY ? 53 : FLUSH_TOILET)))
                 {
                     if (RR && !RRRA)
                         g_canSeePlayer = -1;
 
-                    A_PlaySound(RR ? DUKE_GRUNT : FLUSH_TOILET,nearSprite);
+                    A_PlaySound(RR ? DUKE_GRUNT : (REALITY ? 53 : FLUSH_TOILET),nearSprite);
                 }
                 return;
 
@@ -5093,7 +5106,7 @@ void P_CheckSectors(int playerNum)
                         sprite[pPlayer->i].extra++;
                         if (RR && !RRRA)
                             g_canSeePlayer = -1;
-                        A_PlaySound(DUKE_DRINKING,pPlayer->i);
+                        A_PlaySound(REALITY ? 29 : DUKE_DRINKING,pPlayer->i);
                     }
                 }
                 return;
@@ -5101,7 +5114,7 @@ void P_CheckSectors(int playerNum)
             case PLUG__STATIC:
                 if (RR && !RRRA)
                     g_canSeePlayer = -1;
-                A_PlaySound(SHORT_CIRCUIT, pPlayer->i);
+                A_PlaySound(REALITY ? 19 : SHORT_CIRCUIT, pPlayer->i);
                 sprite[pPlayer->i].extra -= 2+(krand2()&3);
 
                 P_PalFrom(pPlayer, 32, 48,48,64);
@@ -5113,17 +5126,19 @@ void P_CheckSectors(int playerNum)
                 // Try to find a camera sprite for the viewscreen.
                 for (bssize_t SPRITES_OF(STAT_ACTOR, spriteNum))
                 {
-                    if (PN(spriteNum) == CAMERA1 && SP(spriteNum) == 0 && sprite[nearSprite].hitag == SLT(spriteNum))
+                    if (PN(spriteNum) == CAMERA1 && (REALITY || SP(spriteNum) == 0) && sprite[nearSprite].hitag == SLT(spriteNum))
                     {
-                        sprite[spriteNum].yvel   = 1;  // Using this camera
-                        A_PlaySound(MONITOR_ACTIVE, pPlayer->i);
+                        if (!REALITY)
+                            sprite[spriteNum].yvel   = 1;  // Using this camera
+                        A_PlaySound(REALITY ? 169 : MONITOR_ACTIVE, pPlayer->i);
                         sprite[nearSprite].owner = spriteNum;
                         sprite[nearSprite].yvel  = 1;  // VIEWSCREEN_YVEL
                         g_curViewscreen          = nearSprite;
 
                         int const playerSectnum = pPlayer->cursectnum;
                         pPlayer->cursectnum     = SECT(spriteNum);
-                        P_UpdateScreenPal(pPlayer);
+                        if (!REALITY)
+                            P_UpdateScreenPal(pPlayer);
                         pPlayer->cursectnum     = playerSectnum;
                         pPlayer->newowner       = spriteNum;
 
@@ -5155,7 +5170,7 @@ void P_CheckSectors(int playerNum)
             {
                 if (RR && !RRRA)
                     g_canSeePlayer = -1;
-                A_PlaySound(((krand2()&255) < 16) ? DUKE_SEARCH2 : DUKE_SEARCH, pPlayer->i);
+                A_PlaySound(((krand2()&255) < 16) ? (REALITY ? 164 : DUKE_SEARCH2) : (REALITY ? 166 : DUKE_SEARCH), pPlayer->i);
                 return;
             }
         }

@@ -86,11 +86,14 @@ void G_ClearCameraView(DukePlayer_t *ps)
     ps->q16ang = ps->oq16ang;
 
     updatesector(ps->pos.x, ps->pos.y, &ps->cursectnum);
-    P_UpdateScreenPal(ps);
+    if (!REALITY)
+    {
+        P_UpdateScreenPal(ps);
 
-    for (bssize_t SPRITES_OF(STAT_ACTOR, k))
-        if (sprite[k].picnum==CAMERA1)
-            sprite[k].yvel = 0;
+        for (bssize_t SPRITES_OF(STAT_ACTOR, k))
+            if (sprite[k].picnum==CAMERA1)
+                sprite[k].yvel = 0;
+    }
 }
 
 // Manhattan distance between wall-point and sprite.

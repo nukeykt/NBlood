@@ -15,7 +15,7 @@ struct rt_adpcm_book_t {
 struct rt_adpcm_loop_t {
     uint32_t start;
     uint32_t end;
-    uint32_t count;
+    int32_t count;
     int16_t state[16];
     uint32_t unknown1;
 };
@@ -23,7 +23,7 @@ struct rt_adpcm_loop_t {
 struct rt_raw_loop_t {
     uint32_t start;
     uint32_t end;
-    uint32_t count;
+    int32_t count;
 };
 
 struct rt_adpcm_wave_t {
@@ -45,9 +45,9 @@ struct rt_wave_t {
 };
 
 struct rt_env_t {
-    uint32_t attack_time;
-    uint32_t decay_time;
-    uint32_t release_time;
+    int32_t attack_time;
+    int32_t decay_time;
+    int32_t release_time;
     uint8_t attack_volume;
     uint8_t decay_volume;
     uint16_t pad;

@@ -189,6 +189,18 @@ static rt_instrument_t *RT_LoadInstrument(uint32_t ctlOffset, uint32_t instOffse
     for (int i = 0; i < inst->sound_count; i++)
     {
         inst->sounds[i] = RT_LoadSound(ctlOffset, soundOffset[i], tblOffset);
+        if (inst->sounds[i]->wave->adpcm->loop)
+        {
+            initprintf("Sound %i is looped\n", i);
+        }
+        // if (inst->sounds[i]->env->attack_time != -1 || inst->sounds[i]->env->decay_time != -1 || inst->sounds[i]->env->release_time != -1)
+        {
+            auto env = inst->sounds[i]->env;
+            initprintf("Sound %i envelope\n", i);
+            initprintf("Attack time=%i volume=%i\n", env->attack_time, env->attack_volume);
+            initprintf("Decay time=%i volume=%i\n", env->decay_time, env->decay_volume);
+            initprintf("Release time=%i\n", env->release_time);
+        }
     }
     Xfree(soundOffset);
     return inst;
