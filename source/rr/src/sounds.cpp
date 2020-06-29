@@ -147,6 +147,12 @@ void S_PauseMusic(bool paused)
 
     MusicPaused = paused;
 
+    if (REALITY && g_musicIndex == MUS_INTRO)
+    {
+        RT_PauseSong(paused);
+        return;
+    }
+
     if (MusicIsWaveform)
     {
         FX_PauseVoice(MusicVoice, paused);

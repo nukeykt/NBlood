@@ -509,6 +509,14 @@ void RT_PlaySong(void)
     MV_HookMusicRoutine(RT_MusicService);
 }
 
+void RT_PauseSong(bool paused)
+{
+    if (paused)
+        MV_UnhookMusicRoutine();
+    else
+        MV_HookMusicRoutine(RT_MusicService);
+}
+
 void RT_StopSong(void)
 {
     MV_UnhookMusicRoutine();
