@@ -749,7 +749,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
     }
     else
     {
-        if (sndist > 32767 && PN(spriteNum) != MUSICANDSFX && (snd.m & (SF_LOOP|SF_MSFX)) == 0)
+        if (!REALITY && sndist > 32767 && PN(spriteNum) != MUSICANDSFX && (snd.m & (SF_LOOP|SF_MSFX)) == 0)
             return -1;
 
         if (pOther->cursectnum > -1 && sector[pOther->cursectnum].lotag == ST_2_UNDERWATER

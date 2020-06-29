@@ -7713,7 +7713,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
         case SE_30_TWO_WAY_TRAIN:
             if (REALITY)
             {
-                if (pSprite->xvel && pSprite->pal == 0)
+                if (pSprite->xvel && pSprite->pal)
                     if (!S_CheckSoundPlaying(spriteNum,actor[spriteNum].lastv.x))
                         A_PlaySound(actor[spriteNum].lastv.x,spriteNum);
 

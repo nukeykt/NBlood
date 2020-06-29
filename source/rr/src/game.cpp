@@ -4614,18 +4614,20 @@ rr_badguy:
             {
                 case SE_6_SUBWAY:
                 case SE_14_SUBWAY_CAR:
-                    S_FindMusicSFX(sectNum, &spriteNum);
-                    // XXX: uh.. what?
-                    if (spriteNum == -1)
-                    {
-                        if (RR && sector[pSprite->sectnum].floorpal == 7)
-                            spriteNum = 456;
-                        else
-                            spriteNum = SUBWAY;
-                    }
-                    pActor->lastv.x = spriteNum;
-                    fallthrough__;
                 case SE_30_TWO_WAY_TRAIN:
+                    if (pSprite->lotag != SE_30_TWO_WAY_TRAIN || (REALITY && pSprite->pal))
+                    {
+                        S_FindMusicSFX(sectNum, &spriteNum);
+                        // XXX: uh.. what?
+                        if (spriteNum == -1)
+                        {
+                            if (RR && sector[pSprite->sectnum].floorpal == 7)
+                                spriteNum = 456;
+                            else
+                                spriteNum = REALITY ? 50 : SUBWAY;
+                        }
+                        pActor->lastv.x = spriteNum;
+                    }
                     if (g_netServer || numplayers > 1)
                         break;
                     fallthrough__;

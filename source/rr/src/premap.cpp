@@ -2109,7 +2109,8 @@ static void resetpspritevars(char gameMode)
     for (TRAVERSE_CONNECT(i))
     {
         if (i) Bmemcpy(g_player[i].ps,g_player[0].ps,sizeof(DukePlayer_t));
-        P_PalFrom(g_player[i].ps, 64, 0, 0, 0);
+        if (REALITY)
+            P_PalFrom(g_player[i].ps, 64, 0, 0, 0);
     }
 
     if (ud.recstat != 2)

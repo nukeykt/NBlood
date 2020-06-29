@@ -659,7 +659,7 @@ int G_ActivateWarpElevators(int spriteNum, int warpDir)
     if (i == -1)
         return 1; // No find
 
-    A_PlaySound(warpDir ? ELEVATOR_ON : ELEVATOR_OFF, spriteNum);
+    A_PlaySound(warpDir ? (REALITY ? 46 : ELEVATOR_ON) : (REALITY ? 48: ELEVATOR_OFF), spriteNum);
 
     for (SPRITES_OF(STAT_EFFECTOR, i))
         if ((SLT(i) == SE_17_WARP_ELEVATOR || (RRRA && SLT(i) == 18)) && SHT(i) == sprite[spriteNum].hitag)
