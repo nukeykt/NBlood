@@ -212,9 +212,9 @@ typedef struct
     DukePlayer_t *ps;
     input_t *input;
 
-    bool    horizRecenter;
-    float   horizAngleAdjust;
-    fix16_t horizSkew;
+    int horizRecenter;
+    int horizAngleAdjust;
+    int horizSkew;
 
     int32_t netsynctime;
     int32_t pcolor, pteam;

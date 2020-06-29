@@ -3352,7 +3352,7 @@ void P_GetInput(int const playerNum)
     }
 
     if (thisPlayer.horizSkew)
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float(thisPlayer.horizSkew))));
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(thisPlayer.horizSkew)));
 
     pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
     pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
@@ -5664,7 +5664,7 @@ RECHECK:
         {
             pPlayer->return_to_center = 9;
             thisPlayer.horizRecenter = true;
-            thisPlayer.horizAngleAdjust = float(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = 12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN));
         }
     }
 
@@ -5674,7 +5674,7 @@ RECHECK:
         {
             pPlayer->return_to_center = 9;
             thisPlayer.horizRecenter = true;
-            thisPlayer.horizAngleAdjust = -float(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = -(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         }
     }
 
@@ -5682,7 +5682,7 @@ RECHECK:
     {
         if (VM_OnEvent(EVENT_AIMUP,pPlayer->i,playerNum) == 0)
         {
-            thisPlayer.horizAngleAdjust = float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = 6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN));
             thisPlayer.horizRecenter    = false;
             pPlayer->return_to_center   = 0;
         }
@@ -5692,7 +5692,7 @@ RECHECK:
     {
         if (VM_OnEvent(EVENT_AIMDOWN,pPlayer->i,playerNum) == 0)
         {
-            thisPlayer.horizAngleAdjust = -float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = -(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
             pPlayer->return_to_center   = 0;
         }
@@ -5700,7 +5700,7 @@ RECHECK:
 
     if (pPlayer->hard_landing > 0)
     {
-        thisPlayer.horizSkew = fix16_from_int(-(pPlayer->hard_landing << 4));
+        thisPlayer.horizSkew = -(pPlayer->hard_landing << 4);
         pPlayer->hard_landing--;
     }
 
@@ -5729,7 +5729,7 @@ RECHECK:
 #ifndef EDUKE32_STANDALONE
     if (!FURY && pPlayer->knee_incs > 0)
     {
-        thisPlayer.horizSkew = F16(-48);
+        thisPlayer.horizSkew = -48;
         thisPlayer.horizRecenter = true;
         pPlayer->return_to_center = 9;
 
