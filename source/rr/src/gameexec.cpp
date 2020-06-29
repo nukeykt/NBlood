@@ -2014,9 +2014,7 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 }
                 insptr++;
                 if (!RR || ((g_spriteExtra[vm.spriteNum] < 1 || g_spriteExtra[vm.spriteNum] == 128) && A_CheckSpriteFlags(vm.spriteNum, SFLAG_KILLCOUNT)))
-                {
                     P_AddKills(pPlayer, *insptr);
-                }
                 insptr++;
                 vm.pActor->actorstayput = -1;
                 continue;
@@ -2335,20 +2333,10 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
 
             case CON_IFWASWEAPON:
-            {
+            case CON_IFSPAWNEDBY:
                 insptr++;
-                int picnum = vm.pActor->picnum;
-                if (REALITY)
-                {
-                    if (picnum == DN64TILE2599 || picnum == RPG)
-                        picnum = RADIUSEXPLOSION;
-                    if (picnum == DN64TILE2598 || picnum == DN64TILE2597)
-                        picnum = SHOTSPARK1;
-                }
-
-                VM_CONDITIONAL(picnum == *insptr);
+                VM_CONDITIONAL(vm.pActor->picnum == *insptr);
                 continue;
-            }
 
             case CON_IFAI:
                 insptr++;
@@ -2559,11 +2547,6 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
             case CON_GUTS:
                 A_DoGuts(vm.spriteNum, *(insptr + 1), *(insptr + 2));
                 insptr += 3;
-                continue;
-
-            case CON_IFSPAWNEDBY:
-                insptr++;
-                VM_CONDITIONAL(vm.pActor->picnum == *insptr);
                 continue;
 
             case CON_SLAPPLAYER:
@@ -3104,16 +3087,6 @@ safe_delete:
 }
 
 #ifdef USE_OPENGL
-
-
-// #define RT_VM_CONDITIONAL(xxx)                                                                                         \
-//     {                                                                                                                  \
-//         if ((xxx) || ((insptr = (intptr_t *)*(insptr + 1)) && (((*insptr) & VM_INSTMASK) == RT_CON_ELSE)))             \
-//         {                                                                                                              \
-//             insptr += 2;                                                                                               \
-//             RT_VM_Execute(0);                                                                                          \
-//         }                                                                                                              \
-//     }
 
 static inline void RT_VM_CONDITIONAL(int condition)
 {
@@ -3663,7 +3636,7 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
                 if (picnum == DN64TILE2598 || picnum == DN64TILE2597)
                     picnum = SHOTSPARK1;
 
-                VM_CONDITIONAL(picnum == *insptr);
+                RT_VM_CONDITIONAL(picnum == *insptr);
                 continue;
             }
 
