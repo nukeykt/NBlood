@@ -813,7 +813,8 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    RT_ProjectionCorrect();
+    if (aspectCorrection)
+        RT_ProjectionCorrect();
     glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(u1, v1); glVertex3f(x1 * sclx + xo, y1 * scly, -rt_globaldepth);
@@ -831,6 +832,7 @@ float rt_sky_color[2][3];
 static float rt_globalhoriz;
 static float rt_globalposx, rt_globalposy, rt_globalposz;
 static float rt_globalang;
+static float rt_worldspritefactor;
 
 void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
 {
@@ -919,16 +921,12 @@ void RT_SetupMatrix(void)
     glLoadIdentity();
     glScalef(0.5f, 0.5f, 0.5f);
     glMatrixMode(GL_PROJECTION);
-    for (int i = 0; i < 2; i++)
-    {
-        glLoadIdentity();
-        if (i == 1)
-            RT_ProjectionCorrect();
-        bgluPerspective(60.f, (float)xdim/(float)ydim, 5.f, 16384.f);
-        bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
-        if (i == 0)
-            glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
-    }
+    glLoadIdentity();
+    float fovy = atanf(tanf((float)ud.fov * (fPI / 180.f) / 2.f) * (3.f / 4.f)) * 2.f * (180.f/fPI);
+    rt_worldspritefactor = tanf(60.f * (fPI / 180.f) / 2.f) / tanf(fovy * (fPI / 180.f) / 2.f);
+    bgluPerspective(fovy, (float)xdim/(float)ydim, 5.f, 16384.f);
+    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+    glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
     RT_LookVectorCalc(dx, dy, dz);
 }
 
@@ -1755,7 +1753,7 @@ void RT_DrawSpriteFace(float x, float y, float z, int pn)
     
     rt_globaldepth = sz;
 
-    float tt = 1.f - sz;
+    float tt = (1.f - sz) * rt_worldspritefactor;
 
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, rt_tspriteptr->xrepeat * tt * 4.f, rt_tspriteptr->yrepeat * tt * 4.f,
@@ -2928,7 +2926,7 @@ void RT_DisplayExplosions(void)
 
             rt_globaldepth = sz;
 
-            float tt = 1.f - sz;
+            float tt = (1.f - sz) * rt_worldspritefactor;
 
             int alpha = int(s.phase * 25.f);
 
