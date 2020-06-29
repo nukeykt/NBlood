@@ -14,6 +14,13 @@ rt_soundinstance_t rt_soundinstance[MAXRTSOUNDINSTANCES];
 
 int16_t rt_soundrate[MAXSOUNDS];
 
+enum {
+    SE_ATTACK = 0,
+    SE_DECAY,
+    SE_SUSTAIN,
+    SE_RELEASE
+};
+
 static rt_env_t *RT_LoadEnv(uint32_t ctlOffset, uint32_t envOffset)
 {
     rt_env_t *env = (rt_env_t*)Xcalloc(1, sizeof(rt_env_t));
@@ -189,18 +196,6 @@ static rt_instrument_t *RT_LoadInstrument(uint32_t ctlOffset, uint32_t instOffse
     for (int i = 0; i < inst->sound_count; i++)
     {
         inst->sounds[i] = RT_LoadSound(ctlOffset, soundOffset[i], tblOffset);
-        if (inst->sounds[i]->wave->adpcm->loop)
-        {
-            initprintf("Sound %i is looped\n", i);
-        }
-        // if (inst->sounds[i]->env->attack_time != -1 || inst->sounds[i]->env->decay_time != -1 || inst->sounds[i]->env->release_time != -1)
-        {
-            auto env = inst->sounds[i]->env;
-            initprintf("Sound %i envelope\n", i);
-            initprintf("Attack time=%i volume=%i\n", env->attack_time, env->attack_volume);
-            initprintf("Decay time=%i volume=%i\n", env->decay_time, env->decay_volume);
-            initprintf("Release time=%i\n", env->release_time);
-        }
     }
     Xfree(soundOffset);
     return inst;
@@ -472,6 +467,58 @@ void RT_SoundDecode(const char **ptr, uint32_t *length, void *userdata)
     }
 }
 
+void RT_SoundDecodeEnv(const char **ptr, uint32_t *length, void *userdata)
+{
+    RT_SoundDecode(ptr, length, userdata);
+    // Apply env volume
+    auto snd = (rt_soundinstance_t*)userdata;
+    int i;
+    for (i = 0; i < *length;)
+    {
+        if (--snd->envTimer <= 0)
+        {
+            if (snd->envState == SE_ATTACK)
+            {
+                if (snd->rtsound->env->decay_time == -1)
+                {
+                    snd->envState = SE_SUSTAIN;
+                    snd->envVol = snd->envTarget;
+                    snd->envTimer = 0;
+                    snd->envStep = 0.0;
+                }
+                else
+                {
+                    snd->envState = SE_DECAY;
+                    snd->envVol = snd->envTarget;
+                    snd->envTarget = snd->rtsound->env->decay_volume;
+                    snd->envTimer = snd->rate * (snd->rtsound->env->decay_time / 1000000.0);
+                    snd->envStep = (double)(snd->envTarget - snd->envVol) / (double)snd->envTimer;
+                }
+            }
+            else if (snd->envState == SE_DECAY)
+            {
+                snd->envState = SE_RELEASE;
+                snd->envVol = snd->envTarget;
+                snd->envTarget = 0.0;
+                snd->envTimer = snd->rate * (snd->rtsound->env->release_time / 1000000.0);
+                snd->envStep = (double)(snd->envTarget - snd->envVol) / (double)snd->envTimer;
+            }
+            else if (snd->envState == SE_RELEASE)
+            {
+                snd->endofdata = 1;
+                break;
+            }
+        }
+        else
+        {
+            snd->envVol += snd->envStep;
+        }
+        snd->buf[i] = clamp((int)(snd->buf[i] * snd->envVol * (1.0 / 127.f)), INT16_MIN, INT16_MAX);
+        i++;
+    }
+    *length = i;
+}
+
 rt_soundinstance_t *RT_FindSoundSlot(int snum, int id)
 {
     if (!soundCtl)
@@ -489,6 +536,7 @@ rt_soundinstance_t *RT_FindSoundSlot(int snum, int id)
             snd->ptr = snd->snd = g_sounds[snum].ptr;
             snd->rtsound = rtsound;
             snd->id = id;
+            snd->rate = soundCtl->bank[0]->rate;
             if (rtsound->wave->adpcm && rtsound->wave->adpcm->loop)
             {
                 snd->loop = rtsound->wave->adpcm->loop->count;
@@ -497,6 +545,11 @@ rt_soundinstance_t *RT_FindSoundSlot(int snum, int id)
             }
             // if (rtsound->wave->raw && rtsound->wave->raw->loop)
             //     snd->loop = rtsound->wave->raw->loop->count;
+            snd->envState = SE_ATTACK;
+            snd->envVol = 0.0;
+            snd->envTarget = rtsound->env->attack_volume;
+            snd->envTimer = snd->rate * (rtsound->env->attack_time / 1000000.0);
+            snd->envStep = (double)(snd->envTarget - snd->envVol) / (double)snd->envTimer;
             return snd;
         }
     }
