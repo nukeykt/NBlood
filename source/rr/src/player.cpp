@@ -7301,8 +7301,8 @@ static void P_DoJetpack(int const playerNum, int const playerBits, int const pla
         pPlayer->jetpack_on++;
         pPlayer->pos.z -= (pPlayer->jetpack_on<<7); //Goin up
     }
-    else if (pPlayer->jetpack_on == 11 && !A_CheckSoundPlaying(pPlayer->i, REALITY ? 37 : DUKE_JETPACK_IDLE))
-        A_PlaySound(REALITY ? 37 : DUKE_JETPACK_IDLE, pPlayer->i);
+    else if (pPlayer->jetpack_on == 11 && !A_CheckSoundPlaying(pPlayer->i, REALITY ? 39 : DUKE_JETPACK_IDLE))
+        A_PlaySound(REALITY ? 39 : DUKE_JETPACK_IDLE, pPlayer->i);
 
     int const zAdjust = playerShrunk ? 512 : 2048;
 
