@@ -1353,12 +1353,11 @@ int RT_WallCalc_NoSlope(int sectnum, int wallnum)
             else
             {
                 RT_SetTileGlobals(wall[w.nextwall].picnum);
-                if (cstat & 4)
+                if (wall[w.nextwall].cstat & 4)
                     v10 = sector[sectnum].ceilingz>>4;
                 else
                     v10 = z1s;
-                cstat &= ~4;
-                RT_SetWallGlobals2(wallnum, cstat);
+                RT_SetWallGlobals2(wallnum, wall[w.nextwall].cstat & ~4);
             }
             globalwallv1 = (v10 - z1s) * globalyrepeat + globalwallvoffset;
             globalwallv2 = (v10 - z2s) * globalyrepeat + globalwallvoffset;
@@ -1576,7 +1575,7 @@ int RT_WallCalc_Slope(int sectnum, int wallnum)
             if (w.cstat & 2)
             {
                 RT_SetTileGlobals(wall[w.nextwall].picnum);
-                if (w.cstat & 4)
+                if (wall[w.nextwall].cstat & 4)
                 {
                     cstat = w.cstat;
                     vz = sector[sectnum].ceilingz;
