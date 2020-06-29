@@ -682,8 +682,14 @@ growspark_rr:
                         sprite[spawnedSprite].xvel = -12;
                         sprite[spawnedSprite].ang
                         = (getangle(hitwal->x - wall[hitwal->point2].x, hitwal->y - wall[hitwal->point2].y) + 512) & 2047;
-                        *(vec3_t *)&sprite[spawnedSprite] = hitData.pos;
+                        sprite[spawnedSprite].pos = hitData.pos;
                         sprite[spawnedSprite].cstat |= (krand2() & 4);
+                        if (REALITY)
+                        {
+                            sprite[spawnedSprite].ang = (sprite[spawnedSprite].ang + 1024) & 2047;
+                            sprite[spawnedSprite].pos.x += sintable[(sprite[spawnedSprite].ang + 512) & 2047] >> 10;
+                            sprite[spawnedSprite].pos.y += sintable[sprite[spawnedSprite].ang & 2047] >> 10;
+                        }
                         A_SetSprite(spawnedSprite, CLIPMASK0);
                         setsprite(spawnedSprite, (vec3_t *)&sprite[spawnedSprite]);
                         if (PN(spriteNum) == OOZFILTER || (!RR && PN(spriteNum) == NEWBEAST))
