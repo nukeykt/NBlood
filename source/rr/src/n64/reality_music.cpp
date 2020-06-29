@@ -485,6 +485,8 @@ void RT_MusicInit(void)
     }
 }
 
+int rt_musicactive = 0;
+
 void RT_PlaySong(void)
 {
     if (!musicCtl || !seqBuffer)
@@ -507,10 +509,13 @@ void RT_PlaySong(void)
         track->altPattern = nullptr;
     }
     MV_HookMusicRoutine(RT_MusicService);
+    rt_musicactive = 1;
 }
 
 void RT_PauseSong(bool paused)
 {
+    if (!rt_musicactive)
+        return;
     if (paused)
         MV_UnhookMusicRoutine();
     else
@@ -519,5 +524,8 @@ void RT_PauseSong(bool paused)
 
 void RT_StopSong(void)
 {
+    if (!rt_musicactive)
+        return;
     MV_UnhookMusicRoutine();
+    rt_musicactive = 0;
 }

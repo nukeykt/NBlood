@@ -255,6 +255,9 @@ static int S_PlayMusic(const char *fn, int loop)
 
     if (!Bmemcmp(MyMusicPtr, "MThd", 4))
     {
+        if (REALITY && g_musicIndex == MUS_INTRO)
+            RT_StopSong();
+
         int32_t retval = MUSIC_PlaySong(MyMusicPtr, MyMusicSize, loop);
 
         if (retval != MUSIC_Ok)
@@ -276,6 +279,9 @@ static int S_PlayMusic(const char *fn, int loop)
     }
     else
     {
+        if (REALITY && g_musicIndex == MUS_INTRO)
+            RT_StopSong();
+
         int MyMusicVoice = FX_Play(MyMusicPtr, MusicLen, loop ? 0 : -1, 0, 0, ud.config.MusicVolume, ud.config.MusicVolume, ud.config.MusicVolume,
                                    FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
 
