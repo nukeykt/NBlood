@@ -2822,19 +2822,19 @@ void C_Compile(const char *fileName)
     C_InitHashes();
     Gv_Init();
 
+#ifdef USE_OPENGL
+    if (REALITY)
+    {
+        if (RT_PrepareScript())
+            G_GameExit("Script error");
+        return;
+    }
+#endif
+
     int kFile = kopen4loadfrommod(fileName,g_loadFromGroupOnly);
 
     if (kFile == -1) // JBF: was 0
     {
-#ifdef USE_OPENGL
-        if (REALITY)
-        {
-            if (RT_PrepareScript())
-                G_GameExit("Script error");
-            return;
-        }
-#endif
-
         if (g_loadFromGroupOnly == 1 || numgroupfiles == 0)
         {
             char const *gf = G_GrpFile();
