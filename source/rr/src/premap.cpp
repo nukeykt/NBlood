@@ -965,7 +965,17 @@ void P_ResetStatus(int playerNum)
     pPlayer->movement_lock      = 0;
     pPlayer->frag_ps            = playerNum;
 
-    P_UpdateScreenPal(pPlayer);
+    if (REALITY)
+    {
+        pPlayer->dn64_370 = 0;
+        pPlayer->dn64_374 = 0;
+        pPlayer->dn64_376 = 0;
+        pPlayer->dn64_378 = 0;
+        pPlayer->dn64_372 = pPlayer->curr_weapon;
+    }
+
+    if (!REALITY)
+        P_UpdateScreenPal(pPlayer);
 
     if (RR)
     {
@@ -1066,6 +1076,8 @@ void P_ResetWeapons(int playerNum)
         pPlayer->dn64_372               = PISTOL_WEAPON;
     pPlayer->kickback_pic               = 5;
     pPlayer->gotweapon                  = ((1 << PISTOL_WEAPON) | (1 << KNEE_WEAPON) | (1 << HANDREMOTE_WEAPON));
+    if (REALITY)
+        pPlayer->gotweapon             |= (1 << BOWLINGBALL_WEAPON);
     pPlayer->ammo_amount[PISTOL_WEAPON] = min<int16_t>(pPlayer->max_ammo_amount[PISTOL_WEAPON], 48);
     if (RRRA)
     {
@@ -1159,6 +1171,11 @@ static void resetprestat(int playerNum, int gameMode)
     pPlayer->max_secret_rooms  = 0;
     pPlayer->actors_killed     = 0;
     pPlayer->max_actors_killed = 0;
+    if (REALITY)
+    {
+        pPlayer->dn64_36e = 0;
+        pPlayer->dn64_36d = 0;
+    }
     pPlayer->lastrandomspot    = 0;
     pPlayer->weapon_pos        = WEAPON_POS_START;
 
@@ -1212,8 +1229,13 @@ static void resetprestat(int playerNum, int gameMode)
     }
 
     pPlayer->timebeforeexit  = 0;
-    pPlayer->customexitsound = 0;
+    pPlayer->customexitsound = REALITY ? -1 : 0;
 
+    if (REALITY)
+    {
+        pPlayer->dn64_374 = 0;
+        pPlayer->dn64_378 = 0;
+    }
     if (RR)
     {
         pPlayer->stairs = 0;
@@ -2085,7 +2107,10 @@ static void resetpspritevars(char gameMode)
     P_ResetStatus(0);
 
     for (TRAVERSE_CONNECT(i))
+    {
         if (i) Bmemcpy(g_player[i].ps,g_player[0].ps,sizeof(DukePlayer_t));
+        P_PalFrom(g_player[i].ps, 64, 0, 0, 0);
+    }
 
     if (ud.recstat != 2)
         for (TRAVERSE_CONNECT(i))
