@@ -9541,6 +9541,20 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             }
             break;
 
+        case SE_77:
+            if (!REALITY)
+                break;
+            // if (ud.multimode > 1 && ud.coop == 0 && dukematch_mode != 1)
+            //     break;
+            
+            for (int TRAVERSE_CONNECT(playerNum))
+                if (g_player[playerNum].ps->cursectnum == pSprite->sectnum && klabs(g_player[playerNum].ps->pos.z - pSprite->z) <= (24<<8)
+                    && g_player[playerNum].ps->timebeforeexit == 0)
+                {
+                    g_player[playerNum].ps->timebeforeexit = 17;
+                }
+            break;
+
         case SE_49_POINT_LIGHT:
         case SE_50_SPOT_LIGHT:
             changespritestat(spriteNum, STAT_LIGHT);

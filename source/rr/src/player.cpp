@@ -8570,7 +8570,7 @@ check_enemy_sprite:
                             else
                             {
                                 A_PlaySound(REALITY ? 35 : DUKE_LAND, pPlayer->i);
-                                A_PlaySound(REALITY ? 168 : DUKE_LAND_HURT, pPlayer->i);
+                                A_PlaySound(REALITY ? 158 : DUKE_LAND_HURT, pPlayer->i);
                             }
 
                             P_PalFrom(pPlayer, 32, 16, 0, 0);
