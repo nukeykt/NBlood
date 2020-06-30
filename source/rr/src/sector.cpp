@@ -5122,9 +5122,11 @@ void P_CheckSectors(int playerNum)
 
             case VIEWSCREEN__STATIC:
             case VIEWSCREEN2__STATIC:
+            {
                 if (RR) break;
+                int spriteNum = (REALITY && pPlayer->newowner != -1) ? nextspritestat[pPlayer->newowner] : headspritestat[STAT_ACTOR];
                 // Try to find a camera sprite for the viewscreen.
-                for (bssize_t SPRITES_OF(STAT_ACTOR, spriteNum))
+                for (; spriteNum >= 0; spriteNum = nextspritestat[spriteNum])
                 {
                     if (PN(spriteNum) == CAMERA1 && (REALITY || SP(spriteNum) == 0) && sprite[nearSprite].hitag == SLT(spriteNum))
                     {
@@ -5150,6 +5152,7 @@ void P_CheckSectors(int playerNum)
 
                 G_ClearCameras(pPlayer);
                 return;
+            }
             }  // switch
         }
 

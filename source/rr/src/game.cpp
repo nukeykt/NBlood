@@ -1279,12 +1279,22 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         else
         {
             vec3_t const camVect = G_GetCameraPosition(pPlayer->newowner, smoothRatio);
-
-            // looking through viewscreen
-            CAMERA(pos)      = camVect;
-            CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
-            CAMERA(q16horiz) = fix16_from_int(100 + sprite[pPlayer->newowner].shade);
-            CAMERA(sect)     = sprite[pPlayer->newowner].sectnum;
+            if (REALITY)
+            {
+                auto pCamSprite = &sprite[pPlayer->newowner];
+                CAMERA(pos) = camVect;
+                CAMERA(q16ang) = fix16_from_int(pCamSprite->ang);
+                CAMERA(q16horiz) = fix16_from_int(100 + pCamSprite->shade);
+                CAMERA(sect) = pCamSprite->sectnum;
+            }
+            else
+            {
+                // looking through viewscreen
+                CAMERA(pos)      = camVect;
+                CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16horiz) = fix16_from_int(100 + sprite[pPlayer->newowner].shade);
+                CAMERA(sect)     = sprite[pPlayer->newowner].sectnum;
+            }
         }
 
         ceilZ  = actor[pPlayer->i].ceilingz;

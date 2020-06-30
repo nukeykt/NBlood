@@ -3058,6 +3058,8 @@ void RT_LoadBOSS2MDL(void)
 
 void RT_AnimateBOSS2(void)
 {
+    if (!rt_boss2)
+        return;
     if (boss2seq == nullptr)
         boss2seq = boss2seq0;
 
