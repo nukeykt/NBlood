@@ -927,9 +927,9 @@ static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:
 static MenuOption_t MEO_MOUSESETUP_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &ud.mouseflip );
 static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_INVERT, Option );
 
-static MenuRangeInt32_t MEO_MOUSESETUP_SCALEX = MAKE_MENURANGE(&CONTROL_MouseAxesScale[0], &MF_Redfont, 512, 65536, 65536, 128, 3 | EnforceIntervals);
+static MenuRangeInt32_t MEO_MOUSESETUP_SCALEX = MAKE_MENURANGE(&CONTROL_MouseAxesScale[0], &MF_Redfont, 0, 65536, 65536, 129, 3 | EnforceIntervals);
 static MenuEntry_t ME_MOUSESETUP_SCALEX = MAKE_MENUENTRY("X-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SCALEX, RangeInt32);
-static MenuRangeInt32_t MEO_MOUSESETUP_SCALEY = MAKE_MENURANGE(&CONTROL_MouseAxesScale[1], &MF_Redfont, 512, 65536, 65536, 128, 3 | EnforceIntervals);
+static MenuRangeInt32_t MEO_MOUSESETUP_SCALEY = MAKE_MENURANGE(&CONTROL_MouseAxesScale[1], &MF_Redfont, 0, 65536, 65536, 129, 3 | EnforceIntervals);
 static MenuEntry_t ME_MOUSESETUP_SCALEY = MAKE_MENUENTRY("Y-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SCALEY, RangeInt32);
 
 static MenuEntry_t *MEL_MOUSESETUP[] = {
