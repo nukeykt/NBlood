@@ -708,10 +708,10 @@ void RT_P_DisplayWeapon(void)
                 weaponYOffset += sintable[(1024 + ((*weaponFrame) << 7)) & 2047] >> 10;
             }
             if (*weaponFrame > 3 && *weaponFrame < 12)
-                RT_DrawWeaponTileWithID(currentWeapon, weaponX + 310 - halfLookAng, weaponY + 288 - weaponYOffset,
+                RT_DrawWeaponTileWithID(currentWeapon, weaponX + 310 - halfLookAng, weaponY + 278 - weaponYOffset,
                                         3638+((*weaponFrame)-2)/2, weaponShade, weaponBits, weaponPal);
             else
-                RT_DrawWeaponTileWithID(currentWeapon, weaponX + 310 - halfLookAng, weaponY + 283 - weaponYOffset,
+                RT_DrawWeaponTileWithID(currentWeapon, weaponX + 310 - halfLookAng, weaponY + 273 - weaponYOffset,
                                         3638, weaponShade, weaponBits, weaponPal);
             break;
 
@@ -1090,6 +1090,7 @@ void RT_P_ProcessWeapon(int playerNum)
                 break;
             case 31:
                 (*weaponFrame) = 0;
+                P_CheckWeapon(pPlayer);
                 return;
             }
             break;
