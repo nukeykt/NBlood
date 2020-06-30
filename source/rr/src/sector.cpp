@@ -5087,8 +5087,11 @@ void P_CheckSectors(int playerNum)
                             actor[nearSprite].t_data[0] = 1;
                             sprite[nearSprite].owner    = pPlayer->i;
                             // assignment of buttonpalette here is not a bug
-                            ud.secretlevel =
-                            (pPlayer->buttonpalette = sprite[nearSprite].pal) ? sprite[nearSprite].lotag : 0;
+                            pPlayer->buttonpalette = sprite[nearSprite].pal;
+                            if (REALITY)
+                                ud.secretlevel = sprite[nearSprite].pal != 0;
+                            else
+                                ud.secretlevel = sprite[nearSprite].pal ? sprite[nearSprite].lotag : 0;
                         }
                     }
                 }

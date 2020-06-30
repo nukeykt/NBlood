@@ -1971,6 +1971,8 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 
     g_showShareware = GAMETICSPERSEC*34;
 
+    if (REALITY)
+        rt_levelnum = levelNum;
     ud.level_number = levelNum;
     ud.volume_number = volumeNum;
     ud.player_skill = skillNum;
@@ -2407,6 +2409,12 @@ int G_EnterLevel(int gameMode)
     ud.ffire             = ud.m_ffire;
     ud.noexits           = ud.m_noexits;
 
+    if (REALITY)
+    {
+        ud.volume_number = 0;
+        ud.level_number = rt_levelnum;
+    }
+
     if ((gameMode & MODE_DEMO) != MODE_DEMO)
         ud.recstat = ud.m_recstat;
     if ((gameMode & MODE_DEMO) == 0 && ud.recstat == 2)
@@ -2521,7 +2529,7 @@ int G_EnterLevel(int gameMode)
     }
     else if (REALITY)
     {
-        RT_LoadBoard(ud.m_level_number);
+        RT_LoadBoard(rt_levelnum);
     }
     else if (engineLoadBoard(g_mapInfo[mii].filename, VOLUMEONE, &pPlayer->pos, &lbang, &pPlayer->cursectnum) < 0)
     {

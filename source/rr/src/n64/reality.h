@@ -20,11 +20,13 @@ extern rt_vertex_t *rt_sectvtx;
 extern rt_walltype *rt_wall;
 extern rt_sectortype *rt_sector;
 extern int rt_boardnum;
+extern int rt_levelnum;
 
 buildvfs_kfd RT_InitGRP(const char *filename);
 void RT_Init(void);
 int RT_PrepareScript(void);
 void RT_LoadBoard(int boardnum);
 void RT_Execute(int spriteNum, int playerNum, int playerDist);
+int RT_NextLevel(void);
 
 #endif

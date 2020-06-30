@@ -1903,16 +1903,18 @@ void Menu_Init(void)
         }
         MEOS_NETOPTIONS_LEVEL[i].optionNames = MEOSN_NetLevels[i];
     }
-    M_EPISODE.numEntries = g_volumeCnt+2;
-#ifndef EDUKE32_SIMPLE_MENU
-    MEL_EPISODE[g_volumeCnt] = &ME_Space4_Redfont;
-    MEL_EPISODE[g_volumeCnt+1] = &ME_EPISODE_USERMAP;
+    if (REALITY)
+    {
+        M_EPISODE.numEntries = 3;
+    }
+    else
+    {
+        M_EPISODE.numEntries = g_volumeCnt+2;
+        MEL_EPISODE[g_volumeCnt] = &ME_Space4_Redfont;
+        MEL_EPISODE[g_volumeCnt+1] = &ME_EPISODE_USERMAP;
+    }
     MEOSN_NetEpisodes[k] = MenuUserMap;
     MEOSV_NetEpisodes[k] = MAXVOLUMES;
-#else
-    M_EPISODE.numEntries = g_volumeCnt;
-    k--;
-#endif
     MEOS_NETOPTIONS_EPISODE.numOptions = k + 1;
     NetEpisode = MEOSV_NetEpisodes[0];
     MMF_Top_Episode.pos.y = (58 + (3-k)*6)<<16;
@@ -3925,8 +3927,26 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     case MENU_EPISODE:
         if (entry != &ME_EPISODE_USERMAP)
         {
-            ud.m_volume_number = M_EPISODE.currentEntry;
-            ud.m_level_number = 0;
+            if (REALITY)
+            {
+                switch (M_EPISODE.currentEntry)
+                {
+                default:
+                    ud.m_level_number = 0;
+                    break;
+                case 1:
+                    ud.m_level_number = 8;
+                    break;
+                case 2:
+                    ud.m_level_number = 19;
+                    break;
+                }
+            }
+            else
+            {
+                ud.m_volume_number = M_EPISODE.currentEntry;
+                ud.m_level_number = 0;
+            }
 
             if (g_skillCnt == 0)
                 Menu_StartGameWithoutSkill();

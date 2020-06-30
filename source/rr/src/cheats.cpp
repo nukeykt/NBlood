@@ -599,6 +599,9 @@ void G_DoCheats(void)
                         ud.volume_number = volnume;
                         ud.level_number = levnume;
 
+                        if (REALITY)
+                            rt_levelnum = levnume;
+
 #if 0
                         if (numplayers > 1 && g_netServer)
                             Net_NewGame(volnume, levnume);

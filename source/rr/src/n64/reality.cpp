@@ -476,4 +476,105 @@ void RT_LoadBoard(int boardnum)
         RT_LoadBOSS2MDL();
 }
 
+int rt_levelnum;
+int rt_level7unlock, rt_level18unlock, rt_level28unlock, rt_level29unlock, rt_level33unlock;
+
+int RT_NextLevel(void)
+{
+#if 0
+    if (ud.multimode > 1 && !ud.coop && dukematch_mode != 1)
+    {
+        if (rt_levelnum == 1 && rt_level7unlock)
+            ud.secretlevel = 1;
+        else
+        {
+            if ((rt_levelnum == 15 && rt_level18unlock)
+                || (rt_levelnum == 23 && rt_level28unlock)
+                || (rt_levelnum == 26 && rt_level29unlock)
+                || (rt_levelnum == 32 && rt_level33unlock))
+                ud.secretlevel = 1;
+        }
+    }
+#endif
+    int nextlevel = rt_levelnum;
+    if (!ud.secretlevel)
+    {
+        switch (rt_levelnum)
+        {
+        case 6:
+            nextlevel = 8;
+            break;
+        case 7:
+            nextlevel = 2;
+            break;
+        case 17:
+            nextlevel = 19;
+            break;
+        case 18:
+            nextlevel = 16;
+            break;
+        case 27:
+            nextlevel = 30;
+            break;
+        case 28:
+            nextlevel = 24;
+            break;
+        case 29:
+            nextlevel = 27;
+            break;
+        case 32:
+            nextlevel = 0;
+            break;
+        case 33:
+            nextlevel = 0;
+            break;
+        default:
+            nextlevel++;
+            break;
+        }
+    }
+    else
+    {
+        switch (rt_levelnum)
+        {
+        case 1:
+            rt_level7unlock = 1;
+            nextlevel = 7;
+            break;
+        case 7:
+            nextlevel = 2;
+            break;
+        case 15:
+            rt_level18unlock = 1;
+            nextlevel = 18;
+            break;
+        case 18:
+            nextlevel = 16;
+            break;
+        case 23:
+            rt_level28unlock = 1;
+            nextlevel = 28;
+            break;
+        case 26:
+            rt_level29unlock = 1;
+            nextlevel = 29;
+            break;
+        case 28:
+            nextlevel = 24;
+            break;
+        case 29:
+            nextlevel = 27;
+            break;
+        case 32:
+            rt_level33unlock = 1;
+            nextlevel = 33;
+            break;
+        case 33:
+            nextlevel = 33;
+            break;
+        }
+    }
+    return nextlevel;
+}
+
 #endif
