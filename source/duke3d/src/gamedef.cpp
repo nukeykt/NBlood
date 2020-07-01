@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #if MICROPROFILE_ENABLED != 0
 MicroProfileToken g_eventTokens[MAXEVENTS];
+MicroProfileToken g_eventCounterTokens[MAXEVENTS];
 MicroProfileToken g_actorTokens[MAXTILES];
 MicroProfileToken g_statnumTokens[MAXSTATUS];
 #if 0
@@ -6430,7 +6431,10 @@ void C_Compile(const char *fileName)
     for (int i=0; i<MAXEVENTS; i++)
     {
         if (VM_HaveEvent(i))
-            g_eventTokens[i] = MicroProfileGetToken("CON VM Events", EventNames[i], MP_AUTO, MicroProfileTokenTypeCpu);
+        {
+            g_eventTokens[i]        = MicroProfileGetToken("CON VM Events", EventNames[i], MP_AUTO, MicroProfileTokenTypeCpu);
+            g_eventCounterTokens[i] = MicroProfileGetCounterToken(EventNames[i]);
+        }
     }
 
 #if 0

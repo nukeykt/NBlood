@@ -177,6 +177,8 @@ typedef uint16_t MicroProfileGroupId;
 #define MicroProfileGpuEnd() 0
 #define MicroProfileGpuSubmit(w) do{} while(0)
 
+#define MicroProfileCounterAdd(name, count) do{} while(0)
+
 #else
 
 #include "compat.h"
@@ -531,7 +533,7 @@ struct MicroProfileScopeHandler
     }
 };
 
-#define MICROPROFILE_MAX_COUNTERS 1024
+#define MICROPROFILE_MAX_COUNTERS 256
 #define MICROPROFILE_MAX_COUNTER_NAME_CHARS (MICROPROFILE_MAX_COUNTERS*16)
 
 #define MICROPROFILE_MAX_GROUPS 48 //dont bump! no. of bits used it bitmask

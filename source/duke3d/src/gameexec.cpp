@@ -45,6 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #if MICROPROFILE_ENABLED != 0
 extern MicroProfileToken g_eventTokens[MAXEVENTS];
+extern MicroProfileToken g_eventCounterTokens[MAXEVENTS];
 extern MicroProfileToken g_actorTokens[MAXTILES];
 extern MicroProfileToken g_statnumTokens[MAXSTATUS];
 #if 0
@@ -137,6 +138,7 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
                                                        int const playerDist = -1, int32_t returnValue = 0)
 {
     MICROPROFILE_SCOPE_TOKEN(g_eventTokens[eventNum]);
+    MicroProfileCounterAdd(g_eventCounterTokens[eventNum], 1);
 
     vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0,
                                    &sprite[spriteNum&(MAXSPRITES-1)],
