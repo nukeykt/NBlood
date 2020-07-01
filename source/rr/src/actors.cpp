@@ -10024,7 +10024,7 @@ void A_PlayAlertSound(int spriteNum)
             case PIGCOP__STATIC:
             case PIGCOPDIVE__STATIC:       A_PlaySound(REALITY ? 92 : PIG_RECOG, spriteNum); break;
             case RECON__STATIC:            A_PlaySound(REALITY ? 97 : RECO_RECOG, spriteNum); break;
-            case DRONE__STATIC:            A_PlaySound(REALITY ? 105 : DRON_RECOG, spriteNum); break;
+            case DRONE__STATIC:            A_PlaySound(REALITY ? 101 : DRON_RECOG, spriteNum); break;
             case COMMANDER__STATIC:
             case COMMANDERSTAYPUT__STATIC: A_PlaySound(REALITY ? 106 : COMM_RECOG, spriteNum); break;
             case ORGANTIC__STATIC:         if (REALITY) break; A_PlaySound(TURR_RECOG, spriteNum); break;
