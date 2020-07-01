@@ -2949,7 +2949,7 @@ rrbloodpool_fallthrough:
             else if (REALITY && pSprite->picnum == DN64TILE3953)
             {
                 pSprite->xrepeat = 64;
-                pSprite->xrepeat = 64;
+                pSprite->yrepeat = 64;
                 pSprite->z -= (30<<8);
                 if ((krand2() % 256) < 128)
                     pSprite->cstat |= 4;
