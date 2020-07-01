@@ -3323,6 +3323,7 @@ GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
             case RT_CON_STRENGTH:
                 insptr++;
                 vm.pSprite->extra = *insptr++;
+                vm.pActor->extra = -1;
                 continue;
 
             case RT_CON_IFGOTWEAPONCE:

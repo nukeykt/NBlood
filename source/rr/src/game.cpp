@@ -2557,7 +2557,7 @@ rrbloodpool_fallthrough:
                     pSprite->picnum = DN64TILE3805;
                 else if (pSprite->picnum == FEM6)
                     pSprite->picnum = DN64TILE3797;
-                if (ud.multimode > 1 && &ud.coop == 0)
+                if (ud.multimode > 1 && ud.coop == 0)
                 {
                     pSprite->xrepeat = pSprite->yrepeat = 0;
                     changespritestat(newSprite, STAT_MISC);
