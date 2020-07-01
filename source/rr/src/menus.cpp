@@ -156,11 +156,8 @@ static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnu
     if (REALITY)
     {
         RT_DisablePolymost();
-        glScissor(0, ydim_upper, xdim, ydim_lower + 1);
-
         RT_RotateSpriteSetColor(255, 255, 255, 256);
         RT_RotateSprite(x * (1.f/65536.f), y * (1.f/65536.f) * 1.2f, z * (100.f/65536.f), z * (100.f/65536.f), 3200, 0, false);
-        glScissor(0, 0, xdim, ydim);
         RT_EnablePolymost();
         return;
     }

@@ -1672,6 +1672,53 @@ void G_DisplayLogo(void)
         videoClearScreen(0L);
         return;
     }
+    if (REALITY)
+    {
+        G_FadePalette(0, 0, 0, 0);
+        totalclock = 0;
+
+        while ((int)totalclock < (4 * (16 + 120 + 16)) && !I_CheckAllInput())
+        {
+            if (engineFPSLimit())
+            {
+                int alpha = 0;
+                if (totalclock < (4 * 16))
+                    alpha = clamp((int)totalclock * 4, 0, 256);
+                else if (totalclock < (4 * (16 + 120)))
+                    alpha = 256;
+                else
+                    alpha = clamp(256 - ((int)totalclock - (4 * (16 + 120))) * 4, 0, 256);
+
+
+                videoClearScreen(0);
+
+                RT_DisablePolymost();
+                RT_RotateSpriteSetColor(255, 255, 255, alpha);
+
+                RT_RotateSprite(160, 60, 100, 100, 0xe09, 0);
+                RT_RotateSprite(100, 160, 100, 100, 0xe5d, 0);
+                RT_RotateSprite(220, 160, 100, 100, 0xe5e, 0);
+                RT_EnablePolymost();
+
+                G_HandleAsync();
+                videoNextPage();
+            }
+        }
+
+        S_PlaySpecialMusicOrNothing(MUS_INTRO);
+
+        renderFlushPerms();
+        videoClearScreen(0L);
+        videoNextPage();
+
+        //g_player[myconnectindex].ps->palette = palette;
+        P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 0);    // JBF 20040308
+        S_PlaySound(NITEVISION_ONOFF);
+
+        //G_FadePalette(0,0,0,0);
+        videoClearScreen(0L);
+        return;
+    }
     if (!g_noLogo /* && (!g_netServer && ud.multimode < 2) */)
     {
 #ifndef EDUKE32_TOUCH_DEVICES
