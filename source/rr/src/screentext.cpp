@@ -643,7 +643,7 @@ vec2_t G_ScreenText(const int32_t font,
 
             if (REALITY)
             {
-                RT_RotateSpriteSetColor(255, 255, 255, 255);
+                RT_RotateSpriteSetShadePal(0, shade, pal);
                 RT_RotateSpriteText(location.x, location.y, (float)z2 * (100.f/65536.f), (float)z2 * (100.f/65536.f), tile, orientation, true);
                 break;
             }

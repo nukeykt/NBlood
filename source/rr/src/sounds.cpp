@@ -344,7 +344,8 @@ int S_TryPlaySpecialMusic(unsigned int m)
 {
     if (REALITY && m == MUS_INTRO)
     {
-        RT_PlaySong();
+        if (ud.config.MusicToggle)
+            RT_PlaySong();
         S_SetMusicIndex(m);
         return 0;
     }

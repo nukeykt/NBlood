@@ -3649,16 +3649,18 @@ void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4)
         a3 = 0;
     if (a3 > 255)
         a3 = 255;
-    if (a4 > 255)
+    /*if (a4 > 255)
     {
         // TODO: TEX_EDGE mode (a4 == 666)
         RT_SetTexComb(1);
         RT_SetColor1(a1, a2, a3, 255);
         RT_SetColor2(a1, a2, a3, 255);
     }
-    else
+    else*/
     {
+        a4 = clamp(a4, 0, 255);
         RT_SetTexComb(0);
+        glEnable(GL_ALPHA_TEST);
         glColor4f(a1 * (1.f / 255.f), a2 * (1.f / 255.f), a3 * (1.f / 255.f), a4 * (1.f / 255.f));
     }
 }
@@ -3726,7 +3728,7 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), 1.f);
 }
 
-void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation)
+void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation, bool screenCorrection /* = true */)
 {
     int otilenum = tilenum;
     int xflip = (orientation & 4) != 0;
@@ -3839,7 +3841,7 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     if (!waloff[tilenum])
         tileLoad(tilenum);
     
-    int method = DAMETH_CLAMPED | DAMETH_N64;
+    int method = DAMETH_CLAMPED | DAMETH_N64 | ((orientation & RTRS_SCALED) != 0 ? DAMETH_N64_SCALED : 0);
     pthtyp *pth = texcache_fetch(tilenum, pal, 0, method);
 
     if (!pth)
@@ -3852,7 +3854,8 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    RT_ProjectionCorrect();
+    if (screenCorrection)
+        RT_ProjectionCorrect();
     float xdim43 = ydim * (4.f / 3.f);
     float scl = ydim / 240.f;
     float xo = (xdim - xdim43) * 0.5f;

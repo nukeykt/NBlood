@@ -114,11 +114,23 @@ static savehead_t savehead;
 
 static void Menu_DrawBackground(const vec2_t origin)
 {
+    if (REALITY)
+    {
+        float ox = origin.x * (1.f/65536.f) * (240.f - 32.f) / (240.f);
+        float oy = origin.y * (1.f/65536.f) * (240.f - 32.f) / (240.f) * 1.2f;
+        RT_DisablePolymost();
+        RT_RotateSpriteSetColor(255, 255, 255, 256);
+        RT_RotateSprite(160 + ox, 120 + oy, 100, 100, 3670, RTRS_SCALED);
+        RT_EnablePolymost();
+        return;
+    }
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (100<<16), 65536L,0,MENUSCREEN,16,0,10+64);
 }
 
 static void Menu_DrawTopBar(const vec2_t origin)
 {
+    if (REALITY)
+        return;
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (19<<16), MF_Redfont.cursorScale3, 0,MENUBAR,16,0,10);
 }
 
@@ -141,6 +153,17 @@ static FORCE_INLINE int32_t Menu_CursorShade(void)
 }
 static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnum, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
+    if (REALITY)
+    {
+        RT_DisablePolymost();
+        glScissor(0, ydim_upper, xdim, ydim_lower + 1);
+
+        RT_RotateSpriteSetColor(255, 255, 255, 256);
+        RT_RotateSprite(x * (1.f/65536.f), y * (1.f/65536.f) * 1.2f, z * (100.f/65536.f), z * (100.f/65536.f), 3200, 0, false);
+        glScissor(0, 0, xdim, ydim);
+        RT_EnablePolymost();
+        return;
+    }
     rotatesprite_(x, y, z, 0, picnum, Menu_CursorShade(), 0, 2|8, 0, 0, 0, ydim_upper, xdim-1, ydim_lower);
 }
 static void Menu_DrawCursorLeft(int32_t x, int32_t y, int32_t z)
@@ -302,10 +325,10 @@ they effectively stand in for curly braces as struct initializers.
 MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 },           65536,              20<<16,             110<<16,            65536, 65536, 65536, TEXT_BIGALPHANUM | TEXT_UPPERCASE,
                                         -1,                 10,                 0,                  0,                  0,                  0,                   1,
                                         0,                  0,                  1 };
-MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           65536,              10<<16,             110<<16,            32768, 65536, 65536, 0,
+MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           65536,              10<<16,             110<<16,            32768, 32768, 32768, 0,
                                         -1,                 10,                 0,                  0,                  10,                 10,                  16,
                                         0,                  0,                  16 };
-MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   65536,              10<<16,             110<<16,            32768, 65536, 65536, 0,
+MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   65536,              10<<16,             110<<16,            32768, 32768, 32768, 0,
                                         -1,                 10,                 0,                  0,                  2,                  2,                   0,
                                         0,                  0,                  16 };
 
@@ -329,6 +352,7 @@ static MenuMenuFormat_t MMF_NetSetup =             { {                  36<<16, 
 static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_Top_MainDH =           { {  MENU_MARGIN_CENTER<<16, 72<<16, }, -(180<<16) };
+static MenuMenuFormat_t MMF_Top_MainRT =           { {  MENU_MARGIN_CENTER<<16, 110<<16, }, -(180<<16) };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
 static MenuEntryFormat_t MEF_MainMenu =         { 4<<16,      0,          0 };
@@ -1817,6 +1841,9 @@ static MenuEntry_t *Menu_AdjustForCurrentEntryAssignmentBlind(MenuMenu_t *menu)
 
 static int32_t SELECTDIR_z = 65536;
 
+static ClockTicks m_menustarttics;
+static int m_logosoundcnt = 0; // DN64 logo
+
 /*
 This function prepares data after ART and CON have been processed.
 It also initializes some data in loops rather than statically at compile time.
@@ -2179,6 +2206,42 @@ void Menu_Init(void)
         MMF_Top_Episode.bottomcutoff = -(180 << 16);
         MMF_Top_Skill.pos.y = 102 << 16;
         MMF_Top_Skill.bottomcutoff = -(200 << 16);
+    }
+
+    if (REALITY)
+    {
+        MEL_MAIN[0] = &ME_MAIN_NEWGAME;
+        MEL_MAIN[1] = &ME_MAIN_LOADGAME;
+        MEL_MAIN[2] = &ME_MAIN_OPTIONS;
+        MEL_MAIN[3] = &ME_MAIN_QUIT;
+        MEL_MAIN[4] = &ME_MAIN_HELP;
+        M_MAIN.numEntries = 4;
+        M_MAIN.format = &MMF_Top_MainRT;
+
+        MEL_MAIN_INGAME[0] = &ME_MAIN_NEWGAME_INGAME;
+        MEL_MAIN_INGAME[1] = &ME_MAIN_SAVEGAME;
+        MEL_MAIN_INGAME[2] = &ME_MAIN_LOADGAME;
+        MEL_MAIN_INGAME[3] = &ME_MAIN_OPTIONS;
+        MEL_MAIN_INGAME[4] = &ME_MAIN_QUITTOTITLE;
+        MEL_MAIN_INGAME[5] = &ME_MAIN_QUITGAME;
+        M_MAIN_INGAME.numEntries = 6;
+
+        MF_Redfont.pal_selected = 6;
+        MF_Redfont.pal_deselected = 0;
+        MF_Redfont.pal_disabled = 0;
+
+        MF_Redfont.pal_selected_right = 6;
+        MF_Redfont.pal_deselected_right = 0;
+        MF_Redfont.pal_disabled_right = 0;
+
+        MF_Redfont.shade_deselected = 0;
+        MF_Redfont.shade_disabled = 17;
+        
+        ud.menutitle_pal = 2;
+
+        MF_Minifont = MF_Bluefont;
+
+        MF_Minifont.zoom = 32768;
     }
 }
 
@@ -2561,6 +2624,38 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER-5)<<16), origin.y + ((57+l)<<16), 16592L,0,THREEDEE,0,0,10);
             else
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+5)<<16), origin.y + ((24+l)<<16), 23592L,0,INGAMEDUKETHREEDEE,0,0,10);
+        }
+        else if (REALITY)
+        {
+            if (cm != MENU_MAIN)
+                break;
+            int logotics = (int)(totalclock - m_menustarttics);
+            int logozoom1, logozoom2;
+            logozoom2 = 0;
+            logozoom1 = (logotics * 6) / 4 + 10;
+            if (logozoom1 > 100)
+            {
+                int const l1tics = (100 - 10) * 4 / 6;
+                logozoom1 = 100;
+                logozoom2 = clamp(205 - (logotics - l1tics) * 7 / 4, 100, 205);
+            }
+            RT_DisablePolymost();
+            RT_RotateSpriteSetColor(255, 255, 255, 256);
+            float ox = (float)(origin.x) * (1.f/65536.f) * (240.f - 32.f) / (240.f);
+            RT_RotateSprite(ox+160, 55, logozoom1, logozoom1, 0xe68, RTRS_SCALED);
+            if (logozoom2)
+                RT_RotateSprite(ox+160, 105, logozoom2, logozoom2, 0xe69, RTRS_SCALED);
+            RT_EnablePolymost();
+            if (m_logosoundcnt == 0)
+            {
+                S_PlaySound(195);
+                m_logosoundcnt++;
+            }
+            else if (m_logosoundcnt == 1 && logozoom2 > 0 && logozoom2 <= 107)
+            {
+                S_PlaySound(12);
+                m_logosoundcnt++;
+            }
         }
         else
         {
@@ -5390,6 +5485,9 @@ void Menu_Open(uint8_t playerID)
     m_mousewake_watchpoint = 0;
 #endif
 
+    m_menustarttics = totalclock;
+    m_logosoundcnt = 0;
+
     mouseLockToWindow(0);
 }
 
@@ -8155,6 +8253,9 @@ void M_DisplayMenus(void)
         walock[TILE_LOADSHOT] = 1;
         return;
     }
+
+    if (!(g_player[myconnectindex].ps->gm&MODE_GAME))
+        totalclocklock = totalclock;
 
     if (!Menu_IsTextInput(m_currentMenu) && KB_KeyPressed(sc_Q))
         Menu_AnimateChange(MENU_QUIT, MA_Advance);
