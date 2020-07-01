@@ -10024,15 +10024,15 @@ void A_PlayAlertSound(int spriteNum)
             case PIGCOP__STATIC:
             case PIGCOPDIVE__STATIC:       A_PlaySound(REALITY ? 92 : PIG_RECOG, spriteNum); break;
             case RECON__STATIC:            A_PlaySound(REALITY ? 97 : RECO_RECOG, spriteNum); break;
-            case DRONE__STATIC:            A_PlaySound(REALITY ? 82 : DRON_RECOG, spriteNum); break;
+            case DRONE__STATIC:            A_PlaySound(REALITY ? 105 : DRON_RECOG, spriteNum); break;
             case COMMANDER__STATIC:
-            case COMMANDERSTAYPUT__STATIC: A_PlaySound(REALITY ? 101 : COMM_RECOG, spriteNum); break;
+            case COMMANDERSTAYPUT__STATIC: A_PlaySound(REALITY ? 106 : COMM_RECOG, spriteNum); break;
             case ORGANTIC__STATIC:         if (REALITY) break; A_PlaySound(TURR_RECOG, spriteNum); break;
             case OCTABRAIN__STATIC:
             case OCTABRAINSTAYPUT__STATIC: A_PlaySound(REALITY ? 111 : OCTA_RECOG, spriteNum); break;
-            case BOSS1__STATIC:            S_PlaySound(REALITY ? ((sprite[spriteNum].pal == 1) ? 68 : 262) : BOS1_RECOG); break;
+            case BOSS1__STATIC:            S_PlaySound(REALITY ? ((sprite[spriteNum].pal != 0) ? 68 : 262) : BOS1_RECOG); break;
             case BOSS2__STATIC:            S_PlaySound(REALITY ? 226 : ((sprite[spriteNum].pal == 1) ? BOS2_RECOG : WHIPYOURASS)); break;
-            case BOSS3__STATIC:            S_PlaySound((sprite[spriteNum].pal == 1) ? (REALITY ? 118 : BOS3_RECOG) : (REALITY ? 261 : RIPHEADNECK)); break;
+            case BOSS3__STATIC:            S_PlaySound(REALITY ? ((sprite[spriteNum].pal != 0) ? 118 : 261) : ((sprite[spriteNum].pal == 1) ? BOS3_RECOG : RIPHEADNECK)); break;
             case BOSS4__STATIC:
             case BOSS4STAYPUT__STATIC:     if (REALITY) break; if (sprite[spriteNum].pal == 1) S_PlaySound(BOS4_RECOG); S_PlaySound(BOSS4_FIRSTSEE); break;
             case GREENSLIME__STATIC:       A_PlaySound(REALITY ? 22 : SLIM_RECOG, spriteNum); break;
