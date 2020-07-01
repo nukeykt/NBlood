@@ -2330,13 +2330,7 @@ static void Net_ReceiveNewPlayer(uint8_t *pbuf, int32_t packbufleng)
         g_player[pbuf[4]].playerquitflag = 1;
 
         if (!g_player[pbuf[4]].ps)
-        {
             g_player[pbuf[4]].ps = (DukePlayer_t *)Xcalloc(1, sizeof(DukePlayer_t));
-        }
-        if (!g_player[pbuf[4]].input)
-        {
-            g_player[pbuf[4]].input = (input_t *)Xcalloc(1, sizeof(input_t));
-        }
     }
 
     if (pbuf[5] == NET_DEDICATED_SERVER)

@@ -1687,11 +1687,10 @@ void G_ClearFIFO(void)
 
     for (int p = 0; p < MAXPLAYERS; ++p)
     {
-        if (g_player[p].input != NULL)
-            *g_player[p].input = {};
-
-        g_player[p].vote = 0;
+        g_player[p].input   = {};
+        g_player[p].vote    = 0;
         g_player[p].gotvote = 0;
+
         g_player[p].horizSkew        = 0;
         g_player[p].horizAngleAdjust = 0;
     }

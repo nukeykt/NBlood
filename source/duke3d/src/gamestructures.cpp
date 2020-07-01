@@ -1764,17 +1764,17 @@ int32_t __fastcall VM_GetPlayerInput(int const playerNum, int32_t labelNum)
     switch (labelNum)
     {
         case INPUT_AVEL:
-            labelNum = (i->q16avel >> 16); break;
+            labelNum = (i.q16avel >> 16); break;
 
         case INPUT_HORZ:
-            labelNum = (i->q16horz >> 16); break;
+            labelNum = (i.q16horz >> 16); break;
 
-        case INPUT_Q16AVEL: labelNum = i->q16avel; break;
-        case INPUT_Q16HORZ: labelNum = i->q16horz; break;
-        case INPUT_FVEL:    labelNum = i->fvel;    break;
-        case INPUT_SVEL:    labelNum = i->svel;    break;
-        case INPUT_BITS:    labelNum = i->bits;    break;
-        case INPUT_EXTBITS: labelNum = i->extbits; break;
+        case INPUT_Q16AVEL: labelNum = i.q16avel; break;
+        case INPUT_Q16HORZ: labelNum = i.q16horz; break;
+        case INPUT_FVEL:    labelNum = i.fvel;    break;
+        case INPUT_SVEL:    labelNum = i.svel;    break;
+        case INPUT_BITS:    labelNum = i.bits;    break;
+        case INPUT_EXTBITS: labelNum = i.extbits; break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -1795,17 +1795,17 @@ void __fastcall VM_SetPlayerInput(int const playerNum, int const labelNum, int32
     switch (labelNum)
     {
         case INPUT_AVEL:
-            i->q16avel = fix16_from_int(newValue); break;
+            i.q16avel = fix16_from_int(newValue); break;
 
         case INPUT_HORZ:
-            i->q16horz = fix16_from_int(newValue); break;
+            i.q16horz = fix16_from_int(newValue); break;
 
-        case INPUT_Q16AVEL: i->q16avel = newValue; break;
-        case INPUT_Q16HORZ: i->q16horz = newValue; break;
-        case INPUT_FVEL:    i->fvel    = newValue; break;
-        case INPUT_SVEL:    i->svel    = newValue; break;
-        case INPUT_BITS:    i->bits    = newValue; break;
-        case INPUT_EXTBITS: i->extbits = newValue; break;
+        case INPUT_Q16AVEL: i.q16avel = newValue; break;
+        case INPUT_Q16HORZ: i.q16horz = newValue; break;
+        case INPUT_FVEL:    i.fvel    = newValue; break;
+        case INPUT_SVEL:    i.svel    = newValue; break;
+        case INPUT_BITS:    i.bits    = newValue; break;
+        case INPUT_EXTBITS: i.extbits = newValue; break;
     }
 }
 

@@ -215,7 +215,7 @@ EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t) % 4 == 0);
 typedef struct
 {
     DukePlayer_t *ps;
-    input_t *input;
+    input_t input;
 
     int horizRecenter;
     int horizAngleAdjust;
