@@ -3888,6 +3888,7 @@ badindex:
                                     VM_ASSERT((unsigned)ud.volume_number < MAXVOLUMES, "invalid volume %d\n", ud.volume_number);
                                     Bstrcpy(apStrings[q], g_volumeNames[ud.volume_number]);
                                     break;
+                                case STR_REVISION:        Bstrcpy(apStrings[q], &s_buildRev[1]);        break;
                                 case STR_YOURTIME:        Bstrcpy(apStrings[q], G_PrintYourTime());     break;
                                 case STR_PARTIME:         Bstrcpy(apStrings[q], G_PrintParTime());      break;
                                 case STR_DESIGNERTIME:    Bstrcpy(apStrings[q], G_PrintDesignerTime()); break;

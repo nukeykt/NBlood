@@ -6074,6 +6074,7 @@ static void C_AddDefaultDefinitions(void)
         { "STR_MAPNAME",         STR_MAPNAME },
         { "STR_PARTIME",         STR_PARTIME },
         { "STR_PLAYERNAME",      STR_PLAYERNAME },
+        { "STR_REVISION",        STR_REVISION },
         { "STR_USERMAPFILENAME", STR_USERMAPFILENAME },
         { "STR_VERSION",         STR_VERSION },
         { "STR_VOLUMENAME",      STR_VOLUMENAME },

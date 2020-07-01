@@ -204,6 +204,7 @@ enum SystemString_t {
     STR_DESIGNERTIME,
     STR_BESTTIME,
     STR_USERMAPFILENAME,
+    STR_REVISION,
 };
 
 enum ScriptError_t
