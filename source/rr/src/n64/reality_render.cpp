@@ -2279,7 +2279,7 @@ int viswallcheck(int w, float f1, float f2)
     return 1;
 }
 
-void RT_ScanSector(float lx, float rx, int sectnum)
+void RT_ScanSector(float lx, float rx, int sectnum, bool firstscan = false)
 {
     if (sector[sectnum].floorheinum == 0)
     {
@@ -2321,8 +2321,9 @@ void RT_ScanSector(float lx, float rx, int sectnum)
             continue;
         }
         //// Visibility check
-        if ((globalposx - wx1) * (y2 - wy1) < (globalposy - wy1) * (x2 - wx1)
-         || (globalposy - wy1) * (x1 - wx1) <= (globalposx - wx1) * (y1 - wy1))
+        if (!firstscan &&
+            ((globalposx - wx1) * (y2 - wy1) < (globalposy - wy1) * (x2 - wx1)
+         || (globalposy - wy1) * (x1 - wx1) <= (globalposx - wx1) * (y1 - wy1)))
         {
             if ((globalposx - wx2) * (y2 - wy2) < (globalposy - wy2) * (x2 - wx2)
              || (globalposy - wy2) * (x1 - wx2) <= (globalposx - wx2) * (y1 - wy2))
@@ -2347,19 +2348,29 @@ void RT_ScanSector(float lx, float rx, int sectnum)
             wallbitcheck[w>>3] |= pow2char[w&7];
             continue;
         }
+        float a2, a1;
         float wa2 = getanglef2(wx2, wy2, globalposx, globalposy);
         float wa1 = getanglef2(wx1, wy1, globalposx, globalposy);
-        float a2 = lx;
-        float d2 = getangledelta(lx, wa2);
-        if (d2 >= 0.f)
-            a2 = wa2;
-        float a1 = rx;
-        float d1 = getangledelta(rx, wa1);
-        if (d1 <= 0.f)
-            a1 = wa1;
-        if (d1 <= 0 && d2 >= 0)
+        if (firstscan)
         {
+            a2 = wa2;
+            a1 = wa1;
             wallbitcheck[w>>3] |= pow2char[w&7];
+        }
+        else
+        {
+            a2 = lx;
+            float d2 = getangledelta(lx, wa2);
+            if (d2 >= 0.f)
+                a2 = wa2;
+            a1 = rx;
+            float d1 = getangledelta(rx, wa1);
+            if (d1 <= 0.f)
+                a1 = wa1;
+            if (d1 <= 0 && d2 >= 0)
+            {
+                wallbitcheck[w>>3] |= pow2char[w&7];
+            }
         }
         if (viswallcheck(w, a2, a1) && viswallcnt < MAXWALLS)
         {
@@ -2401,7 +2412,7 @@ void RT_ScanSectors(int sectnum)
     memset(ceilingbitcheck, 0, sizeof(ceilingbitcheck));
     memset(vissectbit1, 0, sizeof(vissectbit1));
 
-    RT_ScanSector(viewangler2, viewangler1, sectnum);
+    RT_ScanSector(viewangler2, viewangler1, sectnum, ud.fov > 100);
     for (int i = 0; i < ((MAXWALLS+7)>>3); i++)
     {
         for (int j = 0; j < 8; j++)
