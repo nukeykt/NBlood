@@ -82,6 +82,14 @@ void RT_Init(void)
 
     RT_BuildAngleTable();
 
+    static int const wchoice[14] = {
+        13, 12, 2, 3, 7, 4, 10, 6, 14, 8, 5, 1, 9, 0
+    };
+
+    for (int i = 0; i < 14; i++)
+    {
+        g_player[0].wchoice[i] = wchoice[i];
+    }
 }
 
 struct {
