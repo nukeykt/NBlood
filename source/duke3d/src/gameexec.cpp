@@ -71,10 +71,6 @@ int32_t g_textureVarID   = -1;  // var ID of "TEXTURE"
 int32_t g_thisActorVarID = -1;  // var ID of "THISACTOR"
 int32_t g_structVarIDs   = -1;
 
-// for timing events and actors
-uint32_t g_eventCalls[MAXEVENTS], g_actorCalls[MAXTILES];
-double g_eventTotalMs[MAXEVENTS], g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];
-
 GAMEEXEC_STATIC void VM_Execute(int const loop = false);
 
 void VM_ScriptInfo(intptr_t const * const ptr, int const range)
@@ -163,8 +159,6 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
     insptr = apScript + apScriptEvents[eventNum];
     globalReturn = returnValue;
 
-    auto const t = timerGetPerformanceCounter();
-
     if ((unsigned)spriteNum >= MAXSPRITES)
         VM_DummySprite();
 
@@ -175,9 +169,6 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
 
     if (vm.flags & VM_KILL)
         VM_DeleteSprite(vm.spriteNum, vm.playerNum);
-
-    g_eventTotalMs[eventNum] += (double)(1000*(timerGetPerformanceCounter()-t))/timerGetPerformanceFrequency();
-    g_eventCalls[eventNum]++;
 
     // restoring these needs to happen after VM_DeleteSprite() due to event recursion
     returnValue = globalReturn;
@@ -6400,19 +6391,10 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     }
 
     VM_UpdateAnim(vm.spriteNum, vm.pData);
-    int const picnum = vm.pSprite->picnum;
-
-    auto t = timerGetPerformanceCounter();
 
     insptr = 4 + (g_tile[vm.pSprite->picnum].execPtr);
     VM_Execute(true);
     insptr = NULL;
-
-    auto ms = (double)(1000*(timerGetPerformanceCounter()-t))/timerGetPerformanceFrequency();
-    g_actorTotalMs[picnum] += ms;
-    g_actorMinMs[picnum] = min(g_actorMinMs[picnum], ms);
-    g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], ms);
-    g_actorCalls[picnum]++;
 
     if ((vm.flags & VM_KILL) == 0)
     {

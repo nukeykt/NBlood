@@ -6302,9 +6302,6 @@ void C_Compile(const char *fileName)
     for (auto & i : g_tile)
         Bmemset(&i, 0, sizeof(tiledata_t));
 
-    for (double & actorMinMs : g_actorMinMs)
-        actorMinMs = 1e308;
-
     scriptInitTables();
     VM_InitHashTables();
 
