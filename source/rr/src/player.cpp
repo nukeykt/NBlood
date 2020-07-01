@@ -1310,7 +1310,7 @@ growspark_rr:
                 {
                     startPos.z -= ZOFFSET5;
                     if (REALITY && pSprite->pal != 0)
-                        startPos.z -= ZOFFSET2;
+                        startPos.z += ZOFFSET2;
                 }
                 else if (PN(spriteNum) == BOSS2)
                 {
