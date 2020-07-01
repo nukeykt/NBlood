@@ -484,6 +484,9 @@ vec2_t G_ScreenText(const int32_t font,
     if (str == NULL)
         return size;
 
+    if (REALITY)
+        RT_DisablePolymost();
+
     NEG_ALPHA_TO_BLEND(alpha, blendidx, o);
 
     end = (f & TEXT_BACKWARDS) ? str-1 : Bstrchr(str, '\0');
@@ -638,6 +641,12 @@ vec2_t G_ScreenText(const int32_t font,
             G_AddCoordsFromRotation(&location, &Xdirection, pos.x);
             G_AddCoordsFromRotation(&location, &Ydirection, pos.y);
 
+            if (REALITY)
+            {
+                RT_RotateSpriteSetColor(255, 255, 255, 255);
+                RT_RotateSpriteText(location.x, location.y, (float)z2 * (100.f/65536.f), (float)z2 * (100.f/65536.f), tile, orientation, true);
+                break;
+            }
             rotatesprite_(location.x, location.y, z2, angle, tile, shade, pal, orientation, alpha, blendidx, x1, y1, x2, y2);
 
             break;
@@ -847,6 +856,9 @@ vec2_t G_ScreenText(const int32_t font,
         size.x >>= 16;
         size.y >>= 16;
     }
+
+    if (REALITY)
+        RT_EnablePolymost();
 
     return size;
 }

@@ -60,7 +60,7 @@ static pthtyp *texcache_tryart(int32_t const dapicnum, int32_t const dapalnum, i
         // load from art
         for (pth=texcache.list[j]; pth; pth=pth->next)
             if (pth->picnum == dapicnum && (pth->flags & PTH_N64)
-                && (pth->flags & (PTH_CLAMPED | PTH_N64_INTENSIVITY)) == (TO_PTH_CLAMPED(dameth) | TO_PTH_N64_INTENSIVITY(dameth)))
+                && (pth->flags & (PTH_CLAMPED | PTH_N64_INTENSIVITY | PTH_N64_SCALED)) == (TO_PTH_CLAMPED(dameth) | TO_PTH_N64_INTENSIVITY(dameth) | TO_PTH_N64_SCALED(dameth)))
             {
                 if (pth->flags & PTH_INVALIDATED)
                 {

@@ -372,16 +372,25 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     int tileid = rt_tilemap[dapic];
     static int32_t fullbrightloadingpass = 0;
     vec2_16_t const & tsizart = tilesiz[dapic];
-    vec2_t siz = { 0, 0 }, tsiz = { 0, 0 };
-    int const picdim = tsiz.x*tsiz.y;
+    vec2_t siz = { 0, 0 }, tsiz = { 0, 0 }, tsiz2 = { 0, 0 };
     char hasalpha = 0;
     tileinfo_t *tinfo = nullptr;
 
     if (tileid >= 0)
     {
         tinfo = &rt_tileinfo[tileid];
-        tsiz.x = tinfo->dimx;
-        tsiz.y = tinfo->dimy;
+        if (dameth & DAMETH_N64_SCALED)
+        {
+            tsiz.x = tinfo->sizx;
+            tsiz.y = tinfo->sizy;
+        }
+        else
+        {
+            tsiz.x = tinfo->dimx;
+            tsiz.y = tinfo->dimy;
+        }
+        tsiz2.x = tinfo->dimx;
+        tsiz2.y = tinfo->dimy;
     }
 
     if (!glinfo.texnpot)
@@ -412,14 +421,20 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
         for (bssize_t y = 0; y < siz.y; y++)
         {
             coltype *wpptr = &pic[y * siz.x];
-            int32_t y2 = (y < tsiz.y) ? y : y - tsiz.y;
+            int32_t ty = y;
+            if (dameth & DAMETH_N64_SCALED)
+                ty = tsiz2.y - 1 - ((tsiz.y - y - 1) * tsiz2.y) / tsiz.y;
+            int32_t y2 = (ty < tsiz2.y) ? ty : ty - tsiz2.y;
 
             for (bssize_t x = 0; x < siz.x; x++, wpptr++)
             {
                 int32_t dacol;
-                int32_t x2 = (x < tsiz.x) ? x : x-tsiz.x;
+                int32_t tx = x;
+                if (dameth & DAMETH_N64_SCALED)
+                    tx = tsiz2.x - 1 - ((tsiz.x - x - 1) * tsiz2.x) / tsiz.x;
+                int32_t x2 = (tx < tsiz2.x) ? tx : tx-tsiz2.x;
 
-                if ((dameth & DAMETH_CLAMPED) && (x >= tsiz.x || y >= tsiz.y)) //Clamp texture
+                if ((dameth & DAMETH_CLAMPED) && (tx >= tsiz2.x || ty >= tsiz2.y)) //Clamp texture
                 {
                     wpptr->r = wpptr->g = wpptr->b = wpptr->a = 0;
                     continue;
@@ -427,12 +442,12 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
 
                 if (is8bit)
                 {
-                    dacol = *(char *)(rt_waloff[tileid]+y2*tsiz.x+x2);
+                    dacol = *(char *)(rt_waloff[tileid]+y2*tsiz2.x+x2);
                     dacol = rt_palette[dapal][dacol];
                 }
                 else
                 {
-                    int o = y2 * tsiz.x + x2;
+                    int o = y2 * tsiz2.x + x2;
                     dacol = *(char *)(rt_waloff[tileid]+32+o/2);
                     if (o&1)
                         dacol &= 15;
@@ -591,7 +606,7 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     pth->palnum = dapal;
     pth->shade = dashade;
     pth->effects = 0;
-    pth->flags = PTH_N64 | TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | (hasalpha*(PTH_HASALPHA|PTH_ONEBITALPHA)) | TO_PTH_N64_INTENSIVITY(dameth);
+    pth->flags = PTH_N64 | TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | (hasalpha*(PTH_HASALPHA|PTH_ONEBITALPHA)) | TO_PTH_N64_INTENSIVITY(dameth) | TO_PTH_N64_SCALED(dameth);
     pth->hicr = NULL;
     pth->siz = tsiz;
 }
@@ -3841,6 +3856,90 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     float xdim43 = ydim * (4.f / 3.f);
     float scl = ydim / 240.f;
     float xo = (xdim - xdim43) * 0.5f;
+    glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u1, v1); glVertex2f(x1 * scl + xo, y1 * scl);
+    glTexCoord2f(u2, v1); glVertex2f(x2 * scl + xo, y1 * scl);
+    glTexCoord2f(u2, v2); glVertex2f(x2 * scl + xo, y2 * scl);
+    glTexCoord2f(u1, v2); glVertex2f(x1 * scl + xo, y2 * scl);
+    glEnd();
+}
+
+void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int orientation, bool buildcoords/* = false*/)
+{
+    int otilenum = tilenum;
+    int tileid = rt_tilemap[tilenum];
+    if (tileid == -1)
+        return;
+
+    if (orientation & ROTATESPRITE_FULL16)
+    {
+        x *= (1.f/65536.f);
+        y *= (1.f/65536.f);
+    }
+
+    if (rt_tileinfo[tileid].picanm&192)
+    {
+        int anim = animateoffs(tilenum, 0);
+        tilenum += anim;
+        tileid += anim;
+    }
+    if (tileid == 1)
+        return;
+
+    if (buildcoords)
+    {
+        sy *= 1.2;
+        y *= 1.2;
+    }
+
+    float sizx = tilesiz[tilenum].x * sx / 100.f;
+    float sizy = tilesiz[tilenum].y * sy / 100.f;
+
+    if (sizx < 1.f && sizy < 1.f)
+        return;
+
+    float x1 = x;
+    float x2 = x + sizx;
+    float y1 = y;
+    float y2 = y + sizy;
+
+    float u1, u2, v1, v2;
+    u1 = 0.f;
+    u2 = 1.f;
+    v1 = 0.f;
+    v2 = 1.f;
+
+    if (!waloff[tilenum])
+        tileLoad(tilenum);
+    
+    int method = DAMETH_CLAMPED | DAMETH_N64 | DAMETH_N64_SCALED;
+    pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
+
+    if (!pth)
+        return;
+
+    glEnable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    if (!buildcoords)
+        RT_ProjectionCorrect();
+    float xdim43 = ydim * (4.f / 3.f);
+    float scl = ydim / 240.f;
+    float xo = (xdim - xdim43) * 0.5f;
+    if (orientation & 256)
+    {
+        xo = 0;
+    }
+    else if (orientation & 512)
+    {
+        xo *= 2.f;
+    }
     glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(u1, v1); glVertex2f(x1 * scl + xo, y1 * scl);

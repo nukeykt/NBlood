@@ -1,3 +1,5 @@
+// Copyright: 2020 Nuke.YKT, EDuke32 developers
+// License: GPLv2
 #pragma once
 
 extern int rt_pfade;

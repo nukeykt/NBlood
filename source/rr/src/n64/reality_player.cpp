@@ -1,3 +1,5 @@
+// Copyright: 2020 Nuke.YKT, EDuke32 developers
+// License: GPLv2
 #include "compat.h"
 #include "build.h"
 #include "../duke3d.h"
