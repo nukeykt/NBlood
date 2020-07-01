@@ -491,7 +491,7 @@ int rt_musicactive = 0;
 
 void RT_PlaySong(void)
 {
-    if (!musicCtl || !seqBuffer)
+    if (!musicCtl || !seqBuffer || rt_musicactive)
         return;
 
     memset(voicePool, 0, sizeof(voicePool));

@@ -1713,7 +1713,6 @@ void G_DisplayLogo(void)
 
         //g_player[myconnectindex].ps->palette = palette;
         P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 0);    // JBF 20040308
-        S_PlaySound(NITEVISION_ONOFF);
 
         //G_FadePalette(0,0,0,0);
         videoClearScreen(0L);

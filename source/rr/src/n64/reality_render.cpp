@@ -3696,7 +3696,7 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
         globalcolorgreen = shade;
     }
 
-    if (g_player[ss].ps->heat_on && g_player[ss].ps->newowner == -1)
+    if (g_player[ss].ps->heat_on && g_player[ss].ps->newowner == -1 && (g_player[ss].ps->gm & MODE_GAME) != 0)
     {
         globalcolorgreen = (globalcolorgreen * 384) >> 8;
         globalcolorred = (globalcolorred * 171) >> 8;
@@ -3706,7 +3706,7 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
     globalcolorred = (shade * globalcolorred) / 256;
     globalcolorgreen = (shade * globalcolorgreen) / 256;
     globalcolorblue = (shade * globalcolorblue) / 256;
-    if (g_player[ss].ps->pals.f > 0 && g_player[ss].ps->loogcnt == 0)
+    if (g_player[ss].ps->pals.f > 0 && g_player[ss].ps->loogcnt == 0 && (g_player[ss].ps->gm & MODE_GAME) != 0)
     {
         globalcolorred += ((g_player[ss].ps->pals.r * 4 - globalcolorred) * g_player[ss].ps->pals.f) / 64;
         globalcolorgreen += ((g_player[ss].ps->pals.g * 4 - globalcolorgreen) * g_player[ss].ps->pals.f) / 64;
