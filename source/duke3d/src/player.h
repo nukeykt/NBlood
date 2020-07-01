@@ -120,7 +120,8 @@ typedef struct {
 typedef struct {
     int16_t got_access, last_extra, inv_amount[GET_MAX], curr_weapon, holoduke_on;
     int16_t last_weapon, weapon_pos, kickback_pic;
-    int16_t ammo_amount[MAX_WEAPONS], frag[MAXPLAYERS];
+    int16_t ammo_amount[MAX_WEAPONS];
+    uint16_t frag[MAXPLAYERS];
     uint16_t gotweapon;
     char inven_icon, jetpack_on, heat_on;
 } DukeStatus_t;
