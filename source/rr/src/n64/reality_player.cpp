@@ -472,7 +472,7 @@ void RT_P_DisplayWeapon(void)
             if (*weaponFrame > 0)
             {
                 RT_DrawWeaponTileWithID(currentWeapon << 1, weaponX + 249 + max(79 - ((*weaponFrame) << 1), 47),
-                                        (weaponY << 1) + 176 - weaponYOffset + max(0, *weaponFrame * 3 - 60),
+                                        (weaponY << 1) + 189 - weaponYOffset + max(0, *weaponFrame * 3 - 60),
                                         (currentWeapon == RPG_WEAPON) ? 3792 : 3789, weaponShade, weaponBits, weaponPal);
             }
 
