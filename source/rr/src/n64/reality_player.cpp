@@ -729,8 +729,9 @@ void RT_P_DisplayWeapon(void)
                     weaponY += RT_FakeKRand() & 3;
                 }
                 
-                float sizx = ((RT_FakeKRand() & 255) * (1.f/256.f) + 1.5f);
-                float sizy = ((RT_FakeKRand() & 255) * (1.f/256.f) + 1.5f);
+                float siz = min(pPlayer->hbomb_hold_delay / 33.f, 1.f);
+                float sizx = ((RT_FakeKRand() & 255) * (1.f/256.f) + 1.5f) * siz;
+                float sizy = ((RT_FakeKRand() & 255) * (1.f/256.f) + 1.5f) * siz;
 
                 RT_DrawTileFlash(weaponX + 175 - halfLookAng, weaponY + 215 - weaponYOffset, 0xf01, sizx, sizy, RT_FakeKRand()&255, 4);
             }
