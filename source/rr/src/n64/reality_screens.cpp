@@ -285,6 +285,11 @@ void RT_Intro(void)
             }
             case 3:
             {
+                if (intro_time >= 60 * 4 && intro_sndcnt == 0)
+                {
+                    S_PlaySound(0xba);
+                    intro_sndcnt++;
+                }
                 RT_RenderScissor(91, 68, 229, 172);
                 int alpha = min(intro_time * 2, 255);
                 RT_RotateSpriteSetColor(255, 255, 255, 256);
