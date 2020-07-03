@@ -190,17 +190,70 @@ void RT_IntroAdvance(bool advance)
     }
 }
 
+void RT_IntroText(int textId, int totaltime)
+{
+    char textline[34] = "";
+    int intro_time = (int)(totalclock - ototalclock);
+    int y = textId < 7 ? 20 : 180;
+    int alpha = 0;
+    if (totaltime - 16 * 4 < intro_time)
+        alpha = (totaltime - intro_time) * 4;
+    else
+        alpha = min(intro_time * 4, 256);
+
+    int l = strlen(rt_scenestrings[textId]);
+    switch (textId)
+    {
+    case 4:
+    case 6:
+    case 12:
+        RT_RotateSpriteSetColor(127, 255, 127, alpha);
+        break;
+    case 5:
+        RT_RotateSpriteSetColor(255, 127, 127, alpha);
+        break;
+    case 14:
+    case 15:
+    case 16:
+        RT_RotateSpriteSetColor(255, 127, 255, alpha);
+        break;
+    default:
+        RT_RotateSpriteSetColor(255, 255, 255, alpha);
+        break;
+    }
+    RT_RenderUnsetScissor();
+
+    for (int i = 0; i < l;)
+    {
+        const char *t = rt_scenestrings[textId];
+        int j;
+        for (j = 0; j < 33 && i + j < l; j++)
+            textline[j] = t[i + j];
+        textline[j] = '\0';
+        while (textline[j] != ' ' && j > 0)
+        {
+            textline[j] = '\0';
+            j--;
+        }
+        G_ScreenText(STARTALPHANUM, 160, y, 65536, 0, 0, textline, 0, 0, 0, 0, 7, 0, 0, 0,
+            TEXT_XCENTER | TEXT_N64COORDS | TEXT_N64NOPAL, 0, 0, xdim, ydim);
+        i += j + 1;
+        y += 10;
+    }
+}
+
 void RT_Intro(void)
 {
     I_ClearAllInput();
     ototalclock = totalclock;
-    intro_state = 0;
+    intro_state = 1;
     S_TryPlaySpecialMusic(MUS_INTRO);
     bool playing = true;
     while (playing && !I_CheckAllInput())
     {
         if (engineFPSLimit())
         {
+            RT_RenderUnsetScissor();
             videoClearScreen(0L);
             int intro_time = (int)(totalclock - ototalclock);
             RT_DisablePolymost();
@@ -216,22 +269,23 @@ void RT_Intro(void)
             }
             case 1:
             {
-                // Text
+                RT_IntroText(0, 160 * 4);
                 RT_IntroAdvance(intro_time >= 160 * 4);
                 break;
             }
             case 2:
             {
-                // Scissor
+                RT_RenderScissor(91, 68, 229, 172);
                 int alpha = min(intro_time * 2, 255);
                 RT_RotateSpriteSetColor(alpha, alpha, alpha, 256);
                 RT_RotateSprite(160, 120, 100, 100, 0xf56, RTRS_SCALED);
+                RT_IntroText(1, 160 * 4);
                 RT_IntroAdvance(intro_time >= 160 * 4);
                 break;
             }
             case 3:
             {
-                // Scissor
+                RT_RenderScissor(91, 68, 229, 172);
                 int alpha = min(intro_time * 2, 255);
                 RT_RotateSpriteSetColor(255, 255, 255, 256);
                 RT_RotateSprite(160, 120, 100, 100, 0xf56, RTRS_SCALED);
@@ -241,7 +295,7 @@ void RT_Intro(void)
                     float z = max<float>(50.f - (intro_time * (1.f/4.f) + 40.f) * 0.25f, 0.75);
                     RT_RotateSprite(x + 100, 120, 100.f / z, 100.f /z, 0xf57, RTRS_SCALED);
                 }
-                // text
+                RT_IntroText(2, 160 * 4);
                 RT_IntroAdvance(intro_time >= 160 * 4);
                 break;
             }
@@ -250,6 +304,7 @@ void RT_Intro(void)
                 float z = max(140.f - max(intro_time - 20 * 4, 0) * (1.f/4.f), 100.f);
                 RT_RotateSpriteSetColor(255, 255, 255, 256);
                 RT_RotateSprite(160, 120, z, z, 0xf58, RTRS_SCALED);
+                RT_IntroText(3, 130 * 4);
                 RT_IntroAdvance(intro_time >= 130 * 4);
                 break;
             }
@@ -258,7 +313,7 @@ void RT_Intro(void)
                 float z = max(140.f - max(intro_time - 20 * 4, 0) * (1.f/4.f), 100.f);
                 RT_RotateSpriteSetColor(255, 255, 255, 256);
                 RT_RotateSprite(160, 120, 100, 100, 0xf5a, RTRS_SCALED);
-                RT_IntroAdvance(intro_time >= 4 * 4);
+                RT_IntroAdvance(intro_time >= 40 * 4);
                 break;
             }
             case 6:
@@ -268,7 +323,7 @@ void RT_Intro(void)
                 RT_RotateSprite(160, 120, 100, 100, 0xf59, RTRS_SCALED);
                 RT_RotateSpriteSetColor(255, 255, 255, alpha);
                 RT_RotateSprite(160, 120, 100, 100, 0xf5b, RTRS_SCALED);
-                // Text
+                RT_IntroText(4, 154 * 4);
                 RT_IntroAdvance(intro_time >= 154 * 4);
                 break;
             }
@@ -286,17 +341,17 @@ void RT_Intro(void)
                 }
                 if (intro_time >= 32*4 && intro_sndcnt == 2)
                 {
-                    S_PlaySound(0xb2);
+                    S_PlaySound(0xb4);
                     intro_sndcnt++;
                 }
-                // Scissor
+                RT_RenderScissor(91, 68, 229, 172);
                 RT_RotateSpriteSetColor(255, 255, 255, 256);
                 float z = intro_time * (1.f/4.f) * 2.3f + 100.f;
                 if ((intro_time & 32) == 0 && intro_time < 64 * 4)
                     RT_RotateSprite(160.f + intro_time * (1.f/4.f), 120.f + intro_time * (1.f/8.f), z, z, 0xf59, RTRS_SCALED);
                 else
-                    RT_RotateSprite(160.f, 120.f, z, z, 0xf59, RTRS_SCALED);
-                // text
+                    RT_RotateSprite(160.f, 120.f, 100.f, 100.f, 0xf5c, RTRS_SCALED);
+                RT_IntroText(5, 79 * 4);
                 RT_IntroAdvance(intro_time >= 79 * 4);
                 break;
             }
@@ -310,8 +365,8 @@ void RT_Intro(void)
                 int o = 230 - intro_time * 2;
                 RT_RotateSpriteSetColor(255, 255, 255, 256);
                 RT_RotateSprite(160 + o, 120 - o / 3.f, 100, 100, 0xf5d, RTRS_SCALED);
-                // text
-                RT_IntroAdvance(o < 90);
+                RT_IntroText(6, 57 * 4);
+                RT_IntroAdvance(o < -230);
                 break;
             }
             case 9:
@@ -340,6 +395,7 @@ void RT_Intro(void)
         }
     }
 
+    RT_RenderUnsetScissor();
     videoClearScreen(0L);
     videoNextPage();
 }

@@ -643,8 +643,9 @@ vec2_t G_ScreenText(const int32_t font,
 
             if (REALITY)
             {
-                RT_RotateSpriteSetShadePal(0, shade, pal);
-                RT_RotateSpriteText(location.x, location.y, (float)z2 * (100.f/65536.f), (float)z2 * (100.f/65536.f), tile, orientation, true);
+                if (!(f & TEXT_N64NOPAL))
+                    RT_RotateSpriteSetShadePalAlpha(shade, pal, 255 - alpha);
+                RT_RotateSpriteText(location.x, location.y, (float)z2 * (100.f/65536.f), (float)z2 * (100.f/65536.f), tile, orientation | ROTATESPRITE_FULL16, !(f & TEXT_N64COORDS));
                 break;
             }
             rotatesprite_(location.x, location.y, z2, angle, tile, shade, pal, orientation, alpha, blendidx, x1, y1, x2, y2);

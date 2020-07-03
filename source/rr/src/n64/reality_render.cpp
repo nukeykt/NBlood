@@ -3696,7 +3696,7 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
         globalcolorgreen = shade;
     }
 
-    if (g_player[ss].ps->heat_on && g_player[ss].ps->newowner == -1 && (g_player[ss].ps->gm & MODE_GAME) != 0)
+    if (g_player[ss].ps->heat_on && g_player[ss].ps->newowner == -1)
     {
         globalcolorgreen = (globalcolorgreen * 384) >> 8;
         globalcolorred = (globalcolorred * 171) >> 8;
@@ -3726,6 +3726,55 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
         globalcolorblue = 255;
     RT_SetTexComb(0);
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), 1.f);
+}
+
+void RT_RotateSpriteSetShadePalAlpha(int shade, int pal, int alpha)
+{
+    shade = (28 - shade) * 9;
+    if (shade > 256)
+        shade = 256;
+    else if (shade < 0)
+        shade = 0;
+
+    globalcolorred = shade;
+    globalcolorblue = shade;
+    globalcolorgreen = shade;
+
+    if (pal == 1)
+    {
+        globalcolorred = shade / 2;
+        globalcolorblue = shade;
+        globalcolorgreen = shade / 2;
+    }
+    else if (pal == 2)
+    {
+        globalcolorred = shade;
+        globalcolorblue = shade / 2;
+        globalcolorgreen = shade / 2;
+    }
+    else if (pal == 6 || pal == 8)
+    {
+        globalcolorred = shade / 2;
+        globalcolorblue = shade / 2;
+        globalcolorgreen = shade;
+    }
+    globalcolorred = (shade * globalcolorred) / 256;
+    globalcolorgreen = (shade * globalcolorgreen) / 256;
+    globalcolorblue = (shade * globalcolorblue) / 256;
+    if (globalcolorred < 0)
+        globalcolorred = 0;
+    if (globalcolorred > 255)
+        globalcolorred = 255;
+    if (globalcolorgreen < 0)
+        globalcolorgreen = 0;
+    if (globalcolorgreen > 255)
+        globalcolorgreen = 255;
+    if (globalcolorblue < 0)
+        globalcolorblue = 0;
+    if (globalcolorblue > 255)
+        globalcolorblue = 255;
+    RT_SetTexComb(0);
+    glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
 }
 
 void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation, bool screenCorrection /* = true */)
@@ -3989,10 +4038,12 @@ void RT_RenderScissor(float x1, float y1, float x2, float y2)
     y1 += fydim * (1.f / 2.f);
     y2 += fydim * (1.f / 2.f);
 
-    glScissor((int)x1, (int)y1, (int)x2, (int)y2);
+    glScissor((int)x1, (int)y1, (int)x2 - (int)x1, (int)y2 - (int)y1);
+    glEnable(GL_SCISSOR_TEST);
 }
 
 void RT_RenderUnsetScissor(void)
 {
     glScissor(0, 0, xdim, ydim);
+    glDisable(GL_SCISSOR_TEST);
 }

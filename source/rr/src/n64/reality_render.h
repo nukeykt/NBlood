@@ -29,6 +29,7 @@ void RT_AdjustCeilingPanning(int sectnum, int x, int y);
 void RT_AdjustFloorPanning(int sectnum, int x, int y);
 void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4);
 void RT_RotateSpriteSetShadePal(int ss, int shade, int pal);
+void RT_RotateSpriteSetShadePalAlpha(int shade, int pal, int alpha);
 void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation, bool screenCorrection = true);
 void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int orientation, bool buildcoords = false);
 void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientation, int color);
