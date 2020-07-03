@@ -3965,3 +3965,34 @@ void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientat
     RT_DisplayTileWorld(x, y, sx, sy, picnum, orientation);
     unsetfxcolor();
 }
+
+
+void RT_RenderScissor(float x1, float y1, float x2, float y2)
+{
+    const float fxdim = (float)xdim;
+    const float fydim = (float)ydim;
+
+    x1 -= 160.f;
+    x2 -= 160.f;
+    y1 -= 120.f;
+    y2 -= 120.f;
+
+    float factor = fydim / (240.f - 32.f);
+
+    x1 *= factor;
+    x2 *= factor;
+    y1 *= factor;
+    y2 *= factor;
+
+    x1 += fxdim * (1.f / 2.f);
+    x2 += fxdim * (1.f / 2.f);
+    y1 += fydim * (1.f / 2.f);
+    y2 += fydim * (1.f / 2.f);
+
+    glScissor((int)x1, (int)y1, (int)x2, (int)y2);
+}
+
+void RT_RenderUnsetScissor(void)
+{
+    glScissor(0, 0, xdim, ydim);
+}
