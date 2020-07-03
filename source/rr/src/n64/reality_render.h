@@ -14,7 +14,7 @@ void RT_LoadTiles(void);
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio);
 void RT_GLInit(void);
 
-void RT_DisablePolymost();
+void RT_DisablePolymost(int useShader);
 void RT_EnablePolymost();
 
 enum {

@@ -208,7 +208,7 @@ void RT_P_DisplayScuba(void)
 #ifdef SPLITSCREEN_MOD_HACKS
         g_snum = screenpeek;
 #endif
-        RT_DisablePolymost();
+        RT_DisablePolymost(0);
 
         RT_DrawTileScaled(103, 208, SCUBAMASK, 0, 0, scubaPal);
         RT_DrawTileScaled(217, 208, SCUBAMASK, 0, 4, scubaPal);
@@ -331,7 +331,7 @@ void RT_P_DisplayWeapon(void)
         || (sprite[pPlayer->i].pal != 1 && sprite[pPlayer->i].extra <= 0))
         return;
 
-    RT_DisablePolymost();
+    RT_DisablePolymost(1);
 
     int weaponX       = (160) - 90;
     int weaponY       = klabs(pPlayer->look_ang) / 9;

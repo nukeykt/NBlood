@@ -485,7 +485,7 @@ vec2_t G_ScreenText(const int32_t font,
         return size;
 
     if (REALITY && !(f & TEXT_N64NOPAL))
-        RT_DisablePolymost();
+        RT_DisablePolymost(0);
 
     NEG_ALPHA_TO_BLEND(alpha, blendidx, o);
 

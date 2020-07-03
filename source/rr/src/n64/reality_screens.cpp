@@ -279,7 +279,7 @@ void RT_Intro(void)
             RT_RenderUnsetScissor();
             videoClearScreen(0L);
             int intro_time = (int)(totalclock - ototalclock);
-            RT_DisablePolymost();
+            RT_DisablePolymost(0);
             switch (intro_state)
             {
             case 0:
@@ -449,7 +449,7 @@ void RT_BossScene(void)
             }
             videoClearScreen(0L);
             int intro_time = (int)(totalclock - ototalclock);
-            RT_DisablePolymost();
+            RT_DisablePolymost(0);
             switch (intro_state)
             {
             case 0:
@@ -546,7 +546,7 @@ void RT_FinalBossScene(void)
             }
             videoClearScreen(0L);
             int intro_time = (int)(totalclock - ototalclock);
-            RT_DisablePolymost();
+            RT_DisablePolymost(0);
             switch (intro_state)
             {
             case 0:
@@ -709,7 +709,7 @@ void RT_Bonus(void)
         if (engineFPSLimit())
         {
             videoClearScreen(0L);
-            RT_DisablePolymost();
+            RT_DisablePolymost(0);
             int buttons = 0;
             float bonus_alpha = 0.f;
             if (bonus_state == 0)

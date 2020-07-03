@@ -118,7 +118,7 @@ static void Menu_DrawBackground(const vec2_t origin)
     {
         float ox = origin.x * (1.f/65536.f) * (240.f - 32.f) / (240.f);
         float oy = origin.y * (1.f/65536.f) * (240.f - 32.f) / (240.f) * 1.2f;
-        RT_DisablePolymost();
+        RT_DisablePolymost(0);
         RT_RotateSpriteSetColor(255, 255, 255, 256);
         RT_RotateSprite(160 + ox, 120 + oy, 100, 100, 3670, RTRS_SCALED);
         RT_EnablePolymost();
@@ -155,7 +155,7 @@ static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnu
 {
     if (REALITY)
     {
-        RT_DisablePolymost();
+        RT_DisablePolymost(0);
         RT_RotateSpriteSetColor(255, 255, 255, 256);
         RT_RotateSprite(x * (1.f/65536.f), y * (1.f/65536.f) * 1.2f, z * (100.f/65536.f), z * (100.f/65536.f), 3200, 0, false);
         RT_EnablePolymost();
@@ -2660,7 +2660,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 logozoom1 = 100;
                 logozoom2 = clamp(205 - (logotics - l1tics) * 7 / 4, 100, 205);
             }
-            RT_DisablePolymost();
+            RT_DisablePolymost(0);
             RT_RotateSpriteSetColor(255, 255, 255, 256);
             float ox = (float)(origin.x) * (1.f/65536.f) * (240.f - 32.f) / (240.f);
             RT_RotateSprite(ox+160, 55, logozoom1, logozoom1, 0xe68, RTRS_SCALED);

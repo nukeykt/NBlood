@@ -26,6 +26,8 @@ static int rt_spritedimtotal;
 static int rt_boss2, rt_boss2_sprite, rt_boss2_x, rt_boss2_y, rt_boss2_ang;
 static float rt_boss2_sin, rt_boss2_cos;
 
+static int rt_renderactive = 0;
+
 struct maskdraw_t {
     int dist;
     uint16_t index;
@@ -643,7 +645,8 @@ void RT_SetColor1(int r, int g, int b, int a)
     rt_scolor1[1] = g / 255.f;
     rt_scolor1[2] = b / 255.f;
     rt_scolor1[3] = a / 255.f;
-    glUniform4fv(rt_scolor1loc, 1, rt_scolor1);
+    if (rt_renderactive == 3)
+        glUniform4fv(rt_scolor1loc, 1, rt_scolor1);
 }
 
 void RT_SetColor2(int r, int g, int b, int a)
@@ -652,7 +655,8 @@ void RT_SetColor2(int r, int g, int b, int a)
     rt_scolor2[1] = g / 255.f;
     rt_scolor2[2] = b / 255.f;
     rt_scolor2[3] = a / 255.f;
-    glUniform4fv(rt_scolor2loc, 1, rt_scolor2);
+    if (rt_renderactive == 3)
+        glUniform4fv(rt_scolor2loc, 1, rt_scolor2);
 }
 
 void RT_SetTexComb(int comb)
@@ -660,7 +664,8 @@ void RT_SetTexComb(int comb)
     if (rt_stexcomb != comb)
     {
         rt_stexcomb = comb;
-        glUniform1f(rt_stexcombloc, rt_stexcomb);
+        if (rt_renderactive == 3)
+            glUniform1f(rt_stexcombloc, rt_stexcomb);
     }
 }
 
@@ -880,23 +885,43 @@ void RT_DisplaySky(void)
     glEnable(GL_DEPTH_TEST);
 }
 
-void RT_DisablePolymost()
+void RT_DisablePolymost(int useShader)
 {
-    RT_SetShader();
+    if (rt_renderactive)
+        return;
+    rt_renderactive = 1 | (useShader << 1);
+    if (useShader)
+        RT_SetShader();
+    else
+    {
+        vec4f_t texturePosSize = { 0.f, 0.f, 1.f, 1.f };
+        vec2f_t halfTexelSize = { 0.f, 0.f };
+        polymost_setTexturePosSize(texturePosSize);
+        polymost_setHalfTexelSize(halfTexelSize);
+        polymost_setClamp(1+2);
+        polymost_setFogEnabled(false);
+        polymost_usePaletteIndexing(false);
+    }
     RT_SetTexComb(0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void RT_EnablePolymost()
 {
+    if (!rt_renderactive)
+        return;
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glDisable(GL_CULL_FACE);
-    polymost_resetVertexPointers();
+    if (rt_renderactive & 2)
+        polymost_resetVertexPointers();
+    polymost_setClamp(0);
     polymost_setFogEnabled(true);
     polymost_usePaletteIndexing(true);
     polymost2d = 0;
+    rt_renderactive = 0;
 }
 
 static GLfloat rt_projmatrix[16];
@@ -3263,7 +3288,7 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     if (rt_boardnum == 27)
         RT_BOSS2CalcVTX();
 
-    RT_DisablePolymost();
+    RT_DisablePolymost(1);
 
     for (int i = 0; i < ms_list_cnt; i++)
     {
@@ -3897,6 +3922,8 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     if (!pth)
         return;
 
+    glEnable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_MODELVIEW);
@@ -3973,6 +4000,7 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
         return;
 
     glEnable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_MODELVIEW);

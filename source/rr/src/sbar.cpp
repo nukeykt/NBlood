@@ -1394,7 +1394,7 @@ void G_DrawBackground(void)
 
         if (REALITY)
         {
-            RT_DisablePolymost();
+            RT_DisablePolymost(0);
             RT_RotateSpriteSetColor(255, 255, 255, 255);
             RT_RotateSprite(160, 120, 100, 100, 3670, RTRS_SCALED);
             RT_EnablePolymost();

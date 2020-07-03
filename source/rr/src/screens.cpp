@@ -1184,7 +1184,15 @@ void G_DisplayRest(int32_t smoothratio)
                     ? currentboardfilename
                     : g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name;
 
-            menutext_(160<<16, (90+16+8)<<16, -g_levelTextTime+22/*quotepulseshade*/, fn, o, TEXT_XCENTER);
+            if (REALITY)
+            {
+                RT_DisablePolymost(0);
+                RT_RotateSpriteSetColor(255, 128, 128, clamp(g_levelTextTime * 8, 0, 256));
+                menutext_(160<<16, (90+16+8)<<16, 0, fn, 0, TEXT_XCENTER|TEXT_N64NOPAL);
+                RT_EnablePolymost();
+            }
+            else
+                menutext_(160<<16, (90+16+8)<<16, -g_levelTextTime+22/*quotepulseshade*/, fn, o, TEXT_XCENTER);
         }
     }
 
@@ -1705,7 +1713,7 @@ void G_DisplayLogo(void)
 
                 videoClearScreen(0);
 
-                RT_DisablePolymost();
+                RT_DisablePolymost(0);
                 RT_RotateSpriteSetColor(255, 255, 255, alpha);
 
                 RT_RotateSprite(160, 60, 100, 100, 0xe09, 0);
