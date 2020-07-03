@@ -896,6 +896,7 @@ void RT_EnablePolymost()
     polymost_resetVertexPointers();
     polymost_setFogEnabled(true);
     polymost_usePaletteIndexing(true);
+    polymost2d = 0;
 }
 
 static GLfloat rt_projmatrix[16];
