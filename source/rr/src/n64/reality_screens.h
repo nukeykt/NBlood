@@ -3,3 +3,4 @@
 #pragma once
 
 void RT_Intro(void);
+void RT_Bonus(void);

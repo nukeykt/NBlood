@@ -80,6 +80,43 @@ const char *rt_scenestrings[] = {
     "RESISTANCE! "
 };
 
+const char* rt_level_names[] = {
+    "HOLLYWOOD HOLOCAUST",
+    "GUN CRAZY",
+    "DEATH ROW",
+    "TOXIC DUMP",
+    "LAUNCH FACILITY",
+    "THE ABYSS",
+    "BATTLELORD",
+    "DUKE-BURGER",
+    "SPACEPORT",
+    "INCUBATOR",
+    "WARP FACTOR",
+    "FUSION STATION",
+    "OCCUPIED TERRITORY",
+    "TIBERIUS STATION",
+    "LUNAR REACTOR",
+    "DARK SIDE",
+    "DREADNOUGHT",
+    "OVERLORD",
+    "LUNATIC FRINGE",
+    "RAW MEAT",
+    "BANK ROLL",
+    "FLOOD ZONE",
+    "L.A. RUMBLE",
+    "MOVIE SET",
+    "RABID TRANSIT",
+    "FAHRENHEIT",
+    "HOTEL HELL",
+    "STADIUM",
+    "AREA 51",
+    "FREEWAY",
+    "CASTLE DUKENSTEIN",
+    "PIRACY",
+    "SHAFT",
+    "NOCTIS LABYRINTHUS"
+};
+
 struct {
     int type;
     int y;
@@ -179,6 +216,30 @@ struct {
 static int intro_state = 0;
 static int intro_sndcnt = 0;
 
+void RT_GameText(int x, int y, const char *text)
+{
+    if (x == -1)
+    {
+        G_ScreenText(STARTALPHANUM, 160, y, 65536, 0, 0, text, 0, 0, 0, 0, 7, 0, 0, 0,
+            TEXT_XCENTER | TEXT_N64COORDS | TEXT_N64NOPAL, 0, 0, xdim, ydim);
+        return;
+    }
+    G_ScreenText(STARTALPHANUM, x, y, 65536, 0, 0, text, 0, 0, 0, 0, 7, 0, 0, 0,
+        TEXT_N64COORDS | TEXT_N64NOPAL, 0, 0, xdim, ydim);
+}
+
+void RT_MenuText(int x, int y, const char *text)
+{
+    if (x == -1)
+    {
+        G_ScreenText(BIGALPHANUM, 160, y, 65536, 0, 0, text, 0, 0, 0, 0, 12, 0, 0, 0,
+            TEXT_XCENTER | TEXT_N64COORDS | TEXT_N64NOPAL | TEXT_BIGALPHANUM, 0, 0, xdim, ydim);
+        return;
+    }
+    G_ScreenText(BIGALPHANUM, x, y, 65536, 0, 0, text, 0, 0, 0, 0, 12, 0, 0, 0,
+        TEXT_N64COORDS | TEXT_N64NOPAL | TEXT_BIGALPHANUM, 0, 0, xdim, ydim);
+}
+
 
 void RT_IntroAdvance(bool advance)
 {
@@ -235,8 +296,7 @@ void RT_IntroText(int textId, int totaltime)
             textline[j] = '\0';
             j--;
         }
-        G_ScreenText(STARTALPHANUM, 160, y, 65536, 0, 0, textline, 0, 0, 0, 0, 7, 0, 0, 0,
-            TEXT_XCENTER | TEXT_N64COORDS | TEXT_N64NOPAL, 0, 0, xdim, ydim);
+        RT_GameText(-1, y, textline);
         i += j + 1;
         y += 10;
     }
@@ -405,3 +465,192 @@ void RT_Intro(void)
     videoNextPage();
 }
 
+void RT_Bonus(void)
+{
+    G_UpdateAppTitle();
+    videoClearScreen(0L);
+    videoNextPage();
+
+    FX_StopAllSounds();
+    S_ClearSoundLocks();
+    FX_SetReverb(0L);
+    CONTROL_BindsEnabled = 1; // so you can use your screenshot bind on the score screens
+
+    totalclock = 0;
+
+    int bonus_state = 0;
+    int soundcnt = 0;
+    int soundcnt2 = 0;
+    int soundcnt3 = 0;
+
+    S_StopMusic();
+    FX_StopAllSounds();
+    S_ClearSoundLocks();
+
+    I_ClearAllInput();
+    do
+    {
+        G_HandleAsync();
+        MUSIC_Update();
+        if (engineFPSLimit())
+        {
+            videoClearScreen(0L);
+            RT_DisablePolymost();
+            int buttons = 0;
+            float bonus_alpha = 0.f;
+            float bonus_oalpha = 0.f;
+            if (bonus_state == 0)
+            {
+                bonus_alpha = min(((int)totalclock * 4) * (1.f / 256.f), 1.f);
+                buttons = I_CheckAllInput() != 0;
+            }
+            else
+            {
+                bonus_alpha = bonus_oalpha - ((int)totalclock - (int)ototalclock) * (1.f / 4.f);
+                buttons = 0;
+            }
+            if (buttons)
+            {
+                if (soundcnt == 0)
+                {
+                    S_PlaySound(12);
+                    soundcnt++;
+                    bonus_state = 69;
+                    bonus_oalpha = bonus_alpha;
+                    ototalclock = totalclock;
+                }
+            }
+            if (bonus_state != 69 || bonus_alpha > 0)
+            {
+                /*if (ud.multimode > 2 && !ud.coop)
+                {
+                    bonusmp();
+                }
+                else*/
+                {
+                    char buf[8];
+                    RT_RotateSpriteSetColor(bonus_alpha * 255.f, bonus_alpha * 255.f, bonus_alpha * 255.f, 256);
+                    RT_RotateSprite(160.f, 120.f, 100.f, 100.f, 0xf09, RTRS_SCALED);
+                    int v3 = max((int)totalclock - 112 * 4, 0);
+                    int dukeframe;
+                    if (v3 < 20 * 4)
+                        dukeframe = 0;
+                    else
+                    {
+                        dukeframe = 2;
+                        if (v3 < 36 * 4)
+                            dukeframe = (v3 - 20 * 4) / 16;
+                    }
+                    if (v3 >= 28 * 4)
+                    {
+                        if (!soundcnt2)
+                        {
+                            S_PlaySound(0x83);
+                            soundcnt2++;
+                        }
+                    }
+                    RT_RotateSprite(79, 137.5, 100, 100, 0xf0a + dukeframe, RTRS_SCALED); // hack
+                    RT_RotateSprite(79, 138, 100, 100, 0xf0a + dukeframe, RTRS_SCALED);
+                    RT_RotateSpriteSetColor(bonus_alpha * 150.f, bonus_alpha * 150.f, bonus_alpha * 255.f, 256);
+                    RT_MenuText(-1, 30, rt_level_names[rt_levelnum]);
+                    RT_GameText(-1, 47, "COMPLETED");
+                    int kills = g_player[0].ps->actors_killed;
+                    int secrets = g_player[0].ps->secret_rooms;
+                    int babes = g_player[0].ps->dn64_36e;
+                    int secretstotal = g_player[0].ps->max_secret_rooms;
+                    int babestotal = g_player[0].ps->dn64_36d;
+                    int killstotal = 0;
+                    for (int i = headspritestat[1]; i != -1; i = nextspritestat[i])
+                    {
+                        if (A_CheckEnemySprite(&sprite[i]) && sprite[i].picnum != RAT && sprite[i].extra > 0)
+                        {
+                            killstotal++;
+                        }
+                    }
+                    for (int i = headspritestat[2]; i != -1; i = nextspritestat[i])
+                    {
+                        if (A_CheckEnemySprite(&sprite[i]) && sprite[i].picnum != RAT && sprite[i].extra > 0)
+                        {
+                            killstotal++;
+                        }
+                    }
+                    /*if ((buttons & 0x8000) && controllerpak_port != -1)
+                    {
+                        S_PlaySound(12);
+                        bonus_state = 42;
+                    }
+                    if (bonus_state == 42 && bonus_alpa <= 0.f)
+                    {
+                        // savegame
+                    }
+                    */
+                    if ((int)totalclock > 16 * 4)
+                    {
+                        RT_RotateSpriteSetColor(bonus_alpha * 150, bonus_alpha * 255, bonus_alpha * 150, 256);
+                        RT_GameText(0x8c, 0x46, "ENEMIES KILLED");
+                        sprintf(buf, "%d", kills);
+                        RT_GameText(0x10e, 0x46, buf);
+                    }
+                    if ((int)totalclock > 32 * 4)
+                    {
+                        RT_RotateSpriteSetColor(bonus_alpha * 255, bonus_alpha * 150, bonus_alpha * 150, 256);
+                        RT_GameText(0x8c, 0x50, "ENEMIES LEFT");
+                        sprintf(buf, "%d", killstotal);
+                        RT_GameText(0x10e, 0x50, buf);
+                    }
+                    if ((int)totalclock > 48 * 4)
+                    {
+                        RT_RotateSpriteSetColor(bonus_alpha * 150, bonus_alpha * 255, bonus_alpha * 150, 256);
+                        RT_GameText(0x8c, 0x69, "SECRETS FOUND");
+                        sprintf(buf, "%d", secrets);
+                        RT_GameText(0x10e, 0x69, buf);
+                    }
+                    if ((int)totalclock > 64 * 4)
+                    {
+                        RT_RotateSpriteSetColor(bonus_alpha * 255, bonus_alpha * 150, bonus_alpha * 150, 256);
+                        RT_GameText(0x8c, 0x73, "SECRETS MISSED");
+                        sprintf(buf, "%d", secretstotal - secrets);
+                        RT_GameText(0x10e, 0x73, buf);
+                    }
+                    if ((int)totalclock > 80 * 4)
+                    {
+                        RT_RotateSpriteSetColor(bonus_alpha * 150, bonus_alpha * 255, bonus_alpha * 150, 256);
+                        RT_GameText(0x8c, 0x8c, "BABES SAVED");
+                        sprintf(buf, "%d", babes);
+                        RT_GameText(0x10e, 0x8c, buf);
+                    }
+                    if ((int)totalclock > 96 * 4)
+                    {
+                        RT_RotateSpriteSetColor(bonus_alpha * 255, bonus_alpha * 150, bonus_alpha * 150, 256);
+                        RT_GameText(0x8c, 0x96, "BABES LEFT");
+                        sprintf(buf, "%d", babestotal - babes);
+                        RT_GameText(0x10e, 0x96, buf);
+                    }
+                    int cnt = (int)totalclock >> 6;
+                    if (soundcnt3 <= cnt && cnt < 7)
+                    {
+                        S_PlaySound(12);
+                        soundcnt3 = cnt+1;
+                    }
+                    int alpha2 = (192 + (sintable[((int)totalclock & 255) * 8] / 256)) * bonus_alpha;
+                    RT_RotateSpriteSetColor(alpha2, alpha2, alpha2, 256);
+                    RT_GameText(-1, 0xc3, "PRESS START TO ENTER");
+                    RT_MenuText(-1, 0xcd, rt_level_names[RT_NextLevel()]);
+                    RT_RotateSpriteSetColor(255, 255, 255, 256);
+                }
+            }
+            else
+            {
+                RT_EnablePolymost();
+                break;
+            }
+            RT_EnablePolymost();
+            videoNextPage();
+        }
+    } while (1);
+
+    I_ClearAllInput();
+
+    videoClearScreen(0);
+    videoNextPage();
+}

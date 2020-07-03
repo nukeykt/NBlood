@@ -2393,6 +2393,12 @@ void G_BonusScreen(int32_t bonusonly)
     int32_t clockpad = 2;
     const char *lastmapname;
 
+    if (REALITY)
+    {
+        RT_Bonus();
+        return;
+    }
+
     //if (g_networkMode == NET_DEDICATED_SERVER)
     //    return;
 
