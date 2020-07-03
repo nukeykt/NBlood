@@ -583,10 +583,20 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
         if (p == screenpeek || GTFLAGS(GAMETYPE_OTHERPLAYERSINMAP))
         {
-            if (pSprite->xvel > 16 && pPlayer->on_ground)
-                i = APLAYERTOP+(((int32_t) totalclock>>4)&3);
+            if (REALITY)
+            {
+                if (pSprite->xvel > 16 && pPlayer->on_ground)
+                    i = 1440-((((4-((int32_t) totalclock>>4)))&3)*5);
+                else
+                    i = APLAYER;
+            }
             else
-                i = APLAYERTOP;
+            {
+                if (pSprite->xvel > 16 && pPlayer->on_ground)
+                    i = APLAYERTOP+(((int32_t) totalclock>>4)&3);
+                else
+                    i = APLAYERTOP;
+            }
 
             if (i < 0)
                 continue;
@@ -596,6 +606,9 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
             if (j < 22000) j = 22000;
             else if (j > (65536<<1)) j = (65536<<1);
+
+            if (REALITY)
+                j >>= 1;
 
             rotatesprite_win((x1<<4)+(xdim<<15), (y1<<4)+(ydim<<15), j, daang, i, pSprite->shade,
                 P_GetOverheadPal(pPlayer), 0);
