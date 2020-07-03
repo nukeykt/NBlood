@@ -8043,6 +8043,12 @@ static int G_EndOfLevel(void)
                 G_BonusScreenRRRA(0);
         }
 
+        if (REALITY)
+        {
+            ud.eog = rt_levelnum == 27;
+            rt_levelnum = RT_NextLevel();
+        }
+
         // Clear potentially loaded per-map ART only after the bonus screens.
         artClearMapArt();
 

@@ -2841,9 +2841,6 @@ void G_BonusScreen(int32_t bonusonly)
         g_turdLevel = 0;
     if (g_vixenLevel)
         g_vixenLevel = 0;
-
-    if (REALITY)
-        rt_levelnum = RT_NextLevel();
 }
 
 void G_PlayMapAnim(void)
