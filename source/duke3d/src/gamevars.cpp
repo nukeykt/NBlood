@@ -934,6 +934,13 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
                 returnValue = VM_GetPlayer(arrayIndex, labelNum, arrayIndexVar);
                 break;
 
+            case STRUCT_PLAYER_INTERNAL__:
+                if (arrayIndexVar == g_thisActorVarID)
+                    arrayIndex = vm.playerNum;
+                CHECK_INDEX(MAXPLAYERS);
+                returnValue = VM_GetStruct(PlayerLabels[labelNum].flags, (intptr_t *)((intptr_t)&g_player[arrayIndex].ps[0] + PlayerLabels[labelNum].offset));
+                break;
+
             case STRUCT_THISPROJECTILE:
                 CHECK_INDEX(MAXSPRITES);
                 returnValue = VM_GetActiveProjectile(arrayIndex, labelNum);
@@ -1366,6 +1373,7 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("wall",           -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("__wall__",       -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("player",         -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
+    Gv_NewVar("__player__",     -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("actorvar",       -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("playervar",      -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("tspr",           -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);

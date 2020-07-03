@@ -849,6 +849,9 @@ static const tokenmap_t keywords_for_private_opcodes[] =
 
     { "getsector", CON_GETSECTORSTRUCT },
     { "setsector", CON_SETSECTORSTRUCT },
+
+    { "getplayer", CON_GETPLAYERSTRUCT },
+    { "setplayer", CON_SETPLAYERSTRUCT },
 };
 
 char const *VM_GetKeywordForID(int32_t id)
@@ -1594,10 +1597,18 @@ static void C_GetNextVarType(int32_t type)
                 }
                 break;
             case STRUCT_PLAYER:
-                scriptWriteValue(PlayerLabels[labelNum].lId);
+                {
+                    auto const &label = PlayerLabels[labelNum];
 
-                if (PlayerLabels[labelNum].flags & LABEL_HASPARM2)
-                    C_GetNextVarType(0);
+                    scriptWriteValue(label.lId);
+
+                    Bassert((*varptr & (MAXGAMEVARS-1)) == g_structVarIDs + STRUCT_PLAYER);
+
+                    if (label.flags & LABEL_HASPARM2)
+                        C_GetNextVarType(0);
+                    else if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                        *varptr = (*varptr & ~(MAXGAMEVARS-1)) + g_structVarIDs + STRUCT_PLAYER_INTERNAL__;
+                }
                 break;
             case STRUCT_ACTORVAR:
             case STRUCT_PLAYERVAR:
@@ -3359,6 +3370,7 @@ DO_DEFSTATE:
                 continue;
             }
 
+
         case CON_FINDNEARACTOR3D:
         case CON_FINDNEARACTOR:
         case CON_FINDNEARACTORZ:
@@ -3427,19 +3439,50 @@ DO_DEFSTATE:
             }
 
         case CON_SETPLAYER:
-        case CON_GETPLAYER:
             {
+                intptr_t * const ins = &g_scriptPtr[-1];
                 int const labelNum = C_GetStructureIndexes(1, &h_player);
 
                 if (labelNum == -1)
                     continue;
 
-                scriptWriteValue(PlayerLabels[labelNum].lId);
+                Bassert((*ins & VM_INSTMASK) == CON_SETPLAYER);
 
-                if (PlayerLabels[labelNum].flags & LABEL_HASPARM2)
+                auto const &label = PlayerLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & (LABEL_WRITEFUNC|LABEL_HASPARM2)) == 0)
+                    *ins = CON_SETPLAYERSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                if (label.flags & LABEL_HASPARM2)
                     C_GetNextVar();
 
-                C_GetNextVarType((tw == CON_GETPLAYER) ? GAMEVAR_READONLY : 0);
+                C_GetNextVar();
+                continue;
+            }
+
+        case CON_GETPLAYER:
+            {
+                intptr_t * const ins = &g_scriptPtr[-1];
+                int const labelNum = C_GetStructureIndexes(1, &h_player);
+
+                if (labelNum == -1)
+                    continue;
+
+                Bassert((*ins & VM_INSTMASK) == CON_GETPLAYER);
+
+                auto const &label = PlayerLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & (LABEL_READFUNC|LABEL_HASPARM2)) == 0)
+                    *ins = CON_GETPLAYERSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                if (label.flags & LABEL_HASPARM2)
+                    C_GetNextVar();
+
+                C_GetNextVarType(GAMEVAR_READONLY);
                 continue;
             }
 

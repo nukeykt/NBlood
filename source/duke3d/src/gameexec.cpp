@@ -2314,11 +2314,13 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_SETPLAYER):
                 insptr++;
                 {
-                    int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    int const labelNum  = *insptr++;
-                    int const lParm2    = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
+                    int const   playerNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
+                    int const   labelNum    = *insptr++;
+                    auto const &playerLabel = PlayerLabels[labelNum];
+                    int const   lParm2      = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d\n", playerNum);
+                    VM_ASSERT((unsigned)playerNum < MAXSPRITES && ((playerLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)playerLabel.maxParm2),
+                              "%s[%d] invalid for sprite %d\n", playerLabel.name, lParm2, playerNum);
 
                     VM_SetPlayer(playerNum, labelNum, lParm2, Gv_GetVar(*insptr++));
                     dispatch();
@@ -2327,15 +2329,47 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_GETPLAYER):
                 insptr++;
                 {
-                    int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    int const labelNum  = *insptr++;
-                    int const lParm2    = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
+                    int const   playerNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
+                    int const   labelNum    = *insptr++;
+                    auto const &playerLabel = PlayerLabels[labelNum];
+                    int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d\n", playerNum);
+                    VM_ASSERT((unsigned)playerNum < MAXSPRITES && ((playerLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)playerLabel.maxParm2),
+                              "%s[%d] invalid for sprite %d\n", playerLabel.name, lParm2, playerNum);
 
                     Gv_SetVar(*insptr++, VM_GetPlayer(playerNum, labelNum, lParm2));
                     dispatch();
                 }
+
+            vInstruction(CON_SETPLAYERSTRUCT):
+                insptr++;
+                {
+                    int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
+                    int const labelNum  = *insptr++;
+
+                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d\n", playerNum);
+
+                    auto const &playerLabel = PlayerLabels[labelNum];
+                    int const newValue = Gv_GetVar(*insptr++);
+
+                    VM_SetStruct(playerLabel.flags, (intptr_t *)((char *)&g_player[playerNum].ps[0] + playerLabel.offset), newValue);
+                    dispatch();
+                }
+
+            vInstruction(CON_GETPLAYERSTRUCT):
+                insptr++;
+                {
+                    int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
+                    int const labelNum  = *insptr++;
+
+                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d\n", playerNum);
+
+                    auto const &playerLabel = PlayerLabels[labelNum];
+
+                    Gv_SetVar(*insptr++, VM_GetStruct(playerLabel.flags, (intptr_t *)((char *)&g_player[playerNum].ps[0] + playerLabel.offset)));
+                    dispatch();
+                }
+
             vInstruction(CON_SETWALL):
                 insptr++;
                 {

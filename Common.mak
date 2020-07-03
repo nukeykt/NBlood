@@ -1004,12 +1004,20 @@ LIBS += -lm
 
 VC_REV :=
 VC_HASH :=
+VC_BRANCH :=
+
 -include EDUKE32_REVISION.mak
 ifeq (,$(VC_REV))
-    VC_REV := $(shell git rev-list --count origin 2>&1)
+    VC_REV := $(shell git rev-list --count HEAD 2>&1)
 endif
 ifeq (,$(VC_HASH))
     VC_HASH := $(shell git rev-parse --short=9 HEAD 2>&1)
+endif
+ifeq (,$(VC_BRANCH))
+    VC_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>&1)
+    ifneq (master,$(VC_BRANCH))
+        VC_REV := $(VC_REV)[$(VC_BRANCH)]
+    endif
 endif
 ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
     REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
