@@ -37,5 +37,5 @@ void RT_AddSmoke(int16_t x, int16_t y, int16_t z, uint8_t type);
 void RT_AddExplosion(int16_t x, int16_t y, int16_t z, uint8_t type);
 void RT_AnimateModels(void);
 void RT_LoadBOSS2MDL(void);
-void RT_RenderScissor(float x1, float y1, float x2, float y2);
+void RT_RenderScissor(float x1, float y1, float x2, float y2, bool absolute = false);
 void RT_RenderUnsetScissor(void);
