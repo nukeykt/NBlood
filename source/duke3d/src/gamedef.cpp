@@ -837,13 +837,19 @@ const tokenmap_t iter_tokens [] =
 // keywords_for_private_opcodes[] resolves those opcodes to the publicly facing keyword that can generate them
 static const tokenmap_t keywords_for_private_opcodes[] =
 {
-    { "getactor", CON_GETSPRITEEXT },
-    { "getactor", CON_GETACTORSTRUCT },
-    { "getactor", CON_GETSPRITESTRUCT },
+    { "getactor",  CON_GETSPRITEEXT },
+    { "getactor",  CON_GETACTORSTRUCT },
+    { "getactor",  CON_GETSPRITESTRUCT },
 
-    { "setactor", CON_SETSPRITEEXT },
-    { "setactor", CON_SETACTORSTRUCT },
-    { "setactor", CON_SETSPRITESTRUCT },
+    { "setactor",  CON_SETSPRITEEXT },
+    { "setactor",  CON_SETACTORSTRUCT },
+    { "setactor",  CON_SETSPRITESTRUCT },
+
+    { "getwall",   CON_GETWALLSTRUCT },
+    { "setwall",   CON_SETWALLSTRUCT },
+
+    { "getsector", CON_GETSECTORSTRUCT },
+    { "setsector", CON_SETSECTORSTRUCT },
 };
 
 char const *VM_GetKeywordForID(int32_t id)
@@ -1565,10 +1571,28 @@ static void C_GetNextVarType(int32_t type)
 
                 break;
             case STRUCT_SECTOR:
-                scriptWriteValue(SectorLabels[labelNum].lId);
+                {
+                    auto const &label = SectorLabels[labelNum];
+
+                    scriptWriteValue(label.lId);
+
+                    Bassert((*varptr & (MAXGAMEVARS-1)) == g_structVarIDs + STRUCT_SECTOR);
+
+                    if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                        *varptr = (*varptr & ~(MAXGAMEVARS-1)) + g_structVarIDs + STRUCT_SECTOR_INTERNAL__;
+                }
                 break;
             case STRUCT_WALL:
-                scriptWriteValue(WallLabels[labelNum].lId);
+                {
+                    auto const &label = WallLabels[labelNum];
+
+                    scriptWriteValue(label.lId);
+
+                    Bassert((*varptr & (MAXGAMEVARS-1)) == g_structVarIDs + STRUCT_WALL);
+
+                    if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                        *varptr = (*varptr & ~(MAXGAMEVARS-1)) + g_structVarIDs + STRUCT_WALL_INTERNAL__;
+                }
                 break;
             case STRUCT_PLAYER:
                 scriptWriteValue(PlayerLabels[labelNum].lId);
@@ -3296,16 +3320,44 @@ DO_DEFSTATE:
             }
 
         case CON_SETSECTOR:
-        case CON_GETSECTOR:
             {
+                intptr_t * const ins = &g_scriptPtr[-1];
                 int const labelNum = C_GetStructureIndexes(1, &h_sector);
 
                 if (labelNum == -1)
                     continue;
 
-                scriptWriteValue(SectorLabels[labelNum].lId);
+                Bassert((*ins & VM_INSTMASK) == CON_SETSECTOR);
 
-                C_GetNextVarType((tw == CON_GETSECTOR) ? GAMEVAR_READONLY : 0);
+                auto const &label = SectorLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_WRITEFUNC) == 0)
+                    *ins = CON_SETSECTORSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVar();
+                continue;
+            }
+
+        case CON_GETSECTOR:
+            {
+                intptr_t * const ins = &g_scriptPtr[-1];
+                int const labelNum = C_GetStructureIndexes(1, &h_sector);
+
+                if (labelNum == -1)
+                    continue;
+
+                Bassert((*ins & VM_INSTMASK) == CON_GETSECTOR);
+
+                auto const &label = SectorLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                    *ins = CON_GETSECTORSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVarType(GAMEVAR_READONLY);
                 continue;
             }
 
@@ -3335,16 +3387,44 @@ DO_DEFSTATE:
             }
 
         case CON_SETWALL:
-        case CON_GETWALL:
             {
+                intptr_t * const ins = &g_scriptPtr[-1];
                 int const labelNum = C_GetStructureIndexes(1, &h_wall);
 
                 if (labelNum == -1)
                     continue;
 
-                scriptWriteValue(WallLabels[labelNum].lId);
+                Bassert((*ins & VM_INSTMASK) == CON_SETWALL);
 
-                C_GetNextVarType((tw == CON_GETWALL) ? GAMEVAR_READONLY : 0);
+                auto const &label = WallLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_WRITEFUNC) == 0)
+                    *ins = CON_SETWALLSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVar();
+                continue;
+            }
+
+        case CON_GETWALL:
+            {
+                intptr_t * const ins = &g_scriptPtr[-1];
+                int const labelNum = C_GetStructureIndexes(1, &h_wall);
+
+                if (labelNum == -1)
+                    continue;
+
+                Bassert((*ins & VM_INSTMASK) == CON_GETWALL);
+
+                auto const &label = WallLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                    *ins = CON_GETWALLSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVarType(GAMEVAR_READONLY);
                 continue;
             }
 

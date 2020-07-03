@@ -2334,18 +2334,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const wallNum  = Gv_GetVar(tw);
                     int const labelNum = *insptr++;
                     int const newValue = Gv_GetVar(*insptr++);
-                    auto const &wallLabel = WallLabels[labelNum];
 
                     VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
 
-                    if (wallLabel.offset == -1 || wallLabel.flags & LABEL_WRITEFUNC)
-                    {
-                        VM_SetWall(wallNum, labelNum, newValue);
-                        dispatch();
-                    }
-
-                    VM_SetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset), newValue);
-
+                    VM_SetWall(wallNum, labelNum, newValue);
                     dispatch();
                 }
 
@@ -2356,15 +2348,41 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 
                     int const wallNum  = Gv_GetVar(tw);
                     int const labelNum = *insptr++;
+
+                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
+
+                    Gv_SetVar(*insptr++, VM_GetWall(wallNum, labelNum));
+                    dispatch();
+                }
+
+            vInstruction(CON_SETWALLSTRUCT):
+                insptr++;
+                {
+                    tw = *insptr++;
+
+                    int const wallNum  = Gv_GetVar(tw);
+                    int const labelNum = *insptr++;
+                    int const newValue = Gv_GetVar(*insptr++);
                     auto const &wallLabel = WallLabels[labelNum];
 
                     VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
 
-                    Gv_SetVar(*insptr++,
-                               (wallLabel.offset != -1 && (wallLabel.flags & LABEL_READFUNC) != LABEL_READFUNC)
-                               ? VM_GetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset))
-                               : VM_GetWall(wallNum, labelNum));
+                    VM_SetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset), newValue);
+                    dispatch();
+                }
 
+            vInstruction(CON_GETWALLSTRUCT):
+                insptr++;
+                {
+                    tw = *insptr++;
+
+                    int const wallNum  = Gv_GetVar(tw);
+                    int const labelNum = *insptr++;
+                    auto const &wallLabel = WallLabels[labelNum];
+
+                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
+
+                    Gv_SetVar(*insptr++, VM_GetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset)));
                     dispatch();
                 }
 
@@ -2542,18 +2560,11 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
                     int const   labelNum  = *insptr++;
-                    auto const &sectLabel = SectorLabels[labelNum];
                     int const   newValue  = Gv_GetVar(*insptr++);
 
                     VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
 
-                    if (sectLabel.offset == -1 || sectLabel.flags & LABEL_WRITEFUNC)
-                    {
-                        VM_SetSector(sectNum, labelNum, newValue);
-                        dispatch();
-                    }
-
-                    VM_SetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset), newValue);
+                    VM_SetSector(sectNum, labelNum, newValue);
                     dispatch();
                 }
 
@@ -2562,14 +2573,37 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
                     int const   labelNum  = *insptr++;
+
+                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
+
+                    Gv_SetVar(*insptr++, VM_GetSector(sectNum, labelNum));
+                    dispatch();
+                }
+
+            vInstruction(CON_SETSECTORSTRUCT):
+                insptr++;
+                {
+                    int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
+                    int const   labelNum  = *insptr++;
+                    auto const &sectLabel = SectorLabels[labelNum];
+                    int const   newValue  = Gv_GetVar(*insptr++);
+
+                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
+
+                    VM_SetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset), newValue);
+                    dispatch();
+                }
+
+            vInstruction(CON_GETSECTORSTRUCT):
+                insptr++;
+                {
+                    int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
+                    int const   labelNum  = *insptr++;
                     auto const &sectLabel = SectorLabels[labelNum];
 
                     VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
 
-                    Gv_SetVar(*insptr++,
-                               (sectLabel.offset != -1 && (sectLabel.flags & LABEL_READFUNC) != LABEL_READFUNC)
-                               ? VM_GetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset))
-                               : VM_GetSector(sectNum, labelNum));
+                    Gv_SetVar(*insptr++, VM_GetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset)));
                     dispatch();
                 }
 
