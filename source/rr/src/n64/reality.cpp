@@ -90,6 +90,8 @@ void RT_Init(void)
     {
         g_player[0].wchoice[i] = wchoice[i];
     }
+
+    globalflags |= GLOBAL_NO_GL_TILESHADES;
 }
 
 struct {
