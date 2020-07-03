@@ -14,6 +14,30 @@
 #include "reality_music.h"
 #include "reality_util.h"
 
+enum {
+    GO_SCRIPTOFFSET = 0,
+    GO_ACTOROFFSET,
+    GO_BOARDOFFSET,
+    GO_QUOTEOFFSET,
+    GO_QUOTEDELTA,
+    GO_PALETTEOFFSET,
+    GO_MUSICCTLOFFSET,
+    GO_MUSICTBLOFFSET,
+    GO_MUSICSEQOFFSET,
+    GO_SOUNDCTLOFFSET,
+    GO_SOUNDTBLOFFSET,
+    GO_SOUNDVOOFFSET,
+    GO_SOUNDPEOFFSET,
+    GO_SOUNDPSFFSET,
+    GO_SOUNDMOFFSET,
+    GO_SOUNDRATEOFFSET,
+    GO_TILEINFOOFFSET,
+    GO_TILEDATAOFFSET,
+    GO_BOSSMDLOFFSET,
+    GO_BOSSTRISOFFSET,
+    GO_MAXOFFSETS
+};
+
 extern buildvfs_kfd rt_group;
 extern int rt_gamestate, rt_gamestatus;
 extern uint16_t rt_palette[RT_PALNUM][256];
@@ -25,6 +49,9 @@ extern int rt_levelnum;
 
 buildvfs_kfd RT_InitGRP(const char *filename);
 void RT_Init(void);
+void RT_ROMSeek(int offset);
+int RT_ROMRead(void *ptr, int count);
+int RT_ROMGetOffset(int offset);
 int RT_PrepareScript(void);
 void RT_LoadBoard(int boardnum);
 void RT_Execute(int spriteNum, int playerNum, int playerDist);

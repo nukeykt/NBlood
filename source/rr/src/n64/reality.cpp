@@ -28,28 +28,151 @@ rt_sectortype *rt_sector;
 
 int rt_boardnum;
 
+char *rt_rom;
+
+int rt_romcountry; // 0 - USA, 1 - EU
+
+struct {
+    int usaoffset, euoffset;
+} rt_offsettable[GO_MAXOFFSETS] = {
+    0xa4500, 0xa4530,
+    0xb1784, 0xb17b4,
+    0x8f6f8, 0x8f728,
+    0xb4784, 0xb47b4,
+    0xbba50-0x80105e50, 0xbba80-0x80105e80,
+    0xc0880, 0xc08b0,
+    0x7bc6e0, 0x7bc710,
+    0x7bd580, 0x7bd5b0,
+    0x7bbfc0, 0x7bbff0,
+    0x5fe770, 0x5fe7a0,
+    0x60b330, 0x60b360,
+    0xb4990, 0xb49c0,
+    0xb4be8, 0xb4c18,
+    0xb4e40, 0xb4e70,
+    0xb5098, 0xb50c8,
+    0x8a4a8, 0x8a4d8,
+    0x90bf0, 0x90c20,
+    0xc2270, 0xc22a0,
+    0x3e9550, 0x3e9580,
+    0x895b0, 0x895e0,
+};
+
+#define RTROMSIZE 8388608
 buildvfs_kfd RT_InitGRP(const char *filename)
 {
     auto grp = openfrompath(filename, BO_RDONLY|BO_BINARY, BS_IREAD);
     if (grp != buildvfs_kfd_invalid)
     {
-        rt_group_init = true;
         rt_group = grp;
-    } 
-    return rt_group;
+        rt_rom = (char*)Xmalloc(RTROMSIZE);
+        if (!rt_rom)
+            return -1;
+        int byteorder = 0;
+        if (strstr(filename, ".n64"))
+            byteorder = 1;
+        if (strstr(filename, ".v64"))
+            byteorder = 2;
+
+        lseek(rt_group, 0, SEEK_SET);
+        if (read(rt_group, rt_rom, RTROMSIZE) != RTROMSIZE)
+        {
+            Xfree(rt_rom);
+            rt_rom = nullptr;
+            initprintf("Error reading ROM file");
+            return -1;
+        }
+        switch (byteorder)
+        {
+        case 0:
+        default:
+            break;
+        case 1:
+            for (int i = 0; i < RTROMSIZE / 2; i++)
+            {
+                uint16_t *ptr = (uint16_t*)&rt_rom[i * 2];
+                *ptr = B_SWAP16(*ptr);
+            }
+            break;
+        case 2:
+            for (int i = 0; i < RTROMSIZE / 4; i++)
+            {
+                uint32_t *ptr = (uint32_t*)&rt_rom[i * 4];
+                *ptr = B_SWAP32(*ptr);
+            }
+            break;
+        }
+        if (memcmp(&rt_rom[32], "DUKE NUKEM", 10) != 0)
+        {
+            Xfree(rt_rom);
+            rt_rom = nullptr;
+            initprintf("Invalid ROM file");
+            return -1;
+        }
+        switch (rt_rom[62])
+        {
+        case 'E':
+            rt_romcountry = 0;
+            break;
+        case 'P':
+            rt_romcountry = 1;
+            break;
+        default:
+            Xfree(rt_rom);
+            rt_rom = nullptr;
+            initprintf("Invalid ROM file");
+            return -1;
+        }
+        rt_group_init = true;
+
+        return rt_group;
+    }
+
+    return -1;
+}
+
+int rt_romoffset = 0;
+
+void RT_ROMSeek(int offset)
+{
+    if (offset >= 0 && offset <= RTROMSIZE)
+        rt_romoffset = offset;
+}
+
+int RT_ROMRead(void *ptr, int count)
+{
+    count = min(count, RTROMSIZE - rt_romoffset);
+    memcpy(ptr, &rt_rom[rt_romoffset], count);
+    rt_romoffset += count;
+    return count;
+}
+
+int RT_ROMGetOffset(int offset)
+{
+    if (offset < 0 || offset >= GO_MAXOFFSETS)
+        return 0;
+    switch (rt_romcountry)
+    {
+    case 0:
+        return rt_offsettable[offset].usaoffset;
+    case 1:
+        return rt_offsettable[offset].euoffset;
+    default:
+        break;
+    }
+    return 0;
 }
 
 void RT_Init(void)
 {
-    static int boardOffset = 0x8f6f8;
+    int boardOffset = RT_ROMGetOffset(GO_BOARDOFFSET);
     if (!rt_group_init)
         G_GameExit("RT_Init: No GRP initialized");
 
     paletteLoadFromDisk_replace = RT_LoadPalette;
 
 
-    Blseek(rt_group, boardOffset, SEEK_SET);
-    if (Bread(rt_group, boardinfo, sizeof(boardinfo)) != sizeof(boardinfo))
+    RT_ROMSeek(boardOffset);
+    if (RT_ROMRead(boardinfo, sizeof(boardinfo)) != sizeof(boardinfo))
     {
         initprintf("RT_Init: file read error");
         return;
@@ -136,8 +259,8 @@ struct {
 
 int RT_PrepareScript(void)
 {
-    const int rt_scriptoffset = 0xa4500;
-    const int rt_actoroffset = 0xb1784;
+    const int rt_scriptoffset = RT_ROMGetOffset(GO_SCRIPTOFFSET);
+    const int rt_actoroffset = RT_ROMGetOffset(GO_ACTOROFFSET);
     const int rt_scriptsize = 0x34a1;
     int32_t *rt_script = (int32_t*)Xmalloc(rt_scriptsize*4);
     int16_t *rt_actorscrptr = (int16_t*)Xmalloc(6144*2);
@@ -147,15 +270,15 @@ int RT_PrepareScript(void)
         return 1;
     }
 
-    Blseek(rt_group, rt_scriptoffset, SEEK_SET);
-    if (Bread(rt_group, rt_script, rt_scriptsize*4) != rt_scriptsize*4)
+    RT_ROMSeek(rt_scriptoffset);
+    if (RT_ROMRead(rt_script, rt_scriptsize*4) != rt_scriptsize*4)
     {
         initprintf("RT_PrepareScript: file read error\n");
         return 1;
     }
 
-    Blseek(rt_group, rt_actoroffset, SEEK_SET);
-    if (Bread(rt_group, rt_actorscrptr, 6144*2) != 6144*2)
+    RT_ROMSeek(rt_actoroffset);
+    if (RT_ROMRead(rt_actorscrptr, 6144*2) != 6144*2)
     {
         initprintf("RT_PrepareScript: file read error\n");
         return 1;
@@ -210,13 +333,13 @@ int RT_PrepareScript(void)
     g_player[0].ps->max_ammo_amount[13] = 20;
     g_player[0].ps->max_ammo_amount[14] = 25;
 
-    const int quote_offset = 0xb4784;
-    const int quote_delta = 0xbba50- 0x80105e50;
+    const int quote_offset = RT_ROMGetOffset(GO_QUOTEOFFSET);
+    const int quote_delta = RT_ROMGetOffset(GO_QUOTEDELTA);
     const int quote_count = 131;
 
     int32_t *quote_table = (int32_t*)Xmalloc(quote_count * 4);
-    Blseek(rt_group, quote_offset, SEEK_SET);
-    if (Bread(rt_group, quote_table, quote_count*4) != quote_count*4)
+    RT_ROMSeek(quote_offset);
+    if (RT_ROMRead(quote_table, quote_count*4) != quote_count*4)
     {
         initprintf("RT_PrepareScript: file read error\n");
         return 1;
@@ -225,8 +348,8 @@ int RT_PrepareScript(void)
     {
         int const offset = B_BIG32(quote_table[i]) + quote_delta;
         C_AllocQuote(i);
-        Blseek(rt_group, offset, SEEK_SET);
-        Bread(rt_group, apStrings[i], MAXQUOTELEN-1);
+        RT_ROMSeek(offset);
+        RT_ROMRead(apStrings[i], MAXQUOTELEN-1);
         for (int j = 0; j < MAXQUOTELEN; j++)
         {
             if (apStrings[i][j] == 0)
@@ -249,11 +372,11 @@ int RT_PrepareScript(void)
 
 static void RT_LoadPalette(void)
 {
-    const int paletteOffset = 0xc0880;
+    const int paletteOffset = RT_ROMGetOffset(GO_PALETTEOFFSET);
     for (int p = 0; p < RT_PALNUM; p++)
     {
-        Blseek(rt_group, paletteOffset + 520 * p + 8, SEEK_SET);
-        if (Bread(rt_group, rt_palette[p], 512) != 512)
+        RT_ROMSeek(paletteOffset + 520 * p + 8);
+        if (RT_ROMRead(rt_palette[p], 512) != 512)
         {
             initprintf("RT_LoadPalette: file read error");
             return;
@@ -317,8 +440,8 @@ void RT_LoadBoard(int boardnum)
     auto board = &boardinfo[boardnum];
     uint32_t siz = board->dataend - board->datastart;
     char *boardbuf = (char*)Xmalloc(siz);
-    Blseek(rt_group, board->datastart, SEEK_SET);
-    if (Bread(rt_group, boardbuf, siz) != siz)
+    RT_ROMSeek(board->datastart);
+    if (RT_ROMRead(boardbuf, siz) != siz)
     {
         initprintf("RT_LoadBoard: file read error");
         return;

@@ -375,7 +375,9 @@ static int32_t G_LoadGrpDependencyChain(grpfile_t const * const grp)
 
 #ifdef USE_OPENGL
     if (grp->type->game & GAMEFLAG_REALITY)
+    {
         return RT_InitGRP(grp->filename);
+    }
     else
 #endif
     {

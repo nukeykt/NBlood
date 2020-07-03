@@ -166,9 +166,9 @@ static void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, i
 
 void RT_LoadTiles(void)
 {
-    const int tileinfoOffset = 0x90bf0;
-    Blseek(rt_group, tileinfoOffset, SEEK_SET);
-    if (Bread(rt_group, rt_tileinfo, sizeof(rt_tileinfo)) != sizeof(rt_tileinfo))
+    const int tileinfoOffset = RT_ROMGetOffset(GO_TILEINFOOFFSET);
+    RT_ROMSeek(tileinfoOffset);
+    if (RT_ROMRead(rt_tileinfo, sizeof(rt_tileinfo)) != sizeof(rt_tileinfo))
     {
         initprintf("RT_LoadTiles: file read error");
         return;
@@ -217,8 +217,8 @@ void RT_LoadTiles(void)
         tileConvertAnimFormat(t.tile, t.picanm);
         char *inbuf = (char*)Xmalloc(t.filesiz);
         char *outbuf = (char*)Xmalloc(bufsize);
-        Blseek(rt_group, dataOffset+t.fileoff, SEEK_SET);
-        Bread(rt_group, inbuf, t.filesiz);
+        RT_ROMSeek(dataOffset+t.fileoff, SEEK_SET);
+        RT_ROMRead(inbuf, t.filesiz);
         if (RNCDecompress(inbuf, outbuf) == -1)
         {
             Bmemcpy(outbuf, inbuf, bufsize);
@@ -280,7 +280,7 @@ void RT_LoadTiles(void)
 
 bool RT_TileLoad(int16_t tilenum)
 {
-    const int dataOffset = 0xc2270;
+    const int dataOffset = RT_ROMGetOffset(GO_TILEDATAOFFSET);
     int32_t const tileid = rt_tilemap[tilenum];
     if (tileid < 0)
         return false;
@@ -302,8 +302,8 @@ bool RT_TileLoad(int16_t tilenum)
     if (!rt_waloff[tileid])
         return false;
     char *inbuf = (char*)Xmalloc(t.filesiz);
-    Blseek(rt_group, dataOffset+t.fileoff, SEEK_SET);
-    Bread(rt_group, inbuf, t.filesiz);
+    RT_ROMSeek(dataOffset+t.fileoff);
+    RT_ROMRead(inbuf, t.filesiz);
     if (RNCDecompress(inbuf, (char*)rt_waloff[tileid]) == -1)
     {
         Bmemcpy((char*)rt_waloff[tileid], inbuf, bufsize);
@@ -3034,16 +3034,16 @@ void RT_LoadBOSS2MDL(void)
     static int loaded = 0;
     if (!loaded)
     {
-        static int rt_mdloffset = 0x3e9550;
+        static int rt_mdloffset = RT_ROMGetOffset(GO_BOSSMDLOFFSET);
         static int rt_mdlsize = 0xb3f8;
-        static int rt_trisoffset = 0x895b0;
+        static int rt_trisoffset = RT_ROMGetOffset(GO_BOSSTRISOFFSET);
         rt_boss2mdllock = CACHE1D_PERMANENT;
         g_cache.allocateBlock((intptr_t*)&boss2vtx, sizeof(boss2vtx_t)*BOSS2_VTXNUM*BOSS2_FRAMES, &rt_boss2mdllock);
         char *tbuff = (char*)Xmalloc(rt_mdlsize);
         if (!tbuff)
             return;
-        lseek(rt_group, rt_mdloffset, SEEK_SET);
-        if (read(rt_group, tbuff, rt_mdlsize) != rt_mdlsize)
+        RT_ROMSeek(rt_mdloffset);
+        if (RT_ROMRead(tbuff, rt_mdlsize) != rt_mdlsize)
             return;
         RNCDecompress(tbuff, (char*)boss2vtx);
         for (int i = 0; i < BOSS2_VTXNUM*BOSS2_FRAMES; i++)
@@ -3057,8 +3057,8 @@ void RT_LoadBOSS2MDL(void)
             boss2vtx[i].color[1] = B_BIG16(boss2vtx[i].color[1]);
             boss2vtx[i].color[2] = B_BIG16(boss2vtx[i].color[2]);
         }
-        lseek(rt_group, rt_trisoffset, SEEK_SET);
-        if (read(rt_group, boss2tris, sizeof(boss2tris)) != sizeof(boss2tris))
+        RT_ROMSeek(rt_trisoffset);
+        if (RT_ROMRead(boss2tris, sizeof(boss2tris)) != sizeof(boss2tris))
             return;
 
         for (auto& v : boss2tris)

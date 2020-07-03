@@ -104,11 +104,11 @@ void RT_LoadRTSound(rt_sound_t *snd)
 {
     if (snd->ptr)
         return;
-    lseek(rt_group, snd->wave->base, SEEK_SET);
+    RT_ROMSeek(snd->wave->base);
     int l = snd->wave->len;
     snd->lock = 200;
     g_cache.allocateBlock((intptr_t *)&snd->ptr, l, &snd->lock);
-    read(rt_group, snd->ptr, l);
+    RT_ROMRead(snd->ptr, l);
 }
 
 void RT_ChanNoteOn(channel_t *chan, int note, int vel, int duration, int perc)
@@ -455,23 +455,23 @@ void RT_MusicService(void)
 
 void RT_MusicInit(void)
 {
-    static const uint32_t musicCtlOffset = 0x7bc6e0;
-    static const uint32_t musicTblOffset = 0x7bd580;
+    static const uint32_t musicCtlOffset = RT_ROMGetOffset(GO_MUSICCTLOFFSET);
+    static const uint32_t musicTblOffset = RT_ROMGetOffset(GO_MUSICTBLOFFSET);
     musicCtl = RT_LoadCTL(musicCtlOffset, musicTblOffset);
-    static const uint32_t musicSeqOffset = 0x7bbfc0;
+    static const uint32_t musicSeqOffset = RT_ROMGetOffset(GO_MUSICSEQOFFSET);
     uint32_t offset;
-    lseek(rt_group, musicSeqOffset + 4, SEEK_SET);
-    read(rt_group, &offset, sizeof(uint32_t));
+    RT_ROMSeek(musicSeqOffset + 4);
+    RT_ROMRead(&offset, sizeof(uint32_t));
     offset = B_BIG32(offset);
     uint32_t siz;
-    lseek(rt_group, musicSeqOffset + 8, SEEK_SET);
-    read(rt_group, &siz, sizeof(uint32_t));
+    RT_ROMSeek(musicSeqOffset + 8);
+    RT_ROMRead(&siz, sizeof(uint32_t));
     siz = B_BIG32(siz);
     seqBuffer = (char*)Xmalloc(siz);
     if (!seqBuffer)
         return;
-    lseek(rt_group, musicSeqOffset + offset, SEEK_SET);
-    read(rt_group, seqBuffer, siz);
+    RT_ROMSeek(musicSeqOffset + offset);
+    RT_ROMRead(seqBuffer, siz);
     for (int i = 0; i < 16; i++)
     {
         uint32_t trackOffset = *(uint32_t*)&seqBuffer[i * 4];
