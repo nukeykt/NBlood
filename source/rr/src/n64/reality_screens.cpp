@@ -205,7 +205,7 @@ struct {
     2, 0x7c1, "SOUND ENGINE",
     1, 0x7d5, "JIM DOSE",
     2, 0x7f3, "SOUND AND MUSIC",
-    2, 0x807, "ROBERT PRINCE",
+    1, 0x807, "ROBERT PRINCE",
     1, 0x816, "LEE JACKSON",
     2, 0x834, "VOICE PRODUCER",
     1, 0x848, "LANI MINELLA",
@@ -216,27 +216,27 @@ struct {
 static int intro_state = 0;
 static int intro_sndcnt = 0;
 
-void RT_GameText(int x, int y, const char *text)
+void RT_GameText(float x, float y, const char *text)
 {
     if (x == -1)
     {
-        G_ScreenText(STARTALPHANUM, 160, y, 65536, 0, 0, text, 0, 0, 0, 0, 7, 0, 0, 0,
+        G_ScreenText(STARTALPHANUM, 160 * 65536.f, y * 65536.f, 65536, 0, 0, text, 0, 0, ROTATESPRITE_FULL16, 0, 7 * 65536, 0, 0, 0,
             TEXT_XCENTER | TEXT_N64COORDS | TEXT_N64NOPAL, 0, 0, xdim, ydim);
         return;
     }
-    G_ScreenText(STARTALPHANUM, x, y, 65536, 0, 0, text, 0, 0, 0, 0, 7, 0, 0, 0,
+    G_ScreenText(STARTALPHANUM, x * 65536.f, y * 65536.f, 65536, 0, 0, text, 0, 0, ROTATESPRITE_FULL16, 0, 7 * 65536, 0, 0, 0,
         TEXT_N64COORDS | TEXT_N64NOPAL, 0, 0, xdim, ydim);
 }
 
-void RT_MenuText(int x, int y, const char *text)
+void RT_MenuText(float x, float y, const char *text)
 {
     if (x == -1)
     {
-        G_ScreenText(BIGALPHANUM, 160, y, 65536, 0, 0, text, 0, 0, 0, 0, 12, 0, 0, 0,
+        G_ScreenText(BIGALPHANUM, 160 * 65535.f, y * 65535.f, 65536, 0, 0, text, 0, 0, ROTATESPRITE_FULL16, 0, 12 * 65536, 0, 0, 0,
             TEXT_XCENTER | TEXT_N64COORDS | TEXT_N64NOPAL | TEXT_BIGALPHANUM, 0, 0, xdim, ydim);
         return;
     }
-    G_ScreenText(BIGALPHANUM, x, y, 65536, 0, 0, text, 0, 0, 0, 0, 12, 0, 0, 0,
+    G_ScreenText(BIGALPHANUM, x * 65535.f, y * 65535.f, 65536, 0, 0, text, 0, 0, ROTATESPRITE_FULL16, 0, 12 * 65536, 0, 0, 0,
         TEXT_N64COORDS | TEXT_N64NOPAL | TEXT_BIGALPHANUM, 0, 0, xdim, ydim);
 }
 
@@ -465,16 +465,266 @@ void RT_Intro(void)
     videoNextPage();
 }
 
+void RT_BossScene(void)
+{
+    I_ClearAllInput();
+    ototalclock = totalclock;
+    intro_state = 0;
+    bool playing = true;
+
+    int tile = rt_levelnum == 6 ? 0xe6b : 0x36c;
+    int text = rt_levelnum == 6 ? 7 : 12;
+
+    while (playing)
+    {
+        if (engineFPSLimit())
+        {
+            if (I_CheckAllInput() && intro_state < 6)
+            {
+                I_ClearAllInput();
+                intro_state = 6;
+            }
+            videoClearScreen(0L);
+            int intro_time = (int)(totalclock - ototalclock);
+            RT_DisablePolymost();
+            switch (intro_state)
+            {
+            case 0:
+            {
+                int alpha = min(intro_time * 4, 255);
+                RT_RotateSpriteSetColor(alpha, alpha, alpha, 256);
+                RT_RotateSprite(160, 120, 100, 100, tile, RTRS_SCALED);
+                RT_IntroAdvance(intro_time * 4 >= 256);
+                break;
+            }
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            {
+                RT_RotateSpriteSetColor(255, 255, 255, 256);
+                RT_RotateSprite(160, 120, 100, 100, tile, RTRS_SCALED);
+                RT_IntroText(text + intro_state - 1, 150 * 4);
+                RT_IntroAdvance(intro_time >= 150 * 4);
+                break;
+            }
+            case 6:
+            {
+                int alpha = max(256 - intro_time * 4, 0);
+                RT_RotateSpriteSetColor(alpha, alpha, alpha, 256);
+                RT_RotateSprite(160, 120, 100, 100, tile, RTRS_SCALED);
+                RT_IntroAdvance(alpha == 0);
+                break;
+            }
+            default:
+                playing = false;
+                break;
+            }
+            RT_EnablePolymost();
+            videoNextPage();
+
+            G_HandleAsync();
+        }
+    }
+
+    videoClearScreen(0L);
+    videoNextPage();
+}
+
+void RT_CreditsText(int type, float y, const char *string)
+{
+    if (y >= 0 && y <= 240)
+    {
+        int alpha = 0;
+        if (y > 192)
+            alpha = (3328 - y * 16);
+        else
+            alpha = min<int>(y * 16 - 256, 256);
+        RT_RotateSpriteSetColor(255, 255, 255, alpha);
+        switch (type)
+        {
+        case 1:
+            RT_GameText(-1, y, string);
+            break;
+        case 2:
+        default:
+            RT_MenuText(-1, y, string);
+            break;
+        }
+    }
+}
+
+void RT_FinalBossScene(void)
+{
+    I_ClearAllInput();
+    ototalclock = totalclock;
+    intro_state = 0;
+    int soundcnt = 0;
+    bool playing = true;
+
+    while (playing)
+    {
+        if (engineFPSLimit())
+        {
+            if (I_CheckAllInput())
+            {
+                if (intro_state < 6)
+                {
+                    I_ClearAllInput();
+                    intro_state = 6;
+                    ototalclock = totalclock;
+                }
+                else if (intro_state == 6)
+                {
+                    I_ClearAllInput();
+                    intro_state++;
+                }
+            }
+            videoClearScreen(0L);
+            int intro_time = (int)(totalclock - ototalclock);
+            RT_DisablePolymost();
+            switch (intro_state)
+            {
+            case 0:
+            {
+                int alpha = min(intro_time * 4, 255);
+                RT_RotateSpriteSetColor(alpha, alpha, alpha, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe6d, RTRS_SCALED);
+                RT_IntroAdvance(intro_time >= 60 * 4);
+                break;
+            }
+            case 1:
+            {
+                if (intro_time >= 4)
+                {
+                    if (soundcnt < 1)
+                    {
+                        S_PlaySound(0x15);
+                        soundcnt = 1;
+                    }
+                }
+                RT_RotateSpriteSetColor(255, 255, 255, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe6e, RTRS_SCALED);
+                RT_IntroAdvance(intro_time >= 60 * 4);
+                break;
+            }
+            case 2:
+            {
+                RT_RotateSpriteSetColor(255, 255, 255, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe6f, RTRS_SCALED);
+                RT_IntroAdvance(intro_time >= 60 * 4);
+                break;
+            }
+            case 3:
+            {
+                if (intro_time >= 4)
+                {
+                    if (soundcnt < 2)
+                    {
+                        S_PlaySound(0x2c);
+                        soundcnt = 2;
+                    }
+                }
+                RT_RotateSpriteSetColor(255, 255, 255, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe70, RTRS_SCALED);
+                RT_IntroAdvance(intro_time >= 60 * 4);
+                break;
+            }
+            case 4:
+            {
+                if (intro_time >= 4)
+                {
+                    if (soundcnt < 3)
+                    {
+                        S_PlaySound(0x19);
+                        soundcnt = 3;
+                    }
+                }
+                RT_RotateSpriteSetColor(255, 255, 255, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe71, RTRS_SCALED);
+                RT_IntroAdvance(intro_time >= 60 * 4);
+                break;
+            }
+            case 5:
+            {
+                if (intro_time >= 4)
+                {
+                    if (soundcnt < 4)
+                    {
+                        S_PlaySound(0x18);
+                        soundcnt = 4;
+                    }
+                }
+                int alpha = max(60 * 16 - intro_time * 4, 0);
+                RT_RotateSpriteSetColor(alpha, alpha, alpha, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe72, RTRS_SCALED);
+                RT_IntroAdvance(intro_time >= 60 * 4);
+                break;
+            }
+            case 6:
+            {
+                if (soundcnt < 5)
+                {
+                    S_PlaySpecialMusicOrNothing(MUS_INTRO);
+                    soundcnt = 5;
+                }
+                int alpha = min(intro_time * 4, 255);
+                RT_RotateSpriteSetColor(alpha, alpha, alpha, 256);
+                RT_RotateSprite(160, 120, 100, 100, 0xe56, RTRS_SCALED);
+                float y = -intro_time * (1.f / 8.f);
+                for (int i = 0; i < ARRAY_SIZE(rt_credits); i++)
+                {
+                    RT_CreditsText(rt_credits[i].type, rt_credits[i].y + y, rt_credits[i].string);
+                }
+                RT_IntroAdvance(y + 2190 < 0);
+                break;
+            }
+            default:
+                playing = false;
+                break;
+            }
+            RT_EnablePolymost();
+            videoNextPage();
+
+            G_HandleAsync();
+        }
+    }
+    I_ClearAllInput();
+
+    videoClearScreen(0L);
+    videoNextPage();
+}
+
 void RT_Bonus(void)
 {
     G_UpdateAppTitle();
     videoClearScreen(0L);
     videoNextPage();
 
+    S_StopMusic();
     FX_StopAllSounds();
     S_ClearSoundLocks();
     FX_SetReverb(0L);
     CONTROL_BindsEnabled = 1; // so you can use your screenshot bind on the score screens
+
+    if (ud.multimode == 1 || ud.coop)
+    {
+        if (rt_levelnum == 6 || rt_levelnum == 17)
+        {
+            RT_BossScene();
+        }
+        if (rt_levelnum == 27)
+        {
+            RT_FinalBossScene();
+
+            I_ClearAllInput();
+
+            videoClearScreen(0);
+            videoNextPage();
+            return;
+        }
+    }
 
     totalclock = 0;
 
@@ -482,6 +732,7 @@ void RT_Bonus(void)
     int soundcnt = 0;
     int soundcnt2 = 0;
     int soundcnt3 = 0;
+    float bonus_oalpha = 0.f;
 
     S_StopMusic();
     FX_StopAllSounds();
@@ -498,7 +749,6 @@ void RT_Bonus(void)
             RT_DisablePolymost();
             int buttons = 0;
             float bonus_alpha = 0.f;
-            float bonus_oalpha = 0.f;
             if (bonus_state == 0)
             {
                 bonus_alpha = min(((int)totalclock * 4) * (1.f / 256.f), 1.f);
@@ -506,7 +756,7 @@ void RT_Bonus(void)
             }
             else
             {
-                bonus_alpha = bonus_oalpha - ((int)totalclock - (int)ototalclock) * (1.f / 4.f);
+                bonus_alpha = bonus_oalpha - ((int)totalclock - (int)ototalclock) * (1.f / 64.f);
                 buttons = 0;
             }
             if (buttons)
