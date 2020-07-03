@@ -210,7 +210,7 @@ void S_MenuSound(void)
         PISTOL_RICOCHET,   PISTOL_BODYHIT,   PISTOL_FIRE,      SHOTGUN_FIRE,  BOS1_WALK,     RPG_EXPLODE,
         PIPEBOMB_BOUNCE,   PIPEBOMB_EXPLODE, NITEVISION_ONOFF, RPG_SHOOT,     SELECT_WEAPON,
     };
-    int s = RR ? 390 : menusnds[SoundNum++ % ARRAY_SIZE(menusnds)];
+    int s = RR ? 390 : (REALITY ? 0xaa : menusnds[SoundNum++ % ARRAY_SIZE(menusnds)]);
     if (s != -1)
         S_PlaySound(s);
 }

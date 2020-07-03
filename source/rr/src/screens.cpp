@@ -1182,7 +1182,7 @@ void G_DisplayRest(int32_t smoothratio)
         if ((g_player[myconnectindex].ps->gm&MODE_MENU) == MODE_MENU && g_currentMenu <= MENU_MAIN_INGAME)
         {
             I_EscapeTriggerClear();
-            S_PlaySound(EXITMENUSOUND);
+            S_PlaySound(REALITY ? 0xaa : EXITMENUSOUND);
             Menu_Change(MENU_CLOSE);
             if (!ud.pause_on)
                 S_PauseSounds(false);

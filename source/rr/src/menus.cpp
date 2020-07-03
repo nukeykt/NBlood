@@ -3891,7 +3891,7 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
             key[0] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0];
             key[1] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1];
 
-            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
             *column->column[M_KEYBOARDKEYS.currentColumn] = KB_GetLastScanCode();
 
@@ -3950,7 +3950,7 @@ static void Menu_StartGameWithoutSkill(void)
 {
     ud.m_player_skill = M_SKILL.currentEntry+1;
 
-    g_skillSoundVoice = S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+    g_skillSoundVoice = S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
     ud.m_respawn_monsters = 0;
 
@@ -4068,7 +4068,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 
     case MENU_SKILL:
     {
-        int32_t skillsound = RR ? 341 : PISTOL_BODYHIT;
+        int32_t skillsound = RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT);
 
         if (RR)
             switch (M_SKILL.currentEntry)
@@ -4087,6 +4087,22 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
                 break;
             case 4:
                 skillsound = 197;
+                break;
+            }
+        else if (REALITY)
+            switch (M_SKILL.currentEntry)
+            {
+            case 0:
+                skillsound = 0xb6;
+                break;
+            case 1:
+                skillsound = 0x99;
+                break;
+            case 2:
+                skillsound = 0x4e;
+                break;
+            case 3:
+                skillsound = 0xb5;
                 break;
             }
         else
@@ -4799,7 +4815,7 @@ static void Menu_TextFormSubmit(char *input)
             ud.lockout = 0;
         }
 
-        S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+        S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
         Menu_Change(MENU_GAMESETUP);
         break;
 
@@ -4825,14 +4841,14 @@ static void Menu_TextFormSubmit(char *input)
         switch (cheatID)
         {
             case -1:
-                S_PlaySound(RR ? 335 : KICK_HIT);
+                S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                 break;
             case CHEAT_SCOTTY:
             {
                 char const * const numberpos = Bstrchr(CheatStrings[CHEAT_SCOTTY], '#');
                 if (numberpos == NULL)
                 {
-                    S_PlaySound(RR ? 335 : KICK_HIT);
+                    S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     break;
                 }
 
@@ -4846,7 +4862,7 @@ static void Menu_TextFormSubmit(char *input)
                 char const * const numberpos = Bstrchr(CheatStrings[CHEAT_SKILL], '#');
                 if (numberpos == NULL)
                 {
-                    S_PlaySound(RR ? 335 : KICK_HIT);
+                    S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     break;
                 }
 
@@ -4876,13 +4892,13 @@ static void Menu_TextFormSubmit(char *input)
 
     case MENU_CHEAT_WARP:
         if (Menu_Cheat_Warp(input))
-            S_PlaySound(RR ? 335 : KICK_HIT);
+            S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
         Menu_Change(MENU_CHEATS);
         break;
 
     case MENU_CHEAT_SKILL:
         if (Menu_Cheat_Skill(input))
-            S_PlaySound(RR ? 335 : KICK_HIT);
+            S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
         Menu_Change(MENU_CHEATS);
         break;
 
@@ -5922,7 +5938,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 Menu_RunInput_EntryLink_Activate(entry);
 
                                 if (g_player[myconnectindex].ps->gm&MODE_MENU) // for skill selection
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                 m_mousecaught = 1;
                             }
@@ -5966,7 +5982,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                 Menu_RunInput_EntryOption_Activate(entry, object);
 
-                                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                 m_mousecaught = 1;
                             }
@@ -6017,7 +6033,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                     Menu_RunInput_EntryCustom2Col_Activate(entry);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -6040,7 +6056,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                     Menu_RunInput_EntryCustom2Col_Activate(entry);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -6396,7 +6412,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 {
                                     Menu_RunInput_EntryString_Submit(/*entry, */object);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -6410,7 +6426,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                     Menu_RunInput_EntryString_Activate(entry);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -6464,7 +6480,7 @@ static void M_RunMenu_CdPlayer(Menu_t *cm, MenuMenu_t *menu, const vec2_t origin
                 {
                     menu->currentEntry = e;
 
-                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                     if (ud.config.MusicToggle)
                     {
@@ -6608,7 +6624,7 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
                     object->options->currentEntry = e;
 
                     if (!Menu_RunInput_EntryOptionList_Activate(entry, object))
-                        S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                        S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                     m_mousecaught = 1;
                 }
@@ -6903,7 +6919,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
             {
                 Menu_RunInput_FileSelect_Select(object);
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                 m_mousecaught = 1;
             }
@@ -7506,7 +7522,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ReturnTriggerClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -7514,7 +7530,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 I_PanelUpClear();
 
-                S_PlaySound(RR ? 335 : KICK_HIT);
+                S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                 Menu_AnimateChange(panel->previousID, panel->previousAnimation);
             }
             else if (I_PanelDown() || Menu_RunInput_MouseAdvance())
@@ -7522,7 +7538,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_PanelDownClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(RR ? 335 : KICK_HIT);
+                S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                 Menu_AnimateChange(panel->nextID, panel->nextAnimation);
             }
             break;
@@ -7565,7 +7581,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ReturnTriggerClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33: EXITMENUSOUND);
 
                 object->destination[0] = 0;
 
@@ -7579,7 +7595,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 Menu_RunInput_FileSelect_Select(object);
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
             }
             else if (KB_KeyPressed(sc_Home))
             {
@@ -7711,7 +7727,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ReturnTriggerClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33: EXITMENUSOUND);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -7722,7 +7738,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 I_ClearAllInput();
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                 Menu_AnimateChange(message->linkID, message->animation);
             }
@@ -7741,7 +7757,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
             }
 
             if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
@@ -7756,7 +7772,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 Menu_AnimateChange(verify->linkID, verify->animation);
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
             }
 
             Menu_PreInput(NULL);
@@ -7781,7 +7797,7 @@ static void Menu_RunInput(Menu_t *cm)
                     S_PauseMusic(false);
                 }
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
             }
 
             if (I_ReturnTrigger() || I_EscapeTrigger() || Menu_RunInput_MouseReturn())
@@ -7791,7 +7807,7 @@ static void Menu_RunInput(Menu_t *cm)
                 m_mousecaught = 1;
 
                 if (cm->parentID != MENU_CLOSE || (g_player[myconnectindex].ps->gm & MODE_GAME))
-                    S_PlaySound(EXITMENUSOUND);
+                    S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -7955,7 +7971,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryLink_Activate(currentry);
 
                             if (g_player[myconnectindex].ps->gm&MODE_MENU) // for skill selection
-                                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         break;
                     case Option:
@@ -7971,7 +7987,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryOption_Activate(currentry, object);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         else if (I_MenuRight())
                         {
@@ -7979,7 +7995,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryOption_Movement(currentry, object, MM_Right);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         else if (I_MenuLeft())
                         {
@@ -7987,7 +8003,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryOption_Movement(currentry, object, MM_Left);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                     }
                         break;
@@ -8011,7 +8027,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryCustom2Col_Activate(currentry);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         break;
                     case RangeInt32:
@@ -8103,7 +8119,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryString_Activate(currentry);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
 
                         break;
@@ -8117,7 +8133,7 @@ static void Menu_RunInput(Menu_t *cm)
                     m_mousecaught = 1;
 
                     if (cm->parentID != MENU_CLOSE || (g_player[myconnectindex].ps->gm & MODE_GAME))
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                     Menu_AnimateChange(cm->parentID, cm->parentAnimation);
                 }
@@ -8171,13 +8187,13 @@ static void Menu_RunInput(Menu_t *cm)
 
                         Menu_RunInput_EntryString_Cancel(/*currentry, */object);
 
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
                     }
                     else if (hitstate == 1)
                     {
                         Menu_RunInput_EntryString_Submit(/*currentry, */object);
 
-                        S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                        S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     }
                 }
             }
@@ -8192,7 +8208,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_ReturnTriggerClear();
                         m_mousecaught = 1;
 
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                         object->options->currentEntry = -1;
                     }
@@ -8201,7 +8217,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_AdvanceTriggerClear();
 
                         if (!Menu_RunInput_EntryOptionList_Activate(currentry, object))
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     }
                     else if (KB_KeyPressed(sc_Home))
                     {
@@ -8243,7 +8259,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_EscapeTriggerClear();
                         m_mousecaught = 1;
 
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                         ((MenuCustom2Col_t*)currentry->entry)->screenOpen = 0;
                     }
