@@ -472,7 +472,7 @@ void RT_BossScene(void)
     intro_state = 0;
     bool playing = true;
 
-    int tile = rt_levelnum == 6 ? 0xe6b : 0x36c;
+    int tile = rt_levelnum == 6 ? 0xe6b : 0xe6c;
     int text = rt_levelnum == 6 ? 7 : 12;
 
     while (playing)
