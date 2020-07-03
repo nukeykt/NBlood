@@ -1077,7 +1077,7 @@ void RT_DrawCeiling(int sectnum)
         auto vtx = rt_sectvtx[rt_sect->ceilingvertexptr+i];
         float x = vtx.x;
         float y = vtx.y;
-        float z = getceilzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 32.f;
+        float z = getceilzofslope(sectnum, vtx.x * 2, vtx.y * 2) >> 5;
         glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); 
         RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
         glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
@@ -1101,7 +1101,7 @@ void RT_DrawFloor(int sectnum)
         auto vtx = rt_sectvtx[rt_sect->floorvertexptr+i];
         float x = vtx.x;
         float y = vtx.y;
-        float z = getflorzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 32.f;
+        float z = getflorzofslope(sectnum, vtx.x * 2, vtx.y * 2) >> 5;
         glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); 
         RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
         glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
