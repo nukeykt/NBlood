@@ -80,43 +80,6 @@ const char *rt_scenestrings[] = {
     "RESISTANCE! "
 };
 
-const char* rt_level_names[] = {
-    "HOLLYWOOD HOLOCAUST",
-    "GUN CRAZY",
-    "DEATH ROW",
-    "TOXIC DUMP",
-    "LAUNCH FACILITY",
-    "THE ABYSS",
-    "BATTLELORD",
-    "DUKE-BURGER",
-    "SPACEPORT",
-    "INCUBATOR",
-    "WARP FACTOR",
-    "FUSION STATION",
-    "OCCUPIED TERRITORY",
-    "TIBERIUS STATION",
-    "LUNAR REACTOR",
-    "DARK SIDE",
-    "DREADNOUGHT",
-    "OVERLORD",
-    "LUNATIC FRINGE",
-    "RAW MEAT",
-    "BANK ROLL",
-    "FLOOD ZONE",
-    "L.A. RUMBLE",
-    "MOVIE SET",
-    "RABID TRANSIT",
-    "FAHRENHEIT",
-    "HOTEL HELL",
-    "STADIUM",
-    "AREA 51",
-    "FREEWAY",
-    "CASTLE DUKENSTEIN",
-    "PIRACY",
-    "SHAFT",
-    "NOCTIS LABYRINTHUS"
-};
-
 struct {
     int type;
     int y;

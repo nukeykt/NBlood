@@ -46,6 +46,7 @@ extern rt_walltype *rt_wall;
 extern rt_sectortype *rt_sector;
 extern int rt_boardnum;
 extern int rt_levelnum;
+extern const char* rt_level_names[];
 
 buildvfs_kfd RT_InitGRP(const char *filename);
 void RT_Init(void);

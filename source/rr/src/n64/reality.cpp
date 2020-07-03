@@ -255,6 +255,43 @@ struct {
     0, 29, "whomp.mid",
 };
 
+const char* rt_level_names[] = {
+    "HOLLYWOOD HOLOCAUST",
+    "GUN CRAZY",
+    "DEATH ROW",
+    "TOXIC DUMP",
+    "LAUNCH FACILITY",
+    "THE ABYSS",
+    "BATTLELORD",
+    "DUKE-BURGER",
+    "SPACEPORT",
+    "INCUBATOR",
+    "WARP FACTOR",
+    "FUSION STATION",
+    "OCCUPIED TERRITORY",
+    "TIBERIUS STATION",
+    "LUNAR REACTOR",
+    "DARK SIDE",
+    "DREADNOUGHT",
+    "OVERLORD",
+    "LUNATIC FRINGE",
+    "RAW MEAT",
+    "BANK ROLL",
+    "FLOOD ZONE",
+    "L.A. RUMBLE",
+    "MOVIE SET",
+    "RABID TRANSIT",
+    "FAHRENHEIT",
+    "HOTEL HELL",
+    "STADIUM",
+    "AREA 51",
+    "FREEWAY",
+    "CASTLE DUKENSTEIN",
+    "PIRACY",
+    "SHAFT",
+    "NOCTIS LABYRINTHUS"
+};
+
 #define RT_QUOTES 131
 
 int RT_PrepareScript(void)
@@ -312,7 +349,10 @@ int RT_PrepareScript(void)
         for (int j = 0; j < MAXLEVELS; j++)
         {
             g_mapInfo[i * MAXLEVELS + j].filename = (char*)Xcalloc(1, 1);
-            g_mapInfo[i * MAXLEVELS + j].name = (char*)Xcalloc(1, 1);
+            if (i == 0 && j < ARRAY_SIZE(rt_level_names))
+                g_mapInfo[i * MAXLEVELS + j].name = strdup(rt_level_names[j]);
+            else
+                g_mapInfo[i * MAXLEVELS + j].name = (char*)Xcalloc(1, 1);
         }
     }
 
