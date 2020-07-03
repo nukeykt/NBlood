@@ -376,10 +376,10 @@ void RT_P_DisplayWeapon(void)
         guniqhudid = 100;
 
         if (quickKickFrame < 5 || quickKickFrame > 9)
-            RT_DrawTileScaled(weaponX + 80 - (pPlayer->look_ang >> 1), weaponY + 250 - weaponYOffset, KNEE, weaponShade,
+            RT_DrawTileScaled(weaponX + 35 - (pPlayer->look_ang >> 1), weaponY + 321 - weaponYOffset, KNEE, weaponShade,
                                 weaponBits | 4 | DRAWEAP_CENTER, weaponPal);
         else
-            RT_DrawTileScaled(weaponX + 160 - 16 - (pPlayer->look_ang >> 1), weaponY + 214 - weaponYOffset, KNEE + 1,
+            RT_DrawTileScaled(weaponX + 115 - 16 - (pPlayer->look_ang >> 1), weaponY + 285 - weaponYOffset, KNEE + 1,
                                 weaponShade, weaponBits | 4 | DRAWEAP_CENTER, weaponPal);
         guniqhudid = 0;
     }
