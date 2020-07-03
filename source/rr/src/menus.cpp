@@ -2428,6 +2428,7 @@ static void Menu_Pre(MenuID_t cm)
              || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, r_maxfps <= 0);
+        MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER, REALITY);
         break;
     }
 

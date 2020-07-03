@@ -8485,6 +8485,12 @@ int app_main(int argc, char const * const * argv)
 
     system_getcvars();
 
+    if (REALITY)
+    {
+        // force gl mode
+        ud.setup.bpp = 32;
+    }
+
     //if (g_networkMode != NET_DEDICATED_SERVER)
     {
         if (videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail) < 0)
@@ -8525,6 +8531,9 @@ int app_main(int argc, char const * const * argv)
             ud.setup.ydim = validmode[resIdx].ydim;
             ud.setup.bpp  = bpp;
         }
+
+        if (REALITY && ud.setup.bpp != 32)
+            G_GameExit("Duke Nukem 64 requires GL mode");
 
         g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, g_player[myconnectindex].ps->palette, 0);
