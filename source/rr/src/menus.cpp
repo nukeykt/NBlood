@@ -704,7 +704,6 @@ static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &M
 #ifdef USE_OPENGL
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
-#ifdef TEXFILTER_MENU_OPTIONS
 static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER, MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
@@ -716,7 +715,6 @@ static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 0, 1, 2, 4, 8, 16, };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ANISOTROPY, MEOSV_DISPLAYSETUP_ANISOTROPY, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ANISOTROPY, &glanisotropy);
 static MenuEntry_t ME_DISPLAYSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
-#endif
 # endif
 
 # ifdef EDUKE32_ANDROID_MENU
@@ -897,6 +895,16 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST,
 # endif
 #endif
+};
+
+static MenuEntry_t *MEL_DISPLAYSETUP_RT[] = {
+    &ME_DISPLAYSETUP_SCREENSETUP,
+    &ME_DISPLAYSETUP_COLORCORR,
+    &ME_DISPLAYSETUP_VIDEOSETUP,
+    &ME_DISPLAYSETUP_ASPECTRATIO,
+    &ME_DISPLAYSETUP_FOV,
+    &ME_DISPLAYSETUP_TEXFILTER,
+    &ME_DISPLAYSETUP_ANISOTROPY,
 };
 
 #ifdef POLYMER
@@ -2284,7 +2292,9 @@ static void Menu_Pre(MenuID_t cm)
 
 #ifdef USE_OPENGL
     case MENU_DISPLAYSETUP:
-        if (videoGetRenderMode() == REND_CLASSIC)
+        if (REALITY)
+            MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP_RT);
+        else if (videoGetRenderMode() == REND_CLASSIC)
             MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP);
 #ifdef POLYMER
         else if (videoGetRenderMode() == REND_POLYMER)
@@ -2309,9 +2319,19 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size >= 8 && ud.statusbarmode == 0 && !(ud.statusbarflags & STATUSBAR_NOFULL)) +
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
-
+        if (REALITY)
+        {
+            for (i = (int32_t) ARRAY_SIZE(MEOSV_DISPLAYSETUP_ANISOTROPY) - 1; i >= 0; --i)
+            {
+                if (MEOSV_DISPLAYSETUP_ANISOTROPY[i] <= glinfo.maxanisotropy)
+                {
+                    MEOS_DISPLAYSETUP_ANISOTROPY.numOptions = i + 1;
+                    break;
+                }
+            }
+        }
 #ifdef TEXFILTER_MENU_OPTIONS
-        if (videoGetRenderMode() != REND_CLASSIC)
+        else if (videoGetRenderMode() != REND_CLASSIC)
         {
             //POGOTODO: allow setting anisotropy again while r_useindexedcolortextures is set when support is added down the line
             // don't allow setting anisotropy or changing palette emulation while in POLYMOST and r_useindexedcolortextures is enabled
@@ -4426,10 +4446,8 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
         }
     }
 #ifdef USE_OPENGL
-#ifdef TEXFILTER_MENU_OPTIONS
     else if (entry == &ME_DISPLAYSETUP_ANISOTROPY || entry == &ME_DISPLAYSETUP_TEXFILTER)
         gltexapplyprops();
-#endif
     else if (entry == &ME_RENDERERSETUP_TEXQUALITY)
     {
         texcache_invalidate();
