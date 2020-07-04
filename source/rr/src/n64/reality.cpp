@@ -656,6 +656,10 @@ void RT_LoadBoard(int boardnum)
 
     memset(explosions, 0, sizeof(explosions));
     memset(smoke, 0, sizeof(smoke));
+
+    ud.statusbarflags |= STATUSBAR_NOFULL | STATUSBAR_NOOVERLAY | STATUSBAR_NOFRAGBAR;
+    if (ud.screen_size > 4)
+        ud.screen_size = 4;
 }
 
 int RT_NextLevel(void)

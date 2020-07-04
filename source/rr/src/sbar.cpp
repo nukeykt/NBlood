@@ -632,6 +632,8 @@ static inline void rotatesprite_althudr(int32_t sx, int32_t sy, int32_t z, int16
 
 void G_DrawStatusBar(int32_t snum)
 {
+    if (REALITY && RT_DrawStatusBar(snum))
+        return;
     DukePlayer_t *const p = g_player[snum].ps;
     int32_t i, j, o, u;
     int32_t permbit = 0;

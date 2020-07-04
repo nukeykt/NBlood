@@ -2143,6 +2143,9 @@ static void postloadplayer(int32_t savegamep)
         g_player[i].ps->drug_timer = 0;
 
     G_InitRRRASkies();
+
+    if (REALITY)
+        RT_ResetBarScroll();
 }
 
 ////////// END GENERIC SAVING/LOADING SYSTEM //////////

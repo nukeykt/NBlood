@@ -3889,6 +3889,20 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     float xdim43 = ydim * (4.f / 3.f);
     float scl = ydim / 240.f;
     float xo = (xdim - xdim43) * 0.5f;
+    if (orientation & 256)
+    {
+        if (screenCorrection)
+            xo -= xo * (240.f - 32.f) / 240.f;
+        else
+            xo = 0;
+    }
+    else if (orientation & 512)
+    {
+        if (screenCorrection)
+            xo += xo * (240.f - 32.f) / 240.f;
+        else
+            xo *= 2.f;
+    }
     glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(u1, v1); glVertex2f(x1 * scl + xo, y1 * scl);

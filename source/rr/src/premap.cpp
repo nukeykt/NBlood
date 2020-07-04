@@ -2702,6 +2702,9 @@ int G_EnterLevel(int gameMode)
     G_DrawBackground();
     G_DrawRooms(myconnectindex,65536);
 
+    if (REALITY)
+        RT_ResetBarScroll();
+
     Net_WaitForEverybody();
     return 0;
 }

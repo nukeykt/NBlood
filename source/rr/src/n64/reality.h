@@ -9,6 +9,7 @@
 #include "reality_defs.h"
 #include "reality_player.h"
 #include "reality_render.h"
+#include "reality_sbar.h"
 #include "reality_screens.h"
 #include "reality_sound.h"
 #include "reality_music.h"

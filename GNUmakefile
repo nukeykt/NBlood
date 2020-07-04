@@ -976,6 +976,7 @@ n64_objs := \
     reality_music.cpp \
     reality_player.cpp \
     reality_render.cpp \
+    reality_sbar.cpp \
     reality_screens.cpp \
     reality_sound.cpp \
     reality_util.cpp \

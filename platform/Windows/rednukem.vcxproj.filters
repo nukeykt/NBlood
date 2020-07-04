@@ -189,6 +189,9 @@
     <ClInclude Include="..\..\source\rr\src\n64\reality_screens.h">
       <Filter>Header Files\n64</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\rr\src\n64\reality_sbar.h">
+      <Filter>Header Files\n64</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\rr\src\actors.cpp">
@@ -321,6 +324,9 @@
       <Filter>Source Files\n64</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\rr\src\n64\reality_screens.cpp">
+      <Filter>Source Files\n64</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\rr\src\n64\reality_sbar.cpp">
       <Filter>Source Files\n64</Filter>
     </ClCompile>
   </ItemGroup>
