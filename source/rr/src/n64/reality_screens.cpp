@@ -764,7 +764,7 @@ void RT_Bonus(void)
                     }
                     RT_RotateSprite(79, 137.5, 100, 100, 0xf0a + dukeframe, RTRS_SCALED); // hack
                     RT_RotateSprite(79, 138, 100, 100, 0xf0a + dukeframe, RTRS_SCALED);
-                    RT_RotateSpriteSetColor(bonus_alpha * 150.f, bonus_alpha * 150.f, bonus_alpha * 255.f, 256);
+                    RT_RotateSpriteSetColor(bonus_alpha * 150.f, bonus_alpha * 200.f, bonus_alpha * 255.f, 256);
                     RT_MenuText(-1, 30, rt_level_names[rt_levelnum]);
                     RT_GameText(-1, 47, "COMPLETED");
                     int kills = g_player[0].ps->actors_killed;
