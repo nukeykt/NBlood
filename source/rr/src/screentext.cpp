@@ -1074,6 +1074,9 @@ void G_PrintGameQuotes(int32_t snum)
     int32_t height = 0;
     int32_t k = ps->fta;
 
+    if (REALITY)
+        RT_DisablePolymost(0);
+
 
     // primary quote
 
@@ -1116,8 +1119,9 @@ void G_PrintGameQuotes(int32_t snum)
                 y += 100<<16;
         }
 #endif
-
-        height = gametext_(x, y, apStrings[ps->ftq], textsh(k), pal, texto(k), texta(k), TEXT_XCENTER).y + (1<<16);
+        if (REALITY)
+            RT_RotateSpriteSetColor(64, 200, 200, 256 - texta(k));
+        height = gametext_(x, y, apStrings[ps->ftq], textsh(k), pal, texto(k), texta(k), TEXT_XCENTER | (REALITY ? TEXT_N64NOPAL : 0)).y + (1<<16);
     }
     while (0);
 
@@ -1137,10 +1141,15 @@ void G_PrintGameQuotes(int32_t snum)
             continue;
 
         // int32_t const sh = hud_glowingquotes ? sintable[((totalclock+(i<<2))<<5)&2047]>>11 : 0;
-
-        height = mpgametext(mpgametext_x, y, user_quote[i], textsh(k), texto(k), texta(k), TEXT_LINEWRAP).y + textsc(1<<16);
+        
+        if (REALITY)
+            RT_RotateSpriteSetColor(64, 200, 200, 256 - texta(k));
+        height = mpgametext(mpgametext_x, y, user_quote[i], textsh(k), texto(k), texta(k), TEXT_LINEWRAP | (REALITY ? TEXT_N64NOPAL : 0)).y + textsc(1<<16);
         y += k <= 4 ? (height * (k-1))>>2 : height;
     }
+
+    if (REALITY)
+        RT_EnablePolymost();
 }
 
 void P_DoQuote(int32_t q, DukePlayer_t *p)

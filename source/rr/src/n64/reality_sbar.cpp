@@ -136,7 +136,7 @@ void RT_PrintNumber(float x, float y, const char *string, int orientation)
 void RT_DrawBar(DukePlayer_t *const pPlayer, bool drawhud)
 {
     char buf[10];
-    static int ammo_icon[] = {
+    static int ammo_icon[MAX_WEAPONS] = {
         BOOTS, AMMO, SHOTGUNAMMO, BATTERYAMMO, RPGAMMO, HBOMBAMMO, CRYSTALAMMO, GROWAMMO,
         DEVISTATORAMMO, TRIPBOMBSPRITE, FREEZEAMMO, HBOMBAMMO, 34, 50, 43
     };

@@ -6397,7 +6397,7 @@ void G_HandleLocalKeys(void)
                     (ud.screen_size == 4 && ud.althud == 0 && !(ud.statusbarflags & STATUSBAR_NOMODERN)) ||
                     (ud.screen_size > 0 && !(ud.statusbarflags & STATUSBAR_NONONE)))
                 {
-                    S_PlaySound(RR ? 341 : THUD);
+                    S_PlaySound(RR ? 341 : (REALITY ? 124 : THUD));
                     G_SetViewportShrink(-4);
                 }
             }
@@ -6424,7 +6424,7 @@ void G_HandleLocalKeys(void)
                     (RR && ud.screen_size == 8) ||
                     (ud.screen_size < 64 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)))
                 {
-                    S_PlaySound(RR ? 341 : THUD);
+                    S_PlaySound(RR ? 341 : (REALITY ? 124 : THUD));
                     G_SetViewportShrink(+4);
                 }
             }
@@ -6660,7 +6660,7 @@ void G_HandleLocalKeys(void)
             typebuf[0] = 0;
         }
 
-        if (KB_UnBoundKeyPressed(sc_F1)/* || (ud.show_help && I_AdvanceTrigger())*/)
+        if (!REALITY && KB_UnBoundKeyPressed(sc_F1)/* || (ud.show_help && I_AdvanceTrigger())*/)
         {
             KB_ClearKeyDown(sc_F1);
 

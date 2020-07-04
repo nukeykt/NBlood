@@ -122,6 +122,8 @@ static void G_DrawInvNum(int32_t x, int32_t yofs, int32_t y, char num1, char ha,
     const int32_t sbscale = sbarsc(RR ? 32768 : 65536);
     const int32_t sby = yofs+sbary(y), sbyp1 = yofs+sbary(y+1), sbym1 = yofs+sbary(y-1);
 
+    const int32_t font = REALITY ? 3689 + '0' : THREEBYFIVE;
+
     if (shd) x = -x;
 
     Bsprintf(dabuf, "%d", num1);
@@ -132,14 +134,14 @@ static void G_DrawInvNum(int32_t x, int32_t yofs, int32_t y, char num1, char ha,
         {
             if (shd && ud.screen_size == 4 && videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
             {
-                rotatesprite_fs(sbarxr(x+4+1), RR ? sby : sbyp1, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
-                rotatesprite_fs(sbarxr(x-1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
-                rotatesprite_fs(sbarxr(x-4+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[2]-'0', 127, 4, POLYMOSTTRANS|sbits);
+                rotatesprite_fs(sbarxr(x+4+1), RR ? sby : sbyp1, sbscale, 0, font+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
+                rotatesprite_fs(sbarxr(x-1), sbyp1, sbscale, 0, font+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
+                rotatesprite_fs(sbarxr(x-4+1), sbyp1, sbscale, 0, font+dabuf[2]-'0', 127, 4, POLYMOSTTRANS|sbits);
             }
         
-            rotatesprite_fs(sbarxr(x+4), RR ? sbym1 : sby, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 0, sbits);
-            rotatesprite_fs(sbarxr(x), sby, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', ha, 0, sbits);
-            rotatesprite_fs(sbarxr(x-4), sby, sbscale, 0, THREEBYFIVE+dabuf[2]-'0', ha, 0, sbits);
+            rotatesprite_fs(sbarxr(x+4), RR ? sbym1 : sby, sbscale, 0, font+dabuf[0]-'0', ha, 0, sbits);
+            rotatesprite_fs(sbarxr(x), sby, sbscale, 0, font+dabuf[1]-'0', ha, 0, sbits);
+            rotatesprite_fs(sbarxr(x-4), sby, sbscale, 0, font+dabuf[2]-'0', ha, 0, sbits);
             return;
         }
 
@@ -147,17 +149,17 @@ static void G_DrawInvNum(int32_t x, int32_t yofs, int32_t y, char num1, char ha,
         {
             if (shd && ud.screen_size == 4 && videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
             {
-                rotatesprite_fs(sbarxr(x+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
-                rotatesprite_fs(sbarxr(x-4-1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
+                rotatesprite_fs(sbarxr(x+1), sbyp1, sbscale, 0, font+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
+                rotatesprite_fs(sbarxr(x-4-1), sbyp1, sbscale, 0, font+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
             }
 
-            rotatesprite_fs(sbarxr(x), sby, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 0, sbits);
-            rotatesprite_fs(sbarxr(x-4), sby, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', ha, 0, sbits);
+            rotatesprite_fs(sbarxr(x), sby, sbscale, 0, font+dabuf[0]-'0', ha, 0, sbits);
+            rotatesprite_fs(sbarxr(x-4), sby, sbscale, 0, font+dabuf[1]-'0', ha, 0, sbits);
             return;
         }
 
-        rotatesprite_fs(sbarxr(x-4+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 4, sbits);
-        rotatesprite_fs(sbarxr(x-4), sby, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 0, sbits);
+        rotatesprite_fs(sbarxr(x-4+1), sbyp1, sbscale, 0, font+dabuf[0]-'0', ha, 4, sbits);
+        rotatesprite_fs(sbarxr(x-4), sby, sbscale, 0, font+dabuf[0]-'0', ha, 0, sbits);
         return;
     }
 
@@ -165,14 +167,14 @@ static void G_DrawInvNum(int32_t x, int32_t yofs, int32_t y, char num1, char ha,
     {
         if (shd && ud.screen_size == 4 && videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
         {
-            rotatesprite_fs(sbarx(x-4+1), RR ? sby : sbyp1, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
-            rotatesprite_fs(sbarx(x+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
-            rotatesprite_fs(sbarx(x+4+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[2]-'0', 127, 4, POLYMOSTTRANS|sbits);
+            rotatesprite_fs(sbarx(x-4+1), RR ? sby : sbyp1, sbscale, 0, font+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
+            rotatesprite_fs(sbarx(x+1), sbyp1, sbscale, 0, font+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
+            rotatesprite_fs(sbarx(x+4+1), sbyp1, sbscale, 0, font+dabuf[2]-'0', 127, 4, POLYMOSTTRANS|sbits);
         }
         
-        rotatesprite_fs(sbarx(x-4), RR ? sbym1 : sby, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 0, sbits);
-        rotatesprite_fs(sbarx(x), sby, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', ha, 0, sbits);
-        rotatesprite_fs(sbarx(x+4), sby, sbscale, 0, THREEBYFIVE+dabuf[2]-'0', ha, 0, sbits);
+        rotatesprite_fs(sbarx(x-4), RR ? sbym1 : sby, sbscale, 0, font+dabuf[0]-'0', ha, 0, sbits);
+        rotatesprite_fs(sbarx(x), sby, sbscale, 0, font+dabuf[1]-'0', ha, 0, sbits);
+        rotatesprite_fs(sbarx(x+4), sby, sbscale, 0, font+dabuf[2]-'0', ha, 0, sbits);
         return;
     }
 
@@ -180,17 +182,17 @@ static void G_DrawInvNum(int32_t x, int32_t yofs, int32_t y, char num1, char ha,
     {
         if (shd && ud.screen_size == 4 && videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
         {
-            rotatesprite_fs(sbarx(x+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
-            rotatesprite_fs(sbarx(x+4+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
+            rotatesprite_fs(sbarx(x+1), sbyp1, sbscale, 0, font+dabuf[0]-'0', 127, 4, POLYMOSTTRANS|sbits);
+            rotatesprite_fs(sbarx(x+4+1), sbyp1, sbscale, 0, font+dabuf[1]-'0', 127, 4, POLYMOSTTRANS|sbits);
         }
 
-        rotatesprite_fs(sbarx(x), sby, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 0, sbits);
-        rotatesprite_fs(sbarx(x+4), sby, sbscale, 0, THREEBYFIVE+dabuf[1]-'0', ha, 0, sbits);
+        rotatesprite_fs(sbarx(x), sby, sbscale, 0, font+dabuf[0]-'0', ha, 0, sbits);
+        rotatesprite_fs(sbarx(x+4), sby, sbscale, 0, font+dabuf[1]-'0', ha, 0, sbits);
         return;
     }
 
-    rotatesprite_fs(sbarx(x+4+1), sbyp1, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 4, sbits);
-    rotatesprite_fs(sbarx(x+4), sby, sbscale, 0, THREEBYFIVE+dabuf[0]-'0', ha, 0, sbits);
+    rotatesprite_fs(sbarx(x+4+1), sbyp1, sbscale, 0, font+dabuf[0]-'0', ha, 4, sbits);
+    rotatesprite_fs(sbarx(x+4), sby, sbscale, 0, font+dabuf[0]-'0', ha, 0, sbits);
 }
 
 static void G_DrawWeapNum(int16_t ind, int32_t x, int32_t y, int32_t num1, int32_t num2, int32_t ha)
@@ -660,7 +662,12 @@ void G_DrawStatusBar(int32_t snum)
     {
         int32_t iicons[8] = { -1, FIRSTAID_ICON, STEROIDS_ICON, HOLODUKE_ICON,
             JETPACK_ICON, HEAT_ICON, AIRTANK_ICON, BOOT_ICON };
-        Bmemcpy(item_icons, iicons, sizeof(item_icons));
+        int32_t iicons64[9] = { -1, FIRSTAID, STEROIDS, HOLODUKE,
+            JETPACK, HEATSENSOR, AIRTANK, BOOTS, SHIELD };
+        if (REALITY)
+            Bmemcpy(item_icons, iicons64, sizeof(item_icons));
+        else
+            Bmemcpy(item_icons, iicons, sizeof(item_icons));
     }
 
     if (videoGetRenderMode() >= REND_POLYMOST) pus = NUMPAGES;   // JBF 20040101: always redraw in GL
@@ -802,7 +809,15 @@ void G_DrawStatusBar(int32_t snum)
                         RPGAMMO, HBOMBAMMO, CRYSTALAMMO, DEVISTATORAMMO,
                         TRIPBOMBSPRITE, FREEZEAMMO+1, HBOMBAMMO, GROWAMMO
                     };
-                    Bmemcpy(ammo_sprites, asprites, sizeof(ammo_sprites));
+
+                    int32_t asprites64[MAX_WEAPONS] = { -1, AMMO, SHOTGUNAMMO, BATTERYAMMO,
+                        RPGAMMO, HBOMBAMMO, CRYSTALAMMO, GROWAMMO, DEVISTATORAMMO,
+                        TRIPBOMBSPRITE, FREEZEAMMO, HBOMBAMMO, 34, 50, 43
+                    };
+                    if (REALITY)
+                        Bmemcpy(ammo_sprites, asprites64, sizeof(ammo_sprites));
+                    else
+                        Bmemcpy(ammo_sprites, asprites, sizeof(ammo_sprites));
                     // Hardcoded for now
                     althud_numbertile = BIGALPHANUM-10;
                 }
@@ -846,54 +861,101 @@ void G_DrawStatusBar(int32_t snum)
                 o = 102;
                 permbit = 0;
 
-                if (p->inven_icon)
+                if (p->inven_icon && (!REALITY || p->inven_icon != ICON_SHIELD))
                 {
                     const int32_t orient = 10+16+permbit+256;
 
                     i = ((unsigned) p->inven_icon < ICON_MAX) ? item_icons[p->inven_icon] : -1;
 
                     if (i >= 0)
-                        rotatesprite_althud(231-o, hudoffset-21-2, sb16, 0, i, 0, 0, orient);
+                    {
+                        int sc = sb16;
+                        if (REALITY && tilesiz[i].x != 0 && tilesiz[i].y != 0)
+                            sc = min(scale(sc, 16, tilesiz[i].x), scale(sc, 16, tilesiz[i].y));
+                        rotatesprite_althud(231-o, hudoffset-21-2, sc, 0, i, 0, 0, orient);
+                    }
 
-                    if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
-                        minitextshade(292-30-o+1, hudoffset-10-3+1, "%", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
-                    minitext(292-30-o, hudoffset-10-3, "%", 6, orient+ROTATESPRITE_MAX);
+                    if (REALITY)
+                    {
+                        rotatesprite_althud(292-30-o+1, hudoffset-10-3+1, sb16, 0, 3736, 127, 4, POLYMOSTTRANS+orient);
+                        rotatesprite_althud(292-30-o, hudoffset-10-3, sb16, 0, 3736, 0, 0, orient);
+                    }
+                    else
+                    {
+                        if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
+                            minitextshade(292-30-o+1, hudoffset-10-3+1, "%", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
+                        minitext(292-30-o, hudoffset-10-3, "%", 6, orient+ROTATESPRITE_MAX);
+                    }
 
                     i = G_GetInvAmount(p);
                     j = G_GetInvOn(p);
 
-                    G_DrawInvNum(-(284-30-o), 0, hudoffset-6-3, (uint8_t) i, 0, 10+permbit+256);
+                    if (REALITY)
+                        G_DrawInvNum(-(284-30+7-o), 0, hudoffset-6-3-2, (uint8_t) i, 0, 10+permbit+256);
+                    else
+                        G_DrawInvNum(-(284-30-o), 0, hudoffset-6-3, (uint8_t) i, 0, 10+permbit+256);
 
-                    if (!WW2GI)
+                    if (REALITY)
                     {
                         if (j > 0)
                         {
-                            if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
-                                minitextshade(288-30-o+1, hudoffset-20-3+1, "On", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
-                            minitext(288-30-o, hudoffset-20-3, "On", 0, orient+ROTATESPRITE_MAX);
+                            rotatesprite_althud(288-30-o+1, hudoffset-20-3+1, sb16, 0, 3749, 127, 0, POLYMOSTTRANS+orient);
+                            rotatesprite_althud(288-30-o, hudoffset-20-3, sb16, 0, 3749, 0, 0, orient);
                         }
                         else if ((uint32_t) j != 0x80000000)
                         {
-                            if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
-                                minitextshade(284-30-o+1, hudoffset-20-3+1, "Off", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
-                            minitext(284-30-o, hudoffset-20-3, "Off", 2, orient+ROTATESPRITE_MAX);
+                            rotatesprite_althud(284-30-o+1, hudoffset-20-3+1, sb16, 0, 3748, 127, 0, POLYMOSTTRANS+orient);
+                            rotatesprite_althud(284-30-o, hudoffset-20-3, sb16, 0, 3748, 0, 0, orient);
+                        }
+
+                        if (p->inven_icon >= ICON_SCUBA)
+                        {
+                            rotatesprite_althud(284-35-o+1, hudoffset-20-3+1, sb16, 0, 3747, 127, 0, POLYMOSTTRANS+orient);
+                            rotatesprite_althud(284-35-o, hudoffset-20-3, sb16, 0, 3747, 0, 0, orient);
                         }
                     }
-
-                    if (p->inven_icon >= ICON_SCUBA)
+                    else
                     {
-                        if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
-                            minitextshade(284-35-o+1, hudoffset-20-3+1, "Auto", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
-                        minitext(284-35-o, hudoffset-20-3, "Auto", 2, orient+ROTATESPRITE_MAX);
+                        if (!WW2GI)
+                        {
+                            if (j > 0)
+                            {
+                                if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
+                                    minitextshade(288-30-o+1, hudoffset-20-3+1, "On", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
+                                minitext(288-30-o, hudoffset-20-3, "On", 0, orient+ROTATESPRITE_MAX);
+                            }
+                            else if ((uint32_t) j != 0x80000000)
+                            {
+                                if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
+                                    minitextshade(284-30-o+1, hudoffset-20-3+1, "Off", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
+                                minitext(284-30-o, hudoffset-20-3, "Off", 2, orient+ROTATESPRITE_MAX);
+                            }
+                        }
+
+                        if (p->inven_icon >= ICON_SCUBA)
+                        {
+                            if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
+                                minitextshade(284-35-o+1, hudoffset-20-3+1, "Auto", 127, 4, POLYMOSTTRANS+orient+ROTATESPRITE_MAX);
+                            minitext(284-35-o, hudoffset-20-3, "Auto", 2, orient+ROTATESPRITE_MAX);
+                        }
                     }
                 }
 
                 if (ud.hudontop == 1)
                     hudoffset += 40;
 
-                if (p->got_access&1) rotatesprite_althudr(39, hudoffset-43, sb15, 0, ACCESSCARD, 0, 0, 10+16+512);
-                if (p->got_access&4) rotatesprite_althudr(34, hudoffset-41, sb15, 0, ACCESSCARD, 0, 23, 10+16+512);
-                if (p->got_access&2) rotatesprite_althudr(29, hudoffset-39, sb15, 0, ACCESSCARD, 0, 21, 10+16+512);
+                if (REALITY)
+                {
+                    if (p->got_access&1) rotatesprite_althudr(39, hudoffset-43, sb15, 0, ACCESSCARD, 0, 0, 10+16+512);
+                    if (p->got_access&4) rotatesprite_althudr(34, hudoffset-41, sb15, 0, DN64TILE66, 0, 0, 10+16+512);
+                    if (p->got_access&2) rotatesprite_althudr(29, hudoffset-39, sb15, 0, DN64TILE65, 0, 0, 10+16+512);
+                }
+                else
+                {
+                    if (p->got_access&1) rotatesprite_althudr(39, hudoffset-43, sb15, 0, ACCESSCARD, 0, 0, 10+16+512);
+                    if (p->got_access&4) rotatesprite_althudr(34, hudoffset-41, sb15, 0, ACCESSCARD, 0, 23, 10+16+512);
+                    if (p->got_access&2) rotatesprite_althudr(29, hudoffset-39, sb15, 0, ACCESSCARD, 0, 21, 10+16+512);
+                }
             }
         }
         else
