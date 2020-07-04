@@ -3651,11 +3651,11 @@ int P_NextWeapon(DukePlayer_t* p, int k, int j)
         }
         if (p->gotweapon&(1<<k))
         {
-            if (k == PISTOL_WEAPON && p->ammo_amount[BOWLINGBALL_WEAPON])
+            if (k == PISTOL_WEAPON && (p->subweapon&(1<<PISTOL_WEAPON)) && p->ammo_amount[BOWLINGBALL_WEAPON])
                 return BOWLINGBALL_WEAPON;
-            if (k == SHOTGUN_WEAPON && p->ammo_amount[MOTORCYCLE_WEAPON])
+            if (k == SHOTGUN_WEAPON && (p->subweapon&(1<<SHOTGUN_WEAPON)) && p->ammo_amount[MOTORCYCLE_WEAPON])
                 return MOTORCYCLE_WEAPON;
-            if (k == RPG_WEAPON && p->ammo_amount[BOAT_WEAPON])
+            if (k == RPG_WEAPON && (p->subweapon&(1<<RPG_WEAPON)) && p->ammo_amount[BOAT_WEAPON])
                 return BOAT_WEAPON;
             if (k == KNEE_WEAPON)
                 return KNEE_WEAPON;
@@ -3663,6 +3663,39 @@ int P_NextWeapon(DukePlayer_t* p, int k, int j)
                 return k;
         }
     }
+}
+
+int P_HandleSubweapon(DukePlayer_t *const pPlayer, int weapon, int subweapon)
+{
+    if (pPlayer->curr_weapon != weapon && pPlayer->curr_weapon != subweapon)
+    {
+        if ((pPlayer->subweapon & (1<<weapon)) && pPlayer->ammo_amount[subweapon] > 0)
+            return subweapon;
+        if (!(pPlayer->subweapon & (1<<weapon)) && pPlayer->ammo_amount[weapon] > 0)
+            return weapon;
+        if (pPlayer->ammo_amount[subweapon] > 0)
+        {
+            pPlayer->subweapon |= (1<<weapon);
+            return subweapon;
+        }
+        if (pPlayer->ammo_amount[weapon] > 0)
+        {
+            pPlayer->subweapon &= ~(1<<weapon);
+            return weapon;
+        }
+        return -1;
+    }
+    if (pPlayer->curr_weapon != weapon && pPlayer->ammo_amount[weapon])
+    {
+        pPlayer->subweapon &= ~(1<<weapon);
+        return weapon;
+    }
+    if (pPlayer->curr_weapon != subweapon && pPlayer->ammo_amount[subweapon])
+    {
+        pPlayer->subweapon |= (1<<weapon);
+        return subweapon;
+    }
+    return -1;
 }
 
 void P_HandleKeys(int playerNum)
@@ -3877,6 +3910,85 @@ CHECKINV1:
                 }
                 else if (pPlayer->gotweapon&(1<<nextWeapon))
                     pPlayer->dn64_372 = nextWeapon;
+            }
+            else if (pPlayer->weapon_pos == 0)
+            {
+                if (weaponNum == 12)
+                {
+                    int newWeapon = -1;
+                    switch (DYNAMICWEAPONMAP(pPlayer->curr_weapon))
+                    {
+                    case PISTOL_WEAPON__STATIC:
+                    case BOWLINGBALL_WEAPON__STATIC:
+                        newWeapon = P_HandleSubweapon(pPlayer, PISTOL_WEAPON, BOWLINGBALL_WEAPON);
+                        break;
+                    case SHOTGUN_WEAPON__STATIC:
+                    case MOTORCYCLE_WEAPON__STATIC:
+                        newWeapon = P_HandleSubweapon(pPlayer, SHOTGUN_WEAPON, MOTORCYCLE_WEAPON);
+                        break;
+                    case RPG_WEAPON__STATIC:
+                    case BOAT_WEAPON__STATIC:
+                        newWeapon = P_HandleSubweapon(pPlayer, RPG_WEAPON, BOAT_WEAPON);
+                        break;
+                    }
+                    if (newWeapon >= 0 && newWeapon != pPlayer->curr_weapon)
+                        pPlayer->wantweaponfire = newWeapon;
+                }
+                else
+                {
+                    int newWeapon = -1;
+                    if (weaponNum >= 7)
+                        weaponNum++;
+                    if (weaponNum == HANDBOMB_WEAPON && (pPlayer->gotweapon&(1<<HANDBOMB_WEAPON)))
+                    {
+                        if (pPlayer->ammo_amount[HANDBOMB_WEAPON] == 0)
+                        {
+                            int i = headspritestat[1];
+                            while (i >= 0)
+                            {
+                                if (sprite[i].picnum == HEAVYHBOMB && pPlayer->i == sprite[i].owner)
+                                {
+                                    newWeapon = HANDREMOTE_WEAPON;
+                                    break;
+                                }
+                                i = nextspritestat[i];
+                            }
+                        }
+                        else
+                            newWeapon = weaponNum;
+                    }
+                    else if (pPlayer->gotweapon&(1<<weaponNum))
+                    {
+                        switch (DYNAMICWEAPONMAP(weaponNum))
+                        {
+                        case KNEE_WEAPON__STATIC:
+                            newWeapon = weaponNum;
+                            break;
+                        case PISTOL_WEAPON__STATIC:
+                        case BOWLINGBALL_WEAPON__STATIC:
+                            newWeapon = P_HandleSubweapon(pPlayer, PISTOL_WEAPON, BOWLINGBALL_WEAPON);
+                            break;
+                        case SHOTGUN_WEAPON__STATIC:
+                        case MOTORCYCLE_WEAPON__STATIC:
+                            newWeapon = P_HandleSubweapon(pPlayer, SHOTGUN_WEAPON, MOTORCYCLE_WEAPON);
+                            break;
+                        case RPG_WEAPON__STATIC:
+                        case BOAT_WEAPON__STATIC:
+                            newWeapon = P_HandleSubweapon(pPlayer, RPG_WEAPON, BOAT_WEAPON);
+                            break;
+                        case SHRINKER_WEAPON__STATIC:
+                        case GROW_WEAPON__STATIC:
+                            newWeapon = P_HandleSubweapon(pPlayer, SHRINKER_WEAPON, GROW_WEAPON);
+                            break;
+                        default:
+                            if (pPlayer->ammo_amount[weaponNum] > 0)
+                                newWeapon = weaponNum;
+                            break;
+                        }
+                    }
+                    if (newWeapon >= 0 && newWeapon != pPlayer->curr_weapon)
+                        pPlayer->wantweaponfire = newWeapon;
+                }
             }
         }
 
