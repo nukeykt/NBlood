@@ -6965,7 +6965,7 @@ MAIN_LOOP_RESTART:
                         G_DoMoveThings();
                     }
                 }
-                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= TICSPERFRAME);
+                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= (TICSPERFRAME<<1));
 
                 gameUpdate = true;
                 g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
