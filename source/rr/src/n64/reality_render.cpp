@@ -3982,11 +3982,17 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
     float xo = (xdim - xdim43) * 0.5f;
     if (orientation & 256)
     {
-        xo = 0;
+        if (!buildcoords)
+            xo -= xo * (240.f - 32.f) / 240.f;
+        else
+            xo = 0;
     }
     else if (orientation & 512)
     {
-        xo *= 2.f;
+        if (!buildcoords)
+            xo += xo * (240.f - 32.f) / 240.f;
+        else
+            xo *= 2.f;
     }
     glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);

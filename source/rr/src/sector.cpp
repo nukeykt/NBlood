@@ -3722,7 +3722,9 @@ void P_HandleKeys(int playerNum)
                 P_DoQuote(QUOTE_MIGHTY_FOOT,pPlayer);
         }
 
-    if (!(playerBits&(15u<<SK_WEAPON_BITS)))
+    int weaponBits = (playerBits>>SK_WEAPON_BITS)&15;
+
+    if (weaponBits != 11 && weaponBits != 12 && !(pPlayer->dn64_376 == 12 && pPlayer->dn64_378 < 30))
     {
         if (--pPlayer->dn64_376 <= 0)
         {

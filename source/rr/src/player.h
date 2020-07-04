@@ -366,6 +366,7 @@ extern "C" {
 int     P_GetOverheadPal(const DukePlayer_t *pPlayer);
 void P_MadeNoise(int playerNum);
 int P_HasKey(int sectNum, int playerNum);
+int P_NextWeapon(DukePlayer_t* p, int k, int j);
 
 // Get the player index given an APLAYER sprite pointer.
 static inline int P_GetP(const void *pSprite)
