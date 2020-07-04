@@ -6929,6 +6929,7 @@ MAIN_LOOP_RESTART:
 
                     frameJustDrawn = false;
 
+                    // is this even useful?
                     P_GetInput(myconnectindex);
 
                     // this is where we fill the input_t struct that is actually processed by P_ProcessInput()
