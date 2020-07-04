@@ -965,9 +965,16 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (pPlayer->newowner < 0)
         {
-            vec3_t const camVect = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
-                                     pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
-                                     pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
+            vec3_t camVect = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
+                               pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
+                               pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
+
+            static vec3_t v3;
+
+            if (Bmemcmp(&pPlayer->pos, &pPlayer->opos, sizeof(vec3_t)))
+                camVect = { v3.x + ((camVect.x - v3.x) >> 1), v3.y + ((camVect.y - v3.y) >> 1), v3.z + ((camVect.z - v3.z) >> 1) };
+
+            v3 = camVect;
 
             CAMERA(pos) = camVect;
             
