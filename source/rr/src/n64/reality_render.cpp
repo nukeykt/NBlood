@@ -21,7 +21,6 @@ static int rt_tspritetileid, rt_tspritepicnum;
 static int rt_fxcolor;
 static int rt_curfxcolor, rt_lastpicnum, rt_spritezbufferhack;
 static float viewangsin, viewangcos;
-static vec2_t rt_spritedim;
 static int rt_spritedimtotal;
 static int rt_boss2, rt_boss2_sprite, rt_boss2_x, rt_boss2_y, rt_boss2_ang;
 static float rt_boss2_sin, rt_boss2_cos;
@@ -40,18 +39,18 @@ struct explosionvtx_t {
 };
 
 static explosionvtx_t explosionvtx[12] = {
-    { 0.695685, -0.81192, -0.195662, 2048, 544 },
-    { -0.005248, -0.412966, -1.005438, 704, 0 },
-    { 0.856927, 0.234403, -0.626263, 1632, 544 },
-    { 0.964815, 0.056042, 0.49746, 1824, 1472 },
-    { 0.169318, -0.701561, 0.812784, 192, 1472 },
-    { -0.430214, -0.991424, -0.116058, 384, 544 },
-    { -0.964815, -0.056042, -0.49746, 800, 544 },
-    { -0.169318, 0.701561, -0.812784, 1216, 544 },
-    { 0.430214, 0.991424, 0.116058, 1408, 1472 },
-    { -0.695685, 0.81192, 0.195662, 1024, 1472 },
-    { 0.005248, 0.412966, 1.005438, 1472, 2048 },
-    { -0.856927, -0.234403, 0.626263, 608, 1472 },
+    { 0.695685f, -0.81192f, -0.195662f, 2048, 544 },
+    { -0.005248f, -0.412966f, -1.005438f, 704, 0 },
+    { 0.856927f, 0.234403f, -0.626263f, 1632, 544 },
+    { 0.964815f, 0.056042f, 0.49746f, 1824, 1472 },
+    { 0.169318f, -0.701561f, 0.812784f, 192, 1472 },
+    { -0.430214f, -0.991424f, -0.116058f, 384, 544 },
+    { -0.964815f, -0.056042f, -0.49746f, 800, 544 },
+    { -0.169318f, 0.701561f, -0.812784f, 1216, 544 },
+    { 0.430214f, 0.991424f, 0.116058f, 1408, 1472 },
+    { -0.695685f, 0.81192f, 0.195662f, 1024, 1472 },
+    { 0.005248f, 0.412966f, 1.005438f, 1472, 2048 },
+    { -0.856927f, -0.234403f, 0.626263f, 608, 1472 },
 };
 
 static short explosiontris[20][3] = {
@@ -201,7 +200,6 @@ static rt_vertex_t wallvtx[12];
 static int rt_wallcalcres, rt_haswhitewall, rt_hastopwall, rt_hasbottomwall, rt_hasoneway;
 static int rt_wallpolycount;
 
-static int globaltileid;
 static vec2f_t globaltilescale, globaltilesiz, globaltiledim;
 
 static float globalxrepeat, globalyrepeat, globalxpanning, globalypanning;
@@ -899,6 +897,8 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
         tileLoad(picnum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
+    if (faketile[picnum>>3]&pow2char[picnum&7])
+        method = DAMETH_CLAMPED;
     pthtyp *pth = texcache_fetch(picnum, 0, 0, method);
 
     if (!pth)
@@ -1062,6 +1062,8 @@ void RT_SetTexture(int tilenum, int explosion = 0)
     int tileid = rt_tilemap[tilenum];
 
     int method = DAMETH_N64 | (explosion ? DAMETH_N64_INTENSIVITY : 0);
+    if (faketile[tilenum>>3]&pow2char[tilenum&7])
+        method = 0;
     pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
     if (pth)
         glBindTexture(GL_TEXTURE_2D, pth->glpic);
@@ -1076,8 +1078,10 @@ void RT_SetTexture(int tilenum, int explosion = 0)
     }
     else
     {
-        rt_uvscale.x = 1.f;
-        rt_uvscale.y = 1.f;
+        int logx = RT_PicSizLog(tilesiz[tilenum].x);
+        int logy = RT_PicSizLog(tilesiz[tilenum].y);
+        rt_uvscale.x = 1.f/float(32 << logx);
+        rt_uvscale.y = 1.f/float(32 << logy);
     }
 }
 
@@ -1206,8 +1210,12 @@ void RT_SetTileGlobals(int tilenum)
 {
     int tileid = rt_tilemap[tilenum];
     if (tileid < 0)
+    {
+        globaltilescale = { 1.f, 1.f };
+
+        globaltiledim = globaltilesiz = { float(tilesiz[tilenum].x), float(tilesiz[tilenum].y) };
         return;
-    globaltileid = tileid;
+    }
     globaltilescale = { float(rt_tileinfo[tileid].sizx) / float(rt_tileinfo[tileid].dimx),
                         float(rt_tileinfo[tileid].sizy) / float(rt_tileinfo[tileid].dimy) };
 
@@ -1842,10 +1850,10 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
     rt_lastpicnum = 0;
     rt_globalpal = rt_tspriteptr->pal;
     RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
-    int xoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>8)&255);
-    int yoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>16)&255);
-    int v20 = (rt_tileinfo[rt_tspritetileid].sizx * rt_tspriteptr->xrepeat) / 16;
-    int v11 = (rt_tileinfo[rt_tspritetileid].sizy * rt_tspriteptr->yrepeat) / 8;
+    int xoff = picanm[rt_tspritepicnum].xofs;
+    int yoff = picanm[rt_tspritepicnum].yofs;
+    int v20 = (tilesiz[rt_tspritepicnum].x * rt_tspriteptr->xrepeat) / 16;
+    int v11 = (tilesiz[rt_tspritepicnum].y * rt_tspriteptr->yrepeat) / 8;
     int v6 = ((xoff + rt_tspriteptr->xoffset) * rt_tspriteptr->xrepeat) / 8;
     if (rt_tspriteptr->cstat&128)
         rt_tspriteptr->z += (v11 >> 1) * 32;
@@ -1984,6 +1992,8 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
         tileLoad(rt_tspritepicnum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
+    if (faketile[rt_tspritepicnum>>3]&pow2char[rt_tspritepicnum&7])
+        method = DAMETH_CLAMPED;
     pthtyp *pth = texcache_fetch(rt_tspritepicnum, 0, 0, method);
 
     if (!pth)
@@ -2039,8 +2049,8 @@ void RT_DrawSpriteFloor(void)
 
     RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
 
-    int sx = (rt_tileinfo[rt_tspritetileid].sizx * rt_tspriteptr->xrepeat) / 16;
-    int sy = (rt_tileinfo[rt_tspritetileid].sizy * rt_tspriteptr->yrepeat) / 16;
+    int sx = (tilesiz[rt_tspritepicnum].x * rt_tspriteptr->xrepeat) / 16;
+    int sy = (tilesiz[rt_tspritepicnum].y * rt_tspriteptr->yrepeat) / 16;
 
     float ang = (rt_tspriteptr->ang / (1024.f/180.f) + 90.f) / (180.f/fPI);
     float ds = sin(ang);
@@ -2066,6 +2076,8 @@ void RT_DrawSpriteFloor(void)
         tileLoad(rt_tspritepicnum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
+    if (faketile[rt_tspritepicnum>>3]&pow2char[rt_tspritepicnum&7])
+        method = DAMETH_CLAMPED;
     pthtyp *pth = texcache_fetch(rt_tspritepicnum, 0, 0, method);
 
     if (!pth)
@@ -2102,12 +2114,13 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
 
     rt_tspritepicnum = rt_tspriteptr->picnum;
     rt_tspritetileid = rt_tilemap[rt_tspritepicnum];
-    if (rt_tspritetileid == 1)
-        return;
-    if (rt_tileinfo[rt_tspritetileid].picanm & 192)
+    // if (rt_tspritetileid == 1)
+    //     return;
+    if (picanm[rt_tspritepicnum].sf & 192)
     {
-        int anim = animateoffs(rt_tspritepicnum, 0);;
-        rt_tspritetileid += anim;
+        int anim = animateoffs(rt_tspritepicnum, 0);
+        if (rt_tspritetileid >= 0)
+            rt_tspritetileid += anim;
         rt_tspritepicnum += anim;
     }
 
@@ -2222,8 +2235,6 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
         RT_SetColor2(colortable[rt_fxcolor][0].x, colortable[rt_fxcolor][0].y, colortable[rt_fxcolor][0].z, 255);
     }
     rt_spritezbufferhack = (rt_tspriteptr->cstat & 16384) != 0;
-    rt_spritedim = { rt_tileinfo[rt_tspritetileid].dimx, rt_tileinfo[rt_tspritetileid].dimy };
-    rt_spritedimtotal = rt_spritedim.x * rt_spritedim.y;
     rt_tspritesect = sectnum;
     if ((rt_tspriteptr->cstat & 48) == 16 && (rt_tspriteptr->cstat&64))
     {
@@ -2250,8 +2261,7 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
                     return;
             }
         }
-        if (rt_spritedimtotal <= 4096)
-            RT_DrawSpriteFloor();
+        RT_DrawSpriteFloor();
         return;
     }
     RT_DrawSpriteFlat(spritenum, rt_tspritesect, distance);
@@ -2519,8 +2529,8 @@ void RT_DrawMaskWall(int wallnum)
 {
     walltype &w = wall[wallnum];
     int tileid = rt_tilemap[wall[wallnum].overpicnum];
-    if (tileid == -1)
-        return;
+    // if (tileid == -1)
+    //     return;
     
     if (rt_fxtile)
     {
@@ -2639,10 +2649,11 @@ void RT_DrawMaskWall(int wallnum)
 
     int pn = w.overpicnum;
 
-    if (rt_tileinfo[tileid].picanm & 192)
+    if (picanm[pn].sf & 192)
     {
         int anim = animateoffs(w.overpicnum, 0);
-        tileid += anim;
+        if (tileid >= 0)
+            tileid += anim;
         pn += anim;
     }
 
@@ -2650,6 +2661,8 @@ void RT_DrawMaskWall(int wallnum)
         tileLoad(pn);
 
     int method = DAMETH_N64;
+    if (faketile[pn>>3]&pow2char[pn&7])
+        method = 0;
     pthtyp* pth = texcache_fetch(pn, 0, 0, method);
     if (pth)
         glBindTexture(GL_TEXTURE_2D, pth->glpic);
@@ -2664,8 +2677,10 @@ void RT_DrawMaskWall(int wallnum)
     }
     else
     {
-        rt_uvscale.x = 1.f;
-        rt_uvscale.y = 1.f;
+        int logx = RT_PicSizLog(tilesiz[pn].x);
+        int logy = RT_PicSizLog(tilesiz[pn].y);
+        rt_uvscale.x = 1.f / float(32 << logx);
+        rt_uvscale.y = 1.f / float(32 << logy);
     }
     glBegin(GL_QUADS);
     for (int i = 0; i < 4; i++)
@@ -2931,7 +2946,7 @@ void RT_AddSmoke(int16_t x, int16_t y, int16_t z, uint8_t type)
             s.z = z;
             s.scale = 40.f;
             s.phase = 10.f;
-            s.phase_step = 0.1;
+            s.phase_step = 0.1f;
             s.orientation = krand2();
             return;
         }
@@ -3762,14 +3777,15 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     int xflip = (orientation & 4) != 0;
     int yflip = (orientation & 8) != 0;
     int tileid = rt_tilemap[tilenum];
-    if (tileid == -1)
-        return;
+    // if (tileid == -1)
+    //     return;
 
-    if (rt_tileinfo[tileid].picanm&192)
+    if (picanm[tilenum].sf&192)
     {
         int anim = animateoffs(tilenum, 0);
         tilenum += anim;
-        tileid += anim;
+        if (tileid >= 0)
+            tileid += anim;
     }
     if (tileid == 1)
         return;
@@ -3780,7 +3796,7 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     float xoff = picanm[tilenum].xofs;
     float yoff = picanm[tilenum].yofs;
 
-    if (rt_tileinfo[tileid].sizy & 1)
+    if (tilesiz[tilenum].y & 1)
         yoff -= 1.f;
 
     xoff = (xoff * sx) / 100.f;
@@ -3870,6 +3886,8 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
         tileLoad(tilenum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | ((orientation & RTRS_SCALED) != 0 ? DAMETH_N64_SCALED : 0);
+    if (faketile[tilenum>>3]&pow2char[tilenum&7])
+        method = DAMETH_CLAMPED;
     pthtyp *pth = texcache_fetch(tilenum, pal, 0, method);
 
     if (!pth)
@@ -3916,8 +3934,8 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
 {
     int otilenum = tilenum;
     int tileid = rt_tilemap[tilenum];
-    if (tileid == -1)
-        return;
+    // if (tileid == -1)
+    //     return;
 
     if (orientation & ROTATESPRITE_FULL16)
     {
@@ -3925,19 +3943,20 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
         y *= (1.f/65536.f);
     }
 
-    if (rt_tileinfo[tileid].picanm&192)
+    if (picanm[tilenum].sf&192)
     {
         int anim = animateoffs(tilenum, 0);
         tilenum += anim;
-        tileid += anim;
+        if (tileid >= 0)
+            tileid += anim;
     }
     if (tileid == 1)
         return;
 
     if (buildcoords)
     {
-        sy *= 1.2;
-        y *= 1.2;
+        sy *= 1.2f;
+        y *= 1.2f;
     }
 
     float sizx = tilesiz[tilenum].x * sx / 100.f;
@@ -3961,6 +3980,8 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
         tileLoad(tilenum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | DAMETH_N64_SCALED;
+    if (faketile[tilenum>>3]&pow2char[tilenum&7])
+        method = DAMETH_CLAMPED;
     pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
 
     if (!pth)
