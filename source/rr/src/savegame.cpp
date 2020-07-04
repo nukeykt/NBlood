@@ -118,6 +118,8 @@ void G_ResetInterpolations(void)
         case SE_26:
         case SE_30_TWO_WAY_TRAIN:
             Sect_SetInterpolation(sprite[k].sectnum);
+            if (REALITY)
+                RT_MS_SetInterpolation(sprite[k].sectnum);
             break;
         }
 
@@ -1101,6 +1103,7 @@ static void sv_quoteload();
 static void sv_restsave();
 static void sv_restload();
 static void sv_rrrafog();
+static void sv_preloaddn64();
 
 #define SVARDATALEN \
     ((sizeof(g_player[0].user_name)+sizeof(g_player[0].pcolor)+sizeof(g_player[0].pteam) \
@@ -1148,6 +1151,8 @@ static const dataspec_t svgm_udnetw[] =
     { 0, &randomseed, sizeof(randomseed), 1 },
     { 0, &g_globalRandom, sizeof(g_globalRandom), 1 },
 //    { 0, &lockclock_dummy, sizeof(lockclock), 1 },
+    { DS_NOCHK, &rt_boardnum, sizeof(rt_boardnum), 1 },
+    { DS_NOCHK, &rt_levelnum, sizeof(rt_levelnum), 1 },
     { DS_END, 0, 0, 0 }
 };
 
@@ -1200,6 +1205,33 @@ static const dataspec_t svgm_secwsp[] =
     { DS_NOCHK, &g_mirrorWall[0], sizeof(g_mirrorWall[0]), ARRAY_SIZE(g_mirrorWall) },
     { DS_NOCHK, &g_mirrorSector[0], sizeof(g_mirrorSector[0]), ARRAY_SIZE(g_mirrorSector) },
     { 0, &everyothertime, sizeof(everyothertime), 1 },
+// dn64 vars
+    { DS_NOCHK, &rt_vtxnum, sizeof(rt_vtxnum), 1 },
+    { DS_LOADFN, (void *)sv_preloaddn64, 0, 1 },
+    { DS_DYNAMIC|DS_CNT(rt_vtxnum), &rt_sectvtx, sizeof(rt_vertex_t), (intptr_t)&rt_vtxnum },
+    { DS_DYNAMIC|DS_CNT(numwalls), &rt_wall, sizeof(rt_walltype), (intptr_t)&numwalls },
+    { DS_DYNAMIC|DS_CNT(numsectors), &rt_sector, sizeof(rt_sectortype), (intptr_t)&numsectors },
+    { DS_NOCHK, &rt_sky_color[0], sizeof(rt_sky_color[0]), ARRAY_SIZE(rt_sky_color) },
+    { DS_NOCHK, &ms_list_cnt, sizeof(ms_list_cnt), 1 },
+    { DS_NOCHK, &ms_vtx_cnt, sizeof(ms_vtx_cnt), 1 },
+    { DS_NOCHK, &ms_list[0], sizeof(ms_list[0]), MOVESECTNUM },
+    { DS_NOCHK, &ms_listvtxptr[0], sizeof(ms_listvtxptr[0]), MOVESECTNUM },
+    { DS_NOCHK, &ms_dx[0], sizeof(ms_dx[0]), MOVESECTVTXNUM },
+    { DS_NOCHK, &ms_dy[0], sizeof(ms_dy[0]), MOVESECTVTXNUM },
+    { 0, &ms_vx[0], sizeof(ms_vx[0]), MOVESECTVTXNUM },
+    { 0, &ms_vy[0], sizeof(ms_vy[0]), MOVESECTVTXNUM },
+    { 0, &explosions[0], sizeof(explosions[0]), MAXEXPLOSIONS },
+    { 0, &smoke[0], sizeof(smoke[0]), MAXEXPLOSIONS },
+    { 0, &boss2seq, sizeof(boss2seq), 1 },
+    { 0, &boss2seqframe, sizeof(boss2seqframe), 1 },
+    { 0, &boss2mdlstate, sizeof(boss2mdlstate), 1 },
+    { 0, &boss2mdlstate2, sizeof(boss2mdlstate2), 1 },
+    { 0, &boss2timer_step, sizeof(boss2timer_step), 1 },
+    { 0, &boss2_frame, sizeof(boss2_frame), 1 },
+    { 0, &boss2_frame2, sizeof(boss2_frame2), 1 },
+    { 0, &boss2timer, sizeof(boss2timer), 1 },
+    { 0, &boss2_interp, sizeof(boss2_interp), 1 },
+
     { DS_END, 0, 0, 0 }
 };
 
@@ -1952,6 +1984,21 @@ int32_t sv_updatestate(int32_t frominit)
 static void sv_rrrafog()
 {
     G_SetFog(g_fogType ? 2 : 0);
+}
+
+static void sv_preloaddn64()
+{
+    if (rt_sectvtx)
+        Xfree(rt_sectvtx);
+    if (rt_wall)
+        Xfree(rt_wall);
+    if (rt_sector)
+        Xfree(rt_sector);
+    rt_sectvtx = (rt_vertex_t*)Xmalloc(sizeof(rt_vertex_t) * rt_vtxnum);
+    rt_wall = (rt_walltype*)Xmalloc(sizeof(rt_walltype) * numwalls);
+    rt_sector = (rt_sectortype*)Xmalloc(sizeof(rt_sectortype) * numsectors);
+    if (rt_boardnum == 27)
+        RT_LoadBOSS2MDL();
 }
 
 static void postloadplayer(int32_t savegamep)

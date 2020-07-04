@@ -183,16 +183,16 @@ int RNCDecompress(const char *inbuf, char *outbuf)
 
 int RT_FakeKRand(void)
 {
-    if (rt_gamestate == 2)
+    // if (rt_gamestate == 2)
         return _krand();
-    return 42;
+    // return 42;
 }
 
 int RT_KRand2(void)
 {
-    if (rt_gamestatus == 0)
+    // if (rt_gamestatus == 0)
         return _krand();
-    return 62007;
+    // return 62007;
 }
 
 static float rt_gatable[513];

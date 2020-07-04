@@ -4,7 +4,7 @@
 #include "build.h"
 #include "../duke3d.h"
 
-int rt_pfade;
+// int rt_pfade;
 
 //////////////////// HUD WEAPON / MISC. DISPLAY CODE ////////////////////
 
@@ -73,7 +73,7 @@ static int RT_P_DisplayFist(int const fistShade)
 #define DRAWEAP_CENTER 262144
 #define weapsc(sc) scale(sc, ud.weaponscale, 100)
 
-static int32_t g_dts_yadd;
+// static int32_t g_dts_yadd;
 
 static void RT_DrawTileScaled(int drawX, int drawY, int tileNum, int drawShade, int drawBits, int drawPal,
     int drawScale = 65536, int angleOffset = 0)

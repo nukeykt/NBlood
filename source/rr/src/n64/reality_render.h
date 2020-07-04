@@ -8,7 +8,61 @@
 extern float rt_viewhorizang;
 extern tileinfo_t rt_tileinfo[RT_TILENUM];
 extern int32_t rt_tilemap[MAXTILES];
-extern float rt_sky_color[2][3];
+extern vec3f_t rt_sky_color[2];
+
+#define MOVESECTNUM 40
+#define MOVESECTVTXNUM 1024
+
+extern int ms_list[MOVESECTNUM], ms_listvtxptr[MOVESECTNUM];
+extern int ms_list_cnt, ms_vtx_cnt;
+extern int ms_dx[MOVESECTVTXNUM], ms_dy[MOVESECTVTXNUM];
+extern int ms_vx[MOVESECTVTXNUM], ms_vy[MOVESECTVTXNUM];
+
+#define MAXEXPLOSIONS 16
+
+struct explosioninstance_t {
+    uint8_t status;
+    uint8_t type;
+    uint8_t c_enable, r_enable;
+    int16_t x, y, z;
+    int16_t c_size, r_size, r_time, c_time, c_step, r_step;
+};
+
+struct smokeinstance_t {
+    uint8_t status;
+    uint8_t type;
+    int16_t x, y, z;
+    int16_t orientation;
+    float scale, phase, phase_step;
+};
+
+
+extern explosioninstance_t explosions[MAXEXPLOSIONS];
+extern smokeinstance_t smoke[MAXEXPLOSIONS];
+
+#define BOSS2_VTXNUM 418
+#define BOSS2_TRIS 469
+#define BOSS2_FRAMES 15
+
+#pragma pack(push, 1)
+struct boss2vtx_t {
+    int16_t x, y, z, u, v;
+    int16_t color[3];
+};
+
+struct boss2tris_t {
+    int16_t vtx[3];
+    int16_t tile;
+};
+
+#pragma pack(pop)
+
+extern int boss2seq, boss2seqframe;
+extern int boss2mdlstate, boss2mdlstate2;
+extern int boss2timer_step;
+extern int boss2_frame, boss2_frame2;
+extern int boss2timer;
+extern float boss2_interp;
 
 void RT_LoadTiles(void);
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio);

@@ -34,8 +34,6 @@ struct maskdraw_t {
     int16_t sectnum;
 };
 
-#define MAXEXPLOSIONS 16
-
 struct explosionvtx_t {
     float x, y, z;
     int16_t u, v;
@@ -124,25 +122,8 @@ static explosioninfo_t explosioninfo[9][2] = {
     }
 };
 
-struct explosioninstance_t {
-    uint8_t status;
-    uint8_t type;
-    uint8_t c_enable, r_enable;
-    int16_t x, y, z;
-    int16_t c_size, r_size, r_time, c_time, c_step, r_step;
-};
-
-static explosioninstance_t explosions[MAXEXPLOSIONS];
-
-struct smokeinstance_t {
-    uint8_t status;
-    uint8_t type;
-    int16_t x, y, z;
-    int16_t orientation;
-    float scale, phase, phase_step;
-};
-
-static smokeinstance_t smoke[MAXEXPLOSIONS];
+explosioninstance_t explosions[MAXEXPLOSIONS];
+smokeinstance_t smoke[MAXEXPLOSIONS];
 
 maskdraw_t maskdrawlist[10240];
 static int sortspritescnt = 0;
@@ -152,14 +133,132 @@ static fix16_t globalang;
 
 static int rt_globalpal, rt_globalshade;
 
-const int MOVESECTNUM = 40;
-const int MOVESECTVTXNUM = 1024;
+#define MOVESECTNUM 40
+#define MOVESECTVTXNUM 1024
 
 int ms_x, ms_y, ms_angle;
 int ms_list[MOVESECTNUM], ms_listvtxptr[MOVESECTNUM];
 int ms_list_cnt, ms_vtx_cnt;
 int ms_dx[MOVESECTVTXNUM], ms_dy[MOVESECTVTXNUM];
 int ms_vx[MOVESECTVTXNUM], ms_vy[MOVESECTVTXNUM];
+static boss2vtx_t *boss2vtx;
+static boss2vtx_t boss2vtx_current[BOSS2_VTXNUM];
+static boss2tris_t boss2tris[BOSS2_TRIS];
+static char rt_boss2mdllock;
+
+static int8_t boss2seqtable[7][9] = {
+    { 0, 1, 2, 3, 4, 5, 6, 7, -1 },
+    { 5, 6, 7, -1 },
+    { 6, 7, -1 },
+    { 8, 9, -2 },
+    { 11, 11, 10, 10, 10, -3 },
+    { 11, 12, 13, 14, -5 },
+    { 14, -5 }
+};
+
+int boss2seq, boss2seqframe;
+int boss2mdlstate, boss2mdlstate2;
+int boss2timer_step;
+int boss2_frame, boss2_frame2;
+int boss2timer;
+float boss2_interp;
+
+GLuint rt_shaderprogram;
+GLuint rt_stexsamplerloc = -1;
+GLuint rt_stexcombloc = -1;
+GLuint rt_stexcomb = 0;
+GLuint rt_scolor1loc = 0;
+GLfloat rt_scolor1[4] = {
+    0.f, 0.f, 0.f, 0.f
+};
+GLuint rt_scolor2loc = 0;
+GLfloat rt_scolor2[4] = {
+    0.f, 0.f, 0.f, 0.f
+};
+
+static float x_vs = 160.f;
+static float y_vs = 120.f;
+static float x_vt = 160.f;
+static float y_vt = 120.f;
+static float vp_scale = 1.f;
+static float rt_globaldepth;
+static int rt_fxtile = 0;
+
+vec3f_t rt_sky_color[2];
+
+static float rt_globalhoriz;
+static float rt_globalposx, rt_globalposy, rt_globalposz;
+static float rt_globalang;
+static float rt_worldspritefactor;
+
+int globalcolorred, globalcolorgreen, globalcolorblue;
+
+static GLfloat rt_projmatrix[16];
+static vec3f_t rt_look[2];
+
+static rt_vertex_t wallvtx[12];
+
+static int rt_wallcalcres, rt_haswhitewall, rt_hastopwall, rt_hasbottomwall, rt_hasoneway;
+static int rt_wallpolycount;
+
+static int globaltileid;
+static vec2f_t globaltilescale, globaltilesiz, globaltiledim;
+
+static float globalxrepeat, globalyrepeat, globalxpanning, globalypanning;
+static float globalwallvoffset, globalwallu1, globalwallu2, globalwallv1, globalwallv2, globalwallv3, globalwallv4;
+
+static vec3_t colortable[14][2] = {
+    { 0, 0, 0, 0, 0, 0 },
+    { 255, 255, 0, 255, 0, 0 },
+    { 255, 255, 255, 255, 255, 0 },
+    { 128, 128, 255, 64, 64, 128 },
+    { 15, 255, 255, 115, 0, 170 },
+    { 128, 128, 128, 64, 64, 64 },
+    { 0, 0, 255, 64, 64, 128 },
+    { 255, 192, 192, 64, 64, 64 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 255, 0, 0, 255, 0, 0 },
+    { 0, 255, 0, 0, 255, 255 },
+    { 255, 0, 0, 255, 127, 0 },
+    { 255, 255, 255, 64, 64, 64 },
+    { 255, 255, 255, 0, 127, 127 }
+};
+
+static int rt_tspritesect;
+static uint8_t rt_globalalpha;
+
+uint8_t viswalltbit[(MAXWALLS+7)>>3];
+uint8_t wallbitcheck[(MAXWALLS+7)>>3];
+uint8_t floorbitcheck[(MAXSECTORS+7)>>3];
+uint8_t ceilingbitcheck[(MAXSECTORS+7)>>3];
+uint8_t vissectbit1[(MAXSECTORS+7)>>3];
+
+int viswallcnt;
+int drawallcnt;
+int drawceilcnt;
+int drawfloorcnt;
+int visiblesectornum;
+
+float viswallr1[MAXWALLS], viswallr2[MAXWALLS];
+int viswall[MAXWALLS];
+
+int drawalllist[MAXWALLS];
+int drawfloorlist[MAXSECTORS];
+int drawceilinglist[MAXSECTORS];
+int visiblesectors[MAXSECTORS];
+
+static uint8_t rt_explosionuv;
+
+int rt_explosionalpha_c, rt_explosionalpha_r;
+
+struct vtx_t {
+    int16_t x, y, z;
+    int16_t u, v;
+    uint8_t color[4];
+};
+
+static vtx_t rt_c_vtx[12];
+static vtx_t rt_r_vtx[4];
 
 extern void (*gloadtile_n64)(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp* pth, int32_t doalloc);
 
@@ -613,19 +712,6 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     pth->siz = tsiz;
 }
 
-GLuint rt_shaderprogram;
-GLuint rt_stexsamplerloc = -1;
-GLuint rt_stexcombloc = -1;
-GLuint rt_stexcomb = 0;
-GLuint rt_scolor1loc = 0;
-GLfloat rt_scolor1[4] = {
-    0.f, 0.f, 0.f, 0.f
-};
-GLuint rt_scolor2loc = 0;
-GLfloat rt_scolor2[4] = {
-    0.f, 0.f, 0.f, 0.f
-};
-
 void RT_SetShader(void)
 {
     glUseProgram(rt_shaderprogram);
@@ -751,14 +837,6 @@ void RT_ProjectionCorrect(void)
     glScalef(factor, factor, 1.f);
 }
 
-static float x_vs = 160.f;
-static float y_vs = 120.f;
-static float x_vt = 160.f;
-static float y_vt = 120.f;
-static float vp_scale = 1.f;
-static float rt_globaldepth;
-static int rt_fxtile = 0;
-
 void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, int flags, int aspectCorrection = true)
 {
     int xflip = (flags & 4) != 0;
@@ -847,13 +925,6 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glPopMatrix();
 }
 
-float rt_sky_color[2][3];
-
-static float rt_globalhoriz;
-static float rt_globalposx, rt_globalposy, rt_globalposz;
-static float rt_globalang;
-static float rt_worldspritefactor;
-
 void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
 {
     rt_fxtile = 1;
@@ -878,7 +949,7 @@ void RT_DisplaySky(void)
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     rt_globaldepth = 0.f;
-    setfxcolor(rt_sky_color[1][0], rt_sky_color[1][1], rt_sky_color[1][2], rt_sky_color[0][0], rt_sky_color[0][1], rt_sky_color[0][2]);
+    setfxcolor(rt_sky_color[1].x, rt_sky_color[1].y, rt_sky_color[1].z, rt_sky_color[0].x, rt_sky_color[0].y, rt_sky_color[0].z);
     glDisable(GL_BLEND);
     RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f * ((float)xdim / float(ydim)) * (240.f/320.f), 103.f, 3976, 0);
     glDepthMask(GL_TRUE);
@@ -923,9 +994,6 @@ void RT_EnablePolymost()
     polymost2d = 0;
     rt_renderactive = 0;
 }
-
-static GLfloat rt_projmatrix[16];
-static vec3f_t rt_look[2];
 
 void RT_LookVectorCalc(float dx, float dy, float dz)
 {
@@ -1012,8 +1080,6 @@ void RT_SetTexture(int tilenum, int explosion = 0)
         rt_uvscale.y = 1.f;
     }
 }
-
-int globalcolorred, globalcolorgreen, globalcolorblue;
 
 void RT_CalculateShade(int x, int y, int z, int shade)
 {
@@ -1136,14 +1202,6 @@ void RT_DrawFloor(int sectnum)
     glEnd();
 }
 
-static rt_vertex_t wallvtx[12];
-
-static int rt_wallcalcres, rt_haswhitewall, rt_hastopwall, rt_hasbottomwall, rt_hasoneway;
-static int rt_wallpolycount;
-
-static int globaltileid;
-static vec2f_t globaltilescale, globaltilesiz, globaltiledim;
-
 void RT_SetTileGlobals(int tilenum)
 {
     int tileid = rt_tilemap[tilenum];
@@ -1156,9 +1214,6 @@ void RT_SetTileGlobals(int tilenum)
     globaltilesiz = { float(rt_tileinfo[tileid].sizx), float(rt_tileinfo[tileid].sizy) };
     globaltiledim = { float(rt_tileinfo[tileid].dimx), float(rt_tileinfo[tileid].dimy) };
 }
-
-static float globalxrepeat, globalyrepeat, globalxpanning, globalypanning;
-static float globalwallvoffset, globalwallu1, globalwallu2, globalwallv1, globalwallv2, globalwallv3, globalwallv4;
 
 void RT_SetWallGlobals(int wallnum, int cstat)
 {
@@ -1757,26 +1812,6 @@ void RT_SetupDrawMask(void)
     glDepthMask(GL_FALSE);
 }
 
-static vec3_t colortable[14][2] = {
-    { 0, 0, 0, 0, 0, 0 },
-    { 255, 255, 0, 255, 0, 0 },
-    { 255, 255, 255, 255, 255, 0 },
-    { 128, 128, 255, 64, 64, 128 },
-    { 15, 255, 255, 115, 0, 170 },
-    { 128, 128, 128, 64, 64, 64 },
-    { 0, 0, 255, 64, 64, 128 },
-    { 255, 192, 192, 64, 64, 64 },
-    { 0, 0, 0, 0, 0, 0 },
-    { 255, 0, 0, 255, 0, 0 },
-    { 0, 255, 0, 0, 255, 255 },
-    { 255, 0, 0, 255, 127, 0 },
-    { 255, 255, 255, 64, 64, 64 },
-    { 255, 255, 255, 0, 127, 127 }
-};
-
-static int rt_tspritesect;
-static uint8_t rt_globalalpha;
-
 void RT_DrawSpriteFace(float x, float y, float z, int pn)
 {
     if (rt_tspriteptr->xrepeat == 0 || rt_tspriteptr->yrepeat == 0)
@@ -2271,21 +2306,6 @@ void RT_DrawWall(int wallnum)
     }
 }
 
-uint8_t viswalltbit[(MAXWALLS+7)>>3];
-uint8_t wallbitcheck[(MAXWALLS+7)>>3];
-uint8_t floorbitcheck[(MAXSECTORS+7)>>3];
-uint8_t ceilingbitcheck[(MAXSECTORS+7)>>3];
-uint8_t vissectbit1[(MAXSECTORS+7)>>3];
-
-int viswallcnt;
-int drawallcnt;
-int drawceilcnt;
-int drawfloorcnt;
-int visiblesectornum;
-
-float viswallr1[MAXWALLS], viswallr2[MAXWALLS];
-int viswall[MAXWALLS];
-
 float getanglef2(float x1, float y1, float x2, float y2)
 {
     return 270.f - RT_GetAngle(y2 - y1, x2 - x1) * (180.f / fPI);
@@ -2428,11 +2448,6 @@ void RT_ScanSector(float lx, float rx, int sectnum, bool firstscan = false)
         RT_ScanSector(viswallr1[i], viswallr2[i], wall[viswall[i]].nextsector);
     }
 }
-
-int drawalllist[MAXWALLS];
-int drawfloorlist[MAXSECTORS];
-int drawceilinglist[MAXSECTORS];
-int visiblesectors[MAXSECTORS];
 
 void RT_ScanSectors(int sectnum)
 {
@@ -2753,8 +2768,6 @@ void RT_AddExplosion(int16_t x, int16_t y, int16_t z, uint8_t type)
     }
 }
 
-static uint8_t rt_explosionuv;
-
 static void RT_AnimateExplosions(void)
 {
     rt_explosionuv++;
@@ -2792,17 +2805,6 @@ static void RT_AnimateSmoke(void)
         }
     }
 }
-
-int rt_explosionalpha_c, rt_explosionalpha_r;
-
-struct vtx_t {
-    int16_t x, y, z;
-    int16_t u, v;
-    uint8_t color[4];
-};
-
-static vtx_t rt_c_vtx[12];
-static vtx_t rt_r_vtx[4];
 
 void RT_PrepareExplosion(int index, int bottom)
 {
@@ -2998,63 +3000,6 @@ void RT_DisplayExplosions(void)
     }
 }
 
-
-#define BOSS2_VTXNUM 418
-#define BOSS2_TRIS 469
-#define BOSS2_FRAMES 15
-
-#pragma pack(push, 1)
-struct boss2vtx_t {
-    int16_t x, y, z, u, v;
-    int16_t color[3];
-};
-
-struct boss2tris_t {
-    int16_t vtx[3];
-    int16_t tile;
-};
-
-#pragma pack(pop)
-static boss2vtx_t *boss2vtx;
-static boss2vtx_t boss2vtx_current[BOSS2_VTXNUM];
-static boss2tris_t boss2tris[BOSS2_TRIS];
-static char rt_boss2mdllock;
-
-static int8_t boss2seq0[9] = {
-    0, 1, 2, 3, 4, 5, 6, 7, -1
-};
-
-static int8_t boss2seq1[4] = {
-    5, 6, 7, -1
-};
-
-static int8_t boss2seq2[3] = {
-    6, 7, -1
-};
-
-static int8_t boss2seq3[3] = {
-    8, 9, -2
-};
-
-static int8_t boss2seq4[7] = {
-    11, 11, 10, 10, 10, -3
-};
-
-static int8_t boss2seq5[5] = {
-    11, 12, 13, 14, -5
-};
-
-static int8_t boss2seq6[2] = {
-    14, -5
-};
-
-static int8_t *boss2seq;
-static int boss2mdlstate, boss2mdlstate2;
-static int boss2timer_step;
-static int boss2_frame, boss2_frame2;
-static int boss2timer;
-static float boss2_interp;
-
 void RT_LoadBOSS2MDL(void)
 {
     static int loaded = 0;
@@ -3099,7 +3044,8 @@ void RT_LoadBOSS2MDL(void)
         loaded = 1;
     }
 
-    boss2seq = nullptr;
+    boss2seq = 0;
+    boss2seqframe = 0;
     boss2mdlstate = boss2mdlstate2 = 1;
     boss2timer_step = 20;
     boss2_frame = 0;
@@ -3112,8 +3058,6 @@ void RT_AnimateBOSS2(void)
 {
     if (rt_boardnum != 27)
         return;
-    if (boss2seq == nullptr)
-        boss2seq = boss2seq0;
 
     boss2mdlstate = sprite[rt_boss2_sprite].pal;
     if (boss2mdlstate == 0)
@@ -3124,36 +3068,42 @@ void RT_AnimateBOSS2(void)
     if (boss2timer > 100.0)
     {
         boss2timer -= 100.0;
-        boss2seq++;
+        boss2seqframe++;
         boss2_frame2 = boss2_frame;
         do
         {
-            boss2_frame = *boss2seq;
+            boss2_frame = boss2seqtable[boss2seq][boss2seqframe];
             switch (boss2_frame)
             {
             case -1:
-                boss2seq = boss2seq0;
+                boss2seq = 0;
+                boss2seqframe = 0;
                 break;
             case -2:
-                boss2seq = boss2seq3;
+                boss2seq = 3;
+                boss2seqframe = 0;
                 break;
             case -3:
-                boss2seq = boss2seq4;
+                boss2seq = 4;
+                boss2seqframe = 0;
                 break;
             case -5:
-                boss2seq = boss2seq6;
+                boss2seq = 6;
+                boss2seqframe = 0;
                 break;
             case 6:
                 if (boss2mdlstate != 2)
                     goto _end;
-                boss2seq = boss2seq3;
+                boss2seq = 3;
+                boss2seqframe = 0;
                 boss2timer_step = 20;
                 boss2mdlstate2 = boss2mdlstate;
                 break;
             case 7:
                 if (boss2mdlstate == 3)
                 {
-                    boss2seq = boss2seq4;
+                    boss2seq = 4;
+                    boss2seqframe = 0;
                     boss2timer_step = 16;
                     boss2mdlstate2 = boss2mdlstate;
                 }
@@ -3161,7 +3111,8 @@ void RT_AnimateBOSS2(void)
                 {
                     if (boss2mdlstate != 4)
                         goto _end;
-                    boss2seq = boss2seq5;
+                    boss2seq = 5;
+                    boss2seqframe = 0;
                     boss2timer_step = 10;
                     boss2mdlstate2 = boss2mdlstate;
                 }
@@ -3169,14 +3120,16 @@ void RT_AnimateBOSS2(void)
             case 9:
                 if (boss2mdlstate != 1)
                     goto _end;
-                boss2seq = boss2seq1;
+                boss2seq = 1;
+                boss2seqframe = 0;
                 boss2timer_step = 20;
                 boss2mdlstate2 = boss2mdlstate;
                 break;
             case 10:
                 if (boss2mdlstate != 1)
                     goto _end;
-                boss2seq = boss2seq2;
+                boss2seq = 2;
+                boss2seqframe = 0;
                 boss2timer_step = 20;
                 boss2mdlstate2 = boss2mdlstate;
                 break;

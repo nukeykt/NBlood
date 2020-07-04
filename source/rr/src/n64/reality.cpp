@@ -11,7 +11,7 @@
 #include "../gamedef.h"
 
 
-int rt_gamestate = 2, rt_gamestatus = 0;
+// int rt_gamestate = 2, rt_gamestatus = 0;
 
 buildvfs_kfd rt_group = buildvfs_kfd_invalid;
 static bool rt_group_init;
@@ -22,6 +22,8 @@ uint16_t rt_palette[RT_PALNUM][256];
 
 static void RT_LoadPalette(void);
 
+int rt_vtxnum;
+
 rt_vertex_t *rt_sectvtx;
 rt_walltype *rt_wall;
 rt_sectortype *rt_sector;
@@ -31,6 +33,11 @@ int rt_boardnum;
 char *rt_rom;
 
 int rt_romcountry; // 0 - USA, 1 - EU
+
+int rt_romoffset = 0;
+
+int rt_levelnum;
+// int rt_level7unlock, rt_level18unlock, rt_level28unlock, rt_level29unlock, rt_level33unlock;
 
 struct {
     int usaoffset, euoffset;
@@ -129,8 +136,6 @@ buildvfs_kfd RT_InitGRP(const char *filename)
 
     return -1;
 }
-
-int rt_romoffset = 0;
 
 void RT_ROMSeek(int offset)
 {
@@ -491,12 +496,12 @@ void RT_LoadBoard(int boardnum)
     numsectors = board->numsector;
     numwalls = board->numwall;
 
-    rt_sky_color[0][0] = board->sky[0];
-    rt_sky_color[1][0] = board->sky[3];
-    rt_sky_color[0][1] = board->sky[1];
-    rt_sky_color[1][1] = board->sky[4];
-    rt_sky_color[0][2] = board->sky[2];
-    rt_sky_color[1][2] = board->sky[5];
+    rt_sky_color[0].x = board->sky[0];
+    rt_sky_color[1].x = board->sky[3];
+    rt_sky_color[0].y = board->sky[1];
+    rt_sky_color[1].y = board->sky[4];
+    rt_sky_color[0].z = board->sky[2];
+    rt_sky_color[1].z = board->sky[5];
 
     RT_MS_Reset();
     
@@ -630,6 +635,7 @@ void RT_LoadBoard(int boardnum)
     if (rt_sectvtx)
         Xfree(rt_sectvtx);
 
+    rt_vtxnum = vtxnum * 3;
     rt_sectvtx = (rt_vertex_t*)Xmalloc(sizeof(rt_vertex_t) * vtxnum * 3);
     RNCDecompress(boardbuf, (char*)rt_sectvtx);
     
@@ -648,9 +654,6 @@ void RT_LoadBoard(int boardnum)
     if (boardnum == 27)
         RT_LoadBOSS2MDL();
 }
-
-int rt_levelnum;
-int rt_level7unlock, rt_level18unlock, rt_level28unlock, rt_level29unlock, rt_level33unlock;
 
 int RT_NextLevel(void)
 {
@@ -711,25 +714,25 @@ int RT_NextLevel(void)
         switch (rt_levelnum)
         {
         case 1:
-            rt_level7unlock = 1;
+            // rt_level7unlock = 1;
             nextlevel = 7;
             break;
         case 7:
             nextlevel = 2;
             break;
         case 15:
-            rt_level18unlock = 1;
+            // rt_level18unlock = 1;
             nextlevel = 18;
             break;
         case 18:
             nextlevel = 16;
             break;
         case 23:
-            rt_level28unlock = 1;
+            // rt_level28unlock = 1;
             nextlevel = 28;
             break;
         case 26:
-            rt_level29unlock = 1;
+            // rt_level29unlock = 1;
             nextlevel = 29;
             break;
         case 28:
@@ -739,7 +742,7 @@ int RT_NextLevel(void)
             nextlevel = 27;
             break;
         case 32:
-            rt_level33unlock = 1;
+            // rt_level33unlock = 1;
             nextlevel = 33;
             break;
         case 33:

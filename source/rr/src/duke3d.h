@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // increase by 3, because atomic GRP adds 1, and Shareware adds 2
 // Non-Lua build
-# define BYTEVERSION_EDUKE32      336
+# define BYTEVERSION_EDUKE32      339
 
 //#define BYTEVERSION_13      27
 //#define BYTEVERSION_14      116

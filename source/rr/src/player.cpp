@@ -7350,8 +7350,8 @@ static void P_Dead(int const playerNum, int const sectorLotag, int const floorZ,
         pPlayer->pals.r = max<int>(pPlayer->pals.r - 1, 0);
         pPlayer->pals.g = max<int>(pPlayer->pals.g - 1, 0);
         pPlayer->pals.b = max<int>(pPlayer->pals.b - 1, 0);
-        if (ud.multimode)
-            rt_pfade = 0;
+        // if (ud.multimode)
+        //     rt_pfade = 0;
     }
 
     if (/*(numplayers < 2 || g_netServer) && */pPlayer->dead_flag == 0)
@@ -8212,7 +8212,7 @@ check_enemy_sprite:
         pPlayer->timebeforeexit--;
         if (REALITY && pPlayer->timebeforeexit < 19)
         {
-            rt_pfade = 1;
+            // rt_pfade = 1;
             for (bssize_t TRAVERSE_CONNECT(i))
             {
                 DukePlayer_t *const pPlayer2 = g_player[i].ps;
@@ -8270,7 +8270,7 @@ check_enemy_sprite:
         pPlayer->pals.r = 0;
         pPlayer->pals.g = 0;
         pPlayer->pals.b = 0;
-        rt_pfade = 0;
+        // rt_pfade = 0;
     }
 
     if (pPlayer->fta > 0 && --pPlayer->fta == 0)

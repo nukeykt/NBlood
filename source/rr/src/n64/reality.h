@@ -39,8 +39,9 @@ enum {
 };
 
 extern buildvfs_kfd rt_group;
-extern int rt_gamestate, rt_gamestatus;
+// extern int rt_gamestate, rt_gamestatus;
 extern uint16_t rt_palette[RT_PALNUM][256];
+extern int rt_vtxnum;
 extern rt_vertex_t *rt_sectvtx;
 extern rt_walltype *rt_wall;
 extern rt_sectortype *rt_sector;
