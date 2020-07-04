@@ -653,6 +653,9 @@ void RT_LoadBoard(int boardnum)
 
     if (boardnum == 27)
         RT_LoadBOSS2MDL();
+
+    memset(explosions, 0, sizeof(explosions));
+    memset(smoke, 0, sizeof(smoke));
 }
 
 int RT_NextLevel(void)
