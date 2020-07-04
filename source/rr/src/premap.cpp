@@ -482,10 +482,20 @@ static void G_DoLoadScreen(const char *statustext, int32_t percent)
         }
 
         videoClearScreen(0);
-        
-        int const loadScreenTile = VM_OnEventWithReturn(EVENT_GETLOADTILE, g_player[screenpeek].ps->i, screenpeek, DEER ? 7040 : LOADSCREEN);
 
-        rotatesprite_fs(320<<15,200<<15,65536L,0,loadScreenTile,0,0,2+8+64+BGSTRETCH);
+        if (REALITY)
+        {
+            RT_DisablePolymost(0);
+            RT_RotateSpriteSetColor(255, 255, 255, 255);
+            RT_RotateSprite(160, 120, 100, 100, 3670, RTRS_SCALED);
+            RT_EnablePolymost();
+        }
+        else
+        {
+            int const loadScreenTile = VM_OnEventWithReturn(EVENT_GETLOADTILE, g_player[screenpeek].ps->i, screenpeek, DEER ? 7040 : LOADSCREEN);
+
+            rotatesprite_fs(320<<15,200<<15,65536L,0,loadScreenTile,0,0,2+8+64+BGSTRETCH);
+        }
 
         int const textY = RRRA ? 140 : 90;
 
