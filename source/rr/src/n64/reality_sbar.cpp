@@ -10,8 +10,9 @@ float bordery1 = 16;
 float borderx2 = 320.f - 16.f * 4.f / 3.f;
 float bordery2 = 240.f - 16.f;
 
-int bartilescroll, barscrolldir;
-int bartilescrollspeed;
+float bartilescroll;
+int barscrolldir;
+float bartilescrollspeed;
 
 float RT_SBarScale(float x)
 {
@@ -22,13 +23,14 @@ void RT_ResetBarScroll(void)
 {
     if (numplayers > 1)
     {
-        bartilescroll = -99;
+        bartilescrollspeed = 0.f;
+        bartilescroll = -99.f;
         barscrolldir = 1;
     }
     else
     {
-        bartilescrollspeed = 12;
-        bartilescroll = -24;
+        bartilescrollspeed = 12.f;
+        bartilescroll = -24.f;
         barscrolldir = 0;
     }
 }
@@ -48,29 +50,38 @@ void RT_DrawBarOverlay(bool drawhud)
         RT_RotateSprite(x2, y, sc, sc, 0xe31, 0|4|512|RTRS_SCALED);
     }
     static int timer = 0;
+    static int cnt = 0;
     if (timer > (int)totalclock + 16)
-        timer = 0;
-    if (timer < (int)totalclock)
     {
-        timer = (int)totalclock + 4;
+        timer = 0;
+        cnt = 0;
+    }
+    while (timer < (int)totalclock && bartilescroll >= -70.f)
+    {
+        timer = (int)totalclock + 1;
         if (!barscrolldir)
         {
-            bartilescroll = bartilescroll + bartilescrollspeed;
-            bartilescrollspeed--;
-            if (bartilescroll > 56)
+            bartilescroll = bartilescroll + bartilescrollspeed * 0.25f;
+            if (bartilescroll > 56.f)
             {
-                bartilescroll = 56;
+                bartilescroll = 56.f;
                 barscrolldir = 1;
-                bartilescrollspeed = 0;
+                bartilescrollspeed = 0.f;
             }
-            if (bartilescrollspeed < 1)
-                bartilescrollspeed = 1;
+            if ((cnt&3) == 3)
+            {
+                bartilescrollspeed -= 1.f;
+                if (bartilescrollspeed < 1.f)
+                    bartilescrollspeed = 1.f;
+            }
         }
         else
         {
-            bartilescroll -= bartilescrollspeed;
-            bartilescrollspeed++;
+            bartilescroll -= bartilescrollspeed * 0.25f;
+            if ((cnt&3) == 3)
+                bartilescrollspeed += 1.f;
         }
+        cnt++;
     }
 }
 
@@ -80,7 +91,7 @@ void RT_DrawBarBG(bool drawhud)
     {
         if (!drawhud)
             return;
-        int o = bartilescroll;
+        float o = bartilescroll;
         if (barscrolldir)
             o = 56;
 
