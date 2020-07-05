@@ -463,8 +463,8 @@ void RT_P_DisplayWeapon(void)
                 weaponYOffset += sintable[(1024 + ((*weaponFrame) << 7)) & 2047] >> 11;
             }
 
-            //if (!(duke3d_globalflags & DUKE3D_NO_WIDESCREEN_PINNING))
-            //    weaponBits |= 512;
+            if (!(duke3d_globalflags & DUKE3D_NO_WIDESCREEN_PINNING))
+                weaponBits |= 512;
 
             RT_DrawWeaponTileWithID(currentWeapon << 2, weaponX + 249, (weaponY << 1) + 190 - weaponYOffset, RPGGUN+1, weaponShade,
                                     weaponBits, weaponPal);
