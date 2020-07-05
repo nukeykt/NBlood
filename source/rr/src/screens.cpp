@@ -1746,6 +1746,8 @@ void G_DisplayLogo(void)
             }
         }
 
+        I_ClearAllInput();
+
         S_PlaySpecialMusicOrNothing(MUS_INTRO);
 
         renderFlushPerms();
