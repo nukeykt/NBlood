@@ -220,6 +220,16 @@ void RT_Init(void)
     }
 
     globalflags |= GLOBAL_NO_GL_TILESHADES;
+
+#define DN64WSGRP "dn64widescreen.pk3"
+#define DN64WSDEF "duke64_widescreen.def"
+
+    if (initgroupfile(DN64WSGRP) != -1)
+    {
+        G_AddDefModule(DN64WSDEF);
+    }
+#undef DN64WSGRP
+#undef DN64WSDEF
 }
 
 struct {
