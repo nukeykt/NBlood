@@ -876,10 +876,7 @@ void G_DrawStatusBar(int32_t snum)
                     }
 
                     if (REALITY)
-                    {
-                        rotatesprite_althud(292-30-o+1, hudoffset-10-3+1, sb16, 0, 3736, 127, 4, POLYMOSTTRANS+orient);
                         rotatesprite_althud(292-30-o, hudoffset-10-3, sb16, 0, 3736, 0, 0, orient);
-                    }
                     else
                     {
                         if (videoGetRenderMode() >= REND_POLYMOST && althud_shadows)
@@ -898,21 +895,12 @@ void G_DrawStatusBar(int32_t snum)
                     if (REALITY)
                     {
                         if (j > 0)
-                        {
-                            rotatesprite_althud(288-30-o+1, hudoffset-20-3+1, sb16, 0, 3749, 127, 0, POLYMOSTTRANS+orient);
                             rotatesprite_althud(288-30-o, hudoffset-20-3, sb16, 0, 3749, 0, 0, orient);
-                        }
                         else if ((uint32_t) j != 0x80000000)
-                        {
-                            rotatesprite_althud(284-30-o+1, hudoffset-20-3+1, sb16, 0, 3748, 127, 0, POLYMOSTTRANS+orient);
                             rotatesprite_althud(284-30-o, hudoffset-20-3, sb16, 0, 3748, 0, 0, orient);
-                        }
 
                         if (p->inven_icon >= ICON_SCUBA)
-                        {
-                            rotatesprite_althud(284-35-o+1, hudoffset-20-3+1, sb16, 0, 3747, 127, 0, POLYMOSTTRANS+orient);
                             rotatesprite_althud(284-35-o, hudoffset-20-3, sb16, 0, 3747, 0, 0, orient);
-                        }
                     }
                     else
                     {
