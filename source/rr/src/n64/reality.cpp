@@ -630,6 +630,7 @@ void RT_LoadBoard(int boardnum)
         sprite[i].yrepeat = rt_sprite[i].yrepeat;
         sprite[i].xoffset = rt_sprite[i].xoffset;
         sprite[i].yoffset = rt_sprite[i].yoffset;
+        sprite[i].clipdist = rt_sprite[i].clipdist;
         sprite[i].blend = 0;
     }
     for (int i = 0; i < numsprites; i++)
