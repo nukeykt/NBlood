@@ -57,12 +57,6 @@ We are currently working on fancy new menus for the game. In the meantime, you c
 To invert the mouse, add the line 'in_mouseflip 0' to settings.cfg.
 To change the FOV, add a new line to settings.cfg, e.g. 'fov "120"' where 120 is the desired FOV value between 60 and 140.
 
-## Building from source
-See: https://wiki.eduke32.com/wiki/Main_Page
-
-## Acknowledgments
-  See AUTHORS.md
-
 ## Rednukem
 A port of BUILD engine games based on Duke Nukem 3D codebase using EDuke32 engine
 
@@ -84,3 +78,9 @@ A port of BUILD engine games based on Duke Nukem 3D codebase using EDuke32 engin
 * NAM: NAM.GRP, NAM.RTS, CON files
 * World War II GI: WW2GI.GRP, WW2GI.RTS, CON files
 3. Launch Rednukem
+
+## Building from source
+See: https://wiki.eduke32.com/wiki/Main_Page
+
+## Acknowledgments
+  See AUTHORS.md
