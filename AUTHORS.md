@@ -11,16 +11,20 @@
 ### Uses BUILD Engine technology by:
   * Ken Silverman
 
-### NBlood programming:
+### NBlood/Rednukem programming:
   * Nuke.YKT
-  * NoOne
   * sirlemonhead
+  * Hendricks266
+  * NY00123
+  * NoOne
 
-### NBlood widescreen tiles & logo:
+### NBlood/Rednukem widescreen tiles:
   * Maxi Clouds
+  * Fox
+  * Dzierzan
 
-### NBlood special thanks:
-  * NY00123, MetHy, Striker, oasiz, Mblackwell, Zombie, Marphy Black, SAmik37, meleemario
+### NBlood/Rednukem special thanks:
+  * Hendricks266, TerminX, NY00123, Fox, MetHy, Striker, oasiz, Mblackwell, Zombie, Marphy Black, SAmik37, meleemario
 
 ### NBlood contributors:
   * alexey-lysiuk, CommonLoon102, Jan200101
