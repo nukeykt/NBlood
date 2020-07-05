@@ -25,6 +25,7 @@
 
 #include "common.h"
 #include "common_game.h"
+#include "n64/reality.h"
 
 struct grpfile_t const *g_selectedGrp;
 
@@ -370,10 +371,21 @@ static int32_t G_LoadGrpDependencyChain(grpfile_t const * const grp)
     if (grp->type->dependency && grp->type->dependency != grp->type->crcval)
         G_LoadGrpDependencyChain(FindGroup(grp->type->dependency));
 
-    int32_t const i = G_TryLoadingGrp(grp->filename);
+    int32_t i;
 
-    if (grp->type->postprocessing)
-        grp->type->postprocessing(i);
+#ifdef USE_OPENGL
+    if (grp->type->game & GAMEFLAG_REALITY)
+    {
+        return RT_InitGRP(grp->filename);
+    }
+    else
+#endif
+    {
+        i = G_TryLoadingGrp(grp->filename);
+
+        if (grp->type->postprocessing)
+            grp->type->postprocessing(i);
+    }
 
     return i;
 }

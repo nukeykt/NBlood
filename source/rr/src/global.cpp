@@ -99,10 +99,11 @@ int32_t g_playerFriction     = 0xCFD0;
 int32_t g_rpgRadius          = 1780;
 int32_t g_scriptSize         = 1048576;
 int32_t g_seenineRadius      = 2048;
-int32_t g_shrinkerRadius     = 650;
+int32_t g_shrinkerRadius     = 680;
 int32_t g_spriteGravity      = 176;
 int32_t g_timerTicsPerSecond = TICRATE;
 int32_t g_tripbombRadius     = 3880;
+int32_t g_impactDamage       = 10;
 
 int16_t g_blimpSpawnItems[15] =
 {

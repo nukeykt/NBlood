@@ -27,10 +27,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // Macros, some from SW source
 
-static FORCE_INLINE int32_t krand2(void)
+static FORCE_INLINE int32_t _krand(void)
 {
     randomseed = (randomseed * 27584621ul) + 1ul;
     return ((uint32_t) randomseed)>>16;
+}
+
+static FORCE_INLINE int32_t krand2(void)
+{
+    if (REALITY)
+        return RT_KRand2();
+    return _krand();
 }
 
 #define BGSTRETCH (ud.bgstretch ? 1024 : 0)
@@ -39,11 +46,17 @@ static FORCE_INLINE int32_t krand2(void)
 #define ALT_IS_PRESSED ( KB_KeyPressed( sc_RightAlt ) || KB_KeyPressed( sc_LeftAlt ) )
 #define SHIFTS_IS_PRESSED ( KB_KeyPressed( sc_RightShift ) || KB_KeyPressed( sc_LeftShift ) )
 
-#define RANDOMSCRAP(s, i) \
-{ \
-    int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2(), r5 = krand2(), r6 = krand2(), r7 = krand2(); \
-    A_InsertSprite(s->sectnum,s->x+(r7&255)-128,s->y+(r6&255)-128,s->z-ZOFFSET3-(r5&8191),\
-        SCRAP6+(r4&15),-8,RR?16:48,RR?16:48,r3&2047,(r2&63)+64,-512-(r1&2047),i,5); \
+static inline void RANDOMSCRAP(spritetype *s, int i)
+{
+    int32_t r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2(), r5 = krand2(), r6 = krand2(), r7 = krand2();
+    if (REALITY)
+    {
+        swap(&r1, &r7);
+        swap(&r2, &r6);
+        swap(&r3, &r5);
+    }
+    A_InsertSprite(s->sectnum,s->x+(r7&255)-128,s->y+(r6&255)-128,s->z-ZOFFSET3-(r5&8191),
+        SCRAP6+(r4&15),-8,RR?16:48,RR?16:48,r3&2047,(r2&63)+64,-512-(r1&2047),i,5);
 }
 
 #define GTFLAGS(x) (g_gametypeFlags[ud.coop] & x)

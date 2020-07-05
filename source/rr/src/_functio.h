@@ -94,7 +94,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Show_DukeMatch_Scores",
    "Dpad_Select",
    "Dpad_Aiming",
-   "Alternate_Weapon",
+   "Alt_Weapon",
    "Last_Used_Weapon",
    "Quick_Save",
    "Quick_Load",

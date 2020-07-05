@@ -873,11 +873,6 @@ ifneq (0,$(NETCODE))
     rr_game_deps += enet
 endif
 
-ifneq (0,$(LUNATIC))
-    rr_game_deps += lunatic lunatic_game lpeg
-    rr_editor_deps += lunatic lunatic_editor lpeg
-endif
-
 rr_game := rednukem
 rr_editor := rrmapster32
 
@@ -972,6 +967,23 @@ ifeq ($(RENDERTYPE),SDL)
     rr_game_rsrc_objs += game_icon.c
     rr_editor_rsrc_objs += build_icon.c
 endif
+
+n64 := n64
+n64_src := $(rr_src)/$(n64)
+n64_obj := $(rr_obj)/$(n64)
+n64_objs := \
+    reality.cpp \
+    reality_music.cpp \
+    reality_player.cpp \
+    reality_render.cpp \
+    reality_sbar.cpp \
+    reality_screens.cpp \
+    reality_sound.cpp \
+    reality_util.cpp \
+
+n64_cflags :=
+
+rr_game_deps += n64
 
 
 #### Shadow Warrior
@@ -1303,6 +1315,7 @@ libraries := \
     mact \
     voidwrap \
     libsmackerdec \
+    n64 \
 
 ifneq (0,$(USE_PHYSFS))
     libraries += physfs

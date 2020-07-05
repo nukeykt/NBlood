@@ -133,7 +133,6 @@ G_EXTERN int32_t g_earthquakeTime;
 G_EXTERN int32_t g_freezerSelfDamage;
 G_EXTERN int32_t g_gameQuit;
 G_EXTERN int32_t g_globalRandom;
-G_EXTERN int32_t g_impactDamage;
 G_EXTERN int32_t g_labelCnt;
 G_EXTERN int32_t g_maxPlayerHealth;
 G_EXTERN int32_t g_mirrorCount;
@@ -286,6 +285,7 @@ extern int32_t g_shrinkerRadius;
 extern int32_t g_spriteGravity;
 extern int32_t g_timerTicsPerSecond;
 extern int32_t g_tripbombRadius;
+extern int32_t g_impactDamage;
 extern int32_t g_volumeCnt;
 
 extern int16_t g_blimpSpawnItems[15];

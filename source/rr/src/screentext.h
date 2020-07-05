@@ -58,6 +58,8 @@ enum ScreenTextFlags_t {
     TEXT_BIGALPHANUM     = 0x00100000,
     TEXT_GRAYFONT        = 0x00200000,
     TEXT_RRMENUTEXTHACK  = 0x00400000,
+    TEXT_N64NOPAL        = 0x00800000,
+    TEXT_N64COORDS       = 0x01000000,
 };
 
 extern int32_t minitext_(int32_t x, int32_t y, const char *t, int32_t s, int32_t p, int32_t sb);

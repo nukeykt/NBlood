@@ -972,6 +972,19 @@ static int osdcmd_unbind(osdcmdptr_t parm)
     return OSDCMD_SHOWHELP;
 }
 
+static int osdcmd_unbound(osdcmdptr_t parm)
+{
+    if (parm->numparms != 1)
+        return OSDCMD_OK;
+
+    int const gameFunc = CONFIG_FunctionNameToNum(parm->parms[0]);
+
+    if (gameFunc != -1)
+        ud.config.KeyboardKeys[gameFunc][0] = 0;
+
+    return OSDCMD_OK;
+}
+
 static int osdcmd_quicksave(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
@@ -1419,7 +1432,7 @@ int32_t registerosdcommands(void)
         { "demoplay_diffs","enable/disable application of diffs in demo playback",(void *)&demoplay_diffs, CVAR_BOOL, 0, 1 },
         { "demoplay_showsync","enable/disable display of sync status",(void *)&demoplay_showsync, CVAR_BOOL, 0, 1 },
 
-        { "fov", "change the field of view", (void *)&ud.fov, CVAR_INT|CVAR_FUNCPTR, 75, 120 },
+        { "fov", "change the field of view", (void *)&ud.fov, CVAR_INT|CVAR_FUNCPTR, 70, 120 },
 
         { "hud_althud", "enable/disable alternate mini-hud", (void *)&ud.althud, CVAR_BOOL, 0, 1 },
         { "hud_custom", "change the custom hud", (void *)&ud.statusbarcustom, CVAR_INT, 0, ud.statusbarrange },
@@ -1610,6 +1623,7 @@ int32_t registerosdcommands(void)
 
     OSD_RegisterFunction("unbind","unbind <key>: unbinds a key", osdcmd_unbind);
     OSD_RegisterFunction("unbindall","unbindall: unbinds all keys", osdcmd_unbindall);
+    OSD_RegisterFunction("unbound", NULL, osdcmd_unbound);
 
     OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: change the video mode",osdcmd_vidmode);
 #ifdef USE_OPENGL

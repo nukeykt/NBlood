@@ -736,6 +736,15 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
                 Bfprintf(fp,"bind \"%s\"%s \"%s\"\n",CONTROL_KeyBinds[i].key,
                 CONTROL_KeyBinds[i].repeat?"":" norepeat",CONTROL_KeyBinds[i].cmdstr);
 
+        for (int i=0; i<NUMGAMEFUNCTIONS; ++i)
+        {
+            char const * name = CONFIG_FunctionNumToName(i);
+            if (name && name[0] != '\0' && (ud.config.KeyboardKeys[i][0] == 0xff || !ud.config.KeyboardKeys[i][0]))
+            {
+                Bfprintf(fp,"unbound %s\n", name);
+            }
+        }
+
         OSD_WriteAliases(fp);
 
         if (g_crosshairSum != -1 && g_crosshairSum != DefaultCrosshairColors.r+(DefaultCrosshairColors.g<<8)+(DefaultCrosshairColors.b<<16))

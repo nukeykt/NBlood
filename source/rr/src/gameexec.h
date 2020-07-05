@@ -74,6 +74,7 @@ extern double g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAX
 
 void A_Execute(int spriteNum, int playerNum, int playerDist);
 void A_Fall(int spriteNum);
+void A_FallBomb(int spriteNum);
 int32_t A_GetFurthestAngle(int spriteNum, int angDiv);
 void A_GetZLimits(int spriteNum);
 int32_t __fastcall G_GetAngleDelta(int32_t currAngle, int32_t newAngle);

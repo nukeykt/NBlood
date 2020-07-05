@@ -740,6 +740,7 @@ static inline int16_t spriteGetSlope(uint16_t const spritenum)
     return uint8_t(spr->xoffset) + (uint8_t(spr->yoffset) << 8);
 }
 
+extern int32_t animateoffs(int const tilenum, int fakevar);
 
 EXTERN int16_t maskwall[MAXWALLSB], maskwallcnt;
 EXTERN int16_t thewall[MAXWALLSB];
@@ -1025,6 +1026,9 @@ extern int32_t enginecompatibilitymode;
 #else
 static CONSTEXPR int32_t const enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
+
+EXTERN int32_t duke64;
+extern bool (*rt_tileload_callback)(int16_t tileNum);
 
 /*************************************************************************
 POSITION VARIABLES:

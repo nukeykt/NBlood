@@ -73,6 +73,9 @@ void S_SoundStartup(void)
         g_soundlocks[i] = 199;
     }
 
+    if (REALITY)
+        RT_InitSound();
+
     S_PrecacheSounds();
 
     FX_SetVolume(ud.config.FXVolume);
@@ -144,6 +147,12 @@ void S_PauseMusic(bool paused)
 
     MusicPaused = paused;
 
+    if (REALITY && g_musicIndex == MUS_INTRO)
+    {
+        RT_PauseSong(paused);
+        return;
+    }
+
     if (MusicIsWaveform)
     {
         FX_PauseVoice(MusicVoice, paused);
@@ -201,7 +210,7 @@ void S_MenuSound(void)
         PISTOL_RICOCHET,   PISTOL_BODYHIT,   PISTOL_FIRE,      SHOTGUN_FIRE,  BOS1_WALK,     RPG_EXPLODE,
         PIPEBOMB_BOUNCE,   PIPEBOMB_EXPLODE, NITEVISION_ONOFF, RPG_SHOOT,     SELECT_WEAPON,
     };
-    int s = RR ? 390 : menusnds[SoundNum++ % ARRAY_SIZE(menusnds)];
+    int s = RR ? 390 : (REALITY ? 0xaa : menusnds[SoundNum++ % ARRAY_SIZE(menusnds)]);
     if (s != -1)
         S_PlaySound(s);
 }
@@ -246,6 +255,9 @@ static int S_PlayMusic(const char *fn, int loop)
 
     if (!Bmemcmp(MyMusicPtr, "MThd", 4))
     {
+        if (REALITY && g_musicIndex == MUS_INTRO)
+            RT_StopSong();
+
         int32_t retval = MUSIC_PlaySong(MyMusicPtr, MyMusicSize, loop);
 
         if (retval != MUSIC_Ok)
@@ -267,6 +279,9 @@ static int S_PlayMusic(const char *fn, int loop)
     }
     else
     {
+        if (REALITY && g_musicIndex == MUS_INTRO)
+            RT_StopSong();
+
         int MyMusicVoice = FX_Play(MyMusicPtr, MusicLen, loop ? 0 : -1, 0, 0, ud.config.MusicVolume, ud.config.MusicVolume, ud.config.MusicVolume,
                                    FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
 
@@ -327,6 +342,15 @@ void S_PlayLevelMusicOrNothing(unsigned int m)
 
 int S_TryPlaySpecialMusic(unsigned int m)
 {
+    if (REALITY && m == MUS_INTRO)
+    {
+        if (g_musicIndex != MUS_INTRO)
+            S_StopMusic();
+        if (ud.config.MusicToggle)
+            RT_PlaySong();
+        S_SetMusicIndex(m);
+        return 0;
+    }
     if (RR)
         return 1;
     char const * musicfn = g_mapInfo[m].musicfn;
@@ -385,6 +409,12 @@ void S_StopMusic(void)
 {
     MusicPaused = 0;
 
+    if (REALITY && g_musicIndex == MUS_INTRO)
+    {
+        RT_StopSong();
+        return;
+    }
+
     if (MusicIsWaveform && MusicVoice >= 0)
     {
         FX_StopSound(MusicVoice);
@@ -423,6 +453,8 @@ void S_Cleanup(void)
             continue;
         }
 
+        RT_FreeSoundSlotId(num);
+
         int const vidx = num & (MAXSOUNDINSTANCES - 1);
 
         num = (num - vidx) / MAXSOUNDINSTANCES;
@@ -455,8 +487,15 @@ void S_Cleanup(void)
 // returns number of bytes read
 int32_t S_LoadSound(int num)
 {
-    if ((unsigned)num > (unsigned)g_highestSoundIdx || EDUKE32_PREDICT_FALSE(g_sounds[num].filename == NULL))
+    if ((unsigned)num > (unsigned)g_highestSoundIdx)
         return 0;
+
+    if (g_sounds[num].filename == NULL)
+    {
+        if (REALITY)
+            return RT_LoadSound(num);
+        return 0;
+    }
 
     auto &snd = g_sounds[num];
 
@@ -637,7 +676,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
     int const sndNum = num;
     sound_t & snd    = g_sounds[sndNum];
 
-    if (EDUKE32_PREDICT_FALSE((unsigned) sndNum > (unsigned) g_highestSoundIdx || snd.filename == NULL || snd.ptr == NULL))
+    if (EDUKE32_PREDICT_FALSE((unsigned) sndNum > (unsigned) g_highestSoundIdx || (!(snd.m & SF_REALITY_INTERNAL) && snd.filename == NULL) || snd.ptr == NULL))
     {
         OSD_Printf("WARNING: invalid sound #%d\n", num);
         return -1;
@@ -713,7 +752,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
     }
     else
     {
-        if (sndist > 32767 && PN(spriteNum) != MUSICANDSFX && (snd.m & (SF_LOOP|SF_MSFX)) == 0)
+        if (!REALITY && sndist > 32767 && PN(spriteNum) != MUSICANDSFX && (snd.m & (SF_LOOP|SF_MSFX)) == 0)
             return -1;
 
         if (pOther->cursectnum > -1 && sector[pOther->cursectnum].lotag == ST_2_UNDERWATER
@@ -743,13 +782,23 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         return -1;
     }
 
-    // XXX: why is 'right' 0?
-    // Ambient MUSICANDSFX always start playing using the 3D routines!
-    int const ambsfxp = S_IsAmbientSFX(spriteNum);
-    int const voice = (repeatp && !ambsfxp) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, sndist >> 6, sndist >> 6, 0, snd.pr,
-                                                      snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot)
-                                            : FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
-                                                        snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
+    int voice = FX_Ok;
+    if (REALITY && (snd.m & SF_REALITY_INTERNAL))
+    {
+        auto rtsnd = RT_FindSoundSlot(sndNum, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
+        if (rtsnd)
+        {
+            voice = FX_StartDemandFeedPlayback3D(RT_SoundDecodeEnv, 16, 1, rt_soundrate[sndNum] + pitch, 0, sndang >> 4, sndist >> 6,
+                                                 snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot, rtsnd);
+            if (voice <= FX_Ok)
+                RT_FreeSoundSlot(rtsnd);
+        }
+    }
+    else
+    {
+        voice = FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
+                          snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
+    }
 
     if (voice <= FX_Ok)
     {
@@ -775,7 +824,7 @@ int S_PlaySound(int num)
 
     sound_t & snd = g_sounds[num];
 
-    if (EDUKE32_PREDICT_FALSE((unsigned)num > (unsigned)g_highestSoundIdx || snd.filename == NULL || snd.ptr == NULL))
+    if (EDUKE32_PREDICT_FALSE((unsigned)num > (unsigned)g_highestSoundIdx || (!(snd.m & SF_REALITY_INTERNAL) && snd.filename == NULL) || snd.ptr == NULL))
     {
         OSD_Printf("WARNING: invalid sound #%d\n",num);
         return -1;
@@ -797,10 +846,28 @@ int S_PlaySound(int num)
         return -1;
     }
 
-    int const voice = (snd.m & SF_LOOP) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
-                                                  LOUDESTVOLUME, snd.siz, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum)
-                                        : FX_Play3D(snd.ptr, snd.siz, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
-                                                    (num * MAXSOUNDINSTANCES) + sndnum);
+    int voice = FX_Ok;
+    
+    if (REALITY && (snd.m & SF_REALITY_INTERNAL))
+    {
+        auto rtsnd = RT_FindSoundSlot(num, (num * MAXSOUNDINSTANCES) + sndnum);
+        if (rtsnd)
+        {
+            voice = (snd.m & SF_LOOP) ? FX_StartDemandFeedPlayback(RT_SoundDecodeEnv, 16, 1, rt_soundrate[num] + pitch, 0, LOUDESTVOLUME, LOUDESTVOLUME,
+                                                                   LOUDESTVOLUME, snd.pr, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum, rtsnd)
+                                      : FX_StartDemandFeedPlayback3D(RT_SoundDecodeEnv, 16, 1, rt_soundrate[num] + pitch, 0, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
+                                                                     (num * MAXSOUNDINSTANCES) + sndnum, rtsnd);
+            if (voice <= FX_Ok)
+                RT_FreeSoundSlot(rtsnd);
+        }
+    }
+    else
+    {
+        voice = (snd.m & SF_LOOP) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
+                                            LOUDESTVOLUME, snd.pr, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum)
+                                  : FX_Play3D(snd.ptr, snd.siz, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd.pr, snd.volume,
+                                              (num * MAXSOUNDINSTANCES) + sndnum);
+    }
 
     if (voice <= FX_Ok)
     {
@@ -873,7 +940,12 @@ void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
             if (EDUKE32_PREDICT_FALSE(spriteNum >= 0 && voice.id <= FX_Ok))
                 initprintf(OSD_ERROR "S_ChangeSoundPitch(): bad voice %d for sound ID %d!\n", voice.id, soundNum);
             else if (voice.id > FX_Ok && FX_SoundActive(voice.id))
-                FX_SetPitch(voice.id, pitchoffset);
+            {
+                if (g_sounds[spriteNum].m & SF_REALITY_INTERNAL)
+                    FX_SetFrequency(voice.id, rt_soundrate[soundNum] + pitchoffset);
+                else
+                    FX_SetPitch(voice.id, pitchoffset);
+            }
             break;
         }
     }
