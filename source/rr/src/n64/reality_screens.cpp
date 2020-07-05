@@ -155,7 +155,7 @@ struct {
     1, 0x6b3, "MARK DOCHTERMANN",
     2, 0x6d1, "MAP DESIGN",
     1, 0x6e5, "ALLEN H. BLUM III",
-    1, 0x6fd, "RICHARD GRAY",
+    1, 0x6f4, "RICHARD GRAY",
     2, 0x712, "3D MODELLING",
     1, 0x726, "CHUCK JONES",
     1, 0x735, "SAPPHIRE",
