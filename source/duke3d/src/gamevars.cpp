@@ -787,10 +787,7 @@ static int Gv_GetVarIndex(const char *szGameLabel)
     int const gameVar = hash_find(&h_gamevars,szGameLabel);
 
     if (EDUKE32_PREDICT_FALSE((unsigned)gameVar >= MAXGAMEVARS))
-    {
-        OSD_Printf(OSD_ERROR "Gv_GetVarIndex(): INTERNAL ERROR: couldn't find gamevar %s!\n", szGameLabel);
         return -1;
-    }
 
     return gameVar;
 }
@@ -800,10 +797,7 @@ static int Gv_GetArrayIndex(const char *szArrayLabel)
     int const arrayIdx = hash_find(&h_arrays, szArrayLabel);
 
     if (EDUKE32_PREDICT_FALSE((unsigned)arrayIdx >= MAXGAMEARRAYS))
-    {
-        OSD_Printf(OSD_ERROR "Gv_GetArrayIndex(): INTERNAL ERROR: couldn't find array %s!\n", szArrayLabel);
         return -1;
-    }
 
     return arrayIdx;
 }
