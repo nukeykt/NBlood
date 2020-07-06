@@ -531,6 +531,13 @@ static MenuOptionSet_t MEOS_GAMESETUP_AIM_AUTO = MAKE_MENUOPTIONSET( MEOSN_GAMES
 static MenuOption_t MEO_GAMESETUP_AIM_AUTO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_AIM_AUTO, &ud.config.AutoAim );
 static MenuEntry_t ME_GAMESETUP_AIM_AUTO = MAKE_MENUENTRY( "Auto aim:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_AIM_AUTO, Option );
 
+static char const *MEOSN_GAMESETUP_AIM_AUTO_DN64[] = { "Never", "Always", "Hitscan only", "Max" };
+static int32_t MEOSV_GAMESETUP_AIM_AUTO_DN64[] = { 0, 1, 2, 4 };
+
+static MenuOptionSet_t MEOS_GAMESETUP_AIM_AUTO_DN64 = MAKE_MENUOPTIONSET( MEOSN_GAMESETUP_AIM_AUTO_DN64, MEOSV_GAMESETUP_AIM_AUTO_DN64, 0x2 );
+static MenuOption_t MEO_GAMESETUP_AIM_AUTO_DN64 = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_AIM_AUTO_DN64, &ud.config.AutoAim );
+static MenuEntry_t ME_GAMESETUP_AIM_AUTO_DN64 = MAKE_MENUENTRY( "Auto aim:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_AIM_AUTO_DN64, Option );
+
 static char const *MEOSN_GAMESETUP_WEAPSWITCH_PICKUP[] = { "Never", "If new", "By rating", };
 static MenuOptionSet_t MEOS_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUOPTIONSET( MEOSN_GAMESETUP_WEAPSWITCH_PICKUP, NULL, 0x2 );
 static MenuOption_t MEO_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_WEAPSWITCH_PICKUP, NULL );
@@ -2250,6 +2257,12 @@ void Menu_Init(void)
         MF_Minifont = MF_Bluefont;
 
         MF_Minifont.zoom = 32768;
+
+        for (int i = 0; i < M_GAMESETUP.numEntries; i++)
+        {
+            if (MEL_GAMESETUP[i] == &ME_GAMESETUP_AIM_AUTO)
+                MEL_GAMESETUP[i] = &ME_GAMESETUP_AIM_AUTO_DN64;
+        }
     }
 }
 
