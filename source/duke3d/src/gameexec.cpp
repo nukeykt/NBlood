@@ -1224,12 +1224,14 @@ static void SetArray(int const arrayNum, int const arrayIndex, int const newValu
 
     auto &arr = aGameArrays[arrayNum];
 
+#if 0 // this needs to be a compile time check, not something done at runtime...
     if (EDUKE32_PREDICT_FALSE(arr.flags & GAMEARRAY_READONLY))
     {
         OSD_Printf(OSD_ERROR "Tried to set value in read-only array `%s'", arr.szLabel);
         vm.flags |= VM_RETURN;
         return;
     }
+#endif
 
     switch (arr.flags & GAMEARRAY_TYPE_MASK)
     {
