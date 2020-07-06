@@ -476,7 +476,7 @@ static void ProcessDN64Groups(void)
         for (BUILDVFS_FIND_REC *sidx = srch; sidx; sidx = sidx->next)
         {
             char title[20];
-            char country;
+            char country[3];
             int32_t fh = openfrompath(sidx->name, BO_RDONLY|BO_BINARY, BS_IREAD);
             if (fh < 0) continue;
             if (fstat(fh, &st)) continue;
@@ -487,34 +487,12 @@ static void ProcessDN64Groups(void)
             }
             lseek(fh, 32, SEEK_SET);
             read(fh, title, 20);
-            switch (i)
-            {
-            case 0:
-            default:
-                lseek(fh, 62, SEEK_SET);
-                read(fh, &country, 1);
-                break;
-            case 1:
-                lseek(fh, 63, SEEK_SET);
-                read(fh, &country, 1);
-                for (int i = 0; i < 10; i++)
-                {
-                    uint16_t *ptr = (uint16_t*)&title[i * 2];
-                    *ptr = B_SWAP16(*ptr);
-                }
-                break;
-            case 2:
-                lseek(fh, 61, SEEK_SET);
-                read(fh, &country, 1);
-                for (int i = 0; i < 5; i++)
-                {
-                    uint32_t *ptr = (uint32_t*)&title[i * 4];
-                    *ptr = B_SWAP32(*ptr);
-                }
-                break;
-            }
+            lseek(fh, 61, SEEK_SET);
+            read(fh, &country, 3);
             close(fh);
-            if (!memcmp(title, "DUKE NUKEM          ", 20) && (country == 'E' || country == 'P'))
+            if ((!memcmp(title, "DUKE NUKEM", 10) && (country[1] == 'E' || country[1] == 'P'))
+             || (!memcmp(title, "UDEKN KUME", 10) && (country[2] == 'E' || country[0] == 'P'))
+             || (!memcmp(title, "EKUDKUN ", 8) && (country[0] == 'E' || country[0] == 'P')))
             {
                 grpfile_t * const grp = (grpfile_t *)Xcalloc(1, sizeof(grpfile_t));
                 grp->filename = Xstrdup(sidx->name);

@@ -75,10 +75,6 @@ buildvfs_kfd RT_InitGRP(const char *filename)
         if (!rt_rom)
             return -1;
         int byteorder = 0;
-        if (strstr(filename, ".n64"))
-            byteorder = 1;
-        if (strstr(filename, ".v64"))
-            byteorder = 2;
 
         lseek(rt_group, 0, SEEK_SET);
         if (read(rt_group, rt_rom, RTROMSIZE) != RTROMSIZE)
@@ -86,6 +82,17 @@ buildvfs_kfd RT_InitGRP(const char *filename)
             Xfree(rt_rom);
             rt_rom = nullptr;
             initprintf("Error reading ROM file");
+            return -1;
+        }
+        if (!memcmp("DUKE", &rt_rom[32], 4))
+            byteorder = 0;
+        else if (!memcmp("UDEK", &rt_rom[32], 4))
+            byteorder = 1;
+        else if (!memcmp("EKUD", &rt_rom[32], 4))
+            byteorder = 2;
+        else
+        {
+            initprintf("Invalid ROM file");
             return -1;
         }
         switch (byteorder)
