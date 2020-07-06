@@ -174,6 +174,8 @@ GLuint rt_scolor2loc = 0;
 GLfloat rt_scolor2[4] = {
     0.f, 0.f, 0.f, 0.f
 };
+GLint rt_texclamploc = -1;
+vec2f_t rt_texclamp = { 0.f, 0.f };
 
 static float x_vs = 160.f;
 static float y_vs = 120.f;
@@ -717,10 +719,12 @@ void RT_SetShader(void)
     rt_stexcombloc = glGetUniformLocation(rt_shaderprogram, "u_texcomb");
     rt_scolor1loc = glGetUniformLocation(rt_shaderprogram, "u_color1");
     rt_scolor2loc = glGetUniformLocation(rt_shaderprogram, "u_color2");
+    rt_texclamploc = glGetUniformLocation(rt_shaderprogram, "u_clamp");
     glUniform1i(rt_stexsamplerloc, 0);
     glUniform1f(rt_stexcombloc, rt_stexcomb);
     glUniform4fv(rt_scolor1loc, 1, rt_scolor1);
     glUniform4fv(rt_scolor2loc, 1, rt_scolor2);
+    glUniform2f(rt_texclamploc, rt_texclamp.x, rt_texclamp.y);
 }
 
 void RT_SetColor1(int r, int g, int b, int a)
@@ -750,6 +754,18 @@ void RT_SetTexComb(int comb)
         rt_stexcomb = comb;
         if (rt_renderactive == 3)
             glUniform1f(rt_stexcombloc, rt_stexcomb);
+    }
+}
+
+void RT_SetTexClamp(char clamp)
+{
+    char clampx = clamp & 1;
+    char clampy = clamp >> 1;
+    if (clampx != rt_texclamp.x || clampy != rt_texclamp.y)
+    {
+        rt_texclamp = { (float)clampx, (float)clampy };
+        if (rt_renderactive == 3)
+            glUniform2f(rt_texclamploc, rt_texclamp.x, rt_texclamp.y);
     }
 }
 
@@ -788,24 +804,26 @@ void RT_GLInit(void)
          uniform vec4 u_color1;\n\
          uniform vec4 u_color2;\n\
          uniform float u_texcomb;\n\
+         uniform vec2 u_clamp;\n\
          \n\
          varying vec4 v_color;\n\
          varying float v_distance;\n\
          \n\
          const float c_zero = 0.0;\n\
+         const float c_onem = 0.999;\n\
          const float c_one  = 1.0;\n\
          const float c_two  = 2.0;\n\
          \n\
          void main()\n\
          {\n\
          #ifdef GL_ARB_shader_texture_lod\n\
-            //vec4 color = texture2DGradARB(s_texture, gl_TexCoord[0].xy, dFdx(gl_TexCoord[0].xy), dFdy(gl_TexCoord[0].xy));\n\
-            vec4 color = texture2D(s_texture, gl_TexCoord[0].xy);\n\
+            vec2 texCoord = mix(gl_TexCoord[0].xy, clamp(gl_TexCoord[0].xy, c_zero, c_onem), u_clamp);\n\
+            vec4 color = texture2DGradARB(s_texture, texCoord, dFdx(texCoord), dFdy(texCoord));\n\
          #else\n\
             vec2 transitionBlend = fwidth(floor(gl_TexCoord[0].xy));\n\
             transitionBlend = fwidth(transitionBlend)+transitionBlend;\n\
-            vec2 texCoord = mix(fract(gl_TexCoord[0].xy), abs(c_one-mod(gl_TexCoord[0].xy+c_one, c_two)), transitionBlend);\n\
-            vec4 color = texture2D(s_texture, u_texturePosSize.xy+texCoord);\n\
+            vec2 texCoord = mix(mix(gl_TexCoord[0].xy), abs(c_one-mod(gl_TexCoord[0].xy+c_one, c_two)), transitionBlend), clamp(gl_TexCoord[0].xy, c_zero, c_onem), u_clamp);\n\
+            vec4 color = texture2D(s_texture, texCoord);\n\
          #endif\n\
             \n\
             vec4 colorcomb;\n\
@@ -913,6 +931,7 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glLoadIdentity();
     if (aspectCorrection)
         RT_ProjectionCorrect();
+    RT_SetTexClamp(1+2);
     glOrtho(0, xdim, ydim, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(u1, v1); glVertex3f(x1 * sclx + xo, y1 * scly, -rt_globaldepth);
@@ -1068,21 +1087,33 @@ void RT_SetTexture(int tilenum, int explosion = 0)
     if (pth)
         glBindTexture(GL_TEXTURE_2D, pth->glpic);
 
+    int clamp = 0;
+
     if (tileid >= 0)
     {
         auto& tinfo = rt_tileinfo[tileid];
         int logx = RT_PicSizLog(tinfo.dimx);
         int logy = RT_PicSizLog(tinfo.dimy);
-        rt_uvscale.x = 1.f/float(32 << logx);
-        rt_uvscale.y = 1.f/float(32 << logy);
+        if ((1<<logx) != tinfo.dimx)
+            clamp |= 1;
+        if ((1<<logy) != tinfo.dimy)
+            clamp |= 2;
+        rt_uvscale.x = 1.f/float(32 * tinfo.dimx);
+        rt_uvscale.y = 1.f/float(32 * tinfo.dimy);
     }
     else
     {
         int logx = RT_PicSizLog(tilesiz[tilenum].x);
         int logy = RT_PicSizLog(tilesiz[tilenum].y);
-        rt_uvscale.x = 1.f/float(32 << logx);
-        rt_uvscale.y = 1.f/float(32 << logy);
+        if ((1<<logx) != tilesiz[tilenum].x)
+            clamp |= 1;
+        if ((1<<logy) != tilesiz[tilenum].y)
+            clamp |= 2;
+        rt_uvscale.x = 1.f/float(32 * tilesiz[tilenum].x);
+        rt_uvscale.y = 1.f/float(32 * tilesiz[tilenum].y);
     }
+
+    RT_SetTexClamp(clamp);
 }
 
 void RT_CalculateShade(int x, int y, int z, int shade)
@@ -1998,7 +2029,8 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
 
     if (!pth)
         return;
-
+    
+    RT_SetTexClamp(1+2);
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
     //rt_globalalpha = 128;
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
@@ -2082,7 +2114,8 @@ void RT_DrawSpriteFloor(void)
 
     if (!pth)
         return;
-
+    
+    RT_SetTexClamp(1+2);
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
 
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
@@ -2667,21 +2700,34 @@ void RT_DrawMaskWall(int wallnum)
     if (pth)
         glBindTexture(GL_TEXTURE_2D, pth->glpic);
 
+    int clamp = 0;
+
     if (tileid >= 0)
     {
         auto& tinfo = rt_tileinfo[tileid];
         int logx = RT_PicSizLog(tinfo.dimx);
         int logy = RT_PicSizLog(tinfo.dimy);
-        rt_uvscale.x = 1.f / float(32 << logx);
-        rt_uvscale.y = 1.f / float(32 << logy);
+        if ((1<<logx) != tinfo.dimx)
+            clamp |= 1;
+        if ((1<<logy) != tinfo.dimy)
+            clamp |= 2;
+        rt_uvscale.x = 1.f/float(32 * tinfo.dimx);
+        rt_uvscale.y = 1.f/float(32 * tinfo.dimy);
     }
     else
     {
         int logx = RT_PicSizLog(tilesiz[pn].x);
         int logy = RT_PicSizLog(tilesiz[pn].y);
-        rt_uvscale.x = 1.f / float(32 << logx);
-        rt_uvscale.y = 1.f / float(32 << logy);
+        if ((1<<logx) != tilesiz[pn].x)
+            clamp |= 1;
+        if ((1<<logy) != tilesiz[pn].y)
+            clamp |= 2;
+        rt_uvscale.x = 1.f/float(32 * tilesiz[pn].x);
+        rt_uvscale.y = 1.f/float(32 * tilesiz[pn].y);
     }
+
+    RT_SetTexClamp(clamp);
+
     glBegin(GL_QUADS);
     for (int i = 0; i < 4; i++)
     {
@@ -3902,6 +3948,8 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
+    RT_SetTexClamp(1+2);
+
     if (screenCorrection)
         RT_ProjectionCorrect();
     float xdim43 = ydim * (4.f / 3.f);
@@ -3995,6 +4043,8 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+
+    RT_SetTexClamp(1+2);
 
     if (!buildcoords)
         RT_ProjectionCorrect();
