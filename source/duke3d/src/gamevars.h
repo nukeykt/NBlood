@@ -124,7 +124,23 @@ size_t __fastcall Gv_GetArrayAllocSizeForCount(int const arrayIdx, size_t const 
 size_t __fastcall Gv_GetArrayCountForAllocSize(int const arrayIdx, size_t const filelength);
 static FORCE_INLINE size_t Gv_GetArrayAllocSize(int const arrayIdx) { return Gv_GetArrayAllocSizeForCount(arrayIdx, aGameArrays[arrayIdx].size); }
 unsigned __fastcall Gv_GetArrayElementSize(int const arrayIdx);
-int __fastcall Gv_GetArrayValue(int const id, int index);
+
+static FORCE_INLINE int __fastcall Gv_GetArrayValue(int const id, int index)
+{
+    if (aGameArrays[id].flags & GAMEARRAY_STRIDE2)
+        index <<= 1;
+
+    switch (aGameArrays[id].flags & GAMEARRAY_TYPE_MASK)
+    {
+        default: return (aGameArrays[id].pValues)[index];
+        case GAMEARRAY_INT16:  return   ((int16_t  *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_INT8:   return   ((int8_t   *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_UINT16: return   ((uint16_t *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_UINT8:  return   ((uint8_t  *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_BITMAP: return !!(((uint8_t *)aGameArrays[id].pValues)[index >> 3] & pow2char[index & 7]);
+    }
+}
+
 int __fastcall Gv_GetVar(int const gameVar, int const spriteNum, int const playerNum);
 void __fastcall Gv_SetVar(int const gameVar, int const newValue, int const spriteNum, int const playerNum);
 int __fastcall Gv_GetVar(int const gameVar);

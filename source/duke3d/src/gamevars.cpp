@@ -829,29 +829,6 @@ size_t __fastcall Gv_GetArrayCountForAllocSize(int const arrayIdx, size_t const 
     return tabledivide64(filelength + denominator - 1, denominator);
 }
 
-int __fastcall Gv_GetArrayValue(int const id, int index)
-{
-    if (aGameArrays[id].flags & GAMEARRAY_STRIDE2)
-        index <<= 1;
-
-    int returnValue = 0;
-
-    switch (aGameArrays[id].flags & GAMEARRAY_TYPE_MASK)
-    {
-        case 0: returnValue = (aGameArrays[id].pValues)[index]; break;
-
-        case GAMEARRAY_INT16: returnValue = ((int16_t *)aGameArrays[id].pValues)[index]; break;
-        case GAMEARRAY_INT8:  returnValue =  ((int8_t *)aGameArrays[id].pValues)[index]; break;
-
-        case GAMEARRAY_UINT16: returnValue = ((uint16_t *)aGameArrays[id].pValues)[index]; break;
-        case GAMEARRAY_UINT8:  returnValue =  ((uint8_t *)aGameArrays[id].pValues)[index]; break;
-
-        case GAMEARRAY_BITMAP:returnValue = !!(((uint8_t *)aGameArrays[id].pValues)[index >> 3] & pow2char[index & 7]); break;
-    }
-
-    return returnValue;
-}
-
 #define CHECK_INDEX(range)                                              \
     if (EDUKE32_PREDICT_FALSE((unsigned)arrayIndex >= (unsigned)range)) \
     {                                                                   \

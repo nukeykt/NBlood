@@ -1211,7 +1211,7 @@ void Screen_Play(void)
     } while (running);
 }
 
-static void SetArray(int const arrayNum, int const arrayIndex, int const newValue)
+static inline void SetArray(int const arrayNum, int const arrayIndex, int const newValue)
 {
     auto &arr = aGameArrays[arrayNum];
 
