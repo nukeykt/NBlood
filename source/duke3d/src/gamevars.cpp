@@ -1006,16 +1006,13 @@ static FORCE_INLINE int __fastcall getvar__(int const gameVar, int const spriteN
     {
         auto const &var = aGameVars[gameVar & (MAXGAMEVARS-1)];
 
-        int       returnValue  = 0;
-        int const varFlags     = var.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK);
+        int returnValue = 0;
 
-        if (!varFlags) returnValue = var.global;
-        else if (varFlags == GAMEVAR_PERACTOR)
-            returnValue = var.pValues[spriteNum & (MAXSPRITES-1)];
-        else if (varFlags == GAMEVAR_PERPLAYER)
-            returnValue = var.pValues[playerNum & (MAXPLAYERS-1)];
-        else switch (varFlags & GAMEVAR_PTR_MASK)
+        switch (var.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK))
         {
+            default: returnValue = var.global; break;
+            case GAMEVAR_PERACTOR:  returnValue = var.pValues[spriteNum & (MAXSPRITES-1)]; break;
+            case GAMEVAR_PERPLAYER: returnValue = var.pValues[playerNum & (MAXPLAYERS-1)];break;
             case GAMEVAR_RAWQ16PTR:
             case GAMEVAR_INT32PTR: returnValue = *(int32_t *)var.global; break;
             case GAMEVAR_INT16PTR: returnValue = *(int16_t *)var.global; break;
@@ -1040,21 +1037,16 @@ void __fastcall Gv_GetManyVars(int const numVars, int32_t * const outBuf)
 static FORCE_INLINE void __fastcall setvar__(int const gameVar, int const newValue, int const spriteNum, int const playerNum)
 {
     gamevar_t &var = aGameVars[gameVar];
-    int const varFlags = var.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK);
-
-    if (!varFlags) var.global=newValue;
-    else if (varFlags == GAMEVAR_PERACTOR)
-        var.pValues[spriteNum & (MAXSPRITES-1)] = newValue;
-    else if (varFlags == GAMEVAR_PERPLAYER)
-        var.pValues[playerNum & (MAXPLAYERS-1)] = newValue;
-    else switch (varFlags & GAMEVAR_PTR_MASK)
+    switch (var.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK))
     {
+        default: var.global = newValue; break;
+        case GAMEVAR_PERPLAYER: var.pValues[playerNum & (MAXPLAYERS-1)] = newValue; break;
+        case GAMEVAR_PERACTOR:  var.pValues[spriteNum & (MAXSPRITES-1)] = newValue; break;
         case GAMEVAR_RAWQ16PTR:
         case GAMEVAR_INT32PTR: *((int32_t *)var.global) = (int32_t)newValue; break;
         case GAMEVAR_INT16PTR: *((int16_t *)var.global) = (int16_t)newValue; break;
         case GAMEVAR_Q16PTR:    *(fix16_t *)var.global  = fix16_from_int((int16_t)newValue); break;
     }
-    return;
 }
 
 void __fastcall Gv_SetVar(int const gameVar, int const newValue) { setvar__(gameVar, newValue, vm.spriteNum, vm.playerNum); }
