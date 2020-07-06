@@ -1213,15 +1213,6 @@ void Screen_Play(void)
 
 static void SetArray(int const arrayNum, int const arrayIndex, int const newValue)
 {
-    if (EDUKE32_PREDICT_FALSE((unsigned)arrayNum >= (unsigned)g_gameArrayCount || (unsigned)arrayIndex >= (unsigned)aGameArrays[arrayNum].size))
-    {
-        OSD_Printf(OSD_ERROR "Gv_SetVar(): tried to set invalid array %d or index out of bounds from "
-                             "sprite %d (%d), player %d\n",
-                   (int)arrayNum, vm.spriteNum, vm.pUSprite->picnum, vm.playerNum);
-        vm.flags |= VM_RETURN;
-        return;
-    }
-
     auto &arr = aGameArrays[arrayNum];
 
 #if 0 // this needs to be a compile time check, not something done at runtime...
@@ -5665,6 +5656,9 @@ badindex:
                     int const arrayIndex = Gv_GetVar(*insptr++);
                     int const newValue   = Gv_GetVar(*insptr++);
 
+                    VM_ASSERT((unsigned)tw < (unsigned)g_gameArrayCount && (unsigned)arrayIndex < (unsigned)aGameArrays[tw].size, 
+                              "invalid array %d or index %d\n", tw, arrayIndex);
+
                     SetArray(tw, arrayIndex, newValue);
 
                     dispatch();
@@ -5697,6 +5691,9 @@ badindex:
                 int32_t const sequenceSize = *insptr++;
 
                 ResizeArray(arrayNum, sequenceSize);
+
+                VM_ASSERT((unsigned)arrayNum < (unsigned)g_gameArrayCount && (unsigned)sequenceSize < (unsigned)aGameArrays[arrayNum].size, 
+                            "invalid array %d or index %d\n", arrayNum, sequenceSize);
 
                 for (int arrayIndex = 0; arrayIndex < sequenceSize; ++arrayIndex)
                 {
