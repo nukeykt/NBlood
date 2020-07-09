@@ -2313,7 +2313,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const   lParm2      = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
                     VM_ASSERT((unsigned)playerNum < MAXSPRITES && ((playerLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)playerLabel.maxParm2),
-                              "%s[%d] invalid for sprite %d\n", playerLabel.name, lParm2, playerNum);
+                              "%s[%d] invalid for player %d\n", playerLabel.name, lParm2, playerNum);
 
                     VM_SetPlayer(playerNum, labelNum, lParm2, Gv_GetVar(*insptr++));
                     dispatch();
@@ -2328,7 +2328,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
                     VM_ASSERT((unsigned)playerNum < MAXSPRITES && ((playerLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)playerLabel.maxParm2),
-                              "%s[%d] invalid for sprite %d\n", playerLabel.name, lParm2, playerNum);
+                              "%s[%d] invalid for player %d\n", playerLabel.name, lParm2, playerNum);
 
                     Gv_SetVar(*insptr++, VM_GetPlayer(playerNum, labelNum, lParm2));
                     dispatch();
