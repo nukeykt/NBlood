@@ -1285,25 +1285,19 @@ static void ResizeArray(int const arrayNum, int const newSize)
 #endif
 
 #if defined _MSC_VER
-#define VM_ASSERT(condition, fmt, ...)           \
-    do                                           \
-    {                                            \
-        if (EDUKE32_PREDICT_FALSE(!(condition))) \
-        {                                        \
-            CON_ERRPRINTF(fmt, __VA_ARGS__);     \
-            abort_after_error();                 \
-        }                                        \
-    } while (0)
+#define VM_ASSERT(condition, fmt, ...)       \
+    if (EDUKE32_PREDICT_FALSE(!(condition))) \
+    {                                        \
+        CON_ERRPRINTF(fmt, __VA_ARGS__);     \
+        abort_after_error();                 \
+    }
 #else
-#define VM_ASSERT(condition, ...)                \
-    do                                           \
-    {                                            \
-        if (EDUKE32_PREDICT_FALSE(!(condition))) \
-        {                                        \
-            CON_ERRPRINTF(__VA_ARGS__);          \
-            abort_after_error();                 \
-        }                                        \
-    } while (0)
+#define VM_ASSERT(condition, ...)            \
+    if (EDUKE32_PREDICT_FALSE(!(condition))) \
+    {                                        \
+        CON_ERRPRINTF(__VA_ARGS__);          \
+        abort_after_error();                 \
+    }
 #endif
 
 GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
