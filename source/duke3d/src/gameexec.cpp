@@ -5801,7 +5801,7 @@ badindex:
                     int const srcArraySize = (src.flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(src.size) : src.size;
                     int const destArraySize = (dest.flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(dest.size) : dest.size;
 
-                    if (EDUKE32_PREDICT_FALSE(srcArrayIndex > srcArraySize || destArrayIndex > destArraySize))
+                    if (srcArrayIndex > srcArraySize || destArrayIndex > destArraySize)
                         dispatch();
 
                     if ((srcArrayIndex + numElements) > srcArraySize)
@@ -5812,8 +5812,8 @@ badindex:
 
                     // Switch depending on the source array type.
 
-                    int const srcInc  = 1 << (int)!!(EDUKE32_PREDICT_FALSE(src.flags & GAMEARRAY_STRIDE2));
-                    int const destInc = 1 << (int)!!(EDUKE32_PREDICT_FALSE(dest.flags & GAMEARRAY_STRIDE2));
+                    int const srcInc  = 1 << (int)!!((src.flags & GAMEARRAY_STRIDE2));
+                    int const destInc = 1 << (int)!!((dest.flags & GAMEARRAY_STRIDE2));
 
                     // matching array types, no BITMAPs, no STRIDE2 flag
                     if ((src.flags & GAMEARRAY_SIZE_MASK) == (dest.flags & GAMEARRAY_SIZE_MASK)
@@ -6407,7 +6407,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
                 if (vm.pSprite->xrepeat > 60 || (ud.respawn_monsters == 1 && vm.pSprite->extra <= 0))
                     return;
             }
-            else if (EDUKE32_PREDICT_FALSE(ud.respawn_items == 1 && (vm.pSprite->cstat & 32768)))
+            else if ((ud.respawn_items == 1 && (vm.pSprite->cstat & 32768)))
                 return;
 
             if (A_CheckSpriteFlags(vm.spriteNum, SFLAG_USEACTIVATOR) && sector[vm.pSprite->sectnum].lotag & 16384)
