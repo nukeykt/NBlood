@@ -2424,6 +2424,19 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 }
 
             vInstruction(CON_SETACTORVAR):
+                insptr++;
+                {
+                    int const lSprite = Gv_GetVar(*insptr++);
+                    int const lVar1   = *insptr++;
+                    int const lVar2   = *insptr++;
+
+                    VM_ASSERT((unsigned)lSprite < MAXSPRITES, "invalid sprite %d\n", lSprite);
+
+                    Gv_SetVar(lVar1, Gv_GetVar(lVar2), lSprite, vm.playerNum);
+
+                    dispatch();
+                }
+
             vInstruction(CON_GETACTORVAR):
                 insptr++;
                 {
@@ -2433,10 +2446,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 
                     VM_ASSERT((unsigned)lSprite < MAXSPRITES, "invalid sprite %d\n", lSprite);
 
-                    if (VM_DECODE_INST(tw) == CON_SETACTORVAR)
-                        Gv_SetVar(lVar1, Gv_GetVar(lVar2), lSprite, vm.playerNum);
-                    else
-                        Gv_SetVar(lVar2, Gv_GetVar(lVar1, lSprite, vm.playerNum));
+                    Gv_SetVar(lVar2, Gv_GetVar(lVar1, lSprite, vm.playerNum));
 
                     dispatch();
                 }
