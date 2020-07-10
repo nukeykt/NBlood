@@ -8409,6 +8409,75 @@ static int osdcmd_quit(osdcmdptr_t UNUSED(parm))
     exit(EXIT_SUCCESS);
 }
 
+static int osdcmd_artdump(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+
+    BFILE *f = Bfopen("tilesxxx.art", "wb");
+
+    uint32_t numtiles = 0;
+    for (uint32_t i = MAXUSERTILES - 1; i > 0; --i)
+        if (tileLoad(i))
+        {
+            numtiles = i + 1;
+            break;
+        }
+
+    int32_t s32;
+
+    // header
+    s32 = B_LITTLE32(0x4c495542);
+    Bfwrite(&s32, sizeof(int32_t), 1, f);
+    s32 = B_LITTLE32(0x54524144);
+    Bfwrite(&s32, sizeof(int32_t), 1, f);
+
+    // artversion
+    s32 = 1;
+    Bfwrite(&s32, sizeof(int32_t), 1, f);
+
+    // numtiles
+    Bfwrite(&numtiles, sizeof(int32_t), 1, f);
+
+    // localtilestart
+    s32 = 0;
+    Bfwrite(&s32, sizeof(int32_t), 1, f);
+
+    // localtileend
+    s32 = numtiles - 1;
+    Bfwrite(&s32, sizeof(int32_t), 1, f);  // tileend
+
+    // tilesizx
+    for (uint32_t i = 0; i < numtiles; ++i)
+        Bfwrite(&tilesiz[i].x, sizeof(int16_t), 1, f);
+
+    // tilesizy
+    for (uint32_t i = 0; i < numtiles; ++i)
+        Bfwrite(&tilesiz[i].y, sizeof(int16_t), 1, f);
+
+    // picanm
+    for (uint32_t i = 0; i < numtiles; ++i)
+    {
+        picanm_t p = picanm[i];
+
+        // undo picanm reorder...
+        p.num &= ~192;
+        p.num |= p.sf & 192;
+        p.sf &= 0x0F;
+
+        Bfwrite(&p, sizeof(picanm_t), 1, f);
+    }
+
+    for (uint32_t i = 0; i < numtiles; ++i)
+    {
+        tileLoad(i);
+        Bfwrite((void *)waloff[i], tilesiz[i].x * tilesiz[i].y, 1, f);
+    }
+
+    Bfclose(f);
+
+    return OSDCMD_OK;
+}
+
 static int osdcmd_editorgridextent(osdcmdptr_t parm)
 {
     int32_t i;
@@ -9072,6 +9141,8 @@ static int32_t registerosdcommands(void)
 
     OSD_RegisterFunction("quit","quit: exits the editor immediately", osdcmd_quit);
     OSD_RegisterFunction("exit","exit: exits the editor immediately", osdcmd_quit);
+
+    OSD_RegisterFunction("artdump","dump art to disk", osdcmd_artdump);
 
     OSD_RegisterFunction("sensitivity","sensitivity <value>: changes the mouse sensitivity", osdcmd_sensitivity);
 
