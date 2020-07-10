@@ -730,56 +730,59 @@ void Gv_NewVar(const char *pszLabel, intptr_t lValue, uint32_t dwFlags)
     if (gV == -1)
         gV = g_gameVarCount;
 
+    auto &newVar = aGameVars[gV];
+
     // If it's a user gamevar...
-    if ((aGameVars[gV].flags & GAMEVAR_SYSTEM) == 0)
+    if ((newVar.flags & GAMEVAR_SYSTEM) == 0)
     {
         // Allocate and set its label
-        if (aGameVars[gV].szLabel == NULL)
-            aGameVars[gV].szLabel = (char *)Xcalloc(MAXVARLABEL,sizeof(uint8_t));
+        if (newVar.szLabel == NULL)
+            newVar.szLabel = (char *)Xcalloc(MAXVARLABEL,sizeof(uint8_t));
 
-        if (aGameVars[gV].szLabel != pszLabel)
-            Bstrcpy(aGameVars[gV].szLabel,pszLabel);
+        if (newVar.szLabel != pszLabel)
+            Bstrcpy(newVar.szLabel,pszLabel);
 
         // and the flags
-        aGameVars[gV].flags=dwFlags;
+        newVar.flags=dwFlags;
 
         // only free if per-{actor,player}
-        if (aGameVars[gV].flags & GAMEVAR_USER_MASK)
-            ALIGNED_FREE_AND_NULL(aGameVars[gV].pValues);
+        if (newVar.flags & GAMEVAR_USER_MASK)
+            ALIGNED_FREE_AND_NULL(newVar.pValues);
     }
 
     // if existing is system, they only get to change default value....
-    aGameVars[gV].defaultValue = lValue;
-    aGameVars[gV].flags &= ~GAMEVAR_RESET;
+    newVar.defaultValue = lValue;
+    newVar.flags &= ~GAMEVAR_RESET;
 
     if (gV == g_gameVarCount)
     {
         // we're adding a new one.
-        hash_add(&h_gamevars, aGameVars[gV].szLabel, g_gameVarCount++, 0);
+        hash_add(&h_gamevars, newVar.szLabel, g_gameVarCount++, 0);
     }
 
     // Set initial values. (Or, override values for system gamevars.)
-    if (aGameVars[gV].flags & GAMEVAR_PERPLAYER)
+    if (newVar.flags & GAMEVAR_PERPLAYER)
     {
-        if (!aGameVars[gV].pValues)
+        if (!newVar.pValues)
         {
-            aGameVars[gV].pValues = (intptr_t *) Xaligned_alloc(PLAYER_VAR_ALIGNMENT, MAXPLAYERS * sizeof(intptr_t));
-            Bmemset(aGameVars[gV].pValues, 0, MAXPLAYERS * sizeof(intptr_t));
+            newVar.pValues = (intptr_t *) Xaligned_alloc(PLAYER_VAR_ALIGNMENT, MAXPLAYERS * sizeof(intptr_t));
+            Bmemset(newVar.pValues, 0, MAXPLAYERS * sizeof(intptr_t));
         }
         for (bssize_t j=MAXPLAYERS-1; j>=0; --j)
-            aGameVars[gV].pValues[j]=lValue;
+            newVar.pValues[j]=lValue;
+//        std::fill_n(newVar.pValues, MAXPLAYERS, lValue);
     }
-    else if (aGameVars[gV].flags & GAMEVAR_PERACTOR)
+    else if (newVar.flags & GAMEVAR_PERACTOR)
     {
-        if (!aGameVars[gV].pValues)
+        if (!newVar.pValues)
         {
-            aGameVars[gV].pValues = (intptr_t *) Xaligned_alloc(ACTOR_VAR_ALIGNMENT, MAXSPRITES * sizeof(intptr_t));
-            Bmemset(aGameVars[gV].pValues, 0, MAXSPRITES * sizeof(intptr_t));
+            newVar.pValues = (intptr_t *) Xaligned_alloc(ACTOR_VAR_ALIGNMENT, MAXSPRITES * sizeof(intptr_t));
+            Bmemset(newVar.pValues, 0, MAXSPRITES * sizeof(intptr_t));
         }
         for (bssize_t j=MAXSPRITES-1; j>=0; --j)
-            aGameVars[gV].pValues[j]=lValue;
+            newVar.pValues[j]=lValue;
     }
-    else aGameVars[gV].global = lValue;
+    else newVar.global = lValue;
 }
 
 static int Gv_GetVarIndex(const char *szGameLabel)
