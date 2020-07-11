@@ -6650,7 +6650,7 @@ int app_main(int argc, char const* const* argv)
     loaddefinitions_game(defsfile, FALSE);
 
     for (char * m : g_defModules)
-        free(m);
+        Bfree(m);
     g_defModules.clear();
 
     cacheAllSounds();
@@ -6726,7 +6726,7 @@ int app_main(int argc, char const* const* argv)
         initprintf("There was an error loading the sprite clipping map (status %d).\n", clipMapError);
 
     for (char * m : g_clipMapFiles)
-        free(m);
+        Bfree(m);
     g_clipMapFiles.clear();
 #endif
 

@@ -39,11 +39,11 @@ static const char *defaultdeffilename[GAMECOUNT]     = { "duke3d.def", "nam.def"
 static const char *defaultgameconfilename[GAMECOUNT] = { "EDUKE.CON", "NAM.CON", "NAPALM.CON", "WW2GI.CON" };
 #endif
 
-// g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+// g_grpNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
 char *g_grpNamePtr = NULL;
-// g_scriptNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+// g_scriptNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
 char *g_scriptNamePtr = NULL;
-// g_rtsNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+// g_rtsNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
 char *g_rtsNamePtr = NULL;
 
 void clearGrpNamePtr(void)

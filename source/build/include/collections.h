@@ -50,7 +50,7 @@ struct GrowArray
     {
         size_ = 0;
         capacity_ = 0;
-        free(data_);
+        Bfree(data_);
         data_ = nullptr;
     }
 
