@@ -8047,6 +8047,7 @@ static int G_EndOfLevel(void)
         {
             ud.eog = rt_levelnum == 27;
             rt_levelnum = RT_NextLevel();
+            ud.secretlevel = 0;
         }
 
         // Clear potentially loaded per-map ART only after the bonus screens.

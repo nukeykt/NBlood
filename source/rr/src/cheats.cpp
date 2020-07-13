@@ -600,7 +600,10 @@ void G_DoCheats(void)
                         ud.level_number = levnume;
 
                         if (REALITY)
+                        {
                             rt_levelnum = levnume;
+                            ud.secretlevel = 0;
+                        }
 
 #if 0
                         if (numplayers > 1 && g_netServer)
