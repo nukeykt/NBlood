@@ -183,7 +183,6 @@ SWBOOL PreCaching = TRUE;
 int GodMode = FALSE;
 SWBOOL BotMode = FALSE;
 short Skill = 2;
-short BetaVersion = 900;
 short TotalKillable;
 
 AUTO_NET Auto;
