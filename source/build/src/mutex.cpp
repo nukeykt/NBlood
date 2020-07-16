@@ -39,36 +39,3 @@ void mutex_destroy(mutex_t *mutex)
     }
 #endif
 }
-
-void mutex_lock(mutex_t *mutex)
-{
-#if SDL_MAJOR_VERSION >= 2
-    SDL_AtomicLock(mutex);
-#elif defined _WIN32
-    EnterCriticalSection(mutex);
-#elif SDL_MAJOR_VERSION == 1
-    SDL_LockMutex(*mutex);
-#endif
-}
-
-void mutex_unlock(mutex_t *mutex)
-{
-#if SDL_MAJOR_VERSION >= 2
-    SDL_AtomicUnlock(mutex);
-#elif defined _WIN32
-    LeaveCriticalSection(mutex);
-#elif SDL_MAJOR_VERSION == 1
-    SDL_UnlockMutex(*mutex);
-#endif
-}
-
-void mutex_try(mutex_t *mutex)
-{
-#if SDL_MAJOR_VERSION >= 2
-    SDL_AtomicTryLock(mutex);
-#elif defined _WIN32
-    TryEnterCriticalSection(mutex);
-#elif SDL_MAJOR_VERSION == 1
-    SDL_TryLockMutex(*mutex);
-#endif
-}
