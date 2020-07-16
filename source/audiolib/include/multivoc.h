@@ -65,7 +65,7 @@ enum MV_Errors
     MV_InvalidFile,
 };
 
-extern void (*MV_Printf)(const char *fmt, ...);
+extern int (*MV_Printf)(const char *fmt, ...);
 
 const char *MV_ErrorString(int ErrorNumber);
 
@@ -152,7 +152,7 @@ struct MV_MusicRoutineBuffer
 };
 struct MV_MusicRoutineBuffer MV_GetMusicRoutineBuffer(void);
 
-static inline void MV_SetPrintf(void (*function)(const char *, ...)) { if (function) MV_Printf = function; }
+static inline void MV_SetPrintf(int (*function)(const char *, ...)) { if (function) MV_Printf = function; }
 
 #ifdef __cplusplus
 }

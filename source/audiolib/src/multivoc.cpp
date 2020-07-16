@@ -88,7 +88,7 @@ VoiceNode  VoicePool;
 
 static int MV_MixPage;
 
-void (*MV_Printf)(const char *fmt, ...) = initprintf;
+int (*MV_Printf)(const char *fmt, ...) = initprintf;
 static void (*MV_CallBackFunc)(intptr_t);
 
 char *MV_MixDestination;

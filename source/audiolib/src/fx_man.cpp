@@ -319,7 +319,7 @@ int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     return handle;
 }
 
-int FX_SetPrintf(void (*function)(const char *, ...))
+int FX_SetPrintf(int (*function)(const char *, ...))
 {
     MV_SetPrintf(function);
 

@@ -227,9 +227,9 @@ void system_getcvars(void);
 extern int32_t g_logFlushWindow;
 void initputs(const char *);
 #define buildputs initputs
-void initprintf(const char *, ...) ATTRIBUTE((format(printf,1,2)));
+int initprintf(const char *, ...) ATTRIBUTE((format(printf,1,2)));
 #define buildprintf initprintf
-void debugprintf(const char *,...) ATTRIBUTE((format(printf,1,2)));
+int debugprintf(const char *,...) ATTRIBUTE((format(printf,1,2)));
 
 int32_t handleevents(void);
 int32_t handleevents_peekkeys(void);

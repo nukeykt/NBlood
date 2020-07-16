@@ -773,17 +773,19 @@ void system_getcvars(void)
 //
 // initprintf() -- prints a formatted string to the initialization window
 //
-void initprintf(const char *f, ...)
+int initprintf(const char *f, ...)
 {
     va_list va;
     char buf[2048];
 
     va_start(va, f);
-    Bvsnprintf(buf, sizeof(buf), f, va);
+    int len = Bvsnprintf(buf, sizeof(buf), f, va);
     va_end(va);
 
     osdstrings.append(Xstrdup(buf));
     initputs(buf);
+
+    return len;
 }
 
 
@@ -826,16 +828,18 @@ void initputs(const char *buf)
 //
 // debugprintf() -- prints a formatted debug string to stderr
 //
-void debugprintf(const char *f, ...)
+int debugprintf(const char *f, ...)
 {
 #if defined DEBUGGINGAIDS && !(defined __APPLE__ && defined __BIG_ENDIAN__)
     va_list va;
 
     va_start(va,f);
-    Bvfprintf(stderr, f, va);
+    int len = Bvfprintf(stderr, f, va);
     va_end(va);
+    return len;
 #else
     UNREFERENCED_PARAMETER(f);
+    return 0;
 #endif
 }
 
