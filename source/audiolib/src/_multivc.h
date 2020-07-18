@@ -241,7 +241,7 @@ void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t v
 void MV_SetVoicePitch(VoiceNode *voice, uint32_t rate, int pitchoffset);
 
 int  MV_GetVorbisPosition(VoiceNode *voice);
-void MV_SetVorbisPosition(VoiceNode *voice, int position);
+void MV_SetVorbisPosition(VoiceNode *voice, unsigned int position);
 int  MV_GetFLACPosition(VoiceNode *voice);
 void MV_SetFLACPosition(VoiceNode *voice, int position);
 int  MV_GetXAPosition(VoiceNode *voice);

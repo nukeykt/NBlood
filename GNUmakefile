@@ -583,15 +583,15 @@ duke3d_game_orderonlydeps :=
 duke3d_editor_orderonlydeps :=
 
 ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lasound
+    LIBS += -lFLAC -logg -lasound
 endif
 
 ifeq ($(PLATFORM),BSD)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lexecinfo
+    LIBS += -lFLAC -logg -lexecinfo
 endif
 
 ifeq ($(PLATFORM),DARWIN)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lm \
+    LIBS += -lFLAC -logg -lm \
             -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,OpenGL \
             -Wl,-framework,CoreMIDI -Wl,-framework,AudioUnit \
             -Wl,-framework,AudioToolbox -Wl,-framework,IOKit -Wl,-framework,AGL
@@ -605,17 +605,13 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -ldsound
+    LIBS += -lFLAC -logg -ldsound
     duke3d_game_objs += winbits.cpp
     duke3d_game_rsrc_objs += gameres.rc
     duke3d_editor_rsrc_objs += buildres.rc
     ifeq ($(STARTUP_WINDOW),1)
         duke3d_game_objs += startwin.game.cpp
     endif
-endif
-
-ifeq ($(PLATFORM),WII)
-    LIBS += -lvorbisidec
 endif
 
 ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))

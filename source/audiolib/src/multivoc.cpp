@@ -448,7 +448,7 @@ static inline void MV_FinishAllocation(VoiceNode* voice, uint32_t const allocsiz
         ALIGNED_FREE_AND_NULL(voice->rawdataptr);
     }
 
-    voice->rawdataptr = Xaligned_calloc(16, 1, allocsize);
+    voice->rawdataptr = Xaligned_alloc(16, allocsize);
     voice->rawdatasiz = allocsize;
 }
 
@@ -852,7 +852,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     for (int index = 0; index < Voices; index++)
         LL::Insert(&VoicePool, &MV_Voices[index]);
 
-    MV_Handles = (VoiceNode **)Bcalloc(Voices, sizeof(intptr_t));
+    MV_Handles = (VoiceNode **)Xaligned_calloc(16, Voices, sizeof(intptr_t));
 #ifdef ASS_REVERSESTEREO
     MV_SetReverseStereo(FALSE);
 #endif
@@ -932,7 +932,7 @@ int MV_Shutdown(void)
     LL::Reset((VoiceNode*) &VoiceList);
     LL::Reset((VoiceNode*) &VoicePool);
 
-    DO_FREE_AND_NULL(MV_Handles);
+    ALIGNED_FREE_AND_NULL(MV_Handles);
 
     MV_MaxVoices = 1;
 
