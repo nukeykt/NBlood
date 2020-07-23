@@ -5318,9 +5318,10 @@ void P_ProcessInput(int playerNum)
                 pPlayer->jumping_toggle--;
             else if (TEST_SYNC_KEY(playerBits, SK_JUMP) && pPlayer->jumping_toggle == 0)
             {
-                int32_t floorZ2, ceilZ2, dummy;
+                // dummy variables must be separate, otherwise breaks TROR computation
+                int32_t floorZ2, ceilZ2, dummy, dummy2;
 
-                getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy, getZRangeClipDist, CLIPMASK0);
+                getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy2, getZRangeClipDist, CLIPMASK0);
 
                 if (!pPlayer->jumping_counter && klabs(floorZ2-ceilZ2) > (48<<8))
                 {
