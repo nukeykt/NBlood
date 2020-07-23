@@ -243,7 +243,7 @@ static void MV_ServiceVoc(void)
         if (!MV_BufferEmpty[MV_MixPage])
         {
             Bmemset(MV_MixBuffer[MV_MixPage], 0, MV_BufferSize);
-            MV_BufferEmpty[ MV_MixPage ] = TRUE;
+            MV_BufferEmpty[MV_MixPage] = TRUE;
         }
     }
     else
@@ -252,7 +252,7 @@ static void MV_ServiceVoc(void)
         char *            __restrict dest   = MV_MixBuffer[MV_MixPage];
         char const *      __restrict source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
 
-        if (source < MV_MixBuffer[ 0 ])
+        if (source < MV_MixBuffer[0])
             source += MV_BufferLength;
 
         int length = MV_BufferSize;
@@ -264,7 +264,7 @@ static void MV_ServiceVoc(void)
             MV_Reverb<int16_t>(source, dest, MV_ReverbVolume, count >> 1);
 
             // if we go through the loop again, it means that we've wrapped around the buffer
-            source  = MV_MixBuffer[ 0 ];
+            source  = MV_MixBuffer[0];
             dest   += count;
             length -= count;
         } while (length > 0);
@@ -722,8 +722,8 @@ int MV_Pan3D(int handle, int angle, int distance)
     angle &= MV_MAXPANPOSITION;
 
     return MV_SetPan(handle, max(0, 255 - distance),
-        MV_PanTable[ angle ][ volume ].left,
-        MV_PanTable[ angle ][ volume ].right);
+        MV_PanTable[angle][volume].left,
+        MV_PanTable[angle][volume].right);
 }
 
 void MV_SetReverb(int reverb)
@@ -885,10 +885,10 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     MV_ReverbDelay = MV_BufferSize * 3;
 
     // Make sure we don't cross a physical page
-    MV_MixBuffer[ MV_NumberOfBuffers<<1 ] = ptr;
+    MV_MixBuffer[MV_NumberOfBuffers<<1] = ptr;
     for (int buffer = 0; buffer < MV_NumberOfBuffers<<1; buffer++)
     {
-        MV_MixBuffer[ buffer ] = ptr;
+        MV_MixBuffer[buffer] = ptr;
         ptr += MV_BufferSize;
     }
 
@@ -938,7 +938,7 @@ int MV_Shutdown(void)
 
     // Release the descriptor from our mix buffer
     for (int buffer = 0; buffer < MV_NUMBEROFBUFFERS<<1; buffer++)
-        MV_MixBuffer[ buffer ] = nullptr;
+        MV_MixBuffer[buffer] = nullptr;
 
     MV_SetErrorCode(MV_NotInstalled);
 

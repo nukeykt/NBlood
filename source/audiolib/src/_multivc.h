@@ -210,7 +210,7 @@ typedef struct
     uint32_t size;
 } data_header;
 
-extern Pan MV_PanTable[ MV_NUMPANPOSITIONS ][ MV_MAXVOLUME + 1 ];
+extern Pan MV_PanTable[MV_NUMPANPOSITIONS][MV_MAXVOLUME + 1];
 extern int MV_ErrorCode;
 extern int MV_Installed;
 extern int MV_MixRate;

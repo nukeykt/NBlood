@@ -147,7 +147,7 @@ static uint32_t NoteDiv12[MAX_NOTE+1];
 
 // Pitch table
 
-//static unsigned NotePitch[ FINETUNE_MAX+1 ][ 12 ] =
+//static unsigned NotePitch[FINETUNE_MAX+1][12] =
 //   {
 //      { C, C_SHARP, D, D_SHARP, E, F, F_SHARP, G, G_SHARP, A, A_SHARP, B },
 //   };
