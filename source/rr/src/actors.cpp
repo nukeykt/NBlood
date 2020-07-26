@@ -699,7 +699,7 @@ void A_MoveSector(int spriteNum)
     {
         vec2_t const origin = g_origins[originIdx];
         vec2_t result;
-        rotatepoint(zerovec, origin, rotateAngle & 2047, &result);
+        rotatevec(origin, rotateAngle & 2047, &result);
         dragpoint(wallNum, pSprite->x + result.x, pSprite->y + result.y, 0);
 
         originIdx++;

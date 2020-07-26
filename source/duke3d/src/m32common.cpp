@@ -536,6 +536,7 @@ int32_t map_undoredo(int dir)
     {
         // restore sector[]
         auto bytes = LZ4_decompress_safe(mapstate->lz4Blocks[UNDO_SECTORS]+4, (char*)sector, mapstate->lz4Size[UNDO_SECTORS], MAXSECTORS*sizeof(sectortype));
+        UNREFERENCED_PARAMETER(bytes);
         Bassert(bytes > 0);
 
         if (mapstate->num[UNDO_WALLS])  // restore wall[]

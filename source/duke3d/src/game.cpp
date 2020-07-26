@@ -22,25 +22,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define game_c_
 
-#include "duke3d.h"
+#include "anim.h"
+#include "cheats.h"
+#include "cmdline.h"
+#include "colmatch.h"
 #include "communityapi.h"
 #include "compat.h"
-#include "renderlayer.h"
-#include "osdfuncs.h"
-#include "osdcmds.h"
 #include "crc32.h"
-#include "network.h"
-#include "menus.h"
-#include "savegame.h"
-#include "anim.h"
 #include "demo.h"
+#include "duke3d.h"
 #include "input.h"
-#include "colmatch.h"
-#include "cheats.h"
+#include "menus.h"
+#include "microprofile.h"
+#include "network.h"
+#include "osdcmds.h"
+#include "osdfuncs.h"
+#include "palette.h"
+#include "renderlayer.h"
+#include "savegame.h"
 #include "sbar.h"
 #include "screens.h"
-#include "cmdline.h"
-#include "palette.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -574,6 +575,8 @@ static void G_SE40(int32_t smoothratio)
 
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz, int32_t smoothratio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     if ((gotpic[MIRROR>>3]&pow2char[MIRROR&7])
 #ifdef POLYMER
         && (videoGetRenderMode() != REND_POLYMER)
@@ -707,6 +710,8 @@ static void G_ClearGotMirror()
 #ifdef USE_OPENGL
 static void G_ReadGLFrame(void)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     // Save OpenGL screenshot with Duke3D palette
     // NOTE: maybe need to move this to the engine...
     
@@ -746,6 +751,8 @@ static void G_ReadGLFrame(void)
 
 void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     auto const &thisPlayer = g_player[playerNum];
     auto const  pPlayer    = thisPlayer.ps;
 
@@ -958,9 +965,16 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (pPlayer->newowner < 0)
         {
-            vec3_t const camVect = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
-                                     pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
-                                     pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
+            vec3_t camVect = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
+                               pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
+                               pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
+
+            static vec3_t v3;
+
+            if (Bmemcmp(&pPlayer->pos, &pPlayer->opos, sizeof(vec3_t)))
+                camVect = { v3.x + ((camVect.x - v3.x) >> 1), v3.y + ((camVect.y - v3.y) >> 1), v3.z + ((camVect.z - v3.z) >> 1) };
+
+            v3 = camVect;
 
             CAMERA(pos) = camVect;
             
@@ -1114,15 +1128,15 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         {
             g_screenCapture = 0;
 
-            tileInvalidate(TILE_SAVESHOT, 0, 255);
-
             if (videoGetRenderMode() == REND_CLASSIC)
                 renderRestoreTarget();
 #ifdef USE_OPENGL
             else
+            {
                 G_ReadGLFrame();
+                tileInvalidate(TILE_SAVESHOT, 0, 255);
+            }
 #endif
-            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
         else if (screenTilting)
         {
@@ -3659,6 +3673,8 @@ static inline void G_DoEventAnimSprites(int tspriteNum)
 
 void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothratio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     UNREFERENCED_PARAMETER(ourz);
     int32_t j, frameOffset, playerNum;
     intptr_t l;
@@ -4992,6 +5008,8 @@ FAKE_F3:
                 g_quickload = &sv;
                 G_SavePlayerMaybeMulti(sv);
             }
+
+            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
 
         if (BUTTON(gamefunc_Third_Person_View))
@@ -5155,7 +5173,7 @@ static int32_t S_DefineSound(int sndidx, const char *name, int minpitch, int max
     snd.pr     = priority & 255;
     snd.m      = type & ~SF_ONEINST_INTERNAL;
     snd.vo     = clamp(distance, INT16_MIN, INT16_MAX);
-    snd.volume = volume;
+    snd.volume = volume * fix16_one;
 
     if (snd.m & SF_LOOP)
         snd.m |= SF_ONEINST_INTERNAL;
@@ -6337,6 +6355,8 @@ void Net_DedicatedServerStdin(void)
 
 void G_DrawFrame(void)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     if (!g_saveRequested)
     {
         // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
@@ -6353,6 +6373,17 @@ void G_DrawFrame(void)
     if (videoGetRenderMode() >= REND_POLYMOST)
         G_DrawBackground();
     G_DisplayRest(smoothRatio);
+
+#if MICROPROFILE_ENABLED != 0
+    for (auto &gv : aGameVars)
+    {
+        if ((gv.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK)) == 0)
+        {            
+            MICROPROFILE_COUNTER_SET(gv.szLabel, gv.global);
+        }
+    }
+#endif
+
     videoNextPage();
     S_Update();
 }
@@ -6905,6 +6936,7 @@ MAIN_LOOP_RESTART:
 
                     frameJustDrawn = false;
 
+                    // is this even useful?
                     P_GetInput(myconnectindex);
 
                     // this is where we fill the input_t struct that is actually processed by P_ProcessInput()
@@ -6941,7 +6973,7 @@ MAIN_LOOP_RESTART:
                         G_DoMoveThings();
                     }
                 }
-                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= TICSPERFRAME);
+                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= (TICSPERFRAME<<1));
 
                 gameUpdate = true;
                 g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
@@ -6999,8 +7031,8 @@ MAIN_LOOP_RESTART:
 
             G_SavePlayerMaybeMulti(g_lastautosave, true);
             g_quickload = &g_lastautosave;
-
             g_saveRequested = false;
+            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
 
         if (myplayer.gm & MODE_DEMO)

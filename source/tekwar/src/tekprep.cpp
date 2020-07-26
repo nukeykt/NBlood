@@ -774,7 +774,7 @@ int tekpreinit(void)
 void
 tekinitmultiplayers(int argc, char const * const argv[])
 {
-      initmultiplayers(argc, argv);
+      initmultiplayersparms(argc, argv);
 }
 
 short mappic[]={

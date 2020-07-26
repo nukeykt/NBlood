@@ -77,9 +77,6 @@ extern int32_t g_currentEvent;
 
 void A_LoadActor(int const spriteNum);
 
-extern uint32_t g_eventCalls[MAXEVENTS], g_actorCalls[MAXTILES];
-extern double g_eventTotalMs[MAXEVENTS], g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];
-
 void A_Execute(int spriteNum, int playerNum, int playerDist);
 void A_Fall(int spriteNum);
 int A_GetFurthestAngle(int const spriteNum, int const angDiv);

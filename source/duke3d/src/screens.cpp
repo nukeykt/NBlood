@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "duke3d.h"
 #include "input.h"
 #include "mdsprite.h"
+#include "microprofile.h"
 #include "sbar.h"
 #include "screens.h"
 
@@ -904,6 +905,8 @@ static void G_PrintFPS(void)
 
 void G_DisplayRest(int32_t smoothratio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     int32_t i, j;
     palaccum_t tint = PALACCUM_INITIALIZER;
 

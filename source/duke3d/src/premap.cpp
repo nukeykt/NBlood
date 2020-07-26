@@ -1667,6 +1667,7 @@ static void G_ResetAllPlayers(void)
 
 void G_ResetTimers(bool saveMoveCnt)
 {
+    g_lastInputTicks = 0;
     totalclock = g_cloudClock = ototalclock = lockclock = 0;
     ready2send = 1;
     g_levelTextTime = 85;
@@ -1680,14 +1681,19 @@ void G_ResetTimers(bool saveMoveCnt)
 
 void G_ClearFIFO(void)
 {
+    g_lastInputTicks = 0;
     localInput = {};
     Bmemset(&inputfifo, 0, sizeof(input_t) * MOVEFIFOSIZ * MAXPLAYERS);
 
     for (int p = 0; p < MAXPLAYERS; ++p)
     {
         if (g_player[p].input != NULL)
-            Bmemset(g_player[p].input, 0, sizeof(input_t));
-        g_player[p].vote = g_player[p].gotvote = 0;
+            *g_player[p].input = {};
+
+        g_player[p].vote = 0;
+        g_player[p].gotvote = 0;
+        g_player[p].horizSkew        = 0;
+        g_player[p].horizAngleAdjust = 0;
     }
 }
 

@@ -120,7 +120,8 @@ typedef struct {
 typedef struct {
     int16_t got_access, last_extra, inv_amount[GET_MAX], curr_weapon, holoduke_on;
     int16_t last_weapon, weapon_pos, kickback_pic;
-    int16_t ammo_amount[MAX_WEAPONS], frag[MAXPLAYERS];
+    int16_t ammo_amount[MAX_WEAPONS];
+    uint16_t frag[MAXPLAYERS];
     uint16_t gotweapon;
     char inven_icon, jetpack_on, heat_on;
 } DukeStatus_t;
@@ -212,9 +213,9 @@ typedef struct
     DukePlayer_t *ps;
     input_t *input;
 
-    bool    horizRecenter;
-    float   horizAngleAdjust;
-    fix16_t horizSkew;
+    int horizRecenter;
+    int horizAngleAdjust;
+    int horizSkew;
 
     int32_t netsynctime;
     int32_t pcolor, pteam;
@@ -309,6 +310,7 @@ extern int32_t          g_numObituaries;
 extern int32_t          g_numSelfObituaries;
 extern int32_t          mouseyaxismode;
 extern int32_t          ticrandomseed;
+extern double           g_lastInputTicks;
 
 #define SHOOT_HARDCODED_ZVEL INT32_MIN
 
@@ -343,7 +345,6 @@ void    P_QuickKill(DukePlayer_t *pPlayer);
 void    P_SelectNextInvItem(DukePlayer_t *pPlayer);
 void    P_UpdateScreenPal(DukePlayer_t *pPlayer);
 void    P_EndLevel(void);
-void    P_CheckWeaponI(int playerNum);
 int     P_GetHudPal(const DukePlayer_t *pPlayer);
 int     P_GetKneePal(const DukePlayer_t *pPlayer);
 #ifdef __cplusplus

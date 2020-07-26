@@ -126,8 +126,7 @@ SWBOOL Global_PLock = TRUE;
 SWBOOL Global_PLock = FALSE;
 #endif
 
-// 12 was original source release. For future releases increment by two.
-int GameVersion = 19;
+int GameVersion = 20;
 
 char DemoText[3][64];
 int DemoTextYstart = 0;
@@ -183,7 +182,6 @@ SWBOOL PreCaching = TRUE;
 int GodMode = FALSE;
 SWBOOL BotMode = FALSE;
 short Skill = 2;
-short BetaVersion = 900;
 short TotalKillable;
 
 AUTO_NET Auto;
@@ -935,7 +933,7 @@ InitGame(int32_t argc, char const * const * argv)
     // sets numplayers, connecthead, connectpoint2, myconnectindex
 
     if (!firstnet)
-        initsingleplayers();
+        initmultiplayers(0, NULL, 0, 0, 0);
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
         NetBroadcastMode = (networkmode == MMULTI_MODE_P2P);
@@ -1317,6 +1315,7 @@ void InitLevelGlobals2(void)
     InitTimingVars();
     TotalKillable = 0;
     Bunny_Count = 0;
+    FinishAnim = 0;
 }
 
 void
@@ -1725,7 +1724,6 @@ NewLevel(void)
             MenuLevel();
         }
     }
-    FinishAnim = 0;
 }
 
 void

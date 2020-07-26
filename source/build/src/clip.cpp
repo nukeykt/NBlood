@@ -11,6 +11,7 @@
 #include "baselayer.h"
 #include "clip.h"
 #include "engine_priv.h"
+#include "microprofile.h"
 
 static int16_t clipnum;
 static linetype clipit[MAXCLIPNUM];
@@ -734,7 +735,7 @@ int32_t clipsprite_initindex(int32_t curidx, uspriteptr_t const curspr, int32_t 
             {
                 wal->x *= flipx;
                 wal->y *= flipy;
-                rotatepoint(zerovec, wal->pos, rotang, &wal->pos);
+                rotatevec(wal->pos, rotang, &wal->pos);
             }
 
             wal->x += curspr->x;
@@ -1589,8 +1590,11 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
                 if ((tempint ^ tempint2) < 0)
                 {
-                    if (enginecompatibilitymode == ENGINE_19961112)
+                    if (enginecompatibilitymode == ENGINE_EDUKE32)
+                        clipupdatesector(vec, sectnum, rad);
+                    else if (enginecompatibilitymode == ENGINE_19961112)
                         updatesector(pos->x, pos->y, sectnum);
+
                     return clipReturn;
                 }
             }
@@ -1811,6 +1815,8 @@ void getzrange(const vec3_t *pos, int16_t sectnum,
                int32_t *ceilz, int32_t *ceilhit, int32_t *florz, int32_t *florhit,
                int32_t walldist, uint32_t cliptype)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (sectnum < 0)
     {
         *ceilz = INT32_MIN; *ceilhit = -1;

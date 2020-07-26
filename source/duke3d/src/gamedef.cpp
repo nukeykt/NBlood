@@ -35,6 +35,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "savegame.h"
 #include "vfs.h"
 
+#include "microprofile.h"
+
+#if MICROPROFILE_ENABLED != 0
+MicroProfileToken g_eventTokens[MAXEVENTS];
+MicroProfileToken g_actorTokens[MAXTILES];
+MicroProfileToken g_statnumTokens[MAXSTATUS];
+#if 0
+MicroProfileToken g_instTokens[CON_END];
+#endif
+#endif
+
 #define LINE_NUMBER (g_lineNumber << 12)
 
 int32_t g_scriptVersion = 13; // 13 = 1.3D-style CON files, 14 = 1.4/1.5 style CON files
@@ -680,9 +691,10 @@ static const vec2_t varvartable[] =
     { CON_XORVARVAR,         CON_XORVAR },
 };
 
-#ifdef CON_DISCRETE_VAR_ACCESS
 static const vec2_t globalvartable[] =
 {
+    { CON_SETVAR,         CON_SETVAR_GLOBAL },
+#ifdef CON_DISCRETE_VAR_ACCESS
     { CON_IFVARA,         CON_IFVARA_GLOBAL },
     { CON_IFVARAE,        CON_IFVARAE_GLOBAL },
     { CON_IFVARAND,       CON_IFVARAND_GLOBAL },
@@ -708,15 +720,17 @@ static const vec2_t globalvartable[] =
     { CON_MULVAR,         CON_MULVAR_GLOBAL },
     { CON_ORVAR,          CON_ORVAR_GLOBAL },
     { CON_RANDVAR,        CON_RANDVAR_GLOBAL },
-    { CON_SETVAR,         CON_SETVAR_GLOBAL },
     { CON_SHIFTVARL,      CON_SHIFTVARL_GLOBAL },
     { CON_SHIFTVARR,      CON_SHIFTVARR_GLOBAL },
     { CON_SUBVAR,         CON_SUBVAR_GLOBAL },
     { CON_XORVAR,         CON_XORVAR_GLOBAL },
+#endif
 };
 
 static const vec2_t playervartable[] =
 {
+    { CON_SETVAR,         CON_SETVAR_PLAYER },
+#ifdef CON_DISCRETE_VAR_ACCESS
     { CON_IFVARA,         CON_IFVARA_PLAYER },
     { CON_IFVARAE,        CON_IFVARAE_PLAYER },
     { CON_IFVARAND,       CON_IFVARAND_PLAYER },
@@ -742,15 +756,17 @@ static const vec2_t playervartable[] =
     { CON_MULVAR,         CON_MULVAR_PLAYER },
     { CON_ORVAR,          CON_ORVAR_PLAYER },
     { CON_RANDVAR,        CON_RANDVAR_PLAYER },
-    { CON_SETVAR,         CON_SETVAR_PLAYER },
     { CON_SHIFTVARL,      CON_SHIFTVARL_PLAYER },
     { CON_SHIFTVARR,      CON_SHIFTVARR_PLAYER },
     { CON_SUBVAR,         CON_SUBVAR_PLAYER },
     { CON_XORVAR,         CON_XORVAR_PLAYER },
+#endif
 };
 
 static const vec2_t actorvartable[] =
 {
+    { CON_SETVAR,         CON_SETVAR_ACTOR },
+#ifdef CON_DISCRETE_VAR_ACCESS
     { CON_IFVARA,         CON_IFVARA_ACTOR },
     { CON_IFVARAE,        CON_IFVARAE_ACTOR },
     { CON_IFVARAND,       CON_IFVARAND_ACTOR },
@@ -776,28 +792,23 @@ static const vec2_t actorvartable[] =
     { CON_MULVAR,         CON_MULVAR_ACTOR },
     { CON_ORVAR,          CON_ORVAR_ACTOR },
     { CON_RANDVAR,        CON_RANDVAR_ACTOR },
-    { CON_SETVAR,         CON_SETVAR_ACTOR },
     { CON_SHIFTVARL,      CON_SHIFTVARL_ACTOR },
     { CON_SHIFTVARR,      CON_SHIFTVARR_ACTOR },
     { CON_SUBVAR,         CON_SUBVAR_ACTOR },
     { CON_XORVAR,         CON_XORVAR_ACTOR },
-};
 #endif
+};
 
 static inthashtable_t h_varvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(varvartable)) };
-#ifdef CON_DISCRETE_VAR_ACCESS
 static inthashtable_t h_globalvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(globalvartable)) };
 static inthashtable_t h_playervar = { NULL, INTHASH_SIZE(ARRAY_SIZE(playervartable)) };
 static inthashtable_t h_actorvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(actorvartable)) };
-#endif
 
 static inthashtable_t *const inttables[] = {
     &h_varvar,
-#ifdef CON_DISCRETE_VAR_ACCESS
     &h_globalvar,
     &h_playervar,
     &h_actorvar,
-#endif
 };
 
 
@@ -826,13 +837,19 @@ const tokenmap_t iter_tokens [] =
 // keywords_for_private_opcodes[] resolves those opcodes to the publicly facing keyword that can generate them
 static const tokenmap_t keywords_for_private_opcodes[] =
 {
-    { "getactor", CON_GETSPRITEEXT },
-    { "getactor", CON_GETACTORSTRUCT },
-    { "getactor", CON_GETSPRITESTRUCT },
+    { "getactor",  CON_GETSPRITEEXT },
+    { "getactor",  CON_GETACTORSTRUCT },
+    { "getactor",  CON_GETSPRITESTRUCT },
 
-    { "setactor", CON_SETSPRITEEXT },
-    { "setactor", CON_SETACTORSTRUCT },
-    { "setactor", CON_SETSPRITESTRUCT },
+    { "setactor",  CON_SETSPRITEEXT },
+    { "setactor",  CON_SETACTORSTRUCT },
+    { "setactor",  CON_SETSPRITESTRUCT },
+
+    { "getwall",   CON_GETWALLSTRUCT },
+    { "setwall",   CON_SETWALLSTRUCT },
+
+    { "getsector", CON_GETSECTORSTRUCT },
+    { "setsector", CON_SETSECTORSTRUCT },
 };
 
 char const *VM_GetKeywordForID(int32_t id)
@@ -1554,10 +1571,28 @@ static void C_GetNextVarType(int32_t type)
 
                 break;
             case STRUCT_SECTOR:
-                scriptWriteValue(SectorLabels[labelNum].lId);
+                {
+                    auto const &label = SectorLabels[labelNum];
+
+                    scriptWriteValue(label.lId);
+
+                    Bassert((*varptr & (MAXGAMEVARS-1)) == g_structVarIDs + STRUCT_SECTOR);
+
+                    if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                        *varptr = (*varptr & ~(MAXGAMEVARS-1)) + g_structVarIDs + STRUCT_SECTOR_INTERNAL__;
+                }
                 break;
             case STRUCT_WALL:
-                scriptWriteValue(WallLabels[labelNum].lId);
+                {
+                    auto const &label = WallLabels[labelNum];
+
+                    scriptWriteValue(label.lId);
+
+                    Bassert((*varptr & (MAXGAMEVARS-1)) == g_structVarIDs + STRUCT_WALL);
+
+                    if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                        *varptr = (*varptr & ~(MAXGAMEVARS-1)) + g_structVarIDs + STRUCT_WALL_INTERNAL__;
+                }
                 break;
             case STRUCT_PLAYER:
                 scriptWriteValue(PlayerLabels[labelNum].lId);
@@ -2388,7 +2423,6 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
 {
     int opcode = -1;
 
-#ifdef CON_DISCRETE_VAR_ACCESS
     if (ins[1] < MAXGAMEVARS)
     {
         switch (aGameVars[ins[1] & (MAXGAMEVARS - 1)].flags & (GAMEVAR_USER_MASK | GAMEVAR_PTR_MASK))
@@ -2404,7 +2438,6 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
                 break;
         }
     }
-#endif
 
     if (opcode != -1)
     {
@@ -3287,16 +3320,44 @@ DO_DEFSTATE:
             }
 
         case CON_SETSECTOR:
-        case CON_GETSECTOR:
             {
+                intptr_t * const ins = &g_scriptPtr[-1];
                 int const labelNum = C_GetStructureIndexes(1, &h_sector);
 
                 if (labelNum == -1)
                     continue;
 
-                scriptWriteValue(SectorLabels[labelNum].lId);
+                Bassert((*ins & VM_INSTMASK) == CON_SETSECTOR);
 
-                C_GetNextVarType((tw == CON_GETSECTOR) ? GAMEVAR_READONLY : 0);
+                auto const &label = SectorLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_WRITEFUNC) == 0)
+                    *ins = CON_SETSECTORSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVar();
+                continue;
+            }
+
+        case CON_GETSECTOR:
+            {
+                intptr_t * const ins = &g_scriptPtr[-1];
+                int const labelNum = C_GetStructureIndexes(1, &h_sector);
+
+                if (labelNum == -1)
+                    continue;
+
+                Bassert((*ins & VM_INSTMASK) == CON_GETSECTOR);
+
+                auto const &label = SectorLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                    *ins = CON_GETSECTORSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVarType(GAMEVAR_READONLY);
                 continue;
             }
 
@@ -3326,16 +3387,44 @@ DO_DEFSTATE:
             }
 
         case CON_SETWALL:
-        case CON_GETWALL:
             {
+                intptr_t * const ins = &g_scriptPtr[-1];
                 int const labelNum = C_GetStructureIndexes(1, &h_wall);
 
                 if (labelNum == -1)
                     continue;
 
-                scriptWriteValue(WallLabels[labelNum].lId);
+                Bassert((*ins & VM_INSTMASK) == CON_SETWALL);
 
-                C_GetNextVarType((tw == CON_GETWALL) ? GAMEVAR_READONLY : 0);
+                auto const &label = WallLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_WRITEFUNC) == 0)
+                    *ins = CON_SETWALLSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVar();
+                continue;
+            }
+
+        case CON_GETWALL:
+            {
+                intptr_t * const ins = &g_scriptPtr[-1];
+                int const labelNum = C_GetStructureIndexes(1, &h_wall);
+
+                if (labelNum == -1)
+                    continue;
+
+                Bassert((*ins & VM_INSTMASK) == CON_GETWALL);
+
+                auto const &label = WallLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                    *ins = CON_GETWALLSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                C_GetNextVarType(GAMEVAR_READONLY);
                 continue;
             }
 
@@ -6065,6 +6154,7 @@ static void C_AddDefaultDefinitions(void)
         { "STR_MAPNAME",         STR_MAPNAME },
         { "STR_PARTIME",         STR_PARTIME },
         { "STR_PLAYERNAME",      STR_PLAYERNAME },
+        { "STR_REVISION",        STR_REVISION },
         { "STR_USERMAPFILENAME", STR_USERMAPFILENAME },
         { "STR_VERSION",         STR_VERSION },
         { "STR_VOLUMENAME",      STR_VOLUMENAME },
@@ -6179,7 +6269,6 @@ void scriptInitTables()
     for (auto &varvar : varvartable)
         inthash_add(&h_varvar, varvar.x, varvar.y, 0);
 
-#ifdef CON_DISCRETE_VAR_ACCESS
     for (auto &globalvar : globalvartable)
         inthash_add(&h_globalvar, globalvar.x, globalvar.y, 0);
 
@@ -6188,8 +6277,22 @@ void scriptInitTables()
 
     for (auto &actorvar : actorvartable)
         inthash_add(&h_actorvar, actorvar.x, actorvar.y, 0);
-#endif
 }
+
+#if MICROPROFILE_ENABLED != 0
+static int C_GetLabelIndex(int32_t val, int type)
+{
+    for (int i=0;i<g_labelCnt;i++)
+        if (labelcode[i] == val && (labeltype[i] & type) != 0)
+            return i;
+
+    for (int i=0;i<g_labelCnt;i++)
+        if (labelcode[i] == val)
+            return i;
+
+    return -1;
+}
+#endif
 
 void C_Compile(const char *fileName)
 {
@@ -6198,9 +6301,6 @@ void C_Compile(const char *fileName)
 
     for (auto & i : g_tile)
         Bmemset(&i, 0, sizeof(tiledata_t));
-
-    for (double & actorMinMs : g_actorMinMs)
-        actorMinMs = 1e308;
 
     scriptInitTables();
     VM_InitHashTables();
@@ -6331,6 +6431,42 @@ void C_Compile(const char *fileName)
         C_PrintStats();
 
     C_InitQuotes();
+
+#if MICROPROFILE_ENABLED != 0
+    for (int i=0; i<MAXEVENTS; i++)
+    {
+        if (VM_HaveEvent(i))
+            g_eventTokens[i] = MicroProfileGetToken("CON VM Events", EventNames[i], MP_AUTO, MicroProfileTokenTypeCpu);
+    }
+
+#if 0
+    for (int i=0; i<CON_END; i++)
+    {
+        Bassert(VM_GetKeywordForID(i) != nullptr);
+        g_instTokens[i] = MicroProfileGetToken("CON VM Instructions", VM_GetKeywordForID(i), MP_AUTO, MicroProfileTokenTypeCpu);
+    }
+#endif
+
+    for (int i=0; i<MAXTILES; i++)
+    {
+        if (G_TileHasActor(i))
+        {
+            int const index = C_GetLabelIndex(i, LABEL_ACTOR);
+
+            if (index != -1)
+                Bsprintf(tempbuf,"%s (%d)", label+(index<<6), i);
+            else Bsprintf(tempbuf,"unnamed (%d)", i);
+
+            g_actorTokens[i] = MicroProfileGetToken("CON VM Actors", tempbuf, MP_AUTO, MicroProfileTokenTypeCpu);
+        }
+    }
+
+    for (int i=0; i<MAXSTATUS; i++)
+    {
+        Bsprintf(tempbuf,"statnum%d", i);
+        g_statnumTokens[i] = MicroProfileGetToken("CON VM Actors", tempbuf, MP_AUTO, MicroProfileTokenTypeCpu);
+    }
+#endif
 }
 
 void C_ReportError(int error)

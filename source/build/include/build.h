@@ -1313,6 +1313,15 @@ static FORCE_INLINE int32_t logapproach(int32_t const val, int32_t const targetv
 }
 
 void rotatepoint(vec2_t const pivot, vec2_t p, int16_t const daang, vec2_t * const p2) ATTRIBUTE((nonnull(4)));
+
+static inline void rotatevec(vec2_t p, int16_t const daang, vec2_t * const p2)
+{
+    int const dacos = sintable[(daang+2560)&2047];
+    int const dasin = sintable[(daang+2048)&2047];
+    *p2 = { dmulscale14(p.x, dacos, -p.y, dasin), dmulscale14(p.y, dacos, p.x, dasin) };
+}
+
+
 int32_t   lastwall(int16_t point);
 int32_t   nextsectorneighborz(int16_t sectnum, int32_t refz, int16_t topbottom, int16_t direction);
 
@@ -1636,8 +1645,6 @@ static FORCE_INLINE void renderEnableFog(void)
 #endif
 }
 
-static vec2_t const zerovec = { 0, 0 };
-
 static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
 
 #define SET_AND_RETURN(Lval, Rval) \
@@ -1647,7 +1654,7 @@ static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int
         return;                    \
     } while (0)
 
-static inline int64_t compat_maybe_truncate_to_int32(int64_t val)
+static FORCE_INLINE int64_t compat_maybe_truncate_to_int32(int64_t val)
 {
     return enginecompatibilitymode != ENGINE_EDUKE32 ? (int32_t)val : val;
 }

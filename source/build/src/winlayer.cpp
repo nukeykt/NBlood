@@ -556,17 +556,19 @@ void system_getcvars(void)
 //
 // initprintf() -- prints a formatted string to the initialization window
 //
-void initprintf(const char *f, ...)
+int initprintf(const char *f, ...)
 {
     va_list va;
     char buf[2048];
 
     va_start(va, f);
-    Bvsnprintf(buf, sizeof(buf), f, va);
+    int len = Bvsnprintf(buf, sizeof(buf), f, va);
     va_end(va);
 
     osdstrings.append(Xstrdup(buf));
     initputs(buf);
+
+    return len;
 }
 
 
@@ -601,7 +603,7 @@ void initputs(const char *buf)
 //
 // debugprintf() -- sends a formatted debug string to the debugger
 //
-void debugprintf(const char *f, ...)
+int debugprintf(const char *f, ...)
 {
 #if 0 // def DEBUGGINGAIDS
     va_list va;
@@ -610,12 +612,14 @@ void debugprintf(const char *f, ...)
     if (!IsDebuggerPresent()) return;
 
     va_start(va,f);
-    Bvsnprintf(buf, 1024, f, va);
+    int len = Bvsnprintf(buf, 1024, f, va);
     va_end(va);
 
     OutputDebugString(buf);
+    return len;
 #else
     UNREFERENCED_PARAMETER(f);
+    return 0;
 #endif
 }
 

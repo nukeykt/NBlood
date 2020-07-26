@@ -25,10 +25,39 @@ typedef SDL_mutex * mutex_t;
 
 extern int32_t mutex_init(mutex_t *mutex);
 extern void mutex_destroy(mutex_t *mutex);
-extern void mutex_lock(mutex_t *mutex);
-extern void mutex_unlock(mutex_t *mutex);
-extern void mutex_try(mutex_t *mutex);
 
+static FORCE_INLINE void mutex_lock(mutex_t *mutex)
+{
+#if SDL_MAJOR_VERSION >= 2
+    SDL_AtomicLock(mutex);
+#elif defined _WIN32
+    EnterCriticalSection(mutex);
+#elif SDL_MAJOR_VERSION == 1
+    SDL_LockMutex(*mutex);
+#endif
+}
+
+static FORCE_INLINE void mutex_unlock(mutex_t *mutex)
+{
+#if SDL_MAJOR_VERSION >= 2
+    SDL_AtomicUnlock(mutex);
+#elif defined _WIN32
+    LeaveCriticalSection(mutex);
+#elif SDL_MAJOR_VERSION == 1
+    SDL_UnlockMutex(*mutex);
+#endif
+}
+
+static FORCE_INLINE bool mutex_try(mutex_t *mutex)
+{
+#if SDL_MAJOR_VERSION >= 2
+    return SDL_AtomicTryLock(mutex);
+#elif defined _WIN32
+    return TryEnterCriticalSection(mutex);
+#elif SDL_MAJOR_VERSION == 1
+    return SDL_TryLockMutex(*mutex);
+#endif
+}
 
 #ifdef __cplusplus
 }

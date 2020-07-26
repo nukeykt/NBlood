@@ -631,19 +631,25 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
             case STRUCT_SECTOR:
                 if (arrayIndexVar == g_thisActorVarID)
                     arrayIndex = vm.pSprite->sectnum;
-
                 CHECK_INDEX(MAXSECTORS);
+                returnValue = VM_GetSector(arrayIndex, labelNum);
+                break;
 
-                returnValue = (SectorLabels[labelNum].offset != -1 && (SectorLabels[labelNum].flags & LABEL_READFUNC) == 0)
-                              ? VM_GetStruct(SectorLabels[labelNum].flags, (intptr_t *)((intptr_t)&sector[arrayIndex] + SectorLabels[labelNum].offset))
-                              : VM_GetSector(arrayIndex, labelNum);
+            case STRUCT_SECTOR_INTERNAL__:
+                if (arrayIndexVar == g_thisActorVarID)
+                    arrayIndex = vm.pSprite->sectnum;
+                CHECK_INDEX(MAXSECTORS);
+                returnValue = VM_GetStruct(SectorLabels[labelNum].flags, (intptr_t *)((intptr_t)&sector[arrayIndex] + SectorLabels[labelNum].offset));
                 break;
 
             case STRUCT_WALL:
                 CHECK_INDEX(MAXWALLS);
-                returnValue = (WallLabels[labelNum].offset != -1 && (WallLabels[labelNum].flags & LABEL_READFUNC) == 0)
-                              ? VM_GetStruct(WallLabels[labelNum].flags, (intptr_t *)((intptr_t)&wall[arrayIndex] + WallLabels[labelNum].offset))
-                              : VM_GetWall(arrayIndex, labelNum);
+                returnValue = VM_GetWall(arrayIndex, labelNum);
+                break;
+
+            case STRUCT_WALL_INTERNAL__:
+                CHECK_INDEX(MAXWALLS);
+                returnValue = VM_GetStruct(WallLabels[labelNum].flags, (intptr_t *)((intptr_t)&wall[arrayIndex] + WallLabels[labelNum].offset));
                 break;
 
             case STRUCT_SPRITE:
@@ -1098,7 +1104,9 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("__actor__",      -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("__spriteext__",  -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("sector",         -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
+    Gv_NewVar("__sector__",     -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("wall",           -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
+    Gv_NewVar("__wall__",       -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("player",         -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("actorvar",       -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);
     Gv_NewVar("playervar",      -1, GAMEVAR_READONLY | GAMEVAR_SYSTEM | GAMEVAR_SPECIAL);

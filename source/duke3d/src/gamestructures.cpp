@@ -83,12 +83,6 @@ memberlabel_t const SectorLabels[] = {
 
 int32_t __fastcall VM_GetSector(int const sectNum, int32_t labelNum)
 {
-    if (EDUKE32_PREDICT_FALSE((unsigned)sectNum >= (unsigned)numsectors))
-    {
-        CON_ERRPRINTF("invalid sector %d\n", sectNum);
-        return -1;
-    }
-
     auto const &s = *(usectorptr_t)&sector[sectNum];
 
     switch (labelNum)
@@ -121,11 +115,6 @@ int32_t __fastcall VM_GetSector(int const sectNum, int32_t labelNum)
 
 void __fastcall VM_SetSector(int const sectNum, int const labelNum, int32_t newValue)
 {
-    if (EDUKE32_PREDICT_FALSE((unsigned)sectNum >= (unsigned)numsectors))
-    {
-        CON_ERRPRINTF("invalid sector %d\n", sectNum);
-        return;
-    }
 
     auto &s = sector[sectNum];
 
@@ -188,12 +177,6 @@ memberlabel_t const WallLabels[]=
 
 int32_t __fastcall VM_GetWall(int const wallNum, int32_t labelNum)
 {
-    if (EDUKE32_PREDICT_FALSE((unsigned)wallNum >= (unsigned)numwalls))
-    {
-        CON_ERRPRINTF("invalid wall %d\n", wallNum);
-        return -1;
-    }
-
     switch (labelNum)
     {
         case WALL_BLEND:
@@ -212,11 +195,6 @@ int32_t __fastcall VM_GetWall(int const wallNum, int32_t labelNum)
 
 void __fastcall VM_SetWall(int const wallNum, int const labelNum, int32_t const newValue)
 {
-    if (EDUKE32_PREDICT_FALSE((unsigned)wallNum >= (unsigned)numwalls))
-    {
-        CON_ERRPRINTF("invalid wall %d\n", wallNum);
-        return;
-    }
 
     switch (labelNum)
     {

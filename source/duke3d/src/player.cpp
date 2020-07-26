@@ -2994,8 +2994,9 @@ enddisplayweapon:
 #define MAXANGVEL     1024
 #define MAXHORIZVEL   256
 
-int32_t g_myAimMode = 0, g_myAimStat = 0, g_oldAimStat = 0;
+int32_t g_myAimMode, g_myAimStat, g_oldAimStat;
 int32_t mouseyaxismode = -1;
+double g_lastInputTicks;
 
 enum inputlock_t
 {
@@ -3108,13 +3109,15 @@ void P_GetInput(int const playerNum)
     input.svel -= info.dx * keyMove / analogExtent;
     input.fvel -= info.dz * keyMove / analogExtent;
 
-    static double lastInputTicks;
-    auto const    currentHiTicks    = timerGetHiTicks();
-    double const  elapsedInputTicks = currentHiTicks - lastInputTicks;
+    auto const currentHiTicks    = timerGetHiTicks();
+    double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
 
-    lastInputTicks = currentHiTicks;
+    if (!g_lastInputTicks)
+        elapsedInputTicks = 0;
 
-    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / elapsedInputTicks); };
+    g_lastInputTicks = currentHiTicks;
+
+    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
 
     if (BUTTON(gamefunc_Strafe))
     {
@@ -3349,9 +3352,10 @@ void P_GetInput(int const playerNum)
     }
 
     if (thisPlayer.horizSkew)
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float(thisPlayer.horizSkew))));
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(thisPlayer.horizSkew)));
 
-    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
 }
 
 static int32_t P_DoCounters(int playerNum)
@@ -4012,7 +4016,7 @@ void P_FragPlayer(int playerNum)
             if (actor[pPlayer->i].picnum != APLAYERTOP)
             {
                 pPlayer->fraggedself++;
-                if ((unsigned)pPlayer->wackedbyactor < MAXTILES && A_CheckEnemyTile(sprite[pPlayer->wackedbyactor].picnum))
+                if ((unsigned)pPlayer->wackedbyactor < MAXSPRITES && A_CheckEnemyTile(sprite[pPlayer->wackedbyactor].picnum))
                     Bsprintf(tempbuf, apStrings[OBITQUOTEINDEX + (krand() % g_numObituaries)], "A monster",
                              &g_player[playerNum].user_name[0]);
                 else if (actor[pPlayer->i].picnum == NUKEBUTTON)
@@ -5314,9 +5318,10 @@ void P_ProcessInput(int playerNum)
                 pPlayer->jumping_toggle--;
             else if (TEST_SYNC_KEY(playerBits, SK_JUMP) && pPlayer->jumping_toggle == 0)
             {
-                int32_t floorZ2, ceilZ2, dummy;
+                // dummy variables must be separate, otherwise breaks TROR computation
+                int32_t floorZ2, ceilZ2, dummy, dummy2;
 
-                getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy, getZRangeClipDist, CLIPMASK0);
+                getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy2, getZRangeClipDist, CLIPMASK0);
 
                 if (!pPlayer->jumping_counter && klabs(floorZ2-ceilZ2) > (48<<8))
                 {
@@ -5660,7 +5665,7 @@ RECHECK:
         {
             pPlayer->return_to_center = 9;
             thisPlayer.horizRecenter = true;
-            thisPlayer.horizAngleAdjust = float(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = 12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN));
         }
     }
 
@@ -5670,7 +5675,7 @@ RECHECK:
         {
             pPlayer->return_to_center = 9;
             thisPlayer.horizRecenter = true;
-            thisPlayer.horizAngleAdjust = -float(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = -(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         }
     }
 
@@ -5678,7 +5683,7 @@ RECHECK:
     {
         if (VM_OnEvent(EVENT_AIMUP,pPlayer->i,playerNum) == 0)
         {
-            thisPlayer.horizAngleAdjust = float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = 6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN));
             thisPlayer.horizRecenter    = false;
             pPlayer->return_to_center   = 0;
         }
@@ -5688,7 +5693,7 @@ RECHECK:
     {
         if (VM_OnEvent(EVENT_AIMDOWN,pPlayer->i,playerNum) == 0)
         {
-            thisPlayer.horizAngleAdjust = -float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = -(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
             pPlayer->return_to_center   = 0;
         }
@@ -5696,7 +5701,7 @@ RECHECK:
 
     if (pPlayer->hard_landing > 0)
     {
-        thisPlayer.horizSkew = fix16_from_int(-(pPlayer->hard_landing << 4));
+        thisPlayer.horizSkew = -(pPlayer->hard_landing << 4);
         pPlayer->hard_landing--;
     }
 
@@ -5725,7 +5730,7 @@ RECHECK:
 #ifndef EDUKE32_STANDALONE
     if (!FURY && pPlayer->knee_incs > 0)
     {
-        thisPlayer.horizSkew = F16(-48);
+        thisPlayer.horizSkew = -48;
         thisPlayer.horizRecenter = true;
         pPlayer->return_to_center = 9;
 

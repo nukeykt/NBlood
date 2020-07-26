@@ -414,26 +414,39 @@ static inline int32_t gameHandleEvents(void)
     return handleevents();
 }
 
-static inline int32_t calc_smoothratio_demo(ClockTicks totalclk, ClockTicks ototalclk)
+static inline int32_t calc_smoothratio_demo(ClockTicks const totalclk, ClockTicks const ototalclk)
 {
-    int32_t rfreq = tabledivide64(refreshfreq * TICRATE, timerGetClockRate());
-    uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*TICRATE);
+    int const   truncrfreq = Blrintf(floorf(refreshfreq * TICRATE / timerGetClockRate()));
+    int const   clk        = (totalclk - ototalclk).toScale16();
+    float const fracTics   = clk * truncrfreq * (1.f / (65536.f * TICRATE));
+
 #if 0
+    int const   wholeTics  = tabledivide32_noinline(clk * truncrfreq, 65536 * TICRATE);
     //POGO: additional debug info for testing purposes
-    OSD_Printf("Elapsed frames: %" PRIu64 ", smoothratio: %" PRIu64 "\n", elapsedFrames, tabledivide64(65536*elapsedFrames*REALGAMETICSPERSEC, rfreq));
+    OSD_Printf("Elapsed tics: %d (%g), smoothratio: %d (%d)\n", wholeTics, fracTics,
+               tabledivide32_noinline(65536 * wholeTics * REALGAMETICSPERSEC, truncrfreq),
+               tabledivide32_noinline(Blrintf(65536 * fracTics * REALGAMETICSPERSEC), truncrfreq));
 #endif
-    return clamp(tabledivide64(65536*elapsedFrames*REALGAMETICSPERSEC, rfreq), 0, 65536);
+
+#if 1
+    return clamp(tabledivide32_noinline(Blrintf(65536 * fracTics * REALGAMETICSPERSEC), truncrfreq), 0, 65536);
+#else
+    int const wholeTics = tabledivide32_noinline(clk * truncrfreq, 65536 * TICRATE);
+    return clamp(tabledivide32_noinline(65536 * wholeTics * REALGAMETICSPERSEC, truncrfreq), 0, 65536);
+#endif
 }
 
-static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk)
+static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk)
 {
+#if 0
     if (!((ud.show_help == 0 && (!g_netServer && ud.multimode < 2) && ((g_player[myconnectindex].ps->gm & MODE_MENU) == 0)) ||
           (g_netServer || ud.multimode > 1) ||
           ud.recstat == 2) ||
         ud.pause_on)
-    {
+#else
+    if (ud.pause_on || ud.show_help || g_player[myconnectindex].ps->gm & MODE_MENU)
+#endif
         return 65536;
-    }
 
     return calc_smoothratio_demo(totalclk, ototalclk);
 }

@@ -29,10 +29,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamestructures.h"
 #include "input.h"
 #include "menus.h"
+#include "microprofile.h"
 #include "osdcmds.h"
 #include "savegame.h"
 #include "scriplib.h"
-
 #include "vfs.h"
 
 #if KRANDDEBUG
@@ -41,6 +41,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #else
 # define GAMEEXEC_INLINE inline
 # define GAMEEXEC_STATIC static
+#endif
+
+#if MICROPROFILE_ENABLED != 0
+extern MicroProfileToken g_eventTokens[MAXEVENTS];
+extern MicroProfileToken g_actorTokens[MAXTILES];
+extern MicroProfileToken g_statnumTokens[MAXSTATUS];
+#if 0
+extern MicroProfileToken g_instTokens[CON_END];
+#endif
 #endif
 
 vmstate_t vm;
@@ -61,10 +70,6 @@ int32_t g_hitagVarID     = -1;  // var ID of "HITAG"
 int32_t g_textureVarID   = -1;  // var ID of "TEXTURE"
 int32_t g_thisActorVarID = -1;  // var ID of "THISACTOR"
 int32_t g_structVarIDs   = -1;
-
-// for timing events and actors
-uint32_t g_eventCalls[MAXEVENTS], g_actorCalls[MAXTILES];
-double g_eventTotalMs[MAXEVENTS], g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];
 
 GAMEEXEC_STATIC void VM_Execute(int const loop = false);
 
@@ -131,6 +136,8 @@ static inline void VM_DummySprite(void)
 static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int const spriteNum, int const playerNum,
                                                        int const playerDist = -1, int32_t returnValue = 0)
 {
+    MICROPROFILE_SCOPE_TOKEN(g_eventTokens[eventNum]);
+
     vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0,
                                    &sprite[spriteNum&(MAXSPRITES-1)],
                                    &actor[spriteNum&(MAXSPRITES-1)].t_data[0],
@@ -152,8 +159,6 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
     insptr = apScript + apScriptEvents[eventNum];
     globalReturn = returnValue;
 
-    auto const t = timerGetPerformanceCounter();
-
     if ((unsigned)spriteNum >= MAXSPRITES)
         VM_DummySprite();
 
@@ -164,9 +169,6 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
 
     if (vm.flags & VM_KILL)
         VM_DeleteSprite(vm.spriteNum, vm.playerNum);
-
-    g_eventTotalMs[eventNum] += (double)(1000*(timerGetPerformanceCounter()-t))/timerGetPerformanceFrequency();
-    g_eventCalls[eventNum]++;
 
     // restoring these needs to happen after VM_DeleteSprite() due to event recursion
     returnValue = globalReturn;
@@ -411,6 +413,8 @@ void A_GetZLimits(int const spriteNum)
 
 void A_Fall(int const spriteNum)
 {
+    MICROPROFILE_SCOPEI("VM", EDUKE32_FUNCTION, MP_AUTO);
+
     auto const pSprite = &sprite[spriteNum];
     int spriteGravity = g_spriteGravity;
 
@@ -586,6 +590,8 @@ static int32_t A_GetWaterZOffset(int spritenum);
 
 GAMEEXEC_STATIC void VM_Move(void)
 {
+    MICROPROFILE_SCOPEI("VM", EDUKE32_FUNCTION, MP_AUTO);
+
     auto const movflagsptr = &AC_MOVFLAGS(vm.pSprite, &actor[vm.spriteNum]);
     // NOTE: test against -1 commented out and later revived in source history
     // XXX: Does its presence/absence break anything? Where are movflags with all bits set created?
@@ -920,6 +926,8 @@ static int32_t A_GetWaterZOffset(int const spriteNum)
 
 static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 {
+    MICROPROFILE_SCOPEI("VM", EDUKE32_FUNCTION, MP_AUTO);
+
     int spriteGravity = g_spriteGravity;
 
     pSprite->xoffset = pSprite->yoffset = 0;
@@ -1277,25 +1285,19 @@ static void ResizeArray(int const arrayNum, int const newSize)
 #endif
 
 #if defined _MSC_VER
-#define VM_ASSERT(condition, fmt, ...)           \
-    do                                           \
-    {                                            \
-        if (EDUKE32_PREDICT_FALSE(!(condition))) \
-        {                                        \
-            CON_ERRPRINTF(fmt, __VA_ARGS__);     \
-            abort_after_error();                 \
-        }                                        \
-    } while (0)
+#define VM_ASSERT(condition, fmt, ...)       \
+    if (EDUKE32_PREDICT_FALSE(!(condition))) \
+    {                                        \
+        CON_ERRPRINTF(fmt, __VA_ARGS__);     \
+        abort_after_error();                 \
+    }
 #else
-#define VM_ASSERT(condition, ...)                \
-    do                                           \
-    {                                            \
-        if (EDUKE32_PREDICT_FALSE(!(condition))) \
-        {                                        \
-            CON_ERRPRINTF(__VA_ARGS__);          \
-            abort_after_error();                 \
-        }                                        \
-    } while (0)
+#define VM_ASSERT(condition, ...)            \
+    if (EDUKE32_PREDICT_FALSE(!(condition))) \
+    {                                        \
+        CON_ERRPRINTF(__VA_ARGS__);          \
+        abort_after_error();                 \
+    }
 #endif
 
 GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
@@ -1318,8 +1320,13 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 #endif
         int32_t tw = *insptr;
         g_tw = tw;
-
-        eval(VM_DECODE_INST(tw))
+        
+        int const decoded = VM_DECODE_INST(tw);
+#if 0 && defined CON_USE_COMPUTED_GOTO
+        // this is broken without CON_USE_COMPUTED_GOTO because it never goes out of scope
+        MICROPROFILE_SCOPE_TOKEN(g_instTokens[decoded]);
+#endif
+        eval(decoded)
         {
             vInstruction(CON_LEFTBRACE):
             {
@@ -1347,6 +1354,22 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr = tempscrptr;
             }
             dispatch();
+
+            vInstruction(CON_SETVAR_GLOBAL):
+                insptr++;
+                aGameVars[*insptr].global = insptr[1];
+                insptr += 2;
+                dispatch();
+            vInstruction(CON_SETVAR_ACTOR):
+                insptr++;
+                aGameVars[*insptr].pValues[vm.spriteNum & (MAXSPRITES-1)] = insptr[1];
+                insptr += 2;
+                dispatch();
+            vInstruction(CON_SETVAR_PLAYER):
+                insptr++;
+                aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] = insptr[1];
+                insptr += 2;
+                dispatch();
 
 #ifdef CON_DISCRETE_VAR_ACCESS
             vInstruction(CON_IFVARE_GLOBAL):
@@ -1425,11 +1448,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
-            vInstruction(CON_SETVAR_GLOBAL):
-                insptr++;
-                aGameVars[*insptr].global = insptr[1];
-                insptr += 2;
-                dispatch();
             vInstruction(CON_ADDVAR_GLOBAL):
                 insptr++;
                 aGameVars[*insptr].global += insptr[1];
@@ -1547,11 +1565,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
-            vInstruction(CON_SETVAR_ACTOR):
-                insptr++;
-                aGameVars[*insptr].pValues[vm.spriteNum & (MAXSPRITES-1)] = insptr[1];
-                insptr += 2;
-                dispatch();
             vInstruction(CON_ADDVAR_ACTOR):
                 insptr++;
                 aGameVars[*insptr].pValues[vm.spriteNum & (MAXSPRITES-1)] += insptr[1];
@@ -1669,11 +1682,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
-            vInstruction(CON_SETVAR_PLAYER):
-                insptr++;
-                aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] = insptr[1];
-                insptr += 2;
-                dispatch();
             vInstruction(CON_ADDVAR_PLAYER):
                 insptr++;
                 aGameVars[*insptr].pValues[vm.playerNum & (MAXPLAYERS-1)] += insptr[1];
@@ -2311,18 +2319,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const wallNum  = Gv_GetVar(tw);
                     int const labelNum = *insptr++;
                     int const newValue = Gv_GetVar(*insptr++);
-                    auto const &wallLabel = WallLabels[labelNum];
 
                     VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
 
-                    if (wallLabel.offset == -1 || wallLabel.flags & LABEL_WRITEFUNC)
-                    {
-                        VM_SetWall(wallNum, labelNum, newValue);
-                        dispatch();
-                    }
-
-                    VM_SetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset), newValue);
-
+                    VM_SetWall(wallNum, labelNum, newValue);
                     dispatch();
                 }
 
@@ -2333,15 +2333,41 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 
                     int const wallNum  = Gv_GetVar(tw);
                     int const labelNum = *insptr++;
+
+                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
+
+                    Gv_SetVar(*insptr++, VM_GetWall(wallNum, labelNum));
+                    dispatch();
+                }
+
+            vInstruction(CON_SETWALLSTRUCT):
+                insptr++;
+                {
+                    tw = *insptr++;
+
+                    int const wallNum  = Gv_GetVar(tw);
+                    int const labelNum = *insptr++;
+                    int const newValue = Gv_GetVar(*insptr++);
                     auto const &wallLabel = WallLabels[labelNum];
 
                     VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
 
-                    Gv_SetVar(*insptr++,
-                               (wallLabel.offset != -1 && (wallLabel.flags & LABEL_READFUNC) != LABEL_READFUNC)
-                               ? VM_GetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset))
-                               : VM_GetWall(wallNum, labelNum));
+                    VM_SetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset), newValue);
+                    dispatch();
+                }
 
+            vInstruction(CON_GETWALLSTRUCT):
+                insptr++;
+                {
+                    tw = *insptr++;
+
+                    int const wallNum  = Gv_GetVar(tw);
+                    int const labelNum = *insptr++;
+                    auto const &wallLabel = WallLabels[labelNum];
+
+                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
+
+                    Gv_SetVar(*insptr++, VM_GetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset)));
                     dispatch();
                 }
 
@@ -2519,18 +2545,11 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
                     int const   labelNum  = *insptr++;
-                    auto const &sectLabel = SectorLabels[labelNum];
                     int const   newValue  = Gv_GetVar(*insptr++);
 
                     VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
 
-                    if (sectLabel.offset == -1 || sectLabel.flags & LABEL_WRITEFUNC)
-                    {
-                        VM_SetSector(sectNum, labelNum, newValue);
-                        dispatch();
-                    }
-
-                    VM_SetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset), newValue);
+                    VM_SetSector(sectNum, labelNum, newValue);
                     dispatch();
                 }
 
@@ -2539,14 +2558,37 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
                     int const   labelNum  = *insptr++;
+
+                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
+
+                    Gv_SetVar(*insptr++, VM_GetSector(sectNum, labelNum));
+                    dispatch();
+                }
+
+            vInstruction(CON_SETSECTORSTRUCT):
+                insptr++;
+                {
+                    int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
+                    int const   labelNum  = *insptr++;
+                    auto const &sectLabel = SectorLabels[labelNum];
+                    int const   newValue  = Gv_GetVar(*insptr++);
+
+                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
+
+                    VM_SetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset), newValue);
+                    dispatch();
+                }
+
+            vInstruction(CON_GETSECTORSTRUCT):
+                insptr++;
+                {
+                    int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
+                    int const   labelNum  = *insptr++;
                     auto const &sectLabel = SectorLabels[labelNum];
 
                     VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
 
-                    Gv_SetVar(*insptr++,
-                               (sectLabel.offset != -1 && (sectLabel.flags & LABEL_READFUNC) != LABEL_READFUNC)
-                               ? VM_GetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset))
-                               : VM_GetSector(sectNum, labelNum));
+                    Gv_SetVar(*insptr++, VM_GetStruct(sectLabel.flags, (intptr_t *)((char *)&sector[sectNum] + sectLabel.offset)));
                     dispatch();
                 }
 
@@ -2630,10 +2672,18 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     auto const pEnd  = insptr + *insptr;
                     auto const pNext = ++insptr;
 
-                    auto execute = [&](int index) {
+                    auto execute = [&](int const index) {
                         Gv_SetVar(returnVar, index);
                         insptr = pNext;
                         VM_Execute();
+                        return !!(vm.flags & VM_RETURN);
+                    };
+
+                    auto spriteexecute = [&](int const index) {
+                        {
+                            MICROPROFILE_SCOPE_TOKEN(g_statnumTokens[sprite[index].statnum]);
+                            execute(index);
+                        }
                         return !!(vm.flags & VM_RETURN);
                     };
 
@@ -2645,7 +2695,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 if (sprite[jj].statnum == MAXSTATUS)
                                     continue;
 
-                                if (execute(jj))
+                                if (spriteexecute(jj))
                                     return;
                             }
                             break;
@@ -2654,8 +2704,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             for (native_t statNum = 0; statNum < MAXSTATUS; ++statNum)
                             {
                                 for (native_t kk, SPRITES_OF_STAT_SAFE(statNum, jj, kk))
-                                    if (execute(jj))
+                                {
+                                    if (spriteexecute(jj))
                                         return;
+                                }
                             }
                             break;
 
@@ -2663,8 +2715,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             for (native_t sectNum = 0; sectNum < numsectors; ++sectNum)
                             {
                                 for (native_t kk, SPRITES_OF_SECT_SAFE(sectNum, jj, kk))
-                                    if (execute(jj))
+                                {
+                                    if (spriteexecute(jj))
                                         return;
+                                }
                             }
                             break;
 
@@ -2704,8 +2758,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t kk, SPRITES_OF_SECT_SAFE(nIndex, jj, kk))
-                                if (execute(jj))
+                            {
+                                if (spriteexecute(jj))
                                     return;
+                            }
                             break;
 
                         case ITER_SPRITESOFSTATUS:
@@ -2713,8 +2769,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t kk, SPRITES_OF_STAT_SAFE(nIndex, jj, kk))
-                                if (execute(jj))
+                            {
+                                if (spriteexecute(jj))
                                     return;
+                            }
                             break;
 
                         case ITER_WALLSOFSECTOR:
@@ -3849,6 +3907,7 @@ badindex:
                                     VM_ASSERT((unsigned)ud.volume_number < MAXVOLUMES, "invalid volume %d\n", ud.volume_number);
                                     Bstrcpy(apStrings[q], g_volumeNames[ud.volume_number]);
                                     break;
+                                case STR_REVISION:        Bstrcpy(apStrings[q], &s_buildRev[1]);        break;
                                 case STR_YOURTIME:        Bstrcpy(apStrings[q], G_PrintYourTime());     break;
                                 case STR_PARTIME:         Bstrcpy(apStrings[q], G_PrintParTime());      break;
                                 case STR_DESIGNERTIME:    Bstrcpy(apStrings[q], G_PrintDesignerTime()); break;
@@ -5736,7 +5795,7 @@ badindex:
                     int const srcArraySize = (src.flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(src.size) : src.size;
                     int const destArraySize = (dest.flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(dest.size) : dest.size;
 
-                    if (EDUKE32_PREDICT_FALSE(srcArrayIndex > srcArraySize || destArrayIndex > destArraySize))
+                    if (srcArrayIndex > srcArraySize || destArrayIndex > destArraySize)
                         dispatch();
 
                     if ((srcArrayIndex + numElements) > srcArraySize)
@@ -5747,8 +5806,8 @@ badindex:
 
                     // Switch depending on the source array type.
 
-                    int const srcInc  = 1 << (int)!!(EDUKE32_PREDICT_FALSE(src.flags & GAMEARRAY_STRIDE2));
-                    int const destInc = 1 << (int)!!(EDUKE32_PREDICT_FALSE(dest.flags & GAMEARRAY_STRIDE2));
+                    int const srcInc  = 1 << (int)!!((src.flags & GAMEARRAY_STRIDE2));
+                    int const destInc = 1 << (int)!!((dest.flags & GAMEARRAY_STRIDE2));
 
                     // matching array types, no BITMAPs, no STRIDE2 flag
                     if ((src.flags & GAMEARRAY_SIZE_MASK) == (dest.flags & GAMEARRAY_SIZE_MASK)
@@ -6299,6 +6358,8 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     = { spriteNum, playerNum, playerDist, 0, &sprite[spriteNum], &actor[spriteNum].t_data[0], g_player[playerNum].ps, &actor[spriteNum] };
     vm = tempvm;
 
+    MICROPROFILE_SCOPE_TOKEN(g_actorTokens[vm.pSprite->picnum]);
+
 #ifndef NETCODE_DISABLE
     if (g_netClient)
     {
@@ -6324,19 +6385,10 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     }
 
     VM_UpdateAnim(vm.spriteNum, vm.pData);
-    int const picnum = vm.pSprite->picnum;
-
-    auto t = timerGetPerformanceCounter();
 
     insptr = 4 + (g_tile[vm.pSprite->picnum].execPtr);
     VM_Execute(true);
     insptr = NULL;
-
-    auto ms = (double)(1000*(timerGetPerformanceCounter()-t))/timerGetPerformanceFrequency();
-    g_actorTotalMs[picnum] += ms;
-    g_actorMinMs[picnum] = min(g_actorMinMs[picnum], ms);
-    g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], ms);
-    g_actorCalls[picnum]++;
 
     if ((vm.flags & VM_KILL) == 0)
     {
@@ -6349,7 +6401,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
                 if (vm.pSprite->xrepeat > 60 || (ud.respawn_monsters == 1 && vm.pSprite->extra <= 0))
                     return;
             }
-            else if (EDUKE32_PREDICT_FALSE(ud.respawn_items == 1 && (vm.pSprite->cstat & 32768)))
+            else if ((ud.respawn_items == 1 && (vm.pSprite->cstat & 32768)))
                 return;
 
             if (A_CheckSpriteFlags(vm.spriteNum, SFLAG_USEACTIVATOR) && sector[vm.pSprite->sectnum].lotag & 16384)

@@ -1294,6 +1294,9 @@ ifneq (0,$(USE_PHYSFS))
     COMPILERFLAGS += -I$(physfs_inc) -DUSE_PHYSFS
 endif
 
+ifneq (0,$(MICROPROFILE))
+  COMPILERFLAGS += -DMICROPROFILE_ENABLED=1
+endif
 
 ##### Recipes
 

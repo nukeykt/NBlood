@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="Header Files\miniz">
+      <UniqueIdentifier>{14fcfbb9-d8a5-4e68-8cac-f8d8d2c2b7da}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\build\src\2d.cpp">
@@ -301,9 +304,6 @@
     <ClInclude Include="..\..\source\build\include\mdsprite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\build\include\miniz.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\build\include\mmulti.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -432,6 +432,27 @@
     </ClInclude>
     <ClInclude Include="..\..\source\build\include\rev.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\microprofile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\microprofilehtml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\miniz_common.h">
+      <Filter>Header Files\miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\miniz_export.h">
+      <Filter>Header Files\miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\miniz_tdef.h">
+      <Filter>Header Files\miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\miniz_tinfl.h">
+      <Filter>Header Files\miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\miniz.h">
+      <Filter>Header Files\miniz</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

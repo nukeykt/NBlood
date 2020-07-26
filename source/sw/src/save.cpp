@@ -81,6 +81,8 @@ extern SWBOOL NewGame;
 extern char CacheLastLevel[];
 extern short PlayingLevel;
 extern int GodMode;
+extern int FinishTimer;
+extern SWBOOL FinishAnim;
 extern int GameVersion;
 //extern short Zombies;
 
@@ -671,6 +673,9 @@ int SaveGame(short save_num)
     MWRITE(UserMapName,sizeof(UserMapName),1,fil);
     MWRITE(&GodMode,sizeof(GodMode),1,fil);
 
+    MWRITE(&FinishTimer,sizeof(FinishTimer),1,fil);
+    MWRITE(&FinishAnim,sizeof(FinishAnim),1,fil);
+
     MWRITE(&serpwasseen, sizeof(serpwasseen), 1, fil);
     MWRITE(&sumowasseen, sizeof(sumowasseen), 1, fil);
     MWRITE(&zillawasseen, sizeof(zillawasseen), 1, fil);
@@ -1179,6 +1184,9 @@ int LoadGame(short save_num)
 
     MREAD(UserMapName,sizeof(UserMapName),1,fil);
     MREAD(&GodMode,sizeof(GodMode),1,fil);
+
+    MREAD(&FinishTimer,sizeof(FinishTimer),1,fil);
+    MREAD(&FinishAnim,sizeof(FinishAnim),1,fil);
 
     MREAD(&serpwasseen, sizeof(serpwasseen), 1, fil);
     MREAD(&sumowasseen, sizeof(sumowasseen), 1, fil);

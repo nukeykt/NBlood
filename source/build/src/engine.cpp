@@ -13,16 +13,19 @@
 #include "build.h"
 #include "cache1d.h"
 #include "colmatch.h"
+#include "communityapi.h"
 #include "compat.h"
 #include "crc32.h"
 #include "editor.h"
 #include "engine_priv.h"
 #include "lz4.h"
+#include "microprofile.h"
 #include "osd.h"
 #include "palette.h"
 #include "pragmas.h"
 #include "scriptfile.h"
 #include "softsurface.h"
+#include "vfs.h"
 
 #ifdef USE_OPENGL
 # include "glad/glad.h"
@@ -34,10 +37,6 @@
 # endif
 # include "polymost.h"
 #endif
-
-#include "vfs.h"
-
-#include "communityapi.h"
 
 //////////
 // Compilation switches for optional/extended engine features
@@ -850,6 +849,8 @@ void yax_preparedrawrooms(void)
 void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_t),
                    int16_t sectnum, int32_t didmirror, int32_t smoothr)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     static uint8_t havebunch[(YAX_MAXBUNCHES+7)>>3];
 
     const fix16_t horiz = global100horiz;
@@ -6582,6 +6583,8 @@ next_most:
 
 static void renderDrawSprite(int32_t snum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     switch (videoGetRenderMode())
     {
     case REND_CLASSIC:
@@ -6610,6 +6613,8 @@ static void renderDrawSprite(int32_t snum)
 //
 static void renderDrawMaskedWall(int16_t damaskwallcnt)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     //============================================================================= //POLYMOST BEGINS
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST) { polymost_drawmaskwall(damaskwallcnt); return; }
@@ -7286,6 +7291,8 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
                            int32_t cx1, int32_t cy1, int32_t cx2, int32_t cy2,
                            int32_t uniqid)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     // NOTE: if these are made unsigned (for safety), angled tiles may draw
     // incorrectly, showing vertical seams at intervals.
     int32_t bx, by;
@@ -7887,6 +7894,8 @@ static inline void initksqrt(void)
 //
 static void dosetaspect(void)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     int32_t i, j;
 
     if (xyaspect != oxyaspect)
@@ -8564,6 +8573,7 @@ int32_t enginePreInit(void)
     engineInitClipMaps();
 #endif
     preinitcalled = 1;
+
     return 0;
 }
 
@@ -8800,6 +8810,8 @@ void set_globalang(fix16_t const ang)
 int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
                            fix16_t daang, fix16_t dahoriz, int16_t dacursectnum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     int32_t i, j, /*cz, fz,*/ closest;
     int16_t *shortptr1, *shortptr2;
 
@@ -9302,6 +9314,8 @@ static void sortsprites(int const start, int const end)
 //
 void renderDrawMasks(void)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
 #ifdef DEBUG_MASK_DRAWING
         static struct {
             int16_t di;  // &32768: &32767 is tspriteptr[], else thewall[] index
@@ -9691,6 +9705,8 @@ killsprite:
 //
 void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     int32_t i, j, k, l;
     int32_t x, y;
     int32_t s, ox, oy;
@@ -11122,6 +11138,17 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     }
 #endif
 #endif
+
+#if MICROPROFILE_ENABLED == 1
+    static int webServerStarted;
+
+    if (!webServerStarted)
+    {
+        webServerStarted = true;
+        MicroProfileWebServerStart();
+    }
+#endif
+
     qsetmode = 200;
     return 0;
 }
@@ -11132,6 +11159,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
 //
 void videoNextPage(void)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     permfifotype *per;
 
     //char snotbuf[32];
@@ -11607,6 +11636,8 @@ int32_t cansee_19950829(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, in
 
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, int32_t y2, int32_t z2, int16_t sect2)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (enginecompatibilitymode == ENGINE_19950829)
         return cansee_19950829(x1, y1, z1, sect1, x2, y2, z2, sect2);
     int32_t dacnt, danum;
@@ -12156,6 +12187,8 @@ int findwallbetweensectors(int sect1, int sect2)
 //
 void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (enginecompatibilitymode == ENGINE_EDUKE32)
     {
         int16_t sect = *sectnum;
@@ -12226,6 +12259,8 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
 
 void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (enginecompatibilitymode == ENGINE_EDUKE32)
     {
         int16_t sect = *sectnum;
@@ -12398,8 +12433,7 @@ void rotatepoint(vec2_t const pivot, vec2_t p, int16_t const daang, vec2_t * con
     int const dasin = sintable[(daang+2048)&2047];
     p.x -= pivot.x;
     p.y -= pivot.y;
-    p2->x = dmulscale14(p.x, dacos, -p.y, dasin) + pivot.x;
-    p2->y = dmulscale14(p.y, dacos, p.x, dasin) + pivot.y;
+    *p2 = { dmulscale14(p.x, dacos, -p.y, dasin) + pivot.x, dmulscale14(p.y, dacos, p.x, dasin) + pivot.y };
 }
 
 
