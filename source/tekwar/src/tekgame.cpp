@@ -669,13 +669,6 @@ int app_main(int argc, char const * const argv[])
              return 3;
      }
 #endif
-
-#ifndef USE_PHYSFS
-#ifdef DEBUGGINGAIDS
-     extern int32_t(*check_filename_casing_fn)(void);
-     check_filename_casing_fn = check_filename_casing;
-#endif
-#endif
 #endif
 
      tekargv(argc, argv);
