@@ -23,6 +23,9 @@
   * Fox
   * Dzierzan
   * James Manning
+  
+### Autobuilds are provided by
+  * oasiz
 
 ### NBlood/Rednukem special thanks:
   * Hendricks266, TerminX, NY00123, Fox, MetHy, Striker, oasiz, Mblackwell, Zombie, Marphy Black, SAmik37, meleemario
