@@ -9416,6 +9416,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
         else ratio = dimen/scy;
     }
 
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+        glEnable(GL_TEXTURE_2D);
+#endif
+
     glColor3f(1,1,1);
     glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0,              0); glVertex2f((float)tilex            ,(float)tiley);
@@ -9423,6 +9428,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     glTexCoord2f(xdimepad,ydimepad); glVertex2f((float)tilex+(scx*ratio),(float)tiley+(scy*ratio));
     glTexCoord2f(0,       ydimepad); glVertex2f((float)tilex            ,(float)tiley+(scy*ratio));
     glEnd();
+
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+        glDisable(GL_TEXTURE_2D);
+#endif
 
     if (pth && !(pth->flags & PTH_INDEXED))
     {
