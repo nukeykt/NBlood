@@ -885,7 +885,7 @@ void LoadCustomInfoFromScript(const char *filename)
 
             if (name)
             {
-                Bfree(custominventoryname[in]);
+                Xfree(custominventoryname[in]);
                 custominventoryname[in] = Xstrdup(name);
                 InventoryDecls[in].name = custominventoryname[in];
             }
@@ -960,7 +960,7 @@ void LoadCustomInfoFromScript(const char *filename)
                 if (maxammo >= 0) DamageData[id].max_ammo = maxammo;
                 if (name)
                 {
-                    Bfree(customweaponname[0][id]);
+                    Xfree(customweaponname[0][id]);
                     customweaponname[0][id] = Xstrdup(name);
                     DamageData[id].weapon_name = customweaponname[0][id];
                 }
@@ -970,7 +970,7 @@ void LoadCustomInfoFromScript(const char *filename)
             {
                 if (ammo)
                 {
-                    Bfree(customweaponname[1][id]);
+                    Xfree(customweaponname[1][id]);
                     customweaponname[1][id] = Xstrdup(ammo);
                     DamageData[id].ammo_name = customweaponname[1][id];
                 }

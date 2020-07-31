@@ -23,7 +23,7 @@ char *g_grpNamePtr = NULL;
 
 void clearGrpNamePtr(void)
 {
-    Bfree(g_grpNamePtr);
+    Xfree(g_grpNamePtr);
     // g_grpNamePtr assumed to be assigned to right after
 }
 
