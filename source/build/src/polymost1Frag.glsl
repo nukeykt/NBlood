@@ -64,7 +64,7 @@ void main()
 #ifdef GL_ARB_shader_texture_lod
     vec2 texCoord = mix(fract(newCoord.xy), clamp(newCoord.xy, c_zero, c_one), u_clamp);
     texCoord = clamp(u_texturePosSize.zw*texCoord, u_halfTexelSize, u_texturePosSize.zw-u_halfTexelSize);
-    vec4 color = texture2DGradARB(s_texture, u_texturePosSize.xy+texCoord, dFdx(texCoord), dFdy(texCoord));
+    vec4 color = texture2DGradARB(s_texture, u_texturePosSize.xy+texCoord, dFdx(gl_TexCoord[0].xy), dFdy(gl_TexCoord[0].xy));
 #else
     vec2 transitionBlend = fwidth(floor(newCoord.xy));
     transitionBlend = fwidth(transitionBlend)+transitionBlend;
