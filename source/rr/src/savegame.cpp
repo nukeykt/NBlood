@@ -1205,7 +1205,14 @@ static const dataspec_t svgm_secwsp[] =
     { DS_NOCHK, &g_mirrorWall[0], sizeof(g_mirrorWall[0]), ARRAY_SIZE(g_mirrorWall) },
     { DS_NOCHK, &g_mirrorSector[0], sizeof(g_mirrorSector[0]), ARRAY_SIZE(g_mirrorSector) },
     { 0, &everyothertime, sizeof(everyothertime), 1 },
-// dn64 vars
+
+    { DS_END, 0, 0, 0 }
+};
+
+static char svgm_dn64_string [] = "blK:dn64";
+static const dataspec_t svgm_dn64[] =
+{
+    { DS_STRING, (void *)svgm_dn64_string, 0, 1 },
     { DS_NOCHK, &rt_vtxnum, sizeof(rt_vtxnum), 1 },
     { DS_LOADFN, (void *)sv_preloaddn64, 0, 1 },
     { DS_DYNAMIC|DS_CNT(rt_vtxnum), &rt_sectvtx, sizeof(rt_vertex_t), (intptr_t)&rt_vtxnum },
@@ -1440,6 +1447,8 @@ int32_t sv_saveandmakesnapshot(FILE *fil, char const *name, int8_t spot, int8_t 
     sv_makevarspec();
     svsnapsiz = calcsz((const dataspec_t *)svgm_vars);
     svsnapsiz += calcsz(svgm_udnetw) + calcsz(svgm_secwsp) + calcsz(svgm_script) + calcsz(svgm_anmisc);
+    if (REALITY)
+        svsnapsiz += calcsz(svgm_dn64);
 
 
     // create header
@@ -1695,6 +1704,8 @@ uint32_t sv_writediff(FILE *fil)
 
     cmpspecdata(svgm_udnetw, &p, &d);
     cmpspecdata(svgm_secwsp, &p, &d);
+    if (REALITY)
+        cmpspecdata(svgm_dn64, &p, &d);
     cmpspecdata(svgm_script, &p, &d);
     cmpspecdata(svgm_anmisc, &p, &d);
     cmpspecdata((const dataspec_t *)svgm_vars, &p, &d);
@@ -1738,9 +1749,10 @@ int32_t sv_readdiff(int32_t fil)
 
     if (applydiff(svgm_udnetw, &p, &d)) return -3;
     if (applydiff(svgm_secwsp, &p, &d)) return -4;
-    if (applydiff(svgm_script, &p, &d)) return -5;
-    if (applydiff(svgm_anmisc, &p, &d)) return -6;
-    if (applydiff((const dataspec_t *)svgm_vars, &p, &d)) return -7;
+    if (REALITY && applydiff(svgm_dn64, &p, &d)) return -5;
+    if (applydiff(svgm_script, &p, &d)) return -6;
+    if (applydiff(svgm_anmisc, &p, &d)) return -7;
+    if (applydiff((const dataspec_t *)svgm_vars, &p, &d)) return -8;
 
     int i = 0;
 
@@ -1903,6 +1915,11 @@ static uint8_t *dosaveplayer2(FILE *fil, uint8_t *mem)
     PRINTSIZE("ud");
     mem=writespecdata(svgm_secwsp, fil, mem);  // sector, wall, sprite
     PRINTSIZE("sws");
+    if (REALITY)
+    {
+        mem=writespecdata(svgm_dn64, fil, mem);  // dn64 vars
+        PRINTSIZE("dn64");
+    }
     mem=writespecdata(svgm_script, fil, mem);  // script
     PRINTSIZE("script");
     mem=writespecdata(svgm_anmisc, fil, mem);  // animates, quotes & misc.
@@ -1925,9 +1942,14 @@ static int32_t doloadplayer2(int32_t fil, uint8_t **memptr)
     PRINTSIZE("ud");
     if (readspecdata(svgm_secwsp, fil, &mem)) return -4;
     PRINTSIZE("sws");
-    if (readspecdata(svgm_script, fil, &mem)) return -5;
+    if (REALITY)
+    {
+        if (readspecdata(svgm_dn64, fil, &mem)) return -5;
+        PRINTSIZE("dn64");
+    }
+    if (readspecdata(svgm_script, fil, &mem)) return -6;
     PRINTSIZE("script");
-    if (readspecdata(svgm_anmisc, fil, &mem)) return -6;
+    if (readspecdata(svgm_anmisc, fil, &mem)) return -7;
     PRINTSIZE("animisc");
 
     int i;
@@ -1961,8 +1983,9 @@ int32_t sv_updatestate(int32_t frominit)
 
     if (readspecdata(svgm_udnetw, -1, &p)) return -2;
     if (readspecdata(svgm_secwsp, -1, &p)) return -4;
-    if (readspecdata(svgm_script, -1, &p)) return -5;
-    if (readspecdata(svgm_anmisc, -1, &p)) return -6;
+    if (REALITY && readspecdata(svgm_dn64, -1, &p)) return -5;
+    if (readspecdata(svgm_script, -1, &p)) return -6;
+    if (readspecdata(svgm_anmisc, -1, &p)) return -7;
     if (readspecdata((const dataspec_t *)svgm_vars, -1, &p)) return -8;
 
     if (p != pbeg+svsnapsiz)
