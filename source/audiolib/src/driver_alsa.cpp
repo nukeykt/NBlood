@@ -272,7 +272,23 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
         ErrorCode = ALSAErr_SeqOpen;
         return ALSAErr_Error;
     }
-    
+
+    std::vector<alsa_mididevinfo_t> alsaDevices = ALSADrv_MIDI_ListPorts();
+    bool deviceFound = false;
+    for (const alsa_mididevinfo_t &device : alsaDevices)
+        if (device.clntid == ALSA_ClientID && device.portid == ALSA_PortID)
+        {
+            deviceFound = true;
+            break;
+        }
+    if (!deviceFound)
+    {
+        ALSADrv_MIDI_Shutdown();
+        MV_Printf("ALSA MIDI device not found: %d:%d\n", ALSA_ClientID, ALSA_PortID);
+        ErrorCode = ALSAErr_DeviceNotFound;
+        return ALSAErr_Error;
+    }
+
     seq_port = snd_seq_create_simple_port(seq, "output",
                   SND_SEQ_PORT_CAP_READ|SND_SEQ_PORT_CAP_WRITE,
                   SND_SEQ_PORT_TYPE_APPLICATION);
