@@ -407,7 +407,7 @@ void A_GetZLimits(int const spriteNum)
     if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0
 #ifndef EDUKE32_STANDALONE
             // exclude squish sprites as they are sometimes used as pseudo-ladders in old usermaps
-            && actor[spriteNum].picnum != OOZ && actor[spriteNum].picnum != OOZ2
+            && (FURY || (actor[spriteNum].picnum != OOZ && actor[spriteNum].picnum != OOZ2))
 #endif
        )
     {
