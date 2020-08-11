@@ -268,8 +268,8 @@ static int32_t Defs_ImportTileFromTexture(char const * const fn, int32_t const t
         if (artstatus < 0)
             return artstatus<<8;
 
-        int32_t picanmdisk;
-        Bmemcpy(&picanmdisk, &kpzbuf[20], sizeof(int32_t));
+        uint32_t picanmdisk;
+        Bmemcpy(&picanmdisk, &kpzbuf[20], sizeof(uint32_t));
         picanmdisk = B_LITTLE32(picanmdisk);
         tileConvertAnimFormat(tile, picanmdisk);
 

@@ -396,7 +396,7 @@ int32_t artCheckUnitFileHeader(uint8_t const * const buf, int32_t length)
     return 0;
 }
 
-void tileConvertAnimFormat(int32_t const picnum, int32_t const picanmdisk)
+void tileConvertAnimFormat(int32_t const picnum, uint32_t const picanmdisk)
 {
     EDUKE32_STATIC_ASSERT(PICANM_ANIMTYPE_MASK == 192);
 
@@ -417,14 +417,12 @@ void artReadManifest(buildvfs_kfd const fil, artheader_t const * const local)
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
-        int32_t picanmdisk;
-
         tilesiz[i].x = B_LITTLE16(tilesizx[i-local->tilestart]);
         tilesiz[i].y = B_LITTLE16(tilesizy[i-local->tilestart]);
 
-        kread(fil, &picanmdisk, sizeof(int32_t));
+        uint32_t picanmdisk;
+        kread(fil, &picanmdisk, sizeof(uint32_t));
         picanmdisk = B_LITTLE32(picanmdisk);
-
         tileConvertAnimFormat(i, picanmdisk);
     }
 
