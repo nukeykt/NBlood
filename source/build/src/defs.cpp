@@ -127,6 +127,7 @@ enum scripttoken_t
     T_NEWGAMECHOICES,
     T_LOCALIZATION, T_STRING,
     T_TILEFONT, T_CHARACTER,
+    T_TRUENPOT,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -811,6 +812,7 @@ static int32_t defsparser(scriptfile *script)
             vec2_t  tile_size{};
             uint8_t have_crc32 = 0;
             uint8_t have_size = 0;
+            uint8_t tile_flags = 0;
 
             static const tokenlist tilefromtexturetokens[] =
             {
@@ -826,6 +828,7 @@ static int32_t defsparser(scriptfile *script)
                 { "texture",         T_TEXTURE },
                 { "ifcrc",           T_IFCRC },
                 { "ifmatch",         T_IFMATCH },
+                { "truenpot",        T_TRUENPOT },
             };
 
             if (scriptfile_getsymbol(script,&tile)) break;
@@ -893,6 +896,9 @@ static int32_t defsparser(scriptfile *script)
                 case T_NOFULLBRIGHT:
                     flags |= PICANM_NOFULLBRIGHT_BIT;
                     break;
+                case T_TRUENPOT:
+                    tile_flags |= TILEFLAGS_TRUENPOT;
+                    break;
                 case T_TEXTURE:
                     istexture = 1;
                     break;
@@ -944,6 +950,8 @@ static int32_t defsparser(scriptfile *script)
             {
                 // tilefromtexture <tile> { texhitscan }  sets the bit but doesn't change tile data
                 picanm[tile].sf |= flags;
+                picanm[tile].tileflags |= tile_flags;
+
                 if (havexoffset)
                     picanm[tile].xofs = xoffset;
                 if (haveyoffset)
@@ -954,6 +962,8 @@ static int32_t defsparser(scriptfile *script)
                                script->filename, scriptfile_getlinum(script,texturetokptr));
                 break;
             }
+
+            picanm[tile].tileflags |= tile_flags; // Set flags before loading, since we may need them before uploading.
 
             int32_t const texstatus = Defs_ImportTileFromTexture(fn, tile, alphacut, istexture);
             if (texstatus == -3)

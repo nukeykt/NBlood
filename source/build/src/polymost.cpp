@@ -2269,7 +2269,11 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
 
         fixtransparency(pic,tsiz,siz,dameth);
 
-        if (polymost_want_npotytex(dameth, siz.y) && tsiz.x == siz.x && tsiz.y == siz.y)  // XXX
+        if (picanm[dapic].tileflags & TILEFLAGS_TRUENPOT)
+        {
+            npoty = 0;
+        }
+        else if (polymost_want_npotytex(dameth, siz.y) && tsiz.x == siz.x && tsiz.y == siz.y)  // XXX
         {
             const int32_t nextpoty = 1 << ((picsiz[dapic] >> 4) + 1);
             const int32_t ydif = nextpoty - siz.y;
@@ -3320,7 +3324,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         }
     }
 
-    if (glinfo.texnpot && r_npotwallmode == 2 && (method & DAMETH_WALL) != 0)
+    if (glinfo.texnpot && r_npotwallmode == 2 && (method & DAMETH_WALL) != 0 && !(picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT))
     {
         int32_t size = tilesiz[globalpicnum].y;
         int32_t size2;
@@ -4995,7 +4999,11 @@ static void calc_ypanning(int32_t refposz, float ryp0, float ryp1,
         i = tilesiz[globalpicnum].y;
     else
 #endif
-    if (polymost_is_npotmode())
+    if (picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT)
+    {
+        i = tilesiz[globalpicnum].y;
+    }
+    else if (polymost_is_npotmode())
     {
         t *= (float)tilesiz[globalpicnum].y / i;
         i = tilesiz[globalpicnum].y;

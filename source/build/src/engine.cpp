@@ -71,7 +71,7 @@ static FORCE_INLINE int32_t oldnonpow2(void)
 #if !defined CLASSIC_NONPOW2_YSIZE_WALLS
     return 1;
 #else
-    return (g_loadedMapVersion < 10);
+    return ((g_loadedMapVersion < 10) && !(picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT));
 #endif
 }
 
