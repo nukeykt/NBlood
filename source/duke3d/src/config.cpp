@@ -46,7 +46,7 @@ hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
-    if (!func)
+    if (!func || func[0] == '\0')
         return -1;
 
     return hash_findcase(&h_gamefuncs, func);

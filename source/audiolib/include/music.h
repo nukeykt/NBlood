@@ -39,12 +39,36 @@ extern int MUSIC_ErrorCode;
 #ifdef __linux__
 #include <vector>
 
-typedef struct
+struct alsa_mididevinfo_t
 {
-  const char *name;
+  char *name;
   int clntid;
   int portid;
-} alsa_mididevinfo_t;
+
+  alsa_mididevinfo_t(const char *insrcname, int inclntid, int inportid) :
+    name(Xstrdup(insrcname)), clntid(inclntid), portid(inportid) {}
+
+  alsa_mididevinfo_t(const alsa_mididevinfo_t &rhs)
+  {
+    name = Xstrdup(rhs.name);
+    clntid = rhs.clntid;
+    portid = rhs.portid;
+  }
+
+  ~alsa_mididevinfo_t() { Xfree(name); }
+
+  alsa_mididevinfo_t &operator=(const alsa_mididevinfo_t &rhs)
+  {
+    if (this != &rhs)
+    {
+        Xfree(name);
+        name = Xstrdup(rhs.name);
+        clntid = rhs.clntid;
+        portid = rhs.portid;
+    }
+    return *this;
+  }
+};
 
 std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts();
 
