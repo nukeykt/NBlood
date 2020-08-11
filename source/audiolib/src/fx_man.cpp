@@ -319,6 +319,21 @@ int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     return handle;
 }
 
+int FX_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate, int pitchoffset,
+    int angle, int distance, int priority, fix16_t volume, intptr_t callbackval, void* userdata)
+{
+    int handle = MV_StartDemandFeedPlayback3D(function, bitdepth, channels, rate,
+        pitchoffset, angle, distance, priority, volume, callbackval, userdata);
+
+    if (handle <= MV_Ok)
+    {
+        FX_SetErrorCode(FX_MultiVocError);
+        handle = FX_Warning;
+    }
+
+    return handle;
+}
+
 int FX_SetPrintf(int (*function)(const char *, ...))
 {
     MV_SetPrintf(function);

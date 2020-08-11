@@ -112,6 +112,9 @@ int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
     int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval, void* userdata);
 
+int MV_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
+    int pitchoffset, int angle, int distance, int priority, fix16_t volume, intptr_t callbackval, void* userdata);
+
 decltype(MV_PlayVOC3D) MV_PlayWAV3D;
 decltype(MV_PlayVOC)   MV_PlayWAV;
 decltype(MV_PlayVOC3D) MV_PlayVorbis3D;
