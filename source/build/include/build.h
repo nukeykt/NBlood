@@ -1158,7 +1158,7 @@ void    tileSetSize(int32_t picnum, int16_t dasizx, int16_t dasizy);
 int32_t artReadHeader(buildvfs_kfd fil, char const *fn, artheader_t *local);
 int32_t artReadHeaderFromBuffer(uint8_t const *buf, artheader_t *local);
 int32_t artCheckUnitFileHeader(uint8_t const *buf, int32_t length);
-void    tileConvertAnimFormat(int32_t picnum);
+void    tileConvertAnimFormat(int32_t picnum, uint32_t const picanmdisk);
 void    artReadManifest(buildvfs_kfd fil, artheader_t const *local);
 void    artPreloadFile(buildvfs_kfd fil, artheader_t const *local);
 int32_t artLoadFiles(const char *filename, int32_t askedsize);
