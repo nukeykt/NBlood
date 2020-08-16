@@ -2788,7 +2788,7 @@ CHECKINV1:
             }
         }
 
-        weaponNum = ((playerBits&(15<<SK_WEAPON_BITS))>>SK_WEAPON_BITS) - 1;
+        weaponNum = ((playerBits&SK_WEAPON_MASK)>>SK_WEAPON_BITS) - 1;
 
         switch ((int32_t)weaponNum)
         {

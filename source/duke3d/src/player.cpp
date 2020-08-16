@@ -3192,7 +3192,7 @@ void P_GetInput(int const playerNum)
     else if (weaponSelection == gamefunc_Weapon_1-1)
         weaponSelection = 0;
 
-    if ((localInput.bits & 0xf00) == 0)
+    if (weaponSelection && (localInput.bits & SK_WEAPON_MASK) == 0)
         localInput.bits |= (weaponSelection << SK_WEAPON_BITS);
 
     localInput.bits |= (BUTTON(gamefunc_Fire) << SK_FIRE);
