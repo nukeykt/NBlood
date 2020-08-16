@@ -2818,7 +2818,7 @@ CHECKINV1:
 
         if (pPlayer->reloading == 1)
             weaponNum = -1;
-        else if ((uint32_t)weaponNum < MAX_WEAPONS && pPlayer->kickback_pic == 1 && pPlayer->weapon_pos == 1)
+        else if ((uint32_t)weaponNum < 12 && pPlayer->kickback_pic == 1 && pPlayer->weapon_pos == 1)
         {
             pPlayer->wantweaponfire = weaponNum;
             pPlayer->kickback_pic = 0;
@@ -2957,8 +2957,7 @@ CHECKINV1:
 
                 weaponNum = VM_OnEventWithReturn(EVENT_SELECTWEAPON,pPlayer->i,playerNum, weaponNum);
 
-                // XXX: any signifcance to "<= MAX_WEAPONS" instead of "<"?
-                if ((int32_t)weaponNum != -1 && weaponNum <= MAX_WEAPONS)
+                if ((int32_t)weaponNum != -1 && weaponNum < MAX_WEAPONS)
                 {
                     if (P_CheckDetonatorSpecialCase(pPlayer, weaponNum))
                     {
