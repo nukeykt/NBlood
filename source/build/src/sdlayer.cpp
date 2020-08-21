@@ -1199,7 +1199,7 @@ void mouseUninit(void)
 //                    furthermore return 0 if successful.
 //
 
-#ifdef _WIN32
+#if defined _WIN32 && SDL_MINOR_VERSION == 0 && SDL_PATCHLEVEL < 13
 // bypass SDL_SetWindowGrab--see https://bugzilla.libsdl.org/show_bug.cgi?id=4748
 static void SetWindowGrab(SDL_Window *pWindow, int const clipToWindow)
 {
