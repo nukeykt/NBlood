@@ -3082,7 +3082,7 @@ static void polymost_identityrotmat(void)
 
 static void polymost_polyeditorfunc(vec2f_t const * const dpxy, int n)
 {
-    if (!doeditorcheck)
+    if (!doeditorcheck || n < 3)
         return;
 
     for (int i = 0; i < n; i++)
@@ -3140,6 +3140,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
         if (f <= 0) return;
     }
+    else if (n < 3)
+        return;
 
     static int32_t skyzbufferhack_pass = 0;
     if (flatskyrender && skyzbufferhack_pass == 0)
