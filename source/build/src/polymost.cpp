@@ -7780,7 +7780,83 @@ void polymost2_drawsprite(int32_t snum)
     tilesiz[globalpicnum] = oldsiz;
 }
 
-void polymost_voxeditorfunc(int const spritenum, voxmodel_t *m, tspriteptr_t const tspr)
+void polymost_mdeditorfunc(tspriteptr_t const tspr)
+{
+    if (searchit == 0)
+        return;
+
+    // Project 3D to 2D
+    vec3f_t xyz = { (float)tspr->x, (float)tspr->y, (float)tspr->z };
+    vec2_t off = { tspr->xoffset, tspr->yoffset };
+
+    if (tspr->cstat&CSTAT_SPRITE_XFLIP) off.x = -off.x;
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING
+        && tspr->cstat&CSTAT_SPRITE_YFLIP) off.y = -off.y;
+
+    vec2f_t s0 = { (float)(xyz.x - globalposx),
+                    (float)(xyz.y - globalposy)};
+
+    vec2f_t p0 = { s0.y * gcosang - s0.x * gsinang, s0.x * gcosang2 + s0.y * gsinang2 };
+
+    if (p0.y <= SCISDIST)
+        return;
+
+    float const ryp0 = 1.f / p0.y;
+    s0 = { ghalfx * p0.x * ryp0 + ghalfx, ((float)(xyz.z - globalposz)) * gyxscale * ryp0 + ghoriz };
+
+    float const f = ryp0 * fxdimen * (1.0f / 160.f);
+    
+    vec2_16_t const oldsiz = tilesiz[globalpicnum];
+    vec2_t tsiz = { oldsiz.x, oldsiz.y };
+
+    vec2f_t const ftsiz = { (float)tsiz.x, (float)tsiz.y };
+
+    vec2f_t ff = { ((float)tspr->xrepeat) * f,
+                    ((float)tspr->yrepeat) * f * ((float)yxaspect * (1.0f / 65536.f)) };
+
+    if (tsiz.x & 1)
+        s0.x += ff.x * 0.5f;
+    if (globalorientation & 128 && tsiz.y & 1)
+        s0.y += ff.y * 0.5f;
+
+    s0.x -= ff.x * (float) off.x;
+    s0.y -= ff.y * (float) off.y;
+
+    ff.x *= ftsiz.x;
+    ff.y *= ftsiz.y;
+
+    vec2f_t pxy[4];
+
+    pxy[0].x = pxy[3].x = s0.x - ff.x * 0.5f;
+    pxy[1].x = pxy[2].x = s0.x + ff.x * 0.5f;
+
+    if (!(globalorientation & 128))
+    {
+        pxy[0].y = pxy[1].y = s0.y - ff.y;
+        pxy[2].y = pxy[3].y = s0.y;
+    }
+    else
+    {
+        pxy[0].y = pxy[1].y = s0.y - ff.y * 0.5f;
+        pxy[2].y = pxy[3].y = s0.y + ff.y * 0.5f;
+    }
+
+#ifdef YAX_ENABLE
+    if (yax_globallev == YAX_MAXDRAWS || searchit == 2)
+#endif
+    if (searchit >= 1)
+    {
+        otex.d = ryp0 * gviewxrange;
+        xtex.d = ytex.d = 0;
+        psectnum = tspr->sectnum;
+        pwallnum = tspr->owner;
+        psearchstat = 3;
+        doeditorcheck = 1;
+        polymost_polyeditorfunc(pxy, 4);
+    }
+}
+
+void polymost_voxeditorfunc(voxmodel_t *m, tspriteptr_t const tspr)
 {
     if (searchit == 0)
         return;
@@ -7867,7 +7943,7 @@ void polymost_voxeditorfunc(int const spritenum, voxmodel_t *m, tspriteptr_t con
         otex.d = ryp0 * gviewxrange;
         xtex.d = ytex.d = 0;
         psectnum = tspr->sectnum;
-        pwallnum = spritenum;
+        pwallnum = tspr->owner;
         psearchstat = 3;
         doeditorcheck = 1;
         polymost_polyeditorfunc(pxy, 4);
@@ -7945,7 +8021,13 @@ void polymost_drawsprite(int32_t snum)
         if (usemodels && tile2model[Ptile2tile(tspr->picnum, tspr->pal)].modelid >= 0 &&
             tile2model[Ptile2tile(tspr->picnum, tspr->pal)].framenum >= 0)
         {
-            if (polymost_mddraw(tspr)) return;
+            if (polymost_mddraw(tspr))
+            {
+                if (editstatus)
+                    polymost_mdeditorfunc(tspr);
+
+                return;
+            }
             break;  // else, render as flat sprite
         }
 
@@ -7954,7 +8036,7 @@ void polymost_drawsprite(int32_t snum)
             if (polymost_voxdraw(voxmodels[tiletovox[tspr->picnum]], tspr))
             {
                 if (editstatus)
-                    polymost_voxeditorfunc(spritenum, voxmodels[tiletovox[tspr->picnum]], tspr);
+                    polymost_voxeditorfunc(voxmodels[tiletovox[tspr->picnum]], tspr);
 
                 return;
             }
@@ -7966,7 +8048,7 @@ void polymost_drawsprite(int32_t snum)
             polymost_voxdraw(voxmodels[tspr->picnum], tspr);
 
             if (editstatus)
-                polymost_voxeditorfunc(spritenum, voxmodels[tspr->picnum], tspr);
+                polymost_voxeditorfunc(voxmodels[tspr->picnum], tspr);
 
             return;
         }
