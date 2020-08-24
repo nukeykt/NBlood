@@ -513,7 +513,7 @@ memberlabel_t const PlayerLabels[] =
     MEMBER(g_player[0].ps, holster_weapon,              PLAYER_HOLSTER_WEAPON),
     MEMBER(g_player[0].ps, falling_counter,             PLAYER_FALLING_COUNTER),
     {                                "gotweapon",       PLAYER_GOTWEAPON, LABEL_HASPARM2, MAX_WEAPONS, -1 },
-    {                                "palette",         PLAYER_PALETTE, 0, 0, -1 },
+    {                                "palette",         PLAYER_PALETTE, sizeof(g_player[0].ps[0].palette) | LABEL_WRITEFUNC, 0, offsetof(DukePlayer_t, palette) },
     MEMBER(g_player[0].ps, toggle_key_flag,             PLAYER_TOGGLE_KEY_FLAG),
     MEMBER(g_player[0].ps, knuckle_incs,                PLAYER_KNUCKLE_INCS),
     MEMBER(g_player[0].ps, walking_snd_toggle,          PLAYER_WALKING_SND_TOGGLE),
@@ -588,6 +588,9 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_DEATHS:     labelNum = g_player[playerNum].frags[playerNum]; break;
         case PLAYER_BSUBWEAPON: labelNum = (ps.subweapon & (1<<lParm2)) != 0;    break;
 
+        case PLAYER_LOOGIEX:    labelNum = ps.loogiex[lParm2]; break;
+        case PLAYER_LOOGIEY:    labelNum = ps.loogiey[lParm2]; break;
+
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
 
@@ -652,6 +655,9 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
             if (newValue) ps.subweapon |= (1 << lParm2);
             else ps.subweapon &= ~(1 << lParm2);
             break;
+
+        case PLAYER_LOOGIEX: ps.loogiex[lParm2] = newValue; break;
+        case PLAYER_LOOGIEY: ps.loogiey[lParm2] = newValue; break;
 
         default: EDUKE32_UNREACHABLE_SECTION(break);
     }
