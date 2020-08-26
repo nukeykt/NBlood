@@ -6932,7 +6932,8 @@ void polymost_drawrooms()
         float const r = (ghalfx / gvrcorrection) / v.z;
         fsearchx = v.x * r + ghalfx;
         fsearchy = v.y * r + ghoriz;
-        fsearchz = 0.f;
+        if (searchit == 2)
+            fsearchz = 0.f;
         polymost_editorfunc();
     }
 
