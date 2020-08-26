@@ -484,8 +484,10 @@ vec2_t G_ScreenText(const int32_t font,
     if (str == NULL)
         return size;
 
+#ifdef USE_OPENGL
     if (REALITY && !(f & TEXT_N64NOPAL))
         RT_DisablePolymost(0);
+#endif
 
     NEG_ALPHA_TO_BLEND(alpha, blendidx, o);
 
@@ -641,6 +643,7 @@ vec2_t G_ScreenText(const int32_t font,
             G_AddCoordsFromRotation(&location, &Xdirection, pos.x);
             G_AddCoordsFromRotation(&location, &Ydirection, pos.y);
 
+#ifdef USE_OPENGL
             if (REALITY)
             {
                 if (!(f & TEXT_N64NOPAL))
@@ -648,6 +651,7 @@ vec2_t G_ScreenText(const int32_t font,
                 RT_RotateSpriteText(location.x, location.y, (float)z2 * (100.f/65536.f), (float)z2 * (100.f/65536.f), tile, orientation | ROTATESPRITE_FULL16, !(f & TEXT_N64COORDS));
                 break;
             }
+#endif
             rotatesprite_(location.x, location.y, z2, angle, tile, shade, pal, orientation, alpha, blendidx, x1, y1, x2, y2);
 
             break;
@@ -858,8 +862,10 @@ vec2_t G_ScreenText(const int32_t font,
         size.y >>= 16;
     }
 
+#ifdef USE_OPENGL
     if (REALITY && !(f & TEXT_N64NOPAL))
         RT_EnablePolymost();
+#endif
 
     return size;
 }
@@ -1074,8 +1080,10 @@ void G_PrintGameQuotes(int32_t snum)
     int32_t height = 0;
     int32_t k = ps->fta;
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_DisablePolymost(0);
+#endif
 
 
     // primary quote
@@ -1119,8 +1127,10 @@ void G_PrintGameQuotes(int32_t snum)
                 y += 100<<16;
         }
 #endif
+#ifdef USE_OPENGL
         if (REALITY)
             RT_RotateSpriteSetColor(64, 200, 200, 256 - texta(k));
+#endif
         height = gametext_(x, y, apStrings[ps->ftq], textsh(k), pal, texto(k), texta(k), TEXT_XCENTER | (REALITY ? TEXT_N64NOPAL : 0)).y + (1<<16);
     }
     while (0);
@@ -1142,14 +1152,18 @@ void G_PrintGameQuotes(int32_t snum)
 
         // int32_t const sh = hud_glowingquotes ? sintable[((totalclock+(i<<2))<<5)&2047]>>11 : 0;
         
+#ifdef USE_OPENGL
         if (REALITY)
             RT_RotateSpriteSetColor(64, 200, 200, 256 - texta(k));
+#endif
         height = mpgametext(mpgametext_x, y, user_quote[i], textsh(k), texto(k), texta(k), TEXT_LINEWRAP | (REALITY ? TEXT_N64NOPAL : 0)).y + textsc(1<<16);
         y += k <= 4 ? (height * (k-1))>>2 : height;
     }
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_EnablePolymost();
+#endif
 }
 
 void P_DoQuote(int32_t q, DukePlayer_t *p)

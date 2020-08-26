@@ -1,5 +1,7 @@
 // Copyright: 2020 Nuke.YKT, EDuke32 developers
 // License: GPLv2
+
+#ifdef USE_OPENGL
 #include "compat.h"
 #include "../duke3d.h"
 #include "reality.h"
@@ -575,3 +577,4 @@ void RT_FreeSoundSlotId(int id)
             RT_FreeSoundSlot(snd);
     }
 }
+#endif

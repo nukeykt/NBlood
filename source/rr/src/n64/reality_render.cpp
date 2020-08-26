@@ -1,5 +1,7 @@
 // Copyright 2020 Nuke.YKT, EDuke32 developers
 // Polymost code: Copyright Ken Silverman, Copyright (c) 2018, Alex Dawson
+
+#ifdef USE_OPENGL
 #include "build.h"
 #include "colmatch.h"
 #include "reality.h"
@@ -4123,3 +4125,4 @@ void RT_RenderUnsetScissor(void)
     glScissor(0, 0, xdim, ydim);
     glDisable(GL_SCISSOR_TEST);
 }
+#endif

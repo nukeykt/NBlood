@@ -118,8 +118,10 @@ void G_ResetInterpolations(void)
         case SE_26:
         case SE_30_TWO_WAY_TRAIN:
             Sect_SetInterpolation(sprite[k].sectnum);
+#ifdef USE_OPENGL
             if (REALITY)
                 RT_MS_SetInterpolation(sprite[k].sectnum);
+#endif
             break;
         }
 
@@ -1103,7 +1105,9 @@ static void sv_quoteload();
 static void sv_restsave();
 static void sv_restload();
 static void sv_rrrafog();
+#ifdef USE_OPENGL
 static void sv_preloaddn64();
+#endif
 
 #define SVARDATALEN \
     ((sizeof(g_player[0].user_name)+sizeof(g_player[0].pcolor)+sizeof(g_player[0].pteam) \
@@ -1151,8 +1155,10 @@ static const dataspec_t svgm_udnetw[] =
     { 0, &randomseed, sizeof(randomseed), 1 },
     { 0, &g_globalRandom, sizeof(g_globalRandom), 1 },
 //    { 0, &lockclock_dummy, sizeof(lockclock), 1 },
+#ifdef USE_OPENGL
     { DS_NOCHK, &rt_boardnum, sizeof(rt_boardnum), 1 },
     { DS_NOCHK, &rt_levelnum, sizeof(rt_levelnum), 1 },
+#endif
     { DS_END, 0, 0, 0 }
 };
 
@@ -1209,6 +1215,7 @@ static const dataspec_t svgm_secwsp[] =
     { DS_END, 0, 0, 0 }
 };
 
+#ifdef USE_OPENGL
 static char svgm_dn64_string [] = "blK:dn64";
 static const dataspec_t svgm_dn64[] =
 {
@@ -1241,6 +1248,7 @@ static const dataspec_t svgm_dn64[] =
 
     { DS_END, 0, 0, 0 }
 };
+#endif
 
 static char svgm_script_string [] = "blK:scri";
 static const dataspec_t svgm_script[] =
@@ -1447,8 +1455,10 @@ int32_t sv_saveandmakesnapshot(FILE *fil, char const *name, int8_t spot, int8_t 
     sv_makevarspec();
     svsnapsiz = calcsz((const dataspec_t *)svgm_vars);
     svsnapsiz += calcsz(svgm_udnetw) + calcsz(svgm_secwsp) + calcsz(svgm_script) + calcsz(svgm_anmisc);
+#ifdef USE_OPENGL
     if (REALITY)
         svsnapsiz += calcsz(svgm_dn64);
+#endif
 
 
     // create header
@@ -1704,8 +1714,10 @@ uint32_t sv_writediff(FILE *fil)
 
     cmpspecdata(svgm_udnetw, &p, &d);
     cmpspecdata(svgm_secwsp, &p, &d);
+#ifdef USE_OPENGL
     if (REALITY)
         cmpspecdata(svgm_dn64, &p, &d);
+#endif
     cmpspecdata(svgm_script, &p, &d);
     cmpspecdata(svgm_anmisc, &p, &d);
     cmpspecdata((const dataspec_t *)svgm_vars, &p, &d);
@@ -1749,7 +1761,9 @@ int32_t sv_readdiff(int32_t fil)
 
     if (applydiff(svgm_udnetw, &p, &d)) return -3;
     if (applydiff(svgm_secwsp, &p, &d)) return -4;
+#ifdef USE_OPENGL
     if (REALITY && applydiff(svgm_dn64, &p, &d)) return -5;
+#endif
     if (applydiff(svgm_script, &p, &d)) return -6;
     if (applydiff(svgm_anmisc, &p, &d)) return -7;
     if (applydiff((const dataspec_t *)svgm_vars, &p, &d)) return -8;
@@ -1915,11 +1929,13 @@ static uint8_t *dosaveplayer2(FILE *fil, uint8_t *mem)
     PRINTSIZE("ud");
     mem=writespecdata(svgm_secwsp, fil, mem);  // sector, wall, sprite
     PRINTSIZE("sws");
+#ifdef USE_OPENGL
     if (REALITY)
     {
         mem=writespecdata(svgm_dn64, fil, mem);  // dn64 vars
         PRINTSIZE("dn64");
     }
+#endif
     mem=writespecdata(svgm_script, fil, mem);  // script
     PRINTSIZE("script");
     mem=writespecdata(svgm_anmisc, fil, mem);  // animates, quotes & misc.
@@ -1942,11 +1958,13 @@ static int32_t doloadplayer2(int32_t fil, uint8_t **memptr)
     PRINTSIZE("ud");
     if (readspecdata(svgm_secwsp, fil, &mem)) return -4;
     PRINTSIZE("sws");
+#ifdef USE_OPENGL
     if (REALITY)
     {
         if (readspecdata(svgm_dn64, fil, &mem)) return -5;
         PRINTSIZE("dn64");
     }
+#endif
     if (readspecdata(svgm_script, fil, &mem)) return -6;
     PRINTSIZE("script");
     if (readspecdata(svgm_anmisc, fil, &mem)) return -7;
@@ -1983,7 +2001,9 @@ int32_t sv_updatestate(int32_t frominit)
 
     if (readspecdata(svgm_udnetw, -1, &p)) return -2;
     if (readspecdata(svgm_secwsp, -1, &p)) return -4;
+#ifdef USE_OPENGL
     if (REALITY && readspecdata(svgm_dn64, -1, &p)) return -5;
+#endif
     if (readspecdata(svgm_script, -1, &p)) return -6;
     if (readspecdata(svgm_anmisc, -1, &p)) return -7;
     if (readspecdata((const dataspec_t *)svgm_vars, -1, &p)) return -8;
@@ -2009,6 +2029,7 @@ static void sv_rrrafog()
     G_SetFog(g_fogType ? 2 : 0);
 }
 
+#ifdef USE_OPENGL
 static void sv_preloaddn64()
 {
     if (rt_sectvtx)
@@ -2023,6 +2044,7 @@ static void sv_preloaddn64()
     if (rt_boardnum == 27)
         RT_LoadBOSS2MDL();
 }
+#endif
 
 static void postloadplayer(int32_t savegamep)
 {
@@ -2167,8 +2189,10 @@ static void postloadplayer(int32_t savegamep)
 
     G_InitRRRASkies();
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_ResetBarScroll();
+#endif
 }
 
 ////////// END GENERIC SAVING/LOADING SYSTEM //////////

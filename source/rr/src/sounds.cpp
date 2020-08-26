@@ -73,8 +73,10 @@ void S_SoundStartup(void)
         g_soundlocks[i] = 199;
     }
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_InitSound();
+#endif
 
     S_PrecacheSounds();
 
@@ -147,11 +149,13 @@ void S_PauseMusic(bool paused)
 
     MusicPaused = paused;
 
+#ifdef USE_OPENGL
     if (REALITY && g_musicIndex == MUS_INTRO)
     {
         RT_PauseSong(paused);
         return;
     }
+#endif
 
     if (MusicIsWaveform)
     {
@@ -255,8 +259,10 @@ static int S_PlayMusic(const char *fn, int loop)
 
     if (!Bmemcmp(MyMusicPtr, "MThd", 4))
     {
+#ifdef USE_OPENGL
         if (REALITY && g_musicIndex == MUS_INTRO)
             RT_StopSong();
+#endif
 
         int32_t retval = MUSIC_PlaySong(MyMusicPtr, MyMusicSize, loop);
 
@@ -279,8 +285,10 @@ static int S_PlayMusic(const char *fn, int loop)
     }
     else
     {
+#ifdef USE_OPENGL
         if (REALITY && g_musicIndex == MUS_INTRO)
             RT_StopSong();
+#endif
 
         int MyMusicVoice = FX_Play(MyMusicPtr, MusicLen, loop ? 0 : -1, 0, 0, ud.config.MusicVolume, ud.config.MusicVolume, ud.config.MusicVolume,
                                    FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
@@ -342,6 +350,7 @@ void S_PlayLevelMusicOrNothing(unsigned int m)
 
 int S_TryPlaySpecialMusic(unsigned int m)
 {
+#ifdef USE_OPENGL
     if (REALITY && m == MUS_INTRO)
     {
         if (g_musicIndex != MUS_INTRO)
@@ -351,6 +360,7 @@ int S_TryPlaySpecialMusic(unsigned int m)
         S_SetMusicIndex(m);
         return 0;
     }
+#endif
     if (RR)
         return 1;
     char const * musicfn = g_mapInfo[m].musicfn;
@@ -409,11 +419,13 @@ void S_StopMusic(void)
 {
     MusicPaused = 0;
 
+#ifdef USE_OPENGL
     if (REALITY && g_musicIndex == MUS_INTRO)
     {
         RT_StopSong();
         return;
     }
+#endif
 
     if (MusicIsWaveform && MusicVoice >= 0)
     {
@@ -453,7 +465,9 @@ void S_Cleanup(void)
             continue;
         }
 
+#ifdef USE_OPENGL
         RT_FreeSoundSlotId(num);
+#endif
 
         int const vidx = num & (MAXSOUNDINSTANCES - 1);
 
@@ -492,8 +506,10 @@ int32_t S_LoadSound(int num)
 
     if (g_sounds[num].filename == NULL)
     {
+#ifdef USE_OPENGL
         if (REALITY)
             return RT_LoadSound(num);
+#endif
         return 0;
     }
 
@@ -783,6 +799,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
     }
 
     int voice = FX_Ok;
+#ifdef USE_OPENGL
     if (REALITY && (snd.m & SF_REALITY_INTERNAL))
     {
         auto rtsnd = RT_FindSoundSlot(sndNum, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
@@ -795,6 +812,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         }
     }
     else
+#endif
     {
         voice = FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
                           snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
@@ -848,6 +866,7 @@ int S_PlaySound(int num)
 
     int voice = FX_Ok;
     
+#ifdef USE_OPENGL
     if (REALITY && (snd.m & SF_REALITY_INTERNAL))
     {
         auto rtsnd = RT_FindSoundSlot(num, (num * MAXSOUNDINSTANCES) + sndnum);
@@ -862,6 +881,7 @@ int S_PlaySound(int num)
         }
     }
     else
+#endif
     {
         voice = (snd.m & SF_LOOP) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
                                             LOUDESTVOLUME, snd.pr, snd.volume, (num * MAXSOUNDINSTANCES) + sndnum)
@@ -941,9 +961,11 @@ void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
                 initprintf(OSD_ERROR "S_ChangeSoundPitch(): bad voice %d for sound ID %d!\n", voice.id, soundNum);
             else if (voice.id > FX_Ok && FX_SoundActive(voice.id))
             {
+#ifdef USE_OPENGL
                 if (g_sounds[spriteNum].m & SF_REALITY_INTERNAL)
                     FX_SetFrequency(voice.id, rt_soundrate[soundNum] + pitchoffset);
                 else
+#endif
                     FX_SetPitch(voice.id, pitchoffset);
             }
             break;

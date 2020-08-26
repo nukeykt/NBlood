@@ -690,8 +690,10 @@ void A_MoveSector(int spriteNum)
     pSprite->x += (pSprite->xvel * (sintable[(pSprite->ang + 512) & 2047])) >> 14;
     pSprite->y += (pSprite->xvel * (sintable[pSprite->ang & 2047])) >> 14;
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_MS_Update(pSprite->sectnum, rotateAngle, pSprite->x, pSprite->y);
+#endif
 
     int const endWall = sector[pSprite->sectnum].wallptr + sector[pSprite->sectnum].wallnum;
 
@@ -3180,35 +3182,42 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                         case DN64TILE3841__STATIC:
                         {
-                            if (!REALITY)
-                                goto default_case;
-                            int const newSprite = A_InsertSprite(pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z,
-                                FORCERIPPLE, -127, 64, 64, 0, 0, 0, spriteNum, 5);
-                            sprite[newSprite].cstat = 128;
-                            if (pSprite->yvel > 88)
+#ifdef USE_OPENGL
+                            if (REALITY)
                             {
-                                A_PlaySound(271, newSprite);
-                                for (int TRAVERSE_CONNECT(pn))
+                                int const newSprite = A_InsertSprite(pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z,
+                                    FORCERIPPLE, -127, 64, 64, 0, 0, 0, spriteNum, 5);
+                                sprite[newSprite].cstat = 128;
+                                if (pSprite->yvel > 88)
                                 {
-                                    DukePlayer_t *ps = g_player[pn].ps;
-                                    if (ps->last_extra > 0
-                                        && cansee(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum,
-                                            ps->pos.x, ps->pos.y, ps->pos.z, ps->cursectnum))
+                                    A_PlaySound(271, newSprite);
+                                    for (int TRAVERSE_CONNECT(pn))
                                     {
-                                        P_PalFrom(ps, pSprite->yvel - 32, 64, 96, 96);
+                                        DukePlayer_t *ps = g_player[pn].ps;
+                                        if (ps->last_extra > 0
+                                            && cansee(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum,
+                                                ps->pos.x, ps->pos.y, ps->pos.z, ps->cursectnum))
+                                        {
+                                            P_PalFrom(ps, pSprite->yvel - 32, 64, 96, 96);
+                                        }
                                     }
+                                    g_earthquakeTime = 15;
+                                    RT_AddExplosion(pSprite->x >> 1, pSprite->y >> 1, pSprite->z >> 5, 4);
                                 }
-                                g_earthquakeTime = 15;
-                                RT_AddExplosion(pSprite->x >> 1, pSprite->y >> 1, pSprite->z >> 5, 4);
+                                else
+                                {
+                                    A_PlaySound(8, newSprite);
+                                    RT_AddExplosion(pSprite->x >> 1, pSprite->y >> 1, pSprite->z >> 5, 6);
+                                }
+                                int const x = pSprite->extra;
+                                A_RadiusDamage(spriteNum, g_rpgRadius + pSprite->yvel * 30, x >> 2, x >> 1, x - (x >> 2), x);
+                                break;
                             }
                             else
+#endif
                             {
-                                A_PlaySound(8, newSprite);
-                                RT_AddExplosion(pSprite->x >> 1, pSprite->y >> 1, pSprite->z >> 5, 6);
+                                goto default_case;
                             }
-                            int const x = pSprite->extra;
-                            A_RadiusDamage(spriteNum, g_rpgRadius + pSprite->yvel * 30, x >> 2, x >> 1, x - (x >> 2), x);
-                            break;
                         }
 
                         default:
@@ -4764,11 +4773,13 @@ ACTOR_STATIC void G_MoveActors(void)
                 for (bssize_t j  = 0; j < 32; j++)
                     RANDOMSCRAP(pSprite, spriteNum);
 
+#ifdef USE_OPENGL
                 if (REALITY)
                 {
                     A_Spawn(spriteNum,EXPLOSION2);
                     RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 7);
                 }
+#endif
 
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
             }
@@ -5201,8 +5212,10 @@ ACTOR_STATIC void G_MoveActors(void)
 
                     //int const newSprite = A_Spawn(spriteNum, EXPLOSION2);
                     A_PlaySound(REALITY ? 15 : LASERTRIP_EXPLODE, spriteNum);
+#ifdef USE_OPENGL
                     if (REALITY)
                         RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 1);
+#endif
                     if (RR)
                     {
                         if (RRRA && g_ufoSpawnMinion)
@@ -8945,14 +8958,18 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 pSector->floorxpanning -= vect.x >> 3;
                 pSector->floorypanning -= vect.y >> 3;
 
+#ifdef USE_OPENGL
                 if (REALITY)
                     RT_AdjustFloorPanning(pSprite->sectnum, (-vect.x) >> 3, (-vect.y) >> 3);
+#endif
 
                 pSector->ceilingxpanning -= vect.x >> 3;
                 pSector->ceilingypanning -= vect.y >> 3;
 
+#ifdef USE_OPENGL
                 if (REALITY)
                     RT_AdjustCeilingPanning(pSprite->sectnum, (-vect.x) >> 3, (-vect.y) >> 3);
+#endif
             }
 
             break;
@@ -9089,8 +9106,10 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             if (!RRRA || spriteLotag != 156)
             {
                 pSector->floorxpanning += SP(spriteNum)>>7;
+#ifdef USE_OPENGL
                 if (REALITY)
                     RT_AdjustFloorPanning(pSprite->sectnum, SP(spriteNum)>>7, 0);
+#endif
             }
 
             break;

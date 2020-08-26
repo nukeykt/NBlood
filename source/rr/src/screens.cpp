@@ -1060,9 +1060,11 @@ void G_DisplayRest(int32_t smoothratio)
 
                 if (pp->over_shoulder_on == 0)
                 {
+#ifdef USE_OPENGL
                     if (REALITY)
                         RT_P_DisplayScuba();
                     else
+#endif
                         P_DisplayScuba();
                 }
 #ifdef SPLITSCREEN_MOD_HACKS
@@ -1184,6 +1186,7 @@ void G_DisplayRest(int32_t smoothratio)
                     ? currentboardfilename
                     : g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name;
 
+#ifdef USE_OPENGL
             if (REALITY)
             {
                 RT_DisablePolymost(0);
@@ -1192,6 +1195,7 @@ void G_DisplayRest(int32_t smoothratio)
                 RT_EnablePolymost();
             }
             else
+#endif
                 menutext_(160<<16, (90+16+8)<<16, -g_levelTextTime+22/*quotepulseshade*/, fn, o, TEXT_XCENTER);
         }
     }
@@ -1318,12 +1322,14 @@ void G_DisplayRest(int32_t smoothratio)
 
         int32_t textflags = TEXT_XOFFSETZERO | TEXT_GAMETEXTNUMHACK;
 
+#ifdef USE_OPENGL
         if (REALITY)
         {
             RT_DisablePolymost(0);
             RT_RotateSpriteSetColor(255, 80, 0, 256);
             textflags |= TEXT_N64NOPAL;
         }
+#endif
 
         Bsprintf(tempbuf, "T:^15%d:%02d.%02d",
             (myps->player_par/(REALGAMETICSPERSEC*60)),
@@ -1349,7 +1355,7 @@ void G_DisplayRest(int32_t smoothratio)
         else Bsprintf(tempbuf, "S:^15%d/%d", myps->secret_rooms, myps->max_secret_rooms);
         G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|textflags, 0, 0, xdim-1, ydim-1);
         
-        
+#ifdef USE_OPENGL
         if (REALITY)
         {
             Bsprintf(tempbuf, "B:%d/%d",
@@ -1359,6 +1365,7 @@ void G_DisplayRest(int32_t smoothratio)
 
             RT_EnablePolymost();
         }
+#endif
     }
 
     if (g_player[myconnectindex].gotvote == 0 && voting != -1 && voting != myconnectindex)
@@ -1713,6 +1720,7 @@ void G_DisplayLogo(void)
         videoClearScreen(0L);
         return;
     }
+#ifdef USE_OPENGL
     if (REALITY)
     {
         G_FadePalette(0, 0, 0, 0);
@@ -1761,6 +1769,7 @@ void G_DisplayLogo(void)
         videoClearScreen(0L);
         return;
     }
+#endif
     if (!g_noLogo /* && (!g_netServer && ud.multimode < 2) */)
     {
 #ifndef EDUKE32_TOUCH_DEVICES
@@ -2436,11 +2445,13 @@ void G_BonusScreen(int32_t bonusonly)
     int32_t clockpad = 2;
     const char *lastmapname;
 
+#ifdef USE_OPENGL
     if (REALITY)
     {
         RT_Bonus();
         return;
     }
+#endif
 
     //if (g_networkMode == NET_DEDICATED_SERVER)
     //    return;

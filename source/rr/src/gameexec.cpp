@@ -2988,11 +2988,13 @@ void VM_UpdateAnim(int spriteNum, int32_t *pData)
 // NORECURSE
 void A_Execute(int spriteNum, int playerNum, int playerDist)
 {
+#ifdef USE_OPENGL
     if (REALITY)
     {
         RT_Execute(spriteNum, playerNum, playerDist);
         return;
     }
+#endif
     vmstate_t tempvm
     = { spriteNum, playerNum, playerDist, 0, &sprite[spriteNum], &actor[spriteNum].t_data[0], g_player[playerNum].ps, &actor[spriteNum] };
     vm = tempvm;

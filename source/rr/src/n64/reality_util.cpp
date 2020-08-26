@@ -1,5 +1,7 @@
 // Copyright: 2020 Nuke.YKT, EDuke32 developers
 // License: GPLv2
+
+#ifdef USE_OPENGL
 #include "compat.h"
 #include "reality.h"
 #include "../duke3d.h"
@@ -256,3 +258,4 @@ float RT_AngleMod(float a)
     }
     return a;
 }
+#endif

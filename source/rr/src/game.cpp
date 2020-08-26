@@ -1471,10 +1471,12 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
             renderDrawMasks();
         }
+#ifdef USE_OPENGL
         else if (REALITY)
         {
             RT_DrawRooms(CAMERA(pos.x),CAMERA(pos.y),CAMERA(pos.z),CAMERA(q16ang),CAMERA(q16horiz),CAMERA(sect),smoothRatio);
         }
+#endif
         else
         {
             yax_preparedrawrooms();
@@ -2854,6 +2856,7 @@ rrbloodpool_fallthrough:
 
         case EXPLOSION2__STATIC:
         case EXPLOSION3__STATICRR:
+#ifdef USE_OPENGL
             if (REALITY)
             {
                 switch (DYNAMICTILEMAP(sprite[spriteNum].picnum))
@@ -2883,6 +2886,7 @@ rrbloodpool_fallthrough:
                     break;
                 }
             }
+#endif
 #ifdef POLYMER
             if (pSprite->yrepeat > 32)
             {
@@ -2892,10 +2896,12 @@ rrbloodpool_fallthrough:
             fallthrough__;
 #endif
         case SHRINKEREXPLOSION__STATIC:
+#ifdef USE_OPENGL
             if (REALITY && pSprite->picnum == SHRINKEREXPLOSION)
             {
                 RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 5);
             }
+#endif
             fallthrough__;
         case EXPLOSION2BOT__STATIC:
             if (REALITY && pSprite->picnum == EXPLOSION2BOT) goto default_case;
@@ -4512,8 +4518,10 @@ rr_badguy:
                     pSprite->owner = spriteNum;
                 }
 
+#ifdef USE_OPENGL
                 if (REALITY)
                     RT_MS_Add(sectNum, pSprite->x, pSprite->y);
+#endif
 
                 {
                     int const startWall = sector[sectNum].wallptr;
@@ -4649,8 +4657,10 @@ rr_badguy:
                 case SE_16_REACTOR:
                 case SE_26:
                     Sect_SetInterpolation(sprite[newSprite].sectnum);
+#ifdef USE_OPENGL
                     if (REALITY)
                         RT_MS_SetInterpolation(sprite[newSprite].sectnum);
+#endif
                     break;
             }
 
@@ -7951,8 +7961,10 @@ static void G_Startup(void)
             G_GameExit("Failed loading art.");
     }
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_LoadTiles();
+#endif
 
     // Make the fullscreen nuke logo background non-fullbright.  Has to be
     // after dynamic tile remapping (from C_Compile) and loading tiles.
@@ -8043,12 +8055,14 @@ static int G_EndOfLevel(void)
                 G_BonusScreenRRRA(0);
         }
 
+#ifdef USE_OPENGL
         if (REALITY)
         {
             ud.eog = rt_levelnum == 27;
             rt_levelnum = RT_NextLevel();
             ud.secretlevel = 0;
         }
+#endif
 
         // Clear potentially loaded per-map ART only after the bonus screens.
         artClearMapArt();
@@ -9040,8 +9054,10 @@ int G_DoMoveThings(void)
     if (RR && ud.recstat == 0 && ud.multimode < 2 && g_torchCnt)
         G_DoTorch();
 
+#ifdef USE_OPENGL
     if (REALITY && ud.pause_on == 0)
         RT_AnimateModels();
+#endif
 
     return 0;
 }

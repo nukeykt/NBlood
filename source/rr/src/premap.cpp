@@ -483,6 +483,7 @@ static void G_DoLoadScreen(const char *statustext, int32_t percent)
 
         videoClearScreen(0);
 
+#ifdef USE_OPENGL
         if (REALITY)
         {
             RT_DisablePolymost(0);
@@ -491,6 +492,7 @@ static void G_DoLoadScreen(const char *statustext, int32_t percent)
             RT_EnablePolymost();
         }
         else
+#endif
         {
             int const loadScreenTile = VM_OnEventWithReturn(EVENT_GETLOADTILE, g_player[screenpeek].ps->i, screenpeek, DEER ? 7040 : LOADSCREEN);
 
@@ -1981,8 +1983,10 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 
     g_showShareware = GAMETICSPERSEC*34;
 
+#ifdef USE_OPENGL
     if (REALITY)
         rt_levelnum = levelNum;
+#endif
     ud.level_number = levelNum;
     ud.volume_number = volumeNum;
     ud.player_skill = skillNum;
@@ -1997,8 +2001,10 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 
     int const UserMap = Menu_HaveUserMap();
 
+#ifdef USE_OPENGL
     if (REALITY && (!g_netServer && ud.multimode < 2) && UserMap == 0 && levelNum == 0)
         RT_Intro();
+#endif
 
     // we don't want the intro to play after the multiplayer setup screen
     if (!RR && (!g_netServer && ud.multimode < 2) && UserMap == 0 &&
@@ -2422,11 +2428,13 @@ int G_EnterLevel(int gameMode)
     ud.ffire             = ud.m_ffire;
     ud.noexits           = ud.m_noexits;
 
+#ifdef USE_OPENGL
     if (REALITY)
     {
         ud.volume_number = 0;
         ud.level_number = rt_levelnum;
     }
+#endif
 
     if ((gameMode & MODE_DEMO) != MODE_DEMO)
         ud.recstat = ud.m_recstat;
@@ -2540,10 +2548,12 @@ int G_EnterLevel(int gameMode)
         G_LoadMapHack(levelName, boardfilename);
         G_SetupFilenameBasedMusic(levelName, boardfilename, ud.m_level_number);
     }
+#ifdef USE_OPENGL
     else if (REALITY)
     {
         RT_LoadBoard(rt_levelnum);
     }
+#endif
     else if (engineLoadBoard(g_mapInfo[mii].filename, VOLUMEONE, &pPlayer->pos, &lbang, &pPlayer->cursectnum) < 0)
     {
         OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", g_mapInfo[mii].filename);
@@ -2702,8 +2712,10 @@ int G_EnterLevel(int gameMode)
     G_DrawBackground();
     G_DrawRooms(myconnectindex,65536);
 
+#ifdef USE_OPENGL
     if (REALITY)
         RT_ResetBarScroll();
+#endif
 
     Net_WaitForEverybody();
     return 0;

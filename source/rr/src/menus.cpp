@@ -114,6 +114,7 @@ static savehead_t savehead;
 
 static void Menu_DrawBackground(const vec2_t origin)
 {
+#ifdef USE_OPENGL
     if (REALITY)
     {
         float ox = origin.x * (1.f/65536.f) * (240.f - 32.f) / (240.f);
@@ -124,6 +125,7 @@ static void Menu_DrawBackground(const vec2_t origin)
         RT_EnablePolymost();
         return;
     }
+#endif
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (100<<16), 65536L,0,MENUSCREEN,16,0,10+64);
 }
 
@@ -153,6 +155,7 @@ static FORCE_INLINE int32_t Menu_CursorShade(void)
 }
 static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnum, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
+#ifdef USE_OPENGL
     if (REALITY)
     {
         RT_DisablePolymost(0);
@@ -161,6 +164,7 @@ static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnu
         RT_EnablePolymost();
         return;
     }
+#endif
     rotatesprite_(x, y, z, 0, picnum, Menu_CursorShade(), 0, 2|8, 0, 0, 0, ydim_upper, xdim-1, ydim_lower);
 }
 static void Menu_DrawCursorLeft(int32_t x, int32_t y, int32_t z)
@@ -2444,7 +2448,9 @@ static void Menu_Pre(MenuID_t cm)
              || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, r_maxfps <= 0);
+#ifdef USE_OPENGL
         MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER, REALITY);
+#endif
         break;
     }
 
@@ -2659,6 +2665,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             else
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+5)<<16), origin.y + ((24+l)<<16), 23592L,0,INGAMEDUKETHREEDEE,0,0,10);
         }
+#ifdef USE_OPENGL
         else if (REALITY)
         {
             if (cm != MENU_MAIN)
@@ -2691,6 +2698,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 m_logosoundcnt++;
             }
         }
+#endif
         else
         {
             rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((28+l)<<16), 65536L,0,INGAMEDUKETHREEDEE,0,0,10);

@@ -1,5 +1,7 @@
 // Copyright: 2020 Nuke.YKT, EDuke32 developers
 // License: GPLv2
+
+#ifdef USE_OPENGL
 #include "compat.h"
 #include "multivoc.h"
 #include "reality.h"
@@ -531,3 +533,4 @@ void RT_StopSong(void)
     MV_UnhookMusicRoutine();
     rt_musicactive = 0;
 }
+#endif

@@ -35,8 +35,10 @@ static FORCE_INLINE int32_t _krand(void)
 
 static FORCE_INLINE int32_t krand2(void)
 {
+#ifdef USE_OPENGL
     if (REALITY)
         return RT_KRand2();
+#endif
     return _krand();
 }
 

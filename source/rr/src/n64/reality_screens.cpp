@@ -1,5 +1,7 @@
 // Copyright: 2020 Nuke.YKT, EDuke32 developers
 // License: GPLv2
+
+#ifdef USE_OPENGL
 #include "compat.h"
 #include "build.h"
 #include "reality.h"
@@ -867,3 +869,4 @@ void RT_Bonus(void)
     videoClearScreen(0);
     videoNextPage();
 }
+#endif

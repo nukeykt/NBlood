@@ -289,6 +289,7 @@ static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projec
                         if (pSprite->picnum == APLAYER)
                         {
                             const DukePlayer_t *const ps = g_player[P_GetP(pSprite)].ps;
+#ifdef USE_OPENGL
                             if (REALITY && ps->auto_aim != 4)
                             {
                                 float const viewang = RT_GetAngle(fix16_to_float(ps->q16horiz + ps->q16horizoff - F16(100)), 128.f) * 1024.f / fPI;
@@ -297,6 +298,7 @@ static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projec
                                 onScreen = abs(targetang - viewang) < projAng;
                             }
                             else
+#endif
                                 onScreen = (klabs(scale(SZ(spriteNum)-pSprite->z,10,spriteDist)-fix16_to_int(ps->q16horiz+ps->q16horizoff-F16(100))) < 100);
                         }
 
@@ -1604,24 +1606,27 @@ growspark_rr:
 
         case DN64TILE3634__STATIC:
         {
-            if (!REALITY)
-                break;
-
-            float viewang = RT_GetAngle(fix16_to_float(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100)), 128.f) * (-180.f / fPI);
-            int vc = int(cos(viewang * fPI / 180.f) * 768.f);
-            int vs = int(sin(viewang * fPI / 180.f) * 768.f);
-            if (sector[spriteSectnum].lotag == ST_2_UNDERWATER)
+#ifdef USE_OPENGL
+            if (REALITY)
             {
-                vc /= 2;
-                vs /= 2;
+                float viewang = RT_GetAngle(fix16_to_float(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100)), 128.f) * (-180.f / fPI);
+                int vc = int(cos(viewang * fPI / 180.f) * 768.f);
+                int vs = int(sin(viewang * fPI / 180.f) * 768.f);
+                if (sector[spriteSectnum].lotag == ST_2_UNDERWATER)
+                {
+                    vc /= 2;
+                    vs /= 2;
+                }
+
+                int const returnSprite = A_InsertSprite(spriteSectnum, startPos.x + sintable[(shootAng + 512 + 348) & 2047] / 448,
+                    startPos.y + sintable[(shootAng + 348) & 2047] / 448, startPos.z - ZOFFSET, DN64TILE3634, 0, 18, 18,
+                    shootAng, vc, vs << 4, spriteNum, 1);
+                sprite[returnSprite].yvel = 0;
+
+                return returnSprite;
             }
-
-            int const returnSprite = A_InsertSprite(spriteSectnum, startPos.x + sintable[(shootAng + 512 + 348) & 2047] / 448,
-                startPos.y + sintable[(shootAng + 348) & 2047] / 448, startPos.z - ZOFFSET, DN64TILE3634, 0, 18, 18,
-                shootAng, vc, vs << 4, spriteNum, 1);
-            sprite[returnSprite].yvel = 0;
-
-            return returnSprite;
+#endif
+            break;
         }
     }
 
@@ -2112,8 +2117,10 @@ static int P_DisplayAccess(int accessShade)
 
 void P_DisplayWeapon(void)
 {
+#ifdef USE_OPENGL
     if (REALITY)
         return RT_P_DisplayWeapon();
+#endif
 
     DukePlayer_t *const  pPlayer     = g_player[screenpeek].ps;
     const int16_t *const weaponFrame = &pPlayer->kickback_pic;
@@ -5588,8 +5595,10 @@ static void P_ProcessWeapon(int playerNum)
     uint32_t            playerBits   = g_player[playerNum].inputBits->bits;
     int const           sectorLotag  = sector[pPlayer->cursectnum].lotag;
 
+#ifdef USE_OPENGL
     if (REALITY)
         return RT_P_ProcessWeapon(playerNum);
+#endif
 
     if (RR)
     {
