@@ -12228,23 +12228,41 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
                 nofirstzcheck = 1;
             }
 
+#ifdef YAX_ENABLE
+            int mcf = -1;
+restart:
+#endif
             // this block used to be outside the "if" and caused crashes in Polymost Mapster32
             int32_t cz, fz;
             getzsofslope(*sectnum, x, y, &cz, &fz);
 
 #ifdef YAX_ENABLE
-            if (z < cz)
+            if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
             {
                 int const next = yax_getneighborsect(x, y, *sectnum, YAX_CEILING);
-                if (next >= 0 && z >= getceilzofslope(next, x, y))
-                    SET_AND_RETURN(*sectnum, next);
+                if (next >= 0)
+                {
+                    if (z >= getceilzofslope(next, x, y))
+                        SET_AND_RETURN(*sectnum, next);
+
+                    *sectnum = next;
+                    mcf = YAX_CEILING;
+                    goto restart;
+                }
             }
 
-            if (z > fz)
+            if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
             {
                 int const next = yax_getneighborsect(x, y, *sectnum, YAX_FLOOR);
-                if (next >= 0 && z <= getflorzofslope(next, x, y))
-                    SET_AND_RETURN(*sectnum, next);
+                if (next >= 0)
+                {
+                    if (z <= getflorzofslope(next, x, y))
+                        SET_AND_RETURN(*sectnum, next);
+
+                    *sectnum = next;
+                    mcf = YAX_FLOOR;
+                    goto restart;
+                }
             }
 #endif
             if (nofirstzcheck || (z >= cz && z <= fz))
@@ -12320,26 +12338,43 @@ void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, in
         nofirstzcheck = true;
     }
 
+#ifdef YAX_ENABLE
+    int mcf = -1;
+restart:
+#endif
     uint32_t const correctedsectnum = (unsigned)*sectnum;
-
     if (correctedsectnum < (unsigned)numsectors && getsectordist({x, y}, correctedsectnum) <= initialMaxDistance)
     {
         int32_t cz, fz;
         getzsofslope(correctedsectnum, x, y, &cz, &fz);
 
 #ifdef YAX_ENABLE
-        if (z < cz)
+        if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
         {
             int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_CEILING);
-            if (next >= 0 && z >= getceilzofslope(next, x, y))
-                SET_AND_RETURN(*sectnum, next);
+            if (next >= 0)
+            {
+                if (z >= getceilzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+
+                *sectnum = next;
+                mcf = YAX_CEILING;
+                goto restart;
+            }
         }
 
-        if (z > fz)
+        if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
         {
             int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_FLOOR);
-            if (next >= 0 && z <= getflorzofslope(next, x, y))
-                SET_AND_RETURN(*sectnum, next);
+            if (next >= 0)
+            {
+                if (z <= getflorzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+
+                *sectnum = next;
+                mcf = YAX_FLOOR;
+                goto restart;
+            }
         }
 #endif
         if ((nofirstzcheck || (z >= cz && z <= fz)) && inside_p(x, y, *sectnum))
@@ -13045,10 +13080,14 @@ void yax_getzsofslope(int sectNum, int playerX, int playerY, int32_t *pCeilZ, in
     int didCeiling = 0;
     int didFloor   = 0;
     int testSector = 0;
+    int nextSector = 0;
 
     if ((sector[sectNum].ceilingstat & 512) == 0)
     {
-        testSector = yax_getneighborsect(playerX, playerY, sectNum, YAX_CEILING);
+        testSector = -1;
+        nextSector = sectNum;
+        while ((nextSector = yax_getneighborsect(playerX, playerY, nextSector, YAX_CEILING)) >= 0)
+            testSector = nextSector;
 
         if (testSector >= 0)
         {
@@ -13060,7 +13099,10 @@ ceiling:
 
     if ((sector[sectNum].floorstat & 512) == 0)
     {
-        testSector = yax_getneighborsect(playerX, playerY, sectNum, YAX_FLOOR);
+        testSector = -1;
+        nextSector = sectNum;
+        while ((nextSector = yax_getneighborsect(playerX, playerY, nextSector, YAX_FLOOR)) >= 0)
+            testSector = nextSector;
 
         if (testSector >= 0)
         {
@@ -13082,9 +13124,10 @@ int32_t yax_getceilzofslope(int const sectnum, vec2_t const vect)
 {
     if ((sector[sectnum].ceilingstat&512)==0)
     {
-        int const nsect = yax_getneighborsect(vect.x, vect.y, sectnum, YAX_CEILING);
-        if (nsect >= 0)
-            return getcorrectceilzofslope(nsect, vect.x, vect.y);
+        int testsectnum = sectnum, nsect;
+        while ((nsect = yax_getneighborsect(vect.x, vect.y, testsectnum, YAX_CEILING)) >= 0)
+            testsectnum = nsect;
+        return getcorrectceilzofslope(testsectnum, vect.x, vect.y);
     }
 
     return getcorrectceilzofslope(sectnum, vect.x, vect.y);
@@ -13094,9 +13137,10 @@ int32_t yax_getflorzofslope(int const sectnum, vec2_t const vect)
 {
     if ((sector[sectnum].floorstat&512)==0)
     {
-        int const nsect = yax_getneighborsect(vect.x, vect.y, sectnum, YAX_FLOOR);
-        if (nsect >= 0)
-            return getcorrectflorzofslope(nsect, vect.x, vect.y);
+        int testsectnum = sectnum, nsect;
+        while ((nsect = yax_getneighborsect(vect.x, vect.y, testsectnum, YAX_FLOOR)) >= 0)
+            testsectnum = nsect;
+        return getcorrectflorzofslope(testsectnum, vect.x, vect.y);
     }
 
     return getcorrectflorzofslope(sectnum, vect.x, vect.y);
