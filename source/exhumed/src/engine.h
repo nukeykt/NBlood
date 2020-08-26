@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pragmas.h"
 #include "typedefs.h"
 #include "trigdat.h"
+#include "osd.h"
 
 #define kMaxTiles	6144
 #define kMaxSprites 4096
