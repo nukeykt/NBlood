@@ -1,7 +1,5 @@
 // Copyright: 2020 Nuke.YKT, EDuke32 developers
 // License: GPLv2
-
-#ifdef USE_OPENGL
 #include "build.h"
 #include "colmatch.h"
 #include "vfs.h"
@@ -212,8 +210,10 @@ void RT_Init(void)
 
     duke64 = true;
 
+#ifdef USE_OPENGL
     // FIXME
     PolymostProcessVoxels_Callback = RT_GLInit;
+#endif
 
     RT_BuildAngleTable();
 
@@ -483,10 +483,12 @@ static void RT_LoadPalette(void)
         palookup[i] = palookup[0];
     }
 
+#ifdef USE_OPENGL
     for (int i = 0; i < MAXPALOOKUPS; i++)
     {
         palookupfogfactor[i] = 1.f;
     }
+#endif
 
     blendtable[0] = (char*)Xcalloc(1, 256 * 256);
 
@@ -777,5 +779,3 @@ int RT_NextLevel(void)
     }
     return nextlevel;
 }
-
-#endif

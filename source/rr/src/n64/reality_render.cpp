@@ -260,10 +260,14 @@ struct vtx_t {
 static vtx_t rt_c_vtx[12];
 static vtx_t rt_r_vtx[4];
 
+#ifdef USE_OPENGL
 extern void (*gloadtile_n64)(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp* pth, int32_t doalloc);
+#endif
 
 static bool RT_TileLoad(int16_t tilenum);
+#ifdef USE_OPENGL
 static void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp* pth, int32_t doalloc);
+#endif
 
 void RT_LoadTiles(void)
 {
@@ -301,7 +305,9 @@ void RT_LoadTiles(void)
     }
 
     rt_tileload_callback = RT_TileLoad;
+#ifdef USE_OPENGL
     gloadtile_n64 = rt_gloadtile_n64;
+#endif
 #if 0
     for (auto& t : rt_tileinfo)
     {
@@ -468,6 +474,8 @@ bool RT_TileLoad(int16_t tilenum)
 
     return true;
 }
+
+#ifdef USE_OPENGL
 void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp *pth, int32_t doalloc)
 {
     int tileid = rt_tilemap[dapic];
@@ -711,9 +719,11 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     pth->hicr = NULL;
     pth->siz = tsiz;
 }
+#endif
 
 void RT_SetShader(void)
 {
+#ifdef USE_OPENGL
     glUseProgram(rt_shaderprogram);
     rt_stexsamplerloc = glGetUniformLocation(rt_shaderprogram, "s_texture");
     rt_stexcombloc = glGetUniformLocation(rt_shaderprogram, "u_texcomb");
@@ -725,40 +735,48 @@ void RT_SetShader(void)
     glUniform4fv(rt_scolor1loc, 1, rt_scolor1);
     glUniform4fv(rt_scolor2loc, 1, rt_scolor2);
     glUniform2f(rt_texclamploc, rt_texclamp.x, rt_texclamp.y);
+#endif
 }
 
 void RT_SetColor1(int r, int g, int b, int a)
 {
+#ifdef USE_OPENGL
     rt_scolor1[0] = r / 255.f;
     rt_scolor1[1] = g / 255.f;
     rt_scolor1[2] = b / 255.f;
     rt_scolor1[3] = a / 255.f;
     if (rt_renderactive == 3)
         glUniform4fv(rt_scolor1loc, 1, rt_scolor1);
+#endif
 }
 
 void RT_SetColor2(int r, int g, int b, int a)
 {
+#ifdef USE_OPENGL
     rt_scolor2[0] = r / 255.f;
     rt_scolor2[1] = g / 255.f;
     rt_scolor2[2] = b / 255.f;
     rt_scolor2[3] = a / 255.f;
     if (rt_renderactive == 3)
         glUniform4fv(rt_scolor2loc, 1, rt_scolor2);
+#endif
 }
 
 void RT_SetTexComb(int comb)
 {
+#ifdef USE_OPENGL
     if (rt_stexcomb != comb)
     {
         rt_stexcomb = comb;
         if (rt_renderactive == 3)
             glUniform1f(rt_stexcombloc, rt_stexcomb);
     }
+#endif
 }
 
 void RT_SetTexClamp(char clamp)
 {
+#ifdef USE_OPENGL
     char clampx = clamp & 1;
     char clampy = clamp >> 1;
     if (clampx != rt_texclamp.x || clampy != rt_texclamp.y)
@@ -767,10 +785,12 @@ void RT_SetTexClamp(char clamp)
         if (rt_renderactive == 3)
             glUniform2f(rt_texclamploc, rt_texclamp.x, rt_texclamp.y);
     }
+#endif
 }
 
 void RT_GLInit(void)
 {
+#ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_CLASSIC)
         return;
     const char* const RT_VERTEX_SHADER =
@@ -845,16 +865,20 @@ void RT_GLInit(void)
     glAttachShader(rt_shaderprogram, vertexshaderid);
     glAttachShader(rt_shaderprogram, fragmentshaderid);
     glLinkProgram(rt_shaderprogram);
+#endif
 }
 
 void RT_ProjectionCorrect(void)
 {
+#ifdef USE_OPENGL
     float factor = 240.f / (240.f - 32.f);
     glScalef(factor, factor, 1.f);
+#endif
 }
 
 void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, int flags, int aspectCorrection = true)
 {
+#ifdef USE_OPENGL
     int xflip = (flags & 4) != 0;
     int yflip = (flags & 8) != 0;
 
@@ -942,10 +966,12 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+#endif
 }
 
 void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
 {
+#ifdef USE_OPENGL
     rt_fxtile = 1;
     glEnable(GL_BLEND);
     glDisable(GL_ALPHA_TEST);
@@ -953,18 +979,22 @@ void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
     RT_SetColor1(a4, a5, a6, 255);
     RT_SetColor2(a1, a2, a3, 255);
     RT_SetTexComb(1);
+#endif
 }
 
 void unsetfxcolor(void)
 {
+#ifdef USE_OPENGL
     rt_fxtile = 0;
     glDisable(GL_BLEND);
     glEnable(GL_ALPHA_TEST);
     RT_SetTexComb(0);
+#endif
 }
 
 void RT_DisplaySky(void)
 {
+#ifdef USE_OPENGL
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     rt_globaldepth = 0.f;
@@ -973,10 +1003,12 @@ void RT_DisplaySky(void)
     RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f * ((float)xdim / float(ydim)) * (240.f/320.f), 103.f, 3976, 0);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
+#endif
 }
 
 void RT_DisablePolymost(int useShader)
 {
+#ifdef USE_OPENGL
     if (rt_renderactive)
         return;
     rt_renderactive = 1 | (useShader << 1);
@@ -994,10 +1026,12 @@ void RT_DisablePolymost(int useShader)
     }
     RT_SetTexComb(0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#endif
 }
 
 void RT_EnablePolymost()
 {
+#ifdef USE_OPENGL
     if (!rt_renderactive)
         return;
     glMatrixMode(GL_MODELVIEW);
@@ -1012,10 +1046,12 @@ void RT_EnablePolymost()
     polymost_usePaletteIndexing(true);
     polymost2d = 0;
     rt_renderactive = 0;
+#endif
 }
 
 void RT_LookVectorCalc(float dx, float dy, float dz)
 {
+#ifdef USE_OPENGL
     GLfloat tempmat[16];
     // TODO: replace
     glPushMatrix();
@@ -1029,19 +1065,23 @@ void RT_LookVectorCalc(float dx, float dy, float dz)
     rt_look[1].y = tempmat[4+1];
     rt_look[1].z = tempmat[8+1];
     glPopMatrix();
+#endif
 }
 
 void RT_SetSpecularCoords(float nx, float ny, float nz)
 {
+#ifdef USE_OPENGL
     float tx = nx * rt_boss2_cos - ny * rt_boss2_sin;
     float ty = nx * rt_boss2_sin + ny * rt_boss2_cos;
     float u = tx * rt_look[0].x + ty * rt_look[0].y + nz * rt_look[0].z;
     float v = tx * rt_look[1].x + ty * rt_look[1].y + nz * rt_look[1].z;
     glTexCoord2f((1.f + u) * 1008.f * rt_uvscale.x, (1.f + v) * 1008.f  * rt_uvscale.y);
+#endif
 }
 
 void RT_SetupMatrix(void)
 {
+#ifdef USE_OPENGL
     float dx = 512.f * cosf(rt_globalang / (1024.f / fPI));
     float dy = 512.f * sinf(rt_globalang / (1024.f / fPI));
     float dz = -(rt_globalhoriz - 100.f) * 4.f;
@@ -1056,6 +1096,7 @@ void RT_SetupMatrix(void)
     bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
     glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
     RT_LookVectorCalc(dx, dy, dz);
+#endif
 }
 
 static inline int RT_PicSizLog(int siz)
@@ -1068,6 +1109,7 @@ static inline int RT_PicSizLog(int siz)
 
 void RT_SetTexture(int tilenum, int explosion = 0)
 {
+#ifdef USE_OPENGL
     if (rt_globalpicnum == tilenum)
         return;
     
@@ -1114,6 +1156,7 @@ void RT_SetTexture(int tilenum, int explosion = 0)
     }
 
     RT_SetTexClamp(clamp);
+#endif
 }
 
 void RT_CalculateShade(int x, int y, int z, int shade)
@@ -1192,6 +1235,7 @@ void RT_CalculateShade(int x, int y, int z, int shade)
 
 void RT_DrawCeiling(int sectnum)
 {
+#ifdef USE_OPENGL
     auto rt_sect = &rt_sector[sectnum];
     auto sect = &sector[sectnum];
     RT_SetTexComb(0);
@@ -1211,10 +1255,12 @@ void RT_DrawCeiling(int sectnum)
         glVertex3f(x, y, z);
     }
     glEnd();
+#endif
 }
 
 void RT_DrawFloor(int sectnum)
 {
+#ifdef USE_OPENGL
     auto rt_sect = &rt_sector[sectnum];
     auto sect = &sector[sectnum];
     RT_SetTexComb(0);
@@ -1235,6 +1281,7 @@ void RT_DrawFloor(int sectnum)
         glVertex3f(x, y, z);
     }
     glEnd();
+#endif
 }
 
 void RT_SetTileGlobals(int tilenum)
@@ -1836,6 +1883,7 @@ int RT_WallCalc(int sectnum, int wallnum)
 
 void RT_SetupDrawMask(void)
 {
+#ifdef USE_OPENGL
     rt_lastpicnum = 0;
     rt_boss2 = 0;
     rt_spritezbufferhack = 0;
@@ -1849,10 +1897,12 @@ void RT_SetupDrawMask(void)
     glEnable(GL_ALPHA_TEST);
     glDisable(GL_CULL_FACE);
     glDepthMask(GL_FALSE);
+#endif
 }
 
 void RT_DrawSpriteFace(float x, float y, float z, int pn)
 {
+#ifdef USE_OPENGL
     if (rt_tspriteptr->xrepeat == 0 || rt_tspriteptr->yrepeat == 0)
         return;
 
@@ -1874,10 +1924,12 @@ void RT_DrawSpriteFace(float x, float y, float z, int pn)
         rt_tspritepicnum, rt_tspriteptr->cstat, 0);
     //RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, 4.f, 4.f,
     //    rt_tspriteptr->picnum, rt_tspriteptr->cstat);
+#endif
 }
 
 void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
 {
+#ifdef USE_OPENGL
     rt_lastpicnum = 0;
     rt_globalpal = rt_tspriteptr->pal;
     RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
@@ -2040,10 +2092,12 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
     glTexCoord2f(v2, 1.f); glVertex3f(v40, v48, sz2);
     glTexCoord2f(v1, 1.f); glVertex3f(v3e, v46, sz2);
     glEnd();
+#endif
 }
 
 void RT_DrawSpriteFloor(void)
 {
+#ifdef USE_OPENGL
     float u1, v1, u2, v2;
     if ((rt_tspriteptr->cstat&8) == 0)
     {
@@ -2126,10 +2180,12 @@ void RT_DrawSpriteFloor(void)
     glTexCoord2f(u2, v1); glVertex3f(x - sx * dc - sy * ds, y + sy * dc - sx * ds, -z);
     glTexCoord2f(u1, v1); glVertex3f(x + sx * dc - sy * ds, y + sy * dc + sx * ds, -z);
     glEnd();
+#endif
 }
 
 void RT_DrawSprite(int spritenum, int sectnum, int distance)
 {
+#ifdef USE_OPENGL
     int pn;
     if (sprite[spritenum].cstat & 32768)
         return;
@@ -2298,10 +2354,12 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
         return;
     }
     RT_DrawSpriteFlat(spritenum, rt_tspritesect, distance);
+#endif
 }
 
 void RT_DrawWall(int wallnum)
 {
+#ifdef USE_OPENGL
     rt_wallcalcres = RT_WallCalc(rt_wall[wallnum].sectnum, wallnum);
     rt_globalpal = wall[wallnum].pal;
     rt_globalshade = wall[wallnum].shade;
@@ -2347,6 +2405,7 @@ void RT_DrawWall(int wallnum)
         }
         glEnd();
     }
+#endif
 }
 
 float getanglef2(float x1, float y1, float x2, float y2)
@@ -2560,6 +2619,7 @@ void RT_ScanSectors(int sectnum)
 
 void RT_DrawMaskWall(int wallnum)
 {
+#ifdef USE_OPENGL
     walltype &w = wall[wallnum];
     int tileid = rt_tilemap[wall[wallnum].overpicnum];
     // if (tileid == -1)
@@ -2738,10 +2798,12 @@ void RT_DrawMaskWall(int wallnum)
         glVertex3f(vtx.x, vtx.y, vtx.z);
     }
     glEnd();
+#endif
 }
 
 void RT_DrawMasks(void)
 {
+#ifdef USE_OPENGL
     RT_SetupDrawMask();
 
     for (int i = 0; i < visiblesectornum; i++)
@@ -2801,6 +2863,7 @@ void RT_DrawMasks(void)
     }
 
     glDepthMask(GL_TRUE);
+#endif
 }
 
 void RT_AddExplosion(int16_t x, int16_t y, int16_t z, uint8_t type)
@@ -2937,6 +3000,7 @@ void RT_PrepareExplosion(int index, int bottom)
 
 void RT_DisplayExplosion(int index, int bottom)
 {
+#ifdef USE_OPENGL
     auto &e = explosions[index];
     if (e.c_enable)
     {
@@ -2976,6 +3040,7 @@ void RT_DisplayExplosion(int index, int bottom)
         }
         glEnd();
     }
+#endif
 }
 
 void RT_AddSmoke(int16_t x, int16_t y, int16_t z, uint8_t type)
@@ -3001,6 +3066,7 @@ void RT_AddSmoke(int16_t x, int16_t y, int16_t z, uint8_t type)
 
 void RT_DisplayExplosions(void)
 {
+#ifdef USE_OPENGL
     RT_SetTexComb(1);
     glDisable(GL_DEPTH);
     glDepthMask(GL_FALSE);
@@ -3059,6 +3125,7 @@ void RT_DisplayExplosions(void)
                 0xe4a, s.orientation, 0);
         }
     }
+#endif
 }
 
 void RT_LoadBOSS2MDL(void)
@@ -3232,6 +3299,7 @@ void RT_BOSS2CalcVTX(void)
 
 void RT_BOSS2Draw(int x, int y, int z, int ang)
 {
+#ifdef USE_OPENGL
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
@@ -3288,10 +3356,12 @@ void RT_BOSS2Draw(int x, int y, int z, int ang)
     glEnd();
 
     glPopMatrix();
+#endif
 }
 
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio)
 {
+#ifdef USE_OPENGL
     int16_t newsectnum = sectnum;
     updatesector(x, y, &newsectnum);
     if (newsectnum >= 0)
@@ -3412,6 +3482,7 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
                        clamp(pal->b * 4, 0, 255), clamp(pal->f * 4, 0, 255));
 
     glColor4f(1.f, 1.f, 1.f, 1.f);
+#endif
 }
 
 void RT_MS_Reset(void)
@@ -3677,6 +3748,7 @@ void RT_AdjustFloorPanning(int sectnum, int x, int y)
 
 void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4)
 {
+#ifdef USE_OPENGL
     if (a1 < 0)
         a1 = 0;
     if (a1 > 255)
@@ -3703,10 +3775,12 @@ void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4)
         glEnable(GL_ALPHA_TEST);
         glColor4f(a1 * (1.f / 255.f), a2 * (1.f / 255.f), a3 * (1.f / 255.f), a4 * (1.f / 255.f));
     }
+#endif
 }
 
 void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
 {
+#ifdef USE_OPENGL
     shade = (28 - shade) * 9;
     if (shade > 256)
         shade = 256;
@@ -3766,10 +3840,12 @@ void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
         globalcolorblue = 255;
     RT_SetTexComb(0);
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), 1.f);
+#endif
 }
 
 void RT_RotateSpriteSetShadePalAlpha(int shade, int pal, int alpha)
 {
+#ifdef USE_OPENGL
     shade = (28 - shade) * 9;
     if (shade > 256)
         shade = 256;
@@ -3815,10 +3891,12 @@ void RT_RotateSpriteSetShadePalAlpha(int shade, int pal, int alpha)
         globalcolorblue = 255;
     RT_SetTexComb(0);
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
+#endif
 }
 
 void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation, bool screenCorrection /* = true */)
 {
+#ifdef USE_OPENGL
     int otilenum = tilenum;
     int xflip = (orientation & 4) != 0;
     int yflip = (orientation & 8) != 0;
@@ -3976,10 +4054,12 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glTexCoord2f(u2, v2); glVertex2f(x2 * scl + xo, y2 * scl);
     glTexCoord2f(u1, v2); glVertex2f(x1 * scl + xo, y2 * scl);
     glEnd();
+#endif
 }
 
 void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int orientation, bool buildcoords/* = false*/)
 {
+#ifdef USE_OPENGL
     int otilenum = tilenum;
     int tileid = rt_tilemap[tilenum];
     // if (tileid == -1)
@@ -4072,10 +4152,12 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
     glTexCoord2f(u2, v2); glVertex2f(x2 * scl + xo, y2 * scl);
     glTexCoord2f(u1, v2); glVertex2f(x1 * scl + xo, y2 * scl);
     glEnd();
+#endif
 }
 
 void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientation, int color)
 {
+#ifdef USE_OPENGL
     sx *= 3.f;
     sy *= 3.f;
     if (picnum == 0xf01)
@@ -4086,11 +4168,13 @@ void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientat
     glDisable(GL_DEPTH_TEST);
     RT_DisplayTileWorld(x, y, sx, sy, picnum, orientation);
     unsetfxcolor();
+#endif
 }
 
 
 void RT_RenderScissor(float x1, float y1, float x2, float y2, bool absolute/* = false */)
 {
+#ifdef USE_OPENGL
     if (!absolute)
     {
         const float fxdim = (float)xdim;
@@ -4116,10 +4200,13 @@ void RT_RenderScissor(float x1, float y1, float x2, float y2, bool absolute/* = 
 
     glScissor((int)x1, (int)y1, (int)x2 - (int)x1, (int)y2 - (int)y1);
     glEnable(GL_SCISSOR_TEST);
+#endif
 }
 
 void RT_RenderUnsetScissor(void)
 {
+#ifdef USE_OPENGL
     glScissor(0, 0, xdim, ydim);
     glDisable(GL_SCISSOR_TEST);
+#endif
 }

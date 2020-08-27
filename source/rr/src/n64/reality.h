@@ -3,8 +3,6 @@
 
 #pragma once
 
-#ifdef USE_OPENGL
-
 #include "vfs.h"
 #include "reality_defs.h"
 #include "reality_player.h"
@@ -59,5 +57,3 @@ int RT_PrepareScript(void);
 void RT_LoadBoard(int boardnum);
 void RT_Execute(int spriteNum, int playerNum, int playerDist);
 int RT_NextLevel(void);
-
-#endif
