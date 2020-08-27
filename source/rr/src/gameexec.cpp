@@ -3086,8 +3086,6 @@ safe_delete:
         A_DeleteSprite(spriteNum);
 }
 
-#ifdef USE_OPENGL
-
 static inline void RT_VM_CONDITIONAL(int condition)
 {
     if ((condition) || ((insptr = (intptr_t*)&apScript[*(insptr + 1)]) && (((*insptr) & VM_INSTMASK) == RT_CON_ELSE)))
@@ -4148,4 +4146,3 @@ void RT_Execute(int spriteNum, int playerNum, int playerDist)
     else if (vm.pActor->timetosleep == 1)
         changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);
 }
-#endif
