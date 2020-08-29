@@ -6556,7 +6556,11 @@ void polymost_scansector(int32_t sectnum)
 
                 // this said (SCISDIST*SCISDIST*260.f), but SCISDIST is 1 and the significance of 260 isn't obvious to me
                 // is 260 fudged to solve a problem, and does the problem still apply to our version of the renderer?
-                if (d*d < (p1.x*p1.x + p1.y*p1.y) * 256.f)
+                if (d*d < (p1.x*p1.x + p1.y*p1.y) * 256.f
+#ifdef YAX_ENABLE
+                    && yax_globallev == YAX_MAXDRAWS
+#endif
+                    )
                 {
                     sectorborder[sectorbordercnt++] = nextsectnum;
                     gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
@@ -6954,7 +6958,30 @@ void polymost_drawrooms()
 
     // NOTE: globalcursectnum has been already adjusted in ADJUST_GLOBALCURSECTNUM.
     Bassert((unsigned)globalcursectnum < MAXSECTORS);
+#ifdef YAX_ENABLE
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        int k;
+        for (SECTORS_OF_BUNCH(yax_globalbunch, !yax_globalcf, k))
+        {
+            polymost_scansector(k);
+        }
+    }
+    else
+#endif
     polymost_scansector(globalcursectnum);
+
+#ifdef YAX_ENABLE
+    int startbunches = numbunches;
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        for (bssize_t i = 0; i < startbunches; i++)
+        {
+            bunchfirst[MAXWALLSB-1-i] = bunchfirst[i];
+            bunchlast[MAXWALLSB-1-i] = bunchlast[i];
+        }
+    }
+#endif
 
     grhalfxdown10x = grhalfxdown10;
 
@@ -6994,6 +7021,31 @@ void polymost_drawrooms()
             if (!bnch) { ptempbuf[closest] = 1; closest = i; i = 0; }
         }
 
+#ifdef YAX_ENABLE
+        int bunchnodraw = 0;
+
+        if (yax_globallev != YAX_MAXDRAWS)
+        {
+            bunchnodraw = 1;
+            for (bssize_t i = 0; i < startbunches; i++)
+            {
+                int const sbunch = MAXWALLSB-1-i;
+                if (bunchfirst[closest] == bunchfirst[sbunch])
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+                int const bnch = polymost_bunchfront(sbunch,closest); if (bnch < 0) continue;
+                if (!bnch)
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+            }
+        }
+
+        if (!bunchnodraw)
+#endif
         polymost_drawalls(closest);
 
         if (automapping)

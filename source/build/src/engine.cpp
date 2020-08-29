@@ -648,24 +648,21 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
 
     UNREFERENCED_PARAMETER(lastgotsector);
 
-    scansector_retfast = 1;
     scansector_collectsprites = 0;
 
     for (bnchcnt=bbeg; bnchcnt<bbeg+numhere; bnchcnt++)
     {
         int32_t walldist, bestsec=-1;
-        int32_t bestwalldist=INT32_MAX, bestbestdist=INT32_MAX;
+        int32_t bestwalldist=INT32_MAX;
 
         bunchnum = bunches[yax_globalcf][bnchcnt];
 
         for (SECTORS_OF_BUNCH(bunchnum,!yax_globalcf, k))
         {
-            int32_t checkthisec = 0;
-
             if (inside(globalposx, globalposy, k)==1)
             {
                 bestsec = k;
-                bestbestdist = 0;
+                bestwalldist = 0;
                 break;
             }
 
@@ -683,34 +680,17 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
                 walldist = yax_walldist(j);
                 if (walldist < bestwalldist)
                 {
-                    checkthisec = 1;
-                    bestwalldist = walldist;
-                }
-            }
-
-            if (checkthisec)
-            {
-                numscans = numbunches = 0;
-                if (videoGetRenderMode() == REND_CLASSIC)
-                    classicScanSector(k);
-#ifdef USE_OPENGL
-                else
-                    polymost_scansector(k);
-#endif
-                if (numbunches > 0)
-                {
                     bestsec = k;
-                    bestbestdist = bestwalldist;
+                    bestwalldist = walldist;
                 }
             }
         }
 
         bunchsec[bunchnum] = bestsec;
-        bunchdist[bunchnum] = bestbestdist;
+        bunchdist[bunchnum] = bestwalldist;
     }
 
     scansector_collectsprites = 1;
-    scansector_retfast = 0;
 }
 
 static int yax_cmpbunches(const void *b1, const void *b2)
@@ -1726,7 +1706,11 @@ static void classicScanSector(int16_t startsectnum)
                     // OV: E2L10
                     coord_t temp = (coord_t)x1*y2-(coord_t)x2*y1;
                     int32_t tempint = temp;
-                    if (((uint64_t)tempint+262144) < 524288)  // BXY_MAX?
+                    if (
+#ifdef YAX_ENABLE
+                        yax_globallev == YAX_MAXDRAWS && 
+#endif
+                        ((uint64_t)tempint+262144) < 524288)  // BXY_MAX?
                         if (mulscale5(tempint,tempint) <= (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
                         {
                             sectorborder[sectorbordercnt++] = nextsectnum;
@@ -4468,6 +4452,7 @@ static void classicDrawBunches(int32_t bunch)
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_cwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (dwall[x] > umost[x])
@@ -4476,11 +4461,23 @@ static void classicDrawBunches(int32_t bunch)
                                     umost[x] = dwall[x];
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getceilzofslope(sectnum, globalposx, globalposy) <= globalposz)
+                            for (x=x1; x<=x2; x++)
+                                if (uplc[x] > umost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        umost[x] = uplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                     else
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_cwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (umost[x] <= dmost[x])
@@ -4492,6 +4489,17 @@ static void classicDrawBunches(int32_t bunch)
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
                             }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getceilzofslope(sectnum, globalposx, globalposy) <= globalposz)
+                            for (x=x1; x<=x2; x++)
+                                if (uplc[x] > umost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        umost[x] = uplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                 }
 
@@ -4555,6 +4563,7 @@ static void classicDrawBunches(int32_t bunch)
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_fwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (uwall[x] < dmost[x] && umost[x] <= dmost[x])
@@ -4562,11 +4571,23 @@ static void classicDrawBunches(int32_t bunch)
                                 dmost[x] = uwall[x];
                                 if (umost[x] > dmost[x]) numhits--;
                             }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getflorzofslope(sectnum, globalposx, globalposy) >= globalposz)
+                            for (x = x1; x <= x2; x++)
+                                if (dplc[x] < dmost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        dmost[x] = dplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                     else
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_fwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (umost[x] <= dmost[x])
@@ -4578,6 +4599,17 @@ static void classicDrawBunches(int32_t bunch)
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
                             }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getflorzofslope(sectnum, globalposx, globalposy) >= globalposz)
+                            for (x = x1; x <= x2; x++)
+                                if (dplc[x] < dmost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        dmost[x] = dplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                 }
 
@@ -8973,7 +9005,29 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
     if (globalposz < cz) globparaceilclip = 0;
     if (globalposz > fz) globparaflorclip = 0;
 */
+#ifdef YAX_ENABLE
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        int k;
+        for (SECTORS_OF_BUNCH(yax_globalbunch, !yax_globalcf, k))
+        {
+            classicScanSector(k);
+        }
+    }
+    else
+#endif
     classicScanSector(globalcursectnum);
+#ifdef YAX_ENABLE
+    int startbunches = numbunches;
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        for (bssize_t i = 0; i < startbunches; i++)
+        {
+            bunchfirst[MAXWALLSB-1-i] = bunchfirst[i];
+            bunchlast[MAXWALLSB-1-i] = bunchlast[i];
+        }
+    }
+#endif
 
     if (inpreparemirror)
     {
@@ -9034,6 +9088,31 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
             if (j == 0) tempbuf[closest] = 1, closest = i, i = 0;
         }
 
+#ifdef YAX_ENABLE
+        int bunchnodraw = 0;
+
+        if (yax_globallev != YAX_MAXDRAWS)
+        {
+            bunchnodraw = 1;
+            for (i = 0; i < startbunches; i++)
+            {
+                int const sbunch = MAXWALLSB-1-i;
+                if (bunchfirst[closest] == bunchfirst[sbunch])
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+                int const bnch = bunchfront(sbunch,closest); if (bnch < 0) continue;
+                if (!bnch)
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+            }
+        }
+
+        if (!bunchnodraw)
+#endif
         classicDrawBunches(closest);
 
         if (automapping)
