@@ -112,6 +112,12 @@
 // Limitations:
 //  GPU timestamps can only be inserted from one thread.
 
+
+// Windows on ARM64 does not support OpenGL > 1.1, so disable profiler to prevent crash
+#ifdef _M_ARM64
+#undef MICROPROFILE_ENABLED
+#endif
+
 #ifndef MICROPROFILE_ENABLED
 #define MICROPROFILE_ENABLED 0
 #endif
