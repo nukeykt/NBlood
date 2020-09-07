@@ -1994,8 +1994,8 @@ int32_t videoSetGamma(void)
             initprintf("Unable to set gamma: SDL_SetWindowGammaRamp failed: %s\n", SDL_GetError());
 */
 #endif
-
-        OSD_Printf("videoSetGamma(): %s\n", SDL_GetError());
+        if (i != INT32_MIN)
+            OSD_Printf("videoSetGamma(): %s\n", SDL_GetError());
 
 #ifndef EDUKE32_GLES
 #if SDL_MAJOR_VERSION >= 2
