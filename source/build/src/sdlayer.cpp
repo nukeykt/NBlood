@@ -1988,12 +1988,6 @@ int32_t videoSetGamma(void)
 
     if (i < 0)
     {
-#ifndef __ANDROID__  // Don't do this check, it is really supported, TODO
-/*
-        if (i != INT32_MIN)
-            initprintf("Unable to set gamma: SDL_SetWindowGammaRamp failed: %s\n", SDL_GetError());
-*/
-#endif
         if (i != INT32_MIN)
             OSD_Printf("videoSetGamma(): %s\n", SDL_GetError());
 
