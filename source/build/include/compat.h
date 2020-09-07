@@ -317,7 +317,7 @@
 # define EDUKE32_CPU_X86
 #elif defined _M_PPC || defined __powerpc__ || defined __powerpc64__
 # define EDUKE32_CPU_PPC
-#elif defined __MIPSEL__ || defined __mips_isa_rev
+#elif defined __mips__ || defined __MIPSEL__ || defined __MIPSEB__ || defined __mips_isa_rev
 # define EDUKE32_CPU_MIPS
 #endif
 
@@ -331,10 +331,10 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 
 #if defined(__linux)
 # include <endian.h>
-# if __BYTE_ORDER == __LITTLE_ENDIAN
+# if __BYTE_ORDER == __LITTLE_ENDIAN || __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #  define B_LITTLE_ENDIAN 1
 #  define B_BIG_ENDIAN    0
-# elif __BYTE_ORDER == __BIG_ENDIAN
+# elif __BYTE_ORDER == __BIG_ENDIAN || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #  define B_LITTLE_ENDIAN 0
 #  define B_BIG_ENDIAN    1
 # endif

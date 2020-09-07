@@ -175,6 +175,8 @@ ifeq ($(PLATFORM),WII)
     CROSS := powerpc-eabi-
 
     CCFULLPATH = $(DEVKITPPC)/bin/$(CC)
+else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
+    CROSS := mipsel-linux-
 endif
 
 CC := $(CROSS)gcc$(CROSS_SUFFIX)
@@ -207,10 +209,6 @@ ifeq ($(CC),cc)
 endif
 ifeq ($(AS),as)
     override AS := nasm
-endif
-
-ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
-    CROSS := mipsel-linux-
 endif
 
 CLANG := 0
@@ -290,6 +288,8 @@ ifeq ($(PLATFORM),WINDOWS)
     endif
 else ifeq ($(PLATFORM),WII)
     IMPLICIT_ARCH := ppc
+else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
+    IMPLICIT_ARCH := mipsel
 else
     ifneq ($(ARCH),)
         override ARCH := $(subst i486,i386,$(subst i586,i386,$(subst i686,i386,$(strip $(ARCH)))))
