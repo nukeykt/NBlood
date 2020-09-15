@@ -1370,7 +1370,7 @@ musicfade()
 }
 
 void
-menusong(int UNUSED(insubway))
+menusong(int insubway)
 {
     int i, index;
 
