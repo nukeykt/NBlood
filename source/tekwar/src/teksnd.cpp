@@ -1,4 +1,11 @@
 #include "compat.h"
+#include "baselayer.h"
+#include "fx_man.h"
+#include "hmpplay.h"
+#include "keyboard.h"
+#include "control.h"
+#include "tekwar.h"
+#include "config.h"
 
 #if 0
 
@@ -1008,22 +1015,211 @@ SND_SwapLoops(VOID)
 
 #endif
 
+#define NULL_HANDLE        -1
+
+
+buildvfs_kfd fhsongs = buildvfs_kfd_invalid;
+
+#define BASESONG            0
+#define MAXBASESONGLENGTH   44136
+#define AVAILMODES          3
+#define SONGSPERLEVEL       3 
+#define	NUMLEVELS           7
+
+int       totalsongsperlevel;
+char      basesongdata[MAXBASESONGLENGTH];
+char      secondsongdata[MAXBASESONGLENGTH]; // TODO: Unused ?
+char      thirdsongdata[MAXBASESONGLENGTH];
+
+struct songtype {
+    int32_t   handle;
+    int32_t   offset;
+    int32_t   playing;
+    int32_t   pending;
+    char     *buffer;
+    int32_t   length;
+};
+
+InitSong songdataptr;
+
+songtype song[SONGSPERLEVEL];
+songtype *songptr[SONGSPERLEVEL];
+int       songlist[4096];
+
+#define MM_NOHARDWARE       0
+#define MM_MIDIFM           1
+#define MM_MIDIDIGI         2
+#define MM_MIDIGEN          3
+#define MM_MIDIAWE32        4
+
+char      musicmode = MM_NOHARDWARE;
+
+TrackDevice songtrackmap = {
+    0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff
+};
+
 int       digiloopflag=0;
+extern int MV_MixRate;
+extern int musicv;
+
+#define MELODICBANKLENGTH   0x152C
+#define DRUMBANKLENGTH      0x152C
+char *melodicbankptr;
+char *drumbankptr;
+
+void
+setupmidi()
+{
+    buildvfs_kfd fh;
+    int       rv, i;
+
+    if (musicmode == MM_NOHARDWARE)
+        return;
+
+    melodicbankptr = NULL;
+    drumbankptr = NULL;
+
+    if ((musicmode != MM_MIDIFM) && (musicmode != MM_MIDIDIGI))
+        goto nobanks;
+
+    melodicbankptr = (char*)malloc(MELODICBANKLENGTH);
+    drumbankptr = (char*)malloc(DRUMBANKLENGTH);
+    if ((melodicbankptr == NULL) || (drumbankptr == NULL)) {
+        crash("setupmidi: failed malloc");
+    }
+    if ((fh = kopen4load("melodic.bnk", 0)) == buildvfs_kfd_invalid) {
+        crash("setupmidi: cant open melodic.bnk");
+    }
+    kread(fh, (void*)melodicbankptr, MELODICBANKLENGTH);
+    kclose(fh);
+    rv = FMSetBank(melodicbankptr);
+    if (rv != 0) {
+        crash("setupmidi: bad SetInsData");
+    }
+    if ((fh = kopen4load("drum.bnk", O_RDONLY)) == buildvfs_kfd_invalid) {
+        crash("setupmidi: cant open drum.bnk");
+    }
+    kread(fh, (void*)drumbankptr, DRUMBANKLENGTH);
+    kclose(fh);
+    rv = FMSetBank(drumbankptr);
+    if (rv != 0) {
+        crash("setupmidi: bad SetInsData");
+    }
+
+#if 0
+    if ((musicmode == MM_MIDIDIGI) && (midihardwareptr->wPort == 0x388)) {
+        if ((fh = open("test.dig", O_BINARY | O_RDWR)) == -1) {
+            crash("setupmidi: cant open test.dig");
+        }
+        dl = lseek(fh, 0L, SEEK_END);
+        lseek(fh, 0L, SEEK_SET);
+        digitalbankptr = (LPSTR)malloc((size_t)dl);
+        if (digitalbankptr == (LPSTR)NULL) {
+            crash("setupmidi: failed malloc digbnkptr");
+        }
+        rv = read(fh, (void*)digitalbankptr, dl);
+        if (rv != dl) {
+            crash("setupmidi: bad .dig read");
+        }
+        close(fh);
+        rv = sosMIDISetInsData(*fhmididigidriverptr, digitalbankptr, 1);
+        if (rv != _ERR_NO_ERROR) {
+            crash("setupmidi: bad SetInsData");
+        }
+    }
+#endif
+
+nobanks:
+
+    if (musicmode != MM_NOHARDWARE) {
+        if ((fhsongs = kopen4load("SONGS", 0)) == buildvfs_kfd_invalid) {
+            crash("setupmidi: cant open songs");
+        }
+        klseek(fhsongs, 0, SEEK_SET);
+        klseek(fhsongs, -4096, SEEK_END);
+        kread(fhsongs, (void*)songlist, 4096);
+    }
+
+    //jsa venom
+    for (i = 0; i < SONGSPERLEVEL; i++) {
+        songptr[i] = &song[i];
+        songptr[i]->handle = NULL_HANDLE;
+        songptr[i]->offset = 0;
+        songptr[i]->playing = 0;
+        songptr[i]->pending = 0;
+        songptr[i]->length = 0L;
+    }
+    songptr[0]->buffer = basesongdata;
+    songptr[1]->buffer = secondsongdata;
+    songptr[2]->buffer = thirdsongdata;
+
+    totalsongsperlevel = SONGSPERLEVEL * AVAILMODES;
+}
 
 void
 initsb(char UNUSED(option1),char UNUSED(option2),int UNUSED(digihz),
     char UNUSED(option7a),char UNUSED(option7b),int UNUSED(val),char UNUSED(option7c))
 {
+    #ifdef MIXERTYPEWIN
+    void* initdata = (void*)win_gethwnd(); // used for DirectSound
+    #else
+    void* initdata = NULL;
+    #endif
+
+    if (FX_Init(NumVoices, NumChannels, MixRate, initdata) != FX_Ok)
+    {
+        initprintf("Error initializing sound card!\n");
+        return;
+    }
+
+    musicmode = MM_MIDIFM;
+
+    HMIInit(MV_MixRate);
+    setupmidi();
 }
 
 void
 uninitsb(void)
 {
+    int i;
+    if (musicmode != MM_NOHARDWARE)
+    {
+        for (i = 0; i < SONGSPERLEVEL; i++)
+        {
+            if (songptr[i]->handle == NULL_HANDLE)
+                continue;
+            HMIStopSong(songptr[i]->handle);
+            HMIUnInitSong(songptr[i]->handle);
+        }
+        HMIUnInit();
+    }
+    if (fhsongs != buildvfs_kfd_invalid)
+        kclose(fhsongs);
+    if (melodicbankptr)
+        free(melodicbankptr);
+    if (drumbankptr)
+        free(drumbankptr);
+
+    FX_Shutdown();
 }
 
 void
 musicoff(void)
 {
+    int i;
+
+    if (musicmode != MM_NOHARDWARE)
+    {
+        for (i = 0; i < SONGSPERLEVEL; i++) {
+            if (songptr[i]->handle == NULL_HANDLE)
+                continue;
+            HMIStopSong(songptr[i]->handle);
+            HMIUnInitSong(songptr[i]->handle);
+        }
+    }
 }
 
 int
@@ -1043,8 +1239,14 @@ stopsound(int UNUSED(i))
 }
 
 void
-songmastervolume(int UNUSED(vol))
+songmastervolume(int vol)
 {
+    if (musicmode == MM_NOHARDWARE)
+        return;
+
+    if ((vol < 0) || (vol > 127))
+        vol = 127;
+    HMISetMasterVolume(vol);
 }
 
 void
@@ -1063,16 +1265,194 @@ stopallsounds()
 }
 
 void
+removesong(int sn)
+{
+     if( musicmode == MM_NOHARDWARE )
+          return;
+
+     if( songptr[sn]->handle != NULL_HANDLE )
+     {
+          songptr[sn]->pending=0;
+          HMIStopSong(songptr[sn]->handle);
+          HMIUnInitSong(songptr[sn]->handle);
+          songptr[sn]->handle=NULL_HANDLE;
+          songptr[sn]->playing=0;
+     }
+}
+
+int
+playsong(int sn)
+{
+    int       rv;
+    int       fpos;
+
+    if ((musicmode == MM_NOHARDWARE) || (toggles[TOGGLE_MUSIC] == 0))
+        return(0);
+
+    if ((sn < 0) || (sn >= SONGSPERLEVEL) || (songptr[sn]->playing != 0) || (songptr[sn]->pending != 0))
+        return(0);
+
+
+    if (songptr[sn]->handle != NULL_HANDLE)
+        removesong(sn);
+
+    if (songptr[sn]->length == 0)
+        return(0);
+
+    songdataptr.songptr = (uint8_t*)songptr[sn]->buffer;
+    songdataptr.callback = NULL; //songcallback;
+
+    if (songptr[sn]->handle == NULL_HANDLE) {
+        klseek(fhsongs, 0, SEEK_SET);
+        fpos = kfilelength(fhsongs);
+        klseek(fhsongs, songptr[sn]->offset, SEEK_SET);
+        fpos = ktell(fhsongs);
+        rv = kread(fhsongs, (void*)songptr[sn]->buffer, songptr[sn]->length);
+        if (rv != songptr[sn]->length) {
+            crash("playsong: bad read");
+        }
+        rv = HMIInitSong(&songdataptr, &songtrackmap, (uint32_t*)&songptr[sn]->handle);
+        if (rv != 0) {
+            songptr[sn]->handle = NULL_HANDLE;
+            return(0);
+        }
+    }
+    else {
+        rv = HMIResetSong(songptr[sn]->handle, &songdataptr);
+        if (rv != 0) {
+            songptr[sn]->handle = NULL_HANDLE;
+#ifdef MUSICDEBUG
+            showmessage("CANT RESET SONG %2d", sn);
+#endif
+        }
+    }
+
+    rv = HMIStartSong(songptr[sn]->handle);
+    if (rv != 0) {
+        songptr[sn]->handle = NULL_HANDLE;
+        return(0);
+    }
+
+    if ((musicv << 3) > 0) {
+        HMIFadeSong(songptr[sn]->handle, SONG_FADE_IN, 250,
+            0, (musicv << 3), 50);
+    }
+
+#ifdef MUSICDEBUG
+    showmessage("PLAYING SONG %2d", sn);
+#endif
+    songptr[sn]->playing = 1;
+    songptr[sn]->pending = 0;
+
+    return(1);
+}
+
+void
 musicfade()
 {
+    int i;
+
+    if (musicmode == MM_NOHARDWARE)
+        return;
+
+    for (i = 0; i < SONGSPERLEVEL; i++)
+    {
+        if ((songptr[i]->handle != NULL_HANDLE)) {
+            if (((musicv << 3) > 0) && !HMISongDone(songptr[i]->handle)) {
+                HMIFadeSong(songptr[i]->handle, SONG_FADE_OUT_STOP, 700,
+                    (musicv << 3), 0, 50);
+                while (!HMISongDone(songptr[i]->handle)) {
+                }
+            }
+            removesong(i);
+        }
+    }
 }
 
 void
 menusong(int UNUSED(insubway))
 {
+    int i, index;
+
+    if (musicmode == MM_NOHARDWARE)
+        return;
+
+    for (i = 0; i < SONGSPERLEVEL; i++)
+        removesong(i);
+
+    if (insubway)
+        index = (NUMLEVELS * (AVAILMODES * SONGSPERLEVEL) + 3);
+
+    else
+        index = NUMLEVELS * (AVAILMODES * SONGSPERLEVEL);
+
+    switch (musicmode) {
+    case MM_MIDIFM:
+        break;
+    case MM_MIDIAWE32:
+        index++;
+        break;
+    case MM_MIDIGEN:
+        index += 2;
+        break;
+    }
+
+    for (i = 0; i < SONGSPERLEVEL; i++) {
+        songptr[0]->handle = NULL_HANDLE;
+        songptr[0]->offset = songlist[index * 3] * 4096;
+        songptr[0]->playing = 0;
+        songptr[0]->pending = 0;
+        songptr[0]->length = (WORD)songlist[(index * 3) + 1];
+        if (songptr[0]->length >= MAXBASESONGLENGTH) {
+            crash("prepsongs: basesong exceeded max length");
+        }
+    }
+    songptr[0]->buffer = basesongdata;
+
+    playsong(BASESONG);
 }
 
 void
-startmusic(int UNUSED(level))
+startmusic(int level)
 {
+    int i, index;
+
+    if (musicmode == MM_NOHARDWARE)
+        return;
+
+    if (level > 6)
+        return;
+
+    for (i = 0; i < SONGSPERLEVEL; i++)
+        removesong(i);
+
+    index = totalsongsperlevel * (level);
+
+    switch (musicmode) {
+    case MM_MIDIFM:
+        break;
+    case MM_MIDIAWE32:
+        index += SONGSPERLEVEL;
+        break;
+    case MM_MIDIGEN:
+        index += SONGSPERLEVEL * 2;
+        break;
+    }
+
+    for (i = 0; i < SONGSPERLEVEL; i++)
+    {
+        songptr[i]->handle = NULL_HANDLE;
+        songptr[i]->offset = songlist[(index * 3) + (i * 3)] * 4096;
+        songptr[i]->playing = 0;
+        songptr[i]->pending = 0;
+        songptr[i]->length = (WORD)songlist[((index * 3) + (i * 3)) + 1];
+        if (songptr[i]->length >= MAXBASESONGLENGTH) {
+            crash("prepsongs: basesong exceeded max length");
+        }
+    }
+    songptr[0]->buffer = basesongdata;
+    songptr[1]->buffer = secondsongdata;
+    songptr[2]->buffer = thirdsongdata;
+
+    playsong(BASESONG);
 }
