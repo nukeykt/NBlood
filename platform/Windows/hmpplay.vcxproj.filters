@@ -13,5 +13,8 @@
     <ClCompile Include="..\..\source\hmpplay\src\hmpplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\hmpplay\src\fmmidi3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

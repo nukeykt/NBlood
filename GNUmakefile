@@ -199,6 +199,7 @@ hmpplay := hmpplay
 
 hmpplay_objs := \
     hmpplay.cpp \
+    fmmidi3.cpp \
 
 hmpplay_root := $(source)/$(hmpplay)
 hmpplay_src := $(hmpplay_root)/src

@@ -22,6 +22,7 @@
     <ClInclude Include="..\..\source\hmpplay\include\hmpplay.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\hmpplay\src\fmmidi3.cpp" />
     <ClCompile Include="..\..\source\hmpplay\src\hmpplay.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
