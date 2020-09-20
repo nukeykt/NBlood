@@ -5660,10 +5660,9 @@ badindex:
                 int32_t const arrayNum = *insptr++;
                 int32_t const sequenceSize = *insptr++;
 
-                ResizeArray(arrayNum, sequenceSize);
+                VM_ASSERT((unsigned)arrayNum < (unsigned)g_gameArrayCount, "invalid array %d\n", arrayNum);
 
-                VM_ASSERT((unsigned)arrayNum < (unsigned)g_gameArrayCount && (unsigned)sequenceSize < (unsigned)aGameArrays[arrayNum].size, 
-                            "invalid array %d or index %d\n", arrayNum, sequenceSize);
+                ResizeArray(arrayNum, sequenceSize);
 
                 for (int arrayIndex = 0; arrayIndex < sequenceSize; ++arrayIndex)
                     SetArray(arrayNum, arrayIndex, Gv_GetVar(*insptr++));
