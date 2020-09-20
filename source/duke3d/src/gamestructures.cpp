@@ -591,6 +591,8 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_LOOGIEX:    labelNum = ps.loogiex[lParm2]; break;
         case PLAYER_LOOGIEY:    labelNum = ps.loogiey[lParm2]; break;
 
+        case PLAYER_WEAPRECS:   labelNum = ps.weaprecs[lParm2]; break;
+
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
 
@@ -658,6 +660,8 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
 
         case PLAYER_LOOGIEX: ps.loogiex[lParm2] = newValue; break;
         case PLAYER_LOOGIEY: ps.loogiey[lParm2] = newValue; break;
+
+        case PLAYER_WEAPRECS: ps.weaprecs[lParm2] = newValue; break;
 
         default: EDUKE32_UNREACHABLE_SECTION(break);
     }
