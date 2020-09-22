@@ -764,8 +764,7 @@ static void addclipline(int32_t dax1, int32_t day1, int32_t dax2, int32_t day2, 
         return;
     }
 
-    clipit[clipnum].x1 = dax1; clipit[clipnum].y1 = day1;
-    clipit[clipnum].x2 = dax2; clipit[clipnum].y2 = day2;
+    clipit[clipnum] = { { dax1, day1}, { dax2, day2 } };
     clipobjectval[clipnum] = daoval;
 
     uint32_t const mask = pow2char[clipnum&7];
@@ -917,8 +916,8 @@ static inline int32_t cliptrace(vec2_t const pos, vec2_t * const goal)
 
     for (native_t z=clipnum-1; z>=0; z--)
     {
-        vec2_t const p1   = { clipit[z].x1, clipit[z].y1 };
-        vec2_t const p2   = { clipit[z].x2, clipit[z].y2 };
+        vec2_t const p1   = clipit[z].p1;
+        vec2_t const p2   = clipit[z].p2;
         vec2_t const area = { p2.x-p1.x, p2.y-p1.y };
 
         int32_t topu = area.x*(pos.y-p1.y) - (pos.x-p1.x)*area.y;
