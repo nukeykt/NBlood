@@ -1725,7 +1725,7 @@ static void FuncMenu_Process(const StatusBarMenu *m, int32_t col, int32_t row)
         {
             char tempbuf[64];
             Bsprintf(tempbuf,"Delete all sprites of tile #: ");
-            i = getnumber16(tempbuf,-1,MAXSPRITES-1,1);
+            i = getnumber16(tempbuf,-1,MAXTILES-1,1);
             if (i >= 0)
             {
                 int32_t k = 0;
