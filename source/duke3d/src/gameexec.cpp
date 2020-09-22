@@ -678,6 +678,10 @@ GAMEEXEC_STATIC void VM_Move(void)
         if (deadflag || (vm.pActor->bpos.x != vm.pSprite->x) || (vm.pActor->bpos.y != vm.pSprite->y))
             setsprite(vm.spriteNum, &vm.pSprite->pos);
 
+        // this fixes the WW2GI tank not facing the player, as it uses move 0
+        if (WW2GI && movflags & face_player)
+            VM_FacePlayer(2);
+
         return;
     }
 
