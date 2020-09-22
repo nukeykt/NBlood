@@ -5503,7 +5503,7 @@ static void Keys3d(void)
                 Bsprintf(tempbuf,"%s Z %s", AIMING_AT_CEILING?"CEILING":"FLOOR", eitherCTRL?"512":"");
             else if (eitherSHIFT)
                 Bsprintf(tempbuf,"PAN");
-            else if (eitherCTRL)
+            else if (keystatus[KEYSC_LCTRL])
                 Bsprintf(tempbuf,"SLOPE");
             break;
         case SEARCH_SPRITE:
@@ -5910,7 +5910,7 @@ static void Keys3d(void)
 
     mouseaction=0;
 
-    if (eitherCTRL && !eitherSHIFT && (bstatus&1) && AIMING_AT_CEILING_OR_FLOOR)
+    if (keystatus[KEYSC_LCTRL] && !eitherSHIFT && (bstatus&1) && AIMING_AT_CEILING_OR_FLOOR)
     {
         g_mousePos.x=0; mskip=1;
         if (g_mousePos.y)
