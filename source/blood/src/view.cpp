@@ -1249,7 +1249,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
         sprintf(buffer, "K:%d", pPlayer->fragCount);
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
     y += nHeight+1;
-    sprintf(buffer, "S:%d/%d", gSecretMgr.at4+gSecretMgr.at8, gSecretMgr.at0);
+    sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets);
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
 
