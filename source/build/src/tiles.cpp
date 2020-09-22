@@ -31,9 +31,6 @@ static int32_t tilefileoffs[MAXTILES];
 static uint8_t *g_bakTileFileNum;
 static int32_t *g_bakTileFileOffs;
 static vec2_16_t *g_bakTileSiz;
-static char *g_bakPicSiz;
-static char *g_bakWalock;
-static intptr_t *g_bakWaloff;
 static picanm_t *g_bakPicAnm;
 static char * g_bakFakeTile;
 static char ** g_bakFakeTileData;
@@ -71,7 +68,9 @@ template <typename origar_t, typename bakar_t>
 static inline void RESTORE_MAPART_ARRAY(origar_t & origar, bakar_t & bakar)
 {
     EDUKE32_STATIC_ASSERT(sizeof(origar[0]) == sizeof(bakar[0]));
-    Bmemcpy(origar, bakar, ARRAY_SIZE(origar) * sizeof(origar[0]));
+    for (bssize_t i=0; i<MAXTILES; i++)
+        if (tilefilenum[i] >= MAXARTFILES_BASE)
+            origar[i] = bakar[i];
     DO_FREE_AND_NULL(bakar);
 }
 
@@ -109,25 +108,24 @@ void artClearMapArt(void)
     }
 
     // Restore original per-tile arrays
-    RESTORE_MAPART_ARRAY(tilefilenum, g_bakTileFileNum);
     RESTORE_MAPART_ARRAY(tilefileoffs, g_bakTileFileOffs);
     RESTORE_MAPART_ARRAY(tilesiz, g_bakTileSiz);
-    RESTORE_MAPART_ARRAY(picsiz, g_bakPicSiz);
-    RESTORE_MAPART_ARRAY(walock, g_bakWalock);
-    RESTORE_MAPART_ARRAY(waloff, g_bakWaloff);
     RESTORE_MAPART_ARRAY(picanm, g_bakPicAnm);
     RESTORE_MAPART_ARRAY(faketile, g_bakFakeTile);
     RESTORE_MAPART_ARRAY(rottile, g_bakRottile);
 
     for (size_t i = 0; i < MAXUSERTILES; ++i)
     {
-        if (faketiledata[i] != g_bakFakeTileData[i])
+        if (tilefilenum[i] >= MAXARTFILES_BASE && faketiledata[i] != g_bakFakeTileData[i])
         {
             Bfree(faketiledata[i]);
             faketiledata[i] = g_bakFakeTileData[i];
         }
     }
     DO_FREE_AND_NULL(g_bakFakeTileData);
+
+    // must be restored last
+    RESTORE_MAPART_ARRAY(tilefilenum, g_bakTileFileNum);
 
     artUpdateManifest();
 #ifdef USE_OPENGL
@@ -166,9 +164,6 @@ void artSetupMapArt(const char *filename)
     ALLOC_MAPART_ARRAY(tilefilenum, g_bakTileFileNum);
     ALLOC_MAPART_ARRAY(tilefileoffs, g_bakTileFileOffs);
     ALLOC_MAPART_ARRAY(tilesiz, g_bakTileSiz);
-    ALLOC_MAPART_ARRAY(picsiz, g_bakPicSiz);
-    ALLOC_MAPART_ARRAY(walock, g_bakWalock);
-    ALLOC_MAPART_ARRAY(waloff, g_bakWaloff);
     ALLOC_MAPART_ARRAY(picanm, g_bakPicAnm);
     ALLOC_MAPART_ARRAY(faketile, g_bakFakeTile);
     ALLOC_MAPART_ARRAY(faketiledata, g_bakFakeTileData);
