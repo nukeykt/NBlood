@@ -49,7 +49,7 @@ public:
 
 class CSecretMgr {
 public:
-    int at0, at4, at8;
+    int nAllSecrets, nNormalSecretsFound, nSuperSecretsFound;
     CSecretMgr();
     void SetCount(int);
     void Found(int);

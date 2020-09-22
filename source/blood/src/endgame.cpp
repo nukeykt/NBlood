@@ -200,16 +200,16 @@ CSecretMgr::CSecretMgr(void)
 
 void CSecretMgr::SetCount(int nCount)
 {
-    at0 = nCount;
+    nAllSecrets = nCount;
 }
 
 void CSecretMgr::Found(int nType)
 {
-    if (nType == 0) at4++;
+    if (nType == 0) nNormalSecretsFound++;
     else if (nType < 0) {
         viewSetSystemMessage("Invalid secret type %d triggered.", nType);
         return;
-    } else at8++;
+    } else nSuperSecretsFound++;
 
     if (gGameOptions.nGameType == 0) {
         switch (Random(2)) {
@@ -227,18 +227,18 @@ void CSecretMgr::Draw(void)
 {
     char pBuffer[40];
     viewDrawText(1, "SECRETS:", 75, 70, -128, 0, 0, 1);
-    sprintf(pBuffer, "%2d", at4);
+    sprintf(pBuffer, "%2d", nNormalSecretsFound);
     viewDrawText(1, pBuffer, 160, 70, -128, 0, 0, 1);
     viewDrawText(1, "OF", 190, 70, -128, 0, 0, 1);
-    sprintf(pBuffer, "%2d", at0);
+    sprintf(pBuffer, "%2d", nAllSecrets);
     viewDrawText(1, pBuffer, 220, 70, -128, 0, 0, 1);
-    if (at8 > 0)
+    if (nSuperSecretsFound > 0)
         viewDrawText(1, "YOU FOUND A SUPER SECRET!", 160, 100, -128, 2, 1, 1);
 }
 
 void CSecretMgr::Clear(void)
 {
-    at0 = at4 = at8 = 0;
+    nAllSecrets = nNormalSecretsFound = nSuperSecretsFound = 0;
 }
 
 class EndGameLoadSave : public LoadSave {
@@ -249,18 +249,18 @@ public:
 
 void EndGameLoadSave::Load(void)
 {
-    Read(&gSecretMgr.at0, 4);
-    Read(&gSecretMgr.at4, 4);
-    Read(&gSecretMgr.at8, 4);
+    Read(&gSecretMgr.nAllSecrets, 4);
+    Read(&gSecretMgr.nNormalSecretsFound, 4);
+    Read(&gSecretMgr.nSuperSecretsFound, 4);
     Read(&gKillMgr.at0, 4);
     Read(&gKillMgr.at4, 4);
 }
 
 void EndGameLoadSave::Save(void)
 {
-    Write(&gSecretMgr.at0, 4);
-    Write(&gSecretMgr.at4, 4);
-    Write(&gSecretMgr.at8, 4);
+    Write(&gSecretMgr.nAllSecrets, 4);
+    Write(&gSecretMgr.nNormalSecretsFound, 4);
+    Write(&gSecretMgr.nSuperSecretsFound, 4);
     Write(&gKillMgr.at0, 4);
     Write(&gKillMgr.at4, 4);
 }
