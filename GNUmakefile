@@ -215,7 +215,6 @@ engine_objs := \
     crc32.cpp \
     defs.cpp \
     dxtfilter.cpp \
-    enet.cpp \
     engine.cpp \
     fix16.cpp \
     hash.cpp \
@@ -274,6 +273,9 @@ else
   ifneq (0,$(USE_ASM64))
     engine_objs += a64.yasm
   endif
+endif
+ifneq (0,$(NETCODE))
+    engine_objs += enet.cpp
 endif
 ifeq (1,$(USE_OPENGL))
     engine_objs += glsurface.cpp voxmodel.cpp mdsprite.cpp tilepacker.cpp
