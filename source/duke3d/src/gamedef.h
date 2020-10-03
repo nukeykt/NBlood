@@ -48,6 +48,8 @@ enum
     LABEL_ANY    = -1,
 };
 
+#define MAXLABELS 16384
+
 #define LABEL_CHAR sizeof(uint8_t)
 #define LABEL_SHORT sizeof(uint16_t)
 #define LABEL_INT sizeof(uint32_t)
@@ -229,6 +231,7 @@ enum ScriptError_t
     ERROR_NOTTOPLEVEL,
     ERROR_PARAMUNDEFINED,
     ERROR_SYNTAXERROR,
+    ERROR_TOOMANYLABELS,
     ERROR_VARREADONLY,
     ERROR_VARTYPEMISMATCH,
     WARNING_ARRAYMASKSKEYWORD,

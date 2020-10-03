@@ -1038,7 +1038,7 @@ uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointe
 
 hashtable_t h_arrays   = { MAXGAMEARRAYS >> 1, NULL };
 hashtable_t h_gamevars = { MAXGAMEVARS >> 1, NULL };
-hashtable_t h_labels   = { 11264 >> 1, NULL };
+hashtable_t h_labels   = { MAXLABELS >> 1, NULL };
 
 static void C_SetScriptSize(int32_t newsize)
 {
@@ -1213,6 +1213,14 @@ static inline int32_t C_GetLabelNameOffset(hashtable_t const * const table, cons
 static void C_GetNextLabelName(void)
 {
     int32_t i = 0;
+
+    if (EDUKE32_PREDICT_FALSE(g_labelCnt >= MAXLABELS))
+    {
+        g_errorCnt++;
+        C_ReportError(ERROR_TOOMANYLABELS);
+        G_GameExit("Error: too many labels defined!");
+        return;
+    }
 
     C_SkipComments();
 
@@ -6263,9 +6271,7 @@ static char const * C_ScriptVersionString(int32_t version)
 
 void C_PrintStats(void)
 {
-    initprintf("%d/%d labels, %d/%d variables, %d/%d arrays\n", g_labelCnt,
-        (int32_t) min((MAXSECTORS * sizeof(sectortype)/sizeof(int32_t)),
-            MAXSPRITES * sizeof(spritetype)/(1<<6)),
+    initprintf("%d/%d labels, %d/%d variables, %d/%d arrays\n", g_labelCnt, MAXLABELS,
         g_gameVarCount, MAXGAMEVARS, g_gameArrayCount, MAXGAMEARRAYS);
 
     int cnt = g_numXStrings;
@@ -6577,6 +6583,9 @@ void C_ReportError(int error)
         break;
     case ERROR_VARTYPEMISMATCH:
         initprintf("%s:%d: error: variable `%s' is of the wrong type.\n",g_scriptFileName,g_lineNumber,LAST_LABEL);
+        break;
+    case ERROR_TOOMANYLABELS:
+        initprintf("%s:%d: error: too many labels defined! Maximum is %d\n.",g_scriptFileName,g_lineNumber, MAXLABELS);
         break;
     case WARNING_BADGAMEVAR:
         initprintf("%s:%d: warning: variable `%s' should be either per-player OR per-actor, not both.\n",g_scriptFileName,g_lineNumber,LAST_LABEL);
