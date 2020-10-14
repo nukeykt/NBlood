@@ -1492,7 +1492,7 @@ void ProcessInput(PLAYER *pPlayer)
         switch (hit)
         {
         case 6:
-            if (a3 > 0 && a3 <= 2048)
+            if (a3 > 0 && a3 <= kMaxXSectors)
             {
                 XSECTOR *pXSector = &xsector[a3];
                 int key = pXSector->Key;
