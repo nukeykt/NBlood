@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "editor.h"
 
-#define MAXQUOTES 2048
+#define MAXQUOTES 16384
 #define MAXQUOTELEN 128
 
 typedef int32_t instype;
