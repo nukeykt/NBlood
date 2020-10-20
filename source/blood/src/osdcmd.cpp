@@ -810,6 +810,7 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
         if (in3dmode())
         {
             videoSetGameMode(fullscreen, xres, yres, bpp, gUpscaleFactor);
+            viewResizeView(gViewSize);
         }
     }
     else if (!Bstrcasecmp(parm->name, "r_size"))
