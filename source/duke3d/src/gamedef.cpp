@@ -2788,6 +2788,8 @@ DO_DEFSTATE:
             else
             {
                 g_scriptPtr--;
+                scriptWriteValue(CON_MOVE);
+
                 C_GetNextLabelName();
                 // Check to see it's already defined
 
@@ -2825,7 +2827,7 @@ DO_DEFSTATE:
                 for (k=j; k>=0; k--)
                     scriptWriteValue(0);
 
-                scriptWriteValue(CON_MOVE);
+                scriptWriteValue(CON_END);
             }
             continue;
 
@@ -2908,6 +2910,8 @@ DO_DEFSTATE:
             else
             {
                 g_scriptPtr--;
+                scriptWriteValue(CON_AI);
+
                 C_GetNextLabelName();
 
                 if (EDUKE32_PREDICT_FALSE(hash_find(&h_keywords,LAST_LABEL)>=0))
@@ -2964,7 +2968,7 @@ DO_DEFSTATE:
                 for (k=j; k<3; k++)
                     scriptWriteValue(0);
 
-                scriptWriteValue(CON_AI);
+                scriptWriteValue(CON_END);
             }
             continue;
 
@@ -2976,6 +2980,8 @@ DO_DEFSTATE:
             else
             {
                 g_scriptPtr--;
+                scriptWriteValue(CON_ACTION);
+
                 C_GetNextLabelName();
                 // Check to see it's already defined
 
@@ -3015,7 +3021,7 @@ DO_DEFSTATE:
                 for (k=j; k>=0; k--)
                     scriptWriteValue(0);
 
-                scriptWriteValue(CON_ACTION);
+                scriptWriteValue(CON_END);
             }
             continue;
 

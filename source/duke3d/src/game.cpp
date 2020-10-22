@@ -4206,7 +4206,7 @@ PALONLY:
 
         if (G_TileHasActor(pSprite->picnum))
         {
-            if ((unsigned)scrofs_action + ACTION_PARAM_COUNT > (unsigned)g_scriptSize || apScript[scrofs_action + ACTION_PARAM_COUNT] != CON_ACTION)
+            if ((unsigned)scrofs_action + ACTION_PARAM_COUNT > (unsigned)g_scriptSize || apScript[scrofs_action + ACTION_PARAM_COUNT] != CON_END)
             {
                 if (scrofs_action)
                     OSD_Printf("Sprite %d tile %d: invalid action at offset %d\n", i, pSprite->picnum, scrofs_action);
