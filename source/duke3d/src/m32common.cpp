@@ -1731,7 +1731,8 @@ static void FuncMenu_Process(const StatusBarMenu *m, int32_t col, int32_t row)
                 int32_t k = 0;
                 for (j=0; j<MAXSPRITES; j++)
                     if (sprite[j].picnum == i)
-                        deletesprite(j), k++;
+                        if (deletesprite(j) == 0)
+                            k++;
                 printmessage16("%d sprite(s) deleted",k);
             }
             else printmessage16("Aborted");
