@@ -8464,7 +8464,11 @@ static int osdcmd_artdump(osdcmdptr_t UNUSED(parm))
         p.num |= p.sf & 192;
         p.sf &= 0x0F;
 
-        Bfwrite(&p, sizeof(picanm_t), 1, f);
+        // do not write the tileflags member
+        Bfwrite(&p.num, sizeof(uint8_t), 1, f);
+        Bfwrite(&p.xofs, sizeof(int8_t), 1, f);
+        Bfwrite(&p.yofs, sizeof(int8_t), 1, f);
+        Bfwrite(&p.sf, sizeof(uint8_t), 1, f);
     }
 
     for (uint32_t i = 0; i < numtiles; ++i)
