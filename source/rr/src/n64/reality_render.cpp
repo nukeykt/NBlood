@@ -842,7 +842,7 @@ void RT_GLInit(void)
          #else\n\
             vec2 transitionBlend = fwidth(floor(gl_TexCoord[0].xy));\n\
             transitionBlend = fwidth(transitionBlend)+transitionBlend;\n\
-            vec2 texCoord = mix(mix(gl_TexCoord[0].xy), abs(c_one-mod(gl_TexCoord[0].xy+c_one, c_two)), transitionBlend), clamp(gl_TexCoord[0].xy, c_zero, c_onem), u_clamp);\n\
+            vec2 texCoord = mix(mix(gl_TexCoord[0].xy, abs(c_one-mod(gl_TexCoord[0].xy+c_one, c_two)), transitionBlend), clamp(gl_TexCoord[0].xy, c_zero, c_onem), u_clamp);\n\
             vec4 color = texture2D(s_texture, texCoord);\n\
          #endif\n\
             \n\
