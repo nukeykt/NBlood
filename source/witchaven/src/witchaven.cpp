@@ -1666,6 +1666,7 @@ int app_main(int argc, char const* const* argv)
     // TEMP
     MusicMode = 1;
     SoundMode = 1;
+    musiclevel = 15;
 
     //JSA_SPOOGE
     if (SoundMode) {

@@ -193,6 +193,22 @@ libsmackerdec_obj := $(obj)/$(libsmackerdec)
 libsmackerdec_cflags :=
 
 
+#### hmpplay
+
+hmpplay := hmpplay
+
+hmpplay_objs := \
+    hmpplay.cpp \
+    fmmidi3.cpp \
+
+hmpplay_root := $(source)/$(hmpplay)
+hmpplay_src := $(hmpplay_root)/src
+hmpplay_inc := $(hmpplay_root)/include
+hmpplay_obj := $(obj)/$(hmpplay)
+
+hmpplay_cflags :=
+
+
 ##### Component Definitions
 
 #### EBacktrace
@@ -526,7 +542,7 @@ tekwar_editor := etekwar-editor
 tekwar_game_proper := ETekWar
 tekwar_editor_proper := ETekWar Editor
 
-tekwar_game_deps := audiolib mact libsmackerdec
+tekwar_game_deps := audiolib mact libsmackerdec hmpplay
 
 tekwar_game_objs := \
     b5compat.cpp \
@@ -1288,6 +1304,7 @@ COMPILERFLAGS += \
     -I$(glad_inc) \
     -I$(voidwrap_inc) \
     -I$(libsmackerdec_inc) \
+    -I$(hmpplay_inc) \
     -MP -MMD \
 
 ifneq (0,$(USE_PHYSFS))
@@ -1318,6 +1335,7 @@ libraries := \
     mact \
     voidwrap \
     libsmackerdec \
+    hmpplay \
     n64 \
 
 ifneq (0,$(USE_PHYSFS))

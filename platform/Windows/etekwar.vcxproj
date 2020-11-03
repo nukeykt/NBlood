@@ -182,6 +182,9 @@
     <ProjectReference Include="glad.vcxproj">
       <Project>{6ac1d997-8dae-4343-8dd8-da2a1ca63212}</Project>
     </ProjectReference>
+    <ProjectReference Include="hmpplay.vcxproj">
+      <Project>{acb5467d-9913-4a23-88c8-56a36dfa2db4}</Project>
+    </ProjectReference>
     <ProjectReference Include="libsmackerdec.vcxproj">
       <Project>{598f0d83-2c1b-4f7c-b04d-7fdd471c8c45}</Project>
     </ProjectReference>
