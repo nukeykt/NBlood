@@ -523,14 +523,13 @@ void SND_StopLoop(int16_t nSound)
 {
 }
 
-void SND_LoadSongs(WORD which)
+void SND_LoadSongs(uint16_t which)
 {
     static int index;
 
     index = songsperlevel * which;                  //vanilla
 
-
-    //if digi_midi used skip to those songs         
+    //if digi_midi used skip to those songs
     // if (wMIDIDeviceID == _MIDI_AWE32)
     //     index += songelements;                            //skip past vanilla
 
@@ -648,7 +647,6 @@ int SND_PrepareMIDISong(int SongIndex)
     if (SongIndex == SPICE_SONG)
         sSOSInitSongs[SongIndex].songptr = (uint8_t*)SpiceSongPtr;
 
-
     sSOSInitSongs[SongIndex].callback = sosMIDISongCallback;
     if ((status = HMIInitSong(&sSOSInitSongs[SongIndex], &sSOSTrackMap[SongIndex], (uint32_t*)&hSOSSongHandles[SongIndex])))
     {
@@ -656,14 +654,12 @@ int SND_PrepareMIDISong(int SongIndex)
     }
 
     return((int)hSOSSongHandles[SongIndex]);
-
 }
 int SND_StartMIDISong(int wSongHandle)
 {
     HMISetMasterVolume(wMIDIVol);
     return(HMIStartSong(wSongHandle));
 }
-
 
 void SND_StopMIDISong(int wSongHandle)
 {
@@ -682,7 +678,6 @@ void SND_StopMIDISong(int wSongHandle)
         hSOSSongHandles[i] = 0x7fff;
         free(sSOSInitSongs[i].songptr);
     }
-
 }
 
 void SND_SongFlush()
@@ -709,7 +704,7 @@ void SND_MIDIFlush(void)
         hSOSSongHandles[i] = 0x7fff;
     }
 
-    free((void*)FP_OFF(BaseSongPtr));
-    free((void*)FP_OFF(EmbSongPtr));
-    free((void*)FP_OFF(SpiceSongPtr));
+    free(BaseSongPtr);
+    free(EmbSongPtr);
+    free(SpiceSongPtr);
 }

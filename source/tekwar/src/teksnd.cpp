@@ -52,7 +52,7 @@ DWORD    *LoopList;
 #define   BASESONG            0
 #define   MAXBASESONGLENGTH   44136
 #define   AVAILMODES          3
-#define   SONGSPERLEVEL       3 
+#define   SONGSPERLEVEL       3
 #define   NUMLEVELS       7
 
 int       totalsongsperlevel;
@@ -1023,7 +1023,7 @@ buildvfs_kfd fhsongs = buildvfs_kfd_invalid;
 #define BASESONG            0
 #define MAXBASESONGLENGTH   44136
 #define AVAILMODES          3
-#define SONGSPERLEVEL       3 
+#define SONGSPERLEVEL       3
 #define	NUMLEVELS           7
 
 int       totalsongsperlevel;
@@ -1402,7 +1402,7 @@ menusong(int insubway)
         songptr[0]->offset = songlist[index * 3] * 4096;
         songptr[0]->playing = 0;
         songptr[0]->pending = 0;
-        songptr[0]->length = (WORD)songlist[(index * 3) + 1];
+        songptr[0]->length = (uint16_t)songlist[(index * 3) + 1];
         if (songptr[0]->length >= MAXBASESONGLENGTH) {
             crash("prepsongs: basesong exceeded max length");
         }
@@ -1445,7 +1445,7 @@ startmusic(int level)
         songptr[i]->offset = songlist[(index * 3) + (i * 3)] * 4096;
         songptr[i]->playing = 0;
         songptr[i]->pending = 0;
-        songptr[i]->length = (WORD)songlist[((index * 3) + (i * 3)) + 1];
+        songptr[i]->length = (uint16_t)songlist[((index * 3) + (i * 3)) + 1];
         if (songptr[i]->length >= MAXBASESONGLENGTH) {
             crash("prepsongs: basesong exceeded max length");
         }
