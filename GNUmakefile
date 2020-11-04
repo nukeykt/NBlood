@@ -1245,7 +1245,7 @@ witchaven_obj := $(obj)/$(witchaven)
 
 witchaven_cflags := -I$(witchaven_src)
 
-witchaven_game_deps := duke3d_common_midi audiolib mact
+witchaven_game_deps := duke3d_common_midi audiolib mact hmpplay
 witchaven_editor_deps := audiolib
 
 witchaven_game := ewitchaven
