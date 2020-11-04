@@ -30,8 +30,14 @@ extern const char *OptArgv[16];
 extern int OptArgc;
 extern const char *OptFull;
 
+enum {
+    kOptInvalid = -3,
+    kOptFull    = -2,
+    kOptEnd     = -1
+};
+
 struct SWITCH {
     const char *name;
-    int at4, at8;
+    int nID, nArgs;
 };
 int GetOptions(SWITCH *switches);
