@@ -1268,10 +1268,12 @@ struct POWERUPDISPLAY
     int remainingDuration;
 };
 
+#define nPowerUps 11
+
 void sortPowerUps(POWERUPDISPLAY* powerups) {
-    for (int i = 1; i < 5; i++)
+    for (int i = 1; i < nPowerUps; i++)
     {
-        for (int j = 0; j < 5-i; j++)
+        for (int j = 0; j < nPowerUps-i; j++)
         {
             if (powerups[j].remainingDuration > powerups[j+1].remainingDuration)
             {
@@ -1288,28 +1290,28 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     if (!gPowerupDuration)
         return;
 
-    // NoOne to author: the following powerups can be safely added in this list:
-    // kPwUpFeatherFall -   (used in some user addons, makes player immune to fall damage)
-    // kPwUpGasMask -       (used in some user addons, makes player immune to choke damage)
-    // kPwUpDoppleganger -  (works in multiplayer, it swaps player's team colors, so enemy team player thinks it's a team mate)
-    // kPwUpAsbestArmor -   (used in some user addons, makes player immune to fire damage and draws hud)
-    // kPwUpGrowShroom -    (grows player size, works only if gModernMap == true)
-    // kPwUpShrinkShroom -  (shrinks player size, works only if gModernMap == true)
-
-    POWERUPDISPLAY powerups[5];
+    POWERUPDISPLAY powerups[nPowerUps];
     powerups[0] = { gPowerUpInfo[kPwUpShadowCloak].picnum,  0.4f, 0, pPlayer->pwUpTime[kPwUpShadowCloak] }; // invisibility
     powerups[1] = { gPowerUpInfo[kPwUpReflectShots].picnum, 0.4f, 5, pPlayer->pwUpTime[kPwUpReflectShots] };
     powerups[2] = { gPowerUpInfo[kPwUpDeathMask].picnum, 0.3f, 9, pPlayer->pwUpTime[kPwUpDeathMask] }; // invulnerability
     powerups[3] = { gPowerUpInfo[kPwUpTwoGuns].picnum, 0.3f, 5, pPlayer->pwUpTime[kPwUpTwoGuns] };
-    // does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
+    // Does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
     powerups[4] = { gPowerUpInfo[kPwUpShadowCloakUseless].picnum, 0.4f, 9, pPlayer->pwUpTime[kPwUpShadowCloakUseless] };
+
+    // Not in official maps, but custom maps can use them
+    powerups[5] = { gPowerUpInfo[kPwUpFeatherFall].picnum, 0.3f, 7, pPlayer->pwUpTime[kPwUpFeatherFall] };
+    powerups[6] = { gPowerUpInfo[kPwUpGasMask].picnum, 0.4f, 4, pPlayer->pwUpTime[kPwUpGasMask] };
+    powerups[7] = { gPowerUpInfo[kPwUpDoppleganger].picnum, 0.5f, 5, pPlayer->pwUpTime[kPwUpDoppleganger] };
+    powerups[8] = { gPowerUpInfo[kPwUpAsbestArmor].picnum, 0.3f, 9, pPlayer->pwUpTime[kPwUpAsbestArmor] };
+    powerups[9] = { gPowerUpInfo[kPwUpGrowShroom].picnum, 0.4f, 4, pPlayer->pwUpTime[kPwUpGrowShroom] };
+    powerups[10] = { gPowerUpInfo[kPwUpShrinkShroom].picnum, 0.4f, 4, pPlayer->pwUpTime[kPwUpShrinkShroom] };
 
     sortPowerUps(powerups);
 
     const int warningTime = 5;
     const int x = 15;
     int y = 50;
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < nPowerUps; i++)
     {
         if (powerups[i].remainingDuration)
         {
