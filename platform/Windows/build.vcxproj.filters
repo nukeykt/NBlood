@@ -206,6 +206,9 @@
     <ClCompile Include="..\..\source\build\src\screentext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\build\src\xxh_x86dispatch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\build\include\a.h">
