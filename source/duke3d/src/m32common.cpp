@@ -14,7 +14,7 @@
 #include "m32def.h"
 
 #include "lz4.h"
-#include "xxhash.h"
+#include "xxh3.h"
 
 // XXX: This breaks editors for games other than Duke. The OSD needs a way to specify colors in abstract instead of concatenating palswap escape sequences.
 #include "common_game.h"
@@ -451,24 +451,14 @@ void create_map_snapshot(void)
 
     if (numsectors)
     {
-#if !defined UINTPTR_MAX
-# error Need UINTPTR_MAX define to select between 32- and 64-bit functions
-#endif
-#if UINTPTR_MAX == 0xffffffff
-        /* 32-bit */
-#define XXH__ XXH32
-#else
-        /* 64-bit */
-#define XXH__ XXH64
-#endif
-        uintptr_t temphash = XXH__((uint8_t *)sector, numsectors*sizeof(sectortype), numsectors*sizeof(sectortype));
+        uintptr_t temphash = XXH3_64bits((uint8_t *)sector, numsectors*sizeof(sectortype));
 
         if (!try_match_with_prev(0, numsectors, temphash))
             create_compressed_block(0, sector, numsectors*sizeof(sectortype), temphash);
 
         if (numwalls)
         {
-            temphash = XXH__((uint8_t *)wall, numwalls*sizeof(walltype), numwalls*sizeof(walltype));
+            temphash = XXH3_64bits((uint8_t *)wall, numwalls*sizeof(walltype));
 
             if (!try_match_with_prev(1, numwalls, temphash))
                 create_compressed_block(1, wall, numwalls*sizeof(walltype), temphash);
@@ -476,7 +466,7 @@ void create_map_snapshot(void)
 
         if (Numsprites)
         {
-            temphash = XXH__((uint8_t *)sprite, MAXSPRITES*sizeof(spritetype), MAXSPRITES*sizeof(spritetype));
+            temphash = XXH3_64bits((uint8_t *)sprite, MAXSPRITES*sizeof(spritetype));
 
             if (!try_match_with_prev(2, Numsprites, temphash))
             {
@@ -495,7 +485,6 @@ void create_map_snapshot(void)
                 Xfree(uspri);
             }
         }
-#undef XXH__
     }
 
     CheckMapCorruption(5, 0);

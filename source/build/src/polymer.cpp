@@ -3907,7 +3907,7 @@ void                polymer_updatesprite(int32_t snum)
 
     if (tspr->cstat & 48 && searchit != 2)
     {
-        uint32_t const changed = XXH32((uint8_t *) tspr, offsetof(spritetype, owner), 0xDEADBEEF);
+        uint32_t const changed = XXH3_64bits((uint8_t *) tspr, offsetof(spritetype, owner));
 
         if (changed == s->hash)
             return;

@@ -14,7 +14,7 @@
 #include "cache1d.h"
 #include "palette.h"
 #include "a.h"
-#include "xxhash.h"
+#include "xxh3.h"
 
 #include "vfs.h"
 
@@ -708,7 +708,7 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
         paletteSetFade(palfadedelta>>2);
 
     static uint32_t lastpalettesum=0;
-    uint32_t newpalettesum = XXH32((uint8_t *) curpalettefaded, sizeof(curpalettefaded), sizeof(curpalettefaded));
+    uint32_t newpalettesum = XXH3_64bits((uint8_t *) curpalettefaded, sizeof(curpalettefaded));
 
     palsumdidchange = (newpalettesum != lastpalettesum);
 
@@ -793,7 +793,7 @@ void videoFadePalette(uint8_t r, uint8_t g, uint8_t b, uint8_t offset)
     paletteSetFade(offset);
 
     static uint32_t lastpalettesum=0;
-    uint32_t newpalettesum = XXH32((uint8_t *) curpalettefaded, sizeof(curpalettefaded), sizeof(curpalettefaded));
+    uint32_t newpalettesum = XXH3_64bits((uint8_t *) curpalettefaded, sizeof(curpalettefaded));
 
     if (newpalettesum != lastpalettesum || newpalettesum != g_lastpalettesum)
     {
