@@ -49,6 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define QUOTE_MESSAGES_OFF          24
 #define QUOTE_MUSIC                 26
 #define QUOTE_CHEAT_STEROIDS        37
+#define QUOTE_DN64ARMOR             38
 #define QUOTE_F1HELP                40
 #define QUOTE_MOUSE_AIMING_OFF      44
 #define QUOTE_HOLODUKE_ON           47

@@ -14,6 +14,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "kplib.h"
 #include "mdsprite.h"
 #include "polymost.h"
+#include "microprofile.h"
 #include "tilepacker.h"
 
 extern char textfont[2048], smalltextfont[2048];
@@ -483,7 +484,7 @@ static void calcmat(vec3f_t a0, const vec2f_t *offset, float f, float mat[16], i
     mat[14] = (mat[14] + a0.y*mat[2]) + (a0.z*mat[6] + a0.x*mat[10]);
 }
 
-static GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int * pLength = nullptr)
+GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int * pLength)
 {
     GLuint shaderID = glCreateShader(shaderType);
     if (shaderID == 0)
@@ -2007,7 +2008,7 @@ static int32_t tile_is_sky(int32_t tilenum)
 # define clamp_if_tile_is_sky(x, y) (GL_REPEAT)
 #endif
 
-static void polymost_setuptexture(const int32_t dameth, int filter)
+void polymost_setuptexture(const int32_t dameth, int filter)
 {
     const GLuint clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 
@@ -6768,6 +6769,8 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
 
 void polymost_drawrooms()
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (videoGetRenderMode() == REND_CLASSIC) return;
 
     polymost_outputGLDebugMessage(3, "polymost_drawrooms()");
@@ -9470,6 +9473,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
         else ratio = dimen/scy;
     }
 
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+        glEnable(GL_TEXTURE_2D);
+#endif
+
     glColor3f(1,1,1);
     glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0,              0); glVertex2f((float)tilex            ,(float)tiley);
@@ -9477,6 +9485,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     glTexCoord2f(xdimepad,ydimepad); glVertex2f((float)tilex+(scx*ratio),(float)tiley+(scy*ratio));
     glTexCoord2f(0,       ydimepad); glVertex2f((float)tilex            ,(float)tiley+(scy*ratio));
     glEnd();
+
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+        glDisable(GL_TEXTURE_2D);
+#endif
 
     if (pth && !(pth->flags & PTH_INDEXED))
     {
@@ -9773,8 +9786,8 @@ void polymost_initosdfuncs(void)
 #if 0
         { "r_enablepolymost2","enable/disable polymost2",(void *) &r_enablepolymost2, CVAR_BOOL, 0, 0 }, //POGO: temporarily disable this variable
         { "r_pogoDebug","",(void *) &r_pogoDebug, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
-        { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
 #endif
+        { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
         { "r_polymostDebug","Set the verbosity of Polymost GL debug messages",(void *) &r_polymostDebug, CVAR_INT, 0, 3 },
 #ifdef USE_GLEXT
         { "r_detailmapping","enable/disable detail mapping",(void *) &r_detailmapping, CVAR_BOOL, 0, 1 },

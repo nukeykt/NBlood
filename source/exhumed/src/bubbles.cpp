@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "runlist.h"
 #include "init.h"
 #include "anims.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxBubbles     200
@@ -48,10 +49,8 @@ struct machine
 };
 
 short BubbleCount = 0;
-
 short nFreeCount;
 short nMachineCount;
-
 uint8_t nBubblesFree[kMaxBubbles];
 machine Machine[kMaxMachines];
 Bubble BubbleList[kMaxBubbles];
@@ -238,4 +237,40 @@ void DoBubbles(int nPlayer)
     int nSprite = GetBubbleSprite(nBubble);
 
     sprite[nSprite].hitag = nPlayer;
+}
+
+class BubbleLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void BubbleLoadSave::Load()
+{
+    Read(&BubbleCount, sizeof(BubbleCount));
+    Read(&nFreeCount, sizeof(nFreeCount));
+    Read(&nMachineCount, sizeof(nMachineCount));
+
+    Read(nBubblesFree, sizeof(nBubblesFree[0]) * kMaxBubbles);
+    Read(Machine, sizeof(Machine[0]) * nMachineCount);
+    Read(BubbleList, sizeof(BubbleList[0]) * kMaxBubbles);
+}
+
+void BubbleLoadSave::Save()
+{
+    Write(&BubbleCount, sizeof(BubbleCount));
+    Write(&nFreeCount, sizeof(nFreeCount));
+    Write(&nMachineCount, sizeof(nMachineCount));
+
+    Write(nBubblesFree, sizeof(nBubblesFree[0]) * kMaxBubbles);
+    Write(Machine, sizeof(Machine[0]) * nMachineCount);
+    Write(BubbleList, sizeof(BubbleList[0]) * kMaxBubbles);
+}
+
+static BubbleLoadSave* myLoadSave;
+
+void BubbleLoadSaveConstruct()
+{
+    myLoadSave = new BubbleLoadSave();
 }

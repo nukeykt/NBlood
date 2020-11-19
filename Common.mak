@@ -208,9 +208,6 @@ STRIP := $(CROSS)strip$(CROSS_SUFFIX)
 
 AS := nasm
 
-# LuaJIT standalone interpreter executable:
-LUAJIT := luajit$(HOSTEXESUFFIX)
-
 PKG_CONFIG := pkg-config
 
 ELF2DOL := elf2dol
@@ -344,8 +341,7 @@ STARTUP_WINDOW ?= 1
 RETAIL_MENU ?= 0
 POLYMER ?= 1
 USE_OPENGL := 1
-LUNATIC := 0
-USE_LUAJIT_2_1 := 0
+
 NOONE_EXTENSIONS ?= 1
 
 # Library toggles
@@ -372,7 +368,7 @@ PROFILER := 0
 # For debugging with Valgrind + GDB, see
 # http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.gdbserver
 ALLOCACHE_AS_MALLOC := 0
-
+MICROPROFILE := 0
 
 ##### Settings overrides and implicit cascades
 
@@ -454,11 +450,6 @@ ifneq (0,$(CLANG))
         LTO := 0
     endif
 endif
-ifneq ($(LUNATIC),0)
-    # FIXME: Lunatic builds with LTO don't start up properly as the required
-    # symbol names are apparently not exported.
-    override LTO := 0
-endif
 ifeq (0,$(CLANG))
     ifeq (0,$(GCC_PREREQ_4))
         override LTO := 0
@@ -496,8 +487,6 @@ CXXONLYFLAGS := $(CXXSTD) -fno-exceptions -fno-rtti
 
 ASFLAGS := -s #-g
 
-LUAJIT_BCOPTS :=
-
 LINKERFLAGS :=
 L_CXXONLYFLAGS :=
 
@@ -509,8 +498,6 @@ LIBDIRS :=
 ##### Mandatory platform parameters
 
 ASFORMAT := elf$(BITS)
-# Options to "luajit -b" for synthesis. Since it runs on Linux, we need to tell
-# the native LuaJIT to emit PE object files.
 ifeq ($(PLATFORM),WINDOWS)
     LINKERFLAGS += -static-libgcc -static
     ifeq (0,$(CLANG))
@@ -527,22 +514,15 @@ ifeq ($(PLATFORM),WINDOWS)
 
     ifneq ($(RELEASE),0)
         ifeq ($(FORCEDEBUG),0)
-            DYNAMICBASE := ,--dynamicbase
+            DYNAMICBASE := -Wl,--dynamicbase
+            ifeq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
+                DYNAMICBASE := $(DYNAMICBASE),--high-entropy-va
+            endif
         endif
     endif
-    LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat$(DYNAMICBASE)
+    LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat $(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
-    else
-        LINKERFLAGS += -Wl,--high-entropy-va
-    endif
-
-    LUAJIT_BCOPTS := -o windows
-    ifeq (32,$(BITS))
-        LUAJIT_BCOPTS += -a x86
-    endif
-    ifeq (64,$(BITS))
-        LUAJIT_BCOPTS += -a x64
     endif
 else ifeq ($(PLATFORM),DARWIN)
     ifneq ($(ARCH),)
@@ -900,18 +880,6 @@ endif
 
 ##### External libraries
 
-ifneq ($(LUNATIC),0)
-    ifneq ($(USE_LUAJIT_2_1),0)
-        COMPILERFLAGS += -DUSE_LUAJIT_2_1
-    endif
-
-    ifeq ($(PLATFORM),WINDOWS)
-        LIBS += -lluajit
-    else
-        LIBS += -lluajit-5.1
-    endif
-endif
-
 ifneq (0,$(USE_LIBVPX))
     COMPILERFLAGS += -DUSE_LIBVPX
     LIBS += -lvpx
@@ -998,7 +966,12 @@ ifeq ($(PLATFORM),WINDOWS)
     ifneq (0,$(GCC_PREREQ_4))
         L_SSP := -lssp
     endif
-    LIBS += -lmingwex -lgdi32 -lpthread
+    LIBS += -lmingwex -lgdi32
+    ifneq (0,$(CLANG))
+        LIBS += -pthread
+    else
+        LIBS += -lpthread
+    endif
     ifeq ($(RENDERTYPE),WIN)
         LIBS += -ldxguid
     else ifeq ($(SDL_TARGET),1)
@@ -1035,20 +1008,16 @@ LIBS += -lm
 ##### Detect version control revision, if applicable
 
 VC_REV :=
+VC_HASH :=
 -include EDUKE32_REVISION.mak
 ifeq (,$(VC_REV))
-    VC_REV := $(filter v%,$(shell git describe --tags))
+    VC_REV := $(shell git rev-list --count origin 2>&1)
 endif
-#ifeq (,$(VC_REV))
-#    VC_REV := $(word 2,$(subst :, ,$(filter Revision:%,$(subst : ,:,$(strip $(shell svn info 2>&1))))))
-#endif
-#ifeq (,$(VC_REV))
-#    GIT_SVN_URL := $(strip $(shell git config --local svn-remote.svn.url))
-#    GIT_SVN_FETCH := $(strip $(shell git config --local svn-remote.svn.fetch))
-#    VC_REV := $(word 2,$(subst @, ,$(filter git-svn-id:$(GIT_SVN_URL)@%,$(subst : ,:,$(shell git log -1 $(GIT_SVN_FETCH::%=%))))))
-#endif
-ifneq (,$(VC_REV)$(VC_REV_CUSTOM))
-    REVFLAG := -DREV="$(VC_REV)$(VC_REV_CUSTOM)"
+ifeq (,$(VC_HASH))
+    VC_HASH := $(shell git rev-parse --short=9 HEAD 2>&1)
+endif
+ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
+    REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
 endif
 
 

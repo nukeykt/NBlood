@@ -51,7 +51,6 @@ SWBOOL DemoRecording = FALSE;
 SWBOOL DemoEdit = FALSE;
 SWBOOL DemoMode = FALSE;
 SWBOOL DemoModeMenuState = FALSE;
-SWBOOL DemoOverride = FALSE;
 char DemoFileName[16] = "demo.dmo";
 char DemoLevelName[16] = "";
 extern SWBOOL NewGame;
@@ -451,10 +450,13 @@ DemoPlayBack(void)
 
     while (TRUE)
     {
+        timerUpdateClock();
+
         // makes code run at the same rate
         while (totalclock > totalsynctics)
         {
             handleevents();
+            OSD_DispatchQueued();
 
             TRAVERSE_CONNECT(pnum)
             {
@@ -612,80 +614,3 @@ DemoPlayBack(void)
     }
 
 }
-
-//
-// Still using old method of playback - this was for opening demo
-//
-
-void
-ScenePlayBack(void)
-{
-    int buf_ndx, pnum, cnt;
-    PLAYERp pp;
-
-    if (SW_SHAREWARE)
-    {
-        // code here needs to be similar to RunLevel startup code
-        strcpy(LevelSong,"yokoha03.mid");
-        PlaySong(LevelSong, -1, TRUE, TRUE);
-    }
-
-    // IMPORTANT - MUST be right before game loop
-    InitTimingVars();
-
-    buf_ndx = 0;
-    cnt = 0;
-    ready2send = 0;
-    DemoDone = FALSE;
-
-    ResetKeys();
-
-    while (TRUE)
-    {
-        // makes code run at the same rate
-        while ((totalclock > totalsynctics))
-        {
-            TRAVERSE_CONNECT(pnum)
-            {
-                pp = Player + pnum;
-                pp->inputfifo[pp->movefifoend & (MOVEFIFOSIZ - 1)] = DemoBuffer[buf_ndx];
-                pp->movefifoend++;
-                buf_ndx++;
-
-                if (pp->inputfifo[(pp->movefifoend - 1) & (MOVEFIFOSIZ - 1)].bits == -1)
-                {
-                    DemoDone = TRUE;
-                    break;
-                }
-
-                if (buf_ndx > DEMO_BUFFER_MAX - 1)
-                {
-                    DemoReadBuffer();
-                    buf_ndx = 0;
-                }
-            }
-
-            if (KeyPressed())
-                DemoDone = TRUE;
-
-            if (DemoDone)
-                break;
-
-            cnt++;
-
-            //movethings();
-            domovethings();
-
-            MNU_CheckForMenus();
-        }
-
-        // demo is over
-        if (DemoDone)
-            break;
-
-        drawscreen(Player + screenpeek);
-    }
-}
-
-
-

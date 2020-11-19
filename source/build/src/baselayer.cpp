@@ -598,7 +598,6 @@ int engineFPSLimit(void)
 
     g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
 
-    uint64_t const  frameJitter = timerGetPerformanceFrequency() / 1000ull;
     uint64_t        frameTicks;
     static uint64_t nextFrameTicks;
     static uint64_t frameDelay;
@@ -608,8 +607,8 @@ int engineFPSLimit(void)
         nextFrameTicks = timerGetPerformanceCounter() + g_frameDelay;
         frameDelay = g_frameDelay;
     }
-
-    do { handleevents(); } while (nextFrameTicks - (frameTicks = timerGetPerformanceCounter()) < frameJitter);
+    handleevents();
+    frameTicks = timerGetPerformanceCounter();
 
     if (nextFrameTicks - frameTicks > g_frameDelay)
     {

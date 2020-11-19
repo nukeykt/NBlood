@@ -1249,7 +1249,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
         sprintf(buffer, "K:%d", pPlayer->fragCount);
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
     y += nHeight+1;
-    sprintf(buffer, "S:%d/%d", gSecretMgr.at4+gSecretMgr.at8, gSecretMgr.at0);
+    sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets);
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
 
@@ -2454,11 +2454,13 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             int const nRootTile = pTSprite->picnum;
             int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
 
+#if 0
             if (tiletovox[nAnimTile] != -1)
             {
                 pTSprite->yoffset += picanm[nAnimTile].yofs;
                 pTSprite->xoffset += picanm[nAnimTile].xofs;
             }
+#endif
 
             int const nVoxel = tiletovox[pTSprite->picnum];
 
@@ -3413,7 +3415,10 @@ RORHACKOTHER:
                 if (ror_status[i] != TestBitString(gotpic, 4080 + i))
                     do_ror_hack = true;
             if (do_ror_hack)
+            {
+                spritesortcnt = 0;
                 goto RORHACKOTHER;
+            }
             memcpy(otherMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, bakMirrorGotpic, 2);
             viewProcessSprites(vd8, vd4, vd0, v50, gInterpolate);
@@ -3501,6 +3506,7 @@ RORHACK:
         if (do_ror_hack)
         {
             gView->pSprite->cstat = bakCstat;
+            spritesortcnt = 0;
             goto RORHACK;
         }
         sub_5571C(1);

@@ -14,6 +14,30 @@
 extern "C" {
 #endif
 
+static inline CONSTEXPR_CXX14 size_t utf8len(char const * s)
+{
+    size_t len = 0;
+    char c = '\0';
+    while ((c = *s) != '\0')
+    {
+        len += ((c & 0xC0) != 0x80);
+        ++s;
+    }
+    return len;
+}
+
+static inline CONSTEXPR_CXX14 size_t utf8charbytes(char c)
+{
+    if ((c & 0xF8) == 0xF0)
+        return 4;
+    else if ((c & 0xF0) == 0xE0)
+        return 3;
+    else if ((c & 0xE0) == 0xC0)
+        return 2;
+
+    return 1;
+}
+
 typedef uint16_t ScreenTextGlyph_t;
 
 enum ScreenTextSentinels : ScreenTextGlyph_t
@@ -63,18 +87,17 @@ static inline int screentextGlyphIsTab(ScreenTextGlyph_t g)
   return (g & SCREENTEXT_TAB) == SCREENTEXT_TAB;
 }
 
-enum ScreenTextFlags_t
-{
-    TEXT_XRIGHT          = 0x00000001,
-    TEXT_XCENTER         = 0x00000002,
-    TEXT_YBOTTOM         = 0x00000004,
-    TEXT_YCENTER         = 0x00000008,
+#define TEXT_XRIGHT           (0x00000001)
+#define TEXT_XCENTER          (0x00000002)
+#define TEXT_YBOTTOM          (0x00000004)
+#define TEXT_YCENTER          (0x00000008)
 
-    TEXT_XOFFSETZERO     = 0x00000100,
-    TEXT_XJUSTIFY        = 0x00000200,
-    TEXT_YOFFSETZERO     = 0x00000400,
-    TEXT_YJUSTIFY        = 0x00000800,
-};
+#define TEXT_XOFFSETZERO      (0x00000100)
+#define TEXT_XJUSTIFY         (0x00000200)
+#define TEXT_YOFFSETZERO      (0x00000400)
+#define TEXT_YJUSTIFY         (0x00000800)
+
+#define TEXT_VARHEIGHT        (0x00800000)
 
 struct ScreenTextSize_t
 {
@@ -105,6 +128,7 @@ struct ScreenText_t
             int16_t font, blockangle;
         };
     };
+    int32_t standardhalfheight;
     int32_t alpha;
     int16_t charangle;
     int8_t shade;
@@ -114,6 +138,35 @@ struct ScreenText_t
 vec2_t screentextGetSize(ScreenTextSize_t const &);
 vec2_t screentextRender(ScreenText_t const &);
 vec2_t screentextRenderShadow(ScreenText_t const &, vec2_t, int32_t);
+
+struct TileFontPtr_t
+{
+    void * opaque;
+};
+
+static FORCE_INLINE uint32_t tilefontGetChr32FromASCII(char c)
+{
+    uint32_t chr32 = 0;
+    memcpy(&chr32, &c, sizeof(char));
+    return chr32;
+}
+
+TileFontPtr_t tilefontGetPtr(uint16_t tilenum);
+TileFontPtr_t tilefontFind(uint16_t tilenum);
+void tilefontDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum);
+void tilefontMaybeDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum);
+uint16_t tilefontLookup(TileFontPtr_t tilefontPtr, uint32_t chr);
+
+struct LocalePtr_t
+{
+    void * opaque;
+};
+
+LocalePtr_t localeGetPtr(const char * localeName);
+void localeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val);
+void localeMaybeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val);
+void localeSetCurrent(const char * localeName);
+const char * localeLookup(const char * str);
 
 #ifdef __cplusplus
 }

@@ -57,6 +57,28 @@ We are currently working on fancy new menus for the game. In the meantime, you c
 To invert the mouse, add the line 'in_mouseflip 0' to settings.cfg.
 To change the FOV, add a new line to settings.cfg, e.g. 'fov "120"' where 120 is the desired FOV value between 60 and 140.
 
+## Rednukem
+A port of BUILD engine games based on Duke Nukem 3D codebase using EDuke32 engine
+
+### Supported games
+
+* Duke Nukem 3D: Atomic Edition
+* Redneck Rampage
+* Redneck Rampage: Rides Again
+* Duke Nukem 64
+* NAM/NAPALM
+* World War II GI
+
+### Installing
+1. Extract Rednukem to a new directory.
+2. Copy game data files
+* Duke Nukem 3D: DUKE3D.GRP, DUKE.RTS
+* Redneck Rampage: REDNECK.GRP, REDNECK.RTS, optionally CD audio tracks as OGG file in the format trackXX.ogg (where XX is the track number)
+* Duke Nukem 64: Duke 64 cartridge ROM dump, optionally MIDI tracks extracted from DUKE3D.GRP
+* NAM: NAM.GRP, NAM.RTS, CON files
+* World War II GI: WW2GI.GRP, WW2GI.RTS, CON files
+3. Launch Rednukem
+
 ## Building from source
 See: https://wiki.eduke32.com/wiki/Main_Page
 

@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "names.h"
 #include "lighting.h"
 #include "object.h"
+#include "save.h"
 #include <string.h>
 #include <assert.h>
 #ifndef __WATCOMC__
@@ -848,4 +849,52 @@ void FuncBullet(int a, int UNUSED(b), int nRun)
             return;
         }
     }
+}
+
+class BulletLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void BulletLoadSave::Load()
+{
+    Read(BulletFree, sizeof(BulletFree));
+    Read(BulletList, sizeof(BulletList));
+    Read(nBulletEnemy, sizeof(nBulletEnemy));
+    
+    Read(&nBulletsFree, sizeof(nBulletsFree));
+    Read(&lasthitz, sizeof(lasthitz));
+    Read(&lasthitx, sizeof(lasthitx));
+    Read(&lasthity, sizeof(lasthity));
+    Read(&lasthitsect, sizeof(lasthitsect));
+    Read(&lasthitsprite, sizeof(lasthitsprite));
+    Read(&lasthitwall, sizeof(lasthitwall));
+    Read(&nBulletCount, sizeof(nBulletCount));
+    Read(&nRadialBullet, sizeof(nRadialBullet));
+}
+
+void BulletLoadSave::Save()
+{
+    Write(BulletFree, sizeof(BulletFree));
+    Write(BulletList, sizeof(BulletList));
+    Write(nBulletEnemy, sizeof(nBulletEnemy));
+
+    Write(&nBulletsFree, sizeof(nBulletsFree));
+    Write(&lasthitz, sizeof(lasthitz));
+    Write(&lasthitx, sizeof(lasthitx));
+    Write(&lasthity, sizeof(lasthity));
+    Write(&lasthitsect, sizeof(lasthitsect));
+    Write(&lasthitsprite, sizeof(lasthitsprite));
+    Write(&lasthitwall, sizeof(lasthitwall));
+    Write(&nBulletCount, sizeof(nBulletCount));
+    Write(&nRadialBullet, sizeof(nRadialBullet));
+}
+
+static BulletLoadSave* myLoadSave;
+
+void BulletLoadSaveConstruct()
+{
+    myLoadSave = new BulletLoadSave();
 }

@@ -27,11 +27,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include "bullet.h"
 #include "items.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxRoach   100
-
-int16_t RoachCount = -1;
 
 static actionSeq ActionSeq[] = {
     {24, 0},
@@ -55,6 +54,8 @@ struct Roach
     short field_E;
 };
 
+int16_t RoachCount = -1;
+
 Roach RoachList[kMaxRoach];
 
 
@@ -62,14 +63,16 @@ Roach RoachList[kMaxRoach];
 
 void InitRoachs()
 {
-    RoachCount = kMaxRoach;
+    RoachCount = 0;
 }
 
 // TODO - make nType a bool?
 int BuildRoach(int nType, int nSprite, int x, int y, int z, short nSector, int angle)
 {
-    RoachCount--;
-    if (RoachCount < 0) {
+    short nRoach = RoachCount;
+    RoachCount++;
+
+    if (RoachCount >= kMaxRoach) {
         return -1;
     }
 
@@ -112,25 +115,25 @@ int BuildRoach(int nType, int nSprite, int x, int y, int z, short nSector, int a
 
     if (nType)
     {
-        RoachList[RoachCount].nAction = 0;
+        RoachList[nRoach].nAction = 0;
     }
     else
     {
-        RoachList[RoachCount].nAction = 1;
+        RoachList[nRoach].nAction = 1;
     }
 
-    RoachList[RoachCount].nSprite = nSprite;
-    RoachList[RoachCount].field_2 = 0;
-    RoachList[RoachCount].field_C = 0;
-    RoachList[RoachCount].nTarget = -1;
-    RoachList[RoachCount].nHealth = 600;
+    RoachList[nRoach].nSprite = nSprite;
+    RoachList[nRoach].field_2 = 0;
+    RoachList[nRoach].field_C = 0;
+    RoachList[nRoach].nTarget = -1;
+    RoachList[nRoach].nHealth = 600;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, RoachCount | 0x1C0000);
-    RoachList[RoachCount].field_A = runlist_AddRunRec(NewRun, RoachCount | 0x1C0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRoach | 0x1C0000);
+    RoachList[nRoach].field_A = runlist_AddRunRec(NewRun, nRoach | 0x1C0000);
 
     nCreaturesLeft++;
 
-    return RoachCount | 0x1C0000;
+    return nRoach | 0x1C0000;
 }
 
 void GoRoach(short nSprite)
@@ -417,4 +420,30 @@ void FuncRoach(int a, int nDamage, int nRun)
             }
         }
     }
+}
+
+class RoachLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void RoachLoadSave::Load()
+{
+    Read(&RoachCount, sizeof(RoachCount));
+    Read(RoachList, sizeof(RoachList[0]) * RoachCount);
+}
+
+void RoachLoadSave::Save()
+{
+    Write(&RoachCount, sizeof(RoachCount));
+    Write(RoachList, sizeof(RoachList[0]) * RoachCount);
+}
+
+static RoachLoadSave* myLoadSave;
+
+void RoachLoadSaveConstruct()
+{
+    myLoadSave = new RoachLoadSave();
 }

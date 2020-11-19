@@ -1,0 +1,3 @@
+synthesis:
+  script:
+    - kickoff_synthesis.sh

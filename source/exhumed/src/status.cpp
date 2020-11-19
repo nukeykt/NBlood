@@ -27,16 +27,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "items.h"
 #include "view.h"
 #include "trigdat.h"
+#include "light.h"
+#include "save.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "typedefs.h"
 
-short nMaskY;
-static short nAnimsFree = 0;
+//short nMaskY;
+//short statusmask[MAXXDIM];
 
-short statusmask[MAXXDIM];
+static short nAnimsFree = 0;
 
 short message_timer = 0;
 char message_text[80];
@@ -67,7 +69,6 @@ short nMagicFrame;
 short statusx;
 short statusy;
 short nHealthFrames;
-
 short airframe;
 
 int16_t nFirstAnim;
@@ -75,13 +76,9 @@ int16_t nLastAnim;
 short nItemAltSeq;
 
 short airpages = 0;
-
 short ammodelay = 3;
-
 short nCounterBullet = -1;
 
-
-// 8 bytes
 struct statusAnim
 {
     int16_t s1;
@@ -658,6 +655,12 @@ void LoadStatus()
 #endif
 }
 
+void ClearStatusMessage()
+{
+    message_timer = 0;
+    message_text[0] = '\0';
+}
+
 void StatusMessage(int messageTime, const char *fmt, ...)
 {
     message_timer = messageTime;
@@ -670,6 +673,11 @@ void StatusMessage(int messageTime, const char *fmt, ...)
     if (screensize > 0) {
         textpages = numpages;
     }
+}
+
+void DrawSnakeCamStatus()
+{
+    printext(0, 0, "S E R P E N T   C A M", kTile159, 255);
 }
 
 void DrawStatus()
@@ -713,12 +721,14 @@ void DrawStatus()
         // draw compass
         seq_DrawStatusSequence(nStatusSeqOffset + 35, ((inita + 128) & kAngleMask) >> 8, 0);
 
+        /*
         if (bCoordinates)
         {
             sprintf(numberBuf, "%i", lastfps);
             // char *cFPS = itoa(lastfps, numberBuf, 10);
             printext(xdim - 20, nViewTop, numberBuf, kTile159, -1);
         }
+        */
 
         // draw ammo count
         seq_DrawStatusSequence(nStatusSeqOffset + 44, nDigit[2], 0);
@@ -841,8 +851,98 @@ void DrawStatus()
             printext(0, 0, message_text, kTile159, 255);
         }
     }
-    else
-    {
-        printext(0, 0, "S E R P E N T   C A M", kTile159, 255);
-    }
+}
+
+class StatusLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void StatusLoadSave::Load()
+{
+    Read(&nAnimsFree, sizeof(nAnimsFree));
+    Read(&message_timer, sizeof(message_timer));
+    Read(&message_text, sizeof(message_text));
+    Read(&magicperline, sizeof(magicperline));
+    Read(&airperline, sizeof(airperline));
+    Read(&healthperline, sizeof(healthperline));
+    Read(&nAirFrames, sizeof(nAirFrames));
+    Read(&nCounter, sizeof(nCounter));
+    Read(&nCounterDest, sizeof(nCounterDest));
+    Read(&nStatusSeqOffset, sizeof(nStatusSeqOffset));
+    Read(&nItemFrames, sizeof(nItemFrames));
+    Read(&laststatusx, sizeof(laststatusx));
+    Read(&laststatusy, sizeof(laststatusy));
+    Read(&nItemSeq, sizeof(nItemSeq));
+    Read(nDigit, sizeof(nDigit));
+    Read(&nMagicFrames, sizeof(nMagicFrames));
+    Read(&nHealthLevel, sizeof(nHealthLevel));
+    Read(&nItemFrame, sizeof(nItemFrame));
+    Read(&nMeterRange, sizeof(nMeterRange));
+    Read(&nMagicLevel, sizeof(nMagicLevel));
+    Read(&nHealthFrame, sizeof(nHealthFrame));
+    Read(&nMagicFrame, sizeof(nMagicFrame));
+    Read(&statusx, sizeof(statusx));
+    Read(&statusy, sizeof(statusy));
+    Read(&nHealthFrames, sizeof(nHealthFrames));
+    Read(&airframe, sizeof(airframe));
+    Read(&nFirstAnim, sizeof(nFirstAnim));
+    Read(&nLastAnim, sizeof(nLastAnim));
+    Read(&nItemAltSeq, sizeof(nItemAltSeq));
+    Read(&airpages, sizeof(airpages));
+    Read(&ammodelay, sizeof(ammodelay));
+    Read(&nCounterBullet, sizeof(nCounterBullet));
+
+    Read(StatusAnim, sizeof(StatusAnim));
+    Read(StatusAnimsFree, sizeof(StatusAnimsFree));
+    Read(StatusAnimFlags, sizeof(StatusAnimFlags));
+}
+
+void StatusLoadSave::Save()
+{
+    Write(&nAnimsFree, sizeof(nAnimsFree));
+    Write(&message_timer, sizeof(message_timer));
+    Write(&message_text, sizeof(message_text));
+    Write(&magicperline, sizeof(magicperline));
+    Write(&airperline, sizeof(airperline));
+    Write(&healthperline, sizeof(healthperline));
+    Write(&nAirFrames, sizeof(nAirFrames));
+    Write(&nCounter, sizeof(nCounter));
+    Write(&nCounterDest, sizeof(nCounterDest));
+    Write(&nStatusSeqOffset, sizeof(nStatusSeqOffset));
+    Write(&nItemFrames, sizeof(nItemFrames));
+    Write(&laststatusx, sizeof(laststatusx));
+    Write(&laststatusy, sizeof(laststatusy));
+    Write(&nItemSeq, sizeof(nItemSeq));
+    Write(nDigit, sizeof(nDigit));
+    Write(&nMagicFrames, sizeof(nMagicFrames));
+    Write(&nHealthLevel, sizeof(nHealthLevel));
+    Write(&nItemFrame, sizeof(nItemFrame));
+    Write(&nMeterRange, sizeof(nMeterRange));
+    Write(&nMagicLevel, sizeof(nMagicLevel));
+    Write(&nHealthFrame, sizeof(nHealthFrame));
+    Write(&nMagicFrame, sizeof(nMagicFrame));
+    Write(&statusx, sizeof(statusx));
+    Write(&statusy, sizeof(statusy));
+    Write(&nHealthFrames, sizeof(nHealthFrames));
+    Write(&airframe, sizeof(airframe));
+    Write(&nFirstAnim, sizeof(nFirstAnim));
+    Write(&nLastAnim, sizeof(nLastAnim));
+    Write(&nItemAltSeq, sizeof(nItemAltSeq));
+    Write(&airpages, sizeof(airpages));
+    Write(&ammodelay, sizeof(ammodelay));
+    Write(&nCounterBullet, sizeof(nCounterBullet));
+
+    Write(StatusAnim, sizeof(StatusAnim));
+    Write(StatusAnimsFree, sizeof(StatusAnimsFree));
+    Write(StatusAnimFlags, sizeof(StatusAnimFlags));
+}
+
+static StatusLoadSave* myLoadSave;
+
+void StatusLoadSaveConstruct()
+{
+    myLoadSave = new StatusLoadSave();
 }

@@ -9,6 +9,8 @@
 #ifndef pragmas_h_
 #define pragmas_h_
 
+#include "libdivide.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,11 +60,24 @@ skip:
     return libdivide::libdivide_u32_do(n, &udiv);
 }
 
+static inline uint64_t divideu64(uint64_t const n, uint64_t const d)
+{
+    static libdivide::libdivide_u64_t udiv;
+    static uint64_t lastd;
+
+    if (d == lastd)
+        goto skip;
+
+    udiv = libdivide::libdivide_u64_gen((lastd = d));
+skip:
+    return libdivide::libdivide_u64_do(n, &udiv);
+}
+
 static inline int64_t tabledivide64(int64_t const n, int64_t const d)
 {
     static libdivide::libdivide_s64_t sdiv;
-    static int32_t lastd;
-    auto const dptr = ((unsigned)d < DIVTABLESIZE) ? &divtable64[d] : &sdiv;
+    static int64_t lastd;
+    auto const dptr = ((uint64_t)d < DIVTABLESIZE) ? &divtable64[d] : &sdiv;
 
     if (d == lastd || dptr != &sdiv)
         goto skip;
@@ -76,7 +91,7 @@ static inline int32_t tabledivide32(int32_t const n, int32_t const d)
 {
     static libdivide::libdivide_s32_t sdiv;
     static int32_t lastd;
-    auto const dptr = ((unsigned)d < DIVTABLESIZE) ? &divtable32[d] : &sdiv;
+    auto const dptr = ((uint32_t)d < DIVTABLESIZE) ? &divtable32[d] : &sdiv;
 
     if (d == lastd || dptr != &sdiv)
         goto skip;
@@ -87,6 +102,7 @@ skip:
 }
 
 extern uint32_t divideu32_noinline(uint32_t n, uint32_t d);
+extern uint64_t divideu64_noinline(uint64_t n, uint64_t d);
 extern int32_t tabledivide32_noinline(int32_t n, int32_t d);
 extern int64_t tabledivide64_noinline(int64_t n, int64_t d);
 

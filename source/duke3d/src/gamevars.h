@@ -23,7 +23,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef gamevars_h_
 #define gamevars_h_
 
-#include "fix16.hpp"
 #include "gamedef.h"
 
 #include "vfs.h"
@@ -58,8 +57,6 @@ enum GamevarFlags_t
     GAMEVAR_RAWQ16PTR = GAMEVAR_Q16PTR | GAMEVAR_SPECIAL,  // plValues is a pointer to a q16.16 but we don't want conversion
     GAMEVAR_PTR_MASK  = GAMEVAR_INT32PTR | GAMEVAR_INT16PTR | GAMEVAR_Q16PTR | GAMEVAR_RAWQ16PTR,
 };
-
-#if !defined LUNATIC
 
 // Alignments for per-player and per-actor variables.
 #define PLAYER_VAR_ALIGNMENT (sizeof(intptr_t))
@@ -157,16 +154,11 @@ void Gv_ResetVars(void);
 int Gv_ReadSave(buildvfs_kfd kFile);
 void Gv_WriteSave(buildvfs_FILE fil);
 void Gv_Clear(void);
-#else
-extern int32_t g_noResetVars;
-extern LUNATIC_CB void (*A_ResetVars)(int32_t spriteNum);
-#endif
 
 void Gv_ResetSystemDefaults(void);
 void Gv_Init(void);
 void Gv_FinalizeWeaponDefaults(void);
 
-#if !defined LUNATIC
 static inline int __fastcall VM_GetStruct(uint32_t const flags, intptr_t * const addr)
 {
     Bassert(flags & (LABEL_CHAR|LABEL_SHORT|LABEL_INT));
@@ -286,7 +278,5 @@ VM_GAMEVAR_OPERATOR(Gv_ShiftVarL, <<=)
 VM_GAMEVAR_OPERATOR(Gv_ShiftVarR, >>=)
 
 #undef VM_GAMEVAR_OPERATOR
-
-#endif
 
 #endif

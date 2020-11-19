@@ -114,11 +114,23 @@ static savehead_t savehead;
 
 static void Menu_DrawBackground(const vec2_t origin)
 {
+    if (REALITY)
+    {
+        float ox = origin.x * (1.f/65536.f) * (240.f - 32.f) / (240.f);
+        float oy = origin.y * (1.f/65536.f) * (240.f - 32.f) / (240.f) * 1.2f;
+        RT_DisablePolymost(0);
+        RT_RotateSpriteSetColor(255, 255, 255, 256);
+        RT_RotateSprite(160 + ox, 120 + oy, 100, 100, 3670, RTRS_SCALED);
+        RT_EnablePolymost();
+        return;
+    }
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (100<<16), 65536L,0,MENUSCREEN,16,0,10+64);
 }
 
 static void Menu_DrawTopBar(const vec2_t origin)
 {
+    if (REALITY)
+        return;
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (19<<16), MF_Redfont.cursorScale3, 0,MENUBAR,16,0,10);
 }
 
@@ -141,6 +153,14 @@ static FORCE_INLINE int32_t Menu_CursorShade(void)
 }
 static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnum, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
+    if (REALITY)
+    {
+        RT_DisablePolymost(0);
+        RT_RotateSpriteSetColor(255, 255, 255, 256);
+        RT_RotateSprite(x * (1.f/65536.f), y * (1.f/65536.f) * 1.2f, z * (100.f/65536.f), z * (100.f/65536.f), 3200, 0, false);
+        RT_EnablePolymost();
+        return;
+    }
     rotatesprite_(x, y, z, 0, picnum, Menu_CursorShade(), 0, 2|8, 0, 0, 0, ydim_upper, xdim-1, ydim_lower);
 }
 static void Menu_DrawCursorLeft(int32_t x, int32_t y, int32_t z)
@@ -302,10 +322,10 @@ they effectively stand in for curly braces as struct initializers.
 MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 },           65536,              20<<16,             110<<16,            65536, 65536, 65536, TEXT_BIGALPHANUM | TEXT_UPPERCASE,
                                         -1,                 10,                 0,                  0,                  0,                  0,                   1,
                                         0,                  0,                  1 };
-MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           65536,              10<<16,             110<<16,            32768, 65536, 65536, 0,
+MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           65536,              10<<16,             110<<16,            32768, 32768, 32768, 0,
                                         -1,                 10,                 0,                  0,                  10,                 10,                  16,
                                         0,                  0,                  16 };
-MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   65536,              10<<16,             110<<16,            32768, 65536, 65536, 0,
+MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   65536,              10<<16,             110<<16,            32768, 32768, 32768, 0,
                                         -1,                 10,                 0,                  0,                  2,                  2,                   0,
                                         0,                  0,                  16 };
 
@@ -329,6 +349,7 @@ static MenuMenuFormat_t MMF_NetSetup =             { {                  36<<16, 
 static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_Top_MainDH =           { {  MENU_MARGIN_CENTER<<16, 72<<16, }, -(180<<16) };
+static MenuMenuFormat_t MMF_Top_MainRT =           { {  MENU_MARGIN_CENTER<<16, 110<<16, }, -(180<<16) };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
 static MenuEntryFormat_t MEF_MainMenu =         { 4<<16,      0,          0 };
@@ -510,6 +531,13 @@ static MenuOptionSet_t MEOS_GAMESETUP_AIM_AUTO = MAKE_MENUOPTIONSET( MEOSN_GAMES
 static MenuOption_t MEO_GAMESETUP_AIM_AUTO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_AIM_AUTO, &ud.config.AutoAim );
 static MenuEntry_t ME_GAMESETUP_AIM_AUTO = MAKE_MENUENTRY( "Auto aim:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_AIM_AUTO, Option );
 
+static char const *MEOSN_GAMESETUP_AIM_AUTO_DN64[] = { "Never", "Always", "Hitscan only", "Max" };
+static int32_t MEOSV_GAMESETUP_AIM_AUTO_DN64[] = { 0, 1, 2, 4 };
+
+static MenuOptionSet_t MEOS_GAMESETUP_AIM_AUTO_DN64 = MAKE_MENUOPTIONSET( MEOSN_GAMESETUP_AIM_AUTO_DN64, MEOSV_GAMESETUP_AIM_AUTO_DN64, 0x2 );
+static MenuOption_t MEO_GAMESETUP_AIM_AUTO_DN64 = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_AIM_AUTO_DN64, &ud.config.AutoAim );
+static MenuEntry_t ME_GAMESETUP_AIM_AUTO_DN64 = MAKE_MENUENTRY( "Auto aim:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_AIM_AUTO_DN64, Option );
+
 static char const *MEOSN_GAMESETUP_WEAPSWITCH_PICKUP[] = { "Never", "If new", "By rating", };
 static MenuOptionSet_t MEOS_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUOPTIONSET( MEOSN_GAMESETUP_WEAPSWITCH_PICKUP, NULL, 0x2 );
 static MenuOption_t MEO_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_WEAPSWITCH_PICKUP, NULL );
@@ -676,14 +704,13 @@ static MenuEntry_t ME_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUENTRY( "Widescreen:", 
 #endif
 
 
-static MenuRangeInt32_t MEO_DISPLAYSETUP_FOV = MAKE_MENURANGE( &ud.fov, &MF_Redfont, 75, 120, 0, 10, 0 );
+static MenuRangeInt32_t MEO_DISPLAYSETUP_FOV = MAKE_MENURANGE( &ud.fov, &MF_Redfont, 70, 120, 0, 11, 1 );
 static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_FOV, RangeInt32 );
 
 
 #ifdef USE_OPENGL
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
-#ifdef TEXFILTER_MENU_OPTIONS
 static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER, MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
@@ -695,7 +722,6 @@ static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 0, 1, 2, 4, 8, 16, };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ANISOTROPY, MEOSV_DISPLAYSETUP_ANISOTROPY, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ANISOTROPY, &glanisotropy);
 static MenuEntry_t ME_DISPLAYSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
-#endif
 # endif
 
 # ifdef EDUKE32_ANDROID_MENU
@@ -876,6 +902,16 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST,
 # endif
 #endif
+};
+
+static MenuEntry_t *MEL_DISPLAYSETUP_RT[] = {
+    &ME_DISPLAYSETUP_SCREENSETUP,
+    &ME_DISPLAYSETUP_COLORCORR,
+    &ME_DISPLAYSETUP_VIDEOSETUP,
+    &ME_DISPLAYSETUP_ASPECTRATIO,
+    &ME_DISPLAYSETUP_FOV,
+    &ME_DISPLAYSETUP_TEXFILTER,
+    &ME_DISPLAYSETUP_ANISOTROPY,
 };
 
 #ifdef POLYMER
@@ -1817,6 +1853,9 @@ static MenuEntry_t *Menu_AdjustForCurrentEntryAssignmentBlind(MenuMenu_t *menu)
 
 static int32_t SELECTDIR_z = 65536;
 
+static ClockTicks m_menustarttics;
+static int m_logosoundcnt = 0; // DN64 logo
+
 /*
 This function prepares data after ART and CON have been processed.
 It also initializes some data in loops rather than statically at compile time.
@@ -1903,16 +1942,18 @@ void Menu_Init(void)
         }
         MEOS_NETOPTIONS_LEVEL[i].optionNames = MEOSN_NetLevels[i];
     }
-    M_EPISODE.numEntries = g_volumeCnt+2;
-#ifndef EDUKE32_SIMPLE_MENU
-    MEL_EPISODE[g_volumeCnt] = &ME_Space4_Redfont;
-    MEL_EPISODE[g_volumeCnt+1] = &ME_EPISODE_USERMAP;
+    if (REALITY)
+    {
+        M_EPISODE.numEntries = 3;
+    }
+    else
+    {
+        M_EPISODE.numEntries = g_volumeCnt+2;
+        MEL_EPISODE[g_volumeCnt] = &ME_Space4_Redfont;
+        MEL_EPISODE[g_volumeCnt+1] = &ME_EPISODE_USERMAP;
+    }
     MEOSN_NetEpisodes[k] = MenuUserMap;
     MEOSV_NetEpisodes[k] = MAXVOLUMES;
-#else
-    M_EPISODE.numEntries = g_volumeCnt;
-    k--;
-#endif
     MEOS_NETOPTIONS_EPISODE.numOptions = k + 1;
     NetEpisode = MEOSV_NetEpisodes[0];
     MMF_Top_Episode.pos.y = (58 + (3-k)*6)<<16;
@@ -2178,6 +2219,51 @@ void Menu_Init(void)
         MMF_Top_Skill.pos.y = 102 << 16;
         MMF_Top_Skill.bottomcutoff = -(200 << 16);
     }
+
+    if (REALITY)
+    {
+        MEL_MAIN[0] = &ME_MAIN_NEWGAME;
+        MEL_MAIN[1] = &ME_MAIN_LOADGAME;
+        MEL_MAIN[2] = &ME_MAIN_OPTIONS;
+        MEL_MAIN[3] = &ME_MAIN_QUIT;
+        MEL_MAIN[4] = &ME_MAIN_HELP;
+        M_MAIN.numEntries = 4;
+        M_MAIN.format = &MMF_Top_MainRT;
+
+        MEL_MAIN_INGAME[0] = &ME_MAIN_NEWGAME_INGAME;
+        MEL_MAIN_INGAME[1] = &ME_MAIN_SAVEGAME;
+        MEL_MAIN_INGAME[2] = &ME_MAIN_LOADGAME;
+        MEL_MAIN_INGAME[3] = &ME_MAIN_OPTIONS;
+        MEL_MAIN_INGAME[4] = &ME_MAIN_QUITTOTITLE;
+        MEL_MAIN_INGAME[5] = &ME_MAIN_QUITGAME;
+        M_MAIN_INGAME.numEntries = 6;
+
+        MF_Redfont.pal_selected = 6;
+        MF_Redfont.pal_deselected = 0;
+        MF_Redfont.pal_disabled = 0;
+
+        MF_Redfont.pal_selected_right = 6;
+        MF_Redfont.pal_deselected_right = 0;
+        MF_Redfont.pal_disabled_right = 0;
+
+        MF_Redfont.shade_deselected = 0;
+        MF_Redfont.shade_disabled = 17;
+        
+        ud.menutitle_pal = 2;
+        ud.menu_slidebarz = 49152;
+        ud.menu_slidebarmargin = 0;
+        ud.menu_slidecursorz = 49152;
+
+        MF_Minifont = MF_Bluefont;
+
+        MF_Minifont.zoom = 32768;
+
+        for (int i = 0; i < M_GAMESETUP.numEntries; i++)
+        {
+            if (MEL_GAMESETUP[i] == &ME_GAMESETUP_AIM_AUTO)
+                MEL_GAMESETUP[i] = &ME_GAMESETUP_AIM_AUTO_DN64;
+        }
+    }
 }
 
 static void Menu_Run(Menu_t *cm, vec2_t origin);
@@ -2222,7 +2308,9 @@ static void Menu_Pre(MenuID_t cm)
 
 #ifdef USE_OPENGL
     case MENU_DISPLAYSETUP:
-        if (videoGetRenderMode() == REND_CLASSIC)
+        if (REALITY)
+            MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP_RT);
+        else if (videoGetRenderMode() == REND_CLASSIC)
             MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP);
 #ifdef POLYMER
         else if (videoGetRenderMode() == REND_POLYMER)
@@ -2247,9 +2335,19 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size >= 8 && ud.statusbarmode == 0 && !(ud.statusbarflags & STATUSBAR_NOFULL)) +
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
-
+        if (REALITY)
+        {
+            for (i = (int32_t) ARRAY_SIZE(MEOSV_DISPLAYSETUP_ANISOTROPY) - 1; i >= 0; --i)
+            {
+                if (MEOSV_DISPLAYSETUP_ANISOTROPY[i] <= glinfo.maxanisotropy)
+                {
+                    MEOS_DISPLAYSETUP_ANISOTROPY.numOptions = i + 1;
+                    break;
+                }
+            }
+        }
 #ifdef TEXFILTER_MENU_OPTIONS
-        if (videoGetRenderMode() != REND_CLASSIC)
+        else if (videoGetRenderMode() != REND_CLASSIC)
         {
             //POGOTODO: allow setting anisotropy again while r_useindexedcolortextures is set when support is added down the line
             // don't allow setting anisotropy or changing palette emulation while in POLYMOST and r_useindexedcolortextures is enabled
@@ -2346,6 +2444,9 @@ static void Menu_Pre(MenuID_t cm)
              || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, r_maxfps <= 0);
+#ifdef USE_OPENGL
+        MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER, REALITY);
+#endif
         break;
     }
 
@@ -2560,6 +2661,38 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             else
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+5)<<16), origin.y + ((24+l)<<16), 23592L,0,INGAMEDUKETHREEDEE,0,0,10);
         }
+        else if (REALITY)
+        {
+            if (cm != MENU_MAIN)
+                break;
+            int logotics = (int)(totalclock - m_menustarttics);
+            int logozoom1, logozoom2;
+            logozoom2 = 0;
+            logozoom1 = (logotics * 6) / 4 + 10;
+            if (logozoom1 > 100)
+            {
+                int const l1tics = (100 - 10) * 4 / 6;
+                logozoom1 = 100;
+                logozoom2 = clamp(205 - (logotics - l1tics) * 7 / 4, 100, 205);
+            }
+            RT_DisablePolymost(0);
+            RT_RotateSpriteSetColor(255, 255, 255, 256);
+            float ox = (float)(origin.x) * (1.f/65536.f) * (240.f - 32.f) / (240.f);
+            RT_RotateSprite(ox+160, 55, logozoom1, logozoom1, 0xe68, RTRS_SCALED);
+            if (logozoom2)
+                RT_RotateSprite(ox+160, 105, logozoom2, logozoom2, 0xe69, RTRS_SCALED);
+            RT_EnablePolymost();
+            if (m_logosoundcnt == 0)
+            {
+                S_PlaySound(195);
+                m_logosoundcnt++;
+            }
+            else if (m_logosoundcnt == 1 && logozoom2 > 0 && logozoom2 <= 107)
+            {
+                S_PlaySound(12);
+                m_logosoundcnt++;
+            }
+        }
         else
         {
             rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((28+l)<<16), 65536L,0,INGAMEDUKETHREEDEE,0,0,10);
@@ -2585,6 +2718,8 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
     case MENU_COLCORR:
     case MENU_COLCORR_INGAME:
+        if (REALITY)
+            break;
         // center panel
         if (!RR)
             rotatesprite_fs(origin.x + (120<<16), origin.y + (32<<16), 16384, 0, 3290, 0, 0, 2|8|16);
@@ -2705,10 +2840,13 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 #endif
         Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 100<<16, 1|32);
 
-        rotatesprite_fs(origin.x + (22<<16), origin.y + (97<<16), 65536L,0,WINDOWBORDER2,24,0,10);
-        rotatesprite_fs(origin.x + (180<<16), origin.y + (97<<16), 65536L,1024,WINDOWBORDER2,24,0,10);
-        rotatesprite_fs(origin.x + (99<<16), origin.y + (50<<16), 65536L,512,WINDOWBORDER1,24,0,10);
-        rotatesprite_fs(origin.x + (103<<16), origin.y + (144<<16), 65536L,1024+512,WINDOWBORDER1,24,0,10);
+        if (!REALITY)
+        {
+            rotatesprite_fs(origin.x + (22<<16), origin.y + (97<<16), 65536L,0,WINDOWBORDER2,24,0,10);
+            rotatesprite_fs(origin.x + (180<<16), origin.y + (97<<16), 65536L,1024,WINDOWBORDER2,24,0,10);
+            rotatesprite_fs(origin.x + (99<<16), origin.y + (50<<16), 65536L,512,WINDOWBORDER1,24,0,10);
+            rotatesprite_fs(origin.x + (103<<16), origin.y + (144<<16), 65536L,1024+512,WINDOWBORDER1,24,0,10);
+        }
 
         j = 0;
         for (int k = 0; k < g_nummenusaves+1; ++k)
@@ -3776,7 +3914,7 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
             key[0] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0];
             key[1] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1];
 
-            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
             *column->column[M_KEYBOARDKEYS.currentColumn] = KB_GetLastScanCode();
 
@@ -3835,7 +3973,7 @@ static void Menu_StartGameWithoutSkill(void)
 {
     ud.m_player_skill = M_SKILL.currentEntry+1;
 
-    g_skillSoundVoice = S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+    g_skillSoundVoice = S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
     ud.m_respawn_monsters = 0;
 
@@ -3925,8 +4063,26 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     case MENU_EPISODE:
         if (entry != &ME_EPISODE_USERMAP)
         {
-            ud.m_volume_number = M_EPISODE.currentEntry;
-            ud.m_level_number = 0;
+            if (REALITY)
+            {
+                switch (M_EPISODE.currentEntry)
+                {
+                default:
+                    ud.m_level_number = 0;
+                    break;
+                case 1:
+                    ud.m_level_number = 8;
+                    break;
+                case 2:
+                    ud.m_level_number = 19;
+                    break;
+                }
+            }
+            else
+            {
+                ud.m_volume_number = M_EPISODE.currentEntry;
+                ud.m_level_number = 0;
+            }
 
             if (g_skillCnt == 0)
                 Menu_StartGameWithoutSkill();
@@ -3935,7 +4091,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 
     case MENU_SKILL:
     {
-        int32_t skillsound = RR ? 341 : PISTOL_BODYHIT;
+        int32_t skillsound = RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT);
 
         if (RR)
             switch (M_SKILL.currentEntry)
@@ -3954,6 +4110,22 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
                 break;
             case 4:
                 skillsound = 197;
+                break;
+            }
+        else if (REALITY)
+            switch (M_SKILL.currentEntry)
+            {
+            case 0:
+                skillsound = 0xb6;
+                break;
+            case 1:
+                skillsound = 0x99;
+                break;
+            case 2:
+                skillsound = 0x4e;
+                break;
+            case 3:
+                skillsound = 0xb5;
                 break;
             }
         else
@@ -4314,10 +4486,8 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
         }
     }
 #ifdef USE_OPENGL
-#ifdef TEXFILTER_MENU_OPTIONS
     else if (entry == &ME_DISPLAYSETUP_ANISOTROPY || entry == &ME_DISPLAYSETUP_TEXFILTER)
         gltexapplyprops();
-#endif
     else if (entry == &ME_RENDERERSETUP_TEXQUALITY)
     {
         texcache_invalidate();
@@ -4668,7 +4838,7 @@ static void Menu_TextFormSubmit(char *input)
             ud.lockout = 0;
         }
 
-        S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+        S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
         Menu_Change(MENU_GAMESETUP);
         break;
 
@@ -4694,14 +4864,14 @@ static void Menu_TextFormSubmit(char *input)
         switch (cheatID)
         {
             case -1:
-                S_PlaySound(RR ? 335 : KICK_HIT);
+                S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                 break;
             case CHEAT_SCOTTY:
             {
                 char const * const numberpos = Bstrchr(CheatStrings[CHEAT_SCOTTY], '#');
                 if (numberpos == NULL)
                 {
-                    S_PlaySound(RR ? 335 : KICK_HIT);
+                    S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     break;
                 }
 
@@ -4715,7 +4885,7 @@ static void Menu_TextFormSubmit(char *input)
                 char const * const numberpos = Bstrchr(CheatStrings[CHEAT_SKILL], '#');
                 if (numberpos == NULL)
                 {
-                    S_PlaySound(RR ? 335 : KICK_HIT);
+                    S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     break;
                 }
 
@@ -4745,13 +4915,13 @@ static void Menu_TextFormSubmit(char *input)
 
     case MENU_CHEAT_WARP:
         if (Menu_Cheat_Warp(input))
-            S_PlaySound(RR ? 335 : KICK_HIT);
+            S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
         Menu_Change(MENU_CHEATS);
         break;
 
     case MENU_CHEAT_SKILL:
         if (Menu_Cheat_Skill(input))
-            S_PlaySound(RR ? 335 : KICK_HIT);
+            S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
         Menu_Change(MENU_CHEATS);
         break;
 
@@ -5370,6 +5540,9 @@ void Menu_Open(uint8_t playerID)
     m_mousewake_watchpoint = 0;
 #endif
 
+    m_menustarttics = totalclock;
+    m_logosoundcnt = 0;
+
     mouseLockToWindow(0);
 }
 
@@ -5788,7 +5961,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 Menu_RunInput_EntryLink_Activate(entry);
 
                                 if (g_player[myconnectindex].ps->gm&MODE_MENU) // for skill selection
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                 m_mousecaught = 1;
                             }
@@ -5832,7 +6005,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                 Menu_RunInput_EntryOption_Activate(entry, object);
 
-                                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                 m_mousecaught = 1;
                             }
@@ -5883,7 +6056,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                     Menu_RunInput_EntryCustom2Col_Activate(entry);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -5906,7 +6079,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                     Menu_RunInput_EntryCustom2Col_Activate(entry);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -5928,9 +6101,10 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                             p = ud.slidebar_palselected;
                         else
                             p = 0;
-
-                        const int32_t slidebarwidth = mulscale16(tilesiz[SLIDEBAR].x * ud.menu_slidebarz, z);
-                        const int32_t slidebarheight = mulscale16(tilesiz[SLIDEBAR].y * ud.menu_slidebarz, z);
+                        
+                        const int32_t slidebarTile = REALITY ? 3686 : SLIDEBAR;
+                        const int32_t slidebarwidth = mulscale16(tilesiz[slidebarTile].x * ud.menu_slidebarz, z);
+                        const int32_t slidebarheight = mulscale16(tilesiz[slidebarTile].y * ud.menu_slidebarz, z);
 
                         if (status & MT_XRight)
                             x -= slidebarwidth;
@@ -5940,12 +6114,12 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         const int32_t slidebarx = origin.x + x;
                         const int32_t slidebary = origin.y + y_upper + y + ((height - slidebarheight)>>1) - menu->scrollPos;
 
-                        rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, SLIDEBAR, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
+                        rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, slidebarTile, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
 
-                        const int32_t cursorTile = RR ? BIGALPHANUM-9 : SLIDEBAR+1;
-                        const int32_t slideregionwidth = mulscale16((tilesiz[SLIDEBAR].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[cursorTile].x * ud.menu_slidecursorz), z);
+                        const int32_t cursorTile = RR ? BIGALPHANUM-9 : slidebarTile+1;
+                        const int32_t slideregionwidth = mulscale16((tilesiz[slidebarTile].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[cursorTile].x * ud.menu_slidecursorz), z);
                         const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z) + scale(slideregionwidth, *object->variable - object->min, object->max - object->min);
-                        const int32_t slidepointy = slidebary + mulscale16(((tilesiz[SLIDEBAR].y * ud.menu_slidebarz) - (tilesiz[cursorTile].y * ud.menu_slidecursorz))>>1, z);
+                        const int32_t slidepointy = slidebary + mulscale16(((tilesiz[slidebarTile].y * ud.menu_slidebarz) - (tilesiz[cursorTile].y * ud.menu_slidecursorz))>>1, z);
 
                         rotatesprite_ybounds(slidepointx, slidepointy, mulscale16(ud.menu_slidecursorz, z), 0, cursorTile, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
 
@@ -6028,9 +6202,10 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                             p = ud.slidebar_palselected;
                         else
                             p = 0;
-
-                        const int32_t slidebarwidth = mulscale16(tilesiz[SLIDEBAR].x * ud.menu_slidebarz, z);
-                        const int32_t slidebarheight = mulscale16(tilesiz[SLIDEBAR].y * ud.menu_slidebarz, z);
+                        
+                        const int32_t slidebarTile = REALITY ? 3686 : SLIDEBAR;
+                        const int32_t slidebarwidth = mulscale16(tilesiz[slidebarTile].x * ud.menu_slidebarz, z);
+                        const int32_t slidebarheight = mulscale16(tilesiz[slidebarTile].y * ud.menu_slidebarz, z);
 
                         if (status & MT_XRight)
                             x -= slidebarwidth;
@@ -6040,12 +6215,12 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         const int32_t slidebarx = origin.x + x;
                         const int32_t slidebary = origin.y + y_upper + y + ((height - slidebarheight)>>1) - menu->scrollPos;
 
-                        rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, SLIDEBAR, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
+                        rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, slidebarTile, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
                         
-                        const int32_t cursorTile = RR ? BIGALPHANUM-9 : SLIDEBAR+1;
-                        const int32_t slideregionwidth = mulscale16((tilesiz[SLIDEBAR].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[cursorTile].x * ud.menu_slidecursorz), z);
+                        const int32_t cursorTile = RR ? BIGALPHANUM-9 : slidebarTile+1;
+                        const int32_t slideregionwidth = mulscale16((tilesiz[slidebarTile].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[cursorTile].x * ud.menu_slidecursorz), z);
                         const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z) + Blrintf((float) slideregionwidth * (*object->variable - object->min) / (object->max - object->min));
-                        const int32_t slidepointy = slidebary + mulscale16(((tilesiz[SLIDEBAR].y * ud.menu_slidebarz) - (tilesiz[cursorTile].y * ud.menu_slidecursorz))>>1, z);
+                        const int32_t slidepointy = slidebary + mulscale16(((tilesiz[slidebarTile].y * ud.menu_slidebarz) - (tilesiz[cursorTile].y * ud.menu_slidecursorz))>>1, z);
 
                         rotatesprite_ybounds(slidepointx, slidepointy, mulscale16(ud.menu_slidecursorz, z), 0, cursorTile, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
 
@@ -6129,9 +6304,10 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                             p = ud.slidebar_palselected;
                         else
                             p = 0;
-
-                        const int32_t slidebarwidth = mulscale16(tilesiz[SLIDEBAR].x * ud.menu_slidebarz, z);
-                        const int32_t slidebarheight = mulscale16(tilesiz[SLIDEBAR].y * ud.menu_slidebarz, z);
+                        
+                        const int32_t slidebarTile = REALITY ? 3686 : SLIDEBAR;
+                        const int32_t slidebarwidth = mulscale16(tilesiz[slidebarTile].x * ud.menu_slidebarz, z);
+                        const int32_t slidebarheight = mulscale16(tilesiz[slidebarTile].y * ud.menu_slidebarz, z);
 
                         if (status & MT_XRight)
                             x -= slidebarwidth;
@@ -6141,12 +6317,12 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         const int32_t slidebarx = origin.x + x;
                         const int32_t slidebary = origin.y + y_upper + y + ((height - slidebarheight)>>1) - menu->scrollPos;
 
-                        rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, SLIDEBAR, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
+                        rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, slidebarTile, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
 
-                        const int32_t cursorTile = RR ? BIGALPHANUM-9 : SLIDEBAR+1;
-                        const int32_t slideregionwidth = mulscale16((tilesiz[SLIDEBAR].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[cursorTile].x * ud.menu_slidecursorz), z);
+                        const int32_t cursorTile = RR ? BIGALPHANUM-9 : slidebarTile+1;
+                        const int32_t slideregionwidth = mulscale16((tilesiz[slidebarTile].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[cursorTile].x * ud.menu_slidecursorz), z);
                         const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z) + lrint((double) slideregionwidth * (*object->variable - object->min) / (object->max - object->min));
-                        const int32_t slidepointy = slidebary + mulscale16(((tilesiz[SLIDEBAR].y * ud.menu_slidebarz) - (tilesiz[cursorTile].y * ud.menu_slidecursorz))>>1, z);
+                        const int32_t slidepointy = slidebary + mulscale16(((tilesiz[slidebarTile].y * ud.menu_slidebarz) - (tilesiz[cursorTile].y * ud.menu_slidecursorz))>>1, z);
 
                         rotatesprite_ybounds(slidepointx, slidepointy, mulscale16(ud.menu_slidecursorz, z), 0, cursorTile, s, p, 2|8|16|ROTATESPRITE_FULL16, ydim_upper, ydim_lower);
 
@@ -6262,7 +6438,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 {
                                     Menu_RunInput_EntryString_Submit(/*entry, */object);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -6276,7 +6452,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                     Menu_RunInput_EntryString_Activate(entry);
 
-                                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                                     m_mousecaught = 1;
                                 }
@@ -6330,7 +6506,7 @@ static void M_RunMenu_CdPlayer(Menu_t *cm, MenuMenu_t *menu, const vec2_t origin
                 {
                     menu->currentEntry = e;
 
-                    S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                    S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                     if (ud.config.MusicToggle)
                     {
@@ -6474,7 +6650,7 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
                     object->options->currentEntry = e;
 
                     if (!Menu_RunInput_EntryOptionList_Activate(entry, object))
-                        S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                        S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                     m_mousecaught = 1;
                 }
@@ -6769,7 +6945,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
             {
                 Menu_RunInput_FileSelect_Select(object);
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
 
                 m_mousecaught = 1;
             }
@@ -7372,7 +7548,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ReturnTriggerClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -7380,7 +7556,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 I_PanelUpClear();
 
-                S_PlaySound(RR ? 335 : KICK_HIT);
+                S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                 Menu_AnimateChange(panel->previousID, panel->previousAnimation);
             }
             else if (I_PanelDown() || Menu_RunInput_MouseAdvance())
@@ -7388,7 +7564,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_PanelDownClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(RR ? 335 : KICK_HIT);
+                S_PlaySound(RR ? 335 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                 Menu_AnimateChange(panel->nextID, panel->nextAnimation);
             }
             break;
@@ -7431,7 +7607,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ReturnTriggerClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33: EXITMENUSOUND);
 
                 object->destination[0] = 0;
 
@@ -7445,7 +7621,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 Menu_RunInput_FileSelect_Select(object);
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
             }
             else if (KB_KeyPressed(sc_Home))
             {
@@ -7577,7 +7753,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ReturnTriggerClear();
                 m_mousecaught = 1;
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33: EXITMENUSOUND);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -7588,7 +7764,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 I_ClearAllInput();
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                 Menu_AnimateChange(message->linkID, message->animation);
             }
@@ -7607,7 +7783,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
 
-                S_PlaySound(EXITMENUSOUND);
+                S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
             }
 
             if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
@@ -7622,7 +7798,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 Menu_AnimateChange(verify->linkID, verify->animation);
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
             }
 
             Menu_PreInput(NULL);
@@ -7647,7 +7823,7 @@ static void Menu_RunInput(Menu_t *cm)
                     S_PauseMusic(false);
                 }
 
-                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
             }
 
             if (I_ReturnTrigger() || I_EscapeTrigger() || Menu_RunInput_MouseReturn())
@@ -7657,7 +7833,7 @@ static void Menu_RunInput(Menu_t *cm)
                 m_mousecaught = 1;
 
                 if (cm->parentID != MENU_CLOSE || (g_player[myconnectindex].ps->gm & MODE_GAME))
-                    S_PlaySound(EXITMENUSOUND);
+                    S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -7821,7 +7997,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryLink_Activate(currentry);
 
                             if (g_player[myconnectindex].ps->gm&MODE_MENU) // for skill selection
-                                S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                                S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         break;
                     case Option:
@@ -7837,7 +8013,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryOption_Activate(currentry, object);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         else if (I_MenuRight())
                         {
@@ -7845,7 +8021,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryOption_Movement(currentry, object, MM_Right);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         else if (I_MenuLeft())
                         {
@@ -7853,7 +8029,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryOption_Movement(currentry, object, MM_Left);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                     }
                         break;
@@ -7877,7 +8053,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryCustom2Col_Activate(currentry);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
                         break;
                     case RangeInt32:
@@ -7969,7 +8145,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             Menu_RunInput_EntryString_Activate(currentry);
 
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                         }
 
                         break;
@@ -7983,7 +8159,7 @@ static void Menu_RunInput(Menu_t *cm)
                     m_mousecaught = 1;
 
                     if (cm->parentID != MENU_CLOSE || (g_player[myconnectindex].ps->gm & MODE_GAME))
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                     Menu_AnimateChange(cm->parentID, cm->parentAnimation);
                 }
@@ -8037,13 +8213,13 @@ static void Menu_RunInput(Menu_t *cm)
 
                         Menu_RunInput_EntryString_Cancel(/*currentry, */object);
 
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
                     }
                     else if (hitstate == 1)
                     {
                         Menu_RunInput_EntryString_Submit(/*currentry, */object);
 
-                        S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                        S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     }
                 }
             }
@@ -8058,7 +8234,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_ReturnTriggerClear();
                         m_mousecaught = 1;
 
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                         object->options->currentEntry = -1;
                     }
@@ -8067,7 +8243,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_AdvanceTriggerClear();
 
                         if (!Menu_RunInput_EntryOptionList_Activate(currentry, object))
-                            S_PlaySound(RR ? 341 : PISTOL_BODYHIT);
+                            S_PlaySound(RR ? 341 : (REALITY ? 0x33 : PISTOL_BODYHIT));
                     }
                     else if (KB_KeyPressed(sc_Home))
                     {
@@ -8109,7 +8285,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_EscapeTriggerClear();
                         m_mousecaught = 1;
 
-                        S_PlaySound(EXITMENUSOUND);
+                        S_PlaySound(REALITY ? 0x33 : EXITMENUSOUND);
 
                         ((MenuCustom2Col_t*)currentry->entry)->screenOpen = 0;
                     }
@@ -8135,6 +8311,9 @@ void M_DisplayMenus(void)
         walock[TILE_LOADSHOT] = 1;
         return;
     }
+
+    if (!(g_player[myconnectindex].ps->gm&MODE_GAME))
+        totalclocklock = totalclock;
 
     if (!Menu_IsTextInput(m_currentMenu) && KB_KeyPressed(sc_Q))
         Menu_AnimateChange(MENU_QUIT, MA_Advance);

@@ -274,7 +274,7 @@ void OSD_ShowDisplay(int onf);
 void OSD_Draw(void);
 
 // just like printf
-void OSD_Printf(const char *fmt, ...) ATTRIBUTE((format(printf,1,2)));
+int OSD_Printf(const char *fmt, ...) ATTRIBUTE((format(printf,1,2)));
 
 // just like puts
 void OSD_Puts(const char *putstr, int const nolog = false);

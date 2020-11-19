@@ -480,6 +480,7 @@ int32_t ScanGroups(void)
         "*.grp",
         "*.ssi",
         "*.dat",
+        "*.zip",
     };
 
     for (char const *extension : extensions)

@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "light.h"
 #include "random.h"
+#include "save.h"
+#include "status.h"
 #include <string.h>
 #include <assert.h>
 
@@ -68,7 +70,6 @@ struct Flow
 };
 
 Flash sFlash[kMaxFlashes];
-
 Glow sGlow[kMaxGlows];
 short nNextFlash[kMaxFlashes];
 Flicker sFlicker[kMaxFlickers];
@@ -88,7 +89,7 @@ short nGlowCount;
 int bDoFlicks = 0;
 int bDoGlows = 0;
 
-// done
+
 int GrabFlash()
 {
     if (nFlashes >= kMaxFlashes) {
@@ -481,7 +482,6 @@ void AddGlow(short nSector, int nVal)
     nGlowCount++;
 }
 
-// ok
 void AddFlicker(short nSector, int nVal)
 {
     if (nFlickerCount >= kMaxFlickers) {
@@ -775,4 +775,62 @@ void BuildFlash(short nPlayer, short UNUSED(nSector), int nVal)
         flash = nVal;
         flash = -nVal; // ???
     }
+}
+
+class LightingLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void LightingLoadSave::Load()
+{
+    Read(&bTorch, sizeof(bTorch));
+    Read(&nFirstFlash, sizeof(nFirstFlash));
+    Read(&nLastFlash, sizeof(nLastFlash));
+    Read(&nFlashDepth, sizeof(nFlashDepth));
+    Read(&nFlashes, sizeof(nFlashes));
+    Read(&nFlowCount, sizeof(nFlowCount));
+    Read(&nFlickerCount, sizeof(nFlickerCount));
+    Read(&nGlowCount, sizeof(nGlowCount));
+    Read(&bDoFlicks, sizeof(bDoFlicks));
+    Read(&bDoGlows, sizeof(bDoGlows));
+
+    Read(sFlash, sizeof(sFlash));
+    Read(sGlow, sizeof(sGlow));
+    Read(nNextFlash, sizeof(nNextFlash));
+    Read(sFlicker, sizeof(sFlicker));
+    Read(nFreeFlash, sizeof(nFreeFlash));
+    Read(sFlowInfo, sizeof(sFlowInfo));
+    Read(flickermask, sizeof(flickermask));
+}
+
+void LightingLoadSave::Save()
+{
+    Write(&bTorch, sizeof(bTorch));
+    Write(&nFirstFlash, sizeof(nFirstFlash));
+    Write(&nLastFlash, sizeof(nLastFlash));
+    Write(&nFlashDepth, sizeof(nFlashDepth));
+    Write(&nFlashes, sizeof(nFlashes));
+    Write(&nFlowCount, sizeof(nFlowCount));
+    Write(&nFlickerCount, sizeof(nFlickerCount));
+    Write(&nGlowCount, sizeof(nGlowCount));
+    Write(&bDoFlicks, sizeof(bDoFlicks));
+    Write(&bDoGlows, sizeof(bDoGlows));
+
+    Write(sFlash, sizeof(sFlash));
+    Write(sGlow, sizeof(sGlow));
+    Write(nNextFlash, sizeof(nNextFlash));
+    Write(sFlicker, sizeof(sFlicker));
+    Write(nFreeFlash, sizeof(nFreeFlash));
+    Write(sFlowInfo, sizeof(sFlowInfo));
+    Write(flickermask, sizeof(flickermask));
+}
+
+static LightingLoadSave* myLoadSave;
+
+void LightingLoadSaveConstruct()
+{
+    myLoadSave = new LightingLoadSave();
 }

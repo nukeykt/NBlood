@@ -78,14 +78,11 @@ enum
         g_warningCnt++;                                                                          \
     } while (0)
 
-#if !defined LUNATIC
 extern intptr_t const * insptr;
 void VM_ScriptInfo(intptr_t const * const ptr, int const range);
-#endif
 
 extern hashtable_t h_gamefuncs;
 
-#if !defined LUNATIC
 extern hashtable_t h_gamevars;
 extern hashtable_t h_arrays;
 extern hashtable_t h_labels;
@@ -109,7 +106,9 @@ enum QuickStructureAccess_t
     STRUCT_ACTOR_INTERNAL__,
     STRUCT_SPRITEEXT_INTERNAL__,
     STRUCT_SECTOR,
+    STRUCT_SECTOR_INTERNAL__,
     STRUCT_WALL,
+    STRUCT_WALL_INTERNAL__,
     STRUCT_PLAYER,
     STRUCT_ACTORVAR,
     STRUCT_PLAYERVAR,
@@ -127,7 +126,6 @@ extern int32_t g_structVarIDs;
 
 #include "events_defs.h"
 extern intptr_t apScriptEvents[MAXEVENTS];
-#endif
 
 extern char g_scriptFileName[BMAX_PATH];
 
@@ -146,9 +144,7 @@ extern uint8_t *bitptr;
 
 extern const char *EventNames[MAXEVENTS];
 
-#if !defined LUNATIC
 extern intptr_t *g_scriptPtr;
-#endif
 
 typedef projectile_t defaultprojectile_t;
 
@@ -184,20 +180,6 @@ void C_DefineVolumeFlags(int32_t vol, int32_t flags);
 void C_UndefineVolume(int32_t vol);
 void C_UndefineSkill(int32_t skill);
 void C_UndefineLevel(int32_t vol, int32_t lev);
-#if defined LUNATIC
-void C_DefineSound(int32_t sndidx, const char *fn, int32_t args[5]);
-void C_DefineQuote(int32_t qnum, const char *qstr);
-void C_DefineVolumeName(int32_t vol, const char *name);
-void C_DefineSkillName(int32_t skill, const char *name);
-void C_DefineLevelName(int32_t vol, int32_t lev, const char *fn,
-                       int32_t partime, int32_t designertime,
-                       const char *levelname);
-void C_DefineGameFuncName(int32_t idx, const char *name);
-void C_DefineGameType(int32_t idx, int32_t flags, const char *name);
-int32_t C_SetDefName(const char *name);
-void C_DefineProjectile(int32_t j, int32_t what, int32_t val);
-void C_SetCfgName(const char *cfgname);
-#else
 void C_ReportError(int error);
 void C_Compile(const char *filenam);
 
@@ -212,7 +194,6 @@ extern const tokenmap_t iter_tokens[];
 
 extern char const * VM_GetKeywordForID(int32_t id);
 
-// KEEPINSYNC lunatic/con_lang.lua
 enum SystemString_t {
     STR_MAPNAME,
     STR_MAPFILENAME,
@@ -225,6 +206,7 @@ enum SystemString_t {
     STR_DESIGNERTIME,
     STR_BESTTIME,
     STR_USERMAPFILENAME,
+    STR_REVISION,
 };
 
 enum ScriptError_t
@@ -606,6 +588,8 @@ enum UserdefsLabel_t
     USERDEFS_NEWGAMECUSTOMOPEN,
     USERDEFS_NEWGAMECUSTOMSUBOPEN,
     USERDEFS_GAMEPADACTIVE,
+    USERDEFS_M_NEWGAMECUSTOM,
+    USERDEFS_M_NEWGAMECUSTOMSUB,
     USERDEFS_END
 };
 
@@ -769,8 +753,6 @@ enum PalDataLabel_t
     PALDATA_END
 };
 
-#endif
-// KEEPINSYNC lunatic/con_lang.lua
 enum ProjectileLabel_t
 {
     PROJ_WORKSLIKE,  // 0
@@ -805,7 +787,6 @@ enum ProjectileLabel_t
     PROJ_USERDATA,
     PROJ_END
 };
-#if !defined LUNATIC
 
 enum IterationTypes_t
 {
@@ -827,6 +808,9 @@ enum IterationTypes_t
 
 // most keywords have opcodes but some opcodes don't have keywords
 #define TRANSFORM_SCRIPT_KEYWORDS_LIST(TRANSFORM, DELIMITER) \
+    TRANSFORM(CON_SETVAR_GLOBAL) DELIMITER \
+    TRANSFORM(CON_SETVAR_PLAYER) DELIMITER \
+    TRANSFORM(CON_SETVAR_ACTOR) DELIMITER \
 /*  CON_DISCRETE_VAR_ACCESS \
 
     TRANSFORM(CON_IFVARA_GLOBAL) DELIMITER \
@@ -852,7 +836,6 @@ enum IterationTypes_t
     TRANSFORM(CON_MULVAR_GLOBAL) DELIMITER \
     TRANSFORM(CON_ORVAR_GLOBAL) DELIMITER \
     TRANSFORM(CON_RANDVAR_GLOBAL) DELIMITER \
-    TRANSFORM(CON_SETVAR_GLOBAL) DELIMITER \
     TRANSFORM(CON_SHIFTVARL_GLOBAL) DELIMITER \
     TRANSFORM(CON_SHIFTVARR_GLOBAL) DELIMITER \
     TRANSFORM(CON_SUBVAR_GLOBAL) DELIMITER \
@@ -883,7 +866,6 @@ enum IterationTypes_t
     TRANSFORM(CON_MULVAR_PLAYER) DELIMITER \
     TRANSFORM(CON_ORVAR_PLAYER) DELIMITER \
     TRANSFORM(CON_RANDVAR_PLAYER) DELIMITER \
-    TRANSFORM(CON_SETVAR_PLAYER) DELIMITER \
     TRANSFORM(CON_SHIFTVARL_PLAYER) DELIMITER \
     TRANSFORM(CON_SHIFTVARR_PLAYER) DELIMITER \
     TRANSFORM(CON_SUBVAR_PLAYER) DELIMITER \
@@ -914,7 +896,6 @@ enum IterationTypes_t
     TRANSFORM(CON_MULVAR_ACTOR) DELIMITER \
     TRANSFORM(CON_ORVAR_ACTOR) DELIMITER \
     TRANSFORM(CON_RANDVAR_ACTOR) DELIMITER \
-    TRANSFORM(CON_SETVAR_ACTOR) DELIMITER \
     TRANSFORM(CON_SHIFTVARL_ACTOR) DELIMITER \
     TRANSFORM(CON_SHIFTVARR_ACTOR) DELIMITER \
     TRANSFORM(CON_SUBVAR_ACTOR) DELIMITER \
@@ -1002,12 +983,14 @@ enum IterationTypes_t
     TRANSFORM(CON_SETPLAYERVAR) DELIMITER \
     TRANSFORM(CON_SETPROJECTILE) DELIMITER \
     TRANSFORM(CON_SETSECTOR) DELIMITER \
+    TRANSFORM(CON_SETSECTORSTRUCT) DELIMITER \
     TRANSFORM(CON_SETSPRITEEXT) DELIMITER \
     TRANSFORM(CON_SETSPRITESTRUCT) DELIMITER \
     TRANSFORM(CON_SETTHISPROJECTILE) DELIMITER \
     TRANSFORM(CON_SETTSPR) DELIMITER \
     TRANSFORM(CON_SETUSERDEF) DELIMITER \
     TRANSFORM(CON_SETWALL) DELIMITER \
+    TRANSFORM(CON_SETWALLSTRUCT) DELIMITER \
     \
     TRANSFORM(CON_GETACTOR) DELIMITER \
     TRANSFORM(CON_GETACTORSTRUCT) DELIMITER \
@@ -1017,11 +1000,13 @@ enum IterationTypes_t
     TRANSFORM(CON_GETPLAYERVAR) DELIMITER \
     TRANSFORM(CON_GETPROJECTILE) DELIMITER \
     TRANSFORM(CON_GETSECTOR) DELIMITER \
+    TRANSFORM(CON_GETSECTORSTRUCT) DELIMITER \
     TRANSFORM(CON_GETSPRITEEXT) DELIMITER \
     TRANSFORM(CON_GETSPRITESTRUCT) DELIMITER \
     TRANSFORM(CON_GETTSPR) DELIMITER \
     TRANSFORM(CON_GETUSERDEF) DELIMITER \
     TRANSFORM(CON_GETWALL) DELIMITER \
+    TRANSFORM(CON_GETWALLSTRUCT) DELIMITER \
     \
     TRANSFORM(CON_ACTION) DELIMITER \
     TRANSFORM(CON_ACTIVATEBYSECTOR) DELIMITER \
@@ -1363,8 +1348,6 @@ enum IterationTypes_t
     \
     TRANSFORM(CON_END)
 
-// KEEPINSYNC with the keyword list in lunatic/con_lang.lua
-
 #define ENUM_TRANSFORM(ENUM_CONST) ENUM_CONST
 #define COMMA ,
 enum ScriptKeywords_t
@@ -1374,8 +1357,6 @@ enum ScriptKeywords_t
 };
 #undef ENUM_TRANSFORM
 #undef COMMA
-
-#endif
 
 #ifdef __cplusplus
 }

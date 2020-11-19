@@ -74,6 +74,7 @@ static internalgrpinfo_t const internalgrpfiles[] =
 
 struct grpfile_t *foundgrps = NULL;
 struct grpinfo_t *listgrps = NULL;
+struct grpinfo_t *dn64grpinfo = NULL;
 
 static void LoadList(const char * filename)
 {
@@ -235,6 +236,18 @@ static void LoadGameList(void)
 
     for (BUILDVFS_FIND_REC *sidx = srch; sidx; sidx = sidx->next)
         LoadList(sidx->name);
+
+    dn64grpinfo = (grpinfo_t *)Xcalloc(1, sizeof(grpinfo_t));
+
+    dn64grpinfo->name = Xstrdup("Duke Nukem 64");
+    dn64grpinfo->crcval = 0;
+    dn64grpinfo->size = -1;
+    dn64grpinfo->game = GAMEFLAG_DUKE | GAMEFLAG_REALITY;
+    dn64grpinfo->dependency = 0;
+    dn64grpinfo->scriptname = dup_filename("duke64.def");
+    dn64grpinfo->postprocessing = NULL;
+    dn64grpinfo->next = listgrps;
+    listgrps = dn64grpinfo;
 
     klistfree(srch);
 }
@@ -446,6 +459,54 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch)
     Bfree(buf);
 }
 
+static void ProcessDN64Groups(void)
+{
+
+    static char const *n64extensions[] =
+    {
+        "*.z64",
+        "*.n64",
+        "*.v64",
+    };
+
+    for (size_t i = 0; i < ARRAY_SIZE(n64extensions); i++)
+    {
+        struct Bstat st;
+        BUILDVFS_FIND_REC *srch = klistpath("/", n64extensions[i], BUILDVFS_FIND_FILE);
+        for (BUILDVFS_FIND_REC *sidx = srch; sidx; sidx = sidx->next)
+        {
+            char title[20];
+            char country[3];
+            int32_t fh = openfrompath(sidx->name, BO_RDONLY|BO_BINARY, BS_IREAD);
+            if (fh < 0) continue;
+            if (fstat(fh, &st)) continue;
+            if (st.st_size != 0x800000)
+            {
+                close(fh);
+                continue;
+            }
+            lseek(fh, 32, SEEK_SET);
+            read(fh, title, 20);
+            lseek(fh, 61, SEEK_SET);
+            read(fh, &country, 3);
+            close(fh);
+            if ((!memcmp(title, "DUKE NUKEM", 10) && (country[1] == 'E' || country[1] == 'P'))
+             || (!memcmp(title, "UDEKN KUME", 10) && (country[2] == 'E' || country[0] == 'P'))
+             || (!memcmp(title, "EKUDKUN ", 8) && (country[0] == 'E' || country[0] == 'P')))
+            {
+                grpfile_t * const grp = (grpfile_t *)Xcalloc(1, sizeof(grpfile_t));
+                grp->filename = Xstrdup(sidx->name);
+                grp->type = dn64grpinfo;
+                grp->next = foundgrps;
+                foundgrps = grp;
+            }
+            else
+                continue;
+        }
+        klistfree(srch);
+    }
+}
+
 int32_t ScanGroups(void)
 {
     struct grpcache *fg, *fgg;
@@ -468,6 +529,8 @@ int32_t ScanGroups(void)
         ProcessGroups(srch);
         klistfree(srch);
     }
+
+    ProcessDN64Groups();
 
     FreeGroupsCache();
 

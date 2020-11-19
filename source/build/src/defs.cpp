@@ -16,6 +16,7 @@
 #include "common.h"
 #include "mdsprite.h"  // md3model_t
 #include "colmatch.h"
+#include "screentext.h"
 
 #ifdef USE_OPENGL
 # include "hightile.h"
@@ -124,6 +125,8 @@ enum scripttoken_t
     T_IFCRC,T_IFMATCH,T_CRC32,
     T_SIZE,
     T_NEWGAMECHOICES,
+    T_LOCALIZATION, T_STRING,
+    T_TILEFONT, T_CHARACTER,
     T_RFFDEFINEID,
     T_EXTRA,
     T_ROTATE,
@@ -265,8 +268,8 @@ static int32_t Defs_ImportTileFromTexture(char const * const fn, int32_t const t
         if (artstatus < 0)
             return artstatus<<8;
 
-        int32_t picanmdisk;
-        Bmemcpy(&picanmdisk, &kpzbuf[20], sizeof(int32_t));
+        uint32_t picanmdisk;
+        Bmemcpy(&picanmdisk, &kpzbuf[20], sizeof(uint32_t));
         picanmdisk = B_LITTLE32(picanmdisk);
         tileConvertAnimFormat(tile, picanmdisk);
 
@@ -409,6 +412,8 @@ static int32_t defsparser(scriptfile *script)
         { "undefblendtablerange", T_UNDEFBLENDTABLERANGE },
         { "shadefactor",     T_SHADEFACTOR      },
         { "newgamechoices",  T_NEWGAMECHOICES   },
+        { "localization",    T_LOCALIZATION     },
+        { "tilefont",        T_TILEFONT         },
         { "rffdefineid",     T_RFFDEFINEID      },  // dummy
     };
 
@@ -913,24 +918,36 @@ static int32_t defsparser(scriptfile *script)
                 break;
             }
 
+            int32_t orig_crc32{};
             if (have_crc32)
             {
-                int32_t const orig_crc32 = tileGetCRC32(tile);
-                if (orig_crc32 != tile_crc32)
-                {
-                    // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
-                    break;
-                }
+                orig_crc32 = tileGetCRC32(tile);
+                if (orig_crc32 == tile_crc32)
+                    have_crc32 = 0;
+#if 0
+                else
+                    initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
+#endif
             }
 
+            vec2_16_t orig_size{};
             if (have_size)
             {
-                vec2_16_t const orig_size = tileGetSize(tile);
-                if (orig_size.x != tile_size.x && orig_size.y != tile_size.y)
-                {
-                    // initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
-                    break;
-                }
+                orig_size = tileGetSize(tile);
+                if (orig_size.x == tile_size.x && orig_size.y == tile_size.y)
+                    have_size = 0;
+#if 0
+                else
+                    initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
+#endif
+            }
+
+            if (have_crc32 || have_size)
+            {
+#if 0
+                initprintf("tilefromtexture %d { ifmatch { size %d %d crc32 %d } }\n", tile, orig_size.x, orig_size.y, orig_crc32);
+#endif
+                break;
             }
 
             if (!fn)
@@ -2123,7 +2140,7 @@ static int32_t defsparser(scriptfile *script)
                 filebuf = (char *)Xmalloc(filesize);
 
                 klseek(fd, 0, SEEK_SET);
-                if (kread(fd, filebuf, filesize)!=filesize)
+                if (kread_and_test(fd, filebuf, filesize))
                     { kclose(fd); Xfree(highpaldata); initprintf("Error: didn't read all of \"%s\".\n", fn); break; }
 
                 kclose(fd);
@@ -3739,6 +3756,161 @@ static int32_t defsparser(scriptfile *script)
                 break;
         }
         break;
+
+        case T_LOCALIZATION:
+        {
+            char * localeName;
+            if (scriptfile_getstring(script, &localeName))
+            {
+                initprintf("Error: localization: Invalid name on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            char * blockend;
+            if (scriptfile_getbraces(script, &blockend))
+            {
+                initprintf("Error: localization: Invalid braces on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            static const tokenlist subtokens[] =
+            {
+                { "string",   T_STRING   },
+                { "str",      T_STRING   },
+                { "text",     T_STRING   },
+            };
+
+            LocalePtr_t localePtr = localeGetPtr(localeName);
+
+            while (script->textptr < blockend)
+            {
+                int32_t token = getatoken(script, subtokens, ARRAY_SIZE(subtokens));
+                switch (token)
+                {
+                    case T_STRING:
+                    {
+                        char * key, * val;
+                        auto keyResult = scriptfile_getstring(script, &key);
+                        auto valResult = scriptfile_getstring(script, &val);
+                        if (keyResult)
+                        {
+                            initprintf("Error: localization string: Invalid key on line %s:%d\n",
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+                        if (valResult || script->ltextptr == blockend)
+                        {
+                            initprintf("Error: localization string: Invalid value for key \"%s\" on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        localeDefineMapping(localePtr, key, val);
+                        break;
+                    }
+
+                    default:
+                        if (script->textptr == blockend+1)
+                            break;
+                        initprintf("Error: localization: Invalid token on line %s:%d\n",
+                                   script->filename, scriptfile_getlinum(script, script->ltextptr));
+                        break;
+                }
+            }
+            break;
+        }
+
+        case T_TILEFONT:
+        {
+            int32_t tilenum;
+            if (scriptfile_getsymbol(script, &tilenum))
+            {
+                initprintf("Error: tilefont: Invalid tile on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            char * blockend;
+            if (scriptfile_getbraces(script, &blockend))
+            {
+                initprintf("Error: tilefont: Invalid braces on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            if ((unsigned)tilenum >= MAXUSERTILES)
+            {
+                initprintf("Error: tilefont: Invalid tile %d on line %s:%d\n", tilenum,
+                           script->filename, scriptfile_getlinum(script, script->ltextptr));
+                script->textptr = blockend+1;
+                break;
+            }
+
+            static const tokenlist subtokens[] =
+            {
+                { "character",   T_CHARACTER },
+                { "char",        T_CHARACTER },
+                { "chr",         T_CHARACTER },
+            };
+
+            TileFontPtr_t tilefontPtr = tilefontGetPtr(tilenum);
+
+            while (script->textptr < blockend)
+            {
+                int32_t token = getatoken(script, subtokens, ARRAY_SIZE(subtokens));
+                switch (token)
+                {
+                    case T_CHARACTER:
+                    {
+                        char * key;
+                        int32_t val;
+                        auto keyResult = scriptfile_getstring(script, &key);
+                        auto valResult = scriptfile_getsymbol(script, &val);
+                        if (keyResult)
+                        {
+                            initprintf("Error: tilefont character: Invalid character on line %s:%d\n",
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+                        if (valResult || script->ltextptr == blockend)
+                        {
+                            initprintf("Error: tilefont character: Invalid tile for character \"%s\" on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        if (utf8len(key) != 1)
+                        {
+                            initprintf("Error: tilefont character: String \"%s\" consists of multiple characters on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+                        if ((unsigned)val >= MAXUSERTILES)
+                        {
+                            initprintf("Error: tilefont character: Invalid tile %d on line %s:%d\n", val,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        size_t const buflen = strlen(key);
+                        if (buflen > sizeof(uint32_t))
+                        {
+                            initprintf("Error: tilefont character: Character \"%s\" is longer than four bytes on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        uint32_t chr32 = 0;
+                        memcpy(&chr32, key, buflen);
+                        tilefontDefineMapping(tilefontPtr, chr32, val);
+                        break;
+                    }
+                }
+            }
+            break;
+        }
 
         default:
             initprintf("Unknown token.\n"); break;

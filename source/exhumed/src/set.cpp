@@ -25,11 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "move.h"
 #include "trigdat.h"
 #include "bullet.h"
+#include "set.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxSets    10
-
-short SetCount = 0;
 
 static actionSeq ActionSeq[] = {
     {0,  0},
@@ -59,21 +59,23 @@ struct Set
     short field_E;
 };
 
+short SetCount = 0;
+
 Set SetList[kMaxSets];
 short SetChan[kMaxSets];
 
 
 void InitSets()
 {
-    SetCount = kMaxSets;
+    SetCount = 0;
 }
 
 int BuildSet(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
-    SetCount--;
-
     short nSet = SetCount;
-    if (nSet < 0) {
+    SetCount++;
+
+    if (nSet >= kMaxSets) {
         return -1;
     }
 
@@ -683,4 +685,32 @@ void FuncSet(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class SetLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void SetLoadSave::Load()
+{
+    Read(&SetCount, sizeof(SetCount));
+    Read(SetList, sizeof(SetList[0]) * SetCount);
+    Read(SetChan, sizeof(SetChan[0]) * SetCount);
+}
+
+void SetLoadSave::Save()
+{
+    Write(&SetCount, sizeof(SetCount));
+    Write(SetList, sizeof(SetList[0]) * SetCount);
+    Write(SetChan, sizeof(SetChan[0]) * SetCount);
+}
+
+static SetLoadSave* myLoadSave;
+
+void SetLoadSaveConstruct()
+{
+    myLoadSave = new SetLoadSave();
 }

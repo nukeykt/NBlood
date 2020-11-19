@@ -39,20 +39,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "bullet.h"
 #include "trigdat.h"
 #include "object.h"
+#include "save.h"
 #include <string.h>
 #include <assert.h>
-
-/*
-struct Weapon
-{
-    short nSeq;
-    short b[12]; // seq offsets?
-    short nAmmoType;
-    short c;
-    short d;
-    short bFireUnderwater;
-};
-*/
 
 Weapon WeaponInfo[] = {
     { kSeqSword,   { 0, 1, 3,  7, -1,  2,  4, 5, 6, 8, 9, 10 }, 0, 0, 0, kTrue },
@@ -310,7 +299,18 @@ int CheckCloseRange(short nPlayer, int *x, int *y, int *z, short *nSector)
 
     int ecx = sintable[150] >> 3;
 
-    if (ksqrt((hitX - *x) * (hitX - *x) + (hitY - *y) * (hitY - *y)) >= ecx)
+    uint32_t xDiff = klabs(hitX - *x);
+    uint32_t yDiff = klabs(hitY - *y);
+
+    uint32_t sqrtNum = xDiff * xDiff + yDiff * yDiff;
+
+    if (sqrtNum > INT_MAX)
+    {
+        OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+        sqrtNum = INT_MAX;
+    }
+
+    if (ksqrt(sqrtNum) >= ecx)
         return 0;
 
     *x = hitX;
@@ -1117,4 +1117,30 @@ void DrawWeapons(int smooth)
             return;
         }
     }
+}
+
+class GunLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void GunLoadSave::Load()
+{
+    Read(&nTemperature[nLocalPlayer], sizeof(nTemperature[nLocalPlayer]));
+    Read(&word_96E26, sizeof(word_96E26));
+}
+
+void GunLoadSave::Save()
+{
+    Write(&nTemperature[nLocalPlayer], sizeof(nTemperature[nLocalPlayer]));
+    Write(&word_96E26, sizeof(word_96E26));
+}
+
+static GunLoadSave* myLoadSave;
+
+void GunLoadSaveConstruct()
+{
+    myLoadSave = new GunLoadSave();
 }

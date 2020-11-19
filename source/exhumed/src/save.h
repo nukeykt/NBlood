@@ -19,6 +19,39 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef __save_h__
 #define __save_h__
 
+#include "engine.h"
+
+class LoadSave
+{
+public:
+    static LoadSave head;
+    static buildvfs_fd hSFile;
+    static buildvfs_fd hLFile;
+    LoadSave* prev;
+    LoadSave* next;
+    LoadSave()
+    {
+        prev = head.prev;
+        prev->next = this;
+        next = &head;
+        next->prev = this;
+    }
+    LoadSave(int dummy)
+    {
+        UNREFERENCED_PARAMETER(dummy);
+        next = prev = this;
+    }
+    //~LoadSave() { }
+    virtual void Save();
+    virtual void Load();
+    void Read(void*, int);
+    void Write(void*, int);
+    static void LoadGame(const char*);
+    static void SaveGame(const char*);
+};
+
+void LoadSaveSetup();
+
 int savegame(int nSlot);
 int loadgame(int nSlot);
 

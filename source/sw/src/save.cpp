@@ -35,6 +35,8 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "tags.h"
 #include "lists.h"
 #include "interp.h"
+#include "interpso.h"
+#include "text.h"
 
 #include "network.h"
 //#include "save.h"
@@ -79,6 +81,8 @@ extern SWBOOL NewGame;
 extern char CacheLastLevel[];
 extern short PlayingLevel;
 extern int GodMode;
+extern int FinishTimer;
+extern SWBOOL FinishAnim;
 extern int GameVersion;
 //extern short Zombies;
 
@@ -374,6 +378,8 @@ int SaveGame(short save_num)
     MWRITE(&numwalls,sizeof(numwalls),1,fil);
     MWRITE(wall,sizeof(WALL),numwalls,fil);
 
+    MWRITE(&Numsprites,sizeof(Numsprites),1,fil);
+    //Preserve sprite indices
     for (i = 0; i < MAXSPRITES; i++)
     {
         if (sprite[i].statnum != MAXSTATUS)
@@ -606,6 +612,8 @@ int SaveGame(short save_num)
     for (i = short_numinterpolations - 1; i >= 0; i--)
         saveisshot |= SaveSymDataInfo(fil, short_curipos[i]);
 
+    // SO interpolations
+    saveisshot |= so_writeinterpolations(fil);
 
     // parental lock
     for (i = 0; i < (int)SIZ(otlist); i++)
@@ -665,6 +673,9 @@ int SaveGame(short save_num)
     MWRITE(UserMapName,sizeof(UserMapName),1,fil);
     MWRITE(&GodMode,sizeof(GodMode),1,fil);
 
+    MWRITE(&FinishTimer,sizeof(FinishTimer),1,fil);
+    MWRITE(&FinishAnim,sizeof(FinishAnim),1,fil);
+
     MWRITE(&serpwasseen, sizeof(serpwasseen), 1, fil);
     MWRITE(&sumowasseen, sizeof(sumowasseen), 1, fil);
     MWRITE(&zillawasseen, sizeof(zillawasseen), 1, fil);
@@ -678,6 +689,8 @@ int SaveGame(short save_num)
 
     if (saveisshot)
         CON_Message("There was a problem saving. See \"Save Help\" section of release notes.");
+    else
+        PutStringInfo(&Player[myconnectindex], "Game Saved");
 
     return saveisshot ? -1 : 0;
 }
@@ -876,7 +889,8 @@ int LoadGame(short save_num)
     MREAD(&numwalls,sizeof(numwalls),1,fil);
     MREAD(wall,sizeof(WALL),numwalls,fil);
 
-    //Store all sprites to preserve indeces
+    MREAD(&Numsprites,sizeof(Numsprites),1,fil);
+    //Preserve sprite indices
     MREAD(&i, sizeof(i),1,fil);
     while (i != -1)
     {
@@ -1084,6 +1098,10 @@ int LoadGame(short save_num)
         saveisshot |= LoadSymDataInfo(fil, (void **)&short_curipos[i]);
     if (saveisshot) { MCLOSE_READ(fil); return -1; }
 
+    // SO interpolations
+    saveisshot |= so_readinterpolations(fil);
+    if (saveisshot) { MCLOSE_READ(fil); return -1; }
+
     // parental lock
     for (i = 0; i < (int)SIZ(otlist); i++)
     {
@@ -1166,6 +1184,9 @@ int LoadGame(short save_num)
 
     MREAD(UserMapName,sizeof(UserMapName),1,fil);
     MREAD(&GodMode,sizeof(GodMode),1,fil);
+
+    MREAD(&FinishTimer,sizeof(FinishTimer),1,fil);
+    MREAD(&FinishAnim,sizeof(FinishAnim),1,fil);
 
     MREAD(&serpwasseen, sizeof(serpwasseen), 1, fil);
     MREAD(&sumowasseen, sizeof(sumowasseen), 1, fil);

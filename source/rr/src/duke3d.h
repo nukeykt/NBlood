@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // increase by 3, because atomic GRP adds 1, and Shareware adds 2
 // Non-Lua build
-# define BYTEVERSION_EDUKE32      336
+# define BYTEVERSION_EDUKE32      342
 
 //#define BYTEVERSION_13      27
 //#define BYTEVERSION_14      116
@@ -112,6 +112,7 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 // so that debugging with valgrind --smc-check=none is possible:
 //#define DEBUG_VALGRIND_NO_SMC
 
+#include "n64/reality.h"
 #include "_rts.h"
 #include "actors.h"
 #include "common_game.h"

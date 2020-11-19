@@ -1216,10 +1216,12 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
                 gModernMap = true;
             #endif
         }
+#if 0
         if ((sprite[i].cstat & 0x30) == 0x30)
         {
             sprite[i].cstat &= ~0x30;
         }
+#endif
     }
     unsigned int nCRC;
     IOBuffer1.Read(&nCRC, 4);

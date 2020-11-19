@@ -27,12 +27,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include "init.h"
 #include "sound.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxFishes  128
 #define kMaxChunks  128
-
-short FishCount = 0;
 
 static actionSeq ActionSeq[] = {
     {8,  0},
@@ -46,10 +45,6 @@ static actionSeq ActionSeq[] = {
     {35, 1},
     {39, 1}
 };
-
-short nChunksFree;
-
-int nFreeChunk[kMaxChunks] = { 0 };
 
 struct Fish
 {
@@ -71,6 +66,9 @@ struct Chunk
     short field_6;
 };
 
+short FishCount = 0;
+short nChunksFree = 0;
+int nFreeChunk[kMaxChunks] = {0};
 Fish FishList[kMaxFishes];
 Chunk FishChunk[kMaxChunks];
 
@@ -368,7 +366,7 @@ void FuncFish(int a, int nDamage, int nRun)
                         BuildFishLimb(nFish, i);
                     }
 
-                    PlayFXAtXYZ(StaticSound[kSound40], sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].z, sprite[nSprite].sectnum);
+                    PlayFXAtXYZ(StaticSound[kSoundFishDies], sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].z, sprite[nSprite].sectnum);
                     DestroyFish(nFish);
                 }
                 else
@@ -578,4 +576,36 @@ void FuncFish(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class FishLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void FishLoadSave::Load()
+{
+    Read(&FishCount, sizeof(FishCount));
+    Read(&nChunksFree, sizeof(nChunksFree));
+    Read(nFreeChunk, sizeof(nFreeChunk[0]) * kMaxChunks);
+    Read(FishList, sizeof(FishList[0]) * kMaxFishes);
+    Read(FishChunk, sizeof(FishChunk[0]) * kMaxChunks);
+}
+
+void FishLoadSave::Save()
+{
+    Write(&FishCount, sizeof(FishCount));
+    Write(&nChunksFree, sizeof(nChunksFree));
+    Write(nFreeChunk, sizeof(nFreeChunk[0]) * kMaxChunks);
+    Write(FishList, sizeof(FishList[0]) * kMaxFishes);
+    Write(FishChunk, sizeof(FishChunk[0]) * kMaxChunks);
+}
+
+static FishLoadSave* myLoadSave;
+
+void FishLoadSaveConstruct()
+{
+    myLoadSave = new FishLoadSave();
 }

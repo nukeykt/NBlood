@@ -646,7 +646,7 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
             auto sequenceTime = midi_get_tick();
 
             sleepAmount = 100 / MME_THREAD_QUEUE_INTERVAL;
-            if ((midiThreadTimer - sequenceTime) > midiThreadQueueTicks)
+            if (((int64_t)midiThreadTimer - (int64_t)sequenceTime) > midiThreadQueueTicks)
             {
                 // we're running ahead, so sleep for half the usual
                 // amount and try again

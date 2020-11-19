@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "anims.h"
 #include "random.h"
 #include "bullet.h"
+#include "save.h"
 #include <string.h>
 #include <assert.h>
 #ifndef __WATCOMC__
@@ -43,23 +44,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //#include <math.h>
 #endif
 
-short NearSector[kMaxSectors] = { 0 };
-
-short nPushBlocks;
-
-// TODO - moveme?
-short overridesect;
-short NearCount = -1;
-
-short nBodySprite[50];
-
-int hihit, sprceiling, sprfloor, lohit;
-
 #define kMaxPushBlocks	100
 #define kMaxChunks	75
 
-// think this belongs in init.c?
+short NearCount = -1;
+short NearSector[kMaxSectors] = { 0 };
+
+short nPushBlocks;
 BlockInfo sBlockInfo[kMaxPushBlocks];
+
+// TODO - moveme?
+short overridesect;
+short nBodySprite[50];
+int hihit, sprceiling, sprfloor, lohit;
 
 short nChunkSprite[kMaxChunks];
 
@@ -360,7 +357,7 @@ int movespritez(short nSprite, int z, int height, int UNUSED(flordist), int clip
         if (SectFlag[edi] & kSectUnderwater)
         {
             if (nSprite == PlayerList[nLocalPlayer].nSprite) {
-                D3PlayFX(StaticSound[kSound2], nSprite);
+                D3PlayFX(StaticSound[kSoundBubbleLow], nSprite);
             }
 
             if (pSprite->statnum <= 107) {
@@ -491,7 +488,6 @@ int GetSpriteHeight(int nSprite)
     return tilesiz[sprite[nSprite].picnum].y * sprite[nSprite].yrepeat * 4;
 }
 
-// TODO - where is ceildist used?
 int movesprite(short nSprite, int dx, int dy, int dz, int UNUSED(ceildist), int flordist, unsigned int clipmask)
 {
     spritetype *pSprite = &sprite[nSprite];
@@ -572,7 +568,6 @@ int movesprite(short nSprite, int dx, int dy, int dz, int UNUSED(ceildist), int 
     return nRet;
 }
 
-// OK
 void Gravity(short nSprite)
 {
     short nSector = sprite[nSprite].sectnum;
@@ -678,7 +673,18 @@ int PlotCourseToSprite(int nSprite1, int nSprite2)
 
     sprite[nSprite1].ang = GetMyAngle(x, y);
 
-    return ksqrt(y * y + x * x);
+    uint32_t x2 = klabs(x);
+    uint32_t y2 = klabs(y);
+
+    uint32_t diff = x2 * x2 + y2 * y2;
+
+    if (diff > INT_MAX)
+    {
+        OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+        diff = INT_MAX;
+    }
+
+    return ksqrt(diff);
 }
 
 int FindPlayer(int nSprite, int nDistance)
@@ -829,10 +835,18 @@ void CreatePushBlock(int nSector)
 
     for (i = 0; i < nWalls; i++)
     {
-        int x = xAvg - wall[startwall + i].x;
-        int y = yAvg - wall[startwall + i].y;
+        uint32_t xDiff = klabs(xAvg - wall[startwall + i].x);
+        uint32_t yDiff = klabs(yAvg - wall[startwall + i].y);
 
-        int nSqrt = ksqrt(x * x + y * y);
+        uint32_t sqrtNum = xDiff * xDiff + yDiff * yDiff;
+
+        if (sqrtNum > INT_MAX)
+        {
+            OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+            sqrtNum = INT_MAX;
+        }
+
+        int nSqrt = ksqrt(sqrtNum);
         if (nSqrt > var_28) {
             var_28 = nSqrt;
         }
@@ -1068,6 +1082,19 @@ void MoveSector(short nSector, int nAngle, int *nXVel, int *nYVel)
 
     *nXVel = xvect;
     *nYVel = yvect;
+
+    /* 
+        Update player position variables, in case the player sprite was moved by a sector.
+        Otherwise these can be out of sync when used in sound code (before being updated in PlayerFunc()). 
+        Can cause local player sounds to play off-centre.
+        TODO: Might need to be done elsewhere too?
+    */
+    int nPlayerSprite = PlayerList[nLocalPlayer].nSprite;
+    initx = sprite[nPlayerSprite].x;
+    inity = sprite[nPlayerSprite].y;
+    initz = sprite[nPlayerSprite].z;
+    inita = sprite[nPlayerSprite].ang;
+    initsect = sprite[nPlayerSprite].sectnum;
 }
 
 void SetQuake(short nSprite, int nVal)
@@ -1081,10 +1108,18 @@ void SetQuake(short nSprite, int nVal)
     {
         int nPlayerSprite = PlayerList[i].nSprite;
 
-        int xDiff = sprite[nPlayerSprite].x - x;
-        int yDiff = sprite[nPlayerSprite].y - y;
+        uint32_t xDiff = klabs((int32_t)((sprite[nPlayerSprite].x - x) >> 8));
+        uint32_t yDiff = klabs((int32_t)((sprite[nPlayerSprite].y - y) >> 8));
 
-        int nSqrt = ksqrt((xDiff >> 8)* (xDiff >> 8) + (yDiff >> 8)* (yDiff >> 8));
+        uint32_t sqrtNum = xDiff * xDiff + yDiff * yDiff;
+
+        if (sqrtNum > INT_MAX)
+        {
+            OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+            sqrtNum = INT_MAX;
+        }
+
+        int nSqrt = ksqrt(sqrtNum);
 
         int eax = nVal;
 
@@ -1133,12 +1168,20 @@ int AngleChase(int nSprite, int nSprite2, int ebx, int ecx, int push1)
     {
         int nHeight = tilesiz[sprite[nSprite2].picnum].y * sprite[nSprite2].yrepeat * 2;
 
-        int xDiff = sprite[nSprite2].x - sprite[nSprite].x;
-        int yDiff = sprite[nSprite2].y - sprite[nSprite].y;
+        int nMyAngle = GetMyAngle(sprite[nSprite2].x - sprite[nSprite].x, sprite[nSprite2].y - sprite[nSprite].y);
 
-        int nMyAngle = GetMyAngle(xDiff, yDiff);
+        uint32_t xDiff = klabs(sprite[nSprite2].x - sprite[nSprite].x);
+        uint32_t yDiff = klabs(sprite[nSprite2].y - sprite[nSprite].y);
 
-        int nSqrt = ksqrt(xDiff * xDiff + yDiff * yDiff);
+        uint32_t sqrtNum = xDiff * xDiff + yDiff * yDiff;
+
+        if (sqrtNum > INT_MAX)
+        {
+            OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+            sqrtNum = INT_MAX;
+        }
+
+        int nSqrt = ksqrt(sqrtNum);
 
         int var_18 = GetMyAngle(nSqrt, ((sprite[nSprite2].z - nHeight) - sprite[nSprite].z) >> 8);
 
@@ -1182,7 +1225,15 @@ int AngleChase(int nSprite, int nSprite2, int ebx, int ecx, int push1)
     int xshift = x >> 8;
     int yshift = y >> 8;
 
-    int z = Sin(sprite[nSprite].zvel) * ksqrt((xshift * xshift) + (yshift * yshift));
+    uint32_t sqrtNum = xshift * xshift + yshift * yshift;
+
+    if (sqrtNum > INT_MAX)
+    {
+        OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+        sqrtNum = INT_MAX;
+    }
+
+    int z = Sin(sprite[nSprite].zvel) * ksqrt(sqrtNum);
 
     return movesprite(nSprite, x >> 2, y >> 2, (z >> 13) + (Sin(ecx) >> 5), 0, 0, nClipType);
 }
@@ -1468,4 +1519,60 @@ short UpdateEnemy(short *nEnemy)
     }
 
     return *nEnemy;
+}
+
+class MoveLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void MoveLoadSave::Load()
+{
+    Read(&NearCount, sizeof(NearCount));
+    Read(NearSector, sizeof(NearSector[0]) * NearCount);
+    Read(&nPushBlocks, sizeof(nPushBlocks));
+    Read(sBlockInfo, sizeof(sBlockInfo[0]) * nPushBlocks);
+    Read(&overridesect, sizeof(overridesect));
+    
+    Read(&nCurBodyNum, sizeof(nCurBodyNum));
+    Read(nBodySprite, sizeof(nBodySprite[0]) * nCurBodyNum);
+    Read(&nBodyTotal, sizeof(nBodyTotal));
+
+    Read(&hihit, sizeof(hihit));
+    Read(&sprceiling, sizeof(sprceiling));
+    Read(&sprfloor, sizeof(sprfloor));
+    Read(&lohit, sizeof(lohit));
+
+    Read(&nCurChunkNum, sizeof(nCurChunkNum));
+    Read(nChunkSprite, sizeof(nChunkSprite[0]) * nCurChunkNum);
+}
+
+void MoveLoadSave::Save()
+{
+    Write(&NearCount, sizeof(NearCount));
+    Write(NearSector, sizeof(NearSector[0]) * NearCount);
+    Write(&nPushBlocks, sizeof(nPushBlocks));
+    Write(sBlockInfo, sizeof(sBlockInfo[0]) * nPushBlocks);
+    Write(&overridesect, sizeof(overridesect));
+
+    Write(&nCurBodyNum, sizeof(nCurBodyNum));
+    Write(nBodySprite, sizeof(nBodySprite[0]) * nCurBodyNum);
+    Write(&nBodyTotal, sizeof(nBodyTotal));
+
+    Write(&hihit, sizeof(hihit));
+    Write(&sprceiling, sizeof(sprceiling));
+    Write(&sprfloor, sizeof(sprfloor));
+    Write(&lohit, sizeof(lohit));
+
+    Write(&nCurChunkNum, sizeof(nCurChunkNum));
+    Write(nChunkSprite, sizeof(nChunkSprite[0]) * nCurChunkNum);
+}
+
+static MoveLoadSave* myLoadSave;
+
+void MoveLoadSaveConstruct()
+{
+    myLoadSave = new MoveLoadSave();
 }

@@ -57,7 +57,7 @@ static int MixBufferCurrent;
 static int MixBufferUsed;
 static void (*MixCallBack)(void);
 
-#if (SDL_MAJOR_VERSION == 2)
+#if (SDL_MAJOR_VERSION >= 2)
 static SDL_AudioDeviceID audio_dev;
 #endif
 
@@ -198,10 +198,10 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 
     SDL_AudioSpec actual = {};
 
-#if (SDL_MAJOR_VERSION == 1)
-    err = !SDL_OpenAudio(&spec, &actual);
-#else
+#if (SDL_MAJOR_VERSION >= 2)
     audio_dev = err = SDL_OpenAudioDevice(nullptr, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+#else
+    err = !SDL_OpenAudio(&spec, &actual);
 #endif
 
 #if SDL_MAJOR_VERSION >= 2
@@ -216,11 +216,7 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
         return SDLErr_Error;
     }
 
-#if (SDL_MAJOR_VERSION == 1)
-    char drivernamestr[64] = "(error)";
-    SDL_AudioDriverName(drivernamestr, sizeof(drivernamestr));
-    MV_Printf("SDL %s driver", drivernamestr);
-#else
+#if (SDL_MAJOR_VERSION >= 2)
     char *drivername = Xstrdup(SDL_GetCurrentAudioDriver());
 
     for (int i=0;drivername[i] != 0;++i)
@@ -241,9 +237,11 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 
     Xfree(devname);
     Xfree(drivername);
-#endif
+#else
+    char drivernamestr[64] = "(error)";
+    SDL_AudioDriverName(drivernamestr, sizeof(drivernamestr));
+    MV_Printf("SDL %s driver", drivernamestr);
 
-#if (SDL_MAJOR_VERSION == 1)
     if (actual.freq == 0 || actual.channels == 0)
     {
         // hack for when SDL said it opened the audio, but clearly didn't
@@ -312,7 +310,7 @@ int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
     // prime the buffer
     MixCallBack();
 
-#if (SDL_MAJOR_VERSION == 2)
+#if (SDL_MAJOR_VERSION >= 2)
     SDL_PauseAudioDevice(audio_dev, 0);
 #else
     SDL_PauseAudio(0);
@@ -327,7 +325,7 @@ void SDLDrv_PCM_StopPlayback(void)
     if (!Initialised || !Playing)
         return;
 
-#if (SDL_MAJOR_VERSION == 2)
+#if (SDL_MAJOR_VERSION >= 2)
     SDL_PauseAudioDevice(audio_dev, 1);
 #else
     SDL_PauseAudio(1);
@@ -338,7 +336,7 @@ void SDLDrv_PCM_StopPlayback(void)
 
 void SDLDrv_PCM_Lock(void)
 {
-#if (SDL_MAJOR_VERSION == 2)
+#if (SDL_MAJOR_VERSION >= 2)
     SDL_LockAudioDevice(audio_dev);
 #else
     SDL_LockAudio();
@@ -347,7 +345,7 @@ void SDLDrv_PCM_Lock(void)
 
 void SDLDrv_PCM_Unlock(void)
 {
-#if (SDL_MAJOR_VERSION == 2)
+#if (SDL_MAJOR_VERSION >= 2)
     SDL_UnlockAudioDevice(audio_dev);
 #else
     SDL_UnlockAudio();

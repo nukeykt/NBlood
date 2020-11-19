@@ -27,12 +27,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include "player.h"
 #include "aistuff.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxRex 50
-
-short RexCount = 0;
-short RexChan[kMaxRex];
 
 struct Rex
 {
@@ -43,8 +41,6 @@ struct Rex
     short nTarget;
     short field_A;
 };
-
-Rex RexList[kMaxRex];
 
 static actionSeq ActionSeq[] = {
     {29, 0},
@@ -57,18 +53,23 @@ static actionSeq ActionSeq[] = {
     {28, 1}
 };
 
+short RexCount = 0;
+
+short RexChan[kMaxRex];
+Rex RexList[kMaxRex];
+
 
 void InitRexs()
 {
-    RexCount = kMaxRex;
+    RexCount = 0;
 }
 
 int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
-    RexCount--;
-
     int nRex = RexCount;
-    if (nRex < 0) {
+    RexCount++;
+  
+    if (nRex >= kMaxRex) {
         return -1;
     }
 
@@ -265,7 +266,7 @@ void FuncRex(int a, int nDamage, int nRun)
                             sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
 
-                            D3PlayFX(StaticSound[kSound48], nSprite);
+                            D3PlayFX(StaticSound[kSoundRexICU], nSprite);
 
                             RexList[nRex].field_A = 30;
                         }
@@ -303,7 +304,7 @@ void FuncRex(int a, int nDamage, int nRun)
                             {
                                 RexList[nRex].nAction = 2;
                                 RexList[nRex].field_A = 240;
-                                D3PlayFX(StaticSound[kSound48], nSprite);
+                                D3PlayFX(StaticSound[kSoundRexICU], nSprite);
                                 RexList[nRex].nFrame = 0;
                                 return;
                             }
@@ -485,4 +486,32 @@ void FuncRex(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class RexLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void RexLoadSave::Load()
+{
+    Read(&RexCount, sizeof(RexCount));
+    Read(RexChan, sizeof(RexChan[0]) * RexCount);
+    Read(RexList, sizeof(RexList[0]) * RexCount);
+}
+
+void RexLoadSave::Save()
+{
+    Write(&RexCount, sizeof(RexCount));
+    Write(RexChan, sizeof(RexChan[0]) * RexCount);
+    Write(RexList, sizeof(RexList[0]) * RexCount);
+}
+
+static RexLoadSave* myLoadSave;
+
+void RexLoadSaveConstruct()
+{
+    myLoadSave = new RexLoadSave();
 }

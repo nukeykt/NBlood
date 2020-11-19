@@ -41,7 +41,7 @@ struct dynitem
     const int16_t staticval;
 };
 
-LUNATIC_EXTERN struct dynitem g_dynTileList[] =
+static struct dynitem g_dynTileList[] =
 {
     { "ACCESS_ICON",         DVPTR(ACCESS_ICON),         ACCESS_ICON__STATIC },
     { "ACCESSCARD",          DVPTR(ACCESSCARD),          ACCESSCARD__STATIC },
@@ -1297,7 +1297,6 @@ int32_t E32_TILE5736        = E32_TILE5736__STATIC;
 int32_t E32_TILE5737        = E32_TILE5737__STATIC;
 int32_t E32_TILE5846        = E32_TILE5846__STATIC;
 
-#if !defined LUNATIC
 static hashtable_t h_names = {512, NULL};
 
 void G_ProcessDynamicTileMapping(const char *szLabel, int32_t lValue)
@@ -1330,7 +1329,6 @@ void freehashnames(void)
 {
     hash_free(&h_names);
 }
-#endif
 #endif
 
 // This is run after all CON define's have been processed to set up the

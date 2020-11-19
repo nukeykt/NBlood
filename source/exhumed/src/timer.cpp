@@ -30,4 +30,3 @@ void InitTimer()
     timerInit(kTimerTicks);
     timerSetCallback(timerhandler);
 }
-

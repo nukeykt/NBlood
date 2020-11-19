@@ -170,6 +170,7 @@ typedef enum
     sldr_mouse, sldr_sndfxvolume, sldr_musicvolume, sldr_scrsize, sldr_brightness,
     sldr_bordertile, sldr_gametype, sldr_netlevel, sldr_monsters, sldr_killlimit,
     sldr_timelimit, sldr_playercolor, sldr_videores, sldr_videobpp,
+    sldr_fov,
     sldr_mousescalex, sldr_mousescaley,
     sldr_joyaxisscale, sldr_joyaxisanalog, sldr_joyaxisdead, sldr_joyaxissatur,
     sldr_max
@@ -212,6 +213,7 @@ typedef enum
     btn_videofs,
     btn_darts,
     btn_autoswitch,
+    btn_interpolate_so,
     btn_max
 } BTNType;
 

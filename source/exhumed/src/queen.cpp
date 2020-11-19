@@ -29,13 +29,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "player.h"
 #include "sound.h"
 #include "names.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxQueens  1
 #define kMaxEggs    10
 #define kMaxTails   7
-
-short QueenCount = 0;
 
 static actionSeq ActionSeq[] = {
     {0,  0},
@@ -70,17 +69,6 @@ static actionSeq EggSeq[] = {
     {9,  0},
     {23, 1},
 };
-
-int nQHead = 0;
-
-short nEggsFree;
-short nHeadVel;
-short nVelShift;
-
-short tailspr[kMaxTails];
-short nEggFree[kMaxEggs];
-
-short QueenChan[kMaxQueens];
 
 struct Queen
 {
@@ -120,6 +108,17 @@ struct Head
     short field_E;
 };
 
+short QueenCount = 0;
+int nQHead = 0;
+
+short nEggsFree;
+short nHeadVel;
+short nVelShift;
+
+short tailspr[kMaxTails];
+short nEggFree[kMaxEggs];
+
+short QueenChan[kMaxQueens];
 Egg QueenEgg[kMaxEggs];
 Queen QueenList[kMaxQueens];
 Head QueenHead;
@@ -236,10 +235,18 @@ int QueenAngleChase(short nSprite, short nSprite2, int val1, int val2)
 
         int edx = ((pSprite2->z - nTileY) - pSprite->z) >> 8;
 
-        int x = pSprite2->x - pSprite->x;
-        int y = pSprite2->y - pSprite->y;
+        uint32_t xDiff = klabs(pSprite2->x - pSprite->x);
+        uint32_t yDiff = klabs(pSprite2->y - pSprite->y);
 
-        int nSqrt = ksqrt(x * x + y * y);
+        uint32_t sqrtVal = xDiff * xDiff + yDiff * yDiff;
+
+        if (sqrtVal > INT_MAX)
+        {
+            OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+            sqrtVal = INT_MAX;
+        }
+
+        int nSqrt = ksqrt(sqrtVal);
 
         int var_14 = GetMyAngle(nSqrt, edx);
 
@@ -273,7 +280,18 @@ int QueenAngleChase(short nSprite, short nSprite2, int val1, int val2)
     int v26 = x * ((val1 * Cos(nAngle)) >> 14);
     int v27 = x * ((val1 * Sin(nAngle)) >> 14);
 
-    int nSqrt = ksqrt(((v26 >> 8) * (v26 >> 8)) + ((v27 >> 8) * (v27 >> 8))) * Sin(da);
+    uint32_t xDiff = klabs((int32_t)(v26 >> 8));
+    uint32_t yDiff = klabs((int32_t)(v27 >> 8));
+
+    uint32_t sqrtNum = xDiff * xDiff + yDiff * yDiff;
+
+    if (sqrtNum > INT_MAX)
+    {
+        OSD_Printf("%s %d: overflow\n", EDUKE32_FUNCTION, __LINE__);
+        sqrtNum = INT_MAX;
+    }
+
+    int nSqrt = ksqrt(sqrtNum) * Sin(da);
 
     return movesprite(nSprite, v26 >> 2, v27 >> 2, (Sin(bobangle) >> 5) + (nSqrt >> 13), 0, 0, CLIPMASK1);
 }
@@ -1377,7 +1395,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                                 sprite[nChunkSprite].xrepeat = 100;
 
                                 PlayFXAtXYZ(
-                                    StaticSound[kSound40],
+                                    StaticSound[kSoundFishDies],
                                     sprite[nSprite].x,
                                     sprite[nSprite].y,
                                     sprite[nSprite].z,
@@ -1477,4 +1495,58 @@ void FuncQueen(int a, int nDamage, int nRun)
             break;
         }
     }
+}
+
+class QueenLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void QueenLoadSave::Load()
+{
+    Read(&QueenCount, sizeof(QueenCount));
+    Read(&nQHead, sizeof(nQHead));
+    Read(&nEggsFree, sizeof(nEggsFree));
+    Read(&nHeadVel, sizeof(nHeadVel));
+    Read(&nVelShift, sizeof(nVelShift));
+    Read(tailspr, sizeof(tailspr));
+    Read(nEggFree, sizeof(nEggFree));
+    Read(QueenChan, sizeof(QueenChan));
+    Read(QueenEgg, sizeof(QueenEgg));
+    Read(QueenList, sizeof(QueenList));
+    Read(&QueenHead, sizeof(QueenHead));
+    Read(MoveQX, sizeof(MoveQX));
+    Read(MoveQY, sizeof(MoveQY));
+    Read(MoveQZ, sizeof(MoveQZ));
+    Read(MoveQS, sizeof(MoveQS));
+    Read(MoveQA, sizeof(MoveQA));
+}
+
+void QueenLoadSave::Save()
+{
+    Write(&QueenCount, sizeof(QueenCount));
+    Write(&nQHead, sizeof(nQHead));
+    Write(&nEggsFree, sizeof(nEggsFree));
+    Write(&nHeadVel,  sizeof(nHeadVel));
+    Write(&nVelShift, sizeof(nVelShift));
+    Write(tailspr, sizeof(tailspr));
+    Write(nEggFree,  sizeof(nEggFree));
+    Write(QueenChan, sizeof(QueenChan));
+    Write(QueenEgg, sizeof(QueenEgg));
+    Write(QueenList,  sizeof(QueenList));
+    Write(&QueenHead, sizeof(QueenHead));
+    Write(MoveQX, sizeof(MoveQX));
+    Write(MoveQY, sizeof(MoveQY));
+    Write(MoveQZ, sizeof(MoveQZ));
+    Write(MoveQS, sizeof(MoveQS));
+    Write(MoveQA, sizeof(MoveQA));
+}
+
+static QueenLoadSave* myLoadSave;
+
+void QueenLoadSaveConstruct()
+{
+    myLoadSave = new QueenLoadSave();
 }

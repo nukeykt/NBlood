@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pragmas.h"
 #include "typedefs.h"
 #include "trigdat.h"
+#include "osd.h"
 
 #define kMaxTiles	6144
 #define kMaxSprites 4096
@@ -42,6 +43,11 @@ enum
 #define kMaxPalookups 256
 #define kMaxStatus   1024
 //#define MAXPSKYTILES 256
+
+typedef spritetype SPRITE;
+typedef sectortype SECTOR;
+typedef walltype WALL;
+
 
 inline int Sin(int angle)
 {

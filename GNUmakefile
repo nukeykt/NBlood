@@ -85,23 +85,6 @@ libxmplite_obj := $(obj)/$(libxmplite)
 libxmplite_cflags := -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DBUILDING_STATIC -I$(libxmplite_inc)/libxmp-lite -Wno-unused-parameter -Wno-sign-compare
 
 
-#### LPeg
-
-lpeg := lpeg
-
-lpeg_objs := \
-    lpcap.c \
-    lpcode.c \
-    lpprint.c \
-    lptree.c \
-    lpvm.c \
-
-lpeg_root := $(source)/$(lpeg)
-lpeg_src := $(lpeg_root)/src
-lpeg_inc := $(lpeg_root)/include
-lpeg_obj := $(obj)/$(lpeg)
-
-
 #### PhysicsFS
 
 physfs := physfs
@@ -208,6 +191,22 @@ libsmackerdec_inc := $(libsmackerdec_root)/include
 libsmackerdec_obj := $(obj)/$(libsmackerdec)
 
 libsmackerdec_cflags :=
+
+
+#### hmpplay
+
+hmpplay := hmpplay
+
+hmpplay_objs := \
+    hmpplay.cpp \
+    fmmidi3.cpp \
+
+hmpplay_root := $(source)/$(hmpplay)
+hmpplay_src := $(hmpplay_root)/src
+hmpplay_inc := $(hmpplay_root)/include
+hmpplay_obj := $(obj)/$(hmpplay)
+
+hmpplay_cflags :=
 
 
 ##### Component Definitions
@@ -319,9 +318,6 @@ ifeq (1,$(USE_OPENGL))
         engine_objs += glbuild.cpp polymer.cpp
     endif
 endif
-ifneq (0,$(LUNATIC))
-    engine_objs += lunatic.cpp
-endif
 ifeq ($(PLATFORM),DARWIN)
     engine_objs += osxbits.mm
     engine_tools_objs += osxbits.mm
@@ -414,6 +410,9 @@ audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
     audiolib_objs += driver_directsound.cpp driver_winmm.cpp 
+endif
+ifeq ($(SUBPLATFORM),LINUX)
+    audiolib_objs += driver_alsa.cpp
 endif
 
 ifeq ($(RENDERTYPE),SDL)
@@ -543,11 +542,14 @@ tekwar_editor := etekwar-editor
 tekwar_game_proper := ETekWar
 tekwar_editor_proper := ETekWar Editor
 
-tekwar_game_deps := libsmackerdec
+tekwar_game_deps := audiolib mact libsmackerdec hmpplay
 
 tekwar_game_objs := \
     b5compat.cpp \
+    common.cpp \
     config.cpp \
+    grpscan.cpp \
+    osdcmds.cpp \
     tekcdr.cpp \
     tekchng.cpp \
     tekgame.cpp \
@@ -574,15 +576,17 @@ tekwar_editor_rsrc_objs :=
 
 ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     tekwar_game_objs += startgtk.game.cpp
+    tekwar_game_gen_objs += game_banner.c
+    tekwar_editor_gen_objs += build_banner.c
+endif
+ifeq ($(RENDERTYPE),SDL)
+    tekwar_game_rsrc_objs += game_icon.c
+    tekwar_editor_rsrc_objs += game_icon.c
 endif
 ifeq ($(PLATFORM),WINDOWS)
     tekwar_game_objs += startwin.game.cpp
     tekwar_game_rsrc_objs += gameres.rc
-endif
-ifeq ($(PLATFORM),DARWIN)
-    ifeq ($(STARTUP_WINDOW),1)
-        tekwar_game_objs += StartupWinController.game.mm
-    endif
+    tekwar_editor_rsrc_objs += buildres.rc
 endif
 
 
@@ -614,11 +618,6 @@ common_editor_deps := duke3d_common_editor engine_editor
 
 duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
-
-ifneq (0,$(LUNATIC))
-    duke3d_game_deps += lunatic lunatic_game lpeg
-    duke3d_editor_deps += lunatic lunatic_editor lpeg
-endif
 
 duke3d_game := eduke32
 duke3d_editor := mapster32
@@ -684,85 +683,8 @@ duke3d_editor_miscdeps :=
 duke3d_game_orderonlydeps :=
 duke3d_editor_orderonlydeps :=
 
-## Lunatic devel
-lunatic := lunatic
-lunatic_src := $(duke3d_src)/$(lunatic)
-lunatic_obj := $(duke3d_obj)
-
-ifneq (0,$(LUNATIC))
-    COMPILERFLAGS += -I$(lunatic_src) -DLUNATIC
-
-    # Determine size of _defs*.lua bytecode once.
-    ifndef DEFS_BC_SIZE
-        DEFS_BC_SIZE := $(shell $(LUAJIT) -bg -t h $(lunatic_src)/_defs_game.lua -)
-        DEFS_BC_SIZE := $(word 3, $(DEFS_BC_SIZE))
-    endif
-    ifndef DEFS_M32_BC_SIZE
-        DEFS_M32_BC_SIZE := $(shell $(LUAJIT) -bg -t h $(lunatic_src)/_defs_editor.lua -)
-        DEFS_M32_BC_SIZE := $(word 3, $(DEFS_M32_BC_SIZE))
-    endif
-    duke3d_cflags += -DLUNATIC_DEFS_BC_SIZE=$(DEFS_BC_SIZE) -DLUNATIC_DEFS_M32_BC_SIZE=$(DEFS_M32_BC_SIZE)
-
-    # Lunatic object base names. These are not used in targets directly.
-    lunatic_objs := \
-        defs_common.lua \
-        engine_maptext.lua \
-        engine.lua \
-        bcarray.lua \
-        bcheck.lua \
-        bitar.lua \
-        xmath.lua \
-        v.lua \
-        dump.lua \
-        dis_x86.lua \
-        dis_x64.lua \
-
-    lunatic_game_objs := \
-        lunatic_game.cpp \
-        _defs_game.lua \
-        con_lang.lua \
-        lunacon.lua \
-        randgen.lua \
-        stat.lua \
-        control.lua \
-        lunasave.lua \
-        fs.lua \
-
-    lunatic_editor_objs := \
-        lunatic_editor.cpp \
-        _defs_editor.lua \
-
-    # TODO: remove debugging modules from release build
-
-    # now, take care of having the necessary symbols (sector, wall, etc.) in the
-    # executable no matter what the debugging level
-
-    ifeq ($(PLATFORM),DARWIN)
-        # strip on OSX says: removing global symbols from a final linked no longer supported.
-        #                    Use -exported_symbols_list at link time when building
-        # But, following _their_ directions does not give us the symbols! wtf?
-        # Instead of using -alias_list and -exported_symbols_list, prevent stripping them.
-        duke3d_game_stripflags += -s $(duke3d_obj)/lunatic_dynsymlist_game_osx
-        duke3d_editor_stripflags += -s $(duke3d_obj)/lunatic_dynsymlist_editor_osx
-
-        duke3d_game_orderonlydeps += $(duke3d_obj)/lunatic_dynsymlist_game_osx
-        duke3d_editor_orderonlydeps += $(duke3d_obj)/lunatic_dynsymlist_editor_osx
-        LINKERFLAGS += -pagezero_size 10000 -image_base 100000000
-    endif
-    ifeq ($(PLATFORM),WINDOWS)
-        override STRIP :=
-        duke3d_game_miscdeps += $(duke3d_obj)/lunatic_dynsymlist_game.def
-        duke3d_editor_miscdeps += $(duke3d_obj)/lunatic_dynsymlist_editor.def
-    endif
-    ifeq ($(SUBPLATFORM),LINUX)
-        override STRIP :=
-        duke3d_game_ldflags += -Wl,--dynamic-list=$(lunatic_src)/dynsymlist_game.lds
-        duke3d_editor_ldflags += -Wl,--dynamic-list=$(lunatic_src)/dynsymlist_editor.lds
-    endif
-endif
-
 ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lasound
 endif
 
 ifeq ($(PLATFORM),BSD)
@@ -967,11 +889,6 @@ ifneq (0,$(NETCODE))
     rr_game_deps += enet
 endif
 
-ifneq (0,$(LUNATIC))
-    rr_game_deps += lunatic lunatic_game lpeg
-    rr_editor_deps += lunatic lunatic_editor lpeg
-endif
-
 rr_game := rednukem
 rr_editor := rrmapster32
 
@@ -1067,6 +984,23 @@ ifeq ($(RENDERTYPE),SDL)
     rr_editor_rsrc_objs += build_icon.c
 endif
 
+n64 := n64
+n64_src := $(rr_src)/$(n64)
+n64_obj := $(rr_obj)/$(n64)
+n64_objs := \
+    reality.cpp \
+    reality_music.cpp \
+    reality_player.cpp \
+    reality_render.cpp \
+    reality_sbar.cpp \
+    reality_screens.cpp \
+    reality_sound.cpp \
+    reality_util.cpp \
+
+n64_cflags :=
+
+rr_game_deps += n64
+
 
 #### Shadow Warrior
 
@@ -1114,6 +1048,7 @@ sw_game_objs := \
     hornet.cpp \
     interp.cpp \
     interpsh.cpp \
+    interpso.cpp \
     inv.cpp \
     jplayer.cpp \
     jsector.cpp \
@@ -1223,7 +1158,7 @@ exhumed_game_objs := \
     bubbles.cpp \
     bullet.cpp \
     cd.cpp \
-    cdaudio.cpp \
+	common.cpp \
     config.cpp \
     enginesubs.cpp \
     exhumed.cpp \
@@ -1239,7 +1174,6 @@ exhumed_game_objs := \
     light.cpp \
     lighting.cpp \
     lion.cpp \
-    main.cpp \
     map.cpp \
     menu.cpp \
     mono.cpp \
@@ -1249,7 +1183,6 @@ exhumed_game_objs := \
     network.cpp \
     object.cpp \
     osdcmds.cpp \
-    paul.cpp \
     player.cpp \
     queen.cpp \
     ra.cpp \
@@ -1312,7 +1245,7 @@ witchaven_obj := $(obj)/$(witchaven)
 
 witchaven_cflags := -I$(witchaven_src)
 
-witchaven_game_deps := duke3d_common_midi audiolib mact
+witchaven_game_deps := duke3d_common_midi audiolib mact hmpplay
 witchaven_editor_deps := audiolib
 
 witchaven_game := ewitchaven
@@ -1371,12 +1304,16 @@ COMPILERFLAGS += \
     -I$(glad_inc) \
     -I$(voidwrap_inc) \
     -I$(libsmackerdec_inc) \
+    -I$(hmpplay_inc) \
     -MP -MMD \
 
 ifneq (0,$(USE_PHYSFS))
     COMPILERFLAGS += -I$(physfs_inc) -DUSE_PHYSFS
 endif
 
+ifneq (0,$(MICROPROFILE))
+  COMPILERFLAGS += -DMICROPROFILE_ENABLED=1
+endif
 
 ##### Recipes
 
@@ -1388,16 +1325,18 @@ games := \
     sw \
     exhumed \
     witchaven \
+	tekwar \
 
 libraries := \
     audiolib \
     engine \
     glad \
     libxmplite \
-    lpeg \
     mact \
     voidwrap \
     libsmackerdec \
+    hmpplay \
+    n64 \
 
 ifneq (0,$(USE_PHYSFS))
     libraries += physfs
@@ -1510,27 +1449,6 @@ getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o
 $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
-
-
-### Lunatic
-
-# Create object files directly with luajit
-$(duke3d_obj)/%.$o: $(lunatic_src)/%.lua | $(duke3d_obj)
-	$(COMPILE_STATUS)
-	$(RECIPE_IF) $(LUAJIT) -bg $(LUAJIT_BCOPTS) $< $@ $(RECIPE_RESULT_COMPILE)
-
-$(duke3d_obj)/%.$o: $(lunatic_src)/%.cpp | $(duke3d_obj)
-	$(COMPILE_STATUS)
-	$(RECIPE_IF) $(COMPILER_CXX) $(duke3d_cflags) -c $< -o $@ $(RECIPE_RESULT_COMPILE)
-
-# List of exported symbols, OS X
-$(duke3d_obj)/lunatic_%_osx: $(lunatic_src)/%.lds | $(duke3d_obj)
-	sed 's/[{};]//g;s/[A-Za-z_][A-Za-z_0-9]*/_&/g' $< > $@
-
-# List of exported symbols, Windows
-$(duke3d_obj)/lunatic_%.def: $(lunatic_src)/%.lds | $(duke3d_obj)
-	echo EXPORTS > $@
-	sed 's/[{};]//g' $< >> $@
 
 
 ### Main Rules

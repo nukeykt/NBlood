@@ -49,8 +49,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 // only for timed quakes
 #define QUAKE_WaitForTrigger(sp) (TEST_BOOL3(sp))
 
-extern SWBOOL GamePaused;
-
 short CopyQuakeSpotToOn(SPRITEp sp)
 {
     short New;

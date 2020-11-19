@@ -482,10 +482,20 @@ static void G_DoLoadScreen(const char *statustext, int32_t percent)
         }
 
         videoClearScreen(0);
-        
-        int const loadScreenTile = VM_OnEventWithReturn(EVENT_GETLOADTILE, g_player[screenpeek].ps->i, screenpeek, DEER ? 7040 : LOADSCREEN);
 
-        rotatesprite_fs(320<<15,200<<15,65536L,0,loadScreenTile,0,0,2+8+64+BGSTRETCH);
+        if (REALITY)
+        {
+            RT_DisablePolymost(0);
+            RT_RotateSpriteSetColor(255, 255, 255, 255);
+            RT_RotateSprite(160, 120, 100, 100, 3670, RTRS_SCALED);
+            RT_EnablePolymost();
+        }
+        else
+        {
+            int const loadScreenTile = VM_OnEventWithReturn(EVENT_GETLOADTILE, g_player[screenpeek].ps->i, screenpeek, DEER ? 7040 : LOADSCREEN);
+
+            rotatesprite_fs(320<<15,200<<15,65536L,0,loadScreenTile,0,0,2+8+64+BGSTRETCH);
+        }
 
         int const textY = RRRA ? 140 : 90;
 
@@ -965,7 +975,17 @@ void P_ResetStatus(int playerNum)
     pPlayer->movement_lock      = 0;
     pPlayer->frag_ps            = playerNum;
 
-    P_UpdateScreenPal(pPlayer);
+    if (REALITY)
+    {
+        pPlayer->dn64_370 = 0;
+        pPlayer->dn64_374 = 0;
+        pPlayer->dn64_376 = 0;
+        pPlayer->dn64_378 = 0;
+        pPlayer->dn64_372 = pPlayer->curr_weapon;
+    }
+
+    if (!REALITY)
+        P_UpdateScreenPal(pPlayer);
 
     if (RR)
     {
@@ -1062,8 +1082,12 @@ void P_ResetWeapons(int playerNum)
 
     pPlayer->weapon_pos                 = WEAPON_POS_START;
     pPlayer->curr_weapon                = PISTOL_WEAPON;
+    if (REALITY)
+        pPlayer->dn64_372               = PISTOL_WEAPON;
     pPlayer->kickback_pic               = 5;
     pPlayer->gotweapon                  = ((1 << PISTOL_WEAPON) | (1 << KNEE_WEAPON) | (1 << HANDREMOTE_WEAPON));
+    if (REALITY)
+        pPlayer->gotweapon             |= (1 << BOWLINGBALL_WEAPON);
     pPlayer->ammo_amount[PISTOL_WEAPON] = min<int16_t>(pPlayer->max_ammo_amount[PISTOL_WEAPON], 48);
     if (RRRA)
     {
@@ -1157,6 +1181,11 @@ static void resetprestat(int playerNum, int gameMode)
     pPlayer->max_secret_rooms  = 0;
     pPlayer->actors_killed     = 0;
     pPlayer->max_actors_killed = 0;
+    if (REALITY)
+    {
+        pPlayer->dn64_36e = 0;
+        pPlayer->dn64_36d = 0;
+    }
     pPlayer->lastrandomspot    = 0;
     pPlayer->weapon_pos        = WEAPON_POS_START;
 
@@ -1210,8 +1239,13 @@ static void resetprestat(int playerNum, int gameMode)
     }
 
     pPlayer->timebeforeexit  = 0;
-    pPlayer->customexitsound = 0;
+    pPlayer->customexitsound = REALITY ? -1 : 0;
 
+    if (REALITY)
+    {
+        pPlayer->dn64_374 = 0;
+        pPlayer->dn64_378 = 0;
+    }
     if (RR)
     {
         pPlayer->stairs = 0;
@@ -1947,6 +1981,8 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 
     g_showShareware = GAMETICSPERSEC*34;
 
+    if (REALITY)
+        rt_levelnum = levelNum;
     ud.level_number = levelNum;
     ud.volume_number = volumeNum;
     ud.player_skill = skillNum;
@@ -1960,6 +1996,9 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
     g_quickload = nullptr;
 
     int const UserMap = Menu_HaveUserMap();
+
+    if (REALITY && (!g_netServer && ud.multimode < 2) && UserMap == 0 && levelNum == 0)
+        RT_Intro();
 
     // we don't want the intro to play after the multiplayer setup screen
     if (!RR && (!g_netServer && ud.multimode < 2) && UserMap == 0 &&
@@ -2032,6 +2071,21 @@ end_vol4a:
     }
 
     display_mirror = 0;
+
+    if (ud.multimode > 1)
+    {
+        if (numplayers < 2)
+        {
+            connecthead = 0;
+            for (int i = 0; i < MAXPLAYERS; i++) connectpoint2[i] = i + 1;
+            connectpoint2[ud.multimode - 1] = -1;
+        }
+    }
+    else
+    {
+        connecthead = 0;
+        connectpoint2[0] = -1;
+    }
 }
 
 static void resetpspritevars(char gameMode)
@@ -2068,7 +2122,11 @@ static void resetpspritevars(char gameMode)
     P_ResetStatus(0);
 
     for (TRAVERSE_CONNECT(i))
+    {
         if (i) Bmemcpy(g_player[i].ps,g_player[0].ps,sizeof(DukePlayer_t));
+        if (REALITY)
+            P_PalFrom(g_player[i].ps, 64, 0, 0, 0);
+    }
 
     if (ud.recstat != 2)
         for (TRAVERSE_CONNECT(i))
@@ -2364,6 +2422,12 @@ int G_EnterLevel(int gameMode)
     ud.ffire             = ud.m_ffire;
     ud.noexits           = ud.m_noexits;
 
+    if (REALITY)
+    {
+        ud.volume_number = 0;
+        ud.level_number = rt_levelnum;
+    }
+
     if ((gameMode & MODE_DEMO) != MODE_DEMO)
         ud.recstat = ud.m_recstat;
     if ((gameMode & MODE_DEMO) == 0 && ud.recstat == 2)
@@ -2402,7 +2466,7 @@ int G_EnterLevel(int gameMode)
 
     mii = (ud.volume_number*MAXLEVELS)+ud.level_number;
 
-    if (g_mapInfo[mii].name == NULL || g_mapInfo[mii].filename == NULL)
+    if (!REALITY && (g_mapInfo[mii].name == NULL || g_mapInfo[mii].filename == NULL))
     {
         if (RR && g_lastLevel)
         {
@@ -2476,6 +2540,10 @@ int G_EnterLevel(int gameMode)
         G_LoadMapHack(levelName, boardfilename);
         G_SetupFilenameBasedMusic(levelName, boardfilename, ud.m_level_number);
     }
+    else if (REALITY)
+    {
+        RT_LoadBoard(rt_levelnum);
+    }
     else if (engineLoadBoard(g_mapInfo[mii].filename, VOLUMEONE, &pPlayer->pos, &lbang, &pPlayer->cursectnum) < 0)
     {
         OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", g_mapInfo[mii].filename);
@@ -2493,7 +2561,8 @@ int G_EnterLevel(int gameMode)
         g_player[0].ps->gotweapon &= (1<<KNEE_WEAPON);
     }
 
-    pPlayer->q16ang = fix16_from_int(lbang);
+    if (!REALITY)
+        pPlayer->q16ang = fix16_from_int(lbang);
 
     g_precacheCount = 0;
     Bmemset(gotpic, 0, sizeof(gotpic));
@@ -2601,6 +2670,9 @@ int G_EnterLevel(int gameMode)
 
     for (i=g_interpolationCnt-1; i>=0; i--) bakipos[i] = *curipos[i];
 
+    for (i=0; i<ud.multimode; i++)
+        g_player[i].playerquitflag = 1;
+
     g_player[myconnectindex].ps->over_shoulder_on = 0;
 
     clearfrags();
@@ -2629,6 +2701,9 @@ int G_EnterLevel(int gameMode)
     videoClearViewableArea(0L);
     G_DrawBackground();
     G_DrawRooms(myconnectindex,65536);
+
+    if (REALITY)
+        RT_ResetBarScroll();
 
     Net_WaitForEverybody();
     return 0;

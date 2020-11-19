@@ -118,6 +118,8 @@ void G_ResetInterpolations(void)
         case SE_26:
         case SE_30_TWO_WAY_TRAIN:
             Sect_SetInterpolation(sprite[k].sectnum);
+            if (REALITY)
+                RT_MS_SetInterpolation(sprite[k].sectnum);
             break;
         }
 
@@ -1101,6 +1103,7 @@ static void sv_quoteload();
 static void sv_restsave();
 static void sv_restload();
 static void sv_rrrafog();
+static void sv_preloaddn64();
 
 #define SVARDATALEN \
     ((sizeof(g_player[0].user_name)+sizeof(g_player[0].pcolor)+sizeof(g_player[0].pteam) \
@@ -1148,6 +1151,8 @@ static const dataspec_t svgm_udnetw[] =
     { 0, &randomseed, sizeof(randomseed), 1 },
     { 0, &g_globalRandom, sizeof(g_globalRandom), 1 },
 //    { 0, &lockclock_dummy, sizeof(lockclock), 1 },
+    { DS_NOCHK, &rt_boardnum, sizeof(rt_boardnum), 1 },
+    { DS_NOCHK, &rt_levelnum, sizeof(rt_levelnum), 1 },
     { DS_END, 0, 0, 0 }
 };
 
@@ -1200,6 +1205,40 @@ static const dataspec_t svgm_secwsp[] =
     { DS_NOCHK, &g_mirrorWall[0], sizeof(g_mirrorWall[0]), ARRAY_SIZE(g_mirrorWall) },
     { DS_NOCHK, &g_mirrorSector[0], sizeof(g_mirrorSector[0]), ARRAY_SIZE(g_mirrorSector) },
     { 0, &everyothertime, sizeof(everyothertime), 1 },
+
+    { DS_END, 0, 0, 0 }
+};
+
+static char svgm_dn64_string [] = "blK:dn64";
+static const dataspec_t svgm_dn64[] =
+{
+    { DS_STRING, (void *)svgm_dn64_string, 0, 1 },
+    { DS_NOCHK, &rt_vtxnum, sizeof(rt_vtxnum), 1 },
+    { DS_LOADFN, (void *)sv_preloaddn64, 0, 1 },
+    { DS_DYNAMIC|DS_CNT(rt_vtxnum), &rt_sectvtx, sizeof(rt_vertex_t), (intptr_t)&rt_vtxnum },
+    { DS_DYNAMIC|DS_CNT(numwalls), &rt_wall, sizeof(rt_walltype), (intptr_t)&numwalls },
+    { DS_DYNAMIC|DS_CNT(numsectors), &rt_sector, sizeof(rt_sectortype), (intptr_t)&numsectors },
+    { DS_NOCHK, &rt_sky_color[0], sizeof(rt_sky_color[0]), ARRAY_SIZE(rt_sky_color) },
+    { DS_NOCHK, &ms_list_cnt, sizeof(ms_list_cnt), 1 },
+    { DS_NOCHK, &ms_vtx_cnt, sizeof(ms_vtx_cnt), 1 },
+    { DS_NOCHK, &ms_list[0], sizeof(ms_list[0]), MOVESECTNUM },
+    { DS_NOCHK, &ms_listvtxptr[0], sizeof(ms_listvtxptr[0]), MOVESECTNUM },
+    { DS_NOCHK, &ms_dx[0], sizeof(ms_dx[0]), MOVESECTVTXNUM },
+    { DS_NOCHK, &ms_dy[0], sizeof(ms_dy[0]), MOVESECTVTXNUM },
+    { 0, &ms_vx[0], sizeof(ms_vx[0]), MOVESECTVTXNUM },
+    { 0, &ms_vy[0], sizeof(ms_vy[0]), MOVESECTVTXNUM },
+    { 0, &explosions[0], sizeof(explosions[0]), MAXEXPLOSIONS },
+    { 0, &smoke[0], sizeof(smoke[0]), MAXEXPLOSIONS },
+    { 0, &boss2seq, sizeof(boss2seq), 1 },
+    { 0, &boss2seqframe, sizeof(boss2seqframe), 1 },
+    { 0, &boss2mdlstate, sizeof(boss2mdlstate), 1 },
+    { 0, &boss2mdlstate2, sizeof(boss2mdlstate2), 1 },
+    { 0, &boss2timer_step, sizeof(boss2timer_step), 1 },
+    { 0, &boss2_frame, sizeof(boss2_frame), 1 },
+    { 0, &boss2_frame2, sizeof(boss2_frame2), 1 },
+    { 0, &boss2timer, sizeof(boss2timer), 1 },
+    { 0, &boss2_interp, sizeof(boss2_interp), 1 },
+
     { DS_END, 0, 0, 0 }
 };
 
@@ -1408,6 +1447,8 @@ int32_t sv_saveandmakesnapshot(FILE *fil, char const *name, int8_t spot, int8_t 
     sv_makevarspec();
     svsnapsiz = calcsz((const dataspec_t *)svgm_vars);
     svsnapsiz += calcsz(svgm_udnetw) + calcsz(svgm_secwsp) + calcsz(svgm_script) + calcsz(svgm_anmisc);
+    if (REALITY)
+        svsnapsiz += calcsz(svgm_dn64);
 
 
     // create header
@@ -1663,6 +1704,8 @@ uint32_t sv_writediff(FILE *fil)
 
     cmpspecdata(svgm_udnetw, &p, &d);
     cmpspecdata(svgm_secwsp, &p, &d);
+    if (REALITY)
+        cmpspecdata(svgm_dn64, &p, &d);
     cmpspecdata(svgm_script, &p, &d);
     cmpspecdata(svgm_anmisc, &p, &d);
     cmpspecdata((const dataspec_t *)svgm_vars, &p, &d);
@@ -1706,9 +1749,10 @@ int32_t sv_readdiff(int32_t fil)
 
     if (applydiff(svgm_udnetw, &p, &d)) return -3;
     if (applydiff(svgm_secwsp, &p, &d)) return -4;
-    if (applydiff(svgm_script, &p, &d)) return -5;
-    if (applydiff(svgm_anmisc, &p, &d)) return -6;
-    if (applydiff((const dataspec_t *)svgm_vars, &p, &d)) return -7;
+    if (REALITY && applydiff(svgm_dn64, &p, &d)) return -5;
+    if (applydiff(svgm_script, &p, &d)) return -6;
+    if (applydiff(svgm_anmisc, &p, &d)) return -7;
+    if (applydiff((const dataspec_t *)svgm_vars, &p, &d)) return -8;
 
     int i = 0;
 
@@ -1871,6 +1915,11 @@ static uint8_t *dosaveplayer2(FILE *fil, uint8_t *mem)
     PRINTSIZE("ud");
     mem=writespecdata(svgm_secwsp, fil, mem);  // sector, wall, sprite
     PRINTSIZE("sws");
+    if (REALITY)
+    {
+        mem=writespecdata(svgm_dn64, fil, mem);  // dn64 vars
+        PRINTSIZE("dn64");
+    }
     mem=writespecdata(svgm_script, fil, mem);  // script
     PRINTSIZE("script");
     mem=writespecdata(svgm_anmisc, fil, mem);  // animates, quotes & misc.
@@ -1893,9 +1942,14 @@ static int32_t doloadplayer2(int32_t fil, uint8_t **memptr)
     PRINTSIZE("ud");
     if (readspecdata(svgm_secwsp, fil, &mem)) return -4;
     PRINTSIZE("sws");
-    if (readspecdata(svgm_script, fil, &mem)) return -5;
+    if (REALITY)
+    {
+        if (readspecdata(svgm_dn64, fil, &mem)) return -5;
+        PRINTSIZE("dn64");
+    }
+    if (readspecdata(svgm_script, fil, &mem)) return -6;
     PRINTSIZE("script");
-    if (readspecdata(svgm_anmisc, fil, &mem)) return -6;
+    if (readspecdata(svgm_anmisc, fil, &mem)) return -7;
     PRINTSIZE("animisc");
 
     int i;
@@ -1929,8 +1983,9 @@ int32_t sv_updatestate(int32_t frominit)
 
     if (readspecdata(svgm_udnetw, -1, &p)) return -2;
     if (readspecdata(svgm_secwsp, -1, &p)) return -4;
-    if (readspecdata(svgm_script, -1, &p)) return -5;
-    if (readspecdata(svgm_anmisc, -1, &p)) return -6;
+    if (REALITY && readspecdata(svgm_dn64, -1, &p)) return -5;
+    if (readspecdata(svgm_script, -1, &p)) return -6;
+    if (readspecdata(svgm_anmisc, -1, &p)) return -7;
     if (readspecdata((const dataspec_t *)svgm_vars, -1, &p)) return -8;
 
     if (p != pbeg+svsnapsiz)
@@ -1952,6 +2007,21 @@ int32_t sv_updatestate(int32_t frominit)
 static void sv_rrrafog()
 {
     G_SetFog(g_fogType ? 2 : 0);
+}
+
+static void sv_preloaddn64()
+{
+    if (rt_sectvtx)
+        Xfree(rt_sectvtx);
+    if (rt_wall)
+        Xfree(rt_wall);
+    if (rt_sector)
+        Xfree(rt_sector);
+    rt_sectvtx = (rt_vertex_t*)Xmalloc(sizeof(rt_vertex_t) * rt_vtxnum);
+    rt_wall = (rt_walltype*)Xmalloc(sizeof(rt_walltype) * numwalls);
+    rt_sector = (rt_sectortype*)Xmalloc(sizeof(rt_sectortype) * numsectors);
+    if (rt_boardnum == 27)
+        RT_LoadBOSS2MDL();
 }
 
 static void postloadplayer(int32_t savegamep)
@@ -1998,7 +2068,7 @@ static void postloadplayer(int32_t savegamep)
         ud.recstat = 0;
 
         if (g_player[myconnectindex].ps->jetpack_on)
-            A_PlaySound(DUKE_JETPACK_IDLE, g_player[myconnectindex].ps->i);
+            A_PlaySound(REALITY ? 39 : DUKE_JETPACK_IDLE, g_player[myconnectindex].ps->i);
     }
 
     //3
@@ -2096,6 +2166,9 @@ static void postloadplayer(int32_t savegamep)
         g_player[i].ps->drug_timer = 0;
 
     G_InitRRRASkies();
+
+    if (REALITY)
+        RT_ResetBarScroll();
 }
 
 ////////// END GENERIC SAVING/LOADING SYSTEM //////////

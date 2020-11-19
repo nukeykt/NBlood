@@ -583,10 +583,20 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
         if (p == screenpeek || GTFLAGS(GAMETYPE_OTHERPLAYERSINMAP))
         {
-            if (pSprite->xvel > 16 && pPlayer->on_ground)
-                i = APLAYERTOP+(((int32_t) totalclock>>4)&3);
+            if (REALITY)
+            {
+                if (pSprite->xvel > 16 && pPlayer->on_ground)
+                    i = 1440-((((4-((int32_t) totalclock>>4)))&3)*5);
+                else
+                    i = APLAYER;
+            }
             else
-                i = APLAYERTOP;
+            {
+                if (pSprite->xvel > 16 && pPlayer->on_ground)
+                    i = APLAYERTOP+(((int32_t) totalclock>>4)&3);
+                else
+                    i = APLAYERTOP;
+            }
 
             if (i < 0)
                 continue;
@@ -596,6 +606,9 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
             if (j < 22000) j = 22000;
             else if (j > (65536<<1)) j = (65536<<1);
+
+            if (REALITY)
+                j >>= 1;
 
             rotatesprite_win((x1<<4)+(xdim<<15), (y1<<4)+(ydim<<15), j, daang, i, pSprite->shade,
                 P_GetOverheadPal(pPlayer), 0);
@@ -928,7 +941,8 @@ void G_DisplayRest(int32_t smoothratio)
     }
 #endif  // USE_OPENGL
 
-    palaccum_add(&tint, &pp->pals, pp->pals.f);
+    if (!REALITY)
+        palaccum_add(&tint, &pp->pals, pp->pals.f);
 #ifdef SPLITSCREEN_MOD_HACKS
     if (pp2)
         palaccum_add(&tint, &pp2->pals, pp2->pals.f);
@@ -1045,7 +1059,12 @@ void G_DisplayRest(int32_t smoothratio)
 #endif
 
                 if (pp->over_shoulder_on == 0)
-                    P_DisplayScuba();
+                {
+                    if (REALITY)
+                        RT_P_DisplayScuba();
+                    else
+                        P_DisplayScuba();
+                }
 #ifdef SPLITSCREEN_MOD_HACKS
                 if (pp2 && pp2->over_shoulder_on == 0)  // HACK
                 {
@@ -1126,7 +1145,7 @@ void G_DisplayRest(int32_t smoothratio)
                     minitext(5, a+6, "CLOSE ENCOUNTERS", 0, 2+8+16+256);
                 else
                 {
-                    if (!G_HaveUserMap())
+                    if (!REALITY && !G_HaveUserMap())
                         minitext(5, a+6, g_volumeNames[ud.volume_number], 0, 2+8+16+256);
                     minitext(5, a+6+6, g_mapInfo[ud.volume_number*MAXLEVELS + ud.level_number].name, 0, 2+8+16+256);
                 }
@@ -1134,7 +1153,7 @@ void G_DisplayRest(int32_t smoothratio)
         }
     }
 
-    if (pp->invdisptime > 0) G_DrawInventory(pp);
+    if (!REALITY && pp->invdisptime > 0) G_DrawInventory(pp);
 
     G_DrawStatusBar(screenpeek);
 
@@ -1165,7 +1184,15 @@ void G_DisplayRest(int32_t smoothratio)
                     ? currentboardfilename
                     : g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name;
 
-            menutext_(160<<16, (90+16+8)<<16, -g_levelTextTime+22/*quotepulseshade*/, fn, o, TEXT_XCENTER);
+            if (REALITY)
+            {
+                RT_DisablePolymost(0);
+                RT_RotateSpriteSetColor(255, 128, 128, clamp(g_levelTextTime * 8, 0, 256));
+                menutext_(160<<16, (90+16+8)<<16, 0, fn, 0, TEXT_XCENTER|TEXT_N64NOPAL);
+                RT_EnablePolymost();
+            }
+            else
+                menutext_(160<<16, (90+16+8)<<16, -g_levelTextTime+22/*quotepulseshade*/, fn, o, TEXT_XCENTER);
         }
     }
 
@@ -1176,7 +1203,7 @@ void G_DisplayRest(int32_t smoothratio)
         if ((g_player[myconnectindex].ps->gm&MODE_MENU) == MODE_MENU && g_currentMenu <= MENU_MAIN_INGAME)
         {
             I_EscapeTriggerClear();
-            S_PlaySound(EXITMENUSOUND);
+            S_PlaySound(REALITY ? 0xaa : EXITMENUSOUND);
             Menu_Change(MENU_CLOSE);
             if (!ud.pause_on)
                 S_PauseSounds(false);
@@ -1278,7 +1305,7 @@ void G_DisplayRest(int32_t smoothratio)
         if (ud.screen_size == 4)
         {
             if (ud.althud == 0 || ud.hudontop == 0)
-                i -= sbarsc(ud.althud ? ((tilesiz[BIGALPHANUM].y<<sbarshift)+(8<<16)) : tilesiz[INVENTORYBOX].y<<sbarshift);
+                i -= sbarsc(ud.althud ? ((tilesiz[BIGALPHANUM].y<<sbarshift)+(8<<16)) : (REALITY ? 30 : tilesiz[INVENTORYBOX].y)<<sbarshift);
         }
         else if (RR && ud.screen_size == 12)
         {
@@ -1289,12 +1316,21 @@ void G_DisplayRest(int32_t smoothratio)
 
         int32_t const xbetween = (tilesiz[MF_Bluefont.tilenum + 'A' - '!'].x<<16) + MF_Bluefont.between.x;
 
+        int32_t textflags = TEXT_XOFFSETZERO | TEXT_GAMETEXTNUMHACK;
+
+        if (REALITY)
+        {
+            RT_DisablePolymost(0);
+            RT_RotateSpriteSetColor(255, 80, 0, 256);
+            textflags |= TEXT_N64NOPAL;
+        }
+
         Bsprintf(tempbuf, "T:^15%d:%02d.%02d",
             (myps->player_par/(REALGAMETICSPERSEC*60)),
             (myps->player_par/REALGAMETICSPERSEC)%60,
             ((myps->player_par%REALGAMETICSPERSEC)*33)/10
             );
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep*3), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_GAMETEXTNUMHACK, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep*(REALITY ? 4 : 3)), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|textflags, 0, 0, xdim-1, ydim-1);
 
         if ((!RR && ud.player_skill > 3) || ((g_netServer || ud.multimode > 1) && !GTFLAGS(GAMETYPE_PLAYERSFRIENDLY)))
             Bsprintf(tempbuf, "K:^15%d", (ud.multimode>1 &&!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY)) ?
@@ -1306,12 +1342,23 @@ void G_DisplayRest(int32_t smoothratio)
             else
                 Bsprintf(tempbuf, "K:^15%d/%d", myps->actors_killed, myps->max_actors_killed);
         }
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep*2), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_GAMETEXTNUMHACK, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep*(REALITY ? 3 : 2)), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|textflags, 0, 0, xdim-1, ydim-1);
 
         if (myps->secret_rooms == myps->max_secret_rooms)
             Bsprintf(tempbuf, "S:%d/%d", myps->secret_rooms, myps->max_secret_rooms);
         else Bsprintf(tempbuf, "S:^15%d/%d", myps->secret_rooms, myps->max_secret_rooms);
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_GAMETEXTNUMHACK, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|textflags, 0, 0, xdim-1, ydim-1);
+        
+        
+        if (REALITY)
+        {
+            Bsprintf(tempbuf, "B:%d/%d",
+                myps->dn64_36e, myps->dn64_36d
+                );
+            G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(ystep*2), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|textflags, 0, 0, xdim-1, ydim-1);
+
+            RT_EnablePolymost();
+        }
     }
 
     if (g_player[myconnectindex].gotvote == 0 && voting != -1 && voting != myconnectindex)
@@ -1661,6 +1708,54 @@ void G_DisplayLogo(void)
         //g_player[myconnectindex].ps->palette = palette;
         P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 0);    // JBF 20040308
         S_PlaySound(NITEVISION_ONOFF);
+
+        //G_FadePalette(0,0,0,0);
+        videoClearScreen(0L);
+        return;
+    }
+    if (REALITY)
+    {
+        G_FadePalette(0, 0, 0, 0);
+        totalclock = 0;
+
+        while ((int)totalclock < (4 * (16 + 120 + 16)) && !I_CheckAllInput())
+        {
+            if (engineFPSLimit())
+            {
+                int alpha = 0;
+                if (totalclock < (4 * 16))
+                    alpha = clamp((int)totalclock * 4, 0, 256);
+                else if (totalclock < (4 * (16 + 120)))
+                    alpha = 256;
+                else
+                    alpha = clamp(256 - ((int)totalclock - (4 * (16 + 120))) * 4, 0, 256);
+
+
+                videoClearScreen(0);
+
+                RT_DisablePolymost(0);
+                RT_RotateSpriteSetColor(255, 255, 255, alpha);
+
+                RT_RotateSprite(160, 60, 100, 100, 0xe09, 0);
+                RT_RotateSprite(100, 160, 100, 100, 0xe5d, 0);
+                RT_RotateSprite(220, 160, 100, 100, 0xe5e, 0);
+                RT_EnablePolymost();
+
+                G_HandleAsync();
+                videoNextPage();
+            }
+        }
+
+        I_ClearAllInput();
+
+        S_PlaySpecialMusicOrNothing(MUS_INTRO);
+
+        renderFlushPerms();
+        videoClearScreen(0L);
+        videoNextPage();
+
+        //g_player[myconnectindex].ps->palette = palette;
+        P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 0);    // JBF 20040308
 
         //G_FadePalette(0,0,0,0);
         videoClearScreen(0L);
@@ -2340,6 +2435,12 @@ void G_BonusScreen(int32_t bonusonly)
     int32_t bonuscnt;
     int32_t clockpad = 2;
     const char *lastmapname;
+
+    if (REALITY)
+    {
+        RT_Bonus();
+        return;
+    }
 
     //if (g_networkMode == NET_DEDICATED_SERVER)
     //    return;

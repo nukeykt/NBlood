@@ -13,7 +13,7 @@ GLenum BuildGLError;
 void BuildGLErrorCheck(void)
 {
     volatile GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR)
+    while (err = glGetError(), err != GL_NO_ERROR)
     {
         BuildGLError = err; // set a watchpoint/breakpoint here
     }
@@ -55,6 +55,8 @@ bgluErrorStringProcPtr bgluErrorString;
 
 bgluProjectProcPtr bgluProject;
 bgluUnProjectProcPtr bgluUnProject;
+
+bgluLookAtProcPtr bgluLookAt;
 
 #endif
 
@@ -231,6 +233,8 @@ int32_t loadglulibrary(const char *driver)
     bgluProject = (bgluProjectProcPtr) GLUGETPROC("gluProject");
     bgluUnProject = (bgluUnProjectProcPtr) GLUGETPROC("gluUnProject");
 
+    bgluLookAt = (bgluLookAtProcPtr) GLUGETPROC("gluLookAt");
+
     if (err) unloadglulibrary();
     return err;
 #else
@@ -273,6 +277,8 @@ int32_t unloadglulibrary(void)
 
     bgluProject = (bgluProjectProcPtr) NULL;
     bgluUnProject = (bgluUnProjectProcPtr) NULL;
+
+    bgluLookAt = (bgluLookAtProcPtr)NULL;
 #endif
 
     return 0;

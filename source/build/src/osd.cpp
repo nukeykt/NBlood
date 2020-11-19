@@ -1597,17 +1597,19 @@ void OSD_Draw(void)
 //   and write it to the log file
 //
 
-void OSD_Printf(const char *fmt, ...)
+int OSD_Printf(const char *fmt, ...)
 {
     static char tmpstr[8192];
     va_list va;
 
     va_start(va, fmt);
-    Bvsnprintf(tmpstr, sizeof(tmpstr), fmt, va);
+    int len = Bvsnprintf(tmpstr, sizeof(tmpstr), fmt, va);
     va_end(va);
 
     osdstrings.append(Xstrdup(tmpstr));
     OSD_Puts(tmpstr);
+
+    return len;
 }
 
 

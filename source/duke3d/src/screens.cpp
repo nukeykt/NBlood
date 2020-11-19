@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "duke3d.h"
 #include "input.h"
 #include "mdsprite.h"
+#include "microprofile.h"
 #include "sbar.h"
 #include "screens.h"
 
@@ -62,9 +63,9 @@ static void G_HandleEventsWhileNoInput(void)
 
 static int32_t G_PlaySoundWhileNoInput(int32_t soundnum)
 {
-    S_PlaySound(soundnum);
+    auto const voice = S_PlaySound(soundnum);
     I_ClearAllInput();
-    while (S_CheckSoundPlaying(soundnum))
+    while (FX_SoundActive(voice))
     {
         gameHandleEvents();
         if (I_GeneralTrigger())
@@ -904,6 +905,8 @@ static void G_PrintFPS(void)
 
 void G_DisplayRest(int32_t smoothratio)
 {
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
     int32_t i, j;
     palaccum_t tint = PALACCUM_INITIALIZER;
 
@@ -1155,7 +1158,7 @@ void G_DisplayRest(int32_t smoothratio)
 
     if (ud.show_level_text && hud_showmapname && g_levelTextTime > 1)
     {
-        int32_t o = 10|16;
+        int32_t o = g_textstat;
 
         if (g_levelTextTime < 3)
             o |= 1|32;
@@ -1182,8 +1185,7 @@ void G_DisplayRest(int32_t smoothratio)
             I_EscapeTriggerClear();
             S_PlaySound(EXITMENUSOUND);
             Menu_Change(MENU_CLOSE);
-            if (!ud.pause_on)
-                S_PauseSounds(false);
+            S_PauseSounds(ud.pause_on || (ud.recstat == 2 && g_demo_paused));
         }
         else if ((g_player[myconnectindex].ps->gm&MODE_MENU) != MODE_MENU &&
             g_player[myconnectindex].ps->newowner == -1 &&
@@ -1325,7 +1327,7 @@ void G_DisplayRest(int32_t smoothratio)
             (myps->player_par/REALGAMETICSPERSEC)%60,
             ((myps->player_par%REALGAMETICSPERSEC)*33)/10
             );
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(21<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(21<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, g_textstat|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
 
         if (ud.player_skill > 3 || ((g_netServer || ud.multimode > 1) && !GTFLAGS(GAMETYPE_PLAYERSFRIENDLY)))
             Bsprintf(tempbuf, "K:^15%d", (ud.multimode>1 &&!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY)) ?
@@ -1337,12 +1339,12 @@ void G_DisplayRest(int32_t smoothratio)
             else
                 Bsprintf(tempbuf, "K:^15%d/%d", myps->actors_killed, myps->max_actors_killed);
         }
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(14<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(14<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, g_textstat|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
 
         if (myps->secret_rooms == myps->max_secret_rooms)
             Bsprintf(tempbuf, "S:%d/%d", myps->secret_rooms, myps->max_secret_rooms);
         else Bsprintf(tempbuf, "S:^15%d/%d", myps->secret_rooms, myps->max_secret_rooms);
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(7<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(7<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, g_textstat|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
     }
 
     if (g_player[myconnectindex].gotvote == 0 && voting != -1 && voting != myconnectindex)
@@ -1359,10 +1361,6 @@ void G_DisplayRest(int32_t smoothratio)
 
     if (g_Debug)
         G_ShowCacheLocks();
-
-#ifdef LUNATIC
-    El_DisplayErrors();
-#endif
 
 #ifndef EDUKE32_TOUCH_DEVICES
     if (VOLUMEONE)
@@ -1465,10 +1463,6 @@ static void fadepaltile(int32_t r, int32_t g, int32_t b, int32_t start, int32_t 
         start += step;
     } while (start != end+step);
 }
-
-#ifdef LUNATIC
-int32_t g_logoFlags = 255;
-#endif
 
 #ifdef __ANDROID__
 int inExtraScreens = 0;
@@ -1677,9 +1671,6 @@ void gameDisplayTitleScreen(void)
                 }
             }
 
-#ifdef LUNATIC
-            g_elEventError = 0;
-#endif
             VM_OnEvent(EVENT_LOGO, -1, screenpeek);
 
             if (g_restorePalette)
@@ -1689,11 +1680,6 @@ void gameDisplayTitleScreen(void)
             }
 
             videoNextPage();
-
-#ifdef LUNATIC
-            if (g_elEventError)
-                break;
-#endif
         }
 
         gameHandleEvents();

@@ -366,6 +366,7 @@ void palettePostLoadTables(void)
     redcol = paletteGetClosestColor(255, 0, 0);
 
     // Bmemset(PaletteIndexFullbrights, 0, sizeof(PaletteIndexFullbrights));
+    if (!duke64)
     for (bssize_t c = 0; c < 255; ++c) // skipping transparent color
     {
         uint8_t const index = palookup0[c];
@@ -533,13 +534,6 @@ void paletteFreeBlendTable(int32_t const blend)
 {
     DO_FREE_AND_NULL(blendtable[blend]);
 }
-
-#ifdef LUNATIC
-const char *(paletteGetBlendTable) (int32_t blend)
-{
-    return blendtable[blend];
-}
-#endif
 
 #ifdef USE_OPENGL
 glblend_t const nullglblend =

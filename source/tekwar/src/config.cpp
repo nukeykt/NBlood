@@ -47,15 +47,20 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
   "Crouch",
   "Fire",
   "Open",
-  "Fly_Up",
-  "Fly_Down",
   "Look_Up",
   "Look_Down",
   "Look_Straight",
   "Aim_Up",
   "Aim_Down",
   "SendMessage",
-  "Weapon_0",
+  "ConcealWeapon",
+  "SwitchPlayer",
+  "RearView",
+  "MatrixMeter",
+  "HealthMeter",
+  "ElapsedTime",
+  "Score",
+  "Inventory",
   "Weapon_1",
   "Weapon_2",
   "Weapon_3",
@@ -65,12 +70,6 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
   "Weapon_7",
   "Weapon_8",
   "Weapon_9",
-  "Spell_Left",
-  "Spell_Right",
-  "Cast_Spell",
-  "Potion_Left",
-  "Potion_Right",
-  "Use_Potion",
   "Pause",
   "Map",
   "Zoom_In",
@@ -100,15 +99,20 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "LCtrl", "",
    "RCtrl", "",
    "E", "",
-   "Insert", "",
-   "Delete", "",
    "PgUp", "",
    "PgDn", "",
    "Home", "",
    "", "", // aim up
    "", "", // aim down
+   "M", "",
+   "/", "", // conceal weapon
+   "KpdEnt", "",
+   "R", "",
+   "E", "",
+   "H", "",
    "T", "",
-   "0", "",
+   "",  "", // score
+   "I", "", // inventory
    "1", "",
    "2", "",
    "3", "",
@@ -118,12 +122,6 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "7", "",
    "8", "",
    "9", "",
-   "", "", // spell left
-   "", "", // spell right
-   "'", "", // cast spell
-   "[", "", // potion left
-   "]", "", // potion right
-   "Enter", "",  // use potion
    "Pause", "",
    "Tab", "",
    "=", "",
@@ -136,7 +134,7 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "", "", // sensitivity down
    "`", "",
    "U", "",
-   "I", "",
+   "G", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -265,14 +263,20 @@ void SetupGameButtons()
     CONTROL_DefineFlag(gamefunc_Crouch, FALSE);
     CONTROL_DefineFlag(gamefunc_Fire, FALSE);
     CONTROL_DefineFlag(gamefunc_Open, FALSE);
-    CONTROL_DefineFlag(gamefunc_Fly_Up, FALSE);
-    CONTROL_DefineFlag(gamefunc_Fly_Down, FALSE);
     CONTROL_DefineFlag(gamefunc_Look_Up, FALSE);
     CONTROL_DefineFlag(gamefunc_Look_Down, FALSE);
     CONTROL_DefineFlag(gamefunc_Look_Straight, FALSE);
     CONTROL_DefineFlag(gamefunc_Aim_Up, FALSE);
     CONTROL_DefineFlag(gamefunc_Aim_Down, FALSE);
     CONTROL_DefineFlag(gamefunc_SendMessage, FALSE);
+    CONTROL_DefineFlag(gamefunc_ConcealWeapon, FALSE);
+    CONTROL_DefineFlag(gamefunc_SwitchPlayer, FALSE);
+    CONTROL_DefineFlag(gamefunc_RearView, FALSE);
+    CONTROL_DefineFlag(gamefunc_MatrixMeter, FALSE);
+    CONTROL_DefineFlag(gamefunc_HealthMeter, FALSE);
+    CONTROL_DefineFlag(gamefunc_ElapsedTime, FALSE);
+    CONTROL_DefineFlag(gamefunc_Score, FALSE);
+    CONTROL_DefineFlag(gamefunc_Inventory, FALSE);
     CONTROL_DefineFlag(gamefunc_Weapon_1, FALSE);
     CONTROL_DefineFlag(gamefunc_Weapon_2, FALSE);
     CONTROL_DefineFlag(gamefunc_Weapon_3, FALSE);
@@ -282,12 +286,6 @@ void SetupGameButtons()
     CONTROL_DefineFlag(gamefunc_Weapon_7, FALSE);
     CONTROL_DefineFlag(gamefunc_Weapon_8, FALSE);
     CONTROL_DefineFlag(gamefunc_Weapon_9, FALSE);
-    CONTROL_DefineFlag(gamefunc_Spell_Left, FALSE);
-    CONTROL_DefineFlag(gamefunc_Spell_Right, FALSE);
-    CONTROL_DefineFlag(gamefunc_Cast_Spell, FALSE);
-    CONTROL_DefineFlag(gamefunc_Potion_Left, FALSE);
-    CONTROL_DefineFlag(gamefunc_Potion_Right, FALSE);
-    CONTROL_DefineFlag(gamefunc_Use_Potion, FALSE);
     CONTROL_DefineFlag(gamefunc_Pause, FALSE);
     CONTROL_DefineFlag(gamefunc_Map, FALSE);
     CONTROL_DefineFlag(gamefunc_Zoom_In, FALSE);

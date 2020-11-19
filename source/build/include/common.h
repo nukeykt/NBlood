@@ -104,9 +104,13 @@ int32_t maybe_append_ext(char *wbuf, int32_t wbufsiz, const char *fn, const char
 // in mact/src/mathutil.c: "Ken's reverse-engineering job".
 // Note that mathutil.c contains practically the same code, but where the
 // individual x/y(/z) distances are passed instead.
+extern int32_t duke64;
 static inline int32_t sepldist(const int32_t dx, const int32_t dy)
 {
     vec2_t d = { klabs(dx), klabs(dy) };
+
+    if (duke64)
+        return Blrintf(Bsqrtf(float(d.x)*float(d.x)+float(d.y)*float(d.y)));
 
     if (!d.y) return d.x;
     if (!d.x) return d.y;
@@ -123,6 +127,9 @@ static inline int32_t sepldist(const int32_t dx, const int32_t dy)
 static inline int32_t sepdist(const int32_t dx, const int32_t dy, const int32_t dz)
 {
     vec3_t d = { klabs(dx), klabs(dy), klabs(dz>>4) };
+
+    if (duke64)
+        return Blrintf(Bsqrtf(float(d.x)*float(d.x)+float(d.y)*float(d.y)+float(d.z)*float(d.z)));
 
     if (d.x < d.y)
         swaplong(&d.x, &d.y);

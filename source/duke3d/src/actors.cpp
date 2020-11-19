@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #endif
 
 #include "duke3d.h"
+#include "microprofile.h"
 
 #if KRANDDEBUG
 # define ACTOR_STATIC
@@ -108,9 +109,8 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
 #ifndef EDUKE32_STANDALONE
     if (WORLDTOUR && pSprite->picnum == FLAMETHROWERFLAME)
     {
-        if (sprite[pSprite->owner].picnum == FIREFLY && pOther->picnum == FIREFLY)
-            return;
-        if (sprite[pSprite->owner].picnum == BOSS5 && pOther->picnum == BOSS5)
+        // enemies in WT don't damage other enemies of the same type with FLAMETHROWERFLAME
+        if (sprite[pSprite->owner].picnum == pOther->picnum && pOther->picnum != APLAYER)
             return;
     }
 #endif
@@ -148,9 +148,6 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             || (pSprite->picnum == MORTER && otherSprite == pSprite->owner))
             return;
 #endif
-        if (pOther->picnum == APLAYER)
-            spriteDist = FindDistance3D(pSprite->x - pOther->x, pSprite->y - pOther->y, pSprite->z - (pOther->z - PHEIGHT));
-
         if (spriteDist >= blastRadius || !cansee(pOther->x, pOther->y, pOther->z - ZOFFSET3, pOther->sectnum,
                                                  pSprite->x, pSprite->y, pSprite->z - ZOFFSET4, pSprite->sectnum))
             return;
@@ -267,28 +264,100 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
     auto const pSprite = (uspriteptr_t)&sprite[spriteNum];
 
-    int16_t sectorList[MAXDAMAGESECTORS];
-    uint8_t sectorMap[(MAXSECTORS+7)>>3];
-    int16_t numSectors;
-
-    bfirst_search_init(sectorList, sectorMap, &numSectors, MAXSECTORS, pSprite->sectnum);
+    int16_t numSectors, sectorList[MAXDAMAGESECTORS];
+    uint8_t * const sectorMap = (uint8_t *)Balloca((numsectors+7)>>3);
+    bfirst_search_init(sectorList, sectorMap, &numSectors, numsectors, pSprite->sectnum);
 
 #ifndef EDUKE32_STANDALONE
+    int wallDamage = true;
+
+    // rockets from the Devastator skip propagating damage to other sectors
     if (!FURY && (pSprite->picnum == RPG && pSprite->xrepeat < 11))
-        goto SKIPWALLCHECK;
+        wallDamage = false;
 #endif
+
+    uint8_t *wallTouched;
+    wallTouched = (uint8_t *)Balloca((numwalls+7)>>3);
+    Bmemset(wallTouched, 0, (numwalls+7)>>3);
+
+    uint8_t *wallCanSee;
+    wallCanSee = (uint8_t *)Balloca((numwalls+7)>>3);
+    Bmemset(wallCanSee, 0, (numwalls+7)>>3);
 
     for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
     {
         int const   sectorNum  = sectorList[sectorCount];
         auto const &listSector = sector[sectorNum];
-        vec2_t      closest;
 
-        if (getsectordist(pSprite->pos.vec2, sectorNum, &closest) >= blastRadius)
-            continue;
+        vec2_t  closest  = {};
+        int32_t distance = INT32_MAX;
 
         int const startWall = listSector.wallptr;
         int const endWall   = listSector.wallnum + startWall;
+
+        int w = startWall;
+        
+        for (auto pWall = (uwallptr_t)&wall[startWall]; w < endWall; ++w, ++pWall)
+        {
+            vec2_t  p        = pSprite->pos.vec2;
+            int32_t walldist = blastRadius - 1;
+
+            if (bitmap_test(wallTouched, w) == 0)
+                walldist = getwalldist(p, w, &p);
+
+            if (walldist < blastRadius)
+            {
+                if (walldist < distance)
+                {
+                    distance = walldist;
+                    closest  = p;
+                }
+
+                int16_t aSector = sectorNum;
+                vec3_t  vect    = { (((pWall->x + wall[pWall->point2].x) >> 1) + pSprite->x) >> 1,
+                                    (((pWall->y + wall[pWall->point2].y) >> 1) + pSprite->y) >> 1, pSprite->z };
+
+                updatesector(vect.x, vect.y, &aSector);
+
+                if (aSector == -1)
+                {
+                    vect.vec2 = p;
+                    aSector   = sectorNum;
+                }
+
+                bitmap_set(wallTouched, w);
+
+                if (pWall->nextwall != -1)
+                    bitmap_set(wallTouched, pWall->nextwall);
+
+                if (bitmap_test(wallCanSee, w) == 1 || cansee(vect.x, vect.y, vect.z, aSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
+                {
+                    bitmap_set(wallCanSee, w);
+
+                    if (pWall->nextwall != -1)
+                        bitmap_set(wallCanSee, pWall->nextwall);
+
+#ifndef EDUKE32_STANDALONE
+                    if (wallDamage)
+#endif
+                        A_DamageWall_Internal(spriteNum, w, { p.x, p.y, pSprite->z }, pSprite->picnum);
+                }
+
+                int const nextSector = pWall->nextsector;
+
+                if (nextSector >= 0)
+                    bfirst_search_try(sectorList, sectorMap, &numSectors, nextSector);
+
+                if (numSectors == MAXDAMAGESECTORS)
+                {
+                    OSD_Printf("Sprite %d tried to damage more than %d sectors!\n", spriteNum, MAXDAMAGESECTORS);
+                    goto wallsfinished;
+                }
+            }
+        }
+
+        if (distance >= blastRadius)
+            continue;
 
         int32_t floorZ, ceilZ;
         getzsofslope(sectorNum, closest.x, closest.y, &ceilZ, &floorZ);
@@ -298,43 +367,9 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
         if (((pSprite->z - floorZ) >> 8) < blastRadius)
             Sect_DamageFloor_Internal(spriteNum, sectorNum);
-
-        int w = startWall;
-        
-        for (auto pWall = (uwallptr_t)&wall[startWall]; w < endWall; ++w, ++pWall)
-        {
-            if (getwalldist(pSprite->pos.vec2, w, &closest) >= blastRadius)
-                continue;
-
-            int16_t aSector = sectorNum;
-            vec3_t  vect    = { (((pWall->x + wall[pWall->point2].x) >> 1) + pSprite->x) >> 1,
-                                (((pWall->y + wall[pWall->point2].y) >> 1) + pSprite->y) >> 1, pSprite->z };
-
-            updatesector(vect.x, vect.y, &aSector);
-
-            if (aSector == -1)
-            {
-                vect.vec2 = closest;
-                aSector   = sectorNum;
-            }
-
-            if (cansee(vect.x, vect.y, vect.z, aSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
-                A_DamageWall_Internal(spriteNum, w, { closest.x, closest.y, pSprite->z }, pSprite->picnum);
-
-            int const nextSector = pWall->nextsector;
-
-            if (nextSector >= 0)
-                bfirst_search_try(sectorList, sectorMap, &numSectors, nextSector);
-
-            if (numSectors == MAXDAMAGESECTORS)
-            {
-                OSD_Printf("Sprite %d tried to damage more than %d sectors!\n", spriteNum, MAXDAMAGESECTORS);
-                goto SKIPWALLCHECK;
-            }
-        }
     }
 
-SKIPWALLCHECK:
+wallsfinished:
     int const randomZOffset = -ZOFFSET2 + (krand()&(ZOFFSET5-1));
 
     for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
@@ -348,7 +383,10 @@ SKIPWALLCHECK:
 
             if (bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
             {
-                int const spriteDist = dist(pSprite, pDamage);
+                int spriteDist = dist(pSprite, pDamage);
+                
+                if (pDamage->picnum == APLAYER)
+                    spriteDist = FindDistance3D(pSprite->x - pDamage->x, pSprite->y - pDamage->y, pSprite->z - (pDamage->z - PHEIGHT));
 
                 if (spriteDist < blastRadius)
                     A_RadiusDamageObject_Internal(spriteNum, damageSprite, blastRadius, spriteDist, randomZOffset, dmg1, dmg2, dmg3, dmg4);
@@ -804,7 +842,7 @@ void A_DoGutsDir(int spriteNum, int tileNum, int spawnCnt)
 }
 #endif
 
-LUNATIC_EXTERN int32_t G_ToggleWallInterpolation(int32_t wallNum, int32_t setInterpolation)
+static int32_t G_ToggleWallInterpolation(int32_t wallNum, int32_t setInterpolation)
 {
     if (setInterpolation)
     {
@@ -841,7 +879,7 @@ static int32_t move_rotfixed_sprite(int32_t spriteNum, int32_t pivotSpriteNum, i
           A_CheckSpriteFlags(spriteNum, SFLAG_ROTFIXED))) &&
         actor[spriteNum].t_data[7] == (ROTFIXSPR_MAGIC | pivotSpriteNum))
     {
-        rotatepoint(zerovec, *(vec2_t *)&actor[spriteNum].t_data[8], pivotAngle & 2047, &sprite[spriteNum].pos.vec2);
+        rotatevec(*(vec2_t *)&actor[spriteNum].t_data[8], pivotAngle & 2047, &sprite[spriteNum].pos.vec2);
         sprite[spriteNum].x += sprite[pivotSpriteNum].x;
         sprite[spriteNum].y += sprite[pivotSpriteNum].y;
         return 0;
@@ -869,20 +907,15 @@ void A_MoveSector(int spriteNum)
     {
         vec2_t const origin = g_origins[originIdx];
         vec2_t result;
-        rotatepoint(zerovec, origin, rotateAngle & 2047, &result);
+        rotatevec(origin, rotateAngle & 2047, &result);
         dragpoint(wallNum, pSprite->x + result.x, pSprite->y + result.y, 0);
 
         originIdx++;
     }
 }
 
-#if !defined LUNATIC
 // NOTE: T5 is AC_ACTION_ID
-# define LIGHTRAD_PICOFS(i) (T5(i) ? *(apScript + T5(i)) + (*(apScript + T5(i) + 2)) * AC_CURFRAME(actor[i].t_data) : 0)
-#else
-// startframe + viewtype*[cyclic counter]
-# define LIGHTRAD_PICOFS(i) (actor[i].ac.startframe + actor[i].ac.viewtype * AC_CURFRAME(actor[i].t_data))
-#endif
+#define LIGHTRAD_PICOFS(i) (T5(i) ? *(apScript + T5(i)) + (*(apScript + T5(i) + 2)) * AC_CURFRAME(actor[i].t_data) : 0)
 
 // this is the same crap as in game.c's tspr manipulation.  puke.
 // XXX: may access tilesizy out-of-bounds by bad user code.
@@ -1323,7 +1356,9 @@ ACTOR_STATIC void G_MovePlayers(void)
     {
         int const  nextSprite = nextspritestat[spriteNum];
         auto const pSprite    = &sprite[spriteNum];
-        auto const pPlayer    = g_player[P_GetP(pSprite)].ps;
+        int const  playerNum  = P_GetP(pSprite);
+        auto &     thisPlayer = g_player[playerNum];
+        auto const pPlayer    = thisPlayer.ps;
 
         if (pSprite->owner >= 0)
         {
@@ -1368,10 +1403,19 @@ ACTOR_STATIC void G_MovePlayers(void)
                 if (G_TileHasActor(sprite[spriteNum].picnum))
                     A_Execute(spriteNum, P_GetP(pSprite), otherPlayerDist);
 
+                thisPlayer.smoothcamera = false;
+
                 pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
                 pPlayer->oq16ang      = pPlayer->q16ang;
                 pPlayer->oq16horiz    = pPlayer->q16horiz;
                 pPlayer->oq16horizoff = pPlayer->q16horizoff;
+
+                if (pPlayer->one_eighty_count < 0)
+                {
+                    thisPlayer.smoothcamera = true;
+                    pPlayer->one_eighty_count += 128;
+                    pPlayer->q16ang += F16(128);
+                }
 
                 if (g_netServer || ud.multimode > 1)
                 {
@@ -1394,6 +1438,14 @@ ACTOR_STATIC void G_MovePlayers(void)
                             }
                         }
                     }
+                }
+
+                if (pPlayer->actorsqu >= 0)
+                {
+                    thisPlayer.smoothcamera = true;
+                    pPlayer->q16ang += fix16_from_int(
+                    G_GetAngleDelta(fix16_to_int(pPlayer->q16ang), getangle(sprite[pPlayer->actorsqu].x - pPlayer->pos.x, sprite[pPlayer->actorsqu].y - pPlayer->pos.y))
+                    >> 2);
                 }
 
                 if (ud.god)
@@ -1430,6 +1482,7 @@ ACTOR_STATIC void G_MovePlayers(void)
 
                     if (pPlayer->wackedbyactor >= 0 && sprite[pPlayer->wackedbyactor].statnum < MAXSTATUS)
                     {
+                        thisPlayer.smoothcamera = true;
                         pPlayer->q16ang += fix16_from_int(G_GetAngleDelta(fix16_to_int(pPlayer->q16ang),
                                                                       getangle(sprite[pPlayer->wackedbyactor].x - pPlayer->pos.x,
                                                                                sprite[pPlayer->wackedbyactor].y - pPlayer->pos.y))
@@ -1627,7 +1680,7 @@ next_sprite:
 }
 
 ACTOR_STATIC void G_MoveFallers(void)
-{
+{    
     int spriteNum = headspritestat[STAT_FALLER];
 
     while (spriteNum >= 0)
@@ -1724,7 +1777,7 @@ next_sprite:
 }
 
 ACTOR_STATIC void G_MoveStandables(void)
-{
+{    
     int spriteNum = headspritestat[STAT_STANDABLE], j, switchPic;
 
     while (spriteNum >= 0)
@@ -1830,6 +1883,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                         pSprite->owner = -2;
                         g_player[p].ps->on_crane = spriteNum;
                         A_PlaySound(DUKE_GRUNT,g_player[p].ps->i);
+                        g_player[p].smoothcamera = true;
                         g_player[p].ps->q16ang = fix16_from_int(pSprite->ang+1024);
                     }
                     else
@@ -3672,8 +3726,9 @@ ACTOR_STATIC void G_MoveTransports(void)
                 case STAT_PLAYER:
                     if (sprite[sectSprite].owner != -1)
                     {
-                        int const  playerNum = P_Get(sectSprite);
-                        auto const pPlayer   = g_player[playerNum].ps;
+                        int const  playerNum  = P_Get(sectSprite);
+                        auto &     thisPlayer = g_player[playerNum];
+                        auto const pPlayer    = thisPlayer.ps;
 
                         pPlayer->on_warping_sector = 1;
 
@@ -3697,6 +3752,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                     }
                                 }
 
+                                thisPlayer.smoothcamera = true;
                                 pPlayer->q16ang = fix16_from_int(sprite[OW(spriteNum)].ang);
 
                                 if (sprite[OW(spriteNum)].owner != OW(spriteNum))
@@ -3725,12 +3781,12 @@ ACTOR_STATIC void G_MoveTransports(void)
                             }
 
                             if (onFloor == 0 && klabs(SZ(spriteNum) - pPlayer->pos.z) < 6144)
-                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
-                                    || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH))
+                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
+                                    || TEST_SYNC_KEY(thisPlayer.input->bits, SK_CROUCH))
                                 {
                                     pPlayer->pos.x += sprite[OW(spriteNum)].x - SX(spriteNum);
                                     pPlayer->pos.y += sprite[OW(spriteNum)].y - SY(spriteNum);
-                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
+                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
                                                                               || pPlayer->jetpack_on < 11))
                                                      ? sprite[OW(spriteNum)].z - 6144
                                                      : sprite[OW(spriteNum)].z + 6144;
@@ -4636,13 +4692,27 @@ ACTOR_STATIC void G_MoveActors(void)
                 }
             }
 
-            if (pData[0] == -5) // FROZEN
+            enum
+            {
+                GREENSLIME_FROZEN = -5,
+                GREENSLIME_ONPLAYER,
+                GREENSLIME_DEAD,  // set but not checked anywhere...
+                GREENSLIME_EATINGACTOR,
+                GREENSLIME_DONEEATING,
+                GREENSLIME_ONFLOOR,
+                GREENSLIME_TOCEILING,
+                GREENSLIME_ONCEILING,
+                GREENSLIME_TOFLOOR,
+            };
+
+            if (pData[0] == GREENSLIME_FROZEN)
             {
                 pData[3]++;
                 if (pData[3] > 280)
                 {
                     pSprite->pal = 0;
-                    pData[0] = 0;
+                    pData[0] = GREENSLIME_ONFLOOR;
+                    pData[3] = 0;
                     goto next_sprite;
                 }
                 A_Fall(spriteNum);
@@ -4685,11 +4755,12 @@ ACTOR_STATIC void G_MoveActors(void)
 
             pSprite->cstat = (playerDist < 1596) ? 0 : 257;
 
-            if (pData[0] == -4) //On the player
+            if (pData[0] == GREENSLIME_ONPLAYER)
             {
-                if (sprite[pPlayer->i].extra < 1)
+                if (sprite[pPlayer->i].extra < 1 && pPlayer->somethingonplayer == spriteNum)
                 {
-                    pData[0] = 0;
+                    pPlayer->somethingonplayer = -1;
+                    pData[0] = GREENSLIME_TOFLOOR;
                     goto next_sprite;
                 }
 
@@ -4720,7 +4791,7 @@ ACTOR_STATIC void G_MoveActors(void)
                         }
 
                         P_AddKills(pPlayer, 1);
-                        pData[0] = -3;
+                        pData[0] = GREENSLIME_DEAD;
 
                         if (pPlayer->somethingonplayer == spriteNum)
                             pPlayer->somethingonplayer = -1;
@@ -4742,6 +4813,8 @@ ACTOR_STATIC void G_MoveActors(void)
                 if (pData[3] > 0)
                 {
                     static const char slimeFrames[] = { 5, 5, 6, 6, 7, 7, 6, 5 };
+
+                    Bassert(pData[3] < ARRAY_SSIZE(slimeFrames));
 
                     pSprite->picnum = GREENSLIME + slimeFrames[pData[3]];
 
@@ -4770,17 +4843,18 @@ ACTOR_STATIC void G_MoveActors(void)
 
                 goto next_sprite;
             }
-
             else if (pSprite->xvel < 64 && playerDist < 768)
             {
-                if (pPlayer->somethingonplayer == -1)
+                if (pPlayer->somethingonplayer == -1 && sprite[pPlayer->i].extra > 0)
                 {
                     pPlayer->somethingonplayer = spriteNum;
-                    if (pData[0] == 3 || pData[0] == 2)  // Falling downward
+
+                    if (pData[0] == GREENSLIME_TOFLOOR || pData[0] == GREENSLIME_ONCEILING)  // Falling downward
                         pData[2] = (12 << 8);
                     else
                         pData[2] = -(13 << 8);  // Climbing up player
-                    pData[0]     = -4;
+
+                    pData[0] = GREENSLIME_ONPLAYER;
                 }
             }
 
@@ -4795,7 +4869,7 @@ ACTOR_STATIC void G_MoveActors(void)
                 if (damageTile == FREEZEBLAST)
                 {
                     A_PlaySound(SOMETHINGFROZE, spriteNum);
-                    pData[0] = -5;
+                    pData[0] = GREENSLIME_FROZEN;
                     pData[3] = 0;
                     goto next_sprite;
                 }
@@ -4815,19 +4889,16 @@ ACTOR_STATIC void G_MoveActors(void)
                                                  spriteNum, 5);
                     sprite[j].pal = 6;
                 }
-                pData[0] = -3;
+                pData[0] = GREENSLIME_DEAD;
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
             }
             // All weap
-            if (pData[0] == -1) //Shrinking down
+            if (pData[0] == GREENSLIME_DONEEATING)
             {
                 A_Fall(spriteNum);
 
                 pSprite->cstat &= 65535-8;
                 pSprite->picnum = GREENSLIME+4;
-
-                //                    if(s->yrepeat > 62)
-                //                      A_DoGuts(s,JIBS6,5,myconnectindex);
 
                 if (pSprite->xrepeat > 32) pSprite->xrepeat -= krand()&7;
                 if (pSprite->yrepeat > 16) pSprite->yrepeat -= krand()&7;
@@ -4836,14 +4907,14 @@ ACTOR_STATIC void G_MoveActors(void)
                     pSprite->xrepeat = 40;
                     pSprite->yrepeat = 16;
                     pData[5] = -1;
-                    pData[0] = 0;
+                    pData[0] = GREENSLIME_ONFLOOR;
                 }
 
                 goto next_sprite;
             }
-            else if (pData[0] != -2) A_GetZLimits(spriteNum);
+            else if (pData[0] != GREENSLIME_EATINGACTOR) A_GetZLimits(spriteNum);
 
-            if (pData[0] == -2) //On top of somebody
+            if (pData[0] == GREENSLIME_EATINGACTOR) //On top of somebody
             {
                 A_Fall(spriteNum);
                 sprite[pData[5]].xvel = 0;
@@ -4863,7 +4934,7 @@ ACTOR_STATIC void G_MoveActors(void)
                         pSprite->xrepeat += 4;
                     else
                     {
-                        pData[0]   = -1;
+                        pData[0]   = GREENSLIME_DONEEATING;
                         playerDist = ldist(pSprite, &sprite[pData[5]]);
 
                         if (playerDist < 768)
@@ -4891,7 +4962,7 @@ ACTOR_STATIC void G_MoveActors(void)
                         if (ldist(pSprite, &sprite[j]) < 768 && (klabs(pSprite->z - sprite[j].z) < 8192))  // Gulp them
                         {
                             pData[5] = j;
-                            pData[0] = -2;
+                            pData[0] = GREENSLIME_EATINGACTOR;
                             pData[1] = 0;
                             goto next_sprite;
                         }
@@ -4901,14 +4972,14 @@ ACTOR_STATIC void G_MoveActors(void)
 
             //Moving on the ground or ceiling
 
-            if (pData[0] == 0 || pData[0] == 2)
+            if (pData[0] == GREENSLIME_ONFLOOR || pData[0] == GREENSLIME_ONCEILING)
             {
                 pSprite->picnum = GREENSLIME;
 
                 if ((krand()&511) == 0)
                     A_PlaySound(SLIM_ROAM,spriteNum);
 
-                if (pData[0]==2)
+                if (pData[0]==GREENSLIME_ONCEILING)
                 {
                     pSprite->zvel = 0;
                     pSprite->cstat &= (65535-8);
@@ -4916,7 +4987,7 @@ ACTOR_STATIC void G_MoveActors(void)
                     if ((sector[sectNum].ceilingstat&1) || (actor[spriteNum].ceilingz+6144) < pSprite->z)
                     {
                         pSprite->z += 2048;
-                        pData[0] = 3;
+                        pData[0] = GREENSLIME_TOFLOOR;
                         goto next_sprite;
                     }
                 }
@@ -4955,7 +5026,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
             }
 
-            if (pData[0]==1)
+            if (pData[0]==GREENSLIME_TOCEILING)
             {
                 pSprite->picnum = GREENSLIME;
                 if (pSprite->yrepeat < 40) pSprite->yrepeat+=8;
@@ -4967,11 +5038,11 @@ ACTOR_STATIC void G_MoveActors(void)
                 {
                     pSprite->z = actor[spriteNum].ceilingz+4096;
                     pSprite->xvel = 0;
-                    pData[0] = 2;
+                    pData[0] = GREENSLIME_ONCEILING;
                 }
             }
 
-            if (pData[0]==3)
+            if (pData[0]==GREENSLIME_TOFLOOR)
             {
                 pSprite->picnum = GREENSLIME+1;
 
@@ -4991,7 +5062,7 @@ ACTOR_STATIC void G_MoveActors(void)
                 if (pSprite->z > actor[spriteNum].floorz-2048)
                 {
                     pSprite->z = actor[spriteNum].floorz-2048;
-                    pData[0] = 0;
+                    pData[0] = GREENSLIME_ONFLOOR;
                     pSprite->xvel = 0;
                 }
             }
@@ -6244,6 +6315,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                     if (pPlayer->cursectnum == pSprite->sectnum && pPlayer->on_ground == 1)
                     {
+                        g_player[playerNum].smoothcamera = true;
                         pPlayer->q16ang += fix16_from_int(l*q);
                         pPlayer->q16ang &= 0x7FFFFFF;
 
@@ -6433,27 +6505,31 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 m = (pSprite->xvel*sintable[(pSprite->ang+512)&2047])>>14;
                 x = (pSprite->xvel*sintable[pSprite->ang&2047])>>14;
 
-                for (TRAVERSE_CONNECT(playerNum))
+                if (sector[pSprite->sectnum].lotag != ST_2_UNDERWATER)
                 {
-                    auto const pPlayer = g_player[playerNum].ps;
-
-                    // might happen when squished into void space
-                    if (pPlayer->cursectnum < 0)
-                        break;
-
-                    if (sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
+                    // Move player spawns with sector.
+                    for (int spawnNum = 0; spawnNum < g_playerSpawnCnt; spawnNum++)
                     {
-                        if (g_playerSpawnPoints[playerNum].sect == pSprite->sectnum)
+                        if (g_playerSpawnPoints[spawnNum].sect == pSprite->sectnum)
                         {
-                            g_playerSpawnPoints[playerNum].pos.x += m;
-                            g_playerSpawnPoints[playerNum].pos.y += x;
+                            g_playerSpawnPoints[spawnNum].pos.x += m;
+                            g_playerSpawnPoints[spawnNum].pos.y += x;
                         }
+                    }
+
+                    for (TRAVERSE_CONNECT(playerNum))
+                    {
+                        auto const pPlayer = g_player[playerNum].ps;
+
+                        // might happen when squished into void space
+                        if (pPlayer->cursectnum < 0)
+                            break;
 
                         if (pSprite->sectnum == pPlayer->cursectnum
 #ifdef YAX_ENABLE
-                                || (pData[9]>=0 && pData[9] == pPlayer->cursectnum)
+                            || (pData[9] >= 0 && pData[9] == pPlayer->cursectnum)
 #endif
-                            )
+                        )
                         {
                             rotatepoint(pSprite->pos.vec2, pPlayer->pos.vec2, q, &pPlayer->pos.vec2);
 
@@ -6463,59 +6539,43 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                             pPlayer->bobpos.x += m;
                             pPlayer->bobpos.y += x;
 
+                            g_player[playerNum].smoothcamera = true;
+
                             pPlayer->q16ang += fix16_from_int(q);
                             pPlayer->q16ang &= 0x7FFFFFF;
 
-                            if (g_netServer || numplayers > 1)
-                            {
-                                pPlayer->opos.x = pPlayer->pos.x;
-                                pPlayer->opos.y = pPlayer->pos.y;
-                            }
                             if (sprite[pPlayer->i].extra <= 0)
+                                sprite[pPlayer->i].pos.vec2 = pPlayer->pos.vec2;
+                        }
+                    }
+
+                    // NOTE: special loop handling
+                    j = headspritesect[pSprite->sectnum];
+                    while (j >= 0)
+                    {
+                        if ((sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT || sprite[j].lotag == SE_50_SPOT_LIGHT))
+                            && sprite[j].picnum != LOCATORS)
+                        {
+                            if (move_rotfixed_sprite(j, pSprite - sprite, pData[2]))
+                                rotatepoint(pSprite->pos.vec2, sprite[j].pos.vec2, q, &sprite[j].pos.vec2);
+
+                            sprite[j].x += m;
+                            sprite[j].y += x;
+
+                            sprite[j].ang += q;
+                        }
+                        j = nextspritesect[j];
+#ifdef YAX_ENABLE
+                        if (j < 0)
+                        {
+                            if (pData[9] >= 0 && firstrun)
                             {
-                                sprite[pPlayer->i].x = pPlayer->pos.x;
-                                sprite[pPlayer->i].y = pPlayer->pos.y;
+                                firstrun = 0;
+                                j = headspritesect[pData[9]];
                             }
                         }
-                    }
-                }
-
-                // NOTE: special loop handling
-                j = headspritesect[pSprite->sectnum];
-                while (j >= 0)
-                {
-                    // KEEPINSYNC2
-                    // XXX: underwater check?
-                    if (sprite[j].statnum != STAT_PLAYER && sector[sprite[j].sectnum].lotag != ST_2_UNDERWATER &&
-                            (sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT||sprite[j].lotag == SE_50_SPOT_LIGHT))
-                            && sprite[j].picnum != LOCATORS)
-                    {
-                        // fix interpolation
-                        if (numplayers < 2 && !g_netServer)
-                            actor[j].bpos.vec2 = sprite[j].pos.vec2;
-
-                        if (move_rotfixed_sprite(j, pSprite-sprite, pData[2]))
-                            rotatepoint(pSprite->pos.vec2, sprite[j].pos.vec2, q, &sprite[j].pos.vec2);
-
-                        sprite[j].x+= m;
-                        sprite[j].y+= x;
-
-                        sprite[j].ang+=q;
-
-                        if (g_netServer || numplayers > 1)
-                            actor[j].bpos.vec2 = sprite[j].pos.vec2;
-                    }
-                    j = nextspritesect[j];
-#ifdef YAX_ENABLE
-                    if (j < 0)
-                    {
-                        if (pData[9]>=0 && firstrun)
-                        {
-                            firstrun = 0;
-                            j = headspritesect[pData[9]];
-                        }
-                    }
 #endif
+                    }
                 }
 
                 A_MoveSector(spriteNum);
@@ -6527,18 +6587,6 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         MaybeTrainKillPlayer(pSprite, 1);
 
                     MaybeTrainKillEnemies(spriteNum);
-                }
-            }
-            else
-            {
-                // fix for jittering of sprites in halted subways
-                for (SPRITES_OF_SECT(pSprite->sectnum, j))
-                {
-                    // KEEPINSYNC2
-                    if (sprite[j].statnum != STAT_PLAYER && sector[sprite[j].sectnum].lotag != ST_2_UNDERWATER &&
-                            (sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT||sprite[j].lotag == SE_50_SPOT_LIGHT))
-                            && sprite[j].picnum != LOCATORS)
-                        actor[j].bpos.vec2 = sprite[j].pos.vec2;
                 }
             }
 
@@ -6602,6 +6650,16 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     if (ud.noclip == 0)
                         MaybeTrainKillPlayer(pSprite, 0);
 
+                // Move player spawns with sector.
+                for (int spawnNum = 0; spawnNum < g_playerSpawnCnt; spawnNum++)
+                {
+                    if (g_playerSpawnPoints[spawnNum].sect == pSprite->sectnum)
+                    {
+                        g_playerSpawnPoints[spawnNum].pos.x += l;
+                        g_playerSpawnPoints[spawnNum].pos.y += x;
+                    }
+                }
+
                 for (int TRAVERSE_CONNECT(playerNum))
                 {
                     auto const pPlayer = g_player[playerNum].ps;
@@ -6616,12 +6674,6 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                         pPlayer->bobpos.x += l;
                         pPlayer->bobpos.y += x;
-                    }
-
-                    if (g_playerSpawnPoints[playerNum].sect == pSprite->sectnum)
-                    {
-                        g_playerSpawnPoints[playerNum].pos.x += l;
-                        g_playerSpawnPoints[playerNum].pos.y += x;
                     }
                 }
 
@@ -7059,7 +7111,11 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 {
                     auto const foundSprite = (uspriteptr_t)&sprite[spr];
 
-                    if (foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
+                    int32_t floorZ, ceilZ;
+                    getcorrectzsofslope(pSprite->sectnum, foundSprite->pos.x, foundSprite->pos.y, &ceilZ, &floorZ);
+
+                    if ((foundSprite->pos.z > floorZ || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < ceilZ)
+                        && foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
                     {
                         auto const clipdist = A_GetClipdist(spr, -1);
 
@@ -7074,10 +7130,15 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 for (auto TRAVERSE_CONNECT(plr))
                 {
                     auto const foundPlayer = g_player[plr].ps;
+                    auto const foundPlayerSprite = &sprite[foundPlayer->i];
+
+                    int32_t floorZ, ceilZ;
+                    getcorrectzsofslope(pSprite->sectnum, foundPlayer->pos.x, foundPlayer->pos.y, &ceilZ, &floorZ);
 
                     for (int w = pSector->wallptr; w < endWall; w++)
                     {
-                        if (dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
+                        if ((foundPlayerSprite->pos.z > floorZ || foundPlayer->pos.z < ceilZ) && foundPlayerSprite->extra > 0
+                            && dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
                             break;
                     }
                 }
@@ -8248,17 +8309,13 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             {
                 walltype *pWall = &wall[pData[2]];
 
-                if (pWall->cstat|32)
+                pWall->cstat &= (255-32);
+                pWall->cstat |= 16;
+                if (pWall->nextwall >= 0)
                 {
-                    pWall->cstat &= (255-32);
-                    pWall->cstat |= 16;
-                    if (pWall->nextwall >= 0)
-                    {
-                        wall[pWall->nextwall].cstat &= (255-32);
-                        wall[pWall->nextwall].cstat |= 16;
-                    }
+                    wall[pWall->nextwall].cstat &= (255-32);
+                    wall[pWall->nextwall].cstat |= 16;
                 }
-                else break;
 
                 pWall->overpicnum++;
                 if (pWall->nextwall >= 0)
@@ -8913,31 +8970,64 @@ void G_MoveWorld(void)
     extern double g_moveActorsTime, g_moveWorldTime;
     const double worldTime = timerGetHiTicks();
 
+    MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
+
     VM_OnEvent(EVENT_PREWORLD);
-
     G_DoEventGame(EVENT_PREGAME);
-
     G_RecordOldSpritePos();
 
-    G_MoveZombieActors();     //ST 2
-    G_MoveWeapons();          //ST 4
-    G_MoveTransports();       //ST 9
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveZombieActors", MP_YELLOW2);
+        G_MoveZombieActors();  //ST 2
+    }
 
-    G_MovePlayers();          //ST 10
-    G_MoveFallers();          //ST 12
-    G_MoveMisc();             //ST 5
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveWeapons", MP_YELLOW3);
+        G_MoveWeapons();  //ST 4
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveTransports", MP_YELLOW4);
+        G_MoveTransports();  //ST 9
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MovePlayers", MP_YELLOW);
+        G_MovePlayers();  //ST 10
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveFallers", MP_YELLOW2);
+        G_MoveFallers();  //ST 12
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveMisc", MP_YELLOW3);
+        G_MoveMisc();  //ST 5
+    }
 
     const double actorsTime = timerGetHiTicks();
 
-    G_MoveActors();           //ST 1
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveActors", MP_YELLOW4);
+        G_MoveActors();  //ST 1
+    }
 
     g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetHiTicks()-actorsTime);
 
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
     G_DoEffectorLights();
-    G_MoveEffectors();        //ST 3
-    G_MoveStandables();       //ST 6
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveEffectors", MP_YELLOW);
+        G_MoveEffectors();  //ST 3
+    }
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveStandables", MP_YELLOW2);
+        G_MoveStandables();  //ST 6
+    }
 
 
     VM_OnEvent(EVENT_WORLD);
@@ -8946,7 +9036,11 @@ void G_MoveWorld(void)
 
     G_RefreshLights();
     G_DoSectorAnimations();
-    G_MoveFX();               //ST 11
+
+    {
+        MICROPROFILE_SCOPEI("MoveWorld", "MoveFX", MP_YELLOW3);
+        G_MoveFX();  //ST 11
+    }
 
     g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetHiTicks()-worldTime);
 }

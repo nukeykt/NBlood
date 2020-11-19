@@ -114,6 +114,7 @@ int krand1(void);
 
 #include "pragmas.h"
 
+extern SWBOOL PedanticMode;
 
 //
 // Map directions/degrees
@@ -383,6 +384,15 @@ extern char MessageOutputString[256];
 #define ANGLE_2_PLAYER(pp,x,y) (NORM_ANGLE(getangle(pp->posx-(x), pp->posy-(y))))
 #define NORM_Q16ANGLE(ang) ((ang) & 0x7FFFFFF)
 
+static fix16_t FORCE_INLINE GetQ16AngleFromVect(int32_t xvect, int32_t yvect)
+{
+    return (PedanticMode ? getq16angle : gethiq16angle)(xvect, yvect);
+}
+
+static fix16_t FORCE_INLINE PedanticQ16AngleFloor(fix16_t ang)
+{
+    return PedanticMode ? fix16_floor(ang) : ang;
+}
 
 int StdRandomRange(int range);
 #define STD_RANDOM_P2(pwr_of_2) (MOD_P2(rand(),(pwr_of_2)))
@@ -822,9 +832,6 @@ extern int PlayerYellVocs[MAX_YELLSOUNDS];
 
 void BossHealthMeter(void);
 
-extern SWBOOL PedanticMode;
-extern SWBOOL InterpolateSectObj;
-
 // Global variables used for modifying variouse things from the Console
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1074,7 +1081,6 @@ struct PLAYERstruct
     short slide_ang;
     int slide_dec;
     int drive_angvel;
-    int drive_oangvel;
 
 
 
@@ -1101,7 +1107,8 @@ struct PLAYERstruct
 
     int oldposx,oldposy,oldposz;
     int RevolveX, RevolveY;
-    short RevolveDeltaAng, RevolveAng;
+    short RevolveDeltaAng;
+    fix16_t RevolveQ16Ang;
 
     // under vars are for wading and swimming
     short PlayerSprite, PlayerUnderSprite;
@@ -1117,7 +1124,7 @@ struct PLAYERstruct
     short bob_amt;
     short bob_ndx;
     short bcnt; // bob count
-    int bob_z;
+    int bob_z, obob_z;
 
     //Multiplayer variables
     SW_PACKET input;
@@ -1279,6 +1286,8 @@ extern PLAYER Player[MAX_SW_PLAYERS_REG+1];
 #define PF_WEAPON_DOWN       (BIT(31))
 
 #define PF2_TELEPORTED        (BIT(0))
+#define PF2_INPUT_CAN_TURN    (BIT(1)) // Allow calling DoPlayerTurn from getinput
+#define PF2_INPUT_CAN_AIM     (BIT(2)) // Allow calling DoPlayerHorizon from getinput
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1510,6 +1519,8 @@ typedef struct
     short FlagOwner;        // The spritenum of the original flag
     short Vis;              // Shading upgrade, for shooting, etc...
     SWBOOL DidAlert;          // Has actor done his alert noise before?
+
+    int16_t oangdiff;      // Used for interpolating sprite angles
 
     uint8_t filler;
 } USER,*USERp;
@@ -2067,6 +2078,8 @@ struct SECTOR_OBJECTstruct
 #define SO_TANK 98
 #define SO_SPEED_BOAT 99
 
+#define SO_EMPTY(sop) ((sop)->xmid == INT32_MAX)
+
 extern SECTOR_OBJECT SectorObject[MAX_SECTOR_OBJECTS];
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -2081,6 +2094,7 @@ void SetBorder(PLAYERp pp, int);
 void SetFragBar(PLAYERp pp);
 int Distance(int x1, int y1, int x2, int y2);
 short GetDeltaAngle(short, short);
+fix16_t GetDeltaQ16Angle(fix16_t, fix16_t);
 
 int SetActorRotation(short SpriteNum,int,int);
 int NewStateGroup(short SpriteNum, STATEp SpriteGroup[]);
@@ -2201,6 +2215,8 @@ extern char ds[];
 extern short Skill;
 extern int GodMode;
 
+extern SWBOOL ReloadPrompt;
+
 extern int x_min_bound, y_min_bound, x_max_bound, y_max_bound;
 
 //extern unsigned char synctics, lastsynctics;
@@ -2212,7 +2228,6 @@ extern int lockspeed,totalsynctics;
 #define synctics 3
 #define ACTORMOVETICS (synctics<<1)
 #define TICSPERMOVEMENT synctics
-#define FAKETIMERHANDLER()  if (totalclock >= ototalclock + synctics) faketimerhandler()
 
 // subtract value from clipdist on getzrange calls
 #define GETZRANGE_CLIP_ADJ 8
@@ -2267,6 +2282,7 @@ void sendlogoff(void);
 
 extern int ototalclock, save_totalclock, gotlastpacketclock,smoothratio;
 extern SWBOOL ready2send;
+extern SWBOOL GamePaused;
 
 // local copy of variables updated by faketimerhandler
 extern int locselectedgun;

@@ -40,6 +40,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #include "sounds.h"
 #include "interp.h"
+#include "interpso.h"
 #include "sprite.h"
 #include "weapon.h"
 #include "jsector.h"
@@ -647,6 +648,7 @@ KillSprite(int16_t SpriteNum)
                     sn--;
                     ASSERT(sop->sp_num[sn] >= 0);
 
+                    so_stopspriteinterpolation(sop, sp);
                     // replace the one to be deleted with the last ndx
                     sop->sp_num[FoundSpriteNdx] = sop->sp_num[sn];
                     // the last ndx is not -1
@@ -6776,8 +6778,6 @@ SpriteControl(void)
 #endif
     }
 
-    FAKETIMERHANDLER();
-
     // Items and skip2 things
     if (MoveSkip2 == 0)
     {
@@ -6799,8 +6799,6 @@ SpriteControl(void)
             }
         }
     }
-
-    FAKETIMERHANDLER();
 
     if (MoveSkip2 == 0)                 // limit to 20 times a second
     {
@@ -6856,9 +6854,6 @@ SpriteControl(void)
         }
     }
 
-    FAKETIMERHANDLER();
-
-
     // Skip4 things
     if (MoveSkip4 == 0)                 // limit to 10 times a second
     {
@@ -6880,8 +6875,6 @@ SpriteControl(void)
             }
         }
     }
-
-    FAKETIMERHANDLER();
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_NO_STATE], i, nexti)
     {

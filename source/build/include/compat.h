@@ -66,7 +66,9 @@
 # define CSTD 0
 #endif
 
-#if defined __cplusplus && __cplusplus >= 201703L
+#if defined __cplusplus && __cplusplus >= 202002L
+# define CXXSTD 2020
+#elif defined __cplusplus && __cplusplus >= 201703L
 # define CXXSTD 2017
 #elif defined __cplusplus && __cplusplus >= 201402L
 # define CXXSTD 2014
@@ -167,7 +169,7 @@
 # define EXTERN_INLINE_HEADER extern __fastcall
 #endif
 
-#if 0 && defined(__OPTIMIZE__) && (defined __GNUC__ || __has_builtin(__builtin_expect))
+#if 1 && defined(__OPTIMIZE__) && (defined __GNUC__ || __has_builtin(__builtin_expect))
 #define EDUKE32_PREDICT_TRUE(x)       __builtin_expect(!!(x),1)
 #define EDUKE32_PREDICT_FALSE(x)     __builtin_expect(!!(x),0)
 #else
@@ -175,14 +177,17 @@
 #define EDUKE32_PREDICT_FALSE(x) (x)
 #endif
 
-#if EDUKE32_GCC_PREREQ(4,5)  || __has_builtin(__builtin_unreachable)
-#define EDUKE32_UNREACHABLE_SECTION(...)   __builtin_unreachable()
-#elif _MSC_VER
-#define EDUKE32_UNREACHABLE_SECTION(...)   __assume(0)
+#ifdef DEBUG
+# define EDUKE32_UNREACHABLE_SECTION(...) debug_break()
 #else
-#define EDUKE32_UNREACHABLE_SECTION(...) __VA_ARGS__
+# if EDUKE32_GCC_PREREQ(4,5)  || __has_builtin(__builtin_unreachable)
+#  define EDUKE32_UNREACHABLE_SECTION(...)   __builtin_unreachable()
+# elif _MSC_VER
+#  define EDUKE32_UNREACHABLE_SECTION(...)   __assume(0)
+# else
+#  define EDUKE32_UNREACHABLE_SECTION(...) __VA_ARGS__
+# endif
 #endif
-
 #if EDUKE32_GCC_PREREQ(2,0) || defined _MSC_VER
 # define EDUKE32_FUNCTION __FUNCTION__
 #elif CSTD >= 1999 || CXXSTD >= 2011
@@ -650,14 +655,14 @@ static FORCE_INLINE int32_t atoi_safe(const char *str) { return (int32_t)Bstrtol
 #define Batol(str) (strtol(str, NULL, 10))
 #define Batof(str) (strtod(str, NULL))
 
-#if defined BITNESS64 && (defined __SSE2__ || defined _MSC_VER)
+#if defined BITNESS64 && (defined __SSE2__ || defined _MSC_VER) && !defined(_M_ARM64)
 #include <emmintrin.h>
 static FORCE_INLINE int32_t Blrintf(const float x)
 {
     __m128 xx = _mm_load_ss(&x);
     return _mm_cvtss_si32(xx);
 }
-#elif defined (_MSC_VER)
+#elif defined(_MSC_VER) && !defined(_M_ARM64)
 static FORCE_INLINE int32_t Blrintf(const float x)
 {
     int n;

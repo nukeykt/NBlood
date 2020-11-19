@@ -86,20 +86,7 @@ enum rendmode_t {
 # define M32_FIXME_SECTORS 0
 #endif
 
-#ifdef LUNATIC
-# define NEW_MAP_FORMAT
-// A marker for LuaJIT C function callbacks, but not merely:
-# define LUNATIC_CB ATTRIBUTE((used))
-// Used for variables and functions referenced from Lua:
-# define LUNATIC_EXTERN ATTRIBUTE((used))
-# define LUNATIC_FASTCALL
-#else
-# ifdef NEW_MAP_FORMAT
-#  error "New map format can only be used with Lunatic"
-# endif
-# define LUNATIC_EXTERN static
-# define LUNATIC_FASTCALL __fastcall
-#endif
+//define NEW_MAP_FORMAT
 
 #define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
 
@@ -753,6 +740,7 @@ static inline int16_t spriteGetSlope(uint16_t const spritenum)
     return uint8_t(spr->xoffset) + (uint8_t(spr->yoffset) << 8);
 }
 
+extern int32_t animateoffs(int const tilenum, int fakevar);
 
 EXTERN int16_t maskwall[MAXWALLSB], maskwallcnt;
 EXTERN int16_t thewall[MAXWALLSB];
@@ -1039,6 +1027,9 @@ extern int32_t enginecompatibilitymode;
 static CONSTEXPR int32_t const enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+EXTERN int32_t duke64;
+extern bool (*rt_tileload_callback)(int16_t tileNum);
+
 /*************************************************************************
 POSITION VARIABLES:
 
@@ -1173,7 +1164,7 @@ void    tileSetSize(int32_t picnum, int16_t dasizx, int16_t dasizy);
 int32_t artReadHeader(buildvfs_kfd fil, char const *fn, artheader_t *local);
 int32_t artReadHeaderFromBuffer(uint8_t const *buf, artheader_t *local);
 int32_t artCheckUnitFileHeader(uint8_t const *buf, int32_t length);
-void    tileConvertAnimFormat(int32_t picnum, int32_t const picanmdisk);
+void    tileConvertAnimFormat(int32_t picnum, uint32_t const picanmdisk);
 void    artReadManifest(buildvfs_kfd fil, artheader_t const *local);
 void    artPreloadFile(buildvfs_kfd fil, artheader_t const *local);
 int32_t artLoadFiles(const char *filename, int32_t askedsize);
@@ -1291,7 +1282,7 @@ int32_t checksectorpointer(int16_t i, int16_t sectnum);
 
 void   mouseGetValues(int32_t *mousx, int32_t *mousy, int32_t *bstatus) ATTRIBUTE((nonnull(1,2,3)));
 
-#if !KRANDDEBUG && !defined LUNATIC
+#if !KRANDDEBUG
 static FORCE_INLINE int32_t krand(void)
 {
     randomseed = (randomseed * 1664525ul) + 221297ul;
@@ -1302,7 +1293,13 @@ int32_t    krand(void);
 #endif
 
 int32_t   ksqrt(uint32_t num);
-int32_t   LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect);
+int32_t   __fastcall getangle(int32_t xvect, int32_t yvect);
+fix16_t   __fastcall gethiq16angle(int32_t xvect, int32_t yvect);
+
+static FORCE_INLINE fix16_t __fastcall getq16angle(int32_t xvect, int32_t yvect)
+{
+    return fix16_from_int(getangle(xvect, yvect));
+}
 
 static FORCE_INLINE CONSTEXPR uint32_t uhypsq(int32_t const dx, int32_t const dy)
 {
@@ -1316,6 +1313,15 @@ static FORCE_INLINE int32_t logapproach(int32_t const val, int32_t const targetv
 }
 
 void rotatepoint(vec2_t const pivot, vec2_t p, int16_t const daang, vec2_t * const p2) ATTRIBUTE((nonnull(4)));
+
+static inline void rotatevec(vec2_t p, int16_t const daang, vec2_t * const p2)
+{
+    int const dacos = sintable[(daang+2560)&2047];
+    int const dasin = sintable[(daang+2048)&2047];
+    *p2 = { dmulscale14(p.x, dacos, -p.y, dasin), dmulscale14(p.y, dacos, p.x, dasin) };
+}
+
+
 int32_t   lastwall(int16_t point);
 int32_t   nextsectorneighborz(int16_t sectnum, int32_t refz, int16_t topbottom, int16_t direction);
 
@@ -1324,6 +1330,9 @@ int32_t   getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day) ATTRIBU
 void   getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day,
                        int32_t *ceilz, int32_t *florz) ATTRIBUTE((nonnull(1,4,5)));
 void yax_getzsofslope(int sectNum, int playerX, int playerY, int32_t* pCeilZ, int32_t* pFloorZ);
+
+int32_t yax_getceilzofslope(int const sectnum, vec2_t const vect);
+int32_t yax_getflorzofslope(int const sectnum, vec2_t const vect);
 
 static FORCE_INLINE int32_t getceilzofslope(int16_t sectnum, int32_t dax, int32_t day)
 {
@@ -1636,14 +1645,6 @@ static FORCE_INLINE void renderEnableFog(void)
 #endif
 }
 
-static vec2_t const zerovec = { 0, 0 };
-
-#ifdef LUNATIC
-extern const int32_t engine_main_arrays_are_static;
-extern const int32_t engine_v8;
-int32_t Mulscale(int32_t a, int32_t b, int32_t sh);
-#endif
-
 static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
 
 #define SET_AND_RETURN(Lval, Rval) \
@@ -1653,7 +1654,7 @@ static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int
         return;                    \
     } while (0)
 
-static inline int64_t compat_maybe_truncate_to_int32(int64_t val)
+static FORCE_INLINE int64_t compat_maybe_truncate_to_int32(int64_t val)
 {
     return enginecompatibilitymode != ENGINE_EDUKE32 ? (int32_t)val : val;
 }

@@ -396,7 +396,7 @@ int32_t artCheckUnitFileHeader(uint8_t const * const buf, int32_t length)
     return 0;
 }
 
-void tileConvertAnimFormat(int32_t const picnum, int32_t const picanmdisk)
+void tileConvertAnimFormat(int32_t const picnum, uint32_t const picanmdisk)
 {
     EDUKE32_STATIC_ASSERT(PICANM_ANIMTYPE_MASK == 192);
 
@@ -417,14 +417,12 @@ void artReadManifest(buildvfs_kfd const fil, artheader_t const * const local)
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
-        int32_t picanmdisk;
-
         tilesiz[i].x = B_LITTLE16(tilesizx[i-local->tilestart]);
         tilesiz[i].y = B_LITTLE16(tilesizy[i-local->tilestart]);
 
-        kread(fil, &picanmdisk, sizeof(int32_t));
+        uint32_t picanmdisk;
+        kread(fil, &picanmdisk, sizeof(uint32_t));
         picanmdisk = B_LITTLE32(picanmdisk);
-
         tileConvertAnimFormat(i, picanmdisk);
     }
 
@@ -622,6 +620,8 @@ int32_t artLoadFiles(const char *filename, int32_t askedsize)
 //
 static void tilePostLoad(int16_t tilenume);
 
+bool (*rt_tileload_callback)(int16_t tileNum) = nullptr;
+
 bool tileLoad(int16_t tileNum)
 {
     if ((unsigned) tileNum >= (unsigned) MAXTILES) return 0;
@@ -635,7 +635,8 @@ bool tileLoad(int16_t tileNum)
         g_cache.allocateBlock(&waloff[tileNum], dasiz, &walock[tileNum]);
     }
 
-    tileLoadData(tileNum, dasiz, (char *) waloff[tileNum]);
+    if (!duke64 || !rt_tileload_callback || !rt_tileload_callback(tileNum))
+        tileLoadData(tileNum, dasiz, (char *) waloff[tileNum]);
 
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST &&
@@ -717,8 +718,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
         if (artfil == buildvfs_kfd_invalid)
         {
             initprintf("Failed opening ART file \"%s\"!\n", fn);
-            engineUnInit();
-            Bexit(EXIT_FAILURE);
+            return;
         }
 
         artfilnum = tfn;

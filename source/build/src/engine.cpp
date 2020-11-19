@@ -13,16 +13,19 @@
 #include "build.h"
 #include "cache1d.h"
 #include "colmatch.h"
+#include "communityapi.h"
 #include "compat.h"
 #include "crc32.h"
 #include "editor.h"
 #include "engine_priv.h"
 #include "lz4.h"
+#include "microprofile.h"
 #include "osd.h"
 #include "palette.h"
 #include "pragmas.h"
 #include "scriptfile.h"
 #include "softsurface.h"
+#include "vfs.h"
 
 #ifdef USE_OPENGL
 # include "glad/glad.h"
@@ -34,15 +37,6 @@
 # endif
 # include "polymost.h"
 #endif
-
-#ifdef LUNATIC
-# include "lunatic.h"
-L_State g_engState;
-#endif
-
-#include "vfs.h"
-
-#include "communityapi.h"
 
 //////////
 // Compilation switches for optional/extended engine features
@@ -61,20 +55,6 @@ L_State g_engState;
 //#define DEBUG_TILESIZY_512
 //#define DEBUG_TILEOFFSETS
 //////////
-
-#ifdef LUNATIC
-# if !defined DEBUG_MAIN_ARRAYS
-LUNATIC_EXTERN const int32_t engine_main_arrays_are_static = 0;  // for Lunatic
-# else
-LUNATIC_EXTERN const int32_t engine_main_arrays_are_static = 1;
-# endif
-
-#if MAXSECTORS==MAXSECTORSV8
-LUNATIC_EXTERN const int32_t engine_v8 = 1;
-#else
-LUNATIC_EXTERN const int32_t engine_v8 = 0;
-#endif
-#endif
 
 #ifdef DEBUGGINGAIDS
 float debug1, debug2;
@@ -869,6 +849,8 @@ void yax_preparedrawrooms(void)
 void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_t),
                    int16_t sectnum, int32_t didmirror, int32_t smoothr)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     static uint8_t havebunch[(YAX_MAXBUNCHES+7)>>3];
 
     const fix16_t horiz = global100horiz;
@@ -3567,15 +3549,8 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     //asm1 = -(globalzd>>(16-BITSOFPRECISION));
     float bzinc = -globalzd*(1.f/65536.f);
 
-    {
-        int32_t vis = globalvisibility;
-        int64_t lvis;
-
-        if (sec->visibility != 0) vis = mulscale4(vis, (uint8_t)(sec->visibility+16));
-        lvis = ((uint64_t)(vis*fdaz)) >> 13;  // NOTE: lvis can be negative now!
-        lvis = (lvis * xdimscale) >> 16;
-        globvis = lvis;
-    }
+    int32_t const vis = (sec->visibility != 0) ? mulscale4(globalvisibility, (uint8_t)(sec->visibility+16)) : globalvisibility;
+    globvis = ((((uint64_t)(vis*fdaz)) >> 13) * xdimscale) >> 16;
 
     intptr_t fj = FP_OFF(palookup[globalpal]);
 
@@ -3876,15 +3851,8 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     asm1 = -(globalzd>>(16-BITSOFPRECISION));
 
-    {
-        int32_t vis = globalvisibility;
-        int64_t lvis;
-
-        if (sec->visibility != 0) vis = mulscale4(vis, (uint8_t)(sec->visibility+16));
-        lvis = ((uint64_t)vis*daz) >> 13;  // NOTE: lvis can be negative now!
-        lvis = (lvis * xdimscale) >> 16;
-        globvis = lvis;
-    }
+    int32_t const vis = (sec->visibility != 0) ? mulscale4(globalvisibility, (uint8_t)(sec->visibility+16)) : globalvisibility;
+    globvis = ((((uint64_t)(vis*daz)) >> 13) * xdimscale) >> 16;
 
     j = FP_OFF(palookup[globalpal]);
 
@@ -5291,8 +5259,8 @@ static void classicDrawSprite(int32_t snum)
         setup_blend(blendidx, cstat&512);
 
     vec2_t off = { picanm[tilenum].xofs, picanm[tilenum].yofs };
-    int32_t heinum = tspriteGetSlope(tspr);
-    if (heinum == 0)
+    int32_t const slope = tspriteGetSlope(tspr);
+    if (slope == 0)
     {
         off.x += tspr->xoffset;
         off.y += tspr->yoffset;
@@ -5767,10 +5735,8 @@ draw_as_face_sprite:
 
         if ((cstat&4) > 0) off.x = -off.x;
         if ((cstat&8) > 0) off.y = -off.y;
-
-        const int32_t xspan = tilesiz[tilenum].x;
-        const int32_t yspan = tilesiz[tilenum].y;
-        const int32_t ratio = nsqrtasm(heinum * heinum + 16777216);
+        vec2_16_t const span = tilesiz[tilenum];
+        const int32_t ratio = nsqrtasm(slope * slope + 16777216);
 
         //Rotate center point
         dax = tspr->x-globalposx;
@@ -5779,16 +5745,16 @@ draw_as_face_sprite:
         const int32_t cx = dmulscale10(cosglobalang,day,-singlobalang,dax);
 
         //Get top-left corner
-        int32_t cosang = dmulscale14(sintable[(tspr->ang+512)&2047], cosglobalang, sintable[tspr->ang&2047], singlobalang);
-        int32_t sinang = dmulscale14(sintable[(tspr->ang+512)&2047], -singlobalang, sintable[tspr->ang&2047], cosglobalang);
-        dax = (((xspan>>1)+off.x)*tspr->xrepeat)<<8;
-        day = divscale20(((yspan>>1)+off.y)*tspr->yrepeat,ratio);
+        int32_t const cosang = dmulscale14(sintable[(tspr->ang+512)&2047], cosglobalang, sintable[tspr->ang&2047], singlobalang);
+        int32_t const sinang = dmulscale14(sintable[(tspr->ang+512)&2047], -singlobalang, sintable[tspr->ang&2047], cosglobalang);
+        dax = (((span.x>>1)+off.x)*tspr->xrepeat)<<8;
+        day = divscale20(((span.y>>1)+off.y)*tspr->yrepeat,ratio);
         rzi[0] = cz+dmulscale20(sinang,dax,cosang,day);
         rxi[0] = cx+dmulscale20(sinang,day,-cosang,dax);
 
         //Get other 3 corners
-        dax = (xspan*tspr->xrepeat)<<8;
-        day = divscale20(yspan*tspr->yrepeat,ratio);
+        dax = (span.x*tspr->xrepeat)<<8;
+        day = divscale20(span.y*tspr->yrepeat,ratio);
         rzi[1] = rzi[0]-mulscale20(sinang,dax);
         rxi[1] = rxi[0]+mulscale20(cosang,dax);
         dax = -mulscale20(cosang,day);
@@ -5796,48 +5762,59 @@ draw_as_face_sprite:
         rzi[2] = rzi[1]+dax; rxi[2] = rxi[1]+day;
         rzi[3] = rzi[0]+dax; rxi[3] = rxi[0]+day;
 
-        float sgx, sgy, sgx2, sgy2, sgzd, sgzx, sgz, sdaz;
-        int32_t sgx1, sgy1;
+        float sgzd = 0, sgzx = 0, sgz = 0, sdaz = 0;
+        vec2f_t sg_f = {}, sg_f2 = {};
+        vec2_t sg1 = {};
 
-        if (heinum != 0) // slope
+        if (slope != 0)
         {
-            int daz;
+            int daz = 0;
+            float const fslope  = (float)slope;
+            float const fsinang = (float)sinang;
+            float const fcosang = (float)cosang;
+
             for (i = 0; i < 4; i++)
             {
                 int const j = dmulscale8(-sinang, rxi[i]-cx,
                                         -cosang, rzi[i]-cz);
+                int const z = (tspr->z + mulscale18(slope, j) - globalposz);
 
-                int const z = (tspr->z + mulscale18(heinum, j) - globalposz);
                 if (i == 0)
                     daz = z;
+
                 ryi[i] = scale(z,yxaspect,320<<8);
             }
-            sgx = float(cosang)*float(xdimenrecip)*(1.f/524288.f);
-            sgy = float(sinang)*float(xdimenrecip)*(1.f/524288.f);
+
             float const fi = (0-halfxdimen)*xdimenrecip;
-            sgx2 = -float(sinang)*float(viewingrangerecip)*(1.f/4096.f) + float(cosang)*fi*(1.f/134217728.f);
-            sgy2 = float(cosang)*float(viewingrangerecip)*(1.f/4096.f) + float(sinang)*fi*(1.f/134217728.f);
+            sg_f = { fcosang*float(xdimenrecip)*(1.f/524288.f), fsinang*float(xdimenrecip)*(1.f/524288.f) };
+            sg_f2 = { -fsinang*float(viewingrangerecip)*(1.f/4096.f) + fcosang*fi*(1.f/134217728.f),
+                       fcosang*float(viewingrangerecip)*(1.f/4096.f) + fsinang*fi*(1.f/134217728.f) };
+
             sgzd = xdimscale*512.f;
-            sgzx = sgy2*float(heinum)*(1.f/256.f) + (1-globalhoriz)*sgzd*(1.f/1024.f);
-            sgz = sgy*float(heinum)*(1.f/65536.f);
+            sgzx = sg_f2.y*fslope*(1.f/256.f) + (1-globalhoriz)*sgzd*(1.f/1024.f);
+            sgz = sg_f.y*fslope*(1.f/65536.f);
+
             float const fx = 64.f/float(tspr->xrepeat);
             float const fy = 64.f/float(tspr->yrepeat) * float(ratio) * (1.f / 4096.f);
-            sgx *= fx;
-            sgy *= fy;
-            sgx2 *= fx;
-            sgy2 *= fy;
-            sgx1 = divscale6(dmulscale10(rxi[0], -cosang, rzi[0], sinang), tspr->xrepeat);
-            sgy1 = mulscale12(divscale6(dmulscale10(rxi[0], sinang, rzi[0], cosang), tspr->yrepeat), ratio);
+
+            sg_f.x *= fx;
+            sg_f.y *= fy;
+            sg_f2.x *= fx;
+            sg_f2.y *= fy;
+
+            sg1 = { divscale6(dmulscale10(rxi[0], -cosang, rzi[0], sinang), tspr->xrepeat),
+                    mulscale12(divscale6(dmulscale10(rxi[0], sinang, rzi[0], cosang), tspr->yrepeat), ratio) };
+
             if (cstat & 4)
             {
-                sgx1 = -sgx1;
-                sgx2 = -sgx2;
-                sgx = -sgx;
+                sg1.x = -sg1.x;
+                sg_f2.x = -sg_f2.x;
+                sg_f.x = -sg_f.x;
             }
 
-            sdaz = float(heinum)*(float(sinang)*float(rxi[0])+float(cosang)*float(rzi[0]))*(1.f/262144.f) + float(daz)*256.f;
-            sgx2 = (sgx2*sdaz)*(1.f/1048576.f); sgx = (sgx*sdaz)*(1.f/268435456.f);
-            sgy2 = (sgy2*-sdaz)*(1.f/1048576.f); sgy = (sgy*-sdaz)*(1.f/268435456.f);
+            sdaz = fslope*(fsinang*float(rxi[0])+fcosang*float(rzi[0]))*(1.f/262144.f) + float(daz)*256.f;
+            sg_f = { (sg_f.x*sdaz)*(1.f/268435456.f), (sg_f.y*-sdaz)*(1.f/268435456.f) };
+            sg_f2 = { (sg_f2.x*sdaz)*(1.f/1048576.f), (sg_f2.y*-sdaz)*(1.f/1048576.f) };
 
             rzi[0] = mulscale16(rzi[0], viewingrange);
             rzi[1] = mulscale16(rzi[1], viewingrange);
@@ -6117,32 +6094,22 @@ draw_as_face_sprite:
         setgotpic(globalpicnum);
         globalbufplc = waloff[globalpicnum];
 
-        if (heinum != 0)
+        if (slope != 0)
         {
             x = picsiz[globalpicnum]; y = ((x>>4)&15); x &= 15;
-            int32_t ispow2 = (pow2long[x]==xspan && pow2long[y]==yspan);
-            sgx1 = divscale20(sgx1, xspan);
-            sgy1 = divscale20(sgy1, yspan);
-            sgx2 *= 256.f/float(xspan);
-            sgy2 *= 256.f/float(yspan);
-            sgx *= 256.f/float(xspan);
-            sgy *= 256.f/float(yspan);
-
-            sgx1 >>= 16;
-            sgy1 >>= 16;
+            int const ispow2 = (pow2long[x]==span.x && pow2long[y]==span.y);
+            sg1 = { divscale20(sg1.x, span.x) >> 16, divscale20(sg1.y, span.y) >> 16 };
+            vec2f_t const tmp = { 256.f/float(span.x), 256.f/float(span.y) };
+            sg_f2.x *= tmp.x;
+            sg_f2.y *= tmp.y;
+            sg_f.x *= tmp.x;
+            sg_f.y *= tmp.y;
 
             //asm1 = -(globalzd>>(16-BITSOFPRECISION));
-            float bzinc = -sgzd*(1.f/65536.f);
-
-            {
-                int32_t vis = globalhisibility;
-                int64_t lvis;
-
-                if (sec->visibility != 0) vis = mulscale4(vis, (uint8_t)(sec->visibility+16));
-                lvis = ((uint64_t)(vis*sdaz)) >> 13;  // NOTE: lvis can be negative now!
-                lvis = (lvis * xdimscale) >> 16;
-                globvis = lvis;
-            }
+#define LINTERPSIZ 4
+            float const bzinc = -sgzd*(1.f/65536.f) * (1<<LINTERPSIZ);
+            int32_t const vis = (sec->visibility != 0) ? mulscale4(globalhisibility, (uint8_t)(sec->visibility+16)) : globalhisibility;
+            globvis = ((((uint64_t)(vis*sdaz)) >> 13) * xdimscale) >> 16;
 
             intptr_t fj = FP_OFF(palookup[globalpal]);
 
@@ -6169,8 +6136,8 @@ draw_as_face_sprite:
             }
 
             intptr_t *mptr1 = &slopalookup[shy1]; intptr_t *mptr2 = mptr1+1;
-            sgx2 += sgx * lx;
-            sgy2 += sgy * lx;
+            sg_f2.x += sg_f.x * lx;
+            sg_f2.y += sg_f.y * lx;
             sgzx += sgz * lx;
             shoffs += shinc *lx;
 
@@ -6183,14 +6150,10 @@ draw_as_face_sprite:
                     shy2 = y2+(shoffs>>15);
 
                     // Ridiculously steep gradient?
-                    if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
+                    if ((unsigned)shy1 >= SLOPALOOKUPSIZ || (unsigned)shy2 >= SLOPALOOKUPSIZ)
                     {
-                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
-                        goto next_most;
-                    }
-                    if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
-                    {
-                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, spritenum);
+                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__,
+                                   (unsigned)shy1 >= SLOPALOOKUPSIZ ? shy1 : shy2, spritenum);
                         goto next_most;
                     }
 
@@ -6208,32 +6171,27 @@ draw_as_face_sprite:
                         m2 += l;
                     }
 
-                    float sgx3 = sgx2*(1.f/1024.f);
-                    float sgy3 = sgy2*(1.f/1024.f);
+                    vec2f_t const sg_f3 = { sg_f2.x*(1.f/1024.f)*1048576.f, sg_f2.y*(1.f/1024.f)*1048576.f };
                     float bz = (y2*sgzd)*(1.f/65536.f) + sgzx*(1.f/64.f);
                     uint8_t *p = (uint8_t*)(ylookup[y2]+x+frameoffset);
                     intptr_t* A_C_RESTRICT slopalptr = (intptr_t*)nptr2;
-                    uint32_t u, v;
                     int cnt = y2-y1+1;
-#define LINTERPSIZ 4
-                    int u0 = Blrintf(1048576.f*sgx3/bz);
-                    int v0 = Blrintf(1048576.f*sgy3/bz);
+                    int u0 = Blrintf(sg_f3.x/bz);
+                    int v0 = Blrintf(sg_f3.y/bz);
                     if (ispow2)
                     {
                         if ((cstat&2)==0)
                         {
                             while (cnt > 0)
                             {
-                                bz += bzinc*(1<<LINTERPSIZ);
-                                int u1 = Blrintf(1048576.f*sgx3/bz);
-                                int v1 = Blrintf(1048576.f*sgy3/bz);
-                                u1 = (u1-u0)>>LINTERPSIZ;
-                                v1 = (v1-v0)>>LINTERPSIZ;
+                                bz += bzinc;
+                                int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
                                 int cnt2 = min(cnt, 1<<LINTERPSIZ);
                                 for (; cnt2>0; cnt2--)
                                 {
-                                    u = (sgx1+u0)&0xffff;
-                                    v = (sgy1+v0)&0xffff;
+                                    uint16_t u = (sg1.x+u0)&0xffff;
+                                    uint16_t v = (sg1.y+v0)&0xffff;
                                     char ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
                                     if (ch != 255)
                                         *p = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
@@ -6252,16 +6210,14 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc*(1<<LINTERPSIZ);
-                                    int u1 = Blrintf(1048576.f*sgx3/bz);
-                                    int v1 = Blrintf(1048576.f*sgy3/bz);
-                                    u1 = (u1-u0)>>LINTERPSIZ;
-                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    bz += bzinc;
+                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
                                     int cnt2 = min(cnt, 1<<LINTERPSIZ);
                                     for (; cnt2>0; cnt2--)
                                     {
-                                        u = (sgx1+u0)&0xffff;
-                                        v = (sgy1+v0)&0xffff;
+                                        uint16_t u = (sg1.x+u0)&0xffff;
+                                        uint16_t v = (sg1.y+v0)&0xffff;
                                         char ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
                                         if (ch != 255)
                                         {
@@ -6280,16 +6236,14 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc*(1<<LINTERPSIZ);
-                                    int u1 = Blrintf(1048576.f*sgx3/bz);
-                                    int v1 = Blrintf(1048576.f*sgy3/bz);
-                                    u1 = (u1-u0)>>LINTERPSIZ;
-                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    bz += bzinc;
+                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
                                     int cnt2 = min(cnt, 1<<LINTERPSIZ);
                                     for (; cnt2>0; cnt2--)
                                     {
-                                        u = (sgx1+u0)&0xffff;
-                                        v = (sgy1+v0)&0xffff;
+                                        uint16_t u = (sg1.x+u0)&0xffff;
+                                        uint16_t v = (sg1.y+v0)&0xffff;
                                         char ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
                                         if (ch != 255)
                                         {
@@ -6306,23 +6260,21 @@ draw_as_face_sprite:
                             }
                         }
                     }
-                    else
+                    else // the slow path...
                     {
                         if ((cstat&2)==0)
                         {
                             while (cnt > 0)
                             {
-                                bz += bzinc*(1<<LINTERPSIZ);
-                                int u1 = Blrintf(1048576.f*sgx3/bz);
-                                int v1 = Blrintf(1048576.f*sgy3/bz);
-                                u1 = (u1-u0)>>LINTERPSIZ;
-                                v1 = (v1-v0)>>LINTERPSIZ;
+                                bz += bzinc;
+                                int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
                                 int cnt2 = min(cnt, 1<<LINTERPSIZ);
                                 for (; cnt2>0; cnt2--)
                                 {
-                                    u = (sgx1+u0)&0xffff;
-                                    v = (sgy1+v0)&0xffff;
-                                    char ch = ggbuf[mulscale16(u, xspan)*yspan+mulscale16(v, yspan)];
+                                    uint16_t u = (sg1.x+u0)&0xffff;
+                                    uint16_t v = (sg1.y+v0)&0xffff;
+                                    char ch = ggbuf[mulscale16(u, span.x)*span.y+mulscale16(v, span.y)];
                                     if (ch != 255)
                                         *p = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
                                     slopalptr--;
@@ -6340,17 +6292,15 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc*(1<<LINTERPSIZ);
-                                    int u1 = Blrintf(1048576.f*sgx3/bz);
-                                    int v1 = Blrintf(1048576.f*sgy3/bz);
-                                    u1 = (u1-u0)>>LINTERPSIZ;
-                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    bz += bzinc;
+                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
                                     int cnt2 = min(cnt, 1<<LINTERPSIZ);
                                     for (; cnt2>0; cnt2--)
                                     {
-                                        u = (sgx1+u0)&0xffff;
-                                        v = (sgy1+v0)&0xffff;
-                                        char ch = ggbuf[mulscale16(u, xspan)*yspan+mulscale16(v, yspan)];
+                                        uint16_t u = (sg1.x+u0)&0xffff;
+                                        uint16_t v = (sg1.y+v0)&0xffff;
+                                        char ch = ggbuf[mulscale16(u, span.x)*span.y+mulscale16(v, span.y)];
                                         if (ch != 255)
                                         {
                                             ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
@@ -6368,17 +6318,15 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc*(1<<LINTERPSIZ);
-                                    int u1 = Blrintf(1048576.f*sgx3/bz);
-                                    int v1 = Blrintf(1048576.f*sgy3/bz);
-                                    u1 = (u1-u0)>>LINTERPSIZ;
-                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    bz += bzinc;
+                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
                                     int cnt2 = min(cnt, 1<<LINTERPSIZ);
                                     for (; cnt2>0; cnt2--)
                                     {
-                                        u = (sgx1+u0)&0xffff;
-                                        v = (sgy1+v0)&0xffff;
-                                        char ch = ggbuf[mulscale16(u, xspan)*yspan+mulscale16(v, yspan)];
+                                        uint16_t u = (sg1.x+u0)&0xffff;
+                                        uint16_t v = (sg1.y+v0)&0xffff;
+                                        char ch = ggbuf[mulscale16(u, span.x)*span.y+mulscale16(v, span.y)];
                                         if (ch != 255)
                                         {
                                             ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
@@ -6398,8 +6346,8 @@ draw_as_face_sprite:
                     if ((x&15) == 0) faketimerhandler();
                 }
 next_most:
-                sgx2 += sgx;
-                sgy2 += sgy;
+                sg_f2.x += sg_f.x;
+                sg_f2.y += sg_f.y;
                 sgzx += sgz;
                 shoffs += shinc;
             }
@@ -6434,9 +6382,9 @@ next_most:
             else
                 tsethlineshift(x,y);
 
-            globalispow2 = (pow2long[x]==xspan && pow2long[y]==yspan);
-            globalxspan = xspan;
-            globalyspan = yspan;
+            globalispow2 = (pow2long[x]==span.x && pow2long[y]==span.y);
+            globalxspan = span.x;
+            globalyspan = span.y;
 
             //Draw it!
             ceilspritescan(lx,rx-1);
@@ -6549,14 +6497,12 @@ next_most:
         if ((cstat & 8) && (tspr->cstat&48) != 0) off.y = -off.y;
         tspr->z -= off.y * tspr->yrepeat << 2;
 
-        if ((sprite[spritenum].cstat&CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
-        {
-            const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
-            const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
+        const float xfactor = (tspr->cstat&48) != 16 ? (256.f/320.f) : 1.f;
+        const int32_t xv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047]*xfactor);
+        const int32_t yv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047]*xfactor);
 
-            tspr->x -= mulscale16(xv, off.x);
-            tspr->y -= mulscale16(yv, off.x);
-        }
+        tspr->x -= mulscale16(xv, off.x);
+        tspr->y -= mulscale16(yv, off.x);
 
         globvis = globalvisibility;
         if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
@@ -6637,6 +6583,8 @@ next_most:
 
 static void renderDrawSprite(int32_t snum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     switch (videoGetRenderMode())
     {
     case REND_CLASSIC:
@@ -6665,6 +6613,8 @@ static void renderDrawSprite(int32_t snum)
 //
 static void renderDrawMaskedWall(int16_t damaskwallcnt)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     //============================================================================= //POLYMOST BEGINS
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST) { polymost_drawmaskwall(damaskwallcnt); return; }
@@ -6915,10 +6865,20 @@ static void renderFillPolygon(int32_t npoints)
 
                 const intptr_t p = ylookup[y]+x1+frameplace;
 
-                if (globalpolytype == 1)
-                    mhline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                if (globalispow2)
+                {
+                    if (globalpolytype == 1)
+                        mhline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                    else
+                        thline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                }
                 else
-                    thline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                {
+                    if (globalpolytype == 1)
+                        nonpow2_mhline(globalbufplc,bx,(x2-x1)<<16,by,(char *)p);
+                    else
+                        nonpow2_thline(globalbufplc,bx,(x2-x1)<<16,by,(char *)p);
+                }
             }
         }
 
@@ -7331,6 +7291,8 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
                            int32_t cx1, int32_t cy1, int32_t cx2, int32_t cy2,
                            int32_t uniqid)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     // NOTE: if these are made unsigned (for safety), angled tiles may draw
     // incorrectly, showing vertical seams at intervals.
     int32_t bx, by;
@@ -7932,6 +7894,8 @@ static inline void initksqrt(void)
 //
 static void dosetaspect(void)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     int32_t i, j;
 
     if (xyaspect != oxyaspect)
@@ -8609,6 +8573,7 @@ int32_t enginePreInit(void)
     engineInitClipMaps();
 #endif
     preinitcalled = 1;
+
     return 0;
 }
 
@@ -8678,18 +8643,6 @@ int32_t engineInit(void)
     if (!mdinited) mdinit();
 #endif
 
-#ifdef LUNATIC
-    if (L_CreateState(&g_engState, "eng", NULL))
-        return engineFatalError("Failed creating engine Lua state!");
-
-    {
-        static char const * const luastr = "_LUNATIC_AUX=true; decl=require('ffi').cdef; require'defs_common'";
-
-        if (L_RunString(&g_engState, luastr, -1, "eng"))
-            return engineFatalError("Failed setting up engine Lua state");
-    }
-#endif
-
     return 0;
 }
 
@@ -8728,7 +8681,6 @@ void engineUnInit(void)
 
     Buninitart();
 
-    DO_FREE_AND_NULL(lookups);
     for (bssize_t i=0; i<DISTRECIPCACHESIZE; i++)
         ALIGNED_FREE_AND_NULL(distrecipcache[i].distrecip);
     Bmemset(distrecipcache, 0, sizeof(distrecipcache));
@@ -8858,6 +8810,8 @@ void set_globalang(fix16_t const ang)
 int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
                            fix16_t daang, fix16_t dahoriz, int16_t dacursectnum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     int32_t i, j, /*cz, fz,*/ closest;
     int16_t *shortptr1, *shortptr2;
 
@@ -9360,6 +9314,8 @@ static void sortsprites(int const start, int const end)
 //
 void renderDrawMasks(void)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
 #ifdef DEBUG_MASK_DRAWING
         static struct {
             int16_t di;  // &32768: &32767 is tspriteptr[], else thewall[] index
@@ -9475,22 +9431,21 @@ killsprite:
 
         if (spritesortcnt < numSprites)
         {
-            int32_t py = spritesxyz[spritesortcnt].y;
-            int32_t pcstat = tspriteptr[spritesortcnt]->cstat & 48;
-            int32_t pangle = tspriteptr[spritesortcnt]->ang;
-            i = spritesortcnt;
-            for (bssize_t j = spritesortcnt + 1; j <= numSprites; j++)
+            for (bssize_t i = numSprites-1; i >= spritesortcnt;)
             {
-                if (j < numSprites)
+                int32_t py = spritesxyz[i].y;
+                int32_t pcstat = tspriteptr[i]->cstat & 48;
+                int32_t pangle = tspriteptr[i]->ang;
+                int j = i - 1;
+                if (!polymost_spriteIsModelOrVoxel(tspriteptr[i]))
                 {
-                    if (py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
+                    while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
                         && !polymost_spriteIsModelOrVoxel(tspriteptr[j]))
-                        continue;
-                    py = spritesxyz[j].y;
-                    pcstat = (tspriteptr[j]->cstat & 48);
-                    pangle = tspriteptr[j]->ang;
+                    {
+                        j--;
+                    }
                 }
-                if (j - i == 1)
+                if (i - j == 1)
                 {
                     debugmask_add(i | 32768, tspriteptr[i]->owner);
                     renderDrawSprite(i);
@@ -9500,7 +9455,7 @@ killsprite:
                 {
                     glDepthMask(GL_FALSE);
 
-                    for (bssize_t k = j-1; k >= i; k--)
+                    for (bssize_t k = i; k > j; k--)
                     {
                         debugmask_add(k | 32768, tspriteptr[k]->owner);
                         renderDrawSprite(k);
@@ -9510,7 +9465,7 @@ killsprite:
 
                     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
                     
-                    for (bssize_t k = j-1; k >= i; k--)
+                    for (bssize_t k = i; k > j; k--)
                     {
                         renderDrawSprite(k);
                         tspriteptr[k] = NULL;
@@ -9750,6 +9705,8 @@ killsprite:
 //
 void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     int32_t i, j, k, l;
     int32_t x, y;
     int32_t s, ox, oy;
@@ -9936,6 +9893,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
         if ((spr->cstat&48) >= 32)
         {
             const int32_t xspan = tilesiz[spr->picnum].x;
+            const int32_t yspan = tilesiz[spr->picnum].y;
 
             int32_t npoints = 0;
             vec2_t v1 = { spr->x, spr->y }, v2, v3, v4;
@@ -10017,12 +9975,6 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
             globaly2 = mulscale10(dmulscale10(ox,bakgvect.y,-oy,bakgvect.x),i);
 
             ox = picsiz[globalpicnum]; oy = ((ox>>4)&15); ox &= 15;
-            if (pow2long[ox] != xspan)
-            {
-                ox++;
-                globalx1 = mulscale(globalx1,xspan,ox);
-                globaly1 = mulscale(globaly1,xspan,ox);
-            }
 
             bak.x = (bak.x>>4)-(xdim<<7); bak.y = (bak.y>>4)-(ydim<<7);
             globalposx = dmulscale28(-bak.y,globalx1,-bak.x,globaly1);
@@ -10042,9 +9994,15 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
 
             set_globalpos(globalposx, globalposy, globalposz);
 
+            globalispow2 = (pow2long[ox]==xspan && pow2long[oy]==yspan);
+            globalxspan = xspan;
+            globalyspan = yspan;
+
             // so polymost can get the translucency. ignored in software mode:
             globalorientation = ((spr->cstat&2)<<7) | ((spr->cstat&512)>>2);
             renderFillPolygon(npoints);
+
+            globalispow2 = 1;
         }
     }
 
@@ -10063,7 +10021,7 @@ static FORCE_INLINE int32_t have_maptext(void)
     return (mapversion >= 10);
 }
 
-static void enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
+static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
 {
     initspritelists();
 
@@ -10083,12 +10041,19 @@ static void enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daa
 
     if (!have_maptext())
     {
-        kread(fil,&dapos->x,4); dapos->x = B_LITTLE32(dapos->x);
-        kread(fil,&dapos->y,4); dapos->y = B_LITTLE32(dapos->y);
-        kread(fil,&dapos->z,4); dapos->z = B_LITTLE32(dapos->z);
-        kread(fil,daang,2);  *daang  = B_LITTLE16(*daang) & 2047;
-        kread(fil,dacursectnum,2); *dacursectnum = B_LITTLE16(*dacursectnum);
+        if (kread_and_test(fil, &dapos->x, 4)) return -1;
+        dapos->x = B_LITTLE32(dapos->x);
+        if (kread_and_test(fil, &dapos->y, 4)) return -1;
+        dapos->y = B_LITTLE32(dapos->y);
+        if (kread_and_test(fil, &dapos->z, 4)) return -1;
+        dapos->z = B_LITTLE32(dapos->z);
+        if (kread_and_test(fil, daang, 2)) return -1;
+        *daang = B_LITTLE16(*daang) & 2047;
+        if (kread_and_test(fil, dacursectnum, 2)) return -1;
+        *dacursectnum = B_LITTLE16(*dacursectnum);
     }
+
+    return 0;
 }
 
 static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum, int16_t numsprites, char myflags)
@@ -10222,7 +10187,7 @@ static void check_sprite(int32_t i)
 
 #ifdef NEW_MAP_FORMAT
 // Returns the number of sprites, or <0 on error.
-LUNATIC_CB int32_t (*loadboard_maptext)(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum);
+int32_t (*loadboard_maptext)(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum);
 #endif
 
 #include "md4.h"
@@ -10289,7 +10254,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
         }
     }
 
-    enginePrepareLoadBoard(fil, dapos, daang, dacursectnum);
+    if (enginePrepareLoadBoard(fil, dapos, daang, dacursectnum)) goto error;
 
 #ifdef NEW_MAP_FORMAT
     if (have_maptext())
@@ -10312,7 +10277,8 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read sectors //////////
 
-    kread(fil,&numsectors,2); numsectors = B_LITTLE16(numsectors);
+    if (kread_and_test(fil,&numsectors,2)) goto error;
+    numsectors = B_LITTLE16(numsectors);
     if ((unsigned)numsectors >= MYMAXSECTORS() + 1)
     {
     error:
@@ -10323,7 +10289,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
         return -3;
     }
 
-    kread(fil, sector, sizeof(sectortypev7)*numsectors);
+    if (kread_and_test(fil, sector, sizeof(sectortypev7)*numsectors)) goto error;
 
     for (i=numsectors-1; i>=0; i--)
     {
@@ -10352,10 +10318,11 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read walls //////////
 
-    kread(fil,&numwalls,2); numwalls = B_LITTLE16(numwalls);
+    if (kread_and_test(fil,&numwalls,2)) goto error;
+    numwalls = B_LITTLE16(numwalls);
     if ((unsigned)numwalls >= MYMAXWALLS()+1) goto error;
 
-    kread(fil, wall, sizeof(walltypev7)*numwalls);
+    if (kread_and_test(fil, wall, sizeof(walltypev7)*numwalls)) goto error;
 
     for (i=numwalls-1; i>=0; i--)
     {
@@ -10382,10 +10349,11 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read sprites //////////
 
-    kread(fil,&numsprites,2); numsprites = B_LITTLE16(numsprites);
+    if (kread_and_test(fil,&numsprites,2)) goto error; 
+    numsprites = B_LITTLE16(numsprites);
     if ((unsigned)numsprites >= MYMAXSPRITES()+1) goto error;
 
-    kread(fil, sprite, sizeof(spritetype)*numsprites);
+    if (kread_and_test(fil, sprite, sizeof(spritetype)*numsprites)) goto error;
 
 #ifdef NEW_MAP_FORMAT
 skip_reading_mapbin:
@@ -10394,7 +10362,7 @@ skip_reading_mapbin:
     klseek(fil, 0, SEEK_SET);
     int32_t boardsize = kfilelength(fil);
     uint8_t *fullboard = (uint8_t*)Xmalloc(boardsize);
-    kread(fil, fullboard, boardsize);
+    if (kread_and_test(fil, fullboard, boardsize)) { Xfree(fullboard); goto error; }
     md4once(fullboard, boardsize, g_loadedMapHack.md4);
     Xfree(fullboard);
 
@@ -10468,186 +10436,251 @@ skip_reading_mapbin:
 // Witchaven 1 and TekWar and LameDuke use v5
 int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
 {
-    int32_t i;
+    buildvfs_kfd fil;
+
+    if ((fil = kopen4load(filename, fromwhere)) == buildvfs_kfd_invalid)
+    {
+        mapversion = 5L;
+        return -1;
+    }
+
+    if (kread_and_test(fil, &mapversion, sizeof(int32_t)))
+        goto error;
+
+    mapversion = B_LITTLE32(mapversion);
+
+    if (mapversion != 5L && mapversion != 6L)
+    {
+        kclose(fil);
+        return -2;
+    }
+
+    if (enginePrepareLoadBoard(fil, dapos, daang, dacursectnum))
+        goto error;
+
+    if (kread_and_test(fil, &numsectors, sizeof(int16_t)))
+        goto error;
+
+    numsectors = B_LITTLE16(numsectors);
+
+    if (numsectors > MAXSECTORS)
+    {
+    error:
+        kclose(fil);
+        return -1; 
+    }
+
+    switch (mapversion)
+    {
+        case 5:
+        {
+            struct sectortypev5 v5sect;
+            struct sectortypev6 v6sect;
+
+            for (int i = 0; i < numsectors; i++)
+            {
+                if (kread_and_test(fil, &v5sect, sizeof(struct sectortypev5)))
+                    goto error;
+
+                v5sect.wallptr       = B_LITTLE16(v5sect.wallptr);
+                v5sect.wallnum       = B_LITTLE16(v5sect.wallnum);
+                v5sect.ceilingpicnum = B_LITTLE16(v5sect.ceilingpicnum);
+                v5sect.floorpicnum   = B_LITTLE16(v5sect.floorpicnum);
+                v5sect.ceilingheinum = B_LITTLE16(v5sect.ceilingheinum);
+                v5sect.floorheinum   = B_LITTLE16(v5sect.floorheinum);
+                v5sect.ceilingz      = B_LITTLE32(v5sect.ceilingz);
+                v5sect.floorz        = B_LITTLE32(v5sect.floorz);
+                v5sect.lotag         = B_LITTLE16(v5sect.lotag);
+                v5sect.hitag         = B_LITTLE16(v5sect.hitag);
+                v5sect.extra         = B_LITTLE16(v5sect.extra);
+
+                convertv5sectv6(&v5sect, &v6sect);
+                convertv6sectv7(&v6sect, &sector[i]);
+            }
+            break;
+        }
+
+        case 6:
+        {
+            struct sectortypev6 v6sect;
+
+            for (int i = 0; i < numsectors; i++)
+            {
+                if (kread_and_test(fil, &v6sect, sizeof(struct sectortypev6)))
+                    goto error;
+
+                v6sect.wallptr       = B_LITTLE16(v6sect.wallptr);
+                v6sect.wallnum       = B_LITTLE16(v6sect.wallnum);
+                v6sect.ceilingpicnum = B_LITTLE16(v6sect.ceilingpicnum);
+                v6sect.floorpicnum   = B_LITTLE16(v6sect.floorpicnum);
+                v6sect.ceilingheinum = B_LITTLE16(v6sect.ceilingheinum);
+                v6sect.floorheinum   = B_LITTLE16(v6sect.floorheinum);
+                v6sect.ceilingz      = B_LITTLE32(v6sect.ceilingz);
+                v6sect.floorz        = B_LITTLE32(v6sect.floorz);
+                v6sect.lotag         = B_LITTLE16(v6sect.lotag);
+                v6sect.hitag         = B_LITTLE16(v6sect.hitag);
+                v6sect.extra         = B_LITTLE16(v6sect.extra);
+
+                convertv6sectv7(&v6sect, &sector[i]);
+            }
+            break;
+        }
+    }
+
+    if (kread_and_test(fil, &numwalls, sizeof(int16_t)))
+        goto error;
+
+    numwalls = B_LITTLE16(numwalls);
+
+    if (numwalls > MAXWALLS)
+        goto error;
+
+    switch (mapversion)
+    {
+        case 5:
+        {
+            struct walltypev5 v5wall;
+            struct walltypev6 v6wall;
+
+            for (int i = 0; i < numwalls; i++)
+            {
+                if (kread_and_test(fil, &v5wall, sizeof(struct walltypev5)))
+                    goto error;
+
+                v5wall.x           = B_LITTLE32(v5wall.x);
+                v5wall.y           = B_LITTLE32(v5wall.y);
+                v5wall.point2      = B_LITTLE16(v5wall.point2);
+                v5wall.picnum      = B_LITTLE16(v5wall.picnum);
+                v5wall.overpicnum  = B_LITTLE16(v5wall.overpicnum);
+                v5wall.cstat       = B_LITTLE16(v5wall.cstat);
+                v5wall.nextsector1 = B_LITTLE16(v5wall.nextsector1);
+                v5wall.nextwall1   = B_LITTLE16(v5wall.nextwall1);
+                v5wall.nextsector2 = B_LITTLE16(v5wall.nextsector2);
+                v5wall.nextwall2   = B_LITTLE16(v5wall.nextwall2);
+                v5wall.lotag       = B_LITTLE16(v5wall.lotag);
+                v5wall.hitag       = B_LITTLE16(v5wall.hitag);
+                v5wall.extra       = B_LITTLE16(v5wall.extra);
+
+                convertv5wallv6(&v5wall, &v6wall, i);
+                convertv6wallv7(&v6wall, &wall[i]);
+            }
+            break;
+        }
+
+        case 6:
+        {
+            struct walltypev6 v6wall;
+
+            for (int i = 0; i < numwalls; i++)
+            {
+                if (kread_and_test(fil, &v6wall, sizeof(struct walltypev6)))
+                    goto error;
+
+                v6wall.x          = B_LITTLE32(v6wall.x);
+                v6wall.y          = B_LITTLE32(v6wall.y);
+                v6wall.point2     = B_LITTLE16(v6wall.point2);
+                v6wall.nextsector = B_LITTLE16(v6wall.nextsector);
+                v6wall.nextwall   = B_LITTLE16(v6wall.nextwall);
+                v6wall.picnum     = B_LITTLE16(v6wall.picnum);
+                v6wall.overpicnum = B_LITTLE16(v6wall.overpicnum);
+                v6wall.cstat      = B_LITTLE16(v6wall.cstat);
+                v6wall.lotag      = B_LITTLE16(v6wall.lotag);
+                v6wall.hitag      = B_LITTLE16(v6wall.hitag);
+                v6wall.extra      = B_LITTLE16(v6wall.extra);
+
+                convertv6wallv7(&v6wall, &wall[i]);
+            }
+            break;
+        }
+    }
+
     int16_t numsprites;
 
-    struct sectortypev5 v5sect;
-    struct walltypev5   v5wall;
-    struct spritetypev5 v5spr;
-    struct sectortypev6 v6sect;
-    struct walltypev6   v6wall;
-    struct spritetypev6 v6spr;
+    if (kread_and_test(fil, &numsprites, sizeof(int16_t)))
+        goto error;
 
-    buildvfs_kfd fil;
-    if ((fil = kopen4load(filename,fromwhere)) == buildvfs_kfd_invalid)
-        { mapversion = 5L; return -1; }
+    numsprites = B_LITTLE16(numsprites);
 
-    kread(fil,&mapversion,4); mapversion = B_LITTLE32(mapversion);
-    if (mapversion != 5L && mapversion != 6L) { kclose(fil); return -2; }
+    if (numsprites > MAXSPRITES)
+        goto error;
 
-    enginePrepareLoadBoard(fil, dapos, daang, dacursectnum);
-
-    kread(fil,&numsectors,2); numsectors = B_LITTLE16(numsectors);
-    if (numsectors > MAXSECTORS) { kclose(fil); return -1; }
-    for (i=0; i<numsectors; i++)
+    switch (mapversion)
     {
-        switch (mapversion)
-        {
         case 5:
-            kread(fil,&v5sect,sizeof(struct sectortypev5));
-            v5sect.wallptr = B_LITTLE16(v5sect.wallptr);
-            v5sect.wallnum = B_LITTLE16(v5sect.wallnum);
-            v5sect.ceilingpicnum = B_LITTLE16(v5sect.ceilingpicnum);
-            v5sect.floorpicnum = B_LITTLE16(v5sect.floorpicnum);
-            v5sect.ceilingheinum = B_LITTLE16(v5sect.ceilingheinum);
-            v5sect.floorheinum = B_LITTLE16(v5sect.floorheinum);
-            v5sect.ceilingz = B_LITTLE32(v5sect.ceilingz);
-            v5sect.floorz = B_LITTLE32(v5sect.floorz);
-            v5sect.lotag = B_LITTLE16(v5sect.lotag);
-            v5sect.hitag = B_LITTLE16(v5sect.hitag);
-            v5sect.extra = B_LITTLE16(v5sect.extra);
-            break;
-        case 6:
-            kread(fil,&v6sect,sizeof(struct sectortypev6));
-            v6sect.wallptr = B_LITTLE16(v6sect.wallptr);
-            v6sect.wallnum = B_LITTLE16(v6sect.wallnum);
-            v6sect.ceilingpicnum = B_LITTLE16(v6sect.ceilingpicnum);
-            v6sect.floorpicnum = B_LITTLE16(v6sect.floorpicnum);
-            v6sect.ceilingheinum = B_LITTLE16(v6sect.ceilingheinum);
-            v6sect.floorheinum = B_LITTLE16(v6sect.floorheinum);
-            v6sect.ceilingz = B_LITTLE32(v6sect.ceilingz);
-            v6sect.floorz = B_LITTLE32(v6sect.floorz);
-            v6sect.lotag = B_LITTLE16(v6sect.lotag);
-            v6sect.hitag = B_LITTLE16(v6sect.hitag);
-            v6sect.extra = B_LITTLE16(v6sect.extra);
+        {
+            struct spritetypev5 v5spr;
+            struct spritetypev6 v6spr;
+
+            for (int i = 0; i < numsprites; i++)
+            {
+                if (kread_and_test(fil, &v5spr, sizeof(struct spritetypev5)))
+                    goto error;
+
+                v5spr.x       = B_LITTLE32(v5spr.x);
+                v5spr.y       = B_LITTLE32(v5spr.y);
+                v5spr.z       = B_LITTLE32(v5spr.z);
+                v5spr.picnum  = B_LITTLE16(v5spr.picnum);
+                v5spr.ang     = B_LITTLE16(v5spr.ang);
+                v5spr.xvel    = B_LITTLE16(v5spr.xvel);
+                v5spr.yvel    = B_LITTLE16(v5spr.yvel);
+                v5spr.zvel    = B_LITTLE16(v5spr.zvel);
+                v5spr.owner   = B_LITTLE16(v5spr.owner);
+                v5spr.sectnum = B_LITTLE16(v5spr.sectnum);
+                v5spr.statnum = B_LITTLE16(v5spr.statnum);
+                v5spr.lotag   = B_LITTLE16(v5spr.lotag);
+                v5spr.hitag   = B_LITTLE16(v5spr.hitag);
+                v5spr.extra   = B_LITTLE16(v5spr.extra);
+
+                convertv5sprv6(&v5spr, &v6spr);
+                convertv6sprv7(&v6spr, &sprite[i]);
+                check_sprite(i);
+            }
             break;
         }
 
-        switch (mapversion)
-        {
-        case 5:
-            convertv5sectv6(&v5sect,&v6sect);
-            fallthrough__;
         case 6:
-            convertv6sectv7(&v6sect,&sector[i]);
+        {
+            struct spritetypev6 v6spr;
+
+            for (int i = 0; i < numsprites; i++)
+            {
+                if (kread_and_test(fil, &v6spr, sizeof(struct spritetypev6)))
+                    goto error;
+
+                v6spr.x       = B_LITTLE32(v6spr.x);
+                v6spr.y       = B_LITTLE32(v6spr.y);
+                v6spr.z       = B_LITTLE32(v6spr.z);
+                v6spr.cstat   = B_LITTLE16(v6spr.cstat);
+                v6spr.picnum  = B_LITTLE16(v6spr.picnum);
+                v6spr.ang     = B_LITTLE16(v6spr.ang);
+                v6spr.xvel    = B_LITTLE16(v6spr.xvel);
+                v6spr.yvel    = B_LITTLE16(v6spr.yvel);
+                v6spr.zvel    = B_LITTLE16(v6spr.zvel);
+                v6spr.owner   = B_LITTLE16(v6spr.owner);
+                v6spr.sectnum = B_LITTLE16(v6spr.sectnum);
+                v6spr.statnum = B_LITTLE16(v6spr.statnum);
+                v6spr.lotag   = B_LITTLE16(v6spr.lotag);
+                v6spr.hitag   = B_LITTLE16(v6spr.hitag);
+                v6spr.extra   = B_LITTLE16(v6spr.extra);
+                
+                convertv6sprv7(&v6spr, &sprite[i]);
+                check_sprite(i);
+            }
             break;
         }
-    }
-
-    kread(fil,&numwalls,2); numwalls = B_LITTLE16(numwalls);
-    if (numwalls > MAXWALLS) { kclose(fil); return -1; }
-    for (i=0; i<numwalls; i++)
-    {
-        switch (mapversion)
-        {
-        case 5:
-            kread(fil,&v5wall,sizeof(struct walltypev5));
-            v5wall.x = B_LITTLE32(v5wall.x);
-            v5wall.y = B_LITTLE32(v5wall.y);
-            v5wall.point2 = B_LITTLE16(v5wall.point2);
-            v5wall.picnum = B_LITTLE16(v5wall.picnum);
-            v5wall.overpicnum = B_LITTLE16(v5wall.overpicnum);
-            v5wall.cstat = B_LITTLE16(v5wall.cstat);
-            v5wall.nextsector1 = B_LITTLE16(v5wall.nextsector1);
-            v5wall.nextwall1 = B_LITTLE16(v5wall.nextwall1);
-            v5wall.nextsector2 = B_LITTLE16(v5wall.nextsector2);
-            v5wall.nextwall2 = B_LITTLE16(v5wall.nextwall2);
-            v5wall.lotag = B_LITTLE16(v5wall.lotag);
-            v5wall.hitag = B_LITTLE16(v5wall.hitag);
-            v5wall.extra = B_LITTLE16(v5wall.extra);
-            break;
-        case 6:
-            kread(fil,&v6wall,sizeof(struct walltypev6));
-            v6wall.x = B_LITTLE32(v6wall.x);
-            v6wall.y = B_LITTLE32(v6wall.y);
-            v6wall.point2 = B_LITTLE16(v6wall.point2);
-            v6wall.nextsector = B_LITTLE16(v6wall.nextsector);
-            v6wall.nextwall = B_LITTLE16(v6wall.nextwall);
-            v6wall.picnum = B_LITTLE16(v6wall.picnum);
-            v6wall.overpicnum = B_LITTLE16(v6wall.overpicnum);
-            v6wall.cstat = B_LITTLE16(v6wall.cstat);
-            v6wall.lotag = B_LITTLE16(v6wall.lotag);
-            v6wall.hitag = B_LITTLE16(v6wall.hitag);
-            v6wall.extra = B_LITTLE16(v6wall.extra);
-            break;
-        }
-
-        switch (mapversion)
-        {
-        case 5:
-            convertv5wallv6(&v5wall,&v6wall,i);
-            fallthrough__;
-        case 6:
-            convertv6wallv7(&v6wall,&wall[i]);
-            break;
-        }
-    }
-
-    kread(fil,&numsprites,2); numsprites = B_LITTLE16(numsprites);
-    if (numsprites > MAXSPRITES) { kclose(fil); return -1; }
-    for (i=0; i<numsprites; i++)
-    {
-        switch (mapversion)
-        {
-        case 5:
-            kread(fil,&v5spr,sizeof(struct spritetypev5));
-            v5spr.x = B_LITTLE32(v5spr.x);
-            v5spr.y = B_LITTLE32(v5spr.y);
-            v5spr.z = B_LITTLE32(v5spr.z);
-            v5spr.picnum = B_LITTLE16(v5spr.picnum);
-            v5spr.ang = B_LITTLE16(v5spr.ang);
-            v5spr.xvel = B_LITTLE16(v5spr.xvel);
-            v5spr.yvel = B_LITTLE16(v5spr.yvel);
-            v5spr.zvel = B_LITTLE16(v5spr.zvel);
-            v5spr.owner = B_LITTLE16(v5spr.owner);
-            v5spr.sectnum = B_LITTLE16(v5spr.sectnum);
-            v5spr.statnum = B_LITTLE16(v5spr.statnum);
-            v5spr.lotag = B_LITTLE16(v5spr.lotag);
-            v5spr.hitag = B_LITTLE16(v5spr.hitag);
-            v5spr.extra = B_LITTLE16(v5spr.extra);
-            break;
-        case 6:
-            kread(fil,&v6spr,sizeof(struct spritetypev6));
-            v6spr.x = B_LITTLE32(v6spr.x);
-            v6spr.y = B_LITTLE32(v6spr.y);
-            v6spr.z = B_LITTLE32(v6spr.z);
-            v6spr.cstat = B_LITTLE16(v6spr.cstat);
-            v6spr.picnum = B_LITTLE16(v6spr.picnum);
-            v6spr.ang = B_LITTLE16(v6spr.ang);
-            v6spr.xvel = B_LITTLE16(v6spr.xvel);
-            v6spr.yvel = B_LITTLE16(v6spr.yvel);
-            v6spr.zvel = B_LITTLE16(v6spr.zvel);
-            v6spr.owner = B_LITTLE16(v6spr.owner);
-            v6spr.sectnum = B_LITTLE16(v6spr.sectnum);
-            v6spr.statnum = B_LITTLE16(v6spr.statnum);
-            v6spr.lotag = B_LITTLE16(v6spr.lotag);
-            v6spr.hitag = B_LITTLE16(v6spr.hitag);
-            v6spr.extra = B_LITTLE16(v6spr.extra);
-            break;
-        }
-
-        switch (mapversion)
-        {
-        case 5:
-            convertv5sprv6(&v5spr,&v6spr);
-            fallthrough__;
-        case 6:
-            convertv6sprv7(&v6spr,&sprite[i]);
-            break;
-        }
-
-        check_sprite(i);
     }
 
     kclose(fil);
     // Done reading file.
+
+    g_loadedMapVersion = mapversion;
 
     return engineFinishLoadBoard(dapos, dacursectnum, numsprites, 0);
 }
 
 
 #ifdef NEW_MAP_FORMAT
-LUNATIC_CB int32_t (*saveboard_maptext)(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum);
+int32_t (*saveboard_maptext)(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum);
 #endif
 
 // Get map version of external map format (<10: old binary format, ==10: new
@@ -10907,12 +10940,16 @@ static void videoAllocateBuffers(void)
           { (void **)&swplc, xdim * sizeof(int32_t) },
           { (void **)&lplc, xdim * sizeof(int32_t) },
           { (void **)&swall, xdim * sizeof(int32_t) },
+#ifdef HIGH_PRECISION_SPRITE
+          { (void **)&swallf, xdim * sizeof(float) },
+#endif
           { (void **)&lwall, (xdim + 4) * sizeof(int32_t) },
           { (void **)&radarang2, xdim * sizeof(int32_t) },
           { (void **)&dotp1, clamped_ydim * sizeof(intptr_t) },
           { (void **)&dotp2, clamped_ydim * sizeof(intptr_t) },
           { (void **)&lastx, clamped_ydim * sizeof(int32_t) },
           { (void **)&mirrorBuffer, (size_t) (xdim * ydim)},
+          { (void **)&lookups, (ydim << 2) * (sizeof(lookups[0]) << 1) },
       };
 
     for (i = 0; i < (signed)ARRAY_SIZE(dynarray); i++)
@@ -10921,6 +10958,10 @@ static void videoAllocateBuffers(void)
 
         *dynarray[i].ptr = Xaligned_alloc(16, dynarray[i].size);
     }
+
+    horizlookup  = lookups;
+    horizlookup2 = lookups + (ydim << 2);
+    horizycent   = (ydim << 2) >> 1;
 
     ysavecnt = YSAVES;
     nodesperline = tabledivide32_noinline(YSAVES, ydim);
@@ -11015,8 +11056,6 @@ static void PolymostFreeVBOs(void)
 extern char videomodereset;
 int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daupscaledydim, int32_t dabpp, int32_t daupscalefactor)
 {
-    int32_t j;
-
 #ifdef USE_OPENGL
     if (nogl) dabpp = 8;
 #endif
@@ -11035,8 +11074,6 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     //if (checkvideomode(&daxdim, &daydim, dabpp, davidoption)<0) return -1;
 
     //bytesperline is set in this function
-
-    j = bpp;
 
     g_lastpalettesum = 0;
 #ifdef USE_OPENGL
@@ -11072,20 +11109,7 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     OSD_ResizeDisplay(xdim, ydim);
 
     videoAllocateBuffers();
-
-#ifdef HIGH_PRECISION_SPRITE
-    swallf = (float *) Xrealloc(swallf, xdim * sizeof(float));
-#endif
-
-    Xfree(lookups);
-
-    j = ydim*4;  //Leave room for horizlookup&horizlookup2
-    lookups = (int32_t *)Xmalloc(2*j*sizeof(lookups[0]));
-
-    horizlookup = lookups;
-    horizlookup2 = lookups + j;
-    horizycent = ((ydim*4)>>1);
-
+    
     //Force drawrooms to call dosetaspect & recalculate stuff
     oxyaspect = oxdimen = oviewingrange = -1;
 
@@ -11114,6 +11138,17 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     }
 #endif
 #endif
+
+#if MICROPROFILE_ENABLED == 1
+    static int webServerStarted;
+
+    if (!webServerStarted)
+    {
+        webServerStarted = true;
+        MicroProfileWebServerStart();
+    }
+#endif
+
     qsetmode = 200;
     return 0;
 }
@@ -11124,6 +11159,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
 //
 void videoNextPage(void)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     permfifotype *per;
 
     //char snotbuf[32];
@@ -11184,7 +11221,7 @@ void videoNextPage(void)
     omdtims = mdtims;
     mdtims = timerGetTicks();
 
-    for (native_t i = 0; i < Numsprites; ++i)
+    for (native_t i = 0; i < MAXSPRITES + MAXUNIQHUDID; ++i)
         if ((mdpause && spriteext[i].mdanimtims) || (spriteext[i].flags & SPREXT_NOMDANIM))
             spriteext[i].mdanimtims += mdtims - omdtims;
 #endif
@@ -11402,7 +11439,7 @@ int32_t inside(int32_t x, int32_t y, int16_t sectnum)
     }
 }
 
-int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
+int32_t __fastcall getangle(int32_t xvect, int32_t yvect)
 {
     int32_t rv;
 
@@ -11423,6 +11460,27 @@ int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
     return rv;
 }
 
+fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
+{
+    fix16_t rv;
+
+    if ((xvect | yvect) == 0)
+        rv = 0;
+    else if (xvect == 0)
+        rv = fix16_from_int(512 + ((yvect < 0) << 10));
+    else if (yvect == 0)
+        rv = fix16_from_int(((xvect < 0) << 10));
+    else if (xvect == yvect)
+        rv = fix16_from_int(256 + ((xvect < 0) << 10));
+    else if (xvect == -yvect)
+        rv = fix16_from_int(768 + ((xvect > 0) << 10));
+    else if (klabs(xvect) > klabs(yvect))
+        rv = ((qradarang[5120 + scale(1280, yvect, xvect)] >> 6) + fix16_from_int(((xvect < 0) << 10))) & 0x7FFFFFF;
+    else rv = ((qradarang[5120 - scale(1280, xvect, yvect)] >> 6) + fix16_from_int(512 + ((yvect < 0) << 10))) & 0x7FFFFFF;
+
+    return rv;
+}
+
 //
 // ksqrt
 //
@@ -11432,13 +11490,6 @@ int32_t ksqrt(uint32_t num)
         return ksqrtasm_old(num);
     return nsqrtasm(num);
 }
-
-#ifdef LUNATIC
-int32_t Mulscale(int32_t a, int32_t b, int32_t sh)
-{
-    return mulscale(a, b, sh);
-}
-#endif
 
 // Gets the BUILD unit height and z offset of a sprite.
 // Returns the z offset, 'height' may be NULL.
@@ -11585,6 +11636,8 @@ int32_t cansee_19950829(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, in
 
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, int32_t y2, int32_t z2, int16_t sect2)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (enginecompatibilitymode == ENGINE_19950829)
         return cansee_19950829(x1, y1, z1, sect1, x2, y2, z2, sect2);
     int32_t dacnt, danum;
@@ -12134,6 +12187,8 @@ int findwallbetweensectors(int sect1, int sect2)
 //
 void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (enginecompatibilitymode == ENGINE_EDUKE32)
     {
         int16_t sect = *sectnum;
@@ -12204,6 +12259,8 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
 
 void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
 {
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
     if (enginecompatibilitymode == ENGINE_EDUKE32)
     {
         int16_t sect = *sectnum;
@@ -12376,8 +12433,7 @@ void rotatepoint(vec2_t const pivot, vec2_t p, int16_t const daang, vec2_t * con
     int const dasin = sintable[(daang+2048)&2047];
     p.x -= pivot.x;
     p.y -= pivot.y;
-    p2->x = dmulscale14(p.x, dacos, -p.y, dasin) + pivot.x;
-    p2->y = dmulscale14(p.y, dacos, p.x, dasin) + pivot.y;
+    *p2 = { dmulscale14(p.x, dacos, -p.y, dasin) + pivot.x, dmulscale14(p.y, dacos, p.x, dasin) + pivot.y };
 }
 
 
@@ -12439,7 +12495,7 @@ int32_t krd_print(const char *filename)
 }
 #endif  // KRANDDEBUG
 
-#if KRANDDEBUG || defined LUNATIC
+#if KRANDDEBUG
 //
 // krand
 //
@@ -12447,14 +12503,12 @@ int32_t krand(void)
 {
 //    randomseed = (randomseed*27584621)+1;
     randomseed = (randomseed * 1664525ul) + 221297ul;
-#ifdef KRANDDEBUG
     if (krd_enabled)
         if (krd_numcalls < KRD_MAXCALLS)
         {
             backtrace(krd_fromwhere[krd_numcalls], KRD_DEPTH);
             krd_numcalls++;
         }
-#endif
     return ((uint32_t)randomseed)>>16;
 }
 #endif
@@ -13074,6 +13128,30 @@ floor:
         goto ceiling;
     else if (!didFloor)
         goto floor;
+}
+
+int32_t yax_getceilzofslope(int const sectnum, vec2_t const vect)
+{
+    if ((sector[sectnum].ceilingstat&512)==0)
+    {
+        int const nsect = yax_getneighborsect(vect.x, vect.y, sectnum, YAX_CEILING);
+        if (nsect >= 0)
+            return getcorrectceilzofslope(nsect, vect.x, vect.y);
+    }
+
+    return getcorrectceilzofslope(sectnum, vect.x, vect.y);
+}
+
+int32_t yax_getflorzofslope(int const sectnum, vec2_t const vect)
+{
+    if ((sector[sectnum].floorstat&512)==0)
+    {
+        int const nsect = yax_getneighborsect(vect.x, vect.y, sectnum, YAX_FLOOR);
+        if (nsect >= 0)
+            return getcorrectflorzofslope(nsect, vect.x, vect.y);
+    }
+
+    return getcorrectflorzofslope(sectnum, vect.x, vect.y);
 }
 #endif
 

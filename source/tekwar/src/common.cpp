@@ -662,14 +662,4 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
     return clamp(tabledivide64(65536 * elapsedFrames * 30, rfreq), 0, 65536);
 }
 
-
-
-#if defined(_WIN32) && defined(DEBUGGINGAIDS)
-// See FILENAME_CASE_CHECK in cache1d.c
-static int32_t check_filename_casing(void)
-{
-    return 1;
-}
-#endif
-
 #endif

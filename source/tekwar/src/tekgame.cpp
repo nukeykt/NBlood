@@ -43,10 +43,12 @@ int runkey_mode, auto_run;
 # define FPS_YOFFSET 0
 #endif
 
+void shutdown();
+
 void M32RunScript(const char* s) { UNREFERENCED_PARAMETER(s); }
 void app_crashhandler(void)
 {
-// TODO    shutdown();
+    shutdown();
 }
 
 
@@ -238,7 +240,8 @@ short recsyncangvel[16384][2];                    // Les 09/27/95
 short recsyncbits[16384][2];
 
      //Miscellaneous variables
-unsigned char tempbuf[max(576,MAXXDIM)];
+char tempbuf[256];
+uint8_t packetbuf[MAXXDIM];
 char boardfilename[80];
 short screenpeek = 0, oldmousebstatus = 0, brightness = 0;
 short screensize, screensizeflag = 0;
@@ -524,8 +527,9 @@ static void G_PrintFPS(void)
     lastFrameTime = frameTime;
 }
 
-void
-debugout(short p)
+void shutdown();
+
+void debugout(short p)
 {
      static int dbglines;
 
@@ -548,11 +552,99 @@ debugout(short p)
 }
 
 
-char      localname[MAXNAMESIZE];
-char      netnames[MAXPLAYERS][MAXNAMESIZE];
+char localname[MAXNAMESIZE];
+char netnames[MAXPLAYERS][MAXNAMESIZE];
 
 extern int startwin_run(void);
 
+void InstallEngine()
+{
+    lm("initgroupfile");
+    // initgroupfile("stuff.dat");
+
+    char* cwd;
+
+    if (g_modDir[0] != '/' && (cwd = buildvfs_getcwd(NULL, 0)))
+    {
+        buildvfs_chdir(g_modDir);
+        if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
+        {
+            buildvfs_chdir(cwd);
+            if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
+                crash("Failed loading art.");
+        }
+        buildvfs_chdir(cwd);
+        #ifndef __ANDROID__ //This crashes on *some* Android devices. Small onetime memory leak. TODO fix above function
+        Xfree(cwd);
+        #endif
+    }
+    else if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
+        crash("Failed loading art.");
+
+    if (engineInit())
+    {
+        wm_msgbox("Fatal Engine Initialization Error",
+            "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
+        //TODO:
+        //G_Cleanup();
+        ERRprintf("G_Startup: There was a problem initializing the engine: %s\n", engineerrstr);
+        exit(6);
+    }
+    if (videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, 0) < 0)
+    {
+        initprintf("Failure setting video mode %dx%dx%d %s! Trying next mode...\n", gSetup.xdim, gSetup.ydim,
+            gSetup.bpp, gSetup.fullscreen?"fullscreen":"windowed");
+
+        int resIdx = 0;
+
+        for (int i = 0; i < validmodecnt; i++)
+        {
+            if (validmode[i].xdim == gSetup.xdim && validmode[i].ydim == gSetup.ydim)
+            {
+                resIdx = i;
+                break;
+            }
+        }
+
+        int const savedIdx = resIdx;
+        int bpp = gSetup.bpp;
+
+        while (videoSetGameMode(0, validmode[resIdx].xdim, validmode[resIdx].ydim, bpp, 0) < 0)
+        {
+            initprintf("Failure setting video mode %dx%dx%d windowed! Trying next mode...\n",
+                validmode[resIdx].xdim, validmode[resIdx].ydim, bpp);
+
+            if (++resIdx == validmodecnt)
+            {
+                if (bpp == 8)
+                    crash("Fatal error: unable to set any video mode!");
+
+                resIdx = savedIdx;
+                bpp = 8;
+            }
+        }
+
+        gSetup.xdim = validmode[resIdx].xdim;
+        gSetup.ydim = validmode[resIdx].ydim;
+        gSetup.bpp = bpp;
+    }
+
+    // build.obj is dated 9th July 1995
+    enginecompatibilitymode = ENGINE_19950829;
+}
+
+void shutdown()
+{
+    CONFIG_WriteSetup(0);
+
+// TODO    SND_Shutdown();
+
+    engineUnInit();
+
+    uninitgroupfile();
+
+    exit(EXIT_SUCCESS);
+}
 
 int app_main(int argc, char const * const argv[])
 {
@@ -577,89 +669,22 @@ int app_main(int argc, char const * const argv[])
              return 3;
      }
 #endif
-
-#ifndef USE_PHYSFS
-#ifdef DEBUGGINGAIDS
-     extern int32_t(*check_filename_casing_fn)(void);
-     check_filename_casing_fn = check_filename_casing;
 #endif
-#endif
-#endif
-
-
-     #if 0
-#if defined(PREFIX)
-     {
-          const char *prefixdir = PREFIX;
-          if (prefixdir && prefixdir[0]) {
-               addsearchpath(prefixdir);
-          }
-     }
-#endif
-
-     {
-          char *supportdir = Bgetsupportdir(1);
-          char *appdir = Bgetappdir();
-          char dirpath[BMAX_PATH+1];
-
-          // the OSX app bundle, or on Windows the directory where the EXE was launched
-          if (appdir) {
-               addsearchpath(appdir);
-               free(appdir);
-          }
-        
-          // the global support files directory
-          if (supportdir) {
-               Bsnprintf(dirpath, sizeof(dirpath), "%s/JFTekWar", supportdir);
-               addsearchpath(dirpath);
-               free(supportdir);
-          }
-     }
 
      tekargv(argc, argv);
-
-     // creating a 'user_profiles_disabled' file in the current working
-     // directory where the game was launched makes the installation
-     // "portable" by writing into the working directory
-     if (access("user_profiles_disabled", F_OK) == 0) {
-          char cwd[BMAX_PATH+1];
-          if (getcwd(cwd, sizeof(cwd))) {
-               addsearchpath(cwd);
-          }
-     } else {
-          char *supportdir;
-          char dirpath[BMAX_PATH+1];
-          int asperr;
-
-          if ((supportdir = Bgetsupportdir(0))) {
-               Bsnprintf(dirpath, sizeof(dirpath), "%s/"
-#if defined(_WIN32) || defined(__APPLE__)
-                    "JFTekWar"
-#else
-                    ".jftekwar"
-#endif
-                    , supportdir);
-               asperr = addsearchpath(dirpath);
-               if (asperr == -2) {
-                    if (Bmkdir(dirpath, S_IRWXU) == 0) {
-                         asperr = addsearchpath(dirpath);
-                    } else {
-                         asperr = -1;
-                    }
-               }
-               if (asperr == 0) {
-                    chdir(dirpath);
-               }
-               free(supportdir);
-          }
-     }
-
-     buildsetlogfile("tekwar.log");
-     #endif
 
      G_ExtPreInit(argc, argv);
 
      OSD_SetLogFile(APPBASENAME ".log");
+
+     OSD_SetFunctions(NULL,
+         NULL,
+         NULL,
+         NULL,
+         NULL,
+         GAME_clearbackground,
+         BGetTime,
+         GAME_onshowosd);
 
      wm_setapptitle(APPNAME);
 
@@ -702,7 +727,7 @@ int app_main(int argc, char const * const argv[])
 
 // REVERT     wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
 
-     #ifdef STARTUP_SETUP_WINDOW
+#ifdef STARTUP_SETUP_WINDOW
      if (readSetup < 0 || (!g_noSetup && gSetup.forcesetup) || g_commandSetup)
      {
          if (quitevent || !startwin_run())
@@ -710,39 +735,42 @@ int app_main(int argc, char const * const argv[])
              engineUnInit();
              Bexit(0);
          }
-    }
-     #endif
+     }
+#endif
 
      G_LoadGroups(!g_noAutoLoad && !gSetup.noautoload);
 
      CONFIG_WriteSetup(1);
      CONFIG_ReadSetup();
 
-  // TODO  Bsprintf(tempbuf, "TekWar %s", s_buildRev);
-  // TODO   OSD_SetVersion(tempbuf, 10, 0);
+     Bsprintf(tempbuf, "TekWar %s", s_buildRev);
+     OSD_SetVersion(tempbuf, 10, 0);
      OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0'?OSD_PROTECTED:0);
      registerosdcommands();
 
      lm("tekloadsetup");
      tekloadsetup();
 
-#if defined RENDERTYPEWIN || (defined RENDERTYPESDL && (defined __APPLE__ || defined HAVE_GTK2))
-    if (forcesetup) {
-        if (quitevent || !startwin_run()) {
-            uninitengine();
-            exit(0);
-        }
-    }
-#endif
+     SetupInput();
 
-     lm("initgroupfile");
-     initgroupfile("stuff.dat");
+     char* const setupFileName = Xstrdup(setupfilename);
+     char* const p = strtok(setupFileName, ".");
 
-     if (engineInit()) {
-          wm_msgbox("Build Engine Initialisation Error",
-               "There was a problem initialising the Build engine: %s", engineerrstr);
-          exit(1);
-     }
+     if (!p || !Bstrcmp(setupfilename, kSetupFilename))
+         Bsprintf(tempbuf, "settings.cfg");
+     else
+         Bsprintf(tempbuf, "%s_settings.cfg", p);
+
+     Xfree(setupFileName);
+
+     OSD_Exec(tempbuf);
+     OSD_Exec("autoexec.cfg");
+
+     CONFIG_SetDefaultKeys(keydefaults, true);
+
+     system_getcvars();
+
+     InstallEngine();
 
      lm("inittimer");
      timerInit(CLKIPS);
@@ -751,8 +779,6 @@ int app_main(int argc, char const * const argv[])
      tekinitmultiplayers(0, NULL);
      lm("initsb");
      initsb(option[1],option[2],0,0,0,0,0);
-     lm("loadpics");
-     artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE);
      lm("tekpreinit");
      tekpreinit();
      lm("tekgamestarted");
@@ -771,52 +797,70 @@ int app_main(int argc, char const * const argv[])
           dbgcolumn=0;
      }
 
-     videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, 0);
-     //setgamemode(fullscreen, xdimgame, ydimgame, bppgame);
-
-     if( option[4] > 0 ) {
-        lm("multiplayer init");
-        teknetpickmap();
-          sendlogon();
-          if( option[4] < 5 ) {
-               waitplayers=2;
-          }
-          else {
-               waitplayers=option[4]-3;
-          }
-          while( numplayers < waitplayers ) {
-               videoClearViewableArea(0);
-               overwritesprite((xdim>>1)-160,0,408,0,0,0);
-               sprintf((char *)tempbuf,"  MULTIPLAYER MODE  ");
-               printext((xdim>>1)-80,(ydim>>1)-24,(char *)tempbuf,ALPHABET2,0);
-               sprintf((char *)tempbuf,"%2d OF %2d PLAYERS IN",numplayers,waitplayers);
-               printext((xdim>>1)-80,ydim>>1,(char *)tempbuf,ALPHABET2,0);
-               videoNextPage();
-               if( getpacket(&other,tempbuf) > 0 ) {
-                    if( tempbuf[0] == 255 ) {
-                         keystatus[1] = 1;
-                    }
-               }
-               if( keystatus[1] > 0 ) {
-                    goto gameends;
-               }
-          }
-          screenpeek = myconnectindex;
-          videoClearViewableArea(0);
+     const char* defsfile = G_DefFile();
+     uint32_t stime = timerGetTicks();
+     if (!loaddefinitionsfile(defsfile))
+     {
+         uint32_t etime = timerGetTicks();
+         initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime - stime);
      }
-     for( i=connecthead ; i >= 0 ; i=connectpoint2[i] ) {
-          initplayersprite((short)i);
+     loaddefinitions_game(defsfile, FALSE);
+
+    if (enginePostInit())
+        shutdown();
+
+    KB_Startup();
+    // TODO SND_Startup();
+
+     if (option[4] > 0)
+     {
+         lm("multiplayer init");
+         teknetpickmap();
+         sendlogon();
+
+         if (option[4] < 5) {
+             waitplayers = 2;
+         }
+         else {
+             waitplayers = option[4] - 3;
+         }
+
+         while (numplayers < waitplayers)
+         {
+             videoClearViewableArea(0);
+             overwritesprite((xdim >> 1) - 160, 0, 408, 0, 0, 0);
+             sprintf(tempbuf, "  MULTIPLAYER MODE  ");
+             printext((xdim >> 1) - 80, (ydim >> 1) - 24, tempbuf, ALPHABET2, 0);
+             sprintf(tempbuf, "%2d OF %2d PLAYERS IN", numplayers, waitplayers);
+             printext((xdim >> 1) - 80, ydim >> 1, tempbuf, ALPHABET2, 0);
+             videoNextPage();
+             if (getpacket(&other, packetbuf) > 0)
+             {
+                 if (packetbuf[0] == 255) {
+                     keystatus[1] = 1;
+                 }
+             }
+             if (keystatus[1] > 0) {
+                 goto gameends;
+             }
+         }
+         screenpeek = myconnectindex;
+         videoClearViewableArea(0);
+     }
+     for (i = connecthead; i >= 0; i = connectpoint2[i]) {
+         initplayersprite((short)i);
      }
 
-     if( option[4] == 0 ) {
-          smkplayseq("INTRO");
+     if (option[4] == 0) {
+         smkplayseq("INTRO");
      }
 
 missionselection:
-     if( option[4] == 0 ) {
-          if( choosemission() == 0 ) {
-               goto gameends;
-          }
+     if (option[4] == 0)
+     {
+         if (choosemission() == 0) {
+             goto gameends;
+         }
      }
 
      reccnt=0;
@@ -832,46 +876,54 @@ missionselection:
      ototalclock = 0;
      gotlastpacketclock = 0;
      masterslavetexttime = 0;
-     for( i=0; i<MAXPLAYERS; i++ ) {
-          fsyncvel[i] = syncvel[i] = osyncvel[i] = 0;
-          fsyncsvel[i] = syncsvel[i] = osyncsvel[i] = 0;
-          fsyncangvel[i] = syncangvel[i] = osyncangvel[i] = 0;
-          fsyncbits[i] = syncbits[i] = osyncbits[i] = 0;
+     for (i = 0; i < MAXPLAYERS; i++)
+     {
+         fsyncvel[i] = syncvel[i] = osyncvel[i] = 0;
+         fsyncsvel[i] = syncsvel[i] = osyncsvel[i] = 0;
+         fsyncangvel[i] = syncangvel[i] = osyncangvel[i] = 0;
+         fsyncbits[i] = syncbits[i] = osyncbits[i] = 0;
      }
      resettiming();
 
      ready2send = 1;
-    #ifdef NETNAMES
-     if( option[4] != 0 ) {
-          tempbuf[0]=8;
-          tempbuf[1]=myconnectindex;
-          memcpy(&tempbuf[2],localname,10);
-          tempbuf[12]=0;
-          for( i=connecthead; i>=0; i=connectpoint2[i] ) {
-               if( i != myconnectindex ) {
-                    sendpacket(i,tempbuf,12);
-               }
-          }
-          memcpy(netnames[myconnectindex],localname,10);
-          netnames[myconnectindex][10]=0;
+#ifdef NETNAMES
+     if (option[4] != 0)
+     {
+         packetbuf[0] = 8;
+         packetbuf[1] = myconnectindex;
+         memcpy(&packetbuf[2], localname, 10);
+         packetbuf[12] = 0;
+         for (i = connecthead; i >= 0; i = connectpoint2[i])
+         {
+             if (i != myconnectindex)
+             {
+                 sendpacket(i, packetbuf, 12);
+             }
+         }
+         memcpy(netnames[myconnectindex], localname, 10);
+         netnames[myconnectindex][10] = 0;
      }
-    #endif
+#endif
      screenpeek=myconnectindex;
-     while( !gameover ) {
-        handleevents();
-          while( movefifoplc != movefifoend ) {
-               domovethings();
-          }
-          drawscreen(screenpeek,(((int)totalclock)-gotlastpacketclock)*(65536/TICSPERFRAME));
+     while (!gameover)
+     {
+         handleevents();
+         while (movefifoplc != movefifoend) {
+             domovethings();
+         }
+         drawscreen(screenpeek, (((int)totalclock) - gotlastpacketclock) * (65536 / TICSPERFRAME));
      }
      ready2send = 0;
 
-     if( option[4] == 0 ) {
-          debrief=1;
-          goto missionselection;
+     if (option[4] == 0)
+     {
+         debrief = 1;
+         goto missionselection;
      }
 
 gameends:
+
+     CONFIG_WriteSetup(0);
 
      copyrightscreen();
 
@@ -887,7 +939,7 @@ gameends:
      teksavesetup();
 
      if (dbgflag) {
-          fclose(dbgfp);
+         fclose(dbgfp);
      }
 
      exit(0);
@@ -1536,7 +1588,7 @@ drawscreen(short snum, int dasmoothratio)
                else {
                     tempbuf[charsperline] = 0;
                }
-               printext256(0L,((i/charsperline)<<3)+(200-32-8)-(((getmessageleng-1)/charsperline)<<3),151,-1,(char *)tempbuf,0);
+               printext256(0L,((i/charsperline)<<3)+(200-32-8)-(((getmessageleng-1)/charsperline)<<3),151,-1,tempbuf,0);
           }
           if( ((int)totalclock) > getmessagetimeoff ) {
                getmessageleng = 0;
@@ -1545,7 +1597,7 @@ drawscreen(short snum, int dasmoothratio)
 
      // you are looking thru an opponent plaeyer's eyes
      if( (numplayers >= 2) && (screenpeek != myconnectindex) ) {
-          strcpy((char *)tempbuf,"Other");
+          strcpy(tempbuf,"Other");
      }
 
     #ifdef OUTOFSYNCMESSAGE
@@ -1808,8 +1860,7 @@ short moreoptionbits[]={
 };
 //** Les END   - 09/27/95
 
-void
-getinput()
+void getinput()
 {
      int      ch, keystate;
      int      i, j;
@@ -2172,7 +2223,7 @@ getinput()
                               }
                               for( i=connecthead; i>=0; i=connectpoint2[i] ) {
                                    if( i != myconnectindex ) {
-                                        sendpacket(i,tempbuf,typemessageleng+1);
+                                        sendpacket(i,packetbuf,typemessageleng+1);
                                    }
                               }
                               typemessageleng = 0;
@@ -2407,23 +2458,23 @@ faketimerhandler()
 
                if (option[4] != 0)
                {
-                    tempbuf[0] = 0;
+                    packetbuf[0] = 0;
                     j = ((numplayers+1)>>1)+1;
-                    for(k=1;k<j;k++) tempbuf[k] = 0;
+                    for(k=1;k<j;k++) packetbuf[k] = 0;
                     k = (1<<3);
                     for(i=connecthead;i>=0;i=connectpoint2[i])
                     {
                          l = 0;
-                         if (fsyncvel[i] != osyncvel[i]) tempbuf[j++] = fsyncvel[i], l |= 1;
+                         if (fsyncvel[i] != osyncvel[i]) packetbuf[j++] = fsyncvel[i], l |= 1;
 //** Les START - 09/27/95
                          if (fsyncsvel[i] != osyncsvel[i]) {
-                              tempbuf[j++]=(fsyncsvel[i]&0xFF);
-                              tempbuf[j++]=(fsyncsvel[i]>>8);
+                             packetbuf[j++]=(fsyncsvel[i]&0xFF);
+                             packetbuf[j++]=(fsyncsvel[i]>>8);
                               l|=2;
                          }
                          if (fsyncangvel[i] != osyncangvel[i]) {
-                              tempbuf[j++]=(fsyncangvel[i]&0xFF);
-                              tempbuf[j++]=(fsyncangvel[i]>>8);
+                             packetbuf[j++]=(fsyncangvel[i]&0xFF);
+                             packetbuf[j++]=(fsyncangvel[i]>>8);
                               l|=4;
                          }
 //** Les END   - 09/27/95
@@ -2451,7 +2502,7 @@ faketimerhandler()
                     }
 #endif
                     for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
-                         sendpacket(i,tempbuf,j);
+                         sendpacket(i, packetbuf,j);
                }
                else if (numplayers == 2)
                {
@@ -2494,33 +2545,33 @@ faketimerhandler()
           {
                getinput();
 
-               tempbuf[0] = 1; k = 0;
+               packetbuf[0] = 1; k = 0;
                j = 2;
 
-               if (locvel != olocvel) tempbuf[j++] = locvel, k |= 1;
+               if (locvel != olocvel) packetbuf[j++] = locvel, k |= 1;
 //** Les START - 09/27/95
                if (locsvel != olocsvel) {
-                    tempbuf[j++]=locsvel&0xFF;
-                    tempbuf[j++]=(locsvel>>8);
+                   packetbuf[j++]=locsvel&0xFF;
+                   packetbuf[j++]=(locsvel>>8);
                     k|=2;
                }
                if (locangvel != olocangvel) {
-                    tempbuf[j++]=locangvel&0xFF;
-                    tempbuf[j++]=(locangvel>>8);
+                   packetbuf[j++]=locangvel&0xFF;
+                   packetbuf[j++]=(locangvel>>8);
                     k|=4;
                }
 //** Les END   - 09/27/95
-               if ((locbits^olocbits)&0x00ff) tempbuf[j++] = (locbits&255), k |= 8;
-               if ((locbits^olocbits)&0xff00) tempbuf[j++] = ((locbits>>8)&255), k |= 16;
+               if ((locbits^olocbits)&0x00ff) packetbuf[j++] = (locbits&255), k |= 8;
+               if ((locbits^olocbits)&0xff00) packetbuf[j++] = ((locbits>>8)&255), k |= 16;
 
-               tempbuf[1] = k;
+               packetbuf[1] = k;
 
                olocvel = locvel;
                olocsvel = locsvel;
                olocangvel = locangvel;
                olocbits = locbits;
 
-               sendpacket(connecthead,tempbuf,j);
+               sendpacket(connecthead, packetbuf,j);
           }
      }
 }
@@ -2533,29 +2584,29 @@ getpackets()
 
      if (option[4] == 0) return;
 
-     while ((tempbufleng = getpacket(&other,tempbuf)) > 0)
+     while ((tempbufleng = getpacket(&other, packetbuf)) > 0)
      {
-          switch(tempbuf[0])
+          switch(packetbuf[0])
           {
                case 0:  //[0] (receive master sync buffer)
                     j = ((numplayers+1)>>1)+1; k = (1<<3);
                     for(i=connecthead;i>=0;i=connectpoint2[i])
                     {
-                         l = (tempbuf[k>>3]>>(k&7));
-                         if (l&1) fsyncvel[i] = tempbuf[j++];
+                         l = (packetbuf[k>>3]>>(k&7));
+                         if (l&1) fsyncvel[i] = packetbuf[j++];
 //** Les START - 09/27/95
                          if (l&2) {
-                              fsyncsvel[i]=tempbuf[j++];
-                              fsyncsvel[i]|=(tempbuf[j++]<<8);
+                              fsyncsvel[i]= packetbuf[j++];
+                              fsyncsvel[i]|=(packetbuf[j++]<<8);
                          }
                          if (l&4) {
-                              fsyncangvel[i]=tempbuf[j++];
-                              fsyncangvel[i]|=(tempbuf[j++]<<8);
+                              fsyncangvel[i]= packetbuf[j++];
+                              fsyncangvel[i]|=(packetbuf[j++]<<8);
                          }
 //** Les END   - 09/27/95
                          if (l&8)
                          {
-                              fsyncbits[i] = ((short)tempbuf[j])+(((short)tempbuf[j+1])<<8);
+                              fsyncbits[i] = ((short)packetbuf[j])+(((short)packetbuf[j+1])<<8);
                               j += 2;
                          }
                          k += 4;
@@ -2595,38 +2646,38 @@ getpackets()
                 movethings();        //Move all players and sprites
                     break;
                case 1:  //[1] (receive slave sync buffer)
-                    j = 2; k = tempbuf[1];
-                    if (k&1) fsyncvel[other] = tempbuf[j++];
+                    j = 2; k = packetbuf[1];
+                    if (k&1) fsyncvel[other] = packetbuf[j++];
 //** Les START - 09/27/95
                      if (k&2) {
-                         fsyncsvel[other]=tempbuf[j++];
-                         fsyncsvel[other]|=(tempbuf[j++]<<8);
+                         fsyncsvel[other]= packetbuf[j++];
+                         fsyncsvel[other]|=(packetbuf[j++]<<8);
                      }
                      if (k&4) {
-                         fsyncangvel[other]=tempbuf[j++];
-                         fsyncangvel[other]|=(tempbuf[j++]<<8);
+                         fsyncangvel[other]= packetbuf[j++];
+                         fsyncangvel[other]|=(packetbuf[j++]<<8);
                      }
 //** Les END   - 09/27/95
-                    if (k&8) fsyncbits[other] = ((fsyncbits[other]&0xff00)|((short)tempbuf[j++]));
-                    if (k&16) fsyncbits[other] = ((fsyncbits[other]&0x00ff)|(((short)tempbuf[j++])<<8));
+                    if (k&8) fsyncbits[other] = ((fsyncbits[other]&0xff00)|((short)packetbuf[j++]));
+                    if (k&16) fsyncbits[other] = ((fsyncbits[other]&0x00ff)|(((short)packetbuf[j++])<<8));
                     break;
                case 2:
                     getmessageleng = tempbufleng-1;
-                    for(j=getmessageleng-1;j>=0;j--) getmessage[j] = tempbuf[j+1];
+                    for(j=getmessageleng-1;j>=0;j--) getmessage[j] = packetbuf[j+1];
                     getmessagetimeoff = ((int)totalclock)+360+(getmessageleng<<4);
                     break;
                case 3:
                     break;
               #ifdef NETNAMES
                case 8:
-                    memcpy(netnames[tempbuf[1]],&tempbuf[2],10);
-                    netnames[tempbuf[1]][10]=0;
+                    memcpy(netnames[packetbuf[1]],&packetbuf[2],10);
+                    netnames[packetbuf[1]][10]=0;
                     break;
               #endif
                case 5:
-                    playerreadyflag[other] = tempbuf[1];
-                    if ((other == connecthead) && (tempbuf[1] == 2))
-                         sendpacket(connecthead,tempbuf,2);
+                    playerreadyflag[other] = packetbuf[1];
+                    if ((other == connecthead) && (packetbuf[1] == 2))
+                         sendpacket(connecthead, packetbuf,2);
                     break;
                case 255:  //[255] (logout)
                     deletesprite(playersprite[other]);
@@ -2657,10 +2708,10 @@ waitforeverybody()
                     if (((int)totalclock) >= oldtotalclock+8)
                     {
                          oldtotalclock = (int)totalclock;
-                         tempbuf[0] = 5;
-                         tempbuf[1] = j;
+                         packetbuf[0] = 5;
+                         packetbuf[1] = j;
                          for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
-                              if (playerreadyflag[i] != j) sendpacket(i,tempbuf,2);
+                              if (playerreadyflag[i] != j) sendpacket(i, packetbuf,2);
                     }
                     for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
                          if (playerreadyflag[i] != j) break;
@@ -2676,7 +2727,7 @@ waitforeverybody()
                if (playerreadyflag[connecthead] == 1)
                {
                     playerreadyflag[connecthead] = 0;
-                    sendpacket(connecthead,tempbuf,2);
+                    sendpacket(connecthead, packetbuf,2);
                }
           }
      }

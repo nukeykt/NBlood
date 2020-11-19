@@ -32,9 +32,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "vfs.h"
 
 #ifndef EDUKE32_STANDALONE
-static void process_vaca13(int32_t crcval);
-static void process_vacapp15(int32_t crcval);
-
 // custom GRP support for the startup window, file format reflects the structure below
 #define GAMELISTFILE "games.list"
 //    name          crc             size      flags                 dependency

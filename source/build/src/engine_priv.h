@@ -197,7 +197,7 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         return (((d<<4)^0xf0)|d);
     }
 
-    inline int32_t getkensmessagecrc(int32_t b)
+    static inline int32_t getkensmessagecrc(int32_t b)
     {
         UNREFERENCED_PARAMETER(b);
         return 0x56c764d4l;
@@ -205,17 +205,20 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 
 #endif
 
-inline int32_t ksqrtasm_old(int32_t n)
+static inline int32_t ksqrtasm_old(uint32_t n)
 {
-    n = klabs(n);
-    int shift;
-    for (shift = 0; n >= 2048; n >>=2, shift++)
+    uint32_t shift = 0;
+    n = klabs((int32_t)n);
+    while (n >= 2048)
     {
+        n >>= 2;
+        ++shift;
     }
-    return (sqrtable_old[n]<<shift)>>10;
+    uint32_t const s = sqrtable_old[n];
+    return (s << shift) >> 10;
 }
 
-inline int32_t clip_nsqrtasm(int32_t n)
+static inline int32_t clip_nsqrtasm(uint32_t n)
 {
     if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(n);

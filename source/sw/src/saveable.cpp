@@ -102,6 +102,7 @@ int Saveable_FindCodeSym(void *ptr, savedcodesym *sym)
         }
     }
 
+    debug_break();
     return -1;
 }
 
@@ -132,6 +133,8 @@ int Saveable_FindDataSym(void *ptr, saveddatasym *sym)
             return 0;
         }
     }
+
+    debug_break();
     return -1;
 }
 
@@ -143,8 +146,16 @@ int Saveable_RestoreCodeSym(savedcodesym *sym, void **ptr)
         return 0;
     }
 
-    if (sym->module > nummodules) return -1;
-    if (sym->index  >= saveablemodules[sym->module-1]->numcode) return -1;
+    if (sym->module > nummodules)
+    {
+        debug_break();
+        return -1;
+    }
+    if (sym->index  >= saveablemodules[sym->module-1]->numcode)
+    {
+        debug_break();
+        return -1;
+    }
 
     *ptr = saveablemodules[sym->module-1]->code[sym->index];
 
@@ -159,9 +170,21 @@ int Saveable_RestoreDataSym(saveddatasym *sym, void **ptr)
         return 0;
     }
 
-    if (sym->module > nummodules) return -1;
-    if (sym->index  >= saveablemodules[sym->module-1]->numdata) return -1;
-    if (sym->offset >= saveablemodules[sym->module-1]->data[sym->index].size) return -1;
+    if (sym->module > nummodules)
+    {
+        debug_break();
+        return -1;
+    }
+    if (sym->index  >= saveablemodules[sym->module-1]->numdata)
+    {
+        debug_break();
+        return -1;
+    }
+    if (sym->offset >= saveablemodules[sym->module-1]->data[sym->index].size)
+    {
+        debug_break();
+        return -1;
+    }
 
     *ptr = (void *)((intptr_t)saveablemodules[sym->module-1]->data[sym->index].base + sym->offset);
 

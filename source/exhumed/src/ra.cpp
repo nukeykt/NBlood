@@ -26,12 +26,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "input.h"
 #include "gun.h"
 #include "bullet.h"
+#include "save.h"
 #include <string.h>
 
 /* bjd - the content of the ra.* files originally resided in gun.c I think... */
 
 RA Ra[kMaxPlayers]; // one Ra for each player
-short RaCount;
 
 static actionSeq ActionSeq[] = {
     {2, 1},
@@ -89,7 +89,6 @@ int BuildRa(short nPlayer)
 
 void InitRa()
 {
-    RaCount = 0;
     memset(Ra, 0, sizeof(RA) * kMaxPlayers);
 }
 
@@ -291,4 +290,28 @@ void FuncRa(int a, int UNUSED(nDamage), int nRun)
             return;
         }
     }
+}
+
+class RaLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void RaLoadSave::Load()
+{
+    Read(Ra, sizeof(Ra));
+}
+
+void RaLoadSave::Save()
+{
+    Write(Ra, sizeof(Ra));
+}
+
+static RaLoadSave* myLoadSave;
+
+void RaLoadSaveConstruct()
+{
+    myLoadSave = new RaLoadSave();
 }

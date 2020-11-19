@@ -8,10 +8,16 @@
 #include "cache1d.h"
 #include "music.h"
 #include "fx_man.h"
+#include "hmpplay.h"
 #include "keyboard.h"
 #include "control.h"
 #include "config.h"
 #include "player.h"
+
+void SND_MIDIFlush(void);
+char* SND_LoadMIDISong(int nSong);
+int SND_PrepareMIDISong(int SongIndex);
+int SND_StartMIDISong(int wSongHandle);
 
 int lavasnd = -1;
 int batsnd = -1;
@@ -20,6 +26,50 @@ int cartsnd = -1;
 int SoundMode, wDIGIVol;
 int MusicMode, wMIDIVol;
 int use_rec_driver, voicecom_enabled;
+int SD_Started;
+int wMIDIDeviceID;
+int SongPending;
+
+#define  _MIDI_MPU_401              0xa001
+#define  _MIDI_FM                   0xa002
+#define  _MIDI_OPL2                 0xa002
+#define  _MIDI_OPL3                 0xa009
+char *BaseSongPtr;
+char *EmbSongPtr;
+char *SpiceSongPtr;
+
+char *m_bnkptr, *d_bnkptr;
+
+#define MAX_ACTIVE_SONGS 4
+
+int hSOSSongHandles[MAX_ACTIVE_SONGS];
+InitSong sSOSInitSongs[MAX_ACTIVE_SONGS];
+TrackDevice sSOSTrackMap[MAX_ACTIVE_SONGS] = {
+    {
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff
+    },
+    {
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff
+    },
+    {
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff
+    },
+    {
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff
+    },
+};
 
 static uint16_t songelements = 3;
 static uint16_t arrangements = 3;
@@ -135,6 +185,30 @@ void SND_SetupTables()
     return;
 }
 
+void SND_LoadMidiIns(void)
+{
+    static int wLength;
+
+    //JSA_DEMO check port address to verify FM device
+    buildvfs_kfd handle = kopen4loadfrommod("melodic.bnk", 0);
+    if (handle == buildvfs_kfd_invalid)
+        crash("MELODIC BANK FILE FAILED!");
+    m_bnkptr = (char*)malloc(0x152c);
+    kread(handle, m_bnkptr, 0x152c);
+    kclose(handle);
+    if (FMSetBank(m_bnkptr))
+        crash("BAD SetInsData MEL!");
+
+    handle = kopen4loadfrommod("drum.bnk", 0);
+    if (handle == buildvfs_kfd_invalid)
+        crash("PERCUSSIVE BANK FILE FAILED!");
+    d_bnkptr = (char*)malloc(0x152c);
+    kread(handle, d_bnkptr, 0x152c);
+    kclose(handle);
+    if (FMSetBank(d_bnkptr))
+        printf("BAD SetInsData DRUM!");
+}
+
 void ASSCallback(intptr_t pSample)
 {
     SampleType *sample = (SampleType*)pSample;
@@ -144,6 +218,9 @@ void ASSCallback(intptr_t pSample)
     sample->priority = 0;
     sample->number = -1;
 }
+
+extern int MV_MixRate;
+extern int musiclevel;
 
 void SND_Startup()
 {
@@ -189,26 +266,17 @@ void SND_Startup()
     }
     #endif
 
-    int status;
-    if ((status = MUSIC_Init(MusicDevice)) == MUSIC_Ok)
-    {
-        if (MusicDevice == ASS_AutoDetect)
-            MusicDevice = MIDI_GetDevice();
-    }
-    else if ((status = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
-    {
-        MusicDevice = MIDI_GetDevice();
-    }
-    else
-    {
-        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
-//        gs.MusicOn = FALSE;
-        return;
-    }
+    wMIDIVol = (musiclevel<<3);
+    wMIDIDeviceID = _MIDI_FM;
+    HMIInit(MV_MixRate);
 
- //   MusicInitialized = TRUE;
-    MUSIC_SetVolume(255); // gs.MusicVolume);
+    SND_LoadMidiIns();
+    for (int i = 0; i < MAX_ACTIVE_SONGS; i++)
+        hSOSSongHandles[i] = 0x7fff;
 
+    songsperlevel = songelements * arrangements;
+
+    HMISetMasterVolume(wMIDIVol);
         /*
     auto const fil = kopen4load("swtimbr.tmb", 0);
 
@@ -226,6 +294,8 @@ void SND_Startup()
 
     // read in offset page lists
     SND_SetupTables();
+
+    SD_Started = 1;
 }
 
 void SND_Shutdown()
@@ -239,6 +309,14 @@ void SND_Shutdown()
         }
     }
 
+
+    SND_MIDIFlush();
+    HMIUnInit();
+    if (m_bnkptr != NULL)
+        free(m_bnkptr);
+    if (d_bnkptr != NULL)
+        free(d_bnkptr);
+
     if (hSoundFile != buildvfs_kfd_invalid) {
         kclose(hSoundFile);
     }
@@ -250,6 +328,8 @@ void SND_Shutdown()
     if (hSongsFile != buildvfs_kfd_invalid) {
         kclose(hSongsFile);
     }
+
+    SD_Started = 0;
 }
 
 int SND_Sound(int nSound)
@@ -443,38 +523,46 @@ void SND_StopLoop(int16_t nSound)
 {
 }
 
-void SND_SongFlush()
+void SND_LoadSongs(uint16_t which)
 {
+    static int index;
+
+    index = songsperlevel * which;                  //vanilla
+
+    //if digi_midi used skip to those songs
+    // if (wMIDIDeviceID == _MIDI_AWE32)
+    //     index += songelements;                            //skip past vanilla
+
+    //if soundcanvas skip to those songs
+    if (wMIDIDeviceID == _MIDI_MPU_401/* || wMIDIDeviceID == _MIDI_GUS*/)
+        index += songelements * 2;
+
+    BaseSongPtr = SND_LoadMIDISong(index + BASE_SONG);
+    EmbSongPtr = SND_LoadMIDISong(index + EMB_SONG);
+    SpiceSongPtr = SND_LoadMIDISong(index + SPICE_SONG);
 }
 
 void SND_StartMusic(int16_t level)
 {
-    #if 0
     if ((!MusicMode) || !SD_Started)
         return;
 
     if (level > 5)
         level = rand() % 6;
 
-    if (MusicMode == _LOOP_MUSIC)
-    {
-        SND_LoadLoop(0);
-        LoopPending = 1;
-    }
-
-    else
-    {
-        SND_SongFlush();
-        SND_LoadSongs(level);
-        SongPending = SND_PrepareMIDISong(BASE_SONG);
-        SND_StartMIDISong(SongPending);
-        SongPending = 0;
-    }
-    #endif
+    SND_SongFlush();
+    SND_LoadSongs(level);
+    SongPending = SND_PrepareMIDISong(BASE_SONG);
+    SND_StartMIDISong(SongPending);
+    SongPending = 0;
 }
 
 void SND_Mixer(int16_t wSource, int16_t wVolume)
 {
+    if (wSource == MIDI) {
+        wMIDIVol = (wVolume << 3);
+        HMISetMasterVolume(wMIDIVol);
+    }
 }
 
 void SND_Sting(int16_t nSound)
@@ -490,9 +578,9 @@ int nMusicSize = 0;
 
 char* SND_LoadMIDISong(int nSong)
 {
-    uint16_t nLength = (uint16_t)SongList[(nSong * 3) + 1];
-    uint16_t SeekIndex = (SongList[(nSong * 3) + 0] * 4096);
-    char* pData = new char[nLength];
+    uint32_t nLength = SongList[(nSong * 3) + 1];
+    uint32_t SeekIndex = (SongList[(nSong * 3) + 0] * 4096);
+    char* pData = (char*)malloc(nLength);
 
     klseek(hSongsFile, SeekIndex, SEEK_SET);
     kread(hSongsFile, pData, nLength);
@@ -504,21 +592,16 @@ char* SND_LoadMIDISong(int nSong)
 
 void SND_MenuMusic(int nSong)
 {
-    char *pMusic = SND_LoadMIDISong((totallevels * songsperlevel) + BASE_SONG + 2);
-
-    #if 0
-    /* TODO
     if (!MusicMode || !SD_Started)
         return;
 
-    if ((choose == DEATHSONG) && (wMIDIDeviceID == _MIDI_FM))
+    if ((nSong == DEATHSONG) && (wMIDIDeviceID == _MIDI_FM))
         return;
-    */
     SND_SongFlush();
 
     if (nSong == MENUSONG)
     {
-        if (wMIDIDeviceID == _MIDI_MPU_401 || wMIDIDeviceID == _MIDI_AWE32 || wMIDIDeviceID == _MIDI_GUS)
+        if (wMIDIDeviceID == _MIDI_MPU_401/* || wMIDIDeviceID == _MIDI_AWE32 || wMIDIDeviceID == _MIDI_GUS*/)
         {
             BaseSongPtr = SND_LoadMIDISong((totallevels * songsperlevel) + BASE_SONG + 2);
         }
@@ -527,7 +610,7 @@ void SND_MenuMusic(int nSong)
             BaseSongPtr = SND_LoadMIDISong((totallevels * songsperlevel) + BASE_SONG);
         }
     }
-    else if (wMIDIDeviceID == _MIDI_MPU_401 || wMIDIDeviceID == _MIDI_AWE32 || wMIDIDeviceID == _MIDI_GUS)
+    else if (wMIDIDeviceID == _MIDI_MPU_401/* || wMIDIDeviceID == _MIDI_AWE32 || wMIDIDeviceID == _MIDI_GUS*/)
     {
         BaseSongPtr = SND_LoadMIDISong((totallevels * songsperlevel) + 3 + BASE_SONG + 2);
     }
@@ -535,5 +618,93 @@ void SND_MenuMusic(int nSong)
     SongPending = SND_PrepareMIDISong(BASE_SONG);
     SND_StartMIDISong(SongPending);
     SongPending = 0;
-    #endif
+}
+
+void sosMIDISongCallback(uint32_t hSong)
+{
+    int i;
+    for (i = 0; i < MAX_ACTIVE_SONGS; i++)
+        if (hSong == hSOSSongHandles[i])
+            break;
+
+    HMIUnInitSong(hSOSSongHandles[i]);
+    hSOSSongHandles[i] = 0x7fff;
+}
+
+int SND_PrepareMIDISong(int SongIndex)
+{
+    int status;
+    if (!MusicMode)
+        return(0x7fff);
+
+    if (hSOSSongHandles[SongIndex] != 0x7fff)
+        return(0x7fff);
+
+    if (SongIndex == BASE_SONG)
+        sSOSInitSongs[SongIndex].songptr = (uint8_t*)BaseSongPtr;
+    if (SongIndex == EMB_SONG)
+        sSOSInitSongs[SongIndex].songptr = (uint8_t*)EmbSongPtr;
+    if (SongIndex == SPICE_SONG)
+        sSOSInitSongs[SongIndex].songptr = (uint8_t*)SpiceSongPtr;
+
+    sSOSInitSongs[SongIndex].callback = sosMIDISongCallback;
+    if ((status = HMIInitSong(&sSOSInitSongs[SongIndex], &sSOSTrackMap[SongIndex], (uint32_t*)&hSOSSongHandles[SongIndex])))
+    {
+        crash("Init Song Failed!");
+    }
+
+    return((int)hSOSSongHandles[SongIndex]);
+}
+int SND_StartMIDISong(int wSongHandle)
+{
+    HMISetMasterVolume(wMIDIVol);
+    return(HMIStartSong(wSongHandle));
+}
+
+void SND_StopMIDISong(int wSongHandle)
+{
+    int i;
+    for (i = 0; i < MAX_ACTIVE_SONGS; i++)
+        if (hSOSSongHandles[i] == wSongHandle)
+            break;
+
+    if (i >= MAX_ACTIVE_SONGS)
+        return;
+
+    if (!HMISongDone(hSOSSongHandles[i]))
+    {
+        HMIStopSong(hSOSSongHandles[i]);
+        HMIUnInitSong(hSOSSongHandles[i]);
+        hSOSSongHandles[i] = 0x7fff;
+        free(sSOSInitSongs[i].songptr);
+    }
+}
+
+void SND_SongFlush()
+{
+    if (!MusicMode)
+        return;
+
+    if (hSOSSongHandles[BASE_SONG] != 0x7fff)
+        SND_StopMIDISong(hSOSSongHandles[BASE_SONG]);
+    if (hSOSSongHandles[EMB_SONG] != 0x7fff)
+        SND_StopMIDISong(hSOSSongHandles[EMB_SONG]);
+    if (hSOSSongHandles[SPICE_SONG] != 0x7fff)
+        SND_StopMIDISong(hSOSSongHandles[SPICE_SONG]);
+}
+
+void SND_MIDIFlush(void)
+{
+    int i;
+    for (i = 0; i < MAX_ACTIVE_SONGS; i++) {
+        if (!HMISongDone(hSOSSongHandles[i]))
+            HMIStopSong(hSOSSongHandles[i]);
+        if (hSOSSongHandles[i] != 0x7fff)
+            HMIUnInitSong(hSOSSongHandles[i]);
+        hSOSSongHandles[i] = 0x7fff;
+    }
+
+    free(BaseSongPtr);
+    free(EmbSongPtr);
+    free(SpiceSongPtr);
 }

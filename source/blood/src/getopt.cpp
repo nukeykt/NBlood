@@ -40,24 +40,24 @@ int GetOptions(SWITCH *switches)
     if (!pChar)
     {
         if (OptIndex >= margc)
-            return -1;
+            return kOptEnd;
         pChar = margv[OptIndex++];
         if (!pChar)
-            return -1;
+            return kOptEnd;
     }
     OptFull = pChar;
     if (!strchr(SwitchChars, *pChar))
     {
         pChar = NULL;
-        return -2;
+        return kOptFull;
     }
     pChar++;
     int i;
-    int vd;
+    int nID;
     for (i = 0; true; i++)
     {
         if (!switches[i].name)
-            return -3;
+            return kOptInvalid;
         int nLength = strlen(switches[i].name);
         if (!Bstrncasecmp(pChar, switches[i].name, nLength) && (pChar[nLength]=='=' || pChar[nLength]==0))
         {
@@ -73,9 +73,9 @@ int GetOptions(SWITCH *switches)
             break;
         }
     }
-    vd = switches[i].at4;
+    nID = switches[i].nID;
     OptArgc = 0;
-    while (OptArgc < switches[i].at8)
+    while (OptArgc < switches[i].nArgs)
     {
         if (!pChar)
         {
@@ -88,5 +88,5 @@ int GetOptions(SWITCH *switches)
         OptArgv[OptArgc++] = pChar;
         pChar = NULL;
     }
-    return vd;
+    return nID;
 }

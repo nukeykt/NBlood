@@ -632,7 +632,7 @@ void editorGet2dScreenCoordinates(int32_t *xres, int32_t *yres, int32_t x, int32
     vec2_t coord = { x, y };
 
     if (m32_sideview)
-        rotatepoint(zerovec, coord, m32_sideang, &coord);
+        rotatevec(coord, m32_sideang, &coord);
 
     *xres = mulscale14(coord.x, zoome);
     *yres = scalescreeny(mulscale14(coord.y, zoome));
@@ -660,7 +660,7 @@ int32_t getinvdisplacement(int32_t *dx, int32_t *dy, int32_t dz)
 
     vec2_t v[2] = { { 0, dz },{ *dx, *dy } };
 
-    rotatepoint(zerovec, v[0], -m32_sideang, &v[1]);
+    rotatevec(v[0], -m32_sideang, &v[1]);
 
     *dx = v[1].x;
     *dy = v[1].y;
@@ -684,7 +684,7 @@ void editorSetup2dSideView(void)
         m32_sidesin = sintable[m32_sideelev&2047];
         m32_sidecos = sintable[(m32_sideelev+512)&2047];
 
-        rotatepoint(zerovec, m32_viewplane.vec2, -m32_sideang, &m32_viewplane.vec2);
+        rotatevec(m32_viewplane.vec2, -m32_sideang, &m32_viewplane.vec2);
         m32_viewplane.x = mulscale14(m32_viewplane.x, m32_sidecos);
         m32_viewplane.y = mulscale14(m32_viewplane.y, m32_sidecos);
         m32_viewplane.z = m32_sidesin>>5;

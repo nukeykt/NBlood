@@ -46,7 +46,7 @@ hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
-    if (!func)
+    if (!func || func[0] == '\0')
         return -1;
 
     return hash_findcase(&h_gamefuncs, func);
@@ -196,7 +196,7 @@ void CONFIG_SetDefaults(void)
     ud.setup.xdim = droidinfo.screen_width;
     ud.setup.ydim = droidinfo.screen_height;
 #else
-# if defined RENDERTYPESDL && SDL_MAJOR_VERSION > 1
+# if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
     uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
     if (inited == 0)
         SDL_Init(SDL_INIT_VIDEO);

@@ -25,18 +25,82 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sbar.h"
 #include "menus.h"
 
+int32_t g_textstat = RS_AUTO | RS_NOCLIP | RS_TOPLEFT;
+
+size_t g_screentextbufcount = 256;
+ScreenTextGlyph_t * g_screentextbuf;
+
 void G_InitText()
 {
+    g_screentextbuf = (ScreenTextGlyph_t *)Xmalloc(sizeof(ScreenTextGlyph_t) * g_screentextbufcount);
+
     // check if the minifont will support lowercase letters (3136-3161)
     // there is room for them in tiles012.art between "[\]^_." and "{|}~"
     minitext_lowercase = 1;
 
     for (int i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
         minitext_lowercase &= (int)tileLoad(i);
+
+    TileFontPtr_t tilefont_BIGALPHANUM = tilefontGetPtr(BIGALPHANUM);
+    unsigned i, j;
+    j = -10;
+    for (i = 0; i <= '9'-'0'; ++i)
+    {
+        char c = '0' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, BIGALPHANUM + i + j);
+    }
+    j += i;
+    for (i = 0; i <= 'Z'-'A'; ++i)
+    {
+        char c = 'A' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, BIGALPHANUM + i + j);
+    }
+    j += i;
+    for (i = 0; i <= 'z'-'a'; ++i)
+    {
+        char c = 'a' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, BIGALPHANUM + i + j);
+    }
+    j += i;
+    struct { char c; int32_t tilenum; } const bigalphanum_mappings[] =
+    {
+        { '-', BIGALPHANUM - 11, },
+        { '_', BIGALPHANUM - 11, },
+        { '.', BIGPERIOD, },
+        { ',', BIGCOMMA, },
+        { '!', BIGX_, },
+        { '?', BIGQ, },
+        { ';', BIGSEMI, },
+        { ':', BIGCOLIN, },
+        { '\\', BIGALPHANUM + 68, },
+        { '/', BIGALPHANUM + 68, },
+        { '%', BIGALPHANUM + 69, },
+        { '`', BIGAPPOS, },
+        { '\"', BIGAPPOS, },
+        { '\'', BIGAPPOS, },
+    };
+    for (auto const & mapping : bigalphanum_mappings)
+    {
+        uint32_t chr32 = tilefontGetChr32FromASCII(mapping.c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, mapping.tilenum);
+    }
+
+    TileFontPtr_t tilefont_STARTALPHANUM = tilefontGetPtr(STARTALPHANUM);
+    TileFontPtr_t tilefont_MINIFONT = tilefontGetPtr(MINIFONT);
+    for (i = 0; i <= '\x7F'-'!'; ++i)
+    {
+        char c = '!' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_STARTALPHANUM, chr32, STARTALPHANUM + i);
+        tilefontMaybeDefineMapping(tilefont_MINIFONT, chr32, MINIFONT + i);
+    }
 }
 
 // assign the character's tilenum
-int32_t G_GetStringTile(int32_t font, char c, int32_t f)
+static int32_t G_GetStringTileLegacy(int32_t font, char c, int32_t f)
 {
     if (f & TEXT_DIGITALNUMBER)
         return c - '0' + font;
@@ -94,7 +158,23 @@ int32_t G_GetStringTile(int32_t font, char c, int32_t f)
         return c - '!' + font; // uses ASCII order
 }
 
-uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * str, char const * const end, int32_t font, int32_t flags)
+int32_t G_GetStringTileASCII(TileFontPtr_t tilefontPtr, int32_t font, char c, int32_t f)
+{
+    if (tilefontPtr.opaque != nullptr)
+        return tilefontLookup(tilefontPtr, tilefontGetChr32FromASCII(c));
+
+    return G_GetStringTileLegacy(font, c, f);
+}
+
+static inline int32_t G_GetStringTile(TileFontPtr_t tilefontPtr, uint32_t chr32)
+{
+    if (tilefontPtr.opaque != nullptr)
+        return tilefontLookup(tilefontPtr, chr32);
+
+    return 0;
+}
+
+uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * str, char const * const end, TileFontPtr_t tilefontPtr, int32_t font, int32_t flags)
 {
     ScreenTextGlyph_t * text = textbuf;
     char c;
@@ -128,38 +208,51 @@ uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * 
             continue;
         }
 
-        // handle case bits
-        if (flags & TEXT_UPPERCASE)
+        if (!(c & 0x80))
         {
-            if (flags & TEXT_INVERTCASE) // optimization...?
-            { // v^ important that these two ifs remain separate due to the else below
+            // handle case bits
+            if (flags & TEXT_UPPERCASE)
+            {
+                if (flags & TEXT_INVERTCASE) // optimization...?
+                { // v^ important that these two ifs remain separate due to the else below
+                    if (Bisupper(c))
+                        c = Btolower(c);
+                }
+                else if (Bislower(c))
+                    c = Btoupper(c);
+            }
+            else if (flags & TEXT_INVERTCASE)
+            {
                 if (Bisupper(c))
                     c = Btolower(c);
+                else if (Bislower(c))
+                    c = Btoupper(c);
             }
-            else if (Bislower(c))
-                c = Btoupper(c);
-        }
-        else if (flags & TEXT_INVERTCASE)
-        {
-            if (Bisupper(c))
-                c = Btolower(c);
-            else if (Bislower(c))
-                c = Btoupper(c);
-        }
 
-        if ((flags & TEXT_CONSTWIDTHNUMS) && c >= '0' && c <= '9')
-            *text++ = SCREENTEXT_CONSTWIDTH;
+            if ((flags & TEXT_CONSTWIDTHNUMS) && c >= '0' && c <= '9')
+                *text++ = SCREENTEXT_CONSTWIDTH;
 
-        if (c == '\n')
-            *text++ = SCREENTEXT_NEWLINE;
-        else if (c == '\t')
-            *text++ = SCREENTEXT_TAB;
-        else if (c == ' ')
-            *text++ = SCREENTEXT_SPACE;
+            if (c == '\n')
+                *text++ = SCREENTEXT_NEWLINE;
+            else if (c == '\t')
+                *text++ = SCREENTEXT_TAB;
+            else if (c == ' ')
+                *text++ = SCREENTEXT_SPACE;
+            else
+                *text++ = G_GetStringTileASCII(tilefontPtr, font, c, flags);
+
+            ++str;
+        }
         else
-            *text++ = G_GetStringTile(font, c, flags);
+        {
+            uint32_t chr32 = 0;
+            size_t bytes = min(utf8charbytes(c), size_t(end - str));
+            memcpy(&chr32, str, bytes);
 
-        ++str;
+            *text++ = G_GetStringTile(tilefontPtr, chr32);
+
+            str += bytes;
+        }
     }
 
     *text = 0;
@@ -169,12 +262,14 @@ uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * 
 
 void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
 {
+    TileFontPtr_t tilefontPtr = tilefontFind(font);
+
     if (f & (TEXT_INTERNALSPACE|TEXT_TILESPACE))
     {
         char space = '.'; // this is subject to change as an implementation detail
         if (f & TEXT_TILESPACE)
             space = '\x7F'; // tile after '~'
-        uint32_t const tile = G_GetStringTile(font, space, f);
+        uint32_t const tile = G_GetStringTileASCII(tilefontPtr, font, space, f);
         Bassert(tile < MAXTILES);
 
         empty.x += tilesiz[tile].x << 16;
@@ -185,7 +280,7 @@ void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
         char line = 'A'; // this is subject to change as an implementation detail
         if (f & TEXT_TILELINE)
             line = '\x7F'; // tile after '~'
-        uint32_t const tile = G_GetStringTile(font, line, f);
+        uint32_t const tile = G_GetStringTileASCII(tilefontPtr, font, line, f);
         Bassert(tile < MAXTILES);
 
         empty.y += tilesiz[tile].y << 16;
@@ -216,19 +311,19 @@ void G_PrintGameText(int32_t tile, int32_t x, int32_t y, const char *t,
 
 vec2_t gametext_(int32_t x, int32_t y, const char *t, int32_t s, int32_t p, int32_t o, int32_t a, int32_t f)
 {
-    return G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, s, p, o|2|8|16, a, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f, 0, 0, xdim-1, ydim-1);
+    return G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, s, p, o|g_textstat, a, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f, 0, 0, xdim-1, ydim-1);
 }
 void gametext_simple(int32_t x, int32_t y, const char *t)
 {
-    G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, 0, MF_Bluefont.pal, 2|8|16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags, 0, 0, xdim-1, ydim-1);
+    G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, 0, MF_Bluefont.pal, g_textstat, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags, 0, 0, xdim-1, ydim-1);
 }
 vec2_t mpgametext(int32_t x, int32_t y, const char *t, int32_t s, int32_t o, int32_t a, int32_t f)
 {
-    return G_ScreenText(MF_Bluefont.tilenum, x, y, textsc(MF_Bluefont.zoom), 0, 0, t, s, MF_Bluefont.pal, o|2|8|16, a, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f, 0, 0, xdim-1, ydim-1);
+    return G_ScreenText(MF_Bluefont.tilenum, x, y, textsc(MF_Bluefont.zoom), 0, 0, t, s, MF_Bluefont.pal, o|g_textstat, a, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f, 0, 0, xdim-1, ydim-1);
 }
 vec2_t mpgametextsize(const char *t, int32_t f)
 {
-    return G_ScreenTextSize(MF_Bluefont.tilenum, 0, 0, textsc(MF_Bluefont.zoom), 0, t, 2|8|16, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f, 0, 0, xdim-1, ydim-1);
+    return G_ScreenTextSize(MF_Bluefont.tilenum, 0, 0, textsc(MF_Bluefont.zoom), 0, t, g_textstat, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f, 0, 0, xdim-1, ydim-1);
 }
 
 // minitext_yofs: in hud_scale-independent, (<<16)-scaled, 0-200-normalized y coords,
@@ -278,7 +373,9 @@ void menutext_(int32_t x, int32_t y, int32_t s, char const *t, int32_t o, int32_
 
 void captionmenutext(int32_t x, int32_t y, char const *t)
 {
-    G_ScreenText(MF_Redfont.tilenum, x, y - (12<<16), MF_Redfont.zoom, 0, 0, t, 0, ud.menutitle_pal, 2|8|16, 0, MF_Redfont.emptychar.x, MF_Redfont.emptychar.y, MF_Redfont.between.x, MF_Redfont.between.y, MF_Redfont.textflags|TEXT_LITERALESCAPE|TEXT_XCENTER|TEXT_YCENTER, 0, 0, xdim-1, ydim-1);
+    G_ScreenText(MF_Redfont.tilenum, x, y, MF_Redfont.zoom, 0, 0, t, 0, ud.menutitle_pal, g_textstat, 0,
+                 MF_Redfont.emptychar.x, MF_Redfont.emptychar.y, MF_Redfont.between.x, MF_Redfont.emptychar.y,
+                 MF_Redfont.textflags|TEXT_LITERALESCAPE|TEXT_XCENTER|TEXT_YCENTER|TEXT_YOFFSETZERO, 0, 0, xdim-1, ydim-1);
 }
 
 

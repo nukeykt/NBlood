@@ -355,19 +355,11 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
 
     Bassert((unsigned)playerNum < MAXPLAYERS);
 
-#ifdef LUNATIC
-    g_player[playerNum].ps->autoaimang = g_player[playerNum].ps->auto_aim == 3 ? AUTO_AIM_ANGLE<<1 : AUTO_AIM_ANGLE;
-#else
     Gv_SetVar(g_aimAngleVarID, g_player[playerNum].ps->auto_aim == 3 ? AUTO_AIM_ANGLE<<1 : AUTO_AIM_ANGLE, spriteNum, playerNum);
-#endif
 
     VM_OnEvent(EVENT_GETAUTOAIMANGLE, spriteNum, playerNum);
 
-#ifdef LUNATIC
-    int aimang = g_player[playerNum].ps->autoaimang;
-#else
     int aimang = Gv_GetVar(g_aimAngleVarID, spriteNum, playerNum);
-#endif
     if (aimang > 0)
         returnSprite = A_FindTargetSprite(&sprite[spriteNum], aimang, projecTile);
 
@@ -474,23 +466,13 @@ static void P_PreFireHitscan(int spriteNum, int playerNum, int projecTile, vec3_
 
     auto const pPlayer = g_player[playerNum].ps;
 
-#ifdef LUNATIC
-    pPlayer->angrange = angRange;
-    pPlayer->zrange = zRange;
-#else
     Gv_SetVar(g_angRangeVarID, angRange, spriteNum, playerNum);
     Gv_SetVar(g_zRangeVarID, zRange, spriteNum, playerNum);
-#endif
 
     VM_OnEvent(EVENT_GETSHOTRANGE, spriteNum, playerNum);
 
-#ifdef LUNATIC
-    angRange = pPlayer->angrange;
-    zRange   = pPlayer->zrange;
-#else
     angRange = Gv_GetVar(g_angRangeVarID, spriteNum, playerNum);
     zRange   = Gv_GetVar(g_zRangeVarID, spriteNum, playerNum);
-#endif
 
     if (accurateAim)
     {
@@ -1483,9 +1465,10 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                 break;
 
             if (hitData.wall >= 0 && hitData.sect >= 0)
-                if (((hitData.pos.x - startPos.x) * (hitData.pos.x - startPos.x)
-                     + (hitData.pos.y - startPos.y) * (hitData.pos.y - startPos.y))
-                    < (290 * 290))
+            {
+                uint32_t xdiff_sq = (hitData.pos.x - startPos.x) * (hitData.pos.x - startPos.x);
+                uint32_t ydiff_sq = (hitData.pos.y - startPos.y) * (hitData.pos.y - startPos.y);
+                if (xdiff_sq + ydiff_sq < (290 * 290))
                 {
                     // ST_2_UNDERWATER
                     if (wall[hitData.wall].nextsector >= 0)
@@ -1497,27 +1480,19 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                         placeMine = 1;
                 }
 
+            }
             if (placeMine == 1)
             {
                 int const tripBombMode = (playerNum < 0) ? 0 :
-#ifdef LUNATIC
-                                                           g_player[playerNum].ps->tripbombControl;
-#else
                                                            Gv_GetVarByLabel("TRIPBOMB_CONTROL", TRIPBOMB_TRIPWIRE,
                                                                             g_player[playerNum].ps->i, playerNum);
-#endif
                 int const spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, TRIPBOMB, -16, 4, 5,
                                                          shootAng, 0, 0, spriteNum, 6);
                 if (tripBombMode & TRIPBOMB_TIMER)
                 {
-#ifdef LUNATIC
-                    int32_t lLifetime    = g_player[playerNum].ps->tripbombLifetime;
-                    int32_t lLifetimeVar = g_player[playerNum].ps->tripbombLifetimeVar;
-#else
                     int32_t lLifetime = Gv_GetVarByLabel("STICKYBOMB_LIFETIME", NAM_GRENADE_LIFETIME, g_player[playerNum].ps->i, playerNum);
                     int32_t lLifetimeVar
                     = Gv_GetVarByLabel("STICKYBOMB_LIFETIME_VAR", NAM_GRENADE_LIFETIME_VAR, g_player[playerNum].ps->i, playerNum);
-#endif
                     // set timer.  blows up when at zero....
                     actor[spawnedSprite].t_data[7] = lLifetime + mulscale14(krand(), lLifetimeVar) - lLifetimeVar;
                     // TIMER_CONTROL
@@ -2033,8 +2008,6 @@ static int P_DisplayKnuckles(int knuckleShade)
     return 1;
 }
 
-#if !defined LUNATIC
-// Set C-CON's WEAPON and WORKSLIKE gamevars.
 void P_SetWeaponGamevars(int playerNum, const DukePlayer_t * const pPlayer)
 {
     Gv_SetVar(g_weaponVarID, pPlayer->curr_weapon, pPlayer->i, playerNum);
@@ -2042,7 +2015,6 @@ void P_SetWeaponGamevars(int playerNum, const DukePlayer_t * const pPlayer)
               ((unsigned)pPlayer->curr_weapon < MAX_WEAPONS) ? PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) : -1,
               pPlayer->i, playerNum);
 }
-#endif
 
 static void P_FireWeapon(int playerNum)
 {
@@ -3022,8 +2994,9 @@ enddisplayweapon:
 #define MAXANGVEL     1024
 #define MAXHORIZVEL   256
 
-int32_t g_myAimMode = 0, g_myAimStat = 0, g_oldAimStat = 0;
+int32_t g_myAimMode, g_myAimStat, g_oldAimStat;
 int32_t mouseyaxismode = -1;
+double g_lastInputTicks;
 
 enum inputlock_t
 {
@@ -3036,7 +3009,14 @@ enum inputlock_t
 
 static int P_CheckLockedMovement(int const playerNum)
 {
-    auto const pPlayer = g_player[playerNum].ps;
+    auto &     thisPlayer = g_player[playerNum];
+    auto const pPlayer    = thisPlayer.ps;
+
+    if (sprite[pPlayer->i].extra <= 0 || (pPlayer->dead_flag && !ud.god) || pPlayer->fist_incs || pPlayer->transporter_hold > 2 || pPlayer->hard_landing || pPlayer->access_incs > 0
+        || pPlayer->knee_incs > 0
+        || (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == TRIPBOMB_WEAPON && pPlayer->kickback_pic > 1
+            && pPlayer->kickback_pic < PWEAPON(playerNum, pPlayer->curr_weapon, FireDelay)))
+        return IL_NOTHING;
 
     if (pPlayer->on_crane >= 0)
         return IL_NOMOVE|IL_NOANGLE;
@@ -3044,11 +3024,8 @@ static int P_CheckLockedMovement(int const playerNum)
     if (pPlayer->newowner != -1)
         return IL_NOANGLE|IL_NOHORIZ;
 
-    if (pPlayer->dead_flag || pPlayer->fist_incs || pPlayer->transporter_hold > 2 || pPlayer->hard_landing || pPlayer->access_incs > 0
-        || pPlayer->knee_incs > 0
-        || (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == TRIPBOMB_WEAPON && pPlayer->kickback_pic > 1
-            && pPlayer->kickback_pic < PWEAPON(playerNum, pPlayer->curr_weapon, FireDelay)))
-        return IL_NOTHING;
+    if (pPlayer->return_to_center > 0 || thisPlayer.horizRecenter)
+        return IL_NOHORIZ;
 
     return 0;
 }
@@ -3132,13 +3109,15 @@ void P_GetInput(int const playerNum)
     input.svel -= info.dx * keyMove / analogExtent;
     input.fvel -= info.dz * keyMove / analogExtent;
 
-    static double lastInputTicks;
-    auto const    currentHiTicks    = timerGetHiTicks();
-    double const  elapsedInputTicks = currentHiTicks - lastInputTicks;
+    auto const currentHiTicks    = timerGetHiTicks();
+    double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
 
-    lastInputTicks = currentHiTicks;
+    if (!g_lastInputTicks)
+        elapsedInputTicks = 0;
 
-    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / elapsedInputTicks); };
+    g_lastInputTicks = currentHiTicks;
+
+    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
 
     if (BUTTON(gamefunc_Strafe))
     {
@@ -3335,6 +3314,7 @@ void P_GetInput(int const playerNum)
         if ((!pPlayer->return_to_center && thisPlayer.horizRecenter) || (pPlayer->q16horiz >= F16(99.9) && pPlayer->q16horiz <= F16(100.1)))
         {
             pPlayer->q16horiz = F16(100);
+            pPlayer->return_to_center = 0;
             thisPlayer.horizRecenter = false;
         }
 
@@ -3372,9 +3352,10 @@ void P_GetInput(int const playerNum)
     }
 
     if (thisPlayer.horizSkew)
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float(thisPlayer.horizSkew))));
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(thisPlayer.horizSkew)));
 
-    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
 }
 
 static int32_t P_DoCounters(int playerNum)
@@ -3765,13 +3746,6 @@ void P_CheckWeapon(DukePlayer_t *pPlayer)
     P_ChangeWeapon(pPlayer, weaponNum);
 }
 
-#ifdef LUNATIC
-void P_CheckWeaponI(int playerNum)
-{
-    P_CheckWeapon(g_player[playerNum].ps);
-}
-#endif
-
 static void DoWallTouchDamage(const DukePlayer_t *pPlayer, int32_t wallNum)
 {
     vec3_t const davect = { pPlayer->pos.x + (sintable[(fix16_to_int(pPlayer->q16ang) + 512) & 2047] >> 9),
@@ -4042,7 +4016,7 @@ void P_FragPlayer(int playerNum)
             if (actor[pPlayer->i].picnum != APLAYERTOP)
             {
                 pPlayer->fraggedself++;
-                if ((unsigned)pPlayer->wackedbyactor < MAXTILES && A_CheckEnemyTile(sprite[pPlayer->wackedbyactor].picnum))
+                if ((unsigned)pPlayer->wackedbyactor < MAXSPRITES && A_CheckEnemyTile(sprite[pPlayer->wackedbyactor].picnum))
                     Bsprintf(tempbuf, apStrings[OBITQUOTEINDEX + (krand() % g_numObituaries)], "A monster",
                              &g_player[playerNum].user_name[0]);
                 else if (actor[pPlayer->i].picnum == NUKEBUTTON)
@@ -4065,11 +4039,7 @@ void P_FragPlayer(int playerNum)
     }
 }
 
-#ifdef LUNATIC
-# define PIPEBOMB_CONTROL(playerNum) (g_player[playerNum].ps->pipebombControl)
-#else
-# define PIPEBOMB_CONTROL(playerNum) (Gv_GetVarByLabel("PIPEBOMB_CONTROL", PIPEBOMB_REMOTE, -1, playerNum))
-#endif
+#define PIPEBOMB_CONTROL(playerNum) (Gv_GetVarByLabel("PIPEBOMB_CONTROL", PIPEBOMB_REMOTE, -1, playerNum))
 
 static void P_ProcessWeapon(int playerNum)
 {
@@ -4265,12 +4235,15 @@ static void P_ProcessWeapon(int playerNum)
                                 if (wall[hitData.wall].overpicnum == BIGFORCE)
                                     break;
 
+                            uint32_t xdiff_sq, ydiff_sq;
                             int spriteNum = headspritesect[hitData.sect];
                             while (spriteNum >= 0)
                             {
-                                if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.pos.z) < ZOFFSET4 &&
-                                    ((sprite[spriteNum].x - hitData.pos.x) * (sprite[spriteNum].x - hitData.pos.x) +
-                                     (sprite[spriteNum].y - hitData.pos.y) * (sprite[spriteNum].y - hitData.pos.y)) < (290 * 290))
+                                xdiff_sq = (sprite[spriteNum].x - hitData.pos.x) * (sprite[spriteNum].x - hitData.pos.x);
+                                ydiff_sq = (sprite[spriteNum].y - hitData.pos.y) * (sprite[spriteNum].y - hitData.pos.y);
+
+                                if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.pos.z) < ZOFFSET4
+                                        && xdiff_sq + ydiff_sq < (290 * 290))
                                     break;
                                 spriteNum = nextspritesect[spriteNum];
                             }
@@ -4279,8 +4252,11 @@ static void P_ProcessWeapon(int playerNum)
                             if (spriteNum == -1 && hitData.wall >= 0 && (wall[hitData.wall].cstat & 16) == 0)
                                 if ((wall[hitData.wall].nextsector >= 0 && sector[wall[hitData.wall].nextsector].lotag <= 2) ||
                                     (wall[hitData.wall].nextsector == -1 && sector[hitData.sect].lotag <= 2))
-                                    if (((hitData.pos.x - pPlayer->pos.x) * (hitData.pos.x - pPlayer->pos.x) +
-                                         (hitData.pos.y - pPlayer->pos.y) * (hitData.pos.y - pPlayer->pos.y)) < (290 * 290))
+                                {
+                                    xdiff_sq = (hitData.pos.x - pPlayer->pos.x) * (hitData.pos.x - pPlayer->pos.x);
+                                    ydiff_sq = (hitData.pos.y - pPlayer->pos.y) * (hitData.pos.y - pPlayer->pos.y);
+
+                                    if (xdiff_sq + ydiff_sq < (290 * 290))
                                     {
                                         pPlayer->pos.z = pPlayer->opos.z;
                                         pPlayer->vel.z = 0;
@@ -4290,6 +4266,7 @@ static void P_ProcessWeapon(int playerNum)
                                             A_PlaySound(PWEAPON(playerNum, pPlayer->curr_weapon, InitialSound), pPlayer->i);
                                         }
                                     }
+                                }
                         }
                         break;
 
@@ -4380,13 +4357,8 @@ static void P_ProcessWeapon(int playerNum)
 
                     if (pipeBombType & PIPEBOMB_TIMER)
                     {
-#ifdef LUNATIC
-                        int pipeLifeTime     = g_player[playerNum].ps->pipebombLifetime;
-                        int pipeLifeVariance = g_player[playerNum].ps->pipebombLifetimeVar;
-#else
                         int pipeLifeTime     = Gv_GetVarByLabel("GRENADE_LIFETIME", NAM_GRENADE_LIFETIME, -1, playerNum);
                         int pipeLifeVariance = Gv_GetVarByLabel("GRENADE_LIFETIME_VAR", NAM_GRENADE_LIFETIME_VAR, -1, playerNum);
-#endif
                         actor[pipeSpriteNum].t_data[7]= pipeLifeTime
                                             + mulscale14(krand(), pipeLifeVariance)
                                             - pipeLifeVariance;
@@ -4766,6 +4738,8 @@ static void P_DoJetpack(int const playerNum, int const playerBits, int const pla
     pPlayer->pycount        &= 2047;
     pPlayer->pyoff           = sintable[pPlayer->pycount] >> 7;
 
+    g_player[playerNum].horizSkew = 0;
+
     if (pPlayer->jetpack_on < 11)
     {
         pPlayer->jetpack_on++;
@@ -4853,34 +4827,6 @@ static void P_Dead(int const playerNum, int const sectorLotag, int const floorZ,
 }
 
 
-static void P_HandlePal(DukePlayer_t *const pPlayer)
-{
-#if !defined LUNATIC
-    pPlayer->pals.f--;
-#else
-    if (pPlayer->palsfadespeed > 0)
-    {
-        // <palsfadespeed> is the tint fade speed is in
-        // decrements/P_ProcessInput() calls.
-        pPlayer->pals.f = max(pPlayer->pals.f - pPlayer->palsfadespeed, 0);
-    }
-    else
-    {
-        // <palsfadespeed> is a negated count of how many times we
-        // (P_ProcessInput()) should be called before decrementing the tint
-        // fading by one. <palsfadenext> is the live counter.
-        if (pPlayer->palsfadenext < 0)
-            pPlayer->palsfadenext++;
-
-        if (pPlayer->palsfadenext == 0)
-        {
-            pPlayer->palsfadenext = pPlayer->palsfadespeed;
-            pPlayer->pals.f--;
-        }
-    }
-#endif
-}
-
 // Duke3D needs the player sprite to actually be in the floor when shrunk in order to walk under enemies.
 // This sucks.
 static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t const ceilZ, int32_t const floorZ)
@@ -4906,11 +4852,11 @@ void P_ProcessInput(int playerNum)
 {
     auto &thisPlayer = g_player[playerNum];
 
-    thisPlayer.horizAngleAdjust = 0;
-    thisPlayer.horizSkew = 0;
-
     if (thisPlayer.playerquitflag == 0)
         return;
+
+    thisPlayer.horizAngleAdjust = 0;
+    thisPlayer.horizSkew = 0;
 
     auto const pPlayer = thisPlayer.ps;
     auto const pSprite = &sprite[pPlayer->i];
@@ -5068,7 +5014,7 @@ void P_ProcessInput(int playerNum)
     }
 
     if (pPlayer->pals.f > 0)
-        P_HandlePal(pPlayer);
+        pPlayer->pals.f--;
 
     if (pPlayer->fta > 0 && --pPlayer->fta == 0)
     {
@@ -5079,7 +5025,7 @@ void P_ProcessInput(int playerNum)
     if (g_levelTextTime > 0)
         g_levelTextTime--;
 
-    if (pSprite->extra <= 0)
+    if (pSprite->extra <= 0 && !ud.god)
     {
         P_Dead(playerNum, sectorLotag, floorZ, ceilZ);
         return;
@@ -5173,12 +5119,6 @@ void P_ProcessInput(int playerNum)
     if (!ud.noclip)
         pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L<<8), stepHeight, CLIPMASK0);
 
-    if (pPlayer->one_eighty_count < 0)
-    {
-        pPlayer->one_eighty_count += 128;
-        pPlayer->q16ang += F16(128);
-    }
-    
     // Shrinking code
 
     if (sectorLotag == ST_2_UNDERWATER)
@@ -5378,11 +5318,12 @@ void P_ProcessInput(int playerNum)
                 pPlayer->jumping_toggle--;
             else if (TEST_SYNC_KEY(playerBits, SK_JUMP) && pPlayer->jumping_toggle == 0)
             {
-                int32_t floorZ2, ceilZ2, dummy;
+                // dummy variables must be separate, otherwise breaks TROR computation
+                int32_t floorZ2, ceilZ2, dummy, dummy2;
 
-                getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy, getZRangeClipDist, CLIPMASK0);
+                getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy2, getZRangeClipDist, CLIPMASK0);
 
-                if (klabs(floorZ2-ceilZ2) > (48<<8))
+                if (!pPlayer->jumping_counter && klabs(floorZ2-ceilZ2) > (48<<8))
                 {
                     if (VM_OnEvent(EVENT_JUMP,pPlayer->i,playerNum) == 0)
                     {
@@ -5724,7 +5665,7 @@ RECHECK:
         {
             pPlayer->return_to_center = 9;
             thisPlayer.horizRecenter = true;
-            thisPlayer.horizAngleAdjust = float(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = 12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN));
         }
     }
 
@@ -5734,7 +5675,7 @@ RECHECK:
         {
             pPlayer->return_to_center = 9;
             thisPlayer.horizRecenter = true;
-            thisPlayer.horizAngleAdjust = -float(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = -(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         }
     }
 
@@ -5742,8 +5683,9 @@ RECHECK:
     {
         if (VM_OnEvent(EVENT_AIMUP,pPlayer->i,playerNum) == 0)
         {
-            thisPlayer.horizAngleAdjust = float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = 6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN));
             thisPlayer.horizRecenter    = false;
+            pPlayer->return_to_center   = 0;
         }
     }
 
@@ -5751,14 +5693,15 @@ RECHECK:
     {
         if (VM_OnEvent(EVENT_AIMDOWN,pPlayer->i,playerNum) == 0)
         {
-            thisPlayer.horizAngleAdjust = -float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
+            thisPlayer.horizAngleAdjust = -(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
+            pPlayer->return_to_center   = 0;
         }
     }
 
     if (pPlayer->hard_landing > 0)
     {
-        thisPlayer.horizSkew = fix16_from_int(-(pPlayer->hard_landing << 4));
+        thisPlayer.horizSkew = -(pPlayer->hard_landing << 4);
         pPlayer->hard_landing--;
     }
 
@@ -5787,7 +5730,7 @@ RECHECK:
 #ifndef EDUKE32_STANDALONE
     if (!FURY && pPlayer->knee_incs > 0)
     {
-        thisPlayer.horizSkew = F16(-48);
+        thisPlayer.horizSkew = -48;
         thisPlayer.horizRecenter = true;
         pPlayer->return_to_center = 9;
 
@@ -5838,11 +5781,6 @@ RECHECK:
             }
             pPlayer->actorsqu = -1;
         }
-        else if (pPlayer->actorsqu >= 0)
-            pPlayer->q16ang += fix16_from_int(
-            G_GetAngleDelta(fix16_to_int(pPlayer->q16ang),
-                            getangle(sprite[pPlayer->actorsqu].x - pPlayer->pos.x, sprite[pPlayer->actorsqu].y - pPlayer->pos.y))
-            >> 2);
     }
 #endif
 

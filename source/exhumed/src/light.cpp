@@ -57,8 +57,10 @@ short nPalDiff;
 short overscanindex;
 int bGreenPal = 0;
 
+palette_t fadeintopal[256];
+
 // keep a local copy of the palette that would have been sent to the VGA display adapter
-uint8_t vgaPalette[768];
+//uint8_t vgaPalette[768];
 
 
 void MyLoadPalette()
@@ -214,9 +216,9 @@ void GrabPalette()
     nPalDiff  = 0;
     nPalDelay = 0;
 
-    btint = 0;
-    gtint = 0;
     rtint = 0;
+    gtint = 0;
+    btint = 0;
 #ifdef USE_OPENGL
     videoTintBlood(0, 0, 0);
 #endif
@@ -355,7 +357,6 @@ void FadeOut(int bFadeMusic)
         StartfadeCDaudio();
     }
 
-
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
@@ -422,6 +423,14 @@ void StartFadeIn()
 {
     //fadedestpal = curpalette;
     //fadecurpal = curpal;
+
+    /*
+    memcpy(fadeintopal, curpalette, sizeof(curpalette));
+    memset(curpalettefaded, 0, sizeof(curpalettefaded));
+
+    videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
+    */
 }
 
 int DoFadeIn()
@@ -484,6 +493,7 @@ void FadeIn()
         return;
     }
 #endif
+
     StartFadeIn();
 
     int val;
@@ -560,16 +570,16 @@ void FixPalette()
     }
 
     nPalDiff -= 20;
-    gtint -= 20;
     rtint -= 20;
+    gtint -= 20;
     btint -= 20;
-
-    if (gtint < 0) {
-        gtint = 0;
-    }
 
     if (rtint < 0) {
         rtint = 0;
+    }
+
+    if (gtint < 0) {
+        gtint = 0;
     }
 
     if (btint < 0) {
@@ -599,60 +609,45 @@ void TintPalette(int r, int g, int b)
     }
 
     // range limit R between 20 and 255 if positive
-    if (r > 255)
-    {
+    if (r > 255) {
         r = 255;
     }
-    else
-    {
-        if (r && r < 20) {
-            r = 20;
-        }
+    else if (r > 0 && r < 20) {
+        r = 20;
     }
 
     // range limit G between 20 and 255 if positive
-    if (g > 255)
-    {
+    if (g > 255) {
         g = 255;
     }
-    else
-    {
-        if (g && g < 20) {
-            g = 20;
-        }
+    else if (g > 0 && g < 20) {
+        g = 20;
     }
 
     // range limit B between 20 and 255 if positive
-    if (b > 255)
-    {
+    if (b > 255) {
         b = 255;
     }
-    else
-    {
-        if (b && b < 20) {
-            b = 20;
-        }
+    else if (b > 0 && b < 20) {
+        b = 20;
     }
 
-    // loc_17EFA
-    if (g && gtint > 32) {
+    if (g > 0 && gtint > 32) {
         return;
     }
 
     gtint += g;
 
-    if (r && rtint > 256) {
+    if (r > 0 && rtint > 256) {
         return;
     }
 
     rtint += r;
-
     btint += b;
 
     // do not modify r, g or b variables from this point on
     int nVal;
 
-    // loc_17F49
     if (klabs(r) > klabs(g)) {
         nVal = klabs(r);
     }

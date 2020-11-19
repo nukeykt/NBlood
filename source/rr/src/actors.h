@@ -215,6 +215,7 @@ enum sflags_t
     SFLAG_BADGUY_TILE      = 0x08000000,
     SFLAG_KILLCOUNT        = 0x10000000,
     SFLAG_NOCANSEECHECK    = 0x20000000,
+    SFLAG_CORPSE           = 0x40000000,
 };
 
 // Custom projectiles "workslike" flags.
@@ -341,6 +342,11 @@ EXTERN_INLINE int G_CheckForSpaceFloor(int const sectnum)
 EXTERN_INLINE int A_CheckEnemySprite(void const * const pSprite)
 {
     return A_CheckEnemyTile(((uspritetype const *) pSprite)->picnum);
+}
+
+EXTERN_INLINE int A_CheckCorpseSprite(void const * const pSprite)
+{
+    return ((g_tile[((uspritetype const *) pSprite)->picnum].flags & (SFLAG_CORPSE)) != 0);
 }
 
 #endif

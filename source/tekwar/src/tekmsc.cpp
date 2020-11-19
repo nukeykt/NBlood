@@ -273,39 +273,42 @@ void fog()
     palookup[255] = temp;
 }
 
-int
-initpaletteshifts(void)
+int initpaletteshifts()
 {
-     unsigned char *workptr,*baseptr;
-     int       i,j,delta;
+    unsigned char* workptr, * baseptr;
+    int       i, j, delta;
 
-     for( i=1; i<=NUMREDSHIFTS; i++ ) {
-          workptr=&redshifts[i-1][0];
-          baseptr=&palette[0];
-          for( j=0; j<=255; j++) {
-               delta=64-*baseptr;
-               *workptr++=*baseptr++ + delta * i / REDSTEPS;
-               delta=-*baseptr;
-               *workptr++=*baseptr++ + delta * i / REDSTEPS;
-               delta=-*baseptr;
-               *workptr++=*baseptr++ + delta * i / REDSTEPS;
-          }
-     }
+    for (i = 1; i <= NUMREDSHIFTS; i++)
+    {
+        workptr = &redshifts[i - 1][0];
+        baseptr = &palette[0];
+        for (j = 0; j <= 255; j++)
+        {
+            delta = 64 - *baseptr;
+            *workptr++ = *baseptr++ + delta * i / REDSTEPS;
+            delta = -*baseptr;
+            *workptr++ = *baseptr++ + delta * i / REDSTEPS;
+            delta = -*baseptr;
+            *workptr++ = *baseptr++ + delta * i / REDSTEPS;
+        }
+    }
 
-     for( i=1; i<=NUMWHITESHIFTS; i++ ) {
-          workptr=&whiteshifts[i-1][0];
-          baseptr=&palette[0];
-          for( j=0; j<=255; j++ ) {
-               delta = 64-*baseptr;
-               *workptr++ = *baseptr++ + delta * i / WHITESTEPS;
-               delta = 62-*baseptr;
-               *workptr++ = *baseptr++ + delta * i / WHITESTEPS;
-               delta = 0-*baseptr;
-               *workptr++ = *baseptr++ + delta * i / WHITESTEPS;
-          }
-     }
+    for (i = 1; i <= NUMWHITESHIFTS; i++)
+    {
+        workptr = &whiteshifts[i - 1][0];
+        baseptr = &palette[0];
+        for (j = 0; j <= 255; j++)
+        {
+            delta = 64 - *baseptr;
+            *workptr++ = *baseptr++ + delta * i / WHITESTEPS;
+            delta = 62 - *baseptr;
+            *workptr++ = *baseptr++ + delta * i / WHITESTEPS;
+            delta = 0 - *baseptr;
+            *workptr++ = *baseptr++ + delta * i / WHITESTEPS;
+        }
+    }
 
-     return 0;
+    return 0;
 }
 
 int
@@ -500,10 +503,9 @@ tektitlescreen()
 }
 #endif
 
-void
-tekfirstpass()
+void tekfirstpass()
 {
-// TODO     setbrightness(brightness, palette, 0);
+    setbrightness(brightness);
 }
 
 void
@@ -949,7 +951,7 @@ nextnetlevel()
      if (myconnectindex == connecthead) {
           playerreadyflag[myconnectindex]=1;
           do {
-               if ((len=getpacket(&other,tempbuf)) > 0) {
+               if ((len=getpacket(&other,packetbuf)) > 0) {
                     playerreadyflag[other]=1;
                }
                readyplayers=0;
@@ -1267,8 +1269,8 @@ tekscreenfx(void)
      }
 
      if( biasthreshholdon ) {
-          sprintf((char *)tempbuf,"SET BIAS THRESHHOLD %3d", biasthreshhold);
-          printext((xdim>>1)-96,windowxy2.y-10,(char *)tempbuf,ALPHABET2,255);
+          sprintf(tempbuf,"SET BIAS THRESHHOLD %3d", biasthreshhold);
+          printext((xdim>>1)-96,windowxy2.y-10,tempbuf,ALPHABET2,255);
      }
      else if( (activemenu == 0) && messageon ) {
           if( messagex > windowxy1.x )
@@ -1610,9 +1612,9 @@ getloadsavenames(void)
      int  fil,i;
 
      for (i=0 ; i < MAXLOADSAVEOPTS ; i++) {
-          sprintf((char *)tempbuf,"savegam%d.tek",i+1);
-          if (access((char *)tempbuf,F_OK) == 0) {
-               fil=open((char *)tempbuf,O_BINARY|O_RDONLY,S_IREAD);
+          sprintf(tempbuf,"savegam%d.tek",i+1);
+          if (access(tempbuf,F_OK) == 0) {
+               fil=open(tempbuf,O_BINARY|O_RDONLY,S_IREAD);
                read(fil,&loadsavenames[i],MAXLOADSAVESIZE);
                close(fil);
           }
@@ -1629,10 +1631,10 @@ mprintf(short x,short y,char prop,char shade,char palnum,const char *stg,...)
      va_list vargs;
 
      va_start(vargs,stg);
-     vsprintf((char *)tempbuf,stg,vargs);
+     vsprintf(tempbuf,stg,vargs);
      va_end(vargs);
-     Bstrupr((char *)tempbuf);
-     n=strlen((char *)tempbuf);
+     Bstrupr(tempbuf);
+     n=strlen(tempbuf);
      if (x == -1) {
           if (prop) {
                pic=MFONT_A;
@@ -2007,7 +2009,7 @@ domenuinput(void)
           }
      }
      else if (activemenu == 4) {
-          if (keystatus[21] != 0) {                    // "Y" key
+          if (keystatus[sc_Y] != 0) {                    // "Y" key
                switch (activemenu) {
                case 4:
                     gameover=1;
@@ -2019,12 +2021,12 @@ domenuinput(void)
                     break;
                }
           }
-          else if (keystatus[49] != 0) {               // "N" key
+          else if (keystatus[sc_N] != 0) {               // "N" key
                activemenu=255;
           }
      }
-     else if (keystatus[0x1C] || keystatus[0x9C]) {    // enter key
-          keystatus[0x1C]=keystatus[0x9C]=0;
+     else if (keystatus[sc_Enter] || keystatus[sc_kpad_Enter]) {    // enter key
+          keystatus[sc_Enter]=keystatus[sc_kpad_Enter]=0;
           playsound( S_MENUSOUND2 ,0,0,0,ST_IMMEDIATE);
           if (mptr->tomenu != 0) {
                activemenu=mptr->tomenu;
@@ -2063,7 +2065,7 @@ domenuinput(void)
                     activemenu=255;
                     break;
                case 7:                                 // save game
-                    keystatus[0x1C]=keystatus[0x9C]=0;
+                    keystatus[sc_Enter]=keystatus[sc_kpad_Enter]=0;
                     loctypemode=1;
  // TODO                   keyfifoplc=keyfifoend;
                     if (strcmp(loadsavenames[selopt-1],"-EMPTY-") != 0) {
@@ -2080,8 +2082,8 @@ domenuinput(void)
           }
      }
      else if (activemenu == 8 || activemenu == 9) {
-          if (keystatus[0x4B] || keystatus[0xCB]) {    // left arrow key
-               keystatus[0x4B]=keystatus[0xCB]=0;
+          if (keystatus[sc_kpad_4] || keystatus[sc_LeftArrow]) {    // left arrow key
+               keystatus[sc_kpad_4]=keystatus[sc_LeftArrow]=0;
                switch (selopt) {
                case 1:
                     if (activemenu == 8) {
@@ -2105,8 +2107,8 @@ domenuinput(void)
                }
                playsound( S_MENUSOUND1 ,0,0,0,ST_IMMEDIATE);
           }
-          else if (keystatus[0x4D] || keystatus[0xCD]) {    // right arrow key
-               keystatus[0x4D]=keystatus[0xCD]=0;
+          else if (keystatus[sc_kpad_6] || keystatus[sc_RightArrow]) {    // right arrow key
+               keystatus[sc_kpad_6]=keystatus[sc_RightArrow]=0;
                switch (selopt) {
                case 1:
                     if (activemenu == 8) {
@@ -2128,11 +2130,11 @@ domenuinput(void)
                     }
                     break;
                }
-               playsound( S_MENUSOUND1 ,0,0,0,ST_IMMEDIATE);
+               playsound(S_MENUSOUND1 ,0,0,0,ST_IMMEDIATE);
           }
      }
-     else if (keystatus[16]) {
-          keystatus[16]=0;
+     else if (keystatus[sc_Q]) {
+          keystatus[sc_Q]=0;
           gameover=1;
      }
 }

@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include <assert.h>
 
+#include "save.h"
+
 short SpiderCount = 0;
 
 #define kMaxSpiders 100
@@ -267,7 +269,7 @@ void FuncSpider(int a, int nDamage, int nRun)
                                 SpiderList[nSpider].nFrame = 0;
 
                                 if (!RandomSize(3)) {
-                                    D3PlayFX(StaticSound[kSound29], nSprite);
+                                    D3PlayFX(StaticSound[kSoundSpiderJump], nSprite);
                                 }
                             }
                         }
@@ -292,7 +294,7 @@ void FuncSpider(int a, int nDamage, int nRun)
                             if (nFrameFlag & 0x80)
                             {
                                 runlist_DamageEnemy(nTarget, nSprite, 3);
-                                D3PlayFX(StaticSound[kSound38], nSprite);
+                                D3PlayFX(StaticSound[kSoundSpiderAttack], nSprite);
                             }
 
                             if (PlotCourseToSprite(nSprite, nTarget) < 1024) {
@@ -440,4 +442,30 @@ void FuncSpider(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class SpiderLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void SpiderLoadSave::Load()
+{
+    Read(&SpiderCount, sizeof(SpiderCount));
+    Read(SpiderList, sizeof(Spider) * SpiderCount);
+}
+
+void SpiderLoadSave::Save()
+{
+    Write(&SpiderCount, sizeof(SpiderCount));
+    Write(SpiderList, sizeof(Spider) * SpiderCount);
+}
+
+static SpiderLoadSave* myLoadSave;
+
+void SpiderLoadSaveConstruct()
+{
+    myLoadSave = new SpiderLoadSave();
 }

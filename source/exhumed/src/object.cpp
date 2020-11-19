@@ -27,12 +27,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "runlist.h"
 #include "names.h"
 #include "sequence.h"
+#include "light.h"
 #include "lighting.h"
 #include "anims.h"
 #include "items.h"
 #include "player.h"
 #include "trigdat.h"
 #include "bullet.h"
+#include "save.h"
+#include "status.h"
 #include <string.h>
 #include <assert.h>
 
@@ -46,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxTraps		40
 #define kMaxTrails		20
 #define kMaxTrailPoints	100
-
+#define kMaxWallFacePics   8
 
 static short ObjectSeq[] = {
     46, -1, 72, -1
@@ -61,7 +64,7 @@ struct Trail
     short field_0;
     short field_2;
     short field_4;
-    short pad;
+//  short pad;
 };
 
 struct TrailPoint
@@ -127,8 +130,8 @@ struct wallFace
 {
     short nChannel;
     short nWall;
-    short field_4;
-    short field_6[8];
+    short nPicCount;
+    short picList[kMaxWallFacePics];
 };
 
 // TODO - rename
@@ -139,7 +142,7 @@ struct slideData2
     short field_4;
     short field_6;
     short field_8;
-    uint8_t field_A[6]; // pad?
+//  uint8_t field_A[6]; // pad?
 };
 
 struct slideData
@@ -187,7 +190,6 @@ struct Trap
 };
 
 Trap sTrap[kMaxTraps];
-
 Bob sBob[kMaxBobs];
 Trail sTrail[kMaxTrails];
 TrailPoint sTrailPoint[kMaxTrailPoints];
@@ -195,13 +197,13 @@ Elev Elevator[kMaxElevs];
 Object ObjectList[kMaxObjects];
 MoveSect sMoveSect[kMaxMoveSects];
 slideData SlideData[kMaxSlideData];
+slideData2 SlideData2[kMaxSlideData];
 short sMoveDir[kMaxMoveSects];
 wallFace WallFace[kMaxWallFace];
-slideData2 SlideData2[kMaxSlideData];
+
 Point PointList[kMaxPoints];
 
 short nTrapInterval[kMaxTraps];
-
 short sBobID[kMaxBobs];
 
 short PointCount;
@@ -217,13 +219,11 @@ short nTrailPointNext[kMaxTrailPoints];
 Drip sDrip[kMaxDrips];
 
 short ElevCount = -1;
-
 short WallFaceCount = -1;
 
 int lFinaleStart;
 
 short nTrailPoints;
-
 short nEnergyBlocks;
 short nMoveSects;
 short nFinaleStage;
@@ -237,7 +237,7 @@ short nBobs = 0;
 short nDronePitch = 0;
 short nSmokeSparks = 0;
 
-// done
+
 void InitObjects()
 {
     ObjectCount = 0;
@@ -257,13 +257,11 @@ void InitObjects()
     nSmokeSparks = 0;
 }
 
-// done
 void InitElev()
 {
-    ElevCount = kMaxElevs;
+    ElevCount = 0;
 }
 
-// done
 int BuildWallSprite(int nSector)
 {
     int nWall = sector[nSector].wallptr;
@@ -284,7 +282,6 @@ int BuildWallSprite(int nSector)
     return nSprite;
 }
 
-// done
 short FindWallSprites(short nSector)
 {
     int var_24 = 0x7FFFFFFF;
@@ -362,101 +359,98 @@ short FindWallSprites(short nSector)
 
 int BuildElevF(int nChannel, int nSector, int nWallSprite, int arg_4, int arg_5, int nCount, ...)
 {
-    assert(ElevCount > 0);
-
-    if (ElevCount <= 0) {
+    if (ElevCount >= kMaxElevs) {
         return -1;
     }
 
-    ElevCount--;
+    int nElev = ElevCount;
+    ElevCount++;
 
-    Elevator[ElevCount].field_0 = 2;
-    Elevator[ElevCount].field_6 = arg_4;
-    Elevator[ElevCount].field_32 = -1;
-    Elevator[ElevCount].field_A = arg_5;
-    Elevator[ElevCount].nChannel = nChannel;
-    Elevator[ElevCount].nSector = nSector;
-    Elevator[ElevCount].nCountZOffsets = 0;
-    Elevator[ElevCount].nCurZOffset = 0;
-    Elevator[ElevCount].field_36 = 0;
+    Elevator[nElev].field_0 = 2;
+    Elevator[nElev].field_6 = arg_4;
+    Elevator[nElev].field_32 = -1;
+    Elevator[nElev].field_A = arg_5;
+    Elevator[nElev].nChannel = nChannel;
+    Elevator[nElev].nSector = nSector;
+    Elevator[nElev].nCountZOffsets = 0;
+    Elevator[nElev].nCurZOffset = 0;
+    Elevator[nElev].field_36 = 0;
 
     if (nWallSprite < 0) {
         nWallSprite = BuildWallSprite(nSector);
     }
 
-    Elevator[ElevCount].nSprite = nWallSprite;
+    Elevator[nElev].nSprite = nWallSprite;
 
     va_list zlist;
     va_start(zlist, nCount);
 
     while (1)
     {
-        if (Elevator[ElevCount].nCountZOffsets >= nCount) {
-            return ElevCount;
+        if (Elevator[nElev].nCountZOffsets >= nCount) {
+            return nElev;
         }
 
-        int nVal = Elevator[ElevCount].nCountZOffsets;
+        int nVal = Elevator[nElev].nCountZOffsets;
 
-        Elevator[ElevCount].nCountZOffsets++;
+        Elevator[nElev].nCountZOffsets++;
 
-        Elevator[ElevCount].zOffsets[nVal] = va_arg(zlist, int);
+        Elevator[nElev].zOffsets[nVal] = va_arg(zlist, int);
     }
     va_end(zlist);
 
-    return ElevCount;
+    return nElev;
 }
 
 int BuildElevC(int arg1, int nChannel, int nSector, int nWallSprite, int arg5, int arg6, int nCount, ...)
 {
-    int edi = arg5;
-
-    assert(ElevCount > 0);
-    if (ElevCount <= 0) {
+    if (ElevCount >= kMaxElevs) {
         return -1;
     }
 
-    ElevCount--;
+    int nElev = ElevCount;
+    ElevCount++;
 
-    Elevator[ElevCount].field_0 = arg1;
+    Elevator[nElev].field_0 = arg1;
 
     if (arg1 & 4)
     {
-        edi = arg5 / 2;
+        arg5 /= 2;
     }
 
-    Elevator[ElevCount].field_6 = edi;
-    Elevator[ElevCount].nCountZOffsets = 0;
-    Elevator[ElevCount].field_36 = 0;
-    Elevator[ElevCount].nCurZOffset = 0;
-    Elevator[ElevCount].field_A = arg6;
-    Elevator[ElevCount].field_32 = -1;
-    Elevator[ElevCount].nChannel = nChannel;
-    Elevator[ElevCount].nSector = nSector;
+    Elevator[nElev].field_6 = arg5;
+    Elevator[nElev].nCountZOffsets = 0;
+    Elevator[nElev].field_36 = 0;
+    Elevator[nElev].nCurZOffset = 0;
+    Elevator[nElev].field_A = arg6;
+    Elevator[nElev].field_32 = -1;
+    Elevator[nElev].nChannel = nChannel;
+    Elevator[nElev].nSector = nSector;
 
     if (nWallSprite < 0) {
         nWallSprite = BuildWallSprite(nSector);
     }
 
-    Elevator[ElevCount].nSprite = nWallSprite;
+    Elevator[nElev].nSprite = nWallSprite;
 
     va_list zlist;
     va_start(zlist, nCount);
 
     while (1)
     {
-        if (Elevator[ElevCount].nCountZOffsets >= nCount) {
-            return ElevCount;
+        if (Elevator[nElev].nCountZOffsets >= nCount) {
+            return nElev;
         }
 
-        int nVal = Elevator[ElevCount].nCountZOffsets;
+        int nVal = Elevator[nElev].nCountZOffsets;
 
-        Elevator[ElevCount].nCountZOffsets++;
+        Elevator[nElev].nCountZOffsets++;
 
-        Elevator[ElevCount].zOffsets[nVal] = va_arg(zlist, int);
+        Elevator[nElev].zOffsets[nVal] = va_arg(zlist, int);
     }
     va_end(zlist);
 
-    return ElevCount;
+    return nElev;
 }
 
 // TODO - tidy me up
@@ -487,7 +481,6 @@ int LongSeek(int *pZVal, int a2, int a3, int a4)
     return v4;
 }
 
-// done
 int CheckSectorSprites(short nSector, int nVal)
 {
     int b = 0;
@@ -536,7 +529,6 @@ int CheckSectorSprites(short nSector, int nVal)
     return b;
 }
 
-// done
 void MoveSectorSprites(int nSector, int z)
 {
     int nSprite = headspritesect[nSector];
@@ -595,7 +587,7 @@ void FuncElev(int a, int UNUSED(b), int nRun)
 //			short ax = var_18 & 8;
             short dx = sRunChannels[nChannel].c;
 
-            int edi = 999; // FIXME CHECKME - this isn't default set to anything in the ASM that I can see - if ax is 0 and var_24 is 0, this will never be set to a known value otherwise!
+            int edi = 0; // FIXME CHECKME - this isn't default set to anything in the ASM that I can see - if ax is 0 and var_24 is 0, this will never be set to a known value otherwise!
 
             if (var_18 & 0x8)
             {
@@ -639,8 +631,6 @@ void FuncElev(int a, int UNUSED(b), int nRun)
                     }
                 }
             }
-
-            assert(edi != 999);
 
             // loc_20DF9:
             if (edi)
@@ -750,7 +740,7 @@ void FuncElev(int a, int UNUSED(b), int nRun)
                             SetQuake(di, 30);
                         }
 
-                        PlayFXAtXYZ(StaticSound[kSound26], sprite[di].x, sprite[di].y, sprite[di].z, sprite[di].sectnum);
+                        PlayFXAtXYZ(StaticSound[kSoundSetLand], sprite[di].x, sprite[di].y, sprite[di].z, sprite[di].sectnum);
                     }
 
                     if (var_18 & 0x4)
@@ -784,41 +774,41 @@ void FuncElev(int a, int UNUSED(b), int nRun)
     }
 }
 
-// done
 void InitWallFace()
 {
-    WallFaceCount = kMaxWallFace;
+    WallFaceCount = 0;
 }
 
 int BuildWallFace(short nChannel, short nWall, short nCount, ...)
 {
-    if (WallFaceCount <= 0) {
+    if (WallFaceCount >= kMaxWallFace) {
         bail2dos("Too many wall faces!\n");
     }
 
-    WallFaceCount--;
+    int nWallFace = WallFaceCount;
+    WallFaceCount++;
 
-    WallFace[WallFaceCount].field_4 = 0;
-    WallFace[WallFaceCount].nWall = nWall;
-    WallFace[WallFaceCount].nChannel = nChannel;
+    WallFace[nWallFace].nPicCount = 0;
+    WallFace[nWallFace].nWall = nWall;
+    WallFace[nWallFace].nChannel = nChannel;
 
-    if (nCount > 8) {
-        nCount = 8;
+    if (nCount > kMaxWallFacePics) {
+        nCount = kMaxWallFacePics;
     }
 
     va_list piclist;
     va_start(piclist, nCount);
 
-    while (WallFace[WallFaceCount].field_4 < nCount)
+    while (WallFace[nWallFace].nPicCount < nCount)
     {
-        int i = WallFace[WallFaceCount].field_4;
-        WallFace[WallFaceCount].field_4++;
+        int i = WallFace[nWallFace].nPicCount;
+        WallFace[nWallFace].nPicCount++;
 
-        WallFace[WallFaceCount].field_6[i] = (short)va_arg(piclist, int);
+        WallFace[nWallFace].picList[i] = (short)va_arg(piclist, int);
     }
     va_end(piclist);
 
-    return WallFaceCount | 0x70000;
+    return nWallFace | 0x70000;
 }
 
 void FuncWallFace(int a, int UNUSED(b), int nRun)
@@ -831,15 +821,14 @@ void FuncWallFace(int a, int UNUSED(b), int nRun)
     if ((a & 0x7F0000) != 0x10000)
         return;
 
-    short si = sRunChannels[nChannel].c;
+    short nPic = sRunChannels[nChannel].c;
 
-    if ((si <= WallFace[nWallFace].field_4) && (si >= 0))
+    if ((nPic <= WallFace[nWallFace].nPicCount) && (nPic >= 0))
     {
-        wall[WallFace[nWallFace].nWall].picnum = WallFace[nWallFace].field_6[si];
+        wall[WallFace[nWallFace].nWall].picnum = WallFace[nWallFace].picList[nPic];
     }
 }
 
-// done
 void InitPoint()
 {
     PointCount = 0;
@@ -849,16 +838,14 @@ void InitPoint()
     }
 }
 
-// done
 int GrabPoint()
 {
     return PointFree[PointCount++];
 }
 
-// done
 void InitSlide()
 {
-    SlideCount = kMaxSlides;
+    SlideCount = 0;
 
     for (int i = 0; i < kMaxSlides; i++) {
         SlideFree[i] = i;
@@ -888,14 +875,13 @@ int IdentifySector(int nVal)
 
 int BuildSlide(int nChannel, int nStartWall, int ebx, int ecx, int nWall2, int nWall3, int nWall4)
 {
-    if (SlideCount <= 0) {
+    if (SlideCount >= kMaxSlides) {
         bail2dos("Too many slides!\n");
         return -1;
     }
 
-    SlideCount--;
-
     int nSlide = SlideCount;
+    SlideCount++;
 
     short nSector = IdentifySector(nStartWall);
 
@@ -1009,7 +995,7 @@ void FuncSlide(int a, int UNUSED(b), int nRun)
 
             if (SlideData2[nSlide].field_8 != sRunChannels[nChannel].c)
             {
-                D3PlayFX(StaticSound[kSound23], SlideData2[nSlide].field_6);
+                D3PlayFX(StaticSound[kSoundAmbientStone], SlideData2[nSlide].field_6);
                 SlideData2[nSlide].field_8 = sRunChannels[nChannel].c;
             }
 
@@ -1296,7 +1282,7 @@ void FuncTrap(int a, int UNUSED(b), int nRun)
                         if (nType == 15)
                         {
                             sprite[nBulletSprite].ang = (sprite[nBulletSprite].ang - 512) & kAngleMask;
-                            D3PlayFX(StaticSound[kSound32], nSprite);
+                            D3PlayFX(StaticSound[kSoundTrapArrow], nSprite);
                         }
                         else
                         {
@@ -1314,7 +1300,7 @@ void FuncTrap(int a, int UNUSED(b), int nRun)
                                 wall[nWall].picnum = sTrap[nTrap].field_C + 1;
                             }
 
-                            D3PlayFX(StaticSound[kSound36], nSprite);
+                            D3PlayFX(StaticSound[kSoundTrapFire], nSprite);
                         }
                     }
                 }
@@ -1516,7 +1502,7 @@ void DoFinale()
 
         if (!RandomSize(2))
         {
-            PlayFX2(StaticSound[kSound78] | 0x2000, nFinaleSpr);
+            PlayFX2(StaticSound[kSoundBlasted] | 0x2000, nFinaleSpr);
 
             for (int i = 0; i < nTotalPlayers; i++) {
                 nQuake[i] = 1280;
@@ -1534,7 +1520,7 @@ void DoFinale()
                 if (nFinaleStage == 1)
                 {
                     StopLocalSound();
-                    PlayLocalSound(StaticSound[kSound76], 0);
+                    PlayLocalSound(StaticSound[kSoundJonTaunt3], 0);
                     dword_1542FC = (int)totalclock + 120;
                     nFinaleStage++;
                 }
@@ -1543,7 +1529,7 @@ void DoFinale()
             {
                 if ((int)totalclock >= dword_1542FC)
                 {
-                    PlayLocalSound(StaticSound[kSound77], 0);
+                    PlayLocalSound(StaticSound[kSoundJonLaugh1], 0);
                     nFinaleStage++;
                     dword_1542FC = (int)totalclock + 360;
                 }
@@ -1686,7 +1672,7 @@ void ExplodeEnergyBlock(int nSprite)
     sprite[nSprite].cstat = 0;
     sprite[nSprite].xrepeat = 100;
 
-    PlayFX2(StaticSound[kSound78], nSprite);
+    PlayFX2(StaticSound[kSoundBlasted], nSprite);
 
     sprite[nSprite].xrepeat = 0;
 
@@ -1897,7 +1883,7 @@ void ExplodeScreen(short nSprite)
     }
 
     sprite[nSprite].cstat = 0x8000;
-    PlayFX2(StaticSound[kSound78], nSprite);
+    PlayFX2(StaticSound[kSoundBlasted], nSprite);
 }
 
 void FuncObject(int a, int b, int nRun)
@@ -1929,7 +1915,7 @@ void FuncObject(int a, int b, int nRun)
 
             if (nStat == 98)
             {
-                D3PlayFX((StaticSound[kSound47] | 0x2000) | (RandomSize(2) << 9), nSprite);
+                D3PlayFX((StaticSound[kSoundDrum4] | 0x2000) | (RandomSize(2) << 9), nSprite);
                 return;
             }
 
@@ -2259,7 +2245,6 @@ void AddSectorBob(int nSector, int nHitag, int bx)
     nBobs++;
 }
 
-// Confirmed 100% correct with original .exe
 int FindTrail(int nVal)
 {
     for (int i = 0; i < nTrails; i++)
@@ -2274,7 +2259,6 @@ int FindTrail(int nVal)
     return nTrails++;
 }
 
-// ok ?
 void ProcessTrailSprite(int nSprite, int nLotag, int nHitag)
 {
     if (nTrailPoints >= 100) {
@@ -2338,7 +2322,6 @@ void ProcessTrailSprite(int nSprite, int nLotag, int nHitag)
     mydeletesprite(nSprite);
 }
 
-// ok?
 void AddMovingSector(int nSector, int edx, int ebx, int ecx)
 {
     if (nMoveSects >= kMaxMoveSects) {
@@ -2571,7 +2554,7 @@ void PostProcess()
             if (SectSpeed[i] && SectDepth[i] && !(SectFlag[i] & kSectLava))
             {
                 SectSoundSect[i] = i;
-                SectSound[i] = StaticSound[kSound43];
+                SectSound[i] = StaticSound[kSoundAmbientWater];
             }
             else
             {
@@ -2596,7 +2579,7 @@ void PostProcess()
                         {
                             var_20 = xVal + yVal;
                             SectSoundSect[i] = j;
-                            SectSound[i] = StaticSound[kSound43];
+                            SectSound[i] = StaticSound[kSoundAmbientWater];
                         }
                     }
                 }
@@ -2611,7 +2594,7 @@ void PostProcess()
         for (i = 0; i < numsectors; i++)
         {
             SectSoundSect[i] = i;
-            SectSound[i] = StaticSound[kSound62];
+            SectSound[i] = StaticSound[kSoundShip1];
 
             int startwall = sector[ebp].wallptr;
             int endwall = sector[ebp].wallptr + sector[ebp].wallnum;
@@ -2668,4 +2651,120 @@ void PostProcess()
             }
         }
     }
+}
+
+class ObjectLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void ObjectLoadSave::Load()
+{
+    Read(&nTraps, sizeof(nTraps));
+
+    Read(&ElevCount, sizeof(ElevCount));
+    Read(&WallFaceCount, sizeof(WallFaceCount));
+    Read(&nTrailPoints, sizeof(nTrailPoints));
+    Read(&nEnergyBlocks, sizeof(nEnergyBlocks));
+    Read(&nMoveSects, sizeof(nMoveSects));
+    Read(&nTrails, sizeof(nTrails));
+    Read(&SlideCount, sizeof(SlideCount));
+
+    Read(&nFinaleSpr, sizeof(nFinaleSpr));
+    Read(&ObjectCount, sizeof(ObjectCount));
+    Read(&nDrips, sizeof(nDrips));
+    Read(&nBobs, sizeof(nBobs));
+    Read(&nDronePitch, sizeof(nDronePitch));
+    Read(&nSmokeSparks, sizeof(nSmokeSparks));
+
+    Read(&nFinaleStage, sizeof(nFinaleStage));
+    Read(&lFinaleStart, sizeof(lFinaleStart));
+
+    Read(sTrap, sizeof(sTrap[0]) * nTraps);
+    Read(sBob, sizeof(sBob[0]) * nBobs);
+    Read(sTrail, sizeof(sTrail[0]) * nTrails);
+    Read(sTrailPoint, sizeof(sTrailPoint[0]) * nTrailPoints);
+    Read(Elevator, sizeof(Elevator[0]) * ElevCount);
+    Read(ObjectList, sizeof(ObjectList[0]) * ObjectCount);
+    Read(sMoveSect, sizeof(sMoveSect[0]) * nMoveSects);
+    Read(SlideData, sizeof(SlideData[0]) * SlideCount);
+    Read(SlideData2, sizeof(SlideData2[0]) * SlideCount);
+    Read(SlideFree, sizeof(SlideFree));
+    Read(sMoveDir, sizeof(sMoveDir[0]) * nMoveSects);
+    Read(WallFace, sizeof(WallFace[0]) * WallFaceCount);
+
+    Read(PointFree, sizeof(PointFree));
+    Read(nTrailPointVal, sizeof(nTrailPointVal[0]) * nTrailPoints);
+    Read(nTrailPointPrev, sizeof(nTrailPointPrev[0]) * nTrailPoints);
+    Read(nTrailPointNext, sizeof(nTrailPointNext[0]) * nTrailPoints);
+    Read(sDrip, sizeof(sDrip[0]) * nDrips);
+
+    Read(SectSoundSect, sizeof(SectSoundSect[0]) * kMaxSectors);
+    Read(SectSound, sizeof(SectSound[0]) * kMaxSectors);
+    Read(SectFlag, sizeof(SectFlag[0]) * kMaxSectors);
+    Read(SectDepth, sizeof(SectDepth[0]) * kMaxSectors);
+    Read(SectAbove, sizeof(SectAbove[0]) * kMaxSectors);
+    Read(SectDamage, sizeof(SectDamage[0]) * kMaxSectors);
+    Read(SectSpeed, sizeof(SectSpeed[0]) * kMaxSectors);
+    Read(SectBelow, sizeof(SectBelow[0]) * kMaxSectors);
+}
+
+void ObjectLoadSave::Save()
+{
+    Write(&nTraps, sizeof(nTraps));
+
+    Write(&ElevCount, sizeof(ElevCount));
+    Write(&WallFaceCount, sizeof(WallFaceCount));
+    Write(&nTrailPoints, sizeof(nTrailPoints));
+    Write(&nEnergyBlocks, sizeof(nEnergyBlocks));
+    Write(&nMoveSects, sizeof(nMoveSects));
+    Write(&nTrails, sizeof(nTrails));
+    Write(&SlideCount, sizeof(SlideCount));
+
+    Write(&nFinaleSpr, sizeof(nFinaleSpr));
+    Write(&ObjectCount, sizeof(ObjectCount));
+    Write(&nDrips, sizeof(nDrips));
+    Write(&nBobs, sizeof(nBobs));
+    Write(&nDronePitch, sizeof(nDronePitch));
+    Write(&nSmokeSparks, sizeof(nSmokeSparks));
+
+    Write(&nFinaleStage, sizeof(nFinaleStage));
+    Write(&lFinaleStart, sizeof(lFinaleStart));
+
+    Write(sTrap, sizeof(sTrap[0]) * nTraps);
+    Write(sBob, sizeof(sBob[0]) * nBobs);
+    Write(sTrail, sizeof(sTrail[0]) * nTrails);
+    Write(sTrailPoint, sizeof(sTrailPoint[0]) * nTrailPoints);
+    Write(Elevator, sizeof(Elevator[0]) * ElevCount);
+    Write(ObjectList, sizeof(ObjectList[0]) * ObjectCount);
+    Write(sMoveSect, sizeof(sMoveSect[0]) * nMoveSects);
+    Write(SlideData, sizeof(SlideData[0]) * SlideCount);
+    Write(SlideData2, sizeof(SlideData2[0]) * SlideCount);
+    Write(SlideFree, sizeof(SlideFree));
+    Write(sMoveDir, sizeof(sMoveDir[0]) * nMoveSects);
+    Write(WallFace, sizeof(WallFace[0]) * WallFaceCount);
+
+    Write(PointFree, sizeof(PointFree));
+    Write(nTrailPointVal, sizeof(nTrailPointVal[0]) * nTrailPoints);
+    Write(nTrailPointPrev, sizeof(nTrailPointPrev[0]) * nTrailPoints);
+    Write(nTrailPointNext, sizeof(nTrailPointNext[0]) * nTrailPoints);
+    Write(sDrip, sizeof(sDrip[0]) * nDrips);
+
+    Write(SectSoundSect, sizeof(SectSoundSect[0]) * kMaxSectors);
+    Write(SectSound,     sizeof(SectSound[0])     * kMaxSectors);
+    Write(SectFlag,      sizeof(SectFlag[0])      * kMaxSectors);
+    Write(SectDepth,     sizeof(SectDepth[0])     * kMaxSectors);
+    Write(SectAbove,     sizeof(SectAbove[0])     * kMaxSectors);
+    Write(SectDamage,    sizeof(SectDamage[0])    * kMaxSectors);
+    Write(SectSpeed,     sizeof(SectSpeed[0])     * kMaxSectors);
+    Write(SectBelow,     sizeof(SectBelow[0])     * kMaxSectors);
+}
+
+static ObjectLoadSave* myLoadSave;
+
+void ObjectLoadSaveConstruct()
+{
+    myLoadSave = new ObjectLoadSave();
 }

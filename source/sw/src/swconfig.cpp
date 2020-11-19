@@ -157,6 +157,10 @@ void ReadGameSetup(int32_t scripthandle)
     if (dummy != -1) gs.AutoAim = dummy;
 
     dummy = -1;
+    SCRIPT_GetNumber(scripthandle, "Options", "InterpolateSO",&dummy);
+    if (dummy != -1) gs.InterpolateSO = dummy;
+
+    dummy = -1;
     SCRIPT_GetNumber(scripthandle, "Options", "Messages",&dummy);
     if (dummy != -1) gs.Messages = dummy;
 
@@ -233,6 +237,10 @@ void ReadGameSetup(int32_t scripthandle)
     if (dummy != -1) gs.WeaponAutoSwitch = dummy;
 
     dummy = -1;
+    SCRIPT_GetNumber(scripthandle, "Options", "FOV",&dummy);
+    if (dummy != -1) gs.FOV = clamp(dummy, MinFOV, MaxFOV);
+
+    dummy = -1;
     SCRIPT_GetNumber(scripthandle, "Options", "MouseAimingOn",&dummy);
     if (dummy != -1) gs.MouseAimingOn = dummy;
 
@@ -298,6 +306,8 @@ void WriteGameSetup(int32_t scripthandle)
     SCRIPT_PutNumber(scripthandle, "Options", "Crosshair",dummy,FALSE,FALSE);
     dummy = gs.AutoAim;
     SCRIPT_PutNumber(scripthandle, "Options", "AutoAim",dummy,FALSE,FALSE);
+    dummy = gs.InterpolateSO;
+    SCRIPT_PutNumber(scripthandle, "Options", "InterpolateSO",dummy,FALSE,FALSE);
     dummy = gs.Messages;
     SCRIPT_PutNumber(scripthandle, "Options", "Messages",dummy,FALSE,FALSE);
     dummy = gs.Talking;
@@ -342,6 +352,8 @@ void WriteGameSetup(int32_t scripthandle)
     SCRIPT_PutNumber(scripthandle, "Options", "Darts",dummy,FALSE,FALSE);
     dummy = gs.WeaponAutoSwitch;
     SCRIPT_PutNumber(scripthandle, "Options", "WeaponAutoSwitch",dummy,FALSE,FALSE);
+    dummy = gs.FOV;
+    SCRIPT_PutNumber(scripthandle, "Options", "FOV",dummy,FALSE,FALSE);
 
     EncodePassword(gs.Password);
     SCRIPT_PutString(scripthandle, "Options","Rooster",gs.Password);

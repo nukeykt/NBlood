@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "anims.h"
 #include "trigdat.h"
 #include <assert.h>
+#include "save.h"
 
 #define kMaxWasps   100
 
@@ -415,4 +416,32 @@ void FuncWasp(int a, int nDamage, int nRun)
             break;
         }
     }
+}
+
+class WaspLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void WaspLoadSave::Load()
+{
+    Read(&nVelShift, sizeof(nVelShift));
+    Read(&nWaspCount, sizeof(nWaspCount));
+    Read(WaspList, sizeof(WaspList[0]) * nWaspCount);
+}
+
+void WaspLoadSave::Save()
+{
+    Write(&nVelShift, sizeof(nVelShift));
+    Write(&nWaspCount, sizeof(nWaspCount));
+    Write(WaspList, sizeof(WaspList[0]) * nWaspCount);
+}
+
+static WaspLoadSave* myLoadSave;
+
+void WaspLoadSaveConstruct()
+{
+    myLoadSave = new WaspLoadSave();
 }

@@ -837,49 +837,37 @@ void SetupDifficultyMenu(void)
 void SetupEpisodeMenu(void)
 {
     menuEpisode.Add(&itemEpisodesTitle, false);
-    bool unk = false;
     int height;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &height);
     int j = 0;
-    for (int i = 0; i < kMaxEpisodes-1; i++)
+    for (int i = 0; i < gEpisodeCount; i++)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
         if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
         {
-            if (j < gEpisodeCount)
-            {
-                CGameMenuItemChain7F2F0 *pEpisodeItem = &itemEpisodes[j];
-                pEpisodeItem->m_nFont = 1;
-                pEpisodeItem->m_nX = 0;
-                pEpisodeItem->m_nWidth = 320;
-                pEpisodeItem->at20 = 1;
-                pEpisodeItem->m_pzText = pEpisode->title;
-                pEpisodeItem->m_nY = 55+(height+8)*j;
-                pEpisodeItem->at34 = i;
-                if (!unk || j == 0)
-                {
-                    pEpisodeItem = &itemEpisodes[j];
-                    pEpisodeItem->at24 = &menuDifficulty;
-                    pEpisodeItem->at28 = 3;
-                }
-                else
-                {
-                    pEpisodeItem->at24 = &menuSorry2;
-                    pEpisodeItem->at28 = 1;
-                }
-                pEpisodeItem = &itemEpisodes[j];
-                pEpisodeItem->bCanSelect = 1;
-                pEpisodeItem->bEnable = 1;
-                bool first = j == 0;
-                menuEpisode.Add(&itemEpisodes[j], first);
-                if (first)
-                    SetupLevelMenuItem(j);
-            }
+            CGameMenuItemChain7F2F0 *pEpisodeItem = &itemEpisodes[j];
+            pEpisodeItem->m_nFont = 1;
+            pEpisodeItem->m_nX = 0;
+            pEpisodeItem->m_nWidth = 320;
+            pEpisodeItem->at20 = 1;
+            pEpisodeItem->m_pzText = pEpisode->title;
+            pEpisodeItem->m_nY = 55+(height+8)*j;
+            pEpisodeItem->at34 = i;
+            pEpisodeItem = &itemEpisodes[j];
+            pEpisodeItem->at24 = &menuDifficulty;
+            pEpisodeItem->at28 = 3;
+            pEpisodeItem = &itemEpisodes[j];
+            pEpisodeItem->bCanSelect = 1;
+            pEpisodeItem->bEnable = 1;
+            bool first = j == 0;
+            menuEpisode.Add(&itemEpisodes[j], first);
+            if (first)
+                SetupLevelMenuItem(j);
             j++;
         }
     }
 
-    itemUserMap.m_nY = 55+(height+8)*(gEpisodeCount-1);
+    itemUserMap.m_nY = 55+(height+8)*j;
     menuEpisode.Add(&itemUserMap, false);
     menuEpisode.Add(&itemBloodQAV, false);
 
@@ -2023,6 +2011,8 @@ void SetupMouseMenu(CGameMenuItemChain *pItem)
     itemOptionsControlMouseAimFlipped.at20 = gMouseAimingFlipped;
     itemOptionsControlMouseAimMode.at20 = gMouseAiming;
     itemOptionsControlMouseVerticalAim.at20 = gMouseAim;
+    itemOptionsControlMouseXScale.nValue = CONTROL_MouseAxesScale[0];
+    itemOptionsControlMouseYScale.nValue = CONTROL_MouseAxesScale[1];
 }
 
 void PreDrawControlMouse(CGameMenuItem *pItem)

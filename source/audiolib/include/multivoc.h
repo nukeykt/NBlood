@@ -61,12 +61,11 @@ enum MV_Errors
     MV_NotInstalled,
     MV_DriverError,
     MV_NoVoices,
-    MV_NoMem,
     MV_VoiceNotFound,
     MV_InvalidFile,
 };
 
-extern void (*MV_Printf)(const char *fmt, ...);
+extern int (*MV_Printf)(const char *fmt, ...);
 
 const char *MV_ErrorString(int ErrorNumber);
 
@@ -113,6 +112,9 @@ int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
     int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval, void* userdata);
 
+int MV_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
+    int pitchoffset, int angle, int distance, int priority, fix16_t volume, intptr_t callbackval, void* userdata);
+
 decltype(MV_PlayVOC3D) MV_PlayWAV3D;
 decltype(MV_PlayVOC)   MV_PlayWAV;
 decltype(MV_PlayVOC3D) MV_PlayVorbis3D;
@@ -153,7 +155,7 @@ struct MV_MusicRoutineBuffer
 };
 struct MV_MusicRoutineBuffer MV_GetMusicRoutineBuffer(void);
 
-static inline void MV_SetPrintf(void (*function)(const char *, ...)) { if (function) MV_Printf = function; }
+static inline void MV_SetPrintf(int (*function)(const char *, ...)) { if (function) MV_Printf = function; }
 
 #ifdef __cplusplus
 }

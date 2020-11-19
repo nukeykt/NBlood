@@ -52,6 +52,7 @@ Things required to make savegames work:
 #include "panel.h"
 #include "game.h"
 #include "interp.h"
+#include "interpso.h"
 #include "tags.h"
 #include "sector.h"
 #include "sprite.h"
@@ -125,13 +126,11 @@ SWBOOL Global_PLock = TRUE;
 SWBOOL Global_PLock = FALSE;
 #endif
 
-// 12 was original source release. For future releases increment by two.
-int GameVersion = 15;
+int GameVersion = 20;
 
 char DemoText[3][64];
 int DemoTextYstart = 0;
 
-SWBOOL DoubleInitAWE32 = FALSE;
 int Follow_posx=0,Follow_posy=0;
 
 SWBOOL NoMeters = FALSE;
@@ -145,7 +144,6 @@ SWBOOL DemoModeMenuInit = FALSE;
 SWBOOL FinishAnim = 0;
 SWBOOL ShortGameMode = FALSE;
 SWBOOL ReloadPrompt = FALSE;
-SWBOOL ReloadPromptMode = FALSE;
 SWBOOL NewGame = TRUE;
 SWBOOL InMenuLevel = FALSE;
 SWBOOL LoadGameOutsideMoveLoop = FALSE;
@@ -166,14 +164,12 @@ short HelpPage = 0;
 short HelpPagePic[] = { 5115, 5116, 5117 };
 SWBOOL InputMode = FALSE;
 SWBOOL MessageInput = FALSE;
-extern SWBOOL GamePaused;
 short screenpeek = 0;
 SWBOOL NoDemoStartup = FALSE;
 SWBOOL FirstTimeIntoGame;
 extern uint8_t RedBookSong[40];
 
 SWBOOL PedanticMode;
-SWBOOL InterpolateSectObj;
 
 SWBOOL BorderAdjust = TRUE;
 SWBOOL LocationInfo = 0;
@@ -186,7 +182,6 @@ SWBOOL PreCaching = TRUE;
 int GodMode = FALSE;
 SWBOOL BotMode = FALSE;
 short Skill = 2;
-short BetaVersion = 900;
 short TotalKillable;
 
 AUTO_NET Auto;
@@ -211,6 +206,7 @@ const GAME_SET gs_defaults =
     FALSE, // auto run
     TRUE, // crosshair
     TRUE, // auto aim
+    TRUE, // interpolate sector objects
     TRUE, // messages
     TRUE, // fx on
     TRUE, // Music on
@@ -238,6 +234,7 @@ const GAME_SET gs_defaults =
     "Track??", // waveform track name
     FALSE,
     TRUE,
+    90, // FOV
 };
 GAME_SET gs;
 
@@ -936,7 +933,7 @@ InitGame(int32_t argc, char const * const * argv)
     // sets numplayers, connecthead, connectpoint2, myconnectindex
 
     if (!firstnet)
-        initsingleplayers();
+        initmultiplayers(0, NULL, 0, 0, 0);
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
         NetBroadcastMode = (networkmode == MMULTI_MODE_P2P);
@@ -1308,7 +1305,6 @@ void InitLevelGlobals(void)
     memset(BossSpriteNum,-1,sizeof(BossSpriteNum));
 
     PedanticMode = (DemoPlaying || DemoRecording || DemoEdit || DemoMode);
-    InterpolateSectObj = !CommEnabled && !PedanticMode;
 }
 
 void InitLevelGlobals2(void)
@@ -1319,6 +1315,7 @@ void InitLevelGlobals2(void)
     InitTimingVars();
     TotalKillable = 0;
     Bunny_Count = 0;
+    FinishAnim = 0;
 }
 
 void
@@ -1727,7 +1724,6 @@ NewLevel(void)
             MenuLevel();
         }
     }
-    FinishAnim = 0;
 }
 
 void
@@ -2044,89 +2040,6 @@ TenScreen(void)
 */
 // CTW REMOVED END
 
-void
-TitleLevel(void)
-{
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    int i;
-
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
-//    unsigned char backup_pal[256*3];
-//    unsigned char pal[PAL_SIZE];
-    //GetPaletteFromVESA(pal);
-    //memcpy(backup_pal, pal, PAL_SIZE);
-
-    videoClearViewableArea(0L);
-    videoNextPage();
-
-//    int fin;
-//    if ((fin = kopen4load("title.pal", 0)) != -1)
-//        {
-//        kread(fin, pal, PAL_SIZE);
-//        kclose(fin);
-//        SetPaletteToVESA(pal);
-//        }
-
-//    clearview(0);
-//    nextpage();
-
-    //FadeOut(0, 0);
-    ready2send = 0;
-    totalclock = 0;
-    ototalclock = 0;
-
-    rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    videoNextPage();
-    //FadeIn(0, 3);
-
-    ResetKeys();
-    while (TRUE)
-    {
-        handleevents();
-        OSD_DispatchQueued();
-
-        // taken from top of faketimerhandler
-        // limits checks to max of 40 times a second
-        if (totalclock >= ototalclock + synctics)
-        {
-            //void MNU_CheckForMenusAnyKey( void );
-
-            ototalclock += synctics;
-            //MNU_CheckForMenusAnyKey();
-        }
-
-        //if (UsingMenus)
-        //    MNU_DrawMenu();
-
-        //drawscreen as fast as you can
-        rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-
-        videoNextPage();
-
-        if (totalclock > 5*120 || KeyPressed())
-        {
-            DemoMode = TRUE;
-            DemoPlaying = TRUE;
-            break;
-        }
-    }
-
-    palookup[0] = palook_bak;
-
-//    clearview(0);
-//    nextpage();
-    //SetPaletteToVESA(backup_pal);
-
-    // put up a blank screen while loading
-//    clearview(0);
-//    nextpage();
-}
-
-
 void DrawMenuLevelScreen(void)
 {
     renderFlushPerms();
@@ -2405,37 +2318,6 @@ MenuLevel(void)
     InMenuLevel = FALSE;
     videoClearViewableArea(0L);
     videoNextPage();
-}
-
-void
-SceneLevel(void)
-{
-    SWBOOL dp_bak;
-    SWBOOL dm_bak;
-    FILE *fin;
-#define CINEMATIC_DEMO_FILE "$scene.dmo"
-
-    // make sure it exists
-    if ((fin = fopen(CINEMATIC_DEMO_FILE,"rb")) == NULL)
-        return;
-    else
-        fclose(fin);
-
-    strcpy(DemoFileName,CINEMATIC_DEMO_FILE);
-
-    dp_bak = DemoPlaying;
-    dm_bak = DemoMode;
-
-    DemoMode = TRUE;
-    DemoPlaying = TRUE;
-    DemoOverride = TRUE;
-    InitLevel();
-    DemoOverride = FALSE;
-
-    ScenePlayBack();
-    TerminateLevel();
-    DemoMode = dm_bak;
-    DemoPlaying = dp_bak;
 }
 
 void
@@ -2995,8 +2877,6 @@ GameIntro(void)
     {
         LogoLevel();
         //CreditsLevel();
-        //SceneLevel();
-        //TitleLevel();
         IntroAnimLevel();
         IntroAnimCount = 0;
     }
@@ -3310,6 +3190,10 @@ RunLevel(void)
             ExitLevel = FALSE;
             break;
         }
+
+        timerUpdateClock();
+        while (ready2send && (totalclock >= ototalclock + synctics))
+            UpdateInputs();
     }
 
     ready2send = 0;
@@ -3607,6 +3491,26 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     SW_ExtInit();
 
+    for (cnt = 1; cnt < argc; ++cnt)
+    {
+        char const * arg = argv[cnt];
+        if (*arg != '/' && *arg != '-')
+            continue;
+        ++arg;
+
+        if (Bstrncasecmp(arg, "j", 1) == 0 && !SW_SHAREWARE)
+        {
+            if (strlen(arg) > 1)
+            {
+                const char * dir = arg+1;
+                int err = addsearchpath(dir);
+                if (err < 0)
+                    buildprintf("Failed adding %s for game data: %s\n", dir,
+                                err==-1 ? "not a directory" : "no such directory");
+            }
+        }
+    }
+
     // hackish since SW's init order is a bit different right now
     if (G_CheckCmdSwitch(argc, argv, "-addon0"))
     {
@@ -3634,8 +3538,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     SW_ScanGroups();
-
-    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
 
 #ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || CommandSetup || (ud_setup.ForceSetup && !g_noSetup))
@@ -4743,7 +4645,7 @@ FunctionKeys(PLAYERp pp)
 
 void PauseKey(PLAYERp pp)
 {
-    extern SWBOOL GamePaused,CheatInputMode;
+    extern SWBOOL CheatInputMode;
 
     if (KEY_PRESSED(sc_Pause) && !CommEnabled && !InputMode && !UsingMenus && !CheatInputMode && !ConPanel)
     {
@@ -4995,8 +4897,6 @@ void GetConInput(void)
 
 void GetHelpInput(PLAYERp pp)
 {
-    extern SWBOOL GamePaused;
-
     if (KEY_PRESSED(KEYSC_ALT) || KEY_PRESSED(KEYSC_RALT))
         return;
 
@@ -5280,7 +5180,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     }
     else
     {
-        if (BUTTON(gamefunc_Turn_Left))
+        if (BUTTON(gamefunc_Turn_Left) || (BUTTON(gamefunc_Strafe_Left) && pp->sop))
         {
             turnheldtime += synctics;
             if (PedanticMode)
@@ -5293,7 +5193,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
             else
                 q16angvel = fix16_ssub(q16angvel, fix16_from_float(scaleAdjustmentToInterval((turnheldtime >= TURBOTURNTIME) ? turnamount : PREAMBLETURN)));
         }
-        else if (BUTTON(gamefunc_Turn_Right))
+        else if (BUTTON(gamefunc_Turn_Right) || (BUTTON(gamefunc_Strafe_Right) && pp->sop))
         {
             turnheldtime += synctics;
             if (PedanticMode)
@@ -5336,18 +5236,23 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     q16angvel = fix16_clamp(q16angvel, -fix16_from_int(MAXANGVEL), fix16_from_int(MAXANGVEL));
     q16aimvel = fix16_clamp(q16aimvel, -fix16_from_int(MAXHORIZVEL), fix16_from_int(MAXHORIZVEL));
 
+    void DoPlayerTeleportPause(PLAYERp pp);
     if (PedanticMode)
     {
         q16angvel = fix16_floor(q16angvel);
         q16aimvel = fix16_floor(q16aimvel);
     }
-    else if (!TEST(pp->Flags, PF_DEAD))
+    else
     {
+        fix16_t prevcamq16ang = pp->camq16ang, prevcamq16horiz = pp->camq16horiz;
         void DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel);
         void DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel);
-        if (!TEST(pp->Flags, PF_CLIMBING))
+        if (TEST(pp->Flags2, PF2_INPUT_CAN_TURN))
             DoPlayerTurn(pp, &pp->camq16ang, q16angvel);
-        DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
+        if (TEST(pp->Flags2, PF2_INPUT_CAN_AIM))
+            DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
+        pp->oq16ang += pp->camq16ang - prevcamq16ang;
+        pp->oq16horiz += pp->camq16horiz - prevcamq16horiz;
     }
 
     loc->vel += vel;
@@ -5576,7 +5481,8 @@ getinput(SW_PACKET *loc, SWBOOL tied)
         SinglePlayInput(pp);
 #endif
 
-    FunctionKeys(pp);
+    if (!tied)
+        FunctionKeys(pp);
 
     if (BUTTON(gamefunc_Toggle_Crosshair))
     {
