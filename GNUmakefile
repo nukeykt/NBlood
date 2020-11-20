@@ -764,8 +764,6 @@ blood_game_objs := \
 	airat.cpp \
 	aispid.cpp \
 	aitchern.cpp \
-	aiunicult.cpp \
-	nnexts.cpp \
 	aizomba.cpp \
 	aizombf.cpp \
 	asound.cpp \
@@ -817,6 +815,11 @@ blood_game_objs := \
 	view.cpp \
 	warp.cpp \
 	weapon.cpp \
+
+ifeq ($(NOONE_EXTENSIONS),1)
+    blood_game_objs += nnexts.cpp
+    blood_game_objs += aiunicult.cpp
+endif
 
 blood_game_rsrc_objs :=
 blood_game_gen_objs :=

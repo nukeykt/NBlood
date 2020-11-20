@@ -68,7 +68,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "warp.h"
 #include "weapon.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 #ifdef _WIN32
 # include <shellapi.h>

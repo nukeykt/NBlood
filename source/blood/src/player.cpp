@@ -51,7 +51,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "weapon.h"
 #include "common_game.h"
 #include "messages.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 PROFILE gProfile[kMaxPlayers];
 

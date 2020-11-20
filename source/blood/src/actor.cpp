@@ -49,7 +49,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aitchern.h"
 #include "aizomba.h"
 #include "aizombf.h"
+#ifdef NOONE_EXTENSIONS
 #include "aiunicult.h"
+#endif
 #include "blood.h"
 #include "callback.h"
 #include "config.h"
@@ -72,7 +74,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "warp.h"
 #include "weapon.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 VECTORDATA gVectorData[] = {
     

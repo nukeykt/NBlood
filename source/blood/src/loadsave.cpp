@@ -43,7 +43,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sfx.h"
 #include "sound.h"
 #include "view.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 GAMEOPTIONS gSaveGameOptions[10];
 char *gSaveGamePic[10];
