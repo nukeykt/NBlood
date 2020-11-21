@@ -39,7 +39,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "seq.h"
 #include "sfx.h"
 #include "trig.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 static void SlashSeqCallback(int, int);
 static void ThrowSeqCallback(int, int);

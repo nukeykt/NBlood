@@ -21,9 +21,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+#ifdef NOONE_EXTENSIONS
 #pragma once
 #include "nnexts.h"
-#ifdef NOONE_EXTENSIONS
 #include "ai.h"
 #include "eventq.h"
 

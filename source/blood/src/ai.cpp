@@ -45,7 +45,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aitchern.h"
 #include "aizomba.h"
 #include "aizombf.h"
+#ifdef NOONE_EXTENSIONS
 #include "aiunicult.h"
+#endif
 #include "blood.h"
 #include "db.h"
 #include "dude.h"
@@ -63,7 +65,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 #include "triggers.h"
 #include "view.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 int cumulDamage[kMaxXSprites];
 int gDudeSlope[kMaxXSprites];

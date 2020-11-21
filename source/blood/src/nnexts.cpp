@@ -29,9 +29,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ///////////////////////////////////////////////////////////////////
 
 
-#include "nnexts.h"
 #ifdef NOONE_EXTENSIONS
 #include <random>
+#include "nnexts.h"
 #include "aiunicult.h"
 #include "triggers.h"
 #include "sectorfx.h"

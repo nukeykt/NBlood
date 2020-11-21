@@ -21,9 +21,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+#ifdef NOONE_EXTENSIONS
 #include "common_game.h"
 #include "nnexts.h"
-#ifdef NOONE_EXTENSIONS
 #include "compat.h"
 #include "build.h"
 #include "pragmas.h"
