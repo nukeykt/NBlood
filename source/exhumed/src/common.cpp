@@ -299,6 +299,34 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
+void G_AddSearchPaths(void)
+{
+    #ifndef EDUKE32_TOUCH_DEVICES
+    #if defined __linux__ || defined EDUKE32_BSD
+    
+        // TODO
+    
+    #elif defined (_WIN32)
+    char buf[BMAX_PATH] = { 0 };
+    DWORD bufsize;
+    bool found = false;
+
+    // Powerslave - GOG.com
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\2132611980)", "path", buf, &bufsize))
+    {
+        addsearchpath(buf);
+        found = true;
+    }
+    #endif
+    #endif
+}
+
+void G_CleanupSearchPaths(void)
+{
+//    removesearchpaths_withuser(SEARCHPATH_REMOVE);
+}
+
 //////////
 
 void G_AddGroup(const char* buffer)

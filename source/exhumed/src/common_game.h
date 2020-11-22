@@ -75,6 +75,10 @@ extern "C" {
     extern void clearScriptNamePtr(void);
 
     extern int loaddefinitions_game(const char* fn, int32_t preload);
+
+    extern void G_AddSearchPaths(void);
+    extern void G_CleanupSearchPaths(void);
+
     extern int32_t g_groupFileHandle;
 
     //////////
