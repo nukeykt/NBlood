@@ -299,14 +299,39 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
+#ifndef EDUKE32_TOUCH_DEVICES
+#if defined __linux__ || defined EDUKE32_BSD
+static void Exhumed_Add_GOG_Linux(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s/game/data", path);
+    addsearchpath(buf);
+}
+#endif
+#endif
+
 void G_AddSearchPaths(void)
 {
-    #ifndef EDUKE32_TOUCH_DEVICES
-    #if defined __linux__ || defined EDUKE32_BSD
+#ifndef EDUKE32_TOUCH_DEVICES
+#if defined __linux__ || defined EDUKE32_BSD
+    char buf[BMAX_PATH];
+    char *homepath = Bgethomedir();
+
+    // Powerslave - GOG.com
+    Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Powerslave English", homepath);
+    Exhumed_Add_GOG_Linux(buf);
+    Paths_ParseXDGDesktopFilesFromGOG(homepath, "Powerslave_English", Exhumed_Add_GOG_Linux);
+
+    Bfree(homepath);
+
+    addsearchpath("/usr/share/games/pcexhumed");
+    addsearchpath("/usr/local/share/games/pcexhumed");
+#elif defined EDUKE32_OSX
     
-        // TODO
-    
-    #elif defined (_WIN32)
+    // TODO
+
+#elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
     DWORD bufsize;
     bool found = false;
@@ -318,8 +343,8 @@ void G_AddSearchPaths(void)
         addsearchpath(buf);
         found = true;
     }
-    #endif
-    #endif
+#endif
+#endif
 }
 
 void G_CleanupSearchPaths(void)
