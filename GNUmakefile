@@ -1161,7 +1161,7 @@ exhumed_game_objs := \
     bubbles.cpp \
     bullet.cpp \
     cd.cpp \
-	common.cpp \
+    common.cpp \
     config.cpp \
     enginesubs.cpp \
     exhumed.cpp \
@@ -1178,6 +1178,7 @@ exhumed_game_objs := \
     lighting.cpp \
     lion.cpp \
     map.cpp \
+    memorystream.cpp \
     menu.cpp \
     mono.cpp \
     move.cpp \
