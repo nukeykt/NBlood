@@ -91,6 +91,7 @@ extern "C" {
 
 const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
+const char* defaultpk3filename = "pcexhumed.pk3";
 
 void FinishLevel();
 void PrintHelp();
@@ -2121,6 +2122,7 @@ int app_main(int argc, char const* const* argv)
     }
 #endif
 
+    initgroupfile(defaultpk3filename);
     G_LoadGroups(!g_noAutoLoad && !gSetup.noautoload);
 
     PatchDemoStrings();
