@@ -53,17 +53,18 @@ bool playCDtrack(int nTrack, bool bLoop)
 
     char filename[128];
 
-    // prefer flac if available
-    sprintf(filename, "exhumed%02d.flac", nTrack);
-    int32_t hFile = kopen4loadfrommod(filename, 0);
+    // try exhumedXX format first
+    sprintf(filename, "exhumed%02d", nTrack);
+    int32_t hFile = S_OpenAudio(filename, 0, 1);
     if (hFile < 0)
     {
-        // try ogg vorbis now
-        sprintf(filename, "exhumed%02d.ogg", nTrack);
-        hFile = kopen4loadfrommod(filename, 0);
-        if (hFile < 0) {
-            return false;
-        }
+        // try trackxx format
+        sprintf(filename, "track%02d", nTrack);
+        hFile = S_OpenAudio(filename, 0, 1);
+    }
+    
+    if (hFile < 0) {
+        return false;
     }
 
     int32_t nFileLen = kfilelength(hFile);

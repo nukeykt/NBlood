@@ -425,3 +425,107 @@ void G_DoAutoload(const char* dirname)
     Bsnprintf(buf, sizeof(buf), "autoload/%s", dirname);
     G_LoadGroupsInDir(buf);
 }
+
+//////////
+
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+
+static int32_t S_TryFormats(char* const testfn, char* const fn_suffix, char const searchfirst)
+{
+    #ifdef HAVE_FLAC
+    {
+        Bstrcpy(fn_suffix, ".flac");
+        int32_t const fp = kopen4loadfrommod(testfn, searchfirst);
+        if (fp >= 0)
+            return fp;
+    }
+    #endif
+
+    #ifdef HAVE_VORBIS
+    {
+        Bstrcpy(fn_suffix, ".ogg");
+        int32_t const fp = kopen4loadfrommod(testfn, searchfirst);
+        if (fp >= 0)
+            return fp;
+    }
+    #endif
+
+    return -1;
+}
+
+static int32_t S_TryExtensionReplacements(char* const testfn, char const searchfirst, uint8_t const ismusic)
+{
+    char* extension = Bstrrchr(testfn, '.');
+    char* const fn_end = Bstrchr(testfn, '\0');
+
+    // ex: grabbag.voc --> grabbag_voc.*
+    if (extension != NULL)
+    {
+        *extension = '_';
+
+        int32_t const fp = S_TryFormats(testfn, fn_end, searchfirst);
+        if (fp >= 0)
+            return fp;
+    }
+    else
+    {
+        extension = fn_end;
+    }
+
+    // ex: grabbag.mid --> grabbag.*
+    if (ismusic)
+    {
+        int32_t const fp = S_TryFormats(testfn, extension, searchfirst);
+        if (fp >= 0)
+            return fp;
+    }
+
+    return -1;
+}
+
+int32_t S_OpenAudio(const char* fn, char searchfirst, uint8_t const ismusic)
+{
+    int32_t const     origfp = kopen4loadfrommod(fn, searchfirst);
+    char const* const origparent = origfp != -1 ? kfileparent(origfp) : NULL;
+    uint32_t const    parentlength = origparent != NULL ? Bstrlen(origparent) : 0;
+
+    auto testfn = (char*)Xmalloc(Bstrlen(fn) + 12 + parentlength); // "music/" + overestimation of parent minus extension + ".flac" + '\0'
+
+    // look in ./
+    // ex: ./grabbag.mid
+    Bstrcpy(testfn, fn);
+    int32_t fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
+    if (fp >= 0)
+        goto success;
+
+    // look in ./music/<file's parent GRP name>/
+    // ex: ./music/duke3d/grabbag.mid
+    // ex: ./music/nwinter/grabbag.mid
+    if (origparent != NULL)
+    {
+        char const* const parentextension = Bstrrchr(origparent, '.');
+        uint32_t const namelength = parentextension != NULL ? (unsigned)(parentextension - origparent) : parentlength;
+
+        Bsprintf(testfn, "music/%.*s/%s", namelength, origparent, fn);
+        fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
+        if (fp >= 0)
+            goto success;
+    }
+
+    // look in ./music/
+    // ex: ./music/grabbag.mid
+    Bsprintf(testfn, "music/%s", fn);
+    fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
+    if (fp >= 0)
+        goto success;
+
+    fp = origfp;
+success:
+    Bfree(testfn);
+    if (fp != origfp)
+        kclose(origfp);
+
+    return fp;
+}
+
+#endif
