@@ -1903,7 +1903,7 @@ int app_main(int argc, char const* const* argv)
             {
                 if (!bPlayback)
                 {
-                    vcrfp = fopen("data.vcr", "wb+");
+                    vcrfp = fopen("DATA.VCR", "wb+");
                     if (vcrfp != NULL) {
                         bRecord = kTrue;
                     }
@@ -1916,7 +1916,7 @@ int app_main(int argc, char const* const* argv)
             {
                 if (!bRecord)
                 {
-                    vcrfp = fopen("data.vcr", "rb");
+                    vcrfp = fopen("DATA.VCR", "rb");
                     if (vcrfp != NULL) {
                         bPlayback = kTrue;
                         doTitle = kFalse;
@@ -2339,7 +2339,7 @@ MENU:
         forcelevel = 0;
         goto STARTGAME2;
     case 9:
-        vcrfp = fopen("demo.vcr", "rb");
+        vcrfp = fopen("DEMO.VCR", "rb");
         if (vcrfp == NULL) {
             goto MENU;
         }
