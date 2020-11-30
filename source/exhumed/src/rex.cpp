@@ -61,15 +61,15 @@ Rex RexList[kMaxRex];
 
 void InitRexs()
 {
-    RexCount = 0;
+    RexCount = kMaxRex;
 }
 
 int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
+    RexCount--;
+
     int nRex = RexCount;
-    RexCount++;
-  
-    if (nRex >= kMaxRex) {
+    if (nRex < 0) {
         return -1;
     }
 
@@ -498,15 +498,15 @@ public:
 void RexLoadSave::Load()
 {
     Read(&RexCount, sizeof(RexCount));
-    Read(RexChan, sizeof(RexChan[0]) * RexCount);
-    Read(RexList, sizeof(RexList[0]) * RexCount);
+    Read(RexChan, sizeof(RexChan));
+    Read(&RexList[RexCount], sizeof(Rex) * (kMaxRex - RexCount));
 }
 
 void RexLoadSave::Save()
 {
     Write(&RexCount, sizeof(RexCount));
-    Write(RexChan, sizeof(RexChan[0]) * RexCount);
-    Write(RexList, sizeof(RexList[0]) * RexCount);
+    Write(RexChan, sizeof(RexChan));
+    Write(&RexList[RexCount], sizeof(Rex) * (kMaxRex - RexCount));
 }
 
 static RexLoadSave* myLoadSave;

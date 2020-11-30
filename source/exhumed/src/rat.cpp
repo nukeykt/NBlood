@@ -402,7 +402,7 @@ void RatLoadSave::Load()
     Read(&nPlayerPic, sizeof(nPlayerPic));
     Read(&nRatCount, sizeof(nRatCount));
     Read(&nMaxChunk, sizeof(nMaxChunk));
-    Read(RatList, sizeof(RatList[0]) * nRatCount);
+    Read(RatList, sizeof(Rat) * nRatCount);
 }
 
 void RatLoadSave::Save()
@@ -411,7 +411,7 @@ void RatLoadSave::Save()
     Write(&nPlayerPic, sizeof(nPlayerPic));
     Write(&nRatCount, sizeof(nRatCount));
     Write(&nMaxChunk, sizeof(nMaxChunk));
-    Write(RatList, sizeof(RatList[0]) * nRatCount);
+    Write(RatList, sizeof(Rat) * nRatCount);
 }
 
 static RatLoadSave* myLoadSave;

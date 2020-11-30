@@ -72,16 +72,16 @@ short nAnubisDrum = 0;
 
 void InitAnubis()
 {
-    AnubisCount = 0;
+    AnubisCount = kMaxAnubis;
     nAnubisDrum = 1;
 }
 
 int BuildAnubis(int nSprite, int x, int y, int z, int nSector, int nAngle, uint8_t bIsDrummer)
 {
-    short nAnubis = AnubisCount;
-    AnubisCount++;
+    AnubisCount--;
 
-    if (nAnubis >= kMaxAnubis) {
+    short nAnubis = AnubisCount;
+    if (nAnubis < 0) {
         return -1;
     }
 
@@ -507,14 +507,14 @@ void AnubisLoadSave::Load()
 {
     Read(&AnubisCount, sizeof(AnubisCount));
     Read(&nAnubisDrum, sizeof(nAnubisDrum));
-    Read(AnubisList, sizeof(AnubisList[0]) * AnubisCount);
+    Read(&AnubisList[AnubisCount], sizeof(Anubis) * (kMaxAnubis - AnubisCount));
 }
 
 void AnubisLoadSave::Save()
 {
     Write(&AnubisCount, sizeof(AnubisCount));
     Write(&nAnubisDrum, sizeof(nAnubisDrum));
-    Write(AnubisList, sizeof(AnubisList[0]) * AnubisCount);
+    Write(&AnubisList[AnubisCount], sizeof(Anubis) * (kMaxAnubis - AnubisCount));
 }
 
 static AnubisLoadSave* myLoadSave;

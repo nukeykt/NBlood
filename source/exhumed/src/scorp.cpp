@@ -70,15 +70,15 @@ short ScorpChan[kMaxScorpions];
 
 void InitScorp()
 {
-    ScorpCount = 0;
+    ScorpCount = kMaxScorpions;
 }
 
 int BuildScorp(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
-    short nScorp = ScorpCount;
-    ScorpCount++;
+    ScorpCount--;
 
-    if (ScorpCount >= kMaxScorpions) {
+    short nScorp = ScorpCount;
+    if (nScorp < 0) {
         return -1;
     }
 
@@ -523,15 +523,15 @@ public:
 void ScorpLoadSave::Load()
 {
     Read(&ScorpCount, sizeof(ScorpCount));
-    Read(scorpion, sizeof(scorpion[0]) * ScorpCount);
-    Read(ScorpChan, sizeof(ScorpChan[0]) * ScorpCount);
+    Read(&scorpion[ScorpCount], sizeof(Scorpion) * (kMaxScorpions - ScorpCount));
+    Read(ScorpChan, sizeof(ScorpChan));
 }
 
 void ScorpLoadSave::Save()
 {
     Write(&ScorpCount, sizeof(ScorpCount));
-    Write(scorpion, sizeof(scorpion[0]) * ScorpCount);
-    Write(ScorpChan, sizeof(ScorpChan[0]) * ScorpCount);
+    Write(&scorpion[ScorpCount], sizeof(Scorpion) * (kMaxScorpions - ScorpCount));
+    Write(ScorpChan, sizeof(ScorpChan));
 }
 
 static ScorpLoadSave* myLoadSave;

@@ -67,15 +67,15 @@ short SetChan[kMaxSets];
 
 void InitSets()
 {
-    SetCount = 0;
+    SetCount = kMaxSets;
 }
 
 int BuildSet(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
-    short nSet = SetCount;
-    SetCount++;
+    SetCount--;
 
-    if (nSet >= kMaxSets) {
+    short nSet = SetCount;
+    if (nSet < 0) {
         return -1;
     }
 
@@ -697,15 +697,15 @@ public:
 void SetLoadSave::Load()
 {
     Read(&SetCount, sizeof(SetCount));
-    Read(SetList, sizeof(SetList[0]) * SetCount);
-    Read(SetChan, sizeof(SetChan[0]) * SetCount);
+    Read(&SetList[SetCount], sizeof(Set) * (kMaxSets - SetCount));
+    Read(SetChan, sizeof(SetChan));
 }
 
 void SetLoadSave::Save()
 {
     Write(&SetCount, sizeof(SetCount));
-    Write(SetList, sizeof(SetList[0]) * SetCount);
-    Write(SetChan, sizeof(SetChan[0]) * SetCount);
+    Write(&SetList[SetCount], sizeof(Set) * (kMaxSets - SetCount));
+    Write(SetChan, sizeof(SetChan));
 }
 
 static SetLoadSave* myLoadSave;

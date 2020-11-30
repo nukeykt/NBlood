@@ -63,16 +63,16 @@ Roach RoachList[kMaxRoach];
 
 void InitRoachs()
 {
-    RoachCount = 0;
+    RoachCount = kMaxRoach;
 }
 
 // TODO - make nType a bool?
 int BuildRoach(int nType, int nSprite, int x, int y, int z, short nSector, int angle)
 {
-    short nRoach = RoachCount;
-    RoachCount++;
+    RoachCount--;
 
-    if (RoachCount >= kMaxRoach) {
+    short nRoach = RoachCount;
+    if (nRoach < 0) {
         return -1;
     }
 
@@ -432,13 +432,13 @@ public:
 void RoachLoadSave::Load()
 {
     Read(&RoachCount, sizeof(RoachCount));
-    Read(RoachList, sizeof(RoachList[0]) * RoachCount);
+    Read(&RoachList[RoachCount], sizeof(Roach) * (kMaxRoach - RoachCount));
 }
 
 void RoachLoadSave::Save()
 {
     Write(&RoachCount, sizeof(RoachCount));
-    Write(RoachList, sizeof(RoachList[0]) * RoachCount);
+    Write(&RoachList[RoachCount], sizeof(Roach) * (kMaxRoach - RoachCount));
 }
 
 static RoachLoadSave* myLoadSave;
