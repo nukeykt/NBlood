@@ -72,7 +72,7 @@ int BuildLion(short nSprite, int x, int y, int z, short nSector, short nAngle)
     LionCount--;
 
     short nLion = LionCount;
-    if (nLion > 0) {
+    if (nLion < 0) {
         return -1;
     }
 
