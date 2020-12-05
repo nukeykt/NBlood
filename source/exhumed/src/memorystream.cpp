@@ -58,7 +58,7 @@ uint16_t MemoryReadStream::GetUint16LE()
     uint16_t ret;
     memcpy(&ret, _currentOffset, sizeof(ret));
     _currentOffset += sizeof(ret);
-    return ret;
+    return B_LITTLE16(ret);
 }
 
 uint32_t MemoryReadStream::GetUint32LE()
@@ -66,7 +66,7 @@ uint32_t MemoryReadStream::GetUint32LE()
     uint32_t ret;
     memcpy(&ret, _currentOffset, sizeof(ret));
     _currentOffset += sizeof(ret);
-    return ret;
+    return B_LITTLE32(ret);
 }
 
 uint64_t MemoryReadStream::GetUint64LE()
@@ -74,7 +74,7 @@ uint64_t MemoryReadStream::GetUint64LE()
     uint64_t ret;
     memcpy(&ret, _currentOffset, sizeof(ret));
     _currentOffset += sizeof(ret);
-    return ret;
+    return B_LITTLE64(ret);
 }
 
 uint8_t MemoryReadStream::PeekByte()
