@@ -1468,15 +1468,15 @@ EDUKE32_STATIC_ASSERT(sizeof(demo_input) == 36);
 void WritePlaybackInputs()
 {
     demo_input output;
-    output.moveframes = moveframes;
-    output.xVel = sPlayerInput[nLocalPlayer].xVel;
-    output.yVel = sPlayerInput[nLocalPlayer].yVel;
-    output.nAngle = fix16_to_int(sPlayerInput[nLocalPlayer].nAngle >> 2);
-    output.buttons = sPlayerInput[nLocalPlayer].buttons;
-    output.nTarget = sPlayerInput[nLocalPlayer].nTarget;
+    output.moveframes = B_LITTLE32(moveframes);
+    output.xVel = B_LITTLE32(sPlayerInput[nLocalPlayer].xVel);
+    output.yVel = B_LITTLE32(sPlayerInput[nLocalPlayer].yVel);
+    output.nAngle = fix16_to_int(B_LITTLE16(sPlayerInput[nLocalPlayer].nAngle >> 2));
+    output.buttons = B_LITTLE16(sPlayerInput[nLocalPlayer].buttons);
+    output.nTarget = B_LITTLE16(sPlayerInput[nLocalPlayer].nTarget);
     output.horizon = fix16_to_int(sPlayerInput[nLocalPlayer].horizon);
     output.nItem = sPlayerInput[nLocalPlayer].nItem;
-    output.h = sPlayerInput[nLocalPlayer].h;
+    output.h = B_LITTLE32(sPlayerInput[nLocalPlayer].h);
     output.i = sPlayerInput[nLocalPlayer].i;
 
     if (!fwrite(&output, 1, sizeof(output), vcrfp))
@@ -1496,15 +1496,15 @@ uint8_t ReadPlaybackInputs()
     demo_input input;
     if (fread(&input, 1, sizeof(input), vcrfp))
     {
-        moveframes = input.moveframes;
-        sPlayerInput[nLocalPlayer].xVel = input.xVel;
-        sPlayerInput[nLocalPlayer].yVel = input.yVel;
-        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(input.nAngle<<2);
-        sPlayerInput[nLocalPlayer].buttons = input.buttons;
-        sPlayerInput[nLocalPlayer].nTarget = input.nTarget;
+        moveframes = B_LITTLE32(input.moveframes);
+        sPlayerInput[nLocalPlayer].xVel = B_LITTLE32(input.xVel);
+        sPlayerInput[nLocalPlayer].yVel = B_LITTLE32(input.yVel);
+        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(B_LITTLE16(input.nAngle)<<2);
+        sPlayerInput[nLocalPlayer].buttons = B_LITTLE16(input.buttons);
+        sPlayerInput[nLocalPlayer].nTarget = B_LITTLE16(input.nTarget);
         sPlayerInput[nLocalPlayer].horizon = fix16_from_int(input.horizon);
         sPlayerInput[nLocalPlayer].nItem = input.nItem;
-        sPlayerInput[nLocalPlayer].h = input.h;
+        sPlayerInput[nLocalPlayer].h = B_LITTLE32(input.h);
         sPlayerInput[nLocalPlayer].i = input.i;
 
         besttarget = sPlayerInput[nLocalPlayer].nTarget;

@@ -1426,33 +1426,37 @@ void menu_GameLoad2(FILE *fp, bool bIsDemo)
         fread(&header, 1, sizeof(demo_header), fp);
 
         GameStats.nMap = header.nMap;
-        GameStats.nWeapons = header.nWeapons;
-        GameStats.nCurrentWeapon = header.nCurrentWeapon;
-        GameStats.clip = header.clip;
-        GameStats.items = header.items;
-        GameStats.player.nHealth = header.nHealth;
-        GameStats.player.field_2 = header.field_2;
-        GameStats.player.nAction = header.nAction;
-        GameStats.player.nSprite = header.nSprite;
-        GameStats.player.bIsMummified = header.bIsMummified;
-        GameStats.player.someNetVal = header.someNetVal;
-        GameStats.player.invincibility = header.invincibility;
-        GameStats.player.nAir = header.nAir;
-        GameStats.player.nSeq = header.nSeq;
-        GameStats.player.nMaskAmount = header.nMaskAmount;
-        GameStats.player.keys = header.keys;
-        GameStats.player.nMagic = header.nMagic;
+        GameStats.nWeapons = B_LITTLE16(header.nWeapons);
+        GameStats.nCurrentWeapon = B_LITTLE16(header.nCurrentWeapon);
+        GameStats.clip = B_LITTLE16(header.clip);
+        GameStats.items = B_LITTLE16(header.items);
+        GameStats.player.nHealth = B_LITTLE16(header.nHealth);
+        GameStats.player.field_2 = B_LITTLE16(header.field_2);
+        GameStats.player.nAction = B_LITTLE16(header.nAction);
+        GameStats.player.nSprite = B_LITTLE16(header.nSprite);
+        GameStats.player.bIsMummified = B_LITTLE16(header.bIsMummified);
+        GameStats.player.someNetVal = B_LITTLE16(header.someNetVal);
+        GameStats.player.invincibility = B_LITTLE16(header.invincibility);
+        GameStats.player.nAir = B_LITTLE16(header.nAir);
+        GameStats.player.nSeq = B_LITTLE16(header.nSeq);
+        GameStats.player.nMaskAmount = B_LITTLE16(header.nMaskAmount);
+        GameStats.player.keys = B_LITTLE16(header.keys);
+        GameStats.player.nMagic = B_LITTLE16(header.nMagic);
         Bmemcpy(GameStats.player.items, header.item, sizeof(header.item));
-        Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+        //Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+        for (int i = 0; i < 7; i++)
+        {
+            GameStats.player.nAmmo[i] = B_LITTLE16(header.nAmmo[i]);
+        }
         Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
-        GameStats.player.nCurrentWeapon = header.nCurrentWeapon2;
-        GameStats.player.field_3FOUR = header.field_3FOUR;
-        GameStats.player.bIsFiring = header.bIsFiring;
-        GameStats.player.field_38 = header.field_38;
-        GameStats.player.field_3A = header.field_3A;
-        GameStats.player.field_3C = header.field_3C;
-        GameStats.player.nRun = header.nRun;
-        GameStats.nLives = header.nLives;
+        GameStats.player.nCurrentWeapon = B_LITTLE16(header.nCurrentWeapon2);
+        GameStats.player.field_3FOUR = B_LITTLE16(header.field_3FOUR);
+        GameStats.player.bIsFiring = B_LITTLE16(header.bIsFiring);
+        GameStats.player.field_38 = B_LITTLE16(header.field_38);
+        GameStats.player.field_3A = B_LITTLE16(header.field_3A);
+        GameStats.player.field_3C = B_LITTLE16(header.field_3C);
+        GameStats.player.nRun = B_LITTLE16(header.nRun);
+        GameStats.nLives = B_LITTLE16(header.nLives);
     }
     else
         fread(&GameStats, sizeof(GameStats), 1, fp);
