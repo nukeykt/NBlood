@@ -4007,9 +4007,14 @@ void actTouchFloor(spritetype *pSprite, int nSector)
     if (pSector->extra > 0)
         pXSector = &xsector[pSector->extra];
 
-
-    if (pXSector && (pSector->type == kSectorDamage || pXSector->damageType > 0))
-    {
+    bool doDamage = (pXSector && (pSector->type == kSectorDamage || pXSector->damageType > 0));
+    // don't allow damage for damage sectors if they are not enabled
+    #ifdef NOONE_EXTENSIONS
+    if (gModernMap && doDamage && pSector->type == kSectorDamage && !pXSector->state)
+        doDamage = false;
+    #endif
+    
+    if (doDamage) {
         DAMAGE_TYPE nDamageType;
 
         if (pSector->type == kSectorDamage)

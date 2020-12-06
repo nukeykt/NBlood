@@ -434,13 +434,15 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
         // allow to send commands on player sprites
         PLAYER* pPlayer = NULL;
         if (playerRXRngIsFine(rxId)) {
-            if ((pPlayer = getPlayerById((kChannelPlayer0 - kChannelPlayer7) + kMaxPlayers)) != NULL)
+            if ((pPlayer = getPlayerById((rxId - kChannelPlayer7) + kMaxPlayers)) != NULL)
                 trMessageSprite(pPlayer->nSprite, event);
+            return;
         } else if (rxId == kChannelAllPlayers) {
             for (int i = 0; i < kMaxPlayers; i++) {
                 if ((pPlayer = getPlayerById(i)) != NULL)
                     trMessageSprite(pPlayer->nSprite, event);
             }
+            return;
         }
 
     }

@@ -49,6 +49,7 @@ enum VIEW_EFFECT {
     VIEW_EFFECT_16,
     VIEW_EFFECT_17,
     VIEW_EFFECT_18,
+    kViewEffectSpotProgress,
 };
 
 enum VIEWPOS {
