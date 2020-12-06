@@ -977,17 +977,17 @@ static void Net_CopySpriteExtFromNet(const netactor_t* netActor, spriteext_t* ga
     gameSprExt->mdanimtims = netActor->ext_mdanimtims;
 
     gameSprExt->mdanimcur = netActor->ext_mdanimcur;
-    gameSprExt->angoff = netActor->ext_angoff;
-    gameSprExt->pitch = netActor->ext_pitch;
-    gameSprExt->roll = netActor->ext_roll;
+    gameSprExt->mdangoff = netActor->ext_angoff;
+    gameSprExt->mdpitch = netActor->ext_pitch;
+    gameSprExt->mdroll = netActor->ext_roll;
 
-    gameSprExt->pivot_offset.x = netActor->ext_pivot_offset_x;
-    gameSprExt->pivot_offset.y = netActor->ext_pivot_offset_y;
-    gameSprExt->pivot_offset.z = netActor->ext_pivot_offset_z;
+    gameSprExt->mdpivot_offset.x = netActor->ext_pivot_offset_x;
+    gameSprExt->mdpivot_offset.y = netActor->ext_pivot_offset_y;
+    gameSprExt->mdpivot_offset.z = netActor->ext_pivot_offset_z;
 
-    gameSprExt->position_offset.x = netActor->ext_position_offset_x;
-    gameSprExt->position_offset.y = netActor->ext_position_offset_y;
-    gameSprExt->position_offset.z = netActor->ext_position_offset_z;
+    gameSprExt->mdposition_offset.x = netActor->ext_position_offset_x;
+    gameSprExt->mdposition_offset.y = netActor->ext_position_offset_y;
+    gameSprExt->mdposition_offset.z = netActor->ext_position_offset_z;
 
     gameSprExt->flags = netActor->ext_flags;
     gameSprExt->xpanning = netActor->ext_xpanning;
@@ -1315,17 +1315,17 @@ static void Net_CopySpriteExtToNet(const spriteext_t* gameSpriteExt, netactor_t*
     netActor->ext_mdanimtims = gameSpriteExt->mdanimtims;
 
     netActor->ext_mdanimcur = gameSpriteExt->mdanimcur;
-    netActor->ext_angoff = gameSpriteExt->angoff;
-    netActor->ext_pitch = gameSpriteExt->pitch;
-    netActor->ext_roll = gameSpriteExt->roll;
+    netActor->ext_angoff = gameSpriteExt->mdangoff;
+    netActor->ext_pitch = gameSpriteExt->mdpitch;
+    netActor->ext_roll = gameSpriteExt->mdroll;
 
-    netActor->ext_pivot_offset_x = gameSpriteExt->pivot_offset.x;
-    netActor->ext_pivot_offset_y = gameSpriteExt->pivot_offset.y;
-    netActor->ext_pivot_offset_z = gameSpriteExt->pivot_offset.z;
+    netActor->ext_pivot_offset_x = gameSpriteExt->mdpivot_offset.x;
+    netActor->ext_pivot_offset_y = gameSpriteExt->mdpivot_offset.y;
+    netActor->ext_pivot_offset_z = gameSpriteExt->mdpivot_offset.z;
 
-    netActor->ext_position_offset_x = gameSpriteExt->position_offset.x;
-    netActor->ext_position_offset_y = gameSpriteExt->position_offset.y;
-    netActor->ext_position_offset_z = gameSpriteExt->position_offset.z;
+    netActor->ext_position_offset_x = gameSpriteExt->mdposition_offset.x;
+    netActor->ext_position_offset_y = gameSpriteExt->mdposition_offset.y;
+    netActor->ext_position_offset_z = gameSpriteExt->mdposition_offset.z;
 
     netActor->ext_flags = gameSpriteExt->flags;
     netActor->ext_xpanning = gameSpriteExt->xpanning;
@@ -2330,13 +2330,7 @@ static void Net_ReceiveNewPlayer(uint8_t *pbuf, int32_t packbufleng)
         g_player[pbuf[4]].playerquitflag = 1;
 
         if (!g_player[pbuf[4]].ps)
-        {
             g_player[pbuf[4]].ps = (DukePlayer_t *)Xcalloc(1, sizeof(DukePlayer_t));
-        }
-        if (!g_player[pbuf[4]].input)
-        {
-            g_player[pbuf[4]].input = (input_t *)Xcalloc(1, sizeof(input_t));
-        }
     }
 
     if (pbuf[5] == NET_DEDICATED_SERVER)

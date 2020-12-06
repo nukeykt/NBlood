@@ -2025,12 +2025,12 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
     float g;
     float k0, k1, k2, k3, k4, k5, k6, k7;
 
-    k0 = ((float)(tspr->x+spriteext[tspr->owner].position_offset.x-globalposx))*f*(1.f/1024.f);
-    k1 = ((float)(tspr->y+spriteext[tspr->owner].position_offset.y-globalposy))*f*(1.f/1024.f);
+    k0 = ((float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x-globalposx))*f*(1.f/1024.f);
+    k1 = ((float)(tspr->y+spriteext[tspr->owner].mdposition_offset.y-globalposy))*f*(1.f/1024.f);
     f = gcosang2*gshang/gvrcorrection;
     g = gsinang2*gshang/gvrcorrection;
-    k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].angoff+1024)&2047] * (1.f/16384.f);
-    k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].angoff+ 512)&2047] * (1.f/16384.f);
+    k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+1024)&2047] * (1.f/16384.f);
+    k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+ 512)&2047] * (1.f/16384.f);
     k2 = k0*(1-k4)+k1*k5;
     k3 = k1*(1-k4)-k0*k5;
     k6 = f*gstang - gsinang*gctang; k7 = g*gstang + gcosang*gctang;
@@ -2158,7 +2158,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     a0.z = m->zadd * m->scale;
 
     // Parkar: Moved up to be able to use k0 for the y-flipping code
-    k0 = (float)tspr->z+spriteext[tspr->owner].position_offset.z;
+    k0 = (float)tspr->z+spriteext[tspr->owner].mdposition_offset.z;
     f = ((globalorientation&8) && (sprite[tspr->owner].cstat&48)!=0) ? -4.f : 4.f;
     k0 -= (tspr->yoffset*tspr->yrepeat)*f;
     if ((globalorientation&128) && !((globalorientation&48)==32))
@@ -2183,7 +2183,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     m0.z *= f; m1.z *= f; a0.z *= f;
 
     // floor aligned
-    k1 = (float)tspr->y+spriteext[tspr->owner].position_offset.y;
+    k1 = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
     if ((globalorientation&48)==32)
     {
         m0.z = -m0.z; m1.z = -m1.z; a0.z = -a0.z;
@@ -2196,7 +2196,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     // calculations below again, but are needed for the base offsets.
     f = (65536.f*512.f)/(fxdimen*fviewingrange);
     g = 32.f/(fxdimen*gxyaspect);
-    m0.y *= f; m1.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].position_offset.x-globalposx))*  (1.f/1024.f) + a0.y)*f;
+    m0.y *= f; m1.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x-globalposx))*  (1.f/1024.f) + a0.y)*f;
     m0.x *=-f; m1.x *=-f; a0.x = ((k1     -fglobalposy) * -(1.f/1024.f) + a0.x)*-f;
     m0.z *= g; m1.z *= g; a0.z = ((k0     -fglobalposz) * -(1.f/16384.f) + a0.z)*g;
 
@@ -2280,24 +2280,24 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     //------------
 
     // PLAG: Cleaner model rotation code
-    if (sext->pitch || sext->roll)
+    if (sext->mdpitch || sext->mdroll)
     {
         float f = 1.f/((fxdimen * fviewingrange) * (256.f/(65536.f*128.f)) * (m0.x+m1.x));
         Bmemset(&a0, 0, sizeof(a0));
 
-        if (sext->pivot_offset.x)
-            a0.x = (float) sext->pivot_offset.x * f;
+        if (sext->mdpivot_offset.x)
+            a0.x = (float) sext->mdpivot_offset.x * f;
 
-        if (sext->pivot_offset.y)  // Compare with SCREEN_FACTORS above
-            a0.y = (float) sext->pivot_offset.y * f;
+        if (sext->mdpivot_offset.y)  // Compare with SCREEN_FACTORS above
+            a0.y = (float) sext->mdpivot_offset.y * f;
 
-        if ((sext->pivot_offset.z) && !(tspr->clipdist & TSPR_FLAGS_MDHACK))  // Compare with SCREEN_FACTORS above
-            a0.z = (float)sext->pivot_offset.z / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
+        if ((sext->mdpivot_offset.z) && !(tspr->clipdist & TSPR_FLAGS_MDHACK))  // Compare with SCREEN_FACTORS above
+            a0.z = (float)sext->mdpivot_offset.z / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
 
-        k0 = (float)sintable[(sext->pitch+512)&2047] * (1.f/16384.f);
-        k1 = (float)sintable[sext->pitch&2047] * (1.f/16384.f);
-        k2 = (float)sintable[(sext->roll+512)&2047] * (1.f/16384.f);
-        k3 = (float)sintable[sext->roll&2047] * (1.f/16384.f);
+        k0 = (float)sintable[(sext->mdpitch+512)&2047] * (1.f/16384.f);
+        k1 = (float)sintable[sext->mdpitch&2047] * (1.f/16384.f);
+        k2 = (float)sintable[(sext->mdroll+512)&2047] * (1.f/16384.f);
+        k3 = (float)sintable[sext->mdroll&2047] * (1.f/16384.f);
     }
 
     float const xpanning = (float)sext->xpanning * (1.f/256.f);
@@ -2335,7 +2335,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         }
 #endif
 
-        if (sext->pitch || sext->roll)
+        if (sext->mdpitch || sext->mdroll)
         {
             vec3f_t fp1, fp2;
 

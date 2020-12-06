@@ -153,8 +153,13 @@ typedef struct {
     int32_t autostep, autostep_sbw;
 
     uint32_t interface_toggle;
+
+    palette_t pals;
+
     uint16_t max_actors_killed, actors_killed;
     uint16_t gotweapon, zoom;
+
+    uint16_t frag, fraggedself;
 
     int16_t loogiex[64], loogiey[64], sbs, sound_pitch;
 
@@ -177,8 +182,7 @@ typedef struct {
     int16_t transporter_hold, clipdist;
 
     uint8_t max_secret_rooms, secret_rooms;
-    // XXX: 255 values for frag(gedself) seems too small.
-    uint8_t frag, fraggedself, quick_kick, last_quick_kick;
+    uint8_t quick_kick, last_quick_kick;
     uint8_t return_to_center, reloading, weapreccnt;
     uint8_t aim_mode, auto_aim, weaponswitch, movement_lock, team;
     uint8_t tipincs, hbomb_hold_delay, frag_ps, kickback_pic;
@@ -200,18 +204,18 @@ typedef struct {
     int8_t last_weapon, cheat_phase, weapon_pos, wantweaponfire, curr_weapon;
 
     uint8_t palette;
-    palette_t pals;
-
     int8_t last_used_weapon;
 
     int8_t crouch_toggle;
-    int8_t padding_[3];
+    int8_t padding_[1];
 } DukePlayer_t;
+
+EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t) % 4 == 0);
 
 typedef struct
 {
     DukePlayer_t *ps;
-    input_t *input;
+    input_t input;
 
     int horizRecenter;
     int horizAngleAdjust;

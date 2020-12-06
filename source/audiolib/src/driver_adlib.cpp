@@ -231,12 +231,12 @@ int AL_PostAmp = 3;
 #define OFFSET(structure, offset) (*((char **)&(structure)[offset]))
 
 #define LL_AddToTail(type, listhead, node)                                                                                 \
-    LL_AddNode((char *)(node), (char **)&((listhead)->end), (char **)&((listhead)->start), (intptr_t) & ((type *)0)->prev, \
-               (intptr_t) & ((type *)0)->next)
+    LL_AddNode((char *)(node), (char **)&((listhead)->end), (char **)&((listhead)->start), (intptr_t)offsetof(type, prev), \
+               (intptr_t)offsetof(type, next))
 
 #define LL_Remove(type, listhead, node)                                                                                       \
-    LL_RemoveNode((char *)(node), (char **)&((listhead)->start), (char **)&((listhead)->end), (intptr_t) & ((type *)0)->next, \
-                  (intptr_t) & ((type *)0)->prev)
+    LL_RemoveNode((char *)(node), (char **)&((listhead)->start), (char **)&((listhead)->end), (intptr_t)offsetof(type, next), \
+                  (intptr_t)offsetof(type, prev))
 
 static void LL_RemoveNode(char * __restrict item, char ** __restrict head, char ** __restrict tail, intptr_t next, intptr_t prev)
 {

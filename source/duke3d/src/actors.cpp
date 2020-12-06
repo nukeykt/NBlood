@@ -702,10 +702,10 @@ int32_t block_deletesprite = 0;
 #ifdef POLYMER
 static void A_DeleteLight(int32_t s)
 {
-    if (actor[s].lightId >= 0)
-        polymer_deletelight(actor[s].lightId);
-    actor[s].lightId = -1;
-    actor[s].lightptr = NULL;
+    if (practor[s].lightId >= 0)
+        polymer_deletelight(practor[s].lightId);
+    practor[s].lightId = -1;
+    practor[s].lightptr = NULL;
 }
 
 void G_Polymer_UnInit(void)
@@ -736,7 +736,7 @@ void A_DeleteSprite(int spriteNum)
     }
 
 #ifdef POLYMER
-    if (actor[spriteNum].lightptr != NULL && videoGetRenderMode() == REND_POLYMER)
+    if (practor[spriteNum].lightptr != NULL && videoGetRenderMode() == REND_POLYMER)
         A_DeleteLight(spriteNum);
 #endif
 
@@ -930,7 +930,7 @@ void G_AddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange,
     if (videoGetRenderMode() != REND_POLYMER || pr_lighting != 1)
         return;
 
-    if (actor[spriteNum].lightptr == NULL)
+    if (practor[spriteNum].lightptr == NULL)
     {
 #pragma pack(push, 1)
         _prlight mylight;
@@ -945,7 +945,7 @@ void G_AddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange,
         mylight.color[1] = (lightColor >> 8) & 255;
         mylight.color[2] = (lightColor >> 16) & 255;
         mylight.radius = lightRadius;
-        actor[spriteNum].lightmaxrange = mylight.range = lightRange;
+        practor[spriteNum].lightmaxrange = mylight.range = lightRange;
 
         mylight.priority = lightPrio;
         mylight.tilenum = 0;
@@ -953,33 +953,33 @@ void G_AddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange,
         mylight.publicflags.emitshadow = 1;
         mylight.publicflags.negative = 0;
 
-        actor[spriteNum].lightId = polymer_addlight(&mylight);
-        if (actor[spriteNum].lightId >= 0)
-            actor[spriteNum].lightptr = &prlights[actor[spriteNum].lightId];
+        practor[spriteNum].lightId = polymer_addlight(&mylight);
+        if (practor[spriteNum].lightId >= 0)
+            practor[spriteNum].lightptr = &prlights[practor[spriteNum].lightId];
         return;
     }
 
     s->z -= zOffset;
 
-    if (lightRange<actor[spriteNum].lightmaxrange>> 1)
-        actor[spriteNum].lightmaxrange = 0;
+    if (lightRange<practor[spriteNum].lightmaxrange>> 1)
+        practor[spriteNum].lightmaxrange = 0;
 
-    if (lightRange > actor[spriteNum].lightmaxrange || lightPrio != actor[spriteNum].lightptr->priority ||
-        Bmemcmp(&sprite[spriteNum], actor[spriteNum].lightptr, sizeof(int32_t) * 3))
+    if (lightRange > practor[spriteNum].lightmaxrange || lightPrio != practor[spriteNum].lightptr->priority ||
+        Bmemcmp(&sprite[spriteNum], practor[spriteNum].lightptr, sizeof(int32_t) * 3))
     {
-        if (lightRange > actor[spriteNum].lightmaxrange)
-            actor[spriteNum].lightmaxrange = lightRange;
+        if (lightRange > practor[spriteNum].lightmaxrange)
+            practor[spriteNum].lightmaxrange = lightRange;
 
-        Bmemcpy(actor[spriteNum].lightptr, &sprite[spriteNum], sizeof(int32_t) * 3);
-        actor[spriteNum].lightptr->sector = s->sectnum;
-        actor[spriteNum].lightptr->flags.invalidate = 1;
+        Bmemcpy(practor[spriteNum].lightptr, &sprite[spriteNum], sizeof(int32_t) * 3);
+        practor[spriteNum].lightptr->sector = s->sectnum;
+        practor[spriteNum].lightptr->flags.invalidate = 1;
     }
 
-    actor[spriteNum].lightptr->priority = lightPrio;
-    actor[spriteNum].lightptr->range = lightRange;
-    actor[spriteNum].lightptr->color[0] = lightColor & 255;
-    actor[spriteNum].lightptr->color[1] = (lightColor >> 8) & 255;
-    actor[spriteNum].lightptr->color[2] = (lightColor >> 16) & 255;
+    practor[spriteNum].lightptr->priority = lightPrio;
+    practor[spriteNum].lightptr->range = lightRange;
+    practor[spriteNum].lightptr->color[0] = lightColor & 255;
+    practor[spriteNum].lightptr->color[1] = (lightColor >> 8) & 255;
+    practor[spriteNum].lightptr->color[2] = (lightColor >> 16) & 255;
 
     s->z += zOffset;
 
@@ -3602,7 +3602,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
 static int P_Submerge(int const playerNum, DukePlayer_t * const pPlayer, int const sectNum, int const otherSect)
 {
     if (pPlayer->on_ground && pPlayer->pos.z >= sector[sectNum].floorz
-        && (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH) || pPlayer->vel.z > 2048))
+        && (TEST_SYNC_KEY(g_player[playerNum].input.bits, SK_CROUCH) || pPlayer->vel.z > 2048))
     //        if( onfloorz && sectlotag == 1 && ps->pos.z > (sector[sect].floorz-(6<<8)) )
     {
         if (screenpeek == playerNum)
@@ -3618,7 +3618,7 @@ static int P_Submerge(int const playerNum, DukePlayer_t * const pPlayer, int con
 
         pPlayer->opos.z = pPlayer->pos.z = sector[otherSect].ceilingz;
 
-        if (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH))
+        if (TEST_SYNC_KEY(g_player[playerNum].input.bits, SK_CROUCH))
             pPlayer->vel.z += 512;
 
         return 1;
@@ -3781,12 +3781,12 @@ ACTOR_STATIC void G_MoveTransports(void)
                             }
 
                             if (onFloor == 0 && klabs(SZ(spriteNum) - pPlayer->pos.z) < 6144)
-                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
-                                    || TEST_SYNC_KEY(thisPlayer.input->bits, SK_CROUCH))
+                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(thisPlayer.input.bits, SK_JUMP)
+                                    || TEST_SYNC_KEY(thisPlayer.input.bits, SK_CROUCH))
                                 {
                                     pPlayer->pos.x += sprite[OW(spriteNum)].x - SX(spriteNum);
                                     pPlayer->pos.y += sprite[OW(spriteNum)].y - SY(spriteNum);
-                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
+                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(thisPlayer.input.bits, SK_JUMP)
                                                                               || pPlayer->jetpack_on < 11))
                                                      ? sprite[OW(spriteNum)].z - 6144
                                                      : sprite[OW(spriteNum)].z + 6144;
@@ -4346,7 +4346,7 @@ ACTOR_STATIC void G_MoveActors(void)
                 {
                     int const angDiff = G_GetAngleDelta(fix16_to_int(pPlayer->q16ang),getangle(pSprite->x-pPlayer->pos.x,pSprite->y-pPlayer->pos.y));
 
-                    if (angDiff > -64 && angDiff < 64 && TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN)
+                    if (angDiff > -64 && angDiff < 64 && TEST_SYNC_KEY(g_player[playerNum].input.bits, SK_OPEN)
                         && pPlayer->toggle_key_flag == 1)
                     {
                         int ballSprite;
@@ -4768,7 +4768,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
                 pSprite->ang = fix16_to_int(pPlayer->q16ang);
 
-                if ((TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_FIRE) || (pPlayer->quick_kick > 0)) && sprite[pPlayer->i].extra > 0)
+                if ((TEST_SYNC_KEY(g_player[playerNum].input.bits, SK_FIRE) || (pPlayer->quick_kick > 0)) && sprite[pPlayer->i].extra > 0)
                     if (pPlayer->quick_kick > 0 ||
                         (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != HANDREMOTE_WEAPON && PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != HANDBOMB_WEAPON &&
                         PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != TRIPBOMB_WEAPON && pPlayer->ammo_amount[pPlayer->curr_weapon] >= 0))
@@ -8414,7 +8414,7 @@ static void G_DoEffectorLights(void)  // STATNUM 14
             if (!A_CheckSpriteFlags(i, SFLAG_NOLIGHT) && videoGetRenderMode() == REND_POLYMER &&
                     !(A_CheckSpriteFlags(i, SFLAG_USEACTIVATOR) && sector[sprite[i].sectnum].lotag & 16384))
             {
-                if (actor[i].lightptr == NULL)
+                if (practor[i].lightptr == NULL)
                 {
 #pragma pack(push,1)
                     _prlight mylight;
@@ -8444,33 +8444,33 @@ static void G_DoEffectorLights(void)  // STATNUM 14
                     else
                         mylight.priority = PR_LIGHT_PRIO_MAX;
 
-                    actor[i].lightId = polymer_addlight(&mylight);
-                    if (actor[i].lightId >= 0)
-                        actor[i].lightptr = &prlights[actor[i].lightId];
+                    practor[i].lightId = polymer_addlight(&mylight);
+                    if (practor[i].lightId >= 0)
+                        practor[i].lightptr = &prlights[practor[i].lightId];
                     break;
                 }
 
-                if (Bmemcmp(&sprite[i], actor[i].lightptr, sizeof(int32_t) * 3))
+                if (Bmemcmp(&sprite[i], practor[i].lightptr, sizeof(int32_t) * 3))
                 {
-                    Bmemcpy(actor[i].lightptr, &sprite[i], sizeof(int32_t) * 3);
-                    actor[i].lightptr->sector = sprite[i].sectnum;
-                    actor[i].lightptr->flags.invalidate = 1;
+                    Bmemcpy(practor[i].lightptr, &sprite[i], sizeof(int32_t) * 3);
+                    practor[i].lightptr->sector = sprite[i].sectnum;
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if (SHT(i) != actor[i].lightptr->range)
+                if (SHT(i) != practor[i].lightptr->range)
                 {
-                    actor[i].lightptr->range = SHT(i);
-                    actor[i].lightptr->flags.invalidate = 1;
+                    practor[i].lightptr->range = SHT(i);
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if ((sprite[i].xvel != actor[i].lightptr->color[0]) ||
-                        (sprite[i].yvel != actor[i].lightptr->color[1]) ||
-                        (sprite[i].zvel != actor[i].lightptr->color[2]))
+                if ((sprite[i].xvel != practor[i].lightptr->color[0]) ||
+                        (sprite[i].yvel != practor[i].lightptr->color[1]) ||
+                        (sprite[i].zvel != practor[i].lightptr->color[2]))
                 {
-                    actor[i].lightptr->color[0] = sprite[i].xvel;
-                    actor[i].lightptr->color[1] = sprite[i].yvel;
-                    actor[i].lightptr->color[2] = sprite[i].zvel;
+                    practor[i].lightptr->color[0] = sprite[i].xvel;
+                    practor[i].lightptr->color[1] = sprite[i].yvel;
+                    practor[i].lightptr->color[2] = sprite[i].zvel;
                 }
-                if ((int)!!(CS(i) & 128) != actor[i].lightptr->publicflags.negative) {
-                    actor[i].lightptr->publicflags.negative = !!(CS(i) & 128);
+                if ((int)!!(CS(i) & 128) != practor[i].lightptr->publicflags.negative) {
+                    practor[i].lightptr->publicflags.negative = !!(CS(i) & 128);
                 }
             }
             break;
@@ -8480,7 +8480,7 @@ static void G_DoEffectorLights(void)  // STATNUM 14
             if (!A_CheckSpriteFlags(i, SFLAG_NOLIGHT) && videoGetRenderMode() == REND_POLYMER &&
                     !(A_CheckSpriteFlags(i, SFLAG_USEACTIVATOR) && sector[sprite[i].sectnum].lotag & 16384))
             {
-                if (actor[i].lightptr == NULL)
+                if (practor[i].lightptr == NULL)
                 {
 #pragma pack(push,1)
                     _prlight mylight;
@@ -8512,60 +8512,60 @@ static void G_DoEffectorLights(void)  // STATNUM 14
                     else
                         mylight.priority = PR_LIGHT_PRIO_MAX;
 
-                    actor[i].lightId = polymer_addlight(&mylight);
-                    if (actor[i].lightId >= 0)
+                    practor[i].lightId = polymer_addlight(&mylight);
+                    if (practor[i].lightId >= 0)
                     {
-                        actor[i].lightptr = &prlights[actor[i].lightId];
+                        practor[i].lightptr = &prlights[practor[i].lightId];
 
                         // Hack in case polymer_addlight tweaked the horiz value
-                        if (actor[i].lightptr->horiz != SH(i))
-                            SH(i) = actor[i].lightptr->horiz;
+                        if (practor[i].lightptr->horiz != SH(i))
+                            SH(i) = practor[i].lightptr->horiz;
                     }
                     break;
                 }
 
-                if (Bmemcmp(&sprite[i], actor[i].lightptr, sizeof(int32_t) * 3))
+                if (Bmemcmp(&sprite[i], practor[i].lightptr, sizeof(int32_t) * 3))
                 {
-                    Bmemcpy(actor[i].lightptr, &sprite[i], sizeof(int32_t) * 3);
-                    actor[i].lightptr->sector = sprite[i].sectnum;
-                    actor[i].lightptr->flags.invalidate = 1;
+                    Bmemcpy(practor[i].lightptr, &sprite[i], sizeof(int32_t) * 3);
+                    practor[i].lightptr->sector = sprite[i].sectnum;
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if (SHT(i) != actor[i].lightptr->range)
+                if (SHT(i) != practor[i].lightptr->range)
                 {
-                    actor[i].lightptr->range = SHT(i);
-                    actor[i].lightptr->flags.invalidate = 1;
+                    practor[i].lightptr->range = SHT(i);
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if ((sprite[i].xvel != actor[i].lightptr->color[0]) ||
-                        (sprite[i].yvel != actor[i].lightptr->color[1]) ||
-                        (sprite[i].zvel != actor[i].lightptr->color[2]))
+                if ((sprite[i].xvel != practor[i].lightptr->color[0]) ||
+                        (sprite[i].yvel != practor[i].lightptr->color[1]) ||
+                        (sprite[i].zvel != practor[i].lightptr->color[2]))
                 {
-                    actor[i].lightptr->color[0] = sprite[i].xvel;
-                    actor[i].lightptr->color[1] = sprite[i].yvel;
-                    actor[i].lightptr->color[2] = sprite[i].zvel;
+                    practor[i].lightptr->color[0] = sprite[i].xvel;
+                    practor[i].lightptr->color[1] = sprite[i].yvel;
+                    practor[i].lightptr->color[2] = sprite[i].zvel;
                 }
-                if (((256-(SS(i)+128))<<1) != actor[i].lightptr->radius)
+                if (((256-(SS(i)+128))<<1) != practor[i].lightptr->radius)
                 {
-                    actor[i].lightptr->radius = (256-(SS(i)+128))<<1;
-                    actor[i].lightptr->faderadius = (int16_t)(actor[i].lightptr->radius * 0.75f);
-                    actor[i].lightptr->flags.invalidate = 1;
+                    practor[i].lightptr->radius = (256-(SS(i)+128))<<1;
+                    practor[i].lightptr->faderadius = (int16_t)(practor[i].lightptr->radius * 0.75f);
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if (SA(i) != actor[i].lightptr->angle)
+                if (SA(i) != practor[i].lightptr->angle)
                 {
-                    actor[i].lightptr->angle = SA(i);
-                    actor[i].lightptr->flags.invalidate = 1;
+                    practor[i].lightptr->angle = SA(i);
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if (SH(i) != actor[i].lightptr->horiz)
+                if (SH(i) != practor[i].lightptr->horiz)
                 {
-                    actor[i].lightptr->horiz = SH(i);
-                    actor[i].lightptr->flags.invalidate = 1;
+                    practor[i].lightptr->horiz = SH(i);
+                    practor[i].lightptr->flags.invalidate = 1;
                 }
-                if ((int)!(CS(i) & 64) != actor[i].lightptr->publicflags.emitshadow) {
-                    actor[i].lightptr->publicflags.emitshadow = !(CS(i) & 64);
+                if ((int)!(CS(i) & 64) != practor[i].lightptr->publicflags.emitshadow) {
+                    practor[i].lightptr->publicflags.emitshadow = !(CS(i) & 64);
                 }
-                if ((int)!!(CS(i) & 128) != actor[i].lightptr->publicflags.negative) {
-                    actor[i].lightptr->publicflags.negative = !!(CS(i) & 128);
+                if ((int)!!(CS(i) & 128) != practor[i].lightptr->publicflags.negative) {
+                    practor[i].lightptr->publicflags.negative = !!(CS(i) & 128);
                 }
-                actor[i].lightptr->tilenum = actor[i].picnum;
+                practor[i].lightptr->tilenum = actor[i].picnum;
             }
 
             break;
@@ -8585,14 +8585,14 @@ static void A_DoLight(int spriteNum)
         (pSprite->picnum != SECTOREFFECTOR && ((pSprite->cstat & 32768) || pSprite->yrepeat < 4)) ||
         A_CheckSpriteFlags(spriteNum, SFLAG_NOLIGHT) || (A_CheckSpriteFlags(spriteNum, SFLAG_USEACTIVATOR) && sector[pSprite->sectnum].lotag & 16384))
     {
-        if (actor[spriteNum].lightptr != NULL)
+        if (practor[spriteNum].lightptr != NULL)
             A_DeleteLight(spriteNum);
     }
     else
     {
-        if (actor[spriteNum].lightptr != NULL && actor[spriteNum].lightcount)
+        if (practor[spriteNum].lightptr != NULL && practor[spriteNum].lightcount)
         {
-            if (!(--actor[spriteNum].lightcount))
+            if (!(--practor[spriteNum].lightcount))
                 A_DeleteLight(spriteNum);
         }
 
@@ -8628,7 +8628,7 @@ static void A_DoLight(int spriteNum)
                 {
                     if ((pSprite->cstat & 32768) || A_CheckSpriteFlags(spriteNum, SFLAG_NOLIGHT))
                     {
-                        if (actor[spriteNum].lightptr != NULL)
+                        if (practor[spriteNum].lightptr != NULL)
                             A_DeleteLight(spriteNum);
                         break;
                     }
@@ -8713,7 +8713,7 @@ static void A_DoLight(int spriteNum)
             break;
 
         case EXPLOSION2__STATIC:
-            if (!actor[spriteNum].lightcount)
+            if (!practor[spriteNum].lightcount)
             {
                 // XXX: This block gets CODEDUP'd too much.
                 int32_t x = ((sintable[(pSprite->ang+512)&2047])>>6);
@@ -8787,7 +8787,7 @@ static void A_DoLight(int spriteNum)
                 pSprite->y -= y;
 
                 G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), 8 * pSprite->yrepeat, 240+(160<<8)+(80<<16),PR_LIGHT_PRIO_LOW_GAME);
-                actor[spriteNum].lightcount = 1;
+                practor[spriteNum].lightcount = 1;
 
                 pSprite->x += x;
                 pSprite->y += y;

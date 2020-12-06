@@ -1199,7 +1199,7 @@ void mouseUninit(void)
 //                    furthermore return 0 if successful.
 //
 
-#ifdef _WIN32
+#if defined _WIN32 && SDL_MINOR_VERSION == 0 && SDL_PATCHLEVEL < 13
 // bypass SDL_SetWindowGrab--see https://bugzilla.libsdl.org/show_bug.cgi?id=4748
 static void SetWindowGrab(SDL_Window *pWindow, int const clipToWindow)
 {
@@ -2000,14 +2000,8 @@ int32_t videoSetGamma(void)
 
     if (i < 0)
     {
-#ifndef __ANDROID__  // Don't do this check, it is really supported, TODO
-/*
         if (i != INT32_MIN)
-            initprintf("Unable to set gamma: SDL_SetWindowGammaRamp failed: %s\n", SDL_GetError());
-*/
-#endif
-
-        OSD_Printf("videoSetGamma(): %s\n", SDL_GetError());
+            OSD_Printf("videoSetGamma(): %s\n", SDL_GetError());
 
 #ifndef EDUKE32_GLES
 #if SDL_MAJOR_VERSION >= 2

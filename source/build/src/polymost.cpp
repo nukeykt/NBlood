@@ -507,10 +507,10 @@ GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int 
         OSD_Printf("Compile Status: %u\n", compileStatus);
         if (logLength > 0)
         {
-            char *infoLog = (char*)Xmalloc(logLength);
+            char *infoLog = (char*)Bmalloc(logLength);
             glGetShaderInfoLog(shaderID, logLength, &logLength, infoLog);
             OSD_Printf("Log:\n%s\n", infoLog);
-            free(infoLog);
+            Bfree(infoLog);
         }
     }
 
@@ -1154,7 +1154,7 @@ void polymost_glinit()
     glLinkProgram(polymost1ExtendedShaderProgramID);
 
     int polymost1BasicFragLen = strlen(polymost1Frag);
-    char* polymost1BasicFrag = (char*) malloc(polymost1BasicFragLen);
+    char* polymost1BasicFrag = (char*) Bmalloc(polymost1BasicFragLen);
     memcpy(polymost1BasicFrag, polymost1Frag, polymost1BasicFragLen);
     char* extDefineSubstr = strstr(polymost1BasicFrag, " #define POLYMOST1_EXTENDED");
     if (extDefineSubstr)
@@ -1168,7 +1168,7 @@ void polymost_glinit()
     glAttachShader(polymost1BasicShaderProgramID, polymost1BasicVertexShaderID);
     glAttachShader(polymost1BasicShaderProgramID, polymost1BasicFragmentShaderID);
     glLinkProgram(polymost1BasicShaderProgramID);
-    free(polymost1BasicFrag);
+    Bfree(polymost1BasicFrag);
     polymost1BasicFrag = 0;
 
     // set defaults
@@ -2304,7 +2304,11 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
 
         fixtransparency(pic,tsiz,siz,dameth);
 
-        if (polymost_want_npotytex(dameth, siz.y) && tsiz.x == siz.x && tsiz.y == siz.y)  // XXX
+        if (picanm[dapic].tileflags & TILEFLAGS_TRUENPOT)
+        {
+            npoty = 0;
+        }
+        else if (polymost_want_npotytex(dameth, siz.y) && tsiz.x == siz.x && tsiz.y == siz.y)  // XXX
         {
             const int32_t nextpoty = 1 << ((picsiz[dapic] >> 4) + 1);
             const int32_t ydif = nextpoty - siz.y;
@@ -3113,7 +3117,7 @@ static void polymost_identityrotmat(void)
 
 static void polymost_polyeditorfunc(vec2f_t const * const dpxy, int n)
 {
-    if (!doeditorcheck)
+    if (!doeditorcheck || n < 3)
         return;
 
     for (int i = 0; i < n; i++)
@@ -3171,6 +3175,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
         if (f <= 0) return;
     }
+    else if (n < 3)
+        return;
 
     static int32_t skyzbufferhack_pass = 0;
     if (flatskyrender && skyzbufferhack_pass == 0)
@@ -3355,7 +3361,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         }
     }
 
-    if (glinfo.texnpot && r_npotwallmode == 2 && (method & DAMETH_WALL) != 0)
+    if (glinfo.texnpot && r_npotwallmode == 2 && (method & DAMETH_WALL) != 0 && !(picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT))
     {
         int32_t size = tilesiz[globalpicnum].y;
         int32_t size2;
@@ -5030,7 +5036,11 @@ static void calc_ypanning(int32_t refposz, float ryp0, float ryp1,
         i = tilesiz[globalpicnum].y;
     else
 #endif
-    if (polymost_is_npotmode())
+    if (picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT)
+    {
+        i = tilesiz[globalpicnum].y;
+    }
+    else if (polymost_is_npotmode())
     {
         t *= (float)tilesiz[globalpicnum].y / i;
         i = tilesiz[globalpicnum].y;
@@ -5440,6 +5450,20 @@ static void polymost_drawalls(int32_t const bunch)
         }
 
 #ifdef YAX_ENABLE
+        
+        int32_t checkcf = 0;
+        int16_t bn[2] = {};
+
+        if (g_nodraw)
+        {
+            int32_t baselevp;
+            baselevp = (yax_globallev == YAX_MAXDRAWS);
+
+            yax_getbunches(sectnum, &bn[0], &bn[1]);
+            checkcf = (bn[0]>=0) + ((bn[1]>=0)<<1);
+            if (!baselevp)
+                checkcf &= (1<<yax_globalcf);
+        }
         yax_holencf[YAX_FLOOR] = 0;
         yax_drawcf = YAX_FLOOR;
 #endif
@@ -5481,6 +5505,10 @@ static void polymost_drawalls(int32_t const bunch)
             int32_t fz = getflorzofslope(sectnum, globalposx, globalposy);
             if (globalposz <= fz)
                 polymost_internal_nonparallaxed(n0, n1, ryp0, ryp1, x0, x1, fy0, fy1, sectnum | MAXSECTORS);
+#ifdef YAX_ENABLE
+            else if (g_nodraw && (checkcf & 2) != 0)
+                polymost_domost(x0, fy0, x1, fy1);
+#endif
         }
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].floorstat&1)))
         {
@@ -5885,6 +5913,10 @@ static void polymost_drawalls(int32_t const bunch)
             int32_t cz = getceilzofslope(sectnum, globalposx, globalposy);
             if (globalposz >= cz)
                 polymost_internal_nonparallaxed(n0, n1, ryp0, ryp1, x0, x1, cy0, cy1, sectnum);
+#ifdef YAX_ENABLE
+            else if (g_nodraw && (checkcf & 1) != 0)
+                polymost_domost(x1, cy1, x0, cy0);
+#endif
         }
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].ceilingstat&1)))
         {
@@ -6237,22 +6269,7 @@ static void polymost_drawalls(int32_t const bunch)
 #ifdef YAX_ENABLE
         if (g_nodraw)
         {
-            int32_t baselevp, checkcf, i, j;
-            int16_t bn[2];
-# if 0
-            int32_t obunchchk = (1 && yax_globalbunch>=0 &&
-                                 haveymost[yax_globalbunch>>3]&pow2char[yax_globalbunch&7]);
-
-            // if (obunchchk)
-            const int32_t x2 = yax_globalbunch*xdimen;
-# endif
-            baselevp = (yax_globallev == YAX_MAXDRAWS);
-
-            yax_getbunches(sectnum, &bn[0], &bn[1]);
-            checkcf = (bn[0]>=0) + ((bn[1]>=0)<<1);
-            if (!baselevp)
-                checkcf &= (1<<yax_globalcf);
-
+            int32_t i, j;
             for (i=0; i<2; i++)
                 if (checkcf&(1<<i))
                 {
@@ -6594,7 +6611,11 @@ void polymost_scansector(int32_t sectnum)
 
                 // this said (SCISDIST*SCISDIST*260.f), but SCISDIST is 1 and the significance of 260 isn't obvious to me
                 // is 260 fudged to solve a problem, and does the problem still apply to our version of the renderer?
-                if (d*d < (p1.x*p1.x + p1.y*p1.y) * 256.f)
+                if (d*d < (p1.x*p1.x + p1.y*p1.y) * 256.f
+#ifdef YAX_ENABLE
+                    && yax_globallev == YAX_MAXDRAWS
+#endif
+                    )
                 {
                     sectorborder[sectorbordercnt++] = nextsectnum;
                     gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
@@ -6979,7 +7000,8 @@ void polymost_drawrooms()
         float const r = (ghalfx / gvrcorrection) / v.z;
         fsearchx = v.x * r + ghalfx;
         fsearchy = v.y * r + ghoriz;
-        fsearchz = 0.f;
+        if (searchit == 2)
+            fsearchz = 0.f;
         polymost_editorfunc();
     }
 
@@ -6993,7 +7015,30 @@ void polymost_drawrooms()
 
     // NOTE: globalcursectnum has been already adjusted in ADJUST_GLOBALCURSECTNUM.
     Bassert((unsigned)globalcursectnum < MAXSECTORS);
+#ifdef YAX_ENABLE
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        int k;
+        for (SECTORS_OF_BUNCH(yax_globalbunch, !yax_globalcf, k))
+        {
+            polymost_scansector(k);
+        }
+    }
+    else
+#endif
     polymost_scansector(globalcursectnum);
+
+#ifdef YAX_ENABLE
+    int startbunches = numbunches;
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        for (bssize_t i = 0; i < startbunches; i++)
+        {
+            bunchfirst[MAXWALLSB-1-i] = bunchfirst[i];
+            bunchlast[MAXWALLSB-1-i] = bunchlast[i];
+        }
+    }
+#endif
 
     grhalfxdown10x = grhalfxdown10;
 
@@ -7033,6 +7078,31 @@ void polymost_drawrooms()
             if (!bnch) { ptempbuf[closest] = 1; closest = i; i = 0; }
         }
 
+#ifdef YAX_ENABLE
+        int bunchnodraw = 0;
+
+        if (yax_globallev != YAX_MAXDRAWS)
+        {
+            bunchnodraw = 1;
+            for (bssize_t i = 0; i < startbunches; i++)
+            {
+                int const sbunch = MAXWALLSB-1-i;
+                if (bunchfirst[closest] == bunchfirst[sbunch])
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+                int const bnch = polymost_bunchfront(sbunch,closest); if (bnch < 0) continue;
+                if (!bnch)
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+            }
+        }
+
+        if (!bunchnodraw)
+#endif
         polymost_drawalls(closest);
 
         if (automapping)
@@ -7827,7 +7897,83 @@ void polymost2_drawsprite(int32_t snum)
     tilesiz[globalpicnum] = oldsiz;
 }
 
-void polymost_voxeditorfunc(int const spritenum, voxmodel_t *m, tspriteptr_t const tspr)
+void polymost_mdeditorfunc(tspriteptr_t const tspr)
+{
+    if (searchit == 0)
+        return;
+
+    // Project 3D to 2D
+    vec3f_t xyz = { (float)tspr->x, (float)tspr->y, (float)tspr->z };
+    vec2_t off = { tspr->xoffset, tspr->yoffset };
+
+    if (tspr->cstat&CSTAT_SPRITE_XFLIP) off.x = -off.x;
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING
+        && tspr->cstat&CSTAT_SPRITE_YFLIP) off.y = -off.y;
+
+    vec2f_t s0 = { (float)(xyz.x - globalposx),
+                    (float)(xyz.y - globalposy)};
+
+    vec2f_t p0 = { s0.y * gcosang - s0.x * gsinang, s0.x * gcosang2 + s0.y * gsinang2 };
+
+    if (p0.y <= SCISDIST)
+        return;
+
+    float const ryp0 = 1.f / p0.y;
+    s0 = { ghalfx * p0.x * ryp0 + ghalfx, ((float)(xyz.z - globalposz)) * gyxscale * ryp0 + ghoriz };
+
+    float const f = ryp0 * fxdimen * (1.0f / 160.f);
+    
+    vec2_16_t const oldsiz = tilesiz[globalpicnum];
+    vec2_t tsiz = { oldsiz.x, oldsiz.y };
+
+    vec2f_t const ftsiz = { (float)tsiz.x, (float)tsiz.y };
+
+    vec2f_t ff = { ((float)tspr->xrepeat) * f,
+                    ((float)tspr->yrepeat) * f * ((float)yxaspect * (1.0f / 65536.f)) };
+
+    if (tsiz.x & 1)
+        s0.x += ff.x * 0.5f;
+    if (globalorientation & 128 && tsiz.y & 1)
+        s0.y += ff.y * 0.5f;
+
+    s0.x -= ff.x * (float) off.x;
+    s0.y -= ff.y * (float) off.y;
+
+    ff.x *= ftsiz.x;
+    ff.y *= ftsiz.y;
+
+    vec2f_t pxy[4];
+
+    pxy[0].x = pxy[3].x = s0.x - ff.x * 0.5f;
+    pxy[1].x = pxy[2].x = s0.x + ff.x * 0.5f;
+
+    if (!(globalorientation & 128))
+    {
+        pxy[0].y = pxy[1].y = s0.y - ff.y;
+        pxy[2].y = pxy[3].y = s0.y;
+    }
+    else
+    {
+        pxy[0].y = pxy[1].y = s0.y - ff.y * 0.5f;
+        pxy[2].y = pxy[3].y = s0.y + ff.y * 0.5f;
+    }
+
+#ifdef YAX_ENABLE
+    if (yax_globallev == YAX_MAXDRAWS || searchit == 2)
+#endif
+    if (searchit >= 1)
+    {
+        otex.d = ryp0 * gviewxrange;
+        xtex.d = ytex.d = 0;
+        psectnum = tspr->sectnum;
+        pwallnum = tspr->owner;
+        psearchstat = 3;
+        doeditorcheck = 1;
+        polymost_polyeditorfunc(pxy, 4);
+    }
+}
+
+void polymost_voxeditorfunc(voxmodel_t *m, tspriteptr_t const tspr)
 {
     if (searchit == 0)
         return;
@@ -7914,7 +8060,7 @@ void polymost_voxeditorfunc(int const spritenum, voxmodel_t *m, tspriteptr_t con
         otex.d = ryp0 * gviewxrange;
         xtex.d = ytex.d = 0;
         psectnum = tspr->sectnum;
-        pwallnum = spritenum;
+        pwallnum = tspr->owner;
         psearchstat = 3;
         doeditorcheck = 1;
         polymost_polyeditorfunc(pxy, 4);
@@ -7992,7 +8138,13 @@ void polymost_drawsprite(int32_t snum)
         if (usemodels && tile2model[Ptile2tile(tspr->picnum, tspr->pal)].modelid >= 0 &&
             tile2model[Ptile2tile(tspr->picnum, tspr->pal)].framenum >= 0)
         {
-            if (polymost_mddraw(tspr)) return;
+            if (polymost_mddraw(tspr))
+            {
+                if (editstatus)
+                    polymost_mdeditorfunc(tspr);
+
+                return;
+            }
             break;  // else, render as flat sprite
         }
 
@@ -8001,7 +8153,7 @@ void polymost_drawsprite(int32_t snum)
             if (polymost_voxdraw(voxmodels[tiletovox[tspr->picnum]], tspr))
             {
                 if (editstatus)
-                    polymost_voxeditorfunc(spritenum, voxmodels[tiletovox[tspr->picnum]], tspr);
+                    polymost_voxeditorfunc(voxmodels[tiletovox[tspr->picnum]], tspr);
 
                 return;
             }
@@ -8013,7 +8165,7 @@ void polymost_drawsprite(int32_t snum)
             polymost_voxdraw(voxmodels[tspr->picnum], tspr);
 
             if (editstatus)
-                polymost_voxeditorfunc(spritenum, voxmodels[tspr->picnum], tspr);
+                polymost_voxeditorfunc(voxmodels[tspr->picnum], tspr);
 
             return;
         }
@@ -8862,8 +9014,8 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
         glEnable(GL_ALPHA_TEST);
         glEnable(GL_BLEND);
 
-        spriteext[tspr.owner].roll = a;
-        spriteext[tspr.owner].pivot_offset.z = z;
+        spriteext[tspr.owner].mdroll = a;
+        spriteext[tspr.owner].mdpivot_offset.z = z;
 
         fov = hud->fov;
 
@@ -8879,8 +9031,8 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
         polymer_setaspect(pr_fov);
 
-        spriteext[tspr.owner].pivot_offset.z = 0;
-        spriteext[tspr.owner].roll = 0;
+        spriteext[tspr.owner].mdpivot_offset.z = 0;
+        spriteext[tspr.owner].mdroll = 0;
 
         glDisable(GL_BLEND);
         glDisable(GL_ALPHA_TEST);

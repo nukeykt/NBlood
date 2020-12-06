@@ -71,7 +71,7 @@ static FORCE_INLINE int32_t oldnonpow2(void)
 #if !defined CLASSIC_NONPOW2_YSIZE_WALLS
     return 1;
 #else
-    return (g_loadedMapVersion < 10);
+    return ((g_loadedMapVersion < 10) && !(picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT));
 #endif
 }
 
@@ -652,24 +652,21 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
 
     UNREFERENCED_PARAMETER(lastgotsector);
 
-    scansector_retfast = 1;
     scansector_collectsprites = 0;
 
     for (bnchcnt=bbeg; bnchcnt<bbeg+numhere; bnchcnt++)
     {
         int32_t walldist, bestsec=-1;
-        int32_t bestwalldist=INT32_MAX, bestbestdist=INT32_MAX;
+        int32_t bestwalldist=INT32_MAX;
 
         bunchnum = bunches[yax_globalcf][bnchcnt];
 
         for (SECTORS_OF_BUNCH(bunchnum,!yax_globalcf, k))
         {
-            int32_t checkthisec = 0;
-
             if (inside(globalposx, globalposy, k)==1)
             {
                 bestsec = k;
-                bestbestdist = 0;
+                bestwalldist = 0;
                 break;
             }
 
@@ -687,34 +684,17 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
                 walldist = yax_walldist(j);
                 if (walldist < bestwalldist)
                 {
-                    checkthisec = 1;
-                    bestwalldist = walldist;
-                }
-            }
-
-            if (checkthisec)
-            {
-                numscans = numbunches = 0;
-                if (videoGetRenderMode() == REND_CLASSIC)
-                    classicScanSector(k);
-#ifdef USE_OPENGL
-                else
-                    polymost_scansector(k);
-#endif
-                if (numbunches > 0)
-                {
                     bestsec = k;
-                    bestbestdist = bestwalldist;
+                    bestwalldist = walldist;
                 }
             }
         }
 
         bunchsec[bunchnum] = bestsec;
-        bunchdist[bunchnum] = bestbestdist;
+        bunchdist[bunchnum] = bestwalldist;
     }
 
     scansector_collectsprites = 1;
-    scansector_retfast = 0;
 }
 
 static int yax_cmpbunches(const void *b1, const void *b2)
@@ -1730,7 +1710,11 @@ static void classicScanSector(int16_t startsectnum)
                     // OV: E2L10
                     coord_t temp = (coord_t)x1*y2-(coord_t)x2*y1;
                     int32_t tempint = temp;
-                    if (((uint64_t)tempint+262144) < 524288)  // BXY_MAX?
+                    if (
+#ifdef YAX_ENABLE
+                        yax_globallev == YAX_MAXDRAWS && 
+#endif
+                        ((uint64_t)tempint+262144) < 524288)  // BXY_MAX?
                         if (mulscale5(tempint,tempint) <= (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
                         {
                             sectorborder[sectorbordercnt++] = nextsectnum;
@@ -4478,6 +4462,7 @@ static void classicDrawBunches(int32_t bunch)
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_cwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (dwall[x] > umost[x])
@@ -4486,11 +4471,23 @@ static void classicDrawBunches(int32_t bunch)
                                     umost[x] = dwall[x];
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getceilzofslope(sectnum, globalposx, globalposy) <= globalposz)
+                            for (x=x1; x<=x2; x++)
+                                if (uplc[x] > umost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        umost[x] = uplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                     else
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_cwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (umost[x] <= dmost[x])
@@ -4502,6 +4499,17 @@ static void classicDrawBunches(int32_t bunch)
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
                             }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getceilzofslope(sectnum, globalposx, globalposy) <= globalposz)
+                            for (x=x1; x<=x2; x++)
+                                if (uplc[x] > umost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        umost[x] = uplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                 }
 
@@ -4565,6 +4573,7 @@ static void classicDrawBunches(int32_t bunch)
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_fwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (uwall[x] < dmost[x] && umost[x] <= dmost[x])
@@ -4572,11 +4581,23 @@ static void classicDrawBunches(int32_t bunch)
                                 dmost[x] = uwall[x];
                                 if (umost[x] > dmost[x]) numhits--;
                             }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getflorzofslope(sectnum, globalposx, globalposy) >= globalposz)
+                            for (x = x1; x <= x2; x++)
+                                if (dplc[x] < dmost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        dmost[x] = dplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                     else
                     {
 #ifdef YAX_ENABLE
                         if (should_clip_fwall(x1, x2))
+                        {
 #endif
                         for (x=x1; x<=x2; x++)
                             if (umost[x] <= dmost[x])
@@ -4588,6 +4609,17 @@ static void classicDrawBunches(int32_t bunch)
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
                             }
+#ifdef YAX_ENABLE
+                        }
+                        else if (getflorzofslope(sectnum, globalposx, globalposy) >= globalposz)
+                            for (x = x1; x <= x2; x++)
+                                if (dplc[x] < dmost[x])
+                                    if (umost[x] <= dmost[x])
+                                    {
+                                        dmost[x] = dplc[x];
+                                        if (umost[x] > dmost[x]) numhits--;
+                                    }
+#endif
                     }
                 }
 
@@ -6563,12 +6595,12 @@ next_most:
             }
         }
 
-        x = tspr->x + spriteext[spritenum].position_offset.x;
-        y = tspr->y + spriteext[spritenum].position_offset.y;
-        z = tspr->z + spriteext[spritenum].position_offset.z;
+        x = tspr->x + spriteext[spritenum].mdposition_offset.x;
+        y = tspr->y + spriteext[spritenum].mdposition_offset.y;
+        z = tspr->z + spriteext[spritenum].mdposition_offset.z;
 
         i = (int32_t)tspr->ang+1536;
-        i += spriteext[spritenum].angoff;
+        i += spriteext[spritenum].mdangoff;
 
         const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : INT32_MIN;
         const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
@@ -8720,9 +8752,6 @@ void engineUnInit(void)
     pskynummultis = 0;
 
     DO_FREE_AND_NULL(g_defNamePtr);
-
-    for (auto s : osdstrings)
-        Xfree(s);
 }
 
 
@@ -9014,7 +9043,29 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
     if (globalposz < cz) globparaceilclip = 0;
     if (globalposz > fz) globparaflorclip = 0;
 */
+#ifdef YAX_ENABLE
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        int k;
+        for (SECTORS_OF_BUNCH(yax_globalbunch, !yax_globalcf, k))
+        {
+            classicScanSector(k);
+        }
+    }
+    else
+#endif
     classicScanSector(globalcursectnum);
+#ifdef YAX_ENABLE
+    int startbunches = numbunches;
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        for (bssize_t i = 0; i < startbunches; i++)
+        {
+            bunchfirst[MAXWALLSB-1-i] = bunchfirst[i];
+            bunchlast[MAXWALLSB-1-i] = bunchlast[i];
+        }
+    }
+#endif
 
     if (inpreparemirror)
     {
@@ -9075,6 +9126,31 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
             if (j == 0) tempbuf[closest] = 1, closest = i, i = 0;
         }
 
+#ifdef YAX_ENABLE
+        int bunchnodraw = 0;
+
+        if (yax_globallev != YAX_MAXDRAWS)
+        {
+            bunchnodraw = 1;
+            for (i = 0; i < startbunches; i++)
+            {
+                int const sbunch = MAXWALLSB-1-i;
+                if (bunchfirst[closest] == bunchfirst[sbunch])
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+                int const bnch = bunchfront(sbunch,closest); if (bnch < 0) continue;
+                if (!bnch)
+                {
+                    bunchnodraw = 0;
+                    break;
+                }
+            }
+        }
+
+        if (!bunchnodraw)
+#endif
         classicDrawBunches(closest);
 
         if (automapping)
@@ -12280,23 +12356,41 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
                 nofirstzcheck = 1;
             }
 
+#ifdef YAX_ENABLE
+            int mcf = -1;
+restart:
+#endif
             // this block used to be outside the "if" and caused crashes in Polymost Mapster32
             int32_t cz, fz;
             getzsofslope(*sectnum, x, y, &cz, &fz);
 
 #ifdef YAX_ENABLE
-            if (z < cz)
+            if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
             {
                 int const next = yax_getneighborsect(x, y, *sectnum, YAX_CEILING);
-                if (next >= 0 && z >= getceilzofslope(next, x, y))
-                    SET_AND_RETURN(*sectnum, next);
+                if (next >= 0)
+                {
+                    if (z >= getceilzofslope(next, x, y))
+                        SET_AND_RETURN(*sectnum, next);
+
+                    *sectnum = next;
+                    mcf = YAX_CEILING;
+                    goto restart;
+                }
             }
 
-            if (z > fz)
+            if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
             {
                 int const next = yax_getneighborsect(x, y, *sectnum, YAX_FLOOR);
-                if (next >= 0 && z <= getflorzofslope(next, x, y))
-                    SET_AND_RETURN(*sectnum, next);
+                if (next >= 0)
+                {
+                    if (z <= getflorzofslope(next, x, y))
+                        SET_AND_RETURN(*sectnum, next);
+
+                    *sectnum = next;
+                    mcf = YAX_FLOOR;
+                    goto restart;
+                }
             }
 #endif
             if (nofirstzcheck || (z >= cz && z <= fz))
@@ -12372,26 +12466,43 @@ void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, in
         nofirstzcheck = true;
     }
 
+#ifdef YAX_ENABLE
+    int mcf = -1;
+restart:
+#endif
     uint32_t const correctedsectnum = (unsigned)*sectnum;
-
     if (correctedsectnum < (unsigned)numsectors && getsectordist({x, y}, correctedsectnum) <= initialMaxDistance)
     {
         int32_t cz, fz;
         getzsofslope(correctedsectnum, x, y, &cz, &fz);
 
 #ifdef YAX_ENABLE
-        if (z < cz)
+        if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
         {
             int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_CEILING);
-            if (next >= 0 && z >= getceilzofslope(next, x, y))
-                SET_AND_RETURN(*sectnum, next);
+            if (next >= 0)
+            {
+                if (z >= getceilzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+
+                *sectnum = next;
+                mcf = YAX_CEILING;
+                goto restart;
+            }
         }
 
-        if (z > fz)
+        if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
         {
             int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_FLOOR);
-            if (next >= 0 && z <= getflorzofslope(next, x, y))
-                SET_AND_RETURN(*sectnum, next);
+            if (next >= 0)
+            {
+                if (z <= getflorzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+
+                *sectnum = next;
+                mcf = YAX_FLOOR;
+                goto restart;
+            }
         }
 #endif
         if ((nofirstzcheck || (z >= cz && z <= fz)) && inside_p(x, y, *sectnum))
@@ -13097,10 +13208,14 @@ void yax_getzsofslope(int sectNum, int playerX, int playerY, int32_t *pCeilZ, in
     int didCeiling = 0;
     int didFloor   = 0;
     int testSector = 0;
+    int nextSector = 0;
 
     if ((sector[sectNum].ceilingstat & 512) == 0)
     {
-        testSector = yax_getneighborsect(playerX, playerY, sectNum, YAX_CEILING);
+        testSector = -1;
+        nextSector = sectNum;
+        while ((nextSector = yax_getneighborsect(playerX, playerY, nextSector, YAX_CEILING)) >= 0)
+            testSector = nextSector;
 
         if (testSector >= 0)
         {
@@ -13112,7 +13227,10 @@ ceiling:
 
     if ((sector[sectNum].floorstat & 512) == 0)
     {
-        testSector = yax_getneighborsect(playerX, playerY, sectNum, YAX_FLOOR);
+        testSector = -1;
+        nextSector = sectNum;
+        while ((nextSector = yax_getneighborsect(playerX, playerY, nextSector, YAX_FLOOR)) >= 0)
+            testSector = nextSector;
 
         if (testSector >= 0)
         {
@@ -13134,9 +13252,10 @@ int32_t yax_getceilzofslope(int const sectnum, vec2_t const vect)
 {
     if ((sector[sectnum].ceilingstat&512)==0)
     {
-        int const nsect = yax_getneighborsect(vect.x, vect.y, sectnum, YAX_CEILING);
-        if (nsect >= 0)
-            return getcorrectceilzofslope(nsect, vect.x, vect.y);
+        int testsectnum = sectnum, nsect;
+        while ((nsect = yax_getneighborsect(vect.x, vect.y, testsectnum, YAX_CEILING)) >= 0)
+            testsectnum = nsect;
+        return getcorrectceilzofslope(testsectnum, vect.x, vect.y);
     }
 
     return getcorrectceilzofslope(sectnum, vect.x, vect.y);
@@ -13146,9 +13265,10 @@ int32_t yax_getflorzofslope(int const sectnum, vec2_t const vect)
 {
     if ((sector[sectnum].floorstat&512)==0)
     {
-        int const nsect = yax_getneighborsect(vect.x, vect.y, sectnum, YAX_FLOOR);
-        if (nsect >= 0)
-            return getcorrectflorzofslope(nsect, vect.x, vect.y);
+        int testsectnum = sectnum, nsect;
+        while ((nsect = yax_getneighborsect(vect.x, vect.y, testsectnum, YAX_FLOOR)) >= 0)
+            testsectnum = nsect;
+        return getcorrectflorzofslope(testsectnum, vect.x, vect.y);
     }
 
     return getcorrectflorzofslope(sectnum, vect.x, vect.y);

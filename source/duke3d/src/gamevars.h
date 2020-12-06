@@ -35,6 +35,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define GV_FLAG_ARRAY (MAXGAMEVARS<<2)
 #define GV_FLAG_STRUCT (MAXGAMEVARS<<3)
 
+#define SAVEGAMEVARSKIPMASK (GAMEVAR_READONLY|GAMEVAR_SPECIAL)
+#define SAVEGAMEARRAYSKIPMASK (GAMEARRAY_READONLY|GAMEARRAY_SYSTEM)
+
+#define SAVEGAMEMAPSTATEVARSKIPMASK (GAMEVAR_NORESET|SAVEGAMEVARSKIPMASK)
+
 // store global game definitions
 enum GamevarFlags_t
 {
@@ -119,7 +124,23 @@ size_t __fastcall Gv_GetArrayAllocSizeForCount(int const arrayIdx, size_t const 
 size_t __fastcall Gv_GetArrayCountForAllocSize(int const arrayIdx, size_t const filelength);
 static FORCE_INLINE size_t Gv_GetArrayAllocSize(int const arrayIdx) { return Gv_GetArrayAllocSizeForCount(arrayIdx, aGameArrays[arrayIdx].size); }
 unsigned __fastcall Gv_GetArrayElementSize(int const arrayIdx);
-int __fastcall Gv_GetArrayValue(int const id, int index);
+
+static FORCE_INLINE int __fastcall Gv_GetArrayValue(int const id, int index)
+{
+    if (aGameArrays[id].flags & GAMEARRAY_STRIDE2)
+        index <<= 1;
+
+    switch (aGameArrays[id].flags & GAMEARRAY_TYPE_MASK)
+    {
+        default: return (aGameArrays[id].pValues)[index];
+        case GAMEARRAY_INT16:  return   ((int16_t  *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_INT8:   return   ((int8_t   *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_UINT16: return   ((uint16_t *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_UINT8:  return   ((uint8_t  *)aGameArrays[id].pValues)[index];
+        case GAMEARRAY_BITMAP: return !!(((uint8_t *)aGameArrays[id].pValues)[index >> 3] & pow2char[index & 7]);
+    }
+}
+
 int __fastcall Gv_GetVar(int const gameVar, int const spriteNum, int const playerNum);
 void __fastcall Gv_SetVar(int const gameVar, int const newValue, int const spriteNum, int const playerNum);
 int __fastcall Gv_GetVar(int const gameVar);
@@ -159,43 +180,37 @@ void Gv_ResetSystemDefaults(void);
 void Gv_Init(void);
 void Gv_FinalizeWeaponDefaults(void);
 
+#define LABEL_TYPES (LABEL_CHAR|LABEL_SHORT|LABEL_INT|LABEL_UNSIGNED)
+
 static inline int __fastcall VM_GetStruct(uint32_t const flags, intptr_t * const addr)
 {
-    Bassert(flags & (LABEL_CHAR|LABEL_SHORT|LABEL_INT));
-
-    int returnValue = 0;
-
-    switch (flags & (LABEL_CHAR|LABEL_SHORT|LABEL_INT|LABEL_UNSIGNED))
+    switch (flags & LABEL_TYPES)
     {
-        case LABEL_CHAR:                 returnValue = *(int8_t *)addr; break;
-        case LABEL_CHAR|LABEL_UNSIGNED:  returnValue = *(uint8_t *)addr; break;
-
-        case LABEL_SHORT:                returnValue = *(int16_t *)addr; break;
-        case LABEL_SHORT|LABEL_UNSIGNED: returnValue = *(uint16_t *)addr; break;
-
-        case LABEL_INT:                  returnValue = *(int32_t *)addr; break;
-        case LABEL_INT|LABEL_UNSIGNED:   returnValue = *(uint32_t *)addr; break;
+        case LABEL_CHAR:                 return *(int8_t   *)addr;
+        case LABEL_CHAR|LABEL_UNSIGNED:  return *(uint8_t  *)addr;
+        case LABEL_SHORT:                return *(int16_t  *)addr;
+        case LABEL_SHORT|LABEL_UNSIGNED: return *(uint16_t *)addr;
+        case LABEL_INT:                  return *(int32_t  *)addr;
+        case LABEL_INT|LABEL_UNSIGNED:   return *(uint32_t *)addr;
+        default: EDUKE32_UNREACHABLE_SECTION(break);
     }
-
-    return returnValue;
 }
 
 static FORCE_INLINE void __fastcall VM_SetStruct(uint32_t const flags, intptr_t * const addr, int32_t newValue)
 {
-    Bassert(flags & (LABEL_CHAR|LABEL_SHORT|LABEL_INT));
-
-    switch (flags & (LABEL_CHAR|LABEL_SHORT|LABEL_INT|LABEL_UNSIGNED))
+    switch (flags & LABEL_TYPES)
     {
-        case LABEL_CHAR:                 *(int8_t *)addr = newValue; break;
-        case LABEL_CHAR|LABEL_UNSIGNED:  *(uint8_t *)addr = newValue; break;
-
-        case LABEL_SHORT:                *(int16_t *)addr = newValue; break;
+        case LABEL_CHAR:                 *(int8_t   *)addr = newValue; break;
+        case LABEL_CHAR|LABEL_UNSIGNED:  *(uint8_t  *)addr = newValue; break;
+        case LABEL_SHORT:                *(int16_t  *)addr = newValue; break;
         case LABEL_SHORT|LABEL_UNSIGNED: *(uint16_t *)addr = newValue; break;
-
-        case LABEL_INT:                  *(int32_t *)addr = newValue; break;
+        case LABEL_INT:                  *(int32_t  *)addr = newValue; break;
         case LABEL_INT|LABEL_UNSIGNED:   *(uint32_t *)addr = newValue; break;
+        default: EDUKE32_UNREACHABLE_SECTION(break);
     }
 }
+
+#undef LABEL_TYPES
 
 #define VM_GAMEVAR_OPERATOR(func, operator)                                                            \
     static FORCE_INLINE ATTRIBUTE((flatten)) void __fastcall func(int const id, int32_t const operand) \

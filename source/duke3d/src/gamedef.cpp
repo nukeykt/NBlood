@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #if MICROPROFILE_ENABLED != 0
 MicroProfileToken g_eventTokens[MAXEVENTS];
+MicroProfileToken g_eventCounterTokens[MAXEVENTS];
 MicroProfileToken g_actorTokens[MAXTILES];
 MicroProfileToken g_statnumTokens[MAXSTATUS];
 #if 0
@@ -54,7 +55,6 @@ char g_scriptFileName[BMAX_PATH] = "(none)";  // file we're currently compiling
 
 int32_t g_totalLines;
 int32_t g_lineNumber;
-uint32_t g_scriptcrc;
 char g_szBuf[1024];
 
 static char *textptr;
@@ -136,7 +136,6 @@ static hashtable_t *const tables[] = {
 static hashtable_t *const tables_free[] = {
     &h_iter,
     &h_keywords,
-    &h_labels,
 };
 
 static tokenmap_t const vm_keywords[] =
@@ -850,6 +849,9 @@ static const tokenmap_t keywords_for_private_opcodes[] =
 
     { "getsector", CON_GETSECTORSTRUCT },
     { "setsector", CON_SETSECTORSTRUCT },
+
+    { "getplayer", CON_GETPLAYERSTRUCT },
+    { "setplayer", CON_SETPLAYERSTRUCT },
 };
 
 char const *VM_GetKeywordForID(int32_t id)
@@ -1036,7 +1038,7 @@ uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointe
 
 hashtable_t h_arrays   = { MAXGAMEARRAYS >> 1, NULL };
 hashtable_t h_gamevars = { MAXGAMEVARS >> 1, NULL };
-hashtable_t h_labels   = { 11264 >> 1, NULL };
+hashtable_t h_labels   = { MAXLABELS >> 1, NULL };
 
 static void C_SetScriptSize(int32_t newsize)
 {
@@ -1044,7 +1046,7 @@ static void C_SetScriptSize(int32_t newsize)
     {
         if (BITPTR_IS_POINTER(i))
         {
-            if (EDUKE32_PREDICT_FALSE(apScript[i] < (intptr_t)apScript || apScript[i] >= (intptr_t)g_scriptPtr))
+            if (EDUKE32_PREDICT_FALSE(apScript[i] < (intptr_t)apScript || apScript[i] > (intptr_t)g_scriptPtr))
             {
                 g_errorCnt++;
                 buildprint("Internal compiler error at ", i, " (0x", hex(i), ")\n");
@@ -1058,11 +1060,17 @@ static void C_SetScriptSize(int32_t newsize)
     G_Util_PtrToIdx2(&g_tile[0].execPtr, MAXTILES, sizeof(tiledata_t), apScript, P2I_FWD_NON0);
     G_Util_PtrToIdx2(&g_tile[0].loadPtr, MAXTILES, sizeof(tiledata_t), apScript, P2I_FWD_NON0);
 
+    size_t old_bitptr_size = (((g_scriptSize + 7) >> 3) + 1) * sizeof(uint8_t);
+    size_t new_bitptr_size = (((newsize + 7) >> 3) + 1) * sizeof(uint8_t);
+
     auto newscript = (intptr_t *)Xrealloc(apScript, newsize * sizeof(intptr_t));
-    bitptr = (uint8_t *)Xrealloc(bitptr, (((newsize + 7) >> 3) + 1) * sizeof(uint8_t));
+    bitptr = (uint8_t *)Xrealloc(bitptr, new_bitptr_size);
 
     if (newsize > g_scriptSize)
+    {
         Bmemset(&newscript[g_scriptSize], 0, (newsize - g_scriptSize) * sizeof(intptr_t));
+        Bmemset(&bitptr[old_bitptr_size], 0, new_bitptr_size - old_bitptr_size);
+    }
 
     if (apScript != newscript)
     {
@@ -1211,6 +1219,14 @@ static inline int32_t C_GetLabelNameOffset(hashtable_t const * const table, cons
 static void C_GetNextLabelName(void)
 {
     int32_t i = 0;
+
+    if (EDUKE32_PREDICT_FALSE(g_labelCnt >= MAXLABELS))
+    {
+        g_errorCnt++;
+        C_ReportError(ERROR_TOOMANYLABELS);
+        G_GameExit("Error: too many labels defined!");
+        return;
+    }
 
     C_SkipComments();
 
@@ -1595,10 +1611,18 @@ static void C_GetNextVarType(int32_t type)
                 }
                 break;
             case STRUCT_PLAYER:
-                scriptWriteValue(PlayerLabels[labelNum].lId);
+                {
+                    auto const &label = PlayerLabels[labelNum];
 
-                if (PlayerLabels[labelNum].flags & LABEL_HASPARM2)
-                    C_GetNextVarType(0);
+                    scriptWriteValue(label.lId);
+
+                    Bassert((*varptr & (MAXGAMEVARS-1)) == g_structVarIDs + STRUCT_PLAYER);
+
+                    if (label.flags & LABEL_HASPARM2)
+                        C_GetNextVarType(0);
+                    else if (label.offset != -1 && (label.flags & LABEL_READFUNC) == 0)
+                        *varptr = (*varptr & ~(MAXGAMEVARS-1)) + g_structVarIDs + STRUCT_PLAYER_INTERNAL__;
+                }
                 break;
             case STRUCT_ACTORVAR:
             case STRUCT_PLAYERVAR:
@@ -1960,7 +1984,6 @@ static void C_Include(const char *confile)
     kclose(fp);
 
     mptr[len] = 0;
-    g_scriptcrc = Bcrc32(mptr, len, g_scriptcrc);
 
     if (*textptr == '"') // skip past the closing quote if it's there so we don't screw up the next line
         textptr++;
@@ -2771,6 +2794,8 @@ DO_DEFSTATE:
             else
             {
                 g_scriptPtr--;
+                scriptWriteValue(CON_MOVE);
+
                 C_GetNextLabelName();
                 // Check to see it's already defined
 
@@ -2808,7 +2833,7 @@ DO_DEFSTATE:
                 for (k=j; k>=0; k--)
                     scriptWriteValue(0);
 
-                scriptWriteValue(CON_MOVE);
+                scriptWriteValue(CON_END);
             }
             continue;
 
@@ -2891,6 +2916,8 @@ DO_DEFSTATE:
             else
             {
                 g_scriptPtr--;
+                scriptWriteValue(CON_AI);
+
                 C_GetNextLabelName();
 
                 if (EDUKE32_PREDICT_FALSE(hash_find(&h_keywords,LAST_LABEL)>=0))
@@ -2947,7 +2974,7 @@ DO_DEFSTATE:
                 for (k=j; k<3; k++)
                     scriptWriteValue(0);
 
-                scriptWriteValue(CON_AI);
+                scriptWriteValue(CON_END);
             }
             continue;
 
@@ -2959,6 +2986,8 @@ DO_DEFSTATE:
             else
             {
                 g_scriptPtr--;
+                scriptWriteValue(CON_ACTION);
+
                 C_GetNextLabelName();
                 // Check to see it's already defined
 
@@ -2998,7 +3027,7 @@ DO_DEFSTATE:
                 for (k=j; k>=0; k--)
                     scriptWriteValue(0);
 
-                scriptWriteValue(CON_ACTION);
+                scriptWriteValue(CON_END);
             }
             continue;
 
@@ -3361,6 +3390,7 @@ DO_DEFSTATE:
                 continue;
             }
 
+
         case CON_FINDNEARACTOR3D:
         case CON_FINDNEARACTOR:
         case CON_FINDNEARACTORZ:
@@ -3429,19 +3459,50 @@ DO_DEFSTATE:
             }
 
         case CON_SETPLAYER:
-        case CON_GETPLAYER:
             {
+                intptr_t * const ins = &g_scriptPtr[-1];
                 int const labelNum = C_GetStructureIndexes(1, &h_player);
 
                 if (labelNum == -1)
                     continue;
 
-                scriptWriteValue(PlayerLabels[labelNum].lId);
+                Bassert((*ins & VM_INSTMASK) == CON_SETPLAYER);
 
-                if (PlayerLabels[labelNum].flags & LABEL_HASPARM2)
+                auto const &label = PlayerLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & (LABEL_WRITEFUNC|LABEL_HASPARM2)) == 0)
+                    *ins = CON_SETPLAYERSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                if (label.flags & LABEL_HASPARM2)
                     C_GetNextVar();
 
-                C_GetNextVarType((tw == CON_GETPLAYER) ? GAMEVAR_READONLY : 0);
+                C_GetNextVar();
+                continue;
+            }
+
+        case CON_GETPLAYER:
+            {
+                intptr_t * const ins = &g_scriptPtr[-1];
+                int const labelNum = C_GetStructureIndexes(1, &h_player);
+
+                if (labelNum == -1)
+                    continue;
+
+                Bassert((*ins & VM_INSTMASK) == CON_GETPLAYER);
+
+                auto const &label = PlayerLabels[labelNum];
+
+                if (label.offset != -1 && (label.flags & (LABEL_READFUNC|LABEL_HASPARM2)) == 0)
+                    *ins = CON_GETPLAYERSTRUCT | LINE_NUMBER;
+
+                scriptWriteValue(label.lId);
+
+                if (label.flags & LABEL_HASPARM2)
+                    C_GetNextVar();
+
+                C_GetNextVarType(GAMEVAR_READONLY);
                 continue;
             }
 
@@ -6222,9 +6283,7 @@ static char const * C_ScriptVersionString(int32_t version)
 
 void C_PrintStats(void)
 {
-    initprintf("%d/%d labels, %d/%d variables, %d/%d arrays\n", g_labelCnt,
-        (int32_t) min((MAXSECTORS * sizeof(sectortype)/sizeof(int32_t)),
-            MAXSPRITES * sizeof(spritetype)/(1<<6)),
+    initprintf("%d/%d labels, %d/%d variables, %d/%d arrays\n", g_labelCnt, MAXLABELS,
         g_gameVarCount, MAXGAMEVARS, g_gameArrayCount, MAXGAMEARRAYS);
 
     int cnt = g_numXStrings;
@@ -6348,9 +6407,6 @@ void C_Compile(const char *fileName)
     kread(kFile, (char *)textptr, kFileLen);
     kclose(kFile);
 
-    g_scriptcrc = Bcrc32(NULL, 0, 0L);
-    g_scriptcrc = Bcrc32(textptr, kFileLen, g_scriptcrc);
-
     Xfree(apScript);
 
     apScript = (intptr_t *)Xcalloc(1, g_scriptSize * sizeof(intptr_t));
@@ -6371,7 +6427,7 @@ void C_Compile(const char *fileName)
     for (char * m : g_scriptModules)
     {
         C_Include(m);
-        free(m);
+        Bfree(m);
     }
     g_scriptModules.clear();
 
@@ -6436,7 +6492,10 @@ void C_Compile(const char *fileName)
     for (int i=0; i<MAXEVENTS; i++)
     {
         if (VM_HaveEvent(i))
-            g_eventTokens[i] = MicroProfileGetToken("CON VM Events", EventNames[i], MP_AUTO, MicroProfileTokenTypeCpu);
+        {
+            g_eventTokens[i]        = MicroProfileGetToken("CON VM Events", EventNames[i], MP_AUTO, MicroProfileTokenTypeCpu);
+            g_eventCounterTokens[i] = MicroProfileGetCounterToken(EventNames[i]);
+        }
     }
 
 #if 0
@@ -6536,6 +6595,9 @@ void C_ReportError(int error)
         break;
     case ERROR_VARTYPEMISMATCH:
         initprintf("%s:%d: error: variable `%s' is of the wrong type.\n",g_scriptFileName,g_lineNumber,LAST_LABEL);
+        break;
+    case ERROR_TOOMANYLABELS:
+        initprintf("%s:%d: error: too many labels defined! Maximum is %d\n.",g_scriptFileName,g_lineNumber, MAXLABELS);
         break;
     case WARNING_BADGAMEVAR:
         initprintf("%s:%d: warning: variable `%s' should be either per-player OR per-actor, not both.\n",g_scriptFileName,g_lineNumber,LAST_LABEL);
