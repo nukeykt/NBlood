@@ -184,6 +184,14 @@ static void analyzesprites()
 
         pTSprite->pal = RemapPLU(pTSprite->pal);
 
+        // PowerSlaveGDX: Torch bouncing fix
+        if ((pTSprite->picnum == kTile338 || pTSprite->picnum == kTile350) && (pTSprite->cstat & 0x80) == 0)
+        {
+            pTSprite->cstat |= 0x80;
+            int nTileY = (tilesiz[pTSprite->picnum].y * pTSprite->yrepeat) * 2;
+            pTSprite->z -= nTileY;
+        }
+
         if (pSprite->statnum > 0)
         {
             runlist_SignalRun(pSprite->lotag - 1, nTSprite | 0x90000);
