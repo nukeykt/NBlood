@@ -65,6 +65,8 @@ static internalgrpinfo_t const internalgrpfiles[] =
     { "Duke!ZONE II (1.3D)",                   DZ2_13_CRC,  26135388, GAMEFLAG_DUKE|GAMEFLAG_ADDON, DUKE13_CRC, "DZ-GAME.CON", NULL},
     { "Duke!ZONE II",                          DZ2_PP_CRC,  44100411, GAMEFLAG_DUKE|GAMEFLAG_ADDON, DUKE15_CRC, "DZ-GAME.CON", NULL},
     { "Duke!ZONE II",                          (int32_t) 0x1E9516F1,  3186656, GAMEFLAG_DUKE|GAMEFLAG_ADDON, DUKE15_CRC, "DZ-GAME.CON", NULL},
+    { "Duke Nukem's Penthouse Paradise",       (int32_t) 0x7CD82A3B,  2112419, GAMEFLAG_DUKE|GAMEFLAG_ADDON, DUKE15_CRC, "ppakgame.con", NULL}, // original .zip release
+    { "Duke Nukem's Penthouse Paradise",       (int32_t) 0xCF928A58,  4247491, GAMEFLAG_DUKE|GAMEFLAG_ADDON, DUKE15_CRC, "PPAKGAME.CON", NULL}, // ZOOM Platform repacked .grp
     { "NAM",                                   NAM_CRC,     43448927, GAMEFLAG_NAM,                          0, NULL, NULL},
     { "NAPALM",                                NAPALM_CRC,  44365728, GAMEFLAG_NAM|GAMEFLAG_NAPALM,          0, NULL, NULL},
     { "WWII GI",                               WW2GI_CRC,   77939508, GAMEFLAG_WW2GI,                        0, NULL, NULL},
