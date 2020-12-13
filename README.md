@@ -10,11 +10,11 @@ Blood port based on EDuke32
 
    BLOOD.INI  
    BLOOD.RFF  
-   BLOOD000.DEM-BLOOD003.DEM (optional)  
-   CP01.MAP-CP09.MAP (optional, Cryptic Passage)  
+   BLOOD000.DEM, ..., BLOOD003.DEM (optional)  
+   CP01.MAP, ..., CP09.MAP (optional, Cryptic Passage)  
    CPART07.AR_ (optional, Cryptic Passage)  
    CPART15.AR_ (optional, Cryptic Passage)  
-   CPBB01.MAP-CPBB04.MAP (optional, Cryptic Passage)  
+   CPBB01.MAP, ..., CPBB04.MAP (optional, Cryptic Passage)  
    CPSL.MAP (optional, Cryptic Passage)  
    CRYPTIC.INI (optional, Cryptic Passage)  
    CRYPTIC.SMK (optional, Cryptic Passage)  
@@ -22,11 +22,16 @@ Blood port based on EDuke32
    GUI.RFF  
    SOUNDS.RFF  
    SURFACE.DAT  
-   TILES000.ART-TILES017.ART  
+   TILES000.ART, ..., TILES017.ART  
    VOXEL.DAT  
 
 3. Optionally, if you want to use CD audio tracks instead of MIDI, provide FLAC/OGG recordings in following format: bloodXX.flac/ogg, where XX is track number. Make sure to enable Redbook audio option in sound menu.
-4. Optionally, if you want cutscenes and you have the original CD, copy the `movie` folder into NBlood's folder (the folder itself too). If you have the GOG version of the game, rename `game.gog` to `game.bin` and `game.inst` to `game.cue` and mount the `cue` as a virtual CD (for example with `WinCDEmu`), there you will have the `movie` folder.
+4. Optionally, if you want cutscenes and you have the original CD, copy the `movie` folder into NBlood's folder (the folder itself too).
+If you have the GOG version of the game, do the following
+   * rename `game.gog` to `game.bin` and `game.ins` to `game.cue`
+   * edit `game.cue` with a text editor and replace the first line with `FILE "game.bin" BINARY`
+   * mount the `.cue` as a virtual CD (for example with `WinCDEmu`)
+   * copy the `movie` folder from the mounted CD into NBlood's folder
 5. Launch NBlood (on Linux, to play Cryptic Passage, launch with the `-ini CRYPTIC.INI` parameter)
 
 ## PCExhumed
