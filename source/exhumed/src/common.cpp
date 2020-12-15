@@ -328,9 +328,34 @@ void G_AddSearchPaths(void)
     addsearchpath("/usr/share/games/pcexhumed");
     addsearchpath("/usr/local/share/games/pcexhumed");
 #elif defined EDUKE32_OSX
-    
-    // TODO
+    char buf[BMAX_PATH];
+    int32_t i;
+    char* applications[] = { osx_getapplicationsdir(0), osx_getapplicationsdir(1) };
+    char* support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
+    char* home = osx_gethomedir();
 
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Powerslave.app/Contents/Resources/game", applications[i]);
+        addsearchpath(buf);
+    }
+
+    Bsnprintf(buf, sizeof(buf), "%s/Documents/Powerslave.app/Contents/Resources/game", home);
+    addsearchpath(buf);
+
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/PCExhumed", support[i]);
+        addsearchpath(buf);
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        Bfree(applications[i]);
+        Bfree(support[i]);
+    }
+
+    Bfree(home);
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
     DWORD bufsize;
