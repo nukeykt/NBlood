@@ -1236,6 +1236,11 @@ ifeq ($(PLATFORM),WINDOWS)
     exhumed_game_rsrc_objs += gameres.rc
     exhumed_editor_rsrc_objs += buildres.rc
 endif
+ifeq ($(PLATFORM),DARWIN)
+    ifeq ($(STARTUP_WINDOW),1)
+        exhumed_game_objs += GrpFile.game.mm GameListSource.game.mm startosx.game.mm
+    endif
+endif
 
 
 #### Witchaven

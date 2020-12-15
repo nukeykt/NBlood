@@ -21,6 +21,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "compat.h"
 
+#include "_control.h"
+#include "control.h"
+#include "keyboard.h"
+
 #define kMaxGameFuncLen     64
 
 // KEEPINSYNC mact/include/_control.h, build/src/sdlayer.cpp
