@@ -266,7 +266,7 @@ static FORCE_INLINE int32_t klabs(int32_t const a)
 #else
 # ifdef __cplusplus
 // some toolchains use the double version of abs for small int types, so avoid that
-static FORCE_INLINE CONSTEXPR int32_t klabs(int32_t const a) { return abs(a); }
+static FORCE_INLINE int32_t klabs(int32_t const a) { return abs(a); }
 # else
 #  define klabs(x) abs(x)
 # endif
