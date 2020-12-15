@@ -307,6 +307,8 @@ static void Exhumed_Add_GOG_Linux(const char * path)
 
     Bsnprintf(buf, sizeof(buf), "%s/game/data", path);
     addsearchpath(buf);
+    Bsnprintf(buf, sizeof(buf), "%s/game/data/MUSIC", path);
+    addsearchpath(buf);
 }
 #endif
 #endif

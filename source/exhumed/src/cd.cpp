@@ -45,24 +45,25 @@ void setCDaudiovolume(int val)
 
 bool playCDtrack(int nTrack, bool bLoop)
 {
+    static const char *tracknameformats[] = { "Track%02d", "exhumed%02d", "track%02d" };
+
     if (nTrack < 2) {
         return false;
     }
 
     StopCD();
 
-    char filename[128];
+    char filename[BMAX_PATH];
+    int32_t hFile = -1;
 
-    // try exhumedXX format first
-    sprintf(filename, "exhumed%02d", nTrack);
-    int32_t hFile = S_OpenAudio(filename, 0, 1);
-    if (hFile < 0)
+    for (auto fmt : tracknameformats)
     {
-        // try trackxx format
-        sprintf(filename, "track%02d", nTrack);
+        Bsnprintf(filename, sizeof(filename), fmt, nTrack);
         hFile = S_OpenAudio(filename, 0, 1);
+        if (hFile >= 0)
+            break;
     }
-    
+  
     if (hFile < 0) {
         return false;
     }
