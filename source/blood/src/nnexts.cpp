@@ -1537,9 +1537,8 @@ void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer) {
         case 5: // erase powerups
             for (int i = 0; i < kMaxPowerUps; i++) pPlayer->pwUpTime[i] = 0;
             if (pXSource->data2) break;
-            fallthrough__;
+            break;
     }
-
 }
 
 void trPlayerCtrlGiveStuff(XSPRITE* pXSource, PLAYER* pPlayer, TRPLAYERCTRL* pCtrl) {
