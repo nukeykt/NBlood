@@ -1851,6 +1851,20 @@ int app_main(int argc, char const* const* argv)
 
     G_ExtPreInit(argc, argv);
 
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
     OSD_SetLogFile(APPBASENAME ".log");
 
     OSD_SetFunctions(NULL,
