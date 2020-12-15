@@ -1151,8 +1151,8 @@ exhumed_editor_deps := audiolib
 exhumed_game := pcexhumed
 exhumed_editor := pcexhumed_editor
 
-exhumed_game_proper := Exhumed
-exhumed_editor_proper := Exhumed_editor
+exhumed_game_proper := PCExhumed
+exhumed_editor_proper := PCExhumed Editor
 
 exhumed_game_objs := \
     aistuff.cpp \
@@ -1256,7 +1256,7 @@ witchaven_game := ewitchaven
 witchaven_editor := ewitchaven_editor
 
 witchaven_game_proper := EWitchaven
-witchaven_editor_proper := EWitchaven_editor
+witchaven_editor_proper := EWitchaven Editor
 
 witchaven_game_objs := \
     animation.cpp \
