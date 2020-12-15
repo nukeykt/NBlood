@@ -52,7 +52,8 @@ static internalgrpfile grpfiles[] =
     { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
     { "Wanton Destruction",           SWWD_CRC, 48698128, GAMEFLAG_SWWD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
     { "Twin Dragon",                  SWTD_CRC, 12499012, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, process_tdragongrp },
-    { "Twin Dragon",                  0xB5B71277u, 6236287, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Twin Dragon",                  0xACC8DCDEu, 6235578, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Twin Dragon",                  0xB5B71277u, 6236287, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr }, // commonly available repack
 };
 grpfile *foundgrps = NULL;
 

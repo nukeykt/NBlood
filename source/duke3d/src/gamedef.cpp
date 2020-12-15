@@ -2624,6 +2624,8 @@ DO_DEFSTATE:
             // flags are used to define usage
             // (see top of this files for flags)
 
+            //Skip comments before calling the check in order to align the textptr onto the label
+            C_SkipComments(); 
             if (EDUKE32_PREDICT_FALSE(isdigit(*textptr) || (*textptr == '-')))
             {
                 g_errorCnt++;
@@ -2673,6 +2675,8 @@ DO_DEFSTATE:
 
         case CON_GAMEARRAY:
         {
+            //Skip comments before calling the check in order to align the textptr onto the label
+            C_SkipComments();
             if (EDUKE32_PREDICT_FALSE(isdigit(*textptr) || (*textptr == '-')))
             {
                 g_errorCnt++;

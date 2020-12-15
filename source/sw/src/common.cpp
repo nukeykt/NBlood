@@ -266,6 +266,14 @@ static void SW_AddSearchPaths()
             return;
     }
 
+    // Shadow Warrior Classic Complete - ZOOM Platform
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\ZOOM PLATFORM\Shadow Warrior Classic Complete)", "InstallPath", buf, &bufsize))
+    {
+        if (SW_Add_GOG_SWCC(buf) == 0)
+            return;
+    }
+
     // Shadow Warrior (Classic) - 3D Realms Anthology - Steam
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 358400)", "InstallLocation", buf, &bufsize))

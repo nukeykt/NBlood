@@ -638,6 +638,10 @@ void G_AddSearchPaths(void)
         // Duke Nukem 3D: Atomic Edition - GOG.com
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        // Duke Nukem 3D: Atomic Edition - ZOOM Platform
+        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D - Atomic Edition.app/Contents/MacOS/Duke3D - Atomic Edition", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
     for (i = 0; i < 2; i++)
@@ -696,6 +700,19 @@ void G_AddSearchPaths(void)
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
     {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    }
+
+    // Duke Nukem 3D: Atomic Edition - ZOOM Platform
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\ZOOM PLATFORM\Duke Nukem 3D - Atomic Edition)", "InstallPath", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        Bstrncpy(suffix, "/AddOns", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
