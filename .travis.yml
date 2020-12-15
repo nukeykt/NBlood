@@ -12,6 +12,7 @@ git:
 addons:
   apt:
     packages:
+      - libsdl2-dev
       - libvorbis-dev
       - libflac-dev
       - libvpx-dev
@@ -25,18 +26,18 @@ jobs:
     name: "Linux GCC"
     compiler: gcc
     script:
-    - make -kj2
+    - make -j2
   - os: linux
     name: "Linux Clang"
     compiler: clang
     script:
-    - make -kj2 CLANG=1
+    - make -j2 CLANG=1
   - os: osx
     name: "macOS"
     osx_image: xcode10.1
     script:
-    - brew install libvorbis flac libvpx make
-    - gmake -kj2
+    - brew install sdl2 libogg libvorbis flac libvpx make
+    - gmake -j2
 
 notifications:
   email: false
