@@ -66,6 +66,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install-prerequisites
-      run: brew install sdl2 libogg libvorbis flac libvpx make
+      run: |
+        brew install sdl2 libogg libvorbis flac libvpx make
+        brew unlink lz4
     - name: build
       run: gmake -j2 duke3d sw blood rr exhumed tools
