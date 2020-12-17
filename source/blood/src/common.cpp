@@ -360,6 +360,14 @@ void G_AddSearchPaths(void)
         found = true;
     }
 
+    // Blood: One Unit Whole Blood - GOG.com (new installer/GOG Galaxy)
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207658856)", "path", buf, &bufsize))
+    {
+        addsearchpath(buf);
+        found = true;
+    }
+
     // Blood: One Unit Whole Blood - GOG.com
     bufsize = sizeof(buf);
     if (!found && Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGONEUNITONEBLOOD", "PATH", buf, &bufsize))
