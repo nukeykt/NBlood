@@ -42,9 +42,8 @@ struct Weapon
     short b[12]; // seq offsets?
     short nAmmoType;
     short c;
-    short d; // default or min ammo? or ammo used per 'shot' ?
+    short bUsesAmmo;
     short bFireUnderwater;
-//	short pad[15];
 };
 
 extern Weapon WeaponInfo[];
@@ -54,6 +53,8 @@ void RestoreMinAmmo(short nPlayer);
 void FillWeapons(short nPlayer);
 void ResetPlayerWeapons(short nPlayer);
 void InitWeapons();
+void SelectNextWeapon();
+void SelectPreviousWeapon();
 void SetNewWeapon(short nPlayer, short nWeapon);
 void SetNewWeaponImmediate(short nPlayer, short nWeapon);
 void SetNewWeaponIfBetter(short nPlayer, short nWeapon);

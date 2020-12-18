@@ -89,6 +89,8 @@ enum {
     gamefunc_Show_Console,
 	gamefunc_Mouse_Aiming,
 	gamefunc_Toggle_Crosshair,
+    gamefunc_Next_Weapon,
+    gamefunc_Previous_Weapon,
 	kMaxGameFunctions
 };
 

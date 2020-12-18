@@ -37,147 +37,153 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
 {
-  "Move_Forward",
-  "Move_Backward",
-  "Turn_Left",
-  "Turn_Right",
-  "Strafe",
-  "Strafe_Left",
-  "Strafe_Right",
-  "Run",
-  "Jump",
-  "Crouch",
-  "Fire",
-  "Open",
-  "Look_Up",
-  "Look_Down",
-  "Look_Straight",
-  "Aim_Up",
-  "Aim_Down",
-  "SendMessage",
-  "Weapon_1",
-  "Weapon_2",
-  "Weapon_3",
-  "Weapon_4",
-  "Weapon_5",
-  "Weapon_6",
-  "Weapon_7",
-  "Pause",
-  "Map",
-  "Zoom_In",
-  "Zoom_Out",
-  "Gamma_Correction",
-  "Escape",
-  "Shrink_Screen",
-  "Enlarge_Screen",
-  "Inventory",
-  "Inventory_Left",
-  "Inventory_Right",
-  "Mouse_Sensitivity_Up",
-  "Mouse_Sensitivity_Down",
-  "Show_Console",
-  "Mouse_Aiming",
-  "Toggle_Crosshair"
+    "Move_Forward",
+    "Move_Backward",
+    "Turn_Left",
+    "Turn_Right",
+    "Strafe",
+    "Strafe_Left",
+    "Strafe_Right",
+    "Run",
+    "Jump",
+    "Crouch",
+    "Fire",
+    "Open",
+    "Look_Up",
+    "Look_Down",
+    "Look_Straight",
+    "Aim_Up",
+    "Aim_Down",
+    "SendMessage",
+    "Weapon_1",
+    "Weapon_2",
+    "Weapon_3",
+    "Weapon_4",
+    "Weapon_5",
+    "Weapon_6",
+    "Weapon_7",
+    "Pause",
+    "Map",
+    "Zoom_In",
+    "Zoom_Out",
+    "Gamma_Correction",
+    "Escape",
+    "Shrink_Screen",
+    "Enlarge_Screen",
+    "Inventory",
+    "Inventory_Left",
+    "Inventory_Right",
+    "Mouse_Sensitivity_Up",
+    "Mouse_Sensitivity_Down",
+    "Show_Console",
+    "Mouse_Aiming",
+    "Toggle_Crosshair",
+    "Next_Weapon",
+    "Previous_Weapon",
 };
 
 const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
 {
-   "W", "Kpad8",
-   "S", "Kpad2",
-   "Left", "Kpad4",
-   "Right", "KPad6",
-   "LAlt", "RAlt",
-   "A", "",
-   "D", "",
-   "LShift", "RShift",
-   "Space", "",
-   "LCtrl", "",
-   "RCtrl", "",
-   "E", "",
-   "PgUp", "",
-   "PgDn", "",
-   "Home", "",
-   "Insert", "",
-   "Delete", "",
-   "T", "",
-   "1", "",
-   "2", "",
-   "3", "",
-   "4", "",
-   "5", "",
-   "6", "",
-   "7", "",
-   "Pause", "",
-   "Tab", "",
-   "=", "",
-   "-", "",
-   "F11", "",
-   "Escape", "",
-   "Kpad-", "",
-   "Kpad+", "",
-   "Enter", "",
-   "[", "",
-   "]", "",
-   "F7", "",
-   "F8", "",
-   "`", "",
-   "U", "",
-   "I", "",
+    "W", "Kpad8",
+    "S", "Kpad2",
+    "Left", "Kpad4",
+    "Right", "KPad6",
+    "LAlt", "RAlt",
+    "A", "",
+    "D", "",
+    "LShift", "RShift",
+    "Space", "",
+    "LCtrl", "",
+    "RCtrl", "",
+    "E", "",
+    "PgUp", "",
+    "PgDn", "",
+    "Home", "",
+    "Insert", "",
+    "Delete", "",
+    "T", "",
+    "1", "",
+    "2", "",
+    "3", "",
+    "4", "",
+    "5", "",
+    "6", "",
+    "7", "",
+    "Pause", "",
+    "Tab", "",
+    "=", "",
+    "-", "",
+    "F11", "",
+    "Escape", "",
+    "Kpad-", "",
+    "Kpad+", "",
+    "Enter", "",
+    "[", "",
+    "]", "",
+    "F7", "",
+    "F8", "",
+    "`", "",
+    "U", "",
+    "I", "",
+    "'", "",
+    ";", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
 {
-   "Up", "Kpad8",
-   "Down", "Kpad2",
-   "Left", "Kpad4",
-   "Right", "KPad6",
-   "LAlt", "RAlt",
-   ",", "",
-   ".", "",
-   "LShift", "RShift",
-   "A", "",
-   "Z", "",
-   "LCtrl", "RCtrl",
-   "Space", "",
-   "PgUp", "",
-   "PgDn", "",
-   "Home", "",
-   "Insert", "",
-   "Delete", "",
-   "T", "",
-   "1", "",
-   "2", "",
-   "3", "",
-   "4", "",
-   "5", "",
-   "6", "",
-   "7", "",
-   "Pause", "",
-   "Tab", "",
-   "=", "",
-   "-", "",
-   "F11", "",
-   "Escape", "",
-   "Kpad-", "",
-   "Kpad+", "",
-   "Enter", "",
-   "[", "",
-   "]", "",
-   "F7", "",
-   "F8", "",
-   "`", "",
-   "U", "",
-   "I", "",
+    "Up", "Kpad8",
+    "Down", "Kpad2",
+    "Left", "Kpad4",
+    "Right", "KPad6",
+    "LAlt", "RAlt",
+    ",", "",
+    ".", "",
+    "LShift", "RShift",
+    "A", "",
+    "Z", "",
+    "LCtrl", "RCtrl",
+    "Space", "",
+    "PgUp", "",
+    "PgDn", "",
+    "Home", "",
+    "Insert", "",
+    "Delete", "",
+    "T", "",
+    "1", "",
+    "2", "",
+    "3", "",
+    "4", "",
+    "5", "",
+    "6", "",
+    "7", "",
+    "Pause", "",
+    "Tab", "",
+    "=", "",
+    "-", "",
+    "F11", "",
+    "Escape", "",
+    "Kpad-", "",
+    "Kpad+", "",
+    "Enter", "",
+    "[", "",
+    "]", "",
+    "F7", "",
+    "F8", "",
+    "`", "",
+    "U", "",
+    "I", "",
+    "'", "",
+    ";", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
 {
-   "Fire",
-   "Strafe",
-   "Move_Forward"
-   "",
-   "",
-   "",
+    "Fire",
+    "Strafe",
+    "Move_Forward"
+    "",
+    "",
+    "",
 };
 
 static const char *mouseclickeddefaults[MAXMOUSEBUTTONS] =
@@ -186,8 +192,8 @@ static const char *mouseclickeddefaults[MAXMOUSEBUTTONS] =
 
 static const char* mouseanalogdefaults[MAXMOUSEAXES] =
 {
-"analog_strafing",
-"analog_moving",
+    "analog_strafing",
+    "analog_moving",
 };
 
 
@@ -240,47 +246,49 @@ int32_t MAXCACHE1DSIZE = (96*1024*1024);
 
 void SetupGameButtons()
 {
-    CONTROL_DefineFlag(gamefunc_Move_Forward,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Move_Backward,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Turn_Left,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Turn_Right,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Strafe,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Strafe_Left,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Strafe_Right,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Jump,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Crouch,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Fire,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Open,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Aim_Up,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Aim_Down,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Look_Up,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Look_Down,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Look_Straight,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Run,					kFalse);
-    CONTROL_DefineFlag(gamefunc_SendMessage,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_1,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_2,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_3,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_4,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_5,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_6,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_7,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Pause,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Map,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Gamma_Correction,		kFalse);
-    CONTROL_DefineFlag(gamefunc_Escape,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Shrink_Screen,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Enlarge_Screen,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Zoom_In,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Zoom_Out,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Inventory_Left,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Inventory_Right,		kFalse);
-//    CONTROL_DefineFlag(gamefunc_Mouseview,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Inventory,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Up,	kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Down,	kFalse);
+    CONTROL_DefineFlag(gamefunc_Move_Forward,           kFalse);
+    CONTROL_DefineFlag(gamefunc_Move_Backward,          kFalse);
+    CONTROL_DefineFlag(gamefunc_Turn_Left,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Turn_Right,             kFalse);
+    CONTROL_DefineFlag(gamefunc_Strafe,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Strafe_Left,            kFalse);
+    CONTROL_DefineFlag(gamefunc_Strafe_Right,           kFalse);
+    CONTROL_DefineFlag(gamefunc_Jump,                   kFalse);
+    CONTROL_DefineFlag(gamefunc_Crouch,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Fire,                   kFalse);
+    CONTROL_DefineFlag(gamefunc_Open,                   kFalse);
+    CONTROL_DefineFlag(gamefunc_Aim_Up,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Aim_Down,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Look_Up,                kFalse);
+    CONTROL_DefineFlag(gamefunc_Look_Down,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Look_Straight,          kFalse);
+    CONTROL_DefineFlag(gamefunc_Run,                    kFalse);
+    CONTROL_DefineFlag(gamefunc_SendMessage,            kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_1,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_2,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_3,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_4,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_5,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_6,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_7,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Pause,                  kFalse);
+    CONTROL_DefineFlag(gamefunc_Map,                    kFalse);
+    CONTROL_DefineFlag(gamefunc_Gamma_Correction,       kFalse);
+    CONTROL_DefineFlag(gamefunc_Escape,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Shrink_Screen,          kFalse);
+    CONTROL_DefineFlag(gamefunc_Enlarge_Screen,         kFalse);
+    CONTROL_DefineFlag(gamefunc_Zoom_In,                kFalse);
+    CONTROL_DefineFlag(gamefunc_Zoom_Out,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Inventory_Left,         kFalse);
+    CONTROL_DefineFlag(gamefunc_Inventory_Right,        kFalse);
+//  CONTROL_DefineFlag(gamefunc_Mouseview,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Inventory,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Up,   kFalse);
+    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Down, kFalse);
     CONTROL_DefineFlag(gamefunc_Mouse_Aiming,           kFalse);
     CONTROL_DefineFlag(gamefunc_Toggle_Crosshair,       kFalse);
+    CONTROL_DefineFlag(gamefunc_Next_Weapon,            kFalse);
+    CONTROL_DefineFlag(gamefunc_Previous_Weapon,        kFalse);
 }
 
 hashtable_t h_gamefuncs    = { kMaxGameFunctions<<1, NULL };

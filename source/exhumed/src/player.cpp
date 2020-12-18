@@ -728,7 +728,7 @@ void RestartPlayer(short nPlayer)
         sprite[nSprite].y = sprite[nNStartSprite].y;
         sprite[nSprite].z = sprite[nNStartSprite].z;
         mychangespritesect(nSprite, sprite[nNStartSprite].sectnum);
-        PlayerList[nPlayer].q16angle = fix16_from_int(sprite[nNStartSprite].ang&kAngleMask);
+        PlayerList[nPlayer].q16angle = fix16_from_int(sprite[nNStartSprite].ang & kAngleMask);
         sprite[nSprite].ang = fix16_to_int(PlayerList[nPlayer].q16angle);
 
         floorspr = insertsprite(sprite[nSprite].sectnum, 0);
@@ -3176,6 +3176,15 @@ loc_1BD2E:
 
                         bPlayerPan = kTrue;
                         nDestVertPan[nPlayer] = nVertPan[nPlayer];
+                    }
+
+                    if (BUTTON(gamefunc_Next_Weapon))
+                    {
+                        SelectNextWeapon();
+                    }
+                    else if (BUTTON(gamefunc_Previous_Weapon))
+                    {
+                        SelectPreviousWeapon();
                     }
 
                     // loc_1C048:

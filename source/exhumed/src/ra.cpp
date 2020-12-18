@@ -249,7 +249,7 @@ void FuncRa(int a, int UNUSED(nDamage), int nRun)
                             if (PlayerList[nPlayer].nAmmo[kWeaponRing] > 0)
                             {
                                 runlist_DamageEnemy(Ra[nPlayer].nTarget, PlayerList[Ra[nPlayer].nPlayer].nSprite, BulletInfo[kWeaponRing].nDamage);
-                                AddAmmo(nPlayer, kWeaponRing, -WeaponInfo[kWeaponRing].d);
+                                AddAmmo(nPlayer, kWeaponRing, -1); // remove '1' from ammo count
                                 SetQuake(nSprite, 100);
                             }
                             else
