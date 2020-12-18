@@ -774,6 +774,28 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
+    // Redneck Rampage - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 565550)", "InstallLocation", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/Redneck", remaining);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+    }
+
+    // Redneck Rampage Rides Again - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 580940)", "InstallLocation", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/AGAIN", remaining);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+    }
+
     // Redneck Rampage Collection - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\Games\\1207658674", "PATH", buf, &bufsize))
@@ -798,6 +820,20 @@ void G_AddSearchPaths(void)
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGCREDNECKRIDESAGAIN", "PATH", buf, &bufsize))
     {
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+    }
+
+    // Redneck Deer Huntin' - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 580930)", "InstallLocation", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/HUNTIN", remaining);
+        addsearchpath_user(buf, SEARCHPATH_DEER);
+
+        Bstrncpy(suffix, "/AGAIN", remaining);
         addsearchpath_user(buf, SEARCHPATH_RRRA);
     }
 
@@ -844,10 +880,13 @@ void G_CleanupSearchPaths(void)
     if (!WW2GI)
         removesearchpaths_withuser(SEARCHPATH_WW2GI);
 
-    if (!RRRA)
+    if (!DEER)
+        removesearchpaths_withuser(SEARCHPATH_DEER);
+
+    if (!RRRA || DEER)
         removesearchpaths_withuser(SEARCHPATH_RRRA);
 
-    if (!RR || RRRA)
+    if (!RR || RRRA || DEER)
         removesearchpaths_withuser(SEARCHPATH_RR);
 }
 

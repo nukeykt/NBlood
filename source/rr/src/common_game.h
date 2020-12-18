@@ -73,6 +73,7 @@ enum searchpathtypes_t {
     SEARCHPATH_WW2GI  = 1<<2,
     SEARCHPATH_RR     = 1<<3,
     SEARCHPATH_RRRA   = 1<<4,
+    SEARCHPATH_DEER   = 1<<5,
 };
 
 typedef enum basepal_ {
