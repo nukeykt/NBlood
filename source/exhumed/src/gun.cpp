@@ -196,6 +196,9 @@ void SetNewWeaponIfBetter(short nPlayer, short nWeapon)
 
 void SelectNextWeapon()
 {
+    if (PlayerList[nLocalPlayer].bIsFiring)
+        return;
+
     int nCurrentWeapon = PlayerList[nLocalPlayer].nCurrentWeapon;
     if (nCurrentWeapon == kWeaponMummified)
         return; // can't change weapon when mummified
@@ -224,6 +227,9 @@ void SelectNextWeapon()
 
 void SelectPreviousWeapon()
 {
+    if (PlayerList[nLocalPlayer].bIsFiring)
+        return;
+
     int nCurrentWeapon = PlayerList[nLocalPlayer].nCurrentWeapon;
     if (nCurrentWeapon == kWeaponMummified)
         return; // can't change weapon when mummified
