@@ -640,13 +640,29 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
 
         // Redneck Rampage Collection - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/C Redneck Rampage.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/D Redneck.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
         Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/C Redneck Rampage.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_RR);
         Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/D Redneck.cdmedia", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/C Redneck Rampage.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/D Redneck.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/C Redneck Rides Again.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/D RRRAGAIN.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
         Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/C Redneck Rides Again.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_RRRA);
         Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/D RRRAGAIN.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/C Redneck Rides Again.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/D RRRAGAIN.cdmedia", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_RRRA);
 
         // NAM - GOG.com

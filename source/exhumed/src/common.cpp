@@ -343,6 +343,8 @@ void G_AddSearchPaths(void)
         addsearchpath(buf);
         Bsnprintf(buf, sizeof(buf), "%s/Powerslave.app/Contents/Resources/game", documents[i]);
         addsearchpath(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/Powerslave.app/Contents/Resources/game/Powerslave.app/Contents/Resources/game", applications[i]);
+        addsearchpath(buf);
     }
 
     for (i = 0; i < 2; i++)
