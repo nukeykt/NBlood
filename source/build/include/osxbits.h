@@ -20,6 +20,7 @@ char *osx_gethomedir(void);
 char *osx_getsupportdir(int32_t local);
 char *osx_getappdir(void);
 char *osx_getapplicationsdir(int32_t local);
+char *osx_getdocumentsdir(int32_t local);
 
 #ifdef __cplusplus
 }

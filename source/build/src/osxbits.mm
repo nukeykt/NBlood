@@ -177,3 +177,21 @@ char *osx_getapplicationsdir(int32_t local)
 
     return returnpath;
 }
+
+char *osx_getdocumentsdir(int32_t local)
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, local ? NSUserDomainMask : NSLocalDomainMask, YES);
+    char *returnpath = NULL;
+
+    if ([paths count] > 0)
+    {
+        const char *Cpath = [[paths objectAtIndex:0] UTF8String];
+
+        if (Cpath)
+            returnpath = Bstrdup(Cpath);
+    }
+
+    [paths release];
+
+    return returnpath;
+}
