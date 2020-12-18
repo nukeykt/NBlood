@@ -720,7 +720,7 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
-    // Redneck Rampage Collection (GOG.com) - new installer/GOG Galaxy
+    // Redneck Rampage Collection - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\Games\\1207658674", "PATH", buf, &bufsize))
     {
@@ -733,14 +733,14 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_RRRA);
     }
 
-    // Redneck Rampage (GOG.com)
+    // Redneck Rampage - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGREDNECKRAMPAGE", "PATH", buf, &bufsize))
     {
         addsearchpath_user(buf, SEARCHPATH_RR);
     }
 
-    // Redneck Rampage Rides Again (GOG.com)
+    // Redneck Rampage Rides Again - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGCREDNECKRIDESAGAIN", "PATH", buf, &bufsize))
     {
