@@ -12,6 +12,9 @@
     <Filter Include="Header Files\miniz">
       <UniqueIdentifier>{14fcfbb9-d8a5-4e68-8cac-f8d8d2c2b7da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Generated">
+      <UniqueIdentifier>{2d7bd170-46ef-4c43-ace0-20a97ca15f4c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\build\src\2d.cpp">
@@ -208,6 +211,12 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\xxh_x86dispatch.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntermediateOutputPath)\polymost1Frag.glsl.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntermediateOutputPath)\polymost1Vert.glsl.cpp">
+      <Filter>Source Files\Generated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
