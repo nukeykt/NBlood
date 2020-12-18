@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "input.h"
 #include "osdcmds.h"
 #include "savegame.h"
-#include "xxh3.h"
+#include "xxhash.h"
 #include "music.h"
 #include "sbar.h"
 
@@ -3816,7 +3816,7 @@ static int32_t Menu_EntryRangeDoubleModify(void /*MenuEntry_t *entry, double new
 }
 #endif
 
-static uint32_t save_xxh = 0;
+static XXH64_hash_t save_xxh = 0;
 
 static void Menu_EntryStringActivate(/*MenuEntry_t *entry*/)
 {

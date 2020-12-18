@@ -14,7 +14,7 @@
 #include "m32def.h"
 
 #include "lz4.h"
-#include "xxh3.h"
+#include "xxhash.h"
 
 // XXX: This breaks editors for games other than Duke. The OSD needs a way to specify colors in abstract instead of concatenating palswap escape sequences.
 #include "common_game.h"
@@ -345,7 +345,7 @@ mapundo_t *mapstate = NULL;
 
 int32_t map_revision = 1;
 
-static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, uintptr_t crc)
+static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, XXH64_hash_t crc)
 {
     if (mapstate->prev && mapstate->prev->num[idx]==numsthgs && mapstate->prev->crc[idx]==crc)
     {
@@ -360,7 +360,7 @@ static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, uintptr_t crc)
     return 0;
 }
 
-static void create_compressed_block(int32_t idx, const void *srcdata, uint32_t size, uintptr_t crc)
+static void create_compressed_block(int32_t idx, const void *srcdata, uint32_t size, XXH64_hash_t crc)
 {
     // allocate
     int const compressed_size = LZ4_compressBound(size);
@@ -451,7 +451,7 @@ void create_map_snapshot(void)
 
     if (numsectors)
     {
-        uintptr_t temphash = XXH3_64bits((uint8_t *)sector, numsectors*sizeof(sectortype));
+        XXH64_hash_t temphash = XXH3_64bits((uint8_t *)sector, numsectors*sizeof(sectortype));
 
         if (!try_match_with_prev(0, numsectors, temphash))
             create_compressed_block(0, sector, numsectors*sizeof(sectortype), temphash);
