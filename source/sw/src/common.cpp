@@ -195,11 +195,19 @@ static void SW_AddSearchPaths()
         Paths_ParseSteamLibraryVDF(buf, SW_AddSteamPaths);
 
         // Shadow Warrior Classic Complete - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior.app/Contents/Resources/Shadow Warrior.boxer/C swarrior_files.harddisk", applications[i]);
+        SW_Add_GOG_SWCC(buf);
         Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Complete/Shadow Warrior.app/Contents/Resources/Shadow Warrior.boxer/C swarrior_files.harddisk", applications[i]);
+        SW_Add_GOG_SWCC(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Complete.app/Contents/Resources/game/Shadow Warrior.app/Contents/Resources/Shadow Warrior.boxer/C swarrior_files.harddisk", applications[i]);
         SW_Add_GOG_SWCC(buf);
 
         // Shadow Warrior Classic Redux - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Classic Redux.app/Contents/Resources/gameroot", applications[i]);
+        SW_Add_GOG_SWCR(buf);
         Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Classic Redux/Shadow Warrior Classic Redux.app/Contents/Resources/gameroot", applications[i]);
+        SW_Add_GOG_SWCR(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Classic Redux.app/Contents/Resources/game/Shadow Warrior Classic Redux.app/Contents/Resources/gameroot", applications[i]);
         SW_Add_GOG_SWCR(buf);
     }
 
@@ -259,6 +267,12 @@ static void SW_AddSearchPaths()
     }
 
     // Shadow Warrior Classic Complete - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207659142)", "PATH", buf, &bufsize))
+    {
+        if (SW_Add_GOG_SWCC(buf) == 0)
+            return;
+    }
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGSHADOWARRIOR", "PATH", buf, &bufsize))
     {

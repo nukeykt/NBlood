@@ -639,6 +639,8 @@ void G_AddSearchPaths(void)
         // Duke Nukem 3D: Atomic Edition - GOG.com
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/game/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
 
         // Duke Nukem 3D: Atomic Edition - ZOOM Platform
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D - Atomic Edition.app/Contents/MacOS/Duke3D - Atomic Edition", applications[i]);
@@ -646,6 +648,8 @@ void G_AddSearchPaths(void)
 
         // NAM - GOG.com
         Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game/NAM.app/Contents/Resources/game", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_NAM);
         Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", documents[i]);
         addsearchpath_user(buf, SEARCHPATH_NAM);
@@ -705,6 +709,11 @@ void G_AddSearchPaths(void)
     }
 
     // Duke Nukem 3D: Atomic Edition - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207658730)", "path", buf, &bufsize))
+    {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    }
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
     {
