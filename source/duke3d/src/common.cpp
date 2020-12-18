@@ -626,6 +626,7 @@ void G_AddSearchPaths(void)
     int32_t i;
     char *applications[] = { osx_getapplicationsdir(0), osx_getapplicationsdir(1) };
     char *support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
+    char *documents[] = { osx_getdocumentsdir(0), osx_getdocumentsdir(1) };
 
     for (i = 0; i < 2; i++)
     {
@@ -642,6 +643,12 @@ void G_AddSearchPaths(void)
         // Duke Nukem 3D: Atomic Edition - ZOOM Platform
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D - Atomic Edition.app/Contents/MacOS/Duke3D - Atomic Edition", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        // NAM - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", documents[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
     }
 
     for (i = 0; i < 2; i++)
@@ -656,6 +663,7 @@ void G_AddSearchPaths(void)
     {
         Xfree(applications[i]);
         Xfree(support[i]);
+        Xfree(documents[i]);
     }
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = {0};
@@ -746,6 +754,13 @@ void G_AddSearchPaths(void)
         DWORD const remaining = sizeof(buf) - bufsize;
 
         Bstrncpy(suffix, "/NAM", remaining);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+    }
+
+    // NAM - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1575726518)", "path", buf, &bufsize))
+    {
         addsearchpath_user(buf, SEARCHPATH_NAM);
     }
 
