@@ -212,6 +212,16 @@ void PlayerInterruptKeys()
         bLookCentre = true;
     }
 
+    if (BUTTON(gamefunc_AutoRun))
+    {
+        CONTROL_ClearButton(gamefunc_AutoRun);
+        auto_run = !auto_run;
+        if (auto_run)
+            StatusMessage(150, "Auto run ON");
+        else
+            StatusMessage(150, "Auto run OFF");
+    }
+
     if (MouseDeadZone)
     {
         if (info.mousey > 0)
