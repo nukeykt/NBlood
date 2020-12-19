@@ -3816,7 +3816,7 @@ static int32_t Menu_EntryRangeDoubleModify(void /*MenuEntry_t *entry, double new
 }
 #endif
 
-static uint32_t save_xxh = 0;
+static XXH64_hash_t save_xxh = 0;
 
 static void Menu_EntryStringActivate(/*MenuEntry_t *entry*/)
 {
@@ -3827,7 +3827,7 @@ static void Menu_EntryStringActivate(/*MenuEntry_t *entry*/)
         {
             savebrief_t & sv = g_menusaves[M_SAVE.currentEntry-1].brief;
             if (!save_xxh)
-                save_xxh = XXH32((uint8_t *)sv.name, MAXSAVEGAMENAME, 0xDEADBEEF);
+                save_xxh = XXH3_64bits_withSeed((uint8_t *)sv.name, MAXSAVEGAMENAME, 0xDEADBEEF);
             if (sv.isValid())
                 Menu_Change(MENU_SAVEVERIFY);
         }
@@ -3859,7 +3859,7 @@ static int32_t Menu_EntryStringSubmit(/*MenuEntry_t *entry, */char *input)
 #else
         if (input[0] == 0 || (sv.name[MAXSAVEGAMENAME] == 127 &&
             strncmp(sv.name, input, MAXSAVEGAMENAME) == 0 &&
-            save_xxh == XXH32((uint8_t *)sv.name, MAXSAVEGAMENAME, 0xDEADBEEF)))
+            save_xxh == XXH3_64bits_withSeed((uint8_t *)sv.name, MAXSAVEGAMENAME, 0xDEADBEEF)))
 #endif
         {
             strncpy(sv.name, g_mapInfo[ud.volume_number * MAXLEVELS + ud.level_number].name, MAXSAVEGAMENAME);
