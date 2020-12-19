@@ -80,6 +80,7 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
     "Toggle_Crosshair",
     "Next_Weapon",
     "Previous_Weapon",
+    "AutoRun",
 };
 
 const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -127,6 +128,7 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     "I", "",
     "'", "",
     ";", "",
+    "CapLck", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -174,6 +176,7 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     "I", "",
     "'", "",
     ";", "",
+    "CapLck", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
@@ -289,6 +292,7 @@ void SetupGameButtons()
     CONTROL_DefineFlag(gamefunc_Toggle_Crosshair,       kFalse);
     CONTROL_DefineFlag(gamefunc_Next_Weapon,            kFalse);
     CONTROL_DefineFlag(gamefunc_Previous_Weapon,        kFalse);
+    CONTROL_DefineFlag(gamefunc_AutoRun,                kFalse);
 }
 
 hashtable_t h_gamefuncs    = { kMaxGameFunctions<<1, NULL };

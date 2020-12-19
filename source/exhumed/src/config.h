@@ -91,6 +91,7 @@ enum {
 	gamefunc_Toggle_Crosshair,
     gamefunc_Next_Weapon,
     gamefunc_Previous_Weapon,
+	gamefunc_AutoRun,
 	kMaxGameFunctions
 };
 
