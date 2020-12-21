@@ -250,7 +250,6 @@ engine_objs := \
     timer.cpp \
     vfs.cpp \
     xxhash.c \
-    xxh_x86dispatch.c \
     zpl.cpp \
 
 engine_editor_objs := \
