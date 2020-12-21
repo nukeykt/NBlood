@@ -400,7 +400,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\xxhash.c" />
-    <ClCompile Include="..\..\source\build\src\xxh_x86dispatch.c" />
     <ClCompile Include="..\..\source\build\src\zpl.cpp" />
   </ItemGroup>
   <ItemGroup>
