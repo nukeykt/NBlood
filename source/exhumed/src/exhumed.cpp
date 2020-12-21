@@ -719,7 +719,7 @@ short nPasswordCount = 0;
 
 short nGamma = 0;
 
-short screensize;
+short screensize = 0;
 short bSnakeCam = kFalse;
 short bRecord = kFalse;
 short bPlayback = kFalse;
@@ -1078,6 +1078,7 @@ void CheckKeys()
 
         mysetbrightness((uint8_t)nGamma);
         CONTROL_ClearButton(gamefunc_Gamma_Correction);
+        StatusMessage(150, "Gamma level %d", nGamma);
     }
 
     if (BUTTON(gamefunc_Shrink_Screen))
@@ -1803,7 +1804,6 @@ void ExitGame()
 
     StopAllSounds();
     StopLocalSound();
-    mysaveconfig();
 
     if (bSerialPlay)
     {
@@ -2212,6 +2212,7 @@ int app_main(int argc, char const* const* argv)
 
     SetupInput();
 
+	/*
     char *const setupFileName = Xstrdup(setupfilename);
     char *const p = strtok(setupFileName, ".");
 
@@ -2221,9 +2222,10 @@ int app_main(int argc, char const* const* argv)
         Bsprintf(tempbuf, "%s_settings.cfg", p);
 
     Xfree(setupFileName);
+	*/
 
-    OSD_Exec(tempbuf);
-    OSD_Exec("autoexec.cfg");
+    OSD_Exec("pcexhumed_cvars.cfg");
+    OSD_Exec("pcexhumed_autoexec.cfg");
 
     CONFIG_SetDefaultKeys(keydefaults, true);
 
@@ -2293,10 +2295,9 @@ int app_main(int argc, char const* const* argv)
 //	InstallEngine();
     KB_Startup();
     InitView();
-    myloadconfig();
     InitFX();
     LoadFX();
-    setCDaudiovolume(gMusicVolume);
+    setCDaudiovolume(MusicVolume);
     seq_LoadSequences();
     InitStatus();
     InitTimer();
@@ -2517,9 +2518,9 @@ LOOP3:
     }
 
     mysetbrightness((uint8_t)nGamma);
-    //int edi = totalclock;
     tclocks2 = totalclock;
     CONTROL_BindsEnabled = 1;
+
     // Game Loop
     while (1)
     {

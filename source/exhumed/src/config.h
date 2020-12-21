@@ -110,8 +110,8 @@ typedef struct {
     int32_t noautoload;
 } ud_setup_t;
 
-#define kSetupFilename		"SETUP.CFG"
-extern char setupfilename[];
+#define kSetupFilename  "pcexhumed.cfg"
+extern char setupfilename[BMAX_PATH];
 
 extern hashtable_t h_gamefuncs;
 
@@ -131,6 +131,8 @@ extern int32_t MouseDeadZone, MouseBias;
 
 extern int32_t FXVolume;
 extern int32_t MusicVolume;
+extern int32_t SoundToggle;
+extern int32_t MusicToggle;
 extern int32_t MixRate;
 extern int32_t MidiPort;
 extern int32_t NumVoices;

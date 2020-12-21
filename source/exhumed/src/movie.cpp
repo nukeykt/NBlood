@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "typedefs.h"
 #include "keyboard.h"
 #include "fx_man.h"
+#include "config.h"
 #include "sound.h"
 #include "mutex.h"
 #include "memorystream.h"
@@ -303,7 +304,7 @@ void PlayMovie(const char* fileName)
     if (ReadFrame(ms))
     {
         // start audio playback
-        hFx = FX_StartDemandFeedPlayback(ServeSample, 8, 1, kSampleRate, 0, gMusicVolume, gMusicVolume, gMusicVolume, FX_MUSIC_PRIORITY, fix16_one, -1, nullptr);
+        hFx = FX_StartDemandFeedPlayback(ServeSample, 8, 1, kSampleRate, 0, MusicVolume, MusicVolume, MusicVolume, FX_MUSIC_PRIORITY, fix16_one, -1, nullptr);
 
         while (!KB_KeyWaiting())
         {

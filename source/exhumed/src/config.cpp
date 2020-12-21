@@ -206,13 +206,15 @@ static const char* mousedigitaldefaults[MAXMOUSEDIGITAL] =
 
 ud_setup_t gSetup;
 
-char setupfilename[128] = {kSetupFilename};
+char setupfilename[BMAX_PATH] = {kSetupFilename};
 
 int lMouseSens = 32;
 unsigned int dword_1B82E0 = 0;
 
 int32_t FXVolume;
 int32_t MusicVolume;
+int32_t SoundToggle;
+int32_t MusicToggle;
 int32_t MixRate;
 int32_t MidiPort;
 int32_t NumVoices;
@@ -469,9 +471,11 @@ void CONFIG_SetDefaults()
     gSetup.fullscreen = 1;
     gSetup.usemouse = 1;
 
+	SoundToggle = 1;
     MixRate = 44100;
-    FXVolume = 255;
-    MusicVolume = 255;
+    FXVolume = 125;
+    MusicToggle = 1;
+    MusicVolume = 125;
     NumChannels = 2;
     NumBits = 16;
     NumVoices = 32;
@@ -483,6 +487,9 @@ void CONFIG_SetDefaults()
     auto_run = 1;
 
     gFov = 90;
+
+    screensize = 0;
+    nGamma = 2;
 
     CONFIG_SetDefaultKeys(keydefaults);
 
@@ -590,6 +597,14 @@ int CONFIG_ReadSetup()
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", (int32_t *)&windowx);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", (int32_t *)&windowy);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&windowpos);
+
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "FullScreen", (int32_t*)&bFullScreen);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenSize", (int32_t*)&screensize);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "Gamma", (int32_t*)&nGamma);
+
+    if (screensize < 0 || screensize > 15) {
+        screensize = 0;
+    }
 
     if (gSetup.bpp < 8) gSetup.bpp = 32;
 
@@ -805,11 +820,14 @@ void SetupInput()
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
     char filename[BMAX_PATH];
-
+	/*
     if (!Bstrcmp(setupfilename, kSetupFilename))
         Bsprintf(filename, "settings.cfg");
     else
         Bsprintf(filename, "%s_settings.cfg", strtok(setupfilename, "."));
+	*/
+
+    Bsprintf(filename, "pcexhumed_cvars.cfg");
 
     buildvfs_FILE fp = buildvfs_fopen_write(filename);
 
@@ -909,11 +927,9 @@ void CONFIG_WriteSetup(uint32_t flags)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPosY", windowy, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPositioning", windowpos, FALSE, FALSE);
 
-    //if (!NAM_WW2GI)
-    //{
-    //    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "Out",ud.lockout,FALSE,FALSE);
-    //    SCRIPT_PutString(ud.config.scripthandle, "Screen Setup", "Password",ud.pwlockout);
-    //}
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "FullScreen", bFullScreen, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenSize", screensize, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "Gamma", nGamma, FALSE, 2);
 
 //#ifdef _WIN32
 //    SCRIPT_PutNumber(ud.config.scripthandle, "Updates", "CheckForUpdates", ud.config.CheckForUpdates, FALSE, FALSE);

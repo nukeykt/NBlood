@@ -50,8 +50,6 @@ extern "C" {
 }
 #endif
 
-short gMusicVolume = 200;
-short gFXVolume = 200;
 short nSoundsPlaying = 0;
 short nAmbientChannel = -1;
 
@@ -353,7 +351,7 @@ void InitFX(void)
     nSoundCount = 0;
     nCreepyTimer = kCreepyCount;
 
-    SetMasterFXVolume(gFXVolume);
+    SetMasterFXVolume(FXVolume);
 
 #if 0
     int status = FX_Init(FXDevice, NumVoices, NumChannels, NumBits, MixRate);
@@ -972,6 +970,9 @@ void SetMasterFXVolume(int nVolume)
 
 void PlayLocalSound(short nSound, short nRate)
 {
+    if (!SoundToggle)
+        return;
+
     if (!dig)
         return;
 
@@ -1036,6 +1037,9 @@ short soundsect;
 
 short PlayFX2(unsigned short nSound, short nSprite)
 {
+    if (!SoundToggle)
+        return -1;
+
     if (!dig)
         return -1;
 

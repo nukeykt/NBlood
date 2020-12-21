@@ -99,9 +99,6 @@ enum {
     kSoundJonAir2,
 };
 
-extern short gMusicVolume;
-extern short gFXVolume;
-
 extern short nAmbientChannel;
 extern short nStopSound;
 extern short nStoneSound;

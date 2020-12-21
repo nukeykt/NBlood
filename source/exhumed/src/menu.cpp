@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "object.h"
 #include "light.h"
 #include "cd.h"
+#include "config.h"
 #include <string>
 
 #include <assert.h>
@@ -889,8 +890,8 @@ void menu_AdjustVolume()
 
         seq_DrawGunSequence(
             SeqOffsets[kSeqSlider], // eax
-            gMusicVolume % 3, // pick one of 3 frames?
-            (gMusicVolume >> 1) - 93, // ebx. must be x???
+            MusicVolume % 3, // pick one of 3 frames?
+            (MusicVolume >> 1) - 93, // ebx. must be x???
             -22,
             0,
             0);
@@ -900,8 +901,8 @@ void menu_AdjustVolume()
 
         seq_DrawGunSequence(
             SeqOffsets[kSeqSlider],
-            gFXVolume % 3,
-            (gFXVolume / 2) - 93,
+            FXVolume % 3,
+            (FXVolume / 2) - 93,
             38,
             0,
             0);
@@ -956,22 +957,22 @@ void menu_AdjustVolume()
             {
                 case 0:
                 {
-                    if (gMusicVolume > 3) {
-                        gMusicVolume -= 4;
+                    if (MusicVolume > 3) {
+                        MusicVolume -= 4;
                     }
 
 // TODO				SetMusicVolume();
-    				setCDaudiovolume(gMusicVolume);
+    				setCDaudiovolume(MusicVolume);
                     continue;
                 }
 
                 case 1:
                 {
-                    if (gFXVolume > 3) {
-                        gFXVolume -= 4;
+                    if (FXVolume > 3) {
+                        FXVolume -= 4;
                     }
 
-                    SetMasterFXVolume(gFXVolume);
+                    SetMasterFXVolume(FXVolume);
 
                     if (LocalSoundPlaying()) {
                         UpdateLocalSound();
@@ -990,22 +991,22 @@ void menu_AdjustVolume()
             {
                 case 0:
                 {
-                    if (gMusicVolume < 252) {
-                        gMusicVolume += 4;
+                    if (MusicVolume < 252) {
+                        MusicVolume += 4;
                     }
 
 //  				SetMusicVolume();
-    				setCDaudiovolume(gMusicVolume);
+    				setCDaudiovolume(MusicVolume);
                     continue;
                 }
 
                 case 1:
                 {
-                    if (gFXVolume < 252) {
-                        gFXVolume += 4;
+                    if (FXVolume < 252) {
+                        FXVolume += 4;
                     }
 
-                    SetMasterFXVolume(gFXVolume);
+                    SetMasterFXVolume(FXVolume);
 
                     if (LocalSoundPlaying()) {
                         UpdateLocalSound();

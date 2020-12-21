@@ -137,7 +137,6 @@ void viewRestoreInterpolations(void)  //Stick at end of drawscreen
 
 void InitView()
 {
-    screensize = 0;
 #ifdef USE_OPENGL
     polymostcenterhoriz = 92;
 #endif

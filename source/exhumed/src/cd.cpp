@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx_man.h"
 #include "sound.h"
 #include "exhumed.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -45,6 +46,9 @@ void setCDaudiovolume(int val)
 
 bool playCDtrack(int nTrack, bool bLoop)
 {
+//  if (!MusicToggle)
+//      return true;
+
     static const char *tracknameformats[] = { "Track%02d", "exhumed%02d", "track%02d" };
 
     if (nTrack < 2) {
@@ -90,7 +94,7 @@ bool playCDtrack(int nTrack, bool bLoop)
 
     kclose(hFile);
 
-    trackhandle = FX_Play(pTrack, nRead, bLoop ? 0 : -1, 0, 0, gMusicVolume, gMusicVolume, gMusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
+    trackhandle = FX_Play(pTrack, nRead, bLoop ? 0 : -1, 0, 0, MusicVolume, MusicVolume, MusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
     if (trackhandle <= FX_Ok)
     {
         OSD_Printf("Error playing music track %s", filename);
@@ -108,7 +112,7 @@ bool playCDtrack(int nTrack, bool bLoop)
 void StartfadeCDaudio()
 {
     if (CDplaying()) {
-        nLastVolumeSet = gMusicVolume;
+        nLastVolumeSet = MusicVolume;
     }
 }
 

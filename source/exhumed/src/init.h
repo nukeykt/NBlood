@@ -59,8 +59,4 @@ void ResetEngine();
 void RemoveEngine();
 void LoadObjects();
 
-int myloadconfig();
-int mysaveconfig();
-
-
 #endif
