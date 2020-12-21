@@ -644,7 +644,6 @@ short nCreaturesLeft = 0;
 short bNoSound = kFalse;
 
 short nFreeze;
-short bFullScreen;
 
 short nSnakeCam = -1;
 
@@ -717,9 +716,9 @@ short nPasswordCount = 0;
 // short word_96E40 = 0;
 // short word_CB326;
 
-short nGamma = 0;
-
-short screensize = 0;
+int32_t nGamma = 0;
+int32_t screensize = 0;
+int32_t bFullScreen = 0;
 short bSnakeCam = kFalse;
 short bRecord = kFalse;
 short bPlayback = kFalse;

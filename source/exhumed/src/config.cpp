@@ -589,18 +589,18 @@ int CONFIG_ReadSetup()
     windowx = -1;
     windowy = -1;
 
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", &maxrefreshfreq);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &gSetup.bpp);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenHeight", &gSetup.ydim);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenMode", &gSetup.fullscreen);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenWidth", &gSetup.xdim);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", (int32_t *)&windowx);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", (int32_t *)&windowy);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&windowpos);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", &windowx);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", &windowy);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", &windowpos);
 
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "FullScreen", (int32_t*)&bFullScreen);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenSize", (int32_t*)&screensize);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "Gamma", (int32_t*)&nGamma);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "FullScreen", &bFullScreen);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenSize", &screensize);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "Gamma", &nGamma);
 
     if (screensize < 0 || screensize > 15) {
         screensize = 0;
