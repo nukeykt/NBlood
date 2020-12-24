@@ -1369,7 +1369,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
 
             if (sprite[nPlayerSprite].zvel >= 6500 && zVel < 6500)
             {
-                D3PlayFX(StaticSound[kSoundJonFall], 0);
+                D3PlayFX(StaticSound[kSoundJonFall], nPlayerSprite);
             }
 
             // loc_1A4E6
