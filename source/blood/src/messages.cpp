@@ -859,7 +859,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
             LevelWarp(nEpisode, nLevel);
         else
             if (!VanillaMode())
-                levelEndLevel(0);
+                levelEndLevel(kLevelExitNormal);
         break;
     case kCheatLaraCroft:
         SetInfiniteAmmo(!gInfiniteAmmo);

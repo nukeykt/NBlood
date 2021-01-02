@@ -196,7 +196,7 @@ void LoadSave::LoadGame(char *pzFile)
 #endif
 
     if ((unsigned)gGameOptions.nEpisode >= gEpisodeCount || (unsigned)gGameOptions.nLevel >= gEpisodeInfo[gGameOptions.nEpisode].nLevels
-        || Bstrcasecmp(gEpisodeInfo[gGameOptions.nEpisode].levelsInfo[gGameOptions.nLevel].at0, gGameOptions.zLevelName) != 0)
+        || Bstrcasecmp(gEpisodeInfo[gGameOptions.nEpisode].levelsInfo[gGameOptions.nLevel].Filename, gGameOptions.zLevelName) != 0)
     {
         if (!gSysRes.Lookup(gGameOptions.zLevelName, "MAP"))
         {

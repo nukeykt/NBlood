@@ -63,6 +63,11 @@ struct GAMEOPTIONS {
 #pragma pack(pop)
 
 enum {
+    kLevelExitNormal = 0,
+    kLevelExitSecret
+};
+
+enum {
     MUS_FIRST_SPECIAL = kMaxEpisodes*kMaxLevels,
 
     MUS_INTRO = MUS_FIRST_SPECIAL,
@@ -71,16 +76,16 @@ enum {
 
 struct LEVELINFO
 {
-    char at0[BMAX_PATH]; // Filename
-    char at90[32]; // Title
-    char atb0[32]; // Author
-    char atd0[BMAX_PATH]; // Song;
-    int ate0; // SongId
-    int ate4; // EndingA
-    int ate8; // EndingB
-    char atec[kMaxMessages][64]; // Messages
-    char at8ec; // Fog
-    char at8ed; // Weather
+    char Filename[BMAX_PATH];
+    char Title[32];
+    char Author[32];
+    char Song[BMAX_PATH];
+    int SongId;
+    int EndingA;
+    int EndingB;
+    char Messages[kMaxMessages][64];
+    char Fog;
+    char Weather;
 }; // 0x8ee bytes
 
 struct EPISODEINFO
@@ -131,7 +136,7 @@ void levelAddUserMap(const char *pzMap);
 // EndingA is normal ending, EndingB is secret level
 void levelGetNextLevels(int nEpisode, int nLevel, int *pnEndingA, int *pnEndingB);
 // arg: 0 is normal exit, 1 is secret level
-void levelEndLevel(int arg);
+void levelEndLevel(int nExitType);
 void levelRestart(void);
 int levelGetMusicIdx(const char *str);
 bool levelTryPlayMusic(int nEpisode, int nlevel, bool bSetLevelSong = false);

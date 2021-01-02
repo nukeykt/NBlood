@@ -368,10 +368,10 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
         else viewSetSystemMessage("Invalid TextOver command by xobject #%d (object type %d)", nIndex, nType);
         return;
     case kChannelLevelExitNormal:
-        levelEndLevel(0);
+        levelEndLevel(kLevelExitNormal);
         return;
     case kChannelLevelExitSecret:
-        levelEndLevel(1);
+        levelEndLevel(kLevelExitSecret);
         return;
     #ifdef NOONE_EXTENSIONS
     // finished level and load custom level ¹ via numbered command.

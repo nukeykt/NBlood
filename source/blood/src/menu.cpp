@@ -2316,7 +2316,7 @@ void MenuSetupEpisodeInfo(void)
             {
                 if (j < pEpisode->nLevels)
                 {
-                    zLevelNames[i][j] = pEpisode->levelsInfo[j].at90;
+                    zLevelNames[i][j] = pEpisode->levelsInfo[j].Title;
                 }
             }
         }

@@ -1994,7 +1994,7 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
 
     int nEpisode = sel/kMaxLevels;
     int nLevel = sel%kMaxLevels;
-    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, name);
+    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, name);
 }
 
 static int parsedefinitions_game(scriptfile *, int);
@@ -2718,9 +2718,9 @@ int sndTryPlaySpecialMusic(int nMusic)
 {
     int nEpisode = nMusic/kMaxLevels;
     int nLevel = nMusic%kMaxLevels;
-    if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, true))
+    if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, true))
     {
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, BMAX_PATH);
         return 0;
     }
     return 1;
@@ -2733,6 +2733,6 @@ void sndPlaySpecialMusicOrNothing(int nMusic)
     if (sndTryPlaySpecialMusic(nMusic))
     {
         sndStopSong();
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, BMAX_PATH);
     }
 }
