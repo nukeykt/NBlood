@@ -25,20 +25,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct SEQFRAME {
     unsigned int tile : 12;
-    unsigned int at1_4 : 1; // transparent
-    unsigned int at1_5 : 1; // transparent
-    unsigned int at1_6 : 1; // blockable
-    unsigned int at1_7 : 1; // hittable
-    unsigned int at2_0 : 8; // xrepeat
-    unsigned int at3_0 : 8; // yrepeat
-    signed int at4_0 : 8; // shade
-    unsigned int at5_0 : 5; // palette
+    unsigned int transparent  : 1; // transparent
+    unsigned int transparent2 : 1; // transparent
+    unsigned int blockable : 1; // blockable
+    unsigned int hittable : 1; // hittable
+    unsigned int xrepeat : 8; // xrepeat
+    unsigned int yrepeat : 8; // yrepeat
+    signed int shade : 8; // shade
+    unsigned int pal : 5; // palette
     unsigned int at5_5 : 1; //
     unsigned int at5_6 : 1; //
     unsigned int at5_7 : 1; //
     unsigned int at6_0 : 1; //
     unsigned int at6_1 : 1; //
-    unsigned int at6_2 : 1; // invisible
+    unsigned int invisible : 1; // invisible
     unsigned int at6_3 : 1; //
     unsigned int at6_4 : 1; //
     unsigned int tile2 : 4;
@@ -51,9 +51,9 @@ struct Seq {
     char signature[4];
     short version;
     short nFrames; // at6
-    short at8;
-    short ata;
-    int atc;
+    short ticksPerFrame;
+    short nSoundID;
+    int flags;
     SEQFRAME frames[1];
     void Preload(void);
     void Precache(void);
@@ -69,11 +69,11 @@ struct SEQINST
 {
     DICTNODE *hSeq;
     Seq *pSequence;
-    int at8;
-    int atc;
-    short at10;
+    int nSeq;
+    int nCallbackID;
+    short timeCount;
     unsigned char frameIndex;
-    char at13;
+    char isPlaying;
     void Update(ACTIVE *pActive);
 };
 
@@ -84,11 +84,11 @@ inline int seqGetTile(SEQFRAME* pFrame)
 
 int seqRegisterClient(void(*pClient)(int, int));
 void seqPrecacheId(int id);
-SEQINST * GetInstance(int a1, int a2);
+SEQINST* GetInstance(int nType, int nXIndex);
 void UnlockInstance(SEQINST *pInst);
-void seqSpawn(int a1, int a2, int a3, int a4 = -1);
-void seqKill(int a1, int a2);
+void seqSpawn(int nSeq, int nType, int nXIndex, int nCallbackID = -1);
+void seqKill(int nType, int nXIndex);
 void seqKillAll(void);
-int seqGetStatus(int a1, int a2);
-int seqGetID(int a1, int a2);
-void seqProcess(int a1);
+int seqGetStatus(int nType, int nXIndex);
+int seqGetID(int nType, int nXIndex);
+void seqProcess(int nTicks);

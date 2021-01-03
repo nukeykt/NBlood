@@ -2517,10 +2517,10 @@ void actInit(bool bSaveLoad) {
                 break;
             case kThingBloodChunks: {
                 SEQINST *pInst = GetInstance(3, pSprite->extra);
-                if (pInst && pInst->at13) {
-                    DICTNODE *hSeq = gSysRes.Lookup(pInst->at8, "SEQ");
+                if (pInst && pInst->isPlaying) {
+                    DICTNODE *hSeq = gSysRes.Lookup(pInst->nSeq, "SEQ");
                     if (!hSeq) break;
-                    seqSpawn(pInst->at8, 3, pSprite->extra);
+                    seqSpawn(pInst->nSeq, 3, pSprite->extra);
                 }
                 break;
             }

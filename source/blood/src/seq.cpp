@@ -99,42 +99,42 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     if (pSprite->flags & 2)
     {
         if (tilesiz[pSprite->picnum].y != tilesiz[seqGetTile(pFrame)].y || picanm[pSprite->picnum].yofs != picanm[seqGetTile(pFrame)].yofs
-            || (pFrame->at3_0 && pFrame->at3_0 != pSprite->yrepeat))
+            || (pFrame->yrepeat && pFrame->yrepeat != pSprite->yrepeat))
             pSprite->flags |= 4;
     }
     pSprite->picnum = seqGetTile(pFrame);
-    if (pFrame->at5_0)
-        pSprite->pal = pFrame->at5_0;
-    pSprite->shade = pFrame->at4_0;
+    if (pFrame->pal)
+        pSprite->pal = pFrame->pal;
+    pSprite->shade = pFrame->shade;
     
     int scale = xsprite[nXSprite].scale; // SEQ size scaling
-    if (pFrame->at2_0) {
-        if (scale) pSprite->xrepeat = ClipRange(mulscale8(pFrame->at2_0, scale), 0, 255);
-        else pSprite->xrepeat = pFrame->at2_0;
+    if (pFrame->xrepeat) {
+        if (scale) pSprite->xrepeat = ClipRange(mulscale8(pFrame->xrepeat, scale), 0, 255);
+        else pSprite->xrepeat = pFrame->xrepeat;
     }
 
-    if (pFrame->at3_0) {
-        if (scale) pSprite->yrepeat = ClipRange(mulscale8(pFrame->at3_0, scale), 0, 255);
-        else pSprite->yrepeat = pFrame->at3_0;
+    if (pFrame->yrepeat) {
+        if (scale) pSprite->yrepeat = ClipRange(mulscale8(pFrame->yrepeat, scale), 0, 255);
+        else pSprite->yrepeat = pFrame->yrepeat;
     }
 
-    if (pFrame->at1_4)
+    if (pFrame->transparent)
         pSprite->cstat |= 2;
     else
         pSprite->cstat &= ~2;
-    if (pFrame->at1_5)
+    if (pFrame->transparent2)
         pSprite->cstat |= 512;
     else
         pSprite->cstat &= ~512;
-    if (pFrame->at1_6)
+    if (pFrame->blockable)
         pSprite->cstat |= 1;
     else
         pSprite->cstat &= ~1;
-    if (pFrame->at1_7)
+    if (pFrame->hittable)
         pSprite->cstat |= 256;
     else
         pSprite->cstat &= ~256;
-    if (pFrame->at6_2)
+    if (pFrame->invisible)
         pSprite->cstat |= 32768;
     else
         pSprite->cstat &= (unsigned short)~32768;
@@ -168,21 +168,21 @@ void UpdateWall(int nXWall, SEQFRAME *pFrame)
     walltype *pWall = &wall[nWall];
     dassert(pWall->extra == nXWall);
     pWall->picnum = seqGetTile(pFrame);
-    if (pFrame->at5_0)
-        pWall->pal = pFrame->at5_0;
-    if (pFrame->at1_4)
+    if (pFrame->pal)
+        pWall->pal = pFrame->pal;
+    if (pFrame->transparent)
         pWall->cstat |= 128;
     else
         pWall->cstat &= ~128;
-    if (pFrame->at1_5)
+    if (pFrame->transparent2)
         pWall->cstat |= 512;
     else
         pWall->cstat &= ~512;
-    if (pFrame->at1_6)
+    if (pFrame->blockable)
         pWall->cstat |= 1;
     else
         pWall->cstat &= ~1;
-    if (pFrame->at1_7)
+    if (pFrame->hittable)
         pWall->cstat |= 64;
     else
         pWall->cstat &= ~64;
@@ -198,9 +198,9 @@ void UpdateMasked(int nXWall, SEQFRAME *pFrame)
     dassert(pWall->nextwall >= 0);
     walltype *pWallNext = &wall[pWall->nextwall];
     pWall->overpicnum = pWallNext->overpicnum = seqGetTile(pFrame);
-    if (pFrame->at5_0)
-        pWall->pal = pWallNext->pal = pFrame->at5_0;
-    if (pFrame->at1_4)
+    if (pFrame->pal)
+        pWall->pal = pWallNext->pal = pFrame->pal;
+    if (pFrame->transparent)
     {
         pWall->cstat |= 128;
         pWallNext->cstat |= 128;
@@ -210,7 +210,7 @@ void UpdateMasked(int nXWall, SEQFRAME *pFrame)
         pWall->cstat &= ~128;
         pWallNext->cstat &= ~128;
     }
-    if (pFrame->at1_5)
+    if (pFrame->transparent2)
     {
         pWall->cstat |= 512;
         pWallNext->cstat |= 512;
@@ -220,7 +220,7 @@ void UpdateMasked(int nXWall, SEQFRAME *pFrame)
         pWall->cstat &= ~512;
         pWallNext->cstat &= ~512;
     }
-    if (pFrame->at1_6)
+    if (pFrame->blockable)
     {
         pWall->cstat |= 1;
         pWallNext->cstat |= 1;
@@ -230,7 +230,7 @@ void UpdateMasked(int nXWall, SEQFRAME *pFrame)
         pWall->cstat &= ~1;
         pWallNext->cstat &= ~1;
     }
-    if (pFrame->at1_7)
+    if (pFrame->hittable)
     {
         pWall->cstat |= 64;
         pWallNext->cstat |= 64;
@@ -250,9 +250,9 @@ void UpdateFloor(int nXSector, SEQFRAME *pFrame)
     sectortype *pSector = &sector[nSector];
     dassert(pSector->extra == nXSector);
     pSector->floorpicnum = seqGetTile(pFrame);
-    pSector->floorshade = pFrame->at4_0;
-    if (pFrame->at5_0)
-        pSector->floorpal = pFrame->at5_0;
+    pSector->floorshade = pFrame->shade;
+    if (pFrame->pal)
+        pSector->floorpal = pFrame->pal;
 }
 
 void UpdateCeiling(int nXSector, SEQFRAME *pFrame)
@@ -263,9 +263,9 @@ void UpdateCeiling(int nXSector, SEQFRAME *pFrame)
     sectortype *pSector = &sector[nSector];
     dassert(pSector->extra == nXSector);
     pSector->ceilingpicnum = seqGetTile(pFrame);
-    pSector->ceilingshade = pFrame->at4_0;
-    if (pFrame->at5_0)
-        pSector->ceilingpal = pFrame->at5_0;
+    pSector->ceilingshade = pFrame->shade;
+    if (pFrame->pal)
+        pSector->ceilingpal = pFrame->pal;
 }
 
 void SEQINST::Update(ACTIVE *pActive)
@@ -284,11 +284,10 @@ void SEQINST::Update(ACTIVE *pActive)
         break;
     case 3: 
     {
-
         UpdateSprite(pActive->xindex, &pSequence->frames[frameIndex]);
         if (pSequence->frames[frameIndex].at6_1) {
             
-            int sound = pSequence->ata;
+            int sound = pSequence->nSoundID;
             
             // by NoOne: add random sound range feature
             if (!VanillaMode() && pSequence->frames[frameIndex].soundRange > 0)
@@ -297,7 +296,6 @@ void SEQINST::Update(ACTIVE *pActive)
             sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], sound, -1, 0);
         }
 
-        
         // by NoOne: add surfaceSound trigger feature
         spritetype* pSprite = &sprite[xsprite[pActive->xindex].reference];
         if (!VanillaMode() && pSequence->frames[frameIndex].surfaceSound && zvel[pSprite->index] == 0 && xvel[pSprite->index] != 0) {
@@ -333,28 +331,28 @@ void SEQINST::Update(ACTIVE *pActive)
         UpdateMasked(pActive->xindex, &pSequence->frames[frameIndex]);
         break;
     }
-    if (pSequence->frames[frameIndex].at5_5 && atc != -1)
-        clientCallback[atc](pActive->type, pActive->xindex);
+    if (pSequence->frames[frameIndex].at5_5 && nCallbackID != -1)
+        clientCallback[nCallbackID](pActive->type, pActive->xindex);
 }
 
-SEQINST * GetInstance(int a1, int a2)
+SEQINST * GetInstance(int nType, int nXIndex)
 {
-    switch (a1)
+    switch (nType)
     {
     case 0:
-        if (a2 > 0 && a2 < kMaxXWalls) return &siWall[a2];
+        if (nXIndex > 0 && nXIndex < kMaxXWalls) return &siWall[nXIndex];
         break;
     case 1:
-        if (a2 > 0 && a2 < kMaxXSectors) return &siCeiling[a2];
+        if (nXIndex > 0 && nXIndex < kMaxXSectors) return &siCeiling[nXIndex];
         break;
     case 2:
-        if (a2 > 0 && a2 < kMaxXSectors) return &siFloor[a2];
+        if (nXIndex > 0 && nXIndex < kMaxXSectors) return &siFloor[nXIndex];
         break;
     case 3:
-        if (a2 > 0 && a2 < kMaxXSprites) return &siSprite[a2];
+        if (nXIndex > 0 && nXIndex < kMaxXSprites) return &siSprite[nXIndex];
         break;
     case 4:
-        if (a2 > 0 && a2 < kMaxWalls) return &siMasked[a2];
+        if (nXIndex > 0 && nXIndex < kMaxWalls) return &siMasked[nXIndex];
         break;
     }
     return NULL;
@@ -368,73 +366,73 @@ void UnlockInstance(SEQINST *pInst)
     gSysRes.Unlock(pInst->hSeq);
     pInst->hSeq = NULL;
     pInst->pSequence = NULL;
-    pInst->at13 = 0;
+    pInst->isPlaying = 0;
 }
 
-void seqSpawn(int a1, int a2, int a3, int a4)
+void seqSpawn(int nSeq, int nType, int nXIndex, int nCallbackID)
 {
-    SEQINST *pInst = GetInstance(a2, a3);
+    SEQINST *pInst = GetInstance(nType, nXIndex);
     if (!pInst) return;
     
-    DICTNODE *hSeq = gSysRes.Lookup(a1, "SEQ");
+    DICTNODE *hSeq = gSysRes.Lookup(nSeq, "SEQ");
     if (!hSeq)
-        ThrowError("Missing sequence #%d", a1);
+        ThrowError("Missing sequence #%d", nSeq);
 
     int i = activeCount;
-    if (pInst->at13)
+    if (pInst->isPlaying)
     {
         if (hSeq == pInst->hSeq)
             return;
         UnlockInstance(pInst);
         for (i = 0; i < activeCount; i++)
         {
-            if (activeList[i].type == a2 && activeList[i].xindex == a3)
+            if (activeList[i].type == nType && activeList[i].xindex == nXIndex)
                 break;
         }
         dassert(i < activeCount);
     }
     Seq *pSeq = (Seq*)gSysRes.Lock(hSeq);
     if (memcmp(pSeq->signature, "SEQ\x1a", 4) != 0)
-        ThrowError("Invalid sequence %d", a1);
+        ThrowError("Invalid sequence %d", nSeq);
     if ((pSeq->version & 0xff00) != 0x300)
-        ThrowError("Sequence %d is obsolete version", a1);
+        ThrowError("Sequence %d is obsolete version", nSeq);
     if ((pSeq->version & 0xff) == 0x00)
     {
         for (int i = 0; i < pSeq->nFrames; i++)
             pSeq->frames[i].tile2 = 0;
     }
-    pInst->at13 = 1;
+    pInst->isPlaying = 1;
     pInst->hSeq = hSeq;
     pInst->pSequence = pSeq;
-    pInst->at8 = a1;
-    pInst->atc = a4;
-    pInst->at10 = pSeq->at8;
+    pInst->nSeq = nSeq;
+    pInst->nCallbackID = nCallbackID;
+    pInst->timeCount = pSeq->ticksPerFrame;
     pInst->frameIndex = 0;
     if (i == activeCount)
     {
         dassert(activeCount < kMaxSequences);
-        activeList[activeCount].type = a2;
-        activeList[activeCount].xindex = a3;
+        activeList[activeCount].type = nType;
+        activeList[activeCount].xindex = nXIndex;
         activeCount++;
     }
     pInst->Update(&activeList[i]);
 }
 
-void seqKill(int a1, int a2)
+void seqKill(int nType, int nXIndex)
 {
-    SEQINST *pInst = GetInstance(a1, a2);
-    if (!pInst || !pInst->at13)
+    SEQINST *pInst = GetInstance(nType, nXIndex);
+    if (!pInst || !pInst->isPlaying)
         return;
     int i;
     for (i = 0; i < activeCount; i++)
     {
-        if (activeList[i].type == a1 && activeList[i].xindex == a2)
+        if (activeList[i].type == nType && activeList[i].xindex == nXIndex)
             break;
     }
     dassert(i < activeCount);
     activeCount--;
     activeList[i] = activeList[activeCount];
-    pInst->at13 = 0;
+    pInst->isPlaying = 0;
     UnlockInstance(pInst);
 }
 
@@ -442,62 +440,62 @@ void seqKillAll(void)
 {
     for (int i = 0; i < kMaxXWalls; i++)
     {
-        if (siWall[i].at13)
+        if (siWall[i].isPlaying)
             UnlockInstance(&siWall[i]);
-        if (siMasked[i].at13)
+        if (siMasked[i].isPlaying)
             UnlockInstance(&siMasked[i]);
     }
     for (int i = 0; i < kMaxXSectors; i++)
     {
-        if (siCeiling[i].at13)
+        if (siCeiling[i].isPlaying)
             UnlockInstance(&siCeiling[i]);
-        if (siFloor[i].at13)
+        if (siFloor[i].isPlaying)
             UnlockInstance(&siFloor[i]);
     }
     for (int i = 0; i < kMaxXSprites; i++)
     {
-        if (siSprite[i].at13)
+        if (siSprite[i].isPlaying)
             UnlockInstance(&siSprite[i]);
     }
     activeCount = 0;
 }
 
-int seqGetStatus(int a1, int a2)
+int seqGetStatus(int nType, int nXIndex)
 {
-    SEQINST *pInst = GetInstance(a1, a2);
-    if (pInst && pInst->at13)
+    SEQINST *pInst = GetInstance(nType, nXIndex);
+    if (pInst && pInst->isPlaying)
         return pInst->frameIndex;
     return -1;
 }
 
-int seqGetID(int a1, int a2)
+int seqGetID(int nType, int nXIndex)
 {
-    SEQINST *pInst = GetInstance(a1, a2);
+    SEQINST *pInst = GetInstance(nType, nXIndex);
     if (pInst)
-        return pInst->at8;
+        return pInst->nSeq;
     return -1;
 }
 
-void seqProcess(int a1)
+void seqProcess(int nTicks)
 {
     for (int i = 0; i < activeCount; i++)
     {
         SEQINST *pInst = GetInstance(activeList[i].type, activeList[i].xindex);
         Seq *pSeq = pInst->pSequence;
         dassert(pInst->frameIndex < pSeq->nFrames);
-        pInst->at10 -= a1;
-        while (pInst->at10 < 0)
+        pInst->timeCount -= nTicks;
+        while (pInst->timeCount < 0)
         {
-            pInst->at10 += pSeq->at8;
+            pInst->timeCount += pSeq->ticksPerFrame;
             pInst->frameIndex++;
             if (pInst->frameIndex == pSeq->nFrames)
             {
-                if (pSeq->atc & 1)
+                if (pSeq->flags & 1)
                     pInst->frameIndex = 0;
                 else
                 {
                     UnlockInstance(pInst);
-                    if (pSeq->atc & 2)
+                    if (pSeq->flags & 2)
                     {
                         switch (activeList[i].type)
                         {
@@ -570,9 +568,9 @@ void SeqLoadSave::Load(void)
     for (int i = 0; i < activeCount; i++)
     {
         SEQINST *pInst = GetInstance(activeList[i].type, activeList[i].xindex);
-        if (pInst->at13)
+        if (pInst->isPlaying)
         {
-            int nSeq = pInst->at8;
+            int nSeq = pInst->nSeq;
             DICTNODE *hSeq = gSysRes.Lookup(nSeq, "SEQ");
             if (!hSeq) {
                 ThrowError("Missing sequence #%d", nSeq);
