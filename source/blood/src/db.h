@@ -49,7 +49,7 @@ inline bool xwallRangeIsFine(int nXindex) {
 struct AISTATE;
 
 struct XSPRITE {
-    unsigned int unused1 : 2;           // unused
+    unsigned int unused1 : 2;           // additional dude flags in modern maps
     unsigned int unused2 : 1;           // unused
     unsigned int unused3 : 2;           // unused
     unsigned int unused4 : 6;           // unused
