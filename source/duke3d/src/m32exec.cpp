@@ -3061,7 +3061,15 @@ dodefault:
                 drawlinepat = odrawlinepat;
                 continue;
             }
-
+       case CON_DRAWLINE256:
+            insptr++;
+            {
+                int32_t x1=Gv_GetVar(*insptr++), y1=Gv_GetVar(*insptr++);
+                int32_t x2=Gv_GetVar(*insptr++), y2=Gv_GetVar(*insptr++);
+                int32_t col=Gv_GetVar(*insptr++);
+                renderDrawLine(x1, y1, x2, y2, col);
+                continue;
+            }
         case CON_DRAWCIRCLE16:
         case CON_DRAWCIRCLE16B:
         case CON_DRAWCIRCLE16Z:

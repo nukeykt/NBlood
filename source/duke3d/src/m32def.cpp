@@ -437,6 +437,7 @@ const char *keyw[] =
     "drawline16",
     "drawline16b",
     "drawline16z",
+    "drawline256",
     "drawcircle16",
     "drawcircle16b",
     "drawcircle16z",
@@ -3427,6 +3428,7 @@ repeatcase:
     case CON_DRAWLINE16:
     case CON_DRAWLINE16B:
     case CON_DRAWLINE16Z:
+    case CON_DRAWLINE256:
     case CON_DRAWCIRCLE16:
     case CON_DRAWCIRCLE16B:
     case CON_DRAWCIRCLE16Z:
@@ -3435,7 +3437,7 @@ repeatcase:
             C_ReportError(ERROR_EVENTONLY);
             g_numCompilerErrors++;
         }
-        if (tw==CON_DRAWLINE16 || tw==CON_DRAWLINE16B || tw==CON_DRAWCIRCLE16Z)
+        if (tw==CON_DRAWLINE16 || tw==CON_DRAWLINE16B || tw==CON_DRAWCIRCLE16Z || tw==CON_DRAWLINE256)
             C_GetManyVars(5);
         else if (tw==CON_DRAWLINE16Z)
             C_GetManyVars(7);
