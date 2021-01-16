@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef __util_h__
 #define __util_h__
 
-inline int Min(int a, int b)
+static inline int Min(int a, int b)
 {
     if (a < b)
         return a;
@@ -32,7 +32,7 @@ inline int Min(int a, int b)
         return b;
 }
 
-inline int Max(int a, int b)
+static inline int Max(int a, int b)
 {
     if (a < b)
         return b;
