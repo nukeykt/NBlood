@@ -54,12 +54,12 @@ typedef sectortype SECTOR;
 typedef walltype WALL;
 
 
-inline int Sin(int angle)
+static inline int Sin(int angle)
 {
     return sintable[angle & kAngleMask];
 }
 
-inline int Cos(int angle)
+static inline int Cos(int angle)
 {
     return sintable[(angle + 512) & kAngleMask];
 }

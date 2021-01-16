@@ -111,7 +111,7 @@ int BuildSwReady(int nChannel, short nLink)
     return SwitchCount | 0x10000;
 }
 
-void FuncSwReady(int a, int, int nRun)
+void FuncSwReady(int a, int UNUSED(b), int nRun)
 {
     short nSwitch = RunData[nRun].nVal;
     assert(nSwitch >= 0 && nSwitch < kMaxSwitches);
@@ -166,7 +166,7 @@ int BuildSwPause(int nChannel, int nLink, int ebx)
     return SwitchCount | 0x20000;
 }
 
-void FuncSwPause(int a, int, int nRun)
+void FuncSwPause(int a, int UNUSED(b), int nRun)
 {
     short nSwitch = RunData[nRun].nVal;
     assert(nSwitch >= 0 && nSwitch < kMaxSwitches);
@@ -255,7 +255,7 @@ int BuildSwStepOn(int nChannel, int nLink, int nSector)
     return nSwitch | 0x30000;
 }
 
-void FuncSwStepOn(int a, int, int nRun)
+void FuncSwStepOn(int a, int UNUSED(b), int nRun)
 {
     short nSwitch = RunData[nRun].nVal;
     assert(nSwitch >= 0 && nSwitch < kMaxSwitches);
@@ -326,7 +326,7 @@ int BuildSwNotOnPause(int nChannel, int nLink, int nSector, int ecx)
     return nSwitch | 0x40000;
 }
 
-void FuncSwNotOnPause(int a, int, int nRun)
+void FuncSwNotOnPause(int a, int UNUSED(b), int nRun)
 {
     short nSwitch = RunData[nRun].nVal;
     assert(nSwitch >= 0 && nSwitch < kMaxSwitches);
@@ -415,7 +415,7 @@ int BuildSwPressSector(int nChannel, int nLink, int nSector, int keyMask)
     return nSwitch | 0x50000;
 }
 
-void FuncSwPressSector(int a, int, int nRun)
+void FuncSwPressSector(int a, int UNUSED(b), int nRun)
 {
     short nSwitch = RunData[nRun].nVal;
     assert(nSwitch >= 0 && nSwitch < kMaxSwitches);
@@ -488,7 +488,7 @@ int BuildSwPressWall(short nChannel, short nLink, short nWall)
     return SwitchCount | 0x60000;
 }
 
-void FuncSwPressWall(int a, int, int nRun)
+void FuncSwPressWall(int a, int UNUSED(b), int nRun)
 {
     short nSwitch = RunData[nRun].nVal;
     assert(nSwitch >= 0 && nSwitch < kMaxSwitches);

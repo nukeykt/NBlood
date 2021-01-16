@@ -143,7 +143,7 @@ short GetAnimSprite(short nAnim)
     return AnimList[nAnim].nSprite;
 }
 
-void FuncAnim(int a, int, int nRun)
+void FuncAnim(int a, int UNUSED(b), int nRun)
 {
     short nAnim = RunData[nRun].nVal;
     assert(nAnim >= 0 && nAnim < kMaxAnims);
