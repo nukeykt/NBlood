@@ -179,7 +179,7 @@ int BuildSoul(int nSet)
     return nSprite | 0x230000;
 }
 
-void FuncSoul(int a, int, int nRun)
+void FuncSoul(int a, int UNUSED(b), int nRun)
 {
     short nSprite = RunData[nRun].nVal;
 

@@ -1435,7 +1435,7 @@ int BuildCreatureChunk(int nVal, int nPic)
     return nSprite | 0xD0000;
 }
 
-void FuncCreatureChunk(int a, int, int nRun)
+void FuncCreatureChunk(int a, int UNUSED(b), int nRun)
 {
     int nSprite = RunData[nRun].nVal;
     assert(nSprite >= 0 && nSprite < kMaxSprites);
