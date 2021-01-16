@@ -157,7 +157,7 @@ void AddFlash(short nSector, int x, int y, int z, int val)
     unsigned int var_20 = val & 0x80;
     unsigned int var_18 = val & 0x40;
 
-    val = ((var_1C + 1) << 8) | char(val);
+    val = ((var_1C + 1) << 8) | (char)val;
 
     int var_14 = 0;
 
