@@ -1260,7 +1260,7 @@ void G_DrawStatusBar(int32_t snum)
         if (u != -1)
             G_PatchStatusBar(52, SBY+17, 75, SBY+17+11);
 
-        G_DrawDigiNum(64, SBY+17, p->inv_amount[GET_SHIELD], -16, 10+16);
+        G_DrawDigiNum(64, SBY+17, sbar.inv_amount[GET_SHIELD], -16, 10+16);
     }
 
     if (u&1024)
