@@ -683,7 +683,6 @@ void InitPlayerInventory(short nPlayer)
     nPlayerColor[nPlayer] = *(uint8_t*)(waloff[nPlayer + kTile3571] + tilesiz[nPlayer + kTile3571].x * tilesiz[nPlayer + kTile3571].y / 2);
 }
 
-// done
 short GetPlayerFromSprite(short nSprite)
 {
     return RunData[sprite[nSprite].owner].nVal;
@@ -912,7 +911,6 @@ void RestartPlayer(short nPlayer)
     }
 }
 
-// done
 int GrabPlayer()
 {
     if (PlayerCount >= kMaxPlayers) {
@@ -922,7 +920,6 @@ int GrabPlayer()
     return PlayerCount++;
 }
 
-// checked OK on 26/03/2019
 void StartDeathSeq(int nPlayer, int nVal)
 {
     FreeRa(nPlayer);

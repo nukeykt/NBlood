@@ -948,19 +948,17 @@ loc_flag:
                 }
             }
 
-            // end of switch, loc_2753E:
+            // end of switch, nw_break_2:
             if (nWeapon < kWeaponMummified)
             {
                 if (nWeapon != kWeaponGrenade)
-                {
-                    short nAmmo = -WeaponInfo[nWeapon].bUsesAmmo; // negative
-
-                    if (nAmmo) {
-                        AddAmmo(nPlayer, nAmmoType, nAmmo);
+                {   
+                    if (WeaponInfo[nWeapon].bUsesAmmo) {
+                        AddAmmo(nPlayer, nAmmoType, -1);
                     }
 
                     if (nWeapon == kWeaponM60) {
-                        nPlayerClip[nPlayer] -= 1;
+                        nPlayerClip[nPlayer]--;
                     }
                     else if (nWeapon == kWeaponPistol) {
                         nPistolClip[nPlayer]--;
