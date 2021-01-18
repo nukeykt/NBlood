@@ -668,7 +668,7 @@ void InitPlayerInventory(short nPlayer)
     PlayerList[nPlayer].nRun = -1;
 
     nPistolClip[nPlayer] = 6;
-    nPlayerClip[nPlayer] = 100;
+    nPlayerClip[nPlayer] = 0;
 
     PlayerList[nPlayer].nCurrentWeapon = 0;
 
