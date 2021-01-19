@@ -352,6 +352,18 @@ void PlayerInterruptKeys()
     fvel = clamp(fvel, -12, 12);
     svel = clamp(svel, -12, 12);
 
+    if (!bFollowMode && nMapMode)
+    {
+        mapTurn += q16avel << 3;
+        mapForward += fvel << 8;
+        mapStrafe += svel << 8;;
+
+        lPlayerYVel = 0;
+        lPlayerXVel = 0;
+        nPlayerDAng = 0;
+        return;
+    }
+
     nPlayerDAng += q16avel;
 
     inita &= kAngleMask;
@@ -893,6 +905,8 @@ void RestartPlayer(short nPlayer)
 
         bPlayerPan = 0;
         bLockPan = 0;
+
+        SetMapPosition(sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].ang);
     }
 
     sprintf(playerNames[nPlayer], "JOE%d", nPlayer);
@@ -1293,6 +1307,9 @@ void FuncPlayer(int a, int nDamage, int nRun)
 
             sprite[nPlayerSprite].picnum = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nHeightTemplate[nAction]].a, var_EC);
             sprite[nDopple].picnum = sprite[nPlayerSprite].picnum;
+
+            // for showing correct player animations for player sprite on 2D map mode
+            nMapPic = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nAction].a, PlayerList[nPlayer].field_2);
 
             if (nPlayerTorch[nPlayer] > 0)
             {

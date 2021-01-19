@@ -68,7 +68,7 @@ int movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordi
 void overwritesprite(int thex, int they, short tilenum, signed char shade, char stat, char dapalnum);
 void precache();
 void resettiming();
-void printext(int x, int y, const char* buffer, short tilenum, char invisiblecol);
+void printext(int x, int y, const char* buffer, short tilenum);
 void kensetpalette(unsigned char *vgapal);
 
 #endif

@@ -28,12 +28,39 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "engine.h"
 #include "exhumed.h"
 #include "view.h"
+#include "names.h"
+#include "util.h"
 
-short bShowTowers = kFalse;
+int bShowTowers = kFalse;
+int bFollowMode = kTrue;
 int ldMapZoom;
 int lMapZoom;
+int32_t mapx, mapy, mapang;
+
+int32_t x = 0;
+int32_t y = 0;
+int16_t nAngle = 0;
+
+int mapForward, mapStrafe;
+fix16_t mapTurn;
+
+int32_t nMapPic = -1;
 
 void MarkSectorSeen(short nSector);
+
+
+// TEMP - taken from Blood
+template<typename T> void GetSpriteExtents(T const* const pSprite, int* top, int* bottom)
+{
+    *top = *bottom = pSprite->z;
+    if ((pSprite->cstat & 0x30) != 0x20)
+    {
+        int height = tilesiz[pSprite->picnum].y;
+        int center = height / 2 + picanm[pSprite->picnum].yofs;
+        *top -= (pSprite->yrepeat << 2) * center;
+        *bottom += (pSprite->yrepeat << 2) * (height - center);
+    }
+}
 
 
 void InitMap()
@@ -42,8 +69,14 @@ void InitMap()
     memset(show2dwall,   0, sizeof(show2dwall));
     memset(show2dsprite, 0, sizeof(show2dsprite));
 
+    mapForward = 0;
+    mapStrafe = 0;
+    mapTurn = 0;
+
+    nMapPic = -1;
     ldMapZoom = 64;
     lMapZoom  = 1000;
+    bFollowMode = kTrue;
 }
 
 void GrabMap()
@@ -55,236 +88,33 @@ void GrabMap()
 
 void MarkSectorSeen(short nSector)
 {
-    if (!((1 << (nSector & 7)) & show2dsector[nSector >> 3]))
+    int i = nSector;
+
+    if (!(pow2char[i & 7] & show2dsector[i >> 3]))
     {
-        show2dsector[nSector >> 3] |= 1 << (nSector & 7);
+        show2dsector[i >> 3] |= pow2char[i & 7];
+        walltype* wal = &wall[sector[i].wallptr];
 
-        short startwall = sector[nSector].wallptr;
-        short nWalls = sector[nSector].wallnum;
-        short endwall = startwall + nWalls;
-
-        while (startwall <= endwall)
+        for (int j = sector[i].wallnum; j > 0; j--, wal++)
         {
-            show2dwall[startwall >> 3] = (1 << (startwall & 7)) | show2dwall[startwall >> 3];
-            startwall++;
+            i = wal->nextsector;
+            if (i < 0)
+                continue;
+
+            // if it's a dark sector and the torch is off, don't reveal the next sector
+            if (sector[i].ceilingpal == 3 && !nPlayerTorch[nLocalPlayer])
+                continue;
+
+            uint16_t const nextwall = wal->nextwall;
+            if (nextwall < MAXWALLS && wall[nextwall].cstat & 0x0071)
+                continue;
+
+            if (sector[i].ceilingz >= sector[i].floorz)
+                continue;
+
+            show2dsector[i >> 3] |= pow2char[i & 7];
         }
     }
-}
-
-void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
-{
-#ifndef __WATCOMC__ // FIXME - Won't compile on Watcom
-    int xvect = sintable[(2048 - cang) & 2047] * czoom;
-    int yvect = sintable[(1536 - cang) & 2047] * czoom;
-    int xvect2 = mulscale(xvect, yxaspect, 16);
-    int yvect2 = mulscale(yvect, yxaspect, 16);
-
-    // draw player position arrow
-    renderDrawLine(xdim << 11, (ydim << 11) - 20480, xdim << 11, (ydim << 11) + 20480, 24);
-    renderDrawLine((xdim << 11) - 20480, ydim << 11, xdim << 11, (ydim << 11) - 20480, 24);
-    renderDrawLine((xdim << 11) + 20480, ydim << 11, xdim << 11, (ydim << 11) - 20480, 24);
-
-    short nPlayerSprite = PlayerList[nLocalPlayer].nSprite;
-
-    int nPlayerZ = sprite[nPlayerSprite].z;
-
-    for (int nSector = 0; nSector < numsectors; nSector++)
-    {
-        short startwall = sector[nSector].wallptr;
-        short nWalls = sector[nSector].wallnum;
-        short endwall = startwall + nWalls - 1;
-
-        int nCeilZ = sector[nSector].ceilingz;
-        int nFloorZ = sector[nSector].floorz;
-
-        int nZVal = nFloorZ - nPlayerZ;
-        if (nZVal < 0) {
-            nZVal = -nZVal;
-        }
-
-        int var_10 = nZVal >> 13;
-        if (var_10 > 12) {
-            var_10 = 12;
-        }
-
-        var_10 = 111 - var_10;
-
-        // int startwallB = startwall;
-
-        for (int nWall = startwall; nWall <= endwall; nWall++)
-        {
-            short nextwall = wall[nWall].nextwall;
-
-            if (nextwall >= 0)
-            {
-                if (show2dwall[nWall >> 3] & (1 << (nWall & 7)))
-                {
-                    if (nextwall <= nWall || (show2dwall[nextwall >> 3] & (1 << (nextwall & 7))) <= 0)
-                    {
-                        if (nCeilZ != sector[wall[nWall].nextsector].ceilingz ||
-                            nFloorZ != sector[wall[nWall].nextsector].floorz ||
-                            ((wall[nextwall].cstat | wall[nWall].cstat) & 0x30))
-                        {
-                            int ox = wall[nWall].x - cposx;
-                            int oy = wall[nWall].y - cposy;
-
-                            int x1 = mulscale(ox, xvect, 16) - mulscale(oy, yvect, 16);
-                            int y1 = mulscale(oy, xvect2, 16) + mulscale(ox, yvect2, 16);
-
-                            int nWall2 = wall[nWall].point2;
-                            ox = wall[nWall2].x - cposx;
-                            oy = wall[nWall2].y - cposy;
-                            int x2 = mulscale(ox, xvect, 16) - mulscale(oy, yvect, 16);
-                            int y2 = mulscale(oy, xvect2, 16) + mulscale(ox, yvect2, 16);
-
-                            renderDrawLine(x1 + (xdim << 11), y1 + (ydim << 11), x2 + (xdim << 11), y2 + (ydim << 11), var_10);
-
-                            /*
-                            drawline256(
-                                ((unsigned __int64)(v4 * (signed __int64)v12) >> 16)
-                                - ((unsigned __int64)(v5 * (signed __int64)v13) >> 16)
-                                + (xdim << 11),
-                                ((unsigned __int64)(v42 * (signed __int64)v12) >> 16)
-                                + ((unsigned __int64)(v43 * (signed __int64)v13) >> 16)
-                                + (ydim << 11),
-                                (build_xdim << 11)
-                                + ((unsigned __int64)(v4 * (signed __int64)(*v14 - v31)) >> 16)
-                                - ((unsigned __int64)(v5 * (signed __int64)(v14[1] - v30)) >> 16),
-                                ydim << 11)
-                                + ((unsigned __int64)(v43 * (signed __int64)(v14[1] - v30)) >> 16)
-                                + ((unsigned __int64)(v42 * (signed __int64)(*v14 - v31)) >> 16),
-                                v48);
-                            */
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-//	int var_4C = 0;
-//	int var_48 = 0;
-
-    for (int nSector = 0; nSector < numsectors; nSector++)
-    {
-        int startwall = sector[nSector].wallptr;
-        int nWalls = sector[nSector].wallnum;
-        int endwall = startwall + nWalls - 1;
-
-        int nFloorZ = sector[nSector].floorz;
-
-        int nVal = nFloorZ - nPlayerZ;
-        if (nVal < 0) {
-            nVal = -nVal;
-        }
-
-        int var_14 = nVal >> 13;
-
-        if (var_14 <= 15)
-        {
-            var_14 = 111 - var_14;
-
-            for (int nWall = startwall; nWall <= endwall; nWall++)
-            {
-                if (wall[nWall].nextwall < 0)
-                {
-                    if (show2dwall[nWall >> 3] & (1 << (nWall & 7)))
-                    {
-                        if (tilesiz[wall[nWall].picnum].x && tilesiz[wall[nWall].picnum].y)
-                        {
-                            int ox = wall[nWall].x - cposx;
-                            int oy = wall[nWall].y - cposy;
-                            int x1 = mulscale(ox, xvect, 16) - mulscale(oy, yvect, 16);
-                            int y1 = mulscale(oy, xvect2, 16) + mulscale(ox, yvect2, 16);
-
-                            int nWall2 = wall[nWall].point2;
-                            ox = wall[nWall2].x - cposx;
-                            oy = wall[nWall2].y - cposy;
-                            int x2 = mulscale(ox, xvect, 16) - mulscale(oy, yvect, 16);
-                            int y2 = mulscale(oy, xvect2, 16) + mulscale(ox, yvect2, 16);
-
-                            renderDrawLine(x1 + (xdim << 11), y1 + (ydim << 11), x2 + (xdim << 11), y2 + (ydim << 11), 24);
-
-/*
-
-                            v19 = *v17 - v31;
-                            v20 = v17[1] - v30;
-                            v21 = &wall[8 * *((_WORD *)v17 + 4)];
-
-                            build_drawline256(
-                                (build_xdim << 11)
-                                + ((unsigned __int64)(v4 * (signed __int64)v19) >> 16)
-                                - ((unsigned __int64)(v5 * (signed __int64)v20) >> 16),
-                                (build_ydim << 11)
-                                + ((unsigned __int64)(v42 * (signed __int64)v19) >> 16)
-                                + ((unsigned __int64)(v43 * (signed __int64)v20) >> 16),
-                                (build_xdim << 11)
-                                + ((unsigned __int64)(v4 * (signed __int64)(*v21 - v31)) >> 16)
-                                - ((unsigned __int64)(v5 * (signed __int64)(v21[1] - v30)) >> 16),
-                                (build_ydim << 11)
-                                + ((unsigned __int64)(v42 * (signed __int64)(*v21 - v31)) >> 16)
-                                + ((unsigned __int64)(v43 * (signed __int64)(v21[1] - v30)) >> 16),
-                                v46);
-*/
-                        }
-                    }
-                }
-            }
-
-            if (bShowTowers)
-            {
-                for (int nSprite = headspritestat[406]; nSprite != -1; nSprite = nextspritestat[nSprite])
-                {
-                    int ox = sprite[nSprite].x - cposx; // var_64
-                    int oy = sprite[nSprite].y - cposx; // var_68
-
-                    // int var_58 = mulscale(var_64, xvect, 16) - mulscale(var_68, yvect, 16);
-                    int x1 = mulscale(ox, xvect, 16) - mulscale(oy, yvect, 16);
-                    int y1 = mulscale(oy, xvect2, 16) + mulscale(ox, yvect2, 16);
-
-                    //int var_58 = mulscale(var_64, xvect, 16) - mulscale(var_68, yvect, 16);
-                    //int esi = mulscale(var_68, xvect2, 16) + mulscale(var_65, yvect2, 16)
-
-                    //v25 = ((unsigned __int64)(v4 * (signed __int64)ox) >> 16)
-                    //	- ((unsigned __int64)(v5 * (signed __int64)oy) >> 16);
-
-                    //v26 = ((unsigned __int64)(v42 * (signed __int64)ox) >> 16)
-                    //	+ ((unsigned __int64)(v43 * (signed __int64)oy) >> 16);
-
-                    //v27 = v26 + 2048;
-                    //v28 = v26 + 2048 + (ydim << 11);
-                    //v26 -= 2048;
-
-                    // v25 is x1
-                    // v26 is y1
-                    // v27 is y1 + 2048
-                    // v28 is y1 + 2048 + (ydim << 1);
-
-                    renderDrawLine(
-                        x1 - 2048 + (xdim << 11),
-                        y1 - 2048 + (ydim << 11),
-                        x1 - 2048 + (xdim << 11),
-                        y1 + 2048 + (ydim << 1),
-                        170);
-
-                    renderDrawLine(
-                        x1 + (xdim << 11),
-                        y1 + (ydim << 11),
-                        x1 + (xdim << 11),
-                        y1 + 2048 + (ydim << 11),
-                        170);
-
-                    renderDrawLine(
-                        x1 + 2048 + (xdim << 11),
-                        y1 + (ydim << 11),
-                        x1 + 2048 + (xdim << 11),
-                        y1 + 2048 + (ydim << 11),
-                        170);
-                }
-            }
-        }
-    }
-#endif
 }
 
 static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16_t cang)
@@ -299,23 +129,25 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
     renderSetAspect(65536, divscale16(tmpydim*320, xdim*200));
 
-    xvect = sintable[(-cang)&2047] * czoom;
-    yvect = sintable[(1536-cang)&2047] * czoom;
+    xvect = Sin(-cang) * czoom;
+    yvect = Sin(1536 - cang) * czoom;
+
     xvect2 = mulscale16(xvect, yxaspect);
     yvect2 = mulscale16(yvect, yxaspect);
 
     renderDisableFog();
 
     // draw player position arrow
+    /*
     renderDrawLine(xdim << 11, (ydim << 11) - 20480, xdim << 11, (ydim << 11) + 20480, 24);
     renderDrawLine((xdim << 11) - 20480, ydim << 11, xdim << 11, (ydim << 11) - 20480, 24);
     renderDrawLine((xdim << 11) + 20480, ydim << 11, xdim << 11, (ydim << 11) - 20480, 24);
-
+    */
     short nPlayerSprite = PlayerList[nLocalPlayer].nSprite;
 
     int nPlayerZ = sprite[nPlayerSprite].z;
 
-    //Draw red lines
+    // Draw red lines
     for (i=numsectors-1; i>=0; i--)
     {
         if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
@@ -332,7 +164,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             if (k < 0) continue;
 
             if (sector[wal->nextsector].ceilingz == z1 && sector[wal->nextsector].floorz == z2)
-                    if (((wal->cstat|wall[wal->nextwall].cstat)&(16+32)) == 0) continue;
+                if (((wal->cstat|wall[wal->nextwall].cstat)&(16+32)) == 0) continue;
 
             if (nMapMode == 2)
                 col = 111;
@@ -354,158 +186,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
         }
     }
 
-#if 0
-    renderEnableFog();
-
-    //Draw sprites
-    k = PlayerList[nLocalPlayer].nSprite;
-    if (!FURY) for (i=numsectors-1; i>=0; i--)
-    {
-        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
-        for (j=headspritesect[i]; j>=0; j=nextspritesect[j])
-        {
-            spr = &sprite[j];
-
-            if (j == k || (spr->cstat&0x8000) || spr->cstat == 257 || spr->xrepeat == 0) continue;
-
-            col = editorcolors[6]; //cyan
-            if (spr->cstat&1) col = editorcolors[5]; //magenta
-
-            sprx = spr->x;
-            spry = spr->y;
-
-            if ((spr->cstat&257) != 0) switch (spr->cstat&48)
-            {
-            case 0:
-                //                    break;
-
-                ox = sprx-cposx;
-                oy = spry-cposy;
-                x1 = dmulscale16(ox, xvect, -oy, yvect);
-                y1 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                ox = (sintable[(spr->ang+512)&2047]>>7);
-                oy = (sintable[(spr->ang)&2047]>>7);
-                x2 = dmulscale16(ox, xvect, -oy, yvect);
-                y2 = dmulscale16(oy, xvect, ox, yvect);
-
-                x3 = mulscale16(x2, yxaspect);
-                y3 = mulscale16(y2, yxaspect);
-
-                renderDrawLine(x1-x2+(xdim<<11), y1-y3+(ydim<<11),
-                    x1+x2+(xdim<<11), y1+y3+(ydim<<11), col);
-                renderDrawLine(x1-y2+(xdim<<11), y1+x3+(ydim<<11),
-                    x1+x2+(xdim<<11), y1+y3+(ydim<<11), col);
-                renderDrawLine(x1+y2+(xdim<<11), y1-x3+(ydim<<11),
-                    x1+x2+(xdim<<11), y1+y3+(ydim<<11), col);
-                break;
-
-            case 16:
-                if (spr->picnum == LASERLINE)
-                {
-                    x1 = sprx;
-                    y1 = spry;
-                    tilenum = spr->picnum;
-                    xoff = picanm[tilenum].xofs + spr->xoffset;
-                    if ((spr->cstat&4) > 0) xoff = -xoff;
-                    k = spr->ang;
-                    l = spr->xrepeat;
-                    dax = sintable[k&2047]*l;
-                    day = sintable[(k+1536)&2047]*l;
-                    l = tilesiz[tilenum].x;
-                    k = (l>>1)+xoff;
-                    x1 -= mulscale16(dax, k);
-                    x2 = x1+mulscale16(dax, l);
-                    y1 -= mulscale16(day, k);
-                    y2 = y1+mulscale16(day, l);
-
-                    ox = x1-cposx;
-                    oy = y1-cposy;
-                    x1 = dmulscale16(ox, xvect, -oy, yvect);
-                    y1 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                    ox = x2-cposx;
-                    oy = y2-cposy;
-                    x2 = dmulscale16(ox, xvect, -oy, yvect);
-                    y2 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                    renderDrawLine(x1+(xdim<<11), y1+(ydim<<11),
-                        x2+(xdim<<11), y2+(ydim<<11), col);
-                }
-
-                break;
-
-            case 32:
-                tilenum = spr->picnum;
-                xoff = picanm[tilenum].xofs + spr->xoffset;
-                yoff = picanm[tilenum].yofs + spr->yoffset;
-                if ((spr->cstat&4) > 0) xoff = -xoff;
-                if ((spr->cstat&8) > 0) yoff = -yoff;
-
-                k = spr->ang;
-                cosang = sintable[(k+512)&2047];
-                sinang = sintable[k&2047];
-                xspan = tilesiz[tilenum].x;
-                xrepeat = spr->xrepeat;
-                yspan = tilesiz[tilenum].y;
-                yrepeat = spr->yrepeat;
-
-                dax = ((xspan>>1)+xoff)*xrepeat;
-                day = ((yspan>>1)+yoff)*yrepeat;
-                x1 = sprx + dmulscale16(sinang, dax, cosang, day);
-                y1 = spry + dmulscale16(sinang, day, -cosang, dax);
-                l = xspan*xrepeat;
-                x2 = x1 - mulscale16(sinang, l);
-                y2 = y1 + mulscale16(cosang, l);
-                l = yspan*yrepeat;
-                k = -mulscale16(cosang, l);
-                x3 = x2+k;
-                x4 = x1+k;
-                k = -mulscale16(sinang, l);
-                y3 = y2+k;
-                y4 = y1+k;
-
-                ox = x1-cposx;
-                oy = y1-cposy;
-                x1 = dmulscale16(ox, xvect, -oy, yvect);
-                y1 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                ox = x2-cposx;
-                oy = y2-cposy;
-                x2 = dmulscale16(ox, xvect, -oy, yvect);
-                y2 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                ox = x3-cposx;
-                oy = y3-cposy;
-                x3 = dmulscale16(ox, xvect, -oy, yvect);
-                y3 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                ox = x4-cposx;
-                oy = y4-cposy;
-                x4 = dmulscale16(ox, xvect, -oy, yvect);
-                y4 = dmulscale16(oy, xvect2, ox, yvect2);
-
-                renderDrawLine(x1+(xdim<<11), y1+(ydim<<11),
-                    x2+(xdim<<11), y2+(ydim<<11), col);
-
-                renderDrawLine(x2+(xdim<<11), y2+(ydim<<11),
-                    x3+(xdim<<11), y3+(ydim<<11), col);
-
-                renderDrawLine(x3+(xdim<<11), y3+(ydim<<11),
-                    x4+(xdim<<11), y4+(ydim<<11), col);
-
-                renderDrawLine(x4+(xdim<<11), y4+(ydim<<11),
-                    x1+(xdim<<11), y1+(ydim<<11), col);
-
-                break;
-            }
-        }
-    }
-
-    renderDisableFog();
-#endif
-
-    //Draw white lines
+    // Draw white lines
     for (i=numsectors-1; i>=0; i--)
     {
         if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
@@ -558,9 +239,88 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
         }
     }
 
+    if (bShowTowers)
+    {
+        for (int nSprite = headspritestat[406]; nSprite != -1; nSprite = nextspritestat[nSprite])
+        {
+            int ox = sprite[nSprite].x - cposx;
+            int oy = sprite[nSprite].y - cposy;
+
+            int x1 = mulscale16(ox, xvect) - mulscale16(oy, yvect);
+            int y1 = mulscale16(oy, xvect2) + mulscale16(ox, yvect2);
+
+            //int nTile = kTile72 + (((int)totalclock / 64) & 3);
+            int nTile = kTile67 + (((int)totalclock / 64) & 2);
+
+            int8_t xofsbak = picanm[nTile].xofs;
+            int8_t yofsbak = picanm[nTile].yofs;
+            picanm[nTile].xofs = 0; picanm[nTile].yofs = 0;
+
+            rotatesprite_win((x1 << 4) + (xdim << 15), (y1 << 4) + (ydim << 15), 65535, 0, nTile, 0, 0, 0);
+
+            picanm[nTile].xofs = xofsbak;
+            picanm[nTile].yofs = yofsbak;
+
+            #if 0
+            char nCol = 170;
+            int val = 2048;
+
+            renderDrawLine(
+                (x1 - val) + (xdim << 11),
+                (y1 - val) + (ydim << 11),
+                (x1 - val) + (xdim << 11),
+                (y1 + val) + (ydim << 11),
+                nCol);
+
+            renderDrawLine(
+                x1 + (xdim << 11),
+                (y1 - val) + (ydim << 11),
+                x1 + (xdim << 11),
+                (y1 + val) + (ydim << 11),
+                nCol);
+
+            renderDrawLine(
+                (x1 + val) + (xdim << 11),
+                (y1 - val) + (ydim << 11),
+                (x1 + val) + (xdim << 11),
+                (y1 + val) + (ydim << 11),
+                nCol);
+            #endif
+        }
+    }
+
     renderEnableFog();
 
     videoSetCorrectedAspect();
+
+    // Draw player sprite position representation
+    if (bFollowMode && nMapPic >= 0)
+    {
+        spritetype* pSprite = &sprite[PlayerList[nLocalPlayer].nSprite];
+
+        int px = 0;
+        int py = 0;
+        int pa = 0;
+        int x1 = dmulscale16(px, xvect, -py, yvect);
+        int y1 = dmulscale16(py, xvect2, px, yvect);
+
+        {
+            int ceilZ, ceilHit, floorZ, floorHit;
+
+            vec3_t pos;
+            getzrange(&pos, pSprite->sectnum, &ceilZ, &ceilHit, &floorZ, &floorHit, (pSprite->clipdist << 2) + 16, CLIPMASK0);
+
+            int nTop, nBottom;
+            GetSpriteExtents(pSprite, &nTop, &nBottom);
+            int nScale = mulscale((pSprite->yrepeat + ((floorZ - nBottom) >> 8)) * czoom, yxaspect, 16);
+            nScale = ClipRange(nScale, 22000, 65536 << 1);
+
+            nScale = mulscale16(czoom* (pSprite->yrepeat), yxaspect);
+
+            rotatesprite((xdim << 15) + (x1 << 4), (ydim << 15) + (y1 << 4), nScale, pa, nMapPic, pSprite->shade, pSprite->pal, (pSprite->cstat & 2) >> 1,
+                windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
+        }
+    }
 
 #if 0
     for (TRAVERSE_CONNECT(p))
@@ -609,21 +369,55 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
 void UpdateMap()
 {
+    // ceilingpal 3 is a dark area for the torch.
     if (sector[initsect].ceilingpal != 3 || (nPlayerTorch[nLocalPlayer] != 0)) {
         MarkSectorSeen(initsect);
     }
 }
 
+void SetMapPosition(int32_t _x, int32_t _y, int16_t _nAngle)
+{
+    x = _x;
+    y = _y;
+    nAngle = _nAngle;
+}
+
 void DrawMap()
 {
-    if (!nFreeze && nMapMode) {
-        //drawoverheadmap(initx, inity, lMapZoom, inita);
+    if (bFollowMode)
+    {
+        x = initx;
+        y = inity;
+        nAngle = inita;
+    }
+    else
+    {
+        nAngle += fix16_to_int(mapTurn) >> 3;
+        x += mulscale18(mapForward, Cos(nAngle));
+        y += mulscale18(mapForward, Sin(nAngle));
+        x -= mulscale18(mapStrafe, Cos(nAngle + 512));
+        y -= mulscale18(mapStrafe, Sin(nAngle + 512));
+
+        mapTurn = 0;
+        mapForward = 0;
+        mapStrafe = 0;
+    }
+
+    if (!nFreeze && nMapMode)
+    {
         if (nMapMode == 2)
         {
             videoClearViewableArea(blackcol);
             RefreshBackground();
-            renderDrawMapView(initx, inity, lMapZoom, inita);
+            renderDrawMapView(x, y, lMapZoom, nAngle);
         }
-        G_DrawOverheadMap(initx, inity, lMapZoom, inita);
+        G_DrawOverheadMap(x, y, lMapZoom, nAngle);
+
+        if (bFollowMode) {
+            // TODO printext(320 - 120, 0, "Map Follow Mode", kTileFont);
+        }
+        else {
+            // TODO printext(0, 60, "Map Scroll Mode", kTileFont);
+        }
     }
 }

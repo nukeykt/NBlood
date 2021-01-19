@@ -97,6 +97,7 @@ enum {
     gamefunc_Next_Weapon,
     gamefunc_Previous_Weapon,
 	gamefunc_AutoRun,
+    gamefunc_Map_Follow_Mode,
 	kMaxGameFunctions
 };
 
@@ -146,6 +147,8 @@ extern int32_t NumBits;
 extern int32_t ReverseStereo;
 extern int32_t MusicDevice;
 extern int32_t FXDevice;
+
+extern int32_t gShowCrosshair;
 
 // JBF 20031211: Store the input settings because
 // (currently) mact can't regurgitate them

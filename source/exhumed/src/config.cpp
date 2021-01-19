@@ -86,6 +86,7 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
     "Next_Weapon",
     "Previous_Weapon",
     "AutoRun",
+    "Map_Follow_Mode",
 };
 
 const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -134,6 +135,7 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     "'", "",
     ";", "",
     "CapLck", "",
+    "F", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -182,6 +184,7 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     "'", "",
     ";", "",
     "CapLck", "",
+    "F", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
@@ -229,6 +232,8 @@ int32_t ReverseStereo;
 int32_t MusicDevice;
 int32_t FXDevice;
 int32_t ControllerType;
+
+int32_t gShowCrosshair;
 
 int32_t scripthandle;
 int32_t setupread;
@@ -300,6 +305,7 @@ void SetupGameButtons()
     CONTROL_DefineFlag(gamefunc_Next_Weapon,            kFalse);
     CONTROL_DefineFlag(gamefunc_Previous_Weapon,        kFalse);
     CONTROL_DefineFlag(gamefunc_AutoRun,                kFalse);
+    CONTROL_DefineFlag(gamefunc_Map_Follow_Mode,        kFalse);
 }
 
 hashtable_t h_gamefuncs    = { kMaxGameFunctions<<1, NULL };
@@ -492,6 +498,7 @@ void CONFIG_SetDefaults()
     auto_run = 1;
 
     gFov = 90;
+    gShowCrosshair = 0;
 
     screensize = 0;
     nGamma = 2;

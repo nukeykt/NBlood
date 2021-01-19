@@ -2766,16 +2766,26 @@ LOOP3:
                     nMapMode = (nMapMode+1)%3;
                 }
             }
+            else if (BUTTON(gamefunc_Map_Follow_Mode))
+            {
+                CONTROL_ClearButton(gamefunc_Map_Follow_Mode);
+                bFollowMode = !bFollowMode;
+            }
+            else if (BUTTON(gamefunc_Toggle_Crosshair))
+            {
+                CONTROL_ClearButton(gamefunc_Toggle_Crosshair);
+                gShowCrosshair = !gShowCrosshair;
+            }
 
             if (nMapMode != 0)
             {
                 int const timerOffset = ((int) totalclock - nonsharedtimer);
                 nonsharedtimer += timerOffset;
 
-                if (BUTTON(gamefunc_Zoom_In))
+                if (BUTTON(gamefunc_Zoom_In) || KB_KeyPressed(sc_kpad_Plus))
                     lMapZoom += mulscale6(timerOffset, max<int>(lMapZoom, 256));
 
-                if (BUTTON(gamefunc_Zoom_Out))
+                if (BUTTON(gamefunc_Zoom_Out) || KB_KeyPressed(sc_kpad_Minus))
                     lMapZoom -= mulscale6(timerOffset, max<int>(lMapZoom, 256));
 
                 lMapZoom = clamp(lMapZoom, 48, 2048);

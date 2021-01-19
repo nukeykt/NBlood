@@ -40,4 +40,13 @@ static inline int Max(int a, int b)
         return a;
 }
 
+inline int ClipRange(int a, int b, int c)
+{
+    if (a < b)
+        return b;
+    if (a > c)
+        return c;
+    return a;
+}
+
 #endif

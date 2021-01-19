@@ -587,7 +587,7 @@ int32_t registerosdcommands(void)
         // TODO:
         //{ "benchmarkmode", "Set the benchmark mode (0: off, 1: performance test, 2: generate reference screenshots for correctness testing)", (void *) &g_BenchmarkMode, CVAR_INT|CVAR_NOSAVE, 0, 2 },
 
-        //{ "crosshair", "enable/disable crosshair", (void *)&ud.crosshair, CVAR_BOOL, 0, 1 },
+        { "crosshair", "enable/disable crosshair", (void *)&gShowCrosshair, CVAR_BOOL, 0, 1 },
 
         //{ "cl_autoaim", "enable/disable weapon autoaim", (void *)&ud.config.AutoAim, CVAR_INT|CVAR_MULTI, 0, 3 },
         //{ "cl_automsg", "enable/disable automatically sending messages to all players", (void *)&ud.automsg, CVAR_BOOL, 0, 1 },

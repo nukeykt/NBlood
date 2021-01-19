@@ -682,7 +682,7 @@ void StatusMessage(int messageTime, const char *fmt, ...)
 
 void DrawSnakeCamStatus()
 {
-    printext(0, 0, "S E R P E N T   C A M", kTile159, 255);
+    printext(0, 0, "S E R P E N T   C A M", kTileFont);
 }
 
 void DrawStatus()
@@ -839,21 +839,21 @@ void DrawStatus()
         int x = (nViewLeft + nViewRight) / 2;
 
         sprintf(coordBuf, "X %d", (int)sprite[nSprite].x);
-        printext(x, nViewTop + 1, coordBuf, kTile159, 255);
+        printext(x, nViewTop + 1, coordBuf, kTileFont);
 
         sprintf(coordBuf, "Y %d", (int)sprite[nSprite].y);
-        printext(x, nViewTop + 10, coordBuf, kTile159, 255);
+        printext(x, nViewTop + 10, coordBuf, kTileFont);
     }
 
     if (bHolly)
     {
         sprintf(message_text, "HOLLY: %s", sHollyStr);
-        printext(0, 0, message_text, kTile159, 255);
+        printext(0, 0, message_text, kTileFont);
     }
     else if (nSnakeCam < 0)
     {
         if (message_timer) {
-            printext(0, 0, message_text, kTile159, 255);
+            printext(0, 0, message_text, kTileFont);
         }
     }
 }

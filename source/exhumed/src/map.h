@@ -26,13 +26,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "compat.h"
 
-extern short bShowTowers;
+extern int bShowTowers;
+extern int bFollowMode;
 extern int ldMapZoom;
 extern int lMapZoom;
+
+extern int mapForward;
+extern int mapStrafe;
+extern fix16_t mapTurn;
+
+extern int32_t nMapPic;
 
 void InitMap();
 void GrabMap();
 void UpdateMap();
 void DrawMap();
+void SetMapPosition(int32_t _x, int32_t _y, int16_t _nAngle);
 
 #endif
