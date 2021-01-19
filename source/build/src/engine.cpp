@@ -7427,13 +7427,13 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
                 // set dt_t 3864  (bike HUD, 700x220)
                 // set dt_a 100
                 // set dt_z 1280000  <- CRASH!
-                Bassert((unsigned)dax1 < MAXXDIM && (unsigned)dax2 < MAXXDIM+1);
+                Bassert((unsigned)dax1 < (unsigned)xdim && (unsigned)dax2 < (unsigned)xdim+1);
                 qinterpolatedown16short((intptr_t)&uplc[dax1], dax2-dax1, yplc, yinc);
             }
             else
             {
                 yplc = y2 + mulscale16((dax2<<16)+65535-x2,yinc);
-                Bassert((unsigned)dax2 < MAXXDIM && (unsigned)dax1 < MAXXDIM+1);
+                Bassert((unsigned)dax2 < (unsigned)xdim && (unsigned)dax1 < (unsigned)xdim+1);
                 qinterpolatedown16short((intptr_t)&dplc[dax2], dax1-dax2, yplc, yinc);
             }
         }
