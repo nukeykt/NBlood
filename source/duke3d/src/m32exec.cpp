@@ -2608,7 +2608,7 @@ badindex:
                     else if (tw==CON_PRINTEXT16)
                     {
                         if (!in3dmode())
-                            printext16(x, y, editorcolors[col&255], backcol<0 ? -1 : editorcolors[backcol&255],
+                            printext16(x, y, col>=0?editorcolors[col&255]:((-col)&255), backcol<0 ? -1 : editorcolors[backcol&255],
                                        quotetext, fontsize);
                     }
                     else if (tw==CON_DRAWLABEL)
