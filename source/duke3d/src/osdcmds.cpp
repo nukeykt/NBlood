@@ -383,6 +383,7 @@ static int osdcmd_noclip(osdcmdptr_t UNUSED(parm))
 static int osdcmd_restartsound(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
+
     S_SoundShutdown();
     S_MusicShutdown();
 
@@ -1330,9 +1331,12 @@ static int osdcmd_purgesaves(osdcmdptr_t UNUSED(parm))
 
 static int osdcmd_cvar_set_game(osdcmdptr_t parm)
 {
+    static char const prefix_snd[] = "snd_";
+    static char const prefix_mus[] = "mus_";
+
     int const r = osdcmd_cvar_set(parm);
 
-    if (r != OSDCMD_OK) return r;
+    if (r != OSDCMD_OK || parm->numparms < 1) return r;
 
     if (!Bstrcasecmp(parm->name, "r_upscalefactor"))
     {
@@ -1369,6 +1373,55 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
     else if (!Bstrcasecmp(parm->name, "vid_brightness") || !Bstrcasecmp(parm->name, "vid_contrast"))
     {
         videoSetPalette(ud.brightness>>2,g_player[myconnectindex].ps->palette,0);
+    }
+    else if (!Bstrcasecmp(parm->name, "snd_enabled") || !Bstrcasecmp(parm->name, "snd_numvoices"))
+    {
+        if (!FX_WarmedUp())
+            return r;
+
+        S_SoundShutdown();
+        S_SoundStartup();
+
+        S_ClearSoundLocks();
+    }
+    else if (!Bstrncasecmp(parm->name, prefix_snd, ARRAY_SIZE(prefix_snd)-1))
+    {
+        if (!FX_WarmedUp())
+            return r;
+
+        if (ASS_MIDISoundDriver == ASS_OPL3 || ASS_MIDISoundDriver == ASS_SF2 || MusicIsWaveform)
+        {
+            // music that we generate and send through sound
+
+            S_MusicShutdown();
+            S_SoundShutdown();
+
+            S_SoundStartup();
+            S_MusicStartup();
+
+            S_ClearSoundLocks();
+
+            if (ud.config.MusicToggle)
+                S_RestartMusic();
+        }
+        else
+        {
+            S_SoundShutdown();
+            S_SoundStartup();
+
+            S_ClearSoundLocks();
+        }
+    }
+    else if (!Bstrncasecmp(parm->name, prefix_mus, ARRAY_SIZE(prefix_mus)-1))
+    {
+        if (!MUSIC_WarmedUp())
+            return r;
+
+        S_MusicShutdown();
+        S_MusicStartup();
+
+        if (ud.config.MusicToggle)
+            S_RestartMusic();
     }
     else if (!Bstrcasecmp(parm->name, "hud_scale")
              || !Bstrcasecmp(parm->name, "hud_statusbarmode")
@@ -1566,8 +1619,8 @@ int32_t registerosdcommands(void)
         { "in_mousexscale", "scale modifier for mouse x axis", (void *)&CONTROL_MouseAxesScale[0], CVAR_INT, 0, 65536 },
         { "in_mouseyscale", "scale modifier for mouse y axis", (void *)&CONTROL_MouseAxesScale[1], CVAR_INT, 0, 65536 },
 
-        { "mus_enabled", "music subsystem" CVAR_BOOL_OPTSTR, (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
-        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, ASS_NumSoundCards },
+        { "mus_enabled", "music subsystem" CVAR_BOOL_OPTSTR, (void *)&ud.config.MusicToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT|CVAR_FUNCPTR, 0, ASS_NumSoundCards },
         { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },
 
         { "osdhightile", "use content pack assets for console text if available" CVAR_BOOL_OPTSTR, (void *)&osdhightile, CVAR_BOOL, 0, 1 },
@@ -1590,11 +1643,11 @@ int32_t registerosdcommands(void)
         { "skill","changes the game skill setting", (void *)&ud.m_player_skill, CVAR_INT|CVAR_FUNCPTR|CVAR_NOSAVE/*|CVAR_NOMULTI*/, 0, 5 },
 
         { "snd_ambience", "ambient sounds" CVAR_BOOL_OPTSTR, (void *)&ud.config.AmbienceToggle, CVAR_BOOL, 0, 1 },
-        { "snd_enabled", "sound effects" CVAR_BOOL_OPTSTR, (void *)&ud.config.SoundToggle, CVAR_BOOL, 0, 1 },
+        { "snd_enabled", "sound effects" CVAR_BOOL_OPTSTR, (void *)&ud.config.SoundToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "snd_fxvolume", "volume of sound effects", (void *)&ud.config.FXVolume, CVAR_INT, 0, 255 },
-        { "snd_mixrate", "sound mixing rate", (void *)&ud.config.MixRate, CVAR_INT, 0, 48000 },
-        { "snd_numchannels", "the number of sound channels", (void *)&ud.config.NumChannels, CVAR_INT, 0, 2 },
-        { "snd_numvoices", "the number of concurrent sounds", (void *)&ud.config.NumVoices, CVAR_INT, 1, MAXVOICES },
+        { "snd_mixrate", "sound mixing rate", (void *)&ud.config.MixRate, CVAR_INT|CVAR_FUNCPTR, 0, 48000 },
+        { "snd_numchannels", "the number of sound channels", (void *)&ud.config.NumChannels, CVAR_INT|CVAR_FUNCPTR, 0, 2 },
+        { "snd_numvoices", "the number of concurrent sounds", (void *)&ud.config.NumVoices, CVAR_INT|CVAR_FUNCPTR, 1, MAXVOICES },
 #ifdef ASS_REVERSESTEREO
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ud.config.ReverseStereo, CVAR_BOOL, 0, 1 },
 #endif

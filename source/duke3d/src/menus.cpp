@@ -3484,7 +3484,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
                 (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
 #endif
-)
+        )
         {
             S_MusicShutdown();
             S_SoundShutdown();
@@ -3506,10 +3506,10 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         {
             int const needsReInit = (ud.config.MusicDevice != musicdevice || (musicdevice == ASS_SF2 && Bstrcmp(SF2_BankFile, sf2bankfile))
 #ifdef __linux__
-            || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
-                (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
+                || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
+                    (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
 #endif
-);
+            );
 
             AL_Stereo = opl3stereo;
             Bstrcpy(SF2_BankFile, sf2bankfile);
