@@ -9881,8 +9881,8 @@ void polymost_initosdfuncs(void)
 #if 0
         { "r_enablepolymost2","enable/disable polymost2",(void *) &r_enablepolymost2, CVAR_BOOL, 0, 0 }, //POGO: temporarily disable this variable
         { "r_pogoDebug","",(void *) &r_pogoDebug, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
-        { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
 #endif
+        { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
         { "r_polymostDebug","Set the verbosity of Polymost GL debug messages",(void *) &r_polymostDebug, CVAR_INT, 0, 3 },
 #ifdef USE_GLEXT
         { "r_detailmapping","enable/disable detail mapping",(void *) &r_detailmapping, CVAR_BOOL, 0, 1 },
