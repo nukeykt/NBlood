@@ -33,6 +33,7 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 #define __MUSIC_H
 
 #include "compat.h"
+#include "sndcards.h"
 
 extern int MUSIC_ErrorCode;
 
@@ -111,6 +112,12 @@ void MUSIC_Pause(void);
 int  MUSIC_StopSong(void);
 int  MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn = nullptr);
 void MUSIC_Update(void);
+
+/* returns true only after program startup */
+static FORCE_INLINE int MUSIC_WarmedUp(void)
+{
+    return ASS_MIDISoundDriver != ASS_AutoDetect;
+}
 
 extern char SF2_BankFile[BMAX_PATH];
 extern int SF2_EffectSampleBlockSize;

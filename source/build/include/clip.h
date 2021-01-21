@@ -65,9 +65,10 @@ extern void engineInitClipMaps();
 extern void engineSetClipMap(mapinfo_t *bak, mapinfo_t *newmap);
 
 #endif // HAVE_CLIPSHAPE_FEATURE
-typedef struct
+typedef struct MAY_ALIAS
 {
-    int32_t x1, y1, x2, y2;
+    union { struct { int32_t x1, y1; }; vec2_t p1; };
+    union { struct { int32_t x2, y2; }; vec2_t p2; };
 } linetype;
 
 extern int16_t clipsectorlist[MAXCLIPSECTORS];

@@ -33,7 +33,7 @@ int32_t g_numEnvSoundsPlaying, g_highestSoundIdx;
 
 static char *MusicPtr;
 
-static int32_t MusicIsWaveform;
+int32_t MusicIsWaveform;
 static int32_t MusicVoice = -1;
 
 static bool MusicPaused;
