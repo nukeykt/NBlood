@@ -165,7 +165,7 @@ static GLint fogRangeLoc = -1;
 static GLint fogColorLoc = -1;
 
 #define PALSWAP_TEXTURE_SIZE 2048
-int32_t r_useindexedcolortextures = -1;
+int32_t r_useindexedcolortextures = 1;
 static GLuint tilesheetTexIDs[MAXTILESHEETS];
 static GLint tilesheetSize = 0;
 static vec2f_t tilesheetHalfTexelSize = { 0.f, 0.f };
@@ -365,7 +365,6 @@ void gltexapplyprops(void)
     }
 
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
-    r_useindexedcolortextures = !gltexfiltermode;
 
     for (bssize_t i=0; i<=GLTEXCACHEADSIZ-1; i++)
     {
@@ -942,12 +941,6 @@ void polymost_glinit()
 
     //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     //glEnable(GL_LINE_SMOOTH);
-
-    if (r_useindexedcolortextures == -1)
-    {
-        //POGO: r_useindexedcolortextures has never been set, so force it to be enabled
-        gltexfiltermode = 0;
-    }
 
 #ifdef USE_GLEXT
     if (r_persistentStreamBuffer && ((!glinfo.bufferstorage) || (!glinfo.sync)))
