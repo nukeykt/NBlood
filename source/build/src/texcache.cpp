@@ -458,20 +458,12 @@ char const * texcache_calcid(char *outbuf, const char *filename, const int32_t l
         char effect, name[BMAX_PATH+3];  // +3: pad to a multiple of 4
     } id = { len, dameth, effect, "" };
 
-    Bstrcpy(id.name, filename);
+    EDUKE32_STATIC_ASSERT((sizeof(struct texcacheid_t) & 3) == 0);
 
     size_t const fnlen = Bstrlen(filename);
-    size_t idlen = Bstrlen(id.name);
-    while (idlen < BMAX_PATH - fnlen)
-    {
-        Bstrcat(id.name, filename);
-        idlen += fnlen;
-    }
 
-    Bsprintf(outbuf, "%08x%08x%08x",
-             XXH32((uint8_t *)id.name, fnlen, TEXCACHEMAGIC[3]),
-             XXH32((uint8_t *)id.name, Bstrlen(id.name), TEXCACHEMAGIC[3]),
-             XXH32((uint8_t *)&id, sizeof(struct texcacheid_t), TEXCACHEMAGIC[3]));
+    Bstrcpy(id.name, filename);
+    Bsprintf(outbuf, "%08" PRIx64, XXH3_64bits_withSeed((uint8_t *)&id, offsetof(struct texcacheid_t, name) + fnlen, TEXCACHEMAGIC[3]));
 
     return outbuf;
 }
