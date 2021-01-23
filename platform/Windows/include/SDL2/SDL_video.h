@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -175,7 +175,9 @@ typedef enum
 typedef enum
 {
     SDL_DISPLAYEVENT_NONE,          /**< Never used */
-    SDL_DISPLAYEVENT_ORIENTATION    /**< Display orientation has changed to data1 */
+    SDL_DISPLAYEVENT_ORIENTATION,   /**< Display orientation has changed to data1 */
+    SDL_DISPLAYEVENT_CONNECTED,     /**< Display has been added to the system */
+    SDL_DISPLAYEVENT_DISCONNECTED   /**< Display has been removed from the system */
 } SDL_DisplayEventID;
 
 typedef enum
