@@ -985,10 +985,7 @@ else ifeq ($(PLATFORM),SUNOS)
 else ifeq ($(PLATFORM),WII)
     LIBS += -laesnd_tueidj -lfat -lwiiuse -lbte -lwiikeyboard -logc
 else ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lrt
-    ifneq ($(findstring armv6,$(IMPLICIT_ARCH))$(findstring armv7,$(IMPLICIT_ARCH))$(findstring aarch64,$(IMPLICIT_ARCH)),)
-        LIBS += -latomic
-    endif
+    LIBS += -lrt -latomic
 endif
 
 ifeq (,$(filter $(PLATFORM),WINDOWS WII))
