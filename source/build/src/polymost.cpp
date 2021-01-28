@@ -5483,6 +5483,12 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->floorxpanning; global_cf_ypanning = sec->floorypanning, global_cf_heinum = sec->floorheinum;
         global_getzofslope_func = &fgetflorzofslope;
 
+#ifdef YAX_ENABLE
+        // this is to prevent double-drawing of translucent masked floors
+        if (g_nodraw || r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->floorstat&256)==0 ||
+            yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+        {
+#endif
         if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
         {
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
@@ -5847,6 +5853,16 @@ static void polymost_drawalls(int32_t const bunch)
             if (!nofog)
                 polymost_setFogEnabled(true);
         }
+#ifdef YAX_ENABLE
+        }
+        else
+        {
+            g_nodraw = 1;
+            yax_drawcf = -1;
+            polymost_domost(x0, fy0, x1, fy1);
+            g_nodraw = 0;
+        }
+#endif
         
         doeditorcheck = 0;
 
@@ -5891,6 +5907,12 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->ceilingxpanning; global_cf_ypanning = sec->ceilingypanning, global_cf_heinum = sec->ceilingheinum;
         global_getzofslope_func = &fgetceilzofslope;
 
+#ifdef YAX_ENABLE
+        // this is to prevent double-drawing of translucent masked ceilings
+        if (g_nodraw || r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->ceilingstat&256)==0 ||
+            yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+        {
+#endif
         if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
         {
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
@@ -6256,6 +6278,16 @@ static void polymost_drawalls(int32_t const bunch)
             if (!nofog)
                 polymost_setFogEnabled(true);
         }
+#ifdef YAX_ENABLE
+        }
+        else
+        {
+            g_nodraw = 1;
+            yax_drawcf = -1;
+            polymost_domost(x1, cy1, x0, cy0);
+            g_nodraw = 0;
+        }
+#endif
         
         doeditorcheck = 0;
 

@@ -69,7 +69,7 @@ template <typename origar_t, typename bakar_t>
 static inline void RESTORE_MAPART_ARRAY(origar_t & origar, bakar_t & bakar)
 {
     EDUKE32_STATIC_ASSERT(sizeof(origar[0]) == sizeof(bakar[0]));
-    for (bssize_t i=0; i<MAXTILES; i++)
+    for (size_t i=0; i < ARRAY_SIZE(origar); i++)
         if (tilefilenum[i] >= MAXARTFILES_BASE)
             origar[i] = bakar[i];
     DO_FREE_AND_NULL(bakar);

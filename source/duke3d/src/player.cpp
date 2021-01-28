@@ -1623,11 +1623,11 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             sprite[j].z = startPos.z-0x100;
             sprite[j].cstat = 128;
             sprite[j].ang = shootAng;
-            sprite[j].xrepeat = sprite[j].xrepeat = 2;
+            sprite[j].xrepeat = sprite[j].yrepeat = 2;
             sprite[j].clipdist = 40;
             sprite[j].owner = spriteNum;
             sprite[j].yvel = playerNum;
-            if (playerNum == -1 && (sprite[spriteNum].picnum == BOSS5 || sprite[spriteNum].picnum == BOSS5))
+            if (playerNum == -1 && (sprite[spriteNum].picnum == BOSS5 || sprite[spriteNum].picnum == BOSS5STAYPUT))
             {
                 sprite[j].xrepeat = sprite[j].yrepeat = 10;
                 sprite[j].x -= sintable[shootAng&2047]/56;
