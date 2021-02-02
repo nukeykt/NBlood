@@ -504,6 +504,78 @@ void cacheAllSounds(void)
     }
 }
 
+static int32_t S_DefineAudioIfSupported(char** fn, const char* name)
+{
+#if !defined HAVE_FLAC || !defined HAVE_VORBIS
+    const char* extension = Bstrrchr(name, '.');
+# if !defined HAVE_FLAC
+    if (extension && !Bstrcasecmp(extension, ".flac"))
+        return -2;
+# endif
+# if !defined HAVE_VORBIS
+    if (extension && !Bstrcasecmp(extension, ".ogg"))
+        return -2;
+# endif
+#endif
+    realloc_copy(fn, name);
+    return 0;
+}
+
+int32_t S_DefineSound(int sndidx, const char* name, int minpitch, int maxpitch, int priority, int type, int distance, float volume)
+{
+    if ((unsigned)sndidx >= MAXSOUNDS || S_DefineAudioIfSupported(&g_sounds[sndidx].filename, name))
+        return -1;
+
+    auto& snd = g_sounds[sndidx];
+
+    snd.ps = clamp(minpitch, INT16_MIN, INT16_MAX);
+    snd.pe = clamp(maxpitch, INT16_MIN, INT16_MAX);
+    snd.pr = priority & 255;
+    snd.m = type & ~SF_ONEINST_INTERNAL;
+    snd.vo = clamp(distance, INT16_MIN, INT16_MAX);
+    snd.volume = volume * fix16_one;
+
+    if (snd.m & SF_LOOP)
+        snd.m |= SF_ONEINST_INTERNAL;
+
+    return 0;
+}
+
+// Returns:
+//   0: all OK
+//  -1: ID declaration was invalid:
+int32_t S_DefineMusic(const char* ID, const char* name)
+{
+    int32_t sel = MUS_FIRST_SPECIAL;
+
+    Bassert(ID != NULL);
+
+    if (!Bstrcmp(ID, "intro"))
+    {
+        // nothing
+    }
+    else if (!Bstrcmp(ID, "briefing"))
+    {
+        sel++;
+    }
+    else if (!Bstrcmp(ID, "loading"))
+    {
+        sel += 2;
+    }
+    else if (!Bstrcmp(ID, "usermap"))
+    {
+        sel += 3;
+    }
+    else
+    {
+        sel = G_GetMusicIdx(ID);
+        if (sel < 0)
+            return -1;
+    }
+
+    return S_DefineAudioIfSupported(&g_mapInfo[sel].musicfn, name);
+}
+
 static inline int S_GetPitch(int num)
 {
     auto const &snd   = g_sounds[num];

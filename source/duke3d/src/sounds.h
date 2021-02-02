@@ -74,6 +74,8 @@ void S_Cleanup(void);
 void S_ClearSoundLocks(void);
 int32_t S_LoadSound(uint32_t num);
 void cacheAllSounds(void);
+int32_t S_DefineSound(int sndidx, const char* name, int minpitch, int maxpitch, int priority, int type, int distance, float volume);
+int32_t S_DefineMusic(const char* ID, const char* name);
 void S_MenuSound(void);
 void S_MusicShutdown(void);
 void S_MusicStartup(void);
