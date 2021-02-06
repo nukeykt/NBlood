@@ -111,8 +111,12 @@ void artClearMapArt(void)
     RESTORE_MAPART_ARRAY(tilefileoffs, g_bakTileFileOffs);
     RESTORE_MAPART_ARRAY(tilesiz, g_bakTileSiz);
     RESTORE_MAPART_ARRAY(picanm, g_bakPicAnm);
-    RESTORE_MAPART_ARRAY(faketile, g_bakFakeTile);
     RESTORE_MAPART_ARRAY(rottile, g_bakRottile);
+
+    // restore entire faketile array as it can cause problems otherwise
+    EDUKE32_STATIC_ASSERT(sizeof(faketile[0]) == sizeof(g_bakFakeTile[0]));
+    Bmemcpy(faketile, g_bakFakeTile, ARRAY_SIZE(faketile) * sizeof(faketile[0]));
+    DO_FREE_AND_NULL(g_bakFakeTile);
 
     for (size_t i = 0; i < MAXUSERTILES; ++i)
     {
