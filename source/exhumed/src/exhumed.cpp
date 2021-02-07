@@ -2378,7 +2378,7 @@ STARTGAME1:
         FadeOut(0);
     }
 STARTGAME2:
-
+    bool cdSuccess;
     bCamera = kFalse;
     ClearCinemaSeen();
     PlayerCount = 0;
@@ -2525,6 +2525,7 @@ LOOP3:
     tclocks2 = totalclock;
     CONTROL_BindsEnabled = 1;
 
+    cdSuccess = true;
     // Game Loop
     while (1)
     {
@@ -2538,14 +2539,14 @@ LOOP3:
         OSD_DispatchQueued();
 
         // Section B
-        if (!CDplaying() && !nFreeze && !nNetPlayerCount)
+        if (cdSuccess && !CDplaying() && !nFreeze && !nNetPlayerCount)
         {
             int nTrack = levelnum;
             if (nTrack != 0) {
                 nTrack--;
             }
 
-            playCDtrack((nTrack % 8) + 11, true);
+            cdSuccess = playCDtrack((nTrack % 8) + 11, true);
         }
 
 // TODO		CONTROL_GetButtonInput();

@@ -74,6 +74,7 @@ bool playCDtrack(int nTrack, bool bLoop)
     }
   
     if (hFile < 0) {
+        OSD_Printf("Error opening music track %02d", nTrack);
         return false;
     }
 
