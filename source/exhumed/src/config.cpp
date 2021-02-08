@@ -78,8 +78,6 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
     "Inventory",
     "Inventory_Left",
     "Inventory_Right",
-    "Mouse_Sensitivity_Up",
-    "Mouse_Sensitivity_Down",
     "Show_Console",
     "Mouse_Aiming",
     "Toggle_Crosshair",
@@ -87,6 +85,7 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
     "Previous_Weapon",
     "AutoRun",
     "Map_Follow_Mode",
+	"Third_Person_View",
 };
 
 const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -127,8 +126,6 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     "Enter", "",
     "[", "",
     "]", "",
-    "F7", "",
-    "F8", "",
     "`", "",
     "U", "",
     "I", "",
@@ -136,6 +133,7 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     ";", "",
     "CapLck", "",
     "F", "",
+	"F7", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -176,8 +174,6 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     "Enter", "",
     "[", "",
     "]", "",
-    "F7", "",
-    "F8", "",
     "`", "",
     "U", "",
     "I", "",
@@ -185,6 +181,7 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
     ";", "",
     "CapLck", "",
     "F", "",
+	"F7", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
@@ -298,14 +295,13 @@ void SetupGameButtons()
     CONTROL_DefineFlag(gamefunc_Inventory_Right,        kFalse);
 //  CONTROL_DefineFlag(gamefunc_Mouseview,              kFalse);
     CONTROL_DefineFlag(gamefunc_Inventory,              kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Up,   kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Down, kFalse);
     CONTROL_DefineFlag(gamefunc_Mouse_Aiming,           kFalse);
     CONTROL_DefineFlag(gamefunc_Toggle_Crosshair,       kFalse);
     CONTROL_DefineFlag(gamefunc_Next_Weapon,            kFalse);
     CONTROL_DefineFlag(gamefunc_Previous_Weapon,        kFalse);
     CONTROL_DefineFlag(gamefunc_AutoRun,                kFalse);
     CONTROL_DefineFlag(gamefunc_Map_Follow_Mode,        kFalse);
+    CONTROL_DefineFlag(gamefunc_Third_Person_View,      kFalse);
 }
 
 hashtable_t h_gamefuncs    = { kMaxGameFunctions<<1, NULL };

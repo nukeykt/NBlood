@@ -1052,26 +1052,6 @@ void CheckKeys()
         }
     }
 
-    // if (BUTTON(gamefunc_Mouse_Sensitivity_Up))
-    // {
-    //     if (lMouseSens < 64)
-    //         lMouseSens++;
-    //
-    //     CONTROL_ClearButton(gamefunc_Mouse_Sensitivity_Up);
-    //     StatusMessage(500, "MOUSE SENSITIVITY SET TO %d", lMouseSens);
-    // }
-    // else
-    // {
-    //     if (BUTTON(gamefunc_Mouse_Sensitivity_Down))
-    //     {
-    //         if (lMouseSens >= 1)
-    //             lMouseSens -= 1;
-    //
-    //         CONTROL_ClearButton(gamefunc_Mouse_Sensitivity_Down);
-    //         StatusMessage(500, "MOUSE SENSITIVITY SET TO %d", lMouseSens);
-    //     }
-    // }
-
     // F11?
     if (BUTTON(gamefunc_Gamma_Correction))
     {
@@ -1104,7 +1084,7 @@ void CheckKeys()
         }
     }
 
-    // print version string?
+    // print version string
     if (KB_KeyDown[sc_V] && KB_KeyDown[sc_LeftAlt])
     {
         KB_KeyDown[sc_V] = 0;
@@ -1112,22 +1092,26 @@ void CheckKeys()
         return;
     }
 
-    // go to 3rd person view?
-    if (KB_KeyDown[sc_C] && KB_KeyDown[sc_LeftAlt])
+    // go to 3rd person view
+    if ((KB_KeyDown[sc_C] && KB_KeyDown[sc_LeftAlt]) || BUTTON(gamefunc_Third_Person_View))
     {
         if (!nFreeze)
         {
             if (bCamera) {
                 bCamera = kFalse;
             }
-            else {
+            else 
+            {
                 bCamera = kTrue;
+                nCameraDist = 0;
+                nCameraClock = (int32_t)totalclock;
             }
 
             if (bCamera)
                 GrabPalette();
         }
         KB_KeyDown[sc_C] = 0;
+        CONTROL_ClearButton(gamefunc_Third_Person_View);
         return;
     }
 

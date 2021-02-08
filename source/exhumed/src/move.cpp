@@ -181,6 +181,12 @@ void MoveThings()
     DoMovingSects();
     DoRegenerates();
 
+    if (nCameraDist >= 0)
+    {
+        nCameraDist = min(nCameraDist + (((int32_t)totalclock - nCameraClock) << 10), 65536);
+        nCameraClock = (int32_t)totalclock;
+    }
+
     if (levelnum == kMap20)
     {
         DoFinale();

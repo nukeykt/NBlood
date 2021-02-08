@@ -89,8 +89,6 @@ enum {
 	gamefunc_Inventory,
 	gamefunc_Inventory_Left,
 	gamefunc_Inventory_Right,
-	gamefunc_Mouse_Sensitivity_Up,
-	gamefunc_Mouse_Sensitivity_Down,
     gamefunc_Show_Console,
 	gamefunc_Mouse_Aiming,
 	gamefunc_Toggle_Crosshair,
@@ -98,6 +96,7 @@ enum {
     gamefunc_Previous_Weapon,
 	gamefunc_AutoRun,
     gamefunc_Map_Follow_Mode,
+	gamefunc_Third_Person_View,
 	kMaxGameFunctions
 };
 

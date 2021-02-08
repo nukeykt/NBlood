@@ -60,6 +60,8 @@ extern int nCameraz;
 extern short bTouchFloor;
 extern short nChunkTotal;
 extern int gFov;
+extern int32_t nCameraDist;
+extern int32_t nCameraClock;
 
 static inline int angle_interpolate16(int a, int b, int smooth)
 {
