@@ -2185,8 +2185,8 @@ void GoToTheCinema(int nVal)
     GrabPalette();
     Clip();
 
-    // quit the game if we've finished level 4 and displayed the advert text
-    if (ISDEMOVER && nVal == 3) {
+    // quit the game if we've finished the last level and displayed the advert text
+    if (ISDEMOVER && ((EXHUMED && nVal == 2) || nVal == 3)) {
         ExitGame();
     }
 }

@@ -81,7 +81,7 @@ static int osdcmd_changelevel(osdcmdptr_t parm)
         nMaxLevels = 32;
     }
     else {
-        nMaxLevels = 4;
+        nMaxLevels = EXHUMED ? 3 : 4;
     }
 
     if (nLevel > nMaxLevels)

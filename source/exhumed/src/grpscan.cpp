@@ -40,7 +40,7 @@ static internalgrpinfo_t const internalgrpfiles[] =
     { "Powerslave", POWERSLAVE_CRC, 27020745, GAMEFLAG_POWERSLAVE, 0 },
     { "Exhumed",    EXHUMED_CRC,    27108170, GAMEFLAG_EXHUMED,    0 },
     { "Powerslave Demo", POWERSLAVE_DEMO_CRC, 15904838, GAMEFLAG_POWERSLAVE | GAMEFLAG_DEMO, 0 },
-//  { "Exhumed Demo",    EXHUMED_DEMO_CRC,    16481687, GAMEFLAG_EXHUMED | GAMEFLAG_DEMO,    0 },
+    { "Exhumed Demo",    EXHUMED_DEMO_CRC,    16481687, GAMEFLAG_EXHUMED | GAMEFLAG_DEMO,    0 },
 };
 #endif
 
