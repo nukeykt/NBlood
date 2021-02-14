@@ -1766,6 +1766,7 @@ void PatchDemoStrings()
 
     if (EXHUMED) {
         gString[60] = "PICK UP A COPY OF EXHUMED";
+        nBeforeScene[4] = 3;
     }
     else {
         gString[60] = "PICK UP A COPY OF POWERSLAVE";

@@ -50,6 +50,8 @@ extern unsigned char cinemapal[];
 
 extern short SavePosition;
 
+extern short nBeforeScene[];
+
 int showmap(short nLevel, short nLevelNew, short nLevelBest);
 
 void ClearCinemaSeen();
