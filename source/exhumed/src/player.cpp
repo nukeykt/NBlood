@@ -690,9 +690,11 @@ void InitPlayerInventory(short nPlayer)
 
     nPlayerScore[nPlayer] = 0;
 
-    tileLoad(kTile3571 + nPlayer);
+    short nTile = kTile3571 + nPlayer;
 
-    nPlayerColor[nPlayer] = *(uint8_t*)(waloff[nPlayer + kTile3571] + tilesiz[nPlayer + kTile3571].x * tilesiz[nPlayer + kTile3571].y / 2);
+    if (!waloff[nTile]) tileLoad(nTile);
+
+    nPlayerColor[nPlayer] = *(uint8_t*)(waloff[nTile] + tilesiz[nTile].x * tilesiz[nTile].y / 2);
 }
 
 short GetPlayerFromSprite(short nSprite)

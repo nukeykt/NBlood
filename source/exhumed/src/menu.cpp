@@ -146,8 +146,8 @@ void InitEnergyTile()
 
 void DoEnergyTile()
 {
-    tileLoad(kEnergy1);
-    tileLoad(kEnergy2);
+    if (!waloff[kEnergy1]) tileLoad(kEnergy1);
+    if (!waloff[kEnergy2]) tileLoad(kEnergy2);
 
     nButtonColor += nButtonColor < 0 ? 8 : 0;
 
@@ -469,7 +469,7 @@ void menu_DoPlasma()
         r_ebx += 2;
     }
 
-    tileLoad(nLogoTile);
+    if (!waloff[nLogoTile]) tileLoad(nLogoTile);
 
     for (int j = 0; j < 5; j++)
     {

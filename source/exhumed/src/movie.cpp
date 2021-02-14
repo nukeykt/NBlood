@@ -242,7 +242,7 @@ void PlayMovie(const char* fileName)
     uint8_t* pMovieFile = NULL;
     int fileSize = 0;
 
-    tileLoad(kMovieTile);
+    if (!waloff[kMovieTile]) tileLoad(kMovieTile);
     CurFrame = (uint8_t*)waloff[kMovieTile];
 
     // try for a loose BOOK.MOV first

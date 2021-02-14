@@ -1541,6 +1541,7 @@ void DoRedAlert(int nVal)
     }
 }
 
+/*
 void LockEnergyTiles()
 {
     // old	loadtilelockmode = 1;
@@ -1549,12 +1550,13 @@ void LockEnergyTiles()
     tileLoad(kEnergy2);
     // old  loadtilelockmode = 0;
 }
+*/
 
 void DrawClock()
 {
     int ebp = 49;
 
-    tileLoad(kTile3603);
+    if (!waloff[kTile3603]) tileLoad(kTile3603);
 
     memset((void*)waloff[kTile3603], -1, 4096);
 
@@ -1669,7 +1671,7 @@ static void GameDisplay(void)
 
     if (levelnum == kMap20)
     {
-        LockEnergyTiles();
+        //LockEnergyTiles();
         DoEnergyTile();
         DrawClock();
     }
@@ -3087,7 +3089,7 @@ void CopyTileToBitmap(short nSrcTile,  short nDestTile, int xPos, int yPos)
     uint8_t *pDest = (uint8_t*)waloff[nDestTile] + nOffs + yPos;
     uint8_t *pDestB = pDest;
 
-    tileLoad(nSrcTile);
+    if (!waloff[nSrcTile]) tileLoad(nSrcTile);
 
     int destYSize = tilesiz[nDestTile].y;
     int srcYSize = tilesiz[nSrcTile].y;
