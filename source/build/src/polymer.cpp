@@ -6061,7 +6061,7 @@ static inline void  polymer_culllight(int16_t lighti)
     int16_t         ns;
     _prsector       *s;
     _prwall         *w;
-    sectortype      *sec;
+    sectortype      *sec, *nsec;
 
     Bmemset(drawingstate, 0, sizeof(int16_t) * numsectors);
     drawingstate[light->sector] = 1;
@@ -6077,19 +6077,22 @@ static inline void  polymer_culllight(int16_t lighti)
 
         checkror = FALSE;
 
-        zdiff = light->z - s->floorz;
-        if (zdiff < 0)
-            zdiff = -zdiff;
-        zdiff >>= 4;
+        if (!(sec->floorstat & 1))
+        {
+            zdiff = light->z - s->floorz;
+            if (zdiff < 0)
+                zdiff = -zdiff;
+            zdiff >>= 4;
 
-        if (!light->radius && !(sec->floorstat & 1)) {
-            if (zdiff < light->range) {
+            if (!light->radius) {
+                if (zdiff < light->range) {
+                    polymer_addplanelight(&s->floor, lighti);
+                    checkror = TRUE;
+                }
+            } else if (polymer_planeinlight(&s->floor, light)) {
                 polymer_addplanelight(&s->floor, lighti);
                 checkror = TRUE;
             }
-        } else if (polymer_planeinlight(&s->floor, light)) {
-            polymer_addplanelight(&s->floor, lighti);
-            checkror = TRUE;
         }
 
 #ifdef YAX_ENABLE
@@ -6110,19 +6113,22 @@ static inline void  polymer_culllight(int16_t lighti)
 #endif
         checkror = FALSE;
 
-        zdiff = light->z - s->ceilingz;
-        if (zdiff < 0)
-            zdiff = -zdiff;
-        zdiff >>= 4;
+        if (!(sec->ceilingstat & 1))
+        {
+            zdiff = light->z - s->ceilingz;
+            if (zdiff < 0)
+                zdiff = -zdiff;
+            zdiff >>= 4;
 
-        if (!light->radius && !(sec->ceilingstat & 1)) {
-            if (zdiff < light->range) {
+            if (!light->radius) {
+                if (zdiff < light->range) {
+                    polymer_addplanelight(&s->ceil, lighti);
+                    checkror = TRUE;
+                }
+            } else if (polymer_planeinlight(&s->ceil, light)) {
                 polymer_addplanelight(&s->ceil, lighti);
                 checkror = TRUE;
             }
-        } else if (polymer_planeinlight(&s->ceil, light)) {
-            polymer_addplanelight(&s->ceil, lighti);
-            checkror = TRUE;
         }
 
 #ifdef YAX_ENABLE
@@ -6145,17 +6151,33 @@ static inline void  polymer_culllight(int16_t lighti)
         while (i < sec->wallnum)
         {
             w = prwalls[sec->wallptr + i];
+            walltype *wal = &wall[sec->wallptr + i];
+
+            if (wal->nextsector >= 0 && wal->nextsector < numsectors)
+            {
+                nsec = &sector[wal->nextsector];
+            }
+            else
+            {
+                nsec = nullptr;
+            }
 
             j = 0;
 
-            if (polymer_planeinlight(&w->wall, light)) {
-                polymer_addplanelight(&w->wall, lighti);
-                j++;
+            if (!(sec->floorstat & 1 && nsec && nsec->floorstat & 1))
+            {
+                if (polymer_planeinlight(&w->wall, light)) {
+                    polymer_addplanelight(&w->wall, lighti);
+                    j++;
+                }
             }
 
-            if (polymer_planeinlight(&w->over, light)) {
-                polymer_addplanelight(&w->over, lighti);
-                j++;
+            if (!(sec->ceilingstat & 1 && nsec && nsec->ceilingstat & 1))
+            {
+                if (polymer_planeinlight(&w->over, light)) {
+                    polymer_addplanelight(&w->over, lighti);
+                    j++;
+                }
             }
 
             // assume the light hits the middle section if it hits the top and bottom
