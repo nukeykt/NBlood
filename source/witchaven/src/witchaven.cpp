@@ -129,7 +129,7 @@ int32_t goreon = 1;
 
 int32_t totsynctics, frames;
 
-extern int followmode;
+extern bool followmode;
 extern int loadedgame;
 extern char tempbuf[50];
 extern int musiclevel;
