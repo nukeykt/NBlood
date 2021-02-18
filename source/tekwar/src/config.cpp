@@ -209,7 +209,7 @@ static const char* mousedigitaldefaults[MAXMOUSEDIGITAL] =
 
 ud_setup_t gSetup;
 
-char setupfilename[128] = {kSetupFilename};
+char setupfilename[BMAX_PATH] = {kSetupFilename};
 
 int lMouseSens = 32;
 
@@ -814,11 +814,14 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
 {
     char filename[BMAX_PATH];
 
+/*
     if (!Bstrcmp(setupfilename, kSetupFilename))
         Bsprintf(filename, "settings.cfg");
     else
         Bsprintf(filename, "%s_settings.cfg", strtok(setupfilename, "."));
+*/
 
+    Bsprintf(filename, "etekwar_cvars.cfg");
     buildvfs_FILE fp = buildvfs_fopen_write(filename);
 
     if (fp)
