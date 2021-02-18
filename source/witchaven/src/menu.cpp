@@ -226,6 +226,8 @@ int menuscreen()
     {
         handleevents();
 
+        videoClearViewableArea(0);
+
         overwritesprite(0, 0, MAINMENU, 0, 2, 0);
         overwritesprite(127, 58, MENUSELECTIONS, 0, 2, 0);
 
@@ -1202,7 +1204,7 @@ void loadplayerstuff()
 
     read(fh, &totalclock, sizeof(totalclock));
     read(fh, &lockclock, sizeof(lockclock));
-    read(fh, &synctics, sizeof(synctics));
+	read(fh, &synctics, sizeof(synctics));
 
     // Warning: only works if all pointers are in sector structures!
     read(fh, tmpanimateptr, MAXANIMATES << 2);
