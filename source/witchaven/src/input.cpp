@@ -25,6 +25,7 @@
 #define TURN_DECELERATION_RATE 12
 #define MAX_STRAFE_VELOCITY 127
 #define MAX_MOVEMENT_VELOCITY 201
+#define MAX_MOUSE_MOVEMENT_VELOCITY 127
 #define MOVEMENT_ACCELERATION_RATE 8
 #define MOVEMENT_DECELERATION_RATE 2
 
@@ -51,7 +52,7 @@ extern char typemessage[];
 extern char typemessageleng, typemode;
 extern char scantoasc[];
 extern char scantoascwithshift[];
-int nettypemode = 0;
+bool nettypemode = false;
 
 extern char tempbuf[];
 
@@ -373,16 +374,16 @@ void processinput(Player* plr)
         }
         else
         {
-            if (nettypemode == 1)
+            if (nettypemode)
             {
-                nettypemode = 0;
+                nettypemode = false;
                 charsperline = 0;
                 typemessageleng = 0;
                 strcpy(nettemp, "");
             }
             else
             {
-                nettypemode = 1;
+                nettypemode = true;
                 typemessageleng = 0;
             }
             keystatus[sc_BackSpace] = 0;
@@ -394,7 +395,7 @@ void processinput(Player* plr)
         typeletter();
     }
 
-    if (nettypemode == 1)
+    if (nettypemode)
     {
         nettypeletter();
     }
@@ -530,13 +531,13 @@ void processinput(Player* plr)
             i = v;
 
             i -= (mousy * mousyspeed);
-            if (i < -128) //fhomolka 18/02/2021: I have no clue why it's 128 here, but 201 elsewhere
+            if (i < -MAX_MOUSE_MOVEMENT_VELOCITY - 1) //fhomolka 18/02/2021: I have no clue why it's 128 here, but 201 elsewhere
             {
-                i = -128;
+                i = -MAX_MOUSE_MOVEMENT_VELOCITY - 1;
             }
-            else if (i > 127)
+            else if (i > MAX_MOUSE_MOVEMENT_VELOCITY)
             {
-                i = 127;
+                i = MAX_MOUSE_MOVEMENT_VELOCITY;
             }
             v = i;
         }
