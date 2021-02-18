@@ -20,6 +20,14 @@
 
 #define WEAPONONE    0x02
 
+#define MAX_ANGULAR_VELOCITY 127
+#define TURN_ACCELERATION_RATE 16
+#define TURN_DECELERATION_RATE 12
+#define MAX_STRAFE_VELOCITY 127
+#define MAX_MOVEMENT_VELOCITY 201
+#define MOVEMENT_ACCELERATION_RATE 8
+#define MOVEMENT_DECELERATION_RATE 2
+
 void dosoundthing();
 void nettypeletter();
 void typeletter();
@@ -31,10 +39,10 @@ int soundtoggle;
 
 extern int mapon;
 
-int followmode = 0;
-int justplayed = 0;
-int lopoint = 0;
-int walktoggle = 0;
+bool followmode = false;
+bool justplayed = false;
+bool lopoint = false;
+bool walktoggle = false;
 int runningtime = 0;
 
 int charsperline = 0;
@@ -206,16 +214,16 @@ void keytimerstuff()
     {
         if (BUTTON(gamefunc_Turn_Left))
         {
-            svel += 8;
-            if (svel > 127) {
-                svel = 127;
+            svel += MOVEMENT_ACCELERATION_RATE;
+            if (svel > MAX_STRAFE_VELOCITY) {
+                svel = MAX_STRAFE_VELOCITY;
             }
         }
         if (BUTTON(gamefunc_Turn_Right))
         {
-            svel -= 8;
-            if (svel < -128) {
-                svel = -128;
+            svel -= MOVEMENT_ACCELERATION_RATE;
+            if (svel < -MAX_STRAFE_VELOCITY - 1) {//Original says -128
+                svel = -MAX_STRAFE_VELOCITY - 1;
             }
         }
     }
@@ -223,54 +231,55 @@ void keytimerstuff()
     {
         if (BUTTON(gamefunc_Turn_Left))
         {
-            angvel -= 16;
-            if (angvel < -128) {
-                angvel = -128;
+            angvel -= TURN_ACCELERATION_RATE;
+            if (angvel < -MAX_ANGULAR_VELOCITY - 1) { //Original says -128
+                angvel = -MAX_ANGULAR_VELOCITY - 1;
             }
         }
         if (BUTTON(gamefunc_Turn_Right))
         {
-            angvel += 16;
-            if (angvel > 127) {
-                angvel = 127;
+            angvel += TURN_ACCELERATION_RATE;
+            if (angvel > MAX_ANGULAR_VELOCITY) {
+                angvel = MAX_ANGULAR_VELOCITY;
             }
         }
     }
 
     if (BUTTON(gamefunc_Strafe_Left))
     {
-        svel += 8;
-        if (svel > 127) {
-            svel = 127;
+        svel += MOVEMENT_ACCELERATION_RATE;
+        if (svel > MAX_STRAFE_VELOCITY) {
+            svel = MAX_STRAFE_VELOCITY;
         }
     }
     else if (BUTTON(gamefunc_Strafe_Right))
     {
-        svel -= 8;
-        if (svel < -128) {
-            svel = -128;
+        svel -= MOVEMENT_ACCELERATION_RATE;
+        if (svel < -MAX_STRAFE_VELOCITY - 1) {//Original says -128
+            svel = -MAX_STRAFE_VELOCITY - 1;
         }
     }
 
     if (BUTTON(gamefunc_Move_Forward))
     {
-        vel += 8;
-        if (vel > 201) {
-            vel = 201;
+        vel += MOVEMENT_ACCELERATION_RATE;
+        if (vel > MAX_MOVEMENT_VELOCITY) {
+            vel = MAX_MOVEMENT_VELOCITY;
         }
     }
 
     if (BUTTON(gamefunc_Move_Backward))
     {
-        vel -= 8;
-        if (vel < -201) {
-            vel = -201;
+        vel -= MOVEMENT_ACCELERATION_RATE;
+        if (vel < -MAX_MOVEMENT_VELOCITY) {
+            vel = -MAX_MOVEMENT_VELOCITY;
         }
     }
 
+    //Deceleration
     if (angvel < 0)
     {
-        angvel += 12;
+        angvel += TURN_DECELERATION_RATE;
         if (angvel > 0) {
             angvel = 0;
         }
@@ -278,7 +287,7 @@ void keytimerstuff()
 
     if (angvel > 0)
     {
-        angvel -= 12;
+        angvel -= TURN_DECELERATION_RATE;
         if (angvel < 0) {
             angvel = 0;
         }
@@ -286,7 +295,7 @@ void keytimerstuff()
 
     if (svel < 0)
     {
-        svel += 2;
+        svel += MOVEMENT_DECELERATION_RATE;
         if (svel > 0) {
             svel = 0;
         }
@@ -294,7 +303,7 @@ void keytimerstuff()
 
     if (svel > 0)
     {
-        svel -= 2;
+        svel -= MOVEMENT_DECELERATION_RATE;
         if (svel < 0) {
             svel = 0;
         }
@@ -302,7 +311,7 @@ void keytimerstuff()
 
     if (vel < 0)
     {
-        vel += 2;
+        vel += MOVEMENT_DECELERATION_RATE;
         if (vel > 0) {
             vel = 0;
         }
@@ -310,7 +319,7 @@ void keytimerstuff()
 
     if (vel > 0)
     {
-        vel -= 2;
+        vel -= MOVEMENT_DECELERATION_RATE;
         if (vel < 0) {
             vel = 0;
         }
@@ -423,7 +432,7 @@ void processinput(Player* plr)
         }
     }
 
-    if (followmode == 1)
+    if (followmode)
     {
         if (BUTTON(gamefunc_Turn_Left))
         {
@@ -451,7 +460,7 @@ void processinput(Player* plr)
         if (keystatus[sc_F] > 0)
         {
             keystatus[sc_F] = 0;
-            followmode = 0;
+            followmode = false;
         }
         return;
     }
@@ -470,15 +479,15 @@ void processinput(Player* plr)
         setbrightness(brightness);
     }
 
-    if (v < -201) v = -201;
-    else if (v > 201) v = 201;
+    if (v < -MAX_MOVEMENT_VELOCITY) v = -MAX_MOVEMENT_VELOCITY;
+    else if (v > MAX_MOVEMENT_VELOCITY) v = MAX_MOVEMENT_VELOCITY;
 
     v += v >> 1;// SUPER MARIO BROTHERS
 
-    if (s < -201) s = -201;
-    else if (s > 201) s = 201;
+    if (s < -MAX_MOVEMENT_VELOCITY) s = -MAX_MOVEMENT_VELOCITY; // Yes, this is strafing, however, original code compares it against 201
+    else if (s > MAX_MOVEMENT_VELOCITY) s = MAX_MOVEMENT_VELOCITY;
 
-    if (a < -112) a = -112;
+    if (a < -112) a = -112; //fhomolka 18/02/2021: I have no clue why it's 112 here, but 127 elsewhere
     else if (a > 112) a = 112;
 
     int i = 0;
@@ -497,8 +506,8 @@ void processinput(Player* plr)
             i += (mousx * mousxspeed);
         }
 
-        if (i < -128) i = -128;
-        if (i > 127) i = 127;
+        if (i < -MAX_STRAFE_VELOCITY - 1) i = -MAX_STRAFE_VELOCITY - 1; // original says -128
+        if (i > MAX_STRAFE_VELOCITY) i = MAX_STRAFE_VELOCITY;
 
         if (BUTTON(gamefunc_Strafe))
             s = i;
@@ -521,7 +530,7 @@ void processinput(Player* plr)
             i = v;
 
             i -= (mousy * mousyspeed);
-            if (i < -128)
+            if (i < -128) //fhomolka 18/02/2021: I have no clue why it's 128 here, but 201 elsewhere
             {
                 i = -128;
             }
@@ -797,7 +806,7 @@ void processinput(Player* plr)
         else
         {
             plr->dimension = 3;
-            followmode = 0;
+            followmode = false;
         }
 
         CONTROL_ClearButton(gamefunc_Map);
@@ -819,16 +828,16 @@ void processinput(Player* plr)
 
         if (keystatus[sc_F] > 0)
         {
-            if (followmode == 0)
+            if (!followmode)
             {
                 StatusMessage(360, "Map %d", mapon);
-                followmode = 1;
+                followmode = true;
                 followx = 0;
                 followy = 0;
             }
             else
             {
-                followmode = 0;
+                followmode = false;
             }
 
             keystatus[sc_F] = 0;
@@ -1003,7 +1012,7 @@ void processinput(Player* plr)
         if (plr->horiz > 200) plr->horiz = 200;
         if (plr->horiz < 0) plr->horiz = 0;
 
-        if (onsprite != -1 && dist > 50 && lopoint == 1 && justplayed == 0)
+        if (onsprite != -1 && dist > 50 && lopoint && !justplayed)
         {
             switch (sprite[onsprite].picnum)
             {
@@ -1014,16 +1023,16 @@ void processinput(Player* plr)
                     playsound_loc(S_WOOD1, (plr->x + 3000), plr->y);
                 else
                     playsound_loc(S_WOOD1, plr->x, (plr->y + 3000));
-                walktoggle ^= 1;
-                justplayed = 1;
+                walktoggle = !walktoggle;
+                justplayed = true;
                 break;
                 case WOODPLANK:
                 if (walktoggle)
                     playsound_loc(S_SOFTCHAINWALK, (plr->x + 3000), plr->y);
                 else
                     playsound_loc(S_SOFTCHAINWALK, plr->x, (plr->y + 3000));
-                walktoggle ^= 1;
-                justplayed = 1;
+                walktoggle = !walktoggle;
+                justplayed = true;
 
                 break;
                 case SQUAREGRATE:
@@ -1032,26 +1041,26 @@ void processinput(Player* plr)
                     playsound_loc(S_LOUDCHAINWALK, (plr->x + 3000), plr->y);
                 else
                     playsound_loc(S_LOUDCHAINWALK, plr->x, (plr->y + 3000));
-                walktoggle ^= 1;
-                justplayed = 1;
+                walktoggle = !walktoggle;
+                justplayed = true;
                 break;
                 case SPACEPLANK:
                 if (walktoggle)
                     playsound_loc(S_SOFTCREAKWALK, (plr->x + 3000), plr->y);
                 else
                     playsound_loc(S_SOFTCREAKWALK, plr->x, (plr->y + 3000));
-                walktoggle ^= 1;
-                justplayed = 1;
+                walktoggle = !walktoggle;
+                justplayed = true;
                 break;
                 case RAT:
                 playsound_loc(S_RATS1 + (rand() % 2), sprite[i].x, sprite[i].y);
-                justplayed = 1;
+                justplayed = true;
                 deletesprite(i);
                 break;
                 case SPIDER:
                 //STOMP
                 playsound_loc(S_DEADSTEP, sprite[i].x, sprite[i].y);
-                justplayed = 1;
+                justplayed = true;
                 newstatus(i, DIE);
                 break;
 
@@ -1067,7 +1076,7 @@ void processinput(Player* plr)
                 case 1941:
                 case 1940:
                 playsound_loc(S_DEADSTEP, plr->x, plr->y);
-                justplayed = 1;
+                justplayed = true;
                 break;
 
                 default:
@@ -1075,13 +1084,13 @@ void processinput(Player* plr)
             }
         }
 
-        if (lopoint == 0 && oldhoriz == -2 && justplayed == 0)
-            lopoint = 1;
+        if (!lopoint && oldhoriz == -2 && !justplayed)
+            lopoint = true;
 
-        if (lopoint == 1 && oldhoriz != -2 && justplayed == 1)
+        if (lopoint && oldhoriz != -2 && justplayed)
         {
-            lopoint = 0;
-            justplayed = 0;
+            lopoint = false;
+            justplayed = false;
         }
 
         if (vel > 199 || vel < -199 && dist > 10)
