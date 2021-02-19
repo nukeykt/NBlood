@@ -10389,6 +10389,11 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     if (kread_and_test(fil, sprite, sizeof(spritetype)*numsprites)) goto error;
 
+    int const pos = ktell(fil), len = kfilelength(fil);
+
+    if (pos != len)
+        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
+
 #ifdef NEW_MAP_FORMAT
 skip_reading_mapbin:
 #endif
@@ -10703,6 +10708,11 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
             break;
         }
     }
+
+    int const pos = ktell(fil), len = kfilelength(fil);
+
+    if (pos != len)
+        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
 
     kclose(fil);
     // Done reading file.
