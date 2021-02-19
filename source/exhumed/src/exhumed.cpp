@@ -674,7 +674,8 @@ short nEnergyTowers = 0;
 
 
 short nCfgNetPlayers = 0;
-FILE *vcrfp = NULL;
+FILE *vcrfpwrite = NULL;
+buildvfs_kfd hVCRRead = buildvfs_kfd_invalid;
 
 short forcelevel = -1;
 
@@ -1460,7 +1461,7 @@ void WritePlaybackInputs()
     output.moveframes = B_LITTLE32(moveframes);
     output.xVel = B_LITTLE32(sPlayerInput[nLocalPlayer].xVel);
     output.yVel = B_LITTLE32(sPlayerInput[nLocalPlayer].yVel);
-    output.nAngle = fix16_to_int(B_LITTLE16(sPlayerInput[nLocalPlayer].nAngle >> 2));
+    output.nAngle  = fix16_to_int(B_LITTLE16(sPlayerInput[nLocalPlayer].nAngle >> 2));
     output.buttons = B_LITTLE16(sPlayerInput[nLocalPlayer].buttons);
     output.nTarget = B_LITTLE16(sPlayerInput[nLocalPlayer].nTarget);
     output.horizon = fix16_to_int(sPlayerInput[nLocalPlayer].horizon);
@@ -1468,27 +1469,24 @@ void WritePlaybackInputs()
     output.h = B_LITTLE32(sPlayerInput[nLocalPlayer].h);
     output.i = sPlayerInput[nLocalPlayer].i;
 
-    if (!fwrite(&output, 1, sizeof(output), vcrfp))
+    if (!fwrite(&output, 1, sizeof(output), vcrfpwrite))
     {
-        fclose(vcrfp);
-        vcrfp = NULL;
+        fclose(vcrfpwrite);
+        vcrfpwrite = NULL;
         bRecord = kFalse;
         return;
     }
-
-    //fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
-    //fwrite(&sPlayerInput[nLocalPlayer], sizeof(PlayerInput), 1, vcrfp);
 }
 
 uint8_t ReadPlaybackInputs()
 {
     demo_input input;
-    if (fread(&input, 1, sizeof(input), vcrfp))
+    if (kread(hVCRRead, &input, sizeof(input)))
     {
         moveframes = B_LITTLE32(input.moveframes);
         sPlayerInput[nLocalPlayer].xVel = B_LITTLE32(input.xVel);
         sPlayerInput[nLocalPlayer].yVel = B_LITTLE32(input.yVel);
-        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(B_LITTLE16(input.nAngle)<<2);
+        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(B_LITTLE16(input.nAngle) << 2);
         sPlayerInput[nLocalPlayer].buttons = B_LITTLE16(input.buttons);
         sPlayerInput[nLocalPlayer].nTarget = B_LITTLE16(input.nTarget);
         sPlayerInput[nLocalPlayer].horizon = fix16_from_int(input.horizon);
@@ -1502,8 +1500,8 @@ uint8_t ReadPlaybackInputs()
     }
     else
     {
-        fclose(vcrfp);
-        vcrfp = NULL;
+        kclose(hVCRRead);
+        hVCRRead = buildvfs_kfd_invalid;
         bPlayback = kFalse;
         return kFalse;
     }
@@ -1785,7 +1783,7 @@ void PatchDemoStrings()
 void ExitGame()
 {
     if (bRecord) {
-        fclose(vcrfp);
+        fclose(vcrfpwrite);
     }
 
     FadeSong();
@@ -1817,7 +1815,7 @@ static int32_t nonsharedtimer;
 
 int app_main(int argc, char const* const* argv)
 {
-    char tempbuf[256];
+    char buffer[BMAX_PATH];
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
@@ -1908,12 +1906,13 @@ int app_main(int argc, char const* const* argv)
             {
                 if (!bPlayback)
                 {
-                    vcrfp = fopen("DATA.VCR", "wb+");
-                    if (vcrfp != NULL) {
+                    G_ModDirSnprintfLite(buffer, sizeof(buffer), "DATA.VCR");
+                    vcrfpwrite = fopen(buffer, "wb+");
+                    if (vcrfpwrite != NULL) {
                         bRecord = kTrue;
                     }
                     else {
-                        DebugOut("Can't open data file for recording\n");
+                        initprintf("Can't open demo file DATA.VCR for recording\n");
                     }
                 }
             }
@@ -1921,13 +1920,13 @@ int app_main(int argc, char const* const* argv)
             {
                 if (!bRecord)
                 {
-                    vcrfp = fopen("DATA.VCR", "rb");
-                    if (vcrfp != NULL) {
+                    hVCRRead = kopen4loadfrommod("DATA.VCR", 0);
+                    if (hVCRRead >= 0) {
                         bPlayback = kTrue;
                         doTitle = kFalse;
                     }
                     else {
-                        DebugOut("Can't open data file 'data.vcr' for reading\n");
+                        initprintf("Can't open demo file DATA.VCR for playback\n");
                     }
                 }
             }
@@ -2196,8 +2195,8 @@ int app_main(int argc, char const* const* argv)
 
     initprintf("Initializing OSD...\n");
 
-    Bsprintf(tempbuf, "Exhumed %s", s_buildRev);
-    OSD_SetVersion(tempbuf, 10,0);
+    Bsprintf(buffer, "Exhumed %s", s_buildRev);
+    OSD_SetVersion(buffer, 10,0);
     OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
@@ -2208,9 +2207,9 @@ int app_main(int argc, char const* const* argv)
     char *const p = strtok(setupFileName, ".");
 
     if (!p || !Bstrcmp(setupfilename, kSetupFilename))
-        Bsprintf(tempbuf, "settings.cfg");
+        Bsprintf(buffer, "settings.cfg");
     else
-        Bsprintf(tempbuf, "%s_settings.cfg", p);
+        Bsprintf(buffer, "%s_settings.cfg", p);
 
     Xfree(setupFileName);
 	*/
@@ -2345,8 +2344,8 @@ MENU:
         forcelevel = 0;
         goto STARTGAME2;
     case 9:
-        vcrfp = fopen("DEMO.VCR", "rb");
-        if (vcrfp == NULL) {
+        hVCRRead = kopen4loadfrommod("DEMO.VCR", 0);
+        if (hVCRRead < 0) {
             goto MENU;
         }
 
@@ -2392,7 +2391,7 @@ STARTGAME2:
 
     if (bPlayback)
     {
-        menu_GameLoad2(vcrfp, true);
+        menu_GameLoad2(hVCRRead, true);
         levelnew = GameStats.nMap;
         levelnum = GameStats.nMap;
         forcelevel = GameStats.nMap;
@@ -2406,7 +2405,7 @@ STARTGAME2:
         forcelevel = -1;
 
         if (bRecord && !bInDemo) {
-            menu_GameSave2(vcrfp);
+            menu_DemoGameSave(vcrfpwrite);
         }
         goto LOOP3;
     }
@@ -2424,7 +2423,7 @@ STARTGAME2:
     }
 
     if (bRecord && !bInDemo) {
-        menu_GameSave2(vcrfp);
+        menu_DemoGameSave(vcrfpwrite);
     }
 
     nBestLevel = levelnew - 1;
@@ -2564,8 +2563,8 @@ LOOP3:
                     bPlayback = kFalse;
                     bInDemo = kFalse;
 
-                    if (vcrfp) {
-                        fclose(vcrfp);
+                    if (hVCRRead) {
+                        kclose(hVCRRead);
                     }
 
                     CONTROL_BindsEnabled = 0;
@@ -2581,19 +2580,20 @@ LOOP3:
                 sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
                 sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
                 sPlayerInput[nLocalPlayer].nTarget = besttarget;
+                sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
 
                 Ra[nLocalPlayer].nTarget = besttarget;
 
                 lLocalCodes = 0;
-                nPlayerDAng = 0;
-
-                sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
+                nPlayerDAng = 0; 
             }
 
             // loc_11F72:
+            /*
             if (bRecord && !bInDemo) {
                 WritePlaybackInputs();
             }
+            */
 
             if (nNetPlayerCount)
             {
@@ -2620,6 +2620,11 @@ LOOP3:
             tclocks += moveframes * 4;
             while (moveframes && levelnew < 0)
             {
+                // TEMP - try this here...
+                if (bRecord && !bInDemo) {
+                    WritePlaybackInputs();
+                }
+
                 GameMove();
                 // if (nNetTime > 0)
                 // {
@@ -2657,7 +2662,7 @@ LOOP3:
         }
         else
         {
-            static bool frameJustDrawn;
+            static bool frameJustDrawn = false;
             bInMove = kTrue;
             if (!bPause && totalclock >= tclocks + 4)
             {
@@ -2675,13 +2680,12 @@ LOOP3:
                     sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
                     sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
                     sPlayerInput[nLocalPlayer].nTarget = besttarget;
+                    sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
 
                     Ra[nLocalPlayer].nTarget = besttarget;
 
                     lLocalCodes = 0;
                     nPlayerDAng = 0;
-
-                    sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
 
                     do
                     {

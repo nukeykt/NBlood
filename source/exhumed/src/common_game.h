@@ -21,6 +21,14 @@ extern int32_t S_OpenAudio(const char* fn, char searchfirst, uint8_t ismusic);
 # define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)
 #endif
 
+#define G_ModDirSnprintf(buf, size, basename, ...)                                                                                          \
+    (((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/" basename, g_modDir, ##__VA_ARGS__) : Bsnprintf(buf, size, basename, ##__VA_ARGS__)) \
+     >= ((int32_t)size) - 1)
+
+#define G_ModDirSnprintfLite(buf, size, basename) \
+    ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, "%s", basename))
+
+
 #ifdef __cplusplus
 extern "C" {
     #endif

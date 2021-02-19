@@ -1424,12 +1424,12 @@ void menu_ResetKeyTimer()
     keytimer = (int)totalclock + 2400;
 }
 
-void menu_GameLoad2(FILE *fp, bool bIsDemo)
+void menu_GameLoad2(buildvfs_kfd hFile, bool bIsDemo)
 {
     if (bIsDemo)
     {
         demo_header header;
-        fread(&header, 1, sizeof(demo_header), fp);
+        kread(hFile, &header, sizeof(demo_header));
 
         GameStats.nMap = header.nMap;
         GameStats.nWeapons = B_LITTLE16(header.nWeapons);
@@ -1449,11 +1449,12 @@ void menu_GameLoad2(FILE *fp, bool bIsDemo)
         GameStats.player.keys = B_LITTLE16(header.keys);
         GameStats.player.nMagic = B_LITTLE16(header.nMagic);
         Bmemcpy(GameStats.player.items, header.item, sizeof(header.item));
-        //Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+
         for (int i = 0; i < 7; i++)
         {
             GameStats.player.nAmmo[i] = B_LITTLE16(header.nAmmo[i]);
         }
+
         Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
         GameStats.player.nCurrentWeapon = B_LITTLE16(header.nCurrentWeapon2);
         GameStats.player.field_3FOUR = B_LITTLE16(header.field_3FOUR);
@@ -1464,8 +1465,9 @@ void menu_GameLoad2(FILE *fp, bool bIsDemo)
         GameStats.player.nRun = B_LITTLE16(header.nRun);
         GameStats.nLives = B_LITTLE16(header.nLives);
     }
-    else
-        fread(&GameStats, sizeof(GameStats), 1, fp);
+    else {
+        kread(hFile, &GameStats, sizeof(GameStats));
+    }
 
     nPlayerWeapons[nLocalPlayer] = GameStats.nWeapons;
 
@@ -1492,18 +1494,60 @@ short menu_GameLoad(int nSlot)
 {
     memset(&GameStats, 0, sizeof(GameStats));
 
-    FILE *fp = fopen(kSaveFileName, "rb");
-    if (fp == NULL) {
+    buildvfs_kfd hFile = kopen4loadfrommod(kSaveFileName, 0);
+    if (hFile < 0) {
         return 0;
     }
 
-    fseek(fp, 125, SEEK_SET);
-    fseek(fp, nSlot * sizeof(GameStats), SEEK_CUR);
+    klseek(hFile, 125, SEEK_SET);
+    klseek(hFile, nSlot * sizeof(GameStats), SEEK_CUR);
 
-    menu_GameLoad2(fp);
-    fclose(fp);
+    menu_GameLoad2(hFile);
+    kclose(hFile);
 
     return GameStats.nMap;
+}
+
+void menu_DemoGameSave(FILE* fp)
+{
+    demo_header dh;
+    memset(&dh, 0, sizeof(dh));
+
+    Player* pPlayer = &PlayerList[nLocalPlayer];
+
+    dh.nMap = (uint8_t)levelnew;
+    dh.nWeapons = nPlayerWeapons[nLocalPlayer];
+    dh.nCurrentWeapon = pPlayer->nCurrentWeapon;
+    dh.clip   = nPlayerClip[nLocalPlayer];
+    dh.items  = nPlayerItem[nLocalPlayer];
+    dh.nLives = nPlayerLives[nLocalPlayer];
+
+    dh.nHealth = pPlayer->nHealth;
+    dh.field_2 = pPlayer->field_2;
+    dh.nAction = pPlayer->nAction;
+    dh.nSprite = pPlayer->nSprite;
+    dh.bIsMummified = pPlayer->bIsMummified;
+    dh.someNetVal = pPlayer->someNetVal;
+    dh.invincibility = pPlayer->invincibility;
+    dh.nAir = pPlayer->nAir;
+    dh.nSeq = pPlayer->nSeq;
+    dh.nMaskAmount = pPlayer->nMaskAmount;
+    dh.keys = pPlayer->keys;
+    dh.nMagic = pPlayer->nMagic;
+
+    memcpy(dh.item, pPlayer->items, sizeof(pPlayer->items));
+    memcpy(dh.nAmmo, pPlayer->nAmmo, sizeof(pPlayer->nAmmo));
+    memcpy(dh.pad, pPlayer->pad, sizeof(pPlayer->pad));
+
+    dh.nCurrentWeapon2 = pPlayer->nCurrentWeapon;
+    dh.field_3FOUR = pPlayer->field_3FOUR;
+    dh.bIsFiring = pPlayer->bIsFiring;
+    dh.field_38  = pPlayer->field_38;
+    dh.field_3A  = pPlayer->field_3A;
+    dh.field_3C  = pPlayer->field_3C;
+    dh.nRun = pPlayer->nRun;
+
+    fwrite(&dh, sizeof(dh), 1, fp);
 }
 
 void menu_GameSave2(FILE *fp)
