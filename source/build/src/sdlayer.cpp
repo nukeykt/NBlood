@@ -1103,10 +1103,6 @@ const char *joyGetName(int32_t what, int32_t num)
 #if SDL_MAJOR_VERSION >= 2
             if (controller)
             {
-# if 0
-                // Use this if SDL's provided strings ever become user-friendly.
-                return SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)num);
-# else
                 static char const * axisStrings[] =
                 {
                     "Left Stick X-Axis",
@@ -1117,8 +1113,8 @@ const char *joyGetName(int32_t what, int32_t num)
                     "Right Trigger",
                     NULL
                 };
-                return axisStrings[num];
-# endif
+
+                return num < ARRAY_SSIZE(axisStrings) - 1 ? axisStrings[num] : SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)num);
             }
 #endif
 
@@ -1132,10 +1128,6 @@ const char *joyGetName(int32_t what, int32_t num)
 #if SDL_MAJOR_VERSION >= 2
             if (controller)
             {
-# if 0
-                // See above.
-                return SDL_GameControllerGetStringForButton((SDL_GameControllerButton)num);
-# else
                 static char const * buttonStrings[] =
                 {
                     "A",
@@ -1155,8 +1147,8 @@ const char *joyGetName(int32_t what, int32_t num)
                     "D-Pad Right",
                     NULL
                 };
-                return buttonStrings[num];
-# endif
+
+                return num < ARRAY_SSIZE(buttonStrings) - 1 ? buttonStrings[num] : SDL_GameControllerGetStringForButton((SDL_GameControllerButton)num);
             }
 #endif
 
