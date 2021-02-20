@@ -1986,10 +1986,13 @@ void Menu_Init(void)
     {
         if (i < 2*joystick.numButtons)
         {
+            auto const name = joyGetName(1, i>>1);
+            Bassert(name != nullptr);
+
             if (i & 1)
-                Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Double %s", joyGetName(1, i>>1));
+                Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Double %s", name);
             else
-                Bstrncpy(MenuJoystickNames[i], joyGetName(1, i>>1), MAXJOYBUTTONSTRINGLENGTH);
+                Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
         }
         else
         {
@@ -2006,8 +2009,10 @@ void Menu_Init(void)
     M_JOYSTICKBTNS.numEntries = 2*joystick.numButtons + 8*joystick.numHats;
     for (i = 0; i < joystick.numAxes; ++i)
     {
+        auto const name = joyGetName(0, i);
+        Bassert(name != nullptr);
         ME_JOYSTICKAXES[i] = ME_JOYSTICKAXES_TEMPLATE;
-        Bstrncpy(MenuJoystickAxes[i], joyGetName(0, i), MAXJOYBUTTONSTRINGLENGTH);
+        Bstrncpy(MenuJoystickAxes[i], name, MAXJOYBUTTONSTRINGLENGTH);
         ME_JOYSTICKAXES[i].name = MenuJoystickAxes[i];
         MEL_JOYSTICKAXES[i] = &ME_JOYSTICKAXES[i];
     }
