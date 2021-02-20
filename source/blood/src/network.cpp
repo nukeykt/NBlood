@@ -1151,6 +1151,8 @@ void netInitialize(bool bConsole)
     }
     gNetENetInit = true;
     gGameOptions.nGameType = 2;
+#else
+    netResetToSinglePlayer();
 #endif
 }
 
