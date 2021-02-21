@@ -1787,3 +1787,71 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
 
     setvar RETURN -1
 endevent
+
+onevent EVENT_DISPLAYKNUCKLES
+    getuserdef[THISACTOR].weaponscale weaponscale
+    getplayer[THISACTOR].i playerid
+
+    getplayer[THISACTOR].knuckle_incs hud_temp
+    shiftvarr hud_temp 1
+    ifvarge hud_temp 11
+        setvar RETURN -1
+    else ifvarle sprite[playerid].extra 0
+        setvar RETURN -1
+    else
+    {
+        setvar hud_tilenum CRACKKNUCKLES
+        switch hud_temp
+            case 0
+            case 10
+                break
+
+            case 1
+            case 9
+                addvar hud_tilenum 1
+                break
+
+            case 2
+            case 3
+            case 7
+            case 8
+                addvar hud_tilenum 2
+                addvar hud_tilenum 1
+                break
+
+            case 4
+            case 5
+            case 6
+                addvar hud_tilenum 3
+                break
+        endswitch
+
+        getinput[THISACTOR].avel hud_x
+        shiftvarr hud_x 5
+        subvarvar hud_x looking_angSR1
+        addvar hud_x 160
+
+        getplayer[THISACTOR].hard_landing hud_y
+        shiftvarl hud_y 3
+        inv hud_y
+        addvarvar hud_y looking_arc
+        getplayer[THISACTOR].horiz hud_temp
+        subvarvar hud_temp player[THISACTOR].horizoff
+        shiftvarr hud_temp 4
+        subvarvar hud_y hud_temp
+        addvar hud_y 180
+
+        setvar hud_scale 65536
+        setvar hud_angle 0
+        setvar hud_orientation 262148
+        setvarvar hud_shade gs
+        getplayer[THISACTOR].hudpal hud_pal
+
+        state G_DrawTileScaled
+
+        setvar RETURN 1
+
+        // cleanup
+        setvar hud_orientation 0
+    }
+endevent
