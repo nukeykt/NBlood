@@ -308,6 +308,8 @@ void sndStartSample(unsigned int nSound, int nVolume, int nChannel, bool bLoop)
         return;
     if (nVolume < 0)
         nVolume = pEffect->relVol;
+    nVolume *= 80;
+    nVolume = clamp(nVolume, 0, 255); // clamp to range that audiolib accepts
     int nSize = pChannel->at5->size;
     int nLoopEnd = nSize - 1;
     if (nLoopEnd < 0)
