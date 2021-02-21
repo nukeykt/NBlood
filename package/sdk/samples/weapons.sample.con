@@ -20,6 +20,22 @@ gamevar windowy1 0 0 //  (system) (pointer) (read only)
 gamevar windowy2 0 0 //  (system) (pointer) (read only)
 */
 
+
+/* TEMPORARY: so that this code supports the Incinerator without breaking under Atomic */
+
+define FLAMETHROWER_WEAPON 12
+
+define FLAMETHROWERSPRITE 5134
+define FLAMETHROWER 5138
+define FLAMETHROWERFIRE 5139
+define FLAMETHROWERPILOT 5174
+
+// not a real system gamevar
+gamevar WEAPON12_TOTALTIME 16 1
+
+
+/* weapons.con */
+
 gamevar hud_tilenum 0 1
 gamevar hud_x 0 1
 gamevar hud_y 0 1
@@ -1327,6 +1343,86 @@ state draw_freezer // FREEZE_WEAPON:
         xorvar hud_orientation 512
 ends
 
+state draw_incinerator // FLAMETHROWER_WEAPON:
+    state reset_hud_weapon_coordinates
+
+    setvarvar hud_temp3 currentweapon
+    shiftvarl hud_temp3 1
+
+    getplayer[THISACTOR].cursectnum hud_temp4
+    ifvarn sector[hud_temp4].lotag 2 // ST_2_UNDERWATER
+        setvarvar hud_temp4 weaponcount
+    else
+        setvar hud_temp4 0
+
+    ifvarg hud_temp4 0
+    {
+        addvar hud_totaltime 1
+        ifvarvarl weaponcount hud_totaltime
+        {
+            setvar hud_tilenum FLAMETHROWERFIRE
+
+            state determine_animation
+            ifvarn hud_temp 1
+            {
+                displayrand hud_temp
+                andvar hud_temp 1
+
+                addvarvar hud_x hud_temp
+
+                displayrand hud_temp
+                andvar hud_temp 1
+
+                addvarvar hud_y hud_temp
+            }
+
+            guniqhudid hud_temp3
+
+            addvar hud_x 210
+
+            addvar hud_y 277 // 16 + 261
+
+            setvar hud_shade -32
+
+            state G_DrawWeaponTile
+
+            guniqhudid currentweapon
+
+            subvar hud_y 26 // relative
+
+            setvarvar hud_temp weaponcount
+            modvar hud_temp 6
+            divvar hud_temp 2
+            addvar hud_tilenum 1
+            addvarvar hud_tilenum hud_temp
+
+            state G_DrawWeaponTile
+
+            guniqhudid 0
+
+            break
+        }
+    }
+
+    setvar hud_tilenum FLAMETHROWER
+
+    guniqhudid currentweapon
+
+    addvar hud_x 210
+
+    addvar hud_y 261
+
+    state G_DrawWeaponTile
+
+    setvar hud_tilenum FLAMETHROWERPILOT
+
+    guniqhudid hud_temp3
+
+    state G_DrawWeaponTile
+
+    guniqhudid 0
+ends
+
 state draw_expander // GROW_WEAPON:
     state reset_hud_weapon_coordinates
 
@@ -1555,6 +1651,9 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
             case FREEZE_WEAPON
                 setvar hud_tilenum FREEZESPRITE
                 break
+            case FLAMETHROWER_WEAPON
+                setvar hud_tilenum FLAMETHROWERSPRITE
+                break
             case SHRINKER_WEAPON
                 setvar hud_tilenum SHRINKERSPRITE
                 break
@@ -1662,6 +1761,10 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
             case FREEZE_WEAPON
                 setvarvar hud_totaltime WEAPON9_TOTALTIME
                 state draw_freezer
+                break
+            case FLAMETHROWER_WEAPON
+                setvarvar hud_totaltime WEAPON12_TOTALTIME
+                state draw_incinerator
                 break
             case GROW_WEAPON
                 setvarvar hud_totaltime WEAPON11_TOTALTIME
