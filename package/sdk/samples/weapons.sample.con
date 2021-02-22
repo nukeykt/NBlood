@@ -106,7 +106,7 @@ state G_DrawTileScaled
             ifand hud_orientation 262144
             {
                 set hud_int_temp 10485760 // 160<<16
-                xor hud_int_orientation 262144
+                and hud_int_orientation -262145 // ~262144
             }
             break
     endswitch
@@ -418,8 +418,8 @@ state draw_tripbomb // TRIPBOMB_WEAPON:
 
     state G_DrawWeaponTile
 
-    ifand hud_orientation 4
-        xor hud_orientation 4
+    and hud_orientation -5 // ~4
+
     guniqhudid 0
 ends
 
@@ -459,8 +459,7 @@ state draw_rpg // RPG_WEAPON:
 
     state G_DrawWeaponTile
 
-    ifand hud_orientation 512
-        xor hud_orientation 512
+    and hud_orientation -513 // ~512
 ends
 
 state draw_shotgun // SHOTGUN_WEAPON:
@@ -1176,8 +1175,7 @@ state draw_devastator // DEVISTATOR_WEAPON:
 
                 state G_DrawWeaponTile
 
-                ifand hud_orientation 4
-                    xor hud_orientation 4
+                and hud_orientation -5 // ~4
 
                 guniqhudid 0
             }
@@ -1211,8 +1209,7 @@ state draw_devastator // DEVISTATOR_WEAPON:
                 state reset_hud_weapon_coordinates
                 sub hud_tilenum hud_temp3
                 set hud_shade gs
-                ifand hud_orientation 4
-                    xor hud_orientation 4
+                and hud_orientation -5 // ~4
 
                 guniqhudid currentweapon
 
@@ -1251,8 +1248,7 @@ state draw_devastator // DEVISTATOR_WEAPON:
 
         state G_DrawWeaponTile
 
-        ifand hud_orientation 4
-            xor hud_orientation 4
+        and hud_orientation -5 // ~4
 
         guniqhudid 0
     }
@@ -1328,8 +1324,7 @@ state draw_freezer // FREEZE_WEAPON:
         guniqhudid 0
     }
 
-    ifand hud_orientation 512
-        xor hud_orientation 512
+    and hud_orientation -513 // ~512
 ends
 
 state draw_incinerator // FLAMETHROWER_WEAPON:
