@@ -1874,3 +1874,152 @@ onevent EVENT_DISPLAYKNUCKLES
 
     set RETURN 1
 endevent
+
+state get_access_tip_y_array // access_tip_y[]
+    switch hud_temp
+        case 1
+            set hud_temp4 -8
+            break
+        case 2
+        case 20
+            set hud_temp4 -16
+            break
+        case 3
+        case 19
+            set hud_temp4 -32
+            break
+        case 4
+        case 18
+            set hud_temp4 -64
+            break
+        case 5
+            set hud_temp4 -84
+            break
+        case 6
+        case 7
+        case 8
+        case 9
+        case 10
+        case 11
+        case 12
+        case 13
+        case 14
+        case 15
+            set hud_temp4 -108
+            break
+        case 16
+            set hud_temp4 -96
+            break
+        case 17
+            set hud_temp4 -72
+            break
+        case 22
+            set hud_temp4 16
+            break
+        case 23
+            set hud_temp4 32
+            break
+        case 24
+            set hud_temp4 48
+            break
+        /*
+        case 0
+        case 21
+        */
+        default
+            set hud_temp4 0
+            break
+    endswitch
+ends
+
+onevent EVENT_DISPLAYTIP
+    state reset_vars_not_displayweapon
+
+    set RETURN 1
+
+    getplayer[].tipincs hud_temp
+    ifae hud_temp 25 // ARRAY_SIZE(access_tip_y)
+        break
+
+    state calc_display_base
+    state get_access_tip_y_array
+
+    add hud_x 170
+
+    shiftr hud_temp4 1
+    add hud_y hud_temp4
+    add hud_y 240
+
+    set hud_tilenum 26
+    sub hud_tilenum hud_temp
+    shiftr hud_tilenum 4
+    add hud_tilenum TIP
+
+    getplayer[].hudpal hud_pal
+
+    set hud_orientation 262144
+
+    guniqhudid 201
+
+    state G_DrawTileScaled
+
+    guniqhudid 0
+endevent
+
+onevent EVENT_DISPLAYACCESS
+    state reset_vars_not_displayweapon
+
+    set RETURN 1
+
+    getplayer[].access_incs hud_temp
+    ifae hud_temp 21 // ARRAY_SIZE(access_tip_y)-4
+        break
+    ifle sprite[playerid].extra 0
+        break
+
+    state calc_display_base
+    state get_access_tip_y_array
+
+    set hud_temp2 hud_temp4
+    shiftr hud_temp2 2
+    add hud_x hud_temp2
+    add hud_x 170
+
+    add hud_y hud_temp4
+    add hud_y 266
+
+    getplayer[].access_spritenum hud_pal
+    ifb hud_pal MAXSPRITES
+        getactor[hud_pal].pal hud_pal
+    else
+        set hud_pal 0
+
+    set hud_temp3 1
+    set hud_temp2 hud_temp
+    sub hud_temp2 3
+    ifle hud_temp2 0
+        set hud_temp3 0
+    shiftr hud_temp2 3
+    ife hud_temp2 0
+        set hud_temp3 0
+    ifn hud_temp3 0
+    {
+        set hud_tilenum hud_temp
+        shiftr hud_tilenum 3
+        add hud_tilenum HANDHOLDINGLASER
+
+        set hud_orientation 262144
+    }
+    else
+    {
+        set hud_tilenum HANDHOLDINGACCESS
+
+        set hud_orientation 262148 // 4|262144
+    }
+
+    guniqhudid 200
+
+    state G_DrawTileScaled
+
+    guniqhudid 0
+endevent
