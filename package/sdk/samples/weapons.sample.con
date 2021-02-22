@@ -236,8 +236,7 @@ state draw_shrunk_fists // Shrunk Running Fists
     set hud_temp4 hud_temp2
     shiftr hud_temp2 10
     shiftr hud_temp4 8
-    ifl hud_temp4 0
-        mul hud_temp4 -1
+    abs hud_temp4
 
     // right fist
     guniqhudid 101
@@ -633,7 +632,7 @@ state draw_chaingun // CHAINGUN_WEAPON:
         {
             displayrand hud_temp
             and hud_temp 3
-            mul hud_temp -1
+            inv hud_temp
             add hud_temp 1
             add hud_x hud_temp
         }
@@ -1500,7 +1499,7 @@ state draw_expander // GROW_WEAPON:
         getplayer[].random_club_frame hud_shade
         sin hud_shade hud_shade
         shiftr hud_shade 10
-        mul hud_shade -1
+        inv hud_shade
         add hud_shade 16
 
         guniqhudid hud_temp3
@@ -1601,7 +1600,7 @@ state draw_shrinker // SHRINKER_WEAPON:
         getplayer[].random_club_frame hud_shade
         sin hud_shade hud_shade
         shiftr hud_shade 10
-        mul hud_shade -1
+        inv hud_shade
         add hud_shade 16
 
         guniqhudid hud_temp3
