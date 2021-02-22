@@ -2866,9 +2866,9 @@ void P_DisplayWeapon(void)
                 break;
 
             case FLAMETHROWER_WEAPON:
-                if ((*weaponFrame) < (PWEAPON(screenpeek, pPlayer->curr_weapon, TotalTime) + 1) && (*weaponFrame) >= 1 && sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
+                if ((*weaponFrame) < (PWEAPON(screenpeek, pPlayer->curr_weapon, TotalTime) + 1) && (*weaponFrame) > 0 && sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
                 {
-                    static uint8_t freezerFrames[] = { 0, 0, 1, 1, 2, 2 };
+                    static uint8_t incineratorFrames[] = { 0, 0, 1, 1, 2, 2 };
 
                     if (doAnim)
                     {
@@ -2879,13 +2879,13 @@ void P_DisplayWeapon(void)
                     G_DrawWeaponTileWithID(currentWeapon << 1, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
                                            FLAMETHROWERFIRE, -32, weaponBits, weaponPal);
                     G_DrawWeaponTileWithID(currentWeapon, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 235 - weaponYOffset,
-                                           FLAMETHROWERFIRE + 1 + freezerFrames[*weaponFrame % 6], -32, weaponBits, weaponPal);
+                                           FLAMETHROWERFIRE + 1 + incineratorFrames[*weaponFrame % 6], -32, weaponBits, weaponPal);
                 }
                 else
                 {
                     G_DrawWeaponTileWithID(currentWeapon, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
                                            FLAMETHROWER, weaponShade, weaponBits, weaponPal);
-                    G_DrawWeaponTileWithID(currentWeapon, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
+                    G_DrawWeaponTileWithID(currentWeapon << 1, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
                                            FLAMETHROWERPILOT, weaponShade, weaponBits, weaponPal);
                 }
                 break;
