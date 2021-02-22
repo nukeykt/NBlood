@@ -1769,70 +1769,108 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
     set RETURN -1
 endevent
 
-onevent EVENT_DISPLAYKNUCKLES
+
+state reset_vars_not_displayweapon
     getuserdef[].weaponscale weaponscale
     getplayer[].i playerid
 
+    set hud_scale 65536
+    set hud_orientation 0
+    set hud_angle 0
+
+    getactor[playerid].shade hud_shade
+    ifvarg hud_shade 24
+        set hud_shade 24
+ends
+
+state calc_display_base
+    getinput[].avel hud_x
+    shiftr hud_x 5
+
+    getplayer[].look_ang hud_temp4
+    shiftr hud_temp4 1
+    sub hud_x hud_temp4
+
+
+    getplayer[].look_ang hud_y
+    abs hud_y
+    div hud_y 9
+
+    getplayer[].hard_landing hud_temp4
+    shiftl hud_temp4 3
+    sub hud_y hud_temp4
+
+    getplayer[].q16horiz hud_temp4
+    sub hud_temp4 player[].q16horizoff
+
+    // fix16_to_int
+    // CON should not do this.
+    ifge hud_temp4 0
+        add hud_temp4 32768 // fix16_half
+    else
+        sub hud_temp4 32768 // fix16_half
+    div hud_temp4 65536 // fix16_one
+
+    shiftr hud_temp4 4
+    sub hud_y hud_temp4
+ends
+
+onevent EVENT_DISPLAYKNUCKLES
+    state reset_vars_not_displayweapon
+
     getplayer[].knuckle_incs hud_temp
     shiftr hud_temp 1
-    ifge hud_temp 11
-        set RETURN -1
-    else ifle sprite[playerid].extra 0
-        set RETURN -1
-    else
+    ifae hud_temp 11 // ARRAY_SIZE(knuckleFrames)
     {
-        set hud_tilenum CRACKKNUCKLES
-        switch hud_temp
-            case 0
-            case 10
-                break
-
-            case 1
-            case 9
-                add hud_tilenum 1
-                break
-
-            case 2
-            case 3
-            case 7
-            case 8
-                add hud_tilenum 2
-                add hud_tilenum 1
-                break
-
-            case 4
-            case 5
-            case 6
-                add hud_tilenum 3
-                break
-        endswitch
-
-        getinput[].avel hud_x
-        shiftr hud_x 5
-        sub hud_x looking_angSR1
-        add hud_x 160
-
-        getplayer[].hard_landing hud_y
-        shiftl hud_y 3
-        inv hud_y
-        add hud_y looking_arc
-        getplayer[].horiz hud_temp
-        sub hud_temp player[].horizoff
-        shiftr hud_temp 4
-        sub hud_y hud_temp
-        add hud_y 180
-
-        set hud_scale 65536
-        set hud_angle 0
-        set hud_orientation 262148
-        set hud_shade gs
-        getplayer[].hudpal hud_pal
-
-        state G_DrawTileScaled
-
-        set RETURN 1
-
-        // cleanup
-        set hud_orientation 0
+        set RETURN -1
+        break
     }
+    ifle sprite[playerid].extra 0
+    {
+        set RETURN -1
+        break
+    }
+
+    state calc_display_base
+
+    set hud_tilenum CRACKKNUCKLES
+
+    switch hud_temp
+        case 0
+        case 10
+            break
+
+        case 1
+        case 9
+            add hud_tilenum 1
+            break
+
+        case 2
+        case 3
+        case 7
+        case 8
+            add hud_tilenum 2
+            break
+
+        case 4
+        case 5
+        case 6
+            add hud_tilenum 3
+            break
+    endswitch
+
+    add hud_x 160
+
+    add hud_y 180
+
+    set hud_orientation 262148 // 4|262144
+    getplayer[].hudpal hud_pal
+
+    guniqhudid 202
+
+    state G_DrawTileScaled
+
+    guniqhudid 0
+
+    set RETURN 1
 endevent
