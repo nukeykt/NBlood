@@ -89,7 +89,6 @@ ends
 state G_DrawTileScaled
     set hud_int_x hud_x
     set hud_int_y hud_y
-    set hud_int_scale hud_scale
     set hud_int_angle hud_angle
     set hud_int_orientation hud_orientation
 
@@ -120,34 +119,25 @@ state G_DrawTileScaled
         ifn usemodels 0
             ifhasmodel hud_tilenum hud_pal
             {
-                set hud_int_temp2 14680064 // 224<<16
-                mul hud_int_temp2 weaponscale
-                div hud_int_temp2 100
+                scalevar hud_int_temp2 14680064 weaponscale 100 // 224<<16
 
                 add hud_int_y 14680064 // 224<<16
                 sub hud_int_y hud_int_temp2
             }
     */
 
-    mul hud_int_x weaponscale
-    div hud_int_x 100
-    set hud_int_temp2 hud_int_temp
-    mul hud_int_temp2 weaponscale
-    div hud_int_temp2 100
+    scalevar hud_int_x hud_int_x weaponscale 100
+    scalevar hud_int_temp2 hud_int_temp weaponscale 100
     sub hud_int_temp hud_int_temp2
     add hud_int_x hud_int_temp
 
-    mul hud_int_y weaponscale
-    div hud_int_y 100
+    scalevar hud_int_y hud_int_y weaponscale 100
     set hud_int_temp 13107200 // 200<<16
-    set hud_int_temp2 hud_int_temp
-    mul hud_int_temp2 weaponscale
-    div hud_int_temp2 100
+    scalevar hud_int_temp2 hud_int_temp weaponscale 100
     sub hud_int_temp hud_int_temp2
     add hud_int_y hud_int_temp
 
-    mul hud_int_scale weaponscale
-    div hud_int_scale 100
+    scalevar hud_int_scale hud_scale weaponscale 100
 
     or hud_int_orientation 2050 // 2|2048
 
@@ -1685,10 +1675,7 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
             set hud_y weapon_pos
             mul hud_y weapon_pos
             add hud_y 180
-            set hud_scale 65536
-            getuserdef[].statusbarscale hud_temp2
-            mul hud_scale hud_temp2
-            div hud_scale 100
+            scalevar hud_scale 65536 userdef[].statusbarscale 100
             rotatesprite hud_x hud_y hud_scale 0 hud_tilenum 0 0 2 windowx1 windowy1 windowx2 windowy2
         }
 
