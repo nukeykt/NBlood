@@ -2198,20 +2198,15 @@ static int P_DisplayAccess(int accessShade)
     int const accessY   = access_tip_y[pSprite->access_incs] + (klabs(pSprite->look_ang) / 9) - (pSprite->hard_landing << 3);
     int const accessPal = (pSprite->access_spritenum >= 0) ? sprite[pSprite->access_spritenum].pal : 0;
 
+    auto const accessMode = pSprite->access_incs > 3 && (pSprite->access_incs - 3) >> 3;
+    int  const accessTile = accessMode ? HANDHOLDINGLASER + (pSprite->access_incs >> 3) : HANDHOLDINGACCESS;
+    int  const accessBits = accessMode ? DRAWEAP_CENTER : (4 | DRAWEAP_CENTER);
+
     guniqhudid = 200;
 
-    if ((pSprite->access_incs - 3) > 0 && (pSprite->access_incs - 3) >> 3)
-    {
-        G_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
-                         accessY + 266 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4),
-                         HANDHOLDINGLASER + (pSprite->access_incs >> 3), accessShade, DRAWEAP_CENTER, accessPal);
-    }
-    else
-    {
-        G_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
-                         accessY + 266 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4), HANDHOLDINGACCESS, accessShade,
-                         4 + DRAWEAP_CENTER, accessPal);
-    }
+    G_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
+                     accessY + 266 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4),
+                     accessTile, accessShade, accessBits, accessPal);
 
     guniqhudid = 0;
 
