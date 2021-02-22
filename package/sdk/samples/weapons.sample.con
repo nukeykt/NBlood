@@ -203,11 +203,11 @@ state reset_hud_weapon_coordinates
 ends
 
 state determine_animation
-    getuserdef[THISACTOR].pause_on hud_temp
+    getuserdef[].pause_on hud_temp
     ifn hud_temp 0
         set hud_temp 1
 
-    ifand player[THISACTOR].gm 1 // MODE_MENU
+    ifand player[].gm 1 // MODE_MENU
         or hud_temp 1
 
     getactor[playerid].pal hud_int_temp
@@ -222,7 +222,7 @@ state draw_shrunk_fists // Shrunk Running Fists
     state reset_hud_weapon_x_coordinate
 
     set hud_temp3 looking_arc
-    ife player[THISACTOR].jetpack_on 0
+    ife player[].jetpack_on 0
     {
         getactor[playerid].xvel hud_temp2
         shiftr hud_temp2 3
@@ -278,16 +278,16 @@ ends
 
 state draw_quick_kick // Quick Kick
     set hud_temp 14
-    sub hud_temp player[THISACTOR].quick_kick
+    sub hud_temp player[].quick_kick
 
     set hud_temp2 0
     ifn hud_temp 14 set hud_temp2 1
-    ifn player[THISACTOR].last_quick_kick 0 set hud_temp2 1
+    ifn player[].last_quick_kick 0 set hud_temp2 1
     ife hud_temp2 1
     {
-        getplayer[THISACTOR].hudpal hud_pal
+        getplayer[].hudpal hud_pal
         ife hud_pal 0
-            getplayer[THISACTOR].palookup hud_pal
+            getplayer[].palookup hud_pal
 
         guniqhudid 100
 
@@ -335,7 +335,7 @@ state draw_kick // KNEE_WEAPON:
         state reset_hud_weapon_coordinates
 
         ife hud_pal 0
-            getplayer[THISACTOR].palookup hud_pal
+            getplayer[].palookup hud_pal
 
         set hud_tilenum KNEE
 
@@ -1148,7 +1148,7 @@ state draw_devastator // DEVISTATOR_WEAPON:
             else ifl hud_temp2 0
                 set hud_temp3 -1
 
-            ifn player[THISACTOR].hbomb_hold_delay 0
+            ifn player[].hbomb_hold_delay 0
             {
                 guniqhudid currentweapon
 
@@ -1349,7 +1349,7 @@ state draw_incinerator // FLAMETHROWER_WEAPON:
     set hud_temp3 currentweapon
     shiftl hud_temp3 1
 
-    getplayer[THISACTOR].cursectnum hud_temp4
+    getplayer[].cursectnum hud_temp4
     ifn sector[hud_temp4].lotag 2 // ST_2_UNDERWATER
         set hud_temp4 weaponcount
     else
@@ -1497,7 +1497,7 @@ state draw_expander // GROW_WEAPON:
         set hud_tilenum SHRINKER
         add hud_tilenum 2
 
-        getplayer[THISACTOR].random_club_frame hud_shade
+        getplayer[].random_club_frame hud_shade
         sin hud_shade hud_shade
         shiftr hud_shade 10
         mul hud_shade -1
@@ -1598,7 +1598,7 @@ state draw_shrinker // SHRINKER_WEAPON:
         set hud_tilenum SHRINKER
         add hud_tilenum 2
 
-        getplayer[THISACTOR].random_club_frame hud_shade
+        getplayer[].random_club_frame hud_shade
         sin hud_shade hud_shade
         shiftr hud_shade 10
         mul hud_shade -1
@@ -1628,11 +1628,11 @@ ends
 
 onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
 
-    getplayer[THISACTOR].weapon_pos weapon_pos
-    getuserdef[THISACTOR].weaponscale weaponscale
-    getplayer[THISACTOR].i playerid
+    getplayer[].weapon_pos weapon_pos
+    getuserdef[].weaponscale weaponscale
+    getplayer[].i playerid
 
-    getuserdef[THISACTOR].drawweapon hud_temp
+    getuserdef[].drawweapon hud_temp
 
     ife hud_temp 2 // weapon icons
     {
@@ -1687,7 +1687,7 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
             mul hud_y weapon_pos
             add hud_y 180
             set hud_scale 65536
-            getuserdef[THISACTOR].statusbarscale hud_temp2
+            getuserdef[].statusbarscale hud_temp2
             mul hud_scale hud_temp2
             div hud_scale 100
             rotatesprite hud_x hud_y hud_scale 0 hud_tilenum 0 0 2 windowx1 windowy1 windowx2 windowy2
@@ -1711,7 +1711,7 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
     set hud_angle 0
     guniqhudid 0
 
-    getplayer[THISACTOR].hudpal hud_pal
+    getplayer[].hudpal hud_pal
 
     getactor[playerid].xrepeat hud_temp
     ifl hud_temp 40
@@ -1789,10 +1789,10 @@ onevent EVENT_DISPLAYWEAPON // P_DisplayWeapon
 endevent
 
 onevent EVENT_DISPLAYKNUCKLES
-    getuserdef[THISACTOR].weaponscale weaponscale
-    getplayer[THISACTOR].i playerid
+    getuserdef[].weaponscale weaponscale
+    getplayer[].i playerid
 
-    getplayer[THISACTOR].knuckle_incs hud_temp
+    getplayer[].knuckle_incs hud_temp
     shiftr hud_temp 1
     ifge hud_temp 11
         set RETURN -1
@@ -1826,17 +1826,17 @@ onevent EVENT_DISPLAYKNUCKLES
                 break
         endswitch
 
-        getinput[THISACTOR].avel hud_x
+        getinput[].avel hud_x
         shiftr hud_x 5
         sub hud_x looking_angSR1
         add hud_x 160
 
-        getplayer[THISACTOR].hard_landing hud_y
+        getplayer[].hard_landing hud_y
         shiftl hud_y 3
         inv hud_y
         add hud_y looking_arc
-        getplayer[THISACTOR].horiz hud_temp
-        sub hud_temp player[THISACTOR].horizoff
+        getplayer[].horiz hud_temp
+        sub hud_temp player[].horizoff
         shiftr hud_temp 4
         sub hud_y hud_temp
         add hud_y 180
@@ -1845,7 +1845,7 @@ onevent EVENT_DISPLAYKNUCKLES
         set hud_angle 0
         set hud_orientation 262148
         set hud_shade gs
-        getplayer[THISACTOR].hudpal hud_pal
+        getplayer[].hudpal hud_pal
 
         state G_DrawTileScaled
 
