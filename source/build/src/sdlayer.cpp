@@ -1158,6 +1158,12 @@ const char *joyGetName(int32_t what, int32_t num)
                     "D-Pad Down",
                     "D-Pad Left",
                     "D-Pad Right",
+                    "Misc",
+                    "Paddle 1",
+                    "Paddle 2",
+                    "Paddle 3",
+                    "Paddle 4",
+                    "Touchpad",
                     NULL
                 };
 
