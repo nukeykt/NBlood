@@ -236,7 +236,7 @@ static MenuMenuFormat_t MMF_SmallOptions =         { {    MENU_MARGIN_WIDE<<16, 
 static MenuMenuFormat_t MMF_Macros =               { {                  26<<16, 40<<16, },    160<<16 };
 static MenuMenuFormat_t MMF_SmallOptionsNarrow  =  { { MENU_MARGIN_REGULAR<<16, 38<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_KeyboardSetupFuncs =   { {                  50<<16, 34<<16, },    151<<16 };
-static MenuMenuFormat_t MMF_MouseJoySetupBtns =    { {                  76<<16, 34<<16, },    143<<16 };
+static MenuMenuFormat_t MMF_MouseJoySetupBtns =    { {                  76<<16, 34<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FuncList =             { {                 100<<16, 51<<16, },    152<<16 };
 static MenuMenuFormat_t MMF_ColorCorrect =         { { MENU_MARGIN_REGULAR<<16, 86<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_BigSliders =           { {    MENU_MARGIN_WIDE<<16, 37<<16, },    190<<16 };
@@ -992,11 +992,11 @@ static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
 
 #define MAXJOYBUTTONSTRINGLENGTH 32
 
-static char MenuJoystickNames[MAXJOYBUTTONSANDHATS*2][MAXJOYBUTTONSTRINGLENGTH];
+static char MenuJoystickNames[MAXJOYBUTTONSANDHATS][MAXJOYBUTTONSTRINGLENGTH];
 
-static MenuOption_t MEO_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS*2];
-static MenuEntry_t ME_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS*2];
-static MenuEntry_t *MEL_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS*2];
+static MenuOption_t MEO_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS];
+static MenuEntry_t ME_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS];
+static MenuEntry_t *MEL_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS];
 
 static MenuLink_t MEO_JOYSTICKAXES = { MENU_JOYSTICKAXIS, MA_Advance, };
 static MenuEntry_t ME_JOYSTICKAXES_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXES, Link );
@@ -1982,21 +1982,19 @@ void Menu_Init(void)
         MEO_MOUSESETUPBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
         MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseData[i].index[0]][MenuMouseData[i].index[1]];
     }
-    for (i = 0; i < 2*joystick.numButtons + 8*joystick.numHats; ++i)
+
+    for (i = 0; i < joystick.numButtons + 4*joystick.numHats; ++i)
     {
-        if (i < 2*joystick.numButtons)
+        if (i < joystick.numButtons)
         {
-            auto const name = joyGetName(1, i>>1);
+            auto const name = joyGetName(1, i);
             Bassert(name != nullptr);
 
-            if (i & 1)
-                Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Double %s", name);
-            else
-                Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
+            Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
         }
         else
         {
-            Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, (i & 1) ? "Double Hat %d %s" : "Hat %d %s", ((i - 2*joystick.numButtons)>>3), MenuJoystickHatDirections[((i - 2*joystick.numButtons)>>1) % 4]);
+            Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Hat %d %s", ((i - joystick.numButtons)>>2), MenuJoystickHatDirections[((i - joystick.numButtons)) % 4]);
         }
 
         MEL_JOYSTICKBTNS[i] = &ME_JOYSTICKBTNS[i];
@@ -2004,9 +2002,10 @@ void Menu_Init(void)
         ME_JOYSTICKBTNS[i].name = MenuJoystickNames[i];
         ME_JOYSTICKBTNS[i].entry = &MEO_JOYSTICKBTNS[i];
         MEO_JOYSTICKBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i>>1][i&1];
+        MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i][0];
     }
-    M_JOYSTICKBTNS.numEntries = 2*joystick.numButtons + 8*joystick.numHats;
+    M_JOYSTICKBTNS.numEntries = joystick.numButtons + 4*joystick.numHats;
+
     for (i = 0; i < joystick.numAxes; ++i)
     {
         auto const name = joyGetName(0, i);
@@ -3666,7 +3665,7 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         CONTROL_FreeMouseBind(MenuMouseData[M_MOUSEBTNS.currentEntry].index[0]);
         break;
     case MENU_JOYSTICKBTNS:
-        CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry>>1, M_JOYSTICKBTNS.currentEntry&1, controldevice_joystick);
+        CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, M_JOYSTICKBTNS.currentEntry, controldevice_joystick);
         break;
     case MENU_JOYSTICKAXIS:
     {
