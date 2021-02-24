@@ -3089,6 +3089,16 @@ void P_GetInput(int const playerNum)
 
     input_t input {};
 
+    auto const currentHiTicks    = timerGetHiTicks();
+    double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
+
+    if (!g_lastInputTicks)
+        elapsedInputTicks = 0;
+
+    g_lastInputTicks = currentHiTicks;
+
+    auto scaleToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
+
     if (BUTTON(gamefunc_Strafe))
     {
         static int strafeyaw;
@@ -3096,12 +3106,12 @@ void P_GetInput(int const playerNum)
         input.svel = -(info.mousex + strafeyaw) >> 3;
         strafeyaw  = (info.mousex + strafeyaw) % 8;
 
-        input.svel -= info.dyaw * keyMove / analogExtent;
+        input.svel -= lrint(scaleToInterval(info.dyaw * keyMove / analogExtent));
     }
     else
     {
         input.q16avel = fix16_sadd(input.q16avel, fix16_sdiv(fix16_from_int(info.mousex), F16(32)));
-        input.q16avel = fix16_sadd(input.q16avel, fix16_from_int(info.dyaw * analogTurnAmount / (analogExtent >> 1)));
+        input.q16avel = fix16_sadd(input.q16avel, fix16_from_float(scaleToInterval(info.dyaw * analogTurnAmount / (analogExtent >> 1))));
     }
 
     if (g_myAimMode)
@@ -3111,19 +3121,9 @@ void P_GetInput(int const playerNum)
 
     if (ud.mouseflip) input.q16horz = -input.q16horz;
 
-    input.q16horz = fix16_ssub(input.q16horz, fix16_from_int(info.dpitch * analogTurnAmount / analogExtent));
-    input.svel -= info.dx * keyMove / analogExtent;
-    input.fvel -= info.dz * keyMove / analogExtent;
-
-    auto const currentHiTicks    = timerGetHiTicks();
-    double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
-
-    if (!g_lastInputTicks)
-        elapsedInputTicks = 0;
-
-    g_lastInputTicks = currentHiTicks;
-
-    auto scaleAdjustmentToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
+    input.q16horz = fix16_ssub(input.q16horz, fix16_from_float(scaleToInterval(info.dpitch * analogTurnAmount / analogExtent)));
+    input.svel -= lrint(scaleToInterval(info.dx * keyMove / analogExtent));
+    input.fvel -= lrint(scaleToInterval(info.dz * keyMove / analogExtent));
 
     if (BUTTON(gamefunc_Strafe))
     {
@@ -3147,12 +3147,12 @@ void P_GetInput(int const playerNum)
         if (BUTTON(gamefunc_Turn_Left))
         {
             turnHeldTime += elapsedTics;
-            input.q16avel = fix16_ssub(input.q16avel, fix16_from_float(scaleAdjustmentToInterval((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1))));
+            input.q16avel = fix16_ssub(input.q16avel, fix16_from_float(scaleToInterval((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1))));
         }
         else if (BUTTON(gamefunc_Turn_Right))
         {
             turnHeldTime += elapsedTics;
-            input.q16avel = fix16_sadd(input.q16avel, fix16_from_float(scaleAdjustmentToInterval((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1))));
+            input.q16avel = fix16_sadd(input.q16avel, fix16_from_float(scaleToInterval((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1))));
         }
         else
             turnHeldTime = 0;
@@ -3313,12 +3313,12 @@ void P_GetInput(int const playerNum)
     if (thisPlayer.horizAngleAdjust)
     {
         float const horizAngle
-        = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + scaleAdjustmentToInterval(thisPlayer.horizAngleAdjust);
+        = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + scaleToInterval(thisPlayer.horizAngleAdjust);
         pPlayer->q16horiz = F16(100) + Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f)));
     }
     else if (pPlayer->return_to_center > 0 || thisPlayer.horizRecenter)
     {
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float(F16(66.666) - fix16_sdiv(pPlayer->q16horiz, F16(1.5))))));
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(fix16_to_float(F16(66.666) - fix16_sdiv(pPlayer->q16horiz, F16(1.5))))));
 
         if ((!pPlayer->return_to_center && thisPlayer.horizRecenter) || (pPlayer->q16horiz >= F16(99.9) && pPlayer->q16horiz <= F16(100.1)))
         {
@@ -3345,23 +3345,23 @@ void P_GetInput(int const playerNum)
         {
             int const slopeZ = getflorzofslope(pPlayer->cursectnum, adjustedPosition.x, adjustedPosition.y);
             if ((pPlayer->cursectnum == currentSector) || (klabs(getflorzofslope(currentSector, adjustedPosition.x, adjustedPosition.y) - slopeZ) <= ZOFFSET6))
-                pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleAdjustmentToInterval(mulscale16(pPlayer->truefz - slopeZ, 160))));
+                pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(mulscale16(pPlayer->truefz - slopeZ, 160))));
         }
     }
 
     if (pPlayer->q16horizoff > 0)
     {
-        pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float((pPlayer->q16horizoff >> 3) + fix16_one))));
+        pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((pPlayer->q16horizoff >> 3) + fix16_one))));
         pPlayer->q16horizoff = fix16_max(pPlayer->q16horizoff, 0);
     }
     else if (pPlayer->q16horizoff < 0)
     {
-        pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleAdjustmentToInterval(fix16_to_float((-pPlayer->q16horizoff >> 3) + fix16_one))));
+        pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((-pPlayer->q16horizoff >> 3) + fix16_one))));
         pPlayer->q16horizoff = fix16_min(pPlayer->q16horizoff, 0);
     }
 
     if (thisPlayer.horizSkew)
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleAdjustmentToInterval(thisPlayer.horizSkew)));
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(thisPlayer.horizSkew)));
 
     pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
     pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
