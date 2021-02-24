@@ -3152,6 +3152,16 @@ void P_GetInput(int const playerNum)
     input.svel -= lrint(scaleToInterval(info.dx * keyMove / analogExtent));
     input.fvel -= lrint(scaleToInterval(info.dz * keyMove / analogExtent));
 
+    if (ud.config.JoystickViewLeveling && !input.q16avel && !input.q16horz && input.fvel && CONTROL_LastSeenInput == LastSeenInput::Joystick)
+    {
+        if (pPlayer->q16horiz >= F16(99) && pPlayer->q16horiz <= F16(100))
+            thisPlayer.horizRecenter = true;
+        else if (pPlayer->q16horiz < F16(99))
+            input.q16horz = fix16_add(input.q16horz, fix16_from_float(scaleToInterval(ud.config.JoystickViewLeveling)));
+        else if (pPlayer->q16horiz > F16(100))
+            input.q16horz = fix16_sub(input.q16horz, fix16_from_float(scaleToInterval(ud.config.JoystickViewLeveling)));
+    }
+
     if (BUTTON(gamefunc_Strafe))
     {
         if (!localInput.svel)

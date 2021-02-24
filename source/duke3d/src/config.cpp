@@ -266,6 +266,7 @@ void CONFIG_SetDefaults(void)
     ud.config.CheckForUpdates = 1;
     ud.config.FXVolume        = 255;
     ud.config.JoystickAimWeight = 5;
+    ud.config.JoystickViewLeveling = 1;
     ud.config.MouseBias       = 0;
     ud.config.MusicDevice     = ASS_AutoDetect;
     ud.config.MusicToggle     = 1;

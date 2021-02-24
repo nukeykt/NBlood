@@ -981,9 +981,14 @@ static MenuEntry_t ME_JOYSTICK_DEFAULTS_CLEAR = MAKE_MENUENTRY( "Clear All Setti
 
 static MenuRangeInt32_t MEO_JOYSTICK_WEIGHTED_AIMING = MAKE_MENURANGE(&ud.config.JoystickAimWeight , &MF_Bluefont, 0, 10, 0, 11, 0 );
 static MenuEntry_t ME_JOYSTICK_WEIGHTED_AIMING = MAKE_MENUENTRY( "Weighted Aiming", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_WEIGHTED_AIMING, RangeInt32 );
+
+static MenuRangeInt32_t MEO_JOYSTICK_VIEW_LEVELING = MAKE_MENURANGE(&ud.config.JoystickViewLeveling , &MF_Bluefont, 0, 10, 0, 6, 0 );
+static MenuEntry_t ME_JOYSTICK_VIEW_LEVELING = MAKE_MENUENTRY( "View Leveling", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_VIEW_LEVELING, RangeInt32 );
+
 static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
     &ME_JOYSTICK_ENABLE,
     &ME_JOYSTICK_WEIGHTED_AIMING,
+    &ME_JOYSTICK_VIEW_LEVELING,
     &ME_Space6_Redfont,
     &ME_JOYSTICK_EDITBUTTONS,
     &ME_JOYSTICK_EDITAXES,
