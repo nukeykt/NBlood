@@ -944,7 +944,7 @@ void joyScanDevices()
 
             buildprintf("  %d. %s\n", i+1, name);
         }
-
+        
 #if SDL_MAJOR_VERSION >= 2
         for (int i = 0; i < numjoysticks; i++)
         {
@@ -952,17 +952,30 @@ void joyScanDevices()
             {
                 buildprintf("Using controller %s\n", SDL_GameControllerName(controller));
 
-                joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
                 joystick.numBalls   = 0;
-                joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
                 joystick.numHats    = 0;
+                joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
+                joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
 
+#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
+                {
+                    joystick.numAxes = 0;
+                    for (int j = 0; j < SDL_CONTROLLER_AXIS_MAX; ++j)
+                        if (SDL_GameControllerHasAxis(controller, (SDL_GameControllerAxis)j))
+                            joystick.numAxes = j + 1;
+
+                    joystick.numButtons = 0;
+                    for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
+                        if (SDL_GameControllerHasButton(controller, (SDL_GameControllerButton)j))
+                            joystick.numButtons = j + 1;
+                }
+#endif
                 joystick.isGameController = 1;
 
                 Xfree(joystick.pAxis);
                 joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
-                Xfree(joystick.pHat);
-                joystick.pHat = nullptr;
+                DO_FREE_AND_NULL(joystick.pHat);
 
                 inputdevices |= 4;
 
