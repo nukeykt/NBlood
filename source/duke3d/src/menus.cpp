@@ -871,48 +871,32 @@ static MenuEntry_t *MEL_KEYBOARDSETUP[] = {
 
 
 // There is no better way to do this than manually.
+static struct MenuMouseData_t
+{
+    char const *name;
+    int index[2];
+} const MenuMouseData[]  = {
+    { "Left",       0, 0, },
+    { "Right",      1, 0, },
+    { "Middle",     2, 0, },
+    { "Button 4",   3, 0, },
+    { "Button 5",   6, 0, },
 
-#define MENUMOUSEFUNCTIONS 12
+    { "Wheel Up",   4, 0, },
+    { "Wheel Down", 5, 0, },
 
-static char const *MenuMouseNames[MENUMOUSEFUNCTIONS] = {
-    "Button 1",
-    "Double Button 1",
-    "Button 2",
-    "Double Button 2",
-    "Button 3",
-    "Double Button 3",
-
-    "Wheel Up",
-    "Wheel Down",
-
-    "Button 4",
-    "Double Button 4",
-    "Button 5",
-    "Double Button 5",
-};
-static int32_t MenuMouseDataIndex[MENUMOUSEFUNCTIONS][2] = {
-    { 0, 0, },
-    { 0, 1, },
-    { 1, 0, },
-    { 1, 1, },
-    { 2, 0, },
-    { 2, 1, },
-
-    // note the mouse wheel
-    { 4, 0, },
-    { 5, 0, },
-
-    { 3, 0, },
-    { 3, 1, },
-    { 6, 0, },
-    { 6, 1, },
+    { "Double Click Left",      0, 1, },
+    { "Double Click Right",     1, 1, },
+    { "Double Click Middle",    2, 1, },
+    { "Double Click Button 4",  3, 1, },
+    { "Double Click Button 5",  6, 1, },
 };
 
 static MenuOption_t MEO_MOUSEJOYSETUPBTNS_TEMPLATE = MAKE_MENUOPTION( &MF_Minifont, &MEOS_Gamefuncs, NULL );
-static MenuOption_t MEO_MOUSESETUPBTNS[MENUMOUSEFUNCTIONS];
+static MenuOption_t MEO_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
 static MenuEntry_t ME_MOUSEJOYSETUPBTNS_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Minifont, &MEF_FuncList, NULL, Option );
-static MenuEntry_t ME_MOUSESETUPBTNS[MENUMOUSEFUNCTIONS];
-static MenuEntry_t *MEL_MOUSESETUPBTNS[MENUMOUSEFUNCTIONS];
+static MenuEntry_t ME_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
+static MenuEntry_t *MEL_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
 
 static MenuLink_t MEO_MOUSESETUP_BTNS = { MENU_MOUSEBTNS, MA_Advance, };
 static MenuEntry_t ME_MOUSESETUP_BTNS = MAKE_MENUENTRY( "Button assignment", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_BTNS, Link );
@@ -1989,14 +1973,14 @@ void Menu_Init(void)
         MEO_KEYBOARDSETUPFUNCS[i].column[1] = &ud.config.KeyboardKeys[i][1];
     }
     M_KEYBOARDKEYS.numEntries = NUMGAMEFUNCTIONS;
-    for (i = 0; i < MENUMOUSEFUNCTIONS; ++i)
+    for (i = 0; i < ARRAY_SSIZE(MenuMouseData); ++i)
     {
         MEL_MOUSESETUPBTNS[i] = &ME_MOUSESETUPBTNS[i];
         ME_MOUSESETUPBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
-        ME_MOUSESETUPBTNS[i].name = MenuMouseNames[i];
+        ME_MOUSESETUPBTNS[i].name = MenuMouseData[i].name;
         ME_MOUSESETUPBTNS[i].entry = &MEO_MOUSESETUPBTNS[i];
         MEO_MOUSESETUPBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseDataIndex[i][0]][MenuMouseDataIndex[i][1]];
+        MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseData[i].index[0]][MenuMouseData[i].index[1]];
     }
     for (i = 0; i < 2*joystick.numButtons + 8*joystick.numHats; ++i)
     {
@@ -3673,8 +3657,8 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     switch (g_currentMenu)
     {
     case MENU_MOUSEBTNS:
-        CONTROL_MapButton(newOption, MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0], MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][1], controldevice_mouse);
-        CONTROL_FreeMouseBind(MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0]);
+        CONTROL_MapButton(newOption, MenuMouseData[M_MOUSEBTNS.currentEntry].index[0], MenuMouseData[M_MOUSEBTNS.currentEntry].index[1], controldevice_mouse);
+        CONTROL_FreeMouseBind(MenuMouseData[M_MOUSEBTNS.currentEntry].index[0]);
         break;
     case MENU_JOYSTICKBTNS:
         CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry>>1, M_JOYSTICKBTNS.currentEntry&1, controldevice_joystick);
