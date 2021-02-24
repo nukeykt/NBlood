@@ -1603,6 +1603,11 @@ int32_t registerosdcommands(void)
         { "hud_hidestick", "hide the touch input stick", (void *)&droidinput.hideStick, CVAR_BOOL, 0, 1 },
 #endif
 
+        {
+            "in_joystickaimweight", "weight joystick aiming input towards whichever axis is moving the most at any given time",
+            (void *)&ud.config.JoystickAimWeight, CVAR_INT, 0, 10
+        },
+
         { "in_joystick","use joystick or controller input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "in_mouse","use mouse input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usemouse, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
 

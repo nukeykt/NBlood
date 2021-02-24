@@ -3080,6 +3080,33 @@ void P_GetInput(int const playerNum)
             info.mousex = tabledivide32_noinline(info.mousex, ud.config.MouseBias);
     }
 
+    if (ud.config.JoystickAimWeight)
+    {
+        int const absyaw = klabs(info.dyaw);
+        int const abspitch = klabs(info.dpitch);
+        //int const origyaw = info.dyaw;
+        //int const origpitch = info.dpitch;
+
+        if (absyaw > abspitch)
+        {
+            if (info.dpitch > 0)
+                info.dpitch = max(0, info.dpitch - tabledivide32_noinline(absyaw - abspitch, 11 - ud.config.JoystickAimWeight));
+            else if (info.dpitch < 0)
+                info.dpitch = min(0, info.dpitch + tabledivide32_noinline(absyaw - abspitch, 11 - ud.config.JoystickAimWeight));
+
+            //OSD_Printf("pitch %d -> %d\n",origpitch, info.dpitch);
+        }
+        else if (abspitch > absyaw)
+        {
+            if (info.dyaw > 0)
+                info.dyaw = max(0, info.dyaw - tabledivide32_noinline(abspitch - absyaw, 11 - ud.config.JoystickAimWeight));
+            else if (info.dyaw < 0)
+                info.dyaw = min(0, info.dyaw + tabledivide32_noinline(abspitch - absyaw, 11 - ud.config.JoystickAimWeight));
+
+            //OSD_Printf("yaw %d -> %d\n",origyaw, info.dyaw);
+        }
+    }
+
     // JBF: Run key behaviour is selectable
     int const     playerRunning    = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
     int const     turnAmount       = playerRunning ? (NORMALTURN << 1) : NORMALTURN;
