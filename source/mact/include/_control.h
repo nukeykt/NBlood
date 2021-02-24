@@ -63,7 +63,7 @@ extern "C" {
 #define INSTANT_ONOFF       0
 #define TOGGLE_ONOFF        1
 
-#define MAXCONTROLVALUE  0x7fff
+#define MAXCONTROLVALUE  0x1ffff
 
 // Number of Mouse buttons
 
