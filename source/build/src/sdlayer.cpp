@@ -858,6 +858,7 @@ int debugprintf(const char *f, ...)
 static SDL_Joystick *joydev = NULL;
 #if SDL_MAJOR_VERSION >= 2
 static SDL_GameController *controller = NULL;
+static SDL_Haptic *haptic = NULL;
 
 static void LoadSDLControllerDB()
 {
@@ -911,9 +912,14 @@ static int numjoysticks;
 
 void joyScanDevices()
 {
-    inputdevices &= ~4;
+    inputdevices &= ~(DEV_JOYSTICK | DEV_HAPTIC);
 
 #if SDL_MAJOR_VERSION >= 2
+    if (haptic)
+    {
+        SDL_HapticClose(haptic);
+        haptic = nullptr;
+    }
     if (controller)
     {
         SDL_GameControllerClose(controller);
@@ -930,11 +936,11 @@ void joyScanDevices()
 
     if (numjoysticks < 1)
     {
-        buildputs("No game controllers found\n");
+        buildprintf("No game controllers found\n");
     }
     else
     {
-        buildputs("Game controllers:\n");
+        buildprintf("Game controllers:\n");
 
         char name[128];
 
@@ -949,6 +955,15 @@ void joyScanDevices()
                 
             buildprintf("  %d. %s\n", i + 1, name);
         }
+#if SDL_MAJOR_VERSION >= 2
+        int const numhaptics = SDL_NumHaptics();
+        if (numhaptics > 0)
+        {
+            buildprintf("Haptic devices:\n");
+            for (int i = 0; i < numhaptics; i++)
+                buildprintf("  %d. %s\n", i+1, SDL_HapticName(i));
+        }
+#endif
 #if SDL_MAJOR_VERSION >= 2
         for (int i = 0; i < numjoysticks; i++)
         {
@@ -993,7 +1008,12 @@ void joyScanDevices()
                 joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
                 DO_FREE_AND_NULL(joystick.pHat);
 
-                inputdevices |= 4;
+                inputdevices |= DEV_JOYSTICK;
+
+                auto joy = SDL_GameControllerGetJoystick(controller);
+                if ((haptic = SDL_HapticOpenFromJoystick(joy)) || !SDL_GameControllerRumble(controller, 0xffff, 0xffff, 200))
+                    inputdevices |= DEV_HAPTIC;
+                else buildprintf("%s\n", SDL_GetError());
 
                 return;
             }
@@ -1004,7 +1024,7 @@ void joyScanDevices()
         {
             if ((joydev = SDL_JoystickOpen(i)))
             {
-                buildprintf("Using joystick %s\n", SDL_JoystickNameForIndex(i));
+                buildprintf("Using joystick: %s\n", SDL_JoystickNameForIndex(i));
 
                 // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
                 joystick.numAxes    = min(9, SDL_JoystickNumAxes(joydev));
@@ -1034,13 +1054,18 @@ void joyScanDevices()
                     joystick.pHat[j] = -1; // center
 
                 SDL_JoystickEventState(SDL_ENABLE);
-                inputdevices |= 4;
+                inputdevices |= DEV_JOYSTICK;
 
+#if SDL_MAJOR_VERSION >= 2
+                if ((haptic = SDL_HapticOpenFromJoystick(joydev)) || !SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
+                    inputdevices |= DEV_HAPTIC;
+                else buildprintf("%s\n", SDL_GetError());
+#endif
                 return;
             }
         }
 
-        buildputs("No controllers are usable\n");
+        buildprintf("No controllers are usable\n");
     }
 }
 
@@ -1067,8 +1092,8 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
     }
 #endif
 
-    inputdevices = 1 | 2;  // keyboard (1) and mouse (2)
-    g_mouseGrabbed = 0;
+    inputdevices = DEV_KEYBOARD | DEV_MOUSE;
+    g_mouseGrabbed = false;
 
     memset(g_keyNameTable, 0, sizeof(g_keyNameTable));
 
@@ -1089,7 +1114,7 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
     }
 
 #if SDL_MAJOR_VERSION >= 2
-    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
+    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC))
 #else
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
 #endif
@@ -1099,6 +1124,9 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
 #endif
         joyScanDevices();
     }
+
+    if (inputdevices & DEV_HAPTIC)
+        buildprintf("Controller rumble enabled\n");
 
     return 0;
 }
@@ -1111,17 +1139,23 @@ void uninitinput(void)
     mouseUninit();
 
 #if SDL_MAJOR_VERSION >= 2
+    if (haptic)
+    {
+        SDL_HapticClose(haptic);
+        haptic = nullptr;
+    }
+
     if (controller)
     {
         SDL_GameControllerClose(controller);
-        controller = NULL;
+        controller = nullptr;
     }
 #endif
 
     if (joydev)
     {
         SDL_JoystickClose(joydev);
-        joydev = NULL;
+        joydev = nullptr;
     }
 }
 

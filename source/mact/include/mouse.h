@@ -49,7 +49,7 @@ extern float   CONTROL_MouseSensitivity;
 static inline bool MOUSE_Startup(void)
 {
     mouseInit();
-    return ((inputdevices & 2) == 2);
+    return ((inputdevices & DEV_MOUSE) == DEV_MOUSE);
 }
 
 static inline void    MOUSE_Shutdown(void)         { mouseUninit(); }

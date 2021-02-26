@@ -148,6 +148,11 @@ vec2_t CONSTEXPR const g_defaultVideoModes []
 
 extern char inputdevices;
 
+#define DEV_KEYBOARD 0x1
+#define DEV_MOUSE    0x2
+#define DEV_JOYSTICK 0x4
+#define DEV_HAPTIC   0x8
+
 // keys
 #define NUMKEYS 256
 #define KEYFIFOSIZ 64

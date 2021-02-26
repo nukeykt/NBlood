@@ -845,7 +845,7 @@ static void CONTROL_ResetJoystickValues()
 {
     CONTROL_NumJoyAxes      = min(MAXJOYAXES, joystick.numAxes);
     CONTROL_NumJoyButtons   = min(MAXJOYBUTTONS, joystick.numButtons + 4 * (joystick.numHats > 0));
-    CONTROL_JoystickEnabled = CONTROL_JoyPresent = !!((inputdevices & 4) >> 2);
+    CONTROL_JoystickEnabled = CONTROL_JoyPresent = !!((inputdevices & DEV_JOYSTICK) >> 2);
 }
 
 void CONTROL_ScanForControllers()
