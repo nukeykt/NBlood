@@ -2856,7 +2856,7 @@ ACTOR_STATIC void P_HandleBeingSpitOn(DukePlayer_t * const ps)
     }
 }
 
-static void A_DoProjectileEffects(int spriteNum, const vec3_t *davect, int radiusDamage)
+static void A_DoProjectileEffects(int spriteNum, const vec3_t *davect, bool radiusDamage = true)
 {
     auto const pProj = &SpriteProjectile[spriteNum];
 
@@ -2985,7 +2985,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
             if ((pProj->workslike & (PROJECTILE_BOUNCESOFFWALLS | PROJECTILE_EXPLODEONTIMER)) == PROJECTILE_BOUNCESOFFWALLS
                 && pSprite->yvel < 1)
             {
-                A_DoProjectileEffects(spriteNum, &davect, 1);
+                A_DoProjectileEffects(spriteNum, &davect);
                 A_DeleteSprite(spriteNum);
                 return;
             }
@@ -3058,7 +3058,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                 if (++actor[spriteNum].t_data[8] > pProj->range)
                 {
                     if (pProj->workslike & PROJECTILE_EXPLODEONTIMER)
-                        A_DoProjectileEffects(spriteNum, &davect, 1);
+                        A_DoProjectileEffects(spriteNum, &davect);
 
                     A_DeleteSprite(spriteNum);
                     return;
@@ -3124,7 +3124,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                             if (pProj->workslike & PROJECTILE_RPG_IMPACT_DAMAGE)
                                 actor[otherSprite].extra += pProj->extra;
 
-                            A_DoProjectileEffects(spriteNum, &davect, 0);
+                            A_DoProjectileEffects(spriteNum, &davect, false);
 
                             if (!(pProj->workslike & PROJECTILE_FORCEIMPACT))
                             {
@@ -3201,7 +3201,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                         break;
                 }
 
-                A_DoProjectileEffects(spriteNum, &davect, 1);
+                A_DoProjectileEffects(spriteNum, &davect);
                 A_DeleteSprite(spriteNum);
                 return;
             }
