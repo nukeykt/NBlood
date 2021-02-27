@@ -3300,8 +3300,11 @@ void P_GetInput(int const playerNum)
 
         if (!(movementLocked & IL_NOHORIZ))
         {
-            localInput.q16horz = fix16_clamp(fix16_sadd(localInput.q16horz, input.q16horz), F16(-MAXHORIZVEL), F16(MAXHORIZVEL));
-            pPlayer->q16horiz  = fix16_clamp(fix16_sadd(pPlayer->q16horiz, input.q16horz), F16(HORIZ_MIN), F16(HORIZ_MAX));
+            float horizAngle   = atan2f(localInput.q16horz, F16(128)) * (512.f / fPI) + fix16_to_float(input.q16horz);
+            localInput.q16horz = fix16_clamp(Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f))), F16(-MAXHORIZVEL), F16(MAXHORIZVEL));
+
+            horizAngle        = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + fix16_to_float(input.q16horz);
+            pPlayer->q16horiz = F16(100) + Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f)));
         }
     }
 
