@@ -41,91 +41,79 @@ extern "C" {
 
 #include "mouse.h"
 
-//***************************************************************************
-//
-// DEFINES
-//
-//***************************************************************************
-
 #define MAXGAMEBUTTONS      64
 
-#define BUTTON(x) ((CONTROL_ButtonState >> ((uint64_t)(x))) & 1)
+#define BUTTON(x)     ((CONTROL_ButtonState >> ((uint64_t)(x))) & 1)
 #define BUTTONHELD(x) ((CONTROL_ButtonHeldState >> ((uint64_t)(x))) & 1)
 
-#define BUTTONJUSTPRESSED(x) (BUTTON(x) && !BUTTONHELD(x))
-#define BUTTONRELEASED(x) (!BUTTON(x) && BUTTONHELD(x))
+#define BUTTONJUSTPRESSED(x)  (BUTTON(x) && !BUTTONHELD(x))
+#define BUTTONRELEASED(x)     (!BUTTON(x) && BUTTONHELD(x))
 #define BUTTONSTATECHANGED(x) (BUTTON(x) != BUTTONHELD(x))
 
-
-//***************************************************************************
-//
-// TYPEDEFS
-//
-//***************************************************************************
 typedef enum
-   {
-   axis_up,
-   axis_down,
-   axis_left,
-   axis_right
-   } axisdirection;
+{
+    axis_up,
+    axis_down,
+    axis_left,
+    axis_right
+} axisdirection;
 
 typedef enum
-   {
-   analog_turning=0,
-   analog_strafing=1,
-   analog_lookingupanddown=2,
-   analog_elevation=3,
-   analog_rolling=4,
-   analog_moving=5,
-   analog_maxtype
-   } analogcontrol;
+{
+    analog_turning,
+    analog_strafing,
+    analog_lookingupanddown,
+    analog_elevation,
+    analog_rolling,
+    analog_moving,
+    analog_maxtype
+} analogcontrol;
 
 typedef enum
-   {
-   dir_North,
-   dir_NorthEast,
-   dir_East,
-   dir_SouthEast,
-   dir_South,
-   dir_SouthWest,
-   dir_West,
-   dir_NorthWest,
-   dir_None
-   } direction;
+{
+    dir_North,
+    dir_NorthEast,
+    dir_East,
+    dir_SouthEast,
+    dir_South,
+    dir_SouthWest,
+    dir_West,
+    dir_NorthWest,
+    dir_None
+} direction;
 
 typedef struct
-   {
-   int32_t   button0;
-   int32_t   button1;
-   direction dir;
-   } UserInput;
+{
+    int32_t   button0;
+    int32_t   button1;
+    direction dir;
+} UserInput;
 
 typedef struct
-   {
-   int32_t     dx;
-   int32_t     dy;
-   int32_t     dz;
-   int32_t     dyaw;
-   int32_t     dpitch;
-   int32_t     droll;
-   int32_t     mousex;
-   int32_t     mousey;
-   } ControlInfo;
+{
+    int32_t dx;
+    int32_t dy;
+    int32_t dz;
+    int32_t dyaw;
+    int32_t dpitch;
+    int32_t droll;
+    int32_t mousex;
+    int32_t mousey;
+} ControlInfo;
 
 typedef enum
-   {
-   controltype_keyboard,
-   controltype_keyboardandmouse,
-   controltype_keyboardandjoystick
-   } controltype;
+{
+    controltype_keyboard,
+    controltype_keyboardandmouse,
+    controltype_keyboardandjoystick
+} controltype;
 
 typedef enum
-   {
-   controldevice_keyboard,
-   controldevice_mouse,
-   controldevice_joystick
-   } controldevice;
+{
+    controldevice_keyboard,
+    controldevice_mouse,
+    controldevice_joystick
+} controldevice;
 
 enum GameControllerButton : int
 {
@@ -171,12 +159,7 @@ enum class LastSeenInput : unsigned char
     Joystick,
 };
 
-//***************************************************************************
-//
 // GLOBALS
-//
-//***************************************************************************
-
 extern bool CONTROL_Started;
 extern bool CONTROL_MousePresent;
 extern bool CONTROL_JoyPresent;
@@ -189,12 +172,7 @@ extern uint64_t CONTROL_ButtonHeldState;
 extern LastSeenInput CONTROL_LastSeenInput;
 
 
-//***************************************************************************
-//
 // PROTOTYPES
-//
-//***************************************************************************
-
 void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
 void CONTROL_MapButton(int whichfunction, int whichbutton, int doubleclicked, controldevice device);
 void CONTROL_DefineFlag( int which, int toggle );

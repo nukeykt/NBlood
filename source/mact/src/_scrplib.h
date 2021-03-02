@@ -35,173 +35,68 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 extern "C" {
 #endif
 
-#define SCRIPTSECTIONSTART ('[')
-#define SCRIPTSECTIONEND   (']')
-#define SCRIPTENTRYSEPARATOR ('=')
-#define SCRIPTCOMMENT      (';')
-#define SCRIPTEOL          ('\n')
-#define SCRIPTNULL         ('\0')
+#define SCRIPTSECTIONSTART    ('[')
+#define SCRIPTSECTIONEND      (']')
+#define SCRIPTENTRYSEPARATOR  ('=')
+#define SCRIPTCOMMENT         (';')
+#define SCRIPTEOL             ('\n')
+#define SCRIPTNULL            ('\0')
 #define SCRIPTSTRINGSEPARATOR ('"')
-#define SCRIPTHEXFIRST ('0')
-#define SCRIPTHEXSECOND ('x')
-#define SCRIPTSPACE     (' ')
-#define SCRIPTDEFAULTVALUE ('~')
+#define SCRIPTHEXFIRST        ('0')
+#define SCRIPTHEXSECOND       ('x')
+#define SCRIPTSPACE           (' ')
+#define SCRIPTDEFAULTVALUE    ('~')
+
 #define MAXSCRIPTFILES 20
 #define SCRIPT(scripthandle,item) (scriptfiles[(scripthandle)]->item)
 
 typedef enum
-   {
-   linetype_comment,
-   linetype_section,
-   linetype_entry
-   } linetype_t;
+{
+    linetype_comment,
+    linetype_section,
+    linetype_entry
+} linetype_t;
 
 typedef struct scriptline
-   {
-   int32_t  type;
-   void * ptr;
-   struct scriptline *nextline;
-   struct scriptline *prevline;
-   } ScriptLineType;
+{
+    int32_t            type;
+    void *             ptr;
+    struct scriptline *nextline;
+    struct scriptline *prevline;
+} ScriptLineType;
 
 typedef struct scriptentry
-   {
-   char * name;
-   char * value;
-   struct scriptentry *nextentry;
-   struct scriptentry *preventry;
-   } ScriptEntryType;
+{
+    char *              name;
+    char *              value;
+    struct scriptentry *nextentry;
+    struct scriptentry *preventry;
+} ScriptEntryType;
 
 typedef struct scriptsection
-   {
-   char * name;
-   ScriptEntryType      *entries;
-   ScriptLineType       *lastline;
-   struct scriptsection *nextsection;
-   struct scriptsection *prevsection;
-   } ScriptSectionType;
+{
+    char *                name;
+    ScriptEntryType *     entries;
+    ScriptLineType *      lastline;
+    struct scriptsection *nextsection;
+    struct scriptsection *prevsection;
+} ScriptSectionType;
 
 typedef struct
-   {
-   ScriptSectionType * apScript;
-   ScriptSectionType * lastsection;
-   ScriptLineType * scriptlines;
-   char scriptfilename[128];
-   } script_t;
+{
+    ScriptSectionType *apScript;
+    ScriptSectionType *lastsection;
+    ScriptLineType *   scriptlines;
+    char               scriptfilename[BMAX_PATH];
+} script_t;
 
-/*
-==============
-=
-= SCRIPT_New
-=
-==============
-*/
-
-int32_t SCRIPT_New( void );
-
-/*
-==============
-=
-= SCRIPT_Delete
-=
-==============
-*/
-void SCRIPT_Delete( int32_t scripthandle );
-
-/*
-==============
-=
-= SCRIPT_FreeSection
-=
-==============
-*/
-void SCRIPT_FreeSection( ScriptSectionType * section );
-
-/*
-==============
-=
-= SafeWriteString
-=
-==============
-*/
-void SafeWriteString (int32_t handle, char * string);
-
-/*
-==============
-=
-= SCRIPT_AddLine
-=
-==============
-*/
-
-
-ScriptLineType * SCRIPT_AddLine
-   (
-   ScriptLineType * root,
-   int32_t type,
-   void * ptr
-   );
-
-/*
-==============
-=
-= SCRIPT_SectionExists
-=
-==============
-*/
-ScriptSectionType * SCRIPT_SectionExists
-   (
-   int32_t scripthandle,
-   const char * sectionname
-   );
-
-/*
-==============
-=
-= SCRIPT_AddSection
-=
-==============
-*/
-ScriptSectionType * SCRIPT_AddSection( int32_t scripthandle, const char * sectionname );
-
-/*
-==============
-=
-= SCRIPT_EntryExists
-=
-==============
-*/
-ScriptEntryType * SCRIPT_EntryExists
-   (
-   ScriptSectionType * section,
-   const char * entryname
-   );
-
-/*
-==============
-=
-= SCRIPT_AddEntry
-=
-==============
-*/
-void SCRIPT_AddEntry
-   (
-   int32_t scripthandle,
-   const char * sectionname,
-   const char * entryname,
-   const char * entryvalue
-   );
-
-/*
-==============
-=
-= SCRIPT_DecodeToken
-=
-==============
-*/
-
-void SCRIPT_DecodeToken ( int32_t scripthandle, char * str );
-
+int32_t            SCRIPT_New(void);
+void               SCRIPT_Delete(int32_t scripthandle);
+void               SCRIPT_FreeSection(ScriptSectionType *section);
+ScriptSectionType *SCRIPT_SectionExists(int32_t scripthandle, const char *sectionname);
+ScriptSectionType *SCRIPT_AddSection(int32_t scripthandle, const char *sectionname);
+ScriptEntryType *  SCRIPT_EntryExists(ScriptSectionType *section, const char *entryname);
+void               SCRIPT_AddEntry(int32_t scripthandle, const char *sectionname, const char *entryname, const char *entryvalue);
 
 #ifdef __cplusplus
 }

@@ -415,10 +415,10 @@ void CONTROL_ClearAssignments(void)
     memset(CONTROL_MouseButtonMapping,  BUTTONUNDEFINED, sizeof(CONTROL_MouseButtonMapping));
 
     for (int & i : CONTROL_MouseAxesScale)
-        i = NORMALAXISSCALE;
+        i = DEFAULTAXISSCALE;
 
     for (int & i : CONTROL_JoyAxesScale)
-        i = NORMALAXISSCALE;
+        i = DEFAULTAXISSCALE;
 }
 
 static int DoGetDeviceButtons(
@@ -532,7 +532,7 @@ static int CONTROL_DigitizeAxis(int axis, controldevice device)
     {
         set[axis].digitalClearedN = 0;
 
-        if (set[axis].analog > THRESHOLD || (set[axis].analog > MINTHRESHOLD && lastset[axis].digital == 1))
+        if (set[axis].analog > DIGITALAXISANALOGTHRESHOLD || (set[axis].analog > MINDIGITALAXISANALOGTHRESHOLD && lastset[axis].digital == 1))
             set[axis].digital = 1;
         else
             set[axis].digitalClearedP = 0;
@@ -543,7 +543,7 @@ static int CONTROL_DigitizeAxis(int axis, controldevice device)
     {
         set[axis].digitalClearedP = 0;
 
-        if (set[axis].analog < -THRESHOLD || (set[axis].analog < -MINTHRESHOLD && lastset[axis].digital == -1))
+        if (set[axis].analog < -DIGITALAXISANALOGTHRESHOLD || (set[axis].analog < -MINDIGITALAXISANALOGTHRESHOLD && lastset[axis].digital == -1))
             set[axis].digital = -1;
         else
             set[axis].digitalClearedN = 0;
@@ -577,7 +577,8 @@ static void CONTROL_ScaleAxis(int axis, controldevice device)
     }
 
     int const invertResult = !!invert[axis];
-    set[axis].analog = (mulscale16(set[axis].analog, scale[axis]) ^ -invertResult) + invertResult;
+    int const clamped = clamp(mulscale16(set[axis].analog, scale[axis]), -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE);
+    set[axis].analog  = (clamped ^ -invertResult) + invertResult;
 }
 
 static void CONTROL_ApplyAxis(int axis, ControlInfo *info, controldevice device)
@@ -631,7 +632,6 @@ static void CONTROL_PollDevices(ControlInfo *info)
             if (CONTROL_DigitizeAxis(i, controldevice_joystick))
                 CONTROL_LastSeenInput = LastSeenInput::Joystick;
             CONTROL_ScaleAxis(i, controldevice_joystick);
-            LIMITCONTROL(&CONTROL_JoyAxes[i].analog);
             CONTROL_ApplyAxis(i, info, controldevice_joystick);
         }
     }

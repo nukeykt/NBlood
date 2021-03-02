@@ -32,199 +32,27 @@ Prepared for public release: 03/21/2003 - Charlie Wiederhold, 3D Realms
 extern "C" {
 #endif
 
-/*
-==============
-=
-= SCRIPT_Init
-=
-==============
-*/
-int32_t SCRIPT_Init( char const * name );
-
-
-/*
-==============
-=
-= SCRIPT_Free
-=
-==============
-*/
-void SCRIPT_Free( int32_t scripthandle );
-
-/*
-==============
-=
-= SCRIPT_Load
-=
-==============
-*/
-
-int32_t SCRIPT_Load ( char const * filename );
-
-/*
-==============
-=
-= SCRIPT_Save
-=
-==============
-*/
-void SCRIPT_Save (int32_t scripthandle, char const * filename);
-
-
-/*
-==============
-=
-= SCRIPT_NumberSections
-=
-==============
-*/
-
-int32_t SCRIPT_NumberSections( int32_t scripthandle );
-
-/*
-==============
-=
-= SCRIPT_Section
-=
-==============
-*/
-
-char const * SCRIPT_Section( int32_t scripthandle, int32_t which );
-
-/*
-==============
-=
-= SCRIPT_NumberEntries
-=
-==============
-*/
-
-int32_t SCRIPT_NumberEntries( int32_t scripthandle, char const * sectionname );
-
-/*
-==============
-=
-= SCRIPT_Entry
-=
-==============
-*/
-
-char const * SCRIPT_Entry( int32_t scripthandle, char const * sectionname, int32_t which );
-
-
-/*
-==============
-=
-= SCRIPT_GetRaw
-=
-==============
-*/
-char const * SCRIPT_GetRaw(int32_t scripthandle, char const * sectionname, char const * entryname);
-
-/*
-==============
-=
-= SCRIPT_GetString
-=
-==============
-*/
-int32_t SCRIPT_GetStringPtr(int32_t scripthandle, char const *sectionname, char const *entryname, char **dest);
-int32_t SCRIPT_GetString(int32_t scripthandle, char const *sectionname, char const *entryname, char *dest);
-
-/*
-==============
-=
-= SCRIPT_GetDoubleString
-=
-==============
-*/
-int32_t SCRIPT_GetDoubleString(int32_t scripthandle, const char *sectionname, const char *entryname, char *dest1,
-                               char *dest2);
-
-/*
-==============
-=
-= SCRIPT_GetNumber
-=
-==============
-*/
-int32_t SCRIPT_GetNumber(int32_t scripthandle, const char *sectionname, const char *entryname, int32_t *number);
-
-/*
-==============
-=
-= SCRIPT_GetBoolean
-=
-==============
-*/
-int32_t SCRIPT_GetBoolean(int32_t scripthandle, char const *sectionname, char const *entryname, int32_t *boole);
-
-/*
-==============
-=
-= SCRIPT_PutSection
-=
-==============
-*/
-void SCRIPT_PutSection( int32_t scripthandle, char const * sectionname );
-
-/*
-==============
-=
-= SCRIPT_PutRaw
-=
-==============
-*/
-void SCRIPT_PutRaw(int32_t scripthandle, char const * sectionname, char const * entryname, char const * raw);
-
-/*
-==============
-=
-= SCRIPT_PutString
-=
-==============
-*/
-void SCRIPT_PutString(int32_t scripthandle, char const *sectionname, char const *entryname, const char *string);
-
-/*
-==============
-=
-= SCRIPT_PutDoubleString
-=
-==============
-*/
-void SCRIPT_PutDoubleString(int32_t scripthandle, const char *sectionname, const char *entryname, const char *string1,
-                            const char *string2);
-
-/*
-==============
-=
-= SCRIPT_PutNumber
-=
-==============
-*/
-void SCRIPT_PutNumber(int32_t scripthandle, const char *sectionname, const char *entryname, int32_t number,
-                      int32_t hexadecimal, int32_t defaultvalue);
-
-/*
-==============
-=
-= SCRIPT_PutBoolean
-=
-==============
-*/
-void SCRIPT_PutBoolean(int32_t scripthandle, char *sectionname, char *entryname, int32_t boole);
-
-/*
-==============
-=
-= SCRIPT_PutDouble
-=
-==============
-*/
-
-void SCRIPT_PutDouble(int32_t scripthandle, char *sectionname, char *entryname, double number, int32_t defaultvalue);
-
+int32_t     SCRIPT_Init(char const *name);
+void        SCRIPT_Free(int32_t scripthandle);
+int32_t     SCRIPT_Load(char const *filename);
+void        SCRIPT_Save(int32_t scripthandle, char const *filename);
+int32_t     SCRIPT_NumberSections(int32_t scripthandle);
+char const *SCRIPT_Section(int32_t scripthandle, int32_t which);
+int32_t     SCRIPT_NumberEntries(int32_t scripthandle, char const *sectionname);
+char const *SCRIPT_Entry(int32_t scripthandle, char const *sectionname, int32_t which);
+char const *SCRIPT_GetRaw(int32_t scripthandle, char const *sectionname, char const *entryname);
+int32_t     SCRIPT_GetStringPtr(int32_t scripthandle, char const *sectionname, char const *entryname, char **dest);
+int32_t     SCRIPT_GetString(int32_t scripthandle, char const *sectionname, char const *entryname, char *dest);
+int32_t     SCRIPT_GetDoubleString(int32_t scripthandle, const char *sectionname, const char *entryname, char *dest1, char *dest2);
+int32_t     SCRIPT_GetNumber(int32_t scripthandle, const char *sectionname, const char *entryname, int32_t *number);
+int32_t     SCRIPT_GetBoolean(int32_t scripthandle, char const *sectionname, char const *entryname, int32_t *boole);
+void        SCRIPT_PutSection(int32_t scripthandle, char const *sectionname);
+void        SCRIPT_PutRaw(int32_t scripthandle, char const *sectionname, char const *entryname, char const *raw);
+void        SCRIPT_PutString(int32_t scripthandle, char const *sectionname, char const *entryname, const char *string);
+void        SCRIPT_PutDoubleString(int32_t scripthandle, const char *sectionname, const char *entryname, const char *string1, const char *string2);
+void        SCRIPT_PutNumber(int32_t scripthandle, const char *sectionname, const char *entryname, int32_t number, int32_t hexadecimal, int32_t defaultvalue);
+void        SCRIPT_PutBoolean(int32_t scripthandle, char *sectionname, char *entryname, int32_t boole);
+void        SCRIPT_PutDouble(int32_t scripthandle, char *sectionname, char *entryname, double number, int32_t defaultvalue);
 
 #ifdef __cplusplus
 }

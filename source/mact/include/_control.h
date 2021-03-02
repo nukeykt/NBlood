@@ -44,30 +44,20 @@ Prepared for public release: 03/21/2003 - Charlie Wiederhold, 3D Realms
 extern "C" {
 #endif
 
-
-//****************************************************************************
-//
-// DEFINES
-//
-//****************************************************************************
-
 #define AXISUNDEFINED   0x7f
 #define BUTTONUNDEFINED 0x7f
 #define KEYUNDEFINED    0x7f
 
-#define THRESHOLD        (0x200 * 32767 / 10000)
-#define MINTHRESHOLD     (0x80 * 32767 / 10000)
+#define DIGITALAXISANALOGTHRESHOLD    (0x200 * 32767 / 10000)
+#define MINDIGITALAXISANALOGTHRESHOLD (0x80 * 32767 / 10000)
 
 #define DEFAULTMOUSESENSITIVITY 4 // 0x7000+MINIMUMMOUSESENSITIVITY
 
 #define INSTANT_ONOFF       0
 #define TOGGLE_ONOFF        1
 
-#define MAXCONTROLVALUE  0x1ffff
-
-// Number of Mouse buttons
-
-//#define MAXMOUSEBUTTONS 10
+// this is higher than the -32767 to 32767 range of the axis
+#define MAXSCALEDCONTROLVALUE  0x1ffff
 
 // Number of JOY buttons
 // KEEPINSYNC duke3d/src/gamedefs.h, build/src/sdlayer.cpp
@@ -79,60 +69,13 @@ extern "C" {
 #define MAXJOYAXES 9
 #define MAXJOYDIGITAL (MAXJOYAXES*2)
 
-// NORMAL axis scale
-#define NORMALAXISSCALE 65536
+#define DEFAULTAXISSCALE 65536
 
-#define BUTTONSET(x, value) (CONTROL_ButtonState |= ((uint64_t)value << ((uint64_t)(x))))
-#define BUTTONCLEAR(x) (CONTROL_ButtonState &= ~((uint64_t)1 << ((uint64_t)(x))))
+#define BUTTONSET(x, value)     (CONTROL_ButtonState |= ((uint64_t)value << ((uint64_t)(x))))
+#define BUTTONCLEAR(x)          (CONTROL_ButtonState &= ~((uint64_t)1 << ((uint64_t)(x))))
 #define BUTTONHELDSET(x, value) (CONTROL_ButtonHeldState |= (uint64_t)(value << ((uint64_t)(x))))
-#define LIMITCONTROL(x) (*x = clamp(*x, -MAXCONTROLVALUE, MAXCONTROLVALUE))
 
-//****************************************************************************
-//
 // TYPEDEFS
-//
-//****************************************************************************
-
-typedef enum
-{
-    motion_Left = -1,
-    motion_Up = -1,
-    motion_None = 0,
-    motion_Right = 1,
-    motion_Down = 1
-} motion;
-
-
-typedef struct
-{
-    int32_t joyMinX;
-    int32_t joyMinY;
-    int32_t threshMinX;
-    int32_t threshMinY;
-    int32_t threshMaxX;
-    int32_t threshMaxY;
-    int32_t joyMaxX;
-    int32_t joyMaxY;
-    int32_t joyMultXL;
-    int32_t joyMultYL;
-    int32_t joyMultXH;
-    int32_t joyMultYH;
-} JoystickDef;
-
-//   int32_t ThrottleMin;
-//   int32_t RudderMin;
-//   int32_t ThrottlethreshMin;
-//   int32_t RudderthreshMin;
-//   int32_t ThrottlethreshMax;
-//   int32_t RudderthreshMax;
-//   int32_t ThrottleMax;
-//   int32_t RudderMax;
-//   int32_t ThrottleMultL;
-//   int32_t RudderMultL;
-//   int32_t ThrottleMultH;
-//   int32_t RudderMultH;
-
-
 typedef struct
 {
     uint8_t active;
@@ -169,13 +112,6 @@ typedef struct
     int8_t digital;
     int8_t digitalClearedN, digitalClearedP;
 } controlaxistype;
-
-
-//***************************************************************************
-//
-// PROTOTYPES
-//
-//***************************************************************************
 
 #ifdef __cplusplus
 }
