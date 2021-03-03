@@ -5407,6 +5407,13 @@ repeatcase:
                 }
             }
 
+            if (EDUKE32_PREDICT_FALSE(i == 0))
+            {
+                initprintf("%s:%d: warning: empty skill name.\n",
+                    g_scriptFileName,g_lineNumber);
+                g_skillNames[j][i++] = ' ';
+            }
+
             g_skillNames[j][i] = '\0';
 
             for (i=0; i<MAXSKILLS; i++)
