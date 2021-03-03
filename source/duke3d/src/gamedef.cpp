@@ -5273,6 +5273,7 @@ repeatcase:
                 {
                     initprintf("%s:%d: warning: truncating volume name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_volumeNames[j])-1);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5327,18 +5328,19 @@ repeatcase:
             {
                 gamefunctions[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(*textptr != 0x0a && *textptr != 0x0d && ispecial(*textptr)))
-                {
-                    initprintf("%s:%d: warning: invalid character in function name.\n",
-                        g_scriptFileName,g_lineNumber);
-                    g_warningCnt++;
-                    scriptSkipLine();
-                    break;
-                }
                 if (EDUKE32_PREDICT_FALSE(i >= MAXGAMEFUNCLEN))
                 {
                     initprintf("%s:%d: warning: truncating function name to %d characters.\n",
                         g_scriptFileName,g_lineNumber, MAXGAMEFUNCLEN-1);
+                    i--;
+                    g_warningCnt++;
+                    scriptSkipLine();
+                    break;
+                }
+                if (EDUKE32_PREDICT_FALSE(*textptr != 0x0a && *textptr != 0x0d && ispecial(*textptr)))
+                {
+                    initprintf("%s:%d: warning: invalid character in function name.\n",
+                        g_scriptFileName,g_lineNumber);
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5398,6 +5400,7 @@ repeatcase:
                 {
                     initprintf("%s:%d: warning: truncating skill name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_skillNames[j])-1);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5430,6 +5433,7 @@ repeatcase:
                     {
                         initprintf("%s:%d: warning: truncating game name to %d characters.\n",
                             g_scriptFileName,g_lineNumber,(int32_t)sizeof(gamename)-1);
+                        i--;
                         g_warningCnt++;
                         scriptSkipLine();
                         break;
@@ -5506,6 +5510,7 @@ repeatcase:
                 {
                     initprintf("%s:%d: warning: truncating gametype name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_gametypeNames[j])-1);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5597,6 +5602,7 @@ repeatcase:
                 {
                     initprintf("%s:%d: warning: truncating level name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,31);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5671,6 +5677,7 @@ repeatcase:
                 if (EDUKE32_PREDICT_FALSE(i >= MAXQUOTELEN))
                 {
                     initprintf("%s:%d: warning: truncating quote text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXQUOTELEN-1);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5717,6 +5724,7 @@ repeatcase:
                 if (EDUKE32_PREDICT_FALSE(i >= MAXCHEATDESC))
                 {
                     initprintf("%s:%d: warning: truncating cheat text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXCHEATDESC-1);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5776,6 +5784,7 @@ repeatcase:
                 {
                     initprintf("%s:%d: warning: truncating cheat string to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(signed)sizeof(CheatStrings[k])-1);
+                    i--;
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
