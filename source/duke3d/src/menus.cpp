@@ -1920,7 +1920,7 @@ void Menu_Init(void)
     }
 
     // prepare skills
-    k = -1;
+    // k = -1;
     for (i = 0; i < g_skillCnt && g_skillNames[i][0]; ++i)
     {
         MEL_SKILL[i] = &ME_SKILL[i];
@@ -1929,9 +1929,9 @@ void Menu_Init(void)
 
         MEOSN_NetSkills[i] = g_skillNames[i];
 
-        k = i;
+        // k = i;
     }
-    ++k;
+    // ++k;
     M_SKILL.numEntries = g_skillCnt; // k;
     MEOS_NETOPTIONS_MONSTERS.numOptions = g_skillCnt + 1; // k+1;
     MEOSN_NetSkills[g_skillCnt] = MenuSkillNone;
