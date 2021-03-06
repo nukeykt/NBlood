@@ -414,7 +414,7 @@ void sdlayer_sethints()
     SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
 #endif
 #if defined SDL_HINT_XINPUT_ENABLED
-    if (!Bgetenv("EDUKE32_NO_XINPUT"))
+    if (Bgetenv("EDUKE32_NO_XINPUT"))
         SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
 #endif
 #endif
