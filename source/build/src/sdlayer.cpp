@@ -935,25 +935,33 @@ void joyScanDevices()
     else
     {
         buildputs("Game controllers:\n");
+
+        char name[128];
+
         for (int i = 0; i < numjoysticks; i++)
         {
-            const char * name;
 #if SDL_MAJOR_VERSION >= 2
             if (SDL_IsGameController(i))
-                name = SDL_GameControllerNameForIndex(i);
+                Bstrncpyz(name, SDL_GameControllerNameForIndex(i), sizeof(name));
             else
 #endif
-                name = SDL_JoystickNameForIndex(i);
-
-            buildprintf("  %d. %s\n", i+1, name);
+                Bstrncpyz(name, SDL_JoystickNameForIndex(i), sizeof(name));
+                
+            buildprintf("  %d. %s\n", i + 1, name);
         }
-        
 #if SDL_MAJOR_VERSION >= 2
         for (int i = 0; i < numjoysticks; i++)
         {
             if ((controller = SDL_GameControllerOpen(i)))
             {
-                buildprintf("Using controller %s\n", SDL_GameControllerName(controller));
+#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
+                    Bsnprintf(name, sizeof(name), "%s [%s]", SDL_GameControllerName(controller), SDL_GameControllerGetSerial(controller));
+                else
+#endif
+                    Bsnprintf(name, sizeof(name), "%s", SDL_GameControllerName(controller));
+
+                buildprintf("Using controller: %s\n", name);
 
                 joystick.numBalls   = 0;
                 joystick.numHats    = 0;
