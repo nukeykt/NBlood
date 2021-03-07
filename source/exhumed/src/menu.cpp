@@ -1516,36 +1516,39 @@ void menu_DemoGameSave(FILE* fp)
     Player* pPlayer = &PlayerList[nLocalPlayer];
 
     dh.nMap = (uint8_t)levelnew;
-    dh.nWeapons = nPlayerWeapons[nLocalPlayer];
-    dh.nCurrentWeapon = pPlayer->nCurrentWeapon;
-    dh.clip   = nPlayerClip[nLocalPlayer];
-    dh.items  = nPlayerItem[nLocalPlayer];
-    dh.nLives = nPlayerLives[nLocalPlayer];
+    dh.nWeapons = B_LITTLE16(nPlayerWeapons[nLocalPlayer]);
+    dh.nCurrentWeapon = B_LITTLE16(pPlayer->nCurrentWeapon);
+    dh.clip   = B_LITTLE16(nPlayerClip[nLocalPlayer]);
+    dh.items  = B_LITTLE16(nPlayerItem[nLocalPlayer]);
+    dh.nLives = B_LITTLE16(nPlayerLives[nLocalPlayer]);
 
-    dh.nHealth = pPlayer->nHealth;
-    dh.field_2 = pPlayer->field_2;
-    dh.nAction = pPlayer->nAction;
-    dh.nSprite = pPlayer->nSprite;
-    dh.bIsMummified = pPlayer->bIsMummified;
-    dh.someNetVal = pPlayer->someNetVal;
-    dh.invincibility = pPlayer->invincibility;
-    dh.nAir = pPlayer->nAir;
-    dh.nSeq = pPlayer->nSeq;
-    dh.nMaskAmount = pPlayer->nMaskAmount;
-    dh.keys = pPlayer->keys;
-    dh.nMagic = pPlayer->nMagic;
+    dh.nHealth = B_LITTLE16(pPlayer->nHealth);
+    dh.field_2 = B_LITTLE16(pPlayer->field_2);
+    dh.nAction = B_LITTLE16(pPlayer->nAction);
+    dh.nSprite = B_LITTLE16(pPlayer->nSprite);
+    dh.bIsMummified = B_LITTLE16(pPlayer->bIsMummified);
+    dh.someNetVal = B_LITTLE16(pPlayer->someNetVal);
+    dh.invincibility = B_LITTLE16(pPlayer->invincibility);
+    dh.nAir = B_LITTLE16(pPlayer->nAir);
+    dh.nSeq = B_LITTLE16(pPlayer->nSeq);
+    dh.nMaskAmount = B_LITTLE16(pPlayer->nMaskAmount);
+    dh.keys = B_LITTLE16(pPlayer->keys);
+    dh.nMagic = B_LITTLE16(pPlayer->nMagic);
 
-    memcpy(dh.item, pPlayer->items, sizeof(pPlayer->items));
-    memcpy(dh.nAmmo, pPlayer->nAmmo, sizeof(pPlayer->nAmmo));
-    memcpy(dh.pad, pPlayer->pad, sizeof(pPlayer->pad));
+    Bmemcpy(dh.item, pPlayer->items, sizeof(pPlayer->items));
+    for (int i = 0; i < 7; i++)
+    {
+        dh.nAmmo[i] = B_LITTLE16(pPlayer->nAmmo[i]);
+    }
+    Bmemcpy(dh.pad, pPlayer->pad, sizeof(pPlayer->pad));
 
-    dh.nCurrentWeapon2 = pPlayer->nCurrentWeapon;
-    dh.field_3FOUR = pPlayer->field_3FOUR;
-    dh.bIsFiring = pPlayer->bIsFiring;
-    dh.field_38  = pPlayer->field_38;
-    dh.field_3A  = pPlayer->field_3A;
-    dh.field_3C  = pPlayer->field_3C;
-    dh.nRun = pPlayer->nRun;
+    dh.nCurrentWeapon2 = B_LITTLE16(pPlayer->nCurrentWeapon);
+    dh.field_3FOUR = B_LITTLE16(pPlayer->field_3FOUR);
+    dh.bIsFiring = B_LITTLE16(pPlayer->bIsFiring);
+    dh.field_38  = B_LITTLE16(pPlayer->field_38);
+    dh.field_3A  = B_LITTLE16(pPlayer->field_3A);
+    dh.field_3C  = B_LITTLE16(pPlayer->field_3C);
+    dh.nRun = B_LITTLE16(pPlayer->nRun);
 
     fwrite(&dh, sizeof(dh), 1, fp);
 }

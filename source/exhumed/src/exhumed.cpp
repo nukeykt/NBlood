@@ -1461,7 +1461,7 @@ void WritePlaybackInputs()
     output.moveframes = B_LITTLE32(moveframes);
     output.xVel = B_LITTLE32(sPlayerInput[nLocalPlayer].xVel);
     output.yVel = B_LITTLE32(sPlayerInput[nLocalPlayer].yVel);
-    output.nAngle  = fix16_to_int(B_LITTLE16(sPlayerInput[nLocalPlayer].nAngle >> 2));
+    output.nAngle  = B_LITTLE16(fix16_to_int(sPlayerInput[nLocalPlayer].nAngle >> 2));
     output.buttons = B_LITTLE16(sPlayerInput[nLocalPlayer].buttons);
     output.nTarget = B_LITTLE16(sPlayerInput[nLocalPlayer].nTarget);
     output.horizon = fix16_to_int(sPlayerInput[nLocalPlayer].horizon);
