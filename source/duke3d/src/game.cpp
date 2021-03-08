@@ -1034,7 +1034,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         }
 
         if (sprite[pPlayer->i].pal == 1)
-            CAMERA(pos.z) -= (18<<8);
+            CAMERA(pos.z) -= ZOFFSET7;
 
         if (pPlayer->newowner < 0 && pPlayer->spritebridge == 0)
         {
@@ -4005,7 +4005,8 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         case APLAYER__STATIC:
             playerNum = P_GetP(pSprite);
 
-            if (t->pal == 1) t->z -= (18<<8);
+            if (t->pal == 1)
+                t->z -= ZOFFSET7;
 
             if (g_player[playerNum].ps->over_shoulder_on > 0 && g_player[playerNum].ps->newowner < 0)
             {
