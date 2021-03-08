@@ -212,6 +212,7 @@ typedef struct
     int32_t  numButtons;
     int32_t  numHats;
     int32_t  isGameController;
+    uint32_t validButtons;
 } controllerinput_t;
 
 extern controllerinput_t joystick;
@@ -272,6 +273,7 @@ void mouseLockToWindow(char a);
 int32_t mouseReadButtons(void);
 void mouseReadPos(int32_t *x, int32_t *y);
 
+bool joyHasButton(int button);
 void joyReadButtons(int32_t *pResult);
 void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
 void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);

@@ -957,6 +957,7 @@ void joyScanDevices()
                 joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
                 joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
 
+                joystick.validButtons = UINT32_MAX;
 #if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
                 if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
                 {
@@ -965,10 +966,14 @@ void joyScanDevices()
                         if (SDL_GameControllerHasAxis(controller, (SDL_GameControllerAxis)j))
                             joystick.numAxes = j + 1;
 
+                    joystick.validButtons = 0;
                     joystick.numButtons = 0;
                     for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
                         if (SDL_GameControllerHasButton(controller, (SDL_GameControllerButton)j))
+                        {
                             joystick.numButtons = j + 1;
+                            joystick.validButtons |= (1 << j);
+                        }
                 }
 #endif
                 joystick.isGameController = 1;
@@ -996,6 +1001,7 @@ void joyScanDevices()
                 joystick.numButtons = min(32, SDL_JoystickNumButtons(joydev));
                 joystick.numHats    = min((36 - joystick.numButtons) / 4, SDL_JoystickNumHats(joydev));
 
+                joystick.validButtons = UINT32_MAX;
                 joystick.isGameController = 0;
 
                 buildprint("Joystick ", i+1, " has ", joystick.numAxes, " axes, ", joystick.numButtons, " buttons, ");

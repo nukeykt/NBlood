@@ -1028,6 +1028,7 @@ static BOOL InitDirectInput(void)
         joystick.numAxes    = (uint8_t)didc.dwAxes;
         joystick.numButtons = min<uint8_t>(32,didc.dwButtons);
         joystick.numHats    = (uint8_t)didc.dwPOVs;
+        joystick.validButtons = UINT32_MAX;
         initprintf("Controller has %d axes, %d buttons, and %d hat(s).\n",joystick.numAxes,joystick.numButtons,joystick.numHats);
 
         axisdefs = (struct _joydef *)Xcalloc(didc.dwAxes, sizeof(struct _joydef));
