@@ -635,7 +635,20 @@ void WeaponLower(PLAYER *pPlayer)
         switch (prevState)
         {
         case 1:
-            StartQAV(pPlayer, 7, -1, 0);
+            if (VanillaMode())
+            {
+                StartQAV(pPlayer, 7, -1, 0);
+            }
+            else
+            {
+                if (pPlayer->input.newWeapon == 6)
+                {
+                    pPlayer->weaponState = 2;
+                    StartQAV(pPlayer, 11, -1, 0);
+                    WeaponRaise(pPlayer);
+                    return;
+                }
+            }
             break;
         case 2:
             pPlayer->weaponState = 1;
