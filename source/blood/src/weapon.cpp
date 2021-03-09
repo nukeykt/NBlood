@@ -660,6 +660,7 @@ void WeaponLower(PLAYER *pPlayer)
             if (VanillaMode())
             {
                 pPlayer->input.newWeapon = 0;
+                WeaponLower(pPlayer);
             }
             else
             {
