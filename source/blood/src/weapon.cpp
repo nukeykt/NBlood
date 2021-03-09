@@ -2064,44 +2064,68 @@ void WeaponProcess(PLAYER *pPlayer) {
             return;
         break;
     }
-    if (pPlayer->nextWeapon)
+    if (VanillaMode())
     {
-        sfxKill3DSound(pPlayer->pSprite, -1, 441);
-        pPlayer->weaponState = 0;
-        pPlayer->input.newWeapon = pPlayer->nextWeapon;
-        pPlayer->nextWeapon = 0;
+        if (pPlayer->nextWeapon)
+        {
+            sfxKill3DSound(pPlayer->pSprite, -1, 441);
+            pPlayer->weaponState = 0;
+            pPlayer->input.newWeapon = pPlayer->nextWeapon;
+            pPlayer->nextWeapon = 0;
+        }
     }
     if (pPlayer->input.keyFlags.nextWeapon)
     {
         pPlayer->input.keyFlags.nextWeapon = 0;
-        pPlayer->weaponState = 0;
+        if (VanillaMode())
+        {
+            pPlayer->weaponState = 0;
+        }
         pPlayer->nextWeapon = 0;
         int t;
         char weapon = WeaponFindNext(pPlayer, &t, 1);
         pPlayer->weaponMode[weapon] = t;
-        if (pPlayer->curWeapon)
+        if (VanillaMode())
         {
-            WeaponLower(pPlayer);
-            pPlayer->nextWeapon = weapon;
-            return;
+            if (pPlayer->curWeapon)
+            {
+                WeaponLower(pPlayer);
+                pPlayer->nextWeapon = weapon;
+                return;
+            }
         }
         pPlayer->input.newWeapon = weapon;
     }
     if (pPlayer->input.keyFlags.prevWeapon)
     {
         pPlayer->input.keyFlags.prevWeapon = 0;
-        pPlayer->weaponState = 0;
+        if (VanillaMode())
+        {
+            pPlayer->weaponState = 0;
+        }
         pPlayer->nextWeapon = 0;
         int t;
         char weapon = WeaponFindNext(pPlayer, &t, 0);
         pPlayer->weaponMode[weapon] = t;
-        if (pPlayer->curWeapon)
+        if (VanillaMode())
         {
-            WeaponLower(pPlayer);
-            pPlayer->nextWeapon = weapon;
-            return;
+            if (pPlayer->curWeapon)
+            {
+                WeaponLower(pPlayer);
+                pPlayer->nextWeapon = weapon;
+                return;
+            }
         }
         pPlayer->input.newWeapon = weapon;
+    }
+    if (!VanillaMode())
+    {
+        if (pPlayer->nextWeapon)
+        {
+            sfxKill3DSound(pPlayer->pSprite, -1, 441);
+            pPlayer->input.newWeapon = pPlayer->nextWeapon;
+            pPlayer->nextWeapon = 0;
+        }
     }
     if (pPlayer->weaponState == -1)
     {
