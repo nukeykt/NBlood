@@ -827,7 +827,7 @@ void RestartPlayer(short nPlayer)
         PlayerList[nPlayer].nHealth = 1600; // TODO - define
     }
 
-    PlayerList[nPlayer].field_2 = 0;
+    PlayerList[nPlayer].nFrame = 0;
     PlayerList[nPlayer].nSprite = nSprite;
     PlayerList[nPlayer].bIsMummified = kFalse;
 
@@ -843,9 +843,9 @@ void RestartPlayer(short nPlayer)
     nPlayerInvisible[nPlayer] = 0;
 
     PlayerList[nPlayer].bIsFiring = 0;
-    PlayerList[nPlayer].field_3FOUR = 0;
+    PlayerList[nPlayer].nWeaponFrame = 0;
     nPlayerViewSect[nPlayer] = sPlayerSave[nPlayer].nSector;
-    PlayerList[nPlayer].field_3A = 0;
+    PlayerList[nPlayer].nWeaponState = 0;
 
     nPlayerDouble[nPlayer] = 0;
 
@@ -853,13 +853,13 @@ void RestartPlayer(short nPlayer)
 
     nPlayerPushSound[nPlayer] = -1;
 
-    PlayerList[nPlayer].field_38 = -1;
+    PlayerList[nPlayer].nNewWeapon = -1;
 
     if (PlayerList[nPlayer].nCurrentWeapon == 7) {
-        PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_3C;
+        PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nLastWeapon;
     }
 
-    PlayerList[nPlayer].field_3C = 0;
+    PlayerList[nPlayer].nLastWeapon = 0;
     PlayerList[nPlayer].nAir = 100;
     airpages = 0;
 
@@ -1015,7 +1015,7 @@ void StartDeathSeq(int nPlayer, int nVal)
         PlayerList[nPlayer].nAction = 16;
     }
 
-    PlayerList[nPlayer].field_2 = 0;
+    PlayerList[nPlayer].nFrame = 0;
 
     sprite[nSprite].cstat &= 0xFEFE;
 
@@ -1099,13 +1099,13 @@ void SetPlayerMummified(int nPlayer, int bIsMummified)
         PlayerList[nPlayer].nSeq = kSeqJoe;
     }
 
-    PlayerList[nPlayer].field_2 = 0;
+    PlayerList[nPlayer].nFrame = 0;
 }
 
 void ShootStaff(int nPlayer)
 {
     PlayerList[nPlayer].nAction = 15;
-    PlayerList[nPlayer].field_2 = 0;
+    PlayerList[nPlayer].nFrame = 0;
     PlayerList[nPlayer].nSeq = kSeqJoe;
 }
 
@@ -1172,7 +1172,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
     {
         case 0x90000:
         {
-            seq_PlotSequence(a & 0xFFFF, SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a, PlayerList[nPlayer].field_2, ActionSeq[nAction].b);
+            seq_PlotSequence(a & 0xFFFF, SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a, PlayerList[nPlayer].nFrame, ActionSeq[nAction].b);
             return;
         }
 
@@ -1231,7 +1231,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
                     {
                         if (nAction != 12)
                         {
-                            PlayerList[nPlayer].field_2 = 0;
+                            PlayerList[nPlayer].nFrame = 0;
                             PlayerList[nPlayer].nAction = 12;
                             return;
                         }
@@ -1240,7 +1240,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
                     {
                         if (nAction != 4)
                         {
-                            PlayerList[nPlayer].field_2 = 0;
+                            PlayerList[nPlayer].nFrame = 0;
                             PlayerList[nPlayer].nAction = 4;
 
                             if (nSprite2 > -1)
@@ -1308,13 +1308,13 @@ void FuncPlayer(int a, int nDamage, int nRun)
                 sPlayerInput[nPlayer].nItem = -1;
             }
 
-            int var_EC = PlayerList[nPlayer].field_2;
+            int var_EC = PlayerList[nPlayer].nFrame;
 
             sprite[nPlayerSprite].picnum = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nHeightTemplate[nAction]].a, var_EC);
             sprite[nDopple].picnum = sprite[nPlayerSprite].picnum;
 
             // for showing correct player animations for player sprite on 2D map mode
-            nMapPic = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nAction].a, PlayerList[nPlayer].field_2);
+            nMapPic = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nAction].a, PlayerList[nPlayer].nFrame);
 
             if (nPlayerTorch[nPlayer] > 0)
             {
@@ -3154,7 +3154,7 @@ loc_1BD2E:
                 {
                     nAction = nActionB;
                     PlayerList[nPlayer].nAction = nActionB;
-                    PlayerList[nPlayer].field_2 = 0;
+                    PlayerList[nPlayer].nFrame = 0;
                 }
 
                 if (nPlayer == nLocalPlayer)
@@ -3328,12 +3328,12 @@ loc_1BD2E:
 
             int var_AC = SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a;
 
-            seq_MoveSequence(nPlayerSprite, var_AC, PlayerList[nPlayer].field_2);
-            PlayerList[nPlayer].field_2++;
+            seq_MoveSequence(nPlayerSprite, var_AC, PlayerList[nPlayer].nFrame);
+            PlayerList[nPlayer].nFrame++;
 
-            if (PlayerList[nPlayer].field_2 >= SeqSize[var_AC])
+            if (PlayerList[nPlayer].nFrame >= SeqSize[var_AC])
             {
-                PlayerList[nPlayer].field_2 = 0;
+                PlayerList[nPlayer].nFrame = 0;
 
                 switch (PlayerList[nPlayer].nAction)
                 {
@@ -3341,13 +3341,13 @@ loc_1BD2E:
                         break;
 
                     case 3:
-                        PlayerList[nPlayer].field_2 = SeqSize[var_AC] - 1;
+                        PlayerList[nPlayer].nFrame = SeqSize[var_AC] - 1;
                         break;
                     case 4:
                         PlayerList[nPlayer].nAction = 0;
                         break;
                     case 16:
-                        PlayerList[nPlayer].field_2 = SeqSize[var_AC] - 1;
+                        PlayerList[nPlayer].nFrame = SeqSize[var_AC] - 1;
 
                         if (sprite[nPlayerSprite].z < sector[sprite[nPlayerSprite].sectnum].floorz) {
                             sprite[nPlayerSprite].z += 256;

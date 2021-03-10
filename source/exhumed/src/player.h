@@ -54,7 +54,7 @@ extern fix16_t nPlayerDAng;
 struct Player
 {
     short nHealth;
-    short field_2;
+    short nFrame;
     short nAction;
     short nSprite;
     short bIsMummified;
@@ -70,11 +70,11 @@ struct Player
     short pad[2];
 
     short nCurrentWeapon;
-    short field_3FOUR;
+    short nWeaponFrame;
     short bIsFiring;
-    short field_38;
-    short field_3A;
-    short field_3C;
+    short nNewWeapon;
+    short nWeaponState;
+    short nLastWeapon;
     short nRun;
 
     fix16_t q16angle, q16oangle;

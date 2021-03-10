@@ -46,7 +46,7 @@ struct demo_header
     int16_t items;
 
     int16_t nHealth;
-    int16_t field_2;
+    int16_t nFrame;
     int16_t nAction;
     int16_t nSprite;
     int16_t bIsMummified;
@@ -61,11 +61,11 @@ struct demo_header
     int16_t nAmmo[7]; // TODO - kMaxWeapons?
     int16_t pad[2];
     int16_t nCurrentWeapon2;
-    int16_t field_3FOUR;
+    int16_t nWeaponFrame;
     int16_t bIsFiring;
-    int16_t field_38;
-    int16_t field_3A;
-    int16_t field_3C;
+    int16_t nNewWeapon;
+    int16_t nWeaponState;
+    int16_t nLastWeapon;
     int16_t nRun;
 
     int16_t nLives;

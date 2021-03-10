@@ -1437,7 +1437,7 @@ void menu_GameLoad2(buildvfs_kfd hFile, bool bIsDemo)
         GameStats.clip = B_LITTLE16(header.clip);
         GameStats.items = B_LITTLE16(header.items);
         GameStats.player.nHealth = B_LITTLE16(header.nHealth);
-        GameStats.player.field_2 = B_LITTLE16(header.field_2);
+        GameStats.player.nFrame = B_LITTLE16(header.nFrame);
         GameStats.player.nAction = B_LITTLE16(header.nAction);
         GameStats.player.nSprite = B_LITTLE16(header.nSprite);
         GameStats.player.bIsMummified = B_LITTLE16(header.bIsMummified);
@@ -1457,11 +1457,11 @@ void menu_GameLoad2(buildvfs_kfd hFile, bool bIsDemo)
 
         Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
         GameStats.player.nCurrentWeapon = B_LITTLE16(header.nCurrentWeapon2);
-        GameStats.player.field_3FOUR = B_LITTLE16(header.field_3FOUR);
+        GameStats.player.nWeaponFrame = B_LITTLE16(header.nWeaponFrame);
         GameStats.player.bIsFiring = B_LITTLE16(header.bIsFiring);
-        GameStats.player.field_38 = B_LITTLE16(header.field_38);
-        GameStats.player.field_3A = B_LITTLE16(header.field_3A);
-        GameStats.player.field_3C = B_LITTLE16(header.field_3C);
+        GameStats.player.nNewWeapon = B_LITTLE16(header.nNewWeapon);
+        GameStats.player.nWeaponState = B_LITTLE16(header.nWeaponState);
+        GameStats.player.nLastWeapon = B_LITTLE16(header.nLastWeapon);
         GameStats.player.nRun = B_LITTLE16(header.nRun);
         GameStats.nLives = B_LITTLE16(header.nLives);
     }
@@ -1523,7 +1523,7 @@ void menu_DemoGameSave(FILE* fp)
     dh.nLives = B_LITTLE16(nPlayerLives[nLocalPlayer]);
 
     dh.nHealth = B_LITTLE16(pPlayer->nHealth);
-    dh.field_2 = B_LITTLE16(pPlayer->field_2);
+    dh.nFrame = B_LITTLE16(pPlayer->nFrame);
     dh.nAction = B_LITTLE16(pPlayer->nAction);
     dh.nSprite = B_LITTLE16(pPlayer->nSprite);
     dh.bIsMummified = B_LITTLE16(pPlayer->bIsMummified);
@@ -1543,11 +1543,11 @@ void menu_DemoGameSave(FILE* fp)
     Bmemcpy(dh.pad, pPlayer->pad, sizeof(pPlayer->pad));
 
     dh.nCurrentWeapon2 = B_LITTLE16(pPlayer->nCurrentWeapon);
-    dh.field_3FOUR = B_LITTLE16(pPlayer->field_3FOUR);
+    dh.nWeaponFrame = B_LITTLE16(pPlayer->nWeaponFrame);
     dh.bIsFiring = B_LITTLE16(pPlayer->bIsFiring);
-    dh.field_38  = B_LITTLE16(pPlayer->field_38);
-    dh.field_3A  = B_LITTLE16(pPlayer->field_3A);
-    dh.field_3C  = B_LITTLE16(pPlayer->field_3C);
+    dh.nNewWeapon  = B_LITTLE16(pPlayer->nNewWeapon);
+    dh.nWeaponState  = B_LITTLE16(pPlayer->nWeaponState);
+    dh.nLastWeapon  = B_LITTLE16(pPlayer->nLastWeapon);
     dh.nRun = B_LITTLE16(pPlayer->nRun);
 
     fwrite(&dh, sizeof(dh), 1, fp);
