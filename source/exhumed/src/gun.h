@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -42,9 +47,8 @@ struct Weapon
     short b[12]; // seq offsets?
     short nAmmoType;
     short c;
-    short d; // default or min ammo? or ammo used per 'shot' ?
+    short bUsesAmmo;
     short bFireUnderwater;
-//	short pad[15];
 };
 
 extern Weapon WeaponInfo[];
@@ -54,6 +58,8 @@ void RestoreMinAmmo(short nPlayer);
 void FillWeapons(short nPlayer);
 void ResetPlayerWeapons(short nPlayer);
 void InitWeapons();
+void SelectNextWeapon();
+void SelectPreviousWeapon();
 void SetNewWeapon(short nPlayer, short nWeapon);
 void SetNewWeaponImmediate(short nPlayer, short nWeapon);
 void SetNewWeaponIfBetter(short nPlayer, short nWeapon);

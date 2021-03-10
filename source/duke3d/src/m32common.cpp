@@ -345,7 +345,7 @@ mapundo_t *mapstate = NULL;
 
 int32_t map_revision = 1;
 
-static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, uintptr_t crc)
+static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, XXH64_hash_t crc)
 {
     if (mapstate->prev && mapstate->prev->num[idx]==numsthgs && mapstate->prev->crc[idx]==crc)
     {
@@ -360,7 +360,7 @@ static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, uintptr_t crc)
     return 0;
 }
 
-static void create_compressed_block(int32_t idx, const void *srcdata, uint32_t size, uintptr_t crc)
+static void create_compressed_block(int32_t idx, const void *srcdata, uint32_t size, XXH64_hash_t crc)
 {
     // allocate
     int const compressed_size = LZ4_compressBound(size);
@@ -451,24 +451,14 @@ void create_map_snapshot(void)
 
     if (numsectors)
     {
-#if !defined UINTPTR_MAX
-# error Need UINTPTR_MAX define to select between 32- and 64-bit functions
-#endif
-#if UINTPTR_MAX == 0xffffffff
-        /* 32-bit */
-#define XXH__ XXH32
-#else
-        /* 64-bit */
-#define XXH__ XXH64
-#endif
-        uintptr_t temphash = XXH__((uint8_t *)sector, numsectors*sizeof(sectortype), numsectors*sizeof(sectortype));
+        XXH64_hash_t temphash = XXH3_64bits((uint8_t *)sector, numsectors*sizeof(sectortype));
 
         if (!try_match_with_prev(0, numsectors, temphash))
             create_compressed_block(0, sector, numsectors*sizeof(sectortype), temphash);
 
         if (numwalls)
         {
-            temphash = XXH__((uint8_t *)wall, numwalls*sizeof(walltype), numwalls*sizeof(walltype));
+            temphash = XXH3_64bits((uint8_t *)wall, numwalls*sizeof(walltype));
 
             if (!try_match_with_prev(1, numwalls, temphash))
                 create_compressed_block(1, wall, numwalls*sizeof(walltype), temphash);
@@ -476,7 +466,7 @@ void create_map_snapshot(void)
 
         if (Numsprites)
         {
-            temphash = XXH__((uint8_t *)sprite, MAXSPRITES*sizeof(spritetype), MAXSPRITES*sizeof(spritetype));
+            temphash = XXH3_64bits((uint8_t *)sprite, MAXSPRITES*sizeof(spritetype));
 
             if (!try_match_with_prev(2, Numsprites, temphash))
             {
@@ -495,7 +485,6 @@ void create_map_snapshot(void)
                 Xfree(uspri);
             }
         }
-#undef XXH__
     }
 
     CheckMapCorruption(5, 0);
@@ -1725,13 +1714,14 @@ static void FuncMenu_Process(const StatusBarMenu *m, int32_t col, int32_t row)
         {
             char tempbuf[64];
             Bsprintf(tempbuf,"Delete all sprites of tile #: ");
-            i = getnumber16(tempbuf,-1,MAXSPRITES-1,1);
+            i = getnumber16(tempbuf,-1,MAXTILES-1,1);
             if (i >= 0)
             {
                 int32_t k = 0;
                 for (j=0; j<MAXSPRITES; j++)
                     if (sprite[j].picnum == i)
-                        deletesprite(j), k++;
+                        if (deletesprite(j) == 0)
+                            k++;
                 printmessage16("%d sprite(s) deleted",k);
             }
             else printmessage16("Aborted");

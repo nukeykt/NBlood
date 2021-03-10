@@ -49,7 +49,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aitchern.h"
 #include "aizomba.h"
 #include "aizombf.h"
+#ifdef NOONE_EXTENSIONS
 #include "aiunicult.h"
+#endif
 #include "blood.h"
 #include "callback.h"
 #include "config.h"
@@ -72,7 +74,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "warp.h"
 #include "weapon.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 VECTORDATA gVectorData[] = {
     
@@ -2513,10 +2517,10 @@ void actInit(bool bSaveLoad) {
                 break;
             case kThingBloodChunks: {
                 SEQINST *pInst = GetInstance(3, pSprite->extra);
-                if (pInst && pInst->at13) {
-                    DICTNODE *hSeq = gSysRes.Lookup(pInst->at8, "SEQ");
+                if (pInst && pInst->isPlaying) {
+                    DICTNODE *hSeq = gSysRes.Lookup(pInst->nSeq, "SEQ");
                     if (!hSeq) break;
-                    seqSpawn(pInst->at8, 3, pSprite->extra);
+                    seqSpawn(pInst->nSeq, 3, pSprite->extra);
                 }
                 break;
             }

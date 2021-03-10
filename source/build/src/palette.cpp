@@ -23,7 +23,7 @@ uint8_t basepalreset=1;
 uint8_t curbasepal;
 int32_t globalblend;
 
-uint32_t g_lastpalettesum = 0;
+XXH64_hash_t g_lastpalettesum = 0;
 palette_t curpalette[256];			// the current palette, unadjusted for brightness or tint
 palette_t curpalettefaded[256];		// the current palette, adjusted for brightness and tint (ie. what gets sent to the card)
 palette_t palfadergb = { 0, 0, 0, 0 };
@@ -773,8 +773,8 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
     if ((flags&16) && palfadedelta)  // keep the fade
         paletteSetFade(palfadedelta>>2);
 
-    static uint32_t lastpalettesum=0;
-    uint32_t newpalettesum = XXH32((uint8_t *) curpalettefaded, sizeof(curpalettefaded), sizeof(curpalettefaded));
+    static XXH64_hash_t lastpalettesum=0;
+    XXH64_hash_t newpalettesum = XXH3_64bits((uint8_t *) curpalettefaded, sizeof(curpalettefaded));
 
     palsumdidchange = (newpalettesum != lastpalettesum);
 
@@ -858,8 +858,8 @@ void videoFadePalette(uint8_t r, uint8_t g, uint8_t b, uint8_t offset)
 
     paletteSetFade(offset);
 
-    static uint32_t lastpalettesum=0;
-    uint32_t newpalettesum = XXH32((uint8_t *) curpalettefaded, sizeof(curpalettefaded), sizeof(curpalettefaded));
+    static XXH64_hash_t lastpalettesum=0;
+    XXH64_hash_t newpalettesum = XXH3_64bits((uint8_t *) curpalettefaded, sizeof(curpalettefaded));
 
     if (newpalettesum != lastpalettesum || newpalettesum != g_lastpalettesum)
     {

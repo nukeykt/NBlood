@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -37,6 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "object.h"
 #include "light.h"
 #include "cd.h"
+#include "config.h"
 #include <string>
 
 #include <assert.h>
@@ -140,8 +146,8 @@ void InitEnergyTile()
 
 void DoEnergyTile()
 {
-    tileLoad(kEnergy1);
-    tileLoad(kEnergy2);
+    if (!waloff[kEnergy1]) tileLoad(kEnergy1);
+    if (!waloff[kEnergy2]) tileLoad(kEnergy2);
 
     nButtonColor += nButtonColor < 0 ? 8 : 0;
 
@@ -463,7 +469,7 @@ void menu_DoPlasma()
         r_ebx += 2;
     }
 
-    tileLoad(nLogoTile);
+    if (!waloff[nLogoTile]) tileLoad(nLogoTile);
 
     for (int j = 0; j < 5; j++)
     {
@@ -570,26 +576,26 @@ struct MapNamePlaque
 };
 
 MapNamePlaque mapNamePlaques[] = {
-    { 100, 170, kTile3376, 0, 0, kTile3377, 0, 0, kTile3411, 18, 6 },
-    { 230, 10,  kTile3378, 0, 0, kTile3379, 0, 0, kTile3414, 18, 6 }, // DENDUR (level 2)
-    { 180, 125, kTile3380, 0, 0, kTile3381, 0, 0, kTile3417, 18, 6 }, // Kalabash
-    { 10,  95,  kTile3382, 0, 0, kTile3383, 0, 0, kTile3420, 18, 6 },
-    { 210, 160, kTile3384, 0, 0, kTile3385, 0, 0, kTile3423, 18, 6 },
-    { 10,  110, kTile3371, 0, 0, kTile3386, 0, 0, kTile3426, 18, 6 },
-    { 10,  50,  kTile3387, 0, 0, kTile3388, 0, 0, kTile3429, 18, 6 },
-    { 140, 0,   kTile3389, 0, 0, kTile3390, 0, 0, kTile3432, 18, 6 },
-    { 30,  20,  kTile3391, 0, 0, kTile3392, 0, 0, kTile3435, 18, 6 },
-    { 200, 150, kTile3409, 0, 0, kTile3410, 0, 0, kTile3418, 20, 4 },
-    { 145, 170, kTile3393, 0, 0, kTile3394, 0, 0, kTile3438, 18, 6 },
-    { 80,  80,  kTile3395, 0, 0, kTile3396, 0, 0, kTile3441, 18, 6 },
-    { 15,  0,   kTile3397, 0, 0, kTile3398, 0, 0, kTile3444, 18, 5 },
-    { 220, 35,  kTile3399, 0, 0, kTile3400, 0, 0, kTile3447, 18, 6 },
-    { 190, 40,  kTile3401, 0, 0, kTile3402, 0, 0, kTile3450, 18, 6 },
-    { 20,  130, kTile3403, 0, 0, kTile3404, 0, 0, kTile3453, 19, 6 },
-    { 220, 160, kTile3405, 0, 0, kTile3406, 0, 0, kTile3456, 18, 6 },
-    { 20,  10,  kTile3407, 0, 0, kTile3408, 0, 0, kTile3459, 18, 6 },
-    { 200, 10,  kTile3412, 0, 0, kTile3413, 0, 0, kTile3419, 18, 5 },
-    { 20,  10,  kTile3415, 0, 0, kTile3416, 0, 0, kTile3421, 19, 4 }
+    { 100, 170, {{kTile3376, 0, 0}, {kTile3377, 0, 0}}, {kTile3411, 18, 6} },
+    { 230, 10,  {{kTile3378, 0, 0}, {kTile3379, 0, 0}}, {kTile3414, 18, 6} }, // DENDUR (level 2)
+    { 180, 125, {{kTile3380, 0, 0}, {kTile3381, 0, 0}}, {kTile3417, 18, 6} }, // Kalabash
+    { 10,  95,  {{kTile3382, 0, 0}, {kTile3383, 0, 0}}, {kTile3420, 18, 6} },
+    { 210, 160, {{kTile3384, 0, 0}, {kTile3385, 0, 0}}, {kTile3423, 18, 6} },
+    { 10,  110, {{kTile3371, 0, 0}, {kTile3386, 0, 0}}, {kTile3426, 18, 6} },
+    { 10,  50,  {{kTile3387, 0, 0}, {kTile3388, 0, 0}}, {kTile3429, 18, 6} },
+    { 140, 0,   {{kTile3389, 0, 0}, {kTile3390, 0, 0}}, {kTile3432, 18, 6} },
+    { 30,  20,  {{kTile3391, 0, 0}, {kTile3392, 0, 0}}, {kTile3435, 18, 6} },
+    { 200, 150, {{kTile3409, 0, 0}, {kTile3410, 0, 0}}, {kTile3418, 20, 4} },
+    { 145, 170, {{kTile3393, 0, 0}, {kTile3394, 0, 0}}, {kTile3438, 18, 6} },
+    { 80,  80,  {{kTile3395, 0, 0}, {kTile3396, 0, 0}}, {kTile3441, 18, 6} },
+    { 15,  0,   {{kTile3397, 0, 0}, {kTile3398, 0, 0}}, {kTile3444, 18, 5} },
+    { 220, 35,  {{kTile3399, 0, 0}, {kTile3400, 0, 0}}, {kTile3447, 18, 6} },
+    { 190, 40,  {{kTile3401, 0, 0}, {kTile3402, 0, 0}}, {kTile3450, 18, 6} },
+    { 20,  130, {{kTile3403, 0, 0}, {kTile3404, 0, 0}}, {kTile3453, 19, 6} },
+    { 220, 160, {{kTile3405, 0, 0}, {kTile3406, 0, 0}}, {kTile3456, 18, 6} },
+    { 20,  10,  {{kTile3407, 0, 0}, {kTile3408, 0, 0}}, {kTile3459, 18, 6} },
+    { 200, 10,  {{kTile3412, 0, 0}, {kTile3413, 0, 0}}, {kTile3419, 18, 5} },
+    { 20,  10,  {{kTile3415, 0, 0}, {kTile3416, 0, 0}}, {kTile3421, 19, 4} }
 };
 
 // 3 different types of fire, each with 4 frames
@@ -621,26 +627,26 @@ struct MapFire
 */
 
 MapFire MapLevelFires[] = {
-    3, {{0, 107, 95}, {1, 58,  140}, {2, 28,   38}},
-    3, {{2, 240,  0}, {0, 237,  32}, {1, 200,  30}},
-    2, {{2, 250, 57}, {0, 250,  43}, {2, 200,  70}},
-    2, {{1, 82,  59}, {2, 84,   16}, {0, 10,   95}},
-    2, {{2, 237, 50}, {1, 215,  42}, {1, 210,  50}},
-    3, {{0, 40,   7}, {1, 75,    6}, {2, 100,  10}},
-    3, {{0, 58,  61}, {1, 85,   80}, {2, 111,  63}},
-    3, {{0, 260, 65}, {1, 228,   0}, {2, 259,  15}},
-    2, {{0, 81,  38}, {2, 58,   38}, {2, 30,   20}},
-    3, {{0, 259, 49}, {1, 248,  76}, {2, 290,  65}},
-    3, {{2, 227, 66}, {0, 224,  98}, {1, 277,  30}},
-    2, {{0, 100, 10}, {2, 48,   76}, {2, 80,   80}},
-    3, {{0, 17,   2}, {1, 29,   49}, {2, 53,   28}},
-    3, {{0, 266, 42}, {1, 283,  99}, {2, 243, 108}},
-    2, {{0, 238, 19}, {2, 240,  92}, {2, 190,  40}},
-    2, {{0, 27,   0}, {1, 70,   40}, {0, 20,  130}},
-    3, {{0, 275, 65}, {1, 235,   8}, {2, 274,   6}},
-    3, {{0, 75,  45}, {1, 152, 105}, {2, 24,   68}},
-    3, {{0, 290, 25}, {1, 225,  63}, {2, 260, 110}},
-    0, {{1, 20,  10}, {1, 20,   10}, {1, 20,   10}}
+    {3, {{0, 107, 95}, {1, 58,  140}, {2, 28,   38}}},
+    {3, {{2, 240,  0}, {0, 237,  32}, {1, 200,  30}}},
+    {2, {{2, 250, 57}, {0, 250,  43}, {2, 200,  70}}},
+    {2, {{1, 82,  59}, {2, 84,   16}, {0, 10,   95}}},
+    {2, {{2, 237, 50}, {1, 215,  42}, {1, 210,  50}}},
+    {3, {{0, 40,   7}, {1, 75,    6}, {2, 100,  10}}},
+    {3, {{0, 58,  61}, {1, 85,   80}, {2, 111,  63}}},
+    {3, {{0, 260, 65}, {1, 228,   0}, {2, 259,  15}}},
+    {2, {{0, 81,  38}, {2, 58,   38}, {2, 30,   20}}},
+    {3, {{0, 259, 49}, {1, 248,  76}, {2, 290,  65}}},
+    {3, {{2, 227, 66}, {0, 224,  98}, {1, 277,  30}}},
+    {2, {{0, 100, 10}, {2, 48,   76}, {2, 80,   80}}},
+    {3, {{0, 17,   2}, {1, 29,   49}, {2, 53,   28}}},
+    {3, {{0, 266, 42}, {1, 283,  99}, {2, 243, 108}}},
+    {2, {{0, 238, 19}, {2, 240,  92}, {2, 190,  40}}},
+    {2, {{0, 27,   0}, {1, 70,   40}, {0, 20,  130}}},
+    {3, {{0, 275, 65}, {1, 235,   8}, {2, 274,   6}}},
+    {3, {{0, 75,  45}, {1, 152, 105}, {2, 24,   68}}},
+    {3, {{0, 290, 25}, {1, 225,  63}, {2, 260, 110}}},
+    {0, {{1, 20,  10}, {1, 20,   10}, {1, 20,   10}}}
 };
 
 int menu_DrawTheMap(int nLevel, int nLevelNew, int nLevelBest)
@@ -889,8 +895,8 @@ void menu_AdjustVolume()
 
         seq_DrawGunSequence(
             SeqOffsets[kSeqSlider], // eax
-            gMusicVolume % 3, // pick one of 3 frames?
-            (gMusicVolume >> 1) - 93, // ebx. must be x???
+            MusicVolume % 3, // pick one of 3 frames?
+            (MusicVolume >> 1) - 93, // ebx. must be x???
             -22,
             0,
             0);
@@ -900,8 +906,8 @@ void menu_AdjustVolume()
 
         seq_DrawGunSequence(
             SeqOffsets[kSeqSlider],
-            gFXVolume % 3,
-            (gFXVolume / 2) - 93,
+            FXVolume % 3,
+            (FXVolume / 2) - 93,
             38,
             0,
             0);
@@ -956,22 +962,22 @@ void menu_AdjustVolume()
             {
                 case 0:
                 {
-                    if (gMusicVolume > 3) {
-                        gMusicVolume -= 4;
+                    if (MusicVolume > 3) {
+                        MusicVolume -= 4;
                     }
 
 // TODO				SetMusicVolume();
-    				setCDaudiovolume(gMusicVolume);
+    				setCDaudiovolume(MusicVolume);
                     continue;
                 }
 
                 case 1:
                 {
-                    if (gFXVolume > 3) {
-                        gFXVolume -= 4;
+                    if (FXVolume > 3) {
+                        FXVolume -= 4;
                     }
 
-                    SetMasterFXVolume(gFXVolume);
+                    SetMasterFXVolume(FXVolume);
 
                     if (LocalSoundPlaying()) {
                         UpdateLocalSound();
@@ -990,22 +996,22 @@ void menu_AdjustVolume()
             {
                 case 0:
                 {
-                    if (gMusicVolume < 252) {
-                        gMusicVolume += 4;
+                    if (MusicVolume < 252) {
+                        MusicVolume += 4;
                     }
 
 //  				SetMusicVolume();
-    				setCDaudiovolume(gMusicVolume);
+    				setCDaudiovolume(MusicVolume);
                     continue;
                 }
 
                 case 1:
                 {
-                    if (gFXVolume < 252) {
-                        gFXVolume += 4;
+                    if (FXVolume < 252) {
+                        FXVolume += 4;
                     }
 
-                    SetMasterFXVolume(gFXVolume);
+                    SetMasterFXVolume(FXVolume);
 
                     if (LocalSoundPlaying()) {
                         UpdateLocalSound();
@@ -1418,44 +1424,50 @@ void menu_ResetKeyTimer()
     keytimer = (int)totalclock + 2400;
 }
 
-void menu_GameLoad2(FILE *fp, bool bIsDemo)
+void menu_GameLoad2(buildvfs_kfd hFile, bool bIsDemo)
 {
     if (bIsDemo)
     {
         demo_header header;
-        fread(&header, 1, sizeof(demo_header), fp);
+        kread(hFile, &header, sizeof(demo_header));
 
         GameStats.nMap = header.nMap;
-        GameStats.nWeapons = header.nWeapons;
-        GameStats.nCurrentWeapon = header.nCurrentWeapon;
-        GameStats.clip = header.clip;
-        GameStats.items = header.items;
-        GameStats.player.nHealth = header.nHealth;
-        GameStats.player.field_2 = header.field_2;
-        GameStats.player.nAction = header.nAction;
-        GameStats.player.nSprite = header.nSprite;
-        GameStats.player.bIsMummified = header.bIsMummified;
-        GameStats.player.someNetVal = header.someNetVal;
-        GameStats.player.invincibility = header.invincibility;
-        GameStats.player.nAir = header.nAir;
-        GameStats.player.nSeq = header.nSeq;
-        GameStats.player.nMaskAmount = header.nMaskAmount;
-        GameStats.player.keys = header.keys;
-        GameStats.player.nMagic = header.nMagic;
+        GameStats.nWeapons = B_LITTLE16(header.nWeapons);
+        GameStats.nCurrentWeapon = B_LITTLE16(header.nCurrentWeapon);
+        GameStats.clip = B_LITTLE16(header.clip);
+        GameStats.items = B_LITTLE16(header.items);
+        GameStats.player.nHealth = B_LITTLE16(header.nHealth);
+        GameStats.player.field_2 = B_LITTLE16(header.field_2);
+        GameStats.player.nAction = B_LITTLE16(header.nAction);
+        GameStats.player.nSprite = B_LITTLE16(header.nSprite);
+        GameStats.player.bIsMummified = B_LITTLE16(header.bIsMummified);
+        GameStats.player.someNetVal = B_LITTLE16(header.someNetVal);
+        GameStats.player.invincibility = B_LITTLE16(header.invincibility);
+        GameStats.player.nAir = B_LITTLE16(header.nAir);
+        GameStats.player.nSeq = B_LITTLE16(header.nSeq);
+        GameStats.player.nMaskAmount = B_LITTLE16(header.nMaskAmount);
+        GameStats.player.keys = B_LITTLE16(header.keys);
+        GameStats.player.nMagic = B_LITTLE16(header.nMagic);
         Bmemcpy(GameStats.player.items, header.item, sizeof(header.item));
-        Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+
+        for (int i = 0; i < 7; i++)
+        {
+            GameStats.player.nAmmo[i] = B_LITTLE16(header.nAmmo[i]);
+        }
+
         Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
-        GameStats.player.nCurrentWeapon = header.nCurrentWeapon2;
-        GameStats.player.field_3FOUR = header.field_3FOUR;
-        GameStats.player.bIsFiring = header.bIsFiring;
-        GameStats.player.field_38 = header.field_38;
-        GameStats.player.field_3A = header.field_3A;
-        GameStats.player.field_3C = header.field_3C;
-        GameStats.player.nRun = header.nRun;
-        GameStats.nLives = header.nLives;
+        GameStats.player.nCurrentWeapon = B_LITTLE16(header.nCurrentWeapon2);
+        GameStats.player.field_3FOUR = B_LITTLE16(header.field_3FOUR);
+        GameStats.player.bIsFiring = B_LITTLE16(header.bIsFiring);
+        GameStats.player.field_38 = B_LITTLE16(header.field_38);
+        GameStats.player.field_3A = B_LITTLE16(header.field_3A);
+        GameStats.player.field_3C = B_LITTLE16(header.field_3C);
+        GameStats.player.nRun = B_LITTLE16(header.nRun);
+        GameStats.nLives = B_LITTLE16(header.nLives);
     }
-    else
-        fread(&GameStats, sizeof(GameStats), 1, fp);
+    else {
+        kread(hFile, &GameStats, sizeof(GameStats));
+    }
 
     nPlayerWeapons[nLocalPlayer] = GameStats.nWeapons;
 
@@ -1482,18 +1494,63 @@ short menu_GameLoad(int nSlot)
 {
     memset(&GameStats, 0, sizeof(GameStats));
 
-    FILE *fp = fopen(kSaveFileName, "rb");
-    if (fp == NULL) {
+    buildvfs_kfd hFile = kopen4loadfrommod(kSaveFileName, 0);
+    if (hFile < 0) {
         return 0;
     }
 
-    fseek(fp, 125, SEEK_SET);
-    fseek(fp, nSlot * sizeof(GameStats), SEEK_CUR);
+    klseek(hFile, 125, SEEK_SET);
+    klseek(hFile, nSlot * sizeof(GameStats), SEEK_CUR);
 
-    menu_GameLoad2(fp);
-    fclose(fp);
+    menu_GameLoad2(hFile);
+    kclose(hFile);
 
     return GameStats.nMap;
+}
+
+void menu_DemoGameSave(FILE* fp)
+{
+    demo_header dh;
+    memset(&dh, 0, sizeof(dh));
+
+    Player* pPlayer = &PlayerList[nLocalPlayer];
+
+    dh.nMap = (uint8_t)levelnew;
+    dh.nWeapons = B_LITTLE16(nPlayerWeapons[nLocalPlayer]);
+    dh.nCurrentWeapon = B_LITTLE16(pPlayer->nCurrentWeapon);
+    dh.clip   = B_LITTLE16(nPlayerClip[nLocalPlayer]);
+    dh.items  = B_LITTLE16(nPlayerItem[nLocalPlayer]);
+    dh.nLives = B_LITTLE16(nPlayerLives[nLocalPlayer]);
+
+    dh.nHealth = B_LITTLE16(pPlayer->nHealth);
+    dh.field_2 = B_LITTLE16(pPlayer->field_2);
+    dh.nAction = B_LITTLE16(pPlayer->nAction);
+    dh.nSprite = B_LITTLE16(pPlayer->nSprite);
+    dh.bIsMummified = B_LITTLE16(pPlayer->bIsMummified);
+    dh.someNetVal = B_LITTLE16(pPlayer->someNetVal);
+    dh.invincibility = B_LITTLE16(pPlayer->invincibility);
+    dh.nAir = B_LITTLE16(pPlayer->nAir);
+    dh.nSeq = B_LITTLE16(pPlayer->nSeq);
+    dh.nMaskAmount = B_LITTLE16(pPlayer->nMaskAmount);
+    dh.keys = B_LITTLE16(pPlayer->keys);
+    dh.nMagic = B_LITTLE16(pPlayer->nMagic);
+
+    Bmemcpy(dh.item, pPlayer->items, sizeof(pPlayer->items));
+    for (int i = 0; i < 7; i++)
+    {
+        dh.nAmmo[i] = B_LITTLE16(pPlayer->nAmmo[i]);
+    }
+    Bmemcpy(dh.pad, pPlayer->pad, sizeof(pPlayer->pad));
+
+    dh.nCurrentWeapon2 = B_LITTLE16(pPlayer->nCurrentWeapon);
+    dh.field_3FOUR = B_LITTLE16(pPlayer->field_3FOUR);
+    dh.bIsFiring = B_LITTLE16(pPlayer->bIsFiring);
+    dh.field_38  = B_LITTLE16(pPlayer->field_38);
+    dh.field_3A  = B_LITTLE16(pPlayer->field_3A);
+    dh.field_3C  = B_LITTLE16(pPlayer->field_3C);
+    dh.nRun = B_LITTLE16(pPlayer->nRun);
+
+    fwrite(&dh, sizeof(dh), 1, fp);
 }
 
 void menu_GameSave2(FILE *fp)
@@ -2175,8 +2232,8 @@ void GoToTheCinema(int nVal)
     GrabPalette();
     Clip();
 
-    // quit the game if we've finished level 4 and displayed the advert text
-    if (ISDEMOVER && nVal == 3) {
+    // quit the game if we've finished the last level and displayed the advert text
+    if (ISDEMOVER && ((EXHUMED && nVal == 2) || nVal == 3)) {
         ExitGame();
     }
 }

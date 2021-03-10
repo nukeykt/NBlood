@@ -362,6 +362,12 @@ void G_AddSearchPaths(void)
 
     // Blood: One Unit Whole Blood - GOG.com
     bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207658856)", "path", buf, &bufsize))
+    {
+        addsearchpath(buf);
+        found = true;
+    }
+    bufsize = sizeof(buf);
     if (!found && Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGONEUNITONEBLOOD", "PATH", buf, &bufsize))
     {
         addsearchpath(buf);

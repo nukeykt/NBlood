@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -64,16 +69,15 @@ Lion LionList[kMaxLions];
 
 void InitLion()
 {
-    LionCount = 0;
+    LionCount = kMaxLions;
 }
 
 int BuildLion(short nSprite, int x, int y, int z, short nSector, short nAngle)
 {
-    
-    short nLion = LionCount;
-    LionCount++;
+    LionCount--;
 
-    if (LionCount >= kMaxLions) {
+    short nLion = LionCount;
+    if (nLion < 0) {
         return -1;
     }
 
@@ -608,15 +612,15 @@ public:
 void LionLoadSave::Load()
 {
     Read(&LionCount, sizeof(LionCount));
-    Read(&MoveHook, sizeof(MoveHook[0]) * LionCount);
-    Read(&LionList, sizeof(LionList[0]) * LionCount);
+    Read(&MoveHook, sizeof(MoveHook));
+    Read(&LionList[LionCount], sizeof(Lion) * (kMaxLions - LionCount));
 }
 
 void LionLoadSave::Save()
 {
     Write(&LionCount, sizeof(LionCount));
-    Write(&MoveHook, sizeof(MoveHook[0]) * LionCount);
-    Write(&LionList, sizeof(LionList[0]) * LionCount);
+    Write(&MoveHook, sizeof(MoveHook));
+    Write(&LionList[LionCount], sizeof(Lion) * (kMaxLions - LionCount));
 }
 
 static LionLoadSave* myLoadSave;

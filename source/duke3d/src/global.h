@@ -65,6 +65,9 @@ enum DUKE3D_GLOBALFLAGS {
 
 G_EXTERN DukeStatus_t sbar;
 G_EXTERN actor_t actor[MAXSPRITES];
+#ifdef POLYMER
+G_EXTERN practor_t practor[MAXSPRITES];
+#endif
 // g_tile: tile-specific data THAT DOES NOT CHANGE during the course of a game
 G_EXTERN tiledata_t g_tile[MAXTILES];
 G_EXTERN animwalltype animwall[MAXANIMWALLS];

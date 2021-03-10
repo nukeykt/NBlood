@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -212,6 +217,16 @@ void PlayerInterruptKeys()
         bLookCentre = true;
     }
 
+    if (BUTTON(gamefunc_AutoRun))
+    {
+        CONTROL_ClearButton(gamefunc_AutoRun);
+        auto_run = !auto_run;
+        if (auto_run)
+            StatusMessage(150, "Auto run ON");
+        else
+            StatusMessage(150, "Auto run OFF");
+    }
+
     if (MouseDeadZone)
     {
         if (info.mousey > 0)
@@ -336,6 +351,18 @@ void PlayerInterruptKeys()
 
     fvel = clamp(fvel, -12, 12);
     svel = clamp(svel, -12, 12);
+
+    if (!bFollowMode && nMapMode)
+    {
+        mapTurn += q16avel << 3;
+        mapForward += fvel << 8;
+        mapStrafe += svel << 8;;
+
+        lPlayerYVel = 0;
+        lPlayerXVel = 0;
+        nPlayerDAng = 0;
+        return;
+    }
 
     nPlayerDAng += q16avel;
 
@@ -653,7 +680,7 @@ void InitPlayerInventory(short nPlayer)
     PlayerList[nPlayer].nRun = -1;
 
     nPistolClip[nPlayer] = 6;
-    nPlayerClip[nPlayer] = 100;
+    nPlayerClip[nPlayer] = 0;
 
     PlayerList[nPlayer].nCurrentWeapon = 0;
 
@@ -663,12 +690,13 @@ void InitPlayerInventory(short nPlayer)
 
     nPlayerScore[nPlayer] = 0;
 
-    tileLoad(kTile3571 + nPlayer);
+    short nTile = kTile3571 + nPlayer;
 
-    nPlayerColor[nPlayer] = *(uint8_t*)(waloff[nPlayer + kTile3571] + tilesiz[nPlayer + kTile3571].x * tilesiz[nPlayer + kTile3571].y / 2);
+    if (!waloff[nTile]) tileLoad(nTile);
+
+    nPlayerColor[nPlayer] = *(uint8_t*)(waloff[nTile] + tilesiz[nTile].x * tilesiz[nTile].y / 2);
 }
 
-// done
 short GetPlayerFromSprite(short nSprite)
 {
     return RunData[sprite[nSprite].owner].nVal;
@@ -728,7 +756,7 @@ void RestartPlayer(short nPlayer)
         sprite[nSprite].y = sprite[nNStartSprite].y;
         sprite[nSprite].z = sprite[nNStartSprite].z;
         mychangespritesect(nSprite, sprite[nNStartSprite].sectnum);
-        PlayerList[nPlayer].q16angle = fix16_from_int(sprite[nNStartSprite].ang&kAngleMask);
+        PlayerList[nPlayer].q16angle = fix16_from_int(sprite[nNStartSprite].ang & kAngleMask);
         sprite[nSprite].ang = fix16_to_int(PlayerList[nPlayer].q16angle);
 
         floorspr = insertsprite(sprite[nSprite].sectnum, 0);
@@ -879,6 +907,11 @@ void RestartPlayer(short nPlayer)
 
         bPlayerPan = 0;
         bLockPan = 0;
+
+		nCameraDist = 0;
+		nCameraClock = (int32_t)totalclock;
+
+        SetMapPosition(sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].ang);
     }
 
     sprintf(playerNames[nPlayer], "JOE%d", nPlayer);
@@ -897,7 +930,6 @@ void RestartPlayer(short nPlayer)
     }
 }
 
-// done
 int GrabPlayer()
 {
     if (PlayerCount >= kMaxPlayers) {
@@ -907,7 +939,6 @@ int GrabPlayer()
     return PlayerCount++;
 }
 
-// checked OK on 26/03/2019
 void StartDeathSeq(int nPlayer, int nVal)
 {
     FreeRa(nPlayer);
@@ -1282,6 +1313,9 @@ void FuncPlayer(int a, int nDamage, int nRun)
             sprite[nPlayerSprite].picnum = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nHeightTemplate[nAction]].a, var_EC);
             sprite[nDopple].picnum = sprite[nPlayerSprite].picnum;
 
+            // for showing correct player animations for player sprite on 2D map mode
+            nMapPic = seq_GetSeqPicnum(PlayerList[nPlayer].nSeq, ActionSeq[nAction].a, PlayerList[nPlayer].field_2);
+
             if (nPlayerTorch[nPlayer] > 0)
             {
                 nPlayerTorch[nPlayer]--;
@@ -1359,7 +1393,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
 
             if (sprite[nPlayerSprite].zvel >= 6500 && zVel < 6500)
             {
-                D3PlayFX(StaticSound[kSoundJonFall], 0);
+                D3PlayFX(StaticSound[kSoundJonFall], nPlayerSprite);
             }
 
             // loc_1A4E6
@@ -3176,6 +3210,15 @@ loc_1BD2E:
 
                         bPlayerPan = kTrue;
                         nDestVertPan[nPlayer] = nVertPan[nPlayer];
+                    }
+
+                    if (BUTTON(gamefunc_Next_Weapon))
+                    {
+                        SelectNextWeapon();
+                    }
+                    else if (BUTTON(gamefunc_Previous_Weapon))
+                    {
+                        SelectPreviousWeapon();
                     }
 
                     // loc_1C048:

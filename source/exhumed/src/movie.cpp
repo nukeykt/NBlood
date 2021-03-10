@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -27,8 +32,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "typedefs.h"
 #include "keyboard.h"
 #include "fx_man.h"
+#include "config.h"
 #include "sound.h"
 #include "mutex.h"
+#include "memorystream.h"
 
 enum {
     kFramePalette = 0,
@@ -56,7 +63,53 @@ palette_t moviepal[256];
 static mutex_t mutex;
 
 
-int ReadFrame(FILE *fp)
+bool LoadGOGBookMovie(uint8_t *pMovie, int nFileSize)
+{
+    const uint8_t kSyncMark[] = { 0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00 };
+
+    buildvfs_kfd hFile = kopen4load("game.gog", 0);
+    if (hFile < 0)
+        return false;
+
+    int32_t fileSize = kfilelength(hFile);
+    if (fileSize != 391203456) { // expected size of game.gog
+        kclose(hFile);
+        return false;
+    }
+
+    klseek(hFile, 13388 * 2352, SEEK_SET); // offset to start of file
+
+    while (nFileSize)
+    {
+        uint8_t syncmark[12];
+
+        kread(hFile, syncmark, sizeof(syncmark));
+        klseek(hFile, 4, SEEK_CUR);
+
+        if (memcmp(syncmark, kSyncMark, sizeof(kSyncMark)) != 0)
+        {
+            printf("invalid CD image file\n");
+            kclose(hFile);
+            return false;
+        }
+
+        int nRead = kread(hFile, pMovie, min(2048, nFileSize));
+        pMovie += nRead;
+
+        if (nFileSize < 2048)
+            break;
+
+        nFileSize -= 2048;
+
+        // temp - check type
+        klseek(hFile, 4 + 8 + 276, SEEK_CUR);
+    }
+
+    kclose(hFile);
+    return true;
+}
+
+int ReadFrame(MemoryReadStream &ms)
 {
     uint8_t nType;
     uint8_t var_1C;
@@ -68,11 +121,11 @@ int ReadFrame(FILE *fp)
 
     while (1)
     {
-        if (fread(&nType, 1, sizeof(nType), fp) == 0) {
+        if (!ms.GetBytesLeft())
             return 0;
-        }
 
-        fread(&nSize, sizeof(nSize), 1, fp);
+        nType = ms.GetByte();
+        nSize = ms.GetUint32LE();
 
         nType--;
         if (nType > 3) {
@@ -83,8 +136,8 @@ int ReadFrame(FILE *fp)
         {
             case kFramePalette:
             {
-                fread(palette, sizeof(palette[0]), sizeof(palette) / sizeof(palette[0]), fp);
-                fread(&var_1C, sizeof(var_1C), 1, fp);
+                ms.GetBytes(palette, sizeof(palette));
+                var_1C = ms.GetByte();
 
                 for (auto &c : palette)
                     c <<= 2;
@@ -100,13 +153,13 @@ int ReadFrame(FILE *fp)
                 if (lSoundBytesRead - lSoundBytesUsed >= kSampleRate)
                 {
                     DebugOut("ReadFrame() - Sound buffer full\n");
-                    fseek(fp, nSize, SEEK_CUR);
+                    ms.SkipBytes(nSize);
                 }
                 else
                 {
                     mutex_lock(&mutex);
 
-                    int nRead = fread((char*)bankbuf + bankptr, 1, nSize, fp);
+                    int nRead = ms.GetBytes(bankbuf + bankptr, nSize);
 
                     lSoundBytesRead += nRead;
                     bankptr += nSize;
@@ -131,22 +184,22 @@ int ReadFrame(FILE *fp)
 
                 uint8_t *pFrame = CurFrame;
 
-                int nRead = fread(&yOffset, 1, sizeof(yOffset), fp);
-                nSize -= nRead;
+                yOffset = ms.GetUint16LE();
+                nSize -= 2;
 
                 pFrame += yOffset * 200; // row position
 
                 while (nSize > 0)
                 {
-                    fread(&xOffset, sizeof(xOffset), 1, fp);
-                    fread(&nPixels, sizeof(nPixels), 1, fp);
+                    xOffset = ms.GetByte();
+                    nPixels = ms.GetByte();
                     nSize -= 2;
 
                     pFrame += xOffset;
 
                     if (nPixels)
                     {
-                        int nRead = fread(pFrame, 1, nPixels, fp);
+                        int nRead = ms.GetBytes(pFrame, nPixels);
                         pFrame += nRead;
                         nSize -= nRead;
                     }
@@ -186,18 +239,52 @@ void PlayMovie(const char* fileName)
 {
     int bDoFade = kTrue;
     int hFx = -1;
+    uint8_t* pMovieFile = NULL;
+    int fileSize = 0;
 
-    tileLoad(kMovieTile);
+    if (!waloff[kMovieTile]) tileLoad(kMovieTile);
     CurFrame = (uint8_t*)waloff[kMovieTile];
 
-    FILE* fp = fopen(fileName, "rb");
-    if (fp == NULL)
+    // try for a loose BOOK.MOV first
+    buildvfs_kfd hFile = kopen4loadfrommod(fileName, 0);
+    if (hFile >= 0)
+    {
+        fileSize = kfilelength(hFile);
+        pMovieFile = new uint8_t[fileSize];
+        if (pMovieFile)
+            kread(hFile, pMovieFile, fileSize);
+
+        kclose(hFile);
+    }
+    else
+    {
+        // try read from the GOG versions game.gog image file
+        fileSize = 9938599; // BOOK.MOV file size
+        pMovieFile = new uint8_t[fileSize];
+        if (!pMovieFile)
+        {
+            DebugOut("Can't open movie file %s\n", fileName);
+            return;
+        }
+
+        if (!LoadGOGBookMovie(pMovieFile, fileSize))
+        {
+            DebugOut("Can't open movie file %s\n", fileName);
+            if (!pMovieFile)
+                delete[] pMovieFile;
+            return;
+        }
+    }
+
+    if (pMovieFile == NULL)
     {
         DebugOut("Can't open movie file %s\n", fileName);
         return;
     }
 
-    fread(lh, sizeof(lh), 1, fp);
+    MemoryReadStream ms(pMovieFile, fileSize);
+
+    ms.GetBytes(lh, sizeof(lh));
 
     // sound stuff
     mutex_init(&mutex);
@@ -219,10 +306,10 @@ void PlayMovie(const char* fileName)
     videoSetPalette(0, ANIMPAL, 2 + 8);
 
     // Read a frame in first
-    if (ReadFrame(fp))
+    if (ReadFrame(ms))
     {
         // start audio playback
-        hFx = FX_StartDemandFeedPlayback(ServeSample, 8, 1, kSampleRate, 0, gMusicVolume, gMusicVolume, gMusicVolume, FX_MUSIC_PRIORITY, fix16_one, -1, nullptr);
+        hFx = FX_StartDemandFeedPlayback(ServeSample, 8, 1, kSampleRate, 0, MusicVolume, MusicVolume, MusicVolume, FX_MUSIC_PRIORITY, fix16_one, -1, nullptr);
 
         while (!KB_KeyWaiting())
         {
@@ -268,7 +355,7 @@ void PlayMovie(const char* fileName)
 
             videoNextPage();
 
-            if (ReadFrame(fp) == 0) {
+            if (ReadFrame(ms) == 0) {
                 break;
             }
         }
@@ -283,7 +370,9 @@ void PlayMovie(const char* fileName)
     }
 
     mutex_destroy(&mutex);
-    fclose(fp);
+
+    if (pMovieFile)
+        delete[] pMovieFile;
 
 #ifdef USE_OPENGL
     // need to do OpenGL fade out here

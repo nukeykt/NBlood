@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -67,15 +72,15 @@ short SetChan[kMaxSets];
 
 void InitSets()
 {
-    SetCount = 0;
+    SetCount = kMaxSets;
 }
 
 int BuildSet(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
-    short nSet = SetCount;
-    SetCount++;
+    SetCount--;
 
-    if (nSet >= kMaxSets) {
+    short nSet = SetCount;
+    if (nSet < 0) {
         return -1;
     }
 
@@ -174,7 +179,7 @@ int BuildSoul(int nSet)
     return nSprite | 0x230000;
 }
 
-void FuncSoul(int a, int, int nRun)
+void FuncSoul(int a, int UNUSED(b), int nRun)
 {
     short nSprite = RunData[nRun].nVal;
 
@@ -697,15 +702,15 @@ public:
 void SetLoadSave::Load()
 {
     Read(&SetCount, sizeof(SetCount));
-    Read(SetList, sizeof(SetList[0]) * SetCount);
-    Read(SetChan, sizeof(SetChan[0]) * SetCount);
+    Read(&SetList[SetCount], sizeof(Set) * (kMaxSets - SetCount));
+    Read(SetChan, sizeof(SetChan));
 }
 
 void SetLoadSave::Save()
 {
     Write(&SetCount, sizeof(SetCount));
-    Write(SetList, sizeof(SetList[0]) * SetCount);
-    Write(SetChan, sizeof(SetChan[0]) * SetCount);
+    Write(&SetList[SetCount], sizeof(Set) * (kMaxSets - SetCount));
+    Write(SetChan, sizeof(SetChan));
 }
 
 static SetLoadSave* myLoadSave;

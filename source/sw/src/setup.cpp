@@ -24,6 +24,8 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 */
 //-------------------------------------------------------------------------
 #include "build.h"
+#include "baselayer.h"
+#include "osd.h"
 
 #include "keys.h"
 #include "game.h"
@@ -129,6 +131,12 @@ void InitSetup(void)
     }*/
 
     RTS_Init(RTSName);
+
+    OSD_Exec("voidsw_cvars.cfg");
+    OSD_Exec("voidsw_autoexec.cfg");
+
+    system_getcvars();
+    FX_InitCvars();
 }
 
 #if 0

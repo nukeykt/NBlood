@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -20,6 +25,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define __config_h__
 
 #include "compat.h"
+
+#include "_control.h"
+#include "control.h"
+#include "keyboard.h"
 
 #define kMaxGameFuncLen     64
 
@@ -80,11 +89,14 @@ enum {
 	gamefunc_Inventory,
 	gamefunc_Inventory_Left,
 	gamefunc_Inventory_Right,
-	gamefunc_Mouse_Sensitivity_Up,
-	gamefunc_Mouse_Sensitivity_Down,
     gamefunc_Show_Console,
 	gamefunc_Mouse_Aiming,
 	gamefunc_Toggle_Crosshair,
+    gamefunc_Next_Weapon,
+    gamefunc_Previous_Weapon,
+	gamefunc_AutoRun,
+    gamefunc_Map_Follow_Mode,
+	gamefunc_Third_Person_View,
 	kMaxGameFunctions
 };
 
@@ -103,8 +115,8 @@ typedef struct {
     int32_t noautoload;
 } ud_setup_t;
 
-#define kSetupFilename		"SETUP.CFG"
-extern char setupfilename[];
+#define kSetupFilename  "pcexhumed.cfg"
+extern char setupfilename[BMAX_PATH];
 
 extern hashtable_t h_gamefuncs;
 
@@ -124,6 +136,8 @@ extern int32_t MouseDeadZone, MouseBias;
 
 extern int32_t FXVolume;
 extern int32_t MusicVolume;
+extern int32_t SoundToggle;
+extern int32_t MusicToggle;
 extern int32_t MixRate;
 extern int32_t MidiPort;
 extern int32_t NumVoices;
@@ -132,6 +146,8 @@ extern int32_t NumBits;
 extern int32_t ReverseStereo;
 extern int32_t MusicDevice;
 extern int32_t FXDevice;
+
+extern int32_t gShowCrosshair;
 
 // JBF 20031211: Store the input settings because
 // (currently) mact can't regurgitate them

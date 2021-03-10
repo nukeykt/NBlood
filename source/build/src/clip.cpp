@@ -15,9 +15,10 @@
 
 static int16_t clipnum;
 static linetype clipit[MAXCLIPNUM];
-static int32_t clipsectnum, origclipsectnum, clipspritenum;
+static int32_t clipsectnum, origclipsectnum, layerclipsectnum, clipspritenum;
 int16_t clipsectorlist[MAXCLIPSECTORS];
 static int16_t origclipsectorlist[MAXCLIPSECTORS];
+static int16_t layerclipsectorlist[MAXCLIPSECTORS];
 static uint8_t clipsectormap[(MAXSECTORS+7)>>3];
 static uint8_t origclipsectormap[(MAXSECTORS+7)>>3];
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -763,8 +764,7 @@ static void addclipline(int32_t dax1, int32_t day1, int32_t dax2, int32_t day2, 
         return;
     }
 
-    clipit[clipnum].x1 = dax1; clipit[clipnum].y1 = day1;
-    clipit[clipnum].x2 = dax2; clipit[clipnum].y2 = day2;
+    clipit[clipnum] = { { dax1, day1}, { dax2, day2 } };
     clipobjectval[clipnum] = daoval;
 
     uint32_t const mask = pow2char[clipnum&7];
@@ -916,8 +916,8 @@ static inline int32_t cliptrace(vec2_t const pos, vec2_t * const goal)
 
     for (native_t z=clipnum-1; z>=0; z--)
     {
-        vec2_t const p1   = { clipit[z].x1, clipit[z].y1 };
-        vec2_t const p2   = { clipit[z].x2, clipit[z].y2 };
+        vec2_t const p1   = clipit[z].p1;
+        vec2_t const p2   = clipit[z].p2;
         vec2_t const area = { p2.x-p1.x, p2.y-p1.y };
 
         int32_t topu = area.x*(pos.y-p1.y) - (pos.x-p1.x)*area.y;
@@ -1827,6 +1827,7 @@ void getzrange(const vec3_t *pos, int16_t sectnum,
     int32_t clipsectcnt = 0;
 
 #ifdef YAX_ENABLE
+    const int16_t origsectnum = sectnum;
     // YAX round, -1:center, 0:ceiling, 1:floor
     int32_t mcf=-1;
 #endif
@@ -1857,6 +1858,8 @@ void getzrange(const vec3_t *pos, int16_t sectnum,
 #ifdef YAX_ENABLE
     origclipsectorlist[0] = sectnum;
     origclipsectnum = 1;
+    layerclipsectorlist[0] = sectnum;
+    layerclipsectnum = 1;
 #endif
     clipsectorlist[0] = sectnum;
     clipsectnum = 1;
@@ -1993,6 +1996,8 @@ restart_grand:
 #ifdef YAX_ENABLE
                 if (mcf==-1 && curspr==NULL)
                     origclipsectorlist[origclipsectnum++] = k;
+                if (curspr == NULL)
+                    layerclipsectorlist[layerclipsectnum++] = k;
 #endif
                 //It actually got here, through all the continue's!!!
                 int32_t daz, daz2;
@@ -2173,25 +2178,29 @@ restart_grand:
 
         yax_getbunches(sectnum, &cb, &fb);
 
-        mcf++;
+        if (mcf == -1)
+            mcf = 0;
+
         clipsectcnt = 0; clipsectnum = 0;
 
         int didchange = 0;
+        int newsectnum = sectnum;
+        int mcfchange = 0;
         if (cb>=0 && mcf==0 && *ceilhit==sectnum+16384)
         {
             int i;
-            for (i=0; i<origclipsectnum; i++)
+            for (i=0; i<layerclipsectnum; i++)
             {
-                int const j = origclipsectorlist[i];
+                int const j = layerclipsectorlist[i];
                 if (yax_getbunch(j, YAX_CEILING) >= 0)
                     if (sector[j].ceilingstat&dasecclipmask)
                         break;
             }
 
-            if (i==origclipsectnum)
-                for (i=0; i<origclipsectnum; i++)
+            if (i==layerclipsectnum)
+                for (i=0; i<layerclipsectnum; i++)
                 {
-                    cb = yax_getbunch(origclipsectorlist[i], YAX_CEILING);
+                    cb = yax_getbunch(layerclipsectorlist[i], YAX_CEILING);
                     if (cb < 0)
                         continue;
 
@@ -2206,33 +2215,48 @@ restart_grand:
                             int const daz = getceilzofslope(j, closest.x, closest.y);
 
                             if (!didchange || daz > *ceilz)
-                                didchange=1, *ceilhit = j+16384, *ceilz = daz;
+                                didchange=1, *ceilhit = j+16384, *ceilz = daz, newsectnum = j;
                         }
                 }
 
             if (clipsectnum==0)
+            {
+                mcfchange = 1;
                 mcf++;
+            }
         }
         else if (mcf==0)
+        {
+            mcfchange = 1;
             mcf++;
+        }
+
+        if (mcfchange)
+        {
+            layerclipsectnum = origclipsectnum;
+            std::copy(origclipsectorlist, origclipsectorlist + origclipsectnum, layerclipsectorlist);
+            sectnum = origsectnum;
+            yax_getbunches(sectnum, &cb, &fb);
+        }
+
 
         didchange = 0;
         if (fb>=0 && mcf==1 && *florhit==sectnum+16384)
         {
             int i=0;
-            for (; i<origclipsectnum; i++)
+            for (; i<layerclipsectnum; i++)
             {
-                int const j = origclipsectorlist[i];
+                int const j = layerclipsectorlist[i];
                 if (yax_getbunch(j, YAX_FLOOR) >= 0)
                     if (sector[j].floorstat&dasecclipmask)
                         break;
             }
 
             // (almost) same as above, but with floors...
-            if (i==origclipsectnum)
-                for (i=0; i<origclipsectnum; i++)
+            if (i==layerclipsectnum)
+                for (i=0; i<layerclipsectnum; i++)
                 {
-                    fb = yax_getbunch(origclipsectorlist[i], YAX_FLOOR);
+                    fb = yax_getbunch(layerclipsectorlist[i], YAX_FLOOR);
                     if (fb < 0)
                         continue;
 
@@ -2247,7 +2271,7 @@ restart_grand:
                             int const daz = getflorzofslope(j, closest.x,closest.y);
 
                             if (!didchange || daz < *florz)
-                                didchange=1, *florhit = j+16384, *florz = daz;
+                                didchange=1, *florhit = j+16384, *florz = daz, newsectnum = j;
                         }
                 }
         }
@@ -2258,6 +2282,10 @@ restart_grand:
             curidx = -1;
             curspr = NULL;
             clipspritecnt = 0; clipspritenum = 0;
+
+            layerclipsectnum = clipsectnum;
+            std::copy(clipsectorlist, clipsectorlist + clipsectnum, layerclipsectorlist);
+            sectnum = newsectnum;
 
             goto restart_grand;
         }

@@ -43,8 +43,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 #include "triggers.h"
 #include "view.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
 #include "aiunicult.h"
+#endif
 
 void fxFlameLick(int nSprite) // 0
 {

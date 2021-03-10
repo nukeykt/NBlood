@@ -212,7 +212,7 @@
 
 #if CXXSTD >= 2017
 # define EDUKE32_STATIC_ASSERT(cond) static_assert(cond)
-#elif CXXSTD >= 2011 || CSTD >= 2011 || EDUKE32_MSVC_CXX_PREREQ(1600)
+#elif CXXSTD >= 2011 || CSTD >= 2011 || EDUKE32_MSVC_PREREQ(1600)
 # define EDUKE32_STATIC_ASSERT(cond) static_assert(cond, "")
 #else
 /* C99 / C++03 static assertions based on source found in LuaJIT's src/lj_def.h. */
@@ -248,7 +248,7 @@
 #define STATIC_CAST(t, v) (STATIC_CAST_OP(t)(v))
 #define REINTERPRET_CAST(t, v) (REINTERPRET_CAST_OP(t)(v))
 
-#if defined __cplusplus && (__cplusplus >= 201103L || __has_feature(cxx_constexpr) || EDUKE32_MSVC_PREREQ(1900))
+#if defined __cplusplus && (__cplusplus >= 201103L || __has_feature(cxx_constexpr) || EDUKE32_MSVC_CXX_PREREQ(1900))
 # define HAVE_CONSTEXPR
 # define CONSTEXPR constexpr
 #else
@@ -479,7 +479,7 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 #ifdef _MSC_VER
 # if defined _M_AMD64 || defined _M_ARM64 || defined _M_X64 || defined _WIN64
 // should be int64_t, if not for a suspected VS compiler bug
-typedef int32_t ssize_t;
+typedef int64_t ssize_t;
 # else
 typedef int32_t ssize_t;
 # endif
@@ -1016,7 +1016,7 @@ static FORCE_INLINE CONSTEXPR uint64_t B_SWAP64_impl(uint64_t value)
 }
 
 /* The purpose of B_PASS* as functions, as opposed to macros, is to prevent them from being used as lvalues. */
-#if CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1900)
+#if defined __cplusplus && (CXXSTD >= 2011 || EDUKE32_MSVC_CXX_PREREQ(1900))
 template <typename T>
 static FORCE_INLINE CONSTEXPR take_sign_t<int16_t, T> B_SWAP16(T x)
 {
@@ -1218,6 +1218,7 @@ static FORCE_INLINE CONSTEXPR char bitmap_test(uint8_t const *const ptr, int con
 ////////// Utility functions //////////
 
 // breadth-first search helpers
+#ifdef __cplusplus
 template <typename T>
 void bfirst_search_init(T *const list, uint8_t *const bitmap, T *const eltnumptr, int const maxelts, int const firstelt)
 {
@@ -1237,6 +1238,7 @@ void bfirst_search_try(T *const list, uint8_t *const bitmap, T *const eltnumptr,
         list[(*eltnumptr)++] = elt;
     }
 }
+#endif
 
 #if RAND_MAX == 32767
 static FORCE_INLINE uint16_t system_15bit_rand(void) { return (uint16_t)rand(); }
@@ -1431,7 +1433,11 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #define LIBDIVIDE_NOINLINE
 #include "fix16.h"
 #include "libdivide.h"
+
+#ifdef __cplusplus
 #include "clockticks.hpp"
+#endif
+
 #include "debugbreak.h"
 
 #include "zpl.h"

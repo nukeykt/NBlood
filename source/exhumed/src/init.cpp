@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -1210,63 +1215,3 @@ void LoadObjects()
     nCameraz = initz;
 }
 
-int myloadconfig()
-{
-    FILE *fp = fopen("psa.ini", "rb");
-
-    if (fp == NULL)
-    {
-        gFXVolume = 200;
-        nGamma = 2;
-        gMusicVolume = 200;
-        bFullScreen = 0;
-        mysetbrightness((uint8_t)nGamma);
-
-        lMouseSens = 8;
-        return -1;
-    }
-
-    fread(&gFXVolume,    sizeof(gFXVolume), 1, fp);
-    fread(&gMusicVolume, sizeof(gMusicVolume), 1, fp);
-    fread(&screensize,   sizeof(screensize), 1, fp);
-    fread(&bFullScreen,  sizeof(bFullScreen), 1, fp);
-    fread(&nGamma,       sizeof(nGamma), 1, fp);
-    fread(&lMouseSens,   sizeof(lMouseSens), 1, fp);
-
-    if (screensize < 0 || screensize > 15) {
-        screensize = 0;
-    }
-
-    fclose(fp);
-
-    if (gFXVolume > 255) {
-        gFXVolume = 125;
-    }
-
-    if (gMusicVolume > 255) {
-        gMusicVolume = 125;
-    }
-
-    return 1;
-}
-
-int mysaveconfig()
-{
-    FILE *fp = fopen("psa.ini", "wb");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    fwrite(&gFXVolume,    sizeof(gFXVolume), 1, fp);
-    fwrite(&gMusicVolume, sizeof(gMusicVolume), 1, fp);
-
-    short nSize = screensize;
-
-    fwrite(&nSize,       sizeof(nSize), 1, fp);
-    fwrite(&bFullScreen, sizeof(bFullScreen), 1, fp);
-    fwrite(&nGamma,      sizeof(nGamma), 1, fp);
-    fwrite(&lMouseSens,  sizeof(lMouseSens), 1, fp);
-
-    fclose(fp);
-    return 1;
-}

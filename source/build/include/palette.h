@@ -13,6 +13,7 @@
 
 #include "cache1d.h"
 #include "vfs.h"
+#include "xxhash.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,7 +69,7 @@ extern float frealmaxshade;
 
 extern int32_t globalpal;
 extern int32_t globalblend;
-extern uint32_t g_lastpalettesum;
+extern XXH64_hash_t g_lastpalettesum;
 extern palette_t paletteGetColor(int32_t col);
 extern void paletteLoadFromDisk(void);
 extern void palettePostLoadTables(void);

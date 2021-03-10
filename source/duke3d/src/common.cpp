@@ -39,11 +39,11 @@ static const char *defaultdeffilename[GAMECOUNT]     = { "duke3d.def", "nam.def"
 static const char *defaultgameconfilename[GAMECOUNT] = { "EDUKE.CON", "NAM.CON", "NAPALM.CON", "WW2GI.CON" };
 #endif
 
-// g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+// g_grpNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
 char *g_grpNamePtr = NULL;
-// g_scriptNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+// g_scriptNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
 char *g_scriptNamePtr = NULL;
-// g_rtsNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+// g_rtsNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
 char *g_rtsNamePtr = NULL;
 
 void clearGrpNamePtr(void)
@@ -626,6 +626,7 @@ void G_AddSearchPaths(void)
     int32_t i;
     char *applications[] = { osx_getapplicationsdir(0), osx_getapplicationsdir(1) };
     char *support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
+    char *documents[] = { osx_getdocumentsdir(0), osx_getdocumentsdir(1) };
 
     for (i = 0; i < 2; i++)
     {
@@ -638,6 +639,20 @@ void G_AddSearchPaths(void)
         // Duke Nukem 3D: Atomic Edition - GOG.com
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/game/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        // Duke Nukem 3D: Atomic Edition - ZOOM Platform
+        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D - Atomic Edition.app/Contents/MacOS/Duke3D - Atomic Edition", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        // NAM - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game/NAM.app/Contents/Resources/game", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", documents[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
     }
 
     for (i = 0; i < 2; i++)
@@ -652,6 +667,7 @@ void G_AddSearchPaths(void)
     {
         Xfree(applications[i]);
         Xfree(support[i]);
+        Xfree(documents[i]);
     }
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = {0};
@@ -694,8 +710,26 @@ void G_AddSearchPaths(void)
 
     // Duke Nukem 3D: Atomic Edition - GOG.com
     bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207658730)", "path", buf, &bufsize))
+    {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    }
+    bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
     {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    }
+
+    // Duke Nukem 3D: Atomic Edition - ZOOM Platform
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\ZOOM PLATFORM\Duke Nukem 3D - Atomic Edition)", "InstallPath", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        Bstrncpy(suffix, "/AddOns", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
@@ -729,6 +763,13 @@ void G_AddSearchPaths(void)
         DWORD const remaining = sizeof(buf) - bufsize;
 
         Bstrncpy(suffix, "/NAM", remaining);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+    }
+
+    // NAM - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1575726518)", "path", buf, &bufsize))
+    {
         addsearchpath_user(buf, SEARCHPATH_NAM);
     }
 

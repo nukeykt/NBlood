@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -72,16 +77,16 @@ short nAnubisDrum = 0;
 
 void InitAnubis()
 {
-    AnubisCount = 0;
+    AnubisCount = kMaxAnubis;
     nAnubisDrum = 1;
 }
 
 int BuildAnubis(int nSprite, int x, int y, int z, int nSector, int nAngle, uint8_t bIsDrummer)
 {
-    short nAnubis = AnubisCount;
-    AnubisCount++;
+    AnubisCount--;
 
-    if (nAnubis >= kMaxAnubis) {
+    short nAnubis = AnubisCount;
+    if (nAnubis < 0) {
         return -1;
     }
 
@@ -507,14 +512,14 @@ void AnubisLoadSave::Load()
 {
     Read(&AnubisCount, sizeof(AnubisCount));
     Read(&nAnubisDrum, sizeof(nAnubisDrum));
-    Read(AnubisList, sizeof(AnubisList[0]) * AnubisCount);
+    Read(&AnubisList[AnubisCount], sizeof(Anubis) * (kMaxAnubis - AnubisCount));
 }
 
 void AnubisLoadSave::Save()
 {
     Write(&AnubisCount, sizeof(AnubisCount));
     Write(&nAnubisDrum, sizeof(nAnubisDrum));
-    Write(AnubisList, sizeof(AnubisList[0]) * AnubisCount);
+    Write(&AnubisList[AnubisCount], sizeof(Anubis) * (kMaxAnubis - AnubisCount));
 }
 
 static AnubisLoadSave* myLoadSave;

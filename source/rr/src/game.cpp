@@ -5345,7 +5345,7 @@ default_case1:
                     {
                         int32_t v = getangle(t->xvel, t->zvel >> 4);
 
-                        spriteext[i].pitch = (v > 1023 ? v - 2048 : v);
+                        spriteext[i].mdpitch = (v > 1023 ? v - 2048 : v);
                         t->cstat &= ~4;
                         t->picnum = RRTILE7274;
                         break;
@@ -5387,7 +5387,7 @@ default_case1:
             {
                 int32_t v = getangle(t->xvel, t->zvel>>4);
 
-                spriteext[i].pitch = (v > 1023 ? v-2048 : v);
+                spriteext[i].mdpitch = (v > 1023 ? v-2048 : v);
                 t->cstat &= ~4;
                 break;
             }
@@ -5403,7 +5403,7 @@ default_case1:
             {
                 int32_t v = getangle(t->xvel, t->zvel>>4);
 
-                spriteext[i].pitch = (v > 1023 ? v-2048 : v);
+                spriteext[i].mdpitch = (v > 1023 ? v-2048 : v);
                 t->cstat &= ~4;
                 break;
             }

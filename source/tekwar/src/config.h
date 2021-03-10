@@ -111,8 +111,8 @@ typedef struct {
     int32_t noautoload;
 } ud_setup_t;
 
-#define kSetupFilename      "SETUP.CFG"
-extern char setupfilename[];
+#define kSetupFilename  "etekwar.cfg"
+extern char setupfilename[BMAX_PATH];
 
 extern hashtable_t h_gamefuncs;
 

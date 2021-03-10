@@ -161,7 +161,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].angoff = (int16_t) ang;
+            spriteext[whichsprite].mdangoff = (int16_t) ang;
         }
         break;
         case T_NOMODEL:      // notmd
@@ -196,7 +196,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].pitch = (int16_t) pitch;
+            spriteext[whichsprite].mdpitch = (int16_t) pitch;
         }
         break;
         case T_ROLL:     // roll <xx>
@@ -211,7 +211,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].roll = (int16_t) roll;
+            spriteext[whichsprite].mdroll = (int16_t) roll;
         }
         break;
         case T_MDPIVOTXOFF:     // mdpivxoff <xx>
@@ -226,7 +226,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].pivot_offset.x = i;
+            spriteext[whichsprite].mdpivot_offset.x = i;
         }
         break;
         case T_MDPIVOTYOFF:     // mdpivyoff <xx>
@@ -241,7 +241,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].pivot_offset.y = i;
+            spriteext[whichsprite].mdpivot_offset.y = i;
         }
         break;
         case T_MDPIVOTZOFF:     // mdpivzoff <xx>
@@ -256,7 +256,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].pivot_offset.z = i;
+            spriteext[whichsprite].mdpivot_offset.z = i;
         }
         break;
         case T_MDPOSITIONXOFF:     // mdposxoff <xx>
@@ -271,7 +271,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].position_offset.x = i;
+            spriteext[whichsprite].mdposition_offset.x = i;
         }
         break;
         case T_MDPOSITIONYOFF:     // mdposyoff <xx>
@@ -286,7 +286,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].position_offset.y = i;
+            spriteext[whichsprite].mdposition_offset.y = i;
         }
         break;
         case T_MDPOSITIONZOFF:     // mdposzoff <xx>
@@ -301,7 +301,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].position_offset.z = i;
+            spriteext[whichsprite].mdposition_offset.z = i;
         }
         break;
         case T_AWAY1:      // away1
@@ -334,12 +334,12 @@ int32_t engineLoadMHK(const char *filename)
                 break;
             }
             auto pSpriteExt = &spriteext[whichsprite];
-            pSpriteExt->angoff = 0;
+            pSpriteExt->mdangoff = 0;
             pSpriteExt->flags &= ~(SPREXT_NOTMD|SPREXT_NOMDANIM|SPREXT_AWAY1|SPREXT_AWAY2);
-            pSpriteExt->pitch = 0;
-            pSpriteExt->roll = 0;
-            pSpriteExt->pivot_offset = {};
-            pSpriteExt->position_offset = {};
+            pSpriteExt->mdpitch = 0;
+            pSpriteExt->mdroll = 0;
+            pSpriteExt->mdpivot_offset = {};
+            pSpriteExt->mdposition_offset = {};
             break;
         }
 #ifdef POLYMER

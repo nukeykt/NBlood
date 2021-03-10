@@ -68,7 +68,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "warp.h"
 #include "weapon.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 #ifdef _WIN32
 # include <shellapi.h>
@@ -1540,6 +1542,20 @@ int app_main(int argc, char const * const * argv)
 #endif
 #endif
 
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
     OSD_SetLogFile(APPBASENAME ".log");
 
     OSD_SetFunctions(NULL,
@@ -1978,7 +1994,7 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
 
     int nEpisode = sel/kMaxLevels;
     int nLevel = sel%kMaxLevels;
-    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, name);
+    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, name);
 }
 
 static int parsedefinitions_game(scriptfile *, int);
@@ -2702,9 +2718,9 @@ int sndTryPlaySpecialMusic(int nMusic)
 {
     int nEpisode = nMusic/kMaxLevels;
     int nLevel = nMusic%kMaxLevels;
-    if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, true))
+    if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, true))
     {
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, BMAX_PATH);
         return 0;
     }
     return 1;
@@ -2717,6 +2733,6 @@ void sndPlaySpecialMusicOrNothing(int nMusic)
     if (sndTryPlaySpecialMusic(nMusic))
     {
         sndStopSong();
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song, BMAX_PATH);
     }
 }

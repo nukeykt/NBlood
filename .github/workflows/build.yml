@@ -1,0 +1,77 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+jobs:
+
+  build-windows-x86_64:
+    name: "Windows MSYS2 x86_64"
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: git mingw-w64-x86_64-toolchain make
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools SDLCONFIG=""
+
+  build-windows-i686:
+    name: "Windows MSYS2 i686"
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW32
+        update: true
+        install: git mingw-w64-i686-toolchain make nasm
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools SDLCONFIG=""
+
+  build-linux-gcc:
+    name: "Linux GCC"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools
+
+  build-linux-clang:
+    name: "Linux Clang"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools CLANG=1
+
+  build-macos:
+    name: "macOS"
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-prerequisites
+      run: |
+        brew install sdl2 libogg libvorbis flac libvpx make
+        brew unlink lz4
+    - name: build
+      run: gmake -j2 duke3d sw blood rr exhumed tools

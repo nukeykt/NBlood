@@ -168,7 +168,7 @@ static int osdcmd_map(osdcmdptr_t parm)
         for (int j = 0; j < pEpisodeInfo->nLevels; j++)
         {
             auto pLevelInfo = &pEpisodeInfo->levelsInfo[j];
-            if (!Bstrcasecmp(pLevelInfo->at0, filename))
+            if (!Bstrcasecmp(pLevelInfo->Filename, filename))
             {
                 gGameOptions.nEpisode = i;
                 gGameOptions.nLevel = j;
@@ -254,9 +254,9 @@ static int osdcmd_music(osdcmdptr_t parm)
         if (!levelTryPlayMusic(nEpisode, nLevel))
         {
             if (CDAudioToggle)
-                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].levelsInfo[nLevel].ate0);
+                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].levelsInfo[nLevel].SongId);
             else
-                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0);
+                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].levelsInfo[nLevel].Song);
             viewSetMessage(buffer);
         }
         else

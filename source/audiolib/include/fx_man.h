@@ -63,6 +63,11 @@ void FX_InitCvars(void);
 int FX_Shutdown(void);
 int FX_GetDevice(void);
 
+/* returns true only after program startup */
+static FORCE_INLINE int FX_WarmedUp(void)
+{
+    return ASS_PCMSoundDriver != ASS_AutoDetect;
+}
 
 
 int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,

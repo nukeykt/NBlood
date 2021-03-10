@@ -34,7 +34,7 @@ static CONSTEXPR const fix16_t FIX16_OVERFLOW = 0x80000000; /*!< the value used 
 
 static CONSTEXPR const fix16_t fix16_one  = 0x00010000;       /*!< fix16_t value of 1 */
 static CONSTEXPR const fix16_t fix16_half = 0x00008000;       /*!< fix16_t value of 0.5 */
-static CONSTEXPR const float   flt_f161r  = 1.f / fix16_one;  /*!< reciprocal of fix16_one as a float */
+static CONSTEXPR const float   flt_f161r  = 1.f / 0x00010000;  /*!< reciprocal of fix16_one as a float */
 
 /* Conversion functions between fix16_t and float/integer.
  * These are inlined to allow compiler to optimize away constant numbers

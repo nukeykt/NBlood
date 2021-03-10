@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 Nuke.YKT, sirlemonhead
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -50,8 +55,6 @@ extern "C" {
 }
 #endif
 
-short gMusicVolume = 200;
-short gFXVolume = 200;
 short nSoundsPlaying = 0;
 short nAmbientChannel = -1;
 
@@ -353,7 +356,7 @@ void InitFX(void)
     nSoundCount = 0;
     nCreepyTimer = kCreepyCount;
 
-    SetMasterFXVolume(gFXVolume);
+    SetMasterFXVolume(FXVolume);
 
 #if 0
     int status = FX_Init(FXDevice, NumVoices, NumChannels, NumBits, MixRate);
@@ -972,6 +975,9 @@ void SetMasterFXVolume(int nVolume)
 
 void PlayLocalSound(short nSound, short nRate)
 {
+    if (!SoundToggle)
+        return;
+
     if (!dig)
         return;
 
@@ -1036,6 +1042,9 @@ short soundsect;
 
 short PlayFX2(unsigned short nSound, short nSprite)
 {
+    if (!SoundToggle)
+        return -1;
+
     if (!dig)
         return -1;
 

@@ -431,7 +431,6 @@ vec2_t screentextRenderShadow(ScreenText_t const & data, vec2_t shadowpos, int32
     return screentextRender(data);
 }
 
-#include <string>
 #include <unordered_map>
 
 using tilefont_map_t = std::unordered_map<uint32_t, uint16_t>;
@@ -476,31 +475,108 @@ uint16_t tilefontLookup(TileFontPtr_t tilefontPtr, uint32_t chr)
     return iter->second;
 }
 
-using locale_map_t = std::unordered_map<std::string, std::string>;
-static std::unordered_map<std::string, locale_map_t> localeList{{"en", {}}};
+struct LocaleCharWrapper_t
+{
+    char const * str;
+
+    LocaleCharWrapper_t deepCopy()
+    {
+        str = Xstrdup(str);
+        return *this;
+    }
+
+    void doFree()
+    {
+        Xfree(const_cast<char *>(str));
+        str = nullptr;
+    }
+};
+
+/* 32 bit FNV-1a Hash */
+struct LocaleCharWrapper_hash
+{
+    size_t operator()(const LocaleCharWrapper_t& s) const noexcept
+    {
+        uint32_t hash = 0x811c9dc5;
+        uint32_t fnv_1_prime = 0x01000193;
+
+        char const * content = s.str;
+        int i = 0;
+        while(content[i])
+        {
+            hash ^= content[i++];
+            hash *= fnv_1_prime;
+        }
+
+        return hash;
+    }
+};
+
+/* Required for comparing wrappers inside the unordered map. */
+inline bool operator==(const LocaleCharWrapper_t a, const LocaleCharWrapper_t b)
+{
+    return Bstrcmp(a.str, b.str) == 0;
+}
+
+using locale_map_t = std::unordered_map<LocaleCharWrapper_t, LocaleCharWrapper_t, LocaleCharWrapper_hash>;
+static std::unordered_map<LocaleCharWrapper_t, locale_map_t, LocaleCharWrapper_hash> localeList{{LocaleCharWrapper_t{"en"}.deepCopy(), {}}};
 static locale_map_t * currentLocale;
 
-LocalePtr_t localeGetPtr(const char * localeName)
+LocalePtr_t localeGetPtr(char const * localeName)
 {
-    locale_map_t & myLocale = localeList[localeName];
-    return LocalePtr_t{&myLocale};
+    auto wrappedName = LocaleCharWrapper_t{localeName};
+    auto iter = localeList.find(wrappedName);
+
+    if (iter == localeList.end())
+    {
+        locale_map_t & myLocale = localeList[wrappedName.deepCopy()];
+        return LocalePtr_t{&myLocale};
+    }
+    else
+    {
+        locale_map_t & myLocale = iter->second;
+        return LocalePtr_t{&myLocale};
+    }
 }
 
-void localeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val)
+/* Replace existing mapping */
+void localeDefineMapping(LocalePtr_t localePtr, char const * key, char const * val)
 {
     auto & myLocale = *(locale_map_t *)localePtr.opaque;
-    myLocale[key] = val;
+    auto wrappedKey = LocaleCharWrapper_t{key};
+    auto wrappedVal = LocaleCharWrapper_t{val};
+    auto iter = myLocale.find(wrappedKey);
+
+    if (iter != myLocale.end())
+    {
+        iter->second.doFree();
+        iter->second = wrappedVal.deepCopy();
+    }
+    else
+    {
+        myLocale[wrappedKey.deepCopy()] = wrappedVal.deepCopy();
+    }
 }
 
-void localeMaybeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val)
+/* Don't replace existing mapping */
+void localeMaybeDefineMapping(LocalePtr_t localePtr, char const * key, char const * val)
 {
     auto & myLocale = *(locale_map_t *)localePtr.opaque;
-    myLocale.emplace(key, val);
+    auto wrappedKey = LocaleCharWrapper_t{key};
+    auto iter = myLocale.find(wrappedKey);
+
+    if (iter != myLocale.end())
+        return;
+
+    auto wrappedVal = LocaleCharWrapper_t{val};
+    myLocale[wrappedKey.deepCopy()] = wrappedVal.deepCopy();
 }
 
-void localeSetCurrent(const char * localeName)
+void localeSetCurrent(char const * localeName)
 {
-    auto iter = localeList.find(localeName);
+    auto wrappedName = LocaleCharWrapper_t{localeName};
+    auto iter = localeList.find(wrappedName);
+
     if (iter == localeList.end())
         return;
 
@@ -508,14 +584,16 @@ void localeSetCurrent(const char * localeName)
     currentLocale = &myLocale;
 }
 
-const char * localeLookup(const char * str)
+char const * localeLookup(char const * str)
 {
     if (currentLocale == nullptr)
         return str;
 
-    auto iter = currentLocale->find(str);
+    auto wrappedStr = LocaleCharWrapper_t{str};
+    auto iter = currentLocale->find(wrappedStr);
+
     if (iter == currentLocale->end())
         return str;
 
-    return iter->second.c_str();
+    return iter->second.str;
 }

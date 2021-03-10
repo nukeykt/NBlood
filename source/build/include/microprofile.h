@@ -112,6 +112,12 @@
 // Limitations:
 //  GPU timestamps can only be inserted from one thread.
 
+
+// Windows on ARM64 does not support OpenGL > 1.1, so disable profiler to prevent crash
+#ifdef _M_ARM64
+#undef MICROPROFILE_ENABLED
+#endif
+
 #ifndef MICROPROFILE_ENABLED
 #define MICROPROFILE_ENABLED 0
 #endif
@@ -176,6 +182,8 @@ typedef uint16_t MicroProfileGroupId;
 #define MicroProfileGpuBegin(c) do{} while(0)
 #define MicroProfileGpuEnd() 0
 #define MicroProfileGpuSubmit(w) do{} while(0)
+
+#define MicroProfileCounterAdd(name, count) do{} while(0)
 
 #else
 
@@ -531,7 +539,7 @@ struct MicroProfileScopeHandler
     }
 };
 
-#define MICROPROFILE_MAX_COUNTERS 1024
+#define MICROPROFILE_MAX_COUNTERS 256
 #define MICROPROFILE_MAX_COUNTER_NAME_CHARS (MICROPROFILE_MAX_COUNTERS*16)
 
 #define MICROPROFILE_MAX_GROUPS 48 //dont bump! no. of bits used it bitmask
@@ -542,7 +550,7 @@ struct MicroProfileScopeHandler
 #define MICROPROFILE_GPU_BUFFER_SIZE ((MICROPROFILE_PER_THREAD_GPU_BUFFER_SIZE)/sizeof(MicroProfileLogEntry))
 #define MICROPROFILE_GPU_FRAMES ((MICROPROFILE_GPU_FRAME_DELAY)+1)
 #define MICROPROFILE_MAX_CONTEXT_SWITCH_THREADS 256
-#define MICROPROFILE_STACK_MAX 64
+#define MICROPROFILE_STACK_MAX 128
 //#define MICROPROFILE_MAX_PRESETS 5
 #define MICROPROFILE_ANIM_DELAY_PRC 0.5f
 #define MICROPROFILE_GAP_TIME 50 //extra ms to fetch to close timers from earlier frames

@@ -1687,11 +1687,10 @@ void G_ClearFIFO(void)
 
     for (int p = 0; p < MAXPLAYERS; ++p)
     {
-        if (g_player[p].input != NULL)
-            *g_player[p].input = {};
-
-        g_player[p].vote = 0;
+        g_player[p].input   = {};
+        g_player[p].vote    = 0;
         g_player[p].gotvote = 0;
+
         g_player[p].horizSkew        = 0;
         g_player[p].horizAngleAdjust = 0;
     }
@@ -2074,7 +2073,7 @@ void G_FreeMapState(int levelNum)
 
     for (int j=0; j<g_gameVarCount; j++)
     {
-        if (aGameVars[j].flags & GAMEVAR_NORESET)
+        if (aGameVars[j].flags & SAVEGAMEMAPSTATEVARSKIPMASK)
             continue;
 
         if (aGameVars[j].flags & (GAMEVAR_PERPLAYER|GAMEVAR_PERACTOR))
@@ -2083,6 +2082,9 @@ void G_FreeMapState(int levelNum)
 
     for (int j=0; j<g_gameArrayCount; j++)
     {
+        if (aGameArrays[j].flags & SAVEGAMEARRAYSKIPMASK)
+            continue;
+
         if (aGameArrays[j].flags & GAMEARRAY_RESTORE)
             ALIGNED_FREE_AND_NULL(board.savedstate->arrays[j]);
     }

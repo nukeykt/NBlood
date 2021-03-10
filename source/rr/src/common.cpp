@@ -584,12 +584,6 @@ static void Duke_AddSteamPaths(const char *basepath)
     // WWII GI - Steam
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/World War II GI/WW2GI", basepath);
     addsearchpath_user(buf, SEARCHPATH_WW2GI);
-
-#if 0
-    // Ion Fury - Steam
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Ion Fury", basepath);
-    addsearchpath_user(buf, SEARCHPATH_FURY);
-#endif
 }
 #endif
 #endif
@@ -625,6 +619,7 @@ void G_AddSearchPaths(void)
     int32_t i;
     char *applications[] = { osx_getapplicationsdir(0), osx_getapplicationsdir(1) };
     char *support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
+    char *documents[] = { osx_getdocumentsdir(0), osx_getdocumentsdir(1) };
 
     for (i = 0; i < 2; i++)
     {
@@ -637,6 +632,46 @@ void G_AddSearchPaths(void)
         // Duke Nukem 3D: Atomic Edition - GOG.com
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/game/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        // Duke Nukem 3D: Atomic Edition - ZOOM Platform
+        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D - Atomic Edition.app/Contents/MacOS/Duke3D - Atomic Edition", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        // Redneck Rampage Collection - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/C Redneck Rampage.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/D Redneck.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/C Redneck Rampage.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/D Redneck.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/C Redneck Rampage.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rampage.app/Contents/Resources/Redneck Rampage.boxer/D Redneck.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/C Redneck Rides Again.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/D RRRAGAIN.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/C Redneck Rides Again.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/D RRRAGAIN.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/C Redneck Rides Again.harddisk", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+        Bsnprintf(buf, sizeof(buf), "%s/Redneck Rampage Collection.app/Contents/Resources/game/Redneck Rides Again.app/Contents/Resources/Redneck Rides Again.boxer/D RRRAGAIN.cdmedia", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+
+        // NAM - GOG.com
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game/NAM.app/Contents/Resources/game", applications[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+        Bsnprintf(buf, sizeof(buf), "%s/NAM.app/Contents/Resources/game", documents[i]);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
     }
 
     for (i = 0; i < 2; i++)
@@ -651,6 +686,7 @@ void G_AddSearchPaths(void)
     {
         Xfree(applications[i]);
         Xfree(support[i]);
+        Xfree(documents[i]);
     }
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = {0};
@@ -693,8 +729,26 @@ void G_AddSearchPaths(void)
 
     // Duke Nukem 3D: Atomic Edition - GOG.com
     bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207658730)", "path", buf, &bufsize))
+    {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    }
+    bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
     {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    }
+
+    // Duke Nukem 3D: Atomic Edition - ZOOM Platform
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\ZOOM PLATFORM\Duke Nukem 3D - Atomic Edition)", "InstallPath", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+
+        Bstrncpy(suffix, "/AddOns", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
@@ -720,17 +774,66 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
-    // Redneck Rampage (GOG.com)
+    // Redneck Rampage - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 565550)", "InstallLocation", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/Redneck", remaining);
+        addsearchpath_user(buf, SEARCHPATH_RR);
+    }
+
+    // Redneck Rampage Rides Again - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 580940)", "InstallLocation", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/AGAIN", remaining);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+    }
+
+    // Redneck Rampage Collection - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\Games\\1207658674", "PATH", buf, &bufsize))
+    {
+        addsearchpath_user(buf, SEARCHPATH_RR);
+
+        char* const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/AGAIN", remaining);
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+    }
+
+    // Redneck Rampage - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGREDNECKRAMPAGE", "PATH", buf, &bufsize))
     {
         addsearchpath_user(buf, SEARCHPATH_RR);
     }
 
-    // Redneck Rampage Rides Again (GOG.com)
+    // Redneck Rampage Rides Again - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGCREDNECKRIDESAGAIN", "PATH", buf, &bufsize))
     {
+        addsearchpath_user(buf, SEARCHPATH_RRRA);
+    }
+
+    // Redneck Deer Huntin' - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 580930)", "InstallLocation", buf, &bufsize))
+    {
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/HUNTIN", remaining);
+        addsearchpath_user(buf, SEARCHPATH_DEER);
+
+        Bstrncpy(suffix, "/AGAIN", remaining);
         addsearchpath_user(buf, SEARCHPATH_RRRA);
     }
 
@@ -742,6 +845,13 @@ void G_AddSearchPaths(void)
         DWORD const remaining = sizeof(buf) - bufsize;
 
         Bstrncpy(suffix, "/NAM", remaining);
+        addsearchpath_user(buf, SEARCHPATH_NAM);
+    }
+
+    // NAM - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1575726518)", "path", buf, &bufsize))
+    {
         addsearchpath_user(buf, SEARCHPATH_NAM);
     }
 
@@ -770,10 +880,13 @@ void G_CleanupSearchPaths(void)
     if (!WW2GI)
         removesearchpaths_withuser(SEARCHPATH_WW2GI);
 
-    if (!RRRA)
+    if (!DEER)
+        removesearchpaths_withuser(SEARCHPATH_DEER);
+
+    if (!RRRA || DEER)
         removesearchpaths_withuser(SEARCHPATH_RRRA);
 
-    if (!RR || RRRA)
+    if (!RR || RRRA || DEER)
         removesearchpaths_withuser(SEARCHPATH_RR);
 }
 

@@ -43,7 +43,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sfx.h"
 #include "sound.h"
 #include "view.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 GAMEOPTIONS gSaveGameOptions[10];
 char *gSaveGamePic[10];
@@ -194,7 +196,7 @@ void LoadSave::LoadGame(char *pzFile)
 #endif
 
     if ((unsigned)gGameOptions.nEpisode >= gEpisodeCount || (unsigned)gGameOptions.nLevel >= gEpisodeInfo[gGameOptions.nEpisode].nLevels
-        || Bstrcasecmp(gEpisodeInfo[gGameOptions.nEpisode].levelsInfo[gGameOptions.nLevel].at0, gGameOptions.zLevelName) != 0)
+        || Bstrcasecmp(gEpisodeInfo[gGameOptions.nEpisode].levelsInfo[gGameOptions.nLevel].Filename, gGameOptions.zLevelName) != 0)
     {
         if (!gSysRes.Lookup(gGameOptions.zLevelName, "MAP"))
         {

@@ -125,24 +125,29 @@ typedef struct
 {
     int32_t t_data[10];  // 40b sometimes used to hold offsets to con code
 
-    int32_t flags;                             // 4b
-    vec3_t  bpos;                              // 12b
-    int32_t floorz, ceilingz;                  // 8b
-    vec2_t lastv;                              // 8b
-    int16_t picnum, ang, extra, owner;         // 8b
-    int16_t movflag, tempang, timetosleep;     // 6b
-    int16_t stayput;                           // 2b
+    uint32_t flags;                 // 4b
+    vec3_t   bpos;                  // 12b
+    int32_t  floorz, ceilingz;      // 8b
+    vec2_t   lastv;                 // 8b
+    int16_t  picnum, ang;           // 4b
+    int16_t  extra, owner;          // 4b
+    int16_t  movflag, tempang;      // 4b
+    int16_t  timetosleep, stayput;  // 4b
+    uint16_t florhit, lzsum;        // 4b
+    int16_t  dispicnum;             // 2b NOTE: updated every frame, not in sync with game tics!    
+    uint8_t  cgg, lasttransport;    // 2b
+} actor_t;
 
-    uint8_t cgg, lasttransport;                // 2b
-    // NOTE: 'dispicnum' is updated every frame, not in sync with game tics!
-    int16_t dispicnum;                         // 2b
+EDUKE32_STATIC_ASSERT(sizeof(actor_t) == 96);
 
 #ifdef POLYMER
-    int16_t lightId, lightmaxrange;  // 4b
+typedef struct  
+{
     _prlight *lightptr;              // 4b/8b  aligned on 96 bytes
-    uint8_t lightcount, filler[3];
+    int16_t lightId, lightmaxrange;  // 4b
+    uint8_t lightcount, filler[3];   // 4b
+} practor_t;
 #endif
-} actor_t;
 
 // note: fields in this struct DO NOT have to be in this order,
 // however if you add something to this struct, please make sure
@@ -298,7 +303,7 @@ typedef struct
 } tiledata_t;
 
 
-enum sflags_t
+enum sflags_t : unsigned int
 {
     SFLAG_SHADOW        = 0x00000001,
     SFLAG_NVG           = 0x00000002,
@@ -331,11 +336,14 @@ enum sflags_t
     SFLAG_DAMAGEEVENT      = 0x04000000,
     SFLAG_NOWATERSECTOR    = 0x08000000,
     SFLAG_QUEUEDFORDELETE  = 0x10000000,
+    SFLAG_RESERVED         = 0x20000000,
+    SFLAG_RESERVED2        = 0x40000000,
+    SFLAG_RESERVED3        = 0x80000000,
 };
 
 // Custom projectiles "workslike" flags.
 // XXX: Currently not predefined from CON.
-enum pflags_t
+enum pflags_t : unsigned int
 {
     PROJECTILE_HITSCAN           = 0x00000001,
     PROJECTILE_RPG               = 0x00000002,
@@ -366,6 +374,9 @@ enum pflags_t
 
 extern tiledata_t   g_tile[MAXTILES];
 extern actor_t      actor[MAXSPRITES];
+#ifdef POLYMER
+extern practor_t    practor[MAXSPRITES];
+#endif
 extern int32_t      block_deletesprite;
 extern int32_t      g_noEnemies;
 extern int32_t      otherp;

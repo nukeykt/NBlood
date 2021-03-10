@@ -780,8 +780,6 @@ blood_game_objs := \
 	airat.cpp \
 	aispid.cpp \
 	aitchern.cpp \
-	aiunicult.cpp \
-	nnexts.cpp \
 	aizomba.cpp \
 	aizombf.cpp \
 	asound.cpp \
@@ -833,6 +831,11 @@ blood_game_objs := \
 	view.cpp \
 	warp.cpp \
 	weapon.cpp \
+
+ifeq ($(NOONE_EXTENSIONS),1)
+    blood_game_objs += nnexts.cpp
+    blood_game_objs += aiunicult.cpp
+endif
 
 blood_game_rsrc_objs :=
 blood_game_gen_objs :=
@@ -1148,8 +1151,8 @@ exhumed_editor_deps := audiolib
 exhumed_game := pcexhumed
 exhumed_editor := pcexhumed_editor
 
-exhumed_game_proper := Exhumed
-exhumed_editor_proper := Exhumed_editor
+exhumed_game_proper := PCExhumed
+exhumed_editor_proper := PCExhumed Editor
 
 exhumed_game_objs := \
     aistuff.cpp \
@@ -1158,7 +1161,7 @@ exhumed_game_objs := \
     bubbles.cpp \
     bullet.cpp \
     cd.cpp \
-	common.cpp \
+    common.cpp \
     config.cpp \
     enginesubs.cpp \
     exhumed.cpp \
@@ -1175,6 +1178,7 @@ exhumed_game_objs := \
     lighting.cpp \
     lion.cpp \
     map.cpp \
+    memorystream.cpp \
     menu.cpp \
     mono.cpp \
     move.cpp \
@@ -1232,6 +1236,11 @@ ifeq ($(PLATFORM),WINDOWS)
     exhumed_game_rsrc_objs += gameres.rc
     exhumed_editor_rsrc_objs += buildres.rc
 endif
+ifeq ($(PLATFORM),DARWIN)
+    ifeq ($(STARTUP_WINDOW),1)
+        exhumed_game_objs += GrpFile.game.mm GameListSource.game.mm startosx.game.mm
+    endif
+endif
 
 
 #### Witchaven
@@ -1252,7 +1261,7 @@ witchaven_game := ewitchaven
 witchaven_editor := ewitchaven_editor
 
 witchaven_game_proper := EWitchaven
-witchaven_editor_proper := EWitchaven_editor
+witchaven_editor_proper := EWitchaven Editor
 
 witchaven_game_objs := \
     animation.cpp \

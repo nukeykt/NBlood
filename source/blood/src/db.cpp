@@ -35,7 +35,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "db.h"
 #include "iob.h"
 #include "eventq.h"
+#ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#endif
 
 #ifdef NOONE_EXTENSIONS
 bool gModernMap = false;

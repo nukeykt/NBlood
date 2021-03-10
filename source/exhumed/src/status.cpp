@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -677,7 +682,7 @@ void StatusMessage(int messageTime, const char *fmt, ...)
 
 void DrawSnakeCamStatus()
 {
-    printext(0, 0, "S E R P E N T   C A M", kTile159, 255);
+    printext(0, 0, "S E R P E N T   C A M", kTileFont);
 }
 
 void DrawStatus()
@@ -834,21 +839,21 @@ void DrawStatus()
         int x = (nViewLeft + nViewRight) / 2;
 
         sprintf(coordBuf, "X %d", (int)sprite[nSprite].x);
-        printext(x, nViewTop + 1, coordBuf, kTile159, 255);
+        printext(x, nViewTop + 1, coordBuf, kTileFont);
 
         sprintf(coordBuf, "Y %d", (int)sprite[nSprite].y);
-        printext(x, nViewTop + 10, coordBuf, kTile159, 255);
+        printext(x, nViewTop + 10, coordBuf, kTileFont);
     }
 
     if (bHolly)
     {
         sprintf(message_text, "HOLLY: %s", sHollyStr);
-        printext(0, 0, message_text, kTile159, 255);
+        printext(0, 0, message_text, kTileFont);
     }
     else if (nSnakeCam < 0)
     {
         if (message_timer) {
-            printext(0, 0, message_text, kTile159, 255);
+            printext(0, 0, message_text, kTileFont);
         }
     }
 }

@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -61,15 +66,15 @@ Rex RexList[kMaxRex];
 
 void InitRexs()
 {
-    RexCount = 0;
+    RexCount = kMaxRex;
 }
 
 int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
+    RexCount--;
+
     int nRex = RexCount;
-    RexCount++;
-  
-    if (nRex >= kMaxRex) {
+    if (nRex < 0) {
         return -1;
     }
 
@@ -498,15 +503,15 @@ public:
 void RexLoadSave::Load()
 {
     Read(&RexCount, sizeof(RexCount));
-    Read(RexChan, sizeof(RexChan[0]) * RexCount);
-    Read(RexList, sizeof(RexList[0]) * RexCount);
+    Read(RexChan, sizeof(RexChan));
+    Read(&RexList[RexCount], sizeof(Rex) * (kMaxRex - RexCount));
 }
 
 void RexLoadSave::Save()
 {
     Write(&RexCount, sizeof(RexCount));
-    Write(RexChan, sizeof(RexChan[0]) * RexCount);
-    Write(RexList, sizeof(RexList[0]) * RexCount);
+    Write(RexChan, sizeof(RexChan));
+    Write(&RexList[RexCount], sizeof(Rex) * (kMaxRex - RexCount));
 }
 
 static RexLoadSave* myLoadSave;

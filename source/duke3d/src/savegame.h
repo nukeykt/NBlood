@@ -33,7 +33,7 @@ extern "C" {
 
 #define SV_MAJOR_VER 1
 #define SV_MINOR_VER 7
-
+    
 #pragma pack(push,1)
 typedef struct _savehead
 {
@@ -54,7 +54,11 @@ typedef struct _savehead
 
     char savename[MAXSAVEGAMENAMESTRUCT];
     uint8_t numplayers, volnum, levnum, skill;
-    char boardfn[BMAX_PATH];
+
+    // this is kind of shitty, but changing the size of savehead_t would break the checkpoint saves in Fury
+    char boardfn[BMAX_PATH-32];
+    char scriptname[32];
+
     // 286 bytes
 #ifdef __ANDROID__
     char skillname[32], volname[32];

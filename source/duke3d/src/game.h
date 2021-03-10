@@ -77,7 +77,7 @@ enum GametypeFlags_t {
 };
 
 // logo control
-enum LogoFlags_t {
+enum LogoFlags_t : unsigned int {
     LOGO_ENABLED           = 0x00000001,
     LOGO_PLAYANIM          = 0x00000002,
     LOGO_PLAYMUSIC         = 0x00000004,

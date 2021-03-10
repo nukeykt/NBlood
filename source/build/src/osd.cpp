@@ -643,6 +643,10 @@ void OSD_Cleanup(void)
     DO_FREE_AND_NULL(osd->version.buf);
 
     MAYBE_FCLOSE_AND_NULL(osdlog);
+
+    for (auto s : osdstrings)
+        DO_FREE_AND_NULL(s);
+
     DO_FREE_AND_NULL(osd);
 }
 

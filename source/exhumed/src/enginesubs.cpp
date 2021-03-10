@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -95,33 +100,33 @@ void kensetpalette(unsigned char *vgapal)
 
 static int32_t xdim_to_320_16(int32_t x)
 {
-    const int32_t screenwidth = scale(240<<16, xdim, ydim);
-    return scale(x, screenwidth, xdim) + (160<<16) - (screenwidth>>1);
+    const int32_t screenwidth = scale(240 << 16, xdim, ydim);
+    return scale(x, screenwidth, xdim) + (160 << 16) - (screenwidth >> 1);
 }
 
 static int32_t ydim_to_200_16(int32_t y)
 {
-    y = scale(y, 200<<16, ydim);
-    return divscale16(y - (200<<15), rotatesprite_yxaspect) - rotatesprite_y_offset + (200<<15);
+    y = scale(y, 200 << 16, ydim);
+    return divscale16(y - (200 << 15), rotatesprite_yxaspect) - rotatesprite_y_offset + (200 << 15);
 }
 
 static int32_t xdim_from_320_16(int32_t x)
 {
-    const int32_t screenwidth = scale(240<<16, xdim, ydim);
-    return scale(x + (screenwidth>>1) - (160<<16), xdim, screenwidth);
+    const int32_t screenwidth = scale(240 << 16, xdim, ydim);
+    return scale(x + (screenwidth >> 1) - (160 << 16), xdim, screenwidth);
 }
 
 static int32_t ydim_from_200_16(int32_t y)
 {
-    y = mulscale16(y + rotatesprite_y_offset - (200<<15), rotatesprite_yxaspect) + (200<<15);
-    return scale(y, ydim, 200<<16);
+    y = mulscale16(y + rotatesprite_y_offset - (200 << 15), rotatesprite_yxaspect) + (200 << 15);
+    return scale(y, ydim, 200 << 16);
 }
 
-void printext(int x, int y, const char *buffer, short tilenum, char UNUSED(invisiblecol))
+void printext(int x, int y, const char *buffer, short tilenum)
 {
     int i;
     unsigned char ch;
-//    const int32_t screenwidth = scale(240<<16, xdim, ydim);
+    //    const int32_t screenwidth = scale(240<<16, xdim, ydim);
 
     x = xdim_to_320_16(x);
     y = ydim_to_200_16(y);
@@ -129,9 +134,9 @@ void printext(int x, int y, const char *buffer, short tilenum, char UNUSED(invis
     for (i = 0; buffer[i] != 0; i++)
     {
         ch = (unsigned char)buffer[i];
-        rotatesprite(x - ((ch & 15) << (3+16)), y - ((ch >> 4) << (3+16)), 65536L, 0, tilenum, 0, 0, 2 + 8 + 16 + 128, xdim_from_320_16(x), ydim_from_200_16(y),
-            xdim_from_320_16(x + (8<<16))-1, ydim_from_200_16(y + (8<<16))-1);
-        x += (8<<16);
+        rotatesprite(x - ((ch & 15) << (3 + 16)), y - ((ch >> 4) << (3 + 16)), 65536L, 0, tilenum, 0, 0, 2 + 8 + 16 + 128, xdim_from_320_16(x), ydim_from_200_16(y),
+            xdim_from_320_16(x + (8 << 16)) - 1, ydim_from_200_16(y + (8 << 16)) - 1);
+        x += (8 << 16);
     }
 }
 

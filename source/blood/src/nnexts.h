@@ -29,9 +29,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 /////////////////////////////////////////////////////////////////////////
 
 
+#ifdef NOONE_EXTENSIONS
 #pragma once
 #include "common_game.h"
-#ifdef NOONE_EXTENSIONS
 #include "eventq.h"
 #include "qav.h"
 #include "actor.h"

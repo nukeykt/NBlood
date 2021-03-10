@@ -14,6 +14,21 @@
 
 #include "vfs.h"
 
+#if defined HAVE_FLAC || defined HAVE_VORBIS
+# define FORMAT_UPGRADE_ELIGIBLE
+extern int32_t S_OpenAudio(const char* fn, char searchfirst, uint8_t ismusic);
+#else
+# define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)
+#endif
+
+#define G_ModDirSnprintf(buf, size, basename, ...)                                                                                          \
+    (((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/" basename, g_modDir, ##__VA_ARGS__) : Bsnprintf(buf, size, basename, ##__VA_ARGS__)) \
+     >= ((int32_t)size) - 1)
+
+#define G_ModDirSnprintfLite(buf, size, basename) \
+    ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, "%s", basename))
+
+
 #ifdef __cplusplus
 extern "C" {
     #endif
@@ -75,6 +90,10 @@ extern "C" {
     extern void clearScriptNamePtr(void);
 
     extern int loaddefinitions_game(const char* fn, int32_t preload);
+
+    extern void G_AddSearchPaths(void);
+    extern void G_CleanupSearchPaths(void);
+
     extern int32_t g_groupFileHandle;
 
     //////////
@@ -103,17 +122,6 @@ extern "C" {
     //////////
 
     extern void G_LoadLookups(void);
-
-    //////////
-
-    #if defined HAVE_FLAC || defined HAVE_VORBIS
-    # define FORMAT_UPGRADE_ELIGIBLE
-    extern int g_maybeUpgradeSoundFormats;
-    extern buildvfs_kfd S_OpenAudio(const char* fn, char searchfirst, uint8_t ismusic);
-    #else
-    # define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)
-    #endif
-
     #ifdef __cplusplus
 }
 #endif

@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -91,6 +96,7 @@ extern "C" {
 
 const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
+const char* defaultpk3filename = "pcexhumed.pk3";
 
 void FinishLevel();
 void PrintHelp();
@@ -643,7 +649,6 @@ short nCreaturesLeft = 0;
 short bNoSound = kFalse;
 
 short nFreeze;
-short bFullScreen;
 
 short nSnakeCam = -1;
 
@@ -669,7 +674,8 @@ short nEnergyTowers = 0;
 
 
 short nCfgNetPlayers = 0;
-FILE *vcrfp = NULL;
+FILE *vcrfpwrite = NULL;
+buildvfs_kfd hVCRRead = buildvfs_kfd_invalid;
 
 short forcelevel = -1;
 
@@ -716,9 +722,9 @@ short nPasswordCount = 0;
 // short word_96E40 = 0;
 // short word_CB326;
 
-short nGamma = 0;
-
-short screensize;
+int32_t nGamma = 0;
+int32_t screensize = 0;
+int32_t bFullScreen = 0;
 short bSnakeCam = kFalse;
 short bRecord = kFalse;
 short bPlayback = kFalse;
@@ -1047,26 +1053,6 @@ void CheckKeys()
         }
     }
 
-    // if (BUTTON(gamefunc_Mouse_Sensitivity_Up))
-    // {
-    //     if (lMouseSens < 64)
-    //         lMouseSens++;
-    //
-    //     CONTROL_ClearButton(gamefunc_Mouse_Sensitivity_Up);
-    //     StatusMessage(500, "MOUSE SENSITIVITY SET TO %d", lMouseSens);
-    // }
-    // else
-    // {
-    //     if (BUTTON(gamefunc_Mouse_Sensitivity_Down))
-    //     {
-    //         if (lMouseSens >= 1)
-    //             lMouseSens -= 1;
-    //
-    //         CONTROL_ClearButton(gamefunc_Mouse_Sensitivity_Down);
-    //         StatusMessage(500, "MOUSE SENSITIVITY SET TO %d", lMouseSens);
-    //     }
-    // }
-
     // F11?
     if (BUTTON(gamefunc_Gamma_Correction))
     {
@@ -1077,6 +1063,7 @@ void CheckKeys()
 
         mysetbrightness((uint8_t)nGamma);
         CONTROL_ClearButton(gamefunc_Gamma_Correction);
+        StatusMessage(150, "Gamma level %d", nGamma);
     }
 
     if (BUTTON(gamefunc_Shrink_Screen))
@@ -1098,7 +1085,7 @@ void CheckKeys()
         }
     }
 
-    // print version string?
+    // print version string
     if (KB_KeyDown[sc_V] && KB_KeyDown[sc_LeftAlt])
     {
         KB_KeyDown[sc_V] = 0;
@@ -1106,22 +1093,26 @@ void CheckKeys()
         return;
     }
 
-    // go to 3rd person view?
-    if (KB_KeyDown[sc_C] && KB_KeyDown[sc_LeftAlt])
+    // go to 3rd person view
+    if ((KB_KeyDown[sc_C] && KB_KeyDown[sc_LeftAlt]) || BUTTON(gamefunc_Third_Person_View))
     {
         if (!nFreeze)
         {
             if (bCamera) {
                 bCamera = kFalse;
             }
-            else {
+            else 
+            {
                 bCamera = kTrue;
+                nCameraDist = 0;
+                nCameraClock = (int32_t)totalclock;
             }
 
             if (bCamera)
                 GrabPalette();
         }
         KB_KeyDown[sc_C] = 0;
+        CONTROL_ClearButton(gamefunc_Third_Person_View);
         return;
     }
 
@@ -1467,43 +1458,40 @@ EDUKE32_STATIC_ASSERT(sizeof(demo_input) == 36);
 void WritePlaybackInputs()
 {
     demo_input output;
-    output.moveframes = moveframes;
-    output.xVel = sPlayerInput[nLocalPlayer].xVel;
-    output.yVel = sPlayerInput[nLocalPlayer].yVel;
-    output.nAngle = fix16_to_int(sPlayerInput[nLocalPlayer].nAngle >> 2);
-    output.buttons = sPlayerInput[nLocalPlayer].buttons;
-    output.nTarget = sPlayerInput[nLocalPlayer].nTarget;
+    output.moveframes = B_LITTLE32(moveframes);
+    output.xVel = B_LITTLE32(sPlayerInput[nLocalPlayer].xVel);
+    output.yVel = B_LITTLE32(sPlayerInput[nLocalPlayer].yVel);
+    output.nAngle  = B_LITTLE16(fix16_to_int(sPlayerInput[nLocalPlayer].nAngle >> 2));
+    output.buttons = B_LITTLE16(sPlayerInput[nLocalPlayer].buttons);
+    output.nTarget = B_LITTLE16(sPlayerInput[nLocalPlayer].nTarget);
     output.horizon = fix16_to_int(sPlayerInput[nLocalPlayer].horizon);
     output.nItem = sPlayerInput[nLocalPlayer].nItem;
-    output.h = sPlayerInput[nLocalPlayer].h;
+    output.h = B_LITTLE32(sPlayerInput[nLocalPlayer].h);
     output.i = sPlayerInput[nLocalPlayer].i;
 
-    if (!fwrite(&output, 1, sizeof(output), vcrfp))
+    if (!fwrite(&output, 1, sizeof(output), vcrfpwrite))
     {
-        fclose(vcrfp);
-        vcrfp = NULL;
+        fclose(vcrfpwrite);
+        vcrfpwrite = NULL;
         bRecord = kFalse;
         return;
     }
-
-    //fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
-    //fwrite(&sPlayerInput[nLocalPlayer], sizeof(PlayerInput), 1, vcrfp);
 }
 
 uint8_t ReadPlaybackInputs()
 {
     demo_input input;
-    if (fread(&input, 1, sizeof(input), vcrfp))
+    if (kread(hVCRRead, &input, sizeof(input)))
     {
-        moveframes = input.moveframes;
-        sPlayerInput[nLocalPlayer].xVel = input.xVel;
-        sPlayerInput[nLocalPlayer].yVel = input.yVel;
-        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(input.nAngle<<2);
-        sPlayerInput[nLocalPlayer].buttons = input.buttons;
-        sPlayerInput[nLocalPlayer].nTarget = input.nTarget;
+        moveframes = B_LITTLE32(input.moveframes);
+        sPlayerInput[nLocalPlayer].xVel = B_LITTLE32(input.xVel);
+        sPlayerInput[nLocalPlayer].yVel = B_LITTLE32(input.yVel);
+        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(B_LITTLE16(input.nAngle) << 2);
+        sPlayerInput[nLocalPlayer].buttons = B_LITTLE16(input.buttons);
+        sPlayerInput[nLocalPlayer].nTarget = B_LITTLE16(input.nTarget);
         sPlayerInput[nLocalPlayer].horizon = fix16_from_int(input.horizon);
         sPlayerInput[nLocalPlayer].nItem = input.nItem;
-        sPlayerInput[nLocalPlayer].h = input.h;
+        sPlayerInput[nLocalPlayer].h = B_LITTLE32(input.h);
         sPlayerInput[nLocalPlayer].i = input.i;
 
         besttarget = sPlayerInput[nLocalPlayer].nTarget;
@@ -1512,8 +1500,8 @@ uint8_t ReadPlaybackInputs()
     }
     else
     {
-        fclose(vcrfp);
-        vcrfp = NULL;
+        kclose(hVCRRead);
+        hVCRRead = buildvfs_kfd_invalid;
         bPlayback = kFalse;
         return kFalse;
     }
@@ -1551,6 +1539,7 @@ void DoRedAlert(int nVal)
     }
 }
 
+/*
 void LockEnergyTiles()
 {
     // old	loadtilelockmode = 1;
@@ -1559,12 +1548,13 @@ void LockEnergyTiles()
     tileLoad(kEnergy2);
     // old  loadtilelockmode = 0;
 }
+*/
 
 void DrawClock()
 {
     int ebp = 49;
 
-    tileLoad(kTile3603);
+    if (!waloff[kTile3603]) tileLoad(kTile3603);
 
     memset((void*)waloff[kTile3603], -1, 4096);
 
@@ -1679,7 +1669,7 @@ static void GameDisplay(void)
 
     if (levelnum == kMap20)
     {
-        LockEnergyTiles();
+        //LockEnergyTiles();
         DoEnergyTile();
         DrawClock();
     }
@@ -1774,6 +1764,7 @@ void PatchDemoStrings()
 
     if (EXHUMED) {
         gString[60] = "PICK UP A COPY OF EXHUMED";
+        nBeforeScene[4] = 3;
     }
     else {
         gString[60] = "PICK UP A COPY OF POWERSLAVE";
@@ -1792,7 +1783,7 @@ void PatchDemoStrings()
 void ExitGame()
 {
     if (bRecord) {
-        fclose(vcrfp);
+        fclose(vcrfpwrite);
     }
 
     FadeSong();
@@ -1802,7 +1793,6 @@ void ExitGame()
 
     StopAllSounds();
     StopLocalSound();
-    mysaveconfig();
 
     if (bSerialPlay)
     {
@@ -1825,7 +1815,7 @@ static int32_t nonsharedtimer;
 
 int app_main(int argc, char const* const* argv)
 {
-    char tempbuf[256];
+    char buffer[BMAX_PATH];
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
@@ -1850,6 +1840,20 @@ int app_main(int argc, char const* const* argv)
 
     G_ExtPreInit(argc, argv);
 
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
     OSD_SetLogFile(APPBASENAME ".log");
 
     OSD_SetFunctions(NULL,
@@ -1902,12 +1906,13 @@ int app_main(int argc, char const* const* argv)
             {
                 if (!bPlayback)
                 {
-                    vcrfp = fopen("data.vcr", "wb+");
-                    if (vcrfp != NULL) {
+                    G_ModDirSnprintfLite(buffer, sizeof(buffer), "DATA.VCR");
+                    vcrfpwrite = fopen(buffer, "wb+");
+                    if (vcrfpwrite != NULL) {
                         bRecord = kTrue;
                     }
                     else {
-                        DebugOut("Can't open data file for recording\n");
+                        initprintf("Can't open demo file DATA.VCR for recording\n");
                     }
                 }
             }
@@ -1915,13 +1920,13 @@ int app_main(int argc, char const* const* argv)
             {
                 if (!bRecord)
                 {
-                    vcrfp = fopen("data.vcr", "rb");
-                    if (vcrfp != NULL) {
+                    hVCRRead = kopen4loadfrommod("DATA.VCR", 0);
+                    if (hVCRRead >= 0) {
                         bPlayback = kTrue;
                         doTitle = kFalse;
                     }
                     else {
-                        DebugOut("Can't open data file 'data.vcr' for reading\n");
+                        initprintf("Can't open demo file DATA.VCR for playback\n");
                     }
                 }
             }
@@ -2075,6 +2080,9 @@ int app_main(int argc, char const* const* argv)
     // up the command-line-provided search paths (duh).
     G_ExtInit();
 
+    if (!g_useCwd)
+        G_AddSearchPaths();
+
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
     if (forcegl) initprintf("GL driver blacklist disabled.\n");
 #endif
@@ -2118,6 +2126,7 @@ int app_main(int argc, char const* const* argv)
     }
 #endif
 
+    initgroupfile(defaultpk3filename);
     G_LoadGroups(!g_noAutoLoad && !gSetup.noautoload);
 
     PatchDemoStrings();
@@ -2186,25 +2195,27 @@ int app_main(int argc, char const* const* argv)
 
     initprintf("Initializing OSD...\n");
 
-    Bsprintf(tempbuf, "Exhumed %s", s_buildRev);
-    OSD_SetVersion(tempbuf, 10,0);
+    Bsprintf(buffer, "Exhumed %s", s_buildRev);
+    OSD_SetVersion(buffer, 10,0);
     OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
     SetupInput();
 
+	/*
     char *const setupFileName = Xstrdup(setupfilename);
     char *const p = strtok(setupFileName, ".");
 
     if (!p || !Bstrcmp(setupfilename, kSetupFilename))
-        Bsprintf(tempbuf, "settings.cfg");
+        Bsprintf(buffer, "settings.cfg");
     else
-        Bsprintf(tempbuf, "%s_settings.cfg", p);
+        Bsprintf(buffer, "%s_settings.cfg", p);
 
     Xfree(setupFileName);
+	*/
 
-    OSD_Exec(tempbuf);
-    OSD_Exec("autoexec.cfg");
+    OSD_Exec("pcexhumed_cvars.cfg");
+    OSD_Exec("pcexhumed_autoexec.cfg");
 
     CONFIG_SetDefaultKeys(keydefaults, true);
 
@@ -2274,10 +2285,9 @@ int app_main(int argc, char const* const* argv)
 //	InstallEngine();
     KB_Startup();
     InitView();
-    myloadconfig();
     InitFX();
     LoadFX();
-    setCDaudiovolume(gMusicVolume);
+    setCDaudiovolume(MusicVolume);
     seq_LoadSequences();
     InitStatus();
     InitTimer();
@@ -2334,8 +2344,8 @@ MENU:
         forcelevel = 0;
         goto STARTGAME2;
     case 9:
-        vcrfp = fopen("demo.vcr", "rb");
-        if (vcrfp == NULL) {
+        hVCRRead = kopen4loadfrommod("DEMO.VCR", 0);
+        if (hVCRRead < 0) {
             goto MENU;
         }
 
@@ -2354,7 +2364,7 @@ STARTGAME1:
         FadeOut(0);
     }
 STARTGAME2:
-
+    bool cdSuccess;
     bCamera = kFalse;
     ClearCinemaSeen();
     PlayerCount = 0;
@@ -2381,7 +2391,7 @@ STARTGAME2:
 
     if (bPlayback)
     {
-        menu_GameLoad2(vcrfp, true);
+        menu_GameLoad2(hVCRRead, true);
         levelnew = GameStats.nMap;
         levelnum = GameStats.nMap;
         forcelevel = GameStats.nMap;
@@ -2395,7 +2405,7 @@ STARTGAME2:
         forcelevel = -1;
 
         if (bRecord && !bInDemo) {
-            menu_GameSave2(vcrfp);
+            menu_DemoGameSave(vcrfpwrite);
         }
         goto LOOP3;
     }
@@ -2413,7 +2423,7 @@ STARTGAME2:
     }
 
     if (bRecord && !bInDemo) {
-        menu_GameSave2(vcrfp);
+        menu_DemoGameSave(vcrfpwrite);
     }
 
     nBestLevel = levelnew - 1;
@@ -2498,9 +2508,10 @@ LOOP3:
     }
 
     mysetbrightness((uint8_t)nGamma);
-    //int edi = totalclock;
     tclocks2 = totalclock;
     CONTROL_BindsEnabled = 1;
+
+    cdSuccess = true;
     // Game Loop
     while (1)
     {
@@ -2514,14 +2525,14 @@ LOOP3:
         OSD_DispatchQueued();
 
         // Section B
-        if (!CDplaying() && !nFreeze && !nNetPlayerCount)
+        if (cdSuccess && !CDplaying() && !nFreeze && !nNetPlayerCount)
         {
             int nTrack = levelnum;
             if (nTrack != 0) {
                 nTrack--;
             }
 
-            playCDtrack((nTrack % 8) + 11, true);
+            cdSuccess = playCDtrack((nTrack % 8) + 11, true);
         }
 
 // TODO		CONTROL_GetButtonInput();
@@ -2552,8 +2563,8 @@ LOOP3:
                     bPlayback = kFalse;
                     bInDemo = kFalse;
 
-                    if (vcrfp) {
-                        fclose(vcrfp);
+                    if (hVCRRead) {
+                        kclose(hVCRRead);
                     }
 
                     CONTROL_BindsEnabled = 0;
@@ -2569,19 +2580,20 @@ LOOP3:
                 sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
                 sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
                 sPlayerInput[nLocalPlayer].nTarget = besttarget;
+                sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
 
                 Ra[nLocalPlayer].nTarget = besttarget;
 
                 lLocalCodes = 0;
-                nPlayerDAng = 0;
-
-                sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
+                nPlayerDAng = 0; 
             }
 
             // loc_11F72:
+            /*
             if (bRecord && !bInDemo) {
                 WritePlaybackInputs();
             }
+            */
 
             if (nNetPlayerCount)
             {
@@ -2608,6 +2620,11 @@ LOOP3:
             tclocks += moveframes * 4;
             while (moveframes && levelnew < 0)
             {
+                // TEMP - try this here...
+                if (bRecord && !bInDemo) {
+                    WritePlaybackInputs();
+                }
+
                 GameMove();
                 // if (nNetTime > 0)
                 // {
@@ -2645,7 +2662,7 @@ LOOP3:
         }
         else
         {
-            static bool frameJustDrawn;
+            static bool frameJustDrawn = false;
             bInMove = kTrue;
             if (!bPause && totalclock >= tclocks + 4)
             {
@@ -2663,13 +2680,12 @@ LOOP3:
                     sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
                     sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
                     sPlayerInput[nLocalPlayer].nTarget = besttarget;
+                    sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
 
                     Ra[nLocalPlayer].nTarget = besttarget;
 
                     lLocalCodes = 0;
                     nPlayerDAng = 0;
-
-                    sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
 
                     do
                     {
@@ -2742,16 +2758,26 @@ LOOP3:
                     nMapMode = (nMapMode+1)%3;
                 }
             }
+            else if (BUTTON(gamefunc_Map_Follow_Mode))
+            {
+                CONTROL_ClearButton(gamefunc_Map_Follow_Mode);
+                bFollowMode = !bFollowMode;
+            }
+            else if (BUTTON(gamefunc_Toggle_Crosshair))
+            {
+                CONTROL_ClearButton(gamefunc_Toggle_Crosshair);
+                gShowCrosshair = !gShowCrosshair;
+            }
 
             if (nMapMode != 0)
             {
                 int const timerOffset = ((int) totalclock - nonsharedtimer);
                 nonsharedtimer += timerOffset;
 
-                if (BUTTON(gamefunc_Zoom_In))
+                if (BUTTON(gamefunc_Zoom_In) || KB_KeyPressed(sc_kpad_Plus))
                     lMapZoom += mulscale6(timerOffset, max<int>(lMapZoom, 256));
 
-                if (BUTTON(gamefunc_Zoom_Out))
+                if (BUTTON(gamefunc_Zoom_Out) || KB_KeyPressed(sc_kpad_Minus))
                     lMapZoom -= mulscale6(timerOffset, max<int>(lMapZoom, 256));
 
                 lMapZoom = clamp(lMapZoom, 48, 2048);
@@ -3068,7 +3094,7 @@ void CopyTileToBitmap(short nSrcTile,  short nDestTile, int xPos, int yPos)
     uint8_t *pDest = (uint8_t*)waloff[nDestTile] + nOffs + yPos;
     uint8_t *pDestB = pDest;
 
-    tileLoad(nSrcTile);
+    if (!waloff[nSrcTile]) tileLoad(nSrcTile);
 
     int destYSize = tilesiz[nDestTile].y;
     int srcYSize = tilesiz[nSrcTile].y;

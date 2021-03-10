@@ -754,7 +754,7 @@ int app_main(int argc, char const * const * argv)
         initprintf("Definitions file \"%s\" loaded.\n",defsfile);
 
     for (char * m : g_defModules)
-        free(m);
+        Bfree(m);
     g_defModules.clear();
 
     if (enginePostInit())
@@ -804,7 +804,7 @@ int app_main(int argc, char const * const * argv)
         initprintf("There was an error loading the sprite clipping map (status %d).\n", k);
 
     for (char * f : g_clipMapFiles)
-        free(f);
+        Bfree(f);
     g_clipMapFiles.clear();
 #endif
 
@@ -10948,8 +10948,6 @@ static int32_t GetWallBaseZ(int32_t wallnum)
 static void AlignWalls_(int32_t tilenum, int32_t z0, int32_t z1, int32_t doxpanning,
                         int32_t w0_pan, int32_t w0_rep, int32_t w1_pan, int32_t w1_rep)
 {
-    int32_t n;
-
     if (tilesiz[tilenum].x==0 || tilesiz[tilenum].y==0)
         return;
 
@@ -10957,10 +10955,31 @@ static void AlignWalls_(int32_t tilenum, int32_t z0, int32_t z1, int32_t doxpann
     if (doxpanning)
         wall[w1_pan].xpanning = (uint8_t)((wall[w0_pan].xpanning + (wall[w0_rep].xrepeat<<3))%tilesiz[tilenum].x);
 
-    for (n=picsiz[tilenum]>>4; (1<<n)<tilesiz[tilenum].y; n++) { }
+    int32_t zDiff = z1 - z0;                        // Z difference between current wall floor or ceiling, and the next.
 
-    wall[w1_rep].yrepeat = wall[w0_rep].yrepeat;
-    wall[w1_pan].ypanning = (uint8_t)(wall[w0_pan].ypanning + (((z1-z0)*wall[w0_rep].yrepeat)>>(n+3)));
+    uint8_t first_yPan = wall[w0_pan].ypanning;     // Y panning of first wall
+    uint8_t first_yRepeat = wall[w0_rep].yrepeat;   // Y repeat of first wall
+
+    int32_t yPan_offset = ((zDiff * first_yRepeat) / (tilesiz[tilenum].y * 8)); // y-panning offset.
+    uint8_t second_yPan = (uint8_t)(yPan_offset + first_yPan); // The final y-panning for the second wall
+
+#if 0
+    OSD_Printf("----------------\n"
+               "Auto-Align Debug\n"
+               "w0_pan: %d\n"
+               "w1_pan: %d\n"
+               "z0: %d\n"
+               "z1: %d\n"
+               "zDiff: %d\n"
+               "first_yPan: %d\n"
+               "first_yRepeat: %d\n"
+               "ypan_offset: %d\n"
+               "second_yPan: %d\n"
+        , w0_pan, w1_pan, z0, z1, zDiff, first_yPan, first_yRepeat, yPan_offset, second_yPan);
+#endif
+
+    wall[w1_rep].yrepeat = first_yRepeat;
+    wall[w1_pan].ypanning = second_yPan;
 }
 
 static void AlignWalls(int32_t w0, int32_t z0, int32_t w1, int32_t z1, int32_t doxpanning)

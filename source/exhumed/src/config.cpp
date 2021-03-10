@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -37,147 +42,156 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
 {
-  "Move_Forward",
-  "Move_Backward",
-  "Turn_Left",
-  "Turn_Right",
-  "Strafe",
-  "Strafe_Left",
-  "Strafe_Right",
-  "Run",
-  "Jump",
-  "Crouch",
-  "Fire",
-  "Open",
-  "Look_Up",
-  "Look_Down",
-  "Look_Straight",
-  "Aim_Up",
-  "Aim_Down",
-  "SendMessage",
-  "Weapon_1",
-  "Weapon_2",
-  "Weapon_3",
-  "Weapon_4",
-  "Weapon_5",
-  "Weapon_6",
-  "Weapon_7",
-  "Pause",
-  "Map",
-  "Zoom_In",
-  "Zoom_Out",
-  "Gamma_Correction",
-  "Escape",
-  "Shrink_Screen",
-  "Enlarge_Screen",
-  "Inventory",
-  "Inventory_Left",
-  "Inventory_Right",
-  "Mouse_Sensitivity_Up",
-  "Mouse_Sensitivity_Down",
-  "Show_Console",
-  "Mouse_Aiming",
-  "Toggle_Crosshair"
+    "Move_Forward",
+    "Move_Backward",
+    "Turn_Left",
+    "Turn_Right",
+    "Strafe",
+    "Strafe_Left",
+    "Strafe_Right",
+    "Run",
+    "Jump",
+    "Crouch",
+    "Fire",
+    "Open",
+    "Look_Up",
+    "Look_Down",
+    "Look_Straight",
+    "Aim_Up",
+    "Aim_Down",
+    "SendMessage",
+    "Weapon_1",
+    "Weapon_2",
+    "Weapon_3",
+    "Weapon_4",
+    "Weapon_5",
+    "Weapon_6",
+    "Weapon_7",
+    "Pause",
+    "Map",
+    "Zoom_In",
+    "Zoom_Out",
+    "Gamma_Correction",
+    "Escape",
+    "Shrink_Screen",
+    "Enlarge_Screen",
+    "Inventory",
+    "Inventory_Left",
+    "Inventory_Right",
+    "Show_Console",
+    "Mouse_Aiming",
+    "Toggle_Crosshair",
+    "Next_Weapon",
+    "Previous_Weapon",
+    "AutoRun",
+    "Map_Follow_Mode",
+	"Third_Person_View",
 };
 
 const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
 {
-   "W", "Kpad8",
-   "S", "Kpad2",
-   "Left", "Kpad4",
-   "Right", "KPad6",
-   "LAlt", "RAlt",
-   "A", "",
-   "D", "",
-   "LShift", "RShift",
-   "Space", "",
-   "LCtrl", "",
-   "RCtrl", "",
-   "E", "",
-   "PgUp", "",
-   "PgDn", "",
-   "Home", "",
-   "Insert", "",
-   "Delete", "",
-   "T", "",
-   "1", "",
-   "2", "",
-   "3", "",
-   "4", "",
-   "5", "",
-   "6", "",
-   "7", "",
-   "Pause", "",
-   "Tab", "",
-   "=", "",
-   "-", "",
-   "F11", "",
-   "Escape", "",
-   "Kpad-", "",
-   "Kpad+", "",
-   "Enter", "",
-   "[", "",
-   "]", "",
-   "F7", "",
-   "F8", "",
-   "`", "",
-   "U", "",
-   "I", "",
+    "W", "Kpad8",
+    "S", "Kpad2",
+    "Left", "Kpad4",
+    "Right", "KPad6",
+    "LAlt", "RAlt",
+    "A", "",
+    "D", "",
+    "LShift", "RShift",
+    "Space", "",
+    "LCtrl", "",
+    "RCtrl", "",
+    "E", "",
+    "PgUp", "",
+    "PgDn", "",
+    "Home", "",
+    "Insert", "",
+    "Delete", "",
+    "T", "",
+    "1", "",
+    "2", "",
+    "3", "",
+    "4", "",
+    "5", "",
+    "6", "",
+    "7", "",
+    "Pause", "",
+    "Tab", "",
+    "=", "",
+    "-", "",
+    "F11", "",
+    "Escape", "",
+    "Kpad-", "",
+    "Kpad+", "",
+    "Enter", "",
+    "[", "",
+    "]", "",
+    "`", "",
+    "U", "",
+    "I", "",
+    "'", "",
+    ";", "",
+    "CapLck", "",
+    "F", "",
+	"F7", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
 {
-   "Up", "Kpad8",
-   "Down", "Kpad2",
-   "Left", "Kpad4",
-   "Right", "KPad6",
-   "LAlt", "RAlt",
-   ",", "",
-   ".", "",
-   "LShift", "RShift",
-   "A", "",
-   "Z", "",
-   "LCtrl", "RCtrl",
-   "Space", "",
-   "PgUp", "",
-   "PgDn", "",
-   "Home", "",
-   "Insert", "",
-   "Delete", "",
-   "T", "",
-   "1", "",
-   "2", "",
-   "3", "",
-   "4", "",
-   "5", "",
-   "6", "",
-   "7", "",
-   "Pause", "",
-   "Tab", "",
-   "=", "",
-   "-", "",
-   "F11", "",
-   "Escape", "",
-   "Kpad-", "",
-   "Kpad+", "",
-   "Enter", "",
-   "[", "",
-   "]", "",
-   "F7", "",
-   "F8", "",
-   "`", "",
-   "U", "",
-   "I", "",
+    "Up", "Kpad8",
+    "Down", "Kpad2",
+    "Left", "Kpad4",
+    "Right", "KPad6",
+    "LAlt", "RAlt",
+    ",", "",
+    ".", "",
+    "LShift", "RShift",
+    "A", "",
+    "Z", "",
+    "LCtrl", "RCtrl",
+    "Space", "",
+    "PgUp", "",
+    "PgDn", "",
+    "Home", "",
+    "Insert", "",
+    "Delete", "",
+    "T", "",
+    "1", "",
+    "2", "",
+    "3", "",
+    "4", "",
+    "5", "",
+    "6", "",
+    "7", "",
+    "Pause", "",
+    "Tab", "",
+    "=", "",
+    "-", "",
+    "F11", "",
+    "Escape", "",
+    "Kpad-", "",
+    "Kpad+", "",
+    "Enter", "",
+    "[", "",
+    "]", "",
+    "`", "",
+    "U", "",
+    "I", "",
+    "'", "",
+    ";", "",
+    "CapLck", "",
+    "F", "",
+	"F7", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
 {
-   "Fire",
-   "Strafe",
-   "Move_Forward"
-   "",
-   "",
-   "",
+    "Fire",
+    "Strafe",
+    "Move_Forward"
+    "",
+    "",
+    "",
 };
 
 static const char *mouseclickeddefaults[MAXMOUSEBUTTONS] =
@@ -186,8 +200,8 @@ static const char *mouseclickeddefaults[MAXMOUSEBUTTONS] =
 
 static const char* mouseanalogdefaults[MAXMOUSEAXES] =
 {
-"analog_strafing",
-"analog_moving",
+    "analog_strafing",
+    "analog_moving",
 };
 
 
@@ -197,13 +211,15 @@ static const char* mousedigitaldefaults[MAXMOUSEDIGITAL] =
 
 ud_setup_t gSetup;
 
-char setupfilename[128] = {kSetupFilename};
+char setupfilename[BMAX_PATH] = {kSetupFilename};
 
 int lMouseSens = 32;
 unsigned int dword_1B82E0 = 0;
 
 int32_t FXVolume;
 int32_t MusicVolume;
+int32_t SoundToggle;
+int32_t MusicToggle;
 int32_t MixRate;
 int32_t MidiPort;
 int32_t NumVoices;
@@ -213,6 +229,8 @@ int32_t ReverseStereo;
 int32_t MusicDevice;
 int32_t FXDevice;
 int32_t ControllerType;
+
+int32_t gShowCrosshair;
 
 int32_t scripthandle;
 int32_t setupread;
@@ -240,47 +258,50 @@ int32_t MAXCACHE1DSIZE = (96*1024*1024);
 
 void SetupGameButtons()
 {
-    CONTROL_DefineFlag(gamefunc_Move_Forward,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Move_Backward,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Turn_Left,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Turn_Right,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Strafe,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Strafe_Left,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Strafe_Right,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Jump,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Crouch,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Fire,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Open,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Aim_Up,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Aim_Down,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Look_Up,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Look_Down,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Look_Straight,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Run,					kFalse);
-    CONTROL_DefineFlag(gamefunc_SendMessage,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_1,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_2,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_3,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_4,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_5,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_6,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Weapon_7,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Pause,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Map,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Gamma_Correction,		kFalse);
-    CONTROL_DefineFlag(gamefunc_Escape,					kFalse);
-    CONTROL_DefineFlag(gamefunc_Shrink_Screen,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Enlarge_Screen,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Zoom_In,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Zoom_Out,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Inventory_Left,			kFalse);
-    CONTROL_DefineFlag(gamefunc_Inventory_Right,		kFalse);
-//    CONTROL_DefineFlag(gamefunc_Mouseview,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Inventory,				kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Up,	kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Down,	kFalse);
+    CONTROL_DefineFlag(gamefunc_Move_Forward,           kFalse);
+    CONTROL_DefineFlag(gamefunc_Move_Backward,          kFalse);
+    CONTROL_DefineFlag(gamefunc_Turn_Left,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Turn_Right,             kFalse);
+    CONTROL_DefineFlag(gamefunc_Strafe,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Strafe_Left,            kFalse);
+    CONTROL_DefineFlag(gamefunc_Strafe_Right,           kFalse);
+    CONTROL_DefineFlag(gamefunc_Jump,                   kFalse);
+    CONTROL_DefineFlag(gamefunc_Crouch,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Fire,                   kFalse);
+    CONTROL_DefineFlag(gamefunc_Open,                   kFalse);
+    CONTROL_DefineFlag(gamefunc_Aim_Up,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Aim_Down,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Look_Up,                kFalse);
+    CONTROL_DefineFlag(gamefunc_Look_Down,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Look_Straight,          kFalse);
+    CONTROL_DefineFlag(gamefunc_Run,                    kFalse);
+    CONTROL_DefineFlag(gamefunc_SendMessage,            kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_1,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_2,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_3,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_4,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_5,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_6,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Weapon_7,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Pause,                  kFalse);
+    CONTROL_DefineFlag(gamefunc_Map,                    kFalse);
+    CONTROL_DefineFlag(gamefunc_Gamma_Correction,       kFalse);
+    CONTROL_DefineFlag(gamefunc_Escape,                 kFalse);
+    CONTROL_DefineFlag(gamefunc_Shrink_Screen,          kFalse);
+    CONTROL_DefineFlag(gamefunc_Enlarge_Screen,         kFalse);
+    CONTROL_DefineFlag(gamefunc_Zoom_In,                kFalse);
+    CONTROL_DefineFlag(gamefunc_Zoom_Out,               kFalse);
+    CONTROL_DefineFlag(gamefunc_Inventory_Left,         kFalse);
+    CONTROL_DefineFlag(gamefunc_Inventory_Right,        kFalse);
+//  CONTROL_DefineFlag(gamefunc_Mouseview,              kFalse);
+    CONTROL_DefineFlag(gamefunc_Inventory,              kFalse);
     CONTROL_DefineFlag(gamefunc_Mouse_Aiming,           kFalse);
     CONTROL_DefineFlag(gamefunc_Toggle_Crosshair,       kFalse);
+    CONTROL_DefineFlag(gamefunc_Next_Weapon,            kFalse);
+    CONTROL_DefineFlag(gamefunc_Previous_Weapon,        kFalse);
+    CONTROL_DefineFlag(gamefunc_AutoRun,                kFalse);
+    CONTROL_DefineFlag(gamefunc_Map_Follow_Mode,        kFalse);
+    CONTROL_DefineFlag(gamefunc_Third_Person_View,      kFalse);
 }
 
 hashtable_t h_gamefuncs    = { kMaxGameFunctions<<1, NULL };
@@ -457,9 +478,11 @@ void CONFIG_SetDefaults()
     gSetup.fullscreen = 1;
     gSetup.usemouse = 1;
 
+	SoundToggle = 1;
     MixRate = 44100;
-    FXVolume = 255;
-    MusicVolume = 255;
+    FXVolume = 125;
+    MusicToggle = 1;
+    MusicVolume = 125;
     NumChannels = 2;
     NumBits = 16;
     NumVoices = 32;
@@ -471,6 +494,10 @@ void CONFIG_SetDefaults()
     auto_run = 1;
 
     gFov = 90;
+    gShowCrosshair = 0;
+
+    screensize = 0;
+    nGamma = 2;
 
     CONFIG_SetDefaultKeys(keydefaults);
 
@@ -570,14 +597,22 @@ int CONFIG_ReadSetup()
     windowx = -1;
     windowy = -1;
 
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", &maxrefreshfreq);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &gSetup.bpp);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenHeight", &gSetup.ydim);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenMode", &gSetup.fullscreen);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenWidth", &gSetup.xdim);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", (int32_t *)&windowx);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", (int32_t *)&windowy);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&windowpos);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", &windowx);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", &windowy);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", &windowpos);
+
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "FullScreen", &bFullScreen);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenSize", &screensize);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "Gamma", &nGamma);
+
+    if (screensize < 0 || screensize > 15) {
+        screensize = 0;
+    }
 
     if (gSetup.bpp < 8) gSetup.bpp = 32;
 
@@ -793,11 +828,14 @@ void SetupInput()
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
     char filename[BMAX_PATH];
-
+	/*
     if (!Bstrcmp(setupfilename, kSetupFilename))
         Bsprintf(filename, "settings.cfg");
     else
         Bsprintf(filename, "%s_settings.cfg", strtok(setupfilename, "."));
+	*/
+
+    Bsprintf(filename, "pcexhumed_cvars.cfg");
 
     buildvfs_FILE fp = buildvfs_fopen_write(filename);
 
@@ -897,11 +935,9 @@ void CONFIG_WriteSetup(uint32_t flags)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPosY", windowy, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPositioning", windowpos, FALSE, FALSE);
 
-    //if (!NAM_WW2GI)
-    //{
-    //    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "Out",ud.lockout,FALSE,FALSE);
-    //    SCRIPT_PutString(ud.config.scripthandle, "Screen Setup", "Password",ud.pwlockout);
-    //}
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "FullScreen", bFullScreen, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenSize", screensize, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "Gamma", nGamma, FALSE, 2);
 
 //#ifdef _WIN32
 //    SCRIPT_PutNumber(ud.config.scripthandle, "Updates", "CheckForUpdates", ud.config.CheckForUpdates, FALSE, FALSE);

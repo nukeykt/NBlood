@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2020 EDuke32 developers and contributors
 Copyright (C) 2020 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -73,7 +78,7 @@ void InitSpiritHead()
     nSpiritRepeatX = sprite[nSpiritSprite].xrepeat;
     nSpiritRepeatY = sprite[nSpiritSprite].yrepeat;
 
-    tileLoad(kTileRamsesNormal); // Ramses Normal Head
+    if (!waloff[kTileRamsesNormal]) tileLoad(kTileRamsesNormal); // Ramses Normal Head
 
     for (int i = 0; i < kMaxSprites; i++)
     {
@@ -195,7 +200,7 @@ void DimSector(short nSector)
 
 void CopyHeadToWorkTile(short nTile)
 {
-    tileLoad(nTile);
+    if (!waloff[nTile]) tileLoad(nTile);
 
     uint8_t* pSrc = (uint8_t*)waloff[nTile];
     uint8_t* pDest = (uint8_t*)&worktile[212 * 49 + 53];
@@ -513,7 +518,7 @@ int DoSpiritHead()
 
         ebx += word_964EA;
 
-        tileLoad(ebx);
+        if (!waloff[ebx]) tileLoad(ebx);
 
         uint8_t* pDest = (uint8_t*)&worktile[10441];
         uint8_t* pSrc = (uint8_t*)waloff[ebx];
@@ -539,13 +544,15 @@ int DoSpiritHead()
 
         if (nMouthTile)
         {
-            tileLoad(nMouthTile + 598);
+            short nTile = nMouthTile + 598;
 
-            short nTileSizeX = tilesiz[nMouthTile + 598].x;
-            short nTileSizeY = tilesiz[nMouthTile + 598].y;
+            if (!waloff[nTile]) tileLoad(nTile);
+
+            short nTileSizeX = tilesiz[nTile].x;
+            short nTileSizeY = tilesiz[nTile].y;
 
             uint8_t* pDest = (uint8_t*)&worktile[212 * (kSpiritY - nTileSizeX / 2)] + (159 - nTileSizeY);
-            uint8_t* pSrc = (uint8_t*)waloff[nMouthTile + 598];
+            uint8_t* pSrc = (uint8_t*)waloff[nTile];
 
             while (nTileSizeX > 0)
             {

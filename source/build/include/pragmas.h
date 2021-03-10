@@ -264,7 +264,12 @@ static FORCE_INLINE int32_t klabs(int32_t const a)
     return (a ^ m) - m;
 }
 #else
-#define klabs(x) abs(x)
+# ifdef __cplusplus
+// some toolchains use the double version of abs for small int types, so avoid that
+static FORCE_INLINE int32_t klabs(int32_t const a) { return abs(a); }
+# else
+#  define klabs(x) abs(x)
+# endif
 #endif
 #endif
 #ifndef pragmas_have_ksgn

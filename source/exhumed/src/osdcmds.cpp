@@ -81,7 +81,7 @@ static int osdcmd_changelevel(osdcmdptr_t parm)
         nMaxLevels = 32;
     }
     else {
-        nMaxLevels = 4;
+        nMaxLevels = EXHUMED ? 3 : 4;
     }
 
     if (nLevel > nMaxLevels)
@@ -587,7 +587,7 @@ int32_t registerosdcommands(void)
         // TODO:
         //{ "benchmarkmode", "Set the benchmark mode (0: off, 1: performance test, 2: generate reference screenshots for correctness testing)", (void *) &g_BenchmarkMode, CVAR_INT|CVAR_NOSAVE, 0, 2 },
 
-        //{ "crosshair", "enable/disable crosshair", (void *)&ud.crosshair, CVAR_BOOL, 0, 1 },
+        { "crosshair", "enable/disable crosshair", (void *)&gShowCrosshair, CVAR_BOOL, 0, 1 },
 
         //{ "cl_autoaim", "enable/disable weapon autoaim", (void *)&ud.config.AutoAim, CVAR_INT|CVAR_MULTI, 0, 3 },
         //{ "cl_automsg", "enable/disable automatically sending messages to all players", (void *)&ud.automsg, CVAR_BOOL, 0, 1 },
@@ -675,8 +675,8 @@ int32_t registerosdcommands(void)
         { "in_mousexscale", "scale modifier for mouse x axis", (void*)&CONTROL_MouseAxesScale[0], CVAR_INT, 1, 65536 },
         { "in_mouseyscale", "scale modifier for mouse y axis", (void*)&CONTROL_MouseAxesScale[1], CVAR_INT, 1, 65536 },
 
-        //{ "mus_enabled", "enables/disables music", (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
-        //{ "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },
+        { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
+        { "mus_volume", "controls music volume", (void *)&MusicVolume, CVAR_INT, 0, 255 },
 
         //{ "osdhightile", "enable/disable hires art replacements for console text", (void *)&osdhightile, CVAR_BOOL, 0, 1 },
         //{ "osdscale", "adjust console text size", (void *)&osdscale, CVAR_FLOAT|CVAR_FUNCPTR, 1, 4 },
@@ -700,11 +700,11 @@ int32_t registerosdcommands(void)
         //{ "skill","changes the game skill setting", (void *)&ud.m_player_skill, CVAR_INT|CVAR_FUNCPTR|CVAR_NOSAVE/*|CVAR_NOMULTI*/, 0, 5 },
 
         //{ "snd_ambience", "enables/disables ambient sounds", (void *)&ud.config.AmbienceToggle, CVAR_BOOL, 0, 1 },
-        //{ "snd_enabled", "enables/disables sound effects", (void *)&ud.config.SoundToggle, CVAR_BOOL, 0, 1 },
-        //{ "snd_fxvolume", "controls volume for sound effects", (void *)&ud.config.FXVolume, CVAR_INT, 0, 255 },
-        //{ "snd_mixrate", "sound mixing rate", (void *)&ud.config.MixRate, CVAR_INT, 0, 48000 },
-        //{ "snd_numchannels", "the number of sound channels", (void *)&ud.config.NumChannels, CVAR_INT, 0, 2 },
-        //{ "snd_numvoices", "the number of concurrent sounds", (void *)&ud.config.NumVoices, CVAR_INT, 1, 128 },
+        { "snd_enabled", "enables/disables sound effects", (void *)&SoundToggle, CVAR_BOOL, 0, 1 },
+        { "snd_fxvolume", "controls volume for sound effects", (void *)&FXVolume, CVAR_INT, 0, 255 },
+        { "snd_mixrate", "sound mixing rate", (void *)&MixRate, CVAR_INT, 0, 48000 },
+        { "snd_numchannels", "the number of sound channels", (void *)&NumChannels, CVAR_INT, 0, 2 },
+        { "snd_numvoices", "the number of concurrent sounds", (void *)&NumVoices, CVAR_INT, 1, 128 },
         //{ "snd_reversestereo", "reverses the stereo channels", (void *)&ud.config.ReverseStereo, CVAR_BOOL, 0, 1 },
         //{ "snd_speech", "enables/disables player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
 

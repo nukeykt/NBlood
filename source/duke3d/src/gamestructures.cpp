@@ -28,56 +28,57 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gameexec.h"
 #include "global.h"
 
-#define LABEL_SETUP_UNMATCHED(struct, memb, name, idx)                                                              \
+#define LABEL(struct, memb, name, idx)                                                              \
     {                                                                                                               \
         name, idx, sizeof(struct[0].memb) | (is_unsigned<decltype(struct[0].memb)>::value ? LABEL_UNSIGNED : 0), 0, \
         offsetof(remove_pointer_t<decltype(&struct[0])>, memb)                                                      \
     }
 
-#define LABEL_SETUP(struct, memb, idx) LABEL_SETUP_UNMATCHED(struct, memb, #memb, idx)
+#define MEMBER(struct, memb, idx) LABEL(struct, memb, #memb, idx)
 
-memberlabel_t const SectorLabels[] = {
-    { "wallptr",                         SECTOR_WALLPTR, sizeof(sector[0].wallptr) | LABEL_WRITEFUNC, 0, offsetof(usectortype, wallptr) },
-    LABEL_SETUP(sector, wallnum,         SECTOR_WALLNUM),
+memberlabel_t const SectorLabels[] =
+{
+    {                             "wallptr",      SECTOR_WALLPTR, sizeof(sector[0].wallptr) | LABEL_WRITEFUNC, 0, offsetof(usectortype, wallptr) },
+    MEMBER(sector, wallnum,                       SECTOR_WALLNUM),
 
-    LABEL_SETUP(sector, ceilingz,        SECTOR_CEILINGZ),
-    { "ceilingzgoal",                    SECTOR_CEILINGZGOAL, 0, 0, -1 },
-    { "ceilingzvel",                     SECTOR_CEILINGZVEL, 0, 0, -1 },
+    MEMBER(sector, ceilingz,                      SECTOR_CEILINGZ),
+    {                             "ceilingzgoal", SECTOR_CEILINGZGOAL, 0, 0, -1 },
+    {                             "ceilingzvel",  SECTOR_CEILINGZVEL, 0, 0, -1 },
 
-    LABEL_SETUP(sector, floorz,          SECTOR_FLOORZ),
-    { "floorzgoal",                      SECTOR_FLOORZGOAL, 0, 0, -1 },
-    { "floorzvel",                       SECTOR_FLOORZVEL, 0, 0, -1 },
+    MEMBER(sector, floorz,                        SECTOR_FLOORZ),
+    {                             "floorzgoal",   SECTOR_FLOORZGOAL, 0, 0, -1 },
+    {                             "floorzvel",    SECTOR_FLOORZVEL, 0, 0, -1 },
 
-    LABEL_SETUP(sector, ceilingstat,     SECTOR_CEILINGSTAT),
-    LABEL_SETUP(sector, floorstat,       SECTOR_FLOORSTAT),
+    MEMBER(sector, ceilingstat,                   SECTOR_CEILINGSTAT),
+    MEMBER(sector, floorstat,                     SECTOR_FLOORSTAT),
 
-    LABEL_SETUP(sector, ceilingpicnum,   SECTOR_CEILINGPICNUM),
-    LABEL_SETUP_UNMATCHED(sector, ceilingheinum, "ceilingslope", SECTOR_CEILINGSLOPE),
+    MEMBER(sector, ceilingpicnum,                 SECTOR_CEILINGPICNUM),
+     LABEL(sector, ceilingheinum, "ceilingslope", SECTOR_CEILINGSLOPE),
 
-    LABEL_SETUP(sector, ceilingshade,    SECTOR_CEILINGSHADE),
-    LABEL_SETUP(sector, ceilingpal,      SECTOR_CEILINGPAL),
-    LABEL_SETUP(sector, ceilingxpanning, SECTOR_CEILINGXPANNING),
-    LABEL_SETUP(sector, ceilingypanning, SECTOR_CEILINGYPANNING),
+    MEMBER(sector, ceilingshade,                  SECTOR_CEILINGSHADE),
+    MEMBER(sector, ceilingpal,                    SECTOR_CEILINGPAL),
+    MEMBER(sector, ceilingxpanning,               SECTOR_CEILINGXPANNING),
+    MEMBER(sector, ceilingypanning,               SECTOR_CEILINGYPANNING),
 
-    LABEL_SETUP(sector, floorpicnum,     SECTOR_FLOORPICNUM),
-    LABEL_SETUP_UNMATCHED(sector, floorheinum,   "floorslope",   SECTOR_FLOORSLOPE),
-    LABEL_SETUP(sector, floorshade,      SECTOR_FLOORSHADE),
-    LABEL_SETUP(sector, floorpal,        SECTOR_FLOORPAL),
-    LABEL_SETUP(sector, floorxpanning,   SECTOR_FLOORXPANNING),
-    LABEL_SETUP(sector, floorypanning,   SECTOR_FLOORYPANNING),
+    MEMBER(sector, floorpicnum,                   SECTOR_FLOORPICNUM),
+     LABEL(sector, floorheinum,   "floorslope",   SECTOR_FLOORSLOPE),
+    MEMBER(sector, floorshade,                    SECTOR_FLOORSHADE),
+    MEMBER(sector, floorpal,                      SECTOR_FLOORPAL),
+    MEMBER(sector, floorxpanning,                 SECTOR_FLOORXPANNING),
+    MEMBER(sector, floorypanning,                 SECTOR_FLOORYPANNING),
 
-    LABEL_SETUP(sector, visibility,      SECTOR_VISIBILITY),
-    LABEL_SETUP(sector, fogpal,          SECTOR_FOGPAL),
+    MEMBER(sector, visibility,                    SECTOR_VISIBILITY),
+    MEMBER(sector, fogpal,                        SECTOR_FOGPAL),
 
-    LABEL_SETUP(sector, lotag,           SECTOR_LOTAG),
-    LABEL_SETUP(sector, hitag,           SECTOR_HITAG),
-    LABEL_SETUP(sector, extra,           SECTOR_EXTRA),
+    MEMBER(sector, lotag,                         SECTOR_LOTAG),
+    MEMBER(sector, hitag,                         SECTOR_HITAG),
+    MEMBER(sector, extra,                         SECTOR_EXTRA),
 
-    { "ceilingbunch",                    SECTOR_CEILINGBUNCH, 0, 0, -1 },
-    { "floorbunch",                      SECTOR_FLOORBUNCH, 0, 0, -1 },
+    {                             "ceilingbunch", SECTOR_CEILINGBUNCH, 0, 0, -1 },
+    {                             "floorbunch",   SECTOR_FLOORBUNCH, 0, 0, -1 },
 
-    { "ulotag",                          SECTOR_ULOTAG, sizeof(sector[0].lotag) | LABEL_UNSIGNED, 0, offsetof(usectortype, lotag) },
-    { "uhitag",                          SECTOR_UHITAG, sizeof(sector[0].hitag) | LABEL_UNSIGNED, 0, offsetof(usectortype, hitag) },
+    {                             "ulotag",       SECTOR_ULOTAG, sizeof(sector[0].lotag) | LABEL_UNSIGNED, 0, offsetof(usectortype, lotag) },
+    {                             "uhitag",       SECTOR_UHITAG, sizeof(sector[0].hitag) | LABEL_UNSIGNED, 0, offsetof(usectortype, hitag) },
 
 };
 
@@ -115,7 +116,6 @@ int32_t __fastcall VM_GetSector(int const sectNum, int32_t labelNum)
 
 void __fastcall VM_SetSector(int const sectNum, int const labelNum, int32_t newValue)
 {
-
     auto &s = sector[sectNum];
 
     switch (labelNum)
@@ -151,23 +151,23 @@ void __fastcall VM_SetSector(int const sectNum, int const labelNum, int32_t newV
 
 memberlabel_t const WallLabels[]=
 {
-    LABEL_SETUP(wall, x,          WALL_X),
-    LABEL_SETUP(wall, y,          WALL_Y),
-    LABEL_SETUP(wall, point2,     WALL_POINT2),
-    LABEL_SETUP(wall, nextwall,   WALL_NEXTWALL),
-    LABEL_SETUP(wall, nextsector, WALL_NEXTSECTOR),
-    LABEL_SETUP(wall, cstat,      WALL_CSTAT),
-    LABEL_SETUP(wall, picnum,     WALL_PICNUM),
-    LABEL_SETUP(wall, overpicnum, WALL_OVERPICNUM),
-    LABEL_SETUP(wall, shade,      WALL_SHADE),
-    LABEL_SETUP(wall, pal,        WALL_PAL),
-    LABEL_SETUP(wall, xrepeat,    WALL_XREPEAT),
-    LABEL_SETUP(wall, yrepeat,    WALL_YREPEAT),
-    LABEL_SETUP(wall, xpanning,   WALL_XPANNING),
-    LABEL_SETUP(wall, ypanning,   WALL_YPANNING),
-    LABEL_SETUP(wall, lotag,      WALL_LOTAG),
-    LABEL_SETUP(wall, hitag,      WALL_HITAG),
-    LABEL_SETUP(wall, extra,      WALL_EXTRA),
+    MEMBER(wall, x,          WALL_X),
+    MEMBER(wall, y,          WALL_Y),
+    MEMBER(wall, point2,     WALL_POINT2),
+    MEMBER(wall, nextwall,   WALL_NEXTWALL),
+    MEMBER(wall, nextsector, WALL_NEXTSECTOR),
+    MEMBER(wall, cstat,      WALL_CSTAT),
+    MEMBER(wall, picnum,     WALL_PICNUM),
+    MEMBER(wall, overpicnum, WALL_OVERPICNUM),
+    MEMBER(wall, shade,      WALL_SHADE),
+    MEMBER(wall, pal,        WALL_PAL),
+    MEMBER(wall, xrepeat,    WALL_XREPEAT),
+    MEMBER(wall, yrepeat,    WALL_YREPEAT),
+    MEMBER(wall, xpanning,   WALL_XPANNING),
+    MEMBER(wall, ypanning,   WALL_YPANNING),
+    MEMBER(wall, lotag,      WALL_LOTAG),
+    MEMBER(wall, hitag,      WALL_HITAG),
+    MEMBER(wall, extra,      WALL_EXTRA),
 
     { "ulotag", WALL_ULOTAG, sizeof(wall[0].lotag) | LABEL_UNSIGNED, 0, offsetof(uwalltype, lotag) },
     { "uhitag", WALL_UHITAG, sizeof(wall[0].hitag) | LABEL_UNSIGNED, 0, offsetof(uwalltype, hitag) },
@@ -195,7 +195,6 @@ int32_t __fastcall VM_GetWall(int const wallNum, int32_t labelNum)
 
 void __fastcall VM_SetWall(int const wallNum, int const labelNum, int32_t const newValue)
 {
-
     switch (labelNum)
     {
         case WALL_BLEND:
@@ -211,79 +210,79 @@ void __fastcall VM_SetWall(int const wallNum, int const labelNum, int32_t const 
 
 memberlabel_t const ActorLabels[]=
 {
-    LABEL_SETUP(sprite, x,        ACTOR_X),
-    LABEL_SETUP(sprite, y,        ACTOR_Y),
-    LABEL_SETUP(sprite, z,        ACTOR_Z),
-    LABEL_SETUP(sprite, cstat,    ACTOR_CSTAT),
-    LABEL_SETUP(sprite, picnum,   ACTOR_PICNUM),
-    LABEL_SETUP(sprite, shade,    ACTOR_SHADE),
-    LABEL_SETUP(sprite, pal,      ACTOR_PAL),
-    LABEL_SETUP(sprite, clipdist, ACTOR_CLIPDIST),
-    LABEL_SETUP(sprite, blend,    ACTOR_DETAIL),
-    LABEL_SETUP(sprite, xrepeat,  ACTOR_XREPEAT),
-    LABEL_SETUP(sprite, yrepeat,  ACTOR_YREPEAT),
-    LABEL_SETUP(sprite, xoffset,  ACTOR_XOFFSET),
-    LABEL_SETUP(sprite, yoffset,  ACTOR_YOFFSET),
+    MEMBER(sprite, x,        ACTOR_X),
+    MEMBER(sprite, y,        ACTOR_Y),
+    MEMBER(sprite, z,        ACTOR_Z),
+    MEMBER(sprite, cstat,    ACTOR_CSTAT),
+    MEMBER(sprite, picnum,   ACTOR_PICNUM),
+    MEMBER(sprite, shade,    ACTOR_SHADE),
+    MEMBER(sprite, pal,      ACTOR_PAL),
+    MEMBER(sprite, clipdist, ACTOR_CLIPDIST),
+    MEMBER(sprite, blend,    ACTOR_DETAIL),
+    MEMBER(sprite, xrepeat,  ACTOR_XREPEAT),
+    MEMBER(sprite, yrepeat,  ACTOR_YREPEAT),
+    MEMBER(sprite, xoffset,  ACTOR_XOFFSET),
+    MEMBER(sprite, yoffset,  ACTOR_YOFFSET),
     { "sectnum", ACTOR_SECTNUM, sizeof(sprite[0].sectnum) | LABEL_WRITEFUNC, 0, offsetof(uspritetype, sectnum) },
     { "statnum", ACTOR_STATNUM, sizeof(sprite[0].statnum) | LABEL_WRITEFUNC, 0, offsetof(uspritetype, statnum) },
-    LABEL_SETUP(sprite, ang,      ACTOR_ANG),
-    LABEL_SETUP(sprite, owner,    ACTOR_OWNER),
-    LABEL_SETUP(sprite, xvel,     ACTOR_XVEL),
-    LABEL_SETUP(sprite, yvel,     ACTOR_YVEL),
-    LABEL_SETUP(sprite, zvel,     ACTOR_ZVEL),
-    LABEL_SETUP(sprite, lotag,    ACTOR_LOTAG),
-    LABEL_SETUP(sprite, hitag,    ACTOR_HITAG),
-    LABEL_SETUP(sprite, extra,    ACTOR_EXTRA),
+    MEMBER(sprite, ang,      ACTOR_ANG),
+    MEMBER(sprite, owner,    ACTOR_OWNER),
+    MEMBER(sprite, xvel,     ACTOR_XVEL),
+    MEMBER(sprite, yvel,     ACTOR_YVEL),
+    MEMBER(sprite, zvel,     ACTOR_ZVEL),
+    MEMBER(sprite, lotag,    ACTOR_LOTAG),
+    MEMBER(sprite, hitag,    ACTOR_HITAG),
+    MEMBER(sprite, extra,    ACTOR_EXTRA),
 
     { "ulotag", ACTOR_ULOTAG, sizeof(sprite[0].lotag) | LABEL_UNSIGNED, 0, offsetof(uspritetype, lotag) },
     { "uhitag", ACTOR_UHITAG, sizeof(sprite[0].hitag) | LABEL_UNSIGNED, 0, offsetof(uspritetype, hitag) },
 
     // ActorExtra labels...
-    LABEL_SETUP_UNMATCHED(actor, cgg,         "htcgg",          ACTOR_HTCGG),
-    LABEL_SETUP_UNMATCHED(actor, picnum,      "htpicnum",       ACTOR_HTPICNUM),
-    LABEL_SETUP_UNMATCHED(actor, ang,         "htang",          ACTOR_HTANG),
-    LABEL_SETUP_UNMATCHED(actor, extra,       "htextra",        ACTOR_HTEXTRA),
-    LABEL_SETUP_UNMATCHED(actor, owner,       "htowner",        ACTOR_HTOWNER),
-    LABEL_SETUP_UNMATCHED(actor, movflag,     "htmovflag",      ACTOR_HTMOVFLAG),
+    LABEL(actor, cgg,         "htcgg",          ACTOR_HTCGG),
+    LABEL(actor, picnum,      "htpicnum",       ACTOR_HTPICNUM),
+    LABEL(actor, ang,         "htang",          ACTOR_HTANG),
+    LABEL(actor, extra,       "htextra",        ACTOR_HTEXTRA),
+    LABEL(actor, owner,       "htowner",        ACTOR_HTOWNER),
+    LABEL(actor, movflag,     "htmovflag",      ACTOR_HTMOVFLAG),
     { "htumovflag", ACTOR_HTUMOVFLAG, sizeof(actor[0].movflag) | LABEL_UNSIGNED, 0, offsetof(actor_t, movflag) },
-    LABEL_SETUP_UNMATCHED(actor, tempang,     "httempang",      ACTOR_HTTEMPANG),
-    LABEL_SETUP_UNMATCHED(actor, stayput,     "htactorstayput", ACTOR_HTSTAYPUT),
-    LABEL_SETUP_UNMATCHED(actor, dispicnum,   "htdispicnum",    ACTOR_HTDISPICNUM),
-    LABEL_SETUP_UNMATCHED(actor, timetosleep, "httimetosleep",  ACTOR_HTTIMETOSLEEP),
-    LABEL_SETUP_UNMATCHED(actor, floorz,      "htfloorz",       ACTOR_HTFLOORZ),
-    LABEL_SETUP_UNMATCHED(actor, ceilingz,    "htceilingz",     ACTOR_HTCEILINGZ),
-    LABEL_SETUP_UNMATCHED(actor, lastv.x,     "htlastvx",       ACTOR_HTLASTVX),
-    LABEL_SETUP_UNMATCHED(actor, lastv.y,     "htlastvy",       ACTOR_HTLASTVY),
-    LABEL_SETUP_UNMATCHED(actor, bpos.x,      "htbposx",        ACTOR_HTBPOSX),
-    LABEL_SETUP_UNMATCHED(actor, bpos.y,      "htbposy",        ACTOR_HTBPOSY),
-    LABEL_SETUP_UNMATCHED(actor, bpos.z,      "htbposz",        ACTOR_HTBPOSZ),
+    LABEL(actor, tempang,     "httempang",      ACTOR_HTTEMPANG),
+    LABEL(actor, stayput,     "htactorstayput", ACTOR_HTSTAYPUT),
+    LABEL(actor, dispicnum,   "htdispicnum",    ACTOR_HTDISPICNUM),
+    LABEL(actor, timetosleep, "httimetosleep",  ACTOR_HTTIMETOSLEEP),
+    LABEL(actor, floorz,      "htfloorz",       ACTOR_HTFLOORZ),
+    LABEL(actor, ceilingz,    "htceilingz",     ACTOR_HTCEILINGZ),
+    LABEL(actor, lastv.x,     "htlastvx",       ACTOR_HTLASTVX),
+    LABEL(actor, lastv.y,     "htlastvy",       ACTOR_HTLASTVY),
+    LABEL(actor, bpos.x,      "htbposx",        ACTOR_HTBPOSX),
+    LABEL(actor, bpos.y,      "htbposy",        ACTOR_HTBPOSY),
+    LABEL(actor, bpos.z,      "htbposz",        ACTOR_HTBPOSZ),
 
-    { "htg_t",          ACTOR_HTG_T,                  LABEL_HASPARM2, 10, -1 },
-    LABEL_SETUP_UNMATCHED(actor, flags,       "htflags",        ACTOR_HTFLAGS),
+    {                         "htg_t",          ACTOR_HTG_T, LABEL_HASPARM2, 10, -1 },
+    LABEL(actor, flags,       "htflags",        ACTOR_HTFLAGS),
 
     // model flags
 
-    LABEL_SETUP(spriteext, angoff, ACTOR_ANGOFF),
-    LABEL_SETUP(spriteext, pitch, ACTOR_PITCH),
-    LABEL_SETUP(spriteext, roll, ACTOR_ROLL),
+    LABEL(spriteext, mdangoff,            "angoff",     ACTOR_ANGOFF),
+    LABEL(spriteext, mdpitch,             "pitch",      ACTOR_PITCH),
+    LABEL(spriteext, mdroll,              "roll",       ACTOR_ROLL),
 
-    LABEL_SETUP_UNMATCHED(spriteext, pivot_offset.x, "mdxoff",  ACTOR_MDPIVOTXOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, pivot_offset.y, "mdyoff",  ACTOR_MDPIVOTYOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, pivot_offset.z, "mdzoff",  ACTOR_MDPIVOTZOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, position_offset.x, "mdposxoff",  ACTOR_MDPOSITIONXOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, position_offset.y, "mdposyoff",  ACTOR_MDPOSITIONYOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, position_offset.z, "mdposzoff",  ACTOR_MDPOSITIONZOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, flags,    "mdflags", ACTOR_MDFLAGS),
+    LABEL(spriteext, mdpivot_offset.x,    "mdxoff",     ACTOR_MDPIVOTXOFF),
+    LABEL(spriteext, mdpivot_offset.y,    "mdyoff",     ACTOR_MDPIVOTYOFF),
+    LABEL(spriteext, mdpivot_offset.z,    "mdzoff",     ACTOR_MDPIVOTZOFF),
+    LABEL(spriteext, mdposition_offset.x, "mdposxoff",  ACTOR_MDPOSITIONXOFF),
+    LABEL(spriteext, mdposition_offset.y, "mdposyoff",  ACTOR_MDPOSITIONYOFF),
+    LABEL(spriteext, mdposition_offset.z, "mdposzoff",  ACTOR_MDPOSITIONZOFF),
+    LABEL(spriteext, flags,               "mdflags",    ACTOR_MDFLAGS),
 
-    LABEL_SETUP(spriteext, xpanning, ACTOR_XPANNING),
-    LABEL_SETUP(spriteext, ypanning, ACTOR_YPANNING),
+    MEMBER(spriteext, xpanning, ACTOR_XPANNING),
+    MEMBER(spriteext, ypanning, ACTOR_YPANNING),
 
-    { "alpha",          ACTOR_ALPHA,                  0, 0, -1 },
+    { "alpha",    ACTOR_ALPHA,   0, 0, -1 },
+    { "isvalid",  ACTOR_ISVALID, 0, 0, -1 },
 
-    { "isvalid",        ACTOR_ISVALID,                0, 0, -1 },
-// aliases:
-    { "movflags",       ACTOR_HITAG,                  0, 0, -1 },
-    { "detail",         ACTOR_DETAIL,                 0, 0, -1 },  // deprecated name for 'blend'
+    // aliases:
+    { "movflags", ACTOR_HITAG,   0, 0, -1 },
+    { "detail",   ACTOR_DETAIL,  0, 0, -1 },  // deprecated name for 'blend'
 };
 
 void __fastcall VM_SetSprite(int const spriteNum, int const labelNum, int const lParm2, int32_t const newValue)
@@ -323,204 +322,237 @@ memberlabel_t const TsprLabels[] =
 {
     // tsprite access
 
-    LABEL_SETUP_UNMATCHED(sprite, x,        "tsprx",        ACTOR_X),
-    LABEL_SETUP_UNMATCHED(sprite, y,        "tspry",        ACTOR_Y),
-    LABEL_SETUP_UNMATCHED(sprite, z,        "tsprz",        ACTOR_Z),
-    LABEL_SETUP_UNMATCHED(sprite, cstat,    "tsprcstat",    ACTOR_CSTAT),
-    LABEL_SETUP_UNMATCHED(sprite, picnum,   "tsprpicnum",   ACTOR_PICNUM),
-    LABEL_SETUP_UNMATCHED(sprite, shade,    "tsprshade",    ACTOR_SHADE),
-    LABEL_SETUP_UNMATCHED(sprite, pal,      "tsprpal",      ACTOR_PAL),
-    LABEL_SETUP_UNMATCHED(sprite, clipdist, "tsprclipdist", ACTOR_CLIPDIST),
-    LABEL_SETUP_UNMATCHED(sprite, blend,    "tsprblend",    ACTOR_DETAIL),
-    LABEL_SETUP_UNMATCHED(sprite, xrepeat,  "tsprxrepeat",  ACTOR_XREPEAT),
-    LABEL_SETUP_UNMATCHED(sprite, yrepeat,  "tspryrepeat",  ACTOR_YREPEAT),
-    LABEL_SETUP_UNMATCHED(sprite, xoffset,  "tsprxoffset",  ACTOR_XOFFSET),
-    LABEL_SETUP_UNMATCHED(sprite, yoffset,  "tspryoffset",  ACTOR_YOFFSET),
-    LABEL_SETUP_UNMATCHED(sprite, sectnum,  "tsprsectnum",  ACTOR_SECTNUM),
-    LABEL_SETUP_UNMATCHED(sprite, statnum,  "tsprstatnum",  ACTOR_STATNUM),
-    LABEL_SETUP_UNMATCHED(sprite, ang,      "tsprang",      ACTOR_ANG),
-    LABEL_SETUP_UNMATCHED(sprite, owner,    "tsprowner",    ACTOR_OWNER),
-    LABEL_SETUP_UNMATCHED(sprite, xvel,     "tsprxvel",     ACTOR_XVEL),
-    LABEL_SETUP_UNMATCHED(sprite, yvel,     "tspryvel",     ACTOR_YVEL),
-    LABEL_SETUP_UNMATCHED(sprite, zvel,     "tsprzvel",     ACTOR_ZVEL),
-    LABEL_SETUP_UNMATCHED(sprite, lotag,    "tsprlotag",    ACTOR_LOTAG),
-    LABEL_SETUP_UNMATCHED(sprite, hitag,    "tsprhitag",    ACTOR_HITAG),
-    LABEL_SETUP_UNMATCHED(sprite, extra,    "tsprextra",    ACTOR_EXTRA),
+    LABEL(sprite, x,        "tsprx",        ACTOR_X),
+    LABEL(sprite, y,        "tspry",        ACTOR_Y),
+    LABEL(sprite, z,        "tsprz",        ACTOR_Z),
+    LABEL(sprite, cstat,    "tsprcstat",    ACTOR_CSTAT),
+    LABEL(sprite, picnum,   "tsprpicnum",   ACTOR_PICNUM),
+    LABEL(sprite, shade,    "tsprshade",    ACTOR_SHADE),
+    LABEL(sprite, pal,      "tsprpal",      ACTOR_PAL),
+    LABEL(sprite, clipdist, "tsprclipdist", ACTOR_CLIPDIST),
+    LABEL(sprite, blend,    "tsprblend",    ACTOR_DETAIL),
+    LABEL(sprite, xrepeat,  "tsprxrepeat",  ACTOR_XREPEAT),
+    LABEL(sprite, yrepeat,  "tspryrepeat",  ACTOR_YREPEAT),
+    LABEL(sprite, xoffset,  "tsprxoffset",  ACTOR_XOFFSET),
+    LABEL(sprite, yoffset,  "tspryoffset",  ACTOR_YOFFSET),
+    LABEL(sprite, sectnum,  "tsprsectnum",  ACTOR_SECTNUM),
+    LABEL(sprite, statnum,  "tsprstatnum",  ACTOR_STATNUM),
+    LABEL(sprite, ang,      "tsprang",      ACTOR_ANG),
+    LABEL(sprite, owner,    "tsprowner",    ACTOR_OWNER),
+    LABEL(sprite, xvel,     "tsprxvel",     ACTOR_XVEL),
+    LABEL(sprite, yvel,     "tspryvel",     ACTOR_YVEL),
+    LABEL(sprite, zvel,     "tsprzvel",     ACTOR_ZVEL),
+    LABEL(sprite, lotag,    "tsprlotag",    ACTOR_LOTAG),
+    LABEL(sprite, hitag,    "tsprhitag",    ACTOR_HITAG),
+    LABEL(sprite, extra,    "tsprextra",    ACTOR_EXTRA),
 };
 
-memberlabel_t const PlayerLabels[]=
+memberlabel_t const PlayerLabels[] = 
 {
-    { "zoom",                  PLAYER_ZOOM,                  0, 0, -1 },
-    { "loogiex",               PLAYER_LOOGIEX,               LABEL_HASPARM2, 64, -1 },
-    { "loogiey",               PLAYER_LOOGIEY,               LABEL_HASPARM2, 64, -1 },
-    { "numloogs",              PLAYER_NUMLOOGS,              0, 0, -1 },
-    { "loogcnt",               PLAYER_LOOGCNT,               0, 0, -1 },
-    { "posx",                  PLAYER_POSX,                  0, 0, -1 },
-    { "posy",                  PLAYER_POSY,                  0, 0, -1 },
-    { "posz",                  PLAYER_POSZ,                  0, 0, -1 },
-    { "horiz",                 PLAYER_HORIZ,                 0, 0, -1 },
-    { "horizoff",              PLAYER_HORIZOFF,              0, 0, -1 },
-    { "ohoriz",                PLAYER_OHORIZ,                0, 0, -1 },
-    { "ohorizoff",             PLAYER_OHORIZOFF,             0, 0, -1 },
-    { "q16horiz",              PLAYER_Q16HORIZ,              0, 0, -1 },
-    { "q16horizoff",           PLAYER_Q16HORIZOFF,           0, 0, -1 },
-    { "oq16horiz",             PLAYER_OQ16HORIZ,             0, 0, -1 },
-    { "oq16horizoff",          PLAYER_OQ16HORIZOFF,          0, 0, -1 },
+    MEMBER(g_player[0].ps, zoom,                        PLAYER_ZOOM),
+    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, 64, -1 },
+    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, 64, -1 },
+    MEMBER(g_player[0].ps, numloogs,                    PLAYER_NUMLOOGS),
+    MEMBER(g_player[0].ps, loogcnt,                     PLAYER_LOOGCNT),
+     LABEL(g_player[0].ps, pos.x,    "posx",            PLAYER_POSX),
+     LABEL(g_player[0].ps, pos.y,    "posy",            PLAYER_POSY),
+     LABEL(g_player[0].ps, pos.z,    "posz",            PLAYER_POSZ),
+    {                                "horiz",           PLAYER_HORIZ, 0, 0, -1 },
+    {                                "horizoff",        PLAYER_HORIZOFF, 0, 0, -1 },
+    {                                "ohoriz",          PLAYER_OHORIZ, 0, 0, -1 },
+    {                                "ohorizoff",       PLAYER_OHORIZOFF, 0, 0, -1 },
+    MEMBER(g_player[0].ps, q16horiz,                    PLAYER_Q16HORIZ),
+    MEMBER(g_player[0].ps, q16horizoff,                 PLAYER_Q16HORIZOFF),
+    MEMBER(g_player[0].ps, oq16horiz,                   PLAYER_OQ16HORIZ),
+    MEMBER(g_player[0].ps, oq16horizoff,                PLAYER_OQ16HORIZOFF),
 
-    { "invdisptime",           PLAYER_INVDISPTIME,           0, 0, -1 },
-    { "bobposx",               PLAYER_BOBPOSX,               0, 0, -1 },
-    { "bobposy",               PLAYER_BOBPOSY,               0, 0, -1 },
-    { "oposx",                 PLAYER_OPOSX,                 0, 0, -1 },
-    { "oposy",                 PLAYER_OPOSY,                 0, 0, -1 },
-    { "oposz",                 PLAYER_OPOSZ,                 0, 0, -1 },
-    { "pyoff",                 PLAYER_PYOFF,                 0, 0, -1 },
-    { "opyoff",                PLAYER_OPYOFF,                0, 0, -1 },
-    { "posxv",                 PLAYER_POSXV,                 0, 0, -1 },
-    { "posyv",                 PLAYER_POSYV,                 0, 0, -1 },
-    { "poszv",                 PLAYER_POSZV,                 0, 0, -1 },
-    { "last_pissed_time",      PLAYER_LAST_PISSED_TIME,      0, 0, -1 },
-    { "truefz",                PLAYER_TRUEFZ,                0, 0, -1 },
-    { "truecz",                PLAYER_TRUECZ,                0, 0, -1 },
-    { "player_par",            PLAYER_PLAYER_PAR,            0, 0, -1 },
-    { "visibility",            PLAYER_VISIBILITY,            0, 0, -1 },
-    { "bobcounter",            PLAYER_BOBCOUNTER,            0, 0, -1 },
-    { "weapon_sway",           PLAYER_WEAPON_SWAY,           0, 0, -1 },
-    { "pals_time",             PLAYER_PALS_TIME,             0, 0, -1 },
-    { "crack_time",            PLAYER_CRACK_TIME,            0, 0, -1 },
-    { "aim_mode",              PLAYER_AIM_MODE,              0, 0, -1 },
-    { "ang",                   PLAYER_ANG,                   0, 0, -1 },
-    { "oang",                  PLAYER_OANG,                  0, 0, -1 },
-    { "q16ang",                PLAYER_Q16ANG,                0, 0, -1 },
-    { "oq16ang",               PLAYER_OQ16ANG,               0, 0, -1 },
-    { "angvel",                PLAYER_ANGVEL,                0, 0, -1 },
-    { "q16angvel",             PLAYER_Q16ANGVEL,             0, 0, -1 },
-    { "cursectnum",            PLAYER_CURSECTNUM,            0, 0, -1 },
-    { "look_ang",              PLAYER_LOOK_ANG,              0, 0, -1 },
-    { "last_extra",            PLAYER_LAST_EXTRA,            0, 0, -1 },
-    { "subweapon",             PLAYER_SUBWEAPON,             0, 0, -1 },
-    { "ammo_amount",           PLAYER_AMMO_AMOUNT,           LABEL_HASPARM2, MAX_WEAPONS, -1 },
-    { "wackedbyactor",         PLAYER_WACKEDBYACTOR,         0, 0, -1 },
-    { "frag",                  PLAYER_FRAG,                  0, 0, -1 },
-    { "fraggedself",           PLAYER_FRAGGEDSELF,           0, 0, -1 },
-    { "curr_weapon",           PLAYER_CURR_WEAPON,           0, 0, -1 },
-    { "last_weapon",           PLAYER_LAST_WEAPON,           0, 0, -1 },
-    { "tipincs",               PLAYER_TIPINCS,               0, 0, -1 },
-    { "wantweaponfire",        PLAYER_WANTWEAPONFIRE,        0, 0, -1 },
-    { "holoduke_amount",       PLAYER_HOLODUKE_AMOUNT,       0, 0, -1 },
-    { "newowner",              PLAYER_NEWOWNER,              0, 0, -1 },
-    { "hurt_delay",            PLAYER_HURT_DELAY,            0, 0, -1 },
-    { "hbomb_hold_delay",      PLAYER_HBOMB_HOLD_DELAY,      0, 0, -1 },
-    { "jumping_counter",       PLAYER_JUMPING_COUNTER,       0, 0, -1 },
-    { "airleft",               PLAYER_AIRLEFT,               0, 0, -1 },
-    { "knee_incs",             PLAYER_KNEE_INCS,             0, 0, -1 },
-    { "access_incs",           PLAYER_ACCESS_INCS,           0, 0, -1 },
-    { "fta",                   PLAYER_FTA,                   0, 0, -1 },
-    { "ftq",                   PLAYER_FTQ,                   0, 0, -1 },
-    { "access_wallnum",        PLAYER_ACCESS_WALLNUM,        0, 0, -1 },
-    { "access_spritenum",      PLAYER_ACCESS_SPRITENUM,      0, 0, -1 },
-    { "kickback_pic",          PLAYER_KICKBACK_PIC,          0, 0, -1 },
-    { "got_access",            PLAYER_GOT_ACCESS,            0, 0, -1 },
-    { "weapon_ang",            PLAYER_WEAPON_ANG,            0, 0, -1 },
-    { "firstaid_amount",       PLAYER_FIRSTAID_AMOUNT,       0, 0, -1 },
-    { "somethingonplayer",     PLAYER_SOMETHINGONPLAYER,     0, 0, -1 },
-    { "on_crane",              PLAYER_ON_CRANE,              0, 0, -1 },
-    { "i",                     PLAYER_I,                     0, 0, -1 },
-    { "one_parallax_sectnum",  PLAYER_PARALLAX_SECTNUM,      0, 0, -1 },
-    { "over_shoulder_on",      PLAYER_OVER_SHOULDER_ON,      0, 0, -1 },
-    { "random_club_frame",     PLAYER_RANDOM_CLUB_FRAME,     0, 0, -1 },
-    { "fist_incs",             PLAYER_FIST_INCS,             0, 0, -1 },
-    { "one_eighty_count",      PLAYER_ONE_EIGHTY_COUNT,      0, 0, -1 },
-    { "cheat_phase",           PLAYER_CHEAT_PHASE,           0, 0, -1 },
-    { "dummyplayersprite",     PLAYER_DUMMYPLAYERSPRITE,     0, 0, -1 },
-    { "extra_extra8",          PLAYER_EXTRA_EXTRA8,          0, 0, -1 },
-    { "quick_kick",            PLAYER_QUICK_KICK,            0, 0, -1 },
-    { "heat_amount",           PLAYER_HEAT_AMOUNT,           0, 0, -1 },
-    { "actorsqu",              PLAYER_ACTORSQU,              0, 0, -1 },
-    { "timebeforeexit",        PLAYER_TIMEBEFOREEXIT,        0, 0, -1 },
-    { "customexitsound",       PLAYER_CUSTOMEXITSOUND,       0, 0, -1 },
-    { "weaprecs",              PLAYER_WEAPRECS,              LABEL_HASPARM2, MAX_WEAPONS, -1 },
-    { "weapreccnt",            PLAYER_WEAPRECCNT,            0, 0, -1 },
-    { "interface_toggle_flag", PLAYER_INTERFACE_TOGGLE,      0, 0, -1 },
-    { "rotscrnang",            PLAYER_ROTSCRNANG,            0, 0, -1 },
-    { "dead_flag",             PLAYER_DEAD_FLAG,             0, 0, -1 },
-    { "show_empty_weapon",     PLAYER_SHOW_EMPTY_WEAPON,     0, 0, -1 },
-    { "scuba_amount",          PLAYER_SCUBA_AMOUNT,          0, 0, -1 },
-    { "jetpack_amount",        PLAYER_JETPACK_AMOUNT,        0, 0, -1 },
-    { "steroids_amount",       PLAYER_STEROIDS_AMOUNT,       0, 0, -1 },
-    { "shield_amount",         PLAYER_SHIELD_AMOUNT,         0, 0, -1 },
-    { "holoduke_on",           PLAYER_HOLODUKE_ON,           0, 0, -1 },
-    { "pycount",               PLAYER_PYCOUNT,               0, 0, -1 },
-    { "weapon_pos",            PLAYER_WEAPON_POS,            0, 0, -1 },
-    { "frag_ps",               PLAYER_FRAG_PS,               0, 0, -1 },
-    { "transporter_hold",      PLAYER_TRANSPORTER_HOLD,      0, 0, -1 },
-    { "clipdist",              PLAYER_CLIPDIST,              0, 0, -1 },
-    { "last_full_weapon",      PLAYER_LAST_FULL_WEAPON,      0, 0, -1 },
-    { "footprintshade",        PLAYER_FOOTPRINTSHADE,        0, 0, -1 },
-    { "boot_amount",           PLAYER_BOOT_AMOUNT,           0, 0, -1 },
-    { "scream_voice",          PLAYER_SCREAM_VOICE,          0, 0, -1 },
-    { "gm",                    PLAYER_GM,                    0, 0, -1 },
-    { "on_warping_sector",     PLAYER_ON_WARPING_SECTOR,     0, 0, -1 },
-    { "footprintcount",        PLAYER_FOOTPRINTCOUNT,        0, 0, -1 },
-    { "hbomb_on",              PLAYER_HBOMB_ON,              0, 0, -1 },
-    { "jumping_toggle",        PLAYER_JUMPING_TOGGLE,        0, 0, -1 },
-    { "rapid_fire_hold",       PLAYER_RAPID_FIRE_HOLD,       0, 0, -1 },
-    { "on_ground",             PLAYER_ON_GROUND,             0, 0, -1 },
-    { "name",                  PLAYER_NAME,                  LABEL_ISSTRING, 32, -1 },
-    { "inven_icon",            PLAYER_INVEN_ICON,            0, 0, -1 },
-    { "buttonpalette",         PLAYER_BUTTONPALETTE,         0, 0, -1 },
-    { "jetpack_on",            PLAYER_JETPACK_ON,            0, 0, -1 },
-    { "spritebridge",          PLAYER_SPRITEBRIDGE,          0, 0, -1 },
-    { "scuba_on",              PLAYER_SCUBA_ON,              0, 0, -1 },
-    { "footprintpal",          PLAYER_FOOTPRINTPAL,          0, 0, -1 },
-    { "heat_on",               PLAYER_HEAT_ON,               0, 0, -1 },
-    { "holster_weapon",        PLAYER_HOLSTER_WEAPON,        0, 0, -1 },
-    { "falling_counter",       PLAYER_FALLING_COUNTER,       0, 0, -1 },
-    { "gotweapon",             PLAYER_GOTWEAPON,             LABEL_HASPARM2, MAX_WEAPONS, -1 },
-    { "palette",               PLAYER_PALETTE,               0, 0, -1 },
-    { "toggle_key_flag",       PLAYER_TOGGLE_KEY_FLAG,       0, 0, -1 },
-    { "knuckle_incs",          PLAYER_KNUCKLE_INCS,          0, 0, -1 },
-    { "walking_snd_toggle",    PLAYER_WALKING_SND_TOGGLE,    0, 0, -1 },
-    { "palookup",              PLAYER_PALOOKUP,              0, 0, -1 },
-    { "hard_landing",          PLAYER_HARD_LANDING,          0, 0, -1 },
-    { "max_secret_rooms",      PLAYER_MAX_SECRET_ROOMS,      0, 0, -1 },
-    { "secret_rooms",          PLAYER_SECRET_ROOMS,          0, 0, -1 },
-    { "pals",                  PLAYER_PALS,                  LABEL_HASPARM2, 3, -1 },
-    { "max_actors_killed",     PLAYER_MAX_ACTORS_KILLED,     0, 0, -1 },
-    { "actors_killed",         PLAYER_ACTORS_KILLED,         0, 0, -1 },
-    { "return_to_center",      PLAYER_RETURN_TO_CENTER,      0, 0, -1 },
-    { "runspeed",              PLAYER_RUNSPEED,              0, 0, -1 },
-    { "sbs",                   PLAYER_SBS,                   0, 0, -1 },
-    { "reloading",             PLAYER_RELOADING,             0, 0, -1 },
-    { "auto_aim",              PLAYER_AUTO_AIM,              0, 0, -1 },
-    { "movement_lock",         PLAYER_MOVEMENT_LOCK,         0, 0, -1 },
-    { "sound_pitch",           PLAYER_SOUND_PITCH,           0, 0, -1 },
-    { "weaponswitch",          PLAYER_WEAPONSWITCH,          0, 0, -1 },
-    { "team",                  PLAYER_TEAM,                  0, 0, -1 },
-    { "max_player_health",     PLAYER_MAX_PLAYER_HEALTH,     0, 0, -1 },
-    { "max_shield_amount",     PLAYER_MAX_SHIELD_AMOUNT,     0, 0, -1 },
-    { "max_ammo_amount",       PLAYER_MAX_AMMO_AMOUNT,       LABEL_HASPARM2, MAX_WEAPONS, -1 },
-    { "last_quick_kick",       PLAYER_LAST_QUICK_KICK,       0, 0, -1 },
-    { "autostep",              PLAYER_AUTOSTEP,              0, 0, -1 },
-    { "autostep_sbw",          PLAYER_AUTOSTEP_SBW,          0, 0, -1 },
-    { "hudpal",                PLAYER_HUDPAL,                0, 0, -1 },
-    { "index",                 PLAYER_INDEX,                 0, 0, -1 },
-    { "connected",             PLAYER_CONNECTED,             0, 0, -1 },
-    { "frags",                 PLAYER_FRAGS,                 LABEL_HASPARM2, MAXPLAYERS, -1 },
-    { "deaths",                PLAYER_DEATHS,                0, 0, -1 },
-    { "last_used_weapon",      PLAYER_LAST_USED_WEAPON,      0, 0, -1 },
-    { "bsubweapon",            PLAYER_BSUBWEAPON,            LABEL_HASPARM2, MAX_WEAPONS, -1 },
-    { "crouch_toggle",         PLAYER_CROUCH_TOGGLE,         0, 0, -1 },
+    MEMBER(g_player[0].ps, invdisptime,                 PLAYER_INVDISPTIME),
+
+     LABEL(g_player[0].ps, bobpos.x, "bobposx",         PLAYER_BOBPOSX),
+     LABEL(g_player[0].ps, bobpos.y, "bobposy",         PLAYER_BOBPOSY),
+
+     LABEL(g_player[0].ps, opos.x,   "oposx",           PLAYER_OPOSX),
+     LABEL(g_player[0].ps, opos.y,   "oposy",           PLAYER_OPOSY),
+     LABEL(g_player[0].ps, opos.z,   "oposz",           PLAYER_OPOSZ),
+
+    MEMBER(g_player[0].ps, pyoff,                       PLAYER_PYOFF),
+    MEMBER(g_player[0].ps, opyoff,                      PLAYER_OPYOFF),
+
+     LABEL(g_player[0].ps, vel.x,    "posxv",           PLAYER_POSXV),
+     LABEL(g_player[0].ps, vel.y,    "posyv",           PLAYER_POSYV),
+     LABEL(g_player[0].ps, vel.z,    "poszv",           PLAYER_POSZV),
+
+    MEMBER(g_player[0].ps, last_pissed_time,            PLAYER_LAST_PISSED_TIME),
+
+    MEMBER(g_player[0].ps, truefz,                      PLAYER_TRUEFZ),
+    MEMBER(g_player[0].ps, truecz,                      PLAYER_TRUECZ),
+
+    MEMBER(g_player[0].ps, player_par,                  PLAYER_PLAYER_PAR),
+
+    MEMBER(g_player[0].ps, visibility,                  PLAYER_VISIBILITY),
+    MEMBER(g_player[0].ps, bobcounter,                  PLAYER_BOBCOUNTER),
+    MEMBER(g_player[0].ps, weapon_sway,                 PLAYER_WEAPON_SWAY),
+     LABEL(g_player[0].ps, pals.f,   "pals_time",       PLAYER_PALS_TIME),
+    MEMBER(g_player[0].ps, crack_time,                  PLAYER_CRACK_TIME),
+    MEMBER(g_player[0].ps, aim_mode,                    PLAYER_AIM_MODE),
+
+    {                                "ang",             PLAYER_ANG, 0, 0, -1 },
+    {                                "oang",            PLAYER_OANG, 0, 0, -1 },
+
+    MEMBER(g_player[0].ps, q16ang,                      PLAYER_Q16ANG),
+    MEMBER(g_player[0].ps, oq16ang,                     PLAYER_OQ16ANG),
+
+    {                                "angvel",          PLAYER_ANGVEL, 0, 0, -1 },
+
+    MEMBER(g_player[0].ps, q16angvel,                   PLAYER_Q16ANGVEL),
+
+    MEMBER(g_player[0].ps, cursectnum,                  PLAYER_CURSECTNUM),
+
+    MEMBER(g_player[0].ps, look_ang,                    PLAYER_LOOK_ANG),
+    MEMBER(g_player[0].ps, last_extra,                  PLAYER_LAST_EXTRA),
+
+    MEMBER(g_player[0].ps, subweapon,                   PLAYER_SUBWEAPON),
+
+    {                                "ammo_amount",     PLAYER_AMMO_AMOUNT, LABEL_HASPARM2, MAX_WEAPONS, -1 },
+
+    MEMBER(g_player[0].ps, wackedbyactor,               PLAYER_WACKEDBYACTOR),
+
+    MEMBER(g_player[0].ps, frag,                        PLAYER_FRAG),
+    MEMBER(g_player[0].ps, fraggedself,                 PLAYER_FRAGGEDSELF),
+
+    MEMBER(g_player[0].ps, curr_weapon,                 PLAYER_CURR_WEAPON),
+    MEMBER(g_player[0].ps, last_weapon,                 PLAYER_LAST_WEAPON),
+
+    MEMBER(g_player[0].ps, tipincs,                     PLAYER_TIPINCS),
+
+    MEMBER(g_player[0].ps, wantweaponfire,              PLAYER_WANTWEAPONFIRE),
+
+     LABEL(g_player[0].ps, inv_amount[GET_HOLODUKE], "holoduke_amount", PLAYER_HOLODUKE_AMOUNT),
+
+    MEMBER(g_player[0].ps, newowner,                    PLAYER_NEWOWNER),
+    MEMBER(g_player[0].ps, hurt_delay,                  PLAYER_HURT_DELAY),
+    MEMBER(g_player[0].ps, hbomb_hold_delay,            PLAYER_HBOMB_HOLD_DELAY),
+
+    MEMBER(g_player[0].ps, jumping_counter,             PLAYER_JUMPING_COUNTER),
+    MEMBER(g_player[0].ps, airleft,                     PLAYER_AIRLEFT),
+    MEMBER(g_player[0].ps, knee_incs,                   PLAYER_KNEE_INCS),
+
+    MEMBER(g_player[0].ps, access_incs,                 PLAYER_ACCESS_INCS),
+
+    MEMBER(g_player[0].ps, fta,                         PLAYER_FTA),
+    MEMBER(g_player[0].ps, ftq,                         PLAYER_FTQ),
+
+    MEMBER(g_player[0].ps, access_wallnum,              PLAYER_ACCESS_WALLNUM),
+    MEMBER(g_player[0].ps, access_spritenum,            PLAYER_ACCESS_SPRITENUM),
+
+    MEMBER(g_player[0].ps, kickback_pic,                PLAYER_KICKBACK_PIC),
+
+    MEMBER(g_player[0].ps, got_access,                  PLAYER_GOT_ACCESS),
+
+    MEMBER(g_player[0].ps, weapon_ang,                  PLAYER_WEAPON_ANG),
+     LABEL(g_player[0].ps, inv_amount[GET_FIRSTAID], "firstaid_amount", PLAYER_FIRSTAID_AMOUNT),
+
+    MEMBER(g_player[0].ps, somethingonplayer,           PLAYER_SOMETHINGONPLAYER),
+    MEMBER(g_player[0].ps, on_crane,                    PLAYER_ON_CRANE),
+    MEMBER(g_player[0].ps, i,                           PLAYER_I),
+    MEMBER(g_player[0].ps, parallax_sectnum,            PLAYER_PARALLAX_SECTNUM),
+
+    MEMBER(g_player[0].ps, over_shoulder_on,            PLAYER_OVER_SHOULDER_ON),
+
+    MEMBER(g_player[0].ps, random_club_frame,           PLAYER_RANDOM_CLUB_FRAME),
+    MEMBER(g_player[0].ps, fist_incs,                   PLAYER_FIST_INCS),
+    MEMBER(g_player[0].ps, one_eighty_count,            PLAYER_ONE_EIGHTY_COUNT),
+    MEMBER(g_player[0].ps, cheat_phase,                 PLAYER_CHEAT_PHASE),
+    MEMBER(g_player[0].ps, dummyplayersprite,           PLAYER_DUMMYPLAYERSPRITE),
+    MEMBER(g_player[0].ps, extra_extra8,                PLAYER_EXTRA_EXTRA8),
+
+    MEMBER(g_player[0].ps, quick_kick,                  PLAYER_QUICK_KICK),
+
+     LABEL(g_player[0].ps, inv_amount[GET_HEATS], "heat_amount", PLAYER_HEAT_AMOUNT),
+
+    MEMBER(g_player[0].ps, actorsqu,                    PLAYER_ACTORSQU),
+    MEMBER(g_player[0].ps, timebeforeexit,              PLAYER_TIMEBEFOREEXIT),
+    MEMBER(g_player[0].ps, customexitsound,             PLAYER_CUSTOMEXITSOUND),
+    {                                "weaprecs",        PLAYER_WEAPRECS, LABEL_HASPARM2, MAX_WEAPONS, -1 },
+    MEMBER(g_player[0].ps, weapreccnt,                  PLAYER_WEAPRECCNT),
+    MEMBER(g_player[0].ps, interface_toggle,            PLAYER_INTERFACE_TOGGLE),
+    MEMBER(g_player[0].ps, rotscrnang,                  PLAYER_ROTSCRNANG),
+    MEMBER(g_player[0].ps, dead_flag,                   PLAYER_DEAD_FLAG),
+    MEMBER(g_player[0].ps, show_empty_weapon,           PLAYER_SHOW_EMPTY_WEAPON),
+
+     LABEL(g_player[0].ps, inv_amount[GET_SCUBA],    "scuba_amount",    PLAYER_SCUBA_AMOUNT),
+     LABEL(g_player[0].ps, inv_amount[GET_JETPACK],  "jetpack_amount",  PLAYER_JETPACK_AMOUNT),
+     LABEL(g_player[0].ps, inv_amount[GET_STEROIDS], "steroids_amount", PLAYER_STEROIDS_AMOUNT),
+     LABEL(g_player[0].ps, inv_amount[GET_SHIELD],   "shield_amount",   PLAYER_SHIELD_AMOUNT),
+
+    MEMBER(g_player[0].ps, holoduke_on,                 PLAYER_HOLODUKE_ON),
+    MEMBER(g_player[0].ps, pycount,                     PLAYER_PYCOUNT),
+    MEMBER(g_player[0].ps, weapon_pos,                  PLAYER_WEAPON_POS),
+    MEMBER(g_player[0].ps, frag_ps,                     PLAYER_FRAG_PS),
+    MEMBER(g_player[0].ps, transporter_hold,            PLAYER_TRANSPORTER_HOLD),
+    MEMBER(g_player[0].ps, clipdist,                    PLAYER_CLIPDIST),
+    MEMBER(g_player[0].ps, last_full_weapon,            PLAYER_LAST_FULL_WEAPON),
+    MEMBER(g_player[0].ps, footprintshade,              PLAYER_FOOTPRINTSHADE),
+     LABEL(g_player[0].ps, inv_amount[GET_BOOTS],    "boot_amount",     PLAYER_BOOT_AMOUNT),
+    MEMBER(g_player[0].ps, scream_voice,                PLAYER_SCREAM_VOICE),
+    {                                "gm",              PLAYER_GM, sizeof(g_player[0].ps[0].gm) | LABEL_WRITEFUNC, 0, offsetof(DukePlayer_t, gm) },
+    MEMBER(g_player[0].ps, on_warping_sector,           PLAYER_ON_WARPING_SECTOR),
+    MEMBER(g_player[0].ps, footprintcount,              PLAYER_FOOTPRINTCOUNT),
+    MEMBER(g_player[0].ps, hbomb_on,                    PLAYER_HBOMB_ON),
+    MEMBER(g_player[0].ps, jumping_toggle,              PLAYER_JUMPING_TOGGLE),
+    MEMBER(g_player[0].ps, rapid_fire_hold,             PLAYER_RAPID_FIRE_HOLD),
+    MEMBER(g_player[0].ps, on_ground,                   PLAYER_ON_GROUND),
+    {                                "name",            PLAYER_NAME, LABEL_ISSTRING, 32, -1 },
+    MEMBER(g_player[0].ps, inven_icon,                  PLAYER_INVEN_ICON),
+    MEMBER(g_player[0].ps, buttonpalette,               PLAYER_BUTTONPALETTE),
+    MEMBER(g_player[0].ps, jetpack_on,                  PLAYER_JETPACK_ON),
+    MEMBER(g_player[0].ps, spritebridge,                PLAYER_SPRITEBRIDGE),
+    MEMBER(g_player[0].ps, scuba_on,                    PLAYER_SCUBA_ON),
+    MEMBER(g_player[0].ps, footprintpal,                PLAYER_FOOTPRINTPAL),
+    {                                "heat_on",         PLAYER_HEAT_ON, sizeof(g_player[0].ps[0].heat_on) | LABEL_WRITEFUNC, 0, offsetof(DukePlayer_t, heat_on) },
+    MEMBER(g_player[0].ps, holster_weapon,              PLAYER_HOLSTER_WEAPON),
+    MEMBER(g_player[0].ps, falling_counter,             PLAYER_FALLING_COUNTER),
+    {                                "gotweapon",       PLAYER_GOTWEAPON, LABEL_HASPARM2, MAX_WEAPONS, -1 },
+    {                                "palette",         PLAYER_PALETTE, sizeof(g_player[0].ps[0].palette) | LABEL_WRITEFUNC, 0, offsetof(DukePlayer_t, palette) },
+    MEMBER(g_player[0].ps, toggle_key_flag,             PLAYER_TOGGLE_KEY_FLAG),
+    MEMBER(g_player[0].ps, knuckle_incs,                PLAYER_KNUCKLE_INCS),
+    MEMBER(g_player[0].ps, walking_snd_toggle,          PLAYER_WALKING_SND_TOGGLE),
+    MEMBER(g_player[0].ps, palookup,                    PLAYER_PALOOKUP),
+    MEMBER(g_player[0].ps, hard_landing,                PLAYER_HARD_LANDING),
+    MEMBER(g_player[0].ps, max_secret_rooms,            PLAYER_MAX_SECRET_ROOMS),
+    MEMBER(g_player[0].ps, secret_rooms,                PLAYER_SECRET_ROOMS),
+
+    {                                "pals",            PLAYER_PALS, LABEL_HASPARM2, 3, -1 },
+
+    MEMBER(g_player[0].ps, max_actors_killed,           PLAYER_MAX_ACTORS_KILLED),
+    MEMBER(g_player[0].ps, actors_killed,               PLAYER_ACTORS_KILLED),
+    MEMBER(g_player[0].ps, return_to_center,            PLAYER_RETURN_TO_CENTER),
+    MEMBER(g_player[0].ps, runspeed,                    PLAYER_RUNSPEED),
+    MEMBER(g_player[0].ps, sbs,                         PLAYER_SBS),
+    MEMBER(g_player[0].ps, reloading,                   PLAYER_RELOADING),
+    MEMBER(g_player[0].ps, auto_aim,                    PLAYER_AUTO_AIM),
+    MEMBER(g_player[0].ps, movement_lock,               PLAYER_MOVEMENT_LOCK),
+    MEMBER(g_player[0].ps, sound_pitch,                 PLAYER_SOUND_PITCH),
+    MEMBER(g_player[0].ps, weaponswitch,                PLAYER_WEAPONSWITCH),
+    MEMBER(g_player[0].ps, team,                        PLAYER_TEAM),
+    MEMBER(g_player[0].ps, max_player_health,           PLAYER_MAX_PLAYER_HEALTH),
+    MEMBER(g_player[0].ps, max_shield_amount,           PLAYER_MAX_SHIELD_AMOUNT),
+    {                                "max_ammo_amount", PLAYER_MAX_AMMO_AMOUNT, LABEL_HASPARM2, MAX_WEAPONS, -1 },
+    MEMBER(g_player[0].ps, last_quick_kick,             PLAYER_LAST_QUICK_KICK),
+    MEMBER(g_player[0].ps, autostep,                    PLAYER_AUTOSTEP),
+    MEMBER(g_player[0].ps, autostep_sbw,                PLAYER_AUTOSTEP_SBW),
+    {                                "hudpal",          PLAYER_HUDPAL, 0, 0, -1 },
+    {                                "index",           PLAYER_INDEX, 0, 0, -1 },
+    {                                "connected",       PLAYER_CONNECTED, 0, 0, -1 },
+    {                                "frags",           PLAYER_FRAGS, LABEL_HASPARM2, MAXPLAYERS, -1 },
+    {                                "deaths",          PLAYER_DEATHS, 0, 0, -1 },
+    MEMBER(g_player[0].ps, last_used_weapon,            PLAYER_LAST_USED_WEAPON),
+    {                                "bsubweapon",      PLAYER_BSUBWEAPON, LABEL_HASPARM2, MAX_WEAPONS, -1 },
+    MEMBER(g_player[0].ps, crouch_toggle,               PLAYER_CROUCH_TOGGLE),
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)
 {
-    if (EDUKE32_PREDICT_FALSE(((unsigned) playerNum >= (unsigned) g_mostConcurrentPlayers)
-        || (PlayerLabels[labelNum].flags & LABEL_HASPARM2 && (unsigned) lParm2 >= (unsigned) PlayerLabels[labelNum].maxParm2)))
-    {
-        CON_ERRPRINTF("%s[%d] invalid for player %d\n", PlayerLabels[labelNum].name, lParm2, playerNum);
-        return -1;
-    }
-
     auto const &ps = *g_player[playerNum].ps;
 
     switch (labelNum)
@@ -533,156 +565,12 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_HORIZOFF:  labelNum = fix16_to_int(ps.q16horizoff);  break;
         case PLAYER_OHORIZOFF: labelNum = fix16_to_int(ps.oq16horizoff); break;
 
-        case PLAYER_Q16ANG:       labelNum = ps.q16ang;       break;
-        case PLAYER_OQ16ANG:      labelNum = ps.oq16ang;      break;
-        case PLAYER_Q16ANGVEL:    labelNum = ps.q16angvel;    break;
-        case PLAYER_Q16HORIZ:     labelNum = ps.q16horiz;     break;
-        case PLAYER_OQ16HORIZ:    labelNum = ps.oq16horiz;    break;
-        case PLAYER_Q16HORIZOFF:  labelNum = ps.q16horizoff;  break;
-        case PLAYER_OQ16HORIZOFF: labelNum = ps.oq16horizoff; break;
-
-        case PLAYER_ACCESS_INCS:        labelNum = ps.access_incs;        break;
-        case PLAYER_ACCESS_SPRITENUM:   labelNum = ps.access_spritenum;   break;
-        case PLAYER_ACCESS_WALLNUM:     labelNum = ps.access_wallnum;     break;
-        case PLAYER_ACTORS_KILLED:      labelNum = ps.actors_killed;      break;
-        case PLAYER_ACTORSQU:           labelNum = ps.actorsqu;           break;
-        case PLAYER_AIM_MODE:           labelNum = ps.aim_mode;           break;
-        case PLAYER_AIRLEFT:            labelNum = ps.airleft;            break;
-        case PLAYER_AUTO_AIM:           labelNum = ps.auto_aim;           break;
-        case PLAYER_AUTOSTEP:           labelNum = ps.autostep;           break;
-        case PLAYER_AUTOSTEP_SBW:       labelNum = ps.autostep_sbw;       break;
-        case PLAYER_BOBCOUNTER:         labelNum = ps.bobcounter;         break;
-        case PLAYER_BOBPOSX:            labelNum = ps.bobpos.x;           break;
-        case PLAYER_BOBPOSY:            labelNum = ps.bobpos.y;           break;
-        case PLAYER_BUTTONPALETTE:      labelNum = ps.buttonpalette;      break;
-        case PLAYER_CHEAT_PHASE:        labelNum = ps.cheat_phase;        break;
-        case PLAYER_CLIPDIST:           labelNum = ps.clipdist;           break;
-        case PLAYER_CRACK_TIME:         labelNum = ps.crack_time;         break;
-        case PLAYER_CROUCH_TOGGLE:      labelNum = ps.crouch_toggle;      break;
-        case PLAYER_CURR_WEAPON:        labelNum = ps.curr_weapon;        break;
-        case PLAYER_CURSECTNUM:         labelNum = ps.cursectnum;         break;
-        case PLAYER_CUSTOMEXITSOUND:    labelNum = ps.customexitsound;    break;
-        case PLAYER_DEAD_FLAG:          labelNum = ps.dead_flag;          break;
-        case PLAYER_DUMMYPLAYERSPRITE:  labelNum = ps.dummyplayersprite;  break;
-        case PLAYER_EXTRA_EXTRA8:       labelNum = ps.extra_extra8;       break;
-        case PLAYER_FALLING_COUNTER:    labelNum = ps.falling_counter;    break;
-        case PLAYER_FIST_INCS:          labelNum = ps.fist_incs;          break;
-        case PLAYER_FOOTPRINTCOUNT:     labelNum = ps.footprintcount;     break;
-        case PLAYER_FOOTPRINTPAL:       labelNum = ps.footprintpal;       break;
-        case PLAYER_FOOTPRINTSHADE:     labelNum = ps.footprintshade;     break;
-        case PLAYER_FRAG:               labelNum = ps.frag;               break;
-        case PLAYER_FRAG_PS:            labelNum = ps.frag_ps;            break;
-        case PLAYER_FRAGGEDSELF:        labelNum = ps.fraggedself;        break;
-        case PLAYER_FTA:                labelNum = ps.fta;                break;
-        case PLAYER_FTQ:                labelNum = ps.ftq;                break;
-        case PLAYER_GM:                 labelNum = ps.gm;                 break;
-        case PLAYER_GOT_ACCESS:         labelNum = ps.got_access;         break;
-        case PLAYER_HARD_LANDING:       labelNum = ps.hard_landing;       break;
-        case PLAYER_HBOMB_HOLD_DELAY:   labelNum = ps.hbomb_hold_delay;   break;
-        case PLAYER_HBOMB_ON:           labelNum = ps.hbomb_on;           break;
-        case PLAYER_HEAT_ON:            labelNum = ps.heat_on;            break;
-        case PLAYER_HOLODUKE_ON:        labelNum = ps.holoduke_on;        break;
-        case PLAYER_HOLSTER_WEAPON:     labelNum = ps.holster_weapon;     break;
-        case PLAYER_HUDPAL:             labelNum = P_GetHudPal(&ps);      break;
-        case PLAYER_HURT_DELAY:         labelNum = ps.hurt_delay;         break;
-        case PLAYER_I:                  labelNum = ps.i;                  break;
-        case PLAYER_INDEX:              labelNum = playerNum;             break;
-        case PLAYER_INTERFACE_TOGGLE:   labelNum = ps.interface_toggle;   break;
-        case PLAYER_INVDISPTIME:        labelNum = ps.invdisptime;        break;
-        case PLAYER_INVEN_ICON:         labelNum = ps.inven_icon;         break;
-        case PLAYER_JETPACK_ON:         labelNum = ps.jetpack_on;         break;
-        case PLAYER_JUMPING_COUNTER:    labelNum = ps.jumping_counter;    break;
-        case PLAYER_JUMPING_TOGGLE:     labelNum = ps.jumping_toggle;     break;
-        case PLAYER_KICKBACK_PIC:       labelNum = ps.kickback_pic;       break;
-        case PLAYER_KNEE_INCS:          labelNum = ps.knee_incs;          break;
-        case PLAYER_KNUCKLE_INCS:       labelNum = ps.knuckle_incs;       break;
-        case PLAYER_LAST_EXTRA:         labelNum = ps.last_extra;         break;
-        case PLAYER_LAST_FULL_WEAPON:   labelNum = ps.last_full_weapon;   break;
-        case PLAYER_LAST_PISSED_TIME:   labelNum = ps.last_pissed_time;   break;
-        case PLAYER_LAST_QUICK_KICK:    labelNum = ps.last_quick_kick;    break;
-        case PLAYER_LAST_USED_WEAPON:   labelNum = ps.last_used_weapon;   break;
-        case PLAYER_LAST_WEAPON:        labelNum = ps.last_weapon;        break;
-        case PLAYER_LOOGCNT:            labelNum = ps.loogcnt;            break;
-        case PLAYER_LOOGIEX:            labelNum = ps.loogiex[lParm2];    break;
-        case PLAYER_LOOGIEY:            labelNum = ps.loogiey[lParm2];    break;
-        case PLAYER_LOOK_ANG:           labelNum = ps.look_ang;           break;
-        case PLAYER_MAX_ACTORS_KILLED:  labelNum = ps.max_actors_killed;  break;
-        case PLAYER_MAX_PLAYER_HEALTH:  labelNum = ps.max_player_health;  break;
-        case PLAYER_MAX_SECRET_ROOMS:   labelNum = ps.max_secret_rooms;   break;
-        case PLAYER_MAX_SHIELD_AMOUNT:  labelNum = ps.max_shield_amount;  break;
-        case PLAYER_MOVEMENT_LOCK:      labelNum = ps.movement_lock;      break;
-        case PLAYER_NEWOWNER:           labelNum = ps.newowner;           break;
-        case PLAYER_NUMLOOGS:           labelNum = ps.numloogs;           break;
-        case PLAYER_ON_CRANE:           labelNum = ps.on_crane;           break;
-        case PLAYER_ON_GROUND:          labelNum = ps.on_ground;          break;
-        case PLAYER_ON_WARPING_SECTOR:  labelNum = ps.on_warping_sector;  break;
-        case PLAYER_ONE_EIGHTY_COUNT:   labelNum = ps.one_eighty_count;   break;
-        case PLAYER_PARALLAX_SECTNUM:   labelNum = ps.parallax_sectnum;   break;
-        case PLAYER_OPOSX:              labelNum = ps.opos.x;             break;
-        case PLAYER_OPOSY:              labelNum = ps.opos.y;             break;
-        case PLAYER_OPOSZ:              labelNum = ps.opos.z;             break;
-        case PLAYER_OPYOFF:             labelNum = ps.opyoff;             break;
-        case PLAYER_OVER_SHOULDER_ON:   labelNum = ps.over_shoulder_on;   break;
-        case PLAYER_PALETTE:            labelNum = ps.palette;            break;
-        case PLAYER_PALOOKUP:           labelNum = ps.palookup;           break;
-        case PLAYER_PALS_TIME:          labelNum = ps.pals.f;             break;
-        case PLAYER_PLAYER_PAR:         labelNum = ps.player_par;         break;
-        case PLAYER_POSX:               labelNum = ps.pos.x;              break;
-        case PLAYER_POSXV:              labelNum = ps.vel.x;              break;
-        case PLAYER_POSY:               labelNum = ps.pos.y;              break;
-        case PLAYER_POSYV:              labelNum = ps.vel.y;              break;
-        case PLAYER_POSZ:               labelNum = ps.pos.z;              break;
-        case PLAYER_POSZV:              labelNum = ps.vel.z;              break;
-        case PLAYER_PYCOUNT:            labelNum = ps.pycount;            break;
-        case PLAYER_PYOFF:              labelNum = ps.pyoff;              break;
-        case PLAYER_QUICK_KICK:         labelNum = ps.quick_kick;         break;
-        case PLAYER_RANDOM_CLUB_FRAME:  labelNum = ps.random_club_frame;  break;
-        case PLAYER_RAPID_FIRE_HOLD:    labelNum = ps.rapid_fire_hold;    break;
-        case PLAYER_RELOADING:          labelNum = ps.reloading;          break;
-        case PLAYER_RETURN_TO_CENTER:   labelNum = ps.return_to_center;   break;
-        case PLAYER_ROTSCRNANG:         labelNum = ps.rotscrnang;         break;
-        case PLAYER_RUNSPEED:           labelNum = ps.runspeed;           break;
-        case PLAYER_SBS:                labelNum = ps.sbs;                break;
-        case PLAYER_SCREAM_VOICE:       labelNum = ps.scream_voice;       break;
-        case PLAYER_SCUBA_ON:           labelNum = ps.scuba_on;           break;
-        case PLAYER_SECRET_ROOMS:       labelNum = ps.secret_rooms;       break;
-        case PLAYER_SHOW_EMPTY_WEAPON:  labelNum = ps.show_empty_weapon;  break;
-        case PLAYER_SOMETHINGONPLAYER:  labelNum = ps.somethingonplayer;  break;
-        case PLAYER_SOUND_PITCH:        labelNum = ps.sound_pitch;        break;
-        case PLAYER_SPRITEBRIDGE:       labelNum = ps.spritebridge;       break;
-        case PLAYER_SUBWEAPON:          labelNum = ps.subweapon;          break;
-        case PLAYER_TEAM:               labelNum = ps.team;               break;
-        case PLAYER_TIMEBEFOREEXIT:     labelNum = ps.timebeforeexit;     break;
-        case PLAYER_TIPINCS:            labelNum = ps.tipincs;            break;
-        case PLAYER_TOGGLE_KEY_FLAG:    labelNum = ps.toggle_key_flag;    break;
-        case PLAYER_TRANSPORTER_HOLD:   labelNum = ps.transporter_hold;   break;
-        case PLAYER_TRUECZ:             labelNum = ps.truecz;             break;
-        case PLAYER_TRUEFZ:             labelNum = ps.truefz;             break;
-        case PLAYER_VISIBILITY:         labelNum = ps.visibility;         break;
-        case PLAYER_WACKEDBYACTOR:      labelNum = ps.wackedbyactor;      break;
-        case PLAYER_WALKING_SND_TOGGLE: labelNum = ps.walking_snd_toggle; break;
-        case PLAYER_WANTWEAPONFIRE:     labelNum = ps.wantweaponfire;     break;
-        case PLAYER_WEAPON_ANG:         labelNum = ps.weapon_ang;         break;
-        case PLAYER_WEAPON_POS:         labelNum = ps.weapon_pos;         break;
-        case PLAYER_WEAPON_SWAY:        labelNum = ps.weapon_sway;        break;
-        case PLAYER_WEAPONSWITCH:       labelNum = ps.weaponswitch;       break;
-        case PLAYER_WEAPRECCNT:         labelNum = ps.weapreccnt;         break;
-        case PLAYER_WEAPRECS:           labelNum = ps.weaprecs[lParm2];   break;
-        case PLAYER_ZOOM:               labelNum = ps.zoom;               break;
-
-        case PLAYER_BOOT_AMOUNT:     labelNum = ps.inv_amount[GET_BOOTS];    break;
-        case PLAYER_FIRSTAID_AMOUNT: labelNum = ps.inv_amount[GET_FIRSTAID]; break;
-        case PLAYER_HEAT_AMOUNT:     labelNum = ps.inv_amount[GET_HEATS];    break;
-        case PLAYER_HOLODUKE_AMOUNT: labelNum = ps.inv_amount[GET_HOLODUKE]; break;
-        case PLAYER_JETPACK_AMOUNT:  labelNum = ps.inv_amount[GET_JETPACK];  break;
-        case PLAYER_SCUBA_AMOUNT:    labelNum = ps.inv_amount[GET_SCUBA];    break;
-        case PLAYER_SHIELD_AMOUNT:   labelNum = ps.inv_amount[GET_SHIELD];   break;
-        case PLAYER_STEROIDS_AMOUNT: labelNum = ps.inv_amount[GET_STEROIDS]; break;
+        case PLAYER_HUDPAL:    labelNum = P_GetHudPal(&ps); break;
+        case PLAYER_INDEX:     labelNum = playerNum;        break;
 
         case PLAYER_AMMO_AMOUNT:      labelNum = ps.ammo_amount[lParm2];     break;
         case PLAYER_MAX_AMMO_AMOUNT:  labelNum = ps.max_ammo_amount[lParm2]; break;
-
-        case PLAYER_GOTWEAPON: labelNum = (ps.gotweapon & (1<<lParm2)) != 0; break;
+        case PLAYER_GOTWEAPON:        labelNum = (ps.gotweapon & (1<<lParm2)) != 0; break;
 
         case PLAYER_PALS:
             switch (lParm2)
@@ -693,12 +581,17 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
             }
             break;
 
-        case PLAYER_CONNECTED: labelNum = g_player[playerNum].playerquitflag; break;
         case PLAYER_FRAGS:
             labelNum = (playerNum == lParm2) ? ps.fraggedself : g_player[playerNum].frags[lParm2]; break;
-        case PLAYER_DEATHS: labelNum = g_player[playerNum].frags[playerNum]; break;
 
-        case PLAYER_BSUBWEAPON: labelNum = (ps.subweapon & (1<<lParm2)) != 0; break;
+        case PLAYER_CONNECTED:  labelNum = g_player[playerNum].playerquitflag;   break;
+        case PLAYER_DEATHS:     labelNum = g_player[playerNum].frags[playerNum]; break;
+        case PLAYER_BSUBWEAPON: labelNum = (ps.subweapon & (1<<lParm2)) != 0;    break;
+
+        case PLAYER_LOOGIEX:    labelNum = ps.loogiex[lParm2]; break;
+        case PLAYER_LOOGIEY:    labelNum = ps.loogiey[lParm2]; break;
+
+        case PLAYER_WEAPRECS:   labelNum = ps.weaprecs[lParm2]; break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -708,13 +601,6 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
 
 void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const lParm2, int32_t const newValue)
 {
-    if (EDUKE32_PREDICT_FALSE(((unsigned)playerNum >= (unsigned)g_mostConcurrentPlayers)
-        || (PlayerLabels[labelNum].flags & LABEL_HASPARM2 && (unsigned)lParm2 >= (unsigned)PlayerLabels[labelNum].maxParm2)))
-    {
-        CON_ERRPRINTF("%s[%d] invalid for player %d\n", PlayerLabels[labelNum].name, lParm2, playerNum);
-        return;
-    }
-
     auto &ps = *g_player[playerNum].ps;
 
     switch (labelNum)
@@ -726,147 +612,6 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
         case PLAYER_OANG:      ps.oq16ang      = fix16_from_int(newValue); break;
         case PLAYER_ANGVEL:    ps.q16angvel    = fix16_from_int(newValue); break;
         case PLAYER_HORIZOFF:  ps.q16horizoff  = fix16_from_int(newValue); break;
-
-        case PLAYER_Q16HORIZ:     ps.q16horiz     = newValue; break;
-        case PLAYER_OQ16HORIZ:    ps.oq16horiz    = newValue; break;
-        case PLAYER_OQ16HORIZOFF: ps.oq16horizoff = newValue; break;
-        case PLAYER_Q16ANG:       ps.q16ang       = newValue; break;
-        case PLAYER_OQ16ANG:      ps.oq16ang      = newValue; break;
-        case PLAYER_Q16ANGVEL:    ps.q16angvel    = newValue; break;
-        case PLAYER_Q16HORIZOFF:  ps.q16horizoff  = newValue; break;
-
-        case PLAYER_ACCESS_INCS:        ps.access_incs        = newValue; break;
-        case PLAYER_ACCESS_SPRITENUM:   ps.access_spritenum   = newValue; break;
-        case PLAYER_ACCESS_WALLNUM:     ps.access_wallnum     = newValue; break;
-        case PLAYER_ACTORS_KILLED:      ps.actors_killed      = newValue; break;
-        case PLAYER_ACTORSQU:           ps.actorsqu           = newValue; break;
-        case PLAYER_AIM_MODE:           ps.aim_mode           = newValue; break;
-        case PLAYER_AIRLEFT:            ps.airleft            = newValue; break;
-        case PLAYER_AUTO_AIM:           ps.auto_aim           = newValue; break;
-        case PLAYER_AUTOSTEP:           ps.autostep           = newValue; break;
-        case PLAYER_AUTOSTEP_SBW:       ps.autostep_sbw       = newValue; break;
-        case PLAYER_BOBCOUNTER:         ps.bobcounter         = newValue; break;
-        case PLAYER_BOBPOSX:            ps.bobpos.x           = newValue; break;
-        case PLAYER_BOBPOSY:            ps.bobpos.y           = newValue; break;
-        case PLAYER_BUTTONPALETTE:      ps.buttonpalette      = newValue; break;
-        case PLAYER_CHEAT_PHASE:        ps.cheat_phase        = newValue; break;
-        case PLAYER_CLIPDIST:           ps.clipdist           = newValue; break;
-        case PLAYER_CRACK_TIME:         ps.crack_time         = newValue; break;
-        case PLAYER_CROUCH_TOGGLE:      ps.crouch_toggle      = newValue; break;
-        case PLAYER_CURR_WEAPON:        ps.curr_weapon        = newValue; break;
-        case PLAYER_CURSECTNUM:         ps.cursectnum         = newValue; break;
-        case PLAYER_CUSTOMEXITSOUND:    ps.customexitsound    = newValue; break;
-        case PLAYER_DEAD_FLAG:          ps.dead_flag          = newValue; break;
-        case PLAYER_DUMMYPLAYERSPRITE:  ps.dummyplayersprite  = newValue; break;
-        case PLAYER_EXTRA_EXTRA8:       ps.extra_extra8       = newValue; break;
-        case PLAYER_FALLING_COUNTER:    ps.falling_counter    = newValue; break;
-        case PLAYER_FIST_INCS:          ps.fist_incs          = newValue; break;
-        case PLAYER_FOOTPRINTCOUNT:     ps.footprintcount     = newValue; break;
-        case PLAYER_FOOTPRINTPAL:       ps.footprintpal       = newValue; break;
-        case PLAYER_FOOTPRINTSHADE:     ps.footprintshade     = newValue; break;
-        case PLAYER_FRAG:               ps.frag               = newValue; break;
-        case PLAYER_FRAG_PS:            ps.frag_ps            = newValue; break;
-        case PLAYER_FRAGGEDSELF:        ps.fraggedself        = newValue; break;
-        case PLAYER_FTA:                ps.fta                = newValue; break;
-        case PLAYER_FTQ:                ps.ftq                = newValue; break;
-        case PLAYER_GOT_ACCESS:         ps.got_access         = newValue; break;
-        case PLAYER_HARD_LANDING:       ps.hard_landing       = newValue; break;
-        case PLAYER_HBOMB_HOLD_DELAY:   ps.hbomb_hold_delay   = newValue; break;
-        case PLAYER_HBOMB_ON:           ps.hbomb_on           = newValue; break;
-        case PLAYER_HOLODUKE_ON:        ps.holoduke_on        = newValue; break;
-        case PLAYER_HOLSTER_WEAPON:     ps.holster_weapon     = newValue; break;
-        case PLAYER_HURT_DELAY:         ps.hurt_delay         = newValue; break;
-        case PLAYER_I:                  ps.i                  = newValue; break;
-        case PLAYER_INTERFACE_TOGGLE:   ps.interface_toggle   = newValue; break;
-        case PLAYER_INVDISPTIME:        ps.invdisptime        = newValue; break;
-        case PLAYER_INVEN_ICON:         ps.inven_icon         = newValue; break;
-        case PLAYER_JETPACK_ON:         ps.jetpack_on         = newValue; break;
-        case PLAYER_JUMPING_COUNTER:    ps.jumping_counter    = newValue; break;
-        case PLAYER_JUMPING_TOGGLE:     ps.jumping_toggle     = newValue; break;
-        case PLAYER_KICKBACK_PIC:       ps.kickback_pic       = newValue; break;
-        case PLAYER_KNEE_INCS:          ps.knee_incs          = newValue; break;
-        case PLAYER_KNUCKLE_INCS:       ps.knuckle_incs       = newValue; break;
-        case PLAYER_LAST_EXTRA:         ps.last_extra         = newValue; break;
-        case PLAYER_LAST_FULL_WEAPON:   ps.last_full_weapon   = newValue; break;
-        case PLAYER_LAST_PISSED_TIME:   ps.last_pissed_time   = newValue; break;
-        case PLAYER_LAST_QUICK_KICK:    ps.last_quick_kick    = newValue; break;
-        case PLAYER_LAST_USED_WEAPON:   ps.last_used_weapon   = newValue; break;
-        case PLAYER_LAST_WEAPON:        ps.last_weapon        = newValue; break;
-        case PLAYER_LOOGCNT:            ps.loogcnt            = newValue; break;
-        case PLAYER_LOOGIEX:            ps.loogiex[lParm2]    = newValue; break;
-        case PLAYER_LOOGIEY:            ps.loogiey[lParm2]    = newValue; break;
-        case PLAYER_LOOK_ANG:           ps.look_ang           = newValue; break;
-        case PLAYER_MAX_ACTORS_KILLED:  ps.max_actors_killed  = newValue; break;
-        case PLAYER_MAX_PLAYER_HEALTH:  ps.max_player_health  = newValue; break;
-        case PLAYER_MAX_SECRET_ROOMS:   ps.max_secret_rooms   = newValue; break;
-        case PLAYER_MAX_SHIELD_AMOUNT:  ps.max_shield_amount  = newValue; break;
-        case PLAYER_MOVEMENT_LOCK:      ps.movement_lock      = newValue; break;
-        case PLAYER_NEWOWNER:           ps.newowner           = newValue; break;
-        case PLAYER_NUMLOOGS:           ps.numloogs           = newValue; break;
-        case PLAYER_ON_CRANE:           ps.on_crane           = newValue; break;
-        case PLAYER_ON_GROUND:          ps.on_ground          = newValue; break;
-        case PLAYER_ON_WARPING_SECTOR:  ps.on_warping_sector  = newValue; break;
-        case PLAYER_ONE_EIGHTY_COUNT:   ps.one_eighty_count   = newValue; break;
-        case PLAYER_PARALLAX_SECTNUM:   ps.parallax_sectnum   = newValue; break;
-        case PLAYER_OPOSX:              ps.opos.x             = newValue; break;
-        case PLAYER_OPOSY:              ps.opos.y             = newValue; break;
-        case PLAYER_OPOSZ:              ps.opos.z             = newValue; break;
-        case PLAYER_OPYOFF:             ps.opyoff             = newValue; break;
-        case PLAYER_OVER_SHOULDER_ON:   ps.over_shoulder_on   = newValue; break;
-        case PLAYER_PALOOKUP:           ps.palookup           = newValue; break;
-        case PLAYER_PALS_TIME:          ps.pals.f             = newValue; break;
-        case PLAYER_PLAYER_PAR:         ps.player_par         = newValue; break;
-        case PLAYER_POSX:               ps.pos.x              = newValue; break;
-        case PLAYER_POSXV:              ps.vel.x              = newValue; break;
-        case PLAYER_POSY:               ps.pos.y              = newValue; break;
-        case PLAYER_POSYV:              ps.vel.y              = newValue; break;
-        case PLAYER_POSZ:               ps.pos.z              = newValue; break;
-        case PLAYER_POSZV:              ps.vel.z              = newValue; break;
-        case PLAYER_PYCOUNT:            ps.pycount            = newValue; break;
-        case PLAYER_PYOFF:              ps.pyoff              = newValue; break;
-        case PLAYER_QUICK_KICK:         ps.quick_kick         = newValue; break;
-        case PLAYER_RANDOM_CLUB_FRAME:  ps.random_club_frame  = newValue; break;
-        case PLAYER_RAPID_FIRE_HOLD:    ps.rapid_fire_hold    = newValue; break;
-        case PLAYER_RELOADING:          ps.reloading          = newValue; break;
-        case PLAYER_RETURN_TO_CENTER:   ps.return_to_center   = newValue; break;
-        case PLAYER_ROTSCRNANG:         ps.rotscrnang         = newValue; break;
-        case PLAYER_RUNSPEED:           ps.runspeed           = newValue; break;
-        case PLAYER_SBS:                ps.sbs                = newValue; break;
-        case PLAYER_SCREAM_VOICE:       ps.scream_voice       = newValue; break;
-        case PLAYER_SCUBA_ON:           ps.scuba_on           = newValue; break;
-        case PLAYER_SECRET_ROOMS:       ps.secret_rooms       = newValue; break;
-        case PLAYER_SHOW_EMPTY_WEAPON:  ps.show_empty_weapon  = newValue; break;
-        case PLAYER_SOMETHINGONPLAYER:  ps.somethingonplayer  = newValue; break;
-        case PLAYER_SOUND_PITCH:        ps.sound_pitch        = newValue; break;
-        case PLAYER_SPRITEBRIDGE:       ps.spritebridge       = newValue; break;
-        case PLAYER_SUBWEAPON:          ps.subweapon          = newValue; break;
-        case PLAYER_TEAM:               ps.team               = newValue; break;
-        case PLAYER_TIMEBEFOREEXIT:     ps.timebeforeexit     = newValue; break;
-        case PLAYER_TIPINCS:            ps.tipincs            = newValue; break;
-        case PLAYER_TOGGLE_KEY_FLAG:    ps.toggle_key_flag    = newValue; break;
-        case PLAYER_TRANSPORTER_HOLD:   ps.transporter_hold   = newValue; break;
-        case PLAYER_TRUECZ:             ps.truecz             = newValue; break;
-        case PLAYER_TRUEFZ:             ps.truefz             = newValue; break;
-        case PLAYER_VISIBILITY:         ps.visibility         = newValue; break;
-        case PLAYER_WACKEDBYACTOR:      ps.wackedbyactor      = newValue; break;
-        case PLAYER_WALKING_SND_TOGGLE: ps.walking_snd_toggle = newValue; break;
-        case PLAYER_WANTWEAPONFIRE:     ps.wantweaponfire     = newValue; break;
-        case PLAYER_WEAPON_ANG:         ps.weapon_ang         = newValue; break;
-        case PLAYER_WEAPON_POS:         ps.weapon_pos         = newValue; break;
-        case PLAYER_WEAPON_SWAY:        ps.weapon_sway        = newValue; break;
-        case PLAYER_WEAPONSWITCH:       ps.weaponswitch       = newValue; break;
-        case PLAYER_WEAPRECCNT:         ps.weapreccnt         = newValue; break;
-        case PLAYER_WEAPRECS:           ps.weaprecs[lParm2]   = newValue; break;
-        case PLAYER_ZOOM:               ps.zoom               = newValue; break;
-
-        case PLAYER_BOOT_AMOUNT:     ps.inv_amount[GET_BOOTS]    = newValue; break;
-        case PLAYER_FIRSTAID_AMOUNT: ps.inv_amount[GET_FIRSTAID] = newValue; break;
-        case PLAYER_HEAT_AMOUNT:     ps.inv_amount[GET_HEATS]    = newValue; break;
-        case PLAYER_HOLODUKE_AMOUNT: ps.inv_amount[GET_HOLODUKE] = newValue; break;
-        case PLAYER_JETPACK_AMOUNT:  ps.inv_amount[GET_JETPACK]  = newValue; break;
-        case PLAYER_SCUBA_AMOUNT:    ps.inv_amount[GET_SCUBA]    = newValue; break;
-        case PLAYER_SHIELD_AMOUNT:   ps.inv_amount[GET_SHIELD]   = newValue; break;
-        case PLAYER_STEROIDS_AMOUNT: ps.inv_amount[GET_STEROIDS] = newValue; break;
 
         case PLAYER_AMMO_AMOUNT:     ps.ammo_amount[lParm2]     = newValue; break;
         case PLAYER_MAX_AMMO_AMOUNT: ps.max_ammo_amount[lParm2] = newValue; break;
@@ -880,18 +625,14 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
             break;
 
         case PLAYER_GM:
-            if (!(ps.gm & MODE_MENU) && (newValue & MODE_MENU))
-                Menu_Open(playerNum);
-            else if ((ps.gm & MODE_MENU) && !(newValue & MODE_MENU))
-                Menu_Close(playerNum);
+            if (!(ps.gm & MODE_MENU) && (newValue & MODE_MENU)) Menu_Open(playerNum);
+            else if ((ps.gm & MODE_MENU) && !(newValue & MODE_MENU)) Menu_Close(playerNum);
             ps.gm = newValue;
             break;
 
         case PLAYER_GOTWEAPON:
-            if (newValue)
-                ps.gotweapon |= (1 << lParm2);
-            else
-                ps.gotweapon &= ~(1 << lParm2);
+            if (newValue) ps.gotweapon |= (1 << lParm2);
+            else ps.gotweapon &= ~(1 << lParm2);
             break;
 
         case PLAYER_PALETTE: P_SetGamePalette(&ps, newValue, 2 + 16); break;
@@ -906,20 +647,23 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
             break;
 
         case PLAYER_FRAGS:
-            if (playerNum == lParm2)
-                ps.fraggedself = newValue;
-            else
-                g_player[playerNum].frags[lParm2] = newValue;
+            if (playerNum == lParm2) ps.fraggedself = newValue;
+            else g_player[playerNum].frags[lParm2] = newValue;
             break;
 
         case PLAYER_DEATHS: g_player[playerNum].frags[playerNum] = newValue; break;
 
         case PLAYER_BSUBWEAPON:
-            if (newValue)
-                ps.subweapon |= (1 << lParm2);
-            else
-                ps.subweapon &= ~(1 << lParm2);
+            if (newValue) ps.subweapon |= (1 << lParm2);
+            else ps.subweapon &= ~(1 << lParm2);
             break;
+
+        case PLAYER_LOOGIEX: ps.loogiex[lParm2] = newValue; break;
+        case PLAYER_LOOGIEY: ps.loogiey[lParm2] = newValue; break;
+
+        case PLAYER_WEAPRECS: ps.weaprecs[lParm2] = newValue; break;
+
+        default: EDUKE32_UNREACHABLE_SECTION(break);
     }
 }
 
@@ -1764,17 +1508,17 @@ int32_t __fastcall VM_GetPlayerInput(int const playerNum, int32_t labelNum)
     switch (labelNum)
     {
         case INPUT_AVEL:
-            labelNum = (i->q16avel >> 16); break;
+            labelNum = (i.q16avel >> 16); break;
 
         case INPUT_HORZ:
-            labelNum = (i->q16horz >> 16); break;
+            labelNum = (i.q16horz >> 16); break;
 
-        case INPUT_Q16AVEL: labelNum = i->q16avel; break;
-        case INPUT_Q16HORZ: labelNum = i->q16horz; break;
-        case INPUT_FVEL:    labelNum = i->fvel;    break;
-        case INPUT_SVEL:    labelNum = i->svel;    break;
-        case INPUT_BITS:    labelNum = i->bits;    break;
-        case INPUT_EXTBITS: labelNum = i->extbits; break;
+        case INPUT_Q16AVEL: labelNum = i.q16avel; break;
+        case INPUT_Q16HORZ: labelNum = i.q16horz; break;
+        case INPUT_FVEL:    labelNum = i.fvel;    break;
+        case INPUT_SVEL:    labelNum = i.svel;    break;
+        case INPUT_BITS:    labelNum = i.bits;    break;
+        case INPUT_EXTBITS: labelNum = i.extbits; break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -1795,17 +1539,17 @@ void __fastcall VM_SetPlayerInput(int const playerNum, int const labelNum, int32
     switch (labelNum)
     {
         case INPUT_AVEL:
-            i->q16avel = fix16_from_int(newValue); break;
+            i.q16avel = fix16_from_int(newValue); break;
 
         case INPUT_HORZ:
-            i->q16horz = fix16_from_int(newValue); break;
+            i.q16horz = fix16_from_int(newValue); break;
 
-        case INPUT_Q16AVEL: i->q16avel = newValue; break;
-        case INPUT_Q16HORZ: i->q16horz = newValue; break;
-        case INPUT_FVEL:    i->fvel    = newValue; break;
-        case INPUT_SVEL:    i->svel    = newValue; break;
-        case INPUT_BITS:    i->bits    = newValue; break;
-        case INPUT_EXTBITS: i->extbits = newValue; break;
+        case INPUT_Q16AVEL: i.q16avel = newValue; break;
+        case INPUT_Q16HORZ: i.q16horz = newValue; break;
+        case INPUT_FVEL:    i.fvel    = newValue; break;
+        case INPUT_SVEL:    i.svel    = newValue; break;
+        case INPUT_BITS:    i.bits    = newValue; break;
+        case INPUT_EXTBITS: i.extbits = newValue; break;
     }
 }
 
@@ -1904,8 +1648,8 @@ int32_t __fastcall VM_GetPalData(int const palNum, int32_t labelNum)
 
     return labelNum;
 }
-#undef LABEL_SETUP
-#undef LABEL_SETUP_UNMATCHED
+#undef MEMBER
+#undef LABEL
 
 hashtable_t h_actor      = { ACTOR_END>>1, NULL };
 hashtable_t h_input      = { INPUT_END>>1, NULL };

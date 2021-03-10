@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -23,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx_man.h"
 #include "sound.h"
 #include "exhumed.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -45,25 +51,31 @@ void setCDaudiovolume(int val)
 
 bool playCDtrack(int nTrack, bool bLoop)
 {
+//  if (!MusicToggle)
+//      return true;
+
+    static const char *tracknameformats[] = { "Track%02d", "exhumed%02d", "track%02d" };
+
     if (nTrack < 2) {
         return false;
     }
 
     StopCD();
 
-    char filename[128];
+    char filename[BMAX_PATH];
+    int32_t hFile = -1;
 
-    // prefer flac if available
-    sprintf(filename, "exhumed%02d.flac", nTrack);
-    int32_t hFile = kopen4loadfrommod(filename, 0);
-    if (hFile < 0)
+    for (auto fmt : tracknameformats)
     {
-        // try ogg vorbis now
-        sprintf(filename, "exhumed%02d.ogg", nTrack);
-        hFile = kopen4loadfrommod(filename, 0);
-        if (hFile < 0) {
-            return false;
-        }
+        Bsnprintf(filename, sizeof(filename), fmt, nTrack);
+        hFile = S_OpenAudio(filename, 0, 1);
+        if (hFile >= 0)
+            break;
+    }
+  
+    if (hFile < 0) {
+        OSD_Printf("Error opening music track %02d", nTrack);
+        return false;
     }
 
     int32_t nFileLen = kfilelength(hFile);
@@ -88,7 +100,7 @@ bool playCDtrack(int nTrack, bool bLoop)
 
     kclose(hFile);
 
-    trackhandle = FX_Play(pTrack, nRead, bLoop ? 0 : -1, 0, 0, gMusicVolume, gMusicVolume, gMusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
+    trackhandle = FX_Play(pTrack, nRead, bLoop ? 0 : -1, 0, 0, MusicVolume, MusicVolume, MusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
     if (trackhandle <= FX_Ok)
     {
         OSD_Printf("Error playing music track %s", filename);
@@ -106,7 +118,7 @@ bool playCDtrack(int nTrack, bool bLoop)
 void StartfadeCDaudio()
 {
     if (CDplaying()) {
-        nLastVolumeSet = gMusicVolume;
+        nLastVolumeSet = MusicVolume;
     }
 }
 

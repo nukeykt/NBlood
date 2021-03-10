@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -87,7 +92,7 @@ void FillWeapons(short nPlayer)
 
     for (int i = 0; i < kMaxWeapons; i++)
     {
-        if (WeaponInfo[i].d) {
+        if (WeaponInfo[i].bUsesAmmo) {
             PlayerList[nPlayer].nAmmo[i] = 99;
         }
     }
@@ -194,24 +199,86 @@ void SetNewWeaponIfBetter(short nPlayer, short nWeapon)
     }
 }
 
+void SelectNextWeapon()
+{
+    if (PlayerList[nLocalPlayer].bIsFiring)
+        return;
+
+    int nCurrentWeapon = PlayerList[nLocalPlayer].nCurrentWeapon;
+    if (nCurrentWeapon == kWeaponMummified)
+        return; // can't change weapon when mummified
+
+    int nStartWeapon = nCurrentWeapon++;
+    int nBits = nPlayerWeapons[nLocalPlayer];
+
+    while (nCurrentWeapon != nStartWeapon)
+    {
+        if (((nBits >> nCurrentWeapon) & 1) && nCurrentWeapon != kWeaponMummified)
+        {
+            int nAmmoType = WeaponInfo[nCurrentWeapon].nAmmoType;
+            if (!WeaponInfo[nCurrentWeapon].bUsesAmmo || PlayerList[nLocalPlayer].nAmmo[nAmmoType])
+            {
+                StopFiringWeapon(nLocalPlayer);
+                SetNewWeapon(nLocalPlayer, nCurrentWeapon);
+                return;
+            }
+        }
+
+        nCurrentWeapon++;
+        if (nCurrentWeapon >= kWeaponMummified)
+            nCurrentWeapon = 0;
+    }
+}
+
+void SelectPreviousWeapon()
+{
+    if (PlayerList[nLocalPlayer].bIsFiring)
+        return;
+
+    int nCurrentWeapon = PlayerList[nLocalPlayer].nCurrentWeapon;
+    if (nCurrentWeapon == kWeaponMummified)
+        return; // can't change weapon when mummified
+
+    int nStartWeapon = nCurrentWeapon--;
+    int nBits = nPlayerWeapons[nLocalPlayer];
+
+    while (nCurrentWeapon != nStartWeapon)
+    {
+        if (((nBits >> nCurrentWeapon) & 1) && nCurrentWeapon != kWeaponMummified)
+        {
+            int nAmmoType = WeaponInfo[nCurrentWeapon].nAmmoType;
+            if (!WeaponInfo[nCurrentWeapon].bUsesAmmo || PlayerList[nLocalPlayer].nAmmo[nAmmoType])
+            {
+                StopFiringWeapon(nLocalPlayer);
+                SetNewWeapon(nLocalPlayer, nCurrentWeapon);
+                return;
+            }
+        }
+
+        nCurrentWeapon--;
+        if (nCurrentWeapon < 0)
+            nCurrentWeapon = kWeaponMummified - 1;
+    }
+}
+
 void SelectNewWeapon(short nPlayer)
 {
     int nWeapon = kWeaponRing; // start at the highest weapon number
 
-    uint16_t di = nPlayerWeapons[nPlayer];
-    uint16_t dx = 0x40; // bit 7 turned on
+    uint16_t nAvailableWeaponBits = nPlayerWeapons[nPlayer];
+    uint16_t nBitToCheck = 0x40; // bit 7 turned on
 
-    while (dx)
+    while (nBitToCheck)
     {
-        if (di & dx)
+        if (nAvailableWeaponBits & nBitToCheck)
         {
             // we have this weapon
-            if (!WeaponInfo[nWeapon].d || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
+            if (!WeaponInfo[nWeapon].bUsesAmmo || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
                 break;
         }
 
         nWeapon--;
-        dx >>= 1;
+        nBitToCheck >>= 1;
     }
 
     if (nWeapon < 0)
@@ -262,7 +329,7 @@ uint8_t WeaponCanFire(short nPlayer)
     {
         short nAmmoType = WeaponInfo[nWeapon].nAmmoType;
 
-        if (WeaponInfo[nWeapon].d <= PlayerList[nPlayer].nAmmo[nAmmoType]) {
+        if (WeaponInfo[nWeapon].bUsesAmmo <= PlayerList[nPlayer].nAmmo[nAmmoType]) {
             return kTrue;
         }
     }
@@ -535,7 +602,7 @@ void MoveWeapons(short nPlayer)
                         }
                         else if (nWeapon == kWeaponRing)
                         {
-                            if (!WeaponInfo[nWeapon].d || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
+                            if (!WeaponInfo[nWeapon].bUsesAmmo || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
                             {
                                 if (!PlayerList[nPlayer].bIsFiring) {
                                     PlayerList[nPlayer].field_3A = 1;
@@ -560,7 +627,7 @@ void MoveWeapons(short nPlayer)
                         }
                         else if (nWeapon == kWeaponGrenade)
                         {
-                            if (!WeaponInfo[nWeapon].d || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
+                            if (!WeaponInfo[nWeapon].bUsesAmmo || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
                             {
                                 PlayerList[nPlayer].field_3A = 0;
                                 break;
@@ -881,26 +948,24 @@ loc_flag:
                 }
             }
 
-            // end of switch, loc_2753E:
+            // end of switch, nw_break_2:
             if (nWeapon < kWeaponMummified)
             {
                 if (nWeapon != kWeaponGrenade)
-                {
-                    short nAmmo = -WeaponInfo[nWeapon].d; // negative
-
-                    if (nAmmo) {
-                        AddAmmo(nPlayer, nAmmoType, nAmmo);
+                {   
+                    if (WeaponInfo[nWeapon].bUsesAmmo) {
+                        AddAmmo(nPlayer, nAmmoType, -1);
                     }
 
                     if (nWeapon == kWeaponM60) {
-                        nPlayerClip[nPlayer] -= WeaponInfo[nWeapon].d;
+                        nPlayerClip[nPlayer]--;
                     }
                     else if (nWeapon == kWeaponPistol) {
                         nPistolClip[nPlayer]--;
                     }
                 }
 
-                if (!WeaponInfo[nWeapon].d || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
+                if (!WeaponInfo[nWeapon].bUsesAmmo || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
                 {
                     if (nWeapon == kWeaponM60 && nPlayerClip[nPlayer] <= 0)
                     {

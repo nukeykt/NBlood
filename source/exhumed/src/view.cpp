@@ -2,14 +2,19 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 sirlemonhead, Nuke.YKT
+
 This file is part of PCExhumed.
+
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -81,6 +86,10 @@ int32_t oldipos[MAXINTERPOLATIONS];
 int32_t* curipos[MAXINTERPOLATIONS];
 int32_t bakipos[MAXINTERPOLATIONS];
 
+int32_t nCameraDist = 0;
+int32_t nCameraClock = 0;
+
+
 int viewSetInterpolation(int32_t *const posptr)
 {
     if (g_interpolationCnt >= MAXINTERPOLATIONS)
@@ -137,7 +146,6 @@ void viewRestoreInterpolations(void)  //Stick at end of drawscreen
 
 void InitView()
 {
-    screensize = 0;
 #ifdef USE_OPENGL
     polymostcenterhoriz = 92;
 #endif
@@ -183,6 +191,14 @@ static void analyzesprites()
         }
 
         pTSprite->pal = RemapPLU(pTSprite->pal);
+
+        // PowerSlaveGDX: Torch bouncing fix
+        if ((pTSprite->picnum == kTile338 || pTSprite->picnum == kTile350) && (pTSprite->cstat & 0x80) == 0)
+        {
+            pTSprite->cstat |= 0x80;
+            int nTileY = (tilesiz[pTSprite->picnum].y * pTSprite->yrepeat) * 2;
+            pTSprite->z -= nTileY;
+        }
 
         if (pSprite->statnum > 0)
         {
@@ -365,6 +381,73 @@ static inline fix16_t q16angle_interpolate16(fix16_t a, fix16_t b, int smooth)
     return a + mulscale16(((b+F16(1024)-a)&0x7FFFFFF)-F16(1024), smooth);
 }
 
+void viewDo3rdPerson(int nSprite, vec3_t* v, short* nSector, short nAngle, int horiz)
+{
+    spritetype* sp;
+    int i, nx, ny, nz, hx, hy /*, hz*/;
+    short bakcstat, daang;
+    hitdata_t hitinfo;
+
+    nx = Cos(nAngle + 1024) >> 4;
+    ny = Sin(nAngle + 1024) >> 4;
+    nz = (horiz - 100) * 128;
+
+    sp = &sprite[nSprite];
+
+    bakcstat = sp->cstat;
+    sp->cstat &= (short)~0x101;
+
+    updatesectorz(v->x, v->y, v->z, nSector);
+    hitscan(v, *nSector, nx, ny, nz, &hitinfo, CLIPMASK1);
+
+    hx = hitinfo.pos.x - v->x; 
+    hy = hitinfo.pos.y - v->y;
+
+    if (klabs(nx) + klabs(ny) > klabs(hx) + klabs(hy))
+    {
+        *nSector = hitinfo.sect;
+        if (hitinfo.wall >= 0)
+        {
+            daang = getangle(wall[wall[hitinfo.wall].point2].x - wall[hitinfo.wall].x,
+                wall[wall[hitinfo.wall].point2].y - wall[hitinfo.wall].y);
+
+            i = nx * sintable[daang] + ny * sintable[(daang + 1536) & 2047];
+            if (klabs(nx) > klabs(ny)) {
+                hx -= mulscale28(nx, i);
+            }
+            else {
+                hy -= mulscale28(ny, i);
+            }
+        }
+        else if (hitinfo.sprite < 0)
+        {
+            if (klabs(nx) > klabs(ny)) {
+                hx -= (nx >> 5);
+            }
+            else {
+                hy -= (ny >> 5);
+            }
+        }
+        if (klabs(nx) > klabs(ny)) {
+            i = divscale16(hx, nx);
+        }
+        else {
+            i = divscale16(hy, ny);
+        }
+        if (i < nCameraDist) {
+            nCameraDist = i;
+        }
+    }
+
+    v->x = v->x + mulscale16(nx, nCameraDist);
+    v->y = v->y + mulscale16(ny, nCameraDist);
+    v->z = v->z + mulscale16(nz, nCameraDist);
+
+    updatesectorz(v->x, v->y, v->z, nSector);
+
+    sp->cstat = bakcstat;
+}
+
 void DrawView(int smoothRatio)
 {
     int playerX;
@@ -447,6 +530,11 @@ void DrawView(int smoothRatio)
             sprite[nPlayerSprite].cstat |= CSTAT_SPRITE_INVISIBLE;
             sprite[nDoppleSprite[nLocalPlayer]].cstat |= CSTAT_SPRITE_INVISIBLE;
         }
+        else
+        {
+            sprite[nPlayerSprite].cstat |= CSTAT_SPRITE_TRANSLUCENT;
+            sprite[nDoppleSprite[nLocalPlayer]].cstat |= CSTAT_SPRITE_INVISIBLE;
+        }
     }
 
     nCameraa = nAngle;
@@ -475,13 +563,28 @@ void DrawView(int smoothRatio)
     }
     else
     {
-        clipmove_old((int32_t*)&playerX, (int32_t*)&playerY, (int32_t*)&playerZ, &nSector,
-            -2000 * Sin(inita + 512),
-            -2000 * Sin(inita),
-            4, 0, 0, CLIPMASK1);
+        // code from above
+        viewz = playerZ + nQuake[nLocalPlayer];
+        int floorZ = sector[sprite[nPlayerSprite].sectnum].floorz;
 
-        pan = F16(92);
-        viewz = playerZ;
+        pan = interpolate16(PlayerList[nLocalPlayer].q16ohoriz, PlayerList[nLocalPlayer].q16horiz, smoothRatio);
+
+        if (viewz > floorZ)
+            viewz = floorZ;
+
+        nCameraa += fix16_from_int((nQuake[nLocalPlayer] >> 7) % 31);
+        nCameraa &= 0x7FFFFFF;
+
+        vec3_t cpos;
+        cpos.x = playerX;
+        cpos.y = playerY;
+        cpos.z = playerZ;
+
+        viewDo3rdPerson(PlayerList[nLocalPlayer].nSprite, &cpos, &nSector, inita, fix16_to_int(pan));
+
+        playerX = cpos.x;
+        playerY = cpos.y;
+        playerZ = cpos.z;
     }
 
     nCamerax = playerX;

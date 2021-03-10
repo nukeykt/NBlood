@@ -77,6 +77,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define SK_WEAPON_BITS1 9
 #define SK_WEAPON_BITS2 10
 #define SK_WEAPON_BITS3 11
+#define SK_WEAPON_MASK ((1 << SK_WEAPON_BITS) | (1 << SK_WEAPON_BITS1) | (1 << SK_WEAPON_BITS2) | (1 << SK_WEAPON_BITS3))
 #define SK_STEROIDS     12
 #define SK_LOOK_UP      13
 #define SK_LOOK_DOWN    14

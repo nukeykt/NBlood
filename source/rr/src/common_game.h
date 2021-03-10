@@ -67,25 +67,13 @@ enum Games_t {
     GAMECOUNT
 };
 
-enum instpath_t {
-    INSTPATH_STEAM_DUKE3D_MEGATON,
-    INSTPATH_STEAM_DUKE3D_3DR,
-    INSTPATH_GOG_DUKE3D,
-    INSTPATH_3DR_DUKE3D,
-    INSTPATH_3DR_ANTH,
-    INSTPATH_STEAM_NAM,
-    INSTPATH_STEAM_WW2GI,
-    INSTPATH_GOG_RR,
-    INSTPATH_GOG_RRRA,
-    NUMINSTPATHS
-};
-
 enum searchpathtypes_t {
     SEARCHPATH_REMOVE = 1<<0,
     SEARCHPATH_NAM    = 1<<1,
     SEARCHPATH_WW2GI  = 1<<2,
     SEARCHPATH_RR     = 1<<3,
     SEARCHPATH_RRRA   = 1<<4,
+    SEARCHPATH_DEER   = 1<<5,
 };
 
 typedef enum basepal_ {

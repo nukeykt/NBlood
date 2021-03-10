@@ -29,9 +29,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ///////////////////////////////////////////////////////////////////
 
 
-#include "nnexts.h"
 #ifdef NOONE_EXTENSIONS
 #include <random>
+#include "nnexts.h"
 #include "aiunicult.h"
 #include "triggers.h"
 #include "sectorfx.h"
@@ -1745,7 +1745,6 @@ void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer) {
             for (int i = 0; i < kMaxPowerUps; i++) pPlayer->pwUpTime[i] = 0;
             break;
     }
-
 }
 
 void trPlayerCtrlGiveStuff(XSPRITE* pXSource, PLAYER* pPlayer, TRPLAYERCTRL* pCtrl) {

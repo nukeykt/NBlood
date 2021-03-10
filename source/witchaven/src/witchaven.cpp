@@ -129,7 +129,7 @@ int32_t goreon = 1;
 
 int32_t totsynctics, frames;
 
-extern int followmode;
+extern bool followmode;
 extern int loadedgame;
 extern char tempbuf[50];
 extern int musiclevel;
@@ -1572,6 +1572,7 @@ int app_main(int argc, char const* const* argv)
 
     SetupInput();
 
+/*
     char* const setupFileName = Xstrdup(setupfilename);
     char* const p = strtok(setupFileName, ".");
 
@@ -1581,9 +1582,9 @@ int app_main(int argc, char const* const* argv)
         Bsprintf(tempbuf, "%s_settings.cfg", p);
 
     Xfree(setupFileName);
-
-    OSD_Exec(tempbuf);
-    OSD_Exec("autoexec.cfg");
+*/
+    OSD_Exec("ewitchaven_cvars.cfg");
+    OSD_Exec("ewitchaven_autoexec.cfg");
 
     CONFIG_SetDefaultKeys(keydefaults, true);
 
@@ -1883,9 +1884,9 @@ void playloop()
             } while (0);
         }
 
-        keytimerstuff();
+		keytimerstuff();
 
-        handleevents();
+		handleevents();
 
         drawscreen(plr);
 
