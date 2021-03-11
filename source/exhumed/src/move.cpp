@@ -863,7 +863,7 @@ void CreatePushBlock(int nSector)
         }
     }
 
-    sBlockInfo[nBlock].field_8 = var_28;
+    sBlockInfo[nBlock].walldist = var_28;
 
     sprite[nSprite].clipdist = (var_28 & 0xFF) << 2;
     sector[nSector].extra = nBlock;
@@ -932,7 +932,7 @@ void MoveSector(short nSector, int nAngle, int *nXVel, int *nYVel)
         sector[nSector].floorz = sector[nNextSector].floorz;
     }
 
-    clipmove_old((int32_t*)&x, (int32_t*)&y, (int32_t*)&z, &nSectorB, nXVect, nYVect, pBlockInfo->field_8, 0, 0, CLIPMASK1);
+    clipmove_old((int32_t*)&x, (int32_t*)&y, (int32_t*)&z, &nSectorB, nXVect, nYVect, pBlockInfo->walldist, 0, 0, CLIPMASK1);
 
     int yvect = y - y_b;
     int xvect = x - x_b;
@@ -950,7 +950,7 @@ void MoveSector(short nSector, int nAngle, int *nXVel, int *nYVel)
             x = x_b;
             y = y_b;
 
-            clipmove_old((int32_t*)&x, (int32_t*)&y, (int32_t*)&z, &nSectorB, nXVect, nYVect, pBlockInfo->field_8, 0, 0, CLIPMASK1);
+            clipmove_old((int32_t*)&x, (int32_t*)&y, (int32_t*)&z, &nSectorB, nXVect, nYVect, pBlockInfo->walldist, 0, 0, CLIPMASK1);
 
             int ebx = x;
             int ecx = x_b;

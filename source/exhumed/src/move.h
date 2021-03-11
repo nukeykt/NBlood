@@ -29,7 +29,7 @@ struct BlockInfo
 {
     int x;
     int y;
-    int field_8;
+    int walldist;
     short nSprite;
 };
 extern BlockInfo sBlockInfo[];
