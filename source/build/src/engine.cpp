@@ -13,11 +13,13 @@
 #include "build.h"
 #include "cache1d.h"
 #include "colmatch.h"
+#include "common.h"
 #include "communityapi.h"
 #include "compat.h"
 #include "crc32.h"
 #include "editor.h"
 #include "engine_priv.h"
+#include "kplib.h"
 #include "lz4.h"
 #include "microprofile.h"
 #include "osd.h"
@@ -26,7 +28,6 @@
 #include "scriptfile.h"
 #include "softsurface.h"
 #include "vfs.h"
-#include "kplib.h"
 
 #ifdef USE_OPENGL
 # include "glad/glad.h"
