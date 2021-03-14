@@ -1808,11 +1808,14 @@ static int P_DisplayFist(int const fistShade)
         case -1: return 0;
     }
 
-    int const fistY       = klabs(pPlayer->look_ang) / 9;
+    int const baseX       = fix16_to_int(g_player[screenpeek].input.q16avel) >> 5;
+    int const baseY       = klabs(pPlayer->look_ang) / 9;
+    int const fistX       = 222 + baseX - fistInc;
+    int const fistY       = 194 + baseY + (sintable[((6 + fistInc) << 7) & 2047] >> 9);
     int const fistZoom    = clamp(65536 - (sintable[(512 + (fistInc << 6)) & 2047] << 2), 40920, 90612);
-    int const fistYOffset = 194 + (sintable[((6 + fistInc) << 7) & 2047] >> 9);
     int const fistPal     = P_GetHudPal(pPlayer);
     int       wx[2]       = { windowxy1.x, windowxy2.x };
+    int const wy[2]       = { windowxy1.y, windowxy2.y };
 
 #ifdef SPLITSCREEN_MOD_HACKS
     // XXX: this is outdated, doesn't handle above/below split.
@@ -1820,8 +1823,7 @@ static int P_DisplayFist(int const fistShade)
         wx[(g_snum==0)] = (wx[0]+wx[1])/2+1;
 #endif
 
-    rotatesprite((-fistInc + 222 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5)) << 16, (fistY + fistYOffset) << 16,
-                 fistZoom, 0, FIST, fistShade, fistPal, 2, wx[0], windowxy1.y, wx[1], windowxy2.y);
+    rotatesprite(fistX << 16, fistY << 16, fistZoom, 0, FIST, fistShade, fistPal, 2, wx[0],wy[0], wx[1],wy[1]);
 
     return 1;
 }
@@ -1950,6 +1952,15 @@ static inline void G_DrawWeaponTileUnfadedWithID(int uniqueID, int weaponX, int 
     guniqhudid       = lastUniqueID;
 }
 
+static vec2_t P_GetDisplayBaseXY(DukePlayer_t const * const pPlayer)
+{
+    return vec2_t
+    {
+        (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pPlayer->look_ang >> 1),
+        (klabs(pPlayer->look_ang) / 9) - (pPlayer->hard_landing << 3) - (fix16_to_int(pPlayer->q16horiz - pPlayer->q16horizoff) >> 4),
+    };
+}
+
 static int P_DisplayKnee(int kneeShade)
 {
     static int8_t const       knee_y[] = { 0, -8, -16, -32, -64, -84, -108, -108, -108, -72, -32, -8 };
@@ -1967,11 +1978,12 @@ static int P_DisplayKnee(int kneeShade)
     if (ps->knee_incs >= ARRAY_SIZE(knee_y) || sprite[ps->i].extra <= 0)
         return 0;
 
-    int const kneeY   = knee_y[ps->knee_incs] + (klabs(ps->look_ang) / 9) - (ps->hard_landing << 3);
+    auto const base   = P_GetDisplayBaseXY(ps);
+    int const kneeX   = 105 + base.x + (knee_y[ps->knee_incs] >> 2);
+    int const kneeY   = 280 + base.y + knee_y[ps->knee_incs];
     int const kneePal = P_GetKneePal(ps);
 
-    G_DrawTileScaled(105+(fix16_to_int(g_player[screenpeek].input.q16avel)>>5)-(ps->look_ang>>1)+(knee_y[ps->knee_incs]>>2),
-                     kneeY+280-(fix16_to_int(ps->q16horiz-ps->q16horizoff)>>4),KNEE,kneeShade,4+DRAWEAP_CENTER,kneePal);
+    G_DrawTileScaled(kneeX, kneeY, KNEE, kneeShade, 4 | DRAWEAP_CENTER, kneePal);
 
     return 1;
 }
@@ -1997,13 +2009,13 @@ static int P_DisplayKnuckles(int knuckleShade)
     if ((unsigned) (pPlayer->knuckle_incs>>1) >= ARRAY_SIZE(knuckleFrames) || sprite[pPlayer->i].extra <= 0)
         return 0;
 
-    int const knuckleY   = (klabs(pPlayer->look_ang) / 9) - (pPlayer->hard_landing << 3);
-    int const knucklePal = P_GetHudPal(pPlayer);
+    auto const base       = P_GetDisplayBaseXY(pPlayer);
+    int const knuckleX    = 160 + base.x;
+    int const knuckleY    = 180 + base.y;
+    int const knuckleTile = CRACKKNUCKLES + knuckleFrames[pPlayer->knuckle_incs >> 1];
+    int const knucklePal  = P_GetHudPal(pPlayer);
 
-    G_DrawTileScaled(160 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pPlayer->look_ang >> 1),
-                     knuckleY + 180 - (fix16_to_int(pPlayer->q16horiz - pPlayer->q16horizoff) >> 4),
-                     CRACKKNUCKLES + knuckleFrames[pPlayer->knuckle_incs >> 1], knuckleShade, 4 + DRAWEAP_CENTER,
-                     knucklePal);
+    G_DrawTileScaled(knuckleX, knuckleY, knuckleTile, knuckleShade, 4 | DRAWEAP_CENTER, knucklePal);
 
     return 1;
 }
@@ -2163,15 +2175,15 @@ static int P_DisplayTip(int tipShade)
     if ((unsigned)pPlayer->tipincs >= ARRAY_SIZE(access_tip_y))
         return 1;
 
-    int const tipY       = (klabs(pPlayer->look_ang) / 9) - (pPlayer->hard_landing << 3);
-    int const tipPal     = P_GetHudPal(pPlayer);
-    int const tipYOffset = access_tip_y[pPlayer->tipincs] >> 1;
+    auto const base     = P_GetDisplayBaseXY(pPlayer);
+    int const tipX      = 170 + base.x;
+    int const tipY      = 240 + base.y + (access_tip_y[pPlayer->tipincs] >> 1);
+    int const tipTile   = TIP + ((26 - pPlayer->tipincs) >> 4);
+    int const tipPal    = P_GetHudPal(pPlayer);
 
     guniqhudid = 201;
 
-    G_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pPlayer->look_ang >> 1),
-                     tipYOffset + tipY + 240 - (fix16_to_int(pPlayer->q16horiz - pPlayer->q16horizoff) >> 4),
-                     TIP + ((26 - pPlayer->tipincs) >> 4), tipShade, DRAWEAP_CENTER, tipPal);
+    G_DrawTileScaled(tipX, tipY, tipTile, tipShade, DRAWEAP_CENTER, tipPal);
 
     guniqhudid = 0;
 
@@ -2194,24 +2206,18 @@ static int P_DisplayAccess(int accessShade)
     if ((unsigned)pSprite->access_incs >= ARRAY_SIZE(access_tip_y)-4 || sprite[pSprite->i].extra <= 0)
         return 1;
 
-    int const accessX   = access_tip_y[pSprite->access_incs] >> 2;
-    int const accessY   = access_tip_y[pSprite->access_incs] + (klabs(pSprite->look_ang) / 9) - (pSprite->hard_landing << 3);
+    auto const base     = P_GetDisplayBaseXY(pSprite);
+    int const accessX   = 170 + base.x + (access_tip_y[pSprite->access_incs] >> 2);
+    int const accessY   = 266 + base.y + access_tip_y[pSprite->access_incs];
     int const accessPal = (pSprite->access_spritenum >= 0) ? sprite[pSprite->access_spritenum].pal : 0;
+
+    auto const accessMode = pSprite->access_incs > 3 && (pSprite->access_incs - 3) >> 3;
+    int  const accessTile = accessMode ? HANDHOLDINGLASER + (pSprite->access_incs >> 3) : HANDHOLDINGACCESS;
+    int  const accessBits = accessMode ? DRAWEAP_CENTER : (4 | DRAWEAP_CENTER);
 
     guniqhudid = 200;
 
-    if ((pSprite->access_incs - 3) > 0 && (pSprite->access_incs - 3) >> 3)
-    {
-        G_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
-                         accessY + 266 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4),
-                         HANDHOLDINGLASER + (pSprite->access_incs >> 3), accessShade, DRAWEAP_CENTER, accessPal);
-    }
-    else
-    {
-        G_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].input.q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
-                         accessY + 266 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4), HANDHOLDINGACCESS, accessShade,
-                         4 + DRAWEAP_CENTER, accessPal);
-    }
+    G_DrawTileScaled(accessX, accessY, accessTile, accessShade, accessBits, accessPal);
 
     guniqhudid = 0;
 
@@ -2866,9 +2872,9 @@ void P_DisplayWeapon(void)
                 break;
 
             case FLAMETHROWER_WEAPON:
-                if ((*weaponFrame) < (PWEAPON(screenpeek, pPlayer->curr_weapon, TotalTime) + 1) && (*weaponFrame) >= 1 && sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
+                if ((*weaponFrame) < (PWEAPON(screenpeek, pPlayer->curr_weapon, TotalTime) + 1) && (*weaponFrame) > 0 && sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
                 {
-                    static uint8_t freezerFrames[] = { 0, 0, 1, 1, 2, 2 };
+                    static uint8_t incineratorFrames[] = { 0, 0, 1, 1, 2, 2 };
 
                     if (doAnim)
                     {
@@ -2879,13 +2885,13 @@ void P_DisplayWeapon(void)
                     G_DrawWeaponTileWithID(currentWeapon << 1, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
                                            FLAMETHROWERFIRE, -32, weaponBits, weaponPal);
                     G_DrawWeaponTileWithID(currentWeapon, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 235 - weaponYOffset,
-                                           FLAMETHROWERFIRE + 1 + freezerFrames[*weaponFrame % 6], -32, weaponBits, weaponPal);
+                                           FLAMETHROWERFIRE + 1 + incineratorFrames[*weaponFrame % 6], -32, weaponBits, weaponPal);
                 }
                 else
                 {
                     G_DrawWeaponTileWithID(currentWeapon, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
                                            FLAMETHROWER, weaponShade, weaponBits, weaponPal);
-                    G_DrawWeaponTileWithID(currentWeapon, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
+                    G_DrawWeaponTileWithID(currentWeapon << 1, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
                                            FLAMETHROWERPILOT, weaponShade, weaponBits, weaponPal);
                 }
                 break;
