@@ -3559,7 +3559,7 @@ void overheadeditor(void)
 {
     char buffer[80];
     const char *dabuffer;
-    int32_t i, j, k, m=0, mousxplc, mousyplc, firstx=0, firsty=0, oposz, col;
+    int32_t i, j, k, m=0, mousxplc=0, mousyplc=0, firstx=0, firsty=0, oposz, col;
     int32_t numwalls_bak;
     int32_t startwall=0, endwall, dax, day, x1, y1, x2, y2, x3, y3; //, x4, y4;
     int16_t bad, joinsector[2];
