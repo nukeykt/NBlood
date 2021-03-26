@@ -551,36 +551,6 @@ int32_t clipshape_idx_for_sprite(uspriteptr_t const curspr, int32_t curidx)
 
 int32_t clipmoveboxtracenum = 3;
 
-//
-// clipinsidebox
-//
-int clipinsidebox(vec2_t const * const vect, int const wallnum, int const walldist)
-{
-    int const r = walldist << 1;
-
-    auto const wal1 = (uwallptr_t)&wall[wallnum];
-    auto const wal2 = (uwallptr_t)&wall[wal1->point2];
-
-    vec2_t const v1 = { wal1->x + walldist - vect->x, wal1->y + walldist - vect->y };
-    vec2_t       v2 = { wal2->x + walldist - vect->x, wal2->y + walldist - vect->y };
-
-    if (((v1.x < 0) && (v2.x < 0)) || ((v1.y < 0) && (v2.y < 0)) || ((v1.x >= r) && (v2.x >= r)) || ((v1.y >= r) && (v2.y >= r)))
-        return 0;
-
-    v2.x -= v1.x; v2.y -= v1.y;
-
-    if (v2.x * (walldist - v1.y) >= v2.y * (walldist - v1.x))  // Front
-    {
-        v2.x *= ((v2.x > 0) ? (0 - v1.y) : (r - v1.y));
-        v2.y *= ((v2.y > 0) ? (r - v1.x) : (0 - v1.x));
-        return v2.x < v2.y;
-    }
-
-    v2.x *= ((v2.x > 0) ? (r - v1.y) : (0 - v1.y));
-    v2.y *= ((v2.y > 0) ? (0 - v1.x) : (r - v1.x));
-    return (v2.x >= v2.y) << 1;
-}
-
 
 //
 // clipinsideboxline
@@ -614,6 +584,17 @@ int clipinsideboxline(int x, int y, int x1, int y1, int x2, int y2, int walldist
     x2 *= ((x2 > 0) ? (r - y1) : (0 - y1));
     y2 *= ((y2 > 0) ? (0 - x1) : (r - x1));
     return (x2 >= y2) << 1;
+}
+
+
+//
+// clipinsidebox
+//
+int clipinsidebox(vec2_t const vect, int const wallnum, int const walldist)
+{
+    auto const wal1 = (uwallptr_t)&wall[wallnum];
+    auto const wal2 = (uwallptr_t)&wall[wal1->point2];
+    return clipinsideboxline(vect.x, vect.y, wal1->x, wal1->y, wal2->x, wal2->y, walldist);
 }
 
 static int32_t clipmove_warned;
@@ -1746,7 +1727,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             int i;
 
             for (i=startwall, wal=(uwallptr_t)&wall[startwall]; i!=endwall; i+=dir, wal+=dir)
-                if (clipinsidebox(&vect->vec2, i, walldist-4) == 1)
+                if (clipinsidebox(vect->vec2, i, walldist-4) == 1)
                 {
                     int j = 0;
                     if (wal->nextsector < 0 || wal->cstat&dawalclipmask) j = 1;
@@ -1791,7 +1772,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         {
                             vect->x = (vect->x) + dx; vect->y = (vect->y) + dy;
                             bad2--; if (bad2 == 0) break;
-                        } while (clipinsidebox(&vect->vec2, i, walldist-4) != 0);
+                        } while (clipinsidebox(vect->vec2, i, walldist-4) != 0);
                         int16_t const os = *sectnum;
                         clipupdatesector(vect->vec2, sectnum, walldist);
                         bad = -1;
