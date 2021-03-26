@@ -1541,7 +1541,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         {
             for (native_t i=clipnum-1;i>=0;--i)
             {
-                if (!bitmap_test(clipignore, i) && clipinsideboxline(pos->x, pos->y, clipit[i].x1, clipit[i].y1, clipit[i].x2, clipit[i].y2, walldist))
+                if (!bitmap_test(clipignore, i) && clipinsideboxline(pos->x, pos->y, clipit[i].x1, clipit[i].y1, clipit[i].x2, clipit[i].y2, walldist-1))
                 {
                     vec2_t const vec = pos->vec2;
                     keepaway(&pos->x, &pos->y, i);
