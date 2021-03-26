@@ -6155,7 +6155,14 @@ static void MaybeTrainKillPlayer(const spritetype *pSprite, int const setOPos)
     }
 }
 
+static void actorGibEnemy(int findSprite, int spriteNum)
+{
+    actor[findSprite].picnum = RADIUSEXPLOSION;
+    actor[findSprite].extra  = INT16_MAX;
+    actor[findSprite].owner  = spriteNum;
+}
 // i: SE spritenum
+
 static void MaybeTrainKillEnemies(int const spriteNum)
 {
     int findSprite = headspritesect[sprite[OW(spriteNum)].sectnum];
@@ -6171,17 +6178,14 @@ static void MaybeTrainKillEnemies(int const spriteNum)
             updatesector(sprite[findSprite].x,sprite[findSprite].y,&sectNum);
 
             if (sectNum == sprite[spriteNum].sectnum || sectNum == -1)
-            {
-                actor[findSprite].picnum = RADIUSEXPLOSION;
-                actor[findSprite].extra  = g_impactDamage << 10;
-                actor[findSprite].owner  = spriteNum;
-            }
+                actorGibEnemy(findSprite, spriteNum);
         }
 
         findSprite = nextSprite;
     }
     while (findSprite >= 0);
 }
+
 
 ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 {
@@ -7022,7 +7026,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
         }
 
         case SE_10_DOOR_AUTO_CLOSE:
-            // XXX: 32791, what the hell?
+            // pSector->lotag == (int16_t)32791u appears to be checking for a ST_23_SWINGING_DOOR in motion (lotag & 0x8000u)
             if ((pSector->lotag&0xff) == ST_27_STRETCH_BRIDGE || (pSector->floorz > pSector->ceilingz && (pSector->lotag&0xff) != ST_23_SWINGING_DOOR) || pSector->lotag == (int16_t)32791u)
             {
                 j = 1;
@@ -7065,35 +7069,53 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
             if (pData[4])
             {
-                auto dukeLivesMatter = [&](vec2_t const *const pos, int const w, int const clipdist)
+                auto reverseSwingDoor = [&](void)
                 {
-                    if (clipinsidebox(pos, w, clipdist))
+                    uint16_t const tag = pSector->lotag & 0x8000u;
+
+                    for (auto SPRITES_OF(STAT_EFFECTOR, i))
                     {
-                        uint16_t const tag = sector[pSprite->sectnum].lotag & 0x8000u;
-
-                        for (auto SPRITES_OF(STAT_EFFECTOR, i))
+                        if (tag == (sector[SECT(i)].lotag & 0x8000u) && SLT(i) == SE_11_SWINGING_DOOR && pSprite->hitag == SHT(i))
                         {
-                            if (tag == (sector[SECT(i)].lotag & 0x8000u) && SLT(i) == SE_11_SWINGING_DOOR && pSprite->hitag == SHT(i))
-                            {
-                                actor[i].t_data[5] = 2; // delay
-                                actor[i].t_data[2] -= l;
-                                actor[i].t_data[4] -= l;
-                                A_MoveSector(i);
+                            actor[i].t_data[5] = 2; // delay
+                            actor[i].t_data[2] -= l;
+                            actor[i].t_data[4] -= l;
+                            A_MoveSector(i);
 
-                                actor[i].t_data[3] = -actor[i].t_data[3];
-                                if (actor[i].t_data[4] < 0)
-                                    actor[i].t_data[4] += 512;
-                                else
-                                    actor[i].t_data[4] -= 512;
+                            actor[i].t_data[3] = -actor[i].t_data[3];
+                            if (actor[i].t_data[4] <= 0)
+                                actor[i].t_data[4] += 512;
+                            else
+                                actor[i].t_data[4] -= 512;
 
-                                if (sector[SECT(i)].lotag & 0x8000u) sector[SECT(i)].lotag &= 0x7fff;
-                                else sector[SECT(i)].lotag |= 0x8000u;
-                            }
+                            if (sector[SECT(i)].lotag & 0x8000u) sector[SECT(i)].lotag &= 0x7fff;
+                            else sector[SECT(i)].lotag |= 0x8000u;
                         }
+                    }
 
-                        A_CallSound(pSprite->sectnum, spriteNum);
+                    A_CallSound(pSprite->sectnum, spriteNum);
+                };
 
-                        return true;
+                auto maybeHoldDoorOpen = [&](void)
+                {
+                    if ((pSector->lotag & (16384u | 32768u)) == 0)
+                    {
+                        int j;
+
+                        for (SPRITES_OF_SECT(pSprite->sectnum, j))
+                            if (sprite[j].picnum == ACTIVATOR)
+                                break;
+
+                        if (j == -1)
+                        {
+                            pData[2] -= l;
+                            pData[4] -= l;
+                            pData[5] = 2;
+
+                            A_MoveSector(spriteNum);
+
+                            return true;
+                        }
                     }
 
                     return false;
@@ -7107,42 +7129,73 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                 A_MoveSector(spriteNum);
 
-                for (auto SPRITES_OF(STAT_ACTOR, spr))
+                for (auto SPRITES_OF(STAT_ACTOR, findSprite))
                 {
-                    auto const foundSprite = (uspriteptr_t)&sprite[spr];
+                    auto const foundSprite = &sprite[findSprite];
 
                     int32_t floorZ, ceilZ;
                     getcorrectzsofslope(pSprite->sectnum, foundSprite->pos.x, foundSprite->pos.y, &ceilZ, &floorZ);
 
                     if ((foundSprite->pos.z > floorZ || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < ceilZ)
-                        && foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
+                        && A_CheckEnemySprite(foundSprite))
                     {
-                        auto const clipdist = A_GetClipdist(spr, -1);
+                        auto const clipdist = A_GetClipdist(findSprite, -1);
 
                         for (int w = pSector->wallptr; w < endWall; w++)
                         {
-                            if (dukeLivesMatter(&foundSprite->pos.vec2, w, clipdist))
+                            if (clipinsidebox(foundSprite->pos.vec2, w, clipdist))
+                            {
+                                if (foundSprite->extra <= 0)
+                                {
+                                    if (clipinsidebox(foundSprite->pos.vec2, w, clipdist >> 1))
+                                        actorGibEnemy(findSprite, spriteNum);
+                                    break;
+                                }
+
+                                if (maybeHoldDoorOpen())
+                                    goto end;
+
+                                int16_t    sectnum    = foundSprite->sectnum;
+                                int const  pushResult = pushmove(&foundSprite->pos, &sectnum, clipdist - 1, (4L << 8), (4L << 8), CLIPMASK0);
+                                bool const squish     = sectnum == pSprite->sectnum || sectnum == -1 || pushResult < 0;
+
+                                if (sectnum != -1 && sectnum != foundSprite->sectnum)
+                                    changespritesect(findSprite, sectnum);
+
+                                if (squish)
+                                    actorGibEnemy(findSprite, spriteNum);
+
                                 break;
+                            }
                         }
                     }
                 }
 
                 for (auto TRAVERSE_CONNECT(plr))
                 {
-                    auto const foundPlayer = g_player[plr].ps;
+                    auto const foundPlayer       = g_player[plr].ps;
                     auto const foundPlayerSprite = &sprite[foundPlayer->i];
 
                     int32_t floorZ, ceilZ;
                     getcorrectzsofslope(pSprite->sectnum, foundPlayer->pos.x, foundPlayer->pos.y, &ceilZ, &floorZ);
 
-                    for (int w = pSector->wallptr; w < endWall; w++)
+                    if ((foundPlayerSprite->pos.z > floorZ || foundPlayer->pos.z < ceilZ) && foundPlayerSprite->extra > 0)
                     {
-                        if ((foundPlayerSprite->pos.z > floorZ || foundPlayer->pos.z < ceilZ) && foundPlayerSprite->extra > 0
-                            && dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
-                            break;
+                        for (int w = pSector->wallptr; w < endWall; w++)
+                        {
+                            if (clipinsidebox(foundPlayer->pos.vec2, w, foundPlayer->clipdist - 1))
+                            {
+                                if (!maybeHoldDoorOpen())
+                                {
+                                    if (pushmove(&foundPlayer->pos, &foundPlayer->cursectnum, foundPlayer->clipdist - 1, (4L << 8), (4L << 8), CLIPMASK0) < 0)
+                                        reverseSwingDoor();
+                                }
+                                goto end;
+                            }
+                        }
                     }
                 }
-
+            end:
                 if (pData[4] <= -511 || pData[4] >= 512)
                 {
                     pData[4] = 0;
