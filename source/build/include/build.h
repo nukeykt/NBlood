@@ -237,17 +237,21 @@ enum {
     RS_NOCLIP = 8,
     RS_TOPLEFT = 16,
     RS_TRANS2 = 32,
+    RS_TRANS_MASK = RS_TRANS1|RS_TRANS2,
     RS_NOMASK = 64,
     RS_PERM = 128,
 
     RS_ALIGN_L = 256,
     RS_ALIGN_R = 512,
-    RS_ALIGN_MASK = 768,
+    RS_ALIGN_MASK = RS_ALIGN_L|RS_ALIGN_R,
     RS_STRETCH = 1024,
 
     ROTATESPRITE_FULL16 = 2048,
+    RS_LERP = 4096,
+    RS_FORCELERP = 8192,
+
     // ROTATESPRITE_MAX-1 is the mask of all externally available orientation bits
-    ROTATESPRITE_MAX = 4096,
+    ROTATESPRITE_MAX = 16384,
 
     RS_CENTERORIGIN = (1<<30),
 };
@@ -802,7 +806,7 @@ EXTERN int32_t display_mirror;
 // drawrooms() and is used for animateoffs().
 EXTERN ClockTicks totalclock, totalclocklock;
 static inline int32_t BGetTime(void) { return (int32_t) totalclock; }
-
+EXTERN int32_t rotatespritesmoothratio;
 EXTERN int32_t numframes, randomseed;
 EXTERN int16_t sintable[2048];
 
@@ -1247,6 +1251,15 @@ static FORCE_INLINE void rotatesprite_fs(int32_t sx, int32_t sy, int32_t z, int1
                                    int8_t dashade, char dapalnum, int32_t dastat)
 {
     rotatesprite_(sx, sy, z, a, picnum, dashade, dapalnum, dastat, 0, 0, 0,0,xdim-1,ydim-1);
+}
+
+static FORCE_INLINE void rotatesprite_fs_id(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,
+                                   int8_t dashade, char dapalnum, int32_t dastat, int16_t uniqid)
+{
+    int restore = guniqhudid;
+    if (uniqid) guniqhudid = uniqid;
+    rotatesprite_(sx, sy, z, a, picnum, dashade, dapalnum, dastat, 0, 0, 0,0,xdim-1,ydim-1);
+    guniqhudid = restore;
 }
 
 static FORCE_INLINE void rotatesprite_fs_alpha(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,

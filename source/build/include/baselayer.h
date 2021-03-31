@@ -45,6 +45,7 @@ extern int32_t startwin_idle(void *);
 extern int32_t startwin_run(void);
 
 // video
+extern int32_t r_rotatespriteinterp;
 extern int32_t r_usenewaspect, newaspect_enable;
 extern int32_t r_fpgrouscan;
 extern int32_t setaspect_new_use_dimen;

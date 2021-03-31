@@ -125,6 +125,7 @@ static int32_t oxdimen = -1, oviewingrange = -1, oxyaspect = -1;
 int32_t r_usenewaspect = 1, newaspect_enable=0;
 uint32_t r_screenxy = 0;
 
+int32_t r_rotatespriteinterp = 1;
 int32_t r_fpgrouscan = 1;
 int32_t r_displayindex = 0;
 int32_t r_borderless = 2;
@@ -7326,6 +7327,51 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
     {
         dastat |= RS_STRETCH;
         dastat &= ~RS_ALIGN_MASK;
+    }
+
+    if (uniqid)
+    {
+        Bassert(uniqid < MAXUNIQHUDID);
+
+        // r_rotatespriteinterp 1: only interpolate when explicitly requested with RS_LERP
+        // r_rotatespriteinterp 2: interpolate if the picnum or size matches regardless of RS_LERP being set
+        // r_rotatespriteinterp 3: relax above picnum check to include the next tile, with potentially undesirable results
+
+        static struct sm
+        {
+            vec4_t lerp;
+            vec4_t goal;
+            int16_t picnum, flags;
+        } smooth[MAXUNIQHUDID];
+
+        auto &sm = smooth[uniqid];
+        vec4_t const goal = { sx, sy, z, a };
+        smooth[0] = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK) };
+        
+        auto lerpWouldLookDerp = [&](void)
+        {
+            return (!(dastat & RS_LERP) && r_rotatespriteinterp < 2) || sm.flags != (dastat & ~RS_TRANS_MASK)
+                   || (!(dastat & RS_FORCELERP) && tilesiz[picnum] != tilesiz[sm.picnum]
+                   && ((unsigned)(picnum - sm.picnum) > (int)(r_rotatespriteinterp == 3))) || klabs(a - sm.goal.a) == 1024;
+        };
+
+        if (!lerpWouldLookDerp())
+        {
+            smooth[0].lerp = { sm.lerp.x + mulscale16(smooth[0].goal.x - sm.lerp.x, rotatespritesmoothratio),
+                               sm.lerp.y + mulscale16(smooth[0].goal.y - sm.lerp.y, rotatespritesmoothratio),
+                               sm.lerp.z + mulscale16(smooth[0].goal.z - sm.lerp.z, rotatespritesmoothratio),
+                              (sm.lerp.a + mulscale16(((smooth[0].goal.a + 1024 - sm.lerp.a) & 2047) - 1024, rotatespritesmoothratio)) & 2047 };
+        }
+
+        sm = smooth[0];
+
+        if (r_rotatespriteinterp)
+        {
+            sx = sm.lerp.x;
+            sy = sm.lerp.y;
+            z  = sm.lerp.z;
+            a  = sm.lerp.a;
+        }
     }
 
     //============================================================================= //POLYMOST BEGINS
