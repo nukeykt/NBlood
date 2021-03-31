@@ -60,6 +60,47 @@ extern int32_t g_mostConcurrentPlayers;
 #define WEAPON_POS_RAISE            10
 #define WEAPON_POS_START             6
 
+enum weaponuniqhudid_t
+{
+    W_ACCESSCARD,
+    W_CHAINGUN_BOTTOM,
+    W_CHAINGUN_HACK,
+    W_CHAINGUN_TOP,
+    W_DEVISTATOR_LEFT,
+    W_DEVISTATOR_RIGHT,
+    W_DUKENUKEM,
+    W_FIST,
+    W_FIST2,
+    W_FREEZE_BASE,
+    W_FREEZE_TOP,
+    W_HANDBOMB,
+    W_HANDREMOTE,
+    W_KNEE,
+    W_KNEE2,
+    W_KNUCKLES,
+    W_LOOGIE,
+    W_LOOGIE_END = W_LOOGIE + 63,
+    W_PISTOL,
+    W_PISTOL_CLIP,
+    W_PISTOL_HAND,
+    W_PLUTOPAK,
+    W_RPG,
+    W_RPG_MUZZLE,
+    W_SHOTGUN,
+    W_SHOTGUN_MUZZLE,
+    W_SHRINKER,
+    W_SHRINKER_CRYSTAL,
+    W_THREEDEE,
+    W_TIP,
+    W_TRIPBOMB,
+    W_TRIPBOMB_LEFTHAND,
+    W_TRIPBOMB_RIGHTHAND,
+
+    W_END,
+};
+
+EDUKE32_STATIC_ASSERT(W_END < MAXUNIQHUDID);
+
 enum weaponflags_t {
     WEAPON_SPAWNTYPE1           = 0x00000000, // just spawn
     WEAPON_HOLSTER_CLEARS_CLIP  = 0x00000001, // 'holstering' clears the current clip

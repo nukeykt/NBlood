@@ -761,6 +761,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
     if (g_networkMode == NET_DEDICATED_SERVER) return;
 
     totalclocklock = totalclock;
+    rotatespritesmoothratio = smoothRatio;
 
     if (pub > 0 || videoGetRenderMode() >= REND_POLYMOST) // JBF 20040101: redraw background always
     {

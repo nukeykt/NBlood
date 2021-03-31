@@ -961,6 +961,8 @@ void G_DisplayRest(int32_t smoothratio)
 #endif
     }
 
+    rotatespritesmoothratio = smoothratio;
+
     if (g_restorePalette)
     {
         // reset a normal palette
@@ -1610,6 +1612,8 @@ void gameDisplayTitleScreen(void)
         {
             videoClearScreen(0);
             rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, BETASCREEN, 0, 0, 2 + 8 + 64 + BGSTRETCH);
+            rotatespritesmoothratio = calc_smoothratio_demo(totalclock, ototalclock, TICRATE);
+
             if (logoflags & LOGO_DUKENUKEM)
             {
                 if (totalclock > 120 && totalclock < (120 + 60))
@@ -1619,10 +1623,10 @@ void gameDisplayTitleScreen(void)
                         titlesound++;
                         S_PlaySound(PIPEBOMB_EXPLODE);
                     }
-                    rotatesprite_fs(160 << 16, 104 << 16, ((int32_t) totalclock - 120) << 10, 0, DUKENUKEM, 0, 0, 2 + 8);
+                    rotatesprite_fs_id(160 << 16, 104 << 16, ((int32_t) totalclock - 120) << 10, 0, DUKENUKEM, 0, 0, 2 + 8, W_DUKENUKEM);
                 }
                 else if (totalclock >= (120 + 60))
-                    rotatesprite_fs(160 << 16, (104) << 16, 60 << 10, 0, DUKENUKEM, 0, 0, 2 + 8);
+                    rotatesprite_fs_id(160 << 16, (104) << 16, 60 << 10, 0, DUKENUKEM, 0, 0, 2 + 8, W_DUKENUKEM);
             }
             else
                 titlesound++;
@@ -1637,11 +1641,12 @@ void gameDisplayTitleScreen(void)
                         S_PlaySound(PIPEBOMB_EXPLODE);
                     }
 
-                    rotatesprite_fs(160 << 16, (104) << 16, 60 << 10, 0, DUKENUKEM, 0, 0, 2 + 8);
-                    rotatesprite_fs(160 << 16, (129) << 16, ((int32_t) totalclock - 220) << 11, 0, THREEDEE, 0, 0, 2 + 8);
+                    if (logoflags & LOGO_DUKENUKEM)
+                        rotatesprite_fs_id(160 << 16, (104) << 16, 60 << 10, 0, DUKENUKEM, 0, 0, 2 + 8, W_DUKENUKEM);
+                    rotatesprite_fs_id(160 << 16, (129) << 16, ((int32_t) totalclock - 220) << 11, 0, THREEDEE, 0, 0, 2 + 8, W_THREEDEE);
                 }
                 else if (totalclock >= (220 + 30))
-                    rotatesprite_fs(160 << 16, (129) << 16, 30 << 11, 0, THREEDEE, 0, 0, 2 + 8);
+                    rotatesprite_fs_id(160 << 16, (129) << 16, 30 << 11, 0, THREEDEE, 0, 0, 2 + 8, W_THREEDEE);
             }
             else
                 titlesound++;
@@ -1651,8 +1656,8 @@ void gameDisplayTitleScreen(void)
                 // JBF 20030804
                 if (totalclock >= 280 && totalclock < 395)
                 {
-                    rotatesprite_fs(160 << 16, (151) << 16, (410 - (int32_t) totalclock) << 12, 0, PLUTOPAKSPRITE + 1,
-                                    (sintable[((int32_t) totalclock << 4) & 2047] >> 11), 0, 2 + 8);
+                    rotatesprite_fs_id(160 << 16, (151) << 16, (410 - (int32_t) totalclock) << 12, 0, PLUTOPAKSPRITE + 1,
+                                    (sintable[((int32_t) totalclock << 4) & 2047] >> 11), 0, 2 + 8, W_PLUTOPAK);
                     if (titlesound == 2)
                     {
                         titlesound++;
@@ -1666,8 +1671,8 @@ void gameDisplayTitleScreen(void)
                         titlesound++;
                         S_PlaySound(PIPEBOMB_EXPLODE);
                     }
-                    rotatesprite_fs(160 << 16, (151) << 16, 30 << 11, 0, PLUTOPAKSPRITE + 1, (sintable[((int32_t) totalclock << 4) & 2047] >> 11), 0,
-                                    2 + 8);
+                    rotatesprite_fs_id(160 << 16, (151) << 16, 30 << 11, 0, PLUTOPAKSPRITE + 1, (sintable[((int32_t) totalclock << 4) & 2047] >> 11), 0,
+                                    2 + 8, W_PLUTOPAK);
                 }
             }
 
