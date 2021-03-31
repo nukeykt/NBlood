@@ -2855,8 +2855,8 @@ ACTOR_STATIC void P_HandleBeingSpitOn(DukePlayer_t * const ps)
     ps->loogcnt = 24*4;
     for (bssize_t x=0; x < j; x++)
     {
-        ps->loogiex[x] = krand()%xdim;
-        ps->loogiey[x] = krand()%ydim;
+        ps->loogiex[x] = krand()%320;
+        ps->loogiey[x] = krand()%200;
     }
 }
 
