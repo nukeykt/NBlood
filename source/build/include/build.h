@@ -1306,6 +1306,12 @@ static FORCE_INLINE int32_t krand(void)
 int32_t    krand(void);
 #endif
 
+static FORCE_INLINE int32_t seed_krand(int32_t* seed)
+{
+    *seed = (*seed * 1664525ul) + 221297ul;
+    return ((uint32_t)*seed) >> 16;
+}
+
 int32_t   ksqrt(uint32_t num);
 int32_t   __fastcall getangle(int32_t xvect, int32_t yvect);
 fix16_t   __fastcall gethiq16angle(int32_t xvect, int32_t yvect);
