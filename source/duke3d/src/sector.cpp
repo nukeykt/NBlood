@@ -858,7 +858,7 @@ REDODOOR:
         i = GetAnimationGoal(&pSector->floorz);
         if (i >= 0)
         {
-            if (g_animateGoal[sectNum] == pSector->ceilingz)
+            if (g_animateGoal[i] == pSector->ceilingz)
             {
                 j = nextsectorneighborz(sectNum, pSector->ceilingz, 1, 1);
                 if (j == -1)
