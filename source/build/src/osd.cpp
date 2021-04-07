@@ -692,13 +692,47 @@ static int osdfunc_toggle(osdcmdptr_t parm)
         }
     }
 
-    if (i == -1 || (osd->cvars[i].pData->flags & CVAR_TYPEMASK) != CVAR_BOOL)
+    if (i == -1 || !(osd->cvars[i].pData->flags & CVAR_INTTYPES) || osd_findexactsymbol(parm->parms[0])->func != osdcmd_cvar_set)
     {
-        OSD_Printf("Bad cvar name or cvar not boolean\n");
+        OSD_Printf("toggle: bad cvar name \"%s\" or wrong cvar type or complexity.\n", parm->parms[0]);
         return OSDCMD_OK;
     }
 
-    *osd->cvars[i].pData->i32 = 1 - *osd->cvars[i].pData->i32;
+    auto &pData = *osd->cvars[i].pData;
+
+    if (pData.flags & CVAR_READONLY)
+    {
+        OSD_Printf("toggle: cvar \"%s\" is read only.\n", pData.name);
+        return OSDCMD_OK;
+    }
+
+    switch (osd->cvars[i].pData->flags & CVAR_INTTYPES)
+    {
+        case CVAR_INT:
+        case CVAR_BOOL:
+        {
+            if (++*pData.i32 > pData.max)
+                *pData.i32 = pData.min;
+
+            if ((pData.flags & CVAR_TYPEMASK) == CVAR_BOOL)
+                *pData.i32 = (*pData.i32 != 0);
+
+            if (!OSD_ParsingScript())
+                OSD_Printf("%s %d\n", pData.name, *pData.i32);
+        }
+        break;
+        case CVAR_UINT:
+        {
+            if (++*pData.u32 > (uint32_t)pData.max)
+                *pData.u32 = pData.min;
+
+            if (!OSD_ParsingScript())
+                OSD_Printf("%s %d\n", pData.name, *pData.u32);
+        }
+        break;
+        default: EDUKE32_UNREACHABLE_SECTION(return OSDCMD_OK);
+    }
+
     osd->cvars[i].pData->flags |= CVAR_MODIFIED;
 
     return OSDCMD_OK;
