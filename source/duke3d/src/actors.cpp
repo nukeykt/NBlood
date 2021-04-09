@@ -1790,10 +1790,6 @@ ACTOR_STATIC void G_MoveStandables(void)
         if (sectNum < 0)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
-        // Rotation-fixed sprites in rotating sectors already have bpos* updated.
-        if ((pData[7]&(0xffff0000))!=ROTFIXSPR_MAGIC)
-            actor[spriteNum].bpos = pSprite->pos;
-
 #ifndef EDUKE32_STANDALONE
         if (!FURY && PN(spriteNum) >= CRANE && PN(spriteNum) <= CRANE+3)
         {
@@ -3237,8 +3233,6 @@ ACTOR_STATIC void G_MoveWeapons(void)
         if (pSprite->sectnum < 0)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
-        actor[spriteNum].bpos = pSprite->pos;
-
         /* Custom projectiles */
         if (A_CheckSpriteFlags(spriteNum, SFLAG_PROJECTILE))
         {
@@ -4033,8 +4027,6 @@ ACTOR_STATIC void G_MoveActors(void)
 
         if (pSprite->xrepeat == 0 || sectNum < 0 || sectNum >= MAXSECTORS)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
-
-        actor[spriteNum].bpos = pSprite->pos;
 
         switchPic = pSprite->picnum;
 
@@ -5472,8 +5464,6 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
 
         if (sectNum < 0 || pSprite->xrepeat == 0)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
-
-        actor[spriteNum].bpos = pSprite->pos;
 
         switchPic = pSprite->picnum;
 
