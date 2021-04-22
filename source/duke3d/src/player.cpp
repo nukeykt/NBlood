@@ -5219,7 +5219,7 @@ void P_ProcessInput(int playerNum)
 
         if (pPlayer->pos.z < (floorZ-(floorZOffset<<8)))  //falling
         {
-            // not jumping or crouching
+            // this is what keeps you glued to the ground when you're running down slopes
             if ((!TEST_SYNC_KEY(playerBits, SK_JUMP) && !(TEST_SYNC_KEY(playerBits, SK_CROUCH))) && pPlayer->on_ground &&
                 (sector[pPlayer->cursectnum].floorstat & 2) && pPlayer->pos.z >= (floorZ - (floorZOffset << 8) - ZOFFSET2))
                 pPlayer->pos.z = floorZ - (floorZOffset << 8);
@@ -5227,8 +5227,8 @@ void P_ProcessInput(int playerNum)
             {
                 pPlayer->vel.z += (g_spriteGravity + 80);  // (TICSPERFRAME<<6);
 
-                if (pPlayer->vel.z >= (4096 + 2048))
-                    pPlayer->vel.z = (4096 + 2048);
+                if (pPlayer->vel.z >= ACTOR_MAXFALLINGZVEL)
+                    pPlayer->vel.z = ACTOR_MAXFALLINGZVEL;
 
                 if (pPlayer->vel.z > 2400 && pPlayer->falling_counter < 255)
                 {
@@ -5314,9 +5314,9 @@ void P_ProcessInput(int playerNum)
             {
                 pPlayer->pos.z += ((floorZ - (floorZOffset << 7)) - pPlayer->pos.z) >> 1;  // Smooth on the water
 
-                if (pPlayer->on_warping_sector == 0 && pPlayer->pos.z > floorZ - PCROUCHHEIGHT)
+                if (pPlayer->on_warping_sector == 0 && pPlayer->pos.z > floorZ - ZOFFSET2)
                 {
-                    pPlayer->pos.z = floorZ - PCROUCHHEIGHT;
+                    pPlayer->pos.z = floorZ - ZOFFSET2;
                     pPlayer->vel.z >>= 1;
                 }
             }
@@ -5344,7 +5344,7 @@ void P_ProcessInput(int playerNum)
 
                 getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy2, getZRangeClipDist, CLIPMASK0);
 
-                if (!pPlayer->jumping_counter && klabs(floorZ2-ceilZ2) > (48<<8))
+                if (!pPlayer->jumping_counter && klabs(floorZ2-ceilZ2) > PTOTALHEIGHT)
                 {
                     if (VM_OnEvent(EVENT_JUMP,pPlayer->i,playerNum) == 0)
                     {
@@ -5649,7 +5649,7 @@ RECHECK:
         int const  pushResult = pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L<<8), (4L<<8), CLIPMASK0, !mashedPotato);
         bool const squishPlayer = pushResult < 0;
 
-        if (squishPlayer || klabs(actor[pPlayer->i].floorz-actor[pPlayer->i].ceilingz) < (48<<8))
+        if (squishPlayer || klabs(actor[pPlayer->i].floorz-actor[pPlayer->i].ceilingz) < PTOTALHEIGHT)
         {
             if (!(sector[pSprite->sectnum].lotag & 0x8000u) &&
                 (isanunderoperator(sector[pSprite->sectnum].lotag) || isanearoperator(sector[pSprite->sectnum].lotag)))
