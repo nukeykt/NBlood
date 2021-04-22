@@ -1737,6 +1737,7 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
 
 //////////////////// HUD WEAPON / MISC. DISPLAY CODE ////////////////////
 
+#ifndef EDUKE32_STANDALONE
 static void P_DisplaySpit(void)
 {
     auto const pPlayer     = g_player[screenpeek].ps;
@@ -1748,18 +1749,20 @@ static void P_DisplaySpit(void)
     if (VM_OnEvent(EVENT_DISPLAYSPIT, pPlayer->i, screenpeek) != 0)
         return;
 
-    int const rotY = loogCounter<<2;
+    int const rotY  = loogCounter << 2;
+    int const loogs = min<int>(pPlayer->numloogs, ARRAY_SIZE(pPlayer->loogie));
 
-    for (bssize_t i=0; i < pPlayer->numloogs; i++)
+    for (int i=0; i < loogs; i++)
     {
         int const rotAng = klabs(sintable[((loogCounter + i) << 5) & 2047]) >> 5;
         int const rotZoom  = 4096 + ((loogCounter + i) << 9);
         int const rotX     = (-fix16_to_int(g_player[screenpeek].input.q16avel) >> 1) + (sintable[((loogCounter + i) << 6) & 2047] >> 10);
 
-        rotatesprite_fs((pPlayer->loogiex[i] + rotX) << 16, (200 + pPlayer->loogiey[i] - rotY) << 16, rotZoom - (i << 8),
+        rotatesprite_fs((pPlayer->loogie[i].x + rotX) << 16, (200 + pPlayer->loogie[i].y - rotY) << 16, rotZoom - (i << 8),
                         256 - rotAng, LOOGIE, 0, 0, 2);
     }
 }
+#endif
 
 int P_GetHudPal(const DukePlayer_t *p)
 {
@@ -2987,8 +2990,10 @@ void P_DisplayWeapon(void)
         }
     }
 
-enddisplayweapon:
+enddisplayweapon:;
+#ifndef EDUKE32_STANDALONE
     P_DisplaySpit();
+#endif
 }
 
 #define TURBOTURNTIME (TICRATE/8) // 7

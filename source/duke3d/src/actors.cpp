@@ -2835,6 +2835,7 @@ ACTOR_STATIC void A_DoProjectileBounce(int const spriteNum)
     pSprite->ang = getangle(vect.x, vect.y);
 }
 
+#ifndef EDUKE32_STANDALONE
 ACTOR_STATIC void P_HandleBeingSpitOn(DukePlayer_t * const ps)
 {
     ps->q16horiz += F16(32);
@@ -2849,12 +2850,10 @@ ACTOR_STATIC void P_HandleBeingSpitOn(DukePlayer_t * const ps)
     int j = 3+(krand()&3);
     ps->numloogs = j;
     ps->loogcnt = 24*4;
-    for (bssize_t x=0; x < j; x++)
-    {
-        ps->loogiex[x] = krand()%320;
-        ps->loogiey[x] = krand()%200;
-    }
+    for (int x=0; x < j; x++)
+        ps->loogie[x] = { (int16_t)(krand()%320), (int16_t)(krand()%200) };
 }
+#endif
 
 static void A_DoProjectileEffects(int spriteNum, const vec3_t *davect, bool radiusDamage = true)
 {
@@ -3110,10 +3109,13 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
 #ifndef EDUKE32_STANDALONE
                             if (!FURY)
+                            {
                                 A_PlaySound(PISTOL_BODYHIT, otherSprite);
+
+                                if (pProj->workslike & PROJECTILE_SPIT)
+                                    P_HandleBeingSpitOn(g_player[playerNum].ps);
+                            }
 #endif
-                            if (pProj->workslike & PROJECTILE_SPIT)
-                                P_HandleBeingSpitOn(g_player[playerNum].ps);
                         }
 
                         if (pProj->workslike & PROJECTILE_RPG_IMPACT)

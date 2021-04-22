@@ -161,7 +161,10 @@ typedef struct {
 
     uint16_t frag, fraggedself;
 
-    int16_t loogiex[64], loogiey[64], sbs, sound_pitch;
+    vec2_16_t loogie[6];
+
+    int16_t filler[116]; // jesus fucking christ
+    int16_t sbs, sound_pitch;
 
     int16_t cursectnum, look_ang, last_extra, subweapon;
     int16_t max_ammo_amount[MAX_WEAPONS], ammo_amount[MAX_WEAPONS], inv_amount[GET_MAX];
@@ -211,6 +214,7 @@ typedef struct {
 } DukePlayer_t;
 
 EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t) % 4 == 0);
+EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t) == 640); // this needs to stay the same size for savegame compatibility
 
 typedef struct
 {

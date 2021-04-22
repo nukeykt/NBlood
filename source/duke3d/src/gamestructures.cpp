@@ -350,8 +350,8 @@ memberlabel_t const TsprLabels[] =
 memberlabel_t const PlayerLabels[] = 
 {
     MEMBER(g_player[0].ps, zoom,                        PLAYER_ZOOM),
-    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, 64, -1 },
-    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, 64, -1 },
+    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
+    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
     MEMBER(g_player[0].ps, numloogs,                    PLAYER_NUMLOOGS),
     MEMBER(g_player[0].ps, loogcnt,                     PLAYER_LOOGCNT),
      LABEL(g_player[0].ps, pos.x,    "posx",            PLAYER_POSX),
@@ -588,8 +588,8 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_DEATHS:     labelNum = g_player[playerNum].frags[playerNum]; break;
         case PLAYER_BSUBWEAPON: labelNum = (ps.subweapon & (1<<lParm2)) != 0;    break;
 
-        case PLAYER_LOOGIEX:    labelNum = ps.loogiex[lParm2]; break;
-        case PLAYER_LOOGIEY:    labelNum = ps.loogiey[lParm2]; break;
+        case PLAYER_LOOGIEX:    labelNum = ps.loogie[lParm2].x; break;
+        case PLAYER_LOOGIEY:    labelNum = ps.loogie[lParm2].y; break;
 
         case PLAYER_WEAPRECS:   labelNum = ps.weaprecs[lParm2]; break;
 
@@ -658,8 +658,8 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
             else ps.subweapon &= ~(1 << lParm2);
             break;
 
-        case PLAYER_LOOGIEX: ps.loogiex[lParm2] = newValue; break;
-        case PLAYER_LOOGIEY: ps.loogiey[lParm2] = newValue; break;
+        case PLAYER_LOOGIEX: ps.loogie[lParm2].x = newValue; break;
+        case PLAYER_LOOGIEY: ps.loogie[lParm2].y = newValue; break;
 
         case PLAYER_WEAPRECS: ps.weaprecs[lParm2] = newValue; break;
 
