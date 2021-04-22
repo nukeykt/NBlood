@@ -5303,7 +5303,7 @@ void P_ProcessInput(int playerNum)
                 if (klabs(Zdiff) < 256)
                     Zdiff = 0;
                 else if (!playerShrunk)
-                    pPlayer->pos.z += (floorZ - (floorZOffset << 8) - pPlayer->pos.z) >> 1;
+                    pPlayer->pos.z += Zdiff;
 
                 pPlayer->vel.z -= 768;
 
