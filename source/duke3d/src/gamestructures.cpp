@@ -549,6 +549,7 @@ memberlabel_t const PlayerLabels[] =
     MEMBER(g_player[0].ps, last_used_weapon,            PLAYER_LAST_USED_WEAPON),
     {                                "bsubweapon",      PLAYER_BSUBWEAPON, LABEL_HASPARM2, MAX_WEAPONS, -1 },
     MEMBER(g_player[0].ps, crouch_toggle,               PLAYER_CROUCH_TOGGLE),
+    MEMBER(g_player[0].ps, gravity,                     PLAYER_GRAVITY),
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)

@@ -705,6 +705,7 @@ void P_ResetMultiPlayer(int playerNum)
     p.frag_ps         = playerNum;
     p.fta             = 0;
     p.ftq             = 0;
+    p.gravity         = g_spriteGravity+80;
     p.on_crane        = -1;
     p.opyoff          = 0;
     p.q16horiz        = F16(100);
@@ -769,6 +770,7 @@ void P_ResetPlayer(int playerNum)
     p.fta                = 0;
     p.ftq                = 0;
     p.got_access         = ((g_netServer || ud.multimode > 1) && (g_gametypeFlags[ud.coop] & GAMETYPE_ACCESSATSTART)) ? 7 : 0;
+    p.gravity            = g_spriteGravity+80;
     p.hard_landing       = 0;
     p.hbomb_hold_delay   = 0;
     p.heat_on            = 0;

@@ -5310,7 +5310,7 @@ void P_ProcessInput(int playerNum)
                 pPlayer->pos.z = floorZ - (floorZOffset << 8);
             else
             {
-                pPlayer->vel.z += (g_spriteGravity + 80);  // (TICSPERFRAME<<6);
+                pPlayer->vel.z += pPlayer->gravity;  // (TICSPERFRAME<<6);
 
                 if (pPlayer->vel.z >= ACTOR_MAXFALLINGZVEL)
                     pPlayer->vel.z = ACTOR_MAXFALLINGZVEL;

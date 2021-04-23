@@ -208,8 +208,9 @@ typedef struct {
     uint16_t frag, fraggedself;
 
     vec2_16_t loogie[6];
+    int16_t filler[115]; // jesus fucking christ
 
-    int16_t filler[116]; // jesus fucking christ
+    int16_t gravity;
     int16_t sbs, sound_pitch;
 
     int16_t cursectnum, look_ang, last_extra, subweapon;
