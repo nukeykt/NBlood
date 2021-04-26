@@ -41,15 +41,9 @@ extern int32_t g_mostConcurrentPlayers;
 #define HORIZ_MAX                   299
 #define AUTO_AIM_ANGLE              48
 #define PHEIGHT                     (38<<8)
-#define PCROUCHHEIGHT               (16<<8)
-#define PCROUCHINCREMENT            (2048+768)
 #define PMINHEIGHT                  1024 // this is NOT the value I wanted here, but Duke It Out in DC's shitty vents said otherwise
-#define PTOTALHEIGHT                (48<<8)
 
 #define PCRACKTIME                  777
-
-#define PWATERSPEEDMODIFIER         0x1400
-#define PCROUCHSPEEDMODIFIER        0x2000
 
 #define TRIPBOMB_TRIPWIRE       0x00000001
 #define TRIPBOMB_TIMER          0x00000002
@@ -208,7 +202,12 @@ typedef struct {
     uint16_t frag, fraggedself;
 
     vec2_16_t loogie[6];
-    int16_t filler[115]; // jesus fucking christ
+    int16_t filler[103]; // jesus fucking christ
+
+    int16_t floorzoffset, spritezoffset, minwaterzdist, waterzoffset, shrunkzoffset;
+    int16_t crouchzincrement, crouchspeedmodifier, swimspeedmodifier;
+    int16_t swimzincrement, minswimzvel, maxswimzvel;
+    int16_t jetpackzincrement;
 
     int16_t gravity;
     int16_t sbs, sound_pitch;
