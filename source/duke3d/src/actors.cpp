@@ -7856,14 +7856,8 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         fallthrough__;
                     case STAT_ACTOR:
                     case STAT_DEFAULT:
-                        if (sprite[sectSprite].picnum == BOLT1
-                            || sprite[sectSprite].picnum == BOLT1 + 1
-                            || sprite[sectSprite].picnum == BOLT1 + 2
-                            || sprite[sectSprite].picnum == BOLT1 + 3
-                            || sprite[sectSprite].picnum == SIDEBOLT1
-                            || sprite[sectSprite].picnum == SIDEBOLT1 + 1
-                            || sprite[sectSprite].picnum == SIDEBOLT1 + 2
-                            || sprite[sectSprite].picnum == SIDEBOLT1 + 3
+                        if ((sprite[sectSprite].picnum >= BOLT1 && sprite[sectSprite].picnum <= BOLT1 + 3)
+                            || (sprite[sectSprite].picnum >= SIDEBOLT1 && sprite[sectSprite].picnum <= SIDEBOLT1 + 3)
                             || A_CheckSwitchTile(sectSprite))
                             break;
 
