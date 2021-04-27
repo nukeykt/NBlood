@@ -3023,7 +3023,7 @@ void P_GetInput(int const playerNum)
 
         localInput = {};
         localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
-        localInput.extbits |= (1<<7);
+        localInput.extbits |= BIT(EK_CHAT_MODE);
 
         return;
     }
@@ -3274,13 +3274,13 @@ void P_GetInput(int const playerNum)
     if (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_SEMIAUTO && BUTTON(gamefunc_Fire))
         CONTROL_ClearButton(gamefunc_Fire);
 
-    localInput.extbits |= (BUTTON(gamefunc_Move_Forward) || (input.fvel > 0));
-    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (input.fvel < 0)) << 1;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (input.svel > 0)) << 2;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (input.svel < 0)) << 3;
-    localInput.extbits |= BUTTON(gamefunc_Turn_Left)<<4;
-    localInput.extbits |= BUTTON(gamefunc_Turn_Right)<<5;
-    localInput.extbits |= BUTTON(gamefunc_Alt_Fire)<<6;
+    localInput.extbits |= (BUTTON(gamefunc_Move_Forward) || (input.fvel > 0)) << EK_MOVE_FORWARD;
+    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (input.fvel < 0)) << EK_MOVE_BACKWARD;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (input.svel > 0)) << EK_STRAFE_LEFT;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (input.svel < 0)) << EK_STRAFE_RIGHT;
+    localInput.extbits |= BUTTON(gamefunc_Turn_Left) << EK_TURN_LEFT;
+    localInput.extbits |= BUTTON(gamefunc_Turn_Right) << EK_TURN_RIGHT;
+    localInput.extbits |= BUTTON(gamefunc_Alt_Fire) << EK_ALT_FIRE;
 
     int const movementLocked = P_CheckLockedMovement(playerNum);
 
@@ -4185,7 +4185,7 @@ static void P_ProcessWeapon(int playerNum)
     }
 
     bool const doFire    = (playerBits & BIT(SK_FIRE) && (*weaponFrame) == 0);
-    bool const doAltFire = g_player[playerNum].input.extbits & (1 << 6);
+    bool const doAltFire = g_player[playerNum].input.extbits & BIT(EK_ALT_FIRE);
 
     if (doAltFire)
     {
@@ -5443,15 +5443,15 @@ void P_ProcessInput(int playerNum)
         }
     }
 
-    if (pInput.extbits & (1))      VM_OnEvent(EVENT_MOVEFORWARD,  pPlayer->i, playerNum);
-    if (pInput.extbits & (1 << 1)) VM_OnEvent(EVENT_MOVEBACKWARD, pPlayer->i, playerNum);
-    if (pInput.extbits & (1 << 2)) VM_OnEvent(EVENT_STRAFELEFT,   pPlayer->i, playerNum);
-    if (pInput.extbits & (1 << 3)) VM_OnEvent(EVENT_STRAFERIGHT,  pPlayer->i, playerNum);
+    if (pInput.extbits & BIT(EK_MOVE_FORWARD))         VM_OnEvent(EVENT_MOVEFORWARD,  pPlayer->i, playerNum);
+    if (pInput.extbits & BIT(EK_MOVE_BACKWARD))        VM_OnEvent(EVENT_MOVEBACKWARD, pPlayer->i, playerNum);
+    if (pInput.extbits & BIT(EK_STRAFE_LEFT))  VM_OnEvent(EVENT_STRAFELEFT,   pPlayer->i, playerNum);
+    if (pInput.extbits & BIT(EK_STRAFE_RIGHT)) VM_OnEvent(EVENT_STRAFERIGHT,  pPlayer->i, playerNum);
 
-    if (pInput.extbits & (1 << 4) || pInput.q16avel < 0)
+    if (pInput.extbits & BIT(EK_TURN_LEFT) || pInput.q16avel < 0)
         VM_OnEvent(EVENT_TURNLEFT, pPlayer->i, playerNum);
 
-    if (pInput.extbits & (1 << 5) || pInput.q16avel > 0)
+    if (pInput.extbits & BIT(EK_TURN_RIGHT) || pInput.q16avel > 0)
         VM_OnEvent(EVENT_TURNRIGHT, pPlayer->i, playerNum);
 
     if (pPlayer->vel.x || pPlayer->vel.y || pInput.fvel || pInput.svel)

@@ -168,14 +168,14 @@ typedef struct {
     char inven_icon, jetpack_on, heat_on;
 } DukeStatus_t;
 
+#pragma pack(push,1)
 typedef struct {
     uint32_t bits;
     int16_t fvel, svel;
     fix16_t q16avel, q16horz;
-    uint8_t extbits;
+    uint32_t extbits;
 } input_t;
 
-#pragma pack(push,1)
 // XXX: r1625 changed a lot types here, among others
 //  * int32_t --> int16_t
 //  * int16_t --> int8_t
