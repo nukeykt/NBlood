@@ -2453,6 +2453,13 @@ DETONATE:
                         }
                     }
 
+                    if (pSprite->pal == 23)
+                    {
+                        pSprite->yvel = 0;
+                        pSprite->hitag = pSprite->extra;
+                        goto next_sprite;
+                    }
+
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
                 }
             }

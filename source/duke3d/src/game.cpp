@@ -2792,11 +2792,12 @@ int A_Spawn(int spriteNum, int tileNum)
             goto SPAWN_END;
 
         case MASTERSWITCH__STATIC:
-            if (pSprite->picnum == MASTERSWITCH)
-                pSprite->cstat |= 32768;
+            pSprite->cstat |= 32768;
+            pSprite->extra = pSprite->hitag;
             pSprite->yvel = 0;
             changespritestat(newSprite, STAT_STANDABLE);
             goto SPAWN_END;
+
         case LOCATORS__STATIC:
             pSprite->cstat |= 32768;
             changespritestat(newSprite, STAT_LOCATOR);
