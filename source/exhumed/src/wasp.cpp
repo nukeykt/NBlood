@@ -48,9 +48,9 @@ struct Wasp
     short nRun;
     short nTarget;
     short field_C;
-    short field_E;
-    short field_10;
-    short field_12;
+    short nAttackTime;
+    short dTime;
+    short nVelocity;
     short field_14;
     short nDamage;
 };
@@ -162,10 +162,10 @@ int BuildWasp(short nSprite, int x, int y, int z, short nSector, short nAngle)
         WaspList[nWasp].field_C = RandomSize(5);
     }
 
-    WaspList[nWasp].field_E = 0;
+    WaspList[nWasp].nAttackTime = 0;
     WaspList[nWasp].field_14 = 0;
-    WaspList[nWasp].field_12 = 0;
-    WaspList[nWasp].field_10 = RandomSize(7) + 127;
+    WaspList[nWasp].nVelocity = 0;
+    WaspList[nWasp].dTime = RandomSize(7) + 127;
 
     sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nWasp | 0x1E0000);
 
@@ -227,7 +227,7 @@ void FuncWasp(int a, int nDamage, int nRun)
                     sprite[nSprite].ang += RandomSize(9) + 768;
                     sprite[nSprite].ang &= kAngleMask;
 
-                    WaspList[nWasp].field_12 = 3000;
+                    WaspList[nWasp].nVelocity = 3000;
 
                     sprite[nSprite].zvel = (-20) - RandomSize(6);
                 }
@@ -288,10 +288,10 @@ void FuncWasp(int a, int nDamage, int nRun)
 
                 case 0:
                 {
-                    sprite[nSprite].zvel = Sin(WaspList[nWasp].field_E) >> 4;
+                    sprite[nSprite].zvel = Sin(WaspList[nWasp].nAttackTime) >> 4;
 
-                    WaspList[nWasp].field_E += WaspList[nWasp].field_10;
-                    WaspList[nWasp].field_E &= kAngleMask;
+                    WaspList[nWasp].nAttackTime += WaspList[nWasp].dTime;
+                    WaspList[nWasp].nAttackTime &= kAngleMask;
 
                     MoveCreature(nSprite);
 
@@ -307,7 +307,7 @@ void FuncWasp(int a, int nDamage, int nRun)
                             sprite[nSprite].zvel = 0;
                             WaspList[nWasp].nAction = 1;
                             WaspList[nWasp].nFrame  = 0;
-                            WaspList[nWasp].field_12 = 1500;
+                            WaspList[nWasp].nVelocity = 1500;
                             WaspList[nWasp].field_C = RandomSize(5) + 60;
                         }
                     }
@@ -332,7 +332,7 @@ void FuncWasp(int a, int nDamage, int nRun)
                         return;
                     }
 
-                    int nChaseVal = AngleChase(nSprite, nTarget, WaspList[nWasp].field_12, 0, 16);
+                    int nChaseVal = AngleChase(nSprite, nTarget, WaspList[nWasp].nVelocity, 0, 16);
 
                     switch (nChaseVal & 0xC000)
                     {
@@ -372,7 +372,7 @@ void FuncWasp(int a, int nDamage, int nRun)
                         sprite[nSprite].zvel = (-20) - RandomSize(6);
 
                         WaspList[nWasp].nAction = 1; 
-                        WaspList[nWasp].field_12 = 3000;
+                        WaspList[nWasp].nVelocity = 3000;
                     }
                     return;
                 }

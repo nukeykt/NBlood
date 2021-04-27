@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 struct Switch
 {
     short field_0;
-    short field_2;
+    short nPause;
     short nChannel;
     short nLink;
     short field_8;
@@ -146,7 +146,7 @@ int BuildSwPause(int nChannel, int nLink, int ebx)
 {
     for (int i = kMaxSwitches - 1; i >= SwitchCount; i--)
     {
-        if (SwitchData[i].nChannel == nChannel && SwitchData[i].field_2 != 0) {
+        if (SwitchData[i].nChannel == nChannel && SwitchData[i].nPause != 0) {
             return i | 0x20000;
         }
     }
@@ -160,7 +160,7 @@ int BuildSwPause(int nChannel, int nLink, int ebx)
 
     SwitchData[SwitchCount].nChannel = nChannel;
     SwitchData[SwitchCount].nLink = nLink;
-    SwitchData[SwitchCount].field_2 = ebx;
+    SwitchData[SwitchCount].nPause = ebx;
     SwitchData[SwitchCount].field_8 = -1;
 
     return SwitchCount | 0x20000;
@@ -225,13 +225,13 @@ void FuncSwPause(int a, int UNUSED(b), int nRun)
 
             int eax;
 
-            if (SwitchData[nSwitch].field_2 <= 0)
+            if (SwitchData[nSwitch].nPause <= 0)
             {
                 eax = 100;
             }
             else
             {
-                eax = SwitchData[nSwitch].field_2;
+                eax = SwitchData[nSwitch].nPause;
             }
 
             SwitchData[nSwitch].field_0 = eax;
@@ -318,7 +318,7 @@ int BuildSwNotOnPause(int nChannel, int nLink, int nSector, int ecx)
 
     SwitchData[nSwitch].nChannel = nChannel;
     SwitchData[nSwitch].nLink    = nLink;
-    SwitchData[nSwitch].field_2  = ecx;
+    SwitchData[nSwitch].nPause  = ecx;
     SwitchData[nSwitch].nSector  = nSector;
     SwitchData[nSwitch].field_8  = -1;
     SwitchData[nSwitch].field_C  = -1;
@@ -383,7 +383,7 @@ void FuncSwNotOnPause(int a, int UNUSED(b), int nRun)
 
                     short nSector = SwitchData[nSwitch].nSector;
 
-                    SwitchData[nSwitch].field_0 = SwitchData[nSwitch].field_2;
+                    SwitchData[nSwitch].field_0 = SwitchData[nSwitch].nPause;
                     SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nMoves);
                 }
             }
@@ -393,7 +393,7 @@ void FuncSwNotOnPause(int a, int UNUSED(b), int nRun)
 
         case 0x50000:
         {
-            SwitchData[nSwitch].field_0 = SwitchData[nSwitch].field_2;
+            SwitchData[nSwitch].field_0 = SwitchData[nSwitch].nPause;
             return;
         }
     }

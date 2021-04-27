@@ -314,8 +314,8 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
 
                 if (GrenadeList[nGrenade].field_10 < 0)
                 {
-                    PlayerList[nPlayer].field_3A = 0;
-                    PlayerList[nPlayer].field_3FOUR = 0;
+                    PlayerList[nPlayer].nWeaponState = 0;
+                    PlayerList[nPlayer].nWeaponFrame = 0;
 
                     if (PlayerList[nPlayer].nAmmo[kWeaponGrenade])
                     {
@@ -325,8 +325,8 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
                     {
                         SelectNewWeapon(nPlayer);
 
-                        PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_38;
-                        PlayerList[nPlayer].field_38 = -1;
+                        PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nNewWeapon;
+                        PlayerList[nPlayer].nNewWeapon = -1;
                     }
                 }
 

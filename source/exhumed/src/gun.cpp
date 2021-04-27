@@ -114,8 +114,8 @@ void ResetPlayerWeapons(short nPlayer)
     }
 
     PlayerList[nPlayer].nCurrentWeapon = 0;
-    PlayerList[nPlayer].field_3A = 0;
-    PlayerList[nPlayer].field_3FOUR = 0;
+    PlayerList[nPlayer].nWeaponState = 0;
+    PlayerList[nPlayer].nWeaponFrame = 0;
 
     nPlayerGrenade[nPlayer] = -1;
     nPlayerWeapons[nPlayer] = 0x1; // turn on bit 1 only
@@ -131,12 +131,12 @@ void SetNewWeapon(short nPlayer, short nWeapon)
 {
     if (nWeapon == kWeaponMummified)
     {
-        PlayerList[nPlayer].field_3C = PlayerList[nPlayer].nCurrentWeapon;
+        PlayerList[nPlayer].nLastWeapon = PlayerList[nPlayer].nCurrentWeapon;
         PlayerList[nPlayer].bIsFiring = kFalse;
-        PlayerList[nPlayer].field_3A = 5;
+        PlayerList[nPlayer].nWeaponState = 5;
         SetPlayerMummified(nPlayer, kTrue);
 
-        PlayerList[nPlayer].field_3FOUR = 0;
+        PlayerList[nPlayer].nWeaponFrame = 0;
     }
     else
     {
@@ -157,7 +157,7 @@ void SetNewWeapon(short nPlayer, short nWeapon)
             else
             {
                 PlayerList[nPlayer].nCurrentWeapon = nWeapon;
-                PlayerList[nPlayer].field_3FOUR = 0;
+                PlayerList[nPlayer].nWeaponFrame = 0;
             }
         }
         else {
@@ -165,7 +165,7 @@ void SetNewWeapon(short nPlayer, short nWeapon)
         }
     }
 
-    PlayerList[nPlayer].field_38 = nWeapon;
+    PlayerList[nPlayer].nNewWeapon = nWeapon;
 
     if (nPlayer == nLocalPlayer)
     {
@@ -187,9 +187,9 @@ void SetNewWeaponImmediate(short nPlayer, short nWeapon)
     SetNewWeapon(nPlayer, nWeapon);
 
     PlayerList[nPlayer].nCurrentWeapon = nWeapon;
-    PlayerList[nPlayer].field_38 = -1;
-    PlayerList[nPlayer].field_3FOUR = 0;
-    PlayerList[nPlayer].field_3A = 0;
+    PlayerList[nPlayer].nNewWeapon = -1;
+    PlayerList[nPlayer].nWeaponFrame = 0;
+    PlayerList[nPlayer].nWeaponState = 0;
 }
 
 void SetNewWeaponIfBetter(short nPlayer, short nWeapon)
@@ -430,19 +430,19 @@ void MoveWeapons(short nPlayer)
 
     if (nWeapon < -1)
     {
-        if (PlayerList[nPlayer].field_38 != -1)
+        if (PlayerList[nPlayer].nNewWeapon != -1)
         {
-            PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_38;
-            PlayerList[nPlayer].field_3A = 0;
-            PlayerList[nPlayer].field_3FOUR = 0;
-            PlayerList[nPlayer].field_38 = -1;
+            PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nNewWeapon;
+            PlayerList[nPlayer].nWeaponState = 0;
+            PlayerList[nPlayer].nWeaponFrame = 0;
+            PlayerList[nPlayer].nNewWeapon = -1;
         }
 
         return;
     }
 
     // loc_26ACC
-    short eax = PlayerList[nPlayer].field_3A;
+    short eax = PlayerList[nPlayer].nWeaponState;
     short nSeq = WeaponInfo[nWeapon].nSeq;
 
     short var_3C = WeaponInfo[nWeapon].b[eax] + SeqOffsets[nSeq];
@@ -453,27 +453,27 @@ void MoveWeapons(short nPlayer)
 
     for (frames = var_1C; frames > 0; frames--)
     {
-        seq_MoveSequence(nPlayerSprite, var_3C, PlayerList[nPlayer].field_3FOUR);
+        seq_MoveSequence(nPlayerSprite, var_3C, PlayerList[nPlayer].nWeaponFrame);
 
-        PlayerList[nPlayer].field_3FOUR++;
+        PlayerList[nPlayer].nWeaponFrame++;
 
         dword_96E22++;
         if (dword_96E22 >= 15) {
             dword_96E22 = 0;
         }
 
-        if (PlayerList[nPlayer].field_3FOUR >= SeqSize[var_3C])
+        if (PlayerList[nPlayer].nWeaponFrame >= SeqSize[var_3C])
         {
-            if (PlayerList[nPlayer].field_38 == -1)
+            if (PlayerList[nPlayer].nNewWeapon == -1)
             {
-                switch (PlayerList[nPlayer].field_3A)
+                switch (PlayerList[nPlayer].nWeaponState)
                 {
                     default:
                         break;
 
                     case 0:
                     {
-                        PlayerList[nPlayer].field_3A = 1;
+                        PlayerList[nPlayer].nWeaponState = 1;
                         SetWeaponStatus(nPlayer);
                         break;
                     }
@@ -499,7 +499,7 @@ void MoveWeapons(short nPlayer)
                                     Ra[nPlayer].field_C = 1;
                                 }
 
-                                PlayerList[nPlayer].field_3A = 2;
+                                PlayerList[nPlayer].nWeaponState = 2;
 
                                 if (nWeapon == 0)
                                     break;
@@ -525,8 +525,8 @@ void MoveWeapons(short nPlayer)
                     {
                         if (nWeapon == kWeaponPistol && nPistolClip[nPlayer] <= 0)
                         {
-                            PlayerList[nPlayer].field_3A = 3;
-                            PlayerList[nPlayer].field_3FOUR = 0;
+                            PlayerList[nPlayer].nWeaponState = 3;
+                            PlayerList[nPlayer].nWeaponFrame = 0;
 
                             nPistolClip[nPlayer] = Min(6, PlayerList[nPlayer].nAmmo[kWeaponPistol]);
                             break;
@@ -535,19 +535,19 @@ void MoveWeapons(short nPlayer)
                         {
                             if (!PlayerList[nPlayer].bIsFiring)
                             {
-                                PlayerList[nPlayer].field_3A = 3;
+                                PlayerList[nPlayer].nWeaponState = 3;
                                 break;
                             }
                             else
                             {
-                                PlayerList[nPlayer].field_3FOUR = SeqSize[var_3C] - 1;
+                                PlayerList[nPlayer].nWeaponFrame = SeqSize[var_3C] - 1;
                                 continue;
                             }
                         }
                         else if (nWeapon == kWeaponMummified)
                         {
-                            PlayerList[nPlayer].field_3A = 0;
-                            PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_3C;
+                            PlayerList[nPlayer].nWeaponState = 0;
+                            PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nLastWeapon;
 
                             nWeapon = PlayerList[nPlayer].nCurrentWeapon;
 
@@ -560,24 +560,24 @@ void MoveWeapons(short nPlayer)
                             if (PlayerList[nPlayer].bIsFiring && WeaponCanFire(nPlayer))
                             {
                                 if (nWeapon != kWeaponM60 && nWeapon != kWeaponPistol) {
-                                    PlayerList[nPlayer].field_3A = 3;
+                                    PlayerList[nPlayer].nWeaponState = 3;
                                 }
                             }
                             else
                             {
                                 if (WeaponInfo[nWeapon].b[4] == -1)
                                 {
-                                    PlayerList[nPlayer].field_3A = 1;
+                                    PlayerList[nPlayer].nWeaponState = 1;
                                 }
                                 else
                                 {
                                     if (nWeapon == kWeaponFlamer && (nSectFlag & kSectUnderwater))
                                     {
-                                        PlayerList[nPlayer].field_3A = 1;
+                                        PlayerList[nPlayer].nWeaponState = 1;
                                     }
                                     else
                                     {
-                                        PlayerList[nPlayer].field_3A = 4;
+                                        PlayerList[nPlayer].nWeaponState = 4;
                                     }
                                 }
                             }
@@ -593,11 +593,11 @@ void MoveWeapons(short nPlayer)
                     {
                         if (nWeapon == kWeaponMummified)
                         {
-                            PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_3C;
+                            PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nLastWeapon;
 
                             nWeapon = PlayerList[nPlayer].nCurrentWeapon;
 
-                            PlayerList[nPlayer].field_3A = 0;
+                            PlayerList[nPlayer].nWeaponState = 0;
                             break;
                         }
                         else if (nWeapon == kWeaponRing)
@@ -605,7 +605,7 @@ void MoveWeapons(short nPlayer)
                             if (!WeaponInfo[nWeapon].bUsesAmmo || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
                             {
                                 if (!PlayerList[nPlayer].bIsFiring) {
-                                    PlayerList[nPlayer].field_3A = 1;
+                                    PlayerList[nPlayer].nWeaponState = 1;
                                 }
                                 else {
                                     break;
@@ -622,45 +622,45 @@ void MoveWeapons(short nPlayer)
                         else if (nWeapon == kWeaponM60)
                         {
                             CheckClip(nPlayer);
-                            PlayerList[nPlayer].field_3A = 1;
+                            PlayerList[nPlayer].nWeaponState = 1;
                             break;
                         }
                         else if (nWeapon == kWeaponGrenade)
                         {
                             if (!WeaponInfo[nWeapon].bUsesAmmo || PlayerList[nPlayer].nAmmo[WeaponInfo[nWeapon].nAmmoType])
                             {
-                                PlayerList[nPlayer].field_3A = 0;
+                                PlayerList[nPlayer].nWeaponState = 0;
                                 break;
                             }
                             else
                             {
                                 SelectNewWeapon(nPlayer);
-                                PlayerList[nPlayer].field_3A = 5;
+                                PlayerList[nPlayer].nWeaponState = 5;
 
-                                PlayerList[nPlayer].field_3FOUR = SeqSize[WeaponInfo[kWeaponGrenade].b[0] + SeqOffsets[nSeq]] - 1; // CHECKME
+                                PlayerList[nPlayer].nWeaponFrame = SeqSize[WeaponInfo[kWeaponGrenade].b[0] + SeqOffsets[nSeq]] - 1; // CHECKME
                                 goto loc_flag; // FIXME
                             }
                         }
                         else
                         {
                             if (PlayerList[nPlayer].bIsFiring && WeaponCanFire(nPlayer)) {
-                                PlayerList[nPlayer].field_3A = 2;
+                                PlayerList[nPlayer].nWeaponState = 2;
                                 break;
                             }
 
                             if (WeaponInfo[nWeapon].b[4] == -1)
                             {
-                                PlayerList[nPlayer].field_3A = 1;
+                                PlayerList[nPlayer].nWeaponState = 1;
                                 break;
                             }
 
                             if (nWeapon == kWeaponFlamer && (nSectFlag & kSectUnderwater))
                             {
-                                PlayerList[nPlayer].field_3A = 1;
+                                PlayerList[nPlayer].nWeaponState = 1;
                             }
                             else
                             {
-                                PlayerList[nPlayer].field_3A = 4;
+                                PlayerList[nPlayer].nWeaponState = 4;
                             }
                         }
                         break;
@@ -668,18 +668,18 @@ void MoveWeapons(short nPlayer)
 
                     case 4:
                     {
-                        PlayerList[nPlayer].field_3A = 1;
+                        PlayerList[nPlayer].nWeaponState = 1;
                         break;
                     }
 
                     case 5:
                     {
-                        PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_38;
+                        PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nNewWeapon;
 
                         nWeapon = PlayerList[nPlayer].nCurrentWeapon;
 
-                        PlayerList[nPlayer].field_3A = 0;
-                        PlayerList[nPlayer].field_38 = -1;
+                        PlayerList[nPlayer].nWeaponState = 0;
+                        PlayerList[nPlayer].nNewWeapon = -1;
 
                         SetWeaponStatus(nPlayer);
                         break;
@@ -687,26 +687,26 @@ void MoveWeapons(short nPlayer)
                 }
 
                 // loc_26FC5
-                var_3C = SeqOffsets[WeaponInfo[nWeapon].nSeq] + WeaponInfo[nWeapon].b[PlayerList[nPlayer].field_3A];
-                PlayerList[nPlayer].field_3FOUR = 0;
+                var_3C = SeqOffsets[WeaponInfo[nWeapon].nSeq] + WeaponInfo[nWeapon].b[PlayerList[nPlayer].nWeaponState];
+                PlayerList[nPlayer].nWeaponFrame = 0;
             }
             else
             {
-                if (PlayerList[nPlayer].field_3A == 5)
+                if (PlayerList[nPlayer].nWeaponState == 5)
                 {
-                    PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].field_38;
+                    PlayerList[nPlayer].nCurrentWeapon = PlayerList[nPlayer].nNewWeapon;
 
                     nWeapon = PlayerList[nPlayer].nCurrentWeapon;
 
-                    PlayerList[nPlayer].field_38 = -1;
-                    PlayerList[nPlayer].field_3A = 0;
+                    PlayerList[nPlayer].nNewWeapon = -1;
+                    PlayerList[nPlayer].nWeaponState = 0;
                 }
                 else
                 {
-                    PlayerList[nPlayer].field_3A = 5;
+                    PlayerList[nPlayer].nWeaponState = 5;
                 }
 
-                PlayerList[nPlayer].field_3FOUR = 0;
+                PlayerList[nPlayer].nWeaponFrame = 0;
                 continue;
             }
         } // end of if (PlayerList[nPlayer].field_34 >= SeqSize[var_3C])
@@ -714,7 +714,7 @@ void MoveWeapons(short nPlayer)
 loc_flag:
 
         // loc_27001
-        short nFrameFlag = seq_GetFrameFlag(var_3C, PlayerList[nPlayer].field_3FOUR);
+        short nFrameFlag = seq_GetFrameFlag(var_3C, PlayerList[nPlayer].nWeaponFrame);
 
         if (((!(nSectFlag & kSectUnderwater)) || nWeapon == kWeaponRing) && (nFrameFlag & 4))
         {
@@ -748,8 +748,8 @@ loc_flag:
                 if (nTemperature[nPlayer] > 50)
                 {
                     nTemperature[nPlayer] = 0;
-                    PlayerList[nPlayer].field_3A = 4;
-                    PlayerList[nPlayer].field_3FOUR = 0;
+                    PlayerList[nPlayer].nWeaponState = 4;
+                    PlayerList[nPlayer].nWeaponFrame = 0;
                 }
             }
 
@@ -807,7 +807,7 @@ loc_flag:
 
                     int var_28;
 
-                    if (PlayerList[nPlayer].field_3A == 2) {
+                    if (PlayerList[nPlayer].nWeaponState == 2) {
                         var_28 = 6;
                     }
                     else {
@@ -868,8 +868,8 @@ loc_flag:
                     }
 
                     // loc_27399:
-                    PlayerList[nPlayer].field_3A = var_28;
-                    PlayerList[nPlayer].field_3FOUR = 0;
+                    PlayerList[nPlayer].nWeaponState = var_28;
+                    PlayerList[nPlayer].nWeaponFrame = 0;
                     break;
                 }
                 case kWeaponFlamer:
@@ -877,8 +877,8 @@ loc_flag:
                     if (nSectFlag & kSectUnderwater)
                     {
                         DoBubbles(nPlayer);
-                        PlayerList[nPlayer].field_3A = 1;
-                        PlayerList[nPlayer].field_3FOUR = 0;
+                        PlayerList[nPlayer].nWeaponState = 1;
+                        PlayerList[nPlayer].nWeaponFrame = 0;
                         StopSpriteSound(nPlayerSprite);
                         break;
                     }
@@ -969,8 +969,8 @@ loc_flag:
                 {
                     if (nWeapon == kWeaponM60 && nPlayerClip[nPlayer] <= 0)
                     {
-                        PlayerList[nPlayer].field_3A = 3;
-                        PlayerList[nPlayer].field_3FOUR = 0;
+                        PlayerList[nPlayer].nWeaponState = 3;
+                        PlayerList[nPlayer].nWeaponFrame = 0;
                         // goto loc_27609:
                     }
                 }
@@ -995,7 +995,7 @@ void DrawWeapons(int smooth)
         return;
     }
 
-    short var_34 = PlayerList[nLocalPlayer].field_3A;
+    short var_34 = PlayerList[nLocalPlayer].nWeaponState;
 
     short var_30 = SeqOffsets[WeaponInfo[nWeapon].nSeq];
 
@@ -1043,7 +1043,7 @@ void DrawWeapons(int smooth)
         nShade = sprite[PlayerList[nLocalPlayer].nSprite].shade;
     }
 
-    seq_DrawGunSequence(var_28, PlayerList[nLocalPlayer].field_3FOUR, xOffset, yOffset, nShade, nPal);
+    seq_DrawGunSequence(var_28, PlayerList[nLocalPlayer].nWeaponFrame, xOffset, yOffset, nShade, nPal);
 
     if (nWeapon != kWeaponM60)
         return;
@@ -1079,7 +1079,7 @@ void DrawWeapons(int smooth)
                 nSeqOffset = var_30 + 4;
             }
 
-            seq_DrawGunSequence(nSeqOffset, PlayerList[nLocalPlayer].field_3FOUR, xOffset, yOffset, nShade, nPal);
+            seq_DrawGunSequence(nSeqOffset, PlayerList[nLocalPlayer].nWeaponFrame, xOffset, yOffset, nShade, nPal);
             return;
         }
         case 1:
@@ -1117,7 +1117,7 @@ void DrawWeapons(int smooth)
         {
             int nClip = nPlayerClip[nLocalPlayer];
 
-            short dx = PlayerList[nLocalPlayer].field_3FOUR;
+            short dx = PlayerList[nLocalPlayer].nWeaponFrame;
 
             if (nClip <= 0) {
                 return;
@@ -1153,7 +1153,7 @@ void DrawWeapons(int smooth)
         {
             int nClip = nPlayerClip[nLocalPlayer];
 
-            short ax = PlayerList[nLocalPlayer].field_3FOUR;
+            short ax = PlayerList[nLocalPlayer].nWeaponFrame;
 
             if (nClip <= 0) {
                 return;
