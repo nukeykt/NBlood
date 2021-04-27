@@ -484,7 +484,7 @@ enum
     SE_23_ONE_WAY_TELEPORT             = 23,
     SE_24_CONVEYOR                     = 24,
     SE_25_PISTON                       = 25,
-    SE_26                              = 26,
+    SE_26_ESCALATOR                    = 26,
     SE_27_DEMO_CAM                     = 27,
     SE_28_LIGHTNING                    = 28,
     SE_29_WAVES                        = 29,
@@ -492,7 +492,7 @@ enum
     SE_31_FLOOR_RISE_FALL              = 31,
     SE_32_CEILING_RISE_FALL            = 32,
     SE_33_QUAKE_DEBRIS                 = 33,
-    SE_34                              = 34,  // XXX
+    SE_34_CONVEYOR2                    = 34,
     SE_35                              = 35,  // XXX
     SE_36_PROJ_SHOOTER                 = 36,
     SE_49_POINT_LIGHT                  = 49,

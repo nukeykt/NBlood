@@ -1470,7 +1470,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                             break;
 
                         case SE_24_CONVEYOR:
-                        case SE_34:
+                        case SE_34_CONVEYOR2:
                         case SE_25_PISTON:
                             actor[spriteNum].t_data[4] = !actor[spriteNum].t_data[4];
                             P_DoQuote(actor[spriteNum].t_data[4] ? QUOTE_DEACTIVATED : QUOTE_ACTIVATED, g_player[playerNum].ps);

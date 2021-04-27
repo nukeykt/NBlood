@@ -7818,7 +7818,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             break;
 
         case SE_24_CONVEYOR:
-        case SE_34:
+        case SE_34_CONVEYOR2:
         {
             if (pData[4])
                 break;
@@ -7960,7 +7960,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
             break;
 
-        case SE_26:
+        case SE_26_ESCALATOR:
         {
             int32_t p, nextj;
 

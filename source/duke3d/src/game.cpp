@@ -3234,7 +3234,7 @@ int A_Spawn(int spriteNum, int tileNum)
             case SE_14_SUBWAY_CAR:     // Caboos
             case SE_15_SLIDING_DOOR:   // Subwaytype sliding door
             case SE_16_REACTOR:        // That rotating blocker reactor thing
-            case SE_26:                // ESCELATOR
+            case SE_26_ESCALATOR:      // ESCELATOR
             case SE_30_TWO_WAY_TRAIN:  // No rotational subways
                 if (pSprite->lotag == SE_0_ROTATING_SECTOR)
                 {
@@ -3361,7 +3361,7 @@ int A_Spawn(int spriteNum, int tileNum)
                 }
                 else if (pSprite->lotag == SE_16_REACTOR)
                     T4(newSprite) = sector[sectNum].ceilingz;
-                else if (pSprite->lotag == SE_26)
+                else if (pSprite->lotag == SE_26_ESCALATOR)
                 {
                     T4(newSprite)  = pSprite->x;
                     T5(newSprite)  = pSprite->y;
@@ -3395,7 +3395,7 @@ int A_Spawn(int spriteNum, int tileNum)
                 case SE_11_SWINGING_DOOR:
                 case SE_15_SLIDING_DOOR:
                 case SE_16_REACTOR:
-                case SE_26: Sect_SetInterpolation(sprite[newSprite].sectnum); break;
+                case SE_26_ESCALATOR: Sect_SetInterpolation(sprite[newSprite].sectnum); break;
             }
 
             changespritestat(newSprite, STAT_EFFECTOR);

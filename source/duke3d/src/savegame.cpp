@@ -117,7 +117,7 @@ void G_ResetInterpolations(void)
         case SE_14_SUBWAY_CAR:
         case SE_15_SLIDING_DOOR:
         case SE_16_REACTOR:
-        case SE_26:
+        case SE_26_ESCALATOR:
         case SE_30_TWO_WAY_TRAIN:
             Sect_SetInterpolation(sprite[k].sectnum);
             break;
