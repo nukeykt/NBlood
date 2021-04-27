@@ -2429,15 +2429,18 @@ DETONATE:
                         {
                             switch (sprite[j].lotag)
                             {
-                            case SE_2_EARTHQUAKE:
+                            case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
                             case SE_21_DROP_FLOOR:
                             case SE_31_FLOOR_RISE_FALL:
                             case SE_32_CEILING_RISE_FALL:
                             case SE_36_PROJ_SHOOTER:
-                                actor[j].t_data[0] = 1;
+                                A_CallSound(sectNum, j);
+                                fallthrough__;
+                            case SE_2_EARTHQUAKE:
+                                actor[j].t_data[0] = 1 - actor[j].t_data[0];
                                 break;
                             case SE_3_RANDOM_LIGHTS_AFTER_SHOT_OUT:
-                                actor[j].t_data[4] = 1;
+                                actor[j].t_data[4] = 1 - actor[j].t_data[4];
                                 break;
                             }
                         }
