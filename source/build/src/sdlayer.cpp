@@ -745,8 +745,6 @@ void uninitsystem(void)
     windowsPlatformCleanup();
 #endif
 
-    SDL_Quit();
-
 #ifdef USE_OPENGL
 # if SDL_MAJOR_VERSION >= 2
     SDL_GL_UnloadLibrary();
