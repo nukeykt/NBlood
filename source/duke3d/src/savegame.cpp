@@ -2395,11 +2395,11 @@ static void postloadplayer(int32_t savegamep)
             for (i=0; i<g_animWallCnt; i++)
                 switch (DYNAMICTILEMAP(wall[animwall[i].wallnum].picnum))
                 {
-                case FEMPIC1__STATIC:
+                case FEMPIC1__:
                     wall[animwall[i].wallnum].picnum = BLANKSCREEN;
                     break;
-                case FEMPIC2__STATIC:
-                case FEMPIC3__STATIC:
+                case FEMPIC2__:
+                case FEMPIC3__:
                     wall[animwall[i].wallnum].picnum = SCREENBREAK6;
                     break;
                 }

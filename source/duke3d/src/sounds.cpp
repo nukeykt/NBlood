@@ -712,9 +712,9 @@ boost:
     {
         switch (DYNAMICSOUNDMAP(soundNum))
         {
-            case PIPEBOMB_EXPLODE__STATIC:
-            case LASERTRIP_EXPLODE__STATIC:
-            case RPG_EXPLODE__STATIC:
+            case PIPEBOMB_EXPLODE__:
+            case LASERTRIP_EXPLODE__:
+            case RPG_EXPLODE__:
                 goto boost;
         }
     }

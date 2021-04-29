@@ -226,14 +226,14 @@ static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projec
             {
                 switch (DYNAMICTILEMAP(projecTile))
                 {
-                    case TONGUE__STATIC:
-                    case FREEZEBLAST__STATIC:
-                    case SHRINKSPARK__STATIC:
-                    case SHRINKER__STATIC:
-                    case RPG__STATIC:
-                    case FIRELASER__STATIC:
-                    case SPIT__STATIC:
-                    case COOLEXPLOSION1__STATIC:
+                    case TONGUE__:
+                    case FREEZEBLAST__:
+                    case SHRINKSPARK__:
+                    case SHRINKER__:
+                    case RPG__:
+                    case FIRELASER__:
+                    case SPIT__:
+                    case COOLEXPLOSION1__:
                         return -1;
                     default:
                         break;
@@ -1096,16 +1096,16 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
 
     switch (DYNAMICTILEMAP(projecTile))
     {
-        case BLOODSPLAT1__STATIC:
-        case BLOODSPLAT2__STATIC:
-        case BLOODSPLAT3__STATIC:
-        case BLOODSPLAT4__STATIC:
+        case BLOODSPLAT1__:
+        case BLOODSPLAT2__:
+        case BLOODSPLAT3__:
+        case BLOODSPLAT4__:
             shootAng += 64 - (krand() & 127);
             if (playerNum < 0)
                 shootAng += 1024;
             Zvel = 1024 - (krand() & 2047);
             fallthrough__;
-        case KNEE__STATIC:
+        case KNEE__:
             if (projecTile == KNEE)
             {
                 if (playerNum >= 0)
@@ -1161,16 +1161,16 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                 Proj_HandleKnee(&hitData, spriteNum, playerNum, projecTile, shootAng, NULL, KNEE, 7, SMALLSMOKE, KICK_HIT);
             break;
 
-        case SHOTSPARK1__STATIC:
-        case SHOTGUN__STATIC:
-        case CHAINGUN__STATIC:
+        case SHOTSPARK1__:
+        case SHOTGUN__:
+        case CHAINGUN__:
         {
             if (pSprite->extra >= 0)
                 pSprite->shade = -96;
 
             if (playerNum >= 0)
                 P_PreFireHitscan(spriteNum, playerNum, projecTile, &startPos, &Zvel, &shootAng,
-                    projecTile == SHOTSPARK1__STATIC && !WW2GI, 1);
+                    projecTile == SHOTSPARK1__ && !WW2GI, 1);
             else
                 A_PreFireHitscan(pSprite, &startPos, &Zvel, &shootAng, 1);
 
@@ -1201,7 +1201,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             return -1;
         }
 
-        case GROWSPARK__STATIC:
+        case GROWSPARK__:
         {
             if (playerNum >= 0)
                 P_PreFireHitscan(spriteNum, playerNum, projecTile, &startPos, &Zvel, &shootAng, 1, 1);
@@ -1230,25 +1230,25 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
         }
         break;
 
-        case FIREBALL__STATIC:
+        case FIREBALL__:
             if (!WORLDTOUR)
                 break;
             fallthrough__;
-        case FIRELASER__STATIC:
-        case SPIT__STATIC:
-        case COOLEXPLOSION1__STATIC:
+        case FIRELASER__:
+        case SPIT__:
+        case COOLEXPLOSION1__:
         {
             if (pSprite->extra >= 0)
                 pSprite->shade = -96;
 
             switch (projecTile)
             {
-                case SPIT__STATIC: vel = 292; break;
-                case COOLEXPLOSION1__STATIC:
+                case SPIT__: vel = 292; break;
+                case COOLEXPLOSION1__:
                     vel = (pSprite->picnum == BOSS2) ? 644 : 348;
                     startPos.z -= (4 << 7);
                     break;
-                case FIREBALL__STATIC:
+                case FIREBALL__:
                     if (pSprite->picnum == BOSS5 || pSprite->picnum == BOSS5STAYPUT)
                     {
                         vel = 968;
@@ -1256,7 +1256,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                         break;
                     }
                     fallthrough__;
-                case FIRELASER__STATIC:
+                case FIRELASER__:
                 default:
                     vel = 840;
                     startPos.z -= (4 << 7);
@@ -1328,10 +1328,10 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             return returnSprite;
         }
 
-        case FREEZEBLAST__STATIC:
+        case FREEZEBLAST__:
             startPos.z += (3 << 8);
             fallthrough__;
-        case RPG__STATIC:
+        case RPG__:
         {
             // XXX: "CODEDUP"
             if (pSprite->extra >= 0)
@@ -1451,7 +1451,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             return returnSprite;
         }
 
-        case HANDHOLDINGLASER__STATIC:
+        case HANDHOLDINGLASER__:
         {
             int const zOffset     = (playerNum >= 0) ? g_player[playerNum].ps->pyoff : 0;
             Zvel                  = (playerNum >= 0) ? fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 32 : 0;
@@ -1516,8 +1516,8 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             return -1;
         }
 
-        case BOUNCEMINE__STATIC:
-        case MORTER__STATIC:
+        case BOUNCEMINE__:
+        case MORTER__:
         {
             if (pSprite->extra >= 0)
                 pSprite->shade = -96;
@@ -1539,7 +1539,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             break;
         }
 
-        case SHRINKER__STATIC:
+        case SHRINKER__:
         {
             if (pSprite->extra >= 0)
                 pSprite->shade = -96;
@@ -1567,7 +1567,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
 
             return returnSprite;
         }
-        case FLAMETHROWERFLAME__STATIC:
+        case FLAMETHROWERFLAME__:
         {
             if (!WORLDTOUR)
                 break;
@@ -1635,7 +1635,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             }
             return j;
         }
-        case FIREFLY__STATIC:
+        case FIREFLY__:
         {
             if (!WORLDTOUR)
                 break;
@@ -1701,12 +1701,12 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
 #ifdef POLYMER
         switch (DYNAMICTILEMAP(projecTile))
         {
-            case FIRELASER__STATIC:
-            case SHOTGUN__STATIC:
-            case SHOTSPARK1__STATIC:
-            case CHAINGUN__STATIC:
-            case RPG__STATIC:
-            case MORTER__STATIC:
+            case FIRELASER__:
+            case SHOTGUN__:
+            case SHOTSPARK1__:
+            case CHAINGUN__:
+            case RPG__:
+            case MORTER__:
                 {
                     vec2_t const v = { ((sintable[(pSprite->ang + 512) & 2047]) >> 7),
                                        ((sintable[(pSprite->ang) & 2047]) >> 7) };
@@ -3575,9 +3575,9 @@ access_incs:
     return 0;
 }
 
-int16_t WeaponPickupSprites[MAX_WEAPONS] = { KNEE__STATIC, FIRSTGUNSPRITE__STATIC, SHOTGUNSPRITE__STATIC,
-        CHAINGUNSPRITE__STATIC, RPGSPRITE__STATIC, HEAVYHBOMB__STATIC, SHRINKERSPRITE__STATIC, DEVISTATORSPRITE__STATIC,
-        TRIPBOMBSPRITE__STATIC, FREEZESPRITE__STATIC, HEAVYHBOMB__STATIC, SHRINKERSPRITE__STATIC, FLAMETHROWERSPRITE__STATIC
+int16_t WeaponPickupSprites[MAX_WEAPONS] = { KNEE__, FIRSTGUNSPRITE__, SHOTGUNSPRITE__,
+        CHAINGUNSPRITE__, RPGSPRITE__, HEAVYHBOMB__, SHRINKERSPRITE__, DEVISTATORSPRITE__,
+        TRIPBOMBSPRITE__, FREEZESPRITE__, HEAVYHBOMB__, SHRINKERSPRITE__, FLAMETHROWERSPRITE__
                                            };
 // this is used for player deaths
 void P_DropWeapon(int const playerNum)
@@ -3812,7 +3812,7 @@ static void P_CheckTouchDamage(DukePlayer_t *pPlayer, int touchObject)
 
         switch (DYNAMICTILEMAP(forcePic))
         {
-        case W_FORCEFIELD__STATIC:
+        case W_FORCEFIELD__:
             sprite[pPlayer->i].extra -= 5;
 
             pPlayer->hurt_delay = 16;
@@ -3828,7 +3828,7 @@ static void P_CheckTouchDamage(DukePlayer_t *pPlayer, int touchObject)
             DoWallTouchDamage(pPlayer, touchWall);
             break;
 
-        case BIGFORCE__STATIC:
+        case BIGFORCE__:
             pPlayer->hurt_delay = GAMETICSPERSEC;
             DoWallTouchDamage(pPlayer, touchWall);
             break;
@@ -3845,7 +3845,7 @@ static int P_CheckFloorDamage(DukePlayer_t *pPlayer, int floorTexture)
 
     switch (DYNAMICTILEMAP(floorTexture))
     {
-        case HURTRAIL__STATIC:
+        case HURTRAIL__:
             if (rnd(32))
             {
                 if (pPlayer->inv_amount[GET_BOOTS] > 0)
@@ -3871,7 +3871,7 @@ static int P_CheckFloorDamage(DukePlayer_t *pPlayer, int floorTexture)
             }
             break;
 
-        case FLOORSLIME__STATIC:
+        case FLOORSLIME__:
             if (rnd(16))
             {
                 if (pPlayer->inv_amount[GET_BOOTS] > 0)
@@ -3892,7 +3892,7 @@ static int P_CheckFloorDamage(DukePlayer_t *pPlayer, int floorTexture)
             break;
 
 #ifndef EDUKE32_STANDALONE
-        case FLOORPLASMA__STATIC:
+        case FLOORPLASMA__:
             if (!FURY && rnd(32))
             {
                 if (pPlayer->inv_amount[GET_BOOTS] > 0)
@@ -5479,8 +5479,8 @@ void P_ProcessInput(int playerNum)
 
                                 switch (DYNAMICTILEMAP(walkPicnum))
                                 {
-                                    case PANNEL1__STATIC:
-                                    case PANNEL2__STATIC:
+                                    case PANNEL1__:
+                                    case PANNEL2__:
                                         A_PlaySound(DUKE_WALKINDUCTS, pPlayer->i);
                                         pPlayer->walking_snd_toggle = 1;
                                         break;
@@ -5769,24 +5769,24 @@ RECHECK:
                 A_PlaySound(SQUISHED, pPlayer->actorsqu);
                 switch (DYNAMICTILEMAP(sprite[pPlayer->actorsqu].picnum))
                 {
-                    case FEM1__STATIC:
-                    case FEM2__STATIC:
-                    case FEM3__STATIC:
-                    case FEM4__STATIC:
-                    case FEM5__STATIC:
-                    case FEM6__STATIC:
-                    case FEM7__STATIC:
-                    case FEM8__STATIC:
-                    case FEM9__STATIC:
-                    case FEM10__STATIC:
-                    case PODFEM1__STATIC:
-                    case NAKED1__STATIC:
-                    case STATUE__STATIC:
+                    case FEM1__:
+                    case FEM2__:
+                    case FEM3__:
+                    case FEM4__:
+                    case FEM5__:
+                    case FEM6__:
+                    case FEM7__:
+                    case FEM8__:
+                    case FEM9__:
+                    case FEM10__:
+                    case PODFEM1__:
+                    case NAKED1__:
+                    case STATUE__:
                         if (sprite[pPlayer->actorsqu].yvel)
                             G_OperateRespawns(sprite[pPlayer->actorsqu].yvel);
                         A_DeleteSprite(pPlayer->actorsqu);
                         break;
-                    case APLAYER__STATIC:
+                    case APLAYER__:
                     {
                         const int playerSquished = P_Get(pPlayer->actorsqu);
                         P_QuickKill(g_player[playerSquished].ps);

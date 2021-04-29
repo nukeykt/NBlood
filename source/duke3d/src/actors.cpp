@@ -212,22 +212,22 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             {
                 switch (DYNAMICTILEMAP(pOther->picnum))
                 {
-                    case PODFEM1__STATIC:
-                    case FEM1__STATIC:
-                    case FEM2__STATIC:
-                    case FEM3__STATIC:
-                    case FEM4__STATIC:
-                    case FEM5__STATIC:
-                    case FEM6__STATIC:
-                    case FEM7__STATIC:
-                    case FEM8__STATIC:
-                    case FEM9__STATIC:
-                    case FEM10__STATIC:
-                    case STATUE__STATIC:
-                    case STATUEFLASH__STATIC:
-                    case SPACEMARINE__STATIC:
-                    case QUEBALL__STATIC:
-                    case STRIPEBALL__STATIC:
+                    case PODFEM1__:
+                    case FEM1__:
+                    case FEM2__:
+                    case FEM3__:
+                    case FEM4__:
+                    case FEM5__:
+                    case FEM6__:
+                    case FEM7__:
+                    case FEM8__:
+                    case FEM9__:
+                    case FEM10__:
+                    case STATUE__:
+                    case STATUEFLASH__:
+                    case SPACEMARINE__:
+                    case QUEBALL__:
+                    case STRIPEBALL__:
                         A_DamageObject_Duke3D(otherSprite, spriteNum);
                         break;
                 }
@@ -1085,20 +1085,20 @@ ACTOR_STATIC void G_MoveZombieActors(void)
                         switch (DYNAMICTILEMAP(pSprite->picnum))
                         {
 #ifndef EDUKE32_STANDALONE
-                            case RUBBERCAN__STATIC:
-                            case EXPLODINGBARREL__STATIC:
-                            case WOODENHORSE__STATIC:
-                            case HORSEONSIDE__STATIC:
-                            case CANWITHSOMETHING__STATIC:
-                            case CANWITHSOMETHING2__STATIC:
-                            case CANWITHSOMETHING3__STATIC:
-                            case CANWITHSOMETHING4__STATIC:
-                            case FIREBARREL__STATIC:
-                            case FIREVASE__STATIC:
-                            case NUKEBARREL__STATIC:
-                            case NUKEBARRELDENTED__STATIC:
-                            case NUKEBARRELLEAKED__STATIC:
-                            case TRIPBOMB__STATIC:
+                            case RUBBERCAN__:
+                            case EXPLODINGBARREL__:
+                            case WOODENHORSE__:
+                            case HORSEONSIDE__:
+                            case CANWITHSOMETHING__:
+                            case CANWITHSOMETHING2__:
+                            case CANWITHSOMETHING3__:
+                            case CANWITHSOMETHING4__:
+                            case FIREBARREL__:
+                            case FIREVASE__:
+                            case NUKEBARREL__:
+                            case NUKEBARRELDENTED__:
+                            case NUKEBARRELLEAKED__:
+                            case TRIPBOMB__:
                                 if (!FURY)
                                 {
                                     pSprite->shade = ((sector[pSprite->sectnum].ceilingstat & 1) && A_CheckSpriteFlags(spriteNum, SFLAG_NOSHADE) == 0)
@@ -1110,7 +1110,7 @@ ACTOR_STATIC void G_MoveZombieActors(void)
                                 }
                                 fallthrough__;
 
-                            case RECON__STATIC:
+                            case RECON__:
                                 if (!FURY && pSprite->picnum == RECON)
                                     CS(spriteNum) |= 257;
                                 fallthrough__;
@@ -1214,14 +1214,14 @@ int A_IncurDamage(int const spriteNum)
 
         switch (DYNAMICTILEMAP(pActor->picnum))
         {
-            case RADIUSEXPLOSION__STATIC:
-            case SEENINE__STATIC:
+            case RADIUSEXPLOSION__:
+            case SEENINE__:
 #ifndef EDUKE32_STANDALONE
-            case RPG__STATIC:
-            case HYDRENT__STATIC:
-            case HEAVYHBOMB__STATIC:
-            case OOZFILTER__STATIC:
-            case EXPLODINGBARREL__STATIC:
+            case RPG__:
+            case HYDRENT__:
+            case HEAVYHBOMB__:
+            case OOZFILTER__:
+            case EXPLODINGBARREL__:
 #endif
                 P_Nudge(playerNum, spriteNum, 2);
                 break;
@@ -1554,7 +1554,7 @@ ACTOR_STATIC void G_MoveFX(void)
 
         switch (DYNAMICTILEMAP(pSprite->picnum))
         {
-        case RESPAWN__STATIC:
+        case RESPAWN__:
             if (pSprite->extra == 66)
             {
                 /*int32_t j =*/ A_Spawn(spriteNum,SHT(spriteNum));
@@ -1565,7 +1565,7 @@ ACTOR_STATIC void G_MoveFX(void)
                 sprite[spriteNum].extra++;
             break;
 
-        case MUSICANDSFX__STATIC:
+        case MUSICANDSFX__:
         {
             int32_t const spriteHitag = (uint16_t)pSprite->hitag;
             auto const    pPlayer     = g_player[screenpeek].ps;
@@ -2237,11 +2237,11 @@ ACTOR_STATIC void G_MoveStandables(void)
 
                 switch (DYNAMICTILEMAP(dmgTile))
                 {
-                    case FIREEXT__STATIC:
-                    case RPG__STATIC:
-                    case RADIUSEXPLOSION__STATIC:
-                    case SEENINE__STATIC:
-                    case OOZFILTER__STATIC:
+                    case FIREEXT__:
+                    case RPG__:
+                    case RADIUSEXPLOSION__:
+                    case SEENINE__:
+                    case OOZFILTER__:
                         for (SPRITES_OF(STAT_STANDABLE, j))
                         {
                             if (pSprite->hitag == sprite[j].hitag &&
@@ -2448,8 +2448,8 @@ DETONATE:
                         {
                             switch (DYNAMICTILEMAP(sprite[j].picnum))
                             {
-                            case SEENINE__STATIC:
-                            case OOZFILTER__STATIC:
+                            case SEENINE__:
+                            case OOZFILTER__:
                                 sprite[j].shade = -31;
                                 break;
                             }
@@ -2483,7 +2483,7 @@ DETONATE:
 #endif
             switch (DYNAMICTILEMAP(switchPic))
             {
-                case TOUCHPLATE__STATIC:
+                case TOUCHPLATE__:
                     if (pData[1] == 1 && (int16_t)pSprite->hitag >= 0)  // Move the sector floor
                     {
                         int const floorZ = sector[sectNum].floorz;
@@ -2562,8 +2562,8 @@ DETONATE:
                     }
                     goto next_sprite;
 
-                case VIEWSCREEN__STATIC:
-                case VIEWSCREEN2__STATIC:
+                case VIEWSCREEN__:
+                case VIEWSCREEN2__:
 
                     if (pSprite->xrepeat == 0)
                         DELETE_SPRITE_AND_CONTINUE(spriteNum);
@@ -2597,7 +2597,7 @@ DETONATE:
             if (!FURY)
             switch (DYNAMICTILEMAP(switchPic))
             {
-                case TRASH__STATIC:
+                case TRASH__:
 
                     if (pSprite->xvel == 0)
                         pSprite->xvel = 1;
@@ -2613,7 +2613,7 @@ DETONATE:
                         DELETE_SPRITE_AND_CONTINUE(spriteNum);
                     break;
 
-                case SIDEBOLT1__STATIC:
+                case SIDEBOLT1__:
                     //        case SIDEBOLT1+1:
                     //        case SIDEBOLT1+2:
                     //        case SIDEBOLT1+3:
@@ -2660,7 +2660,7 @@ DETONATE:
                     goto next_sprite;
                 }
 
-                case BOLT1__STATIC:
+                case BOLT1__:
                     //        case BOLT1+1:
                     //        case BOLT1+2:
                     //        case BOLT1+3:
@@ -2722,7 +2722,7 @@ DETONATE:
                     goto next_sprite;
                 }
 
-                case WATERDRIP__STATIC:
+                case WATERDRIP__:
 
                     if (pData[1])
                     {
@@ -2758,16 +2758,16 @@ DETONATE:
 
                     goto next_sprite;
 
-                case DOORSHOCK__STATIC:
+                case DOORSHOCK__:
                     pSprite->yrepeat = (klabs(sector[sectNum].ceilingz - sector[sectNum].floorz) >> 9) + 4;
                     pSprite->xrepeat = 16;
                     pSprite->z       = sector[sectNum].floorz;
                     goto next_sprite;
 
-                case CANWITHSOMETHING__STATIC:
-                case CANWITHSOMETHING2__STATIC:
-                case CANWITHSOMETHING3__STATIC:
-                case CANWITHSOMETHING4__STATIC:
+                case CANWITHSOMETHING__:
+                case CANWITHSOMETHING2__:
+                case CANWITHSOMETHING3__:
+                case CANWITHSOMETHING4__:
                     A_Fall(spriteNum);
                     if (A_IncurDamage(spriteNum) >= 0)
                     {
@@ -2782,20 +2782,20 @@ DETONATE:
                     }
                     goto next_sprite;
 
-                case FLOORFLAME__STATIC:
-                case FIREBARREL__STATIC:
-                case FIREVASE__STATIC:
-                case EXPLODINGBARREL__STATIC:
-                case WOODENHORSE__STATIC:
-                case HORSEONSIDE__STATIC:
-                case NUKEBARREL__STATIC:
-                case NUKEBARRELDENTED__STATIC:
-                case NUKEBARRELLEAKED__STATIC:
-                case TOILETWATER__STATIC:
-                case RUBBERCAN__STATIC:
-                case STEAM__STATIC:
-                case CEILINGSTEAM__STATIC:
-                case WATERBUBBLEMAKER__STATIC:
+                case FLOORFLAME__:
+                case FIREBARREL__:
+                case FIREVASE__:
+                case EXPLODINGBARREL__:
+                case WOODENHORSE__:
+                case HORSEONSIDE__:
+                case NUKEBARREL__:
+                case NUKEBARRELDENTED__:
+                case NUKEBARRELLEAKED__:
+                case TOILETWATER__:
+                case RUBBERCAN__:
+                case STEAM__:
+                case CEILINGSTEAM__:
+                case WATERBUBBLEMAKER__:
                     if (!G_TileHasActor(sprite[spriteNum].picnum))
                         goto next_sprite;
                     {
@@ -3255,7 +3255,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
         // hard coded projectiles
         switch (DYNAMICTILEMAP(pSprite->picnum))
         {
-            case SHOTSPARK1__STATIC:
+            case SHOTSPARK1__:
             {
                 if (!G_TileHasActor(sprite[spriteNum].picnum))
                     goto next_sprite;
@@ -3265,14 +3265,14 @@ ACTOR_STATIC void G_MoveWeapons(void)
                 goto next_sprite;
             }
 
-            case RADIUSEXPLOSION__STATIC:
-            case KNEE__STATIC: DELETE_SPRITE_AND_CONTINUE(spriteNum);
+            case RADIUSEXPLOSION__:
+            case KNEE__: DELETE_SPRITE_AND_CONTINUE(spriteNum);
         }
 #ifndef EDUKE32_STANDALONE
         if (!FURY)
         switch (DYNAMICTILEMAP(pSprite->picnum))
         {
-            case FREEZEBLAST__STATIC:
+            case FREEZEBLAST__:
                 if (pSprite->yvel < 1 || pSprite->extra < 2 || (pSprite->xvel | pSprite->zvel) == 0)
                 {
                     int const newSprite       = A_Spawn(spriteNum, TRANSPORTERSTAR);
@@ -3282,15 +3282,15 @@ ACTOR_STATIC void G_MoveWeapons(void)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
                 }
                 fallthrough__;
-            case FIREBALL__STATIC:
+            case FIREBALL__:
                 if (!WORLDTOUR && pSprite->picnum == FIREBALL)
                     break;
                 fallthrough__;
-            case SHRINKSPARK__STATIC:
-            case RPG__STATIC:
-            case FIRELASER__STATIC:
-            case SPIT__STATIC:
-            case COOLEXPLOSION1__STATIC:
+            case SHRINKSPARK__:
+            case RPG__:
+            case FIRELASER__:
+            case SPIT__:
+            case COOLEXPLOSION1__:
             {
                 int const projectileMoved = SpriteProjectile[spriteNum].workslike & PROJECTILE_MOVED;
                 SpriteProjectile[spriteNum].workslike |= PROJECTILE_MOVED;
@@ -3508,13 +3508,13 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                     switch (DYNAMICTILEMAP(pSprite->picnum))
                     {
-                        case SPIT__STATIC:
-                        case COOLEXPLOSION1__STATIC:
-                        case FREEZEBLAST__STATIC:
-                        case FIRELASER__STATIC:
+                        case SPIT__:
+                        case COOLEXPLOSION1__:
+                        case FREEZEBLAST__:
+                        case FIRELASER__:
                             break;
 
-                        case RPG__STATIC:
+                        case RPG__:
                         {
                             int const newSprite = A_Spawn(spriteNum, EXPLOSION2);
                             A_PlaySound(RPG_EXPLODE, newSprite);
@@ -3549,13 +3549,13 @@ ACTOR_STATIC void G_MoveWeapons(void)
                             break;
                         }
 
-                        case SHRINKSPARK__STATIC:
+                        case SHRINKSPARK__:
                             A_Spawn(spriteNum, SHRINKEREXPLOSION);
                             A_PlaySound(SHRINKER_HIT, spriteNum);
                             A_RadiusDamage(spriteNum, g_shrinkerRadius, 0, 0, 0, 0);
                             break;
 
-                        case FIREBALL__STATIC:
+                        case FIREBALL__:
                             if (WORLDTOUR)
                                 break;
                             fallthrough__;
@@ -3879,22 +3879,22 @@ ACTOR_STATIC void G_MoveTransports(void)
                             if (!FURY)
                             switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
                             {
-                                case TRANSPORTERSTAR__STATIC:
-                                case TRANSPORTERBEAM__STATIC:
-                                case TRIPBOMB__STATIC:
-                                case BULLETHOLE__STATIC:
-                                case WATERSPLASH2__STATIC:
-                                case BURNING__STATIC:
-                                case BURNING2__STATIC:
-                                case FIRE__STATIC:
-                                case FIRE2__STATIC:
-                                case TOILETWATER__STATIC:
-                                case LASERLINE__STATIC: goto JBOLT;
+                                case TRANSPORTERSTAR__:
+                                case TRANSPORTERBEAM__:
+                                case TRIPBOMB__:
+                                case BULLETHOLE__:
+                                case WATERSPLASH2__:
+                                case BURNING__:
+                                case BURNING2__:
+                                case FIRE__:
+                                case FIRE2__:
+                                case TOILETWATER__:
+                                case LASERLINE__: goto JBOLT;
                             }
 #endif
                             switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
                             {
-                                case PLAYERONWATER__STATIC:
+                                case PLAYERONWATER__:
                                     if (sectLotag == ST_2_UNDERWATER)
                                     {
                                         sprite[sectSprite].cstat &= 32768;
@@ -3905,7 +3905,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                     if (sprite[sectSprite].statnum == STAT_MISC && !(sectLotag == ST_1_ABOVE_WATER || sectLotag == ST_2_UNDERWATER))
                                         break;
                                     fallthrough__;
-                                case WATERBUBBLE__STATIC:
+                                case WATERBUBBLE__:
                                     //                            if( rnd(192) && sprite[j].picnum == WATERBUBBLE)
                                     //                                break;
 
@@ -4049,8 +4049,8 @@ ACTOR_STATIC void G_MoveActors(void)
 
         switch (DYNAMICTILEMAP(switchPic))
         {
-        case OOZ__STATIC:
-        case OOZ2__STATIC:
+        case OOZ__:
+        case OOZ2__:
         {
             A_GetZLimits(spriteNum);
 
@@ -4063,7 +4063,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
             goto next_sprite;
         }
-        case CAMERA1__STATIC:
+        case CAMERA1__:
             if (pData[0] == 0)
             {
                 pData[1]+=8;
@@ -4102,7 +4102,7 @@ ACTOR_STATIC void G_MoveActors(void)
 #ifndef EDUKE32_STANDALONE
         switch (DYNAMICTILEMAP(switchPic))
         {
-        case FLAMETHROWERFLAME__STATIC:
+        case FLAMETHROWERFLAME__:
         {
             if (!WORLDTOUR)
                 goto next_sprite;
@@ -4204,8 +4204,8 @@ ACTOR_STATIC void G_MoveActors(void)
 
             goto next_sprite;
         }
-        case DUCK__STATIC:
-        case TARGET__STATIC:
+        case DUCK__:
+        case TARGET__:
             if (pSprite->cstat&32)
             {
                 pData[0]++;
@@ -4244,9 +4244,9 @@ ACTOR_STATIC void G_MoveActors(void)
             }
             goto next_sprite;
 
-        case RESPAWNMARKERRED__STATIC:
-        case RESPAWNMARKERYELLOW__STATIC:
-        case RESPAWNMARKERGREEN__STATIC:
+        case RESPAWNMARKERRED__:
+        case RESPAWNMARKERYELLOW__:
+        case RESPAWNMARKERGREEN__:
             if (++T1(spriteNum) > g_itemRespawnTime)
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
@@ -4258,8 +4258,8 @@ ACTOR_STATIC void G_MoveActors(void)
             A_Fall(spriteNum);
             break;
 
-        case HELECOPT__STATIC:
-        case DUKECAR__STATIC:
+        case HELECOPT__:
+        case DUKECAR__:
             pSprite->z += pSprite->zvel;
             pData[0]++;
 
@@ -4282,7 +4282,7 @@ ACTOR_STATIC void G_MoveActors(void)
             A_SetSprite(spriteNum,CLIPMASK0);
             break;
 
-        case RAT__STATIC:
+        case RAT__:
             A_Fall(spriteNum);
             if (A_SetSprite(spriteNum, CLIPMASK0))
             {
@@ -4303,8 +4303,8 @@ ACTOR_STATIC void G_MoveActors(void)
             pSprite->ang += (krand()&3)-6;
             break;
 
-        case QUEBALL__STATIC:
-        case STRIPEBALL__STATIC:
+        case QUEBALL__:
+        case STRIPEBALL__:
             if (pSprite->xvel)
             {
                 for (bssize_t SPRITES_OF(STAT_DEFAULT, hitObject))
@@ -4392,7 +4392,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
             break;
 
-        case FORCESPHERE__STATIC:
+        case FORCESPHERE__:
             if (pSprite->yvel == 0)
             {
                 pSprite->yvel = 1;
@@ -4438,7 +4438,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
             goto next_sprite;
 
-        case RECON__STATIC:
+        case RECON__:
         {
             int playerNum;
             DukePlayer_t *pPlayer;
@@ -4663,7 +4663,7 @@ ACTOR_STATIC void G_MoveActors(void)
             goto next_sprite;
         }
 
-        case GREENSLIME__STATIC:
+        case GREENSLIME__:
         {
             // #ifndef VOLUMEONE
             if (!g_netServer && ud.multimode < 2)
@@ -5073,15 +5073,15 @@ ACTOR_STATIC void G_MoveActors(void)
             goto next_sprite;
         }
 
-        case BOUNCEMINE__STATIC:
+        case BOUNCEMINE__:
         if (pSprite->xvel != 0)
-        case MORTER__STATIC:
+        case MORTER__:
         {
             int const j        = A_Spawn(spriteNum, (PLUTOPAK ? FRAMEEFFECT1 : FRAMEEFFECT1_13));
             actor[j].t_data[0] = 3;
         }
             fallthrough__;
-        case HEAVYHBOMB__STATIC:
+        case HEAVYHBOMB__:
         {
             int           playerNum;
             DukePlayer_t *pPlayer;
@@ -5219,9 +5219,9 @@ DETONATEB:
 
                     switch (DYNAMICTILEMAP(pSprite->picnum))
                     {
-                        case HEAVYHBOMB__STATIC: radius = g_pipebombRadius; break;
-                        case MORTER__STATIC: radius     = g_morterRadius; break;
-                        case BOUNCEMINE__STATIC: radius = g_bouncemineRadius; break;
+                        case HEAVYHBOMB__: radius = g_pipebombRadius; break;
+                        case MORTER__: radius     = g_morterRadius; break;
+                        case BOUNCEMINE__: radius = g_bouncemineRadius; break;
                     }
 
                     A_RadiusDamage(spriteNum, radius, x >> 2, x >> 1, x - (x >> 2), x);
@@ -5312,12 +5312,12 @@ DETONATEB:
             goto next_sprite;
         }
 
-        case REACTORBURNT__STATIC:
-        case REACTOR2BURNT__STATIC:
+        case REACTORBURNT__:
+        case REACTOR2BURNT__:
             goto next_sprite;
 
-        case REACTOR__STATIC:
-        case REACTOR2__STATIC:
+        case REACTOR__:
+        case REACTOR2__:
         {
             if (pData[4] == 1)
             {
@@ -5325,21 +5325,21 @@ DETONATEB:
                 {
                     switch (DYNAMICTILEMAP(sprite[j].picnum))
                     {
-                    case SECTOREFFECTOR__STATIC:
+                    case SECTOREFFECTOR__:
                         if (sprite[j].lotag == 1)
                         {
                             sprite[j].lotag = 65535u;
                             sprite[j].hitag = 65535u;
                         }
                         break;
-                    case REACTOR__STATIC:
+                    case REACTOR__:
                         sprite[j].picnum = REACTORBURNT;
                         break;
-                    case REACTOR2__STATIC:
+                    case REACTOR2__:
                         sprite[j].picnum = REACTOR2BURNT;
                         break;
-                    case REACTORSPARK__STATIC:
-                    case REACTOR2SPARK__STATIC:
+                    case REACTORSPARK__:
+                    case REACTOR2SPARK__:
                         sprite[j].cstat = 32768;
                         break;
                     }
@@ -5496,11 +5496,11 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
         {
             switch (DYNAMICTILEMAP(switchPic))
             {
-                case APLAYER__STATIC: pSprite->cstat = 32768; goto next_sprite;
-                case FRAMEEFFECT1_13__STATIC:
+                case APLAYER__: pSprite->cstat = 32768; goto next_sprite;
+                case FRAMEEFFECT1_13__:
                     if (PLUTOPAK) goto next_sprite;	// JBF: ideally this should never happen...
                     fallthrough__;
-                case FRAMEEFFECT1__STATIC:
+                case FRAMEEFFECT1__:
 
                     if (pSprite->owner >= 0)
                     {
@@ -5520,30 +5520,30 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     goto next_sprite;
 
 #ifndef EDUKE32_STANDALONE
-                case ONFIRESMOKE__STATIC:
-                case ONFIRE__STATIC:
-                case BURNEDCORPSE__STATIC:
-                case LAVAPOOLBUBBLE__STATIC:
-                case WHISPYSMOKE__STATIC:
-                case LAVAPOOL__STATIC:
+                case ONFIRESMOKE__:
+                case ONFIRE__:
+                case BURNEDCORPSE__:
+                case LAVAPOOLBUBBLE__:
+                case WHISPYSMOKE__:
+                case LAVAPOOL__:
                     if (!WORLDTOUR)
                         goto next_sprite;
                     fallthrough__;
 #endif
-                case EXPLOSION2__STATIC:
-                case EXPLOSION2BOT__STATIC:
-                case FORCERIPPLE__STATIC:
-                case TRANSPORTERSTAR__STATIC:
-                case TRANSPORTERBEAM__STATIC:
-                case SMALLSMOKE__STATIC:
+                case EXPLOSION2__:
+                case EXPLOSION2BOT__:
+                case FORCERIPPLE__:
+                case TRANSPORTERSTAR__:
+                case TRANSPORTERBEAM__:
+                case SMALLSMOKE__:
 #ifndef EDUKE32_STANDALONE
-                case WATERBUBBLE__STATIC:
-                case BURNING__STATIC:
-                case BURNING2__STATIC:
-                case FECES__STATIC:
-                case SHRINKEREXPLOSION__STATIC:
-                case BLOOD__STATIC:
-                case LASERSITE__STATIC:
+                case WATERBUBBLE__:
+                case BURNING__:
+                case BURNING2__:
+                case FECES__:
+                case SHRINKEREXPLOSION__:
+                case BLOOD__:
+                case LASERSITE__:
 #endif
                 {
                     if (!G_TileHasActor(sprite[spriteNum].picnum))
@@ -5558,19 +5558,19 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
             if (!FURY)
             switch (DYNAMICTILEMAP(switchPic))
             {
-                case NEON1__STATIC:
-                case NEON2__STATIC:
-                case NEON3__STATIC:
-                case NEON4__STATIC:
-                case NEON5__STATIC:
-                case NEON6__STATIC:
+                case NEON1__:
+                case NEON2__:
+                case NEON3__:
+                case NEON4__:
+                case NEON5__:
+                case NEON6__:
                     pSprite->shade = ((tabledivide32_noinline(g_globalRandom, pSprite->lotag + 1) & 31) > 4) ? -127 : 127;
                     goto next_sprite;
 
-                case BLOODSPLAT1__STATIC:
-                case BLOODSPLAT2__STATIC:
-                case BLOODSPLAT3__STATIC:
-                case BLOODSPLAT4__STATIC:
+                case BLOODSPLAT1__:
+                case BLOODSPLAT2__:
+                case BLOODSPLAT3__:
+                case BLOODSPLAT4__:
                     if (pData[0] == 3 * GAMETICSPERSEC)
                         goto next_sprite;
 
@@ -5587,7 +5587,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     actor[spriteNum].bpos.z += pSprite->z;
                     goto next_sprite;
 
-                case NUKEBUTTON__STATIC:
+                case NUKEBUTTON__:
                     //        case NUKEBUTTON+1:
                     //        case NUKEBUTTON+2:
                     //        case NUKEBUTTON+3:
@@ -5607,7 +5607,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     }
                     goto next_sprite;
 
-                case FORCESPHERE__STATIC:
+                case FORCESPHERE__:
                 {
                     int forceRepeat = pSprite->xrepeat;
                     if (pData[1] > 0)
@@ -5643,7 +5643,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     goto next_sprite;
                 }
 
-            case WATERSPLASH2__STATIC:
+            case WATERSPLASH2__:
                 pData[0]++;
                 if (pData[0] == 1)
                 {
@@ -5668,7 +5668,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 if (pData[1] == 5)
                     A_DeleteSprite(spriteNum);
                 goto next_sprite;
-            case INNERJAW__STATIC:
+            case INNERJAW__:
             {
                 //        case INNERJAW+1:
                 int32_t playerDist, playerNum = A_FindPlayer(pSprite,&playerDist);
@@ -5680,17 +5680,17 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 }
             }
             fallthrough__;
-            case FIRELASER__STATIC:
+            case FIRELASER__:
                 if (pSprite->extra != 5)
                     pSprite->extra = 5;
                 else DELETE_SPRITE_AND_CONTINUE(spriteNum);
                 break;
-            case TONGUE__STATIC:
+            case TONGUE__:
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
-            case MONEY__STATIC:
-            case MAIL__STATIC:
-            case PAPER__STATIC:
+            case MONEY__:
+            case MAIL__:
+            case PAPER__:
             {
                 pSprite->xvel = (krand()&7)+(sintable[T1(spriteNum)&2047]>>9);
                 T1(spriteNum) += (krand()&63);
@@ -5734,21 +5734,21 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 break;
             }
 
-            case JIBS1__STATIC:
-            case JIBS2__STATIC:
-            case JIBS3__STATIC:
-            case JIBS4__STATIC:
-            case JIBS5__STATIC:
-            case JIBS6__STATIC:
-            case HEADJIB1__STATIC:
-            case ARMJIB1__STATIC:
-            case LEGJIB1__STATIC:
-            case LIZMANHEAD1__STATIC:
-            case LIZMANARM1__STATIC:
-            case LIZMANLEG1__STATIC:
-            case DUKETORSO__STATIC:
-            case DUKEGUN__STATIC:
-            case DUKELEG__STATIC:
+            case JIBS1__:
+            case JIBS2__:
+            case JIBS3__:
+            case JIBS4__:
+            case JIBS5__:
+            case JIBS6__:
+            case HEADJIB1__:
+            case ARMJIB1__:
+            case LEGJIB1__:
+            case LIZMANHEAD1__:
+            case LIZMANARM1__:
+            case LIZMANLEG1__:
+            case DUKETORSO__:
+            case DUKEGUN__:
+            case DUKELEG__:
             {
                 pSprite->xvel = (pSprite->xvel > 0) ? pSprite->xvel - 1 : 0;
 
@@ -5836,8 +5836,8 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 goto next_sprite;
             }
 
-            case BLOODPOOL__STATIC:
-            case PUKE__STATIC:
+            case BLOODPOOL__:
+            case PUKE__:
             {
                 if (pData[0] == 0)
                 {
@@ -5915,8 +5915,8 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 goto next_sprite;
             }
 
-            case SHELL__STATIC:
-            case SHOTGUNSHELL__STATIC:
+            case SHELL__:
+            case SHOTGUNSHELL__:
 
                 A_SetSprite(spriteNum,CLIPMASK0);
 
@@ -5955,7 +5955,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
 
                 goto next_sprite;
 
-            case GLASSPIECES__STATIC:
+            case GLASSPIECES__:
                 //        case GLASSPIECES+1:
                 //        case GLASSPIECES+2:
 
@@ -5990,7 +5990,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
 
                 goto next_sprite;
 
-            case FIREFLYFLYINGEFFECT__STATIC:
+            case FIREFLYFLYINGEFFECT__:
                 if (WORLDTOUR && G_TileHasActor(sprite[spriteNum].picnum))
                 {
                     int playerDist;
@@ -7838,19 +7838,19 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     case STAT_MISC:
                         switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
                         {
-                            case BLOODPOOL__STATIC:
-                            case PUKE__STATIC:
-                            case FOOTPRINTS__STATIC:
-                            case FOOTPRINTS2__STATIC:
-                            case FOOTPRINTS3__STATIC:
-                            case FOOTPRINTS4__STATIC:
-                            case BULLETHOLE__STATIC:
-                            case BLOODSPLAT1__STATIC:
-                            case BLOODSPLAT2__STATIC:
-                            case BLOODSPLAT3__STATIC:
-                            case BLOODSPLAT4__STATIC: sprite[sectSprite].xrepeat = sprite[sectSprite].yrepeat = 0; continue;
+                            case BLOODPOOL__:
+                            case PUKE__:
+                            case FOOTPRINTS__:
+                            case FOOTPRINTS2__:
+                            case FOOTPRINTS3__:
+                            case FOOTPRINTS4__:
+                            case BULLETHOLE__:
+                            case BLOODSPLAT1__:
+                            case BLOODSPLAT2__:
+                            case BLOODSPLAT3__:
+                            case BLOODSPLAT4__: sprite[sectSprite].xrepeat = sprite[sectSprite].yrepeat = 0; continue;
 
-                            case LASERLINE__STATIC: continue;
+                            case LASERLINE__: continue;
                         }
                         fallthrough__;
                     case STAT_STANDABLE:
@@ -8659,21 +8659,21 @@ static void A_DoLight(int spriteNum)
 
             switch (DYNAMICTILEMAP(pSprite->picnum-1+ii))
             {
-            case DIPSWITCH__STATIC:
-            case DIPSWITCH2__STATIC:
-            case DIPSWITCH3__STATIC:
-            case PULLSWITCH__STATIC:
-            case SLOTDOOR__STATIC:
-            case LIGHTSWITCH__STATIC:
-            case SPACELIGHTSWITCH__STATIC:
-            case SPACEDOORSWITCH__STATIC:
-            case FRANKENSTINESWITCH__STATIC:
-            case POWERSWITCH1__STATIC:
-            case LOCKSWITCH1__STATIC:
-            case POWERSWITCH2__STATIC:
-            case TECHSWITCH__STATIC:
-            case ACCESSSWITCH__STATIC:
-            case ACCESSSWITCH2__STATIC:
+            case DIPSWITCH__:
+            case DIPSWITCH2__:
+            case DIPSWITCH3__:
+            case PULLSWITCH__:
+            case SLOTDOOR__:
+            case LIGHTSWITCH__:
+            case SPACELIGHTSWITCH__:
+            case SPACEDOORSWITCH__:
+            case FRANKENSTINESWITCH__:
+            case POWERSWITCH1__:
+            case LOCKSWITCH1__:
+            case POWERSWITCH2__:
+            case TECHSWITCH__:
+            case ACCESSSWITCH__:
+            case ACCESSSWITCH2__:
                 {
                     if ((pSprite->cstat & 32768) || A_CheckSpriteFlags(spriteNum, SFLAG_NOLIGHT))
                     {
@@ -8706,14 +8706,14 @@ static void A_DoLight(int spriteNum)
 
         switch (DYNAMICTILEMAP(pSprite->picnum))
         {
-        case ATOMICHEALTH__STATIC:
+        case ATOMICHEALTH__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), LIGHTRAD2(spriteNum, pSprite), 128+(128<<8)+(255<<16),PR_LIGHT_PRIO_HIGH_GAME);
             break;
 
-        case FIRE__STATIC:
-        case FIRE2__STATIC:
-        case BURNING__STATIC:
-        case BURNING2__STATIC:
+        case FIRE__:
+        case FIRE2__:
+        case BURNING__:
+        case BURNING2__:
             {
                 uint32_t color;
                 int32_t jj;
@@ -8751,17 +8751,17 @@ static void A_DoLight(int spriteNum)
             }
             break;
 
-        case OOZFILTER__STATIC:
+        case OOZFILTER__:
             if (pSprite->xrepeat > 4)
                 G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), 4096, 176+(252<<8)+(120<<16),PR_LIGHT_PRIO_HIGH_GAME);
             break;
-        case FLOORFLAME__STATIC:
-        case FIREBARREL__STATIC:
-        case FIREVASE__STATIC:
+        case FLOORFLAME__:
+        case FIREBARREL__:
+        case FIREVASE__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<2), LIGHTRAD2(spriteNum, pSprite)>>1, 255+(95<<8),PR_LIGHT_PRIO_HIGH_GAME);
             break;
 
-        case EXPLOSION2__STATIC:
+        case EXPLOSION2__:
             if (!practor[spriteNum].lightcount)
             {
                 // XXX: This block gets CODEDUP'd too much.
@@ -8778,11 +8778,11 @@ static void A_DoLight(int spriteNum)
                 pSprite->y += y;
             }
             break;
-        case FORCERIPPLE__STATIC:
-        case TRANSPORTERBEAM__STATIC:
+        case FORCERIPPLE__:
+        case TRANSPORTERBEAM__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), LIGHTRAD(spriteNum, pSprite), 80+(80<<8)+(255<<16),PR_LIGHT_PRIO_LOW_GAME);
             break;
-        case GROWSPARK__STATIC:
+        case GROWSPARK__:
             {
                 int32_t x = ((sintable[(pSprite->ang+512)&2047])>>6);
                 int32_t y = ((sintable[(pSprite->ang)&2047])>>6);
@@ -8796,7 +8796,7 @@ static void A_DoLight(int spriteNum)
                 pSprite->y += y;
             }
             break;
-        case SHRINKEREXPLOSION__STATIC:
+        case SHRINKEREXPLOSION__:
             {
                 int32_t x = ((sintable[(pSprite->ang+512)&2047])>>6);
                 int32_t y = ((sintable[(pSprite->ang)&2047])>>6);
@@ -8810,23 +8810,23 @@ static void A_DoLight(int spriteNum)
                 pSprite->y += y;
             }
             break;
-        case FREEZEBLAST__STATIC:
+        case FREEZEBLAST__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), LIGHTRAD(spriteNum, pSprite)<<2, 72+(88<<8)+(140<<16),PR_LIGHT_PRIO_HIGH_GAME);
             break;
-        case COOLEXPLOSION1__STATIC:
+        case COOLEXPLOSION1__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), LIGHTRAD(spriteNum, pSprite)<<2, 128+(0<<8)+(255<<16),PR_LIGHT_PRIO_HIGH_GAME);
             break;
-        case SHRINKSPARK__STATIC:
+        case SHRINKSPARK__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), LIGHTRAD(spriteNum, pSprite), 176+(252<<8)+(120<<16),PR_LIGHT_PRIO_HIGH_GAME);
             break;
-        case FIRELASER__STATIC:
+        case FIRELASER__:
             if (pSprite->statnum == STAT_PROJECTILE)
                 G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), 64 * pSprite->yrepeat, 255+(95<<8),PR_LIGHT_PRIO_LOW_GAME);
             break;
-        case RPG__STATIC:
+        case RPG__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), 128 * pSprite->yrepeat, 255+(95<<8),PR_LIGHT_PRIO_LOW_GAME);
             break;
-        case SHOTSPARK1__STATIC:
+        case SHOTSPARK1__:
             if (actor[spriteNum].t_data[2] == 0) // check for first frame of action
             {
                 int32_t x = ((sintable[(pSprite->ang+512)&2047])>>7);
@@ -8861,33 +8861,33 @@ void A_PlayAlertSound(int spriteNum)
 
         switch (DYNAMICTILEMAP(PN(spriteNum)))
         {
-            case LIZTROOPONTOILET__STATIC:
-            case LIZTROOPJUSTSIT__STATIC:
-            case LIZTROOPSHOOT__STATIC:
-            case LIZTROOPJETPACK__STATIC:
-            case LIZTROOPDUCKING__STATIC:
-            case LIZTROOPRUNNING__STATIC:
-            case LIZTROOP__STATIC:         A_PlaySound(PRED_RECOG, spriteNum); break;
-            case LIZMAN__STATIC:
-            case LIZMANSPITTING__STATIC:
-            case LIZMANFEEDING__STATIC:
-            case LIZMANJUMP__STATIC:       A_PlaySound(CAPT_RECOG, spriteNum); break;
-            case PIGCOP__STATIC:
-            case PIGCOPDIVE__STATIC:       A_PlaySound(PIG_RECOG, spriteNum); break;
-            case RECON__STATIC:            A_PlaySound(RECO_RECOG, spriteNum); break;
-            case DRONE__STATIC:            A_PlaySound(DRON_RECOG, spriteNum); break;
-            case COMMANDER__STATIC:
-            case COMMANDERSTAYPUT__STATIC: A_PlaySound(COMM_RECOG, spriteNum); break;
-            case ORGANTIC__STATIC:         A_PlaySound(TURR_RECOG, spriteNum); break;
-            case OCTABRAIN__STATIC:
-            case OCTABRAINSTAYPUT__STATIC: A_PlaySound(OCTA_RECOG, spriteNum); break;
-            case BOSS1__STATIC:
-            case BOSS1STAYPUT__STATIC:     S_PlaySound(BOS1_RECOG); break;
-            case BOSS2__STATIC:            S_PlaySound((sprite[spriteNum].pal != 0) ? BOS2_RECOG : WHIPYOURASS); break;
-            case BOSS3__STATIC:            S_PlaySound((sprite[spriteNum].pal != 0) ? BOS3_RECOG : RIPHEADNECK); break;
-            case BOSS4__STATIC:
-            case BOSS4STAYPUT__STATIC:     S_PlaySound((sprite[spriteNum].pal != 0) ? BOS4_RECOG : BOSS4_FIRSTSEE); break;
-            case GREENSLIME__STATIC:       A_PlaySound(SLIM_RECOG, spriteNum); break;
+            case LIZTROOPONTOILET__:
+            case LIZTROOPJUSTSIT__:
+            case LIZTROOPSHOOT__:
+            case LIZTROOPJETPACK__:
+            case LIZTROOPDUCKING__:
+            case LIZTROOPRUNNING__:
+            case LIZTROOP__:         A_PlaySound(PRED_RECOG, spriteNum); break;
+            case LIZMAN__:
+            case LIZMANSPITTING__:
+            case LIZMANFEEDING__:
+            case LIZMANJUMP__:       A_PlaySound(CAPT_RECOG, spriteNum); break;
+            case PIGCOP__:
+            case PIGCOPDIVE__:       A_PlaySound(PIG_RECOG, spriteNum); break;
+            case RECON__:            A_PlaySound(RECO_RECOG, spriteNum); break;
+            case DRONE__:            A_PlaySound(DRON_RECOG, spriteNum); break;
+            case COMMANDER__:
+            case COMMANDERSTAYPUT__: A_PlaySound(COMM_RECOG, spriteNum); break;
+            case ORGANTIC__:         A_PlaySound(TURR_RECOG, spriteNum); break;
+            case OCTABRAIN__:
+            case OCTABRAINSTAYPUT__: A_PlaySound(OCTA_RECOG, spriteNum); break;
+            case BOSS1__:
+            case BOSS1STAYPUT__:     S_PlaySound(BOS1_RECOG); break;
+            case BOSS2__:            S_PlaySound((sprite[spriteNum].pal != 0) ? BOS2_RECOG : WHIPYOURASS); break;
+            case BOSS3__:            S_PlaySound((sprite[spriteNum].pal != 0) ? BOS3_RECOG : RIPHEADNECK); break;
+            case BOSS4__:
+            case BOSS4STAYPUT__:     S_PlaySound((sprite[spriteNum].pal != 0) ? BOS4_RECOG : BOSS4_FIRSTSEE); break;
+            case GREENSLIME__:       A_PlaySound(SLIM_RECOG, spriteNum); break;
         }
 #endif
     }
@@ -8918,24 +8918,24 @@ int A_CheckSwitchTile(int spriteNum)
     {
         switch (DYNAMICTILEMAP(PN(spriteNum)-j))
         {
-        case HANDPRINTSWITCH__STATIC:
-        case ALIENSWITCH__STATIC:
-        case MULTISWITCH__STATIC:
-        case PULLSWITCH__STATIC:
-        case HANDSWITCH__STATIC:
-        case SLOTDOOR__STATIC:
-        case LIGHTSWITCH__STATIC:
-        case SPACELIGHTSWITCH__STATIC:
-        case SPACEDOORSWITCH__STATIC:
-        case FRANKENSTINESWITCH__STATIC:
-        case LIGHTSWITCH2__STATIC:
-        case POWERSWITCH1__STATIC:
-        case LOCKSWITCH1__STATIC:
-        case POWERSWITCH2__STATIC:
-        case DIPSWITCH__STATIC:
-        case DIPSWITCH2__STATIC:
-        case TECHSWITCH__STATIC:
-        case DIPSWITCH3__STATIC:
+        case HANDPRINTSWITCH__:
+        case ALIENSWITCH__:
+        case MULTISWITCH__:
+        case PULLSWITCH__:
+        case HANDSWITCH__:
+        case SLOTDOOR__:
+        case LIGHTSWITCH__:
+        case SPACELIGHTSWITCH__:
+        case SPACEDOORSWITCH__:
+        case FRANKENSTINESWITCH__:
+        case LIGHTSWITCH2__:
+        case POWERSWITCH1__:
+        case LOCKSWITCH1__:
+        case POWERSWITCH2__:
+        case DIPSWITCH__:
+        case DIPSWITCH2__:
+        case TECHSWITCH__:
+        case DIPSWITCH3__:
             return 1;
         }
     }

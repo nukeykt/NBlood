@@ -3636,11 +3636,11 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
             for (x=0; x<g_animWallCnt; x++)
                 switch (DYNAMICTILEMAP(wall[animwall[x].wallnum].picnum))
                 {
-                case FEMPIC1__STATIC:
+                case FEMPIC1__:
                     wall[animwall[x].wallnum].picnum = BLANKSCREEN;
                     break;
-                case FEMPIC2__STATIC:
-                case FEMPIC3__STATIC:
+                case FEMPIC2__:
+                case FEMPIC3__:
                     wall[animwall[x].wallnum].picnum = SCREENBREAK6;
                     break;
                 }

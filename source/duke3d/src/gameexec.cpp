@@ -6246,19 +6246,19 @@ badindex:
                 switch (DYNAMICTILEMAP(vm.pSprite->picnum))
                 {
 #ifndef EDUKE32_STANDALONE
-                    case FEM1__STATIC:
-                    case FEM2__STATIC:
-                    case FEM3__STATIC:
-                    case FEM4__STATIC:
-                    case FEM5__STATIC:
-                    case FEM6__STATIC:
-                    case FEM7__STATIC:
-                    case FEM8__STATIC:
-                    case FEM9__STATIC:
-                    case FEM10__STATIC:
-                    case PODFEM1__STATIC:
-                    case NAKED1__STATIC:
-                    case STATUE__STATIC:
+                    case FEM1__:
+                    case FEM2__:
+                    case FEM3__:
+                    case FEM4__:
+                    case FEM5__:
+                    case FEM6__:
+                    case FEM7__:
+                    case FEM8__:
+                    case FEM9__:
+                    case FEM10__:
+                    case PODFEM1__:
+                    case NAKED1__:
+                    case STATUE__:
                         if (!FURY)
                         {
                             if (vm.pSprite->yvel)
@@ -6448,17 +6448,17 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
         {
             switch (DYNAMICTILEMAP(vm.pSprite->picnum))
             {
-                case RUBBERCAN__STATIC:
-                case EXPLODINGBARREL__STATIC:
-                case WOODENHORSE__STATIC:
-                case HORSEONSIDE__STATIC:
-                case CANWITHSOMETHING__STATIC:
-                case FIREBARREL__STATIC:
-                case NUKEBARREL__STATIC:
-                case NUKEBARRELDENTED__STATIC:
-                case NUKEBARRELLEAKED__STATIC:
-                case TRIPBOMB__STATIC:
-                case EGG__STATIC:
+                case RUBBERCAN__:
+                case EXPLODINGBARREL__:
+                case WOODENHORSE__:
+                case HORSEONSIDE__:
+                case CANWITHSOMETHING__:
+                case FIREBARREL__:
+                case NUKEBARREL__:
+                case NUKEBARRELDENTED__:
+                case NUKEBARRELLEAKED__:
+                case TRIPBOMB__:
+                case EGG__:
                     if (vm.pActor->timetosleep > 1)
                         vm.pActor->timetosleep--;
                     else if (vm.pActor->timetosleep == 1)
@@ -6738,9 +6738,9 @@ void G_RestoreMapState(void)
             for (native_t x=g_animWallCnt-1; x>=0; x--)
                 switch (DYNAMICTILEMAP(wall[animwall[x].wallnum].picnum))
                 {
-                    case FEMPIC1__STATIC: wall[animwall[x].wallnum].picnum = BLANKSCREEN; break;
-                    case FEMPIC2__STATIC:
-                    case FEMPIC3__STATIC: wall[animwall[x].wallnum].picnum = SCREENBREAK6; break;
+                    case FEMPIC1__: wall[animwall[x].wallnum].picnum = BLANKSCREEN; break;
+                    case FEMPIC2__:
+                    case FEMPIC3__: wall[animwall[x].wallnum].picnum = SCREENBREAK6; break;
                 }
         }
 #if 0
