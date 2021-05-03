@@ -10194,7 +10194,7 @@ int32_t fillsector_maybetrans(int16_t sectnum, int32_t fillcolor, uint8_t dotran
 
     lborder = 0; rborder = xdim;
     y = OSD_GetRowsCur();
-    uborder = (y>=0)?(y+1)*8:0; dborder = ydim16-STATUS2DSIZ2;
+    uborder = (y>=0)?(y+1)*8:0; dborder = ydim16;
 
 
     miny = dborder-1;
