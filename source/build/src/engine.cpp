@@ -7350,9 +7350,9 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         
         auto lerpWouldLookDerp = [&](void)
         {
-            return (!(dastat & RS_LERP) && r_rotatespriteinterp < 2) || sm.flags != (dastat & ~RS_TRANS_MASK)
-                   || (!(dastat & RS_FORCELERP) && tilesiz[picnum] != tilesiz[sm.picnum]
-                   && ((unsigned)(picnum - sm.picnum) > (int)(r_rotatespriteinterp == 3))) || klabs(a - sm.goal.a) == 1024;
+            return (!(dastat & RS_LERP) && r_rotatespriteinterp < 2)
+                   || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
+                   && ((unsigned)(picnum - sm.picnum) > (int)(r_rotatespriteinterp == 3))))) || klabs(a - sm.goal.a) == 1024;
         };
 
         if (!lerpWouldLookDerp())
