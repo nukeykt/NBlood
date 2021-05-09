@@ -142,6 +142,11 @@ int menu_RandomLong2()
 void InitEnergyTile()
 {
     memset(energytile, 96, sizeof(energytile));
+    for (int i = 0; i < 16; i++)
+    {
+        int nTile = kClockSymbol1 + i;
+        if (waloff[nTile] == 0) tileLoad(nTile);
+    }
 }
 
 void DoEnergyTile()
