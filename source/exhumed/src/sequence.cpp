@@ -298,6 +298,12 @@ int seq_ReadSequence(const char *seqName)
 #endif
         ChunkXpos[chunks + i] -= centerx;
         ChunkYpos[chunks + i] -= centery;
+
+        short nTile = ChunkPict[chunks + i];
+        if (waloff[nTile] == 0)
+        {
+            tileLoad(nTile);
+        }
     }
 
     sequences += nSeqs;

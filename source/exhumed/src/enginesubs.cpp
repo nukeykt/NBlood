@@ -148,14 +148,32 @@ void precache()
     {
         short j = sector[i].ceilingpicnum;
         if (waloff[j] == 0) tileLoad(j);
+        if (picanm[j].sf & PICANM_ANIMTYPE_MASK)
+        {
+            int k;
+            for (k = 1; k <= picanm[j].num; k++)
+                if (waloff[j+k] == 0) tileLoad(j+k);
+        }
         j = sector[i].floorpicnum;
         if (waloff[j] == 0) tileLoad(j);
+        if (picanm[j].sf & PICANM_ANIMTYPE_MASK)
+        {
+            int k;
+            for (k = 1; k <= picanm[j].num; k++)
+                if (waloff[j+k] == 0) tileLoad(j+k);
+        }
     }
 
     for (i = 0; i < numwalls; i++)
     {
         short j = wall[i].picnum;
         if (waloff[j] == 0) tileLoad(j);
+        if (picanm[j].sf & PICANM_ANIMTYPE_MASK)
+        {
+            int k;
+            for (k = 1; k <= picanm[j].num; k++)
+                if (waloff[j+k] == 0) tileLoad(j+k);
+        }
     }
 
     for (i = 0; i < kMaxSprites; i++)
@@ -164,6 +182,12 @@ void precache()
         {
             short j = sprite[i].picnum;
             if (waloff[j] == 0) tileLoad(j);
+            if (picanm[j].sf & PICANM_ANIMTYPE_MASK)
+            {
+                int k;
+                for (k = 1; k <= picanm[j].num; k++)
+                    if (waloff[j+k] == 0) tileLoad(j+k);
+            }
         }
     }
 }
