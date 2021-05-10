@@ -1502,6 +1502,7 @@ static void Gv_AddSystemVars(void)
 
     // SYSTEM_GAMEARRAY
     Gv_NewArray("gotpic",            (void *)&gotpic[0],              MAXTILES,   GAMEARRAY_SYSTEM | GAMEARRAY_BITMAP);
+    Gv_NewArray("gotsector",         (void *)&gotsector[0],           MAXSECTORS, GAMEARRAY_SYSTEM | GAMEARRAY_BITMAP);
     Gv_NewArray("radiusdmgstatnums", (void *)&g_radiusDmgStatnums[0], MAXSTATUS,  GAMEARRAY_SYSTEM | GAMEARRAY_BITMAP);
     Gv_NewArray("show2dsector",      (void *)&show2dsector[0],        MAXSECTORS, GAMEARRAY_SYSTEM | GAMEARRAY_BITMAP);
     Gv_NewArray("tilesizx",          (void *)&tilesiz[0].x,           MAXTILES,   GAMEARRAY_SYSTEM | GAMEARRAY_STRIDE2 | GAMEARRAY_READONLY | GAMEARRAY_INT16);
