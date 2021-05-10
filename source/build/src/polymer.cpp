@@ -3002,6 +3002,8 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
     if (automapping)
         show2dsector[sectnum>>3] |= pow2char[sectnum&7];
 
+    gotsector[sectnum>>3] |= pow2char[sectnum&7];
+
     sec = (usectorptr_t)&sector[sectnum];
     s = prsectors[sectnum];
 
