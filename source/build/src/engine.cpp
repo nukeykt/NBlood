@@ -6162,7 +6162,7 @@ draw_as_face_sprite:
 
             for (int x=lx; x<rx; x++)
             {
-                y1 = uwall[x]+1; y2 = dwall[x]-1;
+                y1 = uwall[x]; y2 = dwall[x]-1;
                 if (y1 <= y2)
                 {
                     shy1 = y1+(shoffs>>15);
