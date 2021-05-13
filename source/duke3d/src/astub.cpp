@@ -8408,14 +8408,25 @@ static int osdcmd_quit(osdcmdptr_t UNUSED(parm))
     exit(EXIT_SUCCESS);
 }
 
-static int osdcmd_artdump(osdcmdptr_t UNUSED(parm))
+static int osdcmd_artdump(osdcmdptr_t parm)
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 
     BFILE *f = Bfopen("tilesxxx.art", "wb");
-
+    uint32_t first = 0;
+    uint32_t last = MAXUSERTILES-1;
     uint32_t numtiles = 0;
-    for (uint32_t i = MAXUSERTILES - 1; i > 0; --i)
+
+    if (parm->numparms >= 1)
+        first = Batol(parm->parms[0]);
+
+    if (parm->numparms >= 2)
+        last = Batol(parm->parms[1]);
+
+    if (first >= MAXUSERTILES || last >= MAXUSERTILES)
+        return OSDCMD_SHOWHELP;
+
+    for (uint32_t i = last; i > first; --i)
         if (tileLoad(i))
         {
             numtiles = i + 1;
@@ -8438,7 +8449,7 @@ static int osdcmd_artdump(osdcmdptr_t UNUSED(parm))
     Bfwrite(&numtiles, sizeof(int32_t), 1, f);
 
     // localtilestart
-    s32 = 0;
+    s32 = first;
     Bfwrite(&s32, sizeof(int32_t), 1, f);
 
     // localtileend
@@ -8446,15 +8457,15 @@ static int osdcmd_artdump(osdcmdptr_t UNUSED(parm))
     Bfwrite(&s32, sizeof(int32_t), 1, f);  // tileend
 
     // tilesizx
-    for (uint32_t i = 0; i < numtiles; ++i)
+    for (uint32_t i = first; i < numtiles; ++i)
         Bfwrite(&tilesiz[i].x, sizeof(int16_t), 1, f);
 
     // tilesizy
-    for (uint32_t i = 0; i < numtiles; ++i)
+    for (uint32_t i = first; i < numtiles; ++i)
         Bfwrite(&tilesiz[i].y, sizeof(int16_t), 1, f);
 
     // picanm
-    for (uint32_t i = 0; i < numtiles; ++i)
+    for (uint32_t i = first; i < numtiles; ++i)
     {
         picanm_t p = picanm[i];
 
@@ -8470,7 +8481,7 @@ static int osdcmd_artdump(osdcmdptr_t UNUSED(parm))
         Bfwrite(&p.sf, sizeof(uint8_t), 1, f);
     }
 
-    for (uint32_t i = 0; i < numtiles; ++i)
+    for (uint32_t i = first; i < numtiles; ++i)
     {
         tileLoad(i);
         Bfwrite((void *)waloff[i], tilesiz[i].x * tilesiz[i].y, 1, f);
