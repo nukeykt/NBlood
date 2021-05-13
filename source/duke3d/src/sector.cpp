@@ -100,48 +100,60 @@ int A_CallSound(int sectNum, int spriteNum)
     return -1;
 }
 
-int G_CheckActivatorMotion(int lotag)
+static int G_CheckSectorMotion(int sectNum)
 {
-    int spriteNum = headspritestat[STAT_ACTIVATOR];
+    for (int j = 0; j < g_animateCnt; ++j)
+        if (sectNum == g_animateSect[j])
+            return 1;
 
-    while (spriteNum >= 0)
+    for (int SPRITES_OF_SECT(sectNum, foundSprite))
     {
-        if (sprite[spriteNum].lotag == lotag)
+        if (sprite[foundSprite].statnum == STAT_EFFECTOR)
         {
-            auto const pSprite = &sprite[spriteNum];
-
-            for (bssize_t j = g_animateCnt - 1; j >= 0; j--)
-                if (pSprite->sectnum == g_animateSect[j])
-                    return 1;
-
-            int sectorEffector = headspritestat[STAT_EFFECTOR];
-
-            while (sectorEffector >= 0)
+            switch (sprite[foundSprite].lotag)
             {
-                if (pSprite->sectnum == sprite[sectorEffector].sectnum)
-                {
-                    switch (sprite[sectorEffector].lotag)
-                    {
-                        case SE_11_SWINGING_DOOR:
-                        case SE_30_TWO_WAY_TRAIN:
-                            if (actor[sectorEffector].t_data[4])
-                                return 1;
-                            break;
-                        case SE_20_STRETCH_BRIDGE:
-                        case SE_31_FLOOR_RISE_FALL:
-                        case SE_32_CEILING_RISE_FALL:
-                        case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
-                            if (actor[sectorEffector].t_data[0])
-                                return 1;
-                            break;
-                    }
-                }
-
-                sectorEffector = nextspritestat[sectorEffector];
+            case SE_11_SWINGING_DOOR:
+            case SE_30_TWO_WAY_TRAIN:
+                if (actor[foundSprite].t_data[4])
+                    return 1;
+                break;
+            case SE_20_STRETCH_BRIDGE:
+            case SE_31_FLOOR_RISE_FALL:
+            case SE_32_CEILING_RISE_FALL:
+            case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
+                if (actor[foundSprite].t_data[0])
+                    return 1;
+                break;
             }
         }
-        spriteNum = nextspritestat[spriteNum];
     }
+
+    return 0;
+}
+
+int G_CheckActivatorMotion(int lotag, bool checkMasterSwitches)
+{
+    for (int SPRITES_OF(STAT_ACTIVATOR, foundSprite))
+    {
+        if (sprite[foundSprite].lotag == lotag)
+        {
+            if (G_CheckSectorMotion(foundSprite))
+                return 1;
+        }
+    }
+
+    if (checkMasterSwitches)
+    {
+        for (int SPRITES_OF(STAT_STANDABLE, foundSprite))
+        {
+            if (sprite[foundSprite].picnum == MASTERSWITCH && sprite[foundSprite].lotag == lotag)
+            {
+                if (sprite[foundSprite].yvel == 1 || G_CheckSectorMotion(foundSprite))
+                    return 1;
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -1311,7 +1323,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
         fallthrough__;
     case MULTISWITCH__:
     case REST_SWITCH_CASES:
-        if (G_CheckActivatorMotion(lotag))
+        if (G_CheckActivatorMotion(lotag, true))
             return 0;
         break;
 
