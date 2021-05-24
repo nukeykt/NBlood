@@ -91,7 +91,7 @@ void credLogosDos(void)
     videoClearScreen(0);
     DoUnFade(1);
 
-    if (!credPlaySmk("LOGO.SMK", "logo811m.wav", 300))
+    if (!credPlaySmk("movie/LOGO.SMK", "movie/logo811m.wav", 300))
     {
         rotatesprite(160<<16, 100<<16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
         scrNextPage();
@@ -105,7 +105,7 @@ void credLogosDos(void)
 
     credReset();
 
-    if (!credPlaySmk("GTI.SMK", "gti.wav", 301))
+    if (!credPlaySmk("movie/GTI.SMK", "movie/gti.wav", 301))
     {
         rotatesprite(160<<16, 100<<16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim-1, ydim-1);
         scrNextPage();
