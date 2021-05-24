@@ -91,33 +91,8 @@ void credLogosDos(void)
     videoClearScreen(0);
     DoUnFade(1);
 
-    if (!credPlaySmk("movie/LOGO.SMK", "movie/logo811m.wav", 300))
-    {
-        rotatesprite(160<<16, 100<<16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
-        scrNextPage();
-        sndStartSample("THUNDER2", 128, -1);
-        if (Wait(360))
-        {
-            if (videoGetRenderMode() == REND_CLASSIC)
-                DoFade(0, 0, 0, 60);
-        }
-    }
-
-    credReset();
-
-    if (!credPlaySmk("movie/GTI.SMK", "movie/gti.wav", 301))
-    {
-        rotatesprite(160<<16, 100<<16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim-1, ydim-1);
-        scrNextPage();
-        sndStartSample("THUNDER2", 128, -1);
-        if (Wait(360))
-        {
-            if (videoGetRenderMode() == REND_CLASSIC)
-                DoFade(0, 0, 0, 60);
-        }
-    }
-
-    credReset();
+    credPlayLogo("LOGO.SMK", "logo811m.wav", 300, 2050, 0x4a);
+    credPlayLogo("GTI.SMK", "gti.wav", 301, 2052, 0x0a);
 
     rotatesprite(160<<16, 100<<16, 65536, 0, 2518, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
     scrNextPage();
@@ -125,6 +100,30 @@ void credLogosDos(void)
     sndPlaySpecialMusicOrNothing(MUS_INTRO);
     Wait(360);
     sndFadeSong(4000);
+}
+
+void credPlayLogo(const char *_pzSMK, const char *_pzWAV, int nWav, int16_t picnum, int32_t dastat)
+{
+    const char *folder = "movie/";
+    char smkPath[BMAX_PATH], wavPath[BMAX_PATH];
+    Bstrcpy(smkPath, folder);
+    Bstrcat(smkPath, _pzSMK);
+    Bstrcpy(wavPath, folder);
+    Bstrcat(wavPath, _pzWAV);
+
+    if (!credPlaySmk(smkPath, wavPath, nWav))
+    {
+        rotatesprite(160<<16, 100<<16, 65536, 0, picnum, 0, 0, dastat, 0, 0, xdim-1, ydim-1);
+        scrNextPage();
+        sndStartSample("THUNDER2", 128, -1);
+        if (Wait(360))
+        {
+            if (videoGetRenderMode() == REND_CLASSIC)
+                DoFade(0, 0, 0, 60);
+        }
+    }
+
+    credReset();
 }
 
 void credReset(void)
@@ -138,7 +137,7 @@ void credReset(void)
 
 int credKOpen4Load(char *&pzFile)
 {
-    int nLen = strlen(pzFile);
+    int nLen = Bstrlen(pzFile);
     for (int i = 0; i < nLen; i++)
     {
         if (pzFile[i] == '\\')

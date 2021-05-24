@@ -22,6 +22,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 
+#include <stdint.h>
+
 void credLogosDos(void);
 void credReset(void);
 char credPlaySmk(const char *pzSMK, const char *pzWAV, int nWAV);
+void credPlayLogo(const char *_pzSMK, const char *_pzWAV, int nWav, int16_t picnum, int32_t dastat);
