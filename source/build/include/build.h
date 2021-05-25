@@ -1048,6 +1048,8 @@ extern int32_t enginecompatibilitymode;
 static CONSTEXPR int32_t const enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+EXTERN int32_t crctab16[256];
+
 /*************************************************************************
 POSITION VARIABLES:
 
@@ -1238,6 +1240,11 @@ int32_t    printext16(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol,
 void   printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol,
                    const char *name, char fontsize) ATTRIBUTE((nonnull(5)));
 void   Buninitart(void);
+
+void   initcrc16(void);
+uint16_t getcrc16(char const *buffer, int bufleng);
+#define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctab16[((((uint16_t)crc)>>8)&65535)^(dat)]))
+
 
 ////////// specialized rotatesprite wrappers for (very) often used cases //////////
 static FORCE_INLINE void rotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,

@@ -28,8 +28,6 @@
 
 char levelname[BMAX_PATH] = {0};
 
-#define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctable[((((uint16_t)crc)>>8)&65535)^dat]))
-static int32_t crctable[256];
 static char kensig[64];
 
 static const char *CallExtGetVer(void);
@@ -250,7 +248,6 @@ static int32_t movewalls(int32_t start, int32_t offs);
 static void loadnames(const char *namesfile);
 static void getclosestpointonwall(int32_t x, int32_t y, int32_t dawall, int32_t *nx, int32_t *ny,
                                   int32_t maybe_screen_coord_p);
-static void initcrc(void);
 
 static int32_t menuselect(void);
 static int32_t menuselect_auto(int, int); //PK
@@ -739,8 +736,7 @@ int app_main(int argc, char const * const * argv)
 
     artLoadFiles("tiles000.art", g_maxCacheSize);
 
-    Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");
-    initcrc();
+    Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");    
 
     InitCustomColors();
 
@@ -10876,25 +10872,6 @@ static void getclosestpointonwall(int32_t x, int32_t y, int32_t dawall, int32_t 
     i=((i<<15)/j)<<15;
     *nx = wx + ((dx*i)>>30);
     *ny = wy + ((dy*i)>>30);
-}
-
-static void initcrc(void)
-{
-    int32_t i, j, k, a;
-
-    for (j=0; j<256; j++)   //Calculate CRC table
-    {
-        k = (j<<8); a = 0;
-        for (i=7; i>=0; i--)
-        {
-            if (((k^a)&0x8000) > 0)
-                a = ((a<<1)&65535) ^ 0x1021;   //0x1021 = genpoly
-            else
-                a = ((a<<1)&65535);
-            k = ((k<<1)&65535);
-        }
-        crctable[j] = (a&65535);
-    }
 }
 
 static int32_t GetWallBaseZ(int32_t wallnum)

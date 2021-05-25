@@ -189,6 +189,27 @@ static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to dr
 int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+void initcrc16()
+{
+    int i, j, k, a;
+    for (j=0;j<256;j++)
+    {
+        for (i=7,k=(j<<8),a=0;i>=0;i--,k=((k<<1)&65535))
+        {
+            if ((k^a)&0x8000) a = ((a<<1)&65535)^0x1021;
+            else a = ((a<<1)&65535);
+        }
+        crctab16[j] = (a&65535);
+    }
+}
+
+uint16_t getcrc16(char const *buffer, int bufleng)
+{
+    int j = 0;
+    for (int i=bufleng-1;i>=0;i--) updatecrc16(j,buffer[i]);
+    return((uint16_t)(j&65535));
+}
+
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
@@ -8614,6 +8635,7 @@ int32_t enginePreInit(void)
     validmodecnt = 0;
     videoGetModes();
 
+    initcrc16();
     initcrc32table();
 
 #ifdef HAVE_CLIPSHAPE_FEATURE

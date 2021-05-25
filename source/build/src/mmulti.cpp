@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "build.h"
 #include "compat.h"
 #include "baselayer.h"
 #include "renderlayer.h"
@@ -345,30 +346,6 @@ void mmulti_flushpackets() {}
 void mmulti_sendlogon() {}
 void mmulti_sendlogoff() {}
 //--------------------------------------------------------------------------------------------------
-
-static int crctab16[256];
-static void initcrc16()
-{
-    int i, j, k, a;
-    for (j=0;j<256;j++)
-    {
-        for (i=7,k=(j<<8),a=0;i>=0;i--,k=((k<<1)&65535))
-        {
-            if ((k^a)&0x8000) a = ((a<<1)&65535)^0x1021;
-            else a = ((a<<1)&65535);
-        }
-        crctab16[j] = (a&65535);
-    }
-}
-#define updatecrc16(crc,dat) crc = (((crc<<8)&65535)^crctab16[((((unsigned short)crc)>>8)&65535)^dat])
-static unsigned short getcrc16(char *buffer, int bufleng)
-{
-    int i, j;
-
-    j = 0;
-    for (i=bufleng-1;i>=0;i--) updatecrc16(j,buffer[i]);
-    return((unsigned short)(j&65535));
-}
 
 void mmulti_uninitmultiplayers() { netuninit(); }
 
