@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "dude.h"
 #include "player.h"
 #include "warp.h"
+#include "triggers.h"
 
 // CONSTANTS
 // additional non-thing proximity, sight and physics sprites 
@@ -46,8 +47,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxTracedObjects 32 // per one tracking condition
 
 // additional physics attributes for debris sprites
-#define kPhysDebrisFly 0x0008 // *debris* affected by negative gravity (fly instead of falling, DO NOT mess with kHitagAutoAim)
-#define kPhysDebrisSwim 0x0016 // *debris* can swim underwater (instead of drowning)
+#define kPhysDebrisFloat 0x0008 // *debris* slowly goes up and down from it's position
+#define kPhysDebrisFly 0x0010 // *debris* affected by negative gravity (fly instead of falling)
+#define kPhysDebrisSwim 0x0020 // *debris* can swim underwater (instead of drowning)
+#define kPhysDebrisTouch 0x0040 // *debris* can be moved via touch
+//#define kPhysDebrisPush 0x0080 // *debris* can be moved via push
 #define kPhysDebrisVector 0x0400 // *debris* can be affected by vector weapons
 #define kPhysDebrisExplode 0x0800 // *debris* can be affected by explosions
 
@@ -62,7 +66,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kPercFull 100
 #define kCondRange 100
 
+#define kPatrolStateSize 27
+#define kMaxPatrolVelocity 500000
+#define kMaxPatrolCrouchVelocity kMaxPatrolVelocity >> 1
+#define kMaxPatrolSpotValue 500
 
+#define kDudeFlagStealth    0x0001
+#define kDudeFlagCrouch     0x0002
+
+#define kSlopeDist 0x20
 
 // modern statnums
 enum {
@@ -79,6 +91,7 @@ kStatModernMax                      = 40,
 
 // modern sprite types
 enum {
+kModernSlopeChanger                 = 16,
 kModernCustomDudeSpawn              = 24,
 kModernRandomTX                     = 25,
 kModernSequentialTX                 = 26,
@@ -140,10 +153,10 @@ kCondSpriteMax                      = 600,
 };
 
 enum {
-kCondSerialSector                   = 100000,
-kCondSerialWall                     = 200000,
-kCondSerialSprite                   = 300000,
-kCondSerialMax                      = 400000,
+kCondSerialSector                   = 10000,
+kCondSerialWall                     = 20000,
+kCondSerialSprite                   = 30000,
+kCondSerialMax                      = 40000,
 };
 
 // - STRUCTS ------------------------------------------------------------------
@@ -179,9 +192,14 @@ struct MISSILEINFO_EXTRA {
 };
 
 struct DUDEINFO_EXTRA {
-    bool flying;    // used by kModernDudeTargetChanger (ai fight)
-    bool melee;     // used by kModernDudeTargetChanger (ai fight)
-    bool annoying;  // used by kModernDudeTargetChanger (ai fight)
+    bool flying;                    // used by kModernDudeTargetChanger (ai fight)
+    bool melee;                     // used by kModernDudeTargetChanger (ai fight)
+    int idlgseqofs : 6;             // used for patrol
+    int mvegseqofs : 6;             // used for patrol
+    int idlwseqofs : 6;             // used for patrol
+    int mvewseqofs : 6;             // used for patrol
+    int idlcseqofs : 6;             // used for patrol
+    int mvecseqofs : 6;             // used for patrol
 };
 
 struct TRPLAYERCTRL { // this one for controlling the player using triggers (movement speed, jumps and other stuff)
@@ -199,8 +217,6 @@ struct TRCONDITION {
     unsigned int length:    8;
     OBJECTS_TO_TRACK obj[kMaxTracedObjects];
 };
-
-
 
 // - VARIABLES ------------------------------------------------------------------
 extern bool gTeamsSpawnUsed;
@@ -223,6 +239,7 @@ extern short gSightSpritesCount;
 extern short gPhysSpritesCount;
 extern short gImpactSpritesCount;
 extern short gTrackingCondsCount;
+extern AISTATE genPatrolStates[kPatrolStateSize];
 
 // - FUNCTIONS ------------------------------------------------------------------
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
@@ -242,6 +259,7 @@ void sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 //  -------------------------------------------------------------------------   //
 int debrisGetIndex(int nSprite);
 int debrisGetFreeIndex(void);
+void debrisBubble(int nSprite);
 void debrisMove(int listIndex);
 void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg);
 //  -------------------------------------------------------------------------   //
@@ -266,15 +284,16 @@ spritetype* aiFightGetTargetInRange(spritetype* pSprite, int minDist, int maxDis
 spritetype* aiFightTargetIsPlayer(XSPRITE* pXSprite);
 spritetype* aiFightGetMateTargets(XSPRITE* pXSprite);
 //  -------------------------------------------------------------------------   //
+void useSlopeChanger(XSPRITE* pXSource, int objType, int objIndex);
 void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector);
 void useEffectGen(XSPRITE* pXSource, spritetype* pSprite);
 void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index);
-void useSpriteDamager(XSPRITE* pXSource, spritetype* pSprite);
+void damageSprites(XSPRITE* pXSource, spritetype* pSprite);
 void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite);
 void useObjResizer(XSPRITE* pXSource, short objType, int objIndex);
 void useRandomItemGen(spritetype* pSource, XSPRITE* pXSource);
 void useUniMissileGen(int, int nXSprite);
-void useSoundGen(spritetype* pSource, XSPRITE* pXSource);
+void useSoundGen(XSPRITE* pXSource, spritetype* pSprite);
 void useIncDecGen(XSPRITE* pXSource, short objType, int objIndex);
 void useDataChanger(XSPRITE* pXSource, int objType, int objIndex);
 void useSectorLigthChanger(XSPRITE* pXSource, XSECTOR* pXSector);
@@ -300,6 +319,7 @@ void trPlayerCtrlUsePackItem(XSPRITE* pXSource, PLAYER* pPlayer, int evCmd);
 //  -------------------------------------------------------------------------   //
 void modernTypeTrigger(int type, int nDest, EVENT event);
 char modernTypeSetSpriteState(int nSprite, XSPRITE* pXSprite, int nState);
+bool modernTypeOperateSector(int nSector, sectortype* pSector, XSECTOR* pXSector, EVENT event);
 bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite, EVENT event);
 bool modernTypeOperateWall(int nWall, walltype* pWall, XWALL* pXWall, EVENT event);
 void modernTypeSendCommand(int nSprite, int channel, COMMAND_ID command);
@@ -350,6 +370,19 @@ XSPRITE* evrListRedirectors(int objType, int objXIndex, XSPRITE* pXRedir, int* t
 XSPRITE* evrIsRedirector(int nSprite);
 int listTx(XSPRITE* pXRedir, int tx);
 void seqSpawnerOffSameTx(XSPRITE* pXSource);
+//  -------------------------------------------------------------------------   //
+void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite);
+void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite);
+void aiPatrolStop(spritetype* pSprite, int target, bool alarm = false);
+void aiPatrolAlarm(spritetype* pSprite, bool chain);
+void aiPatrolState(spritetype* pSprite, int state);
+void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite);
+int aiPatrolMarkerBusy(int nExcept, int nMarker);
+bool aiPatrolMarkerReached(spritetype* pSprite, XSPRITE* pXSprite);
+AISTATE* aiInPatrolState(AISTATE* pAiState);
+//  -------------------------------------------------------------------------   //
+bool readyForCrit(spritetype* pHunter, spritetype* pVictim);
+int sectorInMotion(int nSector);
 #endif
 
 ////////////////////////////////////////////////////////////////////////

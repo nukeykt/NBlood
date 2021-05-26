@@ -1550,7 +1550,7 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         20,
         10240,		                        // hear distance
         51200,	                            // seeing distance
-        kAng120,	                        // vision periphery
+        kAng90,	                            // vision periphery
         //			    0,
         618,                                // melee distance
         5,			                        // flee health
@@ -1558,7 +1558,7 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         0x0000,		                        // change target chance
         0x0000,		                        // change target to kin chance
         0x8000,		                        // alertChance
-        0,		                            // lockout
+        1,		                            // lockout
         46603,		                        // frontSpeed
         34952,		                        // sideSpeed
         13981,		                        // backSpeed

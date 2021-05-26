@@ -93,6 +93,7 @@ kCmdCounterSector           = 12,
 kCmdCallback                = 20,
 kCmdRepeat                  = 21,
 
+
 kCmdSpritePush              = 30,
 kCmdSpriteImpact            = 31,
 kCmdSpritePickup            = 32,
@@ -109,8 +110,13 @@ kCmdSectorExit              = 43,
 kCmdWallPush                = 50,
 kCmdWallImpact              = 51,
 kCmdWallTouch               = 52,
+#ifdef NOONE_EXTENSIONS
+kCmdSectorMotionPause       = 13,   // stops motion of the sector
+kCmdSectorMotionContinue    = 14,   // continues motion of the sector
+kCmdDudeFlagsSet            = 15,   // copy dudeFlags from sprite to dude
+kCmdModernUse               = 53,   // used by most of modern types
+#endif
 
-kCmdModernUse               = 53, // used by most of modern types
 kCmdNumberic                = 64, // 64: 0, 65: 1 and so on up to 255
 kCmdModernFeaturesEnable    = 100, // must be in object with kChannelMapModernize RX / TX
 kCmdModernFeaturesDisable   = 200, // must be in object with kChannelMapModernize RX / TX

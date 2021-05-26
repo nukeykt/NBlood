@@ -2121,6 +2121,32 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         }
         FragPlayer(pPlayer, nSource);
         trTriggerSprite(nSprite, pXSprite, kCmdOff);
+
+        #ifdef NOONE_EXTENSIONS
+        // allow drop items and keys in multiplayer
+        if (gModernMap && gGameOptions.nGameType != 0 && pPlayer->pXSprite->health <= 0) {
+            
+            spritetype* pItem = NULL;
+            if (pPlayer->pXSprite->dropMsg && (pItem = actDropItem(pPlayer->pSprite, pPlayer->pXSprite->dropMsg)) != NULL)
+                evPost(pItem->index, OBJ_SPRITE, 500, kCallbackRemove);
+
+            if (pPlayer->pXSprite->key) {
+                
+                int i; // if all players have this key, don't drop it
+                for (i = connecthead; i >= 0; i = connectpoint2[i]) {
+                    if (!gPlayer[i].hasKey[pPlayer->pXSprite->key])
+                        break;
+                }
+                
+                if (i == 0 && (pItem = actDropKey(pPlayer->pSprite, (pPlayer->pXSprite->key + kItemKeyBase) - 1)) != NULL)
+                    evPost(pItem->index, OBJ_SPRITE, 500, kCallbackRemove);
+
+            }
+
+
+        }
+        #endif
+
     }
     dassert(gSysRes.Lookup(pDudeInfo->seqStartID + nDeathSeqID, "SEQ") != NULL);
     seqSpawn(pDudeInfo->seqStartID+nDeathSeqID, 3, nXSprite, nKneelingPlayer);
