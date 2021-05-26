@@ -358,20 +358,24 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
     return -1;
 }
 
-static inline uint16_t getlzsum(uspriteptr_t pSprite, uspriteptr_t pTouched, int const wallDist)
+static uint16_t getlzsum(uspriteptr_t pSprite)
 {
-    uint16_t lzsum = (uint16_t)pSprite->x ^ (uint16_t)pSprite->y ^ (uint16_t)pSprite->z ^ (uint16_t)sector[pSprite->sectnum].floorz
-                     ^ (uint16_t)sector[pSprite->sectnum].ceilingz ^ wallDist ^ (uint16_t)pSprite->xvel ^ (uint16_t)pSprite->zvel;
-    if (pTouched) lzsum ^= (uint16_t)pTouched->x ^ (uint16_t)pTouched->y ^ (uint16_t)pTouched->z ^ (uint16_t)pTouched->xvel ^ (uint16_t)pTouched->zvel;
+    uint16_t lzsum = getcrc16((char const *)pSprite, 16);
+    updatecrc16(lzsum, pSprite->clipdist & 255);
+    updatecrc16(lzsum, pSprite->xvel & 255);
+    updatecrc16(lzsum, pSprite->zvel & 255);
+    updatecrc16(lzsum, sector[pSprite->sectnum].floorz & 255);
+    updatecrc16(lzsum, sector[pSprite->sectnum].ceilingz & 255);
+    updatecrc16(lzsum, sector[pSprite->sectnum].lotag & 255);
     return lzsum;
 }
 
 void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const florhit, int const wallDist)
 {
-    auto const pSprite  = &sprite[spriteNum];
-    auto       pTouched = ((actor[spriteNum].florhit & 49152) == 49152) ? (uspriteptr_t)&sprite[actor[spriteNum].florhit & (MAXSPRITES-1)] : nullptr;
+    auto const pSprite = &sprite[spriteNum];
+    uint16_t   lzsum   = getlzsum((uspriteptr_t)pSprite);
 
-    if (actor[spriteNum].lzsum == getlzsum((uspriteptr_t)pSprite, pTouched, wallDist))
+    if (actor[spriteNum].lzsum == lzsum)
         return;
 
     int const ocstat = pSprite->cstat;
@@ -385,9 +389,7 @@ void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const fl
     pSprite->cstat = ocstat;
 
     actor[spriteNum].florhit = *florhit;
-    pTouched = ((actor[spriteNum].florhit & 49152) == 49152) ? (uspriteptr_t)&sprite[actor[spriteNum].florhit & (MAXSPRITES-1)] : nullptr;
-
-    actor[spriteNum].lzsum = getlzsum((uspriteptr_t)pSprite, pTouched, wallDist);
+    actor[spriteNum].lzsum = ((actor[spriteNum].florhit & 49152) == 49152) ? UINT16_MAX : lzsum;
 }
 
 void A_GetZLimits(int const spriteNum)
