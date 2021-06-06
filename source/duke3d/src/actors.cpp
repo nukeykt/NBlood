@@ -3113,11 +3113,11 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
                         A_DamageObject(otherSprite, spriteNum);
 
+#ifndef EDUKE32_STANDALONE
                         if (sprite[otherSprite].picnum == APLAYER)
                         {
                             int playerNum = P_Get(otherSprite);
 
-#ifndef EDUKE32_STANDALONE
                             if (!FURY)
                             {
                                 A_PlaySound(PISTOL_BODYHIT, otherSprite);
@@ -3125,8 +3125,8 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                                 if (pProj->workslike & PROJECTILE_SPIT)
                                     P_HandleBeingSpitOn(g_player[playerNum].ps);
                             }
-#endif
                         }
+#endif
 
                         if (pProj->workslike & PROJECTILE_RPG_IMPACT)
                         {

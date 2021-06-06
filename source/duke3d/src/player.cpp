@@ -1900,6 +1900,7 @@ static void G_DrawTileScaled(int drawX, int drawY, int tileNum, int drawShade, i
     guniqhudid = restoreid;
 }
 
+#ifndef EDUKE32_STANDALONE
 static void G_DrawWeaponTile(int weaponX, int weaponY, int weaponTile, int weaponShade, int weaponBits, int weaponPal, int uniqueID = 0)
 {
     static int shadef = 0;
@@ -1938,7 +1939,7 @@ static void G_DrawWeaponTile(int weaponX, int weaponY, int weaponTile, int weapo
 
     G_DrawTileScaled(weaponX, weaponY, weaponTile, shadef, weaponBits, weaponPal, uniqueID);
 }
-
+#endif
 
 static inline void G_DrawWeaponTileUnfaded(int weaponX, int weaponY, int weaponTile, int weaponShade, int weaponBits, int p, int uniqueID = 0)
 {
@@ -2231,8 +2232,9 @@ void P_DisplayWeapon(void)
 
     // fixes trying to interpolate between the weapon_pos 0 and fully lowered positions when placing tripbombs
     // FFS, WEAPON_POS_RAISE gets set in P_DoCounters() and then P_ProcessWeapon() decrements it before we can check for it when drawing
+#ifndef EDUKE32_STANDALONE
     int32_t weaponBits = pPlayer->weapon_pos == WEAPON_POS_LOWER || pPlayer->weapon_pos >= WEAPON_POS_RAISE-1 ? 0 : RS_LERP;
-
+#endif
     if (P_DisplayFist(weaponShade) || P_DisplayKnuckles(weaponShade) || P_DisplayTip(weaponShade) || P_DisplayAccess(weaponShade))
         goto enddisplayweapon;
 
