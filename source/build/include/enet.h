@@ -5364,7 +5364,7 @@ extern "C" {
 
     #ifdef _WIN32
 
-
+    static int is_enet_initialized = 0;
 
     int enet_initialize(void) {
         WORD versionRequested = MAKEWORD(1, 1);
@@ -5380,12 +5380,16 @@ extern "C" {
         }
 
         timeBeginPeriod(1);
+        is_enet_initialized = 1;
         return 0;
     }
 
     void enet_deinitialize(void) {
-        timeEndPeriod(1);
-        WSACleanup();
+        if (is_enet_initialized) {
+            timeEndPeriod(1);
+            WSACleanup();
+            is_enet_initialized = 0;
+        }
     }
 
     enet_uint64 enet_host_random_seed(void) {
