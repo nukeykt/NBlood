@@ -8121,7 +8121,6 @@ int app_main(int argc, char const * const * argv)
 #ifndef NETCODE_DISABLE
     if (enet_initialize() != 0)
         initprintf("An error occurred while initializing ENet.\n");
-    else atexit(enet_deinitialize);
 #endif
 
 #ifdef _WIN32
