@@ -833,8 +833,6 @@ void OSD_Init(void)
     OSD_RegisterFunction("listsymbols", "listsymbols: lists all registered functions, cvars and aliases", osdfunc_listsymbols);
     OSD_RegisterFunction("toggle", "toggle: toggles the value of a boolean cvar", osdfunc_toggle);
     OSD_RegisterFunction("unalias", "unalias: removes a command alias", osdfunc_unalias);
-
-    //    atexit(OSD_Cleanup);
 }
 
 

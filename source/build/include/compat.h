@@ -695,6 +695,7 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 # define Bexit exit
 #endif
 
+// do not try and wrap fatal_exit inside another function or you will break its functionaity (obviously...)
 #ifdef _WIN32
 #define fatal_exit__(x) FatalAppExitA(0, x)
 #else

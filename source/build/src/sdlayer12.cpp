@@ -84,8 +84,6 @@ int32_t initsystem(void)
 #endif
     }
 
-    atexit(uninitsystem);
-
     frameplace = 0;
     lockcount = 0;
 

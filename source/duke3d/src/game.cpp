@@ -283,6 +283,18 @@ int32_t A_CheckInventorySprite(spritetype *s)
 }
 
 
+void app_exit(int returnCode) ATTRIBUTE((noreturn));
+
+void app_exit(int returnCode)
+{
+#ifndef NETCODE_DISABLE
+    enet_deinitialize();
+#endif
+    if (returnCode != EXIT_SUCCESS)
+        Bexit(returnCode);
+
+    exit(EXIT_SUCCESS);
+}
 
 void G_GameExit(const char *msg)
 {
@@ -327,8 +339,7 @@ void G_GameExit(const char *msg)
     }
 
     Bfflush(NULL);
-
-    exit(EXIT_SUCCESS);
+    app_exit(EXIT_SUCCESS);
 }
 
 
@@ -6335,7 +6346,6 @@ int app_main(int argc, char const* const* argv)
 #ifndef NETCODE_DISABLE
     if (enet_initialize() != 0)
         initprintf("An error occurred while initializing ENet.\n");
-    else atexit(enet_deinitialize);
 #endif
 
 #ifdef _WIN32
@@ -6344,7 +6354,7 @@ int app_main(int argc, char const* const* argv)
     {
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
                       "Are you sure you want to start another copy?"))
-            return 3;
+            app_exit(3);
     }
 #endif
 
@@ -6489,7 +6499,7 @@ int app_main(int argc, char const* const* argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            exit(EXIT_SUCCESS);
+            app_exit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -6677,7 +6687,7 @@ int app_main(int argc, char const* const* argv)
 
     system_getcvars();
 
-    if (quitevent) return 4;
+    if (quitevent) app_exit(4);
 
     if (g_networkMode != NET_DEDICATED_SERVER && validmodecnt > 0)
     {
@@ -6970,7 +6980,7 @@ MAIN_LOOP_RESTART:
     }
     while (1);
 
-    return 0;  // not reached (duh)
+    app_exit(EXIT_SUCCESS);  // not reached (duh)
 }
 
 int G_DoMoveThings(void)

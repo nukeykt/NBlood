@@ -158,9 +158,6 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
         {
             if (auto s = SDL_getenv("SDL_AUDIODRIVER"))
                 SDLAudioDriverNameEnv = Xstrdup(s);
-
-            atexit(SDLDrv_Cleanup);
-            done = true;
         }
     }
 
@@ -286,6 +283,9 @@ void SDLDrv_PCM_Shutdown(void)
 
     StartedSDL = 0;
     Initialised = 0;
+#if SDL_MAJOR_VERSION >= 2
+    SDLDrv_Cleanup();
+#endif
 }
 
 int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,

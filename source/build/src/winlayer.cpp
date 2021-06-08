@@ -471,8 +471,6 @@ int32_t initsystem(void)
 
     memset(curpalette, 0, sizeof(palette_t) * 256);
 
-    atexit(uninitsystem);
-
     timerInit(CLOCKTICKSPERSECOND);
 
     frameplace=0;
