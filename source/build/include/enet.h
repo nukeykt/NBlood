@@ -5388,6 +5388,7 @@ extern "C" {
         if (is_enet_initialized) {
             timeEndPeriod(1);
             WSACleanup();
+            is_enet_initialized = 0;
         }
     }
 
