@@ -63,7 +63,7 @@ static SDL_AudioDeviceID audio_dev;
 
 #if SDL_MAJOR_VERSION >= 2
 char SDLAudioDriverName[16];
-char *SDLAudioDriverNameEnv = NULL;
+char *SDLAudioDriverNameEnv;
 #endif
 
 static void fillData(void * userdata, Uint8 * ptr, int remaining)
