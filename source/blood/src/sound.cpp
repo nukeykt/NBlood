@@ -512,6 +512,5 @@ void sndInit(void)
     nWaveMusicHandle = -1;
     InitSoundDevice();
     InitMusicDevice();
-    //atexit(sndTerm);
     sndActive = true;
 }
