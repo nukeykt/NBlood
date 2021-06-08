@@ -689,8 +689,6 @@ int32_t initsystem(void)
     SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 #endif
 
-    atexit(uninitsystem);
-
     timerInit(CLOCKTICKSPERSECOND);
 
     frameplace = 0;
