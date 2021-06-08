@@ -378,7 +378,20 @@ void G_OffBoat(DukePlayer_t *pPlayer)
     }
 }
 
-
+void app_exit(int returnCode)
+{
+#ifndef NETCODE_DISABLE
+    enet_deinitialize();
+#endif
+    if (returnCode == EXIT_SUCCESS)
+    {
+        exit(EXIT_SUCCESS);
+    }
+    else
+    {
+        Bexit(returnCode);
+    }
+}
 
 void G_GameExit(const char *msg)
 {
@@ -421,7 +434,7 @@ void G_GameExit(const char *msg)
 
     Bfflush(NULL);
 
-    exit(0);
+    app_exit(EXIT_SUCCESS);
 }
 
 
@@ -7794,7 +7807,7 @@ static void G_FatalEngineError(void)
               "There was a problem initializing the Build engine: %s", engineerrstr);
     G_Cleanup();
     ERRprintf("G_Startup: There was a problem initializing the Build engine: %s\n", engineerrstr);
-    exit(6);
+    app_exit(6);
 }
 
 static void G_Startup(void)
@@ -8133,7 +8146,7 @@ int app_main(int argc, char const * const * argv)
         if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
 #endif
                       "Are you sure you want to start another copy?"))
-            return 3;
+            app_exit(3);
     }
 #endif
 
@@ -8268,7 +8281,7 @@ int app_main(int argc, char const * const * argv)
         wm_msgbox("Build Engine Initialization Error",
                   "There was a problem initializing the Build engine: %s", engineerrstr);
         ERRprintf("app_main: There was a problem initializing the Build engine: %s\n", engineerrstr);
-        Bexit(2);
+        app_exit(2);
     }
 
     if (Bstrcmp(g_setupFileName, SETUPFILENAME))
@@ -8282,7 +8295,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(0);
+            app_exit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -8373,7 +8386,7 @@ int app_main(int argc, char const * const * argv)
         i = 1-i;
     }
 
-    if (quitevent) return 4;
+    if (quitevent) app_exit(4);
 
     Anim_Init();
 
@@ -8443,7 +8456,7 @@ int app_main(int argc, char const * const * argv)
         {
             ERRprintf("There was an error initializing the CONTROL system.\n");
             engineUnInit();
-            Bexit(5);
+            app_exit(5);
         }
 
         G_SetupGameButtons();
@@ -8832,7 +8845,7 @@ MAIN_LOOP_RESTART:
     }
     while (1);
 
-    return 0;  // not reached (duh)
+    app_exit(EXIT_SUCCESS);  // not reached (duh)
 }
 
 GAME_STATIC GAME_INLINE int32_t G_MoveLoop()

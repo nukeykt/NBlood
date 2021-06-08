@@ -37,9 +37,6 @@
 # endif
 # include "polymost.h"
 #endif
-#ifndef NETCODE_DISABLE
-# include "enet.h"
-#endif
 
 //////////
 // Compilation switches for optional/extended engine features
@@ -8757,9 +8754,6 @@ void engineUnInit(void)
     DO_FREE_AND_NULL(g_defNamePtr);
 
     uninitsystem();
-#ifndef NETCODE_DISABLE
-    enet_deinitialize();
-#endif
 }
 
 

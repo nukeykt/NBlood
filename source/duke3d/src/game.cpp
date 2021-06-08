@@ -281,7 +281,28 @@ int32_t A_CheckInventorySprite(spritetype *s)
     }
 }
 
+void app_fatal_exit(const char *msg)
+{
+#ifndef NETCODE_DISABLE
+    enet_deinitialize();
+#endif
+    fatal_exit(msg);
+}
 
+void app_exit(int returnCode)
+{
+#ifndef NETCODE_DISABLE
+    enet_deinitialize();
+#endif
+    if (returnCode == EXIT_SUCCESS)
+    {
+        exit(EXIT_SUCCESS);
+    }
+    else
+    {
+        Bexit(returnCode);
+    }
+}
 
 void G_GameExit(const char *msg)
 {
@@ -327,7 +348,7 @@ void G_GameExit(const char *msg)
 
     Bfflush(NULL);
 
-    exit(EXIT_SUCCESS);
+    app_exit(EXIT_SUCCESS);
 }
 
 
@@ -6054,8 +6075,8 @@ static void G_HandleMemErr(int32_t lineNum, const char *fileName, const char *fu
 #ifdef DEBUGGINGAIDS
     debug_break();
 #endif
-    Bsprintf(tempbuf, "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);
-    fatal_exit(tempbuf);
+    Bsprintf(tempbuf, "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);   
+    app_fatal_exit(tempbuf);
 }
 
 static void G_FatalEngineInitError(void)
@@ -6066,7 +6087,7 @@ static void G_FatalEngineInitError(void)
     G_Cleanup();
     Bsprintf(tempbuf, "There was a problem initializing the engine: %s\n", engineerrstr);
     ERRprintf("%s", tempbuf);
-    fatal_exit(tempbuf);
+    app_fatal_exit(tempbuf);
 }
 
 static void G_Startup(void)
@@ -6395,7 +6416,7 @@ int app_main(int argc, char const* const* argv)
     {
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
                       "Are you sure you want to start another copy?"))
-            return 3;
+            app_exit(3);
     }
 #endif
 
@@ -6540,7 +6561,7 @@ int app_main(int argc, char const* const* argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            exit(EXIT_SUCCESS);
+            app_exit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -6695,7 +6716,7 @@ int app_main(int argc, char const* const* argv)
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
             engineUnInit();
-            fatal_exit("There was an error initializing the CONTROL system.\n");
+            app_fatal_exit("There was an error initializing the CONTROL system.\n");
         }
 
         G_SetupGameButtons();
@@ -6737,7 +6758,7 @@ int app_main(int argc, char const* const* argv)
 
     system_getcvars();
 
-    if (quitevent) return 4;
+    if (quitevent) app_exit(4);
 
     if (g_networkMode != NET_DEDICATED_SERVER && validmodecnt > 0)
     {
@@ -7033,7 +7054,7 @@ MAIN_LOOP_RESTART:
     }
     while (1);
 
-    return 0;  // not reached (duh)
+    app_exit(EXIT_SUCCESS);  // not reached (duh)
 }
 
 int G_DoMoveThings(void)
