@@ -1609,8 +1609,13 @@ int32_t registerosdcommands(void)
         },
 
         {
-            "in_joystickviewleveling", "automatically level the player view vertically when moving while using a controller",
-            (void *)&ud.config.JoystickViewLeveling, CVAR_INT, 0, 10
+            "in_joystickviewcentering", "automatically center the player's view vertically when moving while using a controller",
+            (void *)&ud.config.JoystickViewCentering, CVAR_INT, 0, 10
+        },
+
+        {
+            "in_joystickviewleveling", "automatically adjusts the player's view vertically to aim at enemies",
+            (void *)&ud.config.JoystickAimAssist, CVAR_BOOL, 0, 1
         },
 
         { "in_joystick","use joystick or controller input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },

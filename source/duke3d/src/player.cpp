@@ -1344,7 +1344,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             if (playerNum >= 0)
             {
                 // NOTE: j is a SPRITE_INDEX
-                j = GetAutoAimAng(spriteNum, playerNum, projecTile, 8 << 8, 0 + 2, &startPos, vel, &Zvel, &shootAng);
+                j = GetAutoAimAng(spriteNum, playerNum, projecTile, ZOFFSET3, 0 + 2, &startPos, vel, &Zvel, &shootAng);
 
                 if (j < 0)
                     Zvel = fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 81;
@@ -3012,6 +3012,116 @@ static int P_CheckLockedMovement(int const playerNum)
     return 0;
 }
 
+void P_UpdateAngles(int const playerNum, input_t const &input)
+{
+    auto      &thisPlayer = g_player[playerNum];
+    auto const pPlayer    = thisPlayer.ps;
+
+    auto const currentHiTicks    = timerGetHiTicks();
+    double     elapsedInputTicks = currentHiTicks - thisPlayer.lastViewUpdate;
+
+    if (!thisPlayer.lastViewUpdate)
+        elapsedInputTicks = 0;
+
+    thisPlayer.lastViewUpdate = currentHiTicks;
+
+    auto scaleToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
+
+    int const movementLocked = P_CheckLockedMovement(playerNum);
+
+    if ((movementLocked & IL_NOTHING) != IL_NOTHING)
+    {
+        if (!(movementLocked & IL_NOANGLE))
+            pPlayer->q16ang = fix16_sadd(pPlayer->q16ang, input.q16avel) & 0x7FFFFFF;
+
+        if (!(movementLocked & IL_NOHORIZ))
+        {
+            float horizAngle  = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + fix16_to_float(input.q16horz);
+            pPlayer->q16horiz = F16(100) + Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f)));
+        }
+    }
+
+    // A horiz diff of 128 equal 45 degrees, so we convert horiz to 1024 angle units
+
+    if (thisPlayer.horizAngleAdjust)
+    {
+        float const horizAngle
+        = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + scaleToInterval(thisPlayer.horizAngleAdjust);
+        pPlayer->q16horiz = F16(100) + Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f)));
+    }
+    else if (pPlayer->return_to_center > 0 || thisPlayer.horizRecenter)
+    {
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(fix16_to_float(F16(66.666) - fix16_sdiv(pPlayer->q16horiz, F16(1.5))))));
+
+        if ((!pPlayer->return_to_center && thisPlayer.horizRecenter) || (pPlayer->q16horiz >= F16(99.9) && pPlayer->q16horiz <= F16(100.1)))
+        {
+            pPlayer->q16horiz = F16(100);
+            pPlayer->return_to_center = 0;
+            thisPlayer.horizRecenter = false;
+        }
+    }
+    int const sectorLotag = pPlayer->cursectnum != -1 ? sector[pPlayer->cursectnum].lotag : 0;
+    // calculates automatic view angle for playing without a mouse
+    if (!pPlayer->aim_mode && pPlayer->on_ground && sectorLotag != ST_2_UNDERWATER && (sector[pPlayer->cursectnum].floorstat & 2))
+    {
+        // this is some kind of horse shit approximation of where the player is looking, I guess?
+        vec2_t const adjustedPosition = { pPlayer->pos.x + (sintable[(fix16_to_int(pPlayer->q16ang) + 512) & 2047] >> 5),
+                                          pPlayer->pos.y + (sintable[fix16_to_int(pPlayer->q16ang) & 2047] >> 5) };
+        int16_t currentSector = pPlayer->cursectnum;
+
+        updatesector(adjustedPosition.x, adjustedPosition.y, &currentSector);
+
+        if (currentSector >= 0)
+        {
+            int const slopeZ = yax_getflorzofslope(pPlayer->cursectnum, adjustedPosition);
+            if ((pPlayer->cursectnum == currentSector) || (klabs(yax_getflorzofslope(currentSector, adjustedPosition) - slopeZ) <= ZOFFSET6))
+                pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(mulscale16(pPlayer->truefz - slopeZ, 160))));
+        }
+    }
+
+    // view centering only works if there's no input on the right stick (looking/aiming) and the player is moving forward/backward, not strafing
+    if (pPlayer->aim_mode&AM_CENTERING && !input.q16avel && !input.q16horz && input.fvel)
+    {
+        if (pPlayer->q16horiz >= F16(99) && pPlayer->q16horiz <= F16(100))
+            thisPlayer.horizRecenter = true;
+        else if (pPlayer->q16horiz < F16(99))
+            pPlayer->q16horiz = fix16_min(fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(ud.config.JoystickViewCentering))), F16(100));
+        else if (pPlayer->q16horiz > F16(100))
+            pPlayer->q16horiz = fix16_max(fix16_ssub(pPlayer->q16horiz, fix16_from_float(scaleToInterval(ud.config.JoystickViewCentering))), F16(100));
+    }
+
+    int32_t Zvel, shootAng;
+
+// FIXME
+    if (pPlayer->aim_mode&AM_AIMASSIST && GetAutoAimAng(pPlayer->i, playerNum, 0, ZOFFSET3, 0 + 2, &pPlayer->pos, 256, &Zvel, &shootAng) != -1)
+    {
+        if (pPlayer->q16horiz == F16(100))
+        {
+            fix16_t const f      = F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff;
+            fix16_t const target = Blrintf(F16(128) * tanf((Zvel / 32.f) * (fPI / 512.f)));
+            fix16_t const scaled = fix16_from_float(scaleToInterval(1.5));
+
+            if (f > target + scaled)
+                pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, scaled);
+            else if (f < target - scaled)
+                pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, scaled);
+        }
+    }
+    else if (pPlayer->q16horizoff > F16(1))
+        pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((pPlayer->q16horizoff >> 3) + fix16_one))));
+    else if (pPlayer->q16horizoff < F16(-1))
+        pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((-pPlayer->q16horizoff >> 3) + fix16_one))));
+    else if (pPlayer->q16horizoff >= F16(-1) && pPlayer->q16horizoff <= F16(1))
+        pPlayer->q16horizoff = 0;
+
+    if (thisPlayer.horizSkew)
+        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(thisPlayer.horizSkew)));
+
+    pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
+}
+
+
 void P_GetInput(int const playerNum)
 {
     auto      &thisPlayer = g_player[playerNum];
@@ -3023,6 +3133,7 @@ void P_GetInput(int const playerNum)
         if (!(pPlayer->gm&MODE_MENU))
             CONTROL_GetInput(&info);
 
+        thisPlayer.lastViewUpdate = 0;
         localInput = {};
         localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
         localInput.extbits |= BIT(EK_CHAT_MODE);
@@ -3031,7 +3142,7 @@ void P_GetInput(int const playerNum)
     }
 
     CONTROL_ProcessBinds();
-
+    
     if (ud.mouseaiming)
         g_myAimMode = BUTTON(gamefunc_Mouse_Aiming);
     else
@@ -3066,18 +3177,18 @@ void P_GetInput(int const playerNum)
         if (absyaw > abspitch)
         {
             if (info.dpitch > 0)
-                info.dpitch = max(0, info.dpitch - tabledivide32_noinline(absyaw - abspitch, 11 - ud.config.JoystickAimWeight));
+                info.dpitch = max(0, info.dpitch - tabledivide32_noinline(absyaw - abspitch, 8 - ud.config.JoystickAimWeight));
             else if (info.dpitch < 0)
-                info.dpitch = min(0, info.dpitch + tabledivide32_noinline(absyaw - abspitch, 11 - ud.config.JoystickAimWeight));
+                info.dpitch = min(0, info.dpitch + tabledivide32_noinline(absyaw - abspitch, 8 - ud.config.JoystickAimWeight));
 
             //OSD_Printf("pitch %d -> %d\n",origpitch, info.dpitch);
         }
         else if (abspitch > absyaw)
         {
             if (info.dyaw > 0)
-                info.dyaw = max(0, info.dyaw - tabledivide32_noinline(abspitch - absyaw, 11 - ud.config.JoystickAimWeight));
+                info.dyaw = max(0, info.dyaw - tabledivide32_noinline(abspitch - absyaw, 8 - ud.config.JoystickAimWeight));
             else if (info.dyaw < 0)
-                info.dyaw = min(0, info.dyaw + tabledivide32_noinline(abspitch - absyaw, 11 - ud.config.JoystickAimWeight));
+                info.dyaw = min(0, info.dyaw + tabledivide32_noinline(abspitch - absyaw, 8 - ud.config.JoystickAimWeight));
 
             //OSD_Printf("yaw %d -> %d\n",origyaw, info.dyaw);
         }
@@ -3127,17 +3238,7 @@ void P_GetInput(int const playerNum)
     input.q16horz = fix16_ssub(input.q16horz, fix16_from_float(scaleToInterval(info.dpitch * 16.0 / analogExtent)));
     input.svel -= lrint(scaleToInterval(info.dx * keyMove / analogExtent));
     input.fvel -= lrint(scaleToInterval(info.dz * keyMove / analogExtent));
-
-    if (ud.config.JoystickViewLeveling && !input.q16avel && !input.q16horz && input.fvel && CONTROL_LastSeenInput == LastSeenInput::Joystick)
-    {
-        if (pPlayer->q16horiz >= F16(99) && pPlayer->q16horiz <= F16(100))
-            thisPlayer.horizRecenter = true;
-        else if (pPlayer->q16horiz < F16(99))
-            input.q16horz = fix16_add(input.q16horz, fix16_from_float(scaleToInterval(ud.config.JoystickViewLeveling)));
-        else if (pPlayer->q16horiz > F16(100))
-            input.q16horz = fix16_sub(input.q16horz, fix16_from_float(scaleToInterval(ud.config.JoystickViewLeveling)));
-    }
-
+    
     if (BUTTON(gamefunc_Strafe))
     {
         if (!localInput.svel)
@@ -3284,6 +3385,12 @@ void P_GetInput(int const playerNum)
     localInput.extbits |= BUTTON(gamefunc_Turn_Right) << EK_TURN_RIGHT;
     localInput.extbits |= BUTTON(gamefunc_Alt_Fire) << EK_ALT_FIRE;
 
+    if (CONTROL_LastSeenInput == LastSeenInput::Joystick)
+    {
+        localInput.extbits |= (!!ud.config.JoystickViewCentering) << EK_GAMEPAD_CENTERING;
+        localInput.extbits |= (!!ud.config.JoystickAimAssist) << EK_GAMEPAD_AIM_ASSIST;
+    }
+
     int const movementLocked = P_CheckLockedMovement(playerNum);
 
     if ((ud.scrollmode && ud.overhead_on) || (movementLocked & IL_NOTHING) == IL_NOTHING)
@@ -3306,78 +3413,17 @@ void P_GetInput(int const playerNum)
         }
 
         if (!(movementLocked & IL_NOANGLE))
-        {
             localInput.q16avel = fix16_sadd(localInput.q16avel, input.q16avel);
-            pPlayer->q16ang    = fix16_sadd(pPlayer->q16ang, input.q16avel) & 0x7FFFFFF;
-        }
 
         if (!(movementLocked & IL_NOHORIZ))
         {
             float horizAngle   = atan2f(localInput.q16horz, F16(128)) * (512.f / fPI) + fix16_to_float(input.q16horz);
             localInput.q16horz = fix16_clamp(Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f))), F16(-MAXHORIZVEL), F16(MAXHORIZVEL));
-
-            horizAngle        = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + fix16_to_float(input.q16horz);
-            pPlayer->q16horiz = F16(100) + Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f)));
         }
     }
 
-    // A horiz diff of 128 equal 45 degrees, so we convert horiz to 1024 angle units
-
-    if (thisPlayer.horizAngleAdjust)
-    {
-        float const horizAngle
-        = atan2f(pPlayer->q16horiz - F16(100), F16(128)) * (512.f / fPI) + scaleToInterval(thisPlayer.horizAngleAdjust);
-        pPlayer->q16horiz = F16(100) + Blrintf(F16(128) * tanf(horizAngle * (fPI / 512.f)));
-    }
-    else if (pPlayer->return_to_center > 0 || thisPlayer.horizRecenter)
-    {
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(fix16_to_float(F16(66.666) - fix16_sdiv(pPlayer->q16horiz, F16(1.5))))));
-
-        if ((!pPlayer->return_to_center && thisPlayer.horizRecenter) || (pPlayer->q16horiz >= F16(99.9) && pPlayer->q16horiz <= F16(100.1)))
-        {
-            pPlayer->q16horiz = F16(100);
-            pPlayer->return_to_center = 0;
-            thisPlayer.horizRecenter = false;
-        }
-
-        if (pPlayer->q16horizoff >= F16(-0.1) && pPlayer->q16horizoff <= F16(0.1))
-            pPlayer->q16horizoff = 0;
-    }
-
-    // calculates automatic view angle for playing without a mouse
-    if (!pPlayer->aim_mode && pPlayer->on_ground && sectorLotag != ST_2_UNDERWATER && (sector[pPlayer->cursectnum].floorstat & 2))
-    {
-        // this is some kind of horse shit approximation of where the player is looking, I guess?
-        vec2_t const adjustedPosition = { pPlayer->pos.x + (sintable[(fix16_to_int(pPlayer->q16ang) + 512) & 2047] >> 5),
-                                          pPlayer->pos.y + (sintable[fix16_to_int(pPlayer->q16ang) & 2047] >> 5) };
-        int16_t currentSector = pPlayer->cursectnum;
-
-        updatesector(adjustedPosition.x, adjustedPosition.y, &currentSector);
-
-        if (currentSector >= 0)
-        {
-            int const slopeZ = getflorzofslope(pPlayer->cursectnum, adjustedPosition.x, adjustedPosition.y);
-            if ((pPlayer->cursectnum == currentSector) || (klabs(getflorzofslope(currentSector, adjustedPosition.x, adjustedPosition.y) - slopeZ) <= ZOFFSET6))
-                pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(mulscale16(pPlayer->truefz - slopeZ, 160))));
-        }
-    }
-
-    if (pPlayer->q16horizoff > 0)
-    {
-        pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((pPlayer->q16horizoff >> 3) + fix16_one))));
-        pPlayer->q16horizoff = fix16_max(pPlayer->q16horizoff, 0);
-    }
-    else if (pPlayer->q16horizoff < 0)
-    {
-        pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((-pPlayer->q16horizoff >> 3) + fix16_one))));
-        pPlayer->q16horizoff = fix16_min(pPlayer->q16horizoff, 0);
-    }
-
-    if (thisPlayer.horizSkew)
-        pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(thisPlayer.horizSkew)));
-
-    pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
-    pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    if (!ud.recstat)
+        P_UpdateAngles(playerNum, input);
 }
 
 static int32_t P_DoCounters(int playerNum)
@@ -4868,6 +4914,24 @@ static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t
         pPlayer->pos.z = floorZ - PMINHEIGHT;
 }
 
+
+static fix16_t P_GetQ16AngleDeltaForTic(DukePlayer_t const *pPlayer)
+{
+    auto oldAngle = pPlayer->oq16ang;
+    auto newAngle = pPlayer->q16ang;
+
+    if (klabs(fix16_sub(oldAngle, newAngle)) < F16(1024))
+        return fix16_sub(newAngle, oldAngle);
+
+    if (newAngle > F16(1024))
+        newAngle = fix16_sub(newAngle, F16(2048));
+
+    if (oldAngle > F16(1024))
+        oldAngle = fix16_sub(oldAngle, F16(2048));
+
+    return fix16_sub(newAngle, oldAngle);
+}
+
 #define GETZRANGECLIPDISTOFFSET 16
 
 void P_ProcessInput(int playerNum)
@@ -4877,10 +4941,29 @@ void P_ProcessInput(int playerNum)
     if (thisPlayer.playerquitflag == 0)
         return;
 
-    thisPlayer.horizAngleAdjust = 0;
-    thisPlayer.horizSkew = 0;
+    thisPlayer.smoothcamera = false;
 
     auto const pPlayer = thisPlayer.ps;
+
+
+    if (pPlayer->newowner < 0)
+    {
+        pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
+        pPlayer->oq16ang      = pPlayer->q16ang;
+        pPlayer->oq16horiz    = pPlayer->q16horiz;
+        pPlayer->oq16horizoff = pPlayer->q16horizoff;
+    }
+
+    if (ud.recstat || pPlayer->gm & MODE_DEMO)
+    {
+        thisPlayer.smoothcamera = true;
+        P_UpdateAngles(playerNum, thisPlayer.input);
+    }
+
+    // these are used in P_UpdateAngles() and can only be reset after calling it
+    thisPlayer.horizAngleAdjust = 0;
+    thisPlayer.horizSkew        = 0;
+
     auto const pSprite = &sprite[pPlayer->i];
 
     ++pPlayer->player_par;

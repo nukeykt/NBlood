@@ -214,7 +214,8 @@ typedef struct {
         int32_t ShowWeapons;
         int32_t MouseBias;
         int32_t JoystickAimWeight;
-        int32_t JoystickViewLeveling;
+        int32_t JoystickViewCentering;
+        int32_t JoystickAimAssist;
 
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them

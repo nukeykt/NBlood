@@ -154,6 +154,10 @@ enum playeraction_t {
     pfacing                     = 0x00010000
 };
 
+#define AM_MOUSE 1
+#define AM_CENTERING 2
+#define AM_AIMASSIST 4
+
 typedef struct {
     vec3_t pos;
     int16_t ang, sect;
@@ -266,6 +270,8 @@ typedef struct
     int horizRecenter;
     int horizAngleAdjust;
     int horizSkew;
+
+    double lastViewUpdate;
 
     int32_t netsynctime;
     int32_t pcolor, pteam;
@@ -381,6 +387,7 @@ static inline void P_PalFrom(DukePlayer_t *pPlayer, uint8_t f, uint8_t r, uint8_
 void    P_AddKills(DukePlayer_t * pPlayer, uint16_t kills);
 int32_t A_GetHitscanRange(int spriteNum);
 void    P_GetInput(int playerNum);
+void P_UpdateAngles(int const playerNum, input_t const &input);
 void P_AddAmmo(DukePlayer_t * pPlayer, int weaponNum, int addAmount);
 void    P_AddWeapon(DukePlayer_t *pPlayer, int weaponNum, int switchWeapon);
 void    P_CheckWeapon(DukePlayer_t *pPlayer);

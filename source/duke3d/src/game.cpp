@@ -6861,15 +6861,12 @@ MAIN_LOOP_RESTART:
         {
             do 
             {
-                if (g_networkMode != NET_DEDICATED_SERVER)
+                if (g_networkMode != NET_DEDICATED_SERVER && (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0)
                 {
                     if (!frameJustDrawn)
                         break;
 
                     frameJustDrawn = false;
-
-                    // is this even useful?
-                    P_GetInput(myconnectindex);
 
                     // this is where we fill the input_t struct that is actually processed by P_ProcessInput()
                     auto const pPlayer = g_player[myconnectindex].ps;

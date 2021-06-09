@@ -2606,7 +2606,8 @@ void P_HandleSharedKeys(int playerNum)
 
     if (pPlayer->cheat_phase == 1) return;
 
-    uint32_t playerBits = g_player[playerNum].input.bits, weaponNum;
+    uint32_t playerBits = g_player[playerNum].input.bits;
+    uint32_t const extBits = g_player[playerNum].input.extbits;
 
     // 1<<0  =  jump
     // 1<<1  =  crouch
@@ -2641,7 +2642,10 @@ void P_HandleSharedKeys(int playerNum)
     int const aimMode = pPlayer->aim_mode;
 
     pPlayer->aim_mode = (playerBits>>SK_AIMMODE)&1;
-    if (pPlayer->aim_mode < aimMode)
+    pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_CENTERING)&1)<<1;
+    pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_AIM_ASSIST)&1)<<2;
+
+    if (pPlayer->aim_mode < (aimMode & 3))
         pPlayer->return_to_center = 9;
 
     if (TEST_SYNC_KEY(playerBits, SK_QUICK_KICK) && pPlayer->quick_kick == 0)
@@ -2655,7 +2659,7 @@ void P_HandleSharedKeys(int playerNum)
             }
         }
 
-    weaponNum = playerBits & ((15u<<SK_WEAPON_BITS)|BIT(SK_STEROIDS)|BIT(SK_NIGHTVISION)|BIT(SK_MEDKIT)|BIT(SK_QUICK_KICK)| \
+    uint32_t weaponNum = playerBits & ((15u<<SK_WEAPON_BITS)|BIT(SK_STEROIDS)|BIT(SK_NIGHTVISION)|BIT(SK_MEDKIT)|BIT(SK_QUICK_KICK)| \
                    BIT(SK_HOLSTER)|BIT(SK_INV_LEFT)|BIT(SK_PAUSE)|BIT(SK_HOLODUKE)|BIT(SK_JETPACK)|BIT(SK_INV_RIGHT)| \
                    BIT(SK_TURNAROUND)|BIT(SK_OPEN)|BIT(SK_INVENTORY)|BIT(SK_ESCAPE));
     playerBits = weaponNum & ~pPlayer->interface_toggle;
