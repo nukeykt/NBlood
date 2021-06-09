@@ -368,7 +368,7 @@ void CONFIG_SetDefaults(void)
     }
 
 #if !defined GEKKO
-    CONFIG_SetGameControllerDefaultsStandard();
+    CONFIG_SetGameControllerDefaults();
 #else
     for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
     {
@@ -614,65 +614,7 @@ static void CONFIG_SetGameControllerAxesModern()
         analogAxis.apply();
 }
 
-void CONFIG_SetGameControllerDefaultsStandard()
-{
-    CONFIG_SetGameControllerDefaultsClear();
-    CONFIG_SetGameControllerAxesModern();
-
-    static GameControllerButtonSetting const buttons[] =
-    {
-        { GAMECONTROLLER_BUTTON_A, gamefunc_Jump },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
-        { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
-        { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
-        { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Quick_Kick },
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Jump },
-        { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
-        { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
-    };
-
-    static GameControllerButtonSetting const buttonsDuke[] =
-    {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_Y, gamefunc_Inventory },
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
-    };
-
-    static GameControllerButtonSetting const buttonsFury[] =
-    {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
-        { GAMECONTROLLER_BUTTON_Y, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
-    };
-
-    static GameControllerDigitalAxisSetting const digitalAxes[] =
-    {
-        { GAMECONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Alt_Fire },
-        { GAMECONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
-    };
-
-    for (auto const & button : buttons)
-        button.apply();
-
-    if (FURY)
-    {
-        for (auto const & button : buttonsFury)
-            button.apply();
-    }
-    else
-    {
-        for (auto const & button : buttonsDuke)
-            button.apply();
-    }
-
-    for (auto const & digitalAxis : digitalAxes)
-        digitalAxis.apply();
-}
-
-void CONFIG_SetGameControllerDefaultsPro()
+void CONFIG_SetGameControllerDefaults()
 {
     CONFIG_SetGameControllerDefaultsClear();
     CONFIG_SetGameControllerAxesModern();
@@ -680,20 +622,21 @@ void CONFIG_SetGameControllerDefaultsPro()
     static GameControllerButtonSetting const buttons[] =
     {
         { GAMECONTROLLER_BUTTON_A, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Third_Person_View },
+        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
         { GAMECONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
         { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
         { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
         { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
         { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
         { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
+        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
+        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
+        { GAMECONTROLLER_BUTTON_MISC, gamefunc_Third_Person_View },
     };
 
     static GameControllerButtonSetting const buttonsDuke[] =
     {
         { GAMECONTROLLER_BUTTON_X, gamefunc_Inventory },
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Previous_Weapon },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Next_Weapon },
         { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
         { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
     };
@@ -701,8 +644,6 @@ void CONFIG_SetGameControllerDefaultsPro()
     static GameControllerButtonSetting const buttonsFury[] =
     {
         { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
         { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
         { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
     };

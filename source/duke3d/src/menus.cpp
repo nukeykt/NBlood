@@ -972,12 +972,8 @@ static MenuEntry_t ME_JOYSTICK_ENABLE = MAKE_MENUENTRY( "Enable Controller:", &M
 MAKE_MENU_TOP_ENTRYLINK( "Edit Buttons", MEF_BigOptionsRtSections, JOYSTICK_EDITBUTTONS, MENU_JOYSTICKBTNS );
 MAKE_MENU_TOP_ENTRYLINK( "Edit Axes", MEF_BigOptionsRtSections, JOYSTICK_EDITAXES, MENU_JOYSTICKAXES );
 
-static MenuLink_t MEO_JOYSTICK_DEFAULTS_STANDARD = { MENU_JOYSTANDARDVERIFY, MA_None, };
-static MenuEntry_t ME_JOYSTICK_DEFAULTS_STANDARD = MAKE_MENUENTRY( "Use Standard Layout", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_DEFAULTS_STANDARD, Link );
-static MenuLink_t MEO_JOYSTICK_DEFAULTS_PRO = { MENU_JOYPROVERIFY, MA_None, };
-static MenuEntry_t ME_JOYSTICK_DEFAULTS_PRO = MAKE_MENUENTRY( "Use Pro Layout", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_DEFAULTS_PRO, Link );
-static MenuLink_t MEO_JOYSTICK_DEFAULTS_CLEAR = { MENU_JOYCLEARVERIFY, MA_None, };
-static MenuEntry_t ME_JOYSTICK_DEFAULTS_CLEAR = MAKE_MENUENTRY( "Clear All Settings", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_DEFAULTS_CLEAR, Link );
+static MenuLink_t MEO_JOYSTICK_DEFAULTS = { MENU_JOYDEFAULTVERIFY, MA_None, };
+static MenuEntry_t ME_JOYSTICK_DEFAULTS = MAKE_MENUENTRY( "Reset To Defaults", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_DEFAULTS, Link );
 
 static MenuRangeInt32_t MEO_JOYSTICK_WEIGHTED_AIMING = MAKE_MENURANGE(&ud.config.JoystickAimWeight , &MF_Bluefont, 0, 10, 0, 11, 0 );
 static MenuEntry_t ME_JOYSTICK_WEIGHTED_AIMING = MAKE_MENUENTRY( "Weighted Aiming", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_WEIGHTED_AIMING, RangeInt32 );
@@ -993,9 +989,7 @@ static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
     &ME_JOYSTICK_EDITBUTTONS,
     &ME_JOYSTICK_EDITAXES,
     &ME_Space6_Redfont,
-    &ME_JOYSTICK_DEFAULTS_STANDARD,
-    &ME_JOYSTICK_DEFAULTS_PRO,
-    &ME_JOYSTICK_DEFAULTS_CLEAR,
+    &ME_JOYSTICK_DEFAULTS,
 };
 
 #define MAXJOYBUTTONSTRINGLENGTH 32
@@ -1532,8 +1526,6 @@ static MenuVerify_t M_COLCORRRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_COLCORR, 
 static MenuVerify_t M_KEYSRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_KEYBOARDSETUP, MA_None, };
 static MenuVerify_t M_KEYSCLASSICVERIFY = { CURSOR_CENTER_2LINE, MENU_KEYBOARDSETUP, MA_None, };
 static MenuVerify_t M_JOYSTANDARDVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
-static MenuVerify_t M_JOYPROVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
-static MenuVerify_t M_JOYCLEARVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
 
 static MenuMessage_t M_NETWAITMASTER = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
 static MenuMessage_t M_NETWAITVOTES = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
@@ -1630,9 +1622,7 @@ static Menu_t Menus[] = {
     { &M_COLCORRRESETVERIFY, MENU_COLCORRRESETVERIFY, MENU_COLCORR, MA_None, Verify },
     { &M_KEYSRESETVERIFY, MENU_KEYSRESETVERIFY, MENU_KEYBOARDSETUP, MA_None, Verify },
     { &M_KEYSCLASSICVERIFY, MENU_KEYSCLASSICVERIFY, MENU_KEYBOARDSETUP, MA_None, Verify },
-    { &M_JOYSTANDARDVERIFY, MENU_JOYSTANDARDVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
-    { &M_JOYPROVERIFY, MENU_JOYPROVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
-    { &M_JOYCLEARVERIFY, MENU_JOYCLEARVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
+    { &M_JOYSTANDARDVERIFY, MENU_JOYDEFAULTVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
     { &M_ADULTPASSWORD, MENU_ADULTPASSWORD, MENU_GAMESETUP, MA_None, TextForm },
     { &M_RESETPLAYER, MENU_RESETPLAYER, MENU_CLOSE, MA_None, Verify },
     { &M_BUYDUKE, MENU_BUYDUKE, MENU_EPISODE, MA_Return, Message },
@@ -2315,8 +2305,7 @@ static void Menu_Pre(MenuID_t cm)
     case MENU_JOYSTICKSETUP:
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITBUTTONS, !CONTROL_JoyPresent || (joystick.numButtons == 0 && joystick.numHats == 0));
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITAXES, !CONTROL_JoyPresent || joystick.numAxes == 0);
-        MenuEntry_DisableOnCondition(&ME_JOYSTICK_DEFAULTS_STANDARD, !joystick.isGameController);
-        MenuEntry_DisableOnCondition(&ME_JOYSTICK_DEFAULTS_PRO, !joystick.isGameController);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_DEFAULTS, !joystick.isGameController);
         break;
 
 #ifndef EDUKE32_RETAIL_MENU
@@ -2792,17 +2781,9 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         videoFadeToBlack(1);
         Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset keys to classic defaults?");
         break;
-    case MENU_JOYSTANDARDVERIFY:
+    case MENU_JOYDEFAULTVERIFY:
         videoFadeToBlack(1);
-        Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller to standard layout?");
-        break;
-    case MENU_JOYPROVERIFY:
-        videoFadeToBlack(1);
-        Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller to pro layout?");
-        break;
-    case MENU_JOYCLEARVERIFY:
-        videoFadeToBlack(1);
-        Menu_DrawVerifyPrompt(origin.x, origin.y, "Clear all controller settings?");
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller settings to default?");
         break;
 
     case MENU_QUIT:
@@ -4039,17 +4020,9 @@ static void Menu_Verify(int32_t input)
         if (input)
             CONFIG_SetDefaultKeys(oldkeydefaults);
         break;
-    case MENU_JOYSTANDARDVERIFY:
+    case MENU_JOYDEFAULTVERIFY:
         if (input)
-            CONFIG_SetGameControllerDefaultsStandard();
-        break;
-    case MENU_JOYPROVERIFY:
-        if (input)
-            CONFIG_SetGameControllerDefaultsPro();
-        break;
-    case MENU_JOYCLEARVERIFY:
-        if (input)
-            CONFIG_SetGameControllerDefaultsClear();
+            CONFIG_SetGameControllerDefaults();
         break;
 
     case MENU_QUIT:
@@ -5969,9 +5942,7 @@ static void Menu_Recurse(MenuID_t cm, const vec2_t origin)
     case MENU_COLCORRRESETVERIFY:
     case MENU_KEYSRESETVERIFY:
     case MENU_KEYSCLASSICVERIFY:
-    case MENU_JOYSTANDARDVERIFY:
-    case MENU_JOYPROVERIFY:
-    case MENU_JOYCLEARVERIFY:
+    case MENU_JOYDEFAULTVERIFY:
     case MENU_ADULTPASSWORD:
     case MENU_CHEATENTRY:
     case MENU_CHEAT_WARP:
