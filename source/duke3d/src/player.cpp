@@ -3124,7 +3124,7 @@ void P_GetInput(int const playerNum)
 
     if (ud.mouseflip) input.q16horz = -input.q16horz;
 
-    input.q16horz = fix16_ssub(input.q16horz, fix16_from_float(scaleToInterval(info.dpitch * analogTurnAmount / analogExtent)));
+    input.q16horz = fix16_ssub(input.q16horz, fix16_from_float(scaleToInterval(info.dpitch * 16.0 / analogExtent)));
     input.svel -= lrint(scaleToInterval(info.dx * keyMove / analogExtent));
     input.fvel -= lrint(scaleToInterval(info.dz * keyMove / analogExtent));
 
