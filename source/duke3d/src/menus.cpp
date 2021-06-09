@@ -1770,6 +1770,50 @@ void Menu_PopulateNewGameCustomSub(int e)
     MMF_Top_NewGameCustomSub.pos.y = (58 + (3-s)*6)<<16;
 }
 
+static void Menu_PopulateJoystick(void)
+{
+    for (int i = 0; i < joystick.numButtons + 4*joystick.numHats; ++i)
+    {
+        if (i < joystick.numButtons)
+        {
+            if (!joyHasButton(i))
+            {
+                ME_JOYSTICKBTNS[i] ={};
+                ME_JOYSTICKBTNS[i].flags = MEF_Hidden;
+                continue;
+            }
+
+            auto const name = joyGetName(1, i);
+            Bassert(name != nullptr);
+
+            Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
+        }
+        else
+        {
+            Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Hat %d %s", ((i - joystick.numButtons)>>2), MenuJoystickHatDirections[((i - joystick.numButtons)) % 4]);
+        }
+
+        MEL_JOYSTICKBTNS[i] = &ME_JOYSTICKBTNS[i];
+        ME_JOYSTICKBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
+        ME_JOYSTICKBTNS[i].name = MenuJoystickNames[i];
+        ME_JOYSTICKBTNS[i].entry = &MEO_JOYSTICKBTNS[i];
+        MEO_JOYSTICKBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
+        MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i][0];
+    }
+    M_JOYSTICKBTNS.numEntries = joystick.numButtons + 4*joystick.numHats;
+
+    for (int i = 0; i < joystick.numAxes; ++i)
+    {
+        auto const name = joyGetName(0, i);
+        Bassert(name != nullptr);
+        ME_JOYSTICKAXES[i] = ME_JOYSTICKAXES_TEMPLATE;
+        Bstrncpy(MenuJoystickAxes[i], name, MAXJOYBUTTONSTRINGLENGTH);
+        ME_JOYSTICKAXES[i].name = MenuJoystickAxes[i];
+        MEL_JOYSTICKAXES[i] = &ME_JOYSTICKAXES[i];
+    }
+    M_JOYSTICKAXES.numEntries = joystick.numAxes;
+}
+
 /*
 This function prepares data after ART and CON have been processed.
 It also initializes some data in loops rather than statically at compile time.
@@ -2007,46 +2051,7 @@ void Menu_Init(void)
         MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseData[i].index[0]][MenuMouseData[i].index[1]];
     }
 
-    for (i = 0; i < joystick.numButtons + 4*joystick.numHats; ++i)
-    {
-        if (i < joystick.numButtons)
-        {
-            if (!joyHasButton(i))
-            {
-                ME_JOYSTICKBTNS[i] = {};
-                ME_JOYSTICKBTNS[i].flags = MEF_Hidden;
-                continue;
-            }
-
-            auto const name = joyGetName(1, i);
-            Bassert(name != nullptr);
-
-            Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
-        }
-        else
-        {
-            Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Hat %d %s", ((i - joystick.numButtons)>>2), MenuJoystickHatDirections[((i - joystick.numButtons)) % 4]);
-        }
-
-        MEL_JOYSTICKBTNS[i] = &ME_JOYSTICKBTNS[i];
-        ME_JOYSTICKBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
-        ME_JOYSTICKBTNS[i].name = MenuJoystickNames[i];
-        ME_JOYSTICKBTNS[i].entry = &MEO_JOYSTICKBTNS[i];
-        MEO_JOYSTICKBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i][0];
-    }
-    M_JOYSTICKBTNS.numEntries = joystick.numButtons + 4*joystick.numHats;
-
-    for (i = 0; i < joystick.numAxes; ++i)
-    {
-        auto const name = joyGetName(0, i);
-        Bassert(name != nullptr);
-        ME_JOYSTICKAXES[i] = ME_JOYSTICKAXES_TEMPLATE;
-        Bstrncpy(MenuJoystickAxes[i], name, MAXJOYBUTTONSTRINGLENGTH);
-        ME_JOYSTICKAXES[i].name = MenuJoystickAxes[i];
-        MEL_JOYSTICKAXES[i] = &ME_JOYSTICKAXES[i];
-    }
-    M_JOYSTICKAXES.numEntries = joystick.numAxes;
+    Menu_PopulateJoystick();
 
     // prepare sound setup
 #ifndef EDUKE32_STANDALONE
@@ -3624,11 +3629,7 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     else if (entry == &ME_SOUND_DUKETALK)
         ud.config.VoiceToggle = (ud.config.VoiceToggle&~1) | newOption;
     else if (entry == &ME_JOYSTICK_ENABLE)
-    {
-        if (newOption)
-            CONTROL_ScanForControllers();
         CONTROL_JoystickEnabled = (newOption && CONTROL_JoyPresent);
-    }
     else if (entry == &ME_JOYSTICKAXIS_ANALOG)
         CONTROL_MapAnalogAxis(M_JOYSTICKAXES.currentEntry, newOption, controldevice_joystick);
     else if (entry == &ME_JOYSTICKAXIS_INVERT)
@@ -4600,6 +4601,11 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
                 break;
             }
         }
+        break;
+
+    case MENU_JOYSTICKAXES:
+    case MENU_JOYSTICKBTNS:
+        Menu_PopulateJoystick();
         break;
 
     case MENU_VIDEOSETUP:
