@@ -391,6 +391,40 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
+void G_AddSearchPaths(void)
+{
+#ifndef EDUKE32_TOUCH_DEVICES
+#if defined __linux__ || defined EDUKE32_BSD
+
+#elif defined EDUKE32_OSX
+
+#elif defined (_WIN32)
+    char buf[BMAX_PATH] = { 0 };
+    DWORD bufsize;
+    bool found = false;
+
+    // Witchaven - GOG.com
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1315510047)", "path", buf, &bufsize))
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN", buf);
+        addsearchpath(buf);
+        found = true;
+    }
+
+    // Witchaven 2 - GOG.com
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1073977251)", "path", buf, &bufsize))
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN2", buf);
+        addsearchpath(buf);
+        found = true;
+    }
+
+#endif
+#endif
+}
+
 void G_CleanupSearchPaths(void)
 {
     removesearchpaths_withuser(SEARCHPATH_REMOVE);

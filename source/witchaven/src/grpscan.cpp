@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 static internalgrpinfo_t const internalgrpfiles[] =
 {
     { "Witchaven",   WH1_CRC,  11904, GAMEFLAG_WH1, 0 },
-    { "Witchaven 2", WH2_CRC, 0,     GAMEFLAG_WH2 , 0}
+    { "Witchaven 2", WH2_CRC,  0,     GAMEFLAG_WH2, 0 }
 };
 #endif
 

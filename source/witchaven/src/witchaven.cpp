@@ -1513,6 +1513,9 @@ int app_main(int argc, char const* const* argv)
     // up the command-line-provided search paths (duh).
     G_ExtInit();
 
+    if (!g_useCwd)
+        G_AddSearchPaths();
+
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
     if (forcegl) initprintf("GL driver blacklist disabled.\n");
 #endif
