@@ -1772,11 +1772,11 @@ void Menu_PopulateNewGameCustomSub(int e)
 
 static void Menu_PopulateJoystick(void)
 {
-    for (int i = 0; i < joystick.numButtons + 4*joystick.numHats; ++i)
+    for (int i = 0; i < joystick.numButtons + 4*joystick.numHats + 2*joystick.isGameController; ++i)
     {
         if (i < joystick.numButtons)
         {
-            if (!joyHasButton(i))
+            if (i == GAMECONTROLLER_BUTTON_START || !joyHasButton(i))
             {
                 ME_JOYSTICKBTNS[i] ={};
                 ME_JOYSTICKBTNS[i].flags = MEF_Hidden;
@@ -1790,7 +1790,17 @@ static void Menu_PopulateJoystick(void)
         }
         else
         {
-            Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Hat %d %s", ((i - joystick.numButtons)>>2), MenuJoystickHatDirections[((i - joystick.numButtons)) % 4]);
+            if (joystick.numHats && i < joystick.numButtons + 4*joystick.numHats)
+            {
+                Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Hat %d %s", ((i - joystick.numButtons) >> 2),
+                          MenuJoystickHatDirections[((i - joystick.numButtons)) % 4]);
+            }
+            else if (joystick.isGameController)
+            {
+                auto const name = joyGetName(0, i - joystick.numButtons + 4);
+                Bassert(name != nullptr);
+                Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
+            }
         }
 
         MEL_JOYSTICKBTNS[i] = &ME_JOYSTICKBTNS[i];
@@ -1798,9 +1808,14 @@ static void Menu_PopulateJoystick(void)
         ME_JOYSTICKBTNS[i].name = MenuJoystickNames[i];
         ME_JOYSTICKBTNS[i].entry = &MEO_JOYSTICKBTNS[i];
         MEO_JOYSTICKBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i][0];
+
+        if (i < joystick.numButtons + 4*joystick.numHats)
+            MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i][0];
+        else if (joystick.isGameController)
+            MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickDigitalFunctions[i - joystick.numButtons - 4*joystick.numHats + 4][1];
     }
-    M_JOYSTICKBTNS.numEntries = joystick.numButtons + 4*joystick.numHats;
+
+    M_JOYSTICKBTNS.numEntries = joystick.numButtons + 4*joystick.numHats + 2*joystick.isGameController;
 
     for (int i = 0; i < joystick.numAxes; ++i)
     {
@@ -3698,7 +3713,10 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         CONTROL_FreeMouseBind(MenuMouseData[M_MOUSEBTNS.currentEntry].index[0]);
         break;
     case MENU_JOYSTICKBTNS:
-        CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, M_JOYSTICKBTNS.currentEntry, controldevice_joystick);
+        if (M_JOYSTICKBTNS.currentEntry < joystick.numButtons + 4*joystick.numHats)
+            CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, M_JOYSTICKBTNS.currentEntry, controldevice_joystick);
+        else if (joystick.isGameController)
+            CONTROL_MapDigitalAxis(M_JOYSTICKBTNS.currentEntry - joystick.numButtons - 4*joystick.numHats + 4, newOption, 1, controldevice_joystick);
         break;
     case MENU_JOYSTICKAXIS:
     {
