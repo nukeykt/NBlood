@@ -137,7 +137,7 @@ int G_CheckActivatorMotion(int lotag, bool checkMasterSwitches)
     {
         if (sprite[foundSprite].lotag == lotag)
         {
-            if (G_CheckSectorMotion(foundSprite))
+            if (G_CheckSectorMotion(sprite[foundSprite].sectnum))
                 return 1;
         }
     }
@@ -148,7 +148,7 @@ int G_CheckActivatorMotion(int lotag, bool checkMasterSwitches)
         {
             if (sprite[foundSprite].picnum == MASTERSWITCH && sprite[foundSprite].lotag == lotag)
             {
-                if (sprite[foundSprite].yvel == 1 || G_CheckSectorMotion(foundSprite))
+                if (sprite[foundSprite].yvel == 1 || G_CheckSectorMotion(sprite[foundSprite].sectnum))
                     return 1;
             }
         }
