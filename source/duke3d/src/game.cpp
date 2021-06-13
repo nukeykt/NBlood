@@ -1024,7 +1024,9 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
             // looking through viewscreen
             CAMERA(pos)      = camVect;
-            CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
+            CAMERA(q16ang)   = pPlayer->q16ang
+                                + mulscale16(((fix16_from_int(sprite[pPlayer->newowner].ang) + F16(1024) - pPlayer->q16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
+                                + fix16_from_int(pPlayer->look_ang);
             CAMERA(q16horiz) = fix16_from_int(100 + sprite[pPlayer->newowner].shade);
             CAMERA(sect)     = sprite[pPlayer->newowner].sectnum;
         }
