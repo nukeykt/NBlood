@@ -396,7 +396,7 @@ void A_GetZLimits(int const spriteNum)
 {
     auto const pSprite = &sprite[spriteNum];
     int32_t    ceilhit = 0, florhit = actor[spriteNum].florhit;
-    int const  clipDist = A_GetClipdist(spriteNum, -1);
+    int const  clipDist = A_GetClipdist(spriteNum);
     auto const oceilz   = actor[spriteNum].ceilingz;
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
@@ -451,7 +451,7 @@ void A_Fall(int const spriteNum)
         spriteGravity = g_spriteGravity/6;
 
     int32_t ceilhit, florhit;
-    VM_GetZRange(spriteNum, &ceilhit, &florhit, A_GetClipdist(spriteNum, -1));
+    VM_GetZRange(spriteNum, &ceilhit, &florhit, A_GetClipdist(spriteNum));
 
 #ifdef YAX_ENABLE
     int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);

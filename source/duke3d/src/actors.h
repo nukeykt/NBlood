@@ -392,7 +392,7 @@ void A_AddToDeleteQueue(int spriteNum);
 void A_DeleteSprite(int spriteNum);
 void A_DoGuts(int spriteNum, int tileNum, int spawnCnt);
 void A_DoGutsDir(int spriteNum, int tileNum, int spawnCnt);
-int A_GetClipdist(int spriteNum, int clipDist);
+int A_GetClipdist(int spriteNum);
 void A_MoveCyclers(void);
 void A_MoveDummyPlayers(void);
 void A_MoveSector(int spriteNum);
@@ -462,7 +462,7 @@ ACTOR_INLINE int A_SetSpriteNoZ(int const spriteNum, uint32_t cliptype)
 
 ACTOR_INLINE int32_t A_MoveSprite(int const spriteNum, vec3_t const &change, uint32_t cliptype)
 {
-    return A_MoveSpriteClipdist(spriteNum, change, cliptype, -1);
+    return A_MoveSpriteClipdist(spriteNum, change, cliptype, A_GetClipdist(spriteNum));
 }
 
 # endif

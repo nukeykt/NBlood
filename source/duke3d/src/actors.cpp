@@ -467,7 +467,7 @@ static int32_t A_CheckNeedZUpdate(int32_t spriteNum, int32_t zChange, int32_t *p
 
     *pZcoord = newZ;
 
-    int const clipDist = A_GetClipdist(spriteNum, -1);
+    int const clipDist = A_GetClipdist(spriteNum);
 
     VM_GetZRange(spriteNum, ceilhit, florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
 
@@ -499,37 +499,35 @@ static int32_t A_CheckNeedZUpdate(int32_t spriteNum, int32_t zChange, int32_t *p
     return 2;
 }
 
-int A_GetClipdist(int spriteNum, int clipDist)
+int A_GetClipdist(int spriteNum)
 {
-    if (clipDist < 0)
-    {
-        auto const pSprite = &sprite[spriteNum];
-        int const  isEnemy = A_CheckEnemySprite(pSprite);
+    auto const pSprite = &sprite[spriteNum];
+    int const  isEnemy = A_CheckEnemySprite(pSprite);
+    int clipDist;
 
-        if (A_CheckSpriteFlags(spriteNum, SFLAG_REALCLIPDIST))
-            clipDist = pSprite->clipdist << 2;
-        else if ((pSprite->cstat & 48) == 16)
-            clipDist = 0;
-        else if (isEnemy)
-        {
-            if (pSprite->xrepeat > 60)
-                clipDist = 1024;
+    if (A_CheckSpriteFlags(spriteNum, SFLAG_REALCLIPDIST))
+        clipDist = pSprite->clipdist << 2;
+    else if ((pSprite->cstat & 48) == 16)
+        clipDist = 0;
+    else if (isEnemy)
+    {
+        if (pSprite->xrepeat > 60)
+            clipDist = 1024;
 #ifndef EDUKE32_STANDALONE
-            else if (!FURY && pSprite->picnum == LIZMAN)
-                clipDist = 292;
+        else if (!FURY && pSprite->picnum == LIZMAN)
+            clipDist = 292;
 #endif
-            else if (A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY))
-                clipDist = pSprite->clipdist << 2;
-            else
-                clipDist = 192;
-        }
+        else if (A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY))
+            clipDist = pSprite->clipdist << 2;
         else
-        {
-            if (pSprite->statnum == STAT_PROJECTILE && (SpriteProjectile[spriteNum].workslike & PROJECTILE_REALCLIPDIST) == 0)
-                clipDist = 16;
-            else
-                clipDist = pSprite->clipdist << 2;
-        }
+            clipDist = 192;
+    }
+    else
+    {
+        if (pSprite->statnum == STAT_PROJECTILE && (SpriteProjectile[spriteNum].workslike & PROJECTILE_REALCLIPDIST) == 0)
+            clipDist = 16;
+        else
+            clipDist = pSprite->clipdist << 2;
     }
 
     return clipDist;
@@ -562,8 +560,6 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const &change, uint32_t c
 
     if (!(change.x|change.y|change.z))
         return 0;
-
-    clipDist = A_GetClipdist(spriteNum, clipDist);
 
     int16_t   newSectnum = pSprite->sectnum;
 #ifndef EDUKE32_STANDALONE
@@ -7135,7 +7131,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     if ((foundSprite->pos.z > floorZ || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < ceilZ)
                         && A_CheckEnemySprite(foundSprite))
                     {
-                        auto const clipdist = A_GetClipdist(findSprite, -1);
+                        auto const clipdist = A_GetClipdist(findSprite);
 
                         for (int w = pSector->wallptr; w < endWall; w++)
                         {
