@@ -4092,8 +4092,8 @@ ACTOR_STATIC void G_MoveActors(void)
                     else if (pData[1] < (pSprite->hitag << 2)) pSprite->ang += 8;
                     else
                     {
-                        pData[1] = 8;
-                        pSprite->ang += 16;
+                        pData[1] = 0;
+                        pSprite->ang += 8;
                     }
                 }
             }
