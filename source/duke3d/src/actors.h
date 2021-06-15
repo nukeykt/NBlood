@@ -421,10 +421,10 @@ static FORCE_INLINE void   Sect_SetInterpolation(int sectnum) { Sect_ToggleInter
 # define ACTOR_INLINE_HEADER EXTERN_INLINE_HEADER
 #endif
 
-extern int32_t A_MoveSpriteClipdist(int32_t spritenum, vec3_t const * change, uint32_t cliptype, int32_t clipdist);
+extern int32_t A_MoveSpriteClipdist(int32_t spritenum, vec3_t const &change, uint32_t cliptype, int32_t clipdist);
 ACTOR_INLINE_HEADER int A_CheckEnemyTile(int tileNum);
 ACTOR_INLINE_HEADER int A_SetSprite(int spriteNum, uint32_t cliptype);
-ACTOR_INLINE_HEADER int32_t A_MoveSprite(int spriteNum, vec3_t const * change, uint32_t cliptype);
+ACTOR_INLINE_HEADER int32_t A_MoveSprite(int spriteNum, vec3_t const &change, uint32_t cliptype);
 
 EXTERN_INLINE_HEADER int G_CheckForSpaceCeiling(int sectnum);
 EXTERN_INLINE_HEADER int G_CheckForSpaceFloor(int sectnum);
@@ -446,19 +446,21 @@ ACTOR_INLINE int A_CheckEnemyTile(int const tileNum)
 
 ACTOR_INLINE int A_SetSprite(int const spriteNum, uint32_t cliptype)
 {
-    vec3_t const davect = { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
-                      (sprite[spriteNum].xvel * (sintable[sprite[spriteNum].ang & 2047])) >> 14, sprite[spriteNum].zvel };
-    return (A_MoveSprite(spriteNum, &davect, cliptype) == 0);
+    return (A_MoveSprite(spriteNum,
+                         { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
+                           (sprite[spriteNum].xvel * (sintable[sprite[spriteNum].ang & 2047])) >> 14, sprite[spriteNum].zvel },
+                         cliptype) == 0);
 }
 
 ACTOR_INLINE int A_SetSpriteNoZ(int const spriteNum, uint32_t cliptype)
 {
-    vec3_t const davect = { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
-                      (sprite[spriteNum].xvel * (sintable[sprite[spriteNum].ang & 2047])) >> 14, 0 };
-    return (A_MoveSprite(spriteNum, &davect, cliptype) == 0);
+    return (A_MoveSprite(spriteNum,
+                         { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
+                           (sprite[spriteNum].xvel * (sintable[sprite[spriteNum].ang & 2047])) >> 14, 0 },
+                         cliptype) == 0);
 }
 
-ACTOR_INLINE int32_t A_MoveSprite(int const spriteNum, vec3_t const * const change, uint32_t cliptype)
+ACTOR_INLINE int32_t A_MoveSprite(int const spriteNum, vec3_t const &change, uint32_t cliptype)
 {
     return A_MoveSpriteClipdist(spriteNum, change, cliptype, -1);
 }

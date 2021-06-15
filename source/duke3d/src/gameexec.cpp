@@ -799,10 +799,9 @@ GAMEEXEC_STATIC void VM_Move(void)
             if (vm.pSprite->z < vm.pActor->ceilingz+ZOFFSET5)
                 vm.pSprite->z = vm.pActor->ceilingz+ZOFFSET5;
 
-        vec3_t const vect
-        = { (spriteXvel * (sintable[(angDiff + 512) & 2047])) >> 14, (spriteXvel * (sintable[angDiff & 2047])) >> 14, vm.pSprite->zvel };
-
-        vm.pActor->movflag = A_MoveSprite(vm.spriteNum, &vect, (A_CheckSpriteFlags(vm.spriteNum, SFLAG_NOCLIP) ? 0 : CLIPMASK0));
+        vm.pActor->movflag = A_MoveSprite(vm.spriteNum, { (spriteXvel * (sintable[(angDiff + 512) & 2047])) >> 14,
+                                                          (spriteXvel * (sintable[angDiff & 2047])) >> 14, vm.pSprite->zvel },
+                                                        A_CheckSpriteFlags(vm.spriteNum, SFLAG_NOCLIP) ? 0 : CLIPMASK0);
     }
 
     if (!badguyp)
@@ -4765,7 +4764,7 @@ badindex:
 
                     VM_ASSERT((unsigned)v.spriteNum < MAXSPRITES, "invalid sprite %d\n", v.spriteNum);
 
-                    Gv_SetVar(*insptr++, A_MoveSprite(v.spriteNum, &v.vect, v.clipType));
+                    Gv_SetVar(*insptr++, A_MoveSprite(v.spriteNum, v.vect, v.clipType));
                     dispatch();
                 }
 
