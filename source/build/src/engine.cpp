@@ -13169,6 +13169,17 @@ int32_t sectorofwall_noquick(int16_t wallNum)
     return sectorofwall_internal(wallNum);
 }
 
+int32_t wallength(int16_t wallNum)
+{
+    int64_t const dax = POINT2(wallNum).x - wall[wallNum].x;
+    int64_t const day = POINT2(wallNum).y - wall[wallNum].y;
+    int64_t const hypsq = dax*dax + day*day;
+
+    if (hypsq <= (int64_t)UINT32_MAX)
+        return nsqrtasm((uint32_t)hypsq);
+    else
+        return (int32_t)sqrt((double)hypsq);
+}
 
 int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
 {

@@ -9215,21 +9215,6 @@ static int32_t movewalls(int32_t start, int32_t offs)
     return 0;
 }
 
-int32_t wallength(int16_t i)
-{
-    int64_t dax = POINT2(i).x - wall[i].x;
-    int64_t day = POINT2(i).y - wall[i].y;
-#if 1 //def POLYMOST
-    int64_t hypsq = dax*dax + day*day;
-    if (hypsq > (int64_t)INT32_MAX)
-        return (int32_t)sqrt((double)hypsq);
-    else
-        return ksqrt((uint32_t)hypsq);
-#else
-    return ksqrt(dax*dax + day*day);
-#endif
-}
-
 void fixrepeats(int16_t i)
 {
     int32_t dist = wallength(i);
