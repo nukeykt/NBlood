@@ -3034,13 +3034,19 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                 projZvel >>= 1;
             }
 
+            int const origXvel = projVel;
+
+            if (!projectileMoved)
+                projVel += sprite[pSprite->owner].xvel;
+
             do
             {
                 davect = pSprite->pos;
                 otherSprite = A_MoveSprite(spriteNum, { (projVel * (sintable[(pSprite->ang + 512) & 2047])) >> 14 >> (int)!projectileMoved,
                                                         (projVel * (sintable[pSprite->ang & 2047])) >> 14 >> (int)!projectileMoved, projZvel >> (int)!projectileMoved },
                                                         (A_CheckSpriteFlags(spriteNum, SFLAG_NOCLIP) ? 0 : CLIPMASK1));
-                projectileMoved++;
+                if (!projectileMoved && ldist(pSprite, &sprite[pSprite->owner]) > A_GetClipdist(spriteNum))
+                    projectileMoved++, projVel = origXvel;
             }
             while (!otherSprite && --projMoveCnt > 0);
 
@@ -3303,6 +3309,9 @@ ACTOR_STATIC void G_MoveWeapons(void)
                     spriteXvel >>= 1;
                     spriteZvel >>= 1;
                 }
+
+                if (!projectileMoved)
+                    spriteXvel += sprite[pSprite->owner].xvel;
 
                 vec3_t davect = pSprite->pos;
 
