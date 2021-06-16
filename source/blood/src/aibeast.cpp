@@ -151,7 +151,7 @@ static void StompSeqCallback(int, int nXSprite)
                                 nDamage = v1c + ((vc-nDist2)*v10)/vc;
                             if (IsPlayerSprite(pSprite2))
                                 gPlayer[pSprite2->type-kDudePlayer1].quakeEffect += nDamage*4;
-                            actDamageSprite(nSprite, pSprite2, DAMAGE_TYPE_0, nDamage<<4);
+                            actDamageSprite(nSprite, pSprite2, kDamageFall, nDamage<<4);
                         }
                     }
                 }
@@ -180,7 +180,7 @@ static void StompSeqCallback(int, int nXSprite)
                     nDamage = v1c + ((vc-nDist2)*v10)/vc;
                 if (IsPlayerSprite(pSprite2))
                     gPlayer[pSprite2->type-kDudePlayer1].quakeEffect += nDamage*4;
-                actDamageSprite(nSprite, pSprite2, DAMAGE_TYPE_0, nDamage<<4);
+                actDamageSprite(nSprite, pSprite2, kDamageFall, nDamage<<4);
             }
         }
     }

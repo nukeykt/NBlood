@@ -976,7 +976,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             if (pSprite->type == kDudeModernCustom) {
 
                 GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
-                if (nDmgType == DAMAGE_TYPE_1) {
+                if (nDmgType == kDamageBurn) {
 
                     if (pXSprite->health > pDudeInfo->fleeHealth) return nDamage;
                     else if (pXSprite->txID <= 0 || getNextIncarnation(pXSprite) == NULL) {
@@ -993,7 +993,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                         if (pXSprite->burnTime <= 0)
                             pXSprite->burnTime = 1200;
 
-                        if (pExtra->canBurn && pExtra->availDeaths[DAMAGE_TYPE_1] > 0) {
+                        if (pExtra->canBurn && pExtra->availDeaths[kDamageBurn] > 0) {
 
                             aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                             playGenDudeSound(pSprite, kGenDudeSndBurning);
@@ -1010,7 +1010,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                         }
 
                     } else {
-                        actKillDude(nSource, pSprite, DAMAGE_TYPE_0, 65535);
+                        actKillDude(nSource, pSprite, kDamageFall, 65535);
                     }
 
                 } else if (canWalk(pSprite) && !inDodge(pXSprite->aiState) && !inRecoil(pXSprite->aiState)) {
@@ -1040,7 +1040,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         }
         #endif
 
-        if (nDmgType == DAMAGE_TYPE_6)
+        if (nDmgType == kDamageTesla)
         {
             DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
             pDudeExtra->at4 = 1;
@@ -1051,7 +1051,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         case kDudeCultistShotgun:
         case kDudeCultistTesla:
         case kDudeCultistTNT:
-            if (nDmgType != DAMAGE_TYPE_1)
+            if (nDmgType != kDamageBurn)
             {
                 if (!sub_5BDA8(pSprite, 14) && !pXSprite->medium)
                     aiNewState(pSprite, pXSprite, &cultistDodge);
@@ -1060,7 +1060,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 else if (sub_5BDA8(pSprite, 13) && (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo))
                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
             }
-            else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
+            else if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = kDudeBurningCultist;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -1072,7 +1072,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             }
             break;
         case kDudeInnocent:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
+            if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = kDudeBurningInnocent;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -1105,7 +1105,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             aiNewState(pSprite, pXSprite, &gargoyleFChase);
             break;
         case kDudeZombieButcher:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth) {
+            if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth) {
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 aiPlay3DSound(pSprite, 1202, AI_SFX_PRIORITY_2, -1);
                 pSprite->type = kDudeBurningZombieButcher;
@@ -1115,7 +1115,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             }
             break;
         case kDudeTinyCaleb:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
+            if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = kDudeBurningInnocent;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -1136,7 +1136,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             break;
         case kDudeZombieAxeNormal:
         case kDudeZombieAxeBuried:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth)
+            if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth)
             {
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 aiPlay3DSound(pSprite, 1106, AI_SFX_PRIORITY_2, -1);

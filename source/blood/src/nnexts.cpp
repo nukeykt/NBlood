@@ -1193,7 +1193,7 @@ void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg) {
         }
 
 
-        actDamageSprite(nOwner, pSprite, DAMAGE_TYPE_3, dmg);
+        actDamageSprite(nOwner, pSprite, kDamageExplode, dmg);
         return;
     }
 }
@@ -2642,8 +2642,8 @@ void damageSprites(XSPRITE* pXSource, spritetype* pSprite) {
         else playerDamageSprite(pSource->index, pPlayer, (DAMAGE_TYPE)dmgType, dmg);
     }
     else if ((pXSprite->health = ClipLow(pXSprite->health - dmg, 1)) > 16) return;
-    else if (!pPlayer) actKillDude(pSource->index, pSprite, DAMAGE_TYPE_2, dmg);
-    else playerDamageSprite(pSource->index, pPlayer, DAMAGE_TYPE_2, dmg);
+    else if (!pPlayer) actKillDude(pSource->index, pSprite, kDamageBullet, dmg);
+    else playerDamageSprite(pSource->index, pPlayer, kDamageBullet, dmg);
     return;
 }
 

@@ -294,7 +294,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
                 }
 
                 if (ceilIsTooLow(pPlayer->pSprite))
-                    actDamageSprite(pPlayer->pSprite->index, pPlayer->pSprite, DAMAGE_TYPE_3, 65535);
+                    actDamageSprite(pPlayer->pSprite->index, pPlayer->pSprite, kDamageExplode, 65535);
             }
             break;
         #endif
@@ -342,7 +342,7 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
             if (gModernMap) {
                 playerSizeReset(pPlayer);
                 if (ceilIsTooLow(pPlayer->pSprite))
-                    actDamageSprite(pPlayer->pSprite->index, pPlayer->pSprite, DAMAGE_TYPE_3, 65535);
+                    actDamageSprite(pPlayer->pSprite->index, pPlayer->pSprite, kDamageExplode, 65535);
             }
             break;
         case kItemShroomGrow:
@@ -1721,13 +1721,13 @@ void playerProcess(PLAYER *pPlayer)
     {
         short nSector = pSprite->sectnum;
         if (pushmove_old(&pSprite->x, &pSprite->y, &pSprite->z, &nSector, dw, dzt, dzb, CLIPMASK0) == -1)
-            actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, 500<<4);
+            actDamageSprite(nSprite, pSprite, kDamageFall, 500<<4);
         if (pSprite->sectnum != nSector)
         {
             if (nSector == -1)
             {
                 nSector = pSprite->sectnum;
-                actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, 500<<4);
+                actDamageSprite(nSprite, pSprite, kDamageFall, 500<<4);
             }
             dassert(nSector >= 0 && nSector < kMaxSectors);
             ChangeSpriteSect(nSprite, nSector);
@@ -2010,11 +2010,11 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         {
             switch (nDamageType)
             {
-            case DAMAGE_TYPE_5:
+            case kDamageSpirit:
                 nDeathSeqID = 18;
                 sfxPlay3DSound(pSprite, 716, 0, 0);
                 break;
-            case DAMAGE_TYPE_3:
+            case kDamageExplode:
                 GibSprite(pSprite, GIBTYPE_7, NULL, NULL);
                 GibSprite(pSprite, GIBTYPE_15, NULL, NULL);
                 pPlayer->pSprite->cstat |= 32768;
@@ -2042,7 +2042,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         pXSprite->health = ClipLow(nHealth, 0);
         if (pXSprite->health > 0 && pXSprite->health < 16)
         {
-            nDamageType = DAMAGE_TYPE_2;
+            nDamageType = kDamageBullet;
             pXSprite->health = 0;
             nHealth = -25;
         }
@@ -2054,7 +2054,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
                 nSound = pDamageInfo->at4[0];
             else
                 nSound = pDamageInfo->at4[Random(3)];
-            if (nDamageType == DAMAGE_TYPE_4 && pXSprite->medium == kMediumWater && !pPlayer->hand)
+            if (nDamageType == kDamageDrown && pXSprite->medium == kMediumWater && !pPlayer->hand)
                 nSound = 714;
             sfxPlay3DSound(pSprite, nSound, 0, 6);
             return nDamage;
@@ -2069,22 +2069,22 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         pPlayer->curWeapon = 0;
         pPlayer->fraggerId = nSource;
         pPlayer->voodooTargets = 0;
-        if (nDamageType == DAMAGE_TYPE_3 && nDamage < (9<<4))
-            nDamageType = DAMAGE_TYPE_0;
+        if (nDamageType == kDamageExplode && nDamage < (9<<4))
+            nDamageType = kDamageFall;
         switch (nDamageType)
         {
-        case DAMAGE_TYPE_3:
+        case kDamageExplode:
             sfxPlay3DSound(pSprite, 717, 0, 0);
             GibSprite(pSprite, GIBTYPE_7, NULL, NULL);
             GibSprite(pSprite, GIBTYPE_15, NULL, NULL);
             pPlayer->pSprite->cstat |= 32768;
             nDeathSeqID = 2;
             break;
-        case DAMAGE_TYPE_1:
+        case kDamageBurn:
             sfxPlay3DSound(pSprite, 718, 0, 0);
             nDeathSeqID = 3;
             break;
-        case DAMAGE_TYPE_4:
+        case kDamageDrown:
             nDeathSeqID = 1;
             break;
         default:
@@ -2246,7 +2246,7 @@ void PlayerKneelsOver(int, int nXSprite)
         if (gPlayer[p].pXSprite == pXSprite)
         {
             PLAYER *pPlayer = &gPlayer[p];
-            playerDamageSprite(pPlayer->fraggerId, pPlayer, DAMAGE_TYPE_5, 500<<4);
+            playerDamageSprite(pPlayer->fraggerId, pPlayer, kDamageSpirit, 500<<4);
             return;
         }
     }

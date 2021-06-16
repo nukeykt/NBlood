@@ -1174,7 +1174,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                         nDamage = 500;
                     else
                         nDamage = pXSector->data;
-                    actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                    actDamageSprite(nSprite, &sprite[nSprite], kDamageFall, nDamage<<4);
                 }
                 a2 = ClipRange(a2-(vbp/2)*4, 0, 65536);
             }
@@ -1185,7 +1185,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                     nDamage = 500;
                 else
                     nDamage = pXSector->data;
-                actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                actDamageSprite(nSprite, &sprite[nSprite], kDamageFall, nDamage<<4);
                 a2 = ClipRange(a2-(vbp/2)*4, 0, 65536);
             }
         }
@@ -1208,7 +1208,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                         nDamage = 500;
                     else
                         nDamage = pXSector->data;
-                    actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                    actDamageSprite(nSprite, &sprite[nSprite], kDamageFall, nDamage<<4);
                 }
                 a2 = ClipRange(a2+(vbp/2)*4, 0, 65536);
             }
@@ -1219,7 +1219,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                     nDamage = 500;
                 else
                     nDamage = pXSector->data;
-                actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                actDamageSprite(nSprite, &sprite[nSprite], kDamageFall, nDamage<<4);
                 a2 = ClipRange(a2+(vbp/2)*4, 0, 65536);
             }
         }
@@ -1428,9 +1428,9 @@ void TeleFrag(int nKiller, int nSector)
     {
         spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == kStatDude)
-            actDamageSprite(nKiller, pSprite, DAMAGE_TYPE_3, 4000);
+            actDamageSprite(nKiller, pSprite, kDamageExplode, 4000);
         else if (pSprite->statnum == kStatThing)
-            actDamageSprite(nKiller, pSprite, DAMAGE_TYPE_3, 4000);
+            actDamageSprite(nKiller, pSprite, kDamageExplode, 4000);
     }
 }
 

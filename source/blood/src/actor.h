@@ -29,13 +29,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gameutil.h"
 
 enum DAMAGE_TYPE {
-    DAMAGE_TYPE_0 = 0,
-    DAMAGE_TYPE_1, // Flame
-    DAMAGE_TYPE_2,
-    DAMAGE_TYPE_3,
-    DAMAGE_TYPE_4,
-    DAMAGE_TYPE_5,
-    DAMAGE_TYPE_6, // Tesla
+    kDamageFall = 0,
+    kDamageBurn,
+    kDamageBullet,
+    kDamageExplode,
+    kDamageDrown,
+    kDamageSpirit,
+    kDamageTesla,
     kDamageMax = 7,
 };
 

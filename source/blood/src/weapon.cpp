@@ -1388,7 +1388,7 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     spritetype *pSprite = pPlayer->pSprite;
     if (nTrigger == 4)
     {
-        actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_2, 1<<4);
+        actDamageSprite(nSprite, pSprite, kDamageBullet, 1<<4);
         return;
     }
     dassert(pPlayer->voodooTarget >= 0);
@@ -1401,7 +1401,7 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     {
         sfxPlay3DSound(pSprite, 460, 2, 0);
         fxSpawnBlood(pTarget, 17<<4);
-        int nDamage = actDamageSprite(nSprite, pTarget, DAMAGE_TYPE_5, 17<<4);
+        int nDamage = actDamageSprite(nSprite, pTarget, kDamageSpirit, 17<<4);
         UseAmmo(pPlayer, 9, nDamage/4);
         break;
     }
@@ -1409,7 +1409,7 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     {
         sfxPlay3DSound(pSprite, 460, 2, 0);
         fxSpawnBlood(pTarget, 17<<4);
-        int nDamage = actDamageSprite(nSprite, pTarget, DAMAGE_TYPE_5, 9<<4);
+        int nDamage = actDamageSprite(nSprite, pTarget, kDamageSpirit, 9<<4);
         if (IsPlayerSprite(pTarget))
             WeaponLower(&gPlayer[pTarget->type-kDudePlayer1]);
         UseAmmo(pPlayer, 9, nDamage/4);
@@ -1419,7 +1419,7 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     {
         sfxPlay3DSound(pSprite, 463, 2, 0);
         fxSpawnBlood(pTarget, 17<<4);
-        int nDamage = actDamageSprite(nSprite, pTarget, DAMAGE_TYPE_5, 49<<4);
+        int nDamage = actDamageSprite(nSprite, pTarget, kDamageSpirit, 49<<4);
         UseAmmo(pPlayer, 9, nDamage/4);
         break;
     }
@@ -1427,7 +1427,7 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     {
         sfxPlay3DSound(pSprite, 460, 2, 0);
         fxSpawnBlood(pTarget, 17<<4);
-        int nDamage = actDamageSprite(nSprite, pTarget, DAMAGE_TYPE_5, 11<<4);
+        int nDamage = actDamageSprite(nSprite, pTarget, kDamageSpirit, 11<<4);
         if (IsPlayerSprite(pTarget))
         {
             PLAYER *pOtherPlayer = &gPlayer[pTarget->type - kDudePlayer1];
@@ -1462,7 +1462,7 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
                         int v8 = pPlayer->ammoCount[9] << 1;
                         int nDamage = (v8 + Random(vc)) << 4;
                         nDamage = (nDamage * ((51200 - nDist) + 1)) / 51200;
-                        nDamage = actDamageSprite(pPlayer->nSprite, pTarget, DAMAGE_TYPE_5, nDamage);
+                        nDamage = actDamageSprite(pPlayer->nSprite, pTarget, kDamageSpirit, nDamage);
 
                         if (IsPlayerSprite(pTarget))
                         {
@@ -1500,7 +1500,7 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
                     int v8 = pPlayer->ammoCount[9] << 1;
                     int nDamage = (v8 + Random2(vc)) << 4;
                     nDamage = (nDamage * ((51200 - nDist) + 1)) / 51200;
-                    nDamage = actDamageSprite(pPlayer->nSprite, pTarget, DAMAGE_TYPE_5, nDamage);
+                    nDamage = actDamageSprite(pPlayer->nSprite, pTarget, kDamageSpirit, nDamage);
                     UseAmmo(pPlayer, 9, nDamage);
                     if (IsPlayerSprite(pTarget))
                     {
@@ -1658,7 +1658,7 @@ void FireLifeLeech(int nTrigger, PLAYER *pPlayer)
     if (sub_4B2C8(pPlayer, 8, 1))
         UseAmmo(pPlayer, 8, 1);
     else
-        actDamageSprite(pPlayer->nSprite, pPlayer->pSprite, DAMAGE_TYPE_5, 16);
+        actDamageSprite(pPlayer->nSprite, pPlayer->pSprite, kDamageSpirit, 16);
     pPlayer->visibility = ClipHigh(pPlayer->visibility+5, 50);
 }
 
@@ -1682,7 +1682,7 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
             int nAmmo = pPlayer->ammoCount[8];
             if (nAmmo < 25 && pPlayer->pXSprite->health > ((25-nAmmo)<<4))
             {
-                actDamageSprite(pPlayer->nSprite, pPlayer->pSprite, DAMAGE_TYPE_5, ((25-nAmmo)<<4));
+                actDamageSprite(pPlayer->nSprite, pPlayer->pSprite, kDamageSpirit, ((25-nAmmo)<<4));
                 nAmmo = 25;
             }
             pXSprite->data3 = nAmmo;
@@ -2560,7 +2560,7 @@ void sub_51340(spritetype *pMissile, int a2)
                 int nDamage = ClipLow((nDist-(ksqrt(dx*dx+dy*dy)>>4)+20)>>1, 10);
                 if (nSprite == nOwner)
                     nDamage /= 2;
-                actDamageSprite(nOwner, pSprite, DAMAGE_TYPE_6, nDamage<<4);
+                actDamageSprite(nOwner, pSprite, kDamageTesla, nDamage<<4);
             }
         }
     }
@@ -2577,7 +2577,7 @@ void sub_51340(spritetype *pMissile, int a2)
                 int dx = pMissile->x-pSprite->x;
                 int dy = pMissile->y-pSprite->y;
                 int nDamage = ClipLow(nDist-(ksqrt(dx*dx+dy*dy)>>4)+20, 20);
-                actDamageSprite(nOwner, pSprite, DAMAGE_TYPE_6, nDamage<<4);
+                actDamageSprite(nOwner, pSprite, kDamageTesla, nDamage<<4);
             }
         }
     }

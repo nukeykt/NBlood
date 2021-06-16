@@ -655,7 +655,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
                 if (CheckProximity(pSprite, pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pExpl->radius >> 1)) {
                     xvel[pSprite->index] = zvel[pSprite->index] = yvel[pSprite->index] = 0;
                     if (doExplosion(pSprite, nType) && pXSprite->health > 0)
-                            actDamageSprite(pSprite->index, pSprite, DAMAGE_TYPE_3, 65535);
+                            actDamageSprite(pSprite->index, pSprite, kDamageExplode, 65535);
                 }
                 return;
             }
@@ -1239,7 +1239,7 @@ void removeLeech(spritetype* pLeech, bool delSprite) {
     
 void killDudeLeech(spritetype* pLeech) {
     if (pLeech != NULL) {
-        actDamageSprite(pLeech->owner, pLeech, DAMAGE_TYPE_3, 65535);
+        actDamageSprite(pLeech->owner, pLeech, kDamageExplode, 65535);
         sfxPlay3DSoundCP(pLeech, 522, -1, 0, 60000);
 
         if (pLeech->owner >= 0 && pLeech->owner < kMaxSprites)
@@ -2159,7 +2159,7 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
 }
 
 void genDudePostDeath(spritetype* pSprite, DAMAGE_TYPE damageType, int damage) {
-    if (damageType == DAMAGE_TYPE_3) {
+    if (damageType == kDamageExplode) {
         DUDEINFO* pDudeInfo = getDudeInfo(pSprite->type);
         for (int i = 0; i < 3; i++)
             if (pDudeInfo->nGibType[i] > -1)
