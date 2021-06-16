@@ -89,9 +89,9 @@ static void BiteSeqCallback(int, int nXSprite)
     }
     spritetype *pTarget = &sprite[pXSprite->target];
     int dz = pTarget->z-pSprite->z;
-    actFireVector(pSprite, 350, -100, dx, dy, dz, VECTOR_TYPE_14);
-    actFireVector(pSprite, -350, 0, dx, dy, dz, VECTOR_TYPE_14);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_14);
+    actFireVector(pSprite, 350, -100, dx, dy, dz, kVectorCerberusHack);
+    actFireVector(pSprite, -350, 0, dx, dy, dz, kVectorCerberusHack);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorCerberusHack);
 }
 
 static void BurnSeqCallback(int, int nXSprite)

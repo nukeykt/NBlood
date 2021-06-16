@@ -88,9 +88,9 @@ static void SlashSeqCallback(int, int nXSprite)
     int dz = pSprite->z-pTarget->z;
     dx += Random3(4000-700*gGameOptions.nDifficulty);
     dy += Random3(4000-700*gGameOptions.nDifficulty);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_13);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_13);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_13);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGargSlash);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGargSlash);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGargSlash);
     sfxPlay3DSound(pSprite, 9012+Random(2), -1, 0);
 }
 
@@ -151,7 +151,7 @@ static void StompSeqCallback(int, int nXSprite)
                                 nDamage = v1c + ((vc-nDist2)*v10)/vc;
                             if (IsPlayerSprite(pSprite2))
                                 gPlayer[pSprite2->type-kDudePlayer1].quakeEffect += nDamage*4;
-                            actDamageSprite(nSprite, pSprite2, DAMAGE_TYPE_0, nDamage<<4);
+                            actDamageSprite(nSprite, pSprite2, kDamageFall, nDamage<<4);
                         }
                     }
                 }
@@ -180,7 +180,7 @@ static void StompSeqCallback(int, int nXSprite)
                     nDamage = v1c + ((vc-nDist2)*v10)/vc;
                 if (IsPlayerSprite(pSprite2))
                     gPlayer[pSprite2->type-kDudePlayer1].quakeEffect += nDamage*4;
-                actDamageSprite(nSprite, pSprite2, DAMAGE_TYPE_0, nDamage<<4);
+                actDamageSprite(nSprite, pSprite2, kDamageFall, nDamage<<4);
             }
         }
     }

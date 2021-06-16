@@ -90,7 +90,7 @@ static void HackSeqCallback(int, int nXSprite)
     int dx = Cos(nAngle)>>16;
     int dy = Sin(nAngle)>>16;
     sfxPlay3DSound(pSprite, 1101, 1, 0);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_10);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorAxe);
 }
 
 static void StandSeqCallback(int, int nXSprite)
