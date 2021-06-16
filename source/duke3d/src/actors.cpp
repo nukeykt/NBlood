@@ -7130,9 +7130,24 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                 A_MoveSector(spriteNum);
 
+                auto const lengths = (int32_t *)Balloca(pSector->wallnum * sizeof(int32_t));
+
+                for (int w = pSector->wallptr; w < endWall; w++)
+                    lengths[w - pSector->wallptr] = wallength(w);
+
                 for (auto SPRITES_OF(STAT_ACTOR, findSprite))
                 {
                     auto const foundSprite = &sprite[findSprite];
+
+                    int w = pSector->wallptr;
+                    for (; w < endWall; w++)
+                    {
+                        if (ldist(foundSprite, &wall[w]) < lengths[w - pSector->wallptr] + foundSprite->clipdist)
+                            break;
+                    }
+
+                    if (w == endWall)
+                        continue;
 
                     int32_t floorZ, ceilZ;
                     getcorrectzsofslope(pSprite->sectnum, foundSprite->pos.x, foundSprite->pos.y, &ceilZ, &floorZ);
