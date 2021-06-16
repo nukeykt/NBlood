@@ -1964,7 +1964,7 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
         case kGenDudePropertyWeapon: {
             pExtra->curWeapon = pXSprite->data1;
             switch (pXSprite->data1) {
-                case VECTOR_TYPE_19: pExtra->curWeapon = VECTOR_TYPE_2; break;
+                case VECTOR_TYPE_19: pExtra->curWeapon = kVectorBullet; break;
                 case kMissileUnused: pExtra->curWeapon = kMissileArcGargoyle; break;
                 case kThingDroppedLifeLeech: pExtra->curWeapon = kModernThingEnemyLifeLeech; break;
             }

@@ -2175,9 +2175,9 @@ void sub_41250(PLAYER *pPlayer)
     for (int i = 0; i < 4; i++)
     {
         int ang1 = (pPlayer->voodooVar1+pPlayer->vodooVar2)&2047;
-        actFireVector(pPlayer->pSprite, 0, dz, Cos(ang1)>>16, Sin(ang1)>>16, v4, VECTOR_TYPE_21);
+        actFireVector(pPlayer->pSprite, 0, dz, Cos(ang1)>>16, Sin(ang1)>>16, v4, kVectorVoodoo10);
         int ang2 = (pPlayer->voodooVar1+2048-pPlayer->vodooVar2)&2047;
-        actFireVector(pPlayer->pSprite, 0, dz, Cos(ang2)>>16, Sin(ang2)>>16, v4, VECTOR_TYPE_21);
+        actFireVector(pPlayer->pSprite, 0, dz, Cos(ang2)>>16, Sin(ang2)>>16, v4, kVectorVoodoo10);
     }
     pPlayer->voodooTargets = ClipLow(pPlayer->voodooTargets-1, 0);
 }

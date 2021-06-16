@@ -84,7 +84,7 @@ static void SeqAttackCallback(int, int nXSprite)
         int r1 = Random3(500);
         int r2 = Random3(1000);
         int r3 = Random3(1000);
-        actFireVector(pSprite, 0, 0, dx+r3, dy+r2, dz+r1, VECTOR_TYPE_1);
+        actFireVector(pSprite, 0, 0, dx+r3, dy+r2, dz+r1, kVectorShell);
     }
     if (Chance(0x8000))
         sfxPlay3DSound(pSprite, 10000+Random(5), -1, 0);

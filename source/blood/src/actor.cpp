@@ -5880,8 +5880,8 @@ void actProcessSprites(void)
                 }
                 dy = Sin(pSprite->ang)>>16;
                 dx = Cos(pSprite->ang)>>16;
-                gVectorData[VECTOR_TYPE_20].maxDist = pXSprite->data1<<9;
-                actFireVector(pSprite, 0, 0, dx, dy, Random2(0x8888), VECTOR_TYPE_20);
+                gVectorData[kVectorTchernobogBurn].maxDist = pXSprite->data1<<9;
+                actFireVector(pSprite, 0, 0, dx, dy, Random2(0x8888), kVectorTchernobogBurn);
             }
             break;
         }
@@ -6639,7 +6639,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             y -= mulscale(a5, 112, 14);
             z -= mulscale(a6, 112<<4, 14);
             int shift = 4;
-            if (vectorType == VECTOR_TYPE_0 && !IsPlayerSprite(pSprite))
+            if (vectorType == kVectorTine && !IsPlayerSprite(pSprite))
                 shift = 3;
             actDamageSprite(nShooter, pSprite, pVectorData->dmgType, pVectorData->dmg<<shift);
             int nXSprite = pSprite->extra;

@@ -2259,7 +2259,7 @@ void MGunFireSeqCallback(int, int nXSprite)
         int dx = (Cos(pSprite->ang)>>16)+Random2(1000);
         int dy = (Sin(pSprite->ang)>>16)+Random2(1000);
         int dz = Random2(1000);
-        actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_2);
+        actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorBullet);
         sfxPlay3DSound(pSprite, 359, -1, 0);
     }
 }

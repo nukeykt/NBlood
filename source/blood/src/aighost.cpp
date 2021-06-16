@@ -94,13 +94,13 @@ static void SlashSeqCallback(int, int nXSprite)
     int dx = Cos(pSprite->ang)>>16;
     int dy = Sin(pSprite->ang)>>16;
     sfxPlay3DSound(pSprite, 1406, 0, 0);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_12);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGhost);
     int r1 = Random(50);
     int r2 = Random(50);
-    actFireVector(pSprite, 0, 0, dx+r2, dy-r1, dz, VECTOR_TYPE_12);
+    actFireVector(pSprite, 0, 0, dx+r2, dy-r1, dz, kVectorGhost);
     r1 = Random(50);
     r2 = Random(50);
-    actFireVector(pSprite, 0, 0, dx-r2, dy+r1, dz, VECTOR_TYPE_12);
+    actFireVector(pSprite, 0, 0, dx-r2, dy+r1, dz, kVectorGhost);
 }
 
 static void ThrowSeqCallback(int, int nXSprite)

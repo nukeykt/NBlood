@@ -80,9 +80,9 @@ static void GillBiteSeqCallback(int, int nXSprite)
     int dz = pSprite->z-pTarget->z;
     dx += Random3(2000);
     dy += Random3(2000);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_8);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_8);
-    actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_8);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGillBite);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGillBite);
+    actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorGillBite);
 }
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
