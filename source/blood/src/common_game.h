@@ -435,6 +435,7 @@ kAiStateSearch          =  3,
 kAiStateChase           =  4,
 kAiStateRecoil          =  5,
 kAiStateAttack          =  6,
+#ifdef NOONE_EXTENSIONS
 kAiStatePatrolBase      =  7,
 kAiStatePatrolWaitL     =  kAiStatePatrolBase,
 kAiStatePatrolWaitC,
@@ -443,6 +444,7 @@ kAiStatePatrolMoveL,
 kAiStatePatrolMoveC,
 kAiStatePatrolMoveW,
 kAiStatePatrolMax,
+#endif
 };
 
 // sprite attributes

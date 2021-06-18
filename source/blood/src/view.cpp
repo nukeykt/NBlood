@@ -2018,6 +2018,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     if (gDetail < effectDetail[nViewEffect] || nTSprite >= kMaxViewSprites) return NULL;
     switch (nViewEffect)
     {
+#ifdef NOONE_EXTENSIONS
     case kViewEffectSpotProgress: {
         XSPRITE* pXSprite = &xsprite[pTSprite->extra];
         int perc = (100 * pXSprite->data3) / kMaxPatrolSpotValue;
@@ -2068,6 +2069,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         }
         break;
     }
+#endif
     case kViewEffectAtom:
         for (int i = 0; i < 16; i++)
         {
