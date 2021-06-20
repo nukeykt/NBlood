@@ -188,7 +188,7 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 
 #endif
 
-static inline int32_t ksqrtasm_old(uint32_t n)
+static int32_t ksqrtasm_old(uint32_t n)
 {
     uint32_t shift = 0;
     n = klabs((int32_t)n);
