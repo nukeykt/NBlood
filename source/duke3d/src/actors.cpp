@@ -501,33 +501,29 @@ static int32_t A_CheckNeedZUpdate(int32_t spriteNum, int32_t zChange, int32_t *p
 
 int A_GetClipdist(int spriteNum)
 {
-    auto const pSprite = &sprite[spriteNum];
-    int const  isEnemy = A_CheckEnemySprite(pSprite);
-    int clipDist;
+    auto const pSprite  = &sprite[spriteNum];
+    int        clipDist = pSprite->clipdist << 2;
 
-    if (A_CheckSpriteFlags(spriteNum, SFLAG_REALCLIPDIST))
-        clipDist = pSprite->clipdist << 2;
-    else if ((pSprite->cstat & 48) == 16)
-        clipDist = 0;
-    else if (isEnemy)
+    if (!A_CheckSpriteFlags(spriteNum, SFLAG_REALCLIPDIST))
     {
-        if (pSprite->xrepeat > 60)
-            clipDist = 1024;
+        if (pSprite->statnum == STAT_PROJECTILE)
+        {
+            if ((SpriteProjectile[spriteNum].workslike & PROJECTILE_REALCLIPDIST) == 0)
+                clipDist = 16;
+        }
+        else if ((pSprite->cstat & 48) == 16)
+            clipDist = 0;
+        else if (A_CheckEnemySprite(pSprite))
+        {
+            if (pSprite->xrepeat > 60)
+                clipDist = 1024;
 #ifndef EDUKE32_STANDALONE
-        else if (!FURY && pSprite->picnum == LIZMAN)
-            clipDist = 292;
+            else if (!FURY && pSprite->picnum == LIZMAN)
+                clipDist = 292;
 #endif
-        else if (A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY))
-            clipDist = pSprite->clipdist << 2;
-        else
-            clipDist = 192;
-    }
-    else
-    {
-        if (pSprite->statnum == STAT_PROJECTILE && (SpriteProjectile[spriteNum].workslike & PROJECTILE_REALCLIPDIST) == 0)
-            clipDist = 16;
-        else
-            clipDist = pSprite->clipdist << 2;
+            else if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY))
+                clipDist = 192;
+        }
     }
 
     return clipDist;
