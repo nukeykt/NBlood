@@ -201,7 +201,7 @@ static int32_t ksqrtasm_old(uint32_t n)
     return (s << shift) >> 10;
 }
 
-static inline int32_t clip_nsqrtasm(uint32_t n)
+static FORCE_INLINE int32_t ksqrt_inline(uint32_t n)
 {
     if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(n);

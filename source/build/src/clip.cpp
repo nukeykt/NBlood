@@ -1097,7 +1097,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     //Extra walldist for sprites on sector lines
     vec2_t const  diff    = { goal.x - (pos->x), goal.y - (pos->y) };
-    int32_t const rad     = clip_nsqrtasm(compat_maybe_truncate_to_int32(uhypsq(diff.x, diff.y))) + MAXCLIPDIST + walldist + 8;
+    int32_t const rad     = ksqrt_inline(compat_maybe_truncate_to_int32(uhypsq(diff.x, diff.y))) + MAXCLIPDIST + walldist + 8;
     vec2_t const  clipMin = { cent.x - rad, cent.y - rad };
     vec2_t const  clipMax = { cent.x + rad, cent.y + rad };
 
