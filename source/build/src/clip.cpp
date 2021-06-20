@@ -1372,7 +1372,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     rxi[0] = p1.x;
                     ryi[0] = p1.y;
 
-                    get_floorspr_points((uspriteptr_t) spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
+                    get_floorspr_points(spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
                         &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
 
                     vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
@@ -1417,7 +1417,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     rxi[0] = p1.x;
                     ryi[0] = p1.y;
 
-                    get_floorspr_points((uspriteptr_t) spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
+                    get_floorspr_points(spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
                         &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
 
                     vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
@@ -2092,7 +2092,7 @@ restart_grand:
                     case CSTAT_SPRITE_ALIGNMENT_WALL:
                     {
                         vec2_t v2;
-                        get_wallspr_points((uspriteptr_t)&sprite[j], &v1.x, &v2.x, &v1.y, &v2.y);
+                        get_wallspr_points(&sprite[j], &v1.x, &v2.x, &v1.y, &v2.y);
 
                         if (clipinsideboxline(pos->x,pos->y,v1.x,v1.y,v2.x,v2.y,walldist+1) != 0)
                         {
@@ -2113,7 +2113,7 @@ restart_grand:
                             continue;
 
                         vec2_t v2, v3, v4;
-                        get_floorspr_points((uspriteptr_t) &sprite[j], pos->x, pos->y, &v1.x, &v2.x, &v3.x, &v4.x,
+                        get_floorspr_points(&sprite[j], pos->x, pos->y, &v1.x, &v2.x, &v3.x, &v4.x,
                                             &v1.y, &v2.y, &v3.y, &v4.y, spriteGetSlope(j));
 
                         vec2_t const da = { mulscale14(sintable[(sprite[j].ang - 256 + 512) & 2047], walldist + 4),

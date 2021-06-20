@@ -413,13 +413,11 @@ template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tilept
 
 // x1, y1: in/out
 // rest x/y: out
-template <typename T>
-static inline void get_wallspr_points(T const * const spr, int32_t *x1, int32_t *x2,
-                                      int32_t *y1, int32_t *y2)
+static inline void get_wallspr_points(void const * const ptr, int32_t *x1, int32_t *x2, int32_t *y1, int32_t *y2)
 {
     //These lines get the 2 points of the rotated sprite
     //Given: (x1, y1) starts out as the center point
-
+    auto spr = (uspriteptr_t)ptr;
     const int32_t tilenum=spr->picnum, ang=spr->ang;
     const int32_t xrepeat = spr->xrepeat;
     int32_t xoff = picanm[tilenum].xofs + spr->xoffset;
@@ -443,12 +441,12 @@ static inline void get_wallspr_points(T const * const spr, int32_t *x1, int32_t 
 
 // x1, y1: in/out
 // rest x/y: out
-template <typename T>
-static inline void get_floorspr_points(T const * const spr, int32_t px, int32_t py,
-                                       int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
-                                       int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
-                                       int32_t const heinum)
+static inline void get_floorspr_points(void const * const ptr, int32_t px, int32_t py,
+                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
+                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
+                                int32_t const heinum)
 {
+    auto spr = (uspriteptr_t)ptr;
     const int32_t tilenum = spr->picnum;
     const int32_t cosang = sintable[(spr->ang+512)&2047];
     const int32_t sinang = sintable[spr->ang&2047];
