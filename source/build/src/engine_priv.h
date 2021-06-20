@@ -164,30 +164,13 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 
 #else   // __GNUC__ && __i386__
 
-    static inline int32_t nsqrtasm(uint32_t a)
+    static FORCE_INLINE int32_t nsqrtasm(uint32_t a)
     {
         // JBF 20030901: This was a damn lot simpler to reverse engineer than
         // msqrtasm was. Really, it was just like simplifying an algebra equation.
-        uint16_t c;
-
-        if (a & 0xff000000)  			// test eax, 0xff000000  /  jnz short over24
-        {
-            c = shlookup[(a >> 24) + 4096];	// mov ebx, eax
-                                            // over24: shr ebx, 24
-                                            // mov cx, word ptr shlookup[ebx*2+8192]
-        }
-        else
-        {
-            c = shlookup[a >> 12];		// mov ebx, eax
-                                        // shr ebx, 12
-                                        // mov cx, word ptr shlookup[ebx*2]
-                                        // jmp short under24
-        }
-        a >>= c&0xff;				// under24: shr eax, cl
-        a = (a&0xffff0000)|(sqrtable[a]);	// mov ax, word ptr sqrtable[eax*2]
-        a >>= ((c&0xff00) >> 8);		// mov cl, ch
-                                        // shr eax, cl
-        return a;
+        uint16_t const c = shlookup[(a & 0xff000000) ? ((a >> 24) + 4096):(a>>12)];
+        a >>= c&0xff;
+        return ((a&0xffff0000)|(sqrtable[a])) >> ((c&0xff00) >> 8);
     }
 
     static inline int32_t getclipmask(int32_t a, int32_t b, int32_t c, int32_t d)
