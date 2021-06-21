@@ -93,24 +93,6 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         }
     }
 
-    static inline int32_t getkensmessagecrc(void *b)
-    {
-        _asm
-        {
-            push ebx
-            mov ebx, b
-            xor eax, eax
-            mov ecx, 32
-            beg:
-            mov edx, dword ptr[ebx+ecx*4-4]
-                ror edx, cl
-                adc eax, edx
-                bswap eax
-                loop short beg
-                pop ebx
-        }
-    }
-
 #elif defined(__GNUC__) && defined(__i386__) && !defined(NOASM)	// _MSC_VER
 
     //
@@ -147,21 +129,6 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         : "a" (__a), "b" (__b), "c" (__c), "d" (__d) : "cc"); \
      __a; })
 
-
-#define getkensmessagecrc(b) \
-    ({ int32_t __a, __b=(b); \
-       __asm__ __volatile__ ( \
-        "xorl %%eax, %%eax\n\t" \
-        "movl $32, %%ecx\n\t" \
-        "0:\n\t" \
-        "movl -4(%%ebx,%%ecx,4), %%edx\n\t" \
-        "rorl %%cl, %%edx\n\t" \
-        "adcl %%edx, %%eax\n\t" \
-        "bswapl %%eax\n\t" \
-        "loop 0b" \
-        : "=a" (__a) : "b" (__b) : "ecx", "edx" \
-     __a; })
-
 #else   // __GNUC__ && __i386__
 
     static FORCE_INLINE int32_t nsqrtasm(uint32_t a)
@@ -178,12 +145,6 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         // Ken did this
         d = ((a<0)<<3) + ((b<0)<<2) + ((c<0)<<1) + (d<0);
         return (((d<<4)^0xf0)|d);
-    }
-
-    static inline int32_t getkensmessagecrc(int32_t b)
-    {
-        UNREFERENCED_PARAMETER(b);
-        return 0x56c764d4l;
     }
 
 #endif
