@@ -149,18 +149,6 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 
 #endif
 
-static int32_t ksqrtasm_old(uint32_t n)
-{
-    uint32_t shift = 0;
-    n = klabs((int32_t)n);
-    while (n >= 2048)
-    {
-        n >>= 2;
-        ++shift;
-    }
-    uint32_t const s = sqrtable_old[n];
-    return (s << shift) >> 10;
-}
 
 static FORCE_INLINE int32_t ksqrt_inline(uint32_t n)
 {

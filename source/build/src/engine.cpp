@@ -11583,7 +11583,20 @@ fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
 //
 // ksqrt
 //
-int32_t ksqrt(uint32_t num)
+int32_t __fastcall ksqrtasm_old(uint32_t n)
+{
+    uint32_t shift = 0;
+    n = klabs((int32_t)n);
+    while (n >= 2048)
+    {
+        n >>= 2;
+        ++shift;
+    }
+    uint32_t const s = sqrtable_old[n];
+    return (s << shift) >> 10;
+}
+
+int32_t __fastcall ksqrt(uint32_t num)
 {
     if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(num);
