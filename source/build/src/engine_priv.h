@@ -140,7 +140,7 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         return ((a&0xffff0000)|(sqrtable[a])) >> ((c&0xff00) >> 8);
     }
 
-    static inline int32_t getclipmask(int32_t a, int32_t b, int32_t c, int32_t d)
+    static FORCE_INLINE int32_t getclipmask(int32_t a, int32_t b, int32_t c, int32_t d)
     {
         // Ken did this
         d = ((a<0)<<3) + ((b<0)<<2) + ((c<0)<<1) + (d<0);
