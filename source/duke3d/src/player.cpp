@@ -224,7 +224,7 @@ static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projec
 #ifndef EDUKE32_STANDALONE
             if (!FURY)
             {
-                switch (DYNAMICTILEMAP(projecTile))
+                switch (tileGetMapping(projecTile))
                 {
                     case TONGUE__:
                     case FREEZEBLAST__:
@@ -1094,7 +1094,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
     int32_t Zvel;
     int vel;
 
-    switch (DYNAMICTILEMAP(projecTile))
+    switch (tileGetMapping(projecTile))
     {
         case BLOODSPLAT1__:
         case BLOODSPLAT2__:
@@ -1699,7 +1699,7 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
 
 #ifndef EDUKE32_STANDALONE
 #ifdef POLYMER
-        switch (DYNAMICTILEMAP(projecTile))
+        switch (tileGetMapping(projecTile))
         {
             case FIRELASER__:
             case SHOTGUN__:
@@ -3858,7 +3858,7 @@ static void P_CheckTouchDamage(DukePlayer_t *pPlayer, int touchObject)
     {
         int const forcePic = G_GetForcefieldPicnum(touchWall);
 
-        switch (DYNAMICTILEMAP(forcePic))
+        switch (tileGetMapping(forcePic))
         {
         case W_FORCEFIELD__:
             sprite[pPlayer->i].extra -= 5;
@@ -3891,7 +3891,7 @@ static int P_CheckFloorDamage(DukePlayer_t *pPlayer, int floorTexture)
     if ((unsigned)(floorTexture = VM_OnEventWithReturn(EVENT_CHECKFLOORDAMAGE, pPlayer->i, P_Get(pPlayer->i), floorTexture)) >= MAXTILES)
         return 0;
 
-    switch (DYNAMICTILEMAP(floorTexture))
+    switch (tileGetMapping(floorTexture))
     {
         case HURTRAIL__:
             if (rnd(32))
@@ -5562,7 +5562,7 @@ void P_ProcessInput(int playerNum)
                                                        ? TrackerCast(sprite[lowZhit & (MAXSPRITES - 1)].picnum)
                                                        : TrackerCast(sector[pPlayer->cursectnum].floorpicnum);
 
-                                switch (DYNAMICTILEMAP(walkPicnum))
+                                switch (tileGetMapping(walkPicnum))
                                 {
                                     case PANNEL1__:
                                     case PANNEL2__:
@@ -5852,7 +5852,7 @@ RECHECK:
                 A_DoGuts(pPlayer->actorsqu, JIBS6, 7);
                 A_Spawn(pPlayer->actorsqu, BLOODPOOL);
                 A_PlaySound(SQUISHED, pPlayer->actorsqu);
-                switch (DYNAMICTILEMAP(sprite[pPlayer->actorsqu].picnum))
+                switch (tileGetMapping(sprite[pPlayer->actorsqu].picnum))
                 {
                     case FEM1__:
                     case FEM2__:

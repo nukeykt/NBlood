@@ -3667,7 +3667,7 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         if (newOption)
         {
             for (x=0; x<g_animWallCnt; x++)
-                switch (DYNAMICTILEMAP(wall[animwall[x].wallnum].picnum))
+                switch (tileGetMapping(wall[animwall[x].wallnum].picnum))
                 {
                 case FEMPIC1__:
                     wall[animwall[x].wallnum].picnum = BLANKSCREEN;

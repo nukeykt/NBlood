@@ -160,7 +160,7 @@ int G_CheckActivatorMotion(int lotag, bool checkMasterSwitches)
 int CheckDoorTile(int tileNum)
 {
 #ifndef EDUKE32_STANDALONE
-    switch (DYNAMICTILEMAP(tileNum))
+    switch (tileGetMapping(tileNum))
     {
         case DOORTILE1__:
         case DOORTILE2__:
@@ -467,7 +467,7 @@ void G_AnimateWalls(void)
     {
         int const wallNum = animwall[animwallNum].wallnum;
 
-        switch (DYNAMICTILEMAP(wall[wallNum].picnum))
+        switch (tileGetMapping(wall[wallNum].picnum))
         {
         case SCREENBREAK1__:
         case SCREENBREAK2__:
@@ -1286,7 +1286,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
     int correctDips  = 1;
     int numDips      = 0;
 
-    switch (DYNAMICTILEMAP(basePicnum))
+    switch (tileGetMapping(basePicnum))
     {
     case DIPSWITCH_LIKE_CASES:
         break;
@@ -1348,7 +1348,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                     sprite[spriteNum].picnum = MULTISWITCH;
             }
 
-            switch (DYNAMICTILEMAP(spritePic))
+            switch (tileGetMapping(spritePic))
             {
             case DIPSWITCH_LIKE_CASES:
                 if (switchType == SWITCH_SPRITE && wallOrSprite == spriteNum)
@@ -1367,7 +1367,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                 if (spritePic <= 0)  // oob safety
                     break;
 
-                switch (DYNAMICTILEMAP(spritePic - 1))
+                switch (tileGetMapping(spritePic - 1))
                 {
                     case DIPSWITCH_LIKE_CASES:
                         if (switchType == SWITCH_SPRITE && wallOrSprite == spriteNum)
@@ -1397,7 +1397,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                     wall[wallNum].picnum = MULTISWITCH;
             }
 
-            switch (DYNAMICTILEMAP(wall[wallNum].picnum))
+            switch (tileGetMapping(wall[wallNum].picnum))
             {
                 case DIPSWITCH_LIKE_CASES:
                     if (switchType == SWITCH_WALL && wallNum == wallOrSprite)
@@ -1416,7 +1416,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                     if (wall[wallNum].picnum <= 0)  // oob safety
                         break;
 
-                    switch (DYNAMICTILEMAP(wall[wallNum].picnum - 1))
+                    switch (tileGetMapping(wall[wallNum].picnum - 1))
                     {
                         case DIPSWITCH_LIKE_CASES:
                             if (switchType == SWITCH_WALL && wallNum == wallOrSprite)
@@ -1443,7 +1443,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
 
     basePicnum = G_GetBaseSwitch(nSwitchPicnum);
 
-    switch (DYNAMICTILEMAP(basePicnum))
+    switch (tileGetMapping(basePicnum))
     {
         default:
             if (CheckDoorTile(nSwitchPicnum) == 0)
@@ -1575,7 +1575,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t &vPos, int w
 
     if (pWall->overpicnum == MIRROR && pWall->pal != 4)
     {
-        switch (DYNAMICTILEMAP(weaponNum))
+        switch (tileGetMapping(weaponNum))
         {
             case RADIUSEXPLOSION__:
             case SEENINE__:
@@ -1605,7 +1605,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t &vPos, int w
     {
         int const switchPic = G_GetForcefieldPicnum(wallNum);
 
-        switch (DYNAMICTILEMAP(switchPic))
+        switch (tileGetMapping(switchPic))
         {
             case FANSPRITE__:
                 pWall->overpicnum = FANSPRITEBROKE;
@@ -1686,7 +1686,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t &vPos, int w
         }
     }
 
-    switch (DYNAMICTILEMAP(pWall->picnum))
+    switch (tileGetMapping(pWall->picnum))
     {
         case COLAMACHINE__:
         case VENDMACHINE__:
@@ -1898,7 +1898,7 @@ void Sect_DamageCeiling_Internal(int const spriteNum, int const sectNum)
     }
 
 #ifndef EDUKE32_STANDALONE
-    switch (DYNAMICTILEMAP(*pPicnum))
+    switch (tileGetMapping(*pPicnum))
     {
         case WALLLIGHT1__: *pPicnum = WALLLIGHTBUST1; goto GLASSBREAK_CODE;
         case WALLLIGHT2__: *pPicnum = WALLLIGHTBUST2; goto GLASSBREAK_CODE;
@@ -1969,7 +1969,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
         if (SpriteProjectile[dmgSrc].workslike & PROJECTILE_RPG)
             radiusDamage = 1;
 
-    switch (DYNAMICTILEMAP(PN(spriteNum)))
+    switch (tileGetMapping(PN(spriteNum)))
     {
     case GRATE1__:
         PN(spriteNum) = BGRATE1;
@@ -2033,7 +2033,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
     case CONE__:
     case BOX__:
     {
-        switch (DYNAMICTILEMAP(sprite[dmgSrc].picnum))
+        switch (tileGetMapping(sprite[dmgSrc].picnum))
         {
         case FLAMETHROWERFLAME__:
         case FIREBALL__:
@@ -2061,7 +2061,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
 
     case CACTUS__:
     {
-        switch (DYNAMICTILEMAP(sprite[dmgSrc].picnum))
+        switch (tileGetMapping(sprite[dmgSrc].picnum))
         {
         case RADIUSEXPLOSION__:
         case RPG__:
@@ -2266,7 +2266,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
     case PIPE5__:
     case PIPE6__:
     {
-        switch (DYNAMICTILEMAP(PN(spriteNum)))
+        switch (tileGetMapping(PN(spriteNum)))
         {
         case PIPE1__:
             PN(spriteNum)=PIPE1B;
@@ -2479,7 +2479,7 @@ void A_DamageObject_Generic(int spriteNum, int const dmgSrc)
 
     spriteNum &= (MAXSPRITES-1);
 
-    switch (DYNAMICTILEMAP(PN(spriteNum)))
+    switch (tileGetMapping(PN(spriteNum)))
     {
     case GRATE1__:
         PN(spriteNum) = BGRATE1;
@@ -3365,7 +3365,7 @@ void P_CheckSectors(int playerNum)
                     &nearWall, &nearSprite, &nearDist, 1280, 3, our_neartag_blacklist);
                 if (nearSprite >= 0)
                 {
-                    switch (DYNAMICTILEMAP(sprite[nearSprite].picnum))
+                    switch (tileGetMapping(sprite[nearSprite].picnum))
                     {
                         case FEM1__:
                         case FEM2__:
@@ -3413,7 +3413,7 @@ void P_CheckSectors(int playerNum)
             if (P_ActivateSwitch(playerNum, nearSprite, 1))
                 return;
 
-            switch (DYNAMICTILEMAP(sprite[nearSprite].picnum))
+            switch (tileGetMapping(sprite[nearSprite].picnum))
             {
 #ifndef EDUKE32_STANDALONE
             case TOILET__:

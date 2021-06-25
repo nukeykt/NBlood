@@ -26,13 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "namesdyn.h"
 #include "global.h"
 
-#ifdef DYNTILEREMAP_ENABLE
-# define DVPTR(x) &x
-#else
-# define DVPTR(x) NULL
-#endif
+inthashtable_t h_dynamictilemap = { nullptr, 640 };
 
-int16_t DynamicTileMap[TILEMAPSIZE];
+#ifdef DYNTILEREMAP_ENABLE
+
+#define DVPTR(x) &x
 
 struct dynitem
 {
@@ -670,7 +668,6 @@ static struct dynitem g_dynTileList[] =
     { "E32_TILE5846",        DVPTR(E32_TILE5846),        E32_TILE5846__ },
  };
 
-#ifdef DYNTILEREMAP_ENABLE
 int32_t ACCESS_ICON         = ACCESS_ICON__;
 int32_t ACCESSCARD          = ACCESSCARD__;
 int32_t ACCESSSWITCH        = ACCESSSWITCH__;
@@ -1335,13 +1332,11 @@ void freehashnames(void)
 // dynamic->static tile mapping.
 void G_InitDynamicTiles(void)
 {
-    Bmemset(DynamicTileMap, 0, sizeof(DynamicTileMap));
+#ifdef DYNTILEREMAP_ENABLE
+    inthash_init(&h_dynamictilemap);
 
     for (auto & i : g_dynTileList)
-#ifdef DYNTILEREMAP_ENABLE
-        DynamicTileMap[*(i.dynvalptr)] = i.staticval;
-#else
-        DynamicTileMap[i.staticval] = i.staticval;
+        tileSetMapping(*(i.dynvalptr), i.staticval);
 #endif
 
     g_blimpSpawnItems[0] = RPGSPRITE;
@@ -1373,9 +1368,4 @@ void G_InitDynamicTiles(void)
     WeaponPickupSprites[10] = HEAVYHBOMB;
     WeaponPickupSprites[11] = SHRINKERSPRITE;
     WeaponPickupSprites[12] = FLAMETHROWERSPRITE;
-
-    // ouch... the big background image takes up a fuckload of memory and takes a second to load!
-#ifdef EDUKE32_GLES
-    MENUSCREEN = LOADSCREEN = BETASCREEN;
-#endif
 }

@@ -2754,10 +2754,10 @@ DO_DEFSTATE:
                 else
                 {
                     hash_add(&h_labels,LAST_LABEL,g_labelCnt,0);
+                    if ((unsigned)g_scriptPtr[-1] < MAXTILES && g_dynamicTileMapping)
+                        G_ProcessDynamicTileMapping(LAST_LABEL, g_scriptPtr[-1]);
                     labeltype[g_labelCnt] = LABEL_DEFINE;
                     labelcode[g_labelCnt++] = g_scriptPtr[-1];
-                    if (g_scriptPtr[-1] >= 0 && g_scriptPtr[-1] < MAXTILES && g_dynamicTileMapping)
-                        G_ProcessDynamicTileMapping(label+((g_labelCnt-1)<<6),g_scriptPtr[-1]);
                 }
                 g_scriptPtr -= 2;
                 continue;

@@ -210,7 +210,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
 #ifndef EDUKE32_STANDALONE
             if (!FURY)
             {
-                switch (DYNAMICTILEMAP(pOther->picnum))
+                switch (tileGetMapping(pOther->picnum))
                 {
                     case PODFEM1__:
                     case FEM1__:
@@ -1079,7 +1079,7 @@ ACTOR_STATIC void G_MoveZombieActors(void)
 
                     if (canSeePlayer)
                     {
-                        switch (DYNAMICTILEMAP(pSprite->picnum))
+                        switch (tileGetMapping(pSprite->picnum))
                         {
 #ifndef EDUKE32_STANDALONE
                             case RUBBERCAN__:
@@ -1209,7 +1209,7 @@ int A_IncurDamage(int const spriteNum)
             pActor->owner = g_player[playerNum].ps->i;
         }
 
-        switch (DYNAMICTILEMAP(pActor->picnum))
+        switch (tileGetMapping(pActor->picnum))
         {
             case RADIUSEXPLOSION__:
             case SEENINE__:
@@ -1526,7 +1526,7 @@ ACTOR_STATIC void G_MoveFX(void)
         auto const pSprite    = &sprite[spriteNum];
         int const  nextSprite = nextspritestat[spriteNum];
 
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        switch (tileGetMapping(pSprite->picnum))
         {
         case RESPAWN__:
             if (pSprite->extra == 66)
@@ -2209,7 +2209,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 if (dmgTile < 0)
                     goto crack_default;
 
-                switch (DYNAMICTILEMAP(dmgTile))
+                switch (tileGetMapping(dmgTile))
                 {
                     case FIREEXT__:
                     case RPG__:
@@ -2420,7 +2420,7 @@ DETONATE:
                         }
                         else if (sprite[j].statnum == STAT_STANDABLE)
                         {
-                            switch (DYNAMICTILEMAP(sprite[j].picnum))
+                            switch (tileGetMapping(sprite[j].picnum))
                             {
                             case SEENINE__:
                             case OOZFILTER__:
@@ -2455,7 +2455,7 @@ DETONATE:
                     switchPic = BOLT1;
             }
 #endif
-            switch (DYNAMICTILEMAP(switchPic))
+            switch (tileGetMapping(switchPic))
             {
                 case TOUCHPLATE__:
                     if (pData[1] == 1 && (int16_t)pSprite->hitag >= 0)  // Move the sector floor
@@ -2569,7 +2569,7 @@ DETONATE:
             }
 #ifndef EDUKE32_STANDALONE
             if (!FURY)
-            switch (DYNAMICTILEMAP(switchPic))
+            switch (tileGetMapping(switchPic))
             {
                 case TRASH__:
 
@@ -3233,7 +3233,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
         }
 
         // hard coded projectiles
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        switch (tileGetMapping(pSprite->picnum))
         {
             case SHOTSPARK1__:
             {
@@ -3250,7 +3250,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
         }
 #ifndef EDUKE32_STANDALONE
         if (!FURY)
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        switch (tileGetMapping(pSprite->picnum))
         {
             case FREEZEBLAST__:
                 if (pSprite->yvel < 1 || pSprite->extra < 2 || (pSprite->xvel | pSprite->zvel) == 0)
@@ -3489,7 +3489,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                         default: break;
                     }
 
-                    switch (DYNAMICTILEMAP(pSprite->picnum))
+                    switch (tileGetMapping(pSprite->picnum))
                     {
                         case SPIT__:
                         case COOLEXPLOSION1__:
@@ -3860,7 +3860,7 @@ ACTOR_STATIC void G_MoveTransports(void)
 
 #ifndef EDUKE32_STANDALONE
                             if (!FURY)
-                            switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
+                            switch (tileGetMapping(sprite[sectSprite].picnum))
                             {
                                 case TRANSPORTERSTAR__:
                                 case TRANSPORTERBEAM__:
@@ -3875,7 +3875,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                 case LASERLINE__: goto JBOLT;
                             }
 #endif
-                            switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
+                            switch (tileGetMapping(sprite[sectSprite].picnum))
                             {
                                 case PLAYERONWATER__:
                                     if (sectLotag == ST_2_UNDERWATER)
@@ -4030,7 +4030,7 @@ ACTOR_STATIC void G_MoveActors(void)
             switchPic = GREENSLIME;
 #endif
 
-        switch (DYNAMICTILEMAP(switchPic))
+        switch (tileGetMapping(switchPic))
         {
         case OOZ__:
         case OOZ2__:
@@ -4083,7 +4083,7 @@ ACTOR_STATIC void G_MoveActors(void)
             goto next_sprite;
         }
 #ifndef EDUKE32_STANDALONE
-        switch (DYNAMICTILEMAP(switchPic))
+        switch (tileGetMapping(switchPic))
         {
         case FLAMETHROWERFLAME__:
         {
@@ -5194,7 +5194,7 @@ DETONATEB:
                     int const x      = pSprite->extra;
                     int       radius = 0;
 
-                    switch (DYNAMICTILEMAP(pSprite->picnum))
+                    switch (tileGetMapping(pSprite->picnum))
                     {
                         case HEAVYHBOMB__: radius = g_pipebombRadius; break;
                         case MORTER__: radius     = g_morterRadius; break;
@@ -5300,7 +5300,7 @@ DETONATEB:
             {
                 for (bssize_t SPRITES_OF_SECT(sectNum, j))
                 {
-                    switch (DYNAMICTILEMAP(sprite[j].picnum))
+                    switch (tileGetMapping(sprite[j].picnum))
                     {
                     case SECTOREFFECTOR__:
                         if (sprite[j].lotag == 1)
@@ -5471,7 +5471,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
         else
 #endif
         {
-            switch (DYNAMICTILEMAP(switchPic))
+            switch (tileGetMapping(switchPic))
             {
                 case APLAYER__: pSprite->cstat = 32768; goto next_sprite;
                 case FRAMEEFFECT1_13__:
@@ -5533,7 +5533,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
 
 #ifndef EDUKE32_STANDALONE
             if (!FURY)
-            switch (DYNAMICTILEMAP(switchPic))
+            switch (tileGetMapping(switchPic))
             {
                 case NEON1__:
                 case NEON2__:
@@ -7828,7 +7828,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 switch (sprite[sectSprite].statnum)
                 {
                     case STAT_MISC:
-                        switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
+                        switch (tileGetMapping(sprite[sectSprite].picnum))
                         {
                             case BLOODPOOL__:
                             case PUKE__:
@@ -8649,7 +8649,7 @@ static void A_DoLight(int spriteNum)
             if (pSprite->picnum <= 0)  // oob safety
                 break;
 
-            switch (DYNAMICTILEMAP(pSprite->picnum-1+ii))
+            switch (tileGetMapping(pSprite->picnum-1+ii))
             {
             case DIPSWITCH__:
             case DIPSWITCH2__:
@@ -8682,13 +8682,10 @@ static void A_DoLight(int spriteNum)
                     int16_t sectnum = pSprite->sectnum;
                     updatesector(pSprite->x, pSprite->y, &sectnum);
 
-                    if ((unsigned) sectnum >= MAXSECTORS || pSprite->z > sector[sectnum].floorz || pSprite->z < sector[sectnum].ceilingz)
-                        goto POOP;
-
+                    if ((unsigned) sectnum < MAXSECTORS && pSprite->z <= sector[sectnum].floorz && pSprite->z >= sector[sectnum].ceilingz)
                     G_AddGameLight(0, spriteNum, (pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1, 512-ii*128,
                         ii==0 ? (172+(200<<8)+(104<<16)) : 216+(52<<8)+(20<<16), PR_LIGHT_PRIO_LOW);
 
-                POOP:
                     pSprite->x -= d.x;
                     pSprite->y -= d.y;
                 }
@@ -8696,7 +8693,7 @@ static void A_DoLight(int spriteNum)
             }
         }
 
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        switch (tileGetMapping(pSprite->picnum))
         {
         case ATOMICHEALTH__:
             G_AddGameLight(0, spriteNum, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), LIGHTRAD2(spriteNum, pSprite), 128+(128<<8)+(255<<16),PR_LIGHT_PRIO_HIGH_GAME);
@@ -8851,7 +8848,7 @@ void A_PlayAlertSound(int spriteNum)
         if (FURY)
             return;
 
-        switch (DYNAMICTILEMAP(PN(spriteNum)))
+        switch (tileGetMapping(PN(spriteNum)))
         {
             case LIZTROOPONTOILET__:
             case LIZTROOPJUSTSIT__:
@@ -8908,7 +8905,7 @@ int A_CheckSwitchTile(int spriteNum)
     // Loop to catch both states of switches.
     for (bssize_t j=1; j>=0; j--)
     {
-        switch (DYNAMICTILEMAP(PN(spriteNum)-j))
+        switch (tileGetMapping(PN(spriteNum)-j))
         {
         case HANDPRINTSWITCH__:
         case ALIENSWITCH__:

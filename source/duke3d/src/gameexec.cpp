@@ -6242,7 +6242,7 @@ badindex:
 
             vInstruction(CON_RESPAWNHITAG):
                 insptr++;
-                switch (DYNAMICTILEMAP(vm.pSprite->picnum))
+                switch (tileGetMapping(vm.pSprite->picnum))
                 {
 #ifndef EDUKE32_STANDALONE
                     case FEM1__:
@@ -6445,7 +6445,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
 #ifndef EDUKE32_STANDALONE
         else if (!FURY && vm.pSprite->statnum == STAT_STANDABLE)
         {
-            switch (DYNAMICTILEMAP(vm.pSprite->picnum))
+            switch (tileGetMapping(vm.pSprite->picnum))
             {
                 case RUBBERCAN__:
                 case EXPLODINGBARREL__:
@@ -6735,7 +6735,7 @@ void G_RestoreMapState(void)
         if (ud.lockout)
         {
             for (native_t x=g_animWallCnt-1; x>=0; x--)
-                switch (DYNAMICTILEMAP(wall[animwall[x].wallnum].picnum))
+                switch (tileGetMapping(wall[animwall[x].wallnum].picnum))
                 {
                     case FEMPIC1__: wall[animwall[x].wallnum].picnum = BLANKSCREEN; break;
                     case FEMPIC2__:

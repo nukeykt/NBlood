@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define namesdyn_h__
 
 
-#define DYNTILEREMAP_ENABLE
+// #define DYNTILEREMAP_ENABLE
 
 
 #define SECTOREFFECTOR__      1
@@ -655,7 +655,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define TILEMAPSIZE 6144
 
-extern int16_t DynamicTileMap[TILEMAPSIZE];
+extern inthashtable_t h_dynamictilemap;
 
 void G_InitDynamicTiles(void);
 
@@ -1292,7 +1292,16 @@ extern int32_t E32_TILE5736;
 extern int32_t E32_TILE5737;
 extern int32_t E32_TILE5846;
 
-#define DYNAMICTILEMAP(Tilenum) ((unsigned)(Tilenum) >= ARRAY_SIZE(DynamicTileMap) ? (Tilenum) : DynamicTileMap[(Tilenum)])
+static FORCE_INLINE int tileGetMapping(int const tile)
+{
+    int const found = inthash_find(&h_dynamictilemap, tile);
+    return found != -1 ? found : tile;
+}
+
+static FORCE_INLINE void tileSetMapping(int const tile1, int const tile2)
+{
+    inthash_add(&h_dynamictilemap, tile1, tile2, true);
+}
 
 #else  /* if !defined DYNTILEREMAP_ENABLE */
 
@@ -1306,7 +1315,7 @@ extern int32_t E32_TILE5846;
 #undef CANNON
 #undef CANNONBALLS
 
-#define DYNAMICTILEMAP(Tilenum) (Tilenum)
+#define tileGetMapping(Tilenum) (Tilenum)
 
 #endif
 #endif // namesdyn_h__

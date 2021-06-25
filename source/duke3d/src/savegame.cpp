@@ -2393,7 +2393,7 @@ static void postloadplayer(int32_t savegamep)
         if (ud.lockout)
         {
             for (i=0; i<g_animWallCnt; i++)
-                switch (DYNAMICTILEMAP(wall[animwall[i].wallnum].picnum))
+                switch (tileGetMapping(wall[animwall[i].wallnum].picnum))
                 {
                 case FEMPIC1__:
                     wall[animwall[i].wallnum].picnum = BLANKSCREEN;

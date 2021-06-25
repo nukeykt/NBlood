@@ -266,7 +266,7 @@ void G_GameQuit(void)
 
 int32_t A_CheckInventorySprite(spritetype *s)
 {
-    switch (DYNAMICTILEMAP(s->picnum))
+    switch (tileGetMapping(s->picnum))
     {
     case FIRSTAID__:
     case STEROIDS__:
@@ -1533,7 +1533,7 @@ int A_Spawn(int spriteNum, int tileNum)
     else if (pSprite->picnum >= SIDEBOLT1 && pSprite->picnum <= SIDEBOLT1 + 3)
         pSprite->picnum = SIDEBOLT1;
 #endif
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        switch (tileGetMapping(pSprite->picnum))
         {
         case FOF__:
             pSprite->xrepeat = pSprite->yrepeat = 0;
@@ -2022,7 +2022,7 @@ int A_Spawn(int spriteNum, int tileNum)
 
             if (pSprite->pal == 0)
             {
-                switch (DYNAMICTILEMAP(pSprite->picnum))
+                switch (tileGetMapping(pSprite->picnum))
                 {
                 case LIZTROOPONTOILET__:
                 case LIZTROOPSHOOT__:
@@ -3707,7 +3707,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
 
         Duke_ApplySpritePropertiesToTSprite(t, (uspriteptr_t)s);
 
-        switch (DYNAMICTILEMAP(s->picnum))
+        switch (tileGetMapping(s->picnum))
         {
         case SECTOREFFECTOR__:
             if (s->lotag == 40 || s->lotag == 41)
@@ -3737,7 +3737,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         auto const s = (uspriteptr_t)&sprite[i];
 
         if (t->picnum < GREENSLIME || t->picnum > GREENSLIME+7)
-            switch (DYNAMICTILEMAP(t->picnum))
+            switch (tileGetMapping(t->picnum))
             {
             case BLOODPOOL__:
             case PUKE__:
@@ -3825,7 +3825,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         auto const pSprite = (i < 0) ? (uspriteptr_t)&tsprite[j] : (uspriteptr_t)&sprite[i];
 
 #ifndef EDUKE32_STANDALONE
-        if (ud.lockout && G_CheckAdultTile(DYNAMICTILEMAP(pSprite->picnum)))
+        if (ud.lockout && G_CheckAdultTile(tileGetMapping(pSprite->picnum)))
         {
             t->xrepeat = t->yrepeat = 0;
             continue;
@@ -3871,7 +3871,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         else if ((pSprite->picnum==MONEY+1) || (pSprite->picnum==MAIL+1) || (pSprite->picnum==PAPER+1))
             switchpic--;
 
-        switch (DYNAMICTILEMAP(switchpic))
+        switch (tileGetMapping(switchpic))
         {
 #ifndef EDUKE32_STANDALONE
         case DUKELYINGDEAD__:
@@ -4380,7 +4380,7 @@ skip:
 
         bool const haveAction = scrofs_action != 0 && (unsigned)scrofs_action + ACTION_PARAM_COUNT <= (unsigned)g_scriptSize;
 
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        switch (tileGetMapping(pSprite->picnum))
         {
 #ifndef EDUKE32_STANDALONE
         case LASERLINE__:
@@ -5834,6 +5834,8 @@ static void G_Cleanup(void)
 
     hash_loop(&h_dukeanim, G_FreeHashAnim);
     hash_free(&h_dukeanim);
+
+    inthash_free(&h_dynamictilemap);
 
     Duke_CommonCleanup();
 }

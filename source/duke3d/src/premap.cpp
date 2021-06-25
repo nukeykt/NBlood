@@ -75,7 +75,7 @@ static void cacheTilesForSprite(int spriteNum)
         tloadtile(j, 1);
 
 #ifndef EDUKE32_STANDALONE
-    switch (DYNAMICTILEMAP(picnum))
+    switch (tileGetMapping(picnum))
     {
     case HYDRENT__:
         tloadtile(BROKEFIREHYDRENT,1);
@@ -1044,7 +1044,7 @@ static void G_SetupLightSwitches()
 
         for (int i = 0; i < 2; i++)
         {
-            switch (DYNAMICTILEMAP(s.picnum-1+i))
+            switch (tileGetMapping(s.picnum-1+i))
             {
                 case DIPSWITCH__:
                 case DIPSWITCH2__:
@@ -1122,7 +1122,7 @@ static void G_SetupSpecialWalls(void)
         aw.tag     = 0;
         aw.wallnum = 0;
 
-        switch (DYNAMICTILEMAP(G_GetForcefieldPicnum(i)))
+        switch (tileGetMapping(G_GetForcefieldPicnum(i)))
         {
             case FANSHADOW__:
             case FANSPRITE__:
@@ -1155,7 +1155,7 @@ static void G_SetupSpecialWalls(void)
 
         w.extra = -1;
 
-        switch (DYNAMICTILEMAP(w.picnum))
+        switch (tileGetMapping(w.picnum))
         {
 #ifndef EDUKE32_STANDALONE
             case FEMPIC1__:
@@ -1232,7 +1232,7 @@ static void G_SetupSpecialWalls(void)
 
 static void A_MaybeProcessEffector(int spriteNum)
 {
-    switch (DYNAMICTILEMAP(PN(spriteNum)))
+    switch (tileGetMapping(PN(spriteNum)))
     {
         case ACTIVATOR__:
         case ACTIVATORLOCKED__:
@@ -1294,7 +1294,7 @@ static void G_DeleteTempEffectors()
 {
     for (int nextSprite, SPRITES_OF_STAT_SAFE(STAT_DEFAULT, i, nextSprite))
     {
-        switch (DYNAMICTILEMAP(PN(i)))
+        switch (tileGetMapping(PN(i)))
         {
             case GPSPEED__:
             case CYCLER__: A_DeleteSprite(i); break;
@@ -1667,7 +1667,7 @@ static void G_ResetAllPlayers(void)
 
         if (p.cursectnum >= 0)
         {
-            switch (DYNAMICTILEMAP(sector[p.cursectnum].floorpicnum))
+            switch (tileGetMapping(sector[p.cursectnum].floorpicnum))
             {
                 case HURTRAIL__:
                 case FLOORSLIME__:
