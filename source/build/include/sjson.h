@@ -1646,7 +1646,7 @@ static bool sjson__parse_value(sjson_context* ctx, const char **sp, sjson_node *
             return false;
         
         case '"': {
-            char *str;
+            char *str = NULL;
             if (sjson__parse_string(ctx, &s, out ? &str : NULL)) {
                 if (out)
                     *out = sjson__mkstring(ctx, str);
@@ -1687,7 +1687,7 @@ static bool sjson__parse_array(sjson_context* ctx, const char **sp, sjson_node *
 {
     const char *s = *sp;
     sjson_node *ret = out ? sjson_mkarray(ctx) : NULL;
-    sjson_node *element;
+    sjson_node *element = NULL;
     
     if (*s++ != '[')
         goto failure;
@@ -1731,8 +1731,8 @@ static bool sjson__parse_object(sjson_context* ctx, const char **sp, sjson_node 
 {
     const char *s = *sp;
     sjson_node *ret = out ? sjson_mkobject(ctx) : NULL;
-    char *key;
-    sjson_node *value;
+    char *key = NULL;
+    sjson_node *value = NULL;
     
     if (*s++ != '{')
         goto failure;
