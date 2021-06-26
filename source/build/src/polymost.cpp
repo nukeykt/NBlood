@@ -51,7 +51,9 @@ float shadescale = 1.0f;
 int32_t shadescale_unbounded = 0;
 
 int32_t r_polymostDebug = 0;
+#ifdef POLYMOST2
 int32_t r_enablepolymost2 = 0;
+#endif // POLYMOST2
 int32_t r_usenewshading = 4;
 int32_t r_usetileshades = 1;
 int32_t r_npotwallmode = 2;
@@ -153,7 +155,9 @@ static GLenum currentActiveTexture = 0;
 static uint32_t currentTextureID = 0;
 
 static GLuint quadVertsID = 0;
+#ifdef POLYMOST2
 static GLuint polymost2BasicShaderProgramID = 0;
+#endif // POLYMOST2
 static GLint texSamplerLoc = -1;
 static GLint fullBrightSamplerLoc = -1;
 static GLint projMatrixLoc = -1;
@@ -624,9 +628,11 @@ void polymost_resetProgram()
 
     polymost_outputGLDebugMessage(3, "polymost_resetProgram()");
 
+#ifdef POLYMOST2
     if (r_enablepolymost2)
         polymost_useShaderProgram(polymost2BasicShaderProgramID);
     else
+#endif // POLYMOST2
         polymost_useShaderProgram(polymost1CurrentShaderProgramID);
 
     // ensure that palswapTexture and paletteTexture[curbasepal] is bound
@@ -1041,6 +1047,7 @@ void polymost_glinit()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+#ifdef POLYMOST2
     const char* const POLYMOST2_BASIC_VERTEX_SHADER_CODE =
         "#version 110\n\
          \n\
@@ -1119,6 +1126,7 @@ void polymost_glinit()
     alphaLoc = glGetUniformLocation(polymost2BasicShaderProgramID, "u_alpha");
     fogRangeLoc = glGetUniformLocation(polymost2BasicShaderProgramID, "u_fogRange");
     fogColorLoc = glGetUniformLocation(polymost2BasicShaderProgramID, "u_fogColor");
+#endif // POLYMOST2
 
     polymost1ExtendedShaderProgramID = glCreateProgram();
     GLuint polymost1BasicVertexShaderID = polymost2_compileShader(GL_VERTEX_SHADER, polymost1Vert);
@@ -1264,6 +1272,7 @@ static inline void fogcalc(int32_t shade, int32_t vis, int32_t pal)
 
 #define GL_FOG_MAX 1.0e37f
 
+#ifdef POLYMOST2
 void polymost2_calc_fog(int32_t shade, int32_t vis, int32_t pal)
 {
     if (nofog) return;
@@ -1284,6 +1293,7 @@ void polymost2_calc_fog(int32_t shade, int32_t vis, int32_t pal)
         fogresult2 = -GL_FOG_MAX; // hide fog behind the camera
     }
 }
+#endif // POLYMOST2
 
 void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal)
 {
@@ -2794,6 +2804,7 @@ int32_t polymost_spriteIsModelOrVoxel(tspritetype const * const tspr)
     return false;
 }
 
+#ifdef POLYMOST2
 static void polymost2_drawVBO(GLenum mode,
                               int32_t vertexBufferID,
                               int32_t indexBufferID,
@@ -2959,6 +2970,7 @@ static void polymost2_drawVBO(GLenum mode,
 
     //polymost_resetVertexPointers();
 }
+#endif // POLYMOST2
 
 void polymost_updatePalette()
 {
@@ -7495,6 +7507,7 @@ int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
 #define TSPR_OFFSET_FACTOR .000008f
 #define TSPR_OFFSET(tspr) ((TSPR_OFFSET_FACTOR + ((tspr->owner != -1 ? tspr->owner & 63 : 1) * TSPR_OFFSET_FACTOR)) * (float)sepdist(globalposx - tspr->x, globalposy - tspr->y, globalposz - tspr->z) * 0.025f)
 
+#ifdef POLYMOST2
 void polymost2_drawsprite(int32_t snum)
 {
     auto const tspr = tspriteptr[snum];
@@ -7878,6 +7891,7 @@ void polymost2_drawsprite(int32_t snum)
 
     tilesiz[globalpicnum] = oldsiz;
 }
+#endif // POLYMOST2
 
 void polymost_mdeditorfunc(tspriteptr_t const tspr)
 {
@@ -8051,11 +8065,13 @@ void polymost_voxeditorfunc(voxmodel_t *m, tspriteptr_t const tspr)
 
 void polymost_drawsprite(int32_t snum)
 {
+#ifdef POLYMOST2
     if (r_enablepolymost2)
     {
         polymost2_drawsprite(snum);
         return;
     }
+#endif // POLYMOST2
 
     auto const tspr = tspriteptr[snum];
 
@@ -9917,10 +9933,11 @@ void polymost_initosdfuncs(void)
 
     static osdcvardata_t cvars_polymost[] =
     {
-#if 0
+#ifdef POLYMOST2
         { "r_enablepolymost2","enable/disable polymost2",(void *) &r_enablepolymost2, CVAR_BOOL, 0, 0 }, //POGO: temporarily disable this variable
         { "r_pogoDebug","",(void *) &r_pogoDebug, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
-#endif
+#endif // POLYMOST2
+
         { "r_texfilter", "changes the texture filtering settings (requires r_useindexedcolortextures to be off, may require restartvid)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
         { "r_polymostDebug","Set the verbosity of Polymost GL debug messages",(void *) &r_polymostDebug, CVAR_INT, 0, 3 },
 #ifdef USE_GLEXT
