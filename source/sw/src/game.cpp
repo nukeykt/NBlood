@@ -1781,6 +1781,7 @@ void PlayTheme()
     // start music at logo
     strcpy(LevelSong,"theme.mid");
     PlaySong(LevelSong, RedBookSong[0], TRUE, TRUE);
+    SetSongVolume(gs.MusicVolume);
 
     DSPRINTF(ds,"After music stuff...");
     MONO_PRINT(ds);
