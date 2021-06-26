@@ -31,7 +31,8 @@ static float xbl, xbr, xbt, xbb;
 int32_t domost_rejectcount;
 #ifdef YAX_ENABLE
 typedef struct { float x, cy[2]; int32_t tag; int16_t n, p, ctag; } yax_vsptyp;
-static yax_vsptyp yax_vsp[YAX_MAXBUNCHES*2][VSPMAX];
+static int numyaxbunchesallocated;
+static yax_vsptyp *yax_vsp[YAX_MAXBUNCHES*2];
 typedef struct { float x0, x1, cy[2], fy[2]; } yax_hole_t;
 static yax_hole_t yax_holecf[2][VSPMAX];
 static int32_t yax_holencf[2];
@@ -6756,6 +6757,19 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
 
     gtag = vcnt;
     viewportNodeCount = vcnt;
+
+#ifdef YAX_ENABLE
+    // shit like this would be a good use for a frame memory allocator...
+    // each one of these things is like 50k memory...
+    if (numyaxbunchesallocated != numyaxbunches*2+1)
+    {
+        while (numyaxbunchesallocated < numyaxbunches*2+1)
+            yax_vsp[numyaxbunchesallocated++] = (yax_vsptyp *)Xcalloc(1, sizeof(yax_vsptyp) * VSPMAX);
+
+        while (numyaxbunchesallocated > numyaxbunches*2+1)
+            DO_FREE_AND_NULL(yax_vsp[--numyaxbunchesallocated]);
+    }
+#endif
 }
 
 void polymost_drawrooms()
