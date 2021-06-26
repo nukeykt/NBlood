@@ -414,14 +414,19 @@ static void _internal_onshowosd(int a)
     UNREFERENCED_PARAMETER(a);
 }
 
-static void osd_clear(int clearstrings = false)
+static void osd_clear(int clearstrings = true)
 {
     Bmemset(osd->text.buf, asc_Space, OSDBUFFERSIZE);
     Bmemset(osd->text.fmt, osd->draw.textpal + (osd->draw.textshade << 5), OSDBUFFERSIZE);
     osd->text.lines = 1;
 
     if (clearstrings)
+    {
+        for (auto s : osdstrings)
+            Xfree(s);
+
         osdstrings.clear();
+    }
 }
 
 ////////////////////////////
@@ -645,7 +650,9 @@ void OSD_Cleanup(void)
     MAYBE_FCLOSE_AND_NULL(osdlog);
 
     for (auto s : osdstrings)
-        DO_FREE_AND_NULL(s);
+        Xfree(s);
+
+    osdstrings.clear();
 
     DO_FREE_AND_NULL(osd);
 }
