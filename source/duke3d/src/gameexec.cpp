@@ -1750,7 +1750,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (aGameVars[insptr[-1]].global != *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -1762,7 +1762,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (aGameVars[insptr[-1]].global < *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -1775,7 +1775,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v != *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -1789,7 +1789,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v < *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -1803,7 +1803,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v != *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -1817,7 +1817,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v < *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -2162,7 +2162,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     branch((tw = (Gv_GetVar(insptr[-1]) != *insptr)));
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -2176,7 +2176,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     tw = (tw != Gv_GetVar(*insptr++));
                     insptr--;
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -2187,7 +2187,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     branch((tw = (Gv_GetVar(insptr[-1]) < *insptr)));
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -2201,7 +2201,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     tw = (tw < Gv_GetVar(*insptr++));
                     insptr--;
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
