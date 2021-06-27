@@ -116,7 +116,7 @@ static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_
 
 static FORCE_INLINE int polymost_usetileshades(void)
 {
-    return r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES);
+    return r_useindexedcolortextures && r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES);
 }
 
 static inline float getshadefactor(int32_t const shade)
