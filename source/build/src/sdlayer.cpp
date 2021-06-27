@@ -2035,7 +2035,7 @@ int32_t videoSetGamma(void)
 
     for (i = 0; i < 256; i++)
     {
-        float val = i * contrast - (contrast - 1.f) * 127.f;
+        float val = max(0.f, i * contrast - (contrast - 1.f) * 127.f);
         if (gamma != 1.f)
             val = powf(val, invgamma) / norm;
 
