@@ -319,7 +319,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\hash.cpp" />
     <ClCompile Include="..\..\source\build\src\hightile.cpp" />
-    <ClCompile Include="..\..\source\build\src\jwzgles.c" />
     <ClCompile Include="..\..\source\build\src\klzw.cpp" />
     <ClCompile Include="..\..\source\build\src\kplib.cpp" />
     <ClCompile Include="..\..\source\build\src\lz4.c" />
@@ -440,8 +439,6 @@
     <ClInclude Include="..\..\source\build\include\gtkbits.h" />
     <ClInclude Include="..\..\source\build\include\hash.h" />
     <ClInclude Include="..\..\source\build\include\hightile.h" />
-    <ClInclude Include="..\..\source\build\include\jwzgles.h" />
-    <ClInclude Include="..\..\source\build\include\jwzglesI.h" />
     <ClInclude Include="..\..\source\build\include\klzw.h" />
     <ClInclude Include="..\..\source\build\include\kplib.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
