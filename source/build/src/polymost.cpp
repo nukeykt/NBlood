@@ -349,7 +349,7 @@ static void bind_2d_texture(GLuint texture, int filter)
     if (filter == -1)
         filter = gltexfiltermode;
 
-    glBindTexture(GL_TEXTURE_2D, texture);
+    polymost_bindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfiltermodes[filter].mag);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfiltermodes[filter].min);
 #ifdef USE_GLEXT
@@ -636,11 +636,11 @@ void polymost_resetProgram()
         polymost_useShaderProgram(polymost1CurrentShaderProgramID);
 
     // ensure that palswapTexture and paletteTexture[curbasepal] is bound
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, palswapTextureID);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
-    glActiveTexture(GL_TEXTURE0);
+    polymost_activeTexture(GL_TEXTURE1);
+    polymost_bindTexture(GL_TEXTURE_2D, palswapTextureID);
+    polymost_activeTexture(GL_TEXTURE2);
+    polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
+    polymost_activeTexture(GL_TEXTURE0);
 }
 
 static void polymost_setCurrentShaderProgram(uint32_t programID)
@@ -876,10 +876,11 @@ void polymost_shadeInterpolate(int32_t shadeInterpolate)
     }
 }
 
+//POGOTODO: these wrappers won't be needed down the line -- remove them once proper draw call organization is finished
 void polymost_activeTexture(GLenum texture)
 {
     currentActiveTexture = texture;
-    glad_glActiveTexture(texture);
+    glActiveTexture(texture);
 }
 
 //POGOTODO: replace this and polymost_activeTexture with proper draw call organization
@@ -890,7 +891,7 @@ void polymost_bindTexture(GLenum target, uint32_t textureID)
         currentActiveTexture != GL_TEXTURE0 ||
         videoGetRenderMode() != REND_POLYMOST)
     {
-        glad_glBindTexture(target, textureID);
+        glBindTexture(target, textureID);
         if (currentActiveTexture == GL_TEXTURE0)
         {
             currentTextureID = textureID;
@@ -924,7 +925,7 @@ static void polymost_bindPth(pthtyp const * const pPth)
     }
     polymost_setTexturePosSize(texturePosSize);
     polymost_setHalfTexelSize(halfTexelSize);
-    glBindTexture(GL_TEXTURE_2D, pPth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pPth->glpic);
 }
 
 void polymost_useShaderProgram(uint32_t shaderID)
@@ -1018,7 +1019,7 @@ void polymost_glinit()
     for (int i = 0; i < numTilesheets; ++i)
     {
         glGenTextures(1, tilesheetTexIDs+i);
-        glBindTexture(GL_TEXTURE_2D, tilesheetTexIDs[i]);
+        polymost_bindTexture(GL_TEXTURE_2D, tilesheetTexIDs[i]);
         uploadtextureindexed(true, {0, 0}, maxTexDimensions, (intptr_t) NULL);
     }
 
@@ -1026,7 +1027,7 @@ void polymost_glinit()
                              255, 255};
     Tile blankTile;
     tilepacker_getTile(0, &blankTile);
-    glBindTexture(GL_TEXTURE_2D, tilesheetTexIDs[blankTile.tilesheetID]);
+    polymost_bindTexture(GL_TEXTURE_2D, tilesheetTexIDs[blankTile.tilesheetID]);
     uploadtextureindexed(false, {(int32_t) blankTile.rect.u, (int32_t) blankTile.rect.v}, {2, 2}, (intptr_t) blankTex);
 
     quadVertsID = ids[1];
@@ -1634,7 +1635,7 @@ static void Polymost_DetermineTextureFormatSupport(void)
     GLuint tex = 0;
 
     glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    polymost_bindTexture(GL_TEXTURE_2D, tex);
 
     BuildGLErrorCheck(); // XXX: Clear errors.
 
@@ -1902,7 +1903,7 @@ void uploadbasepalette(int32_t basepalnum)
     {
         glGenTextures(1, &paletteTextureIDs[basepalnum]);
     }
-    glBindTexture(GL_TEXTURE_2D, paletteTextureIDs[basepalnum]);
+    polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[basepalnum]);
     if (allocateTexture)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -1937,7 +1938,7 @@ void uploadpalswap(int32_t palookupnum)
     {
         glGenTextures(1, &palswapTextureID);
     }
-    glBindTexture(GL_TEXTURE_2D, palswapTextureID);
+    polymost_bindTexture(GL_TEXTURE_2D, palswapTextureID);
     if (allocateTexture)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -2061,7 +2062,7 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
         {
             glGenTextures(1, (GLuint *)&pth->glpic);
         }
-        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
         if (doalloc)
         {
@@ -2269,7 +2270,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
         }
 
         if (doalloc) glGenTextures(1,(GLuint *)&pth->glpic); //# of textures (make OpenGL allocate structure)
-        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
         fixtransparency(pic,tsiz,siz,dameth);
 
@@ -2609,7 +2610,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
         if ((doalloc&3)==1)
             glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
-        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
         fixtransparency(pic,tsiz,siz,dameth);
 
@@ -2710,9 +2711,9 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 #ifdef USE_GLEXT
 void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
 {
-    glActiveTexture(texunits);
+    polymost_activeTexture(texunits);
 
-    glBindTexture(GL_TEXTURE_2D, tex);
+    polymost_bindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2723,9 +2724,9 @@ void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
 
 void polymost_setupglowtexture(const int32_t texunits, const int32_t tex)
 {
-    glActiveTexture(texunits);
+    polymost_activeTexture(texunits);
 
-    glBindTexture(GL_TEXTURE_2D, tex);
+    polymost_bindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2873,13 +2874,13 @@ static void polymost2_drawVBO(GLenum mode,
         return;
     }
 
-    glActiveTexture(GL_TEXTURE1);
+    polymost_activeTexture(GL_TEXTURE1);
     //POGO: temporarily swapped out blankTextureID for 0 (as the blank texture has been moved into the dynamic tilesheets)
-    glBindTexture(GL_TEXTURE_2D, (pth && pth->flags & PTH_HASFULLBRIGHT && r_fullbrights) ? pth->ofb->glpic : 0);
+    polymost_bindTexture(GL_TEXTURE_2D, (pth && pth->flags & PTH_HASFULLBRIGHT && r_fullbrights) ? pth->ofb->glpic : 0);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
-    glActiveTexture(GL_TEXTURE0);
+    polymost_activeTexture(GL_TEXTURE0);
     polymost_bindPth(pth);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -2983,10 +2984,10 @@ void polymost_updatePalette()
     //POGO: only bind the base pal once when it's swapped
     if (curbasepal != lastbasepal)
     {
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
+        polymost_activeTexture(GL_TEXTURE2);
+        polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
         lastbasepal = curbasepal;
-        glActiveTexture(GL_TEXTURE0);
+        polymost_activeTexture(GL_TEXTURE0);
     }
 }
 
@@ -3313,7 +3314,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
                 glScalef(detailpth->hicr->scale.x, detailpth->hicr->scale.y, 1.0f);
 
             glMatrixMode(GL_MODELVIEW);
-            glActiveTexture(GL_TEXTURE0);
+            polymost_activeTexture(GL_TEXTURE0);
         }
     }
 
@@ -3328,7 +3329,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         {
             polymost_useGlowMapping(true);
             polymost_setupglowtexture(videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE4 : ++texunits, glowpth->glpic);
-            glActiveTexture(GL_TEXTURE0);
+            polymost_activeTexture(GL_TEXTURE0);
         }
     }
 
@@ -3619,7 +3620,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     {
         while (texunits > GL_TEXTURE0)
         {
-            glActiveTexture(texunits);
+            polymost_activeTexture(texunits);
             glMatrixMode(GL_TEXTURE);
             glLoadIdentity();
             glMatrixMode(GL_MODELVIEW);
@@ -9698,7 +9699,7 @@ static int32_t gen_font_glyph_tex(void)
         }
     }
 
-    glBindTexture(GL_TEXTURE_2D, polymosttext);
+    polymost_bindTexture(GL_TEXTURE_2D, polymosttext);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,256,128,0,GL_RGBA,GL_UNSIGNED_BYTE,(GLvoid *)tbuf);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
@@ -9726,7 +9727,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
     if (videoGetRenderMode() < REND_POLYMOST || !in3dmode() || (!polymosttext && gen_font_glyph_tex() < 0))
         return -1;
 
-    glBindTexture(GL_TEXTURE_2D, polymosttext);
+    polymost_bindTexture(GL_TEXTURE_2D, polymosttext);
     polymost_setTexturePosSize({0, 0, 1, 1});
 
     polymost_usePaletteIndexing(false);

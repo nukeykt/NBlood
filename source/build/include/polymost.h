@@ -73,12 +73,6 @@ void polymost_useShaderProgram(uint32_t shaderID);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
-//POGOTODO: these wrappers won't be needed down the line -- remove them once proper draw call organization is finished
-#undef glActiveTexture
-#undef glBindTexture
-#define glActiveTexture polymost_activeTexture
-#define glBindTexture polymost_bindTexture
-
 void polymost_glinit(void);
 void polymost_glreset(void);
 

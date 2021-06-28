@@ -820,7 +820,7 @@ int32_t             polymer_init(void)
             if (prhighpalookups[i][j].data)
             {
                 glGenTextures(1, &prhighpalookups[i][j].map);
-                glBindTexture(GL_TEXTURE_3D, prhighpalookups[i][j].map);
+                polymost_bindTexture(GL_TEXTURE_3D, prhighpalookups[i][j].map);
                 glTexImage3D(GL_TEXTURE_3D,                // target
                               0,                            // mip level
                               GL_RGBA,                      // internalFormat
@@ -836,7 +836,7 @@ int32_t             polymer_init(void)
                 glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
                 glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
                 glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-                glBindTexture(GL_TEXTURE_3D, 0);
+                polymost_bindTexture(GL_TEXTURE_3D, 0);
             }
             j++;
         }
@@ -4263,7 +4263,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         const int8_t tileofs = j&numskytilesm1;
 
         glColor4f(glcolors[tileofs][0], glcolors[tileofs][1], glcolors[tileofs][2], 1.0f);
-        glBindTexture(GL_TEXTURE_2D, glpics[tileofs]);
+        polymost_bindTexture(GL_TEXTURE_2D, glpics[tileofs]);
 
         glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &oldswrap);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
@@ -4349,7 +4349,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
 
         glColor4f(color[0], color[1], color[2], 1.0);
         glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
+        polymost_bindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
         if (pr_vbos > 0)
         {
             glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(4 * 5 * i * sizeof(GLfloat)));
@@ -4904,7 +4904,7 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
         }
 
         glGenTextures(1, &prartmaps[tilenum]);
-        glBindTexture(GL_TEXTURE_2D, prartmaps[tilenum]);
+        polymost_bindTexture(GL_TEXTURE_2D, prartmaps[tilenum]);
         glTexImage2D(GL_TEXTURE_2D,
             0,
             GL_RED,
@@ -4918,13 +4918,13 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        polymost_bindTexture(GL_TEXTURE_2D, 0);
         Xfree(tempbuffer);
     }
 
     if (!prbasepalmaps[curbasepal]) {
         glGenTextures(1, &prbasepalmaps[curbasepal]);
-        glBindTexture(GL_TEXTURE_2D, prbasepalmaps[curbasepal]);
+        polymost_bindTexture(GL_TEXTURE_2D, prbasepalmaps[curbasepal]);
         glTexImage2D(GL_TEXTURE_2D,
             0,
             GL_RGB,
@@ -4938,12 +4938,12 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        polymost_bindTexture(GL_TEXTURE_2D, 0);
     }
 
     if (!prlookups[pal]) {
         glGenTextures(1, &prlookups[pal]);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, prlookups[pal]);
+        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, prlookups[pal]);
         glTexImage2D(GL_TEXTURE_RECTANGLE_ARB,
             0,
             GL_RED,
@@ -4957,7 +4957,7 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
         glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
         glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
     }
 }
 
@@ -5244,8 +5244,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         pos[1] = fglobalposz * (-1.f/16.f);
         pos[2] = -fglobalposx;
 
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->normalmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->normalmap);
 
         if (material->mdspritespace == GL_TRUE) {
             float mdspritespacepos[3];
@@ -5286,22 +5286,22 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_ART_MAP
     if (programbits & prprogrambits[PR_BIT_ART_MAP].bit)
     {
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->artmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->artmap);
 
         glUniform1i(prprograms[programbits].uniform_artMap, texunit);
 
         texunit++;
 
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->basepalmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->basepalmap);
 
         glUniform1i(prprograms[programbits].uniform_basePalMap, texunit);
 
         texunit++;
 
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, material->lookupmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, material->lookupmap);
 
         glUniform1i(prprograms[programbits].uniform_lookupMap, texunit);
 
@@ -5332,8 +5332,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_DIFFUSE_MAP
     if (programbits & prprogrambits[PR_BIT_DIFFUSE_MAP].bit)
     {
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->diffusemap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->diffusemap);
 
         glUniform1i(prprograms[programbits].uniform_diffuseMap, texunit);
         glUniform2fv(prprograms[programbits].uniform_diffuseScale, 1, material->diffusescale);
@@ -5344,8 +5344,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_HIGHPALOOKUP_MAP
     if (programbits & prprogrambits[PR_BIT_HIGHPALOOKUP_MAP].bit)
     {
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_3D, material->highpalookupmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_3D, material->highpalookupmap);
 
         glUniform1i(prprograms[programbits].uniform_highPalookupMap, texunit);
 
@@ -5367,8 +5367,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
             scale[1] = material->detailscale[1];
         }
 
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->detailmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->detailmap);
 
         glUniform1i(prprograms[programbits].uniform_detailMap, texunit);
         glUniform2fv(prprograms[programbits].uniform_detailScale, 1, scale);
@@ -5388,8 +5388,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_SPECULAR_MAP
     if (programbits & prprogrambits[PR_BIT_SPECULAR_MAP].bit)
     {
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->specmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->specmap);
 
         glUniform1i(prprograms[programbits].uniform_specMap, texunit);
 
@@ -5412,8 +5412,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_MIRROR_MAP
     if (programbits & prprogrambits[PR_BIT_MIRROR_MAP].bit)
     {
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, material->mirrormap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, material->mirrormap);
 
         glUniform1i(prprograms[programbits].uniform_mirrorMap, texunit);
 
@@ -5428,8 +5428,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_GLOW_MAP
     if (programbits & prprogrambits[PR_BIT_GLOW_MAP].bit)
     {
-        glActiveTexture(texunit + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, material->glowmap);
+        polymost_activeTexture(texunit + GL_TEXTURE0);
+        polymost_bindTexture(GL_TEXTURE_2D, material->glowmap);
 
         glUniform1i(prprograms[programbits].uniform_glowMap, texunit);
 
@@ -5497,8 +5497,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
                 // PR_BIT_SHADOW_MAP
                 if (programbits & prprogrambits[PR_BIT_SHADOW_MAP].bit)
                 {
-                    glActiveTexture(texunit + GL_TEXTURE0);
-                    glBindTexture(prrts[prlights[lights[curlight]].rtindex].target, prrts[prlights[lights[curlight]].rtindex].z);
+                    polymost_activeTexture(texunit + GL_TEXTURE0);
+                    polymost_bindTexture(prrts[prlights[lights[curlight]].rtindex].target, prrts[prlights[lights[curlight]].rtindex].z);
 
                     glUniform1i(prprograms[programbits].uniform_shadowMap, texunit);
 
@@ -5508,8 +5508,8 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
                 // PR_BIT_LIGHT_MAP
                 if (programbits & prprogrambits[PR_BIT_LIGHT_MAP].bit)
                 {
-                    glActiveTexture(texunit + GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, prlights[lights[curlight]].lightmap);
+                    polymost_activeTexture(texunit + GL_TEXTURE0);
+                    polymost_bindTexture(GL_TEXTURE_2D, prlights[lights[curlight]].lightmap);
 
                     glUniform1i(prprograms[programbits].uniform_lightMap, texunit);
 
@@ -5544,7 +5544,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &range[1]);
     }
 
-    glActiveTexture(GL_TEXTURE0);
+    polymost_activeTexture(GL_TEXTURE0);
 
     return programbits;
 }
@@ -6296,7 +6296,7 @@ static void         polymer_initrendertargets(int32_t count)
             prrts[i].ydim = ydim;
 
             glGenTextures(1, &prrts[i].color);
-            glBindTexture(prrts[i].target, prrts[i].color);
+            polymost_bindTexture(prrts[i].target, prrts[i].color);
 
             glTexImage2D(prrts[i].target, 0, GL_RGB, prrts[i].xdim, prrts[i].ydim, 0, GL_RGB, GL_SHORT, NULL);
             glTexParameteri(prrts[i].target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -6311,7 +6311,7 @@ static void         polymer_initrendertargets(int32_t count)
 
             if (pr_ati_fboworkaround) {
                 glGenTextures(1, &prrts[i].color);
-                glBindTexture(prrts[i].target, prrts[i].color);
+                polymost_bindTexture(prrts[i].target, prrts[i].color);
 
                 glTexImage2D(prrts[i].target, 0, GL_RGB, prrts[i].xdim, prrts[i].ydim, 0, GL_RGB, GL_SHORT, NULL);
                 glTexParameteri(prrts[i].target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -6322,7 +6322,7 @@ static void         polymer_initrendertargets(int32_t count)
         }
 
         glGenTextures(1, &prrts[i].z);
-        glBindTexture(prrts[i].target, prrts[i].z);
+        polymost_bindTexture(prrts[i].target, prrts[i].z);
 
         glTexImage2D(prrts[i].target, 0, GL_DEPTH_COMPONENT, prrts[i].xdim, prrts[i].ydim, 0, GL_DEPTH_COMPONENT, GL_SHORT, NULL);
         glTexParameteri(prrts[i].target, GL_TEXTURE_MIN_FILTER, pr_shadowfiltering ? GL_LINEAR : GL_NEAREST);
@@ -6350,7 +6350,7 @@ static void         polymer_initrendertargets(int32_t count)
             OSD_Printf("PR : FBO #%d initialization failed.\n", i);
         }
 
-        glBindTexture(prrts[i].target, 0);
+        polymost_bindTexture(prrts[i].target, 0);
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
         i++;
