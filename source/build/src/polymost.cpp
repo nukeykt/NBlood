@@ -641,6 +641,7 @@ void polymost_resetProgram()
     polymost_activeTexture(GL_TEXTURE2);
     polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
     polymost_activeTexture(GL_TEXTURE0);
+    currentTextureID = 0;
 }
 
 static void polymost_setCurrentShaderProgram(uint32_t programID)

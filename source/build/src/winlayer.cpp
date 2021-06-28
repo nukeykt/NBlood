@@ -1808,6 +1808,9 @@ void videoShowFrame(int32_t w)
             fullscreen_tint_gl(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
 
         SwapBuffers(hDC);
+#ifdef USE_OPENGL
+        polymost_resetVertexPointers();
+#endif
         return;
     }
 #endif

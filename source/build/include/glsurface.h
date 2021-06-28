@@ -36,4 +36,7 @@ vec2_t glsurface_getBufferResolution();
 // If the surface is not initialized, the function returns immediately.
 void glsurface_blitBuffer();
 
+// Rebind texture
+void glsurface_refresh();
+
 #endif /* GLSURFACE_H_ */

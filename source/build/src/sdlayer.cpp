@@ -1957,6 +1957,12 @@ void videoShowFrame(int32_t w)
 
         MicroProfileFlip();
 
+        // attached overlays and streaming hooks tend to change the GL state without setting it back
+        if (bpp > 8)
+            polymost_resetVertexPointers();
+        else
+            glsurface_refresh();
+
         return;
     }
 #endif
