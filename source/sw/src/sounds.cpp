@@ -514,7 +514,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                     if (LoadSong(waveformtrack))
                     {
                         SongVoice = FX_Play(SongPtr, SongLength, loop ? FX_LOOP : FX_ONESHOT, 0, 0,
-                                                      255, 255, 255, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
+                                                gs.MusicVolume, gs.MusicVolume, gs.MusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
                         if (SongVoice > FX_Ok)
                         {
                             SongType = SongTypeWave;
@@ -552,7 +552,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
     else
     {
         SongVoice = FX_Play(SongPtr, SongLength, loop ? FX_LOOP : FX_ONESHOT, 0, 0,
-                                      255, 255, 255, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
+                                gs.MusicVolume, gs.MusicVolume, gs.MusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
         if (SongVoice > FX_Ok)
         {
             SongType = SongTypeWave;
