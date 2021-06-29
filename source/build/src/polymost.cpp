@@ -157,7 +157,6 @@ static uint32_t currentTextureID = 0;
 static GLuint quadVertsID = 0;
 #ifdef POLYMOST2
 static GLuint polymost2BasicShaderProgramID = 0;
-#endif // POLYMOST2
 static GLint texSamplerLoc = -1;
 static GLint fullBrightSamplerLoc = -1;
 static GLint projMatrixLoc = -1;
@@ -168,6 +167,7 @@ static GLint tintLoc = -1;
 static GLint alphaLoc = -1;
 static GLint fogRangeLoc = -1;
 static GLint fogColorLoc = -1;
+#endif // POLYMOST2
 
 #define PALSWAP_TEXTURE_SIZE 2048
 int32_t r_useindexedcolortextures = 1;
@@ -453,6 +453,7 @@ float* multiplyMatrix4f(float m0[4*4], const float m1[4*4])
 #undef multMatrix4RowCol
 }
 
+#ifdef POLYMOST2
 static void calcmat(vec3f_t a0, const vec2f_t *offset, float f, float mat[16], int16_t angle)
 {
     float g;
@@ -479,6 +480,7 @@ static void calcmat(vec3f_t a0, const vec2f_t *offset, float f, float mat[16], i
     mat[13] = (mat[13] + a0.y*mat[1]) + (a0.z*mat[5] + a0.x*mat[ 9]);
     mat[14] = (mat[14] + a0.y*mat[2]) + (a0.z*mat[6] + a0.x*mat[10]);
 }
+#endif // POLYMOST2
 
 static GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int * pLength = nullptr)
 {
