@@ -3069,6 +3069,20 @@ void InitPlayerGameSettings(void)
         RESET(Player[myconnectindex].Flags, PF_MOUSE_AIMING_ON);
 }
 
+void PlayLevelSong(void)
+{
+    int track;
+    if (Level == 0)
+    {
+        track = RedBookSong[4 + RANDOM_RANGE(10)];
+    }
+    else
+    {
+        track = RedBookSong[Level];
+    }
+
+    PlaySong(LevelSong, track, TRUE, TRUE);
+}
 
 void InitRunLevel(void)
 {
@@ -3084,7 +3098,7 @@ void InitRunLevel(void)
         if (gs.Ambient)
             StartAmbientSound();
         SetCrosshair();
-        PlaySong(LevelSong, -1, TRUE, TRUE);
+        PlayLevelSong();
         SetRedrawScreen(Player + myconnectindex);
         // crappy little hack to prevent play clock from being overwritten
         // for load games
@@ -3120,18 +3134,7 @@ void InitRunLevel(void)
     // Initialize Game part of network code (When ready2send != 0)
     InitNetVars();
 
-    {
-        int track;
-        if (Level == 0)
-        {
-            track = RedBookSong[4+RANDOM_RANGE(10)];
-        }
-        else
-        {
-            track = RedBookSong[Level];
-        }
-        PlaySong(LevelSong, track, TRUE, TRUE);
-    }
+    PlayLevelSong();
 
     InitPrediction(&Player[myconnectindex]);
 
