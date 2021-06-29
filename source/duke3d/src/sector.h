@@ -126,7 +126,7 @@ int CheckDoorTile(int tileNum);
 void G_AnimateCamSprite(int smoothRatio);
 void G_AnimateWalls(void);
 int G_ActivateWarpElevators(int s,int warpDir);
-int G_CheckActivatorMotion(int lotag, bool checkMasterSwitches = false);
+int G_CheckActivatorMotion(int lotag);
 void G_DoSectorAnimations(void);
 void G_OperateActivators(int lotag, int playerNum);
 void G_OperateForceFields(int spriteNum,int wallTag);

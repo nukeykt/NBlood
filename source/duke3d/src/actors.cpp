@@ -2504,7 +2504,7 @@ DETONATE:
 
                         if (p >= 0 && (g_player[p].ps->on_ground || pSprite->ang == 512))
                         {
-                            if (pData[0] == 0 && !G_CheckActivatorMotion(pSprite->lotag, true))
+                            if (pData[0] == 0 && !G_CheckActivatorMotion(pSprite->lotag))
                             {
                                 pData[0] = 1;
                                 pData[1] = 1;
