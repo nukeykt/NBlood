@@ -387,7 +387,7 @@ int32_t Anim_Play(const char *fn)
             // this and showframe() instead of nextpage() are so that
             // nobody tramples on our carefully set up GL state!
             palfadedelta = 0;
-            videoShowFrame(0);
+            videoShowFrame(-1);
 
             //            I_ClearAllInput();
 
