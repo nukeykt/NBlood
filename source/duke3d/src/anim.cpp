@@ -310,6 +310,7 @@ int32_t Anim_Play(const char *fn)
 
         //        OSD_Printf("msecs per frame: %d\n", msecsperframe);
 
+        g_animPtr = anim;
         do
         {
             nextframetime += msecsperframe;
@@ -401,6 +402,7 @@ int32_t Anim_Play(const char *fn)
                 }
             } while (timerGetTicks() < nextframetime);
         } while (running);
+        g_animPtr = NULL;
 
         animvpx_print_stats(&codec);
 
@@ -478,6 +480,7 @@ int32_t Anim_Play(const char *fn)
     i = 1;
     int32_t frametime; frametime = 0;
 
+    g_animPtr = anim;
     do
     {
         if (i > 4 && totalclock > frametime + 60)
@@ -536,9 +539,7 @@ int32_t Anim_Play(const char *fn)
             rotatesprite_fs(160<<16, 100<<16, z, 512, TILE_ANIM, 0, 0, 2|4|8|64);
         }
 
-        g_animPtr = anim;
         i = VM_OnEventWithReturn(EVENT_CUTSCENE, g_player[screenpeek].ps->i, screenpeek, i);
-        g_animPtr = NULL;
 
         videoNextPage();
 
@@ -566,6 +567,7 @@ end_anim_restore_gl:
     gltexapplyprops();
 #endif
 end_anim:
+    g_animPtr = NULL;
     I_ClearAllInput();
     ANIM_FreeAnim();
 
