@@ -385,6 +385,15 @@ void videoShowFrame(int32_t w)
         }
 
         SDL_GL_SwapBuffers();
+
+        if (w != -1)
+        {
+            if (bpp > 8)
+                polymost_resetVertexPointers();
+            else
+                glsurface_refresh();
+        }
+
         return;
     }
 #endif
