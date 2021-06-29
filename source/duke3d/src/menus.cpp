@@ -3714,7 +3714,7 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         break;
     case MENU_JOYSTICKBTNS:
         if (M_JOYSTICKBTNS.currentEntry < joystick.numButtons + 4*joystick.numHats)
-            CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, M_JOYSTICKBTNS.currentEntry, controldevice_joystick);
+            CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, 0, controldevice_joystick);
         else if (joystick.isGameController)
             CONTROL_MapDigitalAxis(M_JOYSTICKBTNS.currentEntry - joystick.numButtons - 4*joystick.numHats + 4, newOption, 1, controldevice_joystick);
         break;
