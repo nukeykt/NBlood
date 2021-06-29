@@ -358,49 +358,84 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
     return -1;
 }
 
-static uint16_t getlzsum(uspriteptr_t pSprite)
+static struct
 {
-    uint16_t lzsum = getcrc16((char const *)pSprite, 16);
-    updatecrc16(lzsum, pSprite->clipdist & 255);
-    updatecrc16(lzsum, pSprite->xvel & 255);
-    updatecrc16(lzsum, pSprite->zvel & 255);
-    updatecrc16(lzsum, sector[pSprite->sectnum].floorz & 255);
-    updatecrc16(lzsum, sector[pSprite->sectnum].ceilingz & 255);
-    updatecrc16(lzsum, sector[pSprite->sectnum].lotag & 255);
-    return lzsum;
+    int16_t hi, lo;
+} zhit[MAXSPRITES];
+
+static inline uint16_t getspritezsum(int const spriteNum) { return getcrc16((char const *)&sprite[spriteNum], sizeof(spritetype)); }
+static inline uint16_t getsectorzsum(int const sectNum) { return getcrc16((char const *)&sector[sectNum], sizeof(sectortype)); }
+
+static uint16_t VM_GetZSum(int const spriteNum)
+{
+    auto const pSprite = &sprite[spriteNum];
+    auto const pz      = &zhit[spriteNum];
+    uint16_t   zsum    = getspritezsum(spriteNum) ^ getsectorzsum(pSprite->sectnum);
+    int const  hiZspr  = pz->hi & (MAXSPRITES-1);
+
+    if ((pz->hi & 49152) == 49152)
+    {
+        auto const phiZspr = &sprite[hiZspr];
+
+        zsum ^= getspritezsum(hiZspr);
+
+        if (phiZspr->sectnum != pSprite->sectnum)
+            zsum ^= getsectorzsum(phiZspr->sectnum);
+    }
+
+    if ((pz->lo & 49152) == 49152)
+    {
+        int const  loZspr  = pz->lo&(MAXSPRITES-1);
+        auto const ploZspr = &sprite[loZspr];
+
+        zsum ^= getspritezsum(loZspr);
+
+        if (ploZspr->sectnum != pSprite->sectnum && ((pz->hi & 49152) != 49152 || ploZspr->sectnum != sprite[hiZspr].sectnum))
+            zsum ^= getsectorzsum(ploZspr->sectnum);
+    }
+
+    return zsum;
 }
 
 void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const florhit, int const wallDist)
 {
     auto const pSprite = &sprite[spriteNum];
-    uint16_t   lzsum   = getlzsum((uspriteptr_t)pSprite);
+    auto const pActor  = &actor[spriteNum];
+    auto const pz     = &zhit[spriteNum];
+    uint16_t   zsum   = VM_GetZSum(spriteNum);
 
-    if (actor[spriteNum].lzsum == lzsum)
+    if (pActor->lzsum == zsum)
+    {
+        *florhit = pz->lo;
+        *ceilhit = pz->hi;
         return;
+    }
 
     int const ocstat = pSprite->cstat;
 
     pSprite->cstat = 0;
     pSprite->z -= ACTOR_FLOOR_OFFSET;
 
-    getzrange(&pSprite->pos, pSprite->sectnum, &actor[spriteNum].ceilingz, ceilhit, &actor[spriteNum].floorz, florhit, wallDist, CLIPMASK0);
+    getzrange(&pSprite->pos, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
 
     pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
 
-    actor[spriteNum].florhit = *florhit;
-    actor[spriteNum].lzsum = ((actor[spriteNum].florhit & 49152) == 49152) ? UINT16_MAX : lzsum;
+    pz->hi = *ceilhit;
+    pz->lo = *florhit;
+    pActor->lzsum = zsum;
 }
 
 void A_GetZLimits(int const spriteNum)
 {
     auto const pSprite = &sprite[spriteNum];
-    int32_t    ceilhit = 0, florhit = actor[spriteNum].florhit;
+    auto const pActor  = &actor[spriteNum];
     int const  clipDist = A_GetClipdist(spriteNum);
-    auto const oceilz   = actor[spriteNum].ceilingz;
+    int32_t    ceilhit = 0, florhit = 0;
+    auto const oceilz   = pActor->ceilingz;
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
-    actor[spriteNum].flags &= ~SFLAG_NOFLOORSHADOW;
+    pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
     if ((florhit&49152) == 49152 && (sprite[florhit&(MAXSPRITES-1)].cstat&48) == 0)
     {
@@ -412,14 +447,14 @@ void A_GetZLimits(int const spriteNum)
         if ((A_CheckEnemySprite(hitspr) && hitspr->pal != 1 && pSprite->statnum != STAT_PROJECTILE)
                 || (hitspr->picnum == APLAYER && A_CheckEnemySprite(pSprite)))
         {
-            actor[spriteNum].flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
+            pActor->flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
             pSprite->xvel = -256;  // SLIDE_ABOVE_ENEMY
             A_SetSprite(spriteNum, CLIPMASK0);
         }
         else if (pSprite->statnum == STAT_PROJECTILE && hitspr->picnum == APLAYER && pSprite->owner==florhit)
         {
-            actor[spriteNum].ceilingz = sector[pSprite->sectnum].ceilingz;
-            actor[spriteNum].floorz   = sector[pSprite->sectnum].floorz;
+            pActor->ceilingz = sector[pSprite->sectnum].ceilingz;
+            pActor->floorz   = sector[pSprite->sectnum].floorz;
         }
     }
 
@@ -429,12 +464,12 @@ void A_GetZLimits(int const spriteNum)
     if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0
 #ifndef EDUKE32_STANDALONE
             // exclude squish sprites as they are sometimes used as pseudo-ladders in old usermaps
-            && (FURY || (actor[spriteNum].picnum != OOZ && actor[spriteNum].picnum != OOZ2))
+            && (FURY || (pActor->picnum != OOZ && pActor->picnum != OOZ2))
 #endif
        )
     {
-        if (pSprite->z >= actor[spriteNum].floorz)
-            actor[spriteNum].ceilingz = oceilz;
+        if (pSprite->z >= pActor->floorz)
+            pActor->ceilingz = oceilz;
     }
 }
 

@@ -472,9 +472,11 @@ static int32_t A_CheckNeedZUpdate(int32_t spriteNum, int32_t zChange, int32_t *p
 
     *pZcoord = newZ;
 
-    int const clipDist = A_GetClipdist(spriteNum);
-
-    VM_GetZRange(spriteNum, ceilhit, florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
+    if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) == 0)
+    {
+        int const clipDist = A_GetClipdist(spriteNum);
+        VM_GetZRange(spriteNum, ceilhit, florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
+    }
 
     if (newZ > actor[spriteNum].ceilingz && newZ <= actor[spriteNum].floorz)
         return 1;
