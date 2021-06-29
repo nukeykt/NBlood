@@ -113,6 +113,7 @@ template<typename T> T timerGetTicks(T freq)
     return ts.tv_sec * freq + (T)((uint64_t)ts.tv_nsec * freq / (T)1000000000);
 }
 
+uint32_t timer120(void) { return timerGetTicks<uint32_t>(120); }
 uint32_t timerGetTicks(void) { return timerGetTicks<uint32_t>(1000); }
 double   timerGetHiTicks(void) { return timerGetTicks<double>(1000.0); }
 
