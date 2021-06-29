@@ -614,17 +614,18 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
 
 void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const lParm2, int32_t const newValue)
 {
-    auto &ps = *g_player[playerNum].ps;
+    auto &thisPlayer = g_player[playerNum];
+    auto &ps = *thisPlayer.ps;
 
     switch (labelNum)
     {
-        case PLAYER_HORIZ:     ps.q16horiz     = fix16_from_int(newValue); break;
-        case PLAYER_OHORIZ:    ps.oq16horiz    = fix16_from_int(newValue); break;
-        case PLAYER_OHORIZOFF: ps.oq16horizoff = fix16_from_int(newValue); break;
-        case PLAYER_ANG:       ps.q16ang       = fix16_from_int(newValue); break;
-        case PLAYER_OANG:      ps.oq16ang      = fix16_from_int(newValue); break;
+        case PLAYER_HORIZ:     ps.q16horiz     = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_OHORIZ:    ps.oq16horiz    = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_OHORIZOFF: ps.oq16horizoff = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_HORIZOFF:  ps.q16horizoff  = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_ANG:       ps.q16ang       = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_OANG:      ps.oq16ang      = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
         case PLAYER_ANGVEL:    ps.q16angvel    = fix16_from_int(newValue); break;
-        case PLAYER_HORIZOFF:  ps.q16horizoff  = fix16_from_int(newValue); break;
 
         case PLAYER_AMMO_AMOUNT:     ps.ammo_amount[lParm2]     = newValue; break;
         case PLAYER_MAX_AMMO_AMOUNT: ps.max_ammo_amount[lParm2] = newValue; break;
