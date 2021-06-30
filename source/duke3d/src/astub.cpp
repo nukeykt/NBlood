@@ -8010,6 +8010,13 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
     if (argc <= 1)
         return;
+    else
+    {
+        initprintf("Application parameters: ");
+        while (i < argc)
+            initprintf("%s ", argv[i++]);
+        initprintf("\n");
+    }
 
     lengths = (int32_t *)Xmalloc(argc*sizeof(int32_t));
     for (j=1; j<argc; j++)
@@ -8022,6 +8029,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
     testplay_addparam[0] = 0;
 
     j = 0;
+    i = 1;
 
     while (i < argc)
     {
