@@ -191,7 +191,7 @@ void Anim_Init(void)
         { "vol42a.anm", anmsnd(vol42a), 18 },
         { "vol43a.anm", anmsnd(vol43a), 10 },
         { "duketeam.anm", NULL, 0, 10 },
-        { "radlogo.anm", NULL, 0, 10 },
+        { "radlogo.anm", anmsnd(cineov3), 10 },
         { "cineov2.anm", anmsnd(cineov2), 18 },
         { "cineov3.anm", anmsnd(cineov3), 10 },
 #endif
