@@ -438,9 +438,12 @@ static int32_t SW_TryLoadingGrp(char const * const grpfile, internalgrpfile cons
     else
     {
         initprintf("Using \"%s\" as main game data file.\n", grpfile);
-        if (type && type->postprocessing)
-            type->postprocessing(i);
-        SW_GameFlags |= type->gameflags;
+        if (type)
+        {
+            if (type->postprocessing)
+                type->postprocessing(i);
+            SW_GameFlags |= type->gameflags;
+        }
     }
 
     return i;
