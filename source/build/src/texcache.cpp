@@ -712,7 +712,7 @@ static void texcache_setuptexture(int32_t *doalloc, GLuint *glpic)
         *doalloc |= 2;	// prevents glGenTextures being called again if we fail in here
     }
 
-    glBindTexture(GL_TEXTURE_2D, *glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, *glpic);
 }
 
 static int32_t texcache_loadmips(const texcacheheader *head, GLenum *glerr)

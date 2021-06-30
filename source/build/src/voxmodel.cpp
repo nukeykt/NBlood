@@ -53,7 +53,7 @@ uint32_t gloadtex_indexed(const int32_t *picbuf, int32_t xsiz, int32_t ysiz)
     uint32_t rtexid;
 
     glGenTextures(1, (GLuint *) &rtexid);
-    glBindTexture(GL_TEXTURE_2D, rtexid);
+    polymost_bindTexture(GL_TEXTURE_2D, rtexid);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -104,7 +104,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
     uint32_t rtexid;
 
     glGenTextures(1, (GLuint *) &rtexid);
-    glBindTexture(GL_TEXTURE_2D, rtexid);
+    polymost_bindTexture(GL_TEXTURE_2D, rtexid);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 4, xsiz, ysiz, 0, GL_RGBA, GL_UNSIGNED_BYTE, (char *) pic2);
@@ -1130,7 +1130,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         if (!m->texid8bit)
             m->texid8bit = gloadtex_indexed(m->mytex, m->mytexx, m->mytexy);
         else
-            glBindTexture(GL_TEXTURE_2D, m->texid8bit);
+            polymost_bindTexture(GL_TEXTURE_2D, m->texid8bit);
 
         int visShade = int(fabsf(((tspr->x-globalposx)*gcosang+(tspr->y-globalposy)*gsinang)*globvis2*(1.f/(64.f*1024.f*2.f))));
 
@@ -1150,7 +1150,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         if (!m->texid[globalpal])
             m->texid[globalpal] = gloadtex(m->mytex, m->mytexx, m->mytexy, m->is8bit, globalpal);
         else
-            glBindTexture(GL_TEXTURE_2D, m->texid[globalpal]);
+            polymost_bindTexture(GL_TEXTURE_2D, m->texid[globalpal]);
 
         polymost_usePaletteIndexing(false);
         polymost_setTexturePosSize({ 0.f, 0.f, 1.f, 1.f });
