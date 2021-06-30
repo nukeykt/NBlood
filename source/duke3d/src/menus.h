@@ -461,7 +461,7 @@ typedef struct MenuAnimation_t
     Menu_t *previous;
     Menu_t *current;
 
-    int32_t start;
+    uint32_t start;
     int32_t length;
 } MenuAnimation_t;
 
