@@ -32,6 +32,7 @@ extern int32_t vsync;
 extern int32_t r_finishbeforeswap;
 extern int32_t r_glfinish;
 extern int32_t r_borderless;
+extern int32_t r_windowpositioning;
 extern int32_t r_displayindex;
 
 extern void app_crashhandler(void);

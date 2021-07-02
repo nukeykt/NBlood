@@ -2852,7 +2852,7 @@ static BOOL CreateAppWindow(int32_t modenum)
     SetForegroundWindow(hWindow);
     SetFocus(hWindow);
 
-    SetWindowPos(hWindow, HWND_TOP, windowpos?windowx:x, windowpos?windowy:y, w, h, 0);
+    SetWindowPos(hWindow, HWND_TOP, r_windowpositioning && windowx != -1?windowx:x, r_windowpositioning && windowy != -1?windowy:y, w, h, 0);
 
     // fullscreen?
     if (!fs)

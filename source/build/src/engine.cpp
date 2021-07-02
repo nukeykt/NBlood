@@ -130,6 +130,7 @@ int32_t r_rotatespriteinterp = 1;
 int32_t r_fpgrouscan = 1;
 int32_t r_displayindex = 0;
 int32_t r_borderless = 2;
+int32_t r_windowpositioning = 1;
 int32_t globalflags;
 
 float g_videoGamma = DEFAULT_GAMMA;

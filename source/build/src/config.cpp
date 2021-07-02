@@ -173,7 +173,7 @@ int32_t loadsetup(const char *fn)
 //    if (readconfig(fp, "keychat", val, VL) > 0) keys[BK_MESSAGE] = Bstrtol(val, NULL, 16);
 #endif
 
-    if (readconfig(fp, "windowpositioning", val, VL) > 0) windowpos = atoi_safe(val);
+    if (readconfig(fp, "windowpositioning", val, VL) > 0) r_windowpositioning = atoi_safe(val);
     windowx = -1;
     if (readconfig(fp, "windowposx", val, VL) > 0) windowx = atoi_safe(val);
     windowy = -1;
@@ -631,7 +631,7 @@ int32_t writesetup(const char *fn)
 #else
              maxrefreshfreq,
 #endif
-             windowpos, windowx, windowy,
+             r_windowpositioning, windowx, windowy,
              vid_gamma_3d>=0?vid_gamma_3d:g_videoGamma,
              vid_brightness_3d>=0?vid_brightness_3d:g_videoBrightness,
              vid_contrast_3d>=0?vid_contrast_3d:g_videoContrast,

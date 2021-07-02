@@ -1722,8 +1722,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             to force the surface we WANT to be recreated instead of reused. */
 
 
-        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                        windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+        sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                        r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
                                         SDL_WINDOW_OPENGL | borderless);
 
         if (sdl_window)
@@ -1756,8 +1756,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #endif  // defined USE_OPENGL
     {
         // init
-        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                      windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+        sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                      r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
                                       borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
