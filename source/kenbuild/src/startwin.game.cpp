@@ -414,8 +414,8 @@ int startwin_run(void)
     EnableConfig(1);
 
     settings.fullscreen = fullscreen;
-    settings.xdim3d = xdimgame;
-    settings.ydim3d = ydimgame;
+    settings.xdim3d = xdim;
+    settings.ydim3d = ydim;
     settings.bpp3d = bppgame;
     settings.forcesetup = forcesetup;
     PopulateForm();
@@ -439,8 +439,8 @@ int startwin_run(void)
     if (done)
     {
         fullscreen = settings.fullscreen;
-        xdimgame = settings.xdim3d;
-        ydimgame = settings.ydim3d;
+        xdim = settings.xdim3d;
+        ydim = settings.ydim3d;
         bppgame = settings.bpp3d;
         forcesetup = settings.forcesetup;
     }

@@ -9882,7 +9882,7 @@ static int osdcmd_cvar_set_polymost(osdcmdptr_t parm)
 {
     int32_t r = osdcmd_cvar_set(parm);
 
-    if (xdim == 0 || ydim == 0 || bpp == 0) // video not set up yet
+    if (qsetmode == 0) // video not set up yet
     {
         if (r == OSDCMD_OK)
         {

@@ -94,7 +94,7 @@ int32_t synctics = 0, lockclock = 0;
 // so that exiting from mapster32 in 2d mode saves the correct ones
 float vid_gamma_3d=-1, vid_contrast_3d=-1, vid_brightness_3d=-1;
 
-int32_t xdim2d = 640, ydim2d = 480, xdimgame = 640, ydimgame = 480, bppgame = 8;
+int32_t bppgame = 8;
 int32_t forcesetup = 1;
 
 #ifndef GEKKO
@@ -321,8 +321,6 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     if (!in3dmode())
     {
         videoSet2dMode(newx,newy);
-        xdim2d = xdim;
-        ydim2d = ydim;
 
         videoBeginDrawing();	//{{{
         CLEARLINES2D(0, ydim16, 0);
@@ -336,8 +334,6 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     if (videoSetGameMode(newfullscreen,newx,newy,newbpp,upscalefactor))
         OSD_Printf("vidmode: Mode change failed!\n");
 
-    xdimgame = newx;
-    ydimgame = newy;
     bppgame = newbpp;
     fullscreen = newfullscreen;
 
@@ -359,14 +355,14 @@ static void M32_drawdebug(void)
         static char tstr[128];
         Bsprintf(tstr, "search... stat=%d, sector=%d, wall=%d (%d), isbottom=%d, asksave=%d",
                  searchstat, searchsector, searchwall, searchbottomwall, searchisbottom, asksave);
-        printext256(x,y,whitecol,0,tstr,xdimgame>640?0:1);
+        printext256(x,y,whitecol,0,tstr,xdim>640?0:1);
     }
 #endif
     if (m32_numdebuglines>0)
     {
         videoBeginDrawing();
         for (i=0; i<m32_numdebuglines && y<ydim-8; i++, y+=8)
-            printext256(x,y,whitecol,0,m32_debugstr[i],xdimgame>640?0:1);
+            printext256(x,y,whitecol,0,m32_debugstr[i],xdim>640?0:1);
         videoEndDrawing();
     }
     m32_numdebuglines=0;
@@ -830,11 +826,11 @@ int app_main(int argc, char const * const * argv)
         g_videoBrightness = 0.0;
 
         videoSetPalette(0,0,0);
-        if (videoSetGameMode(fullscreen, xdim2d, ydim2d, 8, upscalefactor) < 0)
+        if (videoSetGameMode(fullscreen, xdim, ydim, 8, upscalefactor) < 0)
         {
             CallExtUnInit();
             engineUnInit();
-            Bprintf("%d * %d not supported in this graphics mode\n",xdim2d,ydim2d);
+            Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
             Bexit(EXIT_SUCCESS);
         }
 
@@ -853,7 +849,7 @@ int app_main(int argc, char const * const * argv)
     }
     else
     {
-        if (videoSetGameMode(fullscreen, xdimgame, ydimgame, bppgame, upscalefactor) < 0)
+        if (videoSetGameMode(fullscreen, xdim, ydim, bppgame, upscalefactor) < 0)
         {
             CallExtUnInit();
             engineUnInit();
@@ -1078,7 +1074,7 @@ static void mainloop_move(void)
             int x = m32_2d3d.x + (angvel / 32);
             int xx = m32_2d3d.x + XSIZE_2D3D + (angvel / 32);
 
-            if (x > 4 && xx < xdim2d - 4)
+            if (x > 4 && xx < xdim - 4)
             {
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.x += (angvel / 32);
@@ -1108,7 +1104,7 @@ static void mainloop_move(void)
             int y = m32_2d3d.y - (vel / 64);
             int yy = m32_2d3d.y + YSIZE_2D3D - (vel / 64);
 
-            if (y > 4 && yy < ydim2d - STATUS2DSIZ2 - 4)
+            if (y > 4 && yy < ydim - STATUS2DSIZ2 - 4)
             {
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.y -= (vel / 64);
@@ -1721,13 +1717,13 @@ void drawsmallabel(const char *text, char col, char backcol, char border, int32_
 
     videoBeginDrawing(); //{{{
 
-    if ((unsigned)y1-1 < ydim16+0u && (unsigned) (x1-2) < xdim2d+0u && (unsigned) (x2-2) < xdim2d+0u)
+    if ((unsigned)y1-1 < ydim16+0u && (unsigned) (x1-2) < xdim+0u && (unsigned) (x2-2) < xdim+0u)
     {
         drawpixel((char *) (frameplace + ((y1-1) * bytesperline) + (x1-2)), border);
         drawpixel((char *) (frameplace + ((y1-1) * bytesperline) + (x2-2)), border);
     }
 
-    if ((unsigned) y2 < ydim16+0u && (unsigned) (x1-2) < xdim2d+0u && (unsigned) (x2-2) < xdim2d+0u)
+    if ((unsigned) y2 < ydim16+0u && (unsigned) (x1-2) < xdim+0u && (unsigned) (x2-2) < xdim+0u)
     {
         drawpixel((char *) (frameplace + ((y2) * bytesperline) + (x1-2)), border);
         drawpixel((char *) (frameplace + ((y2) * bytesperline) + (x2-2)), border);
@@ -3575,15 +3571,13 @@ void overheadeditor(void)
     ovh.splitsect = -1;
     ovh.splitstartwall = -1;
 
-    videoSet2dMode(xdim2d,ydim2d);
-    xdim2d = xdim;
-    ydim2d = ydim;
+    videoSet2dMode(xdim,ydim);
 
     osearchx = searchx;
     osearchy = searchy;
 
-    searchx = clamp(scale(searchx,xdim2d,xdimgame), 8, xdim2d-8-1);
-    searchy = clamp(scale(searchy,ydim2d-STATUS2DSIZ2,ydimgame), 8, ydim2d-STATUS2DSIZ-8-1);
+    searchx = clamp(searchx, 8, xdim-8-1);
+    searchy = clamp(searchy, 8, ydim-STATUS2DSIZ-8-1);
     oposz = pos.z;
 
     yax_updategrays(pos.z);
@@ -3902,8 +3896,8 @@ void overheadeditor(void)
                 if (!m32_is2d3dmode() && (m32_sideview || highlightcnt <= 0))
                 {
                     drawlinepat = 0x00ff00ff;
-                    editorDraw2dLine(searchx,0, searchx,ydim2d-1, editorcolors[15]);
-                    editorDraw2dLine(0,searchy, xdim2d-1,searchy, editorcolors[15]);
+                    editorDraw2dLine(searchx,0, searchx,ydim-1, editorcolors[15]);
+                    editorDraw2dLine(0,searchy, xdim-1,searchy, editorcolors[15]);
                     drawlinepat = 0xffffffff;
 
                     _printmessage16("(%d,%d)",mousxplc,mousyplc);
@@ -4062,18 +4056,18 @@ void overheadeditor(void)
             editorDraw2dLine(0,searchy, 8,searchy, editorcolors[15]);
 
             // 2d3d mode
-            if (m32_2d3dmode && m32_2d3d_resolutions_match())
+            if (m32_2d3dmode)
             {
 #ifdef USE_OPENGL
                 int bakrendmode = rendmode;
                 rendmode = REND_CLASSIC;
 #endif
 
-                if (m32_2d3d.x + XSIZE_2D3D > xdim2d - 4)
-                    m32_2d3d.x = xdim2d - 4 - XSIZE_2D3D;
+                if (m32_2d3d.x + XSIZE_2D3D > xdim - 4)
+                    m32_2d3d.x = xdim - 4 - XSIZE_2D3D;
 
-                if (m32_2d3d.y + YSIZE_2D3D > ydim2d - 4 - STATUS2DSIZ2)
-                    m32_2d3d.y = ydim2d - 4 - YSIZE_2D3D - STATUS2DSIZ2;
+                if (m32_2d3d.y + YSIZE_2D3D > ydim - 4 - STATUS2DSIZ2)
+                    m32_2d3d.y = ydim - 4 - YSIZE_2D3D - STATUS2DSIZ2;
 
                 updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
 
@@ -8411,7 +8405,7 @@ CANCEL:
 
     fixspritesectors();
 
-    if (videoSetGameMode(fullscreen,xdimgame,ydimgame,bppgame,upscalefactor) < 0)
+    if (videoSetGameMode(fullscreen,xdim,ydim,bppgame,upscalefactor) < 0)
     {
         initprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
         CallExtUnInit();
@@ -8424,8 +8418,8 @@ CANCEL:
 
     pos.z = oposz;
 
-    searchx = clamp(scale(searchx,xdimgame,xdim2d), 8, xdimgame-8-1);
-    searchy = clamp(scale(searchy,ydimgame,ydim2d-STATUS2DSIZ), 8, ydimgame-8-1);
+    searchx = clamp(searchx, 8, xdim-8-1);
+    searchy = clamp(scale(searchy,ydim,ydim-STATUS2DSIZ), 8, ydim-8-1);
 
     VM_OnEvent(EVENT_ENTER3DMODE, -1);
 }
@@ -9278,8 +9272,8 @@ static void clearministatbar16(void)
     if (xdim >= 800)
     {
         Bsnprintf(tempbuf, sizeof(tempbuf), "%s %s", AppProperName, CallExtGetVer());
-        printext16(xdim2d-(Bstrlen(tempbuf)<<3)-3, ydim2d-STATUS2DSIZ2+10, editorcolors[4],-1, tempbuf, 0);
-        printext16(xdim2d-(Bstrlen(tempbuf)<<3)-2, ydim2d-STATUS2DSIZ2+9, editorcolors[12],-1, tempbuf, 0);
+        printext16(xdim-(Bstrlen(tempbuf)<<3)-3, ydim-STATUS2DSIZ2+10, editorcolors[4],-1, tempbuf, 0);
+        printext16(xdim-(Bstrlen(tempbuf)<<3)-2, ydim-STATUS2DSIZ2+9, editorcolors[12],-1, tempbuf, 0);
     }
 
     videoEndDrawing();
@@ -9994,7 +9988,7 @@ static int32_t menuselect(void)
                 else if (keystatus[sc_PgUp]|keystatus[sc_PgDn]) // page up/down
                 {
                     seeker = currentlist?findfileshigh:finddirshigh;
-                    i = (ydim2d-STATUS2DSIZ2-48)>>5/*3*/;  //PK
+                    i = (ydim-STATUS2DSIZ2-48)>>5/*3*/;  //PK
 
                     while (i>0)
                     {

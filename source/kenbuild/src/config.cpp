@@ -27,14 +27,14 @@ static void Ken_SetDefaults()
     SDL_DisplayMode dm;
     if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
     {
-        xdimgame = xdim2d = dm.w;
-        ydimgame = ydim2d = dm.h;
+        xdim = dm.w;
+        ydim = dm.h;
     }
     else
 #endif
     {
-        xdimgame = xdim2d = 1024;
-        ydimgame = ydim2d = 768;
+        xdim = 1024;
+        ydim = 768;
     }
 }
 
@@ -137,10 +137,10 @@ int Ken_loadsetup(const char *fn)
     if (readconfig(fp, "resolution", val, VL) > 0)
     {
         i = Batoi(val) & 0x0f;
-        if ((unsigned)i<13) { xdimgame = xdim2d = vesares[i][0]; ydimgame = ydim2d = vesares[i][1]; }
+        if ((unsigned)i<13) { xdim = vesares[i][0]; ydim = vesares[i][1]; }
     }
-    if (readconfig(fp, "xdim", val, VL) > 0) xdimgame = xdim2d = Batoi(val);
-    if (readconfig(fp, "ydim", val, VL) > 0) ydimgame = xdim2d = Batoi(val);
+    if (readconfig(fp, "xdim", val, VL) > 0) xdim = Batoi(val);
+    if (readconfig(fp, "ydim", val, VL) > 0) ydim = Batoi(val);
     if (readconfig(fp, "samplerate", val, VL) > 0) option[7] = (option[7] & (~(0x0f<<4))) |(Batoi(val) & 0x0f) << 4;
     if (readconfig(fp, "music", val, VL) > 0) { if (Batoi(val) != 0) option[2] = 1; else option[2] = 0; }
     if (readconfig(fp, "mouse", val, VL) > 0) { if (Batoi(val) != 0) option[3] = 1; else option[3] = 0; }
@@ -288,7 +288,7 @@ int Ken_writesetup(const char *fn)
              "keyconsole = %X\n"
              "\n",
 
-             forcesetup, fullscreen, xdimgame, ydimgame, bppgame,
+             forcesetup, fullscreen, xdim, ydim, bppgame,
 #ifdef USE_OPENGL
              glusetexcache,
 #endif

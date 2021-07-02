@@ -116,10 +116,8 @@ int32_t loadsetup(const char *fn)
     if (readconfig(fp, "forcesetup", val, VL) > 0) forcesetup = (atoi_safe(val) != 0);
     if (readconfig(fp, "fullscreen", val, VL) > 0) fullscreen = (atoi_safe(val) != 0);
 
-    if (readconfig(fp, "xdim2d", val, VL) > 0) xdim2d = atoi_safe(val);
-    if (readconfig(fp, "ydim2d", val, VL) > 0) ydim2d = atoi_safe(val);
-    if (readconfig(fp, "xdim3d", val, VL) > 0) xdimgame = atoi_safe(val);
-    if (readconfig(fp, "ydim3d", val, VL) > 0) ydimgame = atoi_safe(val);
+    if (readconfig(fp, "xdim3d", val, VL) > 0) xdim = atoi_safe(val);
+    if (readconfig(fp, "ydim3d", val, VL) > 0) ydim = atoi_safe(val);
 
     if (readconfig(fp, "bpp", val, VL) > 0) bppgame = atoi_safe(val);
 
@@ -364,8 +362,6 @@ int32_t writesetup(const char *fn)
              "fullscreen = %d\n"
              "\n"
              "; Video resolution\n"
-             "xdim2d = %d\n"
-             "ydim2d = %d\n"
              "xdim3d = %d\n"
              "ydim3d = %d\n"
              "\n"
@@ -609,7 +605,7 @@ int32_t writesetup(const char *fn)
              "; remap = 2B-9C,52-4C\n"
              "remap = ",
 
-             forcesetup, fullscreen, xdim2d, ydim2d, xdimgame, ydimgame, bppgame,
+             forcesetup, fullscreen, xdim, ydim, bppgame,
 #ifdef USE_OPENGL
              vsync,
 #endif

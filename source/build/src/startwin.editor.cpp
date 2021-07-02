@@ -24,7 +24,6 @@
 static struct
 {
     int32_t fullscreen;
-    int32_t xdim2d, ydim2d;
     int32_t xdim3d, ydim3d, bpp3d;
     int32_t forcesetup;
 } settings;
@@ -37,15 +36,12 @@ static void PopulateForm(void)
 {
     int32_t i,j;
     char buf[64];
-    int32_t mode2d, mode3d;
-    HWND hwnd2d, hwnd3d;
+    int32_t mode3d;
+    HWND hwnd3d;
 
-    hwnd2d = GetDlgItem(pages[TAB_CONFIG], IDC2DVMODE);
     hwnd3d = GetDlgItem(pages[TAB_CONFIG], IDC3DVMODE);
 
-    mode2d = videoCheckMode(&settings.xdim2d, &settings.ydim2d, 8, settings.fullscreen, 1);
     mode3d = videoCheckMode(&settings.xdim3d, &settings.ydim3d, settings.bpp3d, settings.fullscreen, 1);
-    if (mode2d < 0) mode2d = 0;
     if (mode3d < 0)
     {
         int32_t cd[] = { 32, 24, 16, 15, 8, 0 };
@@ -62,7 +58,6 @@ static void PopulateForm(void)
     Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), (settings.fullscreen ? BST_CHECKED : BST_UNCHECKED));
     Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCALWAYSSHOW), (settings.forcesetup ? BST_CHECKED : BST_UNCHECKED));
 
-    (void)ComboBox_ResetContent(hwnd2d);
     (void)ComboBox_ResetContent(hwnd3d);
     for (i=0; i<validmodecnt; i++)
     {
@@ -73,13 +68,6 @@ static void PopulateForm(void)
         j = ComboBox_AddString(hwnd3d, buf);
         (void)ComboBox_SetItemData(hwnd3d, j, i);
         if (i == mode3d)(void)ComboBox_SetCurSel(hwnd3d, j);
-
-        // only 8-bit modes get used for 2D
-        if (validmode[i].bpp != 8 || validmode[i].xdim < 640 || validmode[i].ydim < 480) continue;
-        Bsprintf(buf, "%d x %d", validmode[i].xdim, validmode[i].ydim);
-        j = ComboBox_AddString(hwnd2d, buf);
-        (void)ComboBox_SetItemData(hwnd2d, j, i);
-        if (i == mode2d)(void)ComboBox_SetCurSel(hwnd2d, j);
     }
 }
 
@@ -93,19 +81,6 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
         case IDCFULLSCREEN:
             settings.fullscreen = !settings.fullscreen;
             PopulateForm();
-            return TRUE;
-        case IDC2DVMODE:
-            if (HIWORD(wParam) == CBN_SELCHANGE)
-            {
-                int32_t i;
-                i = ComboBox_GetCurSel((HWND)lParam);
-                if (i != CB_ERR) i = ComboBox_GetItemData((HWND)lParam, i);
-                if (i != CB_ERR)
-                {
-                    settings.xdim2d = validmode[i].xdim;
-                    settings.ydim2d = validmode[i].ydim;
-                }
-            }
             return TRUE;
         case IDC3DVMODE:
             if (HIWORD(wParam) == CBN_SELCHANGE)
@@ -155,7 +130,6 @@ static void EnableConfig(int32_t n)
     //EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_CANCEL), n);
     EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_START), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), n);
-    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDC2DVMODE), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDC3DVMODE), n);
 }
 
@@ -450,11 +424,9 @@ int32_t startwin_run(void)
     EnableConfig(1);
 
     settings.fullscreen = fullscreen;
-    settings.xdim2d = xdim2d;
-    settings.ydim2d = ydim2d;
-    settings.xdim3d = xdimgame;
-    settings.ydim3d = ydimgame;
-    settings.bpp3d = bppgame;
+    settings.xdim3d = xdim;
+    settings.ydim3d = ydim;
+    settings.bpp3d = bpp;
     settings.forcesetup = forcesetup;
     PopulateForm();
 
@@ -479,11 +451,9 @@ int32_t startwin_run(void)
     if (done)
     {
         fullscreen = settings.fullscreen;
-        xdim2d = settings.xdim2d;
-        ydim2d = settings.ydim2d;
-        xdimgame = settings.xdim3d;
-        ydimgame = settings.ydim3d;
         bppgame = settings.bpp3d;
+        xdim = settings.xdim3d;
+        ydim = settings.ydim3d;
         forcesetup = settings.forcesetup;
     }
 

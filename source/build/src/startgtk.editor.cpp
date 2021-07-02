@@ -21,9 +21,7 @@ static struct
     GtkWidget *vlayout;
     GtkWidget *tabs;
     GtkWidget *configtlayout;
-    GtkWidget *vmode2dlabel;
     GtkWidget *vmode3dlabel;
-    GtkWidget *vmode2dcombo;
     GtkWidget *vmode3dcombo;
     GtkWidget *fullscreencheck;
     GtkWidget *emptyhlayout;
@@ -49,7 +47,6 @@ static struct
 static struct
 {
     int32_t fullscreen;
-    int32_t xdim2d, ydim2d;
     int32_t xdim3d, ydim3d, bpp3d;
     int32_t forcesetup;
 } settings;
@@ -59,19 +56,6 @@ extern int32_t gtkenabled;
 static void PopulateForm(void);
 
 // -- EVENT CALLBACKS AND CREATION STUFF --------------------------------------
-
-static void on_vmode2dcombo_changed(GtkComboBox *combobox, gpointer user_data)
-{
-    GtkTreeModel *data;
-    GtkTreeIter iter;
-    int32_t val;
-    UNREFERENCED_PARAMETER(user_data);
-    if (!gtk_combo_box_get_active_iter(combobox, &iter)) return;
-    if (!(data = gtk_combo_box_get_model(combobox))) return;
-    gtk_tree_model_get(data, &iter, 1, &val, -1);
-    settings.xdim2d = validmode[val].xdim;
-    settings.ydim2d = validmode[val].ydim;
-}
 
 static void on_vmode3dcombo_changed(GtkComboBox *combobox, gpointer user_data)
 {
@@ -149,15 +133,13 @@ static void SetPage(int32_t n)
 
 static void PopulateForm(void)
 {
-    int32_t mode2d, mode3d, i;
-    GtkListStore *modes2d, *modes3d;
+    int32_t mode3d, i;
+    GtkListStore *modes3d;
     GtkTreeIter iter;
-    GtkComboBox *box2d, *box3d;
+    GtkComboBox *box3d;
     char buf[64];
 
-    mode2d = videoCheckMode(&settings.xdim2d, &settings.ydim2d, 8, settings.fullscreen, 1);
     mode3d = videoCheckMode(&settings.xdim3d, &settings.ydim3d, settings.bpp3d, settings.fullscreen, 1);
-    if (mode2d < 0) mode2d = 0;
     if (mode3d < 0)
     {
         int32_t i, cd[] = { 32, 24, 16, 15, 8, 0 };
@@ -171,11 +153,8 @@ static void PopulateForm(void)
         }
     }
 
-    box2d = GTK_COMBO_BOX(stwidgets.vmode2dcombo);
     box3d = GTK_COMBO_BOX(stwidgets.vmode3dcombo);
-    modes2d = GTK_LIST_STORE(gtk_combo_box_get_model(box2d));
     modes3d = GTK_LIST_STORE(gtk_combo_box_get_model(box3d));
-    gtk_list_store_clear(modes2d);
     gtk_list_store_clear(modes3d);
 
     for (i=0; i<validmodecnt; i++)
@@ -191,18 +170,6 @@ static void PopulateForm(void)
             g_signal_handlers_block_by_func(box3d, (gpointer)on_vmode3dcombo_changed, NULL);
             gtk_combo_box_set_active_iter(box3d, &iter);
             g_signal_handlers_unblock_by_func(box3d, (gpointer)on_vmode3dcombo_changed, NULL);
-        }
-
-        // only 8-bit modes get used for 2D
-        if (validmode[i].bpp != 8 || validmode[i].xdim < 640 || validmode[i].ydim < 480) continue;
-        Bsprintf(buf, "%d x %d", validmode[i].xdim, validmode[i].ydim);
-        gtk_list_store_append(modes2d, &iter);
-        gtk_list_store_set(modes2d, &iter, 0,buf, 1,i, -1);
-        if (i == mode2d)
-        {
-            g_signal_handlers_block_by_func(box2d, (gpointer)on_vmode2dcombo_changed, NULL);
-            gtk_combo_box_set_active_iter(box2d, &iter);
-            g_signal_handlers_unblock_by_func(box2d, (gpointer)on_vmode2dcombo_changed, NULL);
         }
     }
 
@@ -246,29 +213,6 @@ static GtkWidget *create_window(void)
     // layout table of config page
     stwidgets.configtlayout = gtk_table_new(4, 3, FALSE);
     gtk_container_add(GTK_CONTAINER(stwidgets.tabs), stwidgets.configtlayout);
-
-    // 2D video mode label
-    stwidgets.vmode2dlabel = gtk_label_new_with_mnemonic("_2D Video mode:");
-    gtk_misc_set_alignment(GTK_MISC(stwidgets.vmode2dlabel), 0.3, 0);
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode2dlabel, 0,1, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 6);
-
-    // 2D video mode combo
-    {
-        GtkListStore *list = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_INT);
-        GtkCellRenderer *cell;
-
-        stwidgets.vmode2dcombo = gtk_combo_box_new_with_model(GTK_TREE_MODEL(list));
-        g_object_unref(G_OBJECT(list));
-
-        cell = gtk_cell_renderer_text_new();
-        gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(stwidgets.vmode2dcombo), cell, FALSE);
-        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.vmode2dcombo), cell, "text", 0, nullptr);
-    }
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode2dcombo, 1,2, 0,1,
-        (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)0, 4, 6);
-    gtk_widget_add_accelerator(stwidgets.vmode2dcombo, "grab_focus", stwidgets.accel_group,
-                               GDK_2, GDK_MOD1_MASK,
-                               GTK_ACCEL_VISIBLE);
 
     // Fullscreen checkbox
     stwidgets.fullscreencheck = gtk_check_button_new_with_mnemonic("_Fullscreen");
@@ -389,9 +333,6 @@ static GtkWidget *create_window(void)
     g_signal_connect((gpointer) stwidgets.startwin, "delete_event",
                      G_CALLBACK(on_startwin_delete_event),
                      NULL);
-    g_signal_connect((gpointer) stwidgets.vmode2dcombo, "changed",
-                     G_CALLBACK(on_vmode2dcombo_changed),
-                     NULL);
     g_signal_connect((gpointer) stwidgets.vmode3dcombo, "changed",
                      G_CALLBACK(on_vmode3dcombo_changed),
                      NULL);
@@ -409,7 +350,6 @@ static GtkWidget *create_window(void)
                      NULL);
 
     // Associate labels with their controls
-    gtk_label_set_mnemonic_widget(GTK_LABEL(stwidgets.vmode2dlabel), stwidgets.vmode2dcombo);
     gtk_label_set_mnemonic_widget(GTK_LABEL(stwidgets.vmode3dlabel), stwidgets.vmode3dcombo);
 
     gtk_window_add_accel_group(GTK_WINDOW(stwidgets.startwin), stwidgets.accel_group);
@@ -522,11 +462,9 @@ int32_t startwin_run(void)
     SetPage(TAB_CONFIG);
 
     settings.fullscreen = fullscreen;
-    settings.xdim2d = xdim2d;
-    settings.ydim2d = ydim2d;
-    settings.xdim3d = xdimgame;
-    settings.ydim3d = ydimgame;
-    settings.bpp3d = bppgame;
+    settings.xdim3d = xdim;
+    settings.ydim3d = ydim;
+    settings.bpp3d = bpp;
     settings.forcesetup = forcesetup;
     PopulateForm();
 
@@ -536,11 +474,9 @@ int32_t startwin_run(void)
     if (retval)
     {
         fullscreen = settings.fullscreen;
-        xdim2d = settings.xdim2d;
-        ydim2d = settings.ydim2d;
-        xdimgame = settings.xdim3d;
-        ydimgame = settings.ydim3d;
-        bppgame = settings.bpp3d;
+        xdim = settings.xdim3d;
+        ydim = settings.ydim3d;
+        bpp = settings.bpp3d;
         forcesetup = settings.forcesetup;
     }
 

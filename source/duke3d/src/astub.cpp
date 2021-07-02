@@ -1637,9 +1637,9 @@ ENDFOR1:
 //            drawgradient();
 
             videoBeginDrawing();
-            printext16(9, ydim2d-overridepm16y+9, editorcolors[4], -1, "Help Mode", 0);
-            printext16(8, ydim2d-overridepm16y+8, editorcolors[12], -1, "Help Mode", 0);
-            printext16(8 + 9*8 + 2*8, ydim2d-overridepm16y+8, editorcolors[15], -1, "(S:search)", 0);
+            printext16(9, ydim-overridepm16y+9, editorcolors[4], -1, "Help Mode", 0);
+            printext16(8, ydim-overridepm16y+8, editorcolors[12], -1, "Help Mode", 0);
+            printext16(8 + 9*8 + 2*8, ydim-overridepm16y+8, editorcolors[15], -1, "(S:search)", 0);
             videoEndDrawing();
 
             if (curhp < helppage[0]->numlines)
@@ -1834,9 +1834,9 @@ static void SoundDisplay(void)
 //            drawgradient();
 
             videoBeginDrawing();
-            printext16(9, ydim2d-overridepm16y+9, editorcolors[4], -1, "Sound Index", 0);
-            printext16(8, ydim2d-overridepm16y+8, editorcolors[12], -1, "Sound Index", 0);
-            printext16(8 + 11*8 + 2*8, ydim2d-overridepm16y+8, editorcolors[15], -1, "(SPACE:play, S:sort)", 0);
+            printext16(9, ydim-overridepm16y+9, editorcolors[4], -1, "Sound Index", 0);
+            printext16(8, ydim-overridepm16y+8, editorcolors[12], -1, "Sound Index", 0);
+            printext16(8 + 11*8 + 2*8, ydim-overridepm16y+8, editorcolors[15], -1, "(SPACE:play, S:sort)", 0);
             videoEndDrawing();
 
             if (PRESSED_KEYSC(G))    // goto specified sound#
@@ -3276,7 +3276,7 @@ static int32_t OnSelectTile(int32_t tileNum)
         {
             if (s_TileGroups[i].szText != NULL)
             {
-                if ((j+2)*16 > ydimgame) break;
+                if ((j+2)*16 > ydim) break;
 
                 if (s_TileGroups[i].key1)
                 {
@@ -3615,7 +3615,7 @@ static char const *tileinfo_colorstr = "";
 
 static void tileinfo_doprint(int32_t x, int32_t y, char *buf, const char *label, int32_t value, int32_t value2, int32_t pos)
 {
-    int32_t small = (xdimgame<=640), i = ydimgame>>6;
+    int32_t small = (xdim<=640), i = ydim>>6;
 
     if (value2)
         Bsprintf(buf, "%s:%s%4d, %d", label, tileinfo_colorstr, value, value2);
@@ -3632,7 +3632,7 @@ static void drawtileinfo(const char *title,int32_t x,int32_t y,int32_t picnum,in
                          int32_t lotag,int32_t hitag,int32_t extra, int32_t blend, int32_t statnum, uint32_t flags)
 {
     char buf[64];
-    int32_t small = (xdimgame<=640);
+    int32_t small = (xdim<=640);
 
     if (tilesiz[picnum].x>0 && tilesiz[picnum].y>0)
     {
@@ -3641,7 +3641,7 @@ static void drawtileinfo(const char *title,int32_t x,int32_t y,int32_t picnum,in
         if (small)
             x1 /= 2;
 
-        x1 = (int32_t)(x1 * 320.0/xdimgame);
+        x1 = (int32_t)(x1 * 320.0/xdim);
         const double scalediv = max(tilesiz[picnum].x,tilesiz[picnum].y)/24.0;
         const int32_t scale = (int32_t)(65536.0/scalediv);
 
@@ -3652,8 +3652,8 @@ static void drawtileinfo(const char *title,int32_t x,int32_t y,int32_t picnum,in
         renderSetAspect(oviewingrange, oyxaspect);
     }
 
-    x = (int32_t)(x * xdimgame/320.0);
-    y = (int32_t)(y * ydimgame/200.0);
+    x = (int32_t)(x * xdim/320.0);
+    y = (int32_t)(y * ydim/200.0);
 
     videoBeginDrawing();
     printext256(x+2,y+2,0,-1,title,small);
@@ -4418,9 +4418,9 @@ static void Keys3d(void)
             }
         }
 
-        x = (int32_t)(WIND1X*(xdimgame/320.));
-        y = (int32_t)(WIND1Y*(ydimgame/200.));
-        y += (ydimgame>>6)*8;
+        x = (int32_t)(WIND1X*(xdim/320.));
+        y = (int32_t)(WIND1Y*(ydim/200.));
+        y += (ydim>>6)*8;
 
         if (getmessageleng && !m32_is2d3dmode())
         {
@@ -4432,9 +4432,9 @@ static void Keys3d(void)
         videoBeginDrawing();
         for (i=0; i<num; i++)
         {
-            printext256(x+2, y+2, 0, -1, lines[i], xdimgame<=640);
-            printext256(x, y, whitecol, -1, lines[i], xdimgame<=640);
-            y += ydimgame>>6;
+            printext256(x+2, y+2, 0, -1, lines[i], xdim<=640);
+            printext256(x, y, whitecol, -1, lines[i], xdim<=640);
+            y += ydim>>6;
         }
         videoEndDrawing();
     }
@@ -5526,13 +5526,13 @@ static void Keys3d(void)
 
         j = max((searchy+16)-(ydim-1), 0);
 
-        printext256(searchx+4+2-i, searchy+4+2-j, 0,-1,tempbuf,!(xdimgame > 640));
-        printext256(searchx+4-i,   searchy+4-j,   whitecol,-1,tempbuf,!(xdimgame > 640));
+        printext256(searchx+4+2-i, searchy+4+2-j, 0,-1,tempbuf,!(xdim > 640));
+        printext256(searchx+4-i,   searchy+4-j,   whitecol,-1,tempbuf,!(xdim > 640));
     }
 
     if (helpon==1)
     {
-        int32_t small = !(xdimgame > 640);
+        int32_t small = !(xdim > 640);
         for (i=0; i<MAXHELP3D; i++)
         {
             videoBeginDrawing();
@@ -10668,7 +10668,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
 }
 
 #define MESSAGEX 3 // (xdimgame>>1)
-#define MESSAGEY 3 // ((i/charsperline)<<3)+(ydimgame-(ydimgame>>3))-(((getmessageleng-1)/charsperline)<<3)
+#define MESSAGEY 3 // ((i/charsperline)<<3)+(ydim-(ydim>>3))-(((getmessageleng-1)/charsperline)<<3)
 
 static void Keys2d3d(void)
 {
@@ -10697,18 +10697,15 @@ static void Keys2d3d(void)
     {
         keystatus[KEYSC_F10]=0;
 
-        if (!m32_2d3d_resolutions_match())
-            message("2d and 3d mode resolutions don't match!");
-
-        else if (!in3dmode())
+        if (!in3dmode())
         {
             if (eitherSHIFT)
             {
                 // shrinking the size while in a corner pulls the PIP into that corner
-                if (m32_2d3d.x + XSIZE_2D3D >= xdim2d - 5)
+                if (m32_2d3d.x + XSIZE_2D3D >= xdim - 5)
                     m32_2d3d.x = 0xffff;
 
-                if (m32_2d3d.y + YSIZE_2D3D >= ydim2d - 5 - STATUS2DSIZ2)
+                if (m32_2d3d.y + YSIZE_2D3D >= ydim - 5 - STATUS2DSIZ2)
                     m32_2d3d.y = 0xffff;
 
                 if (++m32_2d3dsize > 5)
