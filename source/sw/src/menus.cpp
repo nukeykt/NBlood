@@ -5295,6 +5295,6 @@ void ResetPalette(PLAYERp pp)
     pp->FadeTics = 0;
 }
 
-// vim:ts=4:sw=4:enc=utf-8:
+// vim:ts=4:sw=4:expandtab:
 
 
