@@ -4915,23 +4915,6 @@ static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t
 }
 
 
-static fix16_t P_GetQ16AngleDeltaForTic(DukePlayer_t const *pPlayer)
-{
-    auto oldAngle = pPlayer->oq16ang;
-    auto newAngle = pPlayer->q16ang;
-
-    if (klabs(fix16_sub(oldAngle, newAngle)) < F16(1024))
-        return fix16_sub(newAngle, oldAngle);
-
-    if (newAngle > F16(1024))
-        newAngle = fix16_sub(newAngle, F16(2048));
-
-    if (oldAngle > F16(1024))
-        oldAngle = fix16_sub(oldAngle, F16(2048));
-
-    return fix16_sub(newAngle, oldAngle);
-}
-
 #define GETZRANGECLIPDISTOFFSET 16
 
 void P_ProcessInput(int playerNum)
@@ -4942,28 +4925,10 @@ void P_ProcessInput(int playerNum)
         return;
 
     thisPlayer.smoothcamera = false;
-
-    auto const pPlayer = thisPlayer.ps;
-
-
-    if (pPlayer->newowner < 0)
-    {
-        pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
-        pPlayer->oq16ang      = pPlayer->q16ang;
-        pPlayer->oq16horiz    = pPlayer->q16horiz;
-        pPlayer->oq16horizoff = pPlayer->q16horizoff;
-    }
-
-    if (ud.recstat || pPlayer->gm & MODE_DEMO)
-    {
-        thisPlayer.smoothcamera = true;
-        P_UpdateAngles(playerNum, thisPlayer.input);
-    }
-
-    // these are used in P_UpdateAngles() and can only be reset after calling it
     thisPlayer.horizAngleAdjust = 0;
     thisPlayer.horizSkew        = 0;
 
+    auto const pPlayer = thisPlayer.ps;
     auto const pSprite = &sprite[pPlayer->i];
 
     ++pPlayer->player_par;
