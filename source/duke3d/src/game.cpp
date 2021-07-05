@@ -943,26 +943,23 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 renderSetAspect(mulscale16(oviewingrange, vRange >> 1), yxaspect);
             }
         }
+#ifdef USE_OPENGL
         else if (videoGetRenderMode() >= REND_POLYMOST)
         {
             if (ud.screen_tilting
 #ifdef SPLITSCREEN_MOD_HACKS
-        && !g_fakeMultiMode
+                && !g_fakeMultiMode
 #endif
             )
             {
-#ifdef USE_OPENGL
                 renderSetRollAngle(pPlayer->orotscrnang + mulscale16(((pPlayer->rotscrnang - pPlayer->orotscrnang + 1024)&2047)-1024, smoothRatio));
-#endif
-                pPlayer->orotscrnang = pPlayer->rotscrnang;
             }
-#ifdef USE_OPENGL
             else
             {
                 renderSetRollAngle(0);
             }
-#endif
         }
+#endif
 
         if (pPlayer->newowner < 0)
         {

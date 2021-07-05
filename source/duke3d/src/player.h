@@ -227,7 +227,7 @@ typedef struct {
 
     int16_t weaprecs[MAX_WEAPONS], weapon_sway, crack_time, bobcounter;
 
-    int16_t orotscrnang, rotscrnang, dead_flag;   // JBF 20031220: added orotscrnang
+    int16_t orotscrnang, rotscrnang, dead_flag;
     int16_t holoduke_on, pycount;
     int16_t transporter_hold, clipdist;
 

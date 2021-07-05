@@ -4889,7 +4889,10 @@ static void P_Dead(int const playerNum, int const sectorLotag, int const floorZ,
     pushmove(&pPlayer->pos, &pPlayer->cursectnum, 128L, (4L<<8), (20L<<8), CLIPMASK0);
 
     if (floorZ > ceilZ + ZOFFSET2 && pSprite->pal != 1)
-        pPlayer->rotscrnang = (pPlayer->dead_flag + ((floorZ+pPlayer->pos.z)>>7))&2047;
+    {
+        pPlayer->orotscrnang = pPlayer->rotscrnang;
+        pPlayer->rotscrnang = (pPlayer->dead_flag + ((floorZ + pPlayer->pos.z) >> 7)) & 2047;
+    }
 
     pPlayer->on_warping_sector = 0;
 }
@@ -5123,10 +5126,15 @@ void P_ProcessInput(int playerNum)
         return;
     }
 
-    pPlayer->rotscrnang -= (pPlayer->rotscrnang >> 1);
+    pPlayer->orotscrnang = pPlayer->rotscrnang;
 
-    if (pPlayer->rotscrnang && !(pPlayer->rotscrnang >> 1))
-        pPlayer->rotscrnang -= ksgn(pPlayer->rotscrnang);
+    if (pPlayer->rotscrnang)
+    {
+        pPlayer->rotscrnang -= (pPlayer->rotscrnang >> 1);
+
+        if (pPlayer->rotscrnang && !(pPlayer->rotscrnang >> 1))
+            pPlayer->rotscrnang -= ksgn(pPlayer->rotscrnang);
+    }
 
     pPlayer->olook_ang   = pPlayer->look_ang;
 
