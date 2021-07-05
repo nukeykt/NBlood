@@ -13892,6 +13892,10 @@ int32_t videoSetRenderMode(int32_t renderer)
     else renderer = REND_POLYMOST;
 # endif
 
+    // Fixes mirror glitches that occur when changing the renderer.
+    // Including: mirrored player view in Polymost, black screen in Classic
+    inpreparemirror = 0;
+
     basepalreset = 1;
 
     rendmode = renderer;
