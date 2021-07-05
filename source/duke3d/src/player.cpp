@@ -5128,10 +5128,15 @@ void P_ProcessInput(int playerNum)
     if (pPlayer->rotscrnang && !(pPlayer->rotscrnang >> 1))
         pPlayer->rotscrnang -= ksgn(pPlayer->rotscrnang);
 
-    pPlayer->look_ang -= (pPlayer->look_ang >> 2);
+    pPlayer->olook_ang   = pPlayer->look_ang;
 
-    if (pPlayer->look_ang && !(pPlayer->look_ang >> 2))
-        pPlayer->look_ang -= ksgn(pPlayer->look_ang);
+    if (pPlayer->look_ang)
+    {
+        pPlayer->look_ang -= (pPlayer->look_ang >> 2);
+
+        if (pPlayer->look_ang && !(pPlayer->look_ang >> 2))
+            pPlayer->look_ang -= ksgn(pPlayer->look_ang);
+    }
 
     if (TEST_SYNC_KEY(playerBits, SK_LOOK_LEFT))
     {

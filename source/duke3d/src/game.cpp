@@ -986,16 +986,18 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
             if (thisPlayer.smoothcamera)
             {
                 CAMERA(q16ang)   = pPlayer->oq16ang
-                                 + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
-                                 + fix16_from_int(pPlayer->look_ang);
+                                 + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio);
                 CAMERA(q16horiz) = pPlayer->oq16horiz + pPlayer->oq16horizoff
                                  + mulscale16((pPlayer->q16horiz + pPlayer->q16horizoff - pPlayer->oq16horiz - pPlayer->oq16horizoff), smoothRatio);
             }
             else
             {
-                CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16ang)   = pPlayer->q16ang;
                 CAMERA(q16horiz) = pPlayer->q16horiz + pPlayer->q16horizoff;
             }
+
+            CAMERA(q16ang) += fix16_from_int(pPlayer->olook_ang)
+                            + mulscale16(fix16_from_int(((pPlayer->look_ang + 1024 - pPlayer->olook_ang) & 2047) - 1024), smoothRatio);
 
             if (ud.viewbob)
             {
