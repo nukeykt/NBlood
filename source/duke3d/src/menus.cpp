@@ -2320,11 +2320,16 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MUSIC, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_DUKETALK, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
+        MenuEntry_DisableOnCondition(&ME_SOUND_MIDIDRIVER, !ud.config.MusicToggle);
 #ifndef EDUKE32_RETAIL_MENU
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
 #ifdef __linux__
+        MenuEntry_DisableOnCondition(&ME_SOUND_ALSADEVICE, !ud.config.MusicToggle);
         MenuEntry_HideOnCondition(&ME_SOUND_ALSADEVICE, musicdevice != ASS_ALSA);
 #endif
+        MenuEntry_DisableOnCondition(&ME_SOUND_OPL3STEREO, !ud.config.MusicToggle);
+        MenuEntry_DisableOnCondition(&ME_SOUND_SF2, !ud.config.MusicToggle);
+
         MenuEntry_HideOnCondition(&ME_SOUND_OPL3STEREO, musicdevice != ASS_OPL3);
         MenuEntry_HideOnCondition(&ME_SOUND_SF2, musicdevice != ASS_SF2);
 #endif
