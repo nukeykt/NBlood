@@ -2378,8 +2378,10 @@ static void postloadplayer(int32_t savegamep)
         for (SPRITES_OF(STAT_FX, i))
             if (sprite[i].picnum == MUSICANDSFX)
             {
+                int soundNum = sprite[i].lotag;
                 T2(i) = ud.config.SoundToggle;
-                T1(i) = 0;
+                if (!((g_sounds[soundNum].m & SF_LOOP) || (sprite[i].hitag && sprite[i].hitag != soundNum)))
+                    T1(i) = 0;
             }
 
         G_UpdateScreenArea();
