@@ -5251,11 +5251,16 @@ void P_ProcessInput(int playerNum)
                 {
                     if (pPlayer->on_ground == 1)
                     {
-                        if (pPlayer->dummyplayersprite < 0)
-                            pPlayer->dummyplayersprite = A_Spawn(pPlayer->i,PLAYERONWATER);
+#ifdef YAX_ENABLE
+                        if (yax_getbunch(pPlayer->cursectnum, YAX_FLOOR) == -1)
+#endif
+                        {
+                            if (pPlayer->dummyplayersprite < 0)
+                                pPlayer->dummyplayersprite = A_Spawn(pPlayer->i,PLAYERONWATER);
 
-                        sprite[pPlayer->dummyplayersprite].cstat |= 32768;
-                        sprite[pPlayer->dummyplayersprite].pal = sprite[pPlayer->i].pal;
+                            sprite[pPlayer->dummyplayersprite].cstat |= 32768;
+                            sprite[pPlayer->dummyplayersprite].pal = sprite[pPlayer->i].pal;
+                        }
                         pPlayer->footprintpal                  = (sector[pPlayer->cursectnum].floorpicnum == FLOORSLIME) ? 8 : 0;
                         pPlayer->footprintshade                = 0;
                     }
