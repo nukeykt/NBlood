@@ -1898,7 +1898,7 @@ int G_EnterLevel(int gameMode)
         videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, upscalefactor);
     }
 
-    if (Menu_HaveUserMap())
+    if (Menu_HaveUserMap() || G_HaveUserMap())
     {
         Bcorrectfilename(boardfilename, 0);
 
