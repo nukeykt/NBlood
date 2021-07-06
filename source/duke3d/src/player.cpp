@@ -5037,6 +5037,7 @@ void P_ProcessInput(int playerNum)
 
     int const trueFloorZ    = pPlayer->truefz;
     int const trueFloorDist = klabs(pPlayer->pos.z - trueFloorZ);
+    int const playerShrunk  = (pSprite->yrepeat < 32);
 
     if ((lowZhit & 49152) == 16384 && sectorLotag == 1 && trueFloorDist > pPlayer->spritezoffset + ZOFFSET2)
         sectorLotag = 0;
@@ -5046,7 +5047,7 @@ void P_ProcessInput(int playerNum)
         int const spriteNum = highZhit & (MAXSPRITES-1);
 
         if ((spriteNum != pPlayer->i && sprite[spriteNum].z + PMINHEIGHT > pPlayer->pos.z)
-            || (sprite[spriteNum].statnum == STAT_ACTOR && sprite[spriteNum].extra >= 0))
+            || (!playerShrunk && sprite[spriteNum].statnum == STAT_ACTOR && sprite[spriteNum].extra >= 0))
         {
             highZhit = 0;
             ceilZ    = pPlayer->truecz;
@@ -5190,7 +5191,6 @@ void P_ProcessInput(int playerNum)
     int                  velocityModifier = TICSPERFRAME;
     const uint8_t *const weaponFrame      = &pPlayer->kickback_pic;
     int                  floorZOffset     = pPlayer->floorzoffset;
-    int const            playerShrunk     = (pSprite->yrepeat < 32);
     vec3_t const         backupPos        = pPlayer->opos;
 
     if (pPlayer->on_crane >= 0)
