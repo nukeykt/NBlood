@@ -2,6 +2,8 @@
 #ifndef __joystick_h
 #define __joystick_h
 
+#include "compat.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,6 +40,15 @@ extern "C" {
 #define HAT_LEFTUP      (HAT_LEFT|HAT_UP)
 #define HAT_LEFTDOWN    (HAT_LEFT|HAT_DOWN)
 
+// KEEPINSYNC duke3d/src/gamedefs.h, build/src/sdlayer.cpp
+#define MAXJOYBUTTONS 32
+#define MAXJOYBUTTONSANDHATS (MAXJOYBUTTONS+4)
+
+// Number of JOY axes
+// KEEPINSYNC duke3d/src/gamedefs.h, build/src/sdlayer.cpp
+#define MAXJOYAXES 9
+#define MAXJOYDIGITAL (MAXJOYAXES*2)
+
 int32_t	JOYSTICK_GetButtons( void );
 int32_t	JOYSTICK_GetGameControllerButtons( void );
 int32_t	JOYSTICK_ClearButton( int32_t b );
@@ -51,6 +62,11 @@ void	JOYSTICK_ClearAllHats( void );
 int32_t	JOYSTICK_GetAxis( int32_t a );
 void	JOYSTICK_ClearAxis( int32_t a );
 void	JOYSTICK_ClearAllAxes( void );
+
+void JOYSTICK_SetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
+void JOYSTICK_GetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);
+
+extern uint16_t CONTROL_JoyDeadZone[MAXJOYAXES], CONTROL_JoySaturation[MAXJOYAXES];
 
 #ifdef __cplusplus
 }

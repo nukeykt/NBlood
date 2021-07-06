@@ -59,16 +59,6 @@ extern "C" {
 // this is higher than the -32767 to 32767 range of the axis
 #define MAXSCALEDCONTROLVALUE  0x1ffff
 
-// Number of JOY buttons
-// KEEPINSYNC duke3d/src/gamedefs.h, build/src/sdlayer.cpp
-#define MAXJOYBUTTONS 32
-#define MAXJOYBUTTONSANDHATS (MAXJOYBUTTONS+4)
-
-// Number of JOY axes
-// KEEPINSYNC duke3d/src/gamedefs.h, build/src/sdlayer.cpp
-#define MAXJOYAXES 9
-#define MAXJOYDIGITAL (MAXJOYAXES*2)
-
 #define DEFAULTAXISSCALE 65536
 
 #define BUTTONSET(x, value)     (CONTROL_ButtonState |= ((uint64_t)value << ((uint64_t)(x))))

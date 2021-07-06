@@ -40,6 +40,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "keyboard.h"
 #include "_control.h"
 
+//
+// setjoydeadzone() -- sets the dead and saturation zones for the joystick
+//
+void JOYSTICK_SetDeadZone(int32_t axis, uint16_t dead, uint16_t satur)
+{
+    CONTROL_JoyDeadZone[axis] = dead;
+    CONTROL_JoySaturation[axis] = satur;
+}
+
+
+//
+// getjoydeadzone() -- gets the dead and saturation zones for the joystick
+//
+void JOYSTICK_GetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
+{
+    *dead = CONTROL_JoyDeadZone[axis];
+    *satur = CONTROL_JoySaturation[axis];
+}
+
 int32_t JOYSTICK_GetButtons(void)
 {
     int32_t buttons;

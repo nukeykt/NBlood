@@ -6,10 +6,13 @@
  *
  */
 
+#include "control.h"
+
 #include "_control.h"
 #include "baselayer.h"
+#include "build.h"
+#include "common.h"
 #include "compat.h"
-#include "control.h"
 #include "joystick.h"
 #include "keyboard.h"
 #include "mouse.h"
@@ -25,6 +28,7 @@ bool CONTROL_MouseEnabled    = false;
 bool CONTROL_MousePresent    = false;
 bool CONTROL_JoyPresent      = false;
 bool CONTROL_JoystickEnabled = false;
+bool CONTROL_JoystickConsoleSpam = false;
 
 uint64_t CONTROL_ButtonState     = 0;
 uint64_t CONTROL_ButtonHeldState = 0;
@@ -47,6 +51,9 @@ static controlaxistype    CONTROL_JoyAxes[MAXJOYAXES];
 static controlaxistype    CONTROL_LastJoyAxes[MAXJOYAXES];
 static int32_t            CONTROL_JoyAxesScale[MAXJOYAXES];
 static int8_t             CONTROL_JoyAxesInvert[MAXJOYAXES];
+
+uint16_t                  CONTROL_JoyDeadZone[MAXJOYAXES];
+uint16_t                  CONTROL_JoySaturation[MAXJOYAXES];
 
 static controlbuttontype CONTROL_MouseButtonMapping[MAXMOUSEBUTTONS];
 
@@ -608,6 +615,8 @@ static void CONTROL_ApplyAxis(int axis, ControlInfo *info, controldevice device)
     }
 }
 
+static inline int32_t joydist(int x, int y) { return ksqrt(x * x + y * y); }
+
 static void CONTROL_PollDevices(ControlInfo *info)
 {
     memset(info, 0, sizeof(ControlInfo));
@@ -623,14 +632,41 @@ static void CONTROL_PollDevices(ControlInfo *info)
     if (CONTROL_JoystickEnabled)
     {
         Bmemcpy(CONTROL_LastJoyAxes,   CONTROL_JoyAxes,   sizeof(CONTROL_JoyAxes));
-        memset(CONTROL_JoyAxes,   0, sizeof(CONTROL_JoyAxes));
+        Bmemset(CONTROL_JoyAxes,   0, sizeof(CONTROL_JoyAxes));
 
         for (int i=joystick.numAxes-1; i>=0; i--)
         {
-            CONTROL_JoyAxes[i].analog = joystick.pAxis[i];
+            int const input = joystick.pAxis[i];
+            auto      axis  = &CONTROL_JoyAxes[i];
+            int axisScaled10k = klabs(input * 10000 / 32767);
+
+            if (axisScaled10k >= CONTROL_JoySaturation[i])
+            {
+                axis->analog = 32767 * ksgn(input);
+
+                if (CONTROL_JoystickConsoleSpam)
+                    OSD_Printf("controller axis %d saturated\n", i);
+            }
+            else 
+            {
+                // this assumes there are two sticks comprised of axes 0 and 1, and 2 and 3... because when isGameController is true, there are
+                if (i <= GAMECONTROLLER_AXIS_LEFTY || (joystick.isGameController && (i <= GAMECONTROLLER_AXIS_RIGHTY)))
+                    axisScaled10k = min(10000, joydist(joystick.pAxis[i & ~1], joystick.pAxis[i | 1]) * 10000 / 32767);
+
+                if (axisScaled10k < CONTROL_JoyDeadZone[i])
+                    axis->analog = 0;
+                else
+                {
+                    axis->analog = input * (axisScaled10k - CONTROL_JoyDeadZone[i]) / CONTROL_JoySaturation[i];
+
+                    if (CONTROL_JoystickConsoleSpam)
+                        OSD_Printf("controller axis %d input %d scaled %d output %d\n", i, input, axisScaled10k, axis->analog);
+                }
+            }
 
             if (CONTROL_DigitizeAxis(i, controldevice_joystick))
                 CONTROL_LastSeenInput = LastSeenInput::Joystick;
+
             CONTROL_ScaleAxis(i, controldevice_joystick);
             CONTROL_ApplyAxis(i, info, controldevice_joystick);
         }

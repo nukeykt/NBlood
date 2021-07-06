@@ -6663,10 +6663,6 @@ int app_main(int argc, char const* const* argv)
 
         CONTROL_JoystickEnabled = (ud.setup.usejoystick && CONTROL_JoyPresent);
         CONTROL_MouseEnabled    = (ud.setup.usemouse && CONTROL_MousePresent);
-
-        // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
-        for (int i=0; i<joystick.numAxes; i++)
-            joySetDeadZone(i,ud.config.JoystickAnalogueDead[i],ud.config.JoystickAnalogueSaturate[i]);
     }
 
 #ifdef HAVE_CLIPSHAPE_FEATURE

@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "xxhash.h"
 #include "music.h"
 #include "sbar.h"
+#include "joystick.h"
 
 #ifndef __ANDROID__
 droidinput_t droidinput;
@@ -3871,9 +3872,9 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
     else if (entry == &ME_JOYSTICK_LOOKYSCALE)
         CONTROL_SetAnalogAxisScale(g_lookAxis, newValue, controldevice_joystick);
     else if (entry == &ME_JOYSTICKAXIS_DEAD)
-        joySetDeadZone(M_JOYSTICKAXES.currentEntry, newValue, *MEO_JOYSTICKAXIS_SATU.variable);
+        JOYSTICK_SetDeadZone(M_JOYSTICKAXES.currentEntry, newValue, *MEO_JOYSTICKAXIS_SATU.variable);
     else if (entry == &ME_JOYSTICKAXIS_SATU)
-        joySetDeadZone(M_JOYSTICKAXES.currentEntry, *MEO_JOYSTICKAXIS_DEAD.variable, newValue);
+        JOYSTICK_SetDeadZone(M_JOYSTICKAXES.currentEntry, *MEO_JOYSTICKAXIS_DEAD.variable, newValue);
     else if (entry == &ME_VIDEOSETUP_FRAMELIMITOFFSET)
         g_frameDelay = calcFrameDelay(r_maxfps, newValue);
 

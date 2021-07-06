@@ -115,7 +115,7 @@ static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int satura
 {
     ud.config.JoystickAnalogueDead[i] = dead;
     ud.config.JoystickAnalogueSaturate[i] = saturate;
-    joySetDeadZone(i, dead, saturate);
+    JOYSTICK_SetDeadZone(i, dead, saturate);
 }
 static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
 {
@@ -538,6 +538,7 @@ void CONFIG_SetupJoystick(void)
         CONTROL_MapButton(ud.config.JoystickFunctions[i][0], i, 0, controldevice_joystick);
         CONTROL_MapButton(ud.config.JoystickFunctions[i][1], i, 1,  controldevice_joystick);
     }
+
     for (i=0; i<MAXJOYAXES; i++)
     {
         CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i], controldevice_joystick);
@@ -545,6 +546,7 @@ void CONFIG_SetupJoystick(void)
         CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
         CONTROL_SetAnalogAxisScale(i, ud.config.JoystickAnalogueScale[i], controldevice_joystick);
         CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i], controldevice_joystick);
+        JOYSTICK_SetDeadZone(i, ud.config.JoystickAnalogueDead[i], ud.config.JoystickAnalogueSaturate[i]);
     }
 }
 

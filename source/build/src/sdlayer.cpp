@@ -114,9 +114,6 @@ static SDL_Surface *loadappicon(void);
 
 static mutex_t m_initprintf;
 
-// Joystick dead and saturation zones
-uint16_t joydead[9], joysatur[9];
-
 #ifdef _WIN32
 # if SDL_MAJOR_VERSION >= 2
 //
@@ -1322,24 +1319,6 @@ void mouseLockToWindow(char a)
     SDL_ShowCursor((osd && osd->flags & OSD_CAPTURE) ? SDL_ENABLE : SDL_DISABLE);
 }
 
-//
-// setjoydeadzone() -- sets the dead and saturation zones for the joystick
-//
-void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur)
-{
-    joydead[axis] = dead;
-    joysatur[axis] = satur;
-}
-
-
-//
-// getjoydeadzone() -- gets the dead and saturation zones for the joystick
-//
-void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
-{
-    *dead = joydead[axis];
-    *satur = joysatur[axis];
-}
 
 
 //
@@ -2242,16 +2221,6 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             if (appactive && ev->jaxis.axis < joystick.numAxes)
             {
                 joystick.pAxis[ev->jaxis.axis] = ev->jaxis.value;
-                int32_t const scaledValue = ev->jaxis.value * 10000 / 32767;
-                if ((scaledValue < joydead[ev->jaxis.axis]) &&
-                    (scaledValue > -joydead[ev->jaxis.axis]))
-                    joystick.pAxis[ev->jaxis.axis] = 0;
-                else if (scaledValue >= joysatur[ev->jaxis.axis])
-                    joystick.pAxis[ev->jaxis.axis] = 32767;
-                else if (scaledValue <= -joysatur[ev->jaxis.axis])
-                    joystick.pAxis[ev->jaxis.axis] = -32767;
-                else
-                    joystick.pAxis[ev->jaxis.axis] = joystick.pAxis[ev->jaxis.axis] * 10000 / joysatur[ev->jaxis.axis];
             }
             break;
 

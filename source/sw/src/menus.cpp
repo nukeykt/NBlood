@@ -4022,7 +4022,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
                 //CONTROL_SetJoyAxisSaturate(JoystickAxisPage, JoystickAnalogSaturate[JoystickAxisPage]);
             }
 
-            joySetDeadZone(JoystickAxisPage, JoystickAnalogDead[JoystickAxisPage], JoystickAnalogSaturate[JoystickAxisPage]); // [JM] !CHECKME!
+            JOYSTICK_SetDeadZone(JoystickAxisPage, JoystickAnalogDead[JoystickAxisPage], JoystickAnalogSaturate[JoystickAxisPage]); // [JM] !CHECKME!
         }
 
         sprintf(tmp_text, "%.2f%%", (float)(slidersettings[item->slider]<<10) / 32767.f);

@@ -566,7 +566,7 @@ void CONFIG_SetupJoystick(void)
         CONTROL_SetAnalogAxisScale(i, JoystickAnalogScale[i], controldevice_joystick);
         //CONTROL_SetJoyAxisDead(i, JoystickAnalogDead[i]);
         //CONTROL_SetJoyAxisSaturate(i, JoystickAnalogSaturate[i]);
-        joySetDeadZone(i, JoystickAnalogDead[i], JoystickAnalogSaturate[i]); // [JM] !CHECKME!
+        JOYSTICK_SetDeadZone(i, JoystickAnalogDead[i], JoystickAnalogSaturate[i]); // [JM] !CHECKME!
     }
 }
 

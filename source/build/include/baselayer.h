@@ -283,8 +283,6 @@ void mouseReadPos(int32_t *x, int32_t *y);
 
 bool joyHasButton(int button);
 void joyReadButtons(int32_t *pResult);
-void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
-void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);
 extern int32_t inputchecked;
 
 int32_t wm_msgbox(const char *name, const char *fmt, ...) ATTRIBUTE((format(printf,2,3)));
