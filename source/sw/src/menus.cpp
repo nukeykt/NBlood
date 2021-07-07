@@ -2583,7 +2583,11 @@ MNU_InputSmallString(char *name, short pix_width)
 
         if (ch == ascii_backspace)
         {
-            name[strlen(name) - 1] = '\0';
+            size_t const namelen = strlen(name);
+            if (namelen > 0)
+            {
+                name[namelen - 1] = '\0';
+            }
             continue;
         }
         else if (ch == ascii_esc)
