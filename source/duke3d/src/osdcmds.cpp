@@ -1668,8 +1668,8 @@ int32_t registerosdcommands(void)
 
         { "in_mouseflip", "invert vertical mouse movement" CVAR_BOOL_OPTSTR, (void *)&ud.mouseflip, CVAR_BOOL, 0, 1 },
 
-        { "in_mousexscale", "scale modifier for mouse x axis", (void *)&CONTROL_MouseAxesScale[0], CVAR_INT, 0, 65536 },
-        { "in_mouseyscale", "scale modifier for mouse y axis", (void *)&CONTROL_MouseAxesScale[1], CVAR_INT, 0, 65536 },
+        { "in_mousexsensitivity", "horizontal mouse sensitivity", (void *)&CONTROL_MouseAxesSensitivity[0], CVAR_FLOAT, 0, 25 },
+        { "in_mouseysensitivity", "vertical mouse sensitivity",   (void *)&CONTROL_MouseAxesSensitivity[1], CVAR_FLOAT, 0, 25 },
 
         { "mus_enabled", "music subsystem" CVAR_BOOL_OPTSTR, (void *)&ud.config.MusicToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT|CVAR_FUNCPTR, 0, ASS_NumSoundCards },

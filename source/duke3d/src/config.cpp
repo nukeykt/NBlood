@@ -101,10 +101,10 @@ static void CONFIG_SetJoystickButtonFunction(int i, int j, int function)
     ud.config.JoystickFunctions[i][j] = function;
     CONTROL_MapButton(function, i, j, controldevice_joystick);
 }
-static void CONFIG_SetJoystickAnalogAxisScale(int i, int scale)
+static void CONFIG_SetJoystickAnalogAxisSensitivity(int i, float sens)
 {
-    ud.config.JoystickAnalogueScale[i] = scale;
-    CONTROL_SetAnalogAxisScale(i, scale, controldevice_joystick);
+    ud.config.JoystickAnalogueSensitivity[i] = sens;
+    CONTROL_SetAnalogAxisSensitivity(i, sens, controldevice_joystick);
 }
 static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
 {
@@ -478,6 +478,7 @@ void CONFIG_SetupJoystick(void)
     char str[80];
     char temp[80];
     int32_t scale;
+    double sens;
 
     if (ud.config.scripthandle < 0) return;
 
@@ -512,10 +513,10 @@ void CONFIG_SetupJoystick(void)
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
             ud.config.JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
 
-        Bsprintf(str,"ControllerAnalogScale%d",i);
-        scale = ud.config.JoystickAnalogueScale[i];
-        SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
-        ud.config.JoystickAnalogueScale[i] = scale;
+        Bsprintf(str,"ControllerAnalogSensitivity%d",i);
+        sens = ud.config.JoystickAnalogueSensitivity[i];
+        SCRIPT_GetDouble(ud.config.scripthandle, "Controls", str, &sens);
+        ud.config.JoystickAnalogueSensitivity[i] = sens;
 
         Bsprintf(str,"ControllerAnalogInvert%d",i);
         scale = ud.config.JoystickAnalogueInvert[i];
@@ -544,7 +545,7 @@ void CONFIG_SetupJoystick(void)
         CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i], controldevice_joystick);
         CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
         CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
-        CONTROL_SetAnalogAxisScale(i, ud.config.JoystickAnalogueScale[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisSensitivity(i, ud.config.JoystickAnalogueSensitivity[i], controldevice_joystick);
         CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i], controldevice_joystick);
         JOYSTICK_SetDeadZone(i, ud.config.JoystickAnalogueDead[i], ud.config.JoystickAnalogueSaturate[i]);
     }
@@ -592,8 +593,8 @@ static void CONFIG_SetGameControllerAxesModern()
         { GAMECONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
     };
 
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTX, 65536);
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTY, 65536);
+    CONFIG_SetJoystickAnalogAxisSensitivity(GAMECONTROLLER_AXIS_RIGHTX, DEFAULTJOYSTICKANALOGUESENSITIVITY);
+    CONFIG_SetJoystickAnalogAxisSensitivity(GAMECONTROLLER_AXIS_RIGHTY, DEFAULTJOYSTICKANALOGUESENSITIVITY);
 
     for (auto const & analogAxis : analogAxes)
         analogAxis.apply();
@@ -671,7 +672,7 @@ void CONFIG_SetGameControllerDefaultsClear()
 
     for (int i=0; i<MAXJOYAXES; i++)
     {
-        CONFIG_SetJoystickAnalogAxisScale(i, DEFAULTJOYSTICKANALOGUESCALE);
+        CONFIG_SetJoystickAnalogAxisSensitivity(i, DEFAULTJOYSTICKANALOGUESENSITIVITY);
         CONFIG_SetJoystickAnalogAxisInvert(i, 0);
         CONFIG_SetJoystickAnalogAxisDeadSaturate(i, DEFAULTJOYSTICKANALOGUEDEAD, DEFAULTJOYSTICKANALOGUESATURATE);
 
@@ -979,8 +980,8 @@ void CONFIG_WriteSetup(uint32_t flags)
             Bsprintf(buf, "ControllerDigitalAxes%d_1", dummy);
             SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]));
 
-            Bsprintf(buf, "ControllerAnalogScale%d", dummy);
-            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueScale[dummy], FALSE, FALSE);
+            Bsprintf(buf, "ControllerAnalogSensitivity%d", dummy);
+            SCRIPT_PutDouble(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueSensitivity[dummy], FALSE);
 
             Bsprintf(buf, "ControllerAnalogInvert%d", dummy);
             SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueInvert[dummy], FALSE, FALSE);

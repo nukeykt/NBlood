@@ -51,7 +51,9 @@ extern "C" {
 #define DIGITALAXISANALOGTHRESHOLD    (0x200 * 32767 / 10000)
 #define MINDIGITALAXISANALOGTHRESHOLD (0x80 * 32767 / 10000)
 
-#define DEFAULTMOUSESENSITIVITY 4 // 0x7000+MINIMUMMOUSESENSITIVITY
+#define DEFAULTMOUSESENSITIVITY  (3.f)
+#define MOUSESENSITIVITYMULTIPLIER (.5f)
+#define JOYSENSITIVITYMULTIPLIER (.2f)
 
 #define INSTANT_ONOFF       0
 #define TOGGLE_ONOFF        1
@@ -60,6 +62,7 @@ extern "C" {
 #define MAXSCALEDCONTROLVALUE  0x1ffff
 
 #define DEFAULTAXISSCALE 65536
+#define DEFAULTAXISSENSITIVITY (DEFAULTAXISSCALE/16384.f)
 
 #define BUTTONSET(x, value)     (CONTROL_ButtonState |= ((uint64_t)value << ((uint64_t)(x))))
 #define BUTTONCLEAR(x)          (CONTROL_ButtonState &= ~((uint64_t)1 << ((uint64_t)(x))))

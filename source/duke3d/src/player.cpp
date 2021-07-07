@@ -3213,11 +3213,10 @@ void P_GetInput(int const playerNum)
     }
 
     // JBF: Run key behaviour is selectable
-    int const     playerRunning    = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
-    int const     turnAmount       = playerRunning ? (NORMALTURN << 1) : NORMALTURN;
-    constexpr int analogTurnAmount = (NORMALTURN << 1);
-    int const     keyMove          = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
-    constexpr int analogExtent     = 32767;  // KEEPINSYNC sdlayer.cpp
+    int const       playerRunning = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
+    int const       turnAmount    = playerRunning ? (NORMALTURN << 1) : NORMALTURN;
+    int const       keyMove       = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
+    constexpr float analogExtent  = 32767.f;  // KEEPINSYNC sdlayer.cpp
 
     input_t input {};
 
@@ -3243,7 +3242,7 @@ void P_GetInput(int const playerNum)
     else
     {
         input.q16avel = fix16_sadd(input.q16avel, fix16_sdiv(fix16_from_int(info.mousex), F16(32)));
-        input.q16avel = fix16_sadd(input.q16avel, fix16_from_float(scaleToInterval(info.dyaw * analogTurnAmount / (analogExtent >> 1))));
+        input.q16avel = fix16_sadd(input.q16avel, fix16_from_float(scaleToInterval(info.dyaw * 64.0 / analogExtent)));
     }
 
     if (g_myAimMode)

@@ -36,6 +36,7 @@ uint64_t CONTROL_ButtonHeldState = 0;
 LastSeenInput CONTROL_LastSeenInput;
 
 float          CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
+float          CONTROL_MouseAxesSensitivity[2];
 static int32_t CONTROL_NumMouseButtons  = 0;
 static int32_t CONTROL_NumJoyButtons    = 0;
 static int32_t CONTROL_NumJoyAxes       = 0;
@@ -44,12 +45,10 @@ static controlflags      CONTROL_Flags[CONTROL_NUM_FLAGS];
 
 static controlkeymaptype  CONTROL_KeyMapping[CONTROL_NUM_FLAGS];
 
-int32_t                   CONTROL_MouseAxesScale[2];
-
 static controlaxismaptype CONTROL_JoyAxesMap[MAXJOYAXES];
 static controlaxistype    CONTROL_JoyAxes[MAXJOYAXES];
 static controlaxistype    CONTROL_LastJoyAxes[MAXJOYAXES];
-static int32_t            CONTROL_JoyAxesScale[MAXJOYAXES];
+static float              CONTROL_JoyAxesSensitivity[MAXJOYAXES];
 static int8_t             CONTROL_JoyAxesInvert[MAXJOYAXES];
 
 uint16_t                  CONTROL_JoyDeadZone[MAXJOYAXES];
@@ -114,11 +113,12 @@ static void CONTROL_GetMouseDelta(ControlInfo * info)
 {
     vec2_t input;
     mouseReadPos(&input.x, &input.y);
+    
+    vec2f_t finput = { input.x * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[0] * MOUSESENSITIVITYMULTIPLIER,
+                       input.y * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[1] * MOUSESENSITIVITYMULTIPLIER };
 
-    vec2f_t finput = { float(input.x), float(input.y) };
-
-    info->mousex = mulscale16(Blrintf(finput.x * 4.f * CONTROL_MouseSensitivity), CONTROL_MouseAxesScale[0]);
-    info->mousey = mulscale16(Blrintf(finput.y * 4.f * CONTROL_MouseSensitivity), CONTROL_MouseAxesScale[1]);
+    info->mousex = Blrintf(clamp(finput.x, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
+    info->mousey = Blrintf(clamp(finput.y, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
 }
 
 static int32_t CONTROL_GetTime(void)
@@ -313,38 +313,56 @@ void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog, controldevice device)
 
 void CONTROL_SetAnalogAxisScale(int32_t whichaxis, int32_t axisscale, controldevice device)
 {
-    int32_t *set;
+    float *set;
 
     switch (device)
     {
     case controldevice_mouse:
-        if ((unsigned) whichaxis >= ARRAY_SIZE(CONTROL_MouseAxesScale))
-        {
-            //Error("CONTROL_SetAnalogAxisScale: axis %d out of valid range for %d mouse axes.",
-            //		whichaxis, MAXMOUSEAXES);
+        if ((unsigned) whichaxis >= ARRAY_SIZE(CONTROL_MouseAxesSensitivity))
             return;
-        }
 
-        set = CONTROL_MouseAxesScale;
+        set = CONTROL_MouseAxesSensitivity;
         break;
 
     case controldevice_joystick:
         if ((unsigned) whichaxis >= (unsigned) MAXJOYAXES)
-        {
-            //Error("CONTROL_SetAnalogAxisScale: axis %d out of valid range for %d joystick axes.",
-            //		whichaxis, MAXJOYAXES);
             return;
-        }
 
-        set = CONTROL_JoyAxesScale;
+        set = CONTROL_JoyAxesSensitivity;
         break;
 
     default:
-        //Error("CONTROL_SetAnalogAxisScale: invalid controller device type");
         return;
     }
 
-    set[whichaxis] = axisscale;
+    set[whichaxis] = (float)axisscale / 8192.f;
+}
+
+void CONTROL_SetAnalogAxisSensitivity(int32_t whichaxis, float axissens, controldevice device)
+{
+    float *set;
+
+    switch (device)
+    {
+    case controldevice_mouse:
+        if ((unsigned) whichaxis >= ARRAY_SIZE(CONTROL_MouseAxesSensitivity))
+            return;
+
+        set = CONTROL_MouseAxesSensitivity;
+        break;
+
+    case controldevice_joystick:
+        if ((unsigned) whichaxis >= (unsigned) MAXJOYAXES)
+            return;
+
+        set = CONTROL_JoyAxesSensitivity;
+        break;
+
+    default:
+        return;
+    }
+
+    set[whichaxis] = axissens;
 }
 
 void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert, controldevice device)
@@ -421,11 +439,11 @@ void CONTROL_ClearAssignments(void)
     memset(CONTROL_LastJoyAxes,         0,               sizeof(CONTROL_LastJoyAxes));
     memset(CONTROL_MouseButtonMapping,  BUTTONUNDEFINED, sizeof(CONTROL_MouseButtonMapping));
 
-    for (int & i : CONTROL_MouseAxesScale)
-        i = DEFAULTAXISSCALE;
+    for (auto & i : CONTROL_MouseAxesSensitivity)
+        i = DEFAULTAXISSENSITIVITY;
 
-    for (int & i : CONTROL_JoyAxesScale)
-        i = DEFAULTAXISSCALE;
+    for (auto & i : CONTROL_JoyAxesSensitivity)
+        i = DEFAULTAXISSENSITIVITY;
 }
 
 static int DoGetDeviceButtons(
@@ -569,14 +587,14 @@ static int CONTROL_DigitizeAxis(int axis, controldevice device)
 static void CONTROL_ScaleAxis(int axis, controldevice device)
 {
     controlaxistype *set;
-    int32_t *scale;
+    float *sens;
     int8_t * invert;
 
     switch (device)
     {
     case controldevice_joystick:
         set = CONTROL_JoyAxes;
-        scale = CONTROL_JoyAxesScale;
+        sens = CONTROL_JoyAxesSensitivity;
         invert = CONTROL_JoyAxesInvert;
         break;
 
@@ -584,7 +602,7 @@ static void CONTROL_ScaleAxis(int axis, controldevice device)
     }
 
     int const invertResult = !!invert[axis];
-    int const clamped = clamp(mulscale16(set[axis].analog, scale[axis]), -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE);
+    int const clamped = Blrintf(clamp<float>(set[axis].analog * sens[axis] * JOYSENSITIVITYMULTIPLIER, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
     set[axis].analog  = (clamped ^ -invertResult) + invertResult;
 }
 

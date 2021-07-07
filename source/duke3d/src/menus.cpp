@@ -908,8 +908,8 @@ static MenuEntry_t *MEL_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
 
 static MenuLink_t MEO_MOUSESETUP_BTNS = { MENU_MOUSEBTNS, MA_Advance, };
 static MenuEntry_t ME_MOUSESETUP_BTNS = MAKE_MENUENTRY( "Button assignment", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_BTNS, Link );
-static MenuRangeFloat_t MEO_MOUSESETUP_SENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseSensitivity, &MF_Redfont, .1f, 10.f, 0.f, 100, DisplayTypeInteger );
-static MenuEntry_t ME_MOUSESETUP_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SENSITIVITY, RangeFloat );
+static MenuRangeFloat_t MEO_MOUSESETUP_SENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseSensitivity, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuEntry_t ME_MOUSESETUP_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_SENSITIVITY, RangeFloat );
 
 #ifndef EDUKE32_RETAIL_MENU
 static char const *MEOSN_MOUSESETUP_AIM_TYPE [] = { "Toggle", "Hold" };
@@ -922,15 +922,16 @@ static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:
 static MenuOption_t MEO_MOUSESETUP_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &ud.mouseflip );
 static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_INVERT, Option );
 
-static MenuRangeInt32_t MEO_MOUSESETUP_SCALEX = MAKE_MENURANGE(&CONTROL_MouseAxesScale[0], &MF_Redfont, 0, 65536, 65536, 129, DisplayTypeNormalizedDecimal|EnforceIntervals);
-static MenuEntry_t ME_MOUSESETUP_SCALEX = MAKE_MENUENTRY("X-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SCALEX, RangeInt32);
-static MenuRangeInt32_t MEO_MOUSESETUP_SCALEY = MAKE_MENURANGE(&CONTROL_MouseAxesScale[1], &MF_Redfont, 0, 65536, 65536, 129, DisplayTypeNormalizedDecimal|EnforceIntervals);
-static MenuEntry_t ME_MOUSESETUP_SCALEY = MAKE_MENUENTRY("Y-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SCALEY, RangeInt32);
+static MenuRangeFloat_t MEO_MOUSESETUP_XSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[0], &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuEntry_t ME_MOUSESETUP_HORIZONTALSENSITIVITY = MAKE_MENUENTRY( "Horiz sens.:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_XSENSITIVITY, RangeFloat );
+
+static MenuRangeFloat_t MEO_MOUSESETUP_YSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[1], &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuEntry_t ME_MOUSESETUP_VERTICALSENSITIVITY = MAKE_MENUENTRY( "Vert sens.:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_YSENSITIVITY, RangeFloat );
 
 static MenuEntry_t *MEL_MOUSESETUP[] = {
     &ME_MOUSESETUP_SENSITIVITY,
-    &ME_MOUSESETUP_SCALEX,
-    &ME_MOUSESETUP_SCALEY,
+    &ME_MOUSESETUP_HORIZONTALSENSITIVITY,
+    &ME_MOUSESETUP_VERTICALSENSITIVITY,
     &ME_MOUSESETUP_INVERT,
     &ME_MOUSESETUP_BTNS,
     &ME_Space2_Redfont,
@@ -980,11 +981,11 @@ static MenuEntry_t ME_JOYSTICK_ENABLE = MAKE_MENUENTRY( "Use Controller:", &MF_R
 MAKE_MENU_TOP_ENTRYLINK( "Button Assignment", MEF_BigOptionsRtSections, JOYSTICK_EDITBUTTONS, MENU_JOYSTICKBTNS );
 MAKE_MENU_TOP_ENTRYLINK( "Advanced", MEF_BigOptionsRtSections, JOYSTICK_ADV, MENU_JOYSTICKADV );
 
-static MenuRangeInt32_t MEO_JOYSTICK_LOOKXSCALE = MAKE_MENURANGE( NULL, &MF_Redfont, 0, 131072, 131072, 101, 2 | EnforceIntervals );
-static MenuEntry_t ME_JOYSTICK_LOOKXSCALE = MAKE_MENUENTRY( "Turn sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKXSCALE, RangeInt32 );
+static MenuRangeFloat_t MEO_JOYSTICK_HORIZONTALAIMSENSITIVITY = MAKE_MENURANGE( NULL, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuEntry_t ME_JOYSTICK_HORIZONTALAIMSENSITIVITY = MAKE_MENUENTRY( "Horiz sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_HORIZONTALAIMSENSITIVITY, RangeFloat );
 
-static MenuRangeInt32_t MEO_JOYSTICK_LOOKYSCALE = MAKE_MENURANGE( NULL, &MF_Redfont, 0, 131072, 131072, 101, 2 | EnforceIntervals );
-static MenuEntry_t ME_JOYSTICK_LOOKYSCALE = MAKE_MENUENTRY( "Aim sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKYSCALE, RangeInt32 );
+static MenuRangeFloat_t MEO_JOYSTICK_VERTICALAIMSENSITIVITY = MAKE_MENURANGE( NULL, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuEntry_t ME_JOYSTICK_VERTICALAIMSENSITIVITY = MAKE_MENUENTRY( "Vert sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_VERTICALAIMSENSITIVITY, RangeFloat );
 
 static MenuOption_t MEO_JOYSTICK_LOOKINVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, NULL );
 static MenuEntry_t ME_JOYSTICK_LOOKINVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKINVERT, Option );
@@ -994,8 +995,8 @@ static MenuEntry_t ME_JOYSTICK_DEFAULTS = MAKE_MENUENTRY( "Reset To Defaults", &
 
 static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
     &ME_JOYSTICK_ENABLE,
-    &ME_JOYSTICK_LOOKXSCALE,
-    &ME_JOYSTICK_LOOKYSCALE,
+    &ME_JOYSTICK_HORIZONTALAIMSENSITIVITY,
+    &ME_JOYSTICK_VERTICALAIMSENSITIVITY,
     &ME_JOYSTICK_LOOKINVERT,
     &ME_JOYSTICK_EDITBUTTONS,
     &ME_Space6_Redfont,
@@ -1045,8 +1046,9 @@ static int32_t MEOSV_JOYSTICKAXIS_ANALOG[] = { -1, analog_turning, analog_strafi
 static MenuOptionSet_t MEOS_JOYSTICKAXIS_ANALOG = MAKE_MENUOPTIONSET( MEOSN_JOYSTICKAXIS_ANALOG, MEOSV_JOYSTICKAXIS_ANALOG, 0x0 );
 static MenuOption_t MEO_JOYSTICKAXIS_ANALOG = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_JOYSTICKAXIS_ANALOG, NULL );
 static MenuEntry_t ME_JOYSTICKAXIS_ANALOG = MAKE_MENUENTRY( "Input", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_ANALOG, Option );
-static MenuRangeInt32_t MEO_JOYSTICKAXIS_SCALE = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 131072, 131072, 101, 2 | EnforceIntervals );
-static MenuEntry_t ME_JOYSTICKAXIS_SCALE = MAKE_MENUENTRY( "Sensitivity", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_SCALE, RangeInt32 );
+static MenuRangeFloat_t MEO_JOYSTICKAXIS_SENSITIVITY = MAKE_MENURANGE( NULL, &MF_Redfont, .1f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuEntry_t ME_JOYSTICKAXIS_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICKAXIS_SENSITIVITY, RangeFloat );
+
 static MenuOption_t MEO_JOYSTICKAXIS_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, NULL );
 static MenuEntry_t ME_JOYSTICKAXIS_INVERT = MAKE_MENUENTRY( "Invert", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_INVERT, Option );
 static MenuRangeInt32_t MEO_JOYSTICKAXIS_DEAD = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 4000, 0, 21, EnforceIntervals );
@@ -1061,7 +1063,7 @@ static MenuEntry_t ME_JOYSTICKAXIS_DIGITALPOSITIVE = MAKE_MENUENTRY( "Digital +"
 
 static MenuEntry_t *MEL_JOYSTICKAXIS[] = {
     &ME_JOYSTICKAXIS_ANALOG,
-    &ME_JOYSTICKAXIS_SCALE,
+    &ME_JOYSTICKAXIS_SENSITIVITY,
     &ME_JOYSTICKAXIS_INVERT,
     &ME_JOYSTICKAXIS_DEAD,
     &ME_JOYSTICKAXIS_SATU,
@@ -2391,8 +2393,8 @@ static void Menu_Pre(MenuID_t cm)
         break;
 
     case MENU_JOYSTICKSETUP:
-        MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKXSCALE, !CONTROL_JoyPresent);
-        MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKYSCALE, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_HORIZONTALAIMSENSITIVITY, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_VERTICALAIMSENSITIVITY, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKINVERT, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITBUTTONS, !CONTROL_JoyPresent || (joystick.numButtons == 0 && joystick.numHats == 0));
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_ADV, !CONTROL_JoyPresent);
@@ -3484,10 +3486,10 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     case MENU_JOYSTICKAXES:
         M_JOYSTICKAXIS.title = joyGetName(0, M_JOYSTICKAXES.currentEntry);
         MEO_JOYSTICKAXIS_ANALOG.data = &ud.config.JoystickAnalogueAxes[M_JOYSTICKAXES.currentEntry];
-        MEO_JOYSTICKAXIS_SCALE.variable = &ud.config.JoystickAnalogueScale[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_INVERT.data = &ud.config.JoystickAnalogueInvert[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_DEAD.variable = &ud.config.JoystickAnalogueDead[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_SATU.variable = &ud.config.JoystickAnalogueSaturate[M_JOYSTICKAXES.currentEntry];
+        MEO_JOYSTICKAXIS_SENSITIVITY.variable = &ud.config.JoystickAnalogueSensitivity[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_DIGITALNEGATIVE.data = &ud.config.JoystickDigitalFunctions[M_JOYSTICKAXES.currentEntry][0];
         MEO_JOYSTICKAXIS_DIGITALPOSITIVE.data = &ud.config.JoystickDigitalFunctions[M_JOYSTICKAXES.currentEntry][1];
         break;
@@ -3861,16 +3863,6 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
         FX_SetVolume(newValue);
     else if (entry == &ME_SOUND_VOLUME_MUSIC)
         S_MusicVolume(newValue);
-    else if (entry == &ME_MOUSESETUP_SCALEX)
-        CONTROL_SetAnalogAxisScale(0, newValue, controldevice_mouse);
-    else if (entry == &ME_MOUSESETUP_SCALEY)
-        CONTROL_SetAnalogAxisScale(1, newValue, controldevice_mouse);
-    else if (entry == &ME_JOYSTICKAXIS_SCALE)
-        CONTROL_SetAnalogAxisScale(M_JOYSTICKAXES.currentEntry, newValue, controldevice_joystick);
-    else if (entry == &ME_JOYSTICK_LOOKXSCALE)
-        CONTROL_SetAnalogAxisScale(g_turnAxis, newValue, controldevice_joystick);
-    else if (entry == &ME_JOYSTICK_LOOKYSCALE)
-        CONTROL_SetAnalogAxisScale(g_lookAxis, newValue, controldevice_joystick);
     else if (entry == &ME_JOYSTICKAXIS_DEAD)
         JOYSTICK_SetDeadZone(M_JOYSTICKAXES.currentEntry, newValue, *MEO_JOYSTICKAXIS_SATU.variable);
     else if (entry == &ME_JOYSTICKAXIS_SATU)
@@ -3886,10 +3878,17 @@ static int32_t Menu_EntryRangeFloatModify(MenuEntry_t *entry, float newValue)
 #ifndef EDUKE32_RETAIL_MENU
     if (entry == &ME_COLCORR_AMBIENT)
         r_ambientlightrecip = 1.f/newValue;
+    else
 #else
     UNREFERENCED_PARAMETER(entry);
     UNREFERENCED_PARAMETER(newValue);
 #endif
+    if (entry == &ME_JOYSTICKAXIS_SENSITIVITY)
+        CONTROL_SetAnalogAxisSensitivity(M_JOYSTICKAXES.currentEntry, newValue, controldevice_joystick);
+    else if (entry == &ME_JOYSTICK_HORIZONTALAIMSENSITIVITY)
+        CONTROL_SetAnalogAxisSensitivity(g_turnAxis, newValue, controldevice_joystick);
+    else if (entry == &ME_JOYSTICK_VERTICALAIMSENSITIVITY)
+        CONTROL_SetAnalogAxisSensitivity(g_lookAxis, newValue, controldevice_joystick);
 
     return 0;
 }
@@ -4697,8 +4696,8 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_JOYSTICKSETUP:
-        ME_JOYSTICK_LOOKXSCALE.flags |= MEF_Hidden;
-        ME_JOYSTICK_LOOKYSCALE.flags |= MEF_Hidden;
+        ME_JOYSTICK_HORIZONTALAIMSENSITIVITY.flags |= MEF_Hidden;
+        ME_JOYSTICK_VERTICALAIMSENSITIVITY.flags |= MEF_Hidden;
         ME_JOYSTICK_LOOKINVERT.flags |= MEF_Hidden;
 
         g_turnAxis = g_lookAxis = -1;
@@ -4707,8 +4706,8 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         {
             if (ud.config.JoystickAnalogueAxes[i] == analog_turning)
             {
-                MEO_JOYSTICK_LOOKXSCALE.variable = &ud.config.JoystickAnalogueScale[i];
-                ME_JOYSTICK_LOOKXSCALE.flags &= ~MEF_Hidden;
+                MEO_JOYSTICK_HORIZONTALAIMSENSITIVITY.variable = &ud.config.JoystickAnalogueSensitivity[i];
+                ME_JOYSTICK_HORIZONTALAIMSENSITIVITY.flags &= ~MEF_Hidden;
                 g_turnAxis = i;
                 break;
             }
@@ -4718,8 +4717,8 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         {
             if (ud.config.JoystickAnalogueAxes[i] == analog_lookingupanddown)
             {
-                MEO_JOYSTICK_LOOKYSCALE.variable = &ud.config.JoystickAnalogueScale[i];
-                ME_JOYSTICK_LOOKYSCALE.flags &= ~MEF_Hidden;
+                MEO_JOYSTICK_VERTICALAIMSENSITIVITY.variable = &ud.config.JoystickAnalogueSensitivity[i];
+                ME_JOYSTICK_VERTICALAIMSENSITIVITY.flags &= ~MEF_Hidden;
                 MEO_JOYSTICK_LOOKINVERT.data = &ud.config.JoystickAnalogueInvert[i];
                 ME_JOYSTICK_LOOKINVERT.flags &= ~MEF_Hidden;
                 g_lookAxis = i;
