@@ -291,8 +291,8 @@ static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
 
-static int g_lookAxis;
-static int g_turnAxis;
+static int g_lookAxis = -1;
+static int g_turnAxis = -1;
 
 /*
 MenuEntry_t is passed in arrays of pointers so that the callback function
@@ -4647,11 +4647,18 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_JOYSTICKSETUP:
+        ME_JOYSTICK_LOOKXSCALE.flags |= MEF_Hidden;
+        ME_JOYSTICK_LOOKYSCALE.flags |= MEF_Hidden;
+        ME_JOYSTICK_LOOKINVERT.flags |= MEF_Hidden;
+
+        g_turnAxis = g_lookAxis = -1;
+
         for (int i=0;i<MAXJOYAXES;i++)
         {
             if (ud.config.JoystickAnalogueAxes[i] == analog_turning)
             {
                 MEO_JOYSTICK_LOOKXSCALE.variable = &ud.config.JoystickAnalogueScale[i];
+                ME_JOYSTICK_LOOKXSCALE.flags &= ~MEF_Hidden;
                 g_turnAxis = i;
                 break;
             }
@@ -4662,7 +4669,9 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
             if (ud.config.JoystickAnalogueAxes[i] == analog_lookingupanddown)
             {
                 MEO_JOYSTICK_LOOKYSCALE.variable = &ud.config.JoystickAnalogueScale[i];
-                MEO_JOYSTICK_LOOKINVERT.data     = &ud.config.JoystickAnalogueInvert[i];
+                ME_JOYSTICK_LOOKYSCALE.flags &= ~MEF_Hidden;
+                MEO_JOYSTICK_LOOKINVERT.data = &ud.config.JoystickAnalogueInvert[i];
+                ME_JOYSTICK_LOOKINVERT.flags &= ~MEF_Hidden;
                 g_lookAxis = i;
                 break;
             }
