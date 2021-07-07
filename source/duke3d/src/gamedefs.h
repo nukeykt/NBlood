@@ -48,9 +48,6 @@ extern "C" {
 #define MAXJOYAXES 9
 #define MAXJOYDIGITAL (MAXJOYAXES*2)
 
-// default mouse scale
-#define DEFAULTMOUSEANALOGUESCALE           65536
-
 // default joystick settings
 
 #if defined(GEKKO)

@@ -360,14 +360,6 @@ void CONFIG_SetDefaults(void)
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1, controldevice_mouse);
     }
 
-    for (int i=0; i<MAXMOUSEAXES; i++)
-    {
-        CONTROL_SetAnalogAxisScale(i, DEFAULTMOUSEANALOGUESCALE, controldevice_mouse);
-
-        ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
-        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
-    }
-
 #if !defined GEKKO
     CONFIG_SetGameControllerDefaults();
 #else
@@ -471,22 +463,11 @@ void CONFIG_SetupMouse(void)
             ud.config.MouseFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
     }
 
-    // map over the axes
-    for (int i=0; i<MAXMOUSEAXES; i++)
-    {
-        Bsprintf(str,"MouseAnalogAxes%d",i);
-        temp[0] = 0;
-        if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
-    }
-
     for (int i=0; i<MAXMOUSEBUTTONS; i++)
     {
         CONTROL_MapButton(ud.config.MouseFunctions[i][0], i, 0, controldevice_mouse);
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1,  controldevice_mouse);
     }
-    for (int i=0; i<MAXMOUSEAXES; i++)
-        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
 }
 
 
@@ -944,12 +925,6 @@ void CONFIG_WriteSetup(uint32_t flags)
 
             Bsprintf(buf, "MouseButtonClicked%d", i);
             SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][1]));
-        }
-
-        for (int i=0; i<MAXMOUSEAXES; i++)
-        {
-            Bsprintf(buf, "MouseAnalogAxes%d", i);
-            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[i]));
         }
     }
 
