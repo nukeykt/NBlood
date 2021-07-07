@@ -4564,16 +4564,23 @@ static void Menu_ReadSaveGameHeaders()
 static void Menu_CheckHiddenSelection(Menu_t* m)
 {
     auto const menu = (MenuMenu_t *)m->object;
-    auto const orig = menu->currentEntry;
 
     while (!menu->entrylist[menu->currentEntry] ||
         (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
         ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
     {
         if (--menu->currentEntry < 0)
-            menu->currentEntry = menu->numEntries;
-        if (menu->currentEntry == orig)
-            G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
+        {
+            menu->currentEntry = 0;
+
+            while (!menu->entrylist[menu->currentEntry] ||
+                (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
+                ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
+            {
+                if (++menu->currentEntry >= menu->numEntries)
+                    G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
+            }
+        }
     }
 }
 
