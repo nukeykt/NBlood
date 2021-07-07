@@ -46,13 +46,14 @@ int32_t     SCRIPT_GetString(int32_t scripthandle, char const *sectionname, char
 int32_t     SCRIPT_GetDoubleString(int32_t scripthandle, const char *sectionname, const char *entryname, char *dest1, char *dest2);
 int32_t     SCRIPT_GetNumber(int32_t scripthandle, const char *sectionname, const char *entryname, int32_t *number);
 int32_t     SCRIPT_GetBoolean(int32_t scripthandle, char const *sectionname, char const *entryname, int32_t *boole);
+int32_t     SCRIPT_GetDouble(int32_t scripthandle, const char * sectionname, const char * entryname, double * number);
 void        SCRIPT_PutSection(int32_t scripthandle, char const *sectionname);
 void        SCRIPT_PutRaw(int32_t scripthandle, char const *sectionname, char const *entryname, char const *raw);
 void        SCRIPT_PutString(int32_t scripthandle, char const *sectionname, char const *entryname, const char *string);
 void        SCRIPT_PutDoubleString(int32_t scripthandle, const char *sectionname, const char *entryname, const char *string1, const char *string2);
 void        SCRIPT_PutNumber(int32_t scripthandle, const char *sectionname, const char *entryname, int32_t number, int32_t hexadecimal, int32_t defaultvalue);
-void        SCRIPT_PutBoolean(int32_t scripthandle, char *sectionname, char *entryname, int32_t boole);
-void        SCRIPT_PutDouble(int32_t scripthandle, char *sectionname, char *entryname, double number, int32_t defaultvalue);
+void        SCRIPT_PutBoolean(int32_t scripthandle, char const *sectionname, char const *entryname, int32_t boole);
+void        SCRIPT_PutDouble(int32_t scripthandle, char const *sectionname, char const *entryname, double number, int32_t defaultvalue);
 
 #ifdef __cplusplus
 }
