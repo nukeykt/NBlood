@@ -1062,8 +1062,12 @@ static MenuEntry_t ME_JOYSTICKAXIS_DIGITALNEGATIVE = MAKE_MENUENTRY( "Digital -"
 static MenuOption_t MEO_JOYSTICKAXIS_DIGITALPOSITIVE = MAKE_MENUOPTION( &MF_Minifont, &MEOS_Gamefuncs, NULL );
 static MenuEntry_t ME_JOYSTICKAXIS_DIGITALPOSITIVE = MAKE_MENUENTRY( "Digital +", &MF_Bluefont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_DIGITALPOSITIVE, Option );
 
+static MenuOption_t MEO_JOYSTICKAXIS_TRIGGERFUNCTION = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, NULL );
+static MenuEntry_t ME_JOYSTICKAXIS_TRIGGERFUNCTION = MAKE_MENUENTRY( "Function:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_TRIGGERFUNCTION, Option );
+
 static MenuEntry_t *MEL_JOYSTICKAXIS[] = {
     &ME_JOYSTICKAXIS_ANALOG,
+    &ME_JOYSTICKAXIS_TRIGGERFUNCTION,
     &ME_JOYSTICKAXIS_SENSITIVITY,
     &ME_JOYSTICKAXIS_INVERT,
     &ME_JOYSTICKAXIS_DEAD,
@@ -2406,6 +2410,14 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITAXES, !CONTROL_JoyPresent || joystick.numAxes == 0);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_AIM_ASSIST, !ud.config.JoystickViewCentering);
         break;
+    case MENU_JOYSTICKAXES:
+        MenuEntry_HideOnCondition(&ME_JOYSTICKAXIS_TRIGGERFUNCTION, !joystick.isGameController || M_JOYSTICKAXES.currentEntry < 4);
+        MenuEntry_HideOnCondition(&ME_JOYSTICKAXIS_ANALOG, joystick.isGameController && M_JOYSTICKAXES.currentEntry >= 4);
+        MenuEntry_HideOnCondition(&ME_JOYSTICKAXIS_INVERT, joystick.isGameController && M_JOYSTICKAXES.currentEntry >= 4);
+        MenuEntry_HideOnCondition(&ME_JOYSTICKAXIS_SATU, joystick.isGameController && M_JOYSTICKAXES.currentEntry >= 4);
+        MenuEntry_HideOnCondition(&ME_JOYSTICKAXIS_DIGITALPOSITIVE, joystick.isGameController && M_JOYSTICKAXES.currentEntry >= 4);
+        MenuEntry_HideOnCondition(&ME_JOYSTICKAXIS_DIGITALNEGATIVE, joystick.isGameController && M_JOYSTICKAXES.currentEntry >= 4);
+        break;
 
 #ifndef EDUKE32_RETAIL_MENU
     case MENU_MOUSESETUP:
@@ -3493,6 +3505,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         MEO_JOYSTICKAXIS_SENSITIVITY.variable = &ud.config.JoystickAnalogueSensitivity[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_DIGITALNEGATIVE.data = &ud.config.JoystickDigitalFunctions[M_JOYSTICKAXES.currentEntry][0];
         MEO_JOYSTICKAXIS_DIGITALPOSITIVE.data = &ud.config.JoystickDigitalFunctions[M_JOYSTICKAXES.currentEntry][1];
+        MEO_JOYSTICKAXIS_TRIGGERFUNCTION.data = MEO_JOYSTICKAXIS_DIGITALPOSITIVE.data;
         break;
 
     case MENU_CHEATS:
