@@ -875,7 +875,8 @@ static MenuEntry_t *MEL_KEYBOARDSETUP[] = {
 static struct MenuMouseData_t
 {
     char const *name;
-    int index[2];
+    int buttonIndex;
+    int doubleClick;
 } const MenuMouseData[]  = {
     { "Left",       0, 0, },
     { "Right",      1, 0, },
@@ -2066,12 +2067,13 @@ void Menu_Init(void)
     M_KEYBOARDKEYS.numEntries = NUMGAMEFUNCTIONS;
     for (i = 0; i < ARRAY_SSIZE(MenuMouseData); ++i)
     {
+        auto &mb = MenuMouseData[i];
         MEL_MOUSESETUPBTNS[i] = &ME_MOUSESETUPBTNS[i];
         ME_MOUSESETUPBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
-        ME_MOUSESETUPBTNS[i].name = MenuMouseData[i].name;
+        ME_MOUSESETUPBTNS[i].name = mb.name;
         ME_MOUSESETUPBTNS[i].entry = &MEO_MOUSESETUPBTNS[i];
         MEO_MOUSESETUPBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseData[i].index[0]][MenuMouseData[i].index[1]];
+        MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[mb.buttonIndex][mb.doubleClick];
     }
 
     Menu_PopulateJoystick();
@@ -3722,9 +3724,12 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     switch (g_currentMenu)
     {
     case MENU_MOUSEBTNS:
-        CONTROL_MapButton(newOption, MenuMouseData[M_MOUSEBTNS.currentEntry].index[0], MenuMouseData[M_MOUSEBTNS.currentEntry].index[1], controldevice_mouse);
-        CONTROL_FreeMouseBind(MenuMouseData[M_MOUSEBTNS.currentEntry].index[0]);
+    {
+        auto &mb = MenuMouseData[M_MOUSEBTNS.currentEntry];
+        CONTROL_MapButton(newOption, mb.buttonIndex, mb.doubleClick, controldevice_mouse);
+        CONTROL_FreeMouseBind(mb.buttonIndex);
         break;
+    }
     case MENU_JOYSTICKBTNS:
         if (M_JOYSTICKBTNS.currentEntry < joystick.numButtons + 4*joystick.numHats)
             CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, 0, controldevice_joystick);
