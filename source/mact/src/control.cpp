@@ -972,13 +972,13 @@ void CONTROL_GetUserInput(UserInput * uinfo)
     if (
         KB_KeyPressed(sc_DownArrow)
         || KB_KeyPressed(sc_kpad_2)
-        || (MOUSE_GetButtons()&WHEELDOWN_MOUSE)
+        || (MOUSE_GetButtons()&M_WHEELDOWN)
         )
         uinfo->dir = dir_South;
     else if (
         KB_KeyPressed(sc_UpArrow)
         || KB_KeyPressed(sc_kpad_8)
-        || (MOUSE_GetButtons()&WHEELUP_MOUSE)
+        || (MOUSE_GetButtons()&M_WHEELUP)
         )
         uinfo->dir = dir_North;
     else if (
@@ -995,12 +995,12 @@ void CONTROL_GetUserInput(UserInput * uinfo)
     uinfo->button0 =
         KB_KeyPressed(sc_Enter)
         || KB_KeyPressed(sc_kpad_Enter)
-        || (MOUSE_GetButtons()&LEFT_MOUSE)
+        || (MOUSE_GetButtons()&M_LEFTBUTTON)
         ;
 
     uinfo->button1 =
         KB_KeyPressed(sc_Escape)
-        || (MOUSE_GetButtons()&RIGHT_MOUSE)
+        || (MOUSE_GetButtons()&M_RIGHTBUTTON)
         ;
 }
 void CONTROL_ClearUserInput(UserInput * uinfo)
@@ -1011,11 +1011,11 @@ void CONTROL_ClearUserInput(UserInput * uinfo)
 
     KB_ClearKeyDown(sc_UpArrow);
     KB_ClearKeyDown(sc_kpad_8);
-    MOUSE_ClearButton(WHEELUP_MOUSE);
+    MOUSE_ClearButton(M_WHEELUP);
 
     KB_ClearKeyDown(sc_DownArrow);
     KB_ClearKeyDown(sc_kpad_2);
-    MOUSE_ClearButton(WHEELDOWN_MOUSE);
+    MOUSE_ClearButton(M_WHEELDOWN);
 
     KB_ClearKeyDown(sc_LeftArrow);
     KB_ClearKeyDown(sc_kpad_4);
@@ -1025,8 +1025,8 @@ void CONTROL_ClearUserInput(UserInput * uinfo)
 
     KB_ClearKeyDown(sc_kpad_Enter);
     KB_ClearKeyDown(sc_Enter);
-    MOUSE_ClearButton(LEFT_MOUSE);
+    MOUSE_ClearButton(M_LEFTBUTTON);
 
     KB_ClearKeyDown(sc_Escape);
-    MOUSE_ClearButton(RIGHT_MOUSE);
+    MOUSE_ClearButton(M_RIGHTBUTTON);
 }

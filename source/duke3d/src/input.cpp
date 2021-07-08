@@ -60,7 +60,7 @@ int32_t I_TextSubmit(void)
         KB_KeyPressed(sc_Enter)
         || KB_KeyPressed(sc_kpad_Enter)
 #if !defined EDUKE32_TOUCH_DEVICES
-        || MOUSEINACTIVECONDITIONAL(MOUSE_GetButtons()&LEFT_MOUSE)
+        || MOUSEINACTIVECONDITIONAL(MOUSE_GetButtons()&M_LEFTBUTTON)
 #endif
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_A))
 #if defined(GEKKO)
@@ -74,7 +74,7 @@ void I_TextSubmitClear(void)
     KB_FlushKeyboardQueue();
     KB_ClearKeyDown(sc_kpad_Enter);
     KB_ClearKeyDown(sc_Enter);
-    MOUSE_ClearButton(LEFT_MOUSE);
+    MOUSE_ClearButton(M_LEFTBUTTON);
     JOYSTICK_ClearGameControllerButton(1<<GAMECONTROLLER_BUTTON_A);
 #if defined(GEKKO)
     JOYSTICK_ClearButton(WII_A);
@@ -98,7 +98,7 @@ int32_t I_ReturnTrigger(void)
 {
     return
         KB_KeyPressed(sc_Escape)
-        || (MOUSE_GetButtons()&RIGHT_MOUSE)
+        || (MOUSE_GetButtons()&M_RIGHTBUTTON)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_B))
 #if defined(GEKKO)
         || (JOYSTICK_GetButtons()&(WII_B|WII_HOME))
@@ -110,7 +110,7 @@ void I_ReturnTriggerClear(void)
 {
     KB_FlushKeyboardQueue();
     KB_ClearKeyDown(sc_Escape);
-    MOUSE_ClearButton(RIGHT_MOUSE);
+    MOUSE_ClearButton(M_RIGHTBUTTON);
     JOYSTICK_ClearGameControllerButton(1<<GAMECONTROLLER_BUTTON_B);
 #if defined(GEKKO)
     JOYSTICK_ClearButton(WII_B);
@@ -176,7 +176,7 @@ int32_t I_MenuUp(void)
     return
         KB_KeyPressed(sc_UpArrow)
         || KB_KeyPressed(sc_kpad_8)
-        || (MOUSE_GetButtons()&WHEELUP_MOUSE)
+        || (MOUSE_GetButtons()&M_WHEELUP)
         || BUTTON(gamefunc_Move_Forward)
         || (JOYSTICK_GetHat(0)&HAT_UP)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_UP))
@@ -189,7 +189,7 @@ void I_MenuUpClear(void)
 {
     KB_ClearKeyDown(sc_UpArrow);
     KB_ClearKeyDown(sc_kpad_8);
-    MOUSE_ClearButton(WHEELUP_MOUSE);
+    MOUSE_ClearButton(M_WHEELUP);
     CONTROL_ClearButton(gamefunc_Move_Forward);
     JOYSTICK_ClearHat(0);
     JOYSTICK_ClearGameControllerButton(1<<GAMECONTROLLER_BUTTON_DPAD_UP);
@@ -202,7 +202,7 @@ int32_t I_MenuDown(void)
     return
         KB_KeyPressed(sc_DownArrow)
         || KB_KeyPressed(sc_kpad_2)
-        || (MOUSE_GetButtons()&WHEELDOWN_MOUSE)
+        || (MOUSE_GetButtons()&M_WHEELDOWN)
         || BUTTON(gamefunc_Move_Backward)
         || (JOYSTICK_GetHat(0)&HAT_DOWN)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_DOWN))
@@ -216,7 +216,7 @@ void I_MenuDownClear(void)
     KB_ClearKeyDown(sc_DownArrow);
     KB_ClearKeyDown(sc_kpad_2);
     KB_ClearKeyDown(sc_PgDn);
-    MOUSE_ClearButton(WHEELDOWN_MOUSE);
+    MOUSE_ClearButton(M_WHEELDOWN);
     CONTROL_ClearButton(gamefunc_Move_Backward);
     JOYSTICK_ClearHat(0);
     JOYSTICK_ClearGameControllerButton(1<<GAMECONTROLLER_BUTTON_DPAD_DOWN);
@@ -260,7 +260,7 @@ int32_t I_MenuRight(void)
         || (!SHIFTS_IS_PRESSED && KB_KeyPressed(sc_Tab))
         || BUTTON(gamefunc_Turn_Right)
         || BUTTON(gamefunc_Strafe_Right)
-        || (MOUSE_GetButtons()&MIDDLE_MOUSE)
+        || (MOUSE_GetButtons()&M_MIDDLEBUTTON)
         || (JOYSTICK_GetHat(0)&HAT_RIGHT)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_RIGHT))
         || (CONTROL_GetGameControllerDigitalAxisPos(GAMECONTROLLER_AXIS_LEFTX)
@@ -275,7 +275,7 @@ void I_MenuRightClear(void)
     KB_ClearKeyDown(sc_Tab);
     CONTROL_ClearButton(gamefunc_Turn_Right);
     CONTROL_ClearButton(gamefunc_Strafe_Right);
-    MOUSE_ClearButton(MIDDLE_MOUSE);
+    MOUSE_ClearButton(M_MIDDLEBUTTON);
     JOYSTICK_ClearHat(0);
     JOYSTICK_ClearGameControllerButton(1<<GAMECONTROLLER_BUTTON_DPAD_RIGHT);
     CONTROL_ClearGameControllerDigitalAxisPos(GAMECONTROLLER_AXIS_LEFTX);
@@ -323,7 +323,7 @@ int32_t I_SliderLeft(void)
     return
         I_MenuLeft()
 #if !defined EDUKE32_TOUCH_DEVICES
-        || MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&LEFT_MOUSE) && (MOUSE_GetButtons()&WHEELUP_MOUSE))
+        || MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&M_LEFTBUTTON) && (MOUSE_GetButtons()&M_WHEELUP))
 #endif
         ;
 }
@@ -331,7 +331,7 @@ int32_t I_SliderLeft(void)
 void I_SliderLeftClear(void)
 {
     I_MenuLeftClear();
-    MOUSE_ClearButton(WHEELUP_MOUSE);
+    MOUSE_ClearButton(M_WHEELUP);
 }
 
 
@@ -340,7 +340,7 @@ int32_t I_SliderRight(void)
     return
         I_MenuRight()
 #if !defined EDUKE32_TOUCH_DEVICES
-        || MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&LEFT_MOUSE) && (MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+        || MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&M_LEFTBUTTON) && (MOUSE_GetButtons()&M_WHEELDOWN))
 #endif
         ;
 }
@@ -348,7 +348,7 @@ int32_t I_SliderRight(void)
 void I_SliderRightClear(void)
 {
     I_MenuRightClear();
-    MOUSE_ClearButton(WHEELDOWN_MOUSE);
+    MOUSE_ClearButton(M_WHEELDOWN);
 }
 
 

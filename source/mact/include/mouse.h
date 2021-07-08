@@ -36,12 +36,15 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 extern "C" {
 #endif
 
-#define LEFT_MOUSE      1
-#define RIGHT_MOUSE     2
-#define MIDDLE_MOUSE    4
-#define THUMB_MOUSE     8
-#define WHEELUP_MOUSE   16
-#define WHEELDOWN_MOUSE 32
+enum MouseButtonFlags : uint8_t
+{
+    M_LEFTBUTTON   = 1,
+    M_RIGHTBUTTON  = 2,
+    M_MIDDLEBUTTON = 4,
+    M_XBUTTON      = 8,
+    M_WHEELUP      = 16,
+    M_WHEELDOWN    = 32,
+};
 
 extern float   CONTROL_MouseSensitivity;
 extern float   CONTROL_MouseAxesSensitivity[2];
