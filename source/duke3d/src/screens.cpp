@@ -610,7 +610,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             if (i < 0)
                 continue;
 
-            j = klabs(pPlayer->truefz - pPlayer->pos.z) >> 8;
+            j = max(0, pPlayer->truefz - pPlayer->pos.z) >> 8;
             j = mulscale16(czoom * (pSprite->yrepeat + j), yxaspect);
 
             if (j < 22000) j = 22000;
