@@ -907,7 +907,7 @@ static MenuEntry_t ME_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
 static MenuEntry_t *MEL_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
 
 static MenuLink_t MEO_MOUSESETUP_BTNS = { MENU_MOUSEBTNS, MA_Advance, };
-static MenuEntry_t ME_MOUSESETUP_BTNS = MAKE_MENUENTRY( "Button assignment", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_BTNS, Link );
+static MenuEntry_t ME_MOUSESETUP_BTNS = MAKE_MENUENTRY( "Button assignment", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_BTNS, Link );
 static MenuRangeFloat_t MEO_MOUSESETUP_SENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseSensitivity, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_MOUSESETUP_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_SENSITIVITY, RangeFloat );
 
@@ -915,12 +915,12 @@ static MenuEntry_t ME_MOUSESETUP_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &
 static char const *MEOSN_MOUSESETUP_AIM_TYPE [] = { "Toggle", "Hold" };
 static MenuOptionSet_t MEOS_MOUSESETUP_AIM_TYPE = MAKE_MENUOPTIONSET(MEOSN_MOUSESETUP_AIM_TYPE, NULL, 0x2);
 static MenuOption_t MEO_MOUSESETUP_MOUSEAIMINGTYPE = MAKE_MENUOPTION(&MF_Redfont, &MEOS_MOUSESETUP_AIM_TYPE, &ud.mouseaiming);
-static MenuEntry_t ME_MOUSESETUP_MOUSEAIMINGTYPE = MAKE_MENUENTRY("Aiming type:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_MOUSEAIMINGTYPE, Option);
+static MenuEntry_t ME_MOUSESETUP_MOUSEAIMINGTYPE = MAKE_MENUENTRY("Aiming type:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_MOUSEAIMINGTYPE, Option);
 static MenuOption_t MEO_MOUSESETUP_MOUSEAIMING = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &g_myAimMode );
-static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_MOUSEAIMING, Option );
+static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_MOUSEAIMING, Option );
 #endif
 static MenuOption_t MEO_MOUSESETUP_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &ud.mouseflip );
-static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_INVERT, Option );
+static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Inverted aiming:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_INVERT, Option );
 
 static MenuRangeFloat_t MEO_MOUSESETUP_XSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[0], &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_MOUSESETUP_HORIZONTALSENSITIVITY = MAKE_MENUENTRY( "Horiz sens.:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_XSENSITIVITY, RangeFloat );
@@ -987,8 +987,8 @@ static MenuEntry_t ME_JOYSTICK_HORIZONTALAIMSENSITIVITY = MAKE_MENUENTRY( "Horiz
 static MenuRangeFloat_t MEO_JOYSTICK_VERTICALAIMSENSITIVITY = MAKE_MENURANGE( NULL, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_JOYSTICK_VERTICALAIMSENSITIVITY = MAKE_MENUENTRY( "Vert sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_VERTICALAIMSENSITIVITY, RangeFloat );
 
-static MenuOption_t MEO_JOYSTICK_LOOKINVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, NULL );
-static MenuEntry_t ME_JOYSTICK_LOOKINVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKINVERT, Option );
+static MenuOption_t MEO_JOYSTICK_LOOKINVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, NULL );
+static MenuEntry_t ME_JOYSTICK_LOOKINVERT = MAKE_MENUENTRY( "Inverted aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKINVERT, Option );
 
 static MenuLink_t MEO_JOYSTICK_DEFAULTS = { MENU_JOYDEFAULTVERIFY, MA_None, };
 static MenuEntry_t ME_JOYSTICK_DEFAULTS = MAKE_MENUENTRY( "Reset To Defaults", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_DEFAULTS, Link );
@@ -1005,7 +1005,7 @@ static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
     &ME_JOYSTICK_DEFAULTS,
 };
 
-MAKE_MENU_TOP_ENTRYLINK( "Edit Axes and Triggers", MEF_BigOptionsRtSections, JOYSTICK_EDITAXES, MENU_JOYSTICKAXES );
+MAKE_MENU_TOP_ENTRYLINK( "Edit Analog Inputs", MEF_BigOptionsRtSections, JOYSTICK_EDITAXES, MENU_JOYSTICKAXES );
 
 static MenuRangeInt32_t MEO_JOYSTICK_WEIGHTED_AIMING = MAKE_MENURANGE(&ud.config.JoystickAimWeight , &MF_Bluefont, 0, 8, 0, 9, 0 );
 static MenuEntry_t ME_JOYSTICK_WEIGHTED_AIMING = MAKE_MENUENTRY( "Weighted aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_WEIGHTED_AIMING, RangeInt32 );
@@ -1014,7 +1014,7 @@ static MenuRangeInt32_t MEO_JOYSTICK_VIEW_CENTERING = MAKE_MENURANGE(&ud.config.
 static MenuEntry_t ME_JOYSTICK_VIEW_CENTERING = MAKE_MENUENTRY( "View centering:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_VIEW_CENTERING, RangeInt32 );
 
 static MenuOption_t MEO_JOYSTICK_AIM_ASSIST = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.JoystickAimAssist );
-static MenuEntry_t ME_JOYSTICK_AIM_ASSIST = MAKE_MENUENTRY( "Aim assist:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_JOYSTICK_AIM_ASSIST, Option );
+static MenuEntry_t ME_JOYSTICK_AIM_ASSIST = MAKE_MENUENTRY( "Aim assist:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_AIM_ASSIST, Option );
 
 static MenuEntry_t *MEL_JOYSTICKADV[] = {
     &ME_JOYSTICK_WEIGHTED_AIMING,
@@ -1041,20 +1041,21 @@ static MenuEntry_t *MEL_JOYSTICKAXES[MAXJOYAXES];
 
 static const char *MenuJoystickHatDirections[] = { "Up", "Right", "Down", "Left", };
 
-static char const *MEOSN_JOYSTICKAXIS_ANALOG[] = { MenuGameFuncNone, "Turning Left/Right", "Strafing", "Looking Up/Down", "Moving Forward/Back", };
+static char const *MEOSN_JOYSTICKAXIS_ANALOG[] = { MenuGameFuncNone, "Horizontal aiming", "Move sideways", "Vertical aiming", "Move forward/back", };
 static int32_t MEOSV_JOYSTICKAXIS_ANALOG[] = { -1, analog_turning, analog_strafing, analog_lookingupanddown, analog_moving, };
 static MenuOptionSet_t MEOS_JOYSTICKAXIS_ANALOG = MAKE_MENUOPTIONSET( MEOSN_JOYSTICKAXIS_ANALOG, MEOSV_JOYSTICKAXIS_ANALOG, 0x0 );
 static MenuOption_t MEO_JOYSTICKAXIS_ANALOG = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_JOYSTICKAXIS_ANALOG, NULL );
-static MenuEntry_t ME_JOYSTICKAXIS_ANALOG = MAKE_MENUENTRY( "Input", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_ANALOG, Option );
+static MenuEntry_t ME_JOYSTICKAXIS_ANALOG = MAKE_MENUENTRY( "Function:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_ANALOG, Option );
+
 static MenuRangeFloat_t MEO_JOYSTICKAXIS_SENSITIVITY = MAKE_MENURANGE( NULL, &MF_Redfont, .1f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_JOYSTICKAXIS_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICKAXIS_SENSITIVITY, RangeFloat );
 
 static MenuOption_t MEO_JOYSTICKAXIS_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, NULL );
-static MenuEntry_t ME_JOYSTICKAXIS_INVERT = MAKE_MENUENTRY( "Invert", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_INVERT, Option );
+static MenuEntry_t ME_JOYSTICKAXIS_INVERT = MAKE_MENUENTRY( "Invert input:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_INVERT, Option );
 static MenuRangeInt32_t MEO_JOYSTICKAXIS_DEAD = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 4000, 0, 21, EnforceIntervals );
-static MenuEntry_t ME_JOYSTICKAXIS_DEAD = MAKE_MENUENTRY( "Dead Zone", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_DEAD, RangeInt32 );
+static MenuEntry_t ME_JOYSTICKAXIS_DEAD = MAKE_MENUENTRY( "Dead zone:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_DEAD, RangeInt32 );
 static MenuRangeInt32_t MEO_JOYSTICKAXIS_SATU = MAKE_MENURANGE( NULL, &MF_Bluefont, 6000, 10000, 0, 21, EnforceIntervals );
-static MenuEntry_t ME_JOYSTICKAXIS_SATU = MAKE_MENUENTRY( "Saturation", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_SATU, RangeInt32 );
+static MenuEntry_t ME_JOYSTICKAXIS_SATU = MAKE_MENUENTRY( "Saturation:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_SATU, RangeInt32 );
 
 static MenuOption_t MEO_JOYSTICKAXIS_DIGITALNEGATIVE = MAKE_MENUOPTION( &MF_Minifont, &MEOS_Gamefuncs, NULL );
 static MenuEntry_t ME_JOYSTICKAXIS_DIGITALNEGATIVE = MAKE_MENUENTRY( "Digital -", &MF_Bluefont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_DIGITALNEGATIVE, Option );
@@ -1503,7 +1504,7 @@ static MenuPanel_t M_TOUCHBUTTONS = { "Button Setup", MENU_TOUCHSETUP, MA_Return
 static MenuMenu_t M_JOYSTICKSETUP = MAKE_MENUMENU( "Controller Setup", &MMF_BigOptions, MEL_JOYSTICKSETUP );
 static MenuMenu_t M_JOYSTICKADV  = MAKE_MENUMENU( "Controller Setup", &MMF_BigOptions, MEL_JOYSTICKADV );
 static MenuMenu_t M_JOYSTICKBTNS = MAKE_MENUMENU( "Controller Buttons", &MMF_MouseJoySetupBtns, MEL_JOYSTICKBTNS );
-static MenuMenu_t M_JOYSTICKAXES = MAKE_MENUMENU( "Axes and Triggers", &MMF_BigSliders, MEL_JOYSTICKAXES );
+static MenuMenu_t M_JOYSTICKAXES = MAKE_MENUMENU( "Analog Inputs", &MMF_BigSliders, MEL_JOYSTICKAXES );
 static MenuMenu_t M_KEYBOARDKEYS = MAKE_MENUMENU( "Key Configuration", &MMF_KeyboardSetupFuncs, MEL_KEYBOARDSETUPFUNCS );
 static MenuMenu_t M_MOUSEBTNS = MAKE_MENUMENU( "Mouse Buttons", &MMF_MouseJoySetupBtns, MEL_MOUSESETUPBTNS );
 static MenuMenu_t M_JOYSTICKAXIS = MAKE_MENUMENU( NULL, &MMF_BigSliders, MEL_JOYSTICKAXIS );
