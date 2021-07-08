@@ -5609,7 +5609,7 @@ void P_ProcessInput(int playerNum)
                   || (*weaponFrame > 10 && PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == KNEE_WEAPON)))
             playerSpeedReduction = pPlayer->crouchspeedmodifier;
         else if (pPlayer->on_ground && !pPlayer->jumping_toggle && !TEST_SYNC_KEY(playerBits, SK_CROUCH)
-                 && (klabs(pPlayer->truefz - pPlayer->truecz) - (PMINHEIGHT << 1)) < stepHeight)
+                 && !playerShrunk && (klabs(pPlayer->truefz - pPlayer->truecz) - (PMINHEIGHT << 1)) < stepHeight)
         {
             playerSpeedReduction = pPlayer->crouchspeedmodifier;
 //            pPlayer->pos.z += PCROUCHINCREMENT;
