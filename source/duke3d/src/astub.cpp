@@ -8528,6 +8528,38 @@ static int osdcmd_editorgridextent(osdcmdptr_t parm)
     return OSDCMD_OK;
 }
 
+static int osdcmd_upscalefactor(osdcmdptr_t parm)
+{
+    int32_t i;
+
+    if (parm->numparms == 0)
+    {
+        OSD_Printf("\"upscalefactor\" is \"%d\"\n", upscalefactor);
+        return OSDCMD_SHOWHELP;
+    }
+    else if (parm->numparms != 1)
+        return OSDCMD_SHOWHELP;
+
+    i = Batol(parm->parms[0]);
+
+    if (i >= 1 && i <= 3)
+    {
+        upscalefactor = i;
+        OSD_Printf("upscalefactor %d\n", upscalefactor);
+
+        if (!in3dmode())
+        {
+            videoSet2dMode(xres, yres, upscalefactor);
+            return OSDCMD_OK;
+        }
+
+    }
+    else
+        OSD_Printf("upscalefactor: specify a value 1-3\n");
+
+    return OSDCMD_OK;
+}
+
 static int osdcmd_addpath(osdcmdptr_t parm)
 {
     char pathname[BMAX_PATH];
@@ -9170,6 +9202,8 @@ static int32_t registerosdcommands(void)
     OSD_RegisterFunction("artdump","dump art to disk", osdcmd_artdump);
 
     OSD_RegisterFunction("sensitivity","sensitivity <value>: changes the mouse sensitivity", osdcmd_sensitivity);
+
+    OSD_RegisterFunction("upscalefactor","upscalefactor <value>: integer upscaling",osdcmd_upscalefactor);
 
     //PK
     OSD_RegisterFunction("m32_2d3dmode", "2d3dmode: experimental 2d/3d hybrid mode", osdcmd_vars_pk);

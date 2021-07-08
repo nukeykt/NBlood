@@ -8699,6 +8699,7 @@ int32_t enginePreInit(void)
     mmxoverlay();
 #endif
 
+    upscalefactor = 1;
     validmodecnt = 0;
     videoGetModes();
 
@@ -11268,8 +11269,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
 #ifdef USE_OPENGL
     if (nogl) dabpp = 8;
 #endif
-    daupscaledxdim = max(320, daupscaledxdim);
-    daupscaledydim = max(200, daupscaledydim);
+    daupscaledxdim = max(640, daupscaledxdim);
+    daupscaledydim = max(400, daupscaledydim);
 
     if (in3dmode() && videomodereset == 0 && (davidoption == fullscreen) &&
         (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
@@ -13621,6 +13622,46 @@ void setfirstwall(int16_t sectnum, int16_t newfirstwall)
 //
 // qsetmodeany
 //
+void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor)
+{
+    daupscaledxdim = max(640, min(daupscaledxdim, max(640, daupscaledxdim/daupscalefactor) * daupscalefactor));
+    daupscaledydim = max(480, min(daupscaledydim, max(480, daupscaledydim/daupscalefactor) * daupscalefactor));
+    daupscalefactor = max(1, min(tabledivide32(daupscaledydim, 480), daupscalefactor));
+
+#ifndef RENDERTYPESDL
+    daupscalefactor = 1;
+#endif
+
+    g_lastpalettesum = 0;
+    if (videoSetMode(daupscaledxdim,daupscaledydim,8,fullscreen) < 0) return;
+
+    upscalefactor = daupscalefactor;
+
+    xdim = daupscaledxdim/upscalefactor;
+    ydim = daupscaledydim/upscalefactor;
+
+#ifdef USE_OPENGL
+    fxdim = (float) xdim;
+    fydim = (float) ydim;
+
+    rendmode = REND_CLASSIC;
+#endif
+
+    OSD_ResizeDisplay(xdim, ydim);
+
+    videoAllocateBuffers();
+
+    ydim16 = ydim - STATUS2DSIZ2;
+    halfxdim16 = xdim >> 1;
+    midydim16 = ydim16 >> 1; // scale(200,ydim,480);
+
+    videoBeginDrawing(); //{{{
+    Bmemset((char *)frameplace, 0, ydim*bytesperline);
+    videoEndDrawing();   //}}}
+    qsetmode = ((xres<<16)|(yres&0xffff));
+}
+
+#if 0
 void videoSet2dMode(int32_t daxdim, int32_t daydim)
 {
     if (daxdim < 640) daxdim = 640;
@@ -13657,6 +13698,7 @@ void videoSet2dMode(int32_t daxdim, int32_t daydim)
 
     qsetmode = ((daxdim<<16)|(daydim&0xffff));
 }
+#endif // 
 
 static int32_t printext_checkypos(int32_t ypos, int32_t *yminptr, int32_t *ymaxptr)
 {

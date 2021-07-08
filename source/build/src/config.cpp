@@ -116,8 +116,8 @@ int32_t loadsetup(const char *fn)
     if (readconfig(fp, "forcesetup", val, VL) > 0) forcesetup = (atoi_safe(val) != 0);
     if (readconfig(fp, "fullscreen", val, VL) > 0) fullscreen = (atoi_safe(val) != 0);
 
-    if (readconfig(fp, "xdim3d", val, VL) > 0) xdim = atoi_safe(val);
-    if (readconfig(fp, "ydim3d", val, VL) > 0) ydim = atoi_safe(val);
+    if (readconfig(fp, "xdim", val, VL) > 0) xdim = atoi_safe(val);
+    if (readconfig(fp, "ydim", val, VL) > 0) ydim = atoi_safe(val);
 
     if (readconfig(fp, "bpp", val, VL) > 0) bppgame = atoi_safe(val);
 
@@ -250,6 +250,9 @@ int32_t loadsetup(const char *fn)
     if (readconfig(fp, "graphicsmode", val, VL) > 0)
         graphicsmode = clamp(atoi_safe(val), 0, 2);
 
+    if (readconfig(fp, "upscalefactor", val, VL) > 0)
+        upscalefactor = clamp(atoi_safe(val), 1, 3);
+
     if (readconfig(fp, "samplerate", val, VL) > 0) MixRate = clamp(atoi_safe(val), 8000, 48000);
     if (readconfig(fp, "ambiencetoggle", val, VL) > 0) AmbienceToggle = !!atoi_safe(val);
     if (readconfig(fp, "parlock", val, VL) > 0) ParentalLock = !!atoi_safe(val);
@@ -362,8 +365,9 @@ int32_t writesetup(const char *fn)
              "fullscreen = %d\n"
              "\n"
              "; Video resolution\n"
-             "xdim3d = %d\n"
-             "ydim3d = %d\n"
+             "xdim = %d\n"
+             "ydim = %d\n"
+             "upscalefactor = %d\n"
              "\n"
              "; 3D-mode colour depth\n"
              "bpp = %d\n"
@@ -605,7 +609,7 @@ int32_t writesetup(const char *fn)
              "; remap = 2B-9C,52-4C\n"
              "remap = ",
 
-             forcesetup, fullscreen, xdim, ydim, bppgame,
+             forcesetup, fullscreen, xres, yres, upscalefactor, bppgame,
 #ifdef USE_OPENGL
              vsync,
 #endif

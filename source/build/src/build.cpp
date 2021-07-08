@@ -320,7 +320,7 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
 
     if (!in3dmode())
     {
-        videoSet2dMode(newx,newy);
+        videoSet2dMode(newx, newy, upscalefactor);
 
         videoBeginDrawing();	//{{{
         CLEARLINES2D(0, ydim16, 0);
@@ -3571,7 +3571,7 @@ void overheadeditor(void)
     ovh.splitsect = -1;
     ovh.splitstartwall = -1;
 
-    videoSet2dMode(xdim,ydim);
+    videoSet2dMode(xres, yres, upscalefactor);
 
     osearchx = searchx;
     osearchy = searchy;
@@ -8405,7 +8405,7 @@ CANCEL:
 
     fixspritesectors();
 
-    if (videoSetGameMode(fullscreen,xdim,ydim,bppgame,upscalefactor) < 0)
+    if (videoSetGameMode(fullscreen,xres,yres,bppgame,upscalefactor) < 0)
     {
         initprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
         CallExtUnInit();
