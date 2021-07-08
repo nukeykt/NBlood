@@ -5653,7 +5653,7 @@ SHOWSPRITE:
                 switch (spr->cstat & 48)
                 {
                 case 0:  // Regular sprite
-                    if (Player[p].PlayerSprite == j)
+                    if (p >= 0 && Player[p].PlayerSprite == j)
                     {
                         ox = sprx - cposx;
                         oy = spry - cposy;
