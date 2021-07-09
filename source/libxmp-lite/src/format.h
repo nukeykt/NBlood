@@ -1,7 +1,6 @@
 #ifndef LIBXMP_FORMAT_H
 #define LIBXMP_FORMAT_H
 
-#include <stdio.h>
 #include "common.h"
 #include "hio.h"
 
@@ -11,14 +10,16 @@ struct format_loader {
 	int (*const loader)(struct module_data *, HIO_HANDLE *, const int);
 };
 
-const char **format_list(void);
+const char *const *format_list(void);
 
 #ifndef LIBXMP_CORE_PLAYER
 
-#define NUM_FORMATS 52
+#define NUM_FORMATS 53
 #define NUM_PW_FORMATS 43
 
+#ifndef LIBXMP_NO_PROWIZARD
 int pw_test_format(HIO_HANDLE *, char *, const int, struct xmp_test_info *);
+#endif
 #endif
 
 #endif

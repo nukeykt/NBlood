@@ -1,10 +1,9 @@
 /* _[v]snprintf() from msvcrt.dll might not nul terminate */
 /* OpenWatcom-provided versions seem to behave the same... */
 
-#if defined(_WIN32) || defined(__WATCOMC__)
+#include "common.h"
 
-#include <stdarg.h>
-#include <stdio.h>
+#if defined(USE_LIBXMP_SNPRINTF)
 
 #undef snprintf
 #undef vsnprintf

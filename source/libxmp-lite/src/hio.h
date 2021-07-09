@@ -2,28 +2,39 @@
 #define XMP_HIO_H
 
 #ifdef EDUKE32_DISABLED
-#include <sys/types.h>
-#include <sys/stat.h>
-#endif
+#include "callbackio.h"
+#endif // EDUKE32_DISABLED
 #include <stddef.h>
 #include "memio.h"
 
 #define HIO_HANDLE_TYPE(x) ((x)->type)
 
-typedef struct {
 #ifdef EDUKE32_DISABLED
-#define HIO_HANDLE_TYPE_FILE	0
-#endif
-#define HIO_HANDLE_TYPE_MEMORY	1
-	int type;
+enum hio_type {
+	HIO_HANDLE_TYPE_FILE,
+	HIO_HANDLE_TYPE_MEMORY,
+	HIO_HANDLE_TYPE_CBFILE
+};
+#else
+enum hio_type {
+	HIO_HANDLE_TYPE_MEMORY = 1,
+};
+#endif // EDUKE32_DISABLED
+
+typedef struct {
+	enum hio_type type;
 	long size;
 	union {
 #ifdef EDUKE32_DISABLED
 		FILE *file;
-#endif
+#endif // EDUKE32_DISABLED
 		MFILE *mem;
+#ifdef EDUKE32_DISABLED
+		CBFILE *cbfile;
+#endif // EDUKE32_DISABLED
 	} handle;
 	int error;
+	int noclose;
 } HIO_HANDLE;
 
 int8	hio_read8s	(HIO_HANDLE *);
@@ -34,18 +45,20 @@ uint32	hio_read24l	(HIO_HANDLE *);
 uint32	hio_read24b	(HIO_HANDLE *);
 uint32	hio_read32l	(HIO_HANDLE *);
 uint32	hio_read32b	(HIO_HANDLE *);
-size_t	hio_read	(void *, size_t, size_t, HIO_HANDLE *);	
+size_t	hio_read	(void *, size_t, size_t, HIO_HANDLE *);
 int	hio_seek	(HIO_HANDLE *, long, int);
 long	hio_tell	(HIO_HANDLE *);
 int	hio_eof		(HIO_HANDLE *);
 int	hio_error	(HIO_HANDLE *);
 #ifdef EDUKE32_DISABLED
-HIO_HANDLE *hio_open	(const void *, const char *);
-#endif
+HIO_HANDLE *hio_open	(const char *, const char *);
+#endif // EDUKE32_DISABLED
 HIO_HANDLE *hio_open_mem  (const void *, long);
 #ifdef EDUKE32_DISABLED
 HIO_HANDLE *hio_open_file (FILE *);
-#endif
+HIO_HANDLE *hio_open_file2 (FILE *);/* allows fclose()ing the file by libxmp */
+HIO_HANDLE *hio_open_callbacks (void *, struct xmp_callbacks);
+#endif // EDUKE32_DISABLED
 int	hio_close	(HIO_HANDLE *);
 long	hio_size	(HIO_HANDLE *);
 
