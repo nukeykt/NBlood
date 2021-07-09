@@ -767,6 +767,7 @@ EXTERN tspriteptr_t tspriteptr[MAXSPRITESONSCREEN + 1];
 EXTERN int32_t wx1, wy1, wx2, wy2;
 EXTERN int32_t xdim, ydim, numpages, upscalefactor;
 EXTERN int32_t yxaspect, viewingrange;
+extern int32_t oxyaspect;
 EXTERN intptr_t *ylookup;
 
 EXTERN int32_t rotatesprite_y_offset;

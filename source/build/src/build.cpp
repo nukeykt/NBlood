@@ -4066,12 +4066,6 @@ void overheadeditor(void)
             {
 #ifdef USE_OPENGL
                 int bakrendmode = rendmode;
-#endif
-                vec2_t bdim = { xdim, ydim };
-
-                xdim = xdim2d;
-                ydim = ydim2d;
-#ifdef USE_OPENGL
                 rendmode = REND_CLASSIC;
 #endif
 
@@ -4095,7 +4089,13 @@ void overheadeditor(void)
                     inpclamp(&pos.z, cz+(4<<8), fz-(4<<8));
 
                     videoEndDrawing();
-                    videoSetViewableArea(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D, m32_2d3d.y + YSIZE_2D3D);
+
+                    vec2_t b = { xdim, ydim };
+                    oxyaspect = -1;
+                    videoSetViewableArea(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D - 1, m32_2d3d.y + YSIZE_2D3D - 1);
+                    xdim = XSIZE_2D3D;
+                    ydim = YSIZE_2D3D;
+                    //calc_ylookup(xdim, ydim);
                     videoClearViewableArea(-1);
 
                     vec2_t osearch = { searchx, searchy };
@@ -4104,15 +4104,18 @@ void overheadeditor(void)
                     searchy -= m32_2d3d.y;
 
                     M32_DrawRoomsAndMasks();
-                    videoSetViewableArea(0, 0, xdim2d-1, ydim2d-1);
 
 #ifdef USE_OPENGL
                     rendmode = bakrendmode;
 #endif
-                    xdim = bdim.x;
-                    ydim = bdim.y;
                     searchx = osearch.x;
                     searchy = osearch.y;
+
+                    oxyaspect = -1;
+                    xdim = b.x;
+                    ydim = b.y;
+                    videoSetViewableArea(0, 0, xdim-1, ydim-1);
+                    //calc_ylookup(xdim, ydim);
 
                     videoBeginDrawing();
                     editorDraw2dLine(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D, m32_2d3d.y, editorcolors[15]);
