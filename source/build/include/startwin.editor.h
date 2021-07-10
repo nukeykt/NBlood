@@ -16,4 +16,4 @@
 #define IDC2DVMODE	101
 #define IDC3DVMODE	102
 #define IDCALWAYSSHOW	103
-
+#define IDCCWD          105

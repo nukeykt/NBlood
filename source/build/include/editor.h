@@ -387,6 +387,8 @@ extern int32_t m32_2d3dmode, m32_2d3dsize;
 extern vec2_t m32_2d3d;
 extern int32_t m32_3dundo;
 
+extern int g_useCwd;
+
 #define XSIZE_2D3D (xdim / m32_2d3dsize)
 #define YSIZE_2D3D (ydim / m32_2d3dsize)
 

@@ -650,7 +650,7 @@ int app_main(int argc, char const * const * argv)
     editstatus = 1;
 
     if ((i = CallExtPreInit(argc,argv)) < 0) return -1;
-
+    if (i) cmdsetup = 1;
 #ifdef _WIN32
     win_priorityclass = 1;
 #endif
@@ -706,8 +706,6 @@ int app_main(int argc, char const * const * argv)
     if (enginePreInit())
         M32_FatalEngineError();
 
-    if ((i = CallExtInit()) < 0) return -1;
-
 #ifdef STARTUP_SETUP_WINDOW
     if (i || forcesetup || cmdsetup)
     {
@@ -718,6 +716,8 @@ int app_main(int argc, char const * const * argv)
         }
     }
 #endif
+
+    if ((i = CallExtInit()) < 0) return -1;
 
     if (CallExtPostStartupWindow() < 0) return -1;
 

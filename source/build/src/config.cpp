@@ -113,6 +113,7 @@ int32_t loadsetup(const char *fn)
 
     if ((fp = buildvfs_fopen_read(fn)) == NULL) return -1;
 
+    if (readconfig(fp, "usecwd", val, VL) > 0) g_useCwd = (atoi_safe(val) != 0);
     if (readconfig(fp, "forcesetup", val, VL) > 0) forcesetup = (atoi_safe(val) != 0);
     if (readconfig(fp, "fullscreen", val, VL) > 0) fullscreen = (atoi_safe(val) != 0);
 
@@ -358,6 +359,11 @@ int32_t writesetup(const char *fn)
              ";   0 - No\n"
              ";   1 - Yes\n"
              "forcesetup = %d\n"
+             "\n"
+             "; Restrict operation to the current working directory only\n"
+             ";   0 - No\n"
+             ";   1 - Yes\n"
+             "usecwd = %d\n"
              "\n"
              "; Video mode selection\n"
              ";   0 - Windowed\n"
@@ -609,7 +615,7 @@ int32_t writesetup(const char *fn)
              "; remap = 2B-9C,52-4C\n"
              "remap = ",
 
-             forcesetup, fullscreen, xres, yres, upscalefactor, bppgame,
+             forcesetup, g_useCwd, fullscreen, xres, yres, upscalefactor, bppgame,
 #ifdef USE_OPENGL
              vsync,
 #endif

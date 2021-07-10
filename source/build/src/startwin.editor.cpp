@@ -25,7 +25,7 @@ static struct
 {
     int32_t fullscreen;
     int32_t xdim3d, ydim3d, bpp3d;
-    int32_t forcesetup;
+    int32_t forcesetup, usecwd;
 } settings;
 
 static HWND startupdlg = NULL;
@@ -57,6 +57,7 @@ static void PopulateForm(void)
 
     Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), (settings.fullscreen ? BST_CHECKED : BST_UNCHECKED));
     Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCALWAYSSHOW), (settings.forcesetup ? BST_CHECKED : BST_UNCHECKED));
+    Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCCWD), (settings.usecwd ? BST_CHECKED : BST_UNCHECKED));
 
     (void)ComboBox_ResetContent(hwnd3d);
     for (i=0; i<validmodecnt; i++)
@@ -99,6 +100,9 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
         case IDCALWAYSSHOW:
             settings.forcesetup = IsDlgButtonChecked(hwndDlg, IDCALWAYSSHOW) == BST_CHECKED;
             return TRUE;
+        case IDCCWD:
+            settings.usecwd = IsDlgButtonChecked(hwndDlg, IDCCWD) == BST_CHECKED;
+            return TRUE;
         default:
             break;
         }
@@ -131,6 +135,7 @@ static void EnableConfig(int32_t n)
     EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_START), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDC3DVMODE), n);
+    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCCWD), n);
 }
 
 static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -428,6 +433,7 @@ int32_t startwin_run(void)
     settings.ydim3d = ydim;
     settings.bpp3d = bpp;
     settings.forcesetup = forcesetup;
+    settings.usecwd = g_useCwd;
     PopulateForm();
 
     while (done < 0)
@@ -455,6 +461,7 @@ int32_t startwin_run(void)
         xdim = settings.xdim3d;
         ydim = settings.ydim3d;
         forcesetup = settings.forcesetup;
+        g_useCwd = settings.usecwd;
     }
 
     return done;
