@@ -104,6 +104,7 @@ int32_t g_maxCacheSize = 8<<20;
 #endif
 
 static int16_t oldmousebstatus = 0;
+static int16_t bstatus;
 
 char game_executable[BMAX_PATH] = {0};
 
@@ -205,6 +206,8 @@ typedef struct
 } mapinfofull_t;
 
 int32_t g_doScreenShot;
+int g_alwaysLockMouse;
+int osdvisible;
 
 #define eitherALT   (keystatus[sc_LeftAlt]|keystatus[sc_RightAlt])
 #define eitherCTRL  (keystatus[sc_LeftControl]|keystatus[sc_RightControl])
@@ -557,7 +560,7 @@ void M32_DrawRoomsAndMasks(void)
 
 void M32_OnShowOSD(int shown)
 {
-    mouseLockToWindow((!shown) + 2);
+    osdvisible = shown;
 }
 
 static void M32_FatalEngineError(void)
@@ -627,7 +630,19 @@ static void InitCustomColors()
     vgapal16[41*4+2] = 252; //192;
 }
 
-int app_main(int argc, char const * const * argv)
+static int editorValidateMlook(void)
+{
+    return mlook == 2 || (mlook && in3dmode() && !m32_is2d3dmode());
+}
+
+void editorMaybeLockMouse(int lock)
+{
+    if (g_alwaysLockMouse || editorValidateMlook()) lock = 1;
+    if (osdvisible) lock = 0;
+    mouseLockToWindow(lock);
+}
+
+int app_main(int argc, char const* const* argv)
 {
 #ifdef STARTUP_SETUP_WINDOW
     char cmdsetup = 0;
@@ -814,7 +829,8 @@ int app_main(int argc, char const * const * argv)
     updatesector(pos.x,pos.y,&cursectnum);
 
     keySetCallback(&m32_keypresscallback);
-    M32_OnShowOSD(0);  // make sure the desktop's mouse cursor is hidden
+    editorMaybeLockMouse(0);
+
 
     if (cursectnum == -1)
     {
@@ -1069,8 +1085,9 @@ static void mainloop_move(void)
 
     if (angvel != 0)  //ang += angvel * constant
     {
-        if (eitherCTRL && m32_2d3dmode)
+        if (!in3dmode() && eitherCTRL && m32_2d3dmode)
         {
+#if 0
             int x = m32_2d3d.x + (angvel / 32);
             int xx = m32_2d3d.x + XSIZE_2D3D + (angvel / 32);
 
@@ -1079,6 +1096,7 @@ static void mainloop_move(void)
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.x += (angvel / 32);
             }
+#endif // 
         }
         else
         {
@@ -1099,8 +1117,9 @@ static void mainloop_move(void)
     }
     if ((vel|svel) != 0)
     {
-        if (eitherCTRL && m32_2d3dmode)
+        if (!in3dmode() && eitherCTRL && m32_2d3dmode)
         {
+#if 0
             int y = m32_2d3d.y - (vel / 64);
             int yy = m32_2d3d.y + YSIZE_2D3D - (vel / 64);
 
@@ -1109,6 +1128,7 @@ static void mainloop_move(void)
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.y -= (vel / 64);
             }
+#endif // 
         }
         else
 
@@ -1165,18 +1185,14 @@ static void handle_sprite_in_clipboard(int32_t i)
 
 void editinput(void)
 {
-    int32_t mousz, bstatus;
+    int32_t mousz;
     int32_t i, tempint=0;
     int32_t goalz, xvect, yvect, hiz, loz, oposz;
     int32_t hihit, lohit, omlook=mlook;
 
-// 3B  3C  3D  3E   3F  40  41  42   43  44  57  58          46
-// F1  F2  F3  F4   F5  F6  F7  F8   F9 F10 F11 F12        SCROLL
-
-    mousz = 0;
-    mouseGetValues(&mousx,&mousy,&bstatus);
-    mousx = (mousx<<16) + mousexsurp;
-    mousy = (mousy<<16) + mouseysurp;
+    oldmousebstatus = bstatus;
+    bstatus = mouseReadButtons();
+    editorMaybeLockMouse(!!(bstatus & ~(16|32)));
 
     if (unrealedlook && !mskip)
     {
@@ -1186,7 +1202,22 @@ void editinput(void)
             mlook = 3;
     }
 
+    mousz = 0;
+
+    if (g_mouseLockedToWindow)
+        mouseReadPos(&mousx, &mousy);
+    else
     {
+        mousx = g_mousePos.x;
+        mousy = g_mousePos.y;
+        g_mousePos.x = 0;
+        g_mousePos.y = 0;
+    }
+
+    {
+        mousx = (mousx << 16) + mousexsurp;
+        mousy = (mousy << 16) + mouseysurp;
+
         ldiv_t ld;
         if (mlook)
         {
@@ -1219,7 +1250,7 @@ void editinput(void)
 
             move_and_update(xvect, yvect, 0);
         }
-        else if (!mlook && (bstatus&(1|2|4))==2)
+        else if (!editorValidateMlook() && (bstatus&(1|2|4))==2)
         {
             mlook=2;
         }
@@ -1262,7 +1293,7 @@ void editinput(void)
     }
     else
     {
-        if (mlook && (unrealedlook==0 || (bstatus&(1|4))==0))
+        if (editorValidateMlook() && (unrealedlook==0 || (bstatus&(1|4))==0))
         {
             ang += mousx;
             horiz -= mousy;
@@ -1296,11 +1327,24 @@ void editinput(void)
             osearchy = searchy;
             searchx += mousx;
             searchy += mousy;
-
-            inpclamp(&searchx, 12, xdim-13);
-            inpclamp(&searchy, 12, ydim-13);
         }
     }
+
+    if (!editorValidateMlook())
+    {
+        if (oldmousebstatus && !g_mouseLockedToWindow)
+            editorMaybeWarpMouse(searchx, searchy);
+        else if (!g_mouseLockedToWindow && !oldmousebstatus)
+        {
+            searchx = g_mouseAbs.x / upscalefactor;
+            searchy = g_mouseAbs.y / upscalefactor;
+        }
+    }
+
+    mlook = omlook;
+
+    inpclamp(&searchx, 12, xdim-13);
+    inpclamp(&searchy, 12, ydim-13);
 
 //    showmouse();
 
@@ -3545,6 +3589,43 @@ static void deletewall(int w)
     }
 }
 
+void editorMaybeWarpMouse(int searchx, int searchy)
+{
+#ifdef RENDERTYPESDL
+    // force g_mouseAbs here because we seem to get a frame of rendering with the old values
+    // despite pumping the SDL event queue immediately after SDL_WarpMouseInWindow
+    g_mouseAbs = { searchx*upscalefactor, searchy*upscalefactor };
+    SDL_WarpMouseInWindow(NULL, searchx*upscalefactor, searchy*upscalefactor);
+    handleevents();
+    mouseLockToWindow(0);
+#endif
+}
+
+static void editorCycleGridSize()
+{
+    if (autogrid)
+    {
+        grid = 8*eitherSHIFT;
+        autogrid = 0;
+    }
+    else
+    {
+        grid += (1-2*eitherSHIFT);
+        if (grid == -1 || grid == 9)
+        {
+            autogrid = 1;
+            grid = 0;
+        }
+    }
+
+    if (autogrid)
+        printmessage16("Grid size: 9 (autosize)");
+    else if (!grid)
+        printmessage16("Grid off");
+    else
+        printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
+}
+
 void overheadeditor(void)
 {
     char buffer[80];
@@ -3664,12 +3745,21 @@ void overheadeditor(void)
         if (!m32_is2d3dmode())
         {
             oldmousebstatus = bstatus;
-            mouseGetValues(&mousx, &mousy, &bstatus);
+            bstatus = mouseReadButtons();
+            editorMaybeLockMouse(!!(bstatus & ~(16|32)));
 
+            int32_t bs = bstatus;
+            bstatus &= ~mousewaitmask;
+            mousewaitmask &= bs;
+
+            if (g_mouseLockedToWindow)
+                mouseReadPos(&mousx, &mousy);
+            else
             {
-                int32_t bs = bstatus;
-                bstatus &= ~mousewaitmask;
-                mousewaitmask &= bs;
+                mousx = g_mousePos.x;
+                mousy = g_mousePos.y;
+                g_mousePos.x = 0;
+                g_mousePos.y = 0;
             }
 
             mousx = (mousx<<16)+mousexsurp;
@@ -3679,8 +3769,17 @@ void overheadeditor(void)
                 ld = ldiv(mousx, 1<<16); mousx = ld.quot; mousexsurp = ld.rem;
                 ld = ldiv(mousy, 1<<16); mousy = ld.quot; mouseysurp = ld.rem;
             }
-            searchx += mousx;
-            searchy += mousy;
+
+            if (g_mouseLockedToWindow)
+            {
+                searchx += mousx;
+                searchy += mousy;
+            }
+            else
+            {
+                searchx = g_mouseAbs.x/upscalefactor;
+                searchy = g_mouseAbs.y/upscalefactor;
+            }
 
             inpclamp(&searchx, 8, xdim-8-1);
             inpclamp(&searchy, 8, ydim-8-1);
@@ -3742,6 +3841,15 @@ void overheadeditor(void)
                     totalclocklock = totalclock;
 
                 renderDrawMapView(pos.x, pos.y, zoom, m32_sideview ? (3584 - m32_sideang) & 2047: 1536);
+            }
+
+            if (autogrid)
+            {
+                grid = -1;
+
+                while (grid++ < 7)
+                    if (mulscale14((2048>>grid), zoom) <= 16)
+                        break;
             }
 
             editorDraw2dGrid(pos.x,pos.y,pos.z,cursectnum,ang,zoom,grid);
@@ -4055,15 +4163,10 @@ void overheadeditor(void)
             // 2d3d mode
             if (m32_2d3dmode)
             {
-#ifdef USE_OPENGL
-                int bakrendmode = rendmode;
-                rendmode = REND_CLASSIC;
-#endif
-
-                if (m32_2d3d.x + XSIZE_2D3D > xdim - 4)
+//                if (m32_2d3d.x + XSIZE_2D3D > xdim - 4)
                     m32_2d3d.x = xdim - 4 - XSIZE_2D3D;
 
-                if (m32_2d3d.y + YSIZE_2D3D > ydim - 4 - STATUS2DSIZ2)
+//                if (m32_2d3d.y + YSIZE_2D3D > ydim - 4 - STATUS2DSIZ2)
                     m32_2d3d.y = ydim - 4 - YSIZE_2D3D - STATUS2DSIZ2;
 
                 updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
@@ -4074,19 +4177,19 @@ void overheadeditor(void)
                 if (cursectnum != -1)
                 {
                     int32_t cz, fz;
-
                     getzsofslope(cursectnum, pos.x, pos.y, &cz, &fz);
 
                     inpclamp(&pos.z, cz+(4<<8), fz-(4<<8));
 
                     videoEndDrawing();
 
-                    vec2_t b = { xdim, ydim };
+#ifdef USE_OPENGL
+                    int bakrendmode = rendmode;
+                    rendmode = REND_CLASSIC;
+#endif
                     oxyaspect = -1;
+
                     videoSetViewableArea(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D - 1, m32_2d3d.y + YSIZE_2D3D - 1);
-                    xdim = XSIZE_2D3D;
-                    ydim = YSIZE_2D3D;
-                    //calc_ylookup(xdim, ydim);
                     videoClearViewableArea(-1);
 
                     vec2_t osearch = { searchx, searchy };
@@ -4094,19 +4197,18 @@ void overheadeditor(void)
                     searchx -= m32_2d3d.x;
                     searchy -= m32_2d3d.y;
 
+                    inpclamp(&searchx, 12, xdim - 13);
+                    inpclamp(&searchy, 12, ydim - 13);
+
                     M32_DrawRoomsAndMasks();
 
-#ifdef USE_OPENGL
                     rendmode = bakrendmode;
-#endif
+
                     searchx = osearch.x;
                     searchy = osearch.y;
 
                     oxyaspect = -1;
-                    xdim = b.x;
-                    ydim = b.y;
                     videoSetViewableArea(0, 0, xdim-1, ydim-1);
-                    //calc_ylookup(xdim, ydim);
 
                     videoBeginDrawing();
                     editorDraw2dLine(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D, m32_2d3d.y, editorcolors[15]);
@@ -6040,6 +6142,9 @@ end_point_dragging:
 //        else if ((oldmousebstatus&6) > 0)
             updatesectorz(pos.x,pos.y,pos.z,&cursectnum);
 
+        if ((bstatus&2)==0 && oldmousebstatus&2)
+            editorMaybeWarpMouse(halfxdim16, midydim16);
+
         if (circlewall != -1 && (keystatus[sc_kpad_Minus] || ((bstatus&32) && !eitherCTRL)))  // -, mousewheel down
         {
             if (circlepoints > 1)
@@ -6168,13 +6273,19 @@ end_point_dragging:
             }
         }
 
-
         if (keystatus[sc_G])  // G (grid on/off)
         {
             keystatus[sc_G] = 0;
-            grid++;
-            if (grid == 7) grid = 0;
+            if (eitherCTRL)
+            {
+                g_alwaysLockMouse = !g_alwaysLockMouse;
+                message("Mouse locked to window: %s", g_alwaysLockMouse ? "on" : "off");
+                editorMaybeLockMouse(0);
+            }
+            else
+                editorCycleGridSize();
         }
+
         if (keystatus[sc_L])  // L (grid lock)
         {
             keystatus[sc_L] = 0;
@@ -11148,7 +11259,7 @@ void test_map(int32_t mode)
         OSD_Printf("...as `%s'\n", fullparam);
 
         videoShowFrame(1);
-        mouseUninit();
+//        mouseUninit();
 #ifdef _WIN32
         {
             STARTUPINFO si;
@@ -11173,7 +11284,7 @@ void test_map(int32_t mode)
         else system(fullparam);
 #endif
         printmessage16("Game process exited");
-        mouseInit();
+//        mouseInit();
         clearkeys();
 
         Xfree(fullparam);

@@ -2452,10 +2452,34 @@ static inline void popDisableFog(void)
 #endif
 }
 
+static void editorCalculateTileViewerDimensions(int32_t *nXTiles, int32_t *nYTiles, int32_t *nDisplayedTiles)
+{
+    int nx, ny, ndisplayed;
+
+    do
+    {
+        nx = xdim / ZoomToThumbSize[s_Zoom];
+        ny = ydim / ZoomToThumbSize[s_Zoom];
+        // Refuse to draw less than half of a row.
+        if (ZoomToThumbSize[s_Zoom]/2 < 12) ny--;
+        ndisplayed = nx * ny;
+
+        if (!ndisplayed)
+        {
+            // Eh-up, resolution changed since we were last displaying tiles.
+            s_Zoom--;
+        }
+    } while (!ndisplayed);
+
+    *nXTiles = nx;
+    *nYTiles = ny;
+    *nDisplayedTiles = ndisplayed;
+}
+
 static int32_t m32gettile(int32_t idInitialTile)
 {
     int32_t gap, temp, zoomsz;
-    int32_t nXTiles, nYTiles, nDisplayedTiles;
+    int32_t nXTiles = 0, nYTiles = 0, nDisplayedTiles = 0;
     int32_t i;
     int32_t tileNum, iTopLeftTile, iLastTile;
     int32_t idSelectedTile, idInitialPal;
@@ -2474,24 +2498,6 @@ static int32_t m32gettile(int32_t idInitialTile)
     // s_Zoom = NUM_ZOOMS - 1;
 
     idInitialTile = clamp(idInitialTile, 0, MAXTILES-1);
-
-    // Ensure zoom not to big (which can happen if display size
-    //   changes whilst Mapster is running)
-    do
-    {
-        nXTiles = xdim / ZoomToThumbSize[s_Zoom];
-        nYTiles = ydim / ZoomToThumbSize[s_Zoom];
-        // Refuse to draw less than half of a row.
-        if (ZoomToThumbSize[s_Zoom]/2 < 12) nYTiles--;
-        nDisplayedTiles  = nXTiles * nYTiles;
-
-        if (!nDisplayedTiles)
-        {
-            // Eh-up, resolution changed since we were last displaying tiles.
-            s_Zoom--;
-        }
-    }
-    while (!nDisplayedTiles);
 
     keystatus[KEYSC_V] = 0;
 
@@ -2600,6 +2606,8 @@ static int32_t m32gettile(int32_t idInitialTile)
     //
     //
 
+    editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles);
+
     iTopLeftTile = tileNum - (tileNum % nXTiles);
     iTopLeftTile = clamp(iTopLeftTile, 0, MAXTILES-nDisplayedTiles);
 
@@ -2608,12 +2616,16 @@ static int32_t m32gettile(int32_t idInitialTile)
     searchx = ((tileNum-iTopLeftTile)%nXTiles)*zoomsz + zoomsz/2;
     searchy = ((tileNum-iTopLeftTile)/nXTiles)*zoomsz + zoomsz/2;
 
+    editorMaybeWarpMouse(searchx, searchy);
+
     ////////////////////////////////
     // Start of key handling code //
     ////////////////////////////////
 
     while ((keystatus[KEYSC_ENTER]|keystatus[KEYSC_ESC]|(bstatus&1)) == 0)
     {
+        editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles);
+
         int32_t ret;
         zoomsz = ZoomToThumbSize[s_Zoom];
 
@@ -2629,12 +2641,29 @@ static int32_t m32gettile(int32_t idInitialTile)
             if (handleevents())
                 quitevent = 0;
         }
-        mouseGetValues(&mousedx,&mousedy,&bstatus);
-
         iLastTile = tileNum;
+
+        bstatus = mouseReadButtons();
+        editorMaybeLockMouse(!!(bstatus & ~(16|32)));
+
+        if (g_mouseLockedToWindow)
+            mouseReadPos(&mousedx, &mousedy);
+        else
+        {
+                mousedx = g_mousePos.x;
+                mousedy = g_mousePos.y;
+                g_mousePos.x = 0;
+                g_mousePos.y = 0;
+        }
 
         searchx += mousedx;
         searchy += mousedy;
+
+        if (!g_mouseLockedToWindow)
+        {
+            searchx = g_mouseAbs.x/upscalefactor;
+            searchy = g_mouseAbs.y/upscalefactor;
+        }
 
         if (bstatus&2)
         {
@@ -3004,6 +3033,8 @@ static int32_t m32gettile(int32_t idInitialTile)
         {
             searchx = ((tileNum-iTopLeftTile)%nXTiles) * zoomsz + zoomsz/2;
             searchy = ((tileNum-iTopLeftTile)/nXTiles) * zoomsz + zoomsz/2 + moffset;
+            // HACK? FIXME? XXX? who knows!
+            editorMaybeWarpMouse(searchx, searchy);
         }
     }
 
@@ -3034,8 +3065,8 @@ static int32_t m32gettile(int32_t idInitialTile)
     }
 
     searchx=omousex;
-    searchy=omousey;
-
+    searchy=omousey;    
+    editorMaybeWarpMouse(searchx, searchy);
     keystatus[KEYSC_ESC] = 0;
     keystatus[KEYSC_ENTER] = 0;
 
@@ -7749,43 +7780,6 @@ static void Keys2d(void)
             DoSpriteSearch(tsign);
     }
 
-    if (PRESSED_KEYSC(G))  // G (grid on/off)
-    {
-        if (autogrid)
-        {
-            grid = 8*eitherSHIFT;
-
-            autogrid = 0;
-        }
-        else
-        {
-            grid += (1-2*eitherSHIFT);
-            if (grid == -1 || grid == 9)
-            {
-                autogrid = 1;
-                grid = 0;
-            }
-        }
-
-        if (autogrid)
-            printmessage16("Grid size: 9 (autosize)");
-        else if (!grid)
-            printmessage16("Grid off");
-        else
-            printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
-    }
-
-    if (autogrid)
-    {
-        grid = -1;
-
-        while (grid++ < 7)
-        {
-            if (mulscale14((2048>>grid), zoom) <= 16)
-                break;
-        }
-    }
-
 
     if (keystatus[KEYSC_QUOTE] && PRESSED_KEYSC(L)) // ' L  (set sprite/wall coordinates)
     {
@@ -8402,8 +8396,6 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 
     G_CheckCommandLine(argc,argv);
 
-    bpp = 32;
-
     if (Bstrcmp(setupfilename, SETUPFILENAME))
         initprintf("Using config file \"%s\".\n",setupfilename);
 
@@ -8411,6 +8403,8 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 
     if (loadsetup(setupfilename) < 0)
         initprintf("Configuration file not found, using defaults.\n"), dosetup = 1;
+
+    bpp = bppgame;
 
     return dosetup;
 }
@@ -10954,6 +10948,9 @@ void ExtCheckKeys(void)
 
     lastbstatus = bstatus;
     bstatus = mouseReadButtons();
+
+    //if (mlook && in3dmode() && m32_is2d3dmode())
+    //    mskip=1;
 
     Keys2d3d();
 

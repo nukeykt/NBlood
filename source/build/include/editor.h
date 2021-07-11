@@ -401,6 +401,8 @@ static inline int32_t m32_is2d3dmode(void)
 
 extern int32_t editorGet2dSpriteColor(int32_t spr);
 
+extern void editorMaybeLockMouse(int lock);
+
 #define SPRITESEC(j) (sector[sprite[j].sectnum])
 
 #define SCRIPTHISTSIZ 32  // should be the same as OSD_HISTORYDEPTH for maximum win, should be a power of two
@@ -465,7 +467,7 @@ static FORCE_INLINE void inpclamp(int32_t *x, int32_t mi, int32_t ma)
 #define M32_THROB klabs(sintable[(((int32_t) totalclock << 4) & 2047)] >> 10)
 
 void m32_showmouse(void);
-
+void editorMaybeWarpMouse(int searchx, int searchy);
 #ifdef __cplusplus
 }
 #endif
