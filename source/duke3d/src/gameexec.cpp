@@ -435,26 +435,30 @@ void A_GetZLimits(int const spriteNum)
     auto const oceilz   = pActor->ceilingz;
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
-    pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
-    if ((florhit&49152) == 49152 && (sprite[florhit&(MAXSPRITES-1)].cstat&48) == 0)
+    if (pSprite->xvel || pSprite->zvel || pActor->bpos != pSprite->pos)
     {
-        auto const hitspr = (uspriteptr_t)&sprite[florhit&(MAXSPRITES-1)];
+        pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
-        florhit &= (MAXSPRITES-1);
+        if ((florhit & 49152) == 49152 && (sprite[florhit & (MAXSPRITES - 1)].cstat & 48) == 0)
+        {
+            auto const hitspr = (uspriteptr_t)&sprite[florhit & (MAXSPRITES - 1)];
 
-        // If a non-projectile would fall onto non-frozen enemy OR an enemy onto a player...
-        if ((A_CheckEnemySprite(hitspr) && hitspr->pal != 1 && pSprite->statnum != STAT_PROJECTILE)
+            florhit &= (MAXSPRITES - 1);
+
+            // If a non-projectile would fall onto non-frozen enemy OR an enemy onto a player...
+            if ((A_CheckEnemySprite(hitspr) && hitspr->pal != 1 && pSprite->statnum != STAT_PROJECTILE)
                 || (hitspr->picnum == APLAYER && A_CheckEnemySprite(pSprite)))
-        {
-            pActor->flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
-            pSprite->xvel = -256;  // SLIDE_ABOVE_ENEMY
-            A_SetSprite(spriteNum, CLIPMASK0);
-        }
-        else if (pSprite->statnum == STAT_PROJECTILE && hitspr->picnum == APLAYER && pSprite->owner==florhit)
-        {
-            pActor->ceilingz = sector[pSprite->sectnum].ceilingz;
-            pActor->floorz   = sector[pSprite->sectnum].floorz;
+            {
+                pActor->flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
+                pSprite->xvel = -256;                  // SLIDE_ABOVE_ENEMY
+                A_SetSprite(spriteNum, CLIPMASK0);
+            }
+            else if (pSprite->statnum == STAT_PROJECTILE && hitspr->picnum == APLAYER && pSprite->owner == florhit)
+            {
+                pActor->ceilingz = sector[pSprite->sectnum].ceilingz;
+                pActor->floorz   = sector[pSprite->sectnum].floorz;
+            }
         }
     }
 
