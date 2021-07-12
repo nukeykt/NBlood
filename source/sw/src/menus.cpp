@@ -2559,11 +2559,11 @@ MNU_InputSmallString(char *name, short pix_width)
 
         if (con_input.dir == dir_North)
         {
-            CON_CommandHistory(1);
+            CON_CommandHistory(-1);
         }
         else if (con_input.dir == dir_South)
         {
-            CON_CommandHistory(-1);
+            CON_CommandHistory(1);
         }
     }
 
