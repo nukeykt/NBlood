@@ -63,7 +63,7 @@ extern char g_soundlocks[MAXSOUNDS];
 extern sound_t g_sounds[MAXSOUNDS];
 extern int32_t g_numEnvSoundsPlaying,g_highestSoundIdx;
 
-extern int32_t MusicIsWaveform;
+extern int32_t MusicIsWaveform, MusicVoice;
 
 int A_CheckSoundPlaying(int spriteNum,int soundNum);
 int A_PlaySound(int soundNum, int spriteNum);

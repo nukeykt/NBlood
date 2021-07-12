@@ -3532,6 +3532,13 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     }
     else if (entry == &ME_SOUND_RESTART)
     {
+        songposition pos = {};
+
+        if (MusicIsWaveform)
+            FX_GetPosition(MusicVoice, (int *)&pos.tick);
+        else
+            MUSIC_GetSongPosition(&pos);
+
         if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices
 #ifdef __linux__
             || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
@@ -3575,6 +3582,11 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             }
 
             S_RestartMusic();
+
+            if (MusicIsWaveform)
+                FX_SetPosition(MusicVoice, (int)pos.tick);
+            else
+                MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
         }
 
         Menu_RefreshSoundProperties();

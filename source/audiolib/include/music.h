@@ -112,6 +112,8 @@ void MUSIC_Pause(void);
 int  MUSIC_StopSong(void);
 int  MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn = nullptr);
 void MUSIC_Update(void);
+void MUSIC_SetSongPosition(int measure, int beat, int tick);
+void MUSIC_GetSongPosition(songposition *pos);
 
 /* returns true only after program startup */
 static FORCE_INLINE int MUSIC_WarmedUp(void)

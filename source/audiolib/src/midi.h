@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "compat.h"
 #include "midifuncs.h"
+#include "music.h"
 
 enum MIDI_Errors
 {
@@ -64,5 +65,7 @@ int  MIDI_PlaySong(char *song, int loopflag);
 void MIDI_SetTempo(int tempo);
 void MIDI_Restart(void);
 void MIDI_ServiceRoutine(void);
+void MIDI_SetSongPosition(int measure, int beat, int tick);
+void MIDI_GetSongPosition(songposition *pos);
 
 #endif
