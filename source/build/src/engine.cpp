@@ -10447,7 +10447,6 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
     error:
         numsectors = 0;
         numwalls   = 0;
-        numsprites = 0;
         kclose(fil);
         return -3;
     }
@@ -10484,6 +10483,12 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
     if (kread_and_test(fil,&numwalls,2)) goto error;
     numwalls = B_LITTLE16(numwalls);
     if ((unsigned)numwalls >= MYMAXWALLS()+1) goto error;
+
+    for (int i = 0; i < numsectors; i++)
+    {
+        if ((unsigned)sector[i].wallptr > (unsigned)numwalls) goto error;
+        if ((unsigned)sector[i].wallnum > (unsigned)(numwalls-sector[i].wallptr)) goto error;
+    }
 
     if (kread_and_test(fil, wall, sizeof(walltypev7)*numwalls)) goto error;
 
@@ -10640,9 +10645,11 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
     numsectors = B_LITTLE16(numsectors);
 
-    if (numsectors > MAXSECTORS)
+    if ((unsigned)numsectors > MAXSECTORS)
     {
     error:
+        numsectors = 0;
+        numwalls   = 0;
         kclose(fil);
         return -1; 
     }
@@ -10709,8 +10716,14 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
     numwalls = B_LITTLE16(numwalls);
 
-    if (numwalls > MAXWALLS)
+    if ((unsigned)numwalls > MAXWALLS)
         goto error;
+
+    for (int i = 0; i < numsectors; i++)
+    {
+        if ((unsigned)sector[i].wallptr > (unsigned)numwalls) goto error;
+        if ((unsigned)sector[i].wallnum > (unsigned)(numwalls-sector[i].wallptr)) goto error;
+    }
 
     switch (mapversion)
     {
@@ -10778,7 +10791,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
     numsprites = B_LITTLE16(numsprites);
 
-    if (numsprites > MAXSPRITES)
+    if ((unsigned)numsprites > MAXSPRITES)
         goto error;
 
     switch (mapversion)
