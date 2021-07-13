@@ -793,9 +793,29 @@ int CONFIG_ReadSetup(void)
     return 0;
 }
 
+void CONFIG_ReadSettings(void)
+{
+    char *const setupFileName = Xstrdup(g_setupFileName);
+    char *const p = strtok(setupFileName, ".");
+
+    if (!p || !Bstrcmp(g_setupFileName, SETUPFILENAME))
+        Bsprintf(tempbuf, "settings.cfg");
+    else
+        Bsprintf(tempbuf, "%s_settings.cfg", p);
+
+    Xfree(setupFileName);
+
+    OSD_Exec(tempbuf);
+
+    ud.config.setupread = 2;
+
+    return;
+}
 
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
+    if (ud.config.setupread != 2) return;
+
     char filename[BMAX_PATH];
 
     if (!Bstrcmp(g_setupFileName, SETUPFILENAME))

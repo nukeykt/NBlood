@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 int  CONFIG_ReadSetup(void);
 void CONFIG_WriteSetup(uint32_t flags);
+void CONFIG_ReadSettings(void);
 void CONFIG_SetDefaults(void);
 void CONFIG_SetupMouse(void);
 void CONFIG_SetupJoystick(void);

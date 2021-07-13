@@ -6666,17 +6666,8 @@ int app_main(int argc, char const* const* argv)
     g_clipMapFiles.clear();
 #endif
 
-    char *const setupFileName = Xstrdup(g_setupFileName);
-    char *const p = strtok(setupFileName, ".");
+    CONFIG_ReadSettings();
 
-    if (!p || !Bstrcmp(g_setupFileName, SETUPFILENAME))
-        Bsprintf(tempbuf, "settings.cfg");
-    else
-        Bsprintf(tempbuf, "%s_settings.cfg", p);
-
-    Xfree(setupFileName);
-
-    OSD_Exec(tempbuf);
     OSD_Exec("autoexec.cfg");
 
     CONFIG_SetDefaultKeys(keydefaults, true);
