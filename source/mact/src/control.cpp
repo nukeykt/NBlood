@@ -288,7 +288,7 @@ void CONTROL_SetAnalogAxisScale(int32_t whichaxis, int32_t axisscale, controldev
         return;
     }
 
-    *set = (float)axisscale / 8192.f;
+    *set = (float)axisscale / 24576.f;
 }
 
 void CONTROL_SetAnalogAxisSensitivity(int32_t whichaxis, float axissens, controldevice device)

@@ -63,6 +63,8 @@ extern "C" {
 #define MAXSCALEDCONTROLVALUE  0x1ffff
 
 #define DEFAULTAXISSCALE 65536
+#define DEFAULTAXISDEADZONE 1000
+#define DEFAULTAXISSATURATE 9500
 #define DEFAULTAXISSENSITIVITY (DEFAULTAXISSCALE/16384.f)
 
 #define BUTTONSET(x, value)     (CONTROL_ButtonState |= ((uint64_t)value << ((uint64_t)(x))))

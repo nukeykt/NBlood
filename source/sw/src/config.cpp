@@ -85,9 +85,11 @@ int32_t JoystickButtons[MAXJOYBUTTONS];
 int32_t JoystickButtonsClicked[MAXJOYBUTTONS];
 int32_t JoystickDigitalAxes[MAXJOYAXES][2];
 int32_t JoystickAnalogAxes[MAXJOYAXES];
-int32_t JoystickAnalogScale[MAXJOYAXES];
 int32_t JoystickAnalogDead[MAXJOYAXES];
 int32_t JoystickAnalogSaturate[MAXJOYAXES];
+int32_t JoystickAnalogScale[MAXJOYAXES];
+float JoystickAnalogSensitivity[MAXJOYAXES];
+int32_t JoystickAnalogInvert[MAXJOYAXES];
 
 //
 // Screen variables
@@ -201,6 +203,158 @@ const char *CONFIG_AnalogNumToName(int32_t func)
 ===================
 */
 
+
+static void CONFIG_SetJoystickButtonFunction(int i, int j, int function)
+{
+    if (j)
+        JoystickButtonsClicked[i] = function;
+    else
+        JoystickButtons[i] = function;
+
+    CONTROL_MapButton(function, i, j, controldevice_joystick);
+}
+
+static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
+{
+    JoystickDigitalAxes[i][j] = function;
+    CONTROL_MapDigitalAxis(i, function, j);
+}
+
+static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
+{
+    JoystickAnalogAxes[i] = function;
+    CONTROL_MapAnalogAxis(i, function);
+}
+
+struct GameControllerButtonSetting
+{
+    GameControllerButton button;
+    int function;
+
+    void apply() const
+    {
+        CONFIG_SetJoystickButtonFunction(button, 0, function);
+    }
+};
+struct GameControllerAnalogAxisSetting
+{
+    GameControllerAxis axis;
+    int function;
+
+    void apply() const
+    {
+        CONFIG_SetJoystickAnalogAxisFunction(axis, function);
+    }
+};
+struct GameControllerDigitalAxisSetting
+{
+    GameControllerAxis axis;
+    int polarity;
+    int function;
+
+    void apply() const
+    {
+        CONFIG_SetJoystickDigitalAxisFunction(axis, polarity, function);
+    }
+};
+
+static void CONFIG_SetJoystickAnalogAxisScale(int i, int32_t scale)
+{
+    JoystickAnalogScale[i] = scale;
+    CONTROL_SetAnalogAxisScale(i, scale, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
+{
+    JoystickAnalogInvert[i] = invert;
+    CONTROL_SetAnalogAxisInvert(i, invert);
+}
+static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
+{
+    JoystickAnalogDead[i] = dead;
+    JoystickAnalogSaturate[i] = saturate;
+    JOYSTICK_SetDeadZone(i, dead, saturate);
+}
+
+
+static void CONFIG_SetGameControllerAxesModern()
+{
+    static GameControllerAnalogAxisSetting const analogAxes[] =
+    {
+        { CONTROLLER_AXIS_LEFTX, analog_strafing },
+        { CONTROLLER_AXIS_LEFTY, analog_moving },
+        { CONTROLLER_AXIS_RIGHTX, analog_turning },
+        { CONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
+    };
+
+    CONFIG_SetJoystickAnalogAxisScale(CONTROLLER_AXIS_RIGHTX, DEFAULTAXISSCALE);
+    CONFIG_SetJoystickAnalogAxisScale(CONTROLLER_AXIS_RIGHTY, DEFAULTAXISSCALE);
+
+    for (auto const & analogAxis : analogAxes)
+        analogAxis.apply();
+}
+
+void CONFIG_SetGameControllerDefaultsClear()
+{
+    for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
+    {
+        CONFIG_SetJoystickButtonFunction(i, 0, -1);
+        CONFIG_SetJoystickButtonFunction(i, 1, -1);
+    }
+
+    for (int i=0; i<MAXJOYAXES; i++)
+    {
+        CONFIG_SetJoystickAnalogAxisScale(i, DEFAULTAXISSCALE);
+        CONFIG_SetJoystickAnalogAxisInvert(i, 0);
+        CONFIG_SetJoystickAnalogAxisDeadSaturate(i, DEFAULTAXISDEADZONE, DEFAULTAXISSATURATE);
+
+        CONFIG_SetJoystickDigitalAxisFunction(i, 0, -1);
+        CONFIG_SetJoystickDigitalAxisFunction(i, 1, -1);
+
+        CONFIG_SetJoystickAnalogAxisFunction(i, -1);
+    }
+}
+
+void SetGameControllerDefaults()
+{
+    CONFIG_SetGameControllerDefaultsClear();
+    CONFIG_SetGameControllerAxesModern();
+
+    static GameControllerButtonSetting const buttons[] =
+    {
+        { CONTROLLER_BUTTON_A, gamefunc_Open },
+        { CONTROLLER_BUTTON_BACK, gamefunc_Map },
+        { CONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
+        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
+        { CONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
+        { CONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Weapon_Mode },
+    };
+
+    static GameControllerButtonSetting const buttonsDuke[] =
+    {
+        { CONTROLLER_BUTTON_X, gamefunc_Inventory },
+        { CONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
+        { CONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
+    };
+
+    static GameControllerDigitalAxisSetting const digitalAxes[] =
+    {
+        { CONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Jump },
+        { CONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
+    };
+
+    for (auto const & button : buttons)
+        button.apply();
+
+    for (auto const & button : buttonsDuke)
+        button.apply();
+
+    for (auto const & digitalAxis : digitalAxes)
+        digitalAxis.apply();
+}
+
+
 void CONFIG_SetDefaults(void)
 {
     // JBF 20031211
@@ -255,7 +409,7 @@ void CONFIG_SetDefaults(void)
 
     SetDefaultKeyDefinitions(1);
     SetMouseDefaults(1);
-
+    SetGameControllerDefaults();
     gs.MouseAimingOn = TRUE;
     gs.AutoRun = TRUE;
 
@@ -264,30 +418,7 @@ void CONFIG_SetDefaults(void)
     gs.MouseSpeed = DEFAULTMOUSESENSITIVITY*8192; // fix magic scale factor
     CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
 
-#if 0
-    // joystick defaults are pointless
 
-    memset(JoystickButtons, -1, sizeof(JoystickButtons));
-    memset(JoystickButtonsClicked, -1, sizeof(JoystickButtonsClicked));
-    for (i=0; i < (int32_t)(sizeof(joystickdefaults)/sizeof(char *)); i++)
-    {
-        JoystickButtons[i] = CONFIG_FunctionNameToNum(joystickdefaults[i]);
-        JoystickButtonsClicked[i] = CONFIG_FunctionNameToNum(joystickclickeddefaults[i]);
-    }
-
-    memset(JoystickDigitalAxes, -1, sizeof(JoystickDigitalAxes));
-    for (i=0; i < MAXJOYAXES; i++)
-    {
-        JoystickAnalogScale[i] = 65536;
-        JoystickAnalogDead[i] = 1024;
-        JoystickAnalogSaturate[i] = 32767-1024;
-
-        JoystickDigitalAxes[i][0] = CONFIG_FunctionNameToNum(joystickdigitaldefaults[i*2]);
-        JoystickDigitalAxes[i][1] = CONFIG_FunctionNameToNum(joystickdigitaldefaults[i*2+1]);
-
-        JoystickAnalogAxes[i] = CONFIG_AnalogNameToNum(joystickanalogdefaults[i]);
-    }
-#endif
 }
 
 
