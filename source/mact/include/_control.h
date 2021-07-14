@@ -38,6 +38,7 @@ Prepared for public release: 03/21/2003 - Charlie Wiederhold, 3D Realms
 #define control_private_h_
 
 #include "compat.h"
+#include "control.h"
 #include "keyboard.h"
 
 #ifdef __cplusplus
@@ -68,43 +69,70 @@ extern "C" {
 #define BUTTONCLEAR(x)          (CONTROL_ButtonState &= ~((uint64_t)1 << ((uint64_t)(x))))
 #define BUTTONHELDSET(x, value) (CONTROL_ButtonHeldState |= (uint64_t)(value << ((uint64_t)(x))))
 
-// TYPEDEFS
-typedef struct
+typedef struct ControlFunctionFlags
 {
     uint8_t active;
     uint8_t used;
     uint8_t toggle;
     uint8_t buttonheld;
     int32_t cleared;
-} controlflags;
+} ControlFunctionFlags_t;
 
-typedef struct
+typedef struct ControlKeyMap
 {
     kb_scancode keyPrimary;
     kb_scancode keySecondary;
-} controlkeymaptype;
+} ControlKeyMap_t;
 
-typedef struct
+typedef struct ControlButtonMap
 {
     uint8_t singleclicked;
     uint8_t doubleclicked;
-    uint16_t extra;
-} controlbuttontype;
+} ControlButtonMap_t;
 
-typedef struct
+typedef struct ControlButtonState
+{
+    ControlButtonMap_t mapping;
+
+    int     clicked;
+    int     clickedState;
+    int32_t clickedTime;
+    int     state;
+    int     clickedCount;
+} ControlButtonState_t;
+
+typedef struct ControllerAxisMap
 {
     uint8_t analogmap;
     uint8_t minmap;
     uint8_t maxmap;
-    uint8_t extra;
-} controlaxismaptype;
+} ControllerAxisMap_t;
 
-typedef struct
+typedef struct ControllerAxisState
 {
     int32_t analog;
     int8_t digital;
     int8_t digitalCleared;
-} controlaxistype;
+} ControllerAxisState_t;
+
+typedef struct ControllerAxis
+{
+    ControllerAxisMap_t mapping;
+    ControllerAxisState_t axis;
+    ControllerAxisState_t last;
+    float sensitivity;
+    uint16_t deadzone;
+    uint16_t saturation;
+    bool invert;
+} ControllerAxis_t;
+
+typedef struct UserInputState
+{
+    UserInput local;
+    int32_t   clock;
+    direction repeat;
+    bool      buttonCleared[4];
+} UserInputState_t;
 
 #ifdef __cplusplus
 }

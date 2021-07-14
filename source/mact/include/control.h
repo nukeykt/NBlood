@@ -184,7 +184,6 @@ extern LastSeenInput CONTROL_LastSeenInput;
 void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
 void CONTROL_MapButton(int whichfunction, int whichbutton, int doubleclicked, controldevice device);
 void CONTROL_DefineFlag( int which, int toggle );
-int CONTROL_FlagActive( int which );
 void CONTROL_ClearAssignments( void );
 // void CONTROL_GetFunctionInput( void );
 void CONTROL_GetInput( ControlInfo *info );
@@ -193,16 +192,13 @@ void CONTROL_ClearAllButtons( void );
 bool CONTROL_Startup(controltype which, int32_t ( *TimeFunction )( void ), int32_t ticspersecond);
 void CONTROL_Shutdown( void );
 
-void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog, controldevice device);
-void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t direction, controldevice device);
+void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog);
+void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t direction);
 void CONTROL_SetAnalogAxisScale(int32_t whichaxis, int32_t axisscale, controldevice device);
 void CONTROL_SetAnalogAxisSensitivity(int32_t whichaxis, float axissens, controldevice device);
-void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert, controldevice device);
+void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert);
 
 void CONTROL_ScanForControllers(void);
-
-int32_t CONTROL_GetControllerDigitalAxis(int32_t axis);
-void CONTROL_ClearControllerDigitalAxis(int32_t axis);
 
 //void CONTROL_PrintKeyMap(void);
 //void CONTROL_PrintControlFlag(int32_t which);
@@ -214,17 +210,16 @@ void CONTROL_ClearControllerDigitalAxis(int32_t axis);
 #define MAXBOUNDKEYS MAXKEYBOARDSCAN
 #define MAXMOUSEBUTTONS 10
 
-typedef struct
+typedef struct ConsoleKeyBind
 {
     const char *key;
     char *cmdstr;
     char repeat;
     char laststate;
-}
-consolekeybind_t;
+} ConsoleKeyBind_t;
 
 // Direct use DEPRECATED:
-extern consolekeybind_t CONTROL_KeyBinds[MAXBOUNDKEYS+MAXMOUSEBUTTONS];
+extern ConsoleKeyBind_t CONTROL_KeyBinds[MAXBOUNDKEYS+MAXMOUSEBUTTONS];
 extern bool CONTROL_BindsEnabled;
 
 void CONTROL_ClearAllBinds(void);

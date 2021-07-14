@@ -40,25 +40,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "keyboard.h"
 #include "_control.h"
 
-//
-// setjoydeadzone() -- sets the dead and saturation zones for the joystick
-//
-void JOYSTICK_SetDeadZone(int32_t axis, uint16_t dead, uint16_t satur)
-{
-    CONTROL_JoyDeadZone[axis] = dead;
-    CONTROL_JoySaturation[axis] = satur;
-}
-
-
-//
-// getjoydeadzone() -- gets the dead and saturation zones for the joystick
-//
-void JOYSTICK_GetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
-{
-    *dead = CONTROL_JoyDeadZone[axis];
-    *satur = CONTROL_JoySaturation[axis];
-}
-
 int32_t JOYSTICK_GetButtons(void)
 {
     int32_t buttons;
@@ -83,17 +64,7 @@ int32_t JOYSTICK_GetControllerButtons(void)
     joyReadButtons(&buttons);
     return buttons;
 }
-int32_t JOYSTICK_ClearButton(int32_t b)
-{
-    return (joystick.bits &= ~b);
-}
-void JOYSTICK_ClearControllerButton(int32_t b)
-{
-    if (!joystick.isGameController)
-        return;
 
-    joystick.bits &= ~b;
-}
 void JOYSTICK_ClearAllButtons(void)
 {
     joystick.bits = 0;
@@ -117,31 +88,4 @@ int32_t JOYSTICK_GetHat(int32_t h)
         }
     }
     return 0;
-}
-void JOYSTICK_ClearHat(int32_t h)
-{
-    if (h>=0 && h<joystick.numHats)
-        joystick.pHat[h] = -1;
-}
-void JOYSTICK_ClearAllHats(void)
-{
-    int32_t h;
-    for (h=0; h<joystick.numHats; ++h)
-        joystick.pHat[h] = -1;
-}
-
-int32_t JOYSTICK_GetAxis(int32_t a)
-{
-    return ((a>=0 && a<joystick.numAxes)?joystick.pAxis[a]:0);
-}
-void JOYSTICK_ClearAxis(int32_t a)
-{
-    if (a>=0 && a<joystick.numAxes)
-        joystick.pAxis[a] = 0;
-}
-void JOYSTICK_ClearAllAxes(void)
-{
-    int32_t a;
-    for (a=0; a<joystick.numAxes; ++a)
-        joystick.pAxis[a] = 0;
 }

@@ -51,22 +51,9 @@ extern "C" {
 
 int32_t	JOYSTICK_GetButtons( void );
 int32_t	JOYSTICK_GetControllerButtons( void );
-int32_t	JOYSTICK_ClearButton( int32_t b );
-void	JOYSTICK_ClearControllerButton( int32_t b );
 void	JOYSTICK_ClearAllButtons( void );
-
 int32_t	JOYSTICK_GetHat( int32_t h );
-void	JOYSTICK_ClearHat( int32_t h );
-void	JOYSTICK_ClearAllHats( void );
-
-int32_t	JOYSTICK_GetAxis( int32_t a );
-void	JOYSTICK_ClearAxis( int32_t a );
-void	JOYSTICK_ClearAllAxes( void );
-
 void JOYSTICK_SetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
-void JOYSTICK_GetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);
-
-extern uint16_t CONTROL_JoyDeadZone[MAXJOYAXES], CONTROL_JoySaturation[MAXJOYAXES];
 
 #ifdef __cplusplus
 }

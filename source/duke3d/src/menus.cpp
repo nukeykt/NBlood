@@ -3716,11 +3716,11 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     else if (entry == &ME_JOYSTICK_ENABLE)
         CONTROL_JoystickEnabled = (newOption && CONTROL_JoyPresent);
     else if (entry == &ME_JOYSTICKAXIS_ANALOG)
-        CONTROL_MapAnalogAxis(M_JOYSTICKAXES.currentEntry, newOption, controldevice_joystick);
+        CONTROL_MapAnalogAxis(M_JOYSTICKAXES.currentEntry, newOption);
     else if (entry == &ME_JOYSTICKAXIS_INVERT)
-        CONTROL_SetAnalogAxisInvert(M_JOYSTICKAXES.currentEntry, newOption, controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(M_JOYSTICKAXES.currentEntry, newOption);
     else if (entry == &ME_JOYSTICK_LOOKINVERT)
-        CONTROL_SetAnalogAxisInvert(g_lookAxis, newOption, controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(g_lookAxis, newOption);
     else if (entry == &ME_NETOPTIONS_EPISODE)
     {
         if (newOption < g_volumeCnt)
@@ -3789,13 +3789,13 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         if (M_JOYSTICKBTNS.currentEntry < joystick.numButtons + 4*joystick.numHats)
             CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, 0, controldevice_joystick);
         else if (joystick.isGameController)
-            CONTROL_MapDigitalAxis(M_JOYSTICKBTNS.currentEntry - joystick.numButtons - 4*joystick.numHats + 4, newOption, 1, controldevice_joystick);
+            CONTROL_MapDigitalAxis(M_JOYSTICKBTNS.currentEntry - joystick.numButtons - 4*joystick.numHats + 4, newOption, 1);
         break;
     case MENU_JOYSTICKAXIS:
     {
         for (int i = 0; i < ARRAY_SSIZE(MEL_INTERNAL_JOYSTICKAXIS_DIGITAL); i++)
             if (entry == MEL_INTERNAL_JOYSTICKAXIS_DIGITAL[i])
-                CONTROL_MapDigitalAxis(M_JOYSTICKAXES.currentEntry, newOption, i&1, controldevice_joystick);
+                CONTROL_MapDigitalAxis(M_JOYSTICKAXES.currentEntry, newOption, i&1);
     }
         break;
     }

@@ -109,7 +109,7 @@ static void CONFIG_SetJoystickAnalogAxisSensitivity(int i, float sens)
 static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
 {
     ud.config.JoystickAnalogueInvert[i] = invert;
-    CONTROL_SetAnalogAxisInvert(i, invert, controldevice_joystick);
+    CONTROL_SetAnalogAxisInvert(i, invert);
 }
 static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
 {
@@ -120,12 +120,12 @@ static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int satura
 static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
 {
     ud.config.JoystickDigitalFunctions[i][j] = function;
-    CONTROL_MapDigitalAxis(i, function, j, controldevice_joystick);
+    CONTROL_MapDigitalAxis(i, function, j);
 }
 static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
 {
     ud.config.JoystickAnalogueAxes[i] = function;
-    CONTROL_MapAnalogAxis(i, function, controldevice_joystick);
+    CONTROL_MapAnalogAxis(i, function);
 }
 
 
@@ -542,11 +542,11 @@ void CONFIG_SetupJoystick(void)
 
     for (i=0; i<MAXJOYAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i], controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
+        CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i]);
+        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0);
+        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1);
         CONTROL_SetAnalogAxisSensitivity(i, ud.config.JoystickAnalogueSensitivity[i], controldevice_joystick);
-        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i]);
         JOYSTICK_SetDeadZone(i, ud.config.JoystickAnalogueDead[i], ud.config.JoystickAnalogueSaturate[i]);
     }
 }

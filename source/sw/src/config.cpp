@@ -463,9 +463,6 @@ void CONFIG_SetupMouse(void)
     }
     for (i=0; i<MAXMOUSEAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, MouseAnalogAxes[i], controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, MouseDigitalAxes[i][0], 0,controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, MouseDigitalAxes[i][1], 1,controldevice_mouse);
         CONTROL_SetAnalogAxisScale(i, MouseAnalogScale[i], controldevice_mouse);
     }
 
@@ -538,9 +535,9 @@ void CONFIG_SetupJoystick(void)
     }
     for (i=0; i<MAXJOYAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, JoystickAnalogAxes[i], controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, JoystickDigitalAxes[i][0], 0, controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, JoystickDigitalAxes[i][1], 1, controldevice_joystick);
+        CONTROL_MapAnalogAxis(i, JoystickAnalogAxes[i]);
+        CONTROL_MapDigitalAxis(i, JoystickDigitalAxes[i][0], 0);
+        CONTROL_MapDigitalAxis(i, JoystickDigitalAxes[i][1], 1);
         CONTROL_SetAnalogAxisScale(i, JoystickAnalogScale[i], controldevice_joystick);
         //CONTROL_SetJoyAxisDead(i, JoystickAnalogDead[i]);
         //CONTROL_SetJoyAxisSaturate(i, JoystickAnalogSaturate[i]);

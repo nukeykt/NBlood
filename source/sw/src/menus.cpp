@@ -1457,7 +1457,7 @@ static SWBOOL MNU_JoystickAxisSetupCustom(UserCall call, MenuItem *item)
     case 1:     //acknowledge
         currentfunc--;
         JoystickDigitalAxes[JoystickAxisPage][joystick_axis_item->tics] = currentfunc;
-        CONTROL_MapDigitalAxis(JoystickAxisPage, currentfunc, joystick_axis_item->tics, controldevice_joystick);
+        CONTROL_MapDigitalAxis(JoystickAxisPage, currentfunc, joystick_axis_item->tics);
         MNU_SetJoystickAxisFunctions(joystick_axis_item);
         cust_callback = NULL;
         break;
@@ -3895,7 +3895,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         {
             slidersettings[item->slider] = offset;
             JoystickAnalogAxes[JoystickAxisPage] = MNU_ControlAxisNum(offset);
-            CONTROL_MapAnalogAxis(JoystickAxisPage, MNU_ControlAxisNum(offset), controldevice_joystick);
+            CONTROL_MapAnalogAxis(JoystickAxisPage, MNU_ControlAxisNum(offset));
         }
 
         p = CONFIG_AnalogNumToName(MNU_ControlAxisNum(offset));
