@@ -1989,7 +1989,10 @@ restart_grand:
                     continue;
 #ifdef YAX_ENABLE
                 if (mcf==-1 && curspr==NULL)
+                {
+                    bitmap_set(origclipsectormap, k);
                     origclipsectorlist[origclipsectnum++] = k;
+                }
                 if (curspr == NULL)
                     layerclipsectorlist[layerclipsectnum++] = k;
 #endif
