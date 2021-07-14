@@ -80,8 +80,6 @@ int32_t MixRate     = 44100;
 uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 int32_t MouseButtons[MAXMOUSEBUTTONS];
 int32_t MouseButtonsClicked[MAXMOUSEBUTTONS];
-int32_t MouseDigitalAxes[MAXMOUSEAXES][2];
-int32_t MouseAnalogAxes[MAXMOUSEAXES];
 int32_t MouseAnalogScale[MAXMOUSEAXES];
 int32_t JoystickButtons[MAXJOYBUTTONS];
 int32_t JoystickButtonsClicked[MAXJOYBUTTONS];
@@ -261,16 +259,8 @@ void CONFIG_SetDefaults(void)
     gs.MouseAimingOn = TRUE;
     gs.AutoRun = TRUE;
 
-    memset(MouseDigitalAxes, -1, sizeof(MouseDigitalAxes));
     for (i=0; i<MAXMOUSEAXES; i++)
-    {
         MouseAnalogScale[i] = 65536;
-
-        MouseDigitalAxes[i][0] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2]);
-        MouseDigitalAxes[i][1] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2+1]);
-
-        MouseAnalogAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
-    }
     gs.MouseSpeed = DEFAULTMOUSESENSITIVITY*8192; // fix magic scale factor
     CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
 
@@ -456,18 +446,6 @@ void CONFIG_SetupMouse(void)
     // map over the axes
     for (i=0; i<MAXMOUSEAXES; i++)
     {
-        Bsprintf(str,"MouseAnalogAxes%d",i); temp[0] = 0;
-        if (!SCRIPT_GetString(scripthandle, "Controls", str,temp))
-            MouseAnalogAxes[i] = CONFIG_AnalogNameToNum(temp);
-
-        Bsprintf(str,"MouseDigitalAxes%d_0",i); temp[0] = 0;
-        if (!SCRIPT_GetString(scripthandle, "Controls", str,temp))
-            MouseDigitalAxes[i][0] = CONFIG_FunctionNameToNum(temp);
-
-        Bsprintf(str,"MouseDigitalAxes%d_1",i); temp[0] = 0;
-        if (!SCRIPT_GetString(scripthandle, "Controls", str,temp))
-            MouseDigitalAxes[i][1] = CONFIG_FunctionNameToNum(temp);
-
         Bsprintf(str,"MouseAnalogScale%d",i);
         scale = MouseAnalogScale[i];
         SCRIPT_GetNumber(scripthandle, "Controls", str,&scale);
@@ -749,15 +727,6 @@ void CONFIG_WriteSetup(void)
 
     for (dummy=0; dummy<MAXMOUSEAXES; dummy++)
     {
-        Bsprintf(buf,"MouseAnalogAxes%d",dummy);
-        SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_AnalogNumToName(MouseAnalogAxes[dummy]));
-
-        Bsprintf(buf,"MouseDigitalAxes%d_0",dummy);
-        SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseDigitalAxes[dummy][0]));
-
-        Bsprintf(buf,"MouseDigitalAxes%d_1",dummy);
-        SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseDigitalAxes[dummy][1]));
-
         Bsprintf(buf,"MouseAnalogScale%d",dummy);
         SCRIPT_PutNumber(scripthandle, "Controls", buf, MouseAnalogScale[dummy], FALSE, FALSE);
     }

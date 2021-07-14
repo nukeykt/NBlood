@@ -343,24 +343,12 @@ MenuGroup joyaxessetupgroup = {65, 5, "^Joystick Axes", joyaxes_i, pic_newgameti
 
 
 static char AdvancedMouseAxisFunctions[4][MAXAXISFUNCTIONLENGTH] = { "", "", "", "" };
-static SWBOOL MNU_SetAdvancedMouseFunctions(MenuItem_p item);
-static SWBOOL MNU_MouseDigitalPostProcess(MenuItem_p item);
-static SWBOOL MNU_MouseDigitalSetupCustom(UserCall call, MenuItem_p item);
-MenuGroup advancedmousedigigroup = {0, 0, NULL, NULL, 0, 0, m_defshade, MNU_MouseDigitalSetupCustom, NULL, 0};
 MenuItem advancedmouse_i[] =
 {
     {DefSlider(sldr_mousescalex, 0, "X-Axis Scale"), OPT_XS,     OPT_LINE(0), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(0), 0, m_defshade, 0, NULL, NULL, NULL},
     {DefSlider(sldr_mousescaley, 0, "Y-Axis Scale"), OPT_XS,     OPT_LINE(1), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(1), 0, m_defshade, 0, NULL, NULL, NULL},
-    {DefLayer(0, "Digital Up", &advancedmousedigigroup), OPT_XS, OPT_LINE(3), 1, m_defshade, 0, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[0]), OPT_XSIDE,      OPT_LINE(3), 1, m_defshade, 0, NULL, MNU_SetAdvancedMouseFunctions, NULL},
-    {DefLayer(0, "Digital Down", &advancedmousedigigroup), OPT_XS, OPT_LINE(4), 1, m_defshade, 1, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[1]), OPT_XSIDE,      OPT_LINE(4), 1, m_defshade, 1, NULL, MNU_SetAdvancedMouseFunctions, NULL},
-    {DefLayer(0, "Digital Left", &advancedmousedigigroup), OPT_XS, OPT_LINE(5), 1, m_defshade, 2, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[2]), OPT_XSIDE,      OPT_LINE(5), 1, m_defshade, 2, NULL, MNU_SetAdvancedMouseFunctions, NULL},
-    {DefLayer(0, "Digital Right", &advancedmousedigigroup), OPT_XS, OPT_LINE(6), 1, m_defshade, 3, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[3]), OPT_XSIDE,      OPT_LINE(6), 1, m_defshade, 3, NULL, MNU_SetAdvancedMouseFunctions, NULL},
     {DefNone}
 };
 MenuGroup mouseadvancedgroup = {65, 5, "^Adv'd Mouse", advancedmouse_i, pic_newgametitl, 0, m_defshade, NULL, NULL, 0};
@@ -1174,86 +1162,6 @@ static SWBOOL MNU_SetMouseButtonFunctions(MenuItem_p item)
     return TRUE;
 }
 
-
-static MenuItem_p mouse_digital_item = NULL;
-
-static SWBOOL MNU_MouseDigitalPostProcess(MenuItem_p item)
-{
-    mouse_digital_item = item;
-    return TRUE;
-}
-
-static SWBOOL MNU_MouseDigitalSetupCustom(UserCall call, MenuItem_p item)
-{
-    static int currentfunc = 0;
-
-    if (call == uc_touchup)
-        return TRUE;
-
-    if (cust_callback == NULL)
-    {
-        if (call != uc_setup)
-            return FALSE;
-        currentfunc = MouseDigitalAxes[mouse_digital_item->tics/2][mouse_digital_item->tics%2];
-        currentfunc++;
-
-        cust_callback = MNU_MouseDigitalSetupCustom;
-        cust_callback_call = call;
-        cust_callback_item = item;
-    }
-
-    {
-        short w, h = 0;
-        const char *s = "Adv'd Mouse";
-
-        rotatesprite(10 << 16, (5-3) << 16, MZ, 0, 2427,
-                     m_defshade, 0, MenuDrawFlags|ROTATE_SPRITE_CORNER, 0, 0, xdim - 1, ydim - 1);
-        MNU_MeasureStringLarge(s, &w, &h);
-        MNU_DrawStringLarge(TEXT_XCENTER(w), 5, s);
-    }
-
-    int selection = MNU_SelectButtonFunction(mouse_digital_item->text, &currentfunc);
-    switch (selection)
-    {
-    case -1:    //cancel
-        cust_callback = NULL;
-        break;
-    case 1:     //acknowledge
-        currentfunc--;
-        MouseDigitalAxes[mouse_digital_item->tics/2][mouse_digital_item->tics%2] = currentfunc;
-        CONTROL_MapDigitalAxis(mouse_digital_item->tics/2, currentfunc, mouse_digital_item->tics%2, controldevice_mouse);
-        MNU_SetAdvancedMouseFunctions(mouse_digital_item);
-        cust_callback = NULL;
-        break;
-    default: break;
-    }
-
-    return TRUE;
-}
-
-static SWBOOL MNU_SetAdvancedMouseFunctions(MenuItem_p item)
-{
-    int axis;
-    char *p;
-
-    axis = item->tics;
-    ASSERT(axis >= 0 && axis < 4);
-
-    if (MouseDigitalAxes[axis/2][axis%2] < 0)
-    {
-        strcpy(AdvancedMouseAxisFunctions[axis], "  -");
-    }
-    else
-    {
-        strcpy(AdvancedMouseAxisFunctions[axis], CONFIG_FunctionNumToName(MouseDigitalAxes[axis/2][axis%2]));
-        for (p = AdvancedMouseAxisFunctions[axis]; *p; p++)
-        {
-            if (*p == '_')
-                *p = ' ';
-        }
-    }
-    return TRUE;
-}
 
 
 static MenuItem_p joystick_button_item = NULL;
