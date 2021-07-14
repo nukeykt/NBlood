@@ -328,7 +328,8 @@ void CONFIG_SetDefaults(void)
 
     Bstrcpy(ud.rtsname, G_DefaultRtsFile());
 
-    Bstrcpy(szPlayerName, "Player");
+    if (!CommandName)
+        Bstrcpy(szPlayerName, "Player");
 
 #ifndef EDUKE32_STANDALONE
     Bstrcpy(ud.ridecule[0], "An inspiration for birth control.");
@@ -715,15 +716,18 @@ int CONFIG_ReadSetup(void)
         SCRIPT_GetString(ud.config.scripthandle, "Comm Setup",commmacro,&ud.ridecule[i][0]);
     }
 
-    Bmemset(tempbuf, 0, sizeof(tempbuf));
-    SCRIPT_GetString(ud.config.scripthandle, "Comm Setup","PlayerName",&tempbuf[0]);
+    if (!CommandName)
+    {
+        Bmemset(tempbuf, 0, sizeof(tempbuf));
+        SCRIPT_GetString(ud.config.scripthandle, "Comm Setup","PlayerName",&tempbuf[0]);
 
-    char nameBuf[64];
+        char nameBuf[64];
 
-    while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) > 10)
-        tempbuf[Bstrlen(tempbuf) - 1] = '\0';
+        while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) > 10)
+            tempbuf[Bstrlen(tempbuf) - 1] = '\0';
 
-    Bstrncpyz(szPlayerName, tempbuf, sizeof(szPlayerName));
+        Bstrncpyz(szPlayerName, tempbuf, sizeof(szPlayerName));
+    }
 
     SCRIPT_GetString(ud.config.scripthandle, "Comm Setup","RTSName",&ud.rtsname[0]);
 
@@ -983,7 +987,8 @@ void CONFIG_WriteSetup(uint32_t flags)
         }
     }
 
-    SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","PlayerName",&szPlayerName[0]);
+    if (!CommandName)
+        SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","PlayerName",&szPlayerName[0]);
 
     SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","RTSName",&ud.rtsname[0]);
 

@@ -1150,7 +1150,7 @@ static int osdcmd_name(osdcmdptr_t parm)
 
     Bstrncpy(szPlayerName,tempbuf,sizeof(szPlayerName)-1);
     szPlayerName[sizeof(szPlayerName)-1] = '\0';
-
+    CommandName = nullptr;
     OSD_Printf("name %s\n",szPlayerName);
 
     Net_SendClientInfo();

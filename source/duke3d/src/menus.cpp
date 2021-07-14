@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "al_midi.h"
 #include "cheats.h"
+#include "cmdline.h"
 #include "communityapi.h"
 #include "compat.h"
 #include "demo.h"
@@ -3771,7 +3772,12 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
         entry == &ME_PLAYER_NAME ||
         entry == &ME_PLAYER_COLOR ||
         entry == &ME_PLAYER_TEAM)
+    {
+        if (entry == &ME_PLAYER_NAME)
+            CommandName = nullptr;
+
         G_UpdatePlayerFromMenu();
+    }
     else if (entry == &ME_DISPLAYSETUP_UPSCALING)
     {
         if (in3dmode())
