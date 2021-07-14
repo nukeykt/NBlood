@@ -6486,7 +6486,9 @@ next_most:
             (tspr->xrepeat * 5) / 4 :
             tspr->xrepeat;
 
-        const int32_t lx = 0, rx = xdim-1;
+        const int32_t lx = 0, rx = xdimen-1;
+
+        Bassert(rx+windowxy1.x < xdim);
 
         for (x=lx; x<=rx; x++)
         {
