@@ -547,7 +547,7 @@ int SENSITIVITY = SENSE_MIN + (SENSE_DEFAULT *SENSE_MUL);
 #define VOL_MUL                 16
 
 // User input data for all devices
-UserInput mnu_input, mnu_input_buffered, order_input_buffered;
+UserInput mnu_input;
 
 // Menu function call back pointer for multiplay menus
 SWBOOL(*cust_callback)(UserCall call, MenuItem_p item);
@@ -831,7 +831,7 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
         const char *morestr = "More...";
         const char *p;
 
-        UserInput inpt = {FALSE,FALSE,FALSE,dir_None};
+        UserInput inpt = {};
         CONTROL_GetUserInput(&inpt);
 
         if (KEY_PRESSED(KEYSC_ESC) || inpt.button1)
@@ -955,7 +955,7 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
     short w, h=0;
     int returnval = 0;
 
-    UserInput inpt = {FALSE,FALSE,FALSE,dir_None};
+    UserInput inpt = {};
     CONTROL_GetUserInput(&inpt);
 
     if (inpt.button1)
@@ -1503,10 +1503,7 @@ SWBOOL
 MNU_OrderCustom(UserCall call, MenuItem *item)
 {
     static signed char on_screen = 0;
-    UserInput order_input;
-    static int limitmove=0;
-    UserInput tst_input;
-    SWBOOL select_held = FALSE;
+    UserInput order_input = {};
     int zero = 0;
     static SWBOOL DidOrderSound = FALSE;
     short choose_snd;
@@ -1570,59 +1567,17 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             wanghandle = PlaySound(DIGI_WANGORDER2, &zero, &zero, &zero, v3df_dontpan);
     }
 
-    order_input.button0 = order_input.button1 = FALSE;
-    order_input.dir = dir_None;
+    CONTROL_GetUserInput(&order_input);
 
-    // Zero out the input structure
-    tst_input.button0 = tst_input.button1 = FALSE;
-    tst_input.dir = dir_None;
-
-    if (!select_held)
+    // Support a few other keys too
+    if (KEY_PRESSED(KEYSC_SPACE)||KEY_PRESSED(KEYSC_ENTER))
     {
-        CONTROL_GetUserInput(&tst_input);
-        //order_input_buffered.dir = tst_input.dir;
-        // Support a few other keys too
-        if (KEY_PRESSED(KEYSC_SPACE)||KEY_PRESSED(KEYSC_ENTER))
-        {
-            KEY_PRESSED(KEYSC_SPACE) = FALSE;
-            KEY_PRESSED(KEYSC_ENTER) = FALSE;
-            tst_input.dir = dir_South;
-        }
+        KEY_PRESSED(KEYSC_SPACE) = FALSE;
+        KEY_PRESSED(KEYSC_ENTER) = FALSE;
+        order_input.dir = dir_South;
     }
 
-    if (order_input_buffered.button0 || order_input_buffered.button1 || order_input_buffered.dir != dir_None)
-    {
-        if (tst_input.button0 == order_input_buffered.button0 &&
-            tst_input.button1 == order_input_buffered.button1 &&
-            tst_input.dir == order_input_buffered.dir)
-        {
-            select_held = TRUE;
-        }
-        else
-        {
-            if (labs((int32_t) totalclock - limitmove) > 7)
-            {
-                order_input.button0 = order_input_buffered.button0;
-                order_input.button1 = order_input_buffered.button1;
-                order_input.dir = order_input_buffered.dir;
-
-                order_input_buffered.button0 = tst_input.button0;
-                order_input_buffered.button1 = tst_input.button1;
-                order_input_buffered.dir = tst_input.dir;
-
-                limitmove = (int32_t) totalclock;
-            }
-        }
-    }
-    else
-    {
-        select_held = FALSE;
-        order_input_buffered.button0 = tst_input.button0;
-        order_input_buffered.button1 = tst_input.button1;
-        order_input_buffered.dir = tst_input.dir;
-    }
-
-    if (!KEY_PRESSED(KEYSC_ESC) && !order_input_buffered.button1)
+    if (!KEY_PRESSED(KEYSC_ESC) && !order_input.button1)
     {
         cust_callback = MNU_OrderCustom;
         cust_callback_call = call;
@@ -1653,6 +1608,9 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
     {
         on_screen++;
     }
+
+    if (order_input.dir != dir_None)
+        CONTROL_ClearUserInput(&order_input);
 
 // CTW MODIFICATION
 // I reversed the logic in here to allow the user to loop around.
@@ -2462,7 +2420,6 @@ MNU_InputSmallString(char *name, short pix_width)
 
     if (!MoveSkip4 && !MessageInputMode)
     {
-        con_input.dir = dir_None;
         CONTROL_GetUserInput(&con_input);
 
         if (con_input.dir == dir_North)
@@ -4005,10 +3962,6 @@ MNU_SetupMenu(void)
     menuarray[0] = currentmenu = rootmenu;
     if (ControlPanelType == ct_mainmenu)
 
-        mnu_input_buffered.button0 = mnu_input_buffered.button1 = FALSE;
-    mnu_input_buffered.dir = dir_None;
-    order_input_buffered.button0 = order_input_buffered.button1 = FALSE;
-    order_input_buffered.dir = dir_None;
     ResetKeys();
 
     // custom cust_callback starts out as null
@@ -4509,7 +4462,6 @@ void MNU_DoMenu(CTLType UNUSED(type))
     SWBOOL resetitem;
     int zero = 0;
     static int handle2;
-    static int limitmove=0;
 
     resetitem = TRUE;
 
@@ -4527,57 +4479,18 @@ void MNU_DoMenu(CTLType UNUSED(type))
     mnu_input.dir = dir_None;
 
     // should not get input if you are editing a save game slot
-    if (totalclock < limitmove) limitmove = (int32_t) totalclock;
     if (!MenuInputMode)
     {
-        UserInput tst_input;
-        SWBOOL select_held = FALSE;
+        UserInput tst_input = {};
 
-
-        // Zero out the input structure
-        tst_input.button0 = tst_input.button1 = FALSE;
         tst_input.dir = dir_None;
 
-        if (!select_held)
-        {
-            CONTROL_GetUserInput(&tst_input);
-            mnu_input_buffered.dir = tst_input.dir;
-        }
+        CONTROL_GetUserInput(&tst_input);
+        mnu_input = tst_input;
 
-        if (mnu_input_buffered.button0 || mnu_input_buffered.button1)
-        {
-            if (tst_input.button0 == mnu_input_buffered.button0 &&
-                tst_input.button1 == mnu_input_buffered.button1)
-            {
-                select_held = TRUE;
-            }
-            else if (totalclock - limitmove > 7)
-            {
-                mnu_input.button0 = mnu_input_buffered.button0;
-                mnu_input.button1 = mnu_input_buffered.button1;
-
-                mnu_input_buffered.button0 = tst_input.button0;
-                mnu_input_buffered.button1 = tst_input.button1;
-            }
-        }
-        else
-        {
-            select_held = FALSE;
-            mnu_input_buffered.button0 = tst_input.button0;
-            mnu_input_buffered.button1 = tst_input.button1;
-        }
-
-        if (totalclock - limitmove > 7 && !select_held)
-        {
-            mnu_input.dir = mnu_input_buffered.dir;
-
-            if (mnu_input.dir != dir_None)
-                if (!FX_SoundValidAndActive(handle2))
-                    handle2 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
-
-            limitmove = (int32_t) totalclock;
-            mnu_input_buffered.dir = dir_None;
-        }
+        if (mnu_input.dir != dir_None)
+            if (!FX_SoundValidAndActive(handle2))
+                handle2 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
     }
 
     if (mnu_input.dir == dir_North)
@@ -4626,7 +4539,6 @@ void MNU_DoMenu(CTLType UNUSED(type))
         if (!FX_SoundValidAndActive(handle4))
             handle4 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
         resetitem = TRUE;
-        mnu_input_buffered.button0 = mnu_input_buffered.button1 = FALSE;
     }
     else
         resetitem = FALSE;
@@ -4638,6 +4550,7 @@ void MNU_DoMenu(CTLType UNUSED(type))
 
     if (resetitem)
     {
+        CONTROL_ClearUserInput(&mnu_input);
         KB_ClearKeysDown();
         ResetKeys();
         MOUSE_ClearAllButtons();
