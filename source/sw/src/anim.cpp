@@ -264,7 +264,7 @@ playanm(short anim_num)
     unsigned char *animbuf;
     int i, length = 0, numframes = 0;
     int32_t handle = -1;
-    UserInput uinfo = { FALSE, FALSE, dir_None };
+    UserInput uinfo = { FALSE, FALSE, FALSE, dir_None };
 
     ANIMnum = anim_num;
 

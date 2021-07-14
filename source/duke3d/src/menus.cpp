@@ -1800,7 +1800,7 @@ static void Menu_PopulateJoystick(void)
     {
         if (i < joystick.numButtons)
         {
-            if (i == GAMECONTROLLER_BUTTON_START || !joyHasButton(i))
+            if (i == CONTROLLER_BUTTON_START || !joyHasButton(i))
             {
                 ME_JOYSTICKBTNS[i] ={};
                 ME_JOYSTICKBTNS[i].flags = MEF_Hidden;

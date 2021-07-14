@@ -50,9 +50,9 @@ extern "C" {
 #define MAXJOYDIGITAL (MAXJOYAXES*2)
 
 int32_t	JOYSTICK_GetButtons( void );
-int32_t	JOYSTICK_GetGameControllerButtons( void );
+int32_t	JOYSTICK_GetControllerButtons( void );
 int32_t	JOYSTICK_ClearButton( int32_t b );
-void	JOYSTICK_ClearGameControllerButton( int32_t b );
+void	JOYSTICK_ClearControllerButton( int32_t b );
 void	JOYSTICK_ClearAllButtons( void );
 
 int32_t	JOYSTICK_GetHat( int32_t h );

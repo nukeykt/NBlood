@@ -103,7 +103,7 @@ typedef struct
 {
     int32_t analog;
     int8_t digital;
-    int8_t digitalClearedN, digitalClearedP;
+    int8_t digitalCleared;
 } controlaxistype;
 
 #ifdef __cplusplus

@@ -74,7 +74,7 @@ int32_t JOYSTICK_GetButtons(void)
 
     return buttons;
 }
-int32_t JOYSTICK_GetGameControllerButtons(void)
+int32_t JOYSTICK_GetControllerButtons(void)
 {
     if (!joystick.isGameController)
         return 0;
@@ -87,7 +87,7 @@ int32_t JOYSTICK_ClearButton(int32_t b)
 {
     return (joystick.bits &= ~b);
 }
-void JOYSTICK_ClearGameControllerButton(int32_t b)
+void JOYSTICK_ClearControllerButton(int32_t b)
 {
     if (!joystick.isGameController)
         return;

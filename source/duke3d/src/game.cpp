@@ -197,13 +197,6 @@ void G_HandleSpecialKeys(void)
 {
     auto &myplayer = *g_player[myconnectindex].ps;
 
-    // we need CONTROL_GetInput in order to pick up joystick button presses
-    if (CONTROL_Started && (!(myplayer.gm & MODE_GAME) || (myplayer.gm & MODE_MENU)))
-    {
-        ControlInfo noshareinfo;
-        CONTROL_GetInput(&noshareinfo);
-    }
-
     if (g_networkMode != NET_DEDICATED_SERVER && ALT_IS_PRESSED && KB_KeyPressed(sc_Enter))
     {
         if (videoSetGameMode(!ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail))

@@ -831,7 +831,7 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
         const char *morestr = "More...";
         const char *p;
 
-        UserInput inpt = {FALSE,FALSE,dir_None};
+        UserInput inpt = {FALSE,FALSE,FALSE,dir_None};
         CONTROL_GetUserInput(&inpt);
 
         if (KEY_PRESSED(KEYSC_ESC) || inpt.button1)
@@ -955,7 +955,7 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
     short w, h=0;
     int returnval = 0;
 
-    UserInput inpt = {FALSE,FALSE,dir_None};
+    UserInput inpt = {FALSE,FALSE,FALSE,dir_None};
     CONTROL_GetUserInput(&inpt);
 
     if (inpt.button1)

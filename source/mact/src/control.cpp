@@ -23,6 +23,10 @@
 #include "android.h"
 #endif
 
+// TODO: add mact cvars and make this user configurable
+#define USERINPUTDELAY 500
+#define USERINPUTFASTDELAY 60
+
 bool CONTROL_Started         = false;
 bool CONTROL_MouseEnabled    = false;
 bool CONTROL_MousePresent    = false;
@@ -35,6 +39,7 @@ uint64_t CONTROL_ButtonHeldState = 0;
 
 LastSeenInput CONTROL_LastSeenInput;
 
+static int32_t CONTROL_UserInputDelay = -1;
 float          CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
 float          CONTROL_MouseAxesSensitivity[2];
 static int32_t CONTROL_NumMouseButtons  = 0;
@@ -70,8 +75,11 @@ static int32_t CONTROL_JoyButtonClickedTime[MAXJOYBUTTONS];
 static int32_t CONTROL_JoyButtonState[MAXJOYBUTTONS];
 static uint8_t CONTROL_JoyButtonClickedCount[MAXJOYBUTTONS];
 
-static int32_t(*ExtGetTime)(void);
-//static int32_t ticrate;
+static bool      CONTROL_UserInputCleared[4];
+static UserInput CONTROL_UserInput;
+static direction CONTROL_LastUserInputDirection;
+static int32_t (*ExtGetTime)(void);
+static int32_t ticrate;
 static uint8_t CONTROL_DoubleClickSpeed;
 
 int32_t CONTROL_ButtonFlags[CONTROL_NUM_FLAGS];
@@ -550,36 +558,28 @@ static int CONTROL_DigitizeAxis(int axis, controldevice device)
     default: return 0;
     }
 
-    set[axis].digitalClearedN = lastset[axis].digitalClearedN;
-    set[axis].digitalClearedP = lastset[axis].digitalClearedP;
+    set[axis].digitalCleared = lastset[axis].digitalCleared;
 
     if (set[axis].analog > 0)
     {
-        set[axis].digitalClearedN = 0;
-
         if (set[axis].analog > DIGITALAXISANALOGTHRESHOLD || (set[axis].analog > MINDIGITALAXISANALOGTHRESHOLD && lastset[axis].digital == 1))
             set[axis].digital = 1;
         else
-            set[axis].digitalClearedP = 0;
+            set[axis].digitalCleared = 0;
 
         return 1;
     }
     else if (set[axis].analog < 0)
     {
-        set[axis].digitalClearedP = 0;
-
         if (set[axis].analog < -DIGITALAXISANALOGTHRESHOLD || (set[axis].analog < -MINDIGITALAXISANALOGTHRESHOLD && lastset[axis].digital == -1))
             set[axis].digital = -1;
         else
-            set[axis].digitalClearedN = 0;
+            set[axis].digitalCleared = 0;
 
         return 1;
     }
     else
-    {
-        set[axis].digitalClearedN = 0;
-        set[axis].digitalClearedP = 0;
-    }
+        set[axis].digitalCleared = 0;
 
     return 0;
 }
@@ -668,7 +668,7 @@ static void CONTROL_PollDevices(ControlInfo *info)
             else 
             {
                 // this assumes there are two sticks comprised of axes 0 and 1, and 2 and 3... because when isGameController is true, there are
-                if (i <= GAMECONTROLLER_AXIS_LEFTY || (joystick.isGameController && (i <= GAMECONTROLLER_AXIS_RIGHTY)))
+                if (i <= CONTROLLER_AXIS_LEFTY || (joystick.isGameController && (i <= CONTROLLER_AXIS_RIGHTY)))
                     axisScaled10k = min(10000, joydist(joystick.pAxis[i & ~1], joystick.pAxis[i | 1]) * 10000 / 32767);
 
                 if (axisScaled10k < CONTROL_JoyDeadZone[i])
@@ -808,34 +808,20 @@ void CONTROL_ClearAllButtons(void)
         c.cleared = TRUE;
 }
 
-int32_t CONTROL_GetGameControllerDigitalAxisPos(int32_t axis)
+int32_t CONTROL_GetControllerDigitalAxis(int32_t axis)
 {
     if (!joystick.isGameController)
         return 0;
 
-    return CONTROL_JoyAxes[axis].digital > 0 && !CONTROL_JoyAxes[axis].digitalClearedP;
-}
-int32_t CONTROL_GetGameControllerDigitalAxisNeg(int32_t axis)
-{
-    if (!joystick.isGameController)
-        return 0;
-
-    return CONTROL_JoyAxes[axis].digital < 0 && !CONTROL_JoyAxes[axis].digitalClearedN;
+    return (CONTROL_JoyAxes[axis].digitalCleared || !CONTROL_JoyAxes[axis].digital) ? 0 : ksgn(CONTROL_JoyAxes[axis].digital);
 }
 
-void CONTROL_ClearGameControllerDigitalAxisPos(int32_t axis)
+void CONTROL_ClearControllerDigitalAxis(int32_t axis)
 {
     if (!joystick.isGameController)
         return;
 
-    CONTROL_JoyAxes[axis].digitalClearedP = 1;
-}
-void CONTROL_ClearGameControllerDigitalAxisNeg(int32_t axis)
-{
-    if (!joystick.isGameController)
-        return;
-
-    CONTROL_JoyAxes[axis].digitalClearedN = 1;
+    CONTROL_JoyAxes[axis].digitalCleared = 1;
 }
 
 void CONTROL_ProcessBinds(void)
@@ -917,6 +903,7 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     ExtGetTime = TimeFunction ? TimeFunction : CONTROL_GetTime;
 
     // what the fuck???
+    ticrate = ticspersecond;
     CONTROL_DoubleClickSpeed = (ticspersecond * 57) / 100;
 
     if (CONTROL_DoubleClickSpeed <= 0)
@@ -965,68 +952,145 @@ void CONTROL_Shutdown(void)
     CONTROL_Started = FALSE;
 }
 
-
 // temporary hack until input is unified
-void CONTROL_GetUserInput(UserInput * uinfo)
+
+#define SCALEAXIS(x) (CONTROL_JoyAxes[CONTROLLER_AXIS_ ## x].analog * 10000 / 32767)
+#define SATU(x) (CONTROL_JoySaturation[CONTROLLER_AXIS_ ## x])
+
+UserInput *CONTROL_GetUserInput(UserInput *info)
 {
-    if (
-        KB_KeyPressed(sc_DownArrow)
-        || KB_KeyPressed(sc_kpad_2)
-        || (MOUSE_GetButtons()&M_WHEELDOWN)
-        )
-        uinfo->dir = dir_South;
-    else if (
-        KB_KeyPressed(sc_UpArrow)
-        || KB_KeyPressed(sc_kpad_8)
-        || (MOUSE_GetButtons()&M_WHEELUP)
-        )
-        uinfo->dir = dir_North;
-    else if (
-        KB_KeyPressed(sc_LeftArrow)
-        || KB_KeyPressed(sc_kpad_4)
-        )
-        uinfo->dir = dir_West;
-    else if (
-        KB_KeyPressed(sc_RightArrow)
-        || KB_KeyPressed(sc_kpad_6)
-        )
-        uinfo->dir = dir_East;
+    if (info == nullptr)
+        info = &CONTROL_UserInput;
 
-    uinfo->button0 =
-        KB_KeyPressed(sc_Enter)
-        || KB_KeyPressed(sc_kpad_Enter)
-        || (MOUSE_GetButtons()&M_LEFTBUTTON)
-        ;
+    direction newdir = dir_None;
 
-    uinfo->button1 =
-        KB_KeyPressed(sc_Escape)
-        || (MOUSE_GetButtons()&M_RIGHTBUTTON)
-        ;
+    if ((CONTROL_JoyAxes[CONTROLLER_AXIS_LEFTY].digital == -1 && SCALEAXIS(LEFTY) <= -SATU(LEFTY))
+        || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_DPAD_UP)))
+        newdir = dir_Up;
+    else if ((CONTROL_JoyAxes[CONTROLLER_AXIS_LEFTY].digital == 1 && SCALEAXIS(LEFTY) >= SATU(LEFTY))
+                || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_DPAD_DOWN)))
+        newdir = dir_Down;
+    else if ((CONTROL_JoyAxes[CONTROLLER_AXIS_LEFTX].digital == -1 && SCALEAXIS(LEFTX) <= -SATU(LEFTX))
+                || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_DPAD_LEFT)))
+        newdir = dir_Left;
+    else if ((CONTROL_JoyAxes[CONTROLLER_AXIS_LEFTX].digital == 1 && SCALEAXIS(LEFTX) >= SATU(LEFTX))
+                || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_DPAD_RIGHT)))
+        newdir = dir_Right;
+
+    // allow the user to press the dpad as fast as they like without being rate limited
+    if (newdir == dir_None)
+    {
+        CONTROL_UserInputDelay = -1;
+        CONTROL_LastUserInputDirection = dir_None;
+    }
+
+    info->dir = (ExtGetTime() >= CONTROL_UserInputDelay) ? newdir : dir_None;
+
+    if (KB_KeyDown[sc_kpad_8] || KB_KeyDown[sc_UpArrow])
+        info->dir = dir_Up;
+    else if (KB_KeyDown[sc_kpad_2] || KB_KeyDown[sc_DownArrow])
+        info->dir = dir_Down;
+    else if (KB_KeyDown[sc_kpad_4] || KB_KeyDown[sc_LeftArrow])
+        info->dir = dir_Left;
+    else if (KB_KeyDown[sc_kpad_6] || KB_KeyDown[sc_RightArrow])
+        info->dir = dir_Right;
+
+    info->b_advance = KB_KeyPressed(sc_Enter) || KB_KeyPressed(sc_kpad_Enter) || (MOUSE_GetButtons() & M_LEFTBUTTON)
+                    || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_A));
+    info->b_return   = KB_KeyPressed(sc_Escape) || (MOUSE_GetButtons() & M_RIGHTBUTTON) || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_B));
+    info->b_escape = KB_KeyPressed(sc_Escape) || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_START));
+
+#if defined(GEKKO)
+    if (JOYSTICK_GetButtons()&(WII_A))
+        info->b_advance = true;
+
+    if (JOYSTICK_GetButtons()&(WII_B|WII_HOME))
+        info->b_return = true;
+
+    if (JOYSTICK_GetButtons() & WII_HOME)
+        info->b_escape = true;
+#endif
+
+    if (CONTROL_UserInputCleared[1])
+    {
+        if (!info->b_advance)
+            CONTROL_UserInputCleared[1] = false;
+        else
+            info->b_advance = false;
+    }
+
+    if (CONTROL_UserInputCleared[2])
+    {
+        if (!info->b_return)
+            CONTROL_UserInputCleared[2] = false;
+        else
+            info->b_return = false;
+    }
+
+    if (CONTROL_UserInputCleared[3])
+    {
+        if (!info->b_escape)
+            CONTROL_UserInputCleared[3] = false;
+        else
+            info->b_escape = false;
+    }
+
+    return info;
 }
-void CONTROL_ClearUserInput(UserInput * uinfo)
+
+#undef SCALEAXIS
+#undef SATU
+
+void CONTROL_ClearUserInput(UserInput * info)
 {
-    UNREFERENCED_PARAMETER(uinfo);
+    if (info == nullptr)
+        info = &CONTROL_UserInput;
 
-    KB_FlushKeyboardQueue();
-
+    // for keyboard keys we want the OS repeat rate, so just clear them
     KB_ClearKeyDown(sc_UpArrow);
     KB_ClearKeyDown(sc_kpad_8);
-    MOUSE_ClearButton(M_WHEELUP);
-
     KB_ClearKeyDown(sc_DownArrow);
     KB_ClearKeyDown(sc_kpad_2);
-    MOUSE_ClearButton(M_WHEELDOWN);
-
     KB_ClearKeyDown(sc_LeftArrow);
     KB_ClearKeyDown(sc_kpad_4);
-
     KB_ClearKeyDown(sc_RightArrow);
     KB_ClearKeyDown(sc_kpad_6);
 
-    KB_ClearKeyDown(sc_kpad_Enter);
-    KB_ClearKeyDown(sc_Enter);
-    MOUSE_ClearButton(M_LEFTBUTTON);
+    // the OS doesn't handle repeat for joystick inputs so we have to do it ourselves
+    if (info->dir != dir_None)
+    {
+        auto const clk = ExtGetTime();
 
-    KB_ClearKeyDown(sc_Escape);
-    MOUSE_ClearButton(M_RIGHTBUTTON);
+        if (CONTROL_LastUserInputDirection == info->dir)
+            CONTROL_UserInputDelay = clk + ((ticrate * USERINPUTFASTDELAY) / 1000);
+        else
+        {
+            CONTROL_LastUserInputDirection = info->dir;
+            CONTROL_UserInputDelay = clk + ((ticrate * USERINPUTDELAY) / 1000);
+        }
+
+        CONTROL_UserInputCleared[0] = true;
+    }
+
+    if (info->b_advance)
+    {
+        KB_ClearKeyDown(sc_kpad_Enter);
+        KB_ClearKeyDown(sc_Enter);
+        MOUSE_ClearButton(M_LEFTBUTTON);
+        CONTROL_UserInputCleared[1] = true;
+    }
+
+    if (info->b_return)
+    {
+        KB_ClearKeyDown(sc_Escape);
+        MOUSE_ClearButton(M_RIGHTBUTTON);
+        CONTROL_UserInputCleared[2] = true;
+    }
+
+    if (info->b_escape)
+    {
+        KB_ClearKeyDown(sc_Escape);
+        CONTROL_UserInputCleared[3] = true;    
+    }
+    inputchecked = 1;
 }
