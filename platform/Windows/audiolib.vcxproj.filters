@@ -97,9 +97,6 @@
     <ClInclude Include="..\..\source\audiolib\include\fx_man.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\src\linklist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\multivoc.h">
       <Filter>Header Files</Filter>
     </ClInclude>

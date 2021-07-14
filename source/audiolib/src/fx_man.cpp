@@ -144,6 +144,10 @@ void FX_InitCvars(void)
 
     for (auto& i : cvars_audiolib)
         OSD_RegisterCvar(&i, (i.flags & CVAR_FUNCPTR) ? osdcmd_cvar_set_audiolib : osdcmd_cvar_set);
+
+#ifdef _WIN32
+    OSD_RegisterFunction("mus_mme_debuginfo", "Windows MME MIDI buffer debug information", WinMMDrv_MIDI_PrintBufferInfo);
+#endif
 }
 
 int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)

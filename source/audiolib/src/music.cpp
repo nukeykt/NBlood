@@ -104,6 +104,8 @@ failed:
 int MUSIC_Shutdown(void)
 {
     MIDI_StopSong();
+    SoundDriver_MIDI_Shutdown();
+
     return MUSIC_Ok;
 }
 

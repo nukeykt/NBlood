@@ -96,7 +96,13 @@ static void _MIDI_SetChannelVolume(int channel, int volume);
 
 void MIDI_Restart(void)
 {
-    MIDI_PlaySong(_MIDI_SongPtr, _MIDI_Loop);
+    if (_MIDI_SongLoaded)
+    {
+        songposition pos;
+        MIDI_GetSongPosition(&pos);
+        MIDI_PlaySong(_MIDI_SongPtr, _MIDI_Loop);
+        MIDI_SetSongPosition(pos.measure, pos.beat, pos.tick);
+    }
 }
 
 static int _MIDI_ReadNumber(void *from, size_t size)

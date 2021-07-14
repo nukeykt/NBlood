@@ -18,6 +18,7 @@
  
  */
 
+#include "osd.h"
 #include "midifuncs.h"
 #include "windows_inc.h"
 
@@ -56,3 +57,5 @@ void WinMMDrv_MIDI_Service(void);
 
 void WinMMDrv_MIDI_PrintDevices(void);
 int WinMMDrv_MIDI_GetNumDevices(void);
+
+int WinMMDrv_MIDI_PrintBufferInfo(osdcmdptr_t);
