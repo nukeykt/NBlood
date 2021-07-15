@@ -168,9 +168,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define FLAMETHROWER_END__    400
 #define E5L7_DUKE_QUIT_YOU__  401
 
-#define SOUNDMAPSIZE 450
-
-extern int16_t DynamicSoundMap[SOUNDMAPSIZE];
+extern inthashtable_t h_dsound;
 
 void G_InitDynamicSounds(void);
 
@@ -324,7 +322,7 @@ extern int32_t FLAMETHROWER_LOOP;
 extern int32_t FLAMETHROWER_END;
 extern int32_t E5L7_DUKE_QUIT_YOU;
 
-#define DYNAMICSOUNDMAP(Soundnum) ((unsigned)(Soundnum) >= ARRAY_SIZE(DynamicSoundMap) ? (Soundnum) : DynamicSoundMap[Soundnum])
+#define DYNAMICSOUNDMAP(Soundnum) (inthash_find(&h_dsound, Soundnum))
 
 #else  /* if !defined DYNSOUNDREMAP_ENABLE */
 

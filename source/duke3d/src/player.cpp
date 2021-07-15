@@ -919,7 +919,7 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
         }
 
         if ((krand() & 255) < 4 && pProj->isound >= 0)
-            S_PlaySound3D(pProj->isound, otherSprite, &hitData.xyz);
+            S_PlaySound3D(pProj->isound, otherSprite, hitData.xyz);
 
         return -1;
 
@@ -1196,7 +1196,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             }
 
             if ((krand() & 255) < 4)
-                S_PlaySound3D(PISTOL_RICOCHET, spawnedSprite, &hitData.xyz);
+                S_PlaySound3D(PISTOL_RICOCHET, spawnedSprite, hitData.xyz);
 
             return -1;
         }

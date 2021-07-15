@@ -2451,7 +2451,7 @@ static void postloadplayer(int32_t savegamep)
     if (savegamep)
     {
         for (SPRITES_OF(STAT_FX, i))
-            if (sprite[i].picnum == MUSICANDSFX && T1(i) && SLT(i) < 999 && g_sounds[SLT(i)].m & (SF_MSFX|SF_LOOP))
+            if (sprite[i].picnum == MUSICANDSFX && T1(i) && SLT(i) < 999 && S_SoundIsValid(SLT(i)) && g_sounds[SLT(i)]->flags & (SF_MSFX|SF_LOOP))
             {
                 T2(i) = 0;
 

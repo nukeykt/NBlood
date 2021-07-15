@@ -36,7 +36,7 @@ int S_FindMusicSFX(int sectNum, int *sndptr)
         const int32_t snd = sprite[spriteNum].lotag;
         EDUKE32_STATIC_ASSERT(MAXSOUNDS >= 1000);
 
-        if (PN(spriteNum) == MUSICANDSFX && (unsigned)snd < 1000)  // XXX: in other places, 999
+        if (PN(spriteNum) == MUSICANDSFX && (unsigned)snd < 1000 && S_SoundIsValid(snd))  // XXX: in other places, 999
         {
             *sndptr = snd;
             return spriteNum;
@@ -66,13 +66,13 @@ int A_CallSound(int sectNum, int spriteNum)
 
         if (T1(SFXsprite) == 0)
         {
-            if ((g_sounds[soundNum].m & (SF_GLOBAL|SF_DTAG)) != SF_GLOBAL)
+            if ((g_sounds[soundNum]->flags & (SF_GLOBAL|SF_DTAG)) != SF_GLOBAL)
             {
                 if (soundNum)
                 {
                     A_PlaySound(soundNum, spriteNum);
 
-                    if (SHT(SFXsprite) && soundNum != SHT(SFXsprite) && SHT(SFXsprite) < MAXSOUNDS)
+                    if (SHT(SFXsprite) && soundNum != SHT(SFXsprite) && SHT(SFXsprite) <= g_highestSoundIdx)
                         S_StopEnvSound(SHT(SFXsprite),T6(SFXsprite));
 
                     T6(SFXsprite) = spriteNum;
@@ -82,12 +82,12 @@ int A_CallSound(int sectNum, int spriteNum)
                     T1(SFXsprite) = 1;
             }
         }
-        else if (SHT(SFXsprite) < MAXSOUNDS)
+        else if (SHT(SFXsprite) <= g_highestSoundIdx)
         {
             if (SHT(SFXsprite))
                 A_PlaySound(SHT(SFXsprite), spriteNum);
 
-            if ((g_sounds[soundNum].m & SF_LOOP) || (SHT(SFXsprite) && SHT(SFXsprite) != soundNum))
+            if ((g_sounds[soundNum]->flags & SF_LOOP) || (SHT(SFXsprite) && SHT(SFXsprite) != soundNum))
                 S_StopEnvSound(soundNum, T6(SFXsprite));
 
             T6(SFXsprite) = spriteNum;
@@ -1444,12 +1444,12 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
             if (G_IsLikeDipswitch(nSwitchPicnum))
             {
                 S_PlaySound3D((nSwitchPicnum == ALIENSWITCH || nSwitchPicnum == ALIENSWITCH + 1) ? ALIEN_SWITCH1 : SWITCH_ON,
-                              (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
+                              (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, davector);
 
                 if (numDips != correctDips)
                     break;
 
-                S_PlaySound3D(END_OF_LEVEL_WARN, g_player[playerNum].ps->i, &davector);
+                S_PlaySound3D(END_OF_LEVEL_WARN, g_player[playerNum].ps->i, davector);
             }
             fallthrough__;
         case ACCESSSWITCH_CASES:
@@ -1494,11 +1494,11 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                 return 1;
 
             if (!hitag && CheckDoorTile(nSwitchPicnum) == 0)
-                S_PlaySound3D(SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
-            else if (hitag)
+                S_PlaySound3D(SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, davector);
+            else if (S_SoundIsValid(hitag))
             {
-                if (switchType == SWITCH_SPRITE && (g_sounds[hitag].m & SF_TALK) == 0)
-                    S_PlaySound3D(hitag, wallOrSprite, &davector);
+                if (switchType == SWITCH_SPRITE && (g_sounds[hitag]->flags & SF_TALK) == 0)
+                    S_PlaySound3D(hitag, wallOrSprite, davector);
                 else
                     A_PlaySound(hitag, g_player[playerNum].ps->i);
             }
@@ -2000,7 +2000,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
             sprite[dmgSrc].xvel = (sprite[spriteNum].xvel>>1)+(sprite[spriteNum].xvel>>2);
             sprite[dmgSrc].ang -= (SA(spriteNum)<<1)+1024;
             SA(spriteNum) = getangle(SX(spriteNum)-sprite[dmgSrc].x,SY(spriteNum)-sprite[dmgSrc].y)-512;
-            if (g_sounds[POOLBALLHIT].num < 2)
+            if (g_sounds[POOLBALLHIT]->playing < 2)
                 A_PlaySound(POOLBALLHIT, spriteNum);
         }
         else

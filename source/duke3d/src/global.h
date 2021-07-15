@@ -154,12 +154,10 @@ G_EXTERN playerspawn_t g_playerSpawnPoints[MAXPLAYERS];
 G_EXTERN input_t inputfifo[MOVEFIFOSIZ][MAXPLAYERS];
 #pragma pack(pop)
 
-G_EXTERN char g_soundlocks[MAXSOUNDS];
 G_EXTERN int32_t g_noEnemies;
 G_EXTERN int32_t g_restorePalette;
 G_EXTERN int32_t g_screenCapture;
 G_EXTERN projectile_t SpriteProjectile[MAXSPRITES];
-G_EXTERN sound_t g_sounds[MAXSOUNDS];
 G_EXTERN uint32_t everyothertime;
 G_EXTERN uint32_t g_moveThingsCount;
 G_EXTERN double g_gameUpdateTime;

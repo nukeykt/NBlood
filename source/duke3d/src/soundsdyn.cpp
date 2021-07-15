@@ -34,8 +34,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # define DVPTR(x) NULL
 #endif
 
-int16_t DynamicSoundMap[SOUNDMAPSIZE];
-
 struct dynitem
 {
     const char *str;
@@ -189,6 +187,8 @@ static struct dynitem g_dynSoundList[] =
     { "E5L7_DUKE_QUIT_YOU",  DVPTR(E5L7_DUKE_QUIT_YOU), E5L7_DUKE_QUIT_YOU__ },
  };
 
+inthashtable_t h_dsound = { NULL, INTHASH_SIZE(ARRAY_SIZE(g_dynSoundList)) };
+
 #ifdef DYNSOUNDREMAP_ENABLE
 
 int32_t ALIEN_SWITCH1       = ALIEN_SWITCH1__;
@@ -338,8 +338,7 @@ static hashtable_t h_names = {512, NULL};
 
 void G_ProcessDynamicSoundMapping(const char *szLabel, int32_t lValue)
 {
-    if ((unsigned)lValue >= MAXSOUNDS || !szLabel)
-        return;
+    Bassert((unsigned)lValue < (unsigned)g_highestSoundIdx && szLabel);
 
     int const i = hash_find(&h_names,szLabel);
 
@@ -372,13 +371,12 @@ void freesoundhashnames(void)
 // dynamic->static sound mapping.
 void G_InitDynamicSounds(void)
 {
-    Bmemset(DynamicSoundMap, 0, sizeof(DynamicSoundMap));
+    inthash_init(&h_dsound);
 
     for (auto & i : g_dynSoundList)
 #ifdef DYNSOUNDREMAP_ENABLE
-        DynamicSoundMap[*(i.dynvalptr)] = i.staticval;
+        inthash_add(&h_dsound, *(i.dynvalptr), i.staticval, 0);
 #else
-        DynamicSoundMap[i.staticval] = i.staticval;
+        inthash_add(&h_dsound, i.staticval, i.staticval, 0);
 #endif
-
 }

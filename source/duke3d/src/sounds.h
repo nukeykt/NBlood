@@ -29,13 +29,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef sounds_public_h_
 #define sounds_public_h_
 
+#include "build.h"
+#include "compat.h"
 #include "sounds_common.h"
+#include "namesdyn.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define MAXSOUNDS           4096
+#define MAXSOUNDS           16384
 #define MAXSOUNDINSTANCES   8
 #define LOUDESTVOLUME       111
 #define MUSIC_ID            -65536
@@ -44,26 +47,38 @@ extern "C" {
 typedef struct
 {
     int16_t  owner;
-    int16_t  id;
+    int16_t  handle;
     uint16_t dist;
-    uint16_t clock;
-} assvoice_t;
+} voiceinfo_t;
 
 typedef struct
 {
-    char *    ptr, *filename;                // 8b/16b
-    int32_t   length, num, siz;              // 12b
-    fix16_t   volume;                        // 4b
-    assvoice_t voices[MAXSOUNDINSTANCES];  // 64b
-    int16_t   ps, pe, vo;                    // 6b
-    char      pr, m;                         // 2b
+    voiceinfo_t *voices;
+
+    char *  ptr;
+    char *  filename;
+    int32_t len;
+    fix16_t volume;
+    int16_t minpitch, maxpitch, distOffset;
+    int8_t  playing;
+    uint8_t flags;
+    char    priority;
+    char    lock;
 } sound_t;
 
-extern char g_soundlocks[MAXSOUNDS];
-extern sound_t g_sounds[MAXSOUNDS];
-extern int32_t g_numEnvSoundsPlaying,g_highestSoundIdx;
+extern voiceinfo_t nullvoice;
+extern sound_t nullsound;
+extern sound_t **g_sounds;
+extern int32_t g_numEnvSoundsPlaying, g_highestSoundIdx;
 
 extern int32_t MusicIsWaveform, MusicVoice;
+
+static FORCE_INLINE bool S_SoundIsValid(int soundNum)
+{
+    return soundNum < g_highestSoundIdx && g_sounds[soundNum] && g_sounds[soundNum] != &nullsound && g_sounds[soundNum]->ptr;
+}
+
+static FORCE_INLINE bool S_IsAmbientSFX(int const spriteNum) { return (sprite[spriteNum].picnum == MUSICANDSFX && sprite[spriteNum].lotag < 999); }
 
 int A_CheckSoundPlaying(int spriteNum,int soundNum);
 int A_PlaySound(int soundNum, int spriteNum);
@@ -89,8 +104,9 @@ int S_TryPlaySpecialMusic(unsigned int);
 void S_PlaySpecialMusicOrNothing(unsigned int);
 void S_ContinueLevelMusic(void);
 int S_PlaySound(int num);
-int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos);
+int S_PlaySound3D(int num, int spriteNum, const vec3_t &pos);
 void S_SoundShutdown(void);
+void S_AllocIndexes(int sndidx);
 void S_SoundStartup(void);
 void S_StopEnvSound(int sndNum,int sprNum);
 void S_StopAllSounds(void);
@@ -100,10 +116,6 @@ void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset);
 int32_t S_GetMusicPosition(void);
 void S_SetMusicPosition(int32_t position);
 
-static inline bool S_IsAmbientSFX(int spriteNum)
-{
-    return (sprite[spriteNum].picnum == MUSICANDSFX && sprite[spriteNum].lotag < 999);
-}
 
 #ifdef __cplusplus
 }

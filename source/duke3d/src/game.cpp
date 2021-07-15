@@ -5827,8 +5827,20 @@ static void G_Cleanup(void)
     for (i=MAXPLAYERS-1; i>=0; i--)
         Xfree(g_player[i].ps);
 
-    for (i=MAXSOUNDS-1; i>=0; i--)
-        Xfree(g_sounds[i].filename);
+    for (i=0;i<=g_highestSoundIdx;i++)
+    {
+        if (g_sounds[i] != &nullsound)
+        {
+            DO_FREE_AND_NULL(g_sounds[i]->filename);
+
+            if (g_sounds[i]->voices != &nullvoice)
+                DO_FREE_AND_NULL(g_sounds[i]->voices);
+
+            DO_FREE_AND_NULL(g_sounds[i]);
+        }
+    }
+
+    DO_FREE_AND_NULL(g_sounds);
 
     Xfree(label);
     Xfree(labelcode);
@@ -5846,6 +5858,7 @@ static void G_Cleanup(void)
 
     hash_loop(&h_dukeanim, G_FreeHashAnim);
     hash_free(&h_dukeanim);
+    inthash_free(&h_dsound);
 
     inthash_free(&h_dynamictilemap);
 
