@@ -5171,8 +5171,10 @@ badindex:
                 dispatch();
 
             vInstruction(CON_SAVEMAPSTATE):
-                G_SaveMapState();
                 insptr++;
+                VM_ASSERT((g_player[myconnectindex].ps->gm & (MODE_EOL | MODE_RESTART | MODE_GAME)) == MODE_GAME,
+                        "attempted to save state in invalid gamemode: %d\n", g_player[myconnectindex].ps->gm);
+                G_SaveMapState();
                 dispatch();
 
             vInstruction(CON_LOADMAPSTATE):
