@@ -7674,7 +7674,7 @@ void M_DisplayMenus(void)
             m_mousewake_watchpoint = 1;
 #endif
 
-        if (MOUSEACTIVECONDITIONAL(mouseAdvanceClickState()) || m_mousepos.x != m_prevmousepos.x || m_mousepos.y != m_prevmousepos.y)
+        if (MOUSEACTIVECONDITIONAL(mouseAdvanceClickState()) || m_mousepos.x != m_prevmousepos.x || m_mousepos.y != m_prevmousepos.y || g_mouseClickState != MOUSE_IDLE)
         {
             m_prevmousepos = m_mousepos;
             m_mouselastactivity = timer120();
