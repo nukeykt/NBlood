@@ -2526,23 +2526,8 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
             buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
             if (doalloc)
-            {
-                if (!(dameth & DAMETH_CLAMPED))
-                {
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_if_tile_is_sky(dapic, GL_CLAMP_TO_EDGE));
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                }
-                else
-                {
-                    // For sprite textures, clamping looks better than wrapping
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                }
-            }
-
-            if (!doalloc &&
-                (siz.x != pth->siz.x ||
-                 siz.y != pth->siz.y))
+                polymost_setuptexture(dameth, -1);
+            else if (siz != pth->siz)
             {
                 //POGO: resize our texture to match the tile data
                 doalloc = true;

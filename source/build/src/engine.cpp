@@ -196,9 +196,8 @@ int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 
 struct classicht_t{
     intptr_t ptr;
-    char lock;
-    vec2_t siz;
     vec2_t upscale;
+    char lock;
 };
 
 classicht_t classicht[MAXTILES];
@@ -206,59 +205,55 @@ classicht_t classicht[MAXTILES];
 classicht_t *classic_hightile(int dapicnum)
 {
 #ifdef USE_OPENGL
-    classicht_t *cht = &classicht[dapicnum];
-    hicreplctyp *si = usehightile ? hicfindsubst(dapicnum, 0, 0) : NULL;
-    if (!si)
+    auto tsiz = tilesiz[dapicnum];
+    auto si   = hicfindsubst(dapicnum, 0, 0);
+    auto cht  = &classicht[dapicnum];
+
+    if ((!usehightile) |
+        ((paletteloaded & PALETTE_MAIN) != PALETTE_MAIN) |
+        (tsiz.x <= 0) | (tsiz.y <= 0) |
+        (!si/* || (si->flags & HICR_INDEXED) != HICR_INDEXED*/))
         return NULL;
 
-    if (tilesiz[dapicnum].x <= 0 || tilesiz[dapicnum].y <= 0)
-        return NULL;
-
-    if (!classicht[dapicnum].ptr)
+    if (!cht->ptr)
     {
-        char const * fn = si->filename;
-        if (!fn)
-            return NULL;
+        char const *fn = si->filename;
 
-        if (check_file_exist(fn))
+        if (!fn || check_file_exist(fn))
             return NULL;
 
         int32_t xsiz = 0, ysiz = 0;
         palette_t *picptr = NULL;
 
-        int32_t const length = kpzbufload(fn);
 #ifdef WITHKPLIB
+        int32_t const length = kpzbufload(fn);
         kpzdecode(length, (intptr_t *)&picptr, &xsiz, &ysiz);
 #endif
-        if (!picptr)
-            return NULL;
 
-        if (EDUKE32_PREDICT_FALSE(xsiz <= 0 || ysiz <= 0))
+        if (EDUKE32_PREDICT_FALSE(!picptr | (xsiz <= 0) | (ysiz <= 0)))
         {
             Xfree(picptr);
             return NULL;
         }
 
         vec2_t upscale = {};
-        vec2_16_t tsiz = tilesiz[dapicnum];
+
         while (tsiz.x < xsiz) { tsiz.x <<= 1; upscale.x++; }
         while (tsiz.y < ysiz) { tsiz.y <<= 1; upscale.y++; }
 
-        if (tsiz.x != xsiz || tsiz.y != ysiz || !(paletteloaded & PALETTE_MAIN))
+        if ((tsiz.x != xsiz) | (tsiz.y != ysiz))
         {
             Xfree(picptr);
             return NULL;
         }
 
-        int const siz = xsiz * ysiz;
-
+        cht->upscale = upscale;
         cht->lock = CACHE1D_UNLOCKED;
-        g_cache.allocateBlock(&cht->ptr, siz, &cht->lock);
+        g_cache.allocateBlock(&cht->ptr, xsiz * ysiz, &cht->lock);
 
         paletteFlushClosestColor();
 
-        char *buf = (char*)cht->ptr;
-
+        auto buf = (char*)cht->ptr;
         int alphacut = clamp((int)(255.f - 255.f * si->alphacut), 0, 255);
 
         for (int j = 0; j < ysiz; ++j)
@@ -271,9 +266,6 @@ classicht_t *classic_hightile(int dapicnum)
                 (col->f < alphacut) ? 255 : paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
             }
         }
-
-        cht->siz = { xsiz, ysiz };
-        cht->upscale = upscale;
     }
     else if (cht->lock < CACHE1D_UNLOCKED)
         cht->lock = CACHE1D_UNLOCKED;
@@ -1965,7 +1957,7 @@ static WSHELPER_DECL void tweak_tsizes(vec2_16_t *tsiz)
         tsiz->y = -tsiz->y;
 }
 
-static WSHELPER_DECL void calc_bufplc(intptr_t *bufplc, int32_t lw, vec2_16_t tsiz, classicht_t *ht = NULL)
+static WSHELPER_DECL void calc_bufplc(intptr_t *bufplc, int32_t lw, vec2_16_t tsiz)
 {
     // CAUTION: lw can be negative!
     int32_t i = lw + globalxpanning;
@@ -1986,7 +1978,7 @@ static WSHELPER_DECL void calc_bufplc(intptr_t *bufplc, int32_t lw, vec2_16_t ts
 //    Bassert(i >= 0 && i < tilesiz[globalpicnum].x*tilesiz[globalpicnum].y);
 
     // Address is at the first row of tile storage (which is column-major).
-    *bufplc = (ht ? ht->ptr : waloff[globalpicnum]) + i;
+    *bufplc = (globalht ? globalht->ptr : waloff[globalpicnum]) + i;
 }
 
 static WSHELPER_DECL void calc_vplcinc_wall(uint32_t *vplc, int32_t *vinc, inthi_t sw, int32_t y1v)
@@ -2082,7 +2074,7 @@ static void maskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
 
         palookupoffse[0] = fpalookup + getpalookupsh(mulscale16(swall[x],globvis));
 
-        calc_bufplc(&bufplce[0], lwall[x], tsiz, globalht);
+        calc_bufplc(&bufplce[0], lwall[x], tsiz);
         calc_vplcinc(&vplce[0], &vince[0], swall, x, y1ve[0]);
 
         mvlineasm1(vince[0],palookupoffse[0],y2ve[0]-y1ve[0]-1,vplce[0],bufplce[0],p+ylookup[y1ve[0]]);
@@ -2097,7 +2089,7 @@ static void maskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
             y2ve[z] = min<int>(dwall[dax],startdmost[dax+windowxy1.x]-windowxy1.y)-1;
             if (y2ve[z] < y1ve[z]) { bad += pow2char[z]; continue; }
 
-            calc_bufplc(&bufplce[z], lwall[dax], tsiz, globalht);
+            calc_bufplc(&bufplce[z], lwall[dax], tsiz);
             calc_vplcinc(&vplce[z], &vince[z], swall, dax, y1ve[z]);
         }
         if (bad == 15) continue;
@@ -2155,7 +2147,7 @@ do_mvlineasm1:
 
         palookupoffse[0] = fpalookup + getpalookupsh(mulscale16(swall[x],globvis));
 
-        calc_bufplc(&bufplce[0], lwall[x], tsiz, globalht);
+        calc_bufplc(&bufplce[0], lwall[x], tsiz);
         calc_vplcinc(&vplce[0], &vince[0], swall, x, y1ve[0]);
 
 #ifdef NONPOW2_YSIZE_ASM
@@ -2765,12 +2757,14 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return 1;
     if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
 
-    auto ht = classic_hightile(globalpicnum);
     vec2_t upscale = {};
-    if (ht)
-        upscale = ht->upscale;
-
-    globalbufplc = waloff[globalpicnum];
+    if ((globalht = classic_hightile(globalpicnum)))
+    {
+        upscale = globalht->upscale;
+        globalbufplc = globalht->ptr;
+    }
+    else
+        globalbufplc = waloff[globalpicnum];
 
     globalshade = shade;
     globvis = globalcisibility;
@@ -2833,7 +2827,7 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     globaly1 = (-globalx1-globaly1)*halfxdimen;
     globalx2 = (globalx2-globaly2)*halfxdimen;
 
-    sethlinesizes((picsiz[globalpicnum]&15)+upscale.x,(picsiz[globalpicnum]>>4)+upscale.y,ht ? ht->ptr : globalbufplc);
+    sethlinesizes((picsiz[globalpicnum]&15)+upscale.x,(picsiz[globalpicnum]>>4)+upscale.y,globalbufplc);
 
     globalx2 += globaly2*(x1-1);
     globaly1 += globalx1*(x1-1);
@@ -3110,7 +3104,7 @@ static void wallscan(int32_t x1, int32_t x2,
 
         palookupoffse[0] = fpalookup + getpalookupsh(mulscale16(swal[x],globvis));
 
-        calc_bufplc(&bufplce[0], lwal[x], tsiz, globalht);
+        calc_bufplc(&bufplce[0], lwal[x], tsiz);
         calc_vplcinc(&vplce[0], &vince[0], swal, x, y1ve[0]);
 
         vlineasm1(vince[0],palookupoffse[0],y2ve[0]-y1ve[0]-1,vplce[0],bufplce[0],x+frameoffset+ylookup[y1ve[0]]);
@@ -3124,7 +3118,7 @@ static void wallscan(int32_t x1, int32_t x2,
             y2ve[z] = min(dwal[x+z],dmost[x+z])-1;
             if (y2ve[z] < y1ve[z]) { bad += pow2char[z]; continue; }
 
-            calc_bufplc(&bufplce[z], lwal[x+z], tsiz, globalht);
+            calc_bufplc(&bufplce[z], lwal[x+z], tsiz);
             calc_vplcinc(&vplce[z], &vince[z], swal, x+z, y1ve[z]);
         }
         if (bad == 15) continue;
@@ -3181,7 +3175,7 @@ do_vlineasm1:
 
         palookupoffse[0] = fpalookup + getpalookupsh(mulscale16(swal[x],globvis));
 
-        calc_bufplc(&bufplce[0], lwal[x], tsiz, globalht);
+        calc_bufplc(&bufplce[0], lwal[x], tsiz);
         calc_vplcinc(&vplce[0], &vince[0], swal, x, y1ve[0]);
 
 #ifdef NONPOW2_YSIZE_ASM
@@ -3219,7 +3213,7 @@ static void transmaskvline(int32_t x)
 
     vec2_16_t const ntsiz = { (int16_t)-tsiz.x, (int16_t)-tsiz.y };
     intptr_t bufplc;
-    calc_bufplc(&bufplc, lwall[x], ntsiz, globalht);
+    calc_bufplc(&bufplc, lwall[x], ntsiz);
     uint32_t vplc;
     int32_t vinc;
     calc_vplcinc(&vplc, &vinc, swall, x, y1v);
@@ -3269,8 +3263,8 @@ static void transmaskvline2(int32_t x)
 
     vec2_16_t const ntsiz = { (int16_t)-tsiz.x, (int16_t)-tsiz.y };
 
-    calc_bufplc(&bufplce[0], lwall[x], ntsiz, globalht);
-    calc_bufplc(&bufplce[1], lwall[x2], ntsiz, globalht);
+    calc_bufplc(&bufplce[0], lwall[x], ntsiz);
+    calc_bufplc(&bufplce[1], lwall[x2], ntsiz);
     calc_vplcinc(&vplce[0], &vince[0], swall, x, y1ve[0]);
     calc_vplcinc(&vplce[1], &vince[1], swall, x2, y1ve[1]);
 
@@ -3627,10 +3621,14 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return;
     if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
 
-    auto ht = classic_hightile(globalpicnum);
     vec2_t upscale = {};
-    if (ht)
-        upscale = ht->upscale;
+    if ((globalht = classic_hightile(globalpicnum)))
+    {
+        upscale = globalht->upscale;
+        globalbufplc = globalht->ptr;
+    }
+    else
+        globalbufplc = waloff[globalpicnum];
 
     wal = (uwalltype *)&wall[sec->wallptr];
     wxi = wall[wal->point2].x - wal->x;
@@ -3729,7 +3727,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     vec2_t logsz = { (picsiz[globalpicnum]&15)+upscale.x, (picsiz[globalpicnum]>>4)+upscale.y };
 
-    setupslopevlin_alsotrans(logsz.x + (logsz.y<<8), ht ? ht->ptr : waloff[globalpicnum],-ylookup[1]);
+    setupslopevlin_alsotrans(logsz.x + (logsz.y<<8), globalbufplc,-ylookup[1]);
 
     l = Blrintf((globalzd)*(1.f/65536.f));
 
@@ -3957,10 +3955,14 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return;
     if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
 
-    auto ht = classic_hightile(globalpicnum);
     vec2_t upscale = {};
-    if (ht)
-        upscale = ht->upscale;
+    if ((globalht = classic_hightile(globalpicnum)))
+    {
+        upscale = globalht->upscale;
+        globalbufplc = globalht->ptr;
+    }
+    else
+        globalbufplc = waloff[globalpicnum];
 
     wal = (uwallptr_t)&wall[sec->wallptr];
     wx = wall[wal->point2].x - wal->x;
@@ -4053,7 +4055,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     vec2_t logsz = { (picsiz[globalpicnum]&15)+upscale.x, (picsiz[globalpicnum]>>4)+upscale.y };
 
-    setupslopevlin_alsotrans(logsz.x + (logsz.y<<8), ht ? ht->ptr : waloff[globalpicnum],-ylookup[1]);
+    setupslopevlin_alsotrans(logsz.x + (logsz.y<<8), globalbufplc,-ylookup[1]);
 
     l = (globalzd>>16);
 
@@ -4188,9 +4190,8 @@ static void parascan(char dastat, int32_t bunch)
     if (tsizy==0)
         return;
 
-    globalht = classic_hightile(globalpicnum);
     vec2_t upscale = {};
-    if (globalht)
+    if ((globalht = classic_hightile(globalpicnum)))
         upscale = globalht->upscale;
     globalxpanning <<= upscale.x;
     logtilesizy += upscale.y;
@@ -6009,11 +6010,6 @@ draw_as_face_sprite:
             if ((globalposz > tspriteGetZOfSlope(tspr, globalposx, globalposy)) == ((cstat&8)==0))
                 return;
 
-        auto ht = classic_hightile(tilenum);
-        vec2_t upscale = {};
-        if (ht)
-            upscale = ht->upscale;
-
         if ((cstat&4) > 0) off.x = -off.x;
         if ((cstat&8) > 0) off.y = -off.y;
         vec2_16_t span = tilesiz[tilenum];
@@ -6373,7 +6369,15 @@ draw_as_face_sprite:
 
         if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
         setgotpic(globalpicnum);
-        globalbufplc = ht ? ht->ptr : waloff[globalpicnum];
+
+        vec2_t upscale = {};
+        if ((globalht = classic_hightile(globalpicnum)))
+        {
+            upscale = globalht->upscale;
+            globalbufplc = globalht->ptr;
+        }
+        else
+            globalbufplc = waloff[globalpicnum];
 
         if (slope != 0)
         {
@@ -6398,8 +6402,7 @@ draw_as_face_sprite:
 
             intptr_t fj = FP_OFF(palookup[globalpal]);
 
-            setupslopevlin_alsotrans(x + (y<<8),
-                                     ht ? ht->ptr : waloff[globalpicnum],-ylookup[1]);
+            setupslopevlin_alsotrans(x + (y<<8),globalbufplc,-ylookup[1]);
 
             int32_t const l = Blrintf((sgzd)*(1.f/65536.f));
 
@@ -7780,10 +7783,8 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
     setgotpic(picnum);
     bufplc = waloff[picnum];
 
-    auto ht = classic_hightile(picnum);
-
     vec2_t upscale = {};
-
+    auto ht = classic_hightile(picnum);
     if (ht)
     {
         bufplc = ht->ptr;
