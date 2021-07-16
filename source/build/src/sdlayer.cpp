@@ -446,6 +446,15 @@ int SDL_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
+    engineCreateAllocator();
+
+#if SDL_MAJOR_VERSION >= 2
+# if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 8
+    if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 8))
+        SDL_SetMemoryFunctions(_xmalloc, _xcalloc, _xrealloc, _xfree);
+# endif
+#endif
+
     MicroProfileOnThreadCreate("Main");
     MicroProfileSetForceEnable(true);
     MicroProfileSetEnableAllGroups(true);
@@ -732,17 +741,15 @@ void uninitsystem(void)
     uninitinput();
     timerUninit();
 
+#ifdef _WIN32
+    windowsPlatformCleanup();
+#endif
+
     if (appicon)
     {
         SDL_FreeSurface(appicon);
         appicon = NULL;
     }
-
-#ifdef _WIN32
-    windowsPlatformCleanup();
-#endif
-
-    SDL_Quit();
 
 #ifdef USE_OPENGL
 # if SDL_MAJOR_VERSION >= 2
@@ -752,6 +759,7 @@ void uninitsystem(void)
     unloadglulibrary();
 # endif
 #endif
+    SDL_Quit();
 }
 
 

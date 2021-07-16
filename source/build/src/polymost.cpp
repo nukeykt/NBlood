@@ -506,10 +506,10 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
         OSD_Printf("Compile Status: %u\n", compileStatus);
         if (logLength > 0)
         {
-            char *infoLog = (char*)Bmalloc(logLength);
+            char *infoLog = (char*)Xmalloc(logLength);
             glGetShaderInfoLog(shaderID, logLength, &logLength, infoLog);
             OSD_Printf("Log:\n%s\n", infoLog);
-            Bfree(infoLog);
+            Xfree(infoLog);
         }
     }
 
@@ -1141,7 +1141,7 @@ void polymost_glinit()
     glLinkProgram(polymost1ExtendedShaderProgramID);
 
     int polymost1BasicFragLen = strlen(polymost1Frag);
-    char* polymost1BasicFrag = (char*) Bmalloc(polymost1BasicFragLen);
+    char* polymost1BasicFrag = (char*) Xmalloc(polymost1BasicFragLen);
     memcpy(polymost1BasicFrag, polymost1Frag, polymost1BasicFragLen);
     char* extDefineSubstr = strstr(polymost1BasicFrag, " #define POLYMOST1_EXTENDED");
     if (extDefineSubstr)
@@ -1155,7 +1155,7 @@ void polymost_glinit()
     glAttachShader(polymost1BasicShaderProgramID, polymost1BasicVertexShaderID);
     glAttachShader(polymost1BasicShaderProgramID, polymost1BasicFragmentShaderID);
     glLinkProgram(polymost1BasicShaderProgramID);
-    Bfree(polymost1BasicFrag);
+    Xfree(polymost1BasicFrag);
     polymost1BasicFrag = 0;
 
     // set defaults

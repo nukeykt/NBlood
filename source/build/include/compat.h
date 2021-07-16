@@ -688,21 +688,37 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 # define ERRprintf(fmt, ...) fprintf(stderr, fmt, ## __VA_ARGS__)
 #endif
 
-// Bexit is ONLY for errors!
-#ifdef DEBUGGINGAIDS
-# define Bexit(status) do { initprintf("exit(%d) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); exit(status); } while (0)
-#else
-# define Bexit exit
+#ifdef __ANDROID__
+void eduke32_exit_return(int) ATTRIBUTE((noreturn));
+# define exit(x) eduke32_exit_return(x)
 #endif
 
-// do not try and wrap fatal_exit inside another function or you will break its functionaity (obviously...)
+#ifdef DEBUGGINGAIDS
+#define Bexit(status)                                                                            \
+    do                                                                                           \
+    {                                                                                            \
+        initprintf("exit(%d) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); \
+        engineDestroyAllocator();                                                                \
+        exit(status);                                                                            \
+    } while (0)
+#else
+# define Bexit(status) do { engineDestroyAllocator(); exit(status); } while (0)
+#endif
+
+// do not try and wrap fatal_exit inside another function or you will break its functionality (obviously...)
 #ifdef _WIN32
 #define fatal_exit__(x) FatalAppExitA(0, x)
 #else
 #define fatal_exit__(x) do { wm_msgbox("Fatal Error", "%s", x); exit(EXIT_FAILURE); } while(0)
 #endif
 
-#define fatal_exit(status) do { initprintf("fatal_exit(%s) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); fatal_exit__(status); } while (0)
+#define fatal_exit(status)                                                                             \
+    do                                                                                                 \
+    {                                                                                                  \
+        initprintf("fatal_exit(%s) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); \
+        engineDestroyAllocator();                                                                      \
+        fatal_exit__(status);                                                                          \
+    } while (0)
 
 ////////// Standard library monkey patching //////////
 
@@ -746,11 +762,6 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 #   define isprint(ch)  ({ int32_t c__dontuse_=ch; (c__dontuse_>=0x20 && c__dontuse_<0x7f); })
 #  endif
 # endif
-#endif
-
-#ifdef __ANDROID__
-void eduke32_exit_return(int) ATTRIBUTE((noreturn));
-# define exit(x) eduke32_exit_return(x)
 #endif
 
 
@@ -1010,41 +1021,18 @@ struct bad_arg_to_ARRAY_SIZE
 #define ARRAY_SSIZE(arr) (native_t)ARRAY_SIZE(arr)
 
 
-////////// Memory management //////////
-
-#if !defined NO_ALIGNED_MALLOC
-static FORCE_INLINE void *Baligned_alloc(const size_t alignment, const size_t size)
-{
-#ifdef _WIN32
-    void *ptr = _aligned_malloc(size, alignment);
-#elif defined __APPLE__ || defined EDUKE32_BSD
-    void *ptr = NULL;
-    posix_memalign(&ptr, alignment, size);
-#else
-    void *ptr = memalign(alignment, size);
-#endif
-
-    return ptr;
-}
-#else
-# define Baligned_alloc(alignment, size) Bmalloc(size)
-#endif
-
-#if defined _WIN32 && !defined NO_ALIGNED_MALLOC
-# define Baligned_free _aligned_free
-#else
-# define Baligned_free Bfree
-#endif
-
-
 ////////// Pointer management //////////
 
 #define DO_FREE_AND_NULL(var) do { \
-    Xfree(var); (var) = NULL; \
+    Xfree(var); (var) = nullptr; \
 } while (0)
 
 #define ALIGNED_FREE_AND_NULL(var) do { \
-    Xaligned_free(var); (var) = NULL; \
+    Xaligned_free(var); (var) = nullptr; \
+} while (0)
+
+#define DO_DELETE_AND_NULL(var) do { \
+    delete (var); (var) = nullptr; \
 } while (0)
 
 
@@ -1393,85 +1381,163 @@ char *Bstrupr(char *);
 int Bgetpagesize(void);
 size_t Bgetsysmemsize(void);
 
-////////// PANICKING ALLOCATION WRAPPERS //////////
+#ifdef __cplusplus
+}
+#endif
+
+////////// Memory management //////////
+
 
 #ifdef DEBUGGINGAIDS
-extern void xalloc_set_location(int32_t line, const char *file, const char *func);
+#ifdef __cplusplus
+extern "C"
+{
 #endif
+extern const char *g_MemErrFunc;
+extern const char *g_MemErrFile;
+extern int32_t g_MemErrLine;
+#ifdef __cplusplus
+}
+#endif
+
+static FORCE_INLINE void xalloc_set_location(int32_t const line, const char * const file, const char * const func)
+{
+    g_MemErrLine = line;
+    g_MemErrFile = file;
+
+    if (func)
+        g_MemErrFunc = func;
+}
+#endif
+
 void set_memerr_handler(void (*handlerfunc)(int32_t, const char *, const char *));
-void *handle_memerr(void *);
+void *handle_memerr(void);
+
+#ifdef __cplusplus
+#include "smmalloc.h"
+
+extern sm_allocator g_sm_heap;
+
+#ifdef BITNESS64
+# define ALLOC_ALIGNMENT 16
+#else
+# define ALLOC_ALIGNMENT 8
+#endif
 
 static FORCE_INLINE char *xstrdup(const char *s)
 {
-    char *ptr = Bstrdup(s);
-    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : (char *)handle_memerr(ptr);
+    int const len = Bstrlen(s)+1;
+    char *ptr = (char *)_sm_malloc(g_sm_heap, len, ALLOC_ALIGNMENT);
+    if (EDUKE32_PREDICT_TRUE(ptr != nullptr))
+    {
+        Bstrcpy(ptr, s);
+        ptr[len-1] = '\0';
+        return ptr;
+    }
+    handle_memerr();
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
-static FORCE_INLINE void *xmalloc(const bsize_t size)
+static FORCE_INLINE void *xmalloc(bsize_t const size)
 {
-    void *ptr = Bmalloc(size);
-    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : handle_memerr(ptr);
+    void *ptr = _sm_malloc(g_sm_heap, size, ALLOC_ALIGNMENT);
+    if (EDUKE32_PREDICT_TRUE(ptr != nullptr)) return ptr;
+    handle_memerr();
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
-static FORCE_INLINE void *xcalloc(const bsize_t nmemb, const bsize_t size)
+static FORCE_INLINE void *xcalloc(bsize_t const nmemb, bsize_t const size)
 {
-    void *ptr = Bcalloc(nmemb, size);
-    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : handle_memerr(ptr);
+    bsize_t const siz = nmemb * size;
+    void *ptr = _sm_malloc(g_sm_heap, siz, ALLOC_ALIGNMENT);
+    if (EDUKE32_PREDICT_TRUE(ptr != nullptr))
+    {
+        Bmemset(ptr, 0, siz);
+        return ptr;
+    }
+    handle_memerr();
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
-static FORCE_INLINE void *xrealloc(void * const ptr, const bsize_t size)
+static FORCE_INLINE void *xrealloc(void * const ptr, bsize_t const size)
 {
-    void *newptr = Brealloc(ptr, size);
+    void *newptr = _sm_realloc(g_sm_heap, ptr, size, ALLOC_ALIGNMENT);
 
     // According to the C Standard,
     //  - ptr == NULL makes realloc() behave like malloc()
     //  - size == 0 make it behave like free() if ptr != NULL
     // Since we want to catch an out-of-mem in the first case, this leaves:
-    return (EDUKE32_PREDICT_TRUE(newptr != NULL || size == 0)) ? newptr: handle_memerr(ptr);
+    if (EDUKE32_PREDICT_TRUE(newptr != nullptr || size == 0)) return newptr;
+    handle_memerr();
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
-#if !defined NO_ALIGNED_MALLOC
-static FORCE_INLINE void *xaligned_alloc(const bsize_t alignment, const bsize_t size)
+#undef ALLOC_ALIGNMENT
+
+static FORCE_INLINE void *xaligned_alloc(bsize_t const alignment, bsize_t const size)
 {
-    void *ptr = Baligned_alloc(alignment, size);
-    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : handle_memerr(ptr);
+    void *ptr = _sm_malloc(g_sm_heap, size, alignment);
+    if (EDUKE32_PREDICT_TRUE(ptr != nullptr)) return ptr;
+    handle_memerr();
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
-static FORCE_INLINE void *xaligned_calloc(const bsize_t alignment, const bsize_t count, const bsize_t size)
+static FORCE_INLINE void *xaligned_calloc(bsize_t const alignment, bsize_t const count, bsize_t const size)
 {
     bsize_t const blocksize = count * size;
-    void *ptr = Baligned_alloc(alignment, blocksize);
-    if (EDUKE32_PREDICT_TRUE(ptr != NULL))
+    void *ptr = _sm_malloc(g_sm_heap, blocksize, alignment);
+    if (EDUKE32_PREDICT_TRUE(ptr != nullptr))
     {
         Bmemset(ptr, 0, blocksize);
         return ptr;
     }
-    return handle_memerr(ptr);
+    handle_memerr();
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
+
+static FORCE_INLINE void xfree(void *const ptr) { _sm_free(g_sm_heap, ptr); }
+static FORCE_INLINE void xaligned_free(void *const ptr) { _sm_free(g_sm_heap, ptr); }
+#endif
+
+// jump through hoops so stuff with C linkage works
+#ifdef __cplusplus
+# define _EDUKE32_ALLOC(a) a
 #else
-# define xaligned_alloc(alignment, size) xmalloc(size)
-# define xaligned_calloc(alignment, count, size) xcalloc(count, size)
+# define _EDUKE32_ALLOC(a) _ ## a
 #endif
 
 #ifdef DEBUGGINGAIDS
-# define EDUKE32_PRE_XALLOC xalloc_set_location(__LINE__, __FILE__, EDUKE32_FUNCTION),
+# define EDUKE32_ALLOC_DEBUG xalloc_set_location(__LINE__, __FILE__, EDUKE32_FUNCTION),
+# define EDUKE32_ALLOC(x) (EDUKE32_ALLOC_DEBUG _EDUKE32_ALLOC(x))
 #else
-# define EDUKE32_PRE_XALLOC
+# define EDUKE32_ALLOC(x) _EDUKE32_ALLOC(x)
 #endif
 
-#define Xstrdup(s)    (EDUKE32_PRE_XALLOC xstrdup(s))
-#define Xmalloc(size) (EDUKE32_PRE_XALLOC xmalloc(size))
-#define Xcalloc(nmemb, size) (EDUKE32_PRE_XALLOC xcalloc(nmemb, size))
-#define Xrealloc(ptr, size)  (EDUKE32_PRE_XALLOC xrealloc(ptr, size))
-#define Xaligned_alloc(alignment, size) (EDUKE32_PRE_XALLOC xaligned_alloc(alignment, size))
-#define Xaligned_calloc(alignment, count, size) (EDUKE32_PRE_XALLOC xaligned_calloc(alignment, count, size))
-#define Xfree(ptr) (Bfree(ptr))
-#define Xaligned_free(ptr) (Baligned_free(ptr))
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+char *_xstrdup(const char *s);
+void *_xmalloc(bsize_t const size);
+void *_xcalloc(bsize_t const nmemb, bsize_t const size);
+void *_xrealloc(void * const ptr, bsize_t const size);
+void  _xfree(void * const ptr);
+void *_xaligned_alloc(bsize_t const alignment, bsize_t const size);
+void *_xaligned_calloc(bsize_t const alignment, bsize_t const count, bsize_t const size);
+void  _xaligned_free(void * const ptr);
 #ifdef __cplusplus
 }
 #endif
 
+#define Xstrdup       EDUKE32_ALLOC(xstrdup)
+#define Xmalloc       EDUKE32_ALLOC(xmalloc)
+#define Xcalloc       EDUKE32_ALLOC(xcalloc)
+#define Xrealloc      EDUKE32_ALLOC(xrealloc)
+#define Xfree         _EDUKE32_ALLOC(xfree)
+#define Xaligned_free _EDUKE32_ALLOC(xaligned_free)
+
+#define Xaligned_alloc  EDUKE32_ALLOC(xaligned_alloc)
+#define Xaligned_calloc EDUKE32_ALLOC(xaligned_calloc)
 
 ////////// More utility functions //////////
 

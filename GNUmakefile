@@ -243,6 +243,9 @@ engine_objs := \
     scriptfile.cpp \
     sjson.cpp \
     smalltextfont.cpp \
+    smmalloc.cpp \
+    smmalloc_generic.cpp \
+    smmalloc_tls.cpp \
     softsurface.cpp \
     texcache.cpp \
     textfont.cpp \
@@ -265,6 +268,9 @@ engine_tools_objs := \
     kplib.cpp \
     lz4.cpp \
     pragmas.cpp \
+    smmalloc.cpp \
+    smmalloc_generic.cpp \
+    smmalloc_tls.cpp \
     vfs.cpp \
 
 ifeq (0,$(NOASM))
@@ -882,10 +888,10 @@ libklzw$(DLLSUFFIX): $(engine_src)/klzw.cpp
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) $(RECIPE_RESULT_LINK)
 
-enumdisplay$(EXESUFFIX): $(tools_obj)/enumdisplay.$o
+enumdisplay$(EXESUFFIX): $(tools_obj)/enumdisplay.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) -lgdi32 $(RECIPE_RESULT_LINK)
-getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o
+getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) -ldinput $(RECIPE_RESULT_LINK)
 

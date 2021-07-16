@@ -29,7 +29,6 @@
 #endif
 
 #include "baselayer.h"
-
 #include "vfs.h"
 
 ////////// PANICKING ALLOCATION FUNCTIONS //////////
@@ -37,23 +36,29 @@
 static void (*g_MemErrHandler)(int32_t line, const char *file, const char *func);
 
 #ifdef DEBUGGINGAIDS
-static const char *g_MemErrFunc = "???";
-static const char *g_MemErrFile = "???";
-static int32_t g_MemErrLine;
+const char *g_MemErrFunc = "???";
+const char *g_MemErrFile = "???";
+int32_t g_MemErrLine;
+#endif
 
-void xalloc_set_location(int32_t line, const char *file, const char *func)
+#ifdef __cplusplus
+extern "C"
 {
-    g_MemErrLine = line;
-    g_MemErrFile = file;
-
-    if (func)
-        g_MemErrFunc = func;
+#endif
+char *_xstrdup(const char *s) { return xstrdup(s); }
+void *_xmalloc(bsize_t const size) { return xmalloc(size); }
+void *_xcalloc(bsize_t const nmemb, bsize_t const size) { return xcalloc(nmemb, size); }
+void *_xrealloc(void *const ptr, bsize_t const size) { return xrealloc(ptr, size); }
+void *_xaligned_alloc(bsize_t const alignment, bsize_t const size) { return xaligned_alloc(alignment, size); }
+void *_xaligned_calloc(bsize_t const alignment, bsize_t const count, bsize_t const size) { return xaligned_calloc(alignment, count, size); }
+void  _xfree(void *const ptr) { xfree(ptr); }
+void  _xaligned_free(void *const ptr) { xaligned_free(ptr); }
+#ifdef __cplusplus
 }
 #endif
 
-void *handle_memerr(void *p)
+void *handle_memerr(void)
 {
-    UNREFERENCED_PARAMETER(p);
     debug_break();
 
     if (g_MemErrHandler)
@@ -66,13 +71,12 @@ void *handle_memerr(void *p)
     }
 
     Bexit(EXIT_FAILURE);
-    EDUKE32_UNREACHABLE_SECTION(return &handle_memerr);
+    EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
-void set_memerr_handler(void(*handlerfunc)(int32_t, const char *, const char *))
-{
-    g_MemErrHandler = handlerfunc;
-}
+void set_memerr_handler(void (*handlerfunc)(int32_t, const char *, const char *)) { g_MemErrHandler = handlerfunc; }
+sm_allocator g_sm_heap;
+
 
 //
 // Stuff which must be a function

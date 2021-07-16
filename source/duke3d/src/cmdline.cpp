@@ -217,7 +217,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 if (!Bstrcasecmp(c+1, "?") || !Bstrcasecmp(c+1, "help") || !Bstrcasecmp(c+1, "-help"))
                 {
                     G_ShowParameterHelp();
-                    exit(EXIT_SUCCESS);
+                    Bexit(EXIT_SUCCESS);
                 }
                 if (!Bstrcasecmp(c+1, "addon"))
                 {
@@ -237,7 +237,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 if (!Bstrcasecmp(c+1, "debughelp") || !Bstrcasecmp(c+1, "-debughelp"))
                 {
                     G_ShowDebugHelp();
-                    exit(EXIT_SUCCESS);
+                    Bexit(EXIT_SUCCESS);
                 }
                 if (!Bstrcasecmp(c+1, "grp") || !Bstrcasecmp(c+1, "g"))
                 {
@@ -418,7 +418,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 {
                     if (argc > i+1)
                     {
-                        Bfree(g_rtsNamePtr);
+                        Xfree(g_rtsNamePtr);
                         g_rtsNamePtr = dup_filename(argv[i+1]);
                         initprintf("Using RTS file \"%s\".\n", g_rtsNamePtr);
                         i++;
@@ -649,7 +649,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     else
                     {
                         G_ShowParameterHelp();
-                        exit(EXIT_SUCCESS);
+                        Bexit(EXIT_SUCCESS);
                     }
                     break;
                 case 'q':
@@ -810,7 +810,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     }
                     if (!Bstrcasecmp(k, ".rts"))
                     {
-                        Bfree(g_rtsNamePtr);
+                        Xfree(g_rtsNamePtr);
                         g_rtsNamePtr = dup_filename(argv[i++]);
                         initprintf("Using RTS file \"%s\".\n", g_rtsNamePtr);
                         continue;

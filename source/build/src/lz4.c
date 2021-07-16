@@ -198,10 +198,10 @@ void  LZ4_free(void* p);
 # define ALLOC_AND_ZERO(s) LZ4_calloc(1,s)
 # define FREEMEM(p)        LZ4_free(p)
 #else
-# include <stdlib.h>   /* malloc, calloc, free */
-# define ALLOC(s)          malloc(s)
-# define ALLOC_AND_ZERO(s) calloc(1,s)
-# define FREEMEM(p)        free(p)
+# include "compat.h"
+# define ALLOC(s)          Xmalloc(s)
+# define ALLOC_AND_ZERO(s) Xcalloc(1,s)
+# define FREEMEM(p)        Xfree(p)
 #endif
 
 #include <string.h>   /* memset, memcpy */

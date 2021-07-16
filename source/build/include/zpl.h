@@ -198,11 +198,16 @@ static FORCE_INLINE zpl_virtual_memory xvm_alloc(void * const ptr, const size_t 
     zpl_virtual_memory vm = zpl_vm_alloc(ptr, size);
 
     if (EDUKE32_PREDICT_FALSE(vm.data == NULL))
-        vm.data = handle_memerr(vm.data);
+        vm.data = handle_memerr();
 
     return vm;
+
 }
-#define Xvm_alloc(ptr, size) (EDUKE32_PRE_XALLOC xvm_alloc(ptr, size))
+#ifdef EDUKE32_ALLOC_DEBUG
+#define Xvm_alloc(ptr, size) (EDUKE32_ALLOC_DEBUG xvm_alloc(ptr, size))
+#else
+#define Xvm_alloc(ptr, size) xvm_alloc(ptr, size)
+#endif
 #define Xvm_free(ptr) (zpl_vm_free(ptr))
 #define Xvm_free(ptr) (zpl_vm_free(ptr))
 

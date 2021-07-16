@@ -38,6 +38,66 @@ int32_t r_maxfps = -1;
 int32_t r_maxfpsoffset;
 uint64_t g_frameDelay;
 
+
+static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+#ifdef SMMALLOC_STATS_SUPPORT
+    OSD_Printf("\n%s         --- BUCKET LIST ---\n\n", osd->draw.errorfmt);
+
+    int const numBuckets = g_sm_heap->GetBucketsCount();
+    uint32_t totalBytesUsed = 0;
+
+    for (int i = 0; i < numBuckets; i++)
+    {
+        uint32_t const elementSize = g_sm_heap->GetBucketElementSize(i);
+
+        OSD_Printf("bucket #%u (%d blocks of %d bytes):\n", i, g_sm_heap->GetBucketElementsCount(i), elementSize);
+
+        auto stats = g_sm_heap->GetBucketStats(i);
+
+        uint32_t const cacheHitCount = (uint32_t)stats->cacheHitCount.load();
+        uint32_t const hitCount      = (uint32_t)stats->hitCount.load();
+        uint32_t const missCount     = (uint32_t)stats->missCount.load();
+        uint32_t const freeCount     = (uint32_t)stats->freeCount.load();
+
+        OSD_Printf("%12s: %u\n", "cache hit", cacheHitCount);
+        OSD_Printf("%12s: %u\n", "hit",       hitCount);
+        if (missCount)
+            OSD_Printf("%12s: %s%u\n","miss", osd->draw.errorfmt, missCount);
+        OSD_Printf("%12s: %u\n",  "freed",     freeCount);
+
+        uint32_t const useCount        = cacheHitCount + hitCount + missCount - freeCount;
+        uint32_t const bucketBytesUsed = useCount * elementSize;
+        totalBytesUsed += bucketBytesUsed;
+        OSD_Printf("%12s: %u (%d bytes)\n\n", "in use", useCount, bucketBytesUsed);
+    }
+
+    OSD_Printf("%d total bytes in use across %d buckets.\n", totalBytesUsed, numBuckets);
+#else
+    OSD_Printf("bucketlist: missing SMMALLOC_STATS_SUPPORT!\n");
+#endif
+    return OSDCMD_OK;
+}
+
+void engineDestroyAllocator(void)
+{
+    _sm_allocator_thread_cache_destroy(g_sm_heap);
+    _sm_allocator_destroy(g_sm_heap);
+}
+
+void engineCreateAllocator(void)
+{
+    // 8 buckets of 2MB each--we don't really need to burn a lot of memory here for this thing to do its job
+    g_sm_heap = _sm_allocator_create(SMM_MAX_BUCKET_COUNT, 2097152);
+    _sm_allocator_thread_cache_create(g_sm_heap, sm::CACHE_HOT, { 20480, 32768, 32768, 1536, 4096, 8192, 128, 4096 });
+
+#ifdef SMMALLOC_STATS_SUPPORT
+    OSD_RegisterFunction("bucketlist", "bucketlist: list bucket statistics", osdfunc_bucketlist);
+#endif
+}
+
+
 void (*keypresscallback)(int32_t, int32_t);
 
 void keySetCallback(void (*callback)(int32_t, int32_t)) { keypresscallback = callback; }

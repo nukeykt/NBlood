@@ -381,6 +381,9 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\sjson.cpp" />
     <ClCompile Include="..\..\source\build\src\smalltextfont.cpp" />
+    <ClCompile Include="..\..\source\build\src\smmalloc.cpp" />
+    <ClCompile Include="..\..\source\build\src\smmalloc_generic.cpp" />
+    <ClCompile Include="..\..\source\build\src\smmalloc_tls.cpp" />
     <ClCompile Include="..\..\source\build\src\softsurface.cpp" />
     <ClCompile Include="..\..\source\build\src\texcache.cpp" />
     <ClCompile Include="..\..\source\build\src\textfont.cpp" />
@@ -478,6 +481,7 @@
     <ClInclude Include="..\..\source\build\include\sdlayer.h" />
     <ClInclude Include="..\..\source\build\include\sdl_inc.h" />
     <ClInclude Include="..\..\source\build\include\sjson.h" />
+    <ClInclude Include="..\..\source\build\include\smmalloc.h" />
     <ClInclude Include="..\..\source\build\include\softsurface.h" />
     <ClInclude Include="..\..\source\build\include\texcache.h" />
     <ClInclude Include="..\..\source\build\include\tilepacker.h" />

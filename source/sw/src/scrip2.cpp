@@ -628,7 +628,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     char *t;
                     if (scriptfile_getstring(script, &t)) break;
 
-                    //Bfree(custommaps[curmap].LevelName);
+                    //Xfree(custommaps[curmap].LevelName);
                     custommaps[curmap].LevelName = Xstrdup(t);
                     LevelInfo[curmap].LevelName = custommaps[curmap].LevelName;
                     break;
@@ -638,7 +638,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     char *t;
                     if (scriptfile_getstring(script, &t)) break;
 
-                    //Bfree(custommaps[curmap].SongName);
+                    //Xfree(custommaps[curmap].SongName);
                     custommaps[curmap].SongName = Xstrdup(t);
                     LevelInfo[curmap].SongName = custommaps[curmap].SongName;
                     break;
@@ -648,7 +648,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     char *t;
                     if (scriptfile_getstring(script, &t)) break;
 
-                    //Bfree(custommaps[curmap].Description);
+                    //Xfree(custommaps[curmap].Description);
                     custommaps[curmap].Description = Xstrdup(t);
                     LevelInfo[curmap].Description = custommaps[curmap].Description;
                     break;
@@ -660,7 +660,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getnumber(script, &n)) break;
 
                     Bsnprintf(s, 10, "%d : %02d", n/60, n%60);
-                    //Bfree(custommaps[curmap].BestTime);
+                    //Xfree(custommaps[curmap].BestTime);
                     custommaps[curmap].BestTime = Xstrdup(s);
                     LevelInfo[curmap].BestTime = custommaps[curmap].BestTime;
                     break;
@@ -672,7 +672,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getnumber(script, &n)) break;
 
                     Bsnprintf(s, 10, "%d : %02d", n/60, n%60);
-                    //Bfree(custommaps[curmap].ParTime);
+                    //Xfree(custommaps[curmap].ParTime);
                     custommaps[curmap].ParTime = Xstrdup(s);
                     LevelInfo[curmap].ParTime = custommaps[curmap].ParTime;
                     break;

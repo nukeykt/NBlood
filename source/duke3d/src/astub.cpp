@@ -8047,7 +8047,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
             if (!Bstrcasecmp(c+1,"?") || !Bstrcasecmp(c+1,"help") || !Bstrcasecmp(c+1,"-help"))
             {
                 G_ShowParameterHelp();
-                exit(EXIT_SUCCESS);
+                Bexit(EXIT_SUCCESS);
             }
 
             if (!Bstrcasecmp(c+1,"addon"))
@@ -8426,7 +8426,7 @@ static int osdcmd_quit(osdcmdptr_t UNUSED(parm))
 
     Bfflush(NULL);
 
-    exit(EXIT_SUCCESS);
+    Bexit(EXIT_SUCCESS);
 }
 
 static int osdcmd_artdump(osdcmdptr_t parm)
@@ -10018,7 +10018,7 @@ static int32_t loadconsounds(const char *fn)
     for (char * m : g_scriptModules)
     {
         parseconsounds_include(m, NULL, "null");
-        Bfree(m);
+        Xfree(m);
     }
     g_scriptModules.clear();
 

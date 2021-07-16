@@ -122,7 +122,7 @@ void artClearMapArt(void)
     {
         if (tilefilenum[i] >= MAXARTFILES_BASE && faketiledata[i] != g_bakFakeTileData[i])
         {
-            Bfree(faketiledata[i]);
+            Xfree(faketiledata[i]);
             faketiledata[i] = g_bakFakeTileData[i];
         }
     }
@@ -224,7 +224,7 @@ static void tileSetDataSafe(int32_t const tile, int32_t tsiz, char const * const
     }
     else
     {
-        Bfree(newtile);
+        Xfree(newtile);
     }
 }
 

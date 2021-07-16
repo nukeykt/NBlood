@@ -278,6 +278,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
+    engineCreateAllocator();
+
     mutex_init(&m_initprintf);
 
     if (windowsPreInit())
