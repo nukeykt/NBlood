@@ -179,7 +179,20 @@ void MV_PlayVoice(VoiceNode *voice)
     MV_Unlock();
 }
 
-static void MV_CleanupVoice(VoiceNode *voice)
+static void MV_FreeHandle(VoiceNode* voice)
+{
+    if (voice->handle < MV_MINVOICEHANDLE)
+        return;
+
+    MV_Handles[voice->handle - MV_MINVOICEHANDLE] = nullptr;
+    voice->handle = 0;
+    voice->length = 0;
+    voice->sound = nullptr;
+    voice->wavetype = FMT_UNKNOWN;
+    LL::Move(voice, &VoicePool);
+}
+
+static void MV_CleanupVoice(VoiceNode* voice)
 {
     if (MV_CallBackFunc)
         MV_CallBackFunc(voice->callbackval);
@@ -202,13 +215,6 @@ static void MV_CleanupVoice(VoiceNode *voice)
             voice->rawdatasiz = 0;
             break;
     }
-
-    MV_Handles[voice->handle - MV_MINVOICEHANDLE] = nullptr;
-
-    voice->handle = 0;
-    voice->length = 0;
-    voice->sound = nullptr;
-    voice->wavetype = FMT_UNKNOWN;
 }
 
 static void MV_StopVoice(VoiceNode *voice)
@@ -216,7 +222,7 @@ static void MV_StopVoice(VoiceNode *voice)
     MV_CleanupVoice(voice);
     MV_Lock();
     // move the voice from the play list to the free list
-    LL::Move(voice, &VoicePool);
+    MV_FreeHandle(voice);
     MV_Unlock();
 }
 
@@ -290,7 +296,7 @@ static void MV_ServiceVoc(void)
             if (!MV_Mix(voice, MV_MixPage))
             {
                 MV_CleanupVoice(voice);
-                LL::Move(voice, &VoicePool);
+                MV_FreeHandle(voice);
             }
         }
         while ((voice = next) != &VoiceList);
@@ -310,7 +316,7 @@ static void MV_ServiceVoc(void)
     if (MusicVoice && !MV_Mix(MusicVoice, MV_MixPage + MV_NumberOfBuffers))
     {
         MV_CleanupVoice(MusicVoice);
-        LL::Move(MusicVoice, &VoicePool);
+        MV_FreeHandle(MusicVoice);
     }
 }
 
