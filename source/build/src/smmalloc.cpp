@@ -156,7 +156,10 @@ namespace sm
 
 	void Allocator::DestroyThreadCache()
 	{
-
+#if __SANITIZE_ADDRESS__ == 1
+		auto buf = this->pBuffer.get();
+		ASAN_UNPOISON_MEMORY_REGION(buf, this->pBufferEnd - buf);
+#endif
 		for (size_t i = 0; i < SMM_MAX_BUCKET_COUNT; i++)
 		{
 			uint32_t* p = GetTlsBucket(i)->Destroy();

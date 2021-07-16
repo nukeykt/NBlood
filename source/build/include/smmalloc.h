@@ -29,6 +29,10 @@
 #include <initializer_list>
 #include <cstring>
 
+#if __SANITIZE_ADDRESS__ == 1
+# include "sanitizer/asan_interface.h"
+#endif
+
 #define SMMALLOC_STATS_SUPPORT
 
 
@@ -412,7 +416,7 @@ namespace sm
 			{
 				return (void*)alignment;
 			}
-
+			
 			size_t bytesCount = (_bytesCount < alignment) ? alignment : _bytesCount;
 			size_t bucketIndex = ((bytesCount - 1) >> 4);
 
@@ -427,6 +431,9 @@ namespace sm
 					{
 						buckets[bucketIndex].stats.cacheHitCount.fetch_add(1, std::memory_order_relaxed);
 					}
+#endif
+#if __SANITIZE_ADDRESS__ == 1
+					ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
 #endif
 					return pRes;
 				}
@@ -443,6 +450,9 @@ namespace sm
 					{
 						buckets[bucketIndex].stats.hitCount.fetch_add(1, std::memory_order_relaxed);
 					}
+#endif
+#if __SANITIZE_ADDRESS__ == 1
+					ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
 #endif
 					return pRes;
 				}
@@ -499,12 +509,13 @@ namespace sm
 #endif
 
 				if (ReleaseToCache<true>(GetTlsBucket(bucketIndex), p))
-				{
 					return;
-				}
 
 				PoolBucket* bucket = &buckets[bucketIndex];
 				bucket->FreeInterval(p, p);
+#if 0 //__SANITIZE_ADDRESS__ == 1
+				ASAN_POISON_MEMORY_REGION(p, GetBucketElementSize(bucketIndex));
+#endif
 				return;
 			}
 
@@ -532,6 +543,9 @@ namespace sm
 				if (bytesCount <= elementSize)
 				{
 					//reuse existing memory
+#if __SANITIZE_ADDRESS__ == 1
+					ASAN_UNPOISON_MEMORY_REGION(p, Align(bytesCount, 8));
+#endif
 					return p;
 				}
 
@@ -698,7 +712,7 @@ namespace internal
 			{
 				return;
 			}
-
+			
 			count = std::min(count, numElementsL1);
 
 			uint32_t localTag = 0xFFFFFF;
