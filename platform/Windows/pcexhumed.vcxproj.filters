@@ -17,7 +17,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="pcexhumed.exe.manifest" />
+    <Manifest Include="exhumed.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\exhumed\src\snake.cpp">
@@ -204,6 +204,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\memorystream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\input2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\text.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\menus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -395,6 +404,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\memorystream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\menus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\input2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

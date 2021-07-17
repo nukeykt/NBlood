@@ -908,8 +908,8 @@ void RestartPlayer(short nPlayer)
         bPlayerPan = 0;
         bLockPan = 0;
 
-		nCameraDist = 0;
-		nCameraClock = (int32_t)totalclock;
+        nCameraDist = 0;
+        nCameraClock = (int32_t)totalclock;
 
         SetMapPosition(sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].ang);
     }

@@ -110,6 +110,10 @@ int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
 void UpdateScreenSize();
 void HandleAsync();
 
+void GameDisplay(void), GameMove(void);
+
+int G_FPSLimit(void);
+
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;
 extern char sHollyStr[];

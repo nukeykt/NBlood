@@ -46,6 +46,8 @@ extern GameStat GameStats;
 extern unsigned char cinemapal[];
 extern short SavePosition;
 extern short nBeforeScene[];
+extern int nPlasmaTile;
+extern int nLogoTile;
 
 int showmap(short nLevel, short nLevelNew, short nLevelBest);
 void ClearCinemaSeen();
@@ -59,7 +61,6 @@ void menu_GameSave(int nSaveSlot);
 void menu_DemoGameSave(FILE* fp);
 int menu_DrawTheMap(int nLevel, int param_B, int param_C);
 void DoEnergyTile();
-
 int LoadCinemaPalette(int nPal);
 void CinemaFadeIn();
 void ReadyCinemaText(uint16_t nVal);
@@ -68,5 +69,6 @@ void DoFailedFinalScene();
 void DoLastLevelCinema();
 void DoAfterCinemaScene(int nLevel);
 void InitEnergyTile();
+void menu_DoPlasmaTile();
 
 #endif

@@ -35,6 +35,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 static char *pTrack = NULL;
 static int trackhandle = -1;
 int nLastVolumeSet = 0;
+int nLastTrack = 0;
+bool bLastWasLooped = false;
+
 
 /* TODO
 
@@ -47,6 +50,15 @@ void setCDaudiovolume(int val)
     if (trackhandle > 0) {
         FX_SetPan(trackhandle, val, val, val);
     }
+}
+
+bool playLastTrack()
+{
+    if (nLastTrack < 2) {
+        return false;
+    }
+
+    return playCDtrack(nLastTrack, bLastWasLooped);
 }
 
 bool playCDtrack(int nTrack, bool bLoop)
@@ -111,6 +123,9 @@ bool playCDtrack(int nTrack, bool bLoop)
         }
         return false;
     }
+
+    nLastTrack = nTrack;
+    bLastWasLooped = bLoop;
 
     return true;
 }

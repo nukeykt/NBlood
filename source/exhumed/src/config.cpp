@@ -32,11 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "typedefs.h"
 #include "scriplib.h"
 #include "view.h"
-
 #include "config.h"
-
 #include <string>
-//#include <io.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -220,6 +217,7 @@ int32_t FXVolume;
 int32_t MusicVolume;
 int32_t SoundToggle;
 int32_t MusicToggle;
+int32_t VoiceToggle;
 int32_t MixRate;
 int32_t MidiPort;
 int32_t NumVoices;
@@ -237,6 +235,7 @@ int32_t setupread;
 // TODO: implement precaching toggle
 int32_t useprecache;
 int32_t MouseDeadZone, MouseBias;
+int32_t SmoothInput;
 
 // JBF 20031211: Store the input settings because
 // (currently) mact can't regurgitate them
@@ -828,6 +827,7 @@ void SetupInput()
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
     char filename[BMAX_PATH];
+
 	/*
     if (!Bstrcmp(setupfilename, kSetupFilename))
         Bsprintf(filename, "settings.cfg");

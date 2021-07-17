@@ -952,7 +952,7 @@ loc_flag:
             if (nWeapon < kWeaponMummified)
             {
                 if (nWeapon != kWeaponGrenade)
-                {   
+                {
                     if (WeaponInfo[nWeapon].bUsesAmmo) {
                         AddAmmo(nPlayer, nAmmoType, -1);
                     }

@@ -47,6 +47,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <assert.h>
 
+#include "menus.h"
+#include "input2.h"
+#include "ra.h"
+
 #ifdef __WATCOMC__
 #include <stdlib.h>
 #endif
@@ -91,6 +95,101 @@ int plasma_C[5] = {0};
 short nMenuKeys[] = { sc_N, sc_L, sc_M, sc_V, sc_Q, sc_None }; // select a menu item using the keys. 'N' for New Gane, 'V' for voume etc. 'M' picks Training for some reason...
 
 int zoomsize = 0;
+
+#define kInputBufferSize 1024
+
+demo_input demo_playerinput[kInputBufferSize];
+
+buildvfs_kfd demo_handle = buildvfs_kfd_invalid;
+
+//int demo_playback = 0;
+int demo_input_cnt = 0;
+int demo_input_pos = 0;
+
+bool demo_GameLoad(const char* demo)
+{
+    auto handle = kopen4loadfrommod(demo, 0);
+    if (handle == buildvfs_kfd_invalid)
+    {
+        demo_handle = buildvfs_kfd_invalid;
+        return false;
+    }
+
+    demo_header header;
+
+    kread(handle, &header, sizeof(demo_header));
+
+    GameStats.nMap = header.nMap;
+    GameStats.nWeapons = header.nWeapons;
+    GameStats.nCurrentWeapon = header.nCurrentWeapon;
+    GameStats.clip = header.clip;
+    GameStats.items = header.items;
+    GameStats.player.nHealth = header.nHealth;
+    GameStats.player.nFrame  = header.nFrame;
+    GameStats.player.nAction = header.nAction;
+    GameStats.player.nSprite = header.nSprite;
+    GameStats.player.bIsMummified = header.bIsMummified;
+    GameStats.player.someNetVal = header.someNetVal;
+    GameStats.player.invincibility = header.invincibility;
+    GameStats.player.nAir = header.nAir;
+    GameStats.player.nSeq = header.nSeq;
+    GameStats.player.nMaskAmount = header.nMaskAmount;
+    GameStats.player.keys = header.keys;
+    GameStats.player.nMagic = header.nMagic;
+    Bmemcpy(GameStats.player.items, header.item, sizeof(header.item));
+    Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+    Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
+    GameStats.player.nCurrentWeapon = header.nCurrentWeapon2;
+    GameStats.player.nWeaponFrame   = header.nWeaponFrame;
+    GameStats.player.bIsFiring = header.bIsFiring;
+    GameStats.player.nNewWeapon   = header.nNewWeapon;
+    GameStats.player.nWeaponState = header.nWeaponState;
+    GameStats.player.nLastWeapon  = header.nLastWeapon;
+    GameStats.player.nRun = header.nRun;
+    GameStats.nLives = header.nLives;
+
+    nPlayerWeapons[nLocalPlayer] = GameStats.nWeapons;
+
+    PlayerList[nLocalPlayer].nCurrentWeapon = GameStats.nCurrentWeapon;
+    nPlayerClip[nLocalPlayer] = GameStats.clip;
+
+    int nPistolBullets = PlayerList[nLocalPlayer].nAmmo[kWeaponPistol];
+    if (nPistolBullets >= 6) {
+        nPistolBullets = 6;
+    }
+
+    nPistolClip[nLocalPlayer] = nPistolBullets;
+
+    memcpy(&PlayerList[nLocalPlayer], &GameStats.player, sizeof(Player));
+
+    nPlayerItem[nLocalPlayer] = GameStats.items;
+    nPlayerLives[nLocalPlayer] = GameStats.nLives;
+
+    SetPlayerItem(nLocalPlayer, nPlayerItem[nLocalPlayer]);
+    CheckClip(nLocalPlayer);
+
+    demo_input_cnt = (kfilelength(handle) - sizeof(demo_header)) / sizeof(demo_input);
+    demo_input_pos = 0;
+    demo_handle = handle;
+
+    return true;
+}
+
+void demo_PlaybackInput(demo_input* input)
+{
+    sPlayerInput[nLocalPlayer].xVel = input->xVel;
+    sPlayerInput[nLocalPlayer].yVel = input->yVel;
+    sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(input->nAngle << 2);
+    sPlayerInput[nLocalPlayer].buttons = input->buttons;
+    sPlayerInput[nLocalPlayer].nTarget = input->nTarget;
+    sPlayerInput[nLocalPlayer].horizon = fix16_from_int(input->horizon);
+    sPlayerInput[nLocalPlayer].nItem = input->nItem;
+    sPlayerInput[nLocalPlayer].h = input->h;
+    sPlayerInput[nLocalPlayer].i = input->i;
+
+    besttarget = sPlayerInput[nLocalPlayer].nTarget;
+    Ra[nLocalPlayer].nTarget = besttarget;
+}
 
 void menu_ResetKeyTimer();
 
@@ -316,7 +415,7 @@ int nLogoTile;
 #define kPlasmaWidth	320
 #define kPlasmaHeight	80
 
-void menu_DoPlasma()
+void menu_DoPlasmaTile()
 {
     if (!nLogoTile)
         nLogoTile = EXHUMED ? kExhumedLogo : kPowerslaveLogo;
@@ -324,10 +423,10 @@ void menu_DoPlasma()
     {
         tileCreate(kTile4092, kPlasmaWidth, kPlasmaHeight);
 
-        memset((void*)waloff[kTile4092], 96, kPlasmaWidth*kPlasmaHeight);
+        memset((void*)waloff[kTile4092], 255, kPlasmaWidth*kPlasmaHeight);
 
         waloff[kTile4093] = (intptr_t)plasmaBuffer;
-        memset(plasmaBuffer, 96, sizeof(plasmaBuffer));
+        memset(plasmaBuffer, 255, sizeof(plasmaBuffer));
 
         nSmokeLeft = 160 - tilesiz[nLogoTile].x / 2;
         nSmokeRight = nSmokeLeft + tilesiz[nLogoTile].x;
@@ -381,7 +480,13 @@ void menu_DoPlasma()
         }
     }
 
-    videoClearScreen(overscanindex);
+    // flip between tile 4092 and 4093
+    if (nPlasmaTile == kTile4092) {
+        nPlasmaTile = kTile4093;
+    }
+    else if (nPlasmaTile == kTile4093) {
+        nPlasmaTile = kTile4092;
+    }
 
     uint8_t *r_ebx = (uint8_t*)waloff[nPlasmaTile] + 81;
     uint8_t *r_edx = (uint8_t*)waloff[nPlasmaTile ^ 1] + 81; // flip between value of 4092 and 4093 with xor
@@ -394,13 +499,13 @@ void menu_DoPlasma()
         {
             uint8_t al = *r_edx;
 
-            if (al != 96)
+            if (al != 255)
             {
                 if (al > 158) {
                     *r_ebx = al - 1;
                 }
                 else {
-                    *r_ebx = 96;
+                    *r_ebx = 255;
                 }
             }
             else
@@ -410,56 +515,24 @@ void menu_DoPlasma()
                 }
                 else
                 {
-                    uint8_t al = *(r_edx + 1);
-                    uint8_t cl = *(r_edx - 1);
-
-                    if (al <= cl) {
-                        al = cl;
-                    }
-
-                    cl = al;
-                    al = *(r_edx - 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx + 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx + 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx + 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx - 79);
-                    if (cl > al) {
-                        al = cl;
-                    }
-
-                    cl = *(r_edx - 81);
-                    if (al <= cl) {
-                        al = cl;
-                    }
-
-                    cl = al;
+                    uint8_t al = 0;
+                    static int offset[] = {
+                        1, -1, -80, 80, -79, -81
+                    };
+                    for (int i = 0; i < ARRAY_SIZE(offset); i++)
+                        if (r_edx[offset[i]] != 255 && al < r_edx[offset[i]])
+                            al = r_edx[offset[i]];
 
                     if (al <= 159) {
-                        *r_ebx = 96;
+                        *r_ebx = 255;
                     }
                     else
                     {
                         if (!menu_RandomBit2()) {
-                            cl--;
+                            al--;
                         }
 
-                        *r_ebx = cl;
+                        *r_ebx = al;
                     }
                 }
             }
@@ -505,7 +578,7 @@ void menu_DoPlasma()
             while (nSmokeOffset < nSmokeBottom)
             {
                 uint8_t al = *ptr3;
-                if (al != 255 && al != 96) {
+                if (al != 255) {
                     break;
                 }
 
@@ -522,7 +595,7 @@ void menu_DoPlasma()
             while (nSmokeOffset > nSmokeTop)
             {
                 uint8_t al = *ptr3;
-                if (al != 255 && al != 96) {
+                if (al != 255) {
                     break;
                 }
 
@@ -536,17 +609,16 @@ void menu_DoPlasma()
     }
 
     tileInvalidate(nPlasmaTile,-1,-1);
+}
+
+void menu_DoPlasma()
+{
+    menu_DoPlasmaTile();
+
+    videoClearScreen(overscanindex);
 
     overwritesprite(0,   0,  nPlasmaTile,  0, 2, kPalNormal);
     overwritesprite(160, 40, nLogoTile, 0, 3, kPalNormal);
-
-    // flip between tile 4092 and 4093
-    if (nPlasmaTile == kTile4092) {
-        nPlasmaTile = kTile4093;
-    }
-    else if (nPlasmaTile == kTile4093) {
-        nPlasmaTile = kTile4092;
-    }
 
     // draw the fire urn/lamp thingies
     int dword_9AB5F = ((int)totalclock/16) & 3;
@@ -1596,7 +1668,7 @@ void menu_ResetZoom()
     PlayLocalSound(StaticSound[kSoundItemUse], 0);
 }
 
-int menu_Menu(int bInLevelMenus)
+int menu_MenuOld(int bInLevelMenus)
 {
     GrabPalette();
 
@@ -1875,6 +1947,147 @@ LABEL_21:
     }
 
     return 0;// todo
+}
+
+int menu_Menu(int ingame)
+{
+    #if 0
+    return menu_MenuOld(ingame);
+    #endif
+    g_menuIngame = ingame;
+    Menu_Open(0);
+    Menu_Change(MENU_MAIN);
+	menu_DoPlasmaTile();
+RECHECK:
+    bool founddemo = false;
+	if (!ingame && nTotalPlayers == 1)
+		founddemo = demo_GameLoad("DEMO.VCR");
+
+    int startclock = (int)totalclock;
+
+    if (founddemo)
+    {
+        InitRandom();
+        levelnew = -1;
+        levelnum = GameStats.nMap;
+        PlayerCount = 0;
+        int nPlayer = GrabPlayer();
+        InitPlayerInventory(nPlayer);
+        PlayerList[nPlayer].someNetVal = -3;
+        if (levelnum == kMap20)
+        {
+            lCountDown = 81000;
+            nAlarmTicks = 30;
+            nRedTicks = 0;
+            nClockVal = 0;
+            nEnergyTowers = 0;
+        }
+        if (!LoadLevel(levelnum)) {
+            founddemo = false;
+        }
+        else
+        {
+            SetSavePoint(0, initx, inity, initz, initsect, inita);
+            RestartPlayer(0);
+            InitPlayerKeys(0);
+            UpdateScreenSize();
+            InitStatus();
+            ResetView();
+            ResetEngine();
+            totalmoves = 0;
+            GrabPalette();
+            //nCDTrackLength = 0;
+            RefreshStatus();
+        }
+    }
+
+    Menu_CorrectClocks((int)totalclock - startclock);
+
+    int movecnt = 0;
+    tclocks = totalclock;
+    while (!founddemo || demo_input_pos < demo_input_cnt)
+    {
+        while (tclocks + 4 <= totalclock)
+        {
+            if (founddemo)
+            {
+                UpdateSounds();
+                while (movecnt <= 0 && demo_input_pos < demo_input_cnt)
+                {
+                    if (demo_input_pos % kInputBufferSize == 0)
+                    {
+                        kread(demo_handle, demo_playerinput,
+                            min(demo_input_cnt - demo_input_pos, kInputBufferSize) * sizeof(demo_input));
+                    }
+
+                    auto input = &demo_playerinput[(demo_input_pos++) % kInputBufferSize];
+                    demo_PlaybackInput(input);
+                    movecnt = input->moveframes;
+                }
+                if (movecnt)
+                {
+                    GameMove();
+                    movecnt--;
+                }
+            }
+            tclocks += 4;
+			menu_DoPlasmaTile();
+        }
+        if (founddemo)
+        {
+            if (!g_menuActive && I_EscapeTrigger())
+            {
+                I_EscapeTriggerClear();
+                Menu_Open(0);
+                Menu_Change(MENU_MAIN);
+            }
+        }
+        else
+        {
+            if (!g_menuActive)
+            {
+                if (!ingame)
+                {
+                    Menu_Open(0);
+                    Menu_Change(MENU_MAIN);
+                }
+                else
+                    break;
+            }
+        }
+
+        if (G_FPSLimit())
+        {
+            if (founddemo)
+                GameDisplay();
+            else
+                videoClearScreen(overscanindex);
+
+            M_DisplayMenus();
+
+            videoNextPage();
+        }
+        if (g_menuReturn > -1)
+        {
+            if (demo_handle != buildvfs_kfd_invalid)
+            {
+                kclose(demo_handle);
+                demo_handle = buildvfs_kfd_invalid;
+            }
+            return g_menuReturn;
+        }
+        HandleAsync();
+    }
+    if (demo_handle != buildvfs_kfd_invalid)
+    {
+        kclose(demo_handle);
+        demo_handle = buildvfs_kfd_invalid;
+    }
+    if (g_menuActive)
+        goto RECHECK;
+    // Menu_Close(0);
+
+    return g_menuReturn;
 }
 
 #define kMaxCinemaPals	16
