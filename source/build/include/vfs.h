@@ -149,18 +149,21 @@ static inline int buildvfs_isdir(char const *path)
 
 static inline void buildvfs_fputstrptr(buildvfs_FILE fp, char const * str)
 {
-    buildvfs_fwrite(str, 1, strlen(str), fp);
+    if (fp)
+        buildvfs_fwrite(str, 1, strlen(str), fp);
 }
 
 static inline void buildvfs_fputs(char const * str, buildvfs_FILE fp)
 {
-    buildvfs_fwrite(str, 1, strlen(str), fp);
+    if (fp)
+        buildvfs_fwrite(str, 1, strlen(str), fp);
 }
 
 template <size_t N>
 static inline void buildvfs_fputstr(buildvfs_FILE fp, char const (&str)[N])
 {
-    buildvfs_fwrite(&str, 1, N-1, fp);
+    if (fp)
+        buildvfs_fwrite(&str, 1, N-1, fp);
 }
 
 

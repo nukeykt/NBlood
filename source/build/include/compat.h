@@ -456,10 +456,6 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 
 ////////// Platform headers //////////
 
-#if !defined __APPLE__ && (!defined EDUKE32_BSD || !__STDC__)
-# include <malloc.h>
-#endif
-
 #ifndef USE_PHYSFS
 #include <fcntl.h>
 #include <sys/stat.h>

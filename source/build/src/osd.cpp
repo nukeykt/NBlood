@@ -8,6 +8,7 @@
 #include "editor.h"
 #include "osd.h"
 #include "scancodes.h"
+#include "mimalloc.h"
 
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"
@@ -668,6 +669,8 @@ void OSD_Cleanup(void)
 
     DO_FREE_AND_NULL(osd->version.buf);
 
+    mi_register_output(NULL, NULL);
+
     MAYBE_FCLOSE_AND_NULL(osdlog);
 
     for (auto s : osdstrings)
@@ -864,6 +867,8 @@ void OSD_SetLogFile(const char *fn)
 #endif
         osdlogfn = fn;
     }
+
+    mi_register_output((mi_output_fun *)(void *)&OSD_Printf, NULL);
 }
 
 

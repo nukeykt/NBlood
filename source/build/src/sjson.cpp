@@ -1,5 +1,6 @@
 
 #include "compat.h"
+#include "baselayer.h"
 
 #define SJSON_IMPLEMENT
 

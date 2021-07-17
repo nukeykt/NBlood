@@ -20,8 +20,8 @@
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
 #include "compat.h"
+#include "mimalloc-override.h"
 #include "smmalloc.h"
-#include <malloc.h>
 
 
 sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid()
@@ -50,7 +50,9 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
     SMMALLOC_UNUSED(instance);
     if (alignment < 16)
         alignment = 16;
-#ifdef _WIN32
+#ifdef MIMALLOC_OVERRIDE_H
+    return mi_malloc_aligned(bytesCount, alignment);
+#elif defined _WIN32
     return _aligned_malloc(bytesCount, alignment);
 #elif defined __APPLE__ || defined EDUKE32_BSD
     void *ptr = nullptr;
@@ -64,7 +66,9 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
 void sm::GenericAllocator::Free(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
-#ifdef _WIN32
+#ifdef MIMALLOC_OVERRIDE_H
+    mi_free(p);
+#elif defined _WIN32
     _aligned_free(p);
 #else
     free(p);
@@ -76,7 +80,9 @@ void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, vo
     SMMALLOC_UNUSED(instance);
     if (alignment < 16)
         alignment = 16;
-#ifdef _WIN32
+#ifdef MIMALLOC_OVERRIDE_H
+    return mi_realloc_aligned(p, bytesCount, alignment);
+#elif defined _WIN32
     return _aligned_realloc(p, bytesCount, alignment);
 #elif defined __APPLE__ || defined EDUKE32_BSD
     void *ptr = nullptr;
@@ -95,6 +101,9 @@ void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, vo
 size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
+#ifdef MIMALLOC_OVERRIDE_H
+    return mi_usable_size(p);
+#else
     size_t alignment = DetectAlignment(p);
     if (alignment < sizeof(void*))
         alignment = sizeof(void*);
@@ -104,4 +113,5 @@ size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance inst
 #else    
     return malloc_usable_size(p) - alignment - sizeof(void*);
 #endif    
+#endif // MIMALLOC_OVERRIDE_H
 }

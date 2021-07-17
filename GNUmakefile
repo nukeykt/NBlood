@@ -140,6 +140,37 @@ ifeq ($(RENDERTYPE),WIN)
     glad_objs += glad_wgl.c
 endif
 
+#### mimalloc
+
+mimalloc := mimalloc
+
+mimalloc_objs := \
+    alloc.c \
+    alloc-aligned.c \
+    alloc-posix.c \
+    arena.c \
+    bitmap.c \
+    heap.c \
+    init.c \
+    options.c \
+    os.c \
+    page.c \
+    random.c \
+    region.c \
+    segment.c \
+    stats.c \
+
+ifeq ($(PLATFORM),APPLE)
+    mimalloc_objs += alloc-override-osx.c
+endif
+
+mimalloc_root := $(source)/$(mimalloc)
+mimalloc_src := $(mimalloc_root)/src
+mimalloc_inc := $(mimalloc_root)/include
+mimalloc_obj := $(obj)/$(mimalloc)
+
+mimalloc_cflags := -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -I$(mimalloc_inc) -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas
+
 #### Voidwrap
 
 voidwrap := voidwrap
@@ -194,9 +225,9 @@ engine_src := $(engine_root)/src
 engine_inc := $(engine_root)/include
 engine_obj := $(obj)/$(engine)
 
-engine_cflags := -I$(engine_src)
+engine_cflags := -I$(engine_src) -I$(mimalloc_inc)
 
-engine_deps :=
+engine_deps := mimalloc
 
 ifneq (0,$(USE_PHYSFS))
     engine_deps += physfs
@@ -790,6 +821,7 @@ libraries := \
     engine \
     glad \
     libxmplite \
+    mimalloc \
     mact \
     voidwrap \
 

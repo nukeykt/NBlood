@@ -8,6 +8,7 @@
 #include "osd.h"
 #include "polymost.h"
 #include "renderlayer.h"
+#include "mimalloc.h"
 
 // video
 #ifdef _WIN32
@@ -80,6 +81,13 @@ static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
     return OSDCMD_OK;
 }
 
+static int osdfunc_heapinfo(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+    mi_stats_print(NULL);
+    return OSDCMD_OK;
+}
+
 void engineDestroyAllocator(void)
 {
     _sm_allocator_thread_cache_destroy(g_sm_heap);
@@ -95,6 +103,7 @@ void engineCreateAllocator(void)
 #ifdef SMMALLOC_STATS_SUPPORT
     OSD_RegisterFunction("bucketlist", "bucketlist: list bucket statistics", osdfunc_bucketlist);
 #endif
+    OSD_RegisterFunction("heapinfo", "heapinfo: memory usage statistics", osdfunc_heapinfo);
 }
 
 

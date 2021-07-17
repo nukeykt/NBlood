@@ -6389,6 +6389,7 @@ int app_main(int argc, char const* const* argv)
     G_UpdateAppTitle();
 
     initprintf(HEAD2 " %s\n", s_buildRev);
+
     PrintBuildInfo();
 
     if (!g_useCwd)
