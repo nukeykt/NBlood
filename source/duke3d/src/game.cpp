@@ -6246,7 +6246,7 @@ void app_crashhandler(void)
 {
     G_CloseDemoWrite();
     VM_ScriptInfo(insptr, 64);
-    G_GameQuit();
+    abort();
 }
 
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
