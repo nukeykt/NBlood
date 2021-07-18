@@ -285,10 +285,7 @@ int32_t Anim_Play(const char *fn)
             return 0;
         }
 
-        if (anim)
-            animvpx_setup_glstate(anim->frameflags);
-        else
-            animvpx_setup_glstate(origanim->frameflags);
+        uint8_t fflags = anim ? anim->frameflags : origanim->frameflags;
 
         animvpx_codec_ctx codec;
 
@@ -315,6 +312,7 @@ int32_t Anim_Play(const char *fn)
         {
             nextframetime += msecsperframe;
 
+            animvpx_setup_glstate(fflags);
             i = animvpx_nextpic(&codec, &pic);
             if (i)
             {

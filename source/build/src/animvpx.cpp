@@ -16,6 +16,8 @@
 #include <vpx/vp8dx.h>
 #include "animvpx.h"
 
+GLuint PHandle;
+
 const char *animvpx_read_ivf_header_errmsg[] = {
     "All OK",
     "couldn't read 32-byte IVF header",
@@ -403,10 +405,10 @@ static const char *fragprog_src =
 void animvpx_setup_glstate(int32_t animvpx_flags)
 {
 #ifdef USE_GLEXT
-    if (glinfo.glsl)
+    if (glinfo.glsl && !PHandle)
     {
         GLint gli;
-        GLuint FSHandle, PHandle;
+        GLuint FSHandle;
         static char logbuf[512];
 
         // first, compile the fragment shader
@@ -434,8 +436,10 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
             OSD_Printf("animvpx link log: %s\n", logbuf);
 
         /* Finally, use the program. */
-        polymost_useShaderProgram(PHandle);
     }
+
+    if (PHandle)
+        polymost_useShaderProgram(PHandle);
 #endif
 
     ////////// GL STATE //////////
@@ -460,7 +464,10 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
 #ifdef USE_GLEXT
     glActiveTexture(GL_TEXTURE0);
 #endif
-    glGenTextures(1, &texname);
+
+    if (!texname)
+        glGenTextures(1, &texname);
+
     glBindTexture(GL_TEXTURE_2D, texname);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
