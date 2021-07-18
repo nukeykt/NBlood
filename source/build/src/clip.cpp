@@ -1079,6 +1079,56 @@ static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walld
     return 1;
 }
 
+void clipmove_compat(vec3_t* const pos, int16_t*sectnum)
+{
+    for (native_t j=0; j<clipsectnum; j++)
+    {
+        if (inside(pos->x, pos->y, clipsectorlist[j]) == 1)
+        {
+            *sectnum = clipsectorlist[j];
+            return;
+        }
+    }
+
+    int32_t tempint2, tempint1 = INT32_MAX;
+    *sectnum = -1;
+    for (native_t j=numsectors-1; j>=0; j--)
+    {
+        if (inside(pos->x, pos->y, j) == 1)
+        {
+            if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].ceilingstat&2))
+                tempint2 = getceilzofslope(j, pos->x, pos->y) - pos->z;
+            else
+                tempint2 = sector[j].ceilingz - pos->z;
+
+            if (tempint2 > 0)
+            {
+                if (tempint2 < tempint1)
+                {
+                    *sectnum = j; tempint1 = tempint2;
+                }
+            }
+            else
+            {
+                if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].floorstat&2))
+                    tempint2 = pos->z - getflorzofslope(j, pos->x, pos->y);
+                else
+                    tempint2 = pos->z - sector[j].floorz;
+
+                if (tempint2 <= 0)
+                {
+                    *sectnum = j;
+                    return;
+                }
+                if (tempint2 < tempint1)
+                {
+                    *sectnum = j; tempint1 = tempint2;
+                }
+            }
+        }
+    }
+}
+
 //
 // clipmove
 //
@@ -1604,50 +1654,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
     } while ((xvect|yvect) != 0 && hitwall >= 0 && cnt > 0);
 
     if (enginecompatibilitymode != ENGINE_EDUKE32)
-    {
-        for (native_t j=0; j<clipsectnum; j++)
-            if (inside(pos->x, pos->y, clipsectorlist[j]) == 1)
-            {
-                *sectnum = clipsectorlist[j];
-                return clipReturn;
-            }
-
-        int32_t tempint2, tempint1 = INT32_MAX;
-        *sectnum = -1;
-        for (native_t j=numsectors-1; j>=0; j--)
-            if (inside(pos->x, pos->y, j) == 1)
-            {
-                if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].ceilingstat&2))
-                    tempint2 = getceilzofslope(j, pos->x, pos->y) - pos->z;
-                else
-                    tempint2 = sector[j].ceilingz - pos->z;
-
-                if (tempint2 > 0)
-                {
-                    if (tempint2 < tempint1)
-                    {
-                        *sectnum = j; tempint1 = tempint2;
-                    }
-                }
-                else
-                {
-                    if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].floorstat&2))
-                        tempint2 = pos->z - getflorzofslope(j, pos->x, pos->y);
-                    else
-                        tempint2 = pos->z - sector[j].floorz;
-
-                    if (tempint2 <= 0)
-                    {
-                        *sectnum = j;
-                        return clipReturn;
-                    }
-                    if (tempint2 < tempint1)
-                    {
-                        *sectnum = j; tempint1 = tempint2;
-                    }
-                }
-            }
-    }
+        clipmove_compat(pos, sectnum);
 
     return clipReturn;
 }
