@@ -191,7 +191,7 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     SDL_AudioSpec actual = {};
 
 #if (SDL_MAJOR_VERSION >= 2)
-    audio_dev = err = SDL_OpenAudioDevice(nullptr, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+    audio_dev = err = SDL_OpenAudioDevice(nullptr, 0, &spec, &actual, 0);
 #else
     err = !SDL_OpenAudio(&spec, &actual);
 #endif

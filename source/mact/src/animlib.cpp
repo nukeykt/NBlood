@@ -189,6 +189,9 @@ static void renderframe(uint16_t framenumber, uint16_t *pagepointer)
 
     while (frame--) offset += B_LITTLE16(pagepointer[frame]);
 
+    if (offset >= anim->curlp->nBytes)
+        return;
+
     uint8_t *ppointer = (uint8_t *)(pagepointer) + anim->curlp->nRecords*2 + offset + 4;
 
     if ((ppointer-4)[1])

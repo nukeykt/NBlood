@@ -350,8 +350,8 @@ memberlabel_t const TsprLabels[] =
 memberlabel_t const PlayerLabels[] = 
 {
     MEMBER(g_player[0].ps, zoom,                        PLAYER_ZOOM),
-    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, 64, -1 },
-    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, 64, -1 },
+    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
+    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
     MEMBER(g_player[0].ps, numloogs,                    PLAYER_NUMLOOGS),
     MEMBER(g_player[0].ps, loogcnt,                     PLAYER_LOOGCNT),
      LABEL(g_player[0].ps, pos.x,    "posx",            PLAYER_POSX),
@@ -549,6 +549,19 @@ memberlabel_t const PlayerLabels[] =
     MEMBER(g_player[0].ps, last_used_weapon,            PLAYER_LAST_USED_WEAPON),
     {                                "bsubweapon",      PLAYER_BSUBWEAPON, LABEL_HASPARM2, MAX_WEAPONS, -1 },
     MEMBER(g_player[0].ps, crouch_toggle,               PLAYER_CROUCH_TOGGLE),
+    MEMBER(g_player[0].ps, gravity,                     PLAYER_GRAVITY),
+    MEMBER(g_player[0].ps, floorzoffset,                PLAYER_FLOORZOFFSET),
+    MEMBER(g_player[0].ps, spritezoffset,               PLAYER_SPRITEZOFFSET),
+    MEMBER(g_player[0].ps, minwaterzdist,               PLAYER_MINWATERZDIST),
+    MEMBER(g_player[0].ps, waterzoffset,                PLAYER_WATERZOFFSET),
+    MEMBER(g_player[0].ps, shrunkzoffset,               PLAYER_SHRUNKZOFFSET),
+    MEMBER(g_player[0].ps, crouchzincrement,            PLAYER_CROUCHZINCREMENT),
+    MEMBER(g_player[0].ps, crouchspeedmodifier,         PLAYER_CROUCHSPEEDMODIFIER),
+    MEMBER(g_player[0].ps, swimspeedmodifier,           PLAYER_SWIMSPEEDMODIFIER),
+    MEMBER(g_player[0].ps, swimzincrement,              PLAYER_SWIMZINCREMENT),
+    MEMBER(g_player[0].ps, minswimzvel,                 PLAYER_MINSWIMZVEL),
+    MEMBER(g_player[0].ps, maxswimzvel,                 PLAYER_MAXSWIMZVEL),
+    MEMBER(g_player[0].ps, jetpackzincrement,           PLAYER_JETPACKZINCREMENT),
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)
@@ -588,8 +601,8 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_DEATHS:     labelNum = g_player[playerNum].frags[playerNum]; break;
         case PLAYER_BSUBWEAPON: labelNum = (ps.subweapon & (1<<lParm2)) != 0;    break;
 
-        case PLAYER_LOOGIEX:    labelNum = ps.loogiex[lParm2]; break;
-        case PLAYER_LOOGIEY:    labelNum = ps.loogiey[lParm2]; break;
+        case PLAYER_LOOGIEX:    labelNum = ps.loogie[lParm2].x; break;
+        case PLAYER_LOOGIEY:    labelNum = ps.loogie[lParm2].y; break;
 
         case PLAYER_WEAPRECS:   labelNum = ps.weaprecs[lParm2]; break;
 
@@ -601,17 +614,18 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
 
 void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const lParm2, int32_t const newValue)
 {
-    auto &ps = *g_player[playerNum].ps;
+    auto &thisPlayer = g_player[playerNum];
+    auto &ps = *thisPlayer.ps;
 
     switch (labelNum)
     {
-        case PLAYER_HORIZ:     ps.q16horiz     = fix16_from_int(newValue); break;
-        case PLAYER_OHORIZ:    ps.oq16horiz    = fix16_from_int(newValue); break;
-        case PLAYER_OHORIZOFF: ps.oq16horizoff = fix16_from_int(newValue); break;
-        case PLAYER_ANG:       ps.q16ang       = fix16_from_int(newValue); break;
-        case PLAYER_OANG:      ps.oq16ang      = fix16_from_int(newValue); break;
+        case PLAYER_HORIZ:     ps.q16horiz     = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_OHORIZ:    ps.oq16horiz    = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_OHORIZOFF: ps.oq16horizoff = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_HORIZOFF:  ps.q16horizoff  = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_ANG:       ps.q16ang       = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
+        case PLAYER_OANG:      ps.oq16ang      = fix16_from_int(newValue); thisPlayer.smoothcamera = true; break;
         case PLAYER_ANGVEL:    ps.q16angvel    = fix16_from_int(newValue); break;
-        case PLAYER_HORIZOFF:  ps.q16horizoff  = fix16_from_int(newValue); break;
 
         case PLAYER_AMMO_AMOUNT:     ps.ammo_amount[lParm2]     = newValue; break;
         case PLAYER_MAX_AMMO_AMOUNT: ps.max_ammo_amount[lParm2] = newValue; break;
@@ -658,8 +672,8 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
             else ps.subweapon &= ~(1 << lParm2);
             break;
 
-        case PLAYER_LOOGIEX: ps.loogiex[lParm2] = newValue; break;
-        case PLAYER_LOOGIEY: ps.loogiey[lParm2] = newValue; break;
+        case PLAYER_LOOGIEX: ps.loogie[lParm2].x = newValue; break;
+        case PLAYER_LOOGIEY: ps.loogie[lParm2].y = newValue; break;
 
         case PLAYER_WEAPRECS: ps.weaprecs[lParm2] = newValue; break;
 

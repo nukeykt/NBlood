@@ -129,26 +129,10 @@ Download SDL2-devel-<version>-mingw.tar.gz
   * Stable: http://www.libsdl.org/download-2.0.php
   * Mercurial: http://hg.libsdl.org/SDL
 ### Build ###
-    sh ./configure && make
+    sh ./configure --disable-libc && make
 ### Desired Results ###
   * headers: SDL_*.h
   * libraries: libSDL2.a libSDL2main.a
-
-SDL_mixer
----------
-### Prerequisites ###
-SDL_mixer depends on the results of SDL to compile.
-NEEDS VERIFICATION: Note that the headers must be installed without the "SDL2" prefix directory.
-### Download ###
-Download SDL2_mixer-devel-<version>-mingw.tar.gz.
-  * Stable: http://www.libsdl.org/projects/SDL_mixer/
-  * Mercurial: http://hg.libsdl.org/SDL_mixer/
-### Build ###
-    sh ./configure && make
-### Desired Results ###
-Note: With just this bare bones setup all the external libraries and formats will be disabled, but that's OK.
-  * headers: SDL_mixer.h
-  * libraries: libSDL2_mixer.a
 
 
 dsound, dxguid, and dxguid_sdl

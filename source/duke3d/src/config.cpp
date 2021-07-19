@@ -265,6 +265,9 @@ void CONFIG_SetDefaults(void)
     ud.config.AutoAim         = 1;
     ud.config.CheckForUpdates = 1;
     ud.config.FXVolume        = 255;
+    ud.config.JoystickAimWeight = 5;
+    ud.config.JoystickViewCentering = 3;
+    ud.config.JoystickAimAssist = 1;
     ud.config.MouseBias       = 0;
     ud.config.MusicDevice     = ASS_AutoDetect;
     ud.config.MusicToggle     = 1;
@@ -366,7 +369,7 @@ void CONFIG_SetDefaults(void)
     }
 
 #if !defined GEKKO
-    CONFIG_SetGameControllerDefaultsStandard();
+    CONFIG_SetGameControllerDefaults();
 #else
     for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
     {
@@ -605,72 +608,14 @@ static void CONFIG_SetGameControllerAxesModern()
         { GAMECONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
     };
 
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTX, 32768+16384);
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTY, 32768+16384);
+    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTX, 65536);
+    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTY, 65536);
 
     for (auto const & analogAxis : analogAxes)
         analogAxis.apply();
 }
 
-void CONFIG_SetGameControllerDefaultsStandard()
-{
-    CONFIG_SetGameControllerDefaultsClear();
-    CONFIG_SetGameControllerAxesModern();
-
-    static GameControllerButtonSetting const buttons[] =
-    {
-        { GAMECONTROLLER_BUTTON_A, gamefunc_Jump },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
-        { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
-        { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
-        { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Quick_Kick },
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Jump },
-        { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
-        { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
-    };
-
-    static GameControllerButtonSetting const buttonsDuke[] =
-    {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_Y, gamefunc_Inventory },
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
-    };
-
-    static GameControllerButtonSetting const buttonsFury[] =
-    {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
-        { GAMECONTROLLER_BUTTON_Y, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
-    };
-
-    static GameControllerDigitalAxisSetting const digitalAxes[] =
-    {
-        { GAMECONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Alt_Fire },
-        { GAMECONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
-    };
-
-    for (auto const & button : buttons)
-        button.apply();
-
-    if (FURY)
-    {
-        for (auto const & button : buttonsFury)
-            button.apply();
-    }
-    else
-    {
-        for (auto const & button : buttonsDuke)
-            button.apply();
-    }
-
-    for (auto const & digitalAxis : digitalAxes)
-        digitalAxis.apply();
-}
-
-void CONFIG_SetGameControllerDefaultsPro()
+void CONFIG_SetGameControllerDefaults()
 {
     CONFIG_SetGameControllerDefaultsClear();
     CONFIG_SetGameControllerAxesModern();
@@ -678,20 +623,21 @@ void CONFIG_SetGameControllerDefaultsPro()
     static GameControllerButtonSetting const buttons[] =
     {
         { GAMECONTROLLER_BUTTON_A, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Third_Person_View },
+        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
         { GAMECONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
         { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
         { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
         { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
         { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
         { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
+        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
+        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
+        { GAMECONTROLLER_BUTTON_MISC, gamefunc_Third_Person_View },
     };
 
     static GameControllerButtonSetting const buttonsDuke[] =
     {
         { GAMECONTROLLER_BUTTON_X, gamefunc_Inventory },
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Previous_Weapon },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Next_Weapon },
         { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
         { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
     };
@@ -699,8 +645,6 @@ void CONFIG_SetGameControllerDefaultsPro()
     static GameControllerButtonSetting const buttonsFury[] =
     {
         { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
         { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
         { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
     };
@@ -993,28 +937,19 @@ void CONFIG_WriteSetup(uint32_t flags)
     {
         for (int i=0; i<MAXMOUSEBUTTONS; i++)
         {
-            if (CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][0]))
-            {
-                Bsprintf(buf, "MouseButton%d", i);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][0]));
-            }
+            Bsprintf(buf, "MouseButton%d", i);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][0]));
 
             if (i >= (MAXMOUSEBUTTONS-2)) continue;
 
-            if (CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][1]))
-            {
-                Bsprintf(buf, "MouseButtonClicked%d", i);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][1]));
-            }
+            Bsprintf(buf, "MouseButtonClicked%d", i);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][1]));
         }
 
         for (int i=0; i<MAXMOUSEAXES; i++)
         {
-            if (CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[i]))
-            {
-                Bsprintf(buf, "MouseAnalogAxes%d", i);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[i]));
-            }
+            Bsprintf(buf, "MouseAnalogAxes%d", i);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[i]));
         }
     }
 
@@ -1022,37 +957,22 @@ void CONFIG_WriteSetup(uint32_t flags)
     {
         for (int dummy=0; dummy<MAXJOYBUTTONSANDHATS; dummy++)
         {
-            if (CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][0]))
-            {
-                Bsprintf(buf, "ControllerButton%d", dummy);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][0]));
-            }
+            Bsprintf(buf, "ControllerButton%d", dummy);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][0]));
 
-            if (CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][1]))
-            {
-                Bsprintf(buf, "ControllerButtonClicked%d", dummy);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][1]));
-            }
+            Bsprintf(buf, "ControllerButtonClicked%d", dummy);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][1]));
         }
         for (int dummy=0; dummy<MAXJOYAXES; dummy++)
         {
-            if (CONFIG_AnalogNumToName(ud.config.JoystickAnalogueAxes[dummy]))
-            {
-                Bsprintf(buf, "ControllerAnalogAxes%d", dummy);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.JoystickAnalogueAxes[dummy]));
-            }
+            Bsprintf(buf, "ControllerAnalogAxes%d", dummy);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.JoystickAnalogueAxes[dummy]));
 
-            if (CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][0]))
-            {
-                Bsprintf(buf, "ControllerDigitalAxes%d_0", dummy);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][0]));
-            }
+            Bsprintf(buf, "ControllerDigitalAxes%d_0", dummy);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][0]));
 
-            if (CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]))
-            {
-                Bsprintf(buf, "ControllerDigitalAxes%d_1", dummy);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]));
-            }
+            Bsprintf(buf, "ControllerDigitalAxes%d_1", dummy);
+            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]));
 
             Bsprintf(buf, "ControllerAnalogScale%d", dummy);
             SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueScale[dummy], FALSE, FALSE);

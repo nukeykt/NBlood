@@ -2608,7 +2608,7 @@ badindex:
                     else if (tw==CON_PRINTEXT16)
                     {
                         if (!in3dmode())
-                            printext16(x, y, editorcolors[col&255], backcol<0 ? -1 : editorcolors[backcol&255],
+                            printext16(x, y, col>=0?editorcolors[col&255]:((-col)&255), backcol<0 ? -1 : editorcolors[backcol&255],
                                        quotetext, fontsize);
                     }
                     else if (tw==CON_DRAWLABEL)
@@ -3057,7 +3057,7 @@ dodefault:
                 }
 
                 drawlinepat = m32_drawlinepat;
-                editorDraw2dLine(xofs+x1,yofs+y1, xofs+x2,yofs+y2, col>=0?editorcolors[col&15]:((-col)&255));
+                editorDraw2dLine(xofs+x1,yofs+y1, xofs+x2,yofs+y2, col>=0?editorcolors[col&255]:((-col)&255));
                 drawlinepat = odrawlinepat;
                 continue;
             }
@@ -3093,7 +3093,7 @@ dodefault:
                 }
 
                 drawlinepat = m32_drawlinepat;
-                editorDraw2dCircle(xofs+x1, yofs+y1, r, eccen, col>=0?editorcolors[col&15]:((-col)&255));
+                editorDraw2dCircle(xofs+x1, yofs+y1, r, eccen, col>=0?editorcolors[col&255]:((-col)&255));
                 drawlinepat = odrawlinepat;
                 continue;
             }

@@ -117,7 +117,7 @@ void G_ResetInterpolations(void)
         case SE_14_SUBWAY_CAR:
         case SE_15_SLIDING_DOOR:
         case SE_16_REACTOR:
-        case SE_26:
+        case SE_26_ESCALATOR:
         case SE_30_TWO_WAY_TRAIN:
             Sect_SetInterpolation(sprite[k].sectnum);
             break;
@@ -1479,19 +1479,19 @@ static char svgm_script_string [] = "blK:scri";
 static const dataspec_t svgm_script[] =
 {
     { DS_STRING, (void *)svgm_script_string, 0, 1 },
-    { DS_SAVEFN, (void *) &sv_prelabelsave, 0, 1 },
+    { DS_NOCHK|DS_SAVEFN, (void *) &sv_prelabelsave, 0, 1 },
     { DS_NOCHK, &savegame_labelcnt, sizeof(savegame_labelcnt), 1},
-    { DS_LOADFN, (void *) &sv_prelabelload, 0, 1 },
-    { DS_DYNAMIC|DS_CNT(savegame_labelcnt), &savegame_labels, 1<<6, (intptr_t)&savegame_labelcnt },
+    { DS_NOCHK|DS_LOADFN, (void *) &sv_prelabelload, 0, 1 },
+    { DS_NOCHK|DS_DYNAMIC|DS_CNT(savegame_labelcnt), &savegame_labels, 1<<6, (intptr_t)&savegame_labelcnt },
     { DS_SAVEFN, (void *) &sv_preprojectilesave, 0, 1 },
     { 0, savegame_projectiles, sizeof(uint8_t), (MAXTILES + 7) >> 3 },
     { DS_LOADFN, (void *) &sv_preprojectileload, 0, 1 },
     { DS_DYNAMIC|DS_CNT(savegame_projectilecnt), &savegame_projectiledata, sizeof(projectile_t), (intptr_t)&savegame_projectilecnt },
     { DS_SAVEFN, (void *) &sv_postprojectilesave, 0, 1 },
     { DS_LOADFN, (void *) &sv_postprojectileload, 0, 1 },
-    { DS_SAVEFN, (void *) &sv_preactorsave, 0, 1 },
+    { DS_NOCHK|DS_SAVEFN, (void *) &sv_preactorsave, 0, 1 },
     { 0, &actor[0], sizeof(actor_t), MAXSPRITES },
-    { DS_SAVEFN|DS_LOADFN, (void *)&sv_postactordata, 0, 1 },
+    { DS_NOCHK|DS_SAVEFN|DS_LOADFN, (void *)&sv_postactordata, 0, 1 },
     { DS_END, 0, 0, 0 }
 };
 
@@ -2378,8 +2378,10 @@ static void postloadplayer(int32_t savegamep)
         for (SPRITES_OF(STAT_FX, i))
             if (sprite[i].picnum == MUSICANDSFX)
             {
+                int soundNum = sprite[i].lotag;
                 T2(i) = ud.config.SoundToggle;
-                T1(i) = 0;
+                if (!((g_sounds[soundNum].m & SF_LOOP) || (sprite[i].hitag && sprite[i].hitag != soundNum)))
+                    T1(i) = 0;
             }
 
         G_UpdateScreenArea();
@@ -2393,13 +2395,13 @@ static void postloadplayer(int32_t savegamep)
         if (ud.lockout)
         {
             for (i=0; i<g_animWallCnt; i++)
-                switch (DYNAMICTILEMAP(wall[animwall[i].wallnum].picnum))
+                switch (tileGetMapping(wall[animwall[i].wallnum].picnum))
                 {
-                case FEMPIC1__STATIC:
+                case FEMPIC1__:
                     wall[animwall[i].wallnum].picnum = BLANKSCREEN;
                     break;
-                case FEMPIC2__STATIC:
-                case FEMPIC3__STATIC:
+                case FEMPIC2__:
+                case FEMPIC3__:
                     wall[animwall[i].wallnum].picnum = SCREENBREAK6;
                     break;
                 }

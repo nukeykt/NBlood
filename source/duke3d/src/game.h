@@ -213,6 +213,9 @@ typedef struct {
         int32_t AutoAim;
         int32_t ShowWeapons;
         int32_t MouseBias;
+        int32_t JoystickAimWeight;
+        int32_t JoystickViewCentering;
+        int32_t JoystickAimAssist;
 
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them
@@ -414,7 +417,7 @@ static inline int32_t gameHandleEvents(void)
     return handleevents();
 }
 
-static inline int32_t calc_smoothratio_demo(ClockTicks const totalclk, ClockTicks const ototalclk)
+static inline int32_t calc_smoothratio_demo(ClockTicks const totalclk, ClockTicks const ototalclk, int ticrate = REALGAMETICSPERSEC)
 {
     int const   truncrfreq = Blrintf(floorf(refreshfreq * TICRATE / timerGetClockRate()));
     int const   clk        = (totalclk - ototalclk).toScale16();
@@ -424,15 +427,15 @@ static inline int32_t calc_smoothratio_demo(ClockTicks const totalclk, ClockTick
     int const   wholeTics  = tabledivide32_noinline(clk * truncrfreq, 65536 * TICRATE);
     //POGO: additional debug info for testing purposes
     OSD_Printf("Elapsed tics: %d (%g), smoothratio: %d (%d)\n", wholeTics, fracTics,
-               tabledivide32_noinline(65536 * wholeTics * REALGAMETICSPERSEC, truncrfreq),
-               tabledivide32_noinline(Blrintf(65536 * fracTics * REALGAMETICSPERSEC), truncrfreq));
+               tabledivide32_noinline(65536 * wholeTics * ticrate, truncrfreq),
+               tabledivide32_noinline(Blrintf(65536 * fracTics * ticrate), truncrfreq));
 #endif
 
 #if 1
-    return clamp(tabledivide32_noinline(Blrintf(65536 * fracTics * REALGAMETICSPERSEC), truncrfreq), 0, 65536);
+    return clamp(tabledivide32_noinline(Blrintf(65536 * fracTics * ticrate), truncrfreq), 0, 65536);
 #else
     int const wholeTics = tabledivide32_noinline(clk * truncrfreq, 65536 * TICRATE);
-    return clamp(tabledivide32_noinline(65536 * wholeTics * REALGAMETICSPERSEC, truncrfreq), 0, 65536);
+    return clamp(tabledivide32_noinline(65536 * wholeTics * ticrate, truncrfreq), 0, 65536);
 #endif
 }
 
@@ -482,7 +485,7 @@ enum
     SE_23_ONE_WAY_TELEPORT             = 23,
     SE_24_CONVEYOR                     = 24,
     SE_25_PISTON                       = 25,
-    SE_26                              = 26,
+    SE_26_ESCALATOR                    = 26,
     SE_27_DEMO_CAM                     = 27,
     SE_28_LIGHTNING                    = 28,
     SE_29_WAVES                        = 29,
@@ -490,7 +493,7 @@ enum
     SE_31_FLOOR_RISE_FALL              = 31,
     SE_32_CEILING_RISE_FALL            = 32,
     SE_33_QUAKE_DEBRIS                 = 33,
-    SE_34                              = 34,  // XXX
+    SE_34_CONVEYOR2                    = 34,
     SE_35                              = 35,  // XXX
     SE_36_PROJ_SHOOTER                 = 36,
     SE_49_POINT_LIGHT                  = 49,

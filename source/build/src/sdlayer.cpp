@@ -414,7 +414,7 @@ void sdlayer_sethints()
     SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
 #endif
 #if defined SDL_HINT_XINPUT_ENABLED
-    if (!Bgetenv("EDUKE32_NO_XINPUT"))
+    if (Bgetenv("EDUKE32_NO_XINPUT"))
         SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
 #endif
 #endif
@@ -856,6 +856,7 @@ int debugprintf(const char *f, ...)
 static SDL_Joystick *joydev = NULL;
 #if SDL_MAJOR_VERSION >= 2
 static SDL_GameController *controller = NULL;
+static SDL_Haptic *haptic = NULL;
 
 static void LoadSDLControllerDB()
 {
@@ -905,11 +906,18 @@ static void LoadSDLControllerDB()
 }
 #endif
 
+static int numjoysticks;
+
 void joyScanDevices()
 {
-    inputdevices &= ~4;
+    inputdevices &= ~(DEV_JOYSTICK | DEV_HAPTIC);
 
 #if SDL_MAJOR_VERSION >= 2
+    if (haptic)
+    {
+        SDL_HapticClose(haptic);
+        haptic = nullptr;
+    }
     if (controller)
     {
         SDL_GameControllerClose(controller);
@@ -922,47 +930,88 @@ void joyScanDevices()
         joydev = nullptr;
     }
 
-    int numjoysticks = SDL_NumJoysticks();
+    numjoysticks = SDL_NumJoysticks();
+
     if (numjoysticks < 1)
     {
-        buildputs("No game controllers found\n");
+        buildprintf("No game controllers found\n");
     }
     else
     {
-        buildputs("Game controllers:\n");
+        buildprintf("Game controllers:\n");
+
+        char name[128];
+
         for (int i = 0; i < numjoysticks; i++)
         {
-            const char * name;
 #if SDL_MAJOR_VERSION >= 2
             if (SDL_IsGameController(i))
-                name = SDL_GameControllerNameForIndex(i);
+                Bstrncpyz(name, SDL_GameControllerNameForIndex(i), sizeof(name));
             else
 #endif
-                name = SDL_JoystickNameForIndex(i);
-
-            buildprintf("  %d. %s\n", i+1, name);
+                Bstrncpyz(name, SDL_JoystickNameForIndex(i), sizeof(name));
+                
+            buildprintf("  %d. %s\n", i + 1, name);
         }
-
+#if SDL_MAJOR_VERSION >= 2
+        int const numhaptics = SDL_NumHaptics();
+        if (numhaptics > 0)
+        {
+            buildprintf("Haptic devices:\n");
+            for (int i = 0; i < numhaptics; i++)
+                buildprintf("  %d. %s\n", i+1, SDL_HapticName(i));
+        }
+#endif
 #if SDL_MAJOR_VERSION >= 2
         for (int i = 0; i < numjoysticks; i++)
         {
             if ((controller = SDL_GameControllerOpen(i)))
             {
-                buildprintf("Using controller %s\n", SDL_GameControllerName(controller));
+#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
+                    Bsnprintf(name, sizeof(name), "%s [%s]", SDL_GameControllerName(controller), SDL_GameControllerGetSerial(controller));
+                else
+#endif
+                    Bsnprintf(name, sizeof(name), "%s", SDL_GameControllerName(controller));
 
-                joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
+                buildprintf("Using controller: %s\n", name);
+
                 joystick.numBalls   = 0;
-                joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
                 joystick.numHats    = 0;
+                joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
+                joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
 
+                joystick.validButtons = UINT32_MAX;
+#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
+                {
+                    joystick.numAxes = 0;
+                    for (int j = 0; j < SDL_CONTROLLER_AXIS_MAX; ++j)
+                        if (SDL_GameControllerHasAxis(controller, (SDL_GameControllerAxis)j))
+                            joystick.numAxes = j + 1;
+
+                    joystick.validButtons = 0;
+                    joystick.numButtons = 0;
+                    for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
+                        if (SDL_GameControllerHasButton(controller, (SDL_GameControllerButton)j))
+                        {
+                            joystick.numButtons = j + 1;
+                            joystick.validButtons |= (1 << j);
+                        }
+                }
+#endif
                 joystick.isGameController = 1;
 
                 Xfree(joystick.pAxis);
                 joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
-                Xfree(joystick.pHat);
-                joystick.pHat = nullptr;
+                DO_FREE_AND_NULL(joystick.pHat);
 
-                inputdevices |= 4;
+                inputdevices |= DEV_JOYSTICK;
+
+                auto joy = SDL_GameControllerGetJoystick(controller);
+                if ((haptic = SDL_HapticOpenFromJoystick(joy)) || !SDL_GameControllerRumble(controller, 0xffff, 0xffff, 200))
+                    inputdevices |= DEV_HAPTIC;
+                else buildprintf("%s\n", SDL_GetError());
 
                 return;
             }
@@ -973,7 +1022,7 @@ void joyScanDevices()
         {
             if ((joydev = SDL_JoystickOpen(i)))
             {
-                buildprintf("Using joystick %s\n", SDL_JoystickNameForIndex(i));
+                buildprintf("Using joystick: %s\n", SDL_JoystickNameForIndex(i));
 
                 // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
                 joystick.numAxes    = min(9, SDL_JoystickNumAxes(joydev));
@@ -981,6 +1030,7 @@ void joyScanDevices()
                 joystick.numButtons = min(32, SDL_JoystickNumButtons(joydev));
                 joystick.numHats    = min((36 - joystick.numButtons) / 4, SDL_JoystickNumHats(joydev));
 
+                joystick.validButtons = UINT32_MAX;
                 joystick.isGameController = 0;
 
                 buildprint("Joystick ", i+1, " has ", joystick.numAxes, " axes, ", joystick.numButtons, " buttons, ");
@@ -1002,22 +1052,34 @@ void joyScanDevices()
                     joystick.pHat[j] = -1; // center
 
                 SDL_JoystickEventState(SDL_ENABLE);
-                inputdevices |= 4;
+                inputdevices |= DEV_JOYSTICK;
 
+#if SDL_MAJOR_VERSION >= 2
+                if ((haptic = SDL_HapticOpenFromJoystick(joydev)) || !SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
+                    inputdevices |= DEV_HAPTIC;
+                else buildprintf("%s\n", SDL_GetError());
+#endif
                 return;
             }
         }
 
-        buildputs("No controllers are usable\n");
+        buildprintf("No controllers are usable\n");
     }
 }
 
 //
 // initinput() -- init input system
 //
-int32_t initinput(void)
+int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
 {
     int32_t i;
+
+#if SDL_MAJOR_VERSION >= 2
+    if (hotplugCallback)
+        g_controllerHotplugCallback = hotplugCallback;
+#else
+    UNREFERENCED_PARAMETER(hotplugCallback);
+#endif
 
 #if defined EDUKE32_OSX
     // force OS X to operate in >1 button mouse mode so that LMB isn't adulterated
@@ -1028,8 +1090,8 @@ int32_t initinput(void)
     }
 #endif
 
-    inputdevices = 1 | 2;  // keyboard (1) and mouse (2)
-    g_mouseGrabbed = 0;
+    inputdevices = DEV_KEYBOARD | DEV_MOUSE;
+    g_mouseGrabbed = false;
 
     memset(g_keyNameTable, 0, sizeof(g_keyNameTable));
 
@@ -1050,7 +1112,7 @@ int32_t initinput(void)
     }
 
 #if SDL_MAJOR_VERSION >= 2
-    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
+    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC))
 #else
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
 #endif
@@ -1058,9 +1120,11 @@ int32_t initinput(void)
 #if SDL_MAJOR_VERSION >= 2
         LoadSDLControllerDB();
 #endif
-
         joyScanDevices();
     }
+
+    if (inputdevices & DEV_HAPTIC)
+        buildprintf("Controller rumble enabled\n");
 
     return 0;
 }
@@ -1073,17 +1137,23 @@ void uninitinput(void)
     mouseUninit();
 
 #if SDL_MAJOR_VERSION >= 2
+    if (haptic)
+    {
+        SDL_HapticClose(haptic);
+        haptic = nullptr;
+    }
+
     if (controller)
     {
         SDL_GameControllerClose(controller);
-        controller = NULL;
+        controller = nullptr;
     }
 #endif
 
     if (joydev)
     {
         SDL_JoystickClose(joydev);
-        joydev = NULL;
+        joydev = nullptr;
     }
 }
 
@@ -1101,10 +1171,6 @@ const char *joyGetName(int32_t what, int32_t num)
 #if SDL_MAJOR_VERSION >= 2
             if (controller)
             {
-# if 0
-                // Use this if SDL's provided strings ever become user-friendly.
-                return SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)num);
-# else
                 static char const * axisStrings[] =
                 {
                     "Left Stick X-Axis",
@@ -1115,8 +1181,8 @@ const char *joyGetName(int32_t what, int32_t num)
                     "Right Trigger",
                     NULL
                 };
-                return axisStrings[num];
-# endif
+
+                return num < ARRAY_SSIZE(axisStrings) - 1 ? axisStrings[num] : SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)num);
             }
 #endif
 
@@ -1130,10 +1196,6 @@ const char *joyGetName(int32_t what, int32_t num)
 #if SDL_MAJOR_VERSION >= 2
             if (controller)
             {
-# if 0
-                // See above.
-                return SDL_GameControllerGetStringForButton((SDL_GameControllerButton)num);
-# else
                 static char const * buttonStrings[] =
                 {
                     "A",
@@ -1151,10 +1213,16 @@ const char *joyGetName(int32_t what, int32_t num)
                     "D-Pad Down",
                     "D-Pad Left",
                     "D-Pad Right",
+                    "Misc",
+                    "Paddle 1",
+                    "Paddle 2",
+                    "Paddle 3",
+                    "Paddle 4",
+                    "Touchpad",
                     NULL
                 };
-                return buttonStrings[num];
-# endif
+
+                return num < ARRAY_SSIZE(buttonStrings) - 1 ? buttonStrings[num] : SDL_GameControllerGetStringForButton((SDL_GameControllerButton)num);
             }
 #endif
 
@@ -1899,6 +1967,16 @@ void videoShowFrame(int32_t w)
 
         MicroProfileFlip();
 
+        // attached overlays and streaming hooks tend to change the GL state without setting it back
+
+        if (w != -1)
+        {
+            if (bpp > 8)
+                polymost_resetVertexPointers();
+            else
+                glsurface_refresh();
+        }
+
         return;
     }
 #endif
@@ -1977,7 +2055,7 @@ int32_t videoSetGamma(void)
 
     for (i = 0; i < 256; i++)
     {
-        float val = i * contrast - (contrast - 1.f) * 127.f;
+        float val = max(0.f, i * contrast - (contrast - 1.f) * 127.f);
         if (gamma != 1.f)
             val = powf(val, invgamma) / norm;
 
@@ -2157,7 +2235,13 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             break;
 # endif
 #endif
-
+#if SDL_MAJOR_VERSION >= 2
+        case SDL_CONTROLLERDEVICEADDED:
+        case SDL_CONTROLLERDEVICEREMOVED:
+            if (g_controllerHotplugCallback && SDL_NumJoysticks() != numjoysticks)
+                g_controllerHotplugCallback();
+            break;
+#endif
         case SDL_JOYAXISMOTION:
 #if SDL_MAJOR_VERSION >= 2
             if (joystick.isGameController)

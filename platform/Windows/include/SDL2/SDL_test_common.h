@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -206,6 +206,14 @@ void SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *do
  */
 void SDLTest_CommonQuit(SDLTest_CommonState * state);
 
+/**
+ * \brief Draws various window information (position, size, etc.) to the renderer.
+ *
+ * \param renderer The renderer to draw to.
+ * \param window The window whose information should be displayed.
+ *
+ */
+void SDLTest_CommonDrawWindowInfo(SDL_Renderer * renderer, SDL_Window * window);
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus

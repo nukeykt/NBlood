@@ -786,7 +786,6 @@ int DoSumoDeathMelt(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
-    static SWBOOL alreadydid = FALSE;
 
     PlaySound(DIGI_SUMOFART, &sp->x, &sp->y, &sp->z, v3df_follow);
 
@@ -795,11 +794,8 @@ int DoSumoDeathMelt(short SpriteNum)
     u->ID = 0;
 
     DoMatchEverything(NULL, sp->lotag, ON);
-    if (!SW_SHAREWARE && gs.MusicOn && !alreadydid)
-    {
-        PlaySong(0, RedBookSong[Level], TRUE, TRUE);
-        alreadydid = TRUE;
-    }
+    if (!SW_SHAREWARE && gs.MusicOn)
+        PlaySong(0, RedBookSong[Level], TRUE, FALSE);
 
     BossSpriteNum[1] = -2; // Sprite is gone, set it back to keep it valid!
 
@@ -817,8 +813,6 @@ BossHealthMeter(void)
     int y;
     extern SWBOOL NoMeters;
     short health;
-    SWBOOL bosswasseen;
-    static SWBOOL triedplay = FALSE;
 
     if (NoMeters) return;
 
@@ -854,12 +848,8 @@ BossHealthMeter(void)
     if (BossSpriteNum[0] <= -1 && BossSpriteNum[1] <= -1 && BossSpriteNum[2] <= -1)
         return;
 
-    // Frank, good optimization for other levels, but it broke level 20. :(
-    // I kept this but had to add a fix.
-    bosswasseen = serpwasseen|sumowasseen|zillawasseen;
-
     // Only show the meter when you can see the boss
-    if ((Level == 20 && (!serpwasseen || !sumowasseen || !zillawasseen)) || !bosswasseen)
+    if (!serpwasseen || !sumowasseen || !zillawasseen)
     {
         for (i=0; i<3; i++)
         {
@@ -875,7 +865,7 @@ BossHealthMeter(void)
                         serpwasseen = TRUE;
                         if (!SW_SHAREWARE && gs.MusicOn)
                         {
-                            PlaySong(0, 13, TRUE, TRUE);
+                            PlaySong(0, 13, TRUE, FALSE);
                         }
                     }
                     else if (i == 1 && !sumowasseen)
@@ -883,7 +873,7 @@ BossHealthMeter(void)
                         sumowasseen = TRUE;
                         if (!SW_SHAREWARE && gs.MusicOn)
                         {
-                            PlaySong(0, 13, TRUE, TRUE);
+                            PlaySong(0, 13, TRUE, FALSE);
                         }
                     }
                     else if (i == 2 && !zillawasseen)
@@ -891,7 +881,7 @@ BossHealthMeter(void)
                         zillawasseen = TRUE;
                         if (!SW_SHAREWARE && gs.MusicOn)
                         {
-                            PlaySong(0, 13, TRUE, TRUE);
+                            PlaySong(0, 13, TRUE, FALSE);
                         }
                     }
                 }
@@ -909,13 +899,6 @@ BossHealthMeter(void)
             continue;
         if (i == 2 && (!zillawasseen || BossSpriteNum[2] < 0))
             continue;
-
-        // This is needed because of possible saved game situation
-        if (!SW_SHAREWARE && !triedplay)
-        {
-            PlaySong(0, 13, TRUE, FALSE);
-            triedplay = TRUE; // Only try once, then give up
-        }
 
         sp = &sprite[BossSpriteNum[i]];
         u = User[BossSpriteNum[i]];

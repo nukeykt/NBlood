@@ -108,6 +108,8 @@ bool g_mouseLockedToWindow = 1;
 void (*g_mouseCallback)(int32_t, int32_t);
 void mouseSetCallback(void(*callback)(int32_t, int32_t)) { g_mouseCallback = callback; }
 
+void (*g_controllerHotplugCallback)(void);
+
 int32_t mouseAdvanceClickState(void)
 {
     switch (g_mouseClickState)
@@ -156,6 +158,7 @@ controllerinput_t joystick;
 
 void joySetCallback(void (*callback)(int32_t, int32_t)) { joystick.pCallback = callback; }
 void joyReadButtons(int32_t *pResult) { *pResult = appactive ? joystick.bits : 0; }
+bool joyHasButton(int button) { return !!(joystick.validButtons & (1 << button)); }
 
 #if defined __linux || defined EDUKE32_BSD || defined __APPLE__
 # include <sys/mman.h>
@@ -521,6 +524,7 @@ int32_t baselayer_init(void)
           (void *) &r_screenxy, SCREENASPECT_CVAR_TYPE, 0, 9999 },
         { "r_fpgrouscan","use floating-point numbers for slope rendering",(void *) &r_fpgrouscan, CVAR_BOOL, 0, 1 },
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
+        { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_INT, 0, 3 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
         { "r_maxfps", "limit the frame rate", (void *)&r_maxfps, CVAR_INT | CVAR_FUNCPTR, -1, 1000 },
         { "r_maxfpsoffset", "menu-controlled offset for r_maxfps", (void *)&r_maxfpsoffset, CVAR_INT | CVAR_FUNCPTR, -10, 10 },

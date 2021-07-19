@@ -60,6 +60,7 @@ enum MenuIndex_t {
     MENU_JOYSTICKAXES   = 208,
     MENU_KEYBOARDKEYS   = 209,
     MENU_MOUSEBTNS      = 210,
+    MENU_JOYSTICKADV    = 212,
     MENU_JOYSTICKAXIS   = 213,
     MENU_TOUCHSETUP     = 214,
     MENU_TOUCHSENS      = 215,
@@ -105,9 +106,7 @@ enum MenuIndex_t {
     MENU_COLCORRRESETVERIFY = 2200,
     MENU_KEYSRESETVERIFY = 2201,
     MENU_KEYSCLASSICVERIFY = 2202,
-    MENU_JOYSTANDARDVERIFY = 2203,
-    MENU_JOYPROVERIFY   = 2204,
-    MENU_JOYCLEARVERIFY = 2205,
+    MENU_JOYDEFAULTVERIFY = 2203,
     MENU_ADULTPASSWORD  = 10001,
     MENU_RESETPLAYER    = 15000,
     MENU_BUYDUKE        = 20000,
@@ -462,7 +461,7 @@ typedef struct MenuAnimation_t
     Menu_t *previous;
     Menu_t *current;
 
-    int32_t start;
+    uint32_t start;
     int32_t length;
 } MenuAnimation_t;
 

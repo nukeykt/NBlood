@@ -41,14 +41,9 @@ extern int32_t g_mostConcurrentPlayers;
 #define HORIZ_MAX                   299
 #define AUTO_AIM_ANGLE              48
 #define PHEIGHT                     (38<<8)
-#define PCROUCHHEIGHT               (16<<8)
-#define PCROUCHINCREMENT            (2048+768)
 #define PMINHEIGHT                  1024 // this is NOT the value I wanted here, but Duke It Out in DC's shitty vents said otherwise
 
 #define PCRACKTIME                  777
-
-#define PWATERSPEEDMODIFIER         0x1400
-#define PCROUCHSPEEDMODIFIER        0x2000
 
 #define TRIPBOMB_TRIPWIRE       0x00000001
 #define TRIPBOMB_TIMER          0x00000002
@@ -59,6 +54,47 @@ extern int32_t g_mostConcurrentPlayers;
 #define WEAPON_POS_LOWER            (-9)
 #define WEAPON_POS_RAISE            10
 #define WEAPON_POS_START             6
+
+enum weaponuniqhudid_t
+{
+    W_ACCESSCARD,
+    W_CHAINGUN_BOTTOM,
+    W_CHAINGUN_HACK,
+    W_CHAINGUN_TOP,
+    W_DEVISTATOR_LEFT,
+    W_DEVISTATOR_RIGHT,
+    W_DUKENUKEM,
+    W_FIST,
+    W_FIST2,
+    W_FREEZE_BASE,
+    W_FREEZE_TOP,
+    W_HANDBOMB,
+    W_HANDREMOTE,
+    W_KNEE,
+    W_KNEE2,
+    W_KNUCKLES,
+    W_LOOGIE,
+    W_LOOGIE_END = W_LOOGIE + 63,
+    W_PISTOL,
+    W_PISTOL_CLIP,
+    W_PISTOL_HAND,
+    W_PLUTOPAK,
+    W_RPG,
+    W_RPG_MUZZLE,
+    W_SHOTGUN,
+    W_SHOTGUN_MUZZLE,
+    W_SHRINKER,
+    W_SHRINKER_CRYSTAL,
+    W_THREEDEE,
+    W_TIP,
+    W_TRIPBOMB,
+    W_TRIPBOMB_LEFTHAND,
+    W_TRIPBOMB_RIGHTHAND,
+
+    W_END,
+};
+
+EDUKE32_STATIC_ASSERT(W_END < MAXUNIQHUDID);
 
 enum weaponflags_t {
     WEAPON_SPAWNTYPE1           = 0x00000000, // just spawn
@@ -112,6 +148,10 @@ enum playeraction_t {
     pfacing                     = 0x00010000
 };
 
+#define AM_MOUSE 1
+#define AM_CENTERING 2
+#define AM_AIMASSIST 4
+
 typedef struct {
     vec3_t pos;
     int16_t ang, sect;
@@ -126,14 +166,14 @@ typedef struct {
     char inven_icon, jetpack_on, heat_on;
 } DukeStatus_t;
 
+#pragma pack(push,1)
 typedef struct {
     uint32_t bits;
     int16_t fvel, svel;
     fix16_t q16avel, q16horz;
-    uint8_t extbits;
+    uint32_t extbits;
 } input_t;
 
-#pragma pack(push,1)
 // XXX: r1625 changed a lot types here, among others
 //  * int32_t --> int16_t
 //  * int16_t --> int8_t
@@ -161,7 +201,16 @@ typedef struct {
 
     uint16_t frag, fraggedself;
 
-    int16_t loogiex[64], loogiey[64], sbs, sound_pitch;
+    vec2_16_t loogie[6];
+    int16_t filler[103]; // jesus fucking christ
+
+    int16_t floorzoffset, spritezoffset, minwaterzdist, waterzoffset, shrunkzoffset;
+    int16_t crouchzincrement, crouchspeedmodifier, swimspeedmodifier;
+    int16_t swimzincrement, minswimzvel, maxswimzvel;
+    int16_t jetpackzincrement;
+
+    int16_t gravity;
+    int16_t sbs, sound_pitch;
 
     int16_t cursectnum, look_ang, last_extra, subweapon;
     int16_t max_ammo_amount[MAX_WEAPONS], ammo_amount[MAX_WEAPONS], inv_amount[GET_MAX];
@@ -211,6 +260,7 @@ typedef struct {
 } DukePlayer_t;
 
 EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t) % 4 == 0);
+EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t) == 640); // this needs to stay the same size for savegame compatibility
 
 typedef struct
 {
@@ -220,6 +270,8 @@ typedef struct
     int horizRecenter;
     int horizAngleAdjust;
     int horizSkew;
+
+    double lastViewUpdate;
 
     int32_t netsynctime;
     int32_t pcolor, pteam;
@@ -335,6 +387,7 @@ static inline void P_PalFrom(DukePlayer_t *pPlayer, uint8_t f, uint8_t r, uint8_
 void    P_AddKills(DukePlayer_t * pPlayer, uint16_t kills);
 int32_t A_GetHitscanRange(int spriteNum);
 void    P_GetInput(int playerNum);
+void P_UpdateAngles(int const playerNum, input_t const &input);
 void P_AddAmmo(DukePlayer_t * pPlayer, int weaponNum, int addAmount);
 void    P_AddWeapon(DukePlayer_t *pPlayer, int weaponNum, int switchWeapon);
 void    P_CheckWeapon(DukePlayer_t *pPlayer);

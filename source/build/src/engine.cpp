@@ -125,6 +125,7 @@ static int32_t oxdimen = -1, oviewingrange = -1, oxyaspect = -1;
 int32_t r_usenewaspect = 1, newaspect_enable=0;
 uint32_t r_screenxy = 0;
 
+int32_t r_rotatespriteinterp = 1;
 int32_t r_fpgrouscan = 1;
 int32_t r_displayindex = 0;
 int32_t r_borderless = 2;
@@ -191,6 +192,27 @@ int32_t bloodhack = 0;
 #ifndef EDUKE32_STANDALONE
 int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
+
+void initcrc16()
+{
+    int i, j, k, a;
+    for (j=0;j<256;j++)
+    {
+        for (i=7,k=(j<<8),a=0;i>=0;i--,k=((k<<1)&65535))
+        {
+            if ((k^a)&0x8000) a = ((a<<1)&65535)^0x1021;
+            else a = ((a<<1)&65535);
+        }
+        crctab16[j] = (a&65535);
+    }
+}
+
+uint16_t getcrc16(char const *buffer, int bufleng)
+{
+    int j = 0;
+    for (int i=bufleng-1;i>=0;i--) updatecrc16(j,buffer[i]);
+    return((uint16_t)(j&65535));
+}
 
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
@@ -6175,7 +6197,7 @@ draw_as_face_sprite:
 
             for (int x=lx; x<rx; x++)
             {
-                y1 = uwall[x]+1; y2 = dwall[x]-1;
+                y1 = uwall[x]; y2 = dwall[x]-1;
                 if (y1 <= y2)
                 {
                     shy1 = y1+(shoffs>>15);
@@ -7343,6 +7365,51 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         dastat &= ~RS_ALIGN_MASK;
     }
 
+    if (uniqid)
+    {
+        Bassert(uniqid < MAXUNIQHUDID);
+
+        // r_rotatespriteinterp 1: only interpolate when explicitly requested with RS_LERP
+        // r_rotatespriteinterp 2: interpolate if the picnum or size matches regardless of RS_LERP being set
+        // r_rotatespriteinterp 3: relax above picnum check to include the next tile, with potentially undesirable results
+
+        static struct sm
+        {
+            vec4_t lerp;
+            vec4_t goal;
+            int16_t picnum, flags;
+        } smooth[MAXUNIQHUDID];
+
+        auto &sm = smooth[uniqid];
+        vec4_t const goal = { sx, sy, z, a };
+        smooth[0] = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK) };
+        
+        auto lerpWouldLookDerp = [&](void)
+        {
+            return (!(dastat & RS_LERP) && r_rotatespriteinterp < 2)
+                   || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
+                   && ((unsigned)(picnum - sm.picnum) > (int)(r_rotatespriteinterp == 3))))) || klabs(a - sm.goal.a) == 1024;
+        };
+
+        if (!lerpWouldLookDerp())
+        {
+            smooth[0].lerp = { sm.lerp.x + mulscale16(smooth[0].goal.x - sm.lerp.x, rotatespritesmoothratio),
+                               sm.lerp.y + mulscale16(smooth[0].goal.y - sm.lerp.y, rotatespritesmoothratio),
+                               sm.lerp.z + mulscale16(smooth[0].goal.z - sm.lerp.z, rotatespritesmoothratio),
+                              (sm.lerp.a + mulscale16(((smooth[0].goal.a + 1024 - sm.lerp.a) & 2047) - 1024, rotatespritesmoothratio)) & 2047 };
+        }
+
+        sm = smooth[0];
+
+        if (r_rotatespriteinterp)
+        {
+            sx = sm.lerp.x;
+            sy = sm.lerp.y;
+            z  = sm.lerp.z;
+            a  = sm.lerp.a;
+        }
+    }
+
     //============================================================================= //POLYMOST BEGINS
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
@@ -7442,13 +7509,13 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
                 // set dt_t 3864  (bike HUD, 700x220)
                 // set dt_a 100
                 // set dt_z 1280000  <- CRASH!
-                Bassert((unsigned)dax1 < MAXXDIM && (unsigned)dax2 < MAXXDIM+1);
+                Bassert((unsigned)dax1 < (unsigned)xdim && (unsigned)dax2 < (unsigned)xdim+1);
                 qinterpolatedown16short((intptr_t)&uplc[dax1], dax2-dax1, yplc, yinc);
             }
             else
             {
                 yplc = y2 + mulscale16((dax2<<16)+65535-x2,yinc);
-                Bassert((unsigned)dax2 < MAXXDIM && (unsigned)dax1 < MAXXDIM+1);
+                Bassert((unsigned)dax2 < (unsigned)xdim && (unsigned)dax1 < (unsigned)xdim+1);
                 qinterpolatedown16short((intptr_t)&dplc[dax2], dax1-dax2, yplc, yinc);
             }
         }
@@ -8599,6 +8666,7 @@ int32_t enginePreInit(void)
     validmodecnt = 0;
     videoGetModes();
 
+    initcrc16();
     initcrc32table();
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -9014,10 +9082,6 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
 #endif
 
     frameoffset = frameplace + windowxy1.y*bytesperline + windowxy1.x;
-
-    //if (smostwallcnt < 0)
-    //  if (getkensmessagecrc(FP_OFF(kensmessage)) != 0x56c764d4)
-    //      { /* setvmode(0x3);*/ OSD_Printf("Nice try.\n"); Bexit(EXIT_SUCCESS); }
 
     numhits = xdimen; numscans = 0; numbunches = 0;
     maskwallcnt = 0; smostwallcnt = 0; smostcnt = 0; spritesortcnt = 0;
@@ -10433,6 +10497,11 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     if (kread_and_test(fil, sprite, sizeof(spritetype)*numsprites)) goto error;
 
+    int const pos = ktell(fil), len = kfilelength(fil);
+
+    if (pos != len)
+        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
+
 #ifdef NEW_MAP_FORMAT
 skip_reading_mapbin:
 #endif
@@ -10747,6 +10816,11 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
             break;
         }
     }
+
+    int const pos = ktell(fil), len = kfilelength(fil);
+
+    if (pos != len)
+        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
 
     kclose(fil);
     // Done reading file.
@@ -11144,10 +11218,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
         (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
         return 0;
 
-    Bstrcpy(kensmessage,"!!!! BUILD engine&tools programmed by Ken Silverman of E.G. RI."
-           "  (c) Copyright 1995 Ken Silverman.  Summary:  BUILD = Ken. !!!!");
-    //  if (getkensmessagecrc(FP_OFF(kensmessage)) != 0x56c764d4)
-    //      { OSD_Printf("Nice try.\n"); Bexit(EXIT_SUCCESS); }
+    Bstrcpy(kensmessage, "!!!! BUILD engine&tools programmed by Ken Silverman of E.G. RI."
+                         "  (c) Copyright 1995 Ken Silverman.  Summary:  BUILD = Ken. !!!!");
 
     //if (checkvideomode(&daxdim, &daydim, dabpp, davidoption)<0) return -1;
 
@@ -11562,7 +11634,20 @@ fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
 //
 // ksqrt
 //
-int32_t ksqrt(uint32_t num)
+int32_t __fastcall ksqrtasm_old(uint32_t n)
+{
+    uint32_t shift = 0;
+    n = klabs((int32_t)n);
+    while (n >= 2048)
+    {
+        n >>= 2;
+        ++shift;
+    }
+    uint32_t const s = sqrtable_old[n];
+    return (s << shift) >> 10;
+}
+
+int32_t __fastcall ksqrt(uint32_t num)
 {
     if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(num);
@@ -13142,6 +13227,17 @@ int32_t sectorofwall_noquick(int16_t wallNum)
     return sectorofwall_internal(wallNum);
 }
 
+int32_t wallength(int16_t wallNum)
+{
+    int64_t const dax = POINT2(wallNum).x - wall[wallNum].x;
+    int64_t const day = POINT2(wallNum).y - wall[wallNum].y;
+    int64_t const hypsq = dax*dax + day*day;
+
+    if (hypsq <= (int64_t)UINT32_MAX)
+        return nsqrtasm((uint32_t)hypsq);
+    else
+        return (int32_t)sqrt((double)hypsq);
+}
 
 int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
 {
@@ -13846,6 +13942,10 @@ int32_t videoSetRenderMode(int32_t renderer)
 # else
     else renderer = REND_POLYMOST;
 # endif
+
+    // Fixes mirror glitches that occur when changing the renderer.
+    // Including: mirrored player view in Polymost, black screen in Classic
+    inpreparemirror = 0;
 
     basepalreset = 1;
 

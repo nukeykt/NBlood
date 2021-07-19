@@ -28,8 +28,6 @@
 
 char levelname[BMAX_PATH] = {0};
 
-#define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctable[((((uint16_t)crc)>>8)&65535)^dat]))
-static int32_t crctable[256];
 static char kensig[64];
 
 static const char *CallExtGetVer(void);
@@ -250,7 +248,6 @@ static int32_t movewalls(int32_t start, int32_t offs);
 static void loadnames(const char *namesfile);
 static void getclosestpointonwall(int32_t x, int32_t y, int32_t dawall, int32_t *nx, int32_t *ny,
                                   int32_t maybe_screen_coord_p);
-static void initcrc(void);
 
 static int32_t menuselect(void);
 static int32_t menuselect_auto(int, int); //PK
@@ -740,8 +737,7 @@ int app_main(int argc, char const * const * argv)
     if (!bloodhack)
         artLoadFiles("tiles%03i.art", g_maxCacheSize);
 
-    Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");
-    initcrc();
+    Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");    
 
     InitCustomColors();
 
@@ -3560,7 +3556,7 @@ void overheadeditor(void)
 {
     char buffer[80];
     const char *dabuffer;
-    int32_t i, j, k, m=0, mousxplc, mousyplc, firstx=0, firsty=0, oposz, col;
+    int32_t i, j, k, m=0, mousxplc=0, mousyplc=0, firstx=0, firsty=0, oposz, col;
     int32_t numwalls_bak;
     int32_t startwall=0, endwall, dax, day, x1, y1, x2, y2, x3, y3; //, x4, y4;
     int16_t bad, joinsector[2];
@@ -9234,21 +9230,6 @@ static int32_t movewalls(int32_t start, int32_t offs)
     return 0;
 }
 
-int32_t wallength(int16_t i)
-{
-    int64_t dax = POINT2(i).x - wall[i].x;
-    int64_t day = POINT2(i).y - wall[i].y;
-#if 1 //def POLYMOST
-    int64_t hypsq = dax*dax + day*day;
-    if (hypsq > (int64_t)INT32_MAX)
-        return (int32_t)sqrt((double)hypsq);
-    else
-        return ksqrt((uint32_t)hypsq);
-#else
-    return ksqrt(dax*dax + day*day);
-#endif
-}
-
 void fixrepeats(int16_t i)
 {
     int32_t dist = wallength(i);
@@ -10209,7 +10190,7 @@ int32_t fillsector_maybetrans(int16_t sectnum, int32_t fillcolor, uint8_t dotran
 
     lborder = 0; rborder = xdim;
     y = OSD_GetRowsCur();
-    uborder = (y>=0)?(y+1)*8:0; dborder = ydim16-STATUS2DSIZ2;
+    uborder = (y>=0)?(y+1)*8:0; dborder = ydim16;
 
 
     miny = dborder-1;
@@ -10891,25 +10872,6 @@ static void getclosestpointonwall(int32_t x, int32_t y, int32_t dawall, int32_t 
     i=((i<<15)/j)<<15;
     *nx = wx + ((dx*i)>>30);
     *ny = wy + ((dy*i)>>30);
-}
-
-static void initcrc(void)
-{
-    int32_t i, j, k, a;
-
-    for (j=0; j<256; j++)   //Calculate CRC table
-    {
-        k = (j<<8); a = 0;
-        for (i=7; i>=0; i--)
-        {
-            if (((k^a)&0x8000) > 0)
-                a = ((a<<1)&65535) ^ 0x1021;   //0x1021 = genpoly
-            else
-                a = ((a<<1)&65535);
-            k = ((k<<1)&65535);
-        }
-        crctable[j] = (a&65535);
-    }
 }
 
 static int32_t GetWallBaseZ(int32_t wallnum)

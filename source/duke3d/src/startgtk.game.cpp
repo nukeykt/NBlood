@@ -278,7 +278,11 @@ static unsigned char GetModsDirNames(GtkListStore *list)
 
     if ((homedir = Bgethomedir()))
     {
-        Bsnprintf(pdir, sizeof(pdir), "%s/" ".eduke32", homedir);
+        if (buildvfs_exists("user_profiles_disabled"))
+            buildvfs_getcwd(pdir, sizeof(pdir));
+        else
+            Bsnprintf(pdir, sizeof(pdir), "%s/" ".config/eduke32", homedir);
+
         dirs = klistpath(pdir, "*", BUILDVFS_FIND_DIR);
         for (; dirs != NULL; dirs=dirs->next)
         {

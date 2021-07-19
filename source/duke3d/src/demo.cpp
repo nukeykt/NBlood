@@ -73,11 +73,7 @@ void Demo_PrepareWarp(void)
 
 static void Demo_SetAllClocks(int32_t clocktime)
 {
-    totalclock = ototalclock = lockclock = clocktime;
-    
-    // reset menu transition
-    m_animation.start = 0;
-    m_animation.length = 0;
+    totalclock = ototalclock = lockclock = clocktime;    
 }
 
 static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
@@ -767,14 +763,7 @@ nextdemo_nomenu:
             }
         }
         else if (foundemo && g_demo_paused)
-        {
-            // problem: this locks menu animations as well, should probably be overhauled
             totalclock = lockclock;
-
-            // bandaid fix for menu lockup
-            m_animation.start = 0;
-            m_animation.length = 0;
-        }
 
         if (Demo_IsProfiling())
             totalclock += TICSPERFRAME;
