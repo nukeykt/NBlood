@@ -2,13 +2,15 @@
 // Common non-engine code/data for EDuke32 and Mapster32
 //
 
-#include "compat.h"
-#include "build.h"
+#include "common.h"
+
 #include "baselayer.h"
-#include "palette.h"
-
+#include "build.h"
+#include "common_game.h"
+#include "compat.h"
 #include "grpscan.h"
-
+#include "palette.h"
+#include "texcache.h"
 #include "vfs.h"
 
 #ifdef _WIN32
@@ -17,9 +19,6 @@
 #elif defined __APPLE__
 # include "osxbits.h"
 #endif
-
-#include "common.h"
-#include "common_game.h"
 
 struct grpfile_t const *g_selectedGrp;
 

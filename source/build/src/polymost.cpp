@@ -16,6 +16,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "polymost.h"
 #include "microprofile.h"
 #include "tilepacker.h"
+#include "texcache.h"
 
 extern char textfont[2048], smalltextfont[2048];
 
@@ -523,6 +524,7 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
 
 void polymost_glreset()
 {
+
     for (bssize_t i=0; i<=MAXPALOOKUPS-1; i++)
     {
         fogtable[i].r = palookupfog[i].r * (1.f/255.f);
@@ -573,9 +575,9 @@ void polymost_glreset()
     md_freevbos();
 #endif
 
-    Bmemset(texcache.list,0,sizeof(texcache.list));
+//    Bmemset(texcache.list,0,sizeof(texcache.list));
 
-    texcache_freeptrs();
+    // texcache_freeptrs();
     texcache_syncmemcache();
 
 #ifdef DEBUGGINGAIDS

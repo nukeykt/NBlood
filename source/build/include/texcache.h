@@ -1,6 +1,9 @@
 #ifndef texcache_h_
 # define texcache_h_
 
+#include "mio.hpp"
+#include "polymost.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,8 +37,9 @@ typedef struct texcacheitem_
 } texcacheindex;
 
 typedef struct {
-    uint8_t *buf;
-    buildvfs_FILE   index;
+    mio::mmap_sink rw_mmap;
+    buildvfs_FILE  indexFilePtr;
+    buildvfs_FILE  dataFilePtr;
 
     texcacheindex * first;
     texcacheindex * current;
@@ -45,12 +49,9 @@ typedef struct {
 
     hashtable_t hashes;
 
-    int32_t handle;
     int32_t numentries;
     int32_t entrybufsiz;
-    int32_t pos;
-
-    int32_t memsize;
+    bsize_t dataFilePos;
 } globaltexcache;
 
 extern globaltexcache texcache;

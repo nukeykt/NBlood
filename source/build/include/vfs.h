@@ -88,7 +88,7 @@ using buildvfs_FILE = FILE *;
 #define buildvfs_fopen_read(fn) fopen((fn), "rb")
 #define buildvfs_fopen_write(fn) fopen((fn), "wb")
 #define buildvfs_fopen_write_text(fn) fopen((fn), "w")
-#define buildvfs_fopen_append(fn) fopen((fn), "ab")
+#define buildvfs_fopen_append(fn) fopen((fn), "ab+")
 #define buildvfs_fgetc(fp) fgetc(fp)
 #define buildvfs_fputc(c, fp) fputc((c), (fp))
 #define buildvfs_fgets(str, size, fp) fgets((str), (size), (fp))
@@ -97,6 +97,7 @@ using buildvfs_FILE = FILE *;
 #define buildvfs_ftell(fp) ftell(fp)
 #define buildvfs_fseek_abs(fp, o) fseek((fp), (o), SEEK_SET)
 #define buildvfs_fseek_rel(fp, o) fseek((fp), (o), SEEK_CUR)
+#define buildvfs_fseek_end(fp) fseek((fp), 0, SEEK_END)
 #define buildvfs_rewind(fp) rewind(fp)
 
 static inline int64_t buildvfs_length(int fd)

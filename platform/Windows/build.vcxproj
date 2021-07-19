@@ -456,6 +456,7 @@
     <ClInclude Include="..\..\source\build\include\miniz_export.h" />
     <ClInclude Include="..\..\source\build\include\miniz_tdef.h" />
     <ClInclude Include="..\..\source\build\include\miniz_tinfl.h" />
+    <ClInclude Include="..\..\source\build\include\mio.hpp" />
     <ClInclude Include="..\..\source\build\include\mmulti.h" />
     <ClInclude Include="..\..\source\build\include\mutex.h" />
     <ClInclude Include="..\..\source\build\include\osd.h" />

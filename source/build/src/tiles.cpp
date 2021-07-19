@@ -6,14 +6,14 @@
 // by Jonathon Fowler (jf@jonof.id.au)
 // by the EDuke32 team (development@voidpoint.com)
 
-#include "compat.h"
-#include "build.h"
 #include "baselayer.h"
-#include "engine_priv.h"
+#include "build.h"
 #include "cache1d.h"
-#include "lz4.h"
+#include "compat.h"
 #include "crc32.h"
-
+#include "engine_priv.h"
+#include "lz4.h"
+#include "texcache.h"
 #include "vfs.h"
 
 static void *g_vm_data;
