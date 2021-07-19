@@ -441,7 +441,7 @@ static void         polymer_getscratchmaterial(_prmaterial* material);
 static _prbucket*   polymer_getbuildmaterial(_prmaterial* material, int16_t tilenum, char pal, int8_t shade, int8_t vis, int32_t cmeth);
 static int32_t      polymer_bindmaterial(const _prmaterial *material, const int16_t* lights, int lightcount);
 static void         polymer_unbindmaterial(int32_t programbits);
-static void         polymer_compileprogram(int32_t programbits);
+static _prprograminfo *polymer_compileprogram(int32_t programbits);
 // LIGHTS
 static void         polymer_removelight(int16_t lighti);
 static void         polymer_updatelights(void);
