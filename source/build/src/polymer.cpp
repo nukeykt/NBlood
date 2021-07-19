@@ -1226,7 +1226,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
         while (i >= 0)
         {
             polymer_updatewall(i);
-            polymer_drawwall(sectorofwall(i), i);
+            polymer_drawwall(wallsect[i], i);
             i--;
         }
 
@@ -1308,7 +1308,7 @@ void                polymer_editorpick(void)
     case 0: // wall
     case 5: // botomwall
     case 4: // 1-way/masked wall
-        searchsector = sectorofwall(num);
+        searchsector = wallsect[num];
         searchbottomwall = searchwall = num;
         searchisbottom = (searchstat==5);
         if (searchstat == 5) {
@@ -1481,7 +1481,7 @@ void                polymer_drawmaskwall(int32_t damaskwallcnt)
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Masked wall %i...\n", damaskwallcnt);
 
-    sec = (usectorptr_t)&sector[sectorofwall(maskwall[damaskwallcnt])];
+    sec = (usectorptr_t)&sector[wallsect[maskwall[damaskwallcnt]]];
     wal = &wall[maskwall[damaskwallcnt]];
     w = prwalls[maskwall[damaskwallcnt]];
 
@@ -3197,7 +3197,7 @@ static void         polymer_updatewall(int16_t wallnum)
     float           ypancoef, dist;
     int32_t         i;
     uint32_t        invalid;
-    int32_t         sectofwall = sectorofwall(wallnum);
+    int32_t         sectofwall = wallsect[wallnum];
 
     if (pr_nullrender >= 3) return;
 

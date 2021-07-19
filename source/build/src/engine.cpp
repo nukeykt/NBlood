@@ -191,6 +191,9 @@ static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to dr
 int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+static uint8_t *reachablesectors;
+int16_t wallsect[MAXWALLS];
+
 void initcrc16()
 {
     int i, j, k, a;
@@ -316,6 +319,8 @@ void yax_updategrays(int32_t posze)
                 graywallbitmap[j>>3] |= pow2char[j&7];
         }
     }
+
+    calc_sector_reachability();
 }
 
 
@@ -344,6 +349,7 @@ int32_t yax_polymostclearzbuffer = 1;
 static int16_t yax_spritesortcnt[1 + 2*YAX_MAXDRAWS];
 static uint16_t yax_tsprite[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 static uint8_t yax_tsprfrombunch[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
+static int16_t yax_updown[MAXSECTORS][2];
 
 // drawn sectors
 uint8_t yax_gotsector[(MAXSECTORS+7)>>3];  // engine internal
@@ -636,6 +642,10 @@ void yax_update(int32_t resetstat)
 
 int32_t yax_getneighborsect(int32_t x, int32_t y, int32_t sectnum, int32_t cf)
 {
+    // yax_updown is initialized to -1, but inside() checks it so don't check it here
+    if (inside(x, y, yax_updown[sectnum][!cf])==1)
+        return yax_updown[sectnum][!cf];
+
     int16_t bunchnum = yax_getbunch(sectnum, cf);
 
     if (bunchnum < 0)
@@ -643,7 +653,11 @@ int32_t yax_getneighborsect(int32_t x, int32_t y, int32_t sectnum, int32_t cf)
 
     for (bssize_t SECTORS_OF_BUNCH(bunchnum, !cf, i))
         if (inside(x, y, i)==1)
+        {
+            yax_updown[i][cf] = sectnum;
+            yax_updown[sectnum][!cf] = i;
             return i;
+        }
 
     return -1;
 }
@@ -10213,6 +10227,8 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
 {
     initspritelists();
 
+    DO_FREE_AND_NULL(reachablesectors);
+
     Bmemset(show2dsector, 0, sizeof(show2dsector));
     Bmemset(show2dsprite, 0, sizeof(show2dsprite));
     Bmemset(show2dwall, 0, sizeof(show2dwall));
@@ -10244,7 +10260,89 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
     return 0;
 }
 
-static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum, int16_t numsprites, char myflags)
+
+static FORCE_INLINE size_t getreachabilitybitmapsize(void)
+{
+    return numsectors * ((numsectors + 7) >> 3);
+}
+
+static FORCE_INLINE uint8_t* getreachabilitybitmap(int const sectnum)
+{
+    Bassert(reachablesectors);
+    Bassert(numsectors);
+    return ((uint8_t*)(reachablesectors + (sectnum * tabledivide32_noinline(getreachabilitybitmapsize(), numsectors))));
+}
+
+int sectorsareconnected(int const sect1, int const sect2)
+{
+    return !!bitmap_test(getreachabilitybitmap(sect1), sect2);
+}
+
+void calc_sector_reachability(void)
+{
+    Bmemset(yax_updown, -1, sizeof(yax_updown));
+    Bmemset(wallsect, -1, sizeof(wallsect));
+
+    if (!numsectors)
+        return;
+
+    DO_FREE_AND_NULL(reachablesectors);
+    reachablesectors = (uint8_t*)Xcalloc(1, getreachabilitybitmapsize());
+    auto sectlist = (int16_t *)Balloca(sizeof(int16_t) * numsectors);
+
+    for (int sectnum=0; sectnum<numsectors; sectnum++)
+    {
+        uint8_t* sectbitmap = getreachabilitybitmap(sectnum);
+        int16_t nsecs;
+        bfirst_search_init(sectlist, sectbitmap, &nsecs, numsectors, sectnum);
+
+        for (int listidx=0; listidx<nsecs; listidx++)
+        {
+            Bassert((unsigned)listidx < numsectors);
+            Bassert((unsigned)sectlist[listidx] < numsectors);
+
+            auto sec = (usectorptr_t)&sector[sectlist[listidx]];
+
+            int const startwall = sec->wallptr;
+            int const endwall   = sec->wallptr + sec->wallnum;
+
+            for (int j=startwall; j<endwall; j++)
+                wallsect[j] = sectlist[listidx];
+
+            auto uwal = (uwallptr_t)&wall[startwall];
+            for (int j=startwall; j<endwall; j++, uwal++)
+            {
+                if (uwal->nextsector >= 0 && !bitmap_test(sectbitmap, uwal->nextsector))
+                {
+                    bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
+#if 0
+                    OSD_Printf("sector %d reaches sector %d\n", sectnum, uwal->nextsector);
+#endif
+                }
+
+                int upperSect = yax_vnextsec(j, YAX_CEILING);
+                if (upperSect >= 0 && !bitmap_test(sectbitmap, upperSect))
+                {
+                    bfirst_search_try(sectlist, sectbitmap, &nsecs, upperSect);
+#if 0
+                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, upperSect);
+#endif
+                }
+
+                int lowerSect = yax_vnextsec(j, YAX_FLOOR);
+                if (lowerSect >= 0 && !bitmap_test(sectbitmap, lowerSect))
+                {
+                    bfirst_search_try(sectlist, sectbitmap, &nsecs, lowerSect);
+#if 0
+                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, lowerSect);
+#endif
+                }
+            }
+        }
+    }
+}
+
+static int32_t engineFinishLoadBoard(const vec3_t* dapos, int16_t* dacursectnum, int16_t numsprites, char myflags)
 {
     int32_t i, realnumsprites=numsprites, numremoved;
 
@@ -10321,6 +10419,10 @@ static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum,
     guniqhudid = 0;
 
     Bmemset(tilecols, 0, sizeof(tilecols));
+
+    calc_sector_reachability();
+
+
     return numremoved;
 }
 
@@ -11874,6 +11976,14 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, in
     if ((unsigned)sect1 >= MAXSECTORS || (unsigned)sect2 >= MAXSECTORS)
         return 0;
 
+    if (!sectorsareconnected(sect1, sect2))
+    {
+#ifndef NDEBUG
+        OSD_Printf("cansee: sector %d can't reach sector %d\n", sect1, sect2);
+#endif
+        return 0;
+    }
+
     Bmemset(&pendingvec, 0, sizeof(vec3_t));  // compiler-happy
 #endif
     Bmemset(sectbitmap, 0, sizeof(sectbitmap));
@@ -12372,6 +12482,9 @@ int32_t getsectordist(vec2_t const in, int const sectnum, vec2_t * const out /*=
 
 int findwallbetweensectors(int sect1, int sect2)
 {
+    if (!sectorsareconnected(sect1, sect2))
+        return -1;
+
     if (sector[sect1].wallnum > sector[sect2].wallnum)
         swaplong(&sect1, &sect2);
 
@@ -13302,9 +13415,11 @@ int32_t sectorofwall(int16_t wallNum)
     if (EDUKE32_PREDICT_FALSE((unsigned)wallNum >= (unsigned)numwalls))
         return -1;
 
+#if !defined NEW_MAP_FORMAT
+    return wallsect[wallNum];
+#endif
     native_t const w = wall[wallNum].nextwall;
-
-    return ((unsigned)w < MAXWALLS) ? wall[w].nextsector : sectorofwall_internal(wallNum);
+    return ((unsigned)w < (unsigned)numwalls) ? wall[w].nextsector : sectorofwall_internal(wallNum);
 }
 
 int32_t sectorofwall_noquick(int16_t wallNum)

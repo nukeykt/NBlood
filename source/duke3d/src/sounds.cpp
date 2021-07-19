@@ -687,8 +687,8 @@ sound_further_processing:
         sndist = 0;
 
 #ifndef EDUKE32_STANDALONE
-    if (!FURY && sectNum > -1 && sndist && PN(spriteNum) != MUSICANDSFX
-        && !cansee(cam->x, cam->y, cam->z - (24 << 8), sectNum, SX(spriteNum), SY(spriteNum), SZ(spriteNum) - (24 << 8), SECT(spriteNum)))
+    if (!FURY && sectNum > -1 && sndist && PN(spriteNum) != MUSICANDSFX && (!sectorsareconnected(sectNum, SECT(spriteNum)) ||
+        !cansee(cam->x, cam->y, cam->z - (24 << 8), sectNum, SX(spriteNum), SY(spriteNum), SZ(spriteNum) - (24 << 8), SECT(spriteNum))))
         sndist += sndist>>5;
 #else
     UNREFERENCED_PARAMETER(sectNum);

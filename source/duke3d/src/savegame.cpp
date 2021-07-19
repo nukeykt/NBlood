@@ -2560,6 +2560,8 @@ static void postloadplayer(int32_t savegamep)
         practor[i].lightId = -1;
     }
 #endif
+
+    calc_sector_reachability();
 }
 
 ////////// END GENERIC SAVING/LOADING SYSTEM //////////

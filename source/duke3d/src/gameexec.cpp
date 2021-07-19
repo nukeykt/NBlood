@@ -6946,6 +6946,7 @@ void G_RestoreMapState(void)
 #ifdef YAX_ENABLE
         sv_postyaxload();
 #endif
+        calc_sector_reachability();
         G_ResetInterpolations();
 
         Net_ResetPrediction();
