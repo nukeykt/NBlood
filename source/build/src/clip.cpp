@@ -1786,16 +1786,25 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                             vect->x = (vect->x) + dx; vect->y = (vect->y) + dy;
                             bad2--; if (bad2 == 0) break;
                         } while (clipinsidebox(vect->vec2, i, walldist-4) != 0);
-                        int16_t const os = *sectnum;
-                        clipupdatesector(vect->vec2, sectnum, walldist);
                         bad = -1;
-                        if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0)
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32)
                         {
-                            vect->vec2 = ov;
-                            *sectnum = os;
-                            return -1;
+                            int16_t const os = *sectnum;
+                            clipupdatesector(vect->vec2, sectnum, walldist);
+                            if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0)
+                            {
+                                vect->vec2 = ov;
+                                *sectnum   = os;
+                                return -1;
+                            }
+                            if (--k <= 0) return bad;
                         }
-                        if (--k <= 0) return bad;
+                        else
+                        {
+                            if (--k <= 0) return bad;
+                            updatesector(vect->x, vect->y, sectnum);
+                        }
                     }
                     else if (bitmap_test(clipsectormap, wal->nextsector) == 0)
                         addclipsect(wal->nextsector);
