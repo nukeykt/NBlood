@@ -1683,7 +1683,27 @@ static FORCE_INLINE void renderEnableFog(void)
 #endif
 }
 
-static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
+/* Different "is inside" predicates.
+ * NOTE: The redundant bound checks are expected to be optimized away in the
+ * inlined code. */
+
+static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum)
+{
+    return ((unsigned)sectnum < MAXSECTORS && inside(x, y, sectnum) == 1);
+}
+
+static FORCE_INLINE CONSTEXPR int inside_exclude_p(int32_t const x, int32_t const y, int const sectnum, const uint8_t *excludesectbitmap)
+{
+    return ((unsigned)sectnum < MAXSECTORS && !bitmap_test(excludesectbitmap, sectnum) && inside_p(x, y, sectnum));
+}
+
+/* NOTE: no bound check for inside_z_p */
+static FORCE_INLINE int inside_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum)
+{
+    int32_t cz, fz;
+    getzsofslope(sectnum, x, y, &cz, &fz);
+    return (z >= cz && z <= fz && inside_p(x, y, sectnum));
+}
 
 #define SET_AND_RETURN(Lval, Rval) \
     do                             \
