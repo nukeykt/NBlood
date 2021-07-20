@@ -959,7 +959,7 @@ InitRipper2Hang(short SpriteNum)
         if (hitinfo.sect < 0)
             continue;
 
-        dist = Distance(sp->x, sp->y, hitinfo.pos.x, hitinfo.pos.y);
+        dist = Distance(sp->x, sp->y, hitinfo.x, hitinfo.y);
 
         if (hitinfo.wall < 0 || dist < 2000 || dist > 7000)
         {

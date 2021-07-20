@@ -200,7 +200,7 @@ int32_t A_GetHitscanRange(int spriteNum)
             sintable[SA(spriteNum) & 2047], 0, &hitData, CLIPMASK1);
     SZ(spriteNum) += zOffset;
 
-    return (FindDistance2D(hitData.pos.x - SX(spriteNum), hitData.pos.y - SY(spriteNum)));
+    return (FindDistance2D(hitData.x - SX(spriteNum), hitData.y - SY(spriteNum)));
 }
 
 static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projecTile)
@@ -412,7 +412,7 @@ static void Proj_MaybeSpawn(int spriteNum, int projecTile, const hitdata_t *hitD
 // <extra>: damage that this shotspark does
 static int Proj_InsertShotspark(const hitdata_t *hitData, int spriteNum, int projecTile, int sparkSize, int sparkAng, int damage)
 {
-    int returnSprite = A_InsertSprite(hitData->sect, hitData->pos.x, hitData->pos.y, hitData->pos.z, SHOTSPARK1, -15,
+    int returnSprite = A_InsertSprite(hitData->sect, hitData->x, hitData->y, hitData->z, SHOTSPARK1, -15,
                                      sparkSize, sparkSize, sparkAng, 0, 0, spriteNum, 4);
 
     sprite[returnSprite].extra = damage;
@@ -577,7 +577,7 @@ static inline void HandleHitWall(hitdata_t *hitData)
 {
     auto const hitWall = (uwallptr_t)&wall[hitData->wall];
 
-    if ((hitWall->cstat & 2) && redwallp(hitWall) && (hitData->pos.z >= sector[hitWall->nextsector].floorz))
+    if ((hitWall->cstat & 2) && redwallp(hitWall) && (hitData->z >= sector[hitWall->nextsector].floorz))
         hitData->wall = hitWall->nextwall;
 }
 
@@ -734,7 +734,7 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
 
 SKIPBULLETHOLE:
         HandleHitWall(hitData);
-        A_DamageWall(spriteNum, hitData->wall, hitData->pos, wallDamage);
+        A_DamageWall(spriteNum, hitData->wall, hitData->xyz, wallDamage);
     }
 
     return 0;
@@ -757,7 +757,7 @@ static int A_PostFireHitscan(const hitdata_t *hitData, int const spriteNum, int 
     }
     else if (hitData->wall >= 0)
     {
-        A_DamageWall(returnSprite, hitData->wall, hitData->pos, wallDamage);
+        A_DamageWall(returnSprite, hitData->wall, hitData->xyz, wallDamage);
         Proj_MaybeSpawn(returnSprite, spawnTile, hitData);
     }
     else
@@ -782,7 +782,7 @@ static int Proj_CheckBlood(vec3_t const *const srcVect, hitdata_t const *const h
 
     auto const hitWall = (uwallptr_t)&wall[hitData->wall];
 
-    if ((FindDistance2D(srcVect->x - hitData->pos.x, srcVect->y - hitData->pos.y) < bloodRange)
+    if ((FindDistance2D(srcVect->x - hitData->x, srcVect->y - hitData->y) < bloodRange)
         && (hitWall->overpicnum != BIGFORCE && (hitWall->cstat & 16) == 0)
         && (sector[hitData->sect].lotag == 0)
         && (hitWall->nextsector < 0 || (sector[hitWall->nextsector].lotag == 0 && sector[hitData->sect].lotag == 0
@@ -798,7 +798,7 @@ static void Proj_HandleKnee(hitdata_t *const hitData, int const spriteNum, int c
 {
     auto const pPlayer = playerNum >= 0 ? g_player[playerNum].ps : NULL;
 
-    int kneeSprite = A_InsertSprite(hitData->sect,hitData->pos.x,hitData->pos.y,hitData->pos.z,
+    int kneeSprite = A_InsertSprite(hitData->sect,hitData->x,hitData->y,hitData->z,
                                     inserttile,-15,0,0,shootAng,32,0,spriteNum,4);
 
     if (proj != NULL)
@@ -839,7 +839,7 @@ static void Proj_HandleKnee(hitdata_t *const hitData, int const spriteNum, int c
 
         if (wall[hitData->wall].picnum != ACCESSSWITCH && wall[hitData->wall].picnum != ACCESSSWITCH2)
         {
-            A_DamageWall(kneeSprite, hitData->wall, hitData->pos, projecTile);
+            A_DamageWall(kneeSprite, hitData->wall, hitData->xyz, projecTile);
             if (playerNum >= 0)
                 P_ActivateSwitch(playerNum, hitData->wall,0);
         }
@@ -892,16 +892,16 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
         if (Proj_DoHitscan(spriteNum, (pProj->cstat >= 0) ? pProj->cstat : 256 + 1, startPos, zvel, shootAng, &hitData))
             return -1;
 
-        if (pProj->range > 0 && klabs(startPos->x - hitData.pos.x) + klabs(startPos->y - hitData.pos.y) > pProj->range)
+        if (pProj->range > 0 && klabs(startPos->x - hitData.x) + klabs(startPos->y - hitData.y) > pProj->range)
             return -1;
 
         if (pProj->trail >= 0)
-            A_HitscanProjTrail(startPos, &hitData.pos, shootAng, projecTile, pSprite->sectnum);
+            A_HitscanProjTrail(startPos, &hitData.xyz, shootAng, projecTile, pSprite->sectnum);
 
         if (pProj->workslike & PROJECTILE_WATERBUBBLES)
         {
             if ((krand() & 15) == 0 && sector[hitData.sect].lotag == ST_2_UNDERWATER)
-                Proj_DoWaterTracers(hitData.pos, startPos, 8 - (ud.multimode >> 1), pSprite->sectnum);
+                Proj_DoWaterTracers(hitData.xyz, startPos, 8 - (ud.multimode >> 1), pSprite->sectnum);
         }
 
         if (playerNum >= 0)
@@ -919,7 +919,7 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
         }
 
         if ((krand() & 255) < 4 && pProj->isound >= 0)
-            S_PlaySound3D(pProj->isound, otherSprite, &hitData.pos);
+            S_PlaySound3D(pProj->isound, otherSprite, &hitData.xyz);
 
         return -1;
 
@@ -1009,7 +1009,7 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
         if (pProj->range == 0)
             pProj->range = 1024;
 
-        if (pProj->range > 0 && klabs(startPos->x - hitData.pos.x) + klabs(startPos->y - hitData.pos.y) > pProj->range)
+        if (pProj->range > 0 && klabs(startPos->x - hitData.x) + klabs(startPos->y - hitData.y) > pProj->range)
             return -1;
 
         Proj_HandleKnee(&hitData, spriteNum, playerNum, projecTile, shootAng,
@@ -1054,7 +1054,7 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
 
                     sprite[otherSprite].ang = getangle(hitWall->x - wall[hitWall->point2].x,
                         hitWall->y - wall[hitWall->point2].y) + 512;
-                    Bmemcpy(&sprite[otherSprite], &hitData.pos, sizeof(vec3_t));
+                    sprite[otherSprite].xyz = hitData.xyz;
 
                     Proj_DoRandDecalSize(otherSprite, projecTile);
 
@@ -1142,10 +1142,10 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                         int const spawnedSprite = A_Spawn(spriteNum, projecTile);
                         sprite[spawnedSprite].ang
                         = (getangle(hitwal->x - wall[hitwal->point2].x, hitwal->y - wall[hitwal->point2].y) + 1536) & 2047;
-                        sprite[spawnedSprite].pos = hitData.pos;
+                        sprite[spawnedSprite].xyz = hitData.xyz;
                         sprite[spawnedSprite].cstat |= (krand() & 4);
                         A_SetSprite(spawnedSprite, CLIPMASK0);
-                        setsprite(spawnedSprite, &sprite[spawnedSprite].pos);
+                        setsprite(spawnedSprite, &sprite[spawnedSprite].xyz);
                         if (PN(spriteNum) == OOZFILTER || PN(spriteNum) == NEWBEAST)
                             sprite[spawnedSprite].pal = 6;
                     }
@@ -1157,7 +1157,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             if (hitData.sect < 0)
                 break;
 
-            if (klabs(startPos.x - hitData.pos.x) + klabs(startPos.y - hitData.pos.y) < 1024)
+            if (klabs(startPos.x - hitData.x) + klabs(startPos.y - hitData.y) < 1024)
                 Proj_HandleKnee(&hitData, spriteNum, playerNum, projecTile, shootAng, NULL, KNEE, 7, SMALLSMOKE, KICK_HIT);
             break;
 
@@ -1178,7 +1178,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                 return -1;
 
             if ((krand() & 15) == 0 && sector[hitData.sect].lotag == ST_2_UNDERWATER)
-                Proj_DoWaterTracers(hitData.pos, &startPos, 8 - (ud.multimode >> 1), pSprite->sectnum);
+                Proj_DoWaterTracers(hitData.xyz, &startPos, 8 - (ud.multimode >> 1), pSprite->sectnum);
 
             int spawnedSprite;
 
@@ -1196,7 +1196,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             }
 
             if ((krand() & 255) < 4)
-                S_PlaySound3D(PISTOL_RICOCHET, spawnedSprite, &hitData.pos);
+                S_PlaySound3D(PISTOL_RICOCHET, spawnedSprite, &hitData.xyz);
 
             return -1;
         }
@@ -1211,7 +1211,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             if (Proj_DoHitscan(spriteNum, 256 + 1, &startPos, Zvel, shootAng, &hitData))
                 return -1;
 
-            int const otherSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, GROWSPARK, -16, 28, 28,
+            int const otherSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z, GROWSPARK, -16, 28, 28,
                                                    shootAng, 0, 0, spriteNum, 1);
 
             sprite[otherSprite].pal = 2;
@@ -1226,7 +1226,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             else if (hitData.sprite >= 0)
                 A_DamageObject(hitData.sprite, otherSprite);
             else if (hitData.wall >= 0 && wall[hitData.wall].picnum != ACCESSSWITCH && wall[hitData.wall].picnum != ACCESSSWITCH2)
-                A_DamageWall(otherSprite, hitData.wall, hitData.pos, projecTile);
+                A_DamageWall(otherSprite, hitData.wall, hitData.xyz, projecTile);
         }
         break;
 
@@ -1279,8 +1279,8 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             {
                 int const otherPlayer = A_FindPlayer(pSprite, NULL);
                 shootAng           += 16 - (krand() & 31);
-                hitData.pos.x         = safeldist(g_player[otherPlayer].ps->i, pSprite);
-                Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.pos.x);
+                hitData.x         = safeldist(g_player[otherPlayer].ps->i, pSprite);
+                Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.x);
             }
 
             Zvel = A_GetShootZvel(Zvel);
@@ -1466,8 +1466,8 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
 
             if (hitData.wall >= 0 && hitData.sect >= 0)
             {
-                uint32_t xdiff_sq = (hitData.pos.x - startPos.x) * (hitData.pos.x - startPos.x);
-                uint32_t ydiff_sq = (hitData.pos.y - startPos.y) * (hitData.pos.y - startPos.y);
+                uint32_t xdiff_sq = (hitData.x - startPos.x) * (hitData.x - startPos.x);
+                uint32_t ydiff_sq = (hitData.y - startPos.y) * (hitData.y - startPos.y);
                 if (xdiff_sq + ydiff_sq < (290 * 290))
                 {
                     // ST_2_UNDERWATER
@@ -1486,7 +1486,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                 int const tripBombMode = (playerNum < 0) ? 0 :
                                                            Gv_GetVarByLabel("TRIPBOMB_CONTROL", TRIPBOMB_TRIPWIRE,
                                                                             g_player[playerNum].ps->i, playerNum);
-                int const spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, TRIPBOMB, -16, 4, 5,
+                int const spawnedSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z, TRIPBOMB, -16, 4, 5,
                                                          shootAng, 0, 0, spriteNum, 6);
                 if (tripBombMode & TRIPBOMB_TIMER)
                 {
@@ -1641,7 +1641,7 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                 break;
 
             int j = A_Spawn(spriteNum, projecTile);
-            sprite[j].pos = startPos;
+            sprite[j].xyz = startPos;
             sprite[j].ang = shootAng;
             sprite[j].xvel = 500;
             sprite[j].zvel = 0;
@@ -1683,7 +1683,7 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
     else
     {
         shootAng = pSprite->ang;
-        startPos = pSprite->pos;
+        startPos = pSprite->xyz;
         startPos.z -= (((pSprite->yrepeat * tilesiz[pSprite->picnum].y)<<1) - ZOFFSET6);
 
         if (pSprite->picnum != ROTATEGUN)
@@ -4333,10 +4333,10 @@ static void P_ProcessWeapon(int playerNum)
                             int spriteNum = headspritesect[hitData.sect];
                             while (spriteNum >= 0)
                             {
-                                xdiff_sq = (sprite[spriteNum].x - hitData.pos.x) * (sprite[spriteNum].x - hitData.pos.x);
-                                ydiff_sq = (sprite[spriteNum].y - hitData.pos.y) * (sprite[spriteNum].y - hitData.pos.y);
+                                xdiff_sq = (sprite[spriteNum].x - hitData.x) * (sprite[spriteNum].x - hitData.x);
+                                ydiff_sq = (sprite[spriteNum].y - hitData.y) * (sprite[spriteNum].y - hitData.y);
 
-                                if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.pos.z) < ZOFFSET4
+                                if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.z) < ZOFFSET4
                                         && xdiff_sq + ydiff_sq < (290 * 290))
                                     break;
                                 spriteNum = nextspritesect[spriteNum];
@@ -4347,8 +4347,8 @@ static void P_ProcessWeapon(int playerNum)
                                 if ((wall[hitData.wall].nextsector >= 0 && sector[wall[hitData.wall].nextsector].lotag <= 2) ||
                                     (wall[hitData.wall].nextsector == -1 && sector[hitData.sect].lotag <= 2))
                                 {
-                                    xdiff_sq = (hitData.pos.x - pPlayer->pos.x) * (hitData.pos.x - pPlayer->pos.x);
-                                    ydiff_sq = (hitData.pos.y - pPlayer->pos.y) * (hitData.pos.y - pPlayer->pos.y);
+                                    xdiff_sq = (hitData.x - pPlayer->pos.x) * (hitData.x - pPlayer->pos.x);
+                                    ydiff_sq = (hitData.y - pPlayer->pos.y) * (hitData.y - pPlayer->pos.y);
 
                                     if (xdiff_sq + ydiff_sq < (290 * 290))
                                     {
@@ -4743,7 +4743,7 @@ static int P_DoFist(DukePlayer_t *pPlayer)
 void P_UpdatePosWhenViewingCam(DukePlayer_t *pPlayer)
 {
     int const newOwner      = pPlayer->newowner;
-    pPlayer->pos            = sprite[newOwner].pos;
+    pPlayer->pos            = sprite[newOwner].xyz;
     pPlayer->q16ang         = fix16_from_int(SA(newOwner));
     pPlayer->vel.x          = 0;
     pPlayer->vel.y          = 0;
@@ -5217,11 +5217,11 @@ void P_ProcessInput(int playerNum)
         pPlayer->bobcounter += sprite[pPlayer->i].xvel>>1;
 
     if (ud.noclip == 0 && ((uint16_t)pPlayer->cursectnum >= MAXSECTORS || sector[pPlayer->cursectnum].floorpicnum == MIRROR))
-        pPlayer->pos.vec2 = pPlayer->opos.vec2;
+        pPlayer->pos.xy = pPlayer->opos.xy;
     else
-        pPlayer->opos.vec2 = pPlayer->pos.vec2;
+        pPlayer->opos.xy = pPlayer->pos.xy;
 
-    pPlayer->bobpos  = pPlayer->pos.vec2;
+    pPlayer->bobpos  = pPlayer->pos.xy;
     pPlayer->opos.z  = pPlayer->pos.z;
     pPlayer->opyoff  = pPlayer->pyoff;
 
@@ -5708,7 +5708,7 @@ HORIZONLY:;
     if (pPlayer->cursectnum >= 0)
     {
         pPlayer->pos.z += pPlayer->spritezoffset;
-        sprite[pPlayer->i].pos = pPlayer->pos;
+        sprite[pPlayer->i].xyz = pPlayer->pos;
         pPlayer->pos.z -= pPlayer->spritezoffset;
 
         changespritesect(pPlayer->i, pPlayer->cursectnum);

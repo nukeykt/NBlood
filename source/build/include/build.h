@@ -702,7 +702,7 @@ static inline tspriteptr_t renderMakeTSpriteFromSprite(tspriteptr_t const tspr, 
 {
     auto const spr = (uspriteptr_t)&sprite[spritenum];
 
-    tspr->pos = spr->pos;
+    tspr->xyz = spr->xyz;
     tspr->cstat = spr->cstat;
     tspr->picnum = spr->picnum;
     tspr->shade = spr->shade;
@@ -1156,7 +1156,7 @@ OTHER VARIABLES:
 ***************************************************************************/
 
 typedef struct {
-    vec3_t pos;
+    union { struct { int32_t x, y, z; }; vec3_t xyz; vec2_t xy; };
     int16_t sprite, wall, sect;
 } hitdata_t;
 

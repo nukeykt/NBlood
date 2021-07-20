@@ -1483,12 +1483,11 @@ void editinput(void)
 
             if (hit.sect >= 0)
             {
-                da.x = hit.pos.x;
-                da.y = hit.pos.y;
+                da = hit.xy;
                 if (gridlock && grid > 0)
                 {
                     if (AIMING_AT_WALL || AIMING_AT_MASKWALL)
-                        hit.pos.z &= 0xfffffc00;
+                        hit.z &= 0xfffffc00;
                     else
                         locktogrid(&da.x, &da.y);
                 }
@@ -1504,7 +1503,7 @@ void editinput(void)
                     handle_sprite_in_clipboard(i);
 
                     spriteoncfz(i, &cz, &fz);
-                    sprite[i].z = clamp2(hit.pos.z, cz, fz);
+                    sprite[i].z = clamp2(hit.z, cz, fz);
 
                     if (AIMING_AT_WALL || AIMING_AT_MASKWALL)
                     {
@@ -2286,9 +2285,7 @@ void DoSpriteOrnament(int32_t i)
     if (hit.sect == -1)
         return;
 
-    sprite[i].x = hit.pos.x;
-    sprite[i].y = hit.pos.y;
-    sprite[i].z = hit.pos.z;
+    sprite[i].xyz = hit.xyz;
     changespritesect(i, hit.sect);
 
     correct_ornamented_sprite(i, hit.wall);
@@ -2550,7 +2547,7 @@ static int32_t do_while_copyloop1(int16_t startwall, int16_t endwall,
 
 static void updatesprite1(int16_t i)
 {
-    setsprite(i, &sprite[i].pos);
+    setsprite(i, &sprite[i].xyz);
 
     if (sprite[i].sectnum>=0)
     {
@@ -3784,7 +3781,7 @@ void overheadeditor(void)
                     for (i=0; i<numsectors; i++)
                         for (SPRITES_OF_SECT(i, j))
                             if (reftag==select_sprite_tag(j))
-                                drawlinebetween(&sprite[refspritenum].pos, &sprite[j].pos, editorcolors[12], 0x33333333);
+                                drawlinebetween(&sprite[refspritenum].xyz, &sprite[j].xyz, editorcolors[12], 0x33333333);
                 }
             }
 
@@ -4482,11 +4479,11 @@ void overheadeditor(void)
                 for (i=0; i<highlightsectorcnt; i++)
                 {
                     for (WALLS_OF_SECTOR(highlightsector[i], j))
-                        rotatepoint(da, wall[j].pos, tsign&2047, &wall[j].pos);
+                        rotatepoint(da, wall[j].xy, tsign&2047, &wall[j].xy);
 
                     for (j=headspritesect[highlightsector[i]]; j != -1; j=nextspritesect[j])
                     {
-                        rotatepoint(da, sprite[j].pos.vec2, tsign&2047, &sprite[j].pos.vec2);
+                        rotatepoint(da, sprite[j].xy, tsign&2047, &sprite[j].xy);
                         sprite[j].ang = (sprite[j].ang+tsign)&2047;
                     }
                 }
@@ -5064,7 +5061,7 @@ rotate_hlsect_out:
                     for (WALLS_OF_SECTOR(dstsect, k))
                     {
                         vec2_t pint;
-                        if (lineintersect2v(&wall[i].pos, &wall[j].pos, &wall[k].pos, &POINT2(k).pos, &pint))
+                        if (lineintersect2v(&wall[i].xy, &wall[j].xy, &wall[k].xy, &POINT2(k).xy, &pint))
                         {
                             message("Loop lines must not intersect any destination sector's walls");
                             goto end_yax;
@@ -5934,7 +5931,7 @@ end_after_dragging:
                             int16_t osec=sprite[daspr].sectnum, nsec=osec;
                             vec3_t vec, ovec;
 
-                            Bmemcpy(&ovec, &sprite[daspr].pos, sizeof(vec3_t));
+                            Bmemcpy(&ovec, &sprite[daspr].xyz, sizeof(vec3_t));
                             vec.x = dax;
                             vec.y = day;
                             vec.z = sprite[daspr].z;
@@ -7752,10 +7749,10 @@ end_space_handling:
 
                             vec2_t pint;
 
-                            if (!lineintersect2v(&wall[j].pos, &POINT2(j).pos, &point[i], &point[i + 1], &pint))
+                            if (!lineintersect2v(&wall[j].xy, &POINT2(j).xy, &point[i], &point[i + 1], &pint))
                                 continue;
 
-                            if (vec2eq(&pint, &wall[j].pos) || vec2eq(&pint, &POINT2(j).pos))
+                            if (vec2eq(&pint, &wall[j].xy) || vec2eq(&pint, &POINT2(j).xy))
                                 continue;
 
                             touchedwall[j>>3] |= pow2char[j&7];

@@ -933,7 +933,7 @@ int A_PlaySound(int soundNum, int spriteNum)
         return -1;
 
     return (unsigned)spriteNum >= MAXSPRITES ? S_PlaySound(soundNum) :
-        S_PlaySound3D(soundNum, spriteNum, &sprite[spriteNum].pos);
+        S_PlaySound3D(soundNum, spriteNum, &sprite[spriteNum].xyz);
 }
 
 void S_StopEnvSound(int sndNum, int sprNum)
@@ -1022,7 +1022,7 @@ void S_Update(void)
     }
     else
     {
-        c = &sprite[ud.camerasprite].pos;
+        c = &sprite[ud.camerasprite].xyz;
         cs = sprite[ud.camerasprite].sectnum;
         ca = sprite[ud.camerasprite].ang;
     }

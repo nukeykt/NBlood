@@ -640,8 +640,8 @@ void P_MoveToRandomSpawnPoint(int playerNum)
                 {
                     for (int k = 0; k < g_playerSpawnCnt; k++)
                     {
-                        uint32_t const dist = FindDistance2D(op.pos.x - g_playerSpawnPoints[k].pos.x,
-                                                             op.pos.y - g_playerSpawnPoints[k].pos.y);
+                        uint32_t const dist = FindDistance2D(op.pos.x - g_playerSpawnPoints[k].x,
+                                                             op.pos.y - g_playerSpawnPoints[k].y);
                         if (dist < pdist)
                             i = k, pdist = dist;
                     }
@@ -651,9 +651,9 @@ void P_MoveToRandomSpawnPoint(int playerNum)
         }
     }
 
-    p.opos = p.pos = g_playerSpawnPoints[i].pos;
+    p.opos = p.pos = g_playerSpawnPoints[i].xyz;
 
-    p.bobpos     = p.pos.vec2;
+    p.bobpos     = p.pos.xy;
     p.cursectnum = g_playerSpawnPoints[i].sect;
     p.q16ang     = fix16_from_int(g_playerSpawnPoints[i].ang);
 
@@ -706,9 +706,9 @@ void P_ResetMultiPlayer(int playerNum)
     P_MoveToRandomSpawnPoint(playerNum);
 
     a.bpos = p.opos = p.pos;
-    p.bobpos = p.pos.vec2;
+    p.bobpos = p.pos.xy;
 
-    s.pos = p.pos;
+    s.xyz = p.pos;
 
     setsprite(p.i, &tmpvect);
 
@@ -1504,7 +1504,7 @@ static void G_CollectSpawnPoints(int gameMode)
         auto &s     = sprite[i];
         auto &spawn = g_playerSpawnPoints[g_playerSpawnCnt];
 
-        spawn.pos  = s.pos;
+        spawn.xyz  = s.xyz;
         spawn.ang  = s.ang;
         spawn.sect = s.sectnum;
 
@@ -1578,8 +1578,8 @@ static void G_CollectSpawnPoints(int gameMode)
         p.frag_ps = pindex;
 
         actor[i].owner = p.i = i;
-        actor[i].bpos = p.opos = p.pos = s.pos;
-        p.bobpos = s.pos.vec2;
+        actor[i].bpos = p.opos = p.pos = s.xyz;
+        p.bobpos = s.xy;
 
         p.oq16ang = p.q16ang = fix16_from_int(s.ang);
 

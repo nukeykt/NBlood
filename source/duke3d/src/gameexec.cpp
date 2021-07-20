@@ -316,7 +316,7 @@ int A_GetFurthestAngle(int const spriteNum, int const angDiv)
         origin.z -= ZOFFSET3;
         hitscan(&origin, pSprite->sectnum, sintable[(j + 512) & 2047], sintable[j & 2047], 0, &hit, CLIPMASK1);
 
-        int const hitDist = klabs(hit.pos.x-pSprite->x) + klabs(hit.pos.y-pSprite->y);
+        int const hitDist = klabs(hit.x-pSprite->x) + klabs(hit.y-pSprite->y);
 
         if (hitDist > greatestDist)
         {
@@ -348,15 +348,14 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
         if (hit.sect < 0)
             continue;
 
-        int const d  = FindDistance2D(hit.pos.x - ts->x, hit.pos.y - ts->y);
-        int const da = FindDistance2D(hit.pos.x - pnSprite->x, hit.pos.y - pnSprite->y);
+        int const d  = FindDistance2D(hit.x - ts->x, hit.y - ts->y);
+        int const da = FindDistance2D(hit.x - pnSprite->x, hit.y - pnSprite->y);
 
         if (d < da)
         {
-            if (cansee(hit.pos.x, hit.pos.y, hit.pos.z, hit.sect, pnSprite->x, pnSprite->y, pnSprite->z - ZOFFSET2, pnSprite->sectnum))
+            if (cansee(hit.x, hit.y, hit.z, hit.sect, pnSprite->x, pnSprite->y, pnSprite->z - ZOFFSET2, pnSprite->sectnum))
             {
-                vect->x = hit.pos.x;
-                vect->y = hit.pos.y;
+                *vect = hit.xy;
                 return hit.sect;
             }
         }
@@ -423,7 +422,7 @@ void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const fl
     pSprite->cstat = 0;
     pSprite->z -= ACTOR_FLOOR_OFFSET;
 
-    getzrange(&pSprite->pos, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
+    getzrange(&pSprite->xyz, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
 
     pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
@@ -443,7 +442,7 @@ void A_GetZLimits(int const spriteNum)
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
 
-    if (pSprite->xvel || pSprite->zvel || pActor->bpos != pSprite->pos)
+    if (pSprite->xvel || pSprite->zvel || pActor->bpos != pSprite->xyz)
     {
         pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
@@ -516,7 +515,7 @@ void A_Fall(int const spriteNum)
 
 #ifdef YAX_ENABLE
     if (fbunch >= 0)
-        setspritez(spriteNum, &pSprite->pos);
+        setspritez(spriteNum, &pSprite->xyz);
     else
 #endif
         if (pSprite->z >= actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET)
@@ -643,7 +642,7 @@ static inline void VM_FacePlayer(int const shift)
 
 static inline int32_t VM_GetCeilZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->pos.vec2;
+    vec2_t const vect    = vm.pSprite->xy;
     int const    sectnum = vm.pSprite->sectnum;
 
     return yax_getceilzofslope(sectnum, vect);
@@ -652,7 +651,7 @@ static inline int32_t VM_GetCeilZOfSlope(void)
 #ifndef EDUKE32_STANDALONE
 static inline int32_t VM_GetFlorZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->pos.vec2;
+    vec2_t const vect    = vm.pSprite->xy;
     int const    sectnum = vm.pSprite->sectnum;
 
     return yax_getflorzofslope(sectnum, vect);
@@ -676,7 +675,7 @@ GAMEEXEC_STATIC void VM_Move(void)
     if (AC_MOVE_ID(vm.pData) == 0 || movflags == 0)
     {
         if (deadflag || (vm.pActor->bpos.x != vm.pSprite->x) || (vm.pActor->bpos.y != vm.pSprite->y))
-            setsprite(vm.spriteNum, &vm.pSprite->pos);
+            setsprite(vm.spriteNum, &vm.pSprite->xyz);
 
         // this fixes the WW2GI tank not facing the player, as it uses move 0
         if (WW2GI && movflags & face_player)
@@ -1026,7 +1025,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 
 #ifdef YAX_ENABLE
         if (yax_getbunch(pSprite->sectnum, YAX_FLOOR) >= 0 && (sector[pSprite->sectnum].floorstat & 512) == 0)
-            setspritez(spriteNum, &pSprite->pos);
+            setspritez(spriteNum, &pSprite->xyz);
         else
 #endif
             if (newZ > actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET)
@@ -1061,7 +1060,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         {
             int16_t newsect = pSprite->sectnum;
 
-            pushmove(&pSprite->pos, &newsect, 128, 4<<8, 4<<8, CLIPMASK0);
+            pushmove(&pSprite->xyz, &newsect, 128, 4<<8, 4<<8, CLIPMASK0);
             if ((unsigned)newsect < MAXSECTORS)
                 changespritesect(spriteNum, newsect);
 
@@ -1072,7 +1071,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         }
     }
 
-    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->pos.vec2))
+    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->xy))
     {
         pSprite->z = newZ + A_GetWaterZOffset(spriteNum);
         return;
@@ -3170,7 +3169,7 @@ badindex:
                 {
                     // else, they did see it.
                     // save where we were looking...
-                    vm.pActor->lastv = pSprite->pos.vec2;
+                    vm.pActor->lastv = pSprite->xy;
                 }
 
                 if (tw && (vm.pSprite->statnum == STAT_ACTOR || vm.pSprite->statnum == STAT_STANDABLE))
@@ -4701,9 +4700,9 @@ badindex:
                     Gv_SetVar(sectReturn, hit.sect);
                     Gv_SetVar(wallReturn, hit.wall);
                     Gv_SetVar(spriteReturn, hit.sprite);
-                    Gv_SetVar(xReturn, hit.pos.x);
-                    Gv_SetVar(yReturn, hit.pos.y);
-                    Gv_SetVar(zReturn, hit.pos.z);
+                    Gv_SetVar(xReturn, hit.x);
+                    Gv_SetVar(yReturn, hit.y);
+                    Gv_SetVar(zReturn, hit.z);
                     dispatch();
                 }
 

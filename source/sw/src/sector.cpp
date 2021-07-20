@@ -2378,7 +2378,7 @@ SWBOOL NearThings(PLAYERp pp)
         if (hitinfo.sect < 0)
             return FALSE;
 
-        if (Distance(hitinfo.pos.x, hitinfo.pos.y, pp->posx, pp->posy) > 1500)
+        if (Distance(hitinfo.x, hitinfo.y, pp->posx, pp->posy) > 1500)
             return FALSE;
 
         // hit a sprite?

@@ -175,13 +175,13 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
             MONO_PRINT(ds);
 
             // back it up a bit to get a correct warp location
-            hitinfo->pos.x -= xvect>>9;
-            hitinfo->pos.y -= yvect>>9;
+            hitinfo->x -= xvect>>9;
+            hitinfo->y -= yvect>>9;
 
             // warp to new x,y,z, sectnum
-            if (Warp(&hitinfo->pos.x, &hitinfo->pos.y, &hitinfo->pos.z, &hitinfo->sect))
+            if (Warp(&hitinfo->x, &hitinfo->y, &hitinfo->z, &hitinfo->sect))
             {
-                vec3_t pos = hitinfo->pos;
+                vec3_t pos = hitinfo->xyz;
 
                 dest_sect = hitinfo->sect;
 
@@ -199,7 +199,7 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
             }
             else
             {
-                //DSPRINTF(ds,"hitinfo->pos.x %d, hitinfo->pos.y %d, hitinfo->pos.z %d",hitinfo->pos.x, hitinfo->pos.y, hitinfo->pos.z);
+                //DSPRINTF(ds,"hitinfo->x %d, hitinfo->y %d, hitinfo->z %d",hitinfo->x, hitinfo->y, hitinfo->z);
                 MONO_PRINT(ds);
                 ASSERT(TRUE == FALSE);
             }
@@ -214,9 +214,9 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
             if (TEST(wall[sector[hitinfo->sect].wallptr].cstat, CSTAT_WALL_WARP_HITSCAN))
             {
                 // hit the floor of a sector that is a warping sector
-                if (Warp(&hitinfo->pos.x, &hitinfo->pos.y, &hitinfo->pos.z, &hitinfo->sect))
+                if (Warp(&hitinfo->x, &hitinfo->y, &hitinfo->z, &hitinfo->sect))
                 {
-                    vec3_t pos = hitinfo->pos;
+                    vec3_t pos = hitinfo->xyz;
                     hitscan(&pos, hitinfo->sect, xvect, yvect, zvect,
                             hitinfo, clipmask);
 
@@ -225,9 +225,9 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
             }
             else
             {
-                if (WarpPlane(&hitinfo->pos.x, &hitinfo->pos.y, &hitinfo->pos.z, &hitinfo->sect))
+                if (WarpPlane(&hitinfo->x, &hitinfo->y, &hitinfo->z, &hitinfo->sect))
                 {
-                    vec3_t pos = hitinfo->pos;
+                    vec3_t pos = hitinfo->xyz;
                     hitscan(&pos, hitinfo->sect, xvect, yvect, zvect,
                             hitinfo, clipmask);
 
@@ -236,20 +236,20 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
             }
         }
 
-        getzsofslope(hitinfo->sect, hitinfo->pos.x, hitinfo->pos.y, &hiz, &loz);
-        if (labs(hitinfo->pos.z - loz) < Z(4))
+        getzsofslope(hitinfo->sect, hitinfo->x, hitinfo->y, &hiz, &loz);
+        if (labs(hitinfo->z - loz) < Z(4))
         {
             if (FAF_ConnectFloor(hitinfo->sect) && !TEST(sector[hitinfo->sect].floorstat, FLOOR_STAT_FAF_BLOCK_HITSCAN))
             {
-                updatesectorz(hitinfo->pos.x, hitinfo->pos.y, hitinfo->pos.z + Z(12), &newsectnum);
+                updatesectorz(hitinfo->x, hitinfo->y, hitinfo->z + Z(12), &newsectnum);
                 plax_found = TRUE;
             }
         }
-        else if (labs(hitinfo->pos.z - hiz) < Z(4))
+        else if (labs(hitinfo->z - hiz) < Z(4))
         {
             if (FAF_ConnectCeiling(hitinfo->sect) && !TEST(sector[hitinfo->sect].floorstat, CEILING_STAT_FAF_BLOCK_HITSCAN))
             {
-                updatesectorz(hitinfo->pos.x, hitinfo->pos.y, hitinfo->pos.z - Z(12), &newsectnum);
+                updatesectorz(hitinfo->x, hitinfo->y, hitinfo->z - Z(12), &newsectnum);
                 plax_found = TRUE;
             }
         }
@@ -257,7 +257,7 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
 
     if (plax_found)
     {
-        vec3_t pos = hitinfo->pos;
+        vec3_t pos = hitinfo->xyz;
         hitscan(&pos, newsectnum, xvect, yvect, zvect,
                 hitinfo, clipmask);
     }
@@ -315,20 +315,20 @@ FAFcansee(int32_t xs, int32_t ys, int32_t zs, int16_t sects,
     // make sure it hit JUST a sector before doing a check
     if (hitinfo.wall < 0 && hitinfo.sprite < 0)
     {
-        getzsofslope(hitinfo.sect, hitinfo.pos.x, hitinfo.pos.y, &hiz, &loz);
-        if (labs(hitinfo.pos.z - loz) < Z(4))
+        getzsofslope(hitinfo.sect, hitinfo.x, hitinfo.y, &hiz, &loz);
+        if (labs(hitinfo.z - loz) < Z(4))
         {
             if (FAF_ConnectFloor(hitinfo.sect))
             {
-                updatesectorz(hitinfo.pos.x, hitinfo.pos.y, hitinfo.pos.z + Z(12), &newsectnum);
+                updatesectorz(hitinfo.x, hitinfo.y, hitinfo.z + Z(12), &newsectnum);
                 plax_found = TRUE;
             }
         }
-        else if (labs(hitinfo.pos.z - hiz) < Z(4))
+        else if (labs(hitinfo.z - hiz) < Z(4))
         {
             if (FAF_ConnectCeiling(hitinfo.sect))
             {
-                updatesectorz(hitinfo.pos.x, hitinfo.pos.y, hitinfo.pos.z - Z(12), &newsectnum);
+                updatesectorz(hitinfo.x, hitinfo.y, hitinfo.z - Z(12), &newsectnum);
                 plax_found = TRUE;
             }
         }
@@ -339,7 +339,7 @@ FAFcansee(int32_t xs, int32_t ys, int32_t zs, int16_t sects,
     }
 
     if (plax_found)
-        return cansee(hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z,newsectnum,xe,ye,ze,secte);
+        return cansee(hitinfo.x,hitinfo.y,hitinfo.z,newsectnum,xe,ye,ze,secte);
 
     return FALSE;
 }

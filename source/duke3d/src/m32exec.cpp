@@ -1985,9 +1985,9 @@ badindex:
                     Gv_SetVar(hitsectvar, hit.sect);
                     Gv_SetVar(hitwallvar, hit.wall);
                     Gv_SetVar(hitspritevar, hit.sprite);
-                    Gv_SetVar(hitxvar, hit.pos.x);
-                    Gv_SetVar(hityvar, hit.pos.y);
-                    Gv_SetVar(hitzvar, hit.pos.z);
+                    Gv_SetVar(hitxvar, hit.x);
+                    Gv_SetVar(hityvar, hit.y);
+                    Gv_SetVar(hitzvar, hit.z);
                 }
                 continue;
             }

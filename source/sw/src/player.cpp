@@ -3458,10 +3458,10 @@ DoPlayerMoveTank(PLAYERp pp)
                         MOVEx(256, fix16_to_int(pp->q16ang)), MOVEy(256, fix16_to_int(pp->q16ang)), 0,
                         &hitinfo, CLIPMASK_PLAYER);
 
-                ////DSPRINTF(ds,"hitinfo.sect %d, hitinfo.wall %d, hitinfo.pos.x %d, hitinfo.pos.y %d, hitinfo.pos.z %d",hitinfo.sect, hitinfo.wall, hitinfo.pos.x, hitinfo.pos.y, hitinfo.pos.z);
+                ////DSPRINTF(ds,"hitinfo.sect %d, hitinfo.wall %d, hitinfo.x %d, hitinfo.y %d, hitinfo.z %d",hitinfo.sect, hitinfo.wall, hitinfo.x, hitinfo.y, hitinfo.z);
                 //MONO_PRINT(ds);
 
-                if (FindDistance2D(hitinfo.pos.x - hit_pos.x, hitinfo.pos.y - hit_pos.y) < 800)
+                if (FindDistance2D(hitinfo.x - hit_pos.x, hitinfo.y - hit_pos.y) < 800)
                 {
                     if (hitinfo.wall >= 0)
                         u->ret = hitinfo.wall|HIT_WALL;
@@ -4214,7 +4214,7 @@ DoPlayerWadeSuperJump(PLAYERp pp)
 
             if (hitinfo.sect >= 0 && labs(sector[hitinfo.sect].floorz - pp->posz) < Z(50))
             {
-                if (Distance(pp->posx, pp->posy, hitinfo.pos.x, hitinfo.pos.y) < ((((int)pp->SpriteP->clipdist)<<2) + 256))
+                if (Distance(pp->posx, pp->posy, hitinfo.x, hitinfo.y) < ((((int)pp->SpriteP->clipdist)<<2) + 256))
                     return TRUE;
             }
         }
@@ -4671,7 +4671,7 @@ PlayerOnLadder(PLAYERp pp)
                    0,
                    &hitinfo, CLIPMASK_MISSILE);
 
-        dist = DIST(pp->posx, pp->posy, hitinfo.pos.x, hitinfo.pos.y);
+        dist = DIST(pp->posx, pp->posy, hitinfo.x, hitinfo.y);
 
         if (hitinfo.sprite >= 0)
         {

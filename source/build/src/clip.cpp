@@ -718,7 +718,7 @@ int32_t clipsprite_initindex(int32_t curidx, uspriteptr_t const curspr, int32_t 
             {
                 wal->x *= flipx;
                 wal->y *= flipy;
-                rotatevec(wal->pos, rotang, &wal->pos);
+                rotatevec(wal->xy, rotang, &wal->xy);
             }
 
             wal->x += curspr->x;
@@ -1222,8 +1222,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 (wal->y < clipMin.y && wal2->y < clipMin.y) || (wal->y > clipMax.y && wal2->y > clipMax.y))
                 continue;
 
-            vec2_t const p1 = wal->pos;
-            vec2_t const p2 = wal2->pos;
+            vec2_t const p1 = wal->xy;
+            vec2_t const p2 = wal2->xy;
             vec2_t const d  = { p2.x-p1.x, p2.y-p1.y };
 
             if (d.x * (pos->y-p1.y) < (pos->x-p1.x) * d.y)
@@ -1579,10 +1579,10 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             {
                 if (!bitmap_test(clipignore, i) && clipinsideboxline(pos->x, pos->y, clipit[i].x1, clipit[i].y1, clipit[i].x2, clipit[i].y2, walldist-1))
                 {
-                    vec2_t const vec = pos->vec2;
+                    vec2_t const vec = pos->xy;
                     keepaway(&pos->x, &pos->y, i);
                     if (inside(pos->x,pos->y, *sectnum) != 1)
-                        pos->vec2 = vec;
+                        pos->xy = vec;
                     break;
                 }
             }
@@ -1590,7 +1590,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
         vec2_t vec = goal;
         
-        if ((hitwall = cliptrace(pos->vec2, &vec)) >= 0)
+        if ((hitwall = cliptrace(pos->xy, &vec)) >= 0)
         {
             vec2_t const  clipr  = { clipit[hitwall].x2 - clipit[hitwall].x1, clipit[hitwall].y2 - clipit[hitwall].y1 };
             // clamp to the max value we can utilize without reworking the scaling below
@@ -1740,7 +1740,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             int i;
 
             for (i=startwall, wal=(uwallptr_t)&wall[startwall]; i!=endwall; i+=dir, wal+=dir)
-                if (clipinsidebox(vect->vec2, i, walldist-4) == 1)
+                if (clipinsidebox(vect->xy, i, walldist-4) == 1)
                 {
                     int j = 0;
                     if (wal->nextsector < 0 || wal->cstat&dawalclipmask) j = 1;
@@ -1750,7 +1750,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         vec2_t closest;
 
                         if (enginecompatibilitymode == ENGINE_19950829)
-                            closest = vect->vec2;
+                            closest = vect->xy;
                         else
                         {
                             //Find closest point on wall (dax, day) to (vect->x, vect->y)
@@ -1780,21 +1780,21 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         int32_t dx = (sintable[(j+1024)&2047]>>11);
                         int32_t dy = (sintable[(j+512)&2047]>>11);
                         int bad2 = 16;
-                        vec2_t const ov = vect->vec2;
+                        vec2_t const ov = vect->xy;
                         do
                         {
                             vect->x = (vect->x) + dx; vect->y = (vect->y) + dy;
                             bad2--; if (bad2 == 0) break;
-                        } while (clipinsidebox(vect->vec2, i, walldist-4) != 0);
+                        } while (clipinsidebox(vect->xy, i, walldist-4) != 0);
                         bad = -1;
 
                         if (enginecompatibilitymode == ENGINE_EDUKE32)
                         {
                             int16_t const os = *sectnum;
-                            clipupdatesector(vect->vec2, sectnum, walldist);
+                            clipupdatesector(vect->xy, sectnum, walldist);
                             if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0)
                             {
-                                vect->vec2 = ov;
+                                vect->xy = ov;
                                 *sectnum   = os;
                                 return -1;
                             }
@@ -1853,7 +1853,7 @@ void getzrange(const vec3_t *pos, int16_t sectnum,
     const int32_t dawalclipmask = (cliptype&65535);
     const int32_t dasprclipmask = (cliptype>>16);
 
-    vec2_t closest = pos->vec2;
+    vec2_t closest = pos->xy;
     if (enginecompatibilitymode == ENGINE_EDUKE32)
         getsectordist(closest, sectnum, &closest);
     if (enginecompatibilitymode == ENGINE_19950829)
@@ -1917,13 +1917,13 @@ restart_grand:
                     continue;
 
                 int32_t daz, daz2;
-                closest = pos->vec2;
+                closest = pos->xy;
                 if (enginecompatibilitymode == ENGINE_EDUKE32)
                     getsectordist(closest, k, &closest);
                 getzsofslope(k,closest.x,closest.y,&daz,&daz2);
 
                 int32_t fz, cz;
-                closest = pos->vec2;
+                closest = pos->xy;
                 if (enginecompatibilitymode == ENGINE_EDUKE32)
                     getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
                 getzsofslope(sectq[clipinfo[curidx].qend],closest.x,closest.y,&cz,&fz);
@@ -1955,8 +1955,8 @@ restart_grand:
 
             if (k >= 0)
             {
-                vec2_t const v1 = wall[j].pos;
-                vec2_t const v2 = wall[wall[j].point2].pos;
+                vec2_t const v1 = wall[j].xy;
+                vec2_t const v2 = wall[wall[j].point2].xy;
 
                 if ((v1.x < xmin && (v2.x < xmin)) || (v1.x > xmax && v2.x > xmax) ||
                     (v1.y < ymin && (v2.y < ymin)) || (v1.y > ymax && v2.y > ymax))
@@ -2014,7 +2014,7 @@ restart_grand:
 #endif
                 //It actually got here, through all the continue's!!!
                 int32_t daz, daz2;
-                closest = pos->vec2;
+                closest = pos->xy;
                 if (enginecompatibilitymode == ENGINE_EDUKE32)
                     getsectordist(closest, k, &closest);
                 if (enginecompatibilitymode == ENGINE_19950829)
@@ -2030,7 +2030,7 @@ restart_grand:
                 {
                     int32_t fz,cz, hitwhat=(curspr-(uspritetype *)sprite)+49152;
 
-                    closest = pos->vec2;
+                    closest = pos->xy;
                     if (enginecompatibilitymode == ENGINE_EDUKE32)
                         getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
                     getzsofslope(sectq[clipinfo[curidx].qend],closest.x,closest.y,&cz,&fz);
@@ -2097,7 +2097,7 @@ restart_grand:
                 if (clipsprite_try((uspriteptr_t)&sprite[j], xmin,ymin, xmax,ymax))
                     continue;
 #endif
-                vec2_t v1 = sprite[j].pos.vec2;
+                vec2_t v1 = sprite[j].xy;
 
                 switch (cstat & CSTAT_SPRITE_ALIGNMENT_MASK)
                 {
@@ -2222,7 +2222,7 @@ restart_grand:
                         {
                             addclipsect(j);
 
-                            closest = pos->vec2;
+                            closest = pos->xy;
                             if (enginecompatibilitymode == ENGINE_EDUKE32)
                                 getsectordist(closest, j, &closest);
                             int const daz = getceilzofslope(j, closest.x, closest.y);
@@ -2278,7 +2278,7 @@ restart_grand:
                         {
                             addclipsect(j);
 
-                            closest = pos->vec2;
+                            closest = pos->xy;
                             if (enginecompatibilitymode == ENGINE_EDUKE32)
                                 getsectordist(closest, j, &closest);
                             int const daz = getflorzofslope(j, closest.x,closest.y);
@@ -2312,7 +2312,7 @@ int32_t try_facespr_intersect(uspriteptr_t const spr, vec3_t const in,
                               int32_t vx, int32_t vy, int32_t vz,
                               vec3_t * const intp, int32_t strictly_smaller_than_p)
 {
-    vec3_t const sprpos = spr->pos;
+    vec3_t const sprpos = spr->xyz;
 
     int32_t const topt = vx * (sprpos.x - in.x) + vy * (sprpos.y - in.y);
 
@@ -2337,7 +2337,7 @@ int32_t try_facespr_intersect(uspriteptr_t const spr, vec3_t const in,
 
     if (dist > mulscale7(siz, siz)) return 0;
 
-    newpos.vec2 = { in.x + scale(vx, topt, bot), in.y + scale(vy, topt, bot) };
+    newpos.xy = { in.x + scale(vx, topt, bot), in.y + scale(vy, topt, bot) };
 
     if (klabs(newpos.x - in.x) + klabs(newpos.y - in.y) + strictly_smaller_than_p >
         klabs(intp->x - in.x) + klabs(intp->y - in.y))
@@ -2353,9 +2353,9 @@ static inline void hit_set(hitdata_t *hit, int32_t sectnum, int32_t wallnum, int
     hit->sect = sectnum;
     hit->wall = wallnum;
     hit->sprite = spritenum;
-    hit->pos.x = x;
-    hit->pos.y = y;
-    hit->pos.z = z;
+    hit->x = x;
+    hit->y = y;
+    hit->z = z;
 }
 
 static int32_t hitscan_hitsectcf=-1;
@@ -2403,7 +2403,7 @@ static int32_t hitscan_trysector(const vec3_t *sv, usectorptr_t sec, hitdata_t *
         }
     }
 
-    if ((x1 != INT32_MAX) && (klabs(x1-sv->x)+klabs(y1-sv->y) < klabs((hit->pos.x)-sv->x)+klabs((hit->pos.y)-sv->y)))
+    if ((x1 != INT32_MAX) && (klabs(x1-sv->x)+klabs(y1-sv->y) < klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y)))
     {
         if (tmp==NULL)
         {
@@ -2471,7 +2471,7 @@ int32_t hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32
 #ifdef YAX_ENABLE
 restart_grand:
 #endif
-    hit->pos.vec2 = hitscangoal;
+    hit->xy = hitscangoal;
 
     clipsectorlist[0] = sectnum;
     tempshortcnt  = 0;
@@ -2552,7 +2552,7 @@ restart_grand:
             {
                 if (vz != 0)
                     if ((intz <= sec->ceilingz) || (intz >= sec->floorz))
-                        if (klabs(intx-sv->x)+klabs(inty-sv->y) < klabs(hit->pos.x-sv->x)+klabs(hit->pos.y-sv->y))
+                        if (klabs(intx-sv->x)+klabs(inty-sv->y) < klabs(hit->x-sv->x)+klabs(hit->y-sv->y))
                         {
                                 //x1,y1,z1 are temp variables
                             if (vz > 0) z1 = sec->floorz; else z1 = sec->ceilingz;
@@ -2565,7 +2565,7 @@ restart_grand:
                             }
                         }
             }
-            else if (klabs(intx-sv->x)+klabs(inty-sv->y) >= klabs((hit->pos.x)-sv->x)+klabs((hit->pos.y)-sv->y))
+            else if (klabs(intx-sv->x)+klabs(inty-sv->y) >= klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
                 continue;
 
             if (!curspr)
@@ -2574,14 +2574,14 @@ restart_grand:
                 {
                     if ((nextsector < 0) || (wal->cstat&dawalclipmask))
                     {
-                        if ((klabs(intx-sv->x)+klabs(inty-sv->y) < klabs(hit->pos.x-sv->x)+klabs(hit->pos.y-sv->y)))
+                        if ((klabs(intx-sv->x)+klabs(inty-sv->y) < klabs(hit->x-sv->x)+klabs(hit->y-sv->y)))
                             hit_set(hit, dasector, z, -1, intx, inty, intz);
                         continue;
                     }
 
                     if (intz <= sector[nextsector].ceilingz || intz >= sector[nextsector].floorz)
                     {
-                        if ((klabs(intx-sv->x)+klabs(inty-sv->y) < klabs(hit->pos.x-sv->x)+klabs(hit->pos.y-sv->y)))
+                        if ((klabs(intx-sv->x)+klabs(inty-sv->y) < klabs(hit->x-sv->x)+klabs(hit->y-sv->y)))
                             hit_set(hit, dasector, z, -1, intx, inty, intz);
                         continue;
                     }
@@ -2665,7 +2665,7 @@ restart_grand:
             {
             case 0:
             {
-                if (try_facespr_intersect(spr, *sv, vx, vy, vz, &hit->pos, 0))
+                if (try_facespr_intersect(spr, *sv, vx, vy, vz, &hit->xyz, 0))
                 {
                     hit->sect = dasector;
                     hit->wall = -1;
@@ -2689,7 +2689,7 @@ restart_grand:
                 ucoefup16 = rintersect(sv->x,sv->y,sv->z,vx,vy,vz,x1,y1,x2,y2,&intx,&inty,&intz);
                 if (ucoefup16 == -1) continue;
 
-                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->pos.x)-sv->x)+klabs((hit->pos.y)-sv->y))
+                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
                     continue;
 
                 daz = spr->z + spriteheightofs(z, &k, 1);
@@ -2746,7 +2746,7 @@ restart_grand:
                     inty = sv->y+scale(intz-sv->z,vy,vz);
                 }
 
-                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->pos.x)-sv->x)+klabs((hit->pos.y)-sv->y))
+                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
                     continue;
 
                 get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
@@ -2776,7 +2776,7 @@ restart_grand:
                 inty = sv->y + mulscale30(vy,i);
                 intz = sv->z + mulscale30(vz,i);
 
-                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->pos.x)-sv->x)+klabs((hit->pos.y)-sv->y))
+                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
                     continue;
 
                 get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
@@ -2807,7 +2807,7 @@ restart_grand:
         if (hit->sect == -1 && oldhitsect >= 0)
         {
             // this is bad: we didn't hit anything after going through a ceiling/floor
-            Bmemcpy(&hit->pos, &newsv, sizeof(vec3_t));
+            Bmemcpy(&hit->xyz, &newsv, sizeof(vec3_t));
             hit->sect = oldhitsect;
 
             return 0;
@@ -2818,10 +2818,10 @@ restart_grand:
         if (SECTORFLD(hit->sect,stat, hitscan_hitsectcf)&yax_waltosecmask(dawalclipmask))
             return 0;
 
-        i = yax_getneighborsect(hit->pos.x, hit->pos.y, hit->sect, hitscan_hitsectcf);
+        i = yax_getneighborsect(hit->x, hit->y, hit->sect, hitscan_hitsectcf);
         if (i >= 0)
         {
-            Bmemcpy(&newsv, &hit->pos, sizeof(vec3_t));
+            newsv = hit->xyz;
             sectnum = i;
             sv = &newsv;
 

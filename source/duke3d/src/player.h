@@ -153,7 +153,7 @@ enum playeraction_t {
 #define AM_AIMASSIST 4
 
 typedef struct {
-    vec3_t pos;
+    union { struct { int32_t x, y, z; }; vec3_t xyz; vec2_t xy; };
     int16_t ang, sect;
 } playerspawn_t;
 

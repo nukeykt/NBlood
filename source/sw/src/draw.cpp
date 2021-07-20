@@ -1208,8 +1208,8 @@ BackView(int *nx, int *ny, int *nz, short *vsect, fix16_t *nq16ang, short horiz)
 
     sp->cstat = bakcstat;              // Restore cstat
 
-    hx = hitinfo.pos.x - (*nx);
-    hy = hitinfo.pos.y - (*ny);
+    hx = hitinfo.x - (*nx);
+    hy = hitinfo.y - (*ny);
 
     // If something is in the way, make pp->camera_dist lower if necessary
     if (klabs(vx) + klabs(vy) > klabs(hx) + klabs(hy))
@@ -1329,8 +1329,8 @@ CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nq16ang, short horiz)
     sp->cstat = bakcstat;              // Restore cstat
     //ASSERT(hitinfo.sect >= 0);
 
-    hx = hitinfo.pos.x - (*nx);
-    hy = hitinfo.pos.y - (*ny);
+    hx = hitinfo.x - (*nx);
+    hy = hitinfo.y - (*ny);
 
     // If something is in the way, make pp->circle_camera_dist lower if necessary
     if (klabs(vx) + klabs(vy) > klabs(hx) + klabs(hy))

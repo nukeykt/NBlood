@@ -218,8 +218,8 @@ uint16_t getcrc16(char const *buffer, int bufleng)
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
-    vec2_t const w  = wall[dawall].pos;
-    vec2_t const w2 = wall[wall[dawall].point2].pos;
+    vec2_t const w  = wall[dawall].xy;
+    vec2_t const w2 = wall[wall[dawall].point2].xy;
     vec2_t const d  = { w2.x - w.x, w2.y - w.y };
 
     int64_t i = d.x * ((int64_t)p.x - w.x) + d.y * ((int64_t)p.y - w.y);
@@ -2081,10 +2081,10 @@ do_mvlineasm1:
 //
 int32_t wallfront(int32_t l1, int32_t l2)
 {
-    vec2_t const l1vect   = wall[thewall[l1]].pos;
-    vec2_t const l1p2vect = wall[wall[thewall[l1]].point2].pos;
-    vec2_t const l2vect   = wall[thewall[l2]].pos;
-    vec2_t const l2p2vect = wall[wall[thewall[l2]].point2].pos;
+    vec2_t const l1vect   = wall[thewall[l1]].xy;
+    vec2_t const l1p2vect = wall[wall[thewall[l1]].point2].xy;
+    vec2_t const l2vect   = wall[thewall[l2]].xy;
+    vec2_t const l2p2vect = wall[wall[thewall[l2]].point2].xy;
     vec2_t d = { l1p2vect.x - l1vect.x, l1p2vect.y - l1vect.y };
     int32_t t1 = dmulscale2(l2vect.x-l1vect.x, d.y, -d.x, l2vect.y-l1vect.y); //p1(l2) vs. l1
     int32_t t2 = dmulscale2(l2p2vect.x-l1vect.x, d.y, -d.x, l2p2vect.y-l1vect.y); //p2(l2) vs. l1
@@ -11843,7 +11843,7 @@ int32_t setsprite(int16_t spritenum, const vec3_t *newpos)
     int16_t tempsectnum = sprite[spritenum].sectnum;
 
     if ((void const *) newpos != (void *) &sprite[spritenum])
-        sprite[spritenum].pos = *newpos;
+        sprite[spritenum].xyz = *newpos;
 
     updatesector(newpos->x,newpos->y,&tempsectnum);
 
@@ -11860,7 +11860,7 @@ int32_t setspritez(int16_t spritenum, const vec3_t *newpos)
     int16_t tempsectnum = sprite[spritenum].sectnum;
 
     if ((void const *)newpos != (void *)&sprite[spritenum])
-        sprite[spritenum].pos = *newpos;
+        sprite[spritenum].xyz = *newpos;
 
     updatesectorz(newpos->x,newpos->y,newpos->z,&tempsectnum);
 

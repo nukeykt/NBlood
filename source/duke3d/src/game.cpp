@@ -380,8 +380,8 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
     if (*vsectnum < 0)
         return -1;
 
-    hx = hit.pos.x-(vect->x);
-    hy = hit.pos.y-(vect->y);
+    hx = hit.x-(vect->x);
+    hy = hit.y-(vect->y);
 
     if (klabs(n.x)+klabs(n.y) > klabs(hx)+klabs(hy))
     {
@@ -1506,7 +1506,7 @@ int A_Spawn(int spriteNum, int tileNum)
         else
         {
             A_GetZLimits(newSprite);
-            actor[newSprite].bpos = sprite[newSprite].pos;
+            actor[newSprite].bpos = sprite[newSprite].xyz;
         }
     }
 
@@ -1578,7 +1578,7 @@ int A_Spawn(int spriteNum, int tileNum)
         case WATERSPLASH2__:
             if (spriteNum >= 0)
             {
-                setsprite(newSprite, &sprite[spriteNum].pos);
+                setsprite(newSprite, &sprite[spriteNum].xyz);
                 pSprite->xrepeat = pSprite->yrepeat = 8+(krand()&7);
             }
             else pSprite->xrepeat = pSprite->yrepeat = 16+(krand()&15);
@@ -1673,7 +1673,7 @@ int A_Spawn(int spriteNum, int tileNum)
             pSprite->xvel = 128;
             changespritestat(newSprite, STAT_MISC);
             A_SetSprite(newSprite,CLIPMASK0);
-            setsprite(newSprite,&pSprite->pos);
+            setsprite(newSprite,&pSprite->xyz);
             goto SPAWN_END;
         case FEMMAG1__:
         case FEMMAG2__:
@@ -1880,7 +1880,7 @@ int A_Spawn(int spriteNum, int tileNum)
             pSprite->z = sector[sectNum].ceilingz+(48<<8);
             T5(newSprite) = tempwallptr;
 
-            g_origins[tempwallptr] = pSprite->pos.vec2;
+            g_origins[tempwallptr] = pSprite->xy;
             g_origins[tempwallptr+2].x = pSprite->z;
 
 
@@ -1899,11 +1899,11 @@ int A_Spawn(int spriteNum, int tileNum)
                         sprite[findSprite].xrepeat = 48;
                         sprite[findSprite].yrepeat = 128;
 
-                        g_origins[tempwallptr + 1] = sprite[findSprite].pos.vec2;
-                        sprite[findSprite].pos     = pSprite->pos;
+                        g_origins[tempwallptr + 1] = sprite[findSprite].xy;
+                        sprite[findSprite].xyz     = pSprite->xyz;
                         sprite[findSprite].shade   = pSprite->shade;
 
-                        setsprite(findSprite, &sprite[findSprite].pos);
+                        setsprite(findSprite, &sprite[findSprite].xyz);
                         break;
                     }
                     findSprite = nextspritestat[findSprite];
