@@ -907,7 +907,7 @@ static void Net_CopyActorFromNet(const netactor_t* netActor, actor_t *gameActor)
     bool isActor = G_TileHasActor(netActor->spr_picnum);
 
     // Fixes ambient sound infinite sound replay glitch (stand in the outdoor area of E1L1, the "airplane noise" will get very loud and loop endlessly.
-    bool isSoundActor = (tileGetMapping(netActor->picnum) == MUSICANDSFX);
+    bool isSoundActor = (netActor->picnum == MUSICANDSFX);
 
     if(!isSoundActor)
     {
@@ -921,7 +921,7 @@ static void Net_CopyActorFromNet(const netactor_t* netActor, actor_t *gameActor)
     // Prevents:
     // - Rotating sector stuttering
     // - Trains running backwards
-    bool isSyncedSE =   (tileGetMapping(netActor->picnum) == SECTOREFFECTOR) &&
+    bool isSyncedSE =   (netActor->picnum == SECTOREFFECTOR) &&
                         (
                                 (netActor->spr_lotag == SE_0_ROTATING_SECTOR)
                             ||  (netActor->spr_lotag == SE_1_PIVOT)
