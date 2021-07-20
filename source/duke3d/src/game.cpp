@@ -1295,12 +1295,12 @@ static int32_t G_InitActor(int32_t i, int32_t tilenum, int32_t set_movflag_uncon
 {
     if (g_tile[tilenum].execPtr)
     {
-        SH(i) = *(g_tile[tilenum].execPtr);
-        AC_ACTION_ID(actor[i].t_data) = *(g_tile[tilenum].execPtr+1);
-        AC_MOVE_ID(actor[i].t_data) = *(g_tile[tilenum].execPtr+2);
+        SH(i) = g_tile[tilenum].execPtr[0];
+        AC_ACTION_ID(actor[i].t_data) = g_tile[tilenum].execPtr[1];
+        AC_MOVE_ID(actor[i].t_data) = g_tile[tilenum].execPtr[2];
 
         if (set_movflag_uncond || SHT(i) == 0)  // AC_MOVFLAGS
-            SHT(i) = *(g_tile[tilenum].execPtr+3);
+            SHT(i) = g_tile[tilenum].execPtr[3];
 
         return 1;
     }

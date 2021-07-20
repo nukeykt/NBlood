@@ -2134,7 +2134,9 @@ void sv_restoreactors(actor_t * const actor)
             if (index == -1)
             {
                 OSD_Printf("couldn't find savegame label %s\n", &savegame_labels[AC_MOVE_ID(a.t_data) << 6]);
-                AC_MOVE_ID(a.t_data) = *(g_tile[s->picnum].execPtr + 2);
+
+                if (G_TileHasActor(s->picnum))
+                    AC_MOVE_ID(a.t_data) = g_tile[s->picnum].execPtr[2];
             }
             else
                 AC_MOVE_ID(a.t_data) = labelcode[index];
@@ -2148,8 +2150,10 @@ void sv_restoreactors(actor_t * const actor)
             if (index == -1)
             {
                 OSD_Printf("couldn't find savegame label %s\n", &savegame_labels[AC_ACTION_ID(a.t_data) << 6]);
-                if (g_tile[s->picnum].execPtr)
-                    AC_ACTION_ID(a.t_data) = *(g_tile[s->picnum].execPtr + 1);
+
+                if (G_TileHasActor(s->picnum))
+                    AC_ACTION_ID(a.t_data) = g_tile[s->picnum].execPtr[2];
+
                 AC_ACTION_COUNT(a.t_data) = 0;
                 AC_CURFRAME(a.t_data)     = 0;
             }
