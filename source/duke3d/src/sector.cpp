@@ -2630,14 +2630,17 @@ void P_HandleSharedKeys(int playerNum)
     // 1<<30 = !inventory
     // 1<<31 = !escape
 
-    int const aimMode = pPlayer->aim_mode;
+    if ((extBits & BIT(EK_CHAT_MODE)) == 0)
+    {
+        int const aimMode = pPlayer->aim_mode;
 
-    pPlayer->aim_mode = (playerBits>>SK_AIMMODE)&1;
-    pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_CENTERING)&1)<<1;
-    pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_AIM_ASSIST)&1)<<2;
+        pPlayer->aim_mode = (playerBits>>SK_AIMMODE)&1;
+        pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_CENTERING)&1)<<1;
+        pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_AIM_ASSIST)&1)<<2;
 
-    if (pPlayer->aim_mode < (aimMode & 3))
-        pPlayer->return_to_center = 9;
+        if (pPlayer->aim_mode < (aimMode & 3))
+            pPlayer->return_to_center = 9;
+    }
 
     if (TEST_SYNC_KEY(playerBits, SK_QUICK_KICK) && pPlayer->quick_kick == 0)
         if (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != KNEE_WEAPON || pPlayer->kickback_pic == 0)
