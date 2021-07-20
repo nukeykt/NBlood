@@ -2027,7 +2027,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         int top, bottom;
         GetSpriteExtents(pTSprite, &top, &bottom);
 
-        if (rendmode != REND_CLASSIC) {
+        if (videoGetRenderMode() != REND_CLASSIC) {
             
             auto pNSprite2 = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
             pNSprite2->picnum = 2203;
