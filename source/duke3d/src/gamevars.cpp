@@ -248,6 +248,8 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
             mapstate_t &sv = *g_mapInfo[i].savedstate;
 
+            sv_restoreactors(sv.actor);
+
             if (savedVarCount && varlabels)
             {
                 A_(!kread_and_test(kFile, buf, Bstrlen(s_gamevars)));
@@ -489,7 +491,9 @@ void Gv_WriteSave(buildvfs_FILE fil)
 
             mapstate_t &sv = *g_mapInfo[i].savedstate;
 
+            sv_prepareactors(sv.actor);
             dfwrite_LZ4(g_mapInfo[i].savedstate, sizeof(mapstate_t), 1, fil);
+            sv_restoreactors(sv.actor);
 
             if (savedVarCount)
             {

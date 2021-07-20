@@ -2087,7 +2087,7 @@ static inline int sv_checkoffset(int const scriptoffs, int const val, int const 
 }
 
 // translate anything in actor[] that holds an offset into compiled CON into a label index
-static void sv_preactorsave(void)
+void sv_prepareactors(actor_t * const actor)
 {
     for (int i = 0; i < MAXSPRITES; i++)
     {
@@ -2120,19 +2120,16 @@ static void sv_preactorsave(void)
 }
 
 // translate the script offsets back from label index to offset in the currently compiled script
-static void sv_postactordata(void)
+void sv_restoreactors(actor_t * const actor)
 {
     for (int i = 0; i < MAXSPRITES; i++)
     {
         auto &a = actor[i];
         auto  s = (uspriteptr_t)&sprite[i];
 
-#ifdef POLYMER
-        practor[i].lightptr = NULL;
-        practor[i].lightId = -1;
-#endif
         if (a.flags & SFLAG_RESERVED)
         {
+            Bassert(AC_MOVE_ID(a.t_data) < savegame_labelcnt);
             int const index = hash_find(&h_labels, &savegame_labels[AC_MOVE_ID(a.t_data) << 6]);
             if (index == -1)
             {
@@ -2145,6 +2142,7 @@ static void sv_postactordata(void)
 
         if (a.flags & SFLAG_RESERVED2)
         {
+            Bassert(AC_ACTION_ID(a.t_data) < savegame_labelcnt);
             char *str = &savegame_labels[AC_ACTION_ID(a.t_data) << 6];
             int const index = hash_find(&h_labels, str);
             if (index == -1)
@@ -2161,6 +2159,7 @@ static void sv_postactordata(void)
 
         if (a.flags & SFLAG_RESERVED3)
         {
+            Bassert(AC_AI_ID(a.t_data) < savegame_labelcnt);
             int const index = hash_find(&h_labels, &savegame_labels[AC_AI_ID(a.t_data) << 6]);
             if (index == -1)
             {
@@ -2171,6 +2170,21 @@ static void sv_postactordata(void)
                 AC_AI_ID(a.t_data) = labelcode[index];
         }
         a.flags &= ~(SFLAG_RESERVED|SFLAG_RESERVED2|SFLAG_RESERVED3);
+    }
+}
+
+static void sv_preactorsave(void) { sv_prepareactors(actor); }
+
+static void sv_postactordata(void)
+{
+    sv_restoreactors(actor);
+
+    for (int i = 0; i < MAXSPRITES; i++)
+    {
+#ifdef POLYMER
+        practor[i].lightptr = NULL;
+        practor[i].lightId  = -1;
+#endif
     }
 }
 
@@ -2326,7 +2340,10 @@ static int32_t doloadplayer2(buildvfs_kfd fil, uint8_t **memptr)
     int const i = Gv_ReadSave(fil);
 
     if (savegame_labels != label)
+    {
         DO_FREE_AND_NULL(savegame_labels);
+        savegame_labelcnt = 0;
+    }
 
     if (i) return i;
 
