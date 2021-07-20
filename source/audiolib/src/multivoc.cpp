@@ -428,10 +428,11 @@ static inline VoiceNode *MV_GetLowestPriorityVoice(void)
 {
     auto voice = VoiceList.next;
 
-    // check if we have a higher priority than a voice that is playing.
+    // find the voice with the lowest priority and volume
     for (auto node = voice; node != &VoiceList; node = node->next)
     {
-        if (node->priority < voice->priority)
+        if (node->priority < voice->priority
+            || (node->priority == voice->priority && node->PannedVolume.Left < voice->PannedVolume.Left && node->PannedVolume.Right < voice->PannedVolume.Right))
             voice = node;
     }
 
@@ -440,7 +441,7 @@ static inline VoiceNode *MV_GetLowestPriorityVoice(void)
 
 static inline void MV_FinishAllocation(VoiceNode* voice, uint32_t const allocsize)
 {
-    if (!allocsize || (voice->rawdataptr != nullptr && voice->rawdatasiz == allocsize))
+    if (voice->rawdataptr != nullptr && voice->rawdatasiz == allocsize)
         return;
     else if (voice->rawdataptr != nullptr && voice->wavetype >= FMT_VORBIS)
     {
@@ -448,8 +449,8 @@ static inline void MV_FinishAllocation(VoiceNode* voice, uint32_t const allocsiz
         ALIGNED_FREE_AND_NULL(voice->rawdataptr);
     }
 
-    voice->rawdataptr = Xaligned_alloc(16, allocsize);
     voice->rawdatasiz = allocsize;
+    voice->rawdataptr = Xaligned_alloc(16, allocsize);
 }
 
 VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
@@ -480,7 +481,7 @@ VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
     // Find a free voice handle
     do
     {
-        if (++handle < MV_MINVOICEHANDLE || handle > MV_MaxVoices)
+        if (++handle > MV_MaxVoices)
             handle = MV_MINVOICEHANDLE;
     } while (MV_Handles[handle - MV_MINVOICEHANDLE] != nullptr);
     MV_Handles[handle - MV_MINVOICEHANDLE] = voice;
