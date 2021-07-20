@@ -524,6 +524,7 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
 
 void polymost_glreset()
 {
+    polymost_activeTexture(GL_TEXTURE0);
 
     for (bssize_t i=0; i<=MAXPALOOKUPS-1; i++)
     {

@@ -78,8 +78,10 @@ char quitevent=0, appactive=1, novideo=0;
 static SDL_Surface *sdl_surface/*=NULL*/;
 
 #if SDL_MAJOR_VERSION >= 2
-static SDL_Window *sdl_window=NULL;
-static SDL_GLContext sdl_context=NULL;
+static SDL_Window *sdl_window;
+static SDL_GLContext sdl_context;
+static vec2_t sdl_resize;
+static int sdl_minimized;
 #endif
 
 int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline;
@@ -821,9 +823,6 @@ void initputs(const char *buf)
         startwin_puts(dabuf);
 #ifndef _WIN32
         startwin_idle(NULL);
-#else
-        if (sdl_window)
-            handleevents();
 #endif
         Bmemset(dabuf, 0, sizeof(dabuf));
     }
@@ -1443,8 +1442,8 @@ int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t fo
 
     // fix up the passed resolution values to be multiples of 8
     // and at least 320x200 or at most MAXXDIMxMAXYDIM
-    *x = clamp(*x, 320, MAXXDIM);
-    *y = clamp(*y, 200, MAXYDIM);
+    *x = clamp(*x & ~1, 320, MAXXDIM);
+    *y = clamp(*y & ~1, 200, MAXYDIM);
 
     for (i = 0; i < validmodecnt; i++)
     {
@@ -1506,12 +1505,12 @@ static void destroy_window_resources()
 void sdlayer_setvideomode_opengl(void)
 {
     glsurface_destroy();
-    polymost_glreset();
 
     glShadeModel(GL_SMOOTH);  // GL_FLAT
     glClearColor(0, 0, 0, 1.0);  // Black Background
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Use FASTEST for ortho!
 //    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glViewport(0,0,xres,yres);
 
 #ifndef EDUKE32_GLES
     glDisable(GL_DITHER);
@@ -1576,12 +1575,8 @@ int32_t setvideomode_sdlcommon(int32_t *x, int32_t *y, int32_t c, int32_t fs, in
 
 void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int32_t regrab)
 {
+    SDL_SetWindowSize(sdl_window, x, y);
     wm_setapptitle(apptitle);
-
-#ifdef USE_OPENGL
-    if (!nogl)
-        sdlayer_setvideomode_opengl();
-#endif
 
     xres = x;
     yres = y;
@@ -1593,6 +1588,11 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     lockcount = 0;
     modechange = 1;
     videomodereset = 0;
+
+#ifdef USE_OPENGL
+    if (!nogl)
+        sdlayer_setvideomode_opengl();
+#endif
 
     // save the current system gamma to determine if gamma is available
 #ifndef EDUKE32_GLES
@@ -1610,6 +1610,19 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
         if (gammabrightness && videoSetGamma() < 0)
             gammabrightness = 0;  // nope
     }
+#endif
+
+#if SDL_MAJOR_VERSION >= 2
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+
+    SDL_DisplayMode desktopmode;
+    SDL_GetDesktopDisplayMode(display, &desktopmode);
+
+    int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
+    int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
+
+    SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
+    SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
 #endif
 
     videoFadePalette(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
@@ -1664,10 +1677,14 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         return ret;
     }
 
-    // deinit
-    destroy_window_resources();
-
     initprintf("Setting video mode %dx%d (%d-bpp %s)\n", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
+
+
+    if (sdl_window)
+    {
+        setvideomode_sdlcommonpost(x, y, c, fs, regrab);
+        return 0;
+    }
 
     int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
 
@@ -1676,6 +1693,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
     int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
+
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
     {
@@ -1706,10 +1724,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             so we have to create a new surface in a different format first
             to force the surface we WANT to be recreated instead of reused. */
 
-
         sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
                                         r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
-                                        SDL_WINDOW_OPENGL | borderless);
+                                        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | borderless);
 
         if (sdl_window)
             sdl_context = SDL_GL_CreateContext(sdl_window);
@@ -1731,7 +1748,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             return -1;
         }
 
-        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
         SDL_GL_SetSwapInterval(sdlayer_getswapinterval(vsync_renderlayer));
         vsync_renderlayer = sdlayer_checkvsync(vsync_renderlayer);
 
@@ -1743,7 +1759,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         // init
         sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
                                       r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
-                                      borderless);
+                                      SDL_WINDOW_RESIZABLE | borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
 
@@ -1752,8 +1768,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         sdl_surface = SDL_GetWindowSurface(sdl_window);
         if (!sdl_surface)
             SDL2_VIDEO_ERR("SDL_GetWindowSurface");
-
-        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
 
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
@@ -1883,6 +1897,10 @@ extern "C" void AndroidDrawControls();
 void videoShowFrame(int32_t w)
 {
     UNREFERENCED_PARAMETER(w);
+
+    // if we're minimized or about to resize, just throw away the frame
+    if (sdl_resize.x || sdl_minimized)
+        return;
 
 #ifdef __ANDROID__
     if (mobile_halted) return;
@@ -2290,6 +2308,7 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 
 int32_t handleevents_pollsdl(void);
 #if SDL_MAJOR_VERSION >= 2
+
 // SDL 2.0 specific event handling
 int32_t handleevents_pollsdl(void)
 {
@@ -2492,6 +2511,13 @@ int32_t handleevents_pollsdl(void)
             case SDL_WINDOWEVENT:
                 switch (ev.window.event)
                 {
+                    case SDL_WINDOWEVENT_MINIMIZED:
+                        sdl_minimized = true;
+                        break;
+                    case SDL_WINDOWEVENT_RESTORED:
+                    case SDL_WINDOWEVENT_MAXIMIZED:
+                        sdl_minimized = false;
+                        break;
                     case SDL_WINDOWEVENT_FOCUS_GAINED:
                     case SDL_WINDOWEVENT_FOCUS_LOST:
                         appactive = (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED);
@@ -2512,6 +2538,9 @@ int32_t handleevents_pollsdl(void)
                         videoGetModes();
                         break;
                     }
+                    case SDL_WINDOWEVENT_RESIZED:
+                        sdl_resize = { ev.window.data1 & ~1, ev.window.data2 & ~1 };
+                        break;
                     case SDL_WINDOWEVENT_ENTER:
                     case SDL_WINDOWEVENT_LEAVE:
                         g_mouseInsideWindow = (ev.window.event == SDL_WINDOWEVENT_ENTER);
@@ -2565,6 +2594,16 @@ int32_t handleevents(void)
     timerUpdateClock();
 
     communityapiRunCallbacks();
+
+    if (!frameplace && sdl_resize.x)
+    {
+        if (in3dmode())
+            videoSetGameMode(fullscreen, sdl_resize.x & ~1, sdl_resize.y & ~1, bpp, upscalefactor);
+        else
+            videoSet2dMode(sdl_resize.x & ~1, sdl_resize.y & ~1, upscalefactor);
+
+        sdl_resize = {};
+    }
 
 #ifndef _WIN32
     startwin_idle(NULL);

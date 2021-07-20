@@ -8821,12 +8821,15 @@ void engineUnInit(void)
     communityapiShutdown();
 
 #ifdef USE_OPENGL
-    polymost_glreset();
-    hicinit();
-    freeallmodels();
+    if (qsetmode)
+    {
+        polymost_glreset();
+        freeallmodels();
 # ifdef POLYMER
-    polymer_uninit();
+        polymer_uninit();
 # endif
+    }
+    hicinit();
 #endif
 
     Buninitart();
@@ -11267,11 +11270,7 @@ static void videoAllocateBuffers(void)
       };
 
     for (i = 0; i < (signed)ARRAY_SIZE(dynarray); i++)
-    {
-        Xaligned_free(*dynarray[i].ptr);
-
-        *dynarray[i].ptr = Xaligned_alloc(16, dynarray[i].size);
-    }
+        *dynarray[i].ptr = Xrealloc(*dynarray[i].ptr, dynarray[i].size);
 
     horizlookup  = lookups;
     horizlookup2 = lookups + (ydim << 2);
@@ -13765,6 +13764,7 @@ void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daup
     OSD_ResizeDisplay(xdim, ydim);
 
     videoAllocateBuffers();
+    videoSetViewableArea(0L,0L,xdim-1,ydim-1);
 
     ydim16 = ydim - STATUS2DSIZ2;
     halfxdim16 = xdim >> 1;
