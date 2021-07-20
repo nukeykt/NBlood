@@ -311,26 +311,51 @@ int Paths_ReadRegistryValue(char const * const SubKey, char const * const Value,
 #endif
 
 // A bare-bones "parser" for Valve's KeyValues VDF format.
-// There is no guarantee this will function properly with ill-formed files.
+// There is no guarantee this will function properly with ill-formed files (i.e. unbalanced or improper).
 static void KeyValues_SkipWhitespace(char *& buf, char * const bufend)
 {
-    while (buf < bufend && (buf[0] == ' ' || buf[0] == '\n' || buf[0] == '\r' || buf[0] == '\t' || buf[0] == '\0'))
-        ++buf;
-
-    // comments
-    if (buf + 2 < bufend && buf[0] == '/' && buf[1] == '/')
+    while (1)
     {
-        while (buf < bufend && buf[0] != '\n' && buf[0] != '\r')
+        while (buf < bufend && (buf[0] == ' ' || buf[0] == '\n' || buf[0] == '\r' || buf[0] == '\t'))
             ++buf;
 
-        KeyValues_SkipWhitespace(buf, bufend);
+        // comments
+        if (buf + 2 < bufend && buf[0] == '/' && buf[1] == '/')
+        {
+            buf += 2;
+
+            while (buf < bufend && buf[0] != '\n' && buf[0] != '\r')
+                ++buf;
+
+            continue;
+        }
+
+        break;
     }
+}
+static void KeyValues_SkipToEndOfNormalizedToken(char *& buf, char * const bufend)
+{
+    ++buf;
+    while (buf < bufend && buf[0] != '\0')
+        ++buf;
+    while (buf < bufend && buf[0] == '\0')
+        ++buf;
 }
 static void KeyValues_SkipToEndOfQuotedToken(char *& buf, char * const bufend)
 {
     ++buf;
-    while (buf < bufend && buf[0] != '\"' && buf[-1] != '\\')
-        ++buf;
+    while (buf < bufend)
+    {
+        if (buf + 2 < bufend && buf[0] == '\\' && buf[1] == '"')
+            buf += 2;
+        else if (buf[0] == '"')
+        {
+            ++buf;
+            break;
+        }
+        else
+            ++buf;
+    }
 }
 static void KeyValues_SkipToEndOfUnquotedToken(char *& buf, char * const bufend)
 {
@@ -341,39 +366,48 @@ static void KeyValues_SkipNextWhatever(char *& buf, char * const bufend)
 {
     KeyValues_SkipWhitespace(buf, bufend);
 
-    if (buf == bufend)
+    if (buf >= bufend)
         return;
 
     if (buf[0] == '{')
     {
         ++buf;
+
         do
             KeyValues_SkipNextWhatever(buf, bufend);
-        while (buf[0] != '}');
-        ++buf;
+        while (buf < bufend && buf[0] != '}');
+
+        if (buf < bufend)
+            ++buf;
     }
-    else if (buf[0] == '\"')
+    else if (buf[0] == '\0')
+        KeyValues_SkipToEndOfNormalizedToken(buf, bufend);
+    else if (buf[0] == '"')
         KeyValues_SkipToEndOfQuotedToken(buf, bufend);
     else if (buf[0] != '}')
         KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
 
     KeyValues_SkipWhitespace(buf, bufend);
 }
-static char* KeyValues_NormalizeToken(char *& buf, char * const bufend)
+static char * KeyValues_NormalizeToken(char *& buf, char * const bufend)
 {
+    if (buf >= bufend)
+        return bufend;
+
     char * token = buf;
 
-    if (buf < bufend && buf[0] == '\"')
+    if (buf[0] == '"')
     {
-        ++token;
-
-        KeyValues_SkipToEndOfQuotedToken(buf, bufend);
         buf[0] = '\0';
+        KeyValues_SkipToEndOfQuotedToken(buf, bufend);
+        buf[-1] = '\0';
+
+        ++token;
 
         // account for escape sequences
         const char * readseeker = token;
         char * writeseeker = token;
-        while (readseeker <= buf)
+        while (readseeker < buf)
         {
             if (readseeker[0] == '\\')
                 ++readseeker;
@@ -383,70 +417,44 @@ static char* KeyValues_NormalizeToken(char *& buf, char * const bufend)
             ++writeseeker;
             ++readseeker;
         }
-
-        return token;
+        if (writeseeker < buf)
+            memset(writeseeker, '\0', buf - writeseeker);
     }
-
-    KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
-    buf[0] = '\0';
+    else if (buf[0] == '\0')
+    {
+        KeyValues_SkipToEndOfNormalizedToken(buf, bufend);
+        ++token;
+    }
+    else
+    {
+        KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
+        buf[0] = '\0';
+    }
 
     return token;
 }
-static void KeyValues_FindKey(char *& buf, char * const bufend, const char * token)
-{
-    char *ParentKey = KeyValues_NormalizeToken(buf, bufend);
-    if (token != NULL) // pass in NULL to find the next key instead of a specific one
-        while (buf < bufend && Bstrcmp(ParentKey, token) != 0)
-        {
-            KeyValues_SkipNextWhatever(buf, bufend);
-            ParentKey = KeyValues_NormalizeToken(buf, bufend);
-        }
-
-    KeyValues_SkipWhitespace(buf, bufend);
-}
-static int32_t KeyValues_FindParentKey(char *& buf, char * const bufend, const char * token)
+static void KeyValues_SeekToKey(char *& buf, char * const bufend, const char * token)
 {
     KeyValues_SkipWhitespace(buf, bufend);
 
-    // end of scope
-    if (buf[0] == '}')
-        return 0;
+    if (buf >= bufend || buf[0] == '}') // end of scope
+        return;
 
-    KeyValues_FindKey(buf, bufend, token);
-
-    // ignore the wrong type
-    while (buf < bufend && buf[0] != '{')
+    char * ParentKey = KeyValues_NormalizeToken(buf, bufend);
+    while (buf < bufend && Bstrcasecmp(ParentKey, token) != 0)
     {
         KeyValues_SkipNextWhatever(buf, bufend);
-        KeyValues_FindKey(buf, bufend, token);
-    }
-
-    if (buf == bufend)
-        return 0;
-
-    return 1;
-}
-static char* KeyValues_FindKeyValue(char *& buf, char * const bufend, const char * token)
-{
-    KeyValues_SkipWhitespace(buf, bufend);
-
-    // end of scope
-    if (buf[0] == '}')
-        return NULL;
-
-    KeyValues_FindKey(buf, bufend, token);
-
-    // ignore the wrong type
-    while (buf < bufend && buf[0] == '{')
-    {
-        KeyValues_SkipNextWhatever(buf, bufend);
-        KeyValues_FindKey(buf, bufend, token);
+        ParentKey = KeyValues_NormalizeToken(buf, bufend);
     }
 
     KeyValues_SkipWhitespace(buf, bufend);
+}
+static char * KeyValues_GetValue(char *& buf, char * const bufend)
+{
+    KeyValues_SkipWhitespace(buf, bufend);
 
-    if (buf == bufend)
-        return NULL;
+    if (buf >= bufend)
+        return nullptr;
 
     return KeyValues_NormalizeToken(buf, bufend);
 }
@@ -463,17 +471,42 @@ void Paths_ParseSteamLibraryVDF(const char * fn, PathsParseFunc func)
 
     auto const bufstart = (char *)Xmalloc(size+1);
     char * buf = bufstart;
-    size = (int32_t)buildvfs_read(fd, buf, size);
+    auto readsize = (int32_t)buildvfs_read(fd, buf, size);
     buildvfs_close(fd);
-    char * const bufend = buf + size;
+    if (readsize != size)
+        buildprint("Warning: Read ", readsize, " bytes from \"", fn, "\", expected ", size, "\n");
+
+    char * const bufend = buf + readsize;
     bufend[0] = '\0';
 
-    if (KeyValues_FindParentKey(buf, bufend, "LibraryFolders"))
+    KeyValues_SeekToKey(buf, bufend, "LibraryFolders");
+    if (buf < bufend && buf[0] == '{')
     {
-        char *result;
         ++buf;
-        while ((result = KeyValues_FindKeyValue(buf, bufend, NULL)) != NULL)
-            func(result);
+
+        for (int i = 1; ; ++i)
+        {
+            char * seeker = buf;
+            char key[24];
+            snprintf(key, ARRAY_SIZE(key), "%d", i);
+            KeyValues_SeekToKey(seeker, bufend, key);
+            if (seeker >= bufend || seeker[0] == '}')
+                break;
+
+            if (seeker[0] == '{')
+            {
+                ++seeker;
+                KeyValues_SeekToKey(seeker, bufend, "path");
+                if (seeker >= bufend || seeker[0] == '}' || seeker[0] == '{')
+                    break;
+            }
+
+            char * value = KeyValues_GetValue(seeker, bufend);
+            if (value == nullptr)
+                break;
+
+            func(value);
+        }
     }
 
     Xfree(bufstart);
@@ -491,9 +524,12 @@ void Paths_ParseXDGDesktopFile(const char * fn, PathsParseFunc func)
 
     auto const bufstart = (char *)Xmalloc(size+1);
     char * buf = bufstart;
-    size = (int32_t)buildvfs_read(fd, buf, size);
+    auto readsize = (int32_t)buildvfs_read(fd, buf, size);
     buildvfs_close(fd);
-    char * const bufend = buf + size;
+    if (readsize != size)
+        buildprint("Warning: Read ", readsize, " bytes from \"", fn, "\", expected ", size, "\n");
+
+    char * const bufend = buf + readsize;
     bufend[0] = '\0';
 
     static char const s_PathEquals[] = "Path=";

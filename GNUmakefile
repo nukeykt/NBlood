@@ -1555,7 +1555,7 @@ cleantools:
 	-$(call RM,$(addsuffix $(EXESUFFIX),$($(subst clean,,$@)_targets)))
 	-$(call RMDIR,$($(subst clean,,$@)_obj))
 
-clean: cleanduke3d cleantools
+clean: cleanduke3d cleansw cleantools
 	-$(call RMDIR,$(obj))
 	-$(call RM,$(ebacktrace_dll))
 	-$(call RM,$(voidwrap_lib))

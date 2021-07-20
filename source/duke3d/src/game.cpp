@@ -3620,8 +3620,7 @@ static int getofs_viewtype_mirrored(uint16_t & cstat, int angDiff)
 #ifndef EDUKE32_STANDALONE
 static int G_CheckAdultTile(int tileNum)
 {
-    UNREFERENCED_PARAMETER(tileNum);
-    switch (tileNum)
+    switch (tileGetMapping(tileNum))
     {
         case FEM1__:
         case FEM2__:
@@ -3846,7 +3845,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         auto const pSprite = (i < 0) ? (uspriteptr_t)&tsprite[j] : (uspriteptr_t)&sprite[i];
 
 #ifndef EDUKE32_STANDALONE
-        if (ud.lockout && G_CheckAdultTile(tileGetMapping(pSprite->picnum)))
+        if (ud.lockout && G_CheckAdultTile(pSprite->picnum))
         {
             t->xrepeat = t->yrepeat = 0;
             continue;
