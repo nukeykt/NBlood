@@ -4043,7 +4043,7 @@ void P_FragPlayer(int playerNum)
             packbuf[0] = PACKET_FRAG;
             packbuf[1] = playerNum;
             packbuf[2] = pPlayer->frag_ps;
-            packbuf[3] = actor[pPlayer->i].picnum;
+            packbuf[3] = actor[pPlayer->i].htpicnum;
             B_BUF32(&packbuf[4], ticrandomseed);
             packbuf[8] = myconnectindex;
 
@@ -4107,13 +4107,13 @@ void P_FragPlayer(int playerNum)
         }
         else
         {
-            if (actor[pPlayer->i].picnum != APLAYERTOP)
+            if (actor[pPlayer->i].htpicnum != APLAYERTOP)
             {
                 pPlayer->fraggedself++;
                 if ((unsigned)pPlayer->wackedbyactor < MAXSPRITES && A_CheckEnemyTile(sprite[pPlayer->wackedbyactor].picnum))
                     Bsprintf(tempbuf, apStrings[OBITQUOTEINDEX + (krand() % g_numObituaries)], "A monster",
                              &g_player[playerNum].user_name[0]);
-                else if (actor[pPlayer->i].picnum == NUKEBUTTON)
+                else if (actor[pPlayer->i].htpicnum == NUKEBUTTON)
                     Bsprintf(tempbuf, "^02%s^02 tried to leave", &g_player[playerNum].user_name[0]);
                 else
                 {

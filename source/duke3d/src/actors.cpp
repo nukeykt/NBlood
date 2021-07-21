@@ -158,7 +158,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
 
         auto &dmgActor = actor[otherSprite];
 
-        dmgActor.ang = getangle(pOther->x - pSprite->x, pOther->y - pSprite->y);
+        dmgActor.htang = getangle(pOther->x - pSprite->x, pOther->y - pSprite->y);
 
         if ((pOther->extra > 0 && ((A_CheckSpriteFlags(spriteNum, SFLAG_PROJECTILE) && SpriteProjectile[spriteNum].workslike & PROJECTILE_RADIUS_PICNUM)
 #ifndef EDUKE32_STANDALONE
@@ -169,14 +169,14 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             || (pSprite->picnum == SHRINKSPARK)
 #endif
             )
-            dmgActor.picnum = pSprite->picnum;
+            dmgActor.htpicnum = pSprite->picnum;
 #ifndef EDUKE32_STANDALONE
         else if (WORLDTOUR && (pSprite->picnum == FLAMETHROWERFLAME || pSprite->picnum == LAVAPOOL
                  || (pSprite->picnum == FIREBALL && sprite[pSprite->owner].picnum == APLAYER)))
-            dmgActor.picnum = FLAMETHROWERFLAME;
+            dmgActor.htpicnum = FLAMETHROWERFLAME;
 #endif
         else
-            dmgActor.picnum = RADIUSEXPLOSION;
+            dmgActor.htpicnum = RADIUSEXPLOSION;
 
 #ifndef EDUKE32_STANDALONE
         if (pSprite->picnum != SHRINKSPARK && (!WORLDTOUR || pSprite->picnum != LAVAPOOL))
@@ -196,7 +196,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             if (dmgBase == dmgFuzz)
                 ++dmgFuzz;
 
-            dmgActor.extra = dmgBase + (krand()%(dmgFuzz-dmgBase));
+            dmgActor.htextra = dmgBase + (krand()%(dmgFuzz-dmgBase));
 
             if (!A_CheckSpriteFlags(otherSprite, SFLAG_NODAMAGEPUSH))
             {
@@ -235,7 +235,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
 #endif
         }
 #ifndef EDUKE32_STANDALONE
-        else if (!FURY && pSprite->extra == 0) dmgActor.extra = 0;
+        else if (!FURY && pSprite->extra == 0) dmgActor.htextra = 0;
 #endif
 
         if (pOther->picnum != RADIUSEXPLOSION &&
@@ -249,7 +249,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
                     G_ClearCameraView(pPlayer);
             }
 
-            dmgActor.owner = pSprite->owner;
+            dmgActor.htowner = pSprite->owner;
         }
     }
 }
@@ -1160,8 +1160,8 @@ static FORCE_INLINE int G_FindExplosionInSector(int const sectNum)
 
 static FORCE_INLINE void P_Nudge(int playerNum, int spriteNum, int shiftLeft)
 {
-    g_player[playerNum].ps->vel.x += actor[spriteNum].extra * (sintable[(actor[spriteNum].ang + 512) & 2047]) << shiftLeft;
-    g_player[playerNum].ps->vel.y += actor[spriteNum].extra * (sintable[actor[spriteNum].ang & 2047]) << shiftLeft;
+    g_player[playerNum].ps->vel.x += actor[spriteNum].htextra * (sintable[(actor[spriteNum].htang + 512) & 2047]) << shiftLeft;
+    g_player[playerNum].ps->vel.y += actor[spriteNum].htextra * (sintable[actor[spriteNum].htang & 2047]) << shiftLeft;
 }
 
 int A_IncurDamage(int const spriteNum)
@@ -1170,40 +1170,40 @@ int A_IncurDamage(int const spriteNum)
     auto const pActor  = &actor[spriteNum];
 
     // dmg->picnum check: safety, since it might have been set to <0 from CON.
-    if (pActor->extra < 0 || pSprite->extra < 0 || pActor->picnum < 0)
+    if (pActor->htextra < 0 || pSprite->extra < 0 || pActor->htpicnum < 0)
     {
-        pActor->extra = -1;
+        pActor->htextra = -1;
         return -1;
     }
 
     if (pSprite->picnum == APLAYER)
     {
-        if (ud.god && pActor->picnum != SHRINKSPARK)
+        if (ud.god && pActor->htpicnum != SHRINKSPARK)
             return -1;
 
         int const playerNum = P_GetP(pSprite);
 
-        if (pActor->owner >= 0 && (sprite[pActor->owner].picnum == APLAYER))
+        if (pActor->htowner >= 0 && (sprite[pActor->htowner].picnum == APLAYER))
         {
             if (
                 (ud.ffire == 0) &&
-                (spriteNum != pActor->owner) &&       // Not damaging self.
+                (spriteNum != pActor->htowner) &&       // Not damaging self.
                 ((g_gametypeFlags[ud.coop] & GAMETYPE_PLAYERSFRIENDLY) ||
-                ((g_gametypeFlags[ud.coop] & GAMETYPE_TDM) && g_player[playerNum].ps->team == g_player[P_Get(pActor->owner)].ps->team))
+                ((g_gametypeFlags[ud.coop] & GAMETYPE_TDM) && g_player[playerNum].ps->team == g_player[P_Get(pActor->htowner)].ps->team))
                 )
                 {
                     // Nullify damage and cancel.
-                    pActor->owner = -1;
-                    pActor->extra = -1;
+                    pActor->htowner = -1;
+                    pActor->htextra = -1;
                     return -1;
                 }
         }
 
-        pSprite->extra -= pActor->extra;
+        pSprite->extra -= pActor->htextra;
 
-        if (pActor->owner >= 0 && pSprite->extra <= 0 && pActor->picnum != FREEZEBLAST)
+        if (pActor->htowner >= 0 && pSprite->extra <= 0 && pActor->htpicnum != FREEZEBLAST)
         {
-            int const damageOwner = pActor->owner;
+            int const damageOwner = pActor->htowner;
             pSprite->extra        = 0;
 
             g_player[playerNum].ps->wackedbyactor = damageOwner;
@@ -1211,10 +1211,10 @@ int A_IncurDamage(int const spriteNum)
             if (sprite[damageOwner].picnum == APLAYER && playerNum != P_Get(damageOwner))
                 g_player[playerNum].ps->frag_ps = P_Get(damageOwner);
 
-            pActor->owner = g_player[playerNum].ps->i;
+            pActor->htowner = g_player[playerNum].ps->i;
         }
 
-        switch (tileGetMapping(pActor->picnum))
+        switch (tileGetMapping(pActor->htpicnum))
         {
             case RADIUSEXPLOSION__:
             case SEENINE__:
@@ -1229,28 +1229,28 @@ int A_IncurDamage(int const spriteNum)
                 break;
 
             default:
-                P_Nudge(playerNum, spriteNum, (A_CheckSpriteFlags(pActor->owner, SFLAG_PROJECTILE) &&
-                                       (SpriteProjectile[pActor->owner].workslike & PROJECTILE_RPG))
+                P_Nudge(playerNum, spriteNum, (A_CheckSpriteFlags(pActor->htowner, SFLAG_PROJECTILE) &&
+                                       (SpriteProjectile[pActor->htowner].workslike & PROJECTILE_RPG))
                                       ? 2
                                       : 1);
                 break;
         }
 
-        pActor->extra = -1;
-        return pActor->picnum;
+        pActor->htextra = -1;
+        return pActor->htpicnum;
     }
 
-    if (pActor->extra == 0 && pActor->picnum == SHRINKSPARK && pSprite->xrepeat < 24)
+    if (pActor->htextra == 0 && pActor->htpicnum == SHRINKSPARK && pSprite->xrepeat < 24)
         return -1;
 
-    pSprite->extra -= pActor->extra;
+    pSprite->extra -= pActor->htextra;
 
     if (pSprite->picnum != RECON && pSprite->owner >= 0 && sprite[pSprite->owner].statnum < MAXSTATUS)
-        pSprite->owner = pActor->owner;
+        pSprite->owner = pActor->htowner;
 
-    pActor->extra = -1;
+    pActor->htextra = -1;
 
-    return pActor->picnum;
+    return pActor->htpicnum;
 }
 
 void A_MoveCyclers(void)
@@ -1473,7 +1473,7 @@ ACTOR_STATIC void G_MovePlayers(void)
 #ifndef EDUKE32_STANDALONE
                     if (!FURY)
                     {
-                        actor[spriteNum].owner = spriteNum;
+                        actor[spriteNum].htowner = spriteNum;
 
                         if (ud.god == 0)
                             if (G_CheckForSpaceCeiling(pSprite->sectnum) || G_CheckForSpaceFloor(pSprite->sectnum))
@@ -1731,7 +1731,7 @@ ACTOR_STATIC void G_MoveFallers(void)
                 }
                 else
                 {
-                    actor[spriteNum].extra = 0;
+                    actor[spriteNum].htextra = 0;
                     pSprite->extra = oextra;
                 }
             }
@@ -3172,11 +3172,11 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
                         if (pProj->workslike & PROJECTILE_RPG_IMPACT)
                         {
-                            actor[otherSprite].owner  = pSprite->owner;
-                            actor[otherSprite].picnum = pSprite->picnum;
+                            actor[otherSprite].htowner  = pSprite->owner;
+                            actor[otherSprite].htpicnum = pSprite->picnum;
 
                             if (pProj->workslike & PROJECTILE_RPG_IMPACT_DAMAGE)
-                                actor[otherSprite].extra += pProj->extra;
+                                actor[otherSprite].htextra += pProj->extra;
 
                             A_DoProjectileEffects(spriteNum, &davect, false);
 
@@ -3359,7 +3359,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                 int const fireball = (WORLDTOUR && pSprite->picnum == FIREBALL && sprite[pSprite->owner].picnum != FIREBALL);
 
-                if (pSprite->picnum == RPG && actor[spriteNum].picnum != BOSS2 && pSprite->xrepeat >= 10
+                if (pSprite->picnum == RPG && actor[spriteNum].htpicnum != BOSS2 && pSprite->xrepeat >= 10
                     && sector[pSprite->sectnum].lotag != ST_2_UNDERWATER
                     && g_scriptVersion >= 13)
                 {
@@ -3544,7 +3544,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                                 int lp = A_Spawn(spriteNum, LAVAPOOL);
                                 sprite[lp].owner = sprite[spriteNum].owner;
                                 sprite[lp].yvel = sprite[spriteNum].yvel;
-                                actor[lp].owner = sprite[spriteNum].owner;
+                                actor[lp].htowner = sprite[spriteNum].owner;
                                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
                             }
                             break;
@@ -5901,7 +5901,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 {
                     pData[2]++;
 
-                    if (actor[spriteNum].picnum == TIRE)
+                    if (actor[spriteNum].htpicnum == TIRE)
                     {
                         if (pSprite->xrepeat < 64 && pSprite->yrepeat < 64)
                         {
@@ -5940,7 +5940,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
 
                     pData[1] = 1;
 
-                    pPlayer->footprintcount = (actor[spriteNum].picnum == TIRE) ? 10 : 3;
+                    pPlayer->footprintcount = (actor[spriteNum].htpicnum == TIRE) ? 10 : 3;
                     pPlayer->footprintpal   = pSprite->pal;
                     pPlayer->footprintshade = pSprite->shade;
 
@@ -6198,9 +6198,9 @@ static void MaybeTrainKillPlayer(const spritetype *pSprite, int const setOPos)
 
 static void actorGibEnemy(int findSprite, int spriteNum)
 {
-    actor[findSprite].picnum = RADIUSEXPLOSION;
-    actor[findSprite].extra  = INT16_MAX;
-    actor[findSprite].owner  = spriteNum;
+    actor[findSprite].htpicnum = RADIUSEXPLOSION;
+    actor[findSprite].htextra  = INT16_MAX;
+    actor[findSprite].htowner  = spriteNum;
 }
 // i: SE spritenum
 
@@ -8639,7 +8639,7 @@ static void G_DoEffectorLights(void)  // STATNUM 14
                     mylight.horiz = SH(i);
                     mylight.minshade = sprite[i].xoffset;
                     mylight.maxshade = sprite[i].yoffset;
-                    mylight.tilenum = actor[i].picnum;
+                    mylight.tilenum = actor[i].htpicnum;
                     mylight.publicflags.emitshadow = !(CS(i) & 64);
                     mylight.publicflags.negative = !!(CS(i) & 128);
 
@@ -8706,7 +8706,7 @@ static void G_DoEffectorLights(void)  // STATNUM 14
                 if ((int)!!(CS(i) & 128) != practor[i].lightptr->publicflags.negative) {
                     practor[i].lightptr->publicflags.negative = !!(CS(i) & 128);
                 }
-                practor[i].lightptr->tilenum = actor[i].picnum;
+                practor[i].lightptr->tilenum = actor[i].htpicnum;
             }
 
             break;

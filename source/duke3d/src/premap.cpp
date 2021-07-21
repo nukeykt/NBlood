@@ -744,9 +744,9 @@ void P_ResetMultiPlayer(int playerNum)
 
     a.cgg       = 0;
     a.dispicnum = 0;
-    a.extra     = -1;
+    a.htextra   = -1;
     a.movflag   = 0;
-    a.owner     = p.i;
+    a.htowner   = p.i;
     a.stayput   = -1;
     a.t_data[4] = 0;
     a.tempang   = 0;
@@ -1577,7 +1577,7 @@ static void G_CollectSpawnPoints(int gameMode)
 
         p.frag_ps = pindex;
 
-        actor[i].owner = p.i = i;
+        actor[i].htowner = p.i = i;
         actor[i].bpos = p.opos = p.pos = s.xyz;
         p.bobpos = s.xy;
 

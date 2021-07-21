@@ -1348,14 +1348,14 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
 
     if ((unsigned)s_ow < MAXSPRITES)
     {
-        a.picnum   = sprite[s_ow].picnum;
+        a.htpicnum = sprite[s_ow].picnum;
         a.floorz   = actor[s_ow].floorz;
         a.ceilingz = actor[s_ow].ceilingz;
     }
 
     a.stayput = -1;
-    a.extra   = -1;
-    a.owner = s_ow;
+    a.htextra = -1;
+    a.htowner = s_ow;
 
 #ifdef POLYMER
     practor[newSprite].lightId = -1;
@@ -1426,7 +1426,7 @@ int A_Spawn(int spriteNum, int tileNum)
         // spawn from parent sprite <j>
         newSprite = A_InsertSprite(sprite[spriteNum].sectnum,sprite[spriteNum].x,sprite[spriteNum].y,sprite[spriteNum].z,
                            tileNum,0,0,0,0,0,0,spriteNum,0);
-        actor[newSprite].picnum = sprite[spriteNum].picnum;
+        actor[newSprite].htpicnum = sprite[spriteNum].picnum;
     }
     else
     {
@@ -1438,19 +1438,19 @@ int A_Spawn(int spriteNum, int tileNum)
         a = { };
         a.bpos = { s.x, s.y, s.z };
 
-        a.picnum = s.picnum;
+        a.htpicnum = s.picnum;
 
         if (s.picnum == SECTOREFFECTOR && s.lotag == 50)
-            a.picnum = s.owner;
+            a.htpicnum = s.owner;
 
         if (s.picnum == LOCATORS && s.owner != -1)
-            a.owner = s.owner;
+            a.htowner = s.owner;
         else
-            s.owner = a.owner = newSprite;
+            s.owner = a.htowner = newSprite;
 
         a.floorz   = sector[s.sectnum].floorz;
         a.ceilingz = sector[s.sectnum].ceilingz;
-        a.stayput = a.extra = -1;
+        a.stayput = a.htextra = -1;
         a.florhit = a.lzsum = 0;
 
 #ifdef POLYMER
@@ -4184,7 +4184,7 @@ PALONLY:
         case SCRAP3__:
         case SCRAP4__:
         case SCRAP5__:
-            if (actor[i].picnum == BLIMP && t->picnum == SCRAP1 && pSprite->yvel >= 0)
+            if (actor[i].htpicnum == BLIMP && t->picnum == SCRAP1 && pSprite->yvel >= 0)
                 t->picnum = pSprite->yvel < MAXUSERTILES ? pSprite->yvel : 0;
             else t->picnum += T1(i);
             t->shade = -128+6 < t->shade ? t->shade-6 : -128; // effectively max(t->shade-6, -128) while avoiding (signed!) underflow
@@ -7104,7 +7104,7 @@ int G_DoMoveThings(void)
         if (g_player[i].ps->team != g_player[i].pteam && g_gametypeFlags[ud.coop] & GAMETYPE_TDM)
         {
             g_player[i].ps->team = g_player[i].pteam;
-            actor[g_player[i].ps->i].picnum = APLAYERTOP;
+            actor[g_player[i].ps->i].htpicnum = APLAYERTOP;
             P_QuickKill(g_player[i].ps);
         }
 

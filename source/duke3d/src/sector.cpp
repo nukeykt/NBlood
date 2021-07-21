@@ -2427,13 +2427,13 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
                 return;
 
             if (WORLDTOUR && sprite[dmgSrc].picnum == FIREBALL && sprite[sprite[spriteNum].owner].picnum != FIREBALL)
-                actor[spriteNum].picnum = FLAMETHROWERFLAME;
+                actor[spriteNum].htpicnum = FLAMETHROWERFLAME;
             else
-                actor[spriteNum].picnum = sprite[dmgSrc].picnum;
+                actor[spriteNum].htpicnum = sprite[dmgSrc].picnum;
 
-            actor[spriteNum].extra += sprite[dmgSrc].extra;
-            actor[spriteNum].ang    = sprite[dmgSrc].ang;
-            actor[spriteNum].owner  = sprite[dmgSrc].owner;
+            actor[spriteNum].htextra += sprite[dmgSrc].extra;
+            actor[spriteNum].htang    = sprite[dmgSrc].ang;
+            actor[spriteNum].htowner  = sprite[dmgSrc].owner;
 
             if(A_CheckSpriteFlags(spriteNum, SFLAG_DAMAGEEVENT))
                 VM_OnEventWithReturn(EVENT_POSTDAMAGESPRITE, dmgSrc, -1, spriteNum);
@@ -2449,7 +2449,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
             if (sprite[spriteNum].xrepeat < 24 && sprite[dmgSrc].picnum == SHRINKSPARK)
                 return;
 
-            if (sprite[actor[spriteNum].owner].picnum != APLAYER)
+            if (sprite[actor[spriteNum].htowner].picnum != APLAYER)
                 if (ud.player_skill >= 3)
                     sprite[dmgSrc].extra += (sprite[dmgSrc].extra>>1);
         }
@@ -2516,10 +2516,10 @@ void A_DamageObject_Generic(int spriteNum, int const dmgSrc)
 
             if (sprite[spriteNum].statnum != STAT_ZOMBIEACTOR)
             {
-                actor[spriteNum].picnum = sprite[dmgSrc].picnum;
-                actor[spriteNum].extra += sprite[dmgSrc].extra;
-                actor[spriteNum].ang    = sprite[dmgSrc].ang;
-                actor[spriteNum].owner  = sprite[dmgSrc].owner;
+                actor[spriteNum].htpicnum = sprite[dmgSrc].picnum;
+                actor[spriteNum].htextra += sprite[dmgSrc].extra;
+                actor[spriteNum].htang    = sprite[dmgSrc].ang;
+                actor[spriteNum].htowner  = sprite[dmgSrc].owner;
 
                 if(A_CheckSpriteFlags(spriteNum, SFLAG_DAMAGEEVENT))
                     VM_OnEventWithReturn(EVENT_POSTDAMAGESPRITE, dmgSrc, -1, spriteNum);
@@ -2532,7 +2532,7 @@ void A_DamageObject_Generic(int spriteNum, int const dmgSrc)
                 if (ps->newowner >= 0)
                     G_ClearCameraView(ps);
 
-                if (sprite[actor[spriteNum].owner].picnum != APLAYER)
+                if (sprite[actor[spriteNum].htowner].picnum != APLAYER)
                     if (ud.player_skill >= 3)
                         sprite[dmgSrc].extra += (sprite[dmgSrc].extra>>1);
             }
@@ -3451,8 +3451,8 @@ void P_CheckSectors(int playerNum)
                         if (ud.noexits && (g_netServer || ud.multimode > 1))
                         {
                             // NUKEBUTTON frags the player
-                            actor[pPlayer->i].picnum = NUKEBUTTON;
-                            actor[pPlayer->i].extra  = 250;
+                            actor[pPlayer->i].htpicnum = NUKEBUTTON;
+                            actor[pPlayer->i].htextra  = 250;
                         }
                         else
                         {

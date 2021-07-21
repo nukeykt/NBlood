@@ -130,8 +130,8 @@ typedef struct
     vec3_t   bpos;                  // 12b
     int32_t  floorz, ceilingz;      // 8b
     vec2_t   lastv;                 // 8b
-    int16_t  picnum, ang;           // 4b
-    int16_t  extra, owner;          // 4b
+    int16_t  htpicnum, htang;       // 4b
+    int16_t  htextra, htowner;      // 4b
     int16_t  movflag, tempang;      // 4b
     int16_t  timetosleep, stayput;  // 4b
     uint16_t florhit, lzsum;        // 4b
@@ -190,10 +190,10 @@ typedef struct netactor_s
 
         lasttransport,
 
-        picnum,
-        ang,
-        extra,
-        owner,
+        htpicnum,
+        htang,
+        htextra,
+        htowner,
 
         movflag,
         tempang,

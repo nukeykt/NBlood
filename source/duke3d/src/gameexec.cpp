@@ -246,8 +246,8 @@ static int VM_CheckSquished(void)
 #ifndef EDUKE32_STANDALONE
     if (EDUKE32_PREDICT_FALSE(vm.pSprite->pal == 1)) // frozen
     {
-        vm.pActor->picnum = SHOTSPARK1;
-        vm.pActor->extra  = 1;
+        vm.pActor->htpicnum = SHOTSPARK1;
+        vm.pActor->htextra  = 1;
         return 0;
     }
 #endif
@@ -474,7 +474,7 @@ void A_GetZLimits(int const spriteNum)
     if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0
 #ifndef EDUKE32_STANDALONE
             // exclude squish sprites as they are sometimes used as pseudo-ladders in old usermaps
-            && (FURY || (pActor->picnum != OOZ && pActor->picnum != OOZ2))
+            && (FURY || (pActor->htpicnum != OOZ && pActor->htpicnum != OOZ2))
 #endif
        )
     {
@@ -1052,8 +1052,8 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
                 A_Spawn(spriteNum,BLOODPOOL);
             }
 #endif
-            actor[spriteNum].picnum = SHOTSPARK1;
-            actor[spriteNum].extra = 1;
+            actor[spriteNum].htpicnum = SHOTSPARK1;
+            actor[spriteNum].htextra = 1;
             pSprite->zvel = 0;
         }
         else if (pSprite->zvel > 2048 && sector[pSprite->sectnum].lotag != ST_1_ABOVE_WATER)
@@ -3100,7 +3100,7 @@ badindex:
 
             vInstruction(CON_IFSPAWNEDBY):
             vInstruction(CON_IFWASWEAPON):
-                branch(vm.pActor->picnum == *(++insptr));
+                branch(vm.pActor->htpicnum == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFPDISTL):

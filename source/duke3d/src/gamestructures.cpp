@@ -239,10 +239,10 @@ memberlabel_t const ActorLabels[]=
 
     // ActorExtra labels...
     LABEL(actor, cgg,         "htcgg",          ACTOR_HTCGG),
-    LABEL(actor, picnum,      "htpicnum",       ACTOR_HTPICNUM),
-    LABEL(actor, ang,         "htang",          ACTOR_HTANG),
-    LABEL(actor, extra,       "htextra",        ACTOR_HTEXTRA),
-    LABEL(actor, owner,       "htowner",        ACTOR_HTOWNER),
+    LABEL(actor, htpicnum,    "htpicnum",       ACTOR_HTPICNUM),
+    LABEL(actor, htang,       "htang",          ACTOR_HTANG),
+    LABEL(actor, htextra,     "htextra",        ACTOR_HTEXTRA),
+    LABEL(actor, htowner,     "htowner",        ACTOR_HTOWNER),
     LABEL(actor, movflag,     "htmovflag",      ACTOR_HTMOVFLAG),
     { "htumovflag", ACTOR_HTUMOVFLAG, sizeof(actor[0].movflag) | LABEL_UNSIGNED, 0, offsetof(actor_t, movflag) },
     LABEL(actor, tempang,     "httempang",      ACTOR_HTTEMPANG),
