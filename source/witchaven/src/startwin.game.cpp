@@ -703,7 +703,8 @@ int32_t startwin_run(void)
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
 #endif
         g_selectedGrp = settings.grp;
-        Bstrcpy(g_modDir, (g_noSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
+        if (g_modDir != settings.gamedir)
+            Bstrcpy(g_modDir, (g_noSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return done;
