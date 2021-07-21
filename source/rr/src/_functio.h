@@ -98,6 +98,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Last_Used_Weapon",
    "Quick_Save",
    "Quick_Load",
+   "Alt_Fire",
    "Third_Person_View",
    "Toggle_Crouch",
    };

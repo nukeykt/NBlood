@@ -396,7 +396,8 @@ static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
 
-
+static int g_lookAxis;
+static int g_turnAxis;
 
 /*
 MenuEntry_t is passed in arrays of pointers so that the callback function
@@ -602,7 +603,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Control Setup", MEF_OptionsMenu, OPTIONS_CONTROLS, MEN
 MAKE_MENU_TOP_ENTRYLINK( "Keyboard Setup", MEF_BigOptionsRtSections, OPTIONS_KEYBOARDSETUP, MENU_KEYBOARDSETUP );
 MAKE_MENU_TOP_ENTRYLINK( "Mouse Setup", MEF_BigOptionsRtSections, OPTIONS_MOUSESETUP, MENU_MOUSESETUP );
 #endif
-MAKE_MENU_TOP_ENTRYLINK( "Joystick Setup", MEF_BigOptionsRtSections, OPTIONS_JOYSTICKSETUP, MENU_JOYSTICKSETUP );
+MAKE_MENU_TOP_ENTRYLINK( "Controller Setup", MEF_BigOptionsRtSections, OPTIONS_JOYSTICKSETUP, MENU_JOYSTICKSETUP );
 #ifdef EDUKE32_ANDROID_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHSETUP, MENU_TOUCHSETUP );
 #endif
@@ -1072,21 +1073,60 @@ static MenuEntry_t *MEL_TOUCHSENS [] = {
 };
 #endif
 
-MAKE_MENU_TOP_ENTRYLINK( "Edit Buttons", MEF_CenterMenu, JOYSTICK_EDITBUTTONS, MENU_JOYSTICKBTNS );
-MAKE_MENU_TOP_ENTRYLINK( "Edit Axes", MEF_CenterMenu, JOYSTICK_EDITAXES, MENU_JOYSTICKAXES );
+static MenuOption_t MEO_JOYSTICK_ENABLE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &ud.setup.usejoystick );
+static MenuEntry_t ME_JOYSTICK_ENABLE = MAKE_MENUENTRY( "Use Controller:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_ENABLE, Option );
+
+MAKE_MENU_TOP_ENTRYLINK( "Button Assignment", MEF_BigOptionsRtSections, JOYSTICK_EDITBUTTONS, MENU_JOYSTICKBTNS );
+MAKE_MENU_TOP_ENTRYLINK( "Advanced", MEF_BigOptionsRtSections, JOYSTICK_ADV, MENU_JOYSTICKADV );
+
+static MenuRangeInt32_t MEO_JOYSTICK_LOOKXSCALE = MAKE_MENURANGE( NULL, &MF_Redfont, 0, 131072, 131072, 101, 2 | EnforceIntervals );
+static MenuEntry_t ME_JOYSTICK_LOOKXSCALE = MAKE_MENUENTRY( "Turn sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKXSCALE, RangeInt32 );
+
+static MenuRangeInt32_t MEO_JOYSTICK_LOOKYSCALE = MAKE_MENURANGE( NULL, &MF_Redfont, 0, 131072, 131072, 101, 2 | EnforceIntervals );
+static MenuEntry_t ME_JOYSTICK_LOOKYSCALE = MAKE_MENUENTRY( "Aim sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKYSCALE, RangeInt32 );
+
+static MenuOption_t MEO_JOYSTICK_LOOKINVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, NULL );
+static MenuEntry_t ME_JOYSTICK_LOOKINVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKINVERT, Option );
+
+static MenuLink_t MEO_JOYSTICK_DEFAULTS = { MENU_JOYDEFAULTVERIFY, MA_None, };
+static MenuEntry_t ME_JOYSTICK_DEFAULTS = MAKE_MENUENTRY( "Reset To Defaults", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_JOYSTICK_DEFAULTS, Link );
 
 static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
+    &ME_JOYSTICK_ENABLE,
+    &ME_JOYSTICK_LOOKXSCALE,
+    &ME_JOYSTICK_LOOKYSCALE,
+    &ME_JOYSTICK_LOOKINVERT,
     &ME_JOYSTICK_EDITBUTTONS,
-    &ME_JOYSTICK_EDITAXES,
+    &ME_Space6_Redfont,
+    &ME_JOYSTICK_ADV,
+    &ME_Space6_Redfont,
+    &ME_JOYSTICK_DEFAULTS,
 };
 
+MAKE_MENU_TOP_ENTRYLINK( "Edit Axes and Triggers", MEF_BigOptionsRtSections, JOYSTICK_EDITAXES, MENU_JOYSTICKAXES );
+
+static MenuRangeInt32_t MEO_JOYSTICK_WEIGHTED_AIMING = MAKE_MENURANGE(&ud.config.JoystickAimWeight , &MF_Bluefont, 0, 8, 0, 9, 0 );
+static MenuEntry_t ME_JOYSTICK_WEIGHTED_AIMING = MAKE_MENUENTRY( "Weighted aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_WEIGHTED_AIMING, RangeInt32 );
+
+static MenuRangeInt32_t MEO_JOYSTICK_VIEW_CENTERING = MAKE_MENURANGE(&ud.config.JoystickViewCentering , &MF_Bluefont, 0, 8, 0, 5, 0 );
+static MenuEntry_t ME_JOYSTICK_VIEW_CENTERING = MAKE_MENUENTRY( "View centering:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_VIEW_CENTERING, RangeInt32 );
+
+static MenuOption_t MEO_JOYSTICK_AIM_ASSIST = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.JoystickAimAssist );
+static MenuEntry_t ME_JOYSTICK_AIM_ASSIST = MAKE_MENUENTRY( "Aim assist:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_JOYSTICK_AIM_ASSIST, Option );
+
+static MenuEntry_t *MEL_JOYSTICKADV[] = {
+    &ME_JOYSTICK_WEIGHTED_AIMING,
+    &ME_JOYSTICK_VIEW_CENTERING,
+    &ME_JOYSTICK_AIM_ASSIST,
+    &ME_JOYSTICK_EDITAXES,
+};
 #define MAXJOYBUTTONSTRINGLENGTH 32
 
-static char MenuJoystickNames[MAXJOYBUTTONSANDHATS*2][MAXJOYBUTTONSTRINGLENGTH];
+static char MenuJoystickNames[MAXJOYBUTTONSANDHATS][MAXJOYBUTTONSTRINGLENGTH];
 
-static MenuOption_t MEO_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS*2];
-static MenuEntry_t ME_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS*2];
-static MenuEntry_t *MEL_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS*2];
+static MenuOption_t MEO_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS];
+static MenuEntry_t ME_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS];
+static MenuEntry_t *MEL_JOYSTICKBTNS[MAXJOYBUTTONSANDHATS];
 
 static MenuLink_t MEO_JOYSTICKAXES = { MENU_JOYSTICKAXIS, MA_Advance, };
 static MenuEntry_t ME_JOYSTICKAXES_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXES, Link );
@@ -1097,16 +1137,18 @@ static MenuEntry_t *MEL_JOYSTICKAXES[MAXJOYAXES];
 
 static const char *MenuJoystickHatDirections[] = { "Up", "Right", "Down", "Left", };
 
-static char const *MEOSN_JOYSTICKAXIS_ANALOG[] = { "  -None-", "Turning", "Strafing", "Looking", "Moving", };
+static char const *MEOSN_JOYSTICKAXIS_ANALOG[] = { MenuGameFuncNone, "Turning Left/Right", "Strafing", "Looking Up/Down", "Moving Forward/Back", };
 static int32_t MEOSV_JOYSTICKAXIS_ANALOG[] = { -1, analog_turning, analog_strafing, analog_lookingupanddown, analog_moving, };
 static MenuOptionSet_t MEOS_JOYSTICKAXIS_ANALOG = MAKE_MENUOPTIONSET( MEOSN_JOYSTICKAXIS_ANALOG, MEOSV_JOYSTICKAXIS_ANALOG, 0x0 );
 static MenuOption_t MEO_JOYSTICKAXIS_ANALOG = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_JOYSTICKAXIS_ANALOG, NULL );
-static MenuEntry_t ME_JOYSTICKAXIS_ANALOG = MAKE_MENUENTRY( "Analog", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_ANALOG, Option );
-static MenuRangeInt32_t MEO_JOYSTICKAXIS_SCALE = MAKE_MENURANGE( NULL, &MF_Bluefont, -262144, 262144, 65536, 65, 3 );
-static MenuEntry_t ME_JOYSTICKAXIS_SCALE = MAKE_MENUENTRY( "Scale", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_SCALE, RangeInt32 );
-static MenuRangeInt32_t MEO_JOYSTICKAXIS_DEAD = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 1000000, 0, 33, 2 );
+static MenuEntry_t ME_JOYSTICKAXIS_ANALOG = MAKE_MENUENTRY( "Input", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_ANALOG, Option );
+static MenuRangeInt32_t MEO_JOYSTICKAXIS_SCALE = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 131072, 131072, 101, 2 | EnforceIntervals );
+static MenuEntry_t ME_JOYSTICKAXIS_SCALE = MAKE_MENUENTRY( "Sensitivity", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_SCALE, RangeInt32 );
+static MenuOption_t MEO_JOYSTICKAXIS_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, NULL );
+static MenuEntry_t ME_JOYSTICKAXIS_INVERT = MAKE_MENUENTRY( "Invert", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_INVERT, Option );
+static MenuRangeInt32_t MEO_JOYSTICKAXIS_DEAD = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 4000, 0, 21, EnforceIntervals );
 static MenuEntry_t ME_JOYSTICKAXIS_DEAD = MAKE_MENUENTRY( "Dead Zone", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_DEAD, RangeInt32 );
-static MenuRangeInt32_t MEO_JOYSTICKAXIS_SATU = MAKE_MENURANGE( NULL, &MF_Bluefont, 0, 1000000, 0, 33, 2 );
+static MenuRangeInt32_t MEO_JOYSTICKAXIS_SATU = MAKE_MENURANGE( NULL, &MF_Bluefont, 6000, 10000, 0, 21, EnforceIntervals );
 static MenuEntry_t ME_JOYSTICKAXIS_SATU = MAKE_MENUENTRY( "Saturation", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICKAXIS_SATU, RangeInt32 );
 
 static MenuOption_t MEO_JOYSTICKAXIS_DIGITALNEGATIVE = MAKE_MENUOPTION( &MF_Minifont, &MEOS_Gamefuncs, NULL );
@@ -1117,6 +1159,7 @@ static MenuEntry_t ME_JOYSTICKAXIS_DIGITALPOSITIVE = MAKE_MENUENTRY( "Digital +"
 static MenuEntry_t *MEL_JOYSTICKAXIS[] = {
     &ME_JOYSTICKAXIS_ANALOG,
     &ME_JOYSTICKAXIS_SCALE,
+    &ME_JOYSTICKAXIS_INVERT,
     &ME_JOYSTICKAXIS_DEAD,
     &ME_JOYSTICKAXIS_SATU,
     &ME_Space8_Redfont,
@@ -1572,9 +1615,10 @@ static MenuMenu_t M_TOUCHSETUP = MAKE_MENUMENU( "Touch Setup", &MMF_Top_Options,
 static MenuMenu_t M_TOUCHSENS = MAKE_MENUMENU( "Sensitivity", &MMF_BigOptions, MEL_TOUCHSENS);
 static MenuPanel_t M_TOUCHBUTTONS = { "Button Setup", MENU_TOUCHSETUP, MA_Return, MENU_TOUCHSETUP, MA_Advance, };
 #endif
-static MenuMenu_t M_JOYSTICKSETUP = MAKE_MENUMENU( "Joystick Setup", &MMF_Top_Joystick_Network, MEL_JOYSTICKSETUP );
-static MenuMenu_t M_JOYSTICKBTNS = MAKE_MENUMENU( "Joystick Buttons", &MMF_MouseJoySetupBtns, MEL_JOYSTICKBTNS );
-static MenuMenu_t M_JOYSTICKAXES = MAKE_MENUMENU( "Joystick Axes", &MMF_BigSliders, MEL_JOYSTICKAXES );
+static MenuMenu_t M_JOYSTICKSETUP = MAKE_MENUMENU( "Controller Setup", &MMF_BigOptions, MEL_JOYSTICKSETUP );
+static MenuMenu_t M_JOYSTICKADV  = MAKE_MENUMENU( "Controller Setup", &MMF_BigOptions, MEL_JOYSTICKADV );
+static MenuMenu_t M_JOYSTICKBTNS = MAKE_MENUMENU( "Controller Buttons", &MMF_MouseJoySetupBtns, MEL_JOYSTICKBTNS );
+static MenuMenu_t M_JOYSTICKAXES = MAKE_MENUMENU( "Axes and Triggers", &MMF_BigSliders, MEL_JOYSTICKAXES );
 static MenuMenu_t M_KEYBOARDKEYS = MAKE_MENUMENU( "Key Configuration", &MMF_KeyboardSetupFuncs, MEL_KEYBOARDSETUPFUNCS );
 static MenuMenu_t M_MOUSEBTNS = MAKE_MENUMENU( "Mouse Buttons", &MMF_MouseJoySetupBtns, MEL_MOUSESETUPBTNS );
 static MenuMenu_t M_JOYSTICKAXIS = MAKE_MENUMENU( NULL, &MMF_BigSliders, MEL_JOYSTICKAXIS );
@@ -1660,6 +1704,7 @@ static MenuVerify_t M_SAVEVERIFY = { CURSOR_CENTER_2LINE, MENU_SAVE, MA_None, };
 static MenuVerify_t M_SAVEDELVERIFY = { CURSOR_CENTER_3LINE, MENU_SAVE, MA_None, };
 static MenuVerify_t M_RESETPLAYER = { CURSOR_CENTER_3LINE, MENU_CLOSE, MA_None, };
 
+static MenuVerify_t M_JOYSTANDARDVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
 static MenuMessage_t M_NETWAITMASTER = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
 static MenuMessage_t M_NETWAITVOTES = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
 static MenuMessage_t M_BUYDUKE = { CURSOR_BOTTOMRIGHT, MENU_EPISODE, MA_Return, };
@@ -1691,9 +1736,10 @@ static Menu_t Menus[] = {
     { &M_MOUSESETUP, MENU_MOUSESETUP, MENU_CONTROLS, MA_Return, Menu },
     { &M_JOYSTICKSETUP, MENU_JOYSTICKSETUP, MENU_CONTROLS, MA_Return, Menu },
     { &M_JOYSTICKBTNS, MENU_JOYSTICKBTNS, MENU_JOYSTICKSETUP, MA_Return, Menu },
-    { &M_JOYSTICKAXES, MENU_JOYSTICKAXES, MENU_JOYSTICKSETUP, MA_Return, Menu },
+    { &M_JOYSTICKAXES, MENU_JOYSTICKAXES, MENU_JOYSTICKADV, MA_Return, Menu },
     { &M_KEYBOARDKEYS, MENU_KEYBOARDKEYS, MENU_KEYBOARDSETUP, MA_Return, Menu },
     { &M_MOUSEBTNS, MENU_MOUSEBTNS, MENU_MOUSESETUP, MA_Return, Menu },
+    { &M_JOYSTICKADV, MENU_JOYSTICKADV, MENU_JOYSTICKSETUP, MA_Return, Menu },
     { &M_JOYSTICKAXIS, MENU_JOYSTICKAXIS, MENU_JOYSTICKAXES, MA_Return, Menu },
 #ifdef EDUKE32_ANDROID_MENU
     { &M_TOUCHSETUP, MENU_TOUCHSETUP, MENU_OPTIONS, MA_Return, Menu },
@@ -1775,6 +1821,7 @@ static Menu_t Menus[] = {
     { &M_NEWVERIFY, MENU_NEWVERIFY, MENU_PREVIOUS, MA_Return, Verify },
     { &M_SAVEVERIFY, MENU_SAVEVERIFY, MENU_SAVE, MA_None, Verify },
     { &M_SAVEDELVERIFY, MENU_SAVEDELVERIFY, MENU_SAVE, MA_None, Verify },
+    { &M_JOYSTANDARDVERIFY, MENU_JOYDEFAULTVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
     { &M_ADULTPASSWORD, MENU_ADULTPASSWORD, MENU_GAMESETUP, MA_None, TextForm },
     { &M_RESETPLAYER, MENU_RESETPLAYER, MENU_CLOSE, MA_None, Verify },
     { &M_BUYDUKE, MENU_BUYDUKE, MENU_EPISODE, MA_Return, Message },
@@ -1855,6 +1902,66 @@ static int32_t SELECTDIR_z = 65536;
 
 static ClockTicks m_menustarttics;
 static int m_logosoundcnt = 0; // DN64 logo
+
+
+static void Menu_PopulateJoystick(void)
+{
+    for (int i = 0; i < joystick.numButtons + 4*joystick.numHats + 2*joystick.isGameController; ++i)
+    {
+        if (i < joystick.numButtons)
+        {
+            if (i == GAMECONTROLLER_BUTTON_START || !joyHasButton(i))
+            {
+                ME_JOYSTICKBTNS[i] ={};
+                ME_JOYSTICKBTNS[i].flags = MEF_Hidden;
+                continue;
+            }
+
+            auto const name = joyGetName(1, i);
+            Bassert(name != nullptr);
+
+            Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
+        }
+        else
+        {
+            if (joystick.numHats && i < joystick.numButtons + 4*joystick.numHats)
+            {
+                Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Hat %d %s", ((i - joystick.numButtons) >> 2),
+                          MenuJoystickHatDirections[((i - joystick.numButtons)) % 4]);
+            }
+            else if (joystick.isGameController)
+            {
+                auto const name = joyGetName(0, i - joystick.numButtons + 4);
+                Bassert(name != nullptr);
+                Bstrncpy(MenuJoystickNames[i], name, MAXJOYBUTTONSTRINGLENGTH);
+            }
+        }
+
+        MEL_JOYSTICKBTNS[i] = &ME_JOYSTICKBTNS[i];
+        ME_JOYSTICKBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
+        ME_JOYSTICKBTNS[i].name = MenuJoystickNames[i];
+        ME_JOYSTICKBTNS[i].entry = &MEO_JOYSTICKBTNS[i];
+        MEO_JOYSTICKBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
+
+        if (i < joystick.numButtons + 4*joystick.numHats)
+            MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i][0];
+        else if (joystick.isGameController)
+            MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickDigitalFunctions[i - joystick.numButtons - 4*joystick.numHats + 4][1];
+    }
+
+    M_JOYSTICKBTNS.numEntries = joystick.numButtons + 4*joystick.numHats + 2*joystick.isGameController;
+
+    for (int i = 0; i < joystick.numAxes; ++i)
+    {
+        auto const name = joyGetName(0, i);
+        Bassert(name != nullptr);
+        ME_JOYSTICKAXES[i] = ME_JOYSTICKAXES_TEMPLATE;
+        Bstrncpy(MenuJoystickAxes[i], name, MAXJOYBUTTONSTRINGLENGTH);
+        ME_JOYSTICKAXES[i].name = MenuJoystickAxes[i];
+        MEL_JOYSTICKAXES[i] = &ME_JOYSTICKAXES[i];
+    }
+    M_JOYSTICKAXES.numEntries = joystick.numAxes;
+}
 
 /*
 This function prepares data after ART and CON have been processed.
@@ -2034,36 +2141,8 @@ void Menu_Init(void)
         MEO_MOUSESETUPBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
         MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseDataIndex[i][0]][MenuMouseDataIndex[i][1]];
     }
-    for (i = 0; i < 2*joystick.numButtons + 8*joystick.numHats; ++i)
-    {
-        if (i < 2*joystick.numButtons)
-        {
-            if (i & 1)
-                Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, "Double %s", joyGetName(1, i>>1));
-            else
-                Bstrncpy(MenuJoystickNames[i], joyGetName(1, i>>1), MAXJOYBUTTONSTRINGLENGTH);
-        }
-        else
-        {
-            Bsnprintf(MenuJoystickNames[i], MAXJOYBUTTONSTRINGLENGTH, (i & 1) ? "Double Hat %d %s" : "Hat %d %s", ((i - 2*joystick.numButtons)>>3), MenuJoystickHatDirections[((i - 2*joystick.numButtons)>>1) % 4]);
-        }
 
-        MEL_JOYSTICKBTNS[i] = &ME_JOYSTICKBTNS[i];
-        ME_JOYSTICKBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
-        ME_JOYSTICKBTNS[i].name = MenuJoystickNames[i];
-        ME_JOYSTICKBTNS[i].entry = &MEO_JOYSTICKBTNS[i];
-        MEO_JOYSTICKBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_JOYSTICKBTNS[i].data = &ud.config.JoystickFunctions[i>>1][i&1];
-    }
-    M_JOYSTICKBTNS.numEntries = 2*joystick.numButtons + 8*joystick.numHats;
-    for (i = 0; i < joystick.numAxes; ++i)
-    {
-        ME_JOYSTICKAXES[i] = ME_JOYSTICKAXES_TEMPLATE;
-        Bstrncpy(MenuJoystickAxes[i], joyGetName(0, i), MAXJOYBUTTONSTRINGLENGTH);
-        ME_JOYSTICKAXES[i].name = MenuJoystickAxes[i];
-        MEL_JOYSTICKAXES[i] = &ME_JOYSTICKAXES[i];
-    }
-    M_JOYSTICKAXES.numEntries = joystick.numAxes;
+    Menu_PopulateJoystick();
 
     // prepare video setup
     for (i = 0; i < validmodecnt; ++i)
@@ -2473,6 +2552,20 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SAVESETUP_MAXAUTOSAVES, !ud.autosavedeletion);
         break;
 
+    case MENU_JOYSTICKSETUP:
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKXSCALE, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKYSCALE, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKINVERT, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITBUTTONS, !CONTROL_JoyPresent || (joystick.numButtons == 0 && joystick.numHats == 0));
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_ADV, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_DEFAULTS, !joystick.isGameController);
+        break;
+
+    case MENU_JOYSTICKADV:
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITAXES, !CONTROL_JoyPresent || joystick.numAxes == 0);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_AIM_ASSIST, !ud.config.JoystickViewCentering);
+        break;
+
 #ifndef EDUKE32_SIMPLE_MENU
     case MENU_MOUSESETUP:
         MenuEntry_DisableOnCondition(&ME_MOUSESETUP_MOUSEAIMING, ud.mouseaiming);
@@ -2501,7 +2594,6 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_OPTIONS:
         MenuEntry_DisableOnCondition(&ME_OPTIONS_PLAYERSETUP, ud.recstat == 1);
-        MenuEntry_HideOnCondition(&ME_OPTIONS_JOYSTICKSETUP, !ud.setup.usejoystick || CONTROL_JoyPresent == 0);
         break;
 
     case MENU_COLCORR:
@@ -2639,6 +2731,17 @@ static void Menu_PreDrawBackground(MenuID_t cm, const vec2_t origin)
     }
 }
 
+
+static void Menu_DrawVerifyPrompt(int32_t x, int32_t y, const char * text, int numlines = 1)
+{
+    mgametextcenter(x, y + (90<<16), text);
+#ifndef EDUKE32_ANDROID_MENU
+    char const * inputs = CONTROL_LastSeenInput == LastSeenInput::Joystick
+        ? "Press (A) to accept, (B) to return."
+        : "(Y/N)";
+    mgametextcenter(x, y + (90<<16) + MF_Bluefont.get_yline() * numlines, inputs);
+#endif
+}
 
 static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 {
@@ -2976,6 +3079,9 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                                                        "\n(Y/N)"
 #endif
         );
+    case MENU_JOYDEFAULTVERIFY:
+        videoFadeToBlack(1);
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller settings to default?");
         break;
 
     case MENU_QUIT:
@@ -3892,7 +3998,7 @@ static void Menu_PreOptionListDraw(MenuEntry_t *entry, const vec2_t origin)
     case MENU_JOYSTICKAXIS:
         mgametextcenter(origin.x, origin.y + (31<<16), "Select a function to assign");
 
-        Bsprintf(tempbuf, "to %s", entry->name);
+        Bsprintf(tempbuf, "to %s", g_currentMenu == MENU_JOYSTICKAXIS ? M_JOYSTICKAXIS.title : entry->name);
 
         mgametextcenter(origin.x, origin.y + ((31+9)<<16), tempbuf);
 
@@ -4167,6 +4273,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         M_JOYSTICKAXIS.title = joyGetName(0, M_JOYSTICKAXES.currentEntry);
         MEO_JOYSTICKAXIS_ANALOG.data = &ud.config.JoystickAnalogueAxes[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_SCALE.variable = &ud.config.JoystickAnalogueScale[M_JOYSTICKAXES.currentEntry];
+        MEO_JOYSTICKAXIS_INVERT.data = &ud.config.JoystickAnalogueInvert[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_DEAD.variable = &ud.config.JoystickAnalogueDead[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_SATU.variable = &ud.config.JoystickAnalogueSaturate[M_JOYSTICKAXES.currentEntry];
         MEO_JOYSTICKAXIS_DIGITALNEGATIVE.data = &ud.config.JoystickDigitalFunctions[M_JOYSTICKAXES.currentEntry][0];
@@ -4388,8 +4495,14 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     }
     else if (entry == &ME_SOUND_DUKETALK)
         ud.config.VoiceToggle = (ud.config.VoiceToggle&~1) | newOption;
+    else if (entry == &ME_JOYSTICK_ENABLE)
+        CONTROL_JoystickEnabled = (newOption && CONTROL_JoyPresent);
     else if (entry == &ME_JOYSTICKAXIS_ANALOG)
         CONTROL_MapAnalogAxis(M_JOYSTICKAXES.currentEntry, newOption, controldevice_joystick);
+    else if (entry == &ME_JOYSTICKAXIS_INVERT)
+        CONTROL_SetAnalogAxisInvert(M_JOYSTICKAXES.currentEntry, newOption, controldevice_joystick);
+    else if (entry == &ME_JOYSTICK_LOOKINVERT)
+        CONTROL_SetAnalogAxisInvert(g_lookAxis, newOption, controldevice_joystick);
     else if (entry == &ME_NETOPTIONS_EPISODE)
     {
         if (newOption < g_volumeCnt)
@@ -4452,13 +4565,16 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         CONTROL_FreeMouseBind(MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0]);
         break;
     case MENU_JOYSTICKBTNS:
-        CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry>>1, M_JOYSTICKBTNS.currentEntry&1, controldevice_joystick);
+        if (M_JOYSTICKBTNS.currentEntry < joystick.numButtons + 4*joystick.numHats)
+            CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, 0, controldevice_joystick);
+        else if (joystick.isGameController)
+            CONTROL_MapDigitalAxis(M_JOYSTICKBTNS.currentEntry - joystick.numButtons - 4*joystick.numHats + 4, newOption, 1, controldevice_joystick);
         break;
     case MENU_JOYSTICKAXIS:
     {
         for (int i = 0; i < ARRAY_SSIZE(MEL_INTERNAL_JOYSTICKAXIS_DIGITAL); i++)
             if (entry == MEL_INTERNAL_JOYSTICKAXIS_DIGITAL[i])
-                CONTROL_MapDigitalAxis(i>>1, newOption, i&1, controldevice_joystick);
+                CONTROL_MapDigitalAxis(M_JOYSTICKAXES.currentEntry, newOption, i&1, controldevice_joystick);
     }
         break;
     }
@@ -4537,6 +4653,10 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
         CONTROL_SetAnalogAxisScale(1, newValue, controldevice_mouse);
     else if (entry == &ME_JOYSTICKAXIS_SCALE)
         CONTROL_SetAnalogAxisScale(M_JOYSTICKAXES.currentEntry, newValue, controldevice_joystick);
+    else if (entry == &ME_JOYSTICK_LOOKXSCALE)
+        CONTROL_SetAnalogAxisScale(g_turnAxis, newValue, controldevice_joystick);
+    else if (entry == &ME_JOYSTICK_LOOKYSCALE)
+        CONTROL_SetAnalogAxisScale(g_lookAxis, newValue, controldevice_joystick);
     else if (entry == &ME_JOYSTICKAXIS_DEAD)
         joySetDeadZone(M_JOYSTICKAXES.currentEntry, newValue, *MEO_JOYSTICKAXIS_SATU.variable);
     else if (entry == &ME_JOYSTICKAXIS_SATU)
@@ -4773,6 +4893,11 @@ static void Menu_Verify(int32_t input)
             Menu_SaveReadHeaders();
             M_SAVE.currentEntry = clamp(M_SAVE.currentEntry, 0, (int32_t)g_nummenusaves);
         }
+        break;
+
+    case MENU_JOYDEFAULTVERIFY:
+        if (input)
+            CONFIG_SetGameControllerDefaults();
         break;
 
     case MENU_QUIT:
@@ -5163,7 +5288,7 @@ static void Menu_MaybeSetSelectionToChild(Menu_t * m, MenuID_t id)
 static void Menu_ReadSaveGameHeaders()
 {
     ReadSaveGameHeaders();
-    
+
     int const numloaditems = max<int>(g_nummenusaves, 1), numsaveitems = g_nummenusaves+1;
     ME_LOAD = (MenuEntry_t *)Xrealloc(ME_LOAD, g_nummenusaves * sizeof(MenuEntry_t));
     MEL_LOAD = (MenuEntry_t **)Xrealloc(MEL_LOAD, numloaditems * sizeof(MenuEntry_t *));
@@ -5276,6 +5401,33 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         }
         break;
 
+    case MENU_JOYSTICKSETUP:
+        for (int i=0;i<MAXJOYAXES;i++)
+        {
+            if (ud.config.JoystickAnalogueAxes[i] == analog_turning)
+            {
+                MEO_JOYSTICK_LOOKXSCALE.variable = &ud.config.JoystickAnalogueScale[i];
+                g_turnAxis = i;
+                break;
+            }
+        }
+
+        for (int i=0;i<MAXJOYAXES;i++)
+        {
+            if (ud.config.JoystickAnalogueAxes[i] == analog_lookingupanddown)
+            {
+                MEO_JOYSTICK_LOOKYSCALE.variable = &ud.config.JoystickAnalogueScale[i];
+                MEO_JOYSTICK_LOOKINVERT.data     = &ud.config.JoystickAnalogueInvert[i];
+                g_lookAxis = i;
+                break;
+            }
+        }
+        break;
+
+    case MENU_JOYSTICKAXES:
+    case MENU_JOYSTICKBTNS:
+        Menu_PopulateJoystick();
+        break;
     case MENU_VIDEOSETUP:
         newresolution = -1;
         newrendermode = videoGetRenderMode();
@@ -6747,6 +6899,7 @@ static void Menu_Recurse(MenuID_t cm, const vec2_t origin)
     case MENU_LOADDELVERIFY:
     case MENU_SAVEVERIFY:
     case MENU_SAVEDELVERIFY:
+    case MENU_JOYDEFAULTVERIFY:
     case MENU_ADULTPASSWORD:
     case MENU_CHEATENTRY:
     case MENU_CHEAT_WARP:
