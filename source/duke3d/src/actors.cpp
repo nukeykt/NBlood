@@ -1293,7 +1293,11 @@ void A_MoveDummyPlayers(void)
         int const  nextSprite    = nextspritestat[spriteNum];
         int const  playerSectnum = pPlayer->cursectnum;
 
-        if (pPlayer->on_crane >= 0 || (playerSectnum >= 0 && sector[playerSectnum].lotag != ST_1_ABOVE_WATER) || sprite[pPlayer->i].extra <= 0)
+        if (pPlayer->on_crane >= 0 || (playerSectnum >= 0 && sector[playerSectnum].lotag != ST_1_ABOVE_WATER) || sprite[pPlayer->i].extra <= 0
+#ifdef YAX_ENABLE
+           || yax_getbunch(pPlayer->cursectnum, YAX_FLOOR) >= 0
+#endif
+           )
         {
             pPlayer->dummyplayersprite = -1;
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
