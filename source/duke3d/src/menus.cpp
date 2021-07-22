@@ -1561,12 +1561,14 @@ static MenuTextForm_t M_CHEATENTRY = { NULL, "Enter Cheat Code:", MAXCHEATLEN, 0
 static MenuTextForm_t M_CHEAT_WARP = { NULL, "Enter Warp #:", 4, 0 };
 static MenuTextForm_t M_CHEAT_SKILL = { NULL, "Enter Skill #:", 2, 0 };
 
-#define MAKE_MENUFILESELECT(a, dir, b, c) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, dir, b, c, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
+#define MAKE_MENUFILESELECT(a, dir, b, c, d) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, dir, b, c, d, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
 
-static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "./usermaps/", "*.map", boardfilename );
+static char lastuserdir[BMAX_PATH];
+static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "./usermaps/", "*.map", boardfilename, lastuserdir);
 
 #ifndef EDUKE32_RETAIL_MENU
-static MenuFileSelect_t M_SOUND_SF2 = MAKE_MENUFILESELECT( "Select Sound Bank", "./", "*.sf2", sf2bankfile);
+static char lastsfdir[BMAX_PATH];
+static MenuFileSelect_t M_SOUND_SF2 = MAKE_MENUFILESELECT( "Select Sound Bank", "./", "*.sf2", sf2bankfile, lastsfdir);
 #endif
 
 // MUST be in ascending order of MenuID enum values due to binary search
@@ -4273,18 +4275,27 @@ static void Menu_FileSelectInit(MenuFileSelect_t *object)
 {
     fnlist_clearnames(&object->fnlist);
 
+    // important: object->destination stores a reference (e.g. boardfilename)
     if (object->destination[0] == 0)
     {
-        BDIR * usermaps = Bopendir(object->startdir);
-        if (usermaps)
+        if (object->lastdir[0] == 0)
         {
-            Bclosedir(usermaps);
-            Bstrcpy(object->destination, object->startdir);
+            BDIR * usermaps = Bopendir(object->startdir);
+            if (usermaps)
+            {
+                Bclosedir(usermaps);
+                Bstrcpy(object->destination, object->startdir);
+            }
+            else
+                Bstrcpy(object->destination, "./");
         }
         else
-            Bstrcpy(object->destination, "./");
+            Bstrcpy(object->destination, object->lastdir);
     }
     Bcorrectfilename(object->destination, 1);
+
+    if (object->lastdir[0] == 0)
+        Bstrcpy(object->lastdir, object->destination);
 
     fnlist_getnames(&object->fnlist, object->destination, object->pattern, 0, 0);
     object->findhigh[0] = object->fnlist.finddirs;
@@ -6794,6 +6805,7 @@ static void Menu_RunInput_FileSelect_Select(MenuFileSelect_t *object)
     {
         Bstrcat(object->destination, "/");
         Bcorrectfilename(object->destination, 1);
+        Bstrcpy(object->lastdir, object->destination);
 
         Menu_FileSelectInit(object);
     }
