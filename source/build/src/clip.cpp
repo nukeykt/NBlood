@@ -995,16 +995,16 @@ static int get_floorspr_clipyou(vec2_t const v1, vec2_t const v2, vec2_t const v
     return clipyou;
 }
 
-static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walldist)
+static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walldist)
 {
     if (enginecompatibilitymode != ENGINE_EDUKE32)
     {
         updatesector(pos.x, pos.y, sectnum);
-        return;
+        return 0;
     }
 
     if (inside(pos.x, pos.y, *sectnum) == 1)
-        return;
+        return 0;
 
     int16_t nsecs = min<int16_t>(getsectordist(pos, *sectnum), INT16_MAX);
 
@@ -1030,7 +1030,10 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
         int const listsectnum = sectlist[sectcnt];
 
         if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
-            SET_AND_RETURN(*sectnum, listsectnum);
+        {
+            *sectnum = listsectnum;
+            return 0;
+        }
 
         bitmap_set(insidemap, listsectnum);
 
@@ -1055,7 +1058,8 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
             // add sector to clipping list so the next call to clipupdatesector()
             // finishes in the loop above this one
             addclipsect(listsectnum);
-            SET_AND_RETURN(*sectnum, listsectnum);
+            *sectnum = listsectnum;
+            return 0;
         }
 
         bitmap_set(insidemap, listsectnum);
@@ -1072,7 +1076,7 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
                 bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
     }
 
-    *sectnum = -1;
+    return 1;
 }
 
 //
@@ -1591,7 +1595,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         }
 
         if (enginecompatibilitymode == ENGINE_EDUKE32)
-            clipupdatesector(vec, sectnum, rad);
+            if (clipupdatesector(vec, sectnum, rad))
+                continue;
 
         pos->x = vec.x;
         pos->y = vec.y;
