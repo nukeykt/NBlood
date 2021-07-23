@@ -543,7 +543,7 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const &change, uint32_t c
     vec2_t const oldPos  = pSprite->pos.vec2;
 
     // check to make sure the netcode didn't leave a deleted sprite in the sprite lists.
-    Bassert(pSprite->sectnum < MAXSECTORS);
+    Bassert((unsigned)pSprite->sectnum < MAXSECTORS);
 
 #ifndef EDUKE32_STANDALONE
     if (!FURY && (pSprite->statnum == STAT_MISC || (isEnemy && pSprite->xrepeat < 4)))
