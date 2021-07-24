@@ -11882,7 +11882,7 @@ restart_grand:
 #ifdef YAX_ENABLE
     pendingsectnum = -1;
 #endif
-    sectbitmap[sect1>>3] |= pow2char[sect1&7];
+    bitmap_set(sectbitmap, sect1);
     clipsectorlist[0] = sect1; danum = 1;
 
     for (dacnt=0; dacnt<danum; dacnt++)
@@ -11937,9 +11937,9 @@ restart_grand:
                             if (ns < 0)
                                 continue;
 
-                            if (!(sectbitmap[ns>>3] & pow2char[ns&7]) && pendingsectnum==-1)
+                            if (!bitmap_test(sectbitmap, ns) && pendingsectnum==-1)
                             {
-                                sectbitmap[ns>>3] |= pow2char[ns&7];
+                                bitmap_set(sectbitmap, ns);
                                 pendingsectnum = ns;
                                 pendingvec.x = x;
                                 pendingvec.y = y;
@@ -12007,9 +12007,9 @@ restart_grand:
                 return 0;
 
 add_nextsector:
-            if (!(sectbitmap[nexts>>3] & pow2char[nexts&7]))
+            if (!bitmap_test(sectbitmap, nexts))
             {
-                sectbitmap[nexts>>3] |= pow2char[nexts&7];
+                bitmap_set(sectbitmap, nexts);
                 clipsectorlist[danum++] = nexts;
             }
         }
@@ -12026,7 +12026,7 @@ add_nextsector:
 #endif
     }
 
-    if (sectbitmap[sect2>>3] & pow2char[sect2&7])
+    if (bitmap_test(sectbitmap, sect2))
         return 1;
 
     return 0;
