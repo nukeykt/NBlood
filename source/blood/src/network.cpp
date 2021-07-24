@@ -1159,8 +1159,6 @@ void netInitialize(bool bConsole)
 void netDeinitialize(void)
 {
 #ifndef NETCODE_DISABLE
-    if (!gNetENetInit)
-        return;
     gNetENetInit = false;
     if (gNetMode != NETWORK_NONE)
     {
