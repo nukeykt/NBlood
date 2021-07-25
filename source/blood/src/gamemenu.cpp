@@ -1022,7 +1022,7 @@ void CGameMenuItemBitmap::Draw(void)
         gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
         y += height + 2;
     }
-    rotatesprite(x<<15,y<<15, 65536, 0, at20, 0, 0, 82, 0, 0, xdim-1,ydim-1);
+    rotatesprite(x<<15,y<<15, 65536, 0, at20, 0, 0, 82|8, 0, 0, xdim-1,ydim-1);
 }
 
 bool CGameMenuItemBitmap::Event(CGameMenuEvent &event)
@@ -1077,7 +1077,7 @@ void CGameMenuItemBitmapLS::Draw(void)
         stat = 70;
         picnum = at24;
     }
-    rotatesprite(200<<15,215<<15,32768, ang, picnum, 0, 0, stat, 0, 0, xdim-1, ydim-1);
+    rotatesprite(200<<15,215<<15,32768, ang, picnum, 0, 0, stat|8, 0, 0, xdim-1, ydim-1);
 }
 
 bool CGameMenuItemBitmapLS::Event(CGameMenuEvent &event)
