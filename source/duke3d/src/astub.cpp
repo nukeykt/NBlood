@@ -4579,7 +4579,7 @@ static void Keys3d(void)
     if ((keystatus[KEYSC_QUOTE] || keystatus[KEYSC_SEMI]) && PRESSED_KEYSC(P))   // ' P  ; P
     {
         int16_t w, start_wall, end_wall, currsector;
-        int8_t pal[4];
+        int16_t pal[4];
 
         if (highlightsectorcnt == -1)
         {
