@@ -494,7 +494,7 @@ static int Proj_DoHitscan(int spriteNum, int32_t const cstatmask, const vec3_t *
 
     if (RRRA)
     {
-        if (((sector[hitData->sect].lotag == 160 && zvel > 0) || (sector[hitData->sect].lotag == 161 && zvel < 0))
+        if ((hitData->sect >= 0 && ((sector[hitData->sect].lotag == 160 && zvel > 0) || (sector[hitData->sect].lotag == 161 && zvel < 0)))
             && hitData->sprite == -1 && hitData->wall == -1)
         {
             for (int spriteNum = 0; spriteNum < MAXSPRITES; spriteNum++)
