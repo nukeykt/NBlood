@@ -820,10 +820,7 @@ nextdemo_nomenu:
                 }
                 else
                 {
-                    j = calc_smoothratio_demo(totalclock, ototalclock);
-                    if (g_demo_paused && g_demo_rewind)
-                        j = 65536-j;
-
+                    j = calc_smoothratio_demo(g_demo_paused ? lockclock : totalclock, ototalclock);
                     G_DrawRooms(screenpeek, j);
                     G_DisplayRest(j);
 
