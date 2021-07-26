@@ -3079,6 +3079,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                                                        "\n(Y/N)"
 #endif
         );
+        break;
     case MENU_JOYDEFAULTVERIFY:
         videoFadeToBlack(1);
         Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller settings to default?");
