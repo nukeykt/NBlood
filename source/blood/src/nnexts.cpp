@@ -6644,8 +6644,13 @@ void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
         // another marker which belongs that node?
 
         int breakChance = 0;
-        pCur  = &sprite[pXSprite->target];  pPrev = &sprite[pXSprite->targetX];
-        pXCur = &xsprite[pCur->extra];      pXPrev = &xsprite[pPrev->extra];
+        pCur  = &sprite[pXSprite->target];
+        pXCur = &xsprite[pCur->extra];
+        if (pXSprite->targetX >= 0)
+        {
+            pPrev = &sprite[pXSprite->targetX];
+            pXPrev = &xsprite[pPrev->extra];
+        }
         prev = pCur->index;
 
         bool node = markerIsNode(pXCur, false);
@@ -6657,10 +6662,10 @@ void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
         for (i = headspritestat[kStatPathMarker]; i != -1; i = nextspritestat[i]) {
             
             if (sprite[i].index == pXSprite->target || !xspriRangeIsFine(sprite[i].extra)) continue;
-            else if (sprite[i].index == pPrev->index && node) {
+            else if (pXSprite->targetX >= 0 && sprite[i].index == pPrev->index && node) {
                 if (pXCur->data2 == pXPrev->data1)
                     continue;
-        }
+            }
 
             pXNext = &xsprite[sprite[i].extra];
             if ((pXNext->locked || pXNext->isTriggered || pXNext->DudeLockout) || (back && pXNext->data2 != next) || (!back && pXNext->data1 != next))
@@ -6686,7 +6691,7 @@ void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
         if (path == -1)
             path = firstFinePath;
 
-        }
+    }
 
     if (!spriRangeIsFine(path))
         return;
