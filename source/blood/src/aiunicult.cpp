@@ -1461,7 +1461,7 @@ int getDispersionModifier(spritetype* pSprite, int minDisp, int maxDisp) {
     Seq* pSeq = NULL; DICTNODE* hSeq = gSysRes.Lookup(xsprite[pSprite->extra].data2 + 6, "SEQ"); int disp = 1;
     if (hSeq != NULL && (pSeq = (Seq*)gSysRes.Load(hSeq)) != NULL) {
         int nFrames = pSeq->nFrames; int ticks = pSeq->ticksPerFrame; int shots = 0;
-        for (int i = 0; i <= pSeq->nFrames; i++) {
+        for (int i = 0; i < pSeq->nFrames; i++) {
             if (pSeq->frames[i].at5_5) shots++;
         }
         
