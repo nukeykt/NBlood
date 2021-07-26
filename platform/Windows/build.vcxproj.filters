@@ -197,9 +197,6 @@
     <ClCompile Include="..\..\source\build\src\enet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\build\src\zpl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\build\src\vfs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -433,9 +430,6 @@
     <ClInclude Include="..\..\source\build\include\enet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\build\include\zpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\build\include\linklist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -473,6 +467,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\build\include\vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\rdtsc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

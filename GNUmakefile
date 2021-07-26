@@ -284,7 +284,6 @@ engine_objs := \
     timer.cpp \
     vfs.cpp \
     xxhash.c \
-    zpl.cpp \
 
 engine_editor_objs := \
     build.cpp \

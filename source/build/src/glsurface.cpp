@@ -66,10 +66,7 @@ bool glsurface_initialize(vec2_t bufferResolution)
     bufferRes  = bufferResolution;
     bufferSize = bufferRes.x * bufferRes.y;
 
-    zpl_virtual_memory vm = Xvm_alloc(0, bufferSize);
-
-    bufferSize = vm.size;
-    buffer     = vm.data;
+    buffer = Xmalloc(bufferSize);
 
     glGenBuffers(1, &quadVertsID);
     glBindBuffer(GL_ARRAY_BUFFER, quadVertsID);
@@ -171,8 +168,7 @@ void glsurface_destroy()
     if (!buffer)
         return;
 
-    Xvm_free(zpl_vm(buffer, bufferSize));
-    buffer = nullptr;
+    DO_FREE_AND_NULL(buffer);
 
     glDeleteBuffers(1, &quadVertsID);
     quadVertsID = 0;

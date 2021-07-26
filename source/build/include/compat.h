@@ -1439,8 +1439,7 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #endif
 
 #include "debugbreak.h"
-
-#include "zpl.h"
+#include "rdtsc.h"
 
 /* End dependence on compat.o object. */
 
