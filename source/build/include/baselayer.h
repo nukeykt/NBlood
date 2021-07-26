@@ -61,7 +61,6 @@ extern char offscreenrendering;
 extern int32_t nofog;
 
 extern int32_t r_maxfps;
-extern int32_t r_maxfpsoffset;
 
 void calc_ylookup(int32_t bpl, int32_t lastyidx);
 
@@ -299,14 +298,17 @@ void makeasmwriteable(void);
 void maybe_redirect_outputs(void);
 
 extern uint64_t g_frameDelay;
-static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
+static inline uint64_t calcFrameDelay(int maxFPS)
 {
-    uint64_t const perfFreq = timerGetPerformanceFrequency();
+    uint64_t perfFreq = timerGetNanoTickRate();
 
-    if (maxFPS == -1)
-        return perfFreq / refreshfreq;
+    switch (maxFPS)
+    {
+        case -1: maxFPS = refreshfreq; break;
+        case 0: perfFreq = 0; break;
+    }
 
-    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
+    return tabledivide64(perfFreq, maxFPS);
 }
 extern int engineFPSLimit(void);
 #ifdef __cplusplus

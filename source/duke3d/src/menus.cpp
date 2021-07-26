@@ -513,7 +513,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHS
 MAKE_MENU_TOP_ENTRYLINK("Cheats", MEF_OptionsMenu, OPTIONS_CHEATS, MENU_CHEATS);
 #endif
 
-static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless;
+static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless, newmaxfps;
 
 enum resflags_t {
     RES_FS  = 0x1,
@@ -578,14 +578,16 @@ static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &
 
 
 
+#if 0
 static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "Auto", "None", "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
 static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { -1, 0, 30, 60, 75, 100, 120, 144, 165, 240 };
 static MenuOptionSet_t MEOS_VIDEOSETUP_FRAMELIMIT = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_FRAMELIMIT, MEOSV_VIDEOSETUP_FRAMELIMIT, 0x0);
 static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &r_maxfps);
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY("Framerate limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, Option);
-
-static MenuRangeInt32_t MEO_VIDEOSETUP_FRAMELIMITOFFSET = MAKE_MENURANGE( &r_maxfpsoffset, &MF_Redfont, -10, 10, 0, 21, DisplayTypeInteger );
-static MenuEntry_t ME_VIDEOSETUP_FRAMELIMITOFFSET = MAKE_MENUENTRY( "FPS offset:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMITOFFSET, RangeInt32 );
+#else
+static MenuRangeInt32_t MEO_VIDEOSETUP_FRAMELIMIT = MAKE_MENURANGE( &newmaxfps, &MF_Redfont, -1, 240, 6, 40, DisplayTypeInteger );
+static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY( "FPS limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, RangeInt32 );
+#endif
 
 static MenuEntry_t ME_VIDEOSETUP_APPLY = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
 
@@ -785,7 +787,6 @@ static MenuEntry_t *MEL_VIDEOSETUP[] = {
     &ME_VIDEOSETUP_BORDERLESS,
     &ME_VIDEOSETUP_VSYNC,
     &ME_VIDEOSETUP_FRAMELIMIT,
-    &ME_VIDEOSETUP_FRAMELIMITOFFSET,
     &ME_Space4_Redfont,
     &ME_VIDEOSETUP_APPLY,
 };
@@ -2349,11 +2350,10 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
              (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
               videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
-              && vsync == newvsync && r_borderless == newborderless
+              && vsync == newvsync && r_borderless == newborderless && r_maxfps == newmaxfps
              )
              || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, r_maxfps <= 0);
         break;
     }
 
@@ -3566,6 +3566,8 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             onvideomodechange(n.bppmax > 8);
         }
 
+        r_maxfps = newmaxfps > 0 ? clamp(newmaxfps, 30, 1000) : newmaxfps;
+        g_frameDelay = calcFrameDelay(r_maxfps);
         g_restorePalette = -1;
         G_UpdateScreenArea();
         ud.setup.fullscreen = fullscreen;
@@ -3773,8 +3775,6 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
             }
         }
     }
-    else if (entry == &ME_VIDEOSETUP_FRAMELIMIT)
-        g_frameDelay = calcFrameDelay(newOption, r_maxfpsoffset);
 
     switch (g_currentMenu)
     {
@@ -3881,9 +3881,6 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
         JOYSTICK_SetDeadZone(M_JOYSTICKAXES.currentEntry, newValue, *MEO_JOYSTICKAXIS_SATU.variable);
     else if (entry == &ME_JOYSTICKAXIS_SATU)
         JOYSTICK_SetDeadZone(M_JOYSTICKAXES.currentEntry, *MEO_JOYSTICKAXIS_DEAD.variable, newValue);
-    else if (entry == &ME_VIDEOSETUP_FRAMELIMITOFFSET)
-        g_frameDelay = calcFrameDelay(r_maxfps, newValue);
-
     return 0;
 }
 
@@ -4752,6 +4749,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         newfullscreen = fullscreen;
         newvsync = vsync;
         newborderless = r_borderless;
+        newmaxfps = r_maxfps;
         break;
 
 #ifndef EDUKE32_RETAIL_MENU

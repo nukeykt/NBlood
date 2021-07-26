@@ -36,7 +36,6 @@ char    g_keyRemapTable[NUMKEYS];
 char    g_keyNameTable[NUMKEYS][24];
 
 int32_t r_maxfps = -1;
-int32_t r_maxfpsoffset;
 uint64_t g_frameDelay;
 
 
@@ -566,10 +565,10 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
         videoSetPalette(GAMMA_CALC,0,0);
         return r;
     }
-    else if (!Bstrcasecmp(parm->name, "r_maxfps") || !Bstrcasecmp(parm->name, "r_maxfpsoffset"))
+    else if (!Bstrcasecmp(parm->name, "r_maxfps"))
     {
         if (r_maxfps > 0) r_maxfps = clamp(r_maxfps, 30, 1000);
-        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(r_maxfps);
     }
     return r;
 }
@@ -596,7 +595,6 @@ int32_t baselayer_init(void)
         { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
         { "r_maxfps", "limit the frame rate", (void *)&r_maxfps, CVAR_INT | CVAR_FUNCPTR, -1, 1000 },
-        { "r_maxfpsoffset", "menu-controlled offset for r_maxfps", (void *)&r_maxfpsoffset, CVAR_INT | CVAR_FUNCPTR, -10, 10 },
 #ifdef YAX_ENABLE
         { "r_tror_nomaskpass", "enable/disable additional pass in TROR software rendering", (void *)&r_tror_nomaskpass, CVAR_BOOL, 0, 1 },
 #endif
@@ -666,26 +664,25 @@ void maybe_redirect_outputs(void)
 
 int engineFPSLimit(void)
 {
+    static uint64_t nextFrameTicks;
+    static uint64_t savedFrameDelay;
+
     if (!r_maxfps)
         return true;
 
-    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+    g_frameDelay = calcFrameDelay(r_maxfps);
 
-    uint64_t        frameTicks;
-    static uint64_t nextFrameTicks;
-    static uint64_t frameDelay;
+    uint64_t frameTicks = timerGetNanoTicks();
 
-    if (g_frameDelay != frameDelay)
+    if (g_frameDelay != savedFrameDelay)
     {
-        nextFrameTicks = timerGetPerformanceCounter() + g_frameDelay;
-        frameDelay = g_frameDelay;
+        savedFrameDelay = g_frameDelay;
+        nextFrameTicks  = frameTicks + g_frameDelay;
     }
-    handleevents();
-    frameTicks = timerGetPerformanceCounter();
 
-    if (nextFrameTicks - frameTicks > g_frameDelay)
+    if (frameTicks >= nextFrameTicks)
     {
-        while (nextFrameTicks - frameTicks > g_frameDelay)
+        while (frameTicks >= nextFrameTicks)
             nextFrameTicks += g_frameDelay;
 
         return true;
