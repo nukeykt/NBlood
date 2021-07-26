@@ -529,9 +529,10 @@ void cacheAllSounds(void)
     {
         if (g_sounds[i] != &nullsound && g_sounds[i]->ptr == nullptr)
         {
-            if ((++j&7) == 0)
-                gameHandleEvents();
             S_LoadSound(i);
+            j += g_sounds[i]->len;
+            if (j >= 4 * 1024 * 1024)
+                gameHandleEvents(), j = 0;
         }
     }
 }
