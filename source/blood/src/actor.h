@@ -213,6 +213,14 @@ void actAddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange
 void actDoLight(int spriteNum);
 #endif
 
+void FireballSeqCallback(int, int);
+void sub_38938(int, int);
+void NapalmSeqCallback(int, int);
+void sub_3888C(int, int);
+void TreeToGibCallback(int, int);
+void DudeToGibCallback1(int, int);
+void DudeToGibCallback2(int, int);
+
 bool IsUnderwaterSector(int nSector);
 int actSpriteOwnerToSpriteId(spritetype *pSprite);
 void actPropagateSpriteOwner(spritetype *pTarget, spritetype *pSource);

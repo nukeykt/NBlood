@@ -443,6 +443,9 @@ kAiStatePatrolWaitW,
 kAiStatePatrolMoveL,
 kAiStatePatrolMoveC,
 kAiStatePatrolMoveW,
+kAiStatePatrolTurnL,
+kAiStatePatrolTurnC,
+kAiStatePatrolTurnW,
 kAiStatePatrolMax,
 #endif
 };

@@ -148,7 +148,7 @@ void InitMirrors(void)
             int nLink = gUpperLink[i];
             if (nLink < 0)
                 continue;
-            int nLink2 = sprite[nLink].owner & 0xfff;
+            int nLink2 = sprite[nLink].owner /*& 0xfff*/;
             int j = sprite[nLink2].sectnum;
             if (sector[j].ceilingpicnum != 504)
                 ThrowError("Lower link sector %d doesn't have mirror picnum\n", j);
@@ -268,33 +268,36 @@ void sub_557C4(int x, int y, int interpolation)
                         int dx = mirror[j].at8;
                         int dy = mirror[j].atc;
                         int dz = mirror[j].at10;
-                        tspritetype *pTSprite = &tsprite[spritesortcnt];
-                        memset(pTSprite, 0, sizeof(tspritetype));
-                        pTSprite->type = pSprite->type;
-                        pTSprite->index = pSprite->index;
-                        pTSprite->sectnum = nSector2;
-                        pTSprite->x = pSprite->x+dx;
-                        pTSprite->y = pSprite->y+dy;
-                        pTSprite->z = pSprite->z+dz;
-                        pTSprite->ang = pSprite->ang;
-                        pTSprite->picnum = pSprite->picnum;
-                        pTSprite->shade = pSprite->shade;
-                        pTSprite->pal = pSprite->pal;
-                        pTSprite->xrepeat = pSprite->xrepeat;
-                        pTSprite->yrepeat = pSprite->yrepeat;
-                        pTSprite->xoffset = pSprite->xoffset;
-                        pTSprite->yoffset = pSprite->yoffset;
-                        pTSprite->cstat = pSprite->cstat;
-                        pTSprite->statnum = kStatDecoration;
-                        pTSprite->owner = pSprite->index;
-                        pTSprite->extra = pSprite->extra;
-                        pTSprite->flags = pSprite->hitag|0x200;
-                        LOCATION *pLocation = &gPrevSpriteLoc[pSprite->index];
-                        pTSprite->x = dx+interpolate(pLocation->x, pSprite->x, interpolation);
-                        pTSprite->y = dy+interpolate(pLocation->y, pSprite->y, interpolation);
-                        pTSprite->z = dz+interpolate(pLocation->z, pSprite->z, interpolation);
-                        pTSprite->ang = pLocation->ang+mulscale16(((pSprite->ang-pLocation->ang+1024)&2047)-1024,interpolation);
-                        spritesortcnt++;
+                        if (spritesortcnt < maxspritesonscreen)
+                        {
+                            tspritetype *pTSprite = &tsprite[spritesortcnt];
+                            memset(pTSprite, 0, sizeof(tspritetype));
+                            pTSprite->type = pSprite->type;
+                            pTSprite->index = pSprite->index;
+                            pTSprite->sectnum = nSector2;
+                            pTSprite->x = pSprite->x+dx;
+                            pTSprite->y = pSprite->y+dy;
+                            pTSprite->z = pSprite->z+dz;
+                            pTSprite->ang = pSprite->ang;
+                            pTSprite->picnum = pSprite->picnum;
+                            pTSprite->shade = pSprite->shade;
+                            pTSprite->pal = pSprite->pal;
+                            pTSprite->xrepeat = pSprite->xrepeat;
+                            pTSprite->yrepeat = pSprite->yrepeat;
+                            pTSprite->xoffset = pSprite->xoffset;
+                            pTSprite->yoffset = pSprite->yoffset;
+                            pTSprite->cstat = pSprite->cstat;
+                            pTSprite->statnum = kStatDecoration;
+                            pTSprite->owner = pSprite->index;
+                            pTSprite->extra = pSprite->extra;
+                            pTSprite->flags = pSprite->hitag|0x200;
+                            LOCATION *pLocation = &gPrevSpriteLoc[pSprite->index];
+                            pTSprite->x = dx+interpolate(pLocation->x, pSprite->x, interpolation);
+                            pTSprite->y = dy+interpolate(pLocation->y, pSprite->y, interpolation);
+                            pTSprite->z = dz+interpolate(pLocation->z, pSprite->z, interpolation);
+                            pTSprite->ang = pLocation->ang+mulscale16(((pSprite->ang-pLocation->ang+1024)&2047)-1024,interpolation);
+                            spritesortcnt++;
+                        }
                     }
                 }
             }
