@@ -80,6 +80,9 @@
     <ClInclude Include="..\..\source\duke3d\src\sounds_mapster32.h">
       <Filter>Header Files\editor</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\build\include\editor.h">
+      <Filter>Header Files\editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\duke3d\rsrc\buildres.rc">

@@ -376,6 +376,10 @@ const char *keyw[] =
     "updatehighlightsector",
     "sethighlight",
     "sethighlightsector",
+    "xfliphighlightedsectors",
+    "yfliphighlightedsectors",
+    "xmirrorhighlightedsectors",
+    "ymirrorhighlightedsectors",
     "addlogvar",
     "addlog",
     "debug",
@@ -3171,6 +3175,12 @@ repeatcase:
         return 0;
 
 // *** stuff
+    case CON_XFLIPHIGHLIGHTEDSECTORS:
+    case CON_YFLIPHIGHLIGHTEDSECTORS:
+    case CON_XMIRRORHIGHLIGHTEDSECTORS:
+    case CON_YMIRRORHIGHLIGHTEDSECTORS:
+        return 0;
+
     case CON_SETHIGHLIGHT:
         // sethighlight <what> <index> <set_or_unset>
         // if <what>&16384, index&16383 is sprite index, else wall index

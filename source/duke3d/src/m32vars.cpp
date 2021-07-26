@@ -615,11 +615,11 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("tempsectornum",(intptr_t)&tempsectornum, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
 
     // starting position
-    Gv_NewVar("startposx",(intptr_t)&startpos.x, GAMEVAR_READONLY | GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
-    Gv_NewVar("startposy",(intptr_t)&startpos.y, GAMEVAR_READONLY | GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
-    Gv_NewVar("startposz",(intptr_t)&startpos.z, GAMEVAR_READONLY | GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
-    Gv_NewVar("startang",(intptr_t)&startang, GAMEVAR_READONLY | GAMEVAR_SHORTPTR | GAMEVAR_SYSTEM);
-    Gv_NewVar("startsectnum",(intptr_t)&startsectnum, GAMEVAR_READONLY | GAMEVAR_SHORTPTR | GAMEVAR_SYSTEM);
+    Gv_NewVar("startposx",(intptr_t)&startpos.x, GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
+    Gv_NewVar("startposy",(intptr_t)&startpos.y, GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
+    Gv_NewVar("startposz",(intptr_t)&startpos.z, GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
+    Gv_NewVar("startang",(intptr_t)&startang, GAMEVAR_SHORTPTR | GAMEVAR_SYSTEM);
+    Gv_NewVar("startsectnum",(intptr_t)&startsectnum, GAMEVAR_SHORTPTR | GAMEVAR_SYSTEM);
 
     Gv_NewVar("mousxplc",(intptr_t)&mousxplc, GAMEVAR_READONLY | GAMEVAR_INTPTR | GAMEVAR_SYSTEM);
     Gv_NewVar("mousyplc",(intptr_t)&mousyplc, GAMEVAR_READONLY | GAMEVAR_INTPTR | GAMEVAR_SYSTEM);

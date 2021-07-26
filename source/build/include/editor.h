@@ -228,6 +228,8 @@ extern const char *GetSaveBoardFilename(const char *fn);
 extern int32_t clockdir(int32_t wallstart);
 extern int32_t loopinside(int32_t x, int32_t y, int16_t startwall);
 
+extern void editorFlipHighlightedSectors(int about_x, int doMirror);
+
 enum {
     // NOTE: These must not be changed, see e.g. loopinside().
     CLOCKDIR_CW = 0,  // outer loop

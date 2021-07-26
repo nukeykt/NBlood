@@ -262,9 +262,6 @@
     <ClInclude Include="..\..\source\build\include\dynamicgtk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\build\include\editor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\build\src\engine_priv.h">
       <Filter>Header Files</Filter>
     </ClInclude>

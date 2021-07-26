@@ -30,30 +30,12 @@ char levelname[BMAX_PATH] = {0};
 
 static char kensig[64];
 
-static const char *CallExtGetVer(void);
-static int32_t CallExtInit(void);
-static int32_t CallExtPreInit(int32_t argc,char const * const * argv);
-static int32_t CallExtPostStartupWindow(void);
-static void CallExtPostInit(void);
-static void CallExtUnInit(void);
-static void CallExtPreCheckKeys(void);
-static void CallExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
-static void CallExtCheckKeys(void);
-static void CallExtPreLoadMap(void);
-static void CallExtSetupMapFilename(const char *mapname);
-static void CallExtLoadMap(const char *mapname);
-static int32_t CallExtPreSaveMap(void);
-static void CallExtSaveMap(const char *mapname);
-static inline const char *CallExtGetSectorCaption(int16_t sectnum) { return ExtGetSectorCaption(sectnum); }
-static inline const char *CallExtGetWallCaption(int16_t wallnum) { return ExtGetWallCaption(wallnum); }
-static inline const char *CallExtGetSpriteCaption(int16_t spritenum) { return ExtGetSpriteCaption(spritenum); }
-static void CallExtShowSectorData(int16_t sectnum);
-static void CallExtShowWallData(int16_t wallnum);
-static void CallExtShowSpriteData(int16_t spritenum);
-static void CallExtEditSectorData(int16_t sectnum);
-static void CallExtEditWallData(int16_t wallnum);
-static void CallExtEditSpriteData(int16_t spritenum);
-// static const char *CallExtGetSectorType(int32_t lotag);
+static void    editorEventAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
+static void    editorEventPreLoadMap(void);
+static void    editorSetupMapFilename(const char *mapname);
+static void    editorEventLoadMap(const char *mapname);
+static int32_t editorEventPreSaveMap(void);
+static void    editorEventSaveMap(const char *mapname);
 
 int8_t m32_clipping=2;
 static int32_t m32_rotateang = 0;
@@ -514,7 +496,7 @@ void M32_DrawRoomsAndMasks(void)
 
     yax_preparedrawrooms();
     drawrooms(pos.x,pos.y,pos.z,ang,horiz,cursectnum);
-    yax_drawrooms(CallExtAnalyzeSprites, cursectnum, 0, 0);
+    yax_drawrooms(editorEventAnalyzeSprites, cursectnum, 0, 0);
 
     const int osearchwall=searchwall, osearchstat=searchstat;
     if (srchwall >= 0)
@@ -525,7 +507,7 @@ void M32_DrawRoomsAndMasks(void)
         searchstat = 3;
         searchwall = srchwall;
     }
-    CallExtAnalyzeSprites(0,0,0,0,0);
+    editorEventAnalyzeSprites(0,0,0,0,0);
     searchwall = osearchwall, searchstat=osearchstat;
 
     renderDrawMasks();
@@ -537,7 +519,7 @@ void M32_DrawRoomsAndMasks(void)
     {
         polymer_editorpick();
         drawrooms(pos.x,pos.y,pos.z,ang,horiz,cursectnum);
-        CallExtAnalyzeSprites(0,0,0,0,0);
+        editorEventAnalyzeSprites(0,0,0,0,0);
         renderDrawMasks();
         M32_ResetFakeRORTiles();
     }
@@ -664,8 +646,10 @@ int app_main(int argc, char const* const* argv)
 
     editstatus = 1;
 
-    if ((i = CallExtPreInit(argc,argv)) < 0) return -1;
+    if ((i = ExtPreInit(argc,argv)) < 0) return -1;
+#ifdef STARTUP_SETUP_WINDOW
     if (i) cmdsetup = 1;
+#endif
 #ifdef _WIN32
     win_priorityclass = 1;
 #endif
@@ -732,9 +716,9 @@ int app_main(int argc, char const* const* argv)
     }
 #endif
 
-    if ((i = CallExtInit()) < 0) return -1;
+    if ((i = ExtInit()) < 0) return -1;
 
-    if (CallExtPostStartupWindow() < 0) return -1;
+    if (ExtPostStartupWindow() < 0) return -1;
 
     loadnames(g_namesFileName);
 
@@ -766,7 +750,7 @@ int app_main(int argc, char const* const* argv)
     if (enginePostInit())
         M32_FatalEngineError();
 
-    CallExtPostInit();
+    ExtPostInit();
 
 #ifdef YAX_ENABLE
     // init dummy texture for YAX
@@ -844,7 +828,7 @@ int app_main(int argc, char const* const* argv)
         videoSetPalette(0,0,0);
         if (videoSetGameMode(fullscreen, xdim, ydim, 8, upscalefactor) < 0)
         {
-            CallExtUnInit();
+            ExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
             Bexit(EXIT_SUCCESS);
@@ -867,7 +851,7 @@ int app_main(int argc, char const* const* argv)
     {
         if (videoSetGameMode(fullscreen, xdim, ydim, bppgame, upscalefactor) < 0)
         {
-            CallExtUnInit();
+            ExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
             Bexit(EXIT_SUCCESS);
@@ -897,7 +881,7 @@ CANCEL:
         synctics = (int32_t) totalclock-lockclock;
         lockclock += synctics;
 
-        CallExtPreCheckKeys();
+        ExtPreCheckKeys();
 
         M32_DrawRoomsAndMasks();
 
@@ -913,7 +897,7 @@ CANCEL:
 
         M32_drawdebug();
 #endif
-        CallExtCheckKeys();
+        ExtCheckKeys();
 
 
         if (keystatus[sc_Escape])
@@ -984,7 +968,7 @@ CANCEL:
     }
 
 
-    CallExtUnInit();
+    ExtUnInit();
 //    clearfilenames();
     engineUnInit();
 
@@ -1580,12 +1564,12 @@ void editinput(void)
             {
             case SEARCH_CEILING:
             case SEARCH_FLOOR:
-                CallExtShowSectorData(searchsector); break;
+                ExtShowSectorData(searchsector); break;
             case SEARCH_WALL:
             case SEARCH_MASKWALL:
-                CallExtShowWallData(searchwall); break;
+                ExtShowWallData(searchwall); break;
             case SEARCH_SPRITE:
-                CallExtShowSpriteData(searchwall); break;
+                ExtShowSpriteData(searchwall); break;
             }
 
             keystatus[sc_F5] = keystatus[sc_F6] = 0;
@@ -1596,12 +1580,12 @@ void editinput(void)
             {
             case SEARCH_CEILING:
             case SEARCH_FLOOR:
-                CallExtEditSectorData(searchsector); break;
+                ExtEditSectorData(searchsector); break;
             case SEARCH_WALL:
             case SEARCH_MASKWALL:
-                CallExtEditWallData(searchwall); break;
+                ExtEditWallData(searchwall); break;
             case SEARCH_SPRITE:
-                CallExtEditSpriteData(searchwall); break;
+                ExtEditSpriteData(searchwall); break;
             }
 
             keystatus[sc_F7] = keystatus[sc_F8] = 0;
@@ -3437,7 +3421,7 @@ static void drawspritelabel(int i)
     if ((unsigned)i >= MAXSPRITES)
         return;
 
-    const char *dabuffer = CallExtGetSpriteCaption(i);
+    const char *dabuffer = ExtGetSpriteCaption(i);
 
     if (!dabuffer[0])
         return;
@@ -3624,6 +3608,158 @@ static void editorCycleGridSize()
         printmessage16("Grid off");
     else
         printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
+}
+
+// Flip/mirror sector by Ed Coolidge
+extern void editorFlipHighlightedSectors(int about_x, int doMirror)
+{
+#ifdef YAX_ENABLE
+    if (highlightsectorcnt > 0 && !hl_all_bunch_sectors_p())
+    {
+        printmessage16("To flip extended sectors, all sectors of a bunch must be selected");
+        keystatus[sc_X] = keystatus[sc_Y] = 0;
+    }
+    else
+#endif
+        if (highlightsectorcnt > 0)
+        {
+            int16_t* const otonwall = onextwall;  // OK, since we make old-nextwalls invalid
+            int32_t dax, day;
+            int32_t x3, y3;
+            int j;
+
+            mkonwinvalid();
+
+            for (j=0; j<numwalls; j++)
+                otonwall[j] = j;
+
+            get_sectors_center(highlightsector, highlightsectorcnt, &dax, &day);
+
+            if (gridlock && grid > 0)
+                locktogrid(&dax, &day);
+
+            for (int i=0; i<highlightsectorcnt; i++)
+            {
+                int32_t numtoswap = -1;
+                int32_t w=0;
+                uwalltype tempwall;
+
+                int startwall = sector[highlightsector[i]].wallptr;
+                int endwall = startwall+sector[highlightsector[i]].wallnum-1;
+                int startofloop = startwall;
+                int endofloop = endwall;
+#if 0
+                if (doMirror)
+                {
+                    //mirror sector textures
+                    sector[highlightsector[i]].ceilingstat ^= 0x10;
+                    sector[highlightsector[i]].floorstat ^= 0x10;
+                }
+#endif
+                //save position of wall at start of loop
+                x3 = wall[startofloop].x;
+                y3 = wall[startofloop].y;
+
+                for (j=startwall; j<=endwall; j++)
+                {
+                    //fix position of walls
+                    if (about_x)
+                    {
+                        wall[j].x = dax-POINT2(j).x+dax; //flip wall.x about dax
+                        wall[j].y = POINT2(j).y;
+                    }
+                    else
+                    {
+                        wall[j].x = POINT2(j).x;
+                        wall[j].y = day-POINT2(j).y+day; //flip wall.y about day
+                    }
+
+                    if (doMirror)
+                        wall[j].cstat ^= 8;  //mirror walls about dax/day
+
+                    if (wall[j].point2==startofloop) //check if j is end of loop
+                    {
+                        endofloop = j;
+                        if (about_x)
+                        {
+                            wall[endofloop].x = dax-x3+dax; //flip wall.x about dax
+                            wall[endofloop].y = y3;
+                        }
+                        else
+                        {
+                            wall[endofloop].x = x3;
+                            wall[endofloop].y = day-y3+day; //flip wall.y about dax
+                        }
+
+                        //correct order of walls in loop to maintain player space (right-hand rule)
+                        numtoswap = (endofloop-startofloop)>>1;
+                        for (w=1; w<=numtoswap; w++)
+                        {
+                            Bmemcpy(&tempwall, &wall[startofloop+w], sizeof(walltype));
+                            Bmemcpy(&wall[startofloop+w], &wall[endofloop-w+1], sizeof(walltype));
+                            Bmemcpy(&wall[endofloop-w+1], &tempwall, sizeof(walltype));
+
+                            otonwall[startofloop+w] = endofloop-w+1;
+                            otonwall[endofloop-w+1] = startofloop+w;
+                        }
+
+                        //make point2 point to next wall in loop
+                        for (w=startofloop; w<endofloop; w++)
+                            wall[w].point2 = w+1;
+                        wall[endofloop].point2 = startofloop;
+
+                        startofloop = endofloop+1; //set first wall of next loop
+                        //save position of wall at start of loop
+                        x3 = wall[startofloop].x;
+                        y3 = wall[startofloop].y;
+                    }
+                }
+
+                j = headspritesect[highlightsector[i]];
+                while (j != -1)
+                {
+                    if (about_x)
+                    {
+                        x3 = sprite[j].x;
+                        sprite[j].x = dax-x3+dax; //flip sprite.x about dax
+                        sprite[j].ang = (1024+2048-sprite[j].ang)&2047; //flip ang about 512
+                    }
+                    else
+                    {
+                        y3 = sprite[j].y;
+                        sprite[j].y = day-y3+day; //flip sprite.y about day
+                        sprite[j].ang = (2048-sprite[j].ang)&2047; //flip ang about 512
+                    }
+
+                    if (doMirror && (sprite[j].cstat & 0x30))
+                        sprite[j].cstat ^= 4;  // mirror sprites about dax/day (don't mirror monsters)
+
+                    j = nextspritesect[j];
+                }
+            }
+
+            // finally, construct the nextwalls and yax-nextwalls
+            // for the new arrangement!
+            for (int i=0; i<highlightsectorcnt; i++)
+            {
+                for (int WALLS_OF_SECTOR(highlightsector[i], j))
+                {
+                    if (wall[j].nextwall >= 0)
+                        wall[j].nextwall = otonwall[wall[j].nextwall];
+#ifdef YAX_ENABLE
+                    {
+                        int32_t cf, ynw;
+                        for (cf=0; cf<2; cf++)
+                            if ((ynw = yax_getnextwall(j, cf)) >= 0)
+                                yax_setnextwall(j, cf, otonwall[ynw]);
+                    }
+#endif
+                }
+            }
+
+            printmessage16("Selected sector(s) flipped");
+            asksave = 1;
+        }
 }
 
 void overheadeditor(void)
@@ -3853,7 +3989,7 @@ void overheadeditor(void)
             }
 
             editorDraw2dGrid(pos.x,pos.y,pos.z,cursectnum,ang,zoom,grid);
-            CallExtPreCheckKeys();
+            ExtPreCheckKeys();
             editorDraw2dScreen(&pos,cursectnum,ang,zoom,grid);
 
             // Draw brown arrow (start)
@@ -3903,7 +4039,7 @@ void overheadeditor(void)
 
                         YAX_SKIPSECTOR(i);
 
-                        dabuffer = CallExtGetSectorCaption(i);
+                        dabuffer = ExtGetSectorCaption(i);
                         if (dabuffer[0] == 0)
                             continue;
 
@@ -3943,7 +4079,7 @@ void overheadeditor(void)
                     //Get average point of wall
 //                    if ((dax > x3) && (dax < x4) && (day > y3) && (day < y4))
                     {
-                        dabuffer = CallExtGetWallCaption(i);
+                        dabuffer = ExtGetWallCaption(i);
                         if (dabuffer[0] == 0)
                             continue;
 
@@ -4318,165 +4454,21 @@ void overheadeditor(void)
 
 
         VM_OnEvent(EVENT_PREKEYS2D, -1);
-        CallExtCheckKeys(); // TX 20050101, it makes more sense to have this here so keys can be overwritten with new functions in bstub.c
+        ExtCheckKeys(); // TX 20050101, it makes more sense to have this here so keys can be overwritten with new functions in bstub.c
 
         // 2d3d mode
         if (m32_is2d3dmode())
             goto nokeys;
 
-        // Flip/mirror sector Ed Coolidge
         if (keystatus[sc_X] || keystatus[sc_Y])  // X or Y (2D)
         {
-            int32_t about_x=keystatus[sc_X];
-            int32_t doMirror = eitherALT;  // mirror walls and wall/floor sprites
-
-#ifdef YAX_ENABLE
-            if (highlightsectorcnt > 0 && !hl_all_bunch_sectors_p())
+            if (!eitherCTRL)
             {
-                printmessage16("To flip extended sectors, all sectors of a bunch must be selected");
+                int xflip       = keystatus[sc_X];
                 keystatus[sc_X] = keystatus[sc_Y] = 0;
-            }
-            else
-#endif
-            if (highlightsectorcnt > 0)
-            {
-                int16_t *const otonwall = onextwall;  // OK, since we make old-nextwalls invalid
-
-                mkonwinvalid();
-
-                keystatus[sc_X] = keystatus[sc_Y] = 0;
-
-                for (j=0; j<numwalls; j++)
-                    otonwall[j] = j;
-
-                get_sectors_center(highlightsector, highlightsectorcnt, &dax, &day);
-
-                if (gridlock && grid > 0)
-                    locktogrid(&dax, &day);
-
-                for (i=0; i<highlightsectorcnt; i++)
-                {
-                    int32_t startofloop, endofloop;
-                    int32_t numtoswap = -1;
-                    int32_t w=0;
-                    uwalltype tempwall;
-
-                    startofloop = startwall = sector[highlightsector[i]].wallptr;
-                    endofloop = endwall = startwall+sector[highlightsector[i]].wallnum-1;
-#if 0
-                    if (doMirror)
-                    {
-                        //mirror sector textures
-                        sector[highlightsector[i]].ceilingstat ^= 0x10;
-                        sector[highlightsector[i]].floorstat ^= 0x10;
-                    }
-#endif
-                    //save position of wall at start of loop
-                    x3 = wall[startofloop].x;
-                    y3 = wall[startofloop].y;
-
-                    for (j=startwall; j<=endwall; j++)
-                    {
-                        //fix position of walls
-                        if (about_x)
-                        {
-                            wall[j].x = dax-POINT2(j).x+dax; //flip wall.x about dax
-                            wall[j].y = POINT2(j).y;
-                        }
-                        else
-                        {
-                            wall[j].x = POINT2(j).x;
-                            wall[j].y = day-POINT2(j).y+day; //flip wall.y about day
-                        }
-
-                        if (doMirror)
-                            wall[j].cstat ^= 8;  //mirror walls about dax/day
-
-                        if (wall[j].point2==startofloop) //check if j is end of loop
-                        {
-                            endofloop = j;
-                            if (about_x)
-                            {
-                                wall[endofloop].x = dax-x3+dax; //flip wall.x about dax
-                                wall[endofloop].y = y3;
-                            }
-                            else
-                            {
-                                wall[endofloop].x = x3;
-                                wall[endofloop].y = day-y3+day; //flip wall.y about dax
-                            }
-
-                            //correct order of walls in loop to maintain player space (right-hand rule)
-                            numtoswap = (endofloop-startofloop)>>1;
-                            for (w=1; w<=numtoswap; w++)
-                            {
-                                Bmemcpy(&tempwall, &wall[startofloop+w], sizeof(walltype));
-                                Bmemcpy(&wall[startofloop+w], &wall[endofloop-w+1], sizeof(walltype));
-                                Bmemcpy(&wall[endofloop-w+1], &tempwall, sizeof(walltype));
-
-                                otonwall[startofloop+w] = endofloop-w+1;
-                                otonwall[endofloop-w+1] = startofloop+w;
-                            }
-
-                            //make point2 point to next wall in loop
-                            for (w=startofloop; w<endofloop; w++)
-                                wall[w].point2 = w+1;
-                            wall[endofloop].point2 = startofloop;
-
-                            startofloop = endofloop+1; //set first wall of next loop
-                            //save position of wall at start of loop
-                            x3 = wall[startofloop].x;
-                            y3 = wall[startofloop].y;
-                        }
-                    }
-
-                    j = headspritesect[highlightsector[i]];
-                    while (j != -1)
-                    {
-                        if (about_x)
-                        {
-                            x3 = sprite[j].x;
-                            sprite[j].x = dax-x3+dax; //flip sprite.x about dax
-                            sprite[j].ang = (1024+2048-sprite[j].ang)&2047; //flip ang about 512
-                        }
-                        else
-                        {
-                            y3 = sprite[j].y;
-                            sprite[j].y = day-y3+day; //flip sprite.y about day
-                            sprite[j].ang = (2048-sprite[j].ang)&2047; //flip ang about 512
-                        }
-
-                        if (doMirror && (sprite[j].cstat & 0x30))
-                            sprite[j].cstat ^= 4;  // mirror sprites about dax/day (don't mirror monsters)
-
-                        j = nextspritesect[j];
-                    }
-                }
-
-                // finally, construct the nextwalls and yax-nextwalls
-                // for the new arrangement!
-                for (i=0; i<highlightsectorcnt; i++)
-                {
-                    for (WALLS_OF_SECTOR(highlightsector[i], j))
-                    {
-                        if (wall[j].nextwall >= 0)
-                            wall[j].nextwall = otonwall[wall[j].nextwall];
-#ifdef YAX_ENABLE
-                        {
-                            int32_t cf, ynw;
-                            for (cf=0; cf<2; cf++)
-                                if ((ynw = yax_getnextwall(j, cf)) >= 0)
-                                    yax_setnextwall(j, cf, otonwall[ynw]);
-                        }
-#endif
-                    }
-                }
-
-                printmessage16("Selected sector(s) flipped");
-                asksave = 1;
+                editorFlipHighlightedSectors(xflip, eitherALT);
             }
         }
-        // end edit for sector flip
 
         if (keystatus[88])   //F12
         {
@@ -4632,16 +4624,16 @@ rotate_hlsect_out:
 #if 1
         if (keystatus[sc_F5])  //F5
         {
-            CallExtShowSectorData(-1);
+            ExtShowSectorData(-1);
         }
         if (keystatus[sc_F6])  //F6
         {
             if (pointhighlight >= 16384)
-                CallExtShowSpriteData(pointhighlight-16384);
+                ExtShowSpriteData(pointhighlight-16384);
             else if (linehighlight >= 0)
-                CallExtShowWallData(linehighlight);
+                ExtShowWallData(linehighlight);
             else
-                CallExtShowWallData(-1);
+                ExtShowWallData(-1);
         }
         if (keystatus[sc_F7])  //F7
         {
@@ -4652,7 +4644,7 @@ rotate_hlsect_out:
                 {
                     YAX_SKIPSECTOR(i);
 
-                    CallExtEditSectorData(i);
+                    ExtEditSectorData(i);
                     break;
                 }
         }
@@ -4661,9 +4653,9 @@ rotate_hlsect_out:
             keystatus[sc_F8] = 0;
 
             if (pointhighlight >= 16384)
-                CallExtEditSpriteData(pointhighlight-16384);
+                ExtEditSpriteData(pointhighlight-16384);
             else if (linehighlight >= 0)
-                CallExtEditWallData(linehighlight);
+                ExtEditWallData(linehighlight);
         }
 #endif
 
@@ -6079,11 +6071,11 @@ end_point_dragging:
                 if (cursectornum < numsectors)
                 {
                     if (pointhighlight >= 16384)
-                        CallExtEditSpriteData(pointhighlight-16384);
+                        ExtEditSpriteData(pointhighlight-16384);
                     else if ((linehighlight >= 0) && ((bstatus&1) || sectorofwall(linehighlight) == cursectornum))
-                        CallExtEditWallData(linehighlight);
+                        ExtEditWallData(linehighlight);
                     else if (cursectornum >= 0)
-                        CallExtEditSectorData(cursectornum);
+                        ExtEditSectorData(cursectornum);
                 }
 
                 bstatus &= ~2;
@@ -6266,6 +6258,7 @@ end_point_dragging:
                     searchy = midydim16;
                     pos.x = mousxplc;
                     pos.y = mousyplc;
+                    editorMaybeWarpMouse(searchx, searchy);
                 }
                 ztarget = clamp(ztarget, 16, 39936);
 
@@ -8279,7 +8272,7 @@ CANCEL:
                         reset_default_mapstate();
 
                         Bstrcpy(boardfilename,"newboard.map");
-                        CallExtLoadMap(boardfilename);
+                        editorEventLoadMap(boardfilename);
 #if M32_UNDO
                         map_undoredo_free();
 #endif
@@ -8419,7 +8412,7 @@ CANCEL:
                         SaveBoardAndPrintMessage(selectedboardfilename);
 
                         Bstrcpy(boardfilename, selectedboardfilename);
-                        CallExtSetupMapFilename(boardfilename);
+                        editorSetupMapFilename(boardfilename);
                     }
                     bad = 0;
                 }
@@ -8480,7 +8473,7 @@ CANCEL:
                             goto CANCEL;
                         }
 
-                        CallExtUnInit();
+                        ExtUnInit();
 //                        clearfilenames();
                         engineUnInit();
 
@@ -8516,7 +8509,7 @@ CANCEL:
     if (videoSetGameMode(fullscreen,xres,yres,bppgame,upscalefactor) < 0)
     {
         initprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
-        CallExtUnInit();
+        ExtUnInit();
 //        clearfilenames();
         engineUnInit();
         Bexit(EXIT_FAILURE);
@@ -8687,12 +8680,12 @@ const char *SaveBoard(const char *fn, uint32_t flags)
 #endif
 
     saveboard_savedtags = 0;
-    saveboard_fixedsprites = CallExtPreSaveMap();
+    saveboard_fixedsprites = editorEventPreSaveMap();
 
     ret = saveboard(f, &startpos, startang, startsectnum);
     if ((flags&M32_SB_NOEXT)==0)
     {
-        CallExtSaveMap(f);
+        editorEventSaveMap(f);
         saveboard_savedtags = !taglab_save(f);
     }
 
@@ -8715,7 +8708,7 @@ int32_t LoadBoard(const char *filename, uint32_t flags)
     editorzrange[0] = INT32_MIN;
     editorzrange[1] = INT32_MAX;
 
-    CallExtPreLoadMap();
+    editorEventPreLoadMap();
     i = engineLoadBoard(filename, (flags&4)|loadingflags, &pos, &ang, &cursectnum);
     if (i == -2)
         i = engineLoadBoardV5V6(filename,loadingflags, &pos, &ang, &cursectnum);
@@ -8740,7 +8733,7 @@ int32_t LoadBoard(const char *filename, uint32_t flags)
         loadmhk(0);
 
     tagstat = taglab_load(boardfilename, loadingflags);
-    CallExtLoadMap(boardfilename);
+    editorEventLoadMap(boardfilename);
 
     {
         char msgtail[64];
@@ -9379,7 +9372,7 @@ static void clearministatbar16(void)
 
     if (xdim >= 800)
     {
-        Bsnprintf(tempbuf, sizeof(tempbuf), "%s %s", AppProperName, CallExtGetVer());
+        Bsnprintf(tempbuf, sizeof(tempbuf), "%s %s", AppProperName, ExtGetVer());
         printext16(xdim-(Bstrlen(tempbuf)<<3)-3, ydim-STATUS2DSIZ2+10, editorcolors[4],-1, tempbuf, 0);
         printext16(xdim-(Bstrlen(tempbuf)<<3)-2, ydim-STATUS2DSIZ2+9, editorcolors[12],-1, tempbuf, 0);
     }
@@ -9660,7 +9653,7 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
         inputchecked = 1;
 
         if ((flags&8)==0)
-            CallExtCheckKeys();
+            ExtCheckKeys();
 
         getnumber_clearline();
 
@@ -10679,7 +10672,7 @@ void showsectordata(int16_t sectnum, int16_t small)
 
     if (small)
     {
-        _printmessage16("^10Sector %d %s ^O(F7 to edit)", sectnum, CallExtGetSectorCaption(sectnum));
+        _printmessage16("^10Sector %d %s ^O(F7 to edit)", sectnum, ExtGetSectorCaption(sectnum));
         return;
     }
 
@@ -10747,7 +10740,7 @@ void showwalldata(int16_t wallnum, int16_t small)
     if (small)
     {
         _printmessage16("^10Wall %d %s ^O(F8 to edit)", wallnum,
-                        CallExtGetWallCaption(wallnum));
+                        ExtGetWallCaption(wallnum));
         return;
     }
 
@@ -10796,7 +10789,7 @@ void showspritedata(int16_t spritenum, int16_t small)
 
     if (small)
     {
-        _printmessage16("^10Sprite %d %s ^O(F8 to edit)",spritenum, CallExtGetSpriteCaption(spritenum));
+        _printmessage16("^10Sprite %d %s ^O(F8 to edit)",spritenum, ExtGetSpriteCaption(spritenum));
         return;
     }
 
@@ -11249,7 +11242,7 @@ void test_map(int32_t mode)
         }
         Bstrcat(fullparam, param);
 
-        CallExtPreSaveMap();
+        editorEventPreSaveMap();
         if (mode)
             saveboard(PLAYTEST_MAPNAME, &startpos, startang, startsectnum);
         else
@@ -11302,50 +11295,17 @@ void app_crashhandler(void)
     }
 }
 
-// These will be more useful in the future...
-static const char *CallExtGetVer(void)
-{
-    return ExtGetVer();
-}
-static int32_t CallExtInit(void)
-{
-    return ExtInit();
-}
-static int32_t CallExtPreInit(int32_t argc,char const * const * argv)
-{
-    return ExtPreInit(argc, argv);
-}
-static int32_t CallExtPostStartupWindow(void)
-{
-    return ExtPostStartupWindow();
-}
-static void CallExtPostInit(void)
-{
-    return ExtPostInit();
-}
-static void CallExtUnInit(void)
-{
-    ExtUnInit();
-}
-static void CallExtPreCheckKeys(void)
-{
-    ExtPreCheckKeys();
-}
-static void CallExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
+static void editorEventAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     ExtAnalyzeSprites(ourx, oury, ourz, oura, smoothr);
     VM_OnEvent(EVENT_ANALYZESPRITES, -1);
 }
-static void CallExtCheckKeys(void)
-{
-    ExtCheckKeys();
-}
-static void CallExtPreLoadMap(void)
+static void editorEventPreLoadMap(void)
 {
     VM_OnEvent(EVENT_PRELOADMAP, -1);
     ExtPreLoadMap();
 }
-static void CallExtSetupMapFilename(const char *mapname)
+static void editorSetupMapFilename(const char *mapname)
 {
     Bstrncpy(levelname, mapname, sizeof(levelname));
 
@@ -11354,50 +11314,20 @@ static void CallExtSetupMapFilename(const char *mapname)
 
     ExtSetupMapFilename(mapname);
 }
-static void CallExtLoadMap(const char *mapname)
+static void editorEventLoadMap(const char *mapname)
 {
-    CallExtSetupMapFilename(mapname);
+    editorSetupMapFilename(mapname);
     ExtLoadMap(mapname);
     VM_OnEvent(EVENT_LOADMAP, -1);
 }
-static int32_t CallExtPreSaveMap(void)
+static int32_t editorEventPreSaveMap(void)
 {
     VM_OnEvent(EVENT_PRESAVEMAP, -1);
     return ExtPreSaveMap();
 }
-static void CallExtSaveMap(const char *mapname)
+static void editorEventSaveMap(const char *mapname)
 {
     ExtSaveMap(mapname);
     saveboard("backup.map", &pos, ang, cursectnum);
     VM_OnEvent(EVENT_SAVEMAP, -1);
 }
-static void CallExtShowSectorData(int16_t sectnum)
-{
-    ExtShowSectorData(sectnum);
-}
-static void CallExtShowWallData(int16_t wallnum)
-{
-    ExtShowWallData(wallnum);
-}
-static void CallExtShowSpriteData(int16_t spritenum)
-{
-    ExtShowSpriteData(spritenum);
-}
-static void CallExtEditSectorData(int16_t sectnum)
-{
-    ExtEditSectorData(sectnum);
-}
-static void CallExtEditWallData(int16_t wallnum)
-{
-    ExtEditWallData(wallnum);
-}
-static void CallExtEditSpriteData(int16_t spritenum)
-{
-    ExtEditSpriteData(spritenum);
-}
-#if 0
-static const char *CallExtGetSectorType(int32_t lotag)
-{
-    return ExtGetSectorType(lotag);
-}
-#endif
