@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "duke3d.h"
 #include "premap.h"
 #include "prlights.h"
+#include "md4.h"
 #include "savegame.h"
 
 #include "vfs.h"
@@ -346,6 +347,45 @@ corrupt:
     return 1;
 }
 
+static int32_t sv_loadBoardMD4(char* const fn)
+{
+    buildvfs_kfd fil;
+    if ((fil = kopen4load(fn,0)) == buildvfs_kfd_invalid)
+        return -1;
+
+    klseek(fil, 0, SEEK_SET);
+    int32_t boardsize = kfilelength(fil);
+    uint8_t *fullboard = (uint8_t*)Xmalloc(boardsize);
+    if (kread_and_test(fil, fullboard, boardsize))
+    {
+        Xfree(fullboard);
+        return -1;
+    }
+
+    md4once(fullboard, boardsize, g_loadedMapHack.md4);
+    Xfree(fullboard);
+    return 0;
+}
+
+static void sv_loadMhk(char* currentboardfilename)
+{
+    bool loadedMhk = false;
+    if (sv_loadBoardMD4(currentboardfilename) == 0)
+    {
+        auto mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+                                     sizeof(usermaphack_t), compare_usermaphacks);
+
+        if (mhkInfo && (loadedMhk = (engineLoadMHK(mhkInfo->mhkfile) == 0)))
+            initprintf("Loaded map hack file \"%s\"\n", mhkInfo->mhkfile);
+    }
+
+    if (!loadedMhk)
+    {
+        append_ext_UNSAFE(currentboardfilename, ".mhk");
+        if (engineLoadMHK(currentboardfilename) == 0)
+            initprintf("Loaded map hack file \"%s\"\n", currentboardfilename);
+    }
+}
 
 static void sv_postudload();
 
@@ -471,8 +511,8 @@ int32_t G_LoadPlayer(savebrief_t & sv)
                     artSetupMapArt(currentboardfilename);
                     Bstrcpy(previousboardfilename, currentboardfilename);
                 }
-                append_ext_UNSAFE(currentboardfilename, ".mhk");
-                engineLoadMHK(currentboardfilename);
+
+                sv_loadMhk(currentboardfilename);
             }
 
             currentboardfilename[0] = '\0';
@@ -671,8 +711,8 @@ int32_t G_LoadPlayer(savebrief_t & sv)
             artSetupMapArt(currentboardfilename);
             Bstrcpy(previousboardfilename, currentboardfilename);
         }
-        append_ext_UNSAFE(currentboardfilename, ".mhk");
-        engineLoadMHK(currentboardfilename);
+
+        sv_loadMhk(currentboardfilename);
     }
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
