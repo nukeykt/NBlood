@@ -358,47 +358,84 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
     return -1;
 }
 
-static inline uint16_t getlzsum(uspriteptr_t pSprite, uspriteptr_t pTouched, int const wallDist)
+static struct
 {
-    uint16_t lzsum = (uint16_t)pSprite->x ^ (uint16_t)pSprite->y ^ (uint16_t)pSprite->z ^ (uint16_t)sector[pSprite->sectnum].floorz
-                     ^ (uint16_t)sector[pSprite->sectnum].ceilingz ^ wallDist ^ (uint16_t)pSprite->xvel ^ (uint16_t)pSprite->zvel;
-    if (pTouched) lzsum ^= (uint16_t)pTouched->x ^ (uint16_t)pTouched->y ^ (uint16_t)pTouched->z ^ (uint16_t)pTouched->xvel ^ (uint16_t)pTouched->zvel;
-    return lzsum;
+    int16_t hi, lo;
+} zhit[MAXSPRITES];
+
+static inline uint16_t getspritezsum(int const spriteNum) { return getcrc16((char const *)&sprite[spriteNum], sizeof(spritetype)); }
+static inline uint16_t getsectorzsum(int const sectNum) { return getcrc16((char const *)&sector[sectNum], sizeof(sectortype)); }
+
+static uint16_t VM_GetZSum(int const spriteNum)
+{
+    auto const pSprite = &sprite[spriteNum];
+    auto const pz      = &zhit[spriteNum];
+    uint16_t   zsum    = getspritezsum(spriteNum) ^ getsectorzsum(pSprite->sectnum);
+    int const  hiZspr  = pz->hi & (MAXSPRITES-1);
+
+    if ((pz->hi & 49152) == 49152)
+    {
+        auto const phiZspr = &sprite[hiZspr];
+
+        zsum ^= getspritezsum(hiZspr);
+
+        if (phiZspr->sectnum != pSprite->sectnum)
+            zsum ^= getsectorzsum(phiZspr->sectnum);
+    }
+
+    if ((pz->lo & 49152) == 49152)
+    {
+        int const  loZspr  = pz->lo&(MAXSPRITES-1);
+        auto const ploZspr = &sprite[loZspr];
+
+        zsum ^= getspritezsum(loZspr);
+
+        if (ploZspr->sectnum != pSprite->sectnum && ((pz->hi & 49152) != 49152 || ploZspr->sectnum != sprite[hiZspr].sectnum))
+            zsum ^= getsectorzsum(ploZspr->sectnum);
+    }
+
+    return zsum;
 }
 
 void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const florhit, int const wallDist)
 {
-    auto const pSprite  = &sprite[spriteNum];
-    auto       pTouched = ((actor[spriteNum].florhit & 49152) == 49152) ? (uspriteptr_t)&sprite[actor[spriteNum].florhit & (MAXSPRITES-1)] : nullptr;
+    auto const pSprite = &sprite[spriteNum];
+    auto const pActor  = &actor[spriteNum];
+    auto const pz     = &zhit[spriteNum];
+    uint16_t   zsum   = VM_GetZSum(spriteNum);
 
-    if (actor[spriteNum].lzsum == getlzsum((uspriteptr_t)pSprite, pTouched, wallDist))
+    if (pActor->lzsum == zsum)
+    {
+        *florhit = pz->lo;
+        *ceilhit = pz->hi;
         return;
+    }
 
     int const ocstat = pSprite->cstat;
 
     pSprite->cstat = 0;
     pSprite->z -= ACTOR_FLOOR_OFFSET;
 
-    getzrange(&pSprite->pos, pSprite->sectnum, &actor[spriteNum].ceilingz, ceilhit, &actor[spriteNum].floorz, florhit, wallDist, CLIPMASK0);
+    getzrange(&pSprite->pos, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
 
     pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
 
-    actor[spriteNum].florhit = *florhit;
-    pTouched = ((actor[spriteNum].florhit & 49152) == 49152) ? (uspriteptr_t)&sprite[actor[spriteNum].florhit & (MAXSPRITES-1)] : nullptr;
-
-    actor[spriteNum].lzsum = getlzsum((uspriteptr_t)pSprite, pTouched, wallDist);
+    pz->hi = *ceilhit;
+    pz->lo = *florhit;
+    pActor->lzsum = zsum;
 }
 
 void A_GetZLimits(int const spriteNum)
 {
     auto const pSprite = &sprite[spriteNum];
-    int32_t    ceilhit = 0, florhit = actor[spriteNum].florhit;
-    int const  clipDist = A_GetClipdist(spriteNum, -1);
-    auto const oceilz   = actor[spriteNum].ceilingz;
+    auto const pActor  = &actor[spriteNum];
+    int const  clipDist = A_GetClipdist(spriteNum);
+    int32_t    ceilhit = 0, florhit = 0;
+    auto const oceilz   = pActor->ceilingz;
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
-    actor[spriteNum].flags &= ~SFLAG_NOFLOORSHADOW;
+    pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
     if ((florhit&49152) == 49152 && (sprite[florhit&(MAXSPRITES-1)].cstat&48) == 0)
     {
@@ -410,14 +447,14 @@ void A_GetZLimits(int const spriteNum)
         if ((A_CheckEnemySprite(hitspr) && hitspr->pal != 1 && pSprite->statnum != STAT_PROJECTILE)
                 || (hitspr->picnum == APLAYER && A_CheckEnemySprite(pSprite)))
         {
-            actor[spriteNum].flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
+            pActor->flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
             pSprite->xvel = -256;  // SLIDE_ABOVE_ENEMY
             A_SetSprite(spriteNum, CLIPMASK0);
         }
         else if (pSprite->statnum == STAT_PROJECTILE && hitspr->picnum == APLAYER && pSprite->owner==florhit)
         {
-            actor[spriteNum].ceilingz = sector[pSprite->sectnum].ceilingz;
-            actor[spriteNum].floorz   = sector[pSprite->sectnum].floorz;
+            pActor->ceilingz = sector[pSprite->sectnum].ceilingz;
+            pActor->floorz   = sector[pSprite->sectnum].floorz;
         }
     }
 
@@ -427,12 +464,12 @@ void A_GetZLimits(int const spriteNum)
     if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0
 #ifndef EDUKE32_STANDALONE
             // exclude squish sprites as they are sometimes used as pseudo-ladders in old usermaps
-            && (FURY || (actor[spriteNum].picnum != OOZ && actor[spriteNum].picnum != OOZ2))
+            && (FURY || (pActor->picnum != OOZ && pActor->picnum != OOZ2))
 #endif
        )
     {
-        if (pSprite->z >= actor[spriteNum].floorz)
-            actor[spriteNum].ceilingz = oceilz;
+        if (pSprite->z >= pActor->floorz)
+            pActor->ceilingz = oceilz;
     }
 }
 
@@ -449,7 +486,7 @@ void A_Fall(int const spriteNum)
         spriteGravity = g_spriteGravity/6;
 
     int32_t ceilhit, florhit;
-    VM_GetZRange(spriteNum, &ceilhit, &florhit, A_GetClipdist(spriteNum, -1));
+    VM_GetZRange(spriteNum, &ceilhit, &florhit, A_GetClipdist(spriteNum));
 
 #ifdef YAX_ENABLE
     int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);
@@ -797,10 +834,9 @@ GAMEEXEC_STATIC void VM_Move(void)
             if (vm.pSprite->z < vm.pActor->ceilingz+ZOFFSET5)
                 vm.pSprite->z = vm.pActor->ceilingz+ZOFFSET5;
 
-        vec3_t const vect
-        = { (spriteXvel * (sintable[(angDiff + 512) & 2047])) >> 14, (spriteXvel * (sintable[angDiff & 2047])) >> 14, vm.pSprite->zvel };
-
-        vm.pActor->movflag = A_MoveSprite(vm.spriteNum, &vect, (A_CheckSpriteFlags(vm.spriteNum, SFLAG_NOCLIP) ? 0 : CLIPMASK0));
+        vm.pActor->movflag = A_MoveSprite(vm.spriteNum, { (spriteXvel * (sintable[(angDiff + 512) & 2047])) >> 14,
+                                                          (spriteXvel * (sintable[angDiff & 2047])) >> 14, vm.pSprite->zvel },
+                                                        A_CheckSpriteFlags(vm.spriteNum, SFLAG_NOCLIP) ? 0 : CLIPMASK0);
     }
 
     if (!badguyp)
@@ -1749,7 +1785,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (aGameVars[insptr[-1]].global != *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -1761,7 +1797,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (aGameVars[insptr[-1]].global < *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -1774,7 +1810,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v != *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -1788,7 +1824,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v < *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -1802,7 +1838,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v != *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -1816,7 +1852,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     insptr = savedinsptr;
                     tw = (v < *insptr);
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
 
                 dispatch();
             }
@@ -2161,7 +2197,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     branch((tw = (Gv_GetVar(insptr[-1]) != *insptr)));
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -2175,7 +2211,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     tw = (tw != Gv_GetVar(*insptr++));
                     insptr--;
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -2186,7 +2222,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     branch((tw = (Gv_GetVar(insptr[-1]) < *insptr)));
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -2200,7 +2236,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     tw = (tw < Gv_GetVar(*insptr++));
                     insptr--;
                     branch(tw);
-                } while (tw);
+                } while (tw && (vm.flags & VM_RETURN) == 0);
                 dispatch();
             }
 
@@ -4763,7 +4799,7 @@ badindex:
 
                     VM_ASSERT((unsigned)v.spriteNum < MAXSPRITES, "invalid sprite %d\n", v.spriteNum);
 
-                    Gv_SetVar(*insptr++, A_MoveSprite(v.spriteNum, &v.vect, v.clipType));
+                    Gv_SetVar(*insptr++, A_MoveSprite(v.spriteNum, v.vect, v.clipType));
                     dispatch();
                 }
 
@@ -6241,22 +6277,22 @@ badindex:
 
             vInstruction(CON_RESPAWNHITAG):
                 insptr++;
-                switch (DYNAMICTILEMAP(vm.pSprite->picnum))
+                switch (tileGetMapping(vm.pSprite->picnum))
                 {
 #ifndef EDUKE32_STANDALONE
-                    case FEM1__STATIC:
-                    case FEM2__STATIC:
-                    case FEM3__STATIC:
-                    case FEM4__STATIC:
-                    case FEM5__STATIC:
-                    case FEM6__STATIC:
-                    case FEM7__STATIC:
-                    case FEM8__STATIC:
-                    case FEM9__STATIC:
-                    case FEM10__STATIC:
-                    case PODFEM1__STATIC:
-                    case NAKED1__STATIC:
-                    case STATUE__STATIC:
+                    case FEM1__:
+                    case FEM2__:
+                    case FEM3__:
+                    case FEM4__:
+                    case FEM5__:
+                    case FEM6__:
+                    case FEM7__:
+                    case FEM8__:
+                    case FEM9__:
+                    case FEM10__:
+                    case PODFEM1__:
+                    case NAKED1__:
+                    case STATUE__:
                         if (!FURY)
                         {
                             if (vm.pSprite->yvel)
@@ -6444,19 +6480,19 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
 #ifndef EDUKE32_STANDALONE
         else if (!FURY && vm.pSprite->statnum == STAT_STANDABLE)
         {
-            switch (DYNAMICTILEMAP(vm.pSprite->picnum))
+            switch (tileGetMapping(vm.pSprite->picnum))
             {
-                case RUBBERCAN__STATIC:
-                case EXPLODINGBARREL__STATIC:
-                case WOODENHORSE__STATIC:
-                case HORSEONSIDE__STATIC:
-                case CANWITHSOMETHING__STATIC:
-                case FIREBARREL__STATIC:
-                case NUKEBARREL__STATIC:
-                case NUKEBARRELDENTED__STATIC:
-                case NUKEBARRELLEAKED__STATIC:
-                case TRIPBOMB__STATIC:
-                case EGG__STATIC:
+                case RUBBERCAN__:
+                case EXPLODINGBARREL__:
+                case WOODENHORSE__:
+                case HORSEONSIDE__:
+                case CANWITHSOMETHING__:
+                case FIREBARREL__:
+                case NUKEBARREL__:
+                case NUKEBARRELDENTED__:
+                case NUKEBARRELLEAKED__:
+                case TRIPBOMB__:
+                case EGG__:
                     if (vm.pActor->timetosleep > 1)
                         vm.pActor->timetosleep--;
                     else if (vm.pActor->timetosleep == 1)
@@ -6734,11 +6770,11 @@ void G_RestoreMapState(void)
         if (ud.lockout)
         {
             for (native_t x=g_animWallCnt-1; x>=0; x--)
-                switch (DYNAMICTILEMAP(wall[animwall[x].wallnum].picnum))
+                switch (tileGetMapping(wall[animwall[x].wallnum].picnum))
                 {
-                    case FEMPIC1__STATIC: wall[animwall[x].wallnum].picnum = BLANKSCREEN; break;
-                    case FEMPIC2__STATIC:
-                    case FEMPIC3__STATIC: wall[animwall[x].wallnum].picnum = SCREENBREAK6; break;
+                    case FEMPIC1__: wall[animwall[x].wallnum].picnum = BLANKSCREEN; break;
+                    case FEMPIC2__:
+                    case FEMPIC3__: wall[animwall[x].wallnum].picnum = SCREENBREAK6; break;
                 }
         }
 #if 0

@@ -249,7 +249,7 @@ void BuildNear(int x, int y, int walldist, int nSector)
                 if (j >= NearCount)
                 {
                     vec2_t pos = { x, y };
-                    if (clipinsidebox(&pos, nWall, walldist))
+                    if (clipinsidebox(pos, nWall, walldist))
                     {
                         NearSector[NearCount] = wall[nWall].nextsector;
                         NearCount++;

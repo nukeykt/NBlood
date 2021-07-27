@@ -713,7 +713,8 @@ int32_t startwin_run(void)
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
 #endif
         pINISelected = settings.ini;
-        Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
+        if (g_modDir != settings.gamedir)
+            Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return done;

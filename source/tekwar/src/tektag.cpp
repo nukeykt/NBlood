@@ -520,7 +520,7 @@ tagcode()
                                    {
                                        vec2_t pos;
                                        pos.x = posx[p]; pos.y = posy[p];
-                                       if (clipinsidebox(&pos, swingwall[i][k], 128L) != 0)
+                                       if (clipinsidebox(pos, swingwall[i][k], 128L) != 0)
                                        {
                                            good = 0;
                                            break;

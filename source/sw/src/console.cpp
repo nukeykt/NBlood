@@ -171,6 +171,7 @@ int16_t numcommands=0;    // Total number of commands in the command list
 
 char command_history[MAX_HISTORY][256]; // History of what has been typed in lately
 int16_t curr_history=0; // Line currently being pointed to in the history array
+int16_t add_history_pos=0; // Where next history line will be added in history array
 int16_t numhistory=0;
 
 // Array which stores all the user arguments passed into the game.
@@ -301,20 +302,16 @@ void CON_CommandHistory(signed char dir)
     if (curr_history + dir < numhistory)
         curr_history += dir;
     if (curr_history < 0) curr_history = 0;
-    if (curr_history > MAX_HISTORY) curr_history = MAX_HISTORY;
+    if (curr_history >= MAX_HISTORY) curr_history = MAX_HISTORY - 1;
 
     strcpy(MessageInputString, command_history[curr_history]);
 }
 
 void CON_AddHistory(const char *commandstr)
 {
-    int i;
+    Bstrncpy(command_history[add_history_pos], commandstr, sizeof(command_history[add_history_pos]));
+    if ((++add_history_pos) >= MAX_HISTORY) add_history_pos = 0; // loop back around
 
-    for (i=MAX_HISTORY-1; i>=0; i--)
-    {
-        strcpy(command_history[i],command_history[i-1]);
-    }
-    strcpy(command_history[0],commandstr);
     if ((++numhistory) > MAX_HISTORY) numhistory = MAX_HISTORY;
 }
 

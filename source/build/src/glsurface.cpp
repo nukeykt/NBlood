@@ -240,3 +240,9 @@ void glsurface_blitBuffer()
                  0,
                  4);
 }
+
+void glsurface_refresh()
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, bufferTexID);
+}

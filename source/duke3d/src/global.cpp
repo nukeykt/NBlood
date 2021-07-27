@@ -113,21 +113,21 @@ int32_t g_tripbombRadius     = 3880;
 
 int16_t g_blimpSpawnItems[15] =
 {
-    RPGSPRITE__STATIC,
-    CHAINGUNSPRITE__STATIC,
-    DEVISTATORAMMO__STATIC,
-    RPGAMMO__STATIC,
-    RPGAMMO__STATIC,
-    JETPACK__STATIC,
-    SHIELD__STATIC,
-    FIRSTAID__STATIC,
-    STEROIDS__STATIC,
-    RPGAMMO__STATIC,
-    RPGAMMO__STATIC,
-    RPGSPRITE__STATIC,
-    RPGAMMO__STATIC,
-    FREEZESPRITE__STATIC,
-    FREEZEAMMO__STATIC
+    RPGSPRITE__,
+    CHAINGUNSPRITE__,
+    DEVISTATORAMMO__,
+    RPGAMMO__,
+    RPGAMMO__,
+    JETPACK__,
+    SHIELD__,
+    FIRSTAID__,
+    STEROIDS__,
+    RPGAMMO__,
+    RPGAMMO__,
+    RPGSPRITE__,
+    RPGAMMO__,
+    FREEZESPRITE__,
+    FREEZEAMMO__
 };
 
 char CheatKeys[2]       = { sc_D, sc_N };

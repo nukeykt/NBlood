@@ -45,6 +45,7 @@ extern int32_t startwin_idle(void *);
 extern int32_t startwin_run(void);
 
 // video
+extern int32_t r_rotatespriteinterp;
 extern int32_t r_usenewaspect, newaspect_enable;
 extern int32_t r_fpgrouscan;
 extern int32_t setaspect_new_use_dimen;
@@ -148,6 +149,11 @@ vec2_t CONSTEXPR const g_defaultVideoModes []
 
 extern char inputdevices;
 
+#define DEV_KEYBOARD 0x1
+#define DEV_MOUSE    0x2
+#define DEV_JOYSTICK 0x4
+#define DEV_HAPTIC   0x8
+
 // keys
 #define NUMKEYS 256
 #define KEYFIFOSIZ 64
@@ -212,6 +218,7 @@ typedef struct
     int32_t  numButtons;
     int32_t  numHats;
     int32_t  isGameController;
+    uint32_t validButtons;
 } controllerinput_t;
 
 extern controllerinput_t joystick;
@@ -236,8 +243,9 @@ int32_t handleevents_peekkeys(void);
 
 extern void (*keypresscallback)(int32_t,int32_t);
 extern void (*g_mouseCallback)(int32_t,int32_t);
+extern void (*g_controllerHotplugCallback)(void);
 
-int32_t initinput(void);
+int32_t initinput(void(*hotplugCallback)(void) = NULL);
 void uninitinput(void);
 void keySetCallback(void (*callback)(int32_t,int32_t));
 void mouseSetCallback(void (*callback)(int32_t,int32_t));
@@ -273,6 +281,7 @@ void mouseMoveToCenter(void);
 int32_t mouseReadButtons(void);
 void mouseReadPos(int32_t *x, int32_t *y);
 
+bool joyHasButton(int button);
 void joyReadButtons(int32_t *pResult);
 void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
 void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);

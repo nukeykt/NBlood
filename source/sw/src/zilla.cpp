@@ -765,7 +765,6 @@ int DoZillaDeathMelt(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
-    static SWBOOL alreadydid = FALSE;
 
     if (RANDOM_RANGE(1000) > 800)
         SpawnGrenadeExp(SpriteNum);
@@ -774,11 +773,8 @@ int DoZillaDeathMelt(short SpriteNum)
     RESET(u->Flags, SPR_JUMPING|SPR_FALLING|SPR_MOVED);
 
     //DoMatchEverything(NULL, sp->lotag, ON);
-    if (!SW_SHAREWARE && gs.MusicOn && !alreadydid)
-    {
-        PlaySong(0, RedBookSong[Level], TRUE, TRUE);
-        alreadydid = TRUE;
-    }
+    if (!SW_SHAREWARE && gs.MusicOn)
+        PlaySong(0, RedBookSong[Level], TRUE, FALSE);
 
     //KeepActorOnFloor(SpriteNum);
     getzsofslope(sp->sectnum, sp->x, sp->y, &u->hiz, &u->loz);

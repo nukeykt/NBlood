@@ -93,24 +93,6 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         }
     }
 
-    static inline int32_t getkensmessagecrc(void *b)
-    {
-        _asm
-        {
-            push ebx
-            mov ebx, b
-            xor eax, eax
-            mov ecx, 32
-            beg:
-            mov edx, dword ptr[ebx+ecx*4-4]
-                ror edx, cl
-                adc eax, edx
-                bswap eax
-                loop short beg
-                pop ebx
-        }
-    }
-
 #elif defined(__GNUC__) && defined(__i386__) && !defined(NOASM)	// _MSC_VER
 
     //
@@ -147,78 +129,28 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
         : "a" (__a), "b" (__b), "c" (__c), "d" (__d) : "cc"); \
      __a; })
 
-
-#define getkensmessagecrc(b) \
-    ({ int32_t __a, __b=(b); \
-       __asm__ __volatile__ ( \
-        "xorl %%eax, %%eax\n\t" \
-        "movl $32, %%ecx\n\t" \
-        "0:\n\t" \
-        "movl -4(%%ebx,%%ecx,4), %%edx\n\t" \
-        "rorl %%cl, %%edx\n\t" \
-        "adcl %%edx, %%eax\n\t" \
-        "bswapl %%eax\n\t" \
-        "loop 0b" \
-        : "=a" (__a) : "b" (__b) : "ecx", "edx" \
-     __a; })
-
 #else   // __GNUC__ && __i386__
 
-    static inline int32_t nsqrtasm(uint32_t a)
+    static FORCE_INLINE int32_t nsqrtasm(uint32_t a)
     {
         // JBF 20030901: This was a damn lot simpler to reverse engineer than
         // msqrtasm was. Really, it was just like simplifying an algebra equation.
-        uint16_t c;
-
-        if (a & 0xff000000)  			// test eax, 0xff000000  /  jnz short over24
-        {
-            c = shlookup[(a >> 24) + 4096];	// mov ebx, eax
-                                            // over24: shr ebx, 24
-                                            // mov cx, word ptr shlookup[ebx*2+8192]
-        }
-        else
-        {
-            c = shlookup[a >> 12];		// mov ebx, eax
-                                        // shr ebx, 12
-                                        // mov cx, word ptr shlookup[ebx*2]
-                                        // jmp short under24
-        }
-        a >>= c&0xff;				// under24: shr eax, cl
-        a = (a&0xffff0000)|(sqrtable[a]);	// mov ax, word ptr sqrtable[eax*2]
-        a >>= ((c&0xff00) >> 8);		// mov cl, ch
-                                        // shr eax, cl
-        return a;
+        uint16_t const c = shlookup[(a & 0xff000000) ? ((a >> 24) + 4096):(a>>12)];
+        a >>= c&0xff;
+        return ((a&0xffff0000)|(sqrtable[a])) >> ((c&0xff00) >> 8);
     }
 
-    static inline int32_t getclipmask(int32_t a, int32_t b, int32_t c, int32_t d)
+    static FORCE_INLINE int32_t getclipmask(int32_t a, int32_t b, int32_t c, int32_t d)
     {
         // Ken did this
         d = ((a<0)<<3) + ((b<0)<<2) + ((c<0)<<1) + (d<0);
         return (((d<<4)^0xf0)|d);
     }
 
-    static inline int32_t getkensmessagecrc(int32_t b)
-    {
-        UNREFERENCED_PARAMETER(b);
-        return 0x56c764d4l;
-    }
-
 #endif
 
-static inline int32_t ksqrtasm_old(uint32_t n)
-{
-    uint32_t shift = 0;
-    n = klabs((int32_t)n);
-    while (n >= 2048)
-    {
-        n >>= 2;
-        ++shift;
-    }
-    uint32_t const s = sqrtable_old[n];
-    return (s << shift) >> 10;
-}
 
-static inline int32_t clip_nsqrtasm(uint32_t n)
+static FORCE_INLINE int32_t ksqrt_inline(uint32_t n)
 {
     if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(n);
@@ -432,13 +364,11 @@ template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tilept
 
 // x1, y1: in/out
 // rest x/y: out
-template <typename T>
-static inline void get_wallspr_points(T const * const spr, int32_t *x1, int32_t *x2,
-                                      int32_t *y1, int32_t *y2)
+static inline void get_wallspr_points(void const * const ptr, int32_t *x1, int32_t *x2, int32_t *y1, int32_t *y2)
 {
     //These lines get the 2 points of the rotated sprite
     //Given: (x1, y1) starts out as the center point
-
+    auto spr = (uspriteptr_t)ptr;
     const int32_t tilenum=spr->picnum, ang=spr->ang;
     const int32_t xrepeat = spr->xrepeat;
     int32_t xoff = picanm[tilenum].xofs + spr->xoffset;
@@ -462,12 +392,12 @@ static inline void get_wallspr_points(T const * const spr, int32_t *x1, int32_t 
 
 // x1, y1: in/out
 // rest x/y: out
-template <typename T>
-static inline void get_floorspr_points(T const * const spr, int32_t px, int32_t py,
-                                       int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
-                                       int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
-                                       int32_t const heinum)
+static inline void get_floorspr_points(void const * const ptr, int32_t px, int32_t py,
+                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
+                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
+                                int32_t const heinum)
 {
+    auto spr = (uspriteptr_t)ptr;
     const int32_t tilenum = spr->picnum;
     const int32_t cosang = sintable[(spr->ang+512)&2047];
     const int32_t sinang = sintable[spr->ang&2047];

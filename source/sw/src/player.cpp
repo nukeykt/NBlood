@@ -4648,7 +4648,7 @@ PlayerOnLadder(PLAYERp pp)
             &neartagsector, &neartagwall, &neartagsprite,
             &neartaghitdist, 1024L+768L, NTAG_SEARCH_LO_HI, NULL);
 
-    dir = DOT_PRODUCT_2D(pp->xvect, pp->yvect, sintable[NORM_ANGLE(fix16_to_int(pp->q16ang)+512)], sintable[fix16_to_int(pp->q16ang)]);
+    dir = DOT_PRODUCT_2D(pp->xvect, pp->yvect, sintable[NORM_ANGLE(fix16_to_int(pp->q16ang) + 512)], sintable[NORM_ANGLE(fix16_to_int(pp->q16ang))]);
 
     if (dir < 0)
         return FALSE;

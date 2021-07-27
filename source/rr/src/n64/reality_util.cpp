@@ -11,58 +11,63 @@ struct Huffman {
     uint16_t f_c;
 };
 
-static char byte_8026ecc1;
-static const char *byte_8026ecc4;
-static char *byte_8026ecc8;
-static char *byte_8026eccc;
-static uint32_t dword_8026ecd0;
-static Huffman byte_8026ecd8[3][16];
+static char nBitsLoaded;
+static const char *pStream;
+static const char *pStreamEnd;
+static char *pOutput;
+static char *pOutputEnd;
+static uint32_t loadedBits;
+static Huffman huffVars[3][16];
 
-static void sub_800706b8(const char *inbuf, char *outbuf)
+static void SetupDecompression(const char *inbuf, char *outbuf)
 {
-    byte_8026ecc1 = 0;
-    byte_8026ecc4 = inbuf + 0x12;
-    byte_8026ecc8 = outbuf;
-    byte_8026eccc = outbuf + B_BIG32(*(int*)(inbuf+4));
+    nBitsLoaded = 0;
+    pStream = inbuf + 18; // skip header
+    pStreamEnd = pStream + B_BIG32(*(int*)(inbuf + 8));
+    pOutput = outbuf;
+    pOutputEnd = outbuf + B_BIG32(*(int*)(inbuf + 4));
 }
 
-static int sub_800702d4(uint8_t a1)
+static int GetBitsFromStream(uint8_t nBits)
 {
-    int v2 = 0;
+    int ret = 0;
     int v1 = 1;
-    for (int i = a1 - 1; i >= 0; i--)
+
+    for (int i = 0; i < nBits; i++)
     {
-        if (!byte_8026ecc1)
+        if (!nBitsLoaded)
         {
-            byte_8026ecc1 = 16;
-            dword_8026ecd0 = B_LITTLE32(*(int*)byte_8026ecc4);
-            byte_8026ecc4 += 2;
+            nBitsLoaded = 16;
+            loadedBits = B_LITTLE32(*(int*)pStream);
+            pStream += 2;
         }
-        byte_8026ecc1--;
-        char v3 = dword_8026ecd0 & 1;
-        dword_8026ecd0 >>= 1;
+        nBitsLoaded--;
+
+        char v3 = loadedBits & 1;
+        loadedBits >>= 1;
         if (v3)
-            v2 |= v1;
+            ret |= v1;
         v1 <<= 1;
     }
-    return v2;
+
+    return ret;
 }
 
-static void sub_800705c8(Huffman *a1, int a2)
+static void InitTable(Huffman *table, int nSize)
 {
-    for (int i = a2 - 1; i >= 0; i--)
+    for (int i = 0; i < nSize; i++)
     {
-        a1[i].f_0 = 0;
-        a1[i].f_2 = -1;
-        a1[i].f_8 = 0;
-        a1[i].f_c = 0;
+        table[i].f_0 = 0;
+        table[i].f_2 = -1;
+        table[i].f_8 = 0;
+        table[i].f_c = 0;
     }
 }
 
 static uint32_t sub_80070488(uint32_t a, int a2)
 {
     int v2 = 0;
-    for (int i = a2-1; i >= 0; i--)
+    for (int i = a2 - 1; i >= 0; i--)
     {
         v2 <<= 1;
         if (a & 1)
@@ -72,17 +77,18 @@ static uint32_t sub_80070488(uint32_t a, int a2)
     return v2;
 }
 
-static void sub_800704dc(Huffman *a1, int a2)
+static void sub_800704dc(Huffman *table, int nSize)
 {
     uint32_t v4 = 0;
     uint32_t v5 = 1UL << 31;
+
     for (int i = 1; i < 17; i++)
     {
-        for (int j = 0; j < a2; j++)
+        for (int j = 0; j < nSize; j++)
         {
-            if (a1[j].f_c == i)
+            if (table[j].f_c == i)
             {
-                a1[j].f_8 = sub_80070488(v4/v5, i);
+                table[j].f_8 = sub_80070488(v4 / v5, i);
                 v4 += v5;
             }
         }
@@ -90,64 +96,73 @@ static void sub_800704dc(Huffman *a1, int a2)
     }
 }
 
-static void sub_80070614(Huffman *a1, int a2)
+static void LoadTable(Huffman *table, int nSize)
 {
-    sub_800705c8(a1, a2);
-    int v1 = sub_800702d4(5);
-    if (v1 > 16)
-        v1 = 16;
-    for (int i = 0; i < v1; i++)
+    InitTable(table, nSize);
+
+    int nLeafNodes = GetBitsFromStream(5);
+    if (nLeafNodes > 16)
+        nLeafNodes = 16;
+
+    for (int i = 0; i < nLeafNodes; i++)
     {
-        a1[i].f_c = sub_800702d4(4);
+        table[i].f_c = GetBitsFromStream(4); // leaf depth
     }
-    sub_800704dc(a1, a2);
+
+    sub_800704dc(table, nSize);
 }
 
-static int sub_800703a8(Huffman *a1)
+static int GetTableLength(Huffman *a1)
 {
     int v6 = 0;
-    while (a1->f_c == 0 || a1->f_8 != (((1UL << ((a1->f_c &31)))-1) & dword_8026ecd0))
+    while (a1->f_c == 0 || a1->f_8 != (((1UL << ((a1->f_c & 31))) - 1) & loadedBits))
     {
         a1++;
         v6++;
     }
-    sub_800702d4(a1->f_c);
+    GetBitsFromStream(a1->f_c);
     if (v6 > 1)
     {
         v6--;
-        return sub_800702d4(v6) | (1<<((v6)&31));
+        return GetBitsFromStream(v6) | (1 << ((v6) & 31));
     }
     return v6;
 }
 
 static int RNCDecompress1(const char *inbuf, char *outbuf)
 {
-    sub_800706b8(inbuf, outbuf);
-    sub_800702d4(2);
-    while (byte_8026ecc8 < byte_8026eccc)
+    SetupDecompression(inbuf, outbuf);
+    GetBitsFromStream(2); // ignore first two bits
+
+    while (pOutput < pOutputEnd) // go through the pack chunks
     {
-        sub_80070614(byte_8026ecd8[0], 16);
-        sub_80070614(byte_8026ecd8[1], 16);
-        sub_80070614(byte_8026ecd8[2], 16);
-        int v1 = sub_800702d4(16);
-        for (int j = v1-1; j >= 0; j--)
+        LoadTable(huffVars[0], 16); // raw table
+        LoadTable(huffVars[1], 16); // distance table
+        LoadTable(huffVars[2], 16); // length table
+
+        int nSubChunks = GetBitsFromStream(16); // get count of subchunks in this pack chunk
+
+        for (int j = 0; j < nSubChunks; j++)
         {
-            int v2 = sub_800703a8(byte_8026ecd8[0]);
-            for (int i = 0; i < v2; i++)
+            int nLength = GetTableLength(huffVars[0]);
+
+            for (int i = 0; i < nLength; i++)
             {
-                *byte_8026ecc8++ = *byte_8026ecc4++;
+                *pOutput++ = *pStream++;
             }
-            dword_8026ecd0 = (dword_8026ecd0&((1<<(byte_8026ecc1&31))-1))
-                | ((byte_8026ecc4[0] + (byte_8026ecc4[1]<<8) + (byte_8026ecc4[2]<<16))<<(byte_8026ecc1&31));
-            if (j > 0)
+
+            loadedBits = (loadedBits & ((1 << (nBitsLoaded & 31)) - 1))
+                | ((pStream[0] + (pStream[1] << 8) + (pStream[2] << 16)) << (nBitsLoaded & 31));
+
+            if (j < (nSubChunks - 1))
             {
-                v2 = sub_800703a8(byte_8026ecd8[1]);
-                char* v3 = byte_8026ecc8 - (1 + v2);
-                v2 = sub_800703a8(byte_8026ecd8[2]);
-                v2 += 2;
-                for (int i = 0; i < v2; i++)
+                nLength = GetTableLength(huffVars[1]) + 1;
+                char* v3 = pOutput - nLength;
+                nLength = GetTableLength(huffVars[2]) + 2;
+
+                for (int i = 0; i < nLength; i++)
                 {
-                    *byte_8026ecc8++ = *v3++;
+                    *pOutput++ = *v3++;
                 }
             }
         }
@@ -168,7 +183,7 @@ int RNCDecompress(const char *inbuf, char *outbuf)
         switch (type)
         {
         case 0:
-            Bmemcpy(outbuf, inbuf+8, B_BIG32(*(int*)(inbuf+4)));
+            Bmemcpy(outbuf, inbuf + 8, B_BIG32(*(int*)(inbuf + 4)));
             return 0;
         case 1:
             return RNCDecompress1(inbuf, outbuf);
@@ -207,6 +222,7 @@ float RT_GetAngle(float dy, float dx)
 {
     if (dy == 0.f && dx == 0.f)
         return 0.f;
+
     if (dy < 0)
     {
         if (dx < 0)

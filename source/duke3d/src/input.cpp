@@ -180,7 +180,8 @@ int32_t I_MenuUp(void)
         || BUTTON(gamefunc_Move_Forward)
         || (JOYSTICK_GetHat(0)&HAT_UP)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_UP))
-        || CONTROL_GetGameControllerDigitalAxisNeg(GAMECONTROLLER_AXIS_LEFTY)
+        || (CONTROL_GetGameControllerDigitalAxisNeg(GAMECONTROLLER_AXIS_LEFTY)
+            && JOYSTICK_GetAxis(GAMECONTROLLER_AXIS_LEFTY) <= -ud.config.JoystickAnalogueSaturate[GAMECONTROLLER_AXIS_LEFTY])
         ;
 }
 
@@ -205,7 +206,8 @@ int32_t I_MenuDown(void)
         || BUTTON(gamefunc_Move_Backward)
         || (JOYSTICK_GetHat(0)&HAT_DOWN)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_DOWN))
-        || CONTROL_GetGameControllerDigitalAxisPos(GAMECONTROLLER_AXIS_LEFTY)
+        || (CONTROL_GetGameControllerDigitalAxisPos(GAMECONTROLLER_AXIS_LEFTY)
+            && JOYSTICK_GetAxis(GAMECONTROLLER_AXIS_LEFTY) >= ud.config.JoystickAnalogueSaturate[GAMECONTROLLER_AXIS_LEFTY])
         ;
 }
 
@@ -232,7 +234,8 @@ int32_t I_MenuLeft(void)
         || BUTTON(gamefunc_Strafe_Left)
         || (JOYSTICK_GetHat(0)&HAT_LEFT)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_LEFT))
-        || CONTROL_GetGameControllerDigitalAxisNeg(GAMECONTROLLER_AXIS_LEFTX)
+        || (CONTROL_GetGameControllerDigitalAxisNeg(GAMECONTROLLER_AXIS_LEFTX)
+            && JOYSTICK_GetAxis(GAMECONTROLLER_AXIS_LEFTX) <= -ud.config.JoystickAnalogueSaturate[GAMECONTROLLER_AXIS_LEFTX])
         ;
 }
 
@@ -260,7 +263,8 @@ int32_t I_MenuRight(void)
         || (MOUSE_GetButtons()&MIDDLE_MOUSE)
         || (JOYSTICK_GetHat(0)&HAT_RIGHT)
         || (JOYSTICK_GetGameControllerButtons()&(1<<GAMECONTROLLER_BUTTON_DPAD_RIGHT))
-        || CONTROL_GetGameControllerDigitalAxisPos(GAMECONTROLLER_AXIS_LEFTX)
+        || (CONTROL_GetGameControllerDigitalAxisPos(GAMECONTROLLER_AXIS_LEFTX)
+            && JOYSTICK_GetAxis(GAMECONTROLLER_AXIS_LEFTX) >= ud.config.JoystickAnalogueSaturate[GAMECONTROLLER_AXIS_LEFTX])
         ;
 }
 

@@ -24,6 +24,7 @@ uint64_t timerGetPerformanceCounter(void);
 uint64_t timerGetPerformanceFrequency(void);
 double   timerGetHiTicks(void);
 uint32_t timerGetTicks(void);
+uint32_t timer120(void);
 
 void (*timerSetCallback(void (*callback)(void)))(void);
 

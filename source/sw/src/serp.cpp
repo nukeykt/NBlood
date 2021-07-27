@@ -809,15 +809,11 @@ int DoSerpMove(short SpriteNum)
 int DoDeathSpecial(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
-    static SWBOOL alreadydid = FALSE;
 
     DoMatchEverything(NULL, sp->lotag, ON);
 
-    if (!SW_SHAREWARE && gs.MusicOn && !alreadydid)
-    {
-        PlaySong(0, RedBookSong[Level], TRUE, TRUE);
-        alreadydid = TRUE;
-    }
+    if (!SW_SHAREWARE && gs.MusicOn)
+        PlaySong(0, RedBookSong[Level], TRUE, FALSE);
 
     BossSpriteNum[0] = -2;
     return 0;

@@ -805,15 +805,15 @@ void netGetInput(void)
         PutPacketWord(pPacket, input.forward);
         PutPacketDWord(pPacket, input.q16turn);
         PutPacketWord(pPacket, input.strafe);
-        if (gInput.syncFlags.buttonChange)
+        if (input.syncFlags.buttonChange)
             PutPacketByte(pPacket, input.buttonFlags.byte);
-        if (gInput.syncFlags.keyChange)
+        if (input.syncFlags.keyChange)
             PutPacketWord(pPacket, input.keyFlags.word);
-        if (gInput.syncFlags.useChange)
+        if (input.syncFlags.useChange)
             PutPacketByte(pPacket, input.useFlags.byte);
-        if (gInput.syncFlags.weaponChange)
+        if (input.syncFlags.weaponChange)
             PutPacketByte(pPacket, input.newWeapon);
-        if (gInput.syncFlags.mlookChange)
+        if (input.syncFlags.mlookChange)
             PutPacketDWord(pPacket, input.q16mlook);
         while (gSendCheckTail != gCheckHead[myconnectindex])
         {
@@ -1159,8 +1159,6 @@ void netInitialize(bool bConsole)
 void netDeinitialize(void)
 {
 #ifndef NETCODE_DISABLE
-    if (!gNetENetInit)
-        return;
     gNetENetInit = false;
     if (gNetMode != NETWORK_NONE)
     {

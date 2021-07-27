@@ -3069,6 +3069,20 @@ void InitPlayerGameSettings(void)
         RESET(Player[myconnectindex].Flags, PF_MOUSE_AIMING_ON);
 }
 
+void PlayLevelSong(void)
+{
+    int track;
+    if (Level == 0)
+    {
+        track = RedBookSong[4 + RANDOM_RANGE(10)];
+    }
+    else
+    {
+        track = RedBookSong[Level];
+    }
+
+    PlaySong(LevelSong, track, TRUE, TRUE);
+}
 
 void InitRunLevel(void)
 {
@@ -3084,7 +3098,7 @@ void InitRunLevel(void)
         if (gs.Ambient)
             StartAmbientSound();
         SetCrosshair();
-        PlaySong(LevelSong, -1, TRUE, TRUE);
+        PlayLevelSong();
         SetRedrawScreen(Player + myconnectindex);
         // crappy little hack to prevent play clock from being overwritten
         // for load games
@@ -3120,18 +3134,7 @@ void InitRunLevel(void)
     // Initialize Game part of network code (When ready2send != 0)
     InitNetVars();
 
-    {
-        int track;
-        if (Level == 0)
-        {
-            track = RedBookSong[4+RANDOM_RANGE(10)];
-        }
-        else
-        {
-            track = RedBookSong[Level];
-        }
-        PlaySong(LevelSong, track, TRUE, TRUE);
-    }
+    PlayLevelSong();
 
     InitPrediction(&Player[myconnectindex]);
 
@@ -3643,10 +3646,13 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
         if (Bstrncasecmp(arg, "autonet",7) == 0)
         {
-            AutoNet = TRUE;
-            cnt++;
-            sscanf(argv[cnt],"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",&Auto.Rules,&Auto.Level,&Auto.Enemy,&Auto.Markers,
-                   &Auto.Team,&Auto.HurtTeam,&Auto.Kill,&Auto.Time,&Auto.Color,&Auto.Nuke);
+            if (cnt <= argc-2)
+            {
+                cnt++;
+                AutoNet = TRUE;
+                sscanf(argv[cnt],"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",&Auto.Rules,&Auto.Level,&Auto.Enemy,&Auto.Markers,
+                       &Auto.Team,&Auto.HurtTeam,&Auto.Kill,&Auto.Time,&Auto.Color,&Auto.Nuke);
+            }
         }
         else if (Bstrncasecmp(arg, "turnscale",9) == 0)
         {
@@ -3669,7 +3675,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             move_scale *= 5;
             turn_scale *= 5;
         }
-        else if (Bstrncasecmp(arg, "setupfile",8) == 0)
+        else if (Bstrncasecmp(arg, "setupfile",9) == 0)
         {
             // Passed by setup.exe
             // skip setupfile name
@@ -3730,7 +3736,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         {
             NoDemoStartup = TRUE;
         }
-        else if (Bstrncasecmp(arg, "allsync",3) == 0)
+        else if (Bstrncasecmp(arg, "allsync",7) == 0)
         {
             NumSyncBytes = 8;
         }
@@ -3758,7 +3764,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         {
             DebugActor = TRUE;
         }
-        else if (Bstrncasecmp(arg, "nopredict",6) == 0)
+        else if (Bstrncasecmp(arg, "nopredict",9) == 0)
         {
             extern SWBOOL PredictionOn;
             PredictionOn = FALSE;
@@ -3834,7 +3840,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
             if (strlen(arg) > 3)
             {
-                strcpy(DemoFileName, &arg[2]);
+                strcpy(DemoFileName, &arg[3]);
                 if (strchr(DemoFileName, '.') == 0)
                     strcat(DemoFileName, ".dmo");
             }
@@ -3890,7 +3896,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             DemoSyncTest = TRUE;
             DemoSyncRecord = FALSE;
         }
-        else if (Bstrncasecmp(arg, "demosyncrecord",12) == 0)
+        else if (Bstrncasecmp(arg, "demosyncrecord",14) == 0)
         {
             NumSyncBytes = 8;
             DemoSyncTest = FALSE;
@@ -3927,7 +3933,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             }
 #endif
         }
-        else if (Bstrncasecmp(arg, "randprint",5) == 0)
+        else if (Bstrncasecmp(arg, "randprint",9) == 0)
         {
             RandomPrint = TRUE;
         }
@@ -3938,7 +3944,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
                 strcpy(UserMapName,LevelInfo[atoi(&arg[5])].LevelName);
             }
         }
-        else if (Bstrncasecmp(arg, "debugsecret", 10) == 0)
+        else if (Bstrncasecmp(arg, "debugsecret", 11) == 0)
         {
             extern SWBOOL DebugSecret;
             DebugSecret = TRUE;
@@ -3955,7 +3961,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         {
             DebugSO = TRUE;
         }
-        else if (Bstrncasecmp(arg, "nosyncprint",10) == 0)
+        else if (Bstrncasecmp(arg, "nosyncprint",11) == 0)
         {
             extern SWBOOL SyncPrintMode;
             SyncPrintMode = FALSE;
@@ -4025,10 +4031,10 @@ int32_t app_main(int32_t argc, char const * const * argv)
             if (strlen(arg) > 1)
                 G_AddDef(arg+1);
         }
-        else if (Bstrncasecmp(arg, "mh", 1) == 0 && !SW_SHAREWARE)
+        else if (Bstrncasecmp(arg, "mh", 2) == 0 && !SW_SHAREWARE)
         {
-            if (strlen(arg) > 1)
-                G_AddDefModule(arg+1);
+            if (strlen(arg) > 2)
+                G_AddDefModule(arg+2);
         }
     }
 
@@ -5647,7 +5653,7 @@ SHOWSPRITE:
                 switch (spr->cstat & 48)
                 {
                 case 0:  // Regular sprite
-                    if (Player[p].PlayerSprite == j)
+                    if (p >= 0 && Player[p].PlayerSprite == j)
                     {
                         ox = sprx - cposx;
                         oy = spry - cposy;

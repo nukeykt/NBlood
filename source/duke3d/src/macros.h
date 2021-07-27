@@ -99,6 +99,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define SK_INVENTORY    30
 #define SK_ESCAPE       31
 
+#define EK_MOVE_FORWARD         0
+#define EK_MOVE_BACKWARD        1
+#define EK_STRAFE_LEFT          2
+#define EK_STRAFE_RIGHT         3
+#define EK_TURN_LEFT            4
+#define EK_TURN_RIGHT           5
+#define EK_ALT_FIRE             6
+#define EK_CHAT_MODE            7
+#define EK_GAMEPAD_CENTERING    8
+#define EK_GAMEPAD_AIM_ASSIST   9
+
 // rotatesprite flags
 #define ROTATE_SPRITE_TRANSLUCENT   (BIT(0))
 #define ROTATE_SPRITE_VIEW_CLIP     (BIT(1)) // clip to view

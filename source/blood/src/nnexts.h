@@ -39,10 +39,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "player.h"
 #include "warp.h"
 #include "triggers.h"
+#include "ai.h"
 
 // CONSTANTS
 // additional non-thing proximity, sight and physics sprites 
-#define kMaxSuperXSprites 128
+#define kMaxSuperXSprites 512
 #define kMaxTrackingConditions 64
 #define kMaxTracedObjects 32 // per one tracking condition
 
@@ -61,20 +62,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kModernTypeFlag2 0x0002
 #define kModernTypeFlag3 0x0003
 #define kModernTypeFlag4 0x0004
+#define kModernTypeFlag8 0x0008
+#define kModernTypeFlag16 0x0010
 
 #define kMaxRandomizeRetries 16
 #define kPercFull 100
 #define kCondRange 100
 
-#define kPatrolStateSize 27
+#define kPatrolStateSize 42
+#define kPatrolAlarmSeeDist 10000
+#define kPatrolAlarmHearDist 10000
 #define kMaxPatrolVelocity 500000
 #define kMaxPatrolCrouchVelocity kMaxPatrolVelocity >> 1
 #define kMaxPatrolSpotValue 500
+#define kMinPatrolTurnDelay 8
+#define kPatrolTurnDelayRange 20
 
 #define kDudeFlagStealth    0x0001
 #define kDudeFlagCrouch     0x0002
 
 #define kSlopeDist 0x20
+#define kEffectGenCallbackBase 200
+#define kTriggerSpriteScreen 0x0001
+#define kTriggerSpriteAim    0x0002
+
+#define kMinAllowedPowerup kPwUpFeatherFall
+#define kMaxAllowedPowerup kMaxPowerUps
 
 // modern statnums
 enum {
@@ -85,13 +98,15 @@ kStatModernEventRedirector          = 22,
 kStatModernPlayerLinker             = 23,
 kStatModernBrokenDudeLeech          = 24,
 kStatModernQavScene                 = 25,
+kStatModernWindGen                  = 26,
+kStatModernStealthRegion            = 27,
 kStatModernTmp                      = 39,
 kStatModernMax                      = 40,
 };
 
 // modern sprite types
 enum {
-kModernSlopeChanger                 = 16,
+kModernStealthRegion                = 16,
 kModernCustomDudeSpawn              = 24,
 kModernRandomTX                     = 25,
 kModernSequentialTX                 = 26,
@@ -119,6 +134,7 @@ kModernThingEnemyLifeLeech          = 435, // the same as normal, except it aims
 kModernPlayerControl                = 500, /// WIP
 kModernCondition                    = 501, /// WIP, sends command only if specified conditions == true
 kModernConditionFalse               = 502, /// WIP, sends command only if specified conditions != true
+kModernSlopeChanger                 = 504,
 kGenModernMissileUniversal          = 704,
 kGenModernSound                     = 708,
 };
@@ -138,6 +154,8 @@ OBJ_SECTOR                          = 6,
 };
 
 enum {
+kCondGameBase                       = 0,
+kCondGameMax                        = 50,
 kCondMixedBase                      = 100,
 kCondMixedMax                       = 200,
 kCondWallBase                       = 200,
@@ -153,10 +171,15 @@ kCondSpriteMax                      = 600,
 };
 
 enum {
-kCondSerialSector                   = 10000,
-kCondSerialWall                     = 20000,
-kCondSerialSprite                   = 30000,
-kCondSerialMax                      = 40000,
+kCondSerialSector                   = 100000,
+kCondSerialWall                     = 200000,
+kCondSerialSprite                   = 300000,
+kCondSerialMax                      = 400000,
+};
+
+enum {
+kPatrolMoveForward                  = 0,
+kPatrolMoveBackward                 = 1,
 };
 
 // - STRUCTS ------------------------------------------------------------------
@@ -200,6 +223,7 @@ struct DUDEINFO_EXTRA {
     int mvewseqofs : 6;             // used for patrol
     int idlcseqofs : 6;             // used for patrol
     int mvecseqofs : 6;             // used for patrol
+    
 };
 
 struct TRPLAYERCTRL { // this one for controlling the player using triggers (movement speed, jumps and other stuff)
@@ -216,6 +240,22 @@ struct TRCONDITION {
     signed   int xindex:    16;
     unsigned int length:    8;
     OBJECTS_TO_TRACK obj[kMaxTracedObjects];
+};
+
+struct PATROL_FOUND_SOUNDS {
+
+    int snd;
+    int max;
+    int cur;
+
+};
+
+struct CONDITION_TYPE_NAMES {
+
+    int rng1;
+    int rng2;
+    char name[32];
+
 };
 
 // - VARIABLES ------------------------------------------------------------------
@@ -241,6 +281,11 @@ extern short gImpactSpritesCount;
 extern short gTrackingCondsCount;
 extern AISTATE genPatrolStates[kPatrolStateSize];
 
+
+// - INLINES -------------------------------------------------------------------
+inline bool xsprIsFine(spritetype* pSpr) {
+    return (pSpr && xspriRangeIsFine(pSpr->extra) && !(pSpr->flags & kHitagFree) && !(pSpr->flags & kHitagRespawn));
+}
 // - FUNCTIONS ------------------------------------------------------------------
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
 void nnExtInitModernStuff(bool bSaveLoad);
@@ -251,7 +296,7 @@ void nnExtResetGlobals();
 void nnExtTriggerObject(int objType, int objIndex, int command);
 //  -------------------------------------------------------------------------   //
 spritetype* randomDropPickupObject(spritetype* pSprite, short prevItem);
-spritetype* randomSpawnDude(spritetype* pSprite);
+spritetype* randomSpawnDude(XSPRITE* pXSource, spritetype* pSprite, int a3, int a4);
 int GetDataVal(spritetype* pSprite, int data);
 int randomGetDataValue(XSPRITE* pXSprite, int randType);
 void sfxPlayMissileSound(spritetype* pSprite, int missileId);
@@ -292,7 +337,7 @@ void damageSprites(XSPRITE* pXSource, spritetype* pSprite);
 void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite);
 void useObjResizer(XSPRITE* pXSource, short objType, int objIndex);
 void useRandomItemGen(spritetype* pSource, XSPRITE* pXSource);
-void useUniMissileGen(int, int nXSprite);
+void useUniMissileGen(XSPRITE* pXSource, spritetype* pSprite);
 void useSoundGen(XSPRITE* pXSource, spritetype* pSprite);
 void useIncDecGen(XSPRITE* pXSource, short objType, int objIndex);
 void useDataChanger(XSPRITE* pXSource, int objType, int objIndex);
@@ -302,6 +347,8 @@ void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex);
 void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex);
 void useSequentialTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState);
 void useRandomTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState);
+void useDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
+void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
 bool txIsRanged(XSPRITE* pXSource);
 void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernSend);
 //  -------------------------------------------------------------------------   //
@@ -374,15 +421,43 @@ void seqSpawnerOffSameTx(XSPRITE* pXSource);
 void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite);
 void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite);
 void aiPatrolStop(spritetype* pSprite, int target, bool alarm = false);
-void aiPatrolAlarm(spritetype* pSprite, bool chain);
+void aiPatrolAlarmFull(spritetype* pSprite, XSPRITE* pXTarget, bool chain);
+void aiPatrolAlarmLite(spritetype* pSprite, XSPRITE* pXTarget);
 void aiPatrolState(spritetype* pSprite, int state);
 void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite);
 int aiPatrolMarkerBusy(int nExcept, int nMarker);
 bool aiPatrolMarkerReached(spritetype* pSprite, XSPRITE* pXSprite);
-AISTATE* aiInPatrolState(AISTATE* pAiState);
+bool aiPatrolGetPathDir(XSPRITE* pXSprite, XSPRITE* pXMarker);
+void aiPatrolFlagsMgr(spritetype* pSource, XSPRITE* pXSource, spritetype* pDest, XSPRITE* pXDest, bool copy, bool init);
+void aiPatrolRandGoalAng(spritetype* pSprite, XSPRITE* pXSprite);
+void aiPatrolTurn(spritetype* pSprite, XSPRITE* pXSprite);
+inline int aiPatrolGetVelocity(int speed, int value) {
+    return (value > 0) ? ClipRange((speed / 3) + (2500 * value), 0, 0x47956) : speed;
+}
+
+inline bool aiPatrolWaiting(AISTATE* pAiState) {
+    return (pAiState->stateType >= kAiStatePatrolWaitL && pAiState->stateType <= kAiStatePatrolWaitW);
+}
+
+inline bool aiPatrolMoving(AISTATE* pAiState) {
+    return (pAiState->stateType >= kAiStatePatrolMoveL && pAiState->stateType <= kAiStatePatrolMoveW);
+}
+
+inline bool aiPatrolTurning(AISTATE* pAiState) {
+    return (pAiState->stateType >= kAiStatePatrolTurnL && pAiState->stateType <= kAiStatePatrolTurnW);
+}
+
+inline bool aiInPatrolState(AISTATE* pAiState) {
+    return (pAiState->stateType >= kAiStatePatrolBase && pAiState->stateType < kAiStatePatrolMax);
+}
+
+inline bool aiInPatrolState(int nAiStateType) {
+    return (nAiStateType >= kAiStatePatrolBase && nAiStateType < kAiStatePatrolMax);
+}
 //  -------------------------------------------------------------------------   //
 bool readyForCrit(spritetype* pHunter, spritetype* pVictim);
 int sectorInMotion(int nSector);
+void clampSprite(spritetype* pSprite, int which = 0x03);
 #endif
 
 ////////////////////////////////////////////////////////////////////////

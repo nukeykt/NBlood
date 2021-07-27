@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "build.h"
 #include "compat.h"
 #include "baselayer.h"
 #include "renderlayer.h"
@@ -81,7 +82,10 @@ static char pakbuf[MAXPAKSIZ];
 #define FIFSIZ 512 //16384/40 = 6min:49sec
 static int ipak[MAXPLAYERS][FIFSIZ], icnt0[MAXPLAYERS];
 static int opak[MAXPLAYERS][FIFSIZ], ocnt0[MAXPLAYERS], ocnt1[MAXPLAYERS];
-static char pakmem[4194304]; static int pakmemi = 1;
+
+#define PAKMEMSIZ (4096 * 1024) // WHY??????
+static char *pakmem;
+static int pakmemi = 1;
 
 #define NETPORT 0x5bd9
 static SOCKET mysock;
@@ -346,31 +350,11 @@ void mmulti_sendlogon() {}
 void mmulti_sendlogoff() {}
 //--------------------------------------------------------------------------------------------------
 
-static int crctab16[256];
-static void initcrc16()
+void mmulti_uninitmultiplayers()
 {
-    int i, j, k, a;
-    for (j=0;j<256;j++)
-    {
-        for (i=7,k=(j<<8),a=0;i>=0;i--,k=((k<<1)&65535))
-        {
-            if ((k^a)&0x8000) a = ((a<<1)&65535)^0x1021;
-            else a = ((a<<1)&65535);
-        }
-        crctab16[j] = (a&65535);
-    }
+    netuninit();
+    DO_FREE_AND_NULL(pakmem);
 }
-#define updatecrc16(crc,dat) crc = (((crc<<8)&65535)^crctab16[((((unsigned short)crc)>>8)&65535)^dat])
-static unsigned short getcrc16(char *buffer, int bufleng)
-{
-    int i, j;
-
-    j = 0;
-    for (i=bufleng-1;i>=0;i--) updatecrc16(j,buffer[i]);
-    return((unsigned short)(j&65535));
-}
-
-void mmulti_uninitmultiplayers() { netuninit(); }
 
 static void initmultiplayers_reset(void)
 {
@@ -411,6 +395,7 @@ int initmultiplayersparms(int argc, const char * const *argv)
     int i, j, daindex, portnum = NETPORT;
     char *st;
 
+    pakmem = (char *)Xmalloc(PAKMEMSIZ);
     initmultiplayers_reset();
     networkmode = -1; daindex = 0;
 
@@ -665,7 +650,8 @@ void mmulti_sendpacket(int other, unsigned char *bufptr, int messleng)
 
     if (numplayers < 2) return;
 
-    if (pakmemi+messleng+2 > (int)sizeof(pakmem)) pakmemi = 1;
+    // WHY???????????????
+    if (pakmemi+messleng+2 > PAKMEMSIZ) pakmemi = 1;
     opak[other][ocnt1[other]&(FIFSIZ-1)] = pakmemi;
     *(short *)&pakmem[pakmemi] = messleng;
     memcpy(&pakmem[pakmemi+2],bufptr,messleng); pakmemi += messleng+2;
@@ -798,7 +784,7 @@ int mmulti_getpacket(int *retother, unsigned char *bufptr)
                     j = *(int *)&pakbuf[k]; k += 4;
                     if ((j >= icnt0[other]) && (!ipak[other][j&(FIFSIZ-1)]))
                     {
-                        if (pakmemi+messleng+2 > (int)sizeof(pakmem)) pakmemi = 1;
+                        if (pakmemi+messleng+2 > PAKMEMSIZ) pakmemi = 1;
                         ipak[other][j&(FIFSIZ-1)] = pakmemi;
                         *(short *)&pakmem[pakmemi] = messleng;
                         memcpy(&pakmem[pakmemi+2],&pakbuf[k],messleng); pakmemi += messleng+2;

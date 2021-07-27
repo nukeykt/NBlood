@@ -907,7 +907,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
         if ((doalloc&3)==1)
             glGenTextures(1, texidx);
 
-        glBindTexture(GL_TEXTURE_2D, *texidx);
+        polymost_bindTexture(GL_TEXTURE_2D, *texidx);
 
         //gluBuild2DMipmaps(GL_TEXTURE_2D,GL_RGBA,xsiz,ysiz,GL_BGRA_EXT,GL_UNSIGNED_BYTE,(char *)fptr);
 
@@ -2401,7 +2401,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (!i)
             continue;
         //i = mdloadskin((md2model *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,surfi); //hack for testing multiple surfaces per MD3
-        glBindTexture(GL_TEXTURE_2D, i);
+        polymost_bindTexture(GL_TEXTURE_2D, i);
 
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
@@ -2567,7 +2567,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 glDisable(GL_TEXTURE_2D);
                 glDisableClientState(GL_TEXTURE_COORD_ARRAY);
                 glClientActiveTexture(texunits - 1);
-                glActiveTexture(--texunits);
+                polymost_activeTexture(--texunits);
             }
 #else
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -2588,7 +2588,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 glMatrixMode(GL_MODELVIEW);
                 glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
                 glDisable(GL_TEXTURE_2D);
-                glActiveTexture(--texunits);
+                polymost_activeTexture(--texunits);
             }
         } // r_vertexarrays
 

@@ -54,7 +54,7 @@ struct Seq {
     short ticksPerFrame;
     short nSoundID;
     int flags;
-    SEQFRAME frames[1];
+    SEQFRAME frames[];
     void Preload(void);
     void Precache(void);
 };

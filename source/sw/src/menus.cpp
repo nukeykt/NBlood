@@ -2559,11 +2559,11 @@ MNU_InputSmallString(char *name, short pix_width)
 
         if (con_input.dir == dir_North)
         {
-            CON_CommandHistory(1);
+            CON_CommandHistory(-1);
         }
         else if (con_input.dir == dir_South)
         {
-            CON_CommandHistory(-1);
+            CON_CommandHistory(1);
         }
     }
 
@@ -2583,7 +2583,11 @@ MNU_InputSmallString(char *name, short pix_width)
 
         if (ch == ascii_backspace)
         {
-            name[strlen(name) - 1] = '\0';
+            size_t const namelen = strlen(name);
+            if (namelen > 0)
+            {
+                name[namelen - 1] = '\0';
+            }
             continue;
         }
         else if (ch == ascii_esc)
@@ -5295,6 +5299,6 @@ void ResetPalette(PLAYERp pp)
     pp->FadeTics = 0;
 }
 
-// vim:ts=4:sw=4:enc=utf-8:
+// vim:ts=4:sw=4:expandtab:
 
 
