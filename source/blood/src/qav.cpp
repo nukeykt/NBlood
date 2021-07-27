@@ -41,7 +41,7 @@ int qavRegisterClient(void(*pClient)(int, void *))
     return nClients++;
 }
 
-void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum)
+static void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum)
 {
     stat |= pTile->stat;
     int angle = pTile->angle;
@@ -53,12 +53,17 @@ void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum)
     }
     if (stat & kQavOrientationLeft)
     {
-        stat &= ~kQavOrientationLeft;
         stat |= 256;
     }
+    if (!(stat & kQavOrientationQ16))
+    {
+        x <<= 16;
+        y <<= 16;
+    }
+    stat &= ~(kQavOrientationLeft | kQavOrientationQ16);
     if (palnum <= 0)
         palnum = pTile->palnum;
-    rotatesprite((x + pTile->x) << 16, (y + pTile->y) << 16, pTile->z, angle,
+    rotatesprite(x + (pTile->x << 16), y + (pTile->y << 16), pTile->z, angle,
                  pTile->picnum, ClipRange(pTile->shade + shade, -128, 127), palnum, stat,
                  windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
 }
