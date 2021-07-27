@@ -3469,6 +3469,9 @@ badindex:
             vInstruction(CON_DEBUG):
                 insptr++;
                 buildprint(*insptr++, "\n");
+#ifndef NDEBUG
+                debug_break();
+#endif
                 dispatch();
 
             vInstruction(CON_ENDOFGAME):
