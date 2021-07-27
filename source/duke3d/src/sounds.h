@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "compat.h"
 #include "sounds_common.h"
-#include "namesdyn.h"
+#include "dnames.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -579,6 +579,7 @@ duke3d_game_objs := \
     common.cpp \
     config.cpp \
     demo.cpp \
+    dnames.cpp \
     game.cpp \
     gamedef.cpp \
     gameexec.cpp \
@@ -588,7 +589,6 @@ duke3d_game_objs := \
     grpscan.cpp \
     input.cpp \
     menus.cpp \
-    namesdyn.cpp \
     network.cpp \
     osdcmds.cpp \
     osdfuncs.cpp \
@@ -600,7 +600,6 @@ duke3d_game_objs := \
     screens.cpp \
     sector.cpp \
     sounds.cpp \
-    soundsdyn.cpp \
     text.cpp \
 
 duke3d_editor_objs := \

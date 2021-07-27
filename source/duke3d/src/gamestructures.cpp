@@ -1684,7 +1684,6 @@ void VM_InitHashTables(void)
         hash_init(table);
 
     inithashnames();
-    initsoundhashnames();
 
     STRUCT_HASH_SETUP(h_actor,      ActorLabels);
     STRUCT_HASH_SETUP(h_input,      InputLabels);

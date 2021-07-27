@@ -127,6 +127,7 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 #include "common_game.h"
 #include "config.h"
 #include "control.h"
+#include "dnames.h"
 #include "function.h"
 #include "game.h"
 #include "gamedef.h"
@@ -137,14 +138,12 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 #include "inv.h"
 #include "macros.h"
 #include "music.h"
-#include "namesdyn.h"
 #include "network.h"
 #include "player.h"
 #include "quotes.h"
 #include "rts.h"
 #include "sector.h"
 #include "sounds.h"
-#include "soundsdyn.h"
 #include "text.h"
 
 static inline int32_t G_TileHasActor(int const tileNum)

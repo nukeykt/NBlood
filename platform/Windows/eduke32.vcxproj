@@ -280,6 +280,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\source\duke3d\src\actors.h" />
     <ClInclude Include="..\..\source\duke3d\src\android.h" />
+    <ClInclude Include="..\..\source\duke3d\src\dnames.h" />
     <ClInclude Include="..\..\source\duke3d\src\gamestructures.h" />
     <ClInclude Include="..\..\source\duke3d\src\in_android.h" />
     <ClInclude Include="..\..\source\duke3d\src\anim.h" />
@@ -317,13 +318,11 @@
     <ClInclude Include="..\..\source\duke3d\src\macros.h" />
     <ClInclude Include="..\..\source\duke3d\src\mdump.h" />
     <ClInclude Include="..\..\source\duke3d\src\names.h" />
-    <ClInclude Include="..\..\source\duke3d\src\namesdyn.h" />
     <ClInclude Include="..\..\source\duke3d\src\osdcmds.h" />
     <ClInclude Include="..\..\source\duke3d\src\osdfuncs.h" />
     <ClInclude Include="..\..\source\duke3d\src\rts.h" />
     <ClInclude Include="..\..\source\duke3d\src\soundefs.h" />
     <ClInclude Include="..\..\source\duke3d\src\sounds.h" />
-    <ClInclude Include="..\..\source\duke3d\src\soundsdyn.h" />
     <ClInclude Include="..\..\source\duke3d\src\startwin.game.h" />
   </ItemGroup>
   <ItemGroup>
@@ -335,6 +334,7 @@
     <ClCompile Include="..\..\source\duke3d\src\config.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\common.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\demo.cpp" />
+    <ClCompile Include="..\..\source\duke3d\src\dnames.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\game.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\gamedef.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\gameexec.cpp" />
@@ -352,7 +352,6 @@
     <ClCompile Include="..\..\source\duke3d\src\input.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\mdump.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\menus.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\namesdyn.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\network.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\osdcmds.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\osdfuncs.cpp" />
@@ -364,7 +363,6 @@
     <ClCompile Include="..\..\source\duke3d\src\screens.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sector.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sounds.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\soundsdyn.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\startgtk.game.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -395,7 +393,7 @@
     </ProjectReference>
     <ProjectReference Include="mimalloc.vcxproj">
       <Project>{1150264b-19c6-4c32-a204-cb79e96d5492}</Project>
-    </ProjectReference>    
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\duke3d\rsrc\gameres.rc">

@@ -6050,8 +6050,7 @@ static void G_Startup(void)
     if (engineInit())
         G_FatalEngineInitError();
 
-    G_InitDynamicTiles();
-    G_InitDynamicSounds();
+    G_InitDynamicNames();
 
     // These depend on having the dynamic tile and/or sound mappings set up:
     G_InitMultiPsky(CLOUDYOCEAN, MOONSKY1, BIGORBIT1, LA);

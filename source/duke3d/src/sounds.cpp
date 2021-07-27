@@ -744,7 +744,7 @@ boost:
 #ifndef EDUKE32_STANDALONE
     else if (!FURY)
     {
-        switch (DYNAMICSOUNDMAP(soundNum))
+        switch (soundGetMapping(soundNum))
         {
             case PIPEBOMB_EXPLODE__:
             case LASERTRIP_EXPLODE__:

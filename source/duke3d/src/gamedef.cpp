@@ -26,11 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "common_game.h"
 #include "crc32.h"
+#include "dnames.h"
 #include "duke3d.h"
 #include "gameexec.h"
 #include "gamestructures.h"
 #include "kplib.h"
-#include "namesdyn.h"
 #include "osd.h"
 #include "savegame.h"
 #include "vfs.h"
@@ -2761,8 +2761,10 @@ DO_DEFSTATE:
                 else
                 {
                     hash_add(&h_labels,LAST_LABEL,g_labelCnt,0);
+
                     if ((unsigned)g_scriptPtr[-1] < MAXTILES && g_dynamicTileMapping)
-                        G_ProcessDynamicTileMapping(LAST_LABEL, g_scriptPtr[-1]);
+                        G_ProcessDynamicNameMapping(LAST_LABEL, g_dynTileList, g_scriptPtr[-1]);
+
                     labeltype[g_labelCnt] = LABEL_DEFINE;
                     labelcode[g_labelCnt++] = g_scriptPtr[-1];
                 }
@@ -3791,7 +3793,7 @@ DO_DEFSTATE:
                 initprintf("%s:%d: warning: duplicate dynamicremap statement\n",g_scriptFileName,g_lineNumber);
                 g_warningCnt++;
             }
-#ifdef DYNTILEREMAP_ENABLE
+#ifdef USE_DNAMES
 #ifdef DEBUGGINGAIDS
                 else
                     initprintf("Using dynamic tile remapping\n");
@@ -3814,7 +3816,7 @@ DO_DEFSTATE:
                 g_warningCnt++;
             }
             else
-#ifdef DYNSOUNDREMAP_ENABLE
+#ifdef USE_DNAMES
 #ifdef DEBUGGINGAIDS
                 initprintf("Using dynamic sound remapping\n");
 #endif
@@ -5907,7 +5909,7 @@ repeatcase:
                 g_highestSoundIdx = k;
 
             if (g_dynamicSoundMapping && j >= 0 && (labeltype[j] & LABEL_DEFINE))
-                G_ProcessDynamicSoundMapping(label + (j << 6), k);
+                G_ProcessDynamicNameMapping(label + (j << 6), g_dynSoundList, k);
             continue;
         }
 
@@ -6528,7 +6530,6 @@ void C_Compile(const char *fileName)
         inthash_free(i);
 
     freehashnames();
-    freesoundhashnames();
 
     if (g_scriptDebug)
         C_PrintStats();

@@ -76,7 +76,7 @@ dukeanim_t * Anim_Create(char const * fn)
 }
 
 #ifndef EDUKE32_STANDALONE
-#ifdef DYNSOUNDREMAP_ENABLE
+#ifdef USE_DNAMES
 static int32_t const StopAllSounds = -1;
 #else
 # define StopAllSounds -1
@@ -88,7 +88,7 @@ void Anim_Init(void)
     hash_init(&h_dukeanim);
 
     struct defaultanmsound {
-#ifdef DYNSOUNDREMAP_ENABLE
+#ifdef USE_DNAMES
         int32_t const & sound;
 #else
         int16_t sound;

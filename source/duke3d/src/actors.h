@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define actors_h_
 
 #include "player.h"
+#include "dnames.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -470,8 +471,6 @@ ACTOR_INLINE int32_t A_MoveSprite(int const spriteNum, vec3_t const &change, uin
 }
 
 # endif
-
-# include "namesdyn.h"
 
 EXTERN_INLINE int G_CheckForSpaceCeiling(int const sectnum)
 {
