@@ -1732,6 +1732,7 @@ void Menu_PopulateNewGameCustom(void)
     M_NEWGAMECUSTOM.title = s_NewGame;
 
     int e = 0;
+    int visible = 0;
     for (MenuGameplayStemEntry const & stem : g_MenuGameplayEntries)
     {
         MenuGameplayEntry const & entry = stem.entry;
@@ -1740,10 +1741,13 @@ void Menu_PopulateNewGameCustom(void)
 
         MEL_NEWGAMECUSTOM[e] = &ME_NEWGAMECUSTOMENTRIES[e];
 
+        if (!(entry.flags & MGE_Hidden))
+            ++visible;
+
         ++e;
     }
     M_NEWGAMECUSTOM.numEntries = e;
-    MMF_Top_NewGameCustom.pos.y = (58 + (3-e)*6)<<16;
+    MMF_Top_NewGameCustom.pos.y = (58 + (3-visible)*6)<<16;
 }
 
 void Menu_PopulateNewGameCustomSub(int e)
@@ -1759,6 +1763,7 @@ void Menu_PopulateNewGameCustomSub(int e)
     M_NEWGAMECUSTOMSUB.title = entry.name;
 
     int s = 0;
+    int visible = 0;
     for (MenuGameplayEntry const & subentry : stem.subentries)
     {
         if (!subentry.isValid())
@@ -1766,10 +1771,13 @@ void Menu_PopulateNewGameCustomSub(int e)
 
         MEL_NEWGAMECUSTOMSUB[s] = &ME_NEWGAMECUSTOMSUBENTRIES[e][s];
 
+        if (!(subentry.flags & MGE_Hidden))
+            ++visible;
+
         ++s;
     }
     M_NEWGAMECUSTOMSUB.numEntries = s;
-    MMF_Top_NewGameCustomSub.pos.y = (58 + (3-s)*6)<<16;
+    MMF_Top_NewGameCustomSub.pos.y = (58 + (3-visible)*6)<<16;
 }
 
 static void Menu_PopulateJoystick(void)
