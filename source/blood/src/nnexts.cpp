@@ -6132,7 +6132,7 @@ void playerQavSceneProcess(PLAYER* pPlayer, QAVSCENE* pQavScene) {
     }
 }
 
-void playerQavSceneDraw(PLAYER* pPlayer, int a2, int a3, int a4, int a5) {
+void playerQavSceneDraw(PLAYER* pPlayer, int a2, int x, int y, int a5) {
     if (pPlayer == NULL || pPlayer->sceneQav == -1) return;
 
     QAVSCENE* pQavScene = &gPlayerCtrl[pPlayer->nPlayer].qavScene;
@@ -6143,7 +6143,7 @@ void playerQavSceneDraw(PLAYER* pPlayer, int a2, int a3, int a4, int a5) {
         QAV* pQAV = pQavScene->qavResrc;
         int v4 = (pPlayer->weaponTimer == 0) ? (int)totalclock % pQAV->at10 : pQAV->at10 - pPlayer->weaponTimer;
 
-        int flags = 2; int nInv = powerupCheck(pPlayer, kPwUpShadowCloak);
+        int flags = 2 | kQavOrientationQ16; int nInv = powerupCheck(pPlayer, kPwUpShadowCloak);
         if (nInv >= 120 * 8 || (nInv != 0 && ((int)totalclock & 32))) {
             a2 = -128; flags |= 1;
         }
@@ -6151,7 +6151,7 @@ void playerQavSceneDraw(PLAYER* pPlayer, int a2, int a3, int a4, int a5) {
         // draw as weapon
         if (!(pSprite->flags & kModernTypeFlag1)) {
 
-            pQAV->x = a3; pQAV->y = a4;
+            pQAV->x = x; pQAV->y = y;
             pQAV->Draw(v4, flags, a2, a5);
 
             // draw fullscreen (currently 4:3 only)
