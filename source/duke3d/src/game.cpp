@@ -6389,14 +6389,18 @@ int app_main(int argc, char const* const* argv)
 #endif
     OSD_SetLogFile(APPBASENAME ".log");
 
-    OSD_SetFunctions(GAME_drawosdchar,
-                     GAME_drawosdstr,
-                     GAME_drawosdcursor,
-                     GAME_getcolumnwidth,
-                     GAME_getrowheight,
-                     GAME_clearbackground,
-                     BGetTime,
-                     GAME_onshowosd);
+    osdcallbacks_t callbacks = {};
+
+    callbacks.drawchar        = dukeConsolePrintChar;
+    callbacks.drawstr         = dukeConsolePrintString;
+    callbacks.drawcursor      = dukeConsolePrintCursor;
+    callbacks.getcolumnwidth  = dukeConsoleGetColumnWidth;
+    callbacks.getrowheight    = dukeConsoleGetRowHeight;
+    callbacks.clear = dukeConsoleClearBackground;
+    callbacks.gettime         = BGetTime;
+    callbacks.onshowosd       = dukeConsoleOnShowCallback;
+
+    OSD_SetCallbacks(callbacks);
 
     G_UpdateAppTitle();
 

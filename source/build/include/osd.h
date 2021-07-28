@@ -13,12 +13,25 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct
+{
     int32_t numparms;
     const char *name;
     const char **parms;
     const char *raw;
 } osdfuncparm_t;
+
+typedef struct
+{
+    void (*drawchar)(int, int, char, int, int);
+    void (*drawstr)(int, int, const char *, int, int, int);
+    void (*drawcursor)(int, int, int, int);
+    int (*getcolumnwidth)(int);
+    int (*getrowheight)(int);
+    void (*clear)(int, int);
+    int32_t (*gettime)(void);
+    void (*onshowosd)(int);
+} osdcallbacks_t;
 
 using osdcmdptr_t = osdfuncparm_t const * const;
 
@@ -189,6 +202,8 @@ typedef struct
     int32_t keycode;
 
     osdlog_t log;
+
+    osdcallbacks_t *cb;
 } osdmain_t;
 
 extern osdmain_t *osd;
@@ -240,6 +255,7 @@ void OSD_Cleanup(void);
 void OSD_SetLogFile(const char *fn);
 
 // sets the functions the OSD will call to interrogate the environment
+void OSD_SetCallbacks(osdcallbacks_t const &);
 void OSD_SetFunctions(void (*drawchar)(int, int, char, int, int),
                       void (*drawstr)(int, int, const char *, int, int, int),
                       void (*drawcursor)(int, int, int, int),

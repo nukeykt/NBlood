@@ -2,6 +2,8 @@
 // for the Build Engine
 // by Jonathon Fowler (jf@jonof.id.au)
 
+#include "osd.h"
+
 #include "build.h"
 #include "cache1d.h"
 #include "crc32.h"
@@ -48,23 +50,8 @@ static uint32_t osdscrtime = 0;
 
 static hashtable_t h_osd = { OSDMAXSYMBOLS >> 1, NULL };
 
-// Application callbacks: these are the currently effective ones.
-static void (*drawosdchar)(int32_t, int32_t, char, int32_t, int32_t) = _internal_drawosdchar;
-static void (*drawosdstr)(int32_t, int32_t, const char *, int32_t, int32_t, int32_t) = _internal_drawosdstr;
-static void (*drawosdcursor)(int32_t, int32_t, int32_t, int32_t) = _internal_drawosdcursor;
-static int32_t (*getcolumnwidth)(int32_t) = _internal_getcolumnwidth;
-static int32_t (*getrowheight)(int32_t) = _internal_getrowheight;
-
-static void (*clearbackground)(int32_t,int32_t) = _internal_clearbackground;
-static int32_t (*gettime)(void) = _internal_gettime;
-static void (*onshowosd)(int32_t) = _internal_onshowosd;
-
-// Application callbacks: these are the backed-up ones.
-static void (*_drawosdchar)(int32_t, int32_t, char, int32_t, int32_t) = _internal_drawosdchar;
-static void (*_drawosdstr)(int32_t, int32_t, const char *, int32_t, int32_t, int32_t) = _internal_drawosdstr;
-static void (*_drawosdcursor)(int32_t, int32_t, int32_t, int32_t) = _internal_drawosdcursor;
-static int32_t (*_getcolumnwidth)(int32_t) = _internal_getcolumnwidth;
-static int32_t (*_getrowheight)(int32_t) = _internal_getrowheight;
+static osdcallbacks_t user_callbacks;
+static osdcallbacks_t default_callbacks;
 
 static hashtable_t h_cvars      = { OSDMAXSYMBOLS >> 1, NULL };
 bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown command in the osd
@@ -256,21 +243,14 @@ void OSD_GetShadePal(const char *ch, int *shd, int *pal)
 // Then again, my GCC just crashed (any kept on crashing until after a reboot!)
 // when I tried to rewrite this into something different.
 
-static inline void swaposdptrs(void)
-{
-    swapptr(&_drawosdchar,    &drawosdchar);
-    swapptr(&_drawosdstr,     &drawosdstr);
-    swapptr(&_drawosdcursor,  &drawosdcursor);
-    swapptr(&_getcolumnwidth, &getcolumnwidth);
-    swapptr(&_getrowheight,   &getrowheight);
-}
+static inline void swaposdptrs(void) { osd->cb = (osd->cb == &default_callbacks) ? &user_callbacks : &default_callbacks; }
 
 void OSD_SetTextMode(int mode)
 {
     osd->draw.mode = (mode != 0);
 
-    if ((osd->draw.mode && drawosdchar != _internal_drawosdchar) ||
-        (!osd->draw.mode && drawosdchar == _internal_drawosdchar))
+    if ((osd->draw.mode && osd->cb != &default_callbacks) ||
+        (!osd->draw.mode && osd->cb == &default_callbacks))
         swaposdptrs();
 
     if (in3dmode())
@@ -778,6 +758,17 @@ void OSD_Init(void)
 
     mutex_init(&osd->mutex);
 
+    default_callbacks.drawchar     = _internal_drawosdchar;
+    default_callbacks.drawstr      = _internal_drawosdstr;
+    default_callbacks.drawcursor   = _internal_drawosdcursor;
+    default_callbacks.getcolumnwidth  = _internal_getcolumnwidth;
+    default_callbacks.getrowheight    = _internal_getrowheight;
+    default_callbacks.clear = _internal_clearbackground;
+    default_callbacks.gettime         = _internal_gettime;
+    default_callbacks.onshowosd       = _internal_onshowosd;
+
+    osd->cb = &default_callbacks;
+
     if (!osd->keycode)
         osd->keycode = sc_Tilde;
 
@@ -884,17 +875,31 @@ void OSD_SetFunctions(void (*drawchar)(int, int, char, int, int),
                       int32_t (*gtime)(void),
                       void (*showosd)(int))
 {
-    drawosdchar     = drawchar   ? drawchar   : _internal_drawosdchar;
-    drawosdstr      = drawstr    ? drawstr    : _internal_drawosdstr;
-    drawosdcursor   = drawcursor ? drawcursor : _internal_drawosdcursor;
-    getcolumnwidth  = colwidth   ? colwidth   : _internal_getcolumnwidth;
-    getrowheight    = rowheight  ? rowheight  : _internal_getrowheight;
-    clearbackground = clearbg    ? clearbg    : _internal_clearbackground;
-    gettime         = gtime      ? gtime      : _internal_gettime;
-    onshowosd       = showosd    ? showosd    : _internal_onshowosd;
-
     if (!osd)
         OSD_Init();
+
+    osdcallbacks_t callbacks = default_callbacks;
+
+    callbacks.drawchar     = drawchar   ? drawchar   : _internal_drawosdchar;
+    callbacks.drawstr      = drawstr    ? drawstr    : _internal_drawosdstr;
+    callbacks.drawcursor   = drawcursor ? drawcursor : _internal_drawosdcursor;
+    callbacks.getcolumnwidth  = colwidth   ? colwidth   : _internal_getcolumnwidth;
+    callbacks.getrowheight    = rowheight  ? rowheight  : _internal_getrowheight;
+    callbacks.clear           = clearbg    ? clearbg    : _internal_clearbackground;
+    callbacks.gettime         = gtime      ? gtime      : _internal_gettime;
+    callbacks.onshowosd       = showosd    ? showosd    : _internal_onshowosd;
+
+    OSD_SetCallbacks(callbacks);
+}
+
+
+void OSD_SetCallbacks(osdcallbacks_t const &callbacks)
+{
+    if (!osd)
+        OSD_Init();
+
+    user_callbacks = callbacks;
+    osd->cb = &user_callbacks;
 }
 
 
@@ -1356,7 +1361,7 @@ int OSD_HandleScanCode(uint8_t scanCode, int keyDown)
     }
 
     osdedit_t &ed = osd->editor;
-    osdkeytime    = gettime();
+    osdkeytime    = osd->cb->gettime();
 
     switch (scanCode)
     {
@@ -1518,13 +1523,13 @@ void OSD_ResizeDisplay(int w, int h)
     auto &t = osd->text;
     auto &d = osd->draw;
 
-    int const newcols     = getcolumnwidth(w);
+    int const newcols     = osd->cb->getcolumnwidth(w);
     d.cols     = newcols;
 
     int const newmaxlines = OSDBUFFERSIZE / newcols;
     t.maxlines = newmaxlines;
 
-    osdmaxrows = getrowheight(h) - 2;
+    osdmaxrows = osd->cb->getrowheight(h) - 2;
     d.rows = osdrows ? clamp(osdrows, 1, osdmaxrows) : (osdmaxrows >> 1);
 
     if (osdrowscur != -1)
@@ -1550,7 +1555,7 @@ void OSD_CaptureInput(int cap)
     g_mouseBits = 0;
     osd->flags = (osd->flags & ~(OSD_CAPTURE|OSD_CTRL|OSD_SHIFT)) | (-cap & OSD_CAPTURE);
     mouseGrabInput(cap == 0 ? g_mouseLockedToWindow : 0);
-    onshowosd(cap);
+    osd->cb->onshowosd(cap);
 
     keyFlushChars();
 }
@@ -1616,7 +1621,7 @@ void OSD_Draw(void)
 
     videoBeginDrawing();
 
-    clearbackground(osd->draw.cols,osdrowscur+1);
+    osd->cb->clear(osd->draw.cols,osdrowscur+1);
 
     for (; lines>0; lines--, row--)
     {
@@ -1627,7 +1632,7 @@ void OSD_Draw(void)
         if (topoffs + osd->draw.cols-1 >= OSDBUFFERSIZE)
             break;
 
-        drawosdstr(0, row, osd->text.buf + topoffs, osd->draw.cols, osd->draw.textshade, osd->draw.textpal);
+        osd->cb->drawstr(0, row, osd->text.buf + topoffs, osd->draw.cols, osd->draw.textshade, osd->draw.textpal);
         topoffs += osd->draw.cols;
     }
 
@@ -1635,29 +1640,29 @@ void OSD_Draw(void)
     int const shade  = osd->draw.promptshade ? osd->draw.promptshade : (sintable[((int32_t) totalclock<<4)&2047]>>11);
 
     if (osd->draw.head == osd->text.lines-1)
-        drawosdchar(0, osdrowscur, '~', shade, osd->draw.promptpal);
+        osd->cb->drawchar(0, osdrowscur, '~', shade, osd->draw.promptpal);
     else if (osd->draw.head > 0)
-        drawosdchar(0, osdrowscur, '^', shade, osd->draw.promptpal);
+        osd->cb->drawchar(0, osdrowscur, '^', shade, osd->draw.promptpal);
 
     if (osd->flags & OSD_CAPS)
-        drawosdchar((osd->draw.head > 0), osdrowscur, 'C', shade, osd->draw.promptpal);
+        osd->cb->drawchar((osd->draw.head > 0), osdrowscur, 'C', shade, osd->draw.promptpal);
 
     if (osd->flags & OSD_SHIFT)
-        drawosdchar(1 + (osd->flags & OSD_CAPS && osd->draw.head > 0), osdrowscur, 'H', shade, osd->draw.promptpal);
+        osd->cb->drawchar(1 + (osd->flags & OSD_CAPS && osd->draw.head > 0), osdrowscur, 'H', shade, osd->draw.promptpal);
 
-    drawosdchar(2 + offset, osdrowscur, '>', shade, osd->draw.promptpal);
+    osd->cb->drawchar(2 + offset, osdrowscur, '>', shade, osd->draw.promptpal);
 
     int const len = min(osd->draw.cols-1-3 - offset, osd->editor.len - osd->editor.start);
 
     for (int x=len-1; x>=0; x--)
-        drawosdchar(3 + x + offset, osdrowscur, osd->editor.buf[osd->editor.start+x], osd->draw.editshade<<1, osd->draw.editpal);
+        osd->cb->drawchar(3 + x + offset, osdrowscur, osd->editor.buf[osd->editor.start+x], osd->draw.editshade<<1, osd->draw.editpal);
 
     offset += 3 + osd->editor.pos - osd->editor.start;
 
-    drawosdcursor(offset,osdrowscur,osd->flags & OSD_OVERTYPE,osdkeytime);
+    osd->cb->drawcursor(offset,osdrowscur,osd->flags & OSD_OVERTYPE,osdkeytime);
 
     if (osd->version.buf)
-        drawosdstr(osd->draw.cols - osd->version.len, osdrowscur - (offset >= osd->draw.cols - osd->version.len),
+        osd->cb->drawstr(osd->draw.cols - osd->version.len, osdrowscur - (offset >= osd->draw.cols - osd->version.len),
                     osd->version.buf, osd->version.len, (sintable[((int32_t) totalclock<<4)&2047]>>11), osd->version.pal);
 
     videoEndDrawing();

@@ -54,7 +54,7 @@ static inline int GAME_getchartile(int ch)
     return (ac < STARTALPHANUM || ac > ENDALPHANUM) ? -1 : ac;
 }
 
-void GAME_drawosdchar(int x, int y, char ch, int shade, int pal)
+void dukeConsolePrintChar(int x, int y, char ch, int shade, int pal)
 {
     int ac;
 #ifndef USE_OPENGL
@@ -73,7 +73,7 @@ void GAME_drawosdchar(int x, int y, char ch, int shade, int pal)
     usehightile = ht;
 }
 
-void GAME_drawosdstr(int x, int y, const char *ch, int len, int shade, int pal)
+void dukeConsolePrintString(int x, int y, const char *ch, int len, int shade, int pal)
 {
     int ac;
 #ifdef USE_OPENGL
@@ -103,7 +103,7 @@ void GAME_drawosdstr(int x, int y, const char *ch, int len, int shade, int pal)
 #endif
 }
 
-void GAME_drawosdcursor(int x, int y, int type, int32_t lastkeypress)
+void dukeConsolePrintCursor(int x, int y, int type, int32_t lastkeypress)
 {
     int ac = (type) ? SMALLFNTCURSOR : '_' - '!' + STARTALPHANUM;
 
@@ -113,17 +113,17 @@ void GAME_drawosdcursor(int x, int y, int type, int32_t lastkeypress)
         OSD_SCALE(65536.f), 0, ac, 0, 8, 8|16);
 }
 
-int GAME_getcolumnwidth(int w)
+int dukeConsoleGetColumnWidth(int w)
 {
      return OSD_SCALEDIV(w/OSDCHAR_WIDTH);
 }
 
-int GAME_getrowheight(int h)
+int dukeConsoleGetRowHeight(int h)
 {
     return OSD_SCALEDIV(h/OSDCHAR_HEIGHT);
 }
 
-void GAME_onshowosd(int shown)
+void dukeConsoleOnShowCallback(int shown)
 {
     G_UpdateScreenArea();
 
@@ -136,7 +136,7 @@ void GAME_onshowosd(int shown)
 //        KB_KeyDown[sc_Pause] = 1;
 }
 
-void GAME_clearbackground(int numcols, int numrows)
+void dukeConsoleClearBackground(int numcols, int numrows)
 {
     UNREFERENCED_PARAMETER(numcols);
 
