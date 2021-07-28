@@ -3299,6 +3299,11 @@ void viewDrawScreen(void)
         CalcInterpolations();
     }
 
+    if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
+        rotatespritesmoothratio = gInterpolate;
+    else
+        rotatespritesmoothratio = 65536;
+
     if (gViewMode == 3 || gViewMode == 4 || gOverlayMap)
     {
         DoSectorLighting();
@@ -3698,8 +3703,8 @@ RORHACK:
             {
                 rotatesprite(160<<16, defaultHoriz<<16, 65536, 0, kCrosshairTile, 0, g_isAlterDefaultCrosshair ? CROSSHAIR_PAL : 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
             }
-            cX = (v4c>>8)+160;
-            cY = (v48>>8)+220+(zDelta>>7);
+            cX = (v4c<<8)+(160<<16);
+            cY = (v48<<8)+(220<<16)+(zDelta<<9);
             int nShade = sector[nSectnum].floorshade; int nPalette = 0;
             if (sector[gView->pSprite->sectnum].extra > 0) {
                 sectortype *pSector = &sector[gView->pSprite->sectnum];

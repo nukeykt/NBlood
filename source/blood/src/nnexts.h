@@ -86,6 +86,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kTriggerSpriteScreen 0x0001
 #define kTriggerSpriteAim    0x0002
 
+#define kMinAllowedPowerup kPwUpFeatherFall
+#define kMaxAllowedPowerup kMaxPowerUps
+
 // modern statnums
 enum {
 kStatModernBase                     = 20,

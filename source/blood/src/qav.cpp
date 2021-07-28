@@ -41,29 +41,42 @@ int qavRegisterClient(void(*pClient)(int, void *))
     return nClients++;
 }
 
-void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum)
+static void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum, int uniqid = 0)
 {
     stat |= pTile->stat;
     int angle = pTile->angle;
+    int olduniqid = guniqhudid;
     if (stat & 0x100)
     {
         angle = (angle+1024)&2047;
         stat &= ~0x100;
         stat ^= 0x4;
     }
+
     if (stat & kQavOrientationLeft)
-    {
-        stat &= ~kQavOrientationLeft;
         stat |= 256;
+
+    if (!(stat & kQavOrientationQ16))
+    {
+        x <<= 16;
+        y <<= 16;
     }
+
+    if (stat & RS_LERP)
+        guniqhudid = uniqid;
+    else
+        guniqhudid = 0;
+
+    stat &= ~(kQavOrientationLeft | kQavOrientationQ16);
     if (palnum <= 0)
         palnum = pTile->palnum;
-    rotatesprite((x + pTile->x) << 16, (y + pTile->y) << 16, pTile->z, angle,
+    rotatesprite(x + (pTile->x << 16), y + (pTile->y << 16), pTile->z, angle,
                  pTile->picnum, ClipRange(pTile->shade + shade, -128, 127), palnum, stat,
                  windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
+    guniqhudid = olduniqid;
 }
 
-void QAV::Draw(int ticks, int stat, int shade, int palnum)
+void QAV::Draw(int ticks, int stat, int shade, int palnum, int uniqid)
 {
     dassert(ticksPerFrame > 0);
     int nFrame = ticks / ticksPerFrame;
@@ -72,7 +85,7 @@ void QAV::Draw(int ticks, int stat, int shade, int palnum)
     for (int i = 0; i < 8; i++)
     {
         if (pFrame->tiles[i].picnum > 0)
-            DrawFrame(x, y, &pFrame->tiles[i], stat, shade, palnum);
+            DrawFrame(x, y, &pFrame->tiles[i], stat, shade, palnum, uniqid + i);
     }
 }
 

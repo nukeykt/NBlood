@@ -25,7 +25,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "blood.h"
 
-#define kQavOrientationLeft 4096
+#define kQavOrientationLeft 16384
+#define kQavOrientationQ16 32768
+
+enum weaponuniqhudid_t
+{
+    W_WEAPON_START = 1,
+    W_WEAPON_END = W_WEAPON_START + 7,
+    W_DRIP_START,
+    W_DRIP_END = W_DRIP_START + 7,
+    W_NNEXT_START,
+    W_NNEXT_END = W_NNEXT_START + 7,
+
+    W_END,
+};
 
 #pragma pack(push, 1)
 
@@ -77,7 +90,7 @@ struct QAV
     //SPRITE *pSprite; // 1c
     char pad3[4]; // 20
     FRAMEINFO frames[1]; // 24
-    void Draw(int ticks, int stat, int shade, int palnum);
+    void Draw(int ticks, int stat, int shade, int palnum, int uniqid = 0);
     void Play(int, int, int, void *);
     void Preload(void);
     void Precache(void);
