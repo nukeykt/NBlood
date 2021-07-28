@@ -125,7 +125,7 @@ void GAME_onshowosd(int shown)
 {
     G_UpdateScreenArea();
 
-    mouseLockToWindow((!shown) + 2);
+    mouseLockToWindow(!shown);
 
     osdshown = shown;
 
