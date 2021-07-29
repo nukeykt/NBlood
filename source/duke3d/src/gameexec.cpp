@@ -228,6 +228,9 @@ static int VM_CheckSquished(void)
         floorZ += ZOFFSET5;
 #endif
 
+    floorZ = max(floorZ, vm.pActor->floorz);
+    ceilZ  = min(ceilZ, vm.pActor->ceilingz);
+
     if (vm.pSprite->pal == 1 ? (floorZ - ceilZ >= ZOFFSET5 || (pSector->lotag & 32768u)) : (floorZ - ceilZ >= ZOFFSET4))
         return 0;
 
