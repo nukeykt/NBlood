@@ -2451,12 +2451,30 @@ static void postloadplayer(int32_t savegamep)
     if (savegamep)
     {
         for (SPRITES_OF(STAT_FX, i))
-            if (sprite[i].picnum == MUSICANDSFX)
+            if (sprite[i].picnum == MUSICANDSFX && T1(i) && SLT(i) < 999 && g_sounds[SLT(i)].m & (SF_MSFX|SF_LOOP))
             {
-                int soundNum = sprite[i].lotag;
-                T2(i) = ud.config.SoundToggle;
-                if (!((g_sounds[soundNum].m & SF_LOOP) || (sprite[i].hitag && sprite[i].hitag != soundNum)))
-                    T1(i) = 0;
+                T2(i) = 0;
+
+                for (int SPRITES_OF_SECT(SECT(i), j))
+                    if (sprite[j].picnum == SECTOREFFECTOR && dukeValidateSectorEffectorPlaysSound(j))
+                    {
+                        T1(i) = 0;
+                        T2(i) = ud.config.SoundToggle;
+
+                        A_CallSound(SECT(i), j);
+                        break;
+                    }
+
+                if (T1(i))
+                {
+                    if (dukeValidateSectorPlaysSound(SECT(i)))
+                    {
+                        T1(i) = 0;
+                        T2(i) = ud.config.SoundToggle;
+
+                        A_CallSound(SECT(i), i);
+                    }
+                }
             }
 
         G_UpdateScreenArea();

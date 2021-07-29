@@ -6228,6 +6228,46 @@ static void MaybeTrainKillEnemies(int const spriteNum)
     while (findSprite >= 0);
 }
 
+int dukeValidateSectorEffectorPlaysSound(int num)
+{
+    switch (SLT(num))
+    {
+        case SE_11_SWINGING_DOOR:
+        case SE_15_SLIDING_DOOR:
+        case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
+        case SE_20_STRETCH_BRIDGE:
+        case SE_21_DROP_FLOOR:
+        case SE_31_FLOOR_RISE_FALL:
+        case SE_32_CEILING_RISE_FALL:
+        case SE_36_PROJ_SHOOTER:
+            return 1;
+    }
+    return 0;
+}
+
+int dukeValidateSectorPlaysSound(int sect)
+{
+    switch (sector[sect].lotag)
+    {
+        case ST_9_SLIDING_ST_DOOR:
+        case ST_16_PLATFORM_DOWN:
+        case ST_17_PLATFORM_UP:
+        case ST_18_ELEVATOR_DOWN:
+        case ST_19_ELEVATOR_UP:
+        case ST_29_TEETH_DOOR:
+        case ST_20_CEILING_DOOR:
+        case ST_21_FLOOR_DOOR:
+        case ST_22_SPLITTING_DOOR:
+        case ST_23_SWINGING_DOOR:
+        case ST_25_SLIDING_DOOR:
+        case ST_27_STRETCH_BRIDGE:
+        case ST_28_DROP_FLOOR:
+        case ST_30_ROTATE_RISE_BRIDGE:
+        case ST_31_TWO_WAY_TRAIN:
+            return 1;
+    }
+    return 0;
+}
 
 ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 {
