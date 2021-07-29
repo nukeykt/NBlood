@@ -234,7 +234,11 @@ static int VM_CheckSquished(void)
     if (vm.pSprite->pal == 1 ? (floorZ - ceilZ >= ZOFFSET5 || (pSector->lotag & 32768u)) : (floorZ - ceilZ >= ZOFFSET4))
         return 0;
 
-    P_DoQuote(QUOTE_SQUISHED, vm.pPlayer);
+    if (vm.pPlayer->ftq != QUOTE_DEAD)
+        P_DoQuote(QUOTE_SQUISHED, vm.pPlayer);
+
+    if (vm.spriteNum == vm.pPlayer->i && vm.pPlayer->dead_flag)
+        return 0;
 
     if (A_CheckEnemySprite(vm.pSprite))
         vm.pSprite->xvel = 0;
