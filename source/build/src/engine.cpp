@@ -3579,7 +3579,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     float bzinc = -globalzd*(1.f/65536.f);
 
     int32_t const vis = (sec->visibility != 0) ? mulscale4(globalvisibility, (uint8_t)(sec->visibility+16)) : globalvisibility;
-    globvis = ((((uint64_t)(vis*fdaz)) >> 13) * xdimscale) >> 16;
+    globvis = ((((int64_t)(vis*fdaz)) >> 13) * xdimscale) >> 16;
 
     intptr_t fj = FP_OFF(palookup[globalpal]);
 
@@ -3897,7 +3897,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     asm1 = -(globalzd>>(16-BITSOFPRECISION));
 
     int32_t const vis = (sec->visibility != 0) ? mulscale4(globalvisibility, (uint8_t)(sec->visibility+16)) : globalvisibility;
-    globvis = ((((uint64_t)(vis*daz)) >> 13) * xdimscale) >> 16;
+    globvis = ((((int64_t)(vis*(int64_t)daz)) >> 13) * xdimscale) >> 16;
 
     j = FP_OFF(palookup[globalpal]);
 
@@ -6198,7 +6198,7 @@ draw_as_face_sprite:
 #define LINTERPSIZ 4
             float const bzinc = -sgzd*(1.f/65536.f) * (1<<LINTERPSIZ);
             int32_t const vis = (sec->visibility != 0) ? mulscale4(globalhisibility, (uint8_t)(sec->visibility+16)) : globalhisibility;
-            globvis = ((((uint64_t)(vis*sdaz)) >> 13) * xdimscale) >> 16;
+            globvis = ((((int64_t)(vis*sdaz)) >> 13) * xdimscale) >> 16;
 
             intptr_t fj = FP_OFF(palookup[globalpal]);
 
