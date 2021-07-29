@@ -5528,7 +5528,7 @@ void P_ProcessInput(int playerNum)
         pPlayer->crack_time = PCRACKTIME;
 
 #ifndef EDUKE32_STANDALONE
-        if (!FURY)
+        if (!FURY && pPlayer->cursectnum != -1)
         {
             int const checkWalkSound = sintable[pPlayer->bobcounter & 2047] >> 12;
 
