@@ -5024,6 +5024,8 @@ void Menu_Open(uint8_t playerID)
 {
     g_player[playerID].ps->gm |= MODE_MENU;
 
+    I_ClearAllInput();
+
     mouseReadAbs(&m_prevmousepos, &g_mouseAbs);
     m_mouselastactivity = -M_MOUSETIMEOUT;
 

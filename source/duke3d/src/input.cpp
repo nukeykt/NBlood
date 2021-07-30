@@ -46,9 +46,7 @@ void I_ClearAllInput(void)
     MOUSE_ClearAllButtons();
     JOYSTICK_ClearAllButtons();
     CONTROL_ClearAllButtons();
-#if defined EDUKE32_IOS
     mouseAdvanceClickState();
-#endif
 }
 
 void I_ClearLast(void) { CONTROL_ClearUserInput(nullptr); }
