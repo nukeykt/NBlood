@@ -359,11 +359,13 @@ static int32_t sv_loadBoardMD4(char* const fn)
     if (kread_and_test(fil, fullboard, boardsize))
     {
         Xfree(fullboard);
+        kclose(fil);
         return -1;
     }
 
     md4once(fullboard, boardsize, g_loadedMapHack.md4);
     Xfree(fullboard);
+    kclose(fil);
     return 0;
 }
 
