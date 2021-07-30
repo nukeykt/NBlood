@@ -414,6 +414,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\source\build\include\a.h" />
     <ClInclude Include="..\..\source\build\include\animvpx.h" />
+    <ClInclude Include="..\..\source\build\include\atomiclist.h" />
     <ClInclude Include="..\..\source\build\include\baselayer.h" />
     <ClInclude Include="..\..\source\build\include\build.h" />
     <ClInclude Include="..\..\source\build\include\buildtypes.h" />
@@ -444,6 +445,7 @@
     <ClInclude Include="..\..\source\build\include\kplib.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
     <ClInclude Include="..\..\source\build\include\linklist.h" />
+    <ClInclude Include="..\..\source\build\include\lru.h" />
     <ClInclude Include="..\..\source\build\include\lz4.h" />
     <ClInclude Include="..\..\source\build\include\md4.h" />
     <ClInclude Include="..\..\source\build\include\mdsprite.h" />

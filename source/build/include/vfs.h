@@ -33,6 +33,7 @@ static inline int buildvfs_fputc(char c, buildvfs_FILE fp)
 #define buildvfs_fseek_abs(fp, o) PHYSFS_seek((fp), (o))
 #define buildvfs_fseek_rel(fp, o) PHYSFS_seek((fp), PHYSFS_tell(fp) + (o))
 #define buildvfs_rewind(fp) PHYSFS_seek((fp), 0)
+#define buildvfs_fflush(fp) PHYSFS_flush(fp)
 
 #define buildvfs_flength(fp) PHYSFS_fileLength(fp)
 
@@ -99,6 +100,7 @@ using buildvfs_FILE = FILE *;
 #define buildvfs_fseek_rel(fp, o) fseek((fp), (o), SEEK_CUR)
 #define buildvfs_fseek_end(fp) fseek((fp), 0, SEEK_END)
 #define buildvfs_rewind(fp) rewind(fp)
+#define buildvfs_fflush(fp) fflush(fp)
 
 static inline int64_t buildvfs_length(int fd)
 {

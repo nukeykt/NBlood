@@ -5,13 +5,11 @@
 #ifndef osd_h_
 #define osd_h_
 
+#include "atomiclist.h"
+#include "lru.h"
 #include "collections.h"
 #include "mutex.h"
 #include "vfs.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct
 {
@@ -174,15 +172,30 @@ typedef struct
     int      errfmtlen;
 } osddraw_t;
 
+struct AtomicLogString : AtomicSListNode<AtomicLogString>
+{
+    char *m_value;
+    std::atomic<int> m_isLogged;
+
+    AtomicLogString() = default;
+    AtomicLogString(char *val) : m_value { val }, m_isLogged { 0 } {}
+};
+
 typedef struct
 {
-    buildvfs_FILE fp;
-    int32_t cutoff;
-    int32_t lines;
+    buildvfs_FILE     m_fp;
+    CircularQueue<char *, 1024, RF_INIT_AND_FREE> *m_lines;
+    AtomicSList64<AtomicLogString> m_pending;
+
+    mutex_t mutex;
+
+    uint32_t m_lineidx;
+    int32_t  maxerrors;
 } osdlog_t;
 
 typedef struct
 {
+    osdlog_t log;
     osdtext_t text;
     osdedit_t editor;
     osdhist_t history;
@@ -190,26 +203,20 @@ typedef struct
     osdstr_t  version;
 
     uint32_t   flags;  // controls initialization, etc
-    osdcvar_t *cvars;
     int32_t    numcvars;
 
+    osdcvar_t *cvars;
     osdsymbol_t *symbols;
     osdsymbol_t *symbptrs[OSDMAXSYMBOLS];
 
     int32_t numsymbols;
     int32_t execdepth;  // keeps track of nested execution
-    mutex_t mutex;
     int32_t keycode;
-
-    osdlog_t log;
 
     osdcallbacks_t *cb;
 } osdmain_t;
 
 extern osdmain_t *osd;
-extern GrowArray<char *> osdstrings;
-
-extern buildvfs_FILE osdlog;
 extern const char* osdlogfn;
 
 enum osdflags_t
@@ -298,13 +305,15 @@ void OSD_Draw(void);
 int OSD_Printf(const char *fmt, ...) ATTRIBUTE((format(printf,1,2)));
 
 // just like puts
-void OSD_Puts(const char *putstr, int const nolog = false);
+void OSD_Puts(const char *putstr);
 
 // executes buffered commands
 void OSD_DispatchQueued(void);
 
 // executes a string
 void OSD_Dispatch(const char *cmd);
+
+void OSD_FlushLog(void);
 
 // registers a function
 //   name = name of the function
@@ -324,12 +333,6 @@ static inline void OSD_SetHistory(int idx, const char *src)
 }
 
 extern int osdcmd_restartvid(osdcmdptr_t parm);
-
-extern void M32RunScript(const char *s);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // osd_h_
 

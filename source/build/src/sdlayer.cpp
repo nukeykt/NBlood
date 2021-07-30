@@ -149,17 +149,18 @@ HINSTANCE win_gethinstance(void)
 
 int32_t wm_msgbox(const char *name, const char *fmt, ...)
 {
-    char buf[2048];
+    char *buf = (char *)Balloca(MSGBOX_PRINTF_MAX);
     va_list va;
 
     UNREFERENCED_PARAMETER(name);
 
     va_start(va,fmt);
-    Bvsnprintf(buf,sizeof(buf),fmt,va);
+    Bvsnprintf(buf,MSGBOX_PRINTF_MAX,fmt,va);
     va_end(va);
-
+    buf[MSGBOX_PRINTF_MAX-1] = 0;
 #if defined EDUKE32_OSX
-    return osx_msgbox(name, buf);
+    auto result = osx_msgbox(name, buf);
+    return result;
 #elif defined _WIN32
     MessageBox(win_gethwnd(),buf,name,MB_OK|MB_TASKMODAL);
     return 0;
@@ -178,16 +179,16 @@ int32_t wm_msgbox(const char *name, const char *fmt, ...)
 #  if !defined _WIN32
     // Replace all tab chars with spaces because the hand-rolled SDL message
     // box diplays the former as N/L instead of whitespace.
-    for (size_t i=0; i<sizeof(buf); i++)
+    for (size_t i=0; i<MSGBOX_PRINTF_MAX; i++)
         if (buf[i] == '\t')
             buf[i] = ' ';
 #  endif
-    return SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, name, buf, NULL);
+    auto result = SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, name, buf, NULL);
+    return result;
 # else
     puts(buf);
     puts("   (press Return or Enter to continue)");
     getchar();
-
     return 0;
 # endif
 #endif
@@ -195,19 +196,21 @@ int32_t wm_msgbox(const char *name, const char *fmt, ...)
 
 int32_t wm_ynbox(const char *name, const char *fmt, ...)
 {
-    char buf[2048];
+    char *buf = (char *)Balloca(MSGBOX_PRINTF_MAX);
     va_list va;
 
     UNREFERENCED_PARAMETER(name);
 
     va_start(va,fmt);
-    Bvsnprintf(buf,sizeof(buf),fmt,va);
+    Bvsnprintf(buf,MSGBOX_PRINTF_MAX,fmt,va);
     va_end(va);
-
+    buf[MSGBOX_PRINTF_MAX-1] = 0;
 #if defined EDUKE32_OSX
-    return osx_ynbox(name, buf);
+    auto result = osx_ynbox(name, buf);
+    return result;
 #elif defined _WIN32
-    return (MessageBox(win_gethwnd(),buf,name,MB_YESNO|MB_ICONQUESTION|MB_TASKMODAL) == IDYES);
+    auto result = MessageBox(win_gethwnd(),buf,name,MB_YESNO|MB_ICONQUESTION|MB_TASKMODAL);
+    return result == IDYES;
 #elif defined EDUKE32_TOUCH_DEVICES
     initprintf("wm_ynbox called, this is bad! Message: %s: %s",name,buf);
     initprintf("Returning false..");
@@ -248,7 +251,6 @@ int32_t wm_ynbox(const char *name, const char *fmt, ...)
     };
 
     SDL_ShowMessageBox(&data, &r);
-
     return r;
 # else
     char c;
@@ -775,58 +777,6 @@ void system_getcvars(void)
 # endif
 
     vsync = videoSetVsync(vsync);
-}
-
-//
-// initprintf() -- prints a formatted string to the initialization window
-//
-int initprintf(const char *f, ...)
-{
-    va_list va;
-    char buf[2048];
-
-    va_start(va, f);
-    int len = Bvsnprintf(buf, sizeof(buf), f, va);
-    va_end(va);
-
-    osdstrings.append(Xstrdup(buf));
-    initputs(buf);
-
-    return len;
-}
-
-
-//
-// initputs() -- prints a string to the initialization window
-//
-void initputs(const char *buf)
-{
-    static char dabuf[2048];
-
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_INFO,"DUKE", "%s",buf);
-#endif
-    OSD_Puts(buf);
-//    Bprintf("%s", buf);
-
-    mutex_lock(&m_initprintf);
-    if (Bstrlen(dabuf) + Bstrlen(buf) > 1022)
-    {
-        startwin_puts(dabuf);
-        Bmemset(dabuf, 0, sizeof(dabuf));
-    }
-
-    Bstrcat(dabuf,buf);
-
-    if (g_logFlushWindow || Bstrlen(dabuf) > 768)
-    {
-        startwin_puts(dabuf);
-#ifndef _WIN32
-        startwin_idle(NULL);
-#endif
-        Bmemset(dabuf, 0, sizeof(dabuf));
-    }
-    mutex_unlock(&m_initprintf);
 }
 
 //

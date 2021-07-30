@@ -27,6 +27,9 @@ void engineDestroyAllocator(void);
 extern int32_t g_maskDrawMode;
 #endif
 
+#define PRINTF_INITIAL_BUFFER_SIZE 32
+#define MSGBOX_PRINTF_MAX          1024
+
 extern char quitevent, appactive;
 extern char modechange;
 extern char nogl;

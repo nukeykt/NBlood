@@ -39,6 +39,46 @@ int32_t r_maxfps = -1;
 uint64_t g_frameDelay;
 
 
+//
+// initprintf() -- prints a formatted string to the initialization window
+//
+int initprintf(const char *f, ...)
+{
+    size_t size = max(PRINTF_INITIAL_BUFFER_SIZE >> 1, nextPow2(Bstrlen(f)));
+    char *buf = nullptr;
+    int len;
+
+    do
+    {
+        va_list va;
+        buf = (char *)Xrealloc(buf, (size <<= 1));
+        va_start(va, f);
+        len = Bvsnprintf(buf, size-1, f, va);
+        va_end(va);
+    } while (len < 0);
+
+    buf[size-1] = 0;
+    initputs(buf);
+    Xfree(buf);
+
+    return len;
+}
+
+
+//
+// initputs() -- prints a string to the initialization window
+//
+void initputs(const char *buf)
+{
+#ifdef __ANDROID__
+    __android_log_print(ANDROID_LOG_INFO,"DUKE", "%s",buf);
+#endif
+
+    OSD_Puts(buf);
+    startwin_puts(buf);
+}
+
+
 static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);

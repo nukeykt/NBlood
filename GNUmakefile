@@ -797,6 +797,7 @@ COMPILERFLAGS += \
     -I$(audiolib_inc) \
     -I$(glad_inc) \
     -I$(voidwrap_inc) \
+    -I$(mimalloc_inc) \
     -MP -MMD \
 
 ifneq (0,$(USE_PHYSFS))

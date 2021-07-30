@@ -1128,6 +1128,14 @@ CONSTEXPR size_t logbasenegative(T n)
 #define isPow2OrZero(v) (((v) & ((v) - 1)) == 0)
 #define isPow2(v) (isPow2OrZero(v) && (v))
 
+static FORCE_INLINE int nextPow2(int const value)
+{
+    int i = 1;
+    while (i < value)
+        i <<= 1;
+    return i;
+}
+
 ////////// Bitfield manipulation //////////
 
 static CONSTEXPR const char pow2char[8] = {1,2,4,8,16,32,64,128u};
