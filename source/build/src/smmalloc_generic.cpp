@@ -19,10 +19,12 @@
 // 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
+
+#if __SANITIZE_ADDRESS__ != 1
+
 #include "compat.h"
 #include "mimalloc-override.h"
 #include "smmalloc.h"
-
 
 sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid()
 {
@@ -115,3 +117,4 @@ size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance inst
 #endif    
 #endif // MIMALLOC_OVERRIDE_H
 }
+#endif // __SANITIZE_ADDRESS__

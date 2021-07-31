@@ -234,6 +234,7 @@ ifneq (0,$(USE_PHYSFS))
 endif
 
 engine_objs := \
+    asan_guarded_allocator.cpp \
     2d.cpp \
     baselayer.cpp \
     cache1d.cpp \
