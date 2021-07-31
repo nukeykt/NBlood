@@ -4591,7 +4591,10 @@ extern int G_StartRTS(int lumpNum, int localPlayer)
 
 void G_PrintCurrentMusic(void)
 {
-    Bsnprintf(apStrings[QUOTE_MUSIC], MAXQUOTELEN, "Playing %s", g_mapInfo[g_musicIndex].musicfn);
+    char *fn = g_mapInfo[g_musicIndex].musicfn;
+    if (fn[0] == '/') fn++;
+    g_player[myconnectindex].ps->ftq = 0;
+    Bsnprintf(apStrings[QUOTE_MUSIC], MAXQUOTELEN, "Playing %s", fn);
     P_DoQuote(QUOTE_MUSIC, g_player[myconnectindex].ps);
 }
 
@@ -4982,7 +4985,11 @@ FAKE_F3:
             KB_ClearKeyDown(sc_F5);
 
             if (pMapInfo->musicfn != NULL)
-                Bsnprintf(musicString, MAXQUOTELEN, "%s.  Use SHIFT-F5 to change.", pMapInfo->musicfn);
+            {
+                char *fn = pMapInfo->musicfn;
+                if (fn[0] == '/') fn++;
+                Bsnprintf(musicString, MAXQUOTELEN, "%s. SHIFT-F5 to change.", fn);
+            }
             else
                 musicString[0] = '\0';
 
