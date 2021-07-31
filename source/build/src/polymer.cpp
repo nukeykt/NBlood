@@ -3406,7 +3406,7 @@ static void         polymer_updatewall(int16_t wallnum)
             if ((wal->cstat & 16) || (wal->overpicnum == 0))
                 curpicnum = wallpicnum;
             else
-                curpicnum = wallpicnum;
+                curpicnum = walloverpicnum;
 
             w->over.bucket = polymer_getbuildmaterial(&w->over.material, curpicnum, wal->pal, wal->shade, sec->visibility, DAMETH_WALL);
 
