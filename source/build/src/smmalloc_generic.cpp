@@ -20,6 +20,8 @@
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
 
+#include "mimalloc-new-delete.h"
+
 #if __SANITIZE_ADDRESS__ != 1
 
 #include "compat.h"
