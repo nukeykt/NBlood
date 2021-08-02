@@ -26,6 +26,7 @@ static struct
     GtkWidget *fullscreencheck;
     GtkWidget *emptyhlayout;
     GtkWidget *alwaysshowcheck;
+    GtkWidget *usecwdcheck;
     GtkWidget *configtab;
     GtkWidget *messagesscroll;
     GtkWidget *messagestext;
@@ -48,7 +49,7 @@ static struct
 {
     int32_t fullscreen;
     int32_t xdim3d, ydim3d, bpp3d;
-    int32_t forcesetup;
+    int32_t forcesetup, usecwd;
 } settings;
 
 static int32_t retval = -1, mode = TAB_MESSAGES;
@@ -82,6 +83,12 @@ static void on_alwaysshowcheck_toggled(GtkToggleButton *togglebutton, gpointer u
 {
     UNREFERENCED_PARAMETER(user_data);
     settings.forcesetup = (gtk_toggle_button_get_active(togglebutton) == TRUE);
+}
+
+static void on_usecwdcheck_toggled(GtkToggleButton *togglebutton, gpointer user_data)
+{
+    UNREFERENCED_PARAMETER(user_data);
+    settings.usecwd = (gtk_toggle_button_get_active(togglebutton) == TRUE);
 }
 
 static void on_cancelbutton_clicked(GtkButton *button, gpointer user_data)
@@ -175,6 +182,7 @@ static void PopulateForm(void)
 
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.fullscreencheck), settings.fullscreen);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.alwaysshowcheck), settings.forcesetup);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.usecwdcheck), settings.usecwd);
 }
 
 static GtkWidget *create_window(void)
@@ -216,17 +224,17 @@ static GtkWidget *create_window(void)
 
     // Fullscreen checkbox
     stwidgets.fullscreencheck = gtk_check_button_new_with_mnemonic("_Fullscreen");
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.fullscreencheck, 2,3, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 6);
+    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.fullscreencheck, 2,3, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 24);
     gtk_widget_add_accelerator(stwidgets.fullscreencheck, "grab_focus", stwidgets.accel_group,
                                GDK_F, GDK_MOD1_MASK,
                                GTK_ACCEL_VISIBLE);
 
-    // 3D video mode label
-    stwidgets.vmode3dlabel = gtk_label_new_with_mnemonic("_3D Video mode:");
+    // Video mode label
+    stwidgets.vmode3dlabel = gtk_label_new_with_mnemonic("_Video mode:");
     gtk_misc_set_alignment(GTK_MISC(stwidgets.vmode3dlabel), 0.3, 0);
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dlabel, 0,1, 1,2, GTK_FILL, (GtkAttachOptions)0, 4, 6);
+    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dlabel, 0,1, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 24);
 
-    // 3D video mode combo
+    // Video mode combo
     {
         GtkListStore *list = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_INT);
         GtkCellRenderer *cell;
@@ -238,11 +246,12 @@ static GtkWidget *create_window(void)
         gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(stwidgets.vmode3dcombo), cell, FALSE);
         gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.vmode3dcombo), cell, "text", 0, nullptr);
     }
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dcombo, 1,2, 1,2,
+    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dcombo, 1,2, 0,1,
         (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)0, 4, 0);
     gtk_widget_add_accelerator(stwidgets.vmode3dcombo, "grab_focus", stwidgets.accel_group,
-                               GDK_3, GDK_MOD1_MASK,
+                               GDK_V, GDK_MOD1_MASK,
                                GTK_ACCEL_VISIBLE);
+
     // Empty horizontal layout
     stwidgets.emptyhlayout = gtk_hbox_new(TRUE, 0);
     gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.emptyhlayout, 0,1, 2,3, (GtkAttachOptions)0,
@@ -253,6 +262,13 @@ static GtkWidget *create_window(void)
     gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.alwaysshowcheck, 0,2, 3,4, GTK_FILL, (GtkAttachOptions)0, 4, 6);
     gtk_widget_add_accelerator(stwidgets.alwaysshowcheck, "grab_focus", stwidgets.accel_group,
                                GDK_A, GDK_MOD1_MASK,
+                               GTK_ACCEL_VISIBLE);
+
+    // "Working directory only" checkbox
+    stwidgets.usecwdcheck = gtk_check_button_new_with_mnemonic("_Working directory only");
+    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.usecwdcheck, 0,2, 4,5, GTK_FILL, (GtkAttachOptions)0, 4, 6);
+    gtk_widget_add_accelerator(stwidgets.usecwdcheck, "grab_focus", stwidgets.accel_group,
+                               GDK_W, GDK_MOD1_MASK,
                                GTK_ACCEL_VISIBLE);
 
     // Configuration tab
@@ -341,6 +357,9 @@ static GtkWidget *create_window(void)
                      NULL);
     g_signal_connect((gpointer) stwidgets.alwaysshowcheck, "toggled",
                      G_CALLBACK(on_alwaysshowcheck_toggled),
+                     NULL);
+    g_signal_connect((gpointer) stwidgets.usecwdcheck, "toggled",
+                     G_CALLBACK(on_usecwdcheck_toggled),
                      NULL);
     g_signal_connect((gpointer) stwidgets.cancelbutton, "clicked",
                      G_CALLBACK(on_cancelbutton_clicked),
@@ -466,6 +485,7 @@ int32_t startwin_run(void)
     settings.ydim3d = ydim;
     settings.bpp3d = bpp;
     settings.forcesetup = forcesetup;
+    settings.usecwd = g_useCwd;
     PopulateForm();
 
     gtk_main();
@@ -478,6 +498,7 @@ int32_t startwin_run(void)
         ydim = settings.ydim3d;
         bpp = settings.bpp3d;
         forcesetup = settings.forcesetup;
+        g_useCwd = settings.usecwd;
     }
 
     return retval;
