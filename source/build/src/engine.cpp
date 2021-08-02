@@ -10585,8 +10585,17 @@ skip_reading_mapbin:
 
         system_getcvars();
 
+        auto mapInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+                                            sizeof(usermaphack_t), compare_usermaphacks);
+
         // Per-map ART
-        artSetupMapArt(filename);
+        if (mapInfo)
+        {
+            initprintf("Using mapinfo-defined mapart \"%s\"\n", mapInfo->mapart);
+            artSetupMapArt(mapInfo->mapart);
+        }
+        else
+            artSetupMapArt(filename);
     }
 
     // initprintf("Loaded map \"%s\" (md4sum: %08x%08x%08x%08x)\n", filename, B_BIG32(*((int32_t*)&md4out[0])), B_BIG32(*((int32_t*)&md4out[4])), B_BIG32(*((int32_t*)&md4out[8])), B_BIG32(*((int32_t*)&md4out[12])));

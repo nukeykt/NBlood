@@ -369,24 +369,31 @@ static int32_t sv_loadBoardMD4(char* const fn)
     return 0;
 }
 
-static void sv_loadMhk(char* currentboardfilename)
+static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfilename)
 {
     bool loadedMhk = false;
-    if (sv_loadBoardMD4(currentboardfilename) == 0)
-    {
-        auto mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-                                     sizeof(usermaphack_t), compare_usermaphacks);
 
-        if (mhkInfo && (loadedMhk = (engineLoadMHK(mhkInfo->mhkfile) == 0)))
-            initprintf("Loaded map hack file \"%s\"\n", mhkInfo->mhkfile);
-    }
+    if (mhkInfo && (loadedMhk = (engineLoadMHK(mhkInfo->mhkfile) == 0)))
+        initprintf("Loaded map hack file \"%s\"\n", mhkInfo->mhkfile);
 
     if (!loadedMhk)
     {
-        append_ext_UNSAFE(currentboardfilename, ".mhk");
-        if (engineLoadMHK(currentboardfilename) == 0)
-            initprintf("Loaded map hack file \"%s\"\n", currentboardfilename);
+        char bfn[BMAX_PATH];
+        Bstrcpy(bfn, currentboardfilename);
+        append_ext_UNSAFE(bfn, ".mhk");
+        if (engineLoadMHK(bfn) == 0)
+            initprintf("Loaded map hack file \"%s\"\n", bfn);
     }
+}
+
+static void sv_loadMapart(usermaphack_t* const mhkInfo, char* const currentboardfilename)
+{
+    if (mhkInfo)
+    {
+        initprintf("Using mapinfo-defined mapart \"%s\"\n", mhkInfo->mapart);
+        artSetupMapArt(mhkInfo->mapart);
+    }
+    else artSetupMapArt(currentboardfilename);
 }
 
 static void sv_postudload();
@@ -507,14 +514,19 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
             if (currentboardfilename[0])
             {
+                usermaphack_t* mhkInfo = NULL;
+                if (sv_loadBoardMD4(currentboardfilename) == 0)
+                    mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+                                 sizeof(usermaphack_t), compare_usermaphacks);
+
                 // only setup art if map differs from previous
                 if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
                 {
-                    artSetupMapArt(currentboardfilename);
+                    sv_loadMapart(mhkInfo, currentboardfilename);
                     Bstrcpy(previousboardfilename, currentboardfilename);
                 }
 
-                sv_loadMhk(currentboardfilename);
+                sv_loadMhk(mhkInfo, currentboardfilename);
             }
 
             currentboardfilename[0] = '\0';
@@ -707,14 +719,19 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
     if (currentboardfilename[0])
     {
+        usermaphack_t* mhkInfo = NULL;
+        if (sv_loadBoardMD4(currentboardfilename) == 0)
+            mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+                                 sizeof(usermaphack_t), compare_usermaphacks);
+
         // only setup art if map differs from previous
         if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
         {
-            artSetupMapArt(currentboardfilename);
+            sv_loadMapart(mhkInfo, currentboardfilename);
             Bstrcpy(previousboardfilename, currentboardfilename);
         }
 
-        sv_loadMhk(currentboardfilename);
+        sv_loadMhk(mhkInfo, currentboardfilename);
     }
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);

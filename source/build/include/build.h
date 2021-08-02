@@ -600,6 +600,7 @@ extern int32_t g_loadedMapVersion;
 typedef struct {
     char *mhkfile;
     char *title;
+    char *mapart;
     uint8_t md4[16];
 } usermaphack_t;
 

@@ -103,7 +103,7 @@ enum scripttoken_t
     T_NOFLOORPALRANGE,
     T_TEXHITSCANRANGE,
     T_NOFULLBRIGHTRANGE,
-    T_MAPINFO, T_MAPFILE, T_MAPTITLE, T_MAPMD4, T_MHKFILE,
+    T_MAPINFO, T_MAPFILE, T_MAPTITLE, T_MAPMD4, T_MHKFILE, T_MAPART,
     T_ECHO,
     T_GLOBALFLAGS,
     T_COPYTILE,
@@ -2675,13 +2675,14 @@ static int32_t defsparser(scriptfile *script)
 
         case T_MAPINFO:
         {
-            char *mapmd4string = NULL, *title = NULL, *mhkfile = NULL, *mapinfoend, *dummy;
+            char *mapmd4string = NULL, *title = NULL, *mhkfile = NULL, *mapart = NULL, *mapinfoend, *dummy;
             static const tokenlist mapinfotokens[] =
             {
                 { "mapfile",    T_MAPFILE },
                 { "maptitle",   T_MAPTITLE },
                 { "mapmd4",     T_MAPMD4 },
                 { "mhkfile",    T_MHKFILE },
+                { "mapart",     T_MAPART },
             };
             int32_t previous_usermaphacks = num_usermaphacks;
 
@@ -2717,6 +2718,18 @@ static int32_t defsparser(scriptfile *script)
                 case T_MHKFILE:
                     scriptfile_getstring(script,&mhkfile);
                     break;
+                case T_MAPART:
+                    char *arttokptr = script->ltextptr;
+                    scriptfile_getstring(script,&mapart);
+
+                    char *extptr = Bstrrchr(mapart, '_');
+                    if (!extptr || Bstrcasecmp(extptr, "_xx.art"))
+                    {
+                        initprintf("Error: mapart definition must end with \"_XX.ART\", near line: %s:%d\n",
+                                    script->filename, scriptfile_getlinum(script, arttokptr));
+                        mapart = NULL;
+                    }
+                    break;
                 }
             }
 
@@ -2724,6 +2737,13 @@ static int32_t defsparser(scriptfile *script)
             {
                 usermaphacks[previous_usermaphacks].mhkfile = mhkfile ? Xstrdup(mhkfile) : NULL;
                 usermaphacks[previous_usermaphacks].title = title ? Xstrdup(title) : NULL;
+                if (mapart)
+                {
+                    char* artBuf = Xstrdup(mapart);
+                    *(Bstrrchr(artBuf, '_')) = '\0';
+                    usermaphacks[previous_usermaphacks].mapart = artBuf;
+                }
+                else usermaphacks[previous_usermaphacks].mapart = NULL;
             }
         }
         break;
