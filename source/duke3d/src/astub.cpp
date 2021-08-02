@@ -5046,8 +5046,12 @@ static void Keys3d(void)
                         }
                     }
 
-                    silentmessage("Sector %d visibility %d", searchsector,
-                                  TrackerCast(sector[searchsector].visibility));
+                    if (sector[searchsector].visibility >= 240)
+                        silentmessage("Sector %d visibility %d (%d)", searchsector, TrackerCast(sector[searchsector].visibility) - 256,
+                                      TrackerCast(sector[searchsector].visibility));
+                    else
+                        silentmessage("Sector %d visibility %d", searchsector, TrackerCast(sector[searchsector].visibility));
+
                     asksave = 1;
                 }
             }
