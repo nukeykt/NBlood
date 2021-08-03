@@ -1394,7 +1394,7 @@ int32_t globvis2, globalvisibility2, globalhisibility2, globalpisibility2, globa
 int32_t xyaspect;
 static int32_t viewingrangerecip;
 
-static char globalxshift, globalyshift;
+static int8_t globalxshift, globalyshift;
 static int32_t globalxpanning, globalypanning;
 int32_t globalshade, globalorientation;
 int16_t globalpicnum;
@@ -2628,10 +2628,6 @@ static void calc_globalshifts(void)
     globalxshift = (8-(picsiz[globalpicnum]&15));
     globalyshift = (8-(picsiz[globalpicnum]>>4));
     if (globalorientation&8) { globalxshift++; globalyshift++; }
-    // PK: the following can happen for large (>= 512) tile sizes.
-    // NOTE that global[xy]shift are unsigned chars.
-    if (globalxshift > 31) globalxshift=0;
-    if (globalyshift > 31) globalyshift=0;
 }
 
 static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
@@ -2668,8 +2664,8 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     {
         globalx1 = singlobalang; globalx2 = singlobalang;
         globaly1 = cosglobalang; globaly2 = cosglobalang;
-        globalxpanning = ((inthi_t)globalposx<<20);
-        globalypanning = -((inthi_t)globalposy<<20);
+        globalxpanning = ((inthi_t)globalposx<<14);
+        globalypanning = -((inthi_t)globalposy<<14);
     }
     else
     {
@@ -2682,8 +2678,8 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
         globalx2 = -globalx1;
         globaly2 = -globaly1;
 
-        globalxpanning = (coord_t)((globalposx - wall[sec->wallptr].x)<<6) * wcos + (coord_t)((globalposy - wall[sec->wallptr].y)<<6) * wsin;
-        globalypanning = (coord_t)((globalposy - wall[sec->wallptr].y)<<6) * wcos - (coord_t)((globalposx - wall[sec->wallptr].x)<<6) * wsin;
+        globalxpanning = (coord_t)(globalposx - wall[sec->wallptr].x) * wcos + (coord_t)(globalposy - wall[sec->wallptr].y) * wsin;
+        globalypanning = (coord_t)(globalposy - wall[sec->wallptr].y) * wcos - (coord_t)(globalposx - wall[sec->wallptr].x) * wsin;
     }
     globalx2 = mulscale16(globalx2,viewingrangerecip);
     globaly1 = mulscale16(globaly1,viewingrangerecip);
@@ -2698,9 +2694,23 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     }
     if ((globalorientation&0x10) > 0) globalx1 = -globalx1, globaly1 = -globaly1, globalxpanning = -(inthi_t)globalxpanning;
     if ((globalorientation&0x20) > 0) globalx2 = -globalx2, globaly2 = -globaly2, globalypanning = -(inthi_t)globalypanning;
-    globalx1 <<= globalxshift; globaly1 <<= globalxshift;
-    globalx2 <<= globalyshift;  globaly2 <<= globalyshift;
-    globalxpanning <<= globalxshift; globalypanning <<= globalyshift;
+    if (globalxshift >= 0)
+    {
+        globalx1 <<= globalxshift; globaly1 <<= globalxshift;
+    }
+    else
+    {
+        globalx1 >>= -globalxshift; globaly1 >>= -globalxshift;
+    }
+    if (globalyshift >= 0)
+    {
+        globalx2 <<= globalyshift;  globaly2 <<= globalyshift;
+    }
+    else
+    {
+        globalx2 >>= -globalyshift;  globaly2 >>= -globalyshift;
+    }
+    globalxpanning <<= (globalxshift + 6); globalypanning <<= (globalyshift + 6);
     globalxpanning = (uint32_t)globalxpanning + (xpanning<<24);
     globalypanning = (uint32_t)globalypanning + (ypanning<<24);
     globaly1 = (-globalx1-globaly1)*halfxdimen;
@@ -3433,6 +3443,12 @@ static void mslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int3
 // grouscan (internal)
 //
 #define BITSOFPRECISION 3  //Don't forget to change this in A.ASM also!
+
+static const float pow2invfloat[8] = {
+    1.f / (1 << 0), 1.f / (1 << 1), 1.f / (1 << 2), 1.f / (1 << 3),
+    1.f / (1 << 4), 1.f / (1 << 5), 1.f / (1 << 6), 1.f / (1 << 7)
+};
+
 static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 {
     int32_t i, j, l, globalx1, globaly1, y1, y2, daslope, daz, wxi, wyi;
@@ -3525,8 +3541,25 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     i = 8-(picsiz[globalpicnum]&15); j = 8-(picsiz[globalpicnum]>>4);
     if (globalorientation&8) { i++; j++; }
-    globalx1 <<= (i+12); globalx2 *= 1<<i; globalx *= 1<<i;
-    globaly1 <<= (j+12); globaly2 *= 1<<j; globaly *= 1<<j;
+    globalx1 <<= (i+12);
+    globaly1 <<= (j+12);
+
+    if (i >= 0)
+    {
+        globalx2 *= 1<<i; globalx *= 1<<i;
+    }
+    else if (i > -8)
+    {
+        globalx2 *= pow2invfloat[-i]; globalx *= pow2invfloat[-i];
+    }
+    if (j >= 0)
+    {
+        globaly2 *= 1<<j; globaly *= 1<<j;
+    }
+    else if (j > -8)
+    {
+        globaly2 *= pow2invfloat[-j]; globaly *= pow2invfloat[-j];
+    }
 
     if (dastat == 0)
     {
@@ -3831,8 +3864,24 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     i = 8-(picsiz[globalpicnum]&15); j = 8-(picsiz[globalpicnum]>>4);
     if (globalorientation&8) { i++; j++; }
-    globalx1 <<= (i+12); globalx2 <<= i; globalx <<= i;
-    globaly1 <<= (j+12); globaly2 <<= j; globaly <<= j;
+    globalx1 <<= (i+12);
+    globaly1 <<= (j+12);
+    if (i >= 0)
+    {
+        globalx2 <<= i; globalx <<= i;
+    }
+    else
+    {
+        globalx2 >>= -i; globalx >>= -i;
+    }
+    if (j >= 0)
+    {
+        globaly2 <<= j; globaly <<= j;
+    }
+    else
+    {
+        globaly2 >>= -j; globaly >>= -j;
+    }
 
     if (dastat == 0)
     {
@@ -9966,10 +10015,26 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
             }
             if ((globalorientation&0x10) > 0) globalx1 = -globalx1, globaly1 = -globaly1, globalposx = -globalposx;
             if ((globalorientation&0x20) > 0) globalx2 = -globalx2, globaly2 = -globaly2, globalposy = -globalposy;
-            asm1 = (globaly1<<globalxshift);
-            asm2 = (globalx2<<globalyshift);
-            globalx1 <<= globalxshift;
-            globaly2 <<= globalyshift;
+            if (globalxshift >= 0)
+            {
+                asm1 = globaly1 << globalxshift;
+                globalx1 <<= globalxshift;
+            }
+            else
+            {
+                asm1 = globaly1 >> -globalxshift;
+                globalx1 >>= globalxshift;
+            }
+            if (globalyshift >= 0)
+            {
+                asm2 = globalx2 << globalyshift;
+                globaly2 <<= globalyshift;
+            }
+            else
+            {
+                asm2 = globalx2 >> -globalyshift;
+                globaly2 >>= -globalyshift;
+            }
             set_globalpos(((int64_t) globalposx<<(20+globalxshift))+(((uint32_t) sec->floorxpanning)<<24),
                 ((int64_t) globalposy<<(20+globalyshift))-(((uint32_t) sec->floorypanning)<<24),
                 globalposz);
