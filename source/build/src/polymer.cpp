@@ -3,6 +3,7 @@
 #if defined USE_OPENGL && defined POLYMER
 
 #include "compat.h"
+#include "common.h"
 
 #define POLYMER_C
 #include "polymer.h"
@@ -1574,12 +1575,12 @@ void                polymer_drawsprite(int32_t snum)
     case 1:
         prsectors[tspr->sectnum]->wallsproffset += 0.5f;
         if (!depth || mirrors[depth-1].plane)
-            glPolygonOffset(-1.0f, -1.0f);
+            glPolygonOffset(-(1.f/min(2048, sepldist(globalposx-tspr->x, globalposy-tspr->y)>>2)), -64);
         break;
     case 2:
         prsectors[tspr->sectnum]->floorsproffset += 0.5f;
         if (!depth || mirrors[depth-1].plane)
-            glPolygonOffset(-1.0f, -1.0f);
+            glPolygonOffset(-(1.f/min(2048, sepdist(globalposx-tspr->x, globalposy-tspr->y, globalposz-tspr->z)>>5)), -64);
         break;
     }
 
@@ -4045,13 +4046,36 @@ void                polymer_updatesprite(int32_t snum)
         glScalef((float)(xsize), (float)(ysize), 1.0f);
         break;
     case SPR_WALL:
-        ang = (float)((tspr->ang + 1024) & 2047) * (360.f/2048.f);
+        {
+            int16_t wallnum = ((unsigned)tspr->owner >= MAXSPRITES) ? -1 : ornament[tspr->owner].wall;
+            wallspriteinfo_t *ws = ((unsigned)tspr->owner >= MAXSPRITES) ? nullptr : &ornament[tspr->owner];
+            vec2f_t const vf = { ((float)tspr->xrepeat * (float)sintable[(tspr->ang) & 2047] * (1.0f / 65536.f)) * f,
+                                 ((float)tspr->xrepeat * (float)sintable[(tspr->ang + 1536) & 2047] * (1.0f / 65536.f)) * f};
 
-        glTranslatef(spos[0], spos[1], spos[2]);
-        glRotatef(-ang, 0.0f, 1.0f, 0.0f);
-        glTranslatef((float)(-xoff), (float)(yoff-centeryoff), 0.0f);
-        glScalef((float)(xsize), (float)(ysize), 1.0f);
-        break;
+            polymost_checkornamentedsprite(tspr, &wallnum, ws);
+
+            ang = (float)((tspr->ang + 1024) & 2047) * (360.f / 2048.f);
+
+            if (wallnum != -1 && ((ws != nullptr && !ws->invalid) || polymost_testintersection(tspr->xyz, { (int)vf.x, (int)vf.y }, wallnum)))
+            {
+                fix16_t const ang16 = (gethiq16angle(wall[wallnum].x - POINT2(wallnum).x,
+                                                     wall[wallnum].y - POINT2(wallnum).y) + F16(1536)) & 0x7FFFFFF;
+
+                if (fix16_to_float(fix16_abs(getq16angledelta(fix16_from_int(tspr->ang), ang16))) <= MAXINTERSECTIONANGDIFF)
+                {
+                    if (ws != nullptr)
+                        ws->invalid = 0;
+
+                    ang = fix16_to_float(((ang16 + F16(1024)) & 0x7FFFFFF)) * (360.f / 2048.f);
+                }
+            }
+
+            glTranslatef(spos[0], spos[1], spos[2]);
+            glRotatef(-ang, 0.0f, 1.0f, 0.0f);
+            glTranslatef((float)(-xoff), (float)(yoff - centeryoff), 0.0f);
+            glScalef((float)(xsize), (float)(ysize), 1.0f);
+            break;
+        }
     case SPR_FLOOR:
     {
         float const sang = atan2f(float(heinum), 4096.f) * (180.f * float(M_1_PI));

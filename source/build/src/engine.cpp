@@ -11794,6 +11794,18 @@ fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
     return rv;
 }
 
+fix16_t __fastcall getq16angledelta(fix16_t first, fix16_t second)
+{
+    first &= 0x7FFFFFF;
+    second &= 0x7FFFFFF;
+
+    if (klabs(fix16_sub(first, second)) < F16(1024))
+        return fix16_sub(second, first);
+    else 
+        return fix16_sub((second > F16(1024)) ? fix16_sub(second, F16(2048)) : second, (first > F16(1024)) ? fix16_sub(first, F16(2048)) : first);
+}
+
+
 //
 // ksqrt
 //

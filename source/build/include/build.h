@@ -1370,6 +1370,7 @@ int32_t   __fastcall ksqrtasm_old(uint32_t n);
 int32_t   __fastcall ksqrt(uint32_t num);
 int32_t   __fastcall getangle(int32_t xvect, int32_t yvect);
 fix16_t   __fastcall gethiq16angle(int32_t xvect, int32_t yvect);
+fix16_t   __fastcall getq16angledelta(fix16_t first, fix16_t second);
 
 static FORCE_INLINE fix16_t __fastcall getq16angle(int32_t xvect, int32_t yvect)
 {

@@ -286,6 +286,30 @@ extern char ptempbuf[MAXWALLSB<<1];
 
 extern hitdata_t polymost_hitdata;
 
+typedef struct
+{
+    uint32_t rev;
+    vec2f_t fsin;
+    int16_t wall;
+    int8_t dist;
+    int8_t invalid;
+} wallspriteinfo_t;
+
+// needs to be this high for XXX-Stacy because the bad sprite in that one isn't even properly ornamented onto the wall!
+#define MAXINTERSECTIONANGDIFF (4.5f)
+#define MAXINTERSECTIONLINEDIST 1
+
+extern wallspriteinfo_t ornament[MAXSPRITES];
+extern void polymost_checkornamentedsprite(tspriteptr_t tspr, int16_t *wallnum, wallspriteinfo_t* ws);
+extern int32_t polymost_findintersectingwall(tspritetype const &tspr);
+extern int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, int32_t x4, int32_t y4);
+
+static FORCE_INLINE bool polymost_testintersection(vec3_t const &pos, vec2_t const &v, int16_t wallnum)
+{
+    return ((pos.x - v.x) + (pos.x + v.x)) == (wall[wallnum].x + POINT2(wallnum).x)
+        || ((pos.y - v.y) + (pos.y + v.y)) == (wall[wallnum].y + POINT2(wallnum).y)
+        || polymost_lintersect(pos.x - v.x, pos.y - v.y, pos.x + v.x, pos.y + v.y, wall[wallnum].x, wall[wallnum].y, POINT2(wallnum).x, POINT2(wallnum).y);
+}
 
 extern void polymost_setupglowtexture(int32_t texunits, int32_t tex);
 extern void polymost_setupdetailtexture(int32_t texunits, int32_t tex);
