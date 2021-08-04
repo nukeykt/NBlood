@@ -1741,7 +1741,7 @@ void Menu_PopulateNewGameCustom(void)
 
         MEL_NEWGAMECUSTOM[e] = &ME_NEWGAMECUSTOMENTRIES[e];
 
-        if (!(entry.flags & MGE_Hidden))
+        if (!(MEL_NEWGAMECUSTOM[e]->flags & MEF_Hidden))
             ++visible;
 
         ++e;
@@ -1771,7 +1771,7 @@ void Menu_PopulateNewGameCustomSub(int e)
 
         MEL_NEWGAMECUSTOMSUB[s] = &ME_NEWGAMECUSTOMSUBENTRIES[e][s];
 
-        if (!(subentry.flags & MGE_Hidden))
+        if (!(MEL_NEWGAMECUSTOMSUB[e]->flags & MEF_Hidden))
             ++visible;
 
         ++s;
@@ -1992,8 +1992,6 @@ void Menu_Init(void)
 
             ++e;
         }
-
-        Menu_PopulateNewGameCustom();
     }
 
     // prepare skills
@@ -4569,6 +4567,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     case MENU_MAIN_INGAME:
         if (FURY)
             ME_MAIN_LOADGAME.name = s_LoadGame;
+        break;
+
+    case MENU_NEWGAMECUSTOM:
+        Menu_PopulateNewGameCustom();
         break;
 
     case MENU_NEWGAMECUSTOMSUB:
