@@ -4282,28 +4282,33 @@ static void Menu_FileSelectInit(MenuFileSelect_t *object)
     fnlist_clearnames(&object->fnlist);
 
     // important: object->destination stores a reference (e.g. boardfilename)
-    if (object->destination[0] == 0)
-    {
-        if (object->lastdir[0] == 0)
-        {
-            BDIR * usermaps = Bopendir(object->startdir);
-            if (usermaps)
-            {
-                Bclosedir(usermaps);
-                Bstrcpy(object->destination, object->startdir);
-            }
-            else
-                Bstrcpy(object->destination, "./");
-        }
-        else
-            Bstrcpy(object->destination, object->lastdir);
-    }
+    if (!object->destination[0])
+        Bstrcpy(object->destination, object->lastdir[0] ? object->lastdir : "./");
     Bcorrectfilename(object->destination, 1);
 
-    if (object->lastdir[0] == 0)
-        Bstrcpy(object->lastdir, object->destination);
-
     fnlist_getnames(&object->fnlist, object->destination, object->pattern, 0, 0);
+
+    if (!object->lastdir[0])
+    {
+        // check for startdir -- hack to open startdir from GRP and ZIP files
+        auto cdir = object->fnlist.finddirs;
+        char pathbuf[BMAX_PATH];
+        while (cdir)
+        {
+            Bsnprintf(pathbuf, BMAX_PATH, "./%s/", cdir->name);
+            if (!Bstrcmp(object->startdir, pathbuf))
+            {
+                Bstrcpy(object->destination, object->startdir);
+                Bcorrectfilename(object->destination, 1);
+                fnlist_getnames(&object->fnlist, object->destination, object->pattern, 0, 0);
+                break;
+            }
+            cdir = cdir->next;
+        }
+
+        Bstrcpy(object->lastdir, object->destination);
+    }
+
     object->findhigh[0] = object->fnlist.finddirs;
     object->findhigh[1] = object->fnlist.findfiles;
 
