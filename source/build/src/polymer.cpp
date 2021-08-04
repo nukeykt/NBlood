@@ -3403,10 +3403,7 @@ static void         polymer_updatewall(int16_t wallnum)
                 Bmemcpy(&w->over.buffer[2], &ns->ceil.buffer[nwallnum - nsec->wallptr], sizeof(GLfloat) * 3);
             Bmemcpy(&w->over.buffer[3], &s->ceil.buffer[wallnum - sec->wallptr], sizeof(GLfloat) * 3);
 
-            if ((wal->cstat & 16) || (wal->overpicnum == 0))
-                curpicnum = wallpicnum;
-            else
-                curpicnum = walloverpicnum;
+            curpicnum = wallpicnum;
 
             w->over.bucket = polymer_getbuildmaterial(&w->over.material, curpicnum, wal->pal, wal->shade, sec->visibility, DAMETH_WALL);
 
