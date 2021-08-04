@@ -388,7 +388,7 @@ static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfil
 
 static void sv_loadMapart(usermaphack_t* const mhkInfo, char* const currentboardfilename)
 {
-    if (mhkInfo)
+    if (mhkInfo && mhkInfo->mapart)
     {
         initprintf("Using mapinfo-defined mapart \"%s\"\n", mhkInfo->mapart);
         artSetupMapArt(mhkInfo->mapart);

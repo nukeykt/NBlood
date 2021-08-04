@@ -10589,7 +10589,7 @@ skip_reading_mapbin:
                                             sizeof(usermaphack_t), compare_usermaphacks);
 
         // Per-map ART
-        if (mapInfo)
+        if (mapInfo && mapInfo->mapart)
         {
             initprintf("Using mapinfo-defined mapart \"%s\"\n", mapInfo->mapart);
             artSetupMapArt(mapInfo->mapart);
