@@ -4726,6 +4726,7 @@ static void Keys3d(void)
                 !eitherALT ? ", aligning xrepeats" : "",
                 keystatus[KEYSC_QUOTE] ? ", aligning TROR-nextwalls" : "",
                 (wall[searchbottomwall].cstat&4) ? "" : ". WARNING: top-aligned");
+        asksave = 1;
     }
 
     tsign = 0;
@@ -4739,6 +4740,7 @@ static void Keys3d(void)
             sprite[searchwall].ang += tsign<<(!eitherSHIFT*7);
             sprite[searchwall].ang &= 2047;
             message("Sprite %d angle: %d", searchwall, TrackerCast(sprite[searchwall].ang));
+            asksave = 1;
         }
     }
 
