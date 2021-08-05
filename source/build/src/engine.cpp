@@ -11656,16 +11656,16 @@ fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
     if ((xvect | yvect) == 0)
         rv = 0;
     else if (xvect == 0)
-        rv = fix16_from_int(512 + ((yvect < 0) << 10));
+        rv = F16(512) + fix16_from_int(((yvect < 0) << 10));
     else if (yvect == 0)
         rv = fix16_from_int(((xvect < 0) << 10));
     else if (xvect == yvect)
-        rv = fix16_from_int(256 + ((xvect < 0) << 10));
+        rv = F16(256) + fix16_from_int(((xvect < 0) << 10));
     else if (xvect == -yvect)
-        rv = fix16_from_int(768 + ((xvect > 0) << 10));
+        rv = F16(768) + fix16_from_int(((xvect > 0) << 10));
     else if (klabs(xvect) > klabs(yvect))
         rv = ((qradarang[5120 + scale(1280, yvect, xvect)] >> 6) + fix16_from_int(((xvect < 0) << 10))) & 0x7FFFFFF;
-    else rv = ((qradarang[5120 - scale(1280, xvect, yvect)] >> 6) + fix16_from_int(512 + ((yvect < 0) << 10))) & 0x7FFFFFF;
+    else rv = ((qradarang[5120 - scale(1280, xvect, yvect)] >> 6) + F16(512) + fix16_from_int(((yvect < 0) << 10))) & 0x7FFFFFF;
 
     return rv;
 }
