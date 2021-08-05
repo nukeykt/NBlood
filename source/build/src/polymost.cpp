@@ -3261,7 +3261,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     Bassert(pth);
 
-    const GLuint clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 
     // If we aren't rendmode 3, we're in Polymer, which means this code is
     // used for rotatesprite only. Polymer handles all the material stuff,
@@ -3280,11 +3279,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
         if (drawpoly_trepeat)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-    }
-    else if (method & DAMETH_CLAMPED)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_mode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_mode);
     }
 
     // texture scale by parkar request
@@ -3673,6 +3667,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     }
     else if (!nofog)
         polymost_setFogEnabled(true);
+
+    const GLuint clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 
     if (drawpoly_srepeat)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_mode);

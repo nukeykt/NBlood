@@ -4918,7 +4918,7 @@ static void         polymer_getscratchmaterial(_prmaterial* material)
     material->mdspritespace = GL_FALSE;
 }
 
-static void         polymer_setupartmap(int16_t tilenum, char pal)
+static void         polymer_setupartmap(int16_t tilenum, char pal, int32_t meth)
 {
     if (!prartmaps[tilenum]) {
         char *tilebuffer = (char *) waloff[tilenum];
@@ -4949,8 +4949,8 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
             tempbuffer);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, meth & DAMETH_CLAMPED ? glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, meth & DAMETH_CLAMPED ? glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP : GL_REPEAT);
         polymost_bindTexture(GL_TEXTURE_2D, 0);
         Xfree(tempbuffer);
     }
@@ -5032,7 +5032,7 @@ static _prbucket*   polymer_getbuildmaterial(_prmaterial* material, int16_t tile
         }
 
         if (!prartmaps[tilenum] || !prbasepalmaps[curbasepal] || !prlookups[pal])
-            polymer_setupartmap(tilenum, pal);
+            polymer_setupartmap(tilenum, pal, cmeth);
 
         material->artmap = prartmaps[tilenum];
         material->basepalmap = prbasepalmaps[curbasepal];
