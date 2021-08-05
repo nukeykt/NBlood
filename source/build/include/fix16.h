@@ -58,12 +58,12 @@ static FORCE_INLINE CONSTEXPR fix16_t fix16_from_dbl(double a)  { return (fix16_
 */
 #define F16(x) ((fix16_t)(((x) >= 0) ? ((x) * 65536.0 + 0.5) : ((x) * 65536.0 - 0.5)))
 
-static FORCE_INLINE CONSTEXPR fix16_t fix16_abs(fix16_t x)   { return (x < 0 ? -x : x); }
-static FORCE_INLINE CONSTEXPR fix16_t fix16_floor(fix16_t x) { return (x & 0xFFFF0000UL); }
-static FORCE_INLINE CONSTEXPR fix16_t fix16_ceil(fix16_t x)  { return (x & 0xFFFF0000UL) + ((x & 0x0000FFFFUL) ? fix16_one : 0); }
-static FORCE_INLINE CONSTEXPR fix16_t fix16_min(fix16_t x, fix16_t y) { return (x < y ? x : y); }
-static FORCE_INLINE CONSTEXPR fix16_t fix16_max(fix16_t x, fix16_t y) { return (x > y ? x : y); }
-static FORCE_INLINE CONSTEXPR fix16_t fix16_clamp(fix16_t x, fix16_t lo, fix16_t hi) { return fix16_min(fix16_max(x, lo), hi); }
+static FORCE_INLINE fix16_t fix16_abs(fix16_t const x)   { return abs(x); }
+static FORCE_INLINE CONSTEXPR fix16_t fix16_floor(fix16_t const x) { return (x & 0xFFFF0000UL); }
+static FORCE_INLINE CONSTEXPR fix16_t fix16_ceil(fix16_t const x)  { return (x & 0xFFFF0000UL) + ((x & 0x0000FFFFUL) ? fix16_one : 0); }
+static FORCE_INLINE fix16_t fix16_min(fix16_t const x, fix16_t const y) { return min(x, y); }
+static FORCE_INLINE fix16_t fix16_max(fix16_t const x, fix16_t const y) { return max(x, y); }
+static FORCE_INLINE fix16_t fix16_clamp(fix16_t const x, fix16_t const lo, fix16_t const hi) { return clamp(x, lo, hi); }
 
 /* Subtraction and addition with overflow detection. */
 extern fix16_t fix16_add(fix16_t a, fix16_t b) FIXMATH_FUNC_ATTRS;
