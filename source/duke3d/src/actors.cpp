@@ -2553,18 +2553,42 @@ DETONATE:
                         int const  p  = A_FindPlayer(pSprite, &playerDist);
                         auto const ps = g_player[p].ps;
 
-                        if (dist(&sprite[ps->i], pSprite) < VIEWSCREEN_ACTIVE_DISTANCE)
+                        // EDuke32 extension: xvel of viewscreen determines active distance
+                        int const activeDist = pSprite->xvel > 0 ? pSprite->xvel : VIEWSCREEN_ACTIVE_DISTANCE;
+
+                        if (dist(&sprite[ps->i], pSprite) < activeDist)
                         {
-#if 0
-                        if (sprite[i].yvel == 1)  // VIEWSCREEN_YVEL
-                            g_curViewscreen = i;
-#endif
+                            // DOS behavior: yvel of 1 activates screen if player approaches
+                            if (g_curViewscreen == -1 && pSprite->yvel & 1)
+                            {
+                                g_curViewscreen = spriteNum;
+
+                                // EDuke32 extension: for remote activation, check for connected camera and display its image
+                                if (sprite[spriteNum].hitag)
+                                {
+                                    for (bssize_t SPRITES_OF(STAT_ACTOR, otherSprite))
+                                    {
+                                        if (PN(otherSprite) == CAMERA1 && sprite[spriteNum].hitag == SLT(otherSprite))
+                                        {
+                                            sprite[spriteNum].owner = otherSprite;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } // deactivate viewscreen in valid range if yvel is 0
+                            else if (g_curViewscreen == spriteNum && !(pSprite->yvel & 3))
+                            {
+                                g_curViewscreen    = -1;
+                                T1(spriteNum)      =  0;
+                                for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
+                                    walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
+                            }
                         }
                         else if (g_curViewscreen == spriteNum /*&& T1 == 1*/)
                         {
-                            g_curViewscreen        = -1;
-                            sprite[spriteNum].yvel = 0;  // VIEWSCREEN_YVEL
-                            T1(spriteNum)          = 0;
+                            g_curViewscreen    = -1;
+                            pSprite->yvel     &= ~2; // VIEWSCREEN YVEL
+                            T1(spriteNum)      =  0;
 
                             for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
                                 walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
