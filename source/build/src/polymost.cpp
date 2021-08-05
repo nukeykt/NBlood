@@ -7424,8 +7424,16 @@ int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
     return rv;
 }
 
-#define TSPR_OFFSET_FACTOR (1.f - (1.f/8192.f))
-#define TSPR_OFFSET_FACTOR2 (1.f - (1.f/1024.f))
+// it looks like the TSPR_DEPTH_OFFSET_[WALL, FLOOR] stuff might
+// be enough on its own, but it needs testing
+#define TSPR_OFFSET_FACTOR (1.f)//(1.f - (1.f/8192.f))
+#define TSPR_OFFSET_FACTOR2 (1.f - (1.f/2048.f))
+#define TSPR_DEPTH_OFFSET_WALL(x) (x * r_spritedepthmul)
+#define TSPR_DEPTH_OFFSET_FLOOR(x) (x * r_spritedepthmul)
+#define TSPR_BASE_DEPTH (1.0001f)
+
+float r_spritedepth = TSPR_BASE_DEPTH;
+float r_spritedepthmul = (1.f/8.f);
 
 #ifdef POLYMOST2
 void polymost2_drawsprite(int32_t snum)
@@ -8314,14 +8322,14 @@ void polymost_drawsprite(int32_t snum)
                 }
             }
 
+            vec2f_t const vec1 = { extent.x * ftsiz.x + vec0.x,
+                                   extent.y * ftsiz.x + vec0.y };
+
             vec2f_t p0 = { vec0.y * gcosang - vec0.x * gsinang,
                            vec0.x * gcosang2 + vec0.y * gsinang2 };
 
-            vec2f_t const pp = { extent.x * ftsiz.x + vec0.x,
-                                 extent.y * ftsiz.x + vec0.y };
-
-            vec2f_t p1 = { pp.y * gcosang - pp.x * gsinang,
-                           pp.x * gcosang2 + pp.y * gsinang2 };
+            vec2f_t p1 = { vec1.y * gcosang - vec1.x * gsinang,
+                           vec1.x * gcosang2 + vec1.y * gsinang2 };
 
             if ((p0.y <= SCISDIST) && (p1.y <= SCISDIST))
                 goto _drawsprite_return;
@@ -8350,6 +8358,17 @@ void polymost_drawsprite(int32_t snum)
             f = 1.f / p1.y;
             const float ryp1 = f * gyxscale;
             float sx1 = ghalfx * p1.x * f + ghalfx;
+
+            float const foffs = TSPR_DEPTH_OFFSET_WALL((1.f / (1.f + (float)(tspr - tsprite))));
+            float const dist  = sepdist(globalposx - tspr->x, globalposy - tspr->y, globalposz - tspr->z);
+
+            //if (sx0 < sx1)
+            float depthadjust = r_spritedepth + foffs / dist;
+            //
+            //else
+            //    depthadjust = 1.f - foffs / dist;
+
+            //depthadjust = clamp(depthadjust, 0.999f, 1.001f);
 
             pos.z -= ((off.y * tspr->yrepeat) << 2);
 
@@ -8418,6 +8437,16 @@ void polymost_drawsprite(int32_t snum)
                 otex.v -= otex.d * ypan;
                 drawpoly_trepeat = 1;
             }
+
+            xtex.u *= depthadjust;
+            xtex.v *= depthadjust;
+            xtex.d *= depthadjust;
+            ytex.u *= depthadjust;
+            ytex.v *= depthadjust;
+            ytex.d *= depthadjust;
+            otex.u *= depthadjust;
+            otex.v *= depthadjust;
+            otex.d *= depthadjust;
 
             // Clip sprites to ceilings/floors when no parallaxing
             if (!(sector[tspr->sectnum].ceilingstat & 1))
@@ -8677,7 +8706,22 @@ void polymost_drawsprite(int32_t snum)
                     float const rr = Bsqrtf(fheinum * fheinum + 1.f);
                     xtex.v *= rr; ytex.v *= rr; otex.v *= rr;
                 }
-                
+
+                float const foffs = TSPR_DEPTH_OFFSET_FLOOR((1.f / (1.f + (float)(tspr - tsprite))));
+                float const dist  = sepdist(globalposx - tspr->x, globalposy - tspr->y, globalposz - tspr->z);
+
+                float depthadjust = r_spritedepth + foffs / dist;
+
+                xtex.u *= depthadjust;
+                xtex.v *= depthadjust;
+                xtex.d *= depthadjust;
+                ytex.u *= depthadjust;
+                ytex.v *= depthadjust;
+                ytex.d *= depthadjust;
+                otex.u *= depthadjust;
+                otex.v *= depthadjust;
+                otex.d *= depthadjust;
+
                 tilesiz[globalpicnum] = { (int16_t)tsiz.x, (int16_t)tsiz.y };
                 pow2xsplit = 0;
 
@@ -9871,6 +9915,8 @@ void polymost_initosdfuncs(void)
         { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_BOOL, 0, 1 },
         { "r_shadescale","multiplier for shading",(void *) &shadescale, CVAR_FLOAT, 0, 10 },
         { "r_shadescale_unbounded","enable/disable allowance of complete blackness",(void *) &shadescale_unbounded, CVAR_BOOL, 0, 1 },
+        { "r_spritedepth","depth offset for sprites",(void*)&r_spritedepth, CVAR_FLOAT|CVAR_NOSAVE, 1, 10 },
+        { "r_spritedepthmul","depth offset multiplier for sprites",(void*)&r_spritedepthmul, CVAR_FLOAT|CVAR_NOSAVE, 0, 1 },
         { "r_texcompr","enable/disable OpenGL texture compression: 0: off  1: hightile only  2: ART and hightile",(void *) &glusetexcompr, CVAR_INT, 0, 2 },
         { "r_texturemaxsize","changes the maximum OpenGL texture size limit",(void *) &gltexmaxsize, CVAR_INT | CVAR_NOSAVE, 0, 4096 },
         { "r_texturemiplevel","changes the highest OpenGL mipmap level used",(void *) &gltexmiplevel, CVAR_INT, 0, 6 },
