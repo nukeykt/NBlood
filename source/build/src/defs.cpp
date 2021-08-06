@@ -94,12 +94,9 @@ enum scripttoken_t
     T_ANIMTILERANGE,
     T_CACHESIZE,
     T_IMPORTTILE,
-    T_MUSIC,T_ID,T_SOUND,
     T_TILEFROMTEXTURE, T_XOFFSET, T_YOFFSET, T_TEXHITSCAN, T_NOFULLBRIGHT,
     T_ARTFILE,
     T_INCLUDEDEFAULT,
-    T_ANIMSOUNDS,
-    T_CUTSCENE,
     T_NOFLOORPALRANGE,
     T_TEXHITSCANRANGE,
     T_NOFULLBRIGHTRANGE,
@@ -107,7 +104,6 @@ enum scripttoken_t
     T_ECHO,
     T_GLOBALFLAGS,
     T_COPYTILE,
-    T_GLOBALGAMEFLAGS,
     T_MULTIPSKY, T_HORIZFRAC, T_LOGNUMTILES,
     T_BASEPALETTE, T_PALOOKUP, T_BLENDTABLE,
     T_RAW, T_OFFSET, T_SHIFTLEFT, T_NOSHADES, T_COPY,
@@ -124,10 +120,10 @@ enum scripttoken_t
     T_SHADEFACTOR,
     T_IFCRC,T_IFMATCH,T_CRC32,
     T_SIZE,
-    T_NEWGAMECHOICES,
     T_LOCALIZATION, T_STRING,
     T_TILEFONT, T_CHARACTER,
     T_TRUENPOT,
+    T_STUB_INTEGER, T_STUB_BRACES, T_STUB_STRING_BRACES,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -364,10 +360,6 @@ static int32_t defsparser(scriptfile *script)
         { "makepalookup",    T_MAKEPALOOKUP     },
         { "texture",         T_TEXTURE          },
         { "tile",            T_TEXTURE          },
-        { "music",           T_MUSIC            },
-        { "sound",           T_SOUND            },
-        { "animsounds",      T_ANIMSOUNDS       },  // dummy
-        { "cutscene",        T_CUTSCENE         },
         { "nofloorpalrange", T_NOFLOORPALRANGE  },
         { "texhitscanrange", T_TEXHITSCANRANGE  },
         { "nofullbrightrange", T_NOFULLBRIGHTRANGE },
@@ -399,7 +391,6 @@ static int32_t defsparser(scriptfile *script)
         { "echo",            T_ECHO             },
         { "globalflags",     T_GLOBALFLAGS      },
         { "copytile",        T_COPYTILE         },
-        { "globalgameflags", T_GLOBALGAMEFLAGS  },  // dummy
         { "multipsky",       T_MULTIPSKY        },
         { "basepalette",     T_BASEPALETTE      },
         { "palookup",        T_PALOOKUP         },
@@ -409,9 +400,16 @@ static int32_t defsparser(scriptfile *script)
         { "undefpalookuprange", T_UNDEFPALOOKUPRANGE },
         { "undefblendtablerange", T_UNDEFBLENDTABLERANGE },
         { "shadefactor",     T_SHADEFACTOR      },
-        { "newgamechoices",  T_NEWGAMECHOICES   },
         { "localization",    T_LOCALIZATION     },
         { "tilefont",        T_TILEFONT         },
+
+        // stubs for game-side tokens
+        { "globalgameflags", T_STUB_INTEGER     },
+        { "music",           T_STUB_BRACES      },
+        { "sound",           T_STUB_BRACES      },
+        { "newgamechoices",  T_STUB_BRACES      },
+        { "animsounds",      T_STUB_STRING_BRACES },
+        { "cutscene",        T_STUB_STRING_BRACES },
     };
 
     while (1)
@@ -2613,23 +2611,6 @@ static int32_t defsparser(scriptfile *script)
         }
         break;
 
-        case T_CUTSCENE:
-        case T_ANIMSOUNDS:
-        {
-            char *dummy;
-
-            static const tokenlist dummytokens[] = { { "id",   T_ID  }, };
-
-            if (EDUKE32_PREDICT_FALSE(scriptfile_getstring(script, &dummy))) break;
-            if (EDUKE32_PREDICT_FALSE(scriptfile_getbraces(script,&dummy))) break;
-            while (script->textptr < dummy)
-            {
-                // XXX?
-                getatoken(script,dummytokens,sizeof(dummytokens)/sizeof(dummytokens));
-            }
-        }
-        break;
-
         case T_TEXHITSCANRANGE:
         case T_NOFULLBRIGHTRANGE:
         {
@@ -2644,32 +2625,6 @@ static int32_t defsparser(scriptfile *script)
             for (i=b; i<=e; i++)
                 picanm[i].sf |= (tokn==T_TEXHITSCANRANGE) ?
                     PICANM_TEXHITSCAN_BIT : PICANM_NOFULLBRIGHT_BIT;
-        }
-        break;
-
-        case T_SOUND:
-        case T_MUSIC:
-        {
-            char *dummy, *dummy2;
-            static const tokenlist sound_musictokens[] =
-            {
-                { "id",   T_ID  },
-                { "file", T_FILE },
-            };
-
-            if (EDUKE32_PREDICT_FALSE(scriptfile_getbraces(script,&dummy))) break;
-            while (script->textptr < dummy)
-            {
-                switch (getatoken(script,sound_musictokens,ARRAY_SIZE(sound_musictokens)))
-                {
-                case T_ID:
-                    scriptfile_getstring(script,&dummy2);
-                    break;
-                case T_FILE:
-                    scriptfile_getstring(script,&dummy2);
-                    break;
-                }
-            }
         }
         break;
 
@@ -2759,13 +2714,6 @@ static int32_t defsparser(scriptfile *script)
         case T_GLOBALFLAGS:
         {
             if (scriptfile_getnumber(script,&globalflags)) break;
-        }
-        break;
-
-        case T_GLOBALGAMEFLAGS:
-        {
-            int32_t dummy;
-            if (scriptfile_getnumber(script,&dummy)) break;
         }
         break;
 
@@ -3737,15 +3685,6 @@ static int32_t defsparser(scriptfile *script)
         }
         break;
 
-        case T_NEWGAMECHOICES: // stub
-        {
-            char *blockend;
-            if (scriptfile_getbraces(script,&blockend))
-                break;
-            script->textptr = blockend+1;
-            break;
-        }
-
         case T_LOCALIZATION:
         {
             char * localeName;
@@ -3898,6 +3837,33 @@ static int32_t defsparser(scriptfile *script)
                     }
                 }
             }
+            break;
+        }
+
+        case T_STUB_INTEGER:
+        {
+            int32_t dummy;
+            scriptfile_getnumber(script, &dummy);
+            break;
+        }
+
+        case T_STUB_BRACES:
+        {
+            char * blockend;
+            if (scriptfile_getbraces(script, &blockend))
+                break;
+            script->textptr = blockend+1;
+            break;
+        }
+
+        case T_STUB_STRING_BRACES:
+        {
+            char * blockend;
+            if (scriptfile_getstring(script, &blockend))
+                break;
+            if (scriptfile_getbraces(script, &blockend))
+                break;
+            script->textptr = blockend+1;
             break;
         }
 
