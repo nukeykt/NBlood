@@ -2375,24 +2375,21 @@ int32_t AskIfSure(const char *text)
     return retval;
 }
 
-static int32_t IsValidTile(int32_t idTile)
+static FORCE_INLINE bool IsValidTile(int const idTile)
 {
-    // this is MAXTILES-1 because TROR uses that tile and we don't need it showing up in the tile selector, etc
-    return (idTile>=0 && idTile<MAXTILES-1) && (tilesiz[idTile].x && tilesiz[idTile].y) && rottile[idTile].owner == -1;
+    return (unsigned)idTile < MAXUSERTILES && tilesiz[idTile].x && tilesiz[idTile].y && rottile[idTile].owner == -1;
 }
 
 static int32_t SelectAllTiles(int32_t iCurrentTile)
 {
-    int32_t i;
-
     if (iCurrentTile < localartlookupnum)
         iCurrentTile = localartlookup[iCurrentTile];
     else
         iCurrentTile = 0;
 
-    localartlookupnum = MAXTILES;
+    localartlookupnum = MAXUSERTILES;
 
-    for (i = 0; i < MAXTILES; i++)
+    for (int i = 0; i < MAXUSERTILES; i++)
     {
         localartlookup[i] = i;
         localartfreq[i] = 0;
@@ -2452,22 +2449,23 @@ static inline void popDisableFog(void)
 #endif
 }
 
-static void editorCalculateTileViewerDimensions(int32_t *nXTiles, int32_t *nYTiles, int32_t *nDisplayedTiles)
+
+static void editorCalculateTileViewerDimensions(int32_t *nXTiles, int32_t *nYTiles, int32_t *nDisplayedTiles, int32_t *nzoom)
 {
     int nx, ny, ndisplayed;
 
     do
     {
-        nx = xdim / ZoomToThumbSize[s_Zoom];
-        ny = ydim / ZoomToThumbSize[s_Zoom];
+        nx = xdim / ZOOMSIZ(*nzoom);
+        ny = (ydim / ZOOMSIZ(*nzoom))+1;
         // Refuse to draw less than half of a row.
-        if (ZoomToThumbSize[s_Zoom]/2 < 12) ny--;
+        if (ZOOMSIZ(*nzoom)>>1 < 12) ny--;
         ndisplayed = nx * ny;
 
         if (!ndisplayed)
         {
             // Eh-up, resolution changed since we were last displaying tiles.
-            s_Zoom--;
+            (*nzoom)++;
         }
     } while (!ndisplayed);
 
@@ -2476,64 +2474,192 @@ static void editorCalculateTileViewerDimensions(int32_t *nXTiles, int32_t *nYTil
     *nDisplayedTiles = ndisplayed;
 }
 
-static int32_t m32gettile(int32_t idInitialTile)
+
+static int32_t editorTilePickerBasicKeys(int32_t tileNum, int32_t nXTiles, int32_t iTopLeftTile, int32_t nDisplayedTiles)
 {
-    int32_t gap, temp, zoomsz;
-    int32_t nXTiles = 0, nYTiles = 0, nDisplayedTiles = 0;
+    if (PRESSED_KEYSC(LEFT))
+    {
+        if (eitherCTRL)  // same as HOME, for consistency with CTRL-UP/DOWN
+            tileNum = (tileNum/nXTiles)*nXTiles;
+        else
+            tileNum--;
+    }
+
+    if (PRESSED_KEYSC(RIGHT))
+    {
+        if (eitherCTRL)  // same as END, for consistency with CTRL-UP/DOWN
+            tileNum = ((tileNum+nXTiles)/nXTiles)*nXTiles - 1;
+        else
+            tileNum++;
+    }
+
+    if (PRESSED_KEYSC(UP))
+    {
+        if (eitherCTRL)
+            while (tileNum-nXTiles >= iTopLeftTile)
+                tileNum -= nXTiles;
+        else
+            tileNum -= nXTiles;
+    }
+
+    if (PRESSED_KEYSC(DOWN))
+    {
+        if (eitherCTRL)
+            while (tileNum+nXTiles < iTopLeftTile + nDisplayedTiles)
+                tileNum += nXTiles;
+        else
+            tileNum += nXTiles;
+    }
+
+    if (PRESSED_KEYSC(PGUP))
+    {
+        if (eitherCTRL)
+            tileNum = 0;
+        else
+            tileNum -= nDisplayedTiles;
+    }
+
+    if (PRESSED_KEYSC(PGDN))
+    {
+        if (eitherCTRL)
+            tileNum = localartlookupnum-1;
+        else
+            tileNum += nDisplayedTiles;
+    }
+
+    if (PRESSED_KEYSC(HOME))
+    {
+        if (eitherCTRL)
+            tileNum = iTopLeftTile;
+        else
+            tileNum = (tileNum/nXTiles)*nXTiles;
+    }
+
+    if (PRESSED_KEYSC(END))
+    {
+        if (eitherCTRL)
+            tileNum = iTopLeftTile + nDisplayedTiles - 1;
+        else
+            tileNum = ((tileNum+nXTiles)/nXTiles)*nXTiles - 1;
+    }
+
+    if (PRESSED_KEYSC(DASH))
+    {
+        if (globalpal > 0)
+            globalpal--;
+        else globalpal = M32_MAXPALOOKUPS;
+
+        while (globalpal > 0 && (!palookup[globalpal] || palookup[globalpal] == palookup[0]))
+            globalpal--;
+    }
+
+    if (PRESSED_KEYSC(EQUAL))
+    {
+        if (globalpal < M32_MAXPALOOKUPS)
+        {
+            globalpal++;
+
+            while (globalpal < M32_MAXPALOOKUPS && (!palookup[globalpal] || palookup[globalpal] == palookup[0]))
+                globalpal++;
+
+            if (globalpal == M32_MAXPALOOKUPS)
+                globalpal = 0;
+        }
+        else globalpal = 0;
+    }
+
+    if (PRESSED_KEYSC(BS))
+        globalpal = 0;     
+
+    // 'U'  KEYPRESS : go straight to user defined art
+    if (PRESSED_KEYSC(U))
+    {
+        SelectAllTiles(tileNum);
+        tileNum = FIRST_USER_ART_TILE;
+    }
+
+    // 'A'  KEYPRESS : Go straight to start of Atomic edition's art
+    if (PRESSED_KEYSC(A))
+    {
+        SelectAllTiles(tileNum);
+        tileNum = FIRST_ATOMIC_TILE;
+    }
+
+    // 'E'  KEYPRESS : Go straight to start of extended art
+    if (PRESSED_KEYSC(E))
+    {
+        SelectAllTiles(tileNum);
+
+        if (tileNum == FIRST_EXTENDED_TILE)
+            tileNum = SECOND_EXTENDED_TILE;
+        else tileNum = FIRST_EXTENDED_TILE;
+    }
+
+    // 'T' KEYPRESS = Select from pre-defined tileset
+    if (PRESSED_KEYSC(T))
+        tileNum = OnSelectTile(tileNum);
+
+    // change palette
+    if (PRESSED_KEYSC(P))
+    {
+        Bsprintf(tempbuf, "%s pal: ", Typestr[searchstat]);
+
+        int pal;
+
+        do
+        {
+            pal = getnumber256(tempbuf, globalpal, M32_MAXPALOOKUPS, 0+2+16);
+        } while (pal != 0 && (palookup[pal] == palookup[0] || palookup[pal] == NULL));
+
+        globalpal = pal;
+    }
+
+    if (PRESSED_KEYSC(Z))
+        s_TileZoom = !s_TileZoom;
+
+    return tileNum;
+}
+
+static int32_t editorCalculateTileUsage(int32_t idInitialTile)
+{
+    int32_t gap, temp;
     int32_t i;
-    int32_t tileNum, iTopLeftTile, iLastTile;
-    int32_t idSelectedTile, idInitialPal;
-    int32_t scrollmode;
-    int32_t mousedx, mousedy, mtile, omousex=searchx, omousey=searchy, moffset=0;
 
-    int32_t noTilesMarked=1;
-    int32_t mark_lastk = -1;
-
-    FX_StopAllSounds();
-    S_ClearSoundLocks();
-
-    pushDisableFog();
-
-    // Enable following line for testing. I couldn't work out how to change vidmode on the fly
-    // s_Zoom = NUM_ZOOMS - 1;
-
-    idInitialTile = clamp(idInitialTile, 0, MAXTILES-1);
+    idInitialTile = clamp(idInitialTile, 0, MAXUSERTILES-1);
 
     keystatus[KEYSC_V] = 0;
 
-    for (i = 0; i < MAXTILES; i++)
+    for (i = 0; i < MAXUSERTILES; i++)
     {
         localartfreq[i] = 0;
         localartlookup[i] = i;
     }
 
-    iLastTile = tileNum = idSelectedTile = idInitialTile;
-    idInitialPal = globalpal;
 
     switch (searchstat)
     {
     case SEARCH_WALL:
         for (i = 0; i < numwalls; i++)
-            localartfreq[ wall[i].picnum ]++;
+            localartfreq[wall[i].picnum]++;
         break;
 
     case SEARCH_CEILING:
     case SEARCH_FLOOR:
         for (i = 0; i < numsectors; i++)
         {
-            localartfreq[ sector[i].ceilingpicnum ]++;
-            localartfreq[ sector[i].floorpicnum ]++;
+            localartfreq[sector[i].ceilingpicnum]++;
+            localartfreq[sector[i].floorpicnum]++;
         }
         break;
 
     case SEARCH_SPRITE:
         for (i=0; i<MAXSPRITES; i++)
-            localartfreq[ sprite[i].picnum ] += (sprite[i].statnum < MAXSTATUS);
+            localartfreq[sprite[i].picnum] += (sprite[i].statnum < MAXSTATUS);
         break;
 
     case SEARCH_MASKWALL:
         for (i = 0; i < numwalls; i++)
-            localartfreq[ wall[i].overpicnum ]++;
+            localartfreq[wall[i].overpicnum]++;
         break;
 
     default:
@@ -2545,11 +2671,11 @@ static int32_t m32gettile(int32_t idInitialTile)
     //	Sort tiles into frequency order
     //
 
-    gap = MAXTILES / 2;
+    gap = MAXUSERTILES / 2;
 
     do
     {
-        for (i = 0; i < MAXTILES-gap; i++)
+        for (i = 0; i < MAXUSERTILES-gap; i++)
         {
             temp = i;
 
@@ -2565,17 +2691,16 @@ static int32_t m32gettile(int32_t idInitialTile)
                 localartlookup[temp] = localartlookup[temp+gap];
                 localartlookup[temp+gap] = tempint;
 
-                if (tileNum == temp)
-                    tileNum = temp + gap;
-                else if (tileNum == temp + gap)
-                    tileNum = temp;
+                if (idInitialTile == temp)
+                    idInitialTile = temp + gap;
+                else if (idInitialTile == temp + gap)
+                    idInitialTile = temp;
 
                 temp -= gap;
             }
         }
         gap >>= 1;
-    }
-    while (gap > 0);
+    } while (gap > 0);
 
     //
     // Set up count of number of used tiles
@@ -2591,30 +2716,48 @@ static int32_t m32gettile(int32_t idInitialTile)
 
     if (!localartfreq[0])
     {
-        localartlookupnum = MAXTILES;
+        localartlookupnum = MAXUSERTILES;
 
-        for (i = 0; i < MAXTILES; i++)
+        for (i = 0; i < MAXUSERTILES; i++)
         {
             localartlookup[i] = i;
             localartfreq[i] = 0; // Terrible bodge : zero tilefreq's not displayed in tile view. Still, when in Rome ... :-)
         }
-
-        tileNum = idInitialTile;
     }
 
-    //
-    //
-    //
+    return idInitialTile;
+}
 
-    editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles);
+static int32_t editorGetTile(int32_t idInitialTile)
+{
+    int32_t zoomsz;
+    int32_t nXTiles = 0, nYTiles = 0, nDisplayedTiles = 0;
+    int32_t tileNum, iTopLeftTile, iLastTile;
+    int32_t idSelectedTile, idInitialPal;
+    int32_t scrollmode;
+    int32_t mousedx, mousedy, mtile=0, omousex=searchx, omousey=searchy, moffset=0;
+    int32_t nmoffset=0;
+
+    int32_t noTilesMarked=1;
+    int32_t mark_lastk = -1;
+
+    FX_StopAllSounds();
+    S_ClearSoundLocks();
+
+    pushDisableFog();
+
+    iLastTile = tileNum = idSelectedTile = editorCalculateTileUsage(idInitialTile);
+    idInitialPal = globalpal;
+
+    editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles, &s_Zoom);
 
     iTopLeftTile = tileNum - (tileNum % nXTiles);
-    iTopLeftTile = clamp(iTopLeftTile, 0, MAXTILES-nDisplayedTiles);
+    iTopLeftTile = clamp(iTopLeftTile, 0, MAXUSERTILES-nDisplayedTiles);
 
-    zoomsz = ZoomToThumbSize[s_Zoom];
+    zoomsz = ZOOMSIZ(s_Zoom);
 
-    searchx = ((tileNum-iTopLeftTile)%nXTiles)*zoomsz + zoomsz/2;
-    searchy = ((tileNum-iTopLeftTile)/nXTiles)*zoomsz + zoomsz/2;
+    searchx = ((tileNum-iTopLeftTile)%nXTiles)*zoomsz + (zoomsz>>1);
+    searchy = ((tileNum-iTopLeftTile)/nXTiles)*zoomsz + (zoomsz>>1);
 
     editorMaybeWarpMouse(searchx, searchy);
 
@@ -2622,246 +2765,216 @@ static int32_t m32gettile(int32_t idInitialTile)
     // Start of key handling code //
     ////////////////////////////////
 
+    ClockTicks lastclock = 0;
+    int32_t omoffset = 0;
+    int32_t ozoom = s_Zoom;
+    int32_t nzoom = s_Zoom;
+    int32_t olocked;
+
+    auto doSmoothScrolling = [&](int const amt)
+    {
+        nmoffset += amt;
+
+        //if ((nmoffset < 0 && iTopLeftTile > localartlookupnum - 1) || (nmoffset > 0 && iTopLeftTile == 0))
+        //{
+        //    nmoffset=0;
+        //    omoffset=0;
+        //    return true;
+        //}
+
+        while (nmoffset >= ZOOMSIZ(nzoom))
+        {
+            iTopLeftTile -= nXTiles;
+            nmoffset -= ZOOMSIZ(nzoom);
+            omoffset -= ZOOMSIZ(nzoom);
+        }
+
+        while (nmoffset <= -ZOOMSIZ(nzoom))
+        {
+            iTopLeftTile += nXTiles;
+            nmoffset += ZOOMSIZ(nzoom);
+            omoffset += ZOOMSIZ(nzoom);
+        }
+
+        return false;
+    };
+
     while ((keystatus[KEYSC_ENTER]|keystatus[KEYSC_ESC]|(bstatus&1)) == 0)
     {
-        editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles);
+        editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles, &nzoom);
 
-        int32_t ret;
-        zoomsz = ZoomToThumbSize[s_Zoom];
+        int32_t clock = (int32_t)(totalclock - lastclock);
 
-        ret = DrawTiles(iTopLeftTile, (tileNum >= localartlookupnum) ? localartlookupnum-1 : tileNum,
-                        nXTiles, nYTiles, zoomsz, moffset,
-                        (tilesel_showerr && (tileNum==iLastTile || (tilesel_showerr=0))));
+        if ((int32_t)clock > 3)
+        {
+            lastclock = lastclock + 4;
+            omoffset = nmoffset;
+            ozoom = nzoom;
+            s_Zoom = nzoom;
+        }
+
+        int32_t smoothratio = calc_smoothratio(totalclock, lastclock, 30);
+        moffset = nmoffset - mulscale16(65536-smoothratio, nmoffset - omoffset);
+        //OSD_Printf("moffset %d for smoothratio %d\n", moffset, smoothratio);
+        zoomsz = ZOOMSIZ(nzoom) - mulscale16(65536-smoothratio, ZOOMSIZ(nzoom) - ZOOMSIZ(ozoom));
+        //moffset = nmoffset;
+        //zoomsz = ZOOMSIZ(nzoom);
+        int32_t ret = DrawTiles(iTopLeftTile, (tileNum >= localartlookupnum) ? localartlookupnum-1 : tileNum,
+                                nXTiles, nYTiles, zoomsz, moffset,
+                                (tilesel_showerr && (tileNum==iLastTile || (tilesel_showerr=0))));
+
+        OSD_DispatchQueued();
+
+        if (handleevents())
+            quitevent = 0;
 
         if (ret==0)
         {
-            idle_waitevent_timeout(500);
             // SDL seems to miss mousewheel events when rotated slowly.
+            //if (moffset == nmoffset)
+            //    idle_waitevent_timeout(500);
 
-            if (handleevents())
-                quitevent = 0;
         }
         iLastTile = tileNum;
 
         bstatus = mouseReadButtons();
+
+        olocked = g_mouseLockedToWindow;
         editorMaybeLockMouse(!!(bstatus & ~(16|32)));
 
+        if (osdvisible) continue;
+
         if (g_mouseLockedToWindow)
+        {
             mouseReadPos(&mousedx, &mousedy);
+            searchx += mousedx;
+            searchy += mousedy;
+        }
         else
         {
-                mousedx = g_mousePos.x;
-                mousedy = g_mousePos.y;
-                g_mousePos.x = 0;
-                g_mousePos.y = 0;
-        }
+            // we need to warp to the last position for the RMB panning thing to work right
+            if (olocked)
+                editorMaybeWarpMouse(searchx, searchy);
 
-        searchx += mousedx;
-        searchy += mousedy;
+            mousedx = g_mousePos.x;
+            mousedy = g_mousePos.y;
 
-        if (!g_mouseLockedToWindow)
-        {
+            g_mousePos = {};
+
             searchx = g_mouseAbs.x/upscalefactor;
             searchy = g_mouseAbs.y/upscalefactor;
         }
 
         if (bstatus&2)
         {
-            moffset += mousedy*2;
-            searchy += mousedy;
             searchx -= mousedx;
+            searchy += mousedy;
 
-            if ((moffset < 0 && iTopLeftTile > localartlookupnum-nDisplayedTiles-1)
-                    || (moffset > 0 && iTopLeftTile==0))
-            {
-                moffset=0;
-                searchy -= mousedy*2;
-            }
-
-            while (moffset > zoomsz)
-            {
-                iTopLeftTile -= nXTiles;
-                moffset -= zoomsz;
-            }
-            while (moffset < -zoomsz)
-            {
-                iTopLeftTile += nXTiles;
-                moffset += zoomsz;
-            }
+            if (doSmoothScrolling(mousedy<<1))
+                searchy -= mousedy<<1;
         }
 
         // Keep the pointer visible at all times.
-        temp = min(zoomsz/2, 12);
-        inpclamp(&searchx, temp, xdim-temp);
+        int32_t temp = min(zoomsz>>1, 12);
+        inpclamp(&searchx, temp, nXTiles * zoomsz-1);
         inpclamp(&searchy, temp, ydim-temp);
 
         scrollmode = !(eitherCTRL^revertCTRL);
         if (bstatus&16 && scrollmode && iTopLeftTile > 0)
         {
             g_mouseBits &= ~16;
-            iTopLeftTile -= (nXTiles*scrollamount);
+            doSmoothScrolling(nzoom << scrollamount << 4);
         }
         else if (bstatus&32 && scrollmode && iTopLeftTile < localartlookupnum-nDisplayedTiles-1)
         {
             g_mouseBits &= ~32;
-            iTopLeftTile += (nXTiles*scrollamount);
+            doSmoothScrolling(-(nzoom << scrollamount << 4));
         }
         else if (bstatus&48 && scrollmode)
-        {
             g_mouseBits &= ~48;
-        }
 
-        mtile = tileNum = searchx/zoomsz + ((searchy-moffset)/zoomsz)*nXTiles + iTopLeftTile;
-        while (tileNum >= iTopLeftTile + nDisplayedTiles)
+        //
+        //	Adjust top-left to ensure tilenum is within displayed range of tiles
+        //
+
+
+        //while (tileNum < iTopLeftTile - (nmoffset<0?nXTiles:0))
+        //    iTopLeftTile -= nXTiles;
+
+        //while (tileNum >= iTopLeftTile + nDisplayedTiles - (mtile != tileNum ? nXTiles : 0))
+        //    iTopLeftTile += nXTiles;
+
+        if ((nmoffset < 0 && iTopLeftTile > localartlookupnum - nDisplayedTiles - 1) || (nmoffset > 0 && iTopLeftTile == 0))
         {
-            tileNum -= nXTiles;
-            mtile = tileNum;
+            debug_break();
+            nmoffset=0;
+            omoffset=0;
         }
 
-        // These two lines are so obvious I don't need to comment them ...;-)
+        if (mtile!=tileNum) // if changed by keyboard, update mouse cursor
+        {
+            tileNum = clamp(tileNum, 0, min(MAXUSERTILES-1, localartlookupnum-1));
+            searchx = ((tileNum-iTopLeftTile)%nXTiles) * zoomsz + (zoomsz>>1);
+            searchy = ((tileNum-iTopLeftTile)/nXTiles) * zoomsz + (zoomsz>>1) + nmoffset;
+
+            temp = min(zoomsz>>1, 12);
+            inpclamp(&searchx, temp, xdim-temp);
+            inpclamp(&searchy, temp, ydim-temp);
+
+            // HACK? FIXME? XXX? who knows!
+            editorMaybeWarpMouse(searchx, searchy);
+        }
+
+        iTopLeftTile = clamp(iTopLeftTile, 0, MAXUSERTILES - nDisplayedTiles);
+
+        mtile = tileNum = searchx/zoomsz + ((searchy-nmoffset)/zoomsz)*nXTiles + iTopLeftTile;
+        //while (tileNum >= iTopLeftTile + nDisplayedTiles)
+        //{
+        //    tileNum -= nXTiles;
+        //    mtile = tileNum;
+        //}
+
         synctics = (int32_t) totalclock-lockclock;
         lockclock += synctics;
 
         // Zoom in / out using numeric key pad's / and * keys
-        if (((keystatus[KEYSC_gSLASH] || (!scrollmode && bstatus&16)) && s_Zoom<(signed)(NUM_ZOOMS-1))
-                || ((keystatus[KEYSC_gSTAR]  || (!scrollmode && bstatus&32)) && s_Zoom>0))
+        if (((keystatus[KEYSC_gSLASH] || (!scrollmode && bstatus&16)) && nzoom < (NUM_ZOOMS-1))
+                || ((keystatus[KEYSC_gSTAR]  || (!scrollmode && bstatus&32)) && nzoom > 0))
         {
             if (PRESSED_KEYSC(gSLASH) || (!scrollmode && bstatus&16))
             {
                 g_mouseBits &= ~16;
                 bstatus &= ~16;
+                inputchecked = 1;
 
-                // Watch out : If editor window is small, then the next zoom level
-                //  might get so large that even one tile might not fit !
-                if (ZoomToThumbSize[s_Zoom+1]<=xdim && ZoomToThumbSize[s_Zoom+1]<=ydim)
-                {
-                    // Phew, plenty of room.
-                    s_Zoom++;
-                }
+                if (ZOOMSIZ(nzoom+1) <= xdim && ZOOMSIZ(nzoom+1) <= ydim)
+                    nzoom++;
             }
             else
             {
                 keystatus[KEYSC_gSTAR] = 0;
                 g_mouseBits &= ~32;
                 bstatus &= ~32;
-                s_Zoom--;
+                inputchecked = 1;
+                nzoom--;
             }
-
-            zoomsz = ZoomToThumbSize[s_Zoom];
 
             if (tileNum >= localartlookupnum)
                 tileNum = localartlookupnum-1;
 
-            // Calculate new num of tiles to display
-            nXTiles = xdim / zoomsz;
-            nYTiles = ydim / zoomsz;
-            // Refuse to draw less than half of a row.
-            if (zoomsz/2 < 12)
-                nYTiles--;
-            nDisplayedTiles  = nXTiles * nYTiles;
+            editorCalculateTileViewerDimensions(&nXTiles, &nYTiles, &nDisplayedTiles, &nzoom);
 
             // Determine if the top-left displayed tile needs to
             //   alter in order to display selected tile
             iTopLeftTile = tileNum - (tileNum % nXTiles);
-            iTopLeftTile = clamp(iTopLeftTile, 0, MAXTILES - nDisplayedTiles);
+            iTopLeftTile = clamp(iTopLeftTile, 0, MAXUSERTILES - nDisplayedTiles);
 
             // scroll window so mouse points the same tile as it was before zooming
-            iTopLeftTile -= searchx/zoomsz + ((searchy-moffset)/zoomsz)*nXTiles + iTopLeftTile-tileNum;
+            iTopLeftTile -= searchx/ZOOMSIZ(nzoom) + ((searchy-nmoffset)/ZOOMSIZ(nzoom))*nXTiles + iTopLeftTile-tileNum;
         }
 
-        if (PRESSED_KEYSC(LEFT))
-        {
-            if (eitherCTRL)  // same as HOME, for consistency with CTRL-UP/DOWN
-                tileNum = (tileNum/nXTiles)*nXTiles;
-            else
-                tileNum--;
-        }
-
-        if (PRESSED_KEYSC(RIGHT))
-        {
-            if (eitherCTRL)  // same as END, for consistency with CTRL-UP/DOWN
-                tileNum = ((tileNum+nXTiles)/nXTiles)*nXTiles - 1;
-            else
-                tileNum++;
-        }
-
-        if (PRESSED_KEYSC(UP))
-        {
-            if (eitherCTRL)
-                while (tileNum-nXTiles >= iTopLeftTile)
-                    tileNum -= nXTiles;
-            else
-                tileNum -= nXTiles;
-        }
-
-        if (PRESSED_KEYSC(DOWN))
-        {
-            if (eitherCTRL)
-                while (tileNum+nXTiles < iTopLeftTile + nDisplayedTiles)
-                    tileNum += nXTiles;
-            else
-                tileNum += nXTiles;
-        }
-
-        if (PRESSED_KEYSC(PGUP))
-        {
-            if (eitherCTRL)
-                tileNum = 0;
-            else
-                tileNum -= nDisplayedTiles;
-        }
-
-        if (PRESSED_KEYSC(PGDN))
-        {
-            if (eitherCTRL)
-                tileNum = localartlookupnum-1;
-            else
-                tileNum += nDisplayedTiles;
-        }
-
-        if (PRESSED_KEYSC(HOME))
-        {
-            if (eitherCTRL)
-                tileNum = iTopLeftTile;
-            else
-                tileNum = (tileNum/nXTiles)*nXTiles;
-        }
-
-        if (PRESSED_KEYSC(END))
-        {
-            if (eitherCTRL)
-                tileNum = iTopLeftTile + nDisplayedTiles - 1;
-            else
-                tileNum = ((tileNum+nXTiles)/nXTiles)*nXTiles - 1;
-        }
-
-        if (PRESSED_KEYSC(DASH))
-        {
-            if (globalpal > 0)
-                globalpal--;
-            else globalpal = M32_MAXPALOOKUPS;
-
-            while (globalpal > 0 && (!palookup[globalpal] || palookup[globalpal] == palookup[0]))
-                globalpal--;
-        }
-
-        if (PRESSED_KEYSC(EQUAL))
-        {
-            if (globalpal < M32_MAXPALOOKUPS)
-            {
-                globalpal++;
-
-                while (globalpal < M32_MAXPALOOKUPS && (!palookup[globalpal] || palookup[globalpal] == palookup[0]))
-                    globalpal++;
-
-                if (globalpal == M32_MAXPALOOKUPS)
-                    globalpal = 0;
-            }
-            else globalpal = 0;
-        }
-
-        if (PRESSED_KEYSC(BS))
-            globalpal = 0;
+        int32_t const oldtile = tileNum;
+        tileNum = editorTilePickerBasicKeys(tileNum, nXTiles, iTopLeftTile, nDisplayedTiles);
 
         // 'V'  KEYPRESS
         if (PRESSED_KEYSC(V))
@@ -2884,56 +2997,18 @@ static int32_t m32gettile(int32_t idInitialTile)
                 tileNum = OnGotoTile(tileNum);
         }
 
-        // change palette
-        if (PRESSED_KEYSC(P))
+        if (oldtile != tileNum && (unsigned)tileNum > (unsigned)nXTiles)
         {
-            Bsprintf(tempbuf, "%s pal: ", Typestr[searchstat]);
+            while (iTopLeftTile + nDisplayedTiles - tileNum - 1 < nXTiles)
+                iTopLeftTile += nXTiles;
 
-            int pal;
+            while (tileNum < iTopLeftTile + nXTiles)
+                iTopLeftTile -= nXTiles;
 
-            do
-            {
-                pal = getnumber256(tempbuf, globalpal, M32_MAXPALOOKUPS, 0+2+16);
-            } while (pal != 0 && (palookup[pal] == palookup[0] || palookup[pal] == NULL));
-
-            globalpal = pal;
         }
 
-        // 'U'  KEYPRESS : go straight to user defined art
-        if (PRESSED_KEYSC(U))
-        {
-            SelectAllTiles(tileNum);
-            tileNum = FIRST_USER_ART_TILE;
-        }
-
-        // 'A'  KEYPRESS : Go straight to start of Atomic edition's art
-        if (PRESSED_KEYSC(A))
-        {
-            SelectAllTiles(tileNum);
-            tileNum = FIRST_ATOMIC_TILE;
-        }
-
-        // 'E'  KEYPRESS : Go straight to start of extended art
-        if (PRESSED_KEYSC(E))
-        {
-            SelectAllTiles(tileNum);
-
-            if (tileNum == FIRST_EXTENDED_TILE)
-                tileNum = SECOND_EXTENDED_TILE;
-            else tileNum = FIRST_EXTENDED_TILE;
-        }
-
-        // 'T' KEYPRESS = Select from pre-defined tileset
-        if (PRESSED_KEYSC(T))
-            tileNum = OnSelectTile(tileNum);
-
-        if (PRESSED_KEYSC(Z))
-            s_TileZoom = !s_TileZoom;
-
-        //
-        // Ensure tilenum is within valid range
-        //
-        tileNum = clamp(tileNum, 0, min(MAXTILES-1, localartlookupnum+nDisplayedTiles-1));
+        if (tileNum < nXTiles) iTopLeftTile = 0;
+        else if (tileNum >= MAXUSERTILES-nXTiles) iTopLeftTile = MAXUSERTILES-nDisplayedTiles;
 
         // 'S' KEYPRESS: search for named tile
         if (PRESSED_KEYSC(S))
@@ -2952,7 +3027,7 @@ static int32_t m32gettile(int32_t idInitialTile)
                 Bmemcpy(buf[0], laststr, 25);
                 Bstrupr(buf[0]);
 
-                for (i=(i0+1)%MAXTILES; i!=i0; i=(i+1)%MAXTILES)
+                for (i=(i0+1)%MAXUSERTILES; i!=i0; i=(i+1)%MAXUSERTILES)
                 {
                     Bmemcpy(buf[1], names[i], 25);
                     buf[1][24]=0;
@@ -2970,19 +3045,6 @@ static int32_t m32gettile(int32_t idInitialTile)
 
             g_mousePos.x = g_mousePos.y = g_mouseBits = 0;
         }
-
-        //
-        //	Adjust top-left to ensure tilenum is within displayed range of tiles
-        //
-
-        while (tileNum < iTopLeftTile - (moffset<0)?nXTiles:0)
-            iTopLeftTile -= nXTiles;
-
-        while (tileNum >= iTopLeftTile + nDisplayedTiles)
-            iTopLeftTile += nXTiles;
-
-        iTopLeftTile = clamp(iTopLeftTile, 0, MAXTILES - nDisplayedTiles);
-
 
         // SPACE keypress: mark/unmark selected tile
         if (PRESSED_KEYSC(SPACE))
@@ -3027,14 +3089,6 @@ static int32_t m32gettile(int32_t idInitialTile)
                     }
                 }
             }
-        }
-
-        if (mtile!=tileNum) // if changed by keyboard, update mouse cursor
-        {
-            searchx = ((tileNum-iTopLeftTile)%nXTiles) * zoomsz + zoomsz/2;
-            searchy = ((tileNum-iTopLeftTile)/nXTiles) * zoomsz + zoomsz/2 + moffset;
-            // HACK? FIXME? XXX? who knows!
-            editorMaybeWarpMouse(searchx, searchy);
         }
     }
 
@@ -3240,7 +3294,7 @@ static int32_t OnGotoTile(int32_t tileNum)
     //Automatically press 'V'
     tileNum = SelectAllTiles(tileNum);
 
-    return getnumber256("Goto tile: ", 0, MAXTILES-1, 0+2+16);
+    return getnumber256("Goto tile: ", 0, MAXUSERTILES-1, 0+2+16);
 }
 
 
@@ -3412,7 +3466,7 @@ static void tilescreen_drawbox(int32_t iTopLeft, int32_t iSelected, int32_t nXTi
         int32_t x2 = x1+TileDim-1;
         int32_t y2 = y1+TileDim-1, oydim16=ydim16;
 
-        char markedcol = editorcolors[14];
+        char markedcol = editorcolors[14] - (M32_THROB>>1);
 
         polymostSet2dView();
 
@@ -3424,9 +3478,9 @@ static void tilescreen_drawbox(int32_t iTopLeft, int32_t iSelected, int32_t nXTi
 
         {
             // box
-            int32_t xx[] = {x1, x1, x2, x2, x1};
-            int32_t yy[] = {y1, y2, y2, y1, y1};
-            plotlines2d(xx, yy, 5, tileNum==iSelected ? whitecol : markedcol);
+            int32_t xx[] = {x1+1, x2-1, x2-1, x1+1, x1+1, x1, x2, x2, x1, x1, };
+            int32_t yy[] = { y1+1, y1+1, y2-1, y2-1, y1+1, y1, y1, y2, y2, y1, };
+            plotlines2d(xx, yy, 10, tileNum==iSelected ? batmanandthrobbin() : markedcol);
         }
 
         // cross
@@ -3446,7 +3500,7 @@ static void tilescreen_drawbox(int32_t iTopLeft, int32_t iSelected, int32_t nXTi
 
 static void tilescreen_drawrest(int32_t iSelected, int32_t showmsg)
 {
-    if (iSelected>=0 && iSelected<MAXTILES)
+    if ((unsigned)iSelected < MAXUSERTILES)
     {
         int32_t idTile = localartlookup[iSelected];
         int32_t i;
@@ -3497,11 +3551,11 @@ static int32_t DrawTiles(int32_t iTopLeft, int32_t iSelected, int32_t nXTiles, i
 {
     int32_t XTile, YTile;
     int32_t tileNum, idTile;
-    int32_t i, x, y;
+    int32_t i, x=0, y=0;
     const char *pRawPixels;
     char szT[128];
 #ifdef USE_OPENGL
-    int32_t lazyselector = g_lazy_tileselector && usehightile;
+    int32_t lazyselector = !osdvisible && g_lazy_tileselector && usehightile;
     int32_t usehitile;
 #else
     int32_t lazyselector = g_lazy_tileselector;
@@ -3564,14 +3618,15 @@ restart:
 #endif
                     classic_drawtilescreen(x, y, idTile, TileDim, pRawPixels);
 
-                if (localartfreq[tileNum] != 0 && y >= 0 && y <= ydim-20)
-                {
-                    Bsprintf(szT, "%d", localartfreq[tileNum]);
-                    printext256(x, y, whitecol, -1, szT, 1);
-                }
             }
 
             tilescreen_drawbox(iTopLeft, iSelected, nXTiles, TileDim, offset, tileNum, idTile);
+
+            if (localartfreq[tileNum] != 0 && y >= 0 && y <= ydim-20)
+            {
+                Bsprintf(szT, "%d", localartfreq[tileNum]);
+                printext256(x, y, whitecol, -1, szT, 1);
+            }
 
             if (runi==1 && lazyselector)
             {
@@ -3624,6 +3679,7 @@ restart:
     }
 
     videoEndDrawing();
+    OSD_Draw();
     videoShowFrame(1);
 
 #ifdef USE_OPENGL
@@ -4539,7 +4595,7 @@ static void Keys3d(void)
             int32_t oldtile = AIMED_SELOVR_PICNUM;
 
             globalpal = AIMED_CF_SEL(pal);
-            tempint = m32gettile(oldtile);
+            tempint = editorGetTile(oldtile);
             AIMED_SELOVR_PICNUM = tempint;
             AIMED_CF_SEL(pal) = globalpal;
 

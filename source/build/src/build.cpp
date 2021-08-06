@@ -1178,6 +1178,8 @@ void editinput(void)
     bstatus = mouseReadButtons();
     editorMaybeLockMouse(!!(bstatus & ~(16|32)));
 
+    if (osdvisible) return;
+
     if (unrealedlook && !mskip)
     {
         if (mlook==0 && (bstatus&(1|2|4))==2)
@@ -3878,12 +3880,15 @@ void overheadeditor(void)
             //        printext16(8L,ydim-STATUS2DSIZ+32L,editorcolors[9],-1,kensig,0);
         }
 
+        oldmousebstatus = bstatus;
+        bstatus = mouseReadButtons();
+        editorMaybeLockMouse(!!(bstatus & ~(16|32)));
+
+        if (osdvisible)
+            goto skipinput;
+
         if (!m32_is2d3dmode())
         {
-            oldmousebstatus = bstatus;
-            bstatus = mouseReadButtons();
-            editorMaybeLockMouse(!!(bstatus & ~(16|32)));
-
             int32_t bs = bstatus;
             bstatus &= ~mousewaitmask;
             mousewaitmask &= bs;
@@ -3942,6 +3947,7 @@ void overheadeditor(void)
             wall[newnumwalls].y = day;
         }
 
+skipinput:
         ydim16 = ydim;// - STATUS2DSIZ2;
         midydim16 = ydim>>1;
 
@@ -4440,6 +4446,12 @@ void overheadeditor(void)
             videoEndDrawing();	//}}} LOCK_FRAME_1
 
             OSD_Draw();
+
+            if (osdvisible)
+            {
+                videoShowFrame(0);
+                continue;
+            }
         }
 
         inputchecked = 1;
