@@ -765,10 +765,7 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
     char *ptr = Xstrdup(SetupFilename);
     char filename[BMAX_PATH];
 
-    if (!Bstrcmp(SetupFilename, SETUPFILENAME))
-        Bsprintf(filename, "settings.cfg");
-    else
-        Bsprintf(filename, "%s_settings.cfg", strtok(ptr, "."));
+    Bsprintf(filename, "%s_cvars.cfg", APPBASENAME);
 
     BFILE *fp = Bfopen(filename, "wt");
 

@@ -33,6 +33,9 @@ If you have the GOG version of the game, do the following:
    * copy the `movie` folder from the mounted CD into NBlood's folder
 5. Launch NBlood (on Linux, to play Cryptic Passage, launch with the `-ini CRYPTIC.INI` parameter)
 
+### Notes
+NBlood now uses nblood_cvars.cfg instead of settings.cfg. Please rename your settings.cfg if you need to retain settings from a previous version.
+
 ## PCExhumed
 A port of the PC version of Exhumed based on EDuke32
 
