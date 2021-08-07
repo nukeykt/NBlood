@@ -388,7 +388,7 @@ int32_t findfrompath(const char *fn, char **where)
 # define FILENAME_CASE_CHECK
 #endif
 
-static buildvfs_kfd openfrompath_internal(const char *fn, char **where, int32_t flags, int32_t mode)
+static inline buildvfs_kfd openfrompath_internal(const char *fn, char **where, int32_t flags, int32_t mode)
 {
     if (findfrompath(fn, where) < 0)
         return -1;
