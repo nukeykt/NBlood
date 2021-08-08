@@ -551,12 +551,6 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 
-    if (bpp == 8)
-    {
-        initprintf("glinfo: not in OpenGL mode!\n");
-        return OSDCMD_OK;
-    }
-
     initprintf("OpenGL information\n %s %s %s\n",
                glinfo.vendor, glinfo.renderer, glinfo.version);
 
@@ -585,6 +579,8 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
     initprintf(" Vertex buffer objects:   %s\n", SUPPORTED(glinfo.vbos));
 #endif
     initprintf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
+    if (GLVersion.major)
+        OSD_Printf(" GL context version:      %d.%d\n", GLVersion.major, GLVersion.minor);
 
 #undef SUPPORTED
 
