@@ -580,7 +580,7 @@ static int sdlayer_checkvsync(int checkSync)
 
 int32_t videoSetVsync(int32_t newSync)
 {
-    if (vsync_unsupported)
+    if (newSync != 0 && vsync_unsupported)
     {
         OSD_Printf("GL: VSync configuration locked by driver.\n");
         return vsync_renderlayer;

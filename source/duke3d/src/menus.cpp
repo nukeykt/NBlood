@@ -1561,12 +1561,14 @@ static MenuTextForm_t M_CHEATENTRY = { NULL, "Enter Cheat Code:", MAXCHEATLEN, 0
 static MenuTextForm_t M_CHEAT_WARP = { NULL, "Enter Warp #:", 4, 0 };
 static MenuTextForm_t M_CHEAT_SKILL = { NULL, "Enter Skill #:", 2, 0 };
 
-#define MAKE_MENUFILESELECT(a, dir, b, c) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, dir, b, c, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
+#define MAKE_MENUFILESELECT(a, dir, b, c, d) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, dir, b, c, d, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
 
-static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "./usermaps/", "*.map", boardfilename );
+static char lastuserdir[BMAX_PATH];
+static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "/usermaps/", "*.map", boardfilename, lastuserdir);
 
 #ifndef EDUKE32_RETAIL_MENU
-static MenuFileSelect_t M_SOUND_SF2 = MAKE_MENUFILESELECT( "Select Sound Bank", "./", "*.sf2", sf2bankfile);
+static char lastsfdir[BMAX_PATH];
+static MenuFileSelect_t M_SOUND_SF2 = MAKE_MENUFILESELECT( "Select Sound Bank", "/", "*.sf2", sf2bankfile, lastsfdir);
 #endif
 
 // MUST be in ascending order of MenuID enum values due to binary search
@@ -1730,6 +1732,7 @@ void Menu_PopulateNewGameCustom(void)
     M_NEWGAMECUSTOM.title = s_NewGame;
 
     int e = 0;
+    int visible = 0;
     for (MenuGameplayStemEntry const & stem : g_MenuGameplayEntries)
     {
         MenuGameplayEntry const & entry = stem.entry;
@@ -1738,10 +1741,13 @@ void Menu_PopulateNewGameCustom(void)
 
         MEL_NEWGAMECUSTOM[e] = &ME_NEWGAMECUSTOMENTRIES[e];
 
+        if (!(MEL_NEWGAMECUSTOM[e]->flags & MEF_Hidden))
+            ++visible;
+
         ++e;
     }
     M_NEWGAMECUSTOM.numEntries = e;
-    MMF_Top_NewGameCustom.pos.y = (58 + (3-e)*6)<<16;
+    MMF_Top_NewGameCustom.pos.y = (58 + (3-visible)*6)<<16;
 }
 
 void Menu_PopulateNewGameCustomSub(int e)
@@ -1757,6 +1763,7 @@ void Menu_PopulateNewGameCustomSub(int e)
     M_NEWGAMECUSTOMSUB.title = entry.name;
 
     int s = 0;
+    int visible = 0;
     for (MenuGameplayEntry const & subentry : stem.subentries)
     {
         if (!subentry.isValid())
@@ -1764,10 +1771,13 @@ void Menu_PopulateNewGameCustomSub(int e)
 
         MEL_NEWGAMECUSTOMSUB[s] = &ME_NEWGAMECUSTOMSUBENTRIES[e][s];
 
+        if (!(MEL_NEWGAMECUSTOMSUB[e]->flags & MEF_Hidden))
+            ++visible;
+
         ++s;
     }
     M_NEWGAMECUSTOMSUB.numEntries = s;
-    MMF_Top_NewGameCustomSub.pos.y = (58 + (3-s)*6)<<16;
+    MMF_Top_NewGameCustomSub.pos.y = (58 + (3-visible)*6)<<16;
 }
 
 static void Menu_PopulateJoystick(void)
@@ -1982,8 +1992,6 @@ void Menu_Init(void)
 
             ++e;
         }
-
-        Menu_PopulateNewGameCustom();
     }
 
     // prepare skills
@@ -4273,20 +4281,34 @@ static void Menu_FileSelectInit(MenuFileSelect_t *object)
 {
     fnlist_clearnames(&object->fnlist);
 
-    if (object->destination[0] == 0)
-    {
-        BDIR * usermaps = Bopendir(object->startdir);
-        if (usermaps)
-        {
-            Bclosedir(usermaps);
-            Bstrcpy(object->destination, object->startdir);
-        }
-        else
-            Bstrcpy(object->destination, "./");
-    }
+    // important: object->destination stores a reference (e.g. boardfilename)
+    if (!object->destination[0])
+        Bstrcpy(object->destination, object->lastdir[0] ? object->lastdir : "/");
     Bcorrectfilename(object->destination, 1);
 
     fnlist_getnames(&object->fnlist, object->destination, object->pattern, 0, 0);
+
+    if (!object->lastdir[0])
+    {
+        // check for startdir -- hack to open startdir from GRP and ZIP files
+        auto cdir = object->fnlist.finddirs;
+        char pathbuf[BMAX_PATH];
+        while (cdir)
+        {
+            Bsnprintf(pathbuf, BMAX_PATH, "/%s/", cdir->name);
+            if (!Bstrcmp(object->startdir, pathbuf))
+            {
+                Bstrcpy(object->destination, object->startdir);
+                Bcorrectfilename(object->destination, 1);
+                fnlist_getnames(&object->fnlist, object->destination, object->pattern, 0, 0);
+                break;
+            }
+            cdir = cdir->next;
+        }
+
+        Bstrcpy(object->lastdir, object->destination);
+    }
+
     object->findhigh[0] = object->fnlist.finddirs;
     object->findhigh[1] = object->fnlist.findfiles;
 
@@ -4550,6 +4572,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     case MENU_MAIN_INGAME:
         if (FURY)
             ME_MAIN_LOADGAME.name = s_LoadGame;
+        break;
+
+    case MENU_NEWGAMECUSTOM:
+        Menu_PopulateNewGameCustom();
         break;
 
     case MENU_NEWGAMECUSTOMSUB:
@@ -6794,6 +6820,7 @@ static void Menu_RunInput_FileSelect_Select(MenuFileSelect_t *object)
     {
         Bstrcat(object->destination, "/");
         Bcorrectfilename(object->destination, 1);
+        Bstrcpy(object->lastdir, object->destination);
 
         Menu_FileSelectInit(object);
     }

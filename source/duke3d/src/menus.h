@@ -429,6 +429,7 @@ typedef struct MenuFileSelect_t
     const char * startdir;
     const char *pattern;
     char *destination;
+    char *lastdir;
 
     // state
     BUILDVFS_FIND_REC *findhigh[2];
