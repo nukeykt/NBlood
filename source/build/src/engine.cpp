@@ -4048,7 +4048,7 @@ static void parascan(char dastat, int32_t bunch)
         globalshiftval++;
 #ifdef CLASSIC_NONPOW2_YSIZE_WALLS
     // non power-of-two y size textures!
-    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy >= 512)
+    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
         globalyscale = 65536 / tsizy;
@@ -4215,7 +4215,7 @@ static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t t
         globalshiftval++;
 #ifdef CLASSIC_NONPOW2_YSIZE_WALLS
     // non power-of-two y size textures!
-    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy >= 512)
+    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
         globalyscale = divscale13(wal->yrepeat, tsizy);
