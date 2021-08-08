@@ -1474,7 +1474,7 @@ static void HMIFill(void)
     int len = musicbuffer.size / (2 * MV_Channels);
     for (int i = 0; i < len; i++)
     {
-        Bit16s sampl[2] = {};
+        int16_t sampl[2] = {};
         for (int j = 0; j < MAX_SONGS; j++)
         {
             if (song_timerrate[j] == 0xffffffff)
