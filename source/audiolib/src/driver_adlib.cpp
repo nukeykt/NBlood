@@ -113,7 +113,7 @@ void AdLibDrv_MIDI_Service(void)
 
     for (int i = 0; i < MV_MIXBUFFERSIZE; i++)
     {
-        Bit16s buf[2];
+        int16_t buf[2];
         while (MV_MIDIRenderTimer >= MV_MixRate)
         {
             if (MV_MIDIRenderTempo >= 0)
@@ -270,7 +270,7 @@ static void LL_AddNode(char * __restrict item, char ** __restrict head, char ** 
 
 static void AL_SendOutputToPort(int const port, int const reg, int const data)
 {
-    OPL3_WriteRegBuffered(&chip, (Bit16u)(reg + ((port & 2) << 7)), (Bit8u)data);
+    OPL3_WriteRegBuffered(&chip, (uint16_t)(reg + ((port & 2) << 7)), (uint8_t)data);
 }
 
 
