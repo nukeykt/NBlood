@@ -362,15 +362,25 @@ void G_AddSearchPaths(void)
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
     DWORD bufsize;
-    bool found = false;
+
+    // PowerSlave (DOS Classic Edition) - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1260020)", "InstallLocation", buf, &bufsize))
+    {
+        char* const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/PWRSLAVE", remaining);
+        addsearchpath(buf);
+    }
 
     // Powerslave - GOG.com
     bufsize = sizeof(buf);
-    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\2132611980)", "path", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\2132611980)", "path", buf, &bufsize))
     {
         addsearchpath(buf);
-        found = true;
     }
+
 #endif
 #endif
 }
