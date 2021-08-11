@@ -310,6 +310,18 @@ static void Exhumed_Add_GOG_Linux(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/game/data/MUSIC", path);
     addsearchpath(buf);
 }
+static void Exhumed_Add_Steam_Linux(const char *path)
+{
+    char buf[BMAX_PATH];
+
+    // PowerSlave (DOS Classic Edition) - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/PowerslaveCE", path);
+    addsearchpath(buf);
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/PowerslaveCE/PWRSLAVE", path);
+    addsearchpath(buf);
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/PowerslaveCE/PWRSLAVE/MUSIC", path);
+    addsearchpath(buf);
+}
 #endif
 #endif
 
@@ -319,6 +331,13 @@ void G_AddSearchPaths(void)
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
+
+    // PowerSlave (DOS Classic Edition) - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
+    Exhumed_Add_Steam_Linux(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, Exhumed_Add_Steam_Linux);
 
     // Powerslave - GOG.com
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Powerslave English", homepath);
