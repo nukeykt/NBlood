@@ -4891,7 +4891,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     if ((globalorientation&(2+64)) == (2+64)) //Hack for panning for slopes w/ relative alignment
     {
         float r = global_cf_heinum * (1.0f / 4096.f);
-        r = polymost_invsqrt_approximation(r * r + 1);
+        r = 1.f/ Bsqrtf(r * r + 1);
 
         if (!(globalorientation & 4))
             fxy.y *= r;
@@ -4906,7 +4906,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
         //Pick some point guaranteed to be not collinear to the 1st two points
         vec2f_t dxy = { n1.y - n0.y, n0.x - n1.x };
 
-        float const dxyr = polymost_invsqrt_approximation(dxy.x * dxy.x + dxy.y * dxy.y);
+        float const dxyr = 1.f / Bsqrtf(dxy.x * dxy.x + dxy.y * dxy.y);
 
         dxy.x *= dxyr * 4096.f;
         dxy.y *= dxyr * 4096.f;
@@ -8576,7 +8576,7 @@ void polymost_drawsprite(int32_t snum)
             {
                 int16_t const heinum = tspriteGetSlope(tspr);
                 float const fheinum = heinum * (1.f / 4096.f);
-                float ratio = polymost_invsqrt_approximation(fheinum * fheinum + 1.f);
+                float ratio = 1.f / Bsqrtf(fheinum * fheinum + 1.f);
 
                 if ((globalorientation & 4) > 0)
                     off.x = -off.x;
@@ -8692,7 +8692,7 @@ void polymost_drawsprite(int32_t snum)
                 vec2f_t const vv = { (float)tspr->x + s * p1.x + c * p1.y, (float)tspr->y + s * p1.y - c * p1.x };
                 vec2f_t ff = { -(p0.x + p1.x) * s, (p0.x + p1.x) * c };
 
-                float f = polymost_invsqrt_approximation(ff.x * ff.x + ff.y * ff.y);
+                float f = 1.f / Bsqrtf(ff.x * ff.x + ff.y * ff.y);
 
                 ff.x *= f;
                 ff.y *= f;

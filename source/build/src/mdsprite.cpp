@@ -1676,7 +1676,7 @@ static inline void  normalize(float *vec)
     if ((norm = vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]) == 0.f)
         return;
 
-    norm = polymost_invsqrt_approximation(norm);
+    norm = 1.f / Bsqrtf(norm);
     vec[0] *= norm;
     vec[1] *= norm;
     vec[2] *= norm;
