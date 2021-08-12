@@ -1626,11 +1626,21 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     }
 
     SDL_SetWindowSize(sdl_window, x, y);
-    SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
-    SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
+
+    if (fs)
+    {
+        SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
+        SDL_SetWindowPosition(sdl_window, (int)SDL_WINDOWPOS_UNDEFINED_DISPLAY(newdisplayindex), (int)SDL_WINDOWPOS_UNDEFINED_DISPLAY(newdisplayindex));
+    }
+    else
+    {
+        SDL_SetWindowFullscreen(sdl_window, 0);
+        SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
+        SDL_SetWindowPosition(sdl_window, (r_windowpositioning && windowx != -1) ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex),
+                                          (r_windowpositioning && windowy != -1) ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex));
+    }
+
     SDL_FlushEvent(SDL_WINDOWEVENT);
-    SDL_SetWindowPosition(sdl_window, (!fs && r_windowpositioning && windowx != -1) ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex),
-                                      (!fs && r_windowpositioning && windowy != -1) ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex));
 #endif
 
     videoFadePalette(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
