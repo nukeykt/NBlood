@@ -997,7 +997,7 @@ void ExtShowSectorData(int16_t sectnum)   //F5
 
     for (i=0; i<MAXSPRITES; i++)
     {
-        if (sprite[i].statnum==0 && sprite[i].picnum>=0 && sprite[i].picnum<MAXTILES)
+        if (sprite[i].statnum==0 && (unsigned)sprite[i].picnum<MAXUSERTILES)
         {
             if (sprite[i].pal!=0)
                 multisprite[sprite[i].picnum]++;
@@ -1157,7 +1157,7 @@ void ExtShowWallData(int16_t wallnum)       //F6
                 continue;
 
             pic = (runi==0) ? (int)sprite[i].picnum : (int)sprite[i].hitag;
-            if (pic<0 || pic>=MAXTILES)
+            if ((unsigned)pic>=MAXUSERTILES)
                 continue;
 
             switch (pic)
@@ -1198,9 +1198,9 @@ void ExtShowWallData(int16_t wallnum)       //F6
 #undef CASES_BOSS1
 
         total=0;
-        for (i=0; i<MAXTILES; i++)
+        for (i=0; i<MAXUSERTILES; i++)
             total += numsprite[i];
-        for (i=0; i<MAXTILES; i++)
+        for (i=0; i<MAXUSERTILES; i++)
             total += multisprite[i];
 
         videoBeginDrawing();  //{{{
@@ -3143,7 +3143,7 @@ static int32_t OnSaveTileGroup(void)
     if (tile_groups==MAX_TILE_GROUPS)
         TMPERRMSG_RETURN("Cannot save tile group: maximum number of groups (%d) exceeded.", MAX_TILE_GROUPS);
 
-    for (i=0; i<MAXTILES; i++)
+    for (i=0; i<MAXUSERTILES; i++)
         n += !!(tilemarked[i>>3]&pow2char[i&7]);
 
     if (n==0)
@@ -3185,7 +3185,7 @@ static int32_t OnSaveTileGroup(void)
             TMPERRMSG_RETURN("Could not seek to end of file `%s'.", default_tiles_cfg);
 
 #define TTAB "\t"
-#define TBITCHK(i) ((i)<MAXTILES && (tilemarked[(i)>>3]&pow2char[(i)&7]))
+#define TBITCHK(i) ((i)<MAXUSERTILES && (tilemarked[(i)>>3]&pow2char[(i)&7]))
         Bfprintf(fp, OURNEWL);
         Bfprintf(fp, "tilegroup \"%s\"" OURNEWL"{" OURNEWL, name);
         Bfprintf(fp, TTAB "hotkey \"%c\"" OURNEWL OURNEWL, hotkey);
@@ -3194,7 +3194,7 @@ static int32_t OnSaveTileGroup(void)
 
         j = 0;
         // tileranges for consecutive runs of 3 or more tiles
-        for (i=0; i<MAXTILES; i++)
+        for (i=0; i<MAXUSERTILES; i++)
         {
             if (lasti>=0 && !TBITCHK(i))
             {
@@ -3220,19 +3220,19 @@ static int32_t OnSaveTileGroup(void)
                 }
             }
         }
-        if (lasti>=0 && lasti<=MAXTILES-3)
+        if (lasti>=0 && lasti<=MAXUSERTILES-3)
         {
-            for (k=lasti; k<MAXTILES; k++)
+            for (k=lasti; k<MAXUSERTILES; k++)
             {
                 s_TileGroups[tile_groups].pIds[j++] = k;
                 tilemarked[k>>3] &= ~pow2char[k&7];
             }
-            Bfprintf(fp, TTAB "tilerange %d %d" OURNEWL, lasti, MAXTILES-1);
+            Bfprintf(fp, TTAB "tilerange %d %d" OURNEWL, lasti, MAXUSERTILES-1);
         }
         Bfprintf(fp, OURNEWL);
 
         k = 0;
-        for (i=0; i<MAXTILES; i++)
+        for (i=0; i<MAXUSERTILES; i++)
             if (tilemarked[i>>3]&pow2char[i&7])
             {
                 k = 1;
@@ -3243,7 +3243,7 @@ static int32_t OnSaveTileGroup(void)
         {
             // throw them all in a tiles{...} group else
             Bfprintf(fp, TTAB "tiles\n" TTAB "{" OURNEWL);
-            for (i=0; i<MAXTILES; i++)
+            for (i=0; i<MAXUSERTILES; i++)
             {
                 if (TBITCHK(i))
                 {
@@ -3397,7 +3397,7 @@ static const char *GetTilePixels(int32_t idTile)
 {
     char *pPixelData = 0;
 
-    if (idTile >= 0 && idTile < MAXTILES)
+    if ((unsigned)idTile < MAXUSERTILES)
     {
         if (!waloff[idTile])
             tileLoad(idTile);
@@ -4093,7 +4093,7 @@ ENDFOR1:
 
                 DoSpriteOrnament(i);
 
-                for (k=0; k<MAXTILES; k++)
+                for (k=0; k<MAXUSERTILES; k++)
                     localartfreq[k] = 0;
                 for (k=0; k<MAXSPRITES; k++)
                     if (sprite[k].statnum < MAXSTATUS)
@@ -4487,7 +4487,7 @@ static void Keys3d(void)
                 if (getmessageleng)
                     break;
 
-                if (sprite[searchwall].picnum<0 || sprite[searchwall].picnum>=MAXTILES)
+                if ((unsigned)sprite[searchwall].picnum>=MAXUSERTILES)
                     break;
 
                 if (names[sprite[searchwall].picnum][0])
@@ -5208,8 +5208,8 @@ static void Keys3d(void)
 
             do
             {
-                pic += dir + MAXTILES;
-                pic %= MAXTILES;
+                pic += dir + MAXUSERTILES;
+                pic %= MAXUSERTILES;
             }
             while (!IsValidTile(pic));
             AIMED_SELOVR_PICNUM = pic;
@@ -5854,9 +5854,9 @@ static void Keys3d(void)
             static const char *Typestr_tmp[5] = { "Wall", "Sector ceiling", "Sector floor", "Sprite", "Masked wall" };
 
             Bsprintf(tempbuf, "%s picnum: ", Typestr_tmp[searchstat]);
-            getnumberptr256(tempbuf, picnumptr, sizeof(int16_t), MAXTILES-1, 0+2, NULL);
+            getnumberptr256(tempbuf, picnumptr, sizeof(int16_t), MAXUSERTILES-1, 0+2, NULL);
 
-            Bassert((unsigned)*picnumptr < MAXTILES);
+            Bassert((unsigned)*picnumptr < MAXUSERTILES);
             if (!tileLoad(*picnumptr))
                 *picnumptr = opicnum;
 
@@ -6893,7 +6893,7 @@ paste_ceiling_or_floor:
                 if (tilesiz[temppicnum].x <= 0 || tilesiz[temppicnum].y <= 0)
                 {
                     j = 0;
-                    for (k=0; k<MAXTILES; k++)
+                    for (k=0; k<MAXUSERTILES; k++)
                         if (tilesiz[k].x > 0 && tilesiz[k].y > 0)
                         {
                             j = k;
@@ -9583,7 +9583,7 @@ int32_t parsetilegroups(scriptfile *script)
             int32_t i, j;
             if (scriptfile_getsymbol(script,&i)) break;
             if (scriptfile_getsymbol(script,&j)) break;
-            if (i < 0 || i > 9 || j < 0 || j >= MAXTILES) break;
+            if (i < 0 || i > 9 || (unsigned)j >= MAXUSERTILES) break;
             prefixtiles[i] = j;
             break;
         }
@@ -9663,7 +9663,7 @@ int32_t parsetilegroups(scriptfile *script)
                     int32_t j;
                     if (scriptfile_getsymbol(script,&i)) break;
                     if (scriptfile_getsymbol(script,&j)) break;
-                    if (i < 0 || i >= MAXTILES || j < 0 || j >= MAXTILES) break;
+                    if (i < 0 || i >= MAXTILES || (unsigned)j >= MAXUSERTILES) break;
                     while (tileGrp->nIds < MAX_TILE_GROUP_ENTRIES && i <= j)
                     {
                         tileGrp->pIds[tileGrp->nIds++] = i++;
@@ -9697,7 +9697,7 @@ int32_t parsetilegroups(scriptfile *script)
                     {
                         if (!scriptfile_getsymbol(script,&i))
                         {
-                            if (i >= 0 && i < MAXTILES && tileGrp->nIds < MAX_TILE_GROUP_ENTRIES)
+                            if ((unsigned)i < MAXUSERTILES && tileGrp->nIds < MAX_TILE_GROUP_ENTRIES)
                                 tileGrp->pIds[tileGrp->nIds++] = i;
 //                            OSD_Printf("added tile %d to group %d\n",i,g);
                         }
@@ -9751,7 +9751,7 @@ int32_t parsetilegroups(scriptfile *script)
                     if (scriptfile_getnumber(script,&i)) break;
                     if (scriptfile_getsymbol(script,&j)) break;
 
-                    if (i>=33 && i<=126 && j>= 0 && j<MAXTILES)
+                    if (i>=33 && i<=126 && (unsigned)j<MAXUSERTILES)
                         alphabets[numalphabets].pic[i-33] = j;
 
                     break;
@@ -9764,7 +9764,7 @@ int32_t parsetilegroups(scriptfile *script)
 
                     for (; *s; s++, i++)
                     {
-                        if (*s>=33 && *s<=126 && i>= 0 && i<MAXTILES)
+                        if (*s>=33 && *s<=126 && (unsigned)i<MAXUSERTILES)
                             alphabets[numalphabets].pic[(*s)-33] = i;
                     }
                     break;
@@ -9790,7 +9790,7 @@ int32_t parsetilegroups(scriptfile *script)
                     if (scriptfile_getsymbol(script,&k)) break;
 
                     if (i>126 || j<33) break;
-                    for (; i<=j && k<MAXTILES; i++, k++)
+                    for (; i<=j && k<MAXUSERTILES; i++, k++)
                     {
                         if (i>=33 && i<=126)
                             alphabets[numalphabets].pic[i-33] = k;
@@ -11352,7 +11352,7 @@ static void EditSectorData(int16_t sectnum)
                 break;
             case 4:
                 handlemed(0, "Tile number", "Ceiling Tile Number", &sector[sectnum].ceilingpicnum,
-                          sizeof(sector[sectnum].ceilingpicnum), MAXTILES, 0);
+                          sizeof(sector[sectnum].ceilingpicnum), MAXUSERTILES-1, 0);
                 break;
             case 5:
                 handlemed(0, "Ceiling heinum", "Ceiling Heinum", &sector[sectnum].ceilingheinum,
@@ -11407,7 +11407,7 @@ static void EditSectorData(int16_t sectnum)
                 break;
             case 4:
                 handlemed(0, "Tile number", "Floor Tile Number", &sector[sectnum].floorpicnum,
-                          sizeof(sector[sectnum].floorpicnum), MAXTILES, 0);
+                          sizeof(sector[sectnum].floorpicnum), MAXUSERTILES-1, 0);
                 break;
             case 5:
                 handlemed(0, "Floor heinum", "Floor Heinum", &sector[sectnum].floorheinum,
@@ -11510,12 +11510,12 @@ static void EditWallData(int16_t wallnum)
             break;
         case 5:
             handlemed(0, "Tile number", "Tile number", &wall[wallnum].picnum,
-                      sizeof(wall[wallnum].picnum), MAXTILES, 0);
+                      sizeof(wall[wallnum].picnum), MAXUSERTILES-1, 0);
             break;
 
         case 6:
             handlemed(0, "OverTile number", "OverTile number", &wall[wallnum].overpicnum,
-                      sizeof(wall[wallnum].overpicnum), MAXTILES, 0);
+                      sizeof(wall[wallnum].overpicnum), MAXUSERTILES-1, 0);
             break;
         }
 
@@ -11718,7 +11718,7 @@ static void EditSpriteData(int16_t spritenum)
             break;
             case 6:
                 handlemed(0, "Tile number", "Tile number", &sprite[spritenum].picnum,
-                          sizeof(sprite[spritenum].picnum), MAXTILES-1, 0+2);
+                          sizeof(sprite[spritenum].picnum), MAXUSERTILES-1, 0+2);
                 break;
             }
         }
@@ -11806,7 +11806,7 @@ static void GenericSpriteSearch(void)
         { MAXSECTORS-1, MAXBLENDTABS-1, 65535 },
         { MAXSTATUS-1 , 128           , MAXSPRITES-1 },
         { BTAG_MAX    , 128           , 256 },
-        { BTAG_MAX    , MAXTILES-1    , BTAG_MAX }
+        { BTAG_MAX    , MAXUSERTILES-1    , BTAG_MAX }
     };
 
     static char sign[7][3] =

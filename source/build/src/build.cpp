@@ -1149,7 +1149,7 @@ static void handle_sprite_in_clipboard(int32_t i)
         if (tilesiz[temppicnum].x <= 0 || tilesiz[temppicnum].y <= 0)
         {
             j = 0;
-            for (k=0; k<MAXTILES; k++)
+            for (k=0; k<MAXUSERTILES; k++)
                 if (tilesiz[k].x > 0 && tilesiz[k].y > 0)
                 {
                     j = k;
@@ -2420,7 +2420,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
             localartfreq[sprite[k].picnum]++;
 
     j = 0;
-    for (k=0; k<MAXTILES; k++)
+    for (k=0; k<MAXUSERTILES; k++)
         if (localartfreq[k] > localartfreq[j])
             j = k;
 
@@ -9495,7 +9495,7 @@ int32_t getnumber_autocomplete(const char *namestart, char ch, int32_t *danum, i
 
         if (flags==1)
         {
-            for (i=0; i<MAXTILES; i++)
+            for (i=0; i<MAXUSERTILES; i++)
                 if (!Bstrcasecmp(names[i], gotstr))
                 {
                     *danum = i;
@@ -9802,7 +9802,7 @@ const char *getstring_simple(const char *querystr, const char *defaultstr, int32
                 Bmemcpy(cmpbuf, &buf[qrylen], len);
                 cmpbuf[len] = 0;
 
-                for (i=(completion!=1); i<((completion==1)?MAXTILES:32768); i++)
+                for (i=(completion!=1); i<((completion==1)?MAXUSERTILES:32768); i++)
                 {
                     cmpstr = (completion==1) ? names[i] : taglab_getlabel(i);
                     if (!cmpstr)
@@ -10521,7 +10521,7 @@ static int32_t parsenamesfile(scriptfile *script)
                 break;
             }
 
-            if ((unsigned)number >= MAXTILES)
+            if ((unsigned)number >= MAXUSERTILES)
             {
                 initprintf("Error: Constant %d for name \"%s\" out of range on line %s:%d\n",
                            number, name, script->filename, scriptfile_getlinum(script,cmdtokptr));
@@ -10759,7 +10759,7 @@ void showwalldata(int16_t wallnum, int16_t small)
 
     col++;
 
-    DOPRINT(32, "^10%s^O", (wal->picnum>=0 && wal->picnum<MAXTILES) ? names[wal->picnum] : "!INVALID!");
+    DOPRINT(32, "^10%s^O", ((unsigned)wal->picnum<MAXUSERTILES) ? names[wal->picnum] : "!INVALID!");
     DOPRINT(48, "Flags (hex): %x", TrackerCast(wal->cstat));
     DOPRINT(56, "Shade: %d", TrackerCast(wal->shade));
     DOPRINT(64, "Pal: %d", TrackerCast(wal->pal));
@@ -10811,7 +10811,7 @@ void showspritedata(int16_t spritenum, int16_t small)
     col++;
 
     DOPRINT(32, "^10,0                        ^O");  // 24 blanks
-    DOPRINT(32, "^10%s^O", (spr->picnum>=0 && spr->picnum<MAXTILES) ? names[spr->picnum] : "!INVALID!");
+    DOPRINT(32, "^10%s^O", ((unsigned)spr->picnum < MAXUSERTILES) ? names[spr->picnum] : "!INVALID!");
     DOPRINT(48, "Flags (hex): %x", TrackerCast(spr->cstat));
     DOPRINT(56, "Shade: %d", TrackerCast(spr->shade));
     DOPRINT(64, "Pal: %d", TrackerCast(spr->pal));
