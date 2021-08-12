@@ -1771,7 +1771,7 @@ void Menu_PopulateNewGameCustomSub(int e)
 
         MEL_NEWGAMECUSTOMSUB[s] = &ME_NEWGAMECUSTOMSUBENTRIES[e][s];
 
-        if (!(MEL_NEWGAMECUSTOMSUB[e]->flags & MEF_Hidden))
+        if (!(MEL_NEWGAMECUSTOMSUB[s]->flags & MEF_Hidden))
             ++visible;
 
         ++s;
@@ -2328,8 +2328,8 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MUSIC, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_DUKETALK, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
-        MenuEntry_DisableOnCondition(&ME_SOUND_MIDIDRIVER, !ud.config.MusicToggle);
 #ifndef EDUKE32_RETAIL_MENU
+        MenuEntry_DisableOnCondition(&ME_SOUND_MIDIDRIVER, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
 #ifdef __linux__
         MenuEntry_DisableOnCondition(&ME_SOUND_ALSADEVICE, !ud.config.MusicToggle);
