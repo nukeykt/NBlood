@@ -137,7 +137,6 @@ int32_t r_fullbrights = 1;
 int32_t r_vertexarrays = 1;
 #ifdef USE_GLEXT
 //POGOTODO: we no longer support rendering without VBOs -- update any outdated pre-GL2 code that renders without VBOs
-int32_t r_vbos = 1;
 int32_t r_vbocount = 64;
 #endif
 int32_t r_animsmoothing = 1;

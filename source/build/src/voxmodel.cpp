@@ -2,20 +2,19 @@
 
 #ifdef USE_OPENGL
 
-#include "compat.h"
-#include "build.h"
-#include "glad/glad.h"
-#include "pragmas.h"
 #include "baselayer.h"
-#include "engine_priv.h"
-#include "hightile.h"
-#include "polymost.h"
-#include "texcache.h"
-#include "mdsprite.h"
+#include "build.h"
 #include "cache1d.h"
+#include "compat.h"
+#include "engine_priv.h"
+#include "glad/glad.h"
+#include "hightile.h"
 #include "kplib.h"
+#include "mdsprite.h"
 #include "palette.h"
-
+#include "polymost.h"
+#include "pragmas.h"
+#include "texcache.h"
 #include "vfs.h"
 
 
@@ -34,6 +33,8 @@ static int32_t *shcntmal, *shcnt = 0, shcntp;
 
 static int32_t mytexo5, *zbit, gmaxx, gmaxy, garea, pow2m1[33];
 static voxmodel_t *gvox;
+static voxrect_t *gquad;
+static int32_t gqfacind[7];
 
 
 //pitch must equal xsiz*4
@@ -354,7 +355,7 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
                 (x+(VOXBORDWIDTH<<1))<<2);
     }
 
-    voxrect_t *const qptr = &gvox->quad[gvox->qcnt];
+    voxrect_t *const qptr = &gquad[gvox->qcnt];
 
     qptr->v[0].x = x0; qptr->v[0].y = y0; qptr->v[0].z = z0;
     qptr->v[1].x = x1; qptr->v[1].y = y1; qptr->v[1].z = z1;
@@ -380,8 +381,8 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
     qptr->v[3].y = qptr->v[0].y - qptr->v[1].y + qptr->v[2].y;
     qptr->v[3].z = qptr->v[0].z - qptr->v[1].z + qptr->v[2].z;
 
-    if (gvox->qfacind[face] < 0)
-        gvox->qfacind[face] = gvox->qcnt;
+    if (gqfacind[face] < 0)
+        gqfacind[face] = gvox->qcnt;
 
     gvox->qcnt++;
 }
@@ -405,52 +406,20 @@ static FORCE_INLINE int isair(int32_t i)
 #ifdef USE_GLEXT
 void voxvboalloc(voxmodel_t *vm)
 {
-    if (!r_vbos)
-        return;
-    const float phack[2] = { 0, 1.f / 256.f };
     glGenBuffers(1, &vm->vbo);
     glGenBuffers(1, &vm->vboindex);
-    GLfloat *vertex = (GLfloat *)Xmalloc(sizeof(GLfloat) * 5 * 4 * vm->qcnt);
-    GLuint *index = (GLuint *)Xmalloc(sizeof(GLuint) * 3 * 2 * vm->qcnt);
-    const float ru = 1.f / ((float)vm->mytexx);
-    const float rv = 1.f / ((float)vm->mytexy);
-    for (bssize_t i = 0; i < vm->qcnt; i++)
-    {
-        const vert_t *const vptr = &vm->quad[i].v[0];
 
-        const int32_t xx = vptr[0].x + vptr[2].x;
-        const int32_t yy = vptr[0].y + vptr[2].y;
-        const int32_t zz = vptr[0].z + vptr[2].z;
-
-        for (bssize_t j=0; j<4; j++)
-        {
-            vertex[(i*4+j)*5+0] = ((float)vptr[j].x) - phack[xx>vptr[j].x*2] + phack[xx<vptr[j].x*2];
-            vertex[(i*4+j)*5+1] = ((float)vptr[j].y) - phack[yy>vptr[j].y*2] + phack[yy<vptr[j].y*2];
-            vertex[(i*4+j)*5+2] = ((float)vptr[j].z) - phack[zz>vptr[j].z*2] + phack[zz<vptr[j].z*2];
-
-            vertex[(i*4+j)*5+3] = ((float)vptr[j].u)*ru;
-            vertex[(i*4+j)*5+4] = ((float)vptr[j].v)*rv;
-        }
-        index[(i*2+0)*3+0] = i*4+0;
-        index[(i*2+0)*3+1] = i*4+1;
-        index[(i*2+0)*3+2] = i*4+2;
-
-        index[(i*2+1)*3+0] = i*4+0;
-        index[(i*2+1)*3+1] = i*4+2;
-        index[(i*2+1)*3+2] = i*4+3;
-    }
     GLint prevVBO = 0;
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevVBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->vboindex);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * vm->qcnt, index, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * vm->qcnt, vm->index, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevVBO);
+
     prevVBO = 0;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevVBO);
     glBindBuffer(GL_ARRAY_BUFFER, vm->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vertex, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vm->vertex, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, prevVBO);
-    Xfree(vertex);
-    Xfree(index);
 }
 
 void voxvbofree(voxmodel_t *vm)
@@ -465,30 +434,26 @@ void voxvbofree(voxmodel_t *vm)
 
 static voxmodel_t *vox2poly()
 {
-    int32_t i, j;
-
     gvox = (voxmodel_t *)Xmalloc(sizeof(voxmodel_t));
     memset(gvox, 0, sizeof(voxmodel_t));
 
+    //x is largest dimension, y is 2nd largest dimension
+    int32_t x = voxsiz.x, y = voxsiz.y, z = voxsiz.z;
+
+    if (x < y && x < z)
+        x = z;
+    else if (y < z)
+        y = z;
+
+    if (x < y)
     {
-        //x is largest dimension, y is 2nd largest dimension
-        int32_t x = voxsiz.x, y = voxsiz.y, z = voxsiz.z;
-
-        if (x < y && x < z)
-            x = z;
-        else if (y < z)
-            y = z;
-
-        if (x < y)
-        {
-            z = x;
-            x = y;
-            y = z;
-        }
-
-        shcntp = x;
-        i = x*y*sizeof(int32_t);
+        z = x;
+        x = y;
+        y = z;
     }
+
+    shcntp = x;
+    int32_t i = x*y*sizeof(int32_t);
 
     shcntmal = (int32_t *)Xmalloc(i);
     memset(shcntmal, 0, i);
@@ -504,7 +469,7 @@ static voxmodel_t *vox2poly()
     }
 
     for (i=0; i<7; i++)
-        gvox->qfacind[i] = -1;
+        gqfacind[i] = -1;
 
     i = (max(voxsiz.y, voxsiz.z)+1)<<2;
     int32_t *const bx0 = (int32_t *)Xmalloc(i<<1);
@@ -634,10 +599,10 @@ skindidntfit:
                         Xfree(zbit);
 
                         //Re-generate shp[].x/y (box sizes) from shcnt (now head indices) for next pass :/
-                        j = 0;
+                        int j = 0;
 
-                        for (bssize_t y=gmaxy; y; y--)
-                            for (bssize_t x=gmaxx; x>=y; x--)
+                        for (int y=gmaxy; y; y--)
+                            for (int x=gmaxx; x>=y; x--)
                             {
                                 i = shcnt[y*shcntp+x];
 
@@ -670,12 +635,49 @@ skindidntfit:
                 shp[z].x = x0; shp[z].y = y0; //Overwrite size with top-left location
             }
 
-            gvox->quad = (voxrect_t *)Xmalloc(gvox->qcnt*sizeof(voxrect_t));
+            gquad = (voxrect_t *)Xrealloc(gquad, gvox->qcnt*sizeof(voxrect_t));
             gvox->mytex = (int32_t *)Xmalloc(gvox->mytexx*gvox->mytexy*sizeof(int32_t));
         }
     }
 
-    Xfree(shp); Xfree(zbit); Xfree(bx0);
+    Xfree(shp);
+    Xfree(zbit);
+    Xfree(bx0);
+
+    const float phack[2] = { 0, 1.f / 256.f };
+
+    gvox->vertex = (GLfloat *)Xmalloc(sizeof(GLfloat) * 5 * 4 * gvox->qcnt);
+    gvox->index = (GLuint *)Xmalloc(sizeof(GLuint) * 3 * 2 * gvox->qcnt);
+
+    const float ru = 1.f / ((float)gvox->mytexx);
+    const float rv = 1.f / ((float)gvox->mytexy);
+
+    for (int i = 0; i < gvox->qcnt; i++)
+    {
+        const vert_t *const vptr = &gquad[i].v[0];
+
+        const int32_t xx = vptr[0].x + vptr[2].x;
+        const int32_t yy = vptr[0].y + vptr[2].y;
+        const int32_t zz = vptr[0].z + vptr[2].z;
+
+        for (int j=0; j<4; j++)
+        {
+            gvox->vertex[((i<<2)+j)*5+0] = ((float)vptr[j].x) - phack[xx>vptr[j].x*2] + phack[xx<vptr[j].x*2];
+            gvox->vertex[((i<<2)+j)*5+1] = ((float)vptr[j].y) - phack[yy>vptr[j].y*2] + phack[yy<vptr[j].y*2];
+            gvox->vertex[((i<<2)+j)*5+2] = ((float)vptr[j].z) - phack[zz>vptr[j].z*2] + phack[zz<vptr[j].z*2];
+
+            gvox->vertex[((i<<2)+j)*5+3] = ((float)vptr[j].u)*ru;
+            gvox->vertex[((i<<2)+j)*5+4] = ((float)vptr[j].v)*rv;
+        }
+
+        gvox->index[(i<<1)*3+0] = (i<<2)+0;
+        gvox->index[(i<<1)*3+1] = (i<<2)+1;
+        gvox->index[(i<<1)*3+2] = (i<<2)+2;
+
+        gvox->index[((i<<1)+1)*3+0] = (i<<2)+0;
+        gvox->index[((i<<1)+1)*3+1] = (i<<2)+2;
+        gvox->index[((i<<1)+1)*3+2] = (i<<2)+3;
+    }
 
     return gvox;
 }
@@ -948,14 +950,12 @@ void voxfree(voxmodel_t *m)
     if (!m)
         return;
 
-    DO_FREE_AND_NULL(m->mytex);
-    DO_FREE_AND_NULL(m->quad);
-    DO_FREE_AND_NULL(m->texid);
+    voxvbofree(m);
 
-#ifdef USE_GLEXT
-    if (r_vbos)
-        voxvbofree(m);
-#endif
+    DO_FREE_AND_NULL(m->mytex);
+    DO_FREE_AND_NULL(m->vertex);
+    DO_FREE_AND_NULL(m->index);
+    DO_FREE_AND_NULL(m->texid);
 
     Xfree(m);
 }
@@ -1126,14 +1126,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     glLoadMatrixf(mat);
 
-    const float ru = 1.f/((float)m->mytexx);
-    const float rv = 1.f/((float)m->mytexy);
-#if (VOXBORDWIDTH == 0)
-    uhack[0] = ru*.125; uhack[1] = -uhack[0];
-    vhack[0] = rv*.125; vhack[1] = -vhack[0];
-#endif
-    const float phack[2] = { 0, 1.f / 256.f };
-
     char prevClamp = polymost_getClamp();
     polymost_setClamp(0);
     polymost_setFogEnabled(false);
@@ -1169,62 +1161,20 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         polymost_setTexturePosSize({ 0.f, 0.f, 1.f, 1.f });
     }
 
-#ifdef USE_GLEXT
-    if (r_vbos)
-    {
-        glColor4f(pc[0], pc[1], pc[2], pc[3]);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->vboindex);
-        glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
+    glColor4f(pc[0], pc[1], pc[2], pc[3]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->vboindex);
+    glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
 
-        glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
+    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
 
-        glClientActiveTexture(GL_TEXTURE0);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
+    glClientActiveTexture(GL_TEXTURE0);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
 
-        glDrawElements(GL_TRIANGLES, m->qcnt*2*3, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, m->qcnt*2*3, GL_UNSIGNED_INT, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    }
-    else
-#endif
-    {
-        glBegin(GL_QUADS);  // {{{
-
-        for (bssize_t i=0, fi=0; i<m->qcnt; i++)
-        {
-            if (i == m->qfacind[fi])
-            {
-                f = 1 /*clut[fi++]*/;
-                glColor4f(pc[0]*f, pc[1]*f, pc[2]*f, pc[3]*f);
-            }
-
-            const vert_t *const vptr = &m->quad[i].v[0];
-
-            const int32_t xx = vptr[0].x + vptr[2].x;
-            const int32_t yy = vptr[0].y + vptr[2].y;
-            const int32_t zz = vptr[0].z + vptr[2].z;
-
-            for (bssize_t j=0; j<4; j++)
-            {
-                vec3f_t fp;
-#if (VOXBORDWIDTH == 0)
-                glTexCoord2f(((float)vptr[j].u)*ru + uhack[vptr[j].u!=vptr[0].u],
-                              ((float)vptr[j].v)*rv + vhack[vptr[j].v!=vptr[0].v]);
-#else
-                glTexCoord2f(((float)vptr[j].u)*ru, ((float)vptr[j].v)*rv);
-#endif
-                fp.x = ((float)vptr[j].x) - phack[xx>vptr[j].x*2] + phack[xx<vptr[j].x*2];
-                fp.y = ((float)vptr[j].y) - phack[yy>vptr[j].y*2] + phack[yy<vptr[j].y*2];
-                fp.z = ((float)vptr[j].z) - phack[zz>vptr[j].z*2] + phack[zz<vptr[j].z*2];
-
-                glVertex3fv((float *)&fp);
-            }
-        }
-
-        glEnd();  // }}}
-    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
