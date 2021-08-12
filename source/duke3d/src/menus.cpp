@@ -7207,13 +7207,14 @@ static void Menu_RunInput(Menu_t *cm)
 
                 S_PlaySound(KICK_HIT);
             }
-            else if (KB_KeyPressed(sc_PgUp))
+            else if (KB_KeyPressed(sc_PgUp) || MOUSE_GetButtons() & M_WHEELUP)
             {
                 int32_t i;
 
                 BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgUp);
+                MOUSE_ClearButton(M_WHEELUP);
 
                 for (i = 0; i < 6; ++i)
                 {
@@ -7230,13 +7231,14 @@ static void Menu_RunInput(Menu_t *cm)
                     S_PlaySound(KICK_HIT);
                 }
             }
-            else if (KB_KeyPressed(sc_PgDn))
+            else if (KB_KeyPressed(sc_PgDn) || MOUSE_GetButtons() & M_WHEELDOWN)
             {
                 int32_t i;
 
                 BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgDn);
+                MOUSE_ClearButton(M_WHEELDOWN);
 
                 for (i = 0; i < 6; ++i)
                 {
@@ -7678,6 +7680,34 @@ static void Menu_RunInput(Menu_t *cm)
                         S_PlaySound(KICK_HIT);
 
                         Menu_RunInput_EntryOptionList_Movement(object, MM_Down);
+                    }
+                    else if (KB_KeyPressed(sc_PgUp) || MOUSE_GetButtons() & M_WHEELUP)
+                    {
+                        KB_ClearKeyDown(sc_PgUp);
+                        MOUSE_ClearButton(M_WHEELUP);
+
+                        object->options->currentEntry -= 6;
+
+                        if (object->options->currentEntry < 0)
+                            object->options->currentEntry = 0;
+
+                        S_PlaySound(KICK_HIT);
+
+                        Menu_RunInput_EntryOptionList_MovementVerify(object);
+                    }
+                    else if (KB_KeyPressed(sc_PgDn) || MOUSE_GetButtons() & M_WHEELDOWN)
+                    {
+                        KB_ClearKeyDown(sc_PgDn);
+                        MOUSE_ClearButton(M_WHEELDOWN);
+
+                        object->options->currentEntry += 6;
+
+                        if (object->options->currentEntry > object->options->numOptions-1)
+                            object->options->currentEntry = object->options->numOptions-1;
+
+                        S_PlaySound(KICK_HIT);
+
+                        Menu_RunInput_EntryOptionList_MovementVerify(object);
                     }
                 }
                 else if (currentry->type == Custom2Col)
