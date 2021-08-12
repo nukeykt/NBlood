@@ -3212,15 +3212,6 @@ loc_1BD2E:
                         nDestVertPan[nPlayer] = nVertPan[nPlayer];
                     }
 
-                    if (BUTTON(gamefunc_Next_Weapon))
-                    {
-                        SelectNextWeapon();
-                    }
-                    else if (BUTTON(gamefunc_Previous_Weapon))
-                    {
-                        SelectPreviousWeapon();
-                    }
-
                     // loc_1C048:
                     if (totalvel[nPlayer] > 20) {
                         bPlayerPan = kFalse;

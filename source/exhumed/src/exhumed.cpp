@@ -1028,6 +1028,17 @@ static const char *safeStrtok(char *s, const char *d)
 
 void CheckKeys()
 {
+    if (BUTTON(gamefunc_Next_Weapon))
+    {
+        CONTROL_ClearButton(gamefunc_Next_Weapon);
+        SelectNextWeapon();
+    }
+    else if (BUTTON(gamefunc_Previous_Weapon))
+    {
+        CONTROL_ClearButton(gamefunc_Previous_Weapon);
+        SelectPreviousWeapon();
+    }
+
     if (BUTTON(gamefunc_Enlarge_Screen))
     {
         if (nMapMode == 0)
