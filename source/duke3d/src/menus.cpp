@@ -243,7 +243,7 @@ static MenuMenuFormat_t MMF_MouseJoySetupBtns =    { {                  76<<16, 
 static MenuMenuFormat_t MMF_FuncList =             { {                 100<<16, 51<<16, },    152<<16 };
 static MenuMenuFormat_t MMF_ColorCorrect =         { { MENU_MARGIN_REGULAR<<16, 86<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_BigSliders =           { {    MENU_MARGIN_WIDE<<16, 37<<16, },    190<<16 };
-static MenuMenuFormat_t MMF_LoadSave =             { {                 200<<16, 49<<16, },    145<<16 };
+static MenuMenuFormat_t MMF_LoadSave =             { {                 200<<16, 49<<16, },    180<<16 };
 static MenuMenuFormat_t MMF_NetSetup =             { {                  36<<16, 38<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
@@ -2706,7 +2706,52 @@ static void Menu_DrawVerifyPrompt(int32_t x, int32_t y, const char * text, int n
 #endif
 }
 
-static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
+static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill, const char *boardfn, int16_t health)
+{
+    int const xoffset  = 22;
+    int const xoffset2 = FURY ? 56 : 72;
+    int yoffset = 150 + ((!!FURY)<<1);
+
+    auto name = g_mapInfo[(volume * MAXLEVELS) + level].name;
+    auto vname = g_volumeNames[volume];
+    
+    Menu_BlackRectangle(origin.x + ((xoffset-2)<<16), origin.y + ((yoffset-2)<<16), 178<<16, (34-((!!FURY)<<1))<<16, 1);
+
+    if (vname)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Episode:", MF_Minifont.pal_deselected_right);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(vname), MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
+
+    if (savehead.volnum == 0 && savehead.levnum == 7)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "User map:", MF_Minifont.pal_deselected_right);
+        // I'm sorry
+        if (boardfn[0] == '/') boardfn++;
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), boardfn, MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
+    else if (name)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Level:", MF_Minifont.pal_deselected_right);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(name), MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
+    
+    mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Difficulty:", MF_Minifont.pal_deselected_right);
+    mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(g_skillNames[skill-1]), MF_Minifont.pal_selected_right);
+    yoffset += 8;
+
+    if (savehead.health && (unsigned)savehead.health <= (unsigned)g_maxPlayerHealth)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Health:", MF_Minifont.pal_deselected_right);
+        Bsprintf(tempbuf, "%dhp", health);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), tempbuf, MF_Minifont.pal_selected_right);
+    }
+}
+
+static void Menu_PreDraw(MenuID_t cm, MenuEntry_t* entry, const vec2_t origin)
 {
     int32_t i, j, l = 0;
 
@@ -2804,7 +2849,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         for (i = 0; i <= 108; i += 12)
             rotatesprite_fs(origin.x + ((160+64+91-64)<<16), origin.y + ((i+56)<<16), 65536L,0,TEXTBOX,24,0,10);
 #endif
-        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 100<<16, 1|32);
+        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 135<<16, 1);
 
         rotatesprite_fs(origin.x + (22<<16), origin.y + (97<<16), 65536L,0,WINDOWBORDER2,24,0,10);
         rotatesprite_fs(origin.x + (180<<16), origin.y + (97<<16), 65536L,1024,WINDOWBORDER2,24,0,10);
@@ -2826,16 +2871,16 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
             if (msv.isOldVer)
             {
-                mgametextcenterat(origin.x + (101<<16), origin.y + (50<<16),
-                    msv.brief.isExt ? "Previous Version,\nSequence Point Available" : "Previous Version,\nUnable to Load");
+                mgametextcenterat(origin.x + (101<<16), origin.y + (64<<16),
+                    msv.brief.isExt ? "Previous Version,\nCheckpoint Available" : "Incompatible Save\n");
 
 #ifndef EDUKE32_RETAIL_MENU
-                Bsprintf(tempbuf,"Saved: %d.%d.%d.%u %d-bit", savehead.majorver, savehead.minorver,
-                         savehead.bytever, savehead.userbytever, 8*savehead.getPtrSize());
-                mgametext(origin.x + (25<<16), origin.y + (124<<16), tempbuf);
-                Bsprintf(tempbuf,"Our: %d.%d.%d.%u %d-bit", SV_MAJOR_VER, SV_MINOR_VER, BYTEVERSION,
-                         ud.userbytever, (int32_t)(8*sizeof(intptr_t)));
-                mgametext(origin.x + ((25+16)<<16), origin.y + (134<<16), tempbuf);
+                Bsprintf(tempbuf,"Need: %d.%d.%d.%u %d-bit, %s", savehead.majorver, savehead.minorver,
+                         savehead.bytever, savehead.userbytever, 8*savehead.getPtrSize(), savehead.scriptname);
+                mminitext(origin.x + (23<<16), origin.y + (124<<16), tempbuf, MF_Minifont.pal_selected);
+                Bsprintf(tempbuf,"Have: %d.%d.%d.%u %d-bit, %s", SV_MAJOR_VER, SV_MINOR_VER, BYTEVERSION,
+                         ud.userbytever, (int32_t)(8*sizeof(intptr_t)), g_scriptFileName);
+                mminitext(origin.x + (23<<16), origin.y + (132<<16), tempbuf, MF_Minifont.pal_selected);
 #endif
 
                 if (msv.isUnreadable)
@@ -2848,15 +2893,10 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 mgametextcenter(origin.x, origin.y + (156<<16), tempbuf);
             }
 
-            {
-                const char *name = g_mapInfo[(savehead.volnum*MAXLEVELS) + savehead.levnum].name;
-                const char *skill = g_skillNames[savehead.skill-1];
-                Bsprintf(tempbuf, "%s / %s", name ? localeLookup(name) : "^10unnamed^0", localeLookup(skill));
-            }
+            if (msv.isOldVer && !msv.brief.isExt)
+                break;
 
-            mgametextcenter(origin.x, origin.y + (168<<16), tempbuf);
-            if (savehead.volnum == 0 && savehead.levnum == 7)
-                mgametextcenter(origin.x, origin.y + (180<<16), savehead.boardfn);
+            msaveloadtext(origin, savehead.levnum, savehead.volnum, savehead.skill, savehead.boardfn, savehead.health);
         }
         break;
     }
@@ -2867,7 +2907,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         for (i = 0; i <= 108; i += 12)
             rotatesprite_fs(origin.x + ((160+64+91-64)<<16), origin.y + ((i+56)<<16), 65536L,0,TEXTBOX,24,0,10);
 #endif
-        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 100<<16, 1|32);
+        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 135<<16, 1);
 
         rotatesprite_fs(origin.x + (22<<16), origin.y + (97<<16), 65536L,0,WINDOWBORDER2,24,0,10);
         rotatesprite_fs(origin.x + (180<<16), origin.y + (97<<16), 65536L,1024,WINDOWBORDER2,24,0,10);
@@ -2909,16 +2949,14 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         else
             menutext_centeralign(origin.x + (101<<16), origin.y + (97<<16), "New");
 
-        if (ud.multimode > 1)
-        {
-            Bsprintf(tempbuf, "Players: %-2d                      ", ud.multimode);
-            mgametextcenter(origin.x, origin.y + (156<<16), tempbuf);
-        }
+        //if (ud.multimode > 1)
+        //{
+        //    Bsprintf(tempbuf, "Players: %-2d                      ", ud.multimode);
+        //    mgametextcenter(origin.x, origin.y + (156<<16), tempbuf);
+        //}
 
-        Bsprintf(tempbuf,"%s / %s",g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name, g_skillNames[ud.player_skill-1]);
-        mgametextcenter(origin.x, origin.y + (168<<16), tempbuf);
-        if (ud.volume_number == 0 && ud.level_number == 7)
-            mgametextcenter(origin.x, origin.y + (180<<16), currentboardfilename);
+        msaveloadtext(origin, ud.level_number, ud.volume_number, ud.player_skill,
+                              currentboardfilename, sprite[g_player[myconnectindex].ps->i].extra);
         break;
     }
 
@@ -5378,7 +5416,7 @@ static void Menu_RunScrollbar(Menu_t *cm, MenuMenuFormat_t const * const format,
             rotatesprite_fs(scrollx, scrollregionend, ud.menu_scrollbarz, 0, scrollTileBottom, 0, 0, 26);
         }
         else
-            Menu_BlackRectangle(scrollx, scrolly, scrollwidth, scrollheight, 1|32);
+            Menu_BlackRectangle(scrollx, scrolly, scrollwidth, scrollheight, 1);
 
         rotatesprite_fs(scrollx + ((scrollwidth>>17)<<16) - ((tilesiz[scrollTileCursor].x>>1)*ud.menu_scrollcursorz), scrollregionstart + scale(scrollregionheight, *scrollPos, scrollPosMax), ud.menu_scrollcursorz, 0, scrollTileCursor, 0, 0, 26);
 

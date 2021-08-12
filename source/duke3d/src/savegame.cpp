@@ -1732,6 +1732,7 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
     h.volnum     = ud.volume_number;
     h.levnum     = ud.level_number;
     h.skill      = ud.player_skill;
+    h.health     = sprite[g_player[myconnectindex].ps->i].extra;
 
     Bstrncpyz(h.boardfn, currentboardfilename, sizeof(h.boardfn));
 

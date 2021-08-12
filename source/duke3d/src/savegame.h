@@ -43,7 +43,8 @@ typedef struct _savehead
     // 16 bytes
 
     uint32_t userbytever;
-    uint32_t scriptcrc;
+    uint8_t filler[2];
+    int16_t health;
 
     uint8_t comprthres;
     uint8_t recdiffsp, diffcompress, synccompress;
