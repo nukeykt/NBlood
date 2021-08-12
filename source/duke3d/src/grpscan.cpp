@@ -90,6 +90,7 @@ static void LoadList(const char * filename)
     scriptfile_addsymbolvalue("GAMEFLAG_NAM", GAMEFLAG_NAM);
     scriptfile_addsymbolvalue("GAMEFLAG_NAPALM", GAMEFLAG_NAM|GAMEFLAG_NAPALM);
     scriptfile_addsymbolvalue("GAMEFLAG_WW2GI", GAMEFLAG_NAM|GAMEFLAG_WW2GI);
+    scriptfile_addsymbolvalue("DUKEWT_CRC", DUKEWT_CRC);
     scriptfile_addsymbolvalue("DUKE15_CRC", DUKE15_CRC);
     scriptfile_addsymbolvalue("DUKEPP_CRC", DUKEPP_CRC);
     scriptfile_addsymbolvalue("DUKE13_CRC", DUKE13_CRC);
