@@ -306,7 +306,7 @@ That way, individual menu entries can be ifdef'd out painlessly.
 */
 
 static MenuLink_t MEO_NULL = { MENU_NULL, MA_None, };
-static const char* MenuCustom = "Custom";
+static const char* MenuCustom = "CVAR";
 
 #define MAKE_MENUSTRING(...) { NULL, __VA_ARGS__, }
 #define MAKE_MENUOPTION(...) { __VA_ARGS__, -1, }
@@ -520,7 +520,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHS
 MAKE_MENU_TOP_ENTRYLINK("Cheats", MEF_OptionsMenu, OPTIONS_CHEATS, MENU_CHEATS);
 #endif
 
-static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless, newmaxfps;
+static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless, newmaxfps, newdisplayindex;
 
 enum resflags_t {
     RES_FS  = 0x1,
@@ -542,6 +542,13 @@ static char const *MEOSN_VIDEOSETUP_RESOLUTION[MAXVALIDMODES];
 static MenuOptionSet_t MEOS_VIDEOSETUP_RESOLUTION = MAKE_MENUOPTIONSETDYN( MEOSN_VIDEOSETUP_RESOLUTION, NULL, 0, 0x0 );
 static MenuOption_t MEO_VIDEOSETUP_RESOLUTION = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RESOLUTION, &newresolution );
 static MenuEntry_t ME_VIDEOSETUP_RESOLUTION = MAKE_MENUENTRY( "Resolution:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RESOLUTION, Option );
+
+
+static char const* MEOSN_VIDEOSETUP_DISPLAY[8];
+static MenuOptionSet_t MEOS_VIDEOSETUP_DISPLAY = MAKE_MENUOPTIONSETDYN(MEOSN_VIDEOSETUP_DISPLAY, NULL, 0, 0x0);
+static MenuOption_t MEO_VIDEOSETUP_DISPLAY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_DISPLAY, &newdisplayindex);
+static MenuEntry_t ME_VIDEOSETUP_DISPLAY = MAKE_MENUENTRY("Display:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_DISPLAY, Option);
+
 
 #ifdef USE_OPENGL
 #ifdef POLYMER
@@ -585,14 +592,14 @@ static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &
 
 
 
-#if 0
-static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "Auto", "None", "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
-static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { -1, 0, 30, 60, 75, 100, 120, 144, 165, 240 };
+#if 1
+static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "None", "30 fps", "58 fps", "59 fps", "60 fps", "61 fps", "72 fps", "73 fps", "74 fps", "75 fps", "83 fps", "84 fps", "85 fps", "100 fps", "118 fps", "119 fps", "120 fps", "142 fps", "143 fps", "144 fps", "163 fps", "164 fps", "165 fps", "238 fps", "239 fps", "240 fps" };
+static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { 0, 30, 58, 59, 60, 61, 72, 73, 74, 75, 83, 84, 85, 100, 118, 119, 120, 142, 143, 144, 163, 164, 165, 238, 239, 240 };
 static MenuOptionSet_t MEOS_VIDEOSETUP_FRAMELIMIT = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_FRAMELIMIT, MEOSV_VIDEOSETUP_FRAMELIMIT, 0x0);
-static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &r_maxfps);
+static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &newmaxfps);
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY("Framerate limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, Option);
 #else
-static MenuRangeInt32_t MEO_VIDEOSETUP_FRAMELIMIT = MAKE_MENURANGE( &newmaxfps, &MF_Redfont, -1, 240, 6, 40, DisplayTypeInteger );
+static MenuRangeInt32_t MEO_VIDEOSETUP_FRAMELIMIT = MAKE_MENURANGE( &newmaxfps, &MF_Redfont, 0, 240, 3, 81, DisplayTypeInteger );
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY( "FPS limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, RangeInt32 );
 #endif
 
@@ -790,6 +797,7 @@ static MenuEntry_t *MEL_VIDEOSETUP[] = {
 #ifdef USE_OPENGL
     &ME_VIDEOSETUP_RENDERER,
 #endif
+    &ME_VIDEOSETUP_DISPLAY,
     &ME_VIDEOSETUP_FULLSCREEN,
     &ME_VIDEOSETUP_BORDERLESS,
     &ME_VIDEOSETUP_VSYNC,
@@ -2262,6 +2270,104 @@ static void Menu_Run(Menu_t *cm, vec2_t origin);
 
 static void Menu_BlackRectangle(int32_t x, int32_t y, int32_t width, int32_t height, int32_t orientation);
 
+static void Menu_PopulateVideoSetup()
+{
+    vec2_t res = { xres, yres };
+    static int displayindex;
+
+    if (displayindex != newdisplayindex)
+    {
+        videoResetMode();
+        videoGetModes(newdisplayindex);
+        displayindex = newdisplayindex;
+
+        //if (newresolution != -1)
+        //    res = { resolution[0].xdim, resolution[0].ydim };
+
+        if (displayindex != r_displayindex)
+            newresolution = 0;
+        else
+            newresolution = -1;
+    }
+
+    Bmemset(resolution, 0, sizeof(resolution));
+    MEOS_VIDEOSETUP_RESOLUTION.numOptions = 0;
+
+    // prepare video setup
+    for (int i = 0; i < validmodecnt; ++i)
+    {
+        int j;
+
+        for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
+        {
+            if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
+            {
+                resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
+                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+                if (validmode[i].bpp > resolution[j].bppmax)
+                    resolution[j].bppmax = validmode[i].bpp;
+                break;
+            }
+        }
+
+        if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
+        {
+            resolution[j].xdim = validmode[i].xdim;
+            resolution[j].ydim = validmode[i].ydim;
+            resolution[j].bppmax = validmode[i].bpp;
+            resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
+            Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+            MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+            ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
+        }
+    }
+
+    if (newresolution == -1)
+    {
+        newresolution = 0;
+
+        for (int i = 0; i < MAXVALIDMODES; ++i)
+        {
+            if (resolution[i].xdim == res.x && resolution[i].ydim == res.y)
+            {
+                newresolution = i;
+                break;
+            }
+        }
+    }
+
+    const int32_t nr = newresolution;
+
+    if (newfullscreen && !(resolution[nr].flags & RES_FS))
+        newfullscreen = 0;
+
+    // don't allow setting fullscreen mode if it's not supported by the resolution
+    MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FULLSCREEN, !(resolution[nr].flags & RES_FS));
+
+    MEOS_VIDEOSETUP_DISPLAY.numOptions = 0;
+
+    // prepare video setup
+
+    static char* displayNames[ARRAY_SIZE(MEOSN_VIDEOSETUP_DISPLAY)] = {};
+    for (int i = 0; i < g_numdisplays; ++i)
+    {
+        if (displayNames[i] == nullptr)
+            displayNames[i] = (char *)Xmalloc(32);
+        Bsnprintf(displayNames[i], 32, "%d:%s", i, videoGetDisplayName(i));
+        MEOSN_VIDEOSETUP_DISPLAY[i] = displayNames[i];
+        ++MEOS_VIDEOSETUP_DISPLAY.numOptions;
+    }
+
+    MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
+        (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
+            videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
+            && vsync == newvsync && r_borderless == newborderless && r_maxfps == newmaxfps && r_displayindex == newdisplayindex
+            )
+        || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
+    MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
+}
+
 /*
 At present, no true difference is planned between Menu_Pre() and Menu_PreDraw().
 They are separate for purposes of organization.
@@ -2368,65 +2474,7 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_VIDEOSETUP:
     {
-        Bmemset(resolution, 0, sizeof(resolution));
-        MEOS_VIDEOSETUP_RESOLUTION.numOptions = 0;
-
-        // prepare video setup
-        for (int i = 0; i < validmodecnt; ++i)
-        {
-            int j;
-
-            for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
-            {
-                if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
-                {
-                    resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
-                    Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
-                    MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
-                    if (validmode[i].bpp > resolution[j].bppmax)
-                        resolution[j].bppmax = validmode[i].bpp;
-                    break;
-                }
-            }
-
-            if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
-            {
-                resolution[j].xdim = validmode[i].xdim;
-                resolution[j].ydim = validmode[i].ydim;
-                resolution[j].bppmax = validmode[i].bpp;
-                resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
-                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
-                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
-                ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
-            }
-        }
-
-        if (newresolution == -1)
-        {
-            newresolution = 0;
-
-            for (int i = 0; i < MAXVALIDMODES; ++i)
-            {
-                if (resolution[i].xdim == xres && resolution[i].ydim == yres)
-                {
-                    newresolution = i;
-                    break;
-                }
-            }
-        }
-
-        const int32_t nr = newresolution;
-
-        // don't allow setting fullscreen mode if it's not supported by the resolution
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FULLSCREEN, !(resolution[nr].flags & RES_FS));
-
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
-             (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
-              videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
-              && vsync == newvsync && r_borderless == newborderless && r_maxfps == newmaxfps
-             )
-             || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
+        Menu_PopulateVideoSetup();
         break;
     }
 
@@ -3635,6 +3683,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         if (r_borderless != newborderless)
             videoResetMode();
 
+        r_displayindex = newdisplayindex;
         r_borderless = newborderless;
 
         if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
@@ -3659,7 +3708,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             onvideomodechange(n.bppmax > 8);
         }
 
-        r_maxfps = newmaxfps > 0 ? clamp(newmaxfps, 30, 1000) : newmaxfps;
+        newmaxfps = r_maxfps = newmaxfps > 0 ? clamp(newmaxfps, 30, 1000) : newmaxfps;
         g_frameDelay = calcFrameDelay(r_maxfps);
         g_restorePalette = -1;
         G_UpdateScreenArea();
@@ -4847,6 +4896,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         newvsync = vsync;
         newborderless = r_borderless;
         newmaxfps = r_maxfps;
+        newdisplayindex = r_displayindex;
         break;
 
 #ifndef EDUKE32_RETAIL_MENU
