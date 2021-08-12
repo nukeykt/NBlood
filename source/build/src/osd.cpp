@@ -1696,7 +1696,7 @@ int OSD_Printf(const char *f, ...)
         va_start(va, f);
         len = Bvsnprintf(buf, size-1, f, va);
         va_end(va);
-    } while (len < 0);
+    } while ((unsigned)len > size-1);
 
     buf[size-1] = 0;
     OSD_Puts(buf);
