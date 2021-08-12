@@ -499,6 +499,9 @@ void yax_update(int32_t resetstat)
 #endif
         nextsectbunch[0][i] = nextsectbunch[1][i] = -1;
     }
+
+    Bmemset(yax_updown, -1, sizeof(yax_updown));
+
     for (i=0; i<YAX_MAXBUNCHES; i++)
         headsectbunch[0][i] = headsectbunch[1][i] = -1;
 #if !defined NEW_MAP_FORMAT
@@ -10293,7 +10296,6 @@ void calc_sector_reachability(void)
 
     Bassert(tablesize);
 
-    Bmemset(yax_updown, -1, sizeof(yax_updown));
     Bmemset(wallsect, -1, sizeof(wallsect));
 
     DO_FREE_AND_NULL(reachablesectors);
