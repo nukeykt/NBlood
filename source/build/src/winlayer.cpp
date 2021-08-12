@@ -1584,11 +1584,13 @@ static int sortmodes(const void *a_, const void *b_)
 
     return 0;
 }
-void videoGetModes(void)
+void videoGetModes(int display)
 {
     int32_t cdepths[2] = { 8, 0 };
     int32_t i, j, maxx=0, maxy=0;
     HRESULT result;
+
+    UNREFERENCED_PARAMETER(display);
 
 #ifdef USE_OPENGL
     if (desktopbpp > 8 && !nogl) cdepths[1] = desktopbpp;
@@ -1641,6 +1643,11 @@ void videoGetModes(void)
 #undef CHECK
 #undef ADDMODE
 
+char const* videoGetDisplayName(int display)
+{
+    UNREFERENCED_PARAMETER(display);
+    return "display";
+}
 
 //
 // resetvideomode() -- resets the video system

@@ -64,19 +64,21 @@ extern char offscreenrendering;
 extern int32_t nofog;
 
 extern int32_t r_maxfps;
+extern int32_t g_numdisplays;
+extern int32_t g_displayindex;
 
 void calc_ylookup(int32_t bpl, int32_t lastyidx);
 
 int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t forced);
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs);
-void    videoGetModes(void);
+void    videoGetModes(int display = -1);
 void    videoResetMode(void);
 void    videoEndDrawing(void);
 void    videoShowFrame(int32_t);
 int32_t videoUpdatePalette(int32_t start, int32_t num);
 int32_t videoSetGamma(void);
 int32_t videoSetVsync(int32_t newSync);
-
+char const* videoGetDisplayName(int display);
 //#define DEBUG_FRAME_LOCKING
 #if !defined DEBUG_FRAME_LOCKING
 void videoBeginDrawing(void);

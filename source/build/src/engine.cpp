@@ -11377,8 +11377,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     daupscaledxdim = max(640, daupscaledxdim);
     daupscaledydim = max(400, daupscaledydim);
 
-    if (in3dmode() && videomodereset == 0 && (davidoption == fullscreen) &&
-        (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
+    if (in3dmode() && videomodereset == 0 && (davidoption == fullscreen) && (r_displayindex == g_displayindex)
+        && (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
         return 0;
 
     Bstrcpy(kensmessage, "!!!! BUILD engine&tools programmed by Ken Silverman of E.G. RI."

@@ -23,7 +23,8 @@ extern "C"
 }
 #endif // _WIN32
 
-int32_t g_borderless=2;
+int32_t g_numdisplays = 1;
+int32_t g_displayindex;
 
 // input
 char    inputdevices = 0;
@@ -593,6 +594,25 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 }
 #endif
 
+static int osdcmd_displayindex(osdcmdptr_t parm)
+{
+    int d = 0;
+
+    if (parm->numparms != 1 || (unsigned)(d = Bstrtol(parm->parms[0], NULL, 10)) >= (unsigned)g_numdisplays)
+    {
+        OSD_Puts("r_displayindex: change video display.\nDetected displays:\n");
+        for (d = 0; d < g_numdisplays; d++)
+            OSD_Printf(" %s\n", videoGetDisplayName(d));
+        return OSDCMD_OK;
+    }
+
+    OSD_Printf("%s %d\n", parm->name, d);
+    r_displayindex = d;
+    osdcmd_restartvid(NULL);
+
+    return OSDCMD_OK;
+}
+
 static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
 {
     int32_t r = osdcmd_cvar_set(parm);
@@ -625,7 +645,6 @@ int32_t baselayer_init(void)
     {
         { "lz4compressionlevel","adjust LZ4 compression level used for savegames",(void *) &lz4CompressionLevel, CVAR_INT, 1, 32 },
         { "r_borderless", "borderless windowed mode: 0: never  1: always  2: if resolution matches desktop", (void *) &r_borderless, CVAR_INT|CVAR_RESTARTVID, 0, 2 },
-        { "r_displayindex","index of output display",(void *)&r_displayindex, CVAR_INT|CVAR_RESTARTVID, 0, 10 },
         { "r_usenewaspect","enable/disable new screen aspect ratio determination code",(void *) &r_usenewaspect, CVAR_BOOL, 0, 1 },
         { "r_screenaspect","if using r_usenewaspect and in fullscreen, screen aspect ratio in the form XXYY, e.g. 1609 for 16:9",
           (void *) &r_screenxy, SCREENASPECT_CVAR_TYPE, 0, 9999 },
@@ -653,6 +672,9 @@ int32_t baselayer_init(void)
 
     for (auto & i : cvars_engine)
         OSD_RegisterCvar(&i, (i.flags & CVAR_FUNCPTR) ? osdcmd_cvar_set_baselayer : osdcmd_cvar_set);
+
+    static osdcvardata_t displayindex = { "r_displayindex","index of output display",(void*)&r_displayindex, CVAR_INT | CVAR_FUNCPTR, 0, 8 };
+    OSD_RegisterCvar(&displayindex, osdcmd_displayindex);
 
 #ifdef USE_OPENGL
     OSD_RegisterFunction("setrendermode","setrendermode <number>: sets the engine's rendering mode.\n"
