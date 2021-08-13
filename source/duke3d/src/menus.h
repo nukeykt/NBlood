@@ -244,6 +244,9 @@ typedef struct MenuCustom2Col_t
 
     // state
     int8_t screenOpen;
+
+    // decoupled link (e.g. gamefunc index)
+    int32_t linkIndex;
 } MenuCustom2Col_t;
 
 enum MenuRangeFlags_t
