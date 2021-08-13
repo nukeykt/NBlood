@@ -1955,6 +1955,8 @@ void Menu_Init(void)
     MEOSN_Gamefuncs[0] = MenuGameFuncNone;
     MEOSV_Gamefuncs[0] = -1;
     k = 1;
+
+    bool customKeyOrder = (g_keyEntryOrder[0] >= 0);
     for (i = 0; i < NUMGAMEFUNCTIONS; ++i)
     {
         Bstrcpy(MenuGameFuncs[i], gamefunctions[i]);
@@ -1963,13 +1965,17 @@ void Menu_Init(void)
             if (MenuGameFuncs[i][j] == '_')
                 MenuGameFuncs[i][j] = ' ';
 
-        if (gamefunctions[i][0] != '\0')
+        j = customKeyOrder ? g_keyEntryOrder[i] : i;
+
+        if (j >= 0 && gamefunctions[j][0] != '\0')
         {
-            MEOSN_Gamefuncs[k] = MenuGameFuncs[i];
-            MEOSV_Gamefuncs[k] = i;
+            MEOSN_Gamefuncs[k] = MenuGameFuncs[j];
+            MEOSV_Gamefuncs[k] = j;
             ++k;
         }
     }
+    // 4 -- unsorted list
+    MEOS_Gamefuncs.features |= customKeyOrder ? 4 : 0;
     MEOS_Gamefuncs.numOptions = k;
 
     for (i = 1; i < NUMKEYS-1; ++i)
@@ -5404,6 +5410,15 @@ static vec2_t Menu_TextSize(int32_t x, int32_t y, const MenuFont_t *font, const 
 }
 #endif
 
+static int32_t Menu_FindOptionLinearSearch(MenuOption_t *object, const int32_t query, uint16_t searchstart, uint16_t searchend)
+{
+    for (int i = searchstart; i < searchend; ++i)
+        if (object->options->optionValues[i] == query)
+            return i;
+
+    return -1;
+}
+
 static int32_t Menu_FindOptionBinarySearch(MenuOption_t *object, const int32_t query, uint16_t searchstart, uint16_t searchend)
 {
     const uint16_t thissearch    = (searchstart + searchend) / 2;
@@ -5712,8 +5727,12 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         break;
                     case Option:
                     {
+                        int32_t currentOption;
                         auto object = (MenuOption_t*)entry->entry;
-                        int32_t currentOption = Menu_FindOptionBinarySearch(object, object->data == NULL ? Menu_EntryOptionSource(entry, object->currentOption) : *object->data, 0, object->options->numOptions);
+
+                        // if unsorted, use linear search; otherwise use binary search
+                        auto searchFunc = object->options->features & 4 ? Menu_FindOptionLinearSearch : Menu_FindOptionBinarySearch;
+                        currentOption = searchFunc(object, object->data == NULL ? Menu_EntryOptionSource(entry, object->currentOption) : *object->data, 0, object->options->numOptions);
 
                         if (currentOption >= 0)
                             object->currentOption = currentOption;

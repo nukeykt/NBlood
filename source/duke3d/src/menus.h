@@ -209,7 +209,7 @@ typedef struct MenuOptionSet_t
     int32_t scrollPos;
 
     // appearance
-    uint8_t features; // bit 1 = disable left/right arrows, bit 2 = disable list
+    uint8_t features; // bit 1 = disable left/right arrows, bit 2 = disable list, bit 4 = unsorted list
 
     int32_t getMarginBottom() const { return mulscale16(entryFormat->marginBottom, font->zoom); }
     int32_t getIndent() const { return mulscale16(entryFormat->indent, font->zoom); }
