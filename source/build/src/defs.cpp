@@ -1904,7 +1904,7 @@ static int32_t defsparser(scriptfile *script)
         case T_VOXEL:
         {
             char *voxeltokptr = script->ltextptr;
-            char *fn, *modelend;
+            char *fn, *voxelend;
             int32_t tile0 = MAXTILES, tile1 = -1, tilex = -1;
 
             static const tokenlist voxeltokens[] =
@@ -1918,22 +1918,25 @@ static int32_t defsparser(scriptfile *script)
             if (EDUKE32_PREDICT_FALSE(scriptfile_getstring(script,&fn)))
                 break; //voxel filename
 
+            if (scriptfile_getbraces(script,&voxelend)) break;
+
             if (EDUKE32_PREDICT_FALSE(nextvoxid == MAXVOXELS))
             {
                 initprintf("Maximum number of voxels (%d) already defined.\n", MAXVOXELS);
+                script->textptr = voxelend + 1;
                 break;
             }
 
             if (EDUKE32_PREDICT_FALSE(qloadkvx(nextvoxid, fn)))
             {
                 initprintf("Failure loading voxel file \"%s\"\n",fn);
+                script->textptr = voxelend + 1;
                 break;
             }
 
             lastvoxid = nextvoxid++;
 
-            if (scriptfile_getbraces(script,&modelend)) break;
-            while (script->textptr < modelend)
+            while (script->textptr < voxelend)
             {
                 switch (getatoken(script, voxeltokens, ARRAY_SIZE(voxeltokens)))
                 {
