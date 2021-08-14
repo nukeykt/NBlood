@@ -1027,6 +1027,14 @@ static int osdcmd_unbind(osdcmdptr_t parm)
         if (ConsoleKey.key && !Bstrcasecmp(parm->parms[0], ConsoleKey.key))
         {
             CONTROL_FreeKeyBind(ConsoleKey.sc);
+            for (auto &KeyboardKey : ud.config.KeyboardKeys)
+            {
+                if (KeyboardKey[0] == ConsoleKey.sc)
+                    KeyboardKey[0] = 0xff;
+
+                if (KeyboardKey[1] == ConsoleKey.sc)
+                    KeyboardKey[1] = 0xff;
+            }
             OSD_Printf("unbound key %s\n", ConsoleKey.key);
             return OSDCMD_OK;
         }
