@@ -2367,7 +2367,7 @@ static void         polymer_drawplane(_prplane* plane)
 //     glEnd();
 //     glEnable(GL_TEXTURE_2D);
 
-    if (pr_buckets && pr_vbos > 0 && prcanbucket && plane->bucket)
+    if (pr_buckets && prcanbucket && plane->bucket)
     {
         polymer_bucketplane(plane);
         return;
@@ -2389,7 +2389,7 @@ static void         polymer_drawplane(_prplane* plane)
         geomfbooffset = 0;
     }
 
-    if (planevbo && (pr_vbos > 0))
+    if (planevbo)
     {
         glBindBuffer(GL_ARRAY_BUFFER, planevbo);
         glVertexPointer(3, GL_FLOAT, sizeof(_prvert), (GLvoid *)(geomfbooffset));
@@ -2415,7 +2415,7 @@ static void         polymer_drawplane(_prplane* plane)
 
         if (plane->indices)
         {
-            if (planevbo && (pr_vbos > 0))
+            if (planevbo)
                 glDrawElements(GL_TRIANGLES, plane->indicescount, GL_UNSIGNED_SHORT, NULL);
             else
                 glDrawElements(GL_TRIANGLES, plane->indicescount, GL_UNSIGNED_SHORT, plane->indices);
@@ -2430,7 +2430,7 @@ static void         polymer_drawplane(_prplane* plane)
         curlight++;
     } while ((curlight < plane->lightcount) && (curlight < pr_maxlightpasses) && (!depth || mirrors[depth-1].plane));
 
-    if (planevbo && (pr_vbos > 0))
+    if (planevbo)
     {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         if (plane->indices)
@@ -2841,35 +2841,27 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     i = -1;
 
 attributes:
-    if ((pr_vbos > 0) && ((i == -1) || (wallinvalidate)))
+    if (i == -1 || wallinvalidate)
     {
-        if (pr_vbos > 0)
+        if (pr_nullrender < 2)
         {
-            if (pr_nullrender < 2)
-            {
-                /*glBindBuffer(GL_ARRAY_BUFFER, s->floor.vbo);
-                glBufferSubData(GL_ARRAY_BUFFER, 0, sec->wallnum * sizeof(GLfloat)* 5, s->floor.buffer);
-                glBindBuffer(GL_ARRAY_BUFFER, s->ceil.vbo);
-                glBufferSubData(GL_ARRAY_BUFFER, 0, sec->wallnum * sizeof(GLfloat)* 5, s->ceil.buffer);
-                */
+            /*glBindBuffer(GL_ARRAY_BUFFER, s->floor.vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sec->wallnum * sizeof(GLfloat)* 5, s->floor.buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, s->ceil.vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sec->wallnum * sizeof(GLfloat)* 5, s->ceil.buffer);
+            */
 
-                s->floor.mapvbo_vertoffset = sec->wallptr * 2;
-                s->ceil.mapvbo_vertoffset = s->floor.mapvbo_vertoffset + sec->wallnum;
+            s->floor.mapvbo_vertoffset = sec->wallptr * 2;
+            s->ceil.mapvbo_vertoffset = s->floor.mapvbo_vertoffset + sec->wallnum;
 
-                GLintptr sector_offset = s->floor.mapvbo_vertoffset * sizeof(_prvert);
-                GLsizeiptr cur_sector_size = sec->wallnum * sizeof(_prvert);
-                glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
-                // floor
-                glBufferSubData(GL_ARRAY_BUFFER, sector_offset, cur_sector_size, s->floor.buffer);
-                // ceiling
-                glBufferSubData(GL_ARRAY_BUFFER, sector_offset + cur_sector_size, cur_sector_size, s->ceil.buffer);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-            }
-        }
-        else
-        {
-            s->floor.mapvbo_vertoffset = -1;
-            s->ceil.mapvbo_vertoffset = -1;
+            GLintptr sector_offset = s->floor.mapvbo_vertoffset * sizeof(_prvert);
+            GLsizeiptr cur_sector_size = sec->wallnum * sizeof(_prvert);
+            glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+            // floor
+            glBufferSubData(GL_ARRAY_BUFFER, sector_offset, cur_sector_size, s->floor.buffer);
+            // ceiling
+            glBufferSubData(GL_ARRAY_BUFFER, sector_offset + cur_sector_size, cur_sector_size, s->ceil.buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
 
@@ -2911,24 +2903,22 @@ finish:
     if (needfloor)
     {
         polymer_buildfloor(sectnum);
-        if ((pr_vbos > 0))
+
+        if (pr_nullrender < 2)
         {
-            if (pr_nullrender < 2)
+            if (s->oldindicescount < s->indicescount)
             {
-                if (s->oldindicescount < s->indicescount)
-                {
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
-                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
-                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
-                    s->oldindicescount = s->indicescount;
-                }
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
-                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->floor.indices);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
-                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->ceil.indices);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
+                s->oldindicescount = s->indicescount;
             }
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->floor.indices);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->ceil.indices);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
     }
 
@@ -3580,35 +3570,26 @@ static void         polymer_updatewall(int16_t wallnum)
         polymer_computeplane(&w->over);
     polymer_computeplane(&w->mask);
 
-    if ((pr_vbos > 0))
+    if (pr_nullrender < 2)
     {
-        if (pr_nullrender < 2)
-        {
-            const GLintptr thiswalloffset = prwalldataoffset + (prwalldatasize * wallnum);
-            const GLintptr thisoveroffset = thiswalloffset + proneplanesize;
-            const GLintptr thismaskoffset = thisoveroffset + proneplanesize;
-            glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
-            glBufferSubData(GL_ARRAY_BUFFER, thiswalloffset, proneplanesize, w->wall.buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
-            if (w->over.buffer)
-                glBufferSubData(GL_ARRAY_BUFFER, thisoveroffset, proneplanesize, w->over.buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
-            glBufferSubData(GL_ARRAY_BUFFER, thismaskoffset, proneplanesize, w->mask.buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(GLfloat)* 5, w->bigportal);
-            //glBufferSubData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat)* 5, 4 * sizeof(GLfloat)* 3, w->cap);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        const GLintptr thiswalloffset = prwalldataoffset + (prwalldatasize * wallnum);
+        const GLintptr thisoveroffset = thiswalloffset + proneplanesize;
+        const GLintptr thismaskoffset = thisoveroffset + proneplanesize;
+        glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+        glBufferSubData(GL_ARRAY_BUFFER, thiswalloffset, proneplanesize, w->wall.buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+        if (w->over.buffer)
+            glBufferSubData(GL_ARRAY_BUFFER, thisoveroffset, proneplanesize, w->over.buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+        glBufferSubData(GL_ARRAY_BUFFER, thismaskoffset, proneplanesize, w->mask.buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(GLfloat)* 5, w->bigportal);
+        //glBufferSubData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat)* 5, 4 * sizeof(GLfloat)* 3, w->cap);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            w->wall.mapvbo_vertoffset = thiswalloffset / sizeof(_prvert);
-            w->over.mapvbo_vertoffset = thisoveroffset / sizeof(_prvert);
-            w->mask.mapvbo_vertoffset = thismaskoffset / sizeof(_prvert);
-        }
-    }
-    else
-    {
-        w->wall.mapvbo_vertoffset = -1;
-        w->over.mapvbo_vertoffset = -1;
-        w->mask.mapvbo_vertoffset = -1;
+        w->wall.mapvbo_vertoffset = thiswalloffset / sizeof(_prvert);
+        w->over.mapvbo_vertoffset = thisoveroffset / sizeof(_prvert);
+        w->mask.mapvbo_vertoffset = thismaskoffset / sizeof(_prvert);
     }
 
     w->flags.empty = 0;
@@ -3675,18 +3656,12 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     //{
     //    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    //    if (pr_vbos)
-    //    {
-    //        glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
-    //        glVertexPointer(3, GL_FLOAT, 0, (const GLvoid*)(4 * sizeof(GLfloat) * 5));
-    //    }
-    //    else
-    //        glVertexPointer(3, GL_FLOAT, 0, w->cap);
+    //    glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
+    //    glVertexPointer(3, GL_FLOAT, 0, (const GLvoid*)(4 * sizeof(GLfloat) * 5));
 
     //    glDrawArrays(GL_QUADS, 0, 4);
 
-    //    if (pr_vbos)
-    //        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     //    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     //}
@@ -3945,7 +3920,7 @@ void                polymer_updatesprite(int32_t snum)
         s->hash = 0xDEADBEEF;
     }
 
-    if ((tspr->cstat & 48) && (pr_vbos > 0) && !s->plane.vbo)
+    if ((tspr->cstat & 48) && !s->plane.vbo)
     {
         if (pr_nullrender < 2)
         {
@@ -4122,7 +4097,7 @@ void                polymer_updatesprite(int32_t snum)
 
     if (pr_nullrender < 2)
     {
-        if (alignmask && (pr_vbos > 0))
+        if (alignmask)
         {
             glBindBuffer(GL_ARRAY_BUFFER, s->plane.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(_prvert), s->plane.buffer);
@@ -4350,7 +4325,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     int32_t         i;
     GLfloat         color[3];
 
-    if ((pr_vbos > 0) && (skyboxdatavbo == 0))
+    if (skyboxdatavbo == 0)
     {
         glGenBuffers(1, &skyboxdatavbo);
 
@@ -4360,8 +4335,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    if (pr_vbos > 0)
-        glBindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
 
     tileUpdatePicnum(&tilenum, 0);
 
@@ -4398,14 +4372,8 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
         glColor4f(color[0], color[1], color[2], 1.0);
         glEnable(GL_TEXTURE_2D);
         polymost_bindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
-        if (pr_vbos > 0)
-        {
-            glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(4 * 5 * i * sizeof(GLfloat)));
-            glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(((4 * 5 * i) + 3) * sizeof(GLfloat)));
-        } else {
-            glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), &skyboxdata[4 * 5 * i]);
-            glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), &skyboxdata[3 + (4 * 5 * i)]);
-        }
+        glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(4 * 5 * i * sizeof(GLfloat)));
+        glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(((4 * 5 * i) + 3) * sizeof(GLfloat)));
         glDrawArrays(GL_QUADS, 0, 4);
         glDisable(GL_TEXTURE_2D);
 
@@ -4413,8 +4381,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     }
     drawingskybox = 0;
 
-    if (pr_vbos > 0)
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 // MDSPRITES
@@ -4442,7 +4409,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     m = (md3model_t*)models[tile2model[Ptile2tile(tspr->picnum,lpal)].modelid];
     updateanimation((md2model_t *)m,tspr,lpal);
 
-    if ((pr_vbos > 1) && (m->indices == NULL))
+    if (m->indices == NULL)
         polymer_loadmodelvbos(m);
 
     // Hackish, but that means it's a model drawn by rotatesprite.
@@ -4797,52 +4764,30 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 
         glEnableClientState(GL_NORMAL_ARRAY);
 
-        if (pr_vbos > 1)
-        {
-            glBindBuffer(GL_ARRAY_BUFFER, m->texcoords[surfi]);
-            glTexCoordPointer(2, GL_FLOAT, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, m->texcoords[surfi]);
+        glTexCoordPointer(2, GL_FLOAT, 0, 0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, m->geometry[surfi]);
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 15, (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15));
-            glNormalPointer(GL_FLOAT, sizeof(float) * 15, (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15) + 3);
+        glBindBuffer(GL_ARRAY_BUFFER, m->geometry[surfi]);
+        glVertexPointer(3, GL_FLOAT, sizeof(float) * 15, (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15));
+        glNormalPointer(GL_FLOAT, sizeof(float) * 15, (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15) + 3);
 
-            mdspritematerial.tbn = (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15) + 6;
+        mdspritematerial.tbn = (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15) + 6;
 
-            if (pr_gpusmoothing) {
-                mdspritematerial.nextframedata = (GLfloat*)(m->nframe * s->numverts * sizeof(float) * 15);
-            }
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indices[surfi]);
-
-            curlight = 0;
-            do {
-                materialbits = polymer_bindmaterial(&mdspritematerial, modellights, modellightcount);
-                glDrawElements(GL_TRIANGLES, s->numtris * 3, GL_UNSIGNED_INT, 0);
-                polymer_unbindmaterial(materialbits);
-            } while ((++curlight < modellightcount) && (curlight < pr_maxlightpasses));
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if (pr_gpusmoothing) {
+            mdspritematerial.nextframedata = (GLfloat*)(m->nframe * s->numverts * sizeof(float) * 15);
         }
-        else
-        {
-            glVertexPointer(3, GL_FLOAT, sizeof(float) * 15, v0);
-            glNormalPointer(GL_FLOAT, sizeof(float) * 15, v0 + 3);
-            glTexCoordPointer(2, GL_FLOAT, 0, s->uv);
 
-            mdspritematerial.tbn = v0 + 6;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indices[surfi]);
 
-            if (pr_gpusmoothing) {
-                mdspritematerial.nextframedata = (GLfloat*)(v1);
-            }
+        curlight = 0;
+        do {
+            materialbits = polymer_bindmaterial(&mdspritematerial, modellights, modellightcount);
+            glDrawElements(GL_TRIANGLES, s->numtris * 3, GL_UNSIGNED_INT, 0);
+            polymer_unbindmaterial(materialbits);
+        } while ((++curlight < modellightcount) && (curlight < pr_maxlightpasses));
 
-            curlight = 0;
-            do {
-                materialbits = polymer_bindmaterial(&mdspritematerial, modellights, modellightcount);
-                glDrawElements(GL_TRIANGLES, s->numtris * 3, GL_UNSIGNED_INT, s->tris);
-                polymer_unbindmaterial(materialbits);
-            } while ((++curlight < modellightcount) && (curlight < pr_maxlightpasses));
-        }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         glDisableClientState(GL_NORMAL_ARRAY);
     }
