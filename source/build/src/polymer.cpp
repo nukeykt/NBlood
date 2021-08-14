@@ -2606,7 +2606,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     int32_t         ceilz, florz;
     int32_t         tex, tey, heidiff;
     float           secangcos, secangsin, scalecoef, xpancoef, ypancoef;
-    int32_t         ang, needfloor, wallinvalidate;
+    int32_t         needfloor, wallinvalidate;
     int16_t         curstat, curpicnum, floorpicnum, ceilingpicnum;
     char            curxpanning, curypanning;
     _prvert*        curbuffer;
@@ -2718,9 +2718,9 @@ static int32_t      polymer_updatesector(int16_t sectnum)
             if (((sec->floorstat & 64) || (sec->ceilingstat & 64)) &&
                     ((secangcos == 2) && (secangsin == 2)))
             {
-                ang = (getangle(wall[wal->point2].x - wal->x, wall[wal->point2].y - wal->y) + 512) & 2047;
-                secangcos = (float)(sintable[(ang+512)&2047]) / 16383.0f;
-                secangsin = (float)(sintable[ang&2047]) / 16383.0f;
+                double arctan = atan2( wall[wal->point2].y - wal->y, wall[wal->point2].x - wal->x ) + M_PI / 2.0;
+                secangcos = cos( arctan );
+                secangsin = sin( arctan );
             }
 
             // relative texturing
