@@ -2604,12 +2604,14 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     walltype        *wal;
     int32_t         i, j;
     int32_t         ceilz, florz;
-    int32_t         tex, tey, heidiff;
+    int32_t         heidiff;
+    float           tex, tey;
     float           secangcos, secangsin, scalecoef, xpancoef, ypancoef;
     int32_t         needfloor, wallinvalidate;
     int16_t         curstat, curpicnum, floorpicnum, ceilingpicnum;
     char            curxpanning, curypanning;
     _prvert*        curbuffer;
+    float           relscalefactorfloor = 0.0, relscalefactorceil = 0.0, currelscalefactor;
 
     if (pr_nullrender >= 3) return 0;
 
@@ -2690,6 +2692,46 @@ static int32_t      polymer_updatesector(int16_t sectnum)
 #endif
         goto attributes;
 
+    if (((sec->floorstat & 64) || (sec->ceilingstat & 64)) &&
+        ((secangcos == 2) && (secangsin == 2)))
+    {
+        // relative-aligned floors apparently have a scaling bug in classic related to length of firstwall
+        // lifting polymost code to replicate here
+        vec2_t const xy = { wall[wall[sec->wallptr].point2].x - wall[sec->wallptr].x,
+                            wall[wall[sec->wallptr].point2].y - wall[sec->wallptr].y };
+
+        float len = Bsqrtf(xy.x * xy.x + xy.y * xy.y);
+
+        if (sec->floorstat & 2 || sec->ceilingstat & 2)
+        {
+            int i = krecipasm(nsqrtasm(uhypsq(xy.x,xy.y)));
+            float relscalefactor = i * (1.f/1073741824.f) * len;
+
+            if (sec->floorstat & 2)
+                relscalefactorfloor = relscalefactor;
+
+            if (sec->ceilingstat & 2)
+                relscalefactorceil = relscalefactor;
+        }
+
+        if (!(sec->floorstat & 2) || !(sec->ceilingstat & 2))
+        {
+            int i = nsqrtasm(uhypsq(xy.x,xy.y)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
+            float relscalefactor = i * (1.f/1048576.f) * len;
+
+            if (!(sec->floorstat & 2))
+                relscalefactorfloor = relscalefactor;
+
+            if (!(sec->ceilingstat & 2))
+                relscalefactorceil = relscalefactor;
+        }
+
+        // now sanely compute relative firstwall angle
+        double arctan = atan2( xy.y, xy.x ) + M_PI / 2.0;
+        secangcos = cos( arctan );
+        secangsin = sin( arctan );
+    }
+
     wal = &wall[sec->wallptr];
     i = 0;
     while (i < sec->wallnum)
@@ -2700,6 +2742,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
         curpicnum = floorpicnum;
         curxpanning = sec->floorxpanning;
         curypanning = sec->floorypanning;
+        currelscalefactor = relscalefactorfloor;
 
         while (j)
         {
@@ -2710,27 +2753,20 @@ static int32_t      polymer_updatesector(int16_t sectnum)
                 curpicnum = ceilingpicnum;
                 curxpanning = sec->ceilingxpanning;
                 curypanning = sec->ceilingypanning;
+                currelscalefactor = relscalefactorceil;
             }
 
             if (!waloff[curpicnum])
                 tileLoad(curpicnum);
 
-            if (((sec->floorstat & 64) || (sec->ceilingstat & 64)) &&
-                    ((secangcos == 2) && (secangsin == 2)))
-            {
-                double arctan = atan2( wall[wal->point2].y - wal->y, wall[wal->point2].x - wal->x ) + M_PI / 2.0;
-                secangcos = cos( arctan );
-                secangsin = sin( arctan );
-            }
-
             // relative texturing
             if (curstat & 64)
             {
-                xpancoef = (float)(wal->x - wall[sec->wallptr].x);
-                ypancoef = (float)(wall[sec->wallptr].y - wal->y);
+                xpancoef = (float)(wal->x - wall[sec->wallptr].x) * currelscalefactor;
+                ypancoef = (float)(wall[sec->wallptr].y - wal->y) * currelscalefactor;
 
-                tex = (int32_t)(xpancoef * secangsin + ypancoef * secangcos);
-                tey = (int32_t)(xpancoef * secangcos - ypancoef * secangsin);
+                tex = xpancoef * secangsin + ypancoef * secangcos;
+                tey = xpancoef * secangcos - ypancoef * secangsin;
             } else {
                 tex = wal->x;
                 tey = -wal->y;
@@ -2741,13 +2777,13 @@ static int32_t      polymer_updatesector(int16_t sectnum)
                 heidiff = (int32_t)(curbuffer[i].y - curbuffer[0].y);
                 // don't forget the sign, tey could be negative with concave sectors
                 if (tey >= 0)
-                    tey = (int32_t)sqrt((double)((tey * tey) + (heidiff * heidiff)));
+                    tey = sqrt((double)((tey * tey) + (heidiff * heidiff)));
                 else
-                    tey = -(int32_t)sqrt((double)((tey * tey) + (heidiff * heidiff)));
+                    tey = -sqrt((double)((tey * tey) + (heidiff * heidiff)));
             }
 
             if (curstat & 4)
-                swaplong(&tex, &tey);
+                swapfloat(&tex, &tey);
 
             if (curstat & 16) tex = -tex;
             if (curstat & 32) tey = -tey;
@@ -2770,8 +2806,8 @@ static int32_t      polymer_updatesector(int16_t sectnum)
             else
                 ypancoef = 0;
 
-            curbuffer[i].u = ((float)(tex) / (scalecoef * tilesiz[curpicnum].x)) + xpancoef;
-            curbuffer[i].v = ((float)(tey) / (scalecoef * tilesiz[curpicnum].y)) + ypancoef;
+            curbuffer[i].u = (tex / (scalecoef * tilesiz[curpicnum].x)) + xpancoef;
+            curbuffer[i].v = (tey / (scalecoef * tilesiz[curpicnum].y)) + ypancoef;
 
             j--;
         }
