@@ -6853,9 +6853,9 @@ MAIN_LOOP_RESTART:
 
         static bool frameJustDrawn;
         bool gameUpdate = false;
-        double gameUpdateStartTime = timerGetHiTicks();
+        double gameUpdateStartTime = timerGetFractionalTicks();
 
-        if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && totalclock >= ototalclock+TICSPERFRAME)
+        if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME)
         {
             do 
             {
@@ -6900,10 +6900,10 @@ MAIN_LOOP_RESTART:
                         G_DoMoveThings();
                     }
                 }
-                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= (TICSPERFRAME<<1));
+                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME);
 
                 gameUpdate = true;
-                g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
+                g_gameUpdateTime = timerGetFractionalTicks() - gameUpdateStartTime;
 
                 if (g_gameUpdateAvgTime <= 0.0)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
@@ -6942,7 +6942,7 @@ MAIN_LOOP_RESTART:
             G_DrawFrame();
 
             if (gameUpdate)
-                g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
+                g_gameUpdateAndDrawTime = timerGetFractionalTicks()-gameUpdateStartTime;
 
             frameJustDrawn = true;
         }

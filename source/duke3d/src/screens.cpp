@@ -801,7 +801,7 @@ static void G_PrintFPS(void)
     static float lastFPS, minFPS = std::numeric_limits<float>::max(), maxFPS;
     static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
 
-    double frameTime = timerGetHiTicks();
+    double frameTime = timerGetFractionalTicks();
     double frameDelay = frameTime - lastFrameTime;
     cumulativeFrameDelay += frameDelay;
 
@@ -1612,7 +1612,7 @@ void gameDisplayTitleScreen(void)
         {
             videoClearScreen(0);
             rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, BETASCREEN, 0, 0, 2 + 8 + 64 + BGSTRETCH);
-            rotatespritesmoothratio = calc_smoothratio_demo(totalclock, ototalclock, TICRATE);
+            rotatespritesmoothratio = calc_smoothratio(totalclock, ototalclock, REALGAMETICSPERSEC);
 
             if (logoflags & LOGO_DUKENUKEM)
             {

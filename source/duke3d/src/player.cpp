@@ -3017,7 +3017,7 @@ void P_UpdateAngles(int const playerNum, input_t const &input)
     auto      &thisPlayer = g_player[playerNum];
     auto const pPlayer    = thisPlayer.ps;
 
-    auto const currentHiTicks    = timerGetHiTicks();
+    auto const currentHiTicks    = timerGetFractionalTicks();
     double     elapsedInputTicks = currentHiTicks - thisPlayer.lastViewUpdate;
 
     if (!thisPlayer.lastViewUpdate)
@@ -3203,7 +3203,7 @@ void P_GetInput(int const playerNum)
 
     input_t input {};
 
-    auto const currentHiTicks    = timerGetHiTicks();
+    auto const currentHiTicks    = timerGetFractionalTicks();
     double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
 
     if (!g_lastInputTicks)

@@ -416,28 +416,6 @@ static inline int32_t gameHandleEvents(void)
     return handleevents();
 }
 
-static inline int32_t calc_smoothratio_demo(ClockTicks const totalclk, ClockTicks const ototalclk, int ticrate = REALGAMETICSPERSEC)
-{
-    int const   truncrfreq = Blrintf(floorf(refreshfreq * TICRATE / timerGetClockRate()));
-    int const   clk        = (totalclk - ototalclk).toScale16();
-    float const fracTics   = clk * truncrfreq * (1.f / (65536.f * TICRATE));
-
-#if 0
-    int const   wholeTics  = tabledivide32_noinline(clk * truncrfreq, 65536 * TICRATE);
-    //POGO: additional debug info for testing purposes
-    OSD_Printf("Elapsed tics: %d (%g), smoothratio: %d (%d)\n", wholeTics, fracTics,
-               tabledivide32_noinline(65536 * wholeTics * ticrate, truncrfreq),
-               tabledivide32_noinline(Blrintf(65536 * fracTics * ticrate), truncrfreq));
-#endif
-
-#if 1
-    return clamp(tabledivide32_noinline(Blrintf(65536 * fracTics * ticrate), truncrfreq), 0, 65536);
-#else
-    int const wholeTics = tabledivide32_noinline(clk * truncrfreq, 65536 * TICRATE);
-    return clamp(tabledivide32_noinline(65536 * wholeTics * ticrate, truncrfreq), 0, 65536);
-#endif
-}
-
 static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk)
 {
 #if 0
@@ -450,7 +428,7 @@ static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks con
 #endif
         return 65536;
 
-    return calc_smoothratio_demo(totalclk, ototalclk);
+    return calc_smoothratio(totalclk, ototalclk, REALGAMETICSPERSEC);
 }
 
 // sector effector lotags

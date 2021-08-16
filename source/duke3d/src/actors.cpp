@@ -9087,7 +9087,7 @@ static void G_DoEventGame(int const nEventID)
 void G_MoveWorld(void)
 {
     extern double g_moveActorsTime, g_moveWorldTime;
-    const double worldTime = timerGetHiTicks();
+    const double worldTime = timerGetFractionalTicks();
 
     MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
 
@@ -9128,14 +9128,14 @@ void G_MoveWorld(void)
         G_MoveMisc();  //ST 5
     }
 
-    const double actorsTime = timerGetHiTicks();
+    const double actorsTime = timerGetFractionalTicks();
 
     {
         MICROPROFILE_SCOPEI("MoveWorld", "MoveActors", MP_YELLOW4);
         G_MoveActors();  //ST 1
     }
 
-    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetHiTicks()-actorsTime);
+    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetFractionalTicks()-actorsTime);
 
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
@@ -9164,5 +9164,5 @@ void G_MoveWorld(void)
         G_MoveFX();  //ST 11
     }
 
-    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetHiTicks()-worldTime);
+    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetFractionalTicks()-worldTime);
 }
