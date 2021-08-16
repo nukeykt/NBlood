@@ -208,13 +208,6 @@ void initcrc16()
     }
 }
 
-uint16_t getcrc16(char const *buffer, int bufleng)
-{
-    int j = 0;
-    for (int i=bufleng-1;i>=0;i--) updatecrc16(j,buffer[i]);
-    return((uint16_t)(j&65535));
-}
-
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {

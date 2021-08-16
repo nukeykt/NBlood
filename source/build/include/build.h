@@ -1245,8 +1245,12 @@ void   printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol,
 void   Buninitart(void);
 
 void   initcrc16(void);
-uint16_t getcrc16(char const *buffer, int bufleng);
 #define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctab16[((((uint16_t)crc)>>8)&65535)^(dat)]))
+static FORCE_INLINE uint16_t getcrc16(void const* buffer, int bufleng, int crc = 0)
+{
+    for (int i = 0; i < bufleng; i++) updatecrc16(crc, ((char const*)buffer)[i]);
+    return((uint16_t)(crc & 65535));
+}
 
 
 ////////// specialized rotatesprite wrappers for (very) often used cases //////////
