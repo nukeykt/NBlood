@@ -4358,15 +4358,7 @@ void overheadeditor(void)
             {
                 ////// draw mouse pointer
 
-                col = editorcolors[0];
-
-                drawline16base(searchx+1, searchy+1, +0, -8, +0, -1, col);
-                drawline16base(searchx+1, searchy+1, +0, 1, +0, 8, col);
-
-                drawline16base(searchx+1, searchy+1, -8, 0, -1, 0, col);
-                drawline16base(searchx+1, searchy+1, 1, 0, 8, 0, col);
-
-                col = searchlock ? editorcolors[13] : editorcolors[15 - 3*gridlock];
+                col = searchlock ? editorcolors[13] : gridlock ? 255 : batmanandthrobbin();
 
                 if (joinsector[0] >= 0)
                     col = editorcolors[11];
@@ -4426,21 +4418,21 @@ void overheadeditor(void)
                 drawline16base(searchx, searchy, -8, 0, -1, 0, col);
                 drawline16base(searchx, searchy, 1, 0, 8, 0, col);
 
-                ////// Draw the white pixel closest to mouse cursor on linehighlight
+                ////// Draw an x at the point closest to mouse cursor on linehighlight
                 if (linehighlight>=0)
                 {
-                    char col = wall[linehighlight].nextsector >= 0 ? editorcolors[15] : editorcolors[5];
+                    char col = editorcolors[14] - (M32_THROB>>1);
 
                     if (m32_sideview)
                     {
                         getclosestpointonwall(searchx, searchy, linehighlight, &dax, &day, 1);
-                        drawline16base(dax, day, 0, 0, 0, 0, col);
+                        drawline16base(dax, day, -2,-2, +2,+2, col);
+                        drawline16base(dax, day, -2,+2, +2,-2, col);
                     }
                     else
                     {
                         getclosestpointonwall(mousxplc, mousyplc, linehighlight, &dax, &day, 0);
-                        ovhscrcoords(dax, day, &x2, &y2);
-                        drawline16base(x2, y2, 0, 0, 0, 0, col);
+                        draw_cross(dax, day, 2, col);
                     }
                 }
             }

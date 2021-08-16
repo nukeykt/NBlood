@@ -467,7 +467,13 @@ static FORCE_INLINE void inpclamp(int32_t *x, int32_t mi, int32_t ma)
 // Timed offset for Mapster32 color index cycling.
 // Range: 0 .. 16
 #define M32_THROB klabs(sintable[(((int32_t) totalclock << 4) & 2047)] >> 10)
-
+static FORCE_INLINE int throbbinwilliams(int first, int second)
+{
+    int8_t const dif = second - first;
+    return first + ((M32_THROB >> (3 - (klabs(dif) >> 3))) ^ ksgn(dif));
+}
+static FORCE_INLINE int batmanandthrobbin(void) { return throbbinwilliams(whitecol, editorcolors[0]); }
+static FORCE_INLINE int throbandbig(void) { return throbbinwilliams(editorcolors[0], whitecol); }
 void m32_showmouse(void);
 void editorMaybeWarpMouse(int searchx, int searchy);
 #ifdef __cplusplus
