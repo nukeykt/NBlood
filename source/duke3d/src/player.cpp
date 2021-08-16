@@ -5754,7 +5754,7 @@ RECHECK:
             {
                 if (mashedPotato)
                 {
-                    OSD_Printf(OSD_ERROR "%s: player killed by pushmove()!\n", EDUKE32_FUNCTION);
+                    P_DoQuote(QUOTE_SQUISHED, pPlayer);
                     P_QuickKill(pPlayer);
                     return;
                 }
