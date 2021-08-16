@@ -50,7 +50,7 @@ void StartFadeIn();
 void FadeIn();
 void FadeOut(int bFadeMusic);
 void RestorePalette();
-void TintPalette(int a, int b, int c);
+void TintPalette(int r, int g, int b);
 void GrabPalette();
 void BlackOut();
 void SetGreenPal();

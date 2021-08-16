@@ -166,7 +166,7 @@ void FillItems(short nPlayer)
         PlayerList[nPlayer].items[i] = 5;
     }
 
-    PlayerList[nPlayer].nMagic = 1000;
+    PlayerList[nPlayer].nMagic = kMaxMagic;
 
     if (nPlayer == nLocalPlayer)
     {

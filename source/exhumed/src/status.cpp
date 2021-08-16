@@ -288,7 +288,7 @@ void DrawStatusAnims()
 
 void SetMagicFrame()
 {
-    nMagicLevel = (1000 - PlayerList[nLocalPlayer].nMagic) / magicperline;
+    nMagicLevel = (kMaxMagic - PlayerList[nLocalPlayer].nMagic) / magicperline;
 
     if (nMagicLevel >= nMeterRange) {
         nMagicLevel = nMeterRange - 1;
@@ -303,7 +303,7 @@ void SetMagicFrame()
 
 void SetHealthFrame(short nVal)
 {
-    nHealthLevel = (800 - PlayerList[nLocalPlayer].nHealth) / healthperline;
+    nHealthLevel = (kMaxHealth - PlayerList[nLocalPlayer].nHealth) / healthperline;
 
     if (nHealthLevel >= nMeterRange ) {
         nHealthLevel = nMeterRange - 1;
