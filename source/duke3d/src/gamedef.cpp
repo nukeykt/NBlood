@@ -3665,9 +3665,9 @@ DO_DEFSTATE:
                 continue;
             }
         case CON_ADDLOGVAR:
-            g_labelsOnly = 1;
+            //g_labelsOnly = 1;
             C_GetNextVar();
-            g_labelsOnly = 0;
+            //g_labelsOnly = 0;
             continue;
 
         case CON_COS:
