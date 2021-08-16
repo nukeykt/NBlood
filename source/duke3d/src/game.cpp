@@ -963,22 +963,9 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (pPlayer->newowner < 0)
         {
-            vec3_t const goal = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
-                                  pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
-                                  pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
-
-            CAMERA(pos) = goal;
-#if 1
-            // I'm not particularly happy with this
-            static vec3_t lastcam;
-            static int16_t lastcamsect;
-
-            if (cansee(lastcam.x, lastcam.y, lastcam.z, lastcamsect, goal.x, goal.y, goal.z, CAMERA(sect)))
-                CAMERA(pos) = { logapproach(lastcam.x, goal.x), logapproach(lastcam.y, goal.y), logapproach(lastcam.z, goal.z) };
-
-            lastcam = CAMERA(pos);
-            lastcamsect = CAMERA(sect);
-#endif
+            CAMERA(pos) = { pPlayer->pos.x - mulscale16(65536-smoothRatio, pPlayer->pos.x - pPlayer->opos.x),
+                            pPlayer->pos.y - mulscale16(65536-smoothRatio, pPlayer->pos.y - pPlayer->opos.y),
+                            pPlayer->pos.z - mulscale16(65536-smoothRatio, pPlayer->pos.z - pPlayer->opos.z) };
 
             if (thisPlayer.smoothcamera)
             {
