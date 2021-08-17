@@ -310,6 +310,18 @@ static void Exhumed_Add_GOG_Linux(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/game/data/MUSIC", path);
     addsearchpath(buf);
 }
+static void Exhumed_Add_Steam_Linux(const char *path)
+{
+    char buf[BMAX_PATH];
+
+    // PowerSlave (DOS Classic Edition) - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/PowerslaveCE", path);
+    addsearchpath(buf);
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/PowerslaveCE/PWRSLAVE", path);
+    addsearchpath(buf);
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/PowerslaveCE/PWRSLAVE/MUSIC", path);
+    addsearchpath(buf);
+}
 #endif
 #endif
 
@@ -319,6 +331,13 @@ void G_AddSearchPaths(void)
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
+
+    // PowerSlave (DOS Classic Edition) - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
+    Exhumed_Add_Steam_Linux(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, Exhumed_Add_Steam_Linux);
 
     // Powerslave - GOG.com
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Powerslave English", homepath);
@@ -362,15 +381,25 @@ void G_AddSearchPaths(void)
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
     DWORD bufsize;
-    bool found = false;
+
+    // PowerSlave (DOS Classic Edition) - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1260020)", "InstallLocation", buf, &bufsize))
+    {
+        char* const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        Bstrncpy(suffix, "/PWRSLAVE", remaining);
+        addsearchpath(buf);
+    }
 
     // Powerslave - GOG.com
     bufsize = sizeof(buf);
-    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\2132611980)", "path", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\2132611980)", "path", buf, &bufsize))
     {
         addsearchpath(buf);
-        found = true;
     }
+
 #endif
 #endif
 }

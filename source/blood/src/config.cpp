@@ -762,13 +762,19 @@ int CONFIG_ReadSetup(void)
 
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
-    char *ptr = Xstrdup(SetupFilename);
     char filename[BMAX_PATH];
+    auto const hasSetupFilename = strcmp(SetupFilename, SETUPFILENAME);
 
-    if (!Bstrcmp(SetupFilename, SETUPFILENAME))
-        Bsprintf(filename, "settings.cfg");
+    if (!hasSetupFilename)
+        Bsnprintf(filename, ARRAY_SIZE(filename), APPBASENAME "_cvars.cfg");
     else
-        Bsprintf(filename, "%s_settings.cfg", strtok(ptr, "."));
+    {
+        char const * const ext = strchr(SetupFilename, '.');
+        if (ext != nullptr)
+            Bsnprintf(filename, ARRAY_SIZE(filename), "%.*s_cvars.cfg", int(ext - SetupFilename), SetupFilename);
+        else
+            Bsnprintf(filename, ARRAY_SIZE(filename), "%s_cvars.cfg", SetupFilename);
+    }
 
     BFILE *fp = Bfopen(filename, "wt");
 
@@ -795,7 +801,6 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
         OSD_WriteCvars(fp);
 
         Bfclose(fp);
-        Bfree(ptr);
 
         OSD_Printf("Wrote %s\n", filename);
 
@@ -803,8 +808,6 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
     }
 
     OSD_Printf("Error writing %s: %s\n", filename, strerror(errno));
-
-    Bfree(ptr);
 }
 
 void CONFIG_WriteSetup(uint32_t flags)

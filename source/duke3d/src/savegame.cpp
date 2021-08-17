@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "duke3d.h"
 #include "premap.h"
 #include "prlights.h"
+#include "md4.h"
 #include "savegame.h"
 
 #include "vfs.h"
@@ -346,6 +347,54 @@ corrupt:
     return 1;
 }
 
+static int32_t sv_loadBoardMD4(char* const fn)
+{
+    buildvfs_kfd fil;
+    if ((fil = kopen4load(fn,0)) == buildvfs_kfd_invalid)
+        return -1;
+
+    klseek(fil, 0, SEEK_SET);
+    int32_t boardsize = kfilelength(fil);
+    uint8_t *fullboard = (uint8_t*)Xmalloc(boardsize);
+    if (kread_and_test(fil, fullboard, boardsize))
+    {
+        Xfree(fullboard);
+        kclose(fil);
+        return -1;
+    }
+
+    md4once(fullboard, boardsize, g_loadedMapHack.md4);
+    Xfree(fullboard);
+    kclose(fil);
+    return 0;
+}
+
+static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfilename)
+{
+    bool loadedMhk = false;
+
+    if (mhkInfo && (loadedMhk = (engineLoadMHK(mhkInfo->mhkfile) == 0)))
+        initprintf("Loaded map hack file \"%s\"\n", mhkInfo->mhkfile);
+
+    if (!loadedMhk)
+    {
+        char bfn[BMAX_PATH];
+        Bstrcpy(bfn, currentboardfilename);
+        append_ext_UNSAFE(bfn, ".mhk");
+        if (engineLoadMHK(bfn) == 0)
+            initprintf("Loaded map hack file \"%s\"\n", bfn);
+    }
+}
+
+static void sv_loadMapart(usermaphack_t* const mhkInfo, char* const currentboardfilename)
+{
+    if (mhkInfo && mhkInfo->mapart)
+    {
+        initprintf("Using mapinfo-defined mapart \"%s\"\n", mhkInfo->mapart);
+        artSetupMapArt(mhkInfo->mapart);
+    }
+    else artSetupMapArt(currentboardfilename);
+}
 
 static void sv_postudload();
 
@@ -465,14 +514,19 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
             if (currentboardfilename[0])
             {
+                usermaphack_t* mhkInfo = NULL;
+                if (sv_loadBoardMD4(currentboardfilename) == 0)
+                    mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+                                 sizeof(usermaphack_t), compare_usermaphacks);
+
                 // only setup art if map differs from previous
                 if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
                 {
-                    artSetupMapArt(currentboardfilename);
+                    sv_loadMapart(mhkInfo, currentboardfilename);
                     Bstrcpy(previousboardfilename, currentboardfilename);
                 }
-                append_ext_UNSAFE(currentboardfilename, ".mhk");
-                engineLoadMHK(currentboardfilename);
+
+                sv_loadMhk(mhkInfo, currentboardfilename);
             }
 
             currentboardfilename[0] = '\0';
@@ -665,14 +719,19 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
     if (currentboardfilename[0])
     {
+        usermaphack_t* mhkInfo = NULL;
+        if (sv_loadBoardMD4(currentboardfilename) == 0)
+            mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+                                 sizeof(usermaphack_t), compare_usermaphacks);
+
         // only setup art if map differs from previous
         if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
         {
-            artSetupMapArt(currentboardfilename);
+            sv_loadMapart(mhkInfo, currentboardfilename);
             Bstrcpy(previousboardfilename, currentboardfilename);
         }
-        append_ext_UNSAFE(currentboardfilename, ".mhk");
-        engineLoadMHK(currentboardfilename);
+
+        sv_loadMhk(mhkInfo, currentboardfilename);
     }
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);

@@ -592,7 +592,7 @@ void SetSavePoint(int nPlayer, int x, int y, int z, short nSector, short nAngle)
     sPlayerSave[nPlayer].nAngle = nAngle;
 }
 
-void feebtag(int x, int y, int z, int nSector, short *nSprite, int nVal2, int nVal3)
+void feebtag(int x, int y, int z, int nSector, int *nSprite, int nVal2, int nVal3)
 {
     *nSprite = -1;
 
@@ -821,10 +821,10 @@ void RestartPlayer(short nPlayer)
     sprite[nDSprite].lotag = runlist_HeadRun() + 1;
 
     PlayerList[nPlayer].nAction = 0;
-    PlayerList[nPlayer].nHealth = 800; // TODO - define
+    PlayerList[nPlayer].nHealth = kMaxHealth;
 
     if (nNetPlayerCount) {
-        PlayerList[nPlayer].nHealth = 1600; // TODO - define
+        PlayerList[nPlayer].nHealth = kMaxHealth * 2;
     }
 
     PlayerList[nPlayer].nFrame = 0;
@@ -1122,6 +1122,7 @@ void DoKenTest()
     {
         return;
     }
+
     int nSector = sprite[nPlayerSprite].sectnum;
     if ((unsigned int)nSector >= kMaxSectors)
     {
@@ -1141,10 +1142,645 @@ void DoKenTest()
     }
 }
 
+static void PlayerCheckItemRespawnOrDelete(int nItemSprite, int nVal)
+{
+    // CHECKME - is order of evaluation correct?
+    if (levelnum <= 20 || nVal >= 25 && (nVal <= 25 || nVal == 50))
+    {
+        DestroyItemAnim(nItemSprite);
+        mydeletesprite(nItemSprite);
+    }
+    else
+    {
+        StartRegenerate(nItemSprite);
+    }
+}
+
+static void SetItemPickupMessage(int nPlayer, int nVal)
+{
+    if (nPlayer != nLocalPlayer)
+        return;
+
+    if (nItemText[nVal] > -1 && nTotalPlayers == 1)
+    {
+        StatusMessage(400, gString[nItemTextIndex + nItemText[nVal]]);
+    }
+}
+
+static void WeaponPickup(int nPlayer, int nSprite, int nWeapon, int nAddAmmo, int nItem, int rTint, int gTint)
+{
+    int nPickupSound = -1;
+    int weaponBit = 1 << nWeapon;
+
+    if (nPlayerWeapons[nPlayer] & weaponBit)
+    {
+        if (levelnum > 20)
+        {
+            AddAmmo(nPlayer, WeaponInfo[nWeapon].nAmmoType, nAddAmmo);
+        }
+    }
+    else
+    {
+        SetNewWeaponIfBetter(nPlayer, nWeapon);
+
+        nPlayerWeapons[nPlayer] |= weaponBit;
+
+        AddAmmo(nPlayer, WeaponInfo[nWeapon].nAmmoType, nAddAmmo);
+
+        nPickupSound = StaticSound[kSoundWeapon];
+    }
+
+    if (nWeapon == 2) {
+        CheckClip(nPlayer);
+    }
+
+    if (nItem <= 50)
+    {
+        PlayerCheckItemRespawnOrDelete(nSprite, nItem);
+    }
+    else
+    {
+        sprite[nSprite].cstat = 0x8000;
+        DestroyItemAnim(nSprite);
+    }
+
+    SetItemPickupMessage(nPlayer, nItem);
+    TintPalette(rTint * 4, gTint * 4, 0);
+
+    if (nPickupSound > -1) {
+        PlayLocalSound(nPickupSound, 0);
+    }
+}
+
+static void PlayerPickupKey(int nPlayer, int nKey, int nSprite, int nItem)
+{
+    int keyBit = 0x1000 << nKey;
+
+    if (PlayerList[nPlayer].keys != keyBit)
+    {
+        if (nPlayer == nLocalPlayer) {
+            BuildStatusAnim(36 + 6, 0);
+        }
+
+        PlayerList[nPlayer].keys |= keyBit;
+
+        if (nTotalPlayers <= 1)
+        {
+            PlayerCheckItemRespawnOrDelete(nSprite, nItem);
+        }
+
+        SetItemPickupMessage(nPlayer, nItem);
+        TintPalette(0, 16 * 4, 0);
+    }
+}
+
+void PlayerCheckItemPickup(int nPlayer, int nPickupSprite, int valueFlag)
+{
+    int nPlayerSprite = PlayerList[nPlayer].nSprite;
+
+    if (nPickupSprite >= 0 && sprite[nPickupSprite].statnum >= 900)
+    {
+        int rTint = 0;
+        int gTint = 16;
+        int nPickupSound = 9;
+
+        int nItem = sprite[nPickupSprite].statnum - 900;
+
+        // TODO - handle 0-5 ?
+
+        if (nItem > 60) // item end at number 60
+            return;
+
+        switch (nItem)
+        {
+            default:
+            {
+                PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                break;
+            }
+            case 6: // Speed Loader
+            {
+                if (AddAmmo(nPlayer, 1, sprite[nPickupSprite].hitag))
+                {
+                    nPickupSound = StaticSound[kSoundAmmoPickup];
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+                return;
+            }
+            case 7: // Fuel Canister
+            {
+                if (AddAmmo(nPlayer, 3, sprite[nPickupSprite].hitag))
+                {
+                    nPickupSound = StaticSound[kSoundAmmoPickup];
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+                return;
+            }
+            case 8: // M - 60 Ammo Belt
+            {
+                if (AddAmmo(nPlayer, 2, sprite[nPickupSprite].hitag))
+                {
+                    nPickupSound = StaticSound[kSoundAmmoPickup];
+                    CheckClip(nPlayer);
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+                return;
+            }
+            case 9: // Grenade
+            case 27:
+            case 55:
+            {
+                if (AddAmmo(nPlayer, 4, 1))
+                {
+                    nPickupSound = StaticSound[kSoundAmmoPickup];
+                    if (!(nPlayerWeapons[nPlayer] & 0x10))
+                    {
+                        nPlayerWeapons[nPlayer] |= 0x10;
+                        SetNewWeaponIfBetter(nPlayer, 4);
+                    }
+
+                    if (nItem == 55)
+                    {
+                        sprite[nPickupSprite].cstat = 0x8000;
+                        DestroyItemAnim(nPickupSprite);
+                        break;
+                    }
+                    else
+                    {
+                        PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                        break;
+                    }
+                }
+                return;
+            }
+
+            case 10: // Pickable item
+            case 15: // Pickable item
+            case 16: // Reserved
+            case 24:
+            case 31:
+            case 34:
+            case 35:
+            case 36:
+            case 39:
+            case 40:
+            case 41:
+            case 42:
+            case 43:
+            case 44:
+            case 51:
+            case 58:
+            {
+                PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                break;
+            }
+
+            case 11: // Map
+            {
+                GrabMap();
+                PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                break;
+            }
+
+            case 12: // Berry Twig
+            {
+                if (sprite[nPickupSprite].hitag == 0) {
+                    return;
+                }
+
+                nPickupSound = 20;
+                int nHealthModifier = 40;
+
+                if (nHealthModifier <= 0 || (!(valueFlag & 2)))
+                {
+                    if (!PlayerList[nPlayer].invincibility || nHealthModifier > 0)
+                    {
+                        PlayerList[nPlayer].nHealth += nHealthModifier;
+                        if (PlayerList[nPlayer].nHealth > kMaxHealth)
+                        {
+                            PlayerList[nPlayer].nHealth = kMaxHealth;
+                        }
+                        else
+                        {
+                            if (PlayerList[nPlayer].nHealth < 0)
+                            {
+                                nPickupSound = -1;
+                                StartDeathSeq(nPlayer, 0);
+                            }
+                        }
+                    }
+
+                    if (nLocalPlayer == nPlayer)
+                    {
+                        SetHealthFrame(1);
+                    }
+
+                    if (nItem == 12)
+                    {
+                        sprite[nPickupSprite].hitag = 0;
+                        sprite[nPickupSprite].picnum++;
+
+                        changespritestat(nPickupSprite, 0);
+                        break;
+                    }
+                    else
+                    {
+                        if (nItem != 14)
+                        {
+                            nPickupSound = 21;
+                        }
+                        else
+                        {
+                            rTint = gTint;
+                            nPickupSound = 22;
+                            gTint = 0;
+                        }
+
+                        PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                        break;
+                    }
+                }
+
+                return;
+            }
+
+            case 13: // Blood Bowl
+            {
+                int nHealthModifier = 160;
+
+                // Same code as case 12 now till break
+                if (nHealthModifier <= 0 || (!(valueFlag & 2)))
+                {
+                    if (!PlayerList[nPlayer].invincibility || nHealthModifier > 0)
+                    {
+                        PlayerList[nPlayer].nHealth += nHealthModifier;
+                        if (PlayerList[nPlayer].nHealth > kMaxHealth)
+                        {
+                            PlayerList[nPlayer].nHealth = kMaxHealth;
+                        }
+                        else
+                        {
+                            if (PlayerList[nPlayer].nHealth < 0)
+                            {
+                                nPickupSound = -1;
+                                StartDeathSeq(nPlayer, 0);
+                            }
+                        }
+                    }
+
+                    if (nLocalPlayer == nPlayer)
+                    {
+                        SetHealthFrame(1);
+                    }
+
+                    if (nItem == 12)
+                    {
+                        sprite[nPickupSprite].hitag = 0;
+                        sprite[nPickupSprite].picnum++;
+
+                        changespritestat(nPickupSprite, 0);
+                        break;
+                    }
+                    else
+                    {
+                        if (nItem != 14)
+                        {
+                            nPickupSound = 21;
+                        }
+                        else
+                        {
+                            rTint = gTint;
+                            nPickupSound = 22;
+                            gTint = 0;
+                        }
+
+                        PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                        break;
+                    }
+                }
+
+                return;
+            }
+
+            case 14: // Cobra Venom Bowl
+            {
+                int nHealthModifier = -200;
+
+                // Same code as case 12 and 13 from now till break
+                if (nHealthModifier <= 0 || (!(valueFlag & 2)))
+                {
+                    if (!PlayerList[nPlayer].invincibility || nHealthModifier > 0)
+                    {
+                        PlayerList[nPlayer].nHealth += nHealthModifier;
+                        if (PlayerList[nPlayer].nHealth > kMaxHealth)
+                        {
+                            PlayerList[nPlayer].nHealth = kMaxHealth;
+                        }
+                        else
+                        {
+                            if (PlayerList[nPlayer].nHealth < 0)
+                            {
+                                nPickupSound = -1;
+                                StartDeathSeq(nPlayer, 0);
+                            }
+                        }
+                    }
+
+                    if (nLocalPlayer == nPlayer)
+                    {
+                        SetHealthFrame(1);
+                    }
+
+                    if (nItem == 12)
+                    {
+                        sprite[nPickupSprite].hitag = 0;
+                        sprite[nPickupSprite].picnum++;
+
+                        changespritestat(nPickupSprite, 0);
+                        break;
+                    }
+                    else
+                    {
+                        if (nItem != 14)
+                        {
+                            nPickupSound = 21;
+                        }
+                        else
+                        {
+                            rTint = gTint;
+                            nPickupSound = 22;
+                            gTint = 0;
+                        }
+
+                        PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                        break;
+                    }
+                }
+
+                return;
+            }
+
+            case 17: // Bubble Nest
+            {
+                PlayerList[nPlayer].nAir += 10;
+                if (PlayerList[nPlayer].nAir > 100) {
+                    PlayerList[nPlayer].nAir = 100; // TODO - constant
+                }
+
+                SetAirFrame();
+
+                if (nBreathTimer[nPlayer] < 89)
+                {
+                    D3PlayFX(StaticSound[kSoundJonBubbleNest], nPlayerSprite);
+                }
+
+                nBreathTimer[nPlayer] = 90;
+                return;
+            }
+
+            case 18: // Still Beating Heart
+            {
+                if (GrabItem(nPlayer, kItemHeart))
+                {
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 19: // Scarab amulet (Invicibility)
+            {
+                if (GrabItem(nPlayer, kItemInvincibility))
+                {
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 20: // Severed Slave Hand(double damage)
+            {
+                if (GrabItem(nPlayer, kItemDoubleDamage))
+                {
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 21: // Unseen eye (Invisibility)
+            {
+                if (GrabItem(nPlayer, kItemInvisibility))
+                {
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 22: // Torch
+            {
+                if (GrabItem(nPlayer, kItemTorch))
+                {
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 23: // Sobek Mask
+            {
+                if (GrabItem(nPlayer, kItemMask))
+                {
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 25: // Extra Life
+            {
+                nPickupSound = -1;
+
+                if (nPlayerLives[nPlayer] >= kMaxPlayerLives) {
+                    return;
+                }
+
+                nPlayerLives[nPlayer]++;
+
+                if (nPlayer == nLocalPlayer) {
+                    BuildStatusAnim(146 + ((nPlayerLives[nPlayer] - 1) * 2), 0);
+                }
+
+                gTint = 32;
+                rTint = 32;
+
+                PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                break;
+            }
+
+            case 26: // lotag 26, sword pickup??
+            {
+                WeaponPickup(nPlayer, nPickupSprite, kWeaponSword, 0, nItem, rTint, gTint);
+                return;
+            }
+
+            case 28: // lotag 28, .357 Magnum Revolver
+            case 52:
+            {
+                WeaponPickup(nPlayer, nPickupSprite, kWeaponPistol, 6, nItem, rTint, gTint);
+                return;
+            }
+
+            case 29: // M - 60 Machine Gun
+            case 53:
+            {
+                WeaponPickup(nPlayer, nPickupSprite, kWeaponM60, 24, nItem, rTint, gTint);
+                return;
+            }
+
+            case 30: // Flame Thrower
+            case 54:
+            {
+                WeaponPickup(nPlayer, nPickupSprite, kWeaponFlamer, 100, nItem, rTint, gTint);
+                return;
+            }
+
+            case 32: // Cobra Staff
+            case 56:
+            {
+                WeaponPickup(nPlayer, nPickupSprite, kWeaponStaff, 20, nItem, rTint, gTint);
+                return;
+            }
+
+            case 33: // Eye of Ra Gauntlet
+            case 57:
+            {
+                WeaponPickup(nPlayer, nPickupSprite, kWeaponRing, 2, nItem, rTint, gTint);
+                return;
+            }
+
+            case 37: // Cobra staff ammo
+            {
+                if (AddAmmo(nPlayer, 5, 1))
+                {
+                    nPickupSound = StaticSound[kSoundAmmoPickup];
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 38: // Raw Energy
+            {
+                if (AddAmmo(nPlayer, 6, sprite[nPickupSprite].hitag))
+                {
+                    nPickupSound = StaticSound[kSoundAmmoPickup];
+                    PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                    break;
+                }
+
+                return;
+            }
+
+            case 45: // Power key
+            {
+                PlayerPickupKey(nPlayer, 0, nPickupSprite, nItem);
+                return;
+            }
+            case 46: // Time key
+            {
+                PlayerPickupKey(nPlayer, 1, nPickupSprite, nItem);
+                return;
+            }
+            case 47: // War key
+            {
+                PlayerPickupKey(nPlayer, 2, nPickupSprite, nItem);
+                return;
+            }
+            case 48: // Earth key
+            {
+                PlayerPickupKey(nPlayer, 3, nPickupSprite, nItem);
+                return;
+            }
+
+            case 49: // Magical Essence
+            case 50: // ?
+            {
+                if (PlayerList[nPlayer].nMagic >= kMaxMagic) {
+                    return;
+                }
+
+                nPickupSound = StaticSound[kSoundMana1];
+
+                PlayerList[nPlayer].nMagic += 100;
+                if (PlayerList[nPlayer].nMagic >= kMaxMagic) {
+                    PlayerList[nPlayer].nMagic = kMaxMagic;
+                }
+
+                if (nLocalPlayer == nPlayer)
+                {
+                    SetMagicFrame();
+                }
+
+                PlayerCheckItemRespawnOrDelete(nPickupSprite, nItem);
+                break;
+            }
+
+            case 59: // Scarab (Checkpoint)
+            {
+                if (nLocalPlayer == nPlayer)
+                {
+                    short nAnim = sprite[nPickupSprite].owner;
+                    AnimList[nAnim].nSeq++;
+                    AnimFlags[nAnim] &= 0xEF;
+                    AnimList[nAnim].field_2 = 0;
+
+                    changespritestat(nPickupSprite, 899);
+                }
+
+                SetSavePoint(nPlayer, sprite[nPlayerSprite].x, sprite[nPlayerSprite].y, sprite[nPlayerSprite].z, sprite[nPlayerSprite].sectnum, sprite[nPlayerSprite].ang);
+                return;
+            }
+
+            case 60: // Golden Sarcophagus (End Level)
+            {
+                if (!bInDemo) {
+                    FinishLevel();
+                }
+                else {
+                    // KB_Addch(32);
+                    bDemoPlayerFinishedLevel = true;
+                }
+
+                DestroyItemAnim(nPickupSprite);
+                mydeletesprite(nPickupSprite);
+                return;
+            }
+        }
+
+        SetItemPickupMessage(nPlayer, nItem);
+        TintPalette(rTint * 4, gTint * 4, 0);
+
+        if (nPickupSound > -1) {
+            PlayLocalSound(nPickupSound, 0);
+        }
+    }
+}
+
 void FuncPlayer(int a, int nDamage, int nRun)
 {
     int var_48 = 0;
-    int var_40;
 
     short nPlayer = RunData[nRun].nVal;
     assert(nPlayer >= 0 && nPlayer < kMaxPlayers);
@@ -1921,12 +2557,12 @@ loc_1AB8E:
 
                 int var_30 = 0;
 
-                if (PlayerList[nPlayer].nHealth >= 800)
+                if (PlayerList[nPlayer].nHealth >= kMaxHealth)
                 {
                     var_30 = 2;
                 }
 
-                if (PlayerList[nPlayer].nMagic >= 1000)
+                if (PlayerList[nPlayer].nMagic >= kMaxMagic)
                 {
                     var_30 |= 1;
                 }
@@ -1935,1033 +2571,16 @@ loc_1AB8E:
                 short nearTagSector, nearTagWall, nearTagSprite;
                 int nearHitDist;
 
-                short nValB;
+                int nPickupSprite;
 
                 // neartag finds the nearest sector, wall, and sprite which has its hitag and/or lotag set to a value.
                 neartag(sprite[nPlayerSprite].x, sprite[nPlayerSprite].y, sprite[nPlayerSprite].z, sprite[nPlayerSprite].sectnum, sprite[nPlayerSprite].ang,
                     &nearTagSector, &nearTagWall, &nearTagSprite, (int32_t*)&nearHitDist, 1024, 2, NULL);
 
                 feebtag(sprite[nPlayerSprite].x, sprite[nPlayerSprite].y, sprite[nPlayerSprite].z, sprite[nPlayerSprite].sectnum,
-                    &nValB, var_30, 768);
+                    &nPickupSprite, var_30, 768);
 
-                // Item pickup code
-                if (nValB >= 0 && sprite[nValB].statnum >= 900)
-                {
-                    int var_8C = 16;
-                    int var_88 = 9;
-
-                    int var_70 = sprite[nValB].statnum - 900;
-                    int var_44 = 0;
-
-                    // item lotags start at 6 (1-5 reserved?) so 0-offset them
-                    int var_6C = var_70 - 6;
-
-                    if (var_6C <= 54)
-                    {
-                        switch (var_6C)
-                        {
-do_default:
-                            default:
-                            {
-                                // loc_1B3C7
-
-                                // CHECKME - is order of evaluation correct?
-                                if (levelnum <= 20 || var_70 >= 25 && (var_70 <= 25 || var_70 == 50))
-                                {
-                                    DestroyItemAnim(nValB);
-                                    mydeletesprite(nValB);
-                                }
-                                else
-                                {
-                                    StartRegenerate(nValB);
-                                }
-do_default_b:
-                                // loc_1BA74
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-                            }
-                            case 0: // Speed Loader
-                            {
-                                if (AddAmmo(nPlayer, 1, sprite[nValB].hitag))
-                                {
-                                    var_88 = StaticSound[kSoundAmmoPickup];
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-                            case 1: // Fuel Canister
-                            {
-                                if (AddAmmo(nPlayer, 3, sprite[nValB].hitag))
-                                {
-                                    var_88 = StaticSound[kSoundAmmoPickup];
-                                    goto do_default;
-                                }
-                                break;
-                            }
-                            case 2: // M - 60 Ammo Belt
-                            {
-                                if (AddAmmo(nPlayer, 2, sprite[nValB].hitag))
-                                {
-                                    var_88 = StaticSound[kSoundAmmoPickup];
-                                    CheckClip(nPlayer);
-                                    goto do_default;
-                                }
-                                break;
-                            }
-                            case 3: // Grenade
-                            case 21:
-                            case 49:
-                            {
-                                if (AddAmmo(nPlayer, 4, 1))
-                                {
-                                    var_88 = StaticSound[kSoundAmmoPickup];
-                                    if (!(nPlayerWeapons[nPlayer] & 0x10))
-                                    {
-                                        nPlayerWeapons[nPlayer] |= 0x10;
-                                        SetNewWeaponIfBetter(nPlayer, 4);
-                                    }
-
-                                    if (var_70 == 55)
-                                    {
-                                        sprite[nValB].cstat = 0x8000;
-                                        DestroyItemAnim(nValB);
-
-                                        // loc_1BA74: - repeated block, see in default case
-                                        if (nPlayer == nLocalPlayer)
-                                        {
-                                            if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                            {
-                                                StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                            }
-
-                                            TintPalette(var_44*4, var_8C*4, 0);
-
-                                            if (var_88 > -1)
-                                            {
-                                                PlayLocalSound(var_88, 0);
-                                            }
-                                        }
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        goto do_default;
-                                    }
-                                }
-                                break;
-                            }
-
-                            case 4: // Pickable item
-                            case 9: // Pickable item
-                            case 10: // Reserved
-                            case 18:
-                            case 25:
-                            case 28:
-                            case 29:
-                            case 30:
-                            case 33:
-                            case 34:
-                            case 35:
-                            case 36:
-                            case 37:
-                            case 38:
-                            case 45:
-                            case 52:
-                            {
-                                goto do_default;
-                            }
-
-                            case 5: // Map
-                            {
-                                GrabMap();
-                                goto do_default;
-                            }
-
-                            case 6: // Berry Twig
-                            {
-                                if (sprite[nValB].hitag == 0) {
-                                    break;
-                                }
-
-                                var_88 = 20;
-                                int edx = 40;
-
-                                if (edx <= 0 || (!(var_30 & 2)))
-                                {
-                                    if (!PlayerList[nPlayer].invincibility || edx > 0)
-                                    {
-                                        PlayerList[nPlayer].nHealth += edx;
-                                        if (PlayerList[nPlayer].nHealth > 800)
-                                        {
-                                            PlayerList[nPlayer].nHealth = 800;
-                                        }
-                                        else
-                                        {
-                                            if (PlayerList[nPlayer].nHealth < 0)
-                                            {
-                                                var_88 = -1;
-                                                StartDeathSeq(nPlayer, 0);
-                                            }
-                                        }
-                                    }
-
-                                    if (nLocalPlayer == nPlayer)
-                                    {
-                                        SetHealthFrame(1);
-                                    }
-
-                                    if (var_70 == 12)
-                                    {
-                                        sprite[nValB].hitag = 0;
-                                        sprite[nValB].picnum++;
-
-                                        changespritestat(nValB, 0);
-
-                                        // loc_1BA74: - repeated block, see in default case
-                                        if (nPlayer == nLocalPlayer)
-                                        {
-                                            if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                            {
-                                                StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                            }
-
-                                            TintPalette(var_44*4, var_8C*4, 0);
-
-                                            if (var_88 > -1)
-                                            {
-                                                PlayLocalSound(var_88, 0);
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        if (var_70 != 14)
-                                        {
-                                            var_88 = 21;
-                                        }
-                                        else
-                                        {
-                                            var_44 = var_8C;
-                                            var_88 = 22;
-                                            var_8C = 0;
-                                        }
-
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-
-                            case 7: // Blood Bowl
-                            {
-                                int edx = 160;
-
-                                // Same code as case 6 now till break
-                                if (edx <= 0 || (!(var_30 & 2)))
-                                {
-                                    if (!PlayerList[nPlayer].invincibility || edx > 0)
-                                    {
-                                        PlayerList[nPlayer].nHealth += edx;
-                                        if (PlayerList[nPlayer].nHealth > 800)
-                                        {
-                                            PlayerList[nPlayer].nHealth = 800;
-                                        }
-                                        else
-                                        {
-                                            if (PlayerList[nPlayer].nHealth < 0)
-                                            {
-                                                var_88 = -1;
-                                                StartDeathSeq(nPlayer, 0);
-                                            }
-                                        }
-                                    }
-
-                                    if (nLocalPlayer == nPlayer)
-                                    {
-                                        SetHealthFrame(1);
-                                    }
-
-                                    if (var_70 == 12)
-                                    {
-                                        sprite[nValB].hitag = 0;
-                                        sprite[nValB].picnum++;
-
-                                        changespritestat(nValB, 0);
-
-                                        // loc_1BA74: - repeated block, see in default case
-                                        if (nPlayer == nLocalPlayer)
-                                        {
-                                            if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                            {
-                                                StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                            }
-
-                                            TintPalette(var_44*4, var_8C*4, 0);
-
-                                            if (var_88 > -1)
-                                            {
-                                                PlayLocalSound(var_88, 0);
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        if (var_70 != 14)
-                                        {
-                                            var_88 = 21;
-                                        }
-                                        else
-                                        {
-                                            var_44 = var_8C;
-                                            var_88 = 22;
-                                            var_8C = 0;
-                                        }
-
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-
-                            case 8: // Cobra Venom Bowl
-                            {
-                                int edx = -200;
-
-                                // Same code as case 6 and 7 from now till break
-                                if (edx <= 0 || (!(var_30 & 2)))
-                                {
-                                    if (!PlayerList[nPlayer].invincibility || edx > 0)
-                                    {
-                                        PlayerList[nPlayer].nHealth += edx;
-                                        if (PlayerList[nPlayer].nHealth > 800)
-                                        {
-                                            PlayerList[nPlayer].nHealth = 800;
-                                        }
-                                        else
-                                        {
-                                            if (PlayerList[nPlayer].nHealth < 0)
-                                            {
-                                                var_88 = -1;
-                                                StartDeathSeq(nPlayer, 0);
-                                            }
-                                        }
-                                    }
-
-                                    if (nLocalPlayer == nPlayer)
-                                    {
-                                        SetHealthFrame(1);
-                                    }
-
-                                    if (var_70 == 12)
-                                    {
-                                        sprite[nValB].hitag = 0;
-                                        sprite[nValB].picnum++;
-
-                                        changespritestat(nValB, 0);
-
-                                        // loc_1BA74: - repeated block, see in default case
-                                        if (nPlayer == nLocalPlayer)
-                                        {
-                                            if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                            {
-                                                StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                            }
-
-                                            TintPalette(var_44*4, var_8C*4, 0);
-
-                                            if (var_88 > -1)
-                                            {
-                                                PlayLocalSound(var_88, 0);
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        if (var_70 != 14)
-                                        {
-                                            var_88 = 21;
-                                        }
-                                        else
-                                        {
-                                            var_44 = var_8C;
-                                            var_88 = 22;
-                                            var_8C = 0;
-                                        }
-
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-
-                            case 11: // Bubble Nest
-                            {
-                                PlayerList[nPlayer].nAir += 10;
-                                if (PlayerList[nPlayer].nAir > 100) {
-                                    PlayerList[nPlayer].nAir = 100; // TODO - constant
-                                }
-
-                                SetAirFrame();
-
-                                if (nBreathTimer[nPlayer] < 89)
-                                {
-                                    D3PlayFX(StaticSound[kSoundJonBubbleNest], nPlayerSprite);
-                                }
-
-                                nBreathTimer[nPlayer] = 90;
-                                break;
-                            }
-
-                            case 12: // Still Beating Heart
-                            {
-                                if (GrabItem(nPlayer, kItemHeart)) {
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 13: // Scarab amulet(Invicibility)
-                            {
-                                if (GrabItem(nPlayer, kItemInvincibility)) {
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 14: // Severed Slave Hand(double damage)
-                            {
-                                if (GrabItem(nPlayer, kItemDoubleDamage)) {
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 15: // Unseen eye(Invisibility)
-                            {
-                                if (GrabItem(nPlayer, kItemInvisibility)) {
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 16: // Torch
-                            {
-                                if (GrabItem(nPlayer, kItemTorch)) {
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 17: // Sobek Mask
-                            {
-                                if (GrabItem(nPlayer, kItemMask)) {
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 19: // Extra Life
-                            {
-                                var_88 = -1;
-
-                                if (nPlayerLives[nPlayer] >= kMaxPlayerLives) {
-                                    break;
-                                }
-
-                                nPlayerLives[nPlayer]++;
-
-                                if (nPlayer == nLocalPlayer) {
-                                    BuildStatusAnim(146 + ((nPlayerLives[nPlayer] - 1) * 2), 0);
-                                }
-
-                                var_8C = 32;
-                                var_44 = 32;
-                                goto do_default;
-                            }
-
-                            // FIXME - lots of repeated code from here down!!
-                            case 20: // sword pickup??
-                            {
-                                var_40 = 0;
-                                int ebx = 0;
-
-                                // loc_1B75D
-                                int var_18 = 1 << var_40;
-
-                                short weapons = nPlayerWeapons[nPlayer];
-
-                                if (weapons & var_18)
-                                {
-                                    if (levelnum > 20)
-                                    {
-                                        AddAmmo(nPlayer, WeaponInfo[var_40].nAmmoType, ebx);
-                                    }
-                                }
-                                else
-                                {
-                                    weapons = var_40;
-
-                                    SetNewWeaponIfBetter(nPlayer, weapons);
-
-                                    nPlayerWeapons[nPlayer] |= var_18;
-
-                                    AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
-
-                                    var_88 = StaticSound[kSoundWeapon];
-                                }
-
-                                if (var_40 == 2) {
-                                    CheckClip(nPlayer);
-                                }
-
-                                if (var_70 <= 50) {
-                                    goto do_default;
-                                }
-
-                                sprite[nValB].cstat = 0x8000;
-                                DestroyItemAnim(nValB);
-////
-                                // loc_1BA74: - repeated block, see in default case
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-/////
-                            }
-
-                            case 22: // .357 Magnum Revolver
-                            case 46:
-                            {
-                                var_40 = 1;
-                                int ebx = 6;
-
-                                // loc_1B75D
-                                int var_18 = 1 << var_40;
-
-                                short weapons = nPlayerWeapons[nPlayer];
-
-                                if (weapons & var_18)
-                                {
-                                    if (levelnum > 20)
-                                    {
-                                        AddAmmo(nPlayer, WeaponInfo[var_40].nAmmoType, ebx);
-                                    }
-                                }
-                                else
-                                {
-                                    weapons = var_40;
-
-                                    SetNewWeaponIfBetter(nPlayer, weapons);
-
-                                    nPlayerWeapons[nPlayer] |= var_18;
-
-                                    AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
-
-                                    var_88 = StaticSound[kSoundWeapon];
-                                }
-
-                                if (var_40 == 2) {
-                                    CheckClip(nPlayer);
-                                }
-
-                                if (var_70 <= 50) {
-                                    goto do_default;
-                                }
-
-                                sprite[nValB].cstat = 0x8000;
-                                DestroyItemAnim(nValB);
-////
-                                // loc_1BA74: - repeated block, see in default case
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-/////
-                            }
-
-                            case 23: // M - 60 Machine Gun
-                            case 47:
-                            {
-                                var_40 = 2;
-                                int ebx = 24;
-
-                                // loc_1B75D
-                                int var_18 = 1 << var_40;
-
-                                short weapons = nPlayerWeapons[nPlayer];
-
-                                if (weapons & var_18)
-                                {
-                                    if (levelnum > 20)
-                                    {
-                                        AddAmmo(nPlayer, WeaponInfo[var_40].nAmmoType, ebx);
-                                    }
-                                }
-                                else
-                                {
-                                    weapons = var_40;
-
-                                    SetNewWeaponIfBetter(nPlayer, weapons);
-
-                                    nPlayerWeapons[nPlayer] |= var_18;
-
-                                    AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
-
-                                    var_88 = StaticSound[kSoundWeapon];
-                                }
-
-                                if (var_40 == 2) {
-                                    CheckClip(nPlayer);
-                                }
-
-                                if (var_70 <= 50) {
-                                    goto do_default;
-                                }
-
-                                sprite[nValB].cstat = 0x8000;
-                                DestroyItemAnim(nValB);
-////
-                                // loc_1BA74: - repeated block, see in default case
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-/////
-                            }
-
-                            case 24: // Flame Thrower
-                            case 48:
-                            {
-                                var_40 = 3;
-                                int ebx = 100;
-
-                                // loc_1B75D
-                                int var_18 = 1 << var_40;
-
-                                short weapons = nPlayerWeapons[nPlayer];
-
-                                if (weapons & var_18)
-                                {
-                                    if (levelnum > 20)
-                                    {
-                                        AddAmmo(nPlayer, WeaponInfo[var_40].nAmmoType, ebx);
-                                    }
-                                }
-                                else
-                                {
-                                    weapons = var_40;
-
-                                    SetNewWeaponIfBetter(nPlayer, weapons);
-
-                                    nPlayerWeapons[nPlayer] |= var_18;
-
-                                    AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
-
-                                    var_88 = StaticSound[kSoundWeapon];
-                                }
-
-                                if (var_40 == 2) {
-                                    CheckClip(nPlayer);
-                                }
-
-                                if (var_70 <= 50) {
-                                    goto do_default;
-                                }
-
-                                sprite[nValB].cstat = 0x8000;
-                                DestroyItemAnim(nValB);
-////
-                                // loc_1BA74: - repeated block, see in default case
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-/////
-                            }
-
-                            case 26: // Cobra Staff
-                            case 50:
-                            {
-                                var_40 = 5;
-                                int ebx = 20;
-
-                                // loc_1B75D
-                                int var_18 = 1 << var_40;
-
-                                short weapons = nPlayerWeapons[nPlayer];
-
-                                if (weapons & var_18)
-                                {
-                                    if (levelnum > 20)
-                                    {
-                                        AddAmmo(nPlayer, WeaponInfo[var_40].nAmmoType, ebx);
-                                    }
-                                }
-                                else
-                                {
-                                    weapons = var_40;
-
-                                    SetNewWeaponIfBetter(nPlayer, weapons);
-
-                                    nPlayerWeapons[nPlayer] |= var_18;
-
-                                    AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
-
-                                    var_88 = StaticSound[kSoundWeapon];
-                                }
-
-                                if (var_40 == 2) {
-                                    CheckClip(nPlayer);
-                                }
-
-                                if (var_70 <= 50) {
-                                    goto do_default;
-                                }
-
-                                sprite[nValB].cstat = 0x8000;
-                                DestroyItemAnim(nValB);
-////
-                                // loc_1BA74: - repeated block, see in default case
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-/////
-                            }
-
-                            case 27: // Eye of Ra Gauntlet
-                            case 51:
-                            {
-                                var_40 = 6;
-                                int ebx = 2;
-
-                                // loc_1B75D
-                                int var_18 = 1 << var_40;
-
-                                short weapons = nPlayerWeapons[nPlayer];
-
-                                if (weapons & var_18)
-                                {
-                                    if (levelnum > 20)
-                                    {
-                                        AddAmmo(nPlayer, WeaponInfo[var_40].nAmmoType, ebx);
-                                    }
-                                }
-                                else
-                                {
-                                    weapons = var_40;
-
-                                    SetNewWeaponIfBetter(nPlayer, weapons);
-
-                                    nPlayerWeapons[nPlayer] |= var_18;
-
-                                    AddAmmo(nPlayer, WeaponInfo[weapons].nAmmoType, ebx);
-
-                                    var_88 = StaticSound[kSoundWeapon];
-                                }
-
-                                if (var_40 == 2) {
-                                    CheckClip(nPlayer);
-                                }
-
-                                if (var_70 <= 50) {
-                                    goto do_default;
-                                }
-
-                                sprite[nValB].cstat = 0x8000;
-                                DestroyItemAnim(nValB);
-////
-                                // loc_1BA74: - repeated block, see in default case
-                                if (nPlayer == nLocalPlayer)
-                                {
-                                    if (nItemText[var_70] > -1 && nTotalPlayers == 1)
-                                    {
-                                        StatusMessage(400, gString[nItemTextIndex + nItemText[var_70]]);
-                                    }
-
-                                    TintPalette(var_44*4, var_8C*4, 0);
-
-                                    if (var_88 > -1)
-                                    {
-                                        PlayLocalSound(var_88, 0);
-                                    }
-                                }
-
-                                break;
-/////
-                            }
-
-                            case 31: // Cobra staff ammo
-                            {
-                                if (AddAmmo(nPlayer, 5, 1)) {
-                                    var_88 = StaticSound[kSoundAmmoPickup];
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            case 32: // Raw Energy
-                            {
-                                if (AddAmmo(nPlayer, 6, sprite[nValB].hitag)) {
-                                    var_88 = StaticSound[kSoundAmmoPickup];
-                                    goto do_default;
-                                }
-
-                                break;
-                            }
-
-                            // Lots of repeated code for door key handling
-                            case 39: // Power key
-                            {
-                                int ecx = 4096;
-
-                                var_88 = -1;
-
-                                if (PlayerList[nPlayer].keys != ecx)
-                                {
-                                    if (nPlayer == nLocalPlayer) {
-                                        BuildStatusAnim(36, 0);
-                                    }
-
-                                    PlayerList[nPlayer].keys |= ecx;
-
-                                    if (nTotalPlayers > 1)
-                                    {
-                                        goto do_default_b;
-                                    }
-                                    else
-                                    {
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-                            case 40: // Time key
-                            {
-                                int ecx = 4096 << 1;
-
-                                var_88 = -1;
-
-                                if (PlayerList[nPlayer].keys != ecx)
-                                {
-                                    if (nPlayer == nLocalPlayer) {
-                                        BuildStatusAnim(36 + 2, 0);
-                                    }
-
-                                    PlayerList[nPlayer].keys |= ecx;
-
-                                    if (nTotalPlayers > 1)
-                                    {
-                                        goto do_default_b;
-                                    }
-                                    else
-                                    {
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-                            case 41: // War key
-                            {
-                                int ecx = 4096 << 2;
-
-                                var_88 = -1;
-
-                                if (PlayerList[nPlayer].keys != ecx)
-                                {
-                                    if (nPlayer == nLocalPlayer) {
-                                        BuildStatusAnim(36 + 4, 0);
-                                    }
-
-                                    PlayerList[nPlayer].keys |= ecx;
-
-                                    if (nTotalPlayers > 1)
-                                    {
-                                        goto do_default_b;
-                                    }
-                                    else
-                                    {
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-                            case 42: // Earth key
-                            {
-                                int ecx = 4096 << 3;
-
-                                var_88 = -1;
-
-                                if (PlayerList[nPlayer].keys != ecx)
-                                {
-                                    if (nPlayer == nLocalPlayer) {
-                                        BuildStatusAnim(36 + 6, 0);
-                                    }
-
-                                    PlayerList[nPlayer].keys |= ecx;
-
-                                    if (nTotalPlayers > 1)
-                                    {
-                                        goto do_default_b;
-                                    }
-                                    else
-                                    {
-                                        goto do_default;
-                                    }
-                                }
-
-                                break;
-                            }
-
-                            case 43: // Magical Essence
-                            case 44: // ?
-                            {
-                                if (PlayerList[nPlayer].nMagic >= 1000) {
-                                    break;
-                                }
-
-                                var_88 = StaticSound[kSoundMana1];
-
-                                PlayerList[nPlayer].nMagic += 100;
-                                if (PlayerList[nPlayer].nMagic >= 1000) {
-                                    PlayerList[nPlayer].nMagic = 1000;
-                                }
-
-                                if (nLocalPlayer == nPlayer)
-                                {
-                                    SetMagicFrame();
-                                }
-
-                                goto do_default;
-                            }
-
-                            case 53: // Scarab (Checkpoint)
-                            {
-                                if (nLocalPlayer == nPlayer)
-                                {
-                                    short nAnim = sprite[nValB].owner;
-                                    AnimList[nAnim].nSeq++;
-                                    AnimFlags[nAnim] &= 0xEF;
-                                    AnimList[nAnim].field_2 = 0;
-
-                                    changespritestat(nValB, 899);
-                                }
-
-                                SetSavePoint(nPlayer, sprite[nPlayerSprite].x, sprite[nPlayerSprite].y, sprite[nPlayerSprite].z, sprite[nPlayerSprite].sectnum, sprite[nPlayerSprite].ang);
-                                break;
-                            }
-
-                            case 54: // Golden Sarcophagus (End Level)
-                            {
-                                if (!bInDemo) {
-                                    FinishLevel();
-                                }
-                                else {
-                                    // KB_Addch(32);
-                                    bDemoPlayerFinishedLevel = true;
-                                }
-
-                                DestroyItemAnim(nValB);
-                                mydeletesprite(nValB);
-                                break;
-                            }
-                        }
-                    }
-                }
+                PlayerCheckItemPickup(nPlayer, nPickupSprite, var_30);
 
                 // CORRECT ? // loc_1BAF9:
                 if (bTouchFloor)
@@ -3210,15 +2829,6 @@ loc_1BD2E:
 
                         bPlayerPan = kTrue;
                         nDestVertPan[nPlayer] = nVertPan[nPlayer];
-                    }
-
-                    if (BUTTON(gamefunc_Next_Weapon))
-                    {
-                        SelectNextWeapon();
-                    }
-                    else if (BUTTON(gamefunc_Previous_Weapon))
-                    {
-                        SelectPreviousWeapon();
                     }
 
                     // loc_1C048:

@@ -1637,17 +1637,36 @@ int app_main(int argc, char const * const * argv)
     OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
-    char *const setupFileName = Xstrdup(SetupFilename);
-    char *const p = strtok(setupFileName, ".");
+    auto const hasSetupFilename = strcmp(SetupFilename, SETUPFILENAME);
 
-    if (!p || !Bstrcmp(SetupFilename, SETUPFILENAME))
-        Bsprintf(buffer, "settings.cfg");
+    if (!hasSetupFilename)
+        Bsnprintf(buffer, ARRAY_SIZE(buffer), APPBASENAME "_cvars.cfg");
     else
-        Bsprintf(buffer, "%s_settings.cfg", p);
+    {
+        char const * const ext = strchr(SetupFilename, '.');
+        if (ext != nullptr)
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_cvars.cfg", int(ext - SetupFilename), SetupFilename);
+        else
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_cvars.cfg", SetupFilename);
+    }
 
-    Bfree(setupFileName);
+    if (OSD_Exec(buffer))
+    {
+        // temporary fallback to unadorned "settings.cfg"
 
-    OSD_Exec(buffer);
+        if (!hasSetupFilename)
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "settings.cfg");
+        else
+        {
+            char const * const ext = strchr(SetupFilename, '.');
+            if (ext != nullptr)
+                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_settings.cfg", int(ext - SetupFilename), SetupFilename);
+            else
+                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_settings.cfg", SetupFilename);
+        }
+
+        OSD_Exec(buffer);
+    }
 
     // Not neccessary ?
     // CONFIG_SetDefaultKeys(keydefaults, true);

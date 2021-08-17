@@ -74,7 +74,7 @@ bool playCDtrack(int nTrack, bool bLoop)
     }
   
     if (hFile < 0) {
-        OSD_Printf("Error opening music track %02d", nTrack);
+        OSD_Printf("Error opening music track %02d\n", nTrack);
         return false;
     }
 
@@ -83,7 +83,7 @@ bool playCDtrack(int nTrack, bool bLoop)
     pTrack = (char*)Xaligned_alloc(16, nFileLen);
     if (pTrack == NULL)
     {
-        OSD_Printf("Error allocating music track data memory for %s", filename);
+        OSD_Printf("Error allocating music track data memory for %s\n", filename);
         kclose(hFile);
         return false;
     }
@@ -91,7 +91,7 @@ bool playCDtrack(int nTrack, bool bLoop)
     int nRead = kread(hFile, pTrack, nFileLen);
     if (nRead != nFileLen)
     {
-        OSD_Printf("Error reading music track data for %s", filename);
+        OSD_Printf("Error reading music track data for %s\n", filename);
         Xaligned_free(pTrack);
         pTrack = NULL;
         kclose(hFile);
@@ -103,7 +103,7 @@ bool playCDtrack(int nTrack, bool bLoop)
     trackhandle = FX_Play(pTrack, nRead, bLoop ? 0 : -1, 0, 0, MusicVolume, MusicVolume, MusicVolume, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
     if (trackhandle <= FX_Ok)
     {
-        OSD_Printf("Error playing music track %s", filename);
+        OSD_Printf("Error playing music track %s\n", filename);
         if (pTrack)
         {
             Xaligned_free(pTrack);
