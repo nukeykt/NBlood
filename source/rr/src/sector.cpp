@@ -4359,8 +4359,8 @@ CHECKINV1:
                         else
                             currentWeapon += weaponNum;
 
-                        if (currentWeapon == -1) currentWeapon = FREEZE_WEAPON;
-                        else if (currentWeapon == 10) currentWeapon = KNEE_WEAPON;
+                        if (currentWeapon == -1) currentWeapon = 9;
+                        else if (currentWeapon == 10) currentWeapon = 0;
 
                         if ((pPlayer->gotweapon & (1<<currentWeapon)) && pPlayer->ammo_amount[currentWeapon] > 0)
                         {
