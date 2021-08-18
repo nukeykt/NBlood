@@ -1231,6 +1231,7 @@ void editinput(void)
         if ((bstatus&(1|2|4))==1)
         {
             ang += mousx;
+            ang &= 2047;
             xvect = -((mousy*(int32_t)sintable[(ang+2560)&2047])<<(3+pk_uedaccel));
             yvect = -((mousy*(int32_t)sintable[(ang+2048)&2047])<<(3+pk_uedaccel));
 
@@ -1283,6 +1284,7 @@ void editinput(void)
         {
             ang += mousx;
             horiz -= mousy;
+            ang &= 2047;
 
             /*
             if (mousy && !(mousy/4))
@@ -1290,7 +1292,6 @@ void editinput(void)
             if (mousx && !(mousx/2))
                 ang++;
             */
-
             inpclamp(&horiz, -99, 299);
 
             if (mlook == 1)
