@@ -4143,11 +4143,11 @@ skipinput:
             {
                 if (!m32_is2d3dmode() && (m32_sideview || highlightcnt <= 0))
                 {
-                    drawlinepat = 0x00ff00ff;
+                    drawlinepat = (uint32_t)((0x0f0f0f0f0f0f0f0full << ((searchy & 7))) >> 7);
                     editorDraw2dLine(searchx,0, searchx,ydim-1, editorcolors[15]);
+                    drawlinepat = (uint32_t)((0x0f0f0f0f0f0f0f0full << ((searchx & 7))) >> 7);
                     editorDraw2dLine(0,searchy, xdim-1,searchy, editorcolors[15]);
                     drawlinepat = 0xffffffff;
-
                     _printmessage16("(%d,%d)",mousxplc,mousyplc);
                 }
                 else
