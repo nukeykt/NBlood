@@ -3861,14 +3861,18 @@ void P_GetInputMotorcycle(int playerNum)
             turnRight = 1;
     }
 
-    input.svel = input.fvel = input.q16avel = input.q16horz = 0;
-    
     if (!pPlayer->moto_underwater)
     {
+        // required to move backwards/fowards with gamepad
+        localInput.bits |= (input.fvel > 0) << SK_JUMP;
+        localInput.bits |= (input.fvel < 0) << SK_AIM_UP;
+
         localInput.bits |= (BUTTON(gamefunc_Move_Forward) || BUTTON(gamefunc_Strafe)) << SK_JUMP;
         localInput.bits |= BUTTON(gamefunc_Move_Backward) << SK_AIM_UP;
         localInput.bits |= BUTTON(gamefunc_Run) << SK_CROUCH;
     }
+
+    input.svel = input.fvel = input.q16avel = input.q16horz = 0;
 
     localInput.bits |= turnLeft << SK_AIM_DOWN;
     localInput.bits |= turnRight << SK_LOOK_LEFT;
@@ -4158,6 +4162,10 @@ void P_GetInputBoat(int playerNum)
         else if (turn > 0)
             turnRight = 1;
     }
+
+    // required to move backwards/fowards with gamepad
+    localInput.bits |= (input.fvel > 0) << SK_JUMP;
+    localInput.bits |= (input.fvel < 0) << SK_AIM_UP;
 
     input.svel = input.fvel = input.q16avel = input.q16horz = 0;
     
