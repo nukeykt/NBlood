@@ -10271,14 +10271,18 @@ void ExtPreCheckKeys(void) // just before drawrooms
     {
         for (i=ii=0; i<MAXSPRITES && ii < Numsprites; i++)
         {
-            int32_t daang = 0, flags, shade;
-            int32_t picnum, frames;
+            auto pSprite = (uspriteptr_t)&sprite[i];
+
+            if ((pSprite->cstat & 48) != 0 || pSprite->statnum == MAXSTATUS || (unsigned)pSprite->sectnum >= MAXSECTORS) continue;
+            if (bitmap_test(graysectbitmap, pSprite->sectnum)) continue;
+
+            int daang = 0, flags = 0, shade = 0, frames = 0;
+            int picnum = pSprite->picnum;
             int32_t xp1, yp1;
 
             if ((sprite[i].cstat & 48) != 0 || sprite[i].statnum == MAXSTATUS) continue;
+
             ii++;
-            picnum = sprite[i].picnum;
-            daang = flags = frames = shade = 0;
 
             switch (picnum)
             {
