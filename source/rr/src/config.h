@@ -34,6 +34,9 @@ void CONFIG_SetupMouse( void );
 void CONFIG_SetupJoystick( void );
 void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy=false);
 
+void CONFIG_SetGameControllerDefaults(void);
+void CONFIG_SetGameControllerDefaultsClear(void);
+
 int32_t CONFIG_GetMapBestTime(char const * mapname, uint8_t const * mapmd4);
 int32_t CONFIG_SetMapBestTime(uint8_t const * mapmd4, int32_t tm);
 

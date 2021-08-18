@@ -1455,6 +1455,21 @@ int32_t registerosdcommands(void)
         { "hud_hidestick", "hide the touch input stick", (void *)&droidinput.hideStick, CVAR_BOOL, 0, 1 },
 #endif
 
+        {
+            "in_joystickaimweight", "weight joystick aiming input towards whichever axis is moving the most at any given time",
+            (void *)&ud.config.JoystickAimWeight, CVAR_INT, 0, 10
+        },
+
+        {
+            "in_joystickviewcentering", "automatically center the player's view vertically when moving while using a controller",
+            (void *)&ud.config.JoystickViewCentering, CVAR_INT, 0, 10
+        },
+
+        {
+            "in_joystickviewleveling", "automatically adjusts the player's view vertically to aim at enemies",
+            (void *)&ud.config.JoystickAimAssist, CVAR_BOOL, 0, 1
+        },
+
         { "in_joystick","enables input from the joystick if it is present",(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "in_mouse","enables input from the mouse if it is present",(void *)&ud.setup.usemouse, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
 

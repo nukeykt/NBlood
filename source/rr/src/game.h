@@ -204,6 +204,9 @@ typedef struct {
         int32_t AutoAim;
         int32_t ShowOpponentWeapons;
         int32_t MouseDeadZone,MouseBias;
+        int32_t JoystickAimWeight;
+        int32_t JoystickViewCentering;
+        int32_t JoystickAimAssist;
 
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them
@@ -213,6 +216,7 @@ typedef struct {
         int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
         int32_t JoystickAnalogueAxes[MAXJOYAXES];
         int32_t JoystickAnalogueScale[MAXJOYAXES];
+        int32_t JoystickAnalogueInvert[MAXJOYAXES];
         int32_t JoystickAnalogueDead[MAXJOYAXES];
         int32_t JoystickAnalogueSaturate[MAXJOYAXES];
         uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
