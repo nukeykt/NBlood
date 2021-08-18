@@ -45,6 +45,9 @@
 
 #include "playmve.h"
 #include "filestream.h"
+#include "control.h"
+#include "joystick.h"
+#include "function.h"
 
 #define kAudioBlocks    20 // alloc a lot of blocks - need to store lots of audio data before video frames start.
 
@@ -376,7 +379,10 @@ bool InterplayDecoder::Run()
         {
             handleevents();
 
-            if (KB_KeyWaiting()) {
+            if (KB_KeyWaiting() || BUTTON(gamefunc_Fire)
+                || (JOYSTICK_GetGameControllerButtons() & (1 << GAMECONTROLLER_BUTTON_A))
+                || (JOYSTICK_GetGameControllerButtons() & (1 << GAMECONTROLLER_BUTTON_START)))
+            {
                 renderSetAspect(viewingrange, oyxaspect);
                 Close();
                 return true;
