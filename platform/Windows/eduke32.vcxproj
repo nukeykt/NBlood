@@ -397,6 +397,9 @@
     <ProjectReference Include="mimalloc.vcxproj">
       <Project>{1150264b-19c6-4c32-a204-cb79e96d5492}</Project>
     </ProjectReference>
+    <ProjectReference Include="imgui.vcxproj">
+      <Project>{C782E1F1-AACE-4C00-AFAF-3448DAC597C5}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\duke3d\rsrc\gameres.rc">

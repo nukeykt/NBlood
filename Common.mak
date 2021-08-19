@@ -846,7 +846,7 @@ endif
 ##### External library paths
 
 ifeq ($(PLATFORM),WINDOWS)
-    COMPILERFLAGS += -Iplatform/Windows/include
+    COMPILERFLAGS += -Iplatform/Windows/include -Iplatform/Windows/include/SDL2
     LIBDIRS += -Lplatform/Windows/lib/$(BITS)
 else ifeq ($(PLATFORM),DARWIN)
     ifneq ($(shell port --version &>/dev/null; echo $$?),127)
