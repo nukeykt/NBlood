@@ -402,6 +402,7 @@ void A_SpawnMultiple(int spriteNum, int tileNum, int spawnCnt);
 
 int  G_SetInterpolation(int32_t *posptr);
 void G_AddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange, int lightColor, int lightPrio);
+void G_DeleteAllLights(void);
 void G_ClearCameraView(DukePlayer_t *ps);
 void G_DoInterpolations(int smoothRatio);
 void G_MoveWorld(void);

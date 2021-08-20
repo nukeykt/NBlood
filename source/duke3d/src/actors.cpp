@@ -707,12 +707,15 @@ static void A_DeleteLight(int32_t s)
     practor[s].lightptr = NULL;
 }
 
+void G_DeleteAllLights(void)
+{
+    for (int i=0; i<MAXSPRITES; i++)
+        A_DeleteLight(i);
+}
+
 void G_Polymer_UnInit(void)
 {
-    int32_t i;
-
-    for (i=0; i<MAXSPRITES; i++)
-        A_DeleteLight(i);
+    G_DeleteAllLights();
 }
 #endif
 

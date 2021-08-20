@@ -1940,6 +1940,7 @@ int G_EnterLevel(int gameMode)
 
     G_DoLoadScreen("Loading map . . .", -1);
     G_UpdateScreenArea();
+    G_DeleteAllLights();
 
     ud.screen_size = ssize;
 
@@ -2077,7 +2078,6 @@ int G_EnterLevel(int gameMode)
     videoClearViewableArea(0L);
     G_DrawBackground();
     G_DrawRooms(myconnectindex,65536);
-
     if (g_netClient || g_netServer) // [75] : Initialize map states after map load
     {
         Net_InitMapStateHistory();

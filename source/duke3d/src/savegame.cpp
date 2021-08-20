@@ -2182,14 +2182,9 @@ static void sv_preactorsave(void) { sv_prepareactors(actor); }
 static void sv_postactordata(void)
 {
     sv_restoreactors(actor);
-
-    for (int i = 0; i < MAXSPRITES; i++)
-    {
 #ifdef POLYMER
-        practor[i].lightptr = NULL;
-        practor[i].lightId  = -1;
+    G_DeleteAllLights();
 #endif
-    }
 }
 
 static void sv_preanimateptrsave()
