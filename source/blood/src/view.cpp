@@ -1251,7 +1251,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
         sprintf(buffer, "K:%d", pPlayer->fragCount);
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
     y += nHeight+1;
-    sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets);
+    sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, max(gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets)); // if we found more than there are, increase the total - some levels have a bugged counter
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
 
@@ -1350,7 +1350,7 @@ void viewDrawAimedPlayerName(void)
     if (!gShowPlayerNames || (gView->aim.dx == 0 && gView->aim.dy == 0))
         return;
 
-    int hit = HitScan(gView->pSprite, gView->pSprite->z, gView->aim.dx, gView->aim.dy, gView->aim.dz, CLIPMASK0, 512);
+    int hit = HitScan(gView->pSprite, gView->zView, gView->aim.dx, gView->aim.dy, gView->aim.dz, CLIPMASK0, 512);
     if (hit == 3)
     {
         spritetype* pSprite = &sprite[gHitInfo.hitsprite];
@@ -1622,7 +1622,7 @@ void UpdateStatusBar(ClockTicks arg)
                 DrawStatMaskedSprite(2552+i, 260+10*i, 170, 0, 0, 512, (int)(65536*0.25));
         }
 
-        if (pPlayer->throwPower)
+        if (pPlayer->throwPower && pXSprite->health > 0)
             TileHGauge(2260, 124, 175-10, pPlayer->throwPower, 65536);
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2-30);
@@ -1631,7 +1631,7 @@ void UpdateStatusBar(ClockTicks arg)
     }
     else if (gViewSize <= 2)
     {
-        if (pPlayer->throwPower)
+        if (pPlayer->throwPower && pXSprite->health > 0)
             TileHGauge(2260, 124, 175, pPlayer->throwPower, 65536);
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2);
@@ -1774,7 +1774,7 @@ void UpdateStatusBar(ClockTicks arg)
         }
         DrawStatMaskedSprite(2202, 118, 185, pPlayer->isRunning ? 16 : 40);
         DrawStatMaskedSprite(2202, 201, 185, pPlayer->isRunning ? 16 : 40);
-        if (pPlayer->throwPower)
+        if (pPlayer->throwPower && pXSprite->health > 0)
         {
             TileHGauge(2260, 124, 175, pPlayer->throwPower, 65536);
         }
@@ -2369,30 +2369,33 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
         WEAPONICON weaponIcon = gWeaponIcon[pPlayer->curWeapon];
         const int nTile = weaponIcon.nTile;
-        if (nTile < 0) break;
+        if (nTile < 0)
+            break;
         auto pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
         if (!pNSprite)
             break;
         pNSprite->x = pTSprite->x;
         pNSprite->y = pTSprite->y;
         pNSprite->z = pTSprite->z-(32<<8);
+        pNSprite->z -= weaponIcon.zOffset<<8; // offset up
         pNSprite->picnum = nTile;
         pNSprite->shade = pTSprite->shade;
         pNSprite->xrepeat = 32;
         pNSprite->yrepeat = 32;
+        pNSprite->ang = (gView->pSprite->ang + 512) & 2047; // always face viewer
         const int nVoxel = voxelIndex[nTile];
         if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
         {
             pNSprite->cstat |= 48;
             pNSprite->cstat &= ~8;
             pNSprite->picnum = nVoxel;
-            pNSprite->z -= weaponIcon.zOffset<<8;
-            const int lifeLeech = 9;
-            if (pPlayer->curWeapon == lifeLeech)
+            if (pPlayer->curWeapon == 9) // position lifeleech behind player
             {
-                pNSprite->x -=  mulscale30(128, Cos(pNSprite->ang));
-                pNSprite->y -= mulscale30(128, Sin(pNSprite->ang));
+                pNSprite->x +=  mulscale30(128, Cos(gView->pSprite->ang));
+                pNSprite->y += mulscale30(128, Sin(gView->pSprite->ang));
             }
+            if ((pPlayer->curWeapon == 9) || (pPlayer->curWeapon == 10))  // make lifeleech/voodoo doll always face viewer like sprite
+                pNSprite->ang = (gView->pSprite->ang + 1024) & 2047;
         }
         break;
     }
