@@ -2389,12 +2389,13 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
             pNSprite->cstat |= 48;
             pNSprite->cstat &= ~8;
             pNSprite->picnum = nVoxel;
-            if ((pPlayer->curWeapon == 9) || (pPlayer->curWeapon == 10)) // make lifeleech/voodoo doll always face viewer like sprite
+            if (pPlayer->curWeapon == 9) // position lifeleech behind player
             {
                 pNSprite->x +=  mulscale30(128, Cos(gView->pSprite->ang));
                 pNSprite->y += mulscale30(128, Sin(gView->pSprite->ang));
-                pNSprite->ang = (gView->pSprite->ang + 1024) & 2047;
             }
+            if ((pPlayer->curWeapon == 9) || (pPlayer->curWeapon == 10))  // make lifeleech/voodoo doll always face viewer like sprite
+                pNSprite->ang = (gView->pSprite->ang + 1024) & 2047;
         }
         break;
     }
