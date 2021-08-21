@@ -2389,6 +2389,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
     sprite[i].lotag = 0;
     sprite[i].hitag = 0;
     sprite[i].extra = -1;
+    sprite[i].blend = 0;
 
     Bmemset(localartfreq, 0, sizeof(localartfreq));
     for (k=0; k<MAXSPRITES; k++)
