@@ -244,7 +244,6 @@ void CONFIG_SetDefaults(void)
 #endif
     ud.config.useprecache = 1;
     ud.config.AmbienceToggle = 1;
-    ud.config.AutoAim = 1;
     ud.config.FXVolume = 255;
 #if defined(_WIN32)
     ud.config.MixRate = 44100;
@@ -259,6 +258,7 @@ void CONFIG_SetDefaults(void)
     ud.config.MusicVolume = 195;
     ud.config.MusicDevice = ASS_AutoDetect;
     g_myAimMode = g_player[0].ps->aim_mode = 1;
+    ud.config.AutoAim = 1;
     ud.config.NumBits = 16;
     ud.config.NumChannels = 2;
 #if defined GEKKO || defined __OPENDINGUX__
@@ -272,6 +272,11 @@ void CONFIG_SetDefaults(void)
     ud.auto_run = 1;
     ud.config.ShowOpponentWeapons = 0;
     ud.config.SoundToggle = 1;
+    ud.config.CheckForUpdates = 1;
+    ud.config.AutoAim = 1;
+    ud.config.JoystickAimWeight = 5;
+    ud.config.JoystickViewCentering = 3;
+    ud.config.JoystickAimAssist = 1;
     ud.althud = 1;
     ud.automsg = 0;
     ud.autovote = 0;
@@ -342,8 +347,6 @@ void CONFIG_SetDefaults(void)
     ud.autosavedeletion = 1;
     ud.maxautosaves = 5;
     ud.fov = 90;
-
-    ud.config.CheckForUpdates = 1;
 
     Bstrcpy(ud.rtsname, G_DefaultRtsFile());
 
@@ -1050,6 +1053,9 @@ void CONFIG_WriteSetup(uint32_t flags)
                 Bsprintf(buf, "ControllerAnalogScale%d", dummy);
                 SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueScale[dummy], FALSE, FALSE);
             }
+
+            Bsprintf(buf, "ControllerAnalogInvert%d", dummy);
+            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueInvert[dummy], FALSE, FALSE);
 
             if (ud.config.JoystickAnalogueDead[dummy] != DEFAULTJOYSTICKANALOGUEDEAD)
             {
