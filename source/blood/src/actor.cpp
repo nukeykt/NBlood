@@ -3051,7 +3051,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         }
         break;
     case kDudeTinyCaleb:
-        if (VanillaMode() || DemoRecordStatus())
+        if (VanillaMode())
             break;
         if (damageType == kDamageBurn && pXSprite->medium == kMediumNormal)
         {
@@ -3741,7 +3741,7 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
                     actBurnSprite(pMissile->owner, pXSpriteHit, 360);
 
                 // by NoOne: make Life Leech heal user, just like it was in 1.0x versions
-                if (gGameOptions.weaponsV10x && !VanillaMode() && !DemoRecordStatus() && pDudeInfo != NULL) {
+                if (gGameOptions.weaponsV10x && !VanillaMode() && pDudeInfo != NULL) {
                     spritetype* pSource = &sprite[nOwner];
                     XSPRITE* pXSource = (pSource->extra >= 0) ? &xsprite[pSource->extra] : NULL;
 
@@ -3837,7 +3837,7 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
                     actRadiusDamage(nOwner, pMissile->x, pMissile->y, pMissile->z, pMissile->sectnum, 16, 20, 10, kDamageBullet, 6, 480);
 
                     // by NoOne: allow additional bullet damage for Flare Gun
-                    if (gGameOptions.weaponsV10x && !VanillaMode() && !DemoRecordStatus()) {
+                    if (gGameOptions.weaponsV10x && !VanillaMode()) {
                         int nDamage = (20 + Random(10)) << 4;
                         actDamageSprite(nOwner, pSpriteHit, kDamageBullet, nDamage);
                     }
@@ -4758,7 +4758,7 @@ void MoveDude(spritetype *pSprite)
     }
     if (pPlayer && zvel[nSprite] > 0x155555 && !pPlayer->fallScream && pXSprite->height > 0)
     {
-        const bool playerAlive = (pXSprite->health > 0) || VanillaMode() || DemoRecordStatus(); // only trigger falling scream if player is alive
+        const bool playerAlive = (pXSprite->health > 0) || VanillaMode(); // only trigger falling scream if player is alive
         if (playerAlive)
         {
             pPlayer->fallScream = 1;
@@ -4861,7 +4861,7 @@ void MoveDude(spritetype *pSprite)
                     break;
                 case kDudeBurningCultist:
                 {
-                    const bool fixRandomCultist = (pSprite->inittype >= kDudeBase) && (pSprite->inittype < kDudeMax) && !VanillaMode() && !DemoRecordStatus(); // fix burning cultists randomly switching types underwater
+                    const bool fixRandomCultist = (pSprite->inittype >= kDudeBase) && (pSprite->inittype < kDudeMax) && !VanillaMode(); // fix burning cultists randomly switching types underwater
                     if (fixRandomCultist)
                         pSprite->type = pSprite->inittype;
                     else if (Chance(chance))
@@ -5935,7 +5935,7 @@ void actProcessSprites(void)
             #else
             const bool burningType = (pSprite->type == kDudeBurningInnocent) || (pSprite->type == kDudeBurningCultist) || (pSprite->type == kDudeBurningZombieAxe) || (pSprite->type == kDudeBurningZombieButcher) || (pSprite->type == kDudeBurningTinyCaleb) || (pSprite->type == kDudeBurningBeast);
             #endif
-            const bool fixBurnGlitch = burningType && !VanillaMode() && !DemoRecordStatus(); // if enemies are burning, always apply burning damage per tick
+            const bool fixBurnGlitch = burningType && !VanillaMode(); // if enemies are burning, always apply burning damage per tick
             if ((pXSprite->burnTime > 0) || fixBurnGlitch)
             {
                 switch (pSprite->type)
