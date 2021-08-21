@@ -392,7 +392,7 @@ static void thinkSearch( spritetype* pSprite, XSPRITE* pXSprite ) {
     
     //viewSetSystemMessage("IN SEARCH");
     aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
-    sub_5F15C(pSprite, pXSprite);
+    aiLookForTarget(pSprite, pXSprite);
 }
 
 static void thinkGoto(spritetype* pSprite, XSPRITE* pXSprite) {
@@ -625,7 +625,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
                         mdist = 2500;
                         fallthrough__;
                     case kMissileFireball:
-                    case kMissileFireballNapam:
+                    case kMissileFireballNapalm:
                     case kMissileFireballCerberus:
                     case kMissileFireballTchernobog:
                         if (mdist == defDist) mdist = 3000;
@@ -832,7 +832,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
                                 case kMissileTeslaAlt:
                                 case kMissileFlareAlt:
                                 case kMissileFireball:
-                                case kMissileFireballNapam:
+                                case kMissileFireballNapalm:
                                 case kMissileFireballCerberus:
                                 case kMissileFireballTchernobog: {
                                     // allow attack if dude is far from object, but target is close to it
@@ -1315,7 +1315,7 @@ void scaleDamage(XSPRITE* pXSprite) {
                     curScale[kDmgSpirit] = 32 + Random(18);
                     break;
                 case kMissileFireball:
-                case kMissileFireballNapam:
+                case kMissileFireballNapalm:
                 case kMissileFireballCerberus:
                 case kMissileFireballTchernobog:
                     curScale[kDmgBurn] = 50;

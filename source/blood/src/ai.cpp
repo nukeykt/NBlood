@@ -921,10 +921,24 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
     if (nSource >= 0) {
         spritetype *pSource = &sprite[nSource];
         if (pSprite == pSource) return 0;
-        else if (pXSprite->target == -1 || (nSource != pXSprite->target && Chance(pSprite->type == pSource->type ? nDamage*pDudeInfo->changeTargetKin : nDamage*pDudeInfo->changeTarget)))
+        else if (pXSprite->target == -1) // if no target, give the dude a target
         {
             aiSetTarget(pXSprite, nSource);
             aiActivateDude(pSprite, pXSprite);
+        }
+        else if (nSource != pXSprite->target) // if found a new target, retarget
+        {
+            int nThresh = nDamage;
+            if (pSprite->type == pSource->type)
+                nThresh *= pDudeInfo->changeTargetKin;
+            else
+                nThresh *= pDudeInfo->changeTarget;
+
+            if (Chance(nThresh))
+            {
+                aiSetTarget(pXSprite, nSource);
+                aiActivateDude(pSprite, pXSprite);
+            }
         }
 
         #ifdef NOONE_EXTENSIONS
@@ -1045,6 +1059,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
             pDudeExtra->at4 = 1;
         }
+        const bool fixRandomCultist = (pSprite->inittype >= kDudeBase) && (pSprite->inittype < kDudeMax) && !VanillaMode() && !DemoRecordStatus(); // fix burning cultists randomly switching types underwater
         switch (pSprite->type)
         {
         case kDudeCultistTommy:
@@ -1090,13 +1105,19 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             }
             if (Chance(0x600) && (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo))
             {
-                pSprite->type = kDudeCultistTommy;
+                if (fixRandomCultist)
+                    pSprite->type = pSprite->inittype; // restore back to spawned cultist type
+                else
+                    pSprite->type = kDudeCultistTommy; // vanilla behavior
                 pXSprite->burnTime = 0;
                 aiNewState(pSprite, pXSprite, &cultistSwimGoto);
             }
             else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
             {
-                pSprite->type = kDudeCultistShotgun;
+                if (fixRandomCultist)
+                    pSprite->type = pSprite->inittype; // restore back to spawned cultist type
+                else
+                    pSprite->type = kDudeCultistShotgun; // vanilla behavior
                 pXSprite->burnTime = 0;
                 aiNewState(pSprite, pXSprite, &cultistSwimGoto);
             }
@@ -1117,8 +1138,16 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         case kDudeTinyCaleb:
             if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
-                pSprite->type = kDudeBurningInnocent;
-                aiNewState(pSprite, pXSprite, &cultistBurnGoto);
+                if (!VanillaMode() && !DemoRecordStatus()) // fix burning sprite for tiny caleb
+                {
+                    pSprite->type = kDudeBurningTinyCaleb;
+                    aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
+                }
+                else
+                {
+                    pSprite->type = kDudeBurningInnocent;
+                    aiNewState(pSprite, pXSprite, &cultistBurnGoto);
+                }
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 gDudeExtra[pSprite->extra].at0 = (int)gFrameClock+360;
                 actHealDude(pXSprite, dudeInfo[39].startHealth, dudeInfo[39].startHealth);
@@ -1436,7 +1465,7 @@ void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
     }
 }
 
-void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
+void aiLookForTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
@@ -1474,10 +1503,10 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
         }
         if (pXSprite->state)
         {
-            char va4[(kMaxSectors+7)>>3];
+            char sectmap[(kMaxSectors+7)>>3];
             gAffectedSectors[0] = 0;
             gAffectedXWalls[0] = 0;
-            GetClosestSpriteSectors(pSprite->sectnum, pSprite->x, pSprite->y, 400, gAffectedSectors, va4, gAffectedXWalls);
+            GetClosestSpriteSectors(pSprite->sectnum, pSprite->x, pSprite->y, 400, gAffectedSectors, sectmap, gAffectedXWalls);
             for (int nSprite2 = headspritestat[kStatDude]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
             {
                 spritetype *pSprite2 = &sprite[nSprite2];

@@ -509,6 +509,7 @@ void PreloadCache(void)
 void EndLevel(void)
 {
     gViewPos = VIEWPOS_0;
+    gViewIndex = myconnectindex;
     gGameMessageMgr.Clear();
     sndKillAllSounds();
     sfxKillAllSounds();
@@ -627,6 +628,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 
         gBlueFlagDropped = false;
         gRedFlagDropped = false;
+        gView = gMe;
+        gViewIndex = myconnectindex;
     }
     if (gameOptions->uGameFlags&1)
     {
@@ -794,6 +797,8 @@ void StartNetworkLevel(void)
 
         gBlueFlagDropped = false;
         gRedFlagDropped = false;
+        gView = gMe;
+        gViewIndex = myconnectindex;
 
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
@@ -921,7 +926,7 @@ void LocalKeys(void)
             break;
         case sc_Escape:
             keyFlushScans();
-            if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
+            if (gGameStarted && (gPlayer[myconnectindex].pXSprite->health != 0 || gGameOptions.nGameType > 0))
             {
                 if (!gGameMenuMgr.m_bActive)
                     gGameMenuMgr.Push(&menuMainWithSave,-1);
@@ -959,7 +964,8 @@ void LocalKeys(void)
             return;
         case sc_F6:
             keyFlushScans();
-            DoQuickSave();
+            if (gGameOptions.nGameType == 0)
+                DoQuickSave();
             break;
         case sc_F8:
             keyFlushScans();
@@ -968,7 +974,8 @@ void LocalKeys(void)
             return;
         case sc_F9:
             keyFlushScans();
-            DoQuickLoad();
+            if (gGameOptions.nGameType == 0)
+                DoQuickLoad();
             break;
         case sc_F10:
             keyFlushScans();

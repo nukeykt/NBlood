@@ -1471,6 +1471,11 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
                 {
                     playerResetInertia(pPlayer);
                     pPlayer->zViewVel = pPlayer->zWeaponVel = 0;
+                    if (!VanillaMode() && !DemoRecordStatus()) // if player teleported, clear old angles
+                    {
+                        pPlayer->angold = pSprite->ang;
+                        pPlayer->q16ang = fix16_from_int(pSprite->ang);
+                    }
                 }
             }
         }

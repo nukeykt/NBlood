@@ -162,7 +162,7 @@ static void sub_70284(int, int nXSprite)
             nDist = 75;
             break;
     }
-    sub_2A620(nSprite, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, nDist, 1, 5*(1+gGameOptions.nDifficulty), dmgType, 2, nBurn, 0, 0);
+    actRadiusDamage(nSprite, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, nDist, 1, 5*(1+gGameOptions.nDifficulty), dmgType, 2, nBurn);
 }
 
 static void sub_7034C(spritetype *pSprite, XSPRITE *pXSprite)

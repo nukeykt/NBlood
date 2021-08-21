@@ -230,7 +230,7 @@ void CSecretMgr::Draw(void)
     sprintf(pBuffer, "%2d", nNormalSecretsFound);
     viewDrawText(1, pBuffer, 160, 70, -128, 0, 0, 1);
     viewDrawText(1, "OF", 190, 70, -128, 0, 0, 1);
-    sprintf(pBuffer, "%2d", nAllSecrets);
+    sprintf(pBuffer, "%2d", max(gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets));
     viewDrawText(1, pBuffer, 220, 70, -128, 0, 0, 1);
     if (nSuperSecretsFound > 0)
         viewDrawText(1, "YOU FOUND A SUPER SECRET!", 160, 100, -128, 2, 1, 1);
