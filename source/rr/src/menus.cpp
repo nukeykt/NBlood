@@ -2868,12 +2868,8 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
     case MENU_RESETPLAYER:
         videoFadeToBlack(1);
-        Bsprintf(tempbuf, "Load last game:\n\"%s\""
-#ifndef EDUKE32_ANDROID_MENU
-                          "\n(Y/N)"
-#endif
-        , g_quickload->name);
-        mgametextcenter(origin.x, origin.y + (90<<16), tempbuf);
+        Bsprintf(tempbuf, "Load last game:\n\"%s\"", g_quickload->name);
+        Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
         break;
 
     case MENU_LOAD:
@@ -3012,16 +3008,11 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
         if (g_oldSaveCnt)
         {
-            Bsprintf(tempbuf, "Delete %d obsolete saves?\nThis action cannot be undone."
-#ifndef EDUKE32_ANDROID_MENU
-                "\n(Y/N)"
-#endif
-                , g_oldSaveCnt);
+            Bsprintf(tempbuf, "Delete %d obsolete saves?\nThis action cannot be undone.", g_oldSaveCnt);
+            Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
         }
         else
-            Bsprintf(tempbuf, "No obsolete saves found!");
-
-        mgametextcenter(origin.x, origin.y + (90<<16), tempbuf);
+            mgametextcenter(origin.x, origin.y + (90<<16), "No obsolete saves found!");
         break;
 
     case MENU_LOADVERIFY:
@@ -3031,31 +3022,20 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         if (msv.isOldVer)
         {
             Bsprintf(tempbuf, "Start new game:\n%s / %s"
-#ifndef EDUKE32_ANDROID_MENU
-                              "\n(Y/N)"
-#endif
             , g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name, g_skillNames[ud.player_skill-1]);
-            mgametextcenter(origin.x, origin.y + (90<<16), tempbuf);
+            Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
         }
         else
         {
-            Bsprintf(tempbuf, "Load game:\n\"%s\""
-#ifndef EDUKE32_ANDROID_MENU
-                              "\n(Y/N)"
-#endif
-            , msv.brief.name);
-            mgametextcenter(origin.x, origin.y + (90<<16), tempbuf);
+            Bsprintf(tempbuf, "Load game:\n\"%s\"", msv.brief.name);
+            Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
         }
         break;
     }
 
     case MENU_SAVEVERIFY:
         videoFadeToBlack(1);
-        mgametextcenter(origin.x, origin.y + (90<<16), "Overwrite previous saved game?"
-#ifndef EDUKE32_ANDROID_MENU
-                                                       "\n(Y/N)"
-#endif
-        );
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "Overwrite previous saved game?");
         break;
 
     case MENU_LOADDELVERIFY:
@@ -3063,22 +3043,14 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     {
         videoFadeToBlack(1);
         menusave_t & msv = cm == MENU_LOADDELVERIFY ? g_menusaves[M_LOAD.currentEntry] : g_menusaves[M_SAVE.currentEntry-1];
-        Bsprintf(tempbuf, "Delete saved game:\n\"%s\"?"
-#ifndef EDUKE32_ANDROID_MENU
-                          "\n(Y/N)"
-#endif
-        , msv.brief.name);
-        mgametextcenter(origin.x, origin.y + (90<<16), tempbuf);
+        Bsprintf(tempbuf, "Delete saved game:\n\"%s\"?", msv.brief.name);
+        Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
         break;
     }
 
     case MENU_NEWVERIFY:
         videoFadeToBlack(1);
-        mgametextcenter(origin.x, origin.y + (90<<16), "Abort this game?"
-#ifndef EDUKE32_ANDROID_MENU
-                                                       "\n(Y/N)"
-#endif
-        );
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "Abort this game?");
         break;
     case MENU_JOYDEFAULTVERIFY:
         videoFadeToBlack(1);
@@ -3088,20 +3060,12 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     case MENU_QUIT:
     case MENU_QUIT_INGAME:
         videoFadeToBlack(1);
-        mgametextcenter(origin.x, origin.y + (90<<16), "Are you sure you want to quit?"
-#ifndef EDUKE32_ANDROID_MENU
-                                                       "\n(Y/N)"
-#endif
-        );
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "Are you sure you want to quit?");
         break;
 
     case MENU_QUITTOTITLE:
         videoFadeToBlack(1);
-        mgametextcenter(origin.x, origin.y + (90<<16), "End game and return to title screen?"
-#ifndef EDUKE32_ANDROID_MENU
-                                                       "\n(Y/N)"
-#endif
-        );
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "End game and return to title screen?");
         break;
 
     case MENU_NETWAITMASTER:
