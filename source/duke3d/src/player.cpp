@@ -3012,10 +3012,19 @@ static int P_CheckLockedMovement(int const playerNum)
     return 0;
 }
 
-void P_UpdateAngles(int const playerNum, input_t const &input)
+void P_UpdateAngles(int const playerNum, input_t &input)
 {
     auto      &thisPlayer = g_player[playerNum];
     auto const pPlayer    = thisPlayer.ps;
+
+    if (VM_HaveEvent(EVENT_PREUPDATEANGLES))
+    {
+        input_t pInput = thisPlayer.input;
+        thisPlayer.input = input;
+        VM_OnEvent(EVENT_PREUPDATEANGLES, pPlayer->i, playerNum);
+        input = thisPlayer.input;
+        thisPlayer.input = pInput;
+    }
 
     auto const currentHiTicks    = timerGetFractionalTicks();
     double     elapsedInputTicks = currentHiTicks - thisPlayer.lastViewUpdate;
@@ -3119,6 +3128,15 @@ void P_UpdateAngles(int const playerNum, input_t const &input)
 
     pPlayer->q16horiz    = fix16_clamp(pPlayer->q16horiz, F16(HORIZ_MIN), F16(HORIZ_MAX));
     pPlayer->q16horizoff = fix16_clamp(pPlayer->q16horizoff, F16(HORIZ_MIN), F16(HORIZ_MAX));
+
+    if (VM_HaveEvent(EVENT_POSTUPDATEANGLES))
+    {
+        input_t pInput = thisPlayer.input;
+        thisPlayer.input = input;
+        VM_OnEvent(EVENT_POSTUPDATEANGLES, pPlayer->i, playerNum);
+        input = thisPlayer.input;
+        thisPlayer.input = pInput;
+    }
 }
 
 
@@ -3391,6 +3409,17 @@ void P_GetInput(int const playerNum)
         localInput.extbits |= (!!ud.config.JoystickAimAssist) << EK_GAMEPAD_AIM_ASSIST;
     }
 
+    // for access in the events
+    input.bits = localInput.bits;
+    input.extbits = localInput.extbits;
+
+    if (!ud.recstat)
+        P_UpdateAngles(playerNum, input);
+
+    // in case bits were altered
+    localInput.bits = input.bits;
+    localInput.extbits = input.extbits;
+
     int const movementLocked = P_CheckLockedMovement(playerNum);
 
     if ((ud.scrollmode && ud.overhead_on) || (movementLocked & IL_NOTHING) == IL_NOTHING)
@@ -3422,8 +3451,6 @@ void P_GetInput(int const playerNum)
         }
     }
 
-    if (!ud.recstat)
-        P_UpdateAngles(playerNum, input);
 }
 
 static int32_t P_DoCounters(int playerNum)
