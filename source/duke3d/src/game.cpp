@@ -964,59 +964,45 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 renderSetAspect(mulscale16(oviewingrange, vRange >> 1), yxaspect);
             }
         }
+#ifdef USE_OPENGL
         else if (videoGetRenderMode() >= REND_POLYMOST)
         {
             if (ud.screen_tilting
 #ifdef SPLITSCREEN_MOD_HACKS
-        && !g_fakeMultiMode
+                && !g_fakeMultiMode
 #endif
             )
             {
-#ifdef USE_OPENGL
                 renderSetRollAngle(pPlayer->orotscrnang + mulscale16(((pPlayer->rotscrnang - pPlayer->orotscrnang + 1024)&2047)-1024, smoothRatio));
-#endif
-                pPlayer->orotscrnang = pPlayer->rotscrnang;
             }
-#ifdef USE_OPENGL
             else
             {
                 renderSetRollAngle(0);
             }
-#endif
         }
+#endif
 
         if (pPlayer->newowner < 0)
         {
-            vec3_t const goal = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
-                                  pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
-                                  pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
-
-            CAMERA(pos) = goal;
-#if 1
-            // I'm not particularly happy with this
-            static vec3_t lastcam;
-            static int16_t lastcamsect;
-
-            if (cansee(lastcam.x, lastcam.y, lastcam.z, lastcamsect, goal.x, goal.y, goal.z, CAMERA(sect)))
-                CAMERA(pos) = { logapproach(lastcam.x, goal.x), logapproach(lastcam.y, goal.y), logapproach(lastcam.z, goal.z) };
-
-            lastcam = CAMERA(pos);
-            lastcamsect = CAMERA(sect);
-#endif
+            CAMERA(pos) = { pPlayer->pos.x - mulscale16(65536-smoothRatio, pPlayer->pos.x - pPlayer->opos.x),
+                            pPlayer->pos.y - mulscale16(65536-smoothRatio, pPlayer->pos.y - pPlayer->opos.y),
+                            pPlayer->pos.z - mulscale16(65536-smoothRatio, pPlayer->pos.z - pPlayer->opos.z) };
 
             if (thisPlayer.smoothcamera)
             {
                 CAMERA(q16ang)   = pPlayer->oq16ang
-                                 + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
-                                 + fix16_from_int(pPlayer->look_ang);
+                                 + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio);
                 CAMERA(q16horiz) = pPlayer->oq16horiz + pPlayer->oq16horizoff
                                  + mulscale16((pPlayer->q16horiz + pPlayer->q16horizoff - pPlayer->oq16horiz - pPlayer->oq16horizoff), smoothRatio);
             }
             else
             {
-                CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16ang)   = pPlayer->q16ang;
                 CAMERA(q16horiz) = pPlayer->q16horiz + pPlayer->q16horizoff;
             }
+
+            CAMERA(q16ang) += fix16_from_int(pPlayer->olook_ang)
+                            + mulscale16(fix16_from_int(((pPlayer->look_ang + 1024 - pPlayer->olook_ang) & 2047) - 1024), smoothRatio);
 
             if (ud.viewbob)
             {
@@ -1330,12 +1316,12 @@ static int32_t G_InitActor(int32_t i, int32_t tilenum, int32_t set_movflag_uncon
 {
     if (g_tile[tilenum].execPtr)
     {
-        SH(i) = *(g_tile[tilenum].execPtr);
-        AC_ACTION_ID(actor[i].t_data) = *(g_tile[tilenum].execPtr+1);
-        AC_MOVE_ID(actor[i].t_data) = *(g_tile[tilenum].execPtr+2);
+        SH(i) = g_tile[tilenum].execPtr[0];
+        AC_ACTION_ID(actor[i].t_data) = g_tile[tilenum].execPtr[1];
+        AC_MOVE_ID(actor[i].t_data) = g_tile[tilenum].execPtr[2];
 
         if (set_movflag_uncond || SHT(i) == 0)  // AC_MOVFLAGS
-            SHT(i) = *(g_tile[tilenum].execPtr+3);
+            SHT(i) = g_tile[tilenum].execPtr[3];
 
         return 1;
     }
@@ -4613,7 +4599,10 @@ extern int G_StartRTS(int lumpNum, int localPlayer)
 
 void G_PrintCurrentMusic(void)
 {
-    Bsnprintf(apStrings[QUOTE_MUSIC], MAXQUOTELEN, "Playing %s", g_mapInfo[g_musicIndex].musicfn);
+    char *fn = g_mapInfo[g_musicIndex].musicfn;
+    if (fn[0] == '/') fn++;
+    g_player[myconnectindex].ps->ftq = 0;
+    Bsnprintf(apStrings[QUOTE_MUSIC], MAXQUOTELEN, "Playing %s", fn);
     P_DoQuote(QUOTE_MUSIC, g_player[myconnectindex].ps);
 }
 
@@ -5004,7 +4993,11 @@ FAKE_F3:
             KB_ClearKeyDown(sc_F5);
 
             if (pMapInfo->musicfn != NULL)
-                Bsnprintf(musicString, MAXQUOTELEN, "%s.  Use SHIFT-F5 to change.", pMapInfo->musicfn);
+            {
+                char *fn = pMapInfo->musicfn;
+                if (fn[0] == '/') fn++;
+                Bsnprintf(musicString, MAXQUOTELEN, "%s. SHIFT-F5 to change.", fn);
+            }
             else
                 musicString[0] = '\0';
 
@@ -6402,7 +6395,7 @@ int app_main(int argc, char const* const* argv)
     if (!g_useCwd)
         G_AddSearchPaths();
 
-    g_skillCnt = 4;
+    g_maxDefinedSkill = 4;
     ud.multimode = 1;
 
     // This needs to happen before G_CheckCommandLine() because G_GameExit()
@@ -6680,17 +6673,8 @@ int app_main(int argc, char const* const* argv)
     g_clipMapFiles.clear();
 #endif
 
-    char *const setupFileName = Xstrdup(g_setupFileName);
-    char *const p = strtok(setupFileName, ".");
+    CONFIG_ReadSettings();
 
-    if (!p || !Bstrcmp(g_setupFileName, SETUPFILENAME))
-        Bsprintf(tempbuf, "settings.cfg");
-    else
-        Bsprintf(tempbuf, "%s_settings.cfg", p);
-
-    Xfree(setupFileName);
-
-    OSD_Exec(tempbuf);
     OSD_Exec("autoexec.cfg");
 
     CONFIG_SetDefaultKeys(keydefaults, true);
@@ -6876,9 +6860,9 @@ MAIN_LOOP_RESTART:
 
         static bool frameJustDrawn;
         bool gameUpdate = false;
-        double gameUpdateStartTime = timerGetHiTicks();
+        double gameUpdateStartTime = timerGetFractionalTicks();
 
-        if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && totalclock >= ototalclock+TICSPERFRAME)
+        if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME)
         {
             do 
             {
@@ -6923,10 +6907,10 @@ MAIN_LOOP_RESTART:
                         G_DoMoveThings();
                     }
                 }
-                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= (TICSPERFRAME<<1));
+                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME);
 
                 gameUpdate = true;
-                g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
+                g_gameUpdateTime = timerGetFractionalTicks() - gameUpdateStartTime;
 
                 if (g_gameUpdateAvgTime <= 0.0)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
@@ -6965,7 +6949,7 @@ MAIN_LOOP_RESTART:
             G_DrawFrame();
 
             if (gameUpdate)
-                g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
+                g_gameUpdateAndDrawTime = timerGetFractionalTicks()-gameUpdateStartTime;
 
             frameJustDrawn = true;
         }

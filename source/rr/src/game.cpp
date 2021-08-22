@@ -8724,7 +8724,7 @@ MAIN_LOOP_RESTART:
 
         static bool frameJustDrawn;
         char gameUpdate = false;
-        double const gameUpdateStartTime = timerGetHiTicks();
+        double const gameUpdateStartTime = timerGetFractionalTicks();
         if (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME)
         {
             do
@@ -8779,7 +8779,7 @@ MAIN_LOOP_RESTART:
                 while (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME);
 
                 gameUpdate = true;
-                g_gameUpdateTime = timerGetHiTicks()-gameUpdateStartTime;
+                g_gameUpdateTime = timerGetFractionalTicks()-gameUpdateStartTime;
                 if (g_gameUpdateAvgTime < 0.f)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
                 g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
@@ -8813,7 +8813,7 @@ MAIN_LOOP_RESTART:
 
             if (gameUpdate)
             {
-                g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
+                g_gameUpdateAndDrawTime = timerGetFractionalTicks()-gameUpdateStartTime;
             }
 
             frameJustDrawn = true;

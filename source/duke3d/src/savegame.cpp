@@ -2087,7 +2087,7 @@ static inline int sv_checkoffset(int const scriptoffs, int const val, int const 
 }
 
 // translate anything in actor[] that holds an offset into compiled CON into a label index
-static void sv_preactorsave(void)
+void sv_prepareactors(actor_t * const actor)
 {
     for (int i = 0; i < MAXSPRITES; i++)
     {
@@ -2120,24 +2120,23 @@ static void sv_preactorsave(void)
 }
 
 // translate the script offsets back from label index to offset in the currently compiled script
-static void sv_postactordata(void)
+void sv_restoreactors(actor_t * const actor)
 {
     for (int i = 0; i < MAXSPRITES; i++)
     {
         auto &a = actor[i];
         auto  s = (uspriteptr_t)&sprite[i];
 
-#ifdef POLYMER
-        practor[i].lightptr = NULL;
-        practor[i].lightId = -1;
-#endif
         if (a.flags & SFLAG_RESERVED)
         {
+            Bassert(AC_MOVE_ID(a.t_data) < savegame_labelcnt);
             int const index = hash_find(&h_labels, &savegame_labels[AC_MOVE_ID(a.t_data) << 6]);
             if (index == -1)
             {
                 OSD_Printf("couldn't find savegame label %s\n", &savegame_labels[AC_MOVE_ID(a.t_data) << 6]);
-                AC_MOVE_ID(a.t_data) = *(g_tile[s->picnum].execPtr + 2);
+
+                if (G_TileHasActor(s->picnum))
+                    AC_MOVE_ID(a.t_data) = g_tile[s->picnum].execPtr[2];
             }
             else
                 AC_MOVE_ID(a.t_data) = labelcode[index];
@@ -2145,13 +2144,16 @@ static void sv_postactordata(void)
 
         if (a.flags & SFLAG_RESERVED2)
         {
+            Bassert(AC_ACTION_ID(a.t_data) < savegame_labelcnt);
             char *str = &savegame_labels[AC_ACTION_ID(a.t_data) << 6];
             int const index = hash_find(&h_labels, str);
             if (index == -1)
             {
                 OSD_Printf("couldn't find savegame label %s\n", &savegame_labels[AC_ACTION_ID(a.t_data) << 6]);
-                if (g_tile[s->picnum].execPtr)
-                    AC_ACTION_ID(a.t_data) = *(g_tile[s->picnum].execPtr + 1);
+
+                if (G_TileHasActor(s->picnum))
+                    AC_ACTION_ID(a.t_data) = g_tile[s->picnum].execPtr[2];
+
                 AC_ACTION_COUNT(a.t_data) = 0;
                 AC_CURFRAME(a.t_data)     = 0;
             }
@@ -2161,6 +2163,7 @@ static void sv_postactordata(void)
 
         if (a.flags & SFLAG_RESERVED3)
         {
+            Bassert(AC_AI_ID(a.t_data) < savegame_labelcnt);
             int const index = hash_find(&h_labels, &savegame_labels[AC_AI_ID(a.t_data) << 6]);
             if (index == -1)
             {
@@ -2172,6 +2175,16 @@ static void sv_postactordata(void)
         }
         a.flags &= ~(SFLAG_RESERVED|SFLAG_RESERVED2|SFLAG_RESERVED3);
     }
+}
+
+static void sv_preactorsave(void) { sv_prepareactors(actor); }
+
+static void sv_postactordata(void)
+{
+    sv_restoreactors(actor);
+#ifdef POLYMER
+    G_DeleteAllLights();
+#endif
 }
 
 static void sv_preanimateptrsave()
@@ -2326,7 +2339,10 @@ static int32_t doloadplayer2(buildvfs_kfd fil, uint8_t **memptr)
     int const i = Gv_ReadSave(fil);
 
     if (savegame_labels != label)
+    {
         DO_FREE_AND_NULL(savegame_labels);
+        savegame_labelcnt = 0;
+    }
 
     if (i) return i;
 
@@ -2435,12 +2451,30 @@ static void postloadplayer(int32_t savegamep)
     if (savegamep)
     {
         for (SPRITES_OF(STAT_FX, i))
-            if (sprite[i].picnum == MUSICANDSFX)
+            if (sprite[i].picnum == MUSICANDSFX && T1(i) && SLT(i) < 999 && g_sounds[SLT(i)].m & (SF_MSFX|SF_LOOP))
             {
-                int soundNum = sprite[i].lotag;
-                T2(i) = ud.config.SoundToggle;
-                if (!((g_sounds[soundNum].m & SF_LOOP) || (sprite[i].hitag && sprite[i].hitag != soundNum)))
-                    T1(i) = 0;
+                T2(i) = 0;
+
+                for (int SPRITES_OF_SECT(SECT(i), j))
+                    if (sprite[j].picnum == SECTOREFFECTOR && dukeValidateSectorEffectorPlaysSound(j))
+                    {
+                        T1(i) = 0;
+                        T2(i) = ud.config.SoundToggle;
+
+                        A_CallSound(SECT(i), j);
+                        break;
+                    }
+
+                if (T1(i))
+                {
+                    if (dukeValidateSectorPlaysSound(SECT(i)))
+                    {
+                        T1(i) = 0;
+                        T2(i) = ud.config.SoundToggle;
+
+                        A_CallSound(SECT(i), i);
+                    }
+                }
             }
 
         G_UpdateScreenArea();

@@ -104,6 +104,8 @@ failed:
 int MUSIC_Shutdown(void)
 {
     MIDI_StopSong();
+    SoundDriver_MIDI_Shutdown();
+
     return MUSIC_Ok;
 }
 
@@ -138,5 +140,7 @@ int MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn /*= nu
     return MUSIC_Ok;
 }
 
+void MUSIC_SetSongPosition(int measure, int beat, int tick) { MIDI_SetSongPosition(measure, beat, tick); }
+void MUSIC_GetSongPosition(songposition *pos) { MIDI_GetSongPosition(pos); }
 
 void MUSIC_Update(void) {}

@@ -3017,7 +3017,7 @@ void P_UpdateAngles(int const playerNum, input_t const &input)
     auto      &thisPlayer = g_player[playerNum];
     auto const pPlayer    = thisPlayer.ps;
 
-    auto const currentHiTicks    = timerGetHiTicks();
+    auto const currentHiTicks    = timerGetFractionalTicks();
     double     elapsedInputTicks = currentHiTicks - thisPlayer.lastViewUpdate;
 
     if (!thisPlayer.lastViewUpdate)
@@ -3203,7 +3203,7 @@ void P_GetInput(int const playerNum)
 
     input_t input {};
 
-    auto const currentHiTicks    = timerGetHiTicks();
+    auto const currentHiTicks    = timerGetFractionalTicks();
     double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
 
     if (!g_lastInputTicks)
@@ -4889,7 +4889,10 @@ static void P_Dead(int const playerNum, int const sectorLotag, int const floorZ,
     pushmove(&pPlayer->pos, &pPlayer->cursectnum, 128L, (4L<<8), (20L<<8), CLIPMASK0);
 
     if (floorZ > ceilZ + ZOFFSET2 && pSprite->pal != 1)
-        pPlayer->rotscrnang = (pPlayer->dead_flag + ((floorZ+pPlayer->pos.z)>>7))&2047;
+    {
+        pPlayer->orotscrnang = pPlayer->rotscrnang;
+        pPlayer->rotscrnang = (pPlayer->dead_flag + ((floorZ + pPlayer->pos.z) >> 7)) & 2047;
+    }
 
     pPlayer->on_warping_sector = 0;
 }
@@ -4915,23 +4918,6 @@ static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t
 }
 
 
-static fix16_t P_GetQ16AngleDeltaForTic(DukePlayer_t const *pPlayer)
-{
-    auto oldAngle = pPlayer->oq16ang;
-    auto newAngle = pPlayer->q16ang;
-
-    if (klabs(fix16_sub(oldAngle, newAngle)) < F16(1024))
-        return fix16_sub(newAngle, oldAngle);
-
-    if (newAngle > F16(1024))
-        newAngle = fix16_sub(newAngle, F16(2048));
-
-    if (oldAngle > F16(1024))
-        oldAngle = fix16_sub(oldAngle, F16(2048));
-
-    return fix16_sub(newAngle, oldAngle);
-}
-
 #define GETZRANGECLIPDISTOFFSET 16
 
 void P_ProcessInput(int playerNum)
@@ -4942,28 +4928,10 @@ void P_ProcessInput(int playerNum)
         return;
 
     thisPlayer.smoothcamera = false;
-
-    auto const pPlayer = thisPlayer.ps;
-
-
-    if (pPlayer->newowner < 0)
-    {
-        pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
-        pPlayer->oq16ang      = pPlayer->q16ang;
-        pPlayer->oq16horiz    = pPlayer->q16horiz;
-        pPlayer->oq16horizoff = pPlayer->q16horizoff;
-    }
-
-    if (ud.recstat || pPlayer->gm & MODE_DEMO)
-    {
-        thisPlayer.smoothcamera = true;
-        P_UpdateAngles(playerNum, thisPlayer.input);
-    }
-
-    // these are used in P_UpdateAngles() and can only be reset after calling it
     thisPlayer.horizAngleAdjust = 0;
     thisPlayer.horizSkew        = 0;
 
+    auto const pPlayer = thisPlayer.ps;
     auto const pSprite = &sprite[pPlayer->i];
 
     ++pPlayer->player_par;
@@ -4994,9 +4962,10 @@ void P_ProcessInput(int playerNum)
     // sectorLotag can be set to 0 later on, but the same block sets spritebridge to 1
     int sectorLotag       = sector[pPlayer->cursectnum].lotag;
     int getZRangeClipDist = pPlayer->clipdist - GETZRANGECLIPDISTOFFSET;
-    int getZRangeOffset   = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && (FURY || (pPlayer->on_ground && !pPlayer->jumping_toggle))) || (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1)))
-                          ? pPlayer->autostep_sbw
-                          : pPlayer->autostep;
+    int getZRangeOffset   = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && sectorLotag != ST_2_UNDERWATER && (FURY || (pPlayer->on_ground && !pPlayer->jumping_toggle)))
+                            || (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1)))
+                            ? pPlayer->autostep_sbw
+                            : pPlayer->autostep;
 
     int32_t floorZ, ceilZ, highZhit, lowZhit;
     int const stepHeight = getZRangeOffset;
@@ -5158,15 +5127,25 @@ void P_ProcessInput(int playerNum)
         return;
     }
 
-    pPlayer->rotscrnang -= (pPlayer->rotscrnang >> 1);
+    pPlayer->orotscrnang = pPlayer->rotscrnang;
 
-    if (pPlayer->rotscrnang && !(pPlayer->rotscrnang >> 1))
-        pPlayer->rotscrnang -= ksgn(pPlayer->rotscrnang);
+    if (pPlayer->rotscrnang)
+    {
+        pPlayer->rotscrnang -= (pPlayer->rotscrnang >> 1);
 
-    pPlayer->look_ang -= (pPlayer->look_ang >> 2);
+        if (pPlayer->rotscrnang && !(pPlayer->rotscrnang >> 1))
+            pPlayer->rotscrnang -= ksgn(pPlayer->rotscrnang);
+    }
 
-    if (pPlayer->look_ang && !(pPlayer->look_ang >> 2))
-        pPlayer->look_ang -= ksgn(pPlayer->look_ang);
+    pPlayer->olook_ang   = pPlayer->look_ang;
+
+    if (pPlayer->look_ang)
+    {
+        pPlayer->look_ang -= (pPlayer->look_ang >> 2);
+
+        if (pPlayer->look_ang && !(pPlayer->look_ang >> 2))
+            pPlayer->look_ang -= ksgn(pPlayer->look_ang);
+    }
 
     if (TEST_SYNC_KEY(playerBits, SK_LOOK_LEFT))
     {
@@ -5549,7 +5528,7 @@ void P_ProcessInput(int playerNum)
         pPlayer->crack_time = PCRACKTIME;
 
 #ifndef EDUKE32_STANDALONE
-        if (!FURY)
+        if (!FURY && pPlayer->cursectnum != -1)
         {
             int const checkWalkSound = sintable[pPlayer->bobcounter & 2047] >> 12;
 

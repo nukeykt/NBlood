@@ -1027,6 +1027,14 @@ static int osdcmd_unbind(osdcmdptr_t parm)
         if (ConsoleKey.key && !Bstrcasecmp(parm->parms[0], ConsoleKey.key))
         {
             CONTROL_FreeKeyBind(ConsoleKey.sc);
+            for (auto &KeyboardKey : ud.config.KeyboardKeys)
+            {
+                if (KeyboardKey[0] == ConsoleKey.sc)
+                    KeyboardKey[0] = 0xff;
+
+                if (KeyboardKey[1] == ConsoleKey.sc)
+                    KeyboardKey[1] = 0xff;
+            }
             OSD_Printf("unbound key %s\n", ConsoleKey.key);
             return OSDCMD_OK;
         }
@@ -1142,7 +1150,7 @@ static int osdcmd_name(osdcmdptr_t parm)
 
     Bstrncpy(szPlayerName,tempbuf,sizeof(szPlayerName)-1);
     szPlayerName[sizeof(szPlayerName)-1] = '\0';
-
+    CommandName = nullptr;
     OSD_Printf("name %s\n",szPlayerName);
 
     Net_SendClientInfo();
@@ -1392,6 +1400,12 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
         if (ASS_MIDISoundDriver == ASS_OPL3 || ASS_MIDISoundDriver == ASS_SF2 || MusicIsWaveform)
         {
             // music that we generate and send through sound
+            songposition pos = {};
+
+            if (MusicIsWaveform)
+                FX_GetPosition(MusicVoice, (int *)&pos.tick);
+            else
+                MUSIC_GetSongPosition(&pos);
 
             S_MusicShutdown();
             S_SoundShutdown();
@@ -1402,7 +1416,14 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
             S_ClearSoundLocks();
 
             if (ud.config.MusicToggle)
+            {
                 S_RestartMusic();
+
+                if (MusicIsWaveform)
+                    FX_SetPosition(MusicVoice, (int)pos.tick);
+                else
+                    MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
+            }
         }
         else
         {
@@ -1412,16 +1433,32 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
             S_ClearSoundLocks();
         }
     }
+    else if (!Bstrcasecmp(parm->name, "mus_volume"))
+        S_MusicVolume(Batol(parm->parms[0]));
     else if (!Bstrncasecmp(parm->name, prefix_mus, ARRAY_SIZE(prefix_mus)-1))
     {
         if (!MUSIC_WarmedUp())
             return r;
 
+        songposition pos = {};
+
+        if (MusicIsWaveform)
+            FX_GetPosition(MusicVoice, (int *)&pos.tick);
+        else
+            MUSIC_GetSongPosition(&pos);
+
         S_MusicShutdown();
         S_MusicStartup();
 
         if (ud.config.MusicToggle)
+        {
             S_RestartMusic();
+
+            if (MusicIsWaveform)
+                FX_SetPosition(MusicVoice, (int)pos.tick);
+            else
+                MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
+        }
     }
     else if (!Bstrcasecmp(parm->name, "hud_scale")
              || !Bstrcasecmp(parm->name, "hud_statusbarmode")
@@ -1636,7 +1673,7 @@ int32_t registerosdcommands(void)
 
         { "mus_enabled", "music subsystem" CVAR_BOOL_OPTSTR, (void *)&ud.config.MusicToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT|CVAR_FUNCPTR, 0, ASS_NumSoundCards },
-        { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },
+        { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT|CVAR_FUNCPTR, 0, 255 },
 
         { "osdhightile", "use content pack assets for console text if available" CVAR_BOOL_OPTSTR, (void *)&osdhightile, CVAR_BOOL, 0, 1 },
         { "osdscale", "console text size", (void *)&osdscale, CVAR_FLOAT|CVAR_FUNCPTR, 1, 4 },

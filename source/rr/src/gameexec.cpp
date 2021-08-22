@@ -166,7 +166,7 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
     insptr = apScript + apScriptEvents[eventNum];
     globalReturn = returnValue;
 
-    double const t = timerGetHiTicks();
+    double const t = timerGetFractionalTicks();
 
     if ((unsigned)spriteNum >= MAXSPRITES)
         VM_DummySprite();
@@ -3019,13 +3019,13 @@ void A_Execute(int spriteNum, int playerNum, int playerDist)
 
     VM_UpdateAnim(vm.spriteNum, vm.pData);
 
-    double t = timerGetHiTicks();
+    double t = timerGetFractionalTicks();
     int const picnum = vm.pSprite->picnum;
     insptr = 4 + (g_tile[vm.pSprite->picnum].execPtr);
     VM_Execute(1);
     insptr = NULL;
 
-    t = timerGetHiTicks()-t;
+    t = timerGetFractionalTicks()-t;
     g_actorTotalMs[picnum] += t;
     g_actorMinMs[picnum] = min(g_actorMinMs[picnum], t);
     g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], t);
@@ -4084,13 +4084,13 @@ void RT_Execute(int spriteNum, int playerNum, int playerDist)
 
     VM_UpdateAnim(vm.spriteNum, vm.pData);
 
-    double t = timerGetHiTicks();
+    double t = timerGetFractionalTicks();
     int const picnum = vm.pSprite->picnum;
     insptr = 4 + (g_tile[vm.pSprite->picnum].execPtr);
     RT_VM_Execute(1);
     insptr = NULL;
 
-    t = timerGetHiTicks()-t;
+    t = timerGetFractionalTicks()-t;
     g_actorTotalMs[picnum] += t;
     g_actorMinMs[picnum] = min(g_actorMinMs[picnum], t);
     g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], t);

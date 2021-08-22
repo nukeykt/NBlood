@@ -202,8 +202,9 @@ typedef struct {
     uint16_t frag, fraggedself;
 
     vec2_16_t loogie[6];
-    int16_t filler[103]; // jesus fucking christ
+    int16_t filler[102]; // jesus fucking christ
 
+    int16_t olook_ang;
     int16_t floorzoffset, spritezoffset, minwaterzdist, waterzoffset, shrunkzoffset;
     int16_t crouchzincrement, crouchspeedmodifier, swimspeedmodifier;
     int16_t swimzincrement, minswimzvel, maxswimzvel;
@@ -226,7 +227,7 @@ typedef struct {
 
     int16_t weaprecs[MAX_WEAPONS], weapon_sway, crack_time, bobcounter;
 
-    int16_t orotscrnang, rotscrnang, dead_flag;   // JBF 20031220: added orotscrnang
+    int16_t orotscrnang, rotscrnang, dead_flag;
     int16_t holoduke_on, pycount;
     int16_t transporter_hold, clipdist;
 

@@ -348,14 +348,12 @@ static playbackstatus MV_GetNextXABlock
 
     if (xad->length == xad->pos)
     {
-#if 0
         if (voice->Loop.Size > 0)
         {
             xad->pos = XA_DATA_START;
             xad->t1 = xad->t2 = xad->t1_x = xad->t2_x = 0;
         }
         else
-#endif
             return NoMoreData;
     }
 

@@ -27,7 +27,7 @@
 
 #define CLOCK_FREQ 1000000ULL
 
-EDUKE32_STATIC_ASSERT(CLOCK_FREQ <= 1000000000ULL);
+EDUKE32_STATIC_ASSERT(CLOCK_FREQ <= 1000000000ULL && CLOCK_FREQ >= 1000000ULL);
 
 #ifdef CLOCK_MONOTONIC_RAW
 # define CLOCK_TYPE CLOCK_MONOTONIC_RAW
@@ -103,7 +103,6 @@ static FORCE_INLINE ATTRIBUTE((flatten)) uint64_t timerSampleRDTSC(void)
 }
 #endif
 
-int timerGetClockRate(void) { return clockTicksPerSecond; }
 
 // returns ticks since epoch in the format and frequency specified
 template<typename T> T timerGetTicks(T freq)
@@ -113,27 +112,33 @@ template<typename T> T timerGetTicks(T freq)
     return ts.tv_sec * freq + (T)((uint64_t)ts.tv_nsec * freq / (T)1000000000);
 }
 
+int timerGetClockRate(void) { return clockTicksPerSecond; }
+uint64_t timerGetNanoTickRate(void) { return CLOCK_FREQ / 100 * clockTicksPerSecond; }
+uint64_t timerGetNanoTicks(void) { return timerGetTicks<uint64_t>(timerGetNanoTickRate()); }
 uint32_t timer120(void) { return timerGetTicks<uint32_t>(120); }
 uint32_t timerGetTicks(void) { return timerGetTicks<uint32_t>(1000); }
-double   timerGetHiTicks(void) { return timerGetTicks<double>(1000.0); }
+double   timerGetFractionalTicks(void) { return timerGetTicks<double>(1000.0); }
 
 ATTRIBUTE((flatten)) void timerUpdateClock(void)
 {
     if (!clockTicksPerSecond) return;
 
-    auto time    = timerGetTicks<uint64_t>(CLOCK_FREQ);
-    auto elapsed = (time - clockLastSampleTime) * clockTicksPerSecond;
-    auto cnt     = elapsed / CLOCK_FREQ;
+    auto time = timerGetNanoTicks();
+    auto ld   = lldiv((time - clockLastSampleTime) * clockTicksPerSecond, timerGetNanoTickRate());
 
-    totalclock.setFraction(((elapsed - cnt * CLOCK_FREQ) * 65536) / CLOCK_FREQ);
+    totalclock.setFraction((ld.rem * 65536) / timerGetNanoTickRate());
+#if 0
+    OSD_Printf("totalclock fraction %d\n", totalclock.getFraction());
+#endif
 
-    if (cnt <= 0) return;
+    if (ld.quot <= 0) return;
 
-    totalclock += cnt;
-    clockLastSampleTime += cnt * tabledivide64_noinline(CLOCK_FREQ, clockTicksPerSecond);
+    totalclock += ld.quot;
+    clockLastSampleTime += ld.quot * tabledivide64_noinline(timerGetNanoTickRate(), clockTicksPerSecond);
 
     if (usertimercallback)
-        for (; cnt > 0; cnt--) usertimercallback();
+        for (int cnt = ld.quot; cnt > 0; cnt--)
+            usertimercallback();
 }
 
 static inline int timerGetCounterType(void)
@@ -241,7 +246,7 @@ print_and_return:
         OSD_Printf("WARNING: invariant TSC support not detected! You may experience timing issues.\n");
 #endif
 
-    clockLastSampleTime = timerGetTicks<uint64_t>(CLOCK_FREQ);
+    clockLastSampleTime = timerGetNanoTicks();
 
     return r;
 }
@@ -276,9 +281,9 @@ int timerInit(int const tickspersecond)
 #ifdef ZPL_HAVE_RDTSC
         if (tsc_freq == 0)
         {
-            auto const calibrationEndTime = timerGetHiTicks() + 100.0;
+            auto const calibrationEndTime = timerGetFractionalTicks() + 100.0;
             auto const samplePeriodBegin  = timerSampleRDTSC();
-            do { } while (timerGetHiTicks() < calibrationEndTime);
+            do { } while (timerGetFractionalTicks() < calibrationEndTime);
             auto const samplePeriodEnd = timerSampleRDTSC();
             auto const timePerSample   = timerSampleRDTSC() - samplePeriodEnd;
 
@@ -289,7 +294,7 @@ int timerInit(int const tickspersecond)
     }
 
     clockTicksPerSecond = tickspersecond;
-    clockLastSampleTime = timerGetTicks<uint64_t>(CLOCK_FREQ);
+    clockLastSampleTime = timerGetNanoTicks();
 
     usertimercallback = nullptr;
 

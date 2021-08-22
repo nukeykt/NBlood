@@ -388,14 +388,14 @@ static void Demo_StopProfiling(void)
 static void Demo_GToc(double t)
 {
     g_prof.numtics++;
-    g_prof.totalgamems += timerGetHiTicks()-t;
+    g_prof.totalgamems += timerGetFractionalTicks()-t;
 }
 
 static void Demo_RToc(double t1, double t2)
 {
     g_prof.numframes++;
     g_prof.totalroomsdrawms += t2-t1;
-    g_prof.totalrestdrawms += timerGetHiTicks()-t2;
+    g_prof.totalrestdrawms += timerGetFractionalTicks()-t2;
 }
 
 static void Demo_DisplayProfStatus(void)
@@ -425,7 +425,7 @@ static void Demo_SetupProfile(void)
 
     Bmemset(&g_prof, 0, sizeof(g_prof));
 
-    g_prof.starthiticks = timerGetHiTicks();
+    g_prof.starthiticks = timerGetFractionalTicks();
 }
 
 static void Demo_FinishProfile(void)
@@ -457,7 +457,7 @@ static void Demo_FinishProfile(void)
 
         {
             double totalprofms = gms+dms1+dms2;
-            double totalms = timerGetHiTicks()-g_prof.starthiticks;
+            double totalms = timerGetFractionalTicks()-g_prof.starthiticks;
             if (totalprofms != 0)
                 OSD_Printf("== demo %d: non-profiled time overhead: %.02f %%\n",
                            dn, 100.0*totalms/totalprofms - 100.0);
@@ -723,7 +723,7 @@ nextdemo_nomenu:
 
                 if (Demo_IsProfiling())
                 {
-                    double t = timerGetHiTicks();
+                    double t = timerGetFractionalTicks();
                     G_DoMoveThings();
                     Demo_GToc(t);
                 }
@@ -790,7 +790,7 @@ nextdemo_nomenu:
 
                     for (i=0; i<num; i++)
                     {
-                        double t1 = timerGetHiTicks(), t2;
+                        double t1 = timerGetFractionalTicks(), t2;
 
                         //                    initprintf("t=%d, o=%d, t-o = %d\n", totalclock,
                         //                               ototalclock, totalclock-ototalclock);
@@ -803,7 +803,7 @@ nextdemo_nomenu:
 
                         G_DrawRooms(screenpeek, j);
 
-                        t2 = timerGetHiTicks();
+                        t2 = timerGetFractionalTicks();
 
                         G_DisplayRest(j);
 
@@ -820,10 +820,7 @@ nextdemo_nomenu:
                 }
                 else
                 {
-                    j = calc_smoothratio_demo(totalclock, ototalclock);
-                    if (g_demo_paused && g_demo_rewind)
-                        j = 65536-j;
-
+                    j = calc_smoothratio(g_demo_paused ? lockclock : totalclock, ototalclock, REALGAMETICSPERSEC);
                     G_DrawRooms(screenpeek, j);
                     G_DisplayRest(j);
 
@@ -879,7 +876,7 @@ nextdemo_nomenu:
                 goto RECHECK;
             }
 
-            if (I_EscapeTrigger() && (g_player[myconnectindex].ps->gm&MODE_MENU) == 0 && (g_player[myconnectindex].ps->gm&MODE_TYPE) == 0)
+            if ((I_EscapeTrigger()||(MOUSE_GetButtons()&RIGHT_MOUSE)) && (g_player[myconnectindex].ps->gm&MODE_MENU) == 0 && (g_player[myconnectindex].ps->gm&MODE_TYPE) == 0)
             {
                 I_EscapeTriggerClear();
                 FX_StopAllSounds();

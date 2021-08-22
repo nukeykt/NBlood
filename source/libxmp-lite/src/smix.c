@@ -1,5 +1,5 @@
 /* Extended Module Player
- * Copyright (C) 1996-2018 Claudio Matsuoka and Hipolito Carraro Jr
+ * Copyright (C) 1996-2021 Claudio Matsuoka and Hipolito Carraro Jr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-#include <stdlib.h>
 #include "common.h"
 #include "period.h"
 #include "player.h"
 #include "hio.h"
+#include "loader.h"
 
 
 struct xmp_instrument *libxmp_get_instrument(struct context_data *ctx, int ins)
@@ -88,6 +88,7 @@ int xmp_start_smix(xmp_context opaque, int chn, int smp)
 
     err1:
 	free(smix->xxi);
+	smix->xxi = NULL;
     err:
 	return -XMP_ERROR_INTERNAL;
 }
@@ -173,7 +174,7 @@ int xmp_smix_channel_pan(xmp_context opaque, int chn, int pan)
 }
 
 #ifdef EDUKE32_DISABLED
-int xmp_smix_load_sample(xmp_context opaque, int num, char *path)
+int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 {
 	struct context_data *ctx = (struct context_data *)opaque;
 	struct smix_data *smix = &ctx->smix;
@@ -201,7 +202,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, char *path)
 		
 	/* Init instrument */
 
-	xxi->sub = (struct xmp_subinstrument *)calloc(sizeof(struct xmp_subinstrument), 1);
+	xxi->sub = calloc(sizeof(struct xmp_subinstrument), 1);
 	if (xxi->sub == NULL) {
 		retval = -XMP_ERROR_SYSTEM;
 		goto err1;
@@ -295,7 +296,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, char *path)
     err:
 	return retval;
 }
-#endif
+#endif // EDUKE32_DISABLED
 
 int xmp_smix_release_sample(xmp_context opaque, int num)
 {
@@ -306,9 +307,7 @@ int xmp_smix_release_sample(xmp_context opaque, int num)
 		return -XMP_ERROR_INVALID;
 	}
 
-	if (smix->xxs[num].data != NULL) {
-		free(smix->xxs[num].data - 4);
-	}
+	libxmp_free_sample(&smix->xxs[num]);
 	free(smix->xxi[num].sub);
 
 	smix->xxs[num].data = NULL;
@@ -329,5 +328,6 @@ void xmp_end_smix(xmp_context opaque)
 
 	free(smix->xxs);
 	free(smix->xxi);
+	smix->xxs = NULL;
+	smix->xxi = NULL;
 }
-

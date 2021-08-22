@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "al_midi.h"
 #include "cheats.h"
+#include "cmdline.h"
 #include "communityapi.h"
 #include "compat.h"
 #include "demo.h"
@@ -291,8 +292,8 @@ static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
 
-static int g_lookAxis;
-static int g_turnAxis;
+static int g_lookAxis = -1;
+static int g_turnAxis = -1;
 
 /*
 MenuEntry_t is passed in arrays of pointers so that the callback function
@@ -409,6 +410,8 @@ MenuEntry_t ME_NEWGAMECUSTOMENTRIES[MAXMENUGAMEPLAYENTRIES];
 MenuEntry_t ME_NEWGAMECUSTOMSUBENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOM[MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOMSUB[MAXMENUGAMEPLAYENTRIES];
+
+static char const s_Undefined[] = "Undefined";
 
 static MenuEntry_t ME_SKILL_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
 static MenuEntry_t ME_SKILL[MAXSKILLS];
@@ -875,7 +878,8 @@ static MenuEntry_t *MEL_KEYBOARDSETUP[] = {
 static struct MenuMouseData_t
 {
     char const *name;
-    int index[2];
+    int buttonIndex;
+    int doubleClick;
 } const MenuMouseData[]  = {
     { "Left",       0, 0, },
     { "Right",      1, 0, },
@@ -1771,7 +1775,7 @@ void Menu_PopulateNewGameCustomSub(int e)
 
         MEL_NEWGAMECUSTOMSUB[s] = &ME_NEWGAMECUSTOMSUBENTRIES[e][s];
 
-        if (!(MEL_NEWGAMECUSTOMSUB[e]->flags & MEF_Hidden))
+        if (!(MEL_NEWGAMECUSTOMSUB[s]->flags & MEF_Hidden))
             ++visible;
 
         ++s;
@@ -1936,7 +1940,7 @@ void Menu_Init(void)
     MEOS_NETOPTIONS_EPISODE.numOptions = k + 1;
     NetEpisode = MEOSV_NetEpisodes[0];
     MMF_Top_Episode.pos.y = (58 + (3-k)*6)<<16;
-    if (g_skillCnt == 0)
+    if (g_maxDefinedSkill == 0)
         MEO_EPISODE.linkID = MENU_NULL;
     M_EPISODE.currentEntry = ud.default_volume;
 
@@ -1995,28 +1999,49 @@ void Menu_Init(void)
     }
 
     // prepare skills
-    // k = -1;
-    for (i = 0; i < g_skillCnt && g_skillNames[i][0]; ++i)
+    for (i = 0; i < g_maxDefinedSkill; ++i)
     {
         MEL_SKILL[i] = &ME_SKILL[i];
         ME_SKILL[i] = ME_SKILL_TEMPLATE;
-        ME_SKILL[i].name = g_skillNames[i];
 
-        MEOSN_NetSkills[i] = g_skillNames[i];
-
-        // k = i;
+        if (g_skillNames[i][0])
+        {
+            ME_SKILL[i].name = g_skillNames[i];
+            MEOSN_NetSkills[i] = g_skillNames[i];
+        }
+        else
+        {
+            ME_SKILL[i].name = s_Undefined;
+            MEOSN_NetSkills[i] = s_Undefined;
+            ME_SKILL[i].flags |= MEF_Hidden;
+        }
     }
-    // ++k;
-    M_SKILL.numEntries = g_skillCnt; // k;
-    MEOS_NETOPTIONS_MONSTERS.numOptions = g_skillCnt + 1; // k+1;
-    MEOSN_NetSkills[g_skillCnt] = MenuSkillNone;
-    MMF_Top_Skill.pos.y = (58 + (4-g_skillCnt)*6)<<16;
-    M_SKILL.currentEntry = ud.default_skill;
+    M_SKILL.numEntries = g_maxDefinedSkill;
+    MEOS_NETOPTIONS_MONSTERS.numOptions = g_maxDefinedSkill + 1;
+    MEOSN_NetSkills[g_maxDefinedSkill] = MenuSkillNone;
+    MMF_Top_Skill.pos.y = (58 + (4 - g_maxDefinedSkill)*6)<<16;
 
-    if (M_SKILL.currentEntry >= M_SKILL.numEntries-1)
-        M_SKILL.currentEntry = 0;
+    // If no skills defined, skill menu will be skipped and default skill is used.
+    if (!g_maxDefinedSkill)
+        M_SKILL.currentEntry = ud.default_skill;
+    else
+    {
+        // Otherwise, check if the default skill is out of range or undefined.
+        k = min(MAXSKILLS - 1, ud.default_skill);
+        if (g_skillNames[k][0])
+            M_SKILL.currentEntry = k;
+        else
+        {
+            for (i = 0; i < MAXSKILLS; ++i)
+                if (g_skillNames[i][0])
+                {
+                    M_SKILL.currentEntry = i;
+                    break;
+                }
+        }
 
-    Menu_AdjustForCurrentEntryAssignmentBlind(&M_SKILL);
+        Menu_AdjustForCurrentEntryAssignmentBlind(&M_SKILL);
+    }
 
     // prepare multiplayer gametypes
     k = -1;
@@ -2066,12 +2091,13 @@ void Menu_Init(void)
     M_KEYBOARDKEYS.numEntries = NUMGAMEFUNCTIONS;
     for (i = 0; i < ARRAY_SSIZE(MenuMouseData); ++i)
     {
+        auto &mb = MenuMouseData[i];
         MEL_MOUSESETUPBTNS[i] = &ME_MOUSESETUPBTNS[i];
         ME_MOUSESETUPBTNS[i] = ME_MOUSEJOYSETUPBTNS_TEMPLATE;
-        ME_MOUSESETUPBTNS[i].name = MenuMouseData[i].name;
+        ME_MOUSESETUPBTNS[i].name = mb.name;
         ME_MOUSESETUPBTNS[i].entry = &MEO_MOUSESETUPBTNS[i];
         MEO_MOUSESETUPBTNS[i] = MEO_MOUSEJOYSETUPBTNS_TEMPLATE;
-        MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[MenuMouseData[i].index[0]][MenuMouseData[i].index[1]];
+        MEO_MOUSESETUPBTNS[i].data = &ud.config.MouseFunctions[mb.buttonIndex][mb.doubleClick];
     }
 
     Menu_PopulateJoystick();
@@ -2328,8 +2354,8 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MUSIC, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_DUKETALK, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
-        MenuEntry_DisableOnCondition(&ME_SOUND_MIDIDRIVER, !ud.config.MusicToggle);
 #ifndef EDUKE32_RETAIL_MENU
+        MenuEntry_DisableOnCondition(&ME_SOUND_MIDIDRIVER, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
 #ifdef __linux__
         MenuEntry_DisableOnCondition(&ME_SOUND_ALSADEVICE, !ud.config.MusicToggle);
@@ -3398,7 +3424,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             ud.m_volume_number = M_EPISODE.currentEntry;
             ud.m_level_number = 0;
 
-            if (g_skillCnt == 0)
+            if (g_maxDefinedSkill == 0)
                 Menu_StartGameWithoutSkill();
         }
         break;
@@ -3530,6 +3556,13 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     }
     else if (entry == &ME_SOUND_RESTART)
     {
+        songposition pos = {};
+
+        if (MusicIsWaveform)
+            FX_GetPosition(MusicVoice, (int *)&pos.tick);
+        else
+            MUSIC_GetSongPosition(&pos);
+
         if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices
 #ifdef __linux__
             || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
@@ -3573,6 +3606,11 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             }
 
             S_RestartMusic();
+
+            if (MusicIsWaveform)
+                FX_SetPosition(MusicVoice, (int)pos.tick);
+            else
+                MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
         }
 
         Menu_RefreshSoundProperties();
@@ -3671,8 +3709,8 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     }
     else if (entry == &ME_NETOPTIONS_MONSTERS)
     {
-        ud.m_monsters_off = (newOption == g_skillCnt);
-        if (newOption < g_skillCnt)
+        ud.m_monsters_off = (newOption == g_maxDefinedSkill);
+        if (newOption < g_maxDefinedSkill)
             ud.m_player_skill = newOption;
     }
     else if (entry == &ME_ADULTMODE)
@@ -3722,9 +3760,12 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     switch (g_currentMenu)
     {
     case MENU_MOUSEBTNS:
-        CONTROL_MapButton(newOption, MenuMouseData[M_MOUSEBTNS.currentEntry].index[0], MenuMouseData[M_MOUSEBTNS.currentEntry].index[1], controldevice_mouse);
-        CONTROL_FreeMouseBind(MenuMouseData[M_MOUSEBTNS.currentEntry].index[0]);
+    {
+        auto &mb = MenuMouseData[M_MOUSEBTNS.currentEntry];
+        CONTROL_MapButton(newOption, mb.buttonIndex, mb.doubleClick, controldevice_mouse);
+        CONTROL_FreeMouseBind(mb.buttonIndex);
         break;
+    }
     case MENU_JOYSTICKBTNS:
         if (M_JOYSTICKBTNS.currentEntry < joystick.numButtons + 4*joystick.numHats)
             CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry, 0, controldevice_joystick);
@@ -3754,7 +3795,12 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
         entry == &ME_PLAYER_NAME ||
         entry == &ME_PLAYER_COLOR ||
         entry == &ME_PLAYER_TEAM)
+    {
+        if (entry == &ME_PLAYER_NAME)
+            CommandName = nullptr;
+
         G_UpdatePlayerFromMenu();
+    }
     else if (entry == &ME_DISPLAYSETUP_UPSCALING)
     {
         if (in3dmode())
@@ -3965,7 +4011,7 @@ static int32_t Menu_EntryOptionSource(MenuEntry_t *entry, int32_t currentValue)
     else if (entry == &ME_SOUND_DUKETALK)
         return ud.config.VoiceToggle & 1;
     else if (entry == &ME_NETOPTIONS_MONSTERS)
-        return (ud.m_monsters_off ? g_skillCnt : ud.m_player_skill);
+        return (ud.m_monsters_off ? g_maxDefinedSkill : ud.m_player_skill);
 
     return currentValue;
 }
@@ -4339,7 +4385,7 @@ static void Menu_FileSelect(int32_t input)
             ud.m_volume_number = 0;
             ud.m_level_number = 7;
 
-            if (g_skillCnt > 0)
+            if (g_maxDefinedSkill > 0)
                 Menu_AnimateChange(MENU_SKILL, MA_Advance);
             else
                 Menu_StartGameWithoutSkill();
@@ -4547,16 +4593,23 @@ static void Menu_ReadSaveGameHeaders()
 static void Menu_CheckHiddenSelection(Menu_t* m)
 {
     auto const menu = (MenuMenu_t *)m->object;
-    auto const orig = menu->currentEntry;
 
     while (!menu->entrylist[menu->currentEntry] ||
         (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
         ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
     {
         if (--menu->currentEntry < 0)
-            menu->currentEntry = menu->numEntries;
-        if (menu->currentEntry == orig)
-            G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
+        {
+            menu->currentEntry = 0;
+
+            while (!menu->entrylist[menu->currentEntry] ||
+                (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
+                ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
+            {
+                if (++menu->currentEntry >= menu->numEntries)
+                    G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
+            }
+        }
     }
 }
 
@@ -4630,11 +4683,18 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_JOYSTICKSETUP:
+        ME_JOYSTICK_LOOKXSCALE.flags |= MEF_Hidden;
+        ME_JOYSTICK_LOOKYSCALE.flags |= MEF_Hidden;
+        ME_JOYSTICK_LOOKINVERT.flags |= MEF_Hidden;
+
+        g_turnAxis = g_lookAxis = -1;
+
         for (int i=0;i<MAXJOYAXES;i++)
         {
             if (ud.config.JoystickAnalogueAxes[i] == analog_turning)
             {
                 MEO_JOYSTICK_LOOKXSCALE.variable = &ud.config.JoystickAnalogueScale[i];
+                ME_JOYSTICK_LOOKXSCALE.flags &= ~MEF_Hidden;
                 g_turnAxis = i;
                 break;
             }
@@ -4645,7 +4705,9 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
             if (ud.config.JoystickAnalogueAxes[i] == analog_lookingupanddown)
             {
                 MEO_JOYSTICK_LOOKYSCALE.variable = &ud.config.JoystickAnalogueScale[i];
-                MEO_JOYSTICK_LOOKINVERT.data     = &ud.config.JoystickAnalogueInvert[i];
+                ME_JOYSTICK_LOOKYSCALE.flags &= ~MEF_Hidden;
+                MEO_JOYSTICK_LOOKINVERT.data = &ud.config.JoystickAnalogueInvert[i];
+                ME_JOYSTICK_LOOKINVERT.flags &= ~MEF_Hidden;
                 g_lookAxis = i;
                 break;
             }
@@ -5515,7 +5577,8 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, SLIDEBAR, s, p, 2|8|16, ydim_upper, ydim_lower);
 
                         const int32_t slideregionwidth = mulscale16((tilesiz[SLIDEBAR].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[SLIDEBAR+1].x * ud.menu_slidecursorz), z);
-                        const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z) + scale(slideregionwidth, *object->variable - object->min, object->max - object->min);
+                        const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z)
+                                                  + scale(slideregionwidth, clamp(*object->variable - object->min, 0, object->max - object->min), object->max - object->min);
                         const int32_t slidepointy = slidebary + mulscale16((((tilesiz[SLIDEBAR].y>>1) * ud.menu_slidebarz) - ((tilesiz[SLIDEBAR+1].y>>1) * ud.menu_slidecursorz)), z);
 
                         rotatesprite_ybounds(slidepointx, slidepointy, mulscale16(ud.menu_slidecursorz, z), 0, SLIDEBAR+1, s, p, 2|8|16, ydim_upper, ydim_lower);
@@ -5614,7 +5677,8 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, SLIDEBAR, s, p, 2|8|16, ydim_upper, ydim_lower);
 
                         const int32_t slideregionwidth = mulscale16((tilesiz[SLIDEBAR].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[SLIDEBAR+1].x * ud.menu_slidecursorz), z);
-                        const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z) + Blrintf((float) slideregionwidth * (*object->variable - object->min) / (object->max - object->min));
+                        const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z)
+                                                  + Blrintf((float) slideregionwidth * clamp(*object->variable - object->min, 0.f, object->max - object->min) / (object->max - object->min));
                         const int32_t slidepointy = slidebary + mulscale16(((tilesiz[SLIDEBAR].y>>1) * ud.menu_slidebarz) - ((tilesiz[SLIDEBAR+1].y>>1) * ud.menu_slidecursorz), z);
 
                         rotatesprite_ybounds(slidepointx, slidepointy, mulscale16(ud.menu_slidecursorz, z), 0, SLIDEBAR+1, s, p, 2|8|16, ydim_upper, ydim_lower);
@@ -5714,7 +5778,8 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         rotatesprite_ybounds(slidebarx, slidebary, mulscale16(ud.menu_slidebarz, z), 0, SLIDEBAR, s, p, 2|8|16, ydim_upper, ydim_lower);
 
                         const int32_t slideregionwidth = mulscale16((tilesiz[SLIDEBAR].x * ud.menu_slidebarz) - (ud.menu_slidebarmargin<<1) - (tilesiz[SLIDEBAR+1].x * ud.menu_slidecursorz), z);
-                        const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z) + lrint((double) slideregionwidth * (*object->variable - object->min) / (object->max - object->min));
+                        const int32_t slidepointx = slidebarx + mulscale16(ud.menu_slidebarmargin, z)
+                                                  + lrint((double) slideregionwidth * clamp(*object->variable - object->min, 0., object->max - object->min) / (object->max - object->min));
                         const int32_t slidepointy = slidebary + mulscale16(((tilesiz[SLIDEBAR].y)>>1 * ud.menu_slidebarz) - ((tilesiz[SLIDEBAR+1].y)>>1 * ud.menu_slidecursorz), z);
 
                         rotatesprite_ybounds(slidepointx, slidepointy, mulscale16(ud.menu_slidecursorz, z), 0, SLIDEBAR+1, s, p, 2|8|16, ydim_upper, ydim_lower);

@@ -119,7 +119,8 @@ static int32_t beforedrawrooms = 1;
 
 int32_t benchmarkScreenshot = 0;
 
-static int32_t oxdimen = -1, oviewingrange = -1, oxyaspect = -1;
+static int32_t oxdimen = -1, oviewingrange = -1;
+int32_t oxyaspect = -1;
 
 // r_usenewaspect is the cvar, newaspect_enable to trigger the new behaviour in the code
 int32_t r_usenewaspect = 1, newaspect_enable=0;
@@ -3589,7 +3590,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     float bzinc = -globalzd*(1.f/65536.f);
 
     int32_t const vis = (sec->visibility != 0) ? mulscale4(globalvisibility, (uint8_t)(sec->visibility+16)) : globalvisibility;
-    globvis = ((((uint64_t)(vis*fdaz)) >> 13) * xdimscale) >> 16;
+    globvis = ((((int64_t)(vis*fdaz)) >> 13) * xdimscale) >> 16;
 
     intptr_t fj = FP_OFF(palookup[globalpal]);
 
@@ -3907,7 +3908,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     asm1 = -(globalzd>>(16-BITSOFPRECISION));
 
     int32_t const vis = (sec->visibility != 0) ? mulscale4(globalvisibility, (uint8_t)(sec->visibility+16)) : globalvisibility;
-    globvis = ((((uint64_t)(vis*daz)) >> 13) * xdimscale) >> 16;
+    globvis = ((((int64_t)(vis*(int64_t)daz)) >> 13) * xdimscale) >> 16;
 
     j = FP_OFF(palookup[globalpal]);
 
@@ -4058,7 +4059,7 @@ static void parascan(char dastat, int32_t bunch)
         globalshiftval++;
 #ifdef CLASSIC_NONPOW2_YSIZE_WALLS
     // non power-of-two y size textures!
-    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy >= 512)
+    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
         globalyscale = 65536 / tsizy;
@@ -4225,7 +4226,7 @@ static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t t
         globalshiftval++;
 #ifdef CLASSIC_NONPOW2_YSIZE_WALLS
     // non power-of-two y size textures!
-    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy >= 512)
+    if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
         globalyscale = divscale13(wal->yrepeat, tsizy);
@@ -6212,7 +6213,7 @@ draw_as_face_sprite:
 #define LINTERPSIZ 4
             float const bzinc = -sgzd*(1.f/65536.f) * (1<<LINTERPSIZ);
             int32_t const vis = (sec->visibility != 0) ? mulscale4(globalhisibility, (uint8_t)(sec->visibility+16)) : globalhisibility;
-            globvis = ((((uint64_t)(vis*sdaz)) >> 13) * xdimscale) >> 16;
+            globvis = ((((int64_t)(vis*sdaz)) >> 13) * xdimscale) >> 16;
 
             intptr_t fj = FP_OFF(palookup[globalpal]);
 
@@ -6500,7 +6501,9 @@ next_most:
             (tspr->xrepeat * 5) / 4 :
             tspr->xrepeat;
 
-        const int32_t lx = 0, rx = xdim-1;
+        const int32_t lx = 0, rx = xdimen-1;
+
+        Bassert(rx+windowxy1.x < xdim);
 
         for (x=lx; x<=rx; x++)
         {
@@ -7424,38 +7427,52 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
         static struct sm
         {
-            vec4_t lerp;
-            vec4_t goal;
+            vec4_t lerp, goal;
             int16_t picnum, flags;
+            uint32_t clock;
         } smooth[MAXUNIQHUDID];
 
-        auto &sm = smooth[uniqid];
-        vec4_t const goal = { sx, sy, z, a };
-        smooth[0] = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK) };
+        auto &sm  = smooth[uniqid];
+        auto &sm0 = smooth[0];
+
+        vec4_t const goal  = { sx, sy, z, a };
+        auto const   clock = timer120();
+
+        sm0 = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK), clock };
         
         auto lerpWouldLookDerp = [&](void)
         {
-            return (!(dastat & RS_LERP) && r_rotatespriteinterp < 2)
+            return !(dastat & RS_LERP) || !sm.clock || clock - sm.clock > 4
                    || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
-                   && ((unsigned)(picnum - sm.picnum) > (int)(r_rotatespriteinterp == 3))))) || klabs(a - sm.goal.a) == 1024;
+                   && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
         };
 
-        if (!lerpWouldLookDerp())
+        if (lerpWouldLookDerp())
+            sm.goal = sm0.goal;
+        else 
         {
-            smooth[0].lerp = { sm.lerp.x + mulscale16(smooth[0].goal.x - sm.lerp.x, rotatespritesmoothratio),
-                               sm.lerp.y + mulscale16(smooth[0].goal.y - sm.lerp.y, rotatespritesmoothratio),
-                               sm.lerp.z + mulscale16(smooth[0].goal.z - sm.lerp.z, rotatespritesmoothratio),
-                              (sm.lerp.a + mulscale16(((smooth[0].goal.a + 1024 - sm.lerp.a) & 2047) - 1024, rotatespritesmoothratio)) & 2047 };
+            sm0.lerp = { sm.goal.x - mulscale16(65536-rotatespritesmoothratio, sm.goal.x - sm.lerp.x),
+                         sm.goal.y - mulscale16(65536-rotatespritesmoothratio, sm.goal.y - sm.lerp.y),
+                         sm.goal.z - mulscale16(65536-rotatespritesmoothratio, sm.goal.z - sm.lerp.z),
+                        (sm.goal.a - mulscale16(65536-rotatespritesmoothratio, ((sm.goal.a + 1024 - sm.lerp.a) & 2047) - 1024)) & 2047 };
         }
 
-        sm = smooth[0];
+        sm.picnum = sm0.picnum;
+        sm.flags  = sm0.flags;
+
+        if (clock - sm.clock > 1 || sm0.goal != sm.goal)
+        {
+            sm.lerp  = sm.goal;
+            sm.goal  = sm0.goal;
+            sm.clock = sm0.clock;
+        }
 
         if (r_rotatespriteinterp)
         {
-            sx = sm.lerp.x;
-            sy = sm.lerp.y;
-            z  = sm.lerp.z;
-            a  = sm.lerp.a;
+            sx = sm0.lerp.x;
+            sy = sm0.lerp.y;
+            z  = sm0.lerp.z;
+            a  = sm0.lerp.a;
         }
     }
 
@@ -10491,7 +10508,6 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
     error:
         numsectors = 0;
         numwalls   = 0;
-        numsprites = 0;
         kclose(fil);
         return -3;
     }
@@ -10528,6 +10544,12 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
     if (kread_and_test(fil,&numwalls,2)) goto error;
     numwalls = B_LITTLE16(numwalls);
     if ((unsigned)numwalls >= MYMAXWALLS()+1) goto error;
+
+    for (int i = 0; i < numsectors; i++)
+    {
+        if ((unsigned)sector[i].wallptr > (unsigned)numwalls) goto error;
+        if ((unsigned)sector[i].wallnum > (unsigned)(numwalls-sector[i].wallptr)) goto error;
+    }
 
     if (kread_and_test(fil, wall, sizeof(walltypev7)*numwalls)) goto error;
 
@@ -10684,9 +10706,11 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
     numsectors = B_LITTLE16(numsectors);
 
-    if (numsectors > MAXSECTORS)
+    if ((unsigned)numsectors > MAXSECTORS)
     {
     error:
+        numsectors = 0;
+        numwalls   = 0;
         kclose(fil);
         return -1; 
     }
@@ -10753,8 +10777,14 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
     numwalls = B_LITTLE16(numwalls);
 
-    if (numwalls > MAXWALLS)
+    if ((unsigned)numwalls > MAXWALLS)
         goto error;
+
+    for (int i = 0; i < numsectors; i++)
+    {
+        if ((unsigned)sector[i].wallptr > (unsigned)numwalls) goto error;
+        if ((unsigned)sector[i].wallnum > (unsigned)(numwalls-sector[i].wallptr)) goto error;
+    }
 
     switch (mapversion)
     {
@@ -10822,7 +10852,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
     numsprites = B_LITTLE16(numsprites);
 
-    if (numsprites > MAXSPRITES)
+    if ((unsigned)numsprites > MAXSPRITES)
         goto error;
 
     switch (mapversion)
@@ -11691,16 +11721,16 @@ fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
     if ((xvect | yvect) == 0)
         rv = 0;
     else if (xvect == 0)
-        rv = fix16_from_int(512 + ((yvect < 0) << 10));
+        rv = F16(512) + fix16_from_int(((yvect < 0) << 10));
     else if (yvect == 0)
         rv = fix16_from_int(((xvect < 0) << 10));
     else if (xvect == yvect)
-        rv = fix16_from_int(256 + ((xvect < 0) << 10));
+        rv = F16(256) + fix16_from_int(((xvect < 0) << 10));
     else if (xvect == -yvect)
-        rv = fix16_from_int(768 + ((xvect > 0) << 10));
+        rv = F16(768) + fix16_from_int(((xvect > 0) << 10));
     else if (klabs(xvect) > klabs(yvect))
         rv = ((qradarang[5120 + scale(1280, yvect, xvect)] >> 6) + fix16_from_int(((xvect < 0) << 10))) & 0x7FFFFFF;
-    else rv = ((qradarang[5120 - scale(1280, xvect, yvect)] >> 6) + fix16_from_int(512 + ((yvect < 0) << 10))) & 0x7FFFFFF;
+    else rv = ((qradarang[5120 - scale(1280, xvect, yvect)] >> 6) + F16(512) + fix16_from_int(((yvect < 0) << 10))) & 0x7FFFFFF;
 
     return rv;
 }
@@ -11903,7 +11933,7 @@ restart_grand:
 #ifdef YAX_ENABLE
     pendingsectnum = -1;
 #endif
-    sectbitmap[sect1>>3] |= pow2char[sect1&7];
+    bitmap_set(sectbitmap, sect1);
     clipsectorlist[0] = sect1; danum = 1;
 
     for (dacnt=0; dacnt<danum; dacnt++)
@@ -11958,9 +11988,9 @@ restart_grand:
                             if (ns < 0)
                                 continue;
 
-                            if (!(sectbitmap[ns>>3] & pow2char[ns&7]) && pendingsectnum==-1)
+                            if (!bitmap_test(sectbitmap, ns) && pendingsectnum==-1)
                             {
-                                sectbitmap[ns>>3] |= pow2char[ns&7];
+                                bitmap_set(sectbitmap, ns);
                                 pendingsectnum = ns;
                                 pendingvec.x = x;
                                 pendingvec.y = y;
@@ -12028,9 +12058,9 @@ restart_grand:
                 return 0;
 
 add_nextsector:
-            if (!(sectbitmap[nexts>>3] & pow2char[nexts&7]))
+            if (!bitmap_test(sectbitmap, nexts))
             {
-                sectbitmap[nexts>>3] |= pow2char[nexts&7];
+                bitmap_set(sectbitmap, nexts);
                 clipsectorlist[danum++] = nexts;
             }
         }
@@ -12047,7 +12077,7 @@ add_nextsector:
 #endif
     }
 
-    if (sectbitmap[sect2>>3] & pow2char[sect2&7])
+    if (bitmap_test(sectbitmap, sect2))
         return 1;
 
     return 0;
@@ -12338,23 +12368,6 @@ int32_t lastwall(int16_t point)
 
 ////////// UPDATESECTOR* FAMILY OF FUNCTIONS //////////
 
-/* Different "is inside" predicates.
- * NOTE: The redundant bound checks are expected to be optimized away in the
- * inlined code. */
-
-static FORCE_INLINE CONSTEXPR int inside_exclude_p(int32_t const x, int32_t const y, int const sectnum, const uint8_t *excludesectbitmap)
-{
-    return (sectnum>=0 && !bitmap_test(excludesectbitmap, sectnum) && inside_p(x, y, sectnum));
-}
-
-/* NOTE: no bound check */
-static inline int inside_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum)
-{
-    int32_t cz, fz;
-    getzsofslope(sectnum, x, y, &cz, &fz);
-    return (z >= cz && z <= fz && inside_p(x, y, sectnum));
-}
-
 int32_t getwalldist(vec2_t const in, int const wallnum)
 {
     vec2_t closest;
@@ -12422,36 +12435,27 @@ int findwallbetweensectors(int sect1, int sect2)
 //
 // updatesector[z]
 //
-void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
+int16_t updatesectorneighborlist[MAXSECTORS];
+uint8_t updatesectorneighbormap[(MAXSECTORS+7)>>3];
+
+void updatesector_compat(int32_t const x, int32_t const y, int16_t* const sectnum)
 {
-    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+    if (inside_p(x, y, *sectnum))
+        return;
 
-    if (enginecompatibilitymode == ENGINE_EDUKE32)
+    if ((unsigned) *sectnum < (unsigned) numsectors)
     {
-        int16_t sect = *sectnum;
-        updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-        if (sect != -1)
-            SET_AND_RETURN(*sectnum, sect);
-    }
-    else
-    {
-        if (inside_p(x, y, *sectnum))
-            return;
+        const uwalltype* wal = (uwalltype*) &wall[sector[*sectnum].wallptr];
+        int wallsleft = sector[*sectnum].wallnum;
 
-        if ((unsigned)*sectnum < (unsigned)numsectors)
+        do
         {
-            const uwalltype *wal = (uwalltype *)&wall[sector[*sectnum].wallptr];
-            int wallsleft = sector[*sectnum].wallnum;
-
-            do
-            {
-                int const next = wal->nextsector;
-                if (inside_p(x, y, next))
+            int const next = wal->nextsector;
+            if (inside_p(x, y, next))
                     SET_AND_RETURN(*sectnum, next);
                 wal++;
-            }
-            while (--wallsleft);
         }
+        while (--wallsleft);
     }
 
     // we need to support passing in a sectnum of -1, unfortunately
@@ -12461,6 +12465,49 @@ void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
             SET_AND_RETURN(*sectnum, i);
 
     *sectnum = -1;
+}
+
+void updatesector_tryremaining(int32_t const x, int32_t const y, int16_t *const sectnum)
+{
+    // we need to support passing in a sectnum of -1, unfortunately
+    int16_t const sect = *sectnum == -1 ? numsectors >> 1 : *sectnum;
+    int trycnt = max<int>(numsectors - sect, sect);
+
+    // re-use the bitmap generated by updatesectorneighbor[z]
+    // since these sectors were already checked there, there's
+    // no need to check them again.
+    if (inside_exclude_p(x, y, sect, updatesectorneighbormap))
+        SET_AND_RETURN(*sectnum, sect);
+
+    int16_t highsect = sect, lowsect = sect;
+
+    do
+    {
+        if (++highsect < numsectors && inside_exclude_p(x, y, highsect, updatesectorneighbormap))
+            SET_AND_RETURN(*sectnum, highsect);
+        if (--lowsect >= 0 && inside_exclude_p(x, y, lowsect, updatesectorneighbormap))
+            SET_AND_RETURN(*sectnum, lowsect);
+    } while (trycnt--);
+
+    *sectnum = -1;
+}
+
+void updatesector(int32_t const x, int32_t const y, int16_t* const sectnum)
+{
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
+    {
+        updatesector_compat(x, y, sectnum);
+        return;
+    }
+
+    int16_t sect = *sectnum;
+    updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+    if (sect != -1)
+        SET_AND_RETURN(*sectnum, sect);
+
+    updatesector_tryremaining(x, y, sectnum);
 }
 
 void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectnum, const uint8_t * const excludesectbitmap)
@@ -12490,87 +12537,71 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
     *sectnum = -1;
 }
 
-// new: if *sectnum >= MAXSECTORS, *sectnum-=MAXSECTORS is considered instead
-//      as starting sector and the 'initial' z check is skipped
-//      (not initial anymore because it follows the sector updating due to TROR)
-
-void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
+void updatesectorz_compat(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
 {
-    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+    if ((uint32_t) (*sectnum) < 2*MAXSECTORS)
+    {
+        int32_t nofirstzcheck = 0;
 
-    if (enginecompatibilitymode == ENGINE_EDUKE32)
-    {
-        int16_t sect = *sectnum;
-        updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-        if (sect != -1)
-            SET_AND_RETURN(*sectnum, sect);
-    }
-    else
-    {
-        if ((uint32_t)(*sectnum) < 2*MAXSECTORS)
+        if (*sectnum >= MAXSECTORS)
         {
-            int32_t nofirstzcheck = 0;
-
-            if (*sectnum >= MAXSECTORS)
-            {
-                *sectnum -= MAXSECTORS;
-                nofirstzcheck = 1;
-            }
+            *sectnum -= MAXSECTORS;
+            nofirstzcheck = 1;
+        }
 
 #ifdef YAX_ENABLE
-            int mcf = -1;
-restart:
+        int mcf = -1;
+    restart:
 #endif
-            // this block used to be outside the "if" and caused crashes in Polymost Mapster32
-            int32_t cz, fz;
-            getzsofslope(*sectnum, x, y, &cz, &fz);
+        // this block used to be outside the "if" and caused crashes in Polymost Mapster32
+        int32_t cz, fz;
+        getzsofslope(*sectnum, x, y, &cz, &fz);
 
 #ifdef YAX_ENABLE
-            if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
+        if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
+        {
+            int const next = yax_getneighborsect(x, y, *sectnum, YAX_CEILING);
+            if (next >= 0)
             {
-                int const next = yax_getneighborsect(x, y, *sectnum, YAX_CEILING);
-                if (next >= 0)
-                {
-                    if (z >= getceilzofslope(next, x, y))
-                        SET_AND_RETURN(*sectnum, next);
-
-                    *sectnum = next;
-                    mcf = YAX_CEILING;
-                    goto restart;
-                }
-            }
-
-            if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
-            {
-                int const next = yax_getneighborsect(x, y, *sectnum, YAX_FLOOR);
-                if (next >= 0)
-                {
-                    if (z <= getflorzofslope(next, x, y))
-                        SET_AND_RETURN(*sectnum, next);
-
-                    *sectnum = next;
-                    mcf = YAX_FLOOR;
-                    goto restart;
-                }
-            }
-#endif
-            if (nofirstzcheck || (z >= cz && z <= fz))
-                if (inside_p(x, y, *sectnum))
-                    return;
-
-            uwalltype const * wal = (uwalltype *)&wall[sector[*sectnum].wallptr];
-            int wallsleft = sector[*sectnum].wallnum;
-            do
-            {
-                // YAX: TODO: check neighboring sectors here too?
-                int const next = wal->nextsector;
-                if (next>=0 && inside_z_p(x,y,z, next))
+                if (z >= getceilzofslope(next, x, y))
                     SET_AND_RETURN(*sectnum, next);
 
-                wal++;
+                *sectnum = next;
+                mcf = YAX_CEILING;
+                goto restart;
             }
-            while (--wallsleft);
         }
+
+        if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
+        {
+            int const next = yax_getneighborsect(x, y, *sectnum, YAX_FLOOR);
+            if (next >= 0)
+            {
+                if (z <= getflorzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+
+                *sectnum = next;
+                mcf = YAX_FLOOR;
+                goto restart;
+            }
+        }
+#endif
+        if (nofirstzcheck || (z >= cz && z <= fz))
+            if (inside_p(x, y, *sectnum))
+                return;
+
+        uwalltype const* wal = (uwalltype*) &wall[sector[*sectnum].wallptr];
+        int wallsleft = sector[*sectnum].wallnum;
+        do
+        {
+            // YAX: TODO: check neighboring sectors here too?
+            int const next = wal->nextsector;
+            if (next>=0 && inside_z_p(x, y, z, next))
+                SET_AND_RETURN(*sectnum, next);
+
+            wal++;
+        }
+        while (--wallsleft);
     }
 
     // we need to support passing in a sectnum of -1, unfortunately
@@ -12581,39 +12612,65 @@ restart:
     *sectnum = -1;
 }
 
+
+// new: if *sectnum >= MAXSECTORS, *sectnum-=MAXSECTORS is considered instead
+//      as starting sector and the 'initial' z check is skipped
+//      (not initial anymore because it follows the sector updating due to TROR)
+
+void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
+{
+    MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
+    {
+        updatesectorz_compat(x, y, z, sectnum);
+        return;
+    }
+
+    int16_t sect = *sectnum;
+    updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+    if (sect != -1)
+        SET_AND_RETURN(*sectnum, sect);
+
+    updatesector_tryremaining(x, y, sectnum);
+}
+
 void updatesectorneighbor(int32_t const x, int32_t const y, int16_t * const sectnum, int32_t initialMaxDistance /*= INITIALUPDATESECTORDIST*/, int32_t maxDistance /*= MAXUPDATESECTORDIST*/)
 {
     int const initialsectnum = *sectnum;
 
-    if ((unsigned)initialsectnum < (unsigned)numsectors && getsectordist({x, y}, initialsectnum) <= initialMaxDistance)
+    if ((unsigned)initialsectnum < (unsigned)numsectors)
     {
-        if (inside_p(x, y, initialsectnum))
-            return;
-
-        static int16_t sectlist[MAXSECTORS];
-        static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
         int16_t nsecs;
+        bfirst_search_init(updatesectorneighborlist, updatesectorneighbormap, &nsecs, MAXSECTORS, initialsectnum);
 
-        bfirst_search_init(sectlist, sectbitmap, &nsecs, MAXSECTORS, initialsectnum);
+        int32_t const initialDistance = getsectordist({x, y}, initialsectnum);        
 
-        for (int sectcnt=0; sectcnt<nsecs; sectcnt++)
+        // initialDistance == 0 means the point passed to getsectordist was inside the passed sectnum
+        if (initialDistance == 0)
+            return;
+        else if (initialDistance <= initialMaxDistance)
         {
-            int const listsectnum = sectlist[sectcnt];
+            for (int sectcnt = 0; sectcnt < nsecs; sectcnt++)
+            {
+                int const listsectnum = updatesectorneighborlist[sectcnt];
 
-            if (inside_p(x, y, listsectnum))
-                SET_AND_RETURN(*sectnum, listsectnum);
+                if (inside_p(x, y, listsectnum))
+                    SET_AND_RETURN(*sectnum, listsectnum);
 
-            auto const sec       = &sector[listsectnum];
-            int const  startwall = sec->wallptr;
-            int const  endwall   = sec->wallptr + sec->wallnum;
-            auto       uwal      = (uwallptr_t)&wall[startwall];
+                auto const sec       = &sector[listsectnum];
+                int const  startwall = sec->wallptr;
+                int const  endwall   = sec->wallptr + sec->wallnum;
+                auto       uwal      = (uwallptr_t)&wall[startwall];
 
-            for (int j=startwall; j<endwall; j++, uwal++)
-                if (uwal->nextsector >= 0 && getsectordist({x, y}, uwal->nextsector) <= maxDistance)
-                    bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
+                for (int j = startwall; j < endwall; j++, uwal++)
+                    if (uwal->nextsector >= 0 && !bitmap_test(updatesectorneighbormap, uwal->nextsector) && getsectordist({ x, y }, uwal->nextsector) <= maxDistance)
+                        bfirst_search_try(updatesectorneighborlist, updatesectorneighbormap, &nsecs, uwal->nextsector);
+            }
         }
     }
 
+    Bmemset(updatesectorneighbormap, 0, (MAXSECTORS+7)>>3);
     *sectnum = -1;
 }
 
@@ -12632,67 +12689,68 @@ void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, in
 restart:
 #endif
     uint32_t const correctedsectnum = (unsigned)*sectnum;
-    if (correctedsectnum < (unsigned)numsectors && getsectordist({x, y}, correctedsectnum) <= initialMaxDistance)
-    {
-        int32_t cz, fz;
-        getzsofslope(correctedsectnum, x, y, &cz, &fz);
+    if (correctedsectnum < (unsigned)numsectors)
+    {    
+        int16_t nsecs;
+        bfirst_search_init(updatesectorneighborlist, updatesectorneighbormap, &nsecs, MAXSECTORS, correctedsectnum);
+
+        if (getsectordist({x, y}, correctedsectnum) <= initialMaxDistance)
+        {
+            int32_t cz, fz;
+            getzsofslope(correctedsectnum, x, y, &cz, &fz);
 
 #ifdef YAX_ENABLE
-        if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
-        {
-            int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_CEILING);
-            if (next >= 0)
+            if ((mcf == -1 || mcf == YAX_CEILING) && z < cz)
             {
-                if (z >= getceilzofslope(next, x, y))
-                    SET_AND_RETURN(*sectnum, next);
+                int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_CEILING);
+                if (next >= 0)
+                {
+                    if (z >= getceilzofslope(next, x, y))
+                        SET_AND_RETURN(*sectnum, next);
 
-                *sectnum = next;
-                mcf = YAX_CEILING;
-                goto restart;
+                    *sectnum = next;
+                    mcf = YAX_CEILING;
+                    goto restart;
+                }
             }
-        }
 
-        if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
-        {
-            int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_FLOOR);
-            if (next >= 0)
+            if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
             {
-                if (z <= getflorzofslope(next, x, y))
-                    SET_AND_RETURN(*sectnum, next);
+                int const next = yax_getneighborsect(x, y, correctedsectnum, YAX_FLOOR);
+                if (next >= 0)
+                {
+                    if (z <= getflorzofslope(next, x, y))
+                        SET_AND_RETURN(*sectnum, next);
 
-                *sectnum = next;
-                mcf = YAX_FLOOR;
-                goto restart;
+                    *sectnum = next;
+                    mcf = YAX_FLOOR;
+                    goto restart;
+                }
             }
-        }
 #endif
-        if ((nofirstzcheck || (z >= cz && z <= fz)) && inside_p(x, y, *sectnum))
-            return;
+            if ((nofirstzcheck || (z >= cz && z <= fz)) && inside_p(x, y, *sectnum))
+                return;
 
-        static int16_t sectlist[MAXSECTORS];
-        static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
-        int16_t nsecs;
+            for (int sectcnt=0; sectcnt<nsecs; sectcnt++)
+            {
+                int const listsectnum = updatesectorneighborlist[sectcnt];
 
-        bfirst_search_init(sectlist, sectbitmap, &nsecs, MAXSECTORS, correctedsectnum);
+                if (inside_z_p(x, y, z, listsectnum))
+                    SET_AND_RETURN(*sectnum, listsectnum);
 
-        for (int sectcnt=0; sectcnt<nsecs; sectcnt++)
-        {
-            int const listsectnum = sectlist[sectcnt];
+                auto const sec       = &sector[listsectnum];
+                int const  startwall = sec->wallptr;
+                int const  endwall   = sec->wallptr + sec->wallnum;
+                auto       uwal      = (uwallptr_t)&wall[startwall];
 
-            if (inside_z_p(x, y, z, listsectnum))
-                SET_AND_RETURN(*sectnum, listsectnum);
-
-            auto const sec       = &sector[listsectnum];
-            int const  startwall = sec->wallptr;
-            int const  endwall   = sec->wallptr + sec->wallnum;
-            auto       uwal      = (uwallptr_t)&wall[startwall];
-
-            for (int j=startwall; j<endwall; j++, uwal++)
-                if (uwal->nextsector >= 0 && getsectordist({x, y}, uwal->nextsector) <= maxDistance)
-                    bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
+                for (int j=startwall; j<endwall; j++, uwal++)
+                    if (uwal->nextsector >= 0 && !bitmap_test(updatesectorneighbormap, uwal->nextsector) && getsectordist({x, y}, uwal->nextsector) <= maxDistance)
+                        bfirst_search_try(updatesectorneighborlist, updatesectorneighbormap, &nsecs, uwal->nextsector);
+            }
         }
     }
 
+    Bmemset(updatesectorneighbormap, 0, (MAXSECTORS+7)>>3);
     *sectnum = -1;
 }
 

@@ -1,4 +1,4 @@
-/* miniz.c 2.1.0 - public domain deflate/inflate, zlib-subset, ZIP reading/writing/appending, PNG writing
+/* miniz.c 2.2.0 - public domain deflate/inflate, zlib-subset, ZIP reading/writing/appending, PNG writing
    See "unlicense" statement at the end of this file.
    Rich Geldreich <richgel99@gmail.com>, last updated Oct. 13, 2013
    Implements RFC 1950: http://www.ietf.org/rfc/rfc1950.txt and RFC 1951: http://www.ietf.org/rfc/rfc1951.txt
@@ -95,7 +95,7 @@
      possibility that the archive's central directory could be lost with this method if anything goes wrong, though.
 
      - ZIP archive support limitations:
-     No zip64 or spanning support. Extraction functions can only handle unencrypted, stored or deflated files.
+     No spanning support. Extraction functions can only handle unencrypted, stored or deflated files.
      Requires streams capable of seeking.
 
    * This is a header file library, like stb_image.c. To get only a header file, either cut and paste the
@@ -112,9 +112,7 @@
 */
 #pragma once
 
-#include "miniz_common.h"
-#include "miniz_tdef.h"
-#include "miniz_tinfl.h"
+#include "miniz_export.h"
 
 /* Defines to completely disable specific portions of miniz.c: 
    If all macros here are defined the only functionality remaining will be CRC-32, adler-32, tinfl, and tdefl. */
@@ -222,7 +220,7 @@ enum
 #define MZ_DEFLATED 8
 
 /* Heap allocation callbacks.
-Note that mz_alloc_func parameter types purpsosely differ from zlib's: items/size is size_t, not unsigned long. */
+Note that mz_alloc_func parameter types purposely differ from zlib's: items/size is size_t, not unsigned long. */
 typedef void *(*mz_alloc_func)(void *opaque, size_t items, size_t size);
 typedef void (*mz_free_func)(void *opaque, void *address);
 typedef void *(*mz_realloc_func)(void *opaque, void *address, size_t items, size_t size);
@@ -238,10 +236,10 @@ enum
     MZ_DEFAULT_COMPRESSION = -1
 };
 
-#define MZ_VERSION "10.1.0"
+#define MZ_VERSION "10.2.0"
 #define MZ_VERNUM 0xA100
 #define MZ_VER_MAJOR 10
-#define MZ_VER_MINOR 1
+#define MZ_VER_MINOR 2
 #define MZ_VER_REVISION 0
 #define MZ_VER_SUBREVISION 0
 
@@ -477,3 +475,8 @@ typedef void *const voidpc;
 #ifdef __cplusplus
 }
 #endif
+
+#include "miniz_common.h"
+#include "miniz_tdef.h"
+#include "miniz_tinfl.h"
+

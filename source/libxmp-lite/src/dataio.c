@@ -1,5 +1,5 @@
 /* Extended Module Player
- * Copyright (C) 1996-2018 Claudio Matsuoka and Hipolito Carraro Jr
+ * Copyright (C) 1996-2021 Claudio Matsuoka and Hipolito Carraro Jr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,7 +34,6 @@
 } while (0)
 
 
-#ifdef EDUKE32_DISABLED
 uint8 read8(FILE *f, int *err)
 {
 	int a;
@@ -156,7 +155,6 @@ uint32 read32b(FILE *f, int *err)
 	set_error(ferror(f) ? errno : EOF);
 	return 0xffffffff;
 }
-#endif
 
 uint16 readmem16l(const uint8 *m)
 {

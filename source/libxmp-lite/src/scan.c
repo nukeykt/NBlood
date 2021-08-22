@@ -1,5 +1,5 @@
 /* Extended Module Player
- * Copyright (C) 1996-2018 Claudio Matsuoka and Hipolito Carraro Jr
+ * Copyright (C) 1996-2021 Claudio Matsuoka and Hipolito Carraro Jr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -38,8 +38,6 @@
  */
 
 
-#include <stdlib.h>
-#include <string.h>
 #include "common.h"
 #include "effects.h"
 #include "mixer.h"
@@ -54,7 +52,8 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
     struct module_data *m = &ctx->m;
     struct xmp_module *mod = &m->mod;
     int parm, gvol_memory, f1, f2, p1, p2, ord, ord2;
-    int row, last_row, break_row, row_count;
+    int row, last_row, break_row, row_count, row_count_total;
+    int orders_since_last_valid, any_valid;
     int gvl, bpm, speed, base_time, chn;
     int frame_count;
     double time, start_time;
@@ -74,7 +73,7 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 	return 0;
 
     for (i = 0; i < mod->len; i++) {
-	int pat = mod->xxo[i];
+	pat = mod->xxo[i];
 	memset(m->scan_cnt[i], 0, pat >= mod->pat ? 1 :
 			mod->xxp[pat]->rows ? mod->xxp[pat]->rows : 1);
     }
@@ -90,7 +89,7 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
     bpm = mod->bpm;
 
     speed = mod->spd;
-    base_time = (int) m->rrate;
+    base_time = m->rrate;
 #ifndef LIBXMP_CORE_PLAYER
     st26_speed = 0;
 #endif
@@ -116,11 +115,19 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
     ord2 = -1;
     ord = ep - 1;
 
-    gvol_memory = break_row = row_count = frame_count = 0;
+    gvol_memory = break_row = row_count = row_count_total = frame_count = 0;
+    orders_since_last_valid = any_valid = 0;
     start_time = time = 0.0;
     inside_loop = 0;
 
     while (42) {
+	/* Sanity check to prevent getting stuck due to broken patterns. */
+	if (orders_since_last_valid > 512) {
+	    D_(D_CRIT "orders_since_last_valid = %d @ ord %d; ending scan", orders_since_last_valid, ord);
+	    break;
+	}
+	orders_since_last_valid++;
+
 	if ((uint32)++ord >= mod->len) {
 	    if (mod->rst > mod->len || mod->xxo[mod->rst] >= mod->pat) {
 		ord = ep;
@@ -131,12 +138,12 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 		    ord = ep;
 	        }
 	    }
-	   
+
 	    pat = mod->xxo[ord];
 	    if (has_marker && pat == S3M_END) {
 		break;
 	    }
-	} 
+	}
 
 	pat = mod->xxo[ord];
 	info = &m->xxo_info[ord];
@@ -165,11 +172,13 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
             break;
         }
 
-        /* Don't update pattern information if we're inside a loop, otherwise
-         * a loop containing e.g. a global volume fade can make the pattern
-         * start with the wrong volume.
+        /* Only update pattern information if we weren't here before. This also
+         * means that we don't update pattern information if we're inside a loop,
+         * otherwise a loop containing e.g. a global volume fade can make the
+         * pattern start with the wrong volume. (fixes xyce-dans_la_rue.xm replay,
+         * see https://github.com/libxmp/libxmp/issues/153 for more details).
          */
-        if (!inside_loop && info->gvl < 0) {
+        if (info->time < 0) {
             info->gvl = gvl;
             info->bpm = bpm;
             info->speed = speed;
@@ -188,7 +197,7 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 	}
 
 	last_row = mod->xxp[pat]->rows;
-	for (row = break_row, break_row = 0; row < last_row; row++, row_count++) {
+	for (row = break_row, break_row = 0; row < last_row; row++, row_count++, row_count_total++) {
 	    /* Prevent crashes caused by large softmixer frames */
 	    if (bpm < XMP_MIN_BPM) {
 	        bpm = XMP_MIN_BPM;
@@ -207,14 +216,25 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 	     * (...) it dies at the end of position 2F
 	     */
 
-	    if (row_count > 512)  /* was 255, but Global trash goes to 318 */
+	    if (row_count_total > 512) { /* was 255, but Global trash goes to 318. */
+		D_(D_CRIT "row_count_total = %d @ ord %d, pat %d, row %d; ending scan", row_count_total, ord, pat, row);
 		goto end_module;
+	    }
 
 	    if (!loop_num && m->scan_cnt[ord][row]) {
 		row_count--;
 		goto end_module;
 	    }
 	    m->scan_cnt[ord][row]++;
+	    orders_since_last_valid = 0;
+	    any_valid = 1;
+
+	    /* If the scan count for this row overflows, break.
+	     * A scan count of 0 will help break this loop in playback (storlek_11.it).
+	     */
+	    if (!m->scan_cnt[ord][row]) {
+		goto end_module;
+	    }
 
 	    pdelay = 0;
 
@@ -370,7 +390,9 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 		}
 
 		if (f1 == FX_IT_ROWDELAY) {
-	    		m->scan_cnt[ord][row] += p1 & 0x0f;
+			/* Don't allow the scan count for this row to overflow here. */
+			int x = m->scan_cnt[ord][row] + (p1 & 0x0f);
+			m->scan_cnt[ord][row] = MIN(x, 255);
 			frame_count += (p1 & 0x0f) * speed;
 		}
 
@@ -424,7 +446,7 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 				loop_chn = chn;
 				loop_num++;
 			    }
-			} else { 
+			} else {
 			    /* Loop start */
 			    loop_row[chn] = row - 1;
 			    inside_loop = 1;
@@ -464,6 +486,7 @@ static int scan_module(struct context_data *ctx, int ep, int chain)
 	}
 
 	frame_count += row_count * speed;
+	row_count_total = 0;
 	row_count = 0;
     }
     row = break_row;
@@ -472,6 +495,9 @@ end_module:
 
     /* Sanity check */
     {
+        if (!any_valid) {
+	    return -1;
+	}
         pat = mod->xxo[ord];
         if (pat >= mod->pat || row >= mod->xxp[pat]->rows) {
             row = 0;
@@ -499,15 +525,23 @@ int libxmp_scan_sequences(struct context_data *ctx)
 	struct player_data *p = &ctx->p;
 	struct module_data *m = &ctx->m;
 	struct xmp_module *mod = &m->mod;
+	struct scan_data *s;
 	int i, ep;
 	int seq;
 	unsigned char temp_ep[XMP_MAX_MOD_LENGTH];
+
+	s = (struct scan_data *)realloc(p->scan, MAX(1, mod->len) * sizeof(struct scan_data));
+	if (!s) {
+		D_(D_CRIT "failed to allocate scan data");
+		return -1;
+	}
+	p->scan = s;
 
 	/* Initialize order data to prevent overwrite when a position is used
 	 * multiple times at different starting points (see janosik.xm).
 	 */
 	for (i = 0; i < XMP_MAX_MOD_LENGTH; i++) {
-		m->xxo_info[i].gvl = -1;
+		m->xxo_info[i].time = -1;
 	}
 
 	ep = 0;
@@ -516,7 +550,12 @@ int libxmp_scan_sequences(struct context_data *ctx)
 	p->scan[0].time = scan_module(ctx, ep, 0);
 	seq = 1;
 
- 	while (1) { 
+	if (p->scan[0].time < 0) {
+		D_(D_CRIT "scan was not able to find any valid orders");
+		return -1;
+	}
+
+	while (1) {
 		/* Scan song starting at given entry point */
 		/* Check if any patterns left */
 		for (i = 0; i < mod->len; i++) {
@@ -536,6 +575,12 @@ int libxmp_scan_sequences(struct context_data *ctx)
 		}
 	}
 
+	if (seq < mod->len) {
+		s = (struct scan_data *)realloc(p->scan, seq * sizeof(struct scan_data));
+		if (s != NULL) {
+			p->scan = s;
+		}
+	}
 	m->num_sequences = seq;
 
 	/* Now place entry points in the public accessible array */

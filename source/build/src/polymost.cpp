@@ -150,6 +150,7 @@ int32_t r_rorphase = 0;
 
 int32_t r_yshearing = 0;
 int32_t r_flatsky = 1;
+int32_t r_skyzbufferhack = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
@@ -3295,7 +3296,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     Bassert(pth);
 
-    const GLuint clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 
     // If we aren't rendmode 3, we're in Polymer, which means this code is
     // used for rotatesprite only. Polymer handles all the material stuff,
@@ -3314,11 +3314,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
         if (drawpoly_trepeat)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-    }
-    else if (method & DAMETH_CLAMPED)
-    {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_mode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_mode);
     }
 
     // texture scale by parkar request
@@ -3708,6 +3703,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     else if (!nofog)
         polymost_setFogEnabled(true);
 
+    const GLuint clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
+
     if (drawpoly_srepeat)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_mode);
 
@@ -3736,7 +3733,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         fullbright_pass = 0;
     }
 
-    if (skyzbufferhack && skyzbufferhack_pass == 0)
+    if (r_skyzbufferhack && skyzbufferhack && skyzbufferhack_pass == 0)
     {
         vec3d_t const bxtex = xtex, bytex = ytex, botex = otex;
         xtex = xtex2, ytex = ytex2, otex = otex2;
@@ -10056,6 +10053,7 @@ void polymost_initosdfuncs(void)
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
         { "r_yshearing", "enable/disable y-shearing", (void*) &r_yshearing, CVAR_BOOL, 0, 1 },
         { "r_flatsky", "enable/disable flat skies", (void*)& r_flatsky, CVAR_BOOL, 0, 1 },
+        { "r_skyzbufferhack", "enable/disable polymost sky z-buffer hack", (void*)& r_skyzbufferhack, CVAR_BOOL, 0, 1 },
 #ifdef USE_GLEXT
         { "r_vbocount","sets the number of Vertex Buffer Objects to use when drawing models",(void *) &r_vbocount, CVAR_INT, 1, 256 },
         { "r_persistentStreamBuffer","enable/disable persistent stream buffering (requires renderer restart)",(void *) &r_persistentStreamBuffer, CVAR_BOOL, 0, 1 },

@@ -82,7 +82,7 @@ libxmplite_src := $(libxmplite_root)/src
 libxmplite_inc := $(libxmplite_root)/include
 libxmplite_obj := $(obj)/$(libxmplite)
 
-libxmplite_cflags := -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DBUILDING_STATIC -I$(libxmplite_inc)/libxmp-lite -Wno-unused-parameter -Wno-sign-compare
+libxmplite_cflags := -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DLIBXMP_NO_PROWIZARD -DLIBXMP_NO_DEPACKERS -DBUILDING_STATIC -I$(libxmplite_inc)/libxmp-lite -Wno-unused-parameter -Wno-sign-compare
 
 
 #### PhysicsFS

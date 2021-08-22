@@ -158,7 +158,7 @@ void ctrlGetInput(void)
 
     GINPUT input = {};
     static double lastInputTicks;
-    auto const    currentHiTicks    = timerGetHiTicks();
+    auto const    currentHiTicks    = timerGetFractionalTicks();
     double const  elapsedInputTicks = currentHiTicks - lastInputTicks;
 
     lastInputTicks = currentHiTicks;

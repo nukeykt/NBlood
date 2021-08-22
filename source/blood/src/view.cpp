@@ -4014,7 +4014,7 @@ void viewPrintFPS(void)
     static float lastFPS, minFPS = FLT_MAX, maxFPS;
     static double minGameUpdate = DBL_MAX, maxGameUpdate;
 
-    double frameTime = timerGetHiTicks();
+    double frameTime = timerGetFractionalTicks();
     double frameDelay = frameTime - lastFrameTime;
     cumulativeFrameDelay += frameDelay;
 

@@ -1811,7 +1811,7 @@ RESTART:
         if (gGameStarted)
         {
             char gameUpdate = false;
-            double const gameUpdateStartTime = timerGetHiTicks();
+            double const gameUpdateStartTime = timerGetFractionalTicks();
             while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
             {
                 viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
@@ -1848,7 +1848,7 @@ RESTART:
             }
             if (gameUpdate)
             {
-                g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
+                g_gameUpdateTime = timerGetFractionalTicks() - gameUpdateStartTime;
                 if (g_gameUpdateAvgTime < 0.f)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
                 g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
@@ -1862,7 +1862,7 @@ RESTART:
                 if (bDraw)
                 {
                     viewDrawScreen();
-                    g_gameUpdateAndDrawTime = timerGetHiTicks() - gameUpdateStartTime;
+                    g_gameUpdateAndDrawTime = timerGetFractionalTicks() - gameUpdateStartTime;
                 }
             }
         }

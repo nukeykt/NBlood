@@ -228,10 +228,17 @@ static int VM_CheckSquished(void)
         floorZ += ZOFFSET5;
 #endif
 
+    floorZ = max(floorZ, vm.pActor->floorz);
+    ceilZ  = min(ceilZ, vm.pActor->ceilingz);
+
     if (vm.pSprite->pal == 1 ? (floorZ - ceilZ >= ZOFFSET5 || (pSector->lotag & 32768u)) : (floorZ - ceilZ >= ZOFFSET4))
         return 0;
 
-    P_DoQuote(QUOTE_SQUISHED, vm.pPlayer);
+    if (vm.pPlayer->ftq != QUOTE_DEAD)
+        P_DoQuote(QUOTE_SQUISHED, vm.pPlayer);
+
+    if (vm.spriteNum == vm.pPlayer->i && vm.pPlayer->dead_flag)
+        return 0;
 
     if (A_CheckEnemySprite(vm.pSprite))
         vm.pSprite->xvel = 0;
@@ -435,26 +442,30 @@ void A_GetZLimits(int const spriteNum)
     auto const oceilz   = pActor->ceilingz;
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
-    pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
-    if ((florhit&49152) == 49152 && (sprite[florhit&(MAXSPRITES-1)].cstat&48) == 0)
+    if (pSprite->xvel || pSprite->zvel || pActor->bpos != pSprite->pos)
     {
-        auto const hitspr = (uspriteptr_t)&sprite[florhit&(MAXSPRITES-1)];
+        pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
-        florhit &= (MAXSPRITES-1);
+        if ((florhit & 49152) == 49152 && (sprite[florhit & (MAXSPRITES - 1)].cstat & 48) == 0)
+        {
+            auto const hitspr = (uspriteptr_t)&sprite[florhit & (MAXSPRITES - 1)];
 
-        // If a non-projectile would fall onto non-frozen enemy OR an enemy onto a player...
-        if ((A_CheckEnemySprite(hitspr) && hitspr->pal != 1 && pSprite->statnum != STAT_PROJECTILE)
+            florhit &= (MAXSPRITES - 1);
+
+            // If a non-projectile would fall onto non-frozen enemy OR an enemy onto a player...
+            if ((A_CheckEnemySprite(hitspr) && hitspr->pal != 1 && pSprite->statnum != STAT_PROJECTILE)
                 || (hitspr->picnum == APLAYER && A_CheckEnemySprite(pSprite)))
-        {
-            pActor->flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
-            pSprite->xvel = -256;  // SLIDE_ABOVE_ENEMY
-            A_SetSprite(spriteNum, CLIPMASK0);
-        }
-        else if (pSprite->statnum == STAT_PROJECTILE && hitspr->picnum == APLAYER && pSprite->owner==florhit)
-        {
-            pActor->ceilingz = sector[pSprite->sectnum].ceilingz;
-            pActor->floorz   = sector[pSprite->sectnum].floorz;
+            {
+                pActor->flags |= SFLAG_NOFLOORSHADOW;  // No shadows on actors
+                pSprite->xvel = -256;                  // SLIDE_ABOVE_ENEMY
+                A_SetSprite(spriteNum, CLIPMASK0);
+            }
+            else if (pSprite->statnum == STAT_PROJECTILE && hitspr->picnum == APLAYER && pSprite->owner == florhit)
+            {
+                pActor->ceilingz = sector[pSprite->sectnum].ceilingz;
+                pActor->floorz   = sector[pSprite->sectnum].floorz;
+            }
         }
     }
 
@@ -3469,6 +3480,9 @@ badindex:
             vInstruction(CON_DEBUG):
                 insptr++;
                 buildprint(*insptr++, "\n");
+#ifndef NDEBUG
+                debug_break();
+#endif
                 dispatch();
 
             vInstruction(CON_ENDOFGAME):
@@ -5301,96 +5315,235 @@ badindex:
                 }
 
             vInstruction(CON_ADDLOGVAR):
+#define AL_CHECK_INDEX(upper)                                        \
+if (EDUKE32_PREDICT_FALSE((unsigned)index >= upper))       \
+{                                                                    \
+    CON_ERRPRINTF("index %d exceeds limit of %d\n", index, upper);   \
+    abort_after_error();                                             \
+}
                 insptr++;
                 {
-                    int32_t m = 1;
+                    unsigned int const lVarID = *insptr;
+                    int const gv = (lVarID & (MAXGAMEVARS - 1));
+                    int const sign = (lVarID & GV_FLAG_NEGATIVE) ? -1 : 1;
                     char    szBuf[256];
-                    int32_t lVarID = *insptr;
 
-                    if ((lVarID >= g_gameVarCount) || lVarID < 0)
+                    if (lVarID >= (unsigned) g_gameVarCount)
                     {
-                        if (*insptr == MAXGAMEVARS)  // addlogvar for a constant?  Har.
-                            insptr++;
-                        //                else if (*insptr > g_gameVarCount && (*insptr < (MAXGAMEVARS<<1)+MAXGAMEVARS+1+MAXGAMEARRAYS))
-                        else if (*insptr & (MAXGAMEVARS << 2))
+                        insptr++;
+                        if (lVarID == GV_FLAG_CONSTANT)
                         {
-                            int32_t index;
-
-                            lVarID ^= (MAXGAMEVARS << 2);
-
-                            if (lVarID & GV_FLAG_NEGATIVE)
-                            {
-                                m = -m;
-                                lVarID ^= GV_FLAG_NEGATIVE;
-                            }
-
-                            insptr++;
-
-                            index = Gv_GetVar(*insptr++);
-                            if (EDUKE32_PREDICT_TRUE((unsigned)index < (unsigned)aGameArrays[lVarID].size))
-                            {
-                                initprintf(OSDTEXT_GREEN "CONLOGVAR: L=%d %s[%d] =%d\n", VM_DECODE_LINE_NUMBER(g_tw), aGameArrays[lVarID].szLabel, index,
-                                           (int32_t)(m * Gv_GetArrayValue(lVarID, index)));
-                                dispatch();
-                            }
-                            else
-                            {
-                                CON_ERRPRINTF("invalid array index\n");
-                                abort_after_error();
-                            }
+                            initprintf(OSDTEXT_GREEN "CONLOGVAR: L=%d constant=%d\n", VM_DECODE_LINE_NUMBER(g_tw), (int) *insptr++);
+                            dispatch();
                         }
-                        else if (*insptr & (MAXGAMEVARS << 3))
+                        else if (lVarID & GV_FLAG_ARRAY)
                         {
-                            //                    FIXME FIXME FIXME
-                            if ((lVarID & (MAXGAMEVARS - 1)) == g_structVarIDs + STRUCT_ACTORVAR)
-                            {
-                                auto const oinsptr = insptr++;
-                                int32_t    index   = Gv_GetVar(*insptr++);
-                                insptr             = oinsptr;
+                            int index = Gv_GetVar(*insptr++);
+                            AL_CHECK_INDEX((unsigned) aGameArrays[gv].size);
 
-                                if (EDUKE32_PREDICT_FALSE((unsigned)index >= MAXSPRITES - 1))
-                                {
-                                    CON_ERRPRINTF("invalid array index\n");
+                            initprintf(OSDTEXT_GREEN "CONLOGVAR: L=%d %s[%d] =%d\n", VM_DECODE_LINE_NUMBER(g_tw), aGameArrays[gv].szLabel, index,
+                                       (int32_t)(sign * Gv_GetArrayValue(gv, index)));
+                            dispatch();
+                        }
+                        else if (lVarID & GV_FLAG_STRUCT)
+                        {
+                            int const indexVar = *insptr++;
+                            int index = Gv_GetVar(indexVar);
+                            int const labelNum = *insptr++;
+                            int const structType = gv - g_structVarIDs;
+
+                            const char* structName;
+                            const char* labelName;
+                            int secondaryIndex = -1;
+                            int returnValue = -1;
+                            switch(structType)
+                            {
+                                case STRUCT_ACTORVAR:
+                                    AL_CHECK_INDEX(MAXSPRITES);
+                                    structName = "actorvar";
+                                    labelName = aGameVars[labelNum].szLabel;
+                                    returnValue = Gv_GetVar(labelNum, index, vm.playerNum);
+                                    break;
+
+                                case STRUCT_PLAYERVAR:
+                                    if (indexVar == g_thisActorVarID)
+                                        index = vm.playerNum;
+                                    AL_CHECK_INDEX(MAXPLAYERS);
+                                    structName = "playervar";
+                                    labelName = aGameVars[labelNum].szLabel;
+                                    returnValue = Gv_GetVar(labelNum, vm.spriteNum, index);
+                                    break;
+
+                                case STRUCT_SPRITE:
+                                case STRUCT_SPRITE_INTERNAL__:
+                                    AL_CHECK_INDEX(MAXSPRITES);
+                                    structName = "sprite";
+                                    labelName = ActorLabels[labelNum].name;
+                                    if (structType == STRUCT_SPRITE)
+                                    {
+                                        secondaryIndex = (ActorLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++, vm.spriteNum, vm.playerNum) : -1;
+                                        returnValue = VM_GetSprite(index, labelNum, (EDUKE32_PREDICT_FALSE(secondaryIndex < 0)) ? 0: secondaryIndex);
+                                    }
+                                    else
+                                        returnValue = VM_GetStruct(ActorLabels[labelNum].flags, (intptr_t *)((intptr_t)&sprite[index] + ActorLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_ACTOR_INTERNAL__:
+                                    AL_CHECK_INDEX(MAXSPRITES);
+                                    structName = "actor";
+                                    labelName = ActorLabels[labelNum].name;
+                                    returnValue = VM_GetStruct(ActorLabels[labelNum].flags, (intptr_t *)((intptr_t)&actor[index] + ActorLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_SECTOR:
+                                case STRUCT_SECTOR_INTERNAL__:
+                                    if (indexVar == g_thisActorVarID)
+                                        index = vm.pSprite->sectnum;
+                                    AL_CHECK_INDEX(MAXSECTORS);
+                                    structName = "sector";
+                                    labelName = SectorLabels[labelNum].name;
+                                    returnValue = (structType == STRUCT_SECTOR) ? VM_GetSector(index, labelNum) : VM_GetStruct(SectorLabels[labelNum].flags,
+                                            (intptr_t *)((intptr_t)&sector[index] + SectorLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_WALL:
+                                case STRUCT_WALL_INTERNAL__:
+                                    AL_CHECK_INDEX(MAXWALLS);
+                                    structName = "wall";
+                                    labelName = WallLabels[labelNum].name;
+                                    returnValue = (structType == STRUCT_WALL) ? VM_GetWall(index, labelNum) : VM_GetStruct(WallLabels[labelNum].flags,
+                                            (intptr_t *)((intptr_t)&wall[index] + WallLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_SPRITEEXT_INTERNAL__:
+                                    AL_CHECK_INDEX(MAXSPRITES);
+                                    structName = "spriteext";
+                                    labelName = ActorLabels[labelNum].name;
+                                    returnValue = VM_GetStruct(ActorLabels[labelNum].flags, (intptr_t *)((intptr_t)&spriteext[index] + ActorLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_TSPR:
+                                    AL_CHECK_INDEX(MAXSPRITES);
+                                    structName = "tspr";
+                                    labelName = TsprLabels[labelNum].name;
+                                    returnValue = VM_GetStruct(TsprLabels[labelNum].flags, (intptr_t *)((intptr_t)(spriteext[index].tspr) + TsprLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_PLAYER:
+                                case STRUCT_PLAYER_INTERNAL__:
+                                    if (indexVar == g_thisActorVarID)
+                                        index = vm.playerNum;
+                                    AL_CHECK_INDEX(MAXPLAYERS);
+                                    structName = "player";
+                                    labelName = PlayerLabels[labelNum].name;
+                                    if (structType == STRUCT_PLAYER)
+                                    {
+                                        secondaryIndex = (EDUKE32_PREDICT_FALSE(PlayerLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++, vm.spriteNum, vm.playerNum) : -1;
+                                        returnValue = VM_GetPlayer(index, labelNum, (EDUKE32_PREDICT_FALSE(secondaryIndex < 0)) ? 0: secondaryIndex);
+                                    }
+                                    else returnValue = VM_GetStruct(PlayerLabels[labelNum].flags, (intptr_t *)((intptr_t)&g_player[index].ps[0] + PlayerLabels[labelNum].offset));
+                                    break;
+
+                                case STRUCT_THISPROJECTILE:
+                                    AL_CHECK_INDEX(MAXSPRITES);
+                                    structName = "thisprojectile";
+                                    labelName = ProjectileLabels[labelNum].name;
+                                    returnValue = VM_GetActiveProjectile(index, labelNum);
+                                    break;
+
+                                case STRUCT_PROJECTILE:
+                                    AL_CHECK_INDEX(MAXTILES);
+                                    structName = "projectile";
+                                    labelName = ProjectileLabels[labelNum].name;
+                                    returnValue = VM_GetProjectile(index, labelNum);
+                                    break;
+
+                                case STRUCT_TILEDATA:
+                                    if (indexVar == g_thisActorVarID)
+                                        index = vm.pSprite->picnum;
+                                    AL_CHECK_INDEX(MAXTILES);
+                                    structName = "tiledata";
+                                    labelName = TileDataLabels[labelNum].name;
+                                    returnValue = VM_GetTileData(index, labelNum);
+                                    break;
+
+                                case STRUCT_PALDATA:
+                                    if (indexVar == g_thisActorVarID)
+                                        index = vm.pSprite->pal;
+                                    AL_CHECK_INDEX(MAXPALOOKUPS);
+                                    structName = "paldata";
+                                    labelName = PalDataLabels[labelNum].name;
+                                    returnValue = VM_GetPalData(index, labelNum);
+                                    break;
+
+                                case STRUCT_INPUT:
+                                    if (indexVar == g_thisActorVarID)
+                                        index = vm.playerNum;
+                                    AL_CHECK_INDEX(MAXPLAYERS);
+                                    structName = "input";
+                                    labelName = InputLabels[labelNum].name;
+                                    returnValue = VM_GetPlayerInput(index, labelNum);
+                                    break;
+
+                                case STRUCT_USERDEF:
+                                    structName = "userdef";
+                                    labelName = UserdefsLabels[labelNum].name;
+                                    secondaryIndex = (EDUKE32_PREDICT_FALSE(UserdefsLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++) : -1;
+                                    returnValue   = VM_GetUserdef(labelNum, (EDUKE32_PREDICT_FALSE(secondaryIndex < 0)) ? 0: secondaryIndex);
+                                    break;
+                                default:
+                                    // invalid struct type -- this should never happen
+                                    CON_ERRPRINTF("unknown struct type: %d -- This is a bug and should be reported to the engine developers.\n", structType);
                                     abort_after_error();
-                                }
-                                initprintf(OSDTEXT_GREEN "CONLOGVAR: L=%d %d %d\n", VM_DECODE_LINE_NUMBER(g_tw), index, Gv_GetVar(*insptr++, index, vm.playerNum));
-                                dispatch();
                             }
-                        }
-                        else if (EDUKE32_PREDICT_TRUE(*insptr & GV_FLAG_NEGATIVE))
-                        {
-                            m = -m;
-                            lVarID ^= GV_FLAG_NEGATIVE;
+
+                            Bsprintf(tempbuf, "CONLOGVAR: L=%d %s", VM_DECODE_LINE_NUMBER(g_tw), structName);
+                            if (EDUKE32_PREDICT_TRUE(index >= 0))
+                            {
+                                Bsprintf(szBuf, "[%d]", index);
+                                Bstrcat(tempbuf, szBuf);
+                            }
+
+                            Bsprintf(szBuf, ".%s", labelName);
+                            Bstrcat(tempbuf, szBuf);
+
+                            if (EDUKE32_PREDICT_FALSE(secondaryIndex >= 0))
+                            {
+                                Bsprintf(szBuf, "[%d]", secondaryIndex);
+                                Bstrcat(tempbuf, szBuf);
+                            }
+
+                            Bsprintf(szBuf, " = %d\n", returnValue);
+                            Bstrcat(tempbuf, szBuf);
+                            initprintf(OSDTEXT_GREEN "%s", tempbuf);
+                            dispatch();
                         }
                         else
                         {
-                            // invalid varID
-                            CON_ERRPRINTF("invalid variable\n");
+                            // invalid lVarID -- this should never happen
+                            CON_ERRPRINTF("unknown variable type: %d -- This is a bug and should be reported to the engine developers.\n", lVarID);
                             abort_after_error();
                         }
                     }
-                    Bsprintf(tempbuf, "CONLOGVAR: L=%d %s ", VM_DECODE_LINE_NUMBER(g_tw), aGameVars[lVarID].szLabel);
+                    Bsprintf(tempbuf, "CONLOGVAR: L=%d %s ", VM_DECODE_LINE_NUMBER(g_tw), aGameVars[gv].szLabel);
 
-                    if (aGameVars[lVarID].flags & GAMEVAR_READONLY)
+                    if (aGameVars[gv].flags & GAMEVAR_READONLY)
                     {
                         Bsprintf(szBuf, " (read-only)");
                         Bstrcat(tempbuf, szBuf);
                     }
-                    if (aGameVars[lVarID].flags & GAMEVAR_PERPLAYER)
-                    {
+
+                    if (aGameVars[gv].flags & GAMEVAR_PERPLAYER)
                         Bsprintf(szBuf, " (Per Player. Player=%d)", vm.playerNum);
-                    }
-                    else if (aGameVars[lVarID].flags & GAMEVAR_PERACTOR)
-                    {
+                    else if (aGameVars[gv].flags & GAMEVAR_PERACTOR)
                         Bsprintf(szBuf, " (Per Actor. Actor=%d)", vm.spriteNum);
-                    }
                     else
-                    {
                         Bsprintf(szBuf, " (Global)");
-                    }
                     Bstrcat(tempbuf, szBuf);
-                    Bsprintf(szBuf, " =%d\n", Gv_GetVar(lVarID) * m);
+
+                    Bsprintf(szBuf, " =%d\n", Gv_GetVar(gv) * sign);
                     Bstrcat(tempbuf, szBuf);
+
                     initprintf(OSDTEXT_GREEN "%s", tempbuf);
                     insptr++;
                     dispatch();

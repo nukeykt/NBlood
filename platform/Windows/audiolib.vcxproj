@@ -345,7 +345,6 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_directsound.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_winmm.h" />
-    <ClInclude Include="..\..\source\audiolib\src\linklist.h" />
     <ClInclude Include="..\..\source\audiolib\src\midi.h" />
     <ClInclude Include="..\..\source\audiolib\src\pitch.h" />
     <ClInclude Include="..\..\source\audiolib\src\tsf.h" />

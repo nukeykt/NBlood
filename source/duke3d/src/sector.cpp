@@ -427,7 +427,10 @@ void G_AnimateCamSprite(int smoothRatio)
         if (pPlayer->newowner >= 0)
             OW(spriteNum) = pPlayer->newowner;
 
-        if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < VIEWSCREEN_ACTIVE_DISTANCE)
+        // EDuke32 extension: xvel of viewscreen determines active distance
+        int const activeDist = sprite[spriteNum].xvel > 0 ? sprite[spriteNum].xvel : VIEWSCREEN_ACTIVE_DISTANCE;
+
+        if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < activeDist)
         {
             int const viewscrShift = G_GetViewscreenSizeShift((uspriteptr_t)&sprite[spriteNum]);
             int const viewscrTile  = TILE_VIEWSCR - viewscrShift;
@@ -2627,14 +2630,17 @@ void P_HandleSharedKeys(int playerNum)
     // 1<<30 = !inventory
     // 1<<31 = !escape
 
-    int const aimMode = pPlayer->aim_mode;
+    if ((extBits & BIT(EK_CHAT_MODE)) == 0)
+    {
+        int const aimMode = pPlayer->aim_mode;
 
-    pPlayer->aim_mode = (playerBits>>SK_AIMMODE)&1;
-    pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_CENTERING)&1)<<1;
-    pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_AIM_ASSIST)&1)<<2;
+        pPlayer->aim_mode = (playerBits>>SK_AIMMODE)&1;
+        pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_CENTERING)&1)<<1;
+        pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_AIM_ASSIST)&1)<<2;
 
-    if (pPlayer->aim_mode < (aimMode & 3))
-        pPlayer->return_to_center = 9;
+        if (pPlayer->aim_mode < (aimMode & 3))
+            pPlayer->return_to_center = 9;
+    }
 
     if (TEST_SYNC_KEY(playerBits, SK_QUICK_KICK) && pPlayer->quick_kick == 0)
         if (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != KNEE_WEAPON || pPlayer->kickback_pic == 0)
@@ -3485,16 +3491,17 @@ void P_CheckSectors(int playerNum)
 
             case VIEWSCREEN__:
             case VIEWSCREEN2__:
+
                 // Try to find a camera sprite for the viewscreen.
                 for (bssize_t SPRITES_OF(STAT_ACTOR, spriteNum))
                 {
                     if (PN(spriteNum) == CAMERA1 && SP(spriteNum) == 0 && sprite[nearSprite].hitag == SLT(spriteNum))
                     {
-                        sprite[spriteNum].yvel   = 1;  // Using this camera
+                        sprite[spriteNum].yvel    = 1;  // Using this camera
                         A_PlaySound(MONITOR_ACTIVE, pPlayer->i);
-                        sprite[nearSprite].owner = spriteNum;
-                        sprite[nearSprite].yvel  = 1;  // VIEWSCREEN_YVEL
-                        g_curViewscreen          = nearSprite;
+                        sprite[nearSprite].owner  = spriteNum;
+                        sprite[nearSprite].yvel  |= 2;  // VIEWSCREEN_YVEL
+                        g_curViewscreen           = nearSprite;
 
                         int const playerSectnum = pPlayer->cursectnum;
                         pPlayer->cursectnum     = SECT(spriteNum);

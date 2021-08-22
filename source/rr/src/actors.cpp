@@ -10118,7 +10118,7 @@ void G_RefreshLights(void)
 void G_MoveWorld(void)
 {
     extern double g_moveActorsTime, g_moveWorldTime;
-    const double worldTime = timerGetHiTicks();
+    const double worldTime = timerGetFractionalTicks();
 
     if (!DEER)
     {
@@ -10132,11 +10132,11 @@ void G_MoveWorld(void)
     if (!DEER)
         G_MoveMisc();             //ST 5
 
-    const double actorsTime = timerGetHiTicks();
+    const double actorsTime = timerGetFractionalTicks();
 
     G_MoveActors();           //ST 1
 
-    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetHiTicks()-actorsTime);
+    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetFractionalTicks()-actorsTime);
 
     if (DEER)
     {
@@ -10165,5 +10165,5 @@ void G_MoveWorld(void)
     if (RR && numplayers < 2 && g_thunderOn)
         G_Thunder();
 
-    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetHiTicks()-worldTime);
+    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetFractionalTicks()-worldTime);
 }

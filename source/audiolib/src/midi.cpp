@@ -96,7 +96,13 @@ static void _MIDI_SetChannelVolume(int channel, int volume);
 
 void MIDI_Restart(void)
 {
-    MIDI_PlaySong(_MIDI_SongPtr, _MIDI_Loop);
+    if (_MIDI_SongLoaded)
+    {
+        songposition pos;
+        MIDI_GetSongPosition(&pos);
+        MIDI_PlaySong(_MIDI_SongPtr, _MIDI_Loop);
+        MIDI_SetSongPosition(pos.measure, pos.beat, pos.tick);
+    }
 }
 
 static int _MIDI_ReadNumber(void *from, size_t size)
@@ -781,6 +787,169 @@ void MIDI_SetTempo(int tempo)
     SoundDriver_MIDI_SetTempo(tempo, _MIDI_Division);
     int const tickspersecond = tempo * _MIDI_Division / 60;
     _MIDI_FPSecondsPerTick = tabledivide32_noinline(1 << TIME_PRECISION, tickspersecond);
+}
+
+static int _MIDI_ProcessNextTick(void)
+{
+    if (_MIDI_TrackPtr == nullptr)
+        return 0;
+
+    int TimeSet  = FALSE;
+    int tracknum = 0;
+
+    track *Track = _MIDI_TrackPtr;
+
+    while (tracknum < _MIDI_NumTracks)
+    {
+        while ((Track->active) && (Track->delay == 0))
+        {
+            int event;
+
+            GET_NEXT_EVENT(Track, event);
+
+            if (GET_MIDI_COMMAND(event) == MIDI_SPECIAL)
+            {
+                switch (event)
+                {
+                    case MIDI_SYSEX:
+                    case MIDI_SYSEX_CONTINUE:
+                        _MIDI_SysEx(Track);
+                        break;
+
+                    case MIDI_META_EVENT:
+                        _MIDI_MetaEvent(Track);
+                        break;
+                }
+
+                if (Track->active)
+                    Track->delay = _MIDI_ReadDelta(Track);
+
+                continue;
+            }
+
+            if (event & MIDI_RUNNING_STATUS)
+                Track->RunningStatus = event;
+            else
+            {
+                event = Track->RunningStatus;
+                Track->pos--;
+            }
+
+            int channel = GET_MIDI_CHANNEL(event);
+            int command = GET_MIDI_COMMAND(event);
+
+            int c1 = 0;
+            int c2 = 0;
+
+            if (_MIDI_CommandLengths[command] > 0)
+            {
+                GET_NEXT_EVENT(Track, c1);
+                if (_MIDI_CommandLengths[command] > 1)
+                    GET_NEXT_EVENT(Track, c2);
+            }
+
+            switch (command)
+            {
+                case MIDI_NOTE_OFF:
+                    break;
+
+                case MIDI_NOTE_ON:
+                    break;
+
+                case MIDI_POLY_AFTER_TCH:
+                    if (_MIDI_Funcs->PolyAftertouch)
+                        _MIDI_Funcs->PolyAftertouch(channel, c1, c2);
+                    break;
+
+                case MIDI_CONTROL_CHANGE:
+                    TimeSet = _MIDI_InterpretControllerInfo(Track, TimeSet, channel, c1, c2);
+                    break;
+
+                case MIDI_PROGRAM_CHANGE:
+                    if ((_MIDI_Funcs->ProgramChange) && (!Track->EMIDI_ProgramChange))
+                        _MIDI_Funcs->ProgramChange(channel, c1);
+                    break;
+
+                case MIDI_AFTER_TOUCH:
+                    if (_MIDI_Funcs->ChannelAftertouch)
+                        _MIDI_Funcs->ChannelAftertouch(channel, c1);
+                    break;
+
+                case MIDI_PITCH_BEND:
+                    if (_MIDI_Funcs->PitchBend)
+                        _MIDI_Funcs->PitchBend(channel, c1, c2);
+                    break;
+
+                default:
+                    break;
+            }
+
+            Track->delay = _MIDI_ReadDelta(Track);
+        }
+
+        Track->delay--;
+        Track++;
+        tracknum++;
+
+        if (_MIDI_ActiveTracks == 0)
+            break;
+    }
+
+    _MIDI_AdvanceTick();
+
+    return TimeSet;
+}
+
+void MIDI_SetSongPosition(int measure, int beat, int tick)
+{
+    if (!_MIDI_SongLoaded)
+        return;
+
+    MIDI_PauseSong();
+
+    int32_t pos = RELATIVE_BEAT(measure, beat, tick);
+
+    if (pos < RELATIVE_BEAT(_MIDI_Measure, _MIDI_Beat, _MIDI_Tick))
+    {
+        SoundDriver_MIDI_Lock();
+        _MIDI_ResetTracks();
+        SoundDriver_MIDI_Unlock();
+
+        MIDI_Reset();
+    }
+
+    SoundDriver_MIDI_Lock();
+    while (RELATIVE_BEAT(_MIDI_Measure, _MIDI_Beat, _MIDI_Tick) < pos)
+    {
+        if (_MIDI_ProcessNextTick())
+            break;
+
+        if (_MIDI_ActiveTracks == 0)
+        {
+            _MIDI_ResetTracks();
+            if (!_MIDI_Loop)
+            {
+                SoundDriver_MIDI_Unlock();
+                return;
+            }
+            break;
+        }
+    }
+    SoundDriver_MIDI_Unlock();
+
+    MIDI_SetVolume(_MIDI_TotalVolume);
+    MIDI_ContinueSong();
+}
+
+void MIDI_GetSongPosition(songposition *pos)
+{
+    uint32_t mil      = (_MIDI_Time & ((1 << TIME_PRECISION) - 1)) * 1000;
+    uint32_t sec      = _MIDI_Time >> TIME_PRECISION;
+    pos->milliseconds = (mil >> TIME_PRECISION) + (sec * 1000);
+    pos->tickposition = _MIDI_PositionInTicks;
+    pos->measure      = _MIDI_Measure;
+    pos->beat         = _MIDI_Beat;
+    pos->tick         = _MIDI_Tick;
 }
 
 static void _MIDI_InitEMIDI(void)

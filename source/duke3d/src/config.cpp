@@ -328,7 +328,8 @@ void CONFIG_SetDefaults(void)
 
     Bstrcpy(ud.rtsname, G_DefaultRtsFile());
 
-    Bstrcpy(szPlayerName, "Player");
+    if (!CommandName)
+        Bstrcpy(szPlayerName, "Player");
 
 #ifndef EDUKE32_STANDALONE
     Bstrcpy(ud.ridecule[0], "An inspiration for birth control.");
@@ -358,14 +359,6 @@ void CONFIG_SetDefaults(void)
         if (i>=4) continue;
         ud.config.MouseFunctions[i][1] = CONFIG_FunctionNameToNum(mouseclickeddefaults[i]);
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1, controldevice_mouse);
-    }
-
-    for (int i=0; i<MAXMOUSEAXES; i++)
-    {
-        CONTROL_SetAnalogAxisScale(i, DEFAULTMOUSEANALOGUESCALE, controldevice_mouse);
-
-        ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
-        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
     }
 
 #if !defined GEKKO
@@ -471,22 +464,11 @@ void CONFIG_SetupMouse(void)
             ud.config.MouseFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
     }
 
-    // map over the axes
-    for (int i=0; i<MAXMOUSEAXES; i++)
-    {
-        Bsprintf(str,"MouseAnalogAxes%d",i);
-        temp[0] = 0;
-        if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
-    }
-
     for (int i=0; i<MAXMOUSEBUTTONS; i++)
     {
         CONTROL_MapButton(ud.config.MouseFunctions[i][0], i, 0, controldevice_mouse);
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1,  controldevice_mouse);
     }
-    for (int i=0; i<MAXMOUSEAXES; i++)
-        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
 }
 
 
@@ -734,15 +716,18 @@ int CONFIG_ReadSetup(void)
         SCRIPT_GetString(ud.config.scripthandle, "Comm Setup",commmacro,&ud.ridecule[i][0]);
     }
 
-    Bmemset(tempbuf, 0, sizeof(tempbuf));
-    SCRIPT_GetString(ud.config.scripthandle, "Comm Setup","PlayerName",&tempbuf[0]);
+    if (!CommandName)
+    {
+        Bmemset(tempbuf, 0, sizeof(tempbuf));
+        SCRIPT_GetString(ud.config.scripthandle, "Comm Setup","PlayerName",&tempbuf[0]);
 
-    char nameBuf[64];
+        char nameBuf[64];
 
-    while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) > 10)
-        tempbuf[Bstrlen(tempbuf) - 1] = '\0';
+        while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) > 10)
+            tempbuf[Bstrlen(tempbuf) - 1] = '\0';
 
-    Bstrncpyz(szPlayerName, tempbuf, sizeof(szPlayerName));
+        Bstrncpyz(szPlayerName, tempbuf, sizeof(szPlayerName));
+    }
 
     SCRIPT_GetString(ud.config.scripthandle, "Comm Setup","RTSName",&ud.rtsname[0]);
 
@@ -812,9 +797,29 @@ int CONFIG_ReadSetup(void)
     return 0;
 }
 
+void CONFIG_ReadSettings(void)
+{
+    char *const setupFileName = Xstrdup(g_setupFileName);
+    char *const p = strtok(setupFileName, ".");
+
+    if (!p || !Bstrcmp(g_setupFileName, SETUPFILENAME))
+        Bsprintf(tempbuf, "settings.cfg");
+    else
+        Bsprintf(tempbuf, "%s_settings.cfg", p);
+
+    Xfree(setupFileName);
+
+    OSD_Exec(tempbuf);
+
+    ud.config.setupread = 2;
+
+    return;
+}
 
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
+    if (ud.config.setupread != 2) return;
+
     char filename[BMAX_PATH];
 
     if (!Bstrcmp(g_setupFileName, SETUPFILENAME))
@@ -945,12 +950,6 @@ void CONFIG_WriteSetup(uint32_t flags)
             Bsprintf(buf, "MouseButtonClicked%d", i);
             SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseFunctions[i][1]));
         }
-
-        for (int i=0; i<MAXMOUSEAXES; i++)
-        {
-            Bsprintf(buf, "MouseAnalogAxes%d", i);
-            SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[i]));
-        }
     }
 
     if (ud.setup.usejoystick)
@@ -988,7 +987,8 @@ void CONFIG_WriteSetup(uint32_t flags)
         }
     }
 
-    SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","PlayerName",&szPlayerName[0]);
+    if (!CommandName)
+        SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","PlayerName",&szPlayerName[0]);
 
     SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","RTSName",&ud.rtsname[0]);
 

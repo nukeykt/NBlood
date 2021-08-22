@@ -1,5 +1,5 @@
 /* Extended Module Player
- * Copyright (C) 1996-2018 Claudio Matsuoka and Hipolito Carraro Jr
+ * Copyright (C) 1996-2021 Claudio Matsuoka and Hipolito Carraro Jr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -21,16 +21,34 @@
  */
 
 #include <ctype.h>
-#include <sys/types.h>
-#include <stdarg.h>
-#ifdef __WATCOMC__
-#include <direct.h>
-#elif !defined(_WIN32)
+
+#include "common.h"
+
+#ifndef LIBXMP_CORE_PLAYER
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <limits.h>
+#elif defined(__OS2__) || defined(__EMX__)
+#define INCL_DOS
+#define INCL_DOSERRORS
+#include <os2.h>
+#elif defined(__DJGPP__)
+#include <dos.h>
+#include <io.h>
+#elif defined(LIBXMP_AMIGA)
+#ifdef __amigaos4__
+#define __USE_INLINE__
+#endif
+#include <proto/dos.h>
+#elif defined(HAVE_DIRENT)
 #include <dirent.h>
 #endif
+#endif /* LIBXMP_CORE_PLAYER */
 
 #include "xmp.h"
-#include "common.h"
 #include "period.h"
 #include "loader.h"
 
@@ -46,6 +64,12 @@ int libxmp_init_instrument(struct module_data *m)
 
 	if (mod->smp > 0) {
 		int i;
+		/* Sanity check */
+		if (mod->smp > MAX_SAMPLES) {
+			D_(D_CRIT "sample count %d exceeds maximum (%d)",
+			   mod->smp, MAX_SAMPLES);
+			return -1;
+		}
 
 		mod->xxs = (struct xmp_sample *)calloc(sizeof (struct xmp_sample), mod->smp);
 		if (mod->xxs == NULL)
@@ -59,6 +83,54 @@ int libxmp_init_instrument(struct module_data *m)
 		}
 	}
 
+	return 0;
+}
+
+/* Sample number adjustment (originally by Vitamin/CAIG).
+ * Only use this AFTER a previous usage of libxmp_init_instrument,
+ * and don't use this to free samples that have already been loaded. */
+int libxmp_realloc_samples(struct module_data *m, int new_size)
+{
+	struct xmp_module *mod = &m->mod;
+	struct xmp_sample *xxs;
+	struct extra_sample_data *xtra;
+
+	/* Sanity check */
+	if (new_size < 0)
+		return -1;
+
+	if (new_size == 0) {
+		/* Don't rely on implementation-defined realloc(x,0) behavior. */
+		mod->smp = 0;
+		free(mod->xxs);
+		mod->xxs = NULL;
+		free(m->xtra);
+		m->xtra = NULL;
+		return 0;
+	}
+
+	xxs = (struct xmp_sample *)realloc(mod->xxs, sizeof(struct xmp_sample) * new_size);
+	if (xxs == NULL)
+		return -1;
+	mod->xxs = xxs;
+
+	xtra = (struct extra_sample_data *)realloc(m->xtra, sizeof(struct extra_sample_data) * new_size);
+	if (xtra == NULL)
+		return -1;
+	m->xtra = xtra;
+
+	if (new_size > mod->smp) {
+		int clear_size = new_size - mod->smp;
+		int i;
+
+		memset(xxs + mod->smp, 0, sizeof(struct xmp_sample) * clear_size);
+		memset(xtra + mod->smp, 0, sizeof(struct extra_sample_data) * clear_size);
+
+		for (i = mod->smp; i < new_size; i++) {
+			m->xtra[i].c5spd = m->c4rate;
+		}
+	}
+	mod->smp = new_size;
 	return 0;
 }
 
@@ -138,7 +210,7 @@ int libxmp_alloc_tracks_in_pattern(struct xmp_module *mod, int num)
 int libxmp_alloc_pattern_tracks(struct xmp_module *mod, int num, int rows)
 {
 	/* Sanity check */
-	if (rows < 0 || rows > 256)
+	if (rows <= 0 || rows > 256)
 		return -1;
 
 	if (libxmp_alloc_pattern(mod, num) < 0)
@@ -152,17 +224,24 @@ int libxmp_alloc_pattern_tracks(struct xmp_module *mod, int num, int rows)
 	return 0;
 }
 
-/* Sample number adjustment by Vitamin/CAIG */
-struct xmp_sample *libxmp_realloc_samples(struct xmp_sample *buf, int *size, int new_size)
+/* Some formats explicitly allow more than 256 rows (e.g. OctaMED). This function
+ * allows those formats to work without disrupting the sanity check for other formats.
+ */
+int libxmp_alloc_pattern_tracks_long(struct xmp_module *mod, int num, int rows)
 {
-	buf = (struct xmp_sample *)realloc(buf, sizeof (struct xmp_sample) * new_size);
-	if (buf == NULL)
-		return NULL;
-	if (new_size > *size)
-		memset(buf + *size, 0, sizeof (struct xmp_sample) * (new_size - *size));
-	*size = new_size;
+	/* Sanity check */
+	if (rows <= 0 || rows > 32768)
+		return -1;
 
-	return buf;
+	if (libxmp_alloc_pattern(mod, num) < 0)
+		return -1;
+
+	mod->xxp[num]->rows = rows;
+
+	if (libxmp_alloc_tracks_in_pattern(mod, num) < 0)
+		return -1;
+
+	return 0;
 }
 
 char *libxmp_instrument_name(struct xmp_module *mod, int i, uint8 *r, int n)
@@ -194,7 +273,7 @@ void libxmp_read_title(HIO_HANDLE *f, char *t, int s)
 {
 	uint8 buf[XMP_NAME_SIZE];
 
-	if (t == NULL)
+	if (t == NULL || s < 0)
 		return;
 
 	if (s >= XMP_NAME_SIZE)
@@ -223,6 +302,56 @@ int libxmp_test_name(uint8 *s, int n)
 
 	return 0;
 }
+
+int libxmp_copy_name_for_fopen(char *dest, const char *name, int n)
+{
+	int converted_colon = 0;
+	int i;
+
+	/* libxmp_copy_adjust, but make sure the filename won't do anything
+	 * malicious when given to fopen. This should only be used on song files.
+	 */
+	if (!strcmp(name, ".") || strstr(name, "..") ||
+	    name[0] == '\\' || name[0] == '/' || name[0] == ':')
+		return -1;
+
+	for (i = 0; i < n - 1; i++) {
+		uint8 t = name[i];
+		if (!t)
+			break;
+
+		/* Reject non-ASCII symbols as they have poorly defined behavior.
+		 */
+		if (t < 32 || t >= 0x7f)
+			return -1;
+
+		/* Reject anything resembling a Windows-style root path. Allow
+		 * converting a single : to / so things like ST-01:samplename
+		 * work. (Leave the : as-is on Amiga.)
+		 */
+		if (i > 0 && t == ':' && !converted_colon) {
+			uint8 t2 = name[i + 1];
+			if (!t2 || t2 == '/' || t2 == '\\')
+				return -1;
+
+			converted_colon = 1;
+#ifndef LIBXMP_AMIGA
+			dest[i] = '/';
+			continue;
+#endif
+		}
+
+		if (t == '\\') {
+			dest[i] = '/';
+			continue;
+		}
+
+		dest[i] = t;
+	}
+	dest[i] = '\0';
+	return 0;
+}
+#endif
 
 /*
  * Honor Noisetracker effects:
@@ -263,7 +392,6 @@ void libxmp_decode_noisetracker_event(struct xmp_event *event, uint8 *mod_event)
 
 	libxmp_disable_continue_fx(event);
 }
-#endif
 
 void libxmp_decode_protracker_event(struct xmp_event *event, uint8 *mod_event)
 {
@@ -304,44 +432,102 @@ void libxmp_disable_continue_fx(struct xmp_event *event)
 }
 
 #ifndef LIBXMP_CORE_PLAYER
-#ifndef WIN32
-
+/* libxmp_check_filename_case(): */
 /* Given a directory, see if file exists there, ignoring case */
 
-int libxmp_check_filename_case(char *dir, char *name, char *new_name, int size)
+#if defined(_WIN32)
+int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
+{
+	char path[_MAX_PATH];
+	DWORD rc;
+	/* win32 is case-insensitive: directly probe the file. */
+	snprintf(path, sizeof(path), "%s/%s", dir, name);
+	rc = GetFileAttributesA(path);
+	if (rc == (DWORD)(-1)) return 0;
+	if (rc & FILE_ATTRIBUTE_DIRECTORY) return 0;
+	strncpy(new_name, name, size);
+	return 1;
+}
+#elif defined(__OS2__) || defined(__EMX__)
+int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
+{
+	char path[CCHMAXPATH];
+	FILESTATUS3 fs;
+	/* os/2 is case-insensitive: directly probe the file. */
+	snprintf(path, sizeof(path), "%s/%s", dir, name);
+	if (DosQueryPathInfo(path, FIL_STANDARD, &fs, sizeof(fs)) != NO_ERROR) return 0;
+	if (fs.attrFile & FILE_DIRECTORY) return 0;
+	strncpy(new_name, name, size);
+	return 1;
+}
+#elif defined(__DJGPP__)
+int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
+{
+	char path[256];
+	int attr;
+	/* dos is case-insensitive: directly probe the file. */
+	snprintf(path, sizeof(path), "%s/%s", dir, name);
+	attr = _chmod(path, 0);
+	if (attr == -1) return 0;
+	if (attr & (_A_SUBDIR|_A_VOLID)) return 0;
+	strncpy(new_name, name, size);
+	return 1;
+}
+#elif defined(LIBXMP_AMIGA)
+#ifdef __amigaos4__
+#include <dos/obsolete.h>
+#endif
+int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
+{
+	char path[256]; BPTR lock;
+	struct FileInfoBlock *fib;
+	int found = 0;
+	/* amigados is case-insensitive: directly probe the file. */
+	snprintf(path, sizeof(path), "%s/%s", dir, name);
+	lock = Lock((const STRPTR)path, ACCESS_READ);
+	if (lock) {
+		fib = (struct FileInfoBlock*) AllocDosObject(DOS_FIB, NULL);
+		if (fib != NULL) {
+		    if (Examine(lock, fib)) {
+			if (fib->fib_DirEntryType < 0) {
+				found = 1;
+				strncpy(new_name, name, size);
+			}
+		    }
+		    FreeDosObject(DOS_FIB, fib);
+		}
+		UnLock(lock);
+	}
+	return found;
+}
+#elif defined(HAVE_DIRENT)
+int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
 {
 	int found = 0;
-	DIR *dirfd;
+	DIR *dirp;
 	struct dirent *d;
 
-	dirfd = opendir(dir);
-	if (dirfd == NULL)
+	dirp = opendir(dir);
+	if (dirp == NULL)
 		return 0;
- 
-	while ((d = readdir(dirfd))) {
+
+	while ((d = readdir(dirp)) != NULL) {
 		if (!strcasecmp(d->d_name, name)) {
 			found = 1;
+			strncpy(new_name, d->d_name, size);
 			break;
 		}
 	}
 
-	if (found)
-		strncpy(new_name, d->d_name, size);
-
-	closedir(dirfd);
+	closedir(dirp);
 
 	return found;
 }
-
 #else
-
-/* FIXME: implement functionality for Win32 */
-
-int libxmp_check_filename_case(char *dir, char *name, char *new_name, int size)
+int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
 {
 	return 0;
 }
-
 #endif
 
 void libxmp_get_instrument_path(struct module_data *m, char *path, int size)
@@ -363,4 +549,55 @@ void libxmp_set_type(struct module_data *m, const char *fmt, ...)
 
 	vsnprintf(m->mod.type, XMP_NAME_SIZE, fmt, ap);
 	va_end(ap);
+}
+
+static int schism_tracker_date(int year, int month, int day)
+{
+	int mm = (month + 9) % 12;
+	int yy = year - mm / 10;
+
+	yy = yy * 365 + (yy / 4) - (yy / 100) + (yy / 400);
+	mm = (mm * 306 + 5) / 10;
+
+	return yy + mm + (day - 1);
+}
+
+/* Generate a Schism Tracker version string.
+ * Schism Tracker versions are stored as follows:
+ *
+ * s_ver <= 0x50:		0.s_ver
+ * s_ver > 0x50, < 0xfff:	days from epoch=(s_ver - 0x50)
+ * s_ver = 0xfff:		days from epoch=l_ver
+ */
+void libxmp_schism_tracker_string(char *buf, size_t size, int s_ver, int l_ver)
+{
+	if (s_ver >= 0x50) {
+		/* time_t epoch_sec = 1256947200; */
+		int t = schism_tracker_date(2009, 10, 31);
+		int year, month, day, dayofyear;
+
+		if (s_ver == 0xfff) {
+			t += l_ver;
+		} else
+			t += s_ver - 0x50;
+
+		/* Date algorithm reimplemented from OpenMPT.
+		 */
+		year = (int)(((int64)t * 10000L + 14780) / 3652425);
+		dayofyear = t - (365 * year + (year / 4) - (year / 100) + (year / 400));
+		if (dayofyear < 0) {
+			year--;
+			dayofyear = t - (365 * year + (year / 4) - (year / 100) + (year / 400));
+		}
+		month = (100 * dayofyear + 52) / 3060;
+		day = dayofyear - (month * 306 + 5) / 10 + 1;
+
+		year += (month + 2) / 12;
+		month = (month + 2) % 12 + 1;
+
+		snprintf(buf, size, "Schism Tracker %04d-%02d-%02d",
+			year, month, day);
+	} else {
+		snprintf(buf, size, "Schism Tracker 0.%x", s_ver);
+	}
 }

@@ -285,7 +285,7 @@ static int osdfunc_fileinfo(osdcmdptr_t parm)
         return OSDCMD_OK;
     }
 
-    double   crctime = timerGetHiTicks();
+    double   crctime = timerGetFractionalTicks();
     uint32_t crcval  = 0;
     int32_t  siz     = 0;
 
@@ -299,11 +299,11 @@ static int osdfunc_fileinfo(osdcmdptr_t parm)
     }
     while (siz == ReadSize);
 
-    crctime = timerGetHiTicks() - crctime;
+    crctime = timerGetFractionalTicks() - crctime;
 
     klseek(h, 0, BSEEK_SET);
 
-    double xxhtime = timerGetHiTicks();
+    double xxhtime = timerGetFractionalTicks();
 
     XXH32_state_t xxh;
     XXH32_reset(&xxh, 0x1337);
@@ -316,7 +316,7 @@ static int osdfunc_fileinfo(osdcmdptr_t parm)
     while (siz == ReadSize);
 
     uint32_t const xxhash = XXH32_digest(&xxh);
-    xxhtime = timerGetHiTicks() - xxhtime;
+    xxhtime = timerGetFractionalTicks() - xxhtime;
 
     Xfree(buf);
 

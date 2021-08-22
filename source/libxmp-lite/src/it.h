@@ -1,5 +1,5 @@
 /* Extended Module Player
- * Copyright (C) 1996-2018 Claudio Matsuoka and Hipolito Carraro Jr
+ * Copyright (C) 1996-2021 Claudio Matsuoka and Hipolito Carraro Jr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -19,6 +19,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#ifndef LIBXMP_LOADERS_IT_H
+#define LIBXMP_LOADERS_IT_H
+
+#include "loader.h"
 
 /* IT flags */
 #define IT_STEREO	0x01
@@ -179,3 +184,7 @@ struct it_sample_header {
 	uint8 vit;		/* Vibrato waveform */
 };
 
+int itsex_decompress8(HIO_HANDLE *src, uint8 *dst, int len, int it215);
+int itsex_decompress16(HIO_HANDLE *src, int16 *dst, int len, int it215);
+
+#endif /* LIBXMP_LOADERS_IT_H */

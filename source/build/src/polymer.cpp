@@ -2684,12 +2684,14 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     walltype        *wal;
     int32_t         i, j;
     int32_t         ceilz, florz;
-    int32_t         tex, tey, heidiff;
+    int32_t         heidiff;
+    float           tex, tey;
     float           secangcos, secangsin, scalecoef, xpancoef, ypancoef;
-    int32_t         ang, needfloor, wallinvalidate;
+    int32_t         needfloor, wallinvalidate;
     int16_t         curstat, curpicnum, floorpicnum, ceilingpicnum;
     char            curxpanning, curypanning;
     _prvert*        curbuffer;
+    float           relscalefactorfloor = 0.0, relscalefactorceil = 0.0, currelscalefactor;
 
     if (pr_nullrender >= 3) return 0;
 
@@ -2770,6 +2772,46 @@ static int32_t      polymer_updatesector(int16_t sectnum)
 #endif
         goto attributes;
 
+    if (((sec->floorstat & 64) || (sec->ceilingstat & 64)) &&
+        ((secangcos == 2) && (secangsin == 2)))
+    {
+        // relative-aligned floors apparently have a scaling bug in classic related to length of firstwall
+        // lifting polymost code to replicate here
+        vec2_t const xy = { wall[wall[sec->wallptr].point2].x - wall[sec->wallptr].x,
+                            wall[wall[sec->wallptr].point2].y - wall[sec->wallptr].y };
+
+        float len = Bsqrtf(xy.x * xy.x + xy.y * xy.y);
+
+        if (sec->floorstat & 2 || sec->ceilingstat & 2)
+        {
+            int i = krecipasm(nsqrtasm(uhypsq(xy.x,xy.y)));
+            float relscalefactor = i * (1.f/1073741824.f) * len;
+
+            if (sec->floorstat & 2)
+                relscalefactorfloor = relscalefactor;
+
+            if (sec->ceilingstat & 2)
+                relscalefactorceil = relscalefactor;
+        }
+
+        if (!(sec->floorstat & 2) || !(sec->ceilingstat & 2))
+        {
+            int i = nsqrtasm(uhypsq(xy.x,xy.y)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
+            float relscalefactor = i * (1.f/1048576.f) * len;
+
+            if (!(sec->floorstat & 2))
+                relscalefactorfloor = relscalefactor;
+
+            if (!(sec->ceilingstat & 2))
+                relscalefactorceil = relscalefactor;
+        }
+
+        // now sanely compute relative firstwall angle
+        double arctan = atan2( xy.y, xy.x ) + M_PI / 2.0;
+        secangcos = cos( arctan );
+        secangsin = sin( arctan );
+    }
+
     wal = &wall[sec->wallptr];
     i = 0;
     while (i < sec->wallnum)
@@ -2780,6 +2822,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
         curpicnum = floorpicnum;
         curxpanning = sec->floorxpanning;
         curypanning = sec->floorypanning;
+        currelscalefactor = relscalefactorfloor;
 
         while (j)
         {
@@ -2790,27 +2833,20 @@ static int32_t      polymer_updatesector(int16_t sectnum)
                 curpicnum = ceilingpicnum;
                 curxpanning = sec->ceilingxpanning;
                 curypanning = sec->ceilingypanning;
+                currelscalefactor = relscalefactorceil;
             }
 
             if (!waloff[curpicnum])
                 tileLoad(curpicnum);
 
-            if (((sec->floorstat & 64) || (sec->ceilingstat & 64)) &&
-                    ((secangcos == 2) && (secangsin == 2)))
-            {
-                ang = (getangle(wall[wal->point2].x - wal->x, wall[wal->point2].y - wal->y) + 512) & 2047;
-                secangcos = (float)(sintable[(ang+512)&2047]) / 16383.0f;
-                secangsin = (float)(sintable[ang&2047]) / 16383.0f;
-            }
-
             // relative texturing
             if (curstat & 64)
             {
-                xpancoef = (float)(wal->x - wall[sec->wallptr].x);
-                ypancoef = (float)(wall[sec->wallptr].y - wal->y);
+                xpancoef = (float)(wal->x - wall[sec->wallptr].x) * currelscalefactor;
+                ypancoef = (float)(wall[sec->wallptr].y - wal->y) * currelscalefactor;
 
-                tex = (int32_t)(xpancoef * secangsin + ypancoef * secangcos);
-                tey = (int32_t)(xpancoef * secangcos - ypancoef * secangsin);
+                tex = xpancoef * secangsin + ypancoef * secangcos;
+                tey = xpancoef * secangcos - ypancoef * secangsin;
             } else {
                 tex = wal->x;
                 tey = -wal->y;
@@ -2821,13 +2857,13 @@ static int32_t      polymer_updatesector(int16_t sectnum)
                 heidiff = (int32_t)(curbuffer[i].y - curbuffer[0].y);
                 // don't forget the sign, tey could be negative with concave sectors
                 if (tey >= 0)
-                    tey = (int32_t)sqrt((double)((tey * tey) + (heidiff * heidiff)));
+                    tey = sqrt((double)((tey * tey) + (heidiff * heidiff)));
                 else
-                    tey = -(int32_t)sqrt((double)((tey * tey) + (heidiff * heidiff)));
+                    tey = -sqrt((double)((tey * tey) + (heidiff * heidiff)));
             }
 
             if (curstat & 4)
-                swaplong(&tex, &tey);
+                swapfloat(&tex, &tey);
 
             if (curstat & 16) tex = -tex;
             if (curstat & 32) tey = -tey;
@@ -2850,8 +2886,8 @@ static int32_t      polymer_updatesector(int16_t sectnum)
             else
                 ypancoef = 0;
 
-            curbuffer[i].u = ((float)(tex) / (scalecoef * tilesiz[curpicnum].x)) + xpancoef;
-            curbuffer[i].v = ((float)(tey) / (scalecoef * tilesiz[curpicnum].y)) + ypancoef;
+            curbuffer[i].u = (tex / (scalecoef * tilesiz[curpicnum].x)) + xpancoef;
+            curbuffer[i].v = (tey / (scalecoef * tilesiz[curpicnum].y)) + ypancoef;
 
             j--;
         }
@@ -2905,7 +2941,7 @@ attributes:
     if ((!s->flags.empty) && (!s->flags.invalidtex) &&
             (floorpicnum == s->floorpicnum_anim) &&
             (ceilingpicnum == s->ceilingpicnum_anim) &&
-            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, visibility) - offsetof(sectortype, ceilingstat)))
+            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat)))
         goto finish;
 
     s->floor.bucket = polymer_getbuildmaterial(&s->floor.material, floorpicnum, sec->floorpal, sec->floorshade, sec->visibility, (sec->floorstat & 384) ? DAMETH_MASK : DAMETH_NOMASK);
@@ -2931,7 +2967,7 @@ attributes:
     s->flags.invalidtex = 0;
 
     // copy ceilingstat through visibility members
-    Bmemcpy(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, visibility) - offsetof(sectortype, ceilingstat));
+    Bmemcpy(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat));
     s->floorpicnum_anim = floorpicnum;
     s->ceilingpicnum_anim = ceilingpicnum;
 
@@ -4962,7 +4998,7 @@ static void         polymer_getscratchmaterial(_prmaterial* material)
     material->mdspritespace = GL_FALSE;
 }
 
-static void         polymer_setupartmap(int16_t tilenum, char pal)
+static void         polymer_setupartmap(int16_t tilenum, char pal, int32_t meth)
 {
     if (!prartmaps[tilenum]) {
         char *tilebuffer = (char *) waloff[tilenum];
@@ -4993,8 +5029,8 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
             tempbuffer);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, meth & DAMETH_CLAMPED ? glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, meth & DAMETH_CLAMPED ? glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP : GL_REPEAT);
         polymost_bindTexture(GL_TEXTURE_2D, 0);
         Xfree(tempbuffer);
     }
@@ -5076,7 +5112,7 @@ static _prbucket*   polymer_getbuildmaterial(_prmaterial* material, int16_t tile
         }
 
         if (!prartmaps[tilenum] || !prbasepalmaps[curbasepal] || !prlookups[pal])
-            polymer_setupartmap(tilenum, pal);
+            polymer_setupartmap(tilenum, pal, cmeth);
 
         material->artmap = prartmaps[tilenum];
         material->basepalmap = prbasepalmaps[curbasepal];
@@ -6105,7 +6141,7 @@ static inline void  polymer_culllight(int16_t lighti)
     int16_t         ns;
     _prsector       *s;
     _prwall         *w;
-    sectortype      *sec;
+    sectortype      *sec, *nsec;
 
     Bmemset(drawingstate, 0, sizeof(int16_t) * numsectors);
     drawingstate[light->sector] = 1;
@@ -6121,19 +6157,22 @@ static inline void  polymer_culllight(int16_t lighti)
 
         checkror = FALSE;
 
-        zdiff = light->z - s->floorz;
-        if (zdiff < 0)
-            zdiff = -zdiff;
-        zdiff >>= 4;
+        if (!(sec->floorstat & 1))
+        {
+            zdiff = light->z - s->floorz;
+            if (zdiff < 0)
+                zdiff = -zdiff;
+            zdiff >>= 4;
 
-        if (!light->radius && !(sec->floorstat & 1)) {
-            if (zdiff < light->range) {
+            if (!light->radius) {
+                if (zdiff < light->range) {
+                    polymer_addplanelight(&s->floor, lighti);
+                    checkror = TRUE;
+                }
+            } else if (polymer_planeinlight(&s->floor, light)) {
                 polymer_addplanelight(&s->floor, lighti);
                 checkror = TRUE;
             }
-        } else if (polymer_planeinlight(&s->floor, light)) {
-            polymer_addplanelight(&s->floor, lighti);
-            checkror = TRUE;
         }
 
 #ifdef YAX_ENABLE
@@ -6154,19 +6193,22 @@ static inline void  polymer_culllight(int16_t lighti)
 #endif
         checkror = FALSE;
 
-        zdiff = light->z - s->ceilingz;
-        if (zdiff < 0)
-            zdiff = -zdiff;
-        zdiff >>= 4;
+        if (!(sec->ceilingstat & 1))
+        {
+            zdiff = light->z - s->ceilingz;
+            if (zdiff < 0)
+                zdiff = -zdiff;
+            zdiff >>= 4;
 
-        if (!light->radius && !(sec->ceilingstat & 1)) {
-            if (zdiff < light->range) {
+            if (!light->radius) {
+                if (zdiff < light->range) {
+                    polymer_addplanelight(&s->ceil, lighti);
+                    checkror = TRUE;
+                }
+            } else if (polymer_planeinlight(&s->ceil, light)) {
                 polymer_addplanelight(&s->ceil, lighti);
                 checkror = TRUE;
             }
-        } else if (polymer_planeinlight(&s->ceil, light)) {
-            polymer_addplanelight(&s->ceil, lighti);
-            checkror = TRUE;
         }
 
 #ifdef YAX_ENABLE
@@ -6189,17 +6231,33 @@ static inline void  polymer_culllight(int16_t lighti)
         while (i < sec->wallnum)
         {
             w = prwalls[sec->wallptr + i];
+            walltype *wal = &wall[sec->wallptr + i];
+
+            if (wal->nextsector >= 0 && wal->nextsector < numsectors)
+            {
+                nsec = &sector[wal->nextsector];
+            }
+            else
+            {
+                nsec = nullptr;
+            }
 
             j = 0;
 
-            if (polymer_planeinlight(&w->wall, light)) {
-                polymer_addplanelight(&w->wall, lighti);
-                j++;
+            if (!(sec->floorstat & 1 && nsec && nsec->floorstat & 1))
+            {
+                if (polymer_planeinlight(&w->wall, light)) {
+                    polymer_addplanelight(&w->wall, lighti);
+                    j++;
+                }
             }
 
-            if (polymer_planeinlight(&w->over, light)) {
-                polymer_addplanelight(&w->over, lighti);
-                j++;
+            if (!(sec->ceilingstat & 1 && nsec && nsec->ceilingstat & 1))
+            {
+                if (polymer_planeinlight(&w->over, light)) {
+                    polymer_addplanelight(&w->over, lighti);
+                    j++;
+                }
             }
 
             // assume the light hits the middle section if it hits the top and bottom

@@ -605,6 +605,14 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("tempvis",(intptr_t)&tempvis, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
     Gv_NewVar("tempxrepeat",(intptr_t)&tempxrepeat, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
     Gv_NewVar("tempyrepeat",(intptr_t)&tempyrepeat, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempxpanning",(intptr_t)&tempxpanning, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempypanning",(intptr_t)&tempypanning, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempxvel",(intptr_t)&tempxvel, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempyvel",(intptr_t)&tempyvel, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempzvel",(intptr_t)&tempzvel, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempstatnum",(intptr_t)&tempstatnum, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempblend",(intptr_t)&tempblend, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
+    Gv_NewVar("tempsectornum",(intptr_t)&tempsectornum, GAMEVAR_INTPTR|GAMEVAR_SYSTEM|GAMEVAR_READONLY);
 
     // starting position
     Gv_NewVar("startposx",(intptr_t)&startpos.x, GAMEVAR_READONLY | GAMEVAR_INTPTR | GAMEVAR_SYSTEM);

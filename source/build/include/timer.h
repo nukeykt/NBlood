@@ -17,14 +17,18 @@ enum buildtimertype
     NUMTIMERS,
 };
 
-int      timerInit(int const tickspersecond);
-void     timerUpdateClock(void);
-int      timerGetClockRate(void);
 uint64_t timerGetPerformanceCounter(void);
 uint64_t timerGetPerformanceFrequency(void);
-double   timerGetHiTicks(void);
+
+int  timerInit(int const tickspersecond);
+void timerUpdateClock(void);
+
+int      timerGetClockRate(void);
+double   timerGetFractionalTicks(void);
 uint32_t timerGetTicks(void);
 uint32_t timer120(void);
+uint64_t timerGetNanoTicks(void);
+uint64_t timerGetNanoTickRate(void);
 
 void (*timerSetCallback(void (*callback)(void)))(void);
 

@@ -1,5 +1,5 @@
 /* Extended Module Player
- * Copyright (C) 1996-2018 Claudio Matsuoka and Hipolito Carraro Jr
+ * Copyright (C) 1996-2021 Claudio Matsuoka and Hipolito Carraro Jr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -344,12 +344,17 @@ err:
 #define XM_INST_HEADER_SIZE 33
 #define XM_INST_SIZE 208
 
-static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
+/* grass.near.the.house.xm defines 23 samples in instrument 1. FT2 docs
+ * specify at most 16. See https://github.com/libxmp/libxmp/issues/168
+ * for more details. */
+#define XM_MAX_SAMPLES_PER_INST 32
+
+static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xm_instrument_header xih;
 	struct xm_instrument xi;
-	struct xm_sample_header xsh[16];
+	struct xm_sample_header xsh[XM_MAX_SAMPLES_PER_INST];
 	int sample_num = 0;
 	long total_sample_size;
 	int i, j;
@@ -360,8 +365,9 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 	/* ESTIMATED value! We don't know the actual value at this point */
 	mod->smp = MAX_SAMPLES;
 
-	if (libxmp_init_instrument(m) < 0)
+	if (libxmp_init_instrument(m) < 0) {
 		return -1;
+	}
 
 	for (i = 0; i < mod->ins; i++) {
 		long instr_pos = hio_tell(f);
@@ -384,8 +390,8 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 		xih.sh_size = readmem32l(buf + 29);	/* Sample header size */
 
 		/* Sanity check */
-		if (xih.samples > 0x10 || (xih.samples > 0 && xih.sh_size > 0x100)) {
-			D_(D_CRIT "Sanity check: %d %d", xih.samples, xih.sh_size);
+		if (xih.samples > XM_MAX_SAMPLES_PER_INST || (xih.samples > 0 && xih.sh_size > 0x100)) {
+			D_(D_CRIT "instrument %d: samples:%d sample header size:%d", i + 1, xih.samples, xih.sh_size);
 			return -1;
 		}
 
@@ -393,13 +399,13 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 
 		xxi->nsm = xih.samples;
 
-		D_(D_INFO "[%2X] %-22.22s %2d", i, xxi->name, xxi->nsm);
+		D_(D_INFO "instrument:%2X (%s) samples:%2d", i, xxi->name, xxi->nsm);
 
 		if (xxi->nsm == 0) {
 			/* Sample size should be in struct xm_instrument according to
 			 * the official format description, but FT2 actually puts it in
 			 * struct xm_instrument header. There's a tracker or converter
-			 * that follow the specs, so we must handle both cases (see 
+			 * that follow the specs, so we must handle both cases (see
 			 * "Braintomb" by Jazztiz/ART).
 			 */
 
@@ -507,14 +513,17 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 			}
 		}
 
+		/* Read subinstrument and sample parameters */
+
 		for (j = 0; j < xxi->nsm; j++, sample_num++) {
 			struct xmp_subinstrument *sub = &xxi->sub[j];
 			struct xmp_sample *xxs;
 			uint8 *b = buf;
 
+			D_(D_INFO "  sample index:%d sample id:%d", j, sample_num);
+
 			if (sample_num >= mod->smp) {
-				mod->xxs = libxmp_realloc_samples(mod->xxs, &mod->smp, mod->smp * 3 / 2);
-				if (mod->xxs == NULL)
+				if (libxmp_realloc_samples(m, mod->smp * 3 / 2) < 0)
 					return -1;
 			}
 			xxs = &mod->xxs[sample_num];
@@ -571,21 +580,23 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 
 			xxs->flg |= xsh[j].type & XM_LOOP_FORWARD ? XMP_SAMPLE_LOOP : 0;
 			xxs->flg |= xsh[j].type & XM_LOOP_PINGPONG ? XMP_SAMPLE_LOOP | XMP_SAMPLE_LOOP_BIDIR : 0;
+
+			D_(D_INFO "  size:%06x loop start:%06x loop end:%06x %c V%02x F%+04d P%02x R%+03d %s",
+			   mod->xxs[sub->sid].len,
+			   mod->xxs[sub->sid].lps,
+			   mod->xxs[sub->sid].lpe,
+			   mod->xxs[sub->sid].flg & XMP_SAMPLE_LOOP_BIDIR ? 'B' :
+			   mod->xxs[sub->sid].flg & XMP_SAMPLE_LOOP ? 'L' : ' ',
+			   sub->vol, sub->fin, sub->pan, sub->xpo,
+			   mod->xxs[sub->sid].flg & XMP_SAMPLE_16BIT ? " (16 bit)" : "");
 		}
+
+		/* Read actual sample data */
 
 		total_sample_size = 0;
 		for (j = 0; j < xxi->nsm; j++) {
 			struct xmp_subinstrument *sub = &xxi->sub[j];
 			int flags;
-
-			D_(D_INFO " %1x: %06x%c%06x %06x %c V%02x F%+04d P%02x R%+03d",
-			   j, mod->xxs[sub->sid].len,
-			   mod->xxs[sub->sid].flg & XMP_SAMPLE_16BIT ? '+' : ' ',
-			   mod->xxs[sub->sid].lps,
-			   mod->xxs[sub->sid].lpe,
-			   mod->xxs[sub->sid].flg & XMP_SAMPLE_LOOP_BIDIR ? 'B' :
-			   mod->xxs[sub->sid].flg & XMP_SAMPLE_LOOP ? 'L' : ' ',
-			   sub->vol, sub->fin, sub->pan, sub->xpo);
 
 			flags = SAMPLE_FLAG_DIFF;
 #ifndef LIBXMP_CORE_PLAYER
@@ -595,16 +606,18 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 #endif
 
 			if (version > 0x0103) {
+			        D_(D_INFO "  read sample: index:%d sample id:%d", j, sub->sid);
 				if (libxmp_load_sample(m, f, flags, &mod->xxs[sub->sid], NULL) < 0) {
 					return -1;
 				}
 				if (flags & SAMPLE_FLAG_ADPCM) {
+			                D_(D_INFO "  sample is adpcm");
 					total_sample_size += 16 + ((xsh[j].length + 1) >> 1);
 				} else {
 					total_sample_size += xsh[j].length;
 				}
 			}
-			}
+		}
 
 		/* Reposition correctly in case of 16-bit sample having odd in-file length.
 		 * See "Lead Lined for '99", reported by Dennis Mulleneers.
@@ -615,8 +628,7 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE * f)
 	}
 
 	/* Final sample number adjustment */
-	mod->xxs = libxmp_realloc_samples(mod->xxs, &mod->smp, sample_num);
-	if (mod->xxs == NULL) {
+	if (libxmp_realloc_samples(m, sample_num) < 0) {
 		return -1;
 	}
 
@@ -679,7 +691,7 @@ static int xm_load(struct module_data *m, HIO_HANDLE * f, const int start)
 		return -1;
 	}
 
-	if (hio_read(&xfh.order, len, 1, f) != 1) {	/* Pattern order table */
+	if (hio_read(xfh.order, len, 1, f) != 1) {	/* Pattern order table */
 		D_(D_CRIT "error reading orders");
 		return -1;
 	}

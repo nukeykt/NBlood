@@ -324,6 +324,7 @@ const char *keyw[] =
     "ifoutside",
     "ifnosounds",
     "ifin3dmode",
+    "ifin2d3dmode",
     "ifaimingsprite",
     "ifaimingwall",
     "ifaimingsector",
@@ -2956,6 +2957,7 @@ repeatcase:
 ///    case CON_IFCANSEETARGET:
     case CON_IFNOSOUNDS:
     case CON_IFIN3DMODE:
+    case CON_IFIN2D3DMODE:
     case CON_IFAIMINGSPRITE:
     case CON_IFAIMINGWALL:
     case CON_IFAIMINGSECTOR:

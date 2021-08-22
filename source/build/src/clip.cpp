@@ -995,16 +995,16 @@ static int get_floorspr_clipyou(vec2_t const v1, vec2_t const v2, vec2_t const v
     return clipyou;
 }
 
-static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walldist)
+static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walldist)
 {
     if (enginecompatibilitymode != ENGINE_EDUKE32)
     {
         updatesector(pos.x, pos.y, sectnum);
-        return;
+        return 0;
     }
 
     if (inside(pos.x, pos.y, *sectnum) == 1)
-        return;
+        return 0;
 
     int16_t nsecs = min<int16_t>(getsectordist(pos, *sectnum), INT16_MAX);
 
@@ -1030,7 +1030,10 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
         int const listsectnum = sectlist[sectcnt];
 
         if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
-            SET_AND_RETURN(*sectnum, listsectnum);
+        {
+            *sectnum = listsectnum;
+            return 0;
+        }
 
         bitmap_set(insidemap, listsectnum);
 
@@ -1055,7 +1058,8 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
             // add sector to clipping list so the next call to clipupdatesector()
             // finishes in the loop above this one
             addclipsect(listsectnum);
-            SET_AND_RETURN(*sectnum, listsectnum);
+            *sectnum = listsectnum;
+            return 0;
         }
 
         bitmap_set(insidemap, listsectnum);
@@ -1072,7 +1076,57 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
                 bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
     }
 
+    return 1;
+}
+
+void clipmove_compat(vec3_t* const pos, int16_t*sectnum)
+{
+    for (native_t j=0; j<clipsectnum; j++)
+    {
+        if (inside(pos->x, pos->y, clipsectorlist[j]) == 1)
+        {
+            *sectnum = clipsectorlist[j];
+            return;
+        }
+    }
+
+    int32_t tempint2, tempint1 = INT32_MAX;
     *sectnum = -1;
+    for (native_t j=numsectors-1; j>=0; j--)
+    {
+        if (inside(pos->x, pos->y, j) == 1)
+        {
+            if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].ceilingstat&2))
+                tempint2 = getceilzofslope(j, pos->x, pos->y) - pos->z;
+            else
+                tempint2 = sector[j].ceilingz - pos->z;
+
+            if (tempint2 > 0)
+            {
+                if (tempint2 < tempint1)
+                {
+                    *sectnum = j; tempint1 = tempint2;
+                }
+            }
+            else
+            {
+                if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].floorstat&2))
+                    tempint2 = pos->z - getflorzofslope(j, pos->x, pos->y);
+                else
+                    tempint2 = pos->z - sector[j].floorz;
+
+                if (tempint2 <= 0)
+                {
+                    *sectnum = j;
+                    return;
+                }
+                if (tempint2 < tempint1)
+                {
+                    *sectnum = j; tempint1 = tempint2;
+                }
+            }
+        }
+    }
 }
 
 //
@@ -1573,7 +1627,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 if ((tempint ^ tempint2) < 0)
                 {
                     if (enginecompatibilitymode == ENGINE_EDUKE32)
-                        clipupdatesector(vec, sectnum, rad);
+                        clipupdatesector(pos->vec2, sectnum, rad);
                     else if (enginecompatibilitymode == ENGINE_19961112)
                         updatesector(pos->x, pos->y, sectnum);
 
@@ -1591,7 +1645,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         }
 
         if (enginecompatibilitymode == ENGINE_EDUKE32)
-            clipupdatesector(vec, sectnum, rad);
+            if (clipupdatesector(vec, sectnum, rad))
+                continue;
 
         pos->x = vec.x;
         pos->y = vec.y;
@@ -1599,50 +1654,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
     } while ((xvect|yvect) != 0 && hitwall >= 0 && cnt > 0);
 
     if (enginecompatibilitymode != ENGINE_EDUKE32)
-    {
-        for (native_t j=0; j<clipsectnum; j++)
-            if (inside(pos->x, pos->y, clipsectorlist[j]) == 1)
-            {
-                *sectnum = clipsectorlist[j];
-                return clipReturn;
-            }
-
-        int32_t tempint2, tempint1 = INT32_MAX;
-        *sectnum = -1;
-        for (native_t j=numsectors-1; j>=0; j--)
-            if (inside(pos->x, pos->y, j) == 1)
-            {
-                if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].ceilingstat&2))
-                    tempint2 = getceilzofslope(j, pos->x, pos->y) - pos->z;
-                else
-                    tempint2 = sector[j].ceilingz - pos->z;
-
-                if (tempint2 > 0)
-                {
-                    if (tempint2 < tempint1)
-                    {
-                        *sectnum = j; tempint1 = tempint2;
-                    }
-                }
-                else
-                {
-                    if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].floorstat&2))
-                        tempint2 = pos->z - getflorzofslope(j, pos->x, pos->y);
-                    else
-                        tempint2 = pos->z - sector[j].floorz;
-
-                    if (tempint2 <= 0)
-                    {
-                        *sectnum = j;
-                        return clipReturn;
-                    }
-                    if (tempint2 < tempint1)
-                    {
-                        *sectnum = j; tempint1 = tempint2;
-                    }
-                }
-            }
-    }
+        clipmove_compat(pos, sectnum);
 
     return clipReturn;
 }
@@ -1774,16 +1786,25 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                             vect->x = (vect->x) + dx; vect->y = (vect->y) + dy;
                             bad2--; if (bad2 == 0) break;
                         } while (clipinsidebox(vect->vec2, i, walldist-4) != 0);
-                        int16_t const os = *sectnum;
-                        clipupdatesector(vect->vec2, sectnum, walldist);
                         bad = -1;
-                        if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0)
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32)
                         {
-                            vect->vec2 = ov;
-                            *sectnum = os;
-                            return -1;
+                            int16_t const os = *sectnum;
+                            clipupdatesector(vect->vec2, sectnum, walldist);
+                            if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0)
+                            {
+                                vect->vec2 = ov;
+                                *sectnum   = os;
+                                return -1;
+                            }
+                            if (--k <= 0) return bad;
                         }
-                        if (--k <= 0) return bad;
+                        else
+                        {
+                            if (--k <= 0) return bad;
+                            updatesector(vect->x, vect->y, sectnum);
+                        }
                     }
                     else if (bitmap_test(clipsectormap, wal->nextsector) == 0)
                         addclipsect(wal->nextsector);
@@ -1984,7 +2005,10 @@ restart_grand:
                     continue;
 #ifdef YAX_ENABLE
                 if (mcf==-1 && curspr==NULL)
+                {
+                    bitmap_set(origclipsectormap, k);
                     origclipsectorlist[origclipsectnum++] = k;
+                }
                 if (curspr == NULL)
                     layerclipsectorlist[layerclipsectnum++] = k;
 #endif

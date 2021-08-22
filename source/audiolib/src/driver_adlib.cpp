@@ -124,11 +124,11 @@ void AdLibDrv_MIDI_Service(void)
         OPL3_GenerateResampled(AL_GetChip(), buf);
         if (MV_Channels == 2)
         {
-            *buffer16++ = clamp((buf[0]<<AL_PostAmp)*AL_Volume/MIDI_MaxVolume, INT16_MIN, INT16_MAX);
-            *buffer16++ = clamp((buf[1]<<AL_PostAmp)*AL_Volume/MIDI_MaxVolume, INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp(lrintf(buf[0] * AL_PostAmp * AL_Volume * (1.f / MIDI_MaxVolume)), INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp(lrintf(buf[1] * AL_PostAmp * AL_Volume * (1.f / MIDI_MaxVolume)), INT16_MIN, INT16_MAX);
         }
         else
-            *buffer16++ = clamp(((buf[0]<<AL_PostAmp)+(buf[1]<<AL_PostAmp))*AL_Volume/(2*MIDI_MaxVolume), INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp(lrintf((buf[0] + buf[1]) * AL_PostAmp * AL_Volume * (.5f / MIDI_MaxVolume)), INT16_MIN, INT16_MAX);
     }
 }
 
@@ -225,7 +225,7 @@ static int constexpr AL_MaxMidiChannel = ARRAY_SIZE(Channel);
 int AL_Stereo = TRUE;
 int AL_AdditiveMode;
 
-int AL_PostAmp = 3;
+float AL_PostAmp = 3.f;
 
 // TODO: clean up this shit...
 #define OFFSET(structure, offset) (*((char **)&(structure)[offset]))

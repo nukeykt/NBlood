@@ -543,7 +543,7 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const &change, uint32_t c
     vec2_t const oldPos  = pSprite->pos.vec2;
 
     // check to make sure the netcode didn't leave a deleted sprite in the sprite lists.
-    Bassert(pSprite->sectnum < MAXSECTORS);
+    Bassert((unsigned)pSprite->sectnum < MAXSECTORS);
 
 #ifndef EDUKE32_STANDALONE
     if (!FURY && (pSprite->statnum == STAT_MISC || (isEnemy && pSprite->xrepeat < 4)))
@@ -707,12 +707,15 @@ static void A_DeleteLight(int32_t s)
     practor[s].lightptr = NULL;
 }
 
+void G_DeleteAllLights(void)
+{
+    for (int i=0; i<MAXSPRITES; i++)
+        A_DeleteLight(i);
+}
+
 void G_Polymer_UnInit(void)
 {
-    int32_t i;
-
-    for (i=0; i<MAXSPRITES; i++)
-        A_DeleteLight(i);
+    G_DeleteAllLights();
 }
 #endif
 
@@ -1334,6 +1337,22 @@ static int P_Submerge(int, DukePlayer_t *, int, int);
 static int P_Emerge(int, DukePlayer_t *, int, int);
 static void P_FinishWaterChange(int, DukePlayer_t *, int, int, int);
 
+static fix16_t P_GetQ16AngleDeltaForTic(DukePlayer_t const *pPlayer)
+{
+    auto oldAngle = pPlayer->oq16ang;
+    auto newAngle = pPlayer->q16ang;
+
+    if (klabs(fix16_sub(oldAngle, newAngle)) < F16(1024))
+        return fix16_sub(newAngle, oldAngle);
+
+    if (newAngle > F16(1024))
+        newAngle = fix16_sub(newAngle, F16(2048));
+
+    if (oldAngle > F16(1024))
+        oldAngle = fix16_sub(oldAngle, F16(2048));
+
+    return fix16_sub(newAngle, oldAngle);
+}
 
 ACTOR_STATIC void G_MovePlayers(void)
 {
@@ -1389,6 +1408,20 @@ ACTOR_STATIC void G_MovePlayers(void)
 
                 if (G_TileHasActor(sprite[spriteNum].picnum))
                     A_Execute(spriteNum, P_GetP(pSprite), otherPlayerDist);
+
+                if (pPlayer->newowner < 0)
+                {
+                    pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
+                    pPlayer->oq16ang      = pPlayer->q16ang;
+                    pPlayer->oq16horiz    = pPlayer->q16horiz;
+                    pPlayer->oq16horizoff = pPlayer->q16horizoff;
+                }
+
+                if (ud.recstat || pPlayer->gm & MODE_DEMO)
+                {
+                    thisPlayer.smoothcamera = true;
+                    P_UpdateAngles(playerNum, thisPlayer.input);
+                }
 
                 if (pPlayer->one_eighty_count < 0)
                 {
@@ -2553,18 +2586,42 @@ DETONATE:
                         int const  p  = A_FindPlayer(pSprite, &playerDist);
                         auto const ps = g_player[p].ps;
 
-                        if (dist(&sprite[ps->i], pSprite) < VIEWSCREEN_ACTIVE_DISTANCE)
+                        // EDuke32 extension: xvel of viewscreen determines active distance
+                        int const activeDist = pSprite->xvel > 0 ? pSprite->xvel : VIEWSCREEN_ACTIVE_DISTANCE;
+
+                        if (dist(&sprite[ps->i], pSprite) < activeDist)
                         {
-#if 0
-                        if (sprite[i].yvel == 1)  // VIEWSCREEN_YVEL
-                            g_curViewscreen = i;
-#endif
+                            // DOS behavior: yvel of 1 activates screen if player approaches
+                            if (g_curViewscreen == -1 && pSprite->yvel & 1)
+                            {
+                                g_curViewscreen = spriteNum;
+
+                                // EDuke32 extension: for remote activation, check for connected camera and display its image
+                                if (sprite[spriteNum].hitag)
+                                {
+                                    for (bssize_t SPRITES_OF(STAT_ACTOR, otherSprite))
+                                    {
+                                        if (PN(otherSprite) == CAMERA1 && sprite[spriteNum].hitag == SLT(otherSprite))
+                                        {
+                                            sprite[spriteNum].owner = otherSprite;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } // deactivate viewscreen in valid range if yvel is 0
+                            else if (g_curViewscreen == spriteNum && !(pSprite->yvel & 3))
+                            {
+                                g_curViewscreen    = -1;
+                                T1(spriteNum)      =  0;
+                                for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
+                                    walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
+                            }
                         }
                         else if (g_curViewscreen == spriteNum /*&& T1 == 1*/)
                         {
-                            g_curViewscreen        = -1;
-                            sprite[spriteNum].yvel = 0;  // VIEWSCREEN_YVEL
-                            T1(spriteNum)          = 0;
+                            g_curViewscreen    = -1;
+                            pSprite->yvel     &= ~2; // VIEWSCREEN YVEL
+                            T1(spriteNum)      =  0;
 
                             for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
                                 walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
@@ -6171,6 +6228,46 @@ static void MaybeTrainKillEnemies(int const spriteNum)
     while (findSprite >= 0);
 }
 
+int dukeValidateSectorEffectorPlaysSound(int num)
+{
+    switch (SLT(num))
+    {
+        case SE_11_SWINGING_DOOR:
+        case SE_15_SLIDING_DOOR:
+        case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
+        case SE_20_STRETCH_BRIDGE:
+        case SE_21_DROP_FLOOR:
+        case SE_31_FLOOR_RISE_FALL:
+        case SE_32_CEILING_RISE_FALL:
+        case SE_36_PROJ_SHOOTER:
+            return 1;
+    }
+    return 0;
+}
+
+int dukeValidateSectorPlaysSound(int sect)
+{
+    switch (sector[sect].lotag)
+    {
+        case ST_9_SLIDING_ST_DOOR:
+        case ST_16_PLATFORM_DOWN:
+        case ST_17_PLATFORM_UP:
+        case ST_18_ELEVATOR_DOWN:
+        case ST_19_ELEVATOR_UP:
+        case ST_29_TEETH_DOOR:
+        case ST_20_CEILING_DOOR:
+        case ST_21_FLOOR_DOOR:
+        case ST_22_SPLITTING_DOOR:
+        case ST_23_SWINGING_DOOR:
+        case ST_25_SLIDING_DOOR:
+        case ST_27_STRETCH_BRIDGE:
+        case ST_28_DROP_FLOOR:
+        case ST_30_ROTATE_RISE_BRIDGE:
+        case ST_31_TWO_WAY_TRAIN:
+            return 1;
+    }
+    return 0;
+}
 
 ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 {
@@ -9033,7 +9130,7 @@ static void G_DoEventGame(int const nEventID)
 void G_MoveWorld(void)
 {
     extern double g_moveActorsTime, g_moveWorldTime;
-    const double worldTime = timerGetHiTicks();
+    const double worldTime = timerGetFractionalTicks();
 
     MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
 
@@ -9074,14 +9171,14 @@ void G_MoveWorld(void)
         G_MoveMisc();  //ST 5
     }
 
-    const double actorsTime = timerGetHiTicks();
+    const double actorsTime = timerGetFractionalTicks();
 
     {
         MICROPROFILE_SCOPEI("MoveWorld", "MoveActors", MP_YELLOW4);
         G_MoveActors();  //ST 1
     }
 
-    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetHiTicks()-actorsTime);
+    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetFractionalTicks()-actorsTime);
 
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
@@ -9110,5 +9207,5 @@ void G_MoveWorld(void)
         G_MoveFX();  //ST 11
     }
 
-    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetHiTicks()-worldTime);
+    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetFractionalTicks()-worldTime);
 }

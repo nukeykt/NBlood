@@ -768,6 +768,7 @@ EXTERN tspriteptr_t tspriteptr[MAXSPRITESONSCREEN + 1];
 EXTERN int32_t wx1, wy1, wx2, wy2;
 EXTERN int32_t xdim, ydim, numpages, upscalefactor;
 EXTERN int32_t yxaspect, viewingrange;
+extern int32_t oxyaspect;
 EXTERN intptr_t *ylookup;
 
 EXTERN int32_t rotatesprite_y_offset;
@@ -1694,7 +1695,27 @@ static FORCE_INLINE void renderEnableFog(void)
 #endif
 }
 
-static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
+/* Different "is inside" predicates.
+ * NOTE: The redundant bound checks are expected to be optimized away in the
+ * inlined code. */
+
+static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum)
+{
+    return ((unsigned)sectnum < MAXSECTORS && inside(x, y, sectnum) == 1);
+}
+
+static FORCE_INLINE CONSTEXPR int inside_exclude_p(int32_t const x, int32_t const y, int const sectnum, const uint8_t *excludesectbitmap)
+{
+    return ((unsigned)sectnum < MAXSECTORS && !bitmap_test(excludesectbitmap, sectnum) && inside_p(x, y, sectnum));
+}
+
+/* NOTE: no bound check for inside_z_p */
+static FORCE_INLINE int inside_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum)
+{
+    int32_t cz, fz;
+    getzsofslope(sectnum, x, y, &cz, &fz);
+    return (z >= cz && z <= fz && inside_p(x, y, sectnum));
+}
 
 #define SET_AND_RETURN(Lval, Rval) \
     do                             \
@@ -1821,5 +1842,17 @@ static inline float tspriteGetZOfSlopeFloat(tspriteptr_t const tspr, float dax, 
 #ifdef __cplusplus
 }
 #endif
+
+static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk, int gameTicRate)
+{
+    int const tfreq = (int)refreshfreq;
+    int const clk   = (totalclk - ototalclk).toScale16();
+    int const ratio = tabledivide32_noinline(clk * tfreq, tabledivide32_noinline(timerGetClockRate() * tfreq, gameTicRate));
+#if 0 //ndef NDEBUG
+    if ((unsigned)ratio > 66048)
+        OSD_Printf("calc_smoothratio: ratio: %d\n", ratio);
+#endif
+    return clamp(ratio, 0, 65536);
+}
 
 #endif // build_h_

@@ -2153,12 +2153,12 @@ void C_UndefineSkill(int32_t skill)
 
     g_skillNames[skill][0] = '\0';
 
-    g_skillCnt = 0;
+    g_maxDefinedSkill = 0;
     for (bssize_t i = MAXSKILLS-1; i >= 0; i--)
     {
         if (g_skillNames[i][0])
         {
-            g_skillCnt = i+1;
+            g_maxDefinedSkill = i + 1;
             break;
         }
     }
@@ -3665,9 +3665,9 @@ DO_DEFSTATE:
                 continue;
             }
         case CON_ADDLOGVAR:
-            g_labelsOnly = 1;
+            //g_labelsOnly = 1;
             C_GetNextVar();
-            g_labelsOnly = 0;
+            //g_labelsOnly = 0;
             continue;
 
         case CON_COS:
@@ -5421,10 +5421,15 @@ repeatcase:
 
             g_skillNames[j][i] = '\0';
 
-            for (i=0; i<MAXSKILLS; i++)
-                if (g_skillNames[i][0] == 0)
+            g_maxDefinedSkill = 0;
+            for (bssize_t i = MAXSKILLS-1; i >= 0; i--)
+            {
+                if (g_skillNames[i][0])
+                {
+                    g_maxDefinedSkill = i + 1;
                     break;
-            g_skillCnt = i;
+                }
+            }
 
             continue;
 
