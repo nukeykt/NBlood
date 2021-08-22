@@ -411,6 +411,8 @@ MenuEntry_t ME_NEWGAMECUSTOMSUBENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYEN
 static MenuEntry_t *MEL_NEWGAMECUSTOM[MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOMSUB[MAXMENUGAMEPLAYENTRIES];
 
+static char const s_Undefined[] = "Undefined";
+
 static MenuEntry_t ME_SKILL_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
 static MenuEntry_t ME_SKILL[MAXSKILLS];
 static MenuEntry_t *MEL_SKILL[MAXSKILLS];
@@ -1938,7 +1940,7 @@ void Menu_Init(void)
     MEOS_NETOPTIONS_EPISODE.numOptions = k + 1;
     NetEpisode = MEOSV_NetEpisodes[0];
     MMF_Top_Episode.pos.y = (58 + (3-k)*6)<<16;
-    if (g_skillCnt == 0)
+    if (g_maxDefinedSkill == 0)
         MEO_EPISODE.linkID = MENU_NULL;
     M_EPISODE.currentEntry = ud.default_volume;
 
@@ -1997,28 +1999,49 @@ void Menu_Init(void)
     }
 
     // prepare skills
-    // k = -1;
-    for (i = 0; i < g_skillCnt && g_skillNames[i][0]; ++i)
+    for (i = 0; i < g_maxDefinedSkill; ++i)
     {
         MEL_SKILL[i] = &ME_SKILL[i];
         ME_SKILL[i] = ME_SKILL_TEMPLATE;
-        ME_SKILL[i].name = g_skillNames[i];
 
-        MEOSN_NetSkills[i] = g_skillNames[i];
-
-        // k = i;
+        if (g_skillNames[i][0])
+        {
+            ME_SKILL[i].name = g_skillNames[i];
+            MEOSN_NetSkills[i] = g_skillNames[i];
+        }
+        else
+        {
+            ME_SKILL[i].name = s_Undefined;
+            MEOSN_NetSkills[i] = s_Undefined;
+            ME_SKILL[i].flags |= MEF_Hidden;
+        }
     }
-    // ++k;
-    M_SKILL.numEntries = g_skillCnt; // k;
-    MEOS_NETOPTIONS_MONSTERS.numOptions = g_skillCnt + 1; // k+1;
-    MEOSN_NetSkills[g_skillCnt] = MenuSkillNone;
-    MMF_Top_Skill.pos.y = (58 + (4-g_skillCnt)*6)<<16;
-    M_SKILL.currentEntry = ud.default_skill;
+    M_SKILL.numEntries = g_maxDefinedSkill;
+    MEOS_NETOPTIONS_MONSTERS.numOptions = g_maxDefinedSkill + 1;
+    MEOSN_NetSkills[g_maxDefinedSkill] = MenuSkillNone;
+    MMF_Top_Skill.pos.y = (58 + (4 - g_maxDefinedSkill)*6)<<16;
 
-    if (M_SKILL.currentEntry >= M_SKILL.numEntries-1)
-        M_SKILL.currentEntry = 0;
+    // If no skills defined, skill menu will be skipped and default skill is used.
+    if (!g_maxDefinedSkill)
+        M_SKILL.currentEntry = ud.default_skill;
+    else
+    {
+        // Otherwise, check if the default skill is out of range or undefined.
+        k = min(MAXSKILLS - 1, ud.default_skill);
+        if (g_skillNames[k][0])
+            M_SKILL.currentEntry = k;
+        else
+        {
+            for (i = 0; i < MAXSKILLS; ++i)
+                if (g_skillNames[i][0])
+                {
+                    M_SKILL.currentEntry = i;
+                    break;
+                }
+        }
 
-    Menu_AdjustForCurrentEntryAssignmentBlind(&M_SKILL);
+        Menu_AdjustForCurrentEntryAssignmentBlind(&M_SKILL);
+    }
 
     // prepare multiplayer gametypes
     k = -1;
@@ -3401,7 +3424,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             ud.m_volume_number = M_EPISODE.currentEntry;
             ud.m_level_number = 0;
 
-            if (g_skillCnt == 0)
+            if (g_maxDefinedSkill == 0)
                 Menu_StartGameWithoutSkill();
         }
         break;
@@ -3686,8 +3709,8 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     }
     else if (entry == &ME_NETOPTIONS_MONSTERS)
     {
-        ud.m_monsters_off = (newOption == g_skillCnt);
-        if (newOption < g_skillCnt)
+        ud.m_monsters_off = (newOption == g_maxDefinedSkill);
+        if (newOption < g_maxDefinedSkill)
             ud.m_player_skill = newOption;
     }
     else if (entry == &ME_ADULTMODE)
@@ -3988,7 +4011,7 @@ static int32_t Menu_EntryOptionSource(MenuEntry_t *entry, int32_t currentValue)
     else if (entry == &ME_SOUND_DUKETALK)
         return ud.config.VoiceToggle & 1;
     else if (entry == &ME_NETOPTIONS_MONSTERS)
-        return (ud.m_monsters_off ? g_skillCnt : ud.m_player_skill);
+        return (ud.m_monsters_off ? g_maxDefinedSkill : ud.m_player_skill);
 
     return currentValue;
 }
@@ -4362,7 +4385,7 @@ static void Menu_FileSelect(int32_t input)
             ud.m_volume_number = 0;
             ud.m_level_number = 7;
 
-            if (g_skillCnt > 0)
+            if (g_maxDefinedSkill > 0)
                 Menu_AnimateChange(MENU_SKILL, MA_Advance);
             else
                 Menu_StartGameWithoutSkill();

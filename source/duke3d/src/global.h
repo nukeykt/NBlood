@@ -75,7 +75,7 @@ G_EXTERN char *apStrings[MAXQUOTES],*apXStrings[MAXQUOTES];
 G_EXTERN char *label;
 G_EXTERN int32_t g_musicIndex;
 G_EXTERN char g_loadFromGroupOnly;
-G_EXTERN char g_skillCnt;
+G_EXTERN int8_t g_maxDefinedSkill;
 G_EXTERN char pus,pub;
 G_EXTERN char ready2send;
 #define MAXPLAYERNAME 32

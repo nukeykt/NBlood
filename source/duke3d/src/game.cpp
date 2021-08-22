@@ -6375,7 +6375,7 @@ int app_main(int argc, char const* const* argv)
     if (!g_useCwd)
         G_AddSearchPaths();
 
-    g_skillCnt = 4;
+    g_maxDefinedSkill = 4;
     ud.multimode = 1;
 
     // This needs to happen before G_CheckCommandLine() because G_GameExit()
