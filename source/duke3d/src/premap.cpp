@@ -1940,7 +1940,9 @@ int G_EnterLevel(int gameMode)
 
     G_DoLoadScreen("Loading map . . .", -1);
     G_UpdateScreenArea();
+#ifdef POLYMER
     G_DeleteAllLights();
+#endif
 
     ud.screen_size = ssize;
 
