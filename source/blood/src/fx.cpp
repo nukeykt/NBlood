@@ -116,7 +116,7 @@ FXDATA gFXData[] = {
     { kCallbackNone, 1, 70, 1, -13981, 5120, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-void CFX::sub_73FB0(int nSprite)
+void CFX::fxKill(int nSprite)
 {
     if (nSprite < 0 || nSprite >= kMaxSprites)
         return;
@@ -126,7 +126,7 @@ void CFX::sub_73FB0(int nSprite)
     DeleteSprite(nSprite);
 }
 
-void CFX::sub_73FFC(int nSprite)
+void CFX::fxFree(int nSprite)
 {
     if (nSprite < 0 || nSprite >= kMaxSprites)
         return;
@@ -171,7 +171,7 @@ spritetype * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned 
             nSprite = nextspritestat[nSprite];
         if (nSprite == -1)
             return NULL;
-        sub_73FB0(nSprite);
+        fxKill(nSprite);
     }
     spritetype *pSprite = actSpawnSprite(nSector, x, y, z, 1, 0);
     pSprite->type = nFx;
@@ -223,14 +223,14 @@ void CFX::fxProcess(void)
             updatesector(pSprite->x, pSprite->y, &nSector);
             if (nSector == -1)
             {
-                sub_73FFC(nSprite);
+                fxFree(nSprite);
                 continue;
             }
             if (getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y) <= pSprite->z)
             {
                 if (pFXData->funcID < 0 || pFXData->funcID >= kCallbackMax)
                 {
-                    sub_73FFC(nSprite);
+                    fxFree(nSprite);
                     continue;
                 }
                 dassert(gCallback[pFXData->funcID] != NULL);
@@ -249,14 +249,14 @@ void CFX::fxProcess(void)
             getzsofslope(nSector, pSprite->x, pSprite->y, &ceilZ, &floorZ);
             if (ceilZ > pSprite->z && !(sector[nSector].ceilingstat&1))
             {
-                sub_73FFC(nSprite);
+                fxFree(nSprite);
                 continue;
             }
             if (floorZ < pSprite->z)
             {
                 if (pFXData->funcID < 0 || pFXData->funcID >= kCallbackMax)
                 {
-                    sub_73FFC(nSprite);
+                    fxFree(nSprite);
                     continue;
                 }
                 dassert(gCallback[pFXData->funcID] != NULL);
