@@ -2246,7 +2246,7 @@ static void duplicate_selected_sprites(void)
                 j = insertsprite(sprite[k].sectnum,sprite[k].statnum);
                 Bmemcpy(&sprite[j],&sprite[k],sizeof(spritetype));
 //                sprite[j].sectnum = sprite[k].sectnum;   //Don't let memcpy overwrite sector!
-//                setsprite(j,(vec3_t *)&sprite[j]);
+//                setsprite(j,&sprite[j].pos);
             }
 
         printmessage16("Sprites duplicated.");

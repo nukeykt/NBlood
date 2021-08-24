@@ -2188,7 +2188,7 @@ void tagcode(void)
             {
                 vec2_t const pivot = { swingx[i][0], swingy[i][0] };
                 vec2_t const p = { swingx[i][k], swingy[i][k] };
-                rotatepoint(pivot, p, swingang[i], (vec2_t *)&wall[swingwall[i][k]].x);
+                rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].pos);
             }
 
             if (swinganginc[i] != 0)
@@ -2224,7 +2224,7 @@ void tagcode(void)
                                 {
                                     vec2_t const pivot = { swingx[i][0], swingy[i][0] };
                                     vec2_t const p = { swingx[i][k], swingy[i][k] };
-                                    rotatepoint(pivot, p, swingang[i], (vec2_t *)&wall[swingwall[i][k]].x);
+                                    rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].pos);
                                 }
                                 if (swingang[i] == swingangclosed[i])
                                 {

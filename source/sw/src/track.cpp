@@ -1749,7 +1749,7 @@ MovePoints(SECTOR_OBJECTp sop, short delta_ang, int nx, int ny)
             if (TEST(wp->extra, WALLFX_LOOP_SPIN_4X))
                 rot_ang = NORM_ANGLE(rot_ang * 4);
 
-            rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&wp->x, rot_ang, &rxy);
+            rotatepoint(*(vec2_t *)&sop->xmid, wp->pos, rot_ang, &rxy);
 
             if (wp->extra && TEST(wp->extra, WALLFX_LOOP_OUTER))
             {
@@ -1862,12 +1862,12 @@ PlayerPart:
 
             if (TEST(wall[sector[sp->sectnum].wallptr].extra, WALLFX_LOOP_REVERSE_SPIN))
             {
-                rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&sp->x, -delta_ang, (vec2_t *)&sp->x);
+                rotatepoint(*(vec2_t *)&sop->xmid, sp->pos.vec2, -delta_ang, &sp->pos.vec2);
                 sp->ang = NORM_ANGLE(sp->ang - delta_ang);
             }
             else
             {
-                rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&sp->x, delta_ang, (vec2_t *)&sp->x);
+                rotatepoint(*(vec2_t *)&sop->xmid, sp->pos.vec2, delta_ang, &sp->pos.vec2);
                 sp->ang = NORM_ANGLE(sp->ang + delta_ang);
             }
 
@@ -1877,14 +1877,14 @@ PlayerPart:
             if (!TEST(sop->flags, SOBJ_DONT_ROTATE))
             {
                 // NOT part of a sector - independant of any sector
-                rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&sp->x, delta_ang, (vec2_t *)&sp->x);
+                rotatepoint(*(vec2_t *)&sop->xmid, sp->pos.vec2, delta_ang, &sp->pos.vec2);
                 sp->ang = NORM_ANGLE(sp->ang + delta_ang);
             }
 
             // Does not necessarily move with the sector so must accout for
             // moving across sectors
             if (sop->xmid < MAXSO) // special case for operating SO's
-                setspritez(sop->sp_num[i], (vec3_t *)sp);
+                setspritez(sop->sp_num[i], &sp->pos);
         }
 
         u->oangdiff += GetDeltaAngle(sp->ang, oldang);
@@ -2062,7 +2062,7 @@ void UpdateSectorObjectSprites(SECTOR_OBJECTp sop)
     {
         sp = &sprite[sop->sp_num[i]];
 
-        setspritez(sop->sp_num[i], (vec3_t *)sp);
+        setspritez(sop->sp_num[i], &sp->pos);
     }
 }
 
