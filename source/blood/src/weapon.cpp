@@ -2078,7 +2078,7 @@ void WeaponProcess(PLAYER *pPlayer) {
             pPlayer->nextWeapon = 0;
         }
     }
-    if ((pPlayer->curWeapon == 0) && !VanillaMode()) // if player is switching weapon, clear next/prev keyflags
+    if ((pPlayer->curWeapon == 0) && (pPlayer->input.newWeapon != 0) && !VanillaMode()) // if player is switching weapon (and not holstered), clear next/prev keyflags
     {
         pPlayer->input.keyFlags.nextWeapon = 0;
         pPlayer->input.keyFlags.prevWeapon = 0;

@@ -42,14 +42,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static void SpidBiteSeqCallback(int, int);
 static void SpidJumpSeqCallback(int, int);
-static void sub_71370(int, int);
+static void SpidBirthSeqCallback(int, int);
 static void thinkSearch(spritetype *, XSPRITE *);
 static void thinkGoto(spritetype *, XSPRITE *);
 static void thinkChase(spritetype *, XSPRITE *);
 
 static int nBiteClient = seqRegisterClient(SpidBiteSeqCallback);
 static int nJumpClient = seqRegisterClient(SpidJumpSeqCallback);
-static int dword_279B50 = seqRegisterClient(sub_71370);
+static int nBirthClient = seqRegisterClient(SpidBirthSeqCallback);
 
 AISTATE spidIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
 AISTATE spidChase = { kAiStateChase, 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
@@ -58,25 +58,22 @@ AISTATE spidGoto = { kAiStateMove, 7, -1, 600, NULL, aiMoveForward, thinkGoto, &
 AISTATE spidSearch = { kAiStateSearch, 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &spidIdle };
 AISTATE spidBite = { kAiStateChase, 6, nBiteClient, 60, NULL, NULL, NULL, &spidChase };
 AISTATE spidJump = { kAiStateChase, 8, nJumpClient, 60, NULL, aiMoveForward, NULL, &spidChase };
-AISTATE spid13A92C = { kAiStateOther, 0, dword_279B50, 60, NULL, NULL, NULL, &spidIdle };
+AISTATE spidBirth = { kAiStateOther, 0, nBirthClient, 60, NULL, NULL, NULL, &spidIdle };
 
-static char sub_70D30(XSPRITE *pXDude, int a2, int a3)
+static char SpidPoisonPlayer(XSPRITE *pXDude, int nBlind, int max)
 {
     dassert(pXDude != NULL);
     int nDude = pXDude->reference;
     spritetype *pDude = &sprite[nDude];
     if (IsPlayerSprite(pDude))
     {
-        a2 <<= 4;
-        a3 <<= 4;
-        if (IsPlayerSprite(pDude))
+        nBlind <<= 4;
+        max <<= 4;
+        PLAYER *pPlayer = &gPlayer[pDude->type-kDudePlayer1];
+        if (pPlayer->blindEffect < max)
         {
-            PLAYER *pPlayer = &gPlayer[pDude->type-kDudePlayer1];
-            if (a3 > pPlayer->blindEffect)
-            {
-                pPlayer->blindEffect = ClipHigh(pPlayer->blindEffect+a2, a3);
-                return 1;
-            }
+            pPlayer->blindEffect = ClipHigh(pPlayer->blindEffect+nBlind, max);
+            return 1;
         }
     }
     return 0;
@@ -110,11 +107,11 @@ static void SpidBiteSeqCallback(int, int nXSprite)
                     break;
                 case kDudeSpiderRed:
                     actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorSpiderBite);
-                    if (Chance(0x5000)) sub_70D30(pXTarget, 4, 16);
+                    if (Chance(0x5000)) SpidPoisonPlayer(pXTarget, 4, 16);
                     break;
                 case kDudeSpiderBlack:
                     actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorSpiderBite);
-                    sub_70D30(pXTarget, 8, 16);
+                    SpidPoisonPlayer(pXTarget, 8, 16);
                     break;
                 case kDudeSpiderMother: {
                     actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorSpiderBite);
@@ -123,9 +120,9 @@ static void SpidBiteSeqCallback(int, int nXSprite)
                     dy += Random2(2000);
                     dz += Random2(2000);
                     actFireVector(pSprite, 0, 0, dx, dy, dz, kVectorSpiderBite);
-                    sub_70D30(pXTarget, 8, 16);
-                }
+                    SpidPoisonPlayer(pXTarget, 8, 16);
                     break;
+                }
             }
         }
 
@@ -159,7 +156,7 @@ static void SpidJumpSeqCallback(int, int nXSprite)
     }
 }
 
-static void sub_71370(int, int nXSprite)
+static void SpidBirthSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
@@ -262,7 +259,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         if (nDist < 0x733 && nDist > 0x399 && klabs(nDeltaAngle) < 85)
                             aiNewState(pSprite, pXSprite, &spidJump);
                         else if (Chance(0x8000))
-                            aiNewState(pSprite, pXSprite, &spid13A92C);
+                            aiNewState(pSprite, pXSprite, &spidBirth);
                         break;
                 }
 
