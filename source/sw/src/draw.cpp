@@ -2271,10 +2271,6 @@ drawscreen(PLAYERp pp)
     PLAYERp camerapp;                       // prediction player if prediction is on, else regular player
     void DoPlayerDiveMeter(PLAYERp pp);
 
-    // last valid stuff
-    static short lv_sectnum = -1;
-    static int lv_x, lv_y, lv_z;
-
     int const viewingRange = viewingrange;
 
     if (HelpInputMode)
@@ -2373,28 +2369,6 @@ drawscreen(PLAYERp pp)
     //updatesectorz(tx, ty, tz, &tsectnum);
 
     COVERupdatesector(tx, ty, &tsectnum);
-
-    if (tsectnum < 0)
-    {
-#if 0
-        // if we hit an invalid sector move to the last valid position for drawing
-        tsectnum = lv_sectnum;
-        tx = lv_x;
-        ty = lv_y;
-        tz = lv_z;
-#endif
-    }
-    else
-    {
-        // last valid stuff
-        lv_sectnum = tsectnum;
-        lv_x = tx;
-        lv_y = ty;
-        lv_z = tz;
-    }
-
-    // with "last valid" code this should never happen
-    // ASSERT(tsectnum >= 0 && tsectnum <= MAXSECTORS);
 
     if (pp->sop_riding || pp->sop_control)
     {
