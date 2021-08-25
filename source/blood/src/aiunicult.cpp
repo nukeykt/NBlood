@@ -1129,10 +1129,10 @@ bool playGenDudeSound(spritetype* pSprite, int mode) {
     // so we won't get a lot of annoying screams in the same time and ensure sound played in it's full length (if not interruptable)
     if (pExtra->sndPlaying && !sndInfo->interruptable) {
         for (int i = 0; i < 256; i++) {
-            if (Bonkle[i].atc <= 0) continue;
+            if (Bonkle[i].sfxId <= 0) continue;
             for (int a = 0; a < rand; a++) {
-                if (sndId + a == Bonkle[i].atc) {
-                    if (Bonkle[i].at0 <= 0) {
+                if (sndId + a == Bonkle[i].sfxId) {
+                    if (Bonkle[i].lChan <= 0) {
                         pExtra->sndPlaying = false;
                         break;
                     }
