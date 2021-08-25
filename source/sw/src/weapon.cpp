@@ -19825,14 +19825,21 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
     over = over_sp->sectnum;
     under = under_sp->sectnum;
 
+#if 0
+    // This code originally had identical branches.
+    // TODO: PedanticMode - verify implications of change, enable or remove
     if (GetOverlapSector(*x, *y, &over, &under) == 2)
     {
         *sectnum = under;
     }
     else
     {
-        *sectnum = under;
+        *sectnum = PedanticMode ? under : over;
     }
+#else
+    GetOverlapSector(*x, *y, &over, &under);
+    *sectnum = under;
+#endif
 
     *z = sector[under_sp->sectnum].ceilingz + Z(1);
 

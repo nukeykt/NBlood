@@ -8007,12 +8007,10 @@ domovethings(void)
     UpdateConMessages();    // Update the console messages
 
 #if SYNC_TEST
+#ifndef DEBUG                            // in DEBUG mode even TEN does sync all the time
     if (/* CTW REMOVED !gTenActivated ||*/ !(movefifoplc & 0x3f))
-        getsyncstat();
-#ifdef DEBUG                            // in DEBUG mode even TEN does sync all the time
-    else
-        getsyncstat();
 #endif
+        getsyncstat();
 #endif
 
     // count the number of times this loop is called and use

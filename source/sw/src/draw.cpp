@@ -1748,18 +1748,10 @@ void DrawMessageInput(void)
         MNU_MeasureString(MessageInputString, &w, &h);
 
         cur_show ^= 1;
-        if (cur_show)
-        {
-            MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
-                         (ROTATE_SPRITE_SCREEN_CLIP),0,0,xdim-1,ydim-1);
-        }
-        else
-        {
-            MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
-                         (ROTATE_SPRITE_SCREEN_CLIP),0,0,xdim-1,ydim-1);
-        }
+
+        MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
+        rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
+                     (ROTATE_SPRITE_SCREEN_CLIP),0,0,xdim-1,ydim-1);
     }
 }
 #else
@@ -1777,16 +1769,9 @@ void DrawMessageInput(void)
         MNU_MeasureSmallString(MessageInputString, &w, &h);
 
         cur_show ^= 1;
-        if (cur_show)
-        {
-            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
-        else
-        {
-            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
+
+        minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
+        rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
     }
 }
 #endif
@@ -1807,18 +1792,10 @@ void DrawConInput(void)
         MNU_MeasureSmallString(MessageInputString, &w, &h);
 
         cur_show ^= 1;
-        if (cur_show)
-        {
-            MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
-            rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-            //rotatesprite((PANELINPUTX+w+3)<<16,(PANELINPUTY)<<16,64<<8,0,COINCURSOR+((totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
-        else
-        {
-            MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
-            rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-            //rotatesprite((PANELINPUTX+w+3)<<16,(PANELINPUTY)<<16,64<<8,0,COINCURSOR+((totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
+
+        MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
+        rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
+        //rotatesprite((PANELINPUTX+w+3)<<16,(PANELINPUTY)<<16,64<<8,0,COINCURSOR+((totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
     }
 }
 
