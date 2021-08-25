@@ -349,11 +349,6 @@ void DebugWriteLoc(char *fname, int line)
     fflush(debug_fout);
 }
 
-void Mono_Print(char *str)
-{
-    MONO_PRINT(str);
-}
-
 
 extern SWBOOL DrawScreen;
 #if RANDOM_DEBUG
@@ -2974,9 +2969,8 @@ dsprintf(char *str, char *format, ...)
 }
 
 void
-dsprintf_null(char *str, const char *format, ...)
+dsprintf_null(char * /*str*/, const char * /*format*/, ...)
 {
-    va_list arglist;
 }
 
 void getinput(SW_PACKET *, SWBOOL);
@@ -3346,7 +3340,7 @@ int DetectShareware(void)
 }
 
 
-void CommandLineHelp(char const * const * argv)
+void CommandLineHelp(char const * const * /*argv*/)
 {
     int i;
 #if 1 /* defined RENDERTYPEWIN */

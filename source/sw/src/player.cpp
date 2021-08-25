@@ -1133,7 +1133,7 @@ SetVisNorm(void)
     return 0;
 }
 
-void pSetVisNorm(PANEL_SPRITEp psp)
+void pSetVisNorm(PANEL_SPRITEp /*psp*/)
 {
 //    SetVisNorm();
 }
@@ -7717,8 +7717,6 @@ MoveSkipSavePos(void)
 
 void PlayerTimers(PLAYERp pp)
 {
-    SPRITEp sp = pp->SpriteP;
-
     InventoryTimer(pp);
 }
 

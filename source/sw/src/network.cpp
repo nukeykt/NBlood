@@ -134,7 +134,6 @@ void netsendpacket(int ind, uint8_t* buf, int len)
 {
     uint8_t bbuf[sizeof(packbuf) + sizeof(PACKET_PROXY)];
     PACKET_PROXYp prx = (PACKET_PROXYp)bbuf;
-    int i;
 
     // send via master if in M/S mode and we are not the master, and the recipient is not the master and not ourselves
     if (!NetBroadcastMode && myconnectindex != connecthead && ind != myconnectindex && ind != connecthead)
@@ -147,7 +146,7 @@ void netsendpacket(int ind, uint8_t* buf, int len)
 
 #ifdef NET_DEBUG_MSGS
         buildprintf("netsendpacket() sends proxy to %d\nPlayerIndex=%d Contents:",connecthead,ind);
-        for (i=0; i<len; i++)
+        for (int i=0; i<len; i++)
             buildprintf(" %02x", buf[i]);
         buildputs("\n");
 #endif
@@ -165,7 +164,7 @@ void netsendpacket(int ind, uint8_t* buf, int len)
 
 #ifdef NET_DEBUG_MSGS
     buildprintf("netsendpacket() sends normal to %d\nContents:",ind);
-    for (i=0; i<len; i++)
+    for (int i=0; i<len; i++)
         buildprintf(" %02x", buf[i]);
     buildputs("\n");
 #endif

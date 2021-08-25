@@ -428,9 +428,6 @@ int DoRotatorMove(short SpriteNum)
 
 int DoRotator(short SpriteNum)
 {
-    USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
-
     // could move this inside sprite control
     DoRotatorMove(SpriteNum);
 

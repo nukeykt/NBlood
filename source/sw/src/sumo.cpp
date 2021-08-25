@@ -734,9 +734,6 @@ int InitSumoCharge(short SpriteNum)
 
 int DoSumoRumble(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
-
     SetSumoQuake(SpriteNum);
 
     return 0;

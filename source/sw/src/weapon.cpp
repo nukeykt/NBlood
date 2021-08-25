@@ -10508,13 +10508,13 @@ DoBoltSeeker(int16_t Weapon)
 }
 
 int
-DoBoltShrapnel(int16_t Weapon)
+DoBoltShrapnel(int16_t /*Weapon*/)
 {
     return 0;
 }
 
 int
-DoBoltFatMan(int16_t Weapon)
+DoBoltFatMan(int16_t /*Weapon*/)
 {
     return 0;
 }
@@ -11762,9 +11762,6 @@ InitMineShrap(short SpriteNum)
 
 int DoMineExp(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
-
     DoExpDamageTest(SpriteNum);
     //InitMineShrap(SpriteNum);
 
@@ -12482,7 +12479,7 @@ DoBloodWorm(int16_t Weapon)
 #endif
 
 int
-DoMeteor(int16_t Weapon)
+DoMeteor(int16_t /*Weapon*/)
 {
     return FALSE;
 }
@@ -13060,7 +13057,7 @@ DoSerpRing(int16_t Weapon)
 }
 
 int
-InitLavaFlame(short SpriteNum)
+InitLavaFlame(short /*SpriteNum*/)
 {
     return 0;
 }

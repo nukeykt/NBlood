@@ -1781,10 +1781,8 @@ ACTOR_ACTION_SET PlayerNinjaActionSet =
 };
 
 int
-DoHariKariBlood(short SpriteNum)
+DoHariKariBlood(short /*SpriteNum*/)
 {
-    SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
     return 0;
 }
 
@@ -2122,9 +2120,6 @@ int CheckFire(short SpriteNum)
 int
 DoNinjaCeiling(short SpriteNum)
 {
-    USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
-
     DoActorSectorDamage(SpriteNum);
 
     return 0;

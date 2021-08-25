@@ -2881,7 +2881,7 @@ static char SaveGameInfo1[80];
 static char SaveGameInfo2[80];
 
 SWBOOL
-MNU_LoadSaveMove(UserCall call, MenuItem_p item)
+MNU_LoadSaveMove(UserCall /*call*/, MenuItem_p /*item*/)
 {
     short i;
     short game_num;

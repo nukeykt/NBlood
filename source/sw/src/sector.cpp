@@ -917,13 +917,15 @@ OperateSector(short sectnum, short player_is_operating)
 }
 
 int
-OperateWall(short wallnum, short player_is_operating)
+OperateWall(short /*wallnum*/, short /*player_is_operating*/)
 {
+#if 0
     WALLp wallp = &wall[wallnum];
 
     switch (LOW_TAG_WALL(wallnum))
     {
     }
+#endif
 
     return FALSE;
 }
@@ -1192,14 +1194,12 @@ DoSpawnSpotsForDamage(short match)
 }
 
 void
-DoSoundSpotMatch(short match, short sound_num, short sound_type)
+DoSoundSpotMatch(short match, short sound_num, short /*sound_type*/)
 {
     short sn, next_sn;
     SPRITEp sp;
     int flags;
     short snd2play;
-
-    //sound_type is not used
 
     sound_num--;
 
