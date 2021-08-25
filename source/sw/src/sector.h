@@ -74,7 +74,9 @@ void ShootableSwitch(short SpriteNum);
 SWBOOL TestKillSectorObject(SECTOR_OBJECTp sop);
 void WeaponExplodeSectorInRange(short weapon);
 
+#if 0
 void initlava(void);
 void movelava(char *dapic);
+#endif
 
 #endif

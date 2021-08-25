@@ -1502,7 +1502,9 @@ InitLevel(void)
     PlaceActorsOnTracks();
     PostSetupSectorObject();
     SetupMirrorTiles();
+#if 0
     initlava();
+#endif
 
     SongLevelNum = Level;
 

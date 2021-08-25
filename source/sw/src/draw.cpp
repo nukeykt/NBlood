@@ -2506,8 +2506,10 @@ drawscreen(PLAYERp pp)
     {
         gotpic[SLIME >> 3] &= ~(1 << (SLIME & 7));
 
+#if 0
         if (waloff[SLIME])
             movelava((char *) waloff[SLIME]);
+#endif
     }
 
 

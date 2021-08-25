@@ -3046,9 +3046,9 @@ AnimSetVelAdj(short anim_ndx, short vel_adj)
 }
 
 
+#if 0
 void initlava(void)
 {
-#if 0
     int x, y, z, r;
     int i;
 
@@ -3094,12 +3094,10 @@ void initlava(void)
 
     lavanumdrops = 0;
     lavanumframes = 0;
-#endif
 }
 
 void movelava(char *dapic)
 {
-#if 0
 //    #define COLOR_OFFSET 192
 #define COLOR_OFFSET LT_BROWN
 
@@ -3207,8 +3205,8 @@ void movelava(char *dapic)
     }
 
     lavanumframes++;
-#endif
 }
+#endif
 
 
 void
