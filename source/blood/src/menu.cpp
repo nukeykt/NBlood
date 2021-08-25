@@ -50,7 +50,7 @@ void SetGamma(CGameMenuItemSlider *);
 void SetMusicVol(CGameMenuItemSlider *);
 void SetSoundVol(CGameMenuItemSlider *);
 void SetCDVol(CGameMenuItemSlider *);
-void SetDoppler(CGameMenuItemZBool *);
+void SetMonoStereo(CGameMenuItemZBool *);
 void SetCrosshair(CGameMenuItemZBool *);
 void SetCenterHoriz(CGameMenuItemZBool *);
 void SetShowPlayerNames(CGameMenuItemZBool *);
@@ -250,7 +250,7 @@ CGameMenuItemSlider sliderGamma("GAMMA:", 3, 66, 60, 180, gGamma, 0, 15, 2, SetG
 CGameMenuItemSlider sliderMusic("MUSIC:", 3, 66, 70, 180, MusicVolume, 0, 256, 48, SetMusicVol, -1, -1);
 CGameMenuItemSlider sliderSound("SOUND:", 3, 66, 80, 180, FXVolume, 0, 256, 48, SetSoundVol, -1, -1);
 CGameMenuItemSlider sliderCDAudio("CD AUDIO:", 3, 66, 90, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
-CGameMenuItemZBool bool3DAudio("3D AUDIO:", 3, 66, 100, 180, gDoppler, SetDoppler, NULL, NULL);
+CGameMenuItemZBool bool3DAudio("3D AUDIO:", 3, 66, 100, 180, gStereo, SetMonoStereo, NULL, NULL);
 CGameMenuItemZBool boolCrosshair("CROSSHAIR:", 3, 66, 110, 180, gAimReticle, SetCrosshair, NULL, NULL);
 CGameMenuItemZCycle itemCycleShowWeapons("SHOW WEAPONS:", 3, 66, 120, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
 CGameMenuItemZBool boolSlopeTilting("SLOPE TILTING:", 3, 66, 130, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
@@ -331,7 +331,7 @@ CGameMenuItemTitle itemSoundsTitle("SOUNDS", 1, 160, 20, 2038);
 CGameMenuItemSlider itemSoundsMusic("MUSIC:", 3, 40, 60, 180, MusicVolume, 0, 256, 48, SetMusicVol, -1, -1);
 CGameMenuItemSlider itemSoundsSound("SOUND:", 3, 40, 70, 180, FXVolume, 0, 256, 48, SetSoundVol, -1, -1);
 CGameMenuItemSlider itemSoundsCDAudio("CD AUDIO:", 3, 40, 80, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
-CGameMenuItemZBool itemSounds3DAudio("3D SOUND:", 3, 40, 90, 180, gDoppler, SetDoppler, NULL, NULL);
+CGameMenuItemZBool itemSounds3DAudio("3D SOUND:", 3, 40, 90, 180, gStereo, SetMonoStereo, NULL, NULL);
 
 CGameMenuItemTitle itemQuitTitle("QUIT", 1, 160, 20, 2038);
 CGameMenuItemText itemQuitText1("Do you really want to quit?", 0, 160, 100, 1);
@@ -798,7 +798,7 @@ void SetupOptionsOldMenu(void)
     sliderGamma.nValue = ClipRange(gGamma, sliderGamma.nRangeLow, sliderGamma.nRangeHigh);
     sliderMusic.nValue = ClipRange(MusicVolume, sliderMusic.nRangeLow, sliderMusic.nRangeHigh);
     sliderSound.nValue = ClipRange(FXVolume, sliderSound.nRangeLow, sliderSound.nRangeHigh);
-    bool3DAudio.at20 = gDoppler;
+    bool3DAudio.at20 = gStereo;
     boolCrosshair.at20 = gAimReticle;
     itemCycleShowWeapons.m_nFocus = gShowWeapon;
     boolSlopeTilting.at20 = gSlopeTilting;
@@ -1409,9 +1409,9 @@ void UpdateNetworkMenus(void)
     }
 }
 
-void SetDoppler(CGameMenuItemZBool *pItem)
+void SetMonoStereo(CGameMenuItemZBool *pItem)
 {
-    gDoppler = pItem->at20;
+    gStereo = pItem->at20;
 }
 
 void SetCrosshair(CGameMenuItemZBool *pItem)
@@ -1883,7 +1883,7 @@ void UpdateMusicToggle(CGameMenuItemZBool *pItem)
 
 void Update3DToggle(CGameMenuItemZBool *pItem)
 {
-    gDoppler = pItem->at20;
+    gStereo = pItem->at20;
 }
 
 void UpdateCDToggle(CGameMenuItemZBool *pItem)
@@ -1953,7 +1953,7 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     itemOptionsSoundSoundToggle.at20 = SoundToggle;
     itemOptionsSoundMusicToggle.at20 = MusicToggle;
-    itemOptionsSound3DToggle.at20 = gDoppler;
+    itemOptionsSound3DToggle.at20 = gStereo;
     itemOptionsSoundCDToggle.at20 = CDAudioToggle;
     itemOptionsSoundSampleRate.m_nFocus = 0;
     for (int i = 0; i < 3; i++)

@@ -7084,29 +7084,29 @@ int aiPatrolSearchTargets(spritetype* pSprite, XSPRITE* pXSprite) {
 
                 //BONKLE* pBonk = &Bonkle[nBonk];
                 BONKLE* pBonk = BonkleCache[nBonk];
-                if ((pBonk->atc <= 0) || (!pBonk->at0 && !pBonk->at4))
+                if ((pBonk->sfxId <= 0) || (!pBonk->lChan && !pBonk->rChan))
                     continue; // sound is not playing
 
-                int nDist1 = approxDist(pBonk->at20.x - pSprite->x, pBonk->at20.y - pSprite->y); // channel 1
-                int nDist2 = approxDist(pBonk->at2c.x - pSprite->x, pBonk->at2c.y - pSprite->y); // channel 2
+                int nDist1 = approxDist(pBonk->curPos.x - pSprite->x, pBonk->curPos.y - pSprite->y); // channel 1
+                int nDist2 = approxDist(pBonk->oldPos.x - pSprite->x, pBonk->oldPos.y - pSprite->y); // channel 2
                 if (nDist1 > hearDist && nDist2 > hearDist)
                     continue;
 
                 // N same sounds per single enemy
                 for (f = 0; f < kMaxPatrolFoundSounds; f++) {
-                    if (patrolBonkles[f].snd != pBonk->atc) continue;
+                    if (patrolBonkles[f].snd != pBonk->sfxId) continue;
                     else if (++patrolBonkles[f].cur >= patrolBonkles[f].max)
                         break;
                 }
 
                 if (f < kMaxPatrolFoundSounds) continue;
                 else if (sndCnt < kMaxPatrolFoundSounds - 1)
-                    patrolBonkles[sndCnt++].snd = pBonk->atc;
+                    patrolBonkles[sndCnt++].snd = pBonk->sfxId;
 
                 // sound attached to the sprite
-                if (pBonk->at10) {
+                if (pBonk->pSndSpr) {
 
-                    spritetype* pSndSpr = pBonk->at10;
+                    spritetype* pSndSpr = pBonk->pSndSpr;
                     if (pSpr->index != pSndSpr->index && actSpriteOwnerToSpriteId(pSndSpr) != pSpr->index) {
 
                         if (!sectRangeIsFine(pSndSpr->sectnum)) continue;
@@ -7122,9 +7122,9 @@ int aiPatrolSearchTargets(spritetype* pSprite, XSPRITE* pXSprite) {
                     //viewSetSystemMessage("FOUND SPRITE");
 
                 // sound playing at x, y, z
-                } else if (sectRangeIsFine(pBonk->at38)) {
+                } else if (sectRangeIsFine(pBonk->sectnum)) {
 
-                    for (f = headspritesect[pBonk->at38]; f != -1; f = nextspritesect[f]) {
+                    for (f = headspritesect[pBonk->sectnum]; f != -1; f = nextspritesect[f]) {
                         if (actSpriteOwnerToSpriteId(&sprite[f]) == pSpr->index)
                             break;
                     }
@@ -7141,11 +7141,11 @@ int aiPatrolSearchTargets(spritetype* pSprite, XSPRITE* pXSprite) {
                 }
 
                 f = ClipLow((hearDist - ((nDist1 < hearDist) ? nDist1 : nDist2)) / 8, 0);
-                hearChance += mulscale8(pBonk->at1c, f) + Random(gGameOptions.nDifficulty);
+                hearChance += mulscale8(pBonk->vol, f) + Random(gGameOptions.nDifficulty);
                 if (hearChance >= kMaxPatrolSpotValue)
                     break;
 
-                //viewSetSystemMessage("CNT %d, HEAR %d / %d, SOUND %d, VOL %d", sndCnt, hearChance, f, pBonk->atc, pBonk->at1c);
+                //viewSetSystemMessage("CNT %d, HEAR %d / %d, SOUND %d, VOL %d", sndCnt, hearChance, f, pBonk->sfxId, pBonk->vol);
 
                 
         }

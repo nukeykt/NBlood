@@ -25,24 +25,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct BONKLE
 {
-    int at0;
-    int at4;
-    DICTNODE* at8;
-    int atc;
-    spritetype* at10;
-    int at14; // priority
-    int at18;
-    int at1c;
-    POINT3D at20;
-    POINT3D at2c;
-    //int at20;
-    //int at24;
-    //int at28;
-    //int at2c;
-    //int at30;
-    //int at34;
-    int at38;
-    int at3c;
+    int lChan; // in terms of audio, left channel is main channel when using mono
+    int rChan;
+    DICTNODE* hSnd;
+    int sfxId;
+    spritetype* pSndSpr;
+    int chanId;
+    int pitch;
+    int vol;
+    POINT3D curPos;
+    POINT3D oldPos;
+    int sectnum;
+    int format;
 };
 
 extern BONKLE Bonkle[256];
@@ -51,9 +45,9 @@ extern BONKLE* BonkleCache[256];
 void sfxInit(void);
 void sfxTerm(void);
 void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector);
-void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3 = -1, int a4 = 0);
-void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3 = -1, int a4 = 0, int pitch = 0, int volume = 0);
-void sfxKill3DSound(spritetype *pSprite, int a2 = -1, int a3 = -1);
+void sfxPlay3DSound(spritetype *pSprite, int soundId, int chanId = -1, int nFlags = 0);
+void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int chanId = -1, int nFlags = 0, int pitch = 0, int volume = 0);
+void sfxKill3DSound(spritetype *pSprite, int chanId = -1, int soundId = -1);
 void sfxKillAllSounds(void);
 void sfxKillSpriteSounds(spritetype *pSprite);
 void sfxUpdate3DSounds(void);

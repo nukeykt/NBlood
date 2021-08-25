@@ -61,9 +61,9 @@ int Vol3d(int angle, int dist)
 
 void Calc3DValues(BONKLE *pBonkle)
 {
-    int dx = pBonkle->at20.x - gMe->pSprite->x;
-    int dy = pBonkle->at20.y - gMe->pSprite->y;
-    int dz = pBonkle->at20.z - gMe->pSprite->z;
+    int dx = pBonkle->curPos.x - gMe->pSprite->x;
+    int dy = pBonkle->curPos.y - gMe->pSprite->y;
+    int dz = pBonkle->curPos.z - gMe->pSprite->z;
     int angle = getangle(dx, dy);
     dx >>= 4;
     dy >>= 4;
@@ -71,24 +71,24 @@ void Calc3DValues(BONKLE *pBonkle)
     int distance = ksqrt(dx*dx + dy * dy + dz * dz);
     distance = ClipLow((distance >> 2) + (distance >> 3), 64);
     int v14, v18;
-    v14 = v18 = scale(pBonkle->at1c, 80, distance);
+    v14 = v18 = scale(pBonkle->vol, 80, distance);
     int sinVal = Sin(angle);
     int cosVal = Cos(angle);
-    int v8 = dmulscale30r(cosVal, pBonkle->at20.x - pBonkle->at2c.x, sinVal, pBonkle->at20.y - pBonkle->at2c.y);
+    int v8 = dmulscale30r(cosVal, pBonkle->curPos.x - pBonkle->oldPos.x, sinVal, pBonkle->curPos.y - pBonkle->oldPos.y);
 
-    int distanceL = approxDist(pBonkle->at20.x - earL.x, pBonkle->at20.y - earL.y);
+    int distanceL = approxDist(pBonkle->curPos.x - earL.x, pBonkle->curPos.y - earL.y);
     lVol = Vol3d(angle - (gMe->pSprite->ang - 85), v18);
-    int phaseLeft = mulscale16r(distanceL, pBonkle->at3c == 1 ? 4114 : 8228);
-    lPitch = scale(pBonkle->at18, dmulscale30r(cosVal, earVL.dx, sinVal, earVL.dy) + 5853, v8 + 5853);
-    if (lPitch < 0 || lPitch > pBonkle->at18 * 4)
-        lPitch = pBonkle->at18;
+    int phaseLeft = mulscale16r(distanceL, pBonkle->format == 1 ? 4114 : 8228);
+    lPitch = scale(pBonkle->pitch, dmulscale30r(cosVal, earVL.dx, sinVal, earVL.dy) + 5853, v8 + 5853);
+    if (lPitch < 0 || lPitch > pBonkle->pitch * 4)
+        lPitch = pBonkle->pitch;
 
-    int distanceR = approxDist(pBonkle->at20.x - earR.x, pBonkle->at20.y - earR.y);
+    int distanceR = approxDist(pBonkle->curPos.x - earR.x, pBonkle->curPos.y - earR.y);
     rVol = Vol3d(angle - (gMe->pSprite->ang + 85), v14);
-    int phaseRight = mulscale16r(distanceR, pBonkle->at3c == 1 ? 4114 : 8228);
-    rPitch = scale(pBonkle->at18, dmulscale30r(cosVal, earVR.dx, sinVal, earVR.dy) + 5853, v8 + 5853);
-    if (rPitch < 0 || rPitch > pBonkle->at18 * 4)
-        rPitch = pBonkle->at18;
+    int phaseRight = mulscale16r(distanceR, pBonkle->format == 1 ? 4114 : 8228);
+    rPitch = scale(pBonkle->pitch, dmulscale30r(cosVal, earVR.dx, sinVal, earVR.dy) + 5853, v8 + 5853);
+    if (rPitch < 0 || rPitch > pBonkle->pitch * 4)
+        rPitch = pBonkle->pitch;
 
     int phaseMin = ClipHigh(phaseLeft, phaseRight);
     lPhase = phaseRight - phaseMin;
@@ -111,18 +111,18 @@ void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
     if (nBonkles >= 256)
         return;
     BONKLE *pBonkle = BonkleCache[nBonkles++];
-    pBonkle->at10 = NULL;
-    pBonkle->at20.x = x;
-    pBonkle->at20.y = y;
-    pBonkle->at20.z = z;
-    pBonkle->at38 = nSector;
-    FindSector(x, y, z, &pBonkle->at38);
-    pBonkle->at2c = pBonkle->at20;
-    pBonkle->atc = soundId;
-    pBonkle->at8 = hRes;
-    pBonkle->at1c = pEffect->relVol;
-    pBonkle->at18 = v18;
-    pBonkle->at3c = pEffect->format;
+    pBonkle->pSndSpr = NULL;
+    pBonkle->curPos.x = x;
+    pBonkle->curPos.y = y;
+    pBonkle->curPos.z = z;
+    pBonkle->sectnum = nSector;
+    FindSector(x, y, z, &pBonkle->sectnum);
+    pBonkle->oldPos = pBonkle->curPos;
+    pBonkle->sfxId = soundId;
+    pBonkle->hSnd = hRes;
+    pBonkle->vol = pEffect->relVol;
+    pBonkle->pitch = v18;
+    pBonkle->format = pEffect->format;
     int size = hRes->size;
     char *pData = (char*)gSoundRes.Lock(hRes);
     Calc3DValues(pBonkle);
@@ -131,21 +131,21 @@ void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
         priority = lVol;
     if (priority < rVol)
         priority = rVol;
-    if (gDoppler)
+    if (gStereo)
     {
         MV_Lock();
-        pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->at0);
-        pBonkle->at4 = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->at4);
+        pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->lChan);
+        pBonkle->rChan = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->rChan);
         MV_Unlock();
     }
     else
     {
-        pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, v1c, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)&pBonkle->at0);
-        pBonkle->at4 = 0;
+        pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, v1c, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)&pBonkle->lChan);
+        pBonkle->rChan = 0;
     }
 }
 
-void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
+void sfxPlay3DSound(spritetype *pSprite, int soundId, int chanId, int nFlags)
 {
     if (!SoundToggle)
         return;
@@ -167,26 +167,26 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
     int v14;
     v14 = mulscale16(pEffect->pitch, sndGetRate(pEffect->format));
     BONKLE *pBonkle = NULL;
-    if (a3 >= 0)
+    if (chanId >= 0)
     {
         int i;
         for (i = 0; i < nBonkles; i++)
         {
             pBonkle = BonkleCache[i];
-            if (pBonkle->at14 == a3 && (pBonkle->at10 == pSprite || (a4 & 1) != 0))
+            if (pBonkle->chanId == chanId && (pBonkle->pSndSpr == pSprite || (nFlags & 1) != 0))
             {
-                if ((a4 & 4) != 0 && pBonkle->at14 == a3)
+                if ((nFlags & 4) != 0 && pBonkle->chanId == chanId)
                     return;
-                if ((a4 & 2) != 0 && pBonkle->atc == soundId)
+                if ((nFlags & 2) != 0 && pBonkle->sfxId == soundId)
                     return;
-                if (pBonkle->at0 > 0)
-                    FX_StopSound(pBonkle->at0);
-                if (pBonkle->at4 > 0)
-                    FX_StopSound(pBonkle->at4);
-                if (pBonkle->at8)
+                if (pBonkle->lChan > 0)
+                    FX_StopSound(pBonkle->lChan);
+                if (pBonkle->rChan > 0)
+                    FX_StopSound(pBonkle->rChan);
+                if (pBonkle->hSnd)
                 {
-                    gSoundRes.Unlock(pBonkle->at8);
-                    pBonkle->at8 = NULL;
+                    gSoundRes.Unlock(pBonkle->hSnd);
+                    pBonkle->hSnd = NULL;
                 }
                 break;
             }
@@ -197,25 +197,25 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
                 return;
             pBonkle = BonkleCache[nBonkles++];
         }
-        pBonkle->at10 = pSprite;
-        pBonkle->at14 = a3;
+        pBonkle->pSndSpr = pSprite;
+        pBonkle->chanId = chanId;
     }
     else
     {
         if (nBonkles >= 256)
             return;
         pBonkle = BonkleCache[nBonkles++];
-        pBonkle->at10 = NULL;
+        pBonkle->pSndSpr = NULL;
     }
-    pBonkle->at20.x = pSprite->x;
-    pBonkle->at20.y = pSprite->y;
-    pBonkle->at20.z = pSprite->z;
-    pBonkle->at38 = pSprite->sectnum;
-    pBonkle->at2c = pBonkle->at20;
-    pBonkle->atc = soundId;
-    pBonkle->at8 = hRes;
-    pBonkle->at1c = pEffect->relVol;
-    pBonkle->at18 = v14;
+    pBonkle->curPos.x = pSprite->x;
+    pBonkle->curPos.y = pSprite->y;
+    pBonkle->curPos.z = pSprite->z;
+    pBonkle->sectnum = pSprite->sectnum;
+    pBonkle->oldPos = pBonkle->curPos;
+    pBonkle->sfxId = soundId;
+    pBonkle->hSnd = hRes;
+    pBonkle->vol = pEffect->relVol;
+    pBonkle->pitch = v14;
     Calc3DValues(pBonkle);
     int priority = 1;
     if (priority < lVol)
@@ -224,42 +224,42 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
         priority = rVol;
     int loopStart = pEffect->loopStart;
     int loopEnd = ClipLow(size - 1, 0);
-    if (a3 < 0)
+    if (chanId < 0)
         loopStart = -1;
     MV_Lock();
     char *pData = (char*)gSoundRes.Lock(hRes);
     if (loopStart >= 0)
     {
-        if (gDoppler)
+        if (gStereo)
         {
-            pBonkle->at0 = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->at0);
-            pBonkle->at4 = FX_PlayLoopedRaw(pData + rPhase, size - rPhase, pData + loopStart, pData + loopEnd, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->at4);
+            pBonkle->lChan = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->lChan);
+            pBonkle->rChan = FX_PlayLoopedRaw(pData + rPhase, size - rPhase, pData + loopStart, pData + loopEnd, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->rChan);
         }
         else
         {
-            pBonkle->at0 = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)&pBonkle->at0);
-            pBonkle->at4 = 0;
+            pBonkle->lChan = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)&pBonkle->lChan);
+            pBonkle->rChan = 0;
         }
     }
     else
     {
-        pData = (char*)gSoundRes.Lock(pBonkle->at8);
-        if (gDoppler)
+        pData = (char*)gSoundRes.Lock(pBonkle->hSnd);
+        if (gStereo)
         {
-            pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->at0);
-            pBonkle->at4 = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->at4);
+            pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->lChan);
+            pBonkle->rChan = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->rChan);
         }
         else
         {
-            pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)&pBonkle->at0);
-            pBonkle->at4 = 0;
+            pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)&pBonkle->lChan);
+            pBonkle->rChan = 0;
         }
     }
     MV_Unlock();
 }
 
 // by NoOne: same as previous, but allows to set custom pitch for sound AND volume.
-void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitch, int volume)
+void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int chanId, int nFlags, int pitch, int volume)
 {
     if (!SoundToggle || !pSprite || soundId < 0) return;
     DICTNODE* hRes = gSoundRes.Lookup(soundId, "SFX");
@@ -278,26 +278,26 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
     v14 = mulscale16(pitch, sndGetRate(pEffect->format));
     
     BONKLE * pBonkle = NULL;
-    if (a3 >= 0)
+    if (chanId >= 0)
     {
         int i;
         for (i = 0; i < nBonkles; i++)
         {
             pBonkle = BonkleCache[i];
-            if (pBonkle->at14 == a3 && (pBonkle->at10 == pSprite || (a4 & 1) != 0))
+            if (pBonkle->chanId == chanId && (pBonkle->pSndSpr == pSprite || (nFlags & 1) != 0))
             {
-                if ((a4 & 4) != 0 && pBonkle->at14 == a3)
+                if ((nFlags & 4) != 0 && pBonkle->chanId == chanId)
                     return;
-                if ((a4 & 2) != 0 && pBonkle->atc == soundId)
+                if ((nFlags & 2) != 0 && pBonkle->sfxId == soundId)
                     return;
-                if (pBonkle->at0 > 0)
-                    FX_StopSound(pBonkle->at0);
-                if (pBonkle->at4 > 0)
-                    FX_StopSound(pBonkle->at4);
-                if (pBonkle->at8)
+                if (pBonkle->lChan > 0)
+                    FX_StopSound(pBonkle->lChan);
+                if (pBonkle->rChan > 0)
+                    FX_StopSound(pBonkle->rChan);
+                if (pBonkle->hSnd)
                 {
-                    gSoundRes.Unlock(pBonkle->at8);
-                    pBonkle->at8 = NULL;
+                    gSoundRes.Unlock(pBonkle->hSnd);
+                    pBonkle->hSnd = NULL;
                 }
                 break;
             }
@@ -308,25 +308,25 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
                 return;
             pBonkle = BonkleCache[nBonkles++];
         }
-        pBonkle->at10 = pSprite;
-        pBonkle->at14 = a3;
+        pBonkle->pSndSpr = pSprite;
+        pBonkle->chanId = chanId;
     }
     else
     {
         if (nBonkles >= 256)
             return;
         pBonkle = BonkleCache[nBonkles++];
-        pBonkle->at10 = NULL;
+        pBonkle->pSndSpr = NULL;
     }
-    pBonkle->at20.x = pSprite->x;
-    pBonkle->at20.y = pSprite->y;
-    pBonkle->at20.z = pSprite->z;
-    pBonkle->at38 = pSprite->sectnum;
-    pBonkle->at2c = pBonkle->at20;
-    pBonkle->atc = soundId;
-    pBonkle->at8 = hRes;
-    pBonkle->at1c = ((volume == 0) ? pEffect->relVol : ((volume == -1) ? 0 : ((volume > 255) ? 255 : volume)));
-    pBonkle->at18 = v14;
+    pBonkle->curPos.x = pSprite->x;
+    pBonkle->curPos.y = pSprite->y;
+    pBonkle->curPos.z = pSprite->z;
+    pBonkle->sectnum = pSprite->sectnum;
+    pBonkle->oldPos = pBonkle->curPos;
+    pBonkle->sfxId = soundId;
+    pBonkle->hSnd = hRes;
+    pBonkle->vol = ((volume == 0) ? pEffect->relVol : ((volume == -1) ? 0 : ((volume > 255) ? 255 : volume)));
+    pBonkle->pitch = v14;
     Calc3DValues(pBonkle);
     int priority = 1;
     if (priority < lVol)
@@ -335,35 +335,35 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
         priority = rVol;
     int loopStart = pEffect->loopStart;
     int loopEnd = ClipLow(size - 1, 0);
-    if (a3 < 0)
+    if (chanId < 0)
         loopStart = -1;
     MV_Lock();
     char* pData = (char*)gSoundRes.Lock(hRes);
     if (loopStart >= 0)
     {
-        if (gDoppler)
+        if (gStereo)
         {
-            pBonkle->at0 = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)& pBonkle->at0);
-            pBonkle->at4 = FX_PlayLoopedRaw(pData + rPhase, size - rPhase, pData + loopStart, pData + loopEnd, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)& pBonkle->at4);
+            pBonkle->lChan = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)& pBonkle->lChan);
+            pBonkle->rChan = FX_PlayLoopedRaw(pData + rPhase, size - rPhase, pData + loopStart, pData + loopEnd, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)& pBonkle->rChan);
         }
         else
         {
-            pBonkle->at0 = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)& pBonkle->at0);
-            pBonkle->at4 = 0;
+            pBonkle->lChan = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)& pBonkle->lChan);
+            pBonkle->rChan = 0;
         }
     }
     else
     {
-        pData = (char*)gSoundRes.Lock(pBonkle->at8);
-        if (gDoppler)
+        pData = (char*)gSoundRes.Lock(pBonkle->hSnd);
+        if (gStereo)
         {
-            pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)& pBonkle->at0);
-            pBonkle->at4 = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)& pBonkle->at4);
+            pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)& pBonkle->lChan);
+            pBonkle->rChan = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)& pBonkle->rChan);
         }
         else
         {
-            pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)& pBonkle->at0);
-            pBonkle->at4 = 0;
+            pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, v14, 0, lVol, lVol, rVol, priority, fix16_one, (intptr_t)& pBonkle->lChan);
+            pBonkle->rChan = 0;
         }
     }
     MV_Unlock();
@@ -372,33 +372,33 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
 EXTERN_INLINE void sfxKillSoundInternal(int i)
 {
     BONKLE *pBonkle = BonkleCache[i];
-    if (pBonkle->at0 > 0)
+    if (pBonkle->lChan > 0)
     {
-        FX_EndLooping(pBonkle->at0);
-        FX_StopSound(pBonkle->at0);
+        FX_EndLooping(pBonkle->lChan);
+        FX_StopSound(pBonkle->lChan);
     }
-    if (pBonkle->at4 > 0)
+    if (pBonkle->rChan > 0)
     {
-        FX_EndLooping(pBonkle->at4);
-        FX_StopSound(pBonkle->at4);
+        FX_EndLooping(pBonkle->rChan);
+        FX_StopSound(pBonkle->rChan);
     }
-    if (pBonkle->at8)
+    if (pBonkle->hSnd)
     {
-        gSoundRes.Unlock(pBonkle->at8);
-        pBonkle->at8 = NULL;
+        gSoundRes.Unlock(pBonkle->hSnd);
+        pBonkle->hSnd = NULL;
     }
     BonkleCache[i] = BonkleCache[--nBonkles];
     BonkleCache[nBonkles] = pBonkle;
 }
 
-void sfxKill3DSound(spritetype *pSprite, int a2, int a3)
+void sfxKill3DSound(spritetype *pSprite, int chanId, int soundId)
 {
     if (!pSprite)
         return;
     for (int i = nBonkles - 1; i >= 0; i--)
     {
         BONKLE *pBonkle = BonkleCache[i];
-        if (pBonkle->at10 == pSprite && (a2 < 0 || a2 == pBonkle->at14) && (a3 < 0 || a3 == pBonkle->atc))
+        if (pBonkle->pSndSpr == pSprite && (chanId < 0 || chanId == pBonkle->chanId) && (soundId < 0 || soundId == pBonkle->sfxId))
         {
             sfxKillSoundInternal(i);
             break;
@@ -421,7 +421,7 @@ void sfxKillSpriteSounds(spritetype *pSprite)
     for (int i = nBonkles - 1; i >= 0; i--)
     {
         BONKLE *pBonkle = BonkleCache[i];
-        if (pBonkle->at10 == pSprite)
+        if (pBonkle->pSndSpr == pSprite)
         {
             sfxKillSoundInternal(i);
         }
@@ -445,41 +445,41 @@ void sfxUpdate3DSounds(void)
     for (int i = nBonkles - 1; i >= 0; i--)
     {
         BONKLE *pBonkle = BonkleCache[i];
-        if (pBonkle->at0 > 0 || pBonkle->at4 > 0)
+        if (pBonkle->lChan > 0 || pBonkle->rChan > 0)
         {
-            if (!pBonkle->at8)
+            if (!pBonkle->hSnd)
                 continue;
-            if (pBonkle->at10)
+            if (pBonkle->pSndSpr)
             {
-                pBonkle->at2c = pBonkle->at20;
-                pBonkle->at20.x = pBonkle->at10->x;
-                pBonkle->at20.y = pBonkle->at10->y;
-                pBonkle->at20.z = pBonkle->at10->z;
-                pBonkle->at38 = pBonkle->at10->sectnum;
+                pBonkle->oldPos = pBonkle->curPos;
+                pBonkle->curPos.x = pBonkle->pSndSpr->x;
+                pBonkle->curPos.y = pBonkle->pSndSpr->y;
+                pBonkle->curPos.z = pBonkle->pSndSpr->z;
+                pBonkle->sectnum = pBonkle->pSndSpr->sectnum;
             }
             Calc3DValues(pBonkle);
             MV_Lock();
-            if (pBonkle->at0 > 0)
+            if (pBonkle->lChan > 0)
             {
-                if (pBonkle->at4 > 0)
+                if (pBonkle->rChan > 0)
                 {
-                    FX_SetPan(pBonkle->at0, lVol, lVol, 0);
-                    FX_SetFrequency(pBonkle->at0, lPitch);
+                    FX_SetPan(pBonkle->lChan, lVol, lVol, 0);
+                    FX_SetFrequency(pBonkle->lChan, lPitch);
                 }
                 else
-                    FX_SetPan(pBonkle->at0, lVol, lVol, rVol);
+                    FX_SetPan(pBonkle->lChan, lVol, lVol, rVol);
             }
-            if (pBonkle->at4 > 0)
+            if (pBonkle->rChan > 0)
             {
-                FX_SetPan(pBonkle->at4, rVol, 0, rVol);
-                FX_SetFrequency(pBonkle->at4, rPitch);
+                FX_SetPan(pBonkle->rChan, rVol, 0, rVol);
+                FX_SetFrequency(pBonkle->rChan, rPitch);
             }
             MV_Unlock();
         }
         else
         {
-            gSoundRes.Unlock(pBonkle->at8);
-            pBonkle->at8 = NULL;
+            gSoundRes.Unlock(pBonkle->hSnd);
+            pBonkle->hSnd = NULL;
             BonkleCache[i] = BonkleCache[--nBonkles];
             BonkleCache[nBonkles] = pBonkle;
         }
