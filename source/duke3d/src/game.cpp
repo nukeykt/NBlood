@@ -5544,7 +5544,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         {
             char *tokenPtr = pScript->ltextptr;
             char *fileName = NULL;
-            char *musicEnd;
+            char *soundEnd;
 
             double volume = 1.0;
 
@@ -5555,10 +5555,10 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             int32_t type     = 0;
             int32_t distance = 0;
 
-            if (scriptfile_getbraces(pScript, &musicEnd))
+            if (scriptfile_getbraces(pScript, &soundEnd))
                 break;
 
-            while (pScript->textptr < musicEnd)
+            while (pScript->textptr < soundEnd)
             {
                 switch (getatoken(pScript, soundTokens, ARRAY_SIZE(soundTokens)))
                 {

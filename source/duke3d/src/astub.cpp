@@ -96,9 +96,6 @@ static int32_t pathsearchmode_oninit;
 sound_t g_sounds[MAXSOUNDS];
 #pragma pack(pop)
 
-static int16_t g_definedsndnum[MAXSOUNDS];  // maps parse order index to g_sounds index
-static int16_t g_sndnum[MAXSOUNDS];  // maps current order index to g_sounds index
-int32_t g_numsounds = 0;
 static int32_t bstatus;
 
 static int32_t corruptchecktimer;
@@ -9240,6 +9237,16 @@ enum
 
     T_GAMESTARTUP,
 
+    T_SOUND,
+    T_FILE,
+    T_ID,
+    T_MINPITCH,
+    T_MAXPITCH,
+    T_PRIORITY,
+    T_TYPE,
+    T_DISTANCE,
+    T_VOLUME,
+
     T_DUMMY,
 };
 
@@ -9280,6 +9287,7 @@ static int32_t parsegroupfiles(scriptfile *script)
         { "loadgrp",         T_LOADGRP },
         { "cachesize",       T_CACHESIZE },
         { "noautoload",      T_NOAUTOLOAD },
+        { "sound",           T_SOUND },
         { "globalgameflags", T_GLOBALGAMEFLAGS },
     };
 
@@ -9353,6 +9361,69 @@ static int32_t parsegroupfiles(scriptfile *script)
         case T_NOAUTOLOAD:
             NoAutoLoad = 1;
             break;
+        case T_SOUND:
+        {
+            char *tokenPtr = script->ltextptr;
+            char *fileName = NULL;
+            char *soundEnd;
+
+            double volume = 1.0;
+
+            int32_t soundNum = -1;
+            int32_t maxpitch = 0;
+            int32_t minpitch = 0;
+            int32_t priority = 0;
+            int32_t type     = 0;
+            int32_t distance = 0;
+
+            if (scriptfile_getbraces(script, &soundEnd))
+                break;
+
+            char * definedName = nullptr;
+
+            static const tokenlist soundTokens[] =
+            {
+                { "id",       T_ID },
+                { "file",     T_FILE },
+                { "minpitch", T_MINPITCH },
+                { "maxpitch", T_MAXPITCH },
+                { "priority", T_PRIORITY },
+                { "type",     T_TYPE },
+                { "distance", T_DISTANCE },
+                { "volume",   T_VOLUME },
+            };
+
+            while (script->textptr < soundEnd)
+            {
+                switch (getatoken(script, soundTokens, ARRAY_SIZE(soundTokens)))
+                {
+                    case T_ID:
+                        definedName = script->ltextptr;
+                        scriptfile_getsymbol(script, &soundNum);
+                        break;
+                    case T_FILE:     scriptfile_getstring(script, &fileName); break;
+                    case T_MINPITCH: scriptfile_getsymbol(script, &minpitch); break;
+                    case T_MAXPITCH: scriptfile_getsymbol(script, &maxpitch); break;
+                    case T_PRIORITY: scriptfile_getsymbol(script, &priority); break;
+                    case T_TYPE:     scriptfile_getsymbol(script, &type);     break;
+                    case T_DISTANCE: scriptfile_getsymbol(script, &distance); break;
+                    case T_VOLUME:   scriptfile_getdouble(script, &volume);   break;
+                }
+            }
+
+            if (soundNum==-1)
+            {
+                initprintf("Error: missing ID for sound definition near line %s:%d\n", script->filename, scriptfile_getlinum(script, tokenPtr));
+                break;
+            }
+
+            if (fileName == NULL || check_file_exist(fileName))
+                break;
+
+            if (S_DefineSound(soundNum, fileName, definedName, minpitch, maxpitch, priority, type, distance, volume) == -1)
+                initprintf("Error: invalid sound ID on line %s:%d\n", script->filename, scriptfile_getlinum(script, tokenPtr));
+        }
+        break;
         case T_GLOBALGAMEFLAGS:
         {
             if (scriptfile_getnumber(script,&duke3d_m32_globalflags)) break;
@@ -9825,26 +9896,25 @@ static int32_t parseconsounds(scriptfile *script)
         }
         case T_DEFINESOUND:
         {
-            char *definedname, *filename;
+            char * filename;
             int32_t sndnum, ps, pe, pr, m, vo;
-            int32_t slen, duplicate=0;
+            int32_t slen;
 
             if (scriptfile_getsymbol(script, &sndnum)) break;
 
-            definedname = Xstrdup(script->ltextptr);
+            char * definedname = script->ltextptr;
+            float volume = 1.0;
 
             if (sndnum < 0 || sndnum >= MAXSOUNDS)
             {
                 initprintf("Warning: invalid sound definition %s (sound number < 0 or >= MAXSOUNDS) on line %s:%d\n",
                            definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                Xfree(definedname);
                 num_invalidsounds++;
                 break;
             }
 
             if (scriptfile_getstring(script, &filename))
             {
-                Xfree(definedname);
                 num_invalidsounds++;
                 break;
             }
@@ -9854,20 +9924,9 @@ static int32_t parseconsounds(scriptfile *script)
             {
                 initprintf("Warning: invalid sound definition %s (filename too long) on line %s:%d\n",
                            definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                Xfree(definedname);
                 num_invalidsounds++;
                 break;
             }
-
-            if (g_sounds[sndnum].filename)
-            {
-                duplicate = 1;
-                Xfree(g_sounds[sndnum].filename);
-            }
-            g_sounds[sndnum].filename = (char *)Xcalloc(slen+1,sizeof(uint8_t));
-            // Hopefully noone does memcpy(..., g_sounds[].filename, BMAX_PATH)
-
-            Bmemcpy(g_sounds[sndnum].filename, filename, slen+1);
 
             if (scriptfile_getnumber(script, &ps)) goto BAD;
             if (scriptfile_getnumber(script, &pe)) goto BAD;
@@ -9878,33 +9937,13 @@ static int32_t parseconsounds(scriptfile *script)
             if (0)
             {
 BAD:
-                Xfree(definedname);
-                DO_FREE_AND_NULL(g_sounds[sndnum].filename);
                 num_invalidsounds++;
                 break;
             }
 
-            if (g_sounds[sndnum].definedname)
-            {
-                duplicate = 1;
-                Xfree(g_sounds[sndnum].definedname);
-            }
-            if (duplicate)
-                initprintf("warning: duplicate sound #%d, overwriting\n", sndnum);
+            if (S_DefineSound(sndnum, filename, definedname, ps, pe, pr, m, vo, volume) == -1)
+                initprintf("Error: invalid sound ID on line %s:%d\n", script->filename, scriptfile_getlinum(script, cmdtokptr));
 
-            g_sounds[sndnum].definedname = definedname;  // we want to keep it for display purposes
-            g_sounds[sndnum].ps = ps;
-            g_sounds[sndnum].pe = pe;
-            g_sounds[sndnum].pr = pr;
-            g_sounds[sndnum].m = m;
-            g_sounds[sndnum].vo = vo;
-            if (!duplicate)
-            {
-                g_sndnum[g_numsounds] = g_definedsndnum[g_numsounds] = sndnum;
-                g_numsounds++;
-                if (g_numsounds == MAXSOUNDS)
-                    goto END;
-            }
             break;
         }
         case T_EOF:

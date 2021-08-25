@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
     char *filename, *ptr;
     int32_t  length, num, soundsiz;
+    fix16_t volume;
     SOUNDOWNER SoundOwner[4];
     int16_t ps,pe,vo;
     char pr,m;
@@ -50,8 +51,13 @@ extern sound_t g_sounds[MAXSOUNDS];
 extern int32_t g_numEnvSoundsPlaying;
 extern int32_t NumVoices;
 
+extern int16_t g_definedsndnum[MAXSOUNDS];  // maps parse order index to g_sounds index
+extern int16_t g_sndnum[MAXSOUNDS];  // maps current order index to g_sounds index
+extern int32_t g_numsounds;
+
 int32_t S_SoundStartup(void);
 void S_SoundShutdown(void);
+int32_t S_DefineSound(int sndidx, const char * filename, const char * definedname, int minpitch, int maxpitch, int priority, int type, int distance, float volume);
 int32_t S_PlaySound3D(int32_t, int32_t, const vec3_t*);
 void S_PlaySound(int32_t);
 int32_t A_PlaySound(uint32_t num, int32_t i);

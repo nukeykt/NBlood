@@ -58,6 +58,10 @@ int32_t g_numEnvSoundsPlaying;
 
 void S_Callback(intptr_t);
 
+int16_t g_definedsndnum[MAXSOUNDS];
+int16_t g_sndnum[MAXSOUNDS];
+int32_t g_numsounds = 0;
+
 /*
 ===================
 =
@@ -144,6 +148,52 @@ int32_t S_LoadSound(uint32_t num)
     kread(fp, g_sounds[num].ptr , l);
     kclose(fp);
     return 1;
+}
+
+int32_t S_DefineSound(int sndidx, const char * filename, const char * definedname, int minpitch, int maxpitch, int priority, int type, int distance, float volume)
+{
+    if ((unsigned)sndidx >= MAXSOUNDS)
+        return -1;
+
+    auto & snd = g_sounds[sndidx];
+    int duplicate = 0;
+
+    if (snd.filename)
+    {
+        duplicate = 1;
+        Xfree(snd.filename);
+    }
+    snd.filename = Xstrdup(filename);
+    // Hopefully noone does memcpy(..., g_sounds[].filename, BMAX_PATH)
+
+    if (snd.definedname)
+    {
+        duplicate = 1;
+        Xfree(snd.definedname);
+    }
+    if (duplicate)
+        initprintf("warning: duplicate sound #%d, overwriting\n", sndidx);
+
+    if (!duplicate)
+    {
+        if ((unsigned)g_numsounds >= MAXSOUNDS)
+            return -2;
+        g_sndnum[g_numsounds] = g_definedsndnum[g_numsounds] = sndidx;
+        g_numsounds++;
+    }
+
+    snd.definedname = Xstrdup(definedname);  // we want to keep it for display purposes
+    snd.ps = clamp(minpitch, INT16_MIN, INT16_MAX);
+    snd.pe = clamp(maxpitch, INT16_MIN, INT16_MAX);
+    snd.pr = priority & 0xFF;
+    snd.m = type & ~SF_ONEINST_INTERNAL;
+    snd.vo = clamp(distance, INT16_MIN, INT16_MAX);
+    snd.volume = volume * fix16_one;
+
+    if (snd.m & SF_LOOP)
+        snd.m |= SF_ONEINST_INTERNAL;
+
+    return 0;
 }
 
 int32_t S_PlaySound3D(int32_t num, int32_t i, const vec3_t *pos)
