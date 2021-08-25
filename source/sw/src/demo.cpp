@@ -510,7 +510,7 @@ DemoPlayBack(void)
                 {
                     KEY_PRESSED(KEYSC_ALT) = KEY_PRESSED(KEYSC_CTRL) = KEY_PRESSED(KEYSC_S) = 0;
                     int16_t ang = fix16_to_int(Player->pang);
-                    saveboard("demosave.map", (vec3_t *)Player, ang, &Player->cursectnum);
+                    saveboard("demosave.map", &Player->pos, ang, &Player->cursectnum);
                 }
 #endif
 

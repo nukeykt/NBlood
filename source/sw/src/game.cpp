@@ -691,7 +691,7 @@ void
 LoadLevel(const char *filename)
 {
     int16_t ang;
-    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &ang, &Player[0].cursectnum) == -1)
+    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, &Player[0].pos, &ang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
 #if 1 /* defined RENDERTYPEWIN */

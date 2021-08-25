@@ -171,7 +171,7 @@ static int32_t currentlist=0;
 
 static int32_t fillist[640];
 // used for fillsector, batch point insertion, backup_highlighted_map
-static int32_t tempxyar[MAXWALLS][2];
+static vec2_t tempxyar[MAXWALLS];
 
 static int32_t mousx, mousy;
 int16_t prefixtiles[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -7731,7 +7731,7 @@ end_space_handling:
                 if (newnumwalls > numwalls)  // batch insert points
                 {
                     const int32_t numdrawnwalls = newnumwalls-numwalls;
-                    vec2_t *point = (vec2_t *)tempxyar;  // [MAXWALLS][2]
+                    vec2_t * point = tempxyar;
                     int32_t insdpoints = 0;
 
                     // back up the points of the line strip
@@ -10198,8 +10198,8 @@ int32_t fillsector_maybetrans(int16_t sectnum, int32_t fillcolor, uint8_t dotran
 
         if (m32_sideview)
         {
-            tempxyar[z][0] = x1;
-            tempxyar[z][1] = y1;
+            tempxyar[z].x = x1;
+            tempxyar[z].y = y1;
         }
 
         miny = min(miny, y1);
@@ -10223,10 +10223,10 @@ int32_t fillsector_maybetrans(int16_t sectnum, int32_t fillcolor, uint8_t dotran
         {
             if (m32_sideview)
             {
-                x1 = tempxyar[z][0];
-                y1 = tempxyar[z][1];
-                x2 = tempxyar[wall[z].point2][0];
-                y2 = tempxyar[wall[z].point2][1];
+                x1 = tempxyar[z].x;
+                y1 = tempxyar[z].y;
+                x2 = tempxyar[wall[z].point2].x;
+                y2 = tempxyar[wall[z].point2].y;
 
                 if (y1 > y2)
                 {
