@@ -154,6 +154,7 @@ enum gametokens
     T_MODE = 1,
     T_CACHESIZE = 2,
     T_ALLOW = 2,
+    T_DEFINE,
     T_NOAUTOLOAD,
     T_INCLUDEDEFAULT,
     T_MUSIC,
@@ -5279,6 +5280,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "#include",        T_INCLUDE          },
         { "includedefault",  T_INCLUDEDEFAULT   },
         { "#includedefault", T_INCLUDEDEFAULT   },
+        { "define",          T_DEFINE           },
+        { "#define",         T_DEFINE           },
         { "loadgrp",         T_LOADGRP          },
         { "cachesize",       T_CACHESIZE        },
         { "noautoload",      T_NOAUTOLOAD       },
@@ -5383,6 +5386,19 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         case T_INCLUDEDEFAULT:
         {
             parsedefinitions_game_include(G_DefaultDefFile(), pScript, pToken, firstPass);
+            break;
+        }
+        case T_DEFINE:
+        {
+            char *name;
+            int32_t number;
+
+            if (scriptfile_getstring(pScript, &name)) break;
+            if (scriptfile_getsymbol(pScript, &number)) break;
+
+            if (EDUKE32_PREDICT_FALSE(scriptfile_addsymbolvalue(name, number) < 0))
+                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
+                           name, number, pScript->filename, scriptfile_getlinum(pScript, pToken));
             break;
         }
         case T_NOAUTOLOAD:

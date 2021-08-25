@@ -9275,6 +9275,8 @@ static int32_t parsegroupfiles(scriptfile *script)
         { "#include",        T_INCLUDE },
         { "includedefault",  T_INCLUDEDEFAULT },
         { "#includedefault", T_INCLUDEDEFAULT },
+        { "define",          T_DEFINE },
+        { "#define",         T_DEFINE },
         { "loadgrp",         T_LOADGRP },
         { "cachesize",       T_CACHESIZE },
         { "noautoload",      T_NOAUTOLOAD },
@@ -9335,6 +9337,19 @@ static int32_t parsegroupfiles(scriptfile *script)
             break;
         }
         break;
+        case T_DEFINE:
+        {
+            char *name;
+            int32_t number;
+
+            if (scriptfile_getstring(script, &name)) break;
+            if (scriptfile_getsymbol(script, &number)) break;
+
+            if (EDUKE32_PREDICT_FALSE(scriptfile_addsymbolvalue(name, number) < 0))
+                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
+                           name, number, script->filename, scriptfile_getlinum(script, cmdtokptr));
+            break;
+        }
         case T_NOAUTOLOAD:
             NoAutoLoad = 1;
             break;
