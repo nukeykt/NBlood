@@ -9886,9 +9886,8 @@ DoEMPBurst(int16_t Weapon)
     if (u->Attach >= 0)
     {
         SPRITEp ap = &sprite[u->Attach];
-        USERp au = User[u->Attach];
 
-        ASSERT(au);
+        ASSERT(User[u->Attach]);
 
         setspritez_old(Weapon, ap->x, ap->y, ap->z - u->sz);
         sp->ang = NORM_ANGLE(ap->ang+1024);
@@ -11135,12 +11134,11 @@ int
 SpawnNuclearSecondaryExp(int16_t Weapon, short ang)
 {
     SPRITEp sp = &sprite[Weapon];
-    USERp u = User[Weapon];
     SPRITEp exp;
     USERp eu;
     short explosion;
 
-    ASSERT(u);
+    ASSERT(User[Weapon]);
 
     explosion = SpawnSprite(STAT_MISSILE, GRENADE_EXP, s_GrenadeExp, sp->sectnum,
                             sp->x, sp->y, sp->z, sp->ang, 512);
@@ -11482,14 +11480,13 @@ int
 SpawnGrenadeSecondaryExp(int16_t Weapon, short ang)
 {
     SPRITEp sp = &sprite[Weapon];
-    USERp u = User[Weapon];
     SPRITEp exp;
     USERp eu;
     short explosion;
     int vel;
 
 
-    ASSERT(u);
+    ASSERT(User[Weapon]);
     explosion = SpawnSprite(STAT_MISSILE, GRENADE_EXP, s_GrenadeSmallExp, sp->sectnum,
                             sp->x, sp->y, sp->z, sp->ang, 1024);
     exp = &sprite[explosion];
@@ -19773,7 +19770,9 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
     short i, nexti;
     SECT_USERp sectu = SectUser[*sectnum];
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
     short over, under;
     int sx, sy;
 
@@ -19790,13 +19789,17 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
 
     ASSERT(Found == TRUE);
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for UNDERWATER "under" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_UNDERWATER], i, nexti)
@@ -19807,7 +19810,9 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -19855,7 +19860,9 @@ WarpToSurface(short *sectnum, int *x, int *y, int *z)
     int sx, sy;
 
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
 
     // 0 not valid for water match tags
     if (sectu->number == 0)
@@ -19870,13 +19877,17 @@ WarpToSurface(short *sectnum, int *x, int *y, int *z)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
 
     ASSERT(Found == TRUE);
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for DIVE_AREA "over" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_DIVE_AREA], i, nexti)
@@ -19887,7 +19898,9 @@ WarpToSurface(short *sectnum, int *x, int *y, int *z)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -19925,7 +19938,9 @@ SpriteWarpToUnderwater(SPRITEp sp)
     short i, nexti;
     SECT_USERp sectu = SectUser[sp->sectnum];
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
     short over, under;
     int sx, sy;
 
@@ -19942,13 +19957,17 @@ SpriteWarpToUnderwater(SPRITEp sp)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
 
     ASSERT(Found == TRUE);
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for UNDERWATER "under" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_UNDERWATER], i, nexti)
@@ -19959,7 +19978,9 @@ SpriteWarpToUnderwater(SPRITEp sp)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -20006,7 +20027,9 @@ SpriteWarpToSurface(SPRITEp sp)
     int sx, sy;
 
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
 
     // 0 not valid for water match tags
     if (sectu->number == 0)
@@ -20021,7 +20044,9 @@ SpriteWarpToSurface(SPRITEp sp)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -20031,7 +20056,9 @@ SpriteWarpToSurface(SPRITEp sp)
     if (under_sp->lotag == 0)
         return FALSE;
 
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for DIVE_AREA "over" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_DIVE_AREA], i, nexti)
@@ -20042,7 +20069,9 @@ SpriteWarpToSurface(SPRITEp sp)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }

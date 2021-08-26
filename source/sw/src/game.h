@@ -59,8 +59,10 @@ void _Assert(const char *expr, const char *strFile, unsigned uLine);
 
 #if DEBUG || defined DEBUGGINGAIDS
 #define ASSERT(f) PRODUCTION_ASSERT(f)
+#define ASSERT_ACTIVE 1
 #else
 #define ASSERT(f) do { } while (0)
+#define ASSERT_ACTIVE 0
 #endif
 
 #if DEBUG

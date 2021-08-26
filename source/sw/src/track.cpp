@@ -2232,7 +2232,9 @@ void CallbackSOsink(ANIMp ap, void *data)
     short dest_sector = -1;
     short src_sector = -1;
     short i, nexti, ndx;
+#if ASSERT_ACTIVE
     char found = FALSE;
+#endif
     int tgt_depth;
 
     sop = (SECTOR_OBJECTp)data;
@@ -2288,7 +2290,9 @@ void CallbackSOsink(ANIMp ap, void *data)
             ndx = AnimSet((int *)&su->depth_fract, tgt_depth<<16, (ap->vel<<8)>>8);
             AnimSetVelAdj(ndx, ap->vel_adj);
 
+#if ASSERT_ACTIVE
             found = TRUE;
+#endif
             break;
         }
     }
@@ -2305,7 +2309,9 @@ void CallbackSOsink(ANIMp ap, void *data)
                 // in a more precise way
                 ndx = AnimSet((int *)&su->depth_fract, tgt_depth<<16, (ap->vel<<8)>>8);
                 AnimSetVelAdj(ndx, ap->vel_adj);
+#if ASSERT_ACTIVE
                 found = TRUE;
+#endif
                 break;
             }
         }
