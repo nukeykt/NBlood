@@ -12432,9 +12432,9 @@ void updatesector_tryremaining(int32_t const x, int32_t const y, int16_t *const 
 
     do
     {
-        if (++highsect < numsectors && inside_exclude_p(x, y, highsect, updatesectorneighbormap))
+        if (highsect < numsectors-1 && inside_exclude_p(x, y, ++highsect, updatesectorneighbormap))
             SET_AND_RETURN(*sectnum, highsect);
-        if (--lowsect >= 0 && inside_exclude_p(x, y, lowsect, updatesectorneighbormap))
+        if (lowsect > 0 && inside_exclude_p(x, y, --lowsect, updatesectorneighbormap))
             SET_AND_RETURN(*sectnum, lowsect);
     } while (trycnt--);
 
