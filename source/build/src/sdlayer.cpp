@@ -2561,6 +2561,13 @@ int32_t handleevents(void)
 
     int32_t rv;
 
+    if (g_mouseBits & 2 && osd->flags & OSD_CAPTURE && SDL_HasClipboardText())
+    {
+        auto text = SDL_GetClipboardText();
+        OSD_HandleClipboard(text);
+        SDL_free(text);
+    }
+
     if (inputchecked && g_mouseEnabled)
     {
         if (g_mouseCallback)

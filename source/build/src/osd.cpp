@@ -165,6 +165,27 @@ const char * OSD_StripColors(char *outBuf, const char *inBuf)
     return ptr;
 }
 
+void OSD_HandleClipboard(char* const text)
+{
+    if (!osd->text.useclipboard) return;
+    auto buf = (char*) Xcalloc(1, Bstrlen(text));
+    char const* cp = strtok(text, "\r\n");
+    int cnt = 0;
+
+    while (cp != NULL)
+    {
+        ++osd->execdepth;
+        OSD_Dispatch(cp);
+        --osd->execdepth;
+        cp = strtok(NULL, "\r\n");
+        cnt++;
+    }
+
+    OSD_Printf("Pasted %d lines.\n", cnt);
+    Xfree(buf);
+    g_mouseBits &= ~2;
+}
+
 int OSD_Exec(const char *szScript)
 {
     int err = 0;
@@ -770,6 +791,7 @@ void OSD_Init(void)
     osd->numcvars      = 0;
     osd->text.lines    = 1;
     osd->text.maxlines = OSDDEFAULTMAXLINES;  // overwritten later
+    osd->text.useclipboard = 1;
     osd->draw.cols     = OSDDEFAULTCOLS;
     osd->log.cutoff    = OSDMAXERRORS;
 
@@ -780,6 +802,8 @@ void OSD_Init(void)
 
     static osdcvardata_t cvars_osd [] =
     {
+        { "osdclipboard", "paste text into console from system clipboard with RMB", (void *) &osd->text.useclipboard, CVAR_BOOL, 0, 1 },
+
         { "osdeditpal", "console input text palette", (void *) &osd->draw.editpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
         { "osdeditshade", "console input text shade", (void *) &osd->draw.editshade, CVAR_INT, 0, 7 },
 
