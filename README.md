@@ -85,7 +85,35 @@ A port of BUILD engine games based on Duke Nukem 3D codebase using EDuke32 engin
 3. Launch Rednukem
 
 ## Building from source
-See: https://wiki.eduke32.com/wiki/Main_Page
+For ArkOS-compatible AARCH64 RK3326 devices
+
+install dependencies
+```
+apt-get install build-essential nasm libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev libsdl-mixer1.2-dev libsdl2-dev libsdl2-mixer-dev \ flac libflac-dev libvorbis-dev libvpx-dev libgtk2.0-dev freepats
+```
+build
+```
+git clone --recursive https://github.com/nukeykt/NBlood.git
+
+cd NBlood
+
+make USE_OPENGL=0 SDL_TARGET=2 USE_LIBVPX=0
+```
+Copy `rednukem` to `/roms/ports/<gamename>` for
+
+Duke Nukem 3D: Atomic Edition
+Redneck Rampage
+Redneck Rampage: Rides Again
+NAM/NAPALM
+World War II GI
+Note: Duke Nukem 64 renderer requires opengl-enabled builds, which seem to be incompatible with ArkOS devices (rednukem runs but a black screen is displayed)
+
+Copy `nblood` and `nblood.pk3` to `/roms/ports/Blood` for Blood
+
+Copy `pcexhumed` to `/roms/ports/Exhumed` for Exhumed
+Note: pcexhumed does not appear to work with ArkOS at the moment (the game doesn't complete the loading process), but it does work with RetroOz on OGS
+
+For all others see: https://wiki.eduke32.com/wiki/Main_Page
 
 ## Acknowledgments
   See AUTHORS.md
