@@ -4592,27 +4592,38 @@ static void Menu_ReadSaveGameHeaders()
     // lexicographical sorting?
 }
 
-static void Menu_CheckHiddenSelection(Menu_t* m)
+static inline int Menu_IsEntryActive(MenuEntry_t const * pEntry)
+{
+    return pEntry != nullptr && !(pEntry->flags & MEF_Hidden) && pEntry->type != Spacer;
+}
+
+static void Menu_ValidateSelectionIsActive(Menu_t* m)
 {
     auto const menu = (MenuMenu_t *)m->object;
+    MenuEntry_t ** const entrylist = menu->entrylist;
+    int32_t const currentEntry = menu->currentEntry;
 
-    while (!menu->entrylist[menu->currentEntry] ||
-        (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
-        ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
+    for (int32_t i = currentEntry; i >= 0; --i)
     {
-        if (--menu->currentEntry < 0)
+        if (Menu_IsEntryActive(entrylist[i]))
         {
-            menu->currentEntry = 0;
-
-            while (!menu->entrylist[menu->currentEntry] ||
-                (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
-                ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
-            {
-                if (++menu->currentEntry >= menu->numEntries)
-                    G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
-            }
+            menu->currentEntry = i;
+            return;
         }
     }
+
+    int32_t const numEntries = menu->numEntries;
+
+    for (int32_t i = currentEntry + 1; i < numEntries; ++i)
+    {
+        if (Menu_IsEntryActive(entrylist[i]))
+        {
+            menu->currentEntry = i;
+            return;
+        }
+    }
+
+    G_GameExit("Menu_ValidateSelectionIsActive: menu has no active entries!");
 }
 
 static void Menu_AboutToStartDisplaying(Menu_t * m)
@@ -4777,7 +4788,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         if (menu->currentEntry >= menu->numEntries)
             menu->currentEntry = 0;
 
-        Menu_CheckHiddenSelection(m);
+        Menu_ValidateSelectionIsActive(m);
 
         Menu_EntryFocus(/*currentry*/);
         break;
@@ -6355,7 +6366,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
 
         case Menu:
         {
-            Menu_CheckHiddenSelection(cm);
+            Menu_ValidateSelectionIsActive(cm);
 
             int32_t state;
 
@@ -6438,9 +6449,7 @@ static MenuEntry_t *Menu_RunInput_Menu_Movement(MenuMenu_t *menu, MenuMovement_t
                     if (menu->currentEntry < 0)
                         return Menu_RunInput_Menu_Movement(menu, MM_End);
                 }
-                while (!menu->entrylist[menu->currentEntry] ||
-                       (menu->entrylist[menu->currentEntry]->flags & MEF_Hidden) ||
-                       menu->entrylist[menu->currentEntry]->type == Spacer);
+                while (!Menu_IsEntryActive(menu->entrylist[menu->currentEntry]));
             break;
 
         case MM_Home:
@@ -6453,9 +6462,7 @@ static MenuEntry_t *Menu_RunInput_Menu_Movement(MenuMenu_t *menu, MenuMovement_t
                     if (menu->currentEntry >= menu->numEntries)
                         return Menu_RunInput_Menu_Movement(menu, MM_Home);
                 }
-                while (!menu->entrylist[menu->currentEntry] ||
-                       (menu->entrylist[menu->currentEntry]->flags & MEF_Hidden) ||
-                       menu->entrylist[menu->currentEntry]->type == Spacer);
+                while (!Menu_IsEntryActive(menu->entrylist[menu->currentEntry]));
             break;
 
         case MM_Swap:
