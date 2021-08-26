@@ -1843,6 +1843,7 @@ static inline float tspriteGetZOfSlopeFloat(tspriteptr_t const tspr, float dax, 
 }
 #endif
 
+#ifdef USE_OPENGL
 static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk, int gameTicRate)
 {
     int const tfreq = (int)refreshfreq;
@@ -1854,5 +1855,5 @@ static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks con
 #endif
     return clamp(ratio, 0, 65536);
 }
-
+#endif // USE_OPENGL
 #endif // build_h_
