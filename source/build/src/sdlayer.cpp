@@ -409,7 +409,7 @@ void eduke32_exit_return(int retval)
 
 void sdlayer_sethints()
 {
-#if defined _WIN32
+#if defined _WIN32 && !defined _MSC_VER
     // Thread naming interferes with debugging using MinGW-w64's GDB.
 #if defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
     SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
