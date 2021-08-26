@@ -470,6 +470,8 @@ DoShadows(tspriteptr_t tsp, int viewz, SWBOOL mirror)
             New->y += ofs.y;
         }
     }
+#else
+    UNREFERENCED_PARAMETER(mirror);
 #endif
 
     // Check for voxel items and use a round generic pic if so

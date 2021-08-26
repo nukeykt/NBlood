@@ -559,6 +559,7 @@ int main(int argc, char *argv[])
 
 
 #if SDL_MAJOR_VERSION >= 2
+#ifdef USE_OPENGL
 static int sdlayer_getswapinterval(int const syncMode)
 {
     static int intervals[] = { -1, 0, 1, 0};
@@ -577,6 +578,7 @@ static int sdlayer_checkvsync(int checkSync)
     }
     return checkSync;
 }
+#endif
 
 int32_t videoSetVsync(int32_t newSync)
 {
