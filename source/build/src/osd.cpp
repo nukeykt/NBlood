@@ -1520,8 +1520,8 @@ void OSD_ResizeDisplay(int w, int h)
 //
 void OSD_CaptureInput(int cap)
 {
+    g_mouseBits = 0;
     osd->flags = (osd->flags & ~(OSD_CAPTURE|OSD_CTRL|OSD_SHIFT)) | (-cap & OSD_CAPTURE);
-
     mouseGrabInput(cap == 0 ? g_mouseLockedToWindow : 0);
     onshowosd(cap);
 
