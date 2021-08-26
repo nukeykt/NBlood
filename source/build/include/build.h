@@ -1817,16 +1817,4 @@ static inline float tspriteGetZOfSlopeFloat(tspriteptr_t const tspr, float dax, 
 }
 #endif
 
-static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk, int gameTicRate)
-{
-    int const tfreq = (int)refreshfreq;
-    int const clk   = (totalclk - ototalclk).toScale16();
-    int const ratio = tabledivide32_noinline(clk * tfreq, tabledivide32_noinline(timerGetClockRate() * tfreq, gameTicRate));
-#if 0 //ndef NDEBUG
-    if ((unsigned)ratio > 66048)
-        OSD_Printf("calc_smoothratio: ratio: %d\n", ratio);
-#endif
-    return clamp(ratio, 0, 65536);
-}
-
 #endif // build_h_
