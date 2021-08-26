@@ -196,7 +196,7 @@ int32_t S_DefineSound(int sndidx, const char * filename, const char * definednam
     return 0;
 }
 
-int32_t S_PlaySound3D(int32_t num, int32_t i, const vec3_t *pos)
+int32_t S_PlaySound3D(int32_t const num, int32_t i, const vec3_t *pos)
 {
     int32_t sndist, cx, cy, cz, j/*,k*/;
     int32_t pitche,pitchs,cs;
@@ -206,24 +206,31 @@ int32_t S_PlaySound3D(int32_t num, int32_t i, const vec3_t *pos)
 
     if (num >= MAXSOUNDS ||
             !SM32_havesound ||
-//        ((g_sounds[num].m & SF_ADULT) && ud.lockout) ||
-            SoundToggle == 0 ||
-            g_sounds[num].num > 3 ||
-            FX_VoiceAvailable(g_sounds[num].pr) == 0)
+            SoundToggle == 0)
         return -1;
 
-    if (g_sounds[num].m & SF_DTAG)
+    auto & snd = g_sounds[num];
+
+    if (snd.num > 3 ||
+//        ((snd.m & SF_ADULT) && ud.lockout) ||
+            FX_VoiceAvailable(snd.pr) == 0)
+        return -1;
+
+    if (snd.m & SF_DTAG)
     {
         S_PlaySound(num);
         return 0;
     }
 
-    if (g_sounds[num].m & SF_TALK)
+    if (snd.m & SF_TALK)
     {
         for (j=0; j<MAXSOUNDS; j++)
-//            for (k=0; k<g_sounds[j].num; k++)
-            if ((g_sounds[j].num > 0) && (g_sounds[j].m & SF_TALK))
+        {
+            auto const & jsnd = g_sounds[j];
+//            for (k=0; k<jsnd.num; k++)
+            if ((jsnd.num > 0) && (jsnd.m & SF_TALK))
                 return -1;
+        }
     }
 
     cx = pos->x;
@@ -234,26 +241,28 @@ int32_t S_PlaySound3D(int32_t num, int32_t i, const vec3_t *pos)
 
     sndist = FindDistance3D((cx-pos->x),(cy-pos->y),(cz-pos->z));
 
-    if (i >= 0 && (g_sounds[num].m & SF_GLOBAL) == 0 && PN(i) == MUSICANDSFX && SLT(i) < 999 && (sector[SECT(i)].lotag&0xff) < 9)
+    if (i >= 0 && (snd.m & SF_GLOBAL) == 0 && PN(i) == MUSICANDSFX && SLT(i) < 999 && (sector[SECT(i)].lotag&0xff) < 9)
         sndist = divscale14(sndist,(SHT(i)+1));
 
-    pitchs = g_sounds[num].ps;
-    pitche = g_sounds[num].pe;
+    pitchs = snd.ps;
+    pitche = snd.pe;
     cx = klabs(pitche-pitchs);
 
     if (cx)
     {
         if (pitchs < pitche)
             pitch = pitchs + (rand()%cx);
-        else pitch = pitche + (rand()%cx);
+        else
+            pitch = pitche + (rand()%cx);
     }
-    else pitch = pitchs;
+    else
+        pitch = pitchs;
 
-    sndist += g_sounds[num].vo;
+    sndist += snd.vo;
     if (sndist < 0) sndist = 0;
     if (cs > -1 && sndist && PN(i) != MUSICANDSFX && !cansee(cx,cy,cz-(24<<8),cs,SX(i),SY(i),SZ(i)-(24<<8),SECT(i)))
         sndist += sndist>>5;
-    /*
+#if 0
         switch (num)
         {
         case PIPEBOMB_EXPLODE:
@@ -265,65 +274,68 @@ int32_t S_PlaySound3D(int32_t num, int32_t i, const vec3_t *pos)
                 pitch -= 1024;
             break;
         default:
-    */
-    if (cursectnum > -1 && sector[cursectnum].lotag == 2 && (g_sounds[num].m & SF_TALK) == 0)
+#endif
+    if (cursectnum > -1 && sector[cursectnum].lotag == 2 && (snd.m & SF_TALK) == 0)
         pitch = -768;
     if (sndist > 31444 && PN(i) != MUSICANDSFX)
         return -1;
 //        break;
 //    }
 
-    if (g_sounds[num].num > 0 && PN(i) != MUSICANDSFX)
+    if (snd.num > 0 && PN(i) != MUSICANDSFX)
     {
-        if (g_sounds[num].SoundOwner[0].ow == i) S_StopSound(num);
-        else if (g_sounds[num].num > 1) S_StopSound(num);
+        if (snd.SoundOwner[0].ow == i) S_StopSound(num);
+        else if (snd.num > 1) S_StopSound(num);
 //        else if (A_CheckEnemySprite(&sprite[i]) && sprite[i].extra <= 0) S_StopSound(num);
     }
 
     sndang = 2048 + ca - getangle(cx-pos->x,cy-pos->y);
     sndang &= 2047;
 
-    if (g_sounds[num].ptr == 0)
+    if (snd.ptr == 0)
     {
         if (S_LoadSound(num) == 0) return 0;
     }
     else
     {
-        if (g_sounds[num].lock < CACHE1D_LOCKED)
-            g_sounds[num].lock = CACHE1D_LOCKED;
-        else g_sounds[num].lock++;
+        if (snd.lock < CACHE1D_LOCKED)
+            snd.lock = CACHE1D_LOCKED;
+        else
+            snd.lock++;
     }
 
-    if (g_sounds[num].m & SF_GLOBAL) sndist = 0;
+    if (snd.m & SF_GLOBAL) sndist = 0;
 
     if (sndist < ((255-LOUDESTVOLUME)<<6))
         sndist = ((255-LOUDESTVOLUME)<<6);
 
-    if (g_sounds[num].m & SF_LOOP)
+    if (snd.m & SF_LOOP)
     {
-        if (g_sounds[num].num > 0)
+        if (snd.num > 0)
             return -1;
 
-        voice = FX_Play(g_sounds[num].ptr, g_sounds[num].soundsiz, 0, -1,
-                                  pitch, sndist>>6, sndist>>6, 0, g_sounds[num].pr, fix16_one, num);
+        voice = FX_Play(snd.ptr, snd.soundsiz, 0, -1,
+                        pitch, sndist>>6, sndist>>6, 0, snd.pr, fix16_one, num);
     }
     else
     {
-        voice = FX_Play3D(g_sounds[num].ptr, g_sounds[num].soundsiz, FX_ONESHOT,
-                              pitch, sndang>>4, sndist>>6, g_sounds[num].pr, fix16_one, num);
+        voice = FX_Play3D(snd.ptr, snd.soundsiz, FX_ONESHOT,
+                          pitch, sndang>>4, sndist>>6, snd.pr, fix16_one, num);
     }
 
     if (voice >= FX_Ok)
     {
-        g_sounds[num].SoundOwner[g_sounds[num].num].ow = i;
-        g_sounds[num].SoundOwner[g_sounds[num].num].voice = voice;
-        g_sounds[num].num++;
+        snd.SoundOwner[snd.num].ow = i;
+        snd.SoundOwner[snd.num].voice = voice;
+        snd.num++;
     }
-    else g_sounds[num].lock--;
+    else
+        snd.lock--;
+
     return voice;
 }
 
-void S_PlaySound(int32_t num)
+void S_PlaySound(int32_t const num)
 {
     int32_t pitch,pitche,pitchs,cx;
     int32_t voice;
@@ -335,51 +347,58 @@ void S_PlaySound(int32_t num)
         OSD_Printf("WARNING: invalid sound #%d\n",num);
         return;
     }
-//    if ((g_sounds[num].m & SF_ADULT) && ud.lockout) return;
-    if (FX_VoiceAvailable(g_sounds[num].pr) == 0) return;
 
-    pitchs = g_sounds[num].ps;
-    pitche = g_sounds[num].pe;
+    auto & snd = g_sounds[num];
+
+//    if ((snd.m & SF_ADULT) && ud.lockout) return;
+    if (FX_VoiceAvailable(snd.pr) == 0) return;
+
+    pitchs = snd.ps;
+    pitche = snd.pe;
     cx = klabs(pitche-pitchs);
 
     if (cx)
     {
         if (pitchs < pitche)
             pitch = pitchs + (rand()%cx);
-        else pitch = pitche + (rand()%cx);
+        else
+            pitch = pitche + (rand()%cx);
     }
-    else pitch = pitchs;
+    else
+        pitch = pitchs;
 
-    if (g_sounds[num].ptr == 0)
+    if (snd.ptr == 0)
     {
         if (S_LoadSound(num) == 0) return;
     }
     else
     {
-        if (g_sounds[num].lock < CACHE1D_LOCKED)
-            g_sounds[num].lock = CACHE1D_LOCKED;
-        else g_sounds[num].lock++;
+        if (snd.lock < CACHE1D_LOCKED)
+            snd.lock = CACHE1D_LOCKED;
+        else
+            snd.lock++;
     }
 
-    if (g_sounds[num].m & SF_LOOP)
+    if (snd.m & SF_LOOP)
     {
-        voice = FX_Play(g_sounds[num].ptr, g_sounds[num].soundsiz, 0, -1,
-                                  pitch,LOUDESTVOLUME,LOUDESTVOLUME,LOUDESTVOLUME,g_sounds[num].soundsiz, fix16_one, num);
+        voice = FX_Play(snd.ptr, snd.soundsiz, 0, -1,
+                        pitch,LOUDESTVOLUME,LOUDESTVOLUME,LOUDESTVOLUME,
+                        snd.soundsiz, fix16_one, num);
     }
     else
     {
-        voice = FX_Play3D(g_sounds[num].ptr, g_sounds[num].soundsiz, FX_ONESHOT,
-                              pitch,0,255-LOUDESTVOLUME,g_sounds[num].pr, fix16_one, num);
+        voice = FX_Play3D(snd.ptr, snd.soundsiz, FX_ONESHOT,
+                          pitch,0,255-LOUDESTVOLUME,snd.pr, fix16_one, num);
     }
 
     if (voice >= FX_Ok)
     {
-        g_sounds[num].SoundOwner[g_sounds[num].num].ow = -1;
-        g_sounds[num].SoundOwner[g_sounds[num].num].voice = voice;
-        g_sounds[num].num++;
+        snd.SoundOwner[snd.num].ow = -1;
+        snd.SoundOwner[snd.num].voice = voice;
+        snd.num++;
         return;
     }
-    g_sounds[num].lock--;
+    snd.lock--;
 }
 
 int32_t A_PlaySound(uint32_t num, int32_t i)
