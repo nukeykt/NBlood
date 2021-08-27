@@ -1020,20 +1020,34 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
             }
         }
         return 0;
-        case kItemFlagA:
+        case kItemFlagA: {
             if (gGameOptions.nGameType != 3) return 0;
-            evKill(pItem->index, 3, kCallbackReturnFlag);
-            pPlayer->hasFlag |= 1;
-            pPlayer->used2[0] = pItem->index;
             gBlueFlagDropped = false;
+            pPlayer->hasFlag |= 1;
+            pPlayer->used2[0] = pItem->owner;
+            const bool enemyTeam = (pPlayer->teamId&1) == 1;
+            if (enemyTeam)
+            {
+                sprintf(buffer, "%s stole Blue Flag", gProfile[pPlayer->nPlayer].name);
+                sndStartSample(8007, 255, 2, 0);
+                viewSetMessage(buffer);
+            }
             break;
-        case kItemFlagB:
+        }
+        case kItemFlagB: {
             if (gGameOptions.nGameType != 3) return 0;
-            evKill(pItem->index, 3, kCallbackReturnFlag);
-            pPlayer->hasFlag |= 2;
-            pPlayer->used2[1] = pItem->index;
             gRedFlagDropped = false;
+            pPlayer->hasFlag |= 2;
+            pPlayer->used2[1] = pItem->owner;
+            const bool enemyTeam = (pPlayer->teamId&1) == 0;
+            if (enemyTeam)
+            {
+                sprintf(buffer, "%s stole Red Flag", gProfile[pPlayer->nPlayer].name);
+                sndStartSample(8006, 255, 2, 0);
+                viewSetMessage(buffer);
+            }
             break;
+        }
         case kItemArmorBasic:
         case kItemArmorBody:
         case kItemArmorFire:

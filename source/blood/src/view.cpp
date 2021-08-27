@@ -2388,6 +2388,8 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         const int nTile = weaponIcon.nTile;
         if (nTile < 0)
             break;
+        if (pPlayer->pXSprite->health == 0)
+            break;
         auto pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
         if (!pNSprite)
             break;
