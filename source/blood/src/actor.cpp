@@ -2878,7 +2878,7 @@ spritetype *actDropKey(spritetype *pSprite, int nType)
 spritetype *actDropFlag(spritetype *pSprite, int nType)
 {
     spritetype *pSprite2 = NULL;
-    if (pSprite && pSprite->statnum < kMaxStatus && (nType == 147 || nType == 148))
+    if (pSprite && pSprite->statnum < kMaxStatus && (nType == kItemFlagA || nType == kItemFlagB))
     {
         pSprite2 = actDropItem(pSprite, nType);
         if (pSprite2 && gGameOptions.nGameType == 3)
