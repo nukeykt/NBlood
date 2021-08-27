@@ -106,7 +106,7 @@ SWBOOL LoadScriptFile(const char *filename)
 
     kclose(fp);
 
-    ASSERT(readsize == size);
+    PRODUCTION_ASSERT(readsize == size);
 
 
     // Convert filebuffer to all upper case

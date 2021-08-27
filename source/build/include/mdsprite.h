@@ -7,6 +7,7 @@ extern "C" {
 
 #ifdef USE_OPENGL
 #include "hightile.h"
+#endif
 
 #if defined(_M_IX86) || defined(_M_AMD64) || defined(__i386) || defined(__x86_64)
 #define SHIFTMOD32(a) (a)
@@ -48,7 +49,9 @@ typedef struct _mdskinmap_t
     uint8_t palette, flags, filler[2]; // Build palette number, flags the same as hicreplctyp
     int32_t skinnum, surfnum;   // Skin identifier, surface number
     char *fn;   // Skin filename
+#ifdef USE_OPENGL
     GLuint texid[HICTINT_MEMORY_COMBINATIONS];   // OpenGL texture numbers for effect variations
+#endif
     struct _mdskinmap_t *next;
     float param, specpower, specfactor;
 } mdskinmap_t;
@@ -171,11 +174,13 @@ typedef struct
     uint16_t *vindexes;
 
     float *maxdepths;
+#ifdef USE_OPENGL
     GLuint *vbos;
     // polymer VBO names after that, allocated per surface
     GLuint *indices;
     GLuint *texcoords;
     GLuint *geometry;
+#endif
 } md3model_t;
 
 #define VOXBORDWIDTH 1 //use 0 to save memory, but has texture artifacts; 1 looks better...
@@ -205,7 +210,9 @@ typedef struct
     vec3f_t piv;
     int32_t is8bit;
     uint32_t texid8bit;
+#ifdef USE_OPENGL
     GLuint vbo, vboindex;
+#endif
 } voxmodel_t;
 
 EXTERN mdmodel_t **models;
@@ -235,8 +242,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr);
 int      md3postload_polymer(md3model_t* m);
 //int32_t md_thinoutmodel(int32_t modelid, uint8_t *usedframebitmap);
 EXTERN void md_freevbos(void);
-
-#endif // defined USE_OPENGL
 
 enum {
     HUDFLAG_HIDE = 1,

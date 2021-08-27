@@ -470,6 +470,8 @@ DoShadows(tspriteptr_t tsp, int viewz, SWBOOL mirror)
             New->y += ofs.y;
         }
     }
+#else
+    UNREFERENCED_PARAMETER(mirror);
 #endif
 
     // Check for voxel items and use a round generic pic if so
@@ -1748,18 +1750,10 @@ void DrawMessageInput(void)
         MNU_MeasureString(MessageInputString, &w, &h);
 
         cur_show ^= 1;
-        if (cur_show)
-        {
-            MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
-                         (ROTATE_SPRITE_SCREEN_CLIP),0,0,xdim-1,ydim-1);
-        }
-        else
-        {
-            MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
-                         (ROTATE_SPRITE_SCREEN_CLIP),0,0,xdim-1,ydim-1);
-        }
+
+        MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
+        rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
+                     (ROTATE_SPRITE_SCREEN_CLIP),0,0,xdim-1,ydim-1);
     }
 }
 #else
@@ -1777,16 +1771,9 @@ void DrawMessageInput(void)
         MNU_MeasureSmallString(MessageInputString, &w, &h);
 
         cur_show ^= 1;
-        if (cur_show)
-        {
-            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
-        else
-        {
-            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
-            rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
+
+        minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
+        rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
     }
 }
 #endif
@@ -1807,18 +1794,10 @@ void DrawConInput(void)
         MNU_MeasureSmallString(MessageInputString, &w, &h);
 
         cur_show ^= 1;
-        if (cur_show)
-        {
-            MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
-            rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-            //rotatesprite((PANELINPUTX+w+3)<<16,(PANELINPUTY)<<16,64<<8,0,COINCURSOR+((totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
-        else
-        {
-            MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
-            rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-            //rotatesprite((PANELINPUTX+w+3)<<16,(PANELINPUTY)<<16,64<<8,0,COINCURSOR+((totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
-        }
+
+        MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
+        rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
+        //rotatesprite((PANELINPUTX+w+3)<<16,(PANELINPUTY)<<16,64<<8,0,COINCURSOR+((totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
     }
 }
 
@@ -2271,10 +2250,6 @@ drawscreen(PLAYERp pp)
     PLAYERp camerapp;                       // prediction player if prediction is on, else regular player
     void DoPlayerDiveMeter(PLAYERp pp);
 
-    // last valid stuff
-    static short lv_sectnum = -1;
-    static int lv_x, lv_y, lv_z;
-
     int const viewingRange = viewingrange;
 
     if (HelpInputMode)
@@ -2373,28 +2348,6 @@ drawscreen(PLAYERp pp)
     //updatesectorz(tx, ty, tz, &tsectnum);
 
     COVERupdatesector(tx, ty, &tsectnum);
-
-    if (tsectnum < 0)
-    {
-#if 0
-        // if we hit an invalid sector move to the last valid position for drawing
-        tsectnum = lv_sectnum;
-        tx = lv_x;
-        ty = lv_y;
-        tz = lv_z;
-#endif
-    }
-    else
-    {
-        // last valid stuff
-        lv_sectnum = tsectnum;
-        lv_x = tx;
-        lv_y = ty;
-        lv_z = tz;
-    }
-
-    // with "last valid" code this should never happen
-    // ASSERT(tsectnum >= 0 && tsectnum <= MAXSECTORS);
 
     if (pp->sop_riding || pp->sop_control)
     {
@@ -2506,8 +2459,10 @@ drawscreen(PLAYERp pp)
     {
         gotpic[SLIME >> 3] &= ~(1 << (SLIME & 7));
 
+#if 0
         if (waloff[SLIME])
             movelava((char *) waloff[SLIME]);
+#endif
     }
 
 

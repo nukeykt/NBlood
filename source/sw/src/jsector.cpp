@@ -1069,7 +1069,9 @@ JAnalyzeSprites(tspriteptr_t tspr)
     // Take care of autosizing
     DoAutoSize(tspr);
 
+#ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST && md_tilehasmodel(tspr->picnum, 0) >= 0 && usemodels) return;
+#endif
 
     Bassert((unsigned)tspr->owner < MAXSPRITES);
 

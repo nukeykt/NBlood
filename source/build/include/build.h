@@ -1312,6 +1312,7 @@ int32_t try_facespr_intersect(uspriteptr_t const spr, vec3_t const in,
 void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum) ATTRIBUTE((nonnull(3)));
 void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectnum,
                          const uint8_t * const excludesectbitmap) ATTRIBUTE((nonnull(3,4)));
+void updatesectorz_compat(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum) ATTRIBUTE((nonnull(4)));
 void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum) ATTRIBUTE((nonnull(4)));
 void updatesectorneighbor(int32_t const x, int32_t const y, int16_t * const sectnum, int32_t initialMaxDistance = INITIALUPDATESECTORDIST, int32_t maxDistance = MAXUPDATESECTORDIST) ATTRIBUTE((nonnull(3)));
 void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum, int32_t initialMaxDistance = INITIALUPDATESECTORDIST, int32_t maxDistance = MAXUPDATESECTORDIST) ATTRIBUTE((nonnull(4)));
@@ -1842,17 +1843,5 @@ static inline float tspriteGetZOfSlopeFloat(tspriteptr_t const tspr, float dax, 
 #ifdef __cplusplus
 }
 #endif
-
-static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk, int gameTicRate)
-{
-    int const tfreq = (int)refreshfreq;
-    int const clk   = (totalclk - ototalclk).toScale16();
-    int const ratio = tabledivide32_noinline(clk * tfreq, tabledivide32_noinline(timerGetClockRate() * tfreq, gameTicRate));
-#if 0 //ndef NDEBUG
-    if ((unsigned)ratio > 66048)
-        OSD_Printf("calc_smoothratio: ratio: %d\n", ratio);
-#endif
-    return clamp(ratio, 0, 65536);
-}
 
 #endif // build_h_

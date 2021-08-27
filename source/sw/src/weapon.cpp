@@ -4343,7 +4343,7 @@ SpawnBlood(short SpriteNum, short Weapon, short hit_ang, int hit_x, int hit_y, i
             nu->jump_speed += RANDOM_RANGE(p->max_jspeed - p->min_jspeed);
             nu->jump_speed = -nu->jump_speed;
 
-            //setspritez(New, (vec3_t *)np);
+            //setspritez(New, &np->pos);
             nu->xchange = MOVEx(np->xvel, np->ang);
             nu->ychange = MOVEy(np->xvel, np->ang);
 
@@ -4677,7 +4677,7 @@ WeaponMoveHit(short SpriteNum)
         // clipmove does not correctly return the sprite for WALL sprites
         // on walls, so look with hitscan
 
-        hitscan((vec3_t *)sp, sp->sectnum,   // Start position
+        hitscan(&sp->pos, sp->sectnum,   // Start position
                 sintable[NORM_ANGLE(sp->ang + 512)],    // X vector of 3D ang
                 sintable[NORM_ANGLE(sp->ang)],  // Y vector of 3D ang
                 sp->zvel,               // Z vector of 3D ang
@@ -8651,7 +8651,7 @@ DoPlasmaFountain(int16_t Weapon)
         ap = &sprite[u->Attach];
 
         // move with sprite
-        setspritez(Weapon, (vec3_t *)ap);
+        setspritez(Weapon, &ap->pos);
         sp->ang = ap->ang;
 
         u->Counter++;
@@ -9886,9 +9886,8 @@ DoEMPBurst(int16_t Weapon)
     if (u->Attach >= 0)
     {
         SPRITEp ap = &sprite[u->Attach];
-        USERp au = User[u->Attach];
 
-        ASSERT(au);
+        ASSERT(User[u->Attach]);
 
         setspritez_old(Weapon, ap->x, ap->y, ap->z - u->sz);
         sp->ang = NORM_ANGLE(ap->ang+1024);
@@ -10376,7 +10375,7 @@ DoMicro(int16_t Weapon)
         // last smoke
         if ((u->WaitTics -= MISSILEMOVETICS) <= 0)
         {
-            setspritez(New, (vec3_t *)np);
+            setspritez(New, &np->pos);
             NewStateGroup(Weapon, &sg_MicroMini[0]);
             sp->xrepeat = sp->yrepeat = 10;
             RESET(sp->cstat, CSTAT_SPRITE_INVISIBLE);
@@ -10508,13 +10507,13 @@ DoBoltSeeker(int16_t Weapon)
 }
 
 int
-DoBoltShrapnel(int16_t Weapon)
+DoBoltShrapnel(int16_t /*Weapon*/)
 {
     return 0;
 }
 
 int
-DoBoltFatMan(int16_t Weapon)
+DoBoltFatMan(int16_t /*Weapon*/)
 {
     return 0;
 }
@@ -11135,12 +11134,11 @@ int
 SpawnNuclearSecondaryExp(int16_t Weapon, short ang)
 {
     SPRITEp sp = &sprite[Weapon];
-    USERp u = User[Weapon];
     SPRITEp exp;
     USERp eu;
     short explosion;
 
-    ASSERT(u);
+    ASSERT(User[Weapon]);
 
     explosion = SpawnSprite(STAT_MISSILE, GRENADE_EXP, s_GrenadeExp, sp->sectnum,
                             sp->x, sp->y, sp->z, sp->ang, 512);
@@ -11482,14 +11480,13 @@ int
 SpawnGrenadeSecondaryExp(int16_t Weapon, short ang)
 {
     SPRITEp sp = &sprite[Weapon];
-    USERp u = User[Weapon];
     SPRITEp exp;
     USERp eu;
     short explosion;
     int vel;
 
 
-    ASSERT(u);
+    ASSERT(User[Weapon]);
     explosion = SpawnSprite(STAT_MISSILE, GRENADE_EXP, s_GrenadeSmallExp, sp->sectnum,
                             sp->x, sp->y, sp->z, sp->ang, 1024);
     exp = &sprite[explosion];
@@ -11762,9 +11759,6 @@ InitMineShrap(short SpriteNum)
 
 int DoMineExp(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
-
     DoExpDamageTest(SpriteNum);
     //InitMineShrap(SpriteNum);
 
@@ -12482,7 +12476,7 @@ DoBloodWorm(int16_t Weapon)
 #endif
 
 int
-DoMeteor(int16_t Weapon)
+DoMeteor(int16_t /*Weapon*/)
 {
     return FALSE;
 }
@@ -12846,7 +12840,7 @@ DoRing(int16_t Weapon)
     //sp->ang = NORM_ANGLE(sp->ang + 512);
     //updatesector(sp->x, sp->y);
 
-    setsprite(Weapon, (vec3_t *)sp);
+    setsprite(Weapon, &sp->pos);
 
     ASSERT(sp->sectnum >= 0);
 
@@ -12991,7 +12985,7 @@ DoSerpRing(int16_t Weapon)
     sp->x += ((int) u->Dist * (int) sintable[NORM_ANGLE(u->slide_ang + 512)]) >> 14;
     sp->y += ((int) u->Dist * (int) sintable[u->slide_ang]) >> 14;
 
-    setsprite(Weapon, (vec3_t *)sp);
+    setsprite(Weapon, &sp->pos);
 
     ASSERT(sp->sectnum >= 0);
 
@@ -13060,7 +13054,7 @@ DoSerpRing(int16_t Weapon)
 }
 
 int
-InitLavaFlame(short SpriteNum)
+InitLavaFlame(short /*SpriteNum*/)
 {
     return 0;
 }
@@ -17777,7 +17771,7 @@ HitscanSpriteAdjust(short SpriteNum, short hit_wall)
 
     // must have this
     sectnum = sp->sectnum;
-    clipmove((vec3_t *)sp, &sectnum, xvect, yvect,
+    clipmove(&sp->pos, &sectnum, xvect, yvect,
              4L, 4L<<8, 4L<<8, CLIPMASK_MISSILE);
     clipmoveboxtracenum = 3;
 
@@ -19114,7 +19108,7 @@ InitEnemyUzi(short SpriteNum)
     // Make sprite shade brighter
     u->Vis = 128;
 
-    setspritez(SpriteNum, (vec3_t *)sp);
+    setspritez(SpriteNum, &sp->pos);
 
     if (u->ID == ZILLA_RUN_R0)
     {
@@ -19776,7 +19770,9 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
     short i, nexti;
     SECT_USERp sectu = SectUser[*sectnum];
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
     short over, under;
     int sx, sy;
 
@@ -19793,13 +19789,17 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
 
     ASSERT(Found == TRUE);
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for UNDERWATER "under" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_UNDERWATER], i, nexti)
@@ -19810,7 +19810,9 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -19828,14 +19830,21 @@ WarpToUnderwater(short *sectnum, int *x, int *y, int *z)
     over = over_sp->sectnum;
     under = under_sp->sectnum;
 
+#if 0
+    // This code originally had identical branches.
+    // TODO: PedanticMode - verify implications of change, enable or remove
     if (GetOverlapSector(*x, *y, &over, &under) == 2)
     {
         *sectnum = under;
     }
     else
     {
-        *sectnum = under;
+        *sectnum = PedanticMode ? under : over;
     }
+#else
+    GetOverlapSector(*x, *y, &over, &under);
+    *sectnum = under;
+#endif
 
     *z = sector[under_sp->sectnum].ceilingz + Z(1);
 
@@ -19851,7 +19860,9 @@ WarpToSurface(short *sectnum, int *x, int *y, int *z)
     int sx, sy;
 
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
 
     // 0 not valid for water match tags
     if (sectu->number == 0)
@@ -19866,13 +19877,17 @@ WarpToSurface(short *sectnum, int *x, int *y, int *z)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
 
     ASSERT(Found == TRUE);
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for DIVE_AREA "over" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_DIVE_AREA], i, nexti)
@@ -19883,7 +19898,9 @@ WarpToSurface(short *sectnum, int *x, int *y, int *z)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -19921,7 +19938,9 @@ SpriteWarpToUnderwater(SPRITEp sp)
     short i, nexti;
     SECT_USERp sectu = SectUser[sp->sectnum];
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
     short over, under;
     int sx, sy;
 
@@ -19938,13 +19957,17 @@ SpriteWarpToUnderwater(SPRITEp sp)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
 
     ASSERT(Found == TRUE);
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for UNDERWATER "under" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_UNDERWATER], i, nexti)
@@ -19955,7 +19978,9 @@ SpriteWarpToUnderwater(SPRITEp sp)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -20002,7 +20027,9 @@ SpriteWarpToSurface(SPRITEp sp)
     int sx, sy;
 
     SPRITEp under_sp = NULL, over_sp = NULL;
+#if ASSERT_ACTIVE
     char Found = FALSE;
+#endif
 
     // 0 not valid for water match tags
     if (sectu->number == 0)
@@ -20017,7 +20044,9 @@ SpriteWarpToSurface(SPRITEp sp)
             SectUser[under_sp->sectnum] &&
             SectUser[under_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -20027,7 +20056,9 @@ SpriteWarpToSurface(SPRITEp sp)
     if (under_sp->lotag == 0)
         return FALSE;
 
+#if ASSERT_ACTIVE
     Found = FALSE;
+#endif
 
     // search for DIVE_AREA "over" sprite for reference point
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_DIVE_AREA], i, nexti)
@@ -20038,7 +20069,9 @@ SpriteWarpToSurface(SPRITEp sp)
             SectUser[over_sp->sectnum] &&
             SectUser[over_sp->sectnum]->number == sectu->number)
         {
+#if ASSERT_ACTIVE
             Found = TRUE;
+#endif
             break;
         }
     }
@@ -20633,7 +20666,7 @@ int QueueHole(short hit_sect, short hit_wall, int hit_x, int hit_y, int hit_z)
     sectnum = sp->sectnum;
 
     clipmoveboxtracenum = 1;
-    clipmove((vec3_t *)sp, &sectnum, nx, ny,
+    clipmove(&sp->pos, &sectnum, nx, ny,
              0L, 0L, 0L, CLIPMASK_MISSILE);
     clipmoveboxtracenum = 3;
 
@@ -20952,7 +20985,7 @@ int QueueWallBlood(short hit_sprite, short ang)
     sectnum = sp->sectnum;
 
     clipmoveboxtracenum = 1;
-    clipmove((vec3_t *)sp, &sectnum, nx, ny,
+    clipmove(&sp->pos, &sectnum, nx, ny,
              0L, 0L, 0L, CLIPMASK_MISSILE);
     clipmoveboxtracenum = 3;
 
@@ -21091,7 +21124,7 @@ int QueueGeneric(short SpriteNum, short pic)
     {
         // move old sprite to new sprite's place
         osp = &sprite[GenericQueue[GenericQueueHead]];
-        //setspritez(GenericQueue[GenericQueueHead], (vec3_t *)sp);
+        //setspritez(GenericQueue[GenericQueueHead], &sp->pos);
         osp->x = sp->x;
         osp->y = sp->y;
         osp->z = sp->z;
@@ -21644,7 +21677,7 @@ int QueueLoWangs(short SpriteNum)
     else
     {
         // move old sprite to new sprite's place
-        setspritez(LoWangsQueue[LoWangsQueueHead], (vec3_t *)sp);
+        setspritez(LoWangsQueue[LoWangsQueueHead], &sp->pos);
         NewSprite = LoWangsQueue[LoWangsQueueHead];
         ASSERT(sprite[NewSprite].statnum != MAXSTATUS);
     }

@@ -2188,7 +2188,7 @@ void tagcode(void)
             {
                 vec2_t const pivot = { swingx[i][0], swingy[i][0] };
                 vec2_t const p = { swingx[i][k], swingy[i][k] };
-                rotatepoint(pivot, p, swingang[i], (vec2_t *)&wall[swingwall[i][k]].x);
+                rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].pos);
             }
 
             if (swinganginc[i] != 0)
@@ -2204,7 +2204,7 @@ void tagcode(void)
                             //swingangopendir is -1 if forwards, 1 is backwards
                             l = (swingangopendir[i] > 0);
                             for (k=l+3; k>=l; k--)
-                                if (clipinsidebox((vec2_t *)&pos[p],swingwall[i][k],128L) != 0)
+                                if (clipinsidebox(pos[p].vec2,swingwall[i][k],128L) != 0)
                                 {
                                     good = 0;
                                     break;
@@ -2224,7 +2224,7 @@ void tagcode(void)
                                 {
                                     vec2_t const pivot = { swingx[i][0], swingy[i][0] };
                                     vec2_t const p = { swingx[i][k], swingy[i][k] };
-                                    rotatepoint(pivot, p, swingang[i], (vec2_t *)&wall[swingwall[i][k]].x);
+                                    rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].pos);
                                 }
                                 if (swingang[i] == swingangclosed[i])
                                 {

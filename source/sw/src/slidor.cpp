@@ -674,10 +674,6 @@ int DoSlidorMove(short SpriteNum)
 
 int DoSlidor(short SpriteNum)
 {
-    USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
-    SECTORp sectp = &sector[sp->sectnum];
-
     DoSlidorMove(SpriteNum);
 
     return 0;
