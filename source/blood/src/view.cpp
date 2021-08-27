@@ -2955,8 +2955,11 @@ void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsec
     *pZ += mulscale16(vZ, othercameradist);
     othercameradist = ClipHigh(othercameradist+(((int)(totalclock-othercameraclock))<<10), 65536);
     othercameraclock = (int)totalclock;
+    if (*vsectnum >= 0 && *vsectnum < kMaxSectors)
+        FindSector(*pX, *pY, *pZ, vsectnum);
+    else // sector was not found, likely viewpoint is within wall - use sprite sect and continue
+        *vsectnum = pSprite->sectnum;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
-    FindSector(*pX, *pY, *pZ, vsectnum);
     pSprite->cstat = bakCstat;
 }
 
