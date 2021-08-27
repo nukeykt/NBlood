@@ -4452,19 +4452,19 @@ MenuAnimation_t m_animation;
 
 int32_t Menu_Anim_SinOutRight(MenuAnimation_t *animdata)
 {
-    return sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] - 16384;
+    return sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] - 16384;
 }
 int32_t Menu_Anim_SinInRight(MenuAnimation_t *animdata)
 {
-    return sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] + 16384;
+    return sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] + 16384;
 }
 int32_t Menu_Anim_SinOutLeft(MenuAnimation_t *animdata)
 {
-    return -sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] + 16384;
+    return -sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] + 16384;
 }
 int32_t Menu_Anim_SinInLeft(MenuAnimation_t *animdata)
 {
-    return -sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] - 16384;
+    return -sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] - 16384;
 }
 
 void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
@@ -4487,8 +4487,8 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
             {
                 m_animation.out    = Menu_Anim_SinOutRight;
                 m_animation.in     = Menu_Anim_SinInRight;
-                m_animation.start  = timer120();
-                m_animation.length = 30;
+                m_animation.start  = timerGetTicks();
+                m_animation.length = 250;
 
                 m_animation.previous = previousMenu;
                 m_animation.current  = m_currentMenu;
@@ -4504,8 +4504,8 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
             {
                 m_animation.out    = Menu_Anim_SinOutLeft;
                 m_animation.in     = Menu_Anim_SinInLeft;
-                m_animation.start  = timer120();
-                m_animation.length = 30;
+                m_animation.start  = timerGetTicks();
+                m_animation.length = 250;
 
                 m_animation.previous = previousMenu;
                 m_animation.current  = m_currentMenu;
@@ -7558,7 +7558,7 @@ void M_DisplayMenus(void)
     }
 
     // Determine animation values.
-    if (timer120() < m_animation.start + m_animation.length)
+    if (timerGetTicks() < m_animation.start + m_animation.length)
     {
         const int32_t screenwidth = scale(240<<16, xdim, ydim);
 
@@ -7600,7 +7600,7 @@ void M_DisplayMenus(void)
         videoFadeToBlack(1);
 
     // Display the menu, with a transition animation if applicable.
-    if (timer120() < m_animation.start + m_animation.length)
+    if (timerGetTicks() < m_animation.start + m_animation.length)
     {
         Menu_Run(m_animation.previous, previousOrigin);
         Menu_Run(m_animation.current, origin);
@@ -7626,7 +7626,7 @@ void M_DisplayMenus(void)
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENUREST, g_player[screenpeek].ps->i, screenpeek, m_parentMenu->menuID);
     }
 
-    if (timer120() < m_animation.start + m_animation.length)
+    if (timerGetTicks() < m_animation.start + m_animation.length)
     {
         ud.returnvar[0] = previousOrigin.x;
         ud.returnvar[1] = previousOrigin.y;
