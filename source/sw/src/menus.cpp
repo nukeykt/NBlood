@@ -4732,6 +4732,8 @@ void MNU_DoMenu(CTLType UNUSED(type))
     {
         KB_ClearKeysDown();
         ResetKeys();
+        MOUSE_ClearAllButtons();
+        CONTROL_ClearAllButtons();
     }
 }
 
