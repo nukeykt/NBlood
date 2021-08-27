@@ -298,7 +298,7 @@ spritetype *playerFireThing(PLAYER *pPlayer, int a2, int a3, int thingType, int 
 void        playerFrag(PLAYER *pKiller, PLAYER *pVictim);
 void        FragPlayer(PLAYER *pPlayer, int nSprite);
 int         playerDamageArmor(PLAYER *pPlayer, DAMAGE_TYPE nType, int nDamage);
-spritetype *sub_40A94(PLAYER *pPlayer, int a2);
+spritetype *playerDropFlag(PLAYER *pPlayer, int a2);
 int         playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, int nDamage);
 int         UseAmmo(PLAYER *pPlayer, int nAmmoType, int nDec);
 void        sub_41250(PLAYER *pPlayer);
