@@ -1970,7 +1970,7 @@ int playerDamageArmor(PLAYER *pPlayer, DAMAGE_TYPE nType, int nDamage)
     return nDamage;
 }
 
-spritetype *sub_40A94(PLAYER *pPlayer, int a2)
+spritetype *playerDropFlag(PLAYER *pPlayer, int a2)
 {
     char buffer[80];
     spritetype *pSprite = NULL;
@@ -2075,8 +2075,8 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         }
         sfxKill3DSound(pPlayer->pSprite, -1, 441);
         if (gGameOptions.nGameType == 3 && pPlayer->hasFlag) {
-            if (pPlayer->hasFlag&1) sub_40A94(pPlayer, kItemFlagA);
-            if (pPlayer->hasFlag&2) sub_40A94(pPlayer, kItemFlagB);
+            if (pPlayer->hasFlag&1) playerDropFlag(pPlayer, kItemFlagA);
+            if (pPlayer->hasFlag&2) playerDropFlag(pPlayer, kItemFlagB);
         }
         pPlayer->deathTime = 0;
         pPlayer->qavLoop = 0;
