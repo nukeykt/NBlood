@@ -493,7 +493,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             spritetype* pSpawn = actSpawnDude(pSprite, pXSprite->data1, -1, 0);
             if (pSpawn) {
                 XSPRITE *pXSpawn = &xsprite[pSpawn->extra];
-                gKillMgr.sub_263E0(1);
+                gKillMgr.AddCount(1);
                 switch (pXSprite->data1) {
                     case kDudeBurningInnocent:
                     case kDudeBurningCultist:

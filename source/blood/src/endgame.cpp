@@ -128,7 +128,7 @@ void CKillMgr::SetCount(int nCount)
     at0 = nCount;
 }
 
-void CKillMgr::sub_263E0(int nCount)
+void CKillMgr::AddCount(int nCount)
 {
     at0 += nCount;
 }
@@ -139,7 +139,7 @@ void CKillMgr::AddKill(spritetype* pSprite)
         at4++;
 }
 
-void CKillMgr::sub_2641C(void)
+void CKillMgr::CountTotalKills(void)
 {
     at0 = 0;
     for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite])
