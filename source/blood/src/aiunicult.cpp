@@ -259,7 +259,7 @@ static void genDudeAttack1(int, int nXIndex) {
                         aiActivateDude(pSpawned, &xsprite[pSpawned->extra]);
                 }
 
-                gKillMgr.sub_263E0(1);
+                gKillMgr.AddCount(1);
                 pExtra->slave[pExtra->slaveCount++] = pSpawned->index;
                 if (!playGenDudeSound(pSprite, kGenDudeSndAttackNormal))
                     sfxPlay3DSoundCP(pSprite, 379, 1, 0, 0x10000 - Random3(0x3000));
@@ -1688,7 +1688,7 @@ spritetype* genDudeSpawn(XSPRITE* pXSource, spritetype* pSprite, int nDist) {
         pDude->yrepeat = pSource->yrepeat;
     }
 
-    gKillMgr.sub_263E0(1);
+    gKillMgr.AddCount(1);
     aiInitSprite(pDude);
     return pDude;
 }

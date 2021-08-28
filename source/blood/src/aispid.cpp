@@ -184,7 +184,7 @@ static void SpidBirthSeqCallback(int, int nXSprite)
         if (pSpawn) {
             pDudeExtraE->at4++;
             pSpawn->owner = nSprite;
-            gKillMgr.sub_263E0(1);
+            gKillMgr.AddCount(1);
         }
     }
 

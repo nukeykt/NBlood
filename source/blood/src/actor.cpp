@@ -2550,7 +2550,7 @@ void actInit(bool bSaveLoad) {
             unk[pSprite->type - kDudeBase] = 1;
         }
         
-        gKillMgr.sub_2641C();
+        gKillMgr.CountTotalKills();
         ///////////////
 
         for (int i = 0; i < kDudeMax - kDudeBase; i++)

@@ -40,9 +40,9 @@ public:
     int at0, at4;
     CKillMgr();
     void SetCount(int);
-    void sub_263E0(int);
+    void AddCount(int);
     void AddKill(spritetype *pSprite);
-    void sub_2641C(void);
+    void CountTotalKills(void);
     void Clear(void);
     void Draw(void);
 };
