@@ -3263,7 +3263,7 @@ badindex:
 
             vInstruction(CON_MIKESND):
                 insptr++;
-                VM_ASSERT((unsigned)vm.pSprite->yvel < (unsigned)g_highestSoundIdx, "invalid sound %d\n", vm.pUSprite->yvel);
+                VM_ASSERT((unsigned)vm.pSprite->yvel <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", vm.pUSprite->yvel);
                 if (!S_CheckSoundPlaying(vm.pSprite->yvel))
                     A_PlaySound(vm.pSprite->yvel, vm.spriteNum);
                 dispatch();
@@ -3310,7 +3310,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     insptr--;
                     branch(A_CheckSoundPlaying(spriteNum, soundNum));
@@ -3319,7 +3319,7 @@ badindex:
 
             vInstruction(CON_IFSOUND):
                 insptr++;
-                VM_ASSERT((unsigned)*insptr < (unsigned)g_highestSoundIdx, "invalid sound %d\n", (int32_t)*insptr);
+                VM_ASSERT((unsigned)*insptr <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", (int32_t)*insptr);
                 branch(S_CheckSoundPlaying(*insptr));
                 //    VM_DoConditional(SoundOwner[*insptr][0].ow == vm.spriteNum);
                 dispatch();
@@ -3330,7 +3330,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     if (A_CheckSoundPlaying(spriteNum, soundNum))
                         S_StopEnvSound(soundNum, spriteNum);
@@ -3344,7 +3344,7 @@ badindex:
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     A_PlaySound(soundNum, spriteNum);
 
@@ -3358,7 +3358,7 @@ badindex:
                     int const soundNum  = Gv_GetVar(*insptr++);
                     int const newPitch  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     S_ChangeSoundPitch(soundNum, spriteNum, newPitch);
 
@@ -4287,7 +4287,7 @@ badindex:
                 {
                     int const soundNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     switch (VM_DECODE_INST(tw))
                     {
