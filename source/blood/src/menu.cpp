@@ -1228,6 +1228,7 @@ void SetupOptionsMenu(void)
             ++gResolutionNum;
         }
     }
+    SetupVideoModeMenu(NULL);
     itemOptionsDisplayModeResolution.SetTextArray(gResolutionName, gResolutionNum, 0);
 #ifdef USE_OPENGL
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeRenderer, false);
