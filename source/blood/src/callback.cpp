@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "config.h"
 #include "db.h"
 #include "dude.h"
+#include "endgame.h"
 #include "eventq.h"
 #include "fx.h"
 #include "gameutil.h"
@@ -262,6 +263,8 @@ void Respawn(int nSprite) // 9
             pXSprite->burnTime = 0;
             pXSprite->isTriggered = 0;
             if (IsDudeSprite(pSprite)) {
+                if (!VanillaMode()) // remove a kill
+                    gKillMgr.RemoveKill(pSprite);
                 int nType = pSprite->type-kDudeBase;
                 pSprite->x = baseSprite[nSprite].x;
                 pSprite->y = baseSprite[nSprite].y;
