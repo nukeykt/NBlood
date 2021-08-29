@@ -123,7 +123,7 @@ enum scripttoken_t
     T_LOCALIZATION, T_STRING,
     T_TILEFONT, T_CHARACTER,
     T_TRUENPOT,
-    T_STUB_INTEGER, T_STUB_BRACES, T_STUB_STRING_BRACES,
+    T_STUB_INTEGER, T_STUB_INTEGER_STRING, T_STUB_BRACES, T_STUB_STRING_BRACES,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -405,6 +405,8 @@ static int32_t defsparser(scriptfile *script)
 
         // stubs for game-side tokens
         { "globalgameflags", T_STUB_INTEGER     },
+        { "delplayercolor",  T_STUB_INTEGER     },    // NetDuke32
+        { "addplayercolor",  T_STUB_INTEGER_STRING }, // NetDuke32
         { "music",           T_STUB_BRACES      },
         { "sound",           T_STUB_BRACES      },
         { "newgamechoices",  T_STUB_BRACES      },
@@ -3847,6 +3849,19 @@ static int32_t defsparser(scriptfile *script)
         {
             int32_t dummy;
             scriptfile_getnumber(script, &dummy);
+            break;
+        }
+
+        case T_STUB_INTEGER_STRING:
+        {
+            int32_t dummy;
+            char * dummyChar;
+
+            if (scriptfile_getnumber(script, &dummy))
+                break;
+            if (scriptfile_getstring(script, &dummyChar))
+                break;
+
             break;
         }
 
