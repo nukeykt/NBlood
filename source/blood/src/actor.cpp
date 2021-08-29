@@ -5488,6 +5488,8 @@ void actProcessSprites(void)
         int nXSprite = pSprite->extra;
         if (nXSprite > 0) {
             XSPRITE *pXSprite = &xsprite[nXSprite];
+            if ((pXSprite->respawnPending > 0) && !VanillaMode()) // don't process currently respawning thing
+                continue;
             switch (pSprite->type) {
                 case kThingBloodBits:
                 case kThingBloodChunks:

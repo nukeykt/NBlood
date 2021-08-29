@@ -139,6 +139,14 @@ void CKillMgr::AddKill(spritetype* pSprite)
         at4++;
 }
 
+void CKillMgr::RemoveKill(spritetype* pSprite)
+{
+    if (gKillMgr.at4 <= 0)
+        return;
+    if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
+        at4--;
+}
+
 void CKillMgr::CountTotalKills(void)
 {
     at0 = 0;

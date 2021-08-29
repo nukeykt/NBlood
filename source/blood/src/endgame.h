@@ -42,6 +42,7 @@ public:
     void SetCount(int);
     void AddCount(int);
     void AddKill(spritetype *pSprite);
+    void RemoveKill(spritetype *pSprite);
     void CountTotalKills(void);
     void Clear(void);
     void Draw(void);
