@@ -468,6 +468,7 @@
     <ClInclude Include="..\..\source\build\include\pragmas_x86_msvc.h" />
     <ClInclude Include="..\..\source\build\include\print.h" />
     <ClInclude Include="..\..\source\build\include\prlights.h" />
+    <ClInclude Include="..\..\source\build\include\random.h" />
     <ClInclude Include="..\..\source\build\include\rawinput.h" />
     <ClInclude Include="..\..\source\build\include\renderlayer.h" />
     <ClInclude Include="..\..\source\build\include\rev.h" />
