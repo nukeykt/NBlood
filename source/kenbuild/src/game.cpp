@@ -5094,8 +5094,8 @@ void movelava(char *dapic)
 
     for (z=min(LAVAMAXDROPS-lavanumdrops-1,3); z>=0; z--)
     {
-        lavadropx[lavanumdrops] = (Brand()&(LAVASIZ-1));
-        lavadropy[lavanumdrops] = (Brand()&(LAVASIZ-1));
+        lavadropx[lavanumdrops] = (rand()&(LAVASIZ-1));
+        lavadropy[lavanumdrops] = (rand()&(LAVASIZ-1));
         lavadropsiz[lavanumdrops] = 1;
         lavanumdrops++;
     }
