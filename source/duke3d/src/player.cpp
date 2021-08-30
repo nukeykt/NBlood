@@ -2394,7 +2394,7 @@ void P_DisplayWeapon(void)
                         weaponYOffset -= sintable[(*weaponFrame)<<7]>>12;
 
                     if (*weaponFrame > 0 && doAnim)
-                        weaponX += 1-(krand()&3);
+                        weaponX += 1-(wrand()&3);
 
                     if (*weaponFrame == 0)
                     {
