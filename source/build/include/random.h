@@ -13,10 +13,14 @@
 
 #include "compat.h"
 
+#define WRAND_MAX 32767u
+
 #ifdef engine_c_
 int32_t randomseed;
+uint32_t wrandomseed = 1;
 #else
 extern int32_t randomseed;
+extern uint32_t wrandomseed;
 #endif
 
 #if !KRANDDEBUG
@@ -33,6 +37,13 @@ static FORCE_INLINE int32_t seed_krand(int32_t* seed)
 {
     *seed = (*seed * 1664525ul) + 221297ul;
     return ((uint32_t)*seed) >> 16;
+}
+
+// This aims to mimic Watcom C's implementation of rand
+static FORCE_INLINE int32_t wrand(void)
+{
+	wrandomseed = 1103515245 * wrandomseed + 12345;
+	return (wrandomseed >> 16) & 0x7FFF;
 }
 
 #endif
