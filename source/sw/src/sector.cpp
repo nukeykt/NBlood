@@ -3111,8 +3111,8 @@ void movelava(char *dapic)
         z = LAVAMAXDROPS - lavanumdrops - 1;
     while (z >= 0)
     {
-        lavadropx[lavanumdrops] = (rand() & (LAVASIZ - 1));
-        lavadropy[lavanumdrops] = (rand() & (LAVASIZ - 1));
+        lavadropx[lavanumdrops] = (wrand() & (LAVASIZ - 1));
+        lavadropy[lavanumdrops] = (wrand() & (LAVASIZ - 1));
         lavadropsiz[lavanumdrops] = 1;
         lavanumdrops++;
         z--;

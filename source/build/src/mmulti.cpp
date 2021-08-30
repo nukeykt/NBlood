@@ -256,7 +256,7 @@ int netread(int *other, char *dabuf, int bufsiz)  //0:no packets in buffer
 
     if (recvfrom(mysock,dabuf,bufsiz,0,(struct sockaddr *)&ip,(socklen_t *)&i) == -1) return(0);
 #if (SIMMIS > 0)
-    if ((rand()&255) < SIMMIS) return(0);
+    if ((wrand()&255) < SIMMIS) return(0);
 #endif
 
     snatchip = (int)ip.sin_addr.s_addr; snatchport = (int)ip.sin_port;

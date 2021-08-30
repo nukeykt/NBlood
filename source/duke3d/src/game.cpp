@@ -3931,7 +3931,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
             if (g_curViewscreen >= 0 && actor[OW(i)].t_data[0] == 1)
             {
                 t->picnum = STATIC;
-                t->cstat |= (rand()&12);
+                t->cstat |= (wrand()&12);
                 t->xrepeat += 10;
                 t->yrepeat += 9;
             }
