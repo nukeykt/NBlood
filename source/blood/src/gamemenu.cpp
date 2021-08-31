@@ -1143,6 +1143,13 @@ void CGameMenuItemKeyList::Draw(void)
         const char *sKey1 = key1 == sc_Tilde ? "Tilde" : KB_ScanCodeToString(key1);
         const char *sKey2 = key2 == sc_Tilde ? "Tilde" : KB_ScanCodeToString(key2);
         sprintf(buffer, "%s", CONFIG_FunctionNumToName(k));
+        for (int j = 0; j < 40; j++)
+        {
+            if (buffer[j] == '\0')
+                break;
+            if (buffer[j] == '_')
+                buffer[j] = ' ';
+        }
         if (key2 == 0 || key2 == 0xff)
         {
             if (key1 == 0 || key1 == 0xff)
