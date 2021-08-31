@@ -736,7 +736,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
             PLAYER *pPlayer = &gPlayer[i];
-            if ((gGameOptions.nGameType > 0) && (gHealthTemp[i] == 0)) // if multiplayer and player is dead, reset player between levels
+            if (gHealthTemp[i] == 0) // if player is dead, reset player between levels
             {
                 playerReset(pPlayer); // reset ammo, weapons, etc
                 if (pPlayer->pDudeInfo != NULL) // if dude info is available, reset health
