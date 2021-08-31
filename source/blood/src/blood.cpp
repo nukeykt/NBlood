@@ -625,7 +625,9 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
         ///////
-
+    }
+    if (gGameOptions.nGameType > 0)
+    {
         gBlueFlagDropped = false;
         gRedFlagDropped = false;
         gView = gMe;
@@ -734,6 +736,13 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
             PLAYER *pPlayer = &gPlayer[i];
+            if ((gGameOptions.nGameType > 0) && (gHealthTemp[i] == 0)) // if multiplayer and player is dead, reset player between levels
+            {
+                playerReset(pPlayer); // reset ammo, weapons, etc
+                if (pPlayer->pDudeInfo != NULL) // if dude info is available, reset health
+                    pPlayer->pXSprite->health = pPlayer->pDudeInfo->startHealth<<4;
+                continue;
+            }
             pPlayer->pXSprite->health &= 0xf000;
             pPlayer->pXSprite->health |= gHealthTemp[i];
             pPlayer->weaponQav = gPlayerTemp[i].weaponQav;
@@ -794,11 +803,6 @@ void StartNetworkLevel(void)
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
         ///////
-
-        gBlueFlagDropped = false;
-        gRedFlagDropped = false;
-        gView = gMe;
-        gViewIndex = myconnectindex;
 
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
