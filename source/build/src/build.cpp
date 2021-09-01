@@ -8759,6 +8759,8 @@ int32_t LoadBoard(const char *filename, uint32_t flags)
                 boardfilename, tagstat==0?" w/tags":"", msgtail);
     }
 
+    fixspritesectors();
+
     startpos = pos;      //this is same
     startang = ang;
     startsectnum = cursectnum;
@@ -9222,16 +9224,25 @@ int32_t fixspritesectors(void)
 {
     int32_t i;
     int32_t numfixedsprites = 0, printfirsttime = 0;
+    int deleted = 0;
 
     for (i=numsectors-1; i>=0; i--)
-        if (sector[i].wallnum <= 0 || sector[i].wallptr >= numwalls)
+        if (sector[i].wallnum <= 2 || sector[i].wallptr >= numwalls)
         {
             // XXX: This is not the best course of action for
             //  such great corruption.
+            initprintf("NOTE: Deleting sector %d with corrupt %s\n", i, sector[i].wallnum <= 2 ? ".wallnum" : ".wallptr");
             deletesector(i);
             mkonwinvalid();
-            initprintf("NOTE: Deleted sector %d which had corrupt .wallnum or .wallptr\n", i);
+            deleted++;
         }
+
+    if (deleted)
+    {
+        for (i = 0; i < numsectors; i++)
+            for (int WALLS_OF_SECTOR(i, j))
+                checksectorpointer(j, i);
+    }
 
     if (m32_script_expertmode)
         return 0;
