@@ -7,7 +7,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 /* -----------------------------------------------------------
   The core of the allocator. Every segment contains
-  pages of a {certain block size. The main function
+  pages of a certain block size. The main function
   exported is `mi_malloc_generic`.
 ----------------------------------------------------------- */
 
@@ -84,9 +84,10 @@ static bool mi_page_is_valid_init(mi_page_t* page) {
   mi_assert_internal(mi_page_list_is_valid(page,page->local_free));
 
   #if MI_DEBUG>3 // generally too expensive to check this
-  if (page->flags.is_zero) {
-    for(mi_block_t* block = page->free; block != NULL; mi_block_next(page,block)) {
-      mi_assert_expensive(mi_mem_is_zero(block + 1, page->block_size - sizeof(mi_block_t)));
+  if (page->is_zero) {
+    const size_t ubsize = mi_page_usable_block_size(page);
+    for(mi_block_t* block = page->free; block != NULL; block = mi_block_next(page,block)) {
+      mi_assert_expensive(mi_mem_is_zero(block + 1, ubsize - sizeof(mi_block_t)));
     }
   }
   #endif
@@ -385,7 +386,7 @@ void _mi_page_free(mi_page_t* page, mi_page_queue_t* pq, bool force) {
 // Note: called from `mi_free` and benchmarks often
 // trigger this due to freeing everything and then
 // allocating again so careful when changing this.
-void _mi_page_retire(mi_page_t* page) {
+void _mi_page_retire(mi_page_t* page) mi_attr_noexcept {
   mi_assert_internal(page != NULL);
   mi_assert_expensive(_mi_page_is_valid(page));
   mi_assert_internal(mi_page_all_free(page));

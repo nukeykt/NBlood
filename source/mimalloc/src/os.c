@@ -26,16 +26,20 @@ terms of the MIT license. A copy of the license can be found in the file
 #pragma warning(disable:4996)  // strerror
 #endif
 
+#if defined(__wasi__)
+#define MI_USE_SBRK
+#endif
 
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__wasi__)
-// stdlib.h is all we need, and has already been included in mimalloc.h
+#include <unistd.h>    // sbrk
 #else
 #include <sys/mman.h>  // mmap
 #include <unistd.h>    // sysconf
 #if defined(__linux__)
 #include <features.h>
+#include <fcntl.h>
 #if defined(__GLIBC__)
 #include <linux/mman.h> // linux mmap flags
 #else
@@ -48,9 +52,13 @@ terms of the MIT license. A copy of the license can be found in the file
 #include <mach/vm_statistics.h>
 #endif
 #endif
-#if defined(__HAIKU__)
-#define madvise posix_madvise
-#define MADV_DONTNEED POSIX_MADV_DONTNEED
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#include <sys/param.h>
+#if __FreeBSD_version >= 1200000
+#include <sys/cpuset.h>
+#include <sys/domainset.h>
+#endif
+#include <sys/sysctl.h>
 #endif
 #endif
 
@@ -89,21 +97,27 @@ static size_t os_alloc_granularity = 4096;
 // if non-zero, use large page allocation
 static size_t large_os_page_size = 0;
 
+// is memory overcommit allowed? 
+// set dynamically in _mi_os_init (and if true we use MAP_NORESERVE)
+static bool os_overcommit = true;
+
 // OS (small) page size
 size_t _mi_os_page_size() {
   return os_page_size;
 }
 
 // if large OS pages are supported (2 or 4MiB), then return the size, otherwise return the small page size (4KiB)
-size_t _mi_os_large_page_size() {
+size_t _mi_os_large_page_size(void) {
   return (large_os_page_size != 0 ? large_os_page_size : _mi_os_page_size());
 }
 
+#if !defined(MI_USE_SBRK) && !defined(__wasi__)
 static bool use_large_os_page(size_t size, size_t alignment) {
   // if we have access, check the size and alignment requirements
   if (large_os_page_size == 0 || !mi_option_is_enabled(mi_option_large_os_pages)) return false;
   return ((size % large_os_page_size) == 0 && (alignment % large_os_page_size) == 0);
 }
+#endif
 
 // round to a good OS allocation size (bounded by max 12.5% waste)
 size_t _mi_os_good_alloc_size(size_t size) {
@@ -175,7 +189,9 @@ static bool mi_win_enable_large_os_pages()
   return (ok!=0);
 }
 
-void _mi_os_init(void) {
+void _mi_os_init(void) 
+{
+  os_overcommit = false;
   // get the page size
   SYSTEM_INFO si;
   GetSystemInfo(&si);
@@ -210,10 +226,36 @@ void _mi_os_init(void) {
 }
 #elif defined(__wasi__)
 void _mi_os_init() {
-  os_page_size = 0x10000; // WebAssembly has a fixed page size: 64KB
+  os_overcommit = false;
+  os_page_size = 0x10000; // WebAssembly has a fixed page size: 64KiB
   os_alloc_granularity = 16;
 }
+
+#else  // generic unix
+
+static void os_detect_overcommit(void) {
+#if defined(__linux__)
+  int fd = open("/proc/sys/vm/overcommit_memory", O_RDONLY);
+	if (fd < 0) return;
+  char buf[128];
+  ssize_t nread = read(fd, &buf, sizeof(buf));
+	close(fd);
+  // <https://www.kernel.org/doc/Documentation/vm/overcommit-accounting>
+  // 0: heuristic overcommit, 1: always overcommit, 2: never overcommit (ignore NORESERVE)
+  if (nread >= 1) {
+    os_overcommit = (buf[0] == '0' || buf[0] == '1');
+  }
+#elif defined(__FreeBSD__)
+  int val = 0;
+  size_t olen = sizeof(val);
+  if (sysctlbyname("vm.overcommit", &val, &olen, NULL, 0) == 0) {
+    os_overcommit = (val != 0);
+  }  
 #else
+  // default: overcommit is true  
+#endif
+}
+
 void _mi_os_init() {
   // get the page size
   long result = sysconf(_SC_PAGESIZE);
@@ -222,6 +264,7 @@ void _mi_os_init() {
     os_alloc_granularity = os_page_size;
   }
   large_os_page_size = 2*MiB; // TODO: can we query the OS for this?
+  os_detect_overcommit();
 }
 #endif
 
@@ -236,8 +279,8 @@ static bool mi_os_mem_free(void* addr, size_t size, bool was_committed, mi_stats
   bool err = false;
 #if defined(_WIN32)
   err = (VirtualFree(addr, 0, MEM_RELEASE) == 0);
-#elif defined(__wasi__)
-  err = 0; // WebAssembly's heap cannot be shrunk
+#elif defined(MI_USE_SBRK)
+  err = 0; // sbrk heap cannot be shrunk
 #else
   err = (munmap(addr, size) == -1);
 #endif
@@ -252,22 +295,28 @@ static bool mi_os_mem_free(void* addr, size_t size, bool was_committed, mi_stats
   }
 }
 
+#if !defined(MI_USE_SBRK) && !defined(__wasi__)
 static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size);
+#endif
 
 #ifdef _WIN32
 static void* mi_win_virtual_allocx(void* addr, size_t size, size_t try_alignment, DWORD flags) {
 #if (MI_INTPTR_SIZE >= 8)
-  // on 64-bit systems, try to use the virtual address area after 4TiB for 4MiB aligned allocations
+  // on 64-bit systems, try to use the virtual address area after 2TiB for 4MiB aligned allocations
   void* hint;
   if (addr == NULL && (hint = mi_os_get_aligned_hint(try_alignment,size)) != NULL) {
     void* p = VirtualAlloc(hint, size, flags, PAGE_READWRITE);
     if (p != NULL) return p;
+    // for robustness always fall through in case of an error
+    /*
     DWORD err = GetLastError();
     if (err != ERROR_INVALID_ADDRESS &&   // If linked with multiple instances, we may have tried to allocate at an already allocated area (#210)
         err != ERROR_INVALID_PARAMETER) { // Windows7 instability (#230)
       return NULL;
     }
-    // fall through
+    */
+    _mi_warning_message("unable to allocate hinted aligned OS memory (%zu bytes, error code: %x, address: %p, alignment: %d, flags: %x)\n", size, GetLastError(), hint, try_alignment, flags);
+    // fall through on error
   } 
 #endif
 #if defined(MEM_EXTENDED_PARAMETER_TYPE_BITS)
@@ -278,7 +327,10 @@ static void* mi_win_virtual_allocx(void* addr, size_t size, size_t try_alignment
     MEM_EXTENDED_PARAMETER param = { {0, 0}, {0} };
     param.Type = MemExtendedParameterAddressRequirements;
     param.Pointer = &reqs;
-    return (*pVirtualAlloc2)(GetCurrentProcess(), addr, size, flags, PAGE_READWRITE, &param, 1);
+    void* p = (*pVirtualAlloc2)(GetCurrentProcess(), addr, size, flags, PAGE_READWRITE, &param, 1);
+    if (p != NULL) return p;
+    _mi_warning_message("unable to allocate aligned OS memory (%zu bytes, error code: %x, address: %p, alignment: %d, flags: %x)\n", size, GetLastError(), addr, try_alignment, flags);
+    // fall through on error
   }
 #endif
   // last resort
@@ -318,7 +370,32 @@ static void* mi_win_virtual_alloc(void* addr, size_t size, size_t try_alignment,
   return p;
 }
 
-#elif defined(__wasi__)
+#elif defined(MI_USE_SBRK)
+#define MI_SBRK_FAIL ((void*)(-1)) 
+static void* mi_sbrk_heap_grow(size_t size, size_t try_alignment) {
+  void* pbase0 = sbrk(0);
+  if (pbase0 == MI_SBRK_FAIL) {
+    _mi_warning_message("unable to allocate sbrk() OS memory (%zu bytes)\n", size);
+    errno = ENOMEM;
+    return NULL;
+  }
+  uintptr_t base = (uintptr_t)pbase0;
+  uintptr_t aligned_base = _mi_align_up(base, (uintptr_t) try_alignment);
+  size_t alloc_size = _mi_align_up( aligned_base - base + size, _mi_os_page_size());
+  mi_assert(alloc_size >= size && (alloc_size % _mi_os_page_size()) == 0);
+  if (alloc_size < size) return NULL;
+  void* pbase1 = sbrk(alloc_size);
+  if (pbase1 == MI_SBRK_FAIL) {
+    _mi_warning_message("unable to allocate sbrk() OS memory (%zu bytes, %zu requested)\n", size, alloc_size);
+    errno = ENOMEM;
+    return NULL;
+  }
+  mi_assert(pbase0 == pbase1);
+  return (void*)aligned_base;
+}
+
+#elif defined(__wasi__)  
+ // currently unused as we use sbrk() on wasm
 static void* mi_wasm_heap_grow(size_t size, size_t try_alignment) {
   uintptr_t base = __builtin_wasm_memory_size(0) * _mi_os_page_size();
   uintptr_t aligned_base = _mi_align_up(base, (uintptr_t) try_alignment);
@@ -326,17 +403,19 @@ static void* mi_wasm_heap_grow(size_t size, size_t try_alignment) {
   mi_assert(alloc_size >= size && (alloc_size % _mi_os_page_size()) == 0);
   if (alloc_size < size) return NULL;
   if (__builtin_wasm_memory_grow(0, alloc_size / _mi_os_page_size()) == SIZE_MAX) {
+    _mi_warning_message("unable to allocate wasm_memory_grow() OS memory (%zu bytes, %zu requested)\n", size, alloc_size);
     errno = ENOMEM;
     return NULL;
   }
   return (void*)aligned_base;
 }
+
 #else
 #define MI_OS_USE_MMAP
 static void* mi_unix_mmapx(void* addr, size_t size, size_t try_alignment, int protect_flags, int flags, int fd) {
   void* p = NULL;
   #if (MI_INTPTR_SIZE >= 8) && !defined(MAP_ALIGNED)
-  // on 64-bit systems, use the virtual address area after 4TiB for 4MiB aligned allocations
+  // on 64-bit systems, use the virtual address area after 2TiB for 4MiB aligned allocations
   void* hint;
   if (addr == NULL && (hint = mi_os_get_aligned_hint(try_alignment, size)) != NULL) {
     p = mmap(hint,size,protect_flags,flags,fd,0);
@@ -361,8 +440,11 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
   #if !defined(MAP_NORESERVE)
   #define MAP_NORESERVE  0
   #endif
-  int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE;
+  int flags = MAP_PRIVATE | MAP_ANONYMOUS;
   int fd = -1;
+  if (os_overcommit) {
+    flags |= MAP_NORESERVE;
+  }
   #if defined(MAP_ALIGNED)  // BSD
   if (try_alignment > 0) {
     size_t n = mi_bsr(try_alignment);
@@ -468,7 +550,7 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
 #endif
 
 // On 64-bit systems, we can do efficient aligned allocation by using
-// the 4TiB to 30TiB area to allocate them.
+// the 2TiB to 30TiB area to allocate them.
 #if (MI_INTPTR_SIZE >= 8) && (defined(_WIN32) || (defined(MI_OS_USE_MMAP) && !defined(MAP_ALIGNED)))
 static mi_decl_cache_align _Atomic(uintptr_t) aligned_base;
 
@@ -506,6 +588,8 @@ static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size)
   if (hint%try_alignment != 0) return NULL;
   return (void*)hint;
 }
+#elif defined(__wasi__) || defined(MI_USE_SBRK)
+// no need for mi_os_get_aligned_hint
 #else
 static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size) {
   UNUSED(try_alignment); UNUSED(size);
@@ -536,7 +620,12 @@ static void* mi_os_mem_alloc(size_t size, size_t try_alignment, bool commit, boo
     int flags = MEM_RESERVE;
     if (commit) flags |= MEM_COMMIT;
     p = mi_win_virtual_alloc(NULL, size, try_alignment, flags, false, allow_large, is_large);
+  #elif defined(MI_USE_SBRK)
+    KK_UNUSED(allow_large);
+    *is_large = false;
+    p = mi_sbrk_heap_grow(size, try_alignment);
   #elif defined(__wasi__)
+    KK_UNUSED(allow_large);
     *is_large = false;
     p = mi_wasm_heap_grow(size, try_alignment);
   #else
@@ -593,6 +682,10 @@ static void* mi_os_mem_alloc_aligned(size_t size, size_t alignment, bool commit,
         mi_os_mem_free(p, over_size, commit, stats);
         void* aligned_p = mi_align_up_ptr(p, alignment);
         p = mi_win_virtual_alloc(aligned_p, size, alignment, flags, false, allow_large, is_large);
+        if (p != NULL) {
+          _mi_stat_increase(&stats->reserved, size);
+          if (commit) { _mi_stat_increase(&stats->committed, size); }
+        }
         if (p == aligned_p) break; // success!
         if (p != NULL) { // should not happen?
           mi_os_mem_free(p, size, commit, stats);
@@ -744,16 +837,16 @@ static bool mi_os_commitx(void* addr, size_t size, bool commit, bool conservativ
     // for commit, just change the protection
     err = mprotect(start, csize, (PROT_READ | PROT_WRITE));
     if (err != 0) { err = errno; }
-    #if defined(MADV_FREE_REUSE)
-      while ((err = madvise(start, csize, MADV_FREE_REUSE)) != 0 && errno == EAGAIN) { errno = 0; }
-    #endif
+    //#if defined(MADV_FREE_REUSE)
+    //  while ((err = madvise(start, csize, MADV_FREE_REUSE)) != 0 && errno == EAGAIN) { errno = 0; }
+    //#endif
   }
   #else
   err = mprotect(start, csize, (commit ? (PROT_READ | PROT_WRITE) : PROT_NONE));
   if (err != 0) { err = errno; }
   #endif
   if (err != 0) {
-    _mi_warning_message("%s error: start: %p, csize: 0x%x, err: %i\n", commit ? "commit" : "decommit", start, csize, err);
+    _mi_warning_message("%s error: start: %p, csize: 0x%zx, err: %i\n", commit ? "commit" : "decommit", start, csize, err);
     mi_mprotect_hint(err);
   }
   mi_assert_internal(err == 0);
@@ -808,17 +901,12 @@ static bool mi_os_resetx(void* addr, size_t size, bool reset, mi_stats_t* stats)
   if (p != start) return false;
 #else
 #if defined(MADV_FREE)
-  #if defined(MADV_FREE_REUSABLE)
-    #define KK_MADV_FREE_INITIAL  MADV_FREE_REUSABLE
-  #else
-    #define KK_MADV_FREE_INITIAL  MADV_FREE
-  #endif
-  static _Atomic(uintptr_t) advice = ATOMIC_VAR_INIT(KK_MADV_FREE_INITIAL);
+  static _Atomic(uintptr_t) advice = ATOMIC_VAR_INIT(MADV_FREE);
   int oadvice = (int)mi_atomic_load_relaxed(&advice);
   int err;
   while ((err = madvise(start, csize, oadvice)) != 0 && errno == EAGAIN) { errno = 0;  };
-  if (err != 0 && errno == EINVAL && oadvice == KK_MADV_FREE_INITIAL) {  
-    // if MADV_FREE/MADV_FREE_REUSABLE is not supported, fall back to MADV_DONTNEED from now on
+  if (err != 0 && errno == EINVAL && oadvice == MADV_FREE) {  
+    // if MADV_FREE is not supported, fall back to MADV_DONTNEED from now on
     mi_atomic_store_release(&advice, (uintptr_t)MADV_DONTNEED);
     err = madvise(start, csize, MADV_DONTNEED);
   }
@@ -828,7 +916,7 @@ static bool mi_os_resetx(void* addr, size_t size, bool reset, mi_stats_t* stats)
   int err = madvise(start, csize, MADV_DONTNEED);
 #endif
   if (err != 0) {
-    _mi_warning_message("madvise reset error: start: %p, csize: 0x%x, errno: %i\n", start, csize, errno);
+    _mi_warning_message("madvise reset error: start: %p, csize: 0x%zx, errno: %i\n", start, csize, errno);
   }
   //mi_assert(err == 0);
   if (err != 0) return false;
@@ -887,7 +975,7 @@ static  bool mi_os_protectx(void* addr, size_t size, bool protect) {
   if (err != 0) { err = errno; }
 #endif
   if (err != 0) {
-    _mi_warning_message("mprotect error: start: %p, csize: 0x%x, err: %i\n", start, csize, err);
+    _mi_warning_message("mprotect error: start: %p, csize: 0x%zx, err: %i\n", start, csize, err);
     mi_mprotect_hint(err);
   }
   return (err == 0);
@@ -964,7 +1052,7 @@ static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node)
     else {
       // fall back to regular large pages
       mi_huge_pages_available = false; // don't try further huge pages
-      _mi_warning_message("unable to allocate using huge (1gb) pages, trying large (2mb) pages instead (status 0x%lx)\n", err);
+      _mi_warning_message("unable to allocate using huge (1GiB) pages, trying large (2MiB) pages instead (status 0x%lx)\n", err);
     }
   }
   // on modern Windows try use VirtualAlloc2 for numa aware large OS page allocation
@@ -1007,7 +1095,7 @@ static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node) 
     // see: <https://lkml.org/lkml/2017/2/9/875>
     long err = mi_os_mbind(p, size, MPOL_PREFERRED, &numa_mask, 8*MI_INTPTR_SIZE, 0);
     if (err != 0) {
-      _mi_warning_message("failed to bind huge (1gb) pages to numa node %d: %s\n", numa_node, strerror(errno));
+      _mi_warning_message("failed to bind huge (1GiB) pages to numa node %d: %s\n", numa_node, strerror(errno));
     }
   }
   return p;
@@ -1192,6 +1280,35 @@ static size_t mi_os_numa_node_countx(void) {
     if (access(buf,R_OK) != 0) break;
   }
   return (node+1);
+}
+#elif defined(__FreeBSD__) && __FreeBSD_version >= 1200000
+static size_t mi_os_numa_nodex(void) {
+  domainset_t dom;
+  size_t node;
+  int policy;
+  if (cpuset_getdomain(CPU_LEVEL_CPUSET, CPU_WHICH_PID, -1, sizeof(dom), &dom, &policy) == -1) return 0ul;
+  for (node = 0; node < MAXMEMDOM; node++) {
+    if (DOMAINSET_ISSET(node, &dom)) return node;
+  }
+  return 0ul;
+}
+static size_t mi_os_numa_node_countx(void) {
+  size_t ndomains = 0;
+  size_t len = sizeof(ndomains);
+  if (sysctlbyname("vm.ndomains", &ndomains, &len, NULL, 0) == -1) return 0ul;
+  return ndomains;
+}
+#elif defined(__DragonFly__)
+static size_t mi_os_numa_nodex(void) {
+  // TODO: DragonFly does not seem to provide any userland means to get this information.
+  return 0ul;
+}
+static size_t mi_os_numa_node_countx(void) {
+  size_t ncpus = 0, nvirtcoresperphys = 0;
+  size_t len = sizeof(size_t);
+  if (sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0) == -1) return 0ul;
+  if (sysctlbyname("hw.cpu_topology_ht_ids", &nvirtcoresperphys, &len, NULL, 0) == -1) return 0ul;
+  return nvirtcoresperphys * ncpus;
 }
 #else
 static size_t mi_os_numa_nodex(void) {

@@ -32,6 +32,16 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_cache_align
 #endif
 
+#if defined(__EMSCRIPTEN__) && !defined(__wasi__)
+#define __wasi__
+#endif
+
+#if defined(__cplusplus)
+#define mi_decl_externc       extern "C"
+#else
+#define mi_decl_externc  
+#endif
+
 // "options.c"
 void       _mi_fputs(mi_output_fun* out, void* arg, const char* prefix, const char* message);
 void       _mi_fprintf(mi_output_fun* out, void* arg, const char* fmt, ...);
@@ -46,14 +56,14 @@ void       _mi_random_init(mi_random_ctx_t* ctx);
 void       _mi_random_split(mi_random_ctx_t* ctx, mi_random_ctx_t* new_ctx);
 uintptr_t  _mi_random_next(mi_random_ctx_t* ctx);
 uintptr_t  _mi_heap_random_next(mi_heap_t* heap);
-uintptr_t  _os_random_weak(uintptr_t extra_seed);
+uintptr_t  _mi_os_random_weak(uintptr_t extra_seed);
 static inline uintptr_t _mi_random_shuffle(uintptr_t x);
 
 // init.c
 extern mi_decl_cache_align mi_stats_t       _mi_stats_main;
 extern mi_decl_cache_align const mi_page_t  _mi_page_empty;
 bool       _mi_is_main_thread(void);
-bool       _mi_preloading();  // true while the C runtime is not ready
+bool       _mi_preloading(void);  // true while the C runtime is not ready
 
 // os.c
 size_t     _mi_os_page_size(void);
@@ -90,7 +100,7 @@ void       _mi_abandoned_await_readers(void);
 // "page.c"
 void*      _mi_malloc_generic(mi_heap_t* heap, size_t size)  mi_attr_noexcept mi_attr_malloc;
 
-void       _mi_page_retire(mi_page_t* page);                                  // free the page if there are no other pages with many free blocks
+void       _mi_page_retire(mi_page_t* page) mi_attr_noexcept;                  // free the page if there are no other pages with many free blocks
 void       _mi_page_unfull(mi_page_t* page);
 void       _mi_page_free(mi_page_t* page, mi_page_queue_t* pq, bool force);   // free the page
 void       _mi_page_abandon(mi_page_t* page, mi_page_queue_t* pq);            // abandon the page, to be picked up by another thread...
@@ -295,6 +305,7 @@ mi_heap_t*  _mi_heap_main_get(void);    // statically allocated main backing hea
 #if defined(MI_MALLOC_OVERRIDE)
 #if defined(__APPLE__) // macOS
 #define MI_TLS_SLOT               89  // seems unused? 
+// #define MI_TLS_RECURSE_GUARD 1     
 // other possible unused ones are 9, 29, __PTK_FRAMEWORK_JAVASCRIPTCORE_KEY4 (94), __PTK_FRAMEWORK_GC_KEY9 (112) and __PTK_FRAMEWORK_OLDGC_KEY9 (89)
 // see <https://github.com/rweichler/substrate/blob/master/include/pthread_machdep.h>
 #elif defined(__OpenBSD__)
@@ -332,10 +343,12 @@ extern pthread_key_t _mi_heap_default_key;
 // However, on the Apple M1 we do use the address of this variable as the unique thread-id (issue #356).
 extern mi_decl_thread mi_heap_t* _mi_heap_default;  // default heap to allocate from
 
+
 static inline mi_heap_t* mi_get_default_heap(void) {
 #if defined(MI_TLS_SLOT)
   mi_heap_t* heap = (mi_heap_t*)mi_tls_slot(MI_TLS_SLOT);
-  return (mi_unlikely(heap == NULL) ? (mi_heap_t*)&_mi_heap_empty : heap);
+  if (mi_unlikely(heap == NULL)) { heap = (mi_heap_t*)&_mi_heap_empty; } //_mi_heap_empty_get(); }
+  return heap;
 #elif defined(MI_TLS_PTHREAD_SLOT_OFS)
   mi_heap_t* heap = *mi_tls_pthread_heap_slot();
   return (mi_unlikely(heap == NULL) ? (mi_heap_t*)&_mi_heap_empty : heap);
@@ -343,7 +356,7 @@ static inline mi_heap_t* mi_get_default_heap(void) {
   mi_heap_t* heap = (mi_unlikely(_mi_heap_default_key == (pthread_key_t)(-1)) ? _mi_heap_main_get() : (mi_heap_t*)pthread_getspecific(_mi_heap_default_key));
   return (mi_unlikely(heap == NULL) ? (mi_heap_t*)&_mi_heap_empty : heap);
 #else
-  #if defined(MI_TLS_RECURSE_GUARD)
+  #if defined(MI_TLS_RECURSE_GUARD)  
   if (mi_unlikely(!_mi_process_is_initialized)) return _mi_heap_main_get();
   #endif
   return _mi_heap_default;
@@ -427,7 +440,7 @@ static inline mi_page_t* _mi_ptr_page(void* p) {
   return _mi_segment_page_of(_mi_ptr_segment(p), p);
 }
 
-// Get the block size of a page (special cased for huge objects)
+// Get the block size of a page (special case for huge objects)
 static inline size_t mi_page_block_size(const mi_page_t* page) {
   const size_t bsize = page->xblock_size;
   mi_assert_internal(bsize > 0);
@@ -712,12 +725,12 @@ static inline void* mi_tls_slot(size_t slot) mi_attr_noexcept {
   res = tcb[slot];
 #elif defined(__aarch64__)
   void** tcb; UNUSED(ofs);
-#if defined(__APPLE__) // M1, issue #343
+  #if defined(__APPLE__) // M1, issue #343
   __asm__ volatile ("mrs %0, tpidrro_el0" : "=r" (tcb));
   tcb = (void**)((uintptr_t)tcb & ~0x07UL);  // clear lower 3 bits
-#else
+  #else
   __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
-#endif
+  #endif
   res = tcb[slot];
 #endif
   return res;
@@ -740,12 +753,12 @@ static inline void mi_tls_slot_set(size_t slot, void* value) mi_attr_noexcept {
   tcb[slot] = value;
 #elif defined(__aarch64__)
   void** tcb; UNUSED(ofs);
-#if defined(__APPLE__) // M1, issue #343
+  #if defined(__APPLE__) // M1, issue #343
   __asm__ volatile ("mrs %0, tpidrro_el0" : "=r" (tcb));
   tcb = (void**)((uintptr_t)tcb & ~0x07UL);  // clear lower 3 bits
-#else
+  #else
   __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
-#endif
+  #endif
   tcb[slot] = value;
 #endif
 }

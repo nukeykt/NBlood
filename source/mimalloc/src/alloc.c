@@ -4,6 +4,10 @@ This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE   // for realpath() on Linux
+#endif
+
 #include "mimalloc.h"
 #include "mimalloc-internal.h"
 #include "mimalloc-atomic.h"
@@ -431,7 +435,7 @@ mi_block_t* _mi_page_ptr_unalign(const mi_segment_t* segment, const mi_page_t* p
 }
 
 
-static void mi_decl_noinline mi_free_generic(const mi_segment_t* segment, bool local, void* p) {
+static void mi_decl_noinline mi_free_generic(const mi_segment_t* segment, bool local, void* p) mi_attr_noexcept {
   mi_page_t* const page = _mi_segment_page_of(segment, p);
   mi_block_t* const block = (mi_page_has_aligned(page) ? _mi_page_ptr_unalign(segment, page, p) : (mi_block_t*)p);
   mi_stat_free(page, block);
@@ -465,7 +469,7 @@ static inline mi_segment_t* mi_checked_ptr_segment(const void* p, const char* ms
 #endif
 #if (MI_DEBUG>0 || MI_SECURE>=4)
   if (mi_unlikely(_mi_ptr_cookie(segment) != segment->cookie)) {
-    _mi_error_message(EINVAL, "%s: pointer does not point to a valid heap space: %p\n", p);
+    _mi_error_message(EINVAL, "%s: pointer does not point to a valid heap space: %p\n", msg, p);
   }
 #endif
   return segment;
@@ -482,7 +486,7 @@ void mi_free(void* p) mi_attr_noexcept
   mi_page_t* const page = _mi_segment_page_of(segment, p);
   mi_block_t* const block = (mi_block_t*)p;
 
-  if (mi_likely(tid == segment->thread_id && page->flags.full_aligned == 0)) {  // the thread id matches and it is not a full page, nor has aligned blocks
+  if (mi_likely(tid == mi_atomic_load_relaxed(&segment->thread_id) && page->flags.full_aligned == 0)) {  // the thread id matches and it is not a full page, nor has aligned blocks
     // local, and not full or aligned
     if (mi_unlikely(mi_check_is_double_free(page,block))) return;
     mi_check_padding(page, block);
@@ -747,7 +751,7 @@ mi_decl_restrict char* mi_heap_realpath(mi_heap_t* heap, const char* fname, char
 }
 #else
 #include <unistd.h>  // pathconf
-static size_t mi_path_max() {
+static size_t mi_path_max(void) {
   static size_t path_max = 0;
   if (path_max <= 0) {
     long m = pathconf("/",_PC_PATH_MAX);
@@ -807,13 +811,13 @@ static bool mi_try_new_handler(bool nothrow) {
   }
 }
 #else
-typedef void (*std_new_handler_t)();
+typedef void (*std_new_handler_t)(void);
 
 #if (defined(__GNUC__) || defined(__clang__))
-std_new_handler_t __attribute((weak)) _ZSt15get_new_handlerv() {
+std_new_handler_t __attribute((weak)) _ZSt15get_new_handlerv(void) {
   return NULL;
 }
-static std_new_handler_t mi_get_new_handler() {
+static std_new_handler_t mi_get_new_handler(void) {
   return _ZSt15get_new_handlerv();
 }
 #else
@@ -826,7 +830,10 @@ static std_new_handler_t mi_get_new_handler() {
 static bool mi_try_new_handler(bool nothrow) {
   std_new_handler_t h = mi_get_new_handler();
   if (h==NULL) {
-    if (!nothrow) exit(ENOMEM);  // cannot throw in plain C, use exit as we are out of memory anyway.
+    if (!nothrow) {
+      _mi_error_message(EFAULT, "out of memory in 'new' call"); // cannot throw in plain C, use EFAULT to abort
+      abort();
+    }
     return false;
   }
   else {

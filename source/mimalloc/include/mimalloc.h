@@ -58,8 +58,12 @@ terms of the MIT license. A copy of the license can be found in the file
   #define mi_attr_alloc_size2(s1,s2)
   #define mi_attr_alloc_align(p)
 #elif defined(__GNUC__)                 // includes clang and icc
+  #if defined(MI_SHARED_LIB) && defined(MI_SHARED_LIB_EXPORT)
+    #define mi_decl_export              __attribute__((visibility("default")))
+  #else
+    #define mi_decl_export
+  #endif
   #define mi_cdecl                      // leads to warnings... __attribute__((cdecl))
-  #define mi_decl_export                __attribute__((visibility("default")))
   #define mi_decl_restrict
   #define mi_attr_malloc                __attribute__((malloc))
   #if (defined(__clang_major__) && (__clang_major__ < 4)) || (__GNUC__ < 5)
@@ -342,6 +346,7 @@ mi_decl_export void mi_option_set_default(mi_option_t option, long value);
 mi_decl_export void  mi_cfree(void* p) mi_attr_noexcept;
 mi_decl_export void* mi__expand(void* p, size_t newsize) mi_attr_noexcept;
 mi_decl_nodiscard mi_decl_export size_t mi_malloc_size(const void* p)        mi_attr_noexcept;
+mi_decl_nodiscard mi_decl_export size_t mi_malloc_good_size(size_t size)     mi_attr_noexcept;
 mi_decl_nodiscard mi_decl_export size_t mi_malloc_usable_size(const void *p) mi_attr_noexcept;
 
 mi_decl_export int mi_posix_memalign(void** p, size_t alignment, size_t size)   mi_attr_noexcept;

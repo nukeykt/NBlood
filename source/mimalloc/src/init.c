@@ -102,6 +102,7 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   false
 };
 
+
 // the thread-local default heap for allocation
 mi_decl_thread mi_heap_t* _mi_heap_default = (mi_heap_t*)&_mi_heap_empty;
 
@@ -141,7 +142,7 @@ mi_stats_t _mi_stats_main = { MI_STATS_NULL };
 static void mi_heap_main_init(void) {
   if (_mi_heap_main.cookie == 0) {
     _mi_heap_main.thread_id = _mi_thread_id();
-    _mi_heap_main.cookie = _os_random_weak((uintptr_t)&mi_heap_main_init);
+    _mi_heap_main.cookie = _mi_os_random_weak((uintptr_t)&mi_heap_main_init);
     _mi_random_init(&_mi_heap_main.random);
     _mi_heap_main.keys[0] = _mi_heap_random_next(&_mi_heap_main);
     _mi_heap_main.keys[1] = _mi_heap_random_next(&_mi_heap_main);
@@ -478,10 +479,11 @@ static void mi_detect_cpu_features(void) {
 void mi_process_init(void) mi_attr_noexcept {
   // ensure we are called once
   if (_mi_process_is_initialized) return;
+  _mi_verbose_message("process init: 0x%zx\n", _mi_thread_id());
   _mi_process_is_initialized = true;
   mi_process_setup_auto_thread_done();
 
-  _mi_verbose_message("process init: 0x%zx\n", _mi_thread_id());
+  
   mi_detect_cpu_features();
   _mi_os_init();
   mi_heap_main_init();
@@ -498,7 +500,9 @@ void mi_process_init(void) mi_attr_noexcept {
   } 
   if (mi_option_is_enabled(mi_option_reserve_os_memory)) {
     long ksize = mi_option_get(mi_option_reserve_os_memory);
-    if (ksize > 0) mi_reserve_os_memory((size_t)ksize*KiB, true, true);
+    if (ksize > 0) {
+      mi_reserve_os_memory((size_t)ksize*KiB, true, true);
+    }
   }
 }
 
@@ -569,7 +573,7 @@ static void mi_process_done(void) {
     return 0;
   }
   typedef int(*_crt_cb)(void);
-  #ifdef _M_X64
+  #if defined(_M_X64) || defined(_M_ARM64)
     __pragma(comment(linker, "/include:" "_mi_msvc_initu"))
     #pragma section(".CRT$XIU", long, read)
   #else
