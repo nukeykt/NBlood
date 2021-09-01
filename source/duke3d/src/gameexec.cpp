@@ -471,14 +471,10 @@ void A_GetZLimits(int const spriteNum)
     // in E1L1, the dumpster fire sprites break after calling this function because the cardboard boxes
     // are a few units higher than the fire and are detected as the "ceiling"
     // unfortunately, this trips the "ifgapzl 16 break" in "state firestate"
-    if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0
-#ifndef EDUKE32_STANDALONE
-            // exclude squish sprites as they are sometimes used as pseudo-ladders in old usermaps
-            && (FURY || (pActor->htpicnum != OOZ && pActor->htpicnum != OOZ2))
-#endif
-       )
+    if ((ceilhit&49152) == 49152)
     {
-        if (pSprite->z >= pActor->floorz)
+        auto const pCeil = &sprite[ceilhit&(MAXSPRITES-1)];
+        if ((pCeil->cstat&48) == 0 && pCeil->z >= pActor->floorz)
             pActor->ceilingz = oceilz;
     }
 }
