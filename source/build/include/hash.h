@@ -4,6 +4,8 @@
 #ifndef hash_h_
 #define hash_h_
 
+#include "libdivide.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,9 +20,19 @@ typedef struct hashitem  // size is 12/24 bytes.
     struct hashitem *next;
 } hashitem_t;
 
+typedef struct  
+{
+    uint32_t v;
+    libdivide::libdivide_u32_t d;
+} hashprime_t;
+
 typedef struct
 {
-    int32_t size;
+    union
+    {
+        uint32_t    size;
+        hashprime_t prime;
+    };
     hashitem_t **items;
 } hashtable_t;
 
@@ -34,6 +46,12 @@ static inline uint32_t hash_getcode(const char *s)
         h = ((h << 5) + h) ^ ch;
 
     return h;
+}
+
+static FORCE_INLINE uint32_t hash_getbucket(hashtable_t const *t, const char *s)
+{
+    uint32_t const h = hash_getcode(s);
+    return h - libdivide::libdivide_u32_do(h, &t->prime.d) * t->prime.v;
 }
 
 void hash_init(hashtable_t *t);
@@ -58,7 +76,11 @@ typedef struct inthashitem
 typedef struct
 {
     inthashitem_t *items;
-    uint32_t count;
+    union
+    {
+        uint32_t    count;
+        hashprime_t prime;
+    };
 } inthashtable_t;
 
 // djb3 algorithm
@@ -70,6 +92,12 @@ static inline uint32_t inthash_getcode(intptr_t key)
         h = ((h << 5) + h) ^ (uint32_t) *keybuf;
 
     return h;
+}
+
+static FORCE_INLINE uint32_t inthash_getbucket(inthashtable_t const *t, intptr_t key)
+{
+    uint32_t const h = inthash_getcode(key);
+    return h - libdivide::libdivide_u32_do(h, &t->prime.d) * t->prime.v;
 }
 
 void inthash_init(inthashtable_t *t);
