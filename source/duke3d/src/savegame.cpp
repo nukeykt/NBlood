@@ -407,6 +407,8 @@ static int different_user_map;
 // XXX: keyboard input 'blocked' after load fail? (at least ESC?)
 int32_t G_LoadPlayer(savebrief_t & sv)
 {
+    Bassert(mco_running() != co_drawframe);
+
     if (sv.isExt)
     {
         int volume = -1;

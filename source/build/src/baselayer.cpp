@@ -5,10 +5,18 @@
 #include "cache1d.h"
 #include "communityapi.h"
 #include "compat.h"
+#include "mimalloc.h"
 #include "osd.h"
 #include "polymost.h"
 #include "renderlayer.h"
-#include "mimalloc.h"
+
+#define MINICORO_IMPL
+#define MCO_LOG initprintf
+#define MCO_ASSERT Bassert
+#define MCO_MALLOC Xmalloc
+#define MCO_FREE Xfree
+
+#include "minicoro.h"
 
 #define LIBASYNC_IMPLEMENTATION
 #include "libasync_config.h"

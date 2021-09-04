@@ -8535,6 +8535,8 @@ static void G_DoEffectorLights(void)  // STATNUM 14
 
     for (SPRITES_OF(STAT_LIGHT, i))
     {
+        dukeMaybeDrawFrame();
+
         switch (sprite[i].lotag)
         {
 #ifdef POLYMER
@@ -9104,8 +9106,9 @@ static void G_DoEventGame(int const nEventID)
                 int32_t   playerDist;
                 int const playerNum = A_FindPlayer(&sprite[spriteNum], &playerDist);
                 VM_ExecuteEvent(nEventID, spriteNum, playerNum, playerDist);
-
                 spriteNum = nextSprite;
+
+                dukeMaybeDrawFrame();
             }
         }
         while (statNum < MAXSTATUS);

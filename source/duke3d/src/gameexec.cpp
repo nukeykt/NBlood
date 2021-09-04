@@ -6768,6 +6768,10 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
 #endif
     }
     else VM_DeleteSprite(spriteNum, playerNum);
+
+    // g_frameJustDrawn is set by G_DrawFrame() (and thus by the coroutine)
+    // it isn't cleared until the next game tic is processed.
+    dukeMaybeDrawFrame();
 }
 
 void G_SaveMapState(void)

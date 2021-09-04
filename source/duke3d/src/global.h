@@ -49,7 +49,6 @@ G_EXTERN int32_t oldipos[MAXINTERPOLATIONS];
 G_EXTERN int32_t *curipos[MAXINTERPOLATIONS];
 G_EXTERN int32_t bakipos[MAXINTERPOLATIONS];
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -163,9 +162,16 @@ G_EXTERN uint32_t g_moveThingsCount;
 G_EXTERN double g_gameUpdateTime;
 G_EXTERN double g_gameUpdateAndDrawTime;
 #define GAMEUPDATEAVGTIMENUMSAMPLES 100
-extern double g_gameUpdateAvgTime;
+G_EXTERN double g_gameUpdateAvgTime;
+G_EXTERN mco_coro *co_drawframe;
+G_EXTERN bool     g_frameJustDrawn;
+G_EXTERN uint64_t g_lastFrameStartTime, g_lastFrameEndTime, g_lastFrameDuration;
+G_EXTERN uint32_t g_frameCounter;
+G_EXTERN int g_restartFrameRoutine;
 
 #ifndef global_c_
+extern int32_t g_frameStackSize;
+
 extern char CheatKeys[2];
 extern char g_gametypeNames[MAXGAMETYPES][33];
 extern char g_setupFileName[BMAX_PATH];

@@ -465,6 +465,7 @@
     <ClInclude Include="..\..\source\build\include\mdsprite.h" />
     <ClInclude Include="..\..\source\build\include\microprofile.h" />
     <ClInclude Include="..\..\source\build\include\microprofilehtml.h" />
+    <ClInclude Include="..\..\source\build\include\minicoro.h" />
     <ClInclude Include="..\..\source\build\include\miniz.h" />
     <ClInclude Include="..\..\source\build\include\miniz_common.h" />
     <ClInclude Include="..\..\source\build\include\miniz_export.h" />

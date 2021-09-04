@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fix16.h"
 #include "gamedefs.h"
 #include "gamevars.h"
+#include "minicoro.h"
 #include "mmulti.h"
 #include "network.h"
 
@@ -304,6 +305,34 @@ extern char ror_protectedsectors[MAXSECTORS];
 
 extern float r_ambientlight;
 
+extern bool g_frameJustDrawn;
+extern uint64_t g_lastFrameStartTime;
+extern uint64_t g_lastFrameEndTime;
+extern uint64_t g_lastFrameDuration;
+extern uint32_t g_frameCounter;
+
+// minicoro.h says to make sure this isn't a multiple of 64K
+#define DRAWFRAME_MIN_STACK_SIZE     (576  * 1024)
+#define DRAWFRAME_DEFAULT_STACK_SIZE (704  * 1024)
+#define DRAWFRAME_MAX_STACK_SIZE     (1792 * 1024)
+
+extern mco_coro* co_drawframe;
+extern void g_switchRoutine(mco_coro *co);
+
+static FORCE_INLINE int dukeMaybeDrawFrame(void)
+{
+    // g_frameJustDrawn is set by G_DrawFrame() (and thus by the coroutine)
+    // it isn't cleared until the next game tic is processed.
+
+    if (!g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
+    {
+        g_switchRoutine(co_drawframe);
+        return 1;
+    }
+
+    return 0;
+}
+
 extern int32_t g_BenchmarkMode;
 extern int32_t g_Debug;
 extern int32_t g_Shareware;
@@ -380,7 +409,6 @@ void G_UpdatePlayerFromMenu(void);
 void M32RunScript(const char *s);
 void P_DoQuote(int32_t q,DukePlayer_t *p);
 void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set);
-void G_DrawFrame(void);
 
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?
