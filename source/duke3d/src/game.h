@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "minicoro.h"
 #include "mmulti.h"
 #include "network.h"
+#include "savegame.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,8 +140,6 @@ static inline int32_t G_GetLogoFlags(void)
 
 #define MAXRIDECULE 10
 #define MAXRIDECULELENGTH 40
-#define MAXSAVEGAMENAMESTRUCT 32
-#define MAXSAVEGAMENAME (MAXSAVEGAMENAMESTRUCT-1)
 #define MAXPWLOCKOUT 128
 #define MAXRTSNAME 128
 
@@ -324,7 +323,7 @@ static FORCE_INLINE int dukeMaybeDrawFrame(void)
     // g_frameJustDrawn is set by G_DrawFrame() (and thus by the coroutine)
     // it isn't cleared until the next game tic is processed.
 
-    if (!g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
+    if (!g_saveRequested && !g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
     {
         g_switchRoutine(co_drawframe);
         return 1;

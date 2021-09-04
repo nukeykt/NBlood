@@ -33,7 +33,10 @@ extern "C" {
 
 #define SV_MAJOR_VER 1
 #define SV_MINOR_VER 7
-    
+
+#define MAXSAVEGAMENAMESTRUCT 32
+#define MAXSAVEGAMENAME (MAXSAVEGAMENAMESTRUCT-1)
+
 #pragma pack(push,1)
 typedef struct _savehead
 {

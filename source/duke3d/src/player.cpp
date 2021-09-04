@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "duke3d.h"
 #include "demo.h"
 #include "enet.h"
+#include "savegame.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -3146,7 +3147,7 @@ void P_GetInput(int const playerNum)
     auto const pPlayer    = thisPlayer.ps;
     ControlInfo info;
 
-    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
+    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)) || g_saveRequested)
     {
         if (!(pPlayer->gm&MODE_MENU))
             CONTROL_GetInput(&info);
