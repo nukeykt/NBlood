@@ -1089,7 +1089,7 @@ void polymer_fillpolygon(int32_t npoints)
 void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t daang, fix16_t dahoriz, int16_t dacursectnum)
 {
     int16_t         cursectnum;
-    int32_t         i, cursectflorz, cursectceilz;
+    int32_t         i, cursectflorz=0, cursectceilz=0;
     float           skyhoriz, ang, tiltang;
     float           pos[3];
     pthtyp*         pth;

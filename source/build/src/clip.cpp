@@ -1566,7 +1566,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
     }
 #endif
 
-    int32_t hitwalls[4], hitwall;
+    int32_t hitwalls[4] = {}, hitwall;
     int32_t clipReturn = 0;
 
     native_t cnt = clipmoveboxtracenum;
