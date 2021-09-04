@@ -719,7 +719,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     evInit();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        if (!(gameOptions->uGameFlags&1))
+        if (!(gameOptions->uGameFlags&1)) // if new game
         {
             if (numplayers == 1)
             {
@@ -729,6 +729,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             }
             playerInit(i,0);
         }
+        else if ((gGameOptions.nGameType == 3) && !VanillaMode()) // if ctf mode and went to next level, reset scores
+            playerResetScores(i);
         playerStart(i, 1);
     }
     if (gameOptions->uGameFlags&1)
@@ -774,7 +776,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     // viewSetMessage("");
     viewSetErrorMessage("");
     viewResizeView(gViewSize);
-    if (gGameOptions.nGameType == 3)
+    if ((gGameOptions.nGameType == 3) && VanillaMode())
         gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
     netWaitForEveryone(0);
     totalclock = 0;
