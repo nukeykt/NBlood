@@ -6900,45 +6900,52 @@ MAIN_LOOP_RESTART:
         G_SetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     }
 
-    if (ud.warp_on == 1)
+    if (myplayer.gm & MODE_NEWGAME)
     {
-        G_NewGame_EnterLevel();
-        // may change ud.warp_on in an error condition
+        G_NewGame(ud.m_volume_number, ud.m_level_number, ud.m_player_skill);
+        myplayer.gm = MODE_RESTART;
     }
-
-    if (ud.warp_on == 0)
+    else
     {
-        if ((g_netServer || ud.multimode > 1) && boardfilename[0] != 0)
+        if (ud.warp_on == 1)
         {
-            ud.m_level_number     = 7;
-            ud.m_volume_number    = 0;
-            ud.m_respawn_monsters = !!(ud.m_player_skill == 4);
-
-            for (int TRAVERSE_CONNECT(i))
-            {
-                P_ResetWeapons(i);
-                P_ResetInventory(i);
-            }
-
             G_NewGame_EnterLevel();
-
-            Net_WaitForServer();
+            // may change ud.warp_on in an error condition
         }
-        else if (g_networkMode != NET_DEDICATED_SERVER)
-            G_DisplayLogo();
 
-        if (g_networkMode != NET_DEDICATED_SERVER)
+        if (ud.warp_on == 0)
         {
-            if (G_PlaybackDemo())
+            if ((g_netServer || ud.multimode > 1) && boardfilename[0] != 0)
             {
-                FX_StopAllSounds();
-                g_noLogoAnim = 1;
-                goto MAIN_LOOP_RESTART;
+                ud.m_level_number = 7;
+                ud.m_volume_number = 0;
+                ud.m_respawn_monsters = !!(ud.m_player_skill == 4);
+
+                for (int TRAVERSE_CONNECT(i))
+                {
+                    P_ResetWeapons(i);
+                    P_ResetInventory(i);
+                }
+
+                G_NewGame_EnterLevel();
+
+                Net_WaitForServer();
+            }
+            else if (g_networkMode != NET_DEDICATED_SERVER)
+                G_DisplayLogo();
+
+            if (g_networkMode != NET_DEDICATED_SERVER)
+            {
+                if (G_PlaybackDemo())
+                {
+                    FX_StopAllSounds();
+                    g_noLogoAnim = 1;
+                    goto MAIN_LOOP_RESTART;
+                }
             }
         }
+        else G_UpdateScreenArea();
     }
-    else G_UpdateScreenArea();
-
 //    G_GameExit(" "); ///
 
 //    ud.auto_run = ud.config.RunMode;
@@ -7019,6 +7026,9 @@ MAIN_LOOP_RESTART:
         }
 
         G_DoCheats();
+
+        if (myplayer.gm & MODE_NEWGAME)
+            goto MAIN_LOOP_RESTART;
 
         if (myplayer.gm & (MODE_EOL|MODE_RESTART))
         {
