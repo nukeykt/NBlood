@@ -1486,23 +1486,23 @@ void viewDrawPlayerFlags(void)
 void viewDrawCtfHudVanilla(ClockTicks arg)
 {
     int x = 1, y = 1;
-    if (dword_21EFD0[0] == 0 || ((int)totalclock & 8))
+    if (gPlayerScoreTicks[0] == 0 || ((int)totalclock & 8))
     {
         viewDrawText(0, "BLUE", x, y, -128, 10, 0, 0, 256);
-        dword_21EFD0[0] = dword_21EFD0[0] - arg;
-        if (dword_21EFD0[0] < 0)
-            dword_21EFD0[0] = 0;
-        sprintf(gTempStr, "%-3d", dword_21EFB0[0]);
+        gPlayerScoreTicks[0] = gPlayerScoreTicks[0] - arg;
+        if (gPlayerScoreTicks[0] < 0)
+            gPlayerScoreTicks[0] = 0;
+        sprintf(gTempStr, "%-3d", gPlayerScores[0]);
         viewDrawText(0, gTempStr, x, y + 10, -128, 10, 0, 0, 256);
     }
     x = 319;
-    if (dword_21EFD0[1] == 0 || ((int)totalclock & 8))
+    if (gPlayerScoreTicks[1] == 0 || ((int)totalclock & 8))
     {
         viewDrawText(0, "RED", x, y, -128, 7, 2, 0, 512);
-        dword_21EFD0[1] = dword_21EFD0[1] - arg;
-        if (dword_21EFD0[1] < 0)
-            dword_21EFD0[1] = 0;
-        sprintf(gTempStr, "%3d", dword_21EFB0[1]);
+        gPlayerScoreTicks[1] = gPlayerScoreTicks[1] - arg;
+        if (gPlayerScoreTicks[1] < 0)
+            gPlayerScoreTicks[1] = 0;
+        sprintf(gTempStr, "%3d", gPlayerScores[1]);
         viewDrawText(0, gTempStr, x, y + 10, -128, 7, 2, 0, 512);
     }
 }
@@ -1511,14 +1511,14 @@ void flashTeamScore(ClockTicks arg, int team, bool show)
 {
     dassert(0 == team || 1 == team); // 0: blue, 1: red
 
-    if (dword_21EFD0[team] == 0 || ((int)totalclock & 8))
+    if (gPlayerScoreTicks[team] == 0 || ((int)totalclock & 8))
     {
-        dword_21EFD0[team] = dword_21EFD0[team] - arg;
-        if (dword_21EFD0[team] < 0)
-            dword_21EFD0[team] = 0;
+        gPlayerScoreTicks[team] = gPlayerScoreTicks[team] - arg;
+        if (gPlayerScoreTicks[team] < 0)
+            gPlayerScoreTicks[team] = 0;
 
         if (show)
-            DrawStatNumber("%d", dword_21EFB0[team], kSBarNumberInv, 290, team ? 125 : 90, 0, team ? 2 : 10, 512, 65536 * 0.75);
+            DrawStatNumber("%d", gPlayerScores[team], kSBarNumberInv, 290, team ? 125 : 90, 0, team ? 2 : 10, 512, 65536 * 0.75);
     }
 }
 
