@@ -2283,15 +2283,23 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     }
     case kViewEffectShadow:
     {
-        if (!VanillaMode()) // if floor has ror, don't render shadow
-        {
-            if ((sector[pTSprite->sectnum].floorpicnum >= 4080) && (sector[pTSprite->sectnum].floorpicnum <= 4095))
-                break;
-        }
         auto pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
         if (!pNSprite)
             break;
         pNSprite->z = getflorzofslope(pTSprite->sectnum, pNSprite->x, pNSprite->y);
+        if ((sector[pNSprite->sectnum].floorpicnum >= 4080) && (sector[pNSprite->sectnum].floorpicnum <= 4095) && !VanillaMode()) // if floor has ror, find actual floor
+        {
+            int cX = pNSprite->x, cY = pNSprite->y, cZ = pNSprite->z, nSectnum = pNSprite->sectnum;
+            for (int i = 0; i < 16; i++) // scan through max stacked sectors
+            {
+                if (!CheckLink(&cX, &cY, &cZ, &nSectnum)) // if no more floors underneath, abort
+                    break;
+                cZ = getflorzofslope(nSectnum, cX, cY);
+                if ((sector[nSectnum].floorpicnum < 4080) || (sector[nSectnum].floorpicnum > 4095)) // if current sector is not open air, use as floor for shadow casting, otherwise continue to next sector
+                    break;
+            }
+            pNSprite->x = cX, pNSprite->y = cY, pNSprite->z = cZ, pNSprite->sectnum = nSectnum;
+        }
         pNSprite->shade = 127;
         pNSprite->cstat |= 2;
         pNSprite->xrepeat = pTSprite->xrepeat;
