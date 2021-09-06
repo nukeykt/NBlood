@@ -4,99 +4,99 @@ class TRACKER_NAME__
     public:
         T value;
 
-        inline T *operator&()
+        FORCE_INLINE T *operator&()
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return &this->value;
         }
 
-        inline T operator++()
+        FORCE_INLINE T operator++()
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return ++this->value;
         }
 
-        inline T operator++(int)
+        FORCE_INLINE T operator++(int)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value++;
         }
 
-        inline T operator--()
+        FORCE_INLINE T operator--()
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return --this->value;
         }
 
-        inline T operator--(int)
+        FORCE_INLINE T operator--(int)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value--;
         }
 
-        template <typename U> inline T operator=(U operand)
+        template <typename U> FORCE_INLINE T operator=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value = (T)operand;
         }
 
-        template <typename U> inline T operator+=(U operand)
+        template <typename U> FORCE_INLINE T operator+=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value += (T)operand;
         }
 
-        template <typename U> inline T operator-=(U operand)
+        template <typename U> FORCE_INLINE T operator-=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value -= (T)operand;
         }
 
-        template <typename U> inline T operator*=(U operand)
+        template <typename U> FORCE_INLINE T operator*=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value *= (T)operand;
         }
 
-        template <typename U> inline T operator/=(U operand)
+        template <typename U> FORCE_INLINE T operator/=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value /= (T)operand;
         }
 
-        template <typename U> inline T operator|=(U operand)
+        template <typename U> FORCE_INLINE T operator|=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value |= (T)operand;
         }
 
-        template <typename U> inline T operator&=(U operand)
+        template <typename U> FORCE_INLINE T operator&=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value &= (T)operand;
         }
 
-        template <typename U> inline T operator^=(U operand)
+        template <typename U> FORCE_INLINE T operator^=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value ^= (T)operand;
         }
 
-        template <typename U> inline T operator<<=(U operand)
+        template <typename U> FORCE_INLINE T operator<<=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value <<= (T)operand;
         }
 
-        template <typename U> inline T operator>>=(U operand)
+        template <typename U> FORCE_INLINE T operator>>=(U operand)
         {
             TRACKER_HOOK_((intptr_t) & this->value);
             return this->value >>= (T)operand;
         }
 
-        inline operator T() const { return this->value; }
+        FORCE_INLINE operator T() const { return this->value; }
 
-        inline T cast() const { return this->value; }
+        FORCE_INLINE T cast() const { return this->value; }
 };
 
 template <typename T> struct is_signed<TRACKER_NAME__<T>>
