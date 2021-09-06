@@ -1947,8 +1947,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 pData[0] = 0;
 
             {
-                vec3_t vect;
-                Bmemcpy(&vect,pSprite,sizeof(vec3_t));
+                vec3_t vect = pSprite->xyz;
                 vect.z -= (34<<8);
                 setsprite(g_origins[pData[4]+2].y, &vect);
             }
@@ -2901,7 +2900,7 @@ ACTOR_STATIC void P_HandleBeingSpitOn(DukePlayer_t * const ps)
 }
 #endif
 
-static void A_DoProjectileEffects(int spriteNum, const vec3_t *davect, bool radiusDamage = true)
+static void A_DoProjectileEffects(int spriteNum, bool radiusDamage = true)
 {
     auto const pProj = &SpriteProjectile[spriteNum];
 
@@ -2909,13 +2908,13 @@ static void A_DoProjectileEffects(int spriteNum, const vec3_t *davect, bool radi
     {
         int const newSpr = A_Spawn(spriteNum,pProj->spawns);
 
-        if (davect)
-            Bmemcpy(&sprite[newSpr],davect,sizeof(vec3_t));
-
         if (pProj->sxrepeat > 4)
             sprite[newSpr].xrepeat=pProj->sxrepeat;
         if (pProj->syrepeat > 4)
             sprite[newSpr].yrepeat=pProj->syrepeat;
+
+        sprite[newSpr].xy -= { sprite[newSpr].xrepeat * (sintable[(sprite[spriteNum].ang + 512) & 2047] >> 11),
+                               sprite[newSpr].xrepeat * (sintable[sprite[spriteNum].ang & 2047] >> 11) };
     }
 
     if (pProj->isound >= 0)
@@ -3030,7 +3029,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
             if ((pProj->workslike & (PROJECTILE_BOUNCESOFFWALLS | PROJECTILE_EXPLODEONTIMER)) == PROJECTILE_BOUNCESOFFWALLS
                 && pSprite->yvel < 1)
             {
-                A_DoProjectileEffects(spriteNum, &davect);
+                A_DoProjectileEffects(spriteNum);
                 A_DeleteSprite(spriteNum);
                 return;
             }
@@ -3109,7 +3108,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                 if (++actor[spriteNum].t_data[8] > pProj->range)
                 {
                     if (pProj->workslike & PROJECTILE_EXPLODEONTIMER)
-                        A_DoProjectileEffects(spriteNum, &davect);
+                        A_DoProjectileEffects(spriteNum);
 
                     A_DeleteSprite(spriteNum);
                     return;
@@ -3178,7 +3177,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                             if (pProj->workslike & PROJECTILE_RPG_IMPACT_DAMAGE)
                                 actor[otherSprite].htextra += pProj->extra;
 
-                            A_DoProjectileEffects(spriteNum, &davect, false);
+                            A_DoProjectileEffects(spriteNum, false);
 
                             if (!(pProj->workslike & PROJECTILE_FORCEIMPACT))
                             {
@@ -3254,7 +3253,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                         break;
                 }
 
-                A_DoProjectileEffects(spriteNum, &davect);
+                A_DoProjectileEffects(spriteNum);
                 A_DeleteSprite(spriteNum);
                 return;
             }
@@ -3561,17 +3560,23 @@ ACTOR_STATIC void G_MoveWeapons(void)
                         {
                             int const newSprite = A_Spawn(spriteNum, EXPLOSION2);
                             A_PlaySound(RPG_EXPLODE, newSprite);
-                            Bmemcpy(&sprite[newSprite], &davect, sizeof(vec3_t));
 
                             if (pSprite->xrepeat < 10)
                             {
                                 sprite[newSprite].xrepeat = 6;
                                 sprite[newSprite].yrepeat = 6;
                             }
-                            else if ((moveSprite & 49152) == 16384)
+                                
+                            sprite[newSprite].xy -= { sprite[newSprite].xrepeat * (sintable[(pSprite->ang + 512) & 2047] >> 11),
+                                                      sprite[newSprite].xrepeat * (sintable[pSprite->ang & 2047] >> 11) };
+
+                            if (pSprite->xrepeat >= 10 && (moveSprite & 49152) == 16384)
                             {
                                 if (pSprite->zvel > 0)
-                                    A_Spawn(spriteNum, EXPLOSION2BOT);
+                                {
+                                    auto newSprite2 = A_Spawn(spriteNum, EXPLOSION2BOT);
+                                    sprite[newSprite2].xy = sprite[newSprite].xy;
+                                }
                                 else
                                 {
                                     sprite[newSprite].cstat |= 8;
