@@ -3194,8 +3194,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                     case 32768:
                         otherSprite &= (MAXWALLS - 1);
 
-                        if (pProj->workslike & PROJECTILE_BOUNCESOFFMIRRORS
-                            && (wall[otherSprite].overpicnum == MIRROR || wall[otherSprite].picnum == MIRROR))
+                        if (pProj->workslike & PROJECTILE_BOUNCESOFFMIRRORS && wall[otherSprite].overpicnum == MIRROR)
                         {
                             Proj_BounceOffWall(pSprite, otherSprite);
                             pSprite->owner = spriteNum;
@@ -3212,7 +3211,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
                             if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS)
                             {
-                                if (wall[otherSprite].overpicnum != MIRROR && wall[otherSprite].picnum != MIRROR)
+                                if (wall[otherSprite].overpicnum != MIRROR)
                                     pSprite->yvel--;
 
                                 Proj_BounceOffWall(pSprite, otherSprite);
@@ -3487,8 +3486,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                             moveSprite &= (MAXWALLS - 1);
 
                             if (pSprite->picnum != RPG && pSprite->picnum != FREEZEBLAST && pSprite->picnum != SPIT
-                                && (!WORLDTOUR || pSprite->picnum != FIREBALL)
-                                && (wall[moveSprite].overpicnum == MIRROR || wall[moveSprite].picnum == MIRROR))
+                                && (!WORLDTOUR || pSprite->picnum != FIREBALL) && wall[moveSprite].overpicnum == MIRROR)
                             {
                                 Proj_BounceOffWall(pSprite, moveSprite);
                                 pSprite->owner = spriteNum;
@@ -3502,7 +3500,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                                 if (pSprite->picnum == FREEZEBLAST)
                                 {
-                                    if (wall[moveSprite].overpicnum != MIRROR && wall[moveSprite].picnum != MIRROR)
+                                    if (wall[moveSprite].overpicnum != MIRROR)
                                     {
                                         pSprite->extra >>= 1;
                                         pSprite->yvel--;
