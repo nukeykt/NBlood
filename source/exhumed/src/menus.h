@@ -49,6 +49,10 @@ enum MenuIndex_t {
     MENU_USERMAP        = 101,
     MENU_NEWGAMECUSTOM  = 102,
     MENU_NEWGAMECUSTOMSUB = 103,
+
+    MENU_EXHUMED_NEWGAME  = 104,
+    MENU_EXHUMED_LOADGAME = 105,
+
     MENU_SKILL          = 110,
     MENU_GAMESETUP      = 200,
     MENU_OPTIONS        = 202,
@@ -331,6 +335,7 @@ enum MenuEntryFlags_t
     MEF_LookDisabled = 1<<1,
     MEF_Hidden = 1<<2,
     MEF_MainBG = 1<<3,
+    MEF_ExhumedLoadSave = 1<<4,
 };
 
 typedef struct MenuEntry_t

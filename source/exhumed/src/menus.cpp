@@ -254,7 +254,8 @@ static MenuMenuFormat_t MMF_Top_Joystick_Network = { {  MENU_MARGIN_CENTER<<16, 
 static MenuMenuFormat_t MMF_BigOptions =           { {    MENU_MARGIN_WIDE<<16, 38<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_SmallOptions =         { {    MENU_MARGIN_WIDE<<16, 37<<16, },    170<<16 };
 static MenuMenuFormat_t MMF_Macros =               { {                  26<<16, 40<<16, },    160<<16 };
-static MenuMenuFormat_t MMF_ExNewGame =            { {                  90<<16, 98<<16, }, -(190<<16) };
+static MenuMenuFormat_t MMF_ExhumedNewGame =       { {                  90<<16, 98<<16, },    200<<16 };
+static MenuMenuFormat_t MMF_ExhumedLoadGame =      { {                  90<<16, 98<<16, },    200<<16 };
 static MenuMenuFormat_t MMF_SmallOptionsNarrow  =  { { MENU_MARGIN_REGULAR<<16, 38<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_KeyboardSetupFuncs =   { {                  50<<16, 34<<16, },    151<<16 };
 static MenuMenuFormat_t MMF_MouseJoySetupBtns =    { {                  76<<16, 34<<16, },    143<<16 };
@@ -267,13 +268,13 @@ static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
-static MenuEntryFormat_t MEF_MainMenu =         { 1<<16,     0,          0 };
+static MenuEntryFormat_t MEF_MainMenu =         { 1<<16,      0,          0 };
 static MenuEntryFormat_t MEF_OptionsMenu =      { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_LeftMenu =         { 7<<16,      0,    120<<16 };
 static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_BigOptions_Apply = { 4<<16, 16<<16, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRt =     { 4<<16,      0, -(260<<16) };
-static MenuEntryFormat_t MEF_BigOptionsRtSections = { 3<<16,      0, -(260<<16) };
+static MenuEntryFormat_t MEF_BigOptionsRtSections = { 3<<16,  0, -(260<<16) };
 #if defined USE_OPENGL || !defined EDUKE32_ANDROID_MENU
 static MenuEntryFormat_t MEF_SmallOptions =     { 1<<16,      0, -(260<<16) };
 #endif
@@ -281,7 +282,8 @@ static MenuEntryFormat_t MEF_BigCheats =        { 3<<16,      0, -(260<<16) };
 static MenuEntryFormat_t MEF_Cheats =           { 2<<16,      0, -(260<<16) };
 static MenuEntryFormat_t MEF_PlayerNarrow =     { 1<<16,      0,     90<<16 };
 static MenuEntryFormat_t MEF_Macros =           { 2<<16,     -1,    268<<16 };
-static MenuEntryFormat_t MEF_ExNewGame =        { 2 << 16,     -1,          0 };
+static MenuEntryFormat_t MEF_ExhumedNewGame =   { 10<<16,    -1,          0 };
+static MenuEntryFormat_t MEF_ExhumedLoadGame =  { 10<<16,    -1,          0 };
 static MenuEntryFormat_t MEF_VideoSetup =       { 4<<16,      0,    168<<16 };
 static MenuEntryFormat_t MEF_VideoSetup_Apply = { 4<<16, 16<<16,    168<<16 };
 static MenuEntryFormat_t MEF_KBFuncList =       { 3<<16,      0, -(225<<16) };
@@ -367,7 +369,8 @@ MAKE_MENU_TOP_ENTRYLINK( "Resume Game", MEF_MainMenu, MAIN_RESUMEGAME, MENU_CLOS
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME_INGAME, MENU_NEWVERIFY );
 static MenuLink_t MEO_MAIN_NEWGAME_NETWORK = { MENU_NETWORK, MA_Advance, };
 MAKE_MENU_TOP_ENTRYLINK( s_SaveGame, MEF_MainMenu, MAIN_SAVEGAME, MENU_SAVE );
-MAKE_MENU_TOP_ENTRYLINK( s_LoadGame, MEF_MainMenu, MAIN_LOADGAME, MENU_LOAD );
+// MAKE_MENU_TOP_ENTRYLINK( s_LoadGame, MEF_MainMenu, MAIN_LOADGAME, MENU_LOAD );
+MAKE_MENU_TOP_ENTRYLINK( s_LoadGame, MEF_MainMenu, MAIN_EXHUMED_LOADGAME, MENU_EXHUMED_LOADGAME );
 MAKE_MENU_TOP_ENTRYLINK( s_Options, MEF_MainMenu, MAIN_OPTIONS, MENU_OPTIONS );
 #ifdef EDUKE32_STANDALONE
 MAKE_MENU_TOP_ENTRYLINK( "Read me!", MEF_MainMenu, MAIN_HELP, MENU_STORY );
@@ -385,7 +388,8 @@ MAKE_MENU_TOP_ENTRYLINK( "Quit Game", MEF_MainMenu, MAIN_QUITGAME, MENU_QUIT );
 
 static MenuEntry_t *MEL_MAIN[] = {
     &ME_MAIN_NEWGAME,
-    &ME_MAIN_LOADGAME,
+    //&ME_MAIN_LOADGAME,
+    &ME_MAIN_EXHUMED_LOADGAME,
     &ME_MAIN_OPTIONS,
 //    &ME_MAIN_HELP,
 #ifndef EDUKE32_RETAIL_MENU
@@ -401,7 +405,8 @@ static MenuEntry_t *MEL_MAIN_INGAME[] = {
     &ME_MAIN_NEWGAME_INGAME,
 #endif
     &ME_MAIN_SAVEGAME,
-    &ME_MAIN_LOADGAME,
+    //&ME_MAIN_LOADGAME,
+    &ME_MAIN_EXHUMED_LOADGAME,
     &ME_MAIN_OPTIONS,
 //    &ME_MAIN_HELP,
     &ME_MAIN_QUITTOTITLE,
@@ -413,11 +418,19 @@ static MenuEntry_t *MEL_MAIN_INGAME[] = {
 #define MAXSAVENAMES        5
 #define MAXSAVENAMELENGTH   25
 
-char savesList[MAXSAVENAMES][MAXSAVENAMELENGTH];
+#define kSaveFileName       "savgamea.sav"
+static char savesList[MAXSAVENAMES][MAXSAVENAMELENGTH];
+
+// Exhumed old style NewGame and LoadGame
+static MenuLink_t MEO_EXHUMED_LOAD = { MENU_LOADVERIFY, MA_None, };
+static MenuEntry_t ME_EXHUMED_LOAD_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Minifont2, &MEF_ExhumedLoadGame, &MEO_EXHUMED_LOAD, Link );
+static MenuEntry_t ME_EXHUMED_LOAD_EMPTY = MAKE_MENUENTRY( NULL, &MF_Minifont2, &MEF_ExhumedLoadGame, nullptr, Dummy );
+static MenuEntry_t *ME_EXHUMED_LOAD;
+static MenuEntry_t **MEL_EXHUMED_LOAD;
 
 static MenuString_t MEO_NEWGAMENAMES_TEMPLATE = MAKE_MENUSTRING(NULL, &MF_Minifont2, MAXSAVENAMELENGTH, 0);
 static MenuString_t MEO_NEWGAMENAMES[MAXSAVENAMES];
-static MenuEntry_t ME_NEWGAMENAMES_TEMPLATE = MAKE_MENUENTRY(NULL, &MF_Minifont2, &MEF_ExNewGame, &MEO_NEWGAMENAMES_TEMPLATE, String);
+static MenuEntry_t ME_NEWGAMENAMES_TEMPLATE = MAKE_MENUENTRY(NULL, &MF_Minifont2, &MEF_ExhumedNewGame, &MEO_NEWGAMENAMES_TEMPLATE, String);
 static MenuEntry_t ME_NEWGAMENAMES[MAXSAVENAMES];
 static MenuEntry_t* MEL_NEWGAMENAMES[MAXSAVENAMES];
 
@@ -1483,7 +1496,7 @@ static MenuEntry_t *MEL_SAVESETUP[] = {
 static MenuMenu_t M_MAIN = MAKE_MENUMENU( NoTitle, &MMF_Top_Main, MEL_MAIN );
 static MenuMenu_t M_MAIN_INGAME = MAKE_MENUMENU( NoTitle, &MMF_Top_Main, MEL_MAIN_INGAME );
 
-static MenuMenu_t M_EPISODE = MAKE_MENUMENU("New Game", &MMF_ExNewGame, MEL_NEWGAMENAMES);
+static MenuMenu_t M_EPISODE = MAKE_MENUMENU("New Game", &MMF_ExhumedNewGame, MEL_NEWGAMENAMES);
 
 // static MenuMenu_t M_EPISODE = MAKE_MENUMENU( "Select An Episode", &MMF_Top_Episode, MEL_EPISODE );
 // static MenuMenu_t M_SKILL = MAKE_MENUMENU( "Select Skill", &MMF_Top_Skill, MEL_SKILL );
@@ -1519,6 +1532,9 @@ static MenuMenu_t M_RENDERERSETUP_POLYMOST = MAKE_MENUMENU( "Polymost Setup", &M
 static MenuMenu_t M_COLCORR = MAKE_MENUMENU( "Color Correction", &MMF_ColorCorrect, MEL_COLCORR );
 static MenuMenu_t M_SCREENSETUP = MAKE_MENUMENU( "HUD Setup", &MMF_BigOptions, MEL_SCREENSETUP );
 static MenuMenu_t M_DISPLAYSETUP = MAKE_MENUMENU( "Display Setup", &MMF_BigOptions, MEL_DISPLAYSETUP );
+
+static MenuMenu_t M_EXHUMED_LOAD = MAKE_MENUMENU_CUSTOMSIZE(s_LoadGame, &MMF_ExhumedLoadGame, MEL_EXHUMED_LOAD);
+
 // static MenuMenu_t M_LOAD = MAKE_MENUMENU_CUSTOMSIZE( s_LoadGame, &MMF_LoadSave, MEL_LOAD );
 // static MenuMenu_t M_SAVE = MAKE_MENUMENU_CUSTOMSIZE( s_SaveGame, &MMF_LoadSave, MEL_SAVE );
 static MenuMenu_t M_SOUND = MAKE_MENUMENU( "Sound Setup", &MMF_BigOptions, MEL_SOUND );
@@ -1584,6 +1600,7 @@ static Menu_t Menus[] = {
     { &M_MAIN, MENU_MAIN, MENU_CLOSE, MA_None, Menu },
     { &M_MAIN_INGAME, MENU_MAIN_INGAME, MENU_CLOSE, MA_None, Menu },
     { &M_EPISODE, MENU_EPISODE, MENU_MAIN, MA_Return, Menu },
+
     // { &M_USERMAP, MENU_USERMAP, MENU_PREVIOUS, MA_Return, FileSelect },
     // { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     // { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
@@ -1618,6 +1635,9 @@ static Menu_t Menus[] = {
 //#ifdef POLYMER
 //    { &M_RENDERERSETUP_POLYMER, MENU_POLYMER, MENU_DISPLAYSETUP, MA_Return, Menu },
 //#endif
+
+    { &M_EXHUMED_LOAD, MENU_EXHUMED_LOADGAME, MENU_MAIN, MA_Return, Menu },
+
     // { &M_LOAD, MENU_LOAD, MENU_MAIN, MA_Return, Menu },
     // { &M_SAVE, MENU_SAVE, MENU_MAIN, MA_Return, Menu },
     // { &M_STORY, MENU_STORY, MENU_MAIN, MA_Return, Panel },
@@ -1833,12 +1853,23 @@ void Menu_Init(void)
         MEOSN_Keys[i] = g_keyNameTable[i];
 	MEOSN_Keys[0] = MenuKeyNone;
     MEOSN_Keys[NUMKEYS-1] = MenuKeyNone;
+   
+    // Old Exhumed Save/Load file handling
+    int hSaveFile = kopen4loadfrommod(kSaveFileName, 0);
+    if (hSaveFile == -1)
+    {
+        // TODO - error handle
+        memset(savesList, 0, sizeof(savesList));
+    }
+    else
+    {
+        kread(hSaveFile, savesList, sizeof(savesList));
+        kclose(hSaveFile);
+    }
 
     // TEST FIXME TODO
     for (i = 0; i < 5; ++i)
     {
-        strcpy(savesList[i], "Hello");
-
         MEL_NEWGAMENAMES[i] = &ME_NEWGAMENAMES[i];
         ME_NEWGAMENAMES[i] = ME_NEWGAMENAMES_TEMPLATE;
         ME_NEWGAMENAMES[i].entry = &MEO_NEWGAMENAMES[i];
@@ -2494,6 +2525,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     switch (cm)
     {
     case MENU_EPISODE:
+    case MENU_EXHUMED_LOADGAME:
     {
         int yPos = 90;
         //int yTextPost = 98;
@@ -2771,6 +2803,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
     case MENU_LOADVERIFY:
     {
+        int blah = 123;
 //         videoFadeToBlack(1);
 //         menusave_t & msv = g_menusaves[M_LOAD.currentEntry];
 //         if (msv.isOldVer && msv.brief.isExt)
@@ -2808,7 +2841,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         // menusave_t & msv = cm == MENU_LOADDELVERIFY ? g_menusaves[M_LOAD.currentEntry] : g_menusaves[M_SAVE.currentEntry-1];
         // Bsprintf(tempbuf, "Delete saved game:\n\"%s\"?", msv.brief.name);
         // Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
-        // break;
+        break;
     }
 
     case MENU_NEWVERIFY:
@@ -3121,6 +3154,14 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     }
 }
 
+static void Menu_Exhumed_ReadSaveGameHeaders();
+
+static void Menu_Exhumed_LoadReadHeaders()
+{
+    Menu_Exhumed_ReadSaveGameHeaders();
+
+    // TODO - disable the empty slots?
+}
 
 // static void Menu_ReadSaveGameHeaders();
 // 
@@ -3383,6 +3424,16 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 {
     switch (g_currentMenu)
     {
+        case MENU_EXHUMED_LOADGAME:
+        {
+            if (entry->name[0] == '\0')
+                break;
+
+            g_menuReturn = 2;
+            SavePosition = M_EXHUMED_LOAD.currentEntry;
+            Menu_Change(MENU_CLOSE);
+        }
+        break;
 /* BJD
     case MENU_MAIN:
         if (entry == &ME_MAIN_NEWGAME)
@@ -4486,6 +4537,26 @@ static void Menu_MaybeSetSelectionToChild(Menu_t * m, MenuID_t id)
     }
 }
 
+static void Menu_Exhumed_ReadSaveGameHeaders()
+{
+    // ReadSaveGameHeaders();
+
+    int const numloaditems = MAXSAVENAMES; // always have 5 slots for Exhumed's old save system
+    ME_EXHUMED_LOAD = (MenuEntry_t *)Xrealloc(ME_EXHUMED_LOAD, MAXSAVENAMES * sizeof(MenuEntry_t));
+    MEL_EXHUMED_LOAD = (MenuEntry_t **)Xrealloc(MEL_EXHUMED_LOAD, MAXSAVENAMES * sizeof(MenuEntry_t *));
+
+    for (int i = 0; i < MAXSAVENAMES; ++i)
+    {
+        MEL_EXHUMED_LOAD[i] = &ME_EXHUMED_LOAD[i];
+        ME_EXHUMED_LOAD[i] = ME_EXHUMED_LOAD_TEMPLATE;
+
+        ME_EXHUMED_LOAD[i].name = savesList[i];
+    }
+
+    M_EXHUMED_LOAD.entrylist = MEL_EXHUMED_LOAD;
+    M_EXHUMED_LOAD.numEntries = numloaditems;
+}
+
 // static void Menu_ReadSaveGameHeaders()
 // {
 //     ReadSaveGameHeaders();
@@ -4535,6 +4606,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     case MENU_MAIN_INGAME:
         // if (FURY)
         //     ME_MAIN_LOADGAME.name = s_LoadGame;
+        break;
+
+    case MENU_EXHUMED_LOADGAME:
+        Menu_Exhumed_LoadReadHeaders();
         break;
 
     //case MENU_NEWGAMECUSTOMSUB:
