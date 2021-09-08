@@ -325,14 +325,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\opl3.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\pitch.cpp" />
-    <ClCompile Include="..\..\source\audiolib\src\stb_vorbis.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\vorbis.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\xa.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\xmp.cpp" />
@@ -354,6 +346,7 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_winmm.h" />
     <ClInclude Include="..\..\source\audiolib\src\midi.h" />
+    <ClInclude Include="..\..\source\audiolib\src\minivorbis.h" />
     <ClInclude Include="..\..\source\audiolib\src\pitch.h" />
     <ClInclude Include="..\..\source\audiolib\src\tsf.h" />
     <ClInclude Include="..\..\source\audiolib\src\_al_midi.h" />

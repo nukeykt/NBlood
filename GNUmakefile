@@ -417,9 +417,6 @@ ifeq ($(SUBPLATFORM),LINUX)
 endif
 
 ifeq ($(RENDERTYPE),SDL)
-    ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
-        audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
-    endif
     audiolib_objs += driver_sdl.cpp
 endif
 
@@ -619,15 +616,15 @@ duke3d_game_orderonlydeps :=
 duke3d_editor_orderonlydeps :=
 
 ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lFLAC -logg -lasound
+    LIBS += -lFLAC -lasound
 endif
 
 ifeq ($(PLATFORM),BSD)
-    LIBS += -lFLAC -logg -lexecinfo
+    LIBS += -lFLAC -lexecinfo
 endif
 
 ifeq ($(PLATFORM),DARWIN)
-    LIBS += -lFLAC -logg -lm \
+    LIBS += -lFLAC -lm \
             -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,OpenGL \
             -Wl,-framework,CoreMIDI -Wl,-framework,AudioUnit \
             -Wl,-framework,AudioToolbox -Wl,-framework,IOKit -Wl,-framework,AGL
@@ -641,7 +638,7 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    LIBS += -lFLAC -logg -ldsound
+    LIBS += -lFLAC -ldsound
     duke3d_game_objs += winbits.cpp
     duke3d_game_rsrc_objs += gameres.rc
     duke3d_editor_rsrc_objs += buildres.rc

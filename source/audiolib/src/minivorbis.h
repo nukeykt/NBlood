@@ -28,7 +28,7 @@
  * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
  * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
  *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2002             *
+ * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2020             *
  * by the Xiph.Org Foundation http://www.xiph.org/                  *
  *                                                                  *
  ********************************************************************
@@ -36,15 +36,17 @@
  function: Define a consistent set of types on each platform.
 
  ********************************************************************/
+#include "compat.h"
+
 #ifndef _OS_TYPES_H
 #define _OS_TYPES_H
 
 /* make it easy on the folks that want to compile the libs with a
    different malloc than stdlib */
-#define _ogg_malloc  malloc
-#define _ogg_calloc  calloc
-#define _ogg_realloc realloc
-#define _ogg_free    free
+#define _ogg_malloc  Xmalloc
+#define _ogg_calloc  Xcalloc
+#define _ogg_realloc Xrealloc
+#define _ogg_free    Xfree
 
 #if defined(_WIN32)
 
@@ -187,16 +189,6 @@ typedef uint64_t ogg_uint64_t;
 
 #endif  /* _OS_TYPES_H */
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation http://www.xiph.org/                  *
- *                                                                  *
- ********************************************************************
 
  function: toplevel libogg include
 
@@ -396,16 +388,6 @@ extern void     ogg_packet_clear(ogg_packet *op);
 
 #endif  /* _OGG_H */
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2001             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
-
- ********************************************************************
 
  function: libvorbis codec headers
 
@@ -638,16 +620,6 @@ extern int      vorbis_synthesis_halfrate_p(vorbis_info *v);
 #endif
 
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: stdio-based convenience library for opening/seeking/decoding
 
@@ -847,16 +819,6 @@ extern int ov_halfrate_p(OggVorbis_File *vf);
 extern "C" {
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE Ogg CONTAINER SOURCE CODE.              *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2014             *
- * by the Xiph.Org Foundation http://www.xiph.org/                  *
- *                                                                  *
- ********************************************************************
 
   function: packing variable sized words into an octet stream
 
@@ -886,7 +848,7 @@ static const unsigned int mask8B[]=
 
 void oggpack_writeinit(oggpack_buffer *b){
   memset(b,0,sizeof(*b));
-  b->ptr=b->buffer=_ogg_malloc(BUFFER_INCREMENT);
+  b->ptr=b->buffer=(unsigned char *)_ogg_malloc(BUFFER_INCREMENT);
   b->buffer[0]='\0';
   b->storage=BUFFER_INCREMENT;
 }
@@ -930,10 +892,10 @@ void oggpackB_writetrunc(oggpack_buffer *b,long bits){
 void oggpack_write(oggpack_buffer *b,unsigned long value,int bits){
   if(bits<0 || bits>32) goto err;
   if(b->endbyte>=b->storage-4){
-    void *ret;
+    unsigned char *ret;
     if(!b->ptr)return;
     if(b->storage>LONG_MAX-BUFFER_INCREMENT) goto err;
-    ret=_ogg_realloc(b->buffer,b->storage+BUFFER_INCREMENT);
+    ret=(unsigned char *)_ogg_realloc(b->buffer,b->storage+BUFFER_INCREMENT);
     if(!ret) goto err;
     b->buffer=ret;
     b->storage+=BUFFER_INCREMENT;
@@ -973,10 +935,10 @@ void oggpack_write(oggpack_buffer *b,unsigned long value,int bits){
 void oggpackB_write(oggpack_buffer *b,unsigned long value,int bits){
   if(bits<0 || bits>32) goto err;
   if(b->endbyte>=b->storage-4){
-    void *ret;
+    unsigned char *ret;
     if(!b->ptr)return;
     if(b->storage>LONG_MAX-BUFFER_INCREMENT) goto err;
-    ret=_ogg_realloc(b->buffer,b->storage+BUFFER_INCREMENT);
+    ret=(unsigned char *)_ogg_realloc(b->buffer,b->storage+BUFFER_INCREMENT);
     if(!ret) goto err;
     b->buffer=ret;
     b->storage+=BUFFER_INCREMENT;
@@ -1039,11 +1001,11 @@ static void oggpack_writecopy_helper(oggpack_buffer *b,
 
   /* expand storage up-front */
   if(b->endbyte+pbytes>=b->storage){
-    void *ret;
+    unsigned char *ret;
     if(!b->ptr) goto err;
     if(b->storage>b->endbyte+pbytes+BUFFER_INCREMENT) goto err;
     b->storage=b->endbyte+pbytes+BUFFER_INCREMENT;
-    ret=_ogg_realloc(b->buffer,b->storage);
+    ret=(unsigned char *)_ogg_realloc(b->buffer,b->storage);
     if(!ret) goto err;
     b->buffer=ret;
     b->ptr=b->buffer+b->endbyte;
@@ -1934,16 +1896,6 @@ int main(void){
 
 #undef BUFFER_INCREMENT
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE Ogg CONTAINER SOURCE CODE.              *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2018             *
- * by the Xiph.Org Foundation http://www.xiph.org/                  *
- *                                                                  *
- ********************************************************************
 
  function: code raw packets into framed OggSquish stream and
            decode Ogg streams back into raw packets
@@ -2062,17 +2014,6 @@ static void _ogg_crc_init(){
 #endif
 
 /*#include "crctable.h"*/
-/********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE Ogg CONTAINER SOURCE CODE.              *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2018             *
- * by the Xiph.Org Foundation http://www.xiph.org/                  *
- *                                                                  *
- ********************************************************************/
 
 /*#include <ogg/os_types.h>*/
 
@@ -2349,9 +2290,9 @@ int ogg_stream_init(ogg_stream_state *os,int serialno){
     os->body_storage=16*1024;
     os->lacing_storage=1024;
 
-    os->body_data=_ogg_malloc(os->body_storage*sizeof(*os->body_data));
-    os->lacing_vals=_ogg_malloc(os->lacing_storage*sizeof(*os->lacing_vals));
-    os->granule_vals=_ogg_malloc(os->lacing_storage*sizeof(*os->granule_vals));
+    os->body_data=(unsigned char *)_ogg_malloc(os->body_storage*sizeof(*os->body_data));
+    os->lacing_vals=(int *)_ogg_malloc(os->lacing_storage*sizeof(*os->lacing_vals));
+    os->granule_vals=(ogg_int64_t *)_ogg_malloc(os->lacing_storage*sizeof(*os->granule_vals));
 
     if(!os->body_data || !os->lacing_vals || !os->granule_vals){
       ogg_stream_clear(os);
@@ -2397,14 +2338,14 @@ int ogg_stream_destroy(ogg_stream_state *os){
 static int _os_body_expand(ogg_stream_state *os,long needed){
   if(os->body_storage-needed<=os->body_fill){
     long body_storage;
-    void *ret;
+    unsigned char *ret;
     if(os->body_storage>LONG_MAX-needed){
       ogg_stream_clear(os);
       return -1;
     }
     body_storage=os->body_storage+needed;
     if(body_storage<LONG_MAX-1024)body_storage+=1024;
-    ret=_ogg_realloc(os->body_data,body_storage*sizeof(*os->body_data));
+    ret=(unsigned char *)_ogg_realloc(os->body_data,body_storage*sizeof(*os->body_data));
     if(!ret){
       ogg_stream_clear(os);
       return -1;
@@ -2425,19 +2366,19 @@ static int _os_lacing_expand(ogg_stream_state *os,long needed){
     }
     lacing_storage=os->lacing_storage+needed;
     if(lacing_storage<LONG_MAX-32)lacing_storage+=32;
-    ret=_ogg_realloc(os->lacing_vals,lacing_storage*sizeof(*os->lacing_vals));
+    ret=(unsigned char *)_ogg_realloc(os->lacing_vals,lacing_storage*sizeof(*os->lacing_vals));
     if(!ret){
       ogg_stream_clear(os);
       return -1;
     }
-    os->lacing_vals=ret;
-    ret=_ogg_realloc(os->granule_vals,lacing_storage*
+    os->lacing_vals=(int *)ret;
+    ret=(unsigned char *)_ogg_realloc(os->granule_vals,lacing_storage*
                      sizeof(*os->granule_vals));
     if(!ret){
       ogg_stream_clear(os);
       return -1;
     }
-    os->granule_vals=ret;
+    os->granule_vals=(ogg_int64_t *)ret;
     os->lacing_storage=lacing_storage;
   }
   return 0;
@@ -2811,12 +2752,12 @@ char *ogg_sync_buffer(ogg_sync_state *oy, long size){
   if(size>oy->storage-oy->fill){
     /* We need to extend the internal buffer */
     long newsize=size+oy->fill+4096; /* an extra page to be nice */
-    void *ret;
+    unsigned char *ret;
 
     if(oy->data)
-      ret=_ogg_realloc(oy->data,newsize);
+      ret=(unsigned char *)_ogg_realloc(oy->data,newsize);
     else
-      ret=_ogg_malloc(newsize);
+      ret=(unsigned char *)_ogg_malloc(newsize);
     if(!ret){
       ogg_sync_clear(oy);
       return NULL;
@@ -2924,7 +2865,7 @@ long ogg_sync_pageseek(ogg_sync_state *oy,ogg_page *og){
   oy->bodybytes=0;
 
   /* search for possible capture */
-  next=memchr(page+1,'O',bytes-1);
+  next=(unsigned char *)memchr(page+1,'O',bytes-1);
   if(!next)
     next=oy->data+oy->fill;
 
@@ -4329,16 +4270,6 @@ int main(void){
 extern "C" {
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: miscellaneous prototypes
 
@@ -4388,16 +4319,6 @@ extern void _VDBG_free(void *ptr,char *file,long line);
 #ifndef _OS_H
 #define _OS_H
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: #ifdef jail to whip a few platforms into the UNIX ideal.
 
@@ -4575,16 +4496,6 @@ STIN int vorbis_ftoi(double f){
 
 #endif /* _OS_H */
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: modified discrete cosine transform prototypes
 
@@ -4645,16 +4556,6 @@ extern void mdct_backward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out);
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: PCM data envelope analysis and manipulation
 
@@ -4724,16 +4625,6 @@ extern int  _ve_envelope_mark(vorbis_dsp_state *v);
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: basic shared codebook operations
 
@@ -4841,16 +4732,6 @@ extern long vorbis_book_decodevv_add(codebook *book, float **a,
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: fft transform
 
@@ -4874,16 +4755,6 @@ extern void drft_clear(drft_lookup *l);
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: libvorbis codec headers
 
@@ -4931,16 +4802,6 @@ typedef void vorbis_info_mapping;
 
 /*#include "psy.h"*/
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: random psychoacoustics (not including preecho)
 
@@ -4952,16 +4813,6 @@ typedef void vorbis_info_mapping;
 
 /*#include "backends.h"*/
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: libvorbis backend and mapping structures; needed for
            static mode headers
@@ -5044,7 +4895,7 @@ typedef struct{
                                  vorbis_info_residue *);
   void (*free_info)    (vorbis_info_residue *);
   void (*free_look)    (vorbis_look_residue *);
-  long **(*class)      (struct vorbis_block *,vorbis_look_residue *,
+  long **(*vclass)      (struct vorbis_block *,vorbis_look_residue *,
                         int **,int *,int);
   int  (*forward)      (oggpack_buffer *,struct vorbis_block *,
                         vorbis_look_residue *,
@@ -5228,16 +5079,6 @@ extern void _vp_couple_quantize_normalize(int blobno,
 #endif
 /*#include "bitrate.h"*/
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: bitrate tracking and management
 
@@ -5320,16 +5161,6 @@ typedef struct private_state {
 
 /*#include "highlevel.h"*/
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: highlevel encoder setup struct separated out for vorbisenc clarity
 
@@ -5451,16 +5282,6 @@ extern int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
                   int *post,int *ilogmask);
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: lookup data; generated by lookups.pl; edit there
 
@@ -5642,16 +5463,6 @@ static const long COS_LOOKUP_I[COS_LOOKUP_I_SZ+1]={
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: lookup based functions
 
@@ -5673,16 +5484,6 @@ extern float vorbis_fromdBlook_i(long a);
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: LPC low level routines
 
@@ -5701,16 +5502,6 @@ extern void vorbis_lpc_predict(float *coeff,float *prime,int m,
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: LSP (also called LSF) conversion routines
 
@@ -5728,16 +5519,6 @@ extern void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: masking curve data for psychoacoustics
 
@@ -6512,16 +6293,6 @@ static const float tonemasks[P_BANDS][6][EHMER_MAX]={
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: registry for time, floor, res backends and channel mappings
 
@@ -6543,16 +6314,6 @@ extern const vorbis_func_mapping   *const _mapping_P[];
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: linear scale -> dB, Bark and Mel scales
 
@@ -6632,16 +6393,6 @@ static float unitnorm(float x){
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: window functions
 
@@ -6657,16 +6408,6 @@ extern void _vorbis_apply_window(float *d,int *winno,long *blocksizes,
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: normalized modified discrete cosine transform
            power of two length transform only [64 <= n ]
@@ -6707,8 +6448,8 @@ extern void _vorbis_apply_window(float *d,int *winno,long *blocksizes,
    some window function algebra. */
 
 void mdct_init(mdct_lookup *lookup,int n){
-  int   *bitrev=_ogg_malloc(sizeof(*bitrev)*(n/4));
-  DATA_TYPE *T=_ogg_malloc(sizeof(*T)*(n+n/4));
+  int   *bitrev=(int *)_ogg_malloc(sizeof(*bitrev)*(n/4));
+  DATA_TYPE *T=(DATA_TYPE *)_ogg_malloc(sizeof(*T)*(n+n/4));
 
   int i;
   int n2=n>>1;
@@ -7152,7 +6893,7 @@ void mdct_forward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
   int n2=n>>1;
   int n4=n>>2;
   int n8=n>>3;
-  DATA_TYPE *w=alloca(n*sizeof(*w)); /* forward needs working space */
+  DATA_TYPE *w=(DATA_TYPE *)alloca(n*sizeof(*w)); /* forward needs working space */
   DATA_TYPE *w2=w+n2;
 
   /* rotate */
@@ -7219,16 +6960,6 @@ void mdct_forward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
   }
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: *unnormalized* fft transform
 
@@ -8460,8 +8191,8 @@ void drft_backward(drft_lookup *l,float *data){
 
 void drft_init(drft_lookup *l,int n){
   l->n=n;
-  l->trigcache=_ogg_calloc(3*n,sizeof(*l->trigcache));
-  l->splitcache=_ogg_calloc(32,sizeof(*l->splitcache));
+  l->trigcache=(float *)_ogg_calloc(3*n,sizeof(*l->trigcache));
+  l->splitcache=(int *)_ogg_calloc(32,sizeof(*l->splitcache));
   fdrffti(n, l->trigcache, l->splitcache);
 }
 
@@ -8473,16 +8204,6 @@ void drft_clear(drft_lookup *l){
   }
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: PCM data vector blocking, windowing and dis/reassembly
 
@@ -8555,8 +8276,7 @@ int vorbis_block_init(vorbis_dsp_state *v, vorbis_block *vb){
   vb->localalloc=0;
   vb->localstore=NULL;
   if(v->analysisp){
-    vorbis_block_internal *vbi=
-      vb->internal=_ogg_calloc(1,sizeof(vorbis_block_internal));
+    vorbis_block_internal *vbi=(vorbis_block_internal *)(vb->internal=_ogg_calloc(1,sizeof(vorbis_block_internal)));
     vbi->ampmax=-9999;
 
     for(i=0;i<PACKETBLOBS;i++){
@@ -8564,7 +8284,7 @@ int vorbis_block_init(vorbis_dsp_state *v, vorbis_block *vb){
         vbi->packetblob[i]=&vb->opb;
       }else{
         vbi->packetblob[i]=
-          _ogg_calloc(1,sizeof(oggpack_buffer));
+          (oggpack_buffer *)_ogg_calloc(1,sizeof(oggpack_buffer));
       }
       oggpack_writeinit(vbi->packetblob[i]);
     }
@@ -8578,7 +8298,7 @@ void *_vorbis_block_alloc(vorbis_block *vb,long bytes){
   if(bytes+vb->localtop>vb->localalloc){
     /* can't just _ogg_realloc... there are outstanding pointers */
     if(vb->localstore){
-      struct alloc_chain *link=_ogg_malloc(sizeof(*link));
+      struct alloc_chain *link=(struct alloc_chain *)_ogg_malloc(sizeof(*link));
       vb->totaluse+=vb->localtop;
       link->next=vb->reap;
       link->ptr=vb->localstore;
@@ -8621,7 +8341,7 @@ void _vorbis_block_ripcord(vorbis_block *vb){
 
 int vorbis_block_clear(vorbis_block *vb){
   int i;
-  vorbis_block_internal *vbi=vb->internal;
+  vorbis_block_internal *vbi=(vorbis_block_internal *)vb->internal;
 
   _vorbis_block_ripcord(vb);
   if(vb->localstore)_ogg_free(vb->localstore);
@@ -8643,7 +8363,7 @@ int vorbis_block_clear(vorbis_block *vb){
 
 static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   int i;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   private_state *b=NULL;
   int hs;
 
@@ -8656,20 +8376,20 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   hs=ci->halfrate_flag;
 
   memset(v,0,sizeof(*v));
-  b=v->backend_state=_ogg_calloc(1,sizeof(*b));
+  b=(private_state *)(v->backend_state=_ogg_calloc(1,sizeof(*b)));
 
   v->vi=vi;
   b->modebits=ov_ilog(ci->modes-1);
 
-  b->transform[0]=_ogg_calloc(VI_TRANSFORMB,sizeof(*b->transform[0]));
-  b->transform[1]=_ogg_calloc(VI_TRANSFORMB,sizeof(*b->transform[1]));
+  b->transform[0]=(vorbis_look_transform **)_ogg_calloc(VI_TRANSFORMB,sizeof(*b->transform[0]));
+  b->transform[1]=(vorbis_look_transform **)_ogg_calloc(VI_TRANSFORMB,sizeof(*b->transform[1]));
 
   /* MDCT is tranform 0 */
 
   b->transform[0][0]=_ogg_calloc(1,sizeof(mdct_lookup));
   b->transform[1][0]=_ogg_calloc(1,sizeof(mdct_lookup));
-  mdct_init(b->transform[0][0],ci->blocksizes[0]>>hs);
-  mdct_init(b->transform[1][0],ci->blocksizes[1]>>hs);
+  mdct_init((mdct_lookup *)b->transform[0][0],ci->blocksizes[0]>>hs);
+  mdct_init((mdct_lookup *)b->transform[1][0],ci->blocksizes[1]>>hs);
 
   /* Vorbis I uses only window type 0 */
   /* note that the correct computation below is technically:
@@ -8689,12 +8409,12 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
 
     /* finish the codebooks */
     if(!ci->fullbooks){
-      ci->fullbooks=_ogg_calloc(ci->books,sizeof(*ci->fullbooks));
+      ci->fullbooks=(codebook *)_ogg_calloc(ci->books,sizeof(*ci->fullbooks));
       for(i=0;i<ci->books;i++)
         vorbis_book_init_encode(ci->fullbooks+i,ci->book_param[i]);
     }
 
-    b->psy=_ogg_calloc(ci->psys,sizeof(*b->psy));
+    b->psy=(vorbis_look_psy *)_ogg_calloc(ci->psys,sizeof(*b->psy));
     for(i=0;i<ci->psys;i++){
       _vp_psy_init(b->psy+i,
                    ci->psy_param[i],
@@ -8707,7 +8427,7 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   }else{
     /* finish the codebooks */
     if(!ci->fullbooks){
-      ci->fullbooks=_ogg_calloc(ci->books,sizeof(*ci->fullbooks));
+      ci->fullbooks=(codebook *)_ogg_calloc(ci->books,sizeof(*ci->fullbooks));
       for(i=0;i<ci->books;i++){
         if(ci->book_param[i]==NULL)
           goto abort_books;
@@ -8723,12 +8443,12 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   /* initialize the storage vectors. blocksize[1] is small for encode,
      but the correct size for decode */
   v->pcm_storage=ci->blocksizes[1];
-  v->pcm=_ogg_malloc(vi->channels*sizeof(*v->pcm));
-  v->pcmret=_ogg_malloc(vi->channels*sizeof(*v->pcmret));
+  v->pcm=(float **)_ogg_malloc(vi->channels*sizeof(*v->pcm));
+  v->pcmret=(float **)_ogg_malloc(vi->channels*sizeof(*v->pcmret));
   {
     int i;
     for(i=0;i<vi->channels;i++)
-      v->pcm[i]=_ogg_calloc(v->pcm_storage,sizeof(*v->pcm[i]));
+      v->pcm[i]=(float *)_ogg_calloc(v->pcm_storage,sizeof(*v->pcm[i]));
   }
 
   /* all 1 (large block) or 0 (small block) */
@@ -8742,8 +8462,8 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   v->pcm_current=v->centerW;
 
   /* initialize all the backend lookups */
-  b->flr=_ogg_calloc(ci->floors,sizeof(*b->flr));
-  b->residue=_ogg_calloc(ci->residues,sizeof(*b->residue));
+  b->flr=(vorbis_look_floor **)_ogg_calloc(ci->floors,sizeof(*b->flr));
+  b->residue=(vorbis_look_residue **)_ogg_calloc(ci->residues,sizeof(*b->residue));
 
   for(i=0;i<ci->floors;i++)
     b->flr[i]=_floor_P[ci->floor_type[i]]->
@@ -8770,11 +8490,11 @@ int vorbis_analysis_init(vorbis_dsp_state *v,vorbis_info *vi){
   private_state *b=NULL;
 
   if(_vds_shared_init(v,vi,1))return 1;
-  b=v->backend_state;
+  b=(private_state *)v->backend_state;
   b->psy_g_look=_vp_global_look(vi);
 
   /* Initialize the envelope state storage */
-  b->ve=_ogg_calloc(1,sizeof(*b->ve));
+  b->ve=(envelope_lookup *)_ogg_calloc(1,sizeof(*b->ve));
   _ve_envelope_init(b->ve,vi);
 
   vorbis_bitrate_init(vi,&b->bms);
@@ -8790,8 +8510,8 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
   int i;
   if(v){
     vorbis_info *vi=v->vi;
-    codec_setup_info *ci=(vi?vi->codec_setup:NULL);
-    private_state *b=v->backend_state;
+    codec_setup_info *ci=(codec_setup_info *)(vi?vi->codec_setup:NULL);
+    private_state *b=(private_state *)v->backend_state;
 
     if(b){
 
@@ -8801,12 +8521,12 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
       }
 
       if(b->transform[0]){
-        mdct_clear(b->transform[0][0]);
+        mdct_clear((mdct_lookup *)b->transform[0][0]);
         _ogg_free(b->transform[0][0]);
         _ogg_free(b->transform[0]);
       }
       if(b->transform[1]){
-        mdct_clear(b->transform[1][0]);
+        mdct_clear((mdct_lookup *)b->transform[1][0]);
         _ogg_free(b->transform[1][0]);
         _ogg_free(b->transform[1]);
       }
@@ -8863,7 +8583,7 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
 float **vorbis_analysis_buffer(vorbis_dsp_state *v, int vals){
   int i;
   vorbis_info *vi=v->vi;
-  private_state *b=v->backend_state;
+  private_state *b=(private_state *)v->backend_state;
 
   /* free header, header1, header2 */
   if(b->header)_ogg_free(b->header);b->header=NULL;
@@ -8877,7 +8597,7 @@ float **vorbis_analysis_buffer(vorbis_dsp_state *v, int vals){
     v->pcm_storage=v->pcm_current+vals*2;
 
     for(i=0;i<vi->channels;i++){
-      v->pcm[i]=_ogg_realloc(v->pcm[i],v->pcm_storage*sizeof(*v->pcm[i]));
+      v->pcm[i]=(float *)_ogg_realloc(v->pcm[i],v->pcm_storage*sizeof(*v->pcm[i]));
     }
   }
 
@@ -8890,8 +8610,8 @@ float **vorbis_analysis_buffer(vorbis_dsp_state *v, int vals){
 static void _preextrapolate_helper(vorbis_dsp_state *v){
   int i;
   int order=16;
-  float *lpc=alloca(order*sizeof(*lpc));
-  float *work=alloca(v->pcm_current*sizeof(*work));
+  float *lpc=(float *)alloca(order*sizeof(*lpc));
+  float *work=(float *)alloca(v->pcm_current*sizeof(*work));
   long j;
   v->preextrapolate=1;
 
@@ -8933,12 +8653,12 @@ static void _preextrapolate_helper(vorbis_dsp_state *v){
 
 int vorbis_analysis_wrote(vorbis_dsp_state *v, int vals){
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
 
   if(vals<=0){
     int order=32;
     int i;
-    float *lpc=alloca(order*sizeof(*lpc));
+    float *lpc=(float *)alloca(order*sizeof(*lpc));
 
     /* if it wasn't done earlier (very short sample) */
     if(!v->preextrapolate)
@@ -8998,8 +8718,8 @@ int vorbis_analysis_wrote(vorbis_dsp_state *v, int vals){
 int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
   int i;
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
-  private_state *b=v->backend_state;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
+  private_state *b=(private_state *)v->backend_state;
   vorbis_look_psy_global *g=b->psy_g_look;
   long beginW=v->centerW-ci->blocksizes[v->W]/2,centerNext;
   vorbis_block_internal *vbi=(vorbis_block_internal *)vb->internal;
@@ -9091,11 +8811,11 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
   g->ampmax=_vp_ampmax_decay(g->ampmax,v);
   vbi->ampmax=g->ampmax;
 
-  vb->pcm=_vorbis_block_alloc(vb,sizeof(*vb->pcm)*vi->channels);
-  vbi->pcmdelay=_vorbis_block_alloc(vb,sizeof(*vbi->pcmdelay)*vi->channels);
+  vb->pcm=(float **)_vorbis_block_alloc(vb,sizeof(*vb->pcm)*vi->channels);
+  vbi->pcmdelay=(float **)_vorbis_block_alloc(vb,sizeof(*vbi->pcmdelay)*vi->channels);
   for(i=0;i<vi->channels;i++){
     vbi->pcmdelay[i]=
-      _vorbis_block_alloc(vb,(vb->pcmend+beginW)*sizeof(*vbi->pcmdelay[i]));
+      (float *)_vorbis_block_alloc(vb,(vb->pcmend+beginW)*sizeof(*vbi->pcmdelay[i]));
     memcpy(vbi->pcmdelay[i],v->pcm[i],(vb->pcmend+beginW)*sizeof(*vbi->pcmdelay[i]));
     vb->pcm[i]=vbi->pcmdelay[i]+beginW;
 
@@ -9163,7 +8883,7 @@ int vorbis_synthesis_restart(vorbis_dsp_state *v){
 
   if(!v->backend_state)return -1;
   if(!vi)return -1;
-  ci=vi->codec_setup;
+  ci=(codec_setup_info *)vi->codec_setup;
   if(!ci)return -1;
   hs=ci->halfrate_flag;
 
@@ -9194,8 +8914,8 @@ int vorbis_synthesis_init(vorbis_dsp_state *v,vorbis_info *vi){
 
 int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
-  private_state *b=v->backend_state;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
+  private_state *b=(private_state *)v->backend_state;
   int hs=ci->halfrate_flag;
   int i,j;
 
@@ -9436,7 +9156,7 @@ int vorbis_synthesis_read(vorbis_dsp_state *v,int n){
    this implicit buffer data not normally decoded. */
 int vorbis_synthesis_lapout(vorbis_dsp_state *v,float ***pcm){
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   int hs=ci->halfrate_flag;
 
   int n=ci->blocksizes[v->W]>>(hs+1);
@@ -9511,24 +9231,14 @@ int vorbis_synthesis_lapout(vorbis_dsp_state *v,float ***pcm){
 
 const float *vorbis_window(vorbis_dsp_state *v,int W){
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   int hs=ci->halfrate_flag;
-  private_state *b=v->backend_state;
+  private_state *b=(private_state *)v->backend_state;
 
   if(b->window[W]-1<0)return NULL;
   return _vorbis_window_get(b->window[W]-hs);
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: PCM data envelope analysis
 
@@ -9549,7 +9259,7 @@ const float *vorbis_window(vorbis_dsp_state *v,int W){
 /*#include "misc.h"*/
 
 void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   vorbis_info_psy_global *gi=&ci->psy_g_param;
   int ch=vi->channels;
   int i,j;
@@ -9560,7 +9270,7 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
   e->ch=ch;
   e->storage=128;
   e->cursor=ci->blocksizes[1]/2;
-  e->mdct_win=_ogg_calloc(n,sizeof(*e->mdct_win));
+  e->mdct_win=(float *)_ogg_calloc(n,sizeof(*e->mdct_win));
   mdct_init(&e->mdct,n);
 
   for(i=0;i<n;i++){
@@ -9579,7 +9289,7 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
 
   for(j=0;j<VE_BANDS;j++){
     n=e->band[j].end;
-    e->band[j].window=_ogg_malloc(n*sizeof(*e->band[0].window));
+    e->band[j].window=(float *)_ogg_malloc(n*sizeof(*e->band[0].window));
     for(i=0;i<n;i++){
       e->band[j].window[i]=sin((i+.5)/n*M_PI);
       e->band[j].total+=e->band[j].window[i];
@@ -9587,8 +9297,8 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
     e->band[j].total=1./e->band[j].total;
   }
 
-  e->filter=_ogg_calloc(VE_BANDS*ch,sizeof(*e->filter));
-  e->mark=_ogg_calloc(e->storage,sizeof(*e->mark));
+  e->filter=(envelope_filter_state *)_ogg_calloc(VE_BANDS*ch,sizeof(*e->filter));
+  e->mark=(int *)_ogg_calloc(e->storage,sizeof(*e->mark));
 
 }
 
@@ -9621,7 +9331,7 @@ static int _ve_amp(envelope_lookup *ve,
      itself (for low power signals) */
 
   float minV=ve->minenergy;
-  float *vec=alloca(n*sizeof(*vec));
+  float *vec=(float *)alloca(n*sizeof(*vec));
 
   /* stretch is used to gradually lengthen the number of windows
      considered prevoius-to-potential-trigger */
@@ -9691,10 +9401,10 @@ static int _ve_amp(envelope_lookup *ve,
 
     /* convert amplitude to delta */
     {
-      int p,this=filters[j].ampptr;
+      int p,thisamp=filters[j].ampptr;
       float postmax,postmin,premax=-99999.f,premin=99999.f;
 
-      p=this;
+      p=thisamp;
       p--;
       if(p<0)p+=VE_AMP;
       postmax=max(acc,filters[j].ampbuf[p]);
@@ -9711,7 +9421,7 @@ static int _ve_amp(envelope_lookup *ve,
       valmax=postmax-premax;
 
       /*filters[j].markers[pos]=valmax;*/
-      filters[j].ampbuf[this]=acc;
+      filters[j].ampbuf[thisamp]=acc;
       filters[j].ampptr++;
       if(filters[j].ampptr>=VE_AMP)filters[j].ampptr=0;
     }
@@ -9734,7 +9444,7 @@ static ogg_int64_t totalshift=-1024;
 
 long _ve_envelope_search(vorbis_dsp_state *v){
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   vorbis_info_psy_global *gi=&ci->psy_g_param;
   envelope_lookup *ve=((private_state *)(v->backend_state))->ve;
   long i,j;
@@ -9746,7 +9456,7 @@ long _ve_envelope_search(vorbis_dsp_state *v){
   /* make sure we have enough storage to match the PCM */
   if(last+VE_WIN+VE_POST>ve->storage){
     ve->storage=last+VE_WIN+VE_POST; /* be sure */
-    ve->mark=_ogg_realloc(ve->mark,ve->storage*sizeof(*ve->mark));
+    ve->mark=(int *)_ogg_realloc(ve->mark,ve->storage*sizeof(*ve->mark));
   }
 
   for(j=first;j<last;j++){
@@ -9849,7 +9559,7 @@ long _ve_envelope_search(vorbis_dsp_state *v){
 int _ve_envelope_mark(vorbis_dsp_state *v){
   envelope_lookup *ve=((private_state *)(v->backend_state))->ve;
   vorbis_info *vi=v->vi;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   long centerW=v->centerW;
   long beginW=centerW-ci->blocksizes[v->W]/4;
   long endW=centerW+ci->blocksizes[v->W]/4;
@@ -9893,16 +9603,6 @@ void _ve_envelope_shift(envelope_lookup *e,long shift){
   e->cursor-=shift;
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: window functions
 
@@ -12028,16 +11728,6 @@ void _vorbis_apply_window(float *d,int *winno,long *blocksizes,
   }
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: LSP (also called LSF) conversion routines
 
@@ -12325,7 +12015,7 @@ static void cheby(float *g, int ord) {
 }
 
 static int comp(const void *a,const void *b){
-  return (*(float *)a<*(float *)b)-(*(float *)a>*(float *)b);
+  return (*(const float *)a<*(const float *)b)-(*(const float *)a>*(const float *)b);
 }
 
 /* Newton-Raphson-Maehly actually functioned as a decent root finder,
@@ -12338,11 +12028,11 @@ static int comp(const void *a,const void *b){
 #define EPSILON 10e-7
 static int Laguerre_With_Deflation(float *a,int ord,float *r){
   int i,m;
-  double *defl=alloca(sizeof(*defl)*(ord+1));
+  double *defl=(double *)alloca(sizeof(*defl)*(ord+1));
   for(i=0;i<=ord;i++)defl[i]=a[i];
 
   for(m=ord;m>0;m--){
-    double new=0.f,delta;
+    double newd=0.f,delta;
 
     /* iterate a root */
     while(1){
@@ -12350,9 +12040,9 @@ static int Laguerre_With_Deflation(float *a,int ord,float *r){
 
       /* eval the polynomial and its first two derivatives */
       for(i=m;i>0;i--){
-        ppp = new*ppp + pp;
-        pp  = new*pp  + p;
-        p   = new*p   + defl[i-1];
+        ppp = newd*ppp + pp;
+        pp  = newd*pp  + p;
+        p   = newd*p   + defl[i-1];
       }
 
       /* Laguerre's method */
@@ -12369,19 +12059,19 @@ static int Laguerre_With_Deflation(float *a,int ord,float *r){
       }
 
       delta  = m*p/denom;
-      new   -= delta;
+      newd   -= delta;
 
       if(delta<0.f)delta*=-1;
 
-      if(fabs(delta/new)<10e-12)break;
+      if(fabs(delta/newd)<10e-12)break;
     }
 
-    r[m-1]=new;
+    r[m-1]=newd;
 
     /* forward deflation */
 
     for(i=m;i>0;i--)
-      defl[i-1]+=new*defl[i];
+      defl[i-1]+=newd*defl[i];
     defl++;
 
   }
@@ -12393,7 +12083,7 @@ static int Laguerre_With_Deflation(float *a,int ord,float *r){
 static int Newton_Raphson(float *a,int ord,float *r){
   int i, k, count=0;
   double error=1.f;
-  double *root=alloca(ord*sizeof(*root));
+  double *root=(double *)alloca(ord*sizeof(*root));
 
   for(i=0; i<ord;i++) root[i] = r[i];
 
@@ -12432,10 +12122,10 @@ static int Newton_Raphson(float *a,int ord,float *r){
 int vorbis_lpc_to_lsp(float *lpc,float *lsp,int m){
   int order2=(m+1)>>1;
   int g1_order,g2_order;
-  float *g1=alloca(sizeof(*g1)*(order2+1));
-  float *g2=alloca(sizeof(*g2)*(order2+1));
-  float *g1r=alloca(sizeof(*g1r)*(order2+1));
-  float *g2r=alloca(sizeof(*g2r)*(order2+1));
+  float *g1=(float *)alloca(sizeof(*g1)*(order2+1));
+  float *g2=(float *)alloca(sizeof(*g2)*(order2+1));
+  float *g1r=(float *)alloca(sizeof(*g1r)*(order2+1));
+  float *g2r=(float *)alloca(sizeof(*g2r)*(order2+1));
   int i;
 
   /* even and odd are slightly different base cases */
@@ -12482,16 +12172,6 @@ int vorbis_lpc_to_lsp(float *lpc,float *lsp,int m){
   return(0);
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: LPC low level routines
 
@@ -12541,8 +12221,8 @@ Carsten Bormann
    Output: m lpc coefficients, excitation energy */
 
 float vorbis_lpc_from_data(float *data,float *lpci,int n,int m){
-  double *aut=alloca(sizeof(*aut)*(m+1));
-  double *lpc=alloca(sizeof(*lpc)*(m));
+  double *aut=(double *)alloca(sizeof(*aut)*(m+1));
+  double *lpc=(double *)alloca(sizeof(*lpc)*(m));
   double error;
   double epsilon;
   int i,j;
@@ -12621,7 +12301,7 @@ void vorbis_lpc_predict(float *coeff,float *prime,int m,
 
   long i,j,o,p;
   float y;
-  float *work=alloca(sizeof(*work)*(m+n));
+  float *work=(float *)alloca(sizeof(*work)*(m+n));
 
   if(!prime)
     for(i=0;i<m;i++)
@@ -12641,16 +12321,6 @@ void vorbis_lpc_predict(float *coeff,float *prime,int m,
   }
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: single-block PCM analysis mode dispatch
 
@@ -12670,7 +12340,7 @@ void vorbis_lpc_predict(float *coeff,float *prime,int m,
 /* decides between modes, dispatches to the appropriate mapping. */
 int vorbis_analysis(vorbis_block *vb, ogg_packet *op){
   int ret,i;
-  vorbis_block_internal *vbi=vb->internal;
+  vorbis_block_internal *vbi=(vorbis_block_internal *)vb->internal;
 
   vb->glue_bits=0;
   vb->time_bits=0;
@@ -12760,16 +12430,6 @@ void _analysis_output(char *base,int i,float *v,int n,int bark,int dB,
 
 
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: single-block PCM synthesis
 
@@ -12785,9 +12445,9 @@ void _analysis_output(char *base,int i,float *v,int n,int bark,int dB,
 
 int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
   vorbis_dsp_state     *vd= vb ? vb->vd : 0;
-  private_state        *b= vd ? vd->backend_state : 0;
+  private_state        *b= (private_state *)(vd ? vd->backend_state : 0);
   vorbis_info          *vi= vd ? vd->vi : 0;
-  codec_setup_info     *ci= vi ? vi->codec_setup : 0;
+  codec_setup_info     *ci= (codec_setup_info *)(vi ? vi->codec_setup : 0);
   oggpack_buffer       *opb=vb ? &vb->opb : 0;
   int                   type,mode,i;
 
@@ -12838,9 +12498,9 @@ int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
 
   /* alloc pcm passback storage */
   vb->pcmend=ci->blocksizes[vb->W];
-  vb->pcm=_vorbis_block_alloc(vb,sizeof(*vb->pcm)*vi->channels);
+  vb->pcm=(float **)_vorbis_block_alloc(vb,sizeof(*vb->pcm)*vi->channels);
   for(i=0;i<vi->channels;i++)
-    vb->pcm[i]=_vorbis_block_alloc(vb,vb->pcmend*sizeof(*vb->pcm[i]));
+    vb->pcm[i]=(float *)_vorbis_block_alloc(vb,vb->pcmend*sizeof(*vb->pcm[i]));
 
   /* unpack_header enforces range checking */
   type=ci->map_type[ci->mode_param[mode]->mapping];
@@ -12853,9 +12513,9 @@ int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
    Useful for sequential 'fast forward' */
 int vorbis_synthesis_trackonly(vorbis_block *vb,ogg_packet *op){
   vorbis_dsp_state     *vd=vb->vd;
-  private_state        *b=vd->backend_state;
+  private_state        *b=(private_state *)vd->backend_state;
   vorbis_info          *vi=vd->vi;
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   oggpack_buffer       *opb=&vb->opb;
   int                   mode;
 
@@ -12901,7 +12561,7 @@ int vorbis_synthesis_trackonly(vorbis_block *vb,ogg_packet *op){
 }
 
 long vorbis_packet_blocksize(vorbis_info *vi,ogg_packet *op){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   oggpack_buffer       opb;
   int                  mode;
 
@@ -12926,7 +12586,7 @@ long vorbis_packet_blocksize(vorbis_info *vi,ogg_packet *op){
 
 int vorbis_synthesis_halfrate(vorbis_info *vi,int flag){
   /* set / clear half-sample-rate mode */
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
 
   /* right now, our MDCT can't handle < 64 sample windows. */
   if(ci->blocksizes[0]<=64 && flag)return -1;
@@ -12935,20 +12595,10 @@ int vorbis_synthesis_halfrate(vorbis_info *vi,int flag){
 }
 
 int vorbis_synthesis_halfrate_p(vorbis_info *vi){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   return ci->halfrate_flag;
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2010             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: psychoacoustics not including preecho
 
@@ -12973,9 +12623,9 @@ static const double stereo_threshholds[]={0.0, .5, 1.0, 1.5, 2.5, 4.5, 8.5, 16.5
 static const double stereo_threshholds_limited[]={0.0, .5, 1.0, 1.5, 2.0, 2.5, 4.5, 8.5, 9e10};
 
 vorbis_look_psy_global *_vp_global_look(vorbis_info *vi){
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   vorbis_info_psy_global *gi=&ci->psy_g_param;
-  vorbis_look_psy_global *look=_ogg_calloc(1,sizeof(*look));
+  vorbis_look_psy_global *look=(vorbis_look_psy_global *)_ogg_calloc(1,sizeof(*look));
 
   look->channels=vi->channels;
 
@@ -13028,9 +12678,9 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
   float ath[EHMER_MAX];
   float workc[P_BANDS][P_LEVELS][EHMER_MAX];
   float athc[P_LEVELS][EHMER_MAX];
-  float *brute_buffer=alloca(n*sizeof(*brute_buffer));
+  float *brute_buffer=(float *)alloca(n*sizeof(*brute_buffer));
 
-  float ***ret=_ogg_malloc(sizeof(*ret)*P_BANDS);
+  float ***ret=(float ***)_ogg_malloc(sizeof(*ret)*P_BANDS);
 
   memset(workc,0,sizeof(workc));
 
@@ -13097,7 +12747,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
 
   for(i=0;i<P_BANDS;i++){
     int hi_curve,lo_curve,bin;
-    ret[i]=_ogg_malloc(sizeof(**ret)*P_LEVELS);
+    ret[i]=(float **)_ogg_malloc(sizeof(**ret)*P_LEVELS);
 
     /* low frequency curves are measured with greater resolution than
        the MDCT/FFT will actually give us; we want the curve applied
@@ -13117,7 +12767,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
     if(hi_curve>=P_BANDS)hi_curve=P_BANDS-1;
 
     for(m=0;m<P_LEVELS;m++){
-      ret[i][m]=_ogg_malloc(sizeof(***ret)*(EHMER_MAX+2));
+      ret[i][m]=(float *)_ogg_malloc(sizeof(***ret)*(EHMER_MAX+2));
 
       for(j=0;j<n;j++)brute_buffer[j]=999.;
 
@@ -13215,10 +12865,10 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
   p->firstoc=toOC(.25f*rate*.5/n)*(1<<(p->shiftoc+1))-gi->eighth_octave_lines;
   maxoc=toOC((n+.25f)*rate*.5/n)*(1<<(p->shiftoc+1))+.5f;
   p->total_octave_lines=maxoc-p->firstoc+1;
-  p->ath=_ogg_malloc(n*sizeof(*p->ath));
+  p->ath=(float *)_ogg_malloc(n*sizeof(*p->ath));
 
-  p->octave=_ogg_malloc(n*sizeof(*p->octave));
-  p->bark=_ogg_malloc(n*sizeof(*p->bark));
+  p->octave=(long *)_ogg_malloc(n*sizeof(*p->octave));
+  p->bark=(long *)_ogg_malloc(n*sizeof(*p->bark));
   p->vi=vi;
   p->n=n;
   p->rate=rate;
@@ -13226,8 +12876,8 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
   /* AoTuV HF weighting */
   p->m_val = 1.;
   if(rate < 26000) p->m_val = 0;
-  else if(rate < 38000) p->m_val = .94;   /* 32kHz */
-  else if(rate > 46000) p->m_val = 1.275; /* 48kHz */
+  else if(rate < 38000) p->m_val = .94f;   /* 32kHz */
+  else if(rate > 46000) p->m_val = 1.275f; /* 48kHz */
 
   /* set up the lookups for a given blocksize and sample rate */
 
@@ -13267,9 +12917,9 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
                                   vi->tone_centerboost,vi->tone_decay);
 
   /* set up rolling noise median */
-  p->noiseoffset=_ogg_malloc(P_NOISECURVES*sizeof(*p->noiseoffset));
+  p->noiseoffset=(float **)_ogg_malloc(P_NOISECURVES*sizeof(*p->noiseoffset));
   for(i=0;i<P_NOISECURVES;i++)
-    p->noiseoffset[i]=_ogg_malloc(n*sizeof(**p->noiseoffset));
+    p->noiseoffset[i]=(float *)_ogg_malloc(n*sizeof(**p->noiseoffset));
 
   for(i=0;i<n;i++){
     float halfoc=toOC((i+.5)*rate/(2.*n))*2.;
@@ -13324,7 +12974,7 @@ void _vp_psy_clear(vorbis_look_psy *p){
 
 /* octave/(8*eighth_octave_lines) x scale and dB y scale */
 static void seed_curve(float *seed,
-                       const float **curves,
+                       float **curves,
                        float amp,
                        int oc, int n,
                        int linesper,float dBoffset){
@@ -13351,7 +13001,7 @@ static void seed_curve(float *seed,
 }
 
 static void seed_loop(vorbis_look_psy *p,
-                      const float ***curves,
+                      float ***curves,
                       const float *f,
                       const float *flr,
                       float *seed,
@@ -13388,8 +13038,8 @@ static void seed_loop(vorbis_look_psy *p,
 }
 
 static void seed_chase(float *seeds, int linesper, long n){
-  long  *posstack=alloca(n*sizeof(*posstack));
-  float *ampstack=alloca(n*sizeof(*ampstack));
+  long  *posstack=(long *)alloca(n*sizeof(*posstack));
+  float *ampstack=(float *)alloca(n*sizeof(*ampstack));
   long   stack=0;
   long   pos=0;
   long   i;
@@ -13486,11 +13136,11 @@ static void bark_noise_hybridmp(int n,const long *b,
                                 const float offset,
                                 const int fixed){
 
-  float *N=alloca(n*sizeof(*N));
-  float *X=alloca(n*sizeof(*N));
-  float *XX=alloca(n*sizeof(*N));
-  float *Y=alloca(n*sizeof(*N));
-  float *XY=alloca(n*sizeof(*N));
+  float *N=(float *)alloca(n*sizeof(*N));
+  float *X=(float *)alloca(n*sizeof(*N));
+  float *XX=(float *)alloca(n*sizeof(*N));
+  float *Y=(float *)alloca(n*sizeof(*N));
+  float *XY=(float *)alloca(n*sizeof(*N));
 
   float tN, tX, tXX, tY, tXY;
   int i;
@@ -13644,7 +13294,7 @@ void _vp_noisemask(vorbis_look_psy *p,
                    float *logmask){
 
   int i,n=p->n;
-  float *work=alloca(n*sizeof(*work));
+  float *work=(float *)alloca(n*sizeof(*work));
 
   bark_noise_hybridmp(n,p->bark,logmdct,logmask,
                       140.,-1);
@@ -13695,7 +13345,7 @@ void _vp_tonemask(vorbis_look_psy *p,
 
   int i,n=p->n;
 
-  float *seed=alloca(sizeof(*seed)*p->total_octave_lines);
+  float *seed=(float *)alloca(sizeof(*seed)*p->total_octave_lines);
   float att=local_specmax+p->vi->ath_adjatt;
   for(i=0;i<p->total_octave_lines;i++)seed[i]=NEGINF;
 
@@ -13707,7 +13357,7 @@ void _vp_tonemask(vorbis_look_psy *p,
     logmask[i]=p->ath[i]+att;
 
   /* tone masking */
-  seed_loop(p,(const float ***)p->tonecurves,logfft,logmask,seed,global_specmax);
+  seed_loop(p,p->tonecurves,logfft,logmask,seed,global_specmax);
   max_seeds(p,seed,logmask);
 
 }
@@ -13741,7 +13391,7 @@ void _vp_offset_and_mix(vorbis_look_psy *p,
     */
 
     if(offset_select == 1) {
-      coeffi = -17.2;       /* coeffi is a -17.2dB threshold */
+      coeffi = -17.2f;       /* coeffi is a -17.2dB threshold */
       val = val - logmdct[i];  /* val == mdct line value relative to floor in dB */
 
       if(val > coeffi){
@@ -13754,7 +13404,7 @@ void _vp_offset_and_mix(vorbis_look_psy *p,
            -1.64 dB boost if mdct value is +17.2dB (relative to floor)
            etc... */
 
-        if(de < 0) de = 0.0001;
+        if(de < 0) de = 0.0001f;
       }else
         /* mdct value is <= -17.2 dB below floor */
 
@@ -13772,7 +13422,7 @@ void _vp_offset_and_mix(vorbis_look_psy *p,
 
 float _vp_ampmax_decay(float amp,vorbis_dsp_state *vd){
   vorbis_info *vi=vd->vi;
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   vorbis_info_psy_global *gi=&ci->psy_g_param;
 
   int n=ci->blocksizes[vd->W]/2;
@@ -13852,8 +13502,8 @@ static float _FLOOR1_fromdB_LOOKUP[256]={
 
 /* this is for per-channel noise normalization */
 static int apsort(const void *a, const void *b){
-  float f1=**(float**)a;
-  float f2=**(float**)b;
+  float f1=**(float* const *)a;
+  float f2=**(float* const *)b;
   return (f1<f2)-(f1>f2);
 }
 
@@ -13877,7 +13527,7 @@ static void flag_lossless(int limit, float prepoint, float postpoint, float *mdc
 static float noise_normalize(vorbis_look_psy *p, int limit, float *r, float *q, float *f, int *flags, float acc, int i, int n, int *out){
 
   vorbis_info_psy *vi=p->vi;
-  float **sort = alloca(n*sizeof(*sort));
+  float **sort = (float **)alloca(n*sizeof(*sort));
   int j,count=0;
   int start = (vi->normal_p ? vi->normal_start-i : n);
   if(start>n)start=n;
@@ -13971,31 +13621,31 @@ void _vp_couple_quantize_normalize(int blobno,
   /* inout passes in the ifloor, passes back quantized result */
 
   /* unquantized energy (negative indicates amplitude has negative sign) */
-  float **raw = alloca(ch*sizeof(*raw));
+  float **raw = (float **)alloca(ch*sizeof(*raw));
 
   /* dual pupose; quantized energy (if flag set), othersize fabs(raw) */
-  float **quant = alloca(ch*sizeof(*quant));
+  float **quant = (float **)alloca(ch*sizeof(*quant));
 
   /* floor energy */
-  float **floor = alloca(ch*sizeof(*floor));
+  float **floor = (float **)alloca(ch*sizeof(*floor));
 
   /* flags indicating raw/quantized status of elements in raw vector */
-  int   **flag  = alloca(ch*sizeof(*flag));
+  int   **flag  = (int **)alloca(ch*sizeof(*flag));
 
   /* non-zero flag working vector */
-  int    *nz    = alloca(ch*sizeof(*nz));
+  int    *nz    = (int *)alloca(ch*sizeof(*nz));
 
   /* energy surplus/defecit tracking */
-  float  *acc   = alloca((ch+vi->coupling_steps)*sizeof(*acc));
+  float  *acc   = (float *)alloca((ch+vi->coupling_steps)*sizeof(*acc));
 
   /* The threshold of a stereo is changed with the size of n */
   if(n > 1000)
     postpoint=stereo_threshholds_limited[g->coupling_postpointamp[blobno]];
 
-  raw[0]   = alloca(ch*partition*sizeof(**raw));
-  quant[0] = alloca(ch*partition*sizeof(**quant));
-  floor[0] = alloca(ch*partition*sizeof(**floor));
-  flag[0]  = alloca(ch*partition*sizeof(**flag));
+  raw[0]   = (float *)alloca(ch*partition*sizeof(**raw));
+  quant[0] = (float *)alloca(ch*partition*sizeof(**quant));
+  floor[0] = (float *)alloca(ch*partition*sizeof(**floor));
+  flag[0]  = (int *)alloca(ch*partition*sizeof(**flag));
 
   for(i=1;i<ch;i++){
     raw[i]   = &raw[0][partition*i];
@@ -14148,16 +13798,6 @@ void _vp_couple_quantize_normalize(int blobno,
   }
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: maintain the info structure, info <-> header packets
 
@@ -14204,12 +13844,12 @@ void vorbis_comment_init(vorbis_comment *vc){
 }
 
 void vorbis_comment_add(vorbis_comment *vc,const char *comment){
-  vc->user_comments=_ogg_realloc(vc->user_comments,
+  vc->user_comments=(char **)_ogg_realloc(vc->user_comments,
                             (vc->comments+2)*sizeof(*vc->user_comments));
-  vc->comment_lengths=_ogg_realloc(vc->comment_lengths,
+  vc->comment_lengths=(int *)_ogg_realloc(vc->comment_lengths,
                                   (vc->comments+2)*sizeof(*vc->comment_lengths));
   vc->comment_lengths[vc->comments]=strlen(comment);
-  vc->user_comments[vc->comments]=_ogg_malloc(vc->comment_lengths[vc->comments]+1);
+  vc->user_comments[vc->comments]=(char *)_ogg_malloc(vc->comment_lengths[vc->comments]+1);
   strcpy(vc->user_comments[vc->comments], comment);
   vc->comments++;
   vc->user_comments[vc->comments]=NULL;
@@ -14217,7 +13857,7 @@ void vorbis_comment_add(vorbis_comment *vc,const char *comment){
 
 void vorbis_comment_add_tag(vorbis_comment *vc, const char *tag, const char *contents){
   /* Length for key and value +2 for = and \0 */
-  char *comment=_ogg_malloc(strlen(tag)+strlen(contents)+2);
+  char *comment=(char *)_ogg_malloc(strlen(tag)+strlen(contents)+2);
   strcpy(comment, tag);
   strcat(comment, "=");
   strcat(comment, contents);
@@ -14241,7 +13881,7 @@ char *vorbis_comment_query(vorbis_comment *vc, const char *tag, int count){
   long i;
   int found = 0;
   int taglen = strlen(tag)+1; /* +1 for the = we append */
-  char *fulltag = _ogg_malloc(taglen+1);
+  char *fulltag = (char *)_ogg_malloc(taglen+1);
 
   strcpy(fulltag, tag);
   strcat(fulltag, "=");
@@ -14264,7 +13904,7 @@ char *vorbis_comment_query(vorbis_comment *vc, const char *tag, int count){
 int vorbis_comment_query_count(vorbis_comment *vc, const char *tag){
   int i,count=0;
   int taglen = strlen(tag)+1; /* +1 for the = we append */
-  char *fulltag = _ogg_malloc(taglen+1);
+  char *fulltag = (char *)_ogg_malloc(taglen+1);
   strcpy(fulltag,tag);
   strcat(fulltag, "=");
 
@@ -14294,7 +13934,7 @@ void vorbis_comment_clear(vorbis_comment *vc){
 /* blocksize 0 is guaranteed to be short, 1 is guaranteed to be long.
    They may be equal, but short will never ge greater than long */
 int vorbis_info_blocksize(vorbis_info *vi,int zo){
-  codec_setup_info *ci = vi->codec_setup;
+  codec_setup_info *ci = (codec_setup_info *)vi->codec_setup;
   return ci ? ci->blocksizes[zo] : -1;
 }
 
@@ -14305,7 +13945,7 @@ void vorbis_info_init(vorbis_info *vi){
 }
 
 void vorbis_info_clear(vorbis_info *vi){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   int i;
 
   if(ci){
@@ -14354,7 +13994,7 @@ void vorbis_info_clear(vorbis_info *vi){
 /* Header packing/unpacking ********************************************/
 
 static int _vorbis_unpack_info(vorbis_info *vi,oggpack_buffer *opb){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   int bs;
   if(!ci)return(OV_EFAULT);
 
@@ -14394,21 +14034,21 @@ static int _vorbis_unpack_comment(vorbis_comment *vc,oggpack_buffer *opb){
   int vendorlen=oggpack_read(opb,32);
   if(vendorlen<0)goto err_out;
   if(vendorlen>opb->storage-8)goto err_out;
-  vc->vendor=_ogg_calloc(vendorlen+1,1);
+  vc->vendor=(char *)_ogg_calloc(vendorlen+1,1);
   _v_readstring(opb,vc->vendor,vendorlen);
   i=oggpack_read(opb,32);
   if(i<0)goto err_out;
   if(i>((opb->storage-oggpack_bytes(opb))>>2))goto err_out;
   vc->comments=i;
-  vc->user_comments=_ogg_calloc(vc->comments+1,sizeof(*vc->user_comments));
-  vc->comment_lengths=_ogg_calloc(vc->comments+1, sizeof(*vc->comment_lengths));
+  vc->user_comments=(char **)_ogg_calloc(vc->comments+1,sizeof(*vc->user_comments));
+  vc->comment_lengths=(int *)_ogg_calloc(vc->comments+1, sizeof(*vc->comment_lengths));
 
   for(i=0;i<vc->comments;i++){
     int len=oggpack_read(opb,32);
     if(len<0)goto err_out;
     if(len>opb->storage-oggpack_bytes(opb))goto err_out;
     vc->comment_lengths[i]=len;
-    vc->user_comments[i]=_ogg_calloc(len+1,1);
+    vc->user_comments[i]=(char *)_ogg_calloc(len+1,1);
     _v_readstring(opb,vc->user_comments[i],len);
   }
   if(oggpack_read(opb,1)!=1)goto err_out; /* EOP check */
@@ -14422,7 +14062,7 @@ static int _vorbis_unpack_comment(vorbis_comment *vc,oggpack_buffer *opb){
 /* all of the real encoding details are here.  The modes, books,
    everything */
 static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   int i;
 
   /* codebooks */
@@ -14477,7 +14117,7 @@ static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
   ci->modes=oggpack_read(opb,6)+1;
   if(ci->modes<=0)goto err_out;
   for(i=0;i<ci->modes;i++){
-    ci->mode_param[i]=_ogg_calloc(1,sizeof(*ci->mode_param[i]));
+    ci->mode_param[i]=(vorbis_info_mode *)_ogg_calloc(1,sizeof(*ci->mode_param[i]));
     ci->mode_param[i]->blockflag=oggpack_read(opb,1);
     ci->mode_param[i]->windowtype=oggpack_read(opb,16);
     ci->mode_param[i]->transformtype=oggpack_read(opb,16);
@@ -14598,7 +14238,7 @@ int vorbis_synthesis_headerin(vorbis_info *vi,vorbis_comment *vc,ogg_packet *op)
 /* pack side **********************************************************/
 
 static int _vorbis_pack_info(oggpack_buffer *opb,vorbis_info *vi){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   if(!ci||
      ci->blocksizes[0]<64||
      ci->blocksizes[1]<ci->blocksizes[0]){
@@ -14656,7 +14296,7 @@ static int _vorbis_pack_comment(oggpack_buffer *opb,vorbis_comment *vc){
 }
 
 static int _vorbis_pack_books(oggpack_buffer *opb,vorbis_info *vi){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   int i;
   if(!ci)return(OV_EFAULT);
 
@@ -14722,7 +14362,7 @@ int vorbis_commentheader_out(vorbis_comment *vc,
     return OV_EIMPL;
   }
 
-  op->packet = _ogg_malloc(oggpack_bytes(&opb));
+  op->packet = (unsigned char *)_ogg_malloc(oggpack_bytes(&opb));
   memcpy(op->packet, opb.buffer, oggpack_bytes(&opb));
 
   op->bytes=oggpack_bytes(&opb);
@@ -14743,7 +14383,7 @@ int vorbis_analysis_headerout(vorbis_dsp_state *v,
   int ret=OV_EIMPL;
   vorbis_info *vi=v->vi;
   oggpack_buffer opb;
-  private_state *b=v->backend_state;
+  private_state *b=(private_state *)v->backend_state;
 
   if(!b||vi->channels<=0||vi->channels>256){
     b = NULL;
@@ -14758,7 +14398,7 @@ int vorbis_analysis_headerout(vorbis_dsp_state *v,
 
   /* build the packet */
   if(b->header)_ogg_free(b->header);
-  b->header=_ogg_malloc(oggpack_bytes(&opb));
+  b->header=(unsigned char *)_ogg_malloc(oggpack_bytes(&opb));
   memcpy(b->header,opb.buffer,oggpack_bytes(&opb));
   op->packet=b->header;
   op->bytes=oggpack_bytes(&opb);
@@ -14773,7 +14413,7 @@ int vorbis_analysis_headerout(vorbis_dsp_state *v,
   if(_vorbis_pack_comment(&opb,vc))goto err_out;
 
   if(b->header1)_ogg_free(b->header1);
-  b->header1=_ogg_malloc(oggpack_bytes(&opb));
+  b->header1=(unsigned char *)_ogg_malloc(oggpack_bytes(&opb));
   memcpy(b->header1,opb.buffer,oggpack_bytes(&opb));
   op_comm->packet=b->header1;
   op_comm->bytes=oggpack_bytes(&opb);
@@ -14788,7 +14428,7 @@ int vorbis_analysis_headerout(vorbis_dsp_state *v,
   if(_vorbis_pack_books(&opb,vi))goto err_out;
 
   if(b->header2)_ogg_free(b->header2);
-  b->header2=_ogg_malloc(oggpack_bytes(&opb));
+  b->header2=(unsigned char *)_ogg_malloc(oggpack_bytes(&opb));
   memcpy(b->header2,opb.buffer,oggpack_bytes(&opb));
   op_code->packet=b->header2;
   op_code->bytes=oggpack_bytes(&opb);
@@ -14835,16 +14475,6 @@ const char *vorbis_version_string(void){
   return GENERAL_VENDOR_STRING;
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: floor backend 1 implementation
 
@@ -14946,14 +14576,14 @@ static void floor1_pack (vorbis_info_floor *i,oggpack_buffer *opb){
 }
 
 static int icomp(const void *a,const void *b){
-  return(**(int **)a-**(int **)b);
+  return(**(int * const *)a-**(int * const *)b);
 }
 
 static vorbis_info_floor *floor1_unpack (vorbis_info *vi,oggpack_buffer *opb){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   int j,k,count=0,maxclass=-1,rangebits;
 
-  vorbis_info_floor1 *info=_ogg_calloc(1,sizeof(*info));
+  vorbis_info_floor1 *info=(vorbis_info_floor1 *)_ogg_calloc(1,sizeof(*info));
   /* read partitions */
   info->partitions=oggpack_read(opb,5); /* only 0 to 31 legal */
   for(j=0;j<info->partitions;j++){
@@ -15018,7 +14648,7 @@ static vorbis_look_floor *floor1_look(vorbis_dsp_state *vd,
 
   int *sortpointer[VIF_POSIT+2];
   vorbis_info_floor1 *info=(vorbis_info_floor1 *)in;
-  vorbis_look_floor1 *look=_ogg_calloc(1,sizeof(*look));
+  vorbis_look_floor1 *look=(vorbis_look_floor1 *)_ogg_calloc(1,sizeof(*look));
   int i,j,n=0;
 
   (void)vd;
@@ -15533,7 +15163,7 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
       }
     }
 
-    output=_vorbis_block_alloc(vb,sizeof(*output)*posts);
+    output=(int *)_vorbis_block_alloc(vb,sizeof(*output)*posts);
 
     output[0]=post_Y(fit_valueA,fit_valueB,0);
     output[1]=post_Y(fit_valueA,fit_valueB,1);
@@ -15573,7 +15203,7 @@ int *floor1_interpolate_fit(vorbis_block *vb,vorbis_look_floor1 *look,
   int *output=NULL;
 
   if(A && B){
-    output=_vorbis_block_alloc(vb,sizeof(*output)*posts);
+    output=(int *)_vorbis_block_alloc(vb,sizeof(*output)*posts);
 
     /* overly simpleminded--- look again post 1.2 */
     for(i=0;i<posts;i++){
@@ -15593,7 +15223,7 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
   long i,j;
   vorbis_info_floor1 *info=look->vi;
   long posts=look->posts;
-  codec_setup_info *ci=vb->vd->vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vb->vd->vi->codec_setup;
   int out[VIF_POSIT+2];
   static_codebook **sbooks=ci->book_param;
   codebook *books=ci->fullbooks;
@@ -15679,9 +15309,9 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
 
     /* partition by partition */
     for(i=0,j=2;i<info->partitions;i++){
-      int class=info->partitionclass[i];
-      int cdim=info->class_dim[class];
-      int csubbits=info->class_subs[class];
+      int vclass=info->partitionclass[i];
+      int cdim=info->class_dim[vclass];
+      int csubbits=info->class_subs[vclass];
       int csub=1<<csubbits;
       int bookas[8]={0,0,0,0,0,0,0,0};
       int cval=0;
@@ -15694,11 +15324,11 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
                                             issues a warning without
                                             initialization */
         for(k=0;k<csub;k++){
-          int booknum=info->class_subbook[class][k];
+          int booknum=info->class_subbook[vclass][k];
           if(booknum<0){
             maxval[k]=1;
           }else{
-            maxval[k]=sbooks[info->class_subbook[class][k]]->entries;
+            maxval[k]=sbooks[info->class_subbook[vclass][k]]->entries;
           }
         }
         for(k=0;k<cdim;k++){
@@ -15714,14 +15344,14 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
         }
         /* write it */
         look->phrasebits+=
-          vorbis_book_encode(books+info->class_book[class],cval,opb);
+          vorbis_book_encode(books+info->class_book[vclass],cval,opb);
 
 #ifdef TRAIN_FLOOR1
         {
           FILE *of;
           char buffer[80];
           sprintf(buffer,"line_%dx%ld_class%d.vqd",
-                  vb->pcmend/2,posts-2,class);
+                  vb->pcmend/2,posts-2,vclass);
           of=fopen(buffer,"a");
           fprintf(of,"%d\n",cval);
           fclose(of);
@@ -15731,7 +15361,7 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
 
       /* write post values */
       for(k=0;k<cdim;k++){
-        int book=info->class_subbook[class][bookas[k]];
+        int book=info->class_subbook[vclass][bookas[k]];
         if(book>=0){
           /* hack to allow training with 'bad' books */
           if(out[j+k]<(books+book)->entries)
@@ -15745,7 +15375,7 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
             FILE *of;
             char buffer[80];
             sprintf(buffer,"line_%dx%ld_%dsub%d.vqd",
-                    vb->pcmend/2,posts-2,class,bookas[k]);
+                    vb->pcmend/2,posts-2,vclass,bookas[k]);
             of=fopen(buffer,"a");
             fprintf(of,"%d\n",out[j+k]);
             fclose(of);
@@ -15791,35 +15421,35 @@ int floor1_encode(oggpack_buffer *opb,vorbis_block *vb,
 static void *floor1_inverse1(vorbis_block *vb,vorbis_look_floor *in){
   vorbis_look_floor1 *look=(vorbis_look_floor1 *)in;
   vorbis_info_floor1 *info=look->vi;
-  codec_setup_info   *ci=vb->vd->vi->codec_setup;
+  codec_setup_info   *ci=(codec_setup_info *)vb->vd->vi->codec_setup;
 
   int i,j,k;
   codebook *books=ci->fullbooks;
 
   /* unpack wrapped/predicted values from stream */
   if(oggpack_read(&vb->opb,1)==1){
-    int *fit_value=_vorbis_block_alloc(vb,(look->posts)*sizeof(*fit_value));
+    int *fit_value=(int *)_vorbis_block_alloc(vb,(look->posts)*sizeof(*fit_value));
 
     fit_value[0]=oggpack_read(&vb->opb,ov_ilog(look->quant_q-1));
     fit_value[1]=oggpack_read(&vb->opb,ov_ilog(look->quant_q-1));
 
     /* partition by partition */
     for(i=0,j=2;i<info->partitions;i++){
-      int class=info->partitionclass[i];
-      int cdim=info->class_dim[class];
-      int csubbits=info->class_subs[class];
+      int vclass=info->partitionclass[i];
+      int cdim=info->class_dim[vclass];
+      int csubbits=info->class_subs[vclass];
       int csub=1<<csubbits;
       int cval=0;
 
       /* decode the partition's first stage cascade value */
       if(csubbits){
-        cval=vorbis_book_decode(books+info->class_book[class],&vb->opb);
+        cval=vorbis_book_decode(books+info->class_book[vclass],&vb->opb);
 
         if(cval==-1)goto eop;
       }
 
       for(k=0;k<cdim;k++){
-        int book=info->class_subbook[class][cval&(csub-1)];
+        int book=info->class_subbook[vclass][cval&(csub-1)];
         cval>>=csubbits;
         if(book>=0){
           if((fit_value[j+k]=vorbis_book_decode(books+book,&vb->opb))==-1)
@@ -15879,7 +15509,7 @@ static int floor1_inverse2(vorbis_block *vb,vorbis_look_floor *in,void *memo,
   vorbis_look_floor1 *look=(vorbis_look_floor1 *)in;
   vorbis_info_floor1 *info=look->vi;
 
-  codec_setup_info   *ci=vb->vd->vi->codec_setup;
+  codec_setup_info   *ci=(codec_setup_info *)vb->vd->vi->codec_setup;
   int                  n=ci->blocksizes[vb->W]/2;
   int j;
 
@@ -15921,16 +15551,6 @@ const vorbis_func_floor floor1_exportbundle={
   &floor1_free_look,&floor1_inverse1,&floor1_inverse2
 };
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: floor backend 0 implementation
 
@@ -15993,10 +15613,10 @@ static void floor0_free_look(vorbis_look_floor *i){
 }
 
 static vorbis_info_floor *floor0_unpack (vorbis_info *vi,oggpack_buffer *opb){
-  codec_setup_info     *ci=vi->codec_setup;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   int j;
 
-  vorbis_info_floor0 *info=_ogg_malloc(sizeof(*info));
+  vorbis_info_floor0 *info=(vorbis_info_floor0 *)_ogg_malloc(sizeof(*info));
   info->order=oggpack_read(opb,8);
   info->rate=oggpack_read(opb,16);
   info->barkmap=oggpack_read(opb,16);
@@ -16036,7 +15656,7 @@ static void floor0_map_lazy_init(vorbis_block      *vb,
   if(!look->linearmap[vb->W]){
     vorbis_dsp_state   *vd=vb->vd;
     vorbis_info        *vi=vd->vi;
-    codec_setup_info   *ci=vi->codec_setup;
+    codec_setup_info   *ci=(codec_setup_info *)vi->codec_setup;
     vorbis_info_floor0 *info=(vorbis_info_floor0 *)infoX;
     int W=vb->W;
     int n=ci->blocksizes[W]/2,j;
@@ -16052,7 +15672,7 @@ static void floor0_map_lazy_init(vorbis_block      *vb,
        the encoder may do what it wishes in filling them.  They're
        necessary in some mapping combinations to keep the scale spacing
        accurate */
-    look->linearmap[W]=_ogg_malloc((n+1)*sizeof(**look->linearmap));
+    look->linearmap[W]=(int *)_ogg_malloc((n+1)*sizeof(**look->linearmap));
     for(j=0;j<n;j++){
       int val=floor( toBARK((info->rate/2.f)/n*j)
                      *scale); /* bark numbers represent band edges */
@@ -16067,7 +15687,7 @@ static void floor0_map_lazy_init(vorbis_block      *vb,
 static vorbis_look_floor *floor0_look(vorbis_dsp_state *vd,
                                       vorbis_info_floor *i){
   vorbis_info_floor0 *info=(vorbis_info_floor0 *)i;
-  vorbis_look_floor0 *look=_ogg_calloc(1,sizeof(*look));
+  vorbis_look_floor0 *look=(vorbis_look_floor0 *)_ogg_calloc(1,sizeof(*look));
 
   (void)vd;
 
@@ -16075,7 +15695,7 @@ static vorbis_look_floor *floor0_look(vorbis_dsp_state *vd,
   look->ln=info->barkmap;
   look->vi=info;
 
-  look->linearmap=_ogg_calloc(2,sizeof(*look->linearmap));
+  look->linearmap=(int **)_ogg_calloc(2,sizeof(*look->linearmap));
 
   return look;
 }
@@ -16092,14 +15712,14 @@ static void *floor0_inverse1(vorbis_block *vb,vorbis_look_floor *i){
     int booknum=oggpack_read(&vb->opb,ov_ilog(info->numbooks));
 
     if(booknum!=-1 && booknum<info->numbooks){ /* be paranoid */
-      codec_setup_info  *ci=vb->vd->vi->codec_setup;
+      codec_setup_info  *ci=(codec_setup_info *)vb->vd->vi->codec_setup;
       codebook *b=ci->fullbooks+info->books[booknum];
       float last=0.f;
 
       /* the additional b->dim is a guard against any possible stack
          smash; b->dim is provably more than we can overflow the
          vector */
-      float *lsp=_vorbis_block_alloc(vb,sizeof(*lsp)*(look->m+b->dim+1));
+      float *lsp=(float *)_vorbis_block_alloc(vb,sizeof(*lsp)*(look->m+b->dim+1));
 
       if(vorbis_book_decodev_set(b,lsp,&vb->opb,look->m)==-1)goto eop;
       for(j=0;j<look->m;){
@@ -16144,16 +15764,6 @@ const vorbis_func_floor floor0_exportbundle={
   &floor0_free_look,&floor0_inverse1,&floor0_inverse2
 };
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2010             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: residue backend 0, 1 and 2 implementation
 
@@ -16210,7 +15820,7 @@ typedef struct {
 void res0_free_info(vorbis_info_residue *i){
   vorbis_info_residue0 *info=(vorbis_info_residue0 *)i;
   if(info){
-    memset(info,0,sizeof(*info));
+    memset((void *)info,0,sizeof(*info));
     _ogg_free(info);
   }
 }
@@ -16315,7 +15925,7 @@ void res0_pack(vorbis_info_residue *vr,oggpack_buffer *opb){
   oggpack_write(opb,info->groupbook,8);  /* group huffman book */
 
   /* secondstages is a bitmask; as encoding progresses pass by pass, a
-     bitmask of one indicates this partition class has bits to write
+     bitmask of one indicates this partition vclass has bits to write
      this pass */
   for(j=0;j<info->partitions;j++){
     if(ov_ilog(info->secondstages[j])>3){
@@ -16335,8 +15945,8 @@ void res0_pack(vorbis_info_residue *vr,oggpack_buffer *opb){
 /* vorbis_info is for range checking */
 vorbis_info_residue *res0_unpack(vorbis_info *vi,oggpack_buffer *opb){
   int j,acc=0;
-  vorbis_info_residue0 *info=_ogg_calloc(1,sizeof(*info));
-  codec_setup_info     *ci=vi->codec_setup;
+  vorbis_info_residue0 *info=(vorbis_info_residue0 *)_ogg_calloc(1,sizeof(*info));
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
 
   info->begin=oggpack_read(opb,24);
   info->end=oggpack_read(opb,24);
@@ -16400,8 +16010,8 @@ vorbis_info_residue *res0_unpack(vorbis_info *vi,oggpack_buffer *opb){
 vorbis_look_residue *res0_look(vorbis_dsp_state *vd,
                                vorbis_info_residue *vr){
   vorbis_info_residue0 *info=(vorbis_info_residue0 *)vr;
-  vorbis_look_residue0 *look=_ogg_calloc(1,sizeof(*look));
-  codec_setup_info     *ci=vd->vi->codec_setup;
+  vorbis_look_residue0 *look=(vorbis_look_residue0 *)_ogg_calloc(1,sizeof(*look));
+  codec_setup_info     *ci=(codec_setup_info *)vd->vi->codec_setup;
 
   int j,k,acc=0;
   int dim;
@@ -16413,13 +16023,13 @@ vorbis_look_residue *res0_look(vorbis_dsp_state *vd,
   look->phrasebook=ci->fullbooks+info->groupbook;
   dim=look->phrasebook->dim;
 
-  look->partbooks=_ogg_calloc(look->parts,sizeof(*look->partbooks));
+  look->partbooks=(codebook ***)_ogg_calloc(look->parts,sizeof(*look->partbooks));
 
   for(j=0;j<look->parts;j++){
     int stages=ov_ilog(info->secondstages[j]);
     if(stages){
       if(stages>maxstage)maxstage=stages;
-      look->partbooks[j]=_ogg_calloc(stages,sizeof(*look->partbooks[j]));
+      look->partbooks[j]=(codebook **)_ogg_calloc(stages,sizeof(*look->partbooks[j]));
       for(k=0;k<stages;k++)
         if(info->secondstages[j]&(1<<k)){
           look->partbooks[j][k]=ci->fullbooks+info->booklist[acc++];
@@ -16436,11 +16046,11 @@ vorbis_look_residue *res0_look(vorbis_dsp_state *vd,
       look->partvals*=look->parts;
 
   look->stages=maxstage;
-  look->decodemap=_ogg_malloc(look->partvals*sizeof(*look->decodemap));
+  look->decodemap=(int **)_ogg_malloc(look->partvals*sizeof(*look->decodemap));
   for(j=0;j<look->partvals;j++){
     long val=j;
     long mult=look->partvals/look->parts;
-    look->decodemap[j]=_ogg_malloc(dim*sizeof(*look->decodemap[j]));
+    look->decodemap[j]=(int *)_ogg_malloc(dim*sizeof(*look->decodemap[j]));
     for(k=0;k<dim;k++){
       long deco=val/mult;
       val-=deco*mult;
@@ -16493,14 +16103,14 @@ static int local_book_besterror(codebook *book,int *a){
     int maxval = book->minval + book->delta*(book->quantvals-1);
     for(i=0;i<book->entries;i++){
       if(c->lengthlist[i]>0){
-        int this=0;
+        int t=0;
         for(j=0;j<dim;j++){
           int val=(e[j]-a[j]);
-          this+=val*val;
+          t+=val*val;
         }
-        if(best==-1 || this<best){
+        if(best==-1 || t<best){
           memcpy(p,e,sizeof(p));
-          best=this;
+          best=t;
           index=i;
         }
       }
@@ -16560,7 +16170,7 @@ static long **_01class(vorbis_block *vb,vorbis_look_residue *vl,
   int n=info->end-info->begin;
 
   int partvals=n/samples_per_partition;
-  long **partword=_vorbis_block_alloc(vb,ch*sizeof(*partword));
+  long **partword=(long **)_vorbis_block_alloc(vb,ch*sizeof(*partword));
   float scale=100./samples_per_partition;
 
   /* we find the partition type for each partition of each
@@ -16568,7 +16178,7 @@ static long **_01class(vorbis_block *vb,vorbis_look_residue *vl,
      bit.  For now, clarity */
 
   for(i=0;i<ch;i++){
-    partword[i]=_vorbis_block_alloc(vb,n/samples_per_partition*sizeof(*partword[i]));
+    partword[i]=(long *)_vorbis_block_alloc(vb,n/samples_per_partition*sizeof(*partword[i]));
     memset(partword[i],0,n/samples_per_partition*sizeof(*partword[i]));
   }
 
@@ -16627,14 +16237,14 @@ static long **_2class(vorbis_block *vb,vorbis_look_residue *vl,int **in,
   int n=info->end-info->begin;
 
   int partvals=n/samples_per_partition;
-  long **partword=_vorbis_block_alloc(vb,sizeof(*partword));
+  long **partword=(long **)_vorbis_block_alloc(vb,sizeof(*partword));
 
 #if defined(TRAIN_RES) || defined (TRAIN_RESAUX)
   FILE *of;
   char buffer[80];
 #endif
 
-  partword[0]=_vorbis_block_alloc(vb,partvals*sizeof(*partword[0]));
+  partword[0]=(long *)_vorbis_block_alloc(vb,partvals*sizeof(*partword[0]));
   memset(partword[0],0,partvals*sizeof(*partword[0]));
 
   for(i=0,l=info->begin/ch;i<partvals;i++){
@@ -16804,10 +16414,10 @@ static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
   if(n>0){
     int partvals=n/samples_per_partition;
     int partwords=(partvals+partitions_per_word-1)/partitions_per_word;
-    int ***partword=alloca(ch*sizeof(*partword));
+    int ***partword=(int ***)alloca(ch*sizeof(*partword));
 
     for(j=0;j<ch;j++)
-      partword[j]=_vorbis_block_alloc(vb,partwords*sizeof(*partword[j]));
+      partword[j]=(int **)_vorbis_block_alloc(vb,partwords*sizeof(*partword[j]));
 
     for(s=0;s<look->stages;s++){
 
@@ -16923,7 +16533,7 @@ int res2_forward(oggpack_buffer *opb,
   /* don't duplicate the code; use a working vector hack for now and
      reshape ourselves into a single channel res1 */
   /* ugly; reallocs for each coupling pass :-( */
-  int *work=_vorbis_block_alloc(vb,ch*n*sizeof(*work));
+  int *work=(int *)_vorbis_block_alloc(vb,ch*n*sizeof(*work));
   for(i=0;i<ch;i++){
     int *pcm=in[i];
     if(nonzero[i])used++;
@@ -16960,7 +16570,7 @@ int res2_inverse(vorbis_block *vb,vorbis_look_residue *vl,
   if(n>0){
     int partvals=n/samples_per_partition;
     int partwords=(partvals+partitions_per_word-1)/partitions_per_word;
-    int **partword=_vorbis_block_alloc(vb,partwords*sizeof(*partword));
+    int **partword=(int **)_vorbis_block_alloc(vb,partwords*sizeof(*partword));
 
     for(i=0;i<ch;i++)if(nonzero[i])break;
     if(i==ch)return(0); /* no nonzero vectors */
@@ -17030,16 +16640,6 @@ const vorbis_func_residue residue2_exportbundle={
   &res2_inverse
 };
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2010             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: channel mapping 0 implementation
 
@@ -17121,8 +16721,8 @@ static void mapping0_pack(vorbis_info *vi,vorbis_info_mapping *vm,
 /* also responsible for range checking */
 static vorbis_info_mapping *mapping0_unpack(vorbis_info *vi,oggpack_buffer *opb){
   int i,b;
-  vorbis_info_mapping0 *info=_ogg_calloc(1,sizeof(*info));
-  codec_setup_info     *ci=vi->codec_setup;
+  vorbis_info_mapping0 *info=(vorbis_info_mapping0 *)_ogg_calloc(1,sizeof(*info));
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
   if(vi->channels<=0)goto err_out;
 
   b=oggpack_read(opb,1);
@@ -17261,23 +16861,23 @@ static float FLOOR1_fromdB_LOOKUP[256]={
 static int mapping0_forward(vorbis_block *vb){
   vorbis_dsp_state      *vd=vb->vd;
   vorbis_info           *vi=vd->vi;
-  codec_setup_info      *ci=vi->codec_setup;
-  private_state         *b=vb->vd->backend_state;
+  codec_setup_info      *ci=(codec_setup_info *)vi->codec_setup;
+  private_state         *b=(private_state *)vb->vd->backend_state;
   vorbis_block_internal *vbi=(vorbis_block_internal *)vb->internal;
   int                    n=vb->pcmend;
   int i,j,k;
 
-  int    *nonzero    = alloca(sizeof(*nonzero)*vi->channels);
-  float  **gmdct     = _vorbis_block_alloc(vb,vi->channels*sizeof(*gmdct));
-  int    **iwork      = _vorbis_block_alloc(vb,vi->channels*sizeof(*iwork));
-  int ***floor_posts = _vorbis_block_alloc(vb,vi->channels*sizeof(*floor_posts));
+  int    *nonzero    = (int *)alloca(sizeof(*nonzero)*vi->channels);
+  float  **gmdct     = (float **)_vorbis_block_alloc(vb,vi->channels*sizeof(*gmdct));
+  int    **iwork      = (int **)_vorbis_block_alloc(vb,vi->channels*sizeof(*iwork));
+  int ***floor_posts = (int ***)_vorbis_block_alloc(vb,vi->channels*sizeof(*floor_posts));
 
   float global_ampmax=vbi->ampmax;
-  float *local_ampmax=alloca(sizeof(*local_ampmax)*vi->channels);
+  float *local_ampmax=(float *)alloca(sizeof(*local_ampmax)*vi->channels);
   int blocktype=vbi->blocktype;
 
   int modenumber=vb->W;
-  vorbis_info_mapping0 *info=ci->map_param[modenumber];
+  vorbis_info_mapping0 *info=(vorbis_info_mapping0 *)ci->map_param[modenumber];
   vorbis_look_psy *psy_look=b->psy+blocktype+(vb->W?2:0);
 
   vb->mode=modenumber;
@@ -17289,8 +16889,8 @@ static int mapping0_forward(vorbis_block *vb){
     float *pcm     =vb->pcm[i];
     float *logfft  =pcm;
 
-    iwork[i]=_vorbis_block_alloc(vb,n/2*sizeof(**iwork));
-    gmdct[i]=_vorbis_block_alloc(vb,n/2*sizeof(**gmdct));
+    iwork[i]=(int *)_vorbis_block_alloc(vb,n/2*sizeof(**iwork));
+    gmdct[i]=(float *)_vorbis_block_alloc(vb,n/2*sizeof(**gmdct));
 
     scale_dB=todB(&scale) + .345; /* + .345 is a hack; the original
                                      todB estimation used on IEEE 754
@@ -17334,7 +16934,7 @@ static int mapping0_forward(vorbis_block *vb){
 
     /* transform the PCM data */
     /* only MDCT right now.... */
-    mdct_forward(b->transform[vb->W][0],pcm,gmdct[i]);
+    mdct_forward((mdct_lookup *)b->transform[vb->W][0],pcm,gmdct[i]);
 
     /* FFT yields more accurate tonal estimation (not phase sensitive) */
     drft_forward(&b->fft_look[vb->W],pcm);
@@ -17391,8 +16991,8 @@ static int mapping0_forward(vorbis_block *vb){
   }
 
   {
-    float   *noise        = _vorbis_block_alloc(vb,n/2*sizeof(*noise));
-    float   *tone         = _vorbis_block_alloc(vb,n/2*sizeof(*tone));
+    float   *noise        = (float *)_vorbis_block_alloc(vb,n/2*sizeof(*noise));
+    float   *tone         = (float *)_vorbis_block_alloc(vb,n/2*sizeof(*tone));
 
     for(i=0;i<vi->channels;i++){
       /* the encoder setup assumes that all the modes used by any
@@ -17409,7 +17009,7 @@ static int mapping0_forward(vorbis_block *vb){
 
       vb->mode=modenumber;
 
-      floor_posts[i]=_vorbis_block_alloc(vb,PACKETBLOBS*sizeof(**floor_posts));
+      floor_posts[i]=(int **)_vorbis_block_alloc(vb,PACKETBLOBS*sizeof(**floor_posts));
       memset(floor_posts[i],0,sizeof(**floor_posts)*PACKETBLOBS);
 
       for(j=0;j<n/2;j++)
@@ -17529,7 +17129,7 @@ static int mapping0_forward(vorbis_block *vb){
       if(ci->floor_type[info->floorsubmap[submap]]!=1)return(-1);
 
       floor_posts[i][PACKETBLOBS/2]=
-        floor1_fit(vb,b->flr[info->floorsubmap[submap]],
+        floor1_fit(vb,(vorbis_look_floor1 *)b->flr[info->floorsubmap[submap]],
                    logmdct,
                    logmask);
 
@@ -17558,7 +17158,7 @@ static int mapping0_forward(vorbis_block *vb){
 #endif
 
         floor_posts[i][PACKETBLOBS-1]=
-          floor1_fit(vb,b->flr[info->floorsubmap[submap]],
+          floor1_fit(vb,(vorbis_look_floor1 *)b->flr[info->floorsubmap[submap]],
                      logmdct,
                      logmask);
 
@@ -17583,7 +17183,7 @@ static int mapping0_forward(vorbis_block *vb){
 #endif
 
         floor_posts[i][0]=
-          floor1_fit(vb,b->flr[info->floorsubmap[submap]],
+          floor1_fit(vb,(vorbis_look_floor1 *)b->flr[info->floorsubmap[submap]],
                      logmdct,
                      logmask);
 
@@ -17591,13 +17191,13 @@ static int mapping0_forward(vorbis_block *vb){
            intermediate rates */
         for(k=1;k<PACKETBLOBS/2;k++)
           floor_posts[i][k]=
-            floor1_interpolate_fit(vb,b->flr[info->floorsubmap[submap]],
+            floor1_interpolate_fit(vb,(vorbis_look_floor1 *)b->flr[info->floorsubmap[submap]],
                                    floor_posts[i][0],
                                    floor_posts[i][PACKETBLOBS/2],
                                    k*65536/(PACKETBLOBS/2));
         for(k=PACKETBLOBS/2+1;k<PACKETBLOBS-1;k++)
           floor_posts[i][k]=
-            floor1_interpolate_fit(vb,b->flr[info->floorsubmap[submap]],
+            floor1_interpolate_fit(vb,(vorbis_look_floor1 *)b->flr[info->floorsubmap[submap]],
                                    floor_posts[i][PACKETBLOBS/2],
                                    floor_posts[i][PACKETBLOBS-1],
                                    (k-PACKETBLOBS/2)*65536/(PACKETBLOBS/2));
@@ -17621,8 +17221,8 @@ static int mapping0_forward(vorbis_block *vb){
   /* iterate over the many masking curve fits we've created */
 
   {
-    int **couple_bundle=alloca(sizeof(*couple_bundle)*vi->channels);
-    int *zerobundle=alloca(sizeof(*zerobundle)*vi->channels);
+    int **couple_bundle=(int **)alloca(sizeof(*couple_bundle)*vi->channels);
+    int *zerobundle=(int *)alloca(sizeof(*zerobundle)*vi->channels);
 
     for(k=(vorbis_bitrate_managed(vb)?0:PACKETBLOBS/2);
         k<=(vorbis_bitrate_managed(vb)?PACKETBLOBS-1:PACKETBLOBS/2);
@@ -17645,7 +17245,7 @@ static int mapping0_forward(vorbis_block *vb){
         int submap=info->chmuxlist[i];
         int *ilogmask=iwork[i];
 
-        nonzero[i]=floor1_encode(opb,vb,b->flr[info->floorsubmap[submap]],
+        nonzero[i]=floor1_encode(opb,vb,(vorbis_look_floor1 *)b->flr[info->floorsubmap[submap]],
                                  floor_posts[i][k],
                                  ilogmask);
 #if 0
@@ -17702,7 +17302,7 @@ static int mapping0_forward(vorbis_block *vb){
         }
 
         classifications=_residue_P[ci->residue_type[resnum]]->
-          class(vb,b->residue[resnum],couple_bundle,zerobundle,ch_in_bundle);
+          vclass(vb,b->residue[resnum],couple_bundle,zerobundle,ch_in_bundle);
 
         ch_in_bundle=0;
         for(j=0;j<vi->channels;j++)
@@ -17729,18 +17329,18 @@ static int mapping0_forward(vorbis_block *vb){
 static int mapping0_inverse(vorbis_block *vb,vorbis_info_mapping *l){
   vorbis_dsp_state     *vd=vb->vd;
   vorbis_info          *vi=vd->vi;
-  codec_setup_info     *ci=vi->codec_setup;
-  private_state        *b=vd->backend_state;
+  codec_setup_info     *ci=(codec_setup_info *)vi->codec_setup;
+  private_state        *b=(private_state *)vd->backend_state;
   vorbis_info_mapping0 *info=(vorbis_info_mapping0 *)l;
 
   int                   i,j;
   long                  n=vb->pcmend=ci->blocksizes[vb->W];
 
-  float **pcmbundle=alloca(sizeof(*pcmbundle)*vi->channels);
-  int    *zerobundle=alloca(sizeof(*zerobundle)*vi->channels);
+  float **pcmbundle=(float **)alloca(sizeof(*pcmbundle)*vi->channels);
+  int    *zerobundle=(int *)alloca(sizeof(*zerobundle)*vi->channels);
 
-  int   *nonzero  =alloca(sizeof(*nonzero)*vi->channels);
-  void **floormemo=alloca(sizeof(*floormemo)*vi->channels);
+  int   *nonzero  =(int *)alloca(sizeof(*nonzero)*vi->channels);
+  void **floormemo=(void **)alloca(sizeof(*floormemo)*vi->channels);
 
   /* recover the spectral envelope; store it in the PCM vector for now */
   for(i=0;i<vi->channels;i++){
@@ -17822,7 +17422,7 @@ static int mapping0_inverse(vorbis_block *vb,vorbis_info_mapping *l){
   /* only MDCT right now.... */
   for(i=0;i<vi->channels;i++){
     float *pcm=vb->pcm[i];
-    mdct_backward(b->transform[vb->W][0],pcm,pcm);
+    mdct_backward((mdct_lookup *)b->transform[vb->W][0],pcm,pcm);
   }
 
   /* all done! */
@@ -17838,16 +17438,6 @@ const vorbis_func_mapping mapping0_exportbundle={
   &mapping0_inverse
 };
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: registry for time, floor, res backends and channel mappings
 
@@ -17882,16 +17472,6 @@ const vorbis_func_mapping   *const _mapping_P[]={
   &mapping0_exportbundle,
 };
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: basic codebook pack/unpack/code/decode operations
 
@@ -17935,10 +17515,10 @@ int vorbis_staticbook_pack(const static_codebook *c,oggpack_buffer *opb){
     oggpack_write(opb,c->lengthlist[0]-1,5); /* 1 to 32 */
 
     for(i=1;i<c->entries;i++){
-      char this=c->lengthlist[i];
+      char leng=c->lengthlist[i];
       char last=c->lengthlist[i-1];
-      if(this>last){
-        for(j=last;j<this;j++){
+      if(leng>last){
+        for(j=last;j<leng;j++){
           oggpack_write(opb,i-count,ov_ilog(c->entries-count));
           count=i;
         }
@@ -18030,7 +17610,7 @@ int vorbis_staticbook_pack(const static_codebook *c,oggpack_buffer *opb){
    readies the codebook auxiliary structures for decode *************/
 static_codebook *vorbis_staticbook_unpack(oggpack_buffer *opb){
   long i,j;
-  static_codebook *s=_ogg_calloc(1,sizeof(*s));
+  static_codebook *s=(static_codebook *)_ogg_calloc(1,sizeof(*s));
   s->allocedp=1;
 
   /* make sure alignment is correct */
@@ -18052,7 +17632,7 @@ static_codebook *vorbis_staticbook_unpack(oggpack_buffer *opb){
     if((s->entries*(unused?1:5)+7)>>3>opb->storage-oggpack_bytes(opb))
       goto _eofout;
     /* unordered */
-    s->lengthlist=_ogg_malloc(sizeof(*s->lengthlist)*s->entries);
+    s->lengthlist=(char *)_ogg_malloc(sizeof(*s->lengthlist)*s->entries);
 
     /* allocated but unused entries? */
     if(unused){
@@ -18082,7 +17662,7 @@ static_codebook *vorbis_staticbook_unpack(oggpack_buffer *opb){
     {
       long length=oggpack_read(opb,5)+1;
       if(length==0)goto _eofout;
-      s->lengthlist=_ogg_malloc(sizeof(*s->lengthlist)*s->entries);
+      s->lengthlist=(char *)_ogg_malloc(sizeof(*s->lengthlist)*s->entries);
 
       for(i=0;i<s->entries;){
         long num=oggpack_read(opb,ov_ilog(s->entries-i));
@@ -18132,7 +17712,7 @@ static_codebook *vorbis_staticbook_unpack(oggpack_buffer *opb){
       /* quantized values */
       if(((quantvals*s->q_quant+7)>>3)>opb->storage-oggpack_bytes(opb))
         goto _eofout;
-      s->quantlist=_ogg_malloc(sizeof(*s->quantlist)*quantvals);
+      s->quantlist=(long *)_ogg_malloc(sizeof(*s->quantlist)*quantvals);
       for(i=0;i<quantvals;i++)
         s->quantlist[i]=oggpack_read(opb,s->q_quant);
 
@@ -18259,8 +17839,8 @@ long vorbis_book_decode(codebook *book, oggpack_buffer *b){
 long vorbis_book_decodevs_add(codebook *book,float *a,oggpack_buffer *b,int n){
   if(book->used_entries>0){
     int step=n/book->dim;
-    long *entry = alloca(sizeof(*entry)*step);
-    float **t = alloca(sizeof(*t)*step);
+    long *entry = (long *)alloca(sizeof(*entry)*step);
+    float **t = (float **)alloca(sizeof(*t)*step);
     int i,j,o;
 
     for (i = 0; i < step; i++) {
@@ -18343,16 +17923,6 @@ long vorbis_book_decodevv_add(codebook *book,float **a,long offset,int ch,
   return(0);
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: basic shared codebook operations
 
@@ -18423,7 +17993,7 @@ float _float32_unpack(long val){
 ogg_uint32_t *_make_words(char *l,long n,long sparsecount){
   long i,j,count=0;
   ogg_uint32_t marker[33];
-  ogg_uint32_t *r=_ogg_malloc((sparsecount?sparsecount:n)*sizeof(*r));
+  ogg_uint32_t *r=(ogg_uint32_t *)_ogg_malloc((sparsecount?sparsecount:n)*sizeof(*r));
   memset(marker,0,sizeof(marker));
 
   for(i=0;i<n;i++){
@@ -18557,7 +18127,7 @@ float *_book_unquantize(const static_codebook *b,int n,int *sparsemap){
     int quantvals;
     float mindel=_float32_unpack(b->q_min);
     float delta=_float32_unpack(b->q_delta);
-    float *r=_ogg_calloc(n*b->dim,sizeof(*r));
+    float *r=(float *)_ogg_calloc(n*b->dim,sizeof(*r));
 
     /* maptype 1 and 2 both use a quantized value vector, but
        different sizes */
@@ -18663,8 +18233,8 @@ static ogg_uint32_t bitreverse(ogg_uint32_t x){
 }
 
 static int sort32a(const void *a,const void *b){
-  return ( **(ogg_uint32_t **)a>**(ogg_uint32_t **)b)-
-    ( **(ogg_uint32_t **)a<**(ogg_uint32_t **)b);
+  return ( **(ogg_uint32_t * const *)a>**(ogg_uint32_t * const *)b)-
+    ( **(ogg_uint32_t * const *)a<**(ogg_uint32_t * const *)b);
 }
 
 /* decode codebook arrangement is more heavily optimized than encode */
@@ -18696,7 +18266,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
 
     /* perform sort */
     ogg_uint32_t *codes=_make_words(s->lengthlist,s->entries,c->used_entries);
-    ogg_uint32_t **codep=alloca(sizeof(*codep)*n);
+    ogg_uint32_t **codep=(ogg_uint32_t **)alloca(sizeof(*codep)*n);
 
     if(codes==NULL)goto err_out;
 
@@ -18707,8 +18277,8 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
 
     qsort(codep,n,sizeof(*codep),sort32a);
 
-    sortindex=alloca(n*sizeof(*sortindex));
-    c->codelist=_ogg_malloc(n*sizeof(*c->codelist));
+    sortindex=(int *)alloca(n*sizeof(*sortindex));
+    c->codelist=(ogg_uint32_t *)_ogg_malloc(n*sizeof(*c->codelist));
     /* the index is a reverse index */
     for(i=0;i<n;i++){
       int position=codep[i]-codes;
@@ -18720,13 +18290,13 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
     _ogg_free(codes);
 
     c->valuelist=_book_unquantize(s,n,sortindex);
-    c->dec_index=_ogg_malloc(n*sizeof(*c->dec_index));
+    c->dec_index=(int *)_ogg_malloc(n*sizeof(*c->dec_index));
 
     for(n=0,i=0;i<s->entries;i++)
       if(s->lengthlist[i]>0)
         c->dec_index[sortindex[n++]]=i;
 
-    c->dec_codelengths=_ogg_malloc(n*sizeof(*c->dec_codelengths));
+    c->dec_codelengths=(char *)_ogg_malloc(n*sizeof(*c->dec_codelengths));
     c->dec_maxlength=0;
     for(n=0,i=0;i<s->entries;i++)
       if(s->lengthlist[i]>0){
@@ -18740,7 +18310,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
        fastpath table (that always returns entry 0 )in order to use
        unmodified decode paths. */
       c->dec_firsttablen=1;
-      c->dec_firsttable=_ogg_calloc(2,sizeof(*c->dec_firsttable));
+      c->dec_firsttable=(ogg_uint32_t *)_ogg_calloc(2,sizeof(*c->dec_firsttable));
       c->dec_firsttable[0]=c->dec_firsttable[1]=1;
 
     }else{
@@ -18749,7 +18319,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
       if(c->dec_firsttablen>8)c->dec_firsttablen=8;
 
       tabn=1<<c->dec_firsttablen;
-      c->dec_firsttable=_ogg_calloc(tabn,sizeof(*c->dec_firsttable));
+      c->dec_firsttable=(ogg_uint32_t *)_ogg_calloc(tabn,sizeof(*c->dec_firsttable));
 
       for(i=0;i<n;i++){
         if(c->dec_codelengths[i]<=c->dec_firsttablen){
@@ -18947,16 +18517,6 @@ int main(){
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
   function: lookup based functions
 
@@ -19040,16 +18600,6 @@ long vorbis_coslook_i(long a){
 
 #endif
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2009             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: bitrate tracking and management
 
@@ -19067,7 +18617,7 @@ long vorbis_coslook_i(long a){
 
 /* compute bitrate tracking setup  */
 void vorbis_bitrate_init(vorbis_info *vi,bitrate_manager_state *bm){
-  codec_setup_info *ci=vi->codec_setup;
+  codec_setup_info *ci=(codec_setup_info *)vi->codec_setup;
   bitrate_manager_info *bi=&ci->bi;
 
   memset(bm,0,sizeof(*bm));
@@ -19103,7 +18653,7 @@ void vorbis_bitrate_clear(bitrate_manager_state *bm){
 
 int vorbis_bitrate_managed(vorbis_block *vb){
   vorbis_dsp_state      *vd=vb->vd;
-  private_state         *b=vd->backend_state;
+  private_state         *b=(private_state *)vd->backend_state;
   bitrate_manager_state *bm=&b->bms;
 
   if(bm && bm->managed)return(1);
@@ -19112,12 +18662,12 @@ int vorbis_bitrate_managed(vorbis_block *vb){
 
 /* finish taking in the block we just processed */
 int vorbis_bitrate_addblock(vorbis_block *vb){
-  vorbis_block_internal *vbi=vb->internal;
+  vorbis_block_internal *vbi=(vorbis_block_internal *)vb->internal;
   vorbis_dsp_state      *vd=vb->vd;
-  private_state         *b=vd->backend_state;
+  private_state         *b=(private_state *)vd->backend_state;
   bitrate_manager_state *bm=&b->bms;
   vorbis_info           *vi=vd->vi;
-  codec_setup_info      *ci=vi->codec_setup;
+  codec_setup_info      *ci=(codec_setup_info *)vi->codec_setup;
   bitrate_manager_info  *bi=&ci->bi;
 
   int  choice=rint(bm->avgfloat);
@@ -19268,14 +18818,14 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 }
 
 int vorbis_bitrate_flushpacket(vorbis_dsp_state *vd,ogg_packet *op){
-  private_state         *b=vd->backend_state;
+  private_state         *b=(private_state *)vd->backend_state;
   bitrate_manager_state *bm=&b->bms;
   vorbis_block          *vb=bm->vb;
   int                    choice=PACKETBLOBS/2;
   if(!vb)return 0;
 
   if(op){
-    vorbis_block_internal *vbi=vb->internal;
+    vorbis_block_internal *vbi=(vorbis_block_internal *)vb->internal;
 
     if(vorbis_bitrate_managed(vb))
       choice=bm->choice;
@@ -19292,16 +18842,6 @@ int vorbis_bitrate_flushpacket(vorbis_dsp_state *vd,ogg_packet *op){
   return(1);
 }
 /********************************************************************
- *                                                                  *
- * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
- * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
- * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
- * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
- *                                                                  *
- * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2015             *
- * by the Xiph.Org Foundation https://xiph.org/                     *
- *                                                                  *
- ********************************************************************
 
  function: stdio-based convenience library for opening/seeking/decoding
 
@@ -19483,9 +19023,9 @@ static void _add_serialno(ogg_page *og,long **serialno_list, int *n){
   (*n)++;
 
   if(*serialno_list){
-    *serialno_list = _ogg_realloc(*serialno_list, sizeof(**serialno_list)*(*n));
+    *serialno_list = (long *)_ogg_realloc(*serialno_list, sizeof(**serialno_list)*(*n));
   }else{
-    *serialno_list = _ogg_malloc(sizeof(**serialno_list));
+    *serialno_list = (long *)_ogg_malloc(sizeof(**serialno_list));
   }
 
   (*serialno_list)[(*n)-1] = s;
@@ -19803,12 +19343,12 @@ static int _bisect_forward_serialno(OggVorbis_File *vf,
     if(vf->serialnos)_ogg_free(vf->serialnos);
     if(vf->dataoffsets)_ogg_free(vf->dataoffsets);
 
-    vf->offsets=_ogg_malloc((vf->links+1)*sizeof(*vf->offsets));
-    vf->vi=_ogg_realloc(vf->vi,vf->links*sizeof(*vf->vi));
-    vf->vc=_ogg_realloc(vf->vc,vf->links*sizeof(*vf->vc));
-    vf->serialnos=_ogg_malloc(vf->links*sizeof(*vf->serialnos));
-    vf->dataoffsets=_ogg_malloc(vf->links*sizeof(*vf->dataoffsets));
-    vf->pcmlengths=_ogg_malloc(vf->links*2*sizeof(*vf->pcmlengths));
+    vf->offsets=(ogg_int64_t *)_ogg_malloc((vf->links+1)*sizeof(*vf->offsets));
+    vf->vi=(vorbis_info *)_ogg_realloc(vf->vi,vf->links*sizeof(*vf->vi));
+    vf->vc=(vorbis_comment *)_ogg_realloc(vf->vc,vf->links*sizeof(*vf->vc));
+    vf->serialnos=(long *)_ogg_malloc(vf->links*sizeof(*vf->serialnos));
+    vf->dataoffsets=(ogg_int64_t *)_ogg_malloc(vf->links*sizeof(*vf->dataoffsets));
+    vf->pcmlengths=(ogg_int64_t *)_ogg_malloc(vf->links*2*sizeof(*vf->pcmlengths));
 
     vf->offsets[m+1]=end;
     vf->offsets[m]=begin;
@@ -20200,8 +19740,8 @@ static int _ov_open1(void *f,OggVorbis_File *vf,const char *initial,
   /* No seeking yet; Set up a 'single' (current) logical bitstream
      entry for partial open */
   vf->links=1;
-  vf->vi=_ogg_calloc(vf->links,sizeof(*vf->vi));
-  vf->vc=_ogg_calloc(vf->links,sizeof(*vf->vc));
+  vf->vi=(vorbis_info *)_ogg_calloc(vf->links,sizeof(*vf->vi));
+  vf->vc=(vorbis_comment *)_ogg_calloc(vf->links,sizeof(*vf->vc));
   ogg_stream_init(&vf->os,-1); /* fill in the serialno later */
 
   /* Fetch all BOS pages, store the vorbis header and all seen serial
@@ -20213,13 +19753,13 @@ static int _ov_open1(void *f,OggVorbis_File *vf,const char *initial,
     /* serial number list for first link needs to be held somewhere
        for second stage of seekable stream open; this saves having to
        seek/reread first link's serialnumber data then. */
-    vf->serialnos=_ogg_calloc(serialno_list_size+2,sizeof(*vf->serialnos));
+    vf->serialnos=(long *)_ogg_calloc(serialno_list_size+2,sizeof(*vf->serialnos));
     vf->serialnos[0]=vf->current_serialno=vf->os.serialno;
     vf->serialnos[1]=serialno_list_size;
     memcpy(vf->serialnos+2,serialno_list,serialno_list_size*sizeof(*vf->serialnos));
 
-    vf->offsets=_ogg_calloc(1,sizeof(*vf->offsets));
-    vf->dataoffsets=_ogg_calloc(1,sizeof(*vf->dataoffsets));
+    vf->offsets=(ogg_int64_t *)_ogg_calloc(1,sizeof(*vf->offsets));
+    vf->dataoffsets=(ogg_int64_t *)_ogg_calloc(1,sizeof(*vf->dataoffsets));
     vf->offsets[0]=0;
     vf->dataoffsets[0]=vf->offset;
 
@@ -21573,14 +21113,14 @@ int ov_crosslap(OggVorbis_File *vf1, OggVorbis_File *vf2){
   hs1=ov_halfrate_p(vf1);
   hs2=ov_halfrate_p(vf2);
 
-  lappcm=alloca(sizeof(*lappcm)*vi1->channels);
+  lappcm=(float **)alloca(sizeof(*lappcm)*vi1->channels);
   n1=vorbis_info_blocksize(vi1,0)>>(1+hs1);
   n2=vorbis_info_blocksize(vi2,0)>>(1+hs2);
   w1=vorbis_window(&vf1->vd,0);
   w2=vorbis_window(&vf2->vd,0);
 
   for(i=0;i<vi1->channels;i++)
-    lappcm[i]=alloca(sizeof(**lappcm)*n1);
+    lappcm[i]=(float *)alloca(sizeof(**lappcm)*n1);
 
   _ov_getlap(vf1,vi1,&vf1->vd,lappcm,n1);
 
@@ -21623,9 +21163,9 @@ static int _ov_64_seek_lap(OggVorbis_File *vf,ogg_int64_t pos,
                                    from this link gets dumped, this
                                    window array continues to exist */
 
-  lappcm=alloca(sizeof(*lappcm)*ch1);
+  lappcm=(float **)alloca(sizeof(*lappcm)*ch1);
   for(i=0;i<ch1;i++)
-    lappcm[i]=alloca(sizeof(**lappcm)*n1);
+    lappcm[i]=(float *)alloca(sizeof(**lappcm)*n1);
   _ov_getlap(vf,vi,&vf->vd,lappcm,n1);
 
   /* have lapping data; seek and prime the buffer */
@@ -21684,9 +21224,9 @@ static int _ov_d_seek_lap(OggVorbis_File *vf,double pos,
                                    from this link gets dumped, this
                                    window array continues to exist */
 
-  lappcm=alloca(sizeof(*lappcm)*ch1);
+  lappcm=(float **)alloca(sizeof(*lappcm)*ch1);
   for(i=0;i<ch1;i++)
-    lappcm[i]=alloca(sizeof(**lappcm)*n1);
+    lappcm[i]=(float *)alloca(sizeof(**lappcm)*n1);
   _ov_getlap(vf,vi,&vf->vd,lappcm,n1);
 
   /* have lapping data; seek and prime the buffer */
