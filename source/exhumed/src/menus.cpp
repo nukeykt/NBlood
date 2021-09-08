@@ -1601,6 +1601,8 @@ static Menu_t Menus[] = {
     { &M_MAIN_INGAME, MENU_MAIN_INGAME, MENU_CLOSE, MA_None, Menu },
     { &M_EPISODE, MENU_EPISODE, MENU_MAIN, MA_Return, Menu },
 
+    { &M_EXHUMED_LOAD, MENU_EXHUMED_LOADGAME, MENU_MAIN, MA_Return, Menu },
+
     // { &M_USERMAP, MENU_USERMAP, MENU_PREVIOUS, MA_Return, FileSelect },
     // { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     // { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
@@ -1635,9 +1637,6 @@ static Menu_t Menus[] = {
 //#ifdef POLYMER
 //    { &M_RENDERERSETUP_POLYMER, MENU_POLYMER, MENU_DISPLAYSETUP, MA_Return, Menu },
 //#endif
-
-    { &M_EXHUMED_LOAD, MENU_EXHUMED_LOADGAME, MENU_MAIN, MA_Return, Menu },
-
     // { &M_LOAD, MENU_LOAD, MENU_MAIN, MA_Return, Menu },
     // { &M_SAVE, MENU_SAVE, MENU_MAIN, MA_Return, Menu },
     // { &M_STORY, MENU_STORY, MENU_MAIN, MA_Return, Panel },
