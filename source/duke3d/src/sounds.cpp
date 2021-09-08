@@ -1047,28 +1047,22 @@ void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
     if (EDUKE32_PREDICT_FALSE(g_sounds[soundNum] == &nullsound || g_sounds[soundNum]->playing == 0))
         return;
 
-    int j;
-
-    do 
+    for (int j=0; j < MAXSOUNDINSTANCES; ++j)
     {
-        for (j=0; j < MAXSOUNDINSTANCES; ++j)
+        if (bitmap_test(&g_sounds[soundNum]->playing, j) == 0)
+            continue;
+
+        auto &voice = g_sounds[soundNum]->voices[j];
+
+        if ((spriteNum == -1 && voice.handle > FX_Ok) || (spriteNum != -1 && voice.owner == spriteNum))
         {
-            if (bitmap_test(&g_sounds[soundNum]->playing, j) == 0)
-                continue;
-
-            auto &voice = g_sounds[soundNum]->voices[j];
-
-            if ((spriteNum == -1 && voice.handle > FX_Ok) || (spriteNum != -1 && voice.owner == spriteNum))
-            {
-                Bassert(spriteNum == -1 || voice.handle > FX_Ok);
-                if (EDUKE32_PREDICT_FALSE(spriteNum >= 0 && voice.handle <= FX_Ok))
-                    initprintf(OSD_ERROR "S_ChangeSoundPitch(): bad voice %d for sound ID %d index %d!\n", voice.handle, soundNum, j);
-                else if (FX_SoundValidAndActive(voice.handle))
-                    FX_SetPitch(voice.handle, pitchoffset);
-                break;
-            }
+            Bassert(spriteNum == -1 || voice.handle > FX_Ok);
+            if (EDUKE32_PREDICT_FALSE(spriteNum >= 0 && voice.handle <= FX_Ok))
+                initprintf(OSD_ERROR "S_ChangeSoundPitch(): bad voice %d for sound ID %d index %d!\n", voice.handle, soundNum, j);
+            else if (FX_SoundValidAndActive(voice.handle))
+                FX_SetPitch(voice.handle, pitchoffset);
         }
-    } while (j < MAXSOUNDINSTANCES);
+    }
 }
 
 void S_Update(void)
