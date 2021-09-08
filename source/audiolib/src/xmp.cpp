@@ -11,8 +11,18 @@
 #define BUILDING_STATIC
 #include "libxmp-lite/xmp.h"
 
+#include "libasync_config.h"
+
+typedef struct {
+   void * ptr;
+   async::task<void> task;
+   size_t length;
+
+   xmp_context ctx;
+} xmp_data;
+
 int  MV_GetXMPPosition(VoiceNode *voice)               { return voice->position; }
-void MV_SetXMPPosition(VoiceNode *voice, int position) { xmp_seek_time((xmp_context)voice->rawdataptr, position); }
+void MV_SetXMPPosition(VoiceNode *voice, int position) { xmp_seek_time(((xmp_data *)voice->rawdataptr)->ctx, position); }
 
 static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 {
@@ -22,8 +32,8 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
         return NoMoreData;
     }
 
-    auto ctx = (xmp_context)voice->rawdataptr;
-
+    auto ctx = ((xmp_data *)voice->rawdataptr)->ctx;
+    
     if (xmp_play_frame(ctx) != 0)
     {
 #if 0
@@ -84,30 +94,13 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         return MV_SetErrorCode(MV_NotInstalled);
 
     // Request a voice from the voice pool
-    auto voice = MV_AllocVoice(priority);
+    auto voice = MV_AllocVoice(priority, sizeof(xmp_data));
     if (voice == nullptr)
         return MV_SetErrorCode(MV_NoVoices);
 
-    xmp_context ctx = (voice->rawdataptr == nullptr || voice->rawdatasiz != 0x1337) ? xmp_create_context() : (xmp_context)voice->rawdataptr;
-    if (ctx == nullptr)
-    {
-        MV_Printf("MV_PlayXMP: xmp_create_context failed\n");
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
-
-    int const xmp_status = xmp_load_module_from_memory(ctx, ptr, length);
-    if (xmp_status)
-    {
-        xmp_free_context(ctx);
-        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
-
     voice->sound       = 0;
-
     voice->wavetype    = FMT_XMP;
-    voice->rawdataptr  = ctx;
-    voice->rawdatasiz  = 0x1337;
+    voice->Paused      = TRUE;
     voice->GetSound    = MV_GetNextXMPBlock;
     voice->PitchScale  = PITCH_GetScale(pitchoffset);
     voice->priority    = priority;
@@ -119,37 +112,72 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 
     voice->Loop = { nullptr, nullptr, 0, loopstart >= 0 };
 
-    xmp_start_player(ctx, MV_MixRate, 0);
-    xmp_set_player(ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
-
-    // CODEDUP multivoc.c MV_SetVoicePitch
-    voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
-    voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
     MV_SetVoiceMixMode(voice);
-
     MV_SetVoiceVolume(voice, vol, left, right, volume);
-    MV_PlayVoice(voice);
+
+    auto xd = (xmp_data *)voice->rawdataptr;
+
+    xd->ptr = ptr;
+    xd->length = length;
+
+    xd->task = async::spawn([voice]
+    {    
+        auto xd = (xmp_data *)voice->rawdataptr;
+        auto ctx = xd->ctx;
+
+        if (!ctx)
+        {
+            ctx = xmp_create_context();
+            xd->ctx = ctx;
+        }
+
+        int xmp_status = 0;
+        if (ctx == nullptr || (xmp_status = xmp_load_module_from_memory(ctx, xd->ptr, xd->length)))
+        {
+            if (!xmp_status)
+                MV_Printf("MV_PlayXMP: xmp_create_context failed\n");
+            else
+            {
+                xmp_free_context(ctx);
+                MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
+            }
+
+            ALIGNED_FREE_AND_NULL(voice->rawdataptr);
+            voice->rawdatasiz = 0;
+            MV_SetErrorCode(MV_InvalidFile);
+            MV_PlayVoice(voice);
+            return;
+        }
+
+        xmp_start_player(ctx, MV_MixRate, 0);
+        xmp_set_player(ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
+
+        // CODEDUP multivoc.c MV_SetVoicePitch
+        voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
+        voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
+        MV_PlayVoice(voice);
+    }
+    );
 
     return voice->handle;
 }
 
 void MV_ReleaseXMPVoice(VoiceNode * voice)
 {
-    Bassert(voice->wavetype == FMT_XMP && voice->rawdataptr != nullptr && voice->rawdatasiz == 0x1337);
+    Bassert(voice->wavetype == FMT_XMP && voice->rawdataptr != nullptr && voice->rawdatasiz == sizeof(xmp_data));
 
-    auto ctx = (xmp_context)voice->rawdataptr;
+    auto xd = (xmp_data *)voice->rawdataptr;
 
-    if (!MV_LazyAlloc)
-    {
-        voice->rawdataptr = nullptr;
-        voice->rawdatasiz = 0;
-    }
+    xmp_end_player(xd->ctx);
+    xmp_release_module(xd->ctx);
 
-    xmp_end_player(ctx);
-    xmp_release_module(ctx);
+    if (MV_LazyAlloc)
+        return;
 
-    if (!MV_LazyAlloc)
-        xmp_free_context(ctx);
+    xmp_free_context(xd->ctx);
+    voice->rawdataptr = nullptr;
+    voice->rawdatasiz = 0;
+    ALIGNED_FREE_AND_NULL(xd);
 }
 
 void MV_SetXMPInterpolation(void)
@@ -159,7 +187,7 @@ void MV_SetXMPInterpolation(void)
 
     for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
         if (voice->wavetype == FMT_XMP)
-            xmp_set_player((xmp_context)voice->rawdataptr, XMP_PLAYER_INTERP, MV_XMPInterpolation);
+            xmp_set_player(((xmp_data *)voice->rawdataptr)->ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 }
 
 #else
