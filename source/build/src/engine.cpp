@@ -8030,7 +8030,7 @@ static inline void initksqrt(void)
         temp = root*root-num;
         while (klabs(int32_t(temp-2*root+1)) < klabs(temp))
         {
-            temp += -(2*root)+1;
+            temp += -(2*(int32_t)root)+1;
             root--;
         }
         while (klabs(int32_t(temp+2*root+1)) < klabs(temp))
