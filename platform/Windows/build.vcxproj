@@ -454,6 +454,8 @@
     <ClInclude Include="..\..\source\build\include\hightile.h" />
     <ClInclude Include="..\..\source\build\include\klzw.h" />
     <ClInclude Include="..\..\source\build\include\kplib.h" />
+    <ClInclude Include="..\..\source\build\include\libasync.h" />
+    <ClInclude Include="..\..\source\build\include\libasync_config.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
     <ClInclude Include="..\..\source\build\include\libdivide_config.h" />
     <ClInclude Include="..\..\source\build\include\linklist.h" />
