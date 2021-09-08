@@ -172,7 +172,7 @@ typedef struct VoiceNode
     uint32_t SamplingRate;
     uint32_t RateScale;
     uint32_t position;
-    int Paused;
+    std::atomic<int> Paused;
 
     int handle;
     int priority;

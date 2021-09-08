@@ -69,15 +69,14 @@ extern int (*MV_Printf)(const char *fmt, ...);
 
 const char *MV_ErrorString(int ErrorNumber);
 
-extern int MV_Locked;
-static inline void MV_Lock(void)
+extern thread_local int MV_Locked;
+static FORCE_INLINE void MV_Lock(void)
 {
     extern void SoundDriver_PCM_Lock(void);
-
     if (!MV_Locked++)
         SoundDriver_PCM_Lock();
 }
-static inline void MV_Unlock(void)
+static FORCE_INLINE void MV_Unlock(void)
 {
     extern void SoundDriver_PCM_Unlock(void);
 

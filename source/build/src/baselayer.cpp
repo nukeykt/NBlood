@@ -10,6 +10,9 @@
 #include "renderlayer.h"
 #include "mimalloc.h"
 
+#define LIBASYNC_IMPLEMENTATION
+#include "libasync_config.h"
+
 // video
 #ifdef _WIN32
 #include "winbits.h"

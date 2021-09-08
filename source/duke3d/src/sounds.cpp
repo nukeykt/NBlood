@@ -473,7 +473,7 @@ void S_Cleanup(void)
 
         int const spriteNum = voice.owner;
 
-        Bassert((unsigned)snd->playing <= MAXSOUNDINSTANCES);
+        //Bassert((unsigned)snd->playing <= MAXSOUNDINSTANCES);
         --snd->playing;
 
         Bassert(snd->playing >= 0);
@@ -647,10 +647,8 @@ static int S_GetSlot(int soundNum)
     {
         auto &voice = snd->voices[slot];
 
-        if (!FX_SoundValidAndActive(voice.handle))
-            return slot;
-
-        if (voice.dist >= dist)
+        if (voice.dist == UINT16_MAX) return slot;
+        if (voice.dist >= dist && FX_SoundValidAndActive(voice.handle))
         {
             dist = voice.dist;
             bestslot = slot;
@@ -658,12 +656,12 @@ static int S_GetSlot(int soundNum)
     }
     while (++slot < MAXSOUNDINSTANCES);
 
-    if (slot == MAXSOUNDINSTANCES)
-    {        
-        slot = bestslot;
-        FX_StopSound(snd->voices[slot].handle);
-        S_Cleanup();
-    }
+    if (!FX_SoundValidAndActive(snd->voices[bestslot].handle))
+        return MAXSOUNDINSTANCES;
+
+    slot = bestslot;
+    FX_StopSound(snd->voices[slot].handle);
+    S_Cleanup();
 
     return slot;
 }
@@ -899,7 +897,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     }
 
     snd->playing++;
-    Bassert(snd->playing <= MAXSOUNDINSTANCES);
+    //Bassert(snd->playing <= MAXSOUNDINSTANCES);
     S_FillVoiceInfo(&snd->voices[sndSlot], spriteNum, voice, sndist >> 6);
 
     if (snd->flags & SF_TALK)

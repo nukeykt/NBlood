@@ -32,17 +32,19 @@
 
 #ifdef HAVE_VORBIS
 
+#define BLOCKSIZE MV_MIXBUFFERSIZE
+
+#include "libasync_config.h"
+
 #define OGG_IMPL
 #define VORBIS_IMPL
 #define OV_EXCLUDE_STATIC_CALLBACKS
 
 #include "minivorbis.h"
 
-#define BLOCKSIZE MV_MIXBUFFERSIZE
-
-
 typedef struct {
    void * ptr;
+   async::task<void> task;
    size_t length;
    size_t pos;
 
@@ -208,6 +210,12 @@ static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
     int bytesread = 0;
     auto vd = (vorbis_data *)voice->rawdataptr;
 
+    if (!vd)
+    {
+        MV_Printf("null rawdataptr\n");
+        return NoMoreData;
+    }
+
     do
     {
 #ifdef USING_TREMOR
@@ -323,6 +331,8 @@ int MV_PlayVorbis3D(char *ptr, uint32_t length, int loophow, int pitchoffset, in
                          MV_PanTable[angle][vol].left, MV_PanTable[angle][vol].right, priority, volume, callbackval);
 }
 
+static constexpr ov_callbacks vorbis_callbacks = { read_vorbis, seek_vorbis, close_vorbis, tell_vorbis };
+
 int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     UNREFERENCED_PARAMETER(loopend);
@@ -334,48 +344,75 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     if (voice == nullptr)
         return MV_SetErrorCode(MV_NoVoices);
 
-    vorbis_data *vd = (vorbis_data *)voice->rawdataptr;
+    auto vd = (vorbis_data *)voice->rawdataptr;
 
     vd->ptr    = ptr;
     vd->pos    = 0;
     vd->length = length;
 
-    vd->lastbitstream = -1;
+    // pitchoffset is passed into the worker tasks using the preexisting lastbitstream member
+    vd->lastbitstream = pitchoffset;
 
-    static ov_callbacks vorbis_callbacks = { read_vorbis, seek_vorbis, close_vorbis, tell_vorbis };
-    int status = ov_open_callbacks((void *)vd, &vd->vf, 0, 0, vorbis_callbacks);
-    vorbis_info *vi;
+    voice->wavetype    = FMT_VORBIS;
+    voice->bits        = 16;
+    voice->NextBlock   = vd->block;
+    voice->priority    = priority;
+    voice->callbackval = callbackval;
+    voice->Loop        = { nullptr, nullptr, 0, (loopstart >= 0) };
+    voice->GetSound    = MV_GetNextVorbisBlock;
+    voice->Paused      = true;
+
+    MV_SetVoiceMixMode(voice);
+    MV_SetVoiceVolume(voice, vol, left, right, volume);
+
+    //if (vd->task.valid() && !vd->task.ready())
+    //    vd->task.wait();
+
+    vd->task = async::spawn([voice]
+    {
+#if defined _WIN32 && !defined NDEBUG
+        debugThreadName("MV_PlayVorbis");
+#endif
+        auto vd = (vorbis_data *)voice->rawdataptr;
+
+        // yoinked ptr indicates we're in some shitshow scenario where we tried to cancel
+        // the voice before the decoder even got a chance to start initializing
+
+        if (!vd)
+        {
+            voice->rawdatasiz = 0;
+            MV_PlayVoice(voice);
+            return;
+        }
+
+        int status = ov_open_callbacks((void *)vd, &vd->vf, 0, 0, vorbis_callbacks);
+        vorbis_info *vi;
 
         if (status < 0 || ((vi = ov_info(&vd->vf, 0)) == nullptr) || vi->channels < 1 || vi->channels > 2)
         {
             if (status == 0)
                 ov_clear(&vd->vf);
             else
-            MV_Printf("MV_PlayVorbis: err %d\n", status);
+                MV_Printf("MV_PlayVorbis: err %d\n", status);
 
-        ALIGNED_FREE_AND_NULL(voice->rawdataptr);
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
+            ALIGNED_FREE_AND_NULL(voice->rawdataptr);
+            voice->rawdatasiz = 0;
+            MV_SetErrorCode(MV_InvalidFile);
+            MV_PlayVoice(voice);
+            return;
+        }
 
-    voice->wavetype    = FMT_VORBIS;
-    voice->bits        = 16;
-    voice->channels    = vi->channels;
-    voice->GetSound    = MV_GetNextVorbisBlock;
-    voice->NextBlock   = vd->block;
-    voice->priority    = priority;
-    voice->callbackval = callbackval;
-    voice->Loop        = { nullptr, nullptr, 0, (loopstart >= 0) };
+        voice->channels = vi->channels;
 
-    // load loop tags from metadata
-    if (auto comment = ov_comment(&vd->vf, 0))
-        MV_GetVorbisCommentLoops(voice, comment);
+        // load loop tags from metadata
+        if (auto comment = ov_comment(&vd->vf, 0))
+            MV_GetVorbisCommentLoops(voice, comment);
 
-    MV_SetVoicePitch(voice, vi->rate, pitchoffset);
-    MV_SetVoiceMixMode(voice);
-
-    MV_SetVoiceVolume(voice, vol, left, right, volume);
-    MV_PlayVoice(voice);
-
+        MV_SetVoicePitch(voice, vi->rate, vd->lastbitstream);
+        vd->lastbitstream = -1;
+        MV_PlayVoice(voice);
+    });
+    
     return voice->handle;
 }
 
@@ -384,16 +421,15 @@ void MV_ReleaseVorbisVoice(VoiceNode *voice)
     Bassert(voice->wavetype == FMT_VORBIS && voice->rawdataptr != nullptr && voice->rawdatasiz == sizeof(vorbis_data));
 
     auto vd = (vorbis_data *)voice->rawdataptr;
+    //vd->task.wait();
+
+    ov_clear(&vd->vf);
 
     if (MV_LazyAlloc)
-    {
-        ov_clear(&vd->vf);
         return;
-    }
 
     voice->rawdataptr = nullptr;
     voice->rawdatasiz = 0;
-    ov_clear(&vd->vf);
     ALIGNED_FREE_AND_NULL(vd);
 }
 #else
