@@ -455,6 +455,7 @@
     <ClInclude Include="..\..\source\build\include\klzw.h" />
     <ClInclude Include="..\..\source\build\include\kplib.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
+    <ClInclude Include="..\..\source\build\include\libdivide_config.h" />
     <ClInclude Include="..\..\source\build\include\linklist.h" />
     <ClInclude Include="..\..\source\build\include\lru.h" />
     <ClInclude Include="..\..\source\build\include\lz4.h" />
