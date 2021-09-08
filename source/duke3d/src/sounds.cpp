@@ -1023,6 +1023,23 @@ void S_StopEnvSound(int soundNum, int spriteNum)
 void S_StopAllSounds(void)
 {
     FX_StopAllSounds();
+    S_Cleanup();
+
+    for (int i = 0; i <= g_highestSoundIdx; ++i)
+    {
+        if (g_sounds[i] == &nullsound)
+            continue;
+
+        g_sounds[i]->playing = 0;
+
+        if (g_sounds[i]->voices != &nullvoice)
+            for (int j = 0; j < MAXSOUNDINSTANCES; ++j)
+                g_sounds[i]->voices[j] = nullvoice;
+
+#ifdef CACHING_DOESNT_SUCK
+        g_sounds[i]->lock = CACHE1D_UNLOCKED;
+#endif
+    }
 }
 
 void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
