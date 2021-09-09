@@ -674,7 +674,9 @@ int32_t baselayer_init(void)
     polymost_initosdfuncs();
 #endif
 
-    for (native_t i = 0; i < NUMKEYS; i++) g_keyRemapTable[i] = i;
+    for (native_t i = 0; i < NUMKEYS; i++)
+        if (g_keyRemapTable[i] == 0)
+            g_keyRemapTable[i] = i;
 
     return 0;
 }
