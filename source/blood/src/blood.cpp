@@ -642,7 +642,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    enginecompatibilitymode = ENGINE_19960925;//bVanilla;
     memset(xsprite,0,sizeof(xsprite));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
     drawLoadingScreen();
@@ -1747,6 +1746,7 @@ int app_main(int argc, char const * const * argv)
     ctrlInit();
     timerInit(120);
     timerSetCallback(ClockStrobe);
+    enginecompatibilitymode = ENGINE_19960925;
     // PORT-TODO: CD audio init
 
     initprintf("Initializing network users\n");
