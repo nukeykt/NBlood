@@ -8686,7 +8686,7 @@ int32_t enginePreInit(void)
     initdivtables();
 
     if (initsystem())
-        fatal_exit("Failure in initsystem()!\n");
+        fatal_exit("Failure in initsystem()!");
 
     makeasmwriteable();
 

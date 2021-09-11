@@ -460,7 +460,7 @@ static void maybe_alloc_palookup(int32_t palnum)
     {
         alloc_palookup(palnum);
         if (palookup[palnum] == NULL)
-            fatal_exit("NULL palette!\n");
+            fatal_exit("NULL palette!");
     }
 }
 

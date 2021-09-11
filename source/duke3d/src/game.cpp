@@ -6659,7 +6659,7 @@ int app_main(int argc, char const* const* argv)
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
             engineUnInit();
-            fatal_exit("There was an error initializing the CONTROL system.\n");
+            fatal_exit("There was an error initializing the CONTROL system.");
         }
 
         G_SetupGameButtons();
