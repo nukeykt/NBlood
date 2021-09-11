@@ -2956,7 +2956,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
                         aiGenDudeNewState(pSprite, &genDudeBurnGoto);
                         actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
                         if (pXSprite->burnTime <= 0) pXSprite->burnTime = 1200;
-                        gDudeExtra[pSprite->extra].at0 = (int)gFrameClock + 360;
+                        gDudeExtra[pSprite->extra].clock = (int)gFrameClock + 360;
                         return;
                     }
 
@@ -3357,7 +3357,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     case kDudeSpiderBrown:
         if (pSprite->owner != -1) {
             spritetype *pOwner = &sprite[actSpriteOwnerToSpriteId(pSprite)];
-            gDudeExtra[pOwner->extra].at6.u1.at4--;
+            gDudeExtra[pOwner->extra].stats.birthCounter--;
         }
         
         if (Chance(0x4000) && nSeq == 3) sfxPlay3DSound(pSprite, 1805, -1, 0);
@@ -3367,7 +3367,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     case kDudeSpiderRed:
         if (pSprite->owner != -1) {
             spritetype *pOwner = &sprite[actSpriteOwnerToSpriteId(pSprite)];
-            gDudeExtra[pOwner->extra].at6.u1.at4--;
+            gDudeExtra[pOwner->extra].stats.birthCounter--;
         }
         
         if (Chance(0x4000) && nSeq == 3) sfxPlay3DSound(pSprite, 1805, -1, 0);
@@ -3377,7 +3377,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     case kDudeSpiderBlack:
         if (pSprite->owner != -1) {
             spritetype *pOwner = &sprite[actSpriteOwnerToSpriteId(pSprite)];
-            gDudeExtra[pOwner->extra].at6.u1.at4--;
+            gDudeExtra[pOwner->extra].stats.birthCounter--;
         }
         
         if (Chance(0x4000) && nSeq == 3) sfxPlay3DSound(pSprite, 1805, -1, 0);

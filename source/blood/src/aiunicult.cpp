@@ -2188,8 +2188,8 @@ void genDudePostDeath(spritetype* pSprite, DAMAGE_TYPE damageType, int damage) {
 void aiGenDudeInitSprite(spritetype* pSprite, XSPRITE* pXSprite) {
     switch (pSprite->type) {
         case kDudeModernCustom: {
-            DUDEEXTRA_at6_u1* pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
-            pDudeExtraE->at8 = pDudeExtraE->at0 = 0;
+            DUDEEXTRA_STATS* pDudeExtraE = &gDudeExtra[pSprite->extra].stats;
+            pDudeExtraE->active = 0;
             aiGenDudeNewState(pSprite, &genDudeIdleL);
             break;
         }

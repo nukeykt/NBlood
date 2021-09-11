@@ -3047,7 +3047,7 @@ void damageSprites(XSPRITE* pXSource, spritetype* pSprite) {
         if (forceRecoil && !pPlayer) {
 
             pXSprite->data3 = 32767;
-            gDudeExtra[pSprite->extra].at4 = (dmgType == kDmgElectric) ? 1 : 0;
+            gDudeExtra[pSprite->extra].teslaHit = (dmgType == kDmgElectric) ? 1 : 0;
             if (pXSprite->aiState->stateType != kAiStateRecoil)
                 RecoilDude(pSprite, pXSprite);
         }

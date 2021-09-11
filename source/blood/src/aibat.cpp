@@ -90,12 +90,12 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
-    DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
-    if (pDudeExtraE->at8 && pDudeExtraE->at4 < 10)
-        pDudeExtraE->at4++;
-    else if (pDudeExtraE->at4 >= 10 && pDudeExtraE->at8)
+    DUDEEXTRA_STATS *pDudeExtraE = &gDudeExtra[pSprite->extra].stats;
+    if (pDudeExtraE->active && pDudeExtraE->thinkTime < 10)
+        pDudeExtraE->thinkTime++;
+    else if (pDudeExtraE->thinkTime >= 10 && pDudeExtraE->active)
     {
-        pDudeExtraE->at4 = 0;
+        pDudeExtraE->thinkTime = 0;
         pXSprite->goalAng += 256;
         POINT3D *pTarget = &baseSprite[pSprite->index];
         aiSetTarget(pXSprite, pTarget->x, pTarget->y, pTarget->z);
@@ -427,8 +427,8 @@ void MoveToCeil(spritetype *pSprite, XSPRITE *pXSprite)
     int nSector = pSprite->sectnum;
     if (z - pXSprite->targetZ < 0x1000)
     {
-        DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
-        pDudeExtraE->at8 = 0;
+        DUDEEXTRA_STATS *pDudeExtraE = &gDudeExtra[pSprite->extra].stats;
+        pDudeExtraE->active = 0;
         pSprite->flags = 0;
         aiNewState(pSprite, pXSprite, &batIdle);
     }

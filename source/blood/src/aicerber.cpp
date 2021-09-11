@@ -275,10 +275,10 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
-    DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
-    if (pDudeExtraE->at8 && pDudeExtraE->at4 < 10)
-        pDudeExtraE->at4++;
-    else if (pDudeExtraE->at4 >= 10 && pDudeExtraE->at8)
+    DUDEEXTRA_STATS *pDudeExtraE = &gDudeExtra[pSprite->extra].stats;
+    if (pDudeExtraE->active && pDudeExtraE->thinkTime < 10)
+        pDudeExtraE->thinkTime++;
+    else if (pDudeExtraE->thinkTime >= 10 && pDudeExtraE->active)
     {
         pXSprite->goalAng += 256;
         POINT3D *pTarget = &baseSprite[pSprite->index];
@@ -310,13 +310,13 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
             if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
-                pDudeExtraE->at0 = 0;
+                pDudeExtraE->thinkTime = 0;
                 aiSetTarget(pXSprite, pPlayer->nSprite);
                 aiActivateDude(pSprite, pXSprite);
             }
             else if (nDist < pDudeInfo->hearDist)
             {
-                pDudeExtraE->at0 = 0;
+                pDudeExtraE->thinkTime = 0;
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
             }

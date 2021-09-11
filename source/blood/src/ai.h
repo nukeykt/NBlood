@@ -48,30 +48,21 @@ enum AI_SFX_PRIORITY {
 };
 
 
-struct DUDEEXTRA_at6_u1
+struct DUDEEXTRA_STATS
 {
-    int at0;
-    int at4;
-    char at8;
-};
-
-struct DUDEEXTRA_at6_u2
-{
-    int at0;
-    char at4;
+    union {
+        int thinkTime;
+        int birthCounter;
+    };
+    char active;
 };
 
 struct DUDEEXTRA
 {
-    int at0;
-    char at4;
-    AI_SFX_PRIORITY at5;
-    union
-    {
-        DUDEEXTRA_at6_u1 u1;
-        DUDEEXTRA_at6_u2 u2;
-    } at6;
-    //DUDEEXTRA_at6 at6;
+    int clock;
+    char teslaHit;
+    AI_SFX_PRIORITY sfx_priority;
+    DUDEEXTRA_STATS stats;
 };
 
 struct TARGETTRACK {
