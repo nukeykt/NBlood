@@ -165,14 +165,14 @@ static void SpidBirthSeqCallback(int, int nXSprite)
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
-    DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
+    DUDEEXTRA_STATS *pDudeExtraE = &gDudeExtra[pSprite->extra].stats;
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     
     spritetype *pSpawn = NULL;
-    if (IsPlayerSprite(pTarget) && pDudeExtraE->at4 < 10) {
+    if (IsPlayerSprite(pTarget) && pDudeExtraE->birthCounter < 10) {
         
         if (nDist < 0x1a00 && nDist > 0x1400 && klabs(pSprite->ang-nAngle) < pDudeInfo->periphery)
             pSpawn = actSpawnDude(pSprite, kDudeSpiderRed, pSprite->clipdist, 0);
@@ -182,7 +182,7 @@ static void SpidBirthSeqCallback(int, int nXSprite)
             pSpawn = actSpawnDude(pSprite, kDudeSpiderBrown, pSprite->clipdist, 0);
         
         if (pSpawn) {
-            pDudeExtraE->at4++;
+            pDudeExtraE->birthCounter++;
             pSpawn->owner = nSprite;
             gKillMgr.AddCount(1);
         }
