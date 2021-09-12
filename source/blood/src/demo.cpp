@@ -171,7 +171,32 @@ void CDemo::Write(GINPUT *pPlayerInputs)
         atf.nConnectHead = connecthead;
         memcpy(atf.connectPoints, connectpoint2, sizeof(atf.connectPoints));
         memcpy(&m_gameOptions, &gGameOptions, sizeof(gGameOptions));
+#if B_BIG_ENDIAN == 1
+        atf.signature = B_LITTLE32(atf.signature);
+        atf.nVersion = B_LITTLE16(atf.nVersion);
+        atf.nBuild = B_LITTLE32(atf.nBuild);
+        atf.nInputCount = B_LITTLE32(atf.nInputCount);
+        atf.nNetPlayers = B_LITTLE32(atf.nNetPlayers);
+        atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
+        atf.nConnectHead = B_LITTLE16(atf.nConnectHead);
+        for (int i = 0; i < 8; i++)
+            atf.connectPoints[i] = B_LITTLE16(atf.connectPoints[i]);
+#endif
         fwrite(&atf, sizeof(DEMOHEADER), 1, hRFile);
+#if B_BIG_ENDIAN == 1
+        m_gameOptions.nEpisode = B_LITTLE32(m_gameOptions.nEpisode);
+        m_gameOptions.nLevel = B_LITTLE32(m_gameOptions.nLevel);
+        m_gameOptions.nTrackNumber = B_LITTLE32(m_gameOptions.nTrackNumber);
+        m_gameOptions.nSaveGameSlot = B_LITTLE16(m_gameOptions.nSaveGameSlot);
+        m_gameOptions.picEntry = B_LITTLE32(m_gameOptions.picEntry);
+        m_gameOptions.uMapCRC = B_LITTLE32(m_gameOptions.uMapCRC);
+        m_gameOptions.uGameFlags = B_LITTLE32(m_gameOptions.uGameFlags);
+        m_gameOptions.uNetGameFlags = B_LITTLE32(m_gameOptions.uNetGameFlags);
+        m_gameOptions.nMonsterRespawnTime = B_LITTLE32(m_gameOptions.nMonsterRespawnTime);
+        m_gameOptions.nWeaponRespawnTime = B_LITTLE32(m_gameOptions.nWeaponRespawnTime);
+        m_gameOptions.nItemRespawnTime = B_LITTLE32(m_gameOptions.nItemRespawnTime);
+        m_gameOptions.nSpecialRespawnTime = B_LITTLE32(m_gameOptions.nSpecialRespawnTime);
+#endif
         fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, hRFile);
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
@@ -190,6 +215,9 @@ void CDemo::Close(void)
         if (atb&(kInputBufferSize-1))
             FlushInput(atb&(kInputBufferSize-1));
         atf.nInputCount = atb;
+#if B_BIG_ENDIAN == 1
+        atf.nInputCount = B_LITTLE32(atf.nInputCount);
+#endif
         fseek(hRFile, 0, SEEK_SET);
         fwrite(&atf, sizeof(DEMOHEADER), 1, hRFile);
         fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, hRFile);
@@ -235,7 +263,6 @@ bool CDemo::SetupPlayback(const char *pzFile)
     atf.nNetPlayers = B_LITTLE32(atf.nNetPlayers);
     atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
     atf.nConnectHead = B_LITTLE16(atf.nConnectHead);
-    atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
     for (int i = 0; i < 8; i++)
         atf.connectPoints[i] = B_LITTLE16(atf.connectPoints[i]);
 #endif
