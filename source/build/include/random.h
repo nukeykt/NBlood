@@ -46,4 +46,9 @@ static FORCE_INLINE int32_t wrand(void)
 	return (wrandomseed >> 16) & 0x7FFF;
 }
 
+static FORCE_INLINE void wsrand(int seed)
+{
+    wrandomseed = seed;
+}
+
 #endif
