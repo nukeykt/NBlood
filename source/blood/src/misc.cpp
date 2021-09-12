@@ -109,19 +109,6 @@ unsigned int qrand(void)
     return randSeed&0x7fff;
 }
 
-int wRandSeed = 1;
-
-int wrand(void)
-{
-    wRandSeed = (wRandSeed*1103515245)+12345;
-    return (wRandSeed>>16)&0x7fff;
-}
-
-void wsrand(int seed)
-{
-    wRandSeed = seed;
-}
-
 void ChangeExtension(char *pzFile, const char *pzExt)
 {
 #if 0
