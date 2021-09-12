@@ -843,8 +843,8 @@ void fakeMoveDude(spritetype *pSprite)
             int nHitSprite = floorHit & 0x3fff;
             if ((sprite[nHitSprite].cstat & 0x30) == 0)
             {
-                predict.at5c += mulscale(4, predict.at50 - sprite[nHitSprite].x, 2);
-                predict.at60 += mulscale(4, predict.at54 - sprite[nHitSprite].y, 2);
+                predict.at5c += mulscale2(4, predict.at50 - sprite[nHitSprite].x);
+                predict.at60 += mulscale2(4, predict.at54 - sprite[nHitSprite].y);
                 return;
             }
         }
@@ -2900,7 +2900,7 @@ void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsec
 {
     int vX = mulscale30(-Cos(nAng), 1280);
     int vY = mulscale30(-Sin(nAng), 1280);
-    int vZ = fix16_to_int(mulscale(zm, 1280, 3))-(16<<8);
+    int vZ = fix16_to_int(mulscale3(zm, 1280))-(16<<8);
     int bakCstat = pSprite->cstat;
     pSprite->cstat &= ~256;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
@@ -2945,7 +2945,7 @@ void CalcPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum,
 {
     int vX = mulscale30(-Cos(nAng), 1280);
     int vY = mulscale30(-Sin(nAng), 1280);
-    int vZ = fix16_to_int(mulscale(zm, 1280, 3))-(16<<8);
+    int vZ = fix16_to_int(mulscale3(zm, 1280))-(16<<8);
     int bakCstat = pSprite->cstat;
     pSprite->cstat &= ~256;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);

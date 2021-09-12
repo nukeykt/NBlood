@@ -325,7 +325,7 @@ static void ThrowThing(int nXIndex, bool impact) {
     }
 
     spritetype* pThing = NULL;
-    if ((pThing = actFireThing(pSprite, 0, 0, (dz / 128) - zThrow, curWeapon, divscale(dist / 540, 120, 23))) == NULL) return;
+    if ((pThing = actFireThing(pSprite, 0, 0, (dz / 128) - zThrow, curWeapon, divscale23(dist / 540, 120))) == NULL) return;
     else if (pThinkInfo->picnum < 0 && pThing->type != kModernThingThrowableRock) pThing->picnum = 0;
             
     pThing->owner = pSprite->index;
@@ -500,7 +500,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
         if (((int)gFrameClock & 64) == 0 && Chance(0x3000) && !spriteIsUnderwater(pSprite, false))
             playGenDudeSound(pSprite, kGenDudeSndChasing);
 
-        gDudeSlope[pSprite->extra] = divscale(pTarget->z - pSprite->z, dist, 10);
+        gDudeSlope[pSprite->extra] = divscale10(pTarget->z - pSprite->z, dist);
 
         short curWeapon = gGenDudeExtra[pSprite->index].curWeapon; short weaponType = gGenDudeExtra[pSprite->index].weaponType;
         spritetype* pLeech = leechIsDropped(pSprite); VECTORDATA* meleeVector = &gVectorData[22];
@@ -1019,8 +1019,8 @@ void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite ) {
         int cos = Cos(pSprite->ang);
 
         int frontSpeed = gGenDudeExtra[pSprite->index].moveSpeed;
-        xvel[pSprite->index] += mulscale(cos, frontSpeed, 30);
-        yvel[pSprite->index] += mulscale(sin, frontSpeed, 30);
+        xvel[pSprite->index] += mulscale30(cos, frontSpeed);
+        yvel[pSprite->index] += mulscale30(sin, frontSpeed);
     }
 }
 
@@ -1548,7 +1548,7 @@ void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT event)
             int nDist = approxDist(x - pSprite->x, y - pSprite->y);
             
             if (nDist != 0 && cansee(pSprite->x, pSprite->y, top, pSprite->sectnum, x, y, z, pTarget->sectnum)) {
-                int t = divscale(nDist, 0x1aaaaa, 12);
+                int t = divscale12(nDist, 0x1aaaaa);
                 x += (xvel[nTarget] * t) >> 12;
                 y += (yvel[nTarget] * t) >> 12;
                 int angBak = pSprite->ang;
@@ -1556,7 +1556,7 @@ void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT event)
                 int dx = Cos(pSprite->ang) >> 16;
                 int dy = Sin(pSprite->ang) >> 16;
                 int tz = pTarget->z - (pTarget->yrepeat * pDudeInfo->aimHeight) * 4;
-                int dz = divscale(tz - top - 256, nDist, 10);
+                int dz = divscale10(tz - top - 256, nDist);
                 int nMissileType = kMissileLifeLeechAltNormal + (pXSprite->data3 ? 1 : 0);
                 int t2;
                 
