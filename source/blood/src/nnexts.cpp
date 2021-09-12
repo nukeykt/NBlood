@@ -1292,7 +1292,7 @@ void nnExtProcessSuperSprites() {
                     if ((gSpriteHit[pPlayer->pSprite->extra].hit & 0xc000) == 0xc000  && (gSpriteHit[pPlayer->pSprite->extra].hit & 0x3fff) == idx) {
                         
                             int nSpeed = approxDist(xvel[pPlayer->pSprite->index], yvel[pPlayer->pSprite->index]);
-                            nSpeed = ClipLow(nSpeed - mulscale(nSpeed, mass, 6), 0x9000 - (mass << 3));
+                            nSpeed = ClipLow(nSpeed - mulscale6(nSpeed, mass), 0x9000 - (mass << 3));
 
                             xvel[idx] += mulscale30(nSpeed, Cos(pPlayer->pSprite->ang));
                             yvel[idx] += mulscale30(nSpeed, Sin(pPlayer->pSprite->ang));
@@ -1730,8 +1730,8 @@ void debrisMove(int listIndex) {
 
         int nHitSprite = floorHit & 0x3fff;
         if ((sprite[nHitSprite].cstat & 0x30) == 0) {
-            xvel[nSprite] += mulscale(4, pSprite->x - sprite[nHitSprite].x, 2);
-            yvel[nSprite] += mulscale(4, pSprite->y - sprite[nHitSprite].y, 2);
+            xvel[nSprite] += mulscale2(4, pSprite->x - sprite[nHitSprite].x);
+            yvel[nSprite] += mulscale2(4, pSprite->y - sprite[nHitSprite].y);
             return;
         }
     }
@@ -5481,9 +5481,9 @@ void useUniMissileGen(XSPRITE* pXSource, spritetype* pSprite) {
         if (pXSource->data2 > 0) {
 
             int velocity = pXSource->data2 << 12;
-            xvel[pMissile->index] = mulscale(velocity, dx, 14);
-            yvel[pMissile->index] = mulscale(velocity, dy, 14);
-            zvel[pMissile->index] = mulscale(velocity, dz, 14);
+            xvel[pMissile->index] = mulscale14(velocity, dx);
+            yvel[pMissile->index] = mulscale14(velocity, dy);
+            zvel[pMissile->index] = mulscale14(velocity, dz);
 
         }
 

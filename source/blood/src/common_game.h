@@ -742,27 +742,27 @@ inline char Chance(int a1)
 
 inline unsigned int Random(int a1)
 {
-    return mulscale(wrand(), a1, 15);
+    return mulscale15(wrand(), a1);
 }
 
 inline int Random2(int a1)
 {
-    return mulscale(wrand(), a1, 14)-a1;
+    return mulscale14(wrand(), a1)-a1;
 }
 
 inline int Random3(int a1)
 {
-    return mulscale(wrand()+wrand(), a1, 15) - a1;
+    return mulscale15(wrand()+wrand(), a1) - a1;
 }
 
 inline unsigned int QRandom(int a1)
 {
-    return mulscale(qrand(), a1, 15);
+    return mulscale15(qrand(), a1);
 }
 
 inline int QRandom2(int a1)
 {
-    return mulscale(qrand(), a1, 14)-a1;
+    return mulscale14(qrand(), a1)-a1;
 }
 
 inline void SetBitString(char *pArray, int nIndex)

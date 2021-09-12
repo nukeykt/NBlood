@@ -144,15 +144,15 @@ static void BlastSeqCallback(int, int nXSprite)
             continue;
         if (tt.at10)
         {
-            int t = divscale(nDist, tt.at10, 12);
+            int t = divscale12(nDist, tt.at10);
             x2 += (xvel[nSprite2]*t)>>12;
             y2 += (yvel[nSprite2]*t)>>12;
             z2 += (zvel[nSprite2]*t)>>8;
         }
         int tx = x+mulscale30(Cos(pSprite->ang), nDist);
         int ty = y+mulscale30(Sin(pSprite->ang), nDist);
-        int tz = z+mulscale(gDudeSlope[nXSprite], nDist, 10);
-        int tsr = mulscale(9460, nDist, 10);
+        int tz = z+mulscale10(gDudeSlope[nXSprite], nDist);
+        int tsr = mulscale10(9460, nDist);
         int top, bottom;
         GetSpriteExtents(pSprite2, &top, &bottom);
         if (tz-tsr > bottom || tz+tsr < top)
@@ -173,20 +173,20 @@ static void BlastSeqCallback(int, int nXSprite)
                     nClosest = nDist2;
                     aim.dx = Cos(nAngle)>>16;
                     aim.dy = Sin(nAngle)>>16;
-                    aim.dz = divscale(tz, nDist, 10);
+                    aim.dz = divscale10(tz, nDist);
                     if (tz > -0x333)
-                        aim.dz = divscale(tz, nDist, 10);
+                        aim.dz = divscale10(tz, nDist);
                     else if (tz < -0x333 && tz > -0xb33)
-                        aim.dz = divscale(tz, nDist, 10)+9460;
+                        aim.dz = divscale10(tz, nDist)+9460;
                     else if (tz < -0xb33 && tz > -0x3000)
-                        aim.dz = divscale(tz, nDist, 10)+9460;
+                        aim.dz = divscale10(tz, nDist)+9460;
                     else if (tz < -0x3000)
-                        aim.dz = divscale(tz, nDist, 10)-7500;
+                        aim.dz = divscale10(tz, nDist)-7500;
                     else
-                        aim.dz = divscale(tz, nDist, 10);
+                        aim.dz = divscale10(tz, nDist);
                 }
                 else
-                    aim.dz = divscale(tz, nDist, 10);
+                    aim.dz = divscale10(tz, nDist);
             }
         }
     }

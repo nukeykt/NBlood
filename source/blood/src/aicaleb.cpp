@@ -191,7 +191,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 int nXSprite = sprite[pXSprite->reference].extra;
-                gDudeSlope[nXSprite] = divscale(pTarget->z-pSprite->z, nDist, 10);
+                gDudeSlope[nXSprite] = divscale10(pTarget->z-pSprite->z, nDist);
                 if (nDist < 0x599 && klabs(nDeltaAngle) < 28)
                 {
                     XSECTOR *pXSector;
