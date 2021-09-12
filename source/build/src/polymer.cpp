@@ -5765,11 +5765,23 @@ static void         polymer_compileprogram(int32_t programbits)
         OSD_Printf("PR : Compiling GPU program with bits (octal) %o...\n", (unsigned)programbits);
     if (!linkstatus) {
         OSD_Printf("PR : Failed to compile GPU program with bits (octal) %o!\n", (unsigned)programbits);
-        if (pr_verbosity >= 1) OSD_Printf("PR : Compilation log:\n%s\n", infobuffer);
-        glGetShaderSource(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-        if (pr_verbosity >= 1) OSD_Printf("PR : Vertex source dump:\n%s\n", infobuffer);
-        glGetShaderSource(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-        if (pr_verbosity >= 1) OSD_Printf("PR : Fragment source dump:\n%s\n", infobuffer);
+        if (pr_verbosity >= 1)
+        {
+            glGetProgramInfoLog(program, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
+            OSD_Printf("PR : Linking log:\n%s\n", infobuffer);
+
+            glGetShaderInfoLog(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
+            OSD_Printf("PR : Vertex compile log:\n%s\n", infobuffer);
+
+            glGetShaderInfoLog(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
+            OSD_Printf("PR : Fragment compile log:\n%s\n", infobuffer);
+
+            glGetShaderSource(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
+            OSD_Printf("PR : Vertex source dump:\n%s\n", infobuffer);
+
+            glGetShaderSource(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
+            OSD_Printf("PR : Fragment source dump:\n%s\n", infobuffer);
+        }
     }
 
     // --------- ATTRIBUTE/UNIFORM LOCATIONS

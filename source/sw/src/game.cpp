@@ -5957,14 +5957,14 @@ StdRandomRange(int range)
 
     rand_num = STD_RANDOM();
 
-    if (rand_num == RAND_MAX)
+    if (rand_num == WRAND_MAX)
         rand_num--;
 
     // shift values to give more precision
-#if (RAND_MAX > 0x7fff)
-    value = rand_num / (((int)RAND_MAX) / range);
+#if (WRAND_MAX > 0x7fff)
+    value = rand_num / (((int)WRAND_MAX) / range);
 #else
-    value = (rand_num << 14) / ((((int)RAND_MAX) << 14) / range);
+    value = (rand_num << 14) / ((((int)WRAND_MAX) << 14) / range);
 #endif
 
     if (value >= (uint32_t)range)

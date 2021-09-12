@@ -792,7 +792,7 @@ void computergetinput(int snum, SW_PACKET *syn)
         {
             for (k=0; k<4; k++)
             {
-                i = (rand()%numsectors);
+                i = (wrand()%numsectors);
                 for (j=headspritesect[i]; j>=0; j=nextspritesect[j])
                 {
                     if ((sprite[j].xrepeat <= 0) || (sprite[j].yrepeat <= 0)) continue;

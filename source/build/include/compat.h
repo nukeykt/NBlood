@@ -513,7 +513,6 @@ typedef FILE BFILE;
 #define BMAX_PATH 256
 
 #define Bassert assert
-#define Brand rand
 #define Bmalloc malloc
 #define Bcalloc calloc
 #define Brealloc realloc

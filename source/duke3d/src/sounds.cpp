@@ -581,7 +581,7 @@ static inline int S_GetPitch(int num)
     auto const &snd   = g_sounds[num];
     int const   range = klabs(snd.pe - snd.ps);
 
-    return (range == 0) ? snd.ps : min(snd.ps, snd.pe) + rand() % range;
+    return (range == 0) ? snd.ps : min(snd.ps, snd.pe) + wrand() % range;
 }
 
 static int S_TakeSlot(int soundNum)

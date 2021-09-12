@@ -346,6 +346,9 @@
     <ClInclude Include="..\..\source\build\include\prlights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\build\include\random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\source\build\include\rawinput.h">
       <Filter>Header Files</Filter>
     </ClInclude>

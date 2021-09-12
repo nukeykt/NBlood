@@ -25,6 +25,7 @@
 #include "glbuild.h"
 #include "palette.h"
 #include "pragmas.h"
+#include "random.h"
 
 #include "vfs.h"
 #include "cache1d.h"
@@ -810,7 +811,7 @@ EXTERN int32_t display_mirror;
 EXTERN ClockTicks totalclock, totalclocklock;
 static inline int32_t BGetTime(void) { return (int32_t) totalclock; }
 EXTERN int32_t rotatespritesmoothratio;
-EXTERN int32_t numframes, randomseed;
+EXTERN int32_t numframes;
 EXTERN int16_t sintable[2048];
 
 EXTERN uint8_t palette[768];
@@ -1324,22 +1325,6 @@ extern const int16_t *chsecptr_onextwall;
 int32_t checksectorpointer(int16_t i, int16_t sectnum);
 
 void   mouseGetValues(int32_t *mousx, int32_t *mousy, int32_t *bstatus) ATTRIBUTE((nonnull(1,2,3)));
-
-#if !KRANDDEBUG
-static FORCE_INLINE int32_t krand(void)
-{
-    randomseed = (randomseed * 1664525ul) + 221297ul;
-    return ((uint32_t) randomseed)>>16;
-}
-#else
-int32_t    krand(void);
-#endif
-
-static FORCE_INLINE int32_t seed_krand(int32_t* seed)
-{
-    *seed = (*seed * 1664525ul) + 221297ul;
-    return ((uint32_t)*seed) >> 16;
-}
 
 int32_t   __fastcall ksqrtasm_old(uint32_t n);
 int32_t   __fastcall ksqrt(uint32_t num);

@@ -397,9 +397,9 @@ static fix16_t FORCE_INLINE PedanticQ16AngleFloor(fix16_t ang)
 }
 
 int StdRandomRange(int range);
-#define STD_RANDOM_P2(pwr_of_2) (MOD_P2(rand(),(pwr_of_2)))
+#define STD_RANDOM_P2(pwr_of_2) (MOD_P2(wrand(),(pwr_of_2)))
 #define STD_RANDOM_RANGE(range) (StdRandomRange(range))
-#define STD_RANDOM() (rand())
+#define STD_RANDOM() (wrand())
 
 #if 0
 // TODO: PedanticMode
