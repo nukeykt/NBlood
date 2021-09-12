@@ -917,13 +917,15 @@ OperateSector(short sectnum, short player_is_operating)
 }
 
 int
-OperateWall(short wallnum, short player_is_operating)
+OperateWall(short /*wallnum*/, short /*player_is_operating*/)
 {
+#if 0
     WALLp wallp = &wall[wallnum];
 
     switch (LOW_TAG_WALL(wallnum))
     {
     }
+#endif
 
     return FALSE;
 }
@@ -1049,7 +1051,7 @@ SectorExp(short SpriteNum, short sectnum, short orig_ang, int zh)
 
     // setup vars needed by SectorExp
     changespritesect(SpriteNum, sectnum);
-    //setspritez(SpriteNum, (vec3_t *)sp);
+    //setspritez(SpriteNum, &sp->pos);
     getzsofslope(sp->sectnum, sp->x, sp->y, &u->hiz, &u->loz);
 
     // spawn explosion
@@ -1155,7 +1157,7 @@ DoSpawnSpotsForKill(short match)
             change_sprite_stat(sn, STAT_NO_STATE);
             u->ActorActionFunc = DoSpawnSpot;
             u->WaitTics = SP_TAG5(sp) * 15;
-            setspritez(sn, (vec3_t *)sp);
+            setspritez(sn, &sp->pos);
             // setting for Killed
             u->LastDamage = 1;
         }
@@ -1192,14 +1194,12 @@ DoSpawnSpotsForDamage(short match)
 }
 
 void
-DoSoundSpotMatch(short match, short sound_num, short sound_type)
+DoSoundSpotMatch(short match, short sound_num, short /*sound_type*/)
 {
     short sn, next_sn;
     SPRITEp sp;
     int flags;
     short snd2play;
-
-    //sound_type is not used
 
     sound_num--;
 
@@ -3046,9 +3046,9 @@ AnimSetVelAdj(short anim_ndx, short vel_adj)
 }
 
 
+#if 0
 void initlava(void)
 {
-#if 0
     int x, y, z, r;
     int i;
 
@@ -3094,12 +3094,10 @@ void initlava(void)
 
     lavanumdrops = 0;
     lavanumframes = 0;
-#endif
 }
 
 void movelava(char *dapic)
 {
-#if 0
 //    #define COLOR_OFFSET 192
 #define COLOR_OFFSET LT_BROWN
 
@@ -3207,8 +3205,8 @@ void movelava(char *dapic)
     }
 
     lavanumframes++;
-#endif
 }
+#endif
 
 
 void

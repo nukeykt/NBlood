@@ -37,7 +37,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 //#if DEBUG
 void
-PokeStringMono(uint8_t Attr, uint8_t* String)
+PokeStringMono(uint8_t /*Attr*/, uint8_t* String)
 {
     fprintf(stderr,"MONO: %s\n",String);
 #if 0

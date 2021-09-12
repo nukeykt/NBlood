@@ -788,7 +788,7 @@ void LockSound(int num)
     }
 }
 
-SWBOOL CacheSound(int num, int type)
+SWBOOL CacheSound(int num, int /*type*/)
 {
     VOC_INFOp vp = &voc[num];
 

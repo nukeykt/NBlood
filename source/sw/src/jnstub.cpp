@@ -3785,9 +3785,8 @@ dsprintf(char *str, char *format, ...)
 }
 
 void
-dsprintf_null(char *str, const char *format, ...)
+dsprintf_null(char * /*str*/, const char * /*format*/, ...)
 {
-    va_list arglist;
 }
 
 

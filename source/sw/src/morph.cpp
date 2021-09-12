@@ -76,12 +76,6 @@ DoSectorObjectSetScale(short match)
                     if (sop->scale_speed > 0)
                         sop->scale_speed = -sop->scale_speed;
                 }
-                else if (sop->scale_dist == sop->scale_dist_min)
-                {
-                    // make it positive
-                    if (sop->scale_speed < 0)
-                        sop->scale_speed = -sop->scale_speed;
-                }
                 else
                 {
                     // make it positive

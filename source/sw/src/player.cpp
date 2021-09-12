@@ -1133,7 +1133,7 @@ SetVisNorm(void)
     return 0;
 }
 
-void pSetVisNorm(PANEL_SPRITEp psp)
+void pSetVisNorm(PANEL_SPRITEp /*psp*/)
 {
 //    SetVisNorm();
 }
@@ -1401,7 +1401,7 @@ DoSpawnTeleporterEffect(SPRITEp sp)
 
     ep = &sprite[effect];
 
-    setspritez(effect, (vec3_t *)ep);
+    setspritez(effect, &ep->pos);
 
     ep->shade = -40;
     ep->xrepeat = ep->yrepeat = 42;
@@ -1425,7 +1425,7 @@ DoSpawnTeleporterEffectPlace(SPRITEp sp)
 
     ep = &sprite[effect];
 
-    setspritez(effect, (vec3_t *)ep);
+    setspritez(effect, &ep->pos);
 
     ep->shade = -40;
     ep->xrepeat = ep->yrepeat = 42;
@@ -2409,7 +2409,7 @@ DoPlayerSlide(PLAYERp pp)
     if (labs(pp->slide_xvect) < 12800 && labs(pp->slide_yvect) < 12800)
         pp->slide_xvect = pp->slide_yvect = 0;
 
-    push_ret = pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    push_ret = pushmove(&pp->pos, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     if (push_ret < 0)
     {
         if (!TEST(pp->Flags, PF_DEAD))
@@ -2422,9 +2422,9 @@ DoPlayerSlide(PLAYERp pp)
         }
         return;
     }
-    clipmove((vec3_t *)pp, &pp->cursectnum, pp->slide_xvect, pp->slide_yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    clipmove(&pp->pos, &pp->cursectnum, pp->slide_xvect, pp->slide_yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     PlayerCheckValidMove(pp);
-    push_ret = pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    push_ret = pushmove(&pp->pos, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     if (push_ret < 0)
     {
         if (!TEST(pp->Flags, PF_DEAD))
@@ -2744,7 +2744,7 @@ DoPlayerMove(PLAYERp pp)
     }
     else
     {
-        push_ret = pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist - Z(16), CLIPMASK_PLAYER);
+        push_ret = pushmove(&pp->pos, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist - Z(16), CLIPMASK_PLAYER);
 
         if (push_ret < 0)
         {
@@ -2767,11 +2767,11 @@ DoPlayerMove(PLAYERp pp)
         save_cstat = pp->SpriteP->cstat;
         RESET(pp->SpriteP->cstat, CSTAT_SPRITE_BLOCK);
         COVERupdatesector(pp->posx, pp->posy, &pp->cursectnum);
-        clipmove((vec3_t *)pp, &pp->cursectnum, pp->xvect, pp->yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+        clipmove(&pp->pos, &pp->cursectnum, pp->xvect, pp->yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
         pp->SpriteP->cstat = save_cstat;
         PlayerCheckValidMove(pp);
 
-        push_ret = pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist - Z(16), CLIPMASK_PLAYER);
+        push_ret = pushmove(&pp->pos, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist - Z(16), CLIPMASK_PLAYER);
         if (push_ret < 0)
         {
 
@@ -5592,7 +5592,7 @@ DoPlayerCurrent(PLAYERp pp)
     xvect = sectu->speed * synctics * (int) sintable[NORM_ANGLE(sectu->ang + 512)] >> 4;
     yvect = sectu->speed * synctics * (int) sintable[sectu->ang] >> 4;
 
-    push_ret = pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    push_ret = pushmove(&pp->pos, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     if (push_ret < 0)
     {
         if (!TEST(pp->Flags, PF_DEAD))
@@ -5607,9 +5607,9 @@ DoPlayerCurrent(PLAYERp pp)
         }
         return;
     }
-    clipmove((vec3_t *)pp, &pp->cursectnum, xvect, yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    clipmove(&pp->pos, &pp->cursectnum, xvect, yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     PlayerCheckValidMove(pp);
-    pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    pushmove(&pp->pos, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     if (push_ret < 0)
     {
         if (!TEST(pp->Flags, PF_DEAD))
@@ -7717,8 +7717,6 @@ MoveSkipSavePos(void)
 
 void PlayerTimers(PLAYERp pp)
 {
-    SPRITEp sp = pp->SpriteP;
-
     InventoryTimer(pp);
 }
 
@@ -8009,12 +8007,10 @@ domovethings(void)
     UpdateConMessages();    // Update the console messages
 
 #if SYNC_TEST
+#ifndef DEBUG                            // in DEBUG mode even TEN does sync all the time
     if (/* CTW REMOVED !gTenActivated ||*/ !(movefifoplc & 0x3f))
-        getsyncstat();
-#ifdef DEBUG                            // in DEBUG mode even TEN does sync all the time
-    else
-        getsyncstat();
 #endif
+        getsyncstat();
 #endif
 
     // count the number of times this loop is called and use

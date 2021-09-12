@@ -652,7 +652,9 @@ static MenuEntry_t ME_SCREENSETUP_CROSSHAIRSIZE = MAKE_MENUENTRY( s_Scale, &MF_R
 
 static int32_t vpsize;
 static MenuRangeInt32_t MEO_SCREENSETUP_SCREENSIZE = MAKE_MENURANGE( &vpsize, &MF_Redfont, 0, 0, 0, 1, EnforceIntervals );
+#ifdef USE_OPENGL
 static MenuOption_t MEO_SCREENSETUP_SCREENSIZE_TWO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &vpsize );
+#endif
 static MenuEntry_t ME_SCREENSETUP_SCREENSIZE = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_SCREENSIZE, RangeInt32 );
 static MenuRangeInt32_t MEO_SCREENSETUP_TEXTSIZE = MAKE_MENURANGE( &ud.textscale, &MF_Redfont, 100, 400, 0, 16, 2 );
 static MenuEntry_t ME_SCREENSETUP_TEXTSIZE = MAKE_MENUENTRY( s_Scale, &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SCREENSETUP_TEXTSIZE, RangeInt32 );
@@ -4450,19 +4452,19 @@ MenuAnimation_t m_animation;
 
 int32_t Menu_Anim_SinOutRight(MenuAnimation_t *animdata)
 {
-    return sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] - 16384;
+    return sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] - 16384;
 }
 int32_t Menu_Anim_SinInRight(MenuAnimation_t *animdata)
 {
-    return sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] + 16384;
+    return sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] + 16384;
 }
 int32_t Menu_Anim_SinOutLeft(MenuAnimation_t *animdata)
 {
-    return -sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] + 16384;
+    return -sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] + 16384;
 }
 int32_t Menu_Anim_SinInLeft(MenuAnimation_t *animdata)
 {
-    return -sintable[divscale10(timer120() - animdata->start, animdata->length) + 512] - 16384;
+    return -sintable[divscale10(timerGetTicks() - animdata->start, animdata->length) + 512] - 16384;
 }
 
 void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
@@ -4485,8 +4487,8 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
             {
                 m_animation.out    = Menu_Anim_SinOutRight;
                 m_animation.in     = Menu_Anim_SinInRight;
-                m_animation.start  = timer120();
-                m_animation.length = 30;
+                m_animation.start  = timerGetTicks();
+                m_animation.length = 250;
 
                 m_animation.previous = previousMenu;
                 m_animation.current  = m_currentMenu;
@@ -4502,8 +4504,8 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
             {
                 m_animation.out    = Menu_Anim_SinOutLeft;
                 m_animation.in     = Menu_Anim_SinInLeft;
-                m_animation.start  = timer120();
-                m_animation.length = 30;
+                m_animation.start  = timerGetTicks();
+                m_animation.length = 250;
 
                 m_animation.previous = previousMenu;
                 m_animation.current  = m_currentMenu;
@@ -4590,27 +4592,38 @@ static void Menu_ReadSaveGameHeaders()
     // lexicographical sorting?
 }
 
-static void Menu_CheckHiddenSelection(Menu_t* m)
+static inline int Menu_IsEntryActive(MenuEntry_t const * pEntry)
+{
+    return pEntry != nullptr && !(pEntry->flags & MEF_Hidden) && pEntry->type != Spacer;
+}
+
+static void Menu_ValidateSelectionIsActive(Menu_t* m)
 {
     auto const menu = (MenuMenu_t *)m->object;
+    MenuEntry_t ** const entrylist = menu->entrylist;
+    int32_t const currentEntry = menu->currentEntry;
 
-    while (!menu->entrylist[menu->currentEntry] ||
-        (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
-        ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
+    for (int32_t i = currentEntry; i >= 0; --i)
     {
-        if (--menu->currentEntry < 0)
+        if (Menu_IsEntryActive(entrylist[i]))
         {
-            menu->currentEntry = 0;
-
-            while (!menu->entrylist[menu->currentEntry] ||
-                (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
-                ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
-            {
-                if (++menu->currentEntry >= menu->numEntries)
-                    G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
-            }
+            menu->currentEntry = i;
+            return;
         }
     }
+
+    int32_t const numEntries = menu->numEntries;
+
+    for (int32_t i = currentEntry + 1; i < numEntries; ++i)
+    {
+        if (Menu_IsEntryActive(entrylist[i]))
+        {
+            menu->currentEntry = i;
+            return;
+        }
+    }
+
+    G_GameExit("Menu_ValidateSelectionIsActive: menu has no active entries!");
 }
 
 static void Menu_AboutToStartDisplaying(Menu_t * m)
@@ -4775,7 +4788,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         if (menu->currentEntry >= menu->numEntries)
             menu->currentEntry = 0;
 
-        Menu_CheckHiddenSelection(m);
+        Menu_ValidateSelectionIsActive(m);
 
         Menu_EntryFocus(/*currentry*/);
         break;
@@ -6353,7 +6366,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
 
         case Menu:
         {
-            Menu_CheckHiddenSelection(cm);
+            Menu_ValidateSelectionIsActive(cm);
 
             int32_t state;
 
@@ -6436,9 +6449,7 @@ static MenuEntry_t *Menu_RunInput_Menu_Movement(MenuMenu_t *menu, MenuMovement_t
                     if (menu->currentEntry < 0)
                         return Menu_RunInput_Menu_Movement(menu, MM_End);
                 }
-                while (!menu->entrylist[menu->currentEntry] ||
-                       (menu->entrylist[menu->currentEntry]->flags & MEF_Hidden) ||
-                       menu->entrylist[menu->currentEntry]->type == Spacer);
+                while (!Menu_IsEntryActive(menu->entrylist[menu->currentEntry]));
             break;
 
         case MM_Home:
@@ -6451,9 +6462,7 @@ static MenuEntry_t *Menu_RunInput_Menu_Movement(MenuMenu_t *menu, MenuMovement_t
                     if (menu->currentEntry >= menu->numEntries)
                         return Menu_RunInput_Menu_Movement(menu, MM_Home);
                 }
-                while (!menu->entrylist[menu->currentEntry] ||
-                       (menu->entrylist[menu->currentEntry]->flags & MEF_Hidden) ||
-                       menu->entrylist[menu->currentEntry]->type == Spacer);
+                while (!Menu_IsEntryActive(menu->entrylist[menu->currentEntry]));
             break;
 
         case MM_Swap:
@@ -7549,7 +7558,7 @@ void M_DisplayMenus(void)
     }
 
     // Determine animation values.
-    if (timer120() < m_animation.start + m_animation.length)
+    if (timerGetTicks() < m_animation.start + m_animation.length)
     {
         const int32_t screenwidth = scale(240<<16, xdim, ydim);
 
@@ -7591,7 +7600,7 @@ void M_DisplayMenus(void)
         videoFadeToBlack(1);
 
     // Display the menu, with a transition animation if applicable.
-    if (timer120() < m_animation.start + m_animation.length)
+    if (timerGetTicks() < m_animation.start + m_animation.length)
     {
         Menu_Run(m_animation.previous, previousOrigin);
         Menu_Run(m_animation.current, origin);
@@ -7617,7 +7626,7 @@ void M_DisplayMenus(void)
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENUREST, g_player[screenpeek].ps->i, screenpeek, m_parentMenu->menuID);
     }
 
-    if (timer120() < m_animation.start + m_animation.length)
+    if (timerGetTicks() < m_animation.start + m_animation.length)
     {
         ud.returnvar[0] = previousOrigin.x;
         ud.returnvar[1] = previousOrigin.y;

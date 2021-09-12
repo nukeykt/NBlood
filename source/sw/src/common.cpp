@@ -1,5 +1,6 @@
 
 #include "build.h"
+#include "baselayer.h"
 
 #ifdef _WIN32
 # include "windows_inc.h"

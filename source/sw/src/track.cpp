@@ -783,8 +783,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
         if (pp->posx > xlow && pp->posx < xhigh && pp->posy > ylow && pp->posy < yhigh)
         {
             pp->RevolveQ16Ang = pp->q16ang;
-            pp->RevolveX = pp->posx;
-            pp->RevolveY = pp->posy;
+            pp->RevolvePos = pp->pos.vec2;
             pp->RevolveDeltaAng = 0;
             SET(pp->Flags, PF_PLAYER_RIDING);
 
@@ -1619,8 +1618,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         SET(pp->Flags, PF_PLAYER_RIDING);
 
         pp->RevolveQ16Ang = pp->q16ang;
-        pp->RevolveX = pp->posx;
-        pp->RevolveY = pp->posy;
+        pp->RevolvePos = pp->pos.vec2;
 
         // set the delta angle to 0 when moving
         pp->RevolveDeltaAng = 0;
@@ -1643,8 +1641,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         // moving then you
         // know where he was last
         pp->RevolveQ16Ang = pp->q16ang;
-        pp->RevolveX = pp->posx;
-        pp->RevolveY = pp->posy;
+        pp->RevolvePos = pp->pos.vec2;
 
         // set the delta angle to 0 when moving
         pp->RevolveDeltaAng = 0;
@@ -1654,8 +1651,8 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         // Player is NOT moving
 
         // Move saved x&y variables
-        pp->RevolveX += BOUND_4PIX(nx);
-        pp->RevolveY += BOUND_4PIX(ny);
+        pp->RevolvePos.x += BOUND_4PIX(nx);
+        pp->RevolvePos.y += BOUND_4PIX(ny);
 
         // Last known angle is now adjusted by the delta angle
         pp->RevolveQ16Ang = NORM_Q16ANGLE(pp->q16ang - fix16_from_int(pp->RevolveDeltaAng));
@@ -1664,7 +1661,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
     // increment Players delta angle
     pp->RevolveDeltaAng = NORM_ANGLE(pp->RevolveDeltaAng + GlobSpeedSO);
 
-    rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&pp->RevolveX, pp->RevolveDeltaAng, (vec2_t *)&pp->posx);
+    rotatepoint(sop->mid.vec2, pp->RevolvePos, pp->RevolveDeltaAng, &pp->pos.vec2);
 
     // THIS WAS CAUSING PROLEMS!!!!
     // Sectors are still being manipulated so you can end up in a void (-1) sector
@@ -1749,7 +1746,7 @@ MovePoints(SECTOR_OBJECTp sop, short delta_ang, int nx, int ny)
             if (TEST(wp->extra, WALLFX_LOOP_SPIN_4X))
                 rot_ang = NORM_ANGLE(rot_ang * 4);
 
-            rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&wp->x, rot_ang, &rxy);
+            rotatepoint(sop->mid.vec2, wp->pos, rot_ang, &rxy);
 
             if (wp->extra && TEST(wp->extra, WALLFX_LOOP_OUTER))
             {
@@ -1862,12 +1859,12 @@ PlayerPart:
 
             if (TEST(wall[sector[sp->sectnum].wallptr].extra, WALLFX_LOOP_REVERSE_SPIN))
             {
-                rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&sp->x, -delta_ang, (vec2_t *)&sp->x);
+                rotatepoint(sop->mid.vec2, sp->pos.vec2, -delta_ang, &sp->pos.vec2);
                 sp->ang = NORM_ANGLE(sp->ang - delta_ang);
             }
             else
             {
-                rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&sp->x, delta_ang, (vec2_t *)&sp->x);
+                rotatepoint(sop->mid.vec2, sp->pos.vec2, delta_ang, &sp->pos.vec2);
                 sp->ang = NORM_ANGLE(sp->ang + delta_ang);
             }
 
@@ -1877,14 +1874,14 @@ PlayerPart:
             if (!TEST(sop->flags, SOBJ_DONT_ROTATE))
             {
                 // NOT part of a sector - independant of any sector
-                rotatepoint(*(vec2_t *)&sop->xmid, *(vec2_t *)&sp->x, delta_ang, (vec2_t *)&sp->x);
+                rotatepoint(sop->mid.vec2, sp->pos.vec2, delta_ang, &sp->pos.vec2);
                 sp->ang = NORM_ANGLE(sp->ang + delta_ang);
             }
 
             // Does not necessarily move with the sector so must accout for
             // moving across sectors
             if (sop->xmid < MAXSO) // special case for operating SO's
-                setspritez(sop->sp_num[i], (vec3_t *)sp);
+                setspritez(sop->sp_num[i], &sp->pos);
         }
 
         u->oangdiff += GetDeltaAngle(sp->ang, oldang);
@@ -2062,7 +2059,7 @@ void UpdateSectorObjectSprites(SECTOR_OBJECTp sop)
     {
         sp = &sprite[sop->sp_num[i]];
 
-        setspritez(sop->sp_num[i], (vec3_t *)sp);
+        setspritez(sop->sp_num[i], &sp->pos);
     }
 }
 
@@ -2235,7 +2232,9 @@ void CallbackSOsink(ANIMp ap, void *data)
     short dest_sector = -1;
     short src_sector = -1;
     short i, nexti, ndx;
+#if ASSERT_ACTIVE
     char found = FALSE;
+#endif
     int tgt_depth;
 
     sop = (SECTOR_OBJECTp)data;
@@ -2291,7 +2290,9 @@ void CallbackSOsink(ANIMp ap, void *data)
             ndx = AnimSet((int *)&su->depth_fract, tgt_depth<<16, (ap->vel<<8)>>8);
             AnimSetVelAdj(ndx, ap->vel_adj);
 
+#if ASSERT_ACTIVE
             found = TRUE;
+#endif
             break;
         }
     }
@@ -2308,7 +2309,9 @@ void CallbackSOsink(ANIMp ap, void *data)
                 // in a more precise way
                 ndx = AnimSet((int *)&su->depth_fract, tgt_depth<<16, (ap->vel<<8)>>8);
                 AnimSetVelAdj(ndx, ap->vel_adj);
+#if ASSERT_ACTIVE
                 found = TRUE;
+#endif
                 break;
             }
         }

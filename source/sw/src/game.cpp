@@ -349,11 +349,6 @@ void DebugWriteLoc(char *fname, int line)
     fflush(debug_fout);
 }
 
-void Mono_Print(char *str)
-{
-    MONO_PRINT(str);
-}
-
 
 extern SWBOOL DrawScreen;
 #if RANDOM_DEBUG
@@ -691,7 +686,7 @@ void
 LoadLevel(const char *filename)
 {
     int16_t ang;
-    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &ang, &Player[0].cursectnum) == -1)
+    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, &Player[0].pos, &ang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
 #if 1 /* defined RENDERTYPEWIN */
@@ -1502,7 +1497,9 @@ InitLevel(void)
     PlaceActorsOnTracks();
     PostSetupSectorObject();
     SetupMirrorTiles();
+#if 0
     initlava();
+#endif
 
     SongLevelNum = Level;
 
@@ -2972,9 +2969,8 @@ dsprintf(char *str, char *format, ...)
 }
 
 void
-dsprintf_null(char *str, const char *format, ...)
+dsprintf_null(char * /*str*/, const char * /*format*/, ...)
 {
-    va_list arglist;
 }
 
 void getinput(SW_PACKET *, SWBOOL);
@@ -3344,7 +3340,7 @@ int DetectShareware(void)
 }
 
 
-void CommandLineHelp(char const * const * argv)
+void CommandLineHelp(char const * const * /*argv*/)
 {
     int i;
 #if 1 /* defined RENDERTYPEWIN */

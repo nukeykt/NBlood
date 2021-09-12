@@ -100,6 +100,11 @@ char  RTSName[MAXRTSNAMELENGTH];
 static int32_t scripthandle = -1;
 
 
+// stubs to avoid clobbering the user's settings
+#ifndef USE_OPENGL
+static int32_t gltexfiltermode, glanisotropy, glusetexcompr;
+#endif
+
 
 /*
 ===================
@@ -695,6 +700,7 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenMode",ud_setup.ScreenMode,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenBPP",ud_setup.ScreenBPP,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "MaxRefreshFreq",maxrefreshfreq,FALSE,FALSE);
+
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLTextureMode",gltexfiltermode,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLAnisotropy",glanisotropy,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLUseTextureCompr",glusetexcompr,FALSE,FALSE);

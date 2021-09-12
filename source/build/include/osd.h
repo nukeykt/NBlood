@@ -128,6 +128,8 @@ typedef struct
     int32_t pos;       // position next character will be written at
     int32_t lines;     // total number of lines in buffer
     int32_t maxlines;  // max lines in buffer
+
+    int32_t useclipboard;
 } osdtext_t;
 
 // history display
@@ -259,6 +261,8 @@ void OSD_CaptureKey(uint8_t scanCode);
 int OSD_HandleScanCode(uint8_t scanCode, int keyDown);
 int OSD_HandleChar(char ch);
 void OSD_HandleWheel(void);
+void OSD_HandleClipboard(char* const text);
+
 // handles the readjustment when screen resolution changes
 void OSD_ResizeDisplay(int w,int h);
 

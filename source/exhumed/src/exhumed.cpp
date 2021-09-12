@@ -799,7 +799,7 @@ void bail2dos(const char *fmt, ...)
     setvmode(3);
 #endif
 
-    initprintf("bailed to dos\n");
+    initputs("bailed to dos\n");
 
     va_list args;
     va_start(args, fmt);
@@ -808,7 +808,7 @@ void bail2dos(const char *fmt, ...)
 
     va_end(args);
 
-    initprintf(buf);
+    initputs(buf);
 
     if (*buf != 0)
     {

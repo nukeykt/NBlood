@@ -1305,7 +1305,6 @@ void scaleDamage(XSPRITE* pXSprite) {
                 case kThingPodFireBall:
                 case kThingNapalmBall:
                     curScale[kDmgBurn] = 32;
-                    curScale[kDmgExplode] -= 32;
                     break;
                 case kMissileLifeLeechRegular:
                     curScale[kDmgBurn] = 60 + Random(4);
@@ -1319,7 +1318,7 @@ void scaleDamage(XSPRITE* pXSprite) {
                 case kMissileFireballCerberus:
                 case kMissileFireballTchernobog:
                     curScale[kDmgBurn] = 50;
-                    curScale[kDmgExplode] = 32;
+                    curScale[kDmgExplode] -= 32;
                     curScale[kDmgFall] = 65 + Random(15);
                     break;
                 case kThingTNTBarrel:
@@ -1329,7 +1328,7 @@ void scaleDamage(XSPRITE* pXSprite) {
                 case kThingArmedTNTStick:
                 case kModernThingTNTProx:
                     curScale[kDmgBurn] -= 32;
-                    curScale[kDmgExplode] = 32;
+                    curScale[kDmgExplode] -= 32;
                     curScale[kDmgFall] = 65 + Random(15);
                     break;
                 case kMissileTeslaAlt:
@@ -1958,7 +1957,7 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
     
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
     GENDUDEEXTRA* pExtra = &gGenDudeExtra[pSprite->index]; pExtra->updReq[propId] = false;
-    
+
     switch (propId) {
         case kGenDudePropertyAll:
         case kGenDudePropertyInitVals:
@@ -2044,11 +2043,14 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
                         } else if ((i - seqStartId) == kGenDudeSeqAttackPunch) {
                             pExtra->forcePunch = true; // required for those who don't have fire trigger in punch seq and for default animation
                             Seq* pSeq = NULL; DICTNODE* hSeq = gSysRes.Lookup(i, "SEQ");
-                            pSeq = (Seq*)gSysRes.Load(hSeq);
-                            for (int i = 0; i < pSeq->nFrames; i++) {
-                                if (!pSeq->frames[i].at5_5) continue;
-                                pExtra->forcePunch = false;
-                                break;
+                            if (hSeq) {
+                                
+                                pSeq = (Seq*)gSysRes.Load(hSeq);
+                                for (int i = 0; i < pSeq->nFrames; i++) {
+                                    if (!pSeq->frames[i].at5_5) continue;
+                                    pExtra->forcePunch = false;
+                                    break;
+                                }
                             }
                         }
                         break;
@@ -2068,7 +2070,7 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
                         bool oldStatus = pExtra->canWalk;
                         pExtra->canWalk = gSysRes.Lookup(i, "SEQ");
                         if (oldStatus != pExtra->canWalk) {
-                            if (!spriRangeIsFine(pXSprite->target)) {
+                            if (pXSprite->target <= 0 || pXSprite->target >= kMaxSprites) {
                                 if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeIdleW);
                                 else aiGenDudeNewState(pSprite, &genDudeIdleL);
                             } else if (pExtra->canWalk) {

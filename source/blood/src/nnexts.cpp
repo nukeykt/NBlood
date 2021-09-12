@@ -3247,7 +3247,7 @@ void condError(XSPRITE* pXCond, const char* pzFormat, ...) {
     char buffer[256]; char buffer2[512]; char condType[32] = "Unknown";
     for (int i = 0; i < 7; i++) {
         if (pXCond->data1 < gCondTypeNames[i].rng1 || pXCond->data1 >= gCondTypeNames[i].rng2) continue;
-        Bsprintf(condType, gCondTypeNames[i].name);
+        Bstrcpy(condType, gCondTypeNames[i].name);
         Bstrupr(condType);
         break;
     }
@@ -3924,7 +3924,7 @@ bool condCheckSprite(XSPRITE* pXCond, int cmpOp, bool PUSH) {
                     var = HitScan(pSpr, pPlayer->zWeapon, pPlayer->aim.dx, pPlayer->aim.dy, pPlayer->aim.dz, arg1, arg3 << 1);
                 else if (IsDudeSprite(pSpr))
                     var = HitScan(pSpr, pSpr->z, Cos(pSpr->ang) >> 16, Sin(pSpr->ang) >> 16, gDudeSlope[pSpr->extra], arg1, arg3 << 1);
-                else if (var2 & CSTAT_SPRITE_ALIGNMENT_FLOOR) {
+                else if ((var2 & CSTAT_SPRITE_ALIGNMENT_FLOOR) == CSTAT_SPRITE_ALIGNMENT_FLOOR) {
                     
                     var3 = (var2 & 0x0008) ? 0x10000 << 1 : -(0x10000 << 1);
                     var = HitScan(pSpr, pSpr->z, Cos(pSpr->ang) >> 16, Sin(pSpr->ang) >> 16, var3, arg1, arg3 << 1);

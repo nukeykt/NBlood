@@ -59,8 +59,10 @@ void _Assert(const char *expr, const char *strFile, unsigned uLine);
 
 #if DEBUG || defined DEBUGGINGAIDS
 #define ASSERT(f) PRODUCTION_ASSERT(f)
+#define ASSERT_ACTIVE 1
 #else
 #define ASSERT(f) do { } while (0)
+#define ASSERT_ACTIVE 0
 #endif
 
 #if DEBUG
@@ -1044,7 +1046,13 @@ typedef struct
 struct PLAYERstruct
 {
     // variable that fit in the sprite or user structure
-    int32_t posx, posy, posz;
+    union {
+        struct
+        {
+            int32_t posx, posy, posz;
+        };
+        vec3_t pos;
+    };
     // interpolation
     int
         oposx, oposy, oposz;
@@ -1106,7 +1114,7 @@ struct PLAYERstruct
     short recoil_horizoff;
 
     int oldposx,oldposy,oldposz;
-    int RevolveX, RevolveY;
+    vec2_t RevolvePos;
     short RevolveDeltaAng;
     fix16_t RevolveQ16Ang;
 
@@ -1936,8 +1944,16 @@ struct SECTOR_OBJECTstruct
 
     SPRITEp sp_child;  // child sprite that holds info for the sector object
 
-    int    xmid,ymid,zmid, // midpoints of the sector object
-           vel,            // velocity
+    // midpoints of the sector object
+    union {
+        struct
+        {
+            int32_t xmid, ymid, zmid;
+        };
+        vec3_t mid;
+    };
+
+    int    vel,            // velocity
            vel_tgt,        // target velocity
            player_xoff,    // player x offset from the xmid
            player_yoff,    // player y offset from the ymid

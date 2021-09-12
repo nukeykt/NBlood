@@ -55,17 +55,17 @@ short AttackOrRun = 200;
 #define CHOOSE2(value) (RANDOM_P2(1024) < (value))
 
 
-void DebugMoveHit(short SpriteNum)
+void DebugMoveHit(short /*SpriteNum*/)
 {
+#if 0
     SPRITEp sp;
     USERp u = User[SpriteNum];
 
-    return;
-
-    //if (u->ret == -1)
-    //    printf("Hit a ledge\n");
-    //else
-    /*
+#if 0
+    if (u->ret == -1)
+        printf("Hit a ledge\n");
+    else
+#endif
     switch (TEST(u->ret, HIT_MASK))
         {
         case HIT_SPRITE:
@@ -89,7 +89,7 @@ void DebugMoveHit(short SpriteNum)
         }
 
     MONO_PRINT(ds);
-    */
+#endif
 }
 
 
@@ -314,7 +314,7 @@ CanHitPlayer(short SpriteNum)
     SPRITEp sp = User[SpriteNum]->SpriteP, hp;
     hitdata_t hitinfo;
     int xvect,yvect,zvect;
-    short ang,ret=FALSE;
+    short ang;
     // if actor can still see the player
     int zhs, zhh;
 

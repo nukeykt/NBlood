@@ -1750,6 +1750,14 @@ void aiInitSprite(spritetype *pSprite)
     case kDudeTentacleFire:
         aiNewState(pSprite, pXSprite, &tentacleIdle);
         break;
+    #ifdef NOONE_EXTENSIONS
+    case kDudeModernCustom:
+    case kDudeModernCustomBurning:
+        if (!gModernMap) break;
+        aiGenDudeInitSprite(pSprite, pXSprite);
+        genDudePrepare(pSprite, kGenDudePropertyAll);
+        break;
+    #endif
     default:
         aiNewState(pSprite, pXSprite, &genIdle);
         break;
@@ -1800,11 +1808,6 @@ void aiInitSprite(spritetype *pSprite)
 
     #ifdef NOONE_EXTENSIONS
     if (gModernMap) {
-
-        if (pSprite->type == kDudeModernCustom) {
-            aiGenDudeInitSprite(pSprite, pXSprite);
-            genDudePrepare(pSprite, kGenDudePropertyAll);
-        }
 
         if (pXSprite->dudeFlag4) {
 
