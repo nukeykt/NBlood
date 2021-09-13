@@ -34,9 +34,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "trig.h"
 
-POINT2D earL, earR, earL0, earR0; // Ear position
-VECTOR2D earVL, earVR; // Ear velocity ?
-int lPhase, rPhase, lVol, rVol, lPitch, rPitch;
+static POINT2D earL, earR, earL0, earR0; // Ear position
+static VECTOR2D earVL, earVR; // Ear velocity
+static int lPhase, rPhase, lVol, rVol, lPitch, rPitch;
 
 BONKLE Bonkle[256];
 BONKLE *BonkleCache[256];
@@ -430,10 +430,10 @@ void sfxKillSpriteSounds(spritetype *pSprite)
 
 void sfxUpdate3DSounds(void)
 {
-    int dx = mulscale30(Cos(gMe->pSprite->ang + 512), 43);
     earL0 = earL;
-    int dy = mulscale30(Sin(gMe->pSprite->ang + 512), 43);
     earR0 = earR;
+    int dx = mulscale30(Cos(gMe->pSprite->ang + 512), 43);
+    int dy = mulscale30(Sin(gMe->pSprite->ang + 512), 43);
     earL.x = gMe->pSprite->x - dx;
     earL.y = gMe->pSprite->y - dy;
     earR.x = gMe->pSprite->x + dx;
