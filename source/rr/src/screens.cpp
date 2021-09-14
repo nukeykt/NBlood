@@ -2592,7 +2592,7 @@ void G_BonusScreen(int32_t bonusonly)
                         {
                             bonuscnt++;
                             S_PlaySound(RR ? 425 : SHOTGUN_COCK);
-                            switch (rand()&3)
+                            switch (wrand()&3)
                             {
                             case 0:
                                 S_PlaySound(BONUS_SPEECH1);
@@ -3186,7 +3186,7 @@ void G_BonusScreenRRRA(int32_t bonusonly)
                         {
                             bonuscnt++;
                             S_PlaySound(425);
-                            switch (rand()&3)
+                            switch (wrand()&3)
                             {
                             case 0:
                                 S_PlaySound(BONUS_SPEECH1);

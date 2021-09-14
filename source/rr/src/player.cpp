@@ -2607,7 +2607,7 @@ void P_DisplayWeapon(void)
                     weaponYOffset -= sintable[(*weaponFrame)<<7]>>12;
 
                     if (doAnim)
-                        weaponX += 1-(rand()&3);
+                        weaponX += 1-(wrand()&3);
                 }
 
                 switch (*weaponFrame)
@@ -2762,8 +2762,8 @@ void P_DisplayWeapon(void)
                 {
                     if (doAnim)
                     {
-                        weaponX += rand() & 3;
-                        weaponYOffset += (rand() & 3);
+                        weaponX += wrand() & 3;
+                        weaponYOffset += (wrand() & 3);
                     }
 
                     if (currentWeapon == GROW_WEAPON)
@@ -2863,7 +2863,7 @@ void P_DisplayWeapon(void)
                         weaponYOffset -= sintable[(*weaponFrame)<<7]>>12;
 
                     if (*weaponFrame > 0 && doAnim)
-                        weaponX += 1-(rand()&3);
+                        weaponX += 1-(wrand()&3);
 
                     if (*weaponFrame == 0)
                     {
@@ -2964,7 +2964,7 @@ void P_DisplayWeapon(void)
                     weaponYOffset -= sintable[(*weaponFrame)<<7]>>12;
 
                     if (doAnim)
-                        weaponX += 1-(rand()&3);
+                        weaponX += 1-(wrand()&3);
                 }
 
                 if (WW2GI)
@@ -3054,11 +3054,11 @@ void P_DisplayWeapon(void)
                 default:
                     if (*weaponFrame > 4 && *weaponFrame < 12)
                     {
-                        int randomOffset = doAnim ? rand()&7 : 0;
+                        int randomOffset = doAnim ? wrand()&7 : 0;
                         G_DrawWeaponTileWithID(currentWeapon << 2, randomOffset + weaponX - 4 + 140 - (pPlayer->look_ang >> 1),
                                                 randomOffset + weaponY - ((*weaponFrame) >> 1) + 208 - weaponYOffset,
                                                 CHAINGUN + 5 + ((*weaponFrame - 4) / 5), weaponShade, weaponBits, weaponPal);
-                        if (doAnim) randomOffset = rand()&7;
+                        if (doAnim) randomOffset = wrand()&7;
                         G_DrawWeaponTileWithID(currentWeapon << 2, randomOffset + weaponX - 4 + 184 - (pPlayer->look_ang >> 1),
                                                 randomOffset + weaponY - ((*weaponFrame) >> 1) + 208 - weaponYOffset,
                                                 CHAINGUN + 5 + ((*weaponFrame - 4) / 5), weaponShade, weaponBits, weaponPal);
@@ -3066,7 +3066,7 @@ void P_DisplayWeapon(void)
                 
                     if (*weaponFrame < 8)
                     {
-                        int const randomOffset = doAnim ? rand()&7 : 0;
+                        int const randomOffset = doAnim ? wrand()&7 : 0;
                         G_DrawWeaponTileWithID(currentWeapon << 2, randomOffset + weaponX - 4 + 162 - (pPlayer->look_ang >> 1),
                             randomOffset + weaponY - ((*weaponFrame) >> 1) + 208 - weaponYOffset,
                                                 CHAINGUN + 5 + ((*weaponFrame - 2) / 5), weaponShade, weaponBits, weaponPal);
@@ -3307,8 +3307,8 @@ void P_DisplayWeapon(void)
 
                     if (doAnim)
                     {
-                        weaponX += rand() & 3;
-                        weaponY += rand() & 3;
+                        weaponX += wrand() & 3;
+                        weaponY += wrand() & 3;
                     }
                     weaponYOffset -= 16;
                     G_DrawWeaponTileWithID(currentWeapon << 1, weaponX + 210 - (pPlayer->look_ang >> 1), weaponY + 261 - weaponYOffset,
@@ -3351,8 +3351,8 @@ void P_DisplayWeapon(void)
                         // the 'active' display.
                         if (doAnim)
                         {
-                            weaponX += rand() & 3;
-                            weaponYOffset += rand() & 3;
+                            weaponX += wrand() & 3;
+                            weaponYOffset += wrand() & 3;
                         }
 
                         int const totalTime = PWEAPON(screenpeek, pPlayer->curr_weapon, TotalTime);
@@ -3389,8 +3389,8 @@ void P_DisplayWeapon(void)
                 {
                     if (doAnim)
                     {
-                        weaponX += rand() & 3;
-                        weaponYOffset += (rand() & 3);
+                        weaponX += wrand() & 3;
+                        weaponYOffset += (wrand() & 3);
                     }
 
                     G_DrawWeaponTileUnfadedWithID(currentWeapon << 1, weaponX + 184 - halfLookAng, weaponY + 240 - weaponYOffset,
@@ -4950,7 +4950,7 @@ static int32_t P_DoCounters(int playerNum)
                 if (totalclock > 1024 && (!REALITY || (krand2()&3) == 0))
                     if (playerNum == screenpeek || GTFLAGS(GAMETYPE_COOPSOUND))
                     {
-                        if ((REALITY ? krand2() : rand())&1)
+                        if ((REALITY ? krand2() : wrand())&1)
                             A_PlaySound(REALITY ? 165 : DUKE_CRACK,pPlayer->i);
                         else A_PlaySound(REALITY ? 26 : DUKE_CRACK2,pPlayer->i);
                     }

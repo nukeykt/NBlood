@@ -5468,7 +5468,7 @@ void G_DoTorch(void)
 {
     int j;
     int startWall, endWall;
-    int randNum = rand()&8;
+    int randNum = wrand()&8;
     for (bsize_t i = 0; i < g_torchCnt; i++)
     {
         int shade = g_torchSectorShade[i] - randNum;
@@ -5799,7 +5799,7 @@ void G_Thunder(void)
                 {
                     g_thunderTime = 256;
                     g_thunderFlash = 1;
-                    S_PlaySound(351+(rand()%3));
+                    S_PlaySound(351+(wrand()%3));
                 }
             }
         }
@@ -5831,7 +5831,7 @@ void G_Thunder(void)
                 {
                     g_winderTime = 128;
                     g_winderFlash = 1;
-                    S_PlaySound(351+(rand()%3));
+                    S_PlaySound(351+(wrand()%3));
                 }
             }
         }

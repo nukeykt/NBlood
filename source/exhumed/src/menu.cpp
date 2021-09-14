@@ -346,10 +346,10 @@ void menu_DoPlasma()
         {
             int logoWidth = tilesiz[nLogoTile].x;
 #if 1
-            plasma_C[i] = (nSmokeLeft + rand() % logoWidth) << 16;
+            plasma_C[i] = (nSmokeLeft + wrand() % logoWidth) << 16;
             plasma_B[i] = (menu_RandomLong2() % 327680) + 0x10000;
 #else
-            int r = rand();
+            int r = wrand();
             int rand2 = menu_RandomLong2();
 
             __asm {
