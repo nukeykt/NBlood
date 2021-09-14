@@ -31,6 +31,7 @@
 #include "midifuncs.h"
 #include "multivoc.h"
 #include "osd.h"
+#include "winbits.h"
 
 #include <mmsystem.h>
 
@@ -714,28 +715,12 @@ static void CALLBACK midi_callback(HMIDIOUT out, UINT msg, DWORD_PTR dwInstance,
     WinMMDrv_MIDI_Unlock();
 }
 
-#pragma pack(push,8)
-typedef struct tagTHREADNAME_INFO
-{
-    DWORD dwType; /* must be 0x1000 */
-    LPCSTR szName; /* pointer to name (in user addr space) */
-    DWORD dwThreadID; /* thread ID (-1=caller thread) */
-    DWORD dwFlags; /* reserved for future use, must be zero */
-} THREADNAME_INFO;
-#pragma pack(pop)
-
 static DWORD WINAPI midiDataThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
-
 #ifndef NDEBUG
-    if (IsDebuggerPresent())
-    {
-        THREADNAME_INFO wtf = { 0x1000, "midiDataThread", (DWORD)-1, 0 };
-        RaiseException(0x406D1388, 0, sizeof(wtf) / sizeof(ULONG_PTR), (const ULONG_PTR*) &wtf);
-    }
+    debugThreadName("midiDataThread");
 #endif
-
     DWORD sleepAmount = 100 / MME_THREAD_QUEUE_INTERVAL;
 
     do

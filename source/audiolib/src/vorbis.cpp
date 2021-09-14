@@ -23,8 +23,12 @@
  * OggVorbis source support for MultiVoc
  */
 
-#include "compat.h"
 #include "_multivc.h"
+#include "compat.h"
+
+#ifdef _WIN32
+#include "winbits.h"
+#endif
 
 #ifdef HAVE_VORBIS
 
@@ -342,11 +346,11 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     int status = ov_open_callbacks((void *)vd, &vd->vf, 0, 0, vorbis_callbacks);
     vorbis_info *vi;
 
-    if (status < 0 || ((vi = ov_info(&vd->vf, 0)) == nullptr) || vi->channels < 1 || vi->channels > 2)
-    {
-        if (status == 0)
-            ov_clear(&vd->vf);
-        else
+        if (status < 0 || ((vi = ov_info(&vd->vf, 0)) == nullptr) || vi->channels < 1 || vi->channels > 2)
+        {
+            if (status == 0)
+                ov_clear(&vd->vf);
+            else
             MV_Printf("MV_PlayVorbis: err %d\n", status);
 
         ALIGNED_FREE_AND_NULL(voice->rawdataptr);
