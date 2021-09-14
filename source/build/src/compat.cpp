@@ -35,15 +35,15 @@
 
 static void (*g_MemErrHandler)(int32_t line, const char *file, const char *func);
 
-#ifdef DEBUGGINGAIDS
-const char *g_MemErrFunc = "???";
-const char *g_MemErrFile = "???";
-int32_t g_MemErrLine;
-#endif
 
 #ifdef __cplusplus
 extern "C"
 {
+#endif
+#ifdef DEBUGGINGAIDS
+const char *g_MemErrFunc = "???";
+const char *g_MemErrFile = "???";
+int32_t g_MemErrLine;
 #endif
 char *_xstrdup(const char *s) { return xstrdup(s); }
 void *_xmalloc(bsize_t const size) { return xmalloc(size); }
