@@ -203,7 +203,7 @@ void SF2Drv_MIDI_Service(void)
         int const nsamples = samples * MV_Channels;
 
         for (int j = 0; j < nsamples; j++)
-            *buffer16++ = clamp(Blrintf(fbuf[j] * fvolume), INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp((fbuf[j] * fvolume), INT16_MIN, INT16_MAX);
 
         if (MV_MIDIRenderTempo >= 0)
             MV_MIDIRenderTimer += MV_MIDIRenderTempo * samples;
