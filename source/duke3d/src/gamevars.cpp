@@ -125,8 +125,9 @@ static int Gv_SkipLZ4Block(buildvfs_kfd kFile, size_t const size)
 
 int Gv_ReadSave(buildvfs_kfd kFile)
 {
+#ifndef NDEBUG
     auto const startofs = ktell(kFile);
-
+#endif
     int32_t savedVarCount;
     A_(!kread_and_test(kFile, &savedVarCount, sizeof(savedVarCount)));
 
@@ -332,7 +333,9 @@ int Gv_ReadSave(buildvfs_kfd kFile)
     A_(!kread_and_test(kFile, buf, Bstrlen(s_EOF)));
     A_(!Bmemcmp(buf, s_EOF, Bstrlen(s_EOF)));
 
+#ifndef NDEBUG
     OSD_Printf("Gv_ReadSave(): read %d bytes extended data from offset 0x%08x\n", ktell(kFile) - startofs, startofs);
+#endif
 
     Xfree(varlabels);
     Xfree(arrlabels);
@@ -346,8 +349,9 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
 void Gv_WriteSave(buildvfs_FILE fil)
 {
+#ifndef NDEBUG
     int const startofs = buildvfs_ftell(fil);
-
+#endif
     int32_t savedVarCount = 0;
     for (native_t i = 0; i < g_gameVarCount; i++)
     {
@@ -545,7 +549,9 @@ void Gv_WriteSave(buildvfs_FILE fil)
     }
 
     buildvfs_fwrite(s_EOF, Bstrlen(s_EOF), 1, fil);
+#ifndef NDEBUG
     OSD_Printf("Gv_WriteSave(): wrote %d bytes extended data at offset 0x%08x\n", (int)buildvfs_ftell(fil) - startofs, startofs);
+#endif
     Xfree(varlabels);
     Xfree(arrlabels);
 }
