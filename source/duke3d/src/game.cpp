@@ -5272,6 +5272,91 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
     }
 }
 
+static const tokenlist newGameTokens[] =
+{
+    { "choice",        T_CHOICE },
+};
+static const tokenlist newGameChoiceTokens[] =
+{
+    { "name",          T_NAME },
+    { "locked",        T_LOCKED },
+    { "hidden",        T_HIDDEN },
+    { "choice",        T_CHOICE },
+    { "usercontent",   T_USERCONTENT },
+};
+
+static int newgamesubchoice_recursive(scriptfile *pScript, MenuGameplayEntry entry)
+{
+
+    char * subChoicePtr = pScript->ltextptr;
+    char * subChoiceEnd;
+    int32_t subChoiceID;
+    if (scriptfile_getsymbol(pScript,&subChoiceID))
+        return -1;
+    if (scriptfile_getbraces(pScript,&subChoiceEnd))
+        return -1;
+
+    if ((unsigned)subChoiceID >= MAXMENUGAMEPLAYENTRIES)
+    {
+        initprintf("Error: Maximum subchoices exceeded near line %s:%d\n",
+            pScript->filename, scriptfile_getlinum(pScript, subChoicePtr));
+        pScript->textptr = subChoiceEnd+1;
+        return -1;
+    }
+
+    MenuGameplayEntry & subentry = entry.subentries[subChoiceID];
+    subentry = MenuGameplayEntry{};
+    subentry.subentries = (MenuGameplayEntry *) Xcalloc(MAXMENUGAMEPLAYENTRIES, sizeof(MenuGameplayEntry));
+
+    while (pScript->textptr < subChoiceEnd)
+    {
+        switch (getatoken(pScript, newGameChoiceTokens, ARRAY_SIZE(newGameChoiceTokens)))
+        {
+            case T_CHOICE:
+            {
+                newgamesubchoice_recursive(pScript,subentry);
+                break;
+            }
+            case T_NAME:
+            {
+                char *name = NULL;
+                if (scriptfile_getstring(pScript, &name))
+                    break;
+
+                memset(subentry.name, 0, ARRAY_SIZE(subentry.name));
+                strncpy(subentry.name, name, ARRAY_SIZE(subentry.name)-1);
+                break;
+            }
+            case T_LOCKED:
+            {
+                subentry.flags |= MGE_Locked;
+                break;
+            }
+            case T_HIDDEN:
+            {
+                subentry.flags |= MGE_Hidden;
+                break;
+            }
+            case T_USERCONTENT:
+            {
+                subentry.flags |= MGE_UserContent;
+                break;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static void newgamechoices_recursive_free(MenuGameplayEntry* parent)
+{
+    MenuGameplayEntry* entries = parent->subentries;
+    for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
+        if (entries[i].subentries)
+            newgamechoices_recursive_free(&entries[i]);
+    DO_FREE_AND_NULL(parent->subentries);
+}
+
 static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 {
     int   token;
@@ -5318,25 +5403,6 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "forcefilter",   T_FORCEFILTER },
         { "forcenofilter", T_FORCENOFILTER },
         { "texturefilter", T_TEXTUREFILTER },
-    };
-
-    static const tokenlist newGameTokens[] =
-    {
-        { "choice",        T_CHOICE },
-    };
-    static const tokenlist newGameChoiceTokens[] =
-    {
-        { "name",          T_NAME },
-        { "locked",        T_LOCKED },
-        { "hidden",        T_HIDDEN },
-        { "choice",        T_CHOICE },
-        { "usercontent",   T_USERCONTENT },
-    };
-    static const tokenlist newGameSubchoiceTokens[] =
-    {
-        { "name",          T_NAME },
-        { "locked",        T_LOCKED },
-        { "hidden",        T_HIDDEN },
     };
 
     do
@@ -5627,9 +5693,12 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                             break;
                         }
 
-                        MenuGameplayStemEntry & stem = g_MenuGameplayEntries[choiceID];
-                        stem = MenuGameplayStemEntry{};
-                        MenuGameplayEntry & entry = stem.entry;
+                        MenuGameplayEntry & entry = g_MenuGameplayEntries[choiceID];
+                        if (entry.subentries)
+                            newgamechoices_recursive_free(&entry);
+
+                        entry = MenuGameplayEntry{};
+                        entry.subentries = (MenuGameplayEntry *) Xcalloc(MAXMENUGAMEPLAYENTRIES, sizeof(MenuGameplayEntry));
 
                         while (pScript->textptr < choiceEnd)
                         {
@@ -5637,52 +5706,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                             {
                                 case T_CHOICE:
                                 {
-                                    char * subChoicePtr = pScript->ltextptr;
-                                    char * subChoiceEnd;
-                                    int32_t subChoiceID;
-                                    if (scriptfile_getsymbol(pScript,&subChoiceID))
-                                        break;
-                                    if (scriptfile_getbraces(pScript,&subChoiceEnd))
-                                        break;
-
-                                    if ((unsigned)subChoiceID >= MAXMENUGAMEPLAYENTRIES)
-                                    {
-                                        initprintf("Error: Maximum subchoices exceeded near line %s:%d\n",
-                                            pScript->filename, scriptfile_getlinum(pScript, subChoicePtr));
-                                        pScript->textptr = subChoiceEnd+1;
-                                        break;
-                                    }
-
-                                    MenuGameplayEntry & subentry = stem.subentries[subChoiceID];
-                                    subentry = MenuGameplayEntry{};
-
-                                    while (pScript->textptr < subChoiceEnd)
-                                    {
-                                        switch (getatoken(pScript, newGameSubchoiceTokens, ARRAY_SIZE(newGameSubchoiceTokens)))
-                                        {
-                                            case T_NAME:
-                                            {
-                                                char *name = NULL;
-                                                if (scriptfile_getstring(pScript, &name))
-                                                    break;
-
-                                                memset(subentry.name, 0, ARRAY_SIZE(subentry.name));
-                                                strncpy(subentry.name, name, ARRAY_SIZE(subentry.name)-1);
-                                                break;
-                                            }
-                                            case T_LOCKED:
-                                            {
-                                                subentry.flags |= MGE_Locked;
-                                                break;
-                                            }
-                                            case T_HIDDEN:
-                                            {
-                                                subentry.flags |= MGE_Hidden;
-                                                break;
-                                            }
-                                        }
-                                    }
-
+                                    newgamesubchoice_recursive(pScript, entry);
                                     break;
                                 }
                                 case T_NAME:
@@ -5845,6 +5869,9 @@ static void G_Cleanup(void)
     Xfree(labelcode);
     Xfree(apScript);
     Xfree(bitptr);
+    for (i=0; i < MAXMENUGAMEPLAYENTRIES; i++)
+        if (g_MenuGameplayEntries[i].subentries)
+            newgamechoices_recursive_free(&g_MenuGameplayEntries[i]);
 
 //    Xfree(MusicPtr);
 

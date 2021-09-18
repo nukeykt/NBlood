@@ -208,7 +208,7 @@ they effectively stand in for curly braces as struct initializers.
 */
 
 
-MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
+MenuGameplayEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
 // common font types
 // tilenums are set after namesdyn runs
@@ -230,6 +230,7 @@ static MenuMenuFormat_t MMF_Top_Main =             { {  MENU_MARGIN_CENTER<<16, 
 static MenuMenuFormat_t MMF_Top_Episode =          { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustom =    { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustomSub = { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
+static MenuMenuFormat_t MMF_Top_NewGameCustomL3 =  { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_Skill =            { {  MENU_MARGIN_CENTER<<16, 58<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_Options =          { {  MENU_MARGIN_CENTER<<16, 38<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_Joystick_Network = { {  MENU_MARGIN_CENTER<<16, 70<<16, }, -(190<<16) };
@@ -405,12 +406,18 @@ static MenuEntry_t *MEL_EPISODE[MAXVOLUMES+2]; // +2 for spacer and User Map
 
 static MenuLink_t MEO_NEWGAMECUSTOM_TEMPLATE = { MENU_NEWGAMECUSTOMSUB, MA_Advance, };
 static MenuLink_t MEO_NEWGAMECUSTOM[MAXMENUGAMEPLAYENTRIES];
-static MenuLink_t MEO_NEWGAMECUSTOMSUB_TEMPLATE = { MENU_SKILL, MA_Advance, };
+static MenuLink_t MEO_NEWGAMECUSTOMSUB_TEMPLATE = { MENU_NEWGAMECUSTOML3, MA_Advance, };
 static MenuLink_t MEO_NEWGAMECUSTOMSUB[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 MenuEntry_t ME_NEWGAMECUSTOMENTRIES[MAXMENUGAMEPLAYENTRIES];
 MenuEntry_t ME_NEWGAMECUSTOMSUBENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOM[MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOMSUB[MAXMENUGAMEPLAYENTRIES];
+
+// Newgamecustom Layer 3
+static MenuLink_t MEO_NEWGAMECUSTOML3_TEMPLATE = { MENU_SKILL, MA_Advance, };
+static MenuLink_t MEO_NEWGAMECUSTOML3[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
+MenuEntry_t ME_NEWGAMECUSTOML3ENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
+static MenuEntry_t *MEL_NEWGAMECUSTOML3[MAXMENUGAMEPLAYENTRIES];
 
 static char const s_Undefined[] = "Undefined";
 
@@ -1492,6 +1499,7 @@ static MenuMenu_t M_EPISODE = MAKE_MENUMENU( "Select An Episode", &MMF_Top_Episo
 static MenuMenu_t M_SKILL = MAKE_MENUMENU( "Select Skill", &MMF_Top_Skill, MEL_SKILL );
 static MenuMenu_t M_NEWGAMECUSTOM = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustom, MEL_NEWGAMECUSTOM );
 static MenuMenu_t M_NEWGAMECUSTOMSUB = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustomSub, MEL_NEWGAMECUSTOMSUB );
+static MenuMenu_t M_NEWGAMECUSTOML3 = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustomL3, MEL_NEWGAMECUSTOML3 );
 #ifndef EDUKE32_RETAIL_MENU
 static MenuMenu_t M_GAMESETUP = MAKE_MENUMENU( "Game Setup", &MMF_BigOptions, MEL_GAMESETUP );
 #endif
@@ -1594,6 +1602,7 @@ static Menu_t Menus[] = {
     { &M_USERMAP, MENU_USERMAP, MENU_EPISODE, MA_Return, FileSelect },
     { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
+    { &M_NEWGAMECUSTOML3, MENU_NEWGAMECUSTOML3, MENU_NEWGAMECUSTOMSUB, MA_Return, Menu },
     { &M_SKILL, MENU_SKILL, MENU_PREVIOUS, MA_Return, Menu },
 #ifndef EDUKE32_RETAIL_MENU
     { &M_GAMESETUP, MENU_GAMESETUP, MENU_OPTIONS, MA_Return, Menu },
@@ -1748,9 +1757,8 @@ void Menu_PopulateNewGameCustom(void)
 
     int e = 0;
     int visible = 0;
-    for (MenuGameplayStemEntry const & stem : g_MenuGameplayEntries)
+    for (MenuGameplayEntry const & entry : g_MenuGameplayEntries)
     {
-        MenuGameplayEntry const & entry = stem.entry;
         if (!entry.isValid())
             break;
 
@@ -1770,8 +1778,7 @@ void Menu_PopulateNewGameCustomSub(int e)
     if ((unsigned)e >= MAXMENUGAMEPLAYENTRIES)
         return;
 
-    MenuGameplayStemEntry const & stem = g_MenuGameplayEntries[e];
-    MenuGameplayEntry const & entry = stem.entry;
+    MenuGameplayEntry const & entry = g_MenuGameplayEntries[e];
     if (!entry.isValid())
         return;
 
@@ -1779,8 +1786,9 @@ void Menu_PopulateNewGameCustomSub(int e)
 
     int s = 0;
     int visible = 0;
-    for (MenuGameplayEntry const & subentry : stem.subentries)
+    for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
     {
+        MenuGameplayEntry const & subentry  = entry.subentries[i];
         if (!subentry.isValid())
             break;
 
@@ -1793,6 +1801,41 @@ void Menu_PopulateNewGameCustomSub(int e)
     }
     M_NEWGAMECUSTOMSUB.numEntries = s;
     MMF_Top_NewGameCustomSub.pos.y = (58 + (3-visible)*6)<<16;
+}
+
+void Menu_PopulateNewGameCustomL3(int e, int s)
+{
+    if ((unsigned)e >= MAXMENUGAMEPLAYENTRIES || (unsigned)s >= MAXMENUGAMEPLAYENTRIES)
+        return;
+
+    MenuGameplayEntry const & entryl1 = g_MenuGameplayEntries[e];
+    if (!entryl1.isValid())
+        return;
+
+    MenuGameplayEntry const & entryl2 = entryl1.subentries[s];
+    if (!entryl2.isValid())
+        return;
+
+    M_NEWGAMECUSTOML3.title = entryl2.name;
+
+    int t = 0;
+    int visible = 0;
+    for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
+    {
+        MenuGameplayEntry const & entryl3  = entryl2.subentries[i];
+
+        if (!entryl3.isValid())
+            break;
+
+        MEL_NEWGAMECUSTOML3[t] = &ME_NEWGAMECUSTOML3ENTRIES[e][s][t];
+
+        if (!(MEL_NEWGAMECUSTOML3[t]->flags & MEF_Hidden))
+            ++visible;
+
+        ++t;
+    }
+    M_NEWGAMECUSTOML3.numEntries = t;
+    MMF_Top_NewGameCustomL3.pos.y = (58 + (3-visible)*6)<<16;
 }
 
 static void Menu_PopulateJoystick(void)
@@ -1956,56 +1999,86 @@ void Menu_Init(void)
     M_EPISODE.currentEntry = ud.default_volume;
 
     // prepare new game custom :O
-    if (g_MenuGameplayEntries[0].entry.isValid())
+    if (g_MenuGameplayEntries[0].isValid())
     {
         MEO_MAIN_NEWGAME.linkID = M_NEWVERIFY.linkID = MENU_NEWGAMECUSTOM;
 
-        int e = 0;
-        for (MenuGameplayStemEntry const & stem : g_MenuGameplayEntries)
+        int l1 = 0;
+        for (MenuGameplayEntry const & l1entry : g_MenuGameplayEntries)
         {
-            MenuGameplayEntry const & entry = stem.entry;
-            if (!entry.isValid())
+            if (!l1entry.isValid())
                 break;
 
-            MenuEntry_t & e_me = ME_NEWGAMECUSTOMENTRIES[e];
-            e_me = ME_EPISODE_TEMPLATE;
-            MenuLink_t & e_meo = MEO_NEWGAMECUSTOM[e];
-            e_meo = MEO_NEWGAMECUSTOM_TEMPLATE;
-            e_me.entry = &e_meo;
+            MenuEntry_t & l1_me = ME_NEWGAMECUSTOMENTRIES[l1];
+            l1_me = ME_EPISODE_TEMPLATE;
+            MenuLink_t & l1_meo = MEO_NEWGAMECUSTOM[l1];
+            l1_meo = MEO_NEWGAMECUSTOM_TEMPLATE;
+            l1_me.entry = &l1_meo;
 
-            e_me.name = entry.name;
-            if (entry.flags & MGE_Locked)
-                e_me.flags |= MEF_Disabled;
-            if (entry.flags & MGE_Hidden)
-                e_me.flags |= MEF_Hidden;
+            l1_me.name = l1entry.name;
+            if (l1entry.flags & MGE_Locked)
+                l1_me.flags |= MEF_Disabled;
+            if (l1entry.flags & MGE_Hidden)
+                l1_me.flags |= MEF_Hidden;
 
-            int s = 0;
-            for (MenuGameplayEntry const & subentry : stem.subentries)
+            int l2 = 0;
+            for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
             {
-                if (!subentry.isValid())
+                MenuGameplayEntry const & l2entry  = l1entry.subentries[i];
+                if (!l2entry.isValid())
                     break;
 
-                MenuEntry_t & s_me = ME_NEWGAMECUSTOMSUBENTRIES[e][s];
-                s_me = ME_EPISODE_TEMPLATE;
-                MenuLink_t & s_meo = MEO_NEWGAMECUSTOMSUB[e][s];
-                s_meo = MEO_NEWGAMECUSTOMSUB_TEMPLATE;
-                s_me.entry = &s_meo;
+                MenuEntry_t & l2_me = ME_NEWGAMECUSTOMSUBENTRIES[l1][l2];
+                l2_me = ME_EPISODE_TEMPLATE;
+                MenuLink_t & l2_meo = MEO_NEWGAMECUSTOMSUB[l1][l2];
+                l2_meo = MEO_NEWGAMECUSTOMSUB_TEMPLATE;
+                l2_me.entry = &l2_meo;
 
-                s_me.name = subentry.name;
-                if (subentry.flags & MGE_Locked)
-                    s_me.flags |= MEF_Disabled;
-                if (subentry.flags & MGE_Hidden)
-                    s_me.flags |= MEF_Hidden;
+                l2_me.name = l2entry.name;
+                if (l2entry.flags & MGE_Locked)
+                    l2_me.flags |= MEF_Disabled;
+                if (l2entry.flags & MGE_Hidden)
+                    l2_me.flags |= MEF_Hidden;
 
-                ++s;
+                int l3 = 0;
+                for (int j = 0; j < MAXMENUGAMEPLAYENTRIES; j++)
+                {
+                    MenuGameplayEntry const & l3entry  = l2entry.subentries[j];
+
+                    if (!l3entry.isValid())
+                        break;
+
+                    MenuEntry_t & l3_me = ME_NEWGAMECUSTOML3ENTRIES[l1][l2][l3];
+                    l3_me = ME_EPISODE_TEMPLATE;
+                    MenuLink_t & l3_meo = MEO_NEWGAMECUSTOML3[l1][l2][l3];
+                    l3_meo = MEO_NEWGAMECUSTOML3_TEMPLATE;
+                    l3_me.entry = &l3_meo;
+
+                    l3_me.name = l3entry.name;
+                    if (l3entry.flags & MGE_Locked)
+                        l3_me.flags |= MEF_Disabled;
+                    if (l3entry.flags & MGE_Hidden)
+                        l3_me.flags |= MEF_Hidden;
+
+                    if (l3entry.flags & MGE_UserContent)
+                        l3_meo.linkID = MENU_USERMAP;
+
+                    ++l3;
+                }
+                if (l2entry.flags & MGE_UserContent)
+                    l2_meo.linkID = MENU_USERMAP;
+                else if (l3 == 0)
+                    l2_meo.linkID = MENU_SKILL;
+
+                ++l2;
             }
 
-            if (entry.flags & MGE_UserContent)
-                e_meo.linkID = MENU_USERMAP;
-            else if (s == 0)
-                e_meo.linkID = MENU_SKILL;
+            if (l1entry.flags & MGE_UserContent)
+                l1_meo.linkID = MENU_USERMAP;
+            else if (l2 == 0)
+                l1_meo.linkID = MENU_SKILL;
 
-            ++e;
+            ++l1;
         }
     }
 
@@ -2528,6 +2601,10 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_NEWGAMECUSTOMSUB:
         ud.m_newgamecustomsub = M_NEWGAMECUSTOMSUB.currentEntry;
+        break;
+
+    case MENU_NEWGAMECUSTOML3:
+        ud.m_newgamecustoml3 = M_NEWGAMECUSTOML3.currentEntry;
         break;
 
     default:
@@ -3464,6 +3541,13 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     case MENU_NEWGAMECUSTOMSUB:
         ud.returnvar[0] = M_NEWGAMECUSTOMSUB.currentEntry;
         ud.returnvar[1] = -1;
+        VM_OnEventWithReturn(EVENT_NEWGAMECUSTOM, -1, myconnectindex, M_NEWGAMECUSTOM.currentEntry);
+        break;
+
+    case MENU_NEWGAMECUSTOML3:
+        ud.returnvar[0] = M_NEWGAMECUSTOMSUB.currentEntry;
+        ud.returnvar[1] = M_NEWGAMECUSTOML3.currentEntry;
+        ud.returnvar[2] = -1;
         VM_OnEventWithReturn(EVENT_NEWGAMECUSTOM, -1, myconnectindex, M_NEWGAMECUSTOM.currentEntry);
         break;
 
@@ -4666,6 +4750,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 
     case MENU_NEWGAMECUSTOMSUB:
         Menu_PopulateNewGameCustomSub(M_NEWGAMECUSTOM.currentEntry);
+        break;
+
+    case MENU_NEWGAMECUSTOML3:
+        Menu_PopulateNewGameCustomL3(M_NEWGAMECUSTOM.currentEntry, M_NEWGAMECUSTOMSUB.currentEntry);
         break;
 
     case MENU_LOAD:
@@ -7574,6 +7662,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_parentMenu->object)->currentEntry;
             if (m_parentMenu->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_parentMenu->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENU, g_player[screenpeek].ps->i, screenpeek, m_parentMenu->menuID);
         origin.x = ud.returnvar[0];
@@ -7595,6 +7685,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_animation.previous->object)->currentEntry;
             if (m_animation.previous->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_animation.previous->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENU, g_player[screenpeek].ps->i, screenpeek, m_animation.previous->menuID);
         previousOrigin.x = ud.returnvar[0];
@@ -7608,6 +7700,8 @@ void M_DisplayMenus(void)
         ud.returnvar[2] = ((MenuMenu_t *)m_currentMenu->object)->currentEntry;
         if (g_currentMenu == MENU_NEWGAMECUSTOMSUB)
             ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+        else if (g_currentMenu == MENU_NEWGAMECUSTOML3)
+            ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
     }
     VM_OnEventWithReturn(EVENT_DISPLAYMENU, g_player[screenpeek].ps->i, screenpeek, g_currentMenu);
     origin.x = ud.returnvar[0];
@@ -7645,6 +7739,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_parentMenu->object)->currentEntry;
             if (m_parentMenu->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_parentMenu->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENUREST, g_player[screenpeek].ps->i, screenpeek, m_parentMenu->menuID);
     }
@@ -7658,6 +7754,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_animation.previous->object)->currentEntry;
             if (m_animation.previous->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_animation.previous->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENUREST, g_player[screenpeek].ps->i, screenpeek, m_animation.previous->menuID);
     }
@@ -7669,6 +7767,8 @@ void M_DisplayMenus(void)
         ud.returnvar[2] = ((MenuMenu_t *)m_currentMenu->object)->currentEntry;
         if (g_currentMenu == MENU_NEWGAMECUSTOMSUB)
             ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+        else if (g_currentMenu == MENU_NEWGAMECUSTOML3)
+            ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
     }
     VM_OnEventWithReturn(EVENT_DISPLAYMENUREST, g_player[screenpeek].ps->i, screenpeek, g_currentMenu);
 
