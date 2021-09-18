@@ -172,6 +172,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <OptimizeReferences>true</OptimizeReferences>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <Profile>true</Profile>
     </Link>
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -181,11 +182,12 @@
       <WarningLevel>Level3</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -240,6 +242,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <OptimizeReferences>true</OptimizeReferences>
+      <Profile>true</Profile>
     </Link>
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -249,7 +252,7 @@
       <WarningLevel>Level3</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
