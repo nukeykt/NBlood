@@ -272,6 +272,7 @@ static tokenmap_t const vm_keywords[] =
     { "getkeyname",             CON_GETKEYNAME },
     { "getlastpal",             CON_GETLASTPAL },
     { "getmusicposition",       CON_GETMUSICPOSITION },
+    { "getngcflags",            CON_GETNGCFLAGS },
     { "getplayer",              CON_GETPLAYER },
     { "getplayerangle",         CON_GETPLAYERANGLE },
     { "getplayervar",           CON_GETPLAYERVAR },
@@ -482,6 +483,7 @@ static tokenmap_t const vm_keywords[] =
     { "setgamepalette",         CON_SETGAMEPALETTE },
     { "setinput",               CON_SETINPUT },
     { "setmusicposition",       CON_SETMUSICPOSITION },
+    { "setngcflags",            CON_SETNGCFLAGS },
     { "setplayer",              CON_SETPLAYER },
     { "setplayerangle",         CON_SETPLAYERANGLE },
     { "setplayervar",           CON_SETPLAYERVAR },
@@ -4179,6 +4181,21 @@ setvarvar:
                 return 1;
             }
 
+            continue;
+
+        case CON_GETNGCFLAGS:
+        case CON_SETNGCFLAGS:
+
+            if (tw == CON_GETNGCFLAGS)
+                C_GetNextVarType(GAMEVAR_READONLY);
+            else
+                C_GetNextVar();
+
+            C_GetNextVar();
+            for (j = 0; j < MAXMENUGAMEPLAYLAYERS && (C_GetKeyword() == -1); j++)
+                C_GetNextVar();
+
+            scriptWriteValue(VM_VSIZE_LINE_END);
             continue;
 
         case CON_ACTIVATEBYSECTOR:

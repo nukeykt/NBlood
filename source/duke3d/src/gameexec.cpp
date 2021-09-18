@@ -6131,6 +6131,80 @@ if (EDUKE32_PREDICT_FALSE((unsigned)index >= upper))       \
                     dispatch();
                 }
 
+            vInstruction(CON_GETNGCFLAGS):
+            vInstruction(CON_SETNGCFLAGS):
+                insptr++;
+                {
+                    int vm_inst = VM_DECODE_INST(tw);
+                    intptr_t destVar;
+                    int newFlags;
+
+                    if (vm_inst == CON_GETNGCFLAGS)
+                        destVar = *insptr++;
+                    else
+                        newFlags = Gv_GetVar(*insptr++);
+
+                    int i = 0, ngcIdx[4] = {0};
+                    int newIndex = ngcIdx[0] = Gv_GetVar(*insptr++);
+                    if (EDUKE32_PREDICT_FALSE(newIndex < 0 || newIndex >= MAXMENUGAMEPLAYENTRIES))
+                    {
+                        CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer 0: %d \n", newIndex);
+                        abort_after_error();
+                    }
+
+                    MenuGameplayEntry* cmg = &g_MenuGameplayEntries[newIndex];
+                    for (; i < MAXMENUGAMEPLAYLAYERS; i++)
+                    {
+                        if (*insptr == VM_VSIZE_LINE_END)
+                        {
+                            insptr++;
+                            break;
+                        }
+
+                        newIndex = Gv_GetVar(*insptr++);
+                        ngcIdx[i+1] = newIndex;
+
+                        if (EDUKE32_PREDICT_FALSE(!cmg->subentries || newIndex < 0 || newIndex >= MAXMENUGAMEPLAYENTRIES))
+                        {
+                            CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer %d: %d \n", i+1, newIndex);
+                            abort_after_error();
+                        }
+                        cmg = &cmg->subentries[newIndex];
+                    }
+
+                    if (vm_inst == CON_GETNGCFLAGS)
+                    {
+                        switch(i)
+                        {
+                            case 0:
+                                Gv_SetVar(destVar, ME_NEWGAMECUSTOMENTRIES[ngcIdx[0]].flags);
+                                break;
+                            case 1:
+                                Gv_SetVar(destVar, ME_NEWGAMECUSTOMSUBENTRIES[ngcIdx[0]][ngcIdx[1]].flags);
+                                break;
+                            default:
+                                Gv_SetVar(destVar, ME_NEWGAMECUSTOML3ENTRIES[ngcIdx[0]][ngcIdx[1]][ngcIdx[2]].flags);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch(i)
+                        {
+                            case 0:
+                                ME_NEWGAMECUSTOMENTRIES[ngcIdx[0]].flags = newFlags;
+                                break;
+                            case 1:
+                                ME_NEWGAMECUSTOMSUBENTRIES[ngcIdx[0]][ngcIdx[1]].flags = newFlags;
+                                break;
+                            default:
+                                ME_NEWGAMECUSTOML3ENTRIES[ngcIdx[0]][ngcIdx[1]][ngcIdx[2]].flags = newFlags;
+                                break;
+                        }
+                    }
+                }
+                dispatch();
+
             vInstruction(CON_DISPLAYRANDVAR):
                 insptr++;
                 Gv_SetVar(*insptr, mulscale15(system_15bit_rand(), insptr[1] + 1));
