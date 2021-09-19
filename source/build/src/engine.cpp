@@ -7448,7 +7448,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         };
 
         if (lerpWouldLookDerp())
-            sm.goal = sm0.goal;
+            sm.lerp = sm.goal = sm0.goal;
         else 
         {
             sm0.lerp = { sm.goal.x - mulscale16(65536-rotatespritesmoothratio, sm.goal.x - sm.lerp.x),
