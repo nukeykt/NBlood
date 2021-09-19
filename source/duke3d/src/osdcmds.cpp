@@ -1116,7 +1116,6 @@ static int osdcmd_restorestate(osdcmdptr_t UNUSED(parm))
 }
 #endif
 
-#ifdef DEBUGGINGAIDS
 static int osdcmd_inittimer(osdcmdptr_t parm)
 {
     if (parm->numparms != 1)
@@ -1130,7 +1129,6 @@ static int osdcmd_inittimer(osdcmdptr_t parm)
     OSD_Printf("%s\n",parm->raw);
     return OSDCMD_OK;
 }
-#endif
 
 #if !defined NETCODE_DISABLE
 static int osdcmd_name(osdcmdptr_t parm)
@@ -1785,9 +1783,7 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("maxhealth", "maxhealth <amount>: sets the player's maximum health", osdcmd_maxhealth);
 
     OSD_RegisterFunction("initgroupfile","initgroupfile <path>: adds a grp file into the game filesystem", osdcmd_initgroupfile);
-#ifdef DEBUGGINGAIDS
     OSD_RegisterFunction("inittimer","debug", osdcmd_inittimer);
-#endif
 
     OSD_RegisterFunction("locale","locale: changes the locale", osdcmd_locale);
 

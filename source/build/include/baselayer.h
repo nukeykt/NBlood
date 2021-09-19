@@ -320,9 +320,11 @@ extern int engineFPSLimit(void);
 
 static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk, int gameTicRate)
 {
-    int const tfreq = (int)refreshfreq;
-    int const clk   = (totalclk - ototalclk).toScale16();
-    int const ratio = tabledivide32_noinline(clk * tfreq, tabledivide32_noinline(timerGetClockRate() * tfreq, gameTicRate));
+    int const   tfreq = (int)floorf(refreshfreq * 120 / timerGetClockRate());
+    int const   clk   = (totalclk - ototalclk).toScale16();
+    float const tics  = clk * tfreq * (1.f / (65536.f * 120));
+    int const   ratio = tabledivide32_noinline((int)(65536 * tics * gameTicRate), tfreq);
+
 #if 0 //ndef NDEBUG
     if ((unsigned)ratio > 66048)
         OSD_Printf("calc_smoothratio: ratio: %d\n", ratio);
