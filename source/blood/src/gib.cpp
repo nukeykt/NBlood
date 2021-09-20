@@ -313,7 +313,7 @@ void GibFX(spritetype *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *p
             gPos.y = pSprite->y+mulscale30(pSprite->clipdist<<2, Sin(nAngle));
             gPos.z = bottom-Random(bottom-top);
         }
-        spritetype *pFX = gFX.fxSpawn(pGFX->at0, nSector, gPos.x, gPos.y, gPos.z, 0);
+        spritetype *pFX = gFX.fxSpawn(pGFX->at0, nSector, gPos.x, gPos.y, gPos.z);
         if (pFX)
         {
             if (pGFX->at1 < 0)
@@ -458,7 +458,7 @@ void GibFX(int nWall, GIBFX * pGFX, int a3, int a4, int a5, int a6, CGibVelocity
         int r1 = Random(a6);
         int r2 = Random(a5);
         int r3 = Random(a4);
-        spritetype *pGib = gFX.fxSpawn(pGFX->at0, nSector, pWall->x+r3, pWall->y+r2, a3+r1, 0);
+        spritetype *pGib = gFX.fxSpawn(pGFX->at0, nSector, pWall->x+r3, pWall->y+r2, a3+r1);
         if (pGib)
         {
             if (pGFX->at1 < 0)
