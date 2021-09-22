@@ -3067,13 +3067,22 @@ void viewBurnTime(int gScale)
 
     for (int i = 0; i < 9; i++)
     {
-        int nTile = burnTable[i].nTile+qanimateoffs(burnTable[i].nTile,32768+i);
+        const int nTile = burnTable[i].nTile+qanimateoffs(burnTable[i].nTile,32768+i);
         int nScale = burnTable[i].nScale;
         if (gScale < 600)
         {
             nScale = scale(nScale, gScale, 600);
         }
-        rotatesprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
+        int xoffset = burnTable[i].nX;
+        if (r_usenewaspect)
+        {
+            xoffset = scale(burnTable[i].nX-(320>>1), 320>>1, 266>>1); // scale flame position
+            xoffset = scale(xoffset<<16, xscale, yscale); // multiply by window ratio
+            xoffset += (320>>1)<<16; // offset to center
+        }
+        else
+            xoffset <<= 16;
+        rotatesprite(xoffset, burnTable[i].nY<<16, nScale, 0, nTile,
             0, burnTable[i].nPal, burnTable[i].nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
 }
