@@ -1528,7 +1528,6 @@ int32_t setvideomode_sdlcommon(int32_t *x, int32_t *y, int32_t c, int32_t fs, in
 
 void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int32_t regrab)
 {
-    SDL_SetWindowSize(sdl_window, x, y);
     wm_setapptitle(apptitle);
 
     xres = x;
@@ -1574,8 +1573,33 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
     int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
 
+    if (fs)
+    {
+        SDL_DisplayMode dispmode;
+
+        dispmode.w            = x;
+        dispmode.h            = y;
+        dispmode.refresh_rate = maxrefreshfreq;
+
+        SDL_DisplayMode newmode;
+        SDL_GetClosestDisplayMode(display, &dispmode, &newmode);
+        SDL_SetWindowDisplayMode(sdl_window, &newmode);
+#ifdef _WIN32
+        if (timingInfo.rateRefresh.uiNumerator)
+            refreshfreq = (double)timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
+        else
+#endif
+            refreshfreq = newmode.refresh_rate;
+
+        initprintf("Refresh rate: %.2fHz\n", refreshfreq);
+    }
+
+    SDL_SetWindowSize(sdl_window, x, y);
     SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
+    SDL_SetWindowPosition(sdl_window, (!fs && r_windowpositioning && windowx > 0) ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                      (!fs && r_windowpositioning && windowy > 0) ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display));
+    SDL_FlushEvent(SDL_WINDOWEVENT);
 #endif
 
     videoFadePalette(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
@@ -1585,36 +1609,6 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
 }
 
 #if SDL_MAJOR_VERSION >= 2
-void setrefreshrate(void)
-{
-    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
-
-    SDL_DisplayMode dispmode;
-    SDL_GetCurrentDisplayMode(display, &dispmode);
-
-    dispmode.refresh_rate = maxrefreshfreq;
-
-    SDL_DisplayMode newmode;
-    SDL_GetClosestDisplayMode(display, &dispmode, &newmode);
-
-    char error = 0;
-
-    if (dispmode.refresh_rate != newmode.refresh_rate)
-        error = SDL_SetWindowDisplayMode(sdl_window, &newmode);
-
-    if (!newmode.refresh_rate || error)
-        newmode.refresh_rate = 59;
-
-#ifdef _WIN32
-    if (timingInfo.rateRefresh.uiNumerator)
-        refreshfreq = (double)timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
-    else
-#endif
-        refreshfreq = newmode.refresh_rate;
-
-    initprintf("Refresh rate: %.2fHz\n", refreshfreq);
-}
-
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 {
     int32_t regrab = 0, ret;
@@ -1703,8 +1697,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
         SDL_GL_SetSwapInterval(sdlayer_getswapinterval(vsync_renderlayer));
         vsync_renderlayer = sdlayer_checkvsync(vsync_renderlayer);
-
-        setrefreshrate();
     }
     else
 #endif  // defined USE_OPENGL
@@ -1715,8 +1707,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
                                       SDL_WINDOW_RESIZABLE | borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
-
-        setrefreshrate();
 
         sdl_surface = SDL_GetWindowSurface(sdl_window);
         if (!sdl_surface)
