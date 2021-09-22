@@ -127,7 +127,12 @@ void dukeConsoleOnShowCallback(int shown)
 {
     G_UpdateScreenArea();
 
-    mouseLockToWindow(!shown);
+    int lock = !shown;
+
+    if ((g_player[myconnectindex].ps->gm & MODE_MENU) == MODE_MENU)
+        lock |= 2;
+
+    mouseLockToWindow(lock);
 
     osdshown = shown;
 
