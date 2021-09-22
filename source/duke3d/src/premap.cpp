@@ -665,19 +665,15 @@ static inline void P_ResetTintFade(DukePlayer_t *const pPlayer)
     pPlayer->pals.f = 0;
 }
 
-void P_ResetExtents(DukePlayer_t *const pPlayer)
+void P_ResetOffsets(DukePlayer_t *const pPlayer)
 {
-    pPlayer->autostep      = 20 << 8;
-    pPlayer->autostep_sbw  = 4 << 8;
     pPlayer->floorzoffset  = 40 << 8;
     pPlayer->waterzoffset  = 34 << 8;
     pPlayer->minwaterzdist = 16 << 8;
     pPlayer->shrunkzoffset = 12 << 8;
     pPlayer->spritezoffset = 38 << 8 /*PHEIGHT*/;
 
-    pPlayer->clipdist = 164;
-    pPlayer->gravity  = g_spriteGravity + 80;
-    pPlayer->runspeed = g_playerFriction;
+    pPlayer->gravity = g_spriteGravity + 80;
 
     pPlayer->crouchzincrement    = 2048 + 768;
     pPlayer->crouchspeedmodifier = 8192;
@@ -688,6 +684,16 @@ void P_ResetExtents(DukePlayer_t *const pPlayer)
     pPlayer->swimzincrement    = 348;
 
     pPlayer->jetpackzincrement = 2048;
+}
+
+void P_ResetExtents(DukePlayer_t* const pPlayer)
+{
+    pPlayer->autostep = 20 << 8;
+    pPlayer->autostep_sbw = 4 << 8;
+    pPlayer->clipdist = 164;
+    pPlayer->runspeed = g_playerFriction;
+
+    P_ResetOffsets(pPlayer);
 }
 
 void P_ResetMultiPlayer(int playerNum)

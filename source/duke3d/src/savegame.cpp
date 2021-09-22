@@ -2520,7 +2520,12 @@ static void postloadplayer(int32_t savegamep)
 
     //7
     for (i=0; i<MAXPLAYERS; i++)
+    {
+        if (g_player[i].ps->gravity == 0 && g_player[i].ps->floorzoffset == 0)
+            P_ResetOffsets(g_player[i].ps);
+
         g_player[i].playerquitflag = 1;
+    }
 
     // ----------
 
