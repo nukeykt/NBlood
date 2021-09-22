@@ -274,6 +274,7 @@ void MyLoadSave::Load(void)
     Read(sector, sizeof(sector[0])*numsectors);
     Read(wall, sizeof(wall[0])*numwalls);
     Read(sprite, sizeof(sprite[0])*kMaxSprites);
+    Read(spriteext, sizeof(spriteext[0])*kMaxSprites);
     Read(qsector_filler, sizeof(qsector_filler[0])*numsectors);
     Read(qsprite_filler, sizeof(qsprite_filler[0])*kMaxSprites);
     Read(&randomseed, sizeof(randomseed));
@@ -390,6 +391,7 @@ void MyLoadSave::Save(void)
     Write(sector, sizeof(sector[0])*numsectors);
     Write(wall, sizeof(wall[0])*numwalls);
     Write(sprite, sizeof(sprite[0])*kMaxSprites);
+    Write(spriteext, sizeof(spriteext[0])*kMaxSprites);
     Write(qsector_filler, sizeof(qsector_filler[0])*numsectors);
     Write(qsprite_filler, sizeof(qsprite_filler[0])*kMaxSprites);
     Write(&randomseed, sizeof(randomseed));
