@@ -2157,18 +2157,19 @@ void WeaponProcess(PLAYER *pPlayer) {
         {
             if (oldKeyFlags.nextWeapon || oldKeyFlags.prevWeapon) // if player switched weapons
             {
-                PLAYER tmpPlayer = *pPlayer;
-                tmpPlayer.curWeapon = pPlayer->input.newWeapon; // set current banned weapon to curweapon so WeaponFindNext() can find the next weapon
+                char oldWeapon = pPlayer->curWeapon;
+                pPlayer->curWeapon = pPlayer->input.newWeapon; // set current banned weapon to curweapon so WeaponFindNext() can find the next weapon
                 for (int i = 0; i < 3; i++) // attempt to find a non-banned weapon
                 {
-                    tmpPlayer.curWeapon = WeaponFindNext(&tmpPlayer, NULL, (char)(oldKeyFlags.nextWeapon == 1));
-                    if (!BannedUnderwater(tmpPlayer.curWeapon)) // if new weapon is not a banned weapon, set to new current weapon
+                    pPlayer->curWeapon = WeaponFindNext(pPlayer, NULL, (char)(oldKeyFlags.nextWeapon == 1));
+                    if (!BannedUnderwater(pPlayer->curWeapon)) // if new weapon is not a banned weapon, set to new current weapon
                     {
-                        pPlayer->input.newWeapon = tmpPlayer.curWeapon;
+                        pPlayer->input.newWeapon = pPlayer->curWeapon;
                         pPlayer->weaponMode[pPlayer->input.newWeapon] = 0;
                         break;
                     }
                 }
+                pPlayer->curWeapon = oldWeapon;
             }
         }
         if (pPlayer->input.newWeapon == 6)
