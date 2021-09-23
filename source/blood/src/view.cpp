@@ -3076,7 +3076,7 @@ void viewBurnTime(int gScale)
         int xoffset = burnTable[i].nX;
         if (r_usenewaspect)
         {
-            xoffset = scale(burnTable[i].nX-(320>>1), 320>>1, 266>>1); // scale flame position
+            xoffset = scale(xoffset-(320>>1), 320>>1, 266>>1); // scale flame position
             xoffset = scale(xoffset<<16, xscale, yscale); // multiply by window ratio
             xoffset += (320>>1)<<16; // offset to center
         }

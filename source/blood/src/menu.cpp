@@ -69,6 +69,7 @@ void ResetKeysClassic(CGameMenuItemChain *);
 void SetMessages(CGameMenuItemZBool *);
 void LoadGame(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
 void SetupNetLevels(CGameMenuItemZCycle *);
+void NetClearUserMap(CGameMenuItemZCycle *);
 void StartNetGame(CGameMenuItemChain *);
 void SetParentalLock(CGameMenuItemZBool *);
 void TenProcess(CGameMenuItem7EA1C *);
@@ -314,7 +315,7 @@ CGameMenuFileSelect menuMultiUserMap("", 3, 0, 0, 0, "./", "*.map", zUserMapName
 CGameMenuItemTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemNetStart1("GAME:", 3, 66, 60, 180, 0, 0, zNetGameTypes, 3, 0);
 CGameMenuItemZCycle itemNetStart2("EPISODE:", 3, 66, 70, 180, 0, SetupNetLevels, NULL, 0, 0);
-CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, NULL, NULL, 0, 0);
+CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, NetClearUserMap, NULL, 0, 0);
 CGameMenuItemZCycle itemNetStart4("DIFFICULTY:", 3, 66, 90, 180, 0, 0, zDiffStrings, 5, 0);
 CGameMenuItemZCycle itemNetStart5("MONSTERS:", 3, 66, 100, 180, 0, 0, zMonsterStrings, 3, 0);
 CGameMenuItemZCycle itemNetStart6("WEAPONS:", 3, 66, 110, 180, 0, 0, zWeaponStrings, 4, 0);
@@ -2225,6 +2226,13 @@ void SetupLevelMenuItem(int nEpisode)
 void SetupNetLevels(CGameMenuItemZCycle *pItem)
 {
     SetupLevelMenuItem(pItem->m_nFocus);
+    NetClearUserMap(pItem);
+}
+
+void NetClearUserMap(CGameMenuItemZCycle *pItem)
+{
+    UNREFERENCED_PARAMETER(pItem);
+    memset(zUserMapName, 0, sizeof(zUserMapName));
 }
 
 void StartNetGame(CGameMenuItemChain *pItem)
@@ -2246,7 +2254,7 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.weaponsV10x = itemNetStart10.at20;
     ////
     gPacketStartGame.unk = 0;
-    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, Bstrlen(zUserMapName));
+    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, sizeof(zUserMapName));
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
 
     netBroadcastNewGame();
