@@ -8,6 +8,7 @@ Blood port based on EDuke32
 1. Extract NBlood to a new directory
 2. Copy the following files from Blood 1.21 to NBlood folder:
 
+   ```
    BLOOD.INI  
    BLOOD.RFF  
    BLOOD000.DEM, ..., BLOOD003.DEM (optional)  
@@ -23,7 +24,8 @@ Blood port based on EDuke32
    SOUNDS.RFF  
    SURFACE.DAT  
    TILES000.ART, ..., TILES017.ART  
-   VOXEL.DAT  
+   VOXEL.DAT 
+   ```
 
 3. Optionally, if you want to use CD audio tracks instead of MIDI, provide FLAC/OGG recordings in following format: bloodXX.flac/ogg, where XX is track number. Make sure to enable Redbook audio option in sound menu.
 4. Optionally, if you want cutscenes and you have the original CD, copy the `movie` folder into NBlood's folder (the folder itself too).
