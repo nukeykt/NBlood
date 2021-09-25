@@ -57,7 +57,7 @@ bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown
 static int osdfunc_printvar(int const cvaridx);
 
 void OSD_UpdateDrawBuffer(void);
-void OSD_FlushLog(void);
+void OSD_WritePendingLines(void);
 
 void OSD_RegisterCvar(osdcvardata_t * const cvar, int (*func)(osdcmdptr_t))
 {
@@ -1716,7 +1716,7 @@ void OSD_Puts(const char *putstr)
         return;
 
     osd->log.m_pending.push(new AtomicLogString(Xstrdup(putstr)));
-    OSD_FlushLog();
+    OSD_WritePendingLines();
 }
 
 static inline void OSD_LineFeed(void)
@@ -1755,7 +1755,7 @@ static int OSD_MaybeLogError(char **putstr)
     {
         auto s = (char *)Xstrdup(*putstr);
         buildvfs_fputs(OSD_StripColors(s, *putstr), osd->log.m_fp);
-        if (isError) buildvfs_fflush(osd->log.m_fp);
+        if (isError) OSD_FlushLog();
         Bprintf("%s", s);
         Xfree(s);
     }
@@ -1851,7 +1851,7 @@ void OSD_UpdateDrawBuffer(void)
 }
 
 // writes lines from osd->log.m_pending to disk and updates osd->log.m_lines
-void OSD_FlushLog(void)
+void OSD_WritePendingLines(void)
 {
     do
     {

@@ -313,7 +313,11 @@ void OSD_DispatchQueued(void);
 // executes a string
 void OSD_Dispatch(const char *cmd);
 
-void OSD_FlushLog(void);
+static FORCE_INLINE void OSD_FlushLog(void)
+{
+    if (osd->log.m_fp)
+        buildvfs_fflush(osd->log.m_fp);
+}
 
 // registers a function
 //   name = name of the function

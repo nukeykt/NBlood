@@ -219,6 +219,8 @@ static int32_t setgammaramp(LPDDGAMMARAMP gt);
 //
 static void SignalHandler(int32_t signum)
 {
+    OSD_FlushLog();
+
     switch (signum)
     {
     case SIGSEGV:
