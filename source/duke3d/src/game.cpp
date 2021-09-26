@@ -6418,10 +6418,6 @@ int app_main(int argc, char const* const* argv)
     // accesses g_player[0].
     G_MaybeAllocPlayer(0);
 
-#ifdef EDUKE32_STANDALONE
-    G_DeleteOldSaves();
-#endif
-
     G_CheckCommandLine(argc,argv);
 
     // This needs to happen afterwards, as G_CheckCommandLine() is where we set
