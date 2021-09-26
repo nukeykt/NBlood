@@ -55,7 +55,7 @@ public:
 
         if (ResetItems & RF_FREE)
             for (int i = 0; i < Capacity; i++)
-                Xfree(m_items[i]);
+                DO_FREE_AND_NULL(m_items[i]);
 
         if (ResetItems & RF_INIT)
             for (int i = 0; i < Capacity; i++)

@@ -427,12 +427,7 @@ static void osd_clear(int clearstrings = true)
     osd->log.m_lineidx = 0;
 
     if (clearstrings)
-    {
-        for (auto s : *osd->log.m_lines)
-            DO_FREE_AND_NULL(s);
-
         osd->log.m_lines->clear();
-    }
 
     mutex_unlock(&osd->log.mutex);
 }
