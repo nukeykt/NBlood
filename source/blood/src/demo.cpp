@@ -87,7 +87,7 @@ CDemo::CDemo()
     atb = 0;
     pFirstDemo = NULL;
     pCurrentDemo = NULL;
-    at59ef = 0;
+    nTotalDemos = 0;
     at2 = 0;
     memset(&atf, 0, sizeof(atf));
     m_bLegacy = false;
@@ -118,7 +118,7 @@ CDemo::~CDemo()
     }
     pFirstDemo = NULL;
     pCurrentDemo = NULL;
-    at59ef = 0;
+    nTotalDemos = 0;
     m_bLegacy = false;
 }
 
@@ -406,7 +406,7 @@ _DEMOPLAYBACK:
                 if (v4 >= atf.nInputCount)
                 {
                     ready2send = 0;
-                    if (at59ef != 1)
+                    if (nTotalDemos != 1)
                     {
                         v4 = 0;
                         Close();
@@ -458,7 +458,7 @@ void CDemo::LoadDemoInfo(void)
 {
     auto pDemo = &pFirstDemo;
     const int opsm = pathsearchmode;
-    at59ef = 0;
+    nTotalDemos = 0;
     pathsearchmode = 0;
     char zFN[BMAX_PATH];
     Bsnprintf(zFN, BMAX_PATH, "%s*.dem", BloodIniPre);
@@ -481,7 +481,7 @@ void CDemo::LoadDemoInfo(void)
             *pDemo = new DEMOCHAIN;
             (*pDemo)->pNext = NULL;
             Bstrncpy((*pDemo)->zName, pIterator->name, BMAX_PATH);
-            at59ef++;
+            nTotalDemos++;
             pDemo = &(*pDemo)->pNext;
         }
         pIterator = pIterator->next;
