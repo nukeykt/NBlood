@@ -2994,7 +2994,7 @@ static int P_CheckLockedMovement(int const playerNum)
     auto &     thisPlayer = g_player[playerNum];
     auto const pPlayer    = thisPlayer.ps;
 
-    if (sprite[pPlayer->i].extra <= 0 || (pPlayer->dead_flag && !ud.god) || pPlayer->fist_incs || pPlayer->transporter_hold > 2 || pPlayer->hard_landing || pPlayer->access_incs > 0
+    if (sprite[pPlayer->i].extra <= 0 || (pPlayer->dead_flag && !ud.god) || pPlayer->fist_incs || pPlayer->transporter_hold > 2 || (pPlayer->hard_landing && !FURY) || pPlayer->access_incs > 0
         || pPlayer->knee_incs > 0
         || (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == TRIPBOMB_WEAPON && pPlayer->kickback_pic > 1
             && pPlayer->kickback_pic < PWEAPON(playerNum, pPlayer->curr_weapon, FireDelay)))
