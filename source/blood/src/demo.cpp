@@ -406,7 +406,7 @@ _DEMOPLAYBACK:
                 if (v4 >= atf.nInputCount)
                 {
                     ready2send = 0;
-                    if (nTotalDemos != 1)
+                    if (nTotalDemos > 1)
                     {
                         v4 = 0;
                         Close();
