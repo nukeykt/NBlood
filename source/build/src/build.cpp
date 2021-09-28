@@ -646,6 +646,8 @@ int app_main(int argc, char const* const* argv)
 
     editstatus = 1;
 
+    Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
+
     if ((i = ExtPreInit(argc,argv)) < 0) return -1;
 #ifdef STARTUP_SETUP_WINDOW
     if (i) cmdsetup = 1;
@@ -699,8 +701,6 @@ int app_main(int argc, char const* const* argv)
 
     if (!buildvfs_getcwd(program_origcwd,BMAX_PATH))
         program_origcwd[0] = '\0';
-
-    Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
 
     if (enginePreInit())
         M32_FatalEngineError();
