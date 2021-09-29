@@ -1448,7 +1448,7 @@ int32_t kdfread_LZ4(void *buffer, int dasizeof, int count, buildvfs_kfd fil)
     int32_t leng;
 
     // read compressed data length
-    if (kread_and_test(fil, &leng, sizeof(leng)))
+    if (kread_and_test(fil, &leng, sizeof(leng)) || leng < 0)
         return -1;
 
     leng = B_LITTLE32(leng);
