@@ -1334,10 +1334,10 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         }
 
         if (clipmove_warned & 1)
-            OSD_Printf("clipsectnum >= MAXCLIPSECTORS!\n");
+            OSD_Printf("clipsectnum >= MAXCLIPSECTORS at %d,%d!\n", pos->x, pos->y);
 
         if (clipmove_warned & 2)
-            OSD_Printf("clipnum >= MAXCLIPNUM!\n");
+            OSD_Printf("clipnum >= MAXCLIPNUM at %d,%d!\n", pos->x, pos->y);
 
         ////////// Sprites //////////
 
