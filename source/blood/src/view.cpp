@@ -3438,7 +3438,7 @@ void viewDrawScreen(void)
             CalcPosition(gView->pSprite, (int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum, fix16_to_int(cA), q16horiz);
         }
         CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
-        int v78 = interpolateang(gScreenTiltO, gScreenTilt, gInterpolate);
+        int v78 = gViewInterpolate ? interpolateang(gScreenTiltO, gScreenTilt, gInterpolate) : gScreenTilt;
         char v14 = 0;
         char v10 = 0;
         bool bDelirium = powerupCheck(gView, kPwUpDeliriumShroom) > 0;
@@ -3608,7 +3608,14 @@ RORHACKOTHER:
             nSprite = nextspritestat[nSprite];
         }
         g_visibility = (int32_t)(ClipLow(gVisibility - 32 * gView->visibility - unk, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
-        cA = (cA + interpolateangfix16(fix16_from_int(deliriumTurnO), fix16_from_int(deliriumTurn), gInterpolate)) & 0x7ffffff;
+        if (!gViewInterpolate) 
+        {
+            cA += fix16_from_int(deliriumTurn);
+        }
+        else
+        {
+            cA = (cA + interpolateangfix16(fix16_from_int(deliriumTurnO), fix16_from_int(deliriumTurn), gInterpolate)) & 0x7ffffff;
+        }
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
         if (cZ >= vf8)
@@ -3624,7 +3631,7 @@ RORHACK:
         int ror_status[16];
         for (int i = 0; i < 16; i++)
             ror_status[i] = TestBitString(gotpic, 4080+i);
-        fix16_t deliriumPitchI = interpolate(fix16_from_int(deliriumPitchO), fix16_from_int(deliriumPitch), gInterpolate);
+        fix16_t deliriumPitchI = gViewInterpolate ? interpolate(fix16_from_int(deliriumPitchO), fix16_from_int(deliriumPitch), gInterpolate) : fix16_from_int(deliriumPitch);
         DrawMirrors(cX, cY, cZ, cA, q16horiz + fix16_from_int(defaultHoriz) + deliriumPitchI, gInterpolate, gViewIndex);
         int bakCstat = gView->pSprite->cstat;
         if (gViewPos == 0)
