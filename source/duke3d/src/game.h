@@ -585,6 +585,15 @@ EXTERN_INLINE void G_SetStatusBarScale(int32_t sc)
 
 #endif
 
+static FORCE_INLINE void P_SetupMiscInputSettings(void)
+{
+    auto ps = g_player[myconnectindex].ps;
+
+    ps->aim_mode = ud.mouseaiming;
+    ps->auto_aim = ud.config.AutoAim;
+    ps->weaponswitch = ud.weaponswitch;
+}
+
 #endif
 
 #endif

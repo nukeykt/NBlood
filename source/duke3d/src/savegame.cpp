@@ -2540,6 +2540,7 @@ static void postloadplayer(int32_t savegamep)
     //8
     // if (savegamep)  ?
     G_ResetTimers(0);
+    P_SetupMiscInputSettings();
 
 #ifdef USE_STRUCT_TRACKERS
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));
