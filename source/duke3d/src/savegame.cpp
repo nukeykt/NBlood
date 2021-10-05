@@ -747,7 +747,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     }
 
     sv_postudload();  // ud.m_XXX = ud.XXX
-    VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek);
+    VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek, -1, h.userbytever);
     kclose(fil);
 
     return 0;
@@ -1826,7 +1826,7 @@ int32_t sv_loadheader(buildvfs_kfd fil, int32_t spot, savehead_t *h)
         return -2;
     }
 
-    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever != ud.userbytever
+    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever < ud.userbytever
         || Bstrncasecmp(g_scriptFileName, h->scriptname, Bstrlen(h->scriptname)))
     {
 #ifndef DEBUGGINGAIDS
