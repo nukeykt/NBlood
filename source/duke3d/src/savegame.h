@@ -100,15 +100,23 @@ struct savebrief_t
 struct menusave_t
 {
     savebrief_t brief;
-    uint8_t isOldVer = 0;
-    uint8_t isUnreadable = 0;
-    uint8_t isAutoSave = 0;
+
+    union
+    {
+        struct
+        {
+            int isAutoSave     : 1;
+            int isOldScriptVer : 1;
+            int isOldVer       : 1;
+            int isUnreadable   : 1;
+        };
+        uint8_t flags;
+    };
+
     void clear()
     {
         brief.reset();
-        isOldVer = 0;
-        isUnreadable = 0;
-        isAutoSave = 0;
+        flags = 0;
     }
 };
 

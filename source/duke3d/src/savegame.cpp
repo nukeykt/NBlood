@@ -183,6 +183,7 @@ static void ReadSaveGameHeaders_CACHE1D(BUILDVFS_FIND_REC *f)
             msv.isOldVer = 0;
 
         msv.isAutoSave = h.isAutoSave();
+        msv.isOldScriptVer = h.userbytever < ud.userbytever;
 
         strncpy(msv.brief.path, fn, ARRAY_SIZE(msv.brief.path));
         ++g_numinternalsaves;
@@ -1826,7 +1827,7 @@ int32_t sv_loadheader(buildvfs_kfd fil, int32_t spot, savehead_t *h)
         return -2;
     }
 
-    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever < ud.userbytever
+    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever > ud.userbytever
         || Bstrncasecmp(g_scriptFileName, h->scriptname, Bstrlen(h->scriptname)))
     {
 #ifndef DEBUGGINGAIDS

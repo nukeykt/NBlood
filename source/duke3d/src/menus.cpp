@@ -2852,6 +2852,15 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
 #endif
         }
+        else if (msv.isOldScriptVer)
+        {
+            Bsprintf(tempbuf, "This save was created with an older version of " APPNAME "\n"
+                              "and is not 100%% compatible with the current version of the game.\n\n"
+                              "If this data is important to you, we highly recommend that\n"
+                              "version of " APPNAME " be used to finish your playthrough instead.\n\n"
+                              "Load game:\n\"%s\"", msv.brief.name);
+            Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 8);
+        }
         else
         {
             Bsprintf(tempbuf, "Load game:\n\"%s\"", msv.brief.name);
