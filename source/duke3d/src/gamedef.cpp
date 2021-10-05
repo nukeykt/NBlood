@@ -6188,6 +6188,8 @@ static void C_AddDefaultDefinitions(void)
         { "MAXSPRITESONSCREEN", MAXSPRITESONSCREEN },
         { "MAXSTATUS",          MAXSTATUS },
         { "MAXTILES",           MAXTILES },
+        { "MAXLEVELS",          MAXLEVELS },
+        { "MAXVOLUMES",         MAXVOLUMES },
 
         { "PROJ_BOUNCES",     PROJ_BOUNCES },
         { "PROJ_BSOUND",      PROJ_BSOUND },
