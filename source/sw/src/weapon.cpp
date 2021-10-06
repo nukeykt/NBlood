@@ -4677,7 +4677,7 @@ WeaponMoveHit(short SpriteNum)
         // clipmove does not correctly return the sprite for WALL sprites
         // on walls, so look with hitscan
 
-        hitscan(&sp->pos, sp->sectnum,   // Start position
+        hitscan(&sp->xyz, sp->sectnum,   // Start position
                 sintable[NORM_ANGLE(sp->ang + 512)],    // X vector of 3D ang
                 sintable[NORM_ANGLE(sp->ang)],  // Y vector of 3D ang
                 sp->zvel,               // Z vector of 3D ang
@@ -8651,7 +8651,7 @@ DoPlasmaFountain(int16_t Weapon)
         ap = &sprite[u->Attach];
 
         // move with sprite
-        setspritez(Weapon, &ap->pos);
+        setspritez(Weapon, &ap->xyz);
         sp->ang = ap->ang;
 
         u->Counter++;
@@ -10375,7 +10375,7 @@ DoMicro(int16_t Weapon)
         // last smoke
         if ((u->WaitTics -= MISSILEMOVETICS) <= 0)
         {
-            setspritez(New, &np->pos);
+            setspritez(New, &np->xyz);
             NewStateGroup(Weapon, &sg_MicroMini[0]);
             sp->xrepeat = sp->yrepeat = 10;
             RESET(sp->cstat, CSTAT_SPRITE_INVISIBLE);
@@ -12840,7 +12840,7 @@ DoRing(int16_t Weapon)
     //sp->ang = NORM_ANGLE(sp->ang + 512);
     //updatesector(sp->x, sp->y);
 
-    setsprite(Weapon, &sp->pos);
+    setsprite(Weapon, &sp->xyz);
 
     ASSERT(sp->sectnum >= 0);
 
@@ -12985,7 +12985,7 @@ DoSerpRing(int16_t Weapon)
     sp->x += ((int) u->Dist * (int) sintable[NORM_ANGLE(u->slide_ang + 512)]) >> 14;
     sp->y += ((int) u->Dist * (int) sintable[u->slide_ang]) >> 14;
 
-    setsprite(Weapon, &sp->pos);
+    setsprite(Weapon, &sp->xyz);
 
     ASSERT(sp->sectnum >= 0);
 
@@ -17771,7 +17771,7 @@ HitscanSpriteAdjust(short SpriteNum, short hit_wall)
 
     // must have this
     sectnum = sp->sectnum;
-    clipmove(&sp->pos, &sectnum, xvect, yvect,
+    clipmove(&sp->xyz, &sectnum, xvect, yvect,
              4L, 4L<<8, 4L<<8, CLIPMASK_MISSILE);
     clipmoveboxtracenum = 3;
 
@@ -19108,7 +19108,7 @@ InitEnemyUzi(short SpriteNum)
     // Make sprite shade brighter
     u->Vis = 128;
 
-    setspritez(SpriteNum, &sp->pos);
+    setspritez(SpriteNum, &sp->xyz);
 
     if (u->ID == ZILLA_RUN_R0)
     {
@@ -20666,7 +20666,7 @@ int QueueHole(short hit_sect, short hit_wall, int hit_x, int hit_y, int hit_z)
     sectnum = sp->sectnum;
 
     clipmoveboxtracenum = 1;
-    clipmove(&sp->pos, &sectnum, nx, ny,
+    clipmove(&sp->xyz, &sectnum, nx, ny,
              0L, 0L, 0L, CLIPMASK_MISSILE);
     clipmoveboxtracenum = 3;
 
@@ -20985,7 +20985,7 @@ int QueueWallBlood(short hit_sprite, short ang)
     sectnum = sp->sectnum;
 
     clipmoveboxtracenum = 1;
-    clipmove(&sp->pos, &sectnum, nx, ny,
+    clipmove(&sp->xyz, &sectnum, nx, ny,
              0L, 0L, 0L, CLIPMASK_MISSILE);
     clipmoveboxtracenum = 3;
 
@@ -21124,7 +21124,7 @@ int QueueGeneric(short SpriteNum, short pic)
     {
         // move old sprite to new sprite's place
         osp = &sprite[GenericQueue[GenericQueueHead]];
-        //setspritez(GenericQueue[GenericQueueHead], &sp->pos);
+        //setspritez(GenericQueue[GenericQueueHead], &sp->xyz);
         osp->x = sp->x;
         osp->y = sp->y;
         osp->z = sp->z;
@@ -21677,7 +21677,7 @@ int QueueLoWangs(short SpriteNum)
     else
     {
         // move old sprite to new sprite's place
-        setspritez(LoWangsQueue[LoWangsQueueHead], &sp->pos);
+        setspritez(LoWangsQueue[LoWangsQueueHead], &sp->xyz);
         NewSprite = LoWangsQueue[LoWangsQueueHead];
         ASSERT(sprite[NewSprite].statnum != MAXSTATUS);
     }

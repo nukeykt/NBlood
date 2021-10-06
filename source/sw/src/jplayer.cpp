@@ -557,7 +557,7 @@ void computergetinput(int snum, SW_PACKET *syn)
                 }
                 else
                 {
-                    hitscan(&sprite[j].pos,sprite[j].sectnum,
+                    hitscan(&sprite[j].xyz,sprite[j].sectnum,
                             mulscale14(sprite[j].xvel,sintable[(sprite[j].ang+512)&2047]),
                             mulscale14(sprite[j].xvel,sintable[sprite[j].ang&2047]),
                             (int)sprite[j].zvel,

@@ -1157,7 +1157,7 @@ DoSpawnSpotsForKill(short match)
             change_sprite_stat(sn, STAT_NO_STATE);
             u->ActorActionFunc = DoSpawnSpot;
             u->WaitTics = SP_TAG5(sp) * 15;
-            setspritez(sn, &sp->pos);
+            setspritez(sn, &sp->xyz);
             // setting for Killed
             u->LastDamage = 1;
         }

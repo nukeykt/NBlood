@@ -783,7 +783,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
         if (pp->posx > xlow && pp->posx < xhigh && pp->posy > ylow && pp->posy < yhigh)
         {
             pp->RevolveQ16Ang = pp->q16ang;
-            pp->RevolvePos = pp->pos.vec2;
+            pp->RevolvePos = pp->pos.xy;
             pp->RevolveDeltaAng = 0;
             SET(pp->Flags, PF_PLAYER_RIDING);
 
@@ -1618,7 +1618,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         SET(pp->Flags, PF_PLAYER_RIDING);
 
         pp->RevolveQ16Ang = pp->q16ang;
-        pp->RevolvePos = pp->pos.vec2;
+        pp->RevolvePos = pp->pos.xy;
 
         // set the delta angle to 0 when moving
         pp->RevolveDeltaAng = 0;
@@ -1641,7 +1641,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         // moving then you
         // know where he was last
         pp->RevolveQ16Ang = pp->q16ang;
-        pp->RevolvePos = pp->pos.vec2;
+        pp->RevolvePos = pp->pos.xy;
 
         // set the delta angle to 0 when moving
         pp->RevolveDeltaAng = 0;
@@ -1661,7 +1661,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
     // increment Players delta angle
     pp->RevolveDeltaAng = NORM_ANGLE(pp->RevolveDeltaAng + GlobSpeedSO);
 
-    rotatepoint(sop->mid.vec2, pp->RevolvePos, pp->RevolveDeltaAng, &pp->pos.vec2);
+    rotatepoint(sop->mid.xy, pp->RevolvePos, pp->RevolveDeltaAng, &pp->pos.xy);
 
     // THIS WAS CAUSING PROLEMS!!!!
     // Sectors are still being manipulated so you can end up in a void (-1) sector
@@ -1746,7 +1746,7 @@ MovePoints(SECTOR_OBJECTp sop, short delta_ang, int nx, int ny)
             if (TEST(wp->extra, WALLFX_LOOP_SPIN_4X))
                 rot_ang = NORM_ANGLE(rot_ang * 4);
 
-            rotatepoint(sop->mid.vec2, wp->pos, rot_ang, &rxy);
+            rotatepoint(sop->mid.xy, wp->xy, rot_ang, &rxy);
 
             if (wp->extra && TEST(wp->extra, WALLFX_LOOP_OUTER))
             {
@@ -1859,12 +1859,12 @@ PlayerPart:
 
             if (TEST(wall[sector[sp->sectnum].wallptr].extra, WALLFX_LOOP_REVERSE_SPIN))
             {
-                rotatepoint(sop->mid.vec2, sp->pos.vec2, -delta_ang, &sp->pos.vec2);
+                rotatepoint(sop->mid.xy, sp->xy, -delta_ang, &sp->xy);
                 sp->ang = NORM_ANGLE(sp->ang - delta_ang);
             }
             else
             {
-                rotatepoint(sop->mid.vec2, sp->pos.vec2, delta_ang, &sp->pos.vec2);
+                rotatepoint(sop->mid.xy, sp->xy, delta_ang, &sp->xy);
                 sp->ang = NORM_ANGLE(sp->ang + delta_ang);
             }
 
@@ -1874,14 +1874,14 @@ PlayerPart:
             if (!TEST(sop->flags, SOBJ_DONT_ROTATE))
             {
                 // NOT part of a sector - independant of any sector
-                rotatepoint(sop->mid.vec2, sp->pos.vec2, delta_ang, &sp->pos.vec2);
+                rotatepoint(sop->mid.xy, sp->xy, delta_ang, &sp->xy);
                 sp->ang = NORM_ANGLE(sp->ang + delta_ang);
             }
 
             // Does not necessarily move with the sector so must accout for
             // moving across sectors
             if (sop->xmid < MAXSO) // special case for operating SO's
-                setspritez(sop->sp_num[i], &sp->pos);
+                setspritez(sop->sp_num[i], &sp->xyz);
         }
 
         u->oangdiff += GetDeltaAngle(sp->ang, oldang);
@@ -2059,7 +2059,7 @@ void UpdateSectorObjectSprites(SECTOR_OBJECTp sop)
     {
         sp = &sprite[sop->sp_num[i]];
 
-        setspritez(sop->sp_num[i], &sp->pos);
+        setspritez(sop->sp_num[i], &sp->xyz);
     }
 }
 
