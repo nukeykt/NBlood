@@ -270,7 +270,7 @@ static inline intptr_t mi_atomic_subi(_Atomic(intptr_t)*p, intptr_t sub) {
 }
 
 // Yield 
-#if defined(__cplusplus)
+#if 0 && defined(__cplusplus)
 #include <thread>
 static inline void mi_atomic_yield(void) {
   std::this_thread::yield();
