@@ -497,7 +497,7 @@ LIBDIRS :=
 
 ASFORMAT := elf$(BITS)
 ifeq ($(PLATFORM),WINDOWS)
-    LINKERFLAGS += -static-libgcc -static
+    LINKERFLAGS += -static-libgcc -static -Wl,--allow-multiple-definition
     ifeq (0,$(CLANG))
         L_CXXONLYFLAGS += -static-libstdc++
     endif
