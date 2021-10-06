@@ -169,7 +169,7 @@ mimalloc_src := $(mimalloc_root)/src
 mimalloc_inc := $(mimalloc_root)/include
 mimalloc_obj := $(obj)/$(mimalloc)
 
-mimalloc_cflags := -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -I$(mimalloc_inc) -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas
+mimalloc_cflags := -D_WIN32_WINNT=0x0600 -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -I$(mimalloc_inc) -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas
 
 #### Voidwrap
 
