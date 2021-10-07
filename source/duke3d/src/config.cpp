@@ -608,11 +608,11 @@ void CONFIG_SetGameControllerDefaults()
     static GameControllerButtonSetting const buttons[] =
     {
         { CONTROLLER_BUTTON_A, gamefunc_Open },
-        { CONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
+        { CONTROLLER_BUTTON_B, gamefunc_Inventory },
         { CONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
         { CONTROLLER_BUTTON_BACK, gamefunc_Map },
         { CONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
-        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Toggle_Crouch },
         { CONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
         { CONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
         { CONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
