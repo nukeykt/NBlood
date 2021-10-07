@@ -5974,7 +5974,7 @@ StdRandomRange(int range)
 }
 
 // [JM] Probably will need some doing over. !CHECKME!
-void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
+extern "C" void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
 void G_Polymer_UnInit(void) { }
 void app_crashhandler(void) { }
 
