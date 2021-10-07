@@ -1304,6 +1304,7 @@ static void G_DeleteTempEffectors()
 
 static void prelevel(int g)
 {
+    //Bmemset(zhit, 0, sizeof(zhit));
     Bmemset(show2dsector, 0, sizeof(show2dsector));
 #ifdef LEGACY_ROR
     Bmemset(ror_protectedsectors, 0, MAXSECTORS);

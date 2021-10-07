@@ -2562,6 +2562,7 @@ static void postloadplayer(int32_t savegamep)
 #endif
 
     calc_sector_reachability();
+    //Bmemset(zhit, 0, sizeof(zhit));
 }
 
 ////////// END GENERIC SAVING/LOADING SYSTEM //////////

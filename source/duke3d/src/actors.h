@@ -135,7 +135,7 @@ typedef struct
     int16_t  htextra, htowner;      // 4b
     int16_t  movflag, tempang;      // 4b
     int16_t  timetosleep, stayput;  // 4b
-    uint16_t florhit, lzsum;        // 4b
+    uint8_t  filler[4];             // 4b
     int16_t  dispicnum;             // 2b NOTE: updated every frame, not in sync with game tics!    
     uint8_t  cgg, lasttransport;    // 2b
 } actor_t;

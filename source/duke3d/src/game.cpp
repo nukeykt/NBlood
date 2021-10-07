@@ -1451,7 +1451,6 @@ int A_Spawn(int spriteNum, int tileNum)
         a.floorz   = sector[s.sectnum].floorz;
         a.ceilingz = sector[s.sectnum].ceilingz;
         a.stayput = a.htextra = -1;
-        a.florhit = a.lzsum = 0;
 
 #ifdef POLYMER
         practor[newSprite].lightId = -1;

@@ -364,72 +364,109 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
     return -1;
 }
 
-static struct
-{
-    int16_t hi, lo;
-} zhit[MAXSPRITES];
+//zhit_t zhit[MAXSPRITES];
+//static uint8_t zhseen[(MAXSECTORS+7)>>3];
 
-static inline uint16_t getspritezsum(int const spriteNum) { return getcrc16((char const *)&sprite[spriteNum], sizeof(spritetype)); }
-static inline uint16_t getsectorzsum(int const sectNum) { return getcrc16((char const *)&sector[sectNum], sizeof(sectortype)); }
+//static inline uint16_t getsectorzsum(int const sectnum)
+//{
+//    Bassert(!bitmap_test(zhseen, sectnum));
+//
+//    int  crc = 0;
+//    auto sec = (usectortype *)&sector[sectnum];
+//
+//    bitmap_set(zhseen, sectnum);
+//
+//    // might as well do the full struct here regardless of ZSUM_FULL_STRUCTS, because reading cstat pulls it into cache
+//    for (int SPRITES_OF_SECT(sectnum, i))
+//        if (sprite[i].cstat & CSTAT_SPRITE_BLOCK)
+//#if 1 // #ifdef ZSUM_FULL_STRUCTS
+//            crc = getcrc16(&sprite[i], sizeof(spritetype), crc);
+//#else
+//            crc = getcrc16(&spritechanged[i], sizeof(spritechanged[0]), crc);
+//#endif // ZSUM_FULL_STRUCTS
+//
+//#ifdef ZSUM_FULL_STRUCTS
+//    for (int startwall = sec->wallptr, endwall = sec->wallnum + startwall, i = startwall; i < endwall; i++)
+//        crc = getcrc16(&wall[i], sizeof(walltype), crc);
+//    crc = getcrc16(&sector[sectnum], sizeof(sectortype), crc);
+//#else
+//    for (int startwall = sec->wallptr, endwall = sec->wallnum + startwall, i = startwall; i < endwall; i++)
+//        crc = getcrc16(&wallchanged[i], sizeof(wallchanged[0]), crc);
+//    crc = getcrc16(&sectorchanged[sectnum], sizeof(sectorchanged[0]), crc);
+//#endif // ZSUM_FULL_STRUCTS
+//
+//    return((uint16_t)(crc&65535));
+//}
 
-static uint16_t VM_GetZSum(int const spriteNum)
-{
-    auto const pSprite = &sprite[spriteNum];
-    auto const pz      = &zhit[spriteNum];
-    uint16_t   zsum    = getspritezsum(spriteNum) ^ getsectorzsum(pSprite->sectnum);
-    int const  hiZspr  = pz->hi & (MAXSPRITES-1);
-
-    if ((pz->hi & 49152) == 49152)
-    {
-        auto const phiZspr = &sprite[hiZspr];
-
-        zsum ^= getspritezsum(hiZspr);
-
-        if (phiZspr->sectnum != pSprite->sectnum)
-            zsum ^= getsectorzsum(phiZspr->sectnum);
-    }
-
-    if ((pz->lo & 49152) == 49152)
-    {
-        int const  loZspr  = pz->lo&(MAXSPRITES-1);
-        auto const ploZspr = &sprite[loZspr];
-
-        zsum ^= getspritezsum(loZspr);
-
-        if (ploZspr->sectnum != pSprite->sectnum && ((pz->hi & 49152) != 49152 || ploZspr->sectnum != sprite[hiZspr].sectnum))
-            zsum ^= getsectorzsum(ploZspr->sectnum);
-    }
-
-    return zsum;
-}
+//static uint16_t A_GetZSum(int const spriteNum)
+//{
+//    auto const pSprite = &sprite[spriteNum];
+//    auto const pzhit   = &zhit[spriteNum];
+//    auto const pActor  = &actor[spriteNum];
+//
+//    Bmemset(zhseen, 0, sizeof(zhseen));
+//
+//    int  crc = getsectorzsum(pSprite->sectnum);
+//    auto sec = (usectortype *)&sector[pSprite->sectnum];
+//
+//    for (int startwall = sec->wallptr, endwall = sec->wallnum + startwall, i = startwall; i < endwall; i++)
+//        if ((unsigned)wall[i].nextsector < MAXSECTORS)
+//            if (!bitmap_test(zhseen, wall[i].nextsector))
+//                updatecrc16(crc, getsectorzsum(wall[i].nextsector));
+//
+//    if ((pzhit->hi & 49152) == 49152)
+//    {
+//        int const  hiZspr  = pzhit->hi&(MAXSPRITES-1);
+//        auto const phiZspr = &sprite[hiZspr];
+//        if (phiZspr->sectnum != MAXSECTORS && !bitmap_test(zhseen, phiZspr->sectnum))
+//            updatecrc16(crc, getsectorzsum(phiZspr->sectnum));
+//    }
+//
+//    if ((pzhit->lo & 49152) == 49152)
+//    {
+//        int const  loZspr  = pzhit->lo&(MAXSPRITES-1);
+//        auto const ploZspr = &sprite[loZspr];
+//        if (ploZspr->sectnum != MAXSECTORS && !bitmap_test(zhseen, ploZspr->sectnum))
+//            updatecrc16(crc, getsectorzsum(ploZspr->sectnum));
+//    }
+//
+//    crc = getcrc16(&sprite[spriteNum].xyz, sizeof(vec3_t), crc);
+//    crc = getcrc16(&pActor->ceilingz, sizeof(int32_t), crc);
+//    crc = getcrc16(&pActor->floorz, sizeof(int32_t), crc);
+//
+//    return((uint16_t)(crc&65535));
+//}
 
 void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const florhit, int const wallDist)
 {
     auto const pSprite = &sprite[spriteNum];
     auto const pActor  = &actor[spriteNum];
-    auto const pz     = &zhit[spriteNum];
-    uint16_t   zsum   = VM_GetZSum(spriteNum);
+    //auto const pz     = &zhit[spriteNum];
+    //uint16_t   zsum   = A_GetZSum(spriteNum);
 
-    if (pActor->lzsum == zsum)
-    {
-        *florhit = pz->lo;
-        *ceilhit = pz->hi;
-        return;
-    }
+    //static uint32_t cnt1, cnt2;
 
+    //if (pz->zsum == zsum)
+    //{
+    //    *florhit = pz->lo;
+    //    *ceilhit = pz->hi;
+    //    //OSD_Printf("cnt1 %d cnt2 %d\n", cnt1++, cnt2);
+    //    return;
+    //}
+    //OSD_Printf("cnt1 %d cnt2 %d\n", cnt1, cnt2++);
     int const ocstat = pSprite->cstat;
 
     pSprite->cstat = 0;
     pSprite->z -= ACTOR_FLOOR_OFFSET;
-
+    
     getzrange(&pSprite->xyz, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
 
     pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
 
-    pz->hi = *ceilhit;
-    pz->lo = *florhit;
-    pActor->lzsum = zsum;
+    //pz->hi = *ceilhit;
+    //pz->lo = *florhit;
+    //pz->zsum = zsum;
 }
 
 void A_GetZLimits(int const spriteNum)
