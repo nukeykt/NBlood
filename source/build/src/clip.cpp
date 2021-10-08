@@ -1417,7 +1417,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
             case CSTAT_SPRITE_ALIGNMENT_FLOOR:
             {
-                if (pos->z > spr->z-flordist+CLIPCURBHEIGHT && pos->z < spr->z+ceildist-CLIPCURBHEIGHT)
+                if (pos->z > spr->z-flordist && pos->z < spr->z+ceildist)
                 {
                     if ((cstat&64) != 0)
                         if ((pos->z > spr->z) == ((cstat&8)==0))
