@@ -636,7 +636,7 @@ void yax_update(int32_t resetstat)
 int32_t yax_getneighborsect(int32_t x, int32_t y, int32_t sectnum, int32_t cf)
 {
     // yax_updown is initialized to -1, but inside() checks it so don't check it here
-    if (inside(x, y, yax_updown[sectnum][!cf])==1)
+    if (!editstatus && inside(x, y, yax_updown[sectnum][!cf])==1)
         return yax_updown[sectnum][!cf];
 
     int16_t bunchnum = yax_getbunch(sectnum, cf);
@@ -13408,7 +13408,8 @@ int32_t sectorofwall(int16_t wallNum)
         return -1;
 
 #if !defined NEW_MAP_FORMAT
-    return wallsect[wallNum];
+    if (!editstatus)
+        return wallsect[wallNum];
 #endif
     native_t const w = wall[wallNum].nextwall;
     return ((unsigned)w < (unsigned)numwalls) ? wall[w].nextsector : sectorofwall_internal(wallNum);
