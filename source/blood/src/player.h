@@ -79,6 +79,25 @@ struct POSTURE
 
 extern POSTURE gPostureDefaults[kModeMax][kPostureMax];
 
+enum
+{
+    kWeaponNone         = 0,
+    kWeaponPitchfork    = 1,
+    kWeaponFlare        = 2,
+    kWeaponShotgun      = 3,
+    kWeaponTommy        = 4,
+    kWeaponNapalm       = 5,
+    kWeaponTNT          = 6,
+    kWeaponSprayCan     = 7,
+    kWeaponTesla        = 8,
+    kWeaponLifeLeech    = 9,
+    kWeaponVoodoo       = 10,
+    kWeaponProxyTNT     = 11,
+    kWeaponRemoteTNT    = 12,
+    kWeaponBeast        = 13,
+    kWeaponMax          = 14,
+};
+
 struct PLAYER
 {
     spritetype*         pSprite;
@@ -130,9 +149,9 @@ struct PLAYER
     int                 weaponTimer;
     int                 weaponState;
     int                 weaponAmmo;  //rename
-    bool                hasWeapon[14];
-    int                 weaponMode[14];
-    int                 weaponOrder[2][14];
+    bool                hasWeapon[kWeaponMax];
+    int                 weaponMode[kWeaponMax];
+    int                 weaponOrder[2][kWeaponMax];
     //int               at149[14];
     int                 ammoCount[12];
     bool                qavLoop;
