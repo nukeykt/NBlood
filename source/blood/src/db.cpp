@@ -1674,18 +1674,18 @@ int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSe
     if (nHandle == -1)
     {
         initprintf("Couldn't open \"%s\" for writing: %s\n", sMapExt, strerror(errno));
-        Bfree(pData);
+        Xfree(pData);
         return -1;
     }
     if (Bwrite(nHandle, pData, nSize) != nSize)
     {
         initprintf("Couldn't write to \"%s\": %s\n", sMapExt, strerror(errno));
         Bclose(nHandle);
-        Bfree(pData);
+        Xfree(pData);
         return -1;
     }
     Bclose(nHandle);
-    Bfree(pData);
+    Xfree(pData);
     return 0;
 #if 0
     char *pExt = strchr(sMapExt, '.');

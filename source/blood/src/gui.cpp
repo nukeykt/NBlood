@@ -909,7 +909,7 @@ MODAL_RESULT ShowModal(Container* container)
     gGuiRes.Unlock(hFont);
     pFont = NULL;
 
-    Bfree(pFrameBackup);
+    Xfree(pFrameBackup);
 
     screen.Remove(container);
 
