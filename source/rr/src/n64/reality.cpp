@@ -347,7 +347,7 @@ int RT_PrepareScript(void)
     g_scriptcrc = Bcrc32(rt_script, rt_scriptsize*4, g_scriptcrc);
 
     g_scriptSize = rt_scriptsize;
-    Bfree(apScript);
+    Xfree(apScript);
     apScript = (intptr_t *)Xcalloc(1, g_scriptSize * sizeof(intptr_t));
     for (int i = 0; i < rt_scriptsize; i++)
     {
@@ -422,7 +422,7 @@ int RT_PrepareScript(void)
             }
         }
     }
-    Bfree(quote_table);
+    Xfree(quote_table);
 
     for (int i = 0; i < ARRAY_SIZE(rt_musicdefs); i++)
     {

@@ -2777,7 +2777,7 @@ void Net_Connect(const char *srvaddr)
                 event.type == ENET_EVENT_TYPE_CONNECT)
         {
             initprintf("Connection to %s:%d succeeded.\n", oursrvaddr, address.port);
-            Bfree(oursrvaddr);
+            Xfree(oursrvaddr);
             return;
         }
         else
@@ -2791,7 +2791,7 @@ void Net_Connect(const char *srvaddr)
         initprintf(i ? "Retrying...\n" : "Giving up connection attempt.\n");
     }
 
-    Bfree(oursrvaddr);
+    Xfree(oursrvaddr);
     Net_Disconnect();
 }
 

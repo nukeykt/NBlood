@@ -1746,7 +1746,7 @@ static void prelevel(char g)
             actor[j].t_data[0] = 1;
     }
 
-    Bfree(tagbitmap);
+    Xfree(tagbitmap);
 
     g_mirrorCount = 0;
 

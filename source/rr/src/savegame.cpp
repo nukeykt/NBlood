@@ -460,7 +460,7 @@ static void G_SavePalette(void)
                 fwrite(buf, len, 1, fil);
                 fclose(fil);
 
-                Bfree(buf);
+                Xfree(buf);
             }
         }
         else fclose(fil);
