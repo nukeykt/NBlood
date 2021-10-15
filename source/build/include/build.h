@@ -702,7 +702,7 @@ static inline tspriteptr_t renderMakeTSpriteFromSprite(tspriteptr_t const tspr, 
 {
     auto const spr = (uspriteptr_t)&sprite[spritenum];
 
-    tspr->pos = spr->pos;
+    tspr->xyz = spr->xyz;
     tspr->cstat = spr->cstat;
     tspr->picnum = spr->picnum;
     tspr->shade = spr->shade;
@@ -910,7 +910,39 @@ static CONSTEXPR const int32_t pow2long[32] =
     65536, 131072, 262144, 524288,
     1048576, 2097152, 4194304, 8388608,
     16777216, 33554432, 67108864, 134217728,
-    268435456, 536870912, 1073741824, 2147483647
+    268435456, 536870912, 1073741824, 2147483647 /* INT32_MAX */
+};
+
+static CONSTEXPR const uint32_t pow2ulong[32] =
+{
+    1, 2, 4, 8,
+    16, 32, 64, 128,
+    256, 512, 1024, 2048,
+    4096, 8192, 16384, 32768,
+    65536, 131072, 262144, 524288,
+    1048576, 2097152, 4194304, 8388608,
+    16777216, 33554432, 67108864, 134217728,
+    268435456, 536870912, 1073741824, 2147483648
+};
+
+static CONSTEXPR const int64_t pow264[64] =
+{
+    1, 2, 4, 8,
+    16, 32, 64, 128,
+    256, 512, 1024, 2048,
+    4096, 8192, 16384, 32768,
+    65536, 131072, 262144, 524288,
+    1048576, 2097152, 4194304, 8388608,
+    16777216, 33554432, 67108864, 134217728,
+    268435456, 536870912, 1073741824, 2147483648,
+    4294967296, 8589934592, 17179869184, 34359738368,
+    68719476736, 137438953472, 274877906944, 549755813888,
+    1099511627776, 2199023255552, 4398046511104, 8796093022208,
+    17592186044416, 35184372088832, 70368744177664, 140737488355328,
+    281474976710656, 562949953421312, 1125899906842624, 2251799813685248,
+    4503599627370496, 9007199254740992, 18014398509481984, 36028797018963968,
+    72057594037927936, 144115188075855872, 288230376151711744, 576460752303423488,
+    1152921504606846976, 2305843009213693952, 4611686018427387904, INT64_MAX
 };
 
 // picanm[].sf:
@@ -949,7 +981,7 @@ typedef struct { int16_t newtile; int16_t owner; } rottile_t;
 EXTERN rottile_t rottile[MAXTILES];
 EXTERN intptr_t waloff[MAXTILES];  // stores pointers to cache  -- SA
 
-EXTERN int32_t windowpos, windowx, windowy;
+EXTERN int32_t windowx, windowy;
 
     //These variables are for auto-mapping with the draw2dscreen function.
     //When you load a new board, these bits are all set to 0 - since
@@ -1162,7 +1194,7 @@ OTHER VARIABLES:
 ***************************************************************************/
 
 typedef struct {
-    vec3_t pos;
+    union { struct { int32_t x, y, z; }; vec3_t xyz; vec2_t xy; };
     int16_t sprite, wall, sect;
 } hitdata_t;
 
@@ -1251,8 +1283,12 @@ void   printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol,
 void   Buninitart(void);
 
 void   initcrc16(void);
-uint16_t getcrc16(char const *buffer, int bufleng);
 #define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctab16[((((uint16_t)crc)>>8)&65535)^(dat)]))
+static FORCE_INLINE uint16_t getcrc16(void const* buffer, int bufleng, int crc = 0)
+{
+    for (int i = 0; i < bufleng; i++) updatecrc16(crc, ((char const*)buffer)[i]);
+    return((uint16_t)(crc & 65535));
+}
 
 
 ////////// specialized rotatesprite wrappers for (very) often used cases //////////
@@ -1302,6 +1338,8 @@ void   neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange
 int32_t   cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1,
                  int32_t x2, int32_t y2, int32_t z2, int16_t sect2);
 int32_t   inside(int32_t x, int32_t y, int16_t sectnum);
+void   calc_sector_reachability(void);
+int    sectorsareconnected(int const, int const);
 void   dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags);
 void   setfirstwall(int16_t sectnum, int16_t newfirstwall);
 int32_t try_facespr_intersect(uspriteptr_t const spr, vec3_t const in,
@@ -1477,7 +1515,7 @@ int32_t wallvisible(int32_t const x, int32_t const y, int16_t const wallnum);
 
 //void   qsetmode640350(void);
 //void   qsetmode640480(void);
-void   videoSet2dMode(int32_t,int32_t);
+void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor = 1);
 void   clear2dscreen(void);
 void   editorDraw2dGrid(int32_t posxe, int32_t posye, int32_t posze, int16_t cursectnum,
                   int16_t ange, int32_t zoome, int16_t gride);

@@ -640,8 +640,8 @@ void P_MoveToRandomSpawnPoint(int playerNum)
                 {
                     for (int k = 0; k < g_playerSpawnCnt; k++)
                     {
-                        uint32_t const dist = FindDistance2D(op.pos.x - g_playerSpawnPoints[k].pos.x,
-                                                             op.pos.y - g_playerSpawnPoints[k].pos.y);
+                        uint32_t const dist = FindDistance2D(op.pos.x - g_playerSpawnPoints[k].x,
+                                                             op.pos.y - g_playerSpawnPoints[k].y);
                         if (dist < pdist)
                             i = k, pdist = dist;
                     }
@@ -651,9 +651,9 @@ void P_MoveToRandomSpawnPoint(int playerNum)
         }
     }
 
-    p.opos = p.pos = g_playerSpawnPoints[i].pos;
+    p.opos = p.pos = g_playerSpawnPoints[i].xyz;
 
-    p.bobpos     = p.pos.vec2;
+    p.bobpos     = p.pos.xy;
     p.cursectnum = g_playerSpawnPoints[i].sect;
     p.q16ang     = fix16_from_int(g_playerSpawnPoints[i].ang);
 
@@ -665,19 +665,15 @@ static inline void P_ResetTintFade(DukePlayer_t *const pPlayer)
     pPlayer->pals.f = 0;
 }
 
-void P_ResetExtents(DukePlayer_t *const pPlayer)
+void P_ResetOffsets(DukePlayer_t *const pPlayer)
 {
-    pPlayer->autostep      = 20 << 8;
-    pPlayer->autostep_sbw  = 4 << 8;
     pPlayer->floorzoffset  = 40 << 8;
     pPlayer->waterzoffset  = 34 << 8;
     pPlayer->minwaterzdist = 16 << 8;
     pPlayer->shrunkzoffset = 12 << 8;
     pPlayer->spritezoffset = 38 << 8 /*PHEIGHT*/;
 
-    pPlayer->clipdist = 164;
-    pPlayer->gravity  = g_spriteGravity + 80;
-    pPlayer->runspeed = g_playerFriction;
+    pPlayer->gravity = g_spriteGravity + 80;
 
     pPlayer->crouchzincrement    = 2048 + 768;
     pPlayer->crouchspeedmodifier = 8192;
@@ -688,6 +684,16 @@ void P_ResetExtents(DukePlayer_t *const pPlayer)
     pPlayer->swimzincrement    = 348;
 
     pPlayer->jetpackzincrement = 2048;
+}
+
+void P_ResetExtents(DukePlayer_t* const pPlayer)
+{
+    pPlayer->autostep = 20 << 8;
+    pPlayer->autostep_sbw = 4 << 8;
+    pPlayer->clipdist = 164;
+    pPlayer->runspeed = g_playerFriction;
+
+    P_ResetOffsets(pPlayer);
 }
 
 void P_ResetMultiPlayer(int playerNum)
@@ -706,9 +712,9 @@ void P_ResetMultiPlayer(int playerNum)
     P_MoveToRandomSpawnPoint(playerNum);
 
     a.bpos = p.opos = p.pos;
-    p.bobpos = p.pos.vec2;
+    p.bobpos = p.pos.xy;
 
-    s.pos = p.pos;
+    s.xyz = p.pos;
 
     setsprite(p.i, &tmpvect);
 
@@ -744,9 +750,9 @@ void P_ResetMultiPlayer(int playerNum)
 
     a.cgg       = 0;
     a.dispicnum = 0;
-    a.extra     = -1;
+    a.htextra   = -1;
     a.movflag   = 0;
-    a.owner     = p.i;
+    a.htowner   = p.i;
     a.stayput   = -1;
     a.t_data[4] = 0;
     a.tempang   = 0;
@@ -1304,6 +1310,7 @@ static void G_DeleteTempEffectors()
 
 static void prelevel(int g)
 {
+    //Bmemset(zhit, 0, sizeof(zhit));
     Bmemset(show2dsector, 0, sizeof(show2dsector));
 #ifdef LEGACY_ROR
     Bmemset(ror_protectedsectors, 0, MAXSECTORS);
@@ -1504,7 +1511,7 @@ static void G_CollectSpawnPoints(int gameMode)
         auto &s     = sprite[i];
         auto &spawn = g_playerSpawnPoints[g_playerSpawnCnt];
 
-        spawn.pos  = s.pos;
+        spawn.xyz  = s.xyz;
         spawn.ang  = s.ang;
         spawn.sect = s.sectnum;
 
@@ -1577,9 +1584,9 @@ static void G_CollectSpawnPoints(int gameMode)
 
         p.frag_ps = pindex;
 
-        actor[i].owner = p.i = i;
-        actor[i].bpos = p.opos = p.pos = s.pos;
-        p.bobpos = s.pos.vec2;
+        actor[i].htowner = p.i = i;
+        actor[i].bpos = p.opos = p.pos = s.xyz;
+        p.bobpos = s.xy;
 
         p.oq16ang = p.q16ang = fix16_from_int(s.ang);
 

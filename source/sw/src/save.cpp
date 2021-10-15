@@ -1225,6 +1225,8 @@ int LoadGame(short save_num)
         DoTheCache();
     }
 
+    calc_sector_reachability();
+
     // what is this for? don't remember
     totalclock = totalsynctics;
     ototalclock = totalsynctics;

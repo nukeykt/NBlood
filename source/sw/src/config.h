@@ -121,10 +121,9 @@ extern uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 extern int32_t MouseButtons[MAXMOUSEBUTTONS];
 extern int32_t MouseButtonsClicked[MAXMOUSEBUTTONS];
 
-extern int32_t JoystickButtons[MAXJOYBUTTONS];
-extern int32_t JoystickButtonsClicked[MAXJOYBUTTONS];
+extern int32_t JoystickButtons[MAXJOYBUTTONSANDHATS];
+extern int32_t JoystickButtonsClicked[MAXJOYBUTTONSANDHATS];
 
-extern int32_t MouseAnalogAxes[MAXMOUSEAXES];
 extern int32_t JoystickAnalogAxes[MAXJOYAXES];
 extern int32_t MouseAnalogScale[MAXMOUSEAXES];
 extern int32_t JoystickAnalogScale[MAXJOYAXES];
@@ -133,7 +132,6 @@ extern int32_t JoystickAnalogSaturate[MAXJOYAXES];
 
 extern int32_t EnableRudder;
 
-extern int32_t MouseDigitalAxes[MAXMOUSEAXES][2];
 extern int32_t JoystickDigitalAxes[MAXJOYAXES][2];
 
 extern char setupfilename[BMAX_PATH];

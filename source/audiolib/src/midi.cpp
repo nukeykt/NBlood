@@ -81,7 +81,7 @@ static int  _MIDI_Context;
 static int _MIDI_ActiveTracks;
 static int _MIDI_TotalVolume = MIDI_MaxVolume;
 
-static int _MIDI_ChannelVolume[ NUM_MIDI_CHANNELS ];
+static int _MIDI_ChannelVolume[NUM_MIDI_CHANNELS];
 
 static midifuncs *_MIDI_Funcs;
 
@@ -165,8 +165,8 @@ static void _MIDI_ResetTracks(void)
         ptr->active                 = ptr->EMIDI_IncludeTrack;
         ptr->RunningStatus          = 0;
         ptr->currentcontext         = 0;
-        ptr->context[ 0 ].loopstart = ptr->start;
-        ptr->context[ 0 ].loopcount = 0;
+        ptr->context[0].loopstart = ptr->start;
+        ptr->context[0].loopcount = 0;
 
         if (ptr->active)
             _MIDI_ActiveTracks++;
@@ -288,24 +288,24 @@ static int _MIDI_InterpretControllerInfo(track *Track, int TimeSet, int channel,
                 break;
 
             Track->currentcontext = _MIDI_Context;
-            Track->context[ 0 ].loopstart = Track->context[ _MIDI_Context ].loopstart;
-            Track->context[ 0 ].loopcount = Track->context[ _MIDI_Context ].loopcount;
-            Track->pos           = Track->context[ _MIDI_Context ].pos;
-            Track->RunningStatus = Track->context[ _MIDI_Context ].RunningStatus;
+            Track->context[0].loopstart = Track->context[_MIDI_Context].loopstart;
+            Track->context[0].loopcount = Track->context[_MIDI_Context].loopcount;
+            Track->pos           = Track->context[_MIDI_Context].pos;
+            Track->RunningStatus = Track->context[_MIDI_Context].RunningStatus;
 
             if (TimeSet)
             {
                 break;
             }
 
-            _MIDI_Time             = Track->context[ _MIDI_Context ].time;
-            _MIDI_FPSecondsPerTick = Track->context[ _MIDI_Context ].FPSecondsPerTick;
-            _MIDI_Tick             = Track->context[ _MIDI_Context ].tick;
-            _MIDI_Beat             = Track->context[ _MIDI_Context ].beat;
-            _MIDI_Measure          = Track->context[ _MIDI_Context ].measure;
-            _MIDI_BeatsPerMeasure  = Track->context[ _MIDI_Context ].BeatsPerMeasure;
-            _MIDI_TicksPerBeat     = Track->context[ _MIDI_Context ].TicksPerBeat;
-            _MIDI_TimeBase         = Track->context[ _MIDI_Context ].TimeBase;
+            _MIDI_Time             = Track->context[_MIDI_Context].time;
+            _MIDI_FPSecondsPerTick = Track->context[_MIDI_Context].FPSecondsPerTick;
+            _MIDI_Tick             = Track->context[_MIDI_Context].tick;
+            _MIDI_Beat             = Track->context[_MIDI_Context].beat;
+            _MIDI_Measure          = Track->context[_MIDI_Context].measure;
+            _MIDI_BeatsPerMeasure  = Track->context[_MIDI_Context].BeatsPerMeasure;
+            _MIDI_TicksPerBeat     = Track->context[_MIDI_Context].TicksPerBeat;
+            _MIDI_TimeBase         = Track->context[_MIDI_Context].TimeBase;
             TimeSet = TRUE;
             break;
 
@@ -326,20 +326,20 @@ static int _MIDI_InterpretControllerInfo(track *Track, int TimeSet, int channel,
 
             while (tracknum > 0)
             {
-                trackptr->context[ 0 ].loopcount        = loopcount;
-                trackptr->context[ 0 ].pos              = trackptr->pos;
-                trackptr->context[ 0 ].loopstart        = trackptr->pos;
-                trackptr->context[ 0 ].RunningStatus    = trackptr->RunningStatus;
-                trackptr->context[ 0 ].active           = trackptr->active;
-                trackptr->context[ 0 ].delay            = trackptr->delay;
-                trackptr->context[ 0 ].time             = _MIDI_Time;
-                trackptr->context[ 0 ].FPSecondsPerTick = _MIDI_FPSecondsPerTick;
-                trackptr->context[ 0 ].tick             = _MIDI_Tick;
-                trackptr->context[ 0 ].beat             = _MIDI_Beat;
-                trackptr->context[ 0 ].measure          = _MIDI_Measure;
-                trackptr->context[ 0 ].BeatsPerMeasure  = _MIDI_BeatsPerMeasure;
-                trackptr->context[ 0 ].TicksPerBeat     = _MIDI_TicksPerBeat;
-                trackptr->context[ 0 ].TimeBase         = _MIDI_TimeBase;
+                trackptr->context[0].loopcount        = loopcount;
+                trackptr->context[0].pos              = trackptr->pos;
+                trackptr->context[0].loopstart        = trackptr->pos;
+                trackptr->context[0].RunningStatus    = trackptr->RunningStatus;
+                trackptr->context[0].active           = trackptr->active;
+                trackptr->context[0].delay            = trackptr->delay;
+                trackptr->context[0].time             = _MIDI_Time;
+                trackptr->context[0].FPSecondsPerTick = _MIDI_FPSecondsPerTick;
+                trackptr->context[0].tick             = _MIDI_Tick;
+                trackptr->context[0].beat             = _MIDI_Beat;
+                trackptr->context[0].measure          = _MIDI_Measure;
+                trackptr->context[0].BeatsPerMeasure  = _MIDI_BeatsPerMeasure;
+                trackptr->context[0].TicksPerBeat     = _MIDI_TicksPerBeat;
+                trackptr->context[0].TimeBase         = _MIDI_TimeBase;
                 trackptr++;
                 tracknum--;
             }
@@ -365,15 +365,15 @@ static int _MIDI_InterpretControllerInfo(track *Track, int TimeSet, int channel,
 
             while (tracknum > 0)
             {
-                if (trackptr->context[ 0 ].loopcount != EMIDI_INFINITE)
+                if (trackptr->context[0].loopcount != EMIDI_INFINITE)
                 {
-                    trackptr->context[ 0 ].loopcount--;
+                    trackptr->context[0].loopcount--;
                 }
 
-                trackptr->pos           = trackptr->context[ 0 ].loopstart;
-                trackptr->RunningStatus = trackptr->context[ 0 ].RunningStatus;
-                trackptr->delay         = trackptr->context[ 0 ].delay;
-                trackptr->active        = trackptr->context[ 0 ].active;
+                trackptr->pos           = trackptr->context[0].loopstart;
+                trackptr->RunningStatus = trackptr->context[0].RunningStatus;
+                trackptr->delay         = trackptr->context[0].delay;
+                trackptr->active        = trackptr->context[0].active;
                 if (trackptr->active)
                 {
                     _MIDI_ActiveTracks++;
@@ -381,14 +381,14 @@ static int _MIDI_InterpretControllerInfo(track *Track, int TimeSet, int channel,
 
                 if (!TimeSet)
                 {
-                    _MIDI_Time             = trackptr->context[ 0 ].time;
-                    _MIDI_FPSecondsPerTick = trackptr->context[ 0 ].FPSecondsPerTick;
-                    _MIDI_Tick             = trackptr->context[ 0 ].tick;
-                    _MIDI_Beat             = trackptr->context[ 0 ].beat;
-                    _MIDI_Measure          = trackptr->context[ 0 ].measure;
-                    _MIDI_BeatsPerMeasure  = trackptr->context[ 0 ].BeatsPerMeasure;
-                    _MIDI_TicksPerBeat     = trackptr->context[ 0 ].TicksPerBeat;
-                    _MIDI_TimeBase         = trackptr->context[ 0 ].TimeBase;
+                    _MIDI_Time             = trackptr->context[0].time;
+                    _MIDI_FPSecondsPerTick = trackptr->context[0].FPSecondsPerTick;
+                    _MIDI_Tick             = trackptr->context[0].tick;
+                    _MIDI_Beat             = trackptr->context[0].beat;
+                    _MIDI_Measure          = trackptr->context[0].measure;
+                    _MIDI_BeatsPerMeasure  = trackptr->context[0].BeatsPerMeasure;
+                    _MIDI_TicksPerBeat     = trackptr->context[0].TicksPerBeat;
+                    _MIDI_TimeBase         = trackptr->context[0].TimeBase;
                     TimeSet = TRUE;
                 }
 
@@ -448,10 +448,10 @@ void MIDI_ServiceRoutine(void)
             int const channel = GET_MIDI_CHANNEL(event);
             int const command = GET_MIDI_COMMAND(event);
 
-            if (_MIDI_CommandLengths[ command ] > 0)
+            if (_MIDI_CommandLengths[command] > 0)
             {
                 GET_NEXT_EVENT(Track, c1);
-                if (_MIDI_CommandLengths[ command ] > 1)
+                if (_MIDI_CommandLengths[command] > 1)
                     GET_NEXT_EVENT(Track, c2);
             }
 
@@ -1035,7 +1035,7 @@ static void _MIDI_InitEMIDI(void)
 
 //            channel = GET_MIDI_CHANNEL(event);
             int const command = GET_MIDI_COMMAND(event);
-            int length = _MIDI_CommandLengths[ command ];
+            int length = _MIDI_CommandLengths[command];
 
             if (command == MIDI_CONTROL_CHANGE)
             {
@@ -1051,26 +1051,26 @@ static void _MIDI_InitEMIDI(void)
                 {
                 case EMIDI_LOOP_START :
                 case EMIDI_SONG_LOOP_START :
-                    Track->context[ 0 ].loopcount        = (c2 == 0) ? EMIDI_INFINITE : c2;
-                    Track->context[ 0 ].pos              = Track->pos;
-                    Track->context[ 0 ].loopstart        = Track->pos;
-                    Track->context[ 0 ].RunningStatus    = Track->RunningStatus;
-                    Track->context[ 0 ].time             = _MIDI_Time;
-                    Track->context[ 0 ].FPSecondsPerTick = _MIDI_FPSecondsPerTick;
-                    Track->context[ 0 ].tick             = _MIDI_Tick;
-                    Track->context[ 0 ].beat             = _MIDI_Beat;
-                    Track->context[ 0 ].measure          = _MIDI_Measure;
-                    Track->context[ 0 ].BeatsPerMeasure  = _MIDI_BeatsPerMeasure;
-                    Track->context[ 0 ].TicksPerBeat     = _MIDI_TicksPerBeat;
-                    Track->context[ 0 ].TimeBase         = _MIDI_TimeBase;
+                    Track->context[0].loopcount        = (c2 == 0) ? EMIDI_INFINITE : c2;
+                    Track->context[0].pos              = Track->pos;
+                    Track->context[0].loopstart        = Track->pos;
+                    Track->context[0].RunningStatus    = Track->RunningStatus;
+                    Track->context[0].time             = _MIDI_Time;
+                    Track->context[0].FPSecondsPerTick = _MIDI_FPSecondsPerTick;
+                    Track->context[0].tick             = _MIDI_Tick;
+                    Track->context[0].beat             = _MIDI_Beat;
+                    Track->context[0].measure          = _MIDI_Measure;
+                    Track->context[0].BeatsPerMeasure  = _MIDI_BeatsPerMeasure;
+                    Track->context[0].TicksPerBeat     = _MIDI_TicksPerBeat;
+                    Track->context[0].TimeBase         = _MIDI_TimeBase;
                     break;
 
                 case EMIDI_LOOP_END :
                 case EMIDI_SONG_LOOP_END :
                     if (c2 == EMIDI_END_LOOP_VALUE)
                     {
-                        Track->context[ 0 ].loopstart = nullptr;
-                        Track->context[ 0 ].loopcount = 0;
+                        Track->context[0].loopstart = nullptr;
+                        Track->context[0].loopcount = 0;
                     }
                     break;
 
@@ -1112,18 +1112,18 @@ static void _MIDI_InitEMIDI(void)
                 case EMIDI_CONTEXT_START :
                     if ((c2 > 0) && (c2 < EMIDI_NUM_CONTEXTS))
                     {
-                        Track->context[ c2 ].pos              = Track->pos;
-                        Track->context[ c2 ].loopstart        = Track->context[ 0 ].loopstart;
-                        Track->context[ c2 ].loopcount        = Track->context[ 0 ].loopcount;
-                        Track->context[ c2 ].RunningStatus    = Track->RunningStatus;
-                        Track->context[ c2 ].time             = _MIDI_Time;
-                        Track->context[ c2 ].FPSecondsPerTick = _MIDI_FPSecondsPerTick;
-                        Track->context[ c2 ].tick             = _MIDI_Tick;
-                        Track->context[ c2 ].beat             = _MIDI_Beat;
-                        Track->context[ c2 ].measure          = _MIDI_Measure;
-                        Track->context[ c2 ].BeatsPerMeasure  = _MIDI_BeatsPerMeasure;
-                        Track->context[ c2 ].TicksPerBeat     = _MIDI_TicksPerBeat;
-                        Track->context[ c2 ].TimeBase         = _MIDI_TimeBase;
+                        Track->context[c2].pos              = Track->pos;
+                        Track->context[c2].loopstart        = Track->context[0].loopstart;
+                        Track->context[c2].loopcount        = Track->context[0].loopcount;
+                        Track->context[c2].RunningStatus    = Track->RunningStatus;
+                        Track->context[c2].time             = _MIDI_Time;
+                        Track->context[c2].FPSecondsPerTick = _MIDI_FPSecondsPerTick;
+                        Track->context[c2].tick             = _MIDI_Tick;
+                        Track->context[c2].beat             = _MIDI_Beat;
+                        Track->context[c2].measure          = _MIDI_Measure;
+                        Track->context[c2].BeatsPerMeasure  = _MIDI_BeatsPerMeasure;
+                        Track->context[c2].TicksPerBeat     = _MIDI_TicksPerBeat;
+                        Track->context[c2].TimeBase         = _MIDI_TimeBase;
                     }
                     break;
 

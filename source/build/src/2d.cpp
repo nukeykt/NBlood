@@ -406,7 +406,7 @@ int32_t editorDraw2dLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int col
 
             for (bssize_t i=d.x, df=0; i>0; i--)
             {
-                if (drawlinepat & pow2long[(++patc)&31])
+                if (drawlinepat & pow2ulong[(++patc)&31])
                     drawtranspixel((char *) p, col);
                 df += d.y;
                 if (df >= d.x) { df -= d.x; p += pinc; }
@@ -437,7 +437,7 @@ int32_t editorDraw2dLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int col
 
         for (bssize_t i=d.x, df=0; i>0; i--)
         {
-            if (drawlinepat & pow2long[(++patc)&31])
+            if (drawlinepat & pow2ulong[(++patc)&31])
                 drawpixel((char *) p, col);
             df += d.y;
             if (df >= d.x) { df -= d.x; p += pinc; }
@@ -507,7 +507,7 @@ void editorDraw2dCircle(int32_t x1, int32_t y1, int32_t r, int32_t eccen, char c
 
     uint32_t patc = UINT_MAX;
 
-    if (drawlinepat == 0xffffffff || drawlinepat & pow2long[(++patc)&31])
+    if (drawlinepat == 0xffffffff || drawlinepat & pow2ulong[(++patc)&31])
     {
         if ((uint32_t) y1 < uydim16 && (uint32_t) (x1+r) < uxdim)
             drawpixel((char *) (p+r), col);    // a
@@ -544,7 +544,7 @@ void editorDraw2dCircle(int32_t x1, int32_t y1, int32_t r, int32_t eccen, char c
             int32_t const ypbpl = yp*bytesperline;
             int32_t const xpbpl = xp*bytesperline;
 
-            if (drawlinepat & pow2long[(++patc) & 31])
+            if (drawlinepat & pow2ulong[(++patc) & 31])
             {
                 if ((uint32_t) (x1 + yp) < uxdim && (uint32_t) (y1 + xp) < uydim16)
                     drawpixel_safe((char *) (p + yp + xpbpl), col);  // 1
@@ -684,7 +684,7 @@ void editorSetup2dSideView(void)
         m32_sidesin = sintable[m32_sideelev&2047];
         m32_sidecos = sintable[(m32_sideelev+512)&2047];
 
-        rotatevec(m32_viewplane.vec2, -m32_sideang, &m32_viewplane.vec2);
+        rotatevec(m32_viewplane.xy, -m32_sideang, &m32_viewplane.xy);
         m32_viewplane.x = mulscale14(m32_viewplane.x, m32_sidecos);
         m32_viewplane.y = mulscale14(m32_viewplane.y, m32_sidecos);
         m32_viewplane.z = m32_sidesin>>5;
@@ -704,7 +704,7 @@ static void editorGet2dSideViewDistance(int16_t sw, int16_t sect)
         p = &v;
     }
     else
-        p = &sprite[sw-MAXWALLS].pos;
+        p = &sprite[sw-MAXWALLS].xyz;
 
     m32_sidedist[sw] = p->x*m32_viewplane.x + p->y*m32_viewplane.y + (p->z>>4)*m32_viewplane.z;
 }

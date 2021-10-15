@@ -144,7 +144,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -271,11 +271,12 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -346,6 +347,7 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_winmm.h" />
     <ClInclude Include="..\..\source\audiolib\src\midi.h" />
+    <ClInclude Include="..\..\source\audiolib\src\minivorbis.h" />
     <ClInclude Include="..\..\source\audiolib\src\pitch.h" />
     <ClInclude Include="..\..\source\audiolib\src\tsf.h" />
     <ClInclude Include="..\..\source\audiolib\src\_al_midi.h" />

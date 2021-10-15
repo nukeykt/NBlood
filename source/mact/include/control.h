@@ -35,11 +35,14 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 #ifndef control_public_h_
 #define control_public_h_
+
+#include "joystick.h"
+#include "keyboard.h"
+#include "mouse.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "mouse.h"
 
 #define MAXGAMEBUTTONS      64
 
@@ -72,20 +75,25 @@ typedef enum
 typedef enum
 {
     dir_North,
+    dir_Up = dir_North,
     dir_NorthEast,
     dir_East,
+    dir_Right = dir_East,
     dir_SouthEast,
     dir_South,
+    dir_Down = dir_South,
     dir_SouthWest,
     dir_West,
+    dir_Left = dir_West,
     dir_NorthWest,
     dir_None
 } direction;
 
 typedef struct
 {
-    int32_t   button0;
-    int32_t   button1;
+    union { bool button0, b_advance; };
+    union { bool button1, b_return; };
+    union { bool button2, b_escape; };
     direction dir;
 } UserInput;
 
@@ -117,40 +125,40 @@ typedef enum
 
 enum GameControllerButton : int
 {
-    GAMECONTROLLER_BUTTON_INVALID = -1,
-    GAMECONTROLLER_BUTTON_A,
-    GAMECONTROLLER_BUTTON_B,
-    GAMECONTROLLER_BUTTON_X,
-    GAMECONTROLLER_BUTTON_Y,
-    GAMECONTROLLER_BUTTON_BACK,
-    GAMECONTROLLER_BUTTON_GUIDE,
-    GAMECONTROLLER_BUTTON_START,
-    GAMECONTROLLER_BUTTON_LEFTSTICK,
-    GAMECONTROLLER_BUTTON_RIGHTSTICK,
-    GAMECONTROLLER_BUTTON_LEFTSHOULDER,
-    GAMECONTROLLER_BUTTON_RIGHTSHOULDER,
-    GAMECONTROLLER_BUTTON_DPAD_UP,
-    GAMECONTROLLER_BUTTON_DPAD_DOWN,
-    GAMECONTROLLER_BUTTON_DPAD_LEFT,
-    GAMECONTROLLER_BUTTON_DPAD_RIGHT,
-    GAMECONTROLLER_BUTTON_MISC,
-    GAMECONTROLLER_BUTTON_PADDLE1,
-    GAMECONTROLLER_BUTTON_PADDLE2,
-    GAMECONTROLLER_BUTTON_PADDLE3,
-    GAMECONTROLLER_BUTTON_PADDLE4,
-    GAMECONTROLLER_BUTTON_MAX
+    CONTROLLER_BUTTON_INVALID = -1,
+    CONTROLLER_BUTTON_A,
+    CONTROLLER_BUTTON_B,
+    CONTROLLER_BUTTON_X,
+    CONTROLLER_BUTTON_Y,
+    CONTROLLER_BUTTON_BACK,
+    CONTROLLER_BUTTON_GUIDE,
+    CONTROLLER_BUTTON_START,
+    CONTROLLER_BUTTON_LEFTSTICK,
+    CONTROLLER_BUTTON_RIGHTSTICK,
+    CONTROLLER_BUTTON_LEFTSHOULDER,
+    CONTROLLER_BUTTON_RIGHTSHOULDER,
+    CONTROLLER_BUTTON_DPAD_UP,
+    CONTROLLER_BUTTON_DPAD_DOWN,
+    CONTROLLER_BUTTON_DPAD_LEFT,
+    CONTROLLER_BUTTON_DPAD_RIGHT,
+    CONTROLLER_BUTTON_MISC,
+    CONTROLLER_BUTTON_PADDLE1,
+    CONTROLLER_BUTTON_PADDLE2,
+    CONTROLLER_BUTTON_PADDLE3,
+    CONTROLLER_BUTTON_PADDLE4,
+    CONTROLLER_BUTTON_MAX
 };
 
 enum GameControllerAxis : int
 {
-    GAMECONTROLLER_AXIS_INVALID = -1,
-    GAMECONTROLLER_AXIS_LEFTX,
-    GAMECONTROLLER_AXIS_LEFTY,
-    GAMECONTROLLER_AXIS_RIGHTX,
-    GAMECONTROLLER_AXIS_RIGHTY,
-    GAMECONTROLLER_AXIS_TRIGGERLEFT,
-    GAMECONTROLLER_AXIS_TRIGGERRIGHT,
-    GAMECONTROLLER_AXIS_MAX
+    CONTROLLER_AXIS_INVALID = -1,
+    CONTROLLER_AXIS_LEFTX,
+    CONTROLLER_AXIS_LEFTY,
+    CONTROLLER_AXIS_RIGHTX,
+    CONTROLLER_AXIS_RIGHTY,
+    CONTROLLER_AXIS_TRIGGERLEFT,
+    CONTROLLER_AXIS_TRIGGERRIGHT,
+    CONTROLLER_AXIS_MAX
 };
 
 enum class LastSeenInput : unsigned char
@@ -176,7 +184,6 @@ extern LastSeenInput CONTROL_LastSeenInput;
 void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
 void CONTROL_MapButton(int whichfunction, int whichbutton, int doubleclicked, controldevice device);
 void CONTROL_DefineFlag( int which, int toggle );
-int CONTROL_FlagActive( int which );
 void CONTROL_ClearAssignments( void );
 // void CONTROL_GetFunctionInput( void );
 void CONTROL_GetInput( ControlInfo *info );
@@ -185,17 +192,13 @@ void CONTROL_ClearAllButtons( void );
 bool CONTROL_Startup(controltype which, int32_t ( *TimeFunction )( void ), int32_t ticspersecond);
 void CONTROL_Shutdown( void );
 
-void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog, controldevice device);
-void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t direction, controldevice device);
+void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog);
+void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t direction);
 void CONTROL_SetAnalogAxisScale(int32_t whichaxis, int32_t axisscale, controldevice device);
-void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert, controldevice device);
+void CONTROL_SetAnalogAxisSensitivity(int32_t whichaxis, float axissens, controldevice device);
+void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert);
 
 void CONTROL_ScanForControllers(void);
-
-int32_t CONTROL_GetGameControllerDigitalAxisPos(int32_t axis);
-int32_t CONTROL_GetGameControllerDigitalAxisNeg(int32_t axis);
-void CONTROL_ClearGameControllerDigitalAxisPos(int32_t axis);
-void CONTROL_ClearGameControllerDigitalAxisNeg(int32_t axis);
 
 //void CONTROL_PrintKeyMap(void);
 //void CONTROL_PrintControlFlag(int32_t which);
@@ -207,17 +210,16 @@ void CONTROL_ClearGameControllerDigitalAxisNeg(int32_t axis);
 #define MAXBOUNDKEYS MAXKEYBOARDSCAN
 #define MAXMOUSEBUTTONS 10
 
-typedef struct
+typedef struct ConsoleKeyBind
 {
     const char *key;
     char *cmdstr;
     char repeat;
     char laststate;
-}
-consolekeybind_t;
+} ConsoleKeyBind_t;
 
 // Direct use DEPRECATED:
-extern consolekeybind_t CONTROL_KeyBinds[MAXBOUNDKEYS+MAXMOUSEBUTTONS];
+extern ConsoleKeyBind_t CONTROL_KeyBinds[MAXBOUNDKEYS+MAXMOUSEBUTTONS];
 extern bool CONTROL_BindsEnabled;
 
 void CONTROL_ClearAllBinds(void);
@@ -234,7 +236,7 @@ static inline int CONTROL_KeyIsBound(int const key)
 
 void CONTROL_ProcessBinds(void);
 
-void CONTROL_GetUserInput(UserInput *);
+UserInput *CONTROL_GetUserInput(UserInput *);
 void CONTROL_ClearUserInput(UserInput *);
 
 ////////////////////

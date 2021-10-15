@@ -481,13 +481,13 @@ struct LocaleCharWrapper_t
 
     LocaleCharWrapper_t deepCopy()
     {
-        str = Xstrdup(str);
+        str = strdup(str);
         return *this;
     }
 
     void doFree()
     {
-        Xfree(const_cast<char *>(str));
+        free(const_cast<char *>(str));
         str = nullptr;
     }
 };

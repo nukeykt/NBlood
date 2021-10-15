@@ -27,32 +27,6 @@ http://wiki.eduke32.com/wiki/Working_with_the_Windows_Command_Prompt
 [//]: # (Plain text readers: This refers to lines beginning with exactly four spaces.)
 
 
-libogg
-------
-### Download ###
-Download: libogg-<version>.tar.xz
-  * Stable: https://www.xiph.org/downloads/
-  * Git: https://git.xiph.org/ogg.git
-### Build ###
-    sh ./configure && make
-### Desired Results ###
-  * headers: ogg/config_types.h ogg/ogg.h ogg/os_types.h
-  * libraries: libogg.a
-
-libvorbis
----------
-### Prerequisites ###
-libvorbis depends on the results of libogg to compile.
-### Download ###
-Download: libvorbis-<version>.tar.xz
-  * Stable: https://www.xiph.org/downloads/
-  * Git: https://git.xiph.org/vorbis.git
-### Build ###
-    sh ./configure && make
-### Desired Results ###
-  * headers: vorbis/codec.h vorbis/vorbisfile.h
-  * libraries: libvorbis.a libvorbisfile.a
-
 libFLAC
 -------
 ### Prerequisites ###

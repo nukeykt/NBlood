@@ -246,8 +246,8 @@ static int VM_CheckSquished(void)
 #ifndef EDUKE32_STANDALONE
     if (EDUKE32_PREDICT_FALSE(vm.pSprite->pal == 1)) // frozen
     {
-        vm.pActor->picnum = SHOTSPARK1;
-        vm.pActor->extra  = 1;
+        vm.pActor->htpicnum = SHOTSPARK1;
+        vm.pActor->htextra  = 1;
         return 0;
     }
 #endif
@@ -316,7 +316,7 @@ int A_GetFurthestAngle(int const spriteNum, int const angDiv)
         origin.z -= ZOFFSET3;
         hitscan(&origin, pSprite->sectnum, sintable[(j + 512) & 2047], sintable[j & 2047], 0, &hit, CLIPMASK1);
 
-        int const hitDist = klabs(hit.pos.x-pSprite->x) + klabs(hit.pos.y-pSprite->y);
+        int const hitDist = klabs(hit.x-pSprite->x) + klabs(hit.y-pSprite->y);
 
         if (hitDist > greatestDist)
         {
@@ -348,15 +348,14 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
         if (hit.sect < 0)
             continue;
 
-        int const d  = FindDistance2D(hit.pos.x - ts->x, hit.pos.y - ts->y);
-        int const da = FindDistance2D(hit.pos.x - pnSprite->x, hit.pos.y - pnSprite->y);
+        int const d  = FindDistance2D(hit.x - ts->x, hit.y - ts->y);
+        int const da = FindDistance2D(hit.x - pnSprite->x, hit.y - pnSprite->y);
 
         if (d < da)
         {
-            if (cansee(hit.pos.x, hit.pos.y, hit.pos.z, hit.sect, pnSprite->x, pnSprite->y, pnSprite->z - ZOFFSET2, pnSprite->sectnum))
+            if (cansee(hit.x, hit.y, hit.z, hit.sect, pnSprite->x, pnSprite->y, pnSprite->z - ZOFFSET2, pnSprite->sectnum))
             {
-                vect->x = hit.pos.x;
-                vect->y = hit.pos.y;
+                *vect = hit.xy;
                 return hit.sect;
             }
         }
@@ -365,72 +364,109 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
     return -1;
 }
 
-static struct
-{
-    int16_t hi, lo;
-} zhit[MAXSPRITES];
+//zhit_t zhit[MAXSPRITES];
+//static uint8_t zhseen[(MAXSECTORS+7)>>3];
 
-static inline uint16_t getspritezsum(int const spriteNum) { return getcrc16((char const *)&sprite[spriteNum], sizeof(spritetype)); }
-static inline uint16_t getsectorzsum(int const sectNum) { return getcrc16((char const *)&sector[sectNum], sizeof(sectortype)); }
+//static inline uint16_t getsectorzsum(int const sectnum)
+//{
+//    Bassert(!bitmap_test(zhseen, sectnum));
+//
+//    int  crc = 0;
+//    auto sec = (usectortype *)&sector[sectnum];
+//
+//    bitmap_set(zhseen, sectnum);
+//
+//    // might as well do the full struct here regardless of ZSUM_FULL_STRUCTS, because reading cstat pulls it into cache
+//    for (int SPRITES_OF_SECT(sectnum, i))
+//        if (sprite[i].cstat & CSTAT_SPRITE_BLOCK)
+//#if 1 // #ifdef ZSUM_FULL_STRUCTS
+//            crc = getcrc16(&sprite[i], sizeof(spritetype), crc);
+//#else
+//            crc = getcrc16(&spritechanged[i], sizeof(spritechanged[0]), crc);
+//#endif // ZSUM_FULL_STRUCTS
+//
+//#ifdef ZSUM_FULL_STRUCTS
+//    for (int startwall = sec->wallptr, endwall = sec->wallnum + startwall, i = startwall; i < endwall; i++)
+//        crc = getcrc16(&wall[i], sizeof(walltype), crc);
+//    crc = getcrc16(&sector[sectnum], sizeof(sectortype), crc);
+//#else
+//    for (int startwall = sec->wallptr, endwall = sec->wallnum + startwall, i = startwall; i < endwall; i++)
+//        crc = getcrc16(&wallchanged[i], sizeof(wallchanged[0]), crc);
+//    crc = getcrc16(&sectorchanged[sectnum], sizeof(sectorchanged[0]), crc);
+//#endif // ZSUM_FULL_STRUCTS
+//
+//    return((uint16_t)(crc&65535));
+//}
 
-static uint16_t VM_GetZSum(int const spriteNum)
-{
-    auto const pSprite = &sprite[spriteNum];
-    auto const pz      = &zhit[spriteNum];
-    uint16_t   zsum    = getspritezsum(spriteNum) ^ getsectorzsum(pSprite->sectnum);
-    int const  hiZspr  = pz->hi & (MAXSPRITES-1);
-
-    if ((pz->hi & 49152) == 49152)
-    {
-        auto const phiZspr = &sprite[hiZspr];
-
-        zsum ^= getspritezsum(hiZspr);
-
-        if (phiZspr->sectnum != pSprite->sectnum)
-            zsum ^= getsectorzsum(phiZspr->sectnum);
-    }
-
-    if ((pz->lo & 49152) == 49152)
-    {
-        int const  loZspr  = pz->lo&(MAXSPRITES-1);
-        auto const ploZspr = &sprite[loZspr];
-
-        zsum ^= getspritezsum(loZspr);
-
-        if (ploZspr->sectnum != pSprite->sectnum && ((pz->hi & 49152) != 49152 || ploZspr->sectnum != sprite[hiZspr].sectnum))
-            zsum ^= getsectorzsum(ploZspr->sectnum);
-    }
-
-    return zsum;
-}
+//static uint16_t A_GetZSum(int const spriteNum)
+//{
+//    auto const pSprite = &sprite[spriteNum];
+//    auto const pzhit   = &zhit[spriteNum];
+//    auto const pActor  = &actor[spriteNum];
+//
+//    Bmemset(zhseen, 0, sizeof(zhseen));
+//
+//    int  crc = getsectorzsum(pSprite->sectnum);
+//    auto sec = (usectortype *)&sector[pSprite->sectnum];
+//
+//    for (int startwall = sec->wallptr, endwall = sec->wallnum + startwall, i = startwall; i < endwall; i++)
+//        if ((unsigned)wall[i].nextsector < MAXSECTORS)
+//            if (!bitmap_test(zhseen, wall[i].nextsector))
+//                updatecrc16(crc, getsectorzsum(wall[i].nextsector));
+//
+//    if ((pzhit->hi & 49152) == 49152)
+//    {
+//        int const  hiZspr  = pzhit->hi&(MAXSPRITES-1);
+//        auto const phiZspr = &sprite[hiZspr];
+//        if (phiZspr->sectnum != MAXSECTORS && !bitmap_test(zhseen, phiZspr->sectnum))
+//            updatecrc16(crc, getsectorzsum(phiZspr->sectnum));
+//    }
+//
+//    if ((pzhit->lo & 49152) == 49152)
+//    {
+//        int const  loZspr  = pzhit->lo&(MAXSPRITES-1);
+//        auto const ploZspr = &sprite[loZspr];
+//        if (ploZspr->sectnum != MAXSECTORS && !bitmap_test(zhseen, ploZspr->sectnum))
+//            updatecrc16(crc, getsectorzsum(ploZspr->sectnum));
+//    }
+//
+//    crc = getcrc16(&sprite[spriteNum].xyz, sizeof(vec3_t), crc);
+//    crc = getcrc16(&pActor->ceilingz, sizeof(int32_t), crc);
+//    crc = getcrc16(&pActor->floorz, sizeof(int32_t), crc);
+//
+//    return((uint16_t)(crc&65535));
+//}
 
 void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const florhit, int const wallDist)
 {
     auto const pSprite = &sprite[spriteNum];
     auto const pActor  = &actor[spriteNum];
-    auto const pz     = &zhit[spriteNum];
-    uint16_t   zsum   = VM_GetZSum(spriteNum);
+    //auto const pz     = &zhit[spriteNum];
+    //uint16_t   zsum   = A_GetZSum(spriteNum);
 
-    if (pActor->lzsum == zsum)
-    {
-        *florhit = pz->lo;
-        *ceilhit = pz->hi;
-        return;
-    }
+    //static uint32_t cnt1, cnt2;
 
+    //if (pz->zsum == zsum)
+    //{
+    //    *florhit = pz->lo;
+    //    *ceilhit = pz->hi;
+    //    //OSD_Printf("cnt1 %d cnt2 %d\n", cnt1++, cnt2);
+    //    return;
+    //}
+    //OSD_Printf("cnt1 %d cnt2 %d\n", cnt1, cnt2++);
     int const ocstat = pSprite->cstat;
 
     pSprite->cstat = 0;
     pSprite->z -= ACTOR_FLOOR_OFFSET;
-
-    getzrange(&pSprite->pos, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
+    
+    getzrange(&pSprite->xyz, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
 
     pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
 
-    pz->hi = *ceilhit;
-    pz->lo = *florhit;
-    pActor->lzsum = zsum;
+    //pz->hi = *ceilhit;
+    //pz->lo = *florhit;
+    //pz->zsum = zsum;
 }
 
 void A_GetZLimits(int const spriteNum)
@@ -443,7 +479,7 @@ void A_GetZLimits(int const spriteNum)
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
 
-    if (pSprite->xvel || pSprite->zvel || pActor->bpos != pSprite->pos)
+    if (pSprite->xvel || pSprite->zvel || pActor->bpos != pSprite->xyz)
     {
         pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
@@ -472,14 +508,10 @@ void A_GetZLimits(int const spriteNum)
     // in E1L1, the dumpster fire sprites break after calling this function because the cardboard boxes
     // are a few units higher than the fire and are detected as the "ceiling"
     // unfortunately, this trips the "ifgapzl 16 break" in "state firestate"
-    if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0
-#ifndef EDUKE32_STANDALONE
-            // exclude squish sprites as they are sometimes used as pseudo-ladders in old usermaps
-            && (FURY || (pActor->picnum != OOZ && pActor->picnum != OOZ2))
-#endif
-       )
+    if ((ceilhit&49152) == 49152)
     {
-        if (pSprite->z >= pActor->floorz)
+        auto const pCeil = &sprite[ceilhit&(MAXSPRITES-1)];
+        if ((pCeil->cstat&48) == 0 && pCeil->z >= pActor->floorz)
             pActor->ceilingz = oceilz;
     }
 }
@@ -516,7 +548,7 @@ void A_Fall(int const spriteNum)
 
 #ifdef YAX_ENABLE
     if (fbunch >= 0)
-        setspritez(spriteNum, &pSprite->pos);
+        setspritez(spriteNum, &pSprite->xyz);
     else
 #endif
         if (pSprite->z >= actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET)
@@ -643,7 +675,7 @@ static inline void VM_FacePlayer(int const shift)
 
 static inline int32_t VM_GetCeilZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->pos.vec2;
+    vec2_t const vect    = vm.pSprite->xy;
     int const    sectnum = vm.pSprite->sectnum;
 
     return yax_getceilzofslope(sectnum, vect);
@@ -652,7 +684,7 @@ static inline int32_t VM_GetCeilZOfSlope(void)
 #ifndef EDUKE32_STANDALONE
 static inline int32_t VM_GetFlorZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->pos.vec2;
+    vec2_t const vect    = vm.pSprite->xy;
     int const    sectnum = vm.pSprite->sectnum;
 
     return yax_getflorzofslope(sectnum, vect);
@@ -676,7 +708,7 @@ GAMEEXEC_STATIC void VM_Move(void)
     if (AC_MOVE_ID(vm.pData) == 0 || movflags == 0)
     {
         if (deadflag || (vm.pActor->bpos.x != vm.pSprite->x) || (vm.pActor->bpos.y != vm.pSprite->y))
-            setsprite(vm.spriteNum, &vm.pSprite->pos);
+            setsprite(vm.spriteNum, &vm.pSprite->xyz);
 
         // this fixes the WW2GI tank not facing the player, as it uses move 0
         if (WW2GI && movflags & face_player)
@@ -1026,7 +1058,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 
 #ifdef YAX_ENABLE
         if (yax_getbunch(pSprite->sectnum, YAX_FLOOR) >= 0 && (sector[pSprite->sectnum].floorstat & 512) == 0)
-            setspritez(spriteNum, &pSprite->pos);
+            setspritez(spriteNum, &pSprite->xyz);
         else
 #endif
             if (newZ > actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET)
@@ -1053,15 +1085,15 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
                 A_Spawn(spriteNum,BLOODPOOL);
             }
 #endif
-            actor[spriteNum].picnum = SHOTSPARK1;
-            actor[spriteNum].extra = 1;
+            actor[spriteNum].htpicnum = SHOTSPARK1;
+            actor[spriteNum].htextra = 1;
             pSprite->zvel = 0;
         }
         else if (pSprite->zvel > 2048 && sector[pSprite->sectnum].lotag != ST_1_ABOVE_WATER)
         {
             int16_t newsect = pSprite->sectnum;
 
-            pushmove(&pSprite->pos, &newsect, 128, 4<<8, 4<<8, CLIPMASK0);
+            pushmove(&pSprite->xyz, &newsect, 128, 4<<8, 4<<8, CLIPMASK0);
             if ((unsigned)newsect < MAXSECTORS)
                 changespritesect(spriteNum, newsect);
 
@@ -1072,7 +1104,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         }
     }
 
-    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->pos.vec2))
+    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->xy))
     {
         pSprite->z = newZ + A_GetWaterZOffset(spriteNum);
         return;
@@ -3101,7 +3133,7 @@ badindex:
 
             vInstruction(CON_IFSPAWNEDBY):
             vInstruction(CON_IFWASWEAPON):
-                branch(vm.pActor->picnum == *(++insptr));
+                branch(vm.pActor->htpicnum == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFPDISTL):
@@ -3170,7 +3202,7 @@ badindex:
                 {
                     // else, they did see it.
                     // save where we were looking...
-                    vm.pActor->lastv = pSprite->pos.vec2;
+                    vm.pActor->lastv = pSprite->xy;
                 }
 
                 if (tw && (vm.pSprite->statnum == STAT_ACTOR || vm.pSprite->statnum == STAT_STANDABLE))
@@ -3264,7 +3296,7 @@ badindex:
 
             vInstruction(CON_MIKESND):
                 insptr++;
-                VM_ASSERT((unsigned)vm.pSprite->yvel < MAXSOUNDS, "invalid sound %d\n", vm.pUSprite->yvel);
+                VM_ASSERT((unsigned)vm.pSprite->yvel <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", vm.pUSprite->yvel);
                 if (!S_CheckSoundPlaying(vm.pSprite->yvel))
                     A_PlaySound(vm.pSprite->yvel, vm.spriteNum);
                 dispatch();
@@ -3311,7 +3343,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < MAXSOUNDS, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     insptr--;
                     branch(A_CheckSoundPlaying(spriteNum, soundNum));
@@ -3320,7 +3352,7 @@ badindex:
 
             vInstruction(CON_IFSOUND):
                 insptr++;
-                VM_ASSERT((unsigned)*insptr < MAXSOUNDS, "invalid sound %d\n", (int32_t)*insptr);
+                VM_ASSERT((unsigned)*insptr <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", (int32_t)*insptr);
                 branch(S_CheckSoundPlaying(*insptr));
                 //    VM_DoConditional(SoundOwner[*insptr][0].ow == vm.spriteNum);
                 dispatch();
@@ -3331,7 +3363,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < MAXSOUNDS, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     if (A_CheckSoundPlaying(spriteNum, soundNum))
                         S_StopEnvSound(soundNum, spriteNum);
@@ -3345,7 +3377,7 @@ badindex:
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < MAXSOUNDS, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     A_PlaySound(soundNum, spriteNum);
 
@@ -3359,7 +3391,7 @@ badindex:
                     int const soundNum  = Gv_GetVar(*insptr++);
                     int const newPitch  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < MAXSOUNDS, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     S_ChangeSoundPitch(soundNum, spriteNum, newPitch);
 
@@ -3838,40 +3870,36 @@ badindex:
                     static char const s_JoystickFormat[] = "(%s)";
                     static char const s_Unbound[] = "UNBOUND";
 
-                    if (CONTROL_LastSeenInput == LastSeenInput::Joystick)
+                    auto getkeyname = [&](void)
                     {
-                        char const * joyname = CONFIG_GetGameFuncOnJoystick(gameFunc);
-                        if (joyname != nullptr && joyname[0] != '\0')
-                        {
-                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, joyname);
-                            dispatch();
-                        }
-
-                        char const * keyname = CONFIG_GetGameFuncOnKeyboard(gameFunc);
+                        char const *keyname = CONFIG_GetGameFuncOnKeyboard(gameFunc);
                         if (keyname != nullptr && keyname[0] != '\0')
                         {
                             snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, keyname);
-                            dispatch();
+                            return true;
                         }
+                        return false;
+                    };
 
+                    auto getjoyname = [&](void) 
+                    {
+                        char const *joyname = CONFIG_GetGameFuncOnJoystick(gameFunc);
+                        if (joyname != nullptr && joyname[0] != '\0')
+                        {
+                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, joyname);
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    if (CONTROL_LastSeenInput == LastSeenInput::Joystick)
+                    {
+                        if (getjoyname() || getkeyname()) dispatch();
                         snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, s_Unbound);
                     }
                     else
                     {
-                        char const * keyname = CONFIG_GetGameFuncOnKeyboard(gameFunc);
-                        if (keyname != nullptr && keyname[0] != '\0')
-                        {
-                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, keyname);
-                            dispatch();
-                        }
-
-                        char const * joyname = CONFIG_GetGameFuncOnJoystick(gameFunc);
-                        if (joyname != nullptr && joyname[0] != '\0')
-                        {
-                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, joyname);
-                            dispatch();
-                        }
-
+                        if (getkeyname() || getjoyname()) dispatch();
                         snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, s_Unbound);
                     }
 
@@ -4292,7 +4320,7 @@ badindex:
                 {
                     int const soundNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum < MAXSOUNDS, "invalid sound %d\n", soundNum);
+                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound %d\n", soundNum);
 
                     switch (VM_DECODE_INST(tw))
                     {
@@ -4701,9 +4729,9 @@ badindex:
                     Gv_SetVar(sectReturn, hit.sect);
                     Gv_SetVar(wallReturn, hit.wall);
                     Gv_SetVar(spriteReturn, hit.sprite);
-                    Gv_SetVar(xReturn, hit.pos.x);
-                    Gv_SetVar(yReturn, hit.pos.y);
-                    Gv_SetVar(zReturn, hit.pos.z);
+                    Gv_SetVar(xReturn, hit.x);
+                    Gv_SetVar(yReturn, hit.y);
+                    Gv_SetVar(zReturn, hit.z);
                     dispatch();
                 }
 
@@ -6946,6 +6974,7 @@ void G_RestoreMapState(void)
 #ifdef YAX_ENABLE
         sv_postyaxload();
 #endif
+        calc_sector_reachability();
         G_ResetInterpolations();
 
         Net_ResetPrediction();

@@ -11,11 +11,8 @@ Build the dependencies: vcpkg install libogg:arm64-windows-static libvorbis:arm6
 
 Next, you must copy the built libraries from [vcpkg]\installed\arm64-windows-static\lib into platform\Windows\lib\ARM64, and rename them as follows:
 FLAC.lib -> libFLAC.a
-ogg.lib -> libogg.a
 SDL2.lib -> libSDL2.a
 manual-link\SDL2main.lib -> libSDL2main.a
-vorbis.lib -> libvorbis.a
-vorbisfile.lib -> libvorbisfile.a
 vpxmt.lib -> libvpx.a
 
 dsound, dxguid, and dxguid_sdl

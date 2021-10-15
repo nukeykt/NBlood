@@ -6,14 +6,14 @@
 // by Jonathon Fowler (jf@jonof.id.au)
 // by the EDuke32 team (development@voidpoint.com)
 
-#include "compat.h"
-#include "build.h"
 #include "baselayer.h"
-#include "engine_priv.h"
+#include "build.h"
 #include "cache1d.h"
-#include "lz4.h"
+#include "compat.h"
 #include "crc32.h"
-
+#include "engine_priv.h"
+#include "lz4.h"
+#include "texcache.h"
 #include "vfs.h"
 
 static void *g_vm_data;
@@ -123,7 +123,7 @@ void artClearMapArt(void)
     {
         if (tilefilenum[i] >= MAXARTFILES_BASE && faketiledata[i] != g_bakFakeTileData[i])
         {
-            Bfree(faketiledata[i]);
+            Xfree(faketiledata[i]);
             faketiledata[i] = g_bakFakeTileData[i];
         }
     }
@@ -225,7 +225,7 @@ static void tileSetDataSafe(int32_t const tile, int32_t tsiz, char const * const
     }
     else
     {
-        Bfree(newtile);
+        Xfree(newtile);
     }
 }
 
@@ -599,9 +599,7 @@ int32_t artLoadFiles(const char *filename, int32_t askedsize)
     Bmemset(gotpic, 0, sizeof(gotpic));
     //cachesize = min((int32_t)((Bgetsysmemsize()/100)*60),max(artsize,askedsize));
     g_vm_size = (Bgetsysmemsize() <= (uint32_t)askedsize) ? (int32_t)((Bgetsysmemsize() / 100) * 60) : askedsize;
-    zpl_virtual_memory vm = Xvm_alloc(nullptr, g_vm_size);
-    g_vm_data = vm.data;
-    g_vm_size = vm.size;
+    g_vm_data = Xmalloc(g_vm_size);
     g_cache.initBuffer((intptr_t) g_vm_data, g_vm_size);
 
     artUpdateManifest();
@@ -887,5 +885,5 @@ void Buninitart(void)
     if (artfil != buildvfs_kfd_invalid)
         kclose(artfil);
 
-    Xvm_free(zpl_vm(g_vm_data, g_vm_size));
+    DO_FREE_AND_NULL(g_vm_data);
 }

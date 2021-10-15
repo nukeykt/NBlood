@@ -499,7 +499,7 @@ LIBDIRS :=
 
 ASFORMAT := elf$(BITS)
 ifeq ($(PLATFORM),WINDOWS)
-    LINKERFLAGS += -static-libgcc -static
+    LINKERFLAGS += -static-libgcc -static -Wl,--allow-multiple-definition
     ifeq (0,$(CLANG))
         L_CXXONLYFLAGS += -static-libstdc++
     endif
@@ -979,7 +979,7 @@ ifeq ($(PLATFORM),WINDOWS)
     else
         LIBS += -ldxguid_sdl -lmingw32 -limm32 -lole32 -loleaut32 -lversion -lsetupapi
     endif
-    LIBS += -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid
+    LIBS += -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid -lpsapi
     # -lshfolder
 else ifeq ($(PLATFORM),SKYOS)
     LIBS += -lnet
@@ -1012,22 +1012,23 @@ VC_HASH :=
 VC_BRANCH :=
 
 -include EDUKE32_REVISION.mak
-ifeq (,$(VC_REV))
-    VC_REV := $(shell git rev-list --count HEAD 2>&1)
-endif
-ifeq (,$(VC_HASH))
-    VC_HASH := $(shell git rev-parse --short=9 HEAD 2>&1)
-endif
-ifeq (,$(VC_BRANCH))
-    VC_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>&1)
-    ifneq (master,$(VC_BRANCH))
-        VC_REV := $(VC_REV)[$(VC_BRANCH)]
+ifneq (,$(wildcard .git))
+    ifeq (,$(VC_REV))
+        VC_REV := $(shell git rev-list --count HEAD 2>&1)
+    endif
+    ifeq (,$(VC_HASH))
+        VC_HASH := $(shell git rev-parse --short=9 HEAD 2>&1)
+    endif
+    ifeq (,$(VC_BRANCH))
+        VC_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>&1)
+        ifneq (master,$(VC_BRANCH))
+            VC_REV := $(VC_REV)[$(VC_BRANCH)]
+        endif
+    endif
+    ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
+        REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
     endif
 endif
-ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
-    REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
-endif
-
 
 ##### Allow standard environment variables to take precedence, to help package maintainers.
 

@@ -192,13 +192,13 @@ void RTS_Shutdown(void)
         {
             if (lumpcache[i])
             {
-                Bfree(lumpcache[i]);
+                Xfree(lumpcache[i]);
             }
         }
 #endif
-        Bfree(lumpcache);
+        Xfree(lumpcache);
     }
-    if (lumpinfo) Bfree(lumpinfo);
+    if (lumpinfo) Xfree(lumpinfo);
 
     numlumps = 0;
     lumpinfo = NULL;

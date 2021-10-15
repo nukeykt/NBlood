@@ -21,7 +21,7 @@
 # define HAVE_TIMER_SDL
 #endif
 
-#if !defined _WIN32 && !defined HAVE_TIMER_SDL && !defined ZPL_HAVE_RDTSC
+#if !defined _WIN32 && !defined HAVE_TIMER_SDL && !defined HAVE_TIMER_RDTSC
 # error No platform timer implementation!
 #endif
 
@@ -41,7 +41,7 @@ static int clockTicksPerSecond;
 
 static void(*usertimercallback)(void);
 
-#ifdef ZPL_HAVE_RDTSC
+#ifdef HAVE_TIMER_RDTSC
 static uint64_t tsc_freq;
 
 static FORCE_INLINE ATTRIBUTE((flatten)) void timerFenceRDTSC(void)
@@ -95,7 +95,7 @@ static FORCE_INLINE ATTRIBUTE((flatten)) void timerFenceRDTSC(void)
 static FORCE_INLINE ATTRIBUTE((flatten)) uint64_t timerSampleRDTSC(void)
 {    
     timerFenceRDTSC();  // We need to serialize the instruction stream before executing RDTSC.
-    uint64_t const result = zpl_rdtsc();
+    uint64_t const result = eduke32_rdtsc();
     timerFenceRDTSC();  // Some sources suggest serialization is also necessary or desirable after RDTSC.
     // If this code is ever changed to run by itself in a loop in its own thread, only one fence should be needed.
 
@@ -159,7 +159,7 @@ static inline int timerGetCounterType(void)
         case TIMER_QPC:
             return TIMER_QPC;
 #endif // _WIN32
-#ifdef ZPL_HAVE_RDTSC
+#ifdef HAVE_TIMER_RDTSC
 #if !defined _WIN32 && !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
@@ -186,7 +186,7 @@ uint64_t timerGetPerformanceCounter(void)
             return li.QuadPart;
         }
 #endif // _WIN32
-#ifdef ZPL_HAVE_RDTSC
+#ifdef HAVE_TIMER_RDTSC
         case TIMER_RDTSC: return timerSampleRDTSC();
 #endif
     }
@@ -208,7 +208,7 @@ uint64_t timerGetPerformanceFrequency(void)
             return li.QuadPart;
         }
 #endif // _WIN32
-#ifdef ZPL_HAVE_RDTSC
+#ifdef HAVE_TIMER_RDTSC
         case TIMER_RDTSC: return tsc_freq;
 #endif
     }
@@ -230,7 +230,7 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
     if (sys_timer == TIMER_SDL)
         sys_timer = TIMER_AUTO;
 #endif
-#ifndef ZPL_HAVE_RDTSC
+#ifndef HAVE_TIMER_RDTSC
     if (sys_timer == TIMER_RDTSC)
         sys_timer = TIMER_AUTO;
 #endif
@@ -241,7 +241,7 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
 print_and_return:
         OSD_Printf("Using \"%s\" timer with %g MHz frequency\n", s[sys_timer], timerGetPerformanceFrequency() / 1.0e6);
 
-#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
+#if defined EDUKE32_CPU_X86 && defined HAVE_TIMER_RDTSC
     if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
         OSD_Printf("WARNING: invariant TSC support not detected! You may experience timing issues.\n");
 #endif
@@ -268,7 +268,7 @@ int timerInit(int const tickspersecond)
 #ifdef HAVE_TIMER_SDL
                                                 "   2: SDL_GetPerformanceCounter\n"
 #endif
-#ifdef ZPL_HAVE_RDTSC
+#ifdef HAVE_TIMER_RDTSC
                                                 "   3: CPU RDTSC instruction\n"
 #endif
                                                 , (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
@@ -278,7 +278,7 @@ int timerInit(int const tickspersecond)
 #ifdef HAVE_TIMER_SDL
         SDL_InitSubSystem(SDL_INIT_TIMER);
 #endif
-#ifdef ZPL_HAVE_RDTSC
+#ifdef HAVE_TIMER_RDTSC
         if (tsc_freq == 0)
         {
             auto const calibrationEndTime = timerGetFractionalTicks() + 100.0;

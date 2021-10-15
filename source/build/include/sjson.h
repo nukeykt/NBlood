@@ -144,6 +144,8 @@
 #ifndef SJSON_H_
 #define SJSON_H_
 
+extern "C" void engineDestroyAllocator(void);
+
 #ifdef _MSC_VER
 #   ifndef __cplusplus
 

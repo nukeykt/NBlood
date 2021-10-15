@@ -343,24 +343,12 @@ MenuGroup joyaxessetupgroup = {65, 5, "^Joystick Axes", joyaxes_i, pic_newgameti
 
 
 static char AdvancedMouseAxisFunctions[4][MAXAXISFUNCTIONLENGTH] = { "", "", "", "" };
-static SWBOOL MNU_SetAdvancedMouseFunctions(MenuItem_p item);
-static SWBOOL MNU_MouseDigitalPostProcess(MenuItem_p item);
-static SWBOOL MNU_MouseDigitalSetupCustom(UserCall call, MenuItem_p item);
-MenuGroup advancedmousedigigroup = {0, 0, NULL, NULL, 0, 0, m_defshade, MNU_MouseDigitalSetupCustom, NULL, 0};
 MenuItem advancedmouse_i[] =
 {
     {DefSlider(sldr_mousescalex, 0, "X-Axis Scale"), OPT_XS,     OPT_LINE(0), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(0), 0, m_defshade, 0, NULL, NULL, NULL},
     {DefSlider(sldr_mousescaley, 0, "Y-Axis Scale"), OPT_XS,     OPT_LINE(1), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(1), 0, m_defshade, 0, NULL, NULL, NULL},
-    {DefLayer(0, "Digital Up", &advancedmousedigigroup), OPT_XS, OPT_LINE(3), 1, m_defshade, 0, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[0]), OPT_XSIDE,      OPT_LINE(3), 1, m_defshade, 0, NULL, MNU_SetAdvancedMouseFunctions, NULL},
-    {DefLayer(0, "Digital Down", &advancedmousedigigroup), OPT_XS, OPT_LINE(4), 1, m_defshade, 1, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[1]), OPT_XSIDE,      OPT_LINE(4), 1, m_defshade, 1, NULL, MNU_SetAdvancedMouseFunctions, NULL},
-    {DefLayer(0, "Digital Left", &advancedmousedigigroup), OPT_XS, OPT_LINE(5), 1, m_defshade, 2, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[2]), OPT_XSIDE,      OPT_LINE(5), 1, m_defshade, 2, NULL, MNU_SetAdvancedMouseFunctions, NULL},
-    {DefLayer(0, "Digital Right", &advancedmousedigigroup), OPT_XS, OPT_LINE(6), 1, m_defshade, 3, NULL, NULL, MNU_MouseDigitalPostProcess},
-    {DefInert(0, AdvancedMouseAxisFunctions[3]), OPT_XSIDE,      OPT_LINE(6), 1, m_defshade, 3, NULL, MNU_SetAdvancedMouseFunctions, NULL},
     {DefNone}
 };
 MenuGroup mouseadvancedgroup = {65, 5, "^Adv'd Mouse", advancedmouse_i, pic_newgametitl, 0, m_defshade, NULL, NULL, 0};
@@ -559,7 +547,7 @@ int SENSITIVITY = SENSE_MIN + (SENSE_DEFAULT *SENSE_MUL);
 #define VOL_MUL                 16
 
 // User input data for all devices
-UserInput mnu_input, mnu_input_buffered, order_input_buffered;
+UserInput mnu_input;
 
 // Menu function call back pointer for multiplay menus
 SWBOOL(*cust_callback)(UserCall call, MenuItem_p item);
@@ -843,7 +831,7 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
         const char *morestr = "More...";
         const char *p;
 
-        UserInput inpt = {FALSE,FALSE,dir_None};
+        UserInput inpt = {};
         CONTROL_GetUserInput(&inpt);
 
         if (KEY_PRESSED(KEYSC_ESC) || inpt.button1)
@@ -967,7 +955,7 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
     short w, h=0;
     int returnval = 0;
 
-    UserInput inpt = {FALSE,FALSE,dir_None};
+    UserInput inpt = {};
     CONTROL_GetUserInput(&inpt);
 
     if (inpt.button1)
@@ -1174,86 +1162,6 @@ static SWBOOL MNU_SetMouseButtonFunctions(MenuItem_p item)
     return TRUE;
 }
 
-
-static MenuItem_p mouse_digital_item = NULL;
-
-static SWBOOL MNU_MouseDigitalPostProcess(MenuItem_p item)
-{
-    mouse_digital_item = item;
-    return TRUE;
-}
-
-static SWBOOL MNU_MouseDigitalSetupCustom(UserCall call, MenuItem_p item)
-{
-    static int currentfunc = 0;
-
-    if (call == uc_touchup)
-        return TRUE;
-
-    if (cust_callback == NULL)
-    {
-        if (call != uc_setup)
-            return FALSE;
-        currentfunc = MouseDigitalAxes[mouse_digital_item->tics/2][mouse_digital_item->tics%2];
-        currentfunc++;
-
-        cust_callback = MNU_MouseDigitalSetupCustom;
-        cust_callback_call = call;
-        cust_callback_item = item;
-    }
-
-    {
-        short w, h = 0;
-        const char *s = "Adv'd Mouse";
-
-        rotatesprite(10 << 16, (5-3) << 16, MZ, 0, 2427,
-                     m_defshade, 0, MenuDrawFlags|ROTATE_SPRITE_CORNER, 0, 0, xdim - 1, ydim - 1);
-        MNU_MeasureStringLarge(s, &w, &h);
-        MNU_DrawStringLarge(TEXT_XCENTER(w), 5, s);
-    }
-
-    int selection = MNU_SelectButtonFunction(mouse_digital_item->text, &currentfunc);
-    switch (selection)
-    {
-    case -1:    //cancel
-        cust_callback = NULL;
-        break;
-    case 1:     //acknowledge
-        currentfunc--;
-        MouseDigitalAxes[mouse_digital_item->tics/2][mouse_digital_item->tics%2] = currentfunc;
-        CONTROL_MapDigitalAxis(mouse_digital_item->tics/2, currentfunc, mouse_digital_item->tics%2, controldevice_mouse);
-        MNU_SetAdvancedMouseFunctions(mouse_digital_item);
-        cust_callback = NULL;
-        break;
-    default: break;
-    }
-
-    return TRUE;
-}
-
-static SWBOOL MNU_SetAdvancedMouseFunctions(MenuItem_p item)
-{
-    int axis;
-    char *p;
-
-    axis = item->tics;
-    ASSERT(axis >= 0 && axis < 4);
-
-    if (MouseDigitalAxes[axis/2][axis%2] < 0)
-    {
-        strcpy(AdvancedMouseAxisFunctions[axis], "  -");
-    }
-    else
-    {
-        strcpy(AdvancedMouseAxisFunctions[axis], CONFIG_FunctionNumToName(MouseDigitalAxes[axis/2][axis%2]));
-        for (p = AdvancedMouseAxisFunctions[axis]; *p; p++)
-        {
-            if (*p == '_')
-                *p = ' ';
-        }
-    }
-    return TRUE;
-}
 
 
 static MenuItem_p joystick_button_item = NULL;
@@ -1549,7 +1457,7 @@ static SWBOOL MNU_JoystickAxisSetupCustom(UserCall call, MenuItem *item)
     case 1:     //acknowledge
         currentfunc--;
         JoystickDigitalAxes[JoystickAxisPage][joystick_axis_item->tics] = currentfunc;
-        CONTROL_MapDigitalAxis(JoystickAxisPage, currentfunc, joystick_axis_item->tics, controldevice_joystick);
+        CONTROL_MapDigitalAxis(JoystickAxisPage, currentfunc, joystick_axis_item->tics);
         MNU_SetJoystickAxisFunctions(joystick_axis_item);
         cust_callback = NULL;
         break;
@@ -1595,10 +1503,7 @@ SWBOOL
 MNU_OrderCustom(UserCall call, MenuItem *item)
 {
     static signed char on_screen = 0;
-    UserInput order_input;
-    static int limitmove=0;
-    UserInput tst_input;
-    SWBOOL select_held = FALSE;
+    UserInput order_input = {};
     int zero = 0;
     static SWBOOL DidOrderSound = FALSE;
     short choose_snd;
@@ -1662,59 +1567,17 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             wanghandle = PlaySound(DIGI_WANGORDER2, &zero, &zero, &zero, v3df_dontpan);
     }
 
-    order_input.button0 = order_input.button1 = FALSE;
-    order_input.dir = dir_None;
+    CONTROL_GetUserInput(&order_input);
 
-    // Zero out the input structure
-    tst_input.button0 = tst_input.button1 = FALSE;
-    tst_input.dir = dir_None;
-
-    if (!select_held)
+    // Support a few other keys too
+    if (KEY_PRESSED(KEYSC_SPACE)||KEY_PRESSED(KEYSC_ENTER))
     {
-        CONTROL_GetUserInput(&tst_input);
-        //order_input_buffered.dir = tst_input.dir;
-        // Support a few other keys too
-        if (KEY_PRESSED(KEYSC_SPACE)||KEY_PRESSED(KEYSC_ENTER))
-        {
-            KEY_PRESSED(KEYSC_SPACE) = FALSE;
-            KEY_PRESSED(KEYSC_ENTER) = FALSE;
-            tst_input.dir = dir_South;
-        }
+        KEY_PRESSED(KEYSC_SPACE) = FALSE;
+        KEY_PRESSED(KEYSC_ENTER) = FALSE;
+        order_input.dir = dir_South;
     }
 
-    if (order_input_buffered.button0 || order_input_buffered.button1 || order_input_buffered.dir != dir_None)
-    {
-        if (tst_input.button0 == order_input_buffered.button0 &&
-            tst_input.button1 == order_input_buffered.button1 &&
-            tst_input.dir == order_input_buffered.dir)
-        {
-            select_held = TRUE;
-        }
-        else
-        {
-            if (labs((int32_t) totalclock - limitmove) > 7)
-            {
-                order_input.button0 = order_input_buffered.button0;
-                order_input.button1 = order_input_buffered.button1;
-                order_input.dir = order_input_buffered.dir;
-
-                order_input_buffered.button0 = tst_input.button0;
-                order_input_buffered.button1 = tst_input.button1;
-                order_input_buffered.dir = tst_input.dir;
-
-                limitmove = (int32_t) totalclock;
-            }
-        }
-    }
-    else
-    {
-        select_held = FALSE;
-        order_input_buffered.button0 = tst_input.button0;
-        order_input_buffered.button1 = tst_input.button1;
-        order_input_buffered.dir = tst_input.dir;
-    }
-
-    if (!KEY_PRESSED(KEYSC_ESC) && !order_input_buffered.button1)
+    if (!KEY_PRESSED(KEYSC_ESC) && !order_input.button1)
     {
         cust_callback = MNU_OrderCustom;
         cust_callback_call = call;
@@ -1745,6 +1608,9 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
     {
         on_screen++;
     }
+
+    if (order_input.dir != dir_None)
+        CONTROL_ClearUserInput(&order_input);
 
 // CTW MODIFICATION
 // I reversed the logic in here to allow the user to loop around.
@@ -2554,7 +2420,6 @@ MNU_InputSmallString(char *name, short pix_width)
 
     if (!MoveSkip4 && !MessageInputMode)
     {
-        con_input.dir = dir_None;
         CONTROL_GetUserInput(&con_input);
 
         if (con_input.dir == dir_North)
@@ -3987,7 +3852,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         {
             slidersettings[item->slider] = offset;
             JoystickAnalogAxes[JoystickAxisPage] = MNU_ControlAxisNum(offset);
-            CONTROL_MapAnalogAxis(JoystickAxisPage, MNU_ControlAxisNum(offset), controldevice_joystick);
+            CONTROL_MapAnalogAxis(JoystickAxisPage, MNU_ControlAxisNum(offset));
         }
 
         p = CONFIG_AnalogNumToName(MNU_ControlAxisNum(offset));
@@ -4022,7 +3887,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
                 //CONTROL_SetJoyAxisSaturate(JoystickAxisPage, JoystickAnalogSaturate[JoystickAxisPage]);
             }
 
-            joySetDeadZone(JoystickAxisPage, JoystickAnalogDead[JoystickAxisPage], JoystickAnalogSaturate[JoystickAxisPage]); // [JM] !CHECKME!
+            JOYSTICK_SetDeadZone(JoystickAxisPage, JoystickAnalogDead[JoystickAxisPage], JoystickAnalogSaturate[JoystickAxisPage]); // [JM] !CHECKME!
         }
 
         sprintf(tmp_text, "%.2f%%", (float)(slidersettings[item->slider]<<10) / 32767.f);
@@ -4097,10 +3962,6 @@ MNU_SetupMenu(void)
     menuarray[0] = currentmenu = rootmenu;
     if (ControlPanelType == ct_mainmenu)
 
-        mnu_input_buffered.button0 = mnu_input_buffered.button1 = FALSE;
-    mnu_input_buffered.dir = dir_None;
-    order_input_buffered.button0 = order_input_buffered.button1 = FALSE;
-    order_input_buffered.dir = dir_None;
     ResetKeys();
 
     // custom cust_callback starts out as null
@@ -4601,7 +4462,6 @@ void MNU_DoMenu(CTLType UNUSED(type))
     SWBOOL resetitem;
     int zero = 0;
     static int handle2;
-    static int limitmove=0;
 
     resetitem = TRUE;
 
@@ -4619,57 +4479,18 @@ void MNU_DoMenu(CTLType UNUSED(type))
     mnu_input.dir = dir_None;
 
     // should not get input if you are editing a save game slot
-    if (totalclock < limitmove) limitmove = (int32_t) totalclock;
     if (!MenuInputMode)
     {
-        UserInput tst_input;
-        SWBOOL select_held = FALSE;
+        UserInput tst_input = {};
 
-
-        // Zero out the input structure
-        tst_input.button0 = tst_input.button1 = FALSE;
         tst_input.dir = dir_None;
 
-        if (!select_held)
-        {
-            CONTROL_GetUserInput(&tst_input);
-            mnu_input_buffered.dir = tst_input.dir;
-        }
+        CONTROL_GetUserInput(&tst_input);
+        mnu_input = tst_input;
 
-        if (mnu_input_buffered.button0 || mnu_input_buffered.button1)
-        {
-            if (tst_input.button0 == mnu_input_buffered.button0 &&
-                tst_input.button1 == mnu_input_buffered.button1)
-            {
-                select_held = TRUE;
-            }
-            else if (totalclock - limitmove > 7)
-            {
-                mnu_input.button0 = mnu_input_buffered.button0;
-                mnu_input.button1 = mnu_input_buffered.button1;
-
-                mnu_input_buffered.button0 = tst_input.button0;
-                mnu_input_buffered.button1 = tst_input.button1;
-            }
-        }
-        else
-        {
-            select_held = FALSE;
-            mnu_input_buffered.button0 = tst_input.button0;
-            mnu_input_buffered.button1 = tst_input.button1;
-        }
-
-        if (totalclock - limitmove > 7 && !select_held)
-        {
-            mnu_input.dir = mnu_input_buffered.dir;
-
-            if (mnu_input.dir != dir_None)
-                if (!FX_SoundValidAndActive(handle2))
-                    handle2 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
-
-            limitmove = (int32_t) totalclock;
-            mnu_input_buffered.dir = dir_None;
-        }
+        if (mnu_input.dir != dir_None)
+            if (!FX_SoundValidAndActive(handle2))
+                handle2 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
     }
 
     if (mnu_input.dir == dir_North)
@@ -4718,7 +4539,6 @@ void MNU_DoMenu(CTLType UNUSED(type))
         if (!FX_SoundValidAndActive(handle4))
             handle4 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
         resetitem = TRUE;
-        mnu_input_buffered.button0 = mnu_input_buffered.button1 = FALSE;
     }
     else
         resetitem = FALSE;
@@ -4730,6 +4550,7 @@ void MNU_DoMenu(CTLType UNUSED(type))
 
     if (resetitem)
     {
+        CONTROL_ClearUserInput(&mnu_input);
         KB_ClearKeysDown();
         ResetKeys();
         MOUSE_ClearAllButtons();

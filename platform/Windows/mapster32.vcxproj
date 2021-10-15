@@ -313,6 +313,7 @@
     <ClCompile Include="..\..\source\duke3d\src\sounds_mapster32.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\build\include\editor.h" />
     <ClInclude Include="..\..\source\build\include\m32script.h" />
     <ClInclude Include="..\..\source\build\include\startwin.editor.h" />
     <ClInclude Include="..\..\source\duke3d\src\m32def.h" />
@@ -331,6 +332,9 @@
     </ProjectReference>
     <ProjectReference Include="libxmp-lite.vcxproj">
       <Project>{32d4cf70-a3d6-4cea-81d7-64c743980276}</Project>
+    </ProjectReference>
+    <ProjectReference Include="mimalloc.vcxproj">
+      <Project>{1150264b-19c6-4c32-a204-cb79e96d5492}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

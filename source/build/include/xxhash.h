@@ -76,6 +76,8 @@ XXH64       13.8 GB/s            1.9 GB/s
 XXH32        6.8 GB/s            6.0 GB/s
 */
 
+#include "compat.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -1312,13 +1314,13 @@ XXH_PUBLIC_API XXH128_hash_t XXH128(const void* data, size_t len, XXH64_hash_t s
  * @internal
  * @brief Modify this function to use a different routine than malloc().
  */
-static void* XXH_malloc(size_t s) { return malloc(s); }
+static void* XXH_malloc(size_t s) { return Xmalloc(s); }
 
 /*!
  * @internal
  * @brief Modify this function to use a different routine than free().
  */
-static void XXH_free(void* p) { free(p); }
+static void XXH_free(void* p) { Xfree(p); }
 
 #include <string.h>
 

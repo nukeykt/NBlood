@@ -84,7 +84,7 @@ extern int16_t startang, startsectnum;
 
 extern int32_t lastpm16time, synctics;
 extern int32_t halfxdim16, midydim16, zoom;
-extern int32_t ydim16, xdimgame, ydimgame, bppgame, xdim2d, ydim2d, forcesetup;
+extern int32_t ydim16, bppgame, forcesetup;
 extern int32_t unrealedlook, quickmapcycling;
 extern int32_t pk_turnaccel,pk_turndecel,pk_uedaccel;
 extern int32_t revertCTRL,scrollamount;
@@ -112,6 +112,7 @@ extern int32_t gridlock;
 
 extern int32_t g_maxCacheSize;
 
+extern int osdvisible;
 extern int32_t g_lazy_tileselector;
 extern bool m32_osd_tryscript;
 extern int32_t showheightindicators;
@@ -227,6 +228,8 @@ extern const char *GetSaveBoardFilename(const char *fn);
 
 extern int32_t clockdir(int32_t wallstart);
 extern int32_t loopinside(int32_t x, int32_t y, int16_t startwall);
+
+extern void editorFlipHighlightedSectors(int about_x, int doMirror);
 
 enum {
     // NOTE: These must not be changed, see e.g. loopinside().
@@ -387,23 +390,21 @@ extern int32_t m32_2d3dmode, m32_2d3dsize;
 extern vec2_t m32_2d3d;
 extern int32_t m32_3dundo;
 
-#define XSIZE_2D3D (xdim2d / m32_2d3dsize)
-#define YSIZE_2D3D (ydim2d / m32_2d3dsize)
+extern int g_useCwd;
 
-static inline int32_t m32_2d3d_resolutions_match()
-{
-    return (xdimgame == xdim2d && ydimgame == ydim2d);
-}
+#define XSIZE_2D3D (xdim / m32_2d3dsize)
+#define YSIZE_2D3D (ydim / m32_2d3dsize)
 
 static inline int32_t m32_is2d3dmode(void)
 {
     return !in3dmode() && m32_2d3dmode && (unsigned)cursectnum < MAXSECTORS &&
-        m32_2d3d_resolutions_match() &&
         searchx > m32_2d3d.x && searchx < (m32_2d3d.x + XSIZE_2D3D) &&
         searchy > m32_2d3d.y && searchy < (m32_2d3d.y + YSIZE_2D3D);
 }
 
 extern int32_t editorGet2dSpriteColor(int32_t spr);
+
+extern void editorMaybeLockMouse(int lock);
 
 #define SPRITESEC(j) (sector[sprite[j].sectnum])
 
@@ -467,9 +468,15 @@ static FORCE_INLINE void inpclamp(int32_t *x, int32_t mi, int32_t ma)
 // Timed offset for Mapster32 color index cycling.
 // Range: 0 .. 16
 #define M32_THROB klabs(sintable[(((int32_t) totalclock << 4) & 2047)] >> 10)
-
+static FORCE_INLINE int throbbinwilliams(int first, int second)
+{
+    int8_t const dif = second - first;
+    return first + ((M32_THROB >> (3 - (klabs(dif) >> 3))) ^ ksgn(dif));
+}
+static FORCE_INLINE int batmanandthrobbin(void) { return throbbinwilliams(whitecol, editorcolors[0]); }
+static FORCE_INLINE int throbandbig(void) { return throbbinwilliams(editorcolors[0], whitecol); }
 void m32_showmouse(void);
-
+void editorMaybeWarpMouse(int searchx, int searchy);
 #ifdef __cplusplus
 }
 #endif

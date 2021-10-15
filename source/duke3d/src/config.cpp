@@ -101,31 +101,31 @@ static void CONFIG_SetJoystickButtonFunction(int i, int j, int function)
     ud.config.JoystickFunctions[i][j] = function;
     CONTROL_MapButton(function, i, j, controldevice_joystick);
 }
-static void CONFIG_SetJoystickAnalogAxisScale(int i, int scale)
+static void CONFIG_SetJoystickAnalogAxisSensitivity(int i, float sens)
 {
-    ud.config.JoystickAnalogueScale[i] = scale;
-    CONTROL_SetAnalogAxisScale(i, scale, controldevice_joystick);
+    ud.config.JoystickAnalogueSensitivity[i] = sens;
+    CONTROL_SetAnalogAxisSensitivity(i, sens, controldevice_joystick);
 }
 static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
 {
     ud.config.JoystickAnalogueInvert[i] = invert;
-    CONTROL_SetAnalogAxisInvert(i, invert, controldevice_joystick);
+    CONTROL_SetAnalogAxisInvert(i, invert);
 }
 static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
 {
     ud.config.JoystickAnalogueDead[i] = dead;
     ud.config.JoystickAnalogueSaturate[i] = saturate;
-    joySetDeadZone(i, dead, saturate);
+    JOYSTICK_SetDeadZone(i, dead, saturate);
 }
 static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
 {
     ud.config.JoystickDigitalFunctions[i][j] = function;
-    CONTROL_MapDigitalAxis(i, function, j, controldevice_joystick);
+    CONTROL_MapDigitalAxis(i, function, j);
 }
 static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
 {
     ud.config.JoystickAnalogueAxes[i] = function;
-    CONTROL_MapAnalogAxis(i, function, controldevice_joystick);
+    CONTROL_MapAnalogAxis(i, function);
 }
 
 
@@ -265,8 +265,8 @@ void CONFIG_SetDefaults(void)
     ud.config.AutoAim         = 1;
     ud.config.CheckForUpdates = 1;
     ud.config.FXVolume        = 255;
-    ud.config.JoystickAimWeight = 5;
-    ud.config.JoystickViewCentering = 3;
+    ud.config.JoystickAimWeight = 4;
+    ud.config.JoystickViewCentering = 4;
     ud.config.JoystickAimAssist = 1;
     ud.config.MouseBias       = 0;
     ud.config.MusicDevice     = ASS_AutoDetect;
@@ -478,6 +478,7 @@ void CONFIG_SetupJoystick(void)
     char str[80];
     char temp[80];
     int32_t scale;
+    double sens;
 
     if (ud.config.scripthandle < 0) return;
 
@@ -512,10 +513,10 @@ void CONFIG_SetupJoystick(void)
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
             ud.config.JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
 
-        Bsprintf(str,"ControllerAnalogScale%d",i);
-        scale = ud.config.JoystickAnalogueScale[i];
-        SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
-        ud.config.JoystickAnalogueScale[i] = scale;
+        Bsprintf(str,"ControllerAnalogSensitivity%d",i);
+        sens = ud.config.JoystickAnalogueSensitivity[i];
+        SCRIPT_GetDouble(ud.config.scripthandle, "Controls", str, &sens);
+        ud.config.JoystickAnalogueSensitivity[i] = sens;
 
         Bsprintf(str,"ControllerAnalogInvert%d",i);
         scale = ud.config.JoystickAnalogueInvert[i];
@@ -538,13 +539,15 @@ void CONFIG_SetupJoystick(void)
         CONTROL_MapButton(ud.config.JoystickFunctions[i][0], i, 0, controldevice_joystick);
         CONTROL_MapButton(ud.config.JoystickFunctions[i][1], i, 1,  controldevice_joystick);
     }
+
     for (i=0; i<MAXJOYAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i], controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
-        CONTROL_SetAnalogAxisScale(i, ud.config.JoystickAnalogueScale[i], controldevice_joystick);
-        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i], controldevice_joystick);
+        CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i]);
+        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0);
+        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1);
+        CONTROL_SetAnalogAxisSensitivity(i, ud.config.JoystickAnalogueSensitivity[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i]);
+        JOYSTICK_SetDeadZone(i, ud.config.JoystickAnalogueDead[i], ud.config.JoystickAnalogueSaturate[i]);
     }
 }
 
@@ -584,14 +587,14 @@ static void CONFIG_SetGameControllerAxesModern()
 {
     static GameControllerAnalogAxisSetting const analogAxes[] =
     {
-        { GAMECONTROLLER_AXIS_LEFTX, analog_strafing },
-        { GAMECONTROLLER_AXIS_LEFTY, analog_moving },
-        { GAMECONTROLLER_AXIS_RIGHTX, analog_turning },
-        { GAMECONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
+        { CONTROLLER_AXIS_LEFTX, analog_strafing },
+        { CONTROLLER_AXIS_LEFTY, analog_moving },
+        { CONTROLLER_AXIS_RIGHTX, analog_turning },
+        { CONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
     };
 
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTX, 65536);
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTY, 65536);
+    CONFIG_SetJoystickAnalogAxisSensitivity(CONTROLLER_AXIS_RIGHTX, DEFAULTJOYSTICKANALOGUESENSITIVITY);
+    CONFIG_SetJoystickAnalogAxisSensitivity(CONTROLLER_AXIS_RIGHTY, DEFAULTJOYSTICKANALOGUESENSITIVITY);
 
     for (auto const & analogAxis : analogAxes)
         analogAxis.apply();
@@ -604,37 +607,37 @@ void CONFIG_SetGameControllerDefaults()
 
     static GameControllerButtonSetting const buttons[] =
     {
-        { GAMECONTROLLER_BUTTON_A, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
-        { GAMECONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
-        { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
-        { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
-        { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
-        { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
-        { GAMECONTROLLER_BUTTON_MISC, gamefunc_Third_Person_View },
+        { CONTROLLER_BUTTON_A, gamefunc_Open },
+        { CONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
+        { CONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
+        { CONTROLLER_BUTTON_BACK, gamefunc_Map },
+        { CONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
+        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
+        { CONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
+        { CONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
+        { CONTROLLER_BUTTON_MISC, gamefunc_Third_Person_View },
     };
 
     static GameControllerButtonSetting const buttonsDuke[] =
     {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Inventory },
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
+        { CONTROLLER_BUTTON_X, gamefunc_Inventory },
+        { CONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
+        { CONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
     };
 
     static GameControllerButtonSetting const buttonsFury[] =
     {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
+        { CONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
+        { CONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
+        { CONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
     };
 
     static GameControllerDigitalAxisSetting const digitalAxes[] =
     {
-        { GAMECONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Jump },
-        { GAMECONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
+        { CONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Jump },
+        { CONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
     };
 
     for (auto const & button : buttons)
@@ -653,6 +656,10 @@ void CONFIG_SetGameControllerDefaults()
 
     for (auto const & digitalAxis : digitalAxes)
         digitalAxis.apply();
+
+    ud.config.JoystickAimAssist     = 1;
+    ud.config.JoystickAimWeight     = 4;
+    ud.config.JoystickViewCentering = 4;
 }
 
 void CONFIG_SetGameControllerDefaultsClear()
@@ -665,7 +672,7 @@ void CONFIG_SetGameControllerDefaultsClear()
 
     for (int i=0; i<MAXJOYAXES; i++)
     {
-        CONFIG_SetJoystickAnalogAxisScale(i, DEFAULTJOYSTICKANALOGUESCALE);
+        CONFIG_SetJoystickAnalogAxisSensitivity(i, DEFAULTJOYSTICKANALOGUESENSITIVITY);
         CONFIG_SetJoystickAnalogAxisInvert(i, 0);
         CONFIG_SetJoystickAnalogAxisDeadSaturate(i, DEFAULTJOYSTICKANALOGUEDEAD, DEFAULTJOYSTICKANALOGUESATURATE);
 
@@ -776,7 +783,7 @@ int CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenWidth", &ud.setup.xdim);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "WindowPosX", (int32_t *)&windowx);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "WindowPosY", (int32_t *)&windowy);
-    SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&windowpos);
+    SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&r_windowpositioning);
 
     if (ud.setup.bpp < 8) ud.setup.bpp = 32;
 
@@ -925,7 +932,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", maxrefreshfreq, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPosX", windowx, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPosY", windowy, FALSE, FALSE);
-    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", windowpos, FALSE, FALSE);
+    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", r_windowpositioning, FALSE, FALSE);
 
     if (!NAM_WW2GI)
     {
@@ -973,8 +980,8 @@ void CONFIG_WriteSetup(uint32_t flags)
             Bsprintf(buf, "ControllerDigitalAxes%d_1", dummy);
             SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]));
 
-            Bsprintf(buf, "ControllerAnalogScale%d", dummy);
-            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueScale[dummy], FALSE, FALSE);
+            Bsprintf(buf, "ControllerAnalogSensitivity%d", dummy);
+            SCRIPT_PutDouble(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueSensitivity[dummy], FALSE);
 
             Bsprintf(buf, "ControllerAnalogInvert%d", dummy);
             SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueInvert[dummy], FALSE, FALSE);

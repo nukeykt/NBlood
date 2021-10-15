@@ -876,7 +876,7 @@ nextdemo_nomenu:
                 goto RECHECK;
             }
 
-            if ((I_EscapeTrigger()||(MOUSE_GetButtons()&RIGHT_MOUSE)) && (g_player[myconnectindex].ps->gm&MODE_MENU) == 0 && (g_player[myconnectindex].ps->gm&MODE_TYPE) == 0)
+            if ((I_EscapeTrigger()||(MOUSE_GetButtons()&M_RIGHTBUTTON)) && (g_player[myconnectindex].ps->gm&MODE_MENU) == 0 && (g_player[myconnectindex].ps->gm&MODE_TYPE) == 0)
             {
                 I_EscapeTriggerClear();
                 FX_StopAllSounds();

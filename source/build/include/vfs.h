@@ -33,6 +33,7 @@ static inline int buildvfs_fputc(char c, buildvfs_FILE fp)
 #define buildvfs_fseek_abs(fp, o) PHYSFS_seek((fp), (o))
 #define buildvfs_fseek_rel(fp, o) PHYSFS_seek((fp), PHYSFS_tell(fp) + (o))
 #define buildvfs_rewind(fp) PHYSFS_seek((fp), 0)
+#define buildvfs_fflush(fp) PHYSFS_flush(fp)
 
 #define buildvfs_flength(fp) PHYSFS_fileLength(fp)
 
@@ -88,7 +89,7 @@ using buildvfs_FILE = FILE *;
 #define buildvfs_fopen_read(fn) fopen((fn), "rb")
 #define buildvfs_fopen_write(fn) fopen((fn), "wb")
 #define buildvfs_fopen_write_text(fn) fopen((fn), "w")
-#define buildvfs_fopen_append(fn) fopen((fn), "ab")
+#define buildvfs_fopen_append(fn) fopen((fn), "ab+")
 #define buildvfs_fgetc(fp) fgetc(fp)
 #define buildvfs_fputc(c, fp) fputc((c), (fp))
 #define buildvfs_fgets(str, size, fp) fgets((str), (size), (fp))
@@ -97,9 +98,11 @@ using buildvfs_FILE = FILE *;
 #define buildvfs_ftell(fp) ftell(fp)
 #define buildvfs_fseek_abs(fp, o) fseek((fp), (o), SEEK_SET)
 #define buildvfs_fseek_rel(fp, o) fseek((fp), (o), SEEK_CUR)
+#define buildvfs_fseek_end(fp) fseek((fp), 0, SEEK_END)
 #define buildvfs_rewind(fp) rewind(fp)
+#define buildvfs_fflush(fp) fflush(fp)
 
-static inline int64_t buildvfs_length(int fd)
+static FORCE_INLINE int64_t buildvfs_length(int fd)
 {
 #ifdef _WIN32
     return filelength(fd);
@@ -125,7 +128,7 @@ using buildvfs_fd = int;
 #define buildvfs_lseek_abs(fd, o) lseek((fd), (o), SEEK_SET)
 #define buildvfs_lseek_rel(fd, o) lseek((fd), (o), SEEK_CUR)
 
-static inline int64_t buildvfs_flength(FILE * f)
+static FORCE_INLINE int64_t buildvfs_flength(FILE * f)
 {
 #ifdef _WIN32
     return filelength(_fileno(f));
@@ -133,8 +136,18 @@ static inline int64_t buildvfs_flength(FILE * f)
     return buildvfs_length(fileno(f));
 #endif
 }
-#define buildvfs_exists(fn) (access((fn), F_OK) == 0)
-static inline int buildvfs_isdir(char const *path)
+
+static FORCE_INLINE int buildvfs_exists(char const* path)
+{
+#ifdef _WIN32
+    return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
+#else
+    struct Bstat st;
+    return !Bstat(path, &st);
+#endif
+}
+
+static FORCE_INLINE int buildvfs_isdir(char const *path)
 {
     struct Bstat st;
     return (Bstat(path, &st) ? 0 : (st.st_mode & S_IFDIR) == S_IFDIR);
@@ -147,20 +160,23 @@ static inline int buildvfs_isdir(char const *path)
     if (fileptr) { buildvfs_fclose(fileptr); fileptr = buildvfs_FILE{}; } \
 } while (0)
 
-static inline void buildvfs_fputstrptr(buildvfs_FILE fp, char const * str)
+static FORCE_INLINE void buildvfs_fputstrptr(buildvfs_FILE fp, char const * str)
 {
-    buildvfs_fwrite(str, 1, strlen(str), fp);
+    if (fp)
+        buildvfs_fwrite(str, 1, strlen(str), fp);
 }
 
-static inline void buildvfs_fputs(char const * str, buildvfs_FILE fp)
+static FORCE_INLINE void buildvfs_fputs(char const * str, buildvfs_FILE fp)
 {
-    buildvfs_fwrite(str, 1, strlen(str), fp);
+    if (fp)
+        buildvfs_fwrite(str, 1, strlen(str), fp);
 }
 
 template <size_t N>
-static inline void buildvfs_fputstr(buildvfs_FILE fp, char const (&str)[N])
+static FORCE_INLINE void buildvfs_fputstr(buildvfs_FILE fp, char const (&str)[N])
 {
-    buildvfs_fwrite(&str, 1, N-1, fp);
+    if (fp)
+        buildvfs_fwrite(&str, 1, N-1, fp);
 }
 
 

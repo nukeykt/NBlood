@@ -8,6 +8,7 @@
 #include "osd.h"
 #include "polymost.h"
 #include "renderlayer.h"
+#include "mimalloc.h"
 
 // video
 #ifdef _WIN32
@@ -35,8 +36,115 @@ char    g_keyRemapTable[NUMKEYS];
 char    g_keyNameTable[NUMKEYS][24];
 
 int32_t r_maxfps = -1;
-int32_t r_maxfpsoffset;
 uint64_t g_frameDelay;
+
+
+//
+// initprintf() -- prints a formatted string to the initialization window
+//
+int initprintf(const char *f, ...)
+{
+    size_t size = max(PRINTF_INITIAL_BUFFER_SIZE >> 1, nextPow2(Bstrlen(f)));
+    char *buf = nullptr;
+    int len;
+
+    do
+    {
+        va_list va;
+        buf = (char *)Xrealloc(buf, (size <<= 1));
+        va_start(va, f);
+        len = Bvsnprintf(buf, size-1, f, va);
+        va_end(va);
+    } while (len < 0);
+
+    buf[size-1] = 0;
+    initputs(buf);
+    Xfree(buf);
+
+    return len;
+}
+
+
+//
+// initputs() -- prints a string to the initialization window
+//
+void initputs(const char *buf)
+{
+#ifdef __ANDROID__
+    __android_log_print(ANDROID_LOG_INFO,"DUKE", "%s",buf);
+#endif
+
+    OSD_Puts(buf);
+    startwin_puts(buf);
+}
+
+
+static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+#ifdef SMMALLOC_STATS_SUPPORT
+    OSD_Printf("\n%s         --- BUCKET LIST ---\n\n", osd->draw.errorfmt);
+
+    int const numBuckets = g_sm_heap->GetBucketsCount();
+    uint32_t totalBytesUsed = 0;
+
+    for (int i = 0; i < numBuckets; i++)
+    {
+        uint32_t const elementSize = g_sm_heap->GetBucketElementSize(i);
+
+        OSD_Printf("bucket #%u (%d blocks of %d bytes):\n", i, g_sm_heap->GetBucketElementsCount(i), elementSize);
+
+        auto stats = g_sm_heap->GetBucketStats(i);
+
+        uint32_t const cacheHitCount = (uint32_t)stats->cacheHitCount.load();
+        uint32_t const hitCount      = (uint32_t)stats->hitCount.load();
+        uint32_t const missCount     = (uint32_t)stats->missCount.load();
+        uint32_t const freeCount     = (uint32_t)stats->freeCount.load();
+
+        OSD_Printf("%12s: %u\n", "cache hit", cacheHitCount);
+        OSD_Printf("%12s: %u\n", "hit",       hitCount);
+        if (missCount)
+            OSD_Printf("%12s: %s%u\n","miss", osd->draw.errorfmt, missCount);
+        OSD_Printf("%12s: %u\n",  "freed",     freeCount);
+
+        uint32_t const useCount        = cacheHitCount + hitCount + missCount - freeCount;
+        uint32_t const bucketBytesUsed = useCount * elementSize;
+        totalBytesUsed += bucketBytesUsed;
+        OSD_Printf("%12s: %u (%d bytes)\n\n", "in use", useCount, bucketBytesUsed);
+    }
+
+    OSD_Printf("%d total bytes in use across %d buckets.\n", totalBytesUsed, numBuckets);
+#else
+    OSD_Printf("bucketlist: missing SMMALLOC_STATS_SUPPORT!\n");
+#endif
+    return OSDCMD_OK;
+}
+
+static int osdfunc_heapinfo(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+    mi_stats_print(NULL);
+    return OSDCMD_OK;
+}
+
+void engineDestroyAllocator(void)
+{
+    _sm_allocator_thread_cache_destroy(g_sm_heap);
+    _sm_allocator_destroy(g_sm_heap);
+}
+
+void engineCreateAllocator(void)
+{
+    // 8 buckets of 2MB each--we don't really need to burn a lot of memory here for this thing to do its job
+    g_sm_heap = _sm_allocator_create(SMM_MAX_BUCKET_COUNT, 2097152);
+    _sm_allocator_thread_cache_create(g_sm_heap, sm::CACHE_HOT, { 20480, 32768, 32768, 1536, 4096, 8192, 128, 4096 });
+
+#ifdef SMMALLOC_STATS_SUPPORT
+    OSD_RegisterFunction("bucketlist", "bucketlist: list bucket statistics", osdfunc_bucketlist);
+#endif
+    OSD_RegisterFunction("heapinfo", "heapinfo: memory usage statistics", osdfunc_heapinfo);
+}
+
 
 void (*keypresscallback)(int32_t, int32_t);
 
@@ -443,12 +551,6 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 
-    if (bpp == 8)
-    {
-        initprintf("glinfo: not in OpenGL mode!\n");
-        return OSDCMD_OK;
-    }
-
     initprintf("OpenGL information\n %s %s %s\n",
                glinfo.vendor, glinfo.renderer, glinfo.version);
 
@@ -477,6 +579,8 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
     initprintf(" Vertex buffer objects:   %s\n", SUPPORTED(glinfo.vbos));
 #endif
     initprintf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
+    if (GLVersion.major)
+        OSD_Printf(" GL context version:      %d.%d\n", GLVersion.major, GLVersion.minor);
 
 #undef SUPPORTED
 
@@ -497,10 +601,10 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
         videoSetPalette(GAMMA_CALC,0,0);
         return r;
     }
-    else if (!Bstrcasecmp(parm->name, "r_maxfps") || !Bstrcasecmp(parm->name, "r_maxfpsoffset"))
+    else if (!Bstrcasecmp(parm->name, "r_maxfps"))
     {
         if (r_maxfps > 0) r_maxfps = clamp(r_maxfps, 30, 1000);
-        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(r_maxfps);
     }
     return r;
 }
@@ -527,11 +631,10 @@ int32_t baselayer_init(void)
         { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
         { "r_maxfps", "limit the frame rate", (void *)&r_maxfps, CVAR_INT | CVAR_FUNCPTR, -1, 1000 },
-        { "r_maxfpsoffset", "menu-controlled offset for r_maxfps", (void *)&r_maxfpsoffset, CVAR_INT | CVAR_FUNCPTR, -10, 10 },
 #ifdef YAX_ENABLE
         { "r_tror_nomaskpass", "enable/disable additional pass in TROR software rendering", (void *)&r_tror_nomaskpass, CVAR_BOOL, 0, 1 },
 #endif
-        { "r_windowpositioning", "enable/disable window position memory", (void *) &windowpos, CVAR_BOOL, 0, 1 },
+        { "r_windowpositioning", "enable/disable window position memory", (void *) &r_windowpositioning, CVAR_BOOL, 0, 1 },
         { "vid_gamma","adjusts gamma component of gamma ramp",(void *) &g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
         { "vid_contrast","adjusts contrast component of gamma ramp",(void *) &g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
         { "vid_brightness","adjusts brightness component of gamma ramp",(void *) &g_videoBrightness, CVAR_FLOAT|CVAR_FUNCPTR, -10, 10 },
@@ -567,7 +670,9 @@ int32_t baselayer_init(void)
     polymost_initosdfuncs();
 #endif
 
-    for (native_t i = 0; i < NUMKEYS; i++) g_keyRemapTable[i] = i;
+    for (native_t i = 0; i < NUMKEYS; i++)
+        if (g_keyRemapTable[i] == 0)
+            g_keyRemapTable[i] = i;
 
     return 0;
 }
@@ -597,26 +702,25 @@ void maybe_redirect_outputs(void)
 
 int engineFPSLimit(void)
 {
+    static uint64_t nextFrameTicks;
+    static uint64_t savedFrameDelay;
+
     if (!r_maxfps)
         return true;
 
-    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+    g_frameDelay = calcFrameDelay(r_maxfps);
 
-    uint64_t        frameTicks;
-    static uint64_t nextFrameTicks;
-    static uint64_t frameDelay;
+    uint64_t frameTicks = timerGetNanoTicks();
 
-    if (g_frameDelay != frameDelay)
+    if (g_frameDelay != savedFrameDelay)
     {
-        nextFrameTicks = timerGetPerformanceCounter() + g_frameDelay;
-        frameDelay = g_frameDelay;
+        savedFrameDelay = g_frameDelay;
+        nextFrameTicks  = frameTicks + g_frameDelay;
     }
-    handleevents();
-    frameTicks = timerGetPerformanceCounter();
 
-    if (nextFrameTicks - frameTicks > g_frameDelay)
+    if (frameTicks >= nextFrameTicks)
     {
-        while (nextFrameTicks - frameTicks > g_frameDelay)
+        while (frameTicks >= nextFrameTicks)
             nextFrameTicks += g_frameDelay;
 
         return true;

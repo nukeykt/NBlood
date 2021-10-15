@@ -19,10 +19,16 @@ extern int app_main(int argc, char const * const * argv);
 extern const char* AppProperName;
 extern const char* AppTechnicalName;
 
+void engineCreateAllocator(void);
+void engineDestroyAllocator(void);
+
 #ifdef DEBUGGINGAIDS
 # define DEBUG_MASK_DRAWING
 extern int32_t g_maskDrawMode;
 #endif
+
+#define PRINTF_INITIAL_BUFFER_SIZE 32
+#define MSGBOX_PRINTF_MAX          1024
 
 extern char quitevent, appactive;
 extern char modechange;
@@ -32,6 +38,7 @@ extern int32_t vsync;
 extern int32_t r_finishbeforeswap;
 extern int32_t r_glfinish;
 extern int32_t r_borderless;
+extern int32_t r_windowpositioning;
 extern int32_t r_displayindex;
 
 extern void app_crashhandler(void);
@@ -57,7 +64,6 @@ extern char offscreenrendering;
 extern int32_t nofog;
 
 extern int32_t r_maxfps;
-extern int32_t r_maxfpsoffset;
 
 void calc_ylookup(int32_t bpl, int32_t lastyidx);
 
@@ -283,8 +289,6 @@ void mouseReadPos(int32_t *x, int32_t *y);
 
 bool joyHasButton(int button);
 void joyReadButtons(int32_t *pResult);
-void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
-void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);
 extern int32_t inputchecked;
 
 int32_t wm_msgbox(const char *name, const char *fmt, ...) ATTRIBUTE((format(printf,2,3)));
@@ -298,14 +302,17 @@ void makeasmwriteable(void);
 void maybe_redirect_outputs(void);
 
 extern uint64_t g_frameDelay;
-static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
+static inline uint64_t calcFrameDelay(int maxFPS)
 {
-    uint64_t const perfFreq = timerGetPerformanceFrequency();
+    uint64_t perfFreq = timerGetNanoTickRate();
 
-    if (maxFPS == -1)
-        return perfFreq / refreshfreq;
+    switch (maxFPS)
+    {
+        case -1: maxFPS = refreshfreq; break;
+        case 0: perfFreq = 0; break;
+    }
 
-    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
+    return tabledivide64(perfFreq, maxFPS);
 }
 extern int engineFPSLimit(void);
 #ifdef __cplusplus
@@ -314,9 +321,11 @@ extern int engineFPSLimit(void);
 
 static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks const ototalclk, int gameTicRate)
 {
-    int const tfreq = (int)refreshfreq;
-    int const clk   = (totalclk - ototalclk).toScale16();
-    int const ratio = tabledivide32_noinline(clk * tfreq, tabledivide32_noinline(timerGetClockRate() * tfreq, gameTicRate));
+    int const   tfreq = (int)floorf(refreshfreq * 120 / timerGetClockRate());
+    int const   clk   = (totalclk - ototalclk).toScale16();
+    float const tics  = clk * tfreq * (1.f / (65536.f * 120));
+    int const   ratio = tabledivide32_noinline((int)(65536 * tics * gameTicRate), tfreq);
+
 #if 0 //ndef NDEBUG
     if ((unsigned)ratio > 66048)
         OSD_Printf("calc_smoothratio: ratio: %d\n", ratio);

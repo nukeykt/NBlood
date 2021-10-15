@@ -517,13 +517,13 @@ void G_DoCheats(void)
                     else
                     {
                         sprite[pi].extra = pPlayer->max_player_health;
-                        actor[pi].extra = -1;
+                        actor[pi].htextra = -1;
                         pPlayer->last_extra = pPlayer->max_player_health;
                         P_DoQuote(QUOTE_CHEAT_GODMODE_OFF, pPlayer);
                     }
 
                     sprite[pi].extra = pPlayer->max_player_health;
-                    actor[pi].extra = 0;
+                    actor[pi].htextra = 0;
 
                     if (cheatNum != CHEAT_COMEGETSOME)
                         pPlayer->dead_flag = 0;

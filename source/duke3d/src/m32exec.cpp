@@ -1985,9 +1985,9 @@ badindex:
                     Gv_SetVar(hitsectvar, hit.sect);
                     Gv_SetVar(hitwallvar, hit.wall);
                     Gv_SetVar(hitspritevar, hit.sprite);
-                    Gv_SetVar(hitxvar, hit.pos.x);
-                    Gv_SetVar(hityvar, hit.pos.y);
-                    Gv_SetVar(hitzvar, hit.pos.z);
+                    Gv_SetVar(hitxvar, hit.x);
+                    Gv_SetVar(hityvar, hit.y);
+                    Gv_SetVar(hitzvar, hit.z);
                 }
                 continue;
             }
@@ -2302,6 +2302,18 @@ badindex:
             }
 
 // *** stuff
+        case CON_XFLIPHIGHLIGHTEDSECTORS:
+        case CON_XMIRRORHIGHLIGHTEDSECTORS:
+            insptr++;
+            editorFlipHighlightedSectors(1, tw == CON_XMIRRORHIGHLIGHTEDSECTORS);
+            continue;
+
+        case CON_YFLIPHIGHLIGHTEDSECTORS:
+        case CON_YMIRRORHIGHLIGHTEDSECTORS:
+            insptr++;
+            editorFlipHighlightedSectors(0, tw == CON_YMIRRORHIGHLIGHTEDSECTORS);
+            continue;
+
         case CON_UPDATEHIGHLIGHT:
             insptr++;
             update_highlight();

@@ -30,30 +30,12 @@ char levelname[BMAX_PATH] = {0};
 
 static char kensig[64];
 
-static const char *CallExtGetVer(void);
-static int32_t CallExtInit(void);
-static int32_t CallExtPreInit(int32_t argc,char const * const * argv);
-static int32_t CallExtPostStartupWindow(void);
-static void CallExtPostInit(void);
-static void CallExtUnInit(void);
-static void CallExtPreCheckKeys(void);
-static void CallExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
-static void CallExtCheckKeys(void);
-static void CallExtPreLoadMap(void);
-static void CallExtSetupMapFilename(const char *mapname);
-static void CallExtLoadMap(const char *mapname);
-static int32_t CallExtPreSaveMap(void);
-static void CallExtSaveMap(const char *mapname);
-static inline const char *CallExtGetSectorCaption(int16_t sectnum) { return ExtGetSectorCaption(sectnum); }
-static inline const char *CallExtGetWallCaption(int16_t wallnum) { return ExtGetWallCaption(wallnum); }
-static inline const char *CallExtGetSpriteCaption(int16_t spritenum) { return ExtGetSpriteCaption(spritenum); }
-static void CallExtShowSectorData(int16_t sectnum);
-static void CallExtShowWallData(int16_t wallnum);
-static void CallExtShowSpriteData(int16_t spritenum);
-static void CallExtEditSectorData(int16_t sectnum);
-static void CallExtEditWallData(int16_t wallnum);
-static void CallExtEditSpriteData(int16_t spritenum);
-// static const char *CallExtGetSectorType(int32_t lotag);
+static void    editorEventAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
+static void    editorEventPreLoadMap(void);
+static void    editorSetupMapFilename(const char *mapname);
+static void    editorEventLoadMap(const char *mapname);
+static int32_t editorEventPreSaveMap(void);
+static void    editorEventSaveMap(const char *mapname);
 
 int8_t m32_clipping=2;
 static int32_t m32_rotateang = 0;
@@ -94,7 +76,7 @@ int32_t synctics = 0, lockclock = 0;
 // so that exiting from mapster32 in 2d mode saves the correct ones
 float vid_gamma_3d=-1, vid_contrast_3d=-1, vid_brightness_3d=-1;
 
-int32_t xdim2d = 640, ydim2d = 480, xdimgame = 640, ydimgame = 480, bppgame = 8;
+int32_t bppgame = 8;
 int32_t forcesetup = 1;
 
 #ifndef GEKKO
@@ -104,6 +86,7 @@ int32_t g_maxCacheSize = 8<<20;
 #endif
 
 static int16_t oldmousebstatus = 0;
+static int16_t bstatus;
 
 char game_executable[BMAX_PATH] = {0};
 
@@ -205,6 +188,8 @@ typedef struct
 } mapinfofull_t;
 
 int32_t g_doScreenShot;
+int g_alwaysLockMouse;
+int osdvisible;
 
 #define eitherALT   (keystatus[sc_LeftAlt]|keystatus[sc_RightAlt])
 #define eitherCTRL  (keystatus[sc_LeftControl]|keystatus[sc_RightControl])
@@ -320,9 +305,7 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
 
     if (!in3dmode())
     {
-        videoSet2dMode(newx,newy);
-        xdim2d = xdim;
-        ydim2d = ydim;
+        videoSet2dMode(newx, newy, upscalefactor);
 
         videoBeginDrawing();	//{{{
         CLEARLINES2D(0, ydim16, 0);
@@ -336,8 +319,6 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     if (videoSetGameMode(newfullscreen,newx,newy,newbpp,upscalefactor))
         OSD_Printf("vidmode: Mode change failed!\n");
 
-    xdimgame = newx;
-    ydimgame = newy;
     bppgame = newbpp;
     fullscreen = newfullscreen;
 
@@ -359,14 +340,14 @@ static void M32_drawdebug(void)
         static char tstr[128];
         Bsprintf(tstr, "search... stat=%d, sector=%d, wall=%d (%d), isbottom=%d, asksave=%d",
                  searchstat, searchsector, searchwall, searchbottomwall, searchisbottom, asksave);
-        printext256(x,y,whitecol,0,tstr,xdimgame>640?0:1);
+        printext256(x,y,whitecol,0,tstr,xdim>640?0:1);
     }
 #endif
     if (m32_numdebuglines>0)
     {
         videoBeginDrawing();
         for (i=0; i<m32_numdebuglines && y<ydim-8; i++, y+=8)
-            printext256(x,y,whitecol,0,m32_debugstr[i],xdimgame>640?0:1);
+            printext256(x,y,whitecol,0,m32_debugstr[i],xdim>640?0:1);
         videoEndDrawing();
     }
     m32_numdebuglines=0;
@@ -515,7 +496,7 @@ void M32_DrawRoomsAndMasks(void)
 
     yax_preparedrawrooms();
     drawrooms(pos.x,pos.y,pos.z,ang,horiz,cursectnum);
-    yax_drawrooms(CallExtAnalyzeSprites, cursectnum, 0, 0);
+    yax_drawrooms(editorEventAnalyzeSprites, cursectnum, 0, 0);
 
     const int osearchwall=searchwall, osearchstat=searchstat;
     if (srchwall >= 0)
@@ -526,7 +507,7 @@ void M32_DrawRoomsAndMasks(void)
         searchstat = 3;
         searchwall = srchwall;
     }
-    CallExtAnalyzeSprites(0,0,0,0,0);
+    editorEventAnalyzeSprites(0,0,0,0,0);
     searchwall = osearchwall, searchstat=osearchstat;
 
     renderDrawMasks();
@@ -538,7 +519,7 @@ void M32_DrawRoomsAndMasks(void)
     {
         polymer_editorpick();
         drawrooms(pos.x,pos.y,pos.z,ang,horiz,cursectnum);
-        CallExtAnalyzeSprites(0,0,0,0,0);
+        editorEventAnalyzeSprites(0,0,0,0,0);
         renderDrawMasks();
         M32_ResetFakeRORTiles();
     }
@@ -561,7 +542,7 @@ void M32_DrawRoomsAndMasks(void)
 
 void M32_OnShowOSD(int shown)
 {
-    mouseLockToWindow((!shown) + 2);
+    osdvisible = shown;
 }
 
 static void M32_FatalEngineError(void)
@@ -631,7 +612,19 @@ static void InitCustomColors()
     vgapal16[41*4+2] = 252; //192;
 }
 
-int app_main(int argc, char const * const * argv)
+static int editorValidateMlook(void)
+{
+    return mlook == 2 || (mlook && in3dmode() && !m32_is2d3dmode());
+}
+
+void editorMaybeLockMouse(int lock)
+{
+    if (g_alwaysLockMouse || editorValidateMlook()) lock = 1;
+    if (osdvisible) lock = 0;
+    mouseLockToWindow(lock);
+}
+
+int app_main(int argc, char const* const* argv)
 {
 #ifdef STARTUP_SETUP_WINDOW
     char cmdsetup = 0;
@@ -653,8 +646,12 @@ int app_main(int argc, char const * const * argv)
 
     editstatus = 1;
 
-    if ((i = CallExtPreInit(argc,argv)) < 0) return -1;
+    Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
 
+    if ((i = ExtPreInit(argc,argv)) < 0) return -1;
+#ifdef STARTUP_SETUP_WINDOW
+    if (i) cmdsetup = 1;
+#endif
 #ifdef _WIN32
     win_priorityclass = 1;
 #endif
@@ -705,12 +702,8 @@ int app_main(int argc, char const * const * argv)
     if (!buildvfs_getcwd(program_origcwd,BMAX_PATH))
         program_origcwd[0] = '\0';
 
-    Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
-
     if (enginePreInit())
         M32_FatalEngineError();
-
-    if ((i = CallExtInit()) < 0) return -1;
 
 #ifdef STARTUP_SETUP_WINDOW
     if (i || forcesetup || cmdsetup)
@@ -718,12 +711,14 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            exit(EXIT_SUCCESS);
+            Bexit(EXIT_SUCCESS);
         }
     }
 #endif
 
-    if (CallExtPostStartupWindow() < 0) return -1;
+    if ((i = ExtInit()) < 0) return -1;
+
+    if (ExtPostStartupWindow() < 0) return -1;
 
     loadnames(g_namesFileName);
 
@@ -750,13 +745,13 @@ int app_main(int argc, char const * const * argv)
         initprintf("Definitions file \"%s\" loaded.\n",defsfile);
 
     for (char * m : g_defModules)
-        Bfree(m);
+        Xfree(m);
     g_defModules.clear();
 
     if (enginePostInit())
         M32_FatalEngineError();
 
-    CallExtPostInit();
+    ExtPostInit();
 
 #ifdef YAX_ENABLE
     // init dummy texture for YAX
@@ -800,7 +795,7 @@ int app_main(int argc, char const * const * argv)
         initprintf("There was an error loading the sprite clipping map (status %d).\n", k);
 
     for (char * f : g_clipMapFiles)
-        Bfree(f);
+        Xfree(f);
     g_clipMapFiles.clear();
 #endif
 
@@ -819,7 +814,8 @@ int app_main(int argc, char const * const * argv)
     updatesector(pos.x,pos.y,&cursectnum);
 
     keySetCallback(&m32_keypresscallback);
-    M32_OnShowOSD(0);  // make sure the desktop's mouse cursor is hidden
+    editorMaybeLockMouse(0);
+
 
     if (cursectnum == -1)
     {
@@ -831,11 +827,11 @@ int app_main(int argc, char const * const * argv)
         g_videoBrightness = 0.0;
 
         videoSetPalette(0,0,0);
-        if (videoSetGameMode(fullscreen, xdim2d, ydim2d, 8, upscalefactor) < 0)
+        if (videoSetGameMode(fullscreen, xdim, ydim, 8, upscalefactor) < 0)
         {
-            CallExtUnInit();
+            ExtUnInit();
             engineUnInit();
-            Bprintf("%d * %d not supported in this graphics mode\n",xdim2d,ydim2d);
+            Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
             Bexit(EXIT_SUCCESS);
         }
 
@@ -854,9 +850,9 @@ int app_main(int argc, char const * const * argv)
     }
     else
     {
-        if (videoSetGameMode(fullscreen, xdimgame, ydimgame, bppgame, upscalefactor) < 0)
+        if (videoSetGameMode(fullscreen, xdim, ydim, bppgame, upscalefactor) < 0)
         {
-            CallExtUnInit();
+            ExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
             Bexit(EXIT_SUCCESS);
@@ -886,7 +882,7 @@ CANCEL:
         synctics = (int32_t) totalclock-lockclock;
         lockclock += synctics;
 
-        CallExtPreCheckKeys();
+        ExtPreCheckKeys();
 
         M32_DrawRoomsAndMasks();
 
@@ -902,7 +898,7 @@ CANCEL:
 
         M32_drawdebug();
 #endif
-        CallExtCheckKeys();
+        ExtCheckKeys();
 
 
         if (keystatus[sc_Escape])
@@ -973,7 +969,7 @@ CANCEL:
     }
 
 
-    CallExtUnInit();
+    ExtUnInit();
 //    clearfilenames();
     engineUnInit();
 
@@ -1074,16 +1070,18 @@ static void mainloop_move(void)
 
     if (angvel != 0)  //ang += angvel * constant
     {
-        if (eitherCTRL && m32_2d3dmode)
+        if (!in3dmode() && eitherCTRL && m32_2d3dmode)
         {
+#if 0
             int x = m32_2d3d.x + (angvel / 32);
             int xx = m32_2d3d.x + XSIZE_2D3D + (angvel / 32);
 
-            if (x > 4 && xx < xdim2d - 4)
+            if (x > 4 && xx < xdim - 4)
             {
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.x += (angvel / 32);
             }
+#endif // 
         }
         else
         {
@@ -1104,16 +1102,18 @@ static void mainloop_move(void)
     }
     if ((vel|svel) != 0)
     {
-        if (eitherCTRL && m32_2d3dmode)
+        if (!in3dmode() && eitherCTRL && m32_2d3dmode)
         {
+#if 0
             int y = m32_2d3d.y - (vel / 64);
             int yy = m32_2d3d.y + YSIZE_2D3D - (vel / 64);
 
-            if (y > 4 && yy < ydim2d - STATUS2DSIZ2 - 4)
+            if (y > 4 && yy < ydim - STATUS2DSIZ2 - 4)
             {
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.y -= (vel / 64);
             }
+#endif // 
         }
         else
 
@@ -1150,7 +1150,7 @@ static void handle_sprite_in_clipboard(int32_t i)
         if (tilesiz[temppicnum].x <= 0 || tilesiz[temppicnum].y <= 0)
         {
             j = 0;
-            for (k=0; k<MAXTILES; k++)
+            for (k=0; k<MAXUSERTILES; k++)
                 if (tilesiz[k].x > 0 && tilesiz[k].y > 0)
                 {
                     j = k;
@@ -1170,18 +1170,16 @@ static void handle_sprite_in_clipboard(int32_t i)
 
 void editinput(void)
 {
-    int32_t mousz, bstatus;
+    int32_t mousz;
     int32_t i, tempint=0;
     int32_t goalz, xvect, yvect, hiz, loz, oposz;
     int32_t hihit, lohit, omlook=mlook;
 
-// 3B  3C  3D  3E   3F  40  41  42   43  44  57  58          46
-// F1  F2  F3  F4   F5  F6  F7  F8   F9 F10 F11 F12        SCROLL
+    oldmousebstatus = bstatus;
+    bstatus = mouseReadButtons();
+    editorMaybeLockMouse(!!(bstatus & ~(16|32)));
 
-    mousz = 0;
-    mouseGetValues(&mousx,&mousy,&bstatus);
-    mousx = (mousx<<16) + mousexsurp;
-    mousy = (mousy<<16) + mouseysurp;
+    if (osdvisible) return;
 
     if (unrealedlook && !mskip)
     {
@@ -1191,7 +1189,22 @@ void editinput(void)
             mlook = 3;
     }
 
+    mousz = 0;
+
+    if (g_mouseLockedToWindow)
+        mouseReadPos(&mousx, &mousy);
+    else
     {
+        mousx = g_mousePos.x;
+        mousy = g_mousePos.y;
+        g_mousePos.x = 0;
+        g_mousePos.y = 0;
+    }
+
+    {
+        mousx = (mousx << 16) + mousexsurp;
+        mousy = (mousy << 16) + mouseysurp;
+
         ldiv_t ld;
         if (mlook)
         {
@@ -1219,12 +1232,13 @@ void editinput(void)
         if ((bstatus&(1|2|4))==1)
         {
             ang += mousx;
+            ang &= 2047;
             xvect = -((mousy*(int32_t)sintable[(ang+2560)&2047])<<(3+pk_uedaccel));
             yvect = -((mousy*(int32_t)sintable[(ang+2048)&2047])<<(3+pk_uedaccel));
 
             move_and_update(xvect, yvect, 0);
         }
-        else if (!mlook && (bstatus&(1|2|4))==2)
+        else if (!editorValidateMlook() && (bstatus&(1|2|4))==2)
         {
             mlook=2;
         }
@@ -1267,10 +1281,11 @@ void editinput(void)
     }
     else
     {
-        if (mlook && (unrealedlook==0 || (bstatus&(1|4))==0))
+        if (editorValidateMlook() && (unrealedlook==0 || (bstatus&(1|4))==0))
         {
             ang += mousx;
             horiz -= mousy;
+            ang &= 2047;
 
             /*
             if (mousy && !(mousy/4))
@@ -1278,7 +1293,6 @@ void editinput(void)
             if (mousx && !(mousx/2))
                 ang++;
             */
-
             inpclamp(&horiz, -99, 299);
 
             if (mlook == 1)
@@ -1301,11 +1315,24 @@ void editinput(void)
             osearchy = searchy;
             searchx += mousx;
             searchy += mousy;
-
-            inpclamp(&searchx, 12, xdim-13);
-            inpclamp(&searchy, 12, ydim-13);
         }
     }
+
+    if (!editorValidateMlook())
+    {
+        if (oldmousebstatus && !g_mouseLockedToWindow)
+            editorMaybeWarpMouse(searchx, searchy);
+        else if (!g_mouseLockedToWindow && !oldmousebstatus)
+        {
+            searchx = g_mouseAbs.x / upscalefactor;
+            searchy = g_mouseAbs.y / upscalefactor;
+        }
+    }
+
+    mlook = omlook;
+
+    inpclamp(&searchx, 12, xdim-13);
+    inpclamp(&searchy, 12, ydim-13);
 
 //    showmouse();
 
@@ -1488,12 +1515,11 @@ void editinput(void)
 
             if (hit.sect >= 0)
             {
-                da.x = hit.pos.x;
-                da.y = hit.pos.y;
+                da = hit.xy;
                 if (gridlock && grid > 0)
                 {
                     if (AIMING_AT_WALL || AIMING_AT_MASKWALL)
-                        hit.pos.z &= 0xfffffc00;
+                        hit.z &= 0xfffffc00;
                     else
                         locktogrid(&da.x, &da.y);
                 }
@@ -1509,7 +1535,7 @@ void editinput(void)
                     handle_sprite_in_clipboard(i);
 
                     spriteoncfz(i, &cz, &fz);
-                    sprite[i].z = clamp2(hit.pos.z, cz, fz);
+                    sprite[i].z = clamp2(hit.z, cz, fz);
 
                     if (AIMING_AT_WALL || AIMING_AT_MASKWALL)
                     {
@@ -1542,12 +1568,12 @@ void editinput(void)
             {
             case SEARCH_CEILING:
             case SEARCH_FLOOR:
-                CallExtShowSectorData(searchsector); break;
+                ExtShowSectorData(searchsector); break;
             case SEARCH_WALL:
             case SEARCH_MASKWALL:
-                CallExtShowWallData(searchwall); break;
+                ExtShowWallData(searchwall); break;
             case SEARCH_SPRITE:
-                CallExtShowSpriteData(searchwall); break;
+                ExtShowSpriteData(searchwall); break;
             }
 
             keystatus[sc_F5] = keystatus[sc_F6] = 0;
@@ -1558,12 +1584,12 @@ void editinput(void)
             {
             case SEARCH_CEILING:
             case SEARCH_FLOOR:
-                CallExtEditSectorData(searchsector); break;
+                ExtEditSectorData(searchsector); break;
             case SEARCH_WALL:
             case SEARCH_MASKWALL:
-                CallExtEditWallData(searchwall); break;
+                ExtEditWallData(searchwall); break;
             case SEARCH_SPRITE:
-                CallExtEditSpriteData(searchwall); break;
+                ExtEditSpriteData(searchwall); break;
             }
 
             keystatus[sc_F7] = keystatus[sc_F8] = 0;
@@ -1722,13 +1748,13 @@ void drawsmallabel(const char *text, char col, char backcol, char border, int32_
 
     videoBeginDrawing(); //{{{
 
-    if ((unsigned)y1-1 < ydim16+0u && (unsigned) (x1-2) < xdim2d+0u && (unsigned) (x2-2) < xdim2d+0u)
+    if ((unsigned)y1-1 < ydim16+0u && (unsigned) (x1-2) < xdim+0u && (unsigned) (x2-2) < xdim+0u)
     {
         drawpixel((char *) (frameplace + ((y1-1) * bytesperline) + (x1-2)), border);
         drawpixel((char *) (frameplace + ((y1-1) * bytesperline) + (x2-2)), border);
     }
 
-    if ((unsigned) y2 < ydim16+0u && (unsigned) (x1-2) < xdim2d+0u && (unsigned) (x2-2) < xdim2d+0u)
+    if ((unsigned) y2 < ydim16+0u && (unsigned) (x1-2) < xdim+0u && (unsigned) (x2-2) < xdim+0u)
     {
         drawpixel((char *) (frameplace + ((y2) * bytesperline) + (x1-2)), border);
         drawpixel((char *) (frameplace + ((y2) * bytesperline) + (x2-2)), border);
@@ -2291,9 +2317,7 @@ void DoSpriteOrnament(int32_t i)
     if (hit.sect == -1)
         return;
 
-    sprite[i].x = hit.pos.x;
-    sprite[i].y = hit.pos.y;
-    sprite[i].z = hit.pos.z;
+    sprite[i].xyz = hit.xyz;
     changespritesect(i, hit.sect);
 
     correct_ornamented_sprite(i, hit.wall);
@@ -2398,7 +2422,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
             localartfreq[sprite[k].picnum]++;
 
     j = 0;
-    for (k=0; k<MAXTILES; k++)
+    for (k=0; k<MAXUSERTILES; k++)
         if (localartfreq[k] > localartfreq[j])
             j = k;
 
@@ -2555,7 +2579,7 @@ static int32_t do_while_copyloop1(int16_t startwall, int16_t endwall,
 
 static void updatesprite1(int16_t i)
 {
-    setsprite(i, &sprite[i].pos);
+    setsprite(i, &sprite[i].xyz);
 
     if (sprite[i].sectnum>=0)
     {
@@ -3401,7 +3425,7 @@ static void drawspritelabel(int i)
     if ((unsigned)i >= MAXSPRITES)
         return;
 
-    const char *dabuffer = CallExtGetSpriteCaption(i);
+    const char *dabuffer = ExtGetSpriteCaption(i);
 
     if (!dabuffer[0])
         return;
@@ -3553,6 +3577,195 @@ static void deletewall(int w)
     }
 }
 
+void editorMaybeWarpMouse(int searchx, int searchy)
+{
+#ifdef RENDERTYPESDL
+    // force g_mouseAbs here because we seem to get a frame of rendering with the old values
+    // despite pumping the SDL event queue immediately after SDL_WarpMouseInWindow
+    g_mouseAbs = { searchx*upscalefactor, searchy*upscalefactor };
+    SDL_WarpMouseInWindow(NULL, searchx*upscalefactor, searchy*upscalefactor);
+    handleevents();
+    mouseLockToWindow(0);
+#endif
+}
+
+static void editorCycleGridSize()
+{
+    if (autogrid)
+    {
+        grid = 8*eitherSHIFT;
+        autogrid = 0;
+    }
+    else
+    {
+        grid += (1-2*eitherSHIFT);
+        if (grid == -1 || grid == 9)
+        {
+            autogrid = 1;
+            grid = 0;
+        }
+    }
+
+    if (autogrid)
+        printmessage16("Grid size: 9 (autosize)");
+    else if (!grid)
+        printmessage16("Grid off");
+    else
+        printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
+}
+
+// Flip/mirror sector by Ed Coolidge
+extern void editorFlipHighlightedSectors(int about_x, int doMirror)
+{
+#ifdef YAX_ENABLE
+    if (highlightsectorcnt > 0 && !hl_all_bunch_sectors_p())
+    {
+        printmessage16("To flip extended sectors, all sectors of a bunch must be selected");
+        keystatus[sc_X] = keystatus[sc_Y] = 0;
+    }
+    else
+#endif
+        if (highlightsectorcnt > 0)
+        {
+            int16_t* const otonwall = onextwall;  // OK, since we make old-nextwalls invalid
+            int32_t dax, day;
+            int32_t x3, y3;
+            int j;
+
+            mkonwinvalid();
+
+            for (j=0; j<numwalls; j++)
+                otonwall[j] = j;
+
+            get_sectors_center(highlightsector, highlightsectorcnt, &dax, &day);
+
+            if (gridlock && grid > 0)
+                locktogrid(&dax, &day);
+
+            for (int i=0; i<highlightsectorcnt; i++)
+            {
+                int32_t numtoswap = -1;
+                int32_t w=0;
+                uwalltype tempwall;
+
+                int startwall = sector[highlightsector[i]].wallptr;
+                int endwall = startwall+sector[highlightsector[i]].wallnum-1;
+                int startofloop = startwall;
+                int endofloop = endwall;
+#if 0
+                if (doMirror)
+                {
+                    //mirror sector textures
+                    sector[highlightsector[i]].ceilingstat ^= 0x10;
+                    sector[highlightsector[i]].floorstat ^= 0x10;
+                }
+#endif
+                //save position of wall at start of loop
+                x3 = wall[startofloop].x;
+                y3 = wall[startofloop].y;
+
+                for (j=startwall; j<=endwall; j++)
+                {
+                    //fix position of walls
+                    if (about_x)
+                    {
+                        wall[j].x = dax-POINT2(j).x+dax; //flip wall.x about dax
+                        wall[j].y = POINT2(j).y;
+                    }
+                    else
+                    {
+                        wall[j].x = POINT2(j).x;
+                        wall[j].y = day-POINT2(j).y+day; //flip wall.y about day
+                    }
+
+                    if (doMirror)
+                        wall[j].cstat ^= 8;  //mirror walls about dax/day
+
+                    if (wall[j].point2==startofloop) //check if j is end of loop
+                    {
+                        endofloop = j;
+                        if (about_x)
+                        {
+                            wall[endofloop].x = dax-x3+dax; //flip wall.x about dax
+                            wall[endofloop].y = y3;
+                        }
+                        else
+                        {
+                            wall[endofloop].x = x3;
+                            wall[endofloop].y = day-y3+day; //flip wall.y about dax
+                        }
+
+                        //correct order of walls in loop to maintain player space (right-hand rule)
+                        numtoswap = (endofloop-startofloop)>>1;
+                        for (w=1; w<=numtoswap; w++)
+                        {
+                            Bmemcpy(&tempwall, &wall[startofloop+w], sizeof(walltype));
+                            Bmemcpy(&wall[startofloop+w], &wall[endofloop-w+1], sizeof(walltype));
+                            Bmemcpy(&wall[endofloop-w+1], &tempwall, sizeof(walltype));
+
+                            otonwall[startofloop+w] = endofloop-w+1;
+                            otonwall[endofloop-w+1] = startofloop+w;
+                        }
+
+                        //make point2 point to next wall in loop
+                        for (w=startofloop; w<endofloop; w++)
+                            wall[w].point2 = w+1;
+                        wall[endofloop].point2 = startofloop;
+
+                        startofloop = endofloop+1; //set first wall of next loop
+                        //save position of wall at start of loop
+                        x3 = wall[startofloop].x;
+                        y3 = wall[startofloop].y;
+                    }
+                }
+
+                j = headspritesect[highlightsector[i]];
+                while (j != -1)
+                {
+                    if (about_x)
+                    {
+                        x3 = sprite[j].x;
+                        sprite[j].x = dax-x3+dax; //flip sprite.x about dax
+                        sprite[j].ang = (1024+2048-sprite[j].ang)&2047; //flip ang about 512
+                    }
+                    else
+                    {
+                        y3 = sprite[j].y;
+                        sprite[j].y = day-y3+day; //flip sprite.y about day
+                        sprite[j].ang = (2048-sprite[j].ang)&2047; //flip ang about 512
+                    }
+
+                    if (doMirror && (sprite[j].cstat & 0x30))
+                        sprite[j].cstat ^= 4;  // mirror sprites about dax/day (don't mirror monsters)
+
+                    j = nextspritesect[j];
+                }
+            }
+
+            // finally, construct the nextwalls and yax-nextwalls
+            // for the new arrangement!
+            for (int i=0; i<highlightsectorcnt; i++)
+            {
+                for (int WALLS_OF_SECTOR(highlightsector[i], j))
+                {
+                    if (wall[j].nextwall >= 0)
+                        wall[j].nextwall = otonwall[wall[j].nextwall];
+#ifdef YAX_ENABLE
+                    {
+                        int32_t cf, ynw;
+                        for (cf=0; cf<2; cf++)
+                            if ((ynw = yax_getnextwall(j, cf)) >= 0)
+                                yax_setnextwall(j, cf, otonwall[ynw]);
+                    }
+#endif
+                }
+            }
+
+            printmessage16("Selected sector(s) flipped");
+            asksave = 1;
+        }
+}
+
 void overheadeditor(void)
 {
     char buffer[80];
@@ -3576,15 +3789,13 @@ void overheadeditor(void)
     ovh.splitsect = -1;
     ovh.splitstartwall = -1;
 
-    videoSet2dMode(xdim2d,ydim2d);
-    xdim2d = xdim;
-    ydim2d = ydim;
+    videoSet2dMode(xres, yres, upscalefactor);
 
     osearchx = searchx;
     osearchy = searchy;
 
-    searchx = clamp(scale(searchx,xdim2d,xdimgame), 8, xdim2d-8-1);
-    searchy = clamp(scale(searchy,ydim2d-STATUS2DSIZ2,ydimgame), 8, ydim2d-STATUS2DSIZ-8-1);
+    searchx = clamp(searchx, 8, xdim-8-1);
+    searchy = clamp(searchy, 8, ydim-STATUS2DSIZ-8-1);
     oposz = pos.z;
 
     yax_updategrays(pos.z);
@@ -3671,15 +3882,27 @@ void overheadeditor(void)
             //        printext16(8L,ydim-STATUS2DSIZ+32L,editorcolors[9],-1,kensig,0);
         }
 
-        if (!m32_is2d3dmode())
-        {
             oldmousebstatus = bstatus;
-            mouseGetValues(&mousx, &mousy, &bstatus);
+        bstatus = mouseReadButtons();
+        editorMaybeLockMouse(!!(bstatus & ~(16|32)));
 
+        if (osdvisible)
+            goto skipinput;
+
+        if (!m32_is2d3dmode())
             {
                 int32_t bs = bstatus;
                 bstatus &= ~mousewaitmask;
                 mousewaitmask &= bs;
+
+            if (g_mouseLockedToWindow)
+                mouseReadPos(&mousx, &mousy);
+            else
+            {
+                mousx = g_mousePos.x;
+                mousy = g_mousePos.y;
+                g_mousePos.x = 0;
+                g_mousePos.y = 0;
             }
 
             mousx = (mousx<<16)+mousexsurp;
@@ -3689,8 +3912,17 @@ void overheadeditor(void)
                 ld = ldiv(mousx, 1<<16); mousx = ld.quot; mousexsurp = ld.rem;
                 ld = ldiv(mousy, 1<<16); mousy = ld.quot; mouseysurp = ld.rem;
             }
+
+            if (g_mouseLockedToWindow)
+            {
             searchx += mousx;
             searchy += mousy;
+            }
+            else
+            {
+                searchx = g_mouseAbs.x/upscalefactor;
+                searchy = g_mouseAbs.y/upscalefactor;
+            }
 
             inpclamp(&searchx, 8, xdim-8-1);
             inpclamp(&searchy, 8, ydim-8-1);
@@ -3717,6 +3949,7 @@ void overheadeditor(void)
             wall[newnumwalls].y = day;
         }
 
+skipinput:
         ydim16 = ydim;// - STATUS2DSIZ2;
         midydim16 = ydim>>1;
 
@@ -3754,8 +3987,17 @@ void overheadeditor(void)
                 renderDrawMapView(pos.x, pos.y, zoom, m32_sideview ? (3584 - m32_sideang) & 2047: 1536);
             }
 
+            if (autogrid)
+            {
+                grid = -1;
+
+                while (grid++ < 7)
+                    if (mulscale14((2048>>grid), zoom) <= 16)
+                        break;
+            }
+
             editorDraw2dGrid(pos.x,pos.y,pos.z,cursectnum,ang,zoom,grid);
-            CallExtPreCheckKeys();
+            ExtPreCheckKeys();
             editorDraw2dScreen(&pos,cursectnum,ang,zoom,grid);
 
             // Draw brown arrow (start)
@@ -3791,7 +4033,7 @@ void overheadeditor(void)
                     for (i=0; i<numsectors; i++)
                         for (SPRITES_OF_SECT(i, j))
                             if (reftag==select_sprite_tag(j))
-                                drawlinebetween(&sprite[refspritenum].pos, &sprite[j].pos, editorcolors[12], 0x33333333);
+                                drawlinebetween(&sprite[refspritenum].xyz, &sprite[j].xyz, editorcolors[12], 0x33333333);
                 }
             }
 
@@ -3805,7 +4047,7 @@ void overheadeditor(void)
 
                         YAX_SKIPSECTOR(i);
 
-                        dabuffer = CallExtGetSectorCaption(i);
+                        dabuffer = ExtGetSectorCaption(i);
                         if (dabuffer[0] == 0)
                             continue;
 
@@ -3845,7 +4087,7 @@ void overheadeditor(void)
                     //Get average point of wall
 //                    if ((dax > x3) && (dax < x4) && (day > y3) && (day < y4))
                     {
-                        dabuffer = CallExtGetWallCaption(i);
+                        dabuffer = ExtGetWallCaption(i);
                         if (dabuffer[0] == 0)
                             continue;
 
@@ -3902,11 +4144,11 @@ void overheadeditor(void)
             {
                 if (!m32_is2d3dmode() && (m32_sideview || highlightcnt <= 0))
                 {
-                    drawlinepat = 0x00ff00ff;
-                    editorDraw2dLine(searchx,0, searchx,ydim2d-1, editorcolors[15]);
-                    editorDraw2dLine(0,searchy, xdim2d-1,searchy, editorcolors[15]);
+                    drawlinepat = (uint32_t)((0x0f0f0f0f0f0f0f0full << ((searchy & 7))) >> 7);
+                    editorDraw2dLine(searchx,0, searchx,ydim-1, editorcolors[15]);
+                    drawlinepat = (uint32_t)((0x0f0f0f0f0f0f0f0full << ((searchx & 7))) >> 7);
+                    editorDraw2dLine(0,searchy, xdim-1,searchy, editorcolors[15]);
                     drawlinepat = 0xffffffff;
-
                     _printmessage16("(%d,%d)",mousxplc,mousyplc);
                 }
                 else
@@ -4063,18 +4305,13 @@ void overheadeditor(void)
             editorDraw2dLine(0,searchy, 8,searchy, editorcolors[15]);
 
             // 2d3d mode
-            if (m32_2d3dmode && m32_2d3d_resolutions_match())
+            if (m32_2d3dmode)
             {
-#ifdef USE_OPENGL
-                int bakrendmode = rendmode;
-                rendmode = REND_CLASSIC;
-#endif
+//                if (m32_2d3d.x + XSIZE_2D3D > xdim - 4)
+                    m32_2d3d.x = xdim - 4 - XSIZE_2D3D;
 
-                if (m32_2d3d.x + XSIZE_2D3D > xdim2d - 4)
-                    m32_2d3d.x = xdim2d - 4 - XSIZE_2D3D;
-
-                if (m32_2d3d.y + YSIZE_2D3D > ydim2d - 4 - STATUS2DSIZ2)
-                    m32_2d3d.y = ydim2d - 4 - YSIZE_2D3D - STATUS2DSIZ2;
+//                if (m32_2d3d.y + YSIZE_2D3D > ydim - 4 - STATUS2DSIZ2)
+                    m32_2d3d.y = ydim - 4 - YSIZE_2D3D - STATUS2DSIZ2;
 
                 updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
 
@@ -4084,19 +4321,19 @@ void overheadeditor(void)
                 if (cursectnum != -1)
                 {
                     int32_t cz, fz;
-
                     getzsofslope(cursectnum, pos.x, pos.y, &cz, &fz);
 
                     inpclamp(&pos.z, cz+(4<<8), fz-(4<<8));
 
                     videoEndDrawing();
 
-                    vec2_t b = { xdim, ydim };
+#ifdef USE_OPENGL
+                    int bakrendmode = rendmode;
+                    rendmode = REND_CLASSIC;
+#endif
                     oxyaspect = -1;
+
                     videoSetViewableArea(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D - 1, m32_2d3d.y + YSIZE_2D3D - 1);
-                    xdim = XSIZE_2D3D;
-                    ydim = YSIZE_2D3D;
-                    //calc_ylookup(xdim, ydim);
                     videoClearViewableArea(-1);
 
                     vec2_t osearch = { searchx, searchy };
@@ -4104,19 +4341,18 @@ void overheadeditor(void)
                     searchx -= m32_2d3d.x;
                     searchy -= m32_2d3d.y;
 
+                    inpclamp(&searchx, 12, xdim - 13);
+                    inpclamp(&searchy, 12, ydim - 13);
+
                     M32_DrawRoomsAndMasks();
 
-#ifdef USE_OPENGL
                     rendmode = bakrendmode;
-#endif
+
                     searchx = osearch.x;
                     searchy = osearch.y;
 
                     oxyaspect = -1;
-                    xdim = b.x;
-                    ydim = b.y;
                     videoSetViewableArea(0, 0, xdim-1, ydim-1);
-                    //calc_ylookup(xdim, ydim);
 
                     videoBeginDrawing();
                     editorDraw2dLine(m32_2d3d.x, m32_2d3d.y, m32_2d3d.x + XSIZE_2D3D, m32_2d3d.y, editorcolors[15]);
@@ -4130,15 +4366,7 @@ void overheadeditor(void)
             {
                 ////// draw mouse pointer
 
-                col = editorcolors[0];
-
-                drawline16base(searchx+1, searchy+1, +0, -8, +0, -1, col);
-                drawline16base(searchx+1, searchy+1, +0, 1, +0, 8, col);
-
-                drawline16base(searchx+1, searchy+1, -8, 0, -1, 0, col);
-                drawline16base(searchx+1, searchy+1, 1, 0, 8, 0, col);
-
-                col = searchlock ? editorcolors[13] : editorcolors[15 - 3*gridlock];
+                col = searchlock ? editorcolors[13] : gridlock ? 255 : batmanandthrobbin();
 
                 if (joinsector[0] >= 0)
                     col = editorcolors[11];
@@ -4198,21 +4426,21 @@ void overheadeditor(void)
                 drawline16base(searchx, searchy, -8, 0, -1, 0, col);
                 drawline16base(searchx, searchy, 1, 0, 8, 0, col);
 
-                ////// Draw the white pixel closest to mouse cursor on linehighlight
+                ////// Draw an x at the point closest to mouse cursor on linehighlight
                 if (linehighlight>=0)
                 {
-                    char col = wall[linehighlight].nextsector >= 0 ? editorcolors[15] : editorcolors[5];
+                    char col = editorcolors[14] - (M32_THROB>>1);
 
                     if (m32_sideview)
                     {
                         getclosestpointonwall(searchx, searchy, linehighlight, &dax, &day, 1);
-                        drawline16base(dax, day, 0, 0, 0, 0, col);
+                        drawline16base(dax, day, -2,-2, +2,+2, col);
+                        drawline16base(dax, day, -2,+2, +2,-2, col);
                     }
                     else
                     {
                         getclosestpointonwall(mousxplc, mousyplc, linehighlight, &dax, &day, 0);
-                        ovhscrcoords(dax, day, &x2, &y2);
-                        drawline16base(x2, y2, 0, 0, 0, 0, col);
+                        draw_cross(dax, day, 2, col);
                     }
                 }
             }
@@ -4220,171 +4448,33 @@ void overheadeditor(void)
             videoEndDrawing();	//}}} LOCK_FRAME_1
 
             OSD_Draw();
+
+            if (osdvisible)
+            {
+                videoShowFrame(0);
+                continue;
+        }
         }
 
         inputchecked = 1;
 
 
         VM_OnEvent(EVENT_PREKEYS2D, -1);
-        CallExtCheckKeys(); // TX 20050101, it makes more sense to have this here so keys can be overwritten with new functions in bstub.c
+        ExtCheckKeys(); // TX 20050101, it makes more sense to have this here so keys can be overwritten with new functions in bstub.c
 
         // 2d3d mode
         if (m32_is2d3dmode())
             goto nokeys;
 
-        // Flip/mirror sector Ed Coolidge
         if (keystatus[sc_X] || keystatus[sc_Y])  // X or Y (2D)
         {
-            int32_t about_x=keystatus[sc_X];
-            int32_t doMirror = eitherALT;  // mirror walls and wall/floor sprites
-
-#ifdef YAX_ENABLE
-            if (highlightsectorcnt > 0 && !hl_all_bunch_sectors_p())
+            if (!eitherCTRL)
             {
-                printmessage16("To flip extended sectors, all sectors of a bunch must be selected");
+                int xflip       = keystatus[sc_X];
                 keystatus[sc_X] = keystatus[sc_Y] = 0;
+                editorFlipHighlightedSectors(xflip, eitherALT);
             }
-            else
-#endif
-            if (highlightsectorcnt > 0)
-            {
-                int16_t *const otonwall = onextwall;  // OK, since we make old-nextwalls invalid
-
-                mkonwinvalid();
-
-                keystatus[sc_X] = keystatus[sc_Y] = 0;
-
-                for (j=0; j<numwalls; j++)
-                    otonwall[j] = j;
-
-                get_sectors_center(highlightsector, highlightsectorcnt, &dax, &day);
-
-                if (gridlock && grid > 0)
-                    locktogrid(&dax, &day);
-
-                for (i=0; i<highlightsectorcnt; i++)
-                {
-                    int32_t startofloop, endofloop;
-                    int32_t numtoswap = -1;
-                    int32_t w=0;
-                    uwalltype tempwall;
-
-                    startofloop = startwall = sector[highlightsector[i]].wallptr;
-                    endofloop = endwall = startwall+sector[highlightsector[i]].wallnum-1;
-#if 0
-                    if (doMirror)
-                    {
-                        //mirror sector textures
-                        sector[highlightsector[i]].ceilingstat ^= 0x10;
-                        sector[highlightsector[i]].floorstat ^= 0x10;
                     }
-#endif
-                    //save position of wall at start of loop
-                    x3 = wall[startofloop].x;
-                    y3 = wall[startofloop].y;
-
-                    for (j=startwall; j<=endwall; j++)
-                    {
-                        //fix position of walls
-                        if (about_x)
-                        {
-                            wall[j].x = dax-POINT2(j).x+dax; //flip wall.x about dax
-                            wall[j].y = POINT2(j).y;
-                        }
-                        else
-                        {
-                            wall[j].x = POINT2(j).x;
-                            wall[j].y = day-POINT2(j).y+day; //flip wall.y about day
-                        }
-
-                        if (doMirror)
-                            wall[j].cstat ^= 8;  //mirror walls about dax/day
-
-                        if (wall[j].point2==startofloop) //check if j is end of loop
-                        {
-                            endofloop = j;
-                            if (about_x)
-                            {
-                                wall[endofloop].x = dax-x3+dax; //flip wall.x about dax
-                                wall[endofloop].y = y3;
-                            }
-                            else
-                            {
-                                wall[endofloop].x = x3;
-                                wall[endofloop].y = day-y3+day; //flip wall.y about dax
-                            }
-
-                            //correct order of walls in loop to maintain player space (right-hand rule)
-                            numtoswap = (endofloop-startofloop)>>1;
-                            for (w=1; w<=numtoswap; w++)
-                            {
-                                Bmemcpy(&tempwall, &wall[startofloop+w], sizeof(walltype));
-                                Bmemcpy(&wall[startofloop+w], &wall[endofloop-w+1], sizeof(walltype));
-                                Bmemcpy(&wall[endofloop-w+1], &tempwall, sizeof(walltype));
-
-                                otonwall[startofloop+w] = endofloop-w+1;
-                                otonwall[endofloop-w+1] = startofloop+w;
-                            }
-
-                            //make point2 point to next wall in loop
-                            for (w=startofloop; w<endofloop; w++)
-                                wall[w].point2 = w+1;
-                            wall[endofloop].point2 = startofloop;
-
-                            startofloop = endofloop+1; //set first wall of next loop
-                            //save position of wall at start of loop
-                            x3 = wall[startofloop].x;
-                            y3 = wall[startofloop].y;
-                        }
-                    }
-
-                    j = headspritesect[highlightsector[i]];
-                    while (j != -1)
-                    {
-                        if (about_x)
-                        {
-                            x3 = sprite[j].x;
-                            sprite[j].x = dax-x3+dax; //flip sprite.x about dax
-                            sprite[j].ang = (1024+2048-sprite[j].ang)&2047; //flip ang about 512
-                        }
-                        else
-                        {
-                            y3 = sprite[j].y;
-                            sprite[j].y = day-y3+day; //flip sprite.y about day
-                            sprite[j].ang = (2048-sprite[j].ang)&2047; //flip ang about 512
-                        }
-
-                        if (doMirror && (sprite[j].cstat & 0x30))
-                            sprite[j].cstat ^= 4;  // mirror sprites about dax/day (don't mirror monsters)
-
-                        j = nextspritesect[j];
-                    }
-                }
-
-                // finally, construct the nextwalls and yax-nextwalls
-                // for the new arrangement!
-                for (i=0; i<highlightsectorcnt; i++)
-                {
-                    for (WALLS_OF_SECTOR(highlightsector[i], j))
-                    {
-                        if (wall[j].nextwall >= 0)
-                            wall[j].nextwall = otonwall[wall[j].nextwall];
-#ifdef YAX_ENABLE
-                        {
-                            int32_t cf, ynw;
-                            for (cf=0; cf<2; cf++)
-                                if ((ynw = yax_getnextwall(j, cf)) >= 0)
-                                    yax_setnextwall(j, cf, otonwall[ynw]);
-                        }
-#endif
-                    }
-                }
-
-                printmessage16("Selected sector(s) flipped");
-                asksave = 1;
-            }
-        }
-        // end edit for sector flip
 
         if (keystatus[88])   //F12
         {
@@ -4489,11 +4579,11 @@ void overheadeditor(void)
                 for (i=0; i<highlightsectorcnt; i++)
                 {
                     for (WALLS_OF_SECTOR(highlightsector[i], j))
-                        rotatepoint(da, wall[j].pos, tsign&2047, &wall[j].pos);
+                        rotatepoint(da, wall[j].xy, tsign&2047, &wall[j].xy);
 
                     for (j=headspritesect[highlightsector[i]]; j != -1; j=nextspritesect[j])
                     {
-                        rotatepoint(da, sprite[j].pos.vec2, tsign&2047, &sprite[j].pos.vec2);
+                        rotatepoint(da, sprite[j].xy, tsign&2047, &sprite[j].xy);
                         sprite[j].ang = (sprite[j].ang+tsign)&2047;
                     }
                 }
@@ -4548,22 +4638,22 @@ rotate_hlsect_out:
                     {
                         YAX_SKIPSECTOR(i);
 
-                        CallExtShowSectorData(i);
+                        ExtShowSectorData(i);
                         found = 1;
                         break;
                     }
             }
             if (!found)
-                CallExtShowSectorData(-1);
+                ExtShowSectorData(-1);
         }
         if (keystatus[sc_F6])  //F6
         {
             if (pointhighlight >= 16384)
-                CallExtShowSpriteData(pointhighlight-16384);
+                ExtShowSpriteData(pointhighlight-16384);
             else if (linehighlight >= 0)
-                CallExtShowWallData(linehighlight);
+                ExtShowWallData(linehighlight);
             else
-                CallExtShowWallData(-1);
+                ExtShowWallData(-1);
         }
         if (keystatus[sc_F7])  //F7
         {
@@ -4574,7 +4664,7 @@ rotate_hlsect_out:
                 {
                     YAX_SKIPSECTOR(i);
 
-                    CallExtEditSectorData(i);
+                    ExtEditSectorData(i);
                     break;
                 }
         }
@@ -4583,9 +4673,9 @@ rotate_hlsect_out:
             keystatus[sc_F8] = 0;
 
             if (pointhighlight >= 16384)
-                CallExtEditSpriteData(pointhighlight-16384);
+                ExtEditSpriteData(pointhighlight-16384);
             else if (linehighlight >= 0)
-                CallExtEditWallData(linehighlight);
+                ExtEditWallData(linehighlight);
         }
 #endif
 
@@ -5085,7 +5175,7 @@ rotate_hlsect_out:
                     for (WALLS_OF_SECTOR(dstsect, k))
                     {
                         vec2_t pint;
-                        if (lineintersect2v(&wall[i].pos, &wall[j].pos, &wall[k].pos, &POINT2(k).pos, &pint))
+                        if (lineintersect2v(&wall[i].xy, &wall[j].xy, &wall[k].xy, &POINT2(k).xy, &pint))
                         {
                             message("Loop lines must not intersect any destination sector's walls");
                             goto end_yax;
@@ -5955,7 +6045,7 @@ end_after_dragging:
                             int16_t osec=sprite[daspr].sectnum, nsec=osec;
                             vec3_t vec, ovec;
 
-                            Bmemcpy(&ovec, &sprite[daspr].pos, sizeof(vec3_t));
+                            Bmemcpy(&ovec, &sprite[daspr].xyz, sizeof(vec3_t));
                             vec.x = dax;
                             vec.y = day;
                             vec.z = sprite[daspr].z;
@@ -6001,11 +6091,11 @@ end_point_dragging:
                 if (cursectornum < numsectors)
                 {
                     if (pointhighlight >= 16384)
-                        CallExtEditSpriteData(pointhighlight-16384);
+                        ExtEditSpriteData(pointhighlight-16384);
                     else if ((linehighlight >= 0) && ((bstatus&1) || sectorofwall(linehighlight) == cursectornum))
-                        CallExtEditWallData(linehighlight);
+                        ExtEditWallData(linehighlight);
                     else if (cursectornum >= 0)
-                        CallExtEditSectorData(cursectornum);
+                        ExtEditSectorData(cursectornum);
                 }
 
                 bstatus &= ~2;
@@ -6063,6 +6153,9 @@ end_point_dragging:
         }
 //        else if ((oldmousebstatus&6) > 0)
             updatesectorz(pos.x,pos.y,pos.z,&cursectnum);
+
+        if ((bstatus&2)==0 && oldmousebstatus&2)
+            editorMaybeWarpMouse(halfxdim16, midydim16);
 
         if (circlewall != -1 && (keystatus[sc_kpad_Minus] || ((bstatus&32) && !eitherCTRL)))  // -, mousewheel down
         {
@@ -6185,6 +6278,7 @@ end_point_dragging:
                     searchy = midydim16;
                     pos.x = mousxplc;
                     pos.y = mousyplc;
+                    editorMaybeWarpMouse(searchx, searchy);
                 }
                 ztarget = clamp(ztarget, 16, 39936);
 
@@ -6192,13 +6286,19 @@ end_point_dragging:
             }
         }
 
-
         if (keystatus[sc_G])  // G (grid on/off)
         {
             keystatus[sc_G] = 0;
-            grid++;
-            if (grid == 7) grid = 0;
+            if (eitherCTRL)
+            {
+                g_alwaysLockMouse = !g_alwaysLockMouse;
+                message("Mouse locked to window: %s", g_alwaysLockMouse ? "on" : "off");
+                editorMaybeLockMouse(0);
         }
+            else
+                editorCycleGridSize();
+        }
+
         if (keystatus[sc_L])  // L (grid lock)
         {
             keystatus[sc_L] = 0;
@@ -7773,10 +7873,10 @@ end_space_handling:
 
                             vec2_t pint;
 
-                            if (!lineintersect2v(&wall[j].pos, &POINT2(j).pos, &point[i], &point[i + 1], &pint))
+                            if (!lineintersect2v(&wall[j].xy, &POINT2(j).xy, &point[i], &point[i + 1], &pint))
                                 continue;
 
-                            if (vec2eq(&pint, &wall[j].pos) || vec2eq(&pint, &POINT2(j).pos))
+                            if (vec2eq(&pint, &wall[j].xy) || vec2eq(&pint, &POINT2(j).xy))
                                 continue;
 
                             touchedwall[j>>3] |= pow2char[j&7];
@@ -8192,7 +8292,7 @@ CANCEL:
                         reset_default_mapstate();
 
                         Bstrcpy(boardfilename,"newboard.map");
-                        CallExtLoadMap(boardfilename);
+                        editorEventLoadMap(boardfilename);
 #if M32_UNDO
                         map_undoredo_free();
 #endif
@@ -8332,7 +8432,7 @@ CANCEL:
                         SaveBoardAndPrintMessage(selectedboardfilename);
 
                         Bstrcpy(boardfilename, selectedboardfilename);
-                        CallExtSetupMapFilename(boardfilename);
+                        editorSetupMapFilename(boardfilename);
                     }
                     bad = 0;
                 }
@@ -8393,11 +8493,11 @@ CANCEL:
                             goto CANCEL;
                         }
 
-                        CallExtUnInit();
+                        ExtUnInit();
 //                        clearfilenames();
                         engineUnInit();
 
-                        exit(EXIT_SUCCESS);
+                        Bexit(EXIT_SUCCESS);
                     }
 
                     // printmessage16("");
@@ -8426,10 +8526,10 @@ CANCEL:
 
     fixspritesectors();
 
-    if (videoSetGameMode(fullscreen,xdimgame,ydimgame,bppgame,upscalefactor) < 0)
+    if (videoSetGameMode(fullscreen,xres,yres,bppgame,upscalefactor) < 0)
     {
         initprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
-        CallExtUnInit();
+        ExtUnInit();
 //        clearfilenames();
         engineUnInit();
         Bexit(EXIT_FAILURE);
@@ -8439,8 +8539,8 @@ CANCEL:
 
     pos.z = oposz;
 
-    searchx = clamp(scale(searchx,xdimgame,xdim2d), 8, xdimgame-8-1);
-    searchy = clamp(scale(searchy,ydimgame,ydim2d-STATUS2DSIZ), 8, ydimgame-8-1);
+    searchx = clamp(searchx, 8, xdim-8-1);
+    searchy = clamp(scale(searchy,ydim,ydim-STATUS2DSIZ), 8, ydim-8-1);
 
     VM_OnEvent(EVENT_ENTER3DMODE, -1);
 }
@@ -8600,12 +8700,12 @@ const char *SaveBoard(const char *fn, uint32_t flags)
 #endif
 
     saveboard_savedtags = 0;
-    saveboard_fixedsprites = CallExtPreSaveMap();
+    saveboard_fixedsprites = editorEventPreSaveMap();
 
     ret = saveboard(f, &startpos, startang, startsectnum);
     if ((flags&M32_SB_NOEXT)==0)
     {
-        CallExtSaveMap(f);
+        editorEventSaveMap(f);
         saveboard_savedtags = !taglab_save(f);
     }
 
@@ -8628,7 +8728,7 @@ int32_t LoadBoard(const char *filename, uint32_t flags)
     editorzrange[0] = INT32_MIN;
     editorzrange[1] = INT32_MAX;
 
-    CallExtPreLoadMap();
+    editorEventPreLoadMap();
     i = engineLoadBoard(filename, (flags&4)|loadingflags, &pos, &ang, &cursectnum);
     if (i == -2)
         i = engineLoadBoardV5V6(filename,loadingflags, &pos, &ang, &cursectnum);
@@ -8653,7 +8753,7 @@ int32_t LoadBoard(const char *filename, uint32_t flags)
         loadmhk(0);
 
     tagstat = taglab_load(boardfilename, loadingflags);
-    CallExtLoadMap(boardfilename);
+    editorEventLoadMap(boardfilename);
 
     {
         char msgtail[64];
@@ -8673,6 +8773,8 @@ int32_t LoadBoard(const char *filename, uint32_t flags)
         message("Loaded V%d map %s%s %s", g_loadedMapVersion,
                 boardfilename, tagstat==0?" w/tags":"", msgtail);
     }
+
+    fixspritesectors();
 
     startpos = pos;      //this is same
     startang = ang;
@@ -9137,16 +9239,25 @@ int32_t fixspritesectors(void)
 {
     int32_t i;
     int32_t numfixedsprites = 0, printfirsttime = 0;
+    int deleted = 0;
 
     for (i=numsectors-1; i>=0; i--)
-        if (sector[i].wallnum <= 0 || sector[i].wallptr >= numwalls)
+        if (sector[i].wallnum <= 2 || sector[i].wallptr >= numwalls)
         {
             // XXX: This is not the best course of action for
             //  such great corruption.
+            initprintf("NOTE: Deleting sector %d with corrupt %s\n", i, sector[i].wallnum <= 2 ? ".wallnum" : ".wallptr");
             deletesector(i);
             mkonwinvalid();
-            initprintf("NOTE: Deleted sector %d which had corrupt .wallnum or .wallptr\n", i);
+            deleted++;
         }
+
+    if (deleted)
+    {
+        for (i = 0; i < numsectors; i++)
+            for (int WALLS_OF_SECTOR(i, j))
+                checksectorpointer(j, i);
+    }
 
     if (m32_script_expertmode)
         return 0;
@@ -9292,9 +9403,9 @@ static void clearministatbar16(void)
 
     if (xdim >= 800)
     {
-        Bsnprintf(tempbuf, sizeof(tempbuf), "%s %s", AppProperName, CallExtGetVer());
-        printext16(xdim2d-(Bstrlen(tempbuf)<<3)-3, ydim2d-STATUS2DSIZ2+10, editorcolors[4],-1, tempbuf, 0);
-        printext16(xdim2d-(Bstrlen(tempbuf)<<3)-2, ydim2d-STATUS2DSIZ2+9, editorcolors[12],-1, tempbuf, 0);
+        Bsnprintf(tempbuf, sizeof(tempbuf), "%s %s", AppProperName, ExtGetVer());
+        printext16(xdim-(Bstrlen(tempbuf)<<3)-3, ydim-STATUS2DSIZ2+10, editorcolors[4],-1, tempbuf, 0);
+        printext16(xdim-(Bstrlen(tempbuf)<<3)-2, ydim-STATUS2DSIZ2+9, editorcolors[12],-1, tempbuf, 0);
     }
 
     videoEndDrawing();
@@ -9411,7 +9522,7 @@ int32_t getnumber_autocomplete(const char *namestart, char ch, int32_t *danum, i
 
         if (flags==1)
         {
-            for (i=0; i<MAXTILES; i++)
+            for (i=0; i<MAXUSERTILES; i++)
                 if (!Bstrcasecmp(names[i], gotstr))
                 {
                     *danum = i;
@@ -9573,7 +9684,7 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
         inputchecked = 1;
 
         if ((flags&8)==0)
-            CallExtCheckKeys();
+            ExtCheckKeys();
 
         getnumber_clearline();
 
@@ -9718,7 +9829,7 @@ const char *getstring_simple(const char *querystr, const char *defaultstr, int32
                 Bmemcpy(cmpbuf, &buf[qrylen], len);
                 cmpbuf[len] = 0;
 
-                for (i=(completion!=1); i<((completion==1)?MAXTILES:32768); i++)
+                for (i=(completion!=1); i<((completion==1)?MAXUSERTILES:32768); i++)
                 {
                     cmpstr = (completion==1) ? names[i] : taglab_getlabel(i);
                     if (!cmpstr)
@@ -10009,7 +10120,7 @@ static int32_t menuselect(void)
                 else if (keystatus[sc_PgUp]|keystatus[sc_PgDn]) // page up/down
                 {
                     seeker = currentlist?findfileshigh:finddirshigh;
-                    i = (ydim2d-STATUS2DSIZ2-48)>>5/*3*/;  //PK
+                    i = (ydim-STATUS2DSIZ2-48)>>5/*3*/;  //PK
 
                     while (i>0)
                     {
@@ -10437,7 +10548,7 @@ static int32_t parsenamesfile(scriptfile *script)
                 break;
             }
 
-            if ((unsigned)number >= MAXTILES)
+            if ((unsigned)number >= MAXUSERTILES)
             {
                 initprintf("Error: Constant %d for name \"%s\" out of range on line %s:%d\n",
                            number, name, script->filename, scriptfile_getlinum(script,cmdtokptr));
@@ -10592,7 +10703,7 @@ void showsectordata(int16_t sectnum, int16_t small)
 
     if (small)
     {
-        _printmessage16("^10Sector %d %s ^O(F7 to edit)", sectnum, CallExtGetSectorCaption(sectnum));
+        _printmessage16("^10Sector %d %s ^O(F7 to edit)", sectnum, ExtGetSectorCaption(sectnum));
         return;
     }
 
@@ -10660,7 +10771,7 @@ void showwalldata(int16_t wallnum, int16_t small)
     if (small)
     {
         _printmessage16("^10Wall %d %s ^O(F8 to edit)", wallnum,
-                        CallExtGetWallCaption(wallnum));
+                        ExtGetWallCaption(wallnum));
         return;
     }
 
@@ -10675,7 +10786,7 @@ void showwalldata(int16_t wallnum, int16_t small)
 
     col++;
 
-    DOPRINT(32, "^10%s^O", (wal->picnum>=0 && wal->picnum<MAXTILES) ? names[wal->picnum] : "!INVALID!");
+    DOPRINT(32, "^10%s^O", ((unsigned)wal->picnum<MAXUSERTILES) ? names[wal->picnum] : "!INVALID!");
     DOPRINT(48, "Flags (hex): %x", TrackerCast(wal->cstat));
     DOPRINT(56, "Shade: %d", TrackerCast(wal->shade));
     DOPRINT(64, "Pal: %d", TrackerCast(wal->pal));
@@ -10709,7 +10820,7 @@ void showspritedata(int16_t spritenum, int16_t small)
 
     if (small)
     {
-        _printmessage16("^10Sprite %d %s ^O(F8 to edit)",spritenum, CallExtGetSpriteCaption(spritenum));
+        _printmessage16("^10Sprite %d %s ^O(F8 to edit)",spritenum, ExtGetSpriteCaption(spritenum));
         return;
     }
 
@@ -10727,7 +10838,7 @@ void showspritedata(int16_t spritenum, int16_t small)
     col++;
 
     DOPRINT(32, "^10,0                        ^O");  // 24 blanks
-    DOPRINT(32, "^10%s^O", (spr->picnum>=0 && spr->picnum<MAXTILES) ? names[spr->picnum] : "!INVALID!");
+    DOPRINT(32, "^10%s^O", ((unsigned)spr->picnum < MAXUSERTILES) ? names[spr->picnum] : "!INVALID!");
     DOPRINT(48, "Flags (hex): %x", TrackerCast(spr->cstat));
     DOPRINT(56, "Shade: %d", TrackerCast(spr->shade));
     DOPRINT(64, "Pal: %d", TrackerCast(spr->pal));
@@ -11162,7 +11273,7 @@ void test_map(int32_t mode)
         }
         Bstrcat(fullparam, param);
 
-        CallExtPreSaveMap();
+        editorEventPreSaveMap();
         if (mode)
             saveboard(PLAYTEST_MAPNAME, &startpos, startang, startsectnum);
         else
@@ -11172,7 +11283,7 @@ void test_map(int32_t mode)
         OSD_Printf("...as `%s'\n", fullparam);
 
         videoShowFrame(1);
-        mouseUninit();
+//        mouseUninit();
 #ifdef _WIN32
         {
             STARTUPINFO si;
@@ -11197,7 +11308,7 @@ void test_map(int32_t mode)
         else system(fullparam);
 #endif
         printmessage16("Game process exited");
-        mouseInit();
+//        mouseInit();
         clearkeys();
 
         Xfree(fullparam);
@@ -11215,50 +11326,17 @@ void app_crashhandler(void)
     }
 }
 
-// These will be more useful in the future...
-static const char *CallExtGetVer(void)
-{
-    return ExtGetVer();
-}
-static int32_t CallExtInit(void)
-{
-    return ExtInit();
-}
-static int32_t CallExtPreInit(int32_t argc,char const * const * argv)
-{
-    return ExtPreInit(argc, argv);
-}
-static int32_t CallExtPostStartupWindow(void)
-{
-    return ExtPostStartupWindow();
-}
-static void CallExtPostInit(void)
-{
-    return ExtPostInit();
-}
-static void CallExtUnInit(void)
-{
-    ExtUnInit();
-}
-static void CallExtPreCheckKeys(void)
-{
-    ExtPreCheckKeys();
-}
-static void CallExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
+static void editorEventAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     ExtAnalyzeSprites(ourx, oury, ourz, oura, smoothr);
     VM_OnEvent(EVENT_ANALYZESPRITES, -1);
 }
-static void CallExtCheckKeys(void)
-{
-    ExtCheckKeys();
-}
-static void CallExtPreLoadMap(void)
+static void editorEventPreLoadMap(void)
 {
     VM_OnEvent(EVENT_PRELOADMAP, -1);
     ExtPreLoadMap();
 }
-static void CallExtSetupMapFilename(const char *mapname)
+static void editorSetupMapFilename(const char *mapname)
 {
     Bstrncpy(levelname, mapname, sizeof(levelname));
 
@@ -11267,50 +11345,20 @@ static void CallExtSetupMapFilename(const char *mapname)
 
     ExtSetupMapFilename(mapname);
 }
-static void CallExtLoadMap(const char *mapname)
+static void editorEventLoadMap(const char *mapname)
 {
-    CallExtSetupMapFilename(mapname);
+    editorSetupMapFilename(mapname);
     ExtLoadMap(mapname);
     VM_OnEvent(EVENT_LOADMAP, -1);
 }
-static int32_t CallExtPreSaveMap(void)
+static int32_t editorEventPreSaveMap(void)
 {
     VM_OnEvent(EVENT_PRESAVEMAP, -1);
     return ExtPreSaveMap();
 }
-static void CallExtSaveMap(const char *mapname)
+static void editorEventSaveMap(const char *mapname)
 {
     ExtSaveMap(mapname);
     saveboard("backup.map", &pos, ang, cursectnum);
     VM_OnEvent(EVENT_SAVEMAP, -1);
 }
-static void CallExtShowSectorData(int16_t sectnum)
-{
-    ExtShowSectorData(sectnum);
-}
-static void CallExtShowWallData(int16_t wallnum)
-{
-    ExtShowWallData(wallnum);
-}
-static void CallExtShowSpriteData(int16_t spritenum)
-{
-    ExtShowSpriteData(spritenum);
-}
-static void CallExtEditSectorData(int16_t sectnum)
-{
-    ExtEditSectorData(sectnum);
-}
-static void CallExtEditWallData(int16_t wallnum)
-{
-    ExtEditWallData(wallnum);
-}
-static void CallExtEditSpriteData(int16_t spritenum)
-{
-    ExtEditSpriteData(spritenum);
-}
-#if 0
-static const char *CallExtGetSectorType(int32_t lotag)
-{
-    return ExtGetSectorType(lotag);
-}
-#endif

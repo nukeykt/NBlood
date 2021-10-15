@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define actors_h_
 
 #include "player.h"
+#include "dnames.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,11 +131,11 @@ typedef struct
     vec3_t   bpos;                  // 12b
     int32_t  floorz, ceilingz;      // 8b
     vec2_t   lastv;                 // 8b
-    int16_t  picnum, ang;           // 4b
-    int16_t  extra, owner;          // 4b
+    int16_t  htpicnum, htang;       // 4b
+    int16_t  htextra, htowner;      // 4b
     int16_t  movflag, tempang;      // 4b
     int16_t  timetosleep, stayput;  // 4b
-    uint16_t florhit, lzsum;        // 4b
+    uint8_t  filler[4];             // 4b
     int16_t  dispicnum;             // 2b NOTE: updated every frame, not in sync with game tics!    
     uint8_t  cgg, lasttransport;    // 2b
 } actor_t;
@@ -190,10 +191,10 @@ typedef struct netactor_s
 
         lasttransport,
 
-        picnum,
-        ang,
-        extra,
-        owner,
+        htpicnum,
+        htang,
+        htextra,
+        htowner,
 
         movflag,
         tempang,
@@ -470,8 +471,6 @@ ACTOR_INLINE int32_t A_MoveSprite(int const spriteNum, vec3_t const &change, uin
 }
 
 # endif
-
-# include "namesdyn.h"
 
 EXTERN_INLINE int G_CheckForSpaceCeiling(int const sectnum)
 {

@@ -113,13 +113,12 @@ int32_t loadsetup(const char *fn)
 
     if ((fp = buildvfs_fopen_read(fn)) == NULL) return -1;
 
+    if (readconfig(fp, "usecwd", val, VL) > 0) g_useCwd = (atoi_safe(val) != 0);
     if (readconfig(fp, "forcesetup", val, VL) > 0) forcesetup = (atoi_safe(val) != 0);
     if (readconfig(fp, "fullscreen", val, VL) > 0) fullscreen = (atoi_safe(val) != 0);
 
-    if (readconfig(fp, "xdim2d", val, VL) > 0) xdim2d = atoi_safe(val);
-    if (readconfig(fp, "ydim2d", val, VL) > 0) ydim2d = atoi_safe(val);
-    if (readconfig(fp, "xdim3d", val, VL) > 0) xdimgame = atoi_safe(val);
-    if (readconfig(fp, "ydim3d", val, VL) > 0) ydimgame = atoi_safe(val);
+    if (readconfig(fp, "xdim", val, VL) > 0) xdim = atoi_safe(val);
+    if (readconfig(fp, "ydim", val, VL) > 0) ydim = atoi_safe(val);
 
     if (readconfig(fp, "bpp", val, VL) > 0) bppgame = atoi_safe(val);
 
@@ -173,7 +172,7 @@ int32_t loadsetup(const char *fn)
 //    if (readconfig(fp, "keychat", val, VL) > 0) keys[BK_MESSAGE] = Bstrtol(val, NULL, 16);
 #endif
 
-    if (readconfig(fp, "windowpositioning", val, VL) > 0) windowpos = atoi_safe(val);
+    if (readconfig(fp, "windowpositioning", val, VL) > 0) r_windowpositioning = atoi_safe(val);
     windowx = -1;
     if (readconfig(fp, "windowposx", val, VL) > 0) windowx = atoi_safe(val);
     windowy = -1;
@@ -251,6 +250,9 @@ int32_t loadsetup(const char *fn)
 
     if (readconfig(fp, "graphicsmode", val, VL) > 0)
         graphicsmode = clamp(atoi_safe(val), 0, 2);
+
+    if (readconfig(fp, "upscalefactor", val, VL) > 0)
+        upscalefactor = clamp(atoi_safe(val), 1, 3);
 
     if (readconfig(fp, "samplerate", val, VL) > 0) MixRate = clamp(atoi_safe(val), 8000, 48000);
     if (readconfig(fp, "ambiencetoggle", val, VL) > 0) AmbienceToggle = !!atoi_safe(val);
@@ -358,16 +360,20 @@ int32_t writesetup(const char *fn)
              ";   1 - Yes\n"
              "forcesetup = %d\n"
              "\n"
+             "; Restrict operation to the current working directory only\n"
+             ";   0 - No\n"
+             ";   1 - Yes\n"
+             "usecwd = %d\n"
+             "\n"
              "; Video mode selection\n"
              ";   0 - Windowed\n"
              ";   1 - Fullscreen\n"
              "fullscreen = %d\n"
              "\n"
              "; Video resolution\n"
-             "xdim2d = %d\n"
-             "ydim2d = %d\n"
-             "xdim3d = %d\n"
-             "ydim3d = %d\n"
+             "xdim = %d\n"
+             "ydim = %d\n"
+             "upscalefactor = %d\n"
              "\n"
              "; 3D-mode colour depth\n"
              "bpp = %d\n"
@@ -609,7 +615,7 @@ int32_t writesetup(const char *fn)
              "; remap = 2B-9C,52-4C\n"
              "remap = ",
 
-             forcesetup, fullscreen, xdim2d, ydim2d, xdimgame, ydimgame, bppgame,
+             forcesetup, g_useCwd, fullscreen, xres, yres, upscalefactor, bppgame,
 #ifdef USE_OPENGL
              vsync,
 #endif
@@ -631,7 +637,7 @@ int32_t writesetup(const char *fn)
 #else
              maxrefreshfreq,
 #endif
-             windowpos, windowx, windowy,
+             r_windowpositioning, windowx, windowy,
              vid_gamma_3d>=0?vid_gamma_3d:g_videoGamma,
              vid_brightness_3d>=0?vid_brightness_3d:g_videoBrightness,
              vid_contrast_3d>=0?vid_contrast_3d:g_videoContrast,

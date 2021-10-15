@@ -5156,7 +5156,7 @@ DoGrating(short SpriteNum)
         }
     }
 
-    setspritez(SpriteNum, &sp->pos);
+    setspritez(SpriteNum, &sp->xyz);
 
     return 0;
 }
@@ -7107,7 +7107,7 @@ move_sprite(short spritenum, int xchange, int ychange, int zchange, int ceildist
 
     // extra processing for Stacks and warping
     if (FAF_ConnectArea(spr->sectnum))
-        setspritez(spritenum, &spr->pos);
+        setspritez(spritenum, &spr->xyz);
 
     if (TEST(sector[spr->sectnum].extra, SECTFX_WARP_SECTOR))
     {
@@ -7349,7 +7349,7 @@ move_missile(short spritenum, int xchange, int ychange, int zchange, int ceildis
     }
 
     if (FAF_ConnectArea(sp->sectnum))
-        setspritez(spritenum, &sp->pos);
+        setspritez(spritenum, &sp->xyz);
 
     if (TEST(sector[sp->sectnum].extra, SECTFX_WARP_SECTOR))
     {
@@ -7549,7 +7549,7 @@ move_ground_missile(short spritenum, int xchange, int ychange, int ceildist, int
     //MissileWaterAdjust(spritenum);
 
     //if (FAF_ConnectArea(sp->sectnum))
-    //    setspritez(spritenum, &sp->pos);
+    //    setspritez(spritenum, &sp->xyz);
 
     if (TEST(sector[sp->sectnum].extra, SECTFX_WARP_SECTOR))
     {
@@ -7593,7 +7593,7 @@ int push_check(short SpriteNum)
                 sp = &sprite[i];
                 u = User[i];
 
-                sect = pushmove(&sp->pos, &sp->sectnum, (((int)sp->clipdist)<<2)-8, u->ceiling_dist, u->floor_dist, CLIPMASK0);
+                sect = pushmove(&sp->xyz, &sp->sectnum, (((int)sp->clipdist)<<2)-8, u->ceiling_dist, u->floor_dist, CLIPMASK0);
                 if (sect == -1)
                     {
                     KillSprite(i);

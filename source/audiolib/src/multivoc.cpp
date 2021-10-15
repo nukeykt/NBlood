@@ -243,7 +243,7 @@ static void MV_ServiceVoc(void)
         if (!MV_BufferEmpty[MV_MixPage])
         {
             Bmemset(MV_MixBuffer[MV_MixPage], 0, MV_BufferSize);
-            MV_BufferEmpty[ MV_MixPage ] = TRUE;
+            MV_BufferEmpty[MV_MixPage] = TRUE;
         }
     }
     else
@@ -252,7 +252,7 @@ static void MV_ServiceVoc(void)
         char *            __restrict dest   = MV_MixBuffer[MV_MixPage];
         char const *      __restrict source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
 
-        if (source < MV_MixBuffer[ 0 ])
+        if (source < MV_MixBuffer[0])
             source += MV_BufferLength;
 
         int length = MV_BufferSize;
@@ -264,7 +264,7 @@ static void MV_ServiceVoc(void)
             MV_Reverb<int16_t>(source, dest, MV_ReverbVolume, count >> 1);
 
             // if we go through the loop again, it means that we've wrapped around the buffer
-            source  = MV_MixBuffer[ 0 ];
+            source  = MV_MixBuffer[0];
             dest   += count;
             length -= count;
         } while (length > 0);
@@ -428,10 +428,11 @@ static inline VoiceNode *MV_GetLowestPriorityVoice(void)
 {
     auto voice = VoiceList.next;
 
-    // check if we have a higher priority than a voice that is playing.
+    // find the voice with the lowest priority and volume
     for (auto node = voice; node != &VoiceList; node = node->next)
     {
-        if (node->priority < voice->priority)
+        if (node->priority < voice->priority
+            || (node->priority == voice->priority && node->PannedVolume.Left < voice->PannedVolume.Left && node->PannedVolume.Right < voice->PannedVolume.Right))
             voice = node;
     }
 
@@ -440,7 +441,7 @@ static inline VoiceNode *MV_GetLowestPriorityVoice(void)
 
 static inline void MV_FinishAllocation(VoiceNode* voice, uint32_t const allocsize)
 {
-    if (!allocsize || (voice->rawdataptr != nullptr && voice->rawdatasiz == allocsize))
+    if (voice->rawdataptr != nullptr && voice->rawdatasiz == allocsize)
         return;
     else if (voice->rawdataptr != nullptr && voice->wavetype >= FMT_VORBIS)
     {
@@ -448,8 +449,8 @@ static inline void MV_FinishAllocation(VoiceNode* voice, uint32_t const allocsiz
         ALIGNED_FREE_AND_NULL(voice->rawdataptr);
     }
 
-    voice->rawdataptr = Xaligned_calloc(16, 1, allocsize);
     voice->rawdatasiz = allocsize;
+    voice->rawdataptr = Xaligned_alloc(16, allocsize);
 }
 
 VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
@@ -480,7 +481,7 @@ VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
     // Find a free voice handle
     do
     {
-        if (++handle < MV_MINVOICEHANDLE || handle > MV_MaxVoices)
+        if (++handle > MV_MaxVoices)
             handle = MV_MINVOICEHANDLE;
     } while (MV_Handles[handle - MV_MINVOICEHANDLE] != nullptr);
     MV_Handles[handle - MV_MINVOICEHANDLE] = voice;
@@ -722,8 +723,8 @@ int MV_Pan3D(int handle, int angle, int distance)
     angle &= MV_MAXPANPOSITION;
 
     return MV_SetPan(handle, max(0, 255 - distance),
-        MV_PanTable[ angle ][ volume ].left,
-        MV_PanTable[ angle ][ volume ].right);
+        MV_PanTable[angle][volume].left,
+        MV_PanTable[angle][volume].right);
 }
 
 void MV_SetReverb(int reverb)
@@ -852,7 +853,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     for (int index = 0; index < Voices; index++)
         LL::Insert(&VoicePool, &MV_Voices[index]);
 
-    MV_Handles = (VoiceNode **)Bcalloc(Voices, sizeof(intptr_t));
+    MV_Handles = (VoiceNode **)Xaligned_calloc(16, Voices, sizeof(intptr_t));
 #ifdef ASS_REVERSESTEREO
     MV_SetReverseStereo(FALSE);
 #endif
@@ -885,10 +886,10 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     MV_ReverbDelay = MV_BufferSize * 3;
 
     // Make sure we don't cross a physical page
-    MV_MixBuffer[ MV_NumberOfBuffers<<1 ] = ptr;
+    MV_MixBuffer[MV_NumberOfBuffers<<1] = ptr;
     for (int buffer = 0; buffer < MV_NumberOfBuffers<<1; buffer++)
     {
-        MV_MixBuffer[ buffer ] = ptr;
+        MV_MixBuffer[buffer] = ptr;
         ptr += MV_BufferSize;
     }
 
@@ -932,13 +933,13 @@ int MV_Shutdown(void)
     LL::Reset((VoiceNode*) &VoiceList);
     LL::Reset((VoiceNode*) &VoicePool);
 
-    DO_FREE_AND_NULL(MV_Handles);
+    ALIGNED_FREE_AND_NULL(MV_Handles);
 
     MV_MaxVoices = 1;
 
     // Release the descriptor from our mix buffer
     for (int buffer = 0; buffer < MV_NUMBEROFBUFFERS<<1; buffer++)
-        MV_MixBuffer[ buffer ] = nullptr;
+        MV_MixBuffer[buffer] = nullptr;
 
     MV_SetErrorCode(MV_NotInstalled);
 

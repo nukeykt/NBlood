@@ -36,7 +36,7 @@ int S_FindMusicSFX(int sectNum, int *sndptr)
         const int32_t snd = sprite[spriteNum].lotag;
         EDUKE32_STATIC_ASSERT(MAXSOUNDS >= 1000);
 
-        if (PN(spriteNum) == MUSICANDSFX && (unsigned)snd < 1000)  // XXX: in other places, 999
+        if (PN(spriteNum) == MUSICANDSFX && (unsigned)snd < 1000 && S_SoundIsValid(snd))  // XXX: in other places, 999
         {
             *sndptr = snd;
             return spriteNum;
@@ -66,13 +66,13 @@ int A_CallSound(int sectNum, int spriteNum)
 
         if (T1(SFXsprite) == 0)
         {
-            if ((g_sounds[soundNum].m & (SF_GLOBAL|SF_DTAG)) != SF_GLOBAL)
+            if ((g_sounds[soundNum]->flags & (SF_GLOBAL|SF_DTAG)) != SF_GLOBAL)
             {
                 if (soundNum)
                 {
                     A_PlaySound(soundNum, spriteNum);
 
-                    if (SHT(SFXsprite) && soundNum != SHT(SFXsprite) && SHT(SFXsprite) < MAXSOUNDS)
+                    if (SHT(SFXsprite) && soundNum != SHT(SFXsprite) && SHT(SFXsprite) <= g_highestSoundIdx)
                         S_StopEnvSound(SHT(SFXsprite),T6(SFXsprite));
 
                     T6(SFXsprite) = spriteNum;
@@ -82,12 +82,12 @@ int A_CallSound(int sectNum, int spriteNum)
                     T1(SFXsprite) = 1;
             }
         }
-        else if (SHT(SFXsprite) < MAXSOUNDS)
+        else if (SHT(SFXsprite) <= g_highestSoundIdx)
         {
             if (SHT(SFXsprite))
                 A_PlaySound(SHT(SFXsprite), spriteNum);
 
-            if ((g_sounds[soundNum].m & SF_LOOP) || (SHT(SFXsprite) && SHT(SFXsprite) != soundNum))
+            if ((g_sounds[soundNum]->flags & SF_LOOP) || (SHT(SFXsprite) && SHT(SFXsprite) != soundNum))
                 S_StopEnvSound(soundNum, T6(SFXsprite));
 
             T6(SFXsprite) = spriteNum;
@@ -1255,7 +1255,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
 
         lotag         = sprite[wallOrSprite].lotag;
         hitag         = sprite[wallOrSprite].hitag;
-        davector      = sprite[wallOrSprite].pos;
+        davector      = sprite[wallOrSprite].xyz;
         nSwitchPicnum = sprite[wallOrSprite].picnum;
         nSwitchPal    = sprite[wallOrSprite].pal;
     }
@@ -1444,12 +1444,12 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
             if (G_IsLikeDipswitch(nSwitchPicnum))
             {
                 S_PlaySound3D((nSwitchPicnum == ALIENSWITCH || nSwitchPicnum == ALIENSWITCH + 1) ? ALIEN_SWITCH1 : SWITCH_ON,
-                              (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
+                              (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, davector);
 
                 if (numDips != correctDips)
                     break;
 
-                S_PlaySound3D(END_OF_LEVEL_WARN, g_player[playerNum].ps->i, &davector);
+                S_PlaySound3D(END_OF_LEVEL_WARN, g_player[playerNum].ps->i, davector);
             }
             fallthrough__;
         case ACCESSSWITCH_CASES:
@@ -1494,11 +1494,11 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
                 return 1;
 
             if (!hitag && CheckDoorTile(nSwitchPicnum) == 0)
-                S_PlaySound3D(SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
-            else if (hitag)
+                S_PlaySound3D(SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, davector);
+            else if (S_SoundIsValid(hitag))
             {
-                if (switchType == SWITCH_SPRITE && (g_sounds[hitag].m & SF_TALK) == 0)
-                    S_PlaySound3D(hitag, wallOrSprite, &davector);
+                if (switchType == SWITCH_SPRITE && (g_sounds[hitag]->flags & SF_TALK) == 0)
+                    S_PlaySound3D(hitag, wallOrSprite, davector);
                 else
                     A_PlaySound(hitag, g_player[playerNum].ps->i);
             }
@@ -2000,7 +2000,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
             sprite[dmgSrc].xvel = (sprite[spriteNum].xvel>>1)+(sprite[spriteNum].xvel>>2);
             sprite[dmgSrc].ang -= (SA(spriteNum)<<1)+1024;
             SA(spriteNum) = getangle(SX(spriteNum)-sprite[dmgSrc].x,SY(spriteNum)-sprite[dmgSrc].y)-512;
-            if (g_sounds[POOLBALLHIT].num < 2)
+            if (g_sounds[POOLBALLHIT]->playing < 2)
                 A_PlaySound(POOLBALLHIT, spriteNum);
         }
         else
@@ -2406,7 +2406,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
                         SA(spriteNum)          = (sprite[dmgSrc].ang + 1024) & 2047;
                     sprite[spriteNum].xvel  = -(sprite[dmgSrc].extra << 2);
                     int16_t sectNum = SECT(spriteNum);
-                    pushmove(&sprite[spriteNum].pos, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
+                    pushmove(&sprite[spriteNum].xyz, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
                     if (sectNum != SECT(spriteNum) && (unsigned)sectNum < MAXSECTORS)
                         changespritesect(spriteNum, sectNum);
                 }
@@ -2427,13 +2427,13 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
                 return;
 
             if (WORLDTOUR && sprite[dmgSrc].picnum == FIREBALL && sprite[sprite[spriteNum].owner].picnum != FIREBALL)
-                actor[spriteNum].picnum = FLAMETHROWERFLAME;
+                actor[spriteNum].htpicnum = FLAMETHROWERFLAME;
             else
-                actor[spriteNum].picnum = sprite[dmgSrc].picnum;
+                actor[spriteNum].htpicnum = sprite[dmgSrc].picnum;
 
-            actor[spriteNum].extra += sprite[dmgSrc].extra;
-            actor[spriteNum].ang    = sprite[dmgSrc].ang;
-            actor[spriteNum].owner  = sprite[dmgSrc].owner;
+            actor[spriteNum].htextra += sprite[dmgSrc].extra;
+            actor[spriteNum].htang    = sprite[dmgSrc].ang;
+            actor[spriteNum].htowner  = sprite[dmgSrc].owner;
 
             if(A_CheckSpriteFlags(spriteNum, SFLAG_DAMAGEEVENT))
                 VM_OnEventWithReturn(EVENT_POSTDAMAGESPRITE, dmgSrc, -1, spriteNum);
@@ -2449,7 +2449,7 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
             if (sprite[spriteNum].xrepeat < 24 && sprite[dmgSrc].picnum == SHRINKSPARK)
                 return;
 
-            if (sprite[actor[spriteNum].owner].picnum != APLAYER)
+            if (sprite[actor[spriteNum].htowner].picnum != APLAYER)
                 if (ud.player_skill >= 3)
                     sprite[dmgSrc].extra += (sprite[dmgSrc].extra>>1);
         }
@@ -2501,7 +2501,7 @@ void A_DamageObject_Generic(int spriteNum, int const dmgSrc)
                             SA(spriteNum) = (sprite[dmgSrc].ang + 1024) & 2047;
                         sprite[spriteNum].xvel  = -(sprite[dmgSrc].extra << 2);
                         int16_t sectNum = SECT(spriteNum);
-                        pushmove(&sprite[spriteNum].pos, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
+                        pushmove(&sprite[spriteNum].xyz, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
                         if (sectNum != SECT(spriteNum) && (unsigned)sectNum < MAXSECTORS)
                             changespritesect(spriteNum, sectNum);
                     }
@@ -2516,10 +2516,10 @@ void A_DamageObject_Generic(int spriteNum, int const dmgSrc)
 
             if (sprite[spriteNum].statnum != STAT_ZOMBIEACTOR)
             {
-                actor[spriteNum].picnum = sprite[dmgSrc].picnum;
-                actor[spriteNum].extra += sprite[dmgSrc].extra;
-                actor[spriteNum].ang    = sprite[dmgSrc].ang;
-                actor[spriteNum].owner  = sprite[dmgSrc].owner;
+                actor[spriteNum].htpicnum = sprite[dmgSrc].picnum;
+                actor[spriteNum].htextra += sprite[dmgSrc].extra;
+                actor[spriteNum].htang    = sprite[dmgSrc].ang;
+                actor[spriteNum].htowner  = sprite[dmgSrc].owner;
 
                 if(A_CheckSpriteFlags(spriteNum, SFLAG_DAMAGEEVENT))
                     VM_OnEventWithReturn(EVENT_POSTDAMAGESPRITE, dmgSrc, -1, spriteNum);
@@ -2532,7 +2532,7 @@ void A_DamageObject_Generic(int spriteNum, int const dmgSrc)
                 if (ps->newowner >= 0)
                     G_ClearCameraView(ps);
 
-                if (sprite[actor[spriteNum].owner].picnum != APLAYER)
+                if (sprite[actor[spriteNum].htowner].picnum != APLAYER)
                     if (ud.player_skill >= 3)
                         sprite[dmgSrc].extra += (sprite[dmgSrc].extra>>1);
             }
@@ -3211,7 +3211,7 @@ int32_t A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
     if (hitData.wall >= 0 && (wall[hitData.wall].cstat&16) && A_CheckEnemySprite( &sprite[spriteNum]))
         return 1<<30;
 
-    return FindDistance2D(hitData.pos.x-SX(spriteNum),hitData.pos.y-SY(spriteNum));
+    return FindDistance2D(hitData.x-SX(spriteNum),hitData.y-SY(spriteNum));
 }
 
 static int P_FindWall(DukePlayer_t *pPlayer, int *hitWall)
@@ -3226,7 +3226,7 @@ static int P_FindWall(DukePlayer_t *pPlayer, int *hitWall)
     if (hitData.wall < 0)
         return INT32_MAX;
 
-    return FindDistance2D(hitData.pos.x - pPlayer->pos.x, hitData.pos.y - pPlayer->pos.y);
+    return FindDistance2D(hitData.x - pPlayer->pos.x, hitData.y - pPlayer->pos.y);
 }
 
 // returns 1 if sprite i should not be considered by neartag
@@ -3451,8 +3451,8 @@ void P_CheckSectors(int playerNum)
                         if (ud.noexits && (g_netServer || ud.multimode > 1))
                         {
                             // NUKEBUTTON frags the player
-                            actor[pPlayer->i].picnum = NUKEBUTTON;
-                            actor[pPlayer->i].extra  = 250;
+                            actor[pPlayer->i].htpicnum = NUKEBUTTON;
+                            actor[pPlayer->i].htextra  = 250;
                         }
                         else
                         {

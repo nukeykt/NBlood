@@ -138,7 +138,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -265,11 +265,12 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <LanguageStandard>stdcpp14</LanguageStandard>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -285,6 +286,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\animvpx.cpp" />
+    <ClCompile Include="..\..\source\build\src\asan_guarded_allocator.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\build\src\baselayer.cpp" />
     <ClCompile Include="..\..\source\build\src\cache1d.cpp" />
     <ClCompile Include="..\..\source\build\src\clip.cpp" />
@@ -381,6 +390,11 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\sjson.cpp" />
     <ClCompile Include="..\..\source\build\src\smalltextfont.cpp" />
+    <ClCompile Include="..\..\source\build\src\smmalloc.cpp" />
+    <ClCompile Include="..\..\source\build\src\smmalloc_generic.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\source\build\src\smmalloc_tls.cpp" />
     <ClCompile Include="..\..\source\build\src\softsurface.cpp" />
     <ClCompile Include="..\..\source\build\src\texcache.cpp" />
     <ClCompile Include="..\..\source\build\src\textfont.cpp" />
@@ -407,11 +421,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\xxhash.c" />
-    <ClCompile Include="..\..\source\build\src\zpl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\build\include\a.h" />
     <ClInclude Include="..\..\source\build\include\animvpx.h" />
+    <ClInclude Include="..\..\source\build\include\atomiclist.h" />
     <ClInclude Include="..\..\source\build\include\baselayer.h" />
     <ClInclude Include="..\..\source\build\include\build.h" />
     <ClInclude Include="..\..\source\build\include\buildtypes.h" />
@@ -429,7 +443,6 @@
     <ClInclude Include="..\..\source\build\include\dxdidf.h" />
     <ClInclude Include="..\..\source\build\include\dxtfilter.h" />
     <ClInclude Include="..\..\source\build\include\dynamicgtk.h" />
-    <ClInclude Include="..\..\source\build\include\editor.h" />
     <ClInclude Include="..\..\source\build\include\enet.h" />
     <ClInclude Include="..\..\source\build\include\fix16.h" />
     <ClInclude Include="..\..\source\build\include\fix16.hpp" />
@@ -443,6 +456,7 @@
     <ClInclude Include="..\..\source\build\include\kplib.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
     <ClInclude Include="..\..\source\build\include\linklist.h" />
+    <ClInclude Include="..\..\source\build\include\lru.h" />
     <ClInclude Include="..\..\source\build\include\lz4.h" />
     <ClInclude Include="..\..\source\build\include\md4.h" />
     <ClInclude Include="..\..\source\build\include\mdsprite.h" />
@@ -453,6 +467,7 @@
     <ClInclude Include="..\..\source\build\include\miniz_export.h" />
     <ClInclude Include="..\..\source\build\include\miniz_tdef.h" />
     <ClInclude Include="..\..\source\build\include\miniz_tinfl.h" />
+    <ClInclude Include="..\..\source\build\include\mio.hpp" />
     <ClInclude Include="..\..\source\build\include\mmulti.h" />
     <ClInclude Include="..\..\source\build\include\mutex.h" />
     <ClInclude Include="..\..\source\build\include\osd.h" />
@@ -470,6 +485,7 @@
     <ClInclude Include="..\..\source\build\include\prlights.h" />
     <ClInclude Include="..\..\source\build\include\random.h" />
     <ClInclude Include="..\..\source\build\include\rawinput.h" />
+    <ClInclude Include="..\..\source\build\include\rdtsc.h" />
     <ClInclude Include="..\..\source\build\include\renderlayer.h" />
     <ClInclude Include="..\..\source\build\include\rev.h" />
     <ClInclude Include="..\..\source\build\include\scancodes.h" />
@@ -478,18 +494,19 @@
     <ClInclude Include="..\..\source\build\include\sdlayer.h" />
     <ClInclude Include="..\..\source\build\include\sdl_inc.h" />
     <ClInclude Include="..\..\source\build\include\sjson.h" />
+    <ClInclude Include="..\..\source\build\include\smmalloc.h" />
     <ClInclude Include="..\..\source\build\include\softsurface.h" />
     <ClInclude Include="..\..\source\build\include\texcache.h" />
     <ClInclude Include="..\..\source\build\include\tilepacker.h" />
     <ClInclude Include="..\..\source\build\include\timer.h" />
     <ClInclude Include="..\..\source\build\include\tracker.hpp" />
+    <ClInclude Include="..\..\source\build\include\vec.h" />
     <ClInclude Include="..\..\source\build\include\vfs.h" />
     <ClInclude Include="..\..\source\build\include\winbits.h" />
     <ClInclude Include="..\..\source\build\include\windows_inc.h" />
     <ClInclude Include="..\..\source\build\include\winlayer.h" />
     <ClInclude Include="..\..\source\build\include\xxh3.h" />
     <ClInclude Include="..\..\source\build\include\xxhash.h" />
-    <ClInclude Include="..\..\source\build\include\zpl.h" />
     <ClInclude Include="..\..\source\build\src\engine_priv.h" />
   </ItemGroup>
   <ItemGroup>

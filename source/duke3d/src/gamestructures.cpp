@@ -239,10 +239,10 @@ memberlabel_t const ActorLabels[]=
 
     // ActorExtra labels...
     LABEL(actor, cgg,         "htcgg",          ACTOR_HTCGG),
-    LABEL(actor, picnum,      "htpicnum",       ACTOR_HTPICNUM),
-    LABEL(actor, ang,         "htang",          ACTOR_HTANG),
-    LABEL(actor, extra,       "htextra",        ACTOR_HTEXTRA),
-    LABEL(actor, owner,       "htowner",        ACTOR_HTOWNER),
+    LABEL(actor, htpicnum,    "htpicnum",       ACTOR_HTPICNUM),
+    LABEL(actor, htang,       "htang",          ACTOR_HTANG),
+    LABEL(actor, htextra,     "htextra",        ACTOR_HTEXTRA),
+    LABEL(actor, htowner,     "htowner",        ACTOR_HTOWNER),
     LABEL(actor, movflag,     "htmovflag",      ACTOR_HTMOVFLAG),
     { "htumovflag", ACTOR_HTUMOVFLAG, sizeof(actor[0].movflag) | LABEL_UNSIGNED, 0, offsetof(actor_t, movflag) },
     LABEL(actor, tempang,     "httempang",      ACTOR_HTTEMPANG),
@@ -526,7 +526,7 @@ memberlabel_t const PlayerLabels[] =
 
     MEMBER(g_player[0].ps, max_actors_killed,           PLAYER_MAX_ACTORS_KILLED),
     MEMBER(g_player[0].ps, actors_killed,               PLAYER_ACTORS_KILLED),
-    MEMBER(g_player[0].ps, return_to_center,            PLAYER_RETURN_TO_CENTER),
+    {                                "return_to_center",PLAYER_RETURN_TO_CENTER, sizeof(g_player[0].ps[0].return_to_center) | LABEL_WRITEFUNC, 0, offsetof(DukePlayer_t, return_to_center) },
     MEMBER(g_player[0].ps, runspeed,                    PLAYER_RUNSPEED),
     MEMBER(g_player[0].ps, sbs,                         PLAYER_SBS),
     MEMBER(g_player[0].ps, reloading,                   PLAYER_RELOADING),
@@ -631,7 +631,14 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
 
         case PLAYER_AMMO_AMOUNT:     ps.ammo_amount[lParm2]     = newValue; break;
         case PLAYER_MAX_AMMO_AMOUNT: ps.max_ammo_amount[lParm2] = newValue; break;
-
+        case PLAYER_RETURN_TO_CENTER:
+            ps.return_to_center = newValue;
+            if (!newValue)
+            {
+                thisPlayer.horizRecenter = 0;
+                thisPlayer.horizSkew     = 0;
+            }
+            break;
         case PLAYER_HEAT_ON:
             if (ps.heat_on != newValue)
             {
@@ -1684,7 +1691,6 @@ void VM_InitHashTables(void)
         hash_init(table);
 
     inithashnames();
-    initsoundhashnames();
 
     STRUCT_HASH_SETUP(h_actor,      ActorLabels);
     STRUCT_HASH_SETUP(h_input,      InputLabels);

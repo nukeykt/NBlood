@@ -223,7 +223,7 @@ typedef struct {
         int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];
         int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
         int32_t JoystickAnalogueAxes[MAXJOYAXES];
-        int32_t JoystickAnalogueScale[MAXJOYAXES];
+        float   JoystickAnalogueSensitivity[MAXJOYAXES];
         int32_t JoystickAnalogueInvert[MAXJOYAXES];
         int32_t JoystickAnalogueDead[MAXJOYAXES];
         int32_t JoystickAnalogueSaturate[MAXJOYAXES];
@@ -584,6 +584,15 @@ EXTERN_INLINE void G_SetStatusBarScale(int32_t sc)
 }
 
 #endif
+
+static FORCE_INLINE void P_SetupMiscInputSettings(void)
+{
+    auto ps = g_player[myconnectindex].ps;
+
+    ps->aim_mode = ud.mouseaiming;
+    ps->auto_aim = ud.config.AutoAim;
+    ps->weaponswitch = ud.weaponswitch;
+}
 
 #endif
 

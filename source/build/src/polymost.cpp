@@ -16,6 +16,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "polymost.h"
 #include "microprofile.h"
 #include "tilepacker.h"
+#include "texcache.h"
 
 extern char textfont[2048], smalltextfont[2048];
 
@@ -514,10 +515,10 @@ GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int 
         OSD_Printf("Compile Status: %u\n", compileStatus);
         if (logLength > 0)
         {
-            char *infoLog = (char*)Bmalloc(logLength);
+            char *infoLog = (char*)Xmalloc(logLength);
             glGetShaderInfoLog(shaderID, logLength, &logLength, infoLog);
             OSD_Printf("Log:\n%s\n", infoLog);
-            Bfree(infoLog);
+            Xfree(infoLog);
         }
     }
 
@@ -531,6 +532,8 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
 
 void polymost_glreset()
 {
+    polymost_activeTexture(GL_TEXTURE0);
+
     for (bssize_t i=0; i<=MAXPALOOKUPS-1; i++)
     {
         fogtable[i].r = palookupfog[i].r * (1.f/255.f);
@@ -582,9 +585,9 @@ void polymost_glreset()
     md_freevbos();
 #endif
 
-    Bmemset(texcache.list,0,sizeof(texcache.list));
+//    Bmemset(texcache.list,0,sizeof(texcache.list));
 
-    texcache_freeptrs();
+    // texcache_freeptrs();
     texcache_syncmemcache();
 
 #ifdef DEBUGGINGAIDS
@@ -1161,7 +1164,7 @@ void polymost_glinit()
     glLinkProgram(polymost1ExtendedShaderProgramID);
 
     int polymost1BasicFragLen = strlen(polymost1Frag);
-    char* polymost1BasicFrag = (char*) Bmalloc(polymost1BasicFragLen);
+    char* polymost1BasicFrag = (char*) Xmalloc(polymost1BasicFragLen);
     memcpy(polymost1BasicFrag, polymost1Frag, polymost1BasicFragLen);
     char* extDefineSubstr = strstr(polymost1BasicFrag, " #define POLYMOST1_EXTENDED");
     if (extDefineSubstr)
@@ -1175,7 +1178,7 @@ void polymost_glinit()
     glAttachShader(polymost1BasicShaderProgramID, polymost1BasicVertexShaderID);
     glAttachShader(polymost1BasicShaderProgramID, polymost1BasicFragmentShaderID);
     glLinkProgram(polymost1BasicShaderProgramID);
-    Bfree(polymost1BasicFrag);
+    Xfree(polymost1BasicFrag);
     polymost1BasicFrag = 0;
 
     // set defaults
@@ -4923,7 +4926,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     if ((globalorientation&(2+64)) == (2+64)) //Hack for panning for slopes w/ relative alignment
     {
         float r = global_cf_heinum * (1.0f / 4096.f);
-        r = polymost_invsqrt_approximation(r * r + 1);
+        r = 1.f/ Bsqrtf(r * r + 1);
 
         if (!(globalorientation & 4))
             fxy.y *= r;
@@ -4938,7 +4941,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
         //Pick some point guaranteed to be not collinear to the 1st two points
         vec2f_t dxy = { n1.y - n0.y, n0.x - n1.x };
 
-        float const dxyr = polymost_invsqrt_approximation(dxy.x * dxy.x + dxy.y * dxy.y);
+        float const dxyr = 1.f / Bsqrtf(dxy.x * dxy.x + dxy.y * dxy.y);
 
         dxy.x *= dxyr * 4096.f;
         dxy.y *= dxyr * 4096.f;
@@ -6567,22 +6570,22 @@ static int32_t polymost_bunchfront(const int32_t b1, const int32_t b2)
     const float x2b2 = dxb2[bunchlast[b2]];
     const float x1b1 = dxb1[b1f];
 
-    if (nexttowardf(x1b1, x2b2) >= x2b2)
+    if (x1b1 >= x2b2)
         return -1;
 
     int b2f = bunchfirst[b2];
     const float x1b2 = dxb1[b2f];
 
-    if (nexttowardf(x1b2, dxb2[bunchlast[b1]]) >= dxb2[bunchlast[b1]])
+    if (x1b2 >= dxb2[bunchlast[b1]])
         return -1;
 
-    if (nexttowardf(x1b1, x1b2) > x1b2)
+    if (x1b1 > x1b2)
     {
-        while (nexttowardf(dxb2[b2f], x1b1) <= x1b1) b2f=bunchp2[b2f];
+        while (dxb2[b2f] <= x1b1) b2f=bunchp2[b2f];
         return wallfront(b1f, b2f);
     }
 
-    while (nexttowardf(dxb2[b1f], x1b2) <= x1b2) b1f=bunchp2[b1f];
+    while (dxb2[b1f] <= x1b2) b1f=bunchp2[b1f];
     return wallfront(b1f, b2f);
 }
 
@@ -6687,7 +6690,7 @@ void polymost_scansector(int32_t sectnum)
             }
 
             //if wall is facing you...
-            if ((p1.y >= SCISDIST || p2.y >= SCISDIST) && (nexttoward(p1.x*p2.y, p2.x*p1.y) < p2.x*p1.y))
+            if ((p1.y >= SCISDIST || p2.y >= SCISDIST) && (p1.x*p2.y < p2.x*p1.y))
             {
                 dxb1[numscans] = (p1.y >= SCISDIST) ? float(p1.x*ghalfx/p1.y + ghalfx) : -1e32f;
                 dxb2[numscans] = (p2.y >= SCISDIST) ? float(p2.x*ghalfx/p2.y + ghalfx) : 1e32f;
@@ -6701,7 +6704,7 @@ void polymost_scansector(int32_t sectnum)
                 else if (dxb2[numscans] > xbr)
                     dxb2[numscans] = xbr;
 
-                if (nexttowardf(dxb1[numscans], dxb2[numscans]) < dxb2[numscans])
+                if (dxb1[numscans] < dxb2[numscans])
                 {
                     thesector[numscans] = sectnum;
                     thewall[numscans] = z;
@@ -6719,7 +6722,7 @@ void polymost_scansector(int32_t sectnum)
 
         for (bssize_t z=onumscans; z<numscans; z++)
         {
-            if ((wall[thewall[z]].point2 != thewall[bunchp2[z]]) || (dxb2[z] > nexttowardf(dxb1[bunchp2[z]], dxb2[z])))
+            if ((wall[thewall[z]].point2 != thewall[bunchp2[z]]) || (dxb2[z] > dxb1[bunchp2[z]]))
             {
                 bunchfirst[numbunches++] = bunchp2[z];
                 bunchp2[z] = -1;
@@ -7652,7 +7655,7 @@ void polymost2_drawsprite(int32_t snum)
         return;
     }
 
-    vec2_t pos = tspr->pos.vec2;
+    vec2_t pos = tspr->xy;
 
     if (spriteext[spritenum].flags & SPREXT_AWAY1)
     {
@@ -8236,7 +8239,7 @@ void polymost_drawsprite(int32_t snum)
         break;
     }
 
-    vec3_t pos = tspr->pos;
+    vec3_t pos = tspr->xyz;
 
     if (spriteext[spritenum].flags & SPREXT_AWAY1)
     {
@@ -8630,7 +8633,7 @@ void polymost_drawsprite(int32_t snum)
             {
                 int16_t const heinum = tspriteGetSlope(tspr);
                 float const fheinum = heinum * (1.f / 4096.f);
-                float ratio = polymost_invsqrt_approximation(fheinum * fheinum + 1.f);
+                float ratio = 1.f / Bsqrtf(fheinum * fheinum + 1.f);
 
                 if ((globalorientation & 4) > 0)
                     off.x = -off.x;
@@ -8746,7 +8749,7 @@ void polymost_drawsprite(int32_t snum)
                 vec2f_t const vv = { (float)tspr->x + s * p1.x + c * p1.y, (float)tspr->y + s * p1.y - c * p1.x };
                 vec2f_t ff = { -(p0.x + p1.x) * s, (p0.x + p1.x) * c };
 
-                float f = polymost_invsqrt_approximation(ff.x * ff.x + ff.y * ff.y);
+                float f = 1.f / Bsqrtf(ff.x * ff.x + ff.y * ff.y);
 
                 ff.x *= f;
                 ff.y *= f;
@@ -9939,7 +9942,7 @@ static int osdcmd_cvar_set_polymost(osdcmdptr_t parm)
 {
     int32_t r = osdcmd_cvar_set(parm);
 
-    if (xdim == 0 || ydim == 0 || bpp == 0) // video not set up yet
+    if (qsetmode == 0) // video not set up yet
     {
         if (r == OSDCMD_OK)
         {
@@ -10015,7 +10018,7 @@ void polymost_initosdfuncs(void)
         { "r_texcache","enable/disable OpenGL compressed texture cache",(void *) &glusetexcache, CVAR_INT, 0, 2 },
 #endif
         { "r_animsmoothing","enable/disable model animation smoothing",(void *) &r_animsmoothing, CVAR_BOOL, 0, 1 },
-        { "r_anisotropy", "changes the OpenGL texture anisotropy setting (requires r_useindexedcolortextures to be off)", (void *) &glanisotropy, CVAR_INT|CVAR_FUNCPTR, 0, 16 },
+        { "r_anisotropy", "changes the OpenGL texture anisotropy setting (requires r_useindexedcolortextures to be off)", (void *) &glanisotropy, CVAR_INT|CVAR_FUNCPTR, 1, 16 },
         { "r_downsize","controls downsizing factor (quality) for hires textures",(void *) &r_downsize, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
         { "r_finishbeforeswap", "run glFinish() before swapping when 'r_glfinish' is 1 and when not using KMT vsync", (void *) &r_finishbeforeswap, CVAR_BOOL, 0, 1 },
         { "r_fullbrights","enable/disable fullbright textures",(void *) &r_fullbrights, CVAR_BOOL, 0, 1 },
@@ -10091,7 +10094,6 @@ void polymost_initosdfuncs(void)
         { "r_pr_specularfactor", "overriden specular material factor", (void *) &pr_specularfactor, CVAR_FLOAT | CVAR_NOSAVE, -10, 1000 },
         { "r_pr_specularmapping", "enable/disable specular mapping", (void *) &pr_specularmapping, CVAR_BOOL, 0, 1 },
         { "r_pr_specularpower", "overriden specular material power", (void *) &pr_specularpower, CVAR_FLOAT | CVAR_NOSAVE, -10, 1000 },
-        { "r_pr_vbos", "contols Vertex Buffer Object usage. 0: no VBOs. 1: VBOs for map data. 2: VBOs for model data.", (void *) &pr_vbos, CVAR_INT | CVAR_RESTARTVID, 0, 2 },
         { "r_pr_verbosity", "verbosity level of the polymer renderer", (void *) &pr_verbosity, CVAR_INT, 0, 3 },
         { "r_pr_wireframe", "toggles wireframe mode", (void *) &pr_wireframe, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
 #endif

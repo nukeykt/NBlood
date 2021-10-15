@@ -861,42 +861,6 @@ ResetSpriteFound(void)
 
 static void Keys2D()
 {
-    if (PRESSED_KEYSC(G))  // G (grid on/off)
-    {
-        if (autogrid)
-        {
-            grid = 8*eitherSHIFT;
-
-            autogrid = 0;
-        }
-        else
-        {
-            grid += (1-2*eitherSHIFT);
-            if (grid == -1 || grid == 9)
-            {
-                autogrid = 1;
-                grid = 0;
-            }
-        }
-
-        if (autogrid)
-            printmessage16("Grid size: 9 (autosize)");
-        else if (!grid)
-            printmessage16("Grid off");
-        else
-            printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
-    }
-
-    if (autogrid)
-    {
-        grid = -1;
-
-        while (grid++ < 7)
-        {
-            if (mulscale14((2048>>grid), zoom) <= 16)
-                break;
-        }
-    }
 }
 
 // imported from allen code

@@ -1,5 +1,6 @@
 /*
  Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
+ Copyright (C) 2020 EDuke32 developers and contributors
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -22,26 +23,20 @@
  * OggVorbis source support for MultiVoc
  */
 
+#include "_multivc.h"
 #include "compat.h"
-#include "cache1d.h"
-#include "pragmas.h"
+
+#ifdef _WIN32
+#include "winbits.h"
+#endif
 
 #ifdef HAVE_VORBIS
 
-#include "pitch.h"
-#include "multivoc.h"
-#include "_multivc.h"
-
+#define OGG_IMPL
+#define VORBIS_IMPL
 #define OV_EXCLUDE_STATIC_CALLBACKS
 
-#if defined __APPLE__
-# include <vorbis/vorbisfile.h>
-#elif defined GEKKO
-# define USING_TREMOR
-# include <tremor/ivorbisfile.h>
-#else
-# include "vorbis/vorbisfile.h"
-#endif
+#include "minivorbis.h"
 
 #define BLOCKSIZE MV_MIXBUFFERSIZE
 
@@ -106,7 +101,7 @@ static void MV_GetVorbisCommentLoops(VoiceNode *voice, vorbis_comment *vc)
         if (ov_loopstart >= 0) // a loop starting at 0 is valid
         {
             voice->Loop.Start = (const char *) (intptr_t) ov_loopstart;
-            voice->Loop.Size = 1;
+            voice->Loop.Size  = 1;
         }
     }
     if (vc_loopend != nullptr)
@@ -206,12 +201,6 @@ void MV_SetVorbisPosition(VoiceNode *voice, int position)
 
     ov_pcm_seek(&vd->vf, position);
 }
-
-/*---------------------------------------------------------------------
-Function: MV_GetNextVorbisBlock
-
-Controls playback of OggVorbis data
----------------------------------------------------------------------*/
 
 static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
 {
@@ -314,14 +303,6 @@ static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
     return KeepPlaying;
 }
 
-
-/*---------------------------------------------------------------------
-Function: MV_PlayVorbis3D
-
-Begin playback of sound data at specified angle and distance
-from listener.
----------------------------------------------------------------------*/
-
 int MV_PlayVorbis3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, fix16_t volume, intptr_t callbackval)
 {
     if (!MV_Installed)
@@ -341,13 +322,6 @@ int MV_PlayVorbis3D(char *ptr, uint32_t length, int loophow, int pitchoffset, in
     return MV_PlayVorbis(ptr, length, loophow, -1, pitchoffset, max(0, 255 - distance),
                          MV_PanTable[angle][vol].left, MV_PanTable[angle][vol].right, priority, volume, callbackval);
 }
-
-/*---------------------------------------------------------------------
-Function: MV_PlayVorbis
-
-Begin playback of sound data with the given sound levels and
-priority.
----------------------------------------------------------------------*/
 
 int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
@@ -372,11 +346,11 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     int status = ov_open_callbacks((void *)vd, &vd->vf, 0, 0, vorbis_callbacks);
     vorbis_info *vi;
 
-    if (status < 0 || ((vi = ov_info(&vd->vf, 0)) == nullptr) || vi->channels < 1 || vi->channels > 2)
-    {
-        if (status == 0)
-            ov_clear(&vd->vf);
-        else
+        if (status < 0 || ((vi = ov_info(&vd->vf, 0)) == nullptr) || vi->channels < 1 || vi->channels > 2)
+        {
+            if (status == 0)
+                ov_clear(&vd->vf);
+            else
             MV_Printf("MV_PlayVorbis: err %d\n", status);
 
         ALIGNED_FREE_AND_NULL(voice->rawdataptr);

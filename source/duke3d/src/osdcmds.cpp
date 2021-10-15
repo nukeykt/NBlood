@@ -1116,7 +1116,6 @@ static int osdcmd_restorestate(osdcmdptr_t UNUSED(parm))
 }
 #endif
 
-#ifdef DEBUGGINGAIDS
 static int osdcmd_inittimer(osdcmdptr_t parm)
 {
     if (parm->numparms != 1)
@@ -1130,7 +1129,6 @@ static int osdcmd_inittimer(osdcmdptr_t parm)
     OSD_Printf("%s\n",parm->raw);
     return OSDCMD_OK;
 }
-#endif
 
 #if !defined NETCODE_DISABLE
 static int osdcmd_name(osdcmdptr_t parm)
@@ -1668,8 +1666,8 @@ int32_t registerosdcommands(void)
 
         { "in_mouseflip", "invert vertical mouse movement" CVAR_BOOL_OPTSTR, (void *)&ud.mouseflip, CVAR_BOOL, 0, 1 },
 
-        { "in_mousexscale", "scale modifier for mouse x axis", (void *)&CONTROL_MouseAxesScale[0], CVAR_INT, 0, 65536 },
-        { "in_mouseyscale", "scale modifier for mouse y axis", (void *)&CONTROL_MouseAxesScale[1], CVAR_INT, 0, 65536 },
+        { "in_mousexsensitivity", "horizontal mouse sensitivity", (void *)&CONTROL_MouseAxesSensitivity[0], CVAR_FLOAT, 0, 25 },
+        { "in_mouseysensitivity", "vertical mouse sensitivity",   (void *)&CONTROL_MouseAxesSensitivity[1], CVAR_FLOAT, 0, 25 },
 
         { "mus_enabled", "music subsystem" CVAR_BOOL_OPTSTR, (void *)&ud.config.MusicToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT|CVAR_FUNCPTR, 0, ASS_NumSoundCards },
@@ -1785,9 +1783,7 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("maxhealth", "maxhealth <amount>: sets the player's maximum health", osdcmd_maxhealth);
 
     OSD_RegisterFunction("initgroupfile","initgroupfile <path>: adds a grp file into the game filesystem", osdcmd_initgroupfile);
-#ifdef DEBUGGINGAIDS
     OSD_RegisterFunction("inittimer","debug", osdcmd_inittimer);
-#endif
 
     OSD_RegisterFunction("locale","locale: changes the locale", osdcmd_locale);
 

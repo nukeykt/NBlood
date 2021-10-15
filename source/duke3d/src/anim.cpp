@@ -76,7 +76,7 @@ dukeanim_t * Anim_Create(char const * fn)
 }
 
 #ifndef EDUKE32_STANDALONE
-#ifdef DYNSOUNDREMAP_ENABLE
+#ifdef USE_DNAMES
 static int32_t const StopAllSounds = -1;
 #else
 # define StopAllSounds -1
@@ -88,7 +88,7 @@ void Anim_Init(void)
     hash_init(&h_dukeanim);
 
     struct defaultanmsound {
-#ifdef DYNSOUNDREMAP_ENABLE
+#ifdef USE_DNAMES
         int32_t const & sound;
 #else
         int16_t sound;
@@ -473,6 +473,13 @@ int32_t Anim_Play(const char *fn)
     gltexapplyprops();
 #endif
 
+    if (g_restorePalette == 1)
+    {
+        P_SetGamePalette(g_player[myconnectindex].ps, ANIMPAL, 0);
+        g_restorePalette = 0;
+    }
+
+    gameHandleEvents();
     ototalclock = totalclock;
 
     i = 1;

@@ -142,5 +142,8 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_alsa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\src\minivorbis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

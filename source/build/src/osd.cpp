@@ -2,12 +2,16 @@
 // for the Build Engine
 // by Jonathon Fowler (jf@jonof.id.au)
 
+#include "osd.h"
+
 #include "build.h"
 #include "cache1d.h"
 #include "crc32.h"
 #include "editor.h"
 #include "osd.h"
 #include "scancodes.h"
+#include "mimalloc.h"
+#include "atomiclist.h"
 
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"
@@ -29,13 +33,10 @@ static int32_t _internal_gettime(void);
 static void _internal_onshowosd(int32_t);
 
 osdmain_t *osd;
-GrowArray<char *> osdstrings;
 
 static int osdrowscur = -1;
 static int osdmaxrows = MAXYDIM >> 3;
 static int osdrows;
-
-buildvfs_FILE osdlog;
 
 const char *osdlogfn;
 
@@ -47,28 +48,16 @@ static uint32_t osdscrtime = 0;
 
 static hashtable_t h_osd = { OSDMAXSYMBOLS >> 1, NULL };
 
-// Application callbacks: these are the currently effective ones.
-static void (*drawosdchar)(int32_t, int32_t, char, int32_t, int32_t) = _internal_drawosdchar;
-static void (*drawosdstr)(int32_t, int32_t, const char *, int32_t, int32_t, int32_t) = _internal_drawosdstr;
-static void (*drawosdcursor)(int32_t, int32_t, int32_t, int32_t) = _internal_drawosdcursor;
-static int32_t (*getcolumnwidth)(int32_t) = _internal_getcolumnwidth;
-static int32_t (*getrowheight)(int32_t) = _internal_getrowheight;
-
-static void (*clearbackground)(int32_t,int32_t) = _internal_clearbackground;
-static int32_t (*gettime)(void) = _internal_gettime;
-static void (*onshowosd)(int32_t) = _internal_onshowosd;
-
-// Application callbacks: these are the backed-up ones.
-static void (*_drawosdchar)(int32_t, int32_t, char, int32_t, int32_t) = _internal_drawosdchar;
-static void (*_drawosdstr)(int32_t, int32_t, const char *, int32_t, int32_t, int32_t) = _internal_drawosdstr;
-static void (*_drawosdcursor)(int32_t, int32_t, int32_t, int32_t) = _internal_drawosdcursor;
-static int32_t (*_getcolumnwidth)(int32_t) = _internal_getcolumnwidth;
-static int32_t (*_getrowheight)(int32_t) = _internal_getrowheight;
+static osdcallbacks_t user_callbacks;
+static osdcallbacks_t default_callbacks;
 
 static hashtable_t h_cvars      = { OSDMAXSYMBOLS >> 1, NULL };
 bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown command in the osd
 
 static int osdfunc_printvar(int const cvaridx);
+
+void OSD_UpdateDrawBuffer(void);
+void OSD_WritePendingLines(void);
 
 void OSD_RegisterCvar(osdcvardata_t * const cvar, int (*func)(osdcmdptr_t))
 {
@@ -255,21 +244,14 @@ void OSD_GetShadePal(const char *ch, int *shd, int *pal)
 // Then again, my GCC just crashed (any kept on crashing until after a reboot!)
 // when I tried to rewrite this into something different.
 
-static inline void swaposdptrs(void)
-{
-    swapptr(&_drawosdchar,    &drawosdchar);
-    swapptr(&_drawosdstr,     &drawosdstr);
-    swapptr(&_drawosdcursor,  &drawosdcursor);
-    swapptr(&_getcolumnwidth, &getcolumnwidth);
-    swapptr(&_getrowheight,   &getrowheight);
-}
+static inline void swaposdptrs(void) { osd->cb = (osd->cb == &default_callbacks) ? &user_callbacks : &default_callbacks; }
 
 void OSD_SetTextMode(int mode)
 {
     osd->draw.mode = (mode != 0);
 
-    if ((osd->draw.mode && drawosdchar != _internal_drawosdchar) ||
-        (!osd->draw.mode && drawosdchar == _internal_drawosdchar))
+    if ((osd->draw.mode && osd->cb != &default_callbacks) ||
+        (!osd->draw.mode && osd->cb == &default_callbacks))
         swaposdptrs();
 
     if (in3dmode())
@@ -441,13 +423,13 @@ static void osd_clear(int clearstrings = true)
     Bmemset(osd->text.fmt, osd->draw.textpal + (osd->draw.textshade << 5), OSDBUFFERSIZE);
     osd->text.lines = 1;
 
-    if (clearstrings)
-    {
-        for (auto s : osdstrings)
-            Xfree(s);
+    mutex_lock(&osd->log.mutex);
+    osd->log.m_lineidx = 0;
 
-        osdstrings.clear();
-    }
+    if (clearstrings)
+        osd->log.m_lines->clear();
+
+    mutex_unlock(&osd->log.mutex);
 }
 
 ////////////////////////////
@@ -647,35 +629,43 @@ static int osdfunc_history(osdcmdptr_t UNUSED(parm))
 //
 void OSD_Cleanup(void)
 {
+    mi_register_output(NULL, NULL);
+
+    osd_clear();
+    mutex_lock(&osd->log.mutex);
+    MAYBE_FCLOSE_AND_NULL(osd->log.m_fp);
+
+    auto osdptr = osd;
+    osd = nullptr;
+
     hash_free(&h_osd);
     hash_free(&h_cvars);
 
-    for (auto &symb : osd->symbptrs)
+    for (auto &symb : osdptr->symbptrs)
         DO_FREE_AND_NULL(symb);
 
-    osd->symbols = NULL;
+    osdptr->symbols = NULL;
 
-    for (auto & i : osd->history.buf)
+    for (auto & i : osdptr->history.buf)
         DO_FREE_AND_NULL(i);
 
-    DO_FREE_AND_NULL(osd->cvars);
+    DO_FREE_AND_NULL(osdptr->cvars);
 
-    DO_FREE_AND_NULL(osd->editor.buf);
-    DO_FREE_AND_NULL(osd->editor.tmp);
+    DO_FREE_AND_NULL(osdptr->editor.buf);
+    DO_FREE_AND_NULL(osdptr->editor.tmp);
 
-    DO_FREE_AND_NULL(osd->text.buf);
-    DO_FREE_AND_NULL(osd->text.fmt);
+    DO_FREE_AND_NULL(osdptr->text.buf);
+    DO_FREE_AND_NULL(osdptr->text.fmt);
 
-    DO_FREE_AND_NULL(osd->version.buf);
+    DO_FREE_AND_NULL(osdptr->version.buf);
 
-    MAYBE_FCLOSE_AND_NULL(osdlog);
+    while (!osdptr->log.m_pending.isEmpty())
+        while (auto str = osdptr->log.m_pending.pop())
+            delete str;
 
-    for (auto s : osdstrings)
-        Xfree(s);
+    mutex_destroy(&osdptr->log.mutex);
 
-    osdstrings.clear();
-
-    DO_FREE_AND_NULL(osd);
+    DO_FREE_AND_NULL(osdptr);
 }
 
 
@@ -772,8 +762,19 @@ static int osdfunc_toggle(osdcmdptr_t parm)
 void OSD_Init(void)
 {
     osd = (osdmain_t *)Xcalloc(1, sizeof(osdmain_t));
+    osd->log.m_lines = new CircularQueue<char *, 1024, RF_INIT_AND_FREE>;
 
-    mutex_init(&osd->mutex);
+    mutex_init(&osd->log.mutex);
+    default_callbacks.drawchar     = _internal_drawosdchar;
+    default_callbacks.drawstr      = _internal_drawosdstr;
+    default_callbacks.drawcursor   = _internal_drawosdcursor;
+    default_callbacks.getcolumnwidth  = _internal_getcolumnwidth;
+    default_callbacks.getrowheight    = _internal_getrowheight;
+    default_callbacks.clear = _internal_clearbackground;
+    default_callbacks.gettime         = _internal_gettime;
+    default_callbacks.onshowosd       = _internal_onshowosd;
+
+    osd->cb = &default_callbacks;
 
     if (!osd->keycode)
         osd->keycode = sc_Tilde;
@@ -793,7 +794,7 @@ void OSD_Init(void)
     osd->text.maxlines = OSDDEFAULTMAXLINES;  // overwritten later
     osd->text.useclipboard = 1;
     osd->draw.cols     = OSDDEFAULTCOLS;
-    osd->log.cutoff    = OSDMAXERRORS;
+    osd->log.maxerrors = OSDMAXERRORS;
 
     osd->history.maxlines = OSDMINHISTORYDEPTH;
 
@@ -816,7 +817,7 @@ void OSD_Init(void)
         { "osdrows", "lines of text to display in console", (void *) &osdrows, CVAR_INT|CVAR_FUNCPTR, 0, MAXYDIM >> 3 },
         { "osdtextmode", "console character mode: 0: sprites  1: simple glyphs", (void *) &osd->draw.mode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
 
-        { "osdlogcutoff", "maximum number of error messages to log to the console", (void *) &osd->log.cutoff, CVAR_INT, -1, OSDMAXERRORS },
+        { "osdlogcutoff", "maximum number of error messages to log to the console", (void *) &osd->log.maxerrors, CVAR_INT, -1, OSDMAXERRORS },
         { "osdhistorydepth", "number of lines of command history to cycle through with the up and down cursor keys", (void *) &osd->history.maxlines, CVAR_INT|CVAR_FUNCPTR, OSDMINHISTORYDEPTH, OSDMAXHISTORYDEPTH },
     };
 
@@ -841,7 +842,7 @@ void OSD_Init(void)
 //
 void OSD_SetLogFile(const char *fn)
 {
-    MAYBE_FCLOSE_AND_NULL(osdlog);
+    MAYBE_FCLOSE_AND_NULL(osd->log.m_fp);
     osdlogfn = NULL;
 
     if (!osd)
@@ -850,9 +851,9 @@ void OSD_SetLogFile(const char *fn)
     if (!fn)
         return;
 
-    osdlog = buildvfs_fopen_write_text(fn);
+    osd->log.m_fp = buildvfs_fopen_write_text(fn);
 
-    if (osdlog)
+    if (osd->log.m_fp)
     {
 #ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
@@ -860,10 +861,12 @@ void OSD_SetLogFile(const char *fn)
 #else
         const int bufmode = _IOLBF;
 #endif
-        setvbuf(osdlog, (char *)NULL, bufmode, BUFSIZ);
+        setvbuf(osd->log.m_fp, (char *)NULL, bufmode, BUFSIZ);
 #endif
         osdlogfn = fn;
     }
+
+    mi_register_output((mi_output_fun *)(void *)&OSD_Puts, NULL);
 }
 
 
@@ -879,17 +882,31 @@ void OSD_SetFunctions(void (*drawchar)(int, int, char, int, int),
                       int32_t (*gtime)(void),
                       void (*showosd)(int))
 {
-    drawosdchar     = drawchar   ? drawchar   : _internal_drawosdchar;
-    drawosdstr      = drawstr    ? drawstr    : _internal_drawosdstr;
-    drawosdcursor   = drawcursor ? drawcursor : _internal_drawosdcursor;
-    getcolumnwidth  = colwidth   ? colwidth   : _internal_getcolumnwidth;
-    getrowheight    = rowheight  ? rowheight  : _internal_getrowheight;
-    clearbackground = clearbg    ? clearbg    : _internal_clearbackground;
-    gettime         = gtime      ? gtime      : _internal_gettime;
-    onshowosd       = showosd    ? showosd    : _internal_onshowosd;
-
     if (!osd)
         OSD_Init();
+
+    osdcallbacks_t callbacks = default_callbacks;
+
+    callbacks.drawchar     = drawchar   ? drawchar   : _internal_drawosdchar;
+    callbacks.drawstr      = drawstr    ? drawstr    : _internal_drawosdstr;
+    callbacks.drawcursor   = drawcursor ? drawcursor : _internal_drawosdcursor;
+    callbacks.getcolumnwidth  = colwidth   ? colwidth   : _internal_getcolumnwidth;
+    callbacks.getrowheight    = rowheight  ? rowheight  : _internal_getrowheight;
+    callbacks.clear           = clearbg    ? clearbg    : _internal_clearbackground;
+    callbacks.gettime         = gtime      ? gtime      : _internal_gettime;
+    callbacks.onshowosd       = showosd    ? showosd    : _internal_onshowosd;
+
+    OSD_SetCallbacks(callbacks);
+}
+
+
+void OSD_SetCallbacks(osdcallbacks_t const &callbacks)
+{
+    if (!osd)
+        OSD_Init();
+
+    user_callbacks = callbacks;
+    osd->cb = &user_callbacks;
 }
 
 
@@ -1003,13 +1020,15 @@ static void OSD_HistoryNext(void)
 
 void OSD_HandleWheel()
 {
-    if (osd->flags & OSD_CAPTURE)
+    if (osd->flags & OSD_CAPTURE && g_mouseBits & (16|32))
     {
+        int const scrlines = osd->cb->getrowheight(ydim) >> 4;
+
         if ((g_mouseBits & 16) && osd->draw.head <  osd->text.lines - osdrowscur)
-            ++osd->draw.head;
+            osd->draw.head = min(osd->draw.head + scrlines, osd->text.lines - osdrowscur);
 
         if ((g_mouseBits & 32) && osd->draw.head > 0)
-            --osd->draw.head;
+            osd->draw.head = max(osd->draw.head - scrlines, 0);
     }
 }
 
@@ -1351,7 +1370,7 @@ int OSD_HandleScanCode(uint8_t scanCode, int keyDown)
     }
 
     osdedit_t &ed = osd->editor;
-    osdkeytime    = gettime();
+    osdkeytime    = osd->cb->gettime();
 
     switch (scanCode)
     {
@@ -1513,13 +1532,13 @@ void OSD_ResizeDisplay(int w, int h)
     auto &t = osd->text;
     auto &d = osd->draw;
 
-    int const newcols     = getcolumnwidth(w);
+    int const newcols     = osd->cb->getcolumnwidth(w);
     d.cols     = newcols;
 
     int const newmaxlines = OSDBUFFERSIZE / newcols;
     t.maxlines = newmaxlines;
 
-    osdmaxrows = getrowheight(h) - 2;
+    osdmaxrows = osd->cb->getrowheight(h) - 2;
     d.rows = osdrows ? clamp(osdrows, 1, osdmaxrows) : (osdmaxrows >> 1);
 
     if (osdrowscur != -1)
@@ -1531,9 +1550,7 @@ void OSD_ResizeDisplay(int w, int h)
     whiteColorIdx = -1;
 
     osd_clear(false);
-
-    for (auto s : osdstrings)
-        OSD_Puts(s, true);
+    OSD_UpdateDrawBuffer();
 }
 
 
@@ -1545,7 +1562,7 @@ void OSD_CaptureInput(int cap)
     g_mouseBits = 0;
     osd->flags = (osd->flags & ~(OSD_CAPTURE|OSD_CTRL|OSD_SHIFT)) | (-cap & OSD_CAPTURE);
     mouseGrabInput(cap == 0 ? g_mouseLockedToWindow : 0);
-    onshowosd(cap);
+    osd->cb->onshowosd(cap);
 
     keyFlushChars();
 }
@@ -1572,6 +1589,8 @@ void OSD_Draw(void)
 
     if (osdrowscur == 0)
         OSD_ShowDisplay((osd->flags & OSD_DRAW) != OSD_DRAW);
+
+    OSD_UpdateDrawBuffer();
 
     if (osdrowscur == osd->draw.rows)
         osd->draw.scrolling = 0;
@@ -1611,7 +1630,7 @@ void OSD_Draw(void)
 
     videoBeginDrawing();
 
-    clearbackground(osd->draw.cols,osdrowscur+1);
+    osd->cb->clear(osd->draw.cols,osdrowscur+1);
 
     for (; lines>0; lines--, row--)
     {
@@ -1622,38 +1641,38 @@ void OSD_Draw(void)
         if (topoffs + osd->draw.cols-1 >= OSDBUFFERSIZE)
             break;
 
-        drawosdstr(0, row, osd->text.buf + topoffs, osd->draw.cols, osd->draw.textshade, osd->draw.textpal);
+        osd->cb->drawstr(0, row, osd->text.buf + topoffs, osd->draw.cols, osd->draw.textshade, osd->draw.textpal);
         topoffs += osd->draw.cols;
     }
 
     int       offset = ((osd->flags & (OSD_CAPS | OSD_SHIFT)) == (OSD_CAPS | OSD_SHIFT) && osd->draw.head > 0);
-    int const shade  = osd->draw.promptshade ? osd->draw.promptshade : (sintable[((int32_t) totalclock<<4)&2047]>>11);
+    int const shade  = osd->draw.promptshade ? osd->draw.promptshade : (sintable[((int32_t) timer120()<<4)&2047]>>11);
 
     if (osd->draw.head == osd->text.lines-1)
-        drawosdchar(0, osdrowscur, '~', shade, osd->draw.promptpal);
+        osd->cb->drawchar(0, osdrowscur, '~', shade, osd->draw.promptpal);
     else if (osd->draw.head > 0)
-        drawosdchar(0, osdrowscur, '^', shade, osd->draw.promptpal);
+        osd->cb->drawchar(0, osdrowscur, '^', shade, osd->draw.promptpal);
 
     if (osd->flags & OSD_CAPS)
-        drawosdchar((osd->draw.head > 0), osdrowscur, 'C', shade, osd->draw.promptpal);
+        osd->cb->drawchar((osd->draw.head > 0), osdrowscur, 'C', shade, osd->draw.promptpal);
 
     if (osd->flags & OSD_SHIFT)
-        drawosdchar(1 + (osd->flags & OSD_CAPS && osd->draw.head > 0), osdrowscur, 'H', shade, osd->draw.promptpal);
+        osd->cb->drawchar(1 + (osd->flags & OSD_CAPS && osd->draw.head > 0), osdrowscur, 'H', shade, osd->draw.promptpal);
 
-    drawosdchar(2 + offset, osdrowscur, '>', shade, osd->draw.promptpal);
+    osd->cb->drawchar(2 + offset, osdrowscur, '>', shade, osd->draw.promptpal);
 
     int const len = min(osd->draw.cols-1-3 - offset, osd->editor.len - osd->editor.start);
 
     for (int x=len-1; x>=0; x--)
-        drawosdchar(3 + x + offset, osdrowscur, osd->editor.buf[osd->editor.start+x], osd->draw.editshade<<1, osd->draw.editpal);
+        osd->cb->drawchar(3 + x + offset, osdrowscur, osd->editor.buf[osd->editor.start+x], osd->draw.editshade<<1, osd->draw.editpal);
 
     offset += 3 + osd->editor.pos - osd->editor.start;
 
-    drawosdcursor(offset,osdrowscur,osd->flags & OSD_OVERTYPE,osdkeytime);
+    osd->cb->drawcursor(offset,osdrowscur,osd->flags & OSD_OVERTYPE,osdkeytime);
 
     if (osd->version.buf)
-        drawosdstr(osd->draw.cols - osd->version.len, osdrowscur - (offset >= osd->draw.cols - osd->version.len),
-                    osd->version.buf, osd->version.len, (sintable[((int32_t) totalclock<<4)&2047]>>11), osd->version.pal);
+        osd->cb->drawstr(osd->draw.cols - osd->version.len, osdrowscur - (offset >= osd->draw.cols - osd->version.len),
+                    osd->version.buf, osd->version.len, (sintable[((int32_t) timer120()<<4)&2047]>>11), osd->version.pal);
 
     videoEndDrawing();
 }
@@ -1664,17 +1683,24 @@ void OSD_Draw(void)
 //   and write it to the log file
 //
 
-int OSD_Printf(const char *fmt, ...)
+int OSD_Printf(const char *f, ...)
 {
-    static char tmpstr[8192];
-    va_list va;
+    size_t size = max(PRINTF_INITIAL_BUFFER_SIZE >> 1, nextPow2(Bstrlen(f)));
+    char *buf = nullptr;
+    int len;
 
-    va_start(va, fmt);
-    int len = Bvsnprintf(tmpstr, sizeof(tmpstr), fmt, va);
-    va_end(va);
+    do
+    {
+        va_list va;
+        buf = (char *)Xrealloc(buf, (size <<= 1));
+        va_start(va, f);
+        len = Bvsnprintf(buf, size-1, f, va);
+        va_end(va);
+    } while (len < 0);
 
-    osdstrings.append(Xstrdup(tmpstr));
-    OSD_Puts(tmpstr);
+    buf[size-1] = 0;
+    OSD_Puts(buf);
+    Xfree(buf);
 
     return len;
 }
@@ -1684,6 +1710,14 @@ int OSD_Printf(const char *fmt, ...)
 // OSD_Puts() -- Print a string to the onscreen display
 //   and write it to the log file
 //
+void OSD_Puts(const char *putstr)
+{
+    if (putstr[0] == 0 || !osd)
+        return;
+
+    osd->log.m_pending.push(new AtomicLogString(Xstrdup(putstr)));
+    OSD_WritePendingLines();
+}
 
 static inline void OSD_LineFeed(void)
 {
@@ -1700,108 +1734,144 @@ static inline void OSD_LineFeed(void)
         t.lines++;
 }
 
-void OSD_Puts(const char *putstr, int const nolog /*= false*/)
+
+static int OSD_MaybeLogError(char **putstr)
 {
-    if (putstr[0] == 0 || !osd)
-        return;
-
-    auto &t = osd->text;
-    auto &d = osd->draw;
-    auto &l = osd->log;
-
-    int textPal   = d.textpal;
-    int textShade = d.textshade;
-
     static int errorCnt;
+    int const isError = !Bstrncmp(*putstr, osd->draw.errorfmt, osd->draw.errfmtlen);
 
-    mutex_lock(&osd->mutex);
-
-    if (Bstrlen(putstr) >= (unsigned)d.errfmtlen && !Bstrncmp(putstr, d.errorfmt, d.errfmtlen) && (unsigned)++errorCnt > (unsigned)l.cutoff)
+    if (isError && (unsigned)++errorCnt >(unsigned)osd->log.maxerrors)
     {
-        if (errorCnt >= l.cutoff + 2)
+        if (errorCnt >= osd->log.maxerrors + 2)
         {
-            errorCnt = l.cutoff + 2;
-            mutex_unlock(&osd->mutex);
-            return;
+            errorCnt = osd->log.maxerrors + 2;
+            return 2;
         }
 
-        putstr = "\nError count exceeded \"osdlogcutoff\"!\n";
+        *putstr = Xstrdup("\nError count exceeded \"osdlogcutoff\"! Logging stopped.\n");
+        return 1;
     }
-    else if (!nolog && (unsigned)errorCnt < (unsigned)l.cutoff)
+    else if ((unsigned) errorCnt < (unsigned) osd->log.maxerrors)
     {
-        auto s = Xstrdup(putstr);
-        buildvfs_fputs(OSD_StripColors(s, putstr), osdlog);
+        auto s = (char *)Xstrdup(*putstr);
+        buildvfs_fputs(OSD_StripColors(s, *putstr), osd->log.m_fp);
+        if (isError) OSD_FlushLog();
         Bprintf("%s", s);
         Xfree(s);
     }
 
-    auto s = putstr;
+    return 0;
+}
 
-    do
+void OSD_UpdateDrawBuffer(void)
+{
+    auto &log = osd->log;
+
+    mutex_lock(&log.mutex);
+
+    if (log.m_lines->isEmpty())
     {
-        if (*s == '\n')
-        {
-            t.pos = 0;
-            ++l.lines;
-            OSD_LineFeed();
-            continue;
-        }
+        mutex_unlock(&log.mutex);
+        return;
+    }
 
-        if (*s == '\r')
-        {
-            t.pos = 0;
-            continue;
-        }
+    auto &t = osd->text;
+    auto &d = osd->draw;
+    uint32_t const goalidx = log.m_lines->isFull() ? log.m_lines->frontIndex() : log.m_lines->size();
 
-        if (*s == '^')
+    for (auto s = log.m_lines->operator[](log.m_lineidx); log.m_lineidx != goalidx; s = log.m_lines->operator[](log.m_lineidx))
+    {
+        log.m_lineidx = (log.m_lineidx + 1) % log.m_lines->capacity();
+
+        int textPal   = d.textpal;
+        int textShade = d.textshade;
+
+        do
         {
-            // palette
-            if (isdigit(*(s+1)))
+            if (*s == '\r' || *s == '\n')
             {
-                if (!isdigit(*(++s+1)))
+                t.pos = 0;
+
+                if (*s == '\r')
+                    continue;
+
+                OSD_LineFeed();
+                continue;
+            }
+
+            if (*s == '^')
+            {
+                // palette
+                if (isdigit(*(s+1)))
                 {
-                    char const smallbuf[] = { *(s), '\0' };
+                    if (!isdigit(*(++s+1)))
+                    {
+                        char const smallbuf [] ={ *(s), '\0' };
+                        textPal = Batoi(smallbuf);
+                        continue;
+                    }
+
+                    char const smallbuf [] ={ *(s), *(s+1), '\0' };
+                    s++;
                     textPal = Batoi(smallbuf);
                     continue;
                 }
 
-                char const smallbuf[] = { *(s), *(s+1), '\0' };
-                s++;
-                textPal = Batoi(smallbuf);
-                continue;
+                // shade
+                if (Btoupper(*(s+1)) == 'S')
+                {
+                    s++;
+                    if (isdigit(*(++s)))
+                        textShade = *s;
+                    continue;
+                }
+
+                // reset
+                if (Btoupper(*(s+1)) == 'O')
+                {
+                    s++;
+                    textPal   = d.textpal;
+                    textShade = d.textshade;
+                    continue;
+                }
             }
 
-            // shade
-            if (Btoupper(*(s+1)) == 'S')
+            t.buf[t.pos] = *s;
+            t.fmt[t.pos] = textPal + (textShade << 5);
+
+            if (++t.pos == d.cols)
             {
-                s++;
-                if (isdigit(*(++s)))
-                    textShade = *s;
-                continue;
+                t.pos = 0;
+                OSD_LineFeed();
             }
+        } while (*(++s));
 
-            // reset
-            if (Btoupper(*(s+1)) == 'O')
-            {
-                s++;
-                textPal   = d.textpal;
-                textShade = d.textshade;
-                continue;
-            }
-        }
-
-        t.buf[t.pos] = *s;
-        t.fmt[t.pos] = textPal + (textShade << 5);
-
-        if (++t.pos == d.cols)
-        {
-            t.pos = 0;
-            OSD_LineFeed();
-        }
     }
-    while (*(++s));
+    mutex_unlock(&log.mutex);
+}
 
-    mutex_unlock(&osd->mutex);
+// writes lines from osd->log.m_pending to disk and updates osd->log.m_lines
+void OSD_WritePendingLines(void)
+{
+    do
+    {
+        while (auto str = osd->log.m_pending.pop())
+        {
+            if (str->m_isLogged.fetch_add(1, std::memory_order_acq_rel))
+                continue;
+
+            char *putstr = str->m_value;
+
+            if (OSD_MaybeLogError(&putstr) < 2)
+            {
+                mutex_lock(&osd->log.mutex);
+                osd->log.m_lines->pushBack(putstr);
+                mutex_unlock(&osd->log.mutex);
+            }
+
+            delete str;
+        }
+    } while (!osd->log.m_pending.isEmpty());
 }
 
 

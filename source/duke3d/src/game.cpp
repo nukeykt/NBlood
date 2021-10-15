@@ -197,13 +197,6 @@ void G_HandleSpecialKeys(void)
 {
     auto &myplayer = *g_player[myconnectindex].ps;
 
-    // we need CONTROL_GetInput in order to pick up joystick button presses
-    if (CONTROL_Started && (!(myplayer.gm & MODE_GAME) || (myplayer.gm & MODE_MENU)))
-    {
-        ControlInfo noshareinfo;
-        CONTROL_GetInput(&noshareinfo);
-    }
-
     if (g_networkMode != NET_DEDICATED_SERVER && ALT_IS_PRESSED && KB_KeyPressed(sc_Enter))
     {
         if (videoSetGameMode(!ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail))
@@ -290,19 +283,17 @@ void app_fatal_exit(const char *msg)
     fatal_exit(msg);
 }
 
+void app_exit(int returnCode) ATTRIBUTE((noreturn));
+
 void app_exit(int returnCode)
 {
 #ifndef NETCODE_DISABLE
     enet_deinitialize();
 #endif
-    if (returnCode == EXIT_SUCCESS)
-    {
-        exit(EXIT_SUCCESS);
-    }
-    else
-    {
+    if (returnCode != EXIT_SUCCESS)
         Bexit(returnCode);
-    }
+
+    Bexit(EXIT_SUCCESS);
 }
 
 void G_GameExit(const char *msg)
@@ -348,7 +339,6 @@ void G_GameExit(const char *msg)
     }
 
     Bfflush(NULL);
-
     app_exit(EXIT_SUCCESS);
 }
 
@@ -397,8 +387,8 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
     if (*vsectnum < 0)
         return -1;
 
-    hx = hit.pos.x-(vect->x);
-    hy = hit.pos.y-(vect->y);
+    hx = hit.x-(vect->x);
+    hy = hit.y-(vect->y);
 
     if (klabs(n.x)+klabs(n.y) > klabs(hx)+klabs(hy))
     {
@@ -1365,14 +1355,14 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
 
     if ((unsigned)s_ow < MAXSPRITES)
     {
-        a.picnum   = sprite[s_ow].picnum;
+        a.htpicnum = sprite[s_ow].picnum;
         a.floorz   = actor[s_ow].floorz;
         a.ceilingz = actor[s_ow].ceilingz;
     }
 
     a.stayput = -1;
-    a.extra   = -1;
-    a.owner = s_ow;
+    a.htextra = -1;
+    a.htowner = s_ow;
 
 #ifdef POLYMER
     practor[newSprite].lightId = -1;
@@ -1443,7 +1433,7 @@ int A_Spawn(int spriteNum, int tileNum)
         // spawn from parent sprite <j>
         newSprite = A_InsertSprite(sprite[spriteNum].sectnum,sprite[spriteNum].x,sprite[spriteNum].y,sprite[spriteNum].z,
                            tileNum,0,0,0,0,0,0,spriteNum,0);
-        actor[newSprite].picnum = sprite[spriteNum].picnum;
+        actor[newSprite].htpicnum = sprite[spriteNum].picnum;
     }
     else
     {
@@ -1455,20 +1445,19 @@ int A_Spawn(int spriteNum, int tileNum)
         a = { };
         a.bpos = { s.x, s.y, s.z };
 
-        a.picnum = s.picnum;
+        a.htpicnum = s.picnum;
 
         if (s.picnum == SECTOREFFECTOR && s.lotag == 50)
-            a.picnum = s.owner;
+            a.htpicnum = s.owner;
 
         if (s.picnum == LOCATORS && s.owner != -1)
-            a.owner = s.owner;
+            a.htowner = s.owner;
         else
-            s.owner = a.owner = newSprite;
+            s.owner = a.htowner = newSprite;
 
         a.floorz   = sector[s.sectnum].floorz;
         a.ceilingz = sector[s.sectnum].ceilingz;
-        a.stayput = a.extra = -1;
-        a.florhit = a.lzsum = 0;
+        a.stayput = a.htextra = -1;
 
 #ifdef POLYMER
         practor[newSprite].lightId = -1;
@@ -1523,7 +1512,7 @@ int A_Spawn(int spriteNum, int tileNum)
         else
         {
             A_GetZLimits(newSprite);
-            actor[newSprite].bpos = sprite[newSprite].pos;
+            actor[newSprite].bpos = sprite[newSprite].xyz;
         }
     }
 
@@ -1595,7 +1584,7 @@ int A_Spawn(int spriteNum, int tileNum)
         case WATERSPLASH2__:
             if (spriteNum >= 0)
             {
-                setsprite(newSprite, &sprite[spriteNum].pos);
+                setsprite(newSprite, &sprite[spriteNum].xyz);
                 pSprite->xrepeat = pSprite->yrepeat = 8+(krand()&7);
             }
             else pSprite->xrepeat = pSprite->yrepeat = 16+(krand()&15);
@@ -1690,7 +1679,7 @@ int A_Spawn(int spriteNum, int tileNum)
             pSprite->xvel = 128;
             changespritestat(newSprite, STAT_MISC);
             A_SetSprite(newSprite,CLIPMASK0);
-            setsprite(newSprite,&pSprite->pos);
+            setsprite(newSprite,&pSprite->xyz);
             goto SPAWN_END;
         case FEMMAG1__:
         case FEMMAG2__:
@@ -1897,7 +1886,7 @@ int A_Spawn(int spriteNum, int tileNum)
             pSprite->z = sector[sectNum].ceilingz+(48<<8);
             T5(newSprite) = tempwallptr;
 
-            g_origins[tempwallptr] = pSprite->pos.vec2;
+            g_origins[tempwallptr] = pSprite->xy;
             g_origins[tempwallptr+2].x = pSprite->z;
 
 
@@ -1916,11 +1905,11 @@ int A_Spawn(int spriteNum, int tileNum)
                         sprite[findSprite].xrepeat = 48;
                         sprite[findSprite].yrepeat = 128;
 
-                        g_origins[tempwallptr + 1] = sprite[findSprite].pos.vec2;
-                        sprite[findSprite].pos     = pSprite->pos;
+                        g_origins[tempwallptr + 1] = sprite[findSprite].xy;
+                        sprite[findSprite].xyz     = pSprite->xyz;
                         sprite[findSprite].shade   = pSprite->shade;
 
-                        setsprite(findSprite, &sprite[findSprite].pos);
+                        setsprite(findSprite, &sprite[findSprite].xyz);
                         break;
                     }
                     findSprite = nextspritestat[findSprite];
@@ -4201,7 +4190,7 @@ PALONLY:
         case SCRAP3__:
         case SCRAP4__:
         case SCRAP5__:
-            if (actor[i].picnum == BLIMP && t->picnum == SCRAP1 && pSprite->yvel >= 0)
+            if (actor[i].htpicnum == BLIMP && t->picnum == SCRAP1 && pSprite->yvel >= 0)
                 t->picnum = pSprite->yvel < MAXUSERTILES ? pSprite->yvel : 0;
             else t->picnum += T1(i);
             t->shade = -128+6 < t->shade ? t->shade-6 : -128; // effectively max(t->shade-6, -128) while avoiding (signed!) underflow
@@ -5844,8 +5833,20 @@ static void G_Cleanup(void)
     for (i=MAXPLAYERS-1; i>=0; i--)
         Xfree(g_player[i].ps);
 
-    for (i=MAXSOUNDS-1; i>=0; i--)
-        Xfree(g_sounds[i].filename);
+    for (i=0;i<=g_highestSoundIdx;i++)
+    {
+        if (g_sounds[i] != &nullsound)
+        {
+            DO_FREE_AND_NULL(g_sounds[i]->filename);
+
+            if (g_sounds[i]->voices != &nullvoice)
+                DO_FREE_AND_NULL(g_sounds[i]->voices);
+
+            DO_FREE_AND_NULL(g_sounds[i]);
+        }
+    }
+
+    DO_FREE_AND_NULL(g_sounds);
 
     Xfree(label);
     Xfree(labelcode);
@@ -5863,6 +5864,7 @@ static void G_Cleanup(void)
 
     hash_loop(&h_dukeanim, G_FreeHashAnim);
     hash_free(&h_dukeanim);
+    inthash_free(&h_dsound);
 
     inthash_free(&h_dynamictilemap);
 
@@ -6054,8 +6056,7 @@ static void G_Startup(void)
     if (engineInit())
         G_FatalEngineInitError();
 
-    G_InitDynamicTiles();
-    G_InitDynamicSounds();
+    G_InitDynamicNames();
 
     // These depend on having the dynamic tile and/or sound mappings set up:
     G_InitMultiPsky(CLOUDYOCEAN, MOONSKY1, BIGORBIT1, LA);
@@ -6143,15 +6144,6 @@ static void G_Startup(void)
     screenpeek = myconnectindex;
 
     Bfflush(NULL);
-}
-
-static void P_SetupMiscInputSettings(void)
-{
-    auto ps = g_player[myconnectindex].ps;
-
-    ps->aim_mode = ud.mouseaiming;
-    ps->auto_aim = ud.config.AutoAim;
-    ps->weaponswitch = ud.weaponswitch;
 }
 
 void G_UpdatePlayerFromMenu(void)
@@ -6263,7 +6255,7 @@ void app_crashhandler(void)
 {
     G_CloseDemoWrite();
     VM_ScriptInfo(insptr, 64);
-    G_GameQuit();
+    abort();
 }
 
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
@@ -6394,18 +6386,23 @@ int app_main(int argc, char const* const* argv)
 #endif
     OSD_SetLogFile(APPBASENAME ".log");
 
-    OSD_SetFunctions(GAME_drawosdchar,
-                     GAME_drawosdstr,
-                     GAME_drawosdcursor,
-                     GAME_getcolumnwidth,
-                     GAME_getrowheight,
-                     GAME_clearbackground,
-                     BGetTime,
-                     GAME_onshowosd);
+    osdcallbacks_t callbacks = {};
+
+    callbacks.drawchar        = dukeConsolePrintChar;
+    callbacks.drawstr         = dukeConsolePrintString;
+    callbacks.drawcursor      = dukeConsolePrintCursor;
+    callbacks.getcolumnwidth  = dukeConsoleGetColumnWidth;
+    callbacks.getrowheight    = dukeConsoleGetRowHeight;
+    callbacks.clear = dukeConsoleClearBackground;
+    callbacks.gettime         = BGetTime;
+    callbacks.onshowosd       = dukeConsoleOnShowCallback;
+
+    OSD_SetCallbacks(callbacks);
 
     G_UpdateAppTitle();
 
     initprintf(HEAD2 " %s\n", s_buildRev);
+
     PrintBuildInfo();
 
     if (!g_useCwd)
@@ -6417,10 +6414,6 @@ int app_main(int argc, char const* const* argv)
     // This needs to happen before G_CheckCommandLine() because G_GameExit()
     // accesses g_player[0].
     G_MaybeAllocPlayer(0);
-
-#ifdef EDUKE32_STANDALONE
-    G_DeleteOldSaves();
-#endif
 
     G_CheckCommandLine(argc,argv);
 
@@ -6609,7 +6602,7 @@ int app_main(int argc, char const* const* argv)
     loaddefinitions_game(defsfile, FALSE);
 
     for (char * m : g_defModules)
-        Bfree(m);
+        Xfree(m);
     g_defModules.clear();
 
     cacheAllSounds();
@@ -6664,7 +6657,7 @@ int app_main(int argc, char const* const* argv)
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
             engineUnInit();
-            app_fatal_exit("There was an error initializing the CONTROL system.\n");
+            app_fatal_exit("There was an error initializing the CONTROL system.");
         }
 
         G_SetupGameButtons();
@@ -6673,10 +6666,6 @@ int app_main(int argc, char const* const* argv)
 
         CONTROL_JoystickEnabled = (ud.setup.usejoystick && CONTROL_JoyPresent);
         CONTROL_MouseEnabled    = (ud.setup.usemouse && CONTROL_MousePresent);
-
-        // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
-        for (int i=0; i<joystick.numAxes; i++)
-            joySetDeadZone(i,ud.config.JoystickAnalogueDead[i],ud.config.JoystickAnalogueSaturate[i]);
     }
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -6685,7 +6674,7 @@ int app_main(int argc, char const* const* argv)
         initprintf("There was an error loading the sprite clipping map (status %d).\n", clipMapError);
 
     for (char * m : g_clipMapFiles)
-        Bfree(m);
+        Xfree(m);
     g_clipMapFiles.clear();
 #endif
 
@@ -7111,7 +7100,7 @@ int G_DoMoveThings(void)
         if (g_player[i].ps->team != g_player[i].pteam && g_gametypeFlags[ud.coop] & GAMETYPE_TDM)
         {
             g_player[i].ps->team = g_player[i].pteam;
-            actor[g_player[i].ps->i].picnum = APLAYERTOP;
+            actor[g_player[i].ps->i].htpicnum = APLAYERTOP;
             P_QuickKill(g_player[i].ps);
         }
 

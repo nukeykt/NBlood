@@ -1,13 +1,17 @@
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: true
+AlignConsecutiveBitFields: true
 AlignConsecutiveDeclarations: true
-AlignEscapedNewlinesLeft: true 
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
 AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: false 
 AllowShortFunctionsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false
+AllowShortLambdasOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
@@ -25,8 +29,10 @@ Cpp11BracedListStyle: false
 DerivePointerBinding: false
 ExperimentalAutoDetectBinPacking: true
 IncludeBlocks: Regroup
+IndentCaseBlocks: true
 IndentCaseLabels: true
 IndentFunctionDeclarationAfterType: true
+# IndentPPDirectives: AfterHash
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false
 Language: Cpp
@@ -35,7 +41,11 @@ NamespaceIndentation: None
 PointerAlignment: Right
 PointerBindsToType: false
 ReflowComments: false
+SortIncludes: true
+SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceBeforeAssignmentOperators: true
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false

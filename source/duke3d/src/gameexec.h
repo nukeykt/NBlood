@@ -28,6 +28,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamedef.h"  // vmstate_t
 #include "sector.h"  // mapstate_t
 
+typedef struct
+{
+    uint16_t zsum;
+    uint16_t hi, lo;
+} zhit_t;
+
+extern zhit_t zhit[MAXSPRITES];
+
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist, int32_t const nReturn);
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist);
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum);

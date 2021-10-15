@@ -1157,7 +1157,7 @@ DoSpawnSpotsForKill(short match)
             change_sprite_stat(sn, STAT_NO_STATE);
             u->ActorActionFunc = DoSpawnSpot;
             u->WaitTics = SP_TAG5(sp) * 15;
-            setspritez(sn, &sp->pos);
+            setspritez(sn, &sp->xyz);
             // setting for Killed
             u->LastDamage = 1;
         }
@@ -2378,7 +2378,7 @@ SWBOOL NearThings(PLAYERp pp)
         if (hitinfo.sect < 0)
             return FALSE;
 
-        if (Distance(hitinfo.pos.x, hitinfo.pos.y, pp->posx, pp->posy) > 1500)
+        if (Distance(hitinfo.x, hitinfo.y, pp->posx, pp->posy) > 1500)
             return FALSE;
 
         // hit a sprite?

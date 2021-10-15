@@ -202,6 +202,8 @@ extern int16_t bunchp2[MAXWALLSB];
 extern int16_t numscans, numbunches;
 extern int32_t rxi[8], ryi[8];
 
+extern int16_t wallsect[MAXWALLS];
+
 #ifdef USE_OPENGL
 
 // For GL_EXP2 fog:

@@ -78,8 +78,10 @@ char quitevent=0, appactive=1, novideo=0;
 static SDL_Surface *sdl_surface/*=NULL*/;
 
 #if SDL_MAJOR_VERSION >= 2
-static SDL_Window *sdl_window=NULL;
-static SDL_GLContext sdl_context=NULL;
+static SDL_Window *sdl_window;
+static SDL_GLContext sdl_context;
+static vec2_t sdl_resize;
+static int sdl_minimized;
 #endif
 
 int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline;
@@ -114,9 +116,6 @@ static SDL_Surface *loadappicon(void);
 
 static mutex_t m_initprintf;
 
-// Joystick dead and saturation zones
-uint16_t joydead[9], joysatur[9];
-
 #ifdef _WIN32
 # if SDL_MAJOR_VERSION >= 2
 //
@@ -150,17 +149,18 @@ HINSTANCE win_gethinstance(void)
 
 int32_t wm_msgbox(const char *name, const char *fmt, ...)
 {
-    char buf[2048];
+    char *buf = (char *)Balloca(MSGBOX_PRINTF_MAX);
     va_list va;
 
     UNREFERENCED_PARAMETER(name);
 
     va_start(va,fmt);
-    Bvsnprintf(buf,sizeof(buf),fmt,va);
+    Bvsnprintf(buf,MSGBOX_PRINTF_MAX,fmt,va);
     va_end(va);
-
+    buf[MSGBOX_PRINTF_MAX-1] = 0;
 #if defined EDUKE32_OSX
-    return osx_msgbox(name, buf);
+    auto result = osx_msgbox(name, buf);
+    return result;
 #elif defined _WIN32
     MessageBox(win_gethwnd(),buf,name,MB_OK|MB_TASKMODAL);
     return 0;
@@ -179,16 +179,16 @@ int32_t wm_msgbox(const char *name, const char *fmt, ...)
 #  if !defined _WIN32
     // Replace all tab chars with spaces because the hand-rolled SDL message
     // box diplays the former as N/L instead of whitespace.
-    for (size_t i=0; i<sizeof(buf); i++)
+    for (size_t i=0; i<MSGBOX_PRINTF_MAX; i++)
         if (buf[i] == '\t')
             buf[i] = ' ';
 #  endif
-    return SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, name, buf, NULL);
+    auto result = SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, name, buf, NULL);
+    return result;
 # else
     puts(buf);
     puts("   (press Return or Enter to continue)");
     getchar();
-
     return 0;
 # endif
 #endif
@@ -196,19 +196,21 @@ int32_t wm_msgbox(const char *name, const char *fmt, ...)
 
 int32_t wm_ynbox(const char *name, const char *fmt, ...)
 {
-    char buf[2048];
+    char *buf = (char *)Balloca(MSGBOX_PRINTF_MAX);
     va_list va;
 
     UNREFERENCED_PARAMETER(name);
 
     va_start(va,fmt);
-    Bvsnprintf(buf,sizeof(buf),fmt,va);
+    Bvsnprintf(buf,MSGBOX_PRINTF_MAX,fmt,va);
     va_end(va);
-
+    buf[MSGBOX_PRINTF_MAX-1] = 0;
 #if defined EDUKE32_OSX
-    return osx_ynbox(name, buf);
+    auto result = osx_ynbox(name, buf);
+    return result;
 #elif defined _WIN32
-    return (MessageBox(win_gethwnd(),buf,name,MB_YESNO|MB_ICONQUESTION|MB_TASKMODAL) == IDYES);
+    auto result = MessageBox(win_gethwnd(),buf,name,MB_YESNO|MB_ICONQUESTION|MB_TASKMODAL);
+    return result == IDYES;
 #elif defined EDUKE32_TOUCH_DEVICES
     initprintf("wm_ynbox called, this is bad! Message: %s: %s",name,buf);
     initprintf("Returning false..");
@@ -249,7 +251,6 @@ int32_t wm_ynbox(const char *name, const char *fmt, ...)
     };
 
     SDL_ShowMessageBox(&data, &r);
-
     return r;
 # else
     char c;
@@ -331,6 +332,8 @@ static void sighandler(int signum)
     //    if (signum==SIGSEGV)
     {
         grabmouse_low(0);
+        OSD_FlushLog();
+
 #if PRINTSTACKONSEGV
         {
             void *addr[32];
@@ -408,7 +411,7 @@ void eduke32_exit_return(int retval)
 
 void sdlayer_sethints()
 {
-#if defined _WIN32
+#if defined _WIN32 && !defined _MSC_VER
     // Thread naming interferes with debugging using MinGW-w64's GDB.
 #if defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
     SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
@@ -449,6 +452,15 @@ int SDL_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
+    engineCreateAllocator();
+
+#if SDL_MAJOR_VERSION >= 2
+# if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 8
+    if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 8))
+        SDL_SetMemoryFunctions(_xmalloc, _xcalloc, _xrealloc, _xfree);
+# endif
+#endif
+
     MicroProfileOnThreadCreate("Main");
     MicroProfileSetForceEnable(true);
     MicroProfileSetEnableAllGroups(true);
@@ -735,17 +747,15 @@ void uninitsystem(void)
     uninitinput();
     timerUninit();
 
+#ifdef _WIN32
+    windowsPlatformCleanup();
+#endif
+
     if (appicon)
     {
         SDL_FreeSurface(appicon);
         appicon = NULL;
     }
-
-#ifdef _WIN32
-    windowsPlatformCleanup();
-#endif
-
-    SDL_Quit();
 
 #ifdef USE_OPENGL
 # if SDL_MAJOR_VERSION >= 2
@@ -755,6 +765,7 @@ void uninitsystem(void)
     unloadglulibrary();
 # endif
 #endif
+    SDL_Quit();
 }
 
 
@@ -768,61 +779,6 @@ void system_getcvars(void)
 # endif
 
     vsync = videoSetVsync(vsync);
-}
-
-//
-// initprintf() -- prints a formatted string to the initialization window
-//
-int initprintf(const char *f, ...)
-{
-    va_list va;
-    char buf[2048];
-
-    va_start(va, f);
-    int len = Bvsnprintf(buf, sizeof(buf), f, va);
-    va_end(va);
-
-    osdstrings.append(Xstrdup(buf));
-    initputs(buf);
-
-    return len;
-}
-
-
-//
-// initputs() -- prints a string to the initialization window
-//
-void initputs(const char *buf)
-{
-    static char dabuf[2048];
-
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_INFO,"DUKE", "%s",buf);
-#endif
-    OSD_Puts(buf);
-//    Bprintf("%s", buf);
-
-    mutex_lock(&m_initprintf);
-    if (Bstrlen(dabuf) + Bstrlen(buf) > 1022)
-    {
-        startwin_puts(dabuf);
-        Bmemset(dabuf, 0, sizeof(dabuf));
-    }
-
-    Bstrcat(dabuf,buf);
-
-    if (g_logFlushWindow || Bstrlen(dabuf) > 768)
-    {
-        startwin_puts(dabuf);
-#ifndef _WIN32
-        startwin_idle(NULL);
-#else
-        if (sdl_window)
-            handleevents();
-#endif
-        Bmemset(dabuf, 0, sizeof(dabuf));
-    }
-    mutex_unlock(&m_initprintf);
 }
 
 //
@@ -1298,6 +1254,9 @@ static inline char grabmouse_low(char a)
 //
 void mouseGrabInput(bool grab)
 {
+    if (grab != g_mouseGrabbed)
+        g_mousePos.x = g_mousePos.y = 0;
+
     if (appactive && g_mouseEnabled)
     {
 #if !defined EDUKE32_TOUCH_DEVICES
@@ -1308,7 +1267,6 @@ void mouseGrabInput(bool grab)
     else
         g_mouseGrabbed = grab;
 
-    g_mousePos.x = g_mousePos.y = 0;
 }
 
 void mouseLockToWindow(char a)
@@ -1333,24 +1291,6 @@ void mouseMoveToCenter(void)
 #endif
 }
 
-//
-// setjoydeadzone() -- sets the dead and saturation zones for the joystick
-//
-void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur)
-{
-    joydead[axis] = dead;
-    joysatur[axis] = satur;
-}
-
-
-//
-// getjoydeadzone() -- gets the dead and saturation zones for the joystick
-//
-void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
-{
-    *dead = joydead[axis];
-    *satur = joysatur[axis];
-}
 
 
 //
@@ -1467,8 +1407,8 @@ int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t fo
 
     // fix up the passed resolution values to be multiples of 8
     // and at least 320x200 or at most MAXXDIMxMAXYDIM
-    *x = clamp(*x, 320, MAXXDIM);
-    *y = clamp(*y, 200, MAXYDIM);
+    *x = clamp(*x & ~1, 320, MAXXDIM);
+    *y = clamp(*y & ~1, 200, MAXYDIM);
 
     for (i = 0; i < validmodecnt; i++)
     {
@@ -1530,19 +1470,18 @@ static void destroy_window_resources()
 void sdlayer_setvideomode_opengl(void)
 {
     glsurface_destroy();
-    polymost_glreset();
 
     glShadeModel(GL_SMOOTH);  // GL_FLAT
     glClearColor(0, 0, 0, 1.0);  // Black Background
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Use FASTEST for ortho!
 //    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glViewport(0,0,xres,yres);
 
 #ifndef EDUKE32_GLES
     glDisable(GL_DITHER);
 #endif
 
     fill_glinfo();
-
 }
 #endif  // defined USE_OPENGL
 
@@ -1602,11 +1541,6 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
 {
     wm_setapptitle(apptitle);
 
-#ifdef USE_OPENGL
-    if (!nogl)
-        sdlayer_setvideomode_opengl();
-#endif
-
     xres = x;
     yres = y;
     bpp = c;
@@ -1617,6 +1551,11 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     lockcount = 0;
     modechange = 1;
     videomodereset = 0;
+
+#ifdef USE_OPENGL
+    if (!nogl)
+        sdlayer_setvideomode_opengl();
+#endif
 
     // save the current system gamma to determine if gamma is available
 #ifndef EDUKE32_GLES
@@ -1636,33 +1575,26 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     }
 #endif
 
-    videoFadePalette(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
-
-    if (regrab)
-        mouseGrabInput(g_mouseLockedToWindow);
-}
-
 #if SDL_MAJOR_VERSION >= 2
-void setrefreshrate(void)
-{
     int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
 
-    SDL_DisplayMode dispmode;
-    SDL_GetCurrentDisplayMode(display, &dispmode);
+    SDL_DisplayMode desktopmode;
+    SDL_GetDesktopDisplayMode(display, &desktopmode);
 
+    int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
+    int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
+
+    if (fs)
+    {
+    SDL_DisplayMode dispmode;
+
+        dispmode.w            = x;
+        dispmode.h            = y;
     dispmode.refresh_rate = maxrefreshfreq;
 
     SDL_DisplayMode newmode;
     SDL_GetClosestDisplayMode(display, &dispmode, &newmode);
-
-    char error = 0;
-
-    if (dispmode.refresh_rate != newmode.refresh_rate)
-        error = SDL_SetWindowDisplayMode(sdl_window, &newmode);
-
-    if (!newmode.refresh_rate || error)
-        newmode.refresh_rate = 59;
-
+        SDL_SetWindowDisplayMode(sdl_window, &newmode);
 #ifdef _WIN32
     if (timingInfo.rateRefresh.uiNumerator)
         refreshfreq = (double)timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
@@ -1671,8 +1603,23 @@ void setrefreshrate(void)
         refreshfreq = newmode.refresh_rate;
 
     initprintf("Refresh rate: %.2fHz\n", refreshfreq);
+    }
+
+    SDL_SetWindowSize(sdl_window, x, y);
+    SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
+    SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
+    SDL_SetWindowPosition(sdl_window, (!fs && r_windowpositioning && windowx > 0) ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                      (!fs && r_windowpositioning && windowy > 0) ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display));
+    SDL_FlushEvent(SDL_WINDOWEVENT);
+#endif
+
+    videoFadePalette(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
+
+    if (regrab)
+        mouseGrabInput(g_mouseLockedToWindow);
 }
 
+#if SDL_MAJOR_VERSION >= 2
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 {
     int32_t regrab = 0, ret;
@@ -1688,10 +1635,14 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         return ret;
     }
 
-    // deinit
-    destroy_window_resources();
-
     initprintf("Setting video mode %dx%d (%d-bpp %s)\n", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
+
+
+    if (sdl_window)
+    {
+        setvideomode_sdlcommonpost(x, y, c, fs, regrab);
+        return 0;
+    }
 
     int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
 
@@ -1700,6 +1651,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
     int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
+
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
     {
@@ -1730,10 +1682,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             so we have to create a new surface in a different format first
             to force the surface we WANT to be recreated instead of reused. */
 
-
-        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                        windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
-                                        SDL_WINDOW_OPENGL | borderless);
+        sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                        r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+                                        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | borderless);
 
         if (sdl_window)
             sdl_context = SDL_GL_CreateContext(sdl_window);
@@ -1755,29 +1706,22 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             return -1;
         }
 
-        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
         SDL_GL_SetSwapInterval(sdlayer_getswapinterval(vsync_renderlayer));
         vsync_renderlayer = sdlayer_checkvsync(vsync_renderlayer);
-
-        setrefreshrate();
     }
     else
 #endif  // defined USE_OPENGL
     {
         // init
-        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                      windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
-                                      borderless);
+        sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                      r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+                                      SDL_WINDOW_RESIZABLE | borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
-
-        setrefreshrate();
 
         sdl_surface = SDL_GetWindowSurface(sdl_window);
         if (!sdl_surface)
             SDL2_VIDEO_ERR("SDL_GetWindowSurface");
-
-        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
 
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
@@ -1907,6 +1851,10 @@ extern "C" void AndroidDrawControls();
 void videoShowFrame(int32_t w)
 {
     UNREFERENCED_PARAMETER(w);
+
+    // if we're minimized or about to resize, just throw away the frame
+    if (sdl_resize.x || sdl_minimized)
+        return;
 
 #ifdef __ANDROID__
     if (mobile_halted) return;
@@ -2254,16 +2202,6 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             if (appactive && ev->jaxis.axis < joystick.numAxes)
             {
                 joystick.pAxis[ev->jaxis.axis] = ev->jaxis.value;
-                int32_t const scaledValue = ev->jaxis.value * 10000 / 32767;
-                if ((scaledValue < joydead[ev->jaxis.axis]) &&
-                    (scaledValue > -joydead[ev->jaxis.axis]))
-                    joystick.pAxis[ev->jaxis.axis] = 0;
-                else if (scaledValue >= joysatur[ev->jaxis.axis])
-                    joystick.pAxis[ev->jaxis.axis] = 32767;
-                else if (scaledValue <= -joysatur[ev->jaxis.axis])
-                    joystick.pAxis[ev->jaxis.axis] = -32767;
-                else
-                    joystick.pAxis[ev->jaxis.axis] = joystick.pAxis[ev->jaxis.axis] * 10000 / joysatur[ev->jaxis.axis];
             }
             break;
 
@@ -2325,6 +2263,7 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 
 int32_t handleevents_pollsdl(void);
 #if SDL_MAJOR_VERSION >= 2
+
 // SDL 2.0 specific event handling
 int32_t handleevents_pollsdl(void)
 {
@@ -2527,6 +2466,13 @@ int32_t handleevents_pollsdl(void)
             case SDL_WINDOWEVENT:
                 switch (ev.window.event)
                 {
+                    case SDL_WINDOWEVENT_MINIMIZED:
+                        sdl_minimized = true;
+                        break;
+                    case SDL_WINDOWEVENT_RESTORED:
+                    case SDL_WINDOWEVENT_MAXIMIZED:
+                        sdl_minimized = false;
+                        break;
                     case SDL_WINDOWEVENT_FOCUS_GAINED:
                     case SDL_WINDOWEVENT_FOCUS_LOST:
                         appactive = (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED);
@@ -2547,6 +2493,9 @@ int32_t handleevents_pollsdl(void)
                         videoGetModes();
                         break;
                     }
+                    case SDL_WINDOWEVENT_RESIZED:
+                        sdl_resize = { ev.window.data1 & ~1, ev.window.data2 & ~1 };
+                        break;
                     case SDL_WINDOWEVENT_ENTER:
                     case SDL_WINDOWEVENT_LEAVE:
                         g_mouseInsideWindow = (ev.window.event == SDL_WINDOWEVENT_ENTER);
@@ -2600,6 +2549,16 @@ int32_t handleevents(void)
     timerUpdateClock();
 
     communityapiRunCallbacks();
+
+    if (!frameplace && sdl_resize.x)
+    {
+        if (in3dmode())
+            videoSetGameMode(fullscreen, sdl_resize.x & ~1, sdl_resize.y & ~1, bpp, upscalefactor);
+        else
+            videoSet2dMode(sdl_resize.x & ~1, sdl_resize.y & ~1, upscalefactor);
+
+        sdl_resize = {};
+    }
 
 #ifndef _WIN32
     startwin_idle(NULL);

@@ -51,9 +51,6 @@
     <ClInclude Include="..\..\source\duke3d\src\names.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\duke3d\src\namesdyn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\osdcmds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -67,9 +64,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\sounds.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\duke3d\src\soundsdyn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\startwin.game.h">
@@ -156,6 +150,9 @@
     <ClInclude Include="..\..\source\duke3d\src\gamestructures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\duke3d\src\dnames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\duke3d\src\actors.cpp">
@@ -194,9 +191,6 @@
     <ClCompile Include="..\..\source\duke3d\src\menus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\namesdyn.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\osdcmds.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -219,9 +213,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\sounds.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\soundsdyn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\startgtk.game.cpp">
@@ -262,6 +253,9 @@
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\rsrc\eduke32_icon.c">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\duke3d\src\dnames.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

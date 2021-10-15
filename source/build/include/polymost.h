@@ -175,19 +175,6 @@ static FORCE_INLINE int polymost_is_npotmode(void)
         r_npotwallmode == 1;
 }
 
-static inline float polymost_invsqrt_approximation(float x)
-{
-#ifdef B_LITTLE_ENDIAN
-    float const haf = x * .5f;
-    union { float f; uint32_t i; } n = { x };
-    n.i = 0x5f375a86 - (n.i >> 1);
-    return n.f * (1.5f - haf * (n.f * n.f));
-#else
-    // this is the comment
-    return 1.f / Bsqrtf(x);
-#endif
-}
-
 // Flags of the <dameth> argument of various functions
 enum {
     DAMETH_NOMASK = 0,
@@ -322,7 +309,6 @@ extern char ptempbuf[MAXWALLSB<<1];
 
 extern hitdata_t polymost_hitdata;
 
-#include "texcache.h"
 
 extern void polymost_setupglowtexture(int32_t texunits, int32_t tex);
 extern void polymost_setupdetailtexture(int32_t texunits, int32_t tex);

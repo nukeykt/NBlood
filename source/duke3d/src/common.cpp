@@ -2,13 +2,15 @@
 // Common non-engine code/data for EDuke32 and Mapster32
 //
 
-#include "compat.h"
-#include "build.h"
+#include "common.h"
+
 #include "baselayer.h"
-#include "palette.h"
-
+#include "build.h"
+#include "common_game.h"
+#include "compat.h"
 #include "grpscan.h"
-
+#include "palette.h"
+#include "texcache.h"
 #include "vfs.h"
 
 #ifdef _WIN32
@@ -17,9 +19,6 @@
 #elif defined __APPLE__
 # include "osxbits.h"
 #endif
-
-#include "common.h"
-#include "common_game.h"
 
 struct grpfile_t const *g_selectedGrp;
 
@@ -39,11 +38,11 @@ static const char *defaultdeffilename[GAMECOUNT]     = { "duke3d.def", "nam.def"
 static const char *defaultgameconfilename[GAMECOUNT] = { "EDUKE.CON", "NAM.CON", "NAPALM.CON", "WW2GI.CON" };
 #endif
 
-// g_grpNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
+// g_grpNamePtr can ONLY point to a Xmalloc'd block (length BMAX_PATH)
 char *g_grpNamePtr = NULL;
-// g_scriptNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
+// g_scriptNamePtr can ONLY point to a Xmalloc'd block (length BMAX_PATH)
 char *g_scriptNamePtr = NULL;
-// g_rtsNamePtr can ONLY point to a Bmalloc'd block (length BMAX_PATH)
+// g_rtsNamePtr can ONLY point to a Xmalloc'd block (length BMAX_PATH)
 char *g_rtsNamePtr = NULL;
 
 void clearGrpNamePtr(void)

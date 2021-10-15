@@ -70,7 +70,7 @@ static uint16_t dedxt_hicoadd(uint16_t c)
 }
 #endif
 
-void dxt_handle_io(int32_t fil, int32_t len, void *midbuf, char *packbuf)
+void dxt_handle_io(int32_t len, void *midbuf, char *packbuf)
 {
     void *writebuf;
     int32_t j, cleng;
@@ -94,11 +94,11 @@ void dxt_handle_io(int32_t fil, int32_t len, void *midbuf, char *packbuf)
 
     // native -> external (little endian)
     j = B_LITTLE32(cleng);
-    Bwrite(fil, &j, sizeof(j));
-    Bwrite(fil, writebuf, cleng);
+    buildvfs_fwrite(&j, sizeof(j), 1, texcache.dataFilePtr);
+    buildvfs_fwrite(writebuf, cleng, 1, texcache.dataFilePtr);
 }
 
-int32_t dedxt_handle_io(int32_t fil, int32_t j /* TODO: better name */,
+int32_t dedxt_handle_io(int32_t j /* TODO: better name */,
                                void *midbuf, int32_t mbufsiz, char *packbuf, int32_t ispacked)
 {
     void *inbuf;
@@ -112,26 +112,26 @@ int32_t dedxt_handle_io(int32_t fil, int32_t j /* TODO: better name */,
 
     inbuf = (ispacked && cleng < j) ? packbuf : midbuf;
 
-    if (texcache.buf && texcache.memsize >= texcache.pos + cleng)
+    if (texcache.rw_mmap.is_mapped() && texcache.rw_mmap.mapped_length() >= texcache.dataFilePos + cleng)
     {
         if (ispacked && cleng < j)
         {
-            if (LZ4_decompress_safe((const char *)texcache.buf + texcache.pos, (char*)midbuf, cleng, mbufsiz) <= 0)
+            if (LZ4_decompress_safe(texcache.rw_mmap.data() + texcache.dataFilePos, (char*)midbuf, cleng, mbufsiz) <= 0)
             {
-                texcache.pos += cleng;
+                texcache.dataFilePos += cleng;
                 return -1;
             }
         }
-        else Bmemcpy(inbuf, texcache.buf + texcache.pos, cleng);
+        else Bmemcpy(inbuf, texcache.rw_mmap.data() + texcache.dataFilePos, cleng);
 
-        texcache.pos += cleng;
+        texcache.dataFilePos += cleng;
     }
     else
     {
-        Blseek(fil, texcache.pos, BSEEK_SET);
-        texcache.pos += cleng;
+        buildvfs_fseek_abs(texcache.dataFilePtr, texcache.dataFilePos);
+        texcache.dataFilePos += cleng;
 
-        if (Bread(fil, inbuf, cleng) < cleng)
+        if (buildvfs_fread(inbuf, cleng, 1, texcache.dataFilePtr) != 1)
             return -1;
 
         if (ispacked && cleng < j)
@@ -144,7 +144,7 @@ int32_t dedxt_handle_io(int32_t fil, int32_t j /* TODO: better name */,
 
 #ifndef EDUKE32_GLES
 // NOTE: <pict> members are in external (little) endianness.
-int32_t dxtfilter(int32_t fil, const texcachepicture *pict, const char *pic, void *midbuf, char *packbuf, uint32_t miplen)
+int32_t dxtfilter(const texcachepicture *pict, const char *pic, void *midbuf, char *packbuf, uint32_t miplen)
 {
     uint32_t j, k, offs, stride;
     char *cptr;
@@ -164,7 +164,7 @@ int32_t dxtfilter(int32_t fil, const texcachepicture *pict, const char *pic, voi
         for (j=stride; (unsigned)j<miplen; j+=stride)
             for (k=0; k<8; k++) *cptr++ = pic[j+k];
 
-        dxt_handle_io(fil, tabledivide32(miplen, stride)<<3, midbuf, packbuf);
+        dxt_handle_io(tabledivide32(miplen, stride)<<3, midbuf, packbuf);
     }
 
     //rgb0,rgb1
@@ -173,7 +173,7 @@ int32_t dxtfilter(int32_t fil, const texcachepicture *pict, const char *pic, voi
         for (j=0; (unsigned)j<miplen; j+=stride)
             { B_BUF16(cptr, dxt_hicosub(B_UNBUF16(&pic[offs+j+k]))); cptr += 2; }
 
-    dxt_handle_io(fil, tabledivide32(miplen, stride)<<2, midbuf, packbuf);
+    dxt_handle_io(tabledivide32(miplen, stride)<<2, midbuf, packbuf);
 
     //index_4x4
     cptr = (char *)midbuf;
@@ -187,13 +187,13 @@ int32_t dxtfilter(int32_t fil, const texcachepicture *pict, const char *pic, voi
         cptr += 4;
     }
 
-    dxt_handle_io(fil, tabledivide32(miplen, stride)<<2, midbuf, packbuf);
+    dxt_handle_io(tabledivide32(miplen, stride)<<2, midbuf, packbuf);
 
     return 0;
 }
 
 // NOTE: <pict> members are in native endianness.
-int32_t dedxtfilter(int32_t fil, const texcachepicture *pict, char *pic, void *midbuf, char *packbuf, int32_t ispacked)
+int32_t dedxtfilter(const texcachepicture *pict, char *pic, void *midbuf, char *packbuf, int32_t ispacked)
 {
     int32_t j, k, offs, stride;
     char *cptr;
@@ -208,7 +208,7 @@ int32_t dedxtfilter(int32_t fil, const texcachepicture *pict, char *pic, void *m
     if (stride == 16) //If DXT3...
     {
         //alpha_4x4
-        if (dedxt_handle_io(fil, tabledivide32(pict->size, stride)*8, midbuf, pict->size, packbuf, ispacked))
+        if (dedxt_handle_io(tabledivide32(pict->size, stride)*8, midbuf, pict->size, packbuf, ispacked))
             return -1;
 
         cptr = (char *)midbuf;
@@ -218,7 +218,7 @@ int32_t dedxtfilter(int32_t fil, const texcachepicture *pict, char *pic, void *m
     }
 
     //rgb0,rgb1
-    if (dedxt_handle_io(fil, tabledivide32(pict->size, stride)*4, midbuf, pict->size, packbuf, ispacked))
+    if (dedxt_handle_io(tabledivide32(pict->size, stride)*4, midbuf, pict->size, packbuf, ispacked))
         return -1;
 
     cptr = (char *)midbuf;
@@ -232,7 +232,7 @@ int32_t dedxtfilter(int32_t fil, const texcachepicture *pict, char *pic, void *m
     }
 
     //index_4x4:
-    if (dedxt_handle_io(fil, tabledivide32(pict->size, stride)*4, midbuf, pict->size, packbuf, ispacked))
+    if (dedxt_handle_io(tabledivide32(pict->size, stride)*4, midbuf, pict->size, packbuf, ispacked))
         return -1;
 
     cptr = (char *)midbuf;

@@ -328,10 +328,10 @@ static netField_t ActorFields[] =
 
     { ACTF(lasttransport),  8},
 
-    { ACTF(picnum),             16 },
-    { ACTF(ang),                16 },
-    { ACTF(extra),              16 },
-    { ACTF(owner),              16 },
+    { ACTF(htpicnum),             16 },
+    { ACTF(htang),                16 },
+    { ACTF(htextra),              16 },
+    { ACTF(htowner),              16 },
 
     { ACTF(movflag),            16 },
     { ACTF(tempang),            16 },
@@ -907,7 +907,7 @@ static void Net_CopyActorFromNet(const netactor_t* netActor, actor_t *gameActor)
     bool isActor = G_TileHasActor(netActor->spr_picnum);
 
     // Fixes ambient sound infinite sound replay glitch (stand in the outdoor area of E1L1, the "airplane noise" will get very loud and loop endlessly.
-    bool isSoundActor = (netActor->picnum == MUSICANDSFX);
+    bool isSoundActor = (netActor->spr_picnum == MUSICANDSFX);
 
     if(!isSoundActor)
     {
@@ -921,7 +921,7 @@ static void Net_CopyActorFromNet(const netactor_t* netActor, actor_t *gameActor)
     // Prevents:
     // - Rotating sector stuttering
     // - Trains running backwards
-    bool isSyncedSE =   (netActor->picnum == SECTOREFFECTOR) &&
+    bool isSyncedSE =   (netActor->spr_picnum == SECTOREFFECTOR) &&
                         (
                                 (netActor->spr_lotag == SE_0_ROTATING_SECTOR)
                             ||  (netActor->spr_lotag == SE_1_PIVOT)
@@ -964,10 +964,10 @@ static void Net_CopyActorFromNet(const netactor_t* netActor, actor_t *gameActor)
     gameActor->lasttransport = netActor->lasttransport;
 
     //WARNING: both sprite and actor have these fields
-    gameActor->picnum = netActor->picnum;
-    gameActor->ang = netActor->ang;
-    gameActor->extra = netActor->extra;
-    gameActor->owner = netActor->owner;
+    gameActor->htpicnum = netActor->htpicnum;
+    gameActor->htang = netActor->htang;
+    gameActor->htextra = netActor->htextra;
+    gameActor->htowner = netActor->htowner;
 
     gameActor->movflag = netActor->movflag;
     gameActor->tempang = netActor->tempang;
@@ -1302,10 +1302,10 @@ static void Net_CopyActorToNet(const actor_t* gameActor, netactor_t *netActor)
     netActor->lasttransport = gameActor->lasttransport;
 
     //WARNING: both sprite and actor have these fields
-    netActor->picnum = gameActor->picnum;
-    netActor->ang = gameActor->ang;
-    netActor->extra = gameActor->extra;
-    netActor->owner = gameActor->owner;
+    netActor->htpicnum = gameActor->htpicnum;
+    netActor->htang = gameActor->htang;
+    netActor->htextra = gameActor->htextra;
+    netActor->htowner = gameActor->htowner;
 
     netActor->movflag = gameActor->movflag;
     netActor->tempang = gameActor->tempang;
@@ -2450,7 +2450,7 @@ static void Net_ParseServerPacket(ENetEvent *event)
         }
 
         g_player[pbuf[1]].ps->frag_ps = pbuf[2];
-        actor[g_player[pbuf[1]].ps->i].picnum = pbuf[3];
+        actor[g_player[pbuf[1]].ps->i].htpicnum = pbuf[3];
         ticrandomseed = B_UNBUF32(&pbuf[4]);
         P_FragPlayer(pbuf[1]);
 

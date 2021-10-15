@@ -172,28 +172,29 @@ HINSTANCE win_gethinstance(void)
 //
 int32_t wm_msgbox(const char *name, const char *fmt, ...)
 {
-    char buf[2048];
+    char *buf = (char *)Balloca(MSGBOX_PRINTF_MAX);
     va_list va;
 
     va_start(va,fmt);
-    vsprintf(buf,fmt,va);
+    Bvsnprintf(buf,MSGBOX_PRINTF_MAX,fmt,va);
     va_end(va);
-
+    buf[MSGBOX_PRINTF_MAX-1] = 0;
     MessageBox(hWindow,buf,name,MB_OK|MB_TASKMODAL);
+
     return 0;
 }
 
 
 int32_t wm_ynbox(const char *name, const char *fmt, ...)
 {
-    char buf[2048];
+    char *buf = (char *)Balloca(MSGBOX_PRINTF_MAX);
     va_list va;
     int32_t r;
 
     va_start(va,fmt);
-    vsprintf(buf,fmt,va);
+    Bvsnprintf(buf,MSGBOX_PRINTF_MAX,fmt,va);
     va_end(va);
-
+    buf[MSGBOX_PRINTF_MAX-1] = 0;
     r = MessageBox((HWND)win_gethwnd(),buf,name,MB_YESNO|MB_ICONQUESTION|MB_TASKMODAL);
     if (r==IDYES) return 1;
     return 0;
@@ -218,6 +219,8 @@ static int32_t setgammaramp(LPDDGAMMARAMP gt);
 //
 static void SignalHandler(int32_t signum)
 {
+    OSD_FlushLog();
+
     switch (signum)
     {
     case SIGSEGV:
@@ -277,6 +280,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 #ifdef _MSC_VER
     _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 #endif
+
+    engineCreateAllocator();
 
     mutex_init(&m_initprintf);
 
@@ -548,53 +553,6 @@ void system_getcvars(void)
 {
     windowsDwmSetupComposition(0);
     vsync = videoSetVsync(vsync);
-}
-
-
-//
-// initprintf() -- prints a formatted string to the initialization window
-//
-int initprintf(const char *f, ...)
-{
-    va_list va;
-    char buf[2048];
-
-    va_start(va, f);
-    int len = Bvsnprintf(buf, sizeof(buf), f, va);
-    va_end(va);
-
-    osdstrings.append(Xstrdup(buf));
-    initputs(buf);
-
-    return len;
-}
-
-
-//
-// initputs() -- prints a string to the initialization window
-//
-void initputs(const char *buf)
-{
-    static char dabuf[2048];
-
-    OSD_Puts(buf);
-
-    mutex_lock(&m_initprintf);
-    if ((Bstrlen(dabuf) + Bstrlen(buf) + 2) > sizeof(dabuf))
-    {
-        startwin_puts(dabuf);
-        Bmemset(dabuf, 0, sizeof(dabuf));
-    }
-
-    Bstrcat(dabuf,buf);
-
-    if (g_logFlushWindow || Bstrlen(dabuf) > 768)
-    {
-        startwin_puts(dabuf);
-        handleevents();
-        Bmemset(dabuf, 0, sizeof(dabuf));
-    }
-    mutex_unlock(&m_initprintf);
 }
 
 
@@ -2856,7 +2814,7 @@ static BOOL CreateAppWindow(int32_t modenum)
     SetForegroundWindow(hWindow);
     SetFocus(hWindow);
 
-    SetWindowPos(hWindow, HWND_TOP, windowpos?windowx:x, windowpos?windowy:y, w, h, 0);
+    SetWindowPos(hWindow, HWND_TOP, r_windowpositioning && windowx != -1?windowx:x, r_windowpositioning && windowy != -1?windowy:y, w, h, 0);
 
     // fullscreen?
     if (!fs)

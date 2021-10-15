@@ -26,11 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "common_game.h"
 #include "crc32.h"
+#include "dnames.h"
 #include "duke3d.h"
 #include "gameexec.h"
 #include "gamestructures.h"
 #include "kplib.h"
-#include "namesdyn.h"
 #include "osd.h"
 #include "savegame.h"
 #include "vfs.h"
@@ -1029,6 +1029,8 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_NEWGAMECUSTOM",
     "EVENT_INITCOMPLETE",
     "EVENT_CAPIR",
+    "EVENT_PREUPDATEANGLES",
+    "EVENT_POSTUPDATEANGLES",
 };
 
 uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
@@ -2759,8 +2761,10 @@ DO_DEFSTATE:
                 else
                 {
                     hash_add(&h_labels,LAST_LABEL,g_labelCnt,0);
+
                     if ((unsigned)g_scriptPtr[-1] < MAXTILES && g_dynamicTileMapping)
-                        G_ProcessDynamicTileMapping(LAST_LABEL, g_scriptPtr[-1]);
+                        G_ProcessDynamicNameMapping(LAST_LABEL, g_dynTileList, g_scriptPtr[-1]);
+
                     labeltype[g_labelCnt] = LABEL_DEFINE;
                     labelcode[g_labelCnt++] = g_scriptPtr[-1];
                 }
@@ -3789,7 +3793,7 @@ DO_DEFSTATE:
                 initprintf("%s:%d: warning: duplicate dynamicremap statement\n",g_scriptFileName,g_lineNumber);
                 g_warningCnt++;
             }
-#ifdef DYNTILEREMAP_ENABLE
+#ifdef USE_DNAMES
 #ifdef DEBUGGINGAIDS
                 else
                     initprintf("Using dynamic tile remapping\n");
@@ -3812,7 +3816,7 @@ DO_DEFSTATE:
                 g_warningCnt++;
             }
             else
-#ifdef DYNSOUNDREMAP_ENABLE
+#ifdef USE_DNAMES
 #ifdef DEBUGGINGAIDS
                 initprintf("Using dynamic sound remapping\n");
 #endif
@@ -5834,9 +5838,14 @@ repeatcase:
                 g_errorCnt++;
                 k = MAXSOUNDS - 1;
             }
-            else if (EDUKE32_PREDICT_FALSE(g_sounds[k].filename != NULL))
+
+            S_AllocIndexes(k);
+
+            if (EDUKE32_PREDICT_TRUE(g_sounds[k] == &nullsound))
+                g_sounds[k] = (sound_t *)Xcalloc(1, sizeof(sound_t));
+            else
             {
-                initprintf("%s:%d: warning: sound %d already defined (%s)\n", g_scriptFileName, g_lineNumber, k, g_sounds[k].filename);
+                initprintf("%s:%d: warning: sound %d already defined (%s)\n",g_scriptFileName,g_lineNumber,k,g_sounds[k]->filename);
                 g_warningCnt++;
             }
 
@@ -5889,6 +5898,7 @@ repeatcase:
 
             C_GetNextValue(LABEL_DEFINE);
             int distance = g_scriptPtr[-1];
+
             g_scriptPtr -= 5;
 
             float volume = 1.0;
@@ -5899,7 +5909,7 @@ repeatcase:
                 g_highestSoundIdx = k;
 
             if (g_dynamicSoundMapping && j >= 0 && (labeltype[j] & LABEL_DEFINE))
-                G_ProcessDynamicSoundMapping(label + (j << 6), k);
+                G_ProcessDynamicNameMapping(label + (j << 6), g_dynSoundList, k);
             continue;
         }
 
@@ -6178,6 +6188,8 @@ static void C_AddDefaultDefinitions(void)
         { "MAXSPRITESONSCREEN", MAXSPRITESONSCREEN },
         { "MAXSTATUS",          MAXSTATUS },
         { "MAXTILES",           MAXTILES },
+        { "MAXLEVELS",          MAXLEVELS },
+        { "MAXVOLUMES",         MAXVOLUMES },
 
         { "PROJ_BOUNCES",     PROJ_BOUNCES },
         { "PROJ_BSOUND",      PROJ_BSOUND },
@@ -6466,7 +6478,7 @@ void C_Compile(const char *fileName)
     for (char * m : g_scriptModules)
     {
         C_Include(m);
-        Bfree(m);
+        Xfree(m);
     }
     g_scriptModules.clear();
 
@@ -6520,7 +6532,6 @@ void C_Compile(const char *fileName)
         inthash_free(i);
 
     freehashnames();
-    freesoundhashnames();
 
     if (g_scriptDebug)
         C_PrintStats();

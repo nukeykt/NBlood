@@ -55,7 +55,7 @@ int32_t JOYSTICK_GetButtons(void)
 
     return buttons;
 }
-int32_t JOYSTICK_GetGameControllerButtons(void)
+int32_t JOYSTICK_GetControllerButtons(void)
 {
     if (!joystick.isGameController)
         return 0;
@@ -64,17 +64,7 @@ int32_t JOYSTICK_GetGameControllerButtons(void)
     joyReadButtons(&buttons);
     return buttons;
 }
-int32_t JOYSTICK_ClearButton(int32_t b)
-{
-    return (joystick.bits &= ~b);
-}
-void JOYSTICK_ClearGameControllerButton(int32_t b)
-{
-    if (!joystick.isGameController)
-        return;
 
-    joystick.bits &= ~b;
-}
 void JOYSTICK_ClearAllButtons(void)
 {
     joystick.bits = 0;
@@ -98,31 +88,4 @@ int32_t JOYSTICK_GetHat(int32_t h)
         }
     }
     return 0;
-}
-void JOYSTICK_ClearHat(int32_t h)
-{
-    if (h>=0 && h<joystick.numHats)
-        joystick.pHat[h] = -1;
-}
-void JOYSTICK_ClearAllHats(void)
-{
-    int32_t h;
-    for (h=0; h<joystick.numHats; ++h)
-        joystick.pHat[h] = -1;
-}
-
-int32_t JOYSTICK_GetAxis(int32_t a)
-{
-    return ((a>=0 && a<joystick.numAxes)?joystick.pAxis[a]:0);
-}
-void JOYSTICK_ClearAxis(int32_t a)
-{
-    if (a>=0 && a<joystick.numAxes)
-        joystick.pAxis[a] = 0;
-}
-void JOYSTICK_ClearAllAxes(void)
-{
-    int32_t a;
-    for (a=0; a<joystick.numAxes; ++a)
-        joystick.pAxis[a] = 0;
 }

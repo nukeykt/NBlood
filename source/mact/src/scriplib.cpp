@@ -776,6 +776,29 @@ int32_t SCRIPT_GetBoolean(int32_t scripthandle, char const * sectionname, char c
     return 0;
 }
 
+int32_t SCRIPT_GetDouble(int32_t scripthandle, const char * sectionname, const char * entryname, double * number)
+{
+    ScriptSectionType *s;
+    ScriptEntryType *e;
+    char *p;
+
+    if (!SC(scripthandle)) return 1;
+    if (!SCRIPT(scripthandle,apScript)) return 1;
+
+    s = SCRIPT_SectionExists(scripthandle, sectionname);
+    e = SCRIPT_EntryExists(s, entryname);
+
+    if (!e) return 1;// *number = 0;
+    else
+    {
+        // decimal
+        *number = strtod(e->value, &p);
+        if (p == e->value || (*p != 0 && *p != ' ' && *p != '\t')) return 1;
+    }
+
+    return 0;
+}
+
 void SCRIPT_PutSection(int32_t scripthandle, char const * sectionname)
 {
     SCRIPT_AddSection(scripthandle, sectionname);
@@ -889,8 +912,8 @@ void SCRIPT_PutNumber
 void SCRIPT_PutBoolean
 (
     int32_t scripthandle,
-    char * sectionname,
-    char * entryname,
+    char const * sectionname,
+    char const * entryname,
     int32_t boole
 )
 {
@@ -904,8 +927,8 @@ void SCRIPT_PutBoolean
 void SCRIPT_PutDouble
 (
     int32_t scripthandle,
-    char * sectionname,
-    char * entryname,
+    char const * sectionname,
+    char const * entryname,
     double number,
     int32_t defaultvalue
 )

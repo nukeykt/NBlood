@@ -747,7 +747,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     }
 
     sv_postudload();  // ud.m_XXX = ud.XXX
-    VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek);
+    VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek, -1, h.userbytever);
     kclose(fil);
 
     return 0;
@@ -1826,7 +1826,7 @@ int32_t sv_loadheader(buildvfs_kfd fil, int32_t spot, savehead_t *h)
         return -2;
     }
 
-    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever != ud.userbytever
+    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever < ud.userbytever
         || Bstrncasecmp(g_scriptFileName, h->scriptname, Bstrlen(h->scriptname)))
     {
 #ifndef DEBUGGINGAIDS
@@ -2451,7 +2451,7 @@ static void postloadplayer(int32_t savegamep)
     if (savegamep)
     {
         for (SPRITES_OF(STAT_FX, i))
-            if (sprite[i].picnum == MUSICANDSFX && T1(i) && SLT(i) < 999 && g_sounds[SLT(i)].m & (SF_MSFX|SF_LOOP))
+            if (sprite[i].picnum == MUSICANDSFX && T1(i) && SLT(i) < 999 && S_SoundIsValid(SLT(i)) && g_sounds[SLT(i)]->flags & (SF_MSFX|SF_LOOP))
             {
                 T2(i) = 0;
 
@@ -2520,7 +2520,12 @@ static void postloadplayer(int32_t savegamep)
 
     //7
     for (i=0; i<MAXPLAYERS; i++)
+    {
+        if (g_player[i].ps->gravity == 0 && g_player[i].ps->floorzoffset == 0)
+            P_ResetOffsets(g_player[i].ps);
+
         g_player[i].playerquitflag = 1;
+    }
 
     // ----------
 
@@ -2535,6 +2540,7 @@ static void postloadplayer(int32_t savegamep)
     //8
     // if (savegamep)  ?
     G_ResetTimers(0);
+    P_SetupMiscInputSettings();
 
 #ifdef USE_STRUCT_TRACKERS
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));
@@ -2560,6 +2566,9 @@ static void postloadplayer(int32_t savegamep)
         practor[i].lightId = -1;
     }
 #endif
+
+    calc_sector_reachability();
+    //Bmemset(zhit, 0, sizeof(zhit));
 }
 
 ////////// END GENERIC SAVING/LOADING SYSTEM //////////

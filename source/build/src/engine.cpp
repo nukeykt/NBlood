@@ -130,6 +130,7 @@ int32_t r_rotatespriteinterp = 1;
 int32_t r_fpgrouscan = 1;
 int32_t r_displayindex = 0;
 int32_t r_borderless = 2;
+int32_t r_windowpositioning = 1;
 int32_t globalflags;
 
 float g_videoGamma = DEFAULT_GAMMA;
@@ -194,6 +195,9 @@ int32_t bloodhack = 0;
 int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+static uint8_t *reachablesectors;
+int16_t wallsect[MAXWALLS];
+
 void initcrc16()
 {
     int i, j, k, a;
@@ -208,18 +212,11 @@ void initcrc16()
     }
 }
 
-uint16_t getcrc16(char const *buffer, int bufleng)
-{
-    int j = 0;
-    for (int i=bufleng-1;i>=0;i--) updatecrc16(j,buffer[i]);
-    return((uint16_t)(j&65535));
-}
-
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
-    vec2_t const w  = wall[dawall].pos;
-    vec2_t const w2 = wall[wall[dawall].point2].pos;
+    vec2_t const w  = wall[dawall].xy;
+    vec2_t const w2 = wall[wall[dawall].point2].xy;
     vec2_t const d  = { w2.x - w.x, w2.y - w.y };
 
     int64_t i = d.x * ((int64_t)p.x - w.x) + d.y * ((int64_t)p.y - w.y);
@@ -319,6 +316,8 @@ void yax_updategrays(int32_t posze)
                 graywallbitmap[j>>3] |= pow2char[j&7];
         }
     }
+
+    calc_sector_reachability();
 }
 
 
@@ -347,6 +346,7 @@ int32_t yax_polymostclearzbuffer = 1;
 static int16_t yax_spritesortcnt[1 + 2*YAX_MAXDRAWS];
 static uint16_t yax_tsprite[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 static uint8_t yax_tsprfrombunch[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
+static int16_t yax_updown[MAXSECTORS][2];
 
 // drawn sectors
 uint8_t yax_gotsector[(MAXSECTORS+7)>>3];  // engine internal
@@ -639,6 +639,10 @@ void yax_update(int32_t resetstat)
 
 int32_t yax_getneighborsect(int32_t x, int32_t y, int32_t sectnum, int32_t cf)
 {
+    // yax_updown is initialized to -1, but inside() checks it so don't check it here
+    if (!editstatus && inside(x, y, yax_updown[sectnum][!cf])==1)
+        return yax_updown[sectnum][!cf];
+
     int16_t bunchnum = yax_getbunch(sectnum, cf);
 
     if (bunchnum < 0)
@@ -646,7 +650,11 @@ int32_t yax_getneighborsect(int32_t x, int32_t y, int32_t sectnum, int32_t cf)
 
     for (bssize_t SECTORS_OF_BUNCH(bunchnum, !cf, i))
         if (inside(x, y, i)==1)
+        {
+            yax_updown[i][cf] = sectnum;
+            yax_updown[sectnum][!cf] = i;
             return i;
+        }
 
     return -1;
 }
@@ -2070,10 +2078,10 @@ do_mvlineasm1:
 //
 int32_t wallfront(int32_t l1, int32_t l2)
 {
-    vec2_t const l1vect   = wall[thewall[l1]].pos;
-    vec2_t const l1p2vect = wall[wall[thewall[l1]].point2].pos;
-    vec2_t const l2vect   = wall[thewall[l2]].pos;
-    vec2_t const l2p2vect = wall[wall[thewall[l2]].point2].pos;
+    vec2_t const l1vect   = wall[thewall[l1]].xy;
+    vec2_t const l1p2vect = wall[wall[thewall[l1]].point2].xy;
+    vec2_t const l2vect   = wall[thewall[l2]].xy;
+    vec2_t const l2p2vect = wall[wall[thewall[l2]].point2].xy;
     vec2_t d = { l1p2vect.x - l1vect.x, l1p2vect.y - l1vect.y };
     int32_t t1 = dmulscale2(l2vect.x-l1vect.x, d.y, -d.x, l2vect.y-l1vect.y); //p1(l2) vs. l1
     int32_t t2 = dmulscale2(l2p2vect.x-l1vect.x, d.y, -d.x, l2p2vect.y-l1vect.y); //p2(l2) vs. l1
@@ -8041,7 +8049,7 @@ static inline void initksqrt(void)
         temp = root*root-num;
         while (klabs(int32_t(temp-2*root+1)) < klabs(temp))
         {
-            temp += -(2*root)+1;
+            temp += -(2*(int32_t)root)+1;
             root--;
         }
         while (klabs(int32_t(temp+2*root+1)) < klabs(temp))
@@ -8709,7 +8717,7 @@ int32_t enginePreInit(void)
     initdivtables();
 
     if (initsystem())
-        fatal_exit("Failure in initsystem()!\n");
+        fatal_exit("Failure in initsystem()!");
 
     makeasmwriteable();
 
@@ -8729,6 +8737,7 @@ int32_t enginePreInit(void)
     mmxoverlay();
 #endif
 
+    upscalefactor = 1;
     validmodecnt = 0;
     videoGetModes();
 
@@ -8837,12 +8846,15 @@ void engineUnInit(void)
     communityapiShutdown();
 
 #ifdef USE_OPENGL
-    polymost_glreset();
-    hicinit();
-    freeallmodels();
+    if (qsetmode)
+    {
+        polymost_glreset();
+        freeallmodels();
 # ifdef POLYMER
-    polymer_uninit();
+        polymer_uninit();
 # endif
+    }
+    hicinit();
 #endif
 
     Buninitart();
@@ -10249,6 +10261,8 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
 {
     initspritelists();
 
+    DO_FREE_AND_NULL(reachablesectors);
+
     Bmemset(show2dsector, 0, sizeof(show2dsector));
     Bmemset(show2dsprite, 0, sizeof(show2dsprite));
     Bmemset(show2dwall, 0, sizeof(show2dwall));
@@ -10280,7 +10294,89 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
     return 0;
 }
 
-static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum, int16_t numsprites, char myflags)
+
+static FORCE_INLINE size_t getreachabilitybitmapsize(void)
+{
+    return numsectors * ((numsectors + 7) >> 3);
+}
+
+static FORCE_INLINE uint8_t* getreachabilitybitmap(int const sectnum)
+{
+    Bassert(reachablesectors);
+    Bassert(numsectors);
+    return ((uint8_t*)(reachablesectors + (sectnum * tabledivide32_noinline(getreachabilitybitmapsize(), numsectors))));
+}
+
+int sectorsareconnected(int const sect1, int const sect2)
+{
+    return !!bitmap_test(getreachabilitybitmap(sect1), sect2);
+}
+
+void calc_sector_reachability(void)
+{
+    Bmemset(yax_updown, -1, sizeof(yax_updown));
+    Bmemset(wallsect, -1, sizeof(wallsect));
+
+    if (!numsectors)
+        return;
+
+    DO_FREE_AND_NULL(reachablesectors);
+    reachablesectors = (uint8_t*)Xcalloc(1, getreachabilitybitmapsize());
+    auto sectlist = (int16_t *)Balloca(sizeof(int16_t) * numsectors);
+
+    for (int sectnum=0; sectnum<numsectors; sectnum++)
+    {
+        uint8_t* sectbitmap = getreachabilitybitmap(sectnum);
+        int16_t nsecs;
+        bfirst_search_init(sectlist, sectbitmap, &nsecs, numsectors, sectnum);
+
+        for (int listidx=0; listidx<nsecs; listidx++)
+        {
+            Bassert((unsigned)listidx < numsectors);
+            Bassert((unsigned)sectlist[listidx] < numsectors);
+
+            auto sec = (usectorptr_t)&sector[sectlist[listidx]];
+
+            int const startwall = sec->wallptr;
+            int const endwall   = sec->wallptr + sec->wallnum;
+
+            for (int j=startwall; j<endwall; j++)
+                wallsect[j] = sectlist[listidx];
+
+            auto uwal = (uwallptr_t)&wall[startwall];
+            for (int j=startwall; j<endwall; j++, uwal++)
+            {
+                if (uwal->nextsector >= 0 && !bitmap_test(sectbitmap, uwal->nextsector))
+                {
+                    bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
+#if 0
+                    OSD_Printf("sector %d reaches sector %d\n", sectnum, uwal->nextsector);
+#endif
+                }
+
+                int upperSect = yax_vnextsec(j, YAX_CEILING);
+                if (upperSect >= 0 && !bitmap_test(sectbitmap, upperSect))
+                {
+                    bfirst_search_try(sectlist, sectbitmap, &nsecs, upperSect);
+#if 0
+                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, upperSect);
+#endif
+                }
+
+                int lowerSect = yax_vnextsec(j, YAX_FLOOR);
+                if (lowerSect >= 0 && !bitmap_test(sectbitmap, lowerSect))
+                {
+                    bfirst_search_try(sectlist, sectbitmap, &nsecs, lowerSect);
+#if 0
+                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, lowerSect);
+#endif
+                }
+            }
+        }
+    }
+}
+
+static int32_t engineFinishLoadBoard(const vec3_t* dapos, int16_t* dacursectnum, int16_t numsprites, char myflags)
 {
     int32_t i, realnumsprites=numsprites, numremoved;
 
@@ -10357,6 +10453,10 @@ static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum,
     guniqhudid = 0;
 
     Bmemset(tilecols, 0, sizeof(tilecols));
+
+    calc_sector_reachability();
+
+
     return numremoved;
 }
 
@@ -11209,11 +11309,7 @@ static void videoAllocateBuffers(void)
       };
 
     for (i = 0; i < (signed)ARRAY_SIZE(dynarray); i++)
-    {
-        Xaligned_free(*dynarray[i].ptr);
-
-        *dynarray[i].ptr = Xaligned_alloc(16, dynarray[i].size);
-    }
+        *dynarray[i].ptr = Xrealloc(*dynarray[i].ptr, dynarray[i].size);
 
     horizlookup  = lookups;
     horizlookup2 = lookups + (ydim << 2);
@@ -11315,8 +11411,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
 #ifdef USE_OPENGL
     if (nogl) dabpp = 8;
 #endif
-    daupscaledxdim = max(320, daupscaledxdim);
-    daupscaledydim = max(200, daupscaledydim);
+    daupscaledxdim = max(640, daupscaledxdim);
+    daupscaledydim = max(400, daupscaledydim);
 
     if (in3dmode() && videomodereset == 0 && (davidoption == fullscreen) &&
         (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
@@ -11788,7 +11884,7 @@ int32_t setsprite(int16_t spritenum, const vec3_t *newpos)
     int16_t tempsectnum = sprite[spritenum].sectnum;
 
     if ((void const *) newpos != (void *) &sprite[spritenum])
-        sprite[spritenum].pos = *newpos;
+        sprite[spritenum].xyz = *newpos;
 
     updatesector(newpos->x,newpos->y,&tempsectnum);
 
@@ -11805,7 +11901,7 @@ int32_t setspritez(int16_t spritenum, const vec3_t *newpos)
     int16_t tempsectnum = sprite[spritenum].sectnum;
 
     if ((void const *)newpos != (void *)&sprite[spritenum])
-        sprite[spritenum].pos = *newpos;
+        sprite[spritenum].xyz = *newpos;
 
     updatesectorz(newpos->x,newpos->y,newpos->z,&tempsectnum);
 
@@ -11920,6 +12016,14 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, in
     // the game world.
     if ((unsigned)sect1 >= MAXSECTORS || (unsigned)sect2 >= MAXSECTORS)
         return 0;
+
+    if (!sectorsareconnected(sect1, sect2))
+    {
+#ifndef NDEBUG
+        OSD_Printf("cansee: sector %d can't reach sector %d\n", sect1, sect2);
+#endif
+        return 0;
+    }
 
     Bmemset(&pendingvec, 0, sizeof(vec3_t));  // compiler-happy
 #endif
@@ -12419,6 +12523,9 @@ int32_t getsectordist(vec2_t const in, int const sectnum, vec2_t * const out /*=
 
 int findwallbetweensectors(int sect1, int sect2)
 {
+    if (!sectorsareconnected(sect1, sect2))
+        return -1;
+
     if (sector[sect1].wallnum > sector[sect2].wallnum)
         swaplong(&sect1, &sect2);
 
@@ -13349,9 +13456,12 @@ int32_t sectorofwall(int16_t wallNum)
     if (EDUKE32_PREDICT_FALSE((unsigned)wallNum >= (unsigned)numwalls))
         return -1;
 
+#if !defined NEW_MAP_FORMAT
+    if (!editstatus)
+        return wallsect[wallNum];
+#endif
     native_t const w = wall[wallNum].nextwall;
-
-    return ((unsigned)w < MAXWALLS) ? wall[w].nextsector : sectorofwall_internal(wallNum);
+    return ((unsigned)w < (unsigned)numwalls) ? wall[w].nextsector : sectorofwall_internal(wallNum);
 }
 
 int32_t sectorofwall_noquick(int16_t wallNum)
@@ -13669,6 +13779,47 @@ void setfirstwall(int16_t sectnum, int16_t newfirstwall)
 //
 // qsetmodeany
 //
+void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor)
+{
+    daupscaledxdim = max(640, min(daupscaledxdim, max(640, daupscaledxdim/daupscalefactor) * daupscalefactor));
+    daupscaledydim = max(480, min(daupscaledydim, max(480, daupscaledydim/daupscalefactor) * daupscalefactor));
+    daupscalefactor = max(1, min(tabledivide32(daupscaledydim, 480), daupscalefactor));
+
+#ifndef RENDERTYPESDL
+    daupscalefactor = 1;
+#endif
+
+    g_lastpalettesum = 0;
+    if (videoSetMode(daupscaledxdim,daupscaledydim,8,fullscreen) < 0) return;
+
+    upscalefactor = daupscalefactor;
+
+    xdim = daupscaledxdim/upscalefactor;
+    ydim = daupscaledydim/upscalefactor;
+
+#ifdef USE_OPENGL
+    fxdim = (float) xdim;
+    fydim = (float) ydim;
+
+    rendmode = REND_CLASSIC;
+#endif
+
+    OSD_ResizeDisplay(xdim, ydim);
+
+    videoAllocateBuffers();
+    videoSetViewableArea(0L,0L,xdim-1,ydim-1);
+
+    ydim16 = ydim - STATUS2DSIZ2;
+    halfxdim16 = xdim >> 1;
+    midydim16 = ydim16 >> 1; // scale(200,ydim,480);
+
+    videoBeginDrawing(); //{{{
+    Bmemset((char *)frameplace, 0, ydim*bytesperline);
+    videoEndDrawing();   //}}}
+    qsetmode = ((xres<<16)|(yres&0xffff));
+}
+
+#if 0
 void videoSet2dMode(int32_t daxdim, int32_t daydim)
 {
     if (daxdim < 640) daxdim = 640;
@@ -13705,6 +13856,7 @@ void videoSet2dMode(int32_t daxdim, int32_t daydim)
 
     qsetmode = ((daxdim<<16)|(daydim&0xffff));
 }
+#endif // 
 
 static int32_t printext_checkypos(int32_t ypos, int32_t *yminptr, int32_t *ymaxptr)
 {
