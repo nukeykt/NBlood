@@ -110,7 +110,7 @@ extern int syncvalcnt, othersyncvalcnt;
 extern short syncval[MOVEFIFOSIZ], othersyncval[MOVEFIFOSIZ];
 
 extern int crctable[256];
-#define updatecrc16(dacrc,dadat) dacrc = (((dacrc<<8)&65535)^crctable[((((unsigned short)dacrc)>>8)&65535)^dadat])
+//#define updatecrc16(dacrc,dadat) dacrc = (((dacrc<<8)&65535)^crctable[((((unsigned short)dacrc)>>8)&65535)^dadat])
 extern char playerreadyflag[MAXPLAYERS];
 
      //Game recording variables

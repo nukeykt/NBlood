@@ -125,7 +125,7 @@ void smkplayseq(const char *name)
     walock[kSMKTile] = 0;
     waloff[kSMKTile] = 0;
     tileSetSize(kSMKTile, 0, 0);
-    Bfree(pFrame);
+    Xfree(pFrame);
     pFrame = nullptr;
 
 //    debugprintf("smkplayseq(\"%s\")\n", name);
@@ -215,6 +215,6 @@ void smkclosemenu()
     walock[kSMKTile] = 0;
     waloff[kSMKTile] = 0;
     tileSetSize(kSMKTile, 0, 0);
-    Bfree(pFrame);
-    Bfree(pMenuBackground);
+    Xfree(pFrame);
+    Xfree(pMenuBackground);
 }

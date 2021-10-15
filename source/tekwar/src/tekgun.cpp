@@ -359,7 +359,7 @@ shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
                     default:
                          rv=damagesprite(hitinfo.sprite,tekgundamage(guntype,x,y,z, hitinfo.sprite));
                          if( (rv == 1) && (goreflag) ) {
-                              if( spewblood(hitinfo.sprite, hitinfo.pos.z, daang) != 0 ) {
+                              if( spewblood(hitinfo.sprite, hitinfo.z, daang) != 0 ) {
                                    sprptr[hitinfo.sprite]->cstat&=0xFEFE;  // non hitscan and non block
                                    // must preserve values from previous hitscan call, 
                                    // thus the bloodxhitx, bloodwall, etc...
@@ -374,7 +374,7 @@ shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
 
                                    if(bloodhitinfo.wall != -1 ) {
                                         bloodonwall(bloodhitinfo.wall,sprptr[hitinfo.sprite]->x,sprptr[hitinfo.sprite]->y,sprptr[hitinfo.sprite]->z,
-                                                    sprptr[hitinfo.sprite]->sectnum,daang2, bloodhitinfo.pos.x, bloodhitinfo.pos.y, bloodhitinfo.pos.z);
+                                                    sprptr[hitinfo.sprite]->sectnum,daang2, bloodhitinfo.x, bloodhitinfo.y, bloodhitinfo.z);
                                    }
                               }
                          }
@@ -388,12 +388,12 @@ shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
           if(hitinfo.wall >= 0 ) {
                j=jsinsertsprite(hitinfo.sect, 3);
                if( j != -1 ) {
-                    fillsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(8<<8),2,0,0,32,22,22,0,0,
+                    fillsprite(j,hitinfo.x,hitinfo.y,hitinfo.z+(8<<8),2,0,0,32,22,22,0,0,
                                EXPLOSION,daang,0,0,0,snum+MAXSPRITES,hitinfo.sect,3,63,0,-1);
                     movesprite((short)j,
                                -(((int)sintable[(512+daang)&2047]*TICSPERFRAME)<<4),
                                -(((int)sintable[daang]*TICSPERFRAME)<<4),0L,4L<<8,4L<<8,1);
-                    playsound(S_RIC1, hitinfo.pos.x, hitinfo.pos.y,0,ST_NOUPDATE);
+                    playsound(S_RIC1, hitinfo.x, hitinfo.y,0,ST_NOUPDATE);
                }
           }
           break;

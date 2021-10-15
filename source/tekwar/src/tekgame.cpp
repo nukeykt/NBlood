@@ -45,6 +45,7 @@ int runkey_mode, auto_run;
 
 void shutdown();
 
+extern "C" void M32RunScript(const char* s);
 void M32RunScript(const char* s) { UNREFERENCED_PARAMETER(s); }
 void app_crashhandler(void)
 {

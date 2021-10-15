@@ -2233,7 +2233,7 @@ enemyshootgun(short sprnum,int x,int y,int z,short daang,int dahoriz,
           else {                   
                j=jsinsertsprite(hitinfo.sect, 3);
                if( j != -1 ) {
-                    fillsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(8<<8),2,-4,0,32,16,16,0,0,
+                    fillsprite(j,hitinfo.x,hitinfo.y,hitinfo.z+(8<<8),2,-4,0,32,16,16,0,0,
                                EXPLOSION,daang,0,0,0,sprnum+MAXSPRITES,hitsect,3,63,0,0);
                }
           }
