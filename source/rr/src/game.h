@@ -429,7 +429,7 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
         return 65536;
     }
 
-    return calc_smoothratio_demo(totalclk, ototalclk);
+    return calc_smoothratio(totalclk, ototalclk, REALGAMETICSPERSEC);
 }
 
 // sector effector lotags
