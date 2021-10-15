@@ -475,36 +475,36 @@ bool CGameMenuItem::Event(CGameMenuEvent &event)
 bool CGameMenuItem::MouseEvent(CGameMenuEvent &event)
 {
     event.at0 = kMenuEventNone;
-    if (MOUSEINACTIVECONDITIONAL(MOUSE_GetButtons()&LEFT_MOUSE))
+    if (MOUSEINACTIVECONDITIONAL(MOUSE_GetButtons()&M_LEFTBUTTON))
     {
         event.at0 = kMenuEventEnter;
-        MOUSE_ClearButton(LEFT_MOUSE);
+        MOUSE_ClearButton(M_LEFTBUTTON);
     }
-    else if (MOUSE_GetButtons()&RIGHT_MOUSE)
+    else if (MOUSE_GetButtons()&M_RIGHTBUTTON)
     {
         event.at0 = kMenuEventEscape;
-        MOUSE_ClearButton(RIGHT_MOUSE);
+        MOUSE_ClearButton(M_RIGHTBUTTON);
     }
 #if 0
-    else if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&LEFT_MOUSE) && (MOUSE_GetButtons()&WHEELUP_MOUSE)))
+    else if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&M_LEFTBUTTON) && (MOUSE_GetButtons()&M_WHEELUP)))
     {
-        MOUSE_ClearButton(WHEELUP_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
         event.bAutoAim = kMenuEventScrollLeft;
     }
-    else if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&LEFT_MOUSE) && (MOUSE_GetButtons()&WHEELDOWN_MOUSE)))
+    else if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&M_LEFTBUTTON) && (MOUSE_GetButtons()&M_WHEELDOWN)))
     {
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
         event.bAutoAim = kMenuEventScrollRight;
     }
 #endif
-    else if (MOUSE_GetButtons()&WHEELUP_MOUSE)
+    else if (MOUSE_GetButtons()&M_WHEELUP)
     {
-        MOUSE_ClearButton(WHEELUP_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
         event.at0 = kMenuEventUp;
     }
-    else if (MOUSE_GetButtons()&WHEELDOWN_MOUSE)
+    else if (MOUSE_GetButtons()&M_WHEELDOWN)
     {
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
         event.at0 = kMenuEventDown;
     }
     return event.at0 != kMenuEventNone;
@@ -1308,16 +1308,16 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
 bool CGameMenuItemKeyList::MouseEvent(CGameMenuEvent &event)
 {
     event.at0 = kMenuEventNone;
-    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELUP_MOUSE))
+    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&M_WHEELUP))
     {
         gGameMenuMgr.m_mouselastactivity = (int)totalclock;
-        MOUSE_ClearButton(WHEELUP_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
         event.at0 = kMenuEventScrollUp;
     }
-    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&M_WHEELDOWN))
     {
         gGameMenuMgr.m_mouselastactivity = (int)totalclock;
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
         event.at0 = kMenuEventScrollDown;
     }
     else
@@ -1526,31 +1526,31 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
 bool CGameMenuItemSlider::MouseEvent(CGameMenuEvent &event)
 {
     event.at0 = kMenuEventNone;
-    if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&LEFT_MOUSE) && (MOUSE_GetButtons()&WHEELUP_MOUSE)))
+    if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&M_LEFTBUTTON) && (MOUSE_GetButtons()&M_WHEELUP)))
     {
-        MOUSE_ClearButton(WHEELUP_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
         event.at0 = kMenuEventLeft;
     }
-    else if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&LEFT_MOUSE) && (MOUSE_GetButtons()&WHEELDOWN_MOUSE)))
+    else if (MOUSEINACTIVECONDITIONAL((MOUSE_GetButtons()&M_LEFTBUTTON) && (MOUSE_GetButtons()&M_WHEELDOWN)))
     {
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
         event.at0 = kMenuEventRight;
     }
-    else if (MOUSE_GetButtons()&RIGHT_MOUSE)
+    else if (MOUSE_GetButtons()&M_RIGHTBUTTON)
     {
-        MOUSE_ClearButton(RIGHT_MOUSE);
+        MOUSE_ClearButton(M_RIGHTBUTTON);
         event.at0 = kMenuEventEscape;
     }
-    else if (MOUSE_GetButtons()&WHEELUP_MOUSE)
+    else if (MOUSE_GetButtons()&M_WHEELUP)
     {
-        MOUSE_ClearButton(WHEELUP_MOUSE);
-        MOUSE_ClearButton(LEFT_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
+        MOUSE_ClearButton(M_LEFTBUTTON);
         event.at0 = kMenuEventUp;
     }
-    else if (MOUSE_GetButtons()&WHEELDOWN_MOUSE)
+    else if (MOUSE_GetButtons()&M_WHEELDOWN)
     {
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
-        MOUSE_ClearButton(LEFT_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
+        MOUSE_ClearButton(M_LEFTBUTTON);
         event.at0 = kMenuEventDown;
     }
     return event.at0 != kMenuEventNone;
@@ -2406,16 +2406,16 @@ bool CGameMenuItemZCycleSelect::Event(CGameMenuEvent &event)
 bool CGameMenuItemZCycleSelect::MouseEvent(CGameMenuEvent &event)
 {
     event.at0 = kMenuEventNone;
-    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELUP_MOUSE))
+    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&M_WHEELUP))
     {
         gGameMenuMgr.m_mouselastactivity = (int)totalclock;
-        MOUSE_ClearButton(WHEELUP_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
         event.at0 = kMenuEventScrollUp;
     }
-    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&M_WHEELDOWN))
     {
         gGameMenuMgr.m_mouselastactivity = (int)totalclock;
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
         event.at0 = kMenuEventScrollDown;
     }
     else
@@ -3345,16 +3345,16 @@ void CGameMenuFileSelect::MovementVerify(void)
 bool CGameMenuFileSelect::MouseEvent(CGameMenuEvent &event)
 {
     event.at0 = kMenuEventNone;
-    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELUP_MOUSE))
+    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&M_WHEELUP))
     {
         gGameMenuMgr.m_mouselastactivity = (int)totalclock;
-        MOUSE_ClearButton(WHEELUP_MOUSE);
+        MOUSE_ClearButton(M_WHEELUP);
         event.at0 = kMenuEventScrollUp;
     }
-    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&M_WHEELDOWN))
     {
         gGameMenuMgr.m_mouselastactivity = (int)totalclock;
-        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        MOUSE_ClearButton(M_WHEELDOWN);
         event.at0 = kMenuEventScrollDown;
     }
     else

@@ -35,7 +35,7 @@ BitReader::BitReader(SmackerCommon::FileStream &file, uint32_t size)
 
 BitReader::~BitReader()
 {
-    Bfree(this->cache);
+	Xfree(this->cache);
 }
 
 void BitReader::FillCache()

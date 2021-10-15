@@ -1324,6 +1324,8 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         yax_updategrays(*pZ);
 #endif
 
+    calc_sector_reachability();
+
     g_loadedMapVersion = 7;
 
     return 0;

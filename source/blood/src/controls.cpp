@@ -76,7 +76,7 @@ void ctrlInit(void)
 
     // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
     for (int i = 0; i < joystick.numAxes; i++)
-        joySetDeadZone(i, JoystickAnalogueDead[i], JoystickAnalogueSaturate[i]);
+        JOYSTICK_SetDeadZone(i, JoystickAnalogueDead[i], JoystickAnalogueSaturate[i]);
     CONTROL_DefineFlag(gamefunc_Move_Forward, false);
     CONTROL_DefineFlag(gamefunc_Move_Backward, false);
     CONTROL_DefineFlag(gamefunc_Turn_Left, false);

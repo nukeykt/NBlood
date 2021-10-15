@@ -78,7 +78,7 @@ void SetVideoMode(CGameMenuItemChain *);
 void SetWidescreen(CGameMenuItemZBool *);
 void SetFOV(CGameMenuItemSlider *);
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
-void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
+//void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *);
 void ResetVideoColor(CGameMenuItemChain *);
 #ifdef USE_OPENGL
@@ -509,7 +509,7 @@ CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 
 CGameMenuItemZBool itemOptionsDisplayModeFullscreen("FULLSCREEN:", 3, 66, 80, 180, 0, NULL, NULL, NULL);
 CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, NULL, pzVSyncStrings, 3, 0);
 CGameMenuItemZCycle itemOptionsDisplayModeFrameLimit("FRAMERATE LIMIT:", 3, 66, 100, 180, 0, UpdateVideoModeMenuFrameLimit, pzFrameLimitStrings, 8, 0);
-CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideoModeMenuFPSOffset, -1, -1, kMenuSliderValue);
+// CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideoModeMenuFPSOffset, -1, -1, kMenuSliderValue);
 CGameMenuItemChain itemOptionsDisplayModeApply("APPLY CHANGES", 3, 66, 125, 180, 0, NULL, 0, SetVideoMode, 0);
 
 void PreDrawDisplayColor(CGameMenuItem *);
@@ -669,8 +669,8 @@ CGameMenuItemChain itemOptionsControlKeyboardResetClassic("Reset Keys (classic).
 
 void SetMouseAimMode(CGameMenuItemZBool *pItem);
 void SetMouseVerticalAim(CGameMenuItemZBool *pItem);
-void SetMouseXScale(CGameMenuItemSlider *pItem);
-void SetMouseYScale(CGameMenuItemSlider *pItem);
+void SetMouseXSensitivity(CGameMenuItemSliderFloat *pItem);
+void SetMouseYSensitivity(CGameMenuItemSliderFloat*pItem);
 
 void PreDrawControlMouse(CGameMenuItem *pItem);
 
@@ -678,12 +678,12 @@ void SetupMouseButtonMenu(CGameMenuItemChain *pItem);
 
 CGameMenuItemTitle itemOptionsControlMouseTitle("MOUSE SETUP", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsControlMouseButton("BUTTON ASSIGNMENT", 3, 66, 60, 180, 0, &menuOptionsControlMouseButtonAssignment, 0, SetupMouseButtonMenu, 0);
-CGameMenuItemSliderFloat itemOptionsControlMouseSensitivity("SENSITIVITY:", 3, 66, 70, 180, &CONTROL_MouseSensitivity, 0.5f, 16.f, 0.5f, SetMouseSensitivity, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsControlMouseSensitivity("SENSITIVITY:", 3, 66, 70, 180, &CONTROL_MouseSensitivity, 1.f, 10.f, 0.1f, SetMouseSensitivity, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsControlMouseAimFlipped("INVERT AIMING:", 3, 66, 80, 180, false, SetMouseAimFlipped, NULL, NULL);
 CGameMenuItemZBool itemOptionsControlMouseAimMode("AIMING TYPE:", 3, 66, 90, 180, false, SetMouseAimMode, "HOLD", "TOGGLE");
 CGameMenuItemZBool itemOptionsControlMouseVerticalAim("VERTICAL AIMING:", 3, 66, 100, 180, false, SetMouseVerticalAim, NULL, NULL);
-CGameMenuItemSlider itemOptionsControlMouseXScale("X-SCALE:", 3, 66, 110, 180, 0, 0, 65536, 1024, SetMouseXScale, -1, -1, kMenuSliderQ16);
-CGameMenuItemSlider itemOptionsControlMouseYScale("Y-SCALE:", 3, 66, 120, 180, 0, 0, 65536, 1024, SetMouseYScale, -1, -1, kMenuSliderQ16);
+CGameMenuItemSliderFloat itemOptionsControlMouseXSensitivity("HORIZ SENS:", 3, 66, 110, 180, &CONTROL_MouseAxesSensitivity[0], 1.f, 10.f, 0.1f, SetMouseXSensitivity, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsControlMouseYSensitivity("VERT SENS:", 3, 66, 120, 180, &CONTROL_MouseAxesSensitivity[1], 1.f, 10.f, 0.1f, SetMouseYSensitivity, -1, -1, kMenuSliderValue);
 
 void SetupNetworkMenu(void);
 void SetupNetworkHostMenu(CGameMenuItemChain *pItem);
@@ -1238,7 +1238,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeVSync, false);
 #endif
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFrameLimit, false);
-    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFPSOffset, false);
+    //menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFPSOffset, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeApply, false);
     menuOptionsDisplayMode.Add(&itemBloodQAV, false);
 
@@ -1246,7 +1246,7 @@ void SetupOptionsMenu(void)
     itemOptionsDisplayModeRenderer.pPreDrawCallback = PreDrawVideoModeMenu;
 #endif
     itemOptionsDisplayModeFullscreen.pPreDrawCallback = PreDrawVideoModeMenu;
-    itemOptionsDisplayModeFPSOffset.pPreDrawCallback = PreDrawVideoModeMenu;
+    //itemOptionsDisplayModeFPSOffset.pPreDrawCallback = PreDrawVideoModeMenu;
 
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorTitle, false);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorGamma, true);
@@ -1319,8 +1319,8 @@ void SetupOptionsMenu(void)
     menuOptionsControlMouse.Add(&itemOptionsControlMouseAimFlipped, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseAimMode, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseVerticalAim, false);
-    menuOptionsControlMouse.Add(&itemOptionsControlMouseXScale, false);
-    menuOptionsControlMouse.Add(&itemOptionsControlMouseYScale, false);
+    menuOptionsControlMouse.Add(&itemOptionsControlMouseXSensitivity, false);
+    menuOptionsControlMouse.Add(&itemOptionsControlMouseYSensitivity, false);
     menuOptionsControlMouse.Add(&itemBloodQAV, false);
 
     itemOptionsControlMouseVerticalAim.pPreDrawCallback = PreDrawControlMouse;
@@ -1695,7 +1695,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
             break;
         }
     }
-    itemOptionsDisplayModeFPSOffset.nValue = r_maxfpsoffset;
+    // itemOptionsDisplayModeFPSOffset.nValue = r_maxfpsoffset;
 }
 
 void PreDrawVideoModeMenu(CGameMenuItem *pItem)
@@ -1711,14 +1711,14 @@ void PreDrawVideoModeMenu(CGameMenuItem *pItem)
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
 {
     r_maxfps = nFrameLimitValues[pItem->m_nFocus];
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+    g_frameDelay = calcFrameDelay(r_maxfps);
 }
 
-void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem)
-{
-    r_maxfpsoffset = pItem->nValue;
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
-}
+//void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem)
+//{
+//    r_maxfpsoffset = pItem->nValue;
+//    g_frameDelay = calcFrameDelay(r_maxfps);
+//}
 
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *pItem)
 {
@@ -1996,14 +1996,14 @@ void SetMouseVerticalAim(CGameMenuItemZBool *pItem)
     gMouseAim = pItem->at20;
 }
 
-void SetMouseXScale(CGameMenuItemSlider *pItem)
+void SetMouseXSensitivity(CGameMenuItemSliderFloat *pItem)
 {
-    CONTROL_SetAnalogAxisScale(0, pItem->nValue, controldevice_mouse);
+    CONTROL_MouseAxesSensitivity[0] = pItem->fValue;
 }
 
-void SetMouseYScale(CGameMenuItemSlider *pItem)
+void SetMouseYSensitivity(CGameMenuItemSliderFloat*pItem)
 {
-    CONTROL_SetAnalogAxisScale(1, pItem->nValue, controldevice_mouse);
+    CONTROL_MouseAxesSensitivity[1] = pItem->fValue;
 }
 
 void SetupMouseMenu(CGameMenuItemChain *pItem)
@@ -2012,8 +2012,8 @@ void SetupMouseMenu(CGameMenuItemChain *pItem)
     itemOptionsControlMouseAimFlipped.at20 = gMouseAimingFlipped;
     itemOptionsControlMouseAimMode.at20 = gMouseAiming;
     itemOptionsControlMouseVerticalAim.at20 = gMouseAim;
-    itemOptionsControlMouseXScale.nValue = CONTROL_MouseAxesScale[0];
-    itemOptionsControlMouseYScale.nValue = CONTROL_MouseAxesScale[1];
+    // itemOptionsControlMouseXScale.nValue = CONTROL_MouseAxesScale[0];
+    // itemOptionsControlMouseYScale.nValue = CONTROL_MouseAxesScale[1];
 }
 
 void PreDrawControlMouse(CGameMenuItem *pItem)

@@ -818,11 +818,6 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
         //ud.statusbarmode = (ud.screen_size < 8);
         viewResizeView(gViewSize);
     }
-    else if (!Bstrcasecmp(parm->name, "r_maxfps") || !Bstrcasecmp(parm->name, "r_maxfpsoffset"))
-    {
-        if (r_maxfps != 0) r_maxfps = clamp(r_maxfps, 30, 1000);
-        g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
-    }
     else if (!Bstrcasecmp(parm->name, "r_ambientlight"))
     {
         if (r_ambientlight == 0)
@@ -1041,8 +1036,8 @@ int32_t registerosdcommands(void)
         { "in_mouseflip", "invert vertical mouse movement", (void *)&gMouseAimingFlipped, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "toggles vertical mouse view", (void *)&gMouseAim, CVAR_BOOL, 0, 1 },
 
-        { "in_mousexscale", "scale modifier for mouse x axis", (void *)&CONTROL_MouseAxesScale[0], CVAR_INT, 1, 65536 },
-        { "in_mouseyscale", "scale modifier for mouse y axis", (void *)&CONTROL_MouseAxesScale[1], CVAR_INT, 1, 65536 },
+        { "in_mousexsensitivity", "horizontal mouse sensitivity", (void*)&CONTROL_MouseAxesSensitivity[0], CVAR_FLOAT, 0, 25 },
+        { "in_mouseysensitivity", "vertical mouse sensitivity",   (void*)&CONTROL_MouseAxesSensitivity[1], CVAR_FLOAT, 0, 25 },
 //
         { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
         { "mus_restartonload", "restart the music when loading a saved game with the same map or not", (void *)&MusicRestartsOnLoadToggle, CVAR_BOOL, 0, 1 },
@@ -1064,8 +1059,6 @@ int32_t registerosdcommands(void)
         { "r_precache", "enable/disable the pre-level caching routine", (void *)&useprecache, CVAR_BOOL, 0, 1 },
 //
         { "r_ambientlight", "sets the global map light level",(void *)&r_ambientlight, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-        { "r_maxfps", "limit the frame rate",(void *)&r_maxfps, CVAR_INT|CVAR_FUNCPTR, 0, 1000 },
-        { "r_maxfpsoffset", "menu-controlled offset for r_maxfps",(void *)&r_maxfpsoffset, CVAR_INT|CVAR_FUNCPTR, -10, 10 },
 
         { "sensitivity","changes the mouse sensitivity", (void *)&CONTROL_MouseSensitivity, CVAR_FLOAT|CVAR_FUNCPTR, 0, 25 },
 //

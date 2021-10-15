@@ -184,16 +184,16 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     int nHandleSMK = credKOpen4Load(pzSMK);
     if (nHandleSMK == -1)
     {
-        Bfree(pzSMK_);
-        Bfree(pzWAV_);
+        Xfree(pzSMK_);
+        Xfree(pzWAV_);
         return FALSE;
     }
     kclose(nHandleSMK);
     SmackerHandle hSMK = Smacker_Open(pzSMK);
     if (!hSMK.isValid)
     {
-        Bfree(pzSMK_);
-        Bfree(pzWAV_);
+        Xfree(pzSMK_);
+        Xfree(pzWAV_);
         return FALSE;
     }
     uint32_t nWidth, nHeight;
@@ -207,8 +207,8 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     if (!pFrame)
     {
         Smacker_Close(hSMK);
-        Bfree(pzSMK_);
-        Bfree(pzWAV_);
+        Xfree(pzSMK_);
+        Xfree(pzWAV_);
         return FALSE;
     }
     int nFrameRate = Smacker_GetFrameRate(hSMK);
@@ -293,9 +293,9 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     walock[kSMKTile] = 0;
     waloff[kSMKTile] = 0;
     tileSetSize(kSMKTile, 0, 0);
-    Bfree(pFrame);
-    Bfree(pzSMK_);
-    Bfree(pzWAV_);
+    Xfree(pFrame);
+    Xfree(pzSMK_);
+    Xfree(pzWAV_);
 
     return TRUE;
 }

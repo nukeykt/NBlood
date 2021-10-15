@@ -173,6 +173,7 @@ void app_crashhandler(void)
     // NUKE-TODO:
 }
 
+extern "C" void M32RunScript(const char* s);
 void M32RunScript(const char *s)
 {
     UNREFERENCED_PARAMETER(s);
@@ -1601,7 +1602,7 @@ int app_main(int argc, char const * const * argv)
         char *str = Bstrtolower(Xstrdup(gamefunctions[i]));
         hash_add(&h_gamefuncs,gamefunctions[i],i,0);
         hash_add(&h_gamefuncs,str,i,0);
-        Bfree(str);
+        Xfree(str);
     }
     
 #ifdef STARTUP_SETUP_WINDOW
@@ -2637,10 +2638,10 @@ bool AddINIFile(const char *pzFile, bool bForce = false)
         if (findfrompath(pzFile, &pzFN)) return false; // failed to resolve the filename
         if (Bstat(pzFN, &st))
         {
-            Bfree(pzFN);
+            Xfree(pzFN);
             return false;
         } // failed to stat the file
-        Bfree(pzFN);
+        Xfree(pzFN);
         IniFile *pTempIni = new IniFile(pzFile);
         if (!pTempIni->FindSection("Episode1"))
         {

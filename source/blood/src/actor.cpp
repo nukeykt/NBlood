@@ -4765,7 +4765,7 @@ void MoveDude(spritetype *pSprite)
             sfxPlay3DSound(pSprite, 719, 0, 0);
         }
     }
-    vec3_t const oldpos = pSprite->pos;
+    vec3_t const oldpos = pSprite->xyz;
     int nLink = CheckLink(pSprite);
     if (nLink)
     {

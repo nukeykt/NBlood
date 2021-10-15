@@ -133,7 +133,7 @@ void IniFile::Load()
         void *pBuffer = Xcalloc(1, nSize + 1);
         kread(fp, pBuffer, nSize);
         LoadRes(pBuffer);
-        Bfree(pBuffer);
+        Xfree(pBuffer);
     }
     else
         curNode->next = &head;

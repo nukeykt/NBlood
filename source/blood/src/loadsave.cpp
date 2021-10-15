@@ -135,6 +135,7 @@ void LoadSave::LoadGame(char *pzFile)
 #ifdef YAX_ENABLE
     yax_update(numyaxbunches > 0 ? 2 : 1);
 #endif
+    calc_sector_reachability();
     memset(myMinLag, 0, sizeof(myMinLag));
     otherMinLag = 0;
     myMaxLag = 0;

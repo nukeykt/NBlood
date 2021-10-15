@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "baselayer.h"
 #include "palette.h"
+#include "texcache.h"
 
 #ifdef _WIN32
 # include "windows_inc.h"
@@ -45,7 +46,7 @@ char *g_grpNamePtr = NULL;
 
 void clearGrpNamePtr(void)
 {
-    Bfree(g_grpNamePtr);
+    Xfree(g_grpNamePtr);
     // g_grpNamePtr assumed to be assigned to right after
 }
 
@@ -117,7 +118,7 @@ void G_ExtInit(void)
 #ifdef EDUKE32_OSX
     char *appdir = Bgetappdir();
     addsearchpath(appdir);
-    Bfree(appdir);
+    Xfree(appdir);
 #endif
 
     if (getcwd(cwd,BMAX_PATH) && Bstrcmp(cwd,"/") != 0)
@@ -137,8 +138,8 @@ void G_ExtInit(void)
                            i==-1 ? "not a directory" : "no such directory");
             }
 
-            Bfree(CommandPaths->str);
-            Bfree(CommandPaths);
+            Xfree(CommandPaths->str);
+            Xfree(CommandPaths);
             CommandPaths = s;
         }
     }
@@ -171,7 +172,7 @@ void G_ExtInit(void)
             }
             if (asperr == 0)
                 Bchdir(cwd);
-            Bfree(homedir);
+            Xfree(homedir);
         }
     }
 }
@@ -265,8 +266,8 @@ void G_LoadGroups(int32_t autoload)
                 G_DoAutoload(CommandGrps->str);
         }
 
-        Bfree(CommandGrps->str);
-        Bfree(CommandGrps);
+        Xfree(CommandGrps->str);
+        Xfree(CommandGrps);
         CommandGrps = s;
     }
     pathsearchmode = bakpathsearchmode;
@@ -317,7 +318,7 @@ void G_AddSearchPaths(void)
     Blood_Add_GOG_OUWB_Linux(buf);
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Blood_One_Unit_Whole_Blood", Blood_Add_GOG_OUWB_Linux);
 
-    Bfree(homepath);
+    Xfree(homepath);
 
     addsearchpath("/usr/share/games/nblood");
     addsearchpath("/usr/local/share/games/nblood");
@@ -344,8 +345,8 @@ void G_AddSearchPaths(void)
 
     for (i = 0; i < 2; i++)
     {
-        Bfree(applications[i]);
-        Bfree(support[i]);
+        Xfree(applications[i]);
+        Xfree(support[i]);
     }
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = {0};
@@ -577,7 +578,7 @@ int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic)
 
     fp = origfp;
 success:
-    Bfree(testfn);
+    Xfree(testfn);
     if (fp != origfp)
         kclose(origfp);
 
