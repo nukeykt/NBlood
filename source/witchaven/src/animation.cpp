@@ -3577,5 +3577,5 @@ void checkhit(short i, short j)
 
     hitscan(&pos, dasectnum, Cos(daang2 + 2048), Sin(daang2 + 2048), daz2, &hitinfo, CLIPMASK1); // CHECKME - is CLIPMASK1 correct for version of this function that hadn't got cliptype param?
 
-    sprite[i].ang = (getangle(hitinfo.pos.x - sprite[i].x, hitinfo.pos.y - sprite[i].y) & kAngleMask);
+    sprite[i].ang = (getangle(hitinfo.x - sprite[i].x, hitinfo.y - sprite[i].y) & kAngleMask);
 }

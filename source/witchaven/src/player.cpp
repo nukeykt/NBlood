@@ -1568,9 +1568,9 @@ void plruse(Player* plr)
                 daz2,                    // Z vector of 3D ang
                 &hitinfo, CLIPMASK1); // CHECKME - is CLIPMASK1 correct for version of this function that hadn't got cliptype param?
 
-            hitx = hitinfo.pos.x;
-            hity = hitinfo.pos.y;
-            hitz = hitinfo.pos.z;
+            hitx = hitinfo.x;
+            hity = hitinfo.y;
+            hitz = hitinfo.z;
 
             if (hitinfo.wall >= 0)
             {
@@ -2851,9 +2851,9 @@ void shootgun(Player *plr, short daang, char guntype)
             hitsprite = hitinfo.sprite;
             hitsect = hitinfo.sect;
             hitwall = hitinfo.wall;
-            hitx = hitinfo.pos.x;
-            hity = hitinfo.pos.y;
-            hitz = hitinfo.pos.z;
+            hitx = hitinfo.x;
+            hity = hitinfo.y;
+            hitz = hitinfo.z;
 
             if (hitsprite >= 0)
                 madeahit = 1;
@@ -3559,9 +3559,9 @@ void shootgun(Player *plr, short daang, char guntype)
         hitsprite = hitinfo.sprite;
         hitsect = hitinfo.sect;
         hitwall = hitinfo.wall;
-        hitx = hitinfo.pos.x;
-        hity = hitinfo.pos.y;
-        hitz = hitinfo.pos.z;
+        hitx = hitinfo.x;
+        hity = hitinfo.y;
+        hitz = hitinfo.z;
 
         if (hitwall > 0 && hitsprite < 0)
         {
@@ -3777,9 +3777,9 @@ void shootgun(Player *plr, short daang, char guntype)
         hitsprite = hitinfo.sprite;
         hitsect = hitinfo.sect;
         hitwall = hitinfo.wall;
-        hitx = hitinfo.pos.x;
-        hity = hitinfo.pos.y;
-        hitz = hitinfo.pos.z;
+        hitx = hitinfo.x;
+        hity = hitinfo.y;
+        hitz = hitinfo.z;
 
         if (hitsect < 0 && hitsprite < 0 || hitwall >= 0)
         {

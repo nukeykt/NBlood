@@ -58,7 +58,7 @@ int runkey_mode, auto_run;
 # define FPS_YOFFSET 0
 #endif
 
-
+extern "C" void M32RunScript(const char* s);
 void M32RunScript(const char* s) { UNREFERENCED_PARAMETER(s); }
 void app_crashhandler(void)
 {
@@ -1607,7 +1607,7 @@ int app_main(int argc, char const* const* argv)
     if (enginePostInit())
         shutdown();
 
-    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+    g_frameDelay = calcFrameDelay(r_maxfps);
 
     KB_Startup();
     InitTimer();
