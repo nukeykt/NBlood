@@ -57,7 +57,7 @@ hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
 int32_t MouseDeadZone, MouseBias;
 int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
-int32_t MouseAnalogueAxes[MAXMOUSEAXES];
+//int32_t MouseAnalogueAxes[MAXMOUSEAXES];
 int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];
 int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
 int32_t JoystickAnalogueAxes[MAXJOYAXES];
@@ -435,6 +435,7 @@ void CONFIG_SetDefaults(void)
         CONTROL_MapButton(MouseFunctions[i][1], i, 1, controldevice_mouse);
     }
 
+#if 0
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
         CONTROL_SetAnalogAxisScale(i, DEFAULTMOUSEANALOGUESCALE, controldevice_mouse);
@@ -442,6 +443,7 @@ void CONFIG_SetDefaults(void)
         MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
         CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i]);
     }
+#endif
 
     for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
     {
@@ -539,6 +541,7 @@ void CONFIG_SetupMouse(void)
             MouseFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
     }
 
+#if 0
     // map over the axes
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
@@ -548,14 +551,17 @@ void CONFIG_SetupMouse(void)
             if (CONFIG_AnalogNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
                 MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
     }
+#endif
 
     for (int i=0; i<MAXMOUSEBUTTONS; i++)
     {
         CONTROL_MapButton(MouseFunctions[i][0], i, 0, controldevice_mouse);
         CONTROL_MapButton(MouseFunctions[i][1], i, 1,  controldevice_mouse);
     }
+#if 0
     for (int i=0; i<MAXMOUSEAXES; i++)
         CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i]);
+#endif
 }
 
 
@@ -884,6 +890,7 @@ void CONFIG_WriteSetup(uint32_t flags)
             }
         }
 
+#if 0
         for (int i=0; i<MAXMOUSEAXES; i++)
         {
             if (CONFIG_AnalogNumToName(MouseAnalogueAxes[i]))
@@ -892,6 +899,7 @@ void CONFIG_WriteSetup(uint32_t flags)
                 SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_AnalogNumToName(MouseAnalogueAxes[i]));
             }
         }
+#endif
     }
 
     if (gSetup.usejoystick)
