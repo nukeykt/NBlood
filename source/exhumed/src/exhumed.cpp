@@ -1175,7 +1175,7 @@ void CheckKeys()
                         pToken = safeStrtok(NULL, ",");
                         sprite[nSprite].y = atoi(pToken);
 
-                        setsprite(nSprite, &sprite[nSprite].pos);
+                        setsprite(nSprite, &sprite[nSprite].xyz);
                         sprite[nSprite].z = sector[sprite[nSprite].sectnum].floorz;
                     }
                     else if (!strcmp(pToken, "LEVEL"))
@@ -1592,6 +1592,7 @@ void DrawClock()
     DoEnergyTile();
 }
 
+extern "C" void M32RunScript(const char* s);
 void M32RunScript(const char* s) { UNREFERENCED_PARAMETER(s); }
 void app_crashhandler(void)
 {
@@ -2284,7 +2285,7 @@ int app_main(int argc, char const* const* argv)
     if (enginePostInit())
         ShutDown();
 
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+    g_frameDelay = calcFrameDelay(r_maxfps);
 
     // loc_11745:
 //    FadeOut(0);

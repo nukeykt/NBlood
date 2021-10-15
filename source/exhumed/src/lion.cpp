@@ -450,8 +450,8 @@ void FuncLion(int a, int nDamage, int nRun)
 
                             hitscan(&startPos, sprite[nSprite].sectnum, Cos(nScanAngle), Sin(nScanAngle), 0, &hitData, CLIPMASK1);
 
-                            hitx = hitData.pos.x;
-                            hity = hitData.pos.y;
+                            hitx = hitData.x;
+                            hity = hitData.y;
                             hitwall = hitData.wall;
 
                             if (hitwall > -1)

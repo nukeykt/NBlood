@@ -145,9 +145,9 @@ int BuildSnake(short nPlayer, short zVal)
     hitdata_t hitData;
     hitscan(&pos, sprite[nPlayerSprite].sectnum, Cos(nAngle), Sin(nAngle), 0, &hitData, CLIPMASK1);
 
-    hitx = hitData.pos.x;
-    hity = hitData.pos.y;
-    hitz = hitData.pos.z;
+    hitx = hitData.x;
+    hity = hitData.y;
+    hitz = hitData.z;
     hitsect = hitData.sect;
     hitsprite = hitData.sprite;
 

@@ -357,9 +357,9 @@ int CheckCloseRange(short nPlayer, int *x, int *y, int *z, short *nSector)
     vec3_t startPos = { *x, *y, *z };
     hitdata_t hitData;
     hitscan(&startPos, *nSector, xVect, yVect, 0, &hitData, CLIPMASK1);
-    hitX = hitData.pos.x;
-    hitY = hitData.pos.y;
-    hitZ = hitData.pos.z;
+    hitX = hitData.x;
+    hitY = hitData.y;
+    hitZ = hitData.z;
     hitSprite = hitData.sprite;
     hitSect = hitData.sect;
     hitWall = hitData.wall;

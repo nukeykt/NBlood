@@ -781,7 +781,7 @@ void RestartPlayer(short nPlayer)
         floorspr = -1;
     }
 
-    PlayerList[nPlayer].opos = sprite[nSprite].pos;
+    PlayerList[nPlayer].opos = sprite[nSprite].xyz;
     PlayerList[nPlayer].q16oangle = PlayerList[nPlayer].q16angle;
 
     nPlayerFloorSprite[nPlayer] = floorspr;
@@ -1799,7 +1799,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
 
     short nSprite2;
 
-    PlayerList[nPlayer].opos = sprite[nPlayerSprite].pos;
+    PlayerList[nPlayer].opos = sprite[nPlayerSprite].xyz;
     PlayerList[nPlayer].q16oangle = PlayerList[nPlayer].q16angle;
     PlayerList[nPlayer].q16ohoriz = PlayerList[nPlayer].q16horiz;
     oeyelevel[nPlayer] = eyelevel[nPlayer];

@@ -6,10 +6,9 @@
 #include "build.h"
 #include "baselayer.h"
 #include "palette.h"
-
 #include "grpscan.h"
-
 #include "vfs.h"
+#include "texcache.h"
 
 #ifdef _WIN32
 # include "windows_inc.h"
@@ -578,7 +577,7 @@ int32_t S_OpenAudio(const char* fn, char searchfirst, uint8_t const ismusic)
 
     fp = origfp;
 success:
-    Bfree(testfn);
+    Xfree(testfn);
     if (fp != origfp)
         kclose(origfp);
 

@@ -371,23 +371,23 @@ static void CONFIG_SetJoystickAnalogAxisScale(int i, int scale)
 static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
 {
     JoystickAnalogueInvert[i] = invert;
-    CONTROL_SetAnalogAxisInvert(i, invert, controldevice_joystick);
+    CONTROL_SetAnalogAxisInvert(i, invert);
 }
 static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
 {
     JoystickAnalogueDead[i] = dead;
     JoystickAnalogueSaturate[i] = saturate;
-    joySetDeadZone(i, dead, saturate);
+    JOYSTICK_SetDeadZone(i, dead, saturate);
 }
 static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
 {
     JoystickDigitalFunctions[i][j] = function;
-    CONTROL_MapDigitalAxis(i, function, j, controldevice_joystick);
+    CONTROL_MapDigitalAxis(i, function, j);
 }
 static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
 {
     JoystickAnalogueAxes[i] = function;
-    CONTROL_MapAnalogAxis(i, function, controldevice_joystick);
+    CONTROL_MapAnalogAxis(i, function);
 }
 
 
@@ -524,11 +524,11 @@ void CONFIG_SetDefaults()
 
         MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2]);
         MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2+1]);
-        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0, controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1, controldevice_mouse);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1);
 
         MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
-        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i], controldevice_mouse);
+        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i]);
     }
 
     // TODO:
@@ -604,7 +604,7 @@ int CONFIG_ReadSetup()
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenWidth", &gSetup.xdim);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", &windowx);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", &windowy);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", &windowpos);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", &r_windowpositioning);
 
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "FullScreen", &bFullScreen);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenSize", &screensize);
@@ -721,9 +721,9 @@ void CONFIG_SetupMouse(void)
     }
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i], controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0,controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1,controldevice_mouse);
+        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i]);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1);
         CONTROL_SetAnalogAxisScale(i, MouseAnalogueScale[i], controldevice_mouse);
     }
 }
@@ -797,11 +797,11 @@ void CONFIG_SetupJoystick(void)
     }
     for (i=0; i<MAXJOYAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, JoystickAnalogueAxes[i], controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
+        CONTROL_MapAnalogAxis(i, JoystickAnalogueAxes[i]);
+        CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][0], 0);
+        CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][1], 1);
         CONTROL_SetAnalogAxisScale(i, JoystickAnalogueScale[i], controldevice_joystick);
-        CONTROL_SetAnalogAxisInvert(i, JoystickAnalogueInvert[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, JoystickAnalogueInvert[i]);
     }
 }
 
@@ -822,7 +822,7 @@ void SetupInput()
 
     // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
     for (int i=0; i<joystick.numAxes; i++)
-        joySetDeadZone(i,JoystickAnalogueDead[i],JoystickAnalogueSaturate[i]);
+        JOYSTICK_SetDeadZone(i,JoystickAnalogueDead[i],JoystickAnalogueSaturate[i]);
 }
 
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
@@ -933,7 +933,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", maxrefreshfreq, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPosX", windowx, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPosY", windowy, FALSE, FALSE);
-    SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPositioning", windowpos, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPositioning", r_windowpositioning, FALSE, FALSE);
 
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "FullScreen", bFullScreen, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenSize", screensize, FALSE, FALSE);
