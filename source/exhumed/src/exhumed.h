@@ -31,6 +31,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "grpscan.h"
 
 #define kTimerTicks		120
+////////// TIMING CONSTANTS //////////
+// The number of 'totalclock' increments per second:
+#define TICRATE             120
+// The number of game state updates per second:
+#define REALGAMETICSPERSEC  30
+// The number of 'totalclock' increments per game state update:
+// NOTE: calling a game state update a 'frame' is really weird.
+// (This used to be TICRATE/GAMETICSPERSEC, which was 120/26 = 4.615~ truncated
+// to 4 by integer division.)
+#define TICSPERFRAME        (TICRATE/REALGAMETICSPERSEC)
+// Used as a constant to satisfy all of the calculations written with ticrate =
+// 26 in mind:
+#define GAMETICSPERSEC      26
 
 #ifdef __WATCOMC__
 void handleevents();
