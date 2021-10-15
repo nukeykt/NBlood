@@ -199,7 +199,7 @@ int32_t A_GetHitscanRange(int spriteNum)
             sintable[SA(spriteNum) & 2047], 0, &hitData, CLIPMASK1);
     SZ(spriteNum) += zOffset;
 
-    return (FindDistance2D(hitData.pos.x - SX(spriteNum), hitData.pos.y - SY(spriteNum)));
+    return (FindDistance2D(hitData.x - SX(spriteNum), hitData.y - SY(spriteNum)));
 }
 
 static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projecTile)
@@ -503,8 +503,8 @@ static int Proj_DoHitscan(int spriteNum, int32_t const cstatmask, const vec3_t *
                     && sprite[spriteNum].lotag == SE_7_TELEPORT)
                 {
                     vec3_t const newVect = {
-                        hitData->pos.x + (sprite[OW(spriteNum)].x - sprite[spriteNum].x),
-                        hitData->pos.y + (sprite[OW(spriteNum)].y - sprite[spriteNum].y),
+                        hitData->x + (sprite[OW(spriteNum)].x - sprite[spriteNum].x),
+                        hitData->y + (sprite[OW(spriteNum)].y - sprite[spriteNum].y),
                         sector[hitData->sect].lotag == 161 ? sector[sprite[OW(spriteNum)].sectnum].floorz
                         : sector[sprite[OW(spriteNum)].sectnum].ceilingz
                     };
@@ -540,7 +540,7 @@ static inline void HandleHitWall(hitdata_t *hitData)
 {
     uwalltype const * const hitWall = (uwalltype *)&wall[hitData->wall];
 
-    if ((hitWall->cstat & 2) && redwallp(hitWall) && (hitData->pos.z >= sector[hitWall->nextsector].floorz))
+    if ((hitWall->cstat & 2) && redwallp(hitWall) && (hitData->z >= sector[hitWall->nextsector].floorz))
         hitData->wall = hitWall->nextwall;
 }
 
@@ -553,7 +553,7 @@ static int Proj_CheckBlood(vec3_t const *const srcVect, hitdata_t const *const h
 
     uwalltype const *const hitWall = (uwalltype *)&wall[hitData->wall];
 
-    if ((FindDistance2D(srcVect->x - hitData->pos.x, srcVect->y - hitData->pos.y) < bloodRange)
+    if ((FindDistance2D(srcVect->x - hitData->x, srcVect->y - hitData->y) < bloodRange)
         && (hitWall->overpicnum != BIGFORCE && (hitWall->cstat & 16) == 0)
         && (sector[hitData->sect].lotag == 0)
         && (hitWall->nextsector < 0 || (sector[hitWall->nextsector].lotag == 0 && sector[hitData->sect].lotag == 0
@@ -682,13 +682,13 @@ growspark_rr:
                         sprite[spawnedSprite].xvel = -12;
                         sprite[spawnedSprite].ang
                         = (getangle(hitwal->x - wall[hitwal->point2].x, hitwal->y - wall[hitwal->point2].y) + 512) & 2047;
-                        sprite[spawnedSprite].pos = hitData.pos;
+                        sprite[spawnedSprite].xyz = hitData.xyz;
                         sprite[spawnedSprite].cstat |= (krand2() & 4);
                         if (REALITY)
                         {
                             sprite[spawnedSprite].ang = (sprite[spawnedSprite].ang + 1024) & 2047;
-                            sprite[spawnedSprite].pos.x += sintable[(sprite[spawnedSprite].ang + 512) & 2047] >> 10;
-                            sprite[spawnedSprite].pos.y += sintable[sprite[spawnedSprite].ang & 2047] >> 10;
+                            sprite[spawnedSprite].x += sintable[(sprite[spawnedSprite].ang + 512) & 2047] >> 10;
+                            sprite[spawnedSprite].y += sintable[sprite[spawnedSprite].ang & 2047] >> 10;
                         }
                         A_SetSprite(spawnedSprite, CLIPMASK0);
                         setsprite(spawnedSprite, (vec3_t *)&sprite[spawnedSprite]);
@@ -703,11 +703,11 @@ growspark_rr:
             if (hitData.sect < 0)
                 break;
 
-            if (klabs(startPos.x - hitData.pos.x) + klabs(startPos.y - hitData.pos.y) < 1024)
+            if (klabs(startPos.x - hitData.x) + klabs(startPos.y - hitData.y) < 1024)
             {
                 if (hitData.wall >= 0 || hitData.sprite >= 0)
                 {
-                    int kneeSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z,
+                    int kneeSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z,
                         (RRRA && projecTile == SLINGBLADE) ? SLINGBLADE : KNEE,-15,0,0,shootAng,32,0,spriteNum,4);
                     sprite[kneeSprite].extra += (RRRA && projecTile == SLINGBLADE) ? 50 : (krand2()&7);
 
@@ -736,17 +736,17 @@ growspark_rr:
                         
                         if (hitData.wall >= 0 && wall[hitData.wall].picnum != ACCESSSWITCH && wall[hitData.wall].picnum != ACCESSSWITCH2)
                         {
-                            A_DamageWall(kneeSprite, hitData.wall, &hitData.pos, projecTile);
+                            A_DamageWall(kneeSprite, hitData.wall, &hitData.xyz, projecTile);
                             if (playerNum >= 0)
                                 P_ActivateSwitch(playerNum, hitData.wall, 0);
                         }
                     }
                 }
-                else if(playerNum >= 0 && hitData.pos.z > 0 && sector[hitData.sect].lotag == 1)
+                else if(playerNum >= 0 && hitData.z > 0 && sector[hitData.sect].lotag == 1)
                 {
                     int splashSprite = A_Spawn(pPlayer->i, WATERSPLASH2);
-                    sprite[splashSprite].x = hitData.pos.x;
-                    sprite[splashSprite].y = hitData.pos.y;
+                    sprite[splashSprite].x = hitData.x;
+                    sprite[splashSprite].y = hitData.y;
                     sprite[splashSprite].ang = fix16_to_int(pPlayer->q16ang); // Total tweek
                     sprite[splashSprite].xvel = 32;
                     A_SetSprite(spriteNum, RR ? 0 : CLIPMASK0);
@@ -788,13 +788,13 @@ growspark_rr:
                 return -1;
 
             if ((krand2() & 15) == 0 && sector[hitData.sect].lotag == ST_2_UNDERWATER)
-                Proj_DoWaterTracers(hitData.pos, &startPos, 8 - (ud.multimode >> 1), playerNum);
+                Proj_DoWaterTracers(hitData.xyz, &startPos, 8 - (ud.multimode >> 1), playerNum);
 
             int spawnedSprite;
 
             if (playerNum >= 0)
             {
-                spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, REALITY ? projecTile : SHOTSPARK1, -15, 10, 10, shootAng, 0, 0, spriteNum, 4);
+                spawnedSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z, REALITY ? projecTile : SHOTSPARK1, -15, 10, 10, shootAng, 0, 0, spriteNum, 4);
                 sprite[spawnedSprite].extra = G_DefaultActorHealth(projecTile);
                 sprite[spawnedSprite].extra += (krand2()%6);
 
@@ -949,12 +949,12 @@ growspark_rr:
                 SKIPBULLETHOLE:
 
                     HandleHitWall(&hitData);
-                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.pos, REALITY ? projecTile : SHOTSPARK1);
+                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.xyz, REALITY ? projecTile : SHOTSPARK1);
                 }
             }
             else
             {
-                spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, REALITY ? projecTile : SHOTSPARK1, -15, 24, 24, shootAng, 0, 0, spriteNum, 4);
+                spawnedSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z, REALITY ? projecTile : SHOTSPARK1, -15, 24, 24, shootAng, 0, 0, spriteNum, 4);
                 sprite[spawnedSprite].extra = G_DefaultActorHealth(projecTile);
                 if (REALITY)
                     sprite[spawnedSprite].cstat |= 0x80;
@@ -971,7 +971,7 @@ growspark_rr:
                     }
                 }
                 else if (hitData.wall >= 0)
-                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.pos, REALITY ? projecTile : SHOTSPARK1);
+                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.xyz, REALITY ? projecTile : SHOTSPARK1);
             }
 
             if (REALITY)
@@ -979,13 +979,13 @@ growspark_rr:
                 if (hitData.wall >= 0 && (krand2()&255) < 32)
                 {
                     if (g_tile[projecTile].execPtr != g_tile[DN64TILE2599].execPtr && g_tile[projecTile].execPtr != g_tile[DN64TILE2596].execPtr)
-                        S_PlaySound3D(272+(krand2()%5), spawnedSprite, &hitData.pos);
+                        S_PlaySound3D(272+(krand2()%5), spawnedSprite, &hitData.xyz);
                 }
                 return -1;
             }
 
             if ((krand2() & 255) < (RR ? 10 : 4))
-                S_PlaySound3D(PISTOL_RICOCHET, spawnedSprite, &hitData.pos);
+                S_PlaySound3D(PISTOL_RICOCHET, spawnedSprite, &hitData.xyz);
 
             return -1;
         }
@@ -1038,8 +1038,8 @@ growspark_rr:
                     shootAng -= krand2()&16;
                 else
                     shootAng += 16 - (krand2() & 31);
-                hitData.pos.x         = safeldist(g_player[otherPlayer].ps->i, pSprite);
-                Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.pos.x);
+                hitData.x         = safeldist(g_player[otherPlayer].ps->i, pSprite);
+                Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.x);
             }
 
             int spriteSize = (playerNum >= 0) ? 7 : 8;
@@ -1074,7 +1074,7 @@ growspark_rr:
             if (Proj_DoHitscan(spriteNum, 256 + 1, &startPos, Zvel, shootAng, &hitData))
                 return -1;
 
-            int const otherSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, GROWSPARK, -16, 28, 28,
+            int const otherSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z, GROWSPARK, -16, 28, 28,
                                                    shootAng, 0, 0, spriteNum, 1);
 
             sprite[otherSprite].pal = 2;
@@ -1089,7 +1089,7 @@ growspark_rr:
             else if (hitData.sprite >= 0)
                 A_DamageObject(hitData.sprite, otherSprite);
             else if (hitData.wall >= 0 && wall[hitData.wall].picnum != ACCESSSWITCH && wall[hitData.wall].picnum != ACCESSSWITCH2)
-                A_DamageWall(otherSprite, hitData.wall, &hitData.pos, projecTile);
+                A_DamageWall(otherSprite, hitData.wall, &hitData.xyz, projecTile);
         }
         break;
 
@@ -1174,9 +1174,9 @@ growspark_rr:
                 }
                 else
                     shootAng           += 16 - (krand2() & 31);
-                hitData.pos.x         = REALITY ? safeFindDistance2D(sprite[g_player[otherPlayer].ps->i].x - pSprite->x, sprite[g_player[otherPlayer].ps->i].y - pSprite->y)
+                hitData.x             = REALITY ? safeFindDistance2D(sprite[g_player[otherPlayer].ps->i].x - pSprite->x, sprite[g_player[otherPlayer].ps->i].y - pSprite->y)
                                                 : safeldist(g_player[otherPlayer].ps->i, pSprite);
-                Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.pos.x);
+                Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.x);
             }
 
             int spriteSize = 18;
@@ -1498,8 +1498,8 @@ growspark_rr:
                 break;
 
             if (hitData.wall >= 0 && hitData.sect >= 0)
-                if (((hitData.pos.x - startPos.x) * (hitData.pos.x - startPos.x)
-                     + (hitData.pos.y - startPos.y) * (hitData.pos.y - startPos.y))
+                if (((hitData.x - startPos.x) * (hitData.x - startPos.x)
+                     + (hitData.y - startPos.y) * (hitData.y - startPos.y))
                     < (290 * 290))
                 {
                     // ST_2_UNDERWATER
@@ -1515,7 +1515,7 @@ growspark_rr:
             if (placeMine == 1)
             {
                 int const tripBombMode = Gv_GetVarByLabel("TRIPBOMB_CONTROL", TRIPBOMB_TRIPWIRE, -1, -1);
-                int const spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, TRIPBOMB, -16, 4, 5,
+                int const spawnedSprite = A_InsertSprite(hitData.sect, hitData.x, hitData.y, hitData.z, TRIPBOMB, -16, 4, 5,
                                                          shootAng, 0, 0, spriteNum, 6);
                 if (tripBombMode & TRIPBOMB_TIMER)
                 {
@@ -5783,9 +5783,9 @@ static void P_ProcessWeapon(int playerNum)
                             int spriteNum = headspritesect[hitData.sect];
                             while (spriteNum >= 0)
                             {
-                                if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.pos.z) < ZOFFSET4 &&
-                                    ((sprite[spriteNum].x - hitData.pos.x) * (sprite[spriteNum].x - hitData.pos.x) +
-                                        (sprite[spriteNum].y - hitData.pos.y) * (sprite[spriteNum].y - hitData.pos.y)) < (290 * 290))
+                                if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.z) < ZOFFSET4 &&
+                                    ((sprite[spriteNum].x - hitData.x) * (sprite[spriteNum].x - hitData.x) +
+                                        (sprite[spriteNum].y - hitData.y) * (sprite[spriteNum].y - hitData.y)) < (290 * 290))
                                     break;
                                 spriteNum = nextspritesect[spriteNum];
                             }
@@ -5794,8 +5794,8 @@ static void P_ProcessWeapon(int playerNum)
                             if (spriteNum == -1 && hitData.wall >= 0 && (wall[hitData.wall].cstat & 16) == 0)
                                 if ((wall[hitData.wall].nextsector >= 0 && sector[wall[hitData.wall].nextsector].lotag <= 2) ||
                                     (wall[hitData.wall].nextsector == -1 && sector[hitData.sect].lotag <= 2))
-                                    if (((hitData.pos.x - pPlayer->pos.x) * (hitData.pos.x - pPlayer->pos.x) +
-                                            (hitData.pos.y - pPlayer->pos.y) * (hitData.pos.y - pPlayer->pos.y)) < (290 * 290))
+                                    if (((hitData.x - pPlayer->pos.x) * (hitData.x - pPlayer->pos.x) +
+                                            (hitData.y - pPlayer->pos.y) * (hitData.y - pPlayer->pos.y)) < (290 * 290))
                                     {
                                         pPlayer->pos.z = pPlayer->opos.z;
                                         pPlayer->vel.z = 0;

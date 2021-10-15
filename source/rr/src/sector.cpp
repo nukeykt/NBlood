@@ -4799,7 +4799,7 @@ int A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
     if (hitData.wall >= 0 && (wall[hitData.wall].cstat&16) && A_CheckEnemySprite( &sprite[spriteNum]))
         return 1<<30;
 
-    return FindDistance2D(hitData.pos.x-SX(spriteNum),hitData.pos.y-SY(spriteNum));
+    return FindDistance2D(hitData.x-SX(spriteNum),hitData.y-SY(spriteNum));
 }
 
 static int P_FindWall(DukePlayer_t *pPlayer, int *hitWall)
@@ -4814,7 +4814,7 @@ static int P_FindWall(DukePlayer_t *pPlayer, int *hitWall)
     if (hitData.wall < 0)
         return INT32_MAX;
 
-    return FindDistance2D(hitData.pos.x - pPlayer->pos.x, hitData.pos.y - pPlayer->pos.y);
+    return FindDistance2D(hitData.x - pPlayer->pos.x, hitData.y - pPlayer->pos.y);
 }
 
 // returns 1 if sprite i should not be considered by neartag

@@ -6,6 +6,7 @@
 #include "build.h"
 #include "baselayer.h"
 #include "palette.h"
+#include "texcache.h"
 
 #include "grpscan.h"
 
@@ -52,13 +53,13 @@ char *g_rtsNamePtr = NULL;
 
 void clearGrpNamePtr(void)
 {
-    Bfree(g_grpNamePtr);
+    Xfree(g_grpNamePtr);
     // g_grpNamePtr assumed to be assigned to right after
 }
 
 void clearScriptNamePtr(void)
 {
-    Bfree(g_scriptNamePtr);
+    Xfree(g_scriptNamePtr);
     // g_scriptNamePtr assumed to be assigned to right after
 }
 
@@ -259,7 +260,7 @@ void G_ExtInit(void)
 #ifdef EDUKE32_OSX
     char *appdir = Bgetappdir();
     addsearchpath(appdir);
-    Bfree(appdir);
+    Xfree(appdir);
 #endif
 
     if (getcwd(cwd,BMAX_PATH) && Bstrcmp(cwd,"/") != 0)
@@ -279,8 +280,8 @@ void G_ExtInit(void)
                            i==-1 ? "not a directory" : "no such directory");
             }
 
-            Bfree(CommandPaths->str);
-            Bfree(CommandPaths);
+            Xfree(CommandPaths->str);
+            Xfree(CommandPaths);
             CommandPaths = s;
         }
     }
@@ -313,7 +314,7 @@ void G_ExtInit(void)
             }
             if (asperr == 0)
                 Bchdir(cwd);
-            Bfree(homedir);
+            Xfree(homedir);
         }
     }
 
@@ -497,8 +498,8 @@ void G_LoadGroups(int32_t autoload)
                 G_DoAutoload(CommandGrps->str);
         }
 
-        Bfree(CommandGrps->str);
-        Bfree(CommandGrps);
+        Xfree(CommandGrps->str);
+        Xfree(CommandGrps);
         CommandGrps = s;
     }
     pathsearchmode = bakpathsearchmode;
@@ -1139,7 +1140,7 @@ int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic)
         int32_t const fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
         if (fp >= 0)
         {
-            Bfree(testfn);
+            Xfree(testfn);
             kclose(origfp);
             return fp;
         }
@@ -1157,7 +1158,7 @@ int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic)
         int32_t const fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
         if (fp >= 0)
         {
-            Bfree(testfn);
+            Xfree(testfn);
             kclose(origfp);
             return fp;
         }
@@ -1170,13 +1171,13 @@ int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic)
         int32_t const fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
         if (fp >= 0)
         {
-            Bfree(testfn);
+            Xfree(testfn);
             kclose(origfp);
             return fp;
         }
     }
 
-    Bfree(testfn);
+    Xfree(testfn);
     return origfp;
 }
 

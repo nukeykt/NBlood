@@ -380,8 +380,8 @@ bool InterplayDecoder::Run()
             handleevents();
 
             if (KB_KeyWaiting() || BUTTON(gamefunc_Fire)
-                || (JOYSTICK_GetGameControllerButtons() & (1 << GAMECONTROLLER_BUTTON_A))
-                || (JOYSTICK_GetGameControllerButtons() & (1 << GAMECONTROLLER_BUTTON_START)))
+                || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_A))
+                || (JOYSTICK_GetControllerButtons() & (1 << CONTROLLER_BUTTON_START)))
             {
                 renderSetAspect(viewingrange, oyxaspect);
                 Close();

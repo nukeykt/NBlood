@@ -2,6 +2,7 @@
 // Polymost code: Copyright Ken Silverman, Copyright (c) 2018, Alex Dawson
 #include "build.h"
 #include "colmatch.h"
+#include "texcache.h"
 #include "reality.h"
 #include "../duke3d.h"
 

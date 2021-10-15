@@ -319,7 +319,7 @@ int32_t A_GetFurthestAngle(int const spriteNum, int const angDiv)
         hitscan((const vec3_t *)pSprite, pSprite->sectnum, sintable[(j + 512) & 2047], sintable[j & 2047], 0, &hit, CLIPMASK1);
         pSprite->z += ZOFFSET3;
 
-        int const hitDist = klabs(hit.pos.x-pSprite->x) + klabs(hit.pos.y-pSprite->y);
+        int const hitDist = klabs(hit.x-pSprite->x) + klabs(hit.y-pSprite->y);
 
         if (hitDist > greatestDist)
         {
@@ -350,15 +350,15 @@ int A_FurthestVisiblePoint(int const spriteNum, uspritetype * const ts, vec2_t *
         if (hit.sect < 0)
             continue;
 
-        int const d  = klabs(hit.pos.x - ts->x) + klabs(hit.pos.y - ts->y);
-        int const da = klabs(hit.pos.x - pnSprite->x) + klabs(hit.pos.y - pnSprite->y);
+        int const d  = klabs(hit.x - ts->x) + klabs(hit.y - ts->y);
+        int const da = klabs(hit.x - pnSprite->x) + klabs(hit.y - pnSprite->y);
 
         if (d < da)
         {
-            if (cansee(hit.pos.x, hit.pos.y, hit.pos.z, hit.sect, pnSprite->x, pnSprite->y, pnSprite->z - ZOFFSET2, pnSprite->sectnum))
+            if (cansee(hit.x, hit.y, hit.z, hit.sect, pnSprite->x, pnSprite->y, pnSprite->z - ZOFFSET2, pnSprite->sectnum))
             {
-                vect->x = hit.pos.x;
-                vect->y = hit.pos.y;
+                vect->x = hit.x;
+                vect->y = hit.y;
                 return hit.sect;
             }
         }

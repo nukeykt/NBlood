@@ -1996,9 +1996,9 @@ int hitscan_old(int xs, int ys, int zs, int16_t sectnum, int xv, int yv, int zv,
     vec3_t s = { xs, ys, zs };
     hitdata_t h = { *xh, *yh, *zh, *hitsprite, *hitwall, *hitsect };
     int ret = hitscan(&s, sectnum, xv, yv, zv, &h, cm);
-    *xh = h.pos.x;
-    *yh = h.pos.y;
-    *zh = h.pos.z;
+    *xh = h.x;
+    *yh = h.y;
+    *zh = h.z;
     *hitsprite = h.sprite;
     *hitwall = h.wall;
     *hitsect = h.sect;

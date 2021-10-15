@@ -854,9 +854,9 @@ void RT_P_ProcessWeapon(int playerNum)
                         int spriteNum = headspritesect[hitData.sect];
                         while (spriteNum >= 0)
                         {
-                            if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.pos.z) < ZOFFSET4 &&
-                                ((sprite[spriteNum].x - hitData.pos.x) * (sprite[spriteNum].x - hitData.pos.x) +
-                                    (sprite[spriteNum].y - hitData.pos.y) * (sprite[spriteNum].y - hitData.pos.y)) < (290 * 290))
+                            if (sprite[spriteNum].picnum == TRIPBOMB && klabs(sprite[spriteNum].z - hitData.z) < ZOFFSET4 &&
+                                ((sprite[spriteNum].x - hitData.x) * (sprite[spriteNum].x - hitData.x) +
+                                    (sprite[spriteNum].y - hitData.y) * (sprite[spriteNum].y - hitData.y)) < (290 * 290))
                                 break;
                             spriteNum = nextspritesect[spriteNum];
                         }
@@ -865,8 +865,8 @@ void RT_P_ProcessWeapon(int playerNum)
                         if (spriteNum == -1 && hitData.wall >= 0 && (wall[hitData.wall].cstat & 16) == 0)
                             if ((wall[hitData.wall].nextsector >= 0 && sector[wall[hitData.wall].nextsector].lotag <= 2) ||
                                 (wall[hitData.wall].nextsector == -1 && sector[hitData.sect].lotag <= 2))
-                                if (((hitData.pos.x - pPlayer->pos.x) * (hitData.pos.x - pPlayer->pos.x) +
-                                        (hitData.pos.y - pPlayer->pos.y) * (hitData.pos.y - pPlayer->pos.y)) < (290 * 290))
+                                if (((hitData.x - pPlayer->pos.x) * (hitData.x - pPlayer->pos.x) +
+                                        (hitData.y - pPlayer->pos.y) * (hitData.y - pPlayer->pos.y)) < (290 * 290))
                                 {
                                     pPlayer->pos.z = pPlayer->opos.z;
                                     pPlayer->vel.z = 0;

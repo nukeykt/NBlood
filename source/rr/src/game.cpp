@@ -482,8 +482,8 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
     if (*vsectnum < 0)
         return -1;
 
-    hx = hit.pos.x-(vect->x);
-    hy = hit.pos.y-(vect->y);
+    hx = hit.x-(vect->x);
+    hy = hit.y-(vect->y);
 
     if (klabs(n.x)+klabs(n.y) > klabs(hx)+klabs(hy))
     {
@@ -959,7 +959,7 @@ static void G_ReadGLFrame(void)
         }
     }
 
-    Bfree(frame);
+    Xfree(frame);
 }
 #endif
 
@@ -7034,7 +7034,7 @@ static void parsedefinitions_game_include(const char *fileName, scriptfile *pScr
 
 static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * blockEnd, char const * fileName, dukeanim_t * animPtr)
 {
-    Bfree(animPtr->sounds);
+    Xfree(animPtr->sounds);
 
     size_t numPairs = 0, allocSize = 4;
 
@@ -7448,7 +7448,7 @@ void G_UpdateAppTitle(void)
 
 static void G_FreeHashAnim(const char * /*string*/, intptr_t key)
 {
-    Bfree((void *)key);
+    Xfree((void *)key);
 }
 
 static void G_Cleanup(void)
@@ -7459,35 +7459,35 @@ static void G_Cleanup(void)
 
     for (i=(MAXLEVELS*(MAXVOLUMES+1))-1; i>=0; i--) // +1 volume for "intro", "briefing" music
     {
-        Bfree(g_mapInfo[i].name);
-        Bfree(g_mapInfo[i].filename);
-        Bfree(g_mapInfo[i].musicfn);
+        Xfree(g_mapInfo[i].name);
+        Xfree(g_mapInfo[i].filename);
+        Xfree(g_mapInfo[i].musicfn);
 
         G_FreeMapState(i);
     }
 
     for (i=MAXQUOTES-1; i>=0; i--)
     {
-        Bfree(apStrings[i]);
-        Bfree(apXStrings[i]);
+        Xfree(apStrings[i]);
+        Xfree(apXStrings[i]);
     }
 
     for (i=MAXPLAYERS-1; i>=0; i--)
     {
-        Bfree(g_player[i].ps);
-        Bfree(g_player[i].inputBits);
+        Xfree(g_player[i].ps);
+        Xfree(g_player[i].inputBits);
     }
 
     for (i=MAXSOUNDS-1; i>=0; i--)
     {
-        Bfree(g_sounds[i].filename);
+        Xfree(g_sounds[i].filename);
     }
-    if (label != (char *)&sprite[0]) Bfree(label);
-    if (labelcode != (int32_t *)&sector[0]) Bfree(labelcode);
-    Bfree(apScript);
-    Bfree(bitptr);
+    if (label != (char *)&sprite[0]) Xfree(label);
+    if (labelcode != (int32_t *)&sector[0]) Xfree(labelcode);
+    Xfree(apScript);
+    Xfree(bitptr);
 
-//    Bfree(MusicPtr);
+//    Xfree(MusicPtr);
 
     Gv_Clear();
 
@@ -7956,7 +7956,7 @@ static void G_Startup(void)
             }
             Bchdir(cwd);
 #ifndef __ANDROID__ //This crashes on *some* Android devices. Small onetime memory leak. TODO fix above function
-            Bfree(cwd);
+            Xfree(cwd);
 #endif
 
         }
@@ -8170,7 +8170,7 @@ int app_main(int argc, char const * const * argv)
         else
             Bstrcpy(cwd, APPBASENAME ".log");
         OSD_SetLogFile(cwd);
-        Bfree(homedir);
+        Xfree(homedir);
     }
     else
 #endif
@@ -8224,7 +8224,7 @@ int app_main(int argc, char const * const * argv)
         char *str = Bstrtolower(Xstrdup(gamefunctions[i]));
         hash_add(&h_gamefuncs,gamefunctions[i],i,0);
         hash_add(&h_gamefuncs,str,i,0);
-        Bfree(str);
+        Xfree(str);
     }
 
 #ifdef STARTUP_SETUP_WINDOW
@@ -8468,7 +8468,7 @@ int app_main(int argc, char const * const * argv)
 
         // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
         for (bssize_t i=0; i<joystick.numAxes; i++)
-            joySetDeadZone(i,ud.config.JoystickAnalogueDead[i],ud.config.JoystickAnalogueSaturate[i]);
+            JOYSTICK_SetDeadZone(i,ud.config.JoystickAnalogueDead[i],ud.config.JoystickAnalogueSaturate[i]);
     }
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -8477,7 +8477,7 @@ int app_main(int argc, char const * const * argv)
         initprintf("There was an error loading the sprite clipping map (status %d).\n", clipMapError);
 
     for (char * m : g_clipMapFiles)
-        free(m);
+        Xfree(m);
     g_clipMapFiles.clear();
 #endif
 
@@ -8489,7 +8489,7 @@ int app_main(int argc, char const * const * argv)
     else
         Bsprintf(tempbuf, "%s_settings.cfg", p);
 
-    Bfree(setupFileName);
+    Xfree(setupFileName);
 
     OSD_Exec(tempbuf);
     OSD_Exec("autoexec.cfg");
@@ -8548,7 +8548,7 @@ int app_main(int argc, char const * const * argv)
         if (REALITY && ud.setup.bpp != 32)
             G_GameExit("Duke Nukem 64 requires GL mode");
 
-        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(r_maxfps);
         videoSetPalette(ud.brightness>>2, g_player[myconnectindex].ps->palette, 0);
         S_MusicStartup();
         S_SoundStartup();

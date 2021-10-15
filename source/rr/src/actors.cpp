@@ -3448,10 +3448,10 @@ ACTOR_STATIC void G_MoveTransports(void)
                                     pPlayer->transporter_hold      = 13;
                                 }
 
-                                pPlayer->pos    = sprite[OW(spriteNum)].pos;
+                                pPlayer->pos    = sprite[OW(spriteNum)].xyz;
                                 pPlayer->pos.z -= PHEIGHT-(RR ? (4<<8) : 0);
                                 pPlayer->opos   = pPlayer->pos;
-                                pPlayer->bobpos = pPlayer->pos.vec2;
+                                pPlayer->bobpos = pPlayer->pos.xy;
 
                                 changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
                                 pPlayer->cursectnum = sprite[sectSprite].sectnum;
@@ -3672,7 +3672,7 @@ default_case:
                                             sprite[sectSprite].y += sprite[OW(spriteNum)].y - SY(spriteNum);
                                             sprite[sectSprite].z = (sectLotag == ST_1_ABOVE_WATER) ? sector[osect].ceilingz+absZvel : sector[osect].floorz-absZvel;
 
-                                            actor[sectSprite].bpos = sprite[sectSprite].pos;
+                                            actor[sectSprite].bpos = sprite[sectSprite].xyz;
 
                                             changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
                                         }
@@ -3682,7 +3682,7 @@ default_case:
                                             sprite[sectSprite].y += sprite[OW(spriteNum)].y - SY(spriteNum);
                                             sprite[sectSprite].z = (sectLotag == 160) ? sector[osect].ceilingz+absZdiff : sector[osect].floorz-absZdiff;
 
-                                            actor[sectSprite].bpos = sprite[sectSprite].pos;
+                                            actor[sectSprite].bpos = sprite[sectSprite].xyz;
 
                                             changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
 
@@ -3710,7 +3710,7 @@ default_case:
                                                 sprite[sectSprite].z -= SZ(spriteNum) - sector[sprite[OW(spriteNum)].sectnum].floorz;
 
                                                 sprite[sectSprite].ang = sprite[OW(spriteNum)].ang;
-                                                actor[sectSprite].bpos = sprite[sectSprite].pos;
+                                                actor[sectSprite].bpos = sprite[sectSprite].xyz;
 
                                                 if (RR || sprite[spriteNum].pal == 0)
                                                 {
@@ -3736,7 +3736,7 @@ default_case:
                                             sprite[sectSprite].y += (sprite[OW(spriteNum)].y - SY(spriteNum));
                                             sprite[sectSprite].z = sprite[OW(spriteNum)].z + 4096;
 
-                                            actor[sectSprite].bpos = sprite[sectSprite].pos;
+                                            actor[sectSprite].bpos = sprite[sectSprite].xyz;
 
                                             changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
                                         }
@@ -7385,15 +7385,15 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         pPlayer->pos.z += zchange;
 
                         vec2_t r;
-                        rotatepoint(sprite[j].pos.vec2,pPlayer->pos.vec2,(q*l),&r);
+                        rotatepoint(sprite[j].xy,pPlayer->pos.xy,(q*l),&r);
 
                         pPlayer->bobpos.x += r.x-pPlayer->pos.x;
                         pPlayer->bobpos.y += r.y-pPlayer->pos.y;
 
-                        pPlayer->pos.vec2 = r;
+                        pPlayer->pos.xy = r;
 
                         if (sprite[pPlayer->i].extra <= 0)
-                            sprite[pPlayer->i].pos.vec2 = r;
+                            sprite[pPlayer->i].xy = r;
                     }
                 }
 
@@ -7411,7 +7411,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                             sprite[p].z += zchange;
 
-                            rotatepoint(sprite[j].pos.vec2, sprite[p].pos.vec2, (q * l), &sprite[p].pos.vec2);
+                            rotatepoint(sprite[j].xy, sprite[p].xy, (q * l), &sprite[p].xy);
                         }
                 }
 
@@ -7670,7 +7670,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                             (sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT||sprite[j].lotag == SE_50_SPOT_LIGHT))
                             && sprite[j].picnum != LOCATORS)
                     {
-                        rotatepoint(pSprite->pos.vec2,sprite[j].pos.vec2,q,&sprite[j].pos.vec2);
+                        rotatepoint(pSprite->xy,sprite[j].xy,q,&sprite[j].xy);
 
                         sprite[j].x+= m;
                         sprite[j].y+= x;
@@ -7697,7 +7697,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 }
 
                 A_MoveSector(spriteNum);
-                setsprite(spriteNum,&pSprite->pos);
+                setsprite(spriteNum,&pSprite->xyz);
 
                 if ((pSector->floorz-pSector->ceilingz) < (108<<8))
                 {
@@ -8223,12 +8223,12 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     for (SPRITES_OF(STAT_ACTOR, k))
                     {
                         if (sprite[k].extra > 0 && A_CheckEnemySprite(&sprite[k])
-                                && clipinsidebox(sprite[k].pos.vec2, j, 256) == 1)
+                                && clipinsidebox(sprite[k].xy, j, 256) == 1)
                             goto next_sprite;
                     }
                     for (SPRITES_OF(STAT_PLAYER, k))
                     {
-                        if (sprite[k].owner >= 0 && clipinsidebox(sprite[k].pos.vec2, j, 144) == 1)
+                        if (sprite[k].owner >= 0 && clipinsidebox(sprite[k].xy, j, 144) == 1)
                         {
                             pData[5] = 8;  // Delay
                             pData[2] -= l;

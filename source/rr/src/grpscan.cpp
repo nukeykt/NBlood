@@ -256,13 +256,13 @@ static void FreeGameList(void)
 {
     while (listgrps)
     {
-        Bfree(listgrps->name);
-        Bfree(listgrps->scriptname);
-        Bfree(listgrps->defname);
-        Bfree(listgrps->rtsname);
+        Xfree(listgrps->name);
+        Xfree(listgrps->scriptname);
+        Xfree(listgrps->defname);
+        Xfree(listgrps->rtsname);
 
         grpinfo_t * const fg = listgrps->next;
-        Bfree(listgrps);
+        Xfree(listgrps);
         listgrps = fg;
     }
 }
@@ -317,7 +317,7 @@ static void FreeGroupsCache(void)
     while (grpcache)
     {
         struct grpcache * const fg = grpcache->next;
-        Bfree(grpcache);
+        Xfree(grpcache);
         grpcache = fg;
     }
 }
@@ -333,8 +333,8 @@ static void RemoveGroup(grpfile_t *igrp)
             else
                 prev->next = grp->next;
 
-            Bfree((char *)grp->filename);
-            Bfree(grp);
+            Xfree((char *)grp->filename);
+            Xfree(grp);
 
             return;
         }
@@ -391,10 +391,10 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch)
             if (findfrompath(sidx->name, &fn)) continue; // failed to resolve the filename
             if (Bstat(fn, &st))
             {
-                Bfree(fn);
+                Xfree(fn);
                 continue;
             } // failed to stat the file
-            Bfree(fn);
+            Xfree(fn);
             if (fg->size == (int32_t)st.st_size && fg->mtime == (int32_t)st.st_mtime)
             {
                 grpinfo_t const * const grptype = FindGrpInfo(fg->crcval, fg->size);
@@ -456,7 +456,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch)
         }
     }
 
-    Bfree(buf);
+    Xfree(buf);
 }
 
 static void ProcessDN64Groups(void)
@@ -560,7 +560,7 @@ int32_t ScanGroups(void)
             {
                 fgg = fg->next;
                 fprintf(fp, "\"%s\" %d %d %d\n", fg->name, fg->size, fg->mtime, fg->crcval);
-                Bfree(fg);
+                Xfree(fg);
                 i++;
             }
             fclose(fp);
@@ -580,9 +580,9 @@ void FreeGroups(void)
 {
     while (foundgrps)
     {
-        Bfree((char *)foundgrps->filename);
+        Xfree((char *)foundgrps->filename);
         grpfile_t * const fg = foundgrps->next;
-        Bfree(foundgrps);
+        Xfree(foundgrps);
         foundgrps = fg;
     }
 

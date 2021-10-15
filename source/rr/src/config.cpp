@@ -55,7 +55,7 @@ int32_t CONFIG_FunctionNameToNum(const char *func)
     {
         char *str = Bstrtolower(Xstrdup(func));
         i = hash_find(&h_gamefuncs,str);
-        Bfree(str);
+        Xfree(str);
 
         return i;
     }
@@ -129,23 +129,23 @@ static void CONFIG_SetJoystickAnalogAxisScale(int i, int scale)
 static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
 {
     ud.config.JoystickAnalogueInvert[i] = invert;
-    CONTROL_SetAnalogAxisInvert(i, invert, controldevice_joystick);
+    CONTROL_SetAnalogAxisInvert(i, invert);
 }
 static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
 {
     ud.config.JoystickAnalogueDead[i] = dead;
     ud.config.JoystickAnalogueSaturate[i] = saturate;
-    joySetDeadZone(i, dead, saturate);
+    JOYSTICK_SetDeadZone(i, dead, saturate);
 }
 static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
 {
     ud.config.JoystickDigitalFunctions[i][j] = function;
-    CONTROL_MapDigitalAxis(i, function, j, controldevice_joystick);
+    CONTROL_MapDigitalAxis(i, function, j);
 }
 static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
 {
     ud.config.JoystickAnalogueAxes[i] = function;
-    CONTROL_MapAnalogAxis(i, function, controldevice_joystick);
+    CONTROL_MapAnalogAxis(i, function);
 }
 void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy/*=false*/)
 {
@@ -420,7 +420,7 @@ void CONFIG_SetDefaults(void)
         CONTROL_SetAnalogAxisScale(i, DEFAULTMOUSEANALOGUESCALE, controldevice_mouse);
 
         ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
-        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
+        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i]);
     }
 
 #if !defined GEKKO
@@ -547,7 +547,7 @@ void CONFIG_SetupMouse(void)
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1,  controldevice_mouse);
     }
     for (i=0; i<MAXMOUSEAXES; i++)
-        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
+        CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i]);
 }
 
 
@@ -622,11 +622,11 @@ void CONFIG_SetupJoystick(void)
     }
     for (i=0; i<MAXJOYAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i], controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
-        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
+        CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i]);
+        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0);
+        CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1);
         CONTROL_SetAnalogAxisScale(i, ud.config.JoystickAnalogueScale[i], controldevice_joystick);
-        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i]);
     }
 }
 
@@ -666,14 +666,14 @@ static void CONFIG_SetGameControllerAxesModern()
 {
     static GameControllerAnalogAxisSetting const analogAxes[] =
     {
-        { GAMECONTROLLER_AXIS_LEFTX, analog_strafing },
-        { GAMECONTROLLER_AXIS_LEFTY, analog_moving },
-        { GAMECONTROLLER_AXIS_RIGHTX, analog_turning },
-        { GAMECONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
+        { CONTROLLER_AXIS_LEFTX, analog_strafing },
+        { CONTROLLER_AXIS_LEFTY, analog_moving },
+        { CONTROLLER_AXIS_RIGHTX, analog_turning },
+        { CONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
     };
 
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTX, 65536);
-    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTY, 65536);
+    CONFIG_SetJoystickAnalogAxisScale(CONTROLLER_AXIS_RIGHTX, 65536);
+    CONFIG_SetJoystickAnalogAxisScale(CONTROLLER_AXIS_RIGHTY, 65536);
 
     for (auto const & analogAxis : analogAxes)
         analogAxis.apply();
@@ -686,37 +686,37 @@ void CONFIG_SetGameControllerDefaults()
 
     static GameControllerButtonSetting const buttons[] =
     {
-        { GAMECONTROLLER_BUTTON_A, gamefunc_Open },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
-        { GAMECONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
-        { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
-        { GAMECONTROLLER_BUTTON_LEFTSTICK,  gamefunc_Run },
-        { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_DPAD_UP,    gamefunc_Previous_Weapon },
-        { GAMECONTROLLER_BUTTON_DPAD_DOWN,  gamefunc_Next_Weapon },
-        { GAMECONTROLLER_BUTTON_LEFTSHOULDER,  gamefunc_Crouch },
-        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
-        { GAMECONTROLLER_BUTTON_MISC, gamefunc_Third_Person_View },
+        { CONTROLLER_BUTTON_A, gamefunc_Open },
+        { CONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
+        { CONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
+        { CONTROLLER_BUTTON_BACK, gamefunc_Map },
+        { CONTROLLER_BUTTON_LEFTSTICK,  gamefunc_Run },
+        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_DPAD_UP,    gamefunc_Previous_Weapon },
+        { CONTROLLER_BUTTON_DPAD_DOWN,  gamefunc_Next_Weapon },
+        { CONTROLLER_BUTTON_LEFTSHOULDER,  gamefunc_Crouch },
+        { CONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
+        { CONTROLLER_BUTTON_MISC, gamefunc_Third_Person_View },
     };
 
     static GameControllerButtonSetting const buttonsDuke[] =
     {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Inventory },
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT,  gamefunc_Inventory_Left  },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
+        { CONTROLLER_BUTTON_X, gamefunc_Inventory },
+        { CONTROLLER_BUTTON_DPAD_LEFT,  gamefunc_Inventory_Left  },
+        { CONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
     };
 
     static GameControllerButtonSetting const buttonsFury[] =
     {
-        { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
-        { GAMECONTROLLER_BUTTON_DPAD_LEFT,  gamefunc_MedKit },
-        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
+        { CONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
+        { CONTROLLER_BUTTON_DPAD_LEFT,  gamefunc_MedKit },
+        { CONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
     };
 
     static GameControllerDigitalAxisSetting const digitalAxes[] =
     {
-        { GAMECONTROLLER_AXIS_TRIGGERLEFT,  1, gamefunc_Jump },
-        { GAMECONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
+        { CONTROLLER_AXIS_TRIGGERLEFT,  1, gamefunc_Jump },
+        { CONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
     };
 
     for (auto const & button : buttons)
@@ -844,7 +844,7 @@ int32_t CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenMode", &ud.setup.fullscreen);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenWidth", &ud.setup.xdim);
 
-    SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&windowpos);
+    SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", (int32_t *)&r_windowpositioning);
 
     windowx = -1;
     windowy = -1;
@@ -919,7 +919,7 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
             OSD_Printf("Wrote settings.cfg\n");
         else OSD_Printf("Wrote %s_settings.cfg\n",ptr);
 
-        Bfree(ptr);
+        Xfree(ptr);
         return;
     }
 
@@ -927,7 +927,7 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
         OSD_Printf("Error writing settings.cfg: %s\n", strerror(errno));
     else OSD_Printf("Error writing %s_settings.cfg: %s\n",ptr,strerror(errno));
 
-    Bfree(ptr);
+    Xfree(ptr);
 }
 
 void CONFIG_WriteSetup(uint32_t flags)
@@ -970,7 +970,7 @@ void CONFIG_WriteSetup(uint32_t flags)
         return;
     }
 
-    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", windowpos, FALSE, FALSE);
+    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPositioning", r_windowpositioning, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPosX", windowx, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPosY", windowy, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", maxrefreshfreq, FALSE, FALSE);

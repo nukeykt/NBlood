@@ -25,37 +25,45 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 extern int32_t I_CheckAllInput(void);
 extern void I_ClearAllInput(void);
+extern void I_ClearLast(void);
 
 // Advance = Selecting a menu option || Saying "Yes" || Going forward in Help/Credits
 // Return = Closing a sub-menu || Saying "No"
+// General = Advance + Return = Skipping screens
 // Escape = Opening the menu in-game (should not be any gamefuncs)
 
 extern int32_t I_AdvanceTrigger(void);
-extern void I_AdvanceTriggerClear(void);
+extern int32_t I_GeneralTrigger(void);
 extern int32_t I_ReturnTrigger(void);
-extern void I_ReturnTriggerClear(void);
 extern int32_t I_EscapeTrigger(void);
-extern void I_EscapeTriggerClear(void);
+
+extern void I_AdvanceTriggerClear(void);
+extern void I_GeneralTriggerClear(void);
+
+#define I_ReturnTriggerClear I_ClearLast
+#define I_EscapeTriggerClear I_ClearLast
 
 extern int32_t I_MenuUp(void);
-extern void I_MenuUpClear(void);
 extern int32_t I_MenuDown(void);
-extern void I_MenuDownClear(void);
 extern int32_t I_MenuLeft(void);
-extern void I_MenuLeftClear(void);
 extern int32_t I_MenuRight(void);
-extern void I_MenuRightClear(void);
+
+#define I_MenuUpClear    I_ClearLast
+#define I_MenuDownClear  I_ClearLast
+#define I_MenuLeftClear  I_ClearLast
+#define I_MenuRightClear I_ClearLast
 
 extern int32_t I_PanelUp(void);
-extern void I_PanelUpClear(void);
 extern int32_t I_PanelDown(void);
+
+extern void I_PanelUpClear(void);
 extern void I_PanelDownClear(void);
 
 extern int32_t I_SliderLeft(void);
-extern void I_SliderLeftClear(void);
 extern int32_t I_SliderRight(void);
-extern void I_SliderRightClear(void);
 
+#define I_SliderLeftClear  I_ClearLast
+#define I_SliderRightClear I_ClearLast
 
 enum EnterTextFlags_t {
     INPUT_NUMERIC        = 0x00000001,
