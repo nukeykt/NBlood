@@ -343,7 +343,7 @@ void G_AddSearchPaths(void)
     Exhumed_Add_GOG_Linux(buf);
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Powerslave_English", Exhumed_Add_GOG_Linux);
 
-    Bfree(homepath);
+    Xfree(homepath);
 
     addsearchpath("/usr/share/games/pcexhumed");
     addsearchpath("/usr/local/share/games/pcexhumed");
@@ -373,9 +373,9 @@ void G_AddSearchPaths(void)
 
     for (i = 0; i < 2; i++)
     {
-        Bfree(applications[i]);
-        Bfree(support[i]);
-        Bfree(documents[i]);
+        Xfree(applications[i]);
+        Xfree(support[i]);
+        Xfree(documents[i]);
     }
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
