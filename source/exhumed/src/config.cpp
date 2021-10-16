@@ -242,8 +242,6 @@ int32_t MouseDeadZone, MouseBias;
 // (currently) mact can't regurgitate them
 int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
 int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
-int32_t MouseAnalogueAxes[MAXMOUSEAXES];
-int32_t MouseAnalogueScale[MAXMOUSEAXES];
 int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];
 int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
 int32_t JoystickAnalogueAxes[MAXJOYAXES];
@@ -519,16 +517,10 @@ void CONFIG_SetDefaults()
 
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
-        MouseAnalogueScale[i] = DEFAULTMOUSEANALOGUESCALE;
-        CONTROL_SetAnalogAxisScale(i, MouseAnalogueScale[i], controldevice_mouse);
-
         MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2]);
         MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2+1]);
         CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0);
         CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1);
-
-        MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
-        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i]);
     }
 
     // TODO:
@@ -693,11 +685,6 @@ void CONFIG_SetupMouse(void)
     // map over the axes
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
-        Bsprintf(str,"MouseAnalogAxes%d",i);
-        temp[0] = 0;
-        if (!SCRIPT_GetString(scripthandle, "Controls", str,temp))
-            MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
-
         Bsprintf(str,"MouseDigitalAxes%d_0",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(scripthandle, "Controls", str,temp))
@@ -707,11 +694,6 @@ void CONFIG_SetupMouse(void)
         temp[0] = 0;
         if (!SCRIPT_GetString(scripthandle, "Controls", str,temp))
             MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
-
-        Bsprintf(str,"MouseAnalogScale%d",i);
-        int32_t scale = MouseAnalogueScale[i];
-        SCRIPT_GetNumber(scripthandle, "Controls", str, &scale);
-        MouseAnalogueScale[i] = scale;
     }
 
     for (int i=0; i<MAXMOUSEBUTTONS; i++)
@@ -721,10 +703,8 @@ void CONFIG_SetupMouse(void)
     }
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
-        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i]);
         CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0);
         CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1);
-        CONTROL_SetAnalogAxisScale(i, MouseAnalogueScale[i], controldevice_mouse);
     }
 }
 
@@ -965,12 +945,6 @@ void CONFIG_WriteSetup(uint32_t flags)
 
         for (int i=0; i<MAXMOUSEAXES; i++)
         {
-            if (CONFIG_AnalogNumToName(MouseAnalogueAxes[i]))
-            {
-                Bsprintf(buf, "MouseAnalogAxes%d", i);
-                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_AnalogNumToName(MouseAnalogueAxes[i]));
-            }
-
             if (CONFIG_FunctionNumToName(MouseDigitalFunctions[i][0]))
             {
                 Bsprintf(buf, "MouseDigitalAxes%d_0", i);
@@ -982,9 +956,6 @@ void CONFIG_WriteSetup(uint32_t flags)
                 Bsprintf(buf, "MouseDigitalAxes%d_1", i);
                 SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseDigitalFunctions[i][1]));
             }
-
-            Bsprintf(buf, "MouseAnalogScale%d", i);
-            SCRIPT_PutNumber(scripthandle, "Controls", buf, MouseAnalogueScale[i], FALSE, FALSE);
         }
     }
 

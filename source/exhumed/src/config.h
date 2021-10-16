@@ -153,8 +153,6 @@ extern int32_t gShowCrosshair;
 // (currently) mact can't regurgitate them
 extern int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
 extern int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
-extern int32_t MouseAnalogueAxes[MAXMOUSEAXES];
-extern int32_t MouseAnalogueScale[MAXMOUSEAXES];
 extern int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];
 extern int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
 extern int32_t JoystickAnalogueAxes[MAXJOYAXES];
