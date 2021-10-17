@@ -10294,8 +10294,8 @@ void calc_sector_reachability(void)
 
         for (int listidx=0; listidx<nsecs; listidx++)
         {
-            Bassert((unsigned)listidx < numsectors);
-            Bassert((unsigned)sectlist[listidx] < numsectors);
+            Bassert((unsigned)listidx < (unsigned)numsectors);
+            Bassert((unsigned)sectlist[listidx] < (unsigned)numsectors);
 
             auto sec = (usectorptr_t)&sector[sectlist[listidx]];
 
