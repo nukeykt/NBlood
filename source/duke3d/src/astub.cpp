@@ -7341,7 +7341,7 @@ static void Keys2d(void)
 
                 yax_update(0);
                 yax_updategrays(pos.z);
-
+                calc_sector_reachability();
                 message("Cleared TROR bunch %d", fb);
                 asksave = 1;
             }

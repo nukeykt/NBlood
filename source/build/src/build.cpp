@@ -414,6 +414,7 @@ static void yax_resetbunchnums(void)
         yax_setbunches(i, -1, -1);
     yax_update(1);
     yax_updategrays(pos.z);
+    calc_sector_reachability();
 }
 
 // Whether a wall is constrained by sector extensions.
@@ -2096,6 +2097,7 @@ static int32_t restore_highlighted_map(mapinfofull_t *mapinfo, int32_t forreal)
         yax_update(0);
 #endif
     yax_updategrays(pos.z);
+    calc_sector_reachability();
 
     return 0;
 }
@@ -2251,6 +2253,7 @@ static void duplicate_selected_sectors(void)
         yax_update(0);
 #endif
     yax_updategrays(pos.z);
+    calc_sector_reachability();
 }
 
 
@@ -5007,6 +5010,7 @@ rotate_hlsect_out:
                 numsectors++;
                 yax_update(0);
                 yax_updategrays(pos.z);
+                calc_sector_reachability();
 
                 reset_highlightsector();
 
@@ -5267,6 +5271,7 @@ rotate_hlsect_out:
 
                 yax_update(0);
                 yax_updategrays(pos.z);
+                calc_sector_reachability();
             }
 end_yax: ;
 #endif
@@ -5692,6 +5697,7 @@ end_autoredwall:
 #ifdef YAX_ENABLE
                         yax_updategrays(pos.z);
 #endif
+                        calc_sector_reachability();
                     }
 
                     highlight1.x = searchx;
@@ -5860,7 +5866,8 @@ end_autoredwall:
 
             dragwall[0] = dragwall[1] = -1;
 
-            maybedeletewalls(dax, day);
+            if (pointhighlight >= 0)
+                maybedeletewalls(dax, day);
         }
 end_after_dragging:
         if ((bstatus&1) > 0)                //drag points
@@ -6612,7 +6619,7 @@ end_point_dragging:
 
                 yax_update(0);
                 yax_updategrays(pos.z);
-
+                calc_sector_reachability();
                 message("Joined highlighted sectors to new bunch %d", numyaxbunches);
                 asksave = 1;
             }
@@ -6861,7 +6868,7 @@ end_point_dragging:
                                 // shouldn't be needed again for the editor, but can't harm either:
                                 yax_update(0);
                                 yax_updategrays(pos.z);
-
+                                calc_sector_reachability();
                                 printmessage16("Made sector %d and %d floor bunchnums equal",
                                                joinsector[0], joinsector[1]);
                                 asksave = 1;
@@ -7006,6 +7013,7 @@ end_point_dragging:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
+                    calc_sector_reachability();
                 }
 
                 joinsector[0] = -1;
@@ -7054,6 +7062,7 @@ end_join_sectors:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
+                    calc_sector_reachability();
                     numwalls = newnumwalls;
                     newnumwalls = -1;
                     numsectors++;
@@ -7509,7 +7518,7 @@ check_next_sector: ;
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
-
+                    calc_sector_reachability();
                     goto end_space_handling;
                 }
                 ////////// split sector //////////
@@ -7784,6 +7793,7 @@ split_not_enough_walls:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
+                    calc_sector_reachability();
                 }
             }
         }
@@ -8027,6 +8037,8 @@ end_batch_insert_points:
                 yax_update(0);
                 yax_updategrays(pos.z);
 #endif
+                calc_sector_reachability();
+
                 break;
             }
         }
