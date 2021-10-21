@@ -652,17 +652,36 @@ int32_t sdlayer_checkversion(void)
     SDL_VERSION(&compiled);
 
     if (!Bmemcmp(&compiled, &linked, sizeof(SDL_version)))
-        initprintf("Initializing SDL %d.%d.%d\n",
+        initprintf("Initializing SDL %d.%d.%d",
             compiled.major, compiled.minor, compiled.patch);
     else
     initprintf("Initializing SDL %d.%d.%d"
-               " (built against SDL version %d.%d.%d)\n",
+               " (built against SDL version %d.%d.%d)",
                linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
+
+    // odd-numbered SDL patch levels are dev snapshots, even-numbered are proper releases
+    // string is in the format "https://github.com/libsdl-org/SDL.git@bfd2f8993f173535efe436f8e60827cc44351bea"
+    if (linked.patch & 1)
+    {
+        auto rev = SDL_GetRevision();
+        if (rev)
+        {
+            int len = Bstrlen(rev);
+            if (len > 40 && rev[len-41] == '@')
+            {
+                char buf[10] = {};
+                Bmemcpy(buf, &rev[len-40], 9);
+                initprintf(" (%s)", buf);
+            }
+        }
+    }
+
+    initputs("\n");
 
     if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL2_REQUIREDVERSION)
     {
         /*reject running under SDL versions older than what is stated in sdl_inc.h */
-        initprintf("You need at least v%d.%d.%d of SDL to run this game\n",SDL2_MIN_X,SDL2_MIN_Y,SDL2_MIN_Z);
+        initprintf("You need SDL %d.%d.%d or newer to run %s.\n",SDL2_MIN_X,SDL2_MIN_Y,SDL2_MIN_Z,apptitle);
         return -1;
     }
 
