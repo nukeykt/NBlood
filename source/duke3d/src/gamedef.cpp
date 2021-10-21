@@ -6271,6 +6271,9 @@ static void C_AddDefaultDefinitions(void)
         { "STR_VERSION",         STR_VERSION },
         { "STR_VOLUMENAME",      STR_VOLUMENAME },
         { "STR_YOURTIME",        STR_YOURTIME },
+
+        { "TILE_ANIM",           TILE_ANIM },
+        { "TILE_VIEWSCR",        TILE_VIEWSCR },
     };
 
     for (auto & def : predefined)
