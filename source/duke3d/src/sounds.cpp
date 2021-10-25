@@ -972,9 +972,6 @@ int S_PlaySound(int num)
 
 int A_PlaySound(int soundNum, int spriteNum)
 {
-    if (EDUKE32_PREDICT_FALSE(!S_SoundIsValid(soundNum)))
-        return -1;
-
     return (unsigned)spriteNum >= MAXSPRITES ? S_PlaySound(soundNum) :
         S_PlaySound3D(soundNum, spriteNum, sprite[spriteNum].xyz);
 }
