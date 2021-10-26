@@ -2223,57 +2223,8 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
 
                     if (!fullbrightloadingpass && tintpalnum >= 0)
                     {
-                        polytint_t const & tint = hictinting[tintpalnum];
-                        polytintflags_t const effect = tint.f;
-                        uint8_t const r = tint.r;
-                        uint8_t const g = tint.g;
-                        uint8_t const b = tint.b;
-
-                        if (effect & HICTINT_GRAYSCALE)
-                        {
-                            wpptr->g = wpptr->r = wpptr->b = (uint8_t) ((wpptr->r * GRAYSCALE_COEFF_RED) +
-                                                                  (wpptr->g * GRAYSCALE_COEFF_GREEN) +
-                                                                  (wpptr->b * GRAYSCALE_COEFF_BLUE));
-                        }
-
-                        if (effect & HICTINT_INVERT)
-                        {
-                            wpptr->b = 255 - wpptr->b;
-                            wpptr->g = 255 - wpptr->g;
-                            wpptr->r = 255 - wpptr->r;
-                        }
-
-                        if (effect & HICTINT_COLORIZE)
-                        {
-                            wpptr->b = min((int32_t)((wpptr->b) * b) >> 6, 255);
-                            wpptr->g = min((int32_t)((wpptr->g) * g) >> 6, 255);
-                            wpptr->r = min((int32_t)((wpptr->r) * r) >> 6, 255);
-                        }
-
-                        switch (effect & HICTINT_BLENDMASK)
-                        {
-                            case HICTINT_BLEND_SCREEN:
-                                wpptr->b = 255 - (((255 - wpptr->b) * (255 - b)) >> 8);
-                                wpptr->g = 255 - (((255 - wpptr->g) * (255 - g)) >> 8);
-                                wpptr->r = 255 - (((255 - wpptr->r) * (255 - r)) >> 8);
-                                break;
-                            case HICTINT_BLEND_OVERLAY:
-                                wpptr->b = wpptr->b < 128 ? (wpptr->b * b) >> 7 : 255 - (((255 - wpptr->b) * (255 - b)) >> 7);
-                                wpptr->g = wpptr->g < 128 ? (wpptr->g * g) >> 7 : 255 - (((255 - wpptr->g) * (255 - g)) >> 7);
-                                wpptr->r = wpptr->r < 128 ? (wpptr->r * r) >> 7 : 255 - (((255 - wpptr->r) * (255 - r)) >> 7);
-                                break;
-                            case HICTINT_BLEND_HARDLIGHT:
-                                wpptr->b = b < 128 ? (wpptr->b * b) >> 7 : 255 - (((255 - wpptr->b) * (255 - b)) >> 7);
-                                wpptr->g = g < 128 ? (wpptr->g * g) >> 7 : 255 - (((255 - wpptr->g) * (255 - g)) >> 7);
-                                wpptr->r = r < 128 ? (wpptr->r * r) >> 7 : 255 - (((255 - wpptr->r) * (255 - r)) >> 7);
-                                break;
-                        }
+                        hictinting_applypixcolor(wpptr, tintpalnum);
                     }
-
-                    //swap r & b so that we deal with the data as BGRA
-                    uint8_t tmpR = wpptr->r;
-                    wpptr->r = wpptr->b;
-                    wpptr->b = tmpR;
                 }
             }
         }
@@ -2527,12 +2478,6 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
         }
 
         char *cptr = britable[gammabrightness ? 0 : curbrightness];
-
-        polytint_t const & tint = hictinting[dapalnum];
-        int32_t r = (glinfo.bgra) ? tint.r : tint.b;
-        int32_t g = tint.g;
-        int32_t b = (glinfo.bgra) ? tint.b : tint.r;
-
         char al = 255;
 
         for (bssize_t y = 0, j = 0; y < tsiz.y; ++y, j += siz.x)
@@ -2547,45 +2492,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                 al &= tcol.a = rpptr[x].a;
                 onebitalpha &= tcol.a == 0 || tcol.a == 255;
 
-                if (effect & HICTINT_GRAYSCALE)
-                {
-                    tcol.g = tcol.r = tcol.b = (uint8_t) ((tcol.b * GRAYSCALE_COEFF_RED) +
-                                                          (tcol.g * GRAYSCALE_COEFF_GREEN) +
-                                                          (tcol.r * GRAYSCALE_COEFF_BLUE));
-                }
-
-                if (effect & HICTINT_INVERT)
-                {
-                    tcol.b = 255 - tcol.b;
-                    tcol.g = 255 - tcol.g;
-                    tcol.r = 255 - tcol.r;
-                }
-
-                if (effect & HICTINT_COLORIZE)
-                {
-                    tcol.b = min((int32_t)((tcol.b) * r) >> 6, 255);
-                    tcol.g = min((int32_t)((tcol.g) * g) >> 6, 255);
-                    tcol.r = min((int32_t)((tcol.r) * b) >> 6, 255);
-                }
-
-                switch (effect & HICTINT_BLENDMASK)
-                {
-                    case HICTINT_BLEND_SCREEN:
-                        tcol.b = 255 - (((255 - tcol.b) * (255 - r)) >> 8);
-                        tcol.g = 255 - (((255 - tcol.g) * (255 - g)) >> 8);
-                        tcol.r = 255 - (((255 - tcol.r) * (255 - b)) >> 8);
-                        break;
-                    case HICTINT_BLEND_OVERLAY:
-                        tcol.b = tcol.b < 128 ? (tcol.b * r) >> 7 : 255 - (((255 - tcol.b) * (255 - r)) >> 7);
-                        tcol.g = tcol.g < 128 ? (tcol.g * g) >> 7 : 255 - (((255 - tcol.g) * (255 - g)) >> 7);
-                        tcol.r = tcol.r < 128 ? (tcol.r * b) >> 7 : 255 - (((255 - tcol.r) * (255 - b)) >> 7);
-                        break;
-                    case HICTINT_BLEND_HARDLIGHT:
-                        tcol.b = r < 128 ? (tcol.b * r) >> 7 : 255 - (((255 - tcol.b) * (255 - r)) >> 7);
-                        tcol.g = g < 128 ? (tcol.g * g) >> 7 : 255 - (((255 - tcol.g) * (255 - g)) >> 7);
-                        tcol.r = b < 128 ? (tcol.r * b) >> 7 : 255 - (((255 - tcol.r) * (255 - b)) >> 7);
-                        break;
-                }
+                hictinting_applypixcolor(&tcol, dapalnum);
 
                 rpptr[x] = tcol;
             }

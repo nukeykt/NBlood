@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+typedef struct { uint8_t r, g, b, a; } coltype;
+typedef struct { float r, g, b, a; } coltypef;
+EXTERN int32_t globalnoeffect;
+
 struct hicskybox_t {
     char *face[6];
 };
@@ -46,6 +50,7 @@ typedef struct texcachepic_t
 
 hicreplctyp * hicfindsubst(int picnum, int palnum, int nozero = 0);
 hicreplctyp * hicfindskybox(int picnum, int palnum, int nozero = 0);
+void hictinting_applypixcolor(coltype* tcol, uint8_t pal);
 
 static inline int have_basepal_tint(void)
 {
@@ -135,6 +140,15 @@ enum
 #define GRAYSCALE_COEFF_RED 0.3
 #define GRAYSCALE_COEFF_GREEN 0.59
 #define GRAYSCALE_COEFF_BLUE 0.11
+
+static inline int32_t hicfxmask(size_t pal)
+{
+    return globalnoeffect ? 0 : (hictinting[pal].f & HICTINT_IN_MEMORY);
+}
+static inline int32_t hicfxid(size_t pal)
+{
+    return globalnoeffect ? 0 : ((hictinting[pal].f & (HICTINT_GRAYSCALE | HICTINT_INVERT | HICTINT_COLORIZE)) | ((hictinting[pal].f & HICTINT_BLENDMASK) << 3));
+}
 
 #ifdef __cplusplus
 }

@@ -89,7 +89,6 @@ static int32_t tribufverts = 0;
 
 static mdmodel_t *mdload(const char *);
 static void mdfree(mdmodel_t *);
-int32_t globalnoeffect=0;
 
 #ifdef USE_GLEXT
 void md_freevbos()
@@ -581,15 +580,6 @@ int32_t md_undefinemodel(int32_t modelid)
     return 0;
 }
 
-static inline int32_t hicfxmask(size_t pal)
-{
-    return globalnoeffect ? 0 : (hictinting[pal].f & HICTINT_IN_MEMORY);
-}
-static inline int32_t hicfxid(size_t pal)
-{
-    return globalnoeffect ? 0 : ((hictinting[pal].f & (HICTINT_GRAYSCALE|HICTINT_INVERT|HICTINT_COLORIZE)) | ((hictinting[pal].f & HICTINT_BLENDMASK)<<3));
-}
-
 static int32_t mdloadskin_notfound(char * const skinfile, char const * const fn)
 {
     OSD_Printf("Skin \"%s\" not found.\n", fn);
@@ -724,8 +714,6 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
     }
     else
     {
-        polytintflags_t const effect = hicfxmask(pal);
-
         // CODEDUP: gloadtile_hi
 
         int32_t isart = 0;
@@ -828,11 +816,6 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
 
         char *cptr = britable[gammabrightness ? 0 : curbrightness];
 
-        polytint_t const & tint = hictinting[pal];
-        int32_t r = (glinfo.bgra) ? tint.r : tint.b;
-        int32_t g = tint.g;
-        int32_t b = (glinfo.bgra) ? tint.b : tint.r;
-
         char al = 255;
         char onebitalpha = 1;
 
@@ -848,45 +831,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
                 al &= tcol.a = rpptr[x].a;
                 onebitalpha &= tcol.a == 0 || tcol.a == 255;
 
-                if (effect & HICTINT_GRAYSCALE)
-                {
-                    tcol.g = tcol.r = tcol.b = (uint8_t) ((tcol.b * GRAYSCALE_COEFF_RED) +
-                                                          (tcol.g * GRAYSCALE_COEFF_GREEN) +
-                                                          (tcol.r * GRAYSCALE_COEFF_BLUE));
-                }
-
-                if (effect & HICTINT_INVERT)
-                {
-                    tcol.b = 255 - tcol.b;
-                    tcol.g = 255 - tcol.g;
-                    tcol.r = 255 - tcol.r;
-                }
-
-                if (effect & HICTINT_COLORIZE)
-                {
-                    tcol.b = min((int32_t)((tcol.b) * r) >> 6, 255);
-                    tcol.g = min((int32_t)((tcol.g) * g) >> 6, 255);
-                    tcol.r = min((int32_t)((tcol.r) * b) >> 6, 255);
-                }
-
-                switch (effect & HICTINT_BLENDMASK)
-                {
-                    case HICTINT_BLEND_SCREEN:
-                        tcol.b = 255 - (((255 - tcol.b) * (255 - r)) >> 8);
-                        tcol.g = 255 - (((255 - tcol.g) * (255 - g)) >> 8);
-                        tcol.r = 255 - (((255 - tcol.r) * (255 - b)) >> 8);
-                        break;
-                    case HICTINT_BLEND_OVERLAY:
-                        tcol.b = tcol.b < 128 ? (tcol.b * r) >> 7 : 255 - (((255 - tcol.b) * (255 - r)) >> 7);
-                        tcol.g = tcol.g < 128 ? (tcol.g * g) >> 7 : 255 - (((255 - tcol.g) * (255 - g)) >> 7);
-                        tcol.r = tcol.r < 128 ? (tcol.r * b) >> 7 : 255 - (((255 - tcol.r) * (255 - b)) >> 7);
-                        break;
-                    case HICTINT_BLEND_HARDLIGHT:
-                        tcol.b = r < 128 ? (tcol.b * r) >> 7 : 255 - (((255 - tcol.b) * (255 - r)) >> 7);
-                        tcol.g = g < 128 ? (tcol.g * g) >> 7 : 255 - (((255 - tcol.g) * (255 - g)) >> 7);
-                        tcol.r = b < 128 ? (tcol.r * b) >> 7 : 255 - (((255 - tcol.r) * (255 - b)) >> 7);
-                        break;
-                }
+                hictinting_applypixcolor(&tcol, pal);
 
                 rpptr[x] = tcol;
             }

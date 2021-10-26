@@ -11,9 +11,6 @@
 extern "C" {
 #endif
 
-typedef struct { uint8_t r, g, b, a; } coltype;
-typedef struct { float r, g, b, a; } coltypef;
-
 extern int32_t rendmode;
 extern float gtang;
 extern int polymost2d;
@@ -280,7 +277,6 @@ EDUKE32_STATIC_ASSERT(TO_PTH_INDEXED(DAMETH_INDEXED) == PTH_INDEXED);
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);
 
-extern int32_t globalnoeffect;
 extern int32_t drawingskybox;
 extern int32_t hicprecaching;
 extern float fcosglobalang, fsinglobalang;

@@ -79,10 +79,13 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
     {
         for (bssize_t i=xsiz*ysiz-1; i>=0; i--)
         {
-            pic2[i].b = cptr[pic[i].r];
-            pic2[i].g = cptr[pic[i].g];
-            pic2[i].r = cptr[pic[i].b];
-            pic2[i].a = 255;
+            coltype &tcol = pic2[i];
+            tcol.b = cptr[pic[i].r];
+            tcol.g = cptr[pic[i].g];
+            tcol.r = cptr[pic[i].b];
+            tcol.a = 255;
+
+            hictinting_applypixcolor(&tcol, dapal);
         }
     }
     else
@@ -1080,7 +1083,17 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     float pc[4];
 
     pc[0] = pc[1] = pc[2] = ((float)numshades - min(max((globalshade * shadescale) + m->shadeoff, 0.f), (float)numshades)) / (float)numshades;
-    hictinting_apply(pc, globalpal);
+    polytintflags_t const tintflags = hictinting[globalpal].f;
+    if (!(tintflags & HICTINT_PRECOMPUTED))
+    {
+        if (!(m->flags & 1))
+            hictinting_apply(pc, globalpal);
+        else globalnoeffect = 1;
+    }
+
+    // global tinting
+    if (have_basepal_tint())
+        hictinting_apply(pc, MAXPALOOKUPS - 1);
 
     if (!shadowHack)
     {
@@ -1227,6 +1240,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 //        glDepthRange(0.0, 0.99999);
     }
     glLoadIdentity();
+
+    globalnoeffect = 0;
 
     return 1;
 }
