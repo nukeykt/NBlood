@@ -1272,6 +1272,9 @@ static void G_ShowView(vec3_t vec, fix16_t a, fix16_t horiz, int sect, int ix1, 
 void Screen_Play(void)
 {
     bool running = true;
+    int const gm = g_player[myconnectindex].ps->gm;
+
+    g_player[myconnectindex].ps->gm &= ~MODE_MENU;
 
     I_ClearAllInput();
 
@@ -1280,6 +1283,7 @@ void Screen_Play(void)
         gameHandleEvents();
 
         ototalclock = totalclock + 1; // pause game like ANMs
+        m_mouselastactivity = (int)totalclock;
 
         if (!engineFPSLimit())
             continue;
@@ -1290,8 +1294,11 @@ void Screen_Play(void)
             running = false;
 
         videoNextPage();
-        I_ClearAllInput();
     } while (running);
+
+    g_player[myconnectindex].ps->gm = gm;
+
+    I_ClearAllInput();
 }
 
 static inline void SetArray(int const arrayNum, int const arrayIndex, int const newValue)
@@ -4357,7 +4364,6 @@ badindex:
                     }
 
                     tw = vm.pPlayer->palette;
-                    I_ClearAllInput();
                     Anim_Play(apStrings[nQuote]);
                     P_SetGamePalette(vm.pPlayer, tw, 2 + 16);
                     dispatch();
@@ -4365,7 +4371,6 @@ badindex:
 
             vInstruction(CON_STARTSCREEN):
                 insptr++;
-                I_ClearAllInput();
                 Screen_Play();
                 dispatch();
 

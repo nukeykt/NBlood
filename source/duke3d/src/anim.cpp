@@ -512,13 +512,15 @@ int32_t Anim_Play(const char *fn)
             goto end_anim_restore_gl;
         }
 
+        I_ClearAllInput();
+
         if (g_restorePalette == 1)
         {
             P_SetGamePalette(g_player[myconnectindex].ps, ANIMPAL, 0);
             g_restorePalette = 0;
         }
 
-        frametime = (int32_t) totalclock;
+        m_mouselastactivity = frametime = (int32_t) totalclock;
 
         videoClearScreen(0);
 
@@ -547,8 +549,6 @@ int32_t Anim_Play(const char *fn)
         i = VM_OnEventWithReturn(EVENT_CUTSCENE, g_player[screenpeek].ps->i, screenpeek, i);
 
         videoNextPage();
-
-        I_ClearAllInput();
 
         ototalclock += anim->framedelay;
 
