@@ -42,8 +42,8 @@ static FORCE_INLINE int32_t seed_krand(int32_t* seed)
 // This aims to mimic Watcom C's implementation of rand
 static FORCE_INLINE int32_t wrand(void)
 {
-	wrandomseed = 1103515245 * wrandomseed + 12345;
-	return (wrandomseed >> 16) & 0x7FFF;
+    wrandomseed = 1103515245 * wrandomseed + 12345;
+    return (wrandomseed >> 16) & 0x7FFF;
 }
 
 static FORCE_INLINE void wsrand(int seed)
