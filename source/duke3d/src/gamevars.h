@@ -152,7 +152,7 @@ static FORCE_INLINE void Gv_FillWithVars(T & rv)
 {
     EDUKE32_STATIC_ASSERT(sizeof(T) % sizeof(int32_t) == 0);
     EDUKE32_STATIC_ASSERT(sizeof(T) > sizeof(int32_t));
-    Gv_GetManyVars(sizeof(T)/sizeof(int32_t), (int32_t *)&rv);
+    Gv_GetManyVars(sizeof(T)>>2, (int32_t *)&rv);
 }
 
 int Gv_GetVarByLabel(const char *szGameLabel,int defaultValue,int spriteNum,int playerNum);
