@@ -7,6 +7,10 @@
 #include "vfs.h"
 #include "communityapi.h"
 
+#include "screenshot.h"
+
+char screenshot_dir[BMAX_PATH] = "screenshots";
+
 //
 // screencapture
 //
@@ -61,9 +65,41 @@ static void screencapture_end(char *fn, buildvfs_FILE * filptr)
 #  define HICOLOR 0
 # endif
 
+static char* getScreenshotPath(const char* filename)
+{
+    char fn[BMAX_PATH];
+
+    if (screenshot_dir[0] != 0)
+    {
+        struct Bstat st;
+        if (!Bstat(screenshot_dir, &st) && ((st.st_mode & S_IFMT) == S_IFDIR))
+        {
+            Bsnprintf(fn, sizeof(fn), "%s/%s", screenshot_dir, filename);
+        }
+        else if (buildvfs_mkdir(screenshot_dir, S_IRWXU) == 0)
+        {
+            OSD_Printf("Directory \"%s\" created successfully!\n", screenshot_dir);
+            Bsnprintf(fn, sizeof(fn), "%s/%s", screenshot_dir, filename);
+        }
+        else
+        {
+            OSD_Printf("Failed to create directory \"%s\", using root.\n", screenshot_dir);
+            Bsnprintf(fn, sizeof(fn), "%s", filename);
+        }
+    }
+    else
+    {
+        Bsnprintf(fn, sizeof(fn), "%s", filename);
+    }
+
+    char* ret = Xstrdup(fn);
+
+    return ret;
+}
+
 int videoCaptureScreen(const char *filename, char inverseit)
 {
-    char *fn = Xstrdup(filename);
+    char* fn = getScreenshotPath(filename);
     buildvfs_FILE fp = capturecounter.opennextfile_withext(fn, "png");
 
     if (fp == nullptr)
@@ -143,7 +179,7 @@ int videoCaptureScreenTGA(const char *filename, char inverseit)
     int32_t i;
     char head[18] = { 0,1,1,0,0,0,1,24,0,0,0,0,0/*wlo*/,0/*whi*/,0/*hlo*/,0/*hhi*/,8,0 };
     //char palette[4*256];
-    char *fn = Xstrdup(filename);
+    char* fn = getScreenshotPath(filename);
 
     buildvfs_FILE fil = capturecounter.opennextfile_withext(fn, "tga");
     if (fil == nullptr)

@@ -521,6 +521,8 @@ static inline void inplace_vx_tweak_wall(walltypevx *vxwal, int32_t yaxp)
 int32_t getwalldist(vec2_t const in, int const wallnum);
 int32_t getwalldist(vec2_t const in, int const wallnum, vec2_t * const out);
 
+#include "screenshot.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1486,9 +1488,6 @@ static FORCE_INLINE int32_t spriteheightofs(int16_t i, int32_t *height, int32_t 
 {
     return spriteheightofsptr((uspriteptr_t)&sprite[i], height, alsotileyofs);
 }
-
-int videoCaptureScreen(const char *filename, char inverseit) ATTRIBUTE((nonnull(1)));
-int videoCaptureScreenTGA(const char *filename, char inverseit) ATTRIBUTE((nonnull(1)));
 
 struct OutputFileCounter {
     uint16_t count = 0;

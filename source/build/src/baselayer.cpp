@@ -638,6 +638,7 @@ int32_t baselayer_init(void)
         { "vid_gamma","adjusts gamma component of gamma ramp",(void *) &g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
         { "vid_contrast","adjusts contrast component of gamma ramp",(void *) &g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
         { "vid_brightness","adjusts brightness component of gamma ramp",(void *) &g_videoBrightness, CVAR_FLOAT|CVAR_FUNCPTR, -10, 10 },
+        { "screenshot_dir", "Screenshot save path",  (void*)screenshot_dir, CVAR_STRING, 0, sizeof(screenshot_dir) - 1 },
 #ifdef DEBUGGINGAIDS
         { "debug1","debug counter",(void *) &debug1, CVAR_FLOAT, -100000, 100000 },
         { "debug2","debug counter",(void *) &debug2, CVAR_FLOAT, -100000, 100000 },
