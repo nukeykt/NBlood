@@ -10269,6 +10269,9 @@ static FORCE_INLINE uint8_t* getreachabilitybitmap(int const sectnum)
 
 int sectorsareconnected(int const sect1, int const sect2)
 {
+    if (!reachablesectors)
+        calc_sector_reachability();
+
     return !!bitmap_test(getreachabilitybitmap(sect1), sect2);
 }
 
@@ -10277,19 +10280,23 @@ void calc_sector_reachability(void)
     if (!numsectors)
         return;
 
-    static uint32_t sectcrc = 0;
+    static size_t tablesize = 0;
+    static uint16_t sectcrc = 0;
     uint16_t crc = getcrc16(sector, sizeof(sectortype) * numsectors, 0x1337);
 
-    if (sectcrc == crc)
+    if (reachablesectors && sectcrc == crc && tablesize == getreachabilitybitmapsize())
         return;
 
     sectcrc = crc;
+    tablesize = getreachabilitybitmapsize();
+
+    Bassert(tablesize);
 
     Bmemset(yax_updown, -1, sizeof(yax_updown));
     Bmemset(wallsect, -1, sizeof(wallsect));
 
     DO_FREE_AND_NULL(reachablesectors);
-    reachablesectors = (uint8_t*)Xcalloc(1, getreachabilitybitmapsize());
+    reachablesectors = (uint8_t*)Xcalloc(1, tablesize);
     auto sectlist = (int16_t *)Balloca(sizeof(int16_t) * numsectors);
 
     for (int sectnum=0; sectnum<numsectors; sectnum++)
@@ -10421,9 +10428,6 @@ static int32_t engineFinishLoadBoard(const vec3_t* dapos, int16_t* dacursectnum,
     guniqhudid = 0;
 
     Bmemset(tilecols, 0, sizeof(tilecols));
-
-    calc_sector_reachability();
-
 
     return numremoved;
 }
