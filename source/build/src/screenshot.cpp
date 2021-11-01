@@ -73,12 +73,12 @@ static char* getScreenshotPath(const char* filename)
     {
         struct Bstat st;
         if (!Bstat(screenshot_dir, &st) && ((st.st_mode & S_IFMT) == S_IFDIR))
-        {
             Bsnprintf(fn, sizeof(fn), "%s/%s", screenshot_dir, filename);
-        }
         else if (buildvfs_mkdir(screenshot_dir, S_IRWXU) == 0)
         {
+#ifndef NDEBUG
             OSD_Printf("Directory \"%s\" created successfully!\n", screenshot_dir);
+#endif
             Bsnprintf(fn, sizeof(fn), "%s/%s", screenshot_dir, filename);
         }
         else
@@ -88,9 +88,7 @@ static char* getScreenshotPath(const char* filename)
         }
     }
     else
-    {
         Bsnprintf(fn, sizeof(fn), "%s", filename);
-    }
 
     char* ret = Xstrdup(fn);
 
