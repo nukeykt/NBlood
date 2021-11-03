@@ -2492,7 +2492,8 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                 al &= tcol.a = rpptr[x].a;
                 onebitalpha &= tcol.a == 0 || tcol.a == 255;
 
-                hictinting_applypixcolor(&tcol, dapalnum);
+                if(effect)
+                    hictinting_applypixcolor(&tcol, dapalnum);
 
                 rpptr[x] = tcol;
             }

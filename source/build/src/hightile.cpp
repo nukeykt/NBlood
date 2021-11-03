@@ -372,7 +372,7 @@ int32_t hicclearsubst(int32_t picnum, int32_t palnum)
     return 0;
 }
 
-void hictinting_applypixcolor(coltype& tcol, uint8_t pal)
+void hictinting_applypixcolor(coltype* tcol, uint8_t pal)
 {
     UNREFERENCED_PARAMETER(tcol);
     UNREFERENCED_PARAMETER(pal);
