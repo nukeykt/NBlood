@@ -2687,6 +2687,12 @@ int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall)
 
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr)
 {
+    if (usevoxels && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]] && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) == VF_NOTRANS)
+        return false;
+
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum] && (voxflags[tspr->picnum] & VF_NOTRANS) == VF_NOTRANS)
+        return false;
+
     if ((tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || (tspr->clipdist & TSPR_FLAGS_DRAW_LAST) || 
         ((unsigned)tspr->owner < MAXSPRITES && spriteext[tspr->owner].alpha))
         return true;
@@ -8033,16 +8039,6 @@ void polymost_drawsprite(int32_t snum)
         }
     }
 
-    int32_t method = DAMETH_MASK | DAMETH_CLAMPED;
-
-    if (tspr->cstat & 2)
-        method = DAMETH_CLAMPED | ((tspr->cstat & 512) ? DAMETH_TRANS2 : DAMETH_TRANS1);
-
-    handle_blend(!!(tspr->cstat & 2), tspr->blend, !!(tspr->cstat & 512));
-
-    drawpoly_alpha = spriteext[spritenum].alpha;
-    drawpoly_blend = tspr->blend;
-
     sec = (usectorptr_t)&sector[tspr->sectnum];
 
     if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
@@ -8088,6 +8084,16 @@ void polymost_drawsprite(int32_t snum)
 
         break;
     }
+
+    handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
+
+    drawpoly_alpha = spriteext[spritenum].alpha;
+    drawpoly_blend = tspr->blend;
+
+    int32_t method = DAMETH_MASK | DAMETH_CLAMPED;
+
+    if (tspr->cstat & CSTAT_SPRITE_TRANSLUCENT)
+        method = DAMETH_CLAMPED | ((tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT) ? DAMETH_TRANS2 : DAMETH_TRANS1);
 
     vec3_t pos = tspr->xyz;
 

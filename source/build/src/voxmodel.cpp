@@ -1095,14 +1095,14 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if (have_basepal_tint())
         hictinting_apply(pc, MAXPALOOKUPS - 1);
 
-    if (!shadowHack)
+    if (!shadowHack && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) != VF_NOTRANS)
     {
-        pc[3] = (tspr->cstat & 2) ? glblend[tspr->blend].def[!!(tspr->cstat & 512)].alpha : 1.0f;
+        pc[3] = (tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) ? glblend[tspr->blend].def[!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT)].alpha : 1.0f;
         pc[3] *= 1.0f - spriteext[tspr->owner].alpha;
 
-        handle_blend(!!(tspr->cstat & 2), tspr->blend, !!(tspr->cstat & 512));
+        handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
 
-        if (!(tspr->cstat & 2) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
+        if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
             glEnable(GL_BLEND);  // else glDisable(GL_BLEND);
     }
     else pc[3] = 1.f;

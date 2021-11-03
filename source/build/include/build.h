@@ -1038,7 +1038,13 @@ extern float debug1, debug2;
 
 extern int16_t tiletovox[MAXTILES];
 extern int32_t usevoxels, voxscale[MAXVOXELS];
+extern uint8_t voxflags[MAXVOXELS];
 extern char g_haveVoxels;
+
+enum
+{
+    VF_NOTRANS = 1,
+};
 
 #ifdef USE_OPENGL
 extern int32_t usemodels, usehightile;

@@ -101,6 +101,7 @@ int32_t novoxmips = 1;
 #endif
 static char voxlock[MAXVOXELS][MAXVOXMIPS];
 int32_t voxscale[MAXVOXELS];
+uint8_t voxflags[MAXVOXELS];
 
 static int32_t ggxinc[MAXXSIZ+1], ggyinc[MAXXSIZ+1];
 static int32_t lowrecip[1024], nytooclose;
@@ -11614,6 +11615,7 @@ void vox_undefine(int32_t const tile)
         voxoff[voxindex][j] = 0;
     }
     voxscale[voxindex] = 65536;
+    voxflags[voxindex] = 0;
     tiletovox[tile] = -1;
 
     // TODO: nextvoxid

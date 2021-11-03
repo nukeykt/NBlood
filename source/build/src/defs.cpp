@@ -124,6 +124,7 @@ enum scripttoken_t
     T_TILEFONT, T_CHARACTER,
     T_TRUENPOT,
     T_STUB_INTEGER, T_STUB_INTEGER_STRING, T_STUB_BRACES, T_STUB_STRING_BRACES,
+    T_NOTRANS,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -1911,10 +1912,11 @@ static int32_t defsparser(scriptfile *script)
 
             static const tokenlist voxeltokens[] =
             {
-                { "tile",   T_TILE   },
-                { "tile0",  T_TILE0  },
-                { "tile1",  T_TILE1  },
-                { "scale",  T_SCALE  },
+                { "tile",    T_TILE    },
+                { "tile0",   T_TILE0   },
+                { "tile1",   T_TILE1   },
+                { "scale",   T_SCALE   },
+                { "notrans", T_NOTRANS },
             };
 
             if (EDUKE32_PREDICT_FALSE(scriptfile_getstring(script,&fn)))
@@ -1977,6 +1979,10 @@ static int32_t defsparser(scriptfile *script)
 #endif
                     break;
                 }
+                
+                case T_NOTRANS:
+                    voxflags[lastvoxid] |= VF_NOTRANS;
+                    break;
                 }
             }
             lastvoxid = -1;
