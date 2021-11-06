@@ -1734,6 +1734,13 @@ static FORCE_INLINE int inside_z_p(int32_t const x, int32_t const y, int32_t con
     return (z >= cz && z <= fz && inside_p(x, y, sectnum));
 }
 
+static FORCE_INLINE int inside_exclude_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum, const uint8_t *excludesectbitmap)
+{
+    int32_t cz, fz;
+    getzsofslope(sectnum, x, y, &cz, &fz);
+    return (z >= cz && z <= fz && inside_exclude_p(x, y, sectnum, excludesectbitmap));
+}
+
 #define SET_AND_RETURN(Lval, Rval) \
     do                             \
     {                              \

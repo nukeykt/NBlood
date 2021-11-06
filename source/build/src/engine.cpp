@@ -12562,6 +12562,29 @@ void updatesector_tryremaining(int32_t const x, int32_t const y, int16_t *const 
     *sectnum = -1;
 }
 
+// same as above but with z height checks
+void updatesectorz_tryremaining(int32_t const x, int32_t const y, int32_t const z, int16_t *const sectnum)
+{
+    // we need to support passing in a sectnum of -1, unfortunately
+    int16_t const sect = *sectnum == -1 ? numsectors >> 1 : *sectnum;
+    int trycnt = max<int>(numsectors - sect, sect);
+
+    if (inside_exclude_z_p(x, y, z, sect, updatesectorneighbormap))
+        SET_AND_RETURN(*sectnum, sect);
+
+    int16_t highsect = sect, lowsect = sect;
+
+    do
+    {
+        if (highsect < numsectors-1 && inside_exclude_z_p(x, y, z, ++highsect, updatesectorneighbormap))
+            SET_AND_RETURN(*sectnum, highsect);
+        if (lowsect > 0 && inside_exclude_z_p(x, y, z, --lowsect, updatesectorneighbormap))
+            SET_AND_RETURN(*sectnum, lowsect);
+    } while (trycnt--);
+
+    *sectnum = -1;
+}
+
 void updatesector(int32_t const x, int32_t const y, int16_t* const sectnum)
 {
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
@@ -12600,9 +12623,17 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
         while (--wallsleft);
     }
 
-    for (bssize_t i=numsectors-1; i>=0; --i)
-        if (inside_exclude_p(x, y, i, excludesectbitmap))
-            SET_AND_RETURN(*sectnum, i);
+    int16_t const sect = *sectnum == -1 ? numsectors >> 1 : *sectnum;
+    int trycnt = max<int>(numsectors - sect, sect);
+    int16_t highsect = sect, lowsect = sect;
+
+    do
+    {
+        if (highsect < numsectors-1 && inside_exclude_p(x, y, ++highsect, excludesectbitmap))
+            SET_AND_RETURN(*sectnum, highsect);
+        if (lowsect > 0 && inside_exclude_p(x, y, --lowsect, excludesectbitmap))
+            SET_AND_RETURN(*sectnum, lowsect);
+    } while (trycnt--);
 
     *sectnum = -1;
 }
@@ -12702,7 +12733,7 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
     if (sect != -1)
         SET_AND_RETURN(*sectnum, sect);
 
-    updatesector_tryremaining(x, y, sectnum);
+    updatesectorz_tryremaining(x, y, z, sectnum);
 }
 
 void updatesectorneighbor(int32_t const x, int32_t const y, int16_t * const sectnum, int32_t initialMaxDistance /*= INITIALUPDATESECTORDIST*/, int32_t maxDistance /*= MAXUPDATESECTORDIST*/)
