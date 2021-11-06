@@ -1907,6 +1907,7 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
         return false;
     case kMenuEventKey:
     case kMenuEventSpace:
+    case kMenuEventDelete:
     {
         char key;
         if (event.at2 < 128)
@@ -2105,6 +2106,7 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         return false;
     case kMenuEventKey:
     case kMenuEventSpace:
+    case kMenuEventDelete:
     {
         char key;
         if (bScan && event.at2 < 128)
