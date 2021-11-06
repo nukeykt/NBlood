@@ -418,10 +418,10 @@ void ctrlGetInput(void)
     if (gInput.forward < keyMove && gInput.forward > -keyMove)
     {
         if (BUTTON(gamefunc_Move_Forward))
-            gInput.forward += keyMove;
+            input.forward += keyMove;
 
         if (BUTTON(gamefunc_Move_Backward))
-            gInput.forward -= keyMove;
+            input.forward -= keyMove;
     }
 
     if (gInput.strafe < keyMove && gInput.strafe > -keyMove)
