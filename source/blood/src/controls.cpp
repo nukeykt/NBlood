@@ -244,7 +244,7 @@ void ctrlGetInput(void)
         viewToggle(gViewMode);
     }
 
-    if (BUTTON(gamefunc_Map_Follow_Mode))
+    if (gViewMode == 4 && BUTTON(gamefunc_Map_Follow_Mode))
     {
         CONTROL_ClearButton(gamefunc_Map_Follow_Mode);
         gFollowMap = !gFollowMap;
