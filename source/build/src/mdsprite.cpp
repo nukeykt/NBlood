@@ -2237,7 +2237,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             a0.y = (float) sext->mdpivot_offset.y * f;
 
         if ((sext->mdpivot_offset.z) && !(tspr->clipdist & TSPR_FLAGS_MDHACK))  // Compare with SCREEN_FACTORS above
-            a0.z = (float)sext->mdpivot_offset.z / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
+            a0.z = (float)(((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR) ? -sext->mdpivot_offset.z : sext->mdpivot_offset.z) / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
 
         k0 = (float)sintable[(sext->mdpitch+512)&2047] * (1.f/16384.f);
         k1 = (float)sintable[sext->mdpitch&2047] * (1.f/16384.f);
