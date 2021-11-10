@@ -1642,8 +1642,8 @@ static Menu_t Menus[] = {
 #ifdef POLYMER
     { &M_RENDERERSETUP_POLYMER, MENU_POLYMER, MENU_DISPLAYSETUP, MA_Return, Menu },
 #endif
-    { &M_LOAD, MENU_LOAD, MENU_MAIN, MA_Return, Menu },
-    { &M_SAVE, MENU_SAVE, MENU_MAIN, MA_Return, Menu },
+    { &M_LOAD, MENU_LOAD, MENU_MAIN, MA_Return, List },
+    { &M_SAVE, MENU_SAVE, MENU_MAIN, MA_Return, List },
     { &M_STORY, MENU_STORY, MENU_MAIN, MA_Return, Panel },
     { &M_F1HELP, MENU_F1HELP, MENU_MAIN, MA_Return, Panel },
     { &M_QUIT, MENU_QUIT, MENU_PREVIOUS, MA_Return, Verify },
@@ -4714,7 +4714,7 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
 
 static void Menu_MaybeSetSelectionToChild(Menu_t * m, MenuID_t id)
 {
-    if (m->type == Menu)
+    if (m->type == Menu || m->type == List)
     {
         auto  menu = (MenuMenu_t *)m->object;
 
@@ -4977,6 +4977,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         Menu_FileSelectInit((MenuFileSelect_t*)m->object);
         break;
     case Menu:
+    case List:
     {
         auto menu = (MenuMenu_t*)m->object;
         // MenuEntry_t* currentry = menu->entrylist[menu->currentEntry];
@@ -5136,6 +5137,7 @@ int32_t Menu_IsTextInput(Menu_t *cm)
         case TextForm:
         case FileSelect:
         case Message:
+        case List:
             return 1;
             break;
         case Panel:
@@ -6564,6 +6566,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
         }
 
         case Menu:
+        case List:
         {
             Menu_ValidateSelectionIsActive(cm);
 
@@ -7375,6 +7378,7 @@ static void Menu_RunInput(Menu_t *cm)
             break;
 
         case Menu:
+        case List:
         {
             int32_t state;
 
@@ -7598,6 +7602,83 @@ static void Menu_RunInput(Menu_t *cm)
                     S_PlaySound(KICK_HIT);
 
                     currentry = Menu_RunInput_Menu_Movement(menu, MM_Down);
+                }
+                else if (KB_KeyPressed(sc_PgUp) || MOUSE_GetButtons() & M_WHEELUP)
+                {
+                    if (cm->type != List)
+                        break;
+
+                    KB_ClearKeyDown(sc_PgUp);
+                    MOUSE_ClearButton(M_WHEELUP);
+
+                    menu->currentEntry -= 6;
+
+                    if (menu->currentEntry < 0)
+                        menu->currentEntry = 0;
+
+                    S_PlaySound(KICK_HIT);
+
+                    Menu_RunInput_Menu_MovementVerify(menu);
+                }
+                else if (KB_KeyPressed(sc_PgDn) || MOUSE_GetButtons() & M_WHEELDOWN)
+                {
+                    if (cm->type != List)
+                        break;
+
+                    KB_ClearKeyDown(sc_PgDn);
+                    MOUSE_ClearButton(M_WHEELDOWN);
+
+                    menu->currentEntry += 6;
+
+                    if (menu->currentEntry > menu->numEntries - 1)
+                        menu->currentEntry = menu->numEntries - 1;
+
+                    S_PlaySound(KICK_HIT);
+
+                    Menu_RunInput_Menu_MovementVerify(menu);
+                }
+                else if (KB_KeyWaiting() && KB_KeyPressed(KB_GetLastScanCode()))
+                {
+                    // this is fucking terrible, sorry
+                    char ch = KB_GetCh(), ch2 = KB_ScanCodeToString(KB_GetLastScanCode())[0];
+
+                    if (ch >= 'a')
+                        ch -= ('a' - 'A');
+
+                    if (ch2 != ch || ch <= 0 || (ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9'))
+                        break;
+
+                    int index = 0;
+                    auto seeker = menu->entrylist[menu->currentEntry];
+
+                    do
+                    {
+                        seeker = menu->entrylist[(index + menu->currentEntry) % menu->numEntries];
+
+                        if (!seeker->name)
+                            continue;
+
+                        ch2 = seeker->name[0];
+
+                        if (ch2 >= 'a' && ch2 <= 'z')
+                            ch2 -= ('a' - 'A');
+
+                        if (ch2 == ch && (index + menu->currentEntry) % menu->numEntries != menu->currentEntry)
+                            break;
+                    }
+                    while (++index < menu->numEntries);
+
+                    if ((index + menu->currentEntry) % menu->numEntries != menu->currentEntry)
+                    {
+                        menu->currentEntry = (index + menu->currentEntry) % menu->numEntries;
+
+                        KB_ClearKeysDown();
+                        KB_ClearLastScanCode();
+
+                        Menu_RunInput_Menu_MovementVerify(menu);
+
+                        S_PlaySound(KICK_HIT);
+                    }
                 }
 
                 if (currentry != NULL)

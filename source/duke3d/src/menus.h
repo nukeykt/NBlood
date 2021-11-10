@@ -366,6 +366,7 @@ typedef enum MenuType_t
     Message,
     TextForm,
     FileSelect,
+    List,
 } MenuType_t;
 
 typedef struct MenuMenu_t
