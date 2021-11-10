@@ -2225,6 +2225,11 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
                     {
                         hictinting_applypixcolor(wpptr, tintpalnum);
                     }
+
+                    //swap r & b so that we deal with the data as BGRA
+                    uint8_t tmpR = wpptr->r;
+                    wpptr->r = wpptr->b;
+                    wpptr->b = tmpR;
                 }
             }
         }
