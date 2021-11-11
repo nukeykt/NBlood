@@ -1253,7 +1253,7 @@ static int32_t alsadevice;
 static std::vector<alsa_mididevinfo_t> alsadevices;
 #endif
 
-static int32_t soundrate, soundvoices, musicdevice, opl3stereo;
+static int32_t soundrate, soundvoices, musicdevice, opl3stereo, extmusic;
 static char sf2bankfile[BMAX_PATH];
 static MenuOption_t MEO_SOUND = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.SoundToggle );
 static MenuEntry_t ME_SOUND = MAKE_MENUENTRY( "Sound:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND, Option );
@@ -1286,6 +1286,11 @@ static MenuEntry_t ME_SOUND_SAMPLINGRATE = MAKE_MENUENTRY( "Sample rate:", &MF_R
 #ifndef EDUKE32_RETAIL_MENU
 static MenuOption_t MEO_SOUND_OPL3STEREO = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, &opl3stereo);
 static MenuEntry_t ME_SOUND_OPL3STEREO = MAKE_MENUENTRY( "OPL3 stereo mode:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_OPL3STEREO, Option );
+
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+static MenuOption_t MEO_SOUND_EXTMUSIC = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, &extmusic);
+static MenuEntry_t  ME_SOUND_EXTMUSIC  = MAKE_MENUENTRY("Load OGG/FLAC music:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_EXTMUSIC, Option);
+#endif
 
 static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 128, 0, 8, DisplayTypeInteger );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
@@ -1338,7 +1343,6 @@ static MenuEntry_t *MEL_SOUND[] = {
     &ME_SOUND_VOLUME_MUSIC,
     &ME_SOUND_DUKETALK,
 #ifndef EDUKE32_RETAIL_MENU
-    &ME_Space4_Redfont,
     &ME_SOUND_DEVSETUP,
 #endif
 };
@@ -1353,6 +1357,9 @@ static MenuEntry_t *MEL_SOUND_DEVSETUP[] = {
 #endif
     &ME_SOUND_OPL3STEREO,
     &ME_SOUND_SF2,
+#endif
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+    &ME_SOUND_EXTMUSIC,
 #endif
     &ME_Space4_Redfont,
     &ME_SOUND_RESTART,
@@ -2494,7 +2501,9 @@ static void Menu_Pre(MenuID_t cm)
 #endif
         MenuEntry_DisableOnCondition(&ME_SOUND_OPL3STEREO, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SF2, !ud.config.MusicToggle);
-
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+        MenuEntry_DisableOnCondition(&ME_SOUND_EXTMUSIC, !ud.config.MusicToggle);
+#endif
         MenuEntry_HideOnCondition(&ME_SOUND_OPL3STEREO, musicdevice != ASS_OPL3);
         MenuEntry_HideOnCondition(&ME_SOUND_SF2, musicdevice != ASS_SF2);
 #endif
@@ -2502,6 +2511,9 @@ static void Menu_Pre(MenuID_t cm)
                                                         soundvoices == ud.config.NumVoices &&
                                                         musicdevice == ud.config.MusicDevice &&
                                                         opl3stereo == AL_Stereo &&
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+                                                        extmusic == g_maybeUpgradeMusic &&
+#endif
                                                         !Bstrcmp(sf2bankfile, SF2_BankFile)
 #ifdef __linux__
                                                         && alsadevices.size() > 0
@@ -3598,6 +3610,9 @@ static void Menu_RefreshSoundProperties()
     soundvoices  = ud.config.NumVoices;
     musicdevice  = ud.config.MusicDevice;
     opl3stereo   = AL_Stereo;
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+    extmusic     = g_maybeUpgradeMusic;
+#endif
 }
 
 /*
@@ -3795,7 +3810,10 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
                     (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
 #endif
             );
-
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+            int const musicdirsToggleUsed = (g_maybeUpgradeMusic != extmusic);
+            g_maybeUpgradeMusic = extmusic;
+#endif
             AL_Stereo = opl3stereo;
             Bstrcpy(SF2_BankFile, sf2bankfile);
 
@@ -3808,10 +3826,15 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 
             S_RestartMusic();
 
-            if (MusicIsWaveform)
-                MV_SetPosition(MusicVoice, (int)pos.tick);
-            else
-                MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+            if (!musicdirsToggleUsed)
+#endif
+            {
+                if (MusicIsWaveform)
+                    MV_SetPosition(MusicVoice, (int)pos.tick);
+                else
+                    MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
+            }
         }
 
         Menu_RefreshSoundProperties();

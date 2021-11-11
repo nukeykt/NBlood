@@ -1710,6 +1710,8 @@ int32_t registerosdcommands(void)
         { "snd_speech", "bitmask controlling player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
 #ifdef FORMAT_UPGRADE_ELIGIBLE
         { "snd_tryformats", "discover and use replacement audio in .flac and .ogg formats if available" CVAR_BOOL_OPTSTR, (void *)&g_maybeUpgradeSoundFormats, CVAR_BOOL, 0, 1 },
+        { "mus_tryformats", "discover and use replacement music in .flac and .ogg formats if available (requires snd_tryformats 1)" CVAR_BOOL_OPTSTR, (void *)&g_maybeUpgradeMusic,
+          CVAR_BOOL, 0, 1 },
 #endif
         { "team", "change team in multiplayer", (void *)&ud.team, CVAR_INT|CVAR_MULTI, 0, 3 },
 

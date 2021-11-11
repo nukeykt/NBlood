@@ -947,6 +947,7 @@ void G_LoadLookups(void)
 
 #ifdef FORMAT_UPGRADE_ELIGIBLE
 int g_maybeUpgradeSoundFormats = 1;
+int g_maybeUpgradeMusic = 1;
 
 static buildvfs_kfd S_TryFormats(char * const testfn, char * const fn_suffix, char const searchfirst)
 {
@@ -1016,35 +1017,40 @@ buildvfs_kfd S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic
     auto testfn = (char *)Xmalloc(Bstrlen(fn) + 12);
 #endif
 
-    // look in ./
-    // ex: ./grabbag.mid
-    Bstrcpy(testfn, fn);
-    buildvfs_kfd fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
-    if (fp != buildvfs_kfd_invalid)
-        goto success;
+    buildvfs_kfd fp = buildvfs_kfd_invalid;
 
-#ifndef USE_PHYSFS
-    // look in ./music/<file's parent GRP name>/
-    // ex: ./music/duke3d/grabbag.mid
-    // ex: ./music/nwinter/grabbag.mid
-    if (origparent != NULL)
+    if (g_maybeUpgradeMusic)
     {
-        char const * const parentextension = Bstrrchr(origparent, '.');
-        uint32_t const namelength = parentextension != NULL ? (unsigned)(parentextension - origparent) : parentlength;
-
-        Bsprintf(testfn, "music/%.*s/%s", namelength, origparent, fn);
+        // look in ./
+        // ex: ./grabbag.mid
+        Bstrcpy(testfn, fn);
         fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
         if (fp != buildvfs_kfd_invalid)
             goto success;
-    }
 
-    // look in ./music/
-    // ex: ./music/grabbag.mid
-    Bsprintf(testfn, "music/%s", fn);
-    fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
-    if (fp != buildvfs_kfd_invalid)
-        goto success;
+#ifndef USE_PHYSFS
+        // look in ./music/<file's parent GRP name>/
+        // ex: ./music/duke3d/grabbag.mid
+        // ex: ./music/nwinter/grabbag.mid
+        if (origparent != NULL)
+        {
+            char const * const parentextension = Bstrrchr(origparent, '.');
+            uint32_t const namelength = parentextension != NULL ? (unsigned)(parentextension - origparent) : parentlength;
+
+            Bsprintf(testfn, "music/%.*s/%s", namelength, origparent, fn);
+            fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
+            if (fp != buildvfs_kfd_invalid)
+                goto success;
+        }
+
+        // look in ./music/
+        // ex: ./music/grabbag.mid
+        Bsprintf(testfn, "music/%s", fn);
+        fp = S_TryExtensionReplacements(testfn, searchfirst, ismusic);
+        if (fp != buildvfs_kfd_invalid)
+            goto success;
 #endif
+    }
 
     Xfree(testfn);
     return origfp;
