@@ -50,7 +50,7 @@ typedef struct texcachepic_t
 
 hicreplctyp * hicfindsubst(int picnum, int palnum, int nozero = 0);
 hicreplctyp * hicfindskybox(int picnum, int palnum, int nozero = 0);
-void hictinting_applypixcolor(coltype* tcol, uint8_t pal);
+void hictinting_applypixcolor(coltype* tcol, uint8_t pal, bool no_rb_swap);
 
 static inline int have_basepal_tint(void)
 {

@@ -284,14 +284,14 @@ int32_t hicclearsubst(int32_t picnum, int32_t palnum)
     return 0;
 }
 
-void hictinting_applypixcolor(coltype* tcol, uint8_t pal)
+void hictinting_applypixcolor(coltype* tcol, uint8_t pal, bool no_rb_swap)
 {
     polytintflags_t const effect = hicfxmask(pal);
     polytint_t const& tint = hictinting[pal];
 
-    int32_t r = (glinfo.bgra) ? tint.r : tint.b;
+    int32_t r = (!no_rb_swap && glinfo.bgra) ? tint.b : tint.r;
     int32_t g = tint.g;
-    int32_t b = (glinfo.bgra) ? tint.b : tint.r;
+    int32_t b = (!no_rb_swap && glinfo.bgra) ? tint.r : tint.b;
 
     if (effect & HICTINT_GRAYSCALE)
     {
@@ -309,27 +309,27 @@ void hictinting_applypixcolor(coltype* tcol, uint8_t pal)
 
     if (effect & HICTINT_COLORIZE)
     {
-        tcol->b = min((int32_t)((tcol->b) * r) >> 6, 255);
+        tcol->b = min((int32_t)((tcol->b) * b) >> 6, 255);
         tcol->g = min((int32_t)((tcol->g) * g) >> 6, 255);
-        tcol->r = min((int32_t)((tcol->r) * b) >> 6, 255);
+        tcol->r = min((int32_t)((tcol->r) * r) >> 6, 255);
     }
 
     switch (effect & HICTINT_BLENDMASK)
     {
     case HICTINT_BLEND_SCREEN:
-        tcol->b = 255 - (((255 - tcol->b) * (255 - r)) >> 8);
+        tcol->b = 255 - (((255 - tcol->b) * (255 - b)) >> 8);
         tcol->g = 255 - (((255 - tcol->g) * (255 - g)) >> 8);
-        tcol->r = 255 - (((255 - tcol->r) * (255 - b)) >> 8);
+        tcol->r = 255 - (((255 - tcol->r) * (255 - r)) >> 8);
         break;
     case HICTINT_BLEND_OVERLAY:
-        tcol->b = tcol->b < 128 ? (tcol->b * r) >> 7 : 255 - (((255 - tcol->b) * (255 - r)) >> 7);
+        tcol->b = tcol->b < 128 ? (tcol->b * b) >> 7 : 255 - (((255 - tcol->b) * (255 - b)) >> 7);
         tcol->g = tcol->g < 128 ? (tcol->g * g) >> 7 : 255 - (((255 - tcol->g) * (255 - g)) >> 7);
-        tcol->r = tcol->r < 128 ? (tcol->r * b) >> 7 : 255 - (((255 - tcol->r) * (255 - b)) >> 7);
+        tcol->r = tcol->r < 128 ? (tcol->r * r) >> 7 : 255 - (((255 - tcol->r) * (255 - r)) >> 7);
         break;
     case HICTINT_BLEND_HARDLIGHT:
-        tcol->b = r < 128 ? (tcol->b * r) >> 7 : 255 - (((255 - tcol->b) * (255 - r)) >> 7);
+        tcol->b = b < 128 ? (tcol->b * b) >> 7 : 255 - (((255 - tcol->b) * (255 - b)) >> 7);
         tcol->g = g < 128 ? (tcol->g * g) >> 7 : 255 - (((255 - tcol->g) * (255 - g)) >> 7);
-        tcol->r = b < 128 ? (tcol->r * b) >> 7 : 255 - (((255 - tcol->r) * (255 - b)) >> 7);
+        tcol->r = r < 128 ? (tcol->r * r) >> 7 : 255 - (((255 - tcol->r) * (255 - r)) >> 7);
         break;
     }
 }
@@ -372,7 +372,7 @@ int32_t hicclearsubst(int32_t picnum, int32_t palnum)
     return 0;
 }
 
-void hictinting_applypixcolor(coltype* tcol, uint8_t pal)
+void hictinting_applypixcolor(coltype* tcol, uint8_t pal, bool no_rb_swap)
 {
     UNREFERENCED_PARAMETER(tcol);
     UNREFERENCED_PARAMETER(pal);

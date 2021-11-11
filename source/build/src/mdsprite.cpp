@@ -831,7 +831,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
                 al &= tcol.a = rpptr[x].a;
                 onebitalpha &= tcol.a == 0 || tcol.a == 255;
 
-                hictinting_applypixcolor(&tcol, pal);
+                hictinting_applypixcolor(&tcol, pal, false);
 
                 rpptr[x] = tcol;
             }

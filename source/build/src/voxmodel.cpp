@@ -86,7 +86,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
             tcol.r = cptr[pic[i].b];
             tcol.a = 255;
 
-            hictinting_applypixcolor(&tcol, dapal);
+            hictinting_applypixcolor(&tcol, dapal, false);
         }
     }
     else

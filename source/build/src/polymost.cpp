@@ -2224,7 +2224,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
 
                     if (!fullbrightloadingpass && tintpalnum >= 0)
                     {
-                        hictinting_applypixcolor(wpptr, tintpalnum);
+                        hictinting_applypixcolor(wpptr, tintpalnum, true);
                     }
 
                     //swap r & b so that we deal with the data as BGRA
@@ -2499,7 +2499,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                 onebitalpha &= tcol.a == 0 || tcol.a == 255;
 
                 if(effect)
-                    hictinting_applypixcolor(&tcol, dapalnum);
+                    hictinting_applypixcolor(&tcol, dapalnum, false);
 
                 rpptr[x] = tcol;
             }
