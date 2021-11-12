@@ -146,9 +146,22 @@ EDUKE32_STATIC_ASSERT(sizeof(actor_t) == 96);
 typedef struct  
 {
     _prlight *lightptr;              // 4b/8b  aligned on 96 bytes
+    vec3_t lightoffset;
     int16_t lightId, lightmaxrange;  // 4b
-    uint8_t lightcount, filler[3];   // 4b
+    int16_t lightrange, olightrange;
+    int16_t lightang, olightang;
+    uint8_t lightcount, lightcolidx;   // 4b
 } practor_t;
+
+// NOTE: T5 is AC_ACTION_ID
+#define LIGHTRAD_PICOFS(i) (T5(i) ? *(apScript + T5(i)) + (*(apScript + T5(i) + 2)) * AC_CURFRAME(actor[i].t_data) : 0)
+
+// this is the same crap as in game.c's tspr manipulation.  puke.
+// XXX: may access tilesizy out-of-bounds by bad user code.
+#define LIGHTRAD(s) (sprite[s].yrepeat * tilesiz[sprite[s].picnum + LIGHTRAD_PICOFS(s)].y)
+#define LIGHTRAD2(s) ((sprite[s].yrepeat + ((rand() % sprite[s].yrepeat)>>2)) * tilesiz[sprite[s].picnum + LIGHTRAD_PICOFS(s)].y)
+#define LIGHTRAD3(s) (sprite[s].yrepeat * tilesiz[sprite[s].picnum].y)
+#define LIGHTZOFF(s) ((sprite[s].yrepeat*tilesiz[sprite[s].picnum].y)<<1)
 #endif
 
 // note: fields in this struct DO NOT have to be in this order,
@@ -405,8 +418,9 @@ void A_RadiusDamage(int spriteNum, int blastRadius, int dmg1, int dmg2, int dmg3
 void A_SpawnMultiple(int spriteNum, int tileNum, int spawnCnt);
 
 int  G_SetInterpolation(int32_t *posptr);
-void G_AddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange, int lightColor, int lightPrio);
 void G_DeleteAllLights(void);
+void G_AddGameLight(int spriteNum, int sectNum, vec3_t const &offset, int lightRange, int lightRadius, int lightHoriz, uint32_t lightColor, int lightPrio);
+void G_InterpolateLights(int smoothratio);
 void G_ClearCameraView(DukePlayer_t *ps);
 void G_DoInterpolations(int smoothRatio);
 void G_MoveWorld(void);

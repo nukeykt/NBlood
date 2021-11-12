@@ -385,6 +385,7 @@ int32_t engineLoadMHK(const char *filename)
             light.priority = value;
             scriptfile_getsymbol(script, &value);
             light.tilenum = value;
+            light.owner = -1;
 
             light.publicflags.emitshadow = 1;
             light.publicflags.negative = 0;

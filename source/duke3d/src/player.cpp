@@ -861,14 +861,9 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER && pProj->flashcolor)
     {
-        int32_t x = ((sintable[(pSprite->ang + 512) & 2047]) >> 7), y = ((sintable[(pSprite->ang) & 2047]) >> 7);
-
-        pSprite->x += x;
-        pSprite->y += y;
-        G_AddGameLight(0, spriteNum, pPlayer->spritezoffset, 8192, pProj->flashcolor, PR_LIGHT_PRIO_MAX_GAME);
+        vec3_t const offset = { -((sintable[(pSprite->ang+512)&2047])>>7), -((sintable[(pSprite->ang)&2047])>>7), PHEIGHT };
+        G_AddGameLight(spriteNum, pSprite->sectnum, offset, 8192, 0, 100, pProj->flashcolor, PR_LIGHT_PRIO_MAX_GAME);
         practor[spriteNum].lightcount = 2;
-        pSprite->x -= x;
-        pSprite->y -= y;
     }
 #endif // POLYMER
 
@@ -1709,15 +1704,9 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
             case RPG__:
             case MORTER__:
                 {
-                    vec2_t const v = { ((sintable[(pSprite->ang + 512) & 2047]) >> 7),
-                                       ((sintable[(pSprite->ang) & 2047]) >> 7) };
-
-                    pSprite->x += v.x;
-                    pSprite->y += v.y;
-                    G_AddGameLight(0, spriteNum, PHEIGHT, 8192, 255 + (95 << 8), PR_LIGHT_PRIO_MAX_GAME);
+                    vec3_t const offset = { -((sintable[(pSprite->ang+512)&2047])>>7), -((sintable[(pSprite->ang)&2047])>>7), PHEIGHT };
+                    G_AddGameLight(spriteNum, pSprite->sectnum, offset, 8192, 0, 100, 255 + (95 << 8), PR_LIGHT_PRIO_MAX_GAME);
                     practor[spriteNum].lightcount = 2;
-                    pSprite->x -= v.x;
-                    pSprite->y -= v.y;
                 }
 
                 break;
@@ -2068,16 +2057,10 @@ static void P_FireWeapon(int playerNum)
     if (!(PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_NOVISIBLE))
     {
 #ifdef POLYMER
-        spritetype *s = &sprite[pPlayer->i];
-        int32_t     x = ((sintable[(s->ang + 512) & 2047]) >> 7), y = ((sintable[(s->ang) & 2047]) >> 7);
-
-        s->x += x;
-        s->y += y;
-        G_AddGameLight(0, pPlayer->i, pPlayer->spritezoffset, 8192, PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor),
-                       PR_LIGHT_PRIO_MAX_GAME);
+        auto s = (uspriteptr_t)&sprite[pPlayer->i];
+        vec3_t const offset = { -((sintable[(s->ang+512)&2047])>>7), -((sintable[(s->ang)&2047])>>7), pPlayer->spritezoffset };
+        G_AddGameLight(pPlayer->i, pPlayer->cursectnum, offset, 8192, 0, 100, PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor), PR_LIGHT_PRIO_MAX_GAME);
         practor[pPlayer->i].lightcount = 2;
-        s->x -= x;
-        s->y -= y;
 #endif  // POLYMER
         pPlayer->visibility = 0;
     }
@@ -4204,28 +4187,24 @@ static void P_ProcessWeapon(int playerNum)
         }
     }
 
-    if (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_GLOWS)
+    int const maybeGlowingWeapon = pPlayer->last_weapon != -1 ? pPlayer->last_weapon : pPlayer->curr_weapon;
+
+    if (PWEAPON(playerNum, maybeGlowingWeapon, Flags) & WEAPON_GLOWS)
     {
         pPlayer->random_club_frame += 64; // Glowing
 
 #ifdef POLYMER
         if (pPlayer->kickback_pic == 0)
         {
-            auto const pSprite     = &sprite[pPlayer->i];
-            int const         glowXOffset = ((sintable[(pSprite->ang + 512) & 2047]) >> 7);
-            int const         glowYOffset = ((sintable[(pSprite->ang) & 2047]) >> 7);
-            int const         glowRange   = 1024 + (sintable[pPlayer->random_club_frame & 2047] >> 3);
+            auto   const pSprite = &sprite[pPlayer->i];
+            vec3_t const offset = { -((sintable[(pSprite->ang+512)&2047])>>7), -((sintable[(pSprite->ang)&2047])>>7), pPlayer->spritezoffset };
 
-            pSprite->x += glowXOffset;
-            pSprite->y += glowYOffset;
+            int const glowRange = (16-klabs(pPlayer->weapon_pos)+(sintable[pPlayer->random_club_frame & 2047]>>10))<<6;
 
-            G_AddGameLight(0, pPlayer->i, pPlayer->spritezoffset, max(glowRange, 0),
-                           PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor), PR_LIGHT_PRIO_HIGH_GAME);
+            G_AddGameLight(pPlayer->i, pPlayer->cursectnum, offset, max(glowRange, 0), 0, 100,
+                           PWEAPON(playerNum, maybeGlowingWeapon, FlashColor), PR_LIGHT_PRIO_HIGH_GAME);
 
             practor[pPlayer->i].lightcount = 2;
-
-            pSprite->x -= glowXOffset;
-            pSprite->y -= glowYOffset;
         }
 #endif
     }

@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct osdcmd_cheatsinfo osdcmd_cheatsinfo_stat;
 float r_ambientlight = 1.0, r_ambientlightrecip = 1.0;
+int32_t r_pr_defaultlights = 1;
 
 uint32_t cl_cheatmask;
 
@@ -1692,6 +1693,8 @@ int32_t registerosdcommands(void)
         { "r_precache", "precache art assets during level load" CVAR_BOOL_OPTSTR, (void *)&ud.config.useprecache, CVAR_BOOL, 0, 1 },
 
         { "r_ambientlight", "sets the global map light level",(void *)&r_ambientlight, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
+
+        { "r_pr_defaultlights", "default polymer lights:\n 0: off\n 1: on",(void *)&r_pr_defaultlights, CVAR_BOOL, 0, 1 },
 
         { "skill","changes the game skill setting", (void *)&ud.m_player_skill, CVAR_INT|CVAR_FUNCPTR|CVAR_NOSAVE/*|CVAR_NOMULTI*/, 0, 5 },
 

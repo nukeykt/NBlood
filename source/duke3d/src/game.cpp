@@ -825,6 +825,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
     G_DoInterpolations(smoothRatio);
     G_AnimateCamSprite(smoothRatio);
+    G_InterpolateLights(smoothRatio);
 
     if (ud.camerasprite >= 0)
     {
@@ -2700,7 +2701,7 @@ int A_Spawn(int spriteNum, int tileNum)
 #ifdef POLYMER
             if (pSprite->yrepeat > 32)
             {
-                G_AddGameLight(0, newSprite, ((pSprite->yrepeat*tilesiz[pSprite->picnum].y)<<1), 32768, 255+(95<<8),PR_LIGHT_PRIO_MAX_GAME);
+                G_AddGameLight(newSprite, pSprite->sectnum, { 0, 0, LIGHTZOFF(spriteNum) }, 32768, 0, 100,255+(95<<8), PR_LIGHT_PRIO_MAX_GAME);
                 practor[newSprite].lightcount = 2;
             }
             fallthrough__;

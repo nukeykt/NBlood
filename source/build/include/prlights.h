@@ -14,11 +14,19 @@ typedef struct      s_prplanelist {
 
 #pragma pack(push,1)
 typedef struct      s_prlight {
-    int32_t         x, y, z, horiz, range;
+    union {
+        struct
+        {
+            int32_t x, y, z;
+        };
+        vec3_t xyz;
+        vec2_t xy;
+    };
+    int32_t         horiz, range;
     int16_t         angle, faderadius, radius, sector;
     uint8_t         color[3], priority;
     int8_t          minshade, maxshade;
-    int16_t         tilenum;
+    int16_t         tilenum, owner;
     struct          {
         int         emitshadow  : 1;
         int         negative    : 1;
