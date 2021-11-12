@@ -62,6 +62,7 @@ void polymost_usePaletteIndexing(char usePaletteIndexing);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
+void polymost_initdrawpoly(void);
 void polymost_glinit(void);
 void polymost_glreset(void);
 
@@ -116,6 +117,7 @@ extern int32_t r_yshearing;
 extern int32_t r_persistentStreamBuffer;
 
 extern int32_t polymostcenterhoriz;
+extern GLuint drawpolyVertsID;
 
 // Compare with polymer_eligible_for_artmap()
 static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_t const pal)

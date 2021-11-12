@@ -764,7 +764,6 @@ int32_t             polymer_init(void)
     }
 
     buildgl_resetStateAccounting();
-
     // clean up existing stuff since it will be initialized again if we're re-entering here
     polymer_uninit();
 
@@ -848,6 +847,7 @@ int32_t             polymer_init(void)
     }
 
     buildgl_resetSamplerObjects();
+    polymost_initdrawpoly();
 
     if (pr_verbosity >= 1) OSD_Printf("PR : Initialization complete in %d ms.\n", timerGetTicks()-t);
 
@@ -1456,11 +1456,16 @@ void                polymer_inb4rotatesprite(int16_t tilenum, char pal, int8_t s
     polymer_getbuildmaterial(&rotatespritematerial, tilenum, pal, shade, 0, method);
     rotatespritematerialbits = polymer_bindmaterial(&rotatespritematerial, NULL, 0);
     buildgl_bindSamplerObject(0, PTH_CLAMPED | ((rotatespritematerialbits & prprogrambits[PR_BIT_ART_MAP].bit) ? PTH_INDEXED : 0));
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+
+    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
+    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
 }
 
 void                polymer_postrotatesprite(void)
 {
     polymer_unbindmaterial(rotatespritematerialbits);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static void         polymer_setupdiffusemodulation(_prplane *plane, GLubyte modulation, const GLubyte *data)

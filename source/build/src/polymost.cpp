@@ -108,9 +108,9 @@ static int32_t drawpoly_srepeat = 0, drawpoly_trepeat = 0;
 #define BUFFER_OFFSET(bytes) (GLintptr) ((GLubyte*) NULL + (bytes))
 // these cvars are never used directly in rendering -- only when glinit() is called/renderer reset
 // We do this because we don't want to accidentally overshoot our existing buffer's bounds
-int32_t persistentStreamBuffer = r_persistentStreamBuffer;
-int32_t drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
-static GLuint drawpolyVertsID = 0;
+static int32_t persistentStreamBuffer = r_persistentStreamBuffer;
+static int32_t drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
+GLuint drawpolyVertsID = 0;
 static GLint drawpolyVertsOffset = 0;
 static int32_t drawpolyVertsSubBufferIndex = 0;
 static GLsync drawpolyVertsSync[3] = { 0 };
@@ -549,6 +549,7 @@ void polymost_glreset()
 
     // texcache_freeptrs();
     texcache_syncmemcache();
+    polymost_initdrawpoly();
 
 #ifdef DEBUGGINGAIDS
     OSD_Printf("polymost_glreset()\n");
@@ -884,6 +885,54 @@ static void polymost_bindPth(pthtyp const * const pPth)
 
 // one-time initialization of OpenGL for polymost
 void polymost_clearOrnamentSprites(void);
+
+void polymost_initdrawpoly(void)
+{
+#ifdef USE_GLEXT
+    if (r_persistentStreamBuffer && ((!glinfo.bufferstorage) || (!glinfo.sync)))
+    {
+        OSD_Printf("Your OpenGL implementation doesn't support the required extensions for persistent stream buffers. Disabling...\n");
+        r_persistentStreamBuffer = 0;
+    }
+#endif
+
+    drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
+    persistentStreamBuffer = r_persistentStreamBuffer;
+
+    drawpolyVertsOffset = 0;
+    drawpolyVertsSubBufferIndex = 0;
+
+    if (glIsBuffer(drawpolyVertsID))
+        glDeleteBuffers(1, &drawpolyVertsID);
+
+    glGenBuffers(1, &drawpolyVertsID);
+
+    // reset the sync objects, as old ones we had from any last GL context are gone now
+    for (int i=0; i<ARRAY_SSIZE(drawpolyVertsSync); i++)
+        if (glIsSync(drawpolyVertsSync[i]))
+            glDeleteSync(drawpolyVertsSync[i]);
+
+    Bmemset(drawpolyVertsSync, 0, sizeof(drawpolyVertsSync));
+
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+
+    if (persistentStreamBuffer)
+    {
+        GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+        // we want to triple-buffer to avoid having to wait for the buffer to become available again,
+        // so triple the buffer size we expect to use
+        glBufferStorage(GL_ARRAY_BUFFER, 3*drawpolyVertsBufferLength*sizeof(float)*5, NULL, flags);
+        drawpolyVerts = (float*) glMapBufferRange(GL_ARRAY_BUFFER, 0, 3*drawpolyVertsBufferLength*sizeof(float)*5, flags);
+    }
+    else
+    {
+        drawpolyVerts = defaultDrawpolyVertsArray;
+        glBufferData(GL_ARRAY_BUFFER, drawpolyVertsBufferLength*sizeof(float)*5, NULL, GL_STREAM_DRAW);
+    }
+
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 void polymost_glinit()
 {
     buildgl_resetStateAccounting();
@@ -901,51 +950,9 @@ void polymost_glinit()
     //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     //glEnable(GL_LINE_SMOOTH);
 
-#ifdef USE_GLEXT
-    if (r_persistentStreamBuffer && ((!glinfo.bufferstorage) || (!glinfo.sync)))
-    {
-        OSD_Printf("Your OpenGL implementation doesn't support the required extensions for persistent stream buffers. Disabling...\n");
-        r_persistentStreamBuffer = 0;
-    }
-#endif
+    polymost_initdrawpoly();
 
     //POGOTODO: require a max texture size >= 2048
-
-    persistentStreamBuffer = r_persistentStreamBuffer;
-    drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
-
-    drawpolyVertsOffset = 0;
-    drawpolyVertsSubBufferIndex = 0;
-
-    if (!glIsBuffer(drawpolyVertsID))
-        glGenBuffers(1, &drawpolyVertsID);
-
-    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
-
-    if (persistentStreamBuffer)
-    {
-        // reset the sync objects, as old ones we had from any last GL context are gone now
-        for (int i=0;i<ARRAY_SSIZE(drawpolyVertsSync);i++)
-            if (glIsSync(drawpolyVertsSync[i]))
-                glDeleteSync(drawpolyVertsSync[i]);
-
-        Bmemset(drawpolyVertsSync, 0, sizeof(drawpolyVertsSync));
-
-        GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-        // we want to triple-buffer to avoid having to wait for the buffer to become available again,
-        // so triple the buffer size we expect to use
-        if (drawpolyVerts != defaultDrawpolyVertsArray)
-            glUnmapBuffer(GL_ARRAY_BUFFER);
-        glBufferStorage(GL_ARRAY_BUFFER, 3*drawpolyVertsBufferLength*sizeof(float)*5, NULL, flags);
-        drawpolyVerts = (float*) glMapBufferRange(GL_ARRAY_BUFFER, 0, 3*drawpolyVertsBufferLength*sizeof(float)*5, flags);
-    }
-    else
-    {
-        drawpolyVerts = defaultDrawpolyVertsArray;
-        glBufferData(GL_ARRAY_BUFFER, drawpolyVertsBufferLength*sizeof(float)*5, NULL, GL_STREAM_DRAW);
-    }
-    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
-
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &tilesheetSize);
 #if (defined _MSC_VER) || (!defined BITNESS64)
     if (tilesheetSize > 8192)
@@ -9062,7 +9069,6 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     {
         pr_normalmapping = 0;
         polymer_inb4rotatesprite(picnum, dapalnum, dashade, method);
-        polymost_resetVertexPointers();
 # ifdef USE_GLEXT
         r_detailmapping = 0;
         r_glowmapping = 0;
@@ -9907,7 +9913,7 @@ void polymost_initosdfuncs(void)
         { "r_skyzbufferhack", "enable/disable polymost sky z-buffer hack", (void*)& r_skyzbufferhack, CVAR_BOOL, 0, 1 },
 #ifdef USE_GLEXT
         { "r_vbocount","sets the number of Vertex Buffer Objects to use when drawing models",(void *) &r_vbocount, CVAR_INT, 1, 256 },
-        { "r_persistentStreamBuffer","enable/disable persistent stream buffering (requires renderer restart)",(void *) &r_persistentStreamBuffer, CVAR_BOOL, 0, 1 },
+        { "r_persistentStreamBuffer","enable/disable persistent stream buffering (requires renderer restart)",(void *) &r_persistentStreamBuffer, CVAR_BOOL | CVAR_RESTARTVID, 0, 1 },
         { "r_drawpolyVertsBufferLength","sets the size of the vertex buffer for polymost's streaming VBO rendering (requires renderer restart)",(void *) &r_drawpolyVertsBufferLength, CVAR_INT, MAX_DRAWPOLY_VERTS, 1000000 },
 #endif
 #ifdef POLYMER
