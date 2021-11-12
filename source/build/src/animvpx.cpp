@@ -439,7 +439,7 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
     }
 
     if (PHandle)
-        polymost_useShaderProgram(PHandle);
+        buildgl_useShaderProgram(PHandle);
 #endif
 
     ////////// GL STATE //////////
@@ -496,7 +496,7 @@ void animvpx_restore_glstate(void)
 #ifdef USE_GLEXT
     if (glinfo.glsl)
     {
-        polymost_useShaderProgram(0);
+        buildgl_useShaderProgram(0);
         polymost_resetProgram();
     }
 #endif

@@ -29,7 +29,6 @@ extern struct glfiltermodes glfiltermodes[NUMGLFILTERMODES];
 
 extern void Polymost_prepare_loadboard(void);
 
-void polymost_outputGLDebugMessage(uint8_t severity, const char* format, ...);
 
 //void phex(char v, char *s);
 void uploadtexture(int32_t doalloc, vec2_t siz, int32_t texfmt, coltype *pic, vec2_t tsiz, int32_t dameth);
@@ -50,23 +49,20 @@ int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall);
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr);
 int32_t polymost_spriteIsModelOrVoxel(tspritetype const * const tspr);
 
-void polymost_resetVertexPointers(void);
 void polymost_disableProgram(void);
+char polymost_getClamp(void);
 void polymost_resetProgram(void);
-void polymost_setTexturePosSize(vec4f_t const &texturePosSize);
-void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize);
-char polymost_getClamp();
+void polymost_resetVertexPointers(void);
 void polymost_setClamp(char clamp);
-void polymost_setVisibility(float visibility);
 void polymost_setFogEnabled(char fogEnabled);
+void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize);
+void polymost_setTexturePosSize(vec4f_t const &texturePosSize);
+void polymost_setVisibility(float visibility);
+void polymost_updatePalette(void);
 void polymost_useColorOnly(char useColorOnly);
-void polymost_usePaletteIndexing(char usePaletteIndexing);
 void polymost_useDetailMapping(char useDetailMapping);
 void polymost_useGlowMapping(char useGlowMapping);
-void polymost_activeTexture(GLenum texture);
-void polymost_bindTexture(GLenum target, uint32_t textureID);
-void polymost_updatePalette(void);
-void polymost_useShaderProgram(uint32_t shaderID);
+void polymost_usePaletteIndexing(char usePaletteIndexing);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
@@ -98,6 +94,8 @@ extern int32_t r_npotwallmode;
 extern int32_t polymostcenterhoriz;
 
 extern int16_t globalpicnum;
+
+extern int32_t r_polymostDebug;
 
 // Compare with polymer_eligible_for_artmap()
 static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_t const pal)
@@ -243,6 +241,10 @@ enum pthtyp_flags {
 
     PTH_INDEXED = 512,
     PTH_ONEBITALPHA = 1024,
+
+    // temporary until I create separate flags for samplers
+    PTH_DEPTH_SAMPLER = 16384,
+    PTH_TEMP_SKY_HACK = 32768
 };
 
 typedef struct pthtyp_t
@@ -281,6 +283,7 @@ extern int32_t drawingskybox;
 extern int32_t hicprecaching;
 extern float fcosglobalang, fsinglobalang;
 extern float fxdim, fydim, fydimen, fviewingrange;
+extern float fsearchx, fsearchy;
 
 extern char ptempbuf[MAXWALLSB<<1];
 
@@ -317,7 +320,6 @@ extern void polymost_setupdetailtexture(int32_t texunits, int32_t tex);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
 #endif

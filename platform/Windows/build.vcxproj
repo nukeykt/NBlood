@@ -458,6 +458,7 @@
     <ClInclude Include="..\..\source\build\include\libasync_config.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
     <ClInclude Include="..\..\source\build\include\libdivide_config.h" />
+    <ClInclude Include="..\..\source\build\include\libtess2.h" />
     <ClInclude Include="..\..\source\build\include\linklist.h" />
     <ClInclude Include="..\..\source\build\include\lru.h" />
     <ClInclude Include="..\..\source\build\include\lz4.h" />

@@ -735,13 +735,6 @@ int32_t initsystem(void)
             initprintf("Failed loading OpenGL Driver.  GL modes will be unavailable. Error: %s\n", SDL_GetError());
             nogl = 1;
         }
-#ifdef POLYMER
-        if (loadglulibrary(getenv("BUILD_GLULIB")))
-        {
-            initprintf("Failed loading GLU.  GL modes will be unavailable.\n");
-            nogl = 1;
-        }
-#endif
 #endif
 
 #ifndef _WIN32
@@ -780,9 +773,6 @@ void uninitsystem(void)
 #ifdef USE_OPENGL
 # if SDL_MAJOR_VERSION >= 2
     SDL_GL_UnloadLibrary();
-# endif
-# ifdef POLYMER
-    unloadglulibrary();
 # endif
 #endif
     SDL_Quit();
@@ -1702,6 +1692,12 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
               { SDL_GL_CONTEXT_MAJOR_VERSION, 1 },
               { SDL_GL_CONTEXT_MINOR_VERSION, 1 },
 #endif
+              { SDL_GL_CONTEXT_FLAGS,
+#ifndef NDEBUG
+              SDL_GL_CONTEXT_DEBUG_FLAG |
+#endif
+              SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG },
+              { SDL_GL_CONTEXT_RESET_NOTIFICATION, SDL_GL_CONTEXT_RESET_LOSE_CONTEXT },
               { SDL_GL_DOUBLEBUFFER, 1 },
 
               { SDL_GL_STENCIL_SIZE, 1 },
@@ -2582,6 +2578,29 @@ int32_t handleevents(void)
     timerUpdateClock();
 
     communityapiRunCallbacks();
+
+#ifdef USE_OPENGL
+    if (!nogl && glinfo.reset_notification)
+    {
+        static const auto glGetGraphicsReset = glGetGraphicsResetStatusKHR ? glGetGraphicsResetStatusKHR : glGetGraphicsResetStatus;
+
+        if (glGetGraphicsReset() != GL_NO_ERROR)
+        {
+            do
+            {
+                initputs("GL CONTEXT LOST!\n");
+            } while (glGetGraphicsReset() != GL_NO_ERROR);
+
+            videoResetMode();
+
+            if (videoSetGameMode(fullscreen,xres,yres,bpp,upscalefactor))
+            {
+                initputs("Video reset failed. Terminating.\n");
+                Bexit(EXIT_FAILURE);
+            }
+        }
+    }
+#endif
 
     if (!frameplace && sdl_resize.x)
     {

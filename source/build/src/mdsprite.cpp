@@ -2,22 +2,23 @@
 
 #ifdef USE_OPENGL
 
-#include "compat.h"
 #include "build.h"
-#include "glad/glad.h"
-#include "pragmas.h"
-#include "baselayer.h"
-#include "engine_priv.h"
-#include "hightile.h"
-#include "polymost.h"
-#include "texcache.h"
 #include "mdsprite.h"
-#include "cache1d.h"
+#include "hightile.h"
+#include "texcache.h"
 #include "kplib.h"
+#include "engine_priv.h"
 #include "common.h"
-#include "palette.h"
+#include "polymost.h"
 
-#include "vfs.h"
+//#include "baselayer.h"
+//#include "cache1d.h"
+//#include "compat.h"
+//#include "glad/glad.h"
+#include "glbuild.h"
+//#include "palette.h"
+//#include "pragmas.h"
+//#include "vfs.h"
 
 static int32_t curextra=MAXTILES;
 
@@ -852,7 +853,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
         if ((doalloc&3)==1)
             glGenTextures(1, texidx);
 
-        polymost_bindTexture(GL_TEXTURE_2D, *texidx);
+        buildgl_bindTexture(GL_TEXTURE_2D, *texidx);
 
         //gluBuild2DMipmaps(GL_TEXTURE_2D,GL_RGBA,xsiz,ysiz,GL_BGRA_EXT,GL_UNSIGNED_BYTE,(char *)fptr);
 
@@ -1133,11 +1134,11 @@ static void mdloadvbos(md3model_t *m)
     i = 0;
     while (i < m->head.numsurfs)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, m->vbos[i]);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, m->vbos[i]);
         glBufferData(GL_ARRAY_BUFFER, m->head.surfs[i].numverts * sizeof(md3uv_t), m->head.surfs[i].uv, GL_STATIC_DRAW);
         i++;
     }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 #endif
 
@@ -2067,7 +2068,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     const uint8_t lpal = ((unsigned)owner < MAXSPRITES) ? sprite[tspr->owner].pal : tspr->pal;
     const int32_t sizyrep = tilesiz[tspr->picnum].y*tspr->yrepeat;
 
-    polymost_outputGLDebugMessage(3, "polymost_md3draw(m:%p, tspr:%p)", m, tspr);
+    buildgl_outputDebugMessage(3, "polymost_md3draw(m:%p, tspr:%p)", m, tspr);
 
     if (m->vbos == NULL)
         mdloadvbos(m);
@@ -2171,13 +2172,13 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (f != 0.0) f *= 1.0/(double) (sepldist(globalposx - tspr->x, globalposy - tspr->y)>>5);
 //        glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
 #endif
-        glDepthFunc(GL_LEQUAL);
+        buildgl_setDepthFunc(GL_LEQUAL);
 //        glDepthRange(0.0 - f, 1.0 - f);
     }
 
 //    glPushAttrib(GL_POLYGON_BIT);
     if ((grhalfxdown10x >= 0) ^((globalorientation&8) != 0) ^((globalorientation&4) != 0)) glFrontFace(GL_CW); else glFrontFace(GL_CCW);
-    glEnable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     // tinting
@@ -2201,21 +2202,21 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
     if (m->usesalpha) //Sprites with alpha in texture
     {
-        //      glEnable(GL_BLEND);// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-        //      glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER,0.32);
+        //      buildgl_setEnabled(GL_BLEND);// glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        //      buildgl_setEnabled(GL_ALPHA_TEST); buildgl_setAlphaFunc(GL_GREATER,0.32);
         //      float al = 0.32;
         // PLAG : default cutoff removed
         float al = 0.0;
         if (alphahackarray[globalpicnum] != 0)
             al=alphahackarray[globalpicnum] * (1.f/255.f);
-        glEnable(GL_BLEND);
-        // glEnable(GL_ALPHA_TEST);
-        glAlphaFunc(GL_GREATER,al);
+        buildgl_setDisabled(GL_BLEND);
+        // buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setAlphaFunc(GL_GREATER,al);
     }
     else
     {
         if ((tspr->cstat&2) || sext->alpha > 0.f || pc[3] < 1.0f)
-            glEnable(GL_BLEND); //else glDisable(GL_BLEND);
+            buildgl_setEnabled(GL_BLEND); //else glDisable(GL_BLEND);
     }
     glColor4f(pc[0],pc[1],pc[2],pc[3]);
     //if (MFLAGS_NOCONV(m))
@@ -2272,7 +2273,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             if (++curvbo >= r_vbocount)
                 curvbo = 0;
 
-            glBindBuffer(GL_ARRAY_BUFFER, vertvbos[curvbo]);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, vertvbos[curvbo]);
             vbotemp = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
             vertexhandle = (vec3f_t *)vbotemp;
         }
@@ -2332,7 +2333,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (r_vertexarrays)
         {
             glUnmapBuffer(GL_ARRAY_BUFFER);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
         }
 #endif
 
@@ -2344,7 +2345,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (!i)
             continue;
         //i = mdloadskin((md2model *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,surfi); //hack for testing multiple surfaces per MD3
-        polymost_bindTexture(GL_TEXTURE_2D, i);
+        buildgl_bindTexture(GL_TEXTURE_2D, i);
 
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
@@ -2392,7 +2393,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
             if (r_vertexarrays)
             {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[curvbo]);
+                buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[curvbo]);
                 vbotemp = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
                 indexhandle = (uint16_t *) vbotemp;
             }
@@ -2447,7 +2448,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 #ifdef USE_GLEXT
             if (r_vertexarrays)
             {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[curvbo]);
+                buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[curvbo]);
                 vbotemp = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
                 indexhandle = (uint16_t *) vbotemp;
             }
@@ -2464,8 +2465,8 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             int32_t l;
 
             glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, m->vbos[surfi]);
+            buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, m->vbos[surfi]);
 
             l = GL_TEXTURE0;
             do
@@ -2475,25 +2476,24 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 glTexCoordPointer(2, GL_FLOAT, 0, 0);
             } while (l <= texunits);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vertvbos[curvbo]);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, vertvbos[curvbo]);
             glVertexPointer(3, GL_FLOAT, 0, 0);
 
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[curvbo]);
+            buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[curvbo]);
             glDrawElements(GL_TRIANGLES, s->numtris * 3, GL_UNSIGNED_SHORT, 0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
+            buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             while (texunits > GL_TEXTURE0)
             {
                 glMatrixMode(GL_TEXTURE);
                 glLoadIdentity();
                 glMatrixMode(GL_MODELVIEW);
                 glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
-                glDisable(GL_TEXTURE_2D);
+                buildgl_setDisabled(GL_TEXTURE_2D);
                 glDisableClientState(GL_TEXTURE_COORD_ARRAY);
                 glClientActiveTexture(texunits - 1);
-                glActiveTexture(--texunits);
+                buildgl_activeTexture(--texunits);
             }
 #else
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -2513,8 +2513,8 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 glLoadIdentity();
                 glMatrixMode(GL_MODELVIEW);
                 glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
-                glDisable(GL_TEXTURE_2D);
-                polymost_activeTexture(--texunits);
+                buildgl_setEnabled(GL_TEXTURE_2D);
+                buildgl_activeTexture(--texunits);
             }
         } // r_vertexarrays
 
@@ -2526,7 +2526,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
     // if (m->usesalpha) glDisable(GL_ALPHA_TEST);
 
-    glDisable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_CULL_FACE);
 //    glPopAttrib();
 
     glMatrixMode(GL_TEXTURE);
@@ -2667,15 +2667,15 @@ void md_allocvbos(void)
         i = allocvbos;
         while (i < r_vbocount)
         {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[i]);
+            buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbos[i]);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, maxmodeltris * 3 * sizeof(uint16_t), NULL, GL_STREAM_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vertvbos[i]);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, vertvbos[i]);
             glBufferData(GL_ARRAY_BUFFER, maxmodelverts * sizeof(vec3f_t), NULL, GL_STREAM_DRAW);
             i++;
         }
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
         allocvbos = r_vbocount;
     }

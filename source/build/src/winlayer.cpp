@@ -539,9 +539,6 @@ void uninitsystem(void)
     //POGO: there is no equivalent to unloadgldriver() with GLAD's loader, but this shouldn't be a problem.
     //unloadgldriver();
     unloadwgl();
-#ifdef POLYMER
-    unloadglulibrary();
-#endif
 #endif
 }
 
@@ -2564,15 +2561,6 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
             nogl = 1;
             ReleaseOpenGL();
             return TRUE;
-#ifdef POLYMER
-        }
-        else if (loadglulibrary(getenv("BUILD_GLULIB")))
-        {
-            initprintf("Failure loading GLU. GL modes are unavailable.\n");
-                        nogl = 1;
-                        ReleaseOpenGL();
-                        return TRUE;
-#endif
         }
         else if (GLVersion.major < 2)
         {

@@ -55,12 +55,12 @@ void fullscreen_tint_gl(uint8_t r, uint8_t g, uint8_t b, uint8_t f)
     glPushMatrix();
     glLoadIdentity();
 
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_ALPHA_TEST);
     polymost_setFogEnabled(false);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
+    buildgl_setEnabled(GL_BLEND);
     glColor4ub(r, g, b, f);
 
     polymost_useColorOnly(true);

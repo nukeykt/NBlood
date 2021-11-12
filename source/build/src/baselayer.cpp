@@ -386,6 +386,41 @@ int32_t r_finishbeforeswap=0;
 int32_t r_glfinish=0;
 int32_t g_logFlushWindow = 1;
 
+// DEBUG OUTPUT
+void PR_CALLBACK gl_debugOutputCallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,GLvoid *userParam)
+{
+    UNREFERENCED_PARAMETER(source);
+    UNREFERENCED_PARAMETER(id);
+    UNREFERENCED_PARAMETER(length);
+    UNREFERENCED_PARAMETER(userParam);
+
+    char const *t, *s;
+
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR_ARB: t = "ERROR"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB: t = "DEPRECATED_BEHAVIOR"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:  t = "UNDEFINED_BEHAVIOR"; break;
+        case GL_DEBUG_TYPE_PORTABILITY_ARB:  t = "PORTABILITY"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE_ARB: t = "PERFORMANCE"; break;
+        case GL_DEBUG_TYPE_OTHER_ARB: t = "OTHER"; break;
+        default: t = "unknown"; break;
+    }
+
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH_ARB: s = "high"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM_ARB: s = "medium"; break;
+        default:
+        case GL_DEBUG_SEVERITY_LOW_ARB: s = "low"; break;
+    }
+
+    if (type == GL_DEBUG_TYPE_ERROR_ARB) OSD_Printf("%s** GL ERROR **", OSD_GetErrorFmt());
+    else OSD_Puts("GL DEBUG");
+
+    OSD_Printf(": type: %s, severity: %s, message: %s\n", t, s, message);
+}
+
 #ifdef USE_OPENGL
 struct glinfo_t glinfo =
 {
@@ -442,6 +477,8 @@ void fill_glinfo(void)
     glinfo.multitex         = !!Bstrstr(glinfo.extensions, "GL_ARB_multitexture");
     glinfo.occlusionqueries = !!Bstrstr(glinfo.extensions, "GL_ARB_occlusion_query");
     glinfo.rect             = !!Bstrstr(glinfo.extensions, "GL_NV_texture_rectangle") || !!Bstrstr(glinfo.extensions, "GL_EXT_texture_rectangle");
+    glinfo.reset_notification = (!!Bstrstr(glinfo.extensions, "GL_ARB_robustness") && glGetGraphicsResetStatus)
+                             || (!!Bstrstr(glinfo.extensions, "GL_KHR_robustness") || glGetGraphicsResetStatusKHR);
     glinfo.samplerobjects   = !!Bstrstr(glinfo.extensions, "GL_ARB_sampler_objects");
     glinfo.sync             = !!Bstrstr(glinfo.extensions, "GL_ARB_sync");
     glinfo.texcompr         = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_compression") && Bstrcmp(glinfo.vendor, "ATI Technologies Inc.");
@@ -465,6 +502,31 @@ void fill_glinfo(void)
 
     if (!glinfo.filled)
     {
+#if !defined __APPLE__ && !defined NDEBUG
+        if (glinfo.debugoutput)
+        {
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+
+            if (glIsEnabled(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB))
+            {
+                glDebugMessageCallbackARB((GLDEBUGPROCARB)gl_debugOutputCallback, NULL);
+                glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_FALSE);
+
+                glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH_ARB, 0, NULL, GL_TRUE);
+                glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE_ARB, GL_DONT_CARE, 0, NULL, GL_TRUE);
+                glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR_ARB, GL_DONT_CARE, 0, NULL, GL_TRUE);
+                glDebugMessageControlARB(GL_DONT_CARE, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB, GL_DONT_CARE, 0, NULL, GL_TRUE);
+            }
+        }
+
+        if (glinfo.reset_notification)
+        {
+            GLint strategy;
+            glGetIntegerv(GL_RESET_NOTIFICATION_STRATEGY, &strategy);
+            if (strategy != GL_LOSE_CONTEXT_ON_RESET)
+                glinfo.reset_notification = 0;
+        }
+#endif
         int32_t oldbpp = bpp;
         bpp = 32;
         osdcmd_glinfo(NULL);
@@ -582,6 +644,7 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
     OSD_Printf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
     OSD_Printf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));
     OSD_Printf(" Rectangle textures:      %s\n", SUPPORTED(glinfo.rect));
+    OSD_Printf(" Reset notifications:     %s\n", SUPPORTED(glinfo.reset_notification));
     OSD_Printf(" Sampler objects:         %s\n", SUPPORTED(glinfo.samplerobjects));
     OSD_Printf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
     OSD_Printf(" Sync:                    %s\n", SUPPORTED(glinfo.sync));

@@ -17,6 +17,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "microprofile.h"
 #include "tilepacker.h"
 #include "texcache.h"
+#include "hash.h"
 
 extern char textfont[2048], smalltextfont[2048];
 
@@ -94,15 +95,12 @@ static GLsync drawpolyVertsSync[3] = { 0 };
 static float defaultDrawpolyVertsArray[MAX_DRAWPOLY_VERTS*5];
 static float* drawpolyVerts = defaultDrawpolyVertsArray;
 
-struct glfiltermodes glfiltermodes[NUMGLFILTERMODES] =
-{
-    {"GL_NEAREST",GL_NEAREST,GL_NEAREST},
-    {"GL_LINEAR",GL_LINEAR,GL_LINEAR},
-    {"GL_NEAREST_MIPMAP_NEAREST",GL_NEAREST_MIPMAP_NEAREST,GL_NEAREST},
-    {"GL_LINEAR_MIPMAP_NEAREST",GL_LINEAR_MIPMAP_NEAREST,GL_LINEAR},
-    {"GL_NEAREST_MIPMAP_LINEAR",GL_NEAREST_MIPMAP_LINEAR,GL_NEAREST},
-    {"GL_LINEAR_MIPMAP_LINEAR",GL_LINEAR_MIPMAP_LINEAR,GL_LINEAR}
-};
+struct glfiltermodes glfiltermodes[NUMGLFILTERMODES] = { { "GL_NEAREST",                GL_NEAREST,                GL_NEAREST },
+                                                         { "GL_LINEAR",                 GL_LINEAR,                 GL_LINEAR  },
+                                                         { "GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST },
+                                                         { "GL_LINEAR_MIPMAP_NEAREST",  GL_LINEAR_MIPMAP_NEAREST,  GL_LINEAR  },
+                                                         { "GL_NEAREST_MIPMAP_LINEAR",  GL_NEAREST_MIPMAP_LINEAR,  GL_NEAREST },
+                                                         { "GL_LINEAR_MIPMAP_LINEAR",   GL_LINEAR_MIPMAP_LINEAR,   GL_LINEAR  } };
 
 int32_t glanisotropy = 0;            // 0 = maximum supported by card
 int32_t gltexfiltermode = TEXFILTER_OFF;
@@ -151,10 +149,6 @@ int32_t r_skyzbufferhack = 0;
 static float fogresult, fogresult2;
 coltypef fogcol, fogtable[MAXPALOOKUPS];
 
-static uint32_t currentShaderProgramID = 0;
-static GLenum currentActiveTexture = 0;
-static uint32_t currentTextureID = 0;
-
 static GLuint quadVertsID = 0;
 #ifdef POLYMOST2
 static GLuint polymost2BasicShaderProgramID = 0;
@@ -172,6 +166,7 @@ static GLint fogColorLoc = -1;
 
 #define PALSWAP_TEXTURE_SIZE 2048
 int32_t r_useindexedcolortextures = 1;
+int32_t r_usesamplerobjects = 1;
 static GLuint tilesheetTexIDs[MAXTILESHEETS];
 static GLint tilesheetSize = 0;
 static vec2f_t tilesheetHalfTexelSize = { 0.f, 0.f };
@@ -266,29 +261,6 @@ int32_t hicprecaching = 0;
 
 hitdata_t polymost_hitdata;
 
-void polymost_outputGLDebugMessage(uint8_t severity, const char* format, ...)
-{
-    static char msg[8192];
-    va_list vArgs;
-
-    if (!glinfo.debugoutput ||
-        r_polymostDebug < severity)
-    {
-        return;
-    }
-
-    va_start(vArgs, format);
-    Bvsnprintf(msg, sizeof(msg), format, vArgs);
-    va_end(vArgs);
-
-    glDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB,
-                            GL_DEBUG_TYPE_OTHER_ARB,
-                            0,
-                            GL_DEBUG_SEVERITY_HIGH_ARB+severity-1,
-                            -1,
-                            msg);
-}
-
 #if 0
 static inline int32_t gltexmayhavealpha(int32_t dapicnum, int32_t dapalnum)
 {
@@ -347,10 +319,11 @@ void gltexinvalidatetype(int32_t type)
 
 static void bind_2d_texture(GLuint texture, int filter)
 {
+    UNREFERENCED_PARAMETER(texture);
+
     if (filter == -1)
         filter = gltexfiltermode;
 
-    polymost_bindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfiltermodes[filter].mag);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfiltermodes[filter].min);
 #ifdef USE_GLEXT
@@ -371,7 +344,8 @@ void gltexapplyprops(void)
     }
 
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
-
+    buildgl_resetSamplerObjects();
+return;
     for (bssize_t i=0; i<=GLTEXCACHEADSIZ-1; i++)
     {
         for (pthtyp *pth=texcache.list[i]; pth; pth=pth->next)
@@ -488,6 +462,7 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
     GLuint shaderID = glCreateShader(shaderType);
     if (shaderID == 0)
     {
+        OSD_Printf("Error creating shader!\n");
         return 0;
     }
 
@@ -523,7 +498,8 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
 
 void polymost_glreset()
 {
-    polymost_activeTexture(GL_TEXTURE0);
+    buildgl_resetStateAccounting();
+    buildgl_activeTexture(GL_TEXTURE0);
 
     for (bssize_t i=0; i<=MAXPALOOKUPS-1; i++)
     {
@@ -592,9 +568,9 @@ static void Polymost_DetermineTextureFormatSupport(void);
 // reset vertex pointers to polymost default
 void polymost_resetVertexPointers()
 {
-    polymost_outputGLDebugMessage(3, "polymost_resetVertexPointers()");
-
-    glBindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+    buildgl_outputDebugMessage(3, "polymost_resetVertexPointers()");
+    buildgl_resetStateAccounting();
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
 
     glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
     glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
@@ -621,9 +597,9 @@ void polymost_disableProgram()
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
 
-    polymost_outputGLDebugMessage(3, "polymost_disableProgram()");
+    buildgl_outputDebugMessage(3, "polymost_disableProgram()");
 
-    polymost_useShaderProgram(0);
+    buildgl_useShaderProgram(0);
 }
 
 void polymost_resetProgram()
@@ -631,30 +607,31 @@ void polymost_resetProgram()
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
 
-    polymost_outputGLDebugMessage(3, "polymost_resetProgram()");
+    buildgl_outputDebugMessage(3, "polymost_resetProgram()");
 
 #ifdef POLYMOST2
     if (r_enablepolymost2)
-        polymost_useShaderProgram(polymost2BasicShaderProgramID);
+        buildgl_useShaderProgram(polymost2BasicShaderProgramID);
     else
 #endif // POLYMOST2
-        polymost_useShaderProgram(polymost1CurrentShaderProgramID);
+        buildgl_useShaderProgram(polymost1CurrentShaderProgramID);
 
     // ensure that palswapTexture and paletteTexture[curbasepal] is bound
-    polymost_activeTexture(GL_TEXTURE1);
-    polymost_bindTexture(GL_TEXTURE_2D, palswapTextureID);
-    polymost_activeTexture(GL_TEXTURE2);
-    polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
-    polymost_activeTexture(GL_TEXTURE0);
-    currentTextureID = 0;
+    buildgl_activeTexture(GL_TEXTURE1);
+    buildgl_bindTexture(GL_TEXTURE_2D, palswapTextureID);
+    buildgl_activeTexture(GL_TEXTURE2);
+    buildgl_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
+    buildgl_activeTexture(GL_TEXTURE0);
+    inthash_delete(&gl.state[ACTIVETEX], gl.currentActiveTexture);
+//    buildgl_bindTexture(GL_TEXTURE0, 0);
 }
 
 static void polymost_setCurrentShaderProgram(uint32_t programID)
 {
-    polymost_outputGLDebugMessage(3, "polymost_setCurrentShaderProgram(programID:%u)", programID);
+    buildgl_outputDebugMessage(3, "polymost_setCurrentShaderProgram(programID:%u)", programID);
 
     polymost1CurrentShaderProgramID = programID;
-    polymost_useShaderProgram(programID);
+    buildgl_useShaderProgram(programID);
 
     //update the uniform locations
     polymost1TexSamplerLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "s_texture");
@@ -704,7 +681,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
 
 void polymost_setTexturePosSize(vec4f_t const &texturePosSize)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
     polymost1TexturePosSize = texturePosSize;
@@ -713,7 +690,7 @@ void polymost_setTexturePosSize(vec4f_t const &texturePosSize)
 
 void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || (halfTexelSize.x == polymost1HalfTexelSize.x && halfTexelSize.y == polymost1HalfTexelSize.y))
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || (halfTexelSize.x == polymost1HalfTexelSize.x && halfTexelSize.y == polymost1HalfTexelSize.y))
         return;
 
     polymost1HalfTexelSize = halfTexelSize;
@@ -724,7 +701,7 @@ static void polymost_setPalswap(uint32_t index)
 {
     static uint32_t lastPalswapIndex;
 
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || index == lastPalswapIndex)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || index == lastPalswapIndex)
         return;
 
     lastPalswapIndex = index;
@@ -737,7 +714,7 @@ static void polymost_setPalswap(uint32_t index)
 
 static void polymost_setPalswapSize(uint32_t width, uint32_t height)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
     polymost1PalswapSize = { width*(1.f/PALSWAP_TEXTURE_SIZE),
@@ -758,7 +735,7 @@ void polymost_setClamp(char clamp)
 {
     char clampx = clamp&1;
     char clampy = clamp>>1;
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID ||
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID ||
         (clampx == polymost1Clamp.x && clampy == polymost1Clamp.y))
         return;
 
@@ -769,7 +746,7 @@ void polymost_setClamp(char clamp)
 
 static void polymost_setShade(int32_t shade)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
     if (!polymost_usetileshades())
@@ -795,7 +772,7 @@ static void polymost_setShade(int32_t shade)
 
 void polymost_setVisibility(float visibility)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
     if (!polymost_usetileshades())
@@ -811,7 +788,7 @@ void polymost_setVisibility(float visibility)
 
 void polymost_setFogEnabled(char fogEnabled)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || fogEnabled == polymost1FogEnabled)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || fogEnabled == polymost1FogEnabled)
         return;
 
     polymost1FogEnabled = fogEnabled;
@@ -820,7 +797,7 @@ void polymost_setFogEnabled(char fogEnabled)
 
 void polymost_useColorOnly(char useColorOnly)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || useColorOnly == polymost1UseColorOnly)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || useColorOnly == polymost1UseColorOnly)
         return;
 
     polymost1UseColorOnly = useColorOnly;
@@ -829,7 +806,7 @@ void polymost_useColorOnly(char useColorOnly)
 
 void polymost_usePaletteIndexing(char usePaletteIndexing)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || usePaletteIndexing == polymost1UsePalette)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || usePaletteIndexing == polymost1UsePalette)
         return;
 
     polymost1UsePalette = usePaletteIndexing;
@@ -838,7 +815,7 @@ void polymost_usePaletteIndexing(char usePaletteIndexing)
 
 void polymost_useDetailMapping(char useDetailMapping)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || useDetailMapping == polymost1UseDetailMapping)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || useDetailMapping == polymost1UseDetailMapping)
         return;
 
     if (useDetailMapping)
@@ -850,7 +827,7 @@ void polymost_useDetailMapping(char useDetailMapping)
 
 void polymost_useGlowMapping(char useGlowMapping)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || useGlowMapping == polymost1UseGlowMapping)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || useGlowMapping == polymost1UseGlowMapping)
         return;
 
     if (useGlowMapping)
@@ -862,7 +839,7 @@ void polymost_useGlowMapping(char useGlowMapping)
 
 void polymost_npotEmulation(char npotEmulation, float factor, float xOffset)
 {
-    if (currentShaderProgramID != polymost1CurrentShaderProgramID || npotEmulation == polymost1NPOTEmulation)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || npotEmulation == polymost1NPOTEmulation)
         return;
 
     polymost1NPOTEmulation = npotEmulation;
@@ -875,33 +852,10 @@ void polymost_npotEmulation(char npotEmulation, float factor, float xOffset)
 
 void polymost_shadeInterpolate(int32_t shadeInterpolate)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID == polymost1CurrentShaderProgramID)
     {
         polymost1ShadeInterpolate = shadeInterpolate;
         glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
-    }
-}
-
-//POGOTODO: these wrappers won't be needed down the line -- remove them once proper draw call organization is finished
-void polymost_activeTexture(GLenum texture)
-{
-    currentActiveTexture = texture;
-    glActiveTexture(texture);
-}
-
-//POGOTODO: replace this and polymost_activeTexture with proper draw call organization
-void polymost_bindTexture(GLenum target, uint32_t textureID)
-{
-    if (currentTextureID != textureID ||
-        textureID == 0 ||
-        currentActiveTexture != GL_TEXTURE0 ||
-        videoGetRenderMode() != REND_POLYMOST)
-    {
-        glBindTexture(target, textureID);
-        if (currentActiveTexture == GL_TEXTURE0)
-        {
-            currentTextureID = textureID;
-        }
     }
 }
 
@@ -931,19 +885,15 @@ static void polymost_bindPth(pthtyp const * const pPth)
     }
     polymost_setTexturePosSize(texturePosSize);
     polymost_setHalfTexelSize(halfTexelSize);
-    polymost_bindTexture(GL_TEXTURE_2D, pPth->glpic);
-}
-
-void polymost_useShaderProgram(uint32_t shaderID)
-{
-    glUseProgram(shaderID);
-    currentShaderProgramID = shaderID;
+    buildgl_bindTexture(GL_TEXTURE_2D, pPth->glpic);
 }
 
 // one-time initialization of OpenGL for polymost
 void polymost_clearOrnamentSprites(void);
 void polymost_glinit()
 {
+    buildgl_resetStateAccounting();
+
     glHint(GL_FOG_HINT, GL_NICEST);
     glFogi(GL_FOG_MODE, (r_usenewshading < 2) ? GL_EXP2 : GL_LINEAR);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -952,7 +902,7 @@ void polymost_glinit()
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     if (glinfo.depthclamp)
-        glEnable(GL_DEPTH_CLAMP);
+        buildgl_setEnabled(GL_DEPTH_CLAMP);
 
     //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     //glEnable(GL_LINE_SMOOTH);
@@ -973,18 +923,25 @@ void polymost_glinit()
     drawpolyVertsOffset = 0;
     drawpolyVertsSubBufferIndex = 0;
 
-    GLuint ids[2];
-    glGenBuffers(2, ids);
-    drawpolyVertsID = ids[0];
-    glBindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+    if (!glIsBuffer(drawpolyVertsID))
+        glGenBuffers(1, &drawpolyVertsID);
+
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+
     if (persistentStreamBuffer)
     {
         // reset the sync objects, as old ones we had from any last GL context are gone now
+        for (int i=0;i<ARRAY_SSIZE(drawpolyVertsSync);i++)
+            if (glIsSync(drawpolyVertsSync[i]))
+                glDeleteSync(drawpolyVertsSync[i]);
+
         Bmemset(drawpolyVertsSync, 0, sizeof(drawpolyVertsSync));
 
         GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
         // we want to triple-buffer to avoid having to wait for the buffer to become available again,
         // so triple the buffer size we expect to use
+        if (drawpolyVerts != defaultDrawpolyVertsArray)
+            glUnmapBuffer(GL_ARRAY_BUFFER);
         glBufferStorage(GL_ARRAY_BUFFER, 3*drawpolyVertsBufferLength*sizeof(float)*5, NULL, flags);
         drawpolyVerts = (float*) glMapBufferRange(GL_ARRAY_BUFFER, 0, 3*drawpolyVertsBufferLength*sizeof(float)*5, flags);
     }
@@ -993,9 +950,7 @@ void polymost_glinit()
         drawpolyVerts = defaultDrawpolyVertsArray;
         glBufferData(GL_ARRAY_BUFFER, drawpolyVertsBufferLength*sizeof(float)*5, NULL, GL_STREAM_DRAW);
     }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    currentTextureID = 0;
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &tilesheetSize);
 #if (defined _MSC_VER) || (!defined BITNESS64)
@@ -1003,6 +958,9 @@ void polymost_glinit()
         tilesheetSize = 8192;
 #endif
     tilesheetHalfTexelSize = { 0.5f/tilesheetSize, 0.5f/tilesheetSize };
+
+    buildgl_resetSamplerObjects();
+
     vec2_t maxTexDimensions = { tilesheetSize, tilesheetSize };
     char allPacked = false;
     static int numTilesheets = 0;
@@ -1025,8 +983,9 @@ void polymost_glinit()
     }
     for (int i = 0; i < numTilesheets; ++i)
     {
+        if (glIsTexture(tilesheetTexIDs[i])) continue;
         glGenTextures(1, tilesheetTexIDs+i);
-        polymost_bindTexture(GL_TEXTURE_2D, tilesheetTexIDs[i]);
+        buildgl_bindTexture(GL_TEXTURE_2D, tilesheetTexIDs[i]);
         uploadtextureindexed(true, {0, 0}, maxTexDimensions, (intptr_t) NULL);
     }
 
@@ -1034,11 +993,12 @@ void polymost_glinit()
                              255, 255};
     Tile blankTile;
     tilepacker_getTile(0, &blankTile);
-    polymost_bindTexture(GL_TEXTURE_2D, tilesheetTexIDs[blankTile.tilesheetID]);
+    buildgl_bindTexture(GL_TEXTURE_2D, tilesheetTexIDs[blankTile.tilesheetID]);
     uploadtextureindexed(false, {(int32_t) blankTile.rect.u, (int32_t) blankTile.rect.v}, {2, 2}, (intptr_t) blankTex);
 
-    quadVertsID = ids[1];
-    glBindBuffer(GL_ARRAY_BUFFER, quadVertsID);
+    if (!glIsBuffer(quadVertsID))
+        glGenBuffers(1, &quadVertsID);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, quadVertsID);
     const float quadVerts[] =
         {
             -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, //top-left
@@ -1047,13 +1007,13 @@ void polymost_glinit()
              0.5f, 0.0f, 0.0f, 1.0f, 0.0f  //bottom-right
         };
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
-
+    
     //specify format/arrangement for vertex positions:
     glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float) * 5, 0);
     //specify format/arrangement for vertex texture coords:
     glVertexAttribPointer(1, 2, GL_FLOAT, false, sizeof(float) * 5, (const void*) (sizeof(float) * 3));
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
 #ifdef POLYMOST2
     const char* const POLYMOST2_BASIC_VERTEX_SHADER_CODE =
@@ -1136,30 +1096,61 @@ void polymost_glinit()
     fogColorLoc = glGetUniformLocation(polymost2BasicShaderProgramID, "u_fogColor");
 #endif // POLYMOST2
 
-    polymost1ExtendedShaderProgramID = glCreateProgram();
-    GLuint polymost1BasicVertexShaderID = polymost2_compileShader(GL_VERTEX_SHADER, polymost1Vert);
-    GLuint polymost1ExtendedFragmentShaderID = polymost2_compileShader(GL_FRAGMENT_SHADER, polymost1Frag);
-    glAttachShader(polymost1ExtendedShaderProgramID, polymost1BasicVertexShaderID);
-    glAttachShader(polymost1ExtendedShaderProgramID, polymost1ExtendedFragmentShaderID);
-    glLinkProgram(polymost1ExtendedShaderProgramID);
-
-    int polymost1BasicFragLen = strlen(polymost1Frag);
-    char* polymost1BasicFrag = (char*) Xmalloc(polymost1BasicFragLen);
-    memcpy(polymost1BasicFrag, polymost1Frag, polymost1BasicFragLen);
-    char* extDefineSubstr = strstr(polymost1BasicFrag, " #define POLYMOST1_EXTENDED");
-    if (extDefineSubstr)
+    GLuint polymost1BasicVertexShaderID = 0;
+    GLuint polymost1ExtendedFragmentShaderID = 0;
+    GLuint polymost1BasicFragmentShaderID = 0;
+    
+    if (!glIsProgram(polymost1ExtendedShaderProgramID))
     {
-        //Disable extensions for basic fragment shader
-        extDefineSubstr[0] = '/';
-        extDefineSubstr[1] = '/';
+        polymost1ExtendedShaderProgramID = glCreateProgram();
+
+        polymost1BasicVertexShaderID = polymost2_compileShader(GL_VERTEX_SHADER, polymost1Vert);
+        polymost1ExtendedFragmentShaderID = polymost2_compileShader(GL_FRAGMENT_SHADER, polymost1Frag);
+
+        glAttachShader(polymost1ExtendedShaderProgramID, polymost1BasicVertexShaderID);
+        glAttachShader(polymost1ExtendedShaderProgramID, polymost1ExtendedFragmentShaderID);
+
+        glLinkProgram(polymost1ExtendedShaderProgramID);
+
+        glDetachShader(polymost1ExtendedShaderProgramID, polymost1BasicVertexShaderID);
+        glDetachShader(polymost1ExtendedShaderProgramID, polymost1ExtendedFragmentShaderID);
     }
-    polymost1BasicShaderProgramID = glCreateProgram();
-    GLuint polymost1BasicFragmentShaderID = polymost2_compileShader(GL_FRAGMENT_SHADER, polymost1BasicFrag, polymost1BasicFragLen);
-    glAttachShader(polymost1BasicShaderProgramID, polymost1BasicVertexShaderID);
-    glAttachShader(polymost1BasicShaderProgramID, polymost1BasicFragmentShaderID);
-    glLinkProgram(polymost1BasicShaderProgramID);
-    Xfree(polymost1BasicFrag);
-    polymost1BasicFrag = 0;
+
+    if (!glIsProgram(polymost1BasicShaderProgramID))
+    {
+        int const polymost1BasicFragLen = Bstrlen(polymost1Frag);
+        auto      polymost1BasicFrag    = (char *)Xmalloc(polymost1BasicFragLen);
+
+        Bmemcpy(polymost1BasicFrag, polymost1Frag, polymost1BasicFragLen);
+
+        char *extDefineSubstr = Bstrstr(polymost1BasicFrag, " #define POLYMOST1_EXTENDED");
+
+        if (extDefineSubstr)
+        {
+            //Disable extensions for basic fragment shader
+            extDefineSubstr[0] = '/';
+            extDefineSubstr[1] = '/';
+        }
+
+        polymost1BasicShaderProgramID = glCreateProgram();
+
+        polymost1BasicFragmentShaderID = polymost2_compileShader(GL_FRAGMENT_SHADER, polymost1BasicFrag, polymost1BasicFragLen);
+
+        glAttachShader(polymost1BasicShaderProgramID, polymost1BasicVertexShaderID);
+        glAttachShader(polymost1BasicShaderProgramID, polymost1BasicFragmentShaderID);
+
+        glLinkProgram(polymost1BasicShaderProgramID);
+
+        glDetachShader(polymost1BasicShaderProgramID, polymost1BasicVertexShaderID);
+        glDetachShader(polymost1BasicShaderProgramID, polymost1BasicFragmentShaderID);
+
+        DO_FREE_AND_NULL(polymost1BasicFrag);
+    }
+
+    // GL spec says glDeleteShader() on a shader attached to a program or on a value of 0 are both fine.
+    glDeleteShader(polymost1BasicVertexShaderID);
+    glDeleteShader(polymost1ExtendedFragmentShaderID);
+    glDeleteShader(polymost1BasicFragmentShaderID);
 
     // set defaults
     polymost_setCurrentShaderProgram(polymost1ExtendedShaderProgramID);
@@ -1173,19 +1164,14 @@ void polymost_glinit()
     glUniform1i(polymost1TexSamplerLoc, 0);
     glUniform1i(polymost1PalSwapSamplerLoc, 1);
     glUniform1i(polymost1PaletteSamplerLoc, 2);
-    polymost_useShaderProgram(0);
+    buildgl_useShaderProgram(0);
 
     lastbasepal = -1;
     for (int basepalnum = 0; basepalnum < MAXBASEPALS; ++basepalnum)
-    {
-        paletteTextureIDs[basepalnum] = 0;
         uploadbasepalette(basepalnum);
-    }
-    palswapTextureID = 0;
+
     for (int palookupnum = 0; palookupnum < MAXPALOOKUPS; ++palookupnum)
-    {
         uploadpalswap(palookupnum);
-    }
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1451,7 +1437,7 @@ static void resizeglcheck(void)
 
     polymost2d = 0;
 
-    glViewport(windowxy1.x-(fovcorrect/2), ydim-(windowxy2.y+1),
+    buildgl_setViewport(windowxy1.x-(fovcorrect/2), ydim-(windowxy2.y+1),
                 ourxdimen+fovcorrect, windowxy2.y-windowxy1.y+1);
 
     glMatrixMode(GL_PROJECTION);
@@ -1643,9 +1629,7 @@ static void Polymost_DetermineTextureFormatSupport(void)
     GLuint tex = 0;
 
     glGenTextures(1, &tex);
-    polymost_bindTexture(GL_TEXTURE_2D, tex);
-
-    BuildGLErrorCheck(); // XXX: Clear errors.
+    buildgl_bindTexture(GL_TEXTURE_2D, tex);
 
     texfmt_rgb = Polymost_TryDummyTexture(pic, texfmts_rgb);
     texfmt_rgba = Polymost_TryDummyTexture(pic, texfmts_rgba);
@@ -1911,7 +1895,7 @@ void uploadbasepalette(int32_t basepalnum)
     {
         glGenTextures(1, &paletteTextureIDs[basepalnum]);
     }
-    polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[basepalnum]);
+    buildgl_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[basepalnum]);
     if (allocateTexture)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -1946,7 +1930,7 @@ void uploadpalswap(int32_t palookupnum)
     {
         glGenTextures(1, &palswapTextureID);
     }
-    polymost_bindTexture(GL_TEXTURE_2D, palswapTextureID);
+    buildgl_bindTexture(GL_TEXTURE_2D, palswapTextureID);
     if (allocateTexture)
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -2067,7 +2051,7 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
         if (doalloc)
             glGenTextures(1, (GLuint *)&pth->glpic);
 
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
         if (doalloc)
             polymost_setuptexture(dameth, -1);
@@ -2076,6 +2060,7 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
             //POGO: resize our texture to match the tile data
             doalloc = true;
         }
+
         uploadtextureindexed(doalloc, {(int32_t) tile.rect.u, (int32_t) tile.rect.v}, siz, waloff[dapic]);
     }
     else
@@ -2214,7 +2199,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
         }
 
         if (doalloc) glGenTextures(1,(GLuint *)&pth->glpic); //# of textures (make OpenGL allocate structure)
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
         fixtransparency(pic,tsiz,siz,dameth);
 
@@ -2511,7 +2496,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
         if ((doalloc&3)==1)
             glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
         fixtransparency(pic,tsiz,siz,dameth);
 
@@ -2612,9 +2597,9 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 #ifdef USE_GLEXT
 void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
 {
-    polymost_activeTexture(texunits);
+    buildgl_activeTexture(texunits);
 
-    polymost_bindTexture(GL_TEXTURE_2D, tex);
+    buildgl_bindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2625,9 +2610,9 @@ void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
 
 void polymost_setupglowtexture(const int32_t texunits, const int32_t tex)
 {
-    polymost_activeTexture(texunits);
+    buildgl_activeTexture(texunits);
 
-    polymost_bindTexture(GL_TEXTURE_2D, tex);
+    buildgl_bindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2738,7 +2723,7 @@ static void polymost2_drawVBO(GLenum mode,
 
     if (cullFaces)
     {
-        glEnable(GL_CULL_FACE);
+        buildgl_setEnabled(GL_CULL_FACE);
     }
     //POGOTODO: this is temporary, the permanent fix is to not allow the transform to affect the windings in the first place in polymost2_drawSprite()
     if (cullFaces == 1)
@@ -2751,8 +2736,8 @@ static void polymost2_drawVBO(GLenum mode,
     }
 
     //POGOTODO: in the future, state changes like binding these buffers can be batched.  For now, just switch on every VBO rendered
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -2781,13 +2766,13 @@ static void polymost2_drawVBO(GLenum mode,
         return;
     }
 
-    polymost_activeTexture(GL_TEXTURE1);
+    buildgl_activeTexture(GL_TEXTURE1);
     //POGO: temporarily swapped out blankTextureID for 0 (as the blank texture has been moved into the dynamic tilesheets)
-    polymost_bindTexture(GL_TEXTURE_2D, (pth && pth->flags & PTH_HASFULLBRIGHT && r_fullbrights) ? pth->ofb->glpic : 0);
+    buildgl_bindTexture(GL_TEXTURE_2D, (pth && pth->flags & PTH_HASFULLBRIGHT && r_fullbrights) ? pth->ofb->glpic : 0);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
-    polymost_activeTexture(GL_TEXTURE0);
+    buildgl_activeTexture(GL_TEXTURE0);
     polymost_bindPth(pth);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -2798,14 +2783,14 @@ static void polymost2_drawVBO(GLenum mode,
     //POGOTODO: glAlphaFunc is deprecated, move this into the fragment shader
     float const al = waloff[globalpicnum] ? alphahackarray[globalpicnum] != 0 ? alphahackarray[globalpicnum] * (1.f/255.f):
                              (pth && pth->hicr && pth->hicr->alphacut >= 0.f ? pth->hicr->alphacut : 0.f) : 0.f;
-    glAlphaFunc(GL_GREATER, al);
+    buildgl_setAlphaFunc(GL_GREATER, al);
     //POGOTODO: batch this, only apply it to sprites that actually need blending
-    glEnable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_BLEND);
+    buildgl_setEnabled(GL_ALPHA_TEST);
 
     handle_blend((dameth & DAMETH_MASKPROPS) > DAMETH_MASK, drawpoly_blend, (dameth & DAMETH_MASKPROPS) == DAMETH_TRANS2);
 
-    polymost_useShaderProgram(polymost2BasicShaderProgramID);
+    buildgl_useShaderProgram(polymost2BasicShaderProgramID);
 
     //POGOTODO: batch uniform binding
     float tint[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -2868,10 +2853,10 @@ static void polymost2_drawVBO(GLenum mode,
     glDisableVertexAttribArray(1);
 
     //POGOTODO: again, these state changes should be batched in the future, rather than on each VBO rendered
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    glDisable(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -2891,10 +2876,10 @@ void polymost_updatePalette()
     //POGO: only bind the base pal once when it's swapped
     if (curbasepal != lastbasepal)
     {
-        polymost_activeTexture(GL_TEXTURE2);
-        polymost_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
+        buildgl_activeTexture(GL_TEXTURE2);
+        buildgl_bindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
         lastbasepal = curbasepal;
-        polymost_activeTexture(GL_TEXTURE0);
+        buildgl_activeTexture(GL_TEXTURE0);
     }
 }
 
@@ -2948,7 +2933,7 @@ static void polymost_waitForSubBuffer(uint32_t subBufferIndex)
 
 static void polymost_updaterotmat(void)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID == polymost1CurrentShaderProgramID)
     {
         float matrix[16] = {
             1.f, 0.f, 0.f, 0.f,
@@ -2981,7 +2966,7 @@ static void polymost_updaterotmat(void)
 
 static void polymost_identityrotmat(void)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
+    if (gl.currentShaderProgramID == polymost1CurrentShaderProgramID)
     {
         float matrix[16] = {
             1.f, 0.f, 0.f, 0.f,
@@ -3130,7 +3115,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     if (skyclamphack) method |= DAMETH_CLAMPED;
 
-    polymost_outputGLDebugMessage(3, "polymost_drawpoly(dpxy:%p, n:%d, method_:%X), method: %X", dpxy, n, method_, method);
+    buildgl_outputDebugMessage(3, "polymost_drawpoly(dpxy:%p, n:%d, method_:%X), method: %X", dpxy, n, method_, method);
 
     pthtyp *pth = our_texcache_fetch(method | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
 
@@ -3176,10 +3161,15 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         else if (polymost_usetileshades())
             polymost_setFogEnabled(false);
 
-        if (drawpoly_srepeat)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-        if (drawpoly_trepeat)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+        if (!buildgl_samplerObjectsEnabled())
+        {
+            if (drawpoly_srepeat)
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            if (drawpoly_trepeat)
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
+        else
+            buildgl_bindSamplerObject(0, pth->flags);
     }
 
     // texture scale by parkar request
@@ -3222,7 +3212,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
                 glScalef(detailpth->hicr->scale.x, detailpth->hicr->scale.y, 1.0f);
 
             glMatrixMode(GL_MODELVIEW);
-            polymost_activeTexture(GL_TEXTURE0);
+            buildgl_activeTexture(GL_TEXTURE0);
         }
     }
 
@@ -3237,7 +3227,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         {
             polymost_useGlowMapping(true);
             polymost_setupglowtexture(videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE4 : ++texunits, glowpth->glpic);
-            polymost_activeTexture(GL_TEXTURE0);
+            buildgl_activeTexture(GL_TEXTURE0);
         }
     }
 
@@ -3283,7 +3273,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         float const al = alphahackarray[globalpicnum] != 0 ? alphahackarray[globalpicnum] * (1.f/255.f) :
                          (pth->hicr && pth->hicr->alphacut >= 0.f ? pth->hicr->alphacut : 0.f);
 
-        glAlphaFunc(GL_GREATER, al);
+        buildgl_setAlphaFunc(GL_GREATER, al);
         handle_blend((method & DAMETH_MASKPROPS) > DAMETH_MASK, drawpoly_blend, (method & DAMETH_MASKPROPS) == DAMETH_TRANS2);
     }
 
@@ -3474,6 +3464,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
             {
                 glBufferSubData(GL_ARRAY_BUFFER, drawpolyVertsOffset*sizeof(float)*5, nn*sizeof(float)*5, drawpolyVerts);
             }
+
             glDrawArrays(GL_TRIANGLE_FAN, drawpolyVertsOffset, nn);
             drawpolyVertsOffset += nn;
         }
@@ -3528,7 +3519,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     {
         while (texunits > GL_TEXTURE0)
         {
-            polymost_activeTexture(texunits);
+            buildgl_activeTexture(texunits);
             glMatrixMode(GL_TEXTURE);
             glLoadIdentity();
             glMatrixMode(GL_MODELVIEW);
@@ -3569,11 +3560,14 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     else if (!nofog)
         polymost_setFogEnabled(true);
 
-    if (drawpoly_srepeat)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        if (drawpoly_srepeat)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
-    if (drawpoly_trepeat)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if (drawpoly_trepeat)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
 
     if (fullbright_pass == 1)
     {
@@ -3584,11 +3578,11 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
         polymost_setFogEnabled(false);
 
-        glDepthFunc(GL_EQUAL);
+        buildgl_setDepthFunc(GL_EQUAL);
 
         polymost_drawpoly(dpxy, n, method_);
 
-        glDepthFunc(GL_LEQUAL);
+        buildgl_setDepthFunc(GL_LEQUAL);
 
         if (!nofog)
             polymost_setFogEnabled(true);
@@ -3806,7 +3800,7 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
 {
     int const dir = (x0 < x1);
 
-    polymost_outputGLDebugMessage(3, "polymost_domost(x0:%f, y0:%f, x1:%f, y1:%f, y0top:%f, y0bot:%f, y1top:%f, y1bot:%f)",
+    buildgl_outputDebugMessage(3, "polymost_domost(x0:%f, y0:%f, x1:%f, y1:%f, y0top:%f, y0bot:%f, y1top:%f, y1bot:%f)",
                                   x0, y0, x1, y1, y0top, y0bot, y1top, y1bot);
 
     y0top -= DOMOST_OFFSET;
@@ -3975,10 +3969,10 @@ skip: ;
             //      To enable this, ensure that in polymost_drawrooms() that you are clearing the stencil buffer and color buffer.
             //      Additionally, disable any calls to glColor4f in polymost_drawpoly and disable culling triangles with area==0/removing duplicate points
             //      If you don't want any lines showing up from mirrors/skyboxes, be sure to disable them as well.
-            glEnable(GL_STENCIL_TEST);
+            polymost_setEnabled(GL_STENCIL_TEST);
             glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glDisable(GL_DEPTH_TEST);
+            polymost_setDisabled(GL_DEPTH_TEST);
             polymost_useColorOnly(true);
             glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
@@ -3996,7 +3990,7 @@ skip: ;
 
             glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
             polymost_useColorOnly(false);
-            glEnable(GL_DEPTH_TEST);
+            polymost_setEnabled(GL_DEPTH_TEST);
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
             glStencilFunc(GL_EQUAL, 0, 0xFF);
             glColor4f(1.f, 1.f, 1.f, 1.f);
@@ -4244,10 +4238,10 @@ skip: ;
                 //      To enable this, ensure that in polymost_drawrooms() that you are clearing the stencil buffer and color buffer.
                 //      Additionally, disable any calls to glColor4f in polymost_drawpoly and disable culling triangles with area==0
                 //      If you don't want any lines showing up from mirrors/skyboxes, be sure to disable them as well.
-                glEnable(GL_STENCIL_TEST);
+                polymost_setEnabled(GL_STENCIL_TEST);
                 glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                glDisable(GL_DEPTH_TEST);
+                polymost_setDisabled(GL_DEPTH_TEST);
                 polymost_useColorOnly(true);
                 glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
@@ -4261,7 +4255,7 @@ skip: ;
 
                 glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
                 polymost_useColorOnly(false);
-                glEnable(GL_DEPTH_TEST);
+                polymost_setEnabled(GL_DEPTH_TEST);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
                 glStencilFunc(GL_EQUAL, 0, 0xFF);
                 glColor4f(1.f, 1.f, 1.f, 1.f);
@@ -4706,7 +4700,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
 
     float ft[4] = { fglobalposx, fglobalposy, fcosglobalang, fsinglobalang };
 
-    polymost_outputGLDebugMessage(3, "polymost_internal_nonparallaxed(n0:{x:%f, y:%f}, n1:{x:%f, y:%f}, ryp0:%f, ryp1:%f, x0:%f, x1:%f, y0:%f, y1:%f, sectnum:%d)",
+    buildgl_outputDebugMessage(3, "polymost_internal_nonparallaxed(n0:{x:%f, y:%f}, n1:{x:%f, y:%f}, ryp0:%f, ryp1:%f, x0:%f, x1:%f, y0:%f, y1:%f, sectnum:%d)",
                                   n0.x, n0.y, n1.x, n1.y, ryp0, ryp1, x0, x1, y0, y1, sectnum);
 
     if (globalorientation & 64)
@@ -4878,7 +4872,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
             domostpolymethod = DAMETH_BACKFACECULL; //Back-face culling
 
         if (domostpolymethod & DAMETH_MASKPROPS)
-            glEnable(GL_BLEND);
+            buildgl_setEnabled(GL_BLEND);
 
         polymost_domost(x0, y0, x1, y1); //flor
     }
@@ -4888,13 +4882,13 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
             domostpolymethod = DAMETH_BACKFACECULL; //Back-face culling
 
         if (domostpolymethod & DAMETH_MASKPROPS)
-            glEnable(GL_BLEND);
+            buildgl_setEnabled(GL_BLEND);
 
         polymost_domost(x1, y1, x0, y0); //ceil
     }
 
     if (domostpolymethod & DAMETH_MASKPROPS)
-        glDisable(GL_BLEND);
+        buildgl_setDisabled(GL_BLEND);
 
     domostpolymethod = DAMETH_NOMASK;
 }
@@ -5234,7 +5228,7 @@ static void polymost_drawalls(int32_t const bunch)
     auto const sec = (usectorptr_t)&sector[sectnum];
     float const fglobalang = fix16_to_float(qglobalang);
 
-    polymost_outputGLDebugMessage(3, "polymost_drawalls(bunch:%d)", bunch);
+    buildgl_outputDebugMessage(3, "polymost_drawalls(bunch:%d)", bunch);
 
     //DRAW WALLS SECTION!
     for (bssize_t z=bunchfirst[bunch]; z>=0; z=bunchp2[z])
@@ -6697,7 +6691,7 @@ void polymost_drawrooms()
 
     if (videoGetRenderMode() == REND_CLASSIC) return;
 
-    polymost_outputGLDebugMessage(3, "polymost_drawrooms()");
+    buildgl_outputDebugMessage(3, "polymost_drawrooms()");
 
     videoBeginDrawing();
     frameoffset = frameplace + windowxy1.y*bytesperline + windowxy1.x;
@@ -6713,10 +6707,10 @@ void polymost_drawrooms()
 #endif
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_ALWAYS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
+    buildgl_setDisabled(GL_BLEND);
+    buildgl_setDisabled(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_DEPTH_TEST);
+    buildgl_setDepthFunc(GL_ALWAYS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
 
     gvrcorrection = viewingrange*(1.f/65536.f);
@@ -6824,7 +6818,7 @@ void polymost_drawrooms()
         }
     }
 
-    if (n < 3) { glDepthFunc(GL_LEQUAL); videoEndDrawing(); return; }
+    if (n < 3) { buildgl_setDepthFunc(GL_LEQUAL); videoEndDrawing(); return; }
 
     float sx[6], sy[6];
 
@@ -7017,7 +7011,7 @@ void polymost_drawrooms()
         bunchlast[closest] = bunchlast[numbunches];
     }
 
-    glDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
+    buildgl_setDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
     polymost_identityrotmat();
 
@@ -7037,7 +7031,7 @@ static void polymost_drawmaskwallinternal(int32_t wallIndex)
 
     auto const nsec = (usectorptr_t)&sector[wal->nextsector];
 
-    polymost_outputGLDebugMessage(3, "polymost_drawmaskwallinternal(wallIndex:%d)", wallIndex);
+    buildgl_outputDebugMessage(3, "polymost_drawmaskwallinternal(wallIndex:%d)", wallIndex);
 
     globalpicnum = wal->overpicnum;
     if ((uint32_t)globalpicnum >= MAXTILES)
@@ -7251,7 +7245,7 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
 
 void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang, fix16_t dahoriz, int16_t mirrorWall)
 {
-    polymost_outputGLDebugMessage(3, "polymost_prepareMirror(%u)", mirrorWall);
+    buildgl_outputDebugMessage(3, "polymost_prepareMirror(%u)", mirrorWall);
 
     //POGO: prepare necessary globals for drawing, as we intend to call this outside of drawrooms
     gvrcorrection = viewingrange*(1.f/65536.f);
@@ -7308,15 +7302,15 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
     grhalfxdown10x = grhalfxdown10;
 
     //POGO: write the mirror region to the stencil buffer to allow showing mirrors & skyboxes at the same time
-    glEnable(GL_STENCIL_TEST);
+    buildgl_setEnabled(GL_STENCIL_TEST);
     glClear(GL_STENCIL_BUFFER_BIT);
     glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
     polymost_drawmaskwallinternal(mirrorWall);
-    glEnable(GL_ALPHA_TEST);
-    glEnable(GL_DEPTH_TEST);
+    buildgl_setEnabled(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_DEPTH_TEST);
 
     //POGO: render only to the mirror region
     glStencilFunc(GL_EQUAL, 1, 0xFF);
@@ -7325,8 +7319,8 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
 
 void polymost_completeMirror()
 {
-    polymost_outputGLDebugMessage(3, "polymost_completeMirror()");
-    glDisable(GL_STENCIL_TEST);
+    buildgl_outputDebugMessage(3, "polymost_completeMirror()");
+    buildgl_setDisabled(GL_STENCIL_TEST);
 }
 
 wallspriteinfo_t ornament[MAXSPRITES];
@@ -8003,7 +7997,7 @@ void polymost_drawsprite(int32_t snum)
 
     int32_t spritenum = tspr->owner;
 
-    polymost_outputGLDebugMessage(3, "polymost_drawsprite(snum:%d)", snum);
+    buildgl_outputDebugMessage(3, "polymost_drawsprite(snum:%d)", snum);
 
     if ((tspr->cstat&48) != 48)
         tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
@@ -8766,7 +8760,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     if (!hud || hud->flags & HUDFLAG_HIDE)
         return;
 
-    polymost_outputGLDebugMessage(3, "polymost_dorotatespritemodel(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, uniqid:%d)",
+    buildgl_outputDebugMessage(3, "polymost_dorotatespritemodel(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, uniqid:%d)",
                                   sx, sy, z, a, picnum, dashade, dapalnum, dastat, daalpha, dablend, uniqid);
 
     float const ogchang = gchang; gchang = 1.f;
@@ -8865,9 +8859,9 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     tspr.cstat = globalorientation = (dastat&RS_TRANS1) | ((dastat&RS_TRANS2)<<4) | ((dastat&RS_YFLIP)<<1);
 
     if ((dastat&(RS_AUTO|RS_NOCLIP)) == RS_AUTO)
-        glViewport(windowxy1.x, ydim-(windowxy2.y+1), windowxy2.x-windowxy1.x+1, windowxy2.y-windowxy1.y+1);
+        buildgl_setViewport(windowxy1.x, ydim-(windowxy2.y+1), windowxy2.x-windowxy1.x+1, windowxy2.y-windowxy1.y+1);
     else
-        glViewport(0, 0, xdim, ydim);
+        buildgl_setViewport(0, 0, xdim, ydim);
 
     if (videoGetRenderMode() < REND_POLYMER)
     {
@@ -8905,12 +8899,12 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     }
 
     if (hud->flags & HUDFLAG_NODEPTH)
-        glDisable(GL_DEPTH_TEST);
+        buildgl_setDisabled(GL_DEPTH_TEST);
     else
     {
         static int32_t onumframes = 0;
 
-        glEnable(GL_DEPTH_TEST);
+        buildgl_setEnabled(GL_DEPTH_TEST);
 
         if (onumframes != numframes)
         {
@@ -8933,8 +8927,8 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
         tspriteptr[maxspritesonscreen] = &tspr;
 
-        glEnable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
 
         spriteext[tspr.owner].mdroll = a;
         spriteext[tspr.owner].mdpivot_offset.z = z;
@@ -8956,8 +8950,8 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
         spriteext[tspr.owner].mdpivot_offset.z = 0;
         spriteext[tspr.owner].mdroll = 0;
 
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
     }
 # endif
     if (!nofog) polymost_setFogEnabled(true);
@@ -8984,10 +8978,10 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
         return;
     }
 
-    polymost_outputGLDebugMessage(3, "polymost_dorotatesprite(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, cx1:%d, cy1:%d, cx2:%d, cy2:%d, uniqid:%d)",
+    buildgl_outputDebugMessage(3, "polymost_dorotatesprite(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, cx1:%d, cy1:%d, cx2:%d, cy2:%d, uniqid:%d)",
                                   sx, sy, z, a, picnum, dashade, dapalnum, dastat, daalpha, dablend, cx1, cy1, cx2, cy2, uniqid);
 
-    glViewport(0,0,xdim,ydim);
+    buildgl_setViewport(0,0,xdim,ydim);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
 
@@ -9040,7 +9034,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     glPushMatrix();
     glLoadIdentity();
 
-    glDisable(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
 
 #if defined(POLYMER)
 # ifdef USE_GLEXT
@@ -9053,8 +9047,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
 
     if (!(dastat & RS_NOMASK))
     {
-        glEnable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
 
         if (dastat & RS_TRANS1)
             method |= (dastat & RS_TRANS2) ? DAMETH_TRANS2 : DAMETH_TRANS1;
@@ -9063,8 +9057,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     }
     else
     {
-        glDisable(GL_ALPHA_TEST);
-        glDisable(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
     }
 
     handle_blend(!!(dastat & RS_TRANS1), dablend, !!(dastat & RS_TRANS2));
@@ -9220,8 +9214,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
         if (!nofog) polymost_setFogEnabled(true);
     }
 
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_BLEND);
+    buildgl_setDisabled(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_BLEND);
     polymost_setClamp(0);
 
 #ifdef POLYMER
@@ -9420,7 +9414,7 @@ static void tessectrap(const float *px, const float *py, const int32_t *point2, 
 
 void polymost_fillpolygon(int32_t npoints)
 {
-    polymost_outputGLDebugMessage(3, "polymost_fillpolygon(npoints:%d)", npoints);
+    buildgl_outputDebugMessage(3, "polymost_fillpolygon(npoints:%d)", npoints);
 
     globvis2 = 0;
     polymost_setVisibility(globvis2);
@@ -9442,7 +9436,7 @@ void polymost_fillpolygon(int32_t npoints)
     }
 
     if (!polymost2d) polymostSet2dView(); //disables blending, texturing, and depth testing
-    glEnable(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_ALPHA_TEST);
     pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
 
     if (pth)
@@ -9454,19 +9448,19 @@ void polymost_fillpolygon(int32_t npoints)
     }
 
     polymost_updatePalette();
-
+    buildgl_bindSamplerObject(0, pth->flags);
     float const f = getshadefactor(globalshade);
 
     uint8_t const maskprops = (globalorientation>>7)&DAMETH_MASKPROPS;
     handle_blend(maskprops > DAMETH_MASK, 0, maskprops == DAMETH_TRANS2);
     if (maskprops > DAMETH_MASK)
     {
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_BLEND);
         glColor4f(f, f, f, float_trans(maskprops, 0));
     }
     else
     {
-        glDisable(GL_BLEND);
+        buildgl_setDisabled(GL_BLEND);
         glColor3f(f, f, f);
     }
 
@@ -9489,7 +9483,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     if (videoGetRenderMode() < REND_POLYMOST || !in3dmode())
         return -1;
 
-    polymost_outputGLDebugMessage(3, "polymost_drawtilescreen(tilex:%d, tiley:%d, wallnum:%d, dimen:%d, tilezoom:%d, usehitile:%d, loadedhitile:%p)",
+    buildgl_outputDebugMessage(3, "polymost_drawtilescreen(tilex:%d, tiley:%d, wallnum:%d, dimen:%d, tilezoom:%d, usehitile:%d, loadedhitile:%p)",
                                   tilex, tiley, wallnum, dimen, tilezoom, usehitile, loadedhitile);
 
     if (!glinfo.texnpot)
@@ -9538,8 +9532,8 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     globalshade = 0;
     polymost_updatePalette();
 
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_BLEND);
+    buildgl_setDisabled(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_BLEND);
 
     if (tilezoom)
     {
@@ -9549,7 +9543,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER)
-        glEnable(GL_TEXTURE_2D);
+        buildgl_setEnabled(GL_TEXTURE_2D);
 #endif
 
     glColor3f(1,1,1);
@@ -9562,7 +9556,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER)
-        glDisable(GL_TEXTURE_2D);
+        buildgl_setDisabled(GL_TEXTURE_2D);
 #endif
 
     if (pth && !(pth->flags & PTH_INDEXED))
@@ -9622,7 +9616,7 @@ static int32_t gen_font_glyph_tex(void)
         }
     }
 
-    polymost_bindTexture(GL_TEXTURE_2D, polymosttext);
+    buildgl_bindTexture(GL_TEXTURE_2D, polymosttext);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,256,128,0,GL_RGBA,GL_UNSIGNED_BYTE,(GLvoid *)tbuf);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
@@ -9635,7 +9629,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
 {
     int const arbackcol = (unsigned)backcol < 256 ? backcol : 0;
 
-    polymost_outputGLDebugMessage(3, "polymost_printtext256(xpos:%d, ypos:%d, col:%hd, backcol:%hd, name:%p, fontsize:%hhu)",
+    buildgl_outputDebugMessage(3, "polymost_printtext256(xpos:%d, ypos:%d, col:%hd, backcol:%hd, name:%p, fontsize:%hhu)",
                                       xpos, ypos, col, backcol, name, fontsize);
 
     // FIXME?
@@ -9646,18 +9640,19 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
 
     bricolor(&p, col);
     bricolor(&b, arbackcol);
-
+    
     if (videoGetRenderMode() < REND_POLYMOST || !in3dmode() || (!polymosttext && gen_font_glyph_tex() < 0))
         return -1;
 
-    polymost_bindTexture(GL_TEXTURE_2D, polymosttext);
+    buildgl_bindTexture(GL_TEXTURE_2D, polymosttext);
     polymost_setTexturePosSize({0, 0, 1, 1});
 
     polymost_usePaletteIndexing(false);
 
     polymostSet2dView();	// disables blending, texturing, and depth testing
 
-    glDisable(GL_ALPHA_TEST);
+    buildgl_bindSamplerObject(0, PTH_INDEXED|PTH_CLAMPED);
+    buildgl_setDisabled(GL_ALPHA_TEST);
     glDepthMask(GL_FALSE);	// disable writing to the z-buffer
 
 //    glPushAttrib(GL_POLYGON_BIT|GL_ENABLE_BIT);
@@ -9683,7 +9678,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
         glEnd();
     }
 
-    glEnable(GL_BLEND);
+    buildgl_setEnabled(GL_BLEND);
     glColor4ub(p.r,p.g,p.b,255);
 
     vec2f_t const tc = { fontsize ? (4.f / 256.f) : (8.f / 256.f),
@@ -9898,6 +9893,7 @@ void polymost_initosdfuncs(void)
         { "r_useindexedcolortextures", "enable/disable indexed color texture rendering (always disables r_texfilter and r_anisotropy)", (void *) &r_useindexedcolortextures, CVAR_BOOL, 0, 1 },
         { "r_usenewshading", "visibility/fog code: 0: orig. Polymost   1: 07/2011   2: linear 12/2012   3: no neg. start 03/2014   4: base constant on shade table 11/2017",
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4 },
+        { "r_usesamplerobjects", "enable/disable OpenGL sampler objects", (void *) &r_usesamplerobjects, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "r_usetileshades", "enable/disable apply shade tables to art tiles", (void *) &r_usetileshades, CVAR_BOOL, 0, 1 },
 
         { "r_vsync",
@@ -9926,6 +9922,7 @@ void polymost_initosdfuncs(void)
         { "r_pr_ati_nodepthoffset", "enable this to workaround an ATI driver bug that causes sprite drawing to freeze the game on Radeon X1x00 hardware - you need to restart the renderer for it to take effect", (void *) &pr_ati_nodepthoffset, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
         { "r_pr_billboardingmode", "face sprite display method. 0: classic mode; 1: polymost mode", (void *) &pr_billboardingmode, CVAR_BOOL, 0, 1 },
         { "r_pr_buckets", "controls batching of primitives. 0: no batching. 1: buckets of materials.", (void *)&pr_buckets, CVAR_BOOL | CVAR_NOSAVE | CVAR_RESTARTVID, 0, 1 },
+        { "r_pr_constrained", "tessellation mode. 0: normal. 1: constrained Delaunay triangulation.", (void *)&r_pr_constrained, CVAR_BOOL | CVAR_RESTARTVID, 0, 1 },
         { "r_pr_customaspect", "if non-zero, forces the 3D view aspect ratio", (void *) &pr_customaspect, CVAR_DOUBLE, 0, 3 },
         { "r_pr_gpusmoothing", "toggles model animation interpolation", (void *)&pr_gpusmoothing, CVAR_BOOL, 0, 1 },
         { "r_pr_highpalookups", "enable/disable highpalookups", (void *) &pr_highpalookups, CVAR_BOOL, 0, 1 },
@@ -9935,7 +9932,7 @@ void polymost_initosdfuncs(void)
         { "r_pr_hudyadd", "overriden HUD yadd; see r_pr_overridehud", (void *) &pr_hudyadd, CVAR_FLOAT | CVAR_NOSAVE, -100, 100 },
         { "r_pr_hudzadd", "overriden HUD zadd; see r_pr_overridehud", (void *) &pr_hudzadd, CVAR_FLOAT | CVAR_NOSAVE, -100, 100 },
         { "r_pr_lighting", "enable/disable dynamic lights - restarts renderer", (void *) &pr_lighting, CVAR_INT | CVAR_RESTARTVID, 0, 2 },
-        { "r_pr_maxlightpasses", "the maximal amount of lights a single object can by affected by", (void *) &r_pr_maxlightpasses, CVAR_INT|CVAR_FUNCPTR, 0, PR_MAXLIGHTS },
+        { "r_pr_maxlightpasses", "the maximal amount of lights a single object can by affected by", (void *) &r_pr_maxlightpasses, CVAR_INT|CVAR_FUNCPTR, 0, PR_MAXPLANELIGHTS },
         { "r_pr_maxlightpriority", "lowering that value removes less meaningful lights from the scene", (void *) &pr_maxlightpriority, CVAR_INT, 0, PR_MAXLIGHTPRIORITY },
         { "r_pr_normalmapping", "enable/disable virtual displacement mapping", (void *) &pr_normalmapping, CVAR_BOOL, 0, 1 },
         { "r_pr_nullrender", "disable all draws when enabled, 2: disables updates too", (void *)&pr_nullrender, CVAR_INT | CVAR_NOSAVE, 0, 3 },

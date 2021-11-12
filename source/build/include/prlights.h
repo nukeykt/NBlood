@@ -3,6 +3,7 @@
 # define prlight_h_
 
 #define             PR_MAXLIGHTS            1024
+#define             PR_MAXPLANELIGHTS       32
 #define             SHADOW_DEPTH_OFFSET     30
 #define             PR_MAXLIGHTPRIORITY     6
 
@@ -19,8 +20,8 @@ typedef struct      s_prlight {
     int8_t          minshade, maxshade;
     int16_t         tilenum;
     struct          {
-        int32_t     emitshadow  : 1;
-        int32_t     negative    : 1;
+        int         emitshadow  : 1;
+        int         negative    : 1;
     }               publicflags;
     // internal members
     float           proj[16];
@@ -28,9 +29,9 @@ typedef struct      s_prlight {
     float           frustum[5 * 4];
     int32_t         rtindex;
     struct          {
-        int32_t     active      : 1;
-        int32_t     invalidate  : 1;
-        int32_t     isinview    : 1;
+        int         active      : 1;
+        int         invalidate  : 1;
+        int         isinview    : 1;
     }               flags;
     uint32_t        lightmap;
     _prplanelist*   planelist;

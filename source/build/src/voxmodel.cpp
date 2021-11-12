@@ -54,7 +54,7 @@ uint32_t gloadtex_indexed(const int32_t *picbuf, int32_t xsiz, int32_t ysiz)
     uint32_t rtexid;
 
     glGenTextures(1, (GLuint *) &rtexid);
-    polymost_bindTexture(GL_TEXTURE_2D, rtexid);
+    buildgl_bindTexture(GL_TEXTURE_2D, rtexid);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -108,7 +108,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
     uint32_t rtexid;
 
     glGenTextures(1, (GLuint *) &rtexid);
-    polymost_bindTexture(GL_TEXTURE_2D, rtexid);
+    buildgl_bindTexture(GL_TEXTURE_2D, rtexid);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 4, xsiz, ysiz, 0, GL_RGBA, GL_UNSIGNED_BYTE, (char *) pic2);
@@ -411,15 +411,15 @@ void voxvboalloc(voxmodel_t *vm)
 
     GLint prevVBO = 0;
     glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevVBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->vboindex);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->vboindex);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * vm->qcnt, vm->index, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevVBO);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevVBO);
 
     prevVBO = 0;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, vm->vbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, vm->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vm->vertex, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, prevVBO);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, prevVBO);
 }
 
 void voxvbofree(voxmodel_t *vm)
@@ -1008,7 +1008,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if ((tspr->cstat&48)==32)
         return 0;
 
-    polymost_outputGLDebugMessage(3, "polymost_voxdraw(m:%p, tspr:%p)", m, tspr);
+    buildgl_outputDebugMessage(3, "polymost_voxdraw(m:%p, tspr:%p)", m, tspr);
 
     //updateanimation((md2model *)m,tspr);
 
@@ -1066,7 +1066,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     if (shadowHack)
     {
-        glDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
+        buildgl_setDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 0.9999);
     }
 
@@ -1077,7 +1077,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     else
         glFrontFace(GL_CCW);
 
-    glEnable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     float pc[4];
@@ -1103,7 +1103,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
 
         if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
-            glEnable(GL_BLEND);  // else glDisable(GL_BLEND);
+            buildgl_setEnabled(GL_BLEND);  // else buildgl_setDisabled(GL_BLEND);
     }
     else pc[3] = 1.f;
     //------------
@@ -1135,7 +1135,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         if (!m->texid8bit)
             m->texid8bit = gloadtex_indexed(m->mytex, m->mytexx, m->mytexy);
         else
-            polymost_bindTexture(GL_TEXTURE_2D, m->texid8bit);
+            buildgl_bindTexture(GL_TEXTURE_2D, m->texid8bit);
 
         int visShade = int(fabsf(((tspr->x-globalposx)*gcosang+(tspr->y-globalposy)*gsinang)*globvis2*(1.f/(64.f*1024.f*2.f))));
 
@@ -1155,15 +1155,15 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         if (!m->texid[globalpal])
             m->texid[globalpal] = gloadtex(m->mytex, m->mytexx, m->mytexy, m->is8bit, globalpal);
         else
-            polymost_bindTexture(GL_TEXTURE_2D, m->texid[globalpal]);
+            buildgl_bindTexture(GL_TEXTURE_2D, m->texid[globalpal]);
 
         polymost_usePaletteIndexing(false);
         polymost_setTexturePosSize({ 0.f, 0.f, 1.f, 1.f });
     }
 
     glColor4f(pc[0], pc[1], pc[2], pc[3]);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->vboindex);
-    glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->vboindex);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, m->vbo);
 
     glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
 
@@ -1173,8 +1173,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     glDrawElements(GL_TRIANGLES, m->qcnt*2*3, GL_UNSIGNED_INT, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
@@ -1182,11 +1182,11 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     polymost_resetVertexPointers();
 
     //------------
-    glDisable(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
 //    glPopAttrib();
     if (shadowHack)
     {
-        glDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
+        buildgl_setDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 0.99999);
     }
     glLoadIdentity();

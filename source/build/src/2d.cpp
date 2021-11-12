@@ -60,12 +60,12 @@ void plotpixel(int32_t x, int32_t y, char col)
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {
         palette_t p = paletteGetColor(col);
-        glEnable(GL_SCISSOR_TEST);
+        buildgl_setEnabled(GL_SCISSOR_TEST);
         glScissor(x,ydim-y+1,1,1);
         glClearColor((float)p.r*(1.0f/255.0f),(float)p.g*(1.0f/255.0f),(float)p.b*(1.0f)/255.0f,1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.0f,0.0f,0.0f,1.0f); // XXX: there must be a better way
-        glDisable(GL_SCISSOR_TEST);
+        buildgl_setDisabled(GL_SCISSOR_TEST);
         return;
     }
 #endif
@@ -158,9 +158,9 @@ static void drawlinegl(int32_t x1, int32_t y1, int32_t x2, int32_t y2, palette_t
     }
 
     polymost2d = 1;
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);	// When using line antialiasing, this is needed
+    buildgl_setDisabled(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
+    buildgl_setEnabled(GL_BLEND);	// When using line antialiasing, this is needed
 
     polymost_useColorOnly(true);
     glBegin(GL_LINES);
@@ -1439,7 +1439,7 @@ void polymostSet2dView(void)
 
     polymost2d = 1;
 
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    buildgl_setDisabled(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_BLEND);
 #endif
 }

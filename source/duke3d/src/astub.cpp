@@ -2433,7 +2433,6 @@ static inline void pushDisableFog(void)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        glPushAttrib(GL_ENABLE_BIT);
         polymost_setFogEnabled(false);
     }
 #endif
@@ -2444,7 +2443,6 @@ static inline void popDisableFog(void)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        glPopAttrib();
     }
 #endif
 }

@@ -1550,8 +1550,6 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 void polymost_glreset(void);
 void polymost_precache(int32_t dapicnum, int32_t dapalnum, int32_t datype);
 
-typedef uint16_t polytintflags_t;
-
 enum cutsceneflags {
     CUTSCENE_FORCEFILTER = 1,
     CUTSCENE_FORCENOFILTER = 2,
@@ -1595,14 +1593,6 @@ extern int32_t r_downsizevar;
 extern int32_t mdtims, omdtims;
 extern int32_t glrendmode;
 #endif
-
-void hicinit(void);
-void hicsetpalettetint(int32_t palnum, char r, char g, char b, char sr, char sg, char sb, polytintflags_t effect);
-// flags bitset: 1 = don't compress
-int32_t hicsetsubsttex(int32_t picnum, int32_t palnum, const char *filen, float alphacut,
-                       float xscale, float yscale, float specpower, float specfactor, char flags);
-int32_t hicsetskybox(int32_t picnum, int32_t palnum, char *faces[6], int32_t flags);
-int32_t hicclearsubst(int32_t picnum, int32_t palnum);
 
 int32_t Ptile2tile(int32_t tile, int32_t palette) ATTRIBUTE((pure));
 int32_t md_loadmodel(const char *fn);

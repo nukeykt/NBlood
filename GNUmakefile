@@ -310,10 +310,10 @@ else
   engine_objs += a-c.cpp
 endif
 ifeq (1,$(USE_OPENGL))
-    engine_objs += glsurface.cpp voxmodel.cpp mdsprite.cpp tilepacker.cpp
+    engine_objs += glbuild.cpp glsurface.cpp voxmodel.cpp mdsprite.cpp tilepacker.cpp
     engine_deps += glad
     ifeq (1,$(POLYMER))
-        engine_objs += glbuild.cpp polymer.cpp
+        engine_objs += polymer.cpp
     endif
 endif
 ifeq ($(PLATFORM),DARWIN)

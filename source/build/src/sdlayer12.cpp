@@ -98,15 +98,7 @@ int32_t initsystem(void)
             initprintf("Failed loading OpenGL driver. GL modes will be unavailable.\n");
             nogl = 1;
         }
-#ifdef POLYMER
-        if (loadglulibrary(getenv("BUILD_GLULIB")))
-        {
-            initprintf("Failed loading GLU.  GL modes will be unavailable.\n");
-            nogl = 1;
-        }
 #endif
-#endif
-
         if (SDL_VideoDriverName(drvname, 32))
             initprintf("Using \"%s\" video driver\n", drvname);
 

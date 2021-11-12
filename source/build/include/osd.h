@@ -319,6 +319,7 @@ static FORCE_INLINE void OSD_FlushLog(void)
         buildvfs_fflush(osd->log.m_fp);
 }
 
+static FORCE_INLINE char const *OSD_GetErrorFmt(void) { return osd->draw.errorfmt; }
 // registers a function
 //   name = name of the function
 //   help = a short help string

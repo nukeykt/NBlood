@@ -1,12 +1,12 @@
 #ifndef mdsprite_h_
 # define mdsprite_h_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef USE_OPENGL
 #include "hightile.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if defined(_M_IX86) || defined(_M_AMD64) || defined(__i386) || defined(__x86_64)

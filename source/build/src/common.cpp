@@ -259,7 +259,7 @@ void COMMON_clearbackground(int numcols, int numrows)
 
         polymostSet2dView();
         glColor4f(0.f, 0.f, 0.f, 0.67f);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_BLEND);
         glRecti(0, 0, xdim, 8*numrows+8);
         glColor4f(0.f, 0.f, 0.f, 1.f);
         glRecti(0, 8*numrows+4, xdim, 8*numrows+8);

@@ -6697,11 +6697,11 @@ static void renderDrawSprite(int32_t snum)
         return;
 # ifdef POLYMER
     case REND_POLYMER:
-        glEnable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
         polymer_drawsprite(snum);
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
         return;
 # endif
 #endif
@@ -6722,13 +6722,13 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
 # ifdef POLYMER
     else if (videoGetRenderMode() == REND_POLYMER)
     {
-        glEnable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
 
         polymer_drawmaskwall(damaskwallcnt);
 
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
 
         return;
     }
@@ -9081,7 +9081,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
 #  endif
         polymer_glinit();
         polymer_drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum);
-        glDisable(GL_CULL_FACE);
+        buildgl_setDisabled(GL_CULL_FACE);
         polymost2d = 0;
         return 0;
     }
@@ -9609,8 +9609,8 @@ killsprite:
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
-        glDisable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
         polymost_setClamp(1+2);
 
         if (spritesortcnt < numSprites)
@@ -9676,8 +9676,8 @@ killsprite:
                 renderDrawMaskedWall(i);
         }
 
-        glEnable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);
     }
 #endif
@@ -14073,7 +14073,7 @@ void printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const
         palette_t p=getpal(col), b=getpal(backcol);
 
         setpolymost2dview();
-        glDisable(GL_ALPHA_TEST);
+        polymost_setDisabled(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);	// disable writing to the z-buffer
 
         glBegin(GL_POINTS);
@@ -14213,8 +14213,8 @@ int32_t videoSetRenderMode(int32_t renderer)
 #ifdef USE_OPENGL
     if (bpp == 8)
     {
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
         renderer = REND_CLASSIC;
     }
 # ifdef POLYMER
@@ -14252,6 +14252,8 @@ int32_t videoSetRenderMode(int32_t renderer)
     {
         polymost_init();
     }
+
+    buildgl_resetStateAccounting();
 #endif
 
     return 0;
