@@ -7645,7 +7645,7 @@ static void Menu_RunInput(Menu_t *cm)
                     if (ch >= 'a')
                         ch -= ('a' - 'A');
 
-                    if (ch2 != ch || ch <= 0 || (ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9'))
+                    if (ch2 != ch || ch <= 0 || ((ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9')))
                         break;
 
                     int index = 0;
