@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "duke3d.h"
 #include "microprofile.h"
+#include "screens.h"
 
 #if KRANDDEBUG
 # define ACTOR_STATIC
@@ -9117,8 +9118,8 @@ static void G_DoEventGame(int const nEventID)
 
 void G_MoveWorld(void)
 {
-    extern double g_moveActorsTime, g_moveWorldTime;
-    const double worldTime = timerGetFractionalTicks();
+    double worldTime = timerGetFractionalTicks();
+    auto framecnt = g_frameCounter;
 
     MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
 
@@ -9159,14 +9160,20 @@ void G_MoveWorld(void)
         G_MoveMisc();  //ST 5
     }
 
-    const double actorsTime = timerGetFractionalTicks();
+    double actorsTime = timerGetFractionalTicks();
+    auto framecnt2 = framecnt;
 
     {
         MICROPROFILE_SCOPEI("MoveWorld", "MoveActors", MP_YELLOW4);
         G_MoveActors();  //ST 1
     }
 
-    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetFractionalTicks()-actorsTime);
+    actorsTime = timerGetFractionalTicks() - actorsTime;
+
+    if (framecnt2 != framecnt)
+        actorsTime -= (double)g_lastFrameDuration2 * 1000.0 / (double)timerGetNanoTickRate();
+
+    g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*actorsTime;
 
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
@@ -9195,5 +9202,10 @@ void G_MoveWorld(void)
         G_MoveFX();  //ST 11
     }
 
-    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*(timerGetFractionalTicks()-worldTime);
+    worldTime = timerGetFractionalTicks() - worldTime;
+
+    if (g_frameCounter != framecnt)
+        worldTime -= (double)g_lastFrameDuration2 * 1000.0 / (double)timerGetNanoTickRate();
+
+    g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*worldTime;
 }

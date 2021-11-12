@@ -6398,6 +6398,8 @@ static void drawframe_entry(mco_coro *co)
 
         videoNextPage();
         S_Update();
+        g_lastFrameEndTime2 = timerGetNanoTicks();
+        g_lastFrameDuration2 = g_lastFrameEndTime2 - g_lastFrameStartTime;
         mco_yield(co);
     } while (1);
 }
@@ -6985,6 +6987,7 @@ MAIN_LOOP_RESTART:
 
         bool gameUpdate = false;
         double gameUpdateStartTime = timerGetFractionalTicks();
+        auto framecnt = g_frameCounter;
 
         if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME)
         {
@@ -7017,12 +7020,18 @@ MAIN_LOOP_RESTART:
                 gameUpdate = true;
                 g_gameUpdateTime = timerGetFractionalTicks() - gameUpdateStartTime;
 
+                if (g_frameCounter != framecnt)
+                    g_gameUpdateTime -= (double)g_lastFrameDuration * 1000.0 / (double)timerGetNanoTickRate();
+
                 if (g_gameUpdateAvgTime <= 0.0)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
 
                 g_gameUpdateAvgTime
                 = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
             } while (0);
+
+            if (gameUpdate)
+                g_gameUpdateAndDrawTime = g_gameUpdateTime + (double)g_lastFrameDuration * 1000.0 / (double)timerGetNanoTickRate();
         }
 
         G_DoCheats();
@@ -7055,9 +7064,6 @@ MAIN_LOOP_RESTART:
             }
 
             g_switchRoutine(co_drawframe);
-
-            if (gameUpdate)
-                g_gameUpdateAndDrawTime = timerGetFractionalTicks()-gameUpdateStartTime;
         }
 
         // handle CON_SAVE and CON_SAVENN

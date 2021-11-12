@@ -781,9 +781,9 @@ static void G_ShowCacheLocks(void)
         }
     }
 }
-
-#define LOW_FPS ((videoGetRenderMode() == REND_CLASSIC) ? 35 : 50)
-#define SLOW_FRAME_TIME 20
+#define LOW_FPS (min<unsigned>((unsigned)(r_maxfps - 1), 59))
+#define SLOW_VM_TIME 5
+#define SLOW_FRAME_TIME (1000.0 / LOW_FPS - SLOW_VM_TIME)
 
 #if defined GEKKO
 # define FPS_YOFFSET 16
@@ -848,17 +848,17 @@ static void G_PrintFPS(void)
                 printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+40+FPS_YOFFSET,
                     FPS_COLOR(maxGameUpdate >= SLOW_FRAME_TIME), -1, tempbuf, x);
 
-                chars = Bsprintf(tempbuf, "G_MoveActors(): %.3e ms", g_moveActorsTime);
+                chars = Bsprintf(tempbuf, "G_MoveActors(): %.3f ms", g_moveActorsTime);
 
                 printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+50+2+FPS_YOFFSET, 0, -1, tempbuf, x);
                 printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+50+FPS_YOFFSET,
-                    COLOR_WHITE, -1, tempbuf, x);
+                    FPS_COLOR(g_moveActorsTime >= SLOW_VM_TIME), -1, tempbuf, x);
 
-                chars = Bsprintf(tempbuf, "G_MoveWorld(): %.3e ms", g_moveWorldTime);
+                chars = Bsprintf(tempbuf, "G_MoveWorld(): %.3f ms", g_moveWorldTime);
 
                 printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+60+2+FPS_YOFFSET, 0, -1, tempbuf, x);
                 printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+60+FPS_YOFFSET,
-                    COLOR_WHITE, -1, tempbuf, x);
+                    FPS_COLOR(g_moveWorldTime >= SLOW_VM_TIME), -1, tempbuf, x);
             }
 
             // lag meter
