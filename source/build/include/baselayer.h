@@ -125,7 +125,6 @@ struct glinfo_t {
         {
             int bgra             : 1;
             int bufferstorage    : 1;
-            int clamptoedge      : 1;
             int debugoutput      : 1;
             int depthclamp       : 1;
             int depthtex         : 1;
@@ -134,11 +133,11 @@ struct glinfo_t {
             int multitex         : 1;
             int occlusionqueries : 1;
             int rect             : 1;
+            int samplerobjects   : 1;
             int shadow           : 1;
             int sync             : 1;
             int texcompr         : 1;
             int texnpot          : 1;
-            int vbos             : 1;
             int vsync            : 1;
         };
     };

@@ -434,19 +434,17 @@ void fill_glinfo(void)
     glinfo.shadow   = !!Bstrstr(glinfo.extensions, "GL_ARB_shadow");
     glinfo.texnpot  = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_non_power_of_two") || !!Bstrstr(glinfo.extensions, "GL_OES_texture_npot");
 
-#if !defined EDUKE32_GLES
     glinfo.bgra             = !!Bstrstr(glinfo.extensions, "GL_EXT_bgra");
     glinfo.bufferstorage    = !!Bstrstr(glinfo.extensions, "GL_ARB_buffer_storage");
-    glinfo.clamptoedge      = !!Bstrstr(glinfo.extensions, "GL_EXT_texture_edge_clamp") || !!Bstrstr(glinfo.extensions, "GL_SGIS_texture_edge_clamp");
     glinfo.debugoutput      = !!Bstrstr(glinfo.extensions, "GL_ARB_debug_output");
     glinfo.depthclamp       = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_clamp");
     glinfo.glsl             = !!Bstrstr(glinfo.extensions, "GL_ARB_shader_objects");
     glinfo.multitex         = !!Bstrstr(glinfo.extensions, "GL_ARB_multitexture");
     glinfo.occlusionqueries = !!Bstrstr(glinfo.extensions, "GL_ARB_occlusion_query");
     glinfo.rect             = !!Bstrstr(glinfo.extensions, "GL_NV_texture_rectangle") || !!Bstrstr(glinfo.extensions, "GL_EXT_texture_rectangle");
+    glinfo.samplerobjects   = !!Bstrstr(glinfo.extensions, "GL_ARB_sampler_objects");
     glinfo.sync             = !!Bstrstr(glinfo.extensions, "GL_ARB_sync");
     glinfo.texcompr         = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_compression") && Bstrcmp(glinfo.vendor, "ATI Technologies Inc.");
-    glinfo.vbos             = !!Bstrstr(glinfo.extensions, "GL_ARB_vertex_buffer_object");
     glinfo.vsync            = !!Bstrstr(glinfo.extensions, "WGL_EXT_swap_control") || !!Bstrstr(glinfo.extensions, "GLX_EXT_swap_control");
 
 # ifdef DYNAMIC_GLEXT
@@ -457,7 +455,8 @@ void fill_glinfo(void)
         glinfo.texcompr = 0;
     }
 # endif
-#else
+
+#if defined EDUKE32_GLES
     // don't bother checking because ETC2 et al. are not listed in extensions anyway
     glinfo.texcompr = 1; // !!Bstrstr(glinfo.extensions, "GL_OES_compressed_ETC1_RGB8_texture");
 #endif
@@ -563,8 +562,7 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 
-    initprintf("OpenGL information\n %s %s %s\n",
-               glinfo.vendor, glinfo.renderer, glinfo.version);
+    OSD_Printf("OpenGL information\n %s %s %s\n", glinfo.vendor, glinfo.renderer, glinfo.version);
 
     if (!glinfo.filled)
         return OSDCMD_OK;
@@ -573,24 +571,22 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 
 #define SUPPORTED(x) (x ? s[0] : s[1])
 
-    initprintf(" BGRA textures:           %s\n", SUPPORTED(glinfo.bgra));
-    initprintf(" Clamp-to-edge:           %s\n", SUPPORTED(glinfo.clamptoedge));
-    initprintf(" Framebuffer objects:     %s\n", SUPPORTED(glinfo.fbos));
-    initprintf(" Multi-texturing:         %s\n", SUPPORTED(glinfo.multitex));
-    initprintf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
-#ifndef EDUKE32_GLES
-    initprintf(" Buffer storage:          %s\n", SUPPORTED(glinfo.bufferstorage));
-    initprintf(" Debug output:            %s\n", SUPPORTED(glinfo.debugoutput));
-    initprintf(" Depth textures:          %s\n", SUPPORTED(glinfo.depthtex));
-    initprintf(" GLSL:                    %s\n", SUPPORTED(glinfo.glsl));
-    initprintf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));
-    initprintf(" Rectangle textures:      %s\n", SUPPORTED(glinfo.rect));
-    initprintf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
-    initprintf(" Sync:                    %s\n", SUPPORTED(glinfo.sync));
-    initprintf(" Texture compression:     %s\n", SUPPORTED(glinfo.texcompr));
-    initprintf(" Vertex buffer objects:   %s\n", SUPPORTED(glinfo.vbos));
-#endif
-    initprintf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
+    OSD_Printf(" BGRA textures:           %s\n", SUPPORTED(glinfo.bgra));
+    OSD_Printf(" Buffer storage:          %s\n", SUPPORTED(glinfo.bufferstorage));
+    OSD_Printf(" Debug output:            %s\n", SUPPORTED(glinfo.debugoutput));
+    OSD_Printf(" Depth textures:          %s\n", SUPPORTED(glinfo.depthtex));
+    OSD_Printf(" Frame buffer objects:    %s\n", SUPPORTED(glinfo.fbos));
+    OSD_Printf(" GLSL:                    %s\n", SUPPORTED(glinfo.glsl));
+    OSD_Printf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
+    OSD_Printf(" Multi-texturing:         %s\n", SUPPORTED(glinfo.multitex));
+    OSD_Printf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
+    OSD_Printf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));
+    OSD_Printf(" Rectangle textures:      %s\n", SUPPORTED(glinfo.rect));
+    OSD_Printf(" Sampler objects:         %s\n", SUPPORTED(glinfo.samplerobjects));
+    OSD_Printf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
+    OSD_Printf(" Sync:                    %s\n", SUPPORTED(glinfo.sync));
+    OSD_Printf(" Texture compression:     %s\n", SUPPORTED(glinfo.texcompr));
+
     if (GLVersion.major)
         OSD_Printf(" GL context version:      %d.%d\n", GLVersion.major, GLVersion.minor);
 
