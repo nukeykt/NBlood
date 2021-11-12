@@ -349,6 +349,9 @@ VoiceNode *MV_BeginService(int handle)
         return nullptr;
     }
 
+    if (voice->task.valid() && !voice->task.ready())
+        voice->task.wait();
+
     MV_Lock();
 
     return voice;

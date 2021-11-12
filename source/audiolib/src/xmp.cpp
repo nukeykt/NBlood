@@ -11,11 +11,8 @@
 #define BUILDING_STATIC
 #include "libxmp-lite/xmp.h"
 
-#include "libasync_config.h"
-
 typedef struct {
    void * ptr;
-   async::task<void> task;
    size_t length;
 
    xmp_context ctx;
@@ -120,7 +117,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     xd->ptr = ptr;
     xd->length = length;
 
-    xd->task = async::spawn([voice]
+    voice->task = async::spawn([voice]
     {    
         auto xd = (xmp_data *)voice->rawdataptr;
         auto ctx = xd->ctx;

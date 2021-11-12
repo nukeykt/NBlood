@@ -34,8 +34,6 @@
 
 #define BLOCKSIZE MV_MIXBUFFERSIZE
 
-#include "libasync_config.h"
-
 #define OGG_IMPL
 #define VORBIS_IMPL
 #define OV_EXCLUDE_STATIC_CALLBACKS
@@ -44,7 +42,6 @@
 
 typedef struct {
    void * ptr;
-   async::task<void> task;
    size_t length;
    size_t pos;
 
@@ -368,7 +365,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     //if (vd->task.valid() && !vd->task.ready())
     //    vd->task.wait();
 
-    vd->task = async::spawn([voice]
+    voice->task = async::spawn([voice]
     {
 #if defined _WIN32 && !defined NDEBUG
         debugThreadName("MV_PlayVorbis");
