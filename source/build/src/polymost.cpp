@@ -19,6 +19,37 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "texcache.h"
 #include "hash.h"
 
+#ifdef POLYMOST2
+int32_t r_enablepolymost2 = 0;
+#endif // POLYMOST2
+
+#ifdef USE_GLEXT
+int32_t r_vbocount = 64;
+int32_t r_glowmapping = 1;
+int32_t r_detailmapping = 1;
+#endif
+
+int32_t r_animsmoothing = 1;
+int32_t r_downsize;
+int32_t r_downsizevar = -1;
+int32_t r_drawpolyVertsBufferLength = 30000;
+int32_t r_flatsky = 1;
+int32_t r_fullbrights = 1; // This variable, and 'shadeforfullbrightpass' control the drawing of fullbright tiles.  Also see 'fullbrightloadingpass'.
+int32_t r_npotwallmode = 2;
+int32_t r_parallaxskyclamping = 1;
+int32_t r_parallaxskypanning = 1;
+int32_t r_polygonmode;     // 0:GL_FILL,1:GL_LINE,2:GL_POINT //FUK
+int32_t r_polymostDebug;
+int32_t r_shadeinterpolate = 1;
+int32_t r_skyzbufferhack;
+int32_t r_useindexedcolortextures = 1;
+int32_t r_usenewshading = 4;
+int32_t r_usesamplerobjects = 1;
+int32_t r_usetileshades = 1;
+int32_t r_vertexarrays = 1;
+int32_t r_yshearing;
+int32_t r_persistentStreamBuffer = 1;
+
 extern char textfont[2048], smalltextfont[2048];
 
 int32_t rendmode=0;
@@ -52,13 +83,6 @@ static float dxb1[MAXWALLSB], dxb2[MAXWALLSB];
 float shadescale = 1.0f;
 int32_t shadescale_unbounded = 0;
 
-int32_t r_polymostDebug = 0;
-#ifdef POLYMOST2
-int32_t r_enablepolymost2 = 0;
-#endif // POLYMOST2
-int32_t r_usenewshading = 4;
-int32_t r_usetileshades = 1;
-int32_t r_npotwallmode = 2;
 int32_t polymostcenterhoriz = 100;
 
 static float gviewxrange;
@@ -84,9 +108,7 @@ static int32_t drawpoly_srepeat = 0, drawpoly_trepeat = 0;
 #define BUFFER_OFFSET(bytes) (GLintptr) ((GLubyte*) NULL + (bytes))
 // these cvars are never used directly in rendering -- only when glinit() is called/renderer reset
 // We do this because we don't want to accidentally overshoot our existing buffer's bounds
-uint32_t r_persistentStreamBuffer = 1;
-uint32_t persistentStreamBuffer = r_persistentStreamBuffer;
-int32_t r_drawpolyVertsBufferLength = 30000;
+int32_t persistentStreamBuffer = r_persistentStreamBuffer;
 int32_t drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
 static GLuint drawpolyVertsID = 0;
 static GLint drawpolyVertsOffset = 0;
@@ -111,12 +133,7 @@ int32_t glusetexcache = 0, glusememcache = 0;
 #else
 int32_t glusetexcompr = 1;
 int32_t glusetexcache = 2, glusememcache = 1;
-int32_t r_polygonmode = 0;     // 0:GL_FILL,1:GL_LINE,2:GL_POINT //FUK
 static int32_t lastglpolygonmode = 0; //FUK
-#endif
-#ifdef USE_GLEXT
-int32_t r_detailmapping = 1;
-int32_t r_glowmapping = 1;
 #endif
 
 int polymost2d;
@@ -126,24 +143,7 @@ int32_t gltexmiplevel = 0;		// discards this many mipmap levels
 int32_t glprojectionhacks = 2;
 static GLuint polymosttext = 0;
 int32_t glrendmode = REND_POLYMOST;
-int32_t r_shadeinterpolate = 1;
 
-// This variable, and 'shadeforfullbrightpass' control the drawing of
-// fullbright tiles.  Also see 'fullbrightloadingpass'.
-
-int32_t r_fullbrights = 1;
-int32_t r_vertexarrays = 1;
-#ifdef USE_GLEXT
-//POGOTODO: we no longer support rendering without VBOs -- update any outdated pre-GL2 code that renders without VBOs
-int32_t r_vbocount = 64;
-#endif
-int32_t r_animsmoothing = 1;
-int32_t r_downsize = 0;
-int32_t r_downsizevar = -1;
-
-int32_t r_yshearing = 0;
-int32_t r_flatsky = 1;
-int32_t r_skyzbufferhack = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
@@ -165,8 +165,6 @@ static GLint fogColorLoc = -1;
 #endif // POLYMOST2
 
 #define PALSWAP_TEXTURE_SIZE 2048
-int32_t r_useindexedcolortextures = 1;
-int32_t r_usesamplerobjects = 1;
 static GLuint tilesheetTexIDs[MAXTILESHEETS];
 static GLint tilesheetSize = 0;
 static vec2f_t tilesheetHalfTexelSize = { 0.f, 0.f };
@@ -237,10 +235,6 @@ static inline float float_trans(uint32_t maskprops, uint8_t blend)
 }
 
 char ptempbuf[MAXWALLSB<<1];
-
-// polymost ART sky control
-int32_t r_parallaxskyclamping = 1;
-int32_t r_parallaxskypanning = 1;
 
 #define MIN_CACHETIME_PRINT 10
 

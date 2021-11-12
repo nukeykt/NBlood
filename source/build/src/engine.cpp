@@ -1408,7 +1408,6 @@ static int32_t viewingrangerecip;
 static int8_t globalxshift, globalyshift;
 static int32_t globalxpanning, globalypanning;
 int32_t globalshade, globalorientation;
-int16_t globalpicnum;
 static int16_t globalshiftval;
 #ifdef HIGH_PRECISION_SPRITE
 static int64_t globalzd;

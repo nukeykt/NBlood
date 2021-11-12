@@ -7,10 +7,6 @@
 #include "glad/glad.h"
 #include "hightile.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern int32_t rendmode;
 extern float gtang;
 extern int polymost2d;
@@ -88,14 +84,38 @@ extern float shadescale;
 extern int32_t shadescale_unbounded;
 extern uint8_t alphahackarray[MAXTILES];
 
-extern int32_t r_usenewshading;
-extern int32_t r_usetileshades;
+#ifdef POLYMOST2
+extern int32_t r_enablepolymost2;
+#endif // POLYMOST2
+
+#ifdef USE_GLEXT
+extern int32_t r_vbocount;
+extern int32_t r_glowmapping;
+extern int32_t r_detailmapping;
+#endif
+
+extern int32_t r_animsmoothing;
+extern int32_t r_downsize;
+extern int32_t r_downsizevar;
+extern int32_t r_drawpolyVertsBufferLength;
+extern int32_t r_flatsky;
+extern int32_t r_fullbrights;
 extern int32_t r_npotwallmode;
-extern int32_t polymostcenterhoriz;
-
-extern int16_t globalpicnum;
-
+extern int32_t r_parallaxskyclamping;
+extern int32_t r_parallaxskypanning;
+extern int32_t r_polygonmode;
 extern int32_t r_polymostDebug;
+extern int32_t r_shadeinterpolate;
+extern int32_t r_skyzbufferhack;
+extern int32_t r_useindexedcolortextures;
+extern int32_t r_usenewshading;
+extern int32_t r_usesamplerobjects;
+extern int32_t r_usetileshades;
+extern int32_t r_vertexarrays;
+extern int32_t r_yshearing;
+extern int32_t r_persistentStreamBuffer;
+
+extern int32_t polymostcenterhoriz;
 
 // Compare with polymer_eligible_for_artmap()
 static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_t const pal)
@@ -317,9 +337,6 @@ static FORCE_INLINE bool polymost_testintersection(vec3_t const &pos, vec2_t con
 extern void polymost_setupglowtexture(int32_t texunits, int32_t tex);
 extern void polymost_setupdetailtexture(int32_t texunits, int32_t tex);
 
-#ifdef __cplusplus
-}
-#endif
 #endif
 
 #endif
