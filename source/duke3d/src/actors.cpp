@@ -2957,6 +2957,12 @@ ACTOR_STATIC void P_HandleBeingSpitOn(DukePlayer_t * const ps)
 }
 #endif
 
+static FORCE_INLINE vec2_t Proj_GetOffset(int const spriteNum)
+{
+    return { sprite[spriteNum].xrepeat * (sintable[(sprite[spriteNum].ang + 512) & 2047] >> 11),
+             sprite[spriteNum].xrepeat * (sintable[sprite[spriteNum].ang & 2047] >> 11) };
+}
+
 static void A_DoProjectileEffects(int spriteNum, bool radiusDamage = true)
 {
     auto const pProj = &SpriteProjectile[spriteNum];
@@ -2970,8 +2976,7 @@ static void A_DoProjectileEffects(int spriteNum, bool radiusDamage = true)
         if (pProj->syrepeat > 4)
             sprite[newSpr].yrepeat=pProj->syrepeat;
 
-        sprite[newSpr].xy -= { sprite[newSpr].xrepeat * (sintable[(sprite[spriteNum].ang + 512) & 2047] >> 11),
-                               sprite[newSpr].xrepeat * (sintable[sprite[spriteNum].ang & 2047] >> 11) };
+        sprite[newSpr].xy -= Proj_GetOffset(newSpr);
     }
 
     if (pProj->isound >= 0)
@@ -3054,7 +3059,6 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
     auto const pProj   = &SpriteProjectile[spriteNum];
     auto const pSprite = &sprite[spriteNum];
-    vec3_t     davect;
     int        otherSprite = 0;
 
     switch (pProj->workslike & PROJECTILE_TYPE_MASK)
@@ -3075,8 +3079,6 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
         default:
         case PROJECTILE_RPG:
         {
-            davect = pSprite->xyz;
-
             VM_UpdateAnim(spriteNum, &actor[spriteNum].t_data[0]);
 
             if (pProj->flashcolor)
@@ -3138,7 +3140,6 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
             do
             {
-                davect = pSprite->xyz;
                 otherSprite = A_MoveSprite(spriteNum, { (projVel * (sintable[(pSprite->ang + 512) & 2047])) >> 14 >> (int)!projectileMoved,
                                                         (projVel * (sintable[pSprite->ang & 2047])) >> 14 >> (int)!projectileMoved, projZvel >> (int)!projectileMoved },
                                                         (A_CheckSpriteFlags(spriteNum, SFLAG_NOCLIP) ? 0 : CLIPMASK1));
@@ -3263,7 +3264,8 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                         }
                         else
                         {
-                            setsprite(spriteNum, &davect);
+                            sprite[spriteNum].xy -= Proj_GetOffset(spriteNum);
+
                             A_DamageWall(spriteNum, otherSprite, pSprite->xyz, pSprite->picnum);
 
                             if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS)
@@ -3285,7 +3287,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                         break;
 
                     case 16384:
-                        setsprite(spriteNum, &davect);
+                        sprite[spriteNum].xy -= Proj_GetOffset(spriteNum);
 
                         if (Proj_MaybeDamageCF(spriteNum))
                         {
@@ -3408,8 +3410,6 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                 if (!projectileMoved)
                     spriteXvel += sprite[pSprite->owner].xvel;
-
-                vec3_t davect = pSprite->xyz;
 
                 A_GetZLimits(spriteNum);
 
@@ -3552,7 +3552,6 @@ ACTOR_STATIC void G_MoveWeapons(void)
                             }
                             else
                             {
-                                setsprite(spriteNum, &davect);
                                 A_DamageWall(spriteNum, moveSprite, pSprite->xyz, pSprite->picnum);
 
                                 if (pSprite->picnum == FREEZEBLAST)
@@ -3570,7 +3569,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                             break;
 
                         case 16384:
-                            setsprite(spriteNum, &davect);
+                            pSprite->xy -= Proj_GetOffset(spriteNum);
 
                             if (Proj_MaybeDamageCF(spriteNum))
                                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
@@ -3625,8 +3624,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                                 sprite[newSprite].yrepeat = 6;
                             }
                                 
-                            sprite[newSprite].xy -= { sprite[newSprite].xrepeat * (sintable[(pSprite->ang + 512) & 2047] >> 11),
-                                                      sprite[newSprite].xrepeat * (sintable[pSprite->ang & 2047] >> 11) };
+                            sprite[newSprite].xy -= Proj_GetOffset(newSprite);
 
                             if (pSprite->xrepeat >= 10 && (moveSprite & 49152) == 16384)
                             {
@@ -4230,8 +4228,6 @@ ACTOR_STATIC void G_MoveActors(void)
             int spriteXvel = pSprite->xvel;
             int spriteZvel = pSprite->zvel;
 
-            vec3_t davect = pSprite->xyz;
-
             A_GetZLimits(spriteNum);
 
             if (pSprite->xrepeat < 80)
@@ -4278,14 +4274,12 @@ ACTOR_STATIC void G_MoveActors(void)
                 case 32768:
                     moveSprite &= (MAXWALLS - 1);
 
-                    setsprite(spriteNum, &davect);
+                    pSprite->xy -= Proj_GetOffset(spriteNum);
                     A_DamageWall(spriteNum, moveSprite, pSprite->xyz, pSprite->picnum);
 
                     break;
 
                 case 16384:
-                    setsprite(spriteNum, &davect);
-
                     if (pSprite->zvel < 0)
                         Sect_DamageCeiling(spriteNum, pSprite->sectnum);
                     else if (pSprite->zvel > 0)
