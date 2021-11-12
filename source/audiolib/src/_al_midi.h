@@ -90,7 +90,7 @@ typedef struct
     int16_t  PitchBendHundreds;
 } AdLibChannel;
 
-static int  AL_Init(int rate);
+static int  AL_Init(void);
 static void AL_NoteOff(int channel, int key, int velocity);
 static void AL_NoteOn(int channel, int key, int vel);
 static void AL_ControlChange(int channel, int type, int data);
