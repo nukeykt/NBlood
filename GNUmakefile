@@ -308,9 +308,6 @@ ifeq (0,$(NOASM))
   engine_objs += a.nasm
 else
   engine_objs += a-c.cpp
-  ifneq (0,$(USE_ASM64))
-    engine_objs += a64.yasm
-  endif
 endif
 ifeq (1,$(USE_OPENGL))
     engine_objs += glsurface.cpp voxmodel.cpp mdsprite.cpp tilepacker.cpp

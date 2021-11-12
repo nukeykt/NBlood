@@ -329,8 +329,6 @@ APPBASENAME ?=
 # Build toggles
 RELEASE := 1
 NOASM := 0
-# EXPERIMENTAL, unfinished x86_64 assembly routines. DO NOT ENABLE.
-USE_ASM64 := 0
 MEMMAP := 0
 CPLUSPLUS := 1
 
@@ -813,9 +811,6 @@ endif
 
 ifneq (0,$(NOASM))
     COMPILERFLAGS += -DNOASM
-endif
-ifneq (0,$(USE_ASM64))
-    COMPILERFLAGS += -DUSE_ASM64
 endif
 ifneq (0,$(MEMMAP))
     ifeq ($(PLATFORM),DARWIN)
