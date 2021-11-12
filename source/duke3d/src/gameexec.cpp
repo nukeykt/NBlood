@@ -869,7 +869,7 @@ GAMEEXEC_STATIC void VM_Move(void)
                 if (vm.pPlayer->actorsqu == vm.spriteNum)
                     return;
 
-                if (!A_CheckSpriteFlags(vm.spriteNum, SFLAG_SMOOTHMOVE))
+                if (!vvel && !A_CheckSpriteFlags(vm.spriteNum, SFLAG_SMOOTHMOVE))
                 {
                     if (AC_COUNT(vm.pData) & 1)
                         return;
