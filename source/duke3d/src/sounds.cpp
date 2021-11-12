@@ -40,6 +40,7 @@ int32_t MusicVoice = -1;
 static bool MusicPaused;
 static bool SoundPaused;
 
+static uint32_t localQueueIndex;
 static uint32_t freeSlotQueue[MAXVOICES];
 #ifndef NDEBUG
 static std::atomic<int> freeSlotPendingCnt;
@@ -87,7 +88,7 @@ void S_SoundStartup(void)
     if (status != FX_Ok)
         return;
     
-    freeSlotReadIndex = freeSlotWriteIndex = 0;
+    freeSlotReadIndex = freeSlotWriteIndex = localQueueIndex = 0;
 #ifndef NDEBUG
     freeSlotPendingCnt = 0;
 #endif
@@ -438,7 +439,6 @@ void S_StopMusic(void)
 
 void S_Cleanup(void)
 {
-    static uint32_t localQueueIndex = 0;
     while (localQueueIndex != freeSlotReadIndex.load(std::memory_order_acquire))
     {
         uint32_t num = freeSlotQueue[++localQueueIndex & (MAXVOICES-1)];
@@ -1142,13 +1142,17 @@ void S_Callback(intptr_t num)
 {
     if ((int32_t)num == MUSIC_ID)
         return;
-#ifndef NDEBUG
+
     if ((unsigned)num < (MAXSOUNDS * MAXSOUNDINSTANCES))
     {
         int const voiceindex = num & (MAXSOUNDINSTANCES-1);
         int anum = (num - voiceindex) / MAXSOUNDINSTANCES;    
-        Bassert(bitmap_test(&g_sounds[anum]->playing, voiceindex));
+
+        if (!bitmap_test(&g_sounds[anum]->playing, voiceindex))
+            return;
     }
+
+#ifndef NDEBUG
     int cnt = freeSlotPendingCnt.fetch_add(1, std::memory_order_relaxed);
     Bassert(cnt < MAXVOICES);
 #endif

@@ -384,14 +384,14 @@ static int osdcmd_restartsound(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 
+    S_StopAllSounds();
+    S_ClearSoundLocks();
+
     S_SoundShutdown();
     S_MusicShutdown();
 
     S_SoundStartup();
     S_MusicStartup();
-
-    FX_StopAllSounds();
-    S_ClearSoundLocks();
 
     if (ud.config.MusicToggle)
         S_RestartMusic();
