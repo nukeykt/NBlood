@@ -507,6 +507,7 @@
     <ClInclude Include="..\..\source\build\include\timer.h" />
     <ClInclude Include="..\..\source\build\include\tracker.hpp" />
     <ClInclude Include="..\..\source\build\include\vec.h" />
+    <ClInclude Include="..\..\source\build\include\vectormath.hpp" />
     <ClInclude Include="..\..\source\build\include\vfs.h" />
     <ClInclude Include="..\..\source\build\include\winbits.h" />
     <ClInclude Include="..\..\source\build\include\windows_inc.h" />
