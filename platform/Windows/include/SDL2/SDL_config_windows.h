@@ -28,7 +28,7 @@
 /* This is a set of defines to configure the SDL features */
 
 #if !defined(_STDINT_H_) && (!defined(HAVE_STDINT_H) || !_HAVE_STDINT_H)
-#if defined(__GNUC__) || defined(__DMC__) || defined(__WATCOMC__) || defined(__clang__)
+#if defined(__GNUC__) || defined(__DMC__) || defined(__WATCOMC__) || defined(__clang__) || defined(__BORLANDC__) || defined(__CODEGEARC__)
 #define HAVE_STDINT_H   1
 #elif defined(_MSC_VER)
 typedef signed __int8 int8_t;
@@ -84,7 +84,14 @@ typedef unsigned int uintptr_t;
 #define HAVE_XINPUT_H 1
 #define HAVE_MMDEVICEAPI_H 1
 #define HAVE_AUDIOCLIENT_H 1
-#define HAVE_SENSORSAPI_H
+#define HAVE_SENSORSAPI_H 1
+#if (defined(_M_IX86) || defined(_M_X64) || defined(_M_AMD64)) && (defined(_MSC_VER) && _MSC_VER >= 1600)
+#define HAVE_IMMINTRIN_H 1
+#elif defined(__has_include) && (defined(__i386__) || defined(__x86_64))
+# if __has_include(<immintrin.h>)
+#   define HAVE_IMMINTRIN_H 1
+# endif
+#endif
 
 /* This is disabled by default to avoid C runtime dependencies and manifest requirements */
 #ifdef HAVE_LIBC

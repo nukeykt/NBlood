@@ -33,14 +33,13 @@
 
 #define SDL_POWER_DISABLED  1
 #define SDL_HAPTIC_DISABLED 1
-#define SDL_JOYSTICK_DISABLED 1
-/*#undef SDL_JOYSTICK_OS2 */
-/*#undef SDL_JOYSTICK_HIDAPI */
-/*#undef SDL_JOYSTICK_VIRTUAL */
 
 #define SDL_SENSOR_DUMMY 1
 #define SDL_VIDEO_DRIVER_DUMMY 1
 #define SDL_VIDEO_DRIVER_OS2 1
+#define SDL_JOYSTICK_OS2 1
+/*#undef SDL_JOYSTICK_HIDAPI */
+/*#undef SDL_JOYSTICK_VIRTUAL */
 
 /* Enable OpenGL support */
 /* #undef SDL_VIDEO_OPENGL */
@@ -80,6 +79,7 @@
 #define HAVE_FLOAT_H 1
 #define HAVE_SIGNAL_H 1
 
+/* #undef HAVE_DLOPEN */
 #define HAVE_MALLOC 1
 #define HAVE_CALLOC 1
 #define HAVE_REALLOC 1

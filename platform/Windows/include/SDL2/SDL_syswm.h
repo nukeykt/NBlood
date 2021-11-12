@@ -289,8 +289,10 @@ struct SDL_SysWMinfo
         {
             struct wl_display *display;             /**< Wayland display */
             struct wl_surface *surface;             /**< Wayland surface */
-            struct wl_shell_surface *shell_surface; /**< Wayland shell_surface (window manager handle) */
+            void *shell_surface;                    /**< DEPRECATED Wayland shell_surface (window manager handle) */
             struct wl_egl_window *egl_window;       /**< Wayland EGL window (native window) */
+            struct xdg_surface *xdg_surface;        /**< Wayland xdg surface (window manager handle) */
+            struct xdg_toplevel *xdg_toplevel;      /**< Wayland xdg toplevel role */
         } wl;
 #endif
 #if defined(SDL_VIDEO_DRIVER_MIR)  /* no longer available, left for API/ABI compatibility. Remove in 2.1! */
@@ -351,8 +353,8 @@ typedef struct SDL_SysWMinfo SDL_SysWMinfo;
  * You must include SDL_syswm.h for the declaration of SDL_SysWMinfo.
  *
  * The caller must initialize the `info` structure's version by using
- * `SDL_VERSION(&info.version)`, and then this function will fill in the
- * rest of the structure with information about the given window.
+ * `SDL_VERSION(&info.version)`, and then this function will fill in the rest
+ * of the structure with information about the given window.
  *
  * \param window the window about which information is being requested
  * \param info an SDL_SysWMinfo structure filled in with window information

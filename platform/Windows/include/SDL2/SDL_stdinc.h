@@ -116,6 +116,17 @@ char *alloca();
 #endif
 
 /**
+ * Check if the compiler supports a given builtin.
+ * Supported by virtually all clang versions and recent gcc. Use this
+ * instead of checking the clang version if possible.
+ */
+#ifdef __has_builtin
+#define _SDL_HAS_BUILTIN(x) __has_builtin(x)
+#else
+#define _SDL_HAS_BUILTIN(x) 0
+#endif
+
+/**
  *  The number of elements in an array.
  */
 #define SDL_arraysize(array)    (sizeof(array)/sizeof(array[0]))
@@ -403,7 +414,7 @@ typedef void *(SDLCALL *SDL_realloc_func)(void *mem, size_t size);
 typedef void (SDLCALL *SDL_free_func)(void *mem);
 
 /**
- *  \brief Get the current set of SDL memory functions
+ * Get the current set of SDL memory functions
  */
 extern DECLSPEC void SDLCALL SDL_GetMemoryFunctions(SDL_malloc_func *malloc_func,
                                                     SDL_calloc_func *calloc_func,
@@ -411,12 +422,7 @@ extern DECLSPEC void SDLCALL SDL_GetMemoryFunctions(SDL_malloc_func *malloc_func
                                                     SDL_free_func *free_func);
 
 /**
- *  \brief Replace SDL's memory allocation functions with a custom set
- *
- *  \note If you are replacing SDL's memory functions, you should call
- *        SDL_GetNumAllocations() and be very careful if it returns non-zero.
- *        That means that your free function will be called with memory
- *        allocated by the previous memory allocation functions.
+ * Replace SDL's memory allocation functions with a custom set
  */
 extern DECLSPEC int SDLCALL SDL_SetMemoryFunctions(SDL_malloc_func malloc_func,
                                                    SDL_calloc_func calloc_func,
@@ -424,7 +430,7 @@ extern DECLSPEC int SDLCALL SDL_SetMemoryFunctions(SDL_malloc_func malloc_func,
                                                    SDL_free_func free_func);
 
 /**
- *  \brief Get the number of outstanding (unfreed) allocations
+ * Get the number of outstanding (unfreed) allocations
  */
 extern DECLSPEC int SDLCALL SDL_GetNumAllocations(void);
 
@@ -435,10 +441,10 @@ extern DECLSPEC void SDLCALL SDL_qsort(void *base, size_t nmemb, size_t size, in
 
 extern DECLSPEC int SDLCALL SDL_abs(int x);
 
-/* !!! FIXME: these have side effects. You probably shouldn't use them. */
-/* !!! FIXME: Maybe we do forceinline functions of SDL_mini, SDL_minf, etc? */
+/* NOTE: these double-evaluate their arguments, so you should never have side effects in the parameters */
 #define SDL_min(x, y) (((x) < (y)) ? (x) : (y))
 #define SDL_max(x, y) (((x) > (y)) ? (x) : (y))
+#define SDL_clamp(x, a, b) (((x) < (a)) ? (a) : (((x) > (b)) ? (b) : (x)))
 
 extern DECLSPEC int SDLCALL SDL_isalpha(int x);
 extern DECLSPEC int SDLCALL SDL_isalnum(int x);
@@ -560,6 +566,8 @@ extern DECLSPEC int SDLCALL SDL_sscanf(const char *text, SDL_SCANF_FORMAT_STRING
 extern DECLSPEC int SDLCALL SDL_vsscanf(const char *text, const char *fmt, va_list ap);
 extern DECLSPEC int SDLCALL SDL_snprintf(SDL_OUT_Z_CAP(maxlen) char *text, size_t maxlen, SDL_PRINTF_FORMAT_STRING const char *fmt, ... ) SDL_PRINTF_VARARG_FUNC(3);
 extern DECLSPEC int SDLCALL SDL_vsnprintf(SDL_OUT_Z_CAP(maxlen) char *text, size_t maxlen, const char *fmt, va_list ap);
+extern DECLSPEC int SDLCALL SDL_asprintf(char **strp, SDL_PRINTF_FORMAT_STRING const char *fmt, ...) SDL_PRINTF_VARARG_FUNC(2);
+extern DECLSPEC int SDLCALL SDL_vasprintf(char **strp, const char *fmt, va_list ap);
 
 #ifndef HAVE_M_PI
 #ifndef M_PI
@@ -567,6 +575,20 @@ extern DECLSPEC int SDLCALL SDL_vsnprintf(SDL_OUT_Z_CAP(maxlen) char *text, size
 #endif
 #endif
 
+/**
+ * Use this function to compute arc cosine of `x`.
+ *
+ * The definition of `y = acos(x)` is `x = cos(y)`.
+ *
+ * Domain: `-1 <= x <= 1`
+ *
+ * Range: `0 <= y <= Pi`
+ *
+ * \param x floating point value, in radians.
+ * \returns arc cosine of `x`.
+ *
+ * \since This function is available since SDL 2.0.2.
+ */
 extern DECLSPEC double SDLCALL SDL_acos(double x);
 extern DECLSPEC float SDLCALL SDL_acosf(float x);
 extern DECLSPEC double SDLCALL SDL_asin(double x);
@@ -624,9 +646,10 @@ extern DECLSPEC int SDLCALL SDL_iconv_close(SDL_iconv_t cd);
 extern DECLSPEC size_t SDLCALL SDL_iconv(SDL_iconv_t cd, const char **inbuf,
                                          size_t * inbytesleft, char **outbuf,
                                          size_t * outbytesleft);
+
 /**
- *  This function converts a string between encodings in one pass, returning a
- *  string that must be freed with SDL_free() or NULL on error.
+ * This function converts a string between encodings in one pass, returning a
+ * string that must be freed with SDL_free() or NULL on error.
  */
 extern DECLSPEC char *SDLCALL SDL_iconv_string(const char *tocode,
                                                const char *fromcode,

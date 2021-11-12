@@ -110,9 +110,9 @@ extern DECLSPEC Uint32 SDLCALL SDL_GetMouseState(int *x, int *y);
  * window might not be in sync at all times.
  *
  * Note: SDL_GetMouseState() returns the mouse position as SDL understands it
- * from the last pump of the event queue. This function, however, queries
- * the OS for the current mouse position, and as such, might be a slightly
- * less efficient function. Unless you know what you're doing and have a good
+ * from the last pump of the event queue. This function, however, queries the
+ * OS for the current mouse position, and as such, might be a slightly less
+ * efficient function. Unless you know what you're doing and have a good
  * reason to use this function, you probably want SDL_GetMouseState() instead.
  *
  * \param x filled in with the current X coord relative to the desktop; can be
@@ -150,6 +150,9 @@ extern DECLSPEC Uint32 SDLCALL SDL_GetRelativeMouseState(int *x, int *y);
  *
  * This function generates a mouse motion event.
  *
+ * Note that this function will appear to succeed, but not actually move the
+ * mouse when used over Microsoft Remote Desktop.
+ *
  * \param window the window to move the mouse into, or NULL for the current
  *               mouse focus
  * \param x the x coordinate within the window
@@ -168,6 +171,9 @@ extern DECLSPEC void SDLCALL SDL_WarpMouseInWindow(SDL_Window * window,
  * A failure of this function usually means that it is unsupported by a
  * platform.
  *
+ * Note that this function will appear to succeed, but not actually move the
+ * mouse when used over Microsoft Remote Desktop.
+ *
  * \param x the x coordinate
  * \param y the y coordinate
  * \returns 0 on success or a negative error code on failure; call
@@ -185,6 +191,10 @@ extern DECLSPEC int SDLCALL SDL_WarpMouseGlobal(int x, int y);
  * While the mouse is in relative mode, the cursor is hidden, and the driver
  * will try to report continuous motion in the current window. Only relative
  * motion events will be delivered, the mouse position will not change.
+ *
+ * Note that this function will not be able to provide continuous relative
+ * motion when used over Microsoft Remote Desktop, instead motion is limited
+ * to the bounds of the screen.
  *
  * This function will flush any pending mouse motion.
  *
@@ -245,8 +255,7 @@ extern DECLSPEC int SDLCALL SDL_CaptureMouse(SDL_bool enabled);
 extern DECLSPEC SDL_bool SDLCALL SDL_GetRelativeMouseMode(void);
 
 /**
- * Create a cursor using the specified bitmap data and
- * mask (in MSB format).
+ * Create a cursor using the specified bitmap data and mask (in MSB format).
  *
  * `mask` has to be in MSB (Most Significant Bit) format.
  *
@@ -256,7 +265,7 @@ extern DECLSPEC SDL_bool SDLCALL SDL_GetRelativeMouseMode(void);
  *
  * - data=0, mask=1: white
  * - data=1, mask=1: black
- * - data=0, mask=1: transparent
+ * - data=0, mask=0: transparent
  * - data=1, mask=0: inverted color if possible, black if not.
  *
  * Cursors created with this function must be freed with SDL_FreeCursor().
@@ -328,7 +337,7 @@ extern DECLSPEC SDL_Cursor *SDLCALL SDL_CreateSystemCursor(SDL_SystemCursor id);
  * the display. SDL_SetCursor(NULL) can be used to force cursor redraw, if
  * this is desired for any reason.
  *
- * \param cursor a  cursor to make active
+ * \param cursor a cursor to make active
  *
  * \sa SDL_CreateCursor
  * \sa SDL_GetCursor
@@ -379,8 +388,8 @@ extern DECLSPEC void SDLCALL SDL_FreeCursor(SDL_Cursor * cursor);
  * The cursor starts off displayed but can be turned off. Passing `SDL_ENABLE`
  * displays the cursor and passing `SDL_DISABLE` hides it.
  *
- * The current state of the mouse cursor can be queried by passing `SDL_QUERY`;
- * either `SDL_DISABLE` or `SDL_ENABLE` will be returned.
+ * The current state of the mouse cursor can be queried by passing
+ * `SDL_QUERY`; either `SDL_DISABLE` or `SDL_ENABLE` will be returned.
  *
  * \param toggle `SDL_ENABLE` to show the cursor, `SDL_DISABLE` to hide it,
  *               `SDL_QUERY` to query the current state without changing it.

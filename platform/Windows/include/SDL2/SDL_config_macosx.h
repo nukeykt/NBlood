@@ -52,6 +52,7 @@
 #define HAVE_LIBUNWIND_H    1
 
 /* C library functions */
+#define HAVE_DLOPEN 1
 #define HAVE_MALLOC 1
 #define HAVE_CALLOC 1
 #define HAVE_REALLOC    1
@@ -137,6 +138,12 @@
 #define HAVE_SYSCONF    1
 #define HAVE_SYSCTLBYNAME 1
 
+#if defined(__has_include) && (defined(__i386__) || defined(__x86_64))
+# if __has_include(<immintrin.h>)
+#   define HAVE_IMMINTRIN_H 1
+# endif
+#endif
+
 #define HAVE_GCC_ATOMICS 1
 
 /* Enable various audio drivers */
@@ -195,7 +202,6 @@
  */
 #define SDL_VIDEO_DRIVER_X11_XINPUT2 1
 #define SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS 1
-#define SDL_VIDEO_DRIVER_X11_CONST_PARAM_XEXTADDDISPLAY 1
 #endif
 
 #ifndef SDL_VIDEO_RENDER_OGL
