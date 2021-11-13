@@ -26,7 +26,7 @@ static uint64_t hash_findprime(uint64_t desiredSize)
 {
     if (desiredSize >= primes[ARRAY_SIZE(primes)-1])
     {
-        initprintf("hash_findprime(): size %llu requested, expand prime table\n", desiredSize);
+        initprintf("hash_findprime: size %" PRIu64 "requested, expand prime table\n", desiredSize);
         return primes[ARRAY_SIZE(primes)-1];
     }
 
