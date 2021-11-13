@@ -1858,7 +1858,7 @@ void uploadtextureindexed(int32_t doalloc, vec2_t offset, vec2_t siz, intptr_t t
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, siz.y, siz.x, 0, GL_RED, GL_UNSIGNED_BYTE, (void*) tile);
@@ -9651,7 +9651,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
 
     polymostSet2dView();	// disables blending, texturing, and depth testing
 
-    buildgl_bindSamplerObject(0, PTH_INDEXED|PTH_CLAMPED);
+    buildgl_bindSamplerObject(0, 0);
     buildgl_setDisabled(GL_ALPHA_TEST);
     glDepthMask(GL_FALSE);	// disable writing to the z-buffer
 
@@ -9825,7 +9825,7 @@ static int osdcmd_cvar_set_polymost(osdcmdptr_t parm)
 
             r_downsizevar = r_downsize;
         }
-        else if (!Bstrcasecmp(parm->name, "r_anisotropy"))
+        else if (!Bstrcasecmp(parm->name, "r_anisotropy") || !Bstrcasecmp(parm->name, "r_usesamplerobjects"))
             gltexapplyprops();
         else if (!Bstrcasecmp(parm->name, "r_texfilter"))
             gltexturemode(parm);

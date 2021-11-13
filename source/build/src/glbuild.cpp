@@ -228,6 +228,18 @@ void buildgl_resetSamplerObjects(void)
     glSamplerParameteri(s, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
+    s = samplerObjectIDs[SAMPLER_NEAREST_NEAREST_CLAMP];
+    glSamplerParameteri(s, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glSamplerParameteri(s, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(s, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(s, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+
+    s = samplerObjectIDs[SAMPLER_NEAREST_NEAREST_WRAP];
+    glSamplerParameteri(s, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glSamplerParameteri(s, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+
     s = samplerObjectIDs[SAMPLER_DEPTH];
     glSamplerParameteri(s, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
     glSamplerParameteri(s, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);    
@@ -253,11 +265,11 @@ void buildgl_bindSamplerObject(int texunit, int32_t pth_method)
             samplerid = SAMPLER_WRAP_T;
             break;
         case PTH_INDEXED:
-            samplerid = SAMPLER_NEAREST_WRAP;
+            samplerid = videoGetRenderMode() == REND_POLYMER ? SAMPLER_NEAREST_WRAP : SAMPLER_NEAREST_NEAREST_WRAP;
             break;
         case PTH_INDEXED|PTH_CLAMPED:
         case PTH_CLAMPED:
-            samplerid = SAMPLER_NEAREST_CLAMP;
+            samplerid = videoGetRenderMode() == REND_POLYMER ? SAMPLER_NEAREST_CLAMP : SAMPLER_NEAREST_NEAREST_CLAMP;
             break;
         case PTH_HIGHTILE:
             samplerid = SAMPLER_WRAP_BOTH;
