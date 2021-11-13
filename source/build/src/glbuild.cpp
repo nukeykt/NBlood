@@ -289,11 +289,11 @@ static inline void buildgl_multMatrix4f(const float *a, const float *b, float *r
     {
         for (j=0; j<4; j++)
         {
-	        r[(i<<2)+j] = a[(i<<2)+0] * b[j]
-		                + a[(i<<2)+1] * b[4+j]
- 		                + a[(i<<2)+2] * b[8+j]
-		                + a[(i<<2)+3] * b[12+j];
-	    }
+            r[(i<<2)+j] = a[(i<<2)+0] * b[j]
+                        + a[(i<<2)+1] * b[4+j]
+                        + a[(i<<2)+2] * b[8+j]
+                        + a[(i<<2)+3] * b[12+j];
+        }
     }
 }
 
@@ -350,9 +350,9 @@ static inline void buildgl_multMatrixVec4f(const float *matrix, const float *in,
     for (int i=0; i<4; i++)
     {
         out[i] = in[0] * matrix[0*4+i]
-	           + in[1] * matrix[1*4+i]
-	           + in[2] * matrix[2*4+i]
-	           + in[3] * matrix[3*4+i];
+               + in[1] * matrix[1*4+i]
+               + in[2] * matrix[2*4+i]
+               + in[3] * matrix[3*4+i];
     }
 }
 
