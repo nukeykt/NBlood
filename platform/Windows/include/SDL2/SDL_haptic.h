@@ -820,7 +820,6 @@ typedef union SDL_HapticEffect
 
 
 /* Function prototypes */
-
 /**
  * Count the number of haptic devices attached to the system.
  *
@@ -994,7 +993,8 @@ extern DECLSPEC void SDLCALL SDL_HapticClose(SDL_Haptic * haptic);
 extern DECLSPEC int SDLCALL SDL_HapticNumEffects(SDL_Haptic * haptic);
 
 /**
- * Get the number of effects a haptic device can play at the same time.
+ * Get the number of effects a haptic device can play at
+ * the same time.
  *
  * This is not supported on all platforms, but will always return a value.
  *
@@ -1038,7 +1038,8 @@ extern DECLSPEC unsigned int SDLCALL SDL_HapticQuery(SDL_Haptic * haptic);
 extern DECLSPEC int SDLCALL SDL_HapticNumAxes(SDL_Haptic * haptic);
 
 /**
- * Check to see if an effect is supported by a haptic device.
+ * Check to see if an effect is supported by a haptic
+ * device.
  *
  * \param haptic the SDL_Haptic device to query
  * \param effect the desired effect to query
@@ -1124,9 +1125,7 @@ extern DECLSPEC int SDLCALL SDL_HapticRunEffect(SDL_Haptic * haptic,
 
 /**
  * Stop the haptic effect on its associated haptic device.
- *
  * *
- *
  * \param haptic the SDL_Haptic device to stop the effect on
  * \param effect the ID of the haptic effect to stop
  * \returns 0 on success or a negative error code on failure; call
@@ -1157,7 +1156,8 @@ extern DECLSPEC void SDLCALL SDL_HapticDestroyEffect(SDL_Haptic * haptic,
                                                      int effect);
 
 /**
- * Get the status of the current effect on the specified haptic device.
+ * Get the status of the current effect on the specified
+ * haptic device.
  *
  * Device must support the SDL_HAPTIC_STATUS feature.
  *

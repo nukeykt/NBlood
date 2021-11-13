@@ -98,7 +98,7 @@ extern "C" {
  *
  *  \param rndContext     pointer to context structure
  *
- *  \returns a random number (32bit unsigned integer)
+ *  \returns A random number (32bit unsigned integer)
  *
  */
  unsigned int SDLTest_Random(SDLTest_RandomContext *rndContext);
