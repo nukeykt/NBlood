@@ -178,7 +178,7 @@ typedef struct VoiceNode
     int handle;
     int priority;
 
-    async::task<void> task;
+    async::task<int> task;
 } VoiceNode;
 
 typedef struct

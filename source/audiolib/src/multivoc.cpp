@@ -110,6 +110,20 @@ static VoiceNode **MV_Handles;
 
 static bool MV_Mix(VoiceNode * const voice, int const buffer)
 {
+    if (voice->task.valid())
+    {
+        if (!voice->task.ready())
+            return true;
+
+        auto result = voice->task.get();        
+
+        if (result != MV_Ok)
+        {
+            MV_Printf("Error playing sound % " PRIdPTR ": %s\n", voice->callbackval, MV_ErrorString(result));
+            return false;
+        }
+    }
+
     if (voice->length == 0 && voice->GetSound(voice) != KeepPlaying)
         return false;
 

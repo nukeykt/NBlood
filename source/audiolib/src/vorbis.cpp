@@ -365,7 +365,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     //if (vd->task.valid() && !vd->task.ready())
     //    vd->task.wait();
 
-    voice->task = async::spawn([voice]
+    voice->task = async::spawn([voice]() -> int
     {
 #if defined _WIN32 && !defined NDEBUG
         debugThreadName("MV_PlayVorbis");
@@ -379,7 +379,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
         {
             voice->rawdatasiz = 0;
             MV_PlayVoice(voice);
-            return;
+            return MV_SetErrorCode(MV_VoiceNotFound);
         }
 
         int status = ov_open_callbacks((void *)vd, &vd->vf, 0, 0, vorbis_callbacks);
@@ -394,9 +394,8 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
 
             ALIGNED_FREE_AND_NULL(voice->rawdataptr);
             voice->rawdatasiz = 0;
-            MV_SetErrorCode(MV_InvalidFile);
             MV_PlayVoice(voice);
-            return;
+            return MV_SetErrorCode(MV_InvalidFile);
         }
 
         voice->channels = vi->channels;
@@ -408,6 +407,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
         MV_SetVoicePitch(voice, vi->rate, vd->lastbitstream);
         vd->lastbitstream = -1;
         MV_PlayVoice(voice);
+        return MV_Ok;
     });
     
     return voice->handle;

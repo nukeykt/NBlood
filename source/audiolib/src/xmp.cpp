@@ -117,7 +117,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     xd->ptr = ptr;
     xd->length = length;
 
-    voice->task = async::spawn([voice]
+    voice->task = async::spawn([voice]() -> int
     {    
         auto xd = (xmp_data *)voice->rawdataptr;
         auto ctx = xd->ctx;
@@ -141,9 +141,8 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 
             ALIGNED_FREE_AND_NULL(voice->rawdataptr);
             voice->rawdatasiz = 0;
-            MV_SetErrorCode(MV_InvalidFile);
             MV_PlayVoice(voice);
-            return;
+            return MV_SetErrorCode(MV_InvalidFile);
         }
 
         xmp_start_player(ctx, MV_MixRate, 0);
@@ -153,6 +152,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
         voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
         MV_PlayVoice(voice);
+        return MV_Ok;
     }
     );
 
