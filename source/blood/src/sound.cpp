@@ -464,6 +464,31 @@ void DeinitSoundDevice(void)
         ThrowError(FX_ErrorString(nStatus));
 }
 
+void sndLoadGMTimbre(void)
+{
+    DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
+    if (hTmb)
+    {
+        unsigned char *timbre = (unsigned char*)Xmalloc(hTmb->size);
+        gSoundRes.Load(hTmb, timbre);
+        if (gFMPianoFix)
+        {
+            static uint8_t pianobroken[13] = {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            };
+            static uint8_t pianofixed[13] = {
+                0x33, 0x31, 0x5a, 0x00, 0xb2, 0xb1, 0x50, 0xf5, 0x00, 0x01, 0x00, 0x00, 0x00
+            };
+            if (!memcmp(&timbre[0], pianobroken, 13))
+            {
+                memcpy(&timbre[0], pianofixed, 13);
+            }
+        }
+        AL_RegisterTimbreBank(timbre);
+        Xfree(timbre);
+    }
+}
+
 void InitMusicDevice(void)
 {
     int nStatus;
@@ -477,9 +502,7 @@ void InitMusicDevice(void)
         initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
         return;
     }
-    DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
-    if (hTmb)
-        AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
+    sndLoadGMTimbre();
     MUSIC_SetVolume(MusicVolume);
 }
 

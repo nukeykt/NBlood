@@ -842,6 +842,10 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
     {
         videoSetPalette(gBrightness>>2,gLastPal,0);
     }
+    else if (!Bstrcasecmp(parm->name, "snd_fmpianofix"))
+    {
+        sndLoadGMTimbre();
+    }
 #if 0
     else if (!Bstrcasecmp(parm->name, "hud_scale")
              || !Bstrcasecmp(parm->name, "hud_statusbarmode")
@@ -1074,6 +1078,7 @@ int32_t registerosdcommands(void)
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ReverseStereo, CVAR_BOOL, 0, 1 },
 #endif
         { "snd_stereo", "enable/disable 3d stereo sound", (void *)&gStereo, CVAR_BOOL, 0, 1 },
+        { "snd_fmpianofix", "enable/disable fm piano timbre fix", (void*)&gFMPianoFix, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
 //        { "snd_speech", "enables/disables player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
 //
 //        { "team","change team in multiplayer", (void *)&ud.team, CVAR_INT|CVAR_MULTI, 0, 3 },

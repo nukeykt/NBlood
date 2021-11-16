@@ -111,6 +111,7 @@ int32_t gShowMapTitle;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
+int32_t gFMPianoFix;
 
 //////////
 int gWeaponsV10x;
@@ -328,6 +329,7 @@ void CONFIG_SetDefaults(void)
     SoundToggle     = 1;
     CDAudioToggle = 0;
     MusicDevice = ASS_AutoDetect;
+    gFMPianoFix = 1;
     //ud.config.VoiceToggle     = 5;  // bitfield, 1 = local, 2 = dummy, 4 = other players in DM
     useprecache     = 1;
     configversion          = 0;

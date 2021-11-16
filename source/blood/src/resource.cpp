@@ -710,7 +710,7 @@ void Resource::Read(DICTNODE *n, void *p)
             {
                 size = n->size;
             }
-            Crypt(n->ptr, size, 0);
+            Crypt(p, size, 0);
         }
 #if B_BIG_ENDIAN == 1
         if (!Bstrcmp(n->type, "QAV"))

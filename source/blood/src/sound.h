@@ -70,5 +70,6 @@ void sndKillAllSounds(void);
 void sndProcess(void);
 void sndTerm(void);
 void sndInit(void);
+void sndLoadGMTimbre(void);
 
 extern Resource gSoundRes;
