@@ -10431,6 +10431,8 @@ static int32_t engineFinishLoadBoard(const vec3_t* dapos, int16_t* dacursectnum,
 
     Bmemset(tilecols, 0, sizeof(tilecols));
 
+    calc_sector_reachability();
+
     return numremoved;
 }
 
