@@ -50,6 +50,8 @@ int32_t MusicDevice;
 
 Resource gSoundRes;
 
+bool sndActive = false;
+
 int soundRates[13] = {
     11025,
     11025,
@@ -466,6 +468,8 @@ void DeinitSoundDevice(void)
 
 void sndLoadGMTimbre(void)
 {
+    if (!sndActive)
+        return;
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
     if (hTmb)
     {
@@ -502,7 +506,6 @@ void InitMusicDevice(void)
         initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
         return;
     }
-    sndLoadGMTimbre();
     MUSIC_SetVolume(MusicVolume);
 }
 
@@ -513,8 +516,6 @@ void DeinitMusicDevice(void)
     if (nStatus != 0)
         ThrowError(MUSIC_ErrorString(nStatus));
 }
-
-bool sndActive = false;
 
 void sndTerm(void)
 {
@@ -536,4 +537,5 @@ void sndInit(void)
     InitSoundDevice();
     InitMusicDevice();
     sndActive = true;
+    sndLoadGMTimbre();
 }
