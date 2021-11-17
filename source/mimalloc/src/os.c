@@ -101,6 +101,10 @@ static size_t large_os_page_size = 0;
 // set dynamically in _mi_os_init (and if true we use MAP_NORESERVE)
 static bool os_overcommit = true;
 
+bool _mi_os_has_overcommit(void) {
+  return os_overcommit;
+}
+
 // OS (small) page size
 size_t _mi_os_page_size() {
   return os_page_size;
@@ -122,11 +126,11 @@ static bool use_large_os_page(size_t size, size_t alignment) {
 // round to a good OS allocation size (bounded by max 12.5% waste)
 size_t _mi_os_good_alloc_size(size_t size) {
   size_t align_size;
-  if (size < 512*KiB) align_size = _mi_os_page_size();
-  else if (size < 2*MiB) align_size = 64*KiB;
-  else if (size < 8*MiB) align_size = 256*KiB;
-  else if (size < 32*MiB) align_size = 1*MiB;
-  else align_size = 4*MiB;
+  if (size < 512*MI_KiB) align_size = _mi_os_page_size();
+  else if (size < 2*MI_MiB) align_size = 64*MI_KiB;
+  else if (size < 8*MI_MiB) align_size = 256*MI_KiB;
+  else if (size < 32*MI_MiB) align_size = 1*MI_MiB;
+  else align_size = 4*MI_MiB;
   if (mi_unlikely(size >= (SIZE_MAX - align_size))) return size; // possible overflow?
   return _mi_align_up(size, align_size);
 }
@@ -263,7 +267,7 @@ void _mi_os_init() {
     os_page_size = (size_t)result;
     os_alloc_granularity = os_page_size;
   }
-  large_os_page_size = 2*MiB; // TODO: can we query the OS for this?
+  large_os_page_size = 2*MI_MiB; // TODO: can we query the OS for this?
   os_detect_overcommit();
 }
 #endif
@@ -303,20 +307,21 @@ static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size);
 static void* mi_win_virtual_allocx(void* addr, size_t size, size_t try_alignment, DWORD flags) {
 #if (MI_INTPTR_SIZE >= 8)
   // on 64-bit systems, try to use the virtual address area after 2TiB for 4MiB aligned allocations
-  void* hint;
-  if (addr == NULL && (hint = mi_os_get_aligned_hint(try_alignment,size)) != NULL) {
-    void* p = VirtualAlloc(hint, size, flags, PAGE_READWRITE);
-    if (p != NULL) return p;
-    // for robustness always fall through in case of an error
-    /*
-    DWORD err = GetLastError();
-    if (err != ERROR_INVALID_ADDRESS &&   // If linked with multiple instances, we may have tried to allocate at an already allocated area (#210)
-        err != ERROR_INVALID_PARAMETER) { // Windows7 instability (#230)
-      return NULL;
+  if (addr == NULL) {
+    void* hint = mi_os_get_aligned_hint(try_alignment,size);
+    if (hint != NULL) {
+      void* p = VirtualAlloc(hint, size, flags, PAGE_READWRITE);
+      if (p != NULL) return p;
+      // for robustness always fall through in case of an error
+      /*
+      DWORD err = GetLastError();
+      if (err != ERROR_INVALID_ADDRESS &&   // If linked with multiple instances, we may have tried to allocate at an already allocated area (#210)
+          err != ERROR_INVALID_PARAMETER) { // Windows7 instability (#230)
+        return NULL;
+      }
+      */
+      _mi_warning_message("unable to allocate hinted aligned OS memory (%zu bytes, error code: %x, address: %p, alignment: %d, flags: %x)\n", size, GetLastError(), hint, try_alignment, flags);
     }
-    */
-    _mi_warning_message("unable to allocate hinted aligned OS memory (%zu bytes, error code: %x, address: %p, alignment: %d, flags: %x)\n", size, GetLastError(), hint, try_alignment, flags);
-    // fall through on error
   } 
 #endif
 #if defined(MEM_EXTENDED_PARAMETER_TYPE_BITS)
@@ -339,11 +344,11 @@ static void* mi_win_virtual_allocx(void* addr, size_t size, size_t try_alignment
 
 static void* mi_win_virtual_alloc(void* addr, size_t size, size_t try_alignment, DWORD flags, bool large_only, bool allow_large, bool* is_large) {
   mi_assert_internal(!(large_only && !allow_large));
-  static _Atomic(uintptr_t) large_page_try_ok; // = 0;
+  static _Atomic(size_t) large_page_try_ok; // = 0;
   void* p = NULL;
   if ((large_only || use_large_os_page(size, try_alignment))
       && allow_large && (flags&MEM_COMMIT)!=0 && (flags&MEM_RESERVE)!=0) {
-    uintptr_t try_ok = mi_atomic_load_acquire(&large_page_try_ok);
+    size_t try_ok = mi_atomic_load_acquire(&large_page_try_ok);
     if (!large_only && try_ok > 0) {
       // if a large page allocation fails, it seems the calls to VirtualAlloc get very expensive.
       // therefore, once a large page allocation failed, we don't try again for `large_page_try_ok` times.
@@ -413,23 +418,40 @@ static void* mi_wasm_heap_grow(size_t size, size_t try_alignment) {
 #else
 #define MI_OS_USE_MMAP
 static void* mi_unix_mmapx(void* addr, size_t size, size_t try_alignment, int protect_flags, int flags, int fd) {
-  void* p = NULL;
+  MI_UNUSED(try_alignment);  
+  #if defined(MAP_ALIGNED)  // BSD
+  if (addr == NULL && try_alignment > 0 && (try_alignment % _mi_os_page_size()) == 0) {
+    size_t n = mi_bsr(try_alignment);
+    if (((size_t)1 << n) == try_alignment && n >= 12 && n <= 30) {  // alignment is a power of 2 and 4096 <= alignment <= 1GiB
+      flags |= MAP_ALIGNED(n);
+      void* p = mmap(addr, size, protect_flags, flags | MAP_ALIGNED(n), fd, 0);
+      if (p!=MAP_FAILED) return p;
+      // fall back to regular mmap
+    }
+  }
+  #elif defined(MAP_ALIGN)  // Solaris
+  if (addr == NULL && try_alignment > 0 && (try_alignment % _mi_os_page_size()) == 0) {
+    void* p = mmap(try_alignment, size, protect_flags, flags | MAP_ALIGN, fd, 0);
+    if (p!=MAP_FAILED) return p;
+    // fall back to regular mmap
+  }
+  #endif
   #if (MI_INTPTR_SIZE >= 8) && !defined(MAP_ALIGNED)
   // on 64-bit systems, use the virtual address area after 2TiB for 4MiB aligned allocations
-  void* hint;
-  if (addr == NULL && (hint = mi_os_get_aligned_hint(try_alignment, size)) != NULL) {
-    p = mmap(hint,size,protect_flags,flags,fd,0);
-    if (p==MAP_FAILED) p = NULL; // fall back to regular mmap
+  if (addr == NULL) {
+    void* hint = mi_os_get_aligned_hint(try_alignment, size);
+    if (hint != NULL) {
+      void* p = mmap(hint, size, protect_flags, flags, fd, 0);
+      if (p!=MAP_FAILED) return p;
+      // fall back to regular mmap
+    }
   }
-  #else
-  UNUSED(try_alignment);
-  UNUSED(mi_os_get_aligned_hint);
   #endif
-  if (p==NULL) {
-    p = mmap(addr,size,protect_flags,flags,fd,0);
-    if (p==MAP_FAILED) p = NULL;
-  }
-  return p;
+  // regular mmap
+  void* p = mmap(addr, size, protect_flags, flags, fd, 0);
+  if (p!=MAP_FAILED) return p;  
+  // failed to allocate
+  return NULL;
 }
 
 static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int protect_flags, bool large_only, bool allow_large, bool* is_large) {
@@ -442,29 +464,22 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
   #endif
   int flags = MAP_PRIVATE | MAP_ANONYMOUS;
   int fd = -1;
-  if (os_overcommit) {
+  if (_mi_os_has_overcommit()) {
     flags |= MAP_NORESERVE;
-  }
-  #if defined(MAP_ALIGNED)  // BSD
-  if (try_alignment > 0) {
-    size_t n = mi_bsr(try_alignment);
-    if (((size_t)1 << n) == try_alignment && n >= 12 && n <= 30) {  // alignment is a power of 2 and 4096 <= alignment <= 1GiB
-      flags |= MAP_ALIGNED(n);
-    }
-  }
-  #endif
+  }  
   #if defined(PROT_MAX)
   protect_flags |= PROT_MAX(PROT_READ | PROT_WRITE); // BSD
   #endif
   #if defined(VM_MAKE_TAG)
   // macOS: tracking anonymous page with a specific ID. (All up to 98 are taken officially but LLVM sanitizers had taken 99)
   int os_tag = (int)mi_option_get(mi_option_os_tag);
-  if (os_tag < 100 || os_tag > 255) os_tag = 100;
+  if (os_tag < 100 || os_tag > 255) { os_tag = 100; }
   fd = VM_MAKE_TAG(os_tag);
   #endif
+  // huge page allocation
   if ((large_only || use_large_os_page(size, try_alignment)) && allow_large) {
-    static _Atomic(uintptr_t) large_page_try_ok; // = 0;
-    uintptr_t try_ok = mi_atomic_load_acquire(&large_page_try_ok);
+    static _Atomic(size_t) large_page_try_ok; // = 0;
+    size_t try_ok = mi_atomic_load_acquire(&large_page_try_ok);
     if (!large_only && try_ok > 0) {
       // If the OS is not configured for large OS pages, or the user does not have
       // enough permission, the `mmap` will always fail (but it might also fail for other reasons).
@@ -483,7 +498,7 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
       #endif
       #ifdef MAP_HUGE_1GB
       static bool mi_huge_pages_available = true;
-      if ((size % GiB) == 0 && mi_huge_pages_available) {
+      if ((size % MI_GiB) == 0 && mi_huge_pages_available) {
         lflags |= MAP_HUGE_1GB;
       }
       else
@@ -510,37 +525,39 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
         #endif
         if (large_only) return p;
         if (p == NULL) {
-          mi_atomic_store_release(&large_page_try_ok, (uintptr_t)10);  // on error, don't try again for the next N allocations
+          mi_atomic_store_release(&large_page_try_ok, (size_t)8);  // on error, don't try again for the next N allocations
         }
       }
     }
   }
+  // regular allocation
   if (p == NULL) {
     *is_large = false;
     p = mi_unix_mmapx(addr, size, try_alignment, protect_flags, flags, fd);
-    #if defined(MADV_HUGEPAGE)
-    // Many Linux systems don't allow MAP_HUGETLB but they support instead
-    // transparent huge pages (THP). It is not required to call `madvise` with MADV_HUGE
-    // though since properly aligned allocations will already use large pages if available
-    // in that case -- in particular for our large regions (in `memory.c`).
-    // However, some systems only allow THP if called with explicit `madvise`, so
-    // when large OS pages are enabled for mimalloc, we call `madvise` anyways.
-    if (allow_large && use_large_os_page(size, try_alignment)) {
-      if (madvise(p, size, MADV_HUGEPAGE) == 0) {
-        *is_large = true; // possibly
-      };
-    }
-    #endif
-    #if defined(__sun)
-    if (allow_large && use_large_os_page(size, try_alignment)) {
-      struct memcntl_mha cmd = {0};
-      cmd.mha_pagesize = large_os_page_size;
-      cmd.mha_cmd = MHA_MAPSIZE_VA;
-      if (memcntl(p, size, MC_HAT_ADVISE, (caddr_t)&cmd, 0, 0) == 0) {
-        *is_large = true;
+    if (p != NULL) {
+      #if defined(MADV_HUGEPAGE)
+      // Many Linux systems don't allow MAP_HUGETLB but they support instead
+      // transparent huge pages (THP). Generally, it is not required to call `madvise` with MADV_HUGE
+      // though since properly aligned allocations will already use large pages if available
+      // in that case -- in particular for our large regions (in `memory.c`).
+      // However, some systems only allow THP if called with explicit `madvise`, so
+      // when large OS pages are enabled for mimalloc, we call `madvise` anyways.
+      if (allow_large && use_large_os_page(size, try_alignment)) {
+        if (madvise(p, size, MADV_HUGEPAGE) == 0) {
+          *is_large = true; // possibly
+        };
       }
+      #elif defined(__sun)
+      if (allow_large && use_large_os_page(size, try_alignment)) {
+        struct memcntl_mha cmd = {0};
+        cmd.mha_pagesize = large_os_page_size;
+        cmd.mha_cmd = MHA_MAPSIZE_VA;
+        if (memcntl(p, size, MC_HAT_ADVISE, (caddr_t)&cmd, 0, 0) == 0) {
+          *is_large = true;
+        }
+      }      
+      #endif
     }
-    #endif
   }
   if (p == NULL) {
     _mi_warning_message("unable to allocate OS memory (%zu bytes, error code: %i, address: %p, large only: %d, allow large: %d)\n", size, errno, addr, large_only, allow_large);
@@ -551,7 +568,7 @@ static void* mi_unix_mmap(void* addr, size_t size, size_t try_alignment, int pro
 
 // On 64-bit systems, we can do efficient aligned allocation by using
 // the 2TiB to 30TiB area to allocate them.
-#if (MI_INTPTR_SIZE >= 8) && (defined(_WIN32) || (defined(MI_OS_USE_MMAP) && !defined(MAP_ALIGNED)))
+#if (MI_INTPTR_SIZE >= 8) && (defined(_WIN32) || defined(MI_OS_USE_MMAP))
 static mi_decl_cache_align _Atomic(uintptr_t) aligned_base;
 
 // Return a 4MiB aligned address that is probably available.
@@ -569,7 +586,7 @@ static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size)
 {
   if (try_alignment == 0 || try_alignment > MI_SEGMENT_SIZE) return NULL;
   if ((size%MI_SEGMENT_SIZE) != 0) return NULL;
-  if (size > 1*GiB) return NULL;  // guarantee the chance of fixed valid address is at most 1/(KK_HINT_AREA / 1<<30) = 1/4096.
+  if (size > 1*MI_GiB) return NULL;  // guarantee the chance of fixed valid address is at most 1/(KK_HINT_AREA / 1<<30) = 1/4096.
   #if (MI_SECURE>0)
   size += MI_SEGMENT_SIZE;        // put in `MI_SEGMENT_SIZE` virtual gaps between hinted blocks; this splits VLA's but increases guarded areas.
   #endif
@@ -592,7 +609,7 @@ static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size)
 // no need for mi_os_get_aligned_hint
 #else
 static void* mi_os_get_aligned_hint(size_t try_alignment, size_t size) {
-  UNUSED(try_alignment); UNUSED(size);
+  MI_UNUSED(try_alignment); MI_UNUSED(size);
   return NULL;
 }
 #endif
@@ -719,7 +736,7 @@ static void* mi_os_mem_alloc_aligned(size_t size, size_t alignment, bool commit,
 ----------------------------------------------------------- */
 
 void* _mi_os_alloc(size_t size, mi_stats_t* tld_stats) {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   mi_stats_t* stats = &_mi_stats_main;
   if (size == 0) return NULL;
   size = _mi_os_good_alloc_size(size);
@@ -728,7 +745,7 @@ void* _mi_os_alloc(size_t size, mi_stats_t* tld_stats) {
 }
 
 void  _mi_os_free_ex(void* p, size_t size, bool was_committed, mi_stats_t* tld_stats) {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   mi_stats_t* stats = &_mi_stats_main;
   if (size == 0 || p == NULL) return;
   size = _mi_os_good_alloc_size(size);
@@ -741,7 +758,7 @@ void  _mi_os_free(void* p, size_t size, mi_stats_t* stats) {
 
 void* _mi_os_alloc_aligned(size_t size, size_t alignment, bool commit, bool* large, mi_stats_t* tld_stats)
 {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   if (size == 0) return NULL;
   size = _mi_os_good_alloc_size(size);
   alignment = _mi_align_up(alignment, _mi_os_page_size());
@@ -792,7 +809,7 @@ static void mi_mprotect_hint(int err) {
                         "  > sudo sysctl -w vm.max_map_count=262144\n");
   }
 #else
-  UNUSED(err);
+  MI_UNUSED(err);
 #endif
 }
 
@@ -854,13 +871,13 @@ static bool mi_os_commitx(void* addr, size_t size, bool commit, bool conservativ
 }
 
 bool _mi_os_commit(void* addr, size_t size, bool* is_zero, mi_stats_t* tld_stats) {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   mi_stats_t* stats = &_mi_stats_main;
   return mi_os_commitx(addr, size, true, false /* liberal */, is_zero, stats);
 }
 
 bool _mi_os_decommit(void* addr, size_t size, mi_stats_t* tld_stats) {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   mi_stats_t* stats = &_mi_stats_main;
   bool is_zero;
   return mi_os_commitx(addr, size, false, true /* conservative */, &is_zero, stats);
@@ -901,13 +918,13 @@ static bool mi_os_resetx(void* addr, size_t size, bool reset, mi_stats_t* stats)
   if (p != start) return false;
 #else
 #if defined(MADV_FREE)
-  static _Atomic(uintptr_t) advice = ATOMIC_VAR_INIT(MADV_FREE);
+  static _Atomic(size_t) advice = ATOMIC_VAR_INIT(MADV_FREE);
   int oadvice = (int)mi_atomic_load_relaxed(&advice);
   int err;
   while ((err = madvise(start, csize, oadvice)) != 0 && errno == EAGAIN) { errno = 0;  };
   if (err != 0 && errno == EINVAL && oadvice == MADV_FREE) {  
     // if MADV_FREE is not supported, fall back to MADV_DONTNEED from now on
-    mi_atomic_store_release(&advice, (uintptr_t)MADV_DONTNEED);
+    mi_atomic_store_release(&advice, (size_t)MADV_DONTNEED);
     err = madvise(start, csize, MADV_DONTNEED);
   }
 #elif defined(__wasi__)
@@ -929,7 +946,7 @@ static bool mi_os_resetx(void* addr, size_t size, bool reset, mi_stats_t* stats)
 // pages and reduce swapping while keeping the memory committed.
 // We page align to a conservative area inside the range to reset.
 bool _mi_os_reset(void* addr, size_t size, mi_stats_t* tld_stats) {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   mi_stats_t* stats = &_mi_stats_main;
   if (mi_option_is_enabled(mi_option_reset_decommits)) {
     return _mi_os_decommit(addr, size, stats);
@@ -940,7 +957,7 @@ bool _mi_os_reset(void* addr, size_t size, mi_stats_t* tld_stats) {
 }
 
 bool _mi_os_unreset(void* addr, size_t size, bool* is_zero, mi_stats_t* tld_stats) {
-  UNUSED(tld_stats);
+  MI_UNUSED(tld_stats);
   mi_stats_t* stats = &_mi_stats_main;
   if (mi_option_is_enabled(mi_option_reset_decommits)) {
     return mi_os_commit_unreset(addr, size, is_zero, stats);  // re-commit it (conservatively!)
@@ -1016,12 +1033,12 @@ bool _mi_os_shrink(void* p, size_t oldsize, size_t newsize, mi_stats_t* stats) {
 Support for allocating huge OS pages (1Gib) that are reserved up-front
 and possibly associated with a specific NUMA node. (use `numa_node>=0`)
 -----------------------------------------------------------------------------*/
-#define MI_HUGE_OS_PAGE_SIZE  (GiB)
+#define MI_HUGE_OS_PAGE_SIZE  (MI_GiB)
 
 #if defined(_WIN32) && (MI_INTPTR_SIZE >= 8)
 static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node)
 {
-  mi_assert_internal(size%GiB == 0);
+  mi_assert_internal(size%MI_GiB == 0);
   mi_assert_internal(addr != NULL);
   const DWORD flags = MEM_LARGE_PAGES | MEM_COMMIT | MEM_RESERVE;
 
@@ -1062,7 +1079,7 @@ static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node)
     return (*pVirtualAlloc2)(GetCurrentProcess(), addr, size, flags, PAGE_READWRITE, params, 1);
   }
   #else
-    UNUSED(numa_node);
+    MI_UNUSED(numa_node);
   #endif
   // otherwise use regular virtual alloc on older windows
   return VirtualAlloc(addr, size, flags, PAGE_READWRITE);
@@ -1079,17 +1096,17 @@ static long mi_os_mbind(void* start, unsigned long len, unsigned long mode, cons
 }
 #else
 static long mi_os_mbind(void* start, unsigned long len, unsigned long mode, const unsigned long* nmask, unsigned long maxnode, unsigned flags) {
-  UNUSED(start); UNUSED(len); UNUSED(mode); UNUSED(nmask); UNUSED(maxnode); UNUSED(flags);
+  MI_UNUSED(start); MI_UNUSED(len); MI_UNUSED(mode); MI_UNUSED(nmask); MI_UNUSED(maxnode); MI_UNUSED(flags);
   return 0;
 }
 #endif
 static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node) {
-  mi_assert_internal(size%GiB == 0);
+  mi_assert_internal(size%MI_GiB == 0);
   bool is_large = true;
   void* p = mi_unix_mmap(addr, size, MI_SEGMENT_SIZE, PROT_READ | PROT_WRITE, true, true, &is_large);
   if (p == NULL) return NULL;
   if (numa_node >= 0 && numa_node < 8*MI_INTPTR_SIZE) { // at most 64 nodes
-    uintptr_t numa_mask = (1UL << numa_node);
+    unsigned long numa_mask = (1UL << numa_node);
     // TODO: does `mbind` work correctly for huge OS pages? should we
     // use `set_mempolicy` before calling mmap instead?
     // see: <https://lkml.org/lkml/2017/2/9/875>
@@ -1102,7 +1119,7 @@ static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node) 
 }
 #else
 static void* mi_os_alloc_huge_os_pagesx(void* addr, size_t size, int numa_node) {
-  UNUSED(addr); UNUSED(size); UNUSED(numa_node);
+  MI_UNUSED(addr); MI_UNUSED(size); MI_UNUSED(numa_node);
   return NULL;
 }
 #endif
@@ -1138,7 +1155,7 @@ static uint8_t* mi_os_claim_huge_pages(size_t pages, size_t* total_size) {
 }
 #else
 static uint8_t* mi_os_claim_huge_pages(size_t pages, size_t* total_size) {
-  UNUSED(pages);
+  MI_UNUSED(pages);
   if (total_size != NULL) *total_size = 0;
   return NULL;
 }
@@ -1339,7 +1356,7 @@ size_t _mi_os_numa_node_count_get(void) {
 }
 
 int _mi_os_numa_node_get(mi_os_tld_t* tld) {
-  UNUSED(tld);
+  MI_UNUSED(tld);
   size_t numa_count = _mi_os_numa_node_count();
   if (numa_count<=1) return 0; // optimize on single numa node systems: always node 0
   // never more than the node count and >= 0

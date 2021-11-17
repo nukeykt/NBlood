@@ -8,7 +8,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #ifndef MIMALLOC_H
 #define MIMALLOC_H
 
-#define MI_MALLOC_VERSION 171   // major + 2 digits minor
+#define MI_MALLOC_VERSION 173   // major + 2 digits minor
 
 // ------------------------------------------------------
 // Compiler specific attributes
@@ -310,6 +310,7 @@ typedef enum mi_option_e {
   mi_option_reset_decommits,
   mi_option_large_os_pages,         // implies eager commit
   mi_option_reserve_huge_os_pages,
+  mi_option_reserve_huge_os_pages_at,
   mi_option_reserve_os_memory,
   mi_option_segment_cache,
   mi_option_page_reset,
@@ -388,6 +389,7 @@ mi_decl_nodiscard mi_decl_export void* mi_new_reallocn(void* p, size_t newcount,
 // ---------------------------------------------------------------------------------------------
 #ifdef __cplusplus
 
+#include <cstddef>     // std::size_t
 #include <cstdint>     // PTRDIFF_MAX
 #if (__cplusplus >= 201103L) || (_MSC_VER > 1900)  // C++11
 #include <type_traits> // std::true_type
