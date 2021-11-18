@@ -1115,18 +1115,12 @@ void G_OperateActivators(int lotag, int playerNum)
                         {
                             switch (sprite[foundSprite].lotag)
                             {
-                                case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
-                                case SE_21_DROP_FLOOR:
+                                case SE_36_PROJ_SHOOTER:
                                 case SE_31_FLOOR_RISE_FALL:
                                 case SE_32_CEILING_RISE_FALL:
-                                case SE_36_PROJ_SHOOTER:
-                                    A_CallSound(SECT(spriteNum), foundSprite);
-                                    fallthrough__;
-                                case SE_2_EARTHQUAKE:
+                                case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
                                     actor[foundSprite].t_data[0] = 1 - actor[foundSprite].t_data[0];
-                                    break;
-                                case SE_3_RANDOM_LIGHTS_AFTER_SHOT_OUT:
-                                    actor[foundSprite].t_data[4] = 1 - actor[foundSprite].t_data[4];
+                                    A_CallSound(SECT(spriteNum), foundSprite);
                                     break;
                             }
                         }
