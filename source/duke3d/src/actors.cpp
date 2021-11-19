@@ -199,7 +199,11 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             if (dmgBase == dmgFuzz)
                 ++dmgFuzz;
 
-            dmgActor.htextra = dmgBase + (krand()%(dmgFuzz-dmgBase));
+            int dmgTotal = dmgBase + (krand()%(dmgFuzz-dmgBase));
+            if (SpriteProjectile[spriteNum].workslike & PROJECTILE_HITRADIUS_ADDITIVE)
+                dmgActor.htextra += dmgTotal;
+            else
+                dmgActor.htextra = dmgTotal;
 
             if (!A_CheckSpriteFlags(otherSprite, SFLAG_NODAMAGEPUSH))
             {
