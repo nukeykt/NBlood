@@ -118,6 +118,91 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Toggle_Crouch",
    };
 
+
+// Note: ordering of gamefunctions is important, must not be changed
+const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
+   {
+   "gamefunc_Move_Forward",
+   "gamefunc_Move_Backward",
+   "gamefunc_Turn_Left",
+   "gamefunc_Turn_Right",
+   "gamefunc_Strafe",
+   "gamefunc_Fire",
+   "gamefunc_Open",
+   "gamefunc_Run",
+   "gamefunc_Alt_Fire",
+   "gamefunc_Jump",
+   "gamefunc_Crouch",
+   "gamefunc_Look_Up",
+   "gamefunc_Look_Down",
+   "gamefunc_Look_Left",
+   "gamefunc_Look_Right",
+   "gamefunc_Strafe_Left",
+   "gamefunc_Strafe_Right",
+   "gamefunc_Aim_Up",
+   "gamefunc_Aim_Down",
+   "gamefunc_Weapon_1",
+   "gamefunc_Weapon_2",
+   "gamefunc_Weapon_3",
+   "gamefunc_Weapon_4",
+   "gamefunc_Weapon_5",
+   "gamefunc_Weapon_6",
+   "gamefunc_Weapon_7",
+   "gamefunc_Weapon_8",
+   "gamefunc_Weapon_9",
+   "gamefunc_Weapon_10",
+   "gamefunc_Inventory",
+   "gamefunc_Inventory_Left",
+   "gamefunc_Inventory_Right",
+#ifndef EDUKE32_STANDALONE
+   "gamefunc_Holo_Duke",
+   "gamefunc_Jetpack",
+   "gamefunc_NightVision",
+   "gamefunc_MedKit",
+#else
+   "gamefunc_Inventory_Hotkey_1",
+   "gamefunc_Inventory_Hotkey_2",
+   "gamefunc_Inventory_Hotkey_3",
+   "gamefunc_Inventory_Hotkey_4",
+#endif
+   "gamefunc_TurnAround",
+   "gamefunc_SendMessage",
+   "gamefunc_Map",
+   "gamefunc_Shrink_Screen",
+   "gamefunc_Enlarge_Screen",
+   "gamefunc_Center_View",
+   "gamefunc_Holster_Weapon",
+   "gamefunc_Show_Opponents_Weapon",
+   "gamefunc_Map_Follow_Mode",
+   "gamefunc_See_Coop_View",
+   "gamefunc_Mouse_Aiming",
+   "gamefunc_Toggle_Crosshair",
+#ifndef EDUKE32_STANDALONE
+   "gamefunc_Steroids",
+   "gamefunc_Quick_Kick",
+#else
+   "gamefunc_Inventory_Hotkey_5",
+   "gamefunc_Melee_Hotkey",
+#endif
+   "gamefunc_Next_Weapon",
+   "gamefunc_Previous_Weapon",
+   "gamefunc_Show_Console",
+#ifndef EDUKE32_STANDALONE
+   "gamefunc_Show_DukeMatch_Scores",
+#else
+   "gamefunc_Show_Multiplayer_Scores",
+#endif
+   "gamefunc_Dpad_Select",
+   "gamefunc_Dpad_Aiming",
+   "gamefunc_AutoRun",
+   "gamefunc_Last_Weapon",
+   "gamefunc_Quick_Save",
+   "gamefunc_Quick_Load",
+   "gamefunc_Alt_Weapon",
+   "gamefunc_Third_Person_View",
+   "gamefunc_Toggle_Crouch",
+   };
+
 #ifdef __SETUP__
 
 const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =

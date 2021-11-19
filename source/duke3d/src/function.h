@@ -105,6 +105,7 @@ enum GameFunction_t
    };
 
 extern char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
+extern const char internal_gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 extern const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
 extern const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
 

@@ -185,6 +185,7 @@ enum gametokens
     T_HIDDEN,
     T_USERCONTENT,
     T_LOCALIZATION,
+    T_KEYCONFIG,
 };
 
 static void gameTimerHandler(void)
@@ -5411,6 +5412,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
         { "newgamechoices",  T_NEWGAMECHOICES   },
         { "localization"  ,  T_LOCALIZATION     },
+        { "keyconfig"  ,     T_KEYCONFIG        },
     };
 
     static const tokenlist soundTokens[] =
@@ -5434,6 +5436,10 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "forcenofilter", T_FORCENOFILTER },
         { "texturefilter", T_TEXTUREFILTER },
     };
+
+
+    for (int f = 0; f < NUMGAMEFUNCTIONS; f++)
+       scriptfile_addsymbolvalue(internal_gamefunction_names[f], f);
 
     do
     {
@@ -5786,6 +5792,77 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                 break;
 
             pScript->textptr = blockend+1;
+            break;
+        }
+
+        case T_KEYCONFIG:
+        {
+            char *keyRemapEnd;
+            int32_t currSlot = 0, keyIndex;
+
+            // will require a longer bitmap if additional gamefuncs are added
+            uint64_t gamefunc_bitmap = 0ULL;
+            Bassert(NUMGAMEFUNCTIONS <= 64);
+
+            if (scriptfile_getbraces(pScript, &keyRemapEnd))
+                break;
+
+            if (firstPass)
+            {
+                pScript->textptr = keyRemapEnd+1;
+                break;
+            }
+
+            while (pScript->textptr < keyRemapEnd - 1)
+            {
+                char * mapPtr = pScript->ltextptr;
+
+                if (currSlot >= NUMGAMEFUNCTIONS)
+                {
+                    initprintf("Error: Key remap exceeds number of valid gamefunctions %d near line %s:%d\n",
+                                NUMGAMEFUNCTIONS, pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                    pScript->textptr = keyRemapEnd+1;
+                    break;
+                }
+
+                if (scriptfile_getsymbol(pScript, &keyIndex))
+                    continue;
+
+                if (keyIndex < 0 || keyIndex >= NUMGAMEFUNCTIONS)
+                {
+                    initprintf("Error: Invalid key index %d near line %s:%d\n",
+                                keyIndex, pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                    continue;
+                }
+                else if (gamefunc_bitmap & (1ULL << keyIndex))
+                {
+                    initprintf("Warning: Duplicate listing of key \"%s\" near line %s:%d\n",
+                                internal_gamefunction_names[keyIndex], pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                    continue;
+                }
+
+                g_keyEntryOrder[currSlot] = keyIndex;
+                gamefunc_bitmap |= (1ULL << keyIndex);
+                currSlot++;
+            }
+
+            // fill up remaining slots
+            while(currSlot < NUMGAMEFUNCTIONS)
+            {
+                g_keyEntryOrder[currSlot] = -1;
+                currSlot++;
+            }
+
+            // undefine gamefuncs that are no longer listed
+            for(keyIndex = 0; keyIndex < NUMGAMEFUNCTIONS; keyIndex++)
+            {
+                if (!(gamefunc_bitmap & (1ULL << keyIndex)))
+                {
+                    hash_delete(&h_gamefuncs, gamefunctions[keyIndex]);
+                    gamefunctions[keyIndex][0] = '\0';
+                }
+            }
+
             break;
         }
 

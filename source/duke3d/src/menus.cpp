@@ -210,6 +210,8 @@ they effectively stand in for curly braces as struct initializers.
 
 MenuGameplayEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
+int32_t g_keyEntryOrder[NUMGAMEFUNCTIONS] = {-1};
+
 // common font types
 // tilenums are set after namesdyn runs
 
@@ -2200,6 +2202,21 @@ void Menu_Init(void)
         MEO_KEYBOARDSETUPFUNCS[i].column[1] = &ud.config.KeyboardKeys[i][1];
         MEO_KEYBOARDSETUPFUNCS[i].linkIndex = i;
     }
+
+    //reorder entries if defined
+    if (g_keyEntryOrder[0] != -1)
+    {
+        MenuEntry_t* tempkeyboardfuncs[NUMGAMEFUNCTIONS];
+        for (i = 0; i < NUMGAMEFUNCTIONS; ++i)
+        {
+            if (g_keyEntryOrder[i] >= 0)
+                tempkeyboardfuncs[i] = MEL_KEYBOARDSETUPFUNCS[g_keyEntryOrder[i]];
+            else
+                tempkeyboardfuncs[i] = NULL;
+        }
+        Bmemcpy(MEL_KEYBOARDSETUPFUNCS, tempkeyboardfuncs, NUMGAMEFUNCTIONS * sizeof(MenuEntry_t*));
+    }
+
     M_KEYBOARDKEYS.numEntries = NUMGAMEFUNCTIONS;
     for (i = 0; i < ARRAY_SSIZE(MenuMouseData); ++i)
     {
