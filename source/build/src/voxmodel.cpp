@@ -1137,6 +1137,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         else
             buildgl_bindTexture(GL_TEXTURE_2D, m->texid8bit);
 
+        buildgl_bindSamplerObject(0, PTH_INDEXED);
+
         int visShade = int(fabsf(((tspr->x-globalposx)*gcosang+(tspr->y-globalposy)*gsinang)*globvis2*(1.f/(64.f*1024.f*2.f))));
 
         if (polymost_usetileshades())
@@ -1156,6 +1158,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
             m->texid[globalpal] = gloadtex(m->mytex, m->mytexx, m->mytexy, m->is8bit, globalpal);
         else
             buildgl_bindTexture(GL_TEXTURE_2D, m->texid[globalpal]);
+
+        buildgl_bindSamplerObject(0, PTH_CLAMPED);
 
         polymost_usePaletteIndexing(false);
         polymost_setTexturePosSize({ 0.f, 0.f, 1.f, 1.f });
