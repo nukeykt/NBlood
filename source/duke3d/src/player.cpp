@@ -3410,6 +3410,7 @@ void P_GetInput(int const playerNum)
         if (ud.scrollmode && ud.overhead_on)
         {
             ud.folfvel = input.fvel;
+            ud.folsvel = input.svel;
             ud.folavel = fix16_to_int(input.q16avel);
         }
 

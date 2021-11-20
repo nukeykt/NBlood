@@ -942,6 +942,7 @@ memberlabel_t const UserdefsLabels[]=
     { "uw_framerate",           USERDEFS_UW_FRAMERATE,           0, 0, -1 },
     { "camera_time",            USERDEFS_CAMERA_TIME,            0, 0, -1 },
     { "folfvel",                USERDEFS_FOLFVEL,                0, 0, -1 },
+    { "folsvel",                USERDEFS_FOLSVEL,                0, 0, -1 },
     { "folavel",                USERDEFS_FOLAVEL,                0, 0, -1 },
     { "folx",                   USERDEFS_FOLX,                   0, 0, -1 },
     { "foly",                   USERDEFS_FOLY,                   0, 0, -1 },
@@ -1138,6 +1139,7 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
         case USERDEFS_UW_FRAMERATE:           labelNum = ud.uw_framerate;                 break;
         case USERDEFS_CAMERA_TIME:            labelNum = ud.camera_time;                  break;
         case USERDEFS_FOLFVEL:                labelNum = ud.folfvel;                      break;
+        case USERDEFS_FOLSVEL:                labelNum = ud.folsvel;                      break;
         case USERDEFS_FOLAVEL:                labelNum = ud.folavel;                      break;
         case USERDEFS_FOLX:                   labelNum = ud.folx;                         break;
         case USERDEFS_FOLY:                   labelNum = ud.foly;                         break;
@@ -1337,6 +1339,7 @@ void __fastcall VM_SetUserdef(int const labelNum, int const lParm2, int32_t cons
         case USERDEFS_UW_FRAMERATE:                 ud.uw_framerate                  = iSet; break;
         case USERDEFS_CAMERA_TIME:                  ud.camera_time                   = iSet; break;
         case USERDEFS_FOLFVEL:                      ud.folfvel                       = iSet; break;
+        case USERDEFS_FOLSVEL:                      ud.folsvel                       = iSet; break;
         case USERDEFS_FOLAVEL:                      ud.folavel                       = iSet; break;
         case USERDEFS_FOLX:                         ud.folx                          = iSet; break;
         case USERDEFS_FOLY:                         ud.foly                          = iSet; break;

@@ -1103,8 +1103,8 @@ void G_DisplayRest(int32_t smoothratio)
                 if (!ud.pause_on)
                 {
                     ud.fola += ud.folavel>>3;
-                    ud.folx += (ud.folfvel*sintable[(512+2048-ud.fola)&2047])>>14;
-                    ud.foly += (ud.folfvel*sintable[(512+1024-512-ud.fola)&2047])>>14;
+                    ud.folx += (ud.folfvel*sintable[(512-ud.fola)&2047] + ud.folsvel*sintable[(ud.fola)&2047])>>14;
+                    ud.foly += (ud.folfvel*sintable[(1024-ud.fola)&2047] + ud.folsvel*sintable[(ud.fola-512)&2047])>>14;
                 }
 #endif
                 cposx = ud.folx;
