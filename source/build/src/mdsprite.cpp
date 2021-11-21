@@ -2054,6 +2054,15 @@ static void md3draw_handle_triangles(const md3surf_t *s, uint16_t *indexhandle,
 #endif
 }
 
+static inline mdskinmap_t* mdgetskinmap(md3model_t* m, uint8_t pal, int number, int surface)
+{
+    for (mdskinmap_t* sk = m->skinmap; sk; sk = sk->next)
+        if ((int32_t)sk->palette == pal && sk->skinnum == number && sk->surfnum == surface)
+            return sk;
+
+    return NULL;
+}
+
 static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 {
     vec3f_t m0, m1, a0;
@@ -2341,10 +2350,17 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         mat[3] = mat[7] = mat[11] = 0.f; mat[15] = 1.f; glLoadMatrixf(mat);
         // PLAG: End
 
-        i = mdloadskin((md2model_t *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,globalpal,surfi);
+        auto skinNum = tile2model[Ptile2tile(tspr->picnum, lpal)].skinnum;
+        i = mdloadskin((md2model_t *)m, skinNum, globalpal, surfi);
         if (!i)
             continue;
         //i = mdloadskin((md2model *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,surfi); //hack for testing multiple surfaces per MD3
+
+        auto sk = mdgetskinmap(m, globalpal, skinNum, surfi);
+
+        if (sk)
+            buildgl_bindSamplerObject(0, (sk->flags & HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
+
         buildgl_bindTexture(GL_TEXTURE_2D, i);
 
         glMatrixMode(GL_TEXTURE);
@@ -2358,18 +2374,17 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             //POGOTODO: if we add support for palette indexing on model skins, the texture for the palswap could be setup here
             texunits += 4;
 
-            i = r_detailmapping ? mdloadskin((md2model_t *) m, tile2model[Ptile2tile(tspr->picnum, lpal)].skinnum, DETAILPAL, surfi) : 0;
+            i = r_detailmapping ? mdloadskin((md2model_t *) m, skinNum, DETAILPAL, surfi) : 0;
 
             if (i)
             {
-                mdskinmap_t *sk;
-
                 polymost_useDetailMapping(true);
                 polymost_setupdetailtexture(GL_TEXTURE3, i);
 
-                for (sk = m->skinmap; sk; sk = sk->next)
-                    if ((int32_t) sk->palette == DETAILPAL && sk->skinnum == tile2model[Ptile2tile(tspr->picnum, lpal)].skinnum && sk->surfnum == surfi)
-                        f = sk->param;
+                auto sk = mdgetskinmap(m, DETAILPAL, skinNum, surfi);
+
+                if (sk)
+                    f = sk->param;
 
                 glMatrixMode(GL_TEXTURE);
                 glLoadIdentity();
@@ -2378,7 +2393,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 glMatrixMode(GL_MODELVIEW);
             }
 
-            i = r_glowmapping ? mdloadskin((md2model_t *) m, tile2model[Ptile2tile(tspr->picnum, lpal)].skinnum, GLOWPAL, surfi) : 0;
+            i = r_glowmapping ? mdloadskin((md2model_t *) m, skinNum, GLOWPAL, surfi) : 0;
 
             if (i)
             {
