@@ -1671,7 +1671,7 @@ ACTOR_STATIC void G_MoveFX(void)
                     T1(spriteNum) = 0;
                 }
             }
-            else if (pSprite->lotag < 999 && S_SoundIsValid(pSprite->lotag) && (unsigned)sector[pSprite->sectnum].lotag < 9 &&  // ST_9_SLIDING_ST_DOOR
+            else if (pSprite->lotag < 999 && pSprite->lotag && S_SoundIsValid(pSprite->lotag) && (unsigned)sector[pSprite->sectnum].lotag < 9 &&  // ST_9_SLIDING_ST_DOOR
                          ud.config.AmbienceToggle && sector[SECT(spriteNum)].floorz != sector[SECT(spriteNum)].ceilingz)
             {
                 if (g_sounds[pSprite->lotag]->flags & SF_MSFX)
