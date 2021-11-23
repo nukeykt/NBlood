@@ -2384,7 +2384,10 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 auto sk = mdgetskinmap(m, DETAILPAL, skinNum, surfi);
 
                 if (sk)
+                {
                     f = sk->param;
+                    buildgl_bindSamplerObject(GL_TEXTURE3, (sk->flags & HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
+                }
 
                 glMatrixMode(GL_TEXTURE);
                 glLoadIdentity();
@@ -2397,9 +2400,13 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
             if (i)
             {
+                auto sk = mdgetskinmap(m, GLOWPAL, skinNum, surfi);
+
+                if (sk)
+                    buildgl_bindSamplerObject(GL_TEXTURE4, (sk->flags& HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
+
                 polymost_useGlowMapping(true);
                 polymost_setupglowtexture(GL_TEXTURE4, i);
-
                 glMatrixMode(GL_TEXTURE);
                 glLoadIdentity();
                 glTranslatef(xpanning, ypanning, 1.0f);

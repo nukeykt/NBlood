@@ -3201,8 +3201,9 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
             detailpth->hicr && detailpth->hicr->palnum == DETAILPAL)
         {
             polymost_useDetailMapping(true);
-            polymost_setupdetailtexture(videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE3 : ++texunits, detailpth->glpic);
-
+            int const unit = videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE3 : ++texunits;
+            polymost_setupdetailtexture(unit, detailpth->glpic);
+            buildgl_bindSamplerObject(unit, detailpth->flags);
             glMatrixMode(GL_TEXTURE);
             glLoadIdentity();
 
@@ -3227,7 +3228,9 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
             glowpth->hicr && (glowpth->hicr->palnum == GLOWPAL))
         {
             polymost_useGlowMapping(true);
-            polymost_setupglowtexture(videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE4 : ++texunits, glowpth->glpic);
+            int const unit = videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE4 : ++texunits;
+            polymost_setupglowtexture(unit, glowpth->glpic);
+            buildgl_bindSamplerObject(unit, glowpth->flags);
             buildgl_activeTexture(GL_TEXTURE0);
         }
     }
