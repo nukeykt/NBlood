@@ -191,22 +191,22 @@ void tessSetOption(TESStesselator *tess, int option, int value);
 int tessTesselate(TESStesselator *tess, int windingRule, int elementType, int polySize, int vertexSize, const GLfloat* normal);
 
 // tessGetVertexCount() - Returns number of vertices in the tesselated output.
-int tessGetVertexCount(TESStesselator *tess);
+int tessGetVertexCount(TESStesselator const *tess);
 
 // tessGetVertices() - Returns pointer to first coordinate of first vertex.
-const GLfloat* tessGetVertices(TESStesselator *tess);
+const GLfloat* tessGetVertices(TESStesselator const *tess);
 
 // tessGetVertexIndices() - Returns pointer to first vertex index.
 // Vertex indices can be used to map the generated vertices to the original vertices.
 // Every point added using tessAddContour() will get a new index starting at 0.
 // New vertices generated at the intersections of segments are assigned value TESS_UNDEF.
-const TESSindex* tessGetVertexIndices(TESStesselator *tess);
+const TESSindex* tessGetVertexIndices(TESStesselator const *tess);
 
 // tessGetElementCount() - Returns number of elements in the the tesselated output.
-int tessGetElementCount(TESStesselator *tess);
+int tessGetElementCount(TESStesselator const *tess);
 
 // tessGetElements() - Returns pointer to the first element.
-const TESSindex* tessGetElements(TESStesselator *tess);
+const TESSindex* tessGetElements(TESStesselator const *tess);
 	
 struct BucketAlloc *createBucketAlloc(TESSalloc* alloc,
 									  unsigned int itemSize, unsigned int bucketSize);
@@ -551,7 +551,7 @@ static PQkey pqExtractMin(PriorityQ *pq);
 static void pqDelete(PriorityQ *pq, PQhandle handle);
 
 static PQkey pqMinimum(PriorityQ *pq);
-static int pqIsEmpty(PriorityQ *pq);
+static inline int pqIsEmpty(PriorityQ const *pq);
 
 #ifdef LIBTESS2_IMPLEMENTATION
 //typedef struct TESStesselator TESStesselator;
@@ -662,14 +662,14 @@ struct ActiveRegion {
 
 #define VertCCW(u,v,w) tesvertCCW(u,v,w)
 
-static int tesvertLeq(TESSvertex *u, TESSvertex *v);
-static GLfloat	tesedgeEval(TESSvertex *u, TESSvertex *v, TESSvertex *w);
-static GLfloat	tesedgeSign(TESSvertex *u, TESSvertex *v, TESSvertex *w);
-static GLfloat	testransEval(TESSvertex *u, TESSvertex *v, TESSvertex *w);
-static GLfloat	testransSign(TESSvertex *u, TESSvertex *v, TESSvertex *w);
-static bool tesvertCCW(TESSvertex *u, TESSvertex *v, TESSvertex *w);
+static int tesvertLeq(TESSvertex const *u, TESSvertex const *v);
+static GLfloat	tesedgeEval(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w);
+static GLfloat	tesedgeSign(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w);
+static GLfloat	testransEval(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w);
+static GLfloat	testransSign(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w);
+static bool tesvertCCW(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w);
 static void tesedgeIntersect(TESSvertex *o1, TESSvertex *d1, TESSvertex *o2, TESSvertex *d2, TESSvertex *v);
-static inline int tesedgeIsLocallyDelaunay(TESShalfEdge *e);
+static inline int tesedgeIsLocallyDelaunay(TESShalfEdge const *e);
 
 #define Dot(u,v)	(u[0]*v[0] + u[1]*v[1] + u[2]*v[2])
 
@@ -1011,7 +1011,7 @@ static FORCE_INLINE int stackInit(EdgeStack *stack, TESSalloc *alloc)
 }
 
 static FORCE_INLINE void stackDelete(EdgeStack *stack) { deleteBucketAlloc(stack->nodeBucket); }
-static FORCE_INLINE int stackEmpty(EdgeStack *stack) { return stack->top == NULL; }
+static FORCE_INLINE int stackEmpty(EdgeStack const *stack) { return stack->top == NULL; }
 
 static FORCE_INLINE void stackPush(EdgeStack *stack, TESShalfEdge *e)
 {
@@ -1250,7 +1250,7 @@ void tessDeleteTess(TESStesselator *tess)
 	alloc.memfree(alloc.userData, tess);
 }
 
-static FORCE_INLINE TESSindex GetNeighbourFace(TESShalfEdge* edge)
+static FORCE_INLINE TESSindex GetNeighbourFace(TESShalfEdge const* edge)
 {
 	if (!edge->Rface || !edge->Rface->inside)
 		return TESS_UNDEF;
@@ -1621,11 +1621,11 @@ int tessTesselate(TESStesselator *tess, int windingRule, int elementType,
 	return 1;
 }
 
-inline int tessGetVertexCount(TESStesselator *tess) { return tess->vertexCount; }
-inline const GLfloat *tessGetVertices(TESStesselator *tess) { return tess->vertices; }
-inline const TESSindex *tessGetVertexIndices(TESStesselator *tess) { return tess->vertexIndices; }
-inline int tessGetElementCount(TESStesselator *tess) { return tess->elementCount; }
-inline const int *tessGetElements(TESStesselator *tess) { return tess->elements; }
+inline int tessGetVertexCount(TESStesselator const *tess) { return tess->vertexCount; }
+inline const GLfloat *tessGetVertices(TESStesselator const *tess) { return tess->vertices; }
+inline const TESSindex *tessGetVertexIndices(TESStesselator const *tess) { return tess->vertexIndices; }
+inline int tessGetElementCount(TESStesselator const *tess) { return tess->elementCount; }
+inline const int *tessGetElements(TESStesselator const *tess) { return tess->elements; }
 
 //#define CHECK_BOUNDS
 
@@ -3077,7 +3077,7 @@ static PQkey pqMinimum(PriorityQ *pq)
     return sortMin;
 }
 
-static FORCE_INLINE int pqIsEmpty(PriorityQ *pq) { return (pq->size == 0) && pqHeapIsEmpty(pq->heap); }
+static FORCE_INLINE int pqIsEmpty(PriorityQ const *pq) { return (pq->size == 0) && pqHeapIsEmpty(pq->heap); }
 
 static void pqDelete(PriorityQ *pq, PQhandle curr)
 {
@@ -3263,7 +3263,7 @@ static ActiveRegion *AddRegionBelow(TESStesselator *tess, ActiveRegion *regAbove
 	return regNew;
 }
 
-static int IsWindingInside(TESStesselator *tess, int n)
+static int IsWindingInside(TESStesselator const *tess, int n)
 {
     switch (tess->windingRule)
     {
@@ -3285,7 +3285,7 @@ static int IsWindingInside(TESStesselator *tess, int n)
 	return(FALSE);
 }
 
-static FORCE_INLINE void ComputeWinding(TESStesselator *tess, ActiveRegion *reg)
+static FORCE_INLINE void ComputeWinding(TESStesselator const *tess, ActiveRegion *reg)
 {
 	reg->windingNumber = RegionAbove(reg)->windingNumber + reg->eUp->winding;
 	reg->inside = IsWindingInside(tess, reg->windingNumber);
@@ -3320,7 +3320,7 @@ static void FinishRegion(TESStesselator *tess, ActiveRegion *reg)
 * mesh if necessary, so that the ordering of edges around vOrg is the
 * same as in the dictionary.
 */
-static TESShalfEdge *FinishLeftRegions(TESStesselator *tess, ActiveRegion *regFirst, ActiveRegion *regLast)
+static TESShalfEdge *FinishLeftRegions(TESStesselator *tess, ActiveRegion *regFirst, ActiveRegion const *regLast)
 {
 	auto regPrev = regFirst;
 	auto ePrev = regFirst->eUp;
@@ -3371,7 +3371,7 @@ static TESShalfEdge *FinishLeftRegions(TESStesselator *tess, ActiveRegion *regFi
 * should be NULL.
 */
 static void AddRightEdges(TESStesselator *tess, ActiveRegion *regUp,
-						  TESShalfEdge *eFirst, TESShalfEdge *eLast, TESShalfEdge *eTopLeft,
+						  TESShalfEdge *eFirst, TESShalfEdge const *eLast, TESShalfEdge *eTopLeft,
 						  int cleanUp)
 {
 	int firstTime = TRUE;
@@ -3447,7 +3447,7 @@ static FORCE_INLINE void SpliceMergeVertices(TESStesselator *tess, TESShalfEdge 
 * splits the weight between its org and dst according to the
 * relative distance to "isect".
 */
-static void VertexWeights(TESSvertex *isect, TESSvertex *org, TESSvertex *dst, GLfloat *weights)
+static void VertexWeights(TESSvertex *isect, TESSvertex const *org, TESSvertex const *dst, GLfloat *weights)
 {
 	auto t1 = VertL1dist(org, isect);
 	auto t2 = VertL1dist(dst, isect);
@@ -3464,8 +3464,8 @@ static void VertexWeights(TESSvertex *isect, TESSvertex *org, TESSvertex *dst, G
  * from the user so that we can refer to this new vertex in the
  * rendering callbacks.
  */
-static void GetIntersectData(TESStesselator *tess, TESSvertex *isect, TESSvertex *orgUp, TESSvertex *dstUp,
-                             TESSvertex *orgLo, TESSvertex *dstLo)
+static void GetIntersectData(TESStesselator *tess, TESSvertex *isect, TESSvertex const *orgUp, TESSvertex const *dstUp,
+                             TESSvertex const *orgLo, TESSvertex const *dstLo)
 {
 	GLfloat weights[4];
     UNREFERENCED_PARAMETER(tess);
@@ -4321,9 +4321,9 @@ static int tessComputeInterior(TESStesselator *tess)
 }
 
 /* Returns TRUE if u is lexicographically <= v. */
-static FORCE_INLINE int tesvertLeq(TESSvertex *u, TESSvertex *v) { return VertLeq(u, v); }
+static FORCE_INLINE int tesvertLeq(TESSvertex const *u, TESSvertex const *v) { return VertLeq(u, v); }
 
-static GLfloat tesedgeEval(TESSvertex *u, TESSvertex *v, TESSvertex *w)
+static GLfloat tesedgeEval(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w)
 {
 	/* Given three vertices u,v,w such that VertLeq(u,v) && VertLeq(v,w),
 	* evaluates the t-coord of the edge uw at the s-coord of the vertex v.
@@ -4351,7 +4351,7 @@ static GLfloat tesedgeEval(TESSvertex *u, TESSvertex *v, TESSvertex *w)
 	return 0;
 }
 
-static GLfloat tesedgeSign(TESSvertex *u, TESSvertex *v, TESSvertex *w)
+static GLfloat tesedgeSign(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w)
 {
 	/* Returns a number whose sign matches EdgeEval(u,v,w) but which
 	* is cheaper to evaluate.  Returns > 0, == 0 , or < 0
@@ -4373,7 +4373,7 @@ static GLfloat tesedgeSign(TESSvertex *u, TESSvertex *v, TESSvertex *w)
 * Define versions of EdgeSign, EdgeEval with s and t transposed.
 */
 
-static GLfloat testransEval(TESSvertex *u, TESSvertex *v, TESSvertex *w)
+static GLfloat testransEval(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w)
 {
 	/* Given three vertices u,v,w such that TransLeq(u,v) && TransLeq(v,w),
 	* evaluates the t-coord of the edge uw at the s-coord of the vertex v.
@@ -4401,7 +4401,7 @@ static GLfloat testransEval(TESSvertex *u, TESSvertex *v, TESSvertex *w)
 	return 0;
 }
 
-static inline GLfloat testransSign(TESSvertex *u, TESSvertex *v, TESSvertex *w)
+static inline GLfloat testransSign(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w)
 {
 	/* Returns a number whose sign matches TransEval(u,v,w) but which
 	* is cheaper to evaluate.  Returns > 0, == 0 , or < 0
@@ -4419,7 +4419,7 @@ static inline GLfloat testransSign(TESSvertex *u, TESSvertex *v, TESSvertex *w)
 	return 0;
 }
 
-static FORCE_INLINE bool tesvertCCW(TESSvertex *u, TESSvertex *v, TESSvertex *w)
+static FORCE_INLINE bool tesvertCCW(TESSvertex const *u, TESSvertex const *v, TESSvertex const *w)
 {
 	/* For almost-degenerate situations, the results are not reliable.
 	* Unless the floating-point arithmetic can be performed without
@@ -4505,7 +4505,7 @@ static void tesedgeIntersect(TESSvertex *o1, TESSvertex *d1, TESSvertex *o2, TES
 	}
 }
 
-static GLfloat inCircle(TESSvertex *v, TESSvertex *v0, TESSvertex *v1, TESSvertex *v2)
+static GLfloat inCircle(TESSvertex const *v, TESSvertex const *v0, TESSvertex const *v1, TESSvertex const *v2)
 {
 	vec2f_t const a = { v0->s - v->s, v0->t - v->t };
 	vec2f_t const b = { v1->s - v->s, v1->t - v->t };
@@ -4525,7 +4525,7 @@ static GLfloat inCircle(TESSvertex *v, TESSvertex *v0, TESSvertex *v1, TESSverte
 /*
 	Returns 1 is edge is locally delaunay
  */
-static FORCE_INLINE int tesedgeIsLocallyDelaunay(TESShalfEdge *e) { return inCircle(e->Sym->Lnext->Lnext->Org, e->Lnext->Org, e->Lnext->Lnext->Org, e->Org) < 0; }
+static FORCE_INLINE int tesedgeIsLocallyDelaunay(TESShalfEdge const *e) { return inCircle(e->Sym->Lnext->Lnext->Org, e->Lnext->Org, e->Lnext->Lnext->Org, e->Org) < 0; }
 #endif
 #endif // libtess2_h__
 
