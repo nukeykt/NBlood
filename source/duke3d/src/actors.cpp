@@ -381,9 +381,9 @@ wallsfinished:
         while (damageSprite >= 0)
         {
             int const nextSprite = nextspritesect[damageSprite];
-            auto      pDamage    = &sprite[damageSprite];
+            auto      pDamage    = (uspriteptr_t)&sprite[damageSprite];
 
-            if (bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
+            if (pDamage != pSprite && bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
             {
                 int spriteDist = dist(pSprite, pDamage);
                 
