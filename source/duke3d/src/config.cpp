@@ -660,6 +660,7 @@ void CONFIG_SetGameControllerDefaults()
     ud.config.JoystickAimAssist     = 1;
     ud.config.JoystickAimWeight     = 4;
     ud.config.JoystickViewCentering = 4;
+    ud.config.controllerRumble = 1;
 }
 
 void CONFIG_SetGameControllerDefaultsClear()

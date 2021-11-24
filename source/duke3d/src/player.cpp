@@ -20,9 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "duke3d.h"
 #include "demo.h"
+#include "duke3d.h"
 #include "enet.h"
+#include "input.h"
 #include "savegame.h"
 
 #ifdef __ANDROID__
@@ -105,11 +106,15 @@ static void P_IncurDamage(DukePlayer_t * const pPlayer)
     }
 
     sprite[pPlayer->i].extra = pPlayer->last_extra + playerDamage;
+
+    int const admg = klabs(playerDamage);
+    I_AddForceFeedback((admg << FF_PLAYER_DMG_SCALE), (admg << FF_PLAYER_DMG_SCALE), (admg << FF_PLAYER_TIME_SCALE));
 }
 
 void P_QuickKill(DukePlayer_t * const pPlayer)
 {
     P_PalFrom(pPlayer, 48, 48,48,48);
+    I_AddForceFeedback(pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_TIME_SCALE);
 
     sprite[pPlayer->i].extra = 0;
     sprite[pPlayer->i].cstat |= 32768;
@@ -611,6 +616,20 @@ static int Proj_MaybeDamageCF2(int const spriteNum, int const zvel, int const hi
     return 0;
 }
 
+static void P_DoWeaponRumble(int playerNum)
+{
+    if (!joystick.hasRumble || !ud.config.controllerRumble)
+        return;
+
+    auto const pPlayer = g_player[playerNum].ps;
+
+    int const shoots = PWEAPON(playerNum, pPlayer->curr_weapon, Shoots);
+    int const base   = A_CheckSpriteTileFlags(shoots, SFLAG_PROJECTILE) ? Proj_GetProjectile(shoots)->extra : G_DefaultActorHealthForTile(shoots);
+    int const dmg    = clamp(base * PWEAPON(playerNum, pPlayer->curr_weapon, ShotsPerBurst), FF_WEAPON_DMG_MIN, FF_WEAPON_DMG_MAX);
+
+    I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
+}
+
 // Finish shooting hitscan weapon from player <p>. <k> is the inserted SHOTSPARK1.
 // * <spawnObject> is passed to Proj_MaybeSpawn()
 // * <decalTile> and <wallDamage> are for wall impact
@@ -828,14 +847,18 @@ static void Proj_HandleKnee(hitdata_t *const hitData, int const spriteNum, int c
     if (pPlayer != NULL && pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400)
         sprite[kneeSprite].extra += (pPlayer->max_player_health>>2);
 
+    int const dmg = clamp<int>(sprite[kneeSprite].extra, FF_WEAPON_DMG_MIN, FF_WEAPON_DMG_MAX);
+
     if (hitData->sprite >= 0 && sprite[hitData->sprite].picnum != ACCESSSWITCH && sprite[hitData->sprite].picnum != ACCESSSWITCH2)
     {
+        I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
         A_DamageObject(hitData->sprite, kneeSprite);
         if (playerNum >= 0)
             P_ActivateSwitch(playerNum, hitData->sprite,1);
     }
     else if (hitData->wall >= 0)
     {
+        I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
         HandleHitWall(hitData);
 
         if (wall[hitData->wall].picnum != ACCESSSWITCH && wall[hitData->wall].picnum != ACCESSSWITCH2)
@@ -2020,7 +2043,10 @@ static void P_FireWeapon(int playerNum)
         return;
 
     if (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != KNEE_WEAPON)
+    {
         pPlayer->ammo_amount[pPlayer->curr_weapon]--;
+        P_DoWeaponRumble(playerNum);
+    }
 
     if (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == FLAMETHROWER_WEAPON && sector[pPlayer->cursectnum].lotag == ST_2_UNDERWATER)
         return;
@@ -4012,6 +4038,7 @@ void P_FragPlayer(int playerNum)
     if (pSprite->pal != 1)
     {
         P_PalFrom(pPlayer, 63, 63, 0, 0);
+        I_AddForceFeedback(pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_TIME_SCALE);
 
         pPlayer->pos.z -= ZOFFSET2;
         pSprite->z -= ZOFFSET2;
@@ -5367,6 +5394,7 @@ void P_ProcessInput(int playerNum)
                 (pPlayer->on_ground == 0 && pPlayer->vel.z > (ACTOR_MAXFALLINGZVEL >> 1)))
             {
                 pPlayer->hard_landing = pPlayer->vel.z >> 10;
+                I_AddForceFeedback((pPlayer->hard_landing << FF_PLAYER_DMG_SCALE), (pPlayer->hard_landing << FF_PLAYER_DMG_SCALE), (pPlayer->hard_landing << FF_PLAYER_TIME_SCALE));
             }
 
             pPlayer->on_ground = 1;
@@ -5840,6 +5868,9 @@ RECHECK:
             if (pPlayer->actorsqu >= 0 && sprite[pPlayer->actorsqu].statnum != MAXSTATUS &&
                 dist(&sprite[pPlayer->i], &sprite[pPlayer->actorsqu]) < 1400)
             {
+                int const dmg = G_DefaultActorHealthForTile(KNEE);
+                I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
+
                 A_DoGuts(pPlayer->actorsqu, JIBS6, 7);
                 A_Spawn(pPlayer->actorsqu, BLOODPOOL);
                 A_PlaySound(SQUISHED, pPlayer->actorsqu);

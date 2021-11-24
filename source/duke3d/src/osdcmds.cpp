@@ -1673,7 +1673,10 @@ int32_t registerosdcommands(void)
         },
 
         { "in_mouseflip", "invert vertical mouse movement" CVAR_BOOL_OPTSTR, (void *)&ud.mouseflip, CVAR_BOOL, 0, 1 },
-
+/*
+        { "in_rumble", "controller rumble factor", (void*)&ud.rumble, CVAR_INT, 0, 4 },
+*/
+        { "in_rumble", "game controller rumble support" CVAR_BOOL_OPTSTR, (void*)&ud.config.controllerRumble, CVAR_BOOL, 0, 1 },
         { "mus_enabled", "music subsystem" CVAR_BOOL_OPTSTR, (void *)&ud.config.MusicToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT|CVAR_FUNCPTR, 0, ASS_NumSoundCards },
         { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT|CVAR_FUNCPTR, 0, 255 },

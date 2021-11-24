@@ -209,6 +209,7 @@ typedef struct {
 
     int32_t last_stateless_level, last_stateless_volume; // strictly internal
 
+
     struct {
         int32_t AutoAim;
         int32_t ShowWeapons;
@@ -216,6 +217,7 @@ typedef struct {
         int32_t JoystickAimWeight;
         int32_t JoystickViewCentering;
         int32_t JoystickAimAssist;
+        int32_t controllerRumble;
 
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them

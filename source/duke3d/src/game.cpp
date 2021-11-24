@@ -1057,6 +1057,8 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         {
             CAMERA(pos.z) += 256 - (((g_earthquakeTime)&1) << 9);
             CAMERA(q16ang)   += fix16_from_int((2 - ((g_earthquakeTime)&2)) << 2);
+
+            I_AddForceFeedback(g_earthquakeTime << FF_WEAPON_DMG_SCALE, g_earthquakeTime << FF_WEAPON_DMG_SCALE, g_earthquakeTime << FF_WEAPON_TIME_SCALE);
         }
 
         if (sprite[pPlayer->i].pal == 1)

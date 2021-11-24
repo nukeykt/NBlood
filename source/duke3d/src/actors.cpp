@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "colmatch.h"
 #include "duke3d.h"
+#include "input.h"
 #include "microprofile.h"
 #include "screens.h"
 
@@ -278,12 +279,13 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
         wallDamage = false;
 #endif
 
-    uint8_t *wallTouched;
-    wallTouched = (uint8_t *)Balloca((numwalls+7)>>3);
+    int const forceFromRadiusDamage = max<int>((blastRadius * dmg4) - min<int>(UINT16_MAX, dist(pSprite, &g_player[myconnectindex].ps->pos) << 3), 0);
+    I_AddForceFeedback(forceFromRadiusDamage, forceFromRadiusDamage, dmg3);
+
+    auto wallTouched = (uint8_t *)Balloca((numwalls+7)>>3);
     Bmemset(wallTouched, 0, (numwalls+7)>>3);
 
-    uint8_t *wallCanSee;
-    wallCanSee = (uint8_t *)Balloca((numwalls+7)>>3);
+    auto wallCanSee = (uint8_t *)Balloca((numwalls+7)>>3);
     Bmemset(wallCanSee, 0, (numwalls+7)>>3);
 
     for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
