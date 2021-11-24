@@ -1002,7 +1002,6 @@ void G_AddGameLight(int spriteNum, int sectNum, vec3_t const &offset, int lightR
     pr_light.range = pr_actor->lightrange = lightRange;
     pr_actor->olightang = pr_actor->lightang;
     pr_light.angle = pr_actor->lightang = s->ang;
-    pr_light.angle = s->ang;
     pr_light.color[0] = lightColor & 255;
     pr_light.color[1] = (lightColor >> 8) & 255;
     pr_light.color[2] = (lightColor >> 16) & 255;
