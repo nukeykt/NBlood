@@ -1821,7 +1821,7 @@ ACTOR_STATIC void G_MoveFallers(void)
                 else if (EDUKE32_PREDICT_FALSE(G_CheckForSpaceCeiling(pSprite->sectnum)))
                     spriteGravity = g_spriteGravity / 6;
 
-                if (pSprite->z < (sector[sectNum].floorz-ACTOR_FLOOR_OFFSET))
+                if (pSprite->z < (sector[sectNum].floorz - AC_FZOFFSET(spriteNum)))
                 {
                     pSprite->zvel += spriteGravity;
                     if (pSprite->zvel > ACTOR_MAXFALLINGZVEL)
@@ -5196,7 +5196,7 @@ ACTOR_STATIC void G_MoveActors(void)
             {
                 A_Fall(spriteNum);
 
-                if ((sector[sectNum].lotag != ST_1_ABOVE_WATER || actor[spriteNum].floorz != sector[sectNum].floorz) && pSprite->z >= actor[spriteNum].floorz-(ACTOR_FLOOR_OFFSET) && pSprite->yvel < 3)
+                if ((sector[sectNum].lotag != ST_1_ABOVE_WATER || actor[spriteNum].floorz != sector[sectNum].floorz) && pSprite->z >= actor[spriteNum].floorz - AC_FZOFFSET(spriteNum) && pSprite->yvel < 3)
                 {
                     if (pSprite->yvel > 0 || (pSprite->yvel == 0 && actor[spriteNum].floorz == sector[sectNum].floorz))
                         A_PlaySound(PIPEBOMB_BOUNCE,spriteNum);
@@ -6034,7 +6034,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 if (sectNum < 0)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
-                if (pSprite->z == actor[spriteNum].floorz-(ACTOR_FLOOR_OFFSET) && pData[0] < 3)
+                if (pSprite->z == actor[spriteNum].floorz-AC_FZOFFSET(spriteNum) && pData[0] < 3)
                 {
                     pSprite->zvel = -((3-pData[0])<<8)-(krand()&511);
                     if (sector[sectNum].lotag == ST_2_UNDERWATER)

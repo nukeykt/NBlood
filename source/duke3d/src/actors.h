@@ -32,7 +32,8 @@ extern "C" {
 
 #define MAXSLEEPDIST        16384
 #define SLEEPTIME           1536
-#define ACTOR_FLOOR_OFFSET  (1<<8)
+#define AC_FZOFFSET(t) (((int32_t) actor[t].floorzoffset + 1) << 8)
+
 #define ZOFFSET2            (16<<8)
 #define ZOFFSET3            (8<<8)
 #define ZOFFSET4            (12<<8)
@@ -127,17 +128,18 @@ typedef struct
 {
     int32_t t_data[10];  // 40b sometimes used to hold offsets to con code
 
-    uint32_t flags;                 // 4b
-    vec3_t   bpos;                  // 12b
-    int32_t  floorz, ceilingz;      // 8b
-    vec2_t   lastv;                 // 8b
-    int16_t  htpicnum, htang;       // 4b
-    int16_t  htextra, htowner;      // 4b
-    int16_t  movflag, tempang;      // 4b
-    int16_t  timetosleep, stayput;  // 4b
-    uint8_t  filler[4];             // 4b
-    int16_t  dispicnum;             // 2b NOTE: updated every frame, not in sync with game tics!    
-    uint8_t  cgg, lasttransport;    // 2b
+    uint32_t flags;                       // 4b
+    vec3_t   bpos;                        // 12b
+    int32_t  floorz, ceilingz;            // 8b
+    vec2_t   lastv;                       // 8b
+    int16_t  htpicnum, htang;             // 4b
+    int16_t  htextra, htowner;            // 4b
+    int16_t  movflag, tempang;            // 4b
+    int16_t  timetosleep, stayput;        // 4b
+    int8_t   floorzoffset, waterzoffset;  // 2b
+    uint8_t  filler[2];                   // 3b
+    int16_t  dispicnum;                   // 2b NOTE: updated every frame, not in sync with game tics!
+    uint8_t  cgg, lasttransport;          // 2b
 } actor_t;
 
 EDUKE32_STATIC_ASSERT(sizeof(actor_t) == 96);
@@ -212,8 +214,9 @@ typedef struct netactor_s
         movflag,
         tempang,
         timetosleep,
-
         stayput,
+        floorzoffset,
+        waterzoffset,
         dispicnum;
 
     // note: lightId, lightcount, lightmaxrange are not synchronized between client and server

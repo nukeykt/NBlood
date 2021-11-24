@@ -457,11 +457,11 @@ void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const fl
     int const ocstat = pSprite->cstat;
 
     pSprite->cstat = 0;
-    pSprite->z -= ACTOR_FLOOR_OFFSET;
+    pSprite->z -= AC_FZOFFSET(spriteNum);
     
     getzrange(&pSprite->xyz, pSprite->sectnum, &pActor->ceilingz, ceilhit, &pActor->floorz, florhit, wallDist, CLIPMASK0);
 
-    pSprite->z += ACTOR_FLOOR_OFFSET;
+    pSprite->z += AC_FZOFFSET(spriteNum);
     pSprite->cstat = ocstat;
 
     //pz->hi = *ceilhit;
@@ -535,7 +535,7 @@ void A_Fall(int const spriteNum)
     int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);
 #endif
 
-    if (pSprite->z < actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET
+    if (pSprite->z < actor[spriteNum].floorz - AC_FZOFFSET(spriteNum)
 #ifdef YAX_ENABLE
             || fbunch >= 0
 #endif
@@ -551,9 +551,9 @@ void A_Fall(int const spriteNum)
         setspritez(spriteNum, &pSprite->xyz);
     else
 #endif
-        if (pSprite->z >= actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET)
+        if (pSprite->z >= actor[spriteNum].floorz - AC_FZOFFSET(spriteNum))
         {
-            pSprite->z = actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET;
+            pSprite->z = actor[spriteNum].floorz - AC_FZOFFSET(spriteNum);
             pSprite->zvel = 0;
         }
 }
@@ -1026,7 +1026,7 @@ static int32_t A_GetWaterZOffset(int const spriteNum)
         if ((AC_MOVFLAGS(pSprite, pActor) & jumptoplayer_only) || (G_TileHasActor(pSprite->picnum) && A_GetVerticalVel(pActor) != 0))
             return 0;
 
-        return ACTOR_ONWATER_ADDZ;
+        return ACTOR_ONWATER_ADDZ - ((int32_t) pActor->waterzoffset << 8);
     }
 
     return 0;
@@ -1050,7 +1050,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 
     A_GetZLimits(spriteNum);
 
-    if (pSprite->z < actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET)
+    if (pSprite->z < actor[spriteNum].floorz - AC_FZOFFSET(spriteNum))
     {
         // Free fall.
         pSprite->zvel = min(pSprite->zvel+spriteGravity, ACTOR_MAXFALLINGZVEL);
@@ -1061,15 +1061,15 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             setspritez(spriteNum, &pSprite->xyz);
         else
 #endif
-            if (newZ > actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET)
-                newZ = actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET;
+            if (newZ > actor[spriteNum].floorz - AC_FZOFFSET(spriteNum))
+                newZ = actor[spriteNum].floorz - AC_FZOFFSET(spriteNum);
 
         pSprite->z = newZ;
         return;
     }
 
     // Preliminary new z position of the actor.
-    int newZ = actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET;
+    int newZ = actor[spriteNum].floorz - AC_FZOFFSET(spriteNum);
 
     if (A_CheckEnemySprite(pSprite) || (pSprite->picnum == APLAYER && pSprite->owner >= 0))
     {

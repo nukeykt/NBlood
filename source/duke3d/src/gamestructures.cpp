@@ -247,6 +247,8 @@ memberlabel_t const ActorLabels[]=
     { "htumovflag", ACTOR_HTUMOVFLAG, sizeof(actor[0].movflag) | LABEL_UNSIGNED, 0, offsetof(actor_t, movflag) },
     LABEL(actor, tempang,     "httempang",      ACTOR_HTTEMPANG),
     LABEL(actor, stayput,     "htactorstayput", ACTOR_HTSTAYPUT),
+    LABEL(actor, floorzoffset,"htfloorzoffset", ACTOR_HTFLOORZOFFSET),
+    LABEL(actor, waterzoffset,"htwaterzoffset", ACTOR_HTWATERZOFFSET),
     LABEL(actor, dispicnum,   "htdispicnum",    ACTOR_HTDISPICNUM),
     LABEL(actor, timetosleep, "httimetosleep",  ACTOR_HTTIMETOSLEEP),
     LABEL(actor, floorz,      "htfloorz",       ACTOR_HTFLOORZ),
