@@ -275,8 +275,8 @@ public:
 		: length(0), ptr(nullptr) {}
 	aligned_array(std::nullptr_t)
 		: length(0), ptr(nullptr) {}
-	explicit aligned_array(std::size_t length)
-		: length(length)
+	explicit aligned_array(std::size_t length_)
+		: length(length_)
 	{
 		ptr = static_cast<T*>(aligned_alloc(length * sizeof(T), Align));
 		std::size_t i;
@@ -647,8 +647,8 @@ class compressed_ptr {
 
 public:
 	compressed_ptr() = default;
-	compressed_ptr(void* ptr, std::uintptr_t flags)
-		: ptr(ptr), flags(flags) {}
+	compressed_ptr(void* ptr_, std::uintptr_t flags_)
+		: ptr(ptr_), flags(flags_) {}
 
 	template<typename T>
 	T* get_ptr() const
@@ -675,8 +675,8 @@ class compressed_ptr<Mask, true> {
 
 public:
 	compressed_ptr() = default;
-	compressed_ptr(void* ptr, std::uintptr_t flags)
-		: data(reinterpret_cast<std::uintptr_t>(ptr) | flags) {}
+	compressed_ptr(void* ptr_, std::uintptr_t flags_)
+		: data(reinterpret_cast<std::uintptr_t>(ptr_) | flags_) {}
 
 	template<typename T>
 	T* get_ptr() const
@@ -930,8 +930,8 @@ struct LIBASYNC_CACHELINE_ALIGN task_base: public ref_count_base<task_base, task
 	void run_continuations()
 	{
 		continuations.flush_and_lock([this](task_ptr t) {
-			const task_base_vtable* vtable = t->vtable;
-			vtable->schedule(this, std::move(t));
+			const task_base_vtable* vtable_ptr = t->vtable;
+			vtable_ptr->schedule(this, std::move(t));
 		});
 	}
 
@@ -1090,17 +1090,17 @@ struct task_result: public task_result_holder<Result> {
 	}
 
 	// Cancel a task with the given exception
-	void cancel_base(std::exception_ptr&& except)
+	void cancel_base(std::exception_ptr&& except_)
 	{
-		set_exception(std::move(except));
+		set_exception(std::move(except_));
 		this->state.store(task_state::canceled, std::memory_order_release);
 		this->run_continuations();
 	}
 
 	// Set the exception value of the task
-	void set_exception(std::exception_ptr&& except)
+	void set_exception(std::exception_ptr&& except_)
 	{
-		new(&this->except) std::exception_ptr(std::move(except));
+		new(&this->except) std::exception_ptr(std::move(except_));
 	}
 
 	// Get the exception a task was canceled with
@@ -2183,8 +2183,8 @@ struct when_all_func_range {
 	std::size_t index;
 	ref_count_ptr<when_all_state<Result>> state;
 
-	when_all_func_range(std::size_t index, ref_count_ptr<when_all_state<Result>> state)
-		: index(index), state(std::move(state)) {}
+	when_all_func_range(std::size_t index_, ref_count_ptr<when_all_state<Result>> state_)
+		: index(index_), state(std::move(state_)) {}
 
 	// Copy the completed task object to the shared state. The event is
 	// automatically signaled when all references are dropped.
@@ -2197,8 +2197,8 @@ template<std::size_t index, typename Task, typename Result>
 struct when_all_func_tuple {
 	ref_count_ptr<when_all_state<Result>> state;
 
-	when_all_func_tuple(ref_count_ptr<when_all_state<Result>> state)
-		: state(std::move(state)) {}
+	when_all_func_tuple(ref_count_ptr<when_all_state<Result>> state_)
+		: state(std::move(state_)) {}
 
 	// Copy the completed task object to the shared state. The event is
 	// automatically signaled when all references are dropped.
@@ -2230,8 +2230,8 @@ struct when_any_func {
 	std::size_t index;
 	ref_count_ptr<when_any_state<Result>> state;
 
-	when_any_func(std::size_t index, ref_count_ptr<when_any_state<Result>> state)
-		: index(index), state(std::move(state)) {}
+	when_any_func(std::size_t index_, ref_count_ptr<when_any_state<Result>> state_)
+		: index(index_), state(std::move(state_)) {}
 
 	// Simply tell the state that our task has finished, it already has a copy
 	// of the task object.
@@ -2667,8 +2667,8 @@ class static_partitioner_impl {
 	std::size_t grain;
 
 public:
-	static_partitioner_impl(Iter begin, Iter end, std::size_t grain)
-		: iter_begin(begin), iter_end(end), grain(grain) {}
+	static_partitioner_impl(Iter begin_, Iter end_, std::size_t grain_)
+		: iter_begin(begin_), iter_end(end_), grain(grain_) {}
 	Iter begin() const
 	{
 		return iter_begin;
@@ -2702,8 +2702,8 @@ class auto_partitioner_impl {
 
 public:
 	// thread_id is initialized to "no thread" and will be set on first split
-	auto_partitioner_impl(Iter begin, Iter end, std::size_t grain)
-		: iter_begin(begin), iter_end(end), grain(grain) {}
+	auto_partitioner_impl(Iter begin_, Iter end_, std::size_t grain_)
+		: iter_begin(begin_), iter_end(end_), grain(grain_) {}
 	Iter begin() const
 	{
 		return iter_begin;
