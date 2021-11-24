@@ -5595,12 +5595,12 @@ draw_as_face_sprite:
         int32_t bot = mulscale11(p1.x-p2.x,xdimen) + mulscale2(sx1-halfxdimen,botinc);
 
         j = sx2+3;
-        z = mulscale20(top,krecipasm(bot));
+        z = divscale10(top,bot);
         lwall[sx1] = (z>>8);
         for (x=sx1+4; x<=j; x+=4)
         {
             top += topinc; bot += botinc;
-            zz = z; z = mulscale20(top,krecipasm(bot));
+            zz = z; z = divscale10(top, bot);
             i = ((z+zz)>>1);
             lwall[x-3] = ((i+zz)>>9);
             lwall[x-2] = (i>>8);
