@@ -184,7 +184,6 @@ typedef struct      s_prrograminfo {
                                                    PR_HIGHPALOOKUP_DIM)
 
 typedef struct      s_prprogrambit {
-    int32_t         bit;
     const char*           vert_def;
     const char*           vert_prog;
     const char*           frag_def;
