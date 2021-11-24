@@ -473,8 +473,8 @@ endif
 COMMONFLAGS :=
 COMPILERFLAGS := -funsigned-char
 
-CSTD := -std=gnu99
-CXXSTD := -std=gnu++11
+CSTD := -std=gnu11
+CXXSTD := -std=gnu++14
 ifneq (0,$(CLANG))
     CSTD := $(subst gnu,c,$(CSTD))
     CXXSTD := $(subst gnu,c,$(CXXSTD))
