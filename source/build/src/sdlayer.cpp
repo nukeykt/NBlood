@@ -824,7 +824,6 @@ int debugprintf(const char *f, ...)
 static SDL_Joystick *joydev = NULL;
 #if SDL_MAJOR_VERSION >= 2
 static SDL_GameController *controller = NULL;
-static SDL_Haptic *haptic = NULL;
 
 static void LoadSDLControllerDB()
 {
@@ -878,14 +877,9 @@ static int numjoysticks;
 
 void joyScanDevices()
 {
-    inputdevices &= ~(DEV_JOYSTICK | DEV_HAPTIC);
+    inputdevices &= ~DEV_JOYSTICK;
 
 #if SDL_MAJOR_VERSION >= 2
-    if (haptic)
-    {
-        SDL_HapticClose(haptic);
-        haptic = nullptr;
-    }
     if (controller)
     {
         SDL_GameControllerClose(controller);
@@ -922,15 +916,6 @@ void joyScanDevices()
             buildprintf("  %d. %s\n", i + 1, name);
         }
 #if SDL_MAJOR_VERSION >= 2
-        int const numhaptics = SDL_NumHaptics();
-        if (numhaptics > 0)
-        {
-            buildprintf("Haptic devices:\n");
-            for (int i = 0; i < numhaptics; i++)
-                buildprintf("  %d. %s\n", i+1, SDL_HapticName(i));
-        }
-#endif
-#if SDL_MAJOR_VERSION >= 2
         for (int i = 0; i < numjoysticks; i++)
         {
             if ((controller = SDL_GameControllerOpen(i)))
@@ -944,6 +929,7 @@ void joyScanDevices()
 
                 buildprintf("Using controller: %s\n", name);
 
+                joystick.flags      = 0;
                 joystick.numBalls   = 0;
                 joystick.numHats    = 0;
                 joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
@@ -976,9 +962,8 @@ void joyScanDevices()
 
                 inputdevices |= DEV_JOYSTICK;
 
-                auto joy = SDL_GameControllerGetJoystick(controller);
-                if ((haptic = SDL_HapticOpenFromJoystick(joy)) || !SDL_GameControllerRumble(controller, 0xffff, 0xffff, 200))
-                    inputdevices |= DEV_HAPTIC;
+                if (!SDL_GameControllerRumble(controller, 0xc000, 0xc000, 10))
+                    joystick.hasRumble = 1;
                 else buildprintf("%s\n", SDL_GetError());
 
                 return;
@@ -993,6 +978,7 @@ void joyScanDevices()
                 buildprintf("Using joystick: %s\n", SDL_JoystickNameForIndex(i));
 
                 // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
+                joystick.flags      = 0;
                 joystick.numAxes    = min(9, SDL_JoystickNumAxes(joydev));
                 joystick.numBalls   = SDL_JoystickNumBalls(joydev);
                 joystick.numButtons = min(32, SDL_JoystickNumButtons(joydev));
@@ -1023,8 +1009,8 @@ void joyScanDevices()
                 inputdevices |= DEV_JOYSTICK;
 
 #if SDL_MAJOR_VERSION >= 2
-                if ((haptic = SDL_HapticOpenFromJoystick(joydev)) || !SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
-                    inputdevices |= DEV_HAPTIC;
+                if (!SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
+                    joystick.hasRumble = 1;
                 else buildprintf("%s\n", SDL_GetError());
 #endif
                 return;
@@ -1091,8 +1077,17 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
         joyScanDevices();
     }
 
-    if (inputdevices & DEV_HAPTIC)
-        buildprintf("Controller rumble enabled\n");
+    if (joystick.flags & JOY_RUMBLE)
+    {
+        initputs("Controller supports ");
+
+        switch (joystick.flags & JOY_RUMBLE)
+        {
+        case JOY_RUMBLE:
+            initputs("rumble.\n");
+            break;
+        }
+    }
 
     return 0;
 }
@@ -1105,12 +1100,6 @@ void uninitinput(void)
     mouseUninit();
 
 #if SDL_MAJOR_VERSION >= 2
-    if (haptic)
-    {
-        SDL_HapticClose(haptic);
-        haptic = nullptr;
-    }
-
     if (controller)
     {
         SDL_GameControllerClose(controller);
@@ -2550,6 +2539,14 @@ int32_t handleevents(void)
 #endif
 
     int32_t rv;
+
+    if (joystick.hasRumble)
+    {
+        if (joystick.rumbleLow || joystick.rumbleHigh)
+            SDL_GameControllerRumble(controller, joystick.rumbleLow, joystick.rumbleHigh, joystick.rumbleTime);
+
+        joystick.rumbleTime = joystick.rumbleLow = joystick.rumbleHigh = 0;
+    }
 
     if (g_mouseBits & 2 && osd->flags & OSD_CAPTURE && SDL_HasClipboardText())
     {

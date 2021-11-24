@@ -160,7 +160,6 @@ extern char inputdevices;
 #define DEV_KEYBOARD 0x1
 #define DEV_MOUSE    0x2
 #define DEV_JOYSTICK 0x4
-#define DEV_HAPTIC   0x8
 
 // keys
 #define NUMKEYS 256
@@ -225,9 +224,26 @@ typedef struct
     int32_t  numBalls;
     int32_t  numButtons;
     int32_t  numHats;
-    int32_t  isGameController;
     uint32_t validButtons;
+    uint16_t rumbleLow;
+    uint16_t rumbleHigh;
+    uint16_t rumbleTime;
+    union
+    {
+        uint8_t flags;
+        struct
+        {
+            int isGameController : 1;
+            int hasRumble        : 1;
+        };
+    };
 } controllerinput_t;
+
+enum
+{
+    JOY_CONTROLLER = 0x1,
+    JOY_RUMBLE     = 0x2,
+};
 
 extern controllerinput_t joystick;
 
