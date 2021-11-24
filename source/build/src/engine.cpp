@@ -5590,7 +5590,7 @@ draw_as_face_sprite:
             return;
 
         const int32_t topinc = -mulscale10(p1.y,xspan);
-        int32_t top = ((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y))*xspan)>>3;
+        int32_t top = mulscale3((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y)), xspan);
         const int32_t botinc = (p2.y-p1.y)>>8;
         int32_t bot = mulscale11(p1.x-p2.x,xdimen) + mulscale2(sx1-halfxdimen,botinc);
 
