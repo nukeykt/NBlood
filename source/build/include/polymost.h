@@ -336,8 +336,8 @@ static FORCE_INLINE bool polymost_testintersection(vec3_t const &pos, vec2_t con
         || polymost_lintersect(pos.x - v.x, pos.y - v.y, pos.x + v.x, pos.y + v.y, wall[wallnum].x, wall[wallnum].y, POINT2(wallnum).x, POINT2(wallnum).y);
 }
 
-extern void polymost_setupglowtexture(int32_t texunits, int32_t tex);
-extern void polymost_setupdetailtexture(int32_t texunits, int32_t tex);
+extern void polymost_setupglowtexture(const int32_t texunit, const int32_t glpic, const int32_t flags);
+extern void polymost_setupdetailtexture(const int32_t texunit, const int32_t glpic, const int32_t flags);
 
 #endif
 

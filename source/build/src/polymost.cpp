@@ -2604,29 +2604,35 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
 }
 
 #ifdef USE_GLEXT
-void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
+void polymost_setupdetailtexture(const int32_t texunit, const int32_t glpic, const int32_t flags)
 {
-    buildgl_activeTexture(texunits);
+    buildgl_activeTexture(texunit);
+    buildgl_bindTexture(GL_TEXTURE_2D, glpic);
 
-    buildgl_bindTexture(GL_TEXTURE_2D, tex);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else buildgl_bindSamplerObject(texunit - GL_TEXTURE0, flags);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glClientActiveTexture(texunits);
+    glClientActiveTexture(texunit);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
-void polymost_setupglowtexture(const int32_t texunits, const int32_t tex)
+void polymost_setupglowtexture(const int32_t texunit, const int32_t glpic, const int32_t flags)
 {
-    buildgl_activeTexture(texunits);
+    buildgl_activeTexture(texunit);
+    buildgl_bindTexture(GL_TEXTURE_2D, glpic);
 
-    buildgl_bindTexture(GL_TEXTURE_2D, tex);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else buildgl_bindSamplerObject(texunit - GL_TEXTURE0, flags);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glClientActiveTexture(texunits);
+    glClientActiveTexture(texunit);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 #endif
@@ -3210,8 +3216,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         {
             polymost_useDetailMapping(true);
             int const unit = videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE3 : ++texunits;
-            polymost_setupdetailtexture(unit, detailpth->glpic);
-            buildgl_bindSamplerObject(unit, detailpth->flags);
+            polymost_setupdetailtexture(unit, detailpth->glpic, detailpth->flags);
             glMatrixMode(GL_TEXTURE);
             glLoadIdentity();
 
@@ -3222,7 +3227,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
                 glScalef(detailpth->hicr->scale.x, detailpth->hicr->scale.y, 1.0f);
 
             glMatrixMode(GL_MODELVIEW);
-            buildgl_activeTexture(GL_TEXTURE0);
         }
     }
 
@@ -3237,11 +3241,11 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         {
             polymost_useGlowMapping(true);
             int const unit = videoGetRenderMode() == REND_POLYMOST ? GL_TEXTURE4 : ++texunits;
-            polymost_setupglowtexture(unit, glowpth->glpic);
-            buildgl_bindSamplerObject(unit, glowpth->flags);
-            buildgl_activeTexture(GL_TEXTURE0);
+            polymost_setupglowtexture(unit, glowpth->glpic, glowpth->flags);
         }
     }
+
+    buildgl_activeTexture(GL_TEXTURE0);
 
     if (glinfo.texnpot && r_npotwallmode == 2 && (method & DAMETH_WALL) != 0 && !(picanm[globalpicnum].tileflags & TILEFLAGS_TRUENPOT))
     {
@@ -3526,7 +3530,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         drawpolyVertsOffset += npoints;
     }
 
-#ifdef USE_GLEXT
     if (videoGetRenderMode() != REND_POLYMOST)
     {
         while (texunits > GL_TEXTURE0)
@@ -3543,25 +3546,37 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
             --texunits;
         }
+
+        if (!waloff[globalpicnum])
+            glColorMask(true, true, true, true);
+
+        return;
     }
 
     polymost_useDetailMapping(false);
     polymost_useGlowMapping(false);
     polymost_npotEmulation(false, 1.f, 0.f);
-#endif
+
     if (pth->hicr)
     {
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
-    }
 
-    if (videoGetRenderMode() != REND_POLYMOST)
-    {
-        if (!waloff[globalpicnum])
-            glColorMask(true, true, true, true);
+        // necessary?
+        if (r_detailmapping)
+        {
+            glClientActiveTexture(GL_TEXTURE3);
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        }
 
-        return;
+        if (r_glowmapping)
+        {
+            glClientActiveTexture(GL_TEXTURE4);
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        }
+
+        glClientActiveTexture(GL_TEXTURE0);
     }
 
     if (!(pth->flags & PTH_INDEXED))

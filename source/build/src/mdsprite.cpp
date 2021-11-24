@@ -793,12 +793,10 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
 
     int32_t const filter = (sk->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : gltexfiltermode;
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,glfiltermodes[filter].mag);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,glfiltermodes[filter].min);
-#ifdef USE_GLEXT
-    if (glinfo.maxanisotropy > 1.0)
-        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_ANISOTROPY_EXT,glanisotropy);
-#endif
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_ANISOTROPY_EXT,glanisotropy);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
@@ -2287,15 +2285,10 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             if (i)
             {
                 polymost_useDetailMapping(true);
-                polymost_setupdetailtexture(GL_TEXTURE3, i);
 
                 auto sk = mdgetskinmap(m, DETAILPAL, skinNum, surfi);
-
-                if (sk)
-                {
-                    f = sk->param;
-                    buildgl_bindSamplerObject(GL_TEXTURE3, (sk->flags & HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
-                }
+                f = sk->param;
+                polymost_setupdetailtexture(GL_TEXTURE3, i, (sk->flags& HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
 
                 glMatrixMode(GL_TEXTURE);
                 glLoadIdentity();
@@ -2308,13 +2301,9 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
             if (i)
             {
-                auto sk = mdgetskinmap(m, GLOWPAL, skinNum, surfi);
-
-                if (sk)
-                    buildgl_bindSamplerObject(GL_TEXTURE4, (sk->flags& HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
-
                 polymost_useGlowMapping(true);
-                polymost_setupglowtexture(GL_TEXTURE4, i);
+                auto sk = mdgetskinmap(m, GLOWPAL, skinNum, surfi);
+                polymost_setupglowtexture(GL_TEXTURE4, i, (sk->flags& HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
                 glMatrixMode(GL_TEXTURE);
                 glLoadIdentity();
                 glTranslatef(xpanning, ypanning, 1.0f);
