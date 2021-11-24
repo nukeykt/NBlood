@@ -9172,23 +9172,24 @@ int A_CheckSwitchTile(int spriteNum)
 void G_RefreshLights(void)
 {
 #ifdef POLYMER
-    if (Numsprites && videoGetRenderMode() == REND_POLYMER)
+    if (!Numsprites || videoGetRenderMode() != REND_POLYMER)
+        return;
+
+    int statNum = 0;
+    do
     {
-        int statNum = 0;
-
-        do
-        {
-            int spriteNum = headspritestat[statNum++];
-
-            while (spriteNum >= 0)
-            {
-                A_DoLight(spriteNum);
-                spriteNum = nextspritestat[spriteNum];
-            }
-        }
-        while (statNum < MAXSTATUS);
+        for (int SPRITES_OF(statNum++, spriteNum))
+            A_DoLight(spriteNum);
     }
+    while (statNum < MAXSTATUS);
 #endif
+}
+
+// Remainder of G_RecordOldSpritePos()
+static FORCE_INLINE void G_RecordOldSpritePosForStatnum(int const statNum)
+{
+    for (int SPRITES_OF(statNum, spriteNum))
+        actor[spriteNum].bpos = sprite[spriteNum].xyz;
 }
 
 static void G_RecordOldSpritePos(void)
@@ -9203,63 +9204,31 @@ static void G_RecordOldSpritePos(void)
             continue;
         }
 
-        int spriteNum = headspritestat[statNum++];
-
-        while (spriteNum >= 0)
-        {
-            int const nextSprite = nextspritestat[spriteNum];
-            actor[spriteNum].bpos = sprite[spriteNum].xyz;
-
-            spriteNum = nextSprite;
-        }
+        G_RecordOldSpritePosForStatnum(statNum++);
     }
     while (statNum < MAXSTATUS);
 }
 
-// Remainder of G_RecordOldSpritePos()
-static void G_RecordOldPlayerPos(void)
-{
-    int spriteNum = headspritestat[STAT_PLAYER];
-
-    while (spriteNum >= 0)
-    {
-        int const nextSprite = nextspritestat[spriteNum];
-        actor[spriteNum].bpos = sprite[spriteNum].xyz;
-
-        spriteNum = nextSprite;
-    }
-}
-
 static void G_DoEventGame(int const nEventID)
 {
-    if (VM_HaveEvent(nEventID))
+    if (!VM_HaveEvent(nEventID))
+        return;
+
+    int statNum = 0;
+    do
     {
-        int statNum = 0;
-
-        do
+        for (int nextSprite, SPRITES_OF_STAT_SAFE(statNum++, spriteNum, nextSprite))
         {
-            int spriteNum = headspritestat[statNum++];
+            if (A_CheckSpriteFlags(spriteNum, SFLAG_NOEVENTCODE))
+                continue;
 
-            while (spriteNum >= 0)
-            {
-                int const nextSprite = nextspritestat[spriteNum];
-
-                if (A_CheckSpriteFlags(spriteNum, SFLAG_NOEVENTCODE))
-                {
-                    spriteNum = nextSprite;
-                    continue;
-                }
-
-                int32_t   playerDist;
-                int const playerNum = A_FindPlayer(&sprite[spriteNum], &playerDist);
-                VM_ExecuteEvent(nEventID, spriteNum, playerNum, playerDist);
-                spriteNum = nextSprite;
-
-                dukeMaybeDrawFrame();
-            }
+            int32_t   playerDist;
+            int const playerNum = A_FindPlayer(&sprite[spriteNum], &playerDist);
+            VM_ExecuteEvent(nEventID, spriteNum, playerNum, playerDist);
+            dukeMaybeDrawFrame();
         }
-        while (statNum < MAXSTATUS);
     }
+    while (statNum < MAXSTATUS);
 }
 
 void G_MoveWorld(void)
@@ -9296,7 +9265,7 @@ void G_MoveWorld(void)
     }
 
     // Must be called here to fix a problem where SE7 Transports and Touchplates do not activate concurrently
-    G_RecordOldPlayerPos();
+    G_RecordOldSpritePosForStatnum(STAT_PLAYER);
 
     {
         MICROPROFILE_SCOPEI("MoveWorld", "MoveFallers", MP_YELLOW2);
