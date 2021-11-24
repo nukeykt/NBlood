@@ -1176,7 +1176,7 @@ ACTOR_STATIC void G_MoveZombieActors(void)
                             case TRIPBOMB__:
                                 if (!FURY)
                                 {
-                                    pSprite->shade = ((sector[pSprite->sectnum].ceilingstat & 1) && A_CheckSpriteFlags(spriteNum, SFLAG_NOSHADE) == 0)
+                                    pSprite->shade = ((sector[pSprite->sectnum].ceilingstat & 1) && !A_CheckSpriteFlags(spriteNum, SFLAG_NOSHADE))
                                                      ? sector[pSprite->sectnum].ceilingshade
                                                      : sector[pSprite->sectnum].floorshade;
                                     actor[spriteNum].timetosleep = 0;
@@ -1209,7 +1209,7 @@ ACTOR_STATIC void G_MoveZombieActors(void)
                 }
             }
 
-            if (A_CheckEnemySprite(pSprite) && A_CheckSpriteFlags(spriteNum,SFLAG_NOSHADE) == 0)
+            if (A_CheckEnemySprite(pSprite) && !A_CheckSpriteFlags(spriteNum,SFLAG_NOSHADE))
             {
                 pSprite->shade = (sector[pSprite->sectnum].ceilingstat & 1)
                                 ? sector[pSprite->sectnum].ceilingshade
@@ -6979,7 +6979,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
             for (bssize_t SPRITES_OF_SECT(SECT(spriteNum), sectSprite))
             {
-                if (sprite[sectSprite].cstat&16 && A_CheckSpriteFlags(sectSprite,SFLAG_NOSHADE) == 0)
+                if (sprite[sectSprite].cstat&16 && !A_CheckSpriteFlags(sectSprite,SFLAG_NOSHADE))
                     sprite[sectSprite].shade = (pSector->ceilingstat & 1) ? pSector->ceilingshade : pSector->floorshade;
             }
 
@@ -7355,7 +7355,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                 for (SPRITES_OF_SECT(SECT(spriteNum), j))
                 {
-                    if ((sprite[j].cstat & 16) && (A_CheckSpriteFlags(j, SFLAG_NOSHADE) == 0))
+                    if ((sprite[j].cstat & 16) && !A_CheckSpriteFlags(j, SFLAG_NOSHADE))
                         sprite[j].shade = (pSector->ceilingstat & 1) ? pSector->ceilingshade : pSector->floorshade;
                 }
 
@@ -7387,7 +7387,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                 for (SPRITES_OF_SECT(SECT(spriteNum), j))
                 {
-                    if ((sprite[j].cstat & 16) && (A_CheckSpriteFlags(j, SFLAG_NOSHADE) == 0))
+                    if ((sprite[j].cstat & 16) && !A_CheckSpriteFlags(j, SFLAG_NOSHADE))
                         sprite[j].shade = (pSector->ceilingstat & 1) ? pSector->ceilingshade : pSector->floorshade;
                 }
             }
