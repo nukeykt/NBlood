@@ -2299,7 +2299,130 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
     }
 }
 
-int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp *hicr,
+int gloadtile_willprint;
+
+coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, char *const onebitalpha, polytintflags_t effect,
+                                     int32_t dapalnum, char *const al)
+{
+    int32_t isart = 0;
+    int32_t const length = kpzbufload(fn);
+    if (length == 0)
+        return nullptr;
+
+    // tsizx/y = replacement texture's natural size
+    // xsiz/y = 2^x size of replacement
+
+#ifdef WITHKPLIB
+    kpgetdim(kpzbuf, picfillen, &tsiz->x, &tsiz->y);
+#endif
+
+    if (tsiz->x == 0 || tsiz->y == 0)
+    {
+        if (artCheckUnitFileHeader((uint8_t*)kpzbuf, picfillen))
+            return nullptr;
+
+        *tsiz = { B_LITTLE16(B_UNBUF16(&kpzbuf[16])), B_LITTLE16(B_UNBUF16(&kpzbuf[18])) };
+
+        if (tsiz->x == 0 || tsiz->y == 0)
+            return nullptr;
+
+        isart = 1;
+    }
+
+    if (!glinfo.texnpot)
+    {
+        for (siz->x = 1; siz->x < tsiz->x; siz->x += siz->x) {}
+        for (siz->y = 1; siz->y < tsiz->y; siz->y += siz->y) {}
+    }
+    else
+        *siz = *tsiz;
+
+    if (isart)
+    {
+        if (tsiz->x * tsiz->y + ARTv1_UNITOFFSET > picfillen)
+            return nullptr;// -2;
+    }
+
+    int32_t const bytesperline = siz->x * sizeof(coltype);
+    coltype* pic = (coltype*)Xcalloc(siz->y, bytesperline);
+
+    static coltype* lastpic = NULL;
+    static char* lastfn = NULL;
+    static int32_t lastsize = 0;
+
+    if (lastpic && lastfn && !Bstrcmp(lastfn, fn))
+    {
+        gloadtile_willprint = 1;
+        Bmemcpy(pic, lastpic, siz->x * siz->y * sizeof(coltype));
+    }
+    else
+    {
+        if (isart)
+        {
+            artConvertRGB((palette_t*)pic, (uint8_t*)&kpzbuf[ARTv1_UNITOFFSET], siz->x, tsiz->x, tsiz->y);
+        }
+#ifdef WITHKPLIB
+        else
+        {
+            if (kprender(kpzbuf, picfillen, (intptr_t)pic, bytesperline, siz->x, siz->y))
+            {
+                Xfree(pic);
+                return nullptr;// -2;
+            }
+        }
+#endif
+
+        gloadtile_willprint = 2;
+
+        if (hicprecaching)
+        {
+            lastfn = fn;  // careful...
+            if (!lastpic)
+            {
+                lastpic = (coltype*)Xmalloc(siz->x * siz->y * sizeof(coltype));
+                lastsize = siz->x * siz->y;
+            }
+            else if (lastsize < siz->x * siz->y)
+            {
+                Xfree(lastpic);
+                lastpic = (coltype*)Xmalloc(siz->x * siz->y * sizeof(coltype));
+            }
+            if (lastpic)
+                Bmemcpy(lastpic, pic, siz->x * siz->y * sizeof(coltype));
+        }
+        else if (lastpic)
+        {
+            DO_FREE_AND_NULL(lastpic);
+            lastfn = NULL;
+            lastsize = 0;
+        }
+    }
+
+    char* cptr = britable[gammabrightness ? 0 : curbrightness];
+
+    for (bssize_t y = 0, j = 0; y < tsiz->y; ++y, j += siz->x)
+    {
+        coltype tcol, * rpptr = &pic[j];
+
+        for (bssize_t x = 0; x < tsiz->x; ++x)
+        {
+            tcol.b = cptr[rpptr[x].b];
+            tcol.g = cptr[rpptr[x].g];
+            tcol.r = cptr[rpptr[x].r];
+            *al &= tcol.a = rpptr[x].a;
+            *onebitalpha &= tcol.a == 0 || tcol.a == 255;
+
+            if (effect)
+                hictinting_applypixcolor(&tcol, dapalnum, false);
+
+            rpptr[x] = tcol;
+        }
+    }
+
+    return pic;
+}
+
+int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp* hicr,
                             int32_t dameth, pthtyp *pth, int32_t doalloc, polytintflags_t effect)
 {
     if (!hicr) return -1;
@@ -2331,7 +2454,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
     int32_t picfillen = kfilelength(filh);
     kclose(filh);	// FIXME: shouldn't have to do this. bug in cache1d.c
 
-    int32_t startticks = timerGetTicks(), willprint = 0;
+    int32_t startticks = timerGetTicks(), gloadtile_willprint = 0;
 
     char onebitalpha = 1;
     char hasalpha;
@@ -2349,125 +2472,10 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
     else
     {
         // CODEDUP: mdloadskin
-
-        int32_t isart = 0;
-
         gotcache = 0;	// the compressed version will be saved to disk
-
-        int32_t const length = kpzbufload(fn);
-        if (length == 0)
-            return -1;
-
-        // tsizx/y = replacement texture's natural size
-        // xsiz/y = 2^x size of replacement
-
-#ifdef WITHKPLIB
-        kpgetdim(kpzbuf,picfillen,&tsiz.x,&tsiz.y);
-#endif
-
-        if (tsiz.x == 0 || tsiz.y == 0)
-        {
-            if (artCheckUnitFileHeader((uint8_t *)kpzbuf, picfillen))
-                return -1;
-
-            tsiz = { B_LITTLE16(B_UNBUF16(&kpzbuf[16])), B_LITTLE16(B_UNBUF16(&kpzbuf[18])) };
-
-            if (tsiz.x == 0 || tsiz.y == 0)
-                return -1;
-
-            isart = 1;
-        }
-
-        if (!glinfo.texnpot)
-        {
-            for (siz.x=1; siz.x<tsiz.x; siz.x+=siz.x) { }
-            for (siz.y=1; siz.y<tsiz.y; siz.y+=siz.y) { }
-        }
-        else
-            siz = tsiz;
-
-        if (isart)
-        {
-            if (tsiz.x * tsiz.y + ARTv1_UNITOFFSET > picfillen)
-                return -2;
-        }
-
-        int32_t const bytesperline = siz.x * sizeof(coltype);
-        coltype *pic = (coltype *)Xcalloc(siz.y, bytesperline);
-
-        static coltype *lastpic = NULL;
-        static char *lastfn = NULL;
-        static int32_t lastsize = 0;
-
-        if (lastpic && lastfn && !Bstrcmp(lastfn,fn))
-        {
-            willprint=1;
-            Bmemcpy(pic, lastpic, siz.x*siz.y*sizeof(coltype));
-        }
-        else
-        {
-            if (isart)
-            {
-                artConvertRGB((palette_t *)pic, (uint8_t *)&kpzbuf[ARTv1_UNITOFFSET], siz.x, tsiz.x, tsiz.y);
-            }
-#ifdef WITHKPLIB
-            else
-            {
-                if (kprender(kpzbuf,picfillen,(intptr_t)pic,bytesperline,siz.x,siz.y))
-                {
-                    Xfree(pic);
-                    return -2;
-                }
-            }
-#endif
-
-            willprint=2;
-
-            if (hicprecaching)
-            {
-                lastfn = fn;  // careful...
-                if (!lastpic)
-                {
-                    lastpic = (coltype *)Xmalloc(siz.x*siz.y*sizeof(coltype));
-                    lastsize = siz.x*siz.y;
-                }
-                else if (lastsize < siz.x*siz.y)
-                {
-                    Xfree(lastpic);
-                    lastpic = (coltype *)Xmalloc(siz.x*siz.y*sizeof(coltype));
-                }
-                if (lastpic)
-                    Bmemcpy(lastpic, pic, siz.x*siz.y*sizeof(coltype));
-            }
-            else if (lastpic)
-            {
-                DO_FREE_AND_NULL(lastpic);
-                lastfn = NULL;
-                lastsize = 0;
-            }
-        }
-
-        char *cptr = britable[gammabrightness ? 0 : curbrightness];
         char al = 255;
-
-        for (bssize_t y = 0, j = 0; y < tsiz.y; ++y, j += siz.x)
-        {
-            coltype tcol, *rpptr = &pic[j];
-
-            for (bssize_t x = 0; x < tsiz.x; ++x)
-            {
-                tcol.b = cptr[rpptr[x].b];
-                tcol.g = cptr[rpptr[x].g];
-                tcol.r = cptr[rpptr[x].r];
-                al &= tcol.a = rpptr[x].a;
-                onebitalpha &= tcol.a == 0 || tcol.a == 255;
-
-                if(effect)
-                    hictinting_applypixcolor(&tcol, dapalnum, false);
-
-                rpptr[x] = tcol;
-            }
-        }
+        auto pic = gloadtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, effect, dapalnum, &al);
+        if (!pic) return -1;
 
         hasalpha = (al != 255);
         onebitalpha &= hasalpha;
@@ -2571,25 +2579,25 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
         ///            OSD_Printf("Caching \"%s\"\n", fn);
         texcache_writetex_fromdriver(texcacheid, &cachead);
 
-        if (willprint)
+        if (gloadtile_willprint)
         {
             int32_t etime = timerGetTicks() - startticks;
             if (etime >= MIN_CACHETIME_PRINT)
                 OSD_Printf("Load tile %4d: p%d-m%d-e%d %s... cached... %d ms\n", dapic, dapalnum, dameth, effect,
-                           willprint == 2 ? fn : "", etime);
-            willprint = 0;
+                            gloadtile_willprint == 2 ? fn : "", etime);
+            gloadtile_willprint = 0;
         }
         else
             OSD_Printf("Cached \"%s\"\n", fn);
     }
 #endif
 
-    if (willprint)
+    if (gloadtile_willprint)
     {
         int32_t etime = timerGetTicks()-startticks;
         if (etime>=MIN_CACHETIME_PRINT)
             OSD_Printf("Load tile %4d: p%d-m%d-e%d %s... %d ms\n", dapic, dapalnum, dameth, effect,
-                       willprint==2 ? fn : "", etime);
+                        gloadtile_willprint ==2 ? fn : "", etime);
     }
 
     return 0;

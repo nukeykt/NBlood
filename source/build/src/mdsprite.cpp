@@ -716,128 +716,13 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
     else
     {
         // CODEDUP: gloadtile_hi
-
-        int32_t isart = 0;
-
         gotcache = 0;	// the compressed version will be saved to disk
-
-        int32_t const length = kpzbufload(fn);
-        if (length == 0)
-            return mdloadskin_notfound(skinfile, fn);
-
-        // tsizx/y = replacement texture's natural size
-        // xsiz/y = 2^x size of replacement
-
-#ifdef WITHKPLIB
-        kpgetdim(kpzbuf,picfillen,&tsiz.x,&tsiz.y);
-#endif
-
-        if (tsiz.x == 0 || tsiz.y == 0)
-        {
-            if (artCheckUnitFileHeader((uint8_t *)kpzbuf, picfillen))
-                return mdloadskin_failed(skinfile, fn);
-
-            tsiz.x = B_LITTLE16(B_UNBUF16(&kpzbuf[16]));
-            tsiz.y = B_LITTLE16(B_UNBUF16(&kpzbuf[18]));
-
-            if (tsiz.x == 0 || tsiz.y == 0)
-                return mdloadskin_failed(skinfile, fn);
-
-            isart = 1;
-        }
-
-        if (!glinfo.texnpot)
-        {
-            for (siz.x=1; siz.x<tsiz.x; siz.x+=siz.x) { }
-            for (siz.y=1; siz.y<tsiz.y; siz.y+=siz.y) { }
-        }
-        else
-            siz = tsiz;
-
-        if (isart)
-        {
-            if (tsiz.x * tsiz.y + ARTv1_UNITOFFSET > picfillen)
-                return mdloadskin_failed(skinfile, fn);
-        }
-
-        int32_t const bytesperline = siz.x * sizeof(coltype);
-        coltype *pic = (coltype *)Xcalloc(siz.y, bytesperline);
-
-        static coltype *lastpic = NULL;
-        static char *lastfn = NULL;
-        static int32_t lastsize = 0;
-
-        if (lastpic && lastfn && !Bstrcmp(lastfn,fn))
-        {
-            willprint=1;
-            Bmemcpy(pic, lastpic, siz.x*siz.y*sizeof(coltype));
-        }
-        else
-        {
-            if (isart)
-            {
-                artConvertRGB((palette_t *)pic, (uint8_t *)&kpzbuf[ARTv1_UNITOFFSET], siz.x, tsiz.x, tsiz.y);
-            }
-#ifdef WITHKPLIB
-            else
-            {
-                if (kprender(kpzbuf,picfillen,(intptr_t)pic,bytesperline,siz.x,siz.y))
-                {
-                    Xfree(pic);
-                    return mdloadskin_failed(skinfile, fn);
-                }
-            }
-#endif
-
-            willprint=2;
-
-            if (hicprecaching)
-            {
-                lastfn = fn;  // careful...
-                if (!lastpic)
-                {
-                    lastpic = (coltype *)Xmalloc(siz.x*siz.y*sizeof(coltype));
-                    lastsize = siz.x*siz.y;
-                }
-                else if (lastsize < siz.x*siz.y)
-                {
-                    Xfree(lastpic);
-                    lastpic = (coltype *)Xmalloc(siz.x*siz.y*sizeof(coltype));
-                }
-                if (lastpic)
-                    Bmemcpy(lastpic, pic, siz.x*siz.y*sizeof(coltype));
-            }
-            else if (lastpic)
-            {
-                DO_FREE_AND_NULL(lastpic);
-                lastfn = NULL;
-                lastsize = 0;
-            }
-        }
-
-        char *cptr = britable[gammabrightness ? 0 : curbrightness];
 
         char al = 255;
         char onebitalpha = 1;
 
-        for (bssize_t y = 0, j = 0; y < tsiz.y; ++y, j += siz.x)
-        {
-            coltype tcol, *rpptr = &pic[j];
-
-            for (bssize_t x = 0; x < tsiz.x; ++x)
-            {
-                tcol.b = cptr[rpptr[x].b];
-                tcol.g = cptr[rpptr[x].g];
-                tcol.r = cptr[rpptr[x].r];
-                al &= tcol.a = rpptr[x].a;
-                onebitalpha &= tcol.a == 0 || tcol.a == 255;
-
-                hictinting_applypixcolor(&tcol, pal, false);
-
-                rpptr[x] = tcol;
-            }
-        }
-
+        auto pic = gloadtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, hicfxmask(pal), pal, &al);
+        if (!pic) return mdloadskin_failed(skinfile, fn);
         hasalpha = (al != 255);
 
         // mdloadskin doesn't duplicate npow2 texture pixels
