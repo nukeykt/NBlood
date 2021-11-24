@@ -11,6 +11,7 @@ ifeq ($(FURY),1)
     RETAIL_MENU := 1
     STANDALONE := 1
     USE_LIBVPX := 0
+    SDL_STATIC := 1
 endif
 
 ### Platform and Toolchain Configuration

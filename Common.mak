@@ -339,6 +339,7 @@ STARTUP_WINDOW ?= 1
 RETAIL_MENU ?= 0
 POLYMER ?= 1
 USE_OPENGL := 1
+SDL_STATIC ?= 0
 
 # Library toggles
 HAVE_GTK2 := 1
@@ -926,6 +927,12 @@ ifeq ($(RENDERTYPE),SDL)
         endif
     else
         ifneq ($(SDLCONFIG),)
+            ifneq ($(SDL_STATIC),0)
+                override SDLCONFIG_LIBS := -Wl,-Bstatic -l$(SDLNAME) -Wl,-Bdynamic $(strip $(subst -l$(SDLNAME),,$(shell $(SDLCONFIG) --static-libs)))
+                # for some reason SteamRT has a GCC with --enable-default-pie but its SDL2 has it disabled. WTF?
+                LINKERFLAGS += -no-pie
+            endif
+
             SDLCONFIG_CFLAGS := $(strip $(subst -Dmain=SDL_main,,$(shell $(SDLCONFIG) --cflags)))
             SDLCONFIG_LIBS := $(strip $(subst -mwindows,,$(shell $(SDLCONFIG) --libs)))
 
