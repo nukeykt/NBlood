@@ -1357,9 +1357,9 @@ static MenuEntry_t *MEL_SOUND_DEVSETUP[] = {
 #endif
     &ME_SOUND_OPL3STEREO,
     &ME_SOUND_SF2,
-#endif
 #ifdef FORMAT_UPGRADE_ELIGIBLE
     &ME_SOUND_EXTMUSIC,
+#endif
 #endif
     &ME_Space4_Redfont,
     &ME_SOUND_RESTART,
