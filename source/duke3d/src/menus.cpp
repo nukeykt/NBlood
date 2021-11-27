@@ -7678,7 +7678,7 @@ static void Menu_RunInput(Menu_t *cm)
                     {
                         seeker = menu->entrylist[(index + menu->currentEntry) % menu->numEntries];
 
-                        if (!seeker->name)
+                        if (!seeker || !seeker->name)
                             continue;
 
                         ch2 = seeker->name[0];
