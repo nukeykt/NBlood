@@ -212,7 +212,7 @@ static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projec
 
     if (playerNum != -1)
     {
-        if (!g_player[playerNum].ps->auto_aim && (!RRRA || projecTile != RPG2))
+        if (!g_player[playerNum].ps->auto_aim && (!RRRA || projecTile != RPG2) && (!REALITY || projecTile != DN64TILE2606))
             return -1;
 
         if (g_player[playerNum].ps->auto_aim == 2)
