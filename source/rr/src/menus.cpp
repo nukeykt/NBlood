@@ -4553,6 +4553,7 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
 #endif
 
     if (entry == &ME_GAMESETUP_AIM_AUTO ||
+        entry == &ME_GAMESETUP_AIM_AUTO_DN64 ||
         entry == &ME_GAMESETUP_WEAPSWITCH_PICKUP ||
         entry == &ME_PLAYER_NAME ||
         entry == &ME_PLAYER_COLOR ||
