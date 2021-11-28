@@ -658,7 +658,7 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     }
 
     if (doalloc) glGenTextures(1,(GLuint *)&pth->glpic); //# of textures (make OpenGL allocate structure)
-    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     // fixtransparency(pic,tsiz,siz,dameth);
 
@@ -947,7 +947,7 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     if (!pth)
         return;
 
-    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -1128,7 +1128,7 @@ void RT_SetTexture(int tilenum, int explosion = 0)
         method = 0;
     pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
     if (pth)
-        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     int clamp = 0;
 
@@ -2084,7 +2084,7 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
         return;
     
     RT_SetTexClamp(1+2);
-    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
     //rt_globalalpha = 128;
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     glBegin(GL_QUADS);
@@ -2171,7 +2171,7 @@ void RT_DrawSpriteFloor(void)
         return;
     
     RT_SetTexClamp(1+2);
-    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
 
@@ -2759,7 +2759,7 @@ void RT_DrawMaskWall(int wallnum)
         method = 0;
     pthtyp* pth = texcache_fetch(pn, 0, 0, method);
     if (pth)
-        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     int clamp = 0;
 
@@ -4021,7 +4021,7 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glEnable(GL_ALPHA_TEST);
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
@@ -4119,7 +4119,7 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
     glEnable(GL_ALPHA_TEST);
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
