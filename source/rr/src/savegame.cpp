@@ -2165,6 +2165,8 @@ static void postloadplayer(int32_t savegamep)
     for (i=0; i<MAXPLAYERS; i++)
         g_player[i].ps->drug_timer = 0;
 
+    calc_sector_reachability();
+
     G_InitRRRASkies();
 
     if (REALITY)

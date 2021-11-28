@@ -652,6 +652,8 @@ void RT_LoadBoard(int boardnum)
     yax_update(1);
 #endif
 
+    calc_sector_reachability();
+
     if (rt_sectvtx)
         Xfree(rt_sectvtx);
 
