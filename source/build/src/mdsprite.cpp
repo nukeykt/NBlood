@@ -2056,9 +2056,32 @@ static void md3draw_handle_triangles(const md3surf_t *s, uint16_t *indexhandle,
 
 static inline mdskinmap_t* mdgetskinmap(md3model_t* m, uint8_t pal, int number, int surface)
 {
-    for (mdskinmap_t* sk = m->skinmap; sk; sk = sk->next)
+    mdskinmap_t *sk, *skzero = NULL;
+
+    for (sk = m->skinmap; sk; sk = sk->next)
+    {
         if ((int32_t)sk->palette == pal && sk->skinnum == number && sk->surfnum == surface)
             return sk;
+    }
+
+    // Reserved pals (like detail/glow/spec maps) shouldn't fall back.
+    if (pal >= (MAXPALOOKUPS - RESERVEDPALS))
+        return NULL;
+
+    //If no match, give highest priority to number, then pal...
+    int priority = 0;
+    for (sk = m->skinmap; sk; sk = sk->next)
+    {
+        if ((sk->palette == 0) && (sk->skinnum == number) && (sk->surfnum == surface) && (priority < 5))    { priority = 5; skzero = sk; }
+        else if ((sk->palette == pal) && (sk->skinnum == 0) && (sk->surfnum == surface) && (priority < 4))  { priority = 4; skzero = sk; }
+        else if ((sk->palette == 0) && (sk->skinnum == 0) && (sk->surfnum == surface) && (priority < 3))    { priority = 3; skzero = sk; }
+        else if ((sk->palette == 0) && (sk->skinnum == number) && (priority < 2))                           { priority = 2; skzero = sk; }
+        else if ((sk->palette == pal) && (sk->skinnum == 0) && (priority < 1))                              { priority = 1; skzero = sk; }
+        else if ((sk->palette == 0) && (sk->skinnum == 0) && (priority < 0))                                { priority = 0; skzero = sk; }
+    }
+
+    if (skzero)
+        return skzero;
 
     return NULL;
 }
