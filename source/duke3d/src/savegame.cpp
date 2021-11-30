@@ -520,13 +520,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
                     mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
                                  sizeof(usermaphack_t), compare_usermaphacks);
 
-                // only setup art if map differs from previous
-                if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
-                {
-                    sv_loadMapart(mhkInfo, currentboardfilename);
-                    Bstrcpy(previousboardfilename, currentboardfilename);
-                }
-
+                sv_loadMapart(mhkInfo, currentboardfilename);
                 sv_loadMhk(mhkInfo, currentboardfilename);
             }
 
@@ -725,13 +719,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
             mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
                                  sizeof(usermaphack_t), compare_usermaphacks);
 
-        // only setup art if map differs from previous
-        if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
-        {
-            sv_loadMapart(mhkInfo, currentboardfilename);
-            Bstrcpy(previousboardfilename, currentboardfilename);
-        }
-
+        sv_loadMapart(mhkInfo, currentboardfilename);
         sv_loadMhk(mhkInfo, currentboardfilename);
     }
 
