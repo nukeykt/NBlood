@@ -94,6 +94,13 @@ void S_SoundStartup(void)
 #endif
     nullsound.voices = &nullvoice;
 
+    if (!g_sounds)
+    {
+        Bassert(g_highestSoundIdx == 0);
+        g_sounds = (sound_t **)Xmalloc(sizeof(intptr_t));
+        g_sounds[0] = &nullsound;
+    }
+
     for (int i = 0; i <= g_highestSoundIdx; ++i)
     {
         if (g_sounds[i] == &nullsound)
