@@ -1199,6 +1199,11 @@ static inline bool isaltok(const char c)
             c == '.');
 }
 
+static inline bool isdigterm(const char c)
+{
+    return (isspace(c) || c == '{' || c == '}' || c == '[' || c == ']' || c == '/' || c == ',' || c == ':' || c == '.' || c == ';' || c == '\0');
+}
+
 static inline bool C_IsLabelChar(const char c, int32_t const i)
 {
     return (isalnum(c) || c == '_' || c == '*' || c == '?' || (i > 0 && (c == '+' || c == '-')));
@@ -1234,6 +1239,12 @@ static void C_GetNextLabelName(void)
     }
 
     C_SkipComments();
+
+    if (isdigit(*textptr))
+    {
+        initprintf("%s:%d: warning: label starts with a digit!\n", g_scriptFileName, g_lineNumber);
+        g_warningCnt++;
+    }
 
 //    while (ispecial(*textptr) == 0 && *textptr!='['&& *textptr!=']' && *textptr!='\t' && *textptr!='\n' && *textptr!='\r')
     while (C_IsLabelChar(*textptr, i))
@@ -1352,7 +1363,8 @@ static int C_GetNextKeyword(void) //Returns its code #
 static int32_t parse_decimal_number(void)  // (textptr)
 {
     // decimal constants -- this is finicky business
-    int64_t num = strtoll(textptr, NULL, 10);  // assume long long to be int64_t
+    char* endptr;
+    int64_t num = strtoll(textptr, &endptr, 10);  // assume long long to be int64_t
 
     if (EDUKE32_PREDICT_TRUE(num >= INT32_MIN && num <= INT32_MAX))
     {
@@ -1378,11 +1390,36 @@ static int32_t parse_decimal_number(void)  // (textptr)
         g_warningCnt++;
     }
 
+    if (EDUKE32_PREDICT_FALSE(!isdigterm(*endptr)))
+    {
+        initprintf("%s:%d: warning: invalid character `%c' in decimal constant!\n",g_scriptFileName, g_lineNumber, *endptr);
+        g_warningCnt++;
+    }
+
     return (int32_t)num;
 }
 
 static int32_t parse_hex_constant(const char *hexnum)
 {
+    const char *vcheck = hexnum;
+    if (EDUKE32_PREDICT_FALSE(!isxdigit(*vcheck)))
+    {
+        g_errorCnt++;
+        initprintf("%s:%d: error: malformed hex constant.\n",g_scriptFileName,g_lineNumber);
+        return 0;
+    }
+
+    while (!isdigterm(*vcheck))
+    {
+        if (EDUKE32_PREDICT_FALSE(!isxdigit(*vcheck)))
+        {
+            initprintf("%s:%d: warning: invalid character `%c' in hex constant!\n",g_scriptFileName, g_lineNumber, *vcheck);
+            g_warningCnt++;
+            break;
+        }
+        ++vcheck;
+    }
+
     uint64_t x;
     sscanf(hexnum, "%" PRIx64 "", &x);
 
@@ -1789,21 +1826,6 @@ static int32_t C_GetNextValue(int32_t type)
         C_ReportError(WARNING_LABELSONLY);
         g_warningCnt++;
     }
-
-    i = l-1;
-    do
-    {
-        // FIXME: check for 0-9 A-F for hex
-        if (textptr[0] == '0' && textptr[1] == 'x') break; // kill the warning for hex
-        if (EDUKE32_PREDICT_FALSE(!isdigit(textptr[i--])))
-        {
-            C_ReportError(-1);
-            initprintf("%s:%d: warning: invalid character `%c' in definition!\n",g_scriptFileName,g_lineNumber,textptr[i+1]);
-            g_warningCnt++;
-            break;
-        }
-    }
-    while (i > 0);
 
     if (textptr[0] == '0' && tolower(textptr[1])=='x')
         scriptWriteValue(parse_hex_constant(textptr+2));
