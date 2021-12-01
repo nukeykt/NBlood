@@ -2432,7 +2432,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 glLoadIdentity();
                 glMatrixMode(GL_MODELVIEW);
                 glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
-                buildgl_setEnabled(GL_TEXTURE_2D);
+                buildgl_setDisabled(GL_TEXTURE_2D);
                 buildgl_activeTexture(--texunits);
             }
         } // r_vertexarrays
@@ -2445,7 +2445,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
     // if (m->usesalpha) glDisable(GL_ALPHA_TEST);
 
-    buildgl_setEnabled(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
 //    glPopAttrib();
 
     glMatrixMode(GL_TEXTURE);
