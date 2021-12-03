@@ -167,6 +167,7 @@ static GLint fogColorLoc = -1;
 #define PALSWAP_TEXTURE_SIZE 2048
 static GLuint tilesheetTexIDs[MAXTILESHEETS];
 static GLint tilesheetSize = 0;
+static float tilesheetSizeRecip;
 static vec2f_t tilesheetHalfTexelSize = { 0.f, 0.f };
 static int32_t lastbasepal = -1;
 static GLuint paletteTextureIDs[MAXBASEPALS];
@@ -871,10 +872,10 @@ static void polymost_bindPth(pthtyp const * const pPth)
              (tile.rect.width >= (uint32_t) tilesiz[pPth->picnum].y &&
               tile.rect.height >= (uint32_t) tilesiz[pPth->picnum].x)))
         {
-            texturePosSize = { tile.rect.u/(float) tilesheetSize,
-                               tile.rect.v/(float) tilesheetSize,
-                               tilesiz[pPth->picnum].y/(float) tilesheetSize,
-                               tilesiz[pPth->picnum].x/(float) tilesheetSize };
+            texturePosSize = { tile.rect.u*tilesheetSizeRecip,
+                               tile.rect.v*tilesheetSizeRecip,
+                               tilesiz[pPth->picnum].y*tilesheetSizeRecip,
+                               tilesiz[pPth->picnum].x*tilesheetSizeRecip };
             halfTexelSize = tilesheetHalfTexelSize;
         }
     }
@@ -958,6 +959,7 @@ void polymost_glinit()
     if (tilesheetSize > 8192)
         tilesheetSize = 8192;
 #endif
+    tilesheetSizeRecip = 1.f/tilesheetSize;
     tilesheetHalfTexelSize = { 0.5f/tilesheetSize, 0.5f/tilesheetSize };
 
     buildgl_resetSamplerObjects();
