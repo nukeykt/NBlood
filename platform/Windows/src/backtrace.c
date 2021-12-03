@@ -45,6 +45,10 @@
 # define EBACKTRACE64
 #endif
 
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+
 #include <bfd.h>
 #include <psapi.h>
 #include <stdlib.h>
@@ -620,6 +624,7 @@ int __printf__ ( const char * format, ... );
 int libintl_fprintf ( FILE * stream, const char * format, ... );
 int libintl_sprintf ( char * str, const char * format, ... );
 int libintl_snprintf ( char *buffer, int buf_size, const char *format, ... );
+int libintl_asprintf ( char ** strp, const char * format, ... );
 int libintl_vprintf ( const char * format, va_list arg );
 int libintl_vfprintf ( FILE * stream, const char * format, va_list arg );
 int libintl_vsprintf ( char * str, const char * format, va_list arg );
@@ -658,6 +663,15 @@ int libintl_snprintf ( char *buffer, int buf_size, const char *format, ... )
     va_list arg;
     va_start(arg, format);
     value = vsnprintf ( buffer, buf_size, format, arg );
+    va_end(arg);
+    return value;
+}
+int libintl_asprintf ( char ** strp, const char * format, ... )
+{
+    int value;
+    va_list arg;
+    va_start(arg, format);
+    value = vasprintf ( strp, format, arg );
     va_end(arg);
     return value;
 }
