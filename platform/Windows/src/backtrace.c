@@ -449,7 +449,7 @@ __declspec(dllexport) void SetTechnicalName(const char* input)
 }
 __declspec(dllexport) void SetProperName(const char* input)
 {
-    strncpy(propername, input, MAX_PATH);
+    strncpy(propername, input, MAX_PATH-1);
 }
 
 static char * g_output = NULL;
