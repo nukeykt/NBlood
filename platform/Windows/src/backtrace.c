@@ -502,13 +502,16 @@ exception_filter(LPEXCEPTION_POINTERS info)
     if (!initialized)
         return EXCEPTION_CONTINUE_SEARCH; // EXCEPTION_CONTINUE_EXECUTION
 
-    ExceptionPrinted = (char*)calloc(strlen(g_output) + 37 + 2*MAX_PATH, sizeof(char));
+    static char const s_exception1[] = "\nPlease send ";
+    static char const s_exception2[] = " to the maintainers of ";
+    static char const s_exception3[] = ".";
+    ExceptionPrinted = (char*)calloc(strlen(g_output) + sizeof(s_exception1)-1 + sizeof(s_exception2)-1 + sizeof(s_exception3)-1 + 2*MAX_PATH, sizeof(char));
     strcpy(ExceptionPrinted, g_output);
-    strcat(ExceptionPrinted, "\nPlease send ");
+    strcat(ExceptionPrinted, s_exception1);
     strcat(ExceptionPrinted, crashlogfilename);
-    strcat(ExceptionPrinted, " to the maintainers of ");
+    strcat(ExceptionPrinted, s_exception2);
     strcat(ExceptionPrinted, propername);
-    strcat(ExceptionPrinted, ".");
+    strcat(ExceptionPrinted, s_exception3);
 
     {
         DWORD error = 0;
