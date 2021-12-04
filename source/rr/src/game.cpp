@@ -8400,7 +8400,7 @@ int app_main(int argc, char const * const * argv)
     loaddefinitions_game(defsfile, FALSE);
 
     for (char * m : g_defModules)
-        free(m);
+        Xfree(m);
     g_defModules.clear();
 
     if (enginePostInit())
