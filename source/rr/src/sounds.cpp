@@ -642,8 +642,9 @@ sound_further_processing:
     if (sndist < 0)
         sndist = 0;
 
-    if (sectNum > -1 && sndist && PN(spriteNum) != MUSICANDSFX
-        && !cansee(cam->x, cam->y, cam->z - (24 << 8), sectNum, SX(spriteNum), SY(spriteNum), SZ(spriteNum) - (24 << 8), SECT(spriteNum)))
+    if ((unsigned)sectNum >= (unsigned)numsectors || (unsigned)SECT(spriteNum) >= (unsigned)numsectors
+        || (sndist && PN(spriteNum) != MUSICANDSFX
+        && !cansee(cam->x, cam->y, cam->z - (24 << 8), sectNum, SX(spriteNum), SY(spriteNum), SZ(spriteNum) - (24 << 8), SECT(spriteNum))))
         sndist += sndist>>(RR?2:5);
 
     switch (DYNAMICSOUNDMAP(soundNum))
