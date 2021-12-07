@@ -2540,6 +2540,7 @@ static void Menu_Pre(MenuID_t cm)
     case MENU_JOYSTICKSETUP:
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_HORIZONTALAIMSENSITIVITY, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_VERTICALAIMSENSITIVITY, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_RUMBLE, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKINVERT, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITBUTTONS, !CONTROL_JoyPresent || (joystick.numButtons == 0 && joystick.numHats == 0));
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_ADV, !CONTROL_JoyPresent);
