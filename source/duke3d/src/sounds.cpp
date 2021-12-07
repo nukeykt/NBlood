@@ -659,6 +659,7 @@ static int S_GetSlot(int soundNum)
     int slot = 0;
     int bestslot = 0;
     uint16_t dist = 0;
+    int position = 0;
 
     auto &snd = g_sounds[soundNum];
 
@@ -666,12 +667,22 @@ static int S_GetSlot(int soundNum)
 
     do
     {
-        auto &voice = snd->voices[slot];
         if (bitmap_test(&snd->playing, slot) == 0) return slot;
-        if (voice.dist >= dist && FX_SoundValidAndActive(voice.handle))
+
+        auto &voice = snd->voices[slot];
+        int   fxpos = 0;
+
+        if (FX_SoundValidAndActive(voice.handle))
         {
-            dist = voice.dist;
-            bestslot = slot;
+            if (voice.dist == dist)
+                FX_GetPosition(voice.handle, &fxpos);
+
+            if (voice.dist > dist || (voice.dist == dist && fxpos > position))
+            {
+                dist     = voice.dist;
+                position = fxpos;
+                bestslot = slot;
+            }
         }
     }
     while (++slot < MAXSOUNDINSTANCES);
