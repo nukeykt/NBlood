@@ -662,7 +662,7 @@ int MV_GetPosition(int handle, int *position)
 #ifdef HAVE_XMP
         case FMT_XMP:    *position = MV_GetXMPPosition(voice); break;
 #endif
-        default: break;
+        default:         *position = (int)max<intptr_t>(0, (((intptr_t)voice->NextBlock + (intptr_t)voice->position - (intptr_t)voice->rawdataptr) >> 16) * ((voice->channels * voice->bits) >> 3)); break;
     }
 
     MV_EndService();
