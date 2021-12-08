@@ -340,7 +340,7 @@ void gltexapplyprops(void)
 
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
     buildgl_resetSamplerObjects();
-return;
+
     for (bssize_t i=0; i<=GLTEXCACHEADSIZ-1; i++)
     {
         for (pthtyp *pth=texcache.list[i]; pth; pth=pth->next)
