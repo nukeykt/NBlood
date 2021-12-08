@@ -163,13 +163,6 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
 
     MV_Printf("Initializing sound: ");
 
-    if ((unsigned)SoundCard >= ASS_NumSoundCards)
-    {
-        FX_SetErrorCode(FX_InvalidCard);
-        MV_Printf("failed! %s\n", FX_ErrorString(FX_InvalidCard));
-        return FX_Error;
-    }
-
     if (SoundDriver_IsPCMSupported(SoundCard) == 0)
     {
         // unsupported cards fall back to no sound
