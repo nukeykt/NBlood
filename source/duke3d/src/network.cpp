@@ -1989,7 +1989,7 @@ static void Net_ExtractNewGame(newgame_t *newgame, int32_t menuonly)
         ud.player_skill      = newgame->player_skill;
         ud.monsters_off      = newgame->monsters_off;
         ud.respawn_monsters  = newgame->respawn_monsters;
-        ud.respawn_monsters  = newgame->respawn_items;
+        ud.respawn_items     = newgame->respawn_items;
         ud.respawn_inventory = newgame->respawn_inventory;
         ud.ffire             = newgame->ffire;
         ud.noexits           = newgame->noexits;
