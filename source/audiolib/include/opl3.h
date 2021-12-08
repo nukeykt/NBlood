@@ -57,9 +57,13 @@ typedef struct _opl3_chip opl3_chip;
 struct _opl3_slot {
     opl3_channel *channel;
     opl3_chip *chip;
+    int16_t *mod;
+    uint8_t *trem;
+    uint32_t pg_reset;
+    uint32_t pg_phase;
+    uint16_t pg_phase_out;
     int16_t out;
     int16_t fbmod;
-    int16_t *mod;
     int16_t prout;
     uint16_t eg_rout;
     uint16_t eg_out;
@@ -67,7 +71,6 @@ struct _opl3_slot {
     uint8_t eg_gen;
     uint8_t eg_rate;
     uint8_t eg_ksl;
-    uint8_t *trem;
     uint8_t reg_vib;
     uint8_t reg_type;
     uint8_t reg_ksr;
@@ -80,9 +83,6 @@ struct _opl3_slot {
     uint8_t reg_rr;
     uint8_t reg_wf;
     uint8_t key;
-    uint32_t pg_reset;
-    uint32_t pg_phase;
-    uint16_t pg_phase_out;
     uint8_t slot_num;
 };
 
