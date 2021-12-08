@@ -6221,7 +6221,7 @@ static void MaybeTrainKillPlayer(const spritetype *pSprite, int const setOPos)
 
                 pPlayer->cursectnum = pSprite->sectnum;
 
-                setsprite(pPlayer->i, (vec3_t const *)pSprite);
+                setsprite(pPlayer->i, &pSprite->xyz);
                 P_QuickKill(pPlayer);
             }
         }

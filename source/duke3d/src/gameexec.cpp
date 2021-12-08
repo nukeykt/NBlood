@@ -312,7 +312,7 @@ int A_GetFurthestAngle(int const spriteNum, int const angDiv)
 
     for (native_t j = pSprite->ang; j < (2048 + pSprite->ang); j += angIncs)
     {
-        vec3_t origin = *(const vec3_t *)pSprite;
+        vec3_t origin = pSprite->xyz;
         origin.z -= ZOFFSET3;
         hitscan(&origin, pSprite->sectnum, sintable[(j + 512) & 2047], sintable[j & 2047], 0, &hit, CLIPMASK1);
 

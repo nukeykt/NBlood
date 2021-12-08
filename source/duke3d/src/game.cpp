@@ -3927,7 +3927,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
                 int16_t const sqb = getangle(sprite[pSprite->owner].x - t->x, sprite[pSprite->owner].y - t->y);
 
                 if (klabs(G_GetAngleDelta(sqa,sqb)) > 512)
-                    if (ldist(&sprite[pSprite->owner],(spritetype const *)t) < ldist(&sprite[g_player[screenpeek].ps->i],&sprite[pSprite->owner]))
+                    if (ldist(&sprite[pSprite->owner],t) < ldist(&sprite[g_player[screenpeek].ps->i],&sprite[pSprite->owner]))
                         t->xrepeat = t->yrepeat = 0;
             }
             continue;

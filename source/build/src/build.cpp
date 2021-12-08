@@ -2310,7 +2310,7 @@ void DoSpriteOrnament(int32_t i)
 {
     hitdata_t hit;
 
-    hitscan((const vec3_t *)&sprite[i],sprite[i].sectnum,
+    hitscan(&sprite[i].xyz,sprite[i].sectnum,
             sintable[(sprite[i].ang+1536)&2047],
             sintable[(sprite[i].ang+1024)&2047],
             0,
@@ -6012,7 +6012,7 @@ end_after_dragging:
 
                                 daspr->x += dax;
                                 daspr->y += day;
-                                setspritez(daspr-sprite, (const vec3_t *)daspr);
+                                setspritez(daspr-sprite, &daspr->xyz);
                             }
                         }
                     }

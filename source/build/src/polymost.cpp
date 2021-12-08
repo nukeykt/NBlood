@@ -5006,7 +5006,7 @@ float fgetceilzofslope(usectorptr_t sec, float dax, float day)
     auto const wal  = (uwallptr_t)&wall[sec->wallptr];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const w = wal->xy;
     vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
@@ -5024,7 +5024,7 @@ float fgetflorzofslope(usectorptr_t sec, float dax, float day)
     auto const wal  = (uwallptr_t)&wall[sec->wallptr];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const w = wal->xy;
     vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
@@ -8865,7 +8865,8 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
         vec3f_t const vec2 = { fglobalposx + (gcosang * vec1.z - gsinang * vec1.x) * 2560.f,
                                fglobalposy + (gsinang * vec1.z + gcosang * vec1.x) * 2560.f,
                                fglobalposz + (vec1.y * (2560.f * 0.8f)) };
-        *(vec3f_t *)&tspr = vec2;
+        // XXX.....
+        *(vec3f_t *)&tspr.xyz = vec2;
         tspr.xrepeat = tspr.yrepeat = 5;
     }
     else

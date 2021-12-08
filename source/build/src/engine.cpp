@@ -13501,7 +13501,7 @@ int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     auto const wal  = (uwallptr_t)&wall[sec->wallptr];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const w = wal->xy;
     vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
@@ -13520,7 +13520,7 @@ int32_t getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     auto const wal  = (uwallptr_t)&wall[sec->wallptr];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const w = wal->xy;
     vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;

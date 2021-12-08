@@ -1360,7 +1360,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             if (clipsprite_try(spr, clipMin.x, clipMin.y, clipMax.x, clipMax.y))
                 continue;
 #endif
-            vec2_t p1 = *(vec2_t const *)spr;
+            vec2_t p1 = spr->xy;
 
             switch (cstat & (CSTAT_SPRITE_ALIGNMENT_WALL | CSTAT_SPRITE_ALIGNMENT_FLOOR))
             {

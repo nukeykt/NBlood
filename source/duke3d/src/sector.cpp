@@ -3195,7 +3195,7 @@ int32_t A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
         zOffset = (39 << 8);
 
     SZ(spriteNum) -= zOffset;
-    hitscan((const vec3_t *)&sprite[spriteNum], SECT(spriteNum), sintable[(SA(spriteNum) + 512) & 2047],
+    hitscan(&sprite[spriteNum].xyz, SECT(spriteNum), sintable[(SA(spriteNum) + 512) & 2047],
             sintable[SA(spriteNum) & 2047], 0, &hitData, CLIPMASK1);
     SZ(spriteNum) += zOffset;
 

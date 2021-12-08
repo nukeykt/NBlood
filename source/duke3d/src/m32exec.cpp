@@ -1762,7 +1762,7 @@ badindex:
             insptr++;
             {
                 X_ERROR_INVALIDSP();
-                VM_DoConditional(dist((spritetype *)&pos, vm.pSprite) < Gv_GetVar(*insptr));
+                VM_DoConditional(dist(&pos, vm.pSprite) < Gv_GetVar(*insptr));
             }
             continue;
 
@@ -1770,7 +1770,7 @@ badindex:
             insptr++;
             {
                 X_ERROR_INVALIDSP();
-                VM_DoConditional(dist((spritetype *)&pos, vm.pSprite) > Gv_GetVar(*insptr));
+                VM_DoConditional(dist(&pos, vm.pSprite) > Gv_GetVar(*insptr));
             }
             continue;
 // ^^^
