@@ -196,14 +196,10 @@ void softsurface_blitBuffer(uint32_t* destBuffer,
     switch (destBpp)
     {
     case 15:
-        softsurface_blitBufferInternal<uint16_t>((uint16_t*) destBuffer);
-        break;
     case 16:
         softsurface_blitBufferInternal<uint16_t>((uint16_t*) destBuffer);
         break;
     case 24:
-        softsurface_blitBufferInternal<uint32_t>(destBuffer);
-        break;
     case 32:
         softsurface_blitBufferInternal<uint32_t>(destBuffer);
         break;
