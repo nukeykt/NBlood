@@ -433,7 +433,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class FloatInVec
 
 public:
 
-    inline FloatInVec() { }
+    inline FloatInVec() = default;
     inline FloatInVec(__m128 vec);
     inline FloatInVec(const FloatInVec & vec) = default;
 
@@ -531,7 +531,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class BoolInVec
 
 public:
 
-    inline BoolInVec() { }
+    inline BoolInVec() = default;
 
     // matches standard type conversions
     inline BoolInVec(const FloatInVec & vec);
@@ -945,7 +945,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Vector3
 public:
 
     // Default constructor; does no initialization
-    inline Vector3() { }
+    inline Vector3() = default;
 
     // Copy constructor
     inline Vector3 (const Vector3 & vec) = default;
@@ -1257,7 +1257,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Vector4
 public:
 
     // Default constructor; does no initialization
-    inline Vector4() { }
+    inline Vector4() = default;
 
     // Copy constructor
     inline Vector4 (const Vector4 & vec) = default;
@@ -1551,7 +1551,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Point3
 public:
 
     // Default constructor; does no initialization
-    inline Point3() { }
+    inline Point3() = default;
 
     // Construct a 3-D point from x, y, and z elements
     inline Point3(float x, float y, float z);
@@ -1792,7 +1792,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Quat
 public:
 
     // Default constructor; does no initialization
-    inline Quat() { }
+    inline Quat() = default;
 
     // Construct a quaternion from x, y, z, and w elements
     inline Quat(float x, float y, float z, float w);
@@ -2076,7 +2076,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Matrix3
 public:
 
     // Default constructor; does no initialization
-    inline Matrix3() { }
+    inline Matrix3() = default;
 
     // Copy a 3x3 matrix
     inline Matrix3(const Matrix3 & mat);
@@ -2301,7 +2301,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Matrix4
 public:
 
     // Default constructor; does no initialization
-    inline Matrix4() { }
+    inline Matrix4() = default;
 
     // Copy a 4x4 matrix
     inline Matrix4(const Matrix4 & mat);
@@ -2594,7 +2594,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Transform3
 public:
 
     // Default constructor; does no initialization
-    inline Transform3() { }
+    inline Transform3() = default;
 
     // Copy a 3x4 transformation matrix
     inline Transform3(const Transform3 & tfrm);
@@ -6597,7 +6597,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Vector3
 public:
 
     // Default constructor; does no initialization
-    inline Vector3() { }
+    inline Vector3() = default;
 
     // Copy a 3-D vector
     inline Vector3(const Vector3 & vec);
@@ -6842,7 +6842,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Vector4
 public:
 
     // Default constructor; does no initialization
-    inline Vector4() { }
+    inline Vector4() = default;
 
     // Copy a 4-D vector
     inline Vector4(const Vector4 & vec);
@@ -7082,7 +7082,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Point3
 public:
 
     // Default constructor; does no initialization
-    inline Point3() { }
+    inline Point3() = default;
 
     // Copy a 3-D point
     inline Point3(const Point3 & pnt);
@@ -7280,7 +7280,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Quat
 public:
 
     // Default constructor; does no initialization
-    inline Quat() { }
+    inline Quat() = default;
 
     // Copy a quaternion
     inline Quat(const Quat & quat);
@@ -7482,7 +7482,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Matrix3
 public:
 
     // Default constructor; does no initialization
-    inline Matrix3() { }
+    inline Matrix3() = default;
 
     // Copy a 3x3 matrix
     inline Matrix3(const Matrix3 & mat);
@@ -7669,7 +7669,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Matrix4
 public:
 
     // Default constructor; does no initialization
-    inline Matrix4() { }
+    inline Matrix4() = default;
 
     // Copy a 4x4 matrix
     inline Matrix4(const Matrix4 & mat);
@@ -7923,7 +7923,7 @@ VECTORMATH_ALIGNED_TYPE_PRE class Transform3
 public:
 
     // Default constructor; does no initialization
-    inline Transform3() { }
+    inline Transform3() = default;
 
     // Copy a 3x4 transformation matrix
     inline Transform3(const Transform3 & tfrm);
@@ -11070,7 +11070,7 @@ class Vector2
 public:
 
     // Default constructor; does no initialization
-    inline Vector2() { }
+    inline Vector2() = default;
 
     // Construct a 2-D vector from x and y elements
     inline Vector2(float x, float y);
@@ -11218,7 +11218,7 @@ class Point2
 public:
 
     // Default constructor; does no initialization
-    inline Point2() { }
+    inline Point2() = default;
 
     // Construct a 2-D point from x and y elements
     inline Point2(float x, float y);
