@@ -257,8 +257,6 @@ int timerInit(int const tickspersecond)
 
     if (initDone == 0)
     {
-        initDone = 1;
-
         static osdcvardata_t sys_timer_cvar = { "sys_timer",
                                                 "engine timing backend:\n"
                                                 "   0: auto\n"
