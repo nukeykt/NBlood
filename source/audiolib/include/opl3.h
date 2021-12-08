@@ -37,17 +37,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef OPL_OPL3_H
 #define OPL_OPL3_H
 
+#include "compat.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <inttypes.h>
 
 #ifndef OPL_ENABLE_STEREOEXT
 #define OPL_ENABLE_STEREOEXT 1
 #endif
 
 #define OPL_WRITEBUF_SIZE   1024
+EDUKE32_STATIC_ASSERT(isPow2(OPL_WRITEBUF_SIZE));
 #define OPL_WRITEBUF_DELAY  2
 
 typedef struct _opl3_slot opl3_slot;
