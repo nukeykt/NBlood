@@ -9473,10 +9473,11 @@ void polymost_fillpolygon(int32_t npoints)
 
         if (!(pth->flags & PTH_INDEXED))
             polymost_usePaletteIndexing(false);
+
+        buildgl_bindSamplerObject(0, pth->flags);
     }
 
     polymost_updatePalette();
-    buildgl_bindSamplerObject(0, pth->flags);
     float const f = getshadefactor(globalshade);
 
     uint8_t const maskprops = (globalorientation>>7)&DAMETH_MASKPROPS;
