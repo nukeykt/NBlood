@@ -666,7 +666,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
     if (skinfile == NULL || !skinfile[0])
         return 0;
 
-    if (*texidx)
+    if (texidx && *texidx)
         return *texidx;
 
     // possibly fetch an already loaded multitexture :_)
