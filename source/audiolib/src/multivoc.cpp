@@ -251,7 +251,8 @@ static void MV_StopVoice(VoiceNode *voice)
 static void MV_ServiceVoc(void)
 {
     // Toggle which buffer we'll mix next
-    ++MV_MixPage &= MV_NumberOfBuffers-1;
+    ++MV_MixPage;
+    MV_MixPage &= MV_NumberOfBuffers-1;
 
     if (MV_ReverbLevel == 0)
     {
