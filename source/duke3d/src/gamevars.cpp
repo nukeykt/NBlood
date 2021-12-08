@@ -123,6 +123,9 @@ static int Gv_SkipLZ4Block(buildvfs_kfd kFile, size_t const size)
     return 0;
 }
 
+static int const s_gv_len = Bstrlen(s_gamevars);
+static int const s_ar_len = Bstrlen(s_arrays);
+
 int Gv_ReadSave(buildvfs_kfd kFile)
 {
 #ifndef NDEBUG
@@ -136,8 +139,8 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
     if (savedVarCount)
     {
-        A_(!kread_and_test(kFile, buf, Bstrlen(s_gamevars)));
-        A_(!Bmemcmp(buf, s_gamevars, Bstrlen(s_gamevars)));
+        A_(!kread_and_test(kFile, buf, s_gv_len));
+        A_(!Bmemcmp(buf, s_gamevars, s_gv_len));
 
         int32_t varLabelCount;
         A_(!kread_and_test(kFile, &varLabelCount, sizeof(varLabelCount)));
@@ -183,8 +186,8 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
     if (savedArrayCount)
     {
-        A_(!kread_and_test(kFile, buf, Bstrlen(s_arrays)));
-        A_(!Bmemcmp(buf, s_arrays, Bstrlen(s_arrays)));
+        A_(!kread_and_test(kFile, buf, s_ar_len));
+        A_(!Bmemcmp(buf, s_arrays, s_ar_len));
 
         int32_t arrayLabelCount;
         A_(!kread_and_test(kFile, &arrayLabelCount, sizeof(arrayLabelCount)));
@@ -230,8 +233,10 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
     if (worldStateCount)
     {
-        A_(!kread_and_test(kFile, buf, Bstrlen(s_mapstate)));
-        A_(!Bmemcmp(buf, s_mapstate, Bstrlen(s_mapstate)));
+        int const s_ms_len = Bstrlen(s_mapstate);
+
+        A_(!kread_and_test(kFile, buf, s_ms_len));
+        A_(!Bmemcmp(buf, s_mapstate, s_ms_len));
 
         uint8_t savedStateMap[(MAXVOLUMES * MAXLEVELS + 7) >> 3] = {};
         A_(kdfread_LZ4(savedStateMap, sizeof(savedStateMap), 1, kFile) == 1);
@@ -255,8 +260,8 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
             if (savedVarCount && varlabels)
             {
-                A_(!kread_and_test(kFile, buf, Bstrlen(s_gamevars)));
-                A_(!Bmemcmp(buf, s_gamevars, Bstrlen(s_gamevars)));
+                A_(!kread_and_test(kFile, buf, s_gv_len));
+                A_(!Bmemcmp(buf, s_gamevars, s_gv_len));
 
                 Bmemset(sv.vars, 0, sizeof(sv.vars));
 
@@ -313,8 +318,8 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
             if (savedArrayCount && arrlabels)
             {
-                A_(!kread_and_test(kFile, buf, Bstrlen(s_arrays)));
-                A_(!Bmemcmp(buf, s_arrays, Bstrlen(s_arrays)));
+                A_(!kread_and_test(kFile, buf, s_ar_len));
+                A_(!Bmemcmp(buf, s_arrays, s_ar_len));
 
                 Bmemset(sv.arrays, 0, sizeof(sv.arrays));
 
@@ -383,7 +388,7 @@ void Gv_WriteSave(buildvfs_FILE fil)
 
     if (savedVarCount)
     {
-        buildvfs_fwrite(s_gamevars, Bstrlen(s_gamevars), 1, fil);
+        buildvfs_fwrite(s_gamevars, s_gv_len, 1, fil);
 
         // this is the size of the label table, not the number of actual saved vars
         buildvfs_fwrite(&g_gameVarCount, sizeof(g_gameVarCount), 1, fil);
@@ -433,7 +438,7 @@ void Gv_WriteSave(buildvfs_FILE fil)
 
     if (savedArrayCount)
     {
-        buildvfs_fwrite(s_arrays, Bstrlen(s_arrays), 1, fil);
+        buildvfs_fwrite(s_arrays, s_ar_len, 1, fil);
 
         // this is the size of the label table, not the number of actual saved arrays
         buildvfs_fwrite(&g_gameArrayCount, sizeof(g_gameArrayCount), 1, fil);
@@ -519,7 +524,7 @@ void Gv_WriteSave(buildvfs_FILE fil)
 
             if (savedVarCount)
             {
-                buildvfs_fwrite(s_gamevars, Bstrlen(s_gamevars), 1, fil);
+                buildvfs_fwrite(s_gamevars, s_gv_len, 1, fil);
 
                 int writeCnt = 0;
                 for (int32_t idx = 0; idx < g_gameVarCount; idx++)
@@ -556,7 +561,7 @@ void Gv_WriteSave(buildvfs_FILE fil)
 
             if (savedArrayCount)
             {
-                buildvfs_fwrite(s_arrays, Bstrlen(s_arrays), 1, fil);
+                buildvfs_fwrite(s_arrays, s_ar_len, 1, fil);
 
                 for (int32_t idx = 0; idx < g_gameArrayCount; idx++)
                 {
