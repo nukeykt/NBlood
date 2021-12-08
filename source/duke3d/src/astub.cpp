@@ -8493,7 +8493,10 @@ static int osdcmd_artdump(osdcmdptr_t parm)
         last = Batol(parm->parms[1]);
 
     if (first >= MAXUSERTILES || last >= MAXUSERTILES)
+    {
+        Bfclose(f);
         return OSDCMD_SHOWHELP;
+    }
 
     for (uint32_t i = last; i > first; --i)
         if (tileLoad(i))
