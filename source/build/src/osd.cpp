@@ -842,14 +842,15 @@ void OSD_Init(void)
 //
 void OSD_SetLogFile(const char *fn)
 {
-    MAYBE_FCLOSE_AND_NULL(osd->log.m_fp);
-    osdlogfn = NULL;
+    if (!fn)
+        return;
 
     if (!osd)
         OSD_Init();
+    else
+        MAYBE_FCLOSE_AND_NULL(osd->log.m_fp);
 
-    if (!fn)
-        return;
+    osdlogfn = NULL;
 
     osd->log.m_fp = buildvfs_fopen_write_text(fn);
 
