@@ -4063,7 +4063,7 @@ static void parascan(char dastat, int32_t bunch)
         globaltilesizy = tsizy;
         globalyscale = 65536 / tsizy;
         globalshiftval = 0;
-        globalzd = divscale32(((tsizy>>1)+dapyoffs), tsizy) + ((uint32_t)globalypanning<<24);
+        globalzd = divscale32(((tsizy>>1)+dapyoffs), tsizy) + (decltype(globalzd)(globalypanning)<<24);
     }
     else
 #endif
