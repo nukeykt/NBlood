@@ -4324,9 +4324,9 @@ static void P_ProcessWeapon(int playerNum)
                         if (pPlayer->ammo_amount[pPlayer->curr_weapon] > 0)
                         {
                             hitdata_t hitData;
-
-                            hitscan((const vec3_t *)pPlayer, pPlayer->cursectnum, sintable[(fix16_to_int(pPlayer->q16ang) + 512) & 2047],
-                                    sintable[fix16_to_int(pPlayer->q16ang) & 2047], fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 32, &hitData,
+                            int const pq16ang = fix16_to_int(pPlayer->q16ang);
+                            hitscan((const vec3_t *)pPlayer, pPlayer->cursectnum, sintable[(pq16ang + 512) & 2047],
+                                    sintable[pq16ang & 2047], fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 32, &hitData,
                                     CLIPMASK1);
 
                             if ((hitData.sect < 0 || hitData.sprite >= 0) ||
@@ -4448,12 +4448,12 @@ static void P_ProcessWeapon(int playerNum)
                         pipeBombFwdVel = 140;
                         pipeBombZvel   = -512 - (fix16_to_int(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100)) * 20);
                     }
-
+                    int const pq16ang = fix16_to_int(pPlayer->q16ang);
                     int pipeSpriteNum = A_InsertSprite(pPlayer->cursectnum,
-                                       pPlayer->pos.x+(sintable[(fix16_to_int(pPlayer->q16ang)+512)&2047]>>6),
-                                       pPlayer->pos.y+(sintable[fix16_to_int(pPlayer->q16ang)&2047]>>6),
+                                       pPlayer->pos.x+(sintable[(pq16ang +512)&2047]>>6),
+                                       pPlayer->pos.y+(sintable[pq16ang &2047]>>6),
                                        pPlayer->pos.z,PWEAPON(playerNum, pPlayer->curr_weapon, Shoots),-16,9,9,
-                                       fix16_to_int(pPlayer->q16ang),(pipeBombFwdVel+(pPlayer->hbomb_hold_delay<<5)),pipeBombZvel,pPlayer->i,1);
+                                       pq16ang,(pipeBombFwdVel+(pPlayer->hbomb_hold_delay<<5)),pipeBombZvel,pPlayer->i,1);
 
                     pipeBombType = PIPEBOMB_CONTROL(playerNum);
 
