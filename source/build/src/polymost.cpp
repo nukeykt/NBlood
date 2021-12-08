@@ -2456,7 +2456,7 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     int32_t picfillen = kfilelength(filh);
     kclose(filh);	// FIXME: shouldn't have to do this. bug in cache1d.c
 
-    int32_t startticks = timerGetTicks(), gloadtile_willprint = 0;
+    int32_t startticks = timerGetTicks();
 
     char onebitalpha = 1;
     char hasalpha;
