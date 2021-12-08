@@ -119,6 +119,7 @@ static void cacheTilesForSprite(int spriteNum)
     case BOSS1__:
     case BOSS2__:
     case BOSS3__:
+    case SHARK__:
         extraTiles = 30;
         break;
     case OCTABRAIN__:
@@ -133,9 +134,6 @@ static void cacheTilesForSprite(int spriteNum)
     case PIGCOP__:
     case PIGCOPDIVE__:
         extraTiles = 61;
-        break;
-    case SHARK__:
-        extraTiles = 30;
         break;
     case LIZMAN__:
     case LIZMANSPITTING__:
