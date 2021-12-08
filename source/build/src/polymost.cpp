@@ -8978,6 +8978,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
         spriteext[tspr.owner].mdpivot_offset.z = 0;
         spriteext[tspr.owner].mdroll = 0;
+        tspriteptr[maxspritesonscreen] = nullptr;
 
         buildgl_setDisabled(GL_ALPHA_TEST);
         buildgl_setDisabled(GL_BLEND);
