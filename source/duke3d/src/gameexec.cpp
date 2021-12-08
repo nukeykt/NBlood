@@ -6789,9 +6789,6 @@ void G_SaveMapState(void)
 
     mapstate_t *save = pMapInfo->savedstate;
 
-    if (save == NULL)
-        return;
-
     save->numwalls = numwalls;
     Bmemcpy(&save->wall[0],&wall[0],sizeof(walltype)*MAXWALLS);
     save->numsectors = numsectors;
