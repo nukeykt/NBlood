@@ -3270,10 +3270,10 @@ void P_GetInput(int const playerNum)
     {
         if (!localInput.svel)
         {
-            if (BUTTON(gamefunc_Turn_Left) && !(pPlayer->movement_lock & 4) && !localInput.svel)
+            if (BUTTON(gamefunc_Turn_Left) && !(pPlayer->movement_lock & 4))
                 input.svel = keyMove;
 
-            if (BUTTON(gamefunc_Turn_Right) && !(pPlayer->movement_lock & 8) && !localInput.svel)
+            if (BUTTON(gamefunc_Turn_Right) && !(pPlayer->movement_lock & 8))
                 input.svel = -keyMove;
         }
     }
@@ -5390,7 +5390,7 @@ void P_ProcessInput(int playerNum)
                 pPlayer->scream_voice = -1;
             }
 
-            if ((sectorLotag != ST_1_ABOVE_WATER && sectorLotag != ST_2_UNDERWATER) &&
+            if (sectorLotag != ST_1_ABOVE_WATER &&
                 (pPlayer->on_ground == 0 && pPlayer->vel.z > (ACTOR_MAXFALLINGZVEL >> 1)))
             {
                 pPlayer->hard_landing = pPlayer->vel.z >> 10;
@@ -5494,7 +5494,7 @@ void P_ProcessInput(int playerNum)
             }
         }
 
-        if ((sectorLotag != ST_2_UNDERWATER || ceilZ != pPlayer->truecz) && pPlayer->jumping_counter && pPlayer->pos.z <= (ceilZ + PMINHEIGHT + 128))
+        if (ceilZ != pPlayer->truecz && pPlayer->jumping_counter && pPlayer->pos.z <= (ceilZ + PMINHEIGHT + 128))
         {
             pPlayer->jumping_counter = 0;
             if (pPlayer->vel.z < 0)

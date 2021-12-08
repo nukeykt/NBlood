@@ -3036,7 +3036,7 @@ CHECKINV1:
                         playerBits |= BIT(SK_HOLSTER);
                         pPlayer->weapon_pos = WEAPON_POS_LOWER;
                     }
-                    else if ((uint32_t)weaponNum < MAX_WEAPONS && (pPlayer->gotweapon & (1<<weaponNum)) && (uint32_t)pPlayer->curr_weapon != weaponNum)
+                    else if ((pPlayer->gotweapon & (1<<weaponNum)) && (uint32_t)pPlayer->curr_weapon != weaponNum)
                         switch (weaponNum)
                         {
                         case PISTOL_WEAPON:
