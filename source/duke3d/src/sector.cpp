@@ -2932,13 +2932,13 @@ CHECKINV1:
                         }
                     }
 
-                    if (weaponNum == SHRINKER_WEAPON)
+                    if (weaponNum == SHRINKER_WEAPON && (pPlayer->gotweapon & (1<<SHRINKER_WEAPON)))
                         pPlayer->subweapon &= ~(1 << GROW_WEAPON);
-                    else if (weaponNum == GROW_WEAPON)
+                    else if (weaponNum == GROW_WEAPON && (pPlayer->gotweapon & (1<<GROW_WEAPON)))
                         pPlayer->subweapon |= (1<<GROW_WEAPON);
-                    else if (weaponNum == FREEZE_WEAPON)
+                    else if (weaponNum == FREEZE_WEAPON && pPlayer->gotweapon & (1<<FREEZE_WEAPON))
                         pPlayer->subweapon &= ~(1 << FLAMETHROWER_WEAPON);
-                    else if (weaponNum == FLAMETHROWER_WEAPON)
+                    else if (weaponNum == FLAMETHROWER_WEAPON && pPlayer->gotweapon & (1<<FLAMETHROWER_WEAPON))
                         pPlayer->subweapon |= (1<<FLAMETHROWER_WEAPON);
                 }
 
@@ -2981,25 +2981,25 @@ CHECKINV1:
 
                         if (pPlayer->curr_weapon != GROW_WEAPON && pPlayer->curr_weapon != SHRINKER_WEAPON)
                         {
-                            if (pPlayer->ammo_amount[GROW_WEAPON] > 0)
+                            if (pPlayer->ammo_amount[GROW_WEAPON] > 0 && (pPlayer->gotweapon & (1<<GROW_WEAPON)))
                             {
-                                if ((pPlayer->subweapon&(1<<GROW_WEAPON)) == (1<<GROW_WEAPON))
+                                if (pPlayer->subweapon&(1<<GROW_WEAPON))
                                     weaponNum = GROW_WEAPON;
-                                else if (pPlayer->ammo_amount[SHRINKER_WEAPON] == 0)
+                                else if (pPlayer->ammo_amount[SHRINKER_WEAPON] == 0 || !(pPlayer->gotweapon & (1<<SHRINKER_WEAPON)))
                                 {
                                     weaponNum = GROW_WEAPON;
                                     pPlayer->subweapon |= (1<<GROW_WEAPON);
                                 }
                             }
-                            else if (pPlayer->ammo_amount[SHRINKER_WEAPON] > 0)
+                            else if (pPlayer->ammo_amount[SHRINKER_WEAPON] > 0 && (pPlayer->gotweapon & (1<<SHRINKER_WEAPON)))
                                 pPlayer->subweapon &= ~(1<<GROW_WEAPON);
                         }
-                        else if (pPlayer->curr_weapon == SHRINKER_WEAPON)
+                        else if (pPlayer->curr_weapon == SHRINKER_WEAPON && (pPlayer->gotweapon & (1<<GROW_WEAPON)))
                         {
                             pPlayer->subweapon |= (1<<GROW_WEAPON);
                             weaponNum = GROW_WEAPON;
                         }
-                        else
+                        else if (pPlayer->gotweapon & (1<<SHRINKER_WEAPON))
                             pPlayer->subweapon &= ~(1<<GROW_WEAPON);
                     }
 
@@ -3009,25 +3009,25 @@ CHECKINV1:
 
                         if (pPlayer->curr_weapon != FLAMETHROWER_WEAPON && pPlayer->curr_weapon != FREEZE_WEAPON)
                         {
-                            if (pPlayer->ammo_amount[FLAMETHROWER_WEAPON] > 0)
+                            if (pPlayer->ammo_amount[FLAMETHROWER_WEAPON] > 0 && (pPlayer->gotweapon & (1<<FLAMETHROWER_WEAPON)))
                             {
-                                if ((pPlayer->subweapon&(1<<FLAMETHROWER_WEAPON)) == (1<<FLAMETHROWER_WEAPON))
+                                if (pPlayer->subweapon&(1<<FLAMETHROWER_WEAPON))
                                     weaponNum = FLAMETHROWER_WEAPON;
-                                else if (pPlayer->ammo_amount[FREEZE_WEAPON] == 0)
+                                else if (pPlayer->ammo_amount[FREEZE_WEAPON] == 0 || !(pPlayer->gotweapon & (1<<FREEZE_WEAPON)))
                                 {
                                     weaponNum = FLAMETHROWER_WEAPON;
                                     pPlayer->subweapon |= (1<<FLAMETHROWER_WEAPON);
                                 }
                             }
-                            else if (pPlayer->ammo_amount[FREEZE_WEAPON] > 0)
+                            else if (pPlayer->ammo_amount[FREEZE_WEAPON] > 0 && (pPlayer->gotweapon & (1<<FREEZE_WEAPON)))
                                 pPlayer->subweapon &= ~(1<<FLAMETHROWER_WEAPON);
                         }
-                        else if (pPlayer->curr_weapon == FREEZE_WEAPON)
+                        else if (pPlayer->curr_weapon == FREEZE_WEAPON && (pPlayer->gotweapon & (1<<FLAMETHROWER_WEAPON)))
                         {
                             pPlayer->subweapon |= (1<<FLAMETHROWER_WEAPON);
                             weaponNum = FLAMETHROWER_WEAPON;
                         }
-                        else
+                        else if (pPlayer->gotweapon & (1<<FREEZE_WEAPON))
                             pPlayer->subweapon &= ~(1<<FLAMETHROWER_WEAPON);
                     }
 
