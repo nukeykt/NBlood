@@ -564,20 +564,6 @@ int WinMMDrv_MIDI_PrintBufferInfo(osdcmdptr_t UNUSED(parm))
     return OSDCMD_OK;
 }
 
-void WinMMDrv_MIDI_BufferInfo(void)
-{
-    auto numDevices = (int)midiOutGetNumDevs();
-    MIDIOUTCAPS midicaps;
-
-    for (int i = -1; i < numDevices; i++)
-    {
-        if (!midiOutGetDevCaps(i, &midicaps, sizeof(MIDIOUTCAPS)))
-            MV_Printf("%d: %s  ", i, midicaps.szPname);
-    }
-
-    MV_Printf("\n");
-}
-
 int WinMMDrv_MIDI_GetNumDevices(void) { return midiOutGetNumDevs(); }
 
 int WinMMDrv_MIDI_Init(midifuncs * funcs)
