@@ -3209,11 +3209,13 @@ static void         polymer_updatewall(int16_t wallnum)
 
     // yes, this function is messy and unefficient
     // it also works, bitches
+
+    if (sectofwall < 0 || sectofwall >= numsectors || wallnum < 0 || wallnum > numwalls)
+        return;
+
     sec = &sector[sectofwall];
 
-    if (sectofwall < 0 || sectofwall >= numsectors ||
-        wallnum < 0 || wallnum > numwalls ||
-        sec->wallptr > wallnum || wallnum >= (sec->wallptr + sec->wallnum))
+    if (sec->wallptr > wallnum || wallnum >= (sec->wallptr + sec->wallnum))
         return; // yay, corrupt map
 
     if (sec->floorz == sec->ceilingz)
