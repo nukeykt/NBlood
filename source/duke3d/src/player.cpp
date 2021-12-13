@@ -374,12 +374,8 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
         auto const pSprite = (uspriteptr_t)&sprite[returnSprite];
         int        zCenter = 2 * (pSprite->yrepeat * tilesiz[pSprite->picnum].y) + zAdjust;
 
-#ifndef EDUKE32_STANDALONE
-        if (!FURY && aimFlags &&
-            ((pSprite->picnum >= GREENSLIME && pSprite->picnum <= GREENSLIME + 7) || pSprite->picnum == ROTATEGUN || pSprite->cstat & CSTAT_SPRITE_YCENTER))
-#else
-        if (aimFlags && pSprite->cstat & CSTAT_SPRITE_YCENTER)
-#endif
+        if (aimFlags &&
+            (STANDALONE_EVAL(false, (pSprite->picnum >= GREENSLIME && pSprite->picnum <= GREENSLIME + 7) || pSprite->picnum == ROTATEGUN) || pSprite->cstat & CSTAT_SPRITE_YCENTER))
             zCenter -= ZOFFSET3;
 
         int spriteDist = safeldist(g_player[playerNum].ps->i, &sprite[returnSprite]);
