@@ -53,6 +53,13 @@ extern int     g_addonNum;
 #define DUKEBETA            ((g_gameType & GAMEFLAG_DUKEBETA) == GAMEFLAG_DUKEBETA)
 #define FURY                (g_gameType & GAMEFLAG_FURY)
 
+// statements using STANDALONE_EVAL(false, ...) are expected to be optimized away entirely in EDUKE32_STANDALONE builds
+#ifdef EDUKE32_STANDALONE
+# define STANDALONE_EVAL(x, y)  (x)
+#else
+# define STANDALONE_EVAL(x, y)  (y)
+#endif
+
 enum Games_t {
     GAME_DUKE = 0,
     GAME_NAM,
