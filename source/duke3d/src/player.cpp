@@ -657,11 +657,11 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
     {
         A_DamageObject(hitData->sprite, spriteNum);
 
+#ifndef EDUKE32_STANDALONE
         if (!FURY && sprite[hitData->sprite].picnum == APLAYER &&
             (ud.ffire == 1 || (!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY) && GTFLAGS(GAMETYPE_TDM) &&
                                g_player[P_Get(hitData->sprite)].ps->team != g_player[P_Get(spriteOwner)].ps->team)))
         {
-#ifndef EDUKE32_STANDALONE
             int jibSprite = A_Spawn(spriteNum, JIBS6);
 
             sprite[spriteNum].xrepeat = sprite[spriteNum].yrepeat = 0;
@@ -669,9 +669,9 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
             sprite[jibSprite].xvel    = 16;
             sprite[jibSprite].xrepeat = sprite[jibSprite].yrepeat = 24;
             sprite[jibSprite].ang += 64 - (krand() & 127);
-#endif
         }
         else
+#endif
         {
             Proj_MaybeSpawn(spriteNum, spawnTile, hitData);
         }

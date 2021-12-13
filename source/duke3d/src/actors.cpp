@@ -1249,14 +1249,28 @@ int A_IncurDamage(int const spriteNum)
         return -1;
     }
 
-    if (pSprite->picnum == APLAYER)
+    if (pSprite->picnum != APLAYER)
     {
-        if (ud.god && pActor->htpicnum != SHRINKSPARK)
+        if (pActor->htextra == 0 && STANDALONE_EVAL(false, pActor->htpicnum == SHRINKSPARK) && pSprite->xrepeat < 24)
+            return -1;
+
+        pSprite->extra -= pActor->htextra;
+
+        if ((unsigned)pSprite->owner < MAXSPRITES && sprite[pSprite->owner].statnum < MAXSTATUS && STANDALONE_EVAL(true, pSprite->picnum != RECON))
+            pSprite->owner = pActor->htowner;
+
+        pActor->htextra = -1;
+        return pActor->htpicnum;
+    }
+    else
+    {
+        if (ud.god && STANDALONE_EVAL(true, pActor->htpicnum != SHRINKSPARK))
             return -1;
 
         int const playerNum = P_GetP(pSprite);
 
-        if (pActor->htowner >= 0 && (sprite[pActor->htowner].picnum == APLAYER))
+#ifndef EDUKE32_STANDALONE
+        if (!FURY && pActor->htowner >= 0 && (sprite[pActor->htowner].picnum == APLAYER))
         {
             if (
                 (ud.ffire == 0) &&
@@ -1271,10 +1285,10 @@ int A_IncurDamage(int const spriteNum)
                     return -1;
                 }
         }
-
+#endif
         pSprite->extra -= pActor->htextra;
 
-        if (pActor->htowner >= 0 && pSprite->extra <= 0 && pActor->htpicnum != FREEZEBLAST)
+        if (pActor->htowner >= 0 && pSprite->extra <= 0 && STANDALONE_EVAL(true, pActor->htpicnum != FREEZEBLAST))
         {
             int const damageOwner = pActor->htowner;
             pSprite->extra        = 0;
@@ -1312,18 +1326,6 @@ int A_IncurDamage(int const spriteNum)
         pActor->htextra = -1;
         return pActor->htpicnum;
     }
-
-    if (pActor->htextra == 0 && pActor->htpicnum == SHRINKSPARK && pSprite->xrepeat < 24)
-        return -1;
-
-    pSprite->extra -= pActor->htextra;
-
-    if (pSprite->picnum != RECON && pSprite->owner >= 0 && sprite[pSprite->owner].statnum < MAXSTATUS)
-        pSprite->owner = pActor->htowner;
-
-    pActor->htextra = -1;
-
-    return pActor->htpicnum;
 }
 
 void A_MoveCyclers(void)
