@@ -8783,10 +8783,11 @@ in:
     lasti = -1;
 }
 
+int savedFires = 0;
+
 static void A_DoLight(int spriteNum)
 {
     auto const pSprite = &sprite[spriteNum];
-    int savedFires = 0;
 
     if (pSprite->statnum == STAT_PLAYER)
     {
@@ -9176,6 +9177,7 @@ void G_RefreshLights(void)
         return;
 
     int statNum = 0;
+    savedFires = 0;
     do
     {
         for (int SPRITES_OF(statNum++, spriteNum))
