@@ -454,11 +454,9 @@ int main(int argc, char *argv[])
 {
     engineCreateAllocator();
 
-#if SDL_MAJOR_VERSION >= 2
-# if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 8
+#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 8)
     if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 8))
         SDL_SetMemoryFunctions(_xmalloc, _xcalloc, _xrealloc, _xfree);
-# endif
 #endif
 
     MicroProfileOnThreadCreate("Main");
@@ -962,10 +960,14 @@ void joyScanDevices()
 
                 inputdevices |= DEV_JOYSTICK;
 
-                if (!SDL_GameControllerRumble(controller, 0xc000, 0xc000, 10))
-                    joystick.hasRumble = 1;
-                else buildprintf("%s\n", SDL_GetError());
-
+#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
+                {
+                    if (!SDL_GameControllerRumble(controller, 0xc000, 0xc000, 10))
+                        joystick.hasRumble = 1;
+                    else buildprintf("%s\n", SDL_GetError());
+                }
+#endif
                 return;
             }
         }
@@ -1008,10 +1010,13 @@ void joyScanDevices()
                 SDL_JoystickEventState(SDL_ENABLE);
                 inputdevices |= DEV_JOYSTICK;
 
-#if SDL_MAJOR_VERSION >= 2
-                if (!SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
-                    joystick.hasRumble = 1;
-                else buildprintf("%s\n", SDL_GetError());
+#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9)
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
+                {
+                    if (!SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
+                        joystick.hasRumble = 1;
+                    else buildprintf("%s\n", SDL_GetError());
+                }
 #endif
                 return;
             }
@@ -1077,17 +1082,22 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
         joyScanDevices();
     }
 
-    if (joystick.flags & JOY_RUMBLE)
+#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9)
+    if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
     {
-        initputs("Controller supports ");
-
-        switch (joystick.flags & JOY_RUMBLE)
+        if (joystick.flags & JOY_RUMBLE)
         {
-        case JOY_RUMBLE:
-            initputs("rumble.\n");
-            break;
+            initputs("Controller supports ");
+
+            switch (joystick.flags & JOY_RUMBLE)
+            {
+            case JOY_RUMBLE:
+                initputs("rumble.\n");
+                break;
+            }
         }
     }
+#endif
 
     return 0;
 }
@@ -2540,13 +2550,18 @@ int32_t handleevents(void)
 
     int32_t rv;
 
-    if (joystick.hasRumble)
+#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9)
+    if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
     {
-        if (joystick.rumbleLow || joystick.rumbleHigh)
-            SDL_GameControllerRumble(controller, joystick.rumbleLow, joystick.rumbleHigh, joystick.rumbleTime);
+        if (joystick.hasRumble)
+        {
+            if (joystick.rumbleLow || joystick.rumbleHigh)
+                SDL_GameControllerRumble(controller, joystick.rumbleLow, joystick.rumbleHigh, joystick.rumbleTime);
 
-        joystick.rumbleTime = joystick.rumbleLow = joystick.rumbleHigh = 0;
+            joystick.rumbleTime = joystick.rumbleLow = joystick.rumbleHigh = 0;
+        }
     }
+#endif
 
     if (g_mouseBits & 2 && osd->flags & OSD_CAPTURE && SDL_HasClipboardText())
     {
