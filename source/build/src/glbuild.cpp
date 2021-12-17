@@ -49,7 +49,7 @@ void buildgl_outputDebugMessage(uint8_t severity, const char* format, ...)
         va_end(va);
     } while ((unsigned)len > size-1);
 
-    buf[size-1] = 0;
+    buf[len] = 0;
     glDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB,
                             GL_DEBUG_TYPE_OTHER_ARB,
                             0,

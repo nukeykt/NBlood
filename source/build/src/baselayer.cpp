@@ -69,7 +69,7 @@ int initprintf(const char *f, ...)
         va_end(va);
     } while ((unsigned)len > size-1);
 
-    buf[size-1] = 0;
+    buf[len] = 0;
     initputs(buf);
     Xfree(buf);
 
