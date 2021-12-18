@@ -3394,9 +3394,9 @@ bool condCheckMixed(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH) {
                             break;
                         case 28:
                             switch (arg3) {
-                                default: return ((pObj->floorstat & arg1) || (pObj->ceilingshade & arg1));
+                                default: return ((pObj->floorstat & arg1) || (pObj->ceilingstat & arg1));
                                 case 1:  return (pObj->floorstat & arg1);
-                                case 2:  return (pObj->ceilingshade & arg1);
+                                case 2:  return (pObj->ceilingstat & arg1);
                             }
                             break;
                         case 29: return (pObj->hitag & arg1);
@@ -3493,16 +3493,16 @@ bool condCheckMixed(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH) {
                         case 59: return pXObj->dudeLockout;
                         case 70:
                             switch (arg3) {
-                                default: return (condCmp(seqGetID(1, wall[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetID(2, wall[objIndex].extra), arg1, arg2, cmpOp));
-                                case 1:  return condCmp(seqGetID(1, wall[objIndex].extra), arg1, arg2, cmpOp);
-                                case 2:  return condCmp(seqGetID(2, wall[objIndex].extra), arg1, arg2, cmpOp);
+                                default: return (condCmp(seqGetID(1, sector[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetID(2, sector[objIndex].extra), arg1, arg2, cmpOp));
+                                case 1:  return condCmp(seqGetID(1, sector[objIndex].extra), arg1, arg2, cmpOp);
+                                case 2:  return condCmp(seqGetID(2, sector[objIndex].extra), arg1, arg2, cmpOp);
                             }
                             break;
                         case 71:
                             switch (arg3) {
-                                default: return (condCmp(seqGetStatus(1, wall[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetStatus(2, wall[objIndex].extra), arg1, arg2, cmpOp));
-                                case 1:  return condCmp(seqGetStatus(1, wall[objIndex].extra), arg1, arg2, cmpOp);
-                                case 2:  return condCmp(seqGetStatus(2, wall[objIndex].extra), arg1, arg2, cmpOp);
+                                default: return (condCmp(seqGetStatus(1, sector[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetStatus(2, sector[objIndex].extra), arg1, arg2, cmpOp));
+                                case 1:  return condCmp(seqGetStatus(1, sector[objIndex].extra), arg1, arg2, cmpOp);
+                                case 2:  return condCmp(seqGetStatus(2, sector[objIndex].extra), arg1, arg2, cmpOp);
                             }
                             break;
                     }
