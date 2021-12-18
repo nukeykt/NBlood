@@ -547,6 +547,7 @@ static char const * windowsDecodeKeyboardLayoutName(char const * keyboardLayout)
 
 void windowsSetKeyboardLayout(char const *layout, int focusChanged /*= 0*/)
 {
+	/*
     char layoutName[KL_NAMELENGTH];
     
     GetKeyboardLayoutName(layoutName);
@@ -577,6 +578,7 @@ void windowsSetKeyboardLayout(char const *layout, int focusChanged /*= 0*/)
     }
     else
         ActivateKeyboardLayout(windowsGetSystemKeyboardLayout(), KLF_SETFORPROCESS);
+	*/
 }
 
 
