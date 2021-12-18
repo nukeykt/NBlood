@@ -206,7 +206,7 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
                                     sprite[nSpriteB].shade++;
                                 }
 
-                                if (!(sprite[nSpriteB].cstat & 101))
+                                if (!(sprite[nSpriteB].cstat & 0x101))
                                 {
                                     DestroyAnim(nAnim);
                                     mydeletesprite(nSprite);
