@@ -139,17 +139,9 @@ static int osdfunc_heapinfo(osdcmdptr_t UNUSED(parm))
     return OSDCMD_OK;
 }
 
-void engineDestroyAllocator(void)
+void engineSetupAllocator(void)
 {
-    _sm_allocator_thread_cache_destroy(g_sm_heap);
-    _sm_allocator_destroy(g_sm_heap);
-}
-
-void engineCreateAllocator(void)
-{
-    // 8 buckets of 2MB each--we don't really need to burn a lot of memory here for this thing to do its job
-    g_sm_heap = _sm_allocator_create(SMM_MAX_BUCKET_COUNT, 2097152);
-    _sm_allocator_thread_cache_create(g_sm_heap, sm::CACHE_HOT, { 20480, 32768, 32768, 1536, 4096, 8192, 128, 4096 });
+    engineCreateAllocator();
 
 #ifdef SMMALLOC_STATS_SUPPORT
     OSD_RegisterFunction("bucketlist", "bucketlist: list bucket statistics", osdfunc_bucketlist);

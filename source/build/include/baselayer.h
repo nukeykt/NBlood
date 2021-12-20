@@ -19,8 +19,7 @@ extern int app_main(int argc, char const * const * argv);
 extern const char* AppProperName;
 extern const char* AppTechnicalName;
 
-void engineCreateAllocator(void);
-void engineDestroyAllocator(void);
+void engineSetupAllocator(void);
 
 #ifdef DEBUGGINGAIDS
 # define DEBUG_MASK_DRAWING

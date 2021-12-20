@@ -452,7 +452,7 @@ int SDL_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-    engineCreateAllocator();
+    engineSetupAllocator();
 
 #if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 8)
     if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 8))

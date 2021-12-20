@@ -61,6 +61,7 @@ int main(int argc, char **argv)
 
     memset(&icon, 0, sizeof(icon));
 
+    engineCreateAllocator();
     kpzload(argv[1], (intptr_t*)&icon.pixels, &icon.width, &icon.height);
     if (!icon.pixels) {
         Bfprintf(stderr, "Failure loading %s\n", argv[1]);
