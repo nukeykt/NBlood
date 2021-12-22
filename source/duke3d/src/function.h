@@ -105,9 +105,14 @@ enum GameFunction_t
    };
 
 extern char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
-extern const char internal_gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
+extern const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 extern const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
 extern const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
+
+// classic order is just integers ascending, hence omitted
+#define keybind_order_classic NULL
+extern const int32_t keybind_order_modern[NUMGAMEFUNCTIONS];
+extern int32_t keybind_order_custom[NUMGAMEFUNCTIONS];
 
 #ifdef __cplusplus
 }

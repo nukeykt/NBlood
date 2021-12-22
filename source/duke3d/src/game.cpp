@@ -5841,7 +5841,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     continue;
                 }
 
-                g_keyEntryOrder[currSlot] = keyIndex;
+                keybind_order_custom[currSlot] = keyIndex;
                 gamefunc_bitmap |= (1ULL << keyIndex);
                 currSlot++;
             }
@@ -5849,7 +5849,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             // fill up remaining slots
             while(currSlot < NUMGAMEFUNCTIONS)
             {
-                g_keyEntryOrder[currSlot] = -1;
+                keybind_order_custom[currSlot] = -1;
                 currSlot++;
             }
 

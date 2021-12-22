@@ -210,8 +210,6 @@ they effectively stand in for curly braces as struct initializers.
 
 MenuGameplayEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
-int32_t g_keyEntryOrder[NUMGAMEFUNCTIONS] = {-1};
-
 // common font types
 // tilenums are set after namesdyn runs
 
@@ -289,12 +287,13 @@ static MenuOptionSet_t MEOS_NoYes = MAKE_MENUOPTIONSET( MEOSN_NoYes, NULL, 0x3 )
 static char const *MEOSN_YesNo[] = { "Yes", "No", };
 static MenuOptionSet_t MEOS_YesNo = MAKE_MENUOPTIONSET( MEOSN_YesNo, NULL, 0x3 );
 
-
 static char MenuGameFuncs[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 static char const *MenuGameFuncNone = "  -None-";
 static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
+
+int32_t kbo_type_cvar = 1;
 
 static int g_lookAxis = -1;
 static int g_turnAxis = -1;
@@ -1933,6 +1932,21 @@ It also initializes some data in loops rather than statically at compile time.
 void Menu_Init(void)
 {
     int32_t i, j, k;
+    int32_t const *init_keybind_order = NULL;
+
+    // always prefer custom order, defined by DEF script
+    if (keybind_order_custom[0] >= 0)
+        init_keybind_order = keybind_order_custom;
+    else
+    {
+        // else, change based on cvar
+        if (kbo_type_cvar == 1)
+            init_keybind_order = keybind_order_modern;
+        else
+            init_keybind_order = keybind_order_classic;
+    }
+
+    bool do_reorder_keys = (init_keybind_order && init_keybind_order[0] >= 0);
 
     if (FURY)
     {
@@ -1954,9 +1968,8 @@ void Menu_Init(void)
     // prepare gamefuncs and keys
     MEOSN_Gamefuncs[0] = MenuGameFuncNone;
     MEOSV_Gamefuncs[0] = -1;
-    k = 1;
 
-    bool customKeyOrder = (g_keyEntryOrder[0] >= 0);
+    k = 1;
     for (i = 0; i < NUMGAMEFUNCTIONS; ++i)
     {
         Bstrcpy(MenuGameFuncs[i], gamefunctions[i]);
@@ -1965,7 +1978,7 @@ void Menu_Init(void)
             if (MenuGameFuncs[i][j] == '_')
                 MenuGameFuncs[i][j] = ' ';
 
-        j = customKeyOrder ? g_keyEntryOrder[i] : i;
+        j = (do_reorder_keys) ? init_keybind_order[i] : i;
 
         if (j >= 0 && gamefunctions[j][0] != '\0')
         {
@@ -1974,8 +1987,9 @@ void Menu_Init(void)
             ++k;
         }
     }
+
     // 4 -- unsorted list
-    MEOS_Gamefuncs.features |= customKeyOrder ? 4 : 0;
+    MEOS_Gamefuncs.features |= (do_reorder_keys) ? 4 : 0;
     MEOS_Gamefuncs.numOptions = k;
 
     for (i = 1; i < NUMKEYS-1; ++i)
@@ -2210,13 +2224,13 @@ void Menu_Init(void)
     }
 
     //reorder entries if defined
-    if (g_keyEntryOrder[0] != -1)
+    if (do_reorder_keys)
     {
         MenuEntry_t* tempkeyboardfuncs[NUMGAMEFUNCTIONS];
         for (i = 0; i < NUMGAMEFUNCTIONS; ++i)
         {
-            if (g_keyEntryOrder[i] >= 0)
-                tempkeyboardfuncs[i] = MEL_KEYBOARDSETUPFUNCS[g_keyEntryOrder[i]];
+            if (init_keybind_order[i] >= 0)
+                tempkeyboardfuncs[i] = MEL_KEYBOARDSETUPFUNCS[init_keybind_order[i]];
             else
                 tempkeyboardfuncs[i] = NULL;
         }

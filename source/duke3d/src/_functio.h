@@ -118,8 +118,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Toggle_Crouch",
    };
 
-
-// Note: ordering of gamefunctions is important, must not be changed
+// note: internal ordering is important, must not be changed
 const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    {
    "gamefunc_Move_Forward",
@@ -202,6 +201,86 @@ const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "gamefunc_Third_Person_View",
    "gamefunc_Toggle_Crouch",
    };
+
+
+// classic key order is just integer indices ascending, not listed
+const int32_t keybind_order_modern[NUMGAMEFUNCTIONS] =
+   {
+   // WASD
+   gamefunc_Move_Forward,
+   gamefunc_Move_Backward,
+   gamefunc_Strafe_Left,
+   gamefunc_Strafe_Right,
+   // attacks
+   gamefunc_Fire,
+   gamefunc_Alt_Fire,
+   gamefunc_Quick_Kick,
+   // interact
+   gamefunc_Open,
+   gamefunc_Jump,
+   gamefunc_Crouch,
+   gamefunc_Toggle_Crouch,
+   // inventory
+   gamefunc_Inventory,
+   gamefunc_Inventory_Left,
+   gamefunc_Inventory_Right,
+   gamefunc_Holo_Duke,
+   gamefunc_Jetpack,
+   gamefunc_NightVision,
+   gamefunc_MedKit,
+   gamefunc_Steroids,
+   // weapon selection
+   gamefunc_Next_Weapon,
+   gamefunc_Previous_Weapon,
+   gamefunc_Last_Weapon,
+   gamefunc_Alt_Weapon,
+   gamefunc_Holster_Weapon,
+   gamefunc_Weapon_1,
+   gamefunc_Weapon_2,
+   gamefunc_Weapon_3,
+   gamefunc_Weapon_4,
+   gamefunc_Weapon_5,
+   gamefunc_Weapon_6,
+   gamefunc_Weapon_7,
+   gamefunc_Weapon_8,
+   gamefunc_Weapon_9,
+   gamefunc_Weapon_10,
+   // important utilities
+   gamefunc_Map,
+   gamefunc_Map_Follow_Mode,
+   gamefunc_Third_Person_View,
+   gamefunc_Shrink_Screen,
+   gamefunc_Enlarge_Screen,
+   gamefunc_Quick_Save,
+   gamefunc_Quick_Load,
+   gamefunc_Show_Console,
+   // rarely used or usually replaced
+   gamefunc_Run,
+   gamefunc_Strafe,
+   gamefunc_Aim_Up,
+   gamefunc_Aim_Down,
+   gamefunc_Center_View,
+   gamefunc_Turn_Left,
+   gamefunc_Turn_Right,
+   gamefunc_Look_Up,
+   gamefunc_Look_Down,
+   gamefunc_Look_Left,
+   gamefunc_Look_Right,
+   gamefunc_TurnAround,
+   gamefunc_Dpad_Select,
+   gamefunc_Dpad_Aiming,
+   // toggles that have corresponding menu options
+   gamefunc_Mouse_Aiming,
+   gamefunc_Toggle_Crosshair,
+   gamefunc_AutoRun,
+   // multiplayer
+   gamefunc_SendMessage,
+   gamefunc_Show_Opponents_Weapon,
+   gamefunc_See_Coop_View,
+   gamefunc_Show_DukeMatch_Scores,
+   };
+
+int32_t keybind_order_custom[NUMGAMEFUNCTIONS] = {-1};
 
 #ifdef __SETUP__
 
