@@ -1408,15 +1408,15 @@ void  _xaligned_free(void * const ptr);
 }
 #endif
 
-#define Xstrdup       EDUKE32_ALLOC(xstrdup)
-#define Xmalloc       EDUKE32_ALLOC(xmalloc)
-#define Xcalloc       EDUKE32_ALLOC(xcalloc)
-#define Xrealloc      EDUKE32_ALLOC(xrealloc)
-#define Xfree         _EDUKE32_ALLOC(xfree)
-#define Xaligned_free _EDUKE32_ALLOC(xaligned_free)
+#define Xstrdup       EDUKE32_ALLOC(strdup)
+#define Xmalloc       EDUKE32_ALLOC(malloc)
+#define Xcalloc       EDUKE32_ALLOC(calloc)
+#define Xrealloc      EDUKE32_ALLOC(realloc)
+#define Xfree         _EDUKE32_ALLOC(free)
+#define Xaligned_free _EDUKE32_ALLOC(free)
 
-#define Xaligned_alloc  EDUKE32_ALLOC(xaligned_alloc)
-#define Xaligned_calloc EDUKE32_ALLOC(xaligned_calloc)
+#define Xaligned_alloc(a, b)  malloc(b)
+#define Xaligned_calloc(a,b,c) calloc(b, c)
 
 ////////// More utility functions //////////
 
