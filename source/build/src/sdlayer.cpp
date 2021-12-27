@@ -453,8 +453,8 @@ int main(int argc, char *argv[])
 #endif
 {
     engineSetupAllocator();
-
-#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 8)
+    
+#if SDL_VERSION_ATLEAST(2, 0, 8)
     if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 8))
         SDL_SetMemoryFunctions(_xmalloc, _xcalloc, _xrealloc, _xfree);
 #endif
@@ -918,7 +918,7 @@ void joyScanDevices()
         {
             if ((controller = SDL_GameControllerOpen(i)))
             {
-#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
+#if SDL_VERSION_ATLEAST(2, 0, 14)
                 if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
                     Bsnprintf(name, sizeof(name), "%s [%s]", SDL_GameControllerName(controller), SDL_GameControllerGetSerial(controller));
                 else
@@ -934,7 +934,7 @@ void joyScanDevices()
                 joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
 
                 joystick.validButtons = UINT32_MAX;
-#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 14
+#if SDL_VERSION_ATLEAST(2, 0, 14)
                 if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 14))
                 {
                     joystick.numAxes = 0;
@@ -960,7 +960,7 @@ void joyScanDevices()
 
                 inputdevices |= DEV_JOYSTICK;
 
-#if SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9
+#if SDL_VERSION_ATLEAST(2, 0, 9)
                 if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
                 {
                     if (!SDL_GameControllerRumble(controller, 0xc000, 0xc000, 10))
@@ -1010,7 +1010,7 @@ void joyScanDevices()
                 SDL_JoystickEventState(SDL_ENABLE);
                 inputdevices |= DEV_JOYSTICK;
 
-#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9)
+#if SDL_VERSION_ATLEAST(2, 0, 9)
                 if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
                 {
                     if (!SDL_JoystickRumble(joydev, 0xffff, 0xffff, 200))
@@ -1082,7 +1082,7 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
         joyScanDevices();
     }
 
-#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9)
+#if SDL_VERSION_ATLEAST(2, 0, 9)
     if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
     {
         if (joystick.flags & JOY_RUMBLE)
@@ -1232,8 +1232,8 @@ void mouseUninit(void)
 //                    furthermore return 0 if successful.
 //
 
-#if defined _WIN32 && SDL_MINOR_VERSION == 0 && SDL_PATCHLEVEL < 13
-// bypass SDL_SetWindowGrab--see https://bugzilla.libsdl.org/show_bug.cgi?id=4748
+#if defined _WIN32 && !SDL_VERSION_ATLEAST(2, 0, 13)
+// bypass SDL_SetWindowGrab--see https://github.com/libsdl-org/SDL/issues/3353
 static void SetWindowGrab(SDL_Window *pWindow, int const clipToWindow)
 {
     UNREFERENCED_PARAMETER(pWindow);
@@ -2550,7 +2550,7 @@ int32_t handleevents(void)
 
     int32_t rv;
 
-#if SDL_MAJOR_VERSION >= 2 && (SDL_MINOR_VERSION > 0 || SDL_PATCHLEVEL >= 9)
+#if SDL_VERSION_ATLEAST(2, 0, 9)
     if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
     {
         if (joystick.hasRumble)
