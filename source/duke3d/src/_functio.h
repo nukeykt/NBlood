@@ -155,10 +155,10 @@ const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "gamefunc_NightVision",
    "gamefunc_MedKit",
 #else
-   "gamefunc_Inventory_Hotkey_1",
-   "gamefunc_Inventory_Hotkey_2",
-   "gamefunc_Inventory_Hotkey_3",
-   "gamefunc_Inventory_Hotkey_4",
+   "gamefunc_Item_1",
+   "gamefunc_Item_2",
+   "gamefunc_Item_3",
+   "gamefunc_Item_4",
 #endif
    "gamefunc_TurnAround",
    "gamefunc_SendMessage",
@@ -176,8 +176,8 @@ const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "gamefunc_Steroids",
    "gamefunc_Quick_Kick",
 #else
-   "gamefunc_Inventory_Hotkey_5",
-   "gamefunc_Melee_Hotkey",
+   "gamefunc_Item_5",
+   "gamefunc_Melee",
 #endif
    "gamefunc_Next_Weapon",
    "gamefunc_Previous_Weapon",
