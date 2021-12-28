@@ -5755,10 +5755,14 @@ static void polymost_drawalls(int32_t const bunch)
         }
         else
         {
-            g_nodraw = 1;
-            yax_drawcf = -1;
-            polymost_domost(x0, fy0, x1, fy1);
-            g_nodraw = 0;
+            int32_t fz = getflorzofslope(sectnum, globalposx, globalposy);
+            if (globalposz <= fz)
+            {
+                g_nodraw = 1;
+                yax_drawcf = -1;
+                polymost_domost(x0, fy0, x1, fy1);
+                g_nodraw = 0;
+            }
         }
 #endif
         
@@ -6170,10 +6174,14 @@ static void polymost_drawalls(int32_t const bunch)
         }
         else
         {
-            g_nodraw = 1;
-            yax_drawcf = -1;
-            polymost_domost(x1, cy1, x0, cy0);
-            g_nodraw = 0;
+            int32_t cz = getceilzofslope(sectnum, globalposx, globalposy);
+            if (globalposz >= cz)
+            {
+                g_nodraw = 1;
+                yax_drawcf = -1;
+                polymost_domost(x1, cy1, x0, cy0);
+                g_nodraw = 0;
+            }
         }
 #endif
         
