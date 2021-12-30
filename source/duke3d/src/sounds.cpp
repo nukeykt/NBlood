@@ -454,9 +454,7 @@ void S_Cleanup(void)
         while (num == 0xdeadbeef)
         {
             num = freeSlotQueue[(localQueueIndex-1) & (MAXVOICES-1)];
-#ifndef NDEBUG
             OSD_Puts("Unexpected magic beef!\n");
-#endif
         }
 
         freeSlotQueue[localQueueIndex & (MAXVOICES-1)] = 0xdeadbeef;
@@ -1064,6 +1062,8 @@ void S_StopAllSounds(void)
         g_sounds[i]->lock = CACHE1D_UNLOCKED;
 #endif
     }
+
+    g_dukeTalk = false;
 }
 
 void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
@@ -1173,7 +1173,10 @@ void S_Callback(intptr_t num)
         int anum = (num - voiceindex) / MAXSOUNDINSTANCES;    
 
         if (!bitmap_test(&g_sounds[anum]->playing, voiceindex))
+        {
+            OSD_Printf("Got callback for sound %d index %d that wasn't playing!\n", anum, voiceindex);
             return;
+        }
     }
 
 #ifndef NDEBUG

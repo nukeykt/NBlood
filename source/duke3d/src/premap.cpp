@@ -1427,8 +1427,9 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 
     if (ud.skill_voice > 0 && ud.config.SoundToggle)
     {
-        while (FX_SoundActive(ud.skill_voice))
-            gameHandleEvents();
+        // this is not an error
+        while (ud.skill_voice > 0 && !FX_SoundActive(ud.skill_voice)) gameHandleEvents();
+        while (ud.skill_voice > 0 && FX_SoundActive(ud.skill_voice)) gameHandleEvents();
     }
 
     S_PauseSounds(false);
@@ -1905,7 +1906,7 @@ int G_EnterLevel(int gameMode)
     if (g_networkMode != NET_DEDICATED_SERVER)
     {
         S_PauseSounds(false);
-        FX_StopAllSounds();
+        S_StopAllSounds();
         S_ClearSoundLocks();
         FX_SetReverb(0);
         videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, upscalefactor);
