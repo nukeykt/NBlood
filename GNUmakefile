@@ -255,6 +255,7 @@ engine_objs := \
     hightile.cpp \
     klzw.cpp \
     kplib.cpp \
+    loguru.cpp \
     lz4.c \
     md4.cpp \
     mhk.cpp \
@@ -298,6 +299,7 @@ engine_tools_objs := \
     crc32.cpp \
     klzw.cpp \
     kplib.cpp \
+    loguru.cpp \
     lz4.cpp \
     pragmas.cpp \
     smmalloc.cpp \
