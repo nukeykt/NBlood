@@ -91,7 +91,7 @@ enum GameFunction_t
    gamefunc_Next_Weapon,
    gamefunc_Previous_Weapon,
    gamefunc_Show_Console,
-   gamefunc_Show_DukeMatch_Scores,
+   gamefunc_Show_Scoreboard,
    gamefunc_Dpad_Select,
    gamefunc_Dpad_Aiming,
    gamefunc_AutoRun,

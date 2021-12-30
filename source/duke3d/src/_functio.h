@@ -102,11 +102,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Next_Weapon",
    "Previous_Weapon",
    "Show_Console",
-#ifndef EDUKE32_STANDALONE
-   "Show_DukeMatch_Scores",
-#else
-   "Show_Multiplayer_Scores",
-#endif
+   "Show_Scoreboard",
    "Dpad_Select",
    "Dpad_Aiming",
    "AutoRun",
@@ -186,11 +182,7 @@ const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "gamefunc_Next_Weapon",
    "gamefunc_Previous_Weapon",
    "gamefunc_Show_Console",
-#ifndef EDUKE32_STANDALONE
-   "gamefunc_Show_DukeMatch_Scores",
-#else
-   "gamefunc_Show_Multiplayer_Scores",
-#endif
+   "gamefunc_Show_Scoreboard",
    "gamefunc_Dpad_Select",
    "gamefunc_Dpad_Aiming",
    "gamefunc_AutoRun",
@@ -276,7 +268,7 @@ const int32_t keybind_order_modern[NUMGAMEFUNCTIONS] =
    gamefunc_SendMessage,
    gamefunc_Show_Opponents_Weapon,
    gamefunc_See_Coop_View,
-   gamefunc_Show_DukeMatch_Scores,
+   gamefunc_Show_Scoreboard,
    gamefunc_Show_Console,
    };
 
