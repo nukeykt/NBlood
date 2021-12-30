@@ -590,7 +590,7 @@ static void controlUpdateFlagsFromButtons(int32_t *const p1)
             if (CONTROL_KeyBinds[MAXBOUNDKEYS + i].cmdstr && mouseButtons[i].state)
             {
                 if (CONTROL_KeyBinds[MAXBOUNDKEYS + i].repeat || (CONTROL_KeyBinds[MAXBOUNDKEYS + i].laststate == 0))
-                    OSD_Dispatch(CONTROL_KeyBinds[MAXBOUNDKEYS + i].cmdstr);
+                    OSD_Dispatch(CONTROL_KeyBinds[MAXBOUNDKEYS + i].cmdstr, true);
             }
             CONTROL_KeyBinds[MAXBOUNDKEYS + i].laststate = mouseButtons[i].state;
         }
@@ -664,7 +664,7 @@ void CONTROL_ProcessBinds(void)
             if (keyPressed && (CONTROL_KeyBinds[i].repeat || (CONTROL_KeyBinds[i].laststate == 0)))
             {
                 CONTROL_LastSeenInput = LastSeenInput::Keyboard;
-                OSD_Dispatch(CONTROL_KeyBinds[i].cmdstr);
+                OSD_Dispatch(CONTROL_KeyBinds[i].cmdstr, true);
             }
 
             CONTROL_KeyBinds[i].laststate = keyPressed;
@@ -751,17 +751,16 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     KB_Startup();
 
     CONTROL_NumMouseButtons = MAXMOUSEBUTTONS;
-    CONTROL_MousePresent    = MOUSE_Startup();
-    CONTROL_MouseEnabled    = CONTROL_MousePresent;
+    CONTROL_MousePresent    = MOUSE_Startup();    
+
+    if (!(CONTROL_MouseEnabled = CONTROL_MousePresent))
+        DVLOG_F(LOG_INPUT, "No mice found.");
 
     CONTROL_ResetJoystickValues();
 
 #ifdef GEKKO
-    if (CONTROL_MousePresent)
-        initprintf("CONTROL_Startup: Mouse Present\n");
-
-    if (CONTROL_JoyPresent)
-        initprintf("CONTROL_Startup: Joystick Present\n");
+    if (!CONTROL_JoyPresent)
+        DVLOG_F(LOG_INPUT, "No controllers found.");
 #endif
 
     CONTROL_ButtonState     = 0;

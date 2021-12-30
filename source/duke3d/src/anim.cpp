@@ -229,7 +229,7 @@ int32_t Anim_Play(const char *fn)
 
     if (!anim)
     {
-        OSD_Printf("Animation %s is undefined!\n", fn);
+        LOG_F(ERROR, "Unable to play %s: undefined cutscene", fn);
         return 0;
     }
 
@@ -281,7 +281,7 @@ int32_t Anim_Play(const char *fn)
 
         if (i)
         {
-            OSD_Printf("Failed reading IVF file: %s\n", animvpx_read_ivf_header_errmsg[i]);
+            LOG_F(ERROR, "Unable to play %s: %s", fn, animvpx_read_ivf_header_errmsg[i]);
             kclose(handle);
             return 0;
         }
@@ -292,7 +292,7 @@ int32_t Anim_Play(const char *fn)
 
         if (animvpx_init_codec(&info, handle, &codec))
         {
-            OSD_Printf("Error initializing VPX codec.\n");
+            LOG_F(ERROR, "Failed initializing VPX codec.");
             animvpx_restore_glstate();
             kclose(handle);
             return 0;
@@ -317,12 +317,12 @@ int32_t Anim_Play(const char *fn)
             i = animvpx_nextpic(&codec, &pic);
             if (i)
             {
-                OSD_Printf("Failed getting next pic: %s\n", animvpx_nextpic_errmsg[i]);
+                LOG_F(ERROR, "Failed getting next pic: %s", animvpx_nextpic_errmsg[i]);
                 if (codec.errmsg)
                 {
-                    OSD_Printf("  %s\n", codec.errmsg);
+                    LOG_F(ERROR, "  %s", codec.errmsg);
                     if (codec.errmsg_detail)
-                        OSD_Printf("  detail: %s\n", codec.errmsg_detail);
+                        LOG_F(ERROR, "  detail: %s", codec.errmsg_detail);
                 }
                 break;
             }
@@ -425,7 +425,7 @@ int32_t Anim_Play(const char *fn)
 
     if (length <= 4)
     {
-        OSD_Printf("Warning: skipping playback of empty ANM file \"%s\".\n", fn);
+        LOG_F(WARNING, "Unable to play %s: no data.", fn);
         goto end_anim;
     }
 
@@ -453,7 +453,7 @@ int32_t Anim_Play(const char *fn)
     {
         // XXX: ANM_LoadAnim() still checks less than the bare minimum,
         // e.g. ANM file could still be too small and not contain any frames.
-        OSD_Printf("Error: malformed ANM file \"%s\".\n", fn);
+        LOG_F(ERROR, "Unable to play %s: malformed file.", fn);
         goto end_anim;
     }
 
@@ -520,7 +520,7 @@ int32_t Anim_Play(const char *fn)
     {
         if (i > 4 && totalclock > frametime + 60)
         {
-            OSD_Printf("WARNING: slowdown in %s, skipping playback\n", fn);
+            LOG_F(WARNING, "Unable to maintain framerate playing %s, stopping playback to preserve dignity.", fn);
             goto end_anim_restore_gl;
         }
 

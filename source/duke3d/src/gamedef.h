@@ -69,7 +69,7 @@ enum
     do                                                                                         \
     {                                                                                          \
         C_ReportError(-1);                                                                     \
-        initprintf("%s:%d: error: " Text "\n", g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
+        LOG_F(ERROR, "%s:%d: " Text, g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
         g_errorCnt++;                                                                          \
     } while (0)
 
@@ -77,9 +77,28 @@ enum
     do                                                                                           \
     {                                                                                            \
         C_ReportError(-1);                                                                       \
-        initprintf("%s:%d: warning: " Text "\n", g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
+        LOG_F(WARNING, "%s:%d: " Text, g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
         g_warningCnt++;                                                                          \
     } while (0)
+
+struct vmofs
+{
+    char *fn;
+    struct vmofs *next;
+    int offset;
+};
+
+extern struct vmofs *vmoffset;
+
+static inline const char *C_GetFileForOffset(int const offset)
+{
+    auto ofs = vmoffset;
+    while (ofs->offset > offset)
+        ofs = ofs->next;
+    return ofs->fn;    
+}
+
+#define VM_FILENAME(xxx) C_GetFileForOffset((xxx)-apScript)
 
 extern intptr_t const * insptr;
 void VM_ScriptInfo(intptr_t const * const ptr, int const range);

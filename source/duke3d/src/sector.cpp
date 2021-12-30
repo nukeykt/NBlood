@@ -390,8 +390,7 @@ static void G_SetupCamTile(int spriteNum, int tileNum, int smoothRatio)
         goto finishTileSetup;
 #ifdef DEBUGGINGAIDS
     else if (EDUKE32_PREDICT_FALSE(noDraw != 0)) // event return values other than 0 and 1 are reserved
-        OSD_Printf(OSD_ERROR "ERROR: EVENT_DISPLAYROOMSCAMERATILE return value must be 0 or 1, "
-                   "other values are reserved.\n");
+        LOG_F(ERROR, "EVENT_DISPLAYROOMSCAMERATILE return value must be 0 or 1, all other values are reserved.");
 #endif
 
     yax_preparedrawrooms();
@@ -765,7 +764,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
                 i = nextsectorneighborz(sectNum,pSector->floorz,1,-1);
                 if (i == -1)
                 {
-                    OSD_Printf("ST_16_PLATFORM_DOWN/ST_17_PLATFORM_UP: bad neighbor for sector %d!\n", sectNum);
+                    LOG_F(WARNING, "ST_16_PLATFORM_DOWN/ST_17_PLATFORM_UP: bad neighbor for sector %d!", sectNum);
                     return;
                 }
                 j = sector[i].floorz;
@@ -795,7 +794,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
 
             if (i == -1)
             {
-                OSD_Printf("ST_18_ELEVATOR_DOWN/ST_19_ELEVATOR_UP: bad neighbor for sector %d!\n", sectNum);
+                LOG_F(WARNING, "ST_18_ELEVATOR_DOWN/ST_19_ELEVATOR_UP: bad neighbor for sector %d!", sectNum);
                 return;
             }
 
@@ -831,7 +830,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
             if (j == -1) j = nextsectorneighborz(sectNum,pSector->ceilingz,1,1);
             if (j == -1)
             {
-                OSD_Printf("ST_29_TEETH_DOOR: bad neighbor for sector %d!\n", sectNum);
+                LOG_F(WARNING, "ST_29_TEETH_DOOR: bad neighbor for sector %d!", sectNum);
                 return;
             }
             j = sector[j].ceilingz;
@@ -842,7 +841,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
             if (j == -1) j = nextsectorneighborz(sectNum,pSector->ceilingz,-1,-1);
             if (j == -1)
             {
-                OSD_Printf("ST_29_TEETH_DOOR: bad neighbor for sector %d!\n", sectNum);
+                LOG_F(WARNING, "ST_29_TEETH_DOOR: bad neighbor for sector %d!", sectNum);
                 return;
             }
             j = sector[j].floorz;
@@ -895,7 +894,7 @@ REDODOOR:
                 j = nextsectorneighborz(sectNum, pSector->ceilingz, 1, 1);
                 if (j == -1)
                 {
-                    OSD_Printf("ST_21_FLOOR_DOOR: bad neighbor for sector %d!\n", sectNum);
+                    LOG_F(WARNING, "ST_21_FLOOR_DOOR: bad neighbor for sector %d!", sectNum);
                     return;
                 }
                 g_animateGoal[i] = sector[j].floorz;
@@ -909,7 +908,7 @@ REDODOOR:
                 i = nextsectorneighborz(sectNum, pSector->ceilingz, 1, 1);
                 if (i == -1)
                 {
-                    OSD_Printf("ST_21_FLOOR_DOOR: bad neighbor for sector %d!\n", sectNum);
+                    LOG_F(WARNING, "ST_21_FLOOR_DOOR: bad neighbor for sector %d!", sectNum);
                     return;
                 }
                 j = sector[i].floorz;
@@ -943,7 +942,7 @@ REDODOOR:
             }
             else
             {
-                OSD_Printf("ST_22_SPLITTING_DOOR: bad neighbor for sector %d; floor neighbor=%d, ceiling neighbor=%d!\n", sectNum, floorNeighbor, ceilingNeighbor);
+                LOG_F(WARNING, "ST_22_SPLITTING_DOOR: bad neighbor for sector %d; floor neighbor=%d, ceiling neighbor=%d!", sectNum, floorNeighbor, ceilingNeighbor);
                 pSector->lotag ^= 0x8000u;
             }
         }

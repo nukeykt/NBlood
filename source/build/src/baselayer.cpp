@@ -82,12 +82,23 @@ int initprintf(const char *f, ...)
 //
 void initputs(const char *buf)
 {
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_INFO,"DUKE", "%s",buf);
-#endif
+    if (!startwin_isopen())
+        return;
 
-    OSD_Puts(buf);
-    startwin_puts(buf);
+    // terrible hack... the start window relies on newlines, but we don't have them at the end of the buffer anymore
+    int len = Bstrlen(buf);
+    Bassert(len > 0);
+
+    if (buf[len] == '\n')
+        startwin_puts(buf);
+    else
+    {
+        auto buf2 = (char *)Balloca(len+2);
+        Bmemcpy(buf2, buf, len);
+        buf2[len] = '\n';
+        buf2[len+1] = '\0';
+        startwin_puts(buf2);
+    }
 }
 
 
@@ -95,7 +106,7 @@ static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 #ifdef SMMALLOC_STATS_SUPPORT
-    OSD_Printf("\n%s         --- BUCKET LIST ---\n\n", osd->draw.errorfmt);
+    LOG_F(INFO, "         --- BUCKET LIST ---");
 
     int const numBuckets = g_sm_heap->GetBucketsCount();
     uint32_t totalBytesUsed = 0;
@@ -104,7 +115,7 @@ static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
     {
         uint32_t const elementSize = g_sm_heap->GetBucketElementSize(i);
 
-        OSD_Printf("bucket #%u (%d blocks of %d bytes):\n", i, g_sm_heap->GetBucketElementsCount(i), elementSize);
+        LOG_F(INFO, "bucket #%u (%d blocks of %d bytes):", i, g_sm_heap->GetBucketElementsCount(i), elementSize);
 
         auto stats = g_sm_heap->GetBucketStats(i);
 
@@ -113,21 +124,21 @@ static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
         uint32_t const missCount     = (uint32_t)stats->missCount.load();
         uint32_t const freeCount     = (uint32_t)stats->freeCount.load();
 
-        OSD_Printf("%12s: %u\n", "cache hit", cacheHitCount);
-        OSD_Printf("%12s: %u\n", "hit",       hitCount);
+        LOG_F(INFO, "%12s: %u", "cache hit", cacheHitCount);
+        LOG_F(INFO, "%12s: %u", "hit",       hitCount);
         if (missCount)
-            OSD_Printf("%12s: %s%u\n","miss", osd->draw.errorfmt, missCount);
-        OSD_Printf("%12s: %u\n",  "freed",     freeCount);
+            LOG_F(INFO, "%12s: %s%u","miss", osd->draw.errorfmt, missCount);
+        LOG_F(INFO, "%12s: %u",  "freed",     freeCount);
 
         uint32_t const useCount        = cacheHitCount + hitCount + missCount - freeCount;
         uint32_t const bucketBytesUsed = useCount * elementSize;
         totalBytesUsed += bucketBytesUsed;
-        OSD_Printf("%12s: %u (%d bytes)\n\n", "in use", useCount, bucketBytesUsed);
+        LOG_F(INFO, "%12s: %u (%d bytes)", "in use", useCount, bucketBytesUsed);
     }
 
-    OSD_Printf("%d total bytes in use across %d buckets.\n", totalBytesUsed, numBuckets);
+    LOG_F(INFO, "%d total bytes in use across %d buckets.", totalBytesUsed, numBuckets);
 #else
-    OSD_Printf("bucketlist: missing SMMALLOC_STATS_SUPPORT!\n");
+    LOG_F(ERROR, "bucketlist: missing SMMALLOC_STATS_SUPPORT!");
 #endif
     return OSDCMD_OK;
 }
@@ -149,6 +160,88 @@ void engineSetupAllocator(void)
     OSD_RegisterFunction("heapinfo", "heapinfo: memory usage statistics", osdfunc_heapinfo);
 }
 
+const char*(*gameVerbosityCallback)(loguru::Verbosity verbosity) = nullptr;
+void engineSetVerbosityCallback(const char* (*cb)(loguru::Verbosity)) { gameVerbosityCallback = cb; }
+
+const char *engineVerbosityCallback(loguru::Verbosity verbosity)
+{
+    if (gameVerbosityCallback)
+    {
+        auto str = gameVerbosityCallback(verbosity);
+        if (str != nullptr)
+            return str;
+    }
+
+    switch (verbosity)
+    {
+        default:
+            return nullptr;
+        case LOG_ENGINE:
+            return "ENG";
+        case LOG_GFX:
+            return "GFX";
+        case LOG_GL:
+            return "GL";
+        case LOG_ASS:
+            return "ASS";
+        case LOG_INPUT:
+            return "INPT";
+        case LOG_NET:
+            return "NET";
+        case LOG_DEBUG:
+            return "DBG";
+    }
+}
+
+bool g_useLogCallback = true;
+
+void engineLogCallback(void *user_data, const loguru::Message &message)
+{
+    if (!g_useLogCallback)
+        return;
+
+    if (startwin_isopen())
+        initputs(message.message);
+
+    UNREFERENCED_PARAMETER(user_data);
+
+    size_t len = osd->draw.errfmtlen;
+    len += Bstrlen(message.preamble);
+    len += Bstrlen(message.prefix);
+    len += Bstrlen(message.message);
+
+    auto buf = (char *)Balloca(len + 4);
+    buf[0] = '\0';
+
+    if (message.verbosity == loguru::Verbosity_WARNING && osd->draw.warnfmt)
+        Bsnprintf(buf, len + 4, "%s%s%s\n", osd->draw.warnfmt, message.prefix, message.message);
+    else if (message.verbosity <= loguru::Verbosity_ERROR && osd->draw.errorfmt)
+        Bsnprintf(buf, len + 4, "%s%s%s\n", osd->draw.errorfmt,  message.prefix, message.message);
+    else
+        Bsnprintf(buf, len + 4, "%s%s\n", message.prefix, message.message);
+
+    OSD_Puts(buf);
+}
+
+void engineSetupLogging(int argc, char ** argv)
+{
+    loguru::g_internal_verbosity = LOG_DEBUG;
+    loguru::g_preamble_file   = false;
+    //loguru::g_preamble_header = false;
+    loguru::g_preamble_time   = false;
+    loguru::g_preamble_date   = false;
+    loguru::g_preamble_thread = false;
+    loguru::set_thread_name("main");
+    loguru::set_verbosity_to_name_callback(&engineVerbosityCallback);
+    loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, 0);
+    loguru::init(argc, argv);
+}
+
+void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode /*= loguru::Truncate*/)
+{
+    loguru::g_stderr_verbosity = verbosity;
+    loguru::add_file(fn, mode, verbosity);
+}
 
 void (*keypresscallback)(int32_t, int32_t);
 
@@ -298,7 +391,7 @@ static int32_t nx_unprotect(intptr_t beg, intptr_t end, int prot)
 
     if (!VirtualProtect((LPVOID) beg, (SIZE_T)end - (SIZE_T)beg, prot, &oldprot))
     {
-        initprintf("VirtualProtect() error! Crashing in 3... 2... 1...\n");
+        ABORT_F("VirtualProtect() error! Crashing in 3... 2... 1...");
         return 1;
     }
 # elif defined __linux || defined EDUKE32_BSD || defined __APPLE__
@@ -311,13 +404,13 @@ static int32_t nx_unprotect(intptr_t beg, intptr_t end, int prot)
     pagesize = sysconf(_SC_PAGE_SIZE);
     if (pagesize == -1)
     {
-        initprintf("Error getting system page size\n");
+        ABORT_F("Error getting system page size!");
         return 1;
     }
     dep_begin_page = ((size_t)beg) & ~(pagesize-1);
     if (mprotect((void *) dep_begin_page, (size_t)end - dep_begin_page, prot) < 0)
     {
-        initprintf("Error making code writeable (errno=%d)\n", errno);
+        ABORT_F("mprotect() error %d! Crashing in 3... 2... 1...", errno);
         return 1;
     }
 # else
@@ -376,9 +469,9 @@ void makeasmwriteable(void)
 int32_t vsync=0;
 int32_t r_finishbeforeswap=0;
 int32_t r_glfinish=0;
-int32_t g_logFlushWindow = 1;
 
 // DEBUG OUTPUT
+#ifdef USE_OPENGL
 void PR_CALLBACK gl_debugOutputCallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,GLvoid *userParam)
 {
     UNREFERENCED_PARAMETER(source);
@@ -386,19 +479,19 @@ void PR_CALLBACK gl_debugOutputCallback(GLenum source,GLenum type,GLuint id,GLen
     UNREFERENCED_PARAMETER(length);
     UNREFERENCED_PARAMETER(userParam);
 
-    char const *t, *s;
+    //char const *t;
+    //switch (type)
+    //{
+    //    case GL_DEBUG_TYPE_ERROR_ARB: t = "ERROR"; break;
+    //    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB: t = "DEPRECATED"; break;
+    //    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:  t = "UNDEFINED"; break;
+    //    case GL_DEBUG_TYPE_PORTABILITY_ARB:  t = "PORTABILITY"; break;
+    //    case GL_DEBUG_TYPE_PERFORMANCE_ARB: t = "PERFORMANCE"; break;
+    //    case GL_DEBUG_TYPE_OTHER_ARB: t = "OTHER"; break;
+    //    default: t = "unknown"; break;
+    //}
 
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR_ARB: t = "ERROR"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB: t = "DEPRECATED_BEHAVIOR"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:  t = "UNDEFINED_BEHAVIOR"; break;
-        case GL_DEBUG_TYPE_PORTABILITY_ARB:  t = "PORTABILITY"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE_ARB: t = "PERFORMANCE"; break;
-        case GL_DEBUG_TYPE_OTHER_ARB: t = "OTHER"; break;
-        default: t = "unknown"; break;
-    }
-
+    char const *s;
     switch (severity)
     {
         case GL_DEBUG_SEVERITY_HIGH_ARB: s = "high"; break;
@@ -406,14 +499,9 @@ void PR_CALLBACK gl_debugOutputCallback(GLenum source,GLenum type,GLuint id,GLen
         default:
         case GL_DEBUG_SEVERITY_LOW_ARB: s = "low"; break;
     }
-
-    if (type == GL_DEBUG_TYPE_ERROR_ARB) OSD_Printf("%s** GL ERROR **", OSD_GetErrorFmt());
-    else OSD_Puts("GL DEBUG");
-
-    OSD_Printf(": type: %s, severity: %s, message: %s\n", t, s, message);
+    VLOG_F(type == GL_DEBUG_TYPE_ERROR_ARB ? (int)loguru::Verbosity_ERROR : LOG_GL, "%s (%s severity)", message, s);
 }
 
-#ifdef USE_OPENGL
 struct glinfo_t glinfo =
 {
     "Unknown",  // vendor
@@ -438,19 +526,19 @@ void fill_glinfo(void)
     if (!Bstrcmp(glinfo.vendor, "ATI Technologies Inc."))
     {
         pr_ati_fboworkaround = 1;
-        initprintf("Enabling ATI FBO color attachment workaround.\n");
+        VLOG_F(LOG_GFX, "Enabling ATI FBO color attachment workaround.");
 
         if (Bstrstr(glinfo.renderer, "Radeon X1"))
         {
             pr_ati_nodepthoffset = 1;
-            initprintf("Enabling ATI R520 polygon offset workaround.\n");
+            VLOG_F(LOG_GFX, "Enabling ATI R520 polygon offset workaround.");
         }
 # ifdef __APPLE__
         // See bug description at http://lists.apple.com/archives/mac-opengl/2005/Oct/msg00169.html
         if (!Bstrncmp(glinfo.renderer, "ATI Radeon 9600", 15))
         {
             pr_ati_textureformat_one = 1;
-            initprintf("Enabling ATI Radeon 9600 texture format workaround.\n");
+            VLOG_F(LOG_GFX, "Enabling ATI Radeon 9600 texture format workaround.");
         }
 # endif
     }
@@ -474,14 +562,14 @@ void fill_glinfo(void)
                              || (!!Bstrstr(glinfo.extensions, "GL_KHR_robustness") || glGetGraphicsResetStatusKHR);
     glinfo.samplerobjects   = !!Bstrstr(glinfo.extensions, "GL_ARB_sampler_objects");
     glinfo.sync             = !!Bstrstr(glinfo.extensions, "GL_ARB_sync");
-    glinfo.texcompr         = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_compression") && Bstrcmp(glinfo.vendor, "ATI Technologies Inc.");
+    glinfo.texcompr         = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_compression") && Bstrcmp(glinfo.vendor, "ATI Technologies Inc");
     glinfo.vsync            = !!Bstrstr(glinfo.extensions, "WGL_EXT_swap_control") || !!Bstrstr(glinfo.extensions, "GLX_EXT_swap_control");
 
 # ifdef DYNAMIC_GLEXT
     if (glinfo.texcompr && (!glCompressedTexImage2D || !glGetCompressedTexImage))
     {
         // lacking the necessary extensions to do this
-        initprintf("Warning: the GL driver lacks necessary functions to use caching\n");
+        LOG_F(WARNING, "OpenGL driver lacks the necessary functions to use caching.");
         glinfo.texcompr = 0;
     }
 # endif
@@ -589,7 +677,7 @@ static int osdfunc_setrendermode(osdcmdptr_t parm)
 #endif
     }
 
-    OSD_Printf("Rendering method changed to %s\n", renderer);
+    VLOG_F(LOG_GFX, "Rendering method changed to %s.", renderer);
 
     return OSDCMD_OK;
 }
@@ -618,39 +706,39 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
 
-    OSD_Printf("OpenGL information\n %s %s %s\n", glinfo.vendor, glinfo.renderer, glinfo.version);
+    VLOG_F(LOG_GFX, "OpenGL driver: %s %s", glinfo.renderer, glinfo.version);
+
+    if (GLVersion.major)
+        VLOG_F(LOG_GFX, "OpenGL context: version %d.%d", GLVersion.major, GLVersion.minor);
 
     if (!glinfo.filled)
         return OSDCMD_OK;
 
-    char const *s[] = { "supported", "not supported" };
+    constexpr char const *s[] = { "supported", "not supported" };
 
-#define SUPPORTED(x) (x ? s[0] : s[1])
+#define SUPPORTED(x) (s[!x])
 
-    OSD_Printf(" BGRA textures:           %s\n", SUPPORTED(glinfo.bgra));
-    OSD_Printf(" Buffer storage:          %s\n", SUPPORTED(glinfo.bufferstorage));
-    OSD_Printf(" Debug output:            %s\n", SUPPORTED(glinfo.debugoutput));
-    OSD_Printf(" Depth textures:          %s\n", SUPPORTED(glinfo.depthtex));
-    OSD_Printf(" Frame buffer objects:    %s\n", SUPPORTED(glinfo.fbos));
-    OSD_Printf(" GLSL:                    %s\n", SUPPORTED(glinfo.glsl));
-    OSD_Printf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
-    OSD_Printf(" Maximum texture size:    %dpx\n", glinfo.maxTextureSize);
-    OSD_Printf(" Multi-texturing:         %s\n", SUPPORTED(glinfo.multitex));
-    OSD_Printf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
-    OSD_Printf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));
-    OSD_Printf(" Rectangle textures:      %s\n", SUPPORTED(glinfo.rect));
-    OSD_Printf(" Reset notifications:     %s\n", SUPPORTED(glinfo.reset_notification));
-    OSD_Printf(" Sampler objects:         %s\n", SUPPORTED(glinfo.samplerobjects));
-    OSD_Printf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
-    OSD_Printf(" Sync:                    %s\n", SUPPORTED(glinfo.sync));
-    OSD_Printf(" Texture compression:     %s\n", SUPPORTED(glinfo.texcompr));
-
-    if (GLVersion.major)
-        OSD_Printf(" GL context version:      %d.%d\n", GLVersion.major, GLVersion.minor);
+    LOG_F(INFO, " BGRA textures:           %s", SUPPORTED(glinfo.bgra));
+    LOG_F(INFO, " Buffer storage:          %s", SUPPORTED(glinfo.bufferstorage));
+    LOG_F(INFO, " Debug output:            %s", SUPPORTED(glinfo.debugoutput));
+    LOG_F(INFO, " Depth textures:          %s", SUPPORTED(glinfo.depthtex));
+    LOG_F(INFO, " Frame buffer objects:    %s", SUPPORTED(glinfo.fbos));
+    LOG_F(INFO, " GLSL:                    %s", SUPPORTED(glinfo.glsl));
+    LOG_F(INFO, " Maximum anisotropy:      %.1f%s", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
+    LOG_F(INFO, " Maximum texture size:    %dpx", glinfo.maxTextureSize);
+    LOG_F(INFO, " Multi-texturing:         %s", SUPPORTED(glinfo.multitex));
+    LOG_F(INFO, " Non-power-of-2 textures: %s", SUPPORTED(glinfo.texnpot));
+    LOG_F(INFO, " Occlusion queries:       %s", SUPPORTED(glinfo.occlusionqueries));
+    LOG_F(INFO, " Rectangle textures:      %s", SUPPORTED(glinfo.rect));
+    LOG_F(INFO, " Reset notifications:     %s", SUPPORTED(glinfo.reset_notification));
+    LOG_F(INFO, " Sampler objects:         %s", SUPPORTED(glinfo.samplerobjects));
+    LOG_F(INFO, " Shadow textures:         %s", SUPPORTED(glinfo.shadow));
+    LOG_F(INFO, " Sync:                    %s", SUPPORTED(glinfo.sync));
+    LOG_F(INFO, " Texture compression:     %s", SUPPORTED(glinfo.texcompr));
 
 #undef SUPPORTED
 
-    initprintf(" Extensions:\n%s", glinfo.extensions);
+    LOG_F(INFO, " Extensions:\n%s", glinfo.extensions);
 
     return OSDCMD_OK;
 }
@@ -662,13 +750,16 @@ static int osdcmd_displayindex(osdcmdptr_t parm)
 
     if (parm->numparms != 1 || (unsigned)(d = Bstrtol(parm->parms[0], NULL, 10)) >= (unsigned)g_numdisplays)
     {
-        OSD_Puts("r_displayindex: change video display.\nDetected displays:\n");
+        LOG_F(INFO, "r_displayindex: change video display.");
+        LOG_F(INFO, "Detected displays:");
+
         for (d = 0; d < g_numdisplays; d++)
-            OSD_Printf(" %s\n", videoGetDisplayName(d));
+            LOG_F(INFO, " %s", videoGetDisplayName(d));
+
         return OSDCMD_OK;
     }
 
-    OSD_Printf("%s %d\n", parm->name, d);
+    LOG_F(INFO, "%s %d", parm->name, d);
     r_displayindex = d;
     osdcmd_restartvid(NULL);
 

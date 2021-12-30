@@ -279,7 +279,7 @@ void G_ExtInit(void)
             i = addsearchpath(CommandPaths->str);
             if (i < 0)
             {
-                initprintf("Failed adding %s for game data: %s\n", CommandPaths->str,
+                LOG_F(ERROR, "Unable to add data directory %s: %s", CommandPaths->str,
                            i==-1 ? "not a directory" : "no such directory");
             }
 
@@ -330,7 +330,7 @@ void G_ExtInit(void)
         {
             clearGrpNamePtr();
             g_grpNamePtr = dup_filename(cp);
-            initprintf("Using \"%s\" as main GRP file\n", g_grpNamePtr);
+            LOG_F(INFO, "Using %s as main data file (DUKE3DGRP env var override).", g_grpNamePtr);
         }
     }
 #endif
@@ -362,9 +362,9 @@ static int32_t G_TryLoadingGrp(char const * const grpfile)
     int32_t i;
 
     if ((i = initgroupfile(grpfile)) == -1)
-        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
+        LOG_F(WARNING, "Unable to open %s.", grpfile);
     else
-        initprintf("Using \"%s\" as main game data file.\n", grpfile);
+        LOG_F(INFO, "Using %s as main data file.", grpfile);
 
     return i;
 }
@@ -466,7 +466,7 @@ void G_LoadGroups(int32_t autoload)
         {
             clearDefNamePtr();
             g_defNamePtr = dup_filename(tmpptr);
-            initprintf("Using \"%s\" as definitions file\n", g_defNamePtr);
+            LOG_F(INFO, "Using %s as definitions file (DUKE3DDEF env var override).", g_defNamePtr);
         }
     }
 #endif
@@ -485,11 +485,11 @@ void G_LoadGroups(int32_t autoload)
         s = CommandGrps->next;
 
         if ((j = initgroupfile(CommandGrps->str)) == -1)
-            initprintf("Could not find file \"%s\".\n", CommandGrps->str);
+            LOG_F(ERROR, "Unable to load %s: file not found.", CommandGrps->str);
         else
         {
             g_groupFileHandle = j;
-            initprintf("Using file \"%s\" as game data.\n", CommandGrps->str);
+            LOG_F(INFO, "Loaded %s", CommandGrps->str);
             if (autoload)
                 G_DoAutoload(CommandGrps->str);
         }
@@ -861,7 +861,7 @@ void G_AddCon(const char *buffer)
 {
     clearScriptNamePtr();
     g_scriptNamePtr = dup_filename(buffer);
-    initprintf("Using CON file \"%s\".\n",g_scriptNamePtr);
+    LOG_F(INFO, "Using CON file %s",g_scriptNamePtr);
 }
 
 void G_AddConModule(const char *buffer)
@@ -887,7 +887,7 @@ void G_LoadGroupsInDir(const char *dirname)
         for (rec=fnlist.findfiles; rec; rec=rec->next)
         {
             Bsnprintf(buf, sizeof(buf), "%s/%s", dirname, rec->name);
-            initprintf("Using group file \"%s\".\n", buf);
+            LOG_F(INFO, "Using group file %s", buf);
             initgroupfile(buf);
         }
 
@@ -919,7 +919,7 @@ void G_LoadLookups(void)
     if (j < 0)
     {
         if (j == -1)
-            initprintf("ERROR loading \"lookup.dat\": failed reading enough data.\n");
+            LOG_F(ERROR, "Failed loading \"lookup.dat\": not enough data.");
 
         return kclose(fp);
     }

@@ -25,7 +25,7 @@
 
 #include "driver_winmm.h"
 
-#include "compat.h"
+#include "baselayer.h"
 #include "linklist.h"
 #include "midi.h"
 #include "midifuncs.h"
@@ -105,9 +105,8 @@ const char *WinMMDrv_ErrorString(int ErrorNumber)
 
 
 // will append "err nnn (ssss)\n" to the end of the string it emits
-static void midi_error(MMRESULT rv, const char * fmt, ...)
+static void midi_error(MMRESULT rv, const char *str)
 {
-    va_list va;
     const char * errtxt = "?";
     
     switch (rv)
@@ -135,10 +134,8 @@ static void midi_error(MMRESULT rv, const char * fmt, ...)
         default:                                                      break;
     }
     debug_break();
-    va_start(va, fmt);
-    MV_Printf(fmt, va);
-    va_end(va);
-    MV_Printf(" err %d (%s)\n", (int)rv, errtxt);
+
+    LOG_F(ERROR, "%s: %s (0x%08x)", str, errtxt, rv);
 }
 
 // AddressSanitizer bug causes heap destruction with some functions from winmm.lib
@@ -148,12 +145,10 @@ static void midi_dispose_buffer(MidiBuffer *node, const char *caller)
     if (node->hdr.dwFlags & MHDR_PREPARED)
     {
 #if __SANITIZE_ADDRESS__ != 1
-#ifdef MME_DEBUG
-        MV_Printf("MME %s/midi_dispose_buffer unpreparing buffer %p\n", caller, node);
-#endif // MME_DEBUG
+        VLOG_F(LOG_DEBUG, "%s/midi_dispose_buffer unpreparing buffer %p", caller, node);
         auto rv = midiOutUnprepareHeader((HMIDIOUT)midiStream, &node->hdr, sizeof(MIDIHDR));
         if (rv != MMSYSERR_NOERROR)
-            midi_error(rv, "MME %s/midi_dispose_buffer midiOutUnprepareHeader", caller);
+            midi_error(rv, "midi_dispose_buffer: error in midiOutUnprepareHeader");
 #endif
        node->hdr.dwFlags &= ~MHDR_PREPARED;
     }
@@ -165,9 +160,7 @@ static void midi_dispose_buffer(MidiBuffer *node, const char *caller)
 
     if (++numSpareMidiBuffers > maxSpareMidiBuffers)
         maxSpareMidiBuffers = numSpareMidiBuffers;
-#ifdef MME_DEBUG
-    MV_Printf("MME %s/midi_dispose_buffer recycling buffer %p\n", caller, node);
-#endif // MME_DEBUG
+    VLOG_F(LOG_DEBUG, "MME %s/midi_dispose_buffer recycling buffer %p", caller, node);
 }
 
 static void midi_gc_buffers(void)
@@ -192,9 +185,7 @@ static void midi_gc_buffers(void)
         LL::Remove(node);
         Xfree(node);
         numSpareMidiBuffers--;
-#ifdef MME_DEBUG
-        MV_Printf("MME midi_gc_buffers pruning spare buffer %p\n", node);
-#endif // MME_DEBUG
+        VLOG_F(LOG_DEBUG, "MME midi_gc_buffers pruning spare buffer %p", node);
     }
 }
 
@@ -254,7 +245,7 @@ static void midi_flush_current_buffer(void)
         auto rv = midiOutPrepareHeader((HMIDIOUT)midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR));
         if (rv != MMSYSERR_NOERROR)
         {
-            midi_error(rv, "MME midi_flush_current_buffer midiOutPrepareHeader");
+            midi_error(rv, "midi_flush_current_buffer: error in midiOutPrepareHeader");
             return;
         }
     }
@@ -264,7 +255,7 @@ static void midi_flush_current_buffer(void)
         // midi file playing, so send events to the stream
         auto rv = midiStreamOut(midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR));
         if (rv != MMSYSERR_NOERROR)
-            midi_error(rv, "MME midi_flush_current_buffer midiStreamOut");
+            midi_error(rv, "midi_flush_current_buffer: error in midiStreamOut");
 
         //MV_Printf("MME midi_flush_current_buffer queued buffer %p\n", currentMidiBuffer);
     }
@@ -283,7 +274,7 @@ static void midi_flush_current_buffer(void)
                 //MV_Printf("MME midi_flush_current_buffer sent immediate long\n");
             }
             else
-                midi_error(rv, "MME midi_flush_current_buffer midiOutLongMsg");
+                midi_error(rv, "midi_flush_current_buffer: error in midiOutLongMsg");
 
             midi_dispose_buffer(currentMidiBuffer, "midi_flush_current_buffer");
             currentMidiBuffer = 0;
@@ -292,7 +283,7 @@ static void midi_flush_current_buffer(void)
         {
             auto rv = midiOutShortMsg((HMIDIOUT)midiStream, evt->dwEvent);
             if (rv != MMSYSERR_NOERROR)
-                midi_error(rv, "MME midi_flush_current_buffer midiOutShortMsg");
+                midi_error(rv, "midi_flush_current_buffer: error in midiOutShortMsg");
         }
         return;
     }
@@ -379,7 +370,7 @@ static BOOL midi_get_buffer(int length, unsigned char **data)
 
                 currentMidiBuffer = node;
 
-                //MV_Printf("MME midi_get_buffer fetched buffer %p\n", node);
+                VLOG_F(LOG_DEBUG, "MME midi_get_buffer fetched buffer %p", node);
                 break;
             }
         }
@@ -399,9 +390,7 @@ static BOOL midi_get_buffer(int length, unsigned char **data)
 
         currentMidiBuffer = node;
         LL::Reset(node);
-#ifdef MME_DEBUG
-        MV_Printf("MME midi_get_buffer allocated buffer %p\n", node);
-#endif // MME_DEBUG
+        VLOG_F(LOG_DEBUG, "MME midi_get_buffer allocated buffer %p", node);
     }
 
     midi_setup_event(length, data);
@@ -437,7 +426,7 @@ static void MME_NoteOff(int channel, int key, int velocity)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_NoteOff error\n");
+        LOG_F(ERROR, "Error in MME_NoteOff()");
 }
 
 static void MME_NoteOn(int channel, int key, int velocity)
@@ -452,7 +441,7 @@ static void MME_NoteOn(int channel, int key, int velocity)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_NoteOn error\n");
+        LOG_F(ERROR, "Error in MME_NoteOn()");
 }
 
 static void MME_PolyAftertouch(int channel, int key, int pressure)
@@ -467,7 +456,7 @@ static void MME_PolyAftertouch(int channel, int key, int pressure)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_PolyAftertouch error\n");
+        LOG_F(ERROR, "Error in MME_PolyAftertouch()");
 }
 
 static void MME_ControlChange(int channel, int number, int value)
@@ -482,7 +471,7 @@ static void MME_ControlChange(int channel, int number, int value)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_ControlChange error\n");
+        LOG_F(ERROR, "Error in MME_ControlChange()");
 }
 
 static void MME_ProgramChange(int channel, int program)
@@ -496,7 +485,7 @@ static void MME_ProgramChange(int channel, int program)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_ProgramChange error\n");
+        LOG_F(ERROR, "Error in MME_ProgramChange()");
 }
 
 static void MME_ChannelAftertouch(int channel, int pressure)
@@ -510,7 +499,7 @@ static void MME_ChannelAftertouch(int channel, int pressure)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_ChannelAftertouch error\n");
+        LOG_F(ERROR, "Error in MME_ChannelAftertouch()");
 }
 
 static void MME_PitchBend(int channel, int lsb, int msb)
@@ -525,7 +514,7 @@ static void MME_PitchBend(int channel, int lsb, int msb)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_PitchBend error\n");
+        LOG_F(ERROR, "Error in MME_PitchBend()");
 }
 
 static void MME_SysEx(const unsigned char *data, int length)
@@ -538,7 +527,7 @@ static void MME_SysEx(const unsigned char *data, int length)
         midi_sequence_event();
     }
     else
-        MV_Printf("MME_SysEx error\n");
+        LOG_F(ERROR, "Error in MME_SysEx()");
 }
 
 void WinMMDrv_MIDI_PrintDevices(void)
@@ -549,18 +538,16 @@ void WinMMDrv_MIDI_PrintDevices(void)
     for (int i = -1; i < numDevices; i++)
     {
         if (!midiOutGetDevCaps(i, &midicaps, sizeof(MIDIOUTCAPS)))
-            MV_Printf("%d: %s  ", i, midicaps.szPname);
+            LOG_F(INFO, "%d: %s  ", i, midicaps.szPname);
     }
-
-    MV_Printf("\n");
 }
 
 int WinMMDrv_MIDI_PrintBufferInfo(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
-    MV_Printf("MME MIDI buffer info:\n");
-    MV_Printf("%6s: %d (max %d)\n", "active", numActiveMidiBuffers, maxActiveMidiBuffers);
-    MV_Printf("%6s: %d (max %d)\n", "spare", numSpareMidiBuffers, maxSpareMidiBuffers);
+    LOG_F(INFO, "MME MIDI buffers:");
+    LOG_F(INFO, "%6s: %d (max %d)", "active", numActiveMidiBuffers, maxActiveMidiBuffers);
+    LOG_F(INFO, "%6s: %d (max %d)", "spare", numSpareMidiBuffers, maxSpareMidiBuffers);
     return OSDCMD_OK;
 }
 
@@ -595,14 +582,14 @@ int WinMMDrv_MIDI_Init(midifuncs * funcs)
         WinMM_DeviceID = MIDI_MAPPER;
 
     if (!midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
-        MV_Printf(": [%d] %s", WinMM_DeviceID, midicaps.szPname);    
+        LOG_F(INFO, ": [%d] %s", WinMM_DeviceID, midicaps.szPname);
 
     auto rv = midiStreamOpen(&midiStream, &WinMM_DeviceID, 1, (DWORD_PTR)midi_callback, (DWORD_PTR)0, CALLBACK_FUNCTION);
 
     if (rv != MMSYSERR_NOERROR)
     {
         WinMMDrv_MIDI_Shutdown();
-        midi_error(rv, "MME MIDI_Init midiStreamOpen");
+        midi_error(rv, "WinMMDrv_MIDI_Init: error in midiStreamOpen");
         ErrorCode = WinMMErr_MIDIStreamOpen;
         return WinMMErr_Error;
     }
@@ -631,7 +618,7 @@ void WinMMDrv_MIDI_Shutdown(void)
         // MV_Printf("stopping stream\n");
         auto rv = midiStreamClose(midiStream);
         if (rv != MMSYSERR_NOERROR)
-            midi_error(rv, "MME MIDI_HaltPlayback midiStreamClose");
+            midi_error(rv, "WinMMDrv_MIDI_Shutdown: error in midiStreamClose");
         // MV_Printf("stream stopped\n");
 
         midiStream = 0;
@@ -653,9 +640,7 @@ void WinMMDrv_MIDI_Shutdown(void)
 
     midiInstalled = FALSE;
 
-#ifndef NDEBUG
-    MV_Printf("MME finished, max active buffers: %d max spare buffers: %d\n", maxActiveMidiBuffers, maxSpareMidiBuffers);
-#endif
+    VLOG_F(LOG_DEBUG, "MME finished, max active buffers: %d max spare buffers: %d", maxActiveMidiBuffers, maxSpareMidiBuffers);
 }
 
 static DWORD midi_get_tick(void)
@@ -668,7 +653,7 @@ static DWORD midi_get_tick(void)
     auto rv = midiStreamPosition(midiStream, &mmtime, sizeof(MMTIME));
     if (rv != MMSYSERR_NOERROR)
     {
-        midi_error(rv, "MME midi_get_tick midiStreamPosition");
+        midi_error(rv, "midi_get_tick: error in midiStreamPosition");
         return 0;
     }
 
@@ -704,9 +689,9 @@ static void CALLBACK midi_callback(HMIDIOUT out, UINT msg, DWORD_PTR dwInstance,
 static DWORD WINAPI midiDataThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
-#ifndef NDEBUG
+
     debugThreadName("midiDataThread");
-#endif
+
     DWORD sleepAmount = 100 / MME_THREAD_QUEUE_INTERVAL;
 
     do
@@ -813,7 +798,7 @@ int WinMMDrv_MIDI_StartPlayback(void)
     auto rv = midiStreamRestart(midiStream);
     if (rv != MMSYSERR_NOERROR)
     {
-        midi_error(rv, "MIDI_StartPlayback midiStreamRestart");
+        midi_error(rv, "WinMMDrv_MIDI_StartPlayback: error in midiStreamRestart");
         WinMMDrv_MIDI_HaltPlayback();
         ErrorCode = WinMMErr_MIDIStreamRestart;
         return WinMMErr_Error;
@@ -848,16 +833,16 @@ void WinMMDrv_MIDI_SetTempo(int tempo, int division)
     {
         auto rv = midiStreamStop(midiStream);
         if (rv != MMSYSERR_NOERROR)
-            midi_error(rv, "MME MIDI_SetTempo midiStreamStop");
+            midi_error(rv, "WinMMDrv_MIDI_SetTempo: error in midiStreamStop");
 
         rv = midiStreamProperty(midiStream, (LPBYTE)&propTimediv, MIDIPROP_SET | MIDIPROP_TIMEDIV);
         if (rv != MMSYSERR_NOERROR)
-            midi_error(rv, "MME MIDI_SetTempo midiStreamProperty timediv");
+            midi_error(rv, "WinMMDrv_MIDI_SetTempo: error in midiStreamProperty (MIDIPROP_TIMEDIV)");
     }
 
     auto rv = midiStreamProperty(midiStream, (LPBYTE)&propTempo, MIDIPROP_SET | MIDIPROP_TEMPO);
     if (rv != MMSYSERR_NOERROR)
-        midi_error(rv, "MME MIDI_SetTempo midiStreamProperty tempo");
+        midi_error(rv, "WinMMDrv_MIDI_SetTempo: error in midiStreamProperty (MIDIPROP_TEMPO)");
 
     if (midiLastDivision != division)
     {
@@ -876,7 +861,7 @@ void WinMMDrv_MIDI_Lock(void)
 {
     DWORD err = WaitForSingleObject(midiMutex, INFINITE);
     if (err != WAIT_OBJECT_0)
-        MV_Printf("MME midiMutex lock: wfso %d\n", (int) err);
+        LOG_F(ERROR, "Error in WinMMDrv_MIDI_Lock(): WaitForSingleObject() returned %d", (int) err);
 }
 
 void WinMMDrv_MIDI_Unlock(void)  { ReleaseMutex(midiMutex); }

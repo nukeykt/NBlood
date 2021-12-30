@@ -747,7 +747,7 @@ int32_t             polymer_init(void)
 {
     int32_t         i, j, t = timerGetTicks();
 
-    if (pr_verbosity >= 1) OSD_Printf("Initializing Polymer subsystem...\n");
+    if (pr_verbosity >= 1) VLOG_F(LOG_PR, "Initializing Polymer subsystem...");
 
     if (!glinfo.texnpot ||
         !glinfo.depthtex ||
@@ -758,8 +758,8 @@ int32_t             polymer_init(void)
         !glinfo.occlusionqueries ||
         !glinfo.glsl)
     {
-        OSD_Printf("PR : Your video card driver/combo doesn't support the necessary features!\n");
-        OSD_Printf("PR : Disabling Polymer...\n");
+        VLOG_F(LOG_PR, "Your video card driver/combo doesn't support the necessary features!");
+        VLOG_F(LOG_PR, "Disabling Polymer...");
         return 0;
     }
 
@@ -774,7 +774,7 @@ int32_t             polymer_init(void)
 
     if (prtess == 0)
     {
-        OSD_Printf("PR : Tessellation object initialization failed!\n");
+        VLOG_F(LOG_PR, "Tessellation object initialization failed!");
         return 0;
     }
 
@@ -849,7 +849,7 @@ int32_t             polymer_init(void)
     buildgl_resetSamplerObjects();
     polymost_initdrawpoly();
 
-    if (pr_verbosity >= 1) OSD_Printf("PR : Initialization complete in %d ms.\n", timerGetTicks()-t);
+    if (pr_verbosity >= 1) VLOG_F(LOG_PR, "Initialization complete in %d ms.", timerGetTicks()-t);
 
     return 1;
 }
@@ -910,7 +910,7 @@ void                polymer_uninit(void)
     }
 
     if (pr_verbosity >= 3)
-        OSD_Printf("PR: freed %d planelists\n", i);
+        VLOG_F(LOG_PR, "freed %d planelists", i);
 
     inthash_free(&prprogramtable);
 
@@ -921,7 +921,7 @@ void                polymer_uninit(void)
     }
 
     if (pr_verbosity >= 2)
-        OSD_Printf("PR: freed %" PRIiPTR " programs\n", prprogramptrs.size());
+        VLOG_F(LOG_PR, "freed %" PRIiPTR " programs", prprogramptrs.size());
 
     prprogramptrs.clear();
 }
@@ -1030,7 +1030,7 @@ void                polymer_resetlights(void)
     lightcount = 0;
 
     if (!engineLoadMHK(NULL))
-        OSD_Printf("polymer_resetlights: reloaded maphack\n");
+        VLOG_F(LOG_PR, "Refreshed maphack data");
 }
 
 void                polymer_loadboard(void)
@@ -1080,7 +1080,7 @@ void                polymer_loadboard(void)
 
     polymer_resetlights();
 
-    if (pr_verbosity >= 1 && numsectors) OSD_Printf("PR : Board loaded.\n");
+    if (pr_verbosity >= 1 && numsectors) VLOG_F(LOG_PR, "Board loaded.");
 }
 
 int32_t polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
@@ -1118,7 +1118,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     // TODO: support for screen resizing
     // frameoffset = frameplace + windowxy1.y*bytesperline + windowxy1.x;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Drawing rooms...\n");
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing rooms...");
 
     // fogcalc_old needs this
     gvisibility = ((float)globalvisibility)*FOGSCALE;
@@ -1189,7 +1189,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     if (cursectnum >= 0 && cursectnum < numsectors)
         dacursectnum = cursectnum;
     else if (pr_verbosity>=2)
-        OSD_Printf("PR : got sector %d after update!\n", cursectnum);
+        VLOG_F(LOG_PR, "got sector %d after update!", cursectnum);
 
     // unflag all sectors
     i = numsectors-1;
@@ -1232,9 +1232,9 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
         if (!editstatus && pr_verbosity>=1)
         {
             if ((unsigned)dacursectnum < (unsigned)numsectors)
-                OSD_Printf("PR : EXT sec=%d  z=%d (%d, %d)\n", dacursectnum, daposz, cursectflorz, cursectceilz);
+                VLOG_F(LOG_PR, "EXT sec=%d  z=%d (%d, %d)", dacursectnum, daposz, cursectflorz, cursectceilz);
             else
-                OSD_Printf("PR : EXT sec=%d  z=%d\n", dacursectnum, daposz);
+                VLOG_F(LOG_PR, "EXT sec=%d  z=%d", dacursectnum, daposz);
         }
 
         curmodelviewmatrix = rootmodelviewmatrix;
@@ -1277,7 +1277,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     gcosang2 = gcosang*fviewingrange*(1./65536.f);
     gsinang2 = gsinang*fviewingrange*(1./65536.f);
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Rooms drawn.\n");
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Rooms drawn.");
     videoEndDrawing();
 }
 
@@ -1376,7 +1376,7 @@ void                polymer_editorpick(void)
 
             if (prsectors[searchsector]==NULL)
             {
-                //OSD_Printf("polymer_editorpick: prsectors[searchsector]==NULL !!!\n");
+                //OSD_Printf("polymer_editorpick: prsectors[searchsector]==NULL !!!");
                 searchwall = sector[num].wallptr;
             }
             else
@@ -1494,7 +1494,7 @@ void                polymer_drawmaskwall(int32_t damaskwallcnt)
     _prwall         *w;
     GLubyte         oldcolor[4];
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Masked wall %i...\n", damaskwallcnt);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Masked wall %i", damaskwallcnt);
 
     sec = (usectorptr_t)&sector[wallsect[maskwall[damaskwallcnt]]];
     wal = &wall[maskwall[damaskwallcnt]];
@@ -1520,7 +1520,7 @@ void                polymer_drawsprite(int32_t snum)
     auto const tspr = tspriteptr[snum];
     usectorptr_t sec;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Sprite %i...\n", snum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Sprite %i", snum);
 
     if (bad_tspr(tspr))
         return;
@@ -1722,7 +1722,7 @@ void                polymer_deletelight(int16_t lighti)
     {
 #ifdef DEBUGGINGAIDS
         if (pr_verbosity >= 2)
-            OSD_Printf("PR : Called polymer_deletelight on inactive light\n");
+            VLOG_F(LOG_PR, "Called polymer_deletelight on inactive light");
         // currently known cases: when reloading maphack lights (didn't set maphacklightcnt=0
         // but did loadmaphack()->delete_maphack_lights() after polymer_resetlights())
 #endif
@@ -2578,7 +2578,7 @@ static int32_t      polymer_initsector(int16_t sectnum)
     usectorptr_t sec;
     _prsector*      s;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initializing sector %i...\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Initializing sector %i", sectnum);
 
     sec = (usectorptr_t)&sector[sectnum];
     s = (_prsector *)Xcalloc(1, sizeof(_prsector));
@@ -2606,7 +2606,7 @@ static int32_t      polymer_initsector(int16_t sectnum)
 
     prsectors[sectnum] = s;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initialized sector %i.\n", sectnum);
+    if (pr_verbosity >= 2) VLOG_F(LOG_PR, "Initialized sector %i.", sectnum);
 
     return 1;
 }
@@ -2619,7 +2619,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
 
     if (s == NULL)
     {
-        if (pr_verbosity >= 1) OSD_Printf("PR : Can't update uninitialized sector %i.\n", sectnum);
+        if (pr_verbosity >= 1) VLOG_F(LOG_PR, "Can't update uninitialized sector %i.", sectnum);
         return -1;
     }
     auto sec = (usectorptr_t)&sector[sectnum];
@@ -2937,7 +2937,7 @@ finish:
     s->flags.empty = 0;
     s->flags.uptodate = 1;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Updated sector %i.\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Updated sector %i.", sectnum);
 
     return 0;
 }
@@ -2945,7 +2945,7 @@ finish:
 static int32_t      polymer_buildfloor(int16_t sectnum)
 {
     // This function tesselates the floor/ceiling of a sector and stores the triangles in a display list.
-    if (pr_verbosity >= 2) OSD_Printf("PR : Tesselating floor of sector %i...\n", sectnum);
+    if (pr_verbosity >= 2) VLOG_F(LOG_PR, "Tessellating floor of sector %i", sectnum);
 
     _prsector *s = prsectors[sectnum];
     auto sec = (usectorptr_t)&sector[sectnum];
@@ -3011,7 +3011,7 @@ static int32_t      polymer_buildfloor(int16_t sectnum)
 
         if (index[elements[j]] == TESS_UNDEF)
         {
-            OSD_Printf("sector %d is a very sad sector\n", sectnum);
+            LOG_F(WARNING, "sector %d is a very sad sector", sectnum);
             s->ceil.indices[j] = 0;
         }
         s->floor.indices[s->indicescount-j-1] = s->ceil.indices[j];
@@ -3019,14 +3019,14 @@ static int32_t      polymer_buildfloor(int16_t sectnum)
 
     s->floor.indicescount = s->ceil.indicescount = s->indicescount;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Tesselated floor of sector %i.\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Tessellated floor of sector %i.", sectnum);
 
     return 1;
 }
 
 static void polymer_drawsector(int16_t sectnum, int32_t domasks)
 {
-    if (pr_verbosity >= 3) OSD_Printf("PR : Drawing sector %i...\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing sector %i", sectnum);
 
     if (automapping)
         show2dsector[sectnum>>3] |= pow2char[sectnum&7];
@@ -3110,7 +3110,7 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
         }
     }
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Finished drawing sector %i...\n", sectnum);
+    if (pr_verbosity >= 4) VLOG_F(LOG_PR, "Finished drawing sector %i.", sectnum);
 }
 
 // WALLS
@@ -3118,7 +3118,7 @@ static int32_t      polymer_initwall(int16_t wallnum)
 {
     _prwall         *w;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initializing wall %i...\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Initializing wall %i", wallnum);
 
     w = (_prwall *)Xcalloc(1, sizeof(_prwall));
 
@@ -3154,7 +3154,7 @@ static int32_t      polymer_initwall(int16_t wallnum)
 
     prwalls[wallnum] = w;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initialized wall %i.\n", wallnum);
+    if (pr_verbosity >= 2) VLOG_F(LOG_PR, "Initialized wall %i.", wallnum);
 
     return 1;
 }
@@ -3220,8 +3220,8 @@ static void         polymer_updatewall(int16_t wallnum)
 
     if (sec->floorz == sec->ceilingz)
     {
-        if (pr_verbosity >= 3)
-            OSD_Printf("PR : Skipped wall %i.\n", wallnum);
+        if (pr_verbosity >= 2)
+            VLOG_F(LOG_PR, "Skipped wall %i.", wallnum);
         return;
     }
 
@@ -3608,7 +3608,7 @@ static void         polymer_updatewall(int16_t wallnum)
     w->flags.uptodate = 1;
     w->flags.invalidtex = 0;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Updated wall %i.\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Updated wall %i.", wallnum);
 }
 
 static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
@@ -3619,7 +3619,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     GLubyte         oldcolor[4];
     int32_t         parallaxedfloor = 0, parallaxedceiling = 0;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Drawing wall %i...\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing wall %i", wallnum);
 
     sec = (usectorptr_t)&sector[sectnum];
     wal = &wall[wallnum];
@@ -3681,7 +3681,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     if (automapping)
         show2dwall[wallnum>>3] |= pow2char[wallnum&7];
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Finished drawing wall %i...\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Finished drawing wall %i.", wallnum);
 }
 
 // HSR
@@ -3833,7 +3833,7 @@ static void         polymer_extractfrustum(GLfloat* modelview, GLfloat* projecti
     }
     while (++i < 4);
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Frustum extracted.\n");
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Frustum extracted.");
 }
 
 static inline int polymer_planeinfrustum(_prplane const &plane, const float* frustum)
@@ -3895,7 +3895,7 @@ void                polymer_updatesprite(int32_t snum)
 
     if (pr_nullrender >= 3) return;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Updating sprite %i...\n", snum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Updating sprite %i", snum);
 
     int32_t const curpicnum = tspr->picnum;
 
@@ -5672,25 +5672,25 @@ static _prprograminfo *polymer_compileprogram(int32_t programbits)
 #else
     if (pr_verbosity >= 2)
 #endif
-        OSD_Printf("PR : Compiling GPU program with bits (octal) %o...\n", (unsigned)programbits);
+        VLOG_F(LOG_PR, "Compiling program with bits (octal) %o", (unsigned)programbits);
     if (!linkstatus) {
-        OSD_Printf("PR : Failed to compile GPU program with bits (octal) %o!\n", (unsigned)programbits);
+        VLOG_F(LOG_PR, "Failed to compile program with bits (octal) %o!", (unsigned)programbits);
         if (pr_verbosity >= 1)
         {
             glGetProgramInfoLog(program, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Linking log:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Linking log:\n%s", infobuffer);
 
             glGetShaderInfoLog(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Vertex compile log:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Vertex compile log:\n%s", infobuffer);
 
             glGetShaderInfoLog(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Fragment compile log:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Fragment compile log:\n%s", infobuffer);
 
             glGetShaderSource(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Vertex source dump:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Vertex source dump:\n%s", infobuffer);
 
             glGetShaderSource(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Fragment source dump:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Fragment source dump:\n%s", infobuffer);
         }
     }
 
@@ -6230,7 +6230,7 @@ static void         polymer_prepareshadows(void)
         {
             prlights[i].flags.isinview = 0;
             prlights[i].rtindex = j + 1;
-            if (pr_verbosity >= 3) OSD_Printf("PR : Drawing shadow %i...\n", i);
+            if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing shadow %i", i);
 
             glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, prrts[prlights[i].rtindex].fbo);
             glPushAttrib(GL_VIEWPORT_BIT);
@@ -6386,7 +6386,7 @@ static void         polymer_initrendertargets(int32_t count)
 
         if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
         {
-            OSD_Printf("PR : FBO #%d initialization failed.\n", i);
+            VLOG_F(LOG_PR, "FBO #%d initialization failed.", i);
         }
 
         buildgl_bindTexture(prrts[i].target, 0);

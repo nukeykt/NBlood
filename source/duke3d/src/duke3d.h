@@ -124,6 +124,13 @@ EDUKE32_STATIC_ASSERT(4 + (3 * MAX_ACTIVE_VIEWSCREENS) <= MAXTILES-MAXUSERTILES)
 // so that debugging with valgrind --smc-check=none is possible:
 //#define DEBUG_VALGRIND_NO_SMC
 
+enum loguru_verbosities_game
+{
+    LOG_VM = LOG_ENGINE_MAX,
+    LOG_CON,
+    LOG_GAME_MAX,
+};
+
 #include "_rts.h"
 #include "actors.h"
 #include "common_game.h"

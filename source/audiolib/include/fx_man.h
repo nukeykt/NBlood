@@ -85,8 +85,6 @@ int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
 int FX_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate, int pitchoffset,
     int angle, int distance, int priority, fix16_t volume, intptr_t callbackval, void* userdata);
 
-int FX_SetPrintf(int(*function)(const char *, ...));
-
 extern int FX_ErrorCode;
 extern int FX_MixRate;
 

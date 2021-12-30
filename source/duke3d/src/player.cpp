@@ -4978,7 +4978,7 @@ void P_ProcessInput(int playerNum)
     {
         if (pSprite->extra > 0 && ud.noclip == 0)
         {
-            OSD_Printf(OSD_ERROR "%s: player killed by cursectnum == -1!\n", EDUKE32_FUNCTION);
+            LOG_F(WARNING, "%s: player killed by cursectnum == -1!", EDUKE32_FUNCTION);
             P_QuickKill(pPlayer);
 #ifndef EDUKE32_STANDALONE
             if (!FURY)

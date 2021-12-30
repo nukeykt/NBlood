@@ -547,7 +547,7 @@ void G_CacheMapData(void)
 
     Bmemset(gotpic, 0, sizeof(gotpic));
 
-    OSD_Printf("Cache time: %dms\n", timerGetTicks() - cacheStartTime);
+    LOG_F(INFO, "Cache time: %dms.", timerGetTicks() - cacheStartTime);
 }
 
 int fragbarheight(void)
@@ -1105,7 +1105,7 @@ static void G_SetupSpecialWalls(void)
             {
                 if (g_mirrorCount > 63)
                 {
-                    G_GameExit("\nToo many mirrors (64 max.)");
+                    G_GameExit("Too many mirrors (64 max.)");
                 }
 
                 sector[nextSectnum].ceilingpicnum = MIRROR;
@@ -1119,7 +1119,7 @@ static void G_SetupSpecialWalls(void)
 
         if (g_animWallCnt >= MAXANIMWALLS)
         {
-            Bsprintf(tempbuf, "\nToo many 'anim' walls (%d max).", MAXANIMWALLS);
+            Bsprintf(tempbuf, "Too many 'anim' walls (%d max).", MAXANIMWALLS);
             G_GameExit(tempbuf);
         }
 
@@ -1367,7 +1367,7 @@ static void prelevel(int g)
     }
 
     if (missedCloudSectors > 0)
-        OSD_Printf(OSDTEXT_RED "Map warning: have %d unhandled CLOUDYSKIES ceilings.\n", missedCloudSectors);
+        LOG_F(WARNING, "Map has %d unhandled CLOUDYSKIES ceilings.", missedCloudSectors);
 
     // NOTE: must be safe loop because callbacks could delete sprites.
     for (int nextSprite, SPRITES_OF_STAT_SAFE(STAT_DEFAULT, i, nextSprite))
@@ -1782,7 +1782,7 @@ static int G_TryMapHack(const char *mhkfile)
     int const failure = engineLoadMHK(mhkfile);
 
     if (!failure)
-        initprintf("Loaded map hack file \"%s\"\n", mhkfile);
+        LOG_F(INFO, "Loaded %s", mhkfile);
 
     return failure;
 }
@@ -1944,7 +1944,7 @@ int G_EnterLevel(int gameMode)
     {
         if (m.name == NULL || m.filename == NULL)
         {
-            OSD_Printf(OSDTEXT_RED "Map E%dL%d not defined!\n", ud.volume_number+1, ud.level_number+1);
+            LOG_F(ERROR, "Map E%dL%d not defined!", ud.volume_number+1, ud.level_number+1);
             return 1;
         }
     }
@@ -1973,7 +1973,7 @@ int G_EnterLevel(int gameMode)
     {
         if (engineLoadBoard(boardfilename, 0, &p0.pos, &playerAngle, &p0.cursectnum) < 0)
         {
-            OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", boardfilename);
+            LOG_F(ERROR, "Unable to load %s: file not found or has invalid version!", boardfilename);
             return 1;
         }
 
@@ -1982,7 +1982,7 @@ int G_EnterLevel(int gameMode)
     }
     else if (engineLoadBoard(m.filename, VOLUMEONE, &p0.pos, &playerAngle, &p0.cursectnum) < 0)
     {
-        OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", m.filename);
+        LOG_F(ERROR, "Unable to load %s: file not found or has invalid version!", m.filename);
         return 1;
     }
     else

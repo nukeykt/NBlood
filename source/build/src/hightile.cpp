@@ -178,17 +178,15 @@ int32_t hicsetsubsttex(int32_t picnum, int32_t palnum, const char *filen, float 
         hicreplc[picnum] = hrn;
     }
 
-    if (tilesiz[picnum].x<=0 || tilesiz[picnum].y<=0)
-    {
-        static int32_t first=1;
-        if (first)
-        {
-            initprintf("Warning: defined hightile replacement for empty tile %d.", picnum);
-            initprintf(" Maybe some tilesXXX.art are not loaded?");
-            initprintf("\n");
-            first = 0;
-        }
-    }
+    //if (tilesiz[picnum].x<=0 || tilesiz[picnum].y<=0)
+    //{
+    //    static int32_t first=1;
+    //    if (first)
+    //    {
+    //        LOG_F(WARNING, "Defined replacement for empty tile %d.", picnum);
+    //        first = 0;
+    //    }
+    //}
 
     //printf("Replacement [%d,%d]: %s\n", picnum, palnum, hicreplc[i]->filename);
 

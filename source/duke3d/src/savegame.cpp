@@ -319,7 +319,7 @@ int32_t G_LoadSaveHeaderNew(char const *fn, savehead_t *saveh)
     {
         if (kdfread_LZ4((char *)waloff[TILE_LOADSHOT], 320, 200, fil) != 200)
         {
-            OSD_Printf("G_LoadSaveHeaderNew(): failed reading screenshot in \"%s\"\n", fn);
+            LOG_F(ERROR, "Failed reading screenshot from %s", fn);
             goto corrupt;
         }
 
@@ -375,7 +375,7 @@ static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfil
     bool loadedMhk = false;
 
     if (mhkInfo && (loadedMhk = (engineLoadMHK(mhkInfo->mhkfile) == 0)))
-        initprintf("Loaded map hack file \"%s\"\n", mhkInfo->mhkfile);
+        LOG_F(INFO, "Loaded %s", mhkInfo->mhkfile);
 
     if (!loadedMhk)
     {
@@ -383,7 +383,7 @@ static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfil
         Bstrcpy(bfn, currentboardfilename);
         append_ext_UNSAFE(bfn, ".mhk");
         if (engineLoadMHK(bfn) == 0)
-            initprintf("Loaded map hack file \"%s\"\n", bfn);
+            LOG_F(INFO, "Loaded %s", bfn);
     }
 }
 
@@ -391,7 +391,7 @@ static void sv_loadMapart(usermaphack_t* const mhkInfo, char* const currentboard
 {
     if (mhkInfo && mhkInfo->mapart)
     {
-        initprintf("Using mapinfo-defined mapart \"%s\"\n", mhkInfo->mapart);
+        LOG_F(INFO, "Loading %s", mhkInfo->mapart);
         artSetupMapArt(mhkInfo->mapart);
     }
     else artSetupMapArt(currentboardfilename);
@@ -731,7 +731,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     {
         // in theory, we could load into an initial dump first and trivially
         // recover if things go wrong...
-        Bsprintf(tempbuf, "Loading save game file \"%s\" failed (code %d), cannot recover.", sv.path, status);
+        Bsprintf(tempbuf, "Unable to load %s: fatal error %d.", sv.path, status);
         G_GameExit(tempbuf);
     }
 
@@ -776,7 +776,7 @@ void G_DeleteSave(savebrief_t const & sv)
 
     if (G_ModDirSnprintf(temp, sizeof(temp), "%s", sv.path))
     {
-        OSD_Printf("G_SavePlayer: file name \"%s\" too long\n", sv.path);
+        LOG_F(ERROR, "Unable to remove %s: unknown fatal error.", sv.path);
         return;
     }
 
@@ -832,7 +832,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
     {
         if (G_ModDirSnprintf(fn, sizeof(fn), "%s", sv.path))
         {
-            OSD_Printf("G_SavePlayer: file name \"%s\" too long\n", sv.path);
+            LOG_F(ERROR, "Unable to save %s: unknown fatal error.", sv.path);
             goto saveproblem;
         }
         fil = buildvfs_fopen_write(fn);
@@ -843,7 +843,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
         int const len = G_ModDirSnprintfLite(fn, ARRAY_SIZE(fn), SaveName);
         if (len >= ARRAY_SSIZE(fn)-1)
         {
-            OSD_Printf("G_SavePlayer: could not form automatic save path\n");
+            LOG_F(ERROR, "Resulting save filename is too long.");
             goto saveproblem;
         }
         char * zeros = fn + (len-8);
@@ -855,7 +855,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
 
     if (!fil)
     {
-        OSD_Printf("G_SavePlayer: failed opening \"%s\" for writing: %s\n",
+        LOG_F(ERROR, "Unable to open %s for writing: %s.",
                    fn, strerror(errno));
         goto saveproblem;
     }
@@ -1810,7 +1810,7 @@ int32_t sv_loadheader(buildvfs_kfd fil, int32_t spot, savehead_t *h)
         char headerCstr[sizeof(h->headerstr) + 1];
         Bmemcpy(headerCstr, h->headerstr, sizeof(h->headerstr));
         headerCstr[sizeof(h->headerstr)] = '\0';
-        OSD_Printf("%s %d header reads \"%s\", expected \"E32SAVEGAME\".\n",
+        LOG_F(ERROR, "%s %d header reads '%s', expected 'E32SAVEGAME'.",
                    havedemo ? "Demo":"Savegame", havedemo ? -spot : spot, headerCstr);
         Bmemset(h->headerstr, 0, sizeof(h->headerstr));
         return -2;

@@ -4106,7 +4106,7 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
     {
         videoResetMode();
         if (videoSetGameMode(fullscreen, xres, yres, bpp, upscalefactor))
-            OSD_Printf("restartvid: Reset failed...\n");
+            LOG_F(ERROR, "Failed to set video mode!");
         onvideomodechange(ud.setup.bpp>8);
         G_RefreshLights();
     }

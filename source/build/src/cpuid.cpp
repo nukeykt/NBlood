@@ -32,9 +32,8 @@ void sysReadCPUID()
     Bmemcpy(g_cpuVendorIDString+4, regs+3, 4);
     g_cpuVendorIDString[12] = '\0';
 
-#ifdef DEBUGGINGAIDS
-    initprintf("CPUID Vendor ID: %s\n", g_cpuVendorIDString);
-#endif
+    DVLOG_F(LOG_DEBUG, "CPUID Vendor ID: %s", g_cpuVendorIDString);
+
     cpu.vendorIDString = g_cpuVendorIDString;
 
     if (!Bstrcmp(g_cpuVendorIDString, "GenuineIntel"))
@@ -66,7 +65,7 @@ void sysReadCPUID()
         __cpuid(0x80000004, *(int *)&g_cpuBrandString[32], *(int *)&g_cpuBrandString[36],
                             *(int *)&g_cpuBrandString[40], *(int *)&g_cpuBrandString[44]);
 #endif
-        initprintf("CPU: %s\n", g_cpuBrandString);
+        LOG_F(INFO, "CPU: %s", g_cpuBrandString);
         cpu.brandString = g_cpuBrandString;
 
         if (subleaves >= 0x80000007)

@@ -354,7 +354,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
                 if (numSectors == MAXDAMAGESECTORS)
                 {
-                    OSD_Printf("Sprite %d tried to damage more than %d sectors!\n", spriteNum, MAXDAMAGESECTORS);
+                    LOG_F(WARNING, "Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
                     goto wallsfinished;
                 }
             }
@@ -728,7 +728,7 @@ void A_DeleteSprite(int spriteNum)
 {
     if (EDUKE32_PREDICT_FALSE(block_deletesprite))
     {
-        OSD_Printf(OSD_ERROR "A_DeleteSprite(): tried to remove sprite %d in EVENT_EGS\n", spriteNum);
+        LOG_F(ERROR, "A_DeleteSprite(): tried to remove sprite %d in EVENT_EGS!", spriteNum);
         return;
     }
 
@@ -1538,7 +1538,7 @@ ACTOR_STATIC void G_MovePlayers(void)
                         if (ud.god == 0)
                             if (G_CheckForSpaceCeiling(pSprite->sectnum) || G_CheckForSpaceFloor(pSprite->sectnum))
                             {
-                                OSD_Printf(OSD_ERROR "%s: player killed by space sector!\n", EDUKE32_FUNCTION);
+                                LOG_F(WARNING, "%s: player killed by space sector!", EDUKE32_FUNCTION);
                                 P_QuickKill(pPlayer);
                             }
                     }

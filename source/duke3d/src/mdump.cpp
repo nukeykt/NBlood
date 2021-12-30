@@ -65,13 +65,13 @@ LONG MiniDumper::TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
 
                 if (bOK)
                 {
-                    sprintf(szScratch, "Saved dump file to \"%s\"", szDumpPath);
+                    sprintf(szScratch, "Crash dump written to %s", szDumpPath);
                     szResult = szScratch;
                     retval   = EXCEPTION_EXECUTE_HANDLER;
                 }
                 else
                 {
-                    sprintf(szScratch, "Failed to save dump file to \"%s\" (error %d)", szDumpPath, GetLastError());
+                    sprintf(szScratch, "Unable to write crash dump to %s: error %d.", szDumpPath, GetLastError());
                     szResult = szScratch;
                 }
 
@@ -79,7 +79,7 @@ LONG MiniDumper::TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
             }
             else
             {
-                sprintf(szScratch, "Failed to create dump file \"%s\" (error %d)", szDumpPath, GetLastError());
+                sprintf(szScratch, "Unable to write crash dump to %s: error %d", szDumpPath, GetLastError());
                 szResult = szScratch;
             }
         }

@@ -157,7 +157,7 @@ void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy/*=fal
         {
 #if 0 // defined(DEBUGGINGAIDS)
             if (key[0] != 0xff)
-                initprintf("Skipping %s bound to %s\n", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
+                DLOG_F(INFO, "Skipping key '%s' bound to '%s'", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
 #endif
             continue;
         }
@@ -702,8 +702,8 @@ int CONFIG_ReadSetup(void)
         else if (buildvfs_exists(SETUPFILENAME))
         {
             int const i = wm_ynbox("Import Configuration Settings",
-                                   "The configuration file \"%s\" was not found. "
-                                   "Import configuration data from \"%s\"?",
+                                   "Configuration file %s not found. "
+                                   "Import configuration data from %s?",
                                    g_setupFileName, SETUPFILENAME);
             if (i)
                 ud.config.scripthandle = SCRIPT_Load(SETUPFILENAME);
@@ -755,7 +755,7 @@ int CONFIG_ReadSetup(void)
 
         if (!buildvfs_isdir(g_modDir))
         {
-            initprintf("Invalid mod dir in cfg!\n");
+            LOG_F(WARNING, "Invalid user directory specified in cfg file: %s", g_modDir);
             Bsprintf(g_modDir,"/");
         }
     }
@@ -883,12 +883,12 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
 
         buildvfs_fclose(fp);
 
-        OSD_Printf("Wrote %s\n", filename);
+        LOG_F(INFO, "Wrote %s", filename);
 
         return;
     }
 
-    OSD_Printf("Error writing %s: %s\n", filename, strerror(errno));
+    LOG_F(ERROR, "Unable to write %s: %s.", filename, strerror(errno));
 }
 
 void CONFIG_WriteSetup(uint32_t flags)
@@ -1013,7 +1013,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     if ((flags & 2) == 0)
         SCRIPT_Free(ud.config.scripthandle);
 
-    OSD_Printf("Wrote %s\n",g_setupFileName);
+    LOG_F(INFO, "Wrote %s",g_setupFileName);
     CONFIG_WriteSettings();
     Bfflush(NULL);
 }

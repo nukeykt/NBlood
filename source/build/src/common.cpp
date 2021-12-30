@@ -50,11 +50,11 @@ void PrintBuildInfo(void)
 #else
         "32"
 #endif
-        "-bit "
+        "-bit"
 #if B_BIG_ENDIAN == 1
-        "big-endian"
+        " big-endian"
 #endif
-        "\n");
+        );
 
     // TODO: architecture, OS, maybe build and feature settings
 }
@@ -80,7 +80,7 @@ void G_AddDef(const char *buffer)
 {
     clearDefNamePtr();
     g_defNamePtr = dup_filename(buffer);
-    initprintf("Using DEF file \"%s\".\n",g_defNamePtr);
+    LOG_F(INFO, "Using .def file %s",g_defNamePtr);
 }
 
 void G_AddDefModule(const char *buffer)
@@ -155,7 +155,7 @@ int32_t check_file_exist(const char *fn)
         kzfindfilestart(buf);
         if (!kzfindfile(buf))
         {
-            initprintf("Error: file \"%s\" does not exist\n",fn);
+            LOG_F(ERROR, "File %s not found", fn);
             pathsearchmode = opsm;
             return 1;
         }
@@ -474,7 +474,7 @@ void Paths_ParseSteamLibraryVDF(const char * fn, PathsParseFunc func)
     auto readsize = (int32_t)buildvfs_read(fd, buf, size);
     buildvfs_close(fd);
     if (readsize != size)
-        buildprint("Warning: Read ", readsize, " bytes from \"", fn, "\", expected ", size, "\n");
+        LOG_F(WARNING, "Read %d bytes from %s, expected %d", readsize, fn, size);
 
     char * const bufend = buf + readsize;
     bufend[0] = '\0';
@@ -527,7 +527,7 @@ void Paths_ParseXDGDesktopFile(const char * fn, PathsParseFunc func)
     auto readsize = (int32_t)buildvfs_read(fd, buf, size);
     buildvfs_close(fd);
     if (readsize != size)
-        buildprint("Warning: Read ", readsize, " bytes from \"", fn, "\", expected ", size, "\n");
+        LOG_F(WARNING, "Read %d bytes from %s, expected %d", readsize, fn, size);
 
     char * const bufend = buf + readsize;
     bufend[0] = '\0';

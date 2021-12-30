@@ -307,9 +307,7 @@ void gltexinvalidatetype(int32_t type)
 
     clearskins(type);
 
-#ifdef DEBUGGINGAIDS
-    OSD_Printf("gltexinvalidateall()\n");
-#endif
+    DVLOG_F(LOG_DEBUG, "gltexinvalidateall()");
 }
 
 void bind_2d_texture(GLuint texture, int filter)
@@ -451,7 +449,7 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
     GLuint shaderID = glCreateShader(shaderType);
     if (shaderID == 0)
     {
-        OSD_Printf("Error creating shader!\n");
+        VLOG_F(LOG_GL, "glCreateShader failed!");
         return 0;
     }
 
@@ -467,12 +465,12 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
     {
         GLint logLength;
         glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &logLength);
-        OSD_Printf("Compile Status: %u\n", compileStatus);
+        VLOG_F(LOG_GL, "Compile Status: %u", compileStatus);
         if (logLength > 0)
         {
             char *infoLog = (char*)Xmalloc(logLength);
             glGetShaderInfoLog(shaderID, logLength, &logLength, infoLog);
-            OSD_Printf("Log:\n%s\n", infoLog);
+            VLOG_F(LOG_GL, "Log:\n%s", infoLog);
             Xfree(infoLog);
         }
     }
@@ -546,9 +544,7 @@ void polymost_glreset()
     texcache_syncmemcache();
     polymost_initdrawpoly();
 
-#ifdef DEBUGGINGAIDS
-    OSD_Printf("polymost_glreset()\n");
-#endif
+    DVLOG_F(LOG_DEBUG, "polymost_glreset()");
 }
 
 #if defined EDUKE32_GLES
@@ -886,7 +882,7 @@ void polymost_initdrawpoly(void)
 #ifdef USE_GLEXT
     if (r_persistentStreamBuffer && ((!glinfo.bufferstorage) || (!glinfo.sync)))
     {
-        OSD_Printf("Your OpenGL implementation doesn't support the required extensions for persistent stream buffers. Disabling...\n");
+        VLOG_F(LOG_GL, "Unable to use persistent stream buffers: required extensions missing.");
         r_persistentStreamBuffer = 0;
     }
 #endif
@@ -1946,7 +1942,7 @@ void uploadpalswap(int32_t palookupnum)
     int32_t rowOffset = (numshades+1)*row;
     if (rowOffset > PALSWAP_TEXTURE_SIZE)
     {
-        OSD_Printf("Polymost: palswaps are too large for palswap tilesheet!\n");
+        LOG_F(ERROR, "palswap data too large for tilesheet!");
         return;
     }
     //POGO: There was a reason why having an extra row of black pixels was necessary along the edge of the palswap (I believe it affected a particular IHV/GPU).
@@ -2434,7 +2430,7 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     buildvfs_kfd filh;
     if (EDUKE32_PREDICT_FALSE((filh = kopen4load(fn, 0)) == buildvfs_kfd_invalid))
     {
-        OSD_Printf("hightile: %s (pic %d) not found\n", fn, dapic);
+        LOG_F(ERROR, "File %s not found.", fn);
         return -2;
     }
 
@@ -2570,12 +2566,12 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
         {
             int32_t etime = timerGetTicks() - startticks;
             if (etime >= MIN_CACHETIME_PRINT)
-                OSD_Printf("Load tile %4d: p%d-m%d-e%d %s... cached... %d ms\n", dapic, dapalnum, dameth, effect,
+                LOG_F(INFO, "Load tile %4d: p%d-m%d-e%d %s... cached... %d ms", dapic, dapalnum, dameth, effect,
                             gloadtile_willprint == 2 ? fn : "", etime);
             gloadtile_willprint = 0;
         }
         else
-            OSD_Printf("Cached \"%s\"\n", fn);
+            LOG_F(INFO, "Cached %s", fn);
     }
 #endif
 
@@ -2583,7 +2579,7 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     {
         int32_t etime = timerGetTicks()-startticks;
         if (etime>=MIN_CACHETIME_PRINT)
-            OSD_Printf("Load tile %4d: p%d-m%d-e%d %s... %d ms\n", dapic, dapalnum, dameth, effect,
+            LOG_F(INFO, "Load tile %4d: p%d-m%d-e%d %s... %d ms", dapic, dapalnum, dameth, effect,
                         gloadtile_willprint ==2 ? fn : "", etime);
     }
 
@@ -2897,40 +2893,49 @@ static void polymost_lockSubBuffer(uint32_t subBufferIndex)
 
 static void polymost_waitForSubBuffer(uint32_t subBufferIndex)
 {
-    if (drawpolyVertsSync[subBufferIndex])
+    if (!drawpolyVertsSync[subBufferIndex])
+        return;
+
+    do
     {
-        while (true)
+        // we only need to flush if there's a possibility that drawpolyVertsBufferLength is
+        // so small that we can eat through 3 times the buffer size in a single frame
+        GLenum waitResult = glClientWaitSync(drawpolyVertsSync[subBufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 500000);
+
+        switch (waitResult)
         {
-            // we only need to flush if there's a possibility that drawpolyVertsBufferLength is
-            // so small that we can eat through 3 times the buffer size in a single frame
-            GLenum waitResult = glClientWaitSync(drawpolyVertsSync[subBufferIndex], GL_SYNC_FLUSH_COMMANDS_BIT, 500000);
-            if (waitResult == GL_ALREADY_SIGNALED ||
-                waitResult == GL_CONDITION_SATISFIED)
-            {
+            case GL_ALREADY_SIGNALED:
+            case GL_CONDITION_SATISFIED:
                 return;
-            }
-            if (waitResult == GL_WAIT_FAILED)
+
+            case GL_WAIT_FAILED:
             {
-                OSD_Printf("polymost_waitForSubBuffer: Wait failed! Error 0x%X. Disabling r_persistentStreamBuffer.\n", glGetError());
+                LOG_F(ERROR, "Error 0x%X waiting for OpenGL stream buffer.", glGetError());
                 r_persistentStreamBuffer = 0;
                 videoResetMode();
                 if (videoSetGameMode(fullscreen,xres,yres,bpp,upscalefactor))
                 {
-                    OSD_Printf("polymost_waitForSubBuffer: Video reset failed.  Please ensure r_persistentStreamBuffer = 0 and try restarting the game.\n");
+                    LOG_F(ERROR, "Unable to set video mode! Please ensure r_persistentStreamBuffer is disabled (= 0) and try restarting the game.");
                     Bexit(EXIT_FAILURE);
                 }
                 return;
             }
-
-            static char loggedLongWait = false;
-            if (waitResult == GL_TIMEOUT_EXPIRED &&
-                !loggedLongWait)
-            {
-                OSD_Printf("polymost_waitForSubBuffer(): Had to wait for the drawpoly buffer to become available.  For performance, try increasing buffer size with r_drawpolyVertsBufferLength.\n");
-                loggedLongWait = true;
-            }
+            case GL_TIMEOUT_EXPIRED:
+                {
+                    static char loggedLongWait = false;
+                    if (!loggedLongWait)
+                    {
+                        LOG_F(WARNING,
+                              "Timed out waiting for OpenGL Stream buffer. For performance, try increasing the buffer size with r_drawpolyVertsBufferLength.");
+                        loggedLongWait = true;
+                    }
+                }
+                fallthrough__;
+            default:
+                break;
         }
     }
+    while (true);
 }
 
 static void polymost_updaterotmat(void)
@@ -6550,7 +6555,7 @@ void polymost_scansector(int32_t sectnum)
 
             if (numscans >= MAXWALLSB-1)
             {
-                OSD_Printf("!!numscans\n");
+                LOG_F(ERROR, "!!numscans");
                 return;
             }
 
@@ -9787,10 +9792,10 @@ static int32_t gltexturemode(osdcmdptr_t parm)
 
     if (parm->numparms != 1)
     {
-        OSD_Printf("Current texturing mode is %s\n", glfiltermodes[gltexfiltermode].name);
-        OSD_Printf("  Vaild modes are:\n");
+        LOG_F(INFO, "Current texturing mode is %s", glfiltermodes[gltexfiltermode].name);
+        LOG_F(INFO, "  Vaild modes are:");
         for (m = 0; m < NUMGLFILTERMODES; m++)
-            OSD_Printf("     %d - %s\n", m, glfiltermodes[m].name);
+            LOG_F(INFO, "     %d - %s", m, glfiltermodes[m].name);
 
         return OSDCMD_OK;
     }
@@ -9816,7 +9821,7 @@ static int32_t gltexturemode(osdcmdptr_t parm)
     gltexfiltermode = m;
     gltexapplyprops();
 
-    OSD_Printf("Texture filtering mode changed to %s\n", glfiltermodes[gltexfiltermode].name);
+    LOG_F(INFO, "Texture filtering mode changed to %s", glfiltermodes[gltexfiltermode].name);
 
     return OSDCMD_OK;
 }
@@ -9852,7 +9857,7 @@ static int osdcmd_cvar_set_polymost(osdcmdptr_t parm)
                 texcache_invalidate();
                 videoResetMode();
                 if (videoSetGameMode(fullscreen,xres,yres,bpp,upscalefactor))
-                    OSD_Printf("restartvid: Reset failed...\n");
+                    LOG_F(ERROR, "Unable to set video mode!");
             }
 
             r_downsizevar = r_downsize;

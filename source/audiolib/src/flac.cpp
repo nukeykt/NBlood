@@ -229,7 +229,7 @@ FLAC__StreamDecoderWriteStatus write_flac_stream(const FLAC__StreamDecoder *deco
     {
         samples = (FLAC__uint64)(uintptr_t)voice->Loop.End - fd->sample_pos;
         if (!FLAC__stream_decoder_seek_absolute(fd->stream, (FLAC__uint64)(uintptr_t)voice->Loop.Start))
-            MV_Printf("MV_GetNextFLACBlock FLAC__stream_decoder_seek_absolute: LOOP_START %ul, LOOP_END %ul\n",
+            LOG_F(ERROR, "write_flac_stream: error in FLAC__stream_decoder_seek_absolute (LOOP_START %" PRIu64 ", LOOP_END %" PRIu64 ")",
                       (FLAC__uint64)(uintptr_t)voice->Loop.Start, (FLAC__uint64)(uintptr_t)voice->Loop.End);
     }
 
@@ -289,7 +289,7 @@ void error_flac_stream(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderEr
     // flac_data * fd = (flac_data *) client_data;
     UNREFERENCED_PARAMETER(client_data);
     UNREFERENCED_PARAMETER(decoder);
-    MV_Printf("%s\n", FLAC__StreamDecoderErrorStatusString[status]);
+    LOG_F(ERROR, "%s", FLAC__StreamDecoderErrorStatusString[status]);
     // FLAC__stream_decoder_flush(fd->stream);
 }
 
@@ -325,7 +325,7 @@ static playbackstatus MV_GetNextFLACBlock(VoiceNode *voice)
 
     if ((FLAC__uint64)(uintptr_t)voice->Loop.End > 0 && fd->sample_pos >= (FLAC__uint64)(uintptr_t)voice->Loop.End)
         if (!FLAC__stream_decoder_seek_absolute(fd->stream, (FLAC__uint64)(uintptr_t)voice->Loop.Start))
-            MV_Printf("MV_GetNextFLACBlock FLAC__stream_decoder_seek_absolute: LOOP_START %ul, LOOP_END %ul\n",
+            LOG_F(ERROR, "MV_GetNextFLACBlock: error in FLAC__stream_decoder_seek_absolute (LOOP_START %" PRIu64 ", LOOP_END %" PRIu64 ")",
                       (FLAC__uint64)(uintptr_t)voice->Loop.Start, (FLAC__uint64)(uintptr_t)voice->Loop.End);
 
     /*decode_status =*/FLAC__stream_decoder_process_single(fd->stream);
@@ -350,7 +350,7 @@ static playbackstatus MV_GetNextFLACBlock(VoiceNode *voice)
         if (voice->Loop.Size > 0)
         {
             if (!FLAC__stream_decoder_seek_absolute(fd->stream, (FLAC__uint64)(uintptr_t)voice->Loop.Start))
-                MV_Printf("MV_GetNextFLACBlock FLAC__stream_decoder_seek_absolute: LOOP_START %ul\n",
+                LOG_F(ERROR, "MV_GetNextFLACBlock: error in FLAC__stream_decoder_seek_absolute (LOOP_START %" PRIu64 ")",
                           (FLAC__uint64)(uintptr_t)voice->Loop.Start);
         }
         else
@@ -448,7 +448,7 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
                                          /*metadata_flac_stream*/ nullptr, error_flac_stream,
                                          (void *)fd) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
     {
-        MV_Printf("MV_PlayFLAC: %s\n", FLAC__stream_decoder_get_resolved_state_string(fd->stream));
+        LOG_F(ERROR, "MV_PlayFLAC: error in FLAC__stream_decoder_init_stream: %s", FLAC__stream_decoder_get_resolved_state_string(fd->stream));
         ALIGNED_FREE_AND_NULL(fd);
         return MV_SetErrorCode(MV_InvalidFile);
     }
@@ -583,16 +583,16 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
                 FLAC__metadata_iterator_delete(metadata_iterator);
             }
             else
-                MV_Printf("Error allocating FLAC__Metadata_Iterator!\n");
+                LOG_F(ERROR, "MV_PlayFLAC: error in FLAC__metadata_iterator_new");
         }
         else
-            MV_Printf("%s\n", FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(metadata_chain)]);
+            LOG_F(ERROR, "MV_PlayFLAC: error in FLAC__metadata_chain_read_with_callbacks: %s", FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(metadata_chain)]);
 
         // FLAC__metadata_chain_delete(metadata_chain); // when run with GDB, this throws SIGTRAP about freed heap
         // memory being modified
     }
     else
-        MV_Printf("Error allocating FLAC__Metadata_Chain!\n");
+        LOG_F(ERROR, "MV_PlayFLAC: error in FLAC__metadata_chain_new");
 
     // CODEDUP multivoc.c MV_SetVoicePitch
     voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
@@ -634,13 +634,13 @@ void MV_ReleaseFLACVoice(VoiceNode *voice)
 
 int MV_PlayFLAC(char *, uint32_t, int, int, int, int, int, int, int, fix16_t, intptr_t)
 {
-    MV_Printf("MV_PlayFLAC: FLAC support not included in this binary.\n");
+    LOG_F(ERROR, "MV_PlayFLAC: FLAC support not included in this binary.");
     return -1;
 }
 
 int MV_PlayFLAC3D(char *, uint32_t, int, int, int, int, int, fix16_t, intptr_t)
 {
-    MV_Printf("MV_PlayFLAC: FLAC support not included in this binary.\n");
+    LOG_F(ERROR, "MV_PlayFLAC: FLAC support not included in this binary.");
     return -1;
 }
 #endif  // HAVE_FLAC

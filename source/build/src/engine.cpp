@@ -1762,7 +1762,7 @@ static void classicScanSector(int16_t startsectnum)
 
             if (numscans >= MAXWALLSB-1)
             {
-                OSD_Printf("!!numscans\n");
+                LOG_F(ERROR, "!!numscans");
                 return;
             }
 
@@ -3610,7 +3610,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     shy1 = y1+(shoffs>>15);
     if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
     {
-        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+        LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
         return;
     }
 
@@ -3628,12 +3628,12 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
             // Ridiculously steep gradient?
             if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
                 goto next_most;
             }
             if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
                 goto next_most;
             }
 
@@ -3928,7 +3928,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     shy1 = y1+(shoffs>>15);
     if ((unsigned)shy1 >= SLOPALOOKUPSIZ - 1)
     {
-        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+        LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
         return;
     }
 
@@ -3946,12 +3946,12 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
             // Ridiculously steep gradient?
             if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
                 goto next_most;
             }
             if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
                 goto next_most;
             }
 
@@ -6230,7 +6230,7 @@ draw_as_face_sprite:
             int32_t shy2;
             if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sprite %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sprite %d!", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
                 return;
             }
 
@@ -6251,7 +6251,7 @@ draw_as_face_sprite:
                     // Ridiculously steep gradient?
                     if ((unsigned)shy1 >= SLOPALOOKUPSIZ || (unsigned)shy2 >= SLOPALOOKUPSIZ)
                     {
-                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__,
+                        LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!", EDUKE32_FUNCTION, __LINE__,
                                    (unsigned)shy1 >= SLOPALOOKUPSIZ ? shy1 : shy2, spritenum);
                         goto next_most;
                     }
@@ -8208,7 +8208,7 @@ static int32_t engineLoadTables(void)
         {
             static const char *str[3] = { "sine table", "arctangent table",
                                           "sine and arctangent tables" };
-            initprintf("WARNING: Calculated %s differ%s from original!\n",
+            LOG_F(WARNING, "Calculated %s differ%s from original!\n",
                        str[i-1], i==3 ? "" : "s");
         }
 #endif
@@ -8660,7 +8660,7 @@ static void sighandler(int sig, siginfo_t *info, void *ctx)
 int32_t engineFatalError(char const * const msg)
 {
     engineerrstr = msg;
-    initprintf("ERROR: %s\n", engineerrstr);
+    LOG_F(ERROR, "%s", engineerrstr);
     return -1;
 }
 
@@ -10455,13 +10455,13 @@ static void check_sprite(int32_t i)
 {
     if ((unsigned)sprite[i].statnum >= MAXSTATUS)
     {
-        initprintf("%sMap error: sprite #%d (%d,%d) with illegal statnum (%d) REMOVED.\n", osd->draw.errorfmt,
+        LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal statnum (%d) was REMOVED.",
                    i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), TrackerCast(sprite[i].statnum));
         remove_sprite(i);
     }
     else if ((unsigned)sprite[i].picnum >= MAXTILES)
     {
-        initprintf("%sMap error: sprite #%d (%d,%d) with illegal picnum (%d) REMOVED.\n", osd->draw.errorfmt,
+        LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal picnum (%d) was REMOVED.",
                    i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), TrackerCast(sprite[i].sectnum));
         remove_sprite(i);
     }
@@ -10475,13 +10475,12 @@ static void check_sprite(int32_t i)
         if (sprite[i].sectnum < 0)
             remove_sprite(i);
 
-        initprintf("%sMap error: sprite #%d (%d,%d) with illegal sector (%d) ", osd->draw.errorfmt,
-                   i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), osectnum);
-
-        if (sprite[i].statnum != MAXSTATUS)
-            initprintf("changed to sector %d.\n", TrackerCast(sprite[i].sectnum));
+        if (sprite[i].sectnum != MAXSECTORS)
+            LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal sector (%d) moved to sector %d.",
+                       i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), osectnum, TrackerCast(sprite[i].sectnum));
         else
-            initprintf("REMOVED.\n");
+            LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal sector (%d) REMOVED.",
+                       i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), osectnum);
     }
 }
 
@@ -10659,7 +10658,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
     int const pos = ktell(fil), len = kfilelength(fil);
 
     if (pos != len)
-        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
+        LOG_F(WARNING, "Ignoring %d bytes of unknown data appended to map file. Saving changes to this file will result in loss of this data.", len - pos);
 
 #ifdef NEW_MAP_FORMAT
 skip_reading_mapbin:
@@ -10729,7 +10728,7 @@ skip_reading_mapbin:
         // Per-map ART
         if (mapInfo && mapInfo->mapart)
         {
-            initprintf("Using mapinfo-defined mapart \"%s\"\n", mapInfo->mapart);
+            LOG_F(INFO, "Using mapinfo-defined mapart %s", mapInfo->mapart);
             artSetupMapArt(mapInfo->mapart);
         }
         else
@@ -10996,7 +10995,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
     int const pos = ktell(fil), len = kfilelength(fil);
 
     if (pos != len)
-        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
+        LOG_F(WARNING, "Ignoring %d bytes of unknown data appended to map file. Saving changes to this file will result in loss of this data.", len - pos);
 
     kclose(fil);
     // Done reading file.
@@ -11051,14 +11050,14 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
     {
         if ((unsigned)sprite[j].statnum > MAXSTATUS)
         {
-            initprintf("Map error: sprite #%d(%d,%d) with an illegal statnum(%d)\n",
+            LOG_F(ERROR, "Map error: sprite #%d(%d,%d) with illegal statnum (%d)",
                        j,TrackerCast(sprite[j].x),TrackerCast(sprite[j].y),TrackerCast(sprite[j].statnum));
             changespritestat(j,0);
         }
 
         if ((unsigned)sprite[j].sectnum > MAXSECTORS)
         {
-            initprintf("Map error: sprite #%d(%d,%d) with an illegal sectnum(%d)\n",
+            LOG_F(ERROR, "Map error: sprite #%d(%d,%d) with illegal sectnum (%d)",
                        j,TrackerCast(sprite[j].x),TrackerCast(sprite[j].y),TrackerCast(sprite[j].sectnum));
             changespritesect(j,0);
         }
@@ -11092,7 +11091,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
 
     if (fil == buildvfs_fd_invalid)
     {
-        initprintf("Couldn't open \"%s\" for writing: %s\n", filename, strerror(errno));
+        LOG_F(ERROR, "Couldn't open file %s for writing: %s.", filename, strerror(errno));
         return -1;
     }
 
@@ -11329,7 +11328,7 @@ static void PolymostProcessVoxels(void)
 
     g_haveVoxels = 2;
 
-    OSD_Printf("Generating voxel models for Polymost. This may take a while...\n");
+    LOG_F(INFO, "Generating 3D meshes from voxel model data. This may take a while...");
     videoNextPage();
 
     for (bssize_t i=0; i<MAXVOXELS; i++)
@@ -11997,9 +11996,7 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, in
 
     if (!sectorsareconnected(sect1, sect2))
     {
-#ifndef NDEBUG
-        OSD_Printf("cansee: sector %d can't reach sector %d\n", sect1, sect2);
-#endif
+        DVLOG_F(LOG_DEBUG, "cansee: sector %d can't reach sector %d", sect1, sect2);
         return 0;
     }
 
@@ -12322,7 +12319,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
             cnt--;
             if (cnt==0)
             {
-                initprintf("dragpoint %d: infloop!\n", pointhighlight);
+                LOG_F(ERROR, "dragpoint %d: infloop!", pointhighlight);
                 i = numyaxwalls;
                 break;
             }
@@ -14186,17 +14183,16 @@ static void PolymerProcessModels(void)
 
             if (!warned)
             {
-                OSD_Printf("Post-processing MD3 models for Polymer. This may take a while...\n");
+                LOG_F(INFO, "Processing model data. This may take a while...");
                 videoNextPage();
                 warned = 1;
             }
 
             if (!md3postload_polymer((md3model_t *)models[i]))
-                OSD_Printf("INTERNAL ERROR: mdmodel %s failed postprocessing!\n",
-                           ((md3model_t *)models[i])->head.nam);
+                LOG_F(ERROR, "Failed processing md3model '%s'!", ((md3model_t *)models[i])->head.nam);
 
             if (((md3model_t *)models[i])->head.surfs[0].geometry == NULL)
-                OSD_Printf("INTERNAL ERROR: wtf?\n");
+                LOG_F(ERROR, "Null geometry for md3model '%s'!", ((md3model_t *)models[i])->head.nam);
         }
 //        else
 //            OSD_Printf("mdmodel %d already postprocessed.\n", i);

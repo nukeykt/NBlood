@@ -23,6 +23,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef dnames_h_
 #define dnames_h_
 
+#include "compat.h"
+#include "hash.h"
+
+#include <inttypes.h>
+
 #define USE_DNAMES
 
 struct dynitem

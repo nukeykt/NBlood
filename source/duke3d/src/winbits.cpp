@@ -56,7 +56,7 @@ int32_t windowsCheckForUpdates(char *buffer)
 
     if ((h = gethostbyname(host)) == NULL)
     {
-        initprintf("Couldn't resolve %s!\n", host);
+        LOG_F(WARNING, "Couldn't resolve %s!", host);
         return 0;
     }
 
@@ -74,7 +74,7 @@ int32_t windowsCheckForUpdates(char *buffer)
         return 0;
     }
 
-    initprintf("Connecting to http://%s\n",host);
+    LOG_F(INFO, "Connecting to http://%s", host);
 
     if (connect(mysock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr)) == SOCKET_ERROR)
         goto done;

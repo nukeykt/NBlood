@@ -25,7 +25,7 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 {
     if (voice->rawdataptr == nullptr)
     {
-        MV_Printf("MV_GetNextXMPBlock(): no XMP context!\n");
+        LOG_F(ERROR, "MV_GetNextXMPBlock: no XMP context!");
         return NoMoreData;
     }
 
@@ -132,11 +132,11 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         if (ctx == nullptr || (xmp_status = xmp_load_module_from_memory(ctx, xd->ptr, xd->length)))
         {
             if (!xmp_status)
-                MV_Printf("MV_PlayXMP: xmp_create_context failed\n");
+                LOG_F(ERROR, "MV_PlayXMP: error in xmp_create_context");
             else
             {
                 xmp_free_context(ctx);
-                MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
+                LOG_F(ERROR, "MV_PlayXMP: error %i in xmp_load_module_from_memory", xmp_status);
             }
 
             ALIGNED_FREE_AND_NULL(voice->rawdataptr);
@@ -191,17 +191,17 @@ void MV_SetXMPInterpolation(void)
 
 #include "_multivc.h"
 
-static char const NoXMP[] = "MV_PlayXMP: libxmp-lite support not included in this binary.\n";
+static char const NoXMP[] = "MV_PlayXMP: libxmp-lite support not included in this binary.";
 
 int MV_PlayXMP(char *, uint32_t, int, int, int, int, int, int, int, fix16_t, intptr_t)
 {
-    MV_Printf(NoXMP);
+    LOG_F(ERROR, NoXMP);
     return -1;
 }
 
 int MV_PlayXMP3D(char *, uint32_t, int, int, int, int, int, fix16_t, intptr_t)
 {
-    MV_Printf(NoXMP);
+    LOG_F(ERROR, NoXMP);
     return -1;
 }
 

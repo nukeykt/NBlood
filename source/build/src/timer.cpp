@@ -128,7 +128,7 @@ ATTRIBUTE((flatten)) void timerUpdateClock(void)
 
     totalclock.setFraction((ld.rem * 65536) / timerGetNanoTickRate());
 #if 0
-    OSD_Printf("totalclock fraction %d\n", totalclock.getFraction());
+    DLOG_F(DEBUG, "totalclock fraction %d", totalclock.getFraction());
 #endif
 
     if (ld.quot <= 0) return;
@@ -239,11 +239,11 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
 
     if (sys_timer != TIMER_AUTO || !OSD_ParsingScript())
 print_and_return:
-        OSD_Printf("Using \"%s\" timer with %g MHz frequency\n", s[sys_timer], timerGetPerformanceFrequency() / 1.0e6);
+        LOG_F(INFO, "Using '%s' timer with %g MHz frequency", s[sys_timer], timerGetPerformanceFrequency() / 1.0e6);
 
 #if defined EDUKE32_CPU_X86 && defined HAVE_TIMER_RDTSC
     if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
-        OSD_Printf("WARNING: invariant TSC support not detected! You may experience timing issues.\n");
+        LOG_F(WARNING, "Invariant TSC support not detected! You may experience timing issues.");
 #endif
 
     clockLastSampleTime = timerGetNanoTicks();

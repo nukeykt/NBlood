@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MULTIVOC_H_
 
 #include "compat.h"
+#include "log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,8 +66,6 @@ enum MV_Errors
     MV_InvalidFile,
 };
 
-extern int (*MV_Printf)(const char *fmt, ...);
-
 const char *MV_ErrorString(int ErrorNumber);
 
 extern thread_local int MV_Locked;
@@ -83,7 +82,7 @@ static FORCE_INLINE void MV_Unlock(void)
     if (!--MV_Locked)
         SoundDriver_PCM_Unlock();
     else if (MV_Locked < 0)
-        MV_Printf("MV_Unlock(): lockdepth < 0!\n");
+        LOG_F(ERROR, "PCM lockdepth < 0!");
 }
 
 int  MV_VoicePlaying(int handle);
@@ -153,8 +152,6 @@ struct MV_MusicRoutineBuffer
     int32_t size;
 };
 struct MV_MusicRoutineBuffer MV_GetMusicRoutineBuffer(void);
-
-static inline void MV_SetPrintf(int (*function)(const char *, ...)) { if (function) MV_Printf = function; }
 
 #ifdef __cplusplus
 }

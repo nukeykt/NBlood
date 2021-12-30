@@ -90,7 +90,6 @@ VoiceNode  VoicePool;
 
 static int MV_MixPage;
 
-int (*MV_Printf)(const char *fmt, ...) = initprintf;
 static void (*MV_CallBackFunc)(intptr_t);
 
 char *MV_MixDestination;
@@ -119,7 +118,7 @@ static bool MV_Mix(VoiceNode * const voice, int const buffer)
 
         if (result != MV_Ok)
         {
-            MV_Printf("Error playing sound % " PRIdPTR ": %s\n", voice->callbackval, MV_ErrorString(result));
+            LOG_F(ERROR, "Error playing sound 0x%08" PRIxPTR ": %s", voice->callbackval, MV_ErrorString(result));
             return false;
         }
     }
@@ -340,7 +339,7 @@ static VoiceNode *MV_GetVoice(int handle)
 {
     if (handle < MV_MINVOICEHANDLE || handle > MV_MaxVoices)
     {
-        MV_Printf("MV_GetVoice(): bad handle (%d)!\n", handle);
+        LOG_F(WARNING, "No voice found for handle 0x%08x", handle);
         return nullptr;
     }
 

@@ -84,7 +84,7 @@ void Net_GetPackets(void)
         g_netDisconnect = 0;
 
         if (g_gameQuit)
-            G_GameExit(" ");
+            G_GameExit();
 
         return;
     }
