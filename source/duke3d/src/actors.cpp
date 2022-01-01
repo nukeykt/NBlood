@@ -1316,11 +1316,11 @@ int A_IncurDamage(int const spriteNum)
                 break;
 
             default:
-                P_Nudge(playerNum, spriteNum, (A_CheckSpriteFlags(pActor->htowner, SFLAG_PROJECTILE) &&
-                                       (SpriteProjectile[pActor->htowner].workslike & PROJECTILE_RPG))
-                                      ? 2
-                                      : 1);
+            {
+                int const isRPG = (A_CheckSpriteTileFlags(pActor->htpicnum, SFLAG_PROJECTILE) && (g_tile[pActor->htpicnum].proj->workslike & PROJECTILE_RPG));
+                P_Nudge(playerNum, spriteNum, 1 << isRPG);
                 break;
+            }
         }
 
         pActor->htextra = -1;
