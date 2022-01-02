@@ -948,9 +948,10 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
             int floorZ = getflorzofslope(nSector, pSprite->x, pSprite->y);
             if (!(pSprite->cstat&48) && floorZ <= bottom)
             {
+                if (!VanillaMode()) viewBackupSpriteLoc(nSprite, pSprite);
                 if (v14)
                     RotatePoint((int*)&pSprite->x, (int*)&pSprite->y, v14, v20, v24);
-                viewBackupSpriteLoc(nSprite, pSprite);
+                if (VanillaMode()) viewBackupSpriteLoc(nSprite, pSprite);
                 pSprite->ang = (pSprite->ang+v14)&2047;
                 pSprite->x += v28;
                 pSprite->y += v2c;
