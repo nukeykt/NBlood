@@ -242,11 +242,13 @@ Website: www.ilikebigbits.com
 	#define LOGURU_FMT(x) "%" #x
 #endif
 
-#ifdef _WIN32
-	#define STRDUP(str) _strdup(str)
-#else
-	#define STRDUP(str) strdup(str)
-#endif
+// EDUKE32 MODIFICATION
+#define STRDUP(str) _xstrdup(str)
+
+#define LOGURU_MALLOC(siz)    _xmalloc(siz)
+#define LOGURU_CALLOC(n, siz) _xcalloc(n, siz)
+#define LOGURU_FREE(p)        _xfree(p)
+// END EDUKE32 MODIFICATION
 
 // --------------------------------------------------------------------
 
@@ -1112,12 +1114,14 @@ namespace loguru
 	#define DRAW_VLOG_F(verbosity, ...)     RAW_VLOG_F(verbosity, __VA_ARGS__)
 #else
 	// Debug logging disabled:
-	#define DLOG_F(verbosity_name, ...)
-	#define DVLOG_F(verbosity, ...)
-	#define DLOG_IF_F(verbosity_name, ...)
-	#define DVLOG_IF_F(verbosity, ...)
-	#define DRAW_LOG_F(verbosity_name, ...)
-	#define DRAW_VLOG_F(verbosity, ...)
+	// EDUKE32 MODIFICATION
+	#define DLOG_F(verbosity_name, ...) do {} while(0)
+	#define DVLOG_F(verbosity, ...) do {} while(0)
+	#define DLOG_IF_F(verbosity_name, ...) do {} while(0)
+	#define DVLOG_IF_F(verbosity, ...) do {} while(0)
+	#define DRAW_LOG_F(verbosity_name, ...) do {} while(0)
+	#define DRAW_VLOG_F(verbosity, ...) do {} while(0)
+	// END EDUKE32 MODIFICATION
 #endif
 
 #define CHECK_EQ_F(a, b, ...) CHECK_OP_F(a, b, ==, ##__VA_ARGS__)

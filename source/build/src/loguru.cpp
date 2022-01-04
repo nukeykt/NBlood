@@ -20,7 +20,10 @@
 #pragma warning(disable:4365) // conversion from 'X' to 'Y', signed/unsigned mismatch
 #endif
 
-#include "loguru.hpp"
+// EDUKE32 MODIFICATION
+#include "log.h"
+#include "compat.h"
+//#include "loguru.hpp"
 
 #ifndef LOGURU_HAS_BEEN_IMPLEMENTED
 #define LOGURU_HAS_BEEN_IMPLEMENTED
@@ -216,6 +219,7 @@ namespace loguru
 	static SignalOptions s_signal_options = SignalOptions::none();
 
 	static const bool s_terminal_has_color = [](){
+		// EDUKE32 MODIFICATION
 		#ifdef _WIN32
 			#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 			#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
@@ -226,13 +230,15 @@ namespace loguru
 				DWORD dwMode = 0;
 				GetConsoleMode(hOut, &dwMode);
 				dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-				return SetConsoleMode(hOut, dwMode) != 0;
+
+				if (SetConsoleMode(hOut, dwMode) != 0)
+					return true;
 			}
-			return false;
 		#else
 			if (!isatty(STDERR_FILENO)) {
 				return false;
 			}
+		#endif
 			if (const char* term = getenv("TERM")) {
 				return 0 == strcmp(term, "cygwin")
 					|| 0 == strcmp(term, "linux")
@@ -248,7 +254,7 @@ namespace loguru
 			} else {
 				return false;
 			}
-		#endif
+			// END EDUKE32 MODIFICATION
 	}();
 
 	static void print_preamble_header(char* out_buff, size_t out_buff_size);
@@ -414,7 +420,8 @@ namespace loguru
 // ------------------------------------------------------------------------------
 	// Helpers:
 
-	Text::~Text() { free(_str); }
+	// EDUKE32 MODIFICATION
+	Text::~Text() { LOGURU_FREE(_str); }
 
 #if LOGURU_USE_FMTLIB
 	Text vtextprintf(const char* format, fmt::format_args args)
@@ -438,7 +445,8 @@ namespace loguru
 
 		// Allocate the string's buffer
 		++bytes_needed; // Add space for null terminator
-		auto buff = static_cast<char*>(malloc(bytes_needed));
+		// EDUKE32 MODIFICATION
+		auto buff = static_cast<char*>(LOGURU_MALLOC(bytes_needed));
 		CHECK_F(buff != nullptr, "Out of memory");
 
 		// Construct the string and check the result
@@ -461,7 +469,8 @@ namespace loguru
 	// Overloaded for variadic template matching.
 	Text textprintf()
 	{
-		return Text(static_cast<char*>(calloc(1, 1)));
+		// EDUKE32 MODIFICATION
+		return Text(static_cast<char*>(LOGURU_CALLOC(1, 1)));
 	}
 
 	static const char* indentation(unsigned depth)
@@ -482,16 +491,11 @@ namespace loguru
 	{
 		int arg_dest = 1;
 		int out_argc = argc;
-
+		
 		for (int arg_it = 1; arg_it < argc; ++arg_it) {
 			auto cmd = argv[arg_it];
 			auto arg_len = strlen(verbosity_flag);
-			bool is_alpha;
-			try {
-				is_alpha = std::isalpha(cmd[arg_len], std::locale(""));
-			}  catch (...) {
-				is_alpha = std::isalpha(cmd[arg_len]);
-			}
+			bool is_alpha = std::isalpha(cmd[arg_len], std::locale(""));
 			if (strncmp(cmd, verbosity_flag, arg_len) == 0 && !is_alpha) {
 				out_argc -= 1;
 				auto value_str = cmd + arg_len;
@@ -542,7 +546,8 @@ namespace loguru
 
 	static void on_atexit()
 	{
-		VLOG_F(g_internal_verbosity, "atexit");
+		// EDUKE32 MODIFICATION
+		//VLOG_F(g_internal_verbosity, "atexit");
 		flush();
 	}
 
@@ -563,7 +568,7 @@ namespace loguru
 
 	static void escape(std::string& out, const std::string& str)
 	{
-		for (char c : str) {
+		for (signed char c : str) {
 			/**/ if (c == '\a') { out += "\\a";  }
 			else if (c == '\b') { out += "\\b";  }
 			else if (c == '\f') { out += "\\f";  }
@@ -607,7 +612,17 @@ namespace loguru
 	#endif
 	}
 
-	void init(int& argc, char* argv[], const Options& options)
+	// EDUKE32 MODIFICATION
+	long long get_time_since_epoch(tm &time_info)
+	{
+		long long ms_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+		time_t sec_since_epoch = time_t(ms_since_epoch / 1000);
+		localtime_r(&sec_since_epoch, &time_info);
+		return ms_since_epoch;
+	}
+	// ENDEDUKE32 MODIFICATION
+
+	void init(int& argc, char* argv [], const Options& options)
 	{
 		CHECK_GT_F(argc,       0,       "Expected proper argc/argv");
 		CHECK_EQ_F(argv[argc], nullptr, "Expected proper argc/argv");
@@ -671,6 +686,7 @@ namespace loguru
 			}
 			fflush(stderr);
 		}
+
 		VLOG_F(g_internal_verbosity, "arguments: " LOGURU_FMT(s) "", s_arguments.c_str());
 		if (s_current_dir[0] != '\0')
 		{
@@ -695,11 +711,11 @@ namespace loguru
 
 	void write_date_time(char* buff, size_t buff_size)
 	{
-		auto now = system_clock::now();
-		long long ms_since_epoch = duration_cast<milliseconds>(now.time_since_epoch()).count();
-		time_t sec_since_epoch = time_t(ms_since_epoch / 1000);
+		// EDUKE32 MODIFICATION
 		tm time_info;
-		localtime_r(&sec_since_epoch, &time_info);
+		auto ms_since_epoch = get_time_since_epoch(time_info);
+		// END EDUKE32 MODIFICATION
+
 		snprintf(buff, buff_size, "%04d%02d%02d_%02d%02d%02d.%03lld",
 			1900 + time_info.tm_year, 1 + time_info.tm_mon, time_info.tm_mday,
 			time_info.tm_hour, time_info.tm_min, time_info.tm_sec, ms_since_epoch % 1000);
@@ -792,13 +808,15 @@ namespace loguru
 					LOG_IF_F(ERROR, errno == ELOOP,        "ELOOP");
 
 					*p = '/';
-					free(file_path);
+					// EDUKE32 MODIFICATION
+					LOGURU_FREE(file_path);
 					return false;
 				}
 			}
 			*p = '/';
 		}
-		free(file_path);
+		// EDUKE32 MODIFICATION
+		LOGURU_FREE(file_path);
 		return true;
 	}
 	bool add_file(const char* path_in, FileMode mode, Verbosity verbosity)
@@ -841,19 +859,30 @@ namespace loguru
 		if (mode == FileMode::Append) {
 			fprintf(file, "\n\n\n\n\n");
 		}
-		if (!s_arguments.empty()) {
-			fprintf(file, "arguments: %s\n", s_arguments.c_str());
-		}
-		if (s_current_dir[0] != '\0') {
-			fprintf(file, "Current dir: %s\n", s_current_dir);
-		}
-		fprintf(file, "File verbosity level: %d\n", verbosity);
+
+		// EDUKE32 MODIFICATION
+		//if (!s_arguments.empty()) {
+		//	fprintf(file, "arguments: %s\n", s_arguments.c_str());
+		//}
+		//if (s_current_dir[0] != '\0') {
+		//	fprintf(file, "Current dir: %s\n", s_current_dir);
+		//}
+		//fprintf(file, "File verbosity level: %d\n", verbosity);
+		// END EDUKE32 MODIFICATION
+
 		if (g_preamble_header) {
 			char preamble_explain[LOGURU_PREAMBLE_WIDTH];
 			print_preamble_header(preamble_explain, sizeof(preamble_explain));
 			fprintf(file, "%s\n", preamble_explain);
 		}
 		fflush(file);
+
+		// EDUKE32 MODIFICATION
+		tm time_info;
+		auto ms_since_epoch = get_time_since_epoch(time_info);
+		LOG_F(INFO, "Started at %04d-%02d-%02d %02d:%02d:%02d.%03lld",
+			1900+time_info.tm_year, 1+time_info.tm_mon, time_info.tm_mday, time_info.tm_hour, time_info.tm_min, time_info.tm_sec, ms_since_epoch % 1000);
+		// END EDUKE32 MODIFICATION
 
 		VLOG_F(g_internal_verbosity, "Logging to '" LOGURU_FMT(s) "', mode: '" LOGURU_FMT(s) "', verbosity: " LOGURU_FMT(d) "", path, mode_str, verbosity);
 		return true;
@@ -1304,7 +1333,8 @@ namespace loguru
 			}
 		}
 		if (g_preamble_uptime && pos < out_buff_size) {
-			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "( uptime  ) ");
+			// EDUKE32 MODIFICATION
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, " runtime ");
 			if (bytes > 0) {
 				pos += bytes;
 			}
@@ -1322,7 +1352,8 @@ namespace loguru
 			}
 		}
 		if (g_preamble_verbose && pos < out_buff_size) {
-			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "   v");
+			// EDUKE32 MODIFICATION
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, " src");
 			if (bytes > 0) {
 				pos += bytes;
 			}
@@ -1344,13 +1375,12 @@ namespace loguru
 		if (out_buff_size == 0) { return; }
 		out_buff[0] = '\0';
 		if (!g_preamble) { return; }
-		long long ms_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-		time_t sec_since_epoch = time_t(ms_since_epoch / 1000);
+		// EDUKE32 MODIFICATION
 		tm time_info;
-		localtime_r(&sec_since_epoch, &time_info);
-
-		auto uptime_ms = duration_cast<milliseconds>(steady_clock::now() - s_start_time).count();
-		auto uptime_sec = static_cast<double> (uptime_ms) / 1000.0;
+		auto ms_since_epoch = get_time_since_epoch(time_info);
+		auto uptime_micro = duration_cast<microseconds>(steady_clock::now() - s_start_time).count();
+		auto uptime_sec = static_cast<double> (uptime_micro) / 1000000.0;
+		// END EDUKE32 MODIFICATION
 
 		char thread_name[LOGURU_THREADNAME_WIDTH + 1] = {0};
 		get_thread_name(thread_name, LOGURU_THREADNAME_WIDTH + 1, true);
@@ -1385,7 +1415,8 @@ namespace loguru
 			}
 		}
 		if (g_preamble_uptime && pos < out_buff_size) {
-			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "(%8.3fs) ",
+			// EDUKE32 MODIFICATION
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%7.4fs ",
 			                     uptime_sec);
 			if (bytes > 0) {
 				pos += bytes;
@@ -1401,7 +1432,8 @@ namespace loguru
 		if (g_preamble_file && pos < out_buff_size) {
 			char shortened_filename[LOGURU_FILENAME_WIDTH + 1];
 			snprintf(shortened_filename, LOGURU_FILENAME_WIDTH + 1, "%s", file);
-			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%*s:%-5u ",
+			// EDUKE32 MODIFICATION
+			int bytes = snprintf(out_buff + pos, out_buff_size - pos, "%*s:%-4u ",
 			                     LOGURU_FILENAME_WIDTH, shortened_filename, line);
 			if (bytes > 0) {
 				pos += bytes;
@@ -1906,7 +1938,8 @@ namespace loguru
 	{
 		Text parent_ec = get_error_context_for(ec_handle);
 		size_t buffer_size = strlen(parent_ec.c_str()) + 2;
-		char* with_newline = reinterpret_cast<char*>(malloc(buffer_size));
+		// EDUKE32 MODIFICATION
+		char* with_newline = reinterpret_cast<char*>(LOGURU_MALLOC(buffer_size));
 		CHECK_F(with_newline != nullptr, "Failed to allocate memory for error context.");
 		with_newline[0] = '\n';
 	#ifdef _WIN32
