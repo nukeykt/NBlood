@@ -260,6 +260,7 @@ void CONFIG_SetDefaults(void)
     ud.autovote               = 0;
     ud.brightness             = 8;
     ud.camerasprite           = -1;
+    ud.cashman                = 0;
     ud.color                  = 0;
     ud.config.AmbienceToggle  = 1;
     ud.config.AutoAim         = 1;
@@ -290,6 +291,8 @@ void CONFIG_SetDefaults(void)
     ud.display_bonus_screen   = 1;
     ud.drawweapon             = 1;
     ud.fov                    = 90;
+    ud.fta_on                 = 1;
+    ud.god                    = 0;
     ud.hudontop               = 0;
     ud.idplayers              = 1;
     ud.levelstats             = 0;

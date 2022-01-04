@@ -158,13 +158,10 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
     int16_t i = 1, j;
     const char *c, *k;
 
-    ud.fta_on = 1;
-    ud.god = 0;
     ud.m_respawn_items = 0;
     ud.m_respawn_monsters = 0;
     ud.m_respawn_inventory = 0;
     ud.warp_on = 0;
-    ud.cashman = 0;
     ud.m_ffire = 1;
     ud.m_player_skill = ud.player_skill = 2;
     g_player[0].wchoice[0] = 3;
