@@ -822,9 +822,13 @@ int debugprintf(const char *f, ...)
 static SDL_Joystick *joydev = NULL;
 #if SDL_MAJOR_VERSION >= 2
 static SDL_GameController *controller = NULL;
+static bool gameControllerDBLoaded;
 
 static void LoadSDLControllerDB()
 {
+    if (gameControllerDBLoaded)
+        return;
+
     buildvfs_kfd fh = kopen4load("gamecontrollerdb.txt", 0);
     if (fh == buildvfs_kfd_invalid)
         return;
@@ -853,9 +857,11 @@ static void LoadSDLControllerDB()
     dbuf[flen] = '\0';
     kclose(fh);
 
-    SDL_RWops * rwops = SDL_RWFromConstMem(dbuf, flen);
+    auto rwops = SDL_RWFromConstMem(dbuf, flen);
     if (!rwops)
     {
+error:
+        LOG_F(ERROR, "Failed loading game controller database: %s.", SDL_GetError());
         Xaligned_free(dbuf);
         return;
     }
@@ -863,11 +869,13 @@ static void LoadSDLControllerDB()
     int i = SDL_GameControllerAddMappingsFromRW(rwops, 1);
 
     if (i == -1)
-        LOG_F(ERROR, "Failed loading game controller database: %s.", SDL_GetError());
+        goto error;
     else
         VLOG_F(LOG_INPUT, "Loaded game controller database.");
 
     Xaligned_free(dbuf);
+
+    gameControllerDBLoaded = true;
 }
 #endif
 
@@ -951,6 +959,9 @@ void joyScanDevices()
                 }
 #endif
                 joystick.isGameController = 1;
+
+                if (gameControllerDBLoaded == false)
+                    LoadSDLControllerDB();
 
                 Xfree(joystick.pAxis);
                 joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
@@ -1069,12 +1080,7 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
 #else
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
 #endif
-    {
-#if SDL_MAJOR_VERSION >= 2
-        LoadSDLControllerDB();
-#endif
         joyScanDevices();
-    }
 
 #if SDL_VERSION_ATLEAST(2, 0, 9)
     if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
