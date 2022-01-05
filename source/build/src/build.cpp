@@ -1500,9 +1500,25 @@ void editinput(void)
                 searchy -= m32_2d3d.y;
             }
 
-            vec2_t da = { 16384, divscale14(searchx-(xdim>>1), xdim>>1) };
+            const int32_t tmpyx = yxaspect, tmpvr = viewingrange;
+
+            if (r_usenewaspect)
+            {
+                newaspect_enable = 1;
+                videoSetCorrectedAspect();
+            }
+
+            vec2_t da = { divscale30(1, viewingrange), divscale14(searchx-(xdim>>1), xdim>>1) };
+            int32_t const yscale = scale(xdim,yxaspect,320);
+            int32_t const dz = divscale27(searchy-(ydim>>1), yscale) + divscale27(100-horiz, viewingrange);
 
             rotatevec(da, ang, &da);
+
+            if (r_usenewaspect)
+            {
+                newaspect_enable = 0;
+                yxaspect = tmpyx; viewingrange = tmpvr;
+            }
 
 #ifdef USE_OPENGL
             if (videoGetRenderMode() == REND_POLYMOST)
@@ -1510,7 +1526,7 @@ void editinput(void)
             else
 #endif
                 hitscan((const vec3_t *)&pos,cursectnum,              //Start position
-                    da.x,da.y,(scale(searchy,200,ydim)-horiz)*2000, //vector of 3D ang
+                    da.x,da.y,dz, //vector of 3D ang
                     &hit,CLIPMASK1);
 
             if (hit.sect >= 0)
