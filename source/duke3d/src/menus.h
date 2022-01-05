@@ -70,7 +70,7 @@ enum MenuIndex_t {
     MENU_TOUCHSENS      = 215,
     MENU_TOUCHBUTTONS   = 216,
     MENU_CONTROLS       = 220,
-    MENU_POLYMOST       = 230,
+    MENU_RENDERER       = 230,
     MENU_COLCORR        = 231,
     MENU_COLCORR_INGAME = 232,
     MENU_SCREENSETUP    = 233,
