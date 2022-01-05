@@ -86,6 +86,8 @@ extern void buildgl_setPerspective(float fovy, float aspect, float zNear, float 
 extern void buildgl_setViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 extern void buildgl_useShaderProgram(uint32_t shaderID);
 
+extern void bind_2d_texture(GLuint texture, int filter);
+
 static FORCE_INLINE void  buildgl_crossproduct(const GLfloat* in_a, const GLfloat* in_b, GLfloat* out)
 {
     out[0] = in_a[1] * in_b[2] - in_a[2] * in_b[1];

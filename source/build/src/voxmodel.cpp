@@ -1132,7 +1132,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     polymost_setClamp(0);
     polymost_setFogEnabled(false);
 
-    if (m->is8bit && r_useindexedcolortextures)
+    if (m->is8bit && polymost_useindexedtextures())
     {
         if (!m->texid8bit)
             m->texid8bit = gloadtex_indexed(m->mytex, m->mytexx, m->mytexy);

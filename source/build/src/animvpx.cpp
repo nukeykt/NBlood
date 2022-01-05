@@ -470,18 +470,36 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
 
     glBindTexture(GL_TEXTURE_2D, texname);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if ((animvpx_flags & CUTSCENE_TEXTUREFILTER && gltexfiltermode == TEXFILTER_ON) || animvpx_flags & CUTSCENE_FORCEFILTER ||
-    (!(animvpx_flags & CUTSCENE_TEXTUREFILTER) && !(animvpx_flags & CUTSCENE_FORCENOFILTER))) // if no flags, then use filter for IVFs
+    if (!buildgl_samplerObjectsEnabled())
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if ((animvpx_flags & CUTSCENE_TEXTUREFILTER && gltexfiltermode == TEXFILTER_ON) || animvpx_flags & CUTSCENE_FORCEFILTER
+            || (!(animvpx_flags & CUTSCENE_TEXTUREFILTER) && !(animvpx_flags & CUTSCENE_FORCENOFILTER)))  // if no flags, then use filter for IVFs
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        }
     }
-    else
+    else 
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        switch (animvpx_flags & CUTSCENE_FILTERMASK)
+        {
+        case CUTSCENE_TEXTUREFILTER:
+            buildgl_bindSamplerObject(0, (glfiltermodes[gltexfiltermode].min == GL_NEAREST) ? PTH_INDEXED : PTH_FORCEFILTER);
+            break;
+        case CUTSCENE_FORCEFILTER:
+            buildgl_bindSamplerObject(0, PTH_FORCEFILTER);
+            break;
+        case CUTSCENE_FORCENOFILTER:
+            buildgl_bindSamplerObject(0, PTH_INDEXED);
+            break;
+        }
     }
 
     texuploaded = 0;

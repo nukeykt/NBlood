@@ -2309,6 +2309,10 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
     {
         switch (pData.flags & (CVAR_RESTARTVID|CVAR_INVALIDATEALL|CVAR_INVALIDATEART))
         {
+        default:
+            if ((pData.flags & CVAR_RESTARTVID) != CVAR_RESTARTVID)
+                break;
+            fallthrough__;
         case CVAR_RESTARTVID:
             osdcmd_restartvid(NULL);
             break;

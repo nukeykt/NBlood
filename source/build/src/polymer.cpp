@@ -1455,7 +1455,7 @@ void                polymer_inb4rotatesprite(int16_t tilenum, char pal, int8_t s
 
     polymer_getbuildmaterial(&rotatespritematerial, tilenum, pal, shade, 0, method);
     rotatespritematerialbits = polymer_bindmaterial(&rotatespritematerial, NULL, 0);
-    buildgl_bindSamplerObject(0, PTH_CLAMPED | ((rotatespritematerialbits & prprogrambits[PR_BIT_ART_MAP].bit) ? PTH_INDEXED : 0));
+    buildgl_bindSamplerObject(0, PTH_CLAMPED | ((rotatespritematerialbits & prprogrambits[PR_BIT_ART_MAP].bit) ? PTH_INDEXED : PTH_HIGHTILE));
     buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
 
     glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
@@ -4995,7 +4995,7 @@ static _prbucket*   polymer_getbuildmaterial(_prmaterial* material, int16_t tile
     int32_t usinghighpal = 0;
 
     // Lazily fill in all the textures we need, move this to precaching later
-    if (pr_artmapping && !(globalflags & GLOBAL_NO_GL_TILESHADES) && polymer_eligible_for_artmap(tilenum, pth))
+    if (polymer_useartmapping() && !(globalflags & GLOBAL_NO_GL_TILESHADES) && polymer_eligible_for_artmap(tilenum, pth))
     {
         polytintflags_t const tintflags = hictinting[pal].f;
 
@@ -5134,7 +5134,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         programbits |= prprogrambits[PR_BIT_NORMAL_MAP].bit;
 
     // PR_BIT_ART_MAP
-    if (pr_artmapping && material->artmap &&
+    if (polymer_useartmapping() && material->artmap &&
         !(globalflags & GLOBAL_NO_GL_TILESHADES) &&
         (overridematerial & prprogrambits[PR_BIT_ART_MAP].bit)) {
         programbits |= prprogrambits[PR_BIT_ART_MAP].bit;

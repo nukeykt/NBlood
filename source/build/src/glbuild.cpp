@@ -179,7 +179,7 @@ void buildgl_bindTexture(GLenum target, uint32_t textureID)
 
 void buildgl_resetSamplerObjects(void)
 {
-    glanisotropy    = max<int>(1, glinfo.maxanisotropy);
+    glanisotropy    = clamp<int>(glanisotropy, 1, glinfo.maxanisotropy);
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
 
     auto &f = glfiltermodes[gltexfiltermode];
@@ -196,7 +196,7 @@ void buildgl_resetSamplerObjects(void)
         glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, f.min);
         //glSamplerParameteri(s, GL_TEXTURE_BASE_LEVEL, 0);
         //glSamplerParameteri(s, GL_TEXTURE_MAX_LEVEL, 0);
-        glSamplerParameterf(s, GL_TEXTURE_MAX_ANISOTROPY_EXT, max<float>(1.f, glanisotropy));
+        glSamplerParameterf(s, GL_TEXTURE_MAX_ANISOTROPY_EXT, polymost_getanisotropy());
     }
 
     GLuint s = samplerObjectIDs[SAMPLER_CLAMP];

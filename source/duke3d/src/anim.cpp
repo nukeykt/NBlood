@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mouse.h"
 #include "compat.h"
 #include "input.h"
+#include "texcache.h"
 
 #include "anim.h"
 
@@ -415,9 +416,6 @@ int32_t Anim_Play(const char *fn)
 #endif
 // ANM playback --- v v v ---
 
-#ifdef USE_OPENGL
-    int32_t ogltexfiltermode = gltexfiltermode;
-#endif
     buildvfs_kfd handle = kopen4load(fn, 0);
 
     if (handle == buildvfs_kfd_invalid)
@@ -466,11 +464,43 @@ int32_t Anim_Play(const char *fn)
     P_SetGamePalette(g_player[myconnectindex].ps, ANIMPAL, 8 + 2);
 
 #ifdef USE_OPENGL
-    if ((anim->frameflags & CUTSCENE_TEXTUREFILTER && gltexfiltermode == TEXFILTER_ON) || anim->frameflags & CUTSCENE_FORCEFILTER)
-        gltexfiltermode = TEXFILTER_ON;
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        auto pth = texcache_fetch(TILE_ANIM, 0, 0, DAMETH_NOMASK);
+        if (pth && pth->glpic)
+        {
+            int filter = -1;
+
+            switch (anim->frameflags & CUTSCENE_FILTERMASK)
+            {
+            case CUTSCENE_TEXTUREFILTER:
+                break;
+            case CUTSCENE_FORCEFILTER:
+                filter = TEXFILTER_ON;
+                break;
+            case CUTSCENE_FORCENOFILTER:
+                filter = TEXFILTER_OFF;
+                break;
+            }
+
+            bind_2d_texture(pth->glpic, filter);
+        }
+    }
     else
-        gltexfiltermode = TEXFILTER_OFF;
-    gltexapplyprops();
+    {
+        switch (anim->frameflags & CUTSCENE_FILTERMASK)
+        {
+            case CUTSCENE_TEXTUREFILTER:
+                buildgl_bindSamplerObject(0, (glfiltermodes[gltexfiltermode].min == GL_NEAREST) ? PTH_INDEXED : PTH_FORCEFILTER);
+                break;
+            case CUTSCENE_FORCEFILTER:
+                buildgl_bindSamplerObject(0, PTH_FORCEFILTER);
+                break;
+            case CUTSCENE_FORCENOFILTER:
+                buildgl_bindSamplerObject(0, PTH_INDEXED);
+                break;
+        }
+    }
 #endif
 
     if (g_restorePalette == 1)
@@ -567,10 +597,6 @@ int32_t Anim_Play(const char *fn)
     } while (i < numframes);
 
 end_anim_restore_gl:
-#ifdef USE_OPENGL
-    gltexfiltermode = ogltexfiltermode;
-    gltexapplyprops();
-#endif
 end_anim:
     g_animPtr = NULL;
     I_ClearAllInput();

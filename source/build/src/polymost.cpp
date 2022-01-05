@@ -124,7 +124,7 @@ struct glfiltermodes glfiltermodes[NUMGLFILTERMODES] = { { "GL_NEAREST",        
                                                          { "GL_NEAREST_MIPMAP_LINEAR",  GL_NEAREST_MIPMAP_LINEAR,  GL_NEAREST },
                                                          { "GL_LINEAR_MIPMAP_LINEAR",   GL_LINEAR_MIPMAP_LINEAR,   GL_LINEAR  } };
 
-int32_t glanisotropy = 0;            // 0 = maximum supported by card
+int32_t glanisotropy = 16;
 int32_t gltexfiltermode = TEXFILTER_OFF;
 
 #ifdef EDUKE32_GLES
@@ -312,7 +312,7 @@ void gltexinvalidatetype(int32_t type)
 #endif
 }
 
-static void bind_2d_texture(GLuint texture, int filter)
+void bind_2d_texture(GLuint texture, int filter)
 {
     UNREFERENCED_PARAMETER(texture);
 
@@ -321,10 +321,7 @@ static void bind_2d_texture(GLuint texture, int filter)
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfiltermodes[filter].mag);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfiltermodes[filter].min);
-#ifdef USE_GLEXT
-    if (glinfo.maxanisotropy > 1.f)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max<float>(1.f, glanisotropy));
-#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, polymost_getanisotropy());
 }
 
 void gltexapplyprops(void)
@@ -375,6 +372,10 @@ void gltexapplyprops(void)
                 bind_2d_texture(sk->texid[j], (sk->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : -1);
             }
     }
+
+    buildgl_bindTexture(GL_TEXTURE_2D, polymosttext);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -738,7 +739,7 @@ static void polymost_setShade(int32_t shade)
     if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
-    if (!polymost_usetileshades())
+    if (polymost_usetileshades() != TS_SHADETABLE)
         shade = 0;
 
     static int32_t lastShade;
@@ -764,7 +765,7 @@ void polymost_setVisibility(float visibility)
     if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
-    if (!polymost_usetileshades())
+    if (polymost_usetileshades() != TS_SHADETABLE)
         visibility = -16;
 
     float visFactor = visibility * fviewingrange * (1.f / (64.f * 65536.f));
@@ -1966,6 +1967,7 @@ static int32_t tile_is_sky(int32_t tilenum)
 # define clamp_if_tile_is_sky(x, y) (GL_REPEAT)
 #endif
 
+
 static void polymost_setuptexture(const int32_t dameth, int filter)
 {
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
@@ -1975,18 +1977,7 @@ static void polymost_setuptexture(const int32_t dameth, int filter)
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfiltermodes[filter].mag);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfiltermodes[filter].min);
-
-#ifdef USE_GLEXT
-    if (glinfo.maxanisotropy > 1.f)
-    {
-        uint32_t i = (unsigned)Blrintf(glinfo.maxanisotropy);
-
-        if ((unsigned)glanisotropy > i)
-            glanisotropy = i;
-
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max<float>(1.f, glanisotropy));
-    }
-#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, polymost_getanisotropy((dameth & DAMETH_INDEXED) == 0));
 
     if (!(dameth & DAMETH_CLAMPED))
     {
@@ -2764,7 +2755,7 @@ static void polymost2_drawVBO(GLenum mode,
         tileLoad(globalpicnum);
     }
 
-    pthtyp *pth = our_texcache_fetch(dameth | (r_useindexedcolortextures ? DAMETH_INDEXED : 0));
+    pthtyp *pth = our_texcache_fetch(dameth | (polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
 
     if (!pth)
     {
@@ -3127,7 +3118,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     buildgl_outputDebugMessage(3, "polymost_drawpoly(dpxy:%p, n:%d, method_:%X), method: %X", dpxy, n, method_, method);
 
-    pthtyp *pth = our_texcache_fetch(method | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
+    pthtyp *pth = our_texcache_fetch(method | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
 
     if (!pth)
     {
@@ -3157,7 +3148,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     Bassert(pth);
 
-
     // If we aren't rendmode 3, we're in Polymer, which means this code is
     // used for rotatesprite only. Polymer handles all the material stuff,
     // just submit the geometry and don't mess with textures.
@@ -3168,7 +3158,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         //POGOTODO: I could move this into bindPth
         if (!(pth->flags & PTH_INDEXED))
             polymost_usePaletteIndexing(false);
-        else if (polymost_usetileshades())
+        else if (polymost_usetileshades() != TS_TEXTURE)
             polymost_setFogEnabled(false);
 
         if (!buildgl_samplerObjectsEnabled())
@@ -3179,7 +3169,16 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         }
         else
-            buildgl_bindSamplerObject(0, pth->flags);
+        {
+            int flags = pth->flags;
+            if (!polymost_useindexedtextures())
+            {
+                flags &= ~PTH_INDEXED;
+                // kind of a hack... force PTH_HIGHTILE to make tile eligible for texture filtering
+                flags |= PTH_HIGHTILE;
+            }
+            buildgl_bindSamplerObject(0, flags);
+        }
     }
 
     // texture scale by parkar request
@@ -3291,13 +3290,13 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     float pc[4];
 
 #ifdef POLYMER
-    if (videoGetRenderMode() == REND_POLYMER && pr_artmapping && !(globalflags & GLOBAL_NO_GL_TILESHADES) && polymer_eligible_for_artmap(globalpicnum, pth))
+    if (videoGetRenderMode() == REND_POLYMER && polymer_useartmapping() && !(globalflags & GLOBAL_NO_GL_TILESHADES) && polymer_eligible_for_artmap(globalpicnum, pth))
         pc[0] = pc[1] = pc[2] = 1.0f;
     else
 #endif
     {
         polytint_t const & tint = hictinting[globalpal];
-        float shadeFactor = (pth->flags & PTH_INDEXED) && polymost_usetileshades() ? 1.f : getshadefactor(globalshade);
+        float shadeFactor = (pth->flags & PTH_INDEXED) && polymost_usetileshades() == TS_SHADETABLE ? 1.f : getshadefactor(globalshade);
         pc[0] = (1.f-(tint.sr*(1.f/255.f)))*shadeFactor+(tint.sr*(1.f/255.f));
         pc[1] = (1.f-(tint.sg*(1.f/255.f)))*shadeFactor+(tint.sg*(1.f/255.f));
         pc[2] = (1.f-(tint.sb*(1.f/255.f)))*shadeFactor+(tint.sb*(1.f/255.f));
@@ -4885,7 +4884,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     drawpoly_alpha = 0.f;
     drawpoly_blend = 0;
 
-    if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+    if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
         calc_and_apply_fog(fogshade(global_cf_shade, global_cf_pal), sec->visibility, POLYMOST_CHOOSE_FOG_PAL(global_cf_fogpal, global_cf_pal));
 
     if (have_floor)
@@ -5403,7 +5402,7 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].floorstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+            if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                 calc_and_apply_fog_factor(sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
 
             globvis2 = globalpisibility;
@@ -5821,7 +5820,7 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].ceilingstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+            if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                 calc_and_apply_fog_factor(sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
 
             globvis2 = globalpisibility;
@@ -6281,7 +6280,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -6337,7 +6336,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (nwal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -6404,7 +6403,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -7167,7 +7166,7 @@ static void polymost_drawmaskwallinternal(int32_t wallIndex)
     drawpoly_alpha = 0.f;
     drawpoly_blend = blend;
 
-    if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+    if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
         calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
     float const csy[4] = { ((float)(cz[0] - globalposz)) * ryp0 + ghoriz,
@@ -8062,7 +8061,7 @@ void polymost_drawsprite(int32_t snum)
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
 
-    if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
+    if (polymost_usetileshades() != TS_SHADETABLE || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
         || (usemodels && md_tilehasmodel(globalpicnum, globalpal) >= 0))
         calc_and_apply_fog(fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
 
@@ -9076,7 +9075,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
 #endif
 
     int32_t method = DAMETH_CLAMPED; //Use OpenGL clamping - dorotatesprite never repeats
-
+    
     if (!(dastat & RS_NOMASK))
     {
         buildgl_setEnabled(GL_ALPHA_TEST);
@@ -9468,7 +9467,7 @@ void polymost_fillpolygon(int32_t npoints)
 
     if (!polymost2d) polymostSet2dView(); //disables blending, texturing, and depth testing
     buildgl_setEnabled(GL_ALPHA_TEST);
-    pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
+    pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
 
     if (pth)
     {
@@ -9548,7 +9547,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
     int32_t const ousehightile = usehightile;
     usehightile = usehitile && usehightile;
-    pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
+    pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
     if (usehightile)
         loadedhitile[wallnum>>3] |= pow2char[wallnum&7];
     usehightile = ousehightile;
@@ -9889,7 +9888,7 @@ void polymost_initosdfuncs(void)
         { "r_pogoDebug","",(void *) &r_pogoDebug, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
 #endif // POLYMOST2
 
-        { "r_texfilter", "changes the texture filtering settings (requires r_useindexedcolortextures to be off, may require restartvid)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
+        { "r_texfilter", "changes the texture filtering settings (overrides r_useindexedcolortextures)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR|CVAR_RESTARTVID|CVAR_INVALIDATEART, 0, 5 },
         { "r_polymostDebug","Set the verbosity of Polymost GL debug messages",(void *) &r_polymostDebug, CVAR_INT, 0, 3 },
 #ifdef USE_GLEXT
         { "r_detailmapping","enable/disable detail mapping",(void *) &r_detailmapping, CVAR_BOOL, 0, 1 },
@@ -9901,7 +9900,7 @@ void polymost_initosdfuncs(void)
         { "r_texcache","enable/disable OpenGL compressed texture cache",(void *) &glusetexcache, CVAR_INT, 0, 2 },
 #endif
         { "r_animsmoothing","enable/disable model animation smoothing",(void *) &r_animsmoothing, CVAR_BOOL, 0, 1 },
-        { "r_anisotropy", "changes the OpenGL texture anisotropy setting (requires r_useindexedcolortextures to be off)", (void *) &glanisotropy, CVAR_INT|CVAR_FUNCPTR, 1, 16 },
+        { "r_anisotropy", "changes the OpenGL texture anisotropy setting (requires r_useindexedcolortextures to be off)", (void *) &glanisotropy, CVAR_INT|CVAR_FUNCPTR|CVAR_RESTARTVID, 1, 16 },
         { "r_downsize","controls downsizing factor (quality) for hires textures",(void *) &r_downsize, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
         { "r_finishbeforeswap", "run glFinish() before swapping when 'r_glfinish' is 1 and when not using KMT vsync", (void *) &r_finishbeforeswap, CVAR_BOOL, 0, 1 },
         { "r_fullbrights","enable/disable fullbright textures",(void *) &r_fullbrights, CVAR_BOOL, 0, 1 },
@@ -9922,10 +9921,10 @@ void polymost_initosdfuncs(void)
         { "r_texcompr","enable/disable OpenGL texture compression: 0: off  1: hightile only  2: ART and hightile",(void *) &glusetexcompr, CVAR_INT, 0, 2 },
         { "r_texturemaxsize","changes the maximum OpenGL texture size limit",(void *) &gltexmaxsize, CVAR_INT | CVAR_NOSAVE, 0, 4096 },
         { "r_texturemiplevel","changes the highest OpenGL mipmap level used",(void *) &gltexmiplevel, CVAR_INT, 0, 6 },
-        { "r_useindexedcolortextures", "enable/disable indexed color texture rendering (always disables r_texfilter and r_anisotropy)", (void *) &r_useindexedcolortextures, CVAR_BOOL, 0, 1 },
+        { "r_useindexedcolortextures", "enable/disable indexed color texture rendering (disabled by r_texfilter, disables r_anisotropy)", (void *) &r_useindexedcolortextures, CVAR_BOOL|CVAR_RESTARTVID|CVAR_INVALIDATEART, 0, 1 },
         { "r_usenewshading", "visibility/fog code: 0: orig. Polymost   1: 07/2011   2: linear 12/2012   3: no neg. start 03/2014   4: base constant on shade table 11/2017",
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4 },
-        { "r_usesamplerobjects", "enable/disable OpenGL sampler objects", (void *) &r_usesamplerobjects, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+        { "r_usesamplerobjects", "enable/disable OpenGL sampler objects", (void *) &r_usesamplerobjects, CVAR_BOOL|CVAR_FUNCPTR|CVAR_RESTARTVID|CVAR_INVALIDATEART, 0, 1 },
         { "r_usetileshades", "enable/disable apply shade tables to art tiles", (void *) &r_usetileshades, CVAR_BOOL, 0, 1 },
 
         { "r_vsync",
