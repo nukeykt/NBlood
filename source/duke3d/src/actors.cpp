@@ -3110,12 +3110,16 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
  0, 100,
                                pProj->flashcolor, PR_LIGHT_PRIO_LOW_GAME);
 
-            if ((pProj->workslike & (PROJECTILE_BOUNCESOFFWALLS | PROJECTILE_EXPLODEONTIMER)) == PROJECTILE_BOUNCESOFFWALLS
-                && pSprite->yvel < 1)
+            if (pProj->workslike & (PROJECTILE_BOUNCESOFFWALLS|PROJECTILE_BOUNCESOFFSPRITES) && pSprite->yvel < 1)
             {
-                A_DoProjectileEffects(spriteNum);
-                A_DeleteSprite(spriteNum);
-                return;
+                if ((pProj->workslike & PROJECTILE_EXPLODEONTIMER) == 0)
+                {
+                    A_DoProjectileEffects(spriteNum);
+                    A_DeleteSprite(spriteNum);
+                    return;
+                }
+                else if (pProj->workslike & PROJECTILE_LOSESVELOCITY)
+                    PROJ_DECAYVELOCITY(pSprite);
             }
 
             if (pProj->workslike & PROJECTILE_COOLEXPLOSION1 && ++pSprite->shade >= 40)
@@ -3217,7 +3221,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                     case 49152:
                         otherSprite &= (MAXSPRITES - 1);
 
-                        if (pProj->workslike & PROJECTILE_BOUNCESOFFSPRITES)
+                        if (pProj->workslike & PROJECTILE_BOUNCESOFFSPRITES && pSprite->yvel > 0)
                         {
                             pSprite->yvel--;
 
@@ -3292,7 +3296,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
                             A_DamageWall(spriteNum, otherSprite, pSprite->xyz, pSprite->picnum);
 
-                            if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS)
+                            if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS && pSprite->yvel > 0)
                             {
                                 if (wall[otherSprite].overpicnum != MIRROR)
                                     pSprite->yvel--;
@@ -3319,7 +3323,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                             return;
                         }
 
-                        if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS)
+                        if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS && pSprite->yvel > 0)
                         {
                             A_DoProjectileBounce(spriteNum);
                             A_SetSprite(spriteNum, CLIPMASK1);
