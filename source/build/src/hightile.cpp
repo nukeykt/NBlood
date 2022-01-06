@@ -5,14 +5,12 @@
  */
 
 #include "build.h"
+#include "hightile.h"
 
 #ifdef USE_OPENGL
-
 #include "compat.h"
 #include "kplib.h"
-#include "hightile.h"
 #include "baselayer.h"
-
 
 polytint_t hictinting[MAXPALOOKUPS];
 
@@ -374,6 +372,7 @@ void hictinting_applypixcolor(coltype* tcol, uint8_t pal, bool no_rb_swap)
 {
     UNREFERENCED_PARAMETER(tcol);
     UNREFERENCED_PARAMETER(pal);
+    UNREFERENCED_PARAMETER(no_rb_swap);
 }
 
 #endif

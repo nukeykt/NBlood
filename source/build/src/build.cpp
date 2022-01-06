@@ -254,7 +254,6 @@ void clearkeys(void)
     Bmemset(keystatus,0,sizeof(keystatus));
 }
 
-#ifdef USE_OPENGL
 int osdcmd_restartvid(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
@@ -267,7 +266,6 @@ int osdcmd_restartvid(osdcmdptr_t UNUSED(parm))
 
     return OSDCMD_OK;
 }
-#endif
 
 static int osdcmd_vidmode(osdcmdptr_t parm)
 {
@@ -4364,8 +4362,9 @@ skipinput:
 
                     M32_DrawRoomsAndMasks();
 
+#ifdef USE_OPENGL
                     rendmode = bakrendmode;
-
+#endif
                     searchx = osearch.x;
                     searchy = osearch.y;
 
