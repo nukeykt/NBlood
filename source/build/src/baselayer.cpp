@@ -422,6 +422,7 @@ struct glinfo_t glinfo =
     "",         // extensions
 
     1.0,        // max anisotropy
+    64,         // max texture size
     0,          // structure filled
     0,          // supported extensions
 };
@@ -491,6 +492,7 @@ void fill_glinfo(void)
 #endif
 
     glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glinfo.maxanisotropy);
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &glinfo.maxTextureSize);
 
     if (!glinfo.filled)
     {
@@ -632,6 +634,7 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
     OSD_Printf(" Frame buffer objects:    %s\n", SUPPORTED(glinfo.fbos));
     OSD_Printf(" GLSL:                    %s\n", SUPPORTED(glinfo.glsl));
     OSD_Printf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
+    OSD_Printf(" Maximum texture size:    %dpx\n", glinfo.maxTextureSize);
     OSD_Printf(" Multi-texturing:         %s\n", SUPPORTED(glinfo.multitex));
     OSD_Printf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
     OSD_Printf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));

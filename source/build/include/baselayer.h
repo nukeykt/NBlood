@@ -116,6 +116,8 @@ struct glinfo_t {
 
     float maxanisotropy;
 
+    int maxTextureSize;
+
     int filled;
 
     union {

@@ -948,11 +948,13 @@ void polymost_glinit()
     polymost_initdrawpoly();
 
     //POGOTODO: require a max texture size >= 2048
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &tilesheetSize);
+    tilesheetSize = glinfo.maxTextureSize;
+
 #if (defined _MSC_VER) || (!defined BITNESS64)
     if (tilesheetSize > 8192)
         tilesheetSize = 8192;
 #endif
+
     tilesheetSizeRecip = 1.f/tilesheetSize;
     tilesheetHalfTexelSize = { 0.5f/tilesheetSize, 0.5f/tilesheetSize };
 
@@ -1735,8 +1737,7 @@ void uploadtexture(int32_t doalloc, vec2_t siz, int32_t texfmt,
 
     if (gltexmaxsize <= 0)
     {
-        GLint i = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &i);
+        GLint i = glinfo.maxTextureSize;
         if (!i) gltexmaxsize = 6;   // 2^6 = 64 == default GL max texture size
         else
         {
