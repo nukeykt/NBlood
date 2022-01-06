@@ -1216,10 +1216,10 @@ static void PlayerPickupKey(int nPlayer, int nKey, int nSprite, int nItem)
 {
     int keyBit = 0x1000 << nKey;
 
-    if (PlayerList[nPlayer].keys != keyBit)
+    if (!(PlayerList[nPlayer].keys & keyBit))
     {
         if (nPlayer == nLocalPlayer) {
-            BuildStatusAnim(36 + 6, 0);
+            BuildStatusAnim(36 + (nKey * 2), 0);
         }
 
         PlayerList[nPlayer].keys |= keyBit;
