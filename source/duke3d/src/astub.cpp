@@ -6844,7 +6844,7 @@ static void Keys3d(void)
             if (AIMING_AT_WALL)
             {
                 if (searchisbottom)
-                    SET_PROTECT_BITS(wall[searchbottomwall].cstat, tempcstat, ~256);
+                    SET_PROTECT_BITS(wall[searchbottomwall].cstat, tempcstat, ~(256 + 4096));
 
                 wall[searchbottomwall].picnum = temppicnum;
                 wall[searchbottomwall].shade = tempshade;
