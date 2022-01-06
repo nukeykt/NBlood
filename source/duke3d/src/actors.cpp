@@ -2636,6 +2636,8 @@ DETONATE:
 
                     {
                         int32_t    playerDist;
+                        // T2(spriteNum) contains index of viewscreen in g_activeViewscreenSprite
+                        int const  curVscrIndex = T2(spriteNum);
                         int const  p  = A_FindPlayer(pSprite, &playerDist);
                         auto const ps = g_player[p].ps;
 
@@ -2645,39 +2647,61 @@ DETONATE:
                         if (dist(&sprite[ps->i], pSprite) < activeDist)
                         {
                             // DOS behavior: yvel of 1 activates screen if player approaches
-                            if (g_curViewscreen == -1 && pSprite->yvel & 1)
+                            if (curVscrIndex == -1 && pSprite->yvel & 1)
                             {
-                                g_curViewscreen = spriteNum;
+                                int newVscrIndex = 0;
+                                while (newVscrIndex < MAX_ACTIVE_VIEWSCREENS && g_activeVscrSprite[newVscrIndex] >= 0)
+                                    newVscrIndex++;
 
-                                // EDuke32 extension: for remote activation, check for connected camera and display its image
-                                if (sprite[spriteNum].hitag)
+                                T2(spriteNum) = newVscrIndex;
+                                if (newVscrIndex < MAX_ACTIVE_VIEWSCREENS)
                                 {
-                                    for (bssize_t SPRITES_OF(STAT_ACTOR, otherSprite))
+                                    g_activeVscrSprite[newVscrIndex] = spriteNum;
+
+                                    // EDuke32 extension: for remote activation, check for connected camera and display its image
+                                    if (sprite[spriteNum].hitag)
                                     {
-                                        if (PN(otherSprite) == CAMERA1 && sprite[spriteNum].hitag == SLT(otherSprite))
+                                        for (bssize_t SPRITES_OF(STAT_ACTOR, otherSprite))
                                         {
-                                            sprite[spriteNum].owner = otherSprite;
-                                            break;
+                                            if (PN(otherSprite) == CAMERA1 && sprite[spriteNum].hitag == SLT(otherSprite))
+                                            {
+                                                sprite[spriteNum].owner = otherSprite;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
-                            } // deactivate viewscreen in valid range if yvel is 0
-                            else if (g_curViewscreen == spriteNum && !(pSprite->yvel & 3))
+                            }
+                            // deactivate viewscreen in valid range if yvel is set to 0
+                            else if (curVscrIndex != -1 && !(pSprite->yvel & 3))
                             {
-                                g_curViewscreen    = -1;
-                                T1(spriteNum)      =  0;
-                                for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
-                                    walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
+                                T1(spriteNum) = 0;
+                                T2(spriteNum) = -1;
+
+                                if (curVscrIndex < MAX_ACTIVE_VIEWSCREENS)
+                                {
+                                    if (g_activeVscrTile[curVscrIndex] >= 0)
+                                        walock[g_activeVscrTile[curVscrIndex]] = CACHE1D_UNLOCKED;
+
+                                    g_activeVscrSprite[curVscrIndex] = -1;
+                                    g_activeVscrTile[curVscrIndex] = -1;
+                                }
                             }
                         }
-                        else if (g_curViewscreen == spriteNum /*&& T1 == 1*/)
+                        else if (curVscrIndex != -1)
                         {
-                            g_curViewscreen    = -1;
-                            pSprite->yvel     &= ~2; // VIEWSCREEN YVEL
-                            T1(spriteNum)      =  0;
+                            T1(spriteNum) = 0;
+                            T2(spriteNum) = -1;
+                            pSprite->yvel &= ~2; // yvel bit 2 is temp activation
 
-                            for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
-                                walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
+                            if (curVscrIndex < MAX_ACTIVE_VIEWSCREENS)
+                            {
+                                if (g_activeVscrTile[curVscrIndex] >= 0)
+                                    walock[g_activeVscrTile[curVscrIndex]] = CACHE1D_UNLOCKED;
+
+                                g_activeVscrSprite[curVscrIndex] = -1;
+                                g_activeVscrTile[curVscrIndex] = -1;
+                            }
                         }
                     }
 

@@ -87,10 +87,12 @@ G_EXTERN char typebuf[TYPEBUFSIZE];
 G_EXTERN input_t localInput;
 G_EXTERN input_t recsync[RECSYNCBUFSIZ];
 
+G_EXTERN int32_t g_activeVscrSprite[MAX_ACTIVE_VIEWSCREENS];
+G_EXTERN int32_t g_activeVscrTile[MAX_ACTIVE_VIEWSCREENS];
 G_EXTERN int32_t g_animWallCnt;
 G_EXTERN int32_t g_animateCnt;
 G_EXTERN int32_t g_cloudCnt;
-G_EXTERN int32_t g_curViewscreen;
+G_EXTERN int32_t g_curViewscreen; // unused, kept for savegame purposes
 G_EXTERN int32_t g_frameRate;
 G_EXTERN int32_t g_cyclerCnt;
 G_EXTERN int32_t g_damageCameras;

@@ -3959,17 +3959,21 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         case VIEWSCREEN__:
         case VIEWSCREEN2__:
         {
-            int const viewscrShift = G_GetViewscreenSizeShift(t);
-            int const viewscrTile = TILE_VIEWSCR-viewscrShift;
+            // invalid index, skip applying a tile
+            if (T2(i) < 0 || T2(i) >= MAX_ACTIVE_VIEWSCREENS)
+                break;
 
-            if (g_curViewscreen >= 0 && actor[OW(i)].t_data[0] == 1)
+            int const viewscrTile = g_activeVscrTile[T2(i)];
+            int const viewscrShift = G_GetViewscreenSizeShift(t);
+
+            if (actor[OW(i)].t_data[0] == 1)
             {
                 t->picnum = STATIC;
                 t->cstat |= (wrand()&12);
                 t->xrepeat += 10;
                 t->yrepeat += 9;
             }
-            else if (g_curViewscreen == i && display_mirror != 3 && waloff[viewscrTile])
+            else if (viewscrTile > 0 && display_mirror != 3 && waloff[viewscrTile])
             {
                 // this exposes a sprite sorting issue which needs to be debugged further...
 #if 0

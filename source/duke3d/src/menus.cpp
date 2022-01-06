@@ -5325,8 +5325,11 @@ void Menu_Close(uint8_t playerID)
 
             // Reset next-viewscreen-redraw counter.
             // XXX: are there any other cases like that in need of handling?
-            if (g_curViewscreen >= 0)
-                actor[g_curViewscreen].t_data[0] = (int32_t) totalclock;
+            for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+            {
+                if (g_activeVscrSprite[vscrIndex] >= 0)
+                    actor[g_activeVscrSprite[vscrIndex]].t_data[0] = (int32_t) totalclock;
+            }
         }
 
         walock[TILE_SAVESHOT] = CACHE1D_FREE;

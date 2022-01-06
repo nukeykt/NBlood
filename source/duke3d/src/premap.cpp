@@ -924,10 +924,12 @@ static void P_PrepForNewLevel(int playerNum, int gameMode)
 
     g_animWallCnt      = 0;
     g_animateCnt       = 0;
-    g_curViewscreen    = -1;
     g_cyclerCnt        = 0;
     g_earthquakeTime   = 0;
     g_interpolationCnt = 0;
+
+    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+        g_activeVscrSprite[vscrIndex] = -1;
 
     randomseed  = 1996;
     screenpeek  = myconnectindex;
@@ -1704,8 +1706,11 @@ void G_ResetTimers(bool saveMoveCnt)
     if (!saveMoveCnt)
         g_moveThingsCount = 0;
 
-    if (g_curViewscreen >= 0)
-        actor[g_curViewscreen].t_data[0] = 0;
+    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+    {
+        if (g_activeVscrSprite[vscrIndex] >= 0)
+            actor[g_activeVscrSprite[vscrIndex]].t_data[0] = 0;
+    }
 }
 
 void G_ClearFIFO(void)

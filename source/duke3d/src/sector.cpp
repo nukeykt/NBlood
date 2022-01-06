@@ -415,40 +415,69 @@ void G_AnimateCamSprite(int smoothRatio)
     return;
 #endif
 
-    if (g_curViewscreen < 0)
-        return;
+    int viewscreenOwners[MAX_ACTIVE_VIEWSCREENS];
+    int viewscreenSizeX[MAX_ACTIVE_VIEWSCREENS];
+    int viewscreenSizeY[MAX_ACTIVE_VIEWSCREENS];
 
-    int const spriteNum = g_curViewscreen;
-
-    if (totalclock >= T1(spriteNum) + ud.camera_time)
+    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
     {
-        auto const pPlayer = g_player[screenpeek].ps;
+        int const spriteNum = g_activeVscrSprite[vscrIndex];
 
-        if (pPlayer->newowner >= 0)
-            OW(spriteNum) = pPlayer->newowner;
-
-        // EDuke32 extension: xvel of viewscreen determines active distance
-        int const activeDist = sprite[spriteNum].xvel > 0 ? sprite[spriteNum].xvel : VIEWSCREEN_ACTIVE_DISTANCE;
-
-        if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < activeDist)
+        if (spriteNum < 0)
         {
-            int const viewscrShift = G_GetViewscreenSizeShift((uspriteptr_t)&sprite[spriteNum]);
-            int const viewscrTile  = TILE_VIEWSCR - viewscrShift;
-
-            if (waloff[viewscrTile] == 0)
-                tileCreate(viewscrTile, tilesiz[PN(spriteNum)].x << viewscrShift, tilesiz[PN(spriteNum)].y << viewscrShift);
-            else
-                walock[viewscrTile] = CACHE1D_UNLOCKED;
-
-            G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
-#ifdef POLYMER
-            // Force texture update on viewscreen sprite in Polymer!
-            if (videoGetRenderMode() == REND_POLYMER)
-                polymer_invalidatesprite(spriteNum);
-#endif
+            viewscreenOwners[vscrIndex] = -1;
+            continue;
         }
 
-        T1(spriteNum) = (int32_t) totalclock;
+        if (totalclock >= T1(spriteNum) + ud.camera_time)
+        {
+            auto const pPlayer = g_player[screenpeek].ps;
+
+            // EDuke32 extension: xvel of viewscreen determines active distance
+            int const activeDist = sprite[spriteNum].xvel > 0 ? sprite[spriteNum].xvel : VIEWSCREEN_ACTIVE_DISTANCE;
+            if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < activeDist)
+            {
+                int const viewscrShift = G_GetViewscreenSizeShift((uspriteptr_t)&sprite[spriteNum]);
+                int const viewscrTile  = TILE_VIEWSCR - viewscrShift - (3*vscrIndex);
+
+                int const tilesizx = tilesiz[PN(spriteNum)].x << viewscrShift;
+                int const tilesizy = tilesiz[PN(spriteNum)].y << viewscrShift;
+
+                viewscreenOwners[vscrIndex] = OW(spriteNum);
+                viewscreenSizeX[vscrIndex] = tilesizx;
+                viewscreenSizeY[vscrIndex] = tilesizy;
+
+                bool tileRef = false;
+                for (int j = 0; j < vscrIndex; j++)
+                {
+                    if (OW(spriteNum) == viewscreenOwners[j] && tilesizx == viewscreenSizeX[j] && tilesizy == viewscreenSizeY[j])
+                    {
+                        g_activeVscrTile[vscrIndex] = g_activeVscrTile[j];
+                        tileRef = true;
+                        break;
+                    }
+                }
+
+                if (!tileRef)
+                {
+                    g_activeVscrTile[vscrIndex] = viewscrTile;
+
+                    if (waloff[viewscrTile] == 0)
+                        tileCreate(viewscrTile, tilesizx, tilesizy);
+                    else
+                        walock[viewscrTile] = CACHE1D_UNLOCKED;
+
+                    G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
+                }
+#ifdef POLYMER
+                // Force texture update on viewscreen sprite in Polymer!
+                if (videoGetRenderMode() == REND_POLYMER)
+                    polymer_invalidatesprite(spriteNum);
+#endif
+            }
+
+            T1(spriteNum) = (int32_t) totalclock;
+        }
     }
 }
 
@@ -3495,13 +3524,22 @@ void P_CheckSectors(int playerNum)
                         A_PlaySound(MONITOR_ACTIVE, pPlayer->i);
                         sprite[nearSprite].owner  = spriteNum;
                         sprite[nearSprite].yvel  |= 2;  // VIEWSCREEN_YVEL
-                        g_curViewscreen           = nearSprite;
+
+                        if (T2(nearSprite) == -1)
+                        {
+                            int newVscrIndex = 0;
+                            while (newVscrIndex < MAX_ACTIVE_VIEWSCREENS && g_activeVscrSprite[newVscrIndex] != -1)
+                                newVscrIndex++;
+                            T2(nearSprite) = newVscrIndex;
+                            if (newVscrIndex < MAX_ACTIVE_VIEWSCREENS)
+                                g_activeVscrSprite[newVscrIndex] = nearSprite;
+                        }
 
                         int const playerSectnum = pPlayer->cursectnum;
                         pPlayer->cursectnum     = SECT(spriteNum);
                         P_UpdateScreenPal(pPlayer);
                         pPlayer->cursectnum     = playerSectnum;
-                        pPlayer->newowner       = spriteNum;
+                        OW(nearSprite) = pPlayer->newowner = spriteNum;
 
                         P_UpdatePosWhenViewingCam(pPlayer);
 
