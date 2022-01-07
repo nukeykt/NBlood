@@ -746,6 +746,8 @@ short scan_char = 0;
 int bVanilla = 0;
 
 char debugBuffer[256];
+char gUserMapFilename[BMAX_PATH];
+bool bUserMap = false;
 
 short wConsoleNode; // TODO - move me into network file
 
@@ -1937,6 +1939,14 @@ int app_main(int argc, char const* const* argv)
                     }
                 }
             }
+            else if (Bstrcasecmp(pChar, "map") == 0)
+            {
+                pChar += 4;
+                strcpy(gUserMapFilename, pChar);
+
+                bUserMap = true;
+                doTitle = kFalse;
+            }
             else if (Bstrncasecmp(pChar, "null", 4) == 0)
             {
                 pChar += 4;
@@ -2334,7 +2344,7 @@ int app_main(int argc, char const* const* argv)
         goto STARTGAME1;
     }
     // no forcelevel specified...
-    if (bPlayback)
+    if (bPlayback || bUserMap)
     {
         goto STARTGAME1;
     }
@@ -3303,7 +3313,7 @@ void PrintHelp()
         "-g [file.grp]\tLoad additional game data\n"
         "-h [file.def]\tLoad an alternate definitions file\n"
         "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
-        //"-map [file.map]\tLoad an external map file\n"
+        "-map [file.map]\tLoad an external map file\n"
         "-mh [file.def]\tInclude an additional definitions module\n"
         "-noautoload\tDisable loading from autoload directory\n"
         //"-nodemo\t\tNo Demos\n"

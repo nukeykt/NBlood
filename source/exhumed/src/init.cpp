@@ -135,29 +135,26 @@ static Sprite_6 sprite_6[4096];
 #endif
 
 
-uint8_t LoadLevel(int nMap)
+bool LoadLevel(int nMap)
 {
     char fileName_1[80];
     char fileName_2[32];
 
     initspritelists();
 
-//	nMap = 1;
+    if (bUserMap)
+    {
+        nMap = 0;
+        strcpy(fileName_1, gUserMapFilename);
+    }
+    else
+    {
+        sprintf(fileName_2, "lev%d", nMap);
 
-//	sprintf(fileName_2, "queen");
-    sprintf(fileName_2, "lev%d", nMap);
-//	sprintf(fileName_2, "sentry");
-//	sprintf(fileName_2, "bjd");
-//	sprintf(fileName_2, "door");
-//	sprintf(fileName_2, "ceil");
-//	sprintf(fileName_2, "scarab");
-//	sprintf(fileName_2, "guns");
-//	sprintf(fileName_2, "wasp");
-//	sprintf(fileName_2, "items");
-
-    fileName_1[0] = '\0';
-    strcat(fileName_1, fileName_2);
-    strcat(fileName_1, ".map");
+        fileName_1[0] = '\0';
+        strcat(fileName_1, fileName_2);
+        strcat(fileName_1, ".map");
+    }
 
     // init stuff
     {
@@ -214,7 +211,7 @@ uint8_t LoadLevel(int nMap)
     }
 
     if (nMap < 0) {
-        return kFalse;
+        return false;
     }
 
 #if 0
@@ -224,7 +221,7 @@ uint8_t LoadLevel(int nMap)
         int hFile = kopen4load(fileName_1, 0);
         //	int hFile = open(fileName_1, O_BINARY | O_RDONLY);
         if (hFile == -1) {
-            return kFalse;
+            return false;
         }
 
         int version;
@@ -388,6 +385,12 @@ uint8_t LoadLevel(int nMap)
     int status = engineLoadBoard(fileName_1, 0, &startPos, &inita, &initsect);
     if (status == -2)
         status = engineLoadBoardV5V6(fileName_1, 0, &startPos, &inita, &initsect);
+    if (status < 0)
+    {
+        OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", fileName_1);
+        return false;
+    }
+
     initx = startPos.x;
     inity = startPos.y;
     initz = startPos.z;
@@ -422,7 +425,7 @@ uint8_t LoadLevel(int nMap)
 
     levelnum = nMap;
 
-    return kTrue;
+    return true;
 }
 
 void ResetEngine()

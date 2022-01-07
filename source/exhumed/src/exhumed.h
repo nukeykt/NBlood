@@ -171,6 +171,8 @@ extern const char* gPSDemoString[];
 extern const char* gEXDemoString[];
 extern short bNoSound;
 extern int bVanilla;
+extern char gUserMapFilename[];
+extern bool bUserMap;
 
 extern ClockTicks tclocks, tclocks2;
 extern short nRedTicks;
