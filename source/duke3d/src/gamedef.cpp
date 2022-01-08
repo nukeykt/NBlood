@@ -6219,7 +6219,7 @@ static void C_AddDefaultDefinitions(void)
     }
 #endif
 
-    static tokenmap_t predefined[] =
+    static tokenmap_t predefined [] =
     {
         { "CLIPMASK0",         CLIPMASK0 },
         { "CLIPMASK1",         CLIPMASK1 },
@@ -6276,6 +6276,30 @@ static void C_AddDefaultDefinitions(void)
         { "PROJ_WORKSLIKE",   PROJ_WORKSLIKE },
         { "PROJ_XREPEAT",     PROJ_XREPEAT },
         { "PROJ_YREPEAT",     PROJ_YREPEAT },
+
+        { "PF_ACCURATE",          PROJECTILE_ACCURATE },
+        { "PF_ACCURATE_AUTOAIM",  PROJECTILE_ACCURATE_AUTOAIM },
+        { "PF_BLOOD",             PROJECTILE_BLOOD },
+        { "PF_BOUNCESOFFMIRRORS", PROJECTILE_BOUNCESOFFMIRRORS },
+        { "PF_BOUNCESOFFSPRITES", PROJECTILE_BOUNCESOFFSPRITES },
+        { "PF_BOUNCESOFFWALLS",   PROJECTILE_BOUNCESOFFWALLS },
+        { "PF_COOLEXPLOSION1",    PROJECTILE_COOLEXPLOSION1 },
+        { "PF_EXPLODEONTIMER",    PROJECTILE_EXPLODEONTIMER },
+        { "PF_FORCEIMPACT",       PROJECTILE_FORCEIMPACT },
+        { "PF_HITSCAN",           PROJECTILE_HITSCAN },
+        { "PF_KNEE",              PROJECTILE_KNEE },
+        { "PF_LOSESVELOCITY",     PROJECTILE_LOSESVELOCITY },
+        { "PF_NOAIM",             PROJECTILE_NOAIM },
+        { "PF_NOSETOWNERSHADE",   PROJECTILE_NOSETOWNERSHADE },
+        { "PF_RADIUS_PICNUM",     PROJECTILE_RADIUS_PICNUM },
+        { "PF_RANDDECALSIZE",     PROJECTILE_RANDDECALSIZE },
+        { "PF_REALCLIPDIST",      PROJECTILE_REALCLIPDIST },
+        { "PF_RPG",               PROJECTILE_RPG },
+        { "PF_RPG_IMPACT",        PROJECTILE_RPG_IMPACT },
+        { "PF_RPG_IMPACT_DAMAGE", PROJECTILE_RPG_IMPACT_DAMAGE },
+        { "PF_SPIT",              PROJECTILE_SPIT },
+        { "PF_TIMED",             PROJECTILE_TIMED },
+        { "PF_WATERBUBBLES",      PROJECTILE_WATERBUBBLES },
 
         { "SFLAG_BADGUY",          SFLAG_BADGUY },
         { "SFLAG_DAMAGEEVENT",     SFLAG_DAMAGEEVENT },
