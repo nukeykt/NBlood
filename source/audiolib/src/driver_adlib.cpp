@@ -582,7 +582,7 @@ static void AL_NoteOff(int const channel, int const key, int velocity)
     UNREFERENCED_PARAMETER(velocity);
 
     // We only play channels 1 through 10
-    if (channel > AL_MaxMidiChannel)
+    if (channel >= AL_MaxMidiChannel)
         return;
 
     int const voice = AL_GetVoice(channel, key);
@@ -605,7 +605,7 @@ static void AL_NoteOff(int const channel, int const key, int velocity)
 static void AL_NoteOn(int const channel, int const key, int const velocity)
 {
     // We only play channels 1 through 10
-    if (channel > AL_MaxMidiChannel)
+    if (channel >= AL_MaxMidiChannel)
         return;
 
     if (velocity == 0)
@@ -652,7 +652,7 @@ static FORCE_INLINE void AL_AllNotesOff(int const channel)
 static void AL_ControlChange(int const channel, int const type, int const data)
 {
     // We only play channels 1 through 10
-    if (channel > AL_MaxMidiChannel)
+    if (channel >= AL_MaxMidiChannel)
         return;
 
     switch (type)
@@ -712,7 +712,7 @@ static void AL_ControlChange(int const channel, int const type, int const data)
 static void AL_ProgramChange(int const channel, int const patch)
 {
     // We only play channels 1 through 10
-    if (channel > AL_MaxMidiChannel)
+    if (channel >= AL_MaxMidiChannel)
         return;
 
     Channel[channel].Timbre = patch;
@@ -722,7 +722,7 @@ static void AL_ProgramChange(int const channel, int const patch)
 static void AL_SetPitchBend(int const channel, int const lsb, int const msb)
 {
     // We only play channels 1 through 10
-    if (channel > AL_MaxMidiChannel)
+    if (channel >= AL_MaxMidiChannel)
         return;
 
     int const pitchbend = lsb + (msb << 8);
