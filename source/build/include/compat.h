@@ -169,12 +169,18 @@
 # define EXTERN_INLINE_HEADER extern __fastcall
 #endif
 
-#if 1 && defined(__OPTIMIZE__) && (defined __GNUC__ || __has_builtin(__builtin_expect))
-#define EDUKE32_PREDICT_TRUE(x)       __builtin_expect(!!(x),1)
-#define EDUKE32_PREDICT_FALSE(x)     __builtin_expect(!!(x),0)
+#if defined(_MSC_VER)
+# define EDUKE32_NORETURN __declspec(noreturn)
 #else
-#define EDUKE32_PREDICT_TRUE(x) (x)
-#define EDUKE32_PREDICT_FALSE(x) (x)
+# define EDUKE32_NORETURN __attribute__((noreturn))
+#endif
+
+#if 1 && defined(__OPTIMIZE__) && (defined __GNUC__ || __has_builtin(__builtin_expect))
+# define EDUKE32_PREDICT_TRUE(x)       __builtin_expect(!!(x),1)
+# define EDUKE32_PREDICT_FALSE(x)     __builtin_expect(!!(x),0)
+#else
+# define EDUKE32_PREDICT_TRUE(x) (x)
+# define EDUKE32_PREDICT_FALSE(x) (x)
 #endif
 
 #ifdef DEBUG
@@ -1290,7 +1296,7 @@ static FORCE_INLINE void xalloc_set_location(int32_t const line, const char * co
 #endif
 
 void set_memerr_handler(void (*handlerfunc)(int32_t, const char *, const char *));
-void *handle_memerr(void);
+EDUKE32_NORETURN void handle_memerr(void);
 
 #ifdef __cplusplus
 #include "smmalloc.h"

@@ -57,7 +57,7 @@ void  _xaligned_free(void *const ptr) { xaligned_free(ptr); }
 }
 #endif
 
-void *handle_memerr(void)
+void handle_memerr(void)
 {
     debug_break();
 

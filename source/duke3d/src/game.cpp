@@ -278,7 +278,7 @@ int32_t A_CheckInventorySprite(spritetype *s)
 }
 
 
-void app_exit(int returnCode) ATTRIBUTE((noreturn));
+EDUKE32_NORETURN void app_exit(int returnCode);
 
 static int g_programExitCode = INT_MIN;
 
