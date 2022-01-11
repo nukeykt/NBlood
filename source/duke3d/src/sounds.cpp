@@ -118,7 +118,7 @@ void S_SoundStartup(void)
     }
 
     FX_SetVolume(ud.config.FXVolume);
-    S_MusicVolume(ud.config.MusicVolume);
+    //S_MusicVolume(ud.config.MusicVolume);
 
 #ifdef ASS_REVERSESTEREO
     FX_SetReverseStereo(ud.config.ReverseStereo);
