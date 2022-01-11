@@ -184,9 +184,10 @@ static int osdcmd_map(osdcmdptr_t parm)
 
             LOG_F(INFO, "Map listing:");
 
+            auto buf2 = (char*)Balloca(cols);
+
             for (r=fnlist.findfiles; r; r=r->next)
             {
-                auto buf2 = (char*)Balloca(cols);
                 buf2[0] = 0;
 
                 size_t inc = 0;

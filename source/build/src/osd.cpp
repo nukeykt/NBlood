@@ -546,6 +546,7 @@ static int osdfunc_listsymbols(osdcmdptr_t parm)
         LOG_F(INFO, "Symbol listing:");
 
     int const parmlen = parm->numparms ? Bstrlen(parm->parms[0]) : 0;
+    auto buf2 = (char*)Balloca(osd->draw.cols);
 
     for (auto symb=osd->symbols; symb!=NULL; symb=symb->next)
     {
@@ -554,7 +555,6 @@ static int osdfunc_listsymbols(osdcmdptr_t parm)
 
         int const var = hash_find(&h_cvars, symb->name);
 
-        auto buf2 = (char*)Balloca(osd->draw.cols);
         buf2[0] = 0;
         size_t inc = 0;
         if ((unsigned)var < OSDMAXSYMBOLS && OSD_CvarModified(&osd->cvars[var]))
