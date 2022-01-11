@@ -153,10 +153,8 @@ static void midi_dispose_buffer(MidiBuffer *node, const char *caller)
        node->hdr.dwFlags &= ~MHDR_PREPARED;
     }
 
-    // remove the node from the finishedMidiBuffers list
-    LL::Remove(node);
     node->hdr.dwBufferLength = max<DWORD>(MME_MIDI_BUFFER_SPACE, node->hdr.dwBufferLength);
-    LL::Insert((MidiBuffer *)&spareBufferList, node);
+    LL::Move(node, &spareBufferList);
 
     if (++numSpareMidiBuffers > maxSpareMidiBuffers)
         maxSpareMidiBuffers = numSpareMidiBuffers;
@@ -198,13 +196,21 @@ static void midi_free_buffers(void)
     for (auto node = finishedBufferList.next, next = node->next; node != &finishedBufferList; node = next, next = node->next)
     {
         LL::Move(node, &spareBufferList);
+        numSpareMidiBuffers++;
     }
 
     for (auto node = spareBufferList.next, next = node->next; node != &spareBufferList; node = next, next = node->next)
+    {
+        LL::Remove(node);
         Xfree(node);
+        numSpareMidiBuffers--;
+        VLOG_F(LOG_DEBUG, "MME midi_free_buffers pruning spare buffer %p", node);
+    }
 
-    numActiveMidiBuffers = numSpareMidiBuffers = 0;
-    currentMidiBuffer = 0;
+    Bassert(numSpareMidiBuffers == 0);
+
+    numActiveMidiBuffers = 0;
+    currentMidiBuffer = nullptr;
 }
 
 static void midi_flush_current_buffer(void)
