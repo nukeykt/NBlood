@@ -100,7 +100,8 @@ void kensetpalette(unsigned char *vgapal)
 
 static int32_t xdim_to_320_16(int32_t x)
 {
-    const int32_t screenwidth = scale(240 << 16, xdim, ydim);
+    const int32_t screenwidth = max(scale(240 << 16, xdim, ydim), 320 << 16);
+
     return scale(x, screenwidth, xdim) + (160 << 16) - (screenwidth >> 1);
 }
 
@@ -112,7 +113,7 @@ static int32_t ydim_to_200_16(int32_t y)
 
 static int32_t xdim_from_320_16(int32_t x)
 {
-    const int32_t screenwidth = scale(240 << 16, xdim, ydim);
+    const int32_t screenwidth = max(scale(240 << 16, xdim, ydim), 320 << 16);
     return scale(x + (screenwidth >> 1) - (160 << 16), xdim, screenwidth);
 }
 
@@ -126,7 +127,6 @@ void printext(int x, int y, const char *buffer, short tilenum)
 {
     int i;
     unsigned char ch;
-    //    const int32_t screenwidth = scale(240<<16, xdim, ydim);
 
     x = xdim_to_320_16(x);
     y = ydim_to_200_16(y);
@@ -136,6 +136,7 @@ void printext(int x, int y, const char *buffer, short tilenum)
         ch = (unsigned char)buffer[i];
         rotatesprite(x - ((ch & 15) << (3 + 16)), y - ((ch >> 4) << (3 + 16)), 65536L, 0, tilenum, 0, 0, 2 + 8 + 16 + 128, xdim_from_320_16(x), ydim_from_200_16(y),
             xdim_from_320_16(x + (8 << 16)) - 1, ydim_from_200_16(y + (8 << 16)) - 1);
+
         x += (8 << 16);
     }
 }
