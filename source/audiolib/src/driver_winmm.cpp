@@ -686,7 +686,7 @@ static void CALLBACK midi_callback(HMIDIOUT out, UINT msg, DWORD_PTR dwInstance,
     WinMMDrv_MIDI_Unlock();
 }
 
-static DWORD WINAPI midiDataThread(LPVOID lpParameter)
+static unsigned WINAPI midiDataThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
 
@@ -765,7 +765,7 @@ int midi_create_thread(void)
         return WinMMErr_Error;
     }
 
-    midiThread = CreateThread(nullptr, 0, midiDataThread, 0, 0, 0);
+    midiThread = (HANDLE)_beginthreadex(nullptr, 0, midiDataThread, 0, 0, 0);
     if (!midiThread)
     {
         ErrorCode = WinMMErr_MIDIPlayThread;
