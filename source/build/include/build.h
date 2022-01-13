@@ -91,8 +91,8 @@ enum rendmode_t {
 
 #define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
 
-#define MAXTILES 30976
-#define MAXUSERTILES (MAXTILES-256)  // reserve 256 tiles at the end, most of them for VIEWSCREEN space
+#define MAXTILES 30720
+#define MAXUSERTILES (MAXTILES-16)  // reserve 16 tiles at the end
 
 #define MAXVOXELS 1024
 #define MAXSTATUS 1024
