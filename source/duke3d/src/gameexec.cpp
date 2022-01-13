@@ -657,7 +657,7 @@ static inline void VM_AddAngle(int const shift, int const goalAng)
     int angDiff = G_GetAngleDelta(vm.pSprite->ang, goalAng) >> shift;
 
     if ((angDiff > -8 && angDiff < 0) || (angDiff < 8 && angDiff > 0))
-        angDiff <<= 1;
+        angDiff *= 2;
 
     vm.pSprite->ang += angDiff;
 }

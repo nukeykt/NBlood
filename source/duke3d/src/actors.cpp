@@ -3517,7 +3517,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                         int const newSprite
                             = A_InsertSprite(pSprite->sectnum, pSprite->x + ((k * sintable[(pSprite->ang + 512) & 2047]) >> 9),
                                 pSprite->y + ((k * sintable[pSprite->ang & 2047]) >> 9),
-                                pSprite->z + ((k * ksgn(pSprite->zvel)) * klabs(pSprite->zvel / 24)), FIRELASER, -40 + (k << 2),
+                                pSprite->z + ((k * ksgn(pSprite->zvel)) * klabs(pSprite->zvel / 24)), FIRELASER, -40 + ksgn(k) * (klabs(k) << 2),
                                 pSprite->xrepeat, pSprite->yrepeat, 0, 0, 0, pSprite->owner, 5);
 
                         sprite[newSprite].cstat = 128;

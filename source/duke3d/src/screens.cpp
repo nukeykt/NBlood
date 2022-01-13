@@ -292,7 +292,7 @@ static void G_DrawCameraText(int16_t i)
 
         for (bssize_t x=-64; x<394; x+=64)
             for (bssize_t y=0; y<200; y+=64)
-                rotatesprite_win(x<<16, y<<16, 65536L, 0, STATIC, 0, 0, 2+flipbits);
+                rotatesprite_win(ksgn(x)*(klabs(x)<<16), y<<16, 65536L, 0, STATIC, 0, 0, 2+flipbits);
     }
 }
 
