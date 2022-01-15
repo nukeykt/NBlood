@@ -60,6 +60,7 @@ void polymost_useColorOnly(char useColorOnly);
 void polymost_useDetailMapping(char useDetailMapping);
 void polymost_useGlowMapping(char useGlowMapping);
 void polymost_usePaletteIndexing(char usePaletteIndexing);
+GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int* pLength = nullptr);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
@@ -97,6 +98,7 @@ extern int32_t r_detailmapping;
 #endif
 
 extern int32_t r_animsmoothing;
+extern int32_t r_brightnesshack;
 extern int32_t r_downsize;
 extern int32_t r_downsizevar;
 extern int32_t r_drawpolyVertsBufferLength;
