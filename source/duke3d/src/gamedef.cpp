@@ -2050,6 +2050,8 @@ static void C_Include(const char *confile)
     C_SkipComments();
     C_ParseCommand(true);
 
+    C_AddFileOffset((g_scriptPtr - apScript), parentScriptFileName);
+
     Bstrcpy(g_scriptFileName, parentScriptFileName);
 
     g_totalLines += g_lineNumber;
