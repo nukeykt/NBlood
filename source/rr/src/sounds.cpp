@@ -82,7 +82,6 @@ void S_SoundStartup(void)
     S_MusicVolume(ud.config.MusicVolume);
 
     FX_SetCallBack(S_Callback);
-    FX_SetPrintf(initprintf);
 }
 
 void S_SoundShutdown(void)
