@@ -658,7 +658,7 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     }
 
     if (doalloc) glGenTextures(1,(GLuint *)&pth->glpic); //# of textures (make OpenGL allocate structure)
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     // fixtransparency(pic,tsiz,siz,dameth);
 
@@ -947,7 +947,7 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     if (!pth)
         return;
 
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -1054,10 +1054,13 @@ void RT_LookVectorCalc(float dx, float dy, float dz)
 {
 #ifdef USE_OPENGL
     GLfloat tempmat[16];
+    vec3f_t v_eye = {rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f};
+    vec3f_t v_center = {rt_globalposx * 0.5f + dx, rt_globalposy * 0.5f + dy, rt_globalposz * 0.5f + dz};
+    vec3f_t v_up = {0.f, 0.f, -1.f};
     // TODO: replace
     glPushMatrix();
     glLoadIdentity();
-    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+    buildgl_uLookAt(v_eye, v_center, v_up);
     glGetFloatv(GL_PROJECTION_MATRIX, tempmat);
     rt_look[0].x = tempmat[0];
     rt_look[0].y = tempmat[4];
@@ -1093,8 +1096,13 @@ void RT_SetupMatrix(void)
     glLoadIdentity();
     float fovy = atanf(tanf((float)ud.fov * (fPI / 180.f) / 2.f) * (3.f / 4.f)) * 2.f * (180.f/fPI);
     rt_worldspritefactor = tanf(60.f * (fPI / 180.f) / 2.f) / tanf(fovy * (fPI / 180.f) / 2.f);
-    bgluPerspective(fovy, (float)xdim/(float)ydim, 5.f, 16384.f);
-    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+    buildgl_setPerspective(fovy, (float)xdim/(float)ydim, 5.f, 16384.f);
+
+    vec3f_t v_eye = {rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f};
+    vec3f_t v_center = {rt_globalposx * 0.5f + dx, rt_globalposy * 0.5f + dy, rt_globalposz * 0.5f + dz};
+    vec3f_t v_up = {0.f, 0.f, -1.f};
+    buildgl_uLookAt(v_eye, v_center, v_up);
+
     glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
     RT_LookVectorCalc(dx, dy, dz);
 #endif
@@ -1128,7 +1136,7 @@ void RT_SetTexture(int tilenum, int explosion = 0)
         method = 0;
     pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
     if (pth)
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     int clamp = 0;
 
@@ -2084,7 +2092,7 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
         return;
     
     RT_SetTexClamp(1+2);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
     //rt_globalalpha = 128;
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     glBegin(GL_QUADS);
@@ -2171,7 +2179,7 @@ void RT_DrawSpriteFloor(void)
         return;
     
     RT_SetTexClamp(1+2);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
 
@@ -2759,7 +2767,7 @@ void RT_DrawMaskWall(int wallnum)
         method = 0;
     pthtyp* pth = texcache_fetch(pn, 0, 0, method);
     if (pth)
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     int clamp = 0;
 
@@ -4021,7 +4029,7 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     glEnable(GL_ALPHA_TEST);
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
@@ -4119,7 +4127,7 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
     glEnable(GL_ALPHA_TEST);
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
