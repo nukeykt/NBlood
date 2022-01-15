@@ -370,6 +370,7 @@ void    polymer_invalidatelights(void);
 void    polymer_texinvalidate(void);
 void    polymer_definehighpalookup(uint8_t basepalnum, uint8_t palnum, char *data);
 bool    polymer_havehighpalookup(uint8_t basepalnum, uint8_t palnum);
+void    polymer_setrorcallback(rorcallback callback);
 
 
 extern _prsprite    *prsprites[MAXSPRITES];
