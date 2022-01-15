@@ -135,7 +135,7 @@ void S_SoundShutdown(void)
     if (status != FX_Ok)
     {
         Bsprintf(tempbuf, "Failed tearing down sound subsystem: %s", FX_ErrorString(status));
-        LOG_F(ERROR, tempbuf);
+        LOG_F(ERROR, "%s", tempbuf);
         G_GameExit(tempbuf);
     }
 }

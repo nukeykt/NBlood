@@ -353,7 +353,7 @@ void G_GameExit(const char *msg)
     {
         char titlebuf[256];
         Bsnprintf(titlebuf, sizeof(titlebuf), HEAD2 " %s", s_buildRev);
-        wm_msgbox(titlebuf, msg);
+        wm_msgbox(titlebuf, "%s", msg);
     }
 
     Bfflush(NULL);
