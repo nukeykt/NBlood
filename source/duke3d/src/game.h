@@ -32,8 +32,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fix16.h"
 #include "gamedefs.h"
 #include "gamevars.h"
+#include "minicoro.h"
 #include "mmulti.h"
 #include "network.h"
+#include "savegame.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,8 +140,6 @@ static inline int32_t G_GetLogoFlags(void)
 
 #define MAXRIDECULE 10
 #define MAXRIDECULELENGTH 40
-#define MAXSAVEGAMENAMESTRUCT 32
-#define MAXSAVEGAMENAME (MAXSAVEGAMENAMESTRUCT-1)
 #define MAXPWLOCKOUT 128
 #define MAXRTSNAME 128
 
@@ -161,7 +161,7 @@ typedef struct ud_setup_s {
 typedef struct {
     vec3_t camerapos;
     int32_t const_visibility,uw_framerate;
-    int32_t camera_time,folfvel,folavel,folx,foly,fola;
+    int32_t camera_time,folfvel,folsvel,folavel,folx,foly,fola;
     int32_t reccnt,crosshairscale;
 
     int32_t runkey_mode,statusbarscale,mouseaiming,weaponswitch,drawweapon;   // JBF 20031125
@@ -182,7 +182,7 @@ typedef struct {
     int32_t m_ffire,ffire,m_player_skill,m_level_number,m_volume_number,multimode;
     int32_t player_skill,level_number,volume_number,m_marker,marker,mouseflip;
     int32_t music_episode, music_level, skill_voice;
-    int32_t m_newgamecustom, m_newgamecustomsub;
+    int32_t m_newgamecustom, m_newgamecustomsub, m_newgamecustoml3;
 
     int32_t playerbest;
 
@@ -209,6 +209,7 @@ typedef struct {
 
     int32_t last_stateless_level, last_stateless_volume; // strictly internal
 
+
     struct {
         int32_t AutoAim;
         int32_t ShowWeapons;
@@ -216,6 +217,7 @@ typedef struct {
         int32_t JoystickAimWeight;
         int32_t JoystickViewCentering;
         int32_t JoystickAimAssist;
+        int32_t controllerRumble;
 
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them
@@ -281,7 +283,6 @@ extern user_defs ud;
 extern const char *s_buildDate;
 
 extern char boardfilename[BMAX_PATH], currentboardfilename[BMAX_PATH];
-extern char previousboardfilename[BMAX_PATH];
 #define USERMAPMUSICFAKEVOLUME MAXVOLUMES
 #define USERMAPMUSICFAKELEVEL (MAXLEVELS-1)
 #define USERMAPMUSICFAKESLOT ((USERMAPMUSICFAKEVOLUME * MAXLEVELS) + USERMAPMUSICFAKELEVEL)
@@ -303,6 +304,35 @@ extern char ror_protectedsectors[MAXSECTORS];
 #endif
 
 extern float r_ambientlight;
+extern int32_t r_pr_defaultlights;
+
+extern bool g_frameJustDrawn;
+extern uint64_t g_lastFrameStartTime;
+extern uint64_t g_lastFrameEndTime;
+extern uint64_t g_lastFrameDuration;
+extern uint32_t g_frameCounter;
+
+// minicoro.h says to make sure this isn't a multiple of 64K
+#define DRAWFRAME_MIN_STACK_SIZE     (576  * 1024)
+#define DRAWFRAME_DEFAULT_STACK_SIZE (704  * 1024)
+#define DRAWFRAME_MAX_STACK_SIZE     (1792 * 1024)
+
+extern mco_coro* co_drawframe;
+extern void g_switchRoutine(mco_coro *co);
+
+static FORCE_INLINE int dukeMaybeDrawFrame(void)
+{
+    // g_frameJustDrawn is set by G_DrawFrame() (and thus by the coroutine)
+    // it isn't cleared until the next game tic is processed.
+
+    if (!g_saveRequested && !g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
+    {
+        g_switchRoutine(co_drawframe);
+        return 1;
+    }
+
+    return 0;
+}
 
 extern int32_t g_BenchmarkMode;
 extern int32_t g_Debug;
@@ -366,7 +396,7 @@ void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t horiz, i
 void G_DrawRooms(int32_t playerNum,int32_t smoothratio);
 void G_DrawTXDigiNumZ(int32_t starttile,int32_t x,int32_t y,int32_t n,int32_t s,int32_t pal,int32_t cs,int32_t x1,int32_t y1,int32_t x2,int32_t y2,int32_t z);
 int engineFPSLimit(void);
-void G_GameExit(const char *msg) ATTRIBUTE((noreturn));
+EDUKE32_NORETURN void G_GameExit(const char *msg = nullptr);
 void G_GameQuit(void);
 void G_GetCrosshairColor(void);
 void G_HandleLocalKeys(void);
@@ -380,7 +410,6 @@ void G_UpdatePlayerFromMenu(void);
 void M32RunScript(const char *s);
 void P_DoQuote(int32_t q,DukePlayer_t *p);
 void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set);
-void G_DrawFrame(void);
 
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?

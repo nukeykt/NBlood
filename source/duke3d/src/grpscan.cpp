@@ -427,7 +427,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
             if (Bfstat(fh, &st)) continue;
             if (st.st_size > maxsize) continue;
 
-            initprintf(" Checksumming %s...", sidx->name);
+            DLOG_F(INFO, " Checksumming %s...", sidx->name);
             do
             {
                 b = read(fh, buf, ReadSize);
@@ -435,7 +435,8 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
             }
             while (b == ReadSize);
             close(fh);
-            initprintf(" Done\n");
+
+            LOG_F(INFO, " %s has checksum 0x%08x", sidx->name, crcval);
 
             grpinfo_t const * const grptype = FindGrpInfo(crcval, st.st_size);
             if (grptype)
@@ -466,7 +467,7 @@ int32_t ScanGroups(void)
 #ifndef USE_PHYSFS
     struct grpcache *fg, *fgg;
 
-    initprintf("Searching for game data...\n");
+    LOG_F(INFO, "Searching for game data...");
 
     LoadGameList();
     LoadGroupsCache();
@@ -530,7 +531,7 @@ int32_t ScanGroups(void)
         return 0;
     }
 
-    initprintf("Found no recognized game data!\n");
+    LOG_F(ERROR, "Found no recognized game data!");
 #endif
 
     return 0;

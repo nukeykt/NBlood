@@ -208,7 +208,7 @@ they effectively stand in for curly braces as struct initializers.
 */
 
 
-MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
+MenuGameplayEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
 // common font types
 // tilenums are set after namesdyn runs
@@ -230,10 +230,14 @@ static MenuMenuFormat_t MMF_Top_Main =             { {  MENU_MARGIN_CENTER<<16, 
 static MenuMenuFormat_t MMF_Top_Episode =          { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustom =    { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustomSub = { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
+static MenuMenuFormat_t MMF_Top_NewGameCustomL3 =  { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_Skill =            { {  MENU_MARGIN_CENTER<<16, 58<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_Options =          { {  MENU_MARGIN_CENTER<<16, 38<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_Joystick_Network = { {  MENU_MARGIN_CENTER<<16, 70<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_BigOptions =           { {    MENU_MARGIN_WIDE<<16, 38<<16, }, -(190<<16) };
+#ifdef USE_OPENGL
+static MenuMenuFormat_t MMF_BigOptionsScrolling =  { {    MENU_MARGIN_WIDE<<16, 38<<16, },  (187<<16) };
+#endif
 static MenuMenuFormat_t MMF_SmallOptions =         { {    MENU_MARGIN_WIDE<<16, 37<<16, },    170<<16 };
 static MenuMenuFormat_t MMF_Macros =               { {                  26<<16, 40<<16, },    160<<16 };
 static MenuMenuFormat_t MMF_SmallOptionsNarrow  =  { { MENU_MARGIN_REGULAR<<16, 38<<16, }, -(190<<16) };
@@ -242,7 +246,7 @@ static MenuMenuFormat_t MMF_MouseJoySetupBtns =    { {                  76<<16, 
 static MenuMenuFormat_t MMF_FuncList =             { {                 100<<16, 51<<16, },    152<<16 };
 static MenuMenuFormat_t MMF_ColorCorrect =         { { MENU_MARGIN_REGULAR<<16, 86<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_BigSliders =           { {    MENU_MARGIN_WIDE<<16, 37<<16, },    190<<16 };
-static MenuMenuFormat_t MMF_LoadSave =             { {                 200<<16, 49<<16, },    145<<16 };
+static MenuMenuFormat_t MMF_LoadSave =             { {                 200<<16, 49<<16, },    180<<16 };
 static MenuMenuFormat_t MMF_NetSetup =             { {                  36<<16, 38<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
@@ -255,7 +259,7 @@ static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_BigOptions_Apply = { 4<<16, 16<<16, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRt =     { 4<<16,      0, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRtSections = { 3<<16,      0, -(260<<16) };
-#if defined USE_OPENGL || !defined EDUKE32_ANDROID_MENU
+#if !defined EDUKE32_STANDALONE && defined USE_OPENGL && !defined EDUKE32_ANDROID_MENU
 static MenuEntryFormat_t MEF_SmallOptions =     { 1<<16,      0, -(260<<16) };
 #endif
 static MenuEntryFormat_t MEF_BigCheats =        { 3<<16,      0, -(260<<16) };
@@ -286,12 +290,13 @@ static MenuOptionSet_t MEOS_NoYes = MAKE_MENUOPTIONSET( MEOSN_NoYes, NULL, 0x3 )
 static char const *MEOSN_YesNo[] = { "Yes", "No", };
 static MenuOptionSet_t MEOS_YesNo = MAKE_MENUOPTIONSET( MEOSN_YesNo, NULL, 0x3 );
 
-
 static char MenuGameFuncs[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 static char const *MenuGameFuncNone = "  -None-";
 static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
+
+int32_t kbo_type_cvar = 1;
 
 static int g_lookAxis = -1;
 static int g_turnAxis = -1;
@@ -305,7 +310,7 @@ That way, individual menu entries can be ifdef'd out painlessly.
 */
 
 static MenuLink_t MEO_NULL = { MENU_NULL, MA_None, };
-static const char* MenuCustom = "Custom";
+static const char* MenuCustom = "CVAR";
 
 #define MAKE_MENUSTRING(...) { NULL, __VA_ARGS__, }
 #define MAKE_MENUOPTION(...) { __VA_ARGS__, -1, }
@@ -405,12 +410,18 @@ static MenuEntry_t *MEL_EPISODE[MAXVOLUMES+2]; // +2 for spacer and User Map
 
 static MenuLink_t MEO_NEWGAMECUSTOM_TEMPLATE = { MENU_NEWGAMECUSTOMSUB, MA_Advance, };
 static MenuLink_t MEO_NEWGAMECUSTOM[MAXMENUGAMEPLAYENTRIES];
-static MenuLink_t MEO_NEWGAMECUSTOMSUB_TEMPLATE = { MENU_SKILL, MA_Advance, };
+static MenuLink_t MEO_NEWGAMECUSTOMSUB_TEMPLATE = { MENU_NEWGAMECUSTOML3, MA_Advance, };
 static MenuLink_t MEO_NEWGAMECUSTOMSUB[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 MenuEntry_t ME_NEWGAMECUSTOMENTRIES[MAXMENUGAMEPLAYENTRIES];
 MenuEntry_t ME_NEWGAMECUSTOMSUBENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOM[MAXMENUGAMEPLAYENTRIES];
 static MenuEntry_t *MEL_NEWGAMECUSTOMSUB[MAXMENUGAMEPLAYENTRIES];
+
+// Newgamecustom Layer 3
+static MenuLink_t MEO_NEWGAMECUSTOML3_TEMPLATE = { MENU_SKILL, MA_Advance, };
+static MenuLink_t MEO_NEWGAMECUSTOML3[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
+MenuEntry_t ME_NEWGAMECUSTOML3ENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
+static MenuEntry_t *MEL_NEWGAMECUSTOML3[MAXMENUGAMEPLAYENTRIES];
 
 static char const s_Undefined[] = "Undefined";
 
@@ -513,7 +524,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHS
 MAKE_MENU_TOP_ENTRYLINK("Cheats", MEF_OptionsMenu, OPTIONS_CHEATS, MENU_CHEATS);
 #endif
 
-static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless, newmaxfps;
+static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless, newmaxfps, newdisplayindex;
 
 enum resflags_t {
     RES_FS  = 0x1,
@@ -536,6 +547,13 @@ static MenuOptionSet_t MEOS_VIDEOSETUP_RESOLUTION = MAKE_MENUOPTIONSETDYN( MEOSN
 static MenuOption_t MEO_VIDEOSETUP_RESOLUTION = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RESOLUTION, &newresolution );
 static MenuEntry_t ME_VIDEOSETUP_RESOLUTION = MAKE_MENUENTRY( "Resolution:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RESOLUTION, Option );
 
+
+static char const* MEOSN_VIDEOSETUP_DISPLAY[8];
+static MenuOptionSet_t MEOS_VIDEOSETUP_DISPLAY = MAKE_MENUOPTIONSETDYN(MEOSN_VIDEOSETUP_DISPLAY, NULL, 0, 0x0);
+static MenuOption_t MEO_VIDEOSETUP_DISPLAY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_DISPLAY, &newdisplayindex);
+static MenuEntry_t ME_VIDEOSETUP_DISPLAY = MAKE_MENUENTRY("Display:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_DISPLAY, Option);
+
+
 #ifdef USE_OPENGL
 #ifdef POLYMER
 static char const *MEOSN_VIDEOSETUP_RENDERER[] = { "Classic", "Polymost", "Polymer", };
@@ -555,8 +573,7 @@ static MenuOption_t MEO_VIDEOSETUP_FULLSCREEN = MAKE_MENUOPTION( &MF_Redfont, &M
 static MenuEntry_t ME_VIDEOSETUP_FULLSCREEN = MAKE_MENUENTRY( "Windowed:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FULLSCREEN, Option );
 
 static char const *MEOSN_VIDEOSETUP_BORDERLESS [] = { "No", "Yes", "Auto", };
-static int32_t MEOSV_VIDEOSETUP_BORDERLESS [] = { 0, 1, 2, };
-static MenuOptionSet_t MEOS_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_BORDERLESS, MEOSV_VIDEOSETUP_BORDERLESS, 0x2);
+static MenuOptionSet_t MEOS_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_BORDERLESS, nullptr, 0x2);
 static MenuOption_t MEO_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_BORDERLESS, &newborderless);
 static MenuEntry_t ME_VIDEOSETUP_BORDERLESS = MAKE_MENUENTRY("Borderless:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_BORDERLESS, Option);
 
@@ -578,14 +595,14 @@ static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &
 
 
 
-#if 0
-static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "Auto", "None", "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
-static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { -1, 0, 30, 60, 75, 100, 120, 144, 165, 240 };
+#if 1
+static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "None", "30 fps", "58 fps", "59 fps", "60 fps", "61 fps", "72 fps", "73 fps", "74 fps", "75 fps", "83 fps", "84 fps", "85 fps", "100 fps", "118 fps", "119 fps", "120 fps", "142 fps", "143 fps", "144 fps", "163 fps", "164 fps", "165 fps", "238 fps", "239 fps", "240 fps" };
+static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { 0, 30, 58, 59, 60, 61, 72, 73, 74, 75, 83, 84, 85, 100, 118, 119, 120, 142, 143, 144, 163, 164, 165, 238, 239, 240 };
 static MenuOptionSet_t MEOS_VIDEOSETUP_FRAMELIMIT = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_FRAMELIMIT, MEOSV_VIDEOSETUP_FRAMELIMIT, 0x0);
-static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &r_maxfps);
+static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &newmaxfps);
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY("Framerate limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, Option);
 #else
-static MenuRangeInt32_t MEO_VIDEOSETUP_FRAMELIMIT = MAKE_MENURANGE( &newmaxfps, &MF_Redfont, -1, 240, 6, 40, DisplayTypeInteger );
+static MenuRangeInt32_t MEO_VIDEOSETUP_FRAMELIMIT = MAKE_MENURANGE( &newmaxfps, &MF_Redfont, 0, 240, 3, 81, DisplayTypeInteger );
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY( "FPS limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, RangeInt32 );
 #endif
 
@@ -605,8 +622,7 @@ static MenuEntry_t ME_DISPLAYSETUP_UPSCALING = MAKE_MENUENTRY( "Upscaling:", &MF
 
 #ifndef EDUKE32_ANDROID_MENU
 static char const *MEOSN_DISPLAYSETUP_ASPECTRATIO[] = { "Stretched", "Auto" };
-static int32_t MEOSV_DISPLAYSETUP_ASPECTRATIO[] = { 0, 1 };
-static MenuOptionSet_t MEOS_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ASPECTRATIO, MEOSV_DISPLAYSETUP_ASPECTRATIO, 0x0 );
+static MenuOptionSet_t MEOS_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ASPECTRATIO, nullptr, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ASPECTRATIO, &r_usenewaspect);
 static MenuEntry_t ME_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUENTRY( "Aspect ratio:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ASPECTRATIO, Option );
 #endif
@@ -620,19 +636,21 @@ static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &M
 
 #ifdef USE_OPENGL
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
+#define TEXFILTER_MENU_OPTIONS
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
 #ifdef TEXFILTER_MENU_OPTIONS
-static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
+static char const *MEOSN_DISPLAYSETUP_TEXFILTER[][2]
+= { { "Nearest", "Bilinear" }, { "Nearest", "Smear filter" }, { "Nearest", "Terrible" }, { "Nearest", "Vaseline" }, { "Nearest", "Blurry" } };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
-static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER, MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
+static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER[0], MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
 static MenuOption_t MEO_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTION( &MF_Redfont, &MEOS_DISPLAYSETUP_TEXFILTER, &gltexfiltermode );
-static MenuEntry_t ME_DISPLAYSETUP_TEXFILTER = MAKE_MENUENTRY( "Texture Mode:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_TEXFILTER, Option );
+static MenuEntry_t ME_RENDERERSETUP_TEXFILTER = MAKE_MENUENTRY( "Textures:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_TEXFILTER, Option );
 
-static char const *MEOSN_DISPLAYSETUP_ANISOTROPY[] = { "Max", "None", "2x", "4x", "8x", "16x", };
-static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 0, 1, 2, 4, 8, 16, };
+static char const *MEOSN_DISPLAYSETUP_ANISOTROPY[] = { "None", "2x", "4x", "8x", "16x", };
+static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 1, 2, 4, 8, 16, };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ANISOTROPY, MEOSV_DISPLAYSETUP_ANISOTROPY, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ANISOTROPY, &glanisotropy);
-static MenuEntry_t ME_DISPLAYSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
+static MenuEntry_t ME_RENDERERSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
 #endif
 # endif
 
@@ -655,7 +673,7 @@ static MenuEntry_t ME_SCREENSETUP_CROSSHAIRSIZE = MAKE_MENUENTRY( s_Scale, &MF_R
 
 static int32_t vpsize;
 static MenuRangeInt32_t MEO_SCREENSETUP_SCREENSIZE = MAKE_MENURANGE( &vpsize, &MF_Redfont, 0, 0, 0, 1, EnforceIntervals );
-#ifdef USE_OPENGL
+#if !defined EDUKE32_STANDALONE && defined USE_OPENGL
 static MenuOption_t MEO_SCREENSETUP_SCREENSIZE_TWO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &vpsize );
 #endif
 static MenuEntry_t ME_SCREENSETUP_SCREENSIZE = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_SCREENSIZE, RangeInt32 );
@@ -672,8 +690,7 @@ static MenuEntry_t ME_SCREENSETUP_SHOWPICKUPMESSAGES = MAKE_MENUENTRY( "Game mes
 
 #ifdef EDUKE32_ANDROID_MENU
 static char const *MEOSN_SCREENSETUP_STATUSBARONTOP[] = { "Bottom", "Top" };
-static int32_t MEOSV_SCREENSETUP_STATUSBARONTOP[] = { 0, 1 };
-static MenuOptionSet_t MEOS_SCREENSETUP_STATUSBARONTOP = MAKE_MENUOPTIONSET( MEOSN_SCREENSETUP_STATUSBARONTOP, MEOSV_SCREENSETUP_STATUSBARONTOP, 0x2 );
+static MenuOptionSet_t MEOS_SCREENSETUP_STATUSBARONTOP = MAKE_MENUOPTIONSET( MEOSN_SCREENSETUP_STATUSBARONTOP, nullptr, 0x2 );
 static MenuOption_t MEO_SCREENSETUP_STATUSBARONTOP = MAKE_MENUOPTION(&MF_Redfont, &MEOS_SCREENSETUP_STATUSBARONTOP, &ud.hudontop);
 static MenuEntry_t ME_SCREENSETUP_STATUSBARONTOP = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_STATUSBARONTOP, Option );
 #endif
@@ -688,13 +705,8 @@ static MenuEntry_t ME_DISPLAYSETUP_SCREENSETUP = MAKE_MENUENTRY( "HUD setup", &M
 
 #ifndef EDUKE32_RETAIL_MENU
 #ifdef USE_OPENGL
-static MenuLink_t MEO_DISPLAYSETUP_ADVANCED_GL_POLYMOST = { MENU_POLYMOST, MA_Advance, };
-static MenuEntry_t ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST = MAKE_MENUENTRY( "Polymost setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ADVANCED_GL_POLYMOST, Link );
-
-#ifdef POLYMER
-static MenuLink_t MEO_DISPLAYSETUP_ADVANCED_GL_POLYMER = { MENU_POLYMER, MA_Advance, };
-static MenuEntry_t ME_DISPLAYSETUP_ADVANCED_GL_POLYMER = MAKE_MENUENTRY("Polymer setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ADVANCED_GL_POLYMER, Link);
-#endif
+static MenuLink_t MEO_DISPLAYSETUP_RENDERER = { MENU_RENDERER, MA_Advance, };
+static MenuEntry_t ME_DISPLAYSETUP_RENDERER = MAKE_MENUENTRY( "Renderer setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_RENDERER, Link );
 #endif
 #endif
 
@@ -783,6 +795,7 @@ static MenuEntry_t *MEL_VIDEOSETUP[] = {
 #ifdef USE_OPENGL
     &ME_VIDEOSETUP_RENDERER,
 #endif
+    &ME_VIDEOSETUP_DISPLAY,
     &ME_VIDEOSETUP_FULLSCREEN,
     &ME_VIDEOSETUP_BORDERLESS,
     &ME_VIDEOSETUP_VSYNC,
@@ -798,67 +811,21 @@ static MenuEntry_t *MEL_DISPLAYSETUP[] = {
     &ME_DISPLAYSETUP_ASPECTRATIO,
     &ME_DISPLAYSETUP_FOV,
     &ME_DISPLAYSETUP_VOXELS,
-#endif
-    &ME_DISPLAYSETUP_UPSCALING,
-};
-
-#ifdef USE_OPENGL
-static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
-    &ME_DISPLAYSETUP_SCREENSETUP,
-    &ME_DISPLAYSETUP_COLORCORR,
-#ifndef EDUKE32_ANDROID_MENU
-    &ME_DISPLAYSETUP_VIDEOSETUP,
-    &ME_DISPLAYSETUP_ASPECTRATIO,
-    &ME_DISPLAYSETUP_FOV,
-    &ME_DISPLAYSETUP_VOXELS,
-#endif
-#ifndef EDUKE32_STANDALONE
-# ifdef TEXFILTER_MENU_OPTIONS
-    &ME_DISPLAYSETUP_TEXFILTER,
-# endif
-#endif
-#ifdef EDUKE32_ANDROID_MENU
+#else
     &ME_DISPLAYSETUP_HIDEDPAD,
     &ME_DISPLAYSETUP_TOUCHALPHA,
-#else
-# ifndef EDUKE32_STANDALONE
-#  ifdef TEXFILTER_MENU_OPTIONS
-    &ME_DISPLAYSETUP_ANISOTROPY,
-#  endif
-# endif
-# ifndef EDUKE32_RETAIL_MENU
-    &ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST,
-# endif
+#endif
+    &ME_DISPLAYSETUP_UPSCALING,
+#if !defined EDUKE32_RETAIL_MENU && defined USE_OPENGL
+    &ME_DISPLAYSETUP_RENDERER,
 #endif
 };
-
-#ifdef POLYMER
-static MenuEntry_t *MEL_DISPLAYSETUP_GL_POLYMER[] = {
-    &ME_DISPLAYSETUP_SCREENSETUP,
-    &ME_DISPLAYSETUP_COLORCORR,
-#ifndef EDUKE32_ANDROID_MENU
-    &ME_DISPLAYSETUP_VIDEOSETUP,
-    &ME_DISPLAYSETUP_FOV,
-    &ME_DISPLAYSETUP_VOXELS,
-#endif
-#ifdef TEXFILTER_MENU_OPTIONS
-    &ME_DISPLAYSETUP_TEXFILTER,
-    &ME_DISPLAYSETUP_ANISOTROPY,
-#endif
-#ifndef EDUKE32_RETAIL_MENU
-    &ME_DISPLAYSETUP_ADVANCED_GL_POLYMER,
-#endif
-};
-
-#endif
-#endif
-
 
 
 static char const MenuKeyNone[] = "  -";
 static char const *MEOSN_Keys[NUMKEYS];
 
-static MenuCustom2Col_t MEO_KEYBOARDSETUPFUNCS_TEMPLATE = { { NULL, NULL, }, MEOSN_Keys, &MF_Minifont, NUMKEYS, 54<<16, 0 };
+static MenuCustom2Col_t MEO_KEYBOARDSETUPFUNCS_TEMPLATE = { { NULL, NULL, }, MEOSN_Keys, &MF_Minifont, NUMKEYS, 54<<16, 0, -1 };
 static MenuCustom2Col_t MEO_KEYBOARDSETUPFUNCS[NUMGAMEFUNCTIONS];
 static MenuEntry_t ME_KEYBOARDSETUPFUNCS_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Minifont, &MEF_KBFuncList, &MEO_KEYBOARDSETUPFUNCS_TEMPLATE, Custom2Col );
 static MenuEntry_t ME_KEYBOARDSETUPFUNCS[NUMGAMEFUNCTIONS];
@@ -909,7 +876,7 @@ static MenuEntry_t *MEL_MOUSESETUPBTNS[ARRAY_SIZE(MenuMouseData)];
 
 static MenuLink_t MEO_MOUSESETUP_BTNS = { MENU_MOUSEBTNS, MA_Advance, };
 static MenuEntry_t ME_MOUSESETUP_BTNS = MAKE_MENUENTRY( "Button assignment", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_BTNS, Link );
-static MenuRangeFloat_t MEO_MOUSESETUP_SENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseSensitivity, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuRangeFloat_t MEO_MOUSESETUP_SENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseSensitivity, &MF_Redfont, 1.f, 50.f, 50.f, 100, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_MOUSESETUP_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_SENSITIVITY, RangeFloat );
 
 #ifndef EDUKE32_RETAIL_MENU
@@ -923,10 +890,10 @@ static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:
 static MenuOption_t MEO_MOUSESETUP_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &ud.mouseflip );
 static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Inverted aiming:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_INVERT, Option );
 
-static MenuRangeFloat_t MEO_MOUSESETUP_XSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[0], &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuRangeFloat_t MEO_MOUSESETUP_XSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[0], &MF_Redfont, 1.f, 50.f, 50.f, 100, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_MOUSESETUP_HORIZONTALSENSITIVITY = MAKE_MENUENTRY( "Horiz sens.:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_XSENSITIVITY, RangeFloat );
 
-static MenuRangeFloat_t MEO_MOUSESETUP_YSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[1], &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
+static MenuRangeFloat_t MEO_MOUSESETUP_YSENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseAxesSensitivity[1], &MF_Redfont, 1.f, 50.f, 50.f, 100, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_MOUSESETUP_VERTICALSENSITIVITY = MAKE_MENUENTRY( "Vert sens.:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_MOUSESETUP_YSENSITIVITY, RangeFloat );
 
 static MenuEntry_t *MEL_MOUSESETUP[] = {
@@ -988,6 +955,12 @@ static MenuEntry_t ME_JOYSTICK_HORIZONTALAIMSENSITIVITY = MAKE_MENUENTRY( "Horiz
 static MenuRangeFloat_t MEO_JOYSTICK_VERTICALAIMSENSITIVITY = MAKE_MENURANGE( NULL, &MF_Redfont, 1.f, 10.f, 10.f, 91, DisplayTypeInteger|EnforceIntervals );
 static MenuEntry_t ME_JOYSTICK_VERTICALAIMSENSITIVITY = MAKE_MENUENTRY( "Vert sens.:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_VERTICALAIMSENSITIVITY, RangeFloat );
 
+/*
+static MenuRangeInt32_t MEO_JOYSTICK_RUMBLE = MAKE_MENURANGE(&ud.rumble, &MF_Bluefont, 0, 4, 0, 5, 0);
+*/
+static MenuOption_t MEO_JOYSTICK_RUMBLE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &ud.config.controllerRumble );
+static MenuEntry_t ME_JOYSTICK_RUMBLE  = MAKE_MENUENTRY( "Rumble:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_RUMBLE, Option );
+
 static MenuOption_t MEO_JOYSTICK_LOOKINVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, NULL );
 static MenuEntry_t ME_JOYSTICK_LOOKINVERT = MAKE_MENUENTRY( "Inverted aiming:", &MF_Redfont, &MEF_BigSliders, &MEO_JOYSTICK_LOOKINVERT, Option );
 
@@ -998,6 +971,7 @@ static MenuEntry_t *MEL_JOYSTICKSETUP[] = {
     &ME_JOYSTICK_ENABLE,
     &ME_JOYSTICK_HORIZONTALAIMSENSITIVITY,
     &ME_JOYSTICK_VERTICALAIMSENSITIVITY,
+    &ME_JOYSTICK_RUMBLE,
     &ME_JOYSTICK_LOOKINVERT,
     &ME_JOYSTICK_EDITBUTTONS,
     &ME_Space6_Redfont,
@@ -1084,85 +1058,86 @@ static MenuEntry_t *MEL_INTERNAL_JOYSTICKAXIS_DIGITAL[] = {
 };
 
 #ifdef USE_OPENGL
-static MenuOption_t MEO_RENDERERSETUP_HIGHTILE = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_NoYes, &usehightile );
-static MenuEntry_t ME_RENDERERSETUP_HIGHTILE = MAKE_MENUENTRY( "True color textures:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_HIGHTILE, Option );
+static MenuOption_t MEO_RENDERERSETUP_HIGHTILE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &usehightile );
+static MenuEntry_t ME_RENDERERSETUP_HIGHTILE = MAKE_MENUENTRY( "24-bit textures:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_HIGHTILE, Option );
 
 static char const *MEOSN_RENDERERSETUP_TEXQUALITY [] = { "Full", "Half", "Barf", };
 static MenuOptionSet_t MEOS_RENDERERSETUP_TEXQUALITY = MAKE_MENUOPTIONSET(MEOSN_RENDERERSETUP_TEXQUALITY, NULL, 0x2);
-static MenuOption_t MEO_RENDERERSETUP_TEXQUALITY = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_RENDERERSETUP_TEXQUALITY, &r_downsize);
-static MenuEntry_t ME_RENDERERSETUP_TEXQUALITY = MAKE_MENUENTRY("GL texture quality:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_TEXQUALITY, Option);
+static MenuOption_t MEO_RENDERERSETUP_TEXQUALITY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_RENDERERSETUP_TEXQUALITY, &r_downsize);
+static MenuEntry_t ME_RENDERERSETUP_TEXQUALITY = MAKE_MENUENTRY("GL texture quality:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_TEXQUALITY, Option);
 
 
-static MenuOption_t MEO_RENDERERSETUP_PRECACHE = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_OffOn, &ud.config.useprecache );
-static MenuEntry_t ME_RENDERERSETUP_PRECACHE = MAKE_MENUENTRY( "Pre-load map textures:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_PRECACHE, Option );
+static MenuOption_t MEO_RENDERERSETUP_PRECACHE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.useprecache );
+static MenuEntry_t ME_RENDERERSETUP_PRECACHE = MAKE_MENUENTRY( "Cache whole map:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_PRECACHE, Option );
 # ifndef EDUKE32_GLES
 static char const *MEOSN_RENDERERSETUP_TEXCACHE[] = { "Off", "On", "Compr.", };
 static MenuOptionSet_t MEOS_RENDERERSETUP_TEXCACHE = MAKE_MENUOPTIONSET( MEOSN_RENDERERSETUP_TEXCACHE, NULL, 0x2 );
-static MenuOption_t MEO_RENDERERSETUP_TEXCACHE = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_RENDERERSETUP_TEXCACHE, &glusetexcache );
-static MenuEntry_t ME_RENDERERSETUP_TEXCACHE = MAKE_MENUENTRY( "On-disk texture cache:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_TEXCACHE, Option );
+static MenuOption_t MEO_RENDERERSETUP_TEXCACHE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_RENDERERSETUP_TEXCACHE, &glusetexcache );
+static MenuEntry_t ME_RENDERERSETUP_TEXCACHE = MAKE_MENUENTRY( "Disk cache:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_TEXCACHE, Option );
 # endif
-# ifdef USE_GLEXT
-static MenuOption_t MEO_RENDERERSETUP_DETAILTEX = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_NoYes, &r_detailmapping );
-static MenuEntry_t ME_RENDERERSETUP_DETAILTEX = MAKE_MENUENTRY( "Detail textures:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_DETAILTEX, Option );
-static MenuOption_t MEO_RENDERERSETUP_GLOWTEX = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_NoYes, &r_glowmapping);
-static MenuEntry_t ME_RENDERERSETUP_GLOWTEX = MAKE_MENUENTRY("Glow textures:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_GLOWTEX, Option);
-# endif
-static MenuOption_t MEO_RENDERERSETUP_MODELS = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_NoYes, &usemodels );
-static MenuEntry_t ME_RENDERERSETUP_MODELS = MAKE_MENUENTRY( "3D models:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_MODELS, Option );
+//# ifdef USE_GLEXT
+//static MenuOption_t MEO_RENDERERSETUP_DETAILTEX = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &r_detailmapping );
+//static MenuEntry_t ME_RENDERERSETUP_DETAILTEX = MAKE_MENUENTRY( "Detail textures:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_DETAILTEX, Option );
+//static MenuOption_t MEO_RENDERERSETUP_GLOWTEX = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, &r_glowmapping);
+//static MenuEntry_t ME_RENDERERSETUP_GLOWTEX = MAKE_MENUENTRY("Glow textures:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_GLOWTEX, Option);
+//# endif
+static MenuOption_t MEO_RENDERERSETUP_MODELS = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &usemodels );
+static MenuEntry_t ME_RENDERERSETUP_MODELS = MAKE_MENUENTRY( "3D models:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_MODELS, Option );
 #endif
 
 #ifdef POLYMER
+static MenuLink_t MEO_RENDERERSETUP_POLYMER = { MENU_POLYMER, MA_Advance, };
+static MenuEntry_t ME_RENDERERSETUP_POLYMER = MAKE_MENUENTRY( "Polymer Setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_RENDERERSETUP_POLYMER, Link );
+
 static char const *MEOSN_POLYMER_LIGHTS [] = { "Off", "Full", "Map only", };
 static MenuOptionSet_t MEOS_POLYMER_LIGHTS = MAKE_MENUOPTIONSET(MEOSN_POLYMER_LIGHTS, NULL, 0x2);
-static MenuOption_t MEO_POLYMER_LIGHTS = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_POLYMER_LIGHTS, &pr_lighting);
-static MenuEntry_t ME_POLYMER_LIGHTS = MAKE_MENUENTRY("Dynamic lights:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_LIGHTS, Option);
+static MenuOption_t MEO_POLYMER_LIGHTS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_POLYMER_LIGHTS, &pr_lighting);
+static MenuEntry_t ME_POLYMER_LIGHTS = MAKE_MENUENTRY("Dynamic lights:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_POLYMER_LIGHTS, Option);
 
-static MenuRangeInt32_t MEO_POLYMER_LIGHTPASSES = MAKE_MENURANGE(&r_pr_maxlightpasses, &MF_Bluefont, 1, 10, 1, 10, DisplayTypeInteger);
-static MenuEntry_t ME_POLYMER_LIGHTPASSES = MAKE_MENUENTRY("Lights per surface:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_LIGHTPASSES, RangeInt32);
+static MenuRangeInt32_t MEO_POLYMER_LIGHTPASSES = MAKE_MENURANGE(&r_pr_maxlightpasses, &MF_Redfont, 1, PR_MAXPLANELIGHTS, 1, PR_MAXPLANELIGHTS, DisplayTypeInteger);
+static MenuEntry_t ME_POLYMER_LIGHTPASSES = MAKE_MENUENTRY("Light cnt:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_POLYMER_LIGHTPASSES, RangeInt32);
 
-static MenuOption_t MEO_POLYMER_SHADOWS = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_OffOn, &pr_shadows);
-static MenuEntry_t ME_POLYMER_SHADOWS = MAKE_MENUENTRY("Dynamic shadows:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_SHADOWS, Option);
+static MenuOption_t MEO_POLYMER_SHADOWS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_OffOn, &pr_shadows);
+static MenuEntry_t ME_POLYMER_SHADOWS = MAKE_MENUENTRY("Dynamic shadows:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_POLYMER_SHADOWS, Option);
 
-static MenuRangeInt32_t MEO_POLYMER_SHADOWCOUNT = MAKE_MENURANGE(&pr_shadowcount, &MF_Bluefont, 1, 10, 1, 10, DisplayTypeInteger);
-static MenuEntry_t ME_POLYMER_SHADOWCOUNT = MAKE_MENUENTRY("Shadows per surface:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_SHADOWCOUNT, RangeInt32);
+static MenuRangeInt32_t MEO_POLYMER_SHADOWCOUNT = MAKE_MENURANGE(&pr_shadowcount, &MF_Redfont, 1, 64, 1, 64, DisplayTypeInteger);
+static MenuEntry_t ME_POLYMER_SHADOWCOUNT = MAKE_MENUENTRY("Shadow cnt:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_POLYMER_SHADOWCOUNT, RangeInt32);
 
+static char const *MEOSN_POLYMER_SHADOWDETAIL [] = { "128px", "256px", "512px", "1024px", "2048px", "4096px", "8192px" };
+static MenuOptionSet_t MEOS_POLYMER_SHADOWDETAIL = MAKE_MENUOPTIONSET(MEOSN_POLYMER_SHADOWDETAIL, NULL, 0x2);
+static MenuOption_t MEO_POLYMER_SHADOWDETAIL = MAKE_MENUOPTION(&MF_Redfont, &MEOS_POLYMER_SHADOWDETAIL, &pr_shadowdetail);
+static MenuEntry_t ME_POLYMER_SHADOWDETAIL = MAKE_MENUENTRY("Shadow res:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_POLYMER_SHADOWDETAIL, Option);
 #endif
 
 #ifdef USE_OPENGL
-static MenuEntry_t *MEL_RENDERERSETUP_POLYMOST[] = {
+static MenuEntry_t *MEL_RENDERERSETUP[] = {
+#ifdef TEXFILTER_MENU_OPTIONS
+    &ME_RENDERERSETUP_TEXFILTER,
+    &ME_RENDERERSETUP_ANISOTROPY,
+#endif
     &ME_RENDERERSETUP_HIGHTILE,
-    &ME_RENDERERSETUP_TEXQUALITY,
+//# ifdef USE_GLEXT
+//    &ME_RENDERERSETUP_DETAILTEX,
+//    &ME_RENDERERSETUP_GLOWTEX,
+//# endif
+    //&ME_RENDERERSETUP_TEXQUALITY,
     &ME_RENDERERSETUP_PRECACHE,
 # ifndef EDUKE32_GLES
     &ME_RENDERERSETUP_TEXCACHE,
 # endif
-# ifdef USE_GLEXT
-    &ME_RENDERERSETUP_DETAILTEX,
-    &ME_RENDERERSETUP_GLOWTEX,
-# endif
-    &ME_Space4_Bluefont,
     &ME_RENDERERSETUP_MODELS,
+#ifdef POLYMER
+    &ME_RENDERERSETUP_POLYMER,
+#endif
 };
 
 #ifdef POLYMER
 static MenuEntry_t *MEL_RENDERERSETUP_POLYMER [] = {
-    &ME_RENDERERSETUP_HIGHTILE,
-    &ME_RENDERERSETUP_TEXQUALITY,
-    &ME_RENDERERSETUP_PRECACHE,
-# ifndef EDUKE32_GLES
-    &ME_RENDERERSETUP_TEXCACHE,
-# endif
-# ifdef USE_GLEXT
-    &ME_RENDERERSETUP_DETAILTEX,
-    &ME_RENDERERSETUP_GLOWTEX,
-# endif
-    &ME_Space4_Bluefont,
-    &ME_RENDERERSETUP_MODELS,
-    &ME_Space4_Bluefont,
     &ME_POLYMER_LIGHTS,
     &ME_POLYMER_LIGHTPASSES,
     &ME_POLYMER_SHADOWS,
     &ME_POLYMER_SHADOWCOUNT,
+    &ME_POLYMER_SHADOWDETAIL,
 };
 #endif
 #endif
@@ -1238,7 +1213,7 @@ static int32_t alsadevice;
 static std::vector<alsa_mididevinfo_t> alsadevices;
 #endif
 
-static int32_t soundrate, soundvoices, musicdevice, opl3stereo;
+static int32_t soundrate, soundvoices, musicdevice, opl3stereo, extmusic;
 static char sf2bankfile[BMAX_PATH];
 static MenuOption_t MEO_SOUND = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.SoundToggle );
 static MenuEntry_t ME_SOUND = MAKE_MENUENTRY( "Sound:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND, Option );
@@ -1271,6 +1246,15 @@ static MenuEntry_t ME_SOUND_SAMPLINGRATE = MAKE_MENUENTRY( "Sample rate:", &MF_R
 #ifndef EDUKE32_RETAIL_MENU
 static MenuOption_t MEO_SOUND_OPL3STEREO = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, &opl3stereo);
 static MenuEntry_t ME_SOUND_OPL3STEREO = MAKE_MENUENTRY( "OPL3 stereo mode:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_OPL3STEREO, Option );
+
+static MenuRangeFloat_t MEO_SOUND_OPL3AMP
+= MAKE_MENURANGE(&AL_PostAmp, &MF_Redfont, 1.f, 6.f, 6.f, 21, DisplayTypeInteger | EnforceIntervals);
+static MenuEntry_t ME_SOUND_OPL3AMP = MAKE_MENUENTRY("OPL3 boost:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_OPL3AMP, RangeFloat);
+
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+static MenuOption_t MEO_SOUND_EXTMUSIC = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, &extmusic);
+static MenuEntry_t  ME_SOUND_EXTMUSIC  = MAKE_MENUENTRY("Load OGG/FLAC music:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_EXTMUSIC, Option);
+#endif
 
 static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 128, 0, 8, DisplayTypeInteger );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
@@ -1323,7 +1307,6 @@ static MenuEntry_t *MEL_SOUND[] = {
     &ME_SOUND_VOLUME_MUSIC,
     &ME_SOUND_DUKETALK,
 #ifndef EDUKE32_RETAIL_MENU
-    &ME_Space4_Redfont,
     &ME_SOUND_DEVSETUP,
 #endif
 };
@@ -1336,8 +1319,12 @@ static MenuEntry_t *MEL_SOUND_DEVSETUP[] = {
 #ifdef __linux__
     &ME_SOUND_ALSADEVICE,
 #endif
+    &ME_SOUND_OPL3AMP,
     &ME_SOUND_OPL3STEREO,
     &ME_SOUND_SF2,
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+    &ME_SOUND_EXTMUSIC,
+#endif
 #endif
     &ME_Space4_Redfont,
     &ME_SOUND_RESTART,
@@ -1492,6 +1479,7 @@ static MenuMenu_t M_EPISODE = MAKE_MENUMENU( "Select An Episode", &MMF_Top_Episo
 static MenuMenu_t M_SKILL = MAKE_MENUMENU( "Select Skill", &MMF_Top_Skill, MEL_SKILL );
 static MenuMenu_t M_NEWGAMECUSTOM = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustom, MEL_NEWGAMECUSTOM );
 static MenuMenu_t M_NEWGAMECUSTOMSUB = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustomSub, MEL_NEWGAMECUSTOMSUB );
+static MenuMenu_t M_NEWGAMECUSTOML3 = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustomL3, MEL_NEWGAMECUSTOML3 );
 #ifndef EDUKE32_RETAIL_MENU
 static MenuMenu_t M_GAMESETUP = MAKE_MENUMENU( "Game Setup", &MMF_BigOptions, MEL_GAMESETUP );
 #endif
@@ -1514,10 +1502,10 @@ static MenuMenu_t M_KEYBOARDKEYS = MAKE_MENUMENU( "Key Configuration", &MMF_Keyb
 static MenuMenu_t M_MOUSEBTNS = MAKE_MENUMENU( "Mouse Buttons", &MMF_MouseJoySetupBtns, MEL_MOUSESETUPBTNS );
 static MenuMenu_t M_JOYSTICKAXIS = MAKE_MENUMENU( NULL, &MMF_BigSliders, MEL_JOYSTICKAXIS );
 #ifdef USE_OPENGL
-static MenuMenu_t M_RENDERERSETUP_POLYMOST = MAKE_MENUMENU( "Polymost Setup", &MMF_SmallOptions, MEL_RENDERERSETUP_POLYMOST );
-# ifdef POLYMER
-static MenuMenu_t M_RENDERERSETUP_POLYMER = MAKE_MENUMENU("Polymer Setup", &MMF_SmallOptions, MEL_RENDERERSETUP_POLYMER );
-# endif
+static MenuMenu_t M_RENDERERSETUP = MAKE_MENUMENU( "Renderer Setup", &MMF_BigOptionsScrolling, MEL_RENDERERSETUP );
+#ifdef POLYMER
+static MenuMenu_t M_POLYMER = MAKE_MENUMENU( "Polymer Setup", &MMF_BigOptionsScrolling, MEL_RENDERERSETUP_POLYMER);
+#endif
 #endif
 static MenuMenu_t M_COLCORR = MAKE_MENUMENU( "Color Correction", &MMF_ColorCorrect, MEL_COLCORR );
 static MenuMenu_t M_SCREENSETUP = MAKE_MENUMENU( "HUD Setup", &MMF_BigOptions, MEL_SCREENSETUP );
@@ -1594,6 +1582,7 @@ static Menu_t Menus[] = {
     { &M_USERMAP, MENU_USERMAP, MENU_EPISODE, MA_Return, FileSelect },
     { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
+    { &M_NEWGAMECUSTOML3, MENU_NEWGAMECUSTOML3, MENU_NEWGAMECUSTOMSUB, MA_Return, Menu },
     { &M_SKILL, MENU_SKILL, MENU_PREVIOUS, MA_Return, Menu },
 #ifndef EDUKE32_RETAIL_MENU
     { &M_GAMESETUP, MENU_GAMESETUP, MENU_OPTIONS, MA_Return, Menu },
@@ -1616,17 +1605,17 @@ static Menu_t Menus[] = {
 #endif
     { &M_CONTROLS, MENU_CONTROLS, MENU_OPTIONS, MA_Return, Menu },
 #ifdef USE_OPENGL
-    { &M_RENDERERSETUP_POLYMOST, MENU_POLYMOST, MENU_DISPLAYSETUP, MA_Return, Menu },
+    { &M_RENDERERSETUP, MENU_RENDERER, MENU_DISPLAYSETUP, MA_Return, Menu },
 #endif
     { &M_COLCORR, MENU_COLCORR, MENU_DISPLAYSETUP, MA_Return, Menu },
     { &M_COLCORR, MENU_COLCORR_INGAME, MENU_CLOSE, MA_Return, Menu },
     { &M_SCREENSETUP, MENU_SCREENSETUP, MENU_DISPLAYSETUP, MA_Return, Menu },
     { &M_DISPLAYSETUP, MENU_DISPLAYSETUP, MENU_OPTIONS, MA_Return, Menu },
-#ifdef POLYMER
-    { &M_RENDERERSETUP_POLYMER, MENU_POLYMER, MENU_DISPLAYSETUP, MA_Return, Menu },
+#if defined POLYMER
+    { &M_POLYMER, MENU_POLYMER, MENU_RENDERER, MA_Return, Menu },
 #endif
-    { &M_LOAD, MENU_LOAD, MENU_MAIN, MA_Return, Menu },
-    { &M_SAVE, MENU_SAVE, MENU_MAIN, MA_Return, Menu },
+    { &M_LOAD, MENU_LOAD, MENU_MAIN, MA_Return, List },
+    { &M_SAVE, MENU_SAVE, MENU_MAIN, MA_Return, List },
     { &M_STORY, MENU_STORY, MENU_MAIN, MA_Return, Panel },
     { &M_F1HELP, MENU_F1HELP, MENU_MAIN, MA_Return, Panel },
     { &M_QUIT, MENU_QUIT, MENU_PREVIOUS, MA_Return, Verify },
@@ -1748,9 +1737,8 @@ void Menu_PopulateNewGameCustom(void)
 
     int e = 0;
     int visible = 0;
-    for (MenuGameplayStemEntry const & stem : g_MenuGameplayEntries)
+    for (MenuGameplayEntry const & entry : g_MenuGameplayEntries)
     {
-        MenuGameplayEntry const & entry = stem.entry;
         if (!entry.isValid())
             break;
 
@@ -1770,8 +1758,7 @@ void Menu_PopulateNewGameCustomSub(int e)
     if ((unsigned)e >= MAXMENUGAMEPLAYENTRIES)
         return;
 
-    MenuGameplayStemEntry const & stem = g_MenuGameplayEntries[e];
-    MenuGameplayEntry const & entry = stem.entry;
+    MenuGameplayEntry const & entry = g_MenuGameplayEntries[e];
     if (!entry.isValid())
         return;
 
@@ -1779,8 +1766,9 @@ void Menu_PopulateNewGameCustomSub(int e)
 
     int s = 0;
     int visible = 0;
-    for (MenuGameplayEntry const & subentry : stem.subentries)
+    for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
     {
+        MenuGameplayEntry const & subentry  = entry.subentries[i];
         if (!subentry.isValid())
             break;
 
@@ -1793,6 +1781,41 @@ void Menu_PopulateNewGameCustomSub(int e)
     }
     M_NEWGAMECUSTOMSUB.numEntries = s;
     MMF_Top_NewGameCustomSub.pos.y = (58 + (3-visible)*6)<<16;
+}
+
+void Menu_PopulateNewGameCustomL3(int e, int s)
+{
+    if ((unsigned)e >= MAXMENUGAMEPLAYENTRIES || (unsigned)s >= MAXMENUGAMEPLAYENTRIES)
+        return;
+
+    MenuGameplayEntry const & entryl1 = g_MenuGameplayEntries[e];
+    if (!entryl1.isValid())
+        return;
+
+    MenuGameplayEntry const & entryl2 = entryl1.subentries[s];
+    if (!entryl2.isValid())
+        return;
+
+    M_NEWGAMECUSTOML3.title = entryl2.name;
+
+    int t = 0;
+    int visible = 0;
+    for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
+    {
+        MenuGameplayEntry const & entryl3  = entryl2.subentries[i];
+
+        if (!entryl3.isValid())
+            break;
+
+        MEL_NEWGAMECUSTOML3[t] = &ME_NEWGAMECUSTOML3ENTRIES[e][s][t];
+
+        if (!(MEL_NEWGAMECUSTOML3[t]->flags & MEF_Hidden))
+            ++visible;
+
+        ++t;
+    }
+    M_NEWGAMECUSTOML3.numEntries = t;
+    MMF_Top_NewGameCustomL3.pos.y = (58 + (3-visible)*6)<<16;
 }
 
 static void Menu_PopulateJoystick(void)
@@ -1861,6 +1884,21 @@ It also initializes some data in loops rather than statically at compile time.
 void Menu_Init(void)
 {
     int32_t i, j, k;
+    int32_t const *init_keybind_order = NULL;
+
+    // always prefer custom order, defined by DEF script
+    if (keybind_order_custom[0] >= 0)
+        init_keybind_order = keybind_order_custom;
+    else
+    {
+        // else, change based on cvar
+        if (kbo_type_cvar == 1)
+            init_keybind_order = keybind_order_modern;
+        else
+            init_keybind_order = keybind_order_classic;
+    }
+
+    bool do_reorder_keys = (init_keybind_order && init_keybind_order[0] >= 0);
 
     if (FURY)
     {
@@ -1882,6 +1920,7 @@ void Menu_Init(void)
     // prepare gamefuncs and keys
     MEOSN_Gamefuncs[0] = MenuGameFuncNone;
     MEOSV_Gamefuncs[0] = -1;
+
     k = 1;
     for (i = 0; i < NUMGAMEFUNCTIONS; ++i)
     {
@@ -1891,13 +1930,18 @@ void Menu_Init(void)
             if (MenuGameFuncs[i][j] == '_')
                 MenuGameFuncs[i][j] = ' ';
 
-        if (gamefunctions[i][0] != '\0')
+        j = (do_reorder_keys) ? init_keybind_order[i] : i;
+
+        if (j >= 0 && gamefunctions[j][0] != '\0')
         {
-            MEOSN_Gamefuncs[k] = MenuGameFuncs[i];
-            MEOSV_Gamefuncs[k] = i;
+            MEOSN_Gamefuncs[k] = MenuGameFuncs[j];
+            MEOSV_Gamefuncs[k] = j;
             ++k;
         }
     }
+
+    // 4 -- unsorted list
+    MEOS_Gamefuncs.features |= (do_reorder_keys) ? 4 : 0;
     MEOS_Gamefuncs.numOptions = k;
 
     for (i = 1; i < NUMKEYS-1; ++i)
@@ -1956,56 +2000,86 @@ void Menu_Init(void)
     M_EPISODE.currentEntry = ud.default_volume;
 
     // prepare new game custom :O
-    if (g_MenuGameplayEntries[0].entry.isValid())
+    if (g_MenuGameplayEntries[0].isValid())
     {
         MEO_MAIN_NEWGAME.linkID = M_NEWVERIFY.linkID = MENU_NEWGAMECUSTOM;
 
-        int e = 0;
-        for (MenuGameplayStemEntry const & stem : g_MenuGameplayEntries)
+        int l1 = 0;
+        for (MenuGameplayEntry const & l1entry : g_MenuGameplayEntries)
         {
-            MenuGameplayEntry const & entry = stem.entry;
-            if (!entry.isValid())
+            if (!l1entry.isValid())
                 break;
 
-            MenuEntry_t & e_me = ME_NEWGAMECUSTOMENTRIES[e];
-            e_me = ME_EPISODE_TEMPLATE;
-            MenuLink_t & e_meo = MEO_NEWGAMECUSTOM[e];
-            e_meo = MEO_NEWGAMECUSTOM_TEMPLATE;
-            e_me.entry = &e_meo;
+            MenuEntry_t & l1_me = ME_NEWGAMECUSTOMENTRIES[l1];
+            l1_me = ME_EPISODE_TEMPLATE;
+            MenuLink_t & l1_meo = MEO_NEWGAMECUSTOM[l1];
+            l1_meo = MEO_NEWGAMECUSTOM_TEMPLATE;
+            l1_me.entry = &l1_meo;
 
-            e_me.name = entry.name;
-            if (entry.flags & MGE_Locked)
-                e_me.flags |= MEF_Disabled;
-            if (entry.flags & MGE_Hidden)
-                e_me.flags |= MEF_Hidden;
+            l1_me.name = l1entry.name;
+            if (l1entry.flags & MGE_Locked)
+                l1_me.flags |= MEF_Disabled;
+            if (l1entry.flags & MGE_Hidden)
+                l1_me.flags |= MEF_Hidden;
 
-            int s = 0;
-            for (MenuGameplayEntry const & subentry : stem.subentries)
+            int l2 = 0;
+            for (int i = 0; i < MAXMENUGAMEPLAYENTRIES; i++)
             {
-                if (!subentry.isValid())
+                MenuGameplayEntry const & l2entry  = l1entry.subentries[i];
+                if (!l2entry.isValid())
                     break;
 
-                MenuEntry_t & s_me = ME_NEWGAMECUSTOMSUBENTRIES[e][s];
-                s_me = ME_EPISODE_TEMPLATE;
-                MenuLink_t & s_meo = MEO_NEWGAMECUSTOMSUB[e][s];
-                s_meo = MEO_NEWGAMECUSTOMSUB_TEMPLATE;
-                s_me.entry = &s_meo;
+                MenuEntry_t & l2_me = ME_NEWGAMECUSTOMSUBENTRIES[l1][l2];
+                l2_me = ME_EPISODE_TEMPLATE;
+                MenuLink_t & l2_meo = MEO_NEWGAMECUSTOMSUB[l1][l2];
+                l2_meo = MEO_NEWGAMECUSTOMSUB_TEMPLATE;
+                l2_me.entry = &l2_meo;
 
-                s_me.name = subentry.name;
-                if (subentry.flags & MGE_Locked)
-                    s_me.flags |= MEF_Disabled;
-                if (subentry.flags & MGE_Hidden)
-                    s_me.flags |= MEF_Hidden;
+                l2_me.name = l2entry.name;
+                if (l2entry.flags & MGE_Locked)
+                    l2_me.flags |= MEF_Disabled;
+                if (l2entry.flags & MGE_Hidden)
+                    l2_me.flags |= MEF_Hidden;
 
-                ++s;
+                int l3 = 0;
+                for (int j = 0; j < MAXMENUGAMEPLAYENTRIES; j++)
+                {
+                    MenuGameplayEntry const & l3entry  = l2entry.subentries[j];
+
+                    if (!l3entry.isValid())
+                        break;
+
+                    MenuEntry_t & l3_me = ME_NEWGAMECUSTOML3ENTRIES[l1][l2][l3];
+                    l3_me = ME_EPISODE_TEMPLATE;
+                    MenuLink_t & l3_meo = MEO_NEWGAMECUSTOML3[l1][l2][l3];
+                    l3_meo = MEO_NEWGAMECUSTOML3_TEMPLATE;
+                    l3_me.entry = &l3_meo;
+
+                    l3_me.name = l3entry.name;
+                    if (l3entry.flags & MGE_Locked)
+                        l3_me.flags |= MEF_Disabled;
+                    if (l3entry.flags & MGE_Hidden)
+                        l3_me.flags |= MEF_Hidden;
+
+                    if (l3entry.flags & MGE_UserContent)
+                        l3_meo.linkID = MENU_USERMAP;
+
+                    ++l3;
+                }
+                if (l2entry.flags & MGE_UserContent)
+                    l2_meo.linkID = MENU_USERMAP;
+                else if (l3 == 0)
+                    l2_meo.linkID = MENU_SKILL;
+
+                ++l2;
             }
 
-            if (entry.flags & MGE_UserContent)
-                e_meo.linkID = MENU_USERMAP;
-            else if (s == 0)
-                e_meo.linkID = MENU_SKILL;
+            if (l1entry.flags & MGE_UserContent)
+                l1_meo.linkID = MENU_USERMAP;
+            else if (l2 == 0)
+                l1_meo.linkID = MENU_SKILL;
 
-            ++e;
+            ++l1;
         }
     }
 
@@ -2098,7 +2172,23 @@ void Menu_Init(void)
         MEO_KEYBOARDSETUPFUNCS[i] = MEO_KEYBOARDSETUPFUNCS_TEMPLATE;
         MEO_KEYBOARDSETUPFUNCS[i].column[0] = &ud.config.KeyboardKeys[i][0];
         MEO_KEYBOARDSETUPFUNCS[i].column[1] = &ud.config.KeyboardKeys[i][1];
+        MEO_KEYBOARDSETUPFUNCS[i].linkIndex = i;
     }
+
+    //reorder entries if defined
+    if (do_reorder_keys)
+    {
+        MenuEntry_t* tempkeyboardfuncs[NUMGAMEFUNCTIONS];
+        for (i = 0; i < NUMGAMEFUNCTIONS; ++i)
+        {
+            if (init_keybind_order[i] >= 0)
+                tempkeyboardfuncs[i] = MEL_KEYBOARDSETUPFUNCS[init_keybind_order[i]];
+            else
+                tempkeyboardfuncs[i] = NULL;
+        }
+        Bmemcpy(MEL_KEYBOARDSETUPFUNCS, tempkeyboardfuncs, NUMGAMEFUNCTIONS * sizeof(MenuEntry_t*));
+    }
+
     M_KEYBOARDKEYS.numEntries = NUMGAMEFUNCTIONS;
     for (i = 0; i < ARRAY_SSIZE(MenuMouseData); ++i)
     {
@@ -2189,6 +2279,104 @@ static void Menu_Run(Menu_t *cm, vec2_t origin);
 
 static void Menu_BlackRectangle(int32_t x, int32_t y, int32_t width, int32_t height, int32_t orientation);
 
+static void Menu_PopulateVideoSetup()
+{
+    vec2_t res = { xres, yres };
+    static int displayindex;
+
+    if (displayindex != newdisplayindex)
+    {
+        videoResetMode();
+        videoGetModes(newdisplayindex);
+        displayindex = newdisplayindex;
+
+        //if (newresolution != -1)
+        //    res = { resolution[0].xdim, resolution[0].ydim };
+
+        if (displayindex != r_displayindex)
+            newresolution = 0;
+        else
+            newresolution = -1;
+    }
+
+    Bmemset(resolution, 0, sizeof(resolution));
+    MEOS_VIDEOSETUP_RESOLUTION.numOptions = 0;
+
+    // prepare video setup
+    for (int i = 0; i < validmodecnt; ++i)
+    {
+        int j;
+
+        for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
+        {
+            if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
+            {
+                resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
+                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+                if (validmode[i].bpp > resolution[j].bppmax)
+                    resolution[j].bppmax = validmode[i].bpp;
+                break;
+            }
+        }
+
+        if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
+        {
+            resolution[j].xdim = validmode[i].xdim;
+            resolution[j].ydim = validmode[i].ydim;
+            resolution[j].bppmax = validmode[i].bpp;
+            resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
+            Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+            MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+            ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
+        }
+    }
+
+    if (newresolution == -1)
+    {
+        newresolution = 0;
+
+        for (int i = 0; i < MAXVALIDMODES; ++i)
+        {
+            if (resolution[i].xdim == res.x && resolution[i].ydim == res.y)
+            {
+                newresolution = i;
+                break;
+            }
+        }
+    }
+
+    const int32_t nr = newresolution;
+
+    if (newfullscreen && !(resolution[nr].flags & RES_FS))
+        newfullscreen = 0;
+
+    // don't allow setting fullscreen mode if it's not supported by the resolution
+    MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FULLSCREEN, !(resolution[nr].flags & RES_FS));
+
+    MEOS_VIDEOSETUP_DISPLAY.numOptions = 0;
+
+    // prepare video setup
+
+    static char* displayNames[ARRAY_SIZE(MEOSN_VIDEOSETUP_DISPLAY)] = {};
+    for (int i = 0; i < g_numdisplays; ++i)
+    {
+        if (displayNames[i] == nullptr)
+            displayNames[i] = (char *)Xmalloc(32);
+        Bsnprintf(displayNames[i], 32, "%d:%s", i, videoGetDisplayName(i));
+        MEOSN_VIDEOSETUP_DISPLAY[i] = displayNames[i];
+        ++MEOS_VIDEOSETUP_DISPLAY.numOptions;
+    }
+
+    MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
+        (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
+            videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
+            && vsync == newvsync && r_borderless == newborderless && r_maxfps == newmaxfps && r_displayindex == newdisplayindex
+            )
+        || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
+    MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
+}
+
 /*
 At present, no true difference is planned between Menu_Pre() and Menu_PreDraw().
 They are separate for purposes of organization.
@@ -2225,15 +2413,14 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_DISPLAYSETUP:
         MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_VOXELS, !g_haveVoxels);
+#ifndef EDUKE32_STANDALONE
 #ifdef USE_OPENGL
-        if (videoGetRenderMode() == REND_CLASSIC)
-            MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP);
-#ifdef POLYMER
-        else if (videoGetRenderMode() == REND_POLYMER)
-            MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP_GL_POLYMER);
+        MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_UPSCALING, videoGetRenderMode() > REND_CLASSIC);
+        MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_RENDERER, videoGetRenderMode() < REND_POLYMOST);
+#ifdef TEXFILTER_MENU_OPTIONS
+        MEO_DISPLAYSETUP_TEXFILTER.options->optionNames = MEOSN_DISPLAYSETUP_TEXFILTER[0];
 #endif
-        else
-            MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP_GL);
+#endif
 
         MEO_SCREENSETUP_SCREENSIZE.steps = !(ud.statusbarflags & STATUSBAR_NONONE) +
                                            !(ud.statusbarflags & STATUSBAR_NOMODERN) +
@@ -2261,11 +2448,21 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size >= 8 && ud.statusbarmode == 0 && !(ud.statusbarflags & STATUSBAR_NOFULL)) +
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
+        break;
 
-#ifndef EDUKE32_STANDALONE
-#ifdef TEXFILTER_MENU_OPTIONS
+    case MENU_RENDERER:
         if (videoGetRenderMode() != REND_CLASSIC)
         {
+#ifdef POLYMER
+            MenuEntry_HideOnCondition(&ME_RENDERERSETUP_POLYMER, videoGetRenderMode() != REND_POLYMER);
+            MenuEntry_HideOnCondition(&ME_POLYMER_LIGHTPASSES, !pr_lighting);
+            MenuEntry_HideOnCondition(&ME_POLYMER_SHADOWCOUNT, !pr_shadows);
+            MenuEntry_HideOnCondition(&ME_POLYMER_SHADOWDETAIL, !pr_shadows);
+#endif
+#ifndef EDUKE32_STANDALONE
+#ifdef TEXFILTER_MENU_OPTIONS
+            MenuEntry_HideOnCondition(&ME_RENDERERSETUP_ANISOTROPY, !gltexfiltermode);
+
             for (i = (int32_t) ARRAY_SIZE(MEOSV_DISPLAYSETUP_ANISOTROPY) - 1; i >= 0; --i)
             {
                 if (MEOSV_DISPLAYSETUP_ANISOTROPY[i] <= glinfo.maxanisotropy)
@@ -2274,86 +2471,46 @@ static void Menu_Pre(MenuID_t cm)
                     break;
                 }
             }
-        }
 #endif
+#endif
+        }
+
+        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_TEXQUALITY, !usehightile);
+        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_PRECACHE, !usehightile);
+# ifndef EDUKE32_GLES
+        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_TEXCACHE, !(glusetexcompr && usehightile));
+# endif
+//# ifdef USE_GLEXT
+//        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
+//        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
+//# endif
 #endif
         break;
 
+#ifdef POLYMER
     case MENU_POLYMER:
-    case MENU_POLYMOST:
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_TEXQUALITY, !usehightile);
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_PRECACHE, !usehightile);
-# ifndef EDUKE32_GLES
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_TEXCACHE, !(glusetexcompr && usehightile));
-# endif
-# ifdef USE_GLEXT
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
-# endif
-#endif
+        if (videoGetRenderMode() == REND_POLYMER)
+        {
+            MenuEntry_HideOnCondition(&ME_POLYMER_LIGHTPASSES, !pr_lighting);
+            MenuEntry_HideOnCondition(&ME_POLYMER_SHADOWCOUNT, !pr_shadows);
+            MenuEntry_HideOnCondition(&ME_POLYMER_SHADOWDETAIL, !pr_shadows);
+
+            for (i = (int32_t) ARRAY_SIZE(MEOSN_POLYMER_SHADOWDETAIL) - 1; i >= 0; --i)
+            {
+                if ((128 << i) <= glinfo.maxTextureSize)
+                {
+                    MEOS_POLYMER_SHADOWDETAIL.numOptions = i + 1;
+                    break;
+                }
+            }
+        }
+
         break;
+#endif
 
     case MENU_VIDEOSETUP:
     {
-        Bmemset(resolution, 0, sizeof(resolution));
-        MEOS_VIDEOSETUP_RESOLUTION.numOptions = 0;
-
-        // prepare video setup
-        for (int i = 0; i < validmodecnt; ++i)
-        {
-            int j;
-
-            for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
-            {
-                if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
-                {
-                    resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
-                    Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
-                    MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
-                    if (validmode[i].bpp > resolution[j].bppmax)
-                        resolution[j].bppmax = validmode[i].bpp;
-                    break;
-                }
-            }
-
-            if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
-            {
-                resolution[j].xdim = validmode[i].xdim;
-                resolution[j].ydim = validmode[i].ydim;
-                resolution[j].bppmax = validmode[i].bpp;
-                resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
-                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
-                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
-                ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
-            }
-        }
-
-        if (newresolution == -1)
-        {
-            newresolution = 0;
-
-            for (int i = 0; i < MAXVALIDMODES; ++i)
-            {
-                if (resolution[i].xdim == xres && resolution[i].ydim == yres)
-                {
-                    newresolution = i;
-                    break;
-                }
-            }
-        }
-
-        const int32_t nr = newresolution;
-
-        // don't allow setting fullscreen mode if it's not supported by the resolution
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FULLSCREEN, !(resolution[nr].flags & RES_FS));
-
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
-             (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
-              videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
-              && vsync == newvsync && r_borderless == newborderless && r_maxfps == newmaxfps
-             )
-             || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
+        Menu_PopulateVideoSetup();
         break;
     }
 
@@ -2372,15 +2529,22 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_HideOnCondition(&ME_SOUND_ALSADEVICE, musicdevice != ASS_ALSA);
 #endif
         MenuEntry_DisableOnCondition(&ME_SOUND_OPL3STEREO, !ud.config.MusicToggle);
+        MenuEntry_DisableOnCondition(&ME_SOUND_OPL3AMP, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SF2, !ud.config.MusicToggle);
-
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+        MenuEntry_DisableOnCondition(&ME_SOUND_EXTMUSIC, !ud.config.MusicToggle);
+#endif
         MenuEntry_HideOnCondition(&ME_SOUND_OPL3STEREO, musicdevice != ASS_OPL3);
+        MenuEntry_HideOnCondition(&ME_SOUND_OPL3AMP, musicdevice != ASS_OPL3);
         MenuEntry_HideOnCondition(&ME_SOUND_SF2, musicdevice != ASS_SF2);
 #endif
         MenuEntry_DisableOnCondition(&ME_SOUND_RESTART, soundrate == ud.config.MixRate &&
                                                         soundvoices == ud.config.NumVoices &&
                                                         musicdevice == ud.config.MusicDevice &&
                                                         opl3stereo == AL_Stereo &&
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+                                                        extmusic == g_maybeUpgradeMusic &&
+#endif
                                                         !Bstrcmp(sf2bankfile, SF2_BankFile)
 #ifdef __linux__
                                                         && alsadevices.size() > 0
@@ -2400,6 +2564,7 @@ static void Menu_Pre(MenuID_t cm)
     case MENU_JOYSTICKSETUP:
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_HORIZONTALAIMSENSITIVITY, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_VERTICALAIMSENSITIVITY, !CONTROL_JoyPresent);
+        MenuEntry_DisableOnCondition(&ME_JOYSTICK_RUMBLE, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_LOOKINVERT, !CONTROL_JoyPresent);
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_EDITBUTTONS, !CONTROL_JoyPresent || (joystick.numButtons == 0 && joystick.numHats == 0));
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_ADV, !CONTROL_JoyPresent);
@@ -2530,6 +2695,10 @@ static void Menu_Pre(MenuID_t cm)
         ud.m_newgamecustomsub = M_NEWGAMECUSTOMSUB.currentEntry;
         break;
 
+    case MENU_NEWGAMECUSTOML3:
+        ud.m_newgamecustoml3 = M_NEWGAMECUSTOML3.currentEntry;
+        break;
+
     default:
         break;
     }
@@ -2581,7 +2750,52 @@ static void Menu_DrawVerifyPrompt(int32_t x, int32_t y, const char * text, int n
 #endif
 }
 
-static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
+static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill, const char *boardfn, int16_t health)
+{
+    int const xoffset  = 22;
+    int const xoffset2 = FURY ? 56 : 72;
+    int yoffset = 150 + ((!!FURY)<<1);
+
+    auto name = g_mapInfo[(volume * MAXLEVELS) + level].name;
+    auto vname = g_volumeNames[volume];
+    
+    Menu_BlackRectangle(origin.x + ((xoffset-2)<<16), origin.y + ((yoffset-2)<<16), 178<<16, (34-((!!FURY)<<1))<<16, 1);
+
+    if (vname)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Episode:", MF_Minifont.pal_deselected_right);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(vname), MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
+
+    if (savehead.volnum == 0 && savehead.levnum == 7)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "User map:", MF_Minifont.pal_deselected_right);
+        // I'm sorry
+        if (boardfn[0] == '/') boardfn++;
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), boardfn, MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
+    else if (name)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Level:", MF_Minifont.pal_deselected_right);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(name), MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
+    
+    mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Difficulty:", MF_Minifont.pal_deselected_right);
+    mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(g_skillNames[skill-1]), MF_Minifont.pal_selected_right);
+    yoffset += 8;
+
+    if (savehead.health && (unsigned)savehead.health <= (unsigned)g_maxPlayerHealth)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Health:", MF_Minifont.pal_deselected_right);
+        Bsprintf(tempbuf, "%dhp", health);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), tempbuf, MF_Minifont.pal_selected_right);
+    }
+}
+
+static void Menu_PreDraw(MenuID_t cm, MenuEntry_t* entry, const vec2_t origin)
 {
     int32_t i, j, l = 0;
 
@@ -2679,7 +2893,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         for (i = 0; i <= 108; i += 12)
             rotatesprite_fs(origin.x + ((160+64+91-64)<<16), origin.y + ((i+56)<<16), 65536L,0,TEXTBOX,24,0,10);
 #endif
-        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 100<<16, 1|32);
+        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 135<<16, 1);
 
         rotatesprite_fs(origin.x + (22<<16), origin.y + (97<<16), 65536L,0,WINDOWBORDER2,24,0,10);
         rotatesprite_fs(origin.x + (180<<16), origin.y + (97<<16), 65536L,1024,WINDOWBORDER2,24,0,10);
@@ -2701,16 +2915,16 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
             if (msv.isOldVer)
             {
-                mgametextcenterat(origin.x + (101<<16), origin.y + (50<<16),
-                    msv.brief.isExt ? "Previous Version,\nSequence Point Available" : "Previous Version,\nUnable to Load");
+                mgametextcenterat(origin.x + (101<<16), origin.y + (64<<16),
+                    msv.brief.isExt ? "Previous Version,\nCheckpoint Available" : "Incompatible Save\n");
 
 #ifndef EDUKE32_RETAIL_MENU
-                Bsprintf(tempbuf,"Saved: %d.%d.%d.%u %d-bit", savehead.majorver, savehead.minorver,
-                         savehead.bytever, savehead.userbytever, 8*savehead.getPtrSize());
-                mgametext(origin.x + (25<<16), origin.y + (124<<16), tempbuf);
-                Bsprintf(tempbuf,"Our: %d.%d.%d.%u %d-bit", SV_MAJOR_VER, SV_MINOR_VER, BYTEVERSION,
-                         ud.userbytever, (int32_t)(8*sizeof(intptr_t)));
-                mgametext(origin.x + ((25+16)<<16), origin.y + (134<<16), tempbuf);
+                Bsprintf(tempbuf,"Need: %d.%d.%d.%u %d-bit, %s", savehead.majorver, savehead.minorver,
+                         savehead.bytever, savehead.userbytever, 8*savehead.getPtrSize(), savehead.scriptname);
+                mminitext(origin.x + (23<<16), origin.y + (124<<16), tempbuf, MF_Minifont.pal_selected);
+                Bsprintf(tempbuf,"Have: %d.%d.%d.%u %d-bit, %s", SV_MAJOR_VER, SV_MINOR_VER, BYTEVERSION,
+                         ud.userbytever, (int32_t)(8*sizeof(intptr_t)), g_scriptFileName);
+                mminitext(origin.x + (23<<16), origin.y + (132<<16), tempbuf, MF_Minifont.pal_selected);
 #endif
 
                 if (msv.isUnreadable)
@@ -2723,15 +2937,10 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 mgametextcenter(origin.x, origin.y + (156<<16), tempbuf);
             }
 
-            {
-                const char *name = g_mapInfo[(savehead.volnum*MAXLEVELS) + savehead.levnum].name;
-                const char *skill = g_skillNames[savehead.skill-1];
-                Bsprintf(tempbuf, "%s / %s", name ? localeLookup(name) : "^10unnamed^0", localeLookup(skill));
-            }
+            if (msv.isOldVer && !msv.brief.isExt)
+                break;
 
-            mgametextcenter(origin.x, origin.y + (168<<16), tempbuf);
-            if (savehead.volnum == 0 && savehead.levnum == 7)
-                mgametextcenter(origin.x, origin.y + (180<<16), savehead.boardfn);
+            msaveloadtext(origin, savehead.levnum, savehead.volnum, savehead.skill, savehead.boardfn, savehead.health);
         }
         break;
     }
@@ -2742,7 +2951,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         for (i = 0; i <= 108; i += 12)
             rotatesprite_fs(origin.x + ((160+64+91-64)<<16), origin.y + ((i+56)<<16), 65536L,0,TEXTBOX,24,0,10);
 #endif
-        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 100<<16, 1|32);
+        Menu_BlackRectangle(origin.x + (198<<16), origin.y + (47<<16), 102<<16, 135<<16, 1);
 
         rotatesprite_fs(origin.x + (22<<16), origin.y + (97<<16), 65536L,0,WINDOWBORDER2,24,0,10);
         rotatesprite_fs(origin.x + (180<<16), origin.y + (97<<16), 65536L,1024,WINDOWBORDER2,24,0,10);
@@ -2784,16 +2993,14 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         else
             menutext_centeralign(origin.x + (101<<16), origin.y + (97<<16), "New");
 
-        if (ud.multimode > 1)
-        {
-            Bsprintf(tempbuf, "Players: %-2d                      ", ud.multimode);
-            mgametextcenter(origin.x, origin.y + (156<<16), tempbuf);
-        }
+        //if (ud.multimode > 1)
+        //{
+        //    Bsprintf(tempbuf, "Players: %-2d                      ", ud.multimode);
+        //    mgametextcenter(origin.x, origin.y + (156<<16), tempbuf);
+        //}
 
-        Bsprintf(tempbuf,"%s / %s",g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name, g_skillNames[ud.player_skill-1]);
-        mgametextcenter(origin.x, origin.y + (168<<16), tempbuf);
-        if (ud.volume_number == 0 && ud.level_number == 7)
-            mgametextcenter(origin.x, origin.y + (180<<16), currentboardfilename);
+        msaveloadtext(origin, ud.level_number, ud.volume_number, ud.player_skill,
+                              currentboardfilename, sprite[g_player[myconnectindex].ps->i].extra);
         break;
     }
 
@@ -2851,6 +3058,15 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             , g_mapInfo[(ud.volume_number*MAXLEVELS) + ud.level_number].name, g_skillNames[ud.player_skill-1]);
             Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
 #endif
+        }
+        else if (msv.isOldScriptVer)
+        {
+            Bsprintf(tempbuf, "This save was created with an older version of " APPNAME "\n"
+                              "and is not 100%% compatible with the current version of the game.\n\n"
+                              "If this data is important to you, we highly recommend that\n"
+                              "version of " APPNAME " be used to finish your playthrough instead.\n\n"
+                              "Load game:\n\"%s\"", msv.brief.name);
+            Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 8);
         }
         else
         {
@@ -3131,6 +3347,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 "Marcus Herbert",    // "rhoenie" - OS X compatibility work
                 "Matthew Palmer",    // "Usurper" - testing and eduke32.com domain
                 "Matt Saettler",     // "Matteus" - NAM, WWII GI, DOS EDuke 2.0 enhancements
+                "Mitchell Richters", // "mjr4077au" - audiolib ALSA improvements
                 "NY00123",           // Linux / SDL patches, engine version compatibility
                 "Ozkan Sezer",       // SDL/GTK version checking improvements
                 "Peter Green",       // "Plugwash" - dynamic remapping, custom gametypes
@@ -3139,7 +3356,6 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 "Ryan Gordon",       // "icculus" - icculus.org Duke3D port sound code
                 "Stephen Anthony",   // early 64-bit porting work
                 "tueidj",            // Wii port
-                nullptr,
             };
             EDUKE32_STATIC_ASSERT(ARRAY_SIZE(body) % 3 == 0);
             static const char *footer[] =
@@ -3213,10 +3429,13 @@ static void Menu_PreInput(MenuEntry_t *entry)
         {
             auto column = (MenuCustom2Col_t*)entry->entry;
             char key[2];
-            key[0] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0];
-            key[1] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1];
+
+            Bassert(column->linkIndex >= 0);
+
+            key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
+            key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
             *column->column[M_KEYBOARDKEYS.currentColumn] = 0xff;
-            CONFIG_MapKey(M_KEYBOARDKEYS.currentEntry, ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0], key[0], ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1], key[1]);
+            CONFIG_MapKey(column->linkIndex, ud.config.KeyboardKeys[column->linkIndex][0], key[0], ud.config.KeyboardKeys[column->linkIndex][1], key[1]);
             S_PlaySound(KICK_HIT);
             KB_ClearKeyDown(sc_Delete);
         }
@@ -3268,18 +3487,20 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
     {
         auto column = (MenuCustom2Col_t*)entry->entry;
 
+        Bassert(column->linkIndex >= 0);
+
         int32_t sc = KB_GetLastScanCode();
         if (sc != sc_None)
         {
             char key[2];
-            key[0] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0];
-            key[1] = ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1];
+            key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
+            key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
 
             S_PlaySound(PISTOL_BODYHIT);
 
             *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
 
-            CONFIG_MapKey(M_KEYBOARDKEYS.currentEntry, ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0], key[0], ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1], key[1]);
+            CONFIG_MapKey(column->linkIndex, ud.config.KeyboardKeys[column->linkIndex][0], key[0], ud.config.KeyboardKeys[column->linkIndex][1], key[1]);
 
             KB_ClearKeyDown(sc);
 
@@ -3426,6 +3647,9 @@ static void Menu_RefreshSoundProperties()
     soundvoices  = ud.config.NumVoices;
     musicdevice  = ud.config.MusicDevice;
     opl3stereo   = AL_Stereo;
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+    extmusic     = g_maybeUpgradeMusic;
+#endif
 }
 
 /*
@@ -3455,6 +3679,13 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     case MENU_NEWGAMECUSTOMSUB:
         ud.returnvar[0] = M_NEWGAMECUSTOMSUB.currentEntry;
         ud.returnvar[1] = -1;
+        VM_OnEventWithReturn(EVENT_NEWGAMECUSTOM, -1, myconnectindex, M_NEWGAMECUSTOM.currentEntry);
+        break;
+
+    case MENU_NEWGAMECUSTOML3:
+        ud.returnvar[0] = M_NEWGAMECUSTOMSUB.currentEntry;
+        ud.returnvar[1] = M_NEWGAMECUSTOML3.currentEntry;
+        ud.returnvar[2] = -1;
         VM_OnEventWithReturn(EVENT_NEWGAMECUSTOM, -1, myconnectindex, M_NEWGAMECUSTOM.currentEntry);
         break;
 
@@ -3542,6 +3773,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         if (r_borderless != newborderless)
             videoResetMode();
 
+        r_displayindex = newdisplayindex;
         r_borderless = newborderless;
 
         if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
@@ -3566,7 +3798,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
             onvideomodechange(n.bppmax > 8);
         }
 
-        r_maxfps = newmaxfps > 0 ? clamp(newmaxfps, 30, 1000) : newmaxfps;
+        newmaxfps = r_maxfps = newmaxfps > 0 ? clamp(newmaxfps, 30, 1000) : newmaxfps;
         g_frameDelay = calcFrameDelay(r_maxfps);
         g_restorePalette = -1;
         G_UpdateScreenArea();
@@ -3580,7 +3812,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         songposition pos = {};
 
         if (MusicIsWaveform)
-            FX_GetPosition(MusicVoice, (int *)&pos.tick);
+            MV_GetPosition(MusicVoice, (int *)&pos.tick);
         else
             MUSIC_GetSongPosition(&pos);
 
@@ -3615,7 +3847,10 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
                     (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
 #endif
             );
-
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+            int const musicdirsToggleUsed = (g_maybeUpgradeMusic != extmusic);
+            g_maybeUpgradeMusic = extmusic;
+#endif
             AL_Stereo = opl3stereo;
             Bstrcpy(SF2_BankFile, sf2bankfile);
 
@@ -3628,10 +3863,15 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 
             S_RestartMusic();
 
-            if (MusicIsWaveform)
-                FX_SetPosition(MusicVoice, (int)pos.tick);
-            else
-                MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+            if (!musicdirsToggleUsed)
+#endif
+            {
+                if (MusicIsWaveform)
+                    MV_SetPosition(MusicVoice, (int)pos.tick);
+                else
+                    MUSIC_SetSongPosition(pos.measure, pos.beat, pos.tick);
+            }
         }
 
         Menu_RefreshSoundProperties();
@@ -3830,7 +4070,7 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
 #ifdef USE_OPENGL
 #ifndef EDUKE32_STANDALONE
 #ifdef TEXFILTER_MENU_OPTIONS
-    else if (entry == &ME_DISPLAYSETUP_ANISOTROPY || entry == &ME_DISPLAYSETUP_TEXFILTER)
+    else if (entry == &ME_RENDERERSETUP_ANISOTROPY)
         gltexapplyprops();
 #endif
 #endif
@@ -3843,15 +4083,30 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
 #ifdef POLYMER
     else if (entry == &ME_POLYMER_LIGHTS ||
              entry == &ME_POLYMER_LIGHTPASSES ||
-             entry == &ME_POLYMER_SHADOWCOUNT)
+             entry == &ME_POLYMER_SHADOWCOUNT ||
+             entry == &ME_POLYMER_SHADOWDETAIL)
         domodechange = 1;
+#endif
+#ifndef EDUKE32_STANDALONE
+#ifdef TEXFILTER_MENU_OPTIONS
+    else if (entry == &ME_RENDERERSETUP_TEXFILTER)
+    {
+        MEO_DISPLAYSETUP_TEXFILTER.options->optionNames = MEOSN_DISPLAYSETUP_TEXFILTER[wrand() % ARRAY_SIZE(MEOSN_DISPLAYSETUP_TEXFILTER)];
+        gltexinvalidatetype(INVALIDATE_ART);
+#ifdef POLYMER
+        if (videoGetRenderMode() == REND_POLYMER)
+            polymer_texinvalidate();
+#endif
+        gltexapplyprops();
+    }
+#endif
 #endif
 
     if (domodechange)
     {
         videoResetMode();
         if (videoSetGameMode(fullscreen, xres, yres, bpp, upscalefactor))
-            OSD_Printf("restartvid: Reset failed...\n");
+            LOG_F(ERROR, "Failed to set video mode!");
         onvideomodechange(ud.setup.bpp>8);
         G_RefreshLights();
     }
@@ -4534,7 +4789,7 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
 
 static void Menu_MaybeSetSelectionToChild(Menu_t * m, MenuID_t id)
 {
-    if (m->type == Menu)
+    if (m->type == Menu || m->type == List)
     {
         auto  menu = (MenuMenu_t *)m->object;
 
@@ -4659,6 +4914,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         Menu_PopulateNewGameCustomSub(M_NEWGAMECUSTOM.currentEntry);
         break;
 
+    case MENU_NEWGAMECUSTOML3:
+        Menu_PopulateNewGameCustomL3(M_NEWGAMECUSTOM.currentEntry, M_NEWGAMECUSTOMSUB.currentEntry);
+        break;
+
     case MENU_LOAD:
         if (FURY)
             M_LOAD.title = (g_player[myconnectindex].ps->gm & MODE_GAME) ? s_LoadGame : s_Continue;
@@ -4750,6 +5009,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         newvsync = vsync;
         newborderless = r_borderless;
         newmaxfps = r_maxfps;
+        newdisplayindex = r_displayindex;
         break;
 
 #ifndef EDUKE32_RETAIL_MENU
@@ -4792,6 +5052,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         Menu_FileSelectInit((MenuFileSelect_t*)m->object);
         break;
     case Menu:
+    case List:
     {
         auto menu = (MenuMenu_t*)m->object;
         // MenuEntry_t* currentry = menu->entrylist[menu->currentEntry];
@@ -4951,6 +5212,7 @@ int32_t Menu_IsTextInput(Menu_t *cm)
         case TextForm:
         case FileSelect:
         case Message:
+        case List:
             return 1;
             break;
         case Panel:
@@ -5057,8 +5319,11 @@ void Menu_Close(uint8_t playerID)
 
             // Reset next-viewscreen-redraw counter.
             // XXX: are there any other cases like that in need of handling?
-            if (g_curViewscreen >= 0)
-                actor[g_curViewscreen].t_data[0] = (int32_t) totalclock;
+            for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+            {
+                if (g_activeVscrSprite[vscrIndex] >= 0)
+                    actor[g_activeVscrSprite[vscrIndex]].t_data[0] = (int32_t) totalclock;
+            }
         }
 
         walock[TILE_SAVESHOT] = CACHE1D_FREE;
@@ -5156,6 +5421,15 @@ static vec2_t Menu_TextSize(int32_t x, int32_t y, const MenuFont_t *font, const 
 }
 #endif
 
+static int32_t Menu_FindOptionLinearSearch(MenuOption_t *object, const int32_t query, uint16_t searchstart, uint16_t searchend)
+{
+    for (int i = searchstart; i < searchend; ++i)
+        if (object->options->optionValues[i] == query)
+            return i;
+
+    return -1;
+}
+
 static int32_t Menu_FindOptionBinarySearch(MenuOption_t *object, const int32_t query, uint16_t searchstart, uint16_t searchend)
 {
     const uint16_t thissearch    = (searchstart + searchend) / 2;
@@ -5231,7 +5505,7 @@ static void Menu_RunScrollbar(Menu_t *cm, MenuMenuFormat_t const * const format,
             rotatesprite_fs(scrollx, scrollregionend, ud.menu_scrollbarz, 0, scrollTileBottom, 0, 0, 26);
         }
         else
-            Menu_BlackRectangle(scrollx, scrolly, scrollwidth, scrollheight, 1|32);
+            Menu_BlackRectangle(scrollx, scrolly, scrollwidth, scrollheight, 1);
 
         rotatesprite_fs(scrollx + ((scrollwidth>>17)<<16) - ((tilesiz[scrollTileCursor].x>>1)*ud.menu_scrollcursorz), scrollregionstart + scale(scrollregionheight, *scrollPos, scrollPosMax), ud.menu_scrollcursorz, 0, scrollTileCursor, 0, 0, 26);
 
@@ -5464,8 +5738,12 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         break;
                     case Option:
                     {
+                        int32_t currentOption;
                         auto object = (MenuOption_t*)entry->entry;
-                        int32_t currentOption = Menu_FindOptionBinarySearch(object, object->data == NULL ? Menu_EntryOptionSource(entry, object->currentOption) : *object->data, 0, object->options->numOptions);
+
+                        // if unsorted, use linear search; otherwise use binary search
+                        auto searchFunc = object->options->features & 4 ? Menu_FindOptionLinearSearch : Menu_FindOptionBinarySearch;
+                        currentOption = searchFunc(object, object->data == NULL ? Menu_EntryOptionSource(entry, object->currentOption) : *object->data, 0, object->options->numOptions);
 
                         if (currentOption >= 0)
                             object->currentOption = currentOption;
@@ -6379,6 +6657,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
         }
 
         case Menu:
+        case List:
         {
             Menu_ValidateSelectionIsActive(cm);
 
@@ -7022,13 +7301,14 @@ static void Menu_RunInput(Menu_t *cm)
 
                 S_PlaySound(KICK_HIT);
             }
-            else if (KB_KeyPressed(sc_PgUp))
+            else if (KB_KeyPressed(sc_PgUp) || MOUSE_GetButtons() & M_WHEELUP)
             {
                 int32_t i;
 
                 BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgUp);
+                MOUSE_ClearButton(M_WHEELUP);
 
                 for (i = 0; i < 6; ++i)
                 {
@@ -7045,13 +7325,14 @@ static void Menu_RunInput(Menu_t *cm)
                     S_PlaySound(KICK_HIT);
                 }
             }
-            else if (KB_KeyPressed(sc_PgDn))
+            else if (KB_KeyPressed(sc_PgDn) || MOUSE_GetButtons() & M_WHEELDOWN)
             {
                 int32_t i;
 
                 BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgDn);
+                MOUSE_ClearButton(M_WHEELDOWN);
 
                 for (i = 0; i < 6; ++i)
                 {
@@ -7188,6 +7469,7 @@ static void Menu_RunInput(Menu_t *cm)
             break;
 
         case Menu:
+        case List:
         {
             int32_t state;
 
@@ -7412,6 +7694,83 @@ static void Menu_RunInput(Menu_t *cm)
 
                     currentry = Menu_RunInput_Menu_Movement(menu, MM_Down);
                 }
+                else if (KB_KeyPressed(sc_PgUp) || MOUSE_GetButtons() & M_WHEELUP)
+                {
+                    if (cm->type != List)
+                        break;
+
+                    KB_ClearKeyDown(sc_PgUp);
+                    MOUSE_ClearButton(M_WHEELUP);
+
+                    menu->currentEntry -= 6;
+
+                    if (menu->currentEntry < 0)
+                        menu->currentEntry = 0;
+
+                    S_PlaySound(KICK_HIT);
+
+                    Menu_RunInput_Menu_MovementVerify(menu);
+                }
+                else if (KB_KeyPressed(sc_PgDn) || MOUSE_GetButtons() & M_WHEELDOWN)
+                {
+                    if (cm->type != List)
+                        break;
+
+                    KB_ClearKeyDown(sc_PgDn);
+                    MOUSE_ClearButton(M_WHEELDOWN);
+
+                    menu->currentEntry += 6;
+
+                    if (menu->currentEntry > menu->numEntries - 1)
+                        menu->currentEntry = menu->numEntries - 1;
+
+                    S_PlaySound(KICK_HIT);
+
+                    Menu_RunInput_Menu_MovementVerify(menu);
+                }
+                else if (KB_KeyWaiting() && KB_KeyPressed(KB_GetLastScanCode()))
+                {
+                    // this is fucking terrible, sorry
+                    char ch = KB_GetCh(), ch2 = KB_ScanCodeToString(KB_GetLastScanCode())[0];
+
+                    if (ch >= 'a')
+                        ch -= ('a' - 'A');
+
+                    if (ch2 != ch || ch <= 0 || ((ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9')))
+                        break;
+
+                    int index = 0;
+                    auto seeker = menu->entrylist[menu->currentEntry];
+
+                    do
+                    {
+                        seeker = menu->entrylist[(index + menu->currentEntry) % menu->numEntries];
+
+                        if (!seeker || !seeker->name)
+                            continue;
+
+                        ch2 = seeker->name[0];
+
+                        if (ch2 >= 'a' && ch2 <= 'z')
+                            ch2 -= ('a' - 'A');
+
+                        if (ch2 == ch && (index + menu->currentEntry) % menu->numEntries != menu->currentEntry)
+                            break;
+                    }
+                    while (++index < menu->numEntries);
+
+                    if ((index + menu->currentEntry) % menu->numEntries != menu->currentEntry)
+                    {
+                        menu->currentEntry = (index + menu->currentEntry) % menu->numEntries;
+
+                        KB_ClearKeysDown();
+                        KB_ClearLastScanCode();
+
+                        Menu_RunInput_Menu_MovementVerify(menu);
+
+                        S_PlaySound(KICK_HIT);
+                    }
+                }
 
                 if (currentry != NULL)
                     Menu_PreInput(currentry);
@@ -7494,6 +7853,34 @@ static void Menu_RunInput(Menu_t *cm)
 
                         Menu_RunInput_EntryOptionList_Movement(object, MM_Down);
                     }
+                    else if (KB_KeyPressed(sc_PgUp) || MOUSE_GetButtons() & M_WHEELUP)
+                    {
+                        KB_ClearKeyDown(sc_PgUp);
+                        MOUSE_ClearButton(M_WHEELUP);
+
+                        object->options->currentEntry -= 6;
+
+                        if (object->options->currentEntry < 0)
+                            object->options->currentEntry = 0;
+
+                        S_PlaySound(KICK_HIT);
+
+                        Menu_RunInput_EntryOptionList_MovementVerify(object);
+                    }
+                    else if (KB_KeyPressed(sc_PgDn) || MOUSE_GetButtons() & M_WHEELDOWN)
+                    {
+                        KB_ClearKeyDown(sc_PgDn);
+                        MOUSE_ClearButton(M_WHEELDOWN);
+
+                        object->options->currentEntry += 6;
+
+                        if (object->options->currentEntry > object->options->numOptions-1)
+                            object->options->currentEntry = object->options->numOptions-1;
+
+                        S_PlaySound(KICK_HIT);
+
+                        Menu_RunInput_EntryOptionList_MovementVerify(object);
+                    }
                 }
                 else if (currentry->type == Custom2Col)
                 {
@@ -7565,6 +7952,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_parentMenu->object)->currentEntry;
             if (m_parentMenu->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_parentMenu->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENU, g_player[screenpeek].ps->i, screenpeek, m_parentMenu->menuID);
         origin.x = ud.returnvar[0];
@@ -7586,6 +7975,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_animation.previous->object)->currentEntry;
             if (m_animation.previous->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_animation.previous->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENU, g_player[screenpeek].ps->i, screenpeek, m_animation.previous->menuID);
         previousOrigin.x = ud.returnvar[0];
@@ -7599,6 +7990,8 @@ void M_DisplayMenus(void)
         ud.returnvar[2] = ((MenuMenu_t *)m_currentMenu->object)->currentEntry;
         if (g_currentMenu == MENU_NEWGAMECUSTOMSUB)
             ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+        else if (g_currentMenu == MENU_NEWGAMECUSTOML3)
+            ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
     }
     VM_OnEventWithReturn(EVENT_DISPLAYMENU, g_player[screenpeek].ps->i, screenpeek, g_currentMenu);
     origin.x = ud.returnvar[0];
@@ -7636,6 +8029,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_parentMenu->object)->currentEntry;
             if (m_parentMenu->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_parentMenu->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENUREST, g_player[screenpeek].ps->i, screenpeek, m_parentMenu->menuID);
     }
@@ -7649,6 +8044,8 @@ void M_DisplayMenus(void)
             ud.returnvar[2] = ((MenuMenu_t *)m_animation.previous->object)->currentEntry;
             if (m_animation.previous->menuID == MENU_NEWGAMECUSTOMSUB)
                 ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+            else if (m_animation.previous->menuID == MENU_NEWGAMECUSTOML3)
+                ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
         }
         VM_OnEventWithReturn(EVENT_DISPLAYINACTIVEMENUREST, g_player[screenpeek].ps->i, screenpeek, m_animation.previous->menuID);
     }
@@ -7660,6 +8057,8 @@ void M_DisplayMenus(void)
         ud.returnvar[2] = ((MenuMenu_t *)m_currentMenu->object)->currentEntry;
         if (g_currentMenu == MENU_NEWGAMECUSTOMSUB)
             ud.returnvar[3] = M_NEWGAMECUSTOM.currentEntry;
+        else if (g_currentMenu == MENU_NEWGAMECUSTOML3)
+            ud.returnvar[3] = M_NEWGAMECUSTOMSUB.currentEntry;
     }
     VM_OnEventWithReturn(EVENT_DISPLAYMENUREST, g_player[screenpeek].ps->i, screenpeek, g_currentMenu);
 

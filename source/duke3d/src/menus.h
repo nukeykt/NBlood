@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "pragmas.h"
 #include "vfs.h"
+#include "function.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,8 @@ extern "C" {
 # define EDUKE32_RETAIL_MENU
 # define EDUKE32_ANDROID_MENU
 #endif
+
+extern int32_t kbo_type_cvar;
 
 // #define EDUKE32_SIMPLE_MENU
 
@@ -49,6 +52,7 @@ enum MenuIndex_t {
     MENU_USERMAP        = 101,
     MENU_NEWGAMECUSTOM  = 102,
     MENU_NEWGAMECUSTOMSUB = 103,
+    MENU_NEWGAMECUSTOML3 = 104,
     MENU_SKILL          = 110,
     MENU_GAMESETUP      = 200,
     MENU_OPTIONS        = 202,
@@ -66,7 +70,7 @@ enum MenuIndex_t {
     MENU_TOUCHSENS      = 215,
     MENU_TOUCHBUTTONS   = 216,
     MENU_CONTROLS       = 220,
-    MENU_POLYMOST       = 230,
+    MENU_RENDERER       = 230,
     MENU_COLCORR        = 231,
     MENU_COLCORR_INGAME = 232,
     MENU_SCREENSETUP    = 233,
@@ -207,7 +211,7 @@ typedef struct MenuOptionSet_t
     int32_t scrollPos;
 
     // appearance
-    uint8_t features; // bit 1 = disable left/right arrows, bit 2 = disable list
+    uint8_t features; // bit 1 = disable left/right arrows, bit 2 = disable list, bit 4 = unsorted list
 
     int32_t getMarginBottom() const { return mulscale16(entryFormat->marginBottom, font->zoom); }
     int32_t getIndent() const { return mulscale16(entryFormat->indent, font->zoom); }
@@ -243,6 +247,9 @@ typedef struct MenuCustom2Col_t
 
     // state
     int8_t screenOpen;
+
+    // decoupled link (e.g. gamefunc index)
+    int32_t linkIndex;
 } MenuCustom2Col_t;
 
 enum MenuRangeFlags_t
@@ -365,6 +372,7 @@ typedef enum MenuType_t
     Message,
     TextForm,
     FileSelect,
+    List,
 } MenuType_t;
 
 typedef struct MenuMenu_t
@@ -505,6 +513,7 @@ extern int32_t m_mousewake_watchpoint, m_menuchange_watchpoint;
 # define MOUSEWATCHPOINTCONDITIONAL(condition) ((condition) || m_mousewake_watchpoint || m_menuchange_watchpoint == 3)
 #endif
 
+#define MAXMENUGAMEPLAYLAYERS 3
 #define MAXMENUGAMEPLAYENTRIES 7
 
 enum MenuGameplayEntryFlags
@@ -518,20 +527,16 @@ typedef struct MenuGameplayEntry
 {
     char name[64];
     uint8_t flags;
+    MenuGameplayEntry* subentries;
 
     bool isValid() const { return name[0] != '\0'; }
 } MenuGameplayEntry;
 
-typedef struct MenuGameplayStemEntry
-{
-    MenuGameplayEntry entry;
-    MenuGameplayEntry subentries[MAXMENUGAMEPLAYENTRIES];
-} MenuGameplayStemEntry;
-
-extern MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
+extern MenuGameplayEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
 extern MenuEntry_t ME_NEWGAMECUSTOMENTRIES[MAXMENUGAMEPLAYENTRIES];
 extern MenuEntry_t ME_NEWGAMECUSTOMSUBENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
+extern MenuEntry_t ME_NEWGAMECUSTOML3ENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 
 #ifdef __cplusplus
 }

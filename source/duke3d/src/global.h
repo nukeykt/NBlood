@@ -49,7 +49,6 @@ G_EXTERN int32_t oldipos[MAXINTERPOLATIONS];
 G_EXTERN int32_t *curipos[MAXINTERPOLATIONS];
 G_EXTERN int32_t bakipos[MAXINTERPOLATIONS];
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,6 +68,7 @@ G_EXTERN actor_t actor[MAXSPRITES];
 G_EXTERN practor_t practor[MAXSPRITES];
 #endif
 // g_tile: tile-specific data THAT DOES NOT CHANGE during the course of a game
+G_EXTERN char *g_tileLabels[MAXTILES];
 G_EXTERN tiledata_t g_tile[MAXTILES];
 G_EXTERN animwalltype animwall[MAXANIMWALLS];
 G_EXTERN char *apStrings[MAXQUOTES],*apXStrings[MAXQUOTES];
@@ -88,10 +88,12 @@ G_EXTERN char typebuf[TYPEBUFSIZE];
 G_EXTERN input_t localInput;
 G_EXTERN input_t recsync[RECSYNCBUFSIZ];
 
+G_EXTERN int32_t g_activeVscrSprite[MAX_ACTIVE_VIEWSCREENS];
+G_EXTERN int32_t g_activeVscrTile[MAX_ACTIVE_VIEWSCREENS];
 G_EXTERN int32_t g_animWallCnt;
 G_EXTERN int32_t g_animateCnt;
 G_EXTERN int32_t g_cloudCnt;
-G_EXTERN int32_t g_curViewscreen;
+G_EXTERN int32_t g_curViewscreen; // unused, kept for savegame purposes
 G_EXTERN int32_t g_frameRate;
 G_EXTERN int32_t g_cyclerCnt;
 G_EXTERN int32_t g_damageCameras;
@@ -163,9 +165,17 @@ G_EXTERN uint32_t g_moveThingsCount;
 G_EXTERN double g_gameUpdateTime;
 G_EXTERN double g_gameUpdateAndDrawTime;
 #define GAMEUPDATEAVGTIMENUMSAMPLES 100
-extern double g_gameUpdateAvgTime;
+G_EXTERN double g_gameUpdateAvgTime;
+G_EXTERN mco_coro *co_drawframe;
+G_EXTERN bool     g_frameJustDrawn;
+G_EXTERN uint64_t g_lastFrameStartTime, g_lastFrameEndTime, g_lastFrameDuration;
+G_EXTERN uint64_t g_lastFrameEndTime2, g_lastFrameDuration2;
+G_EXTERN uint32_t g_frameCounter;
+G_EXTERN int g_restartFrameRoutine;
 
 #ifndef global_c_
+extern int32_t g_frameStackSize;
+
 extern char CheatKeys[2];
 extern char g_gametypeNames[MAXGAMETYPES][33];
 extern char g_setupFileName[BMAX_PATH];
@@ -195,6 +205,8 @@ extern int32_t g_gametypeFlags[MAXGAMETYPES];
 extern int32_t g_volumeFlags[MAXVOLUMES];
 
 extern const char *s_buildDate;
+
+extern const char* g_internalFuncNameTokens[];
 #endif
 
 enum

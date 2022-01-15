@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -109,8 +109,8 @@ typedef enum
  * dstA = alphaOperation(srcA * srcAlphaFactor, dstA * dstAlphaFactor);
  * ```
  *
- * Where the functions `colorOperation(src, dst)` and
- * `alphaOperation(src, dst)` can return one of the following:
+ * Where the functions `colorOperation(src, dst)` and `alphaOperation(src,
+ * dst)` can return one of the following:
  *
  * - `src + dst`
  * - `src - dst`
@@ -140,8 +140,8 @@ typedef enum
  *   factors produce unexpected results with `SDL_BLENDOPERATION_MINIMUM` and
  *   `SDL_BLENDOPERATION_MAXIMUM`.
  * - **opengl**: Supports the `SDL_BLENDOPERATION_ADD` operation with all
- *   factors. OpenGL versions 1.1, 1.2, and 1.3 do not work correctly with
- *   SDL 2.0.6.
+ *   factors. OpenGL versions 1.1, 1.2, and 1.3 do not work correctly with SDL
+ *   2.0.6.
  * - **opengles**: Supports the `SDL_BLENDOPERATION_ADD` operation with all
  *   factors. Color and alpha factors need to be the same. OpenGL ES 1
  *   implementation specific: May also support `SDL_BLENDOPERATION_SUBTRACT`
@@ -149,8 +149,8 @@ typedef enum
  *   operations being different from each other. May support color and alpha
  *   factors being different from each other.
  * - **opengles2**: Supports the `SDL_BLENDOPERATION_ADD`,
- *   `SDL_BLENDOPERATION_SUBTRACT`, `SDL_BLENDOPERATION_REV_SUBTRACT` operations
- *   with all factors.
+ *   `SDL_BLENDOPERATION_SUBTRACT`, `SDL_BLENDOPERATION_REV_SUBTRACT`
+ *   operations with all factors.
  * - **psp**: No custom blend mode support.
  * - **software**: No custom blend mode support.
  *
@@ -175,7 +175,7 @@ typedef enum
  * \returns an SDL_BlendMode that represents the chosen factors and
  *          operations.
  *
- * \since This function is available in SDL 2.0.6.
+ * \since This function is available since SDL 2.0.6.
  *
  * \sa SDL_SetRenderDrawBlendMode
  * \sa SDL_GetRenderDrawBlendMode

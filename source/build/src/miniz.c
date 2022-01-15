@@ -24,10 +24,6 @@
  *
  **************************************************************************/
 
-#define MINIZ_NO_ARCHIVE_APIS
-#define MINIZ_NO_ARCHIVE_WRITING_APIS
-#define MINIZ_NO_STDIO
-
 #include "miniz.h"
 
 typedef unsigned char mz_validate_uint16[sizeof(mz_uint16) == 2 ? 1 : -1];
@@ -189,6 +185,8 @@ const char *mz_version(void)
 }
 
 #ifndef MINIZ_NO_ZLIB_APIS
+
+#ifndef MINIZ_NO_DEFLATE_APIS
 
 int mz_deflateInit(mz_streamp pStream, int level)
 {
@@ -356,6 +354,10 @@ mz_ulong mz_compressBound(mz_ulong source_len)
 {
     return mz_deflateBound(NULL, source_len);
 }
+
+#endif /*#ifndef MINIZ_NO_DEFLATE_APIS*/
+
+#ifndef MINIZ_NO_INFLATE_APIS
 
 typedef struct
 {
@@ -591,6 +593,8 @@ int mz_uncompress(unsigned char *pDest, mz_ulong *pDest_len, const unsigned char
 {
     return mz_uncompress2(pDest, pDest_len, pSource, &source_len);
 }
+
+#endif /*#ifndef MINIZ_NO_INFLATE_APIS*/
 
 const char *mz_error(int err)
 {

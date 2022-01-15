@@ -28,10 +28,11 @@
 
 #include "driver_directsound.h"
 
-#include "compat.h"
+#include "baselayer.h"
 #include "multivoc.h"
 #include "mutex.h"
 #include "windows_inc.h"
+#include "winbits.h"
 
 #define MIXBUFFERPOSITIONS 8
 
@@ -113,7 +114,7 @@ static void FillBuffer(int bufnum)
                     continue;
             }
 fail:
-            MV_Printf("DirectSound FillBuffer: err %x\n", (uint32_t)err);
+            LOG_F(ERROR, "Unable to lock DirectSound buffer: IDirectSoundBuffer_Lock error %x", (uint32_t)err);
 
             return;
         }
@@ -130,9 +131,11 @@ fail:
     IDirectSoundBuffer_Unlock(lpdsbsec, ptr, remaining, ptr2, remaining2);
 }
 
-static DWORD WINAPI fillDataThread(LPVOID lpParameter)
+static unsigned WINAPI fillDataThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
+
+    debugThreadName("DSound_fillData");
 
     HANDLE handles[MIXBUFFERPOSITIONS+1];
 
@@ -155,11 +158,15 @@ static DWORD WINAPI fillDataThread(LPVOID lpParameter)
             switch (waitret)
             {
                 case WAIT_OBJECT_0 + MIXBUFFERPOSITIONS:
-                    ExitThread(0);
+                    return 0;
+                case WAIT_FAILED:
+                    {
+                        auto err = GetLastError();
+                        LOG_F(ERROR, "Unable to fill DirectSound buffer: WaitForMultipleObjects failed: %s", windowsGetErrorMessage(err));
+                    }
                     break;
-
                 default:
-                    MV_Printf("DirectSound fillDataThread: wfmo err %d\n", (int)waitret);
+                    LOG_F(ERROR, "Unable to fill DirectSound buffer: WaitForMultipleObjects returned %d", (int)waitret);
                     break;
             }
         }
@@ -172,7 +179,7 @@ static DWORD WINAPI fillDataThread(LPVOID lpParameter)
 static void TeardownDSound(HRESULT err)
 {
     if (FAILED(err))
-        MV_Printf("Dying error: %x\n", (uint32_t)err);
+        LOG_F(ERROR, "DirectSound error: %x", (uint32_t)err);
 
     if (lpdsnotify)
         IDirectSoundNotify_Release(lpdsnotify), lpdsnotify = nullptr;
@@ -302,7 +309,7 @@ int DirectSoundDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize, int NumD
     // prime the buffer
     FillBuffer(0);
 
-    if ((mixThread = CreateThread(nullptr, 0, fillDataThread, 0, 0, 0)) == nullptr)
+    if ((mixThread = (HANDLE)_beginthreadex(nullptr, 0, fillDataThread, 0, 0, 0)) == nullptr)
     {
         ErrorCode = DSErr_CreateThread;
         return DSErr_Error;
@@ -331,6 +338,10 @@ void DirectSoundDrv_PCM_StopPlayback(void)
     IDirectSoundBuffer_Stop(lpdsbsec);
     IDirectSoundBuffer_SetCurrentPosition(lpdsbsec, 0);
 
+    if (mixThread)
+        CloseHandle(mixThread);
+
+    mixThread = 0;
     Playing = 0;
 }
 

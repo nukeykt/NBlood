@@ -33,11 +33,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "compat.h"
-
 #include "scriplib.h"
-#include "_scrplib.h"
 
+#include "_scrplib.h"
+#include "compat.h"
+#include "log.h"
 #include "vfs.h"
 
 static script_t *scriptfiles[MAXSCRIPTFILES];
@@ -292,7 +292,7 @@ int32_t SCRIPT_ParseBuffer(int32_t scripthandle, char *data, int32_t length)
             case '[': if (!(expect & ExpectingSection))
                 {
                     // Unexpected section start
-                    printf("Unexpected start of section on line %d.\n", linenum);
+                    DLOG_F(WARNING, "Unexpected start of section on line %d.", linenum);
                     SETERR(-1);
                     EATLINE(sp);
                     continue;
@@ -308,7 +308,7 @@ int32_t SCRIPT_ParseBuffer(int32_t scripthandle, char *data, int32_t length)
                     if (!(expect & ExpectingEntry))
                     {
                         // Unexpected name start
-                        printf("Unexpected entry LabelText on line %d.\n", linenum);
+                        DLOG_F(WARNING, "Unexpected entry LabelText on line %d.", linenum);
                         SETERR(-1);
                         EATLINE(sp);
                         continue;
@@ -323,7 +323,7 @@ int32_t SCRIPT_ParseBuffer(int32_t scripthandle, char *data, int32_t length)
                 else
                 {
                     // Unexpected character
-                    printf("Illegal character (ASCII %d) on line %d.\n", ch, linenum);
+                    DLOG_F(WARNING, "Illegal character (ASCII %d) on line %d.", ch, linenum);
                     SETERR(-1);
                     EATLINE(sp);
                     continue;
@@ -340,7 +340,7 @@ int32_t SCRIPT_ParseBuffer(int32_t scripthandle, char *data, int32_t length)
             {
             case '\n':
             case '\r':	// Unexpected newline
-                printf("Unexpected newline on line %d.\n", linenum);
+                DLOG_F(WARNING, "Unexpected newline on line %d.", linenum);
                 SETERR(-1);
                 state = ParsingIdle;
                 linenum++;
@@ -366,13 +366,13 @@ int32_t SCRIPT_ParseBuffer(int32_t scripthandle, char *data, int32_t length)
                 /*case '#':*/
                 // unexpected comment
                 EATLINE(sp);
-                printf("Unexpected comment on line %d.\n", linenum);
+                DLOG_F(WARNING, "Unexpected comment on line %d.", linenum);
                 SETERR(-1);
                 fallthrough__;
             case '\n':
             case '\r':
                 // Unexpected newline
-                printf("Unexpected newline on line %d.\n", linenum);
+                DLOG_F(WARNING, "Unexpected newline on line %d.", linenum);
                 SETERR(-1);
                 expect = ExpectingSection | ExpectingEntry;
                 state = ParsingIdle;
@@ -422,7 +422,7 @@ int32_t SCRIPT_ParseBuffer(int32_t scripthandle, char *data, int32_t length)
         }
     }
 
-    if (sp > fence) printf("Stepped outside the fence!\n");
+    if (sp > fence) DLOG_F(ERROR, "Stepped outside the fence!");
 
     return errlevel;
 }

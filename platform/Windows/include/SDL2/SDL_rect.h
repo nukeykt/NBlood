@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -161,6 +161,8 @@ extern DECLSPEC SDL_bool SDLCALL SDL_IntersectRect(const SDL_Rect * A,
  * \param B an SDL_Rect structure representing the second rectangle
  * \param result an SDL_Rect structure filled in with the union of rectangles
  *               `A` and `B`
+ *
+ * \since This function is available since SDL 2.0.0.
  */
 extern DECLSPEC void SDLCALL SDL_UnionRect(const SDL_Rect * A,
                                            const SDL_Rect * B,
@@ -169,8 +171,8 @@ extern DECLSPEC void SDLCALL SDL_UnionRect(const SDL_Rect * A,
 /**
  * Calculate a minimal rectangle enclosing a set of points.
  *
- * If `clip` is not NULL then only points inside of the clipping rectangle
- * are considered.
+ * If `clip` is not NULL then only points inside of the clipping rectangle are
+ * considered.
  *
  * \param points an array of SDL_Point structures representing points to be
  *               enclosed
@@ -180,6 +182,8 @@ extern DECLSPEC void SDLCALL SDL_UnionRect(const SDL_Rect * A,
  *               rectangle
  * \returns SDL_TRUE if any points were enclosed or SDL_FALSE if all the
  *          points were outside of the clipping rectangle.
+ *
+ * \since This function is available since SDL 2.0.0.
  */
 extern DECLSPEC SDL_bool SDLCALL SDL_EnclosePoints(const SDL_Point * points,
                                                    int count,
@@ -201,6 +205,8 @@ extern DECLSPEC SDL_bool SDLCALL SDL_EnclosePoints(const SDL_Point * points,
  * \param X2 a pointer to the ending X-coordinate of the line
  * \param Y2 a pointer to the ending Y-coordinate of the line
  * \returns SDL_TRUE if there is an intersection, SDL_FALSE otherwise.
+ *
+ * \since This function is available since SDL 2.0.0.
  */
 extern DECLSPEC SDL_bool SDLCALL SDL_IntersectRectAndLine(const SDL_Rect *
                                                           rect, int *X1,

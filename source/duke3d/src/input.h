@@ -71,4 +71,24 @@ enum EnterTextFlags_t {
 
 extern int32_t I_EnterText(char *t, int32_t maxlength, int32_t flags);
 
+#define FF_WEAPON_MAX_TIME 66
+#define FF_WEAPON_DMG_MIN  10
+#define FF_WEAPON_DMG_MAX  50
+
+#define FF_WEAPON_DMG_SCALE  8
+#define FF_WEAPON_TIME_SCALE 3
+
+#define FF_PLAYER_DMG_SCALE  10
+#define FF_PLAYER_TIME_SCALE 4
+
+static FORCE_INLINE void I_AddForceFeedback(int const lo, int const hi, int const time)
+{
+    if (!joystick.hasRumble || !ud.config.controllerRumble)
+        return;
+
+    joystick.rumbleHigh = min<int>(UINT16_MAX, joystick.rumbleHigh + hi);
+    joystick.rumbleLow  = min<int>(UINT16_MAX, joystick.rumbleLow + lo);
+    joystick.rumbleTime = max<int>(time, joystick.rumbleTime);
+}
+
 #endif

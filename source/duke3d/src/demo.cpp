@@ -102,7 +102,7 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
     i = sv_loadsnapshot(g_demo_recFilePtr, -g_whichDemo, &saveh);
     if (i)
     {
-        OSD_Printf(OSD_ERROR "There were errors opening demo %d (code: %d).\n", g_whichDemo, i);
+        LOG_F(INFO, "Unable to play demo #%d (code: %d).", g_whichDemo, i);
         kclose(g_demo_recFilePtr); g_demo_recFilePtr = buildvfs_kfd_invalid;
         return 0;
     }
@@ -115,7 +115,7 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
     demo_synccompress &= 1;
 
     i = g_demo_totalCnt/REALGAMETICSPERSEC;
-    OSD_Printf("demo %d duration: %d min %d sec\n", g_whichDemo, i/60, i%60);
+    LOG_F(INFO, "Demo #%d duration is %d min %d sec", g_whichDemo, i/60, i%60);
 
     g_demo_cnt = 1;
     ud.reccnt = 0;
@@ -157,13 +157,13 @@ void G_OpenDemoWrite(void)
             intptr_t w=apScript[i];
             if (VM_DECODE_INST(w)==CON_RESIZEARRAY && VM_DECODE_LINE_NUMBER(w) && apScript[i+1]>=0 && apScript[i+1]<g_gameArrayCount)
             {
-                OSD_Printf("\nThe CON code possibly contains a RESIZEARRAY command.\n");
-                OSD_Printf("Gamearrays that change their size during the game are unsupported by\n");
-                OSD_Printf("the demo recording system. If you are sure that the code doesn't\n");
-                OSD_Printf("contain a RESIZEARRAY command, you can force recording with the\n");
-                OSD_Printf("`demorec_force' cvar. Alternatively, you can disable diff recording\n");
-                OSD_Printf("with the `demorec_diffs' cvar.\n\n");
-                Bstrcpy(apStrings[QUOTE_RESERVED4], "FAILED STARTING DEMO RECORDING. SEE OSD.");
+                LOG_F(ERROR, "The CON code possibly contains the CON_RESIZEARRAY command. "
+                             "Gamearrays that change their size during the game are unsupported by "
+                             "the demo recording system. If you are sure that your code doesn't "
+                             "contain the CON_RESIZEARRAY command, you can force recording with the "
+                             "`demorec_force' cvar. Alternatively, you can disable diff recording "
+                             "with the `demorec_diffs' cvar.");
+                Bstrcpy(apStrings[QUOTE_RESERVED4], "FAILED TO START DEMO RECORDING. SEE LOG FILE.");
                 P_DoQuote(QUOTE_RESERVED4, g_player[myconnectindex].ps);
                 ud.recstat = ud.m_recstat = 0;
                 return;
@@ -176,7 +176,7 @@ void G_OpenDemoWrite(void)
 
         if (G_ModDirSnprintf(demofn, sizeof(demofn), DEMOFN_FMT, demonum))
         {
-            initprintf("Couldn't start demo writing: INTERNAL ERROR: file name too long\n");
+            LOG_F(ERROR, "Couldn't start demo writing: INTERNAL ERROR: file name too long");
             goto error_wopen_demo;
         }
 
@@ -329,7 +329,7 @@ static int32_t Demo_UpdateState(int32_t frominit)
     Demo_RestoreModes(j);
 
     if (k)
-        OSD_Printf("sv_updatestate() returned %d.\n", k);
+        LOG_F(ERROR, "sv_updatestate() returned %d.", k);
     return k;
 }
 
@@ -441,17 +441,17 @@ static void Demo_FinishProfile(void)
 
         if (nt > 0)
         {
-            OSD_Printf("== demo %d: %d gametics\n", dn, nt);
-            OSD_Printf("== demo %d game times: %.03f ms (%.03f us/gametic)\n",
+            LOG_F(INFO, "== demo %d: %d gametics", dn, nt);
+            LOG_F(INFO, "== demo %d game times: %.03f ms (%.03f us/gametic)",
                        dn, gms, (gms*1000.0)/nt);
         }
 
         if (nf > 0)
         {
-            OSD_Printf("== demo %d: %d frames (%d frames/gametic)\n", dn, nf, g_demo_profile-1);
-            OSD_Printf("== demo %d drawrooms times: %.03f s (%.03f ms/frame)\n",
+            LOG_F(INFO, "== demo %d: %d frames (%d frames/gametic)", dn, nf, g_demo_profile-1);
+            LOG_F(INFO, "== demo %d drawrooms times: %.03f s (%.03f ms/frame)",
                        dn, dms1/1000.0, dms1/nf);
-            OSD_Printf("== demo %d drawrest times: %.03f s (%.03f ms/frame)\n",
+            LOG_F(INFO, "== demo %d drawrest times: %.03f s (%.03f ms/frame)",
                        dn, dms2/1000.0, dms2/nf);
         }
 
@@ -459,7 +459,7 @@ static void Demo_FinishProfile(void)
             double totalprofms = gms+dms1+dms2;
             double totalms = timerGetFractionalTicks()-g_prof.starthiticks;
             if (totalprofms != 0)
-                OSD_Printf("== demo %d: non-profiled time overhead: %.02f %%\n",
+                LOG_F(INFO, "== demo %d: non-profiled time overhead: %.02f %%",
                            dn, 100.0*totalms/totalprofms - 100.0);
         }
     }
@@ -488,7 +488,7 @@ RECHECK:
     if (g_demo_playFirstFlag)
         g_demo_playFirstFlag = 0;
     else if (g_demo_exitAfter)
-        G_GameExit(" ");
+        G_GameExit();
 
 #if KRANDDEBUG
     if (foundemo)
@@ -560,6 +560,20 @@ RECHECK:
     bigi = 0;
 
     I_ClearAllInput();
+
+    if (foundemo)
+    {
+        int const mapidx = (ud.volume_number * MAXLEVELS) + ud.level_number;
+        Bassert((unsigned)mapidx < ARRAY_SIZE(g_mapInfo));
+        auto &m = g_mapInfo[mapidx];
+
+        if (G_HaveUserMap())
+            OSD_Printf(OSDTEXT_YELLOW "User Map: %s\n", boardfilename);
+        else if (FURY)
+            OSD_Printf(OSDTEXT_YELLOW "Entering: %s\n", m.name);
+        else
+            OSD_Printf(OSDTEXT_YELLOW "E%dL%d: %s\n", ud.volume_number + 1, ud.level_number + 1, m.name);
+    }
 
     //    OSD_Printf("ticcnt=%d, total=%d\n", g_demo_cnt, g_demo_totalCnt);
     while (g_demo_cnt < g_demo_totalCnt || foundemo==0)
@@ -636,7 +650,7 @@ RECHECK:
 
                     if (ud.reccnt<0)
                     {
-                        OSD_Printf("G_PlaybackDemo: ud.reccnt<0!\n");
+                        LOG_F(ERROR, "G_PlaybackDemo: ud.reccnt<0!");
                         CORRUPT(1);
                     }
 
@@ -658,7 +672,7 @@ RECHECK:
 
                         if (k)
                         {
-                            OSD_Printf("sv_readdiff() returned %d.\n", k);
+                            LOG_F(ERROR, "sv_readdiff() returned %d.", k);
                             CORRUPT(6);
                         }
                         else
@@ -692,7 +706,7 @@ RECHECK:
                     if (0)
                     {
 corrupt:
-                        OSD_Printf(OSD_ERROR "Demo %d is corrupt (code %d).\n", g_whichDemo-1, corruptcode);
+                        LOG_F(ERROR, "Demo #%d is corrupt (code %d).", g_whichDemo-1, corruptcode);
 nextdemo:
                         Menu_Open(myconnectindex);
 nextdemo_nomenu:

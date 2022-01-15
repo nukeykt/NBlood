@@ -254,7 +254,6 @@ void clearkeys(void)
     Bmemset(keystatus,0,sizeof(keystatus));
 }
 
-#ifdef USE_OPENGL
 int osdcmd_restartvid(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
@@ -267,7 +266,6 @@ int osdcmd_restartvid(osdcmdptr_t UNUSED(parm))
 
     return OSDCMD_OK;
 }
-#endif
 
 static int osdcmd_vidmode(osdcmdptr_t parm)
 {
@@ -414,6 +412,7 @@ static void yax_resetbunchnums(void)
         yax_setbunches(i, -1, -1);
     yax_update(1);
     yax_updategrays(pos.z);
+    calc_sector_reachability();
 }
 
 // Whether a wall is constrained by sector extensions.
@@ -1500,9 +1499,25 @@ void editinput(void)
                 searchy -= m32_2d3d.y;
             }
 
-            vec2_t da = { 16384, divscale14(searchx-(xdim>>1), xdim>>1) };
+            const int32_t tmpyx = yxaspect, tmpvr = viewingrange;
+
+            if (r_usenewaspect)
+            {
+                newaspect_enable = 1;
+                videoSetCorrectedAspect();
+            }
+
+            vec2_t da = { divscale30(1, viewingrange), divscale14(searchx-(xdim>>1), xdim>>1) };
+            int32_t const yscale = scale(xdim,yxaspect,320);
+            int32_t const dz = divscale27(searchy-(ydim>>1), yscale) + divscale27(100-horiz, viewingrange);
 
             rotatevec(da, ang, &da);
+
+            if (r_usenewaspect)
+            {
+                newaspect_enable = 0;
+                yxaspect = tmpyx; viewingrange = tmpvr;
+            }
 
 #ifdef USE_OPENGL
             if (videoGetRenderMode() == REND_POLYMOST)
@@ -1510,7 +1525,7 @@ void editinput(void)
             else
 #endif
                 hitscan((const vec3_t *)&pos,cursectnum,              //Start position
-                    da.x,da.y,(scale(searchy,200,ydim)-horiz)*2000, //vector of 3D ang
+                    da.x,da.y,dz, //vector of 3D ang
                     &hit,CLIPMASK1);
 
             if (hit.sect >= 0)
@@ -2097,6 +2112,7 @@ static int32_t restore_highlighted_map(mapinfofull_t *mapinfo, int32_t forreal)
         yax_update(0);
 #endif
     yax_updategrays(pos.z);
+    calc_sector_reachability();
 
     return 0;
 }
@@ -2252,6 +2268,7 @@ static void duplicate_selected_sectors(void)
         yax_update(0);
 #endif
     yax_updategrays(pos.z);
+    calc_sector_reachability();
 }
 
 
@@ -2308,7 +2325,7 @@ void DoSpriteOrnament(int32_t i)
 {
     hitdata_t hit;
 
-    hitscan((const vec3_t *)&sprite[i],sprite[i].sectnum,
+    hitscan(&sprite[i].xyz,sprite[i].sectnum,
             sintable[(sprite[i].ang+1536)&2047],
             sintable[(sprite[i].ang+1024)&2047],
             0,
@@ -4346,8 +4363,9 @@ skipinput:
 
                     M32_DrawRoomsAndMasks();
 
+#ifdef USE_OPENGL
                     rendmode = bakrendmode;
-
+#endif
                     searchx = osearch.x;
                     searchy = osearch.y;
 
@@ -5022,6 +5040,7 @@ rotate_hlsect_out:
                 numsectors++;
                 yax_update(0);
                 yax_updategrays(pos.z);
+                calc_sector_reachability();
 
                 reset_highlightsector();
 
@@ -5282,6 +5301,7 @@ rotate_hlsect_out:
 
                 yax_update(0);
                 yax_updategrays(pos.z);
+                calc_sector_reachability();
             }
 end_yax: ;
 #endif
@@ -5707,6 +5727,7 @@ end_autoredwall:
 #ifdef YAX_ENABLE
                         yax_updategrays(pos.z);
 #endif
+                        calc_sector_reachability();
                     }
 
                     highlight1.x = searchx;
@@ -5875,7 +5896,8 @@ end_autoredwall:
 
             dragwall[0] = dragwall[1] = -1;
 
-            maybedeletewalls(dax, day);
+            if (pointhighlight >= 0)
+                maybedeletewalls(dax, day);
         }
 end_after_dragging:
         if ((bstatus&1) > 0)                //drag points
@@ -6020,7 +6042,7 @@ end_after_dragging:
 
                                 daspr->x += dax;
                                 daspr->y += day;
-                                setspritez(daspr-sprite, (const vec3_t *)daspr);
+                                setspritez(daspr-sprite, &daspr->xyz);
                             }
                         }
                     }
@@ -6627,7 +6649,7 @@ end_point_dragging:
 
                 yax_update(0);
                 yax_updategrays(pos.z);
-
+                calc_sector_reachability();
                 message("Joined highlighted sectors to new bunch %d", numyaxbunches);
                 asksave = 1;
             }
@@ -6876,7 +6898,7 @@ end_point_dragging:
                                 // shouldn't be needed again for the editor, but can't harm either:
                                 yax_update(0);
                                 yax_updategrays(pos.z);
-
+                                calc_sector_reachability();
                                 printmessage16("Made sector %d and %d floor bunchnums equal",
                                                joinsector[0], joinsector[1]);
                                 asksave = 1;
@@ -7021,6 +7043,7 @@ end_point_dragging:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
+                    calc_sector_reachability();
                 }
 
                 joinsector[0] = -1;
@@ -7069,6 +7092,7 @@ end_join_sectors:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
+                    calc_sector_reachability();
                     numwalls = newnumwalls;
                     newnumwalls = -1;
                     numsectors++;
@@ -7524,7 +7548,7 @@ check_next_sector: ;
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
-
+                    calc_sector_reachability();
                     goto end_space_handling;
                 }
                 ////////// split sector //////////
@@ -7799,6 +7823,7 @@ split_not_enough_walls:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
+                    calc_sector_reachability();
                 }
             }
         }
@@ -8042,6 +8067,8 @@ end_batch_insert_points:
                 yax_update(0);
                 yax_updategrays(pos.z);
 #endif
+                calc_sector_reachability();
+
                 break;
             }
         }

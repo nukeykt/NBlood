@@ -53,6 +53,13 @@ extern int     g_addonNum;
 #define DUKEBETA            ((g_gameType & GAMEFLAG_DUKEBETA) == GAMEFLAG_DUKEBETA)
 #define FURY                (g_gameType & GAMEFLAG_FURY)
 
+// statements using STANDALONE_EVAL(false, ...) are expected to be optimized away entirely in EDUKE32_STANDALONE builds
+#ifdef EDUKE32_STANDALONE
+# define STANDALONE_EVAL(x, y)  (x)
+#else
+# define STANDALONE_EVAL(x, y)  (y)
+#endif
+
 enum Games_t {
     GAME_DUKE = 0,
     GAME_NAM,
@@ -156,7 +163,7 @@ void Duke_CommonCleanup(void);
 
 #if defined HAVE_FLAC || defined HAVE_VORBIS
 # define FORMAT_UPGRADE_ELIGIBLE
-extern int g_maybeUpgradeSoundFormats;
+extern int g_maybeUpgradeSoundFormats, g_maybeUpgradeMusic;
 extern buildvfs_kfd S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
 #else
 # define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)

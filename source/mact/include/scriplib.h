@@ -28,6 +28,9 @@ Prepared for public release: 03/21/2003 - Charlie Wiederhold, 3D Realms
 
 #ifndef scriplib_public_h_
 #define scriplib_public_h_
+
+#include <inttypes.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

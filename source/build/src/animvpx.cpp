@@ -59,15 +59,15 @@ int32_t animvpx_read_ivf_header(buildvfs_kfd inhandle, animvpx_ivf_header_t *hdr
         if (hdr->fpsdenom==0 || hdr->fpsnumer==0)
             return 5;  // "invalid framerate numerator or denominator"
 
-        initprintf("animvpx: rate is %d frames / %d seconds (%.03f fps).\n",
+        LOG_F(INFO, "VPX: %d frames / %d seconds (%.03f fps).",
                    hdr->fpsnumer, hdr->fpsdenom, (double)hdr->fpsnumer/hdr->fpsdenom);
     }
     else
     {
         double fps = (hdr->fpsdenom==0) ? 0.0 : (double)hdr->fpsnumer/hdr->fpsdenom;
 
-        initprintf("animvpx: set rate to 30 fps (header says %d frames / %d seconds = %.03f fps).\n",
-                   hdr->fpsnumer, hdr->fpsdenom, fps);
+        LOG_F(WARNING, "VPX: assuming 30 fps (header says %d frames / %d seconds = %.03f fps).",
+                                                            hdr->fpsnumer, hdr->fpsdenom, fps);
 
         /* Don't know FPS for sure, and don't have readahead code
          * (yet?), so just default to 30fps.
@@ -268,7 +268,7 @@ read_ivf_frame:
         }
 #endif
         if (corrupted)
-            OSD_Printf("warning: corrupted frame!\n");
+            LOG_F(WARNING, "VPX: Corrupted frame!");
     }
 
     img = vpx_codec_get_frame(&codec->codec, &codec->iter);
@@ -424,7 +424,7 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
         glGetShaderiv(FSHandle, GL_COMPILE_STATUS, &gli);
         glGetShaderInfoLog(FSHandle, sizeof(logbuf), NULL, logbuf);
         if (logbuf[0])
-            OSD_Printf("animvpx compile log: %s\n", logbuf);
+            DLOG_F(INFO, "VPX compile log: %s", logbuf);
 
         /* Create a complete program object. */
         glAttachShader(PHandle, FSHandle);
@@ -433,13 +433,13 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
         /* And print the link log. */
         glGetProgramInfoLog(PHandle, sizeof(logbuf), NULL, logbuf);
         if (logbuf[0])
-            OSD_Printf("animvpx link log: %s\n", logbuf);
+            DLOG_F(INFO, "VPX link log: %s", logbuf);
 
         /* Finally, use the program. */
     }
 
     if (PHandle)
-        polymost_useShaderProgram(PHandle);
+        buildgl_useShaderProgram(PHandle);
 #endif
 
     ////////// GL STATE //////////
@@ -470,18 +470,36 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
 
     glBindTexture(GL_TEXTURE_2D, texname);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-    if ((animvpx_flags & CUTSCENE_TEXTUREFILTER && gltexfiltermode == TEXFILTER_ON) || animvpx_flags & CUTSCENE_FORCEFILTER ||
-    (!(animvpx_flags & CUTSCENE_TEXTUREFILTER) && !(animvpx_flags & CUTSCENE_FORCENOFILTER))) // if no flags, then use filter for IVFs
+    if (!buildgl_samplerObjectsEnabled())
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if ((animvpx_flags & CUTSCENE_TEXTUREFILTER && gltexfiltermode == TEXFILTER_ON) || animvpx_flags & CUTSCENE_FORCEFILTER
+            || (!(animvpx_flags & CUTSCENE_TEXTUREFILTER) && !(animvpx_flags & CUTSCENE_FORCENOFILTER)))  // if no flags, then use filter for IVFs
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        }
     }
-    else
+    else 
     {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        switch (animvpx_flags & CUTSCENE_FILTERMASK)
+        {
+        case CUTSCENE_TEXTUREFILTER:
+            buildgl_bindSamplerObject(0, (glfiltermodes[gltexfiltermode].min == GL_NEAREST) ? PTH_INDEXED : PTH_FORCEFILTER);
+            break;
+        case CUTSCENE_FORCEFILTER:
+            buildgl_bindSamplerObject(0, PTH_FORCEFILTER);
+            break;
+        case CUTSCENE_FORCENOFILTER:
+            buildgl_bindSamplerObject(0, PTH_INDEXED);
+            break;
+        }
     }
 
     texuploaded = 0;
@@ -496,7 +514,7 @@ void animvpx_restore_glstate(void)
 #ifdef USE_GLEXT
     if (glinfo.glsl)
     {
-        polymost_useShaderProgram(0);
+        buildgl_useShaderProgram(0);
         polymost_resetProgram();
     }
 #endif
@@ -551,6 +569,9 @@ int32_t animvpx_render_frame(animvpx_codec_ctx *codec, double animvpx_aspect)
             y = scr_wbyh/vid_wbyh;
     }
 #endif
+
+    buildgl_bindSamplerObject(0, 0);
+
     glBegin(GL_QUADS);
 
     if (!glinfo.glsl)
@@ -587,13 +608,12 @@ void animvpx_print_stats(const animvpx_codec_ctx *codec)
         int32_t n = codec->numframes;
 
         if (glinfo.glsl)
-            initprintf("animvpx: GLSL mode\n");
+            LOG_F(INFO, "VPX: GLSL mode");
 
-        initprintf("VP8 timing stats (mean, max) [ms] for %d frames:\n"
-                   " read and decode frame: %.02f, %d\n"
-                   " 3 planes -> packed conversion: %.02f, %d\n"
-                   " upload and display: %.02f, %d\n",
-                   n, (double)s[0]/n, m[0], (double)s[1]/n, m[1], (double)s[2]/n, m[2]);
+        LOG_F(INFO, "VP8 timing stats (mean, max) [ms] for %d frames:", n);
+        LOG_F(INFO, " read and decode frame: %.02f, %d", (double)s[0]/n, m[0]);
+        LOG_F(INFO, " 3 planes -> packed conversion: %.02f, %d", (double)s[1]/n, m[1]);
+        LOG_F(INFO, " upload and display: %.02f, %d", (double)s[2]/n, m[2]);
     }
 }
 

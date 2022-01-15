@@ -127,13 +127,13 @@ static inline void sequence_event(snd_seq_event_t *ev, bool sync_output_queue)
     result = snd_seq_event_output(seq, ev);
 
     if (result < 0)
-        MV_Printf("ALSA could not queue event: err %d\n", result);
+        LOG_F(ERROR, "Unable to queue ALSA event: snd_seq_event_output error %d", result);
     else
     {
         do { } while ((result = snd_seq_drain_output(seq)) > 0);
 
         if (result < 0)
-            MV_Printf("ALSA could not drain output: err %d\n", result);
+            LOG_F(ERROR, "Unable to drain ALSA output: snd_seq_drain_output error %d", result);
 
         if (sync_output_queue)
             snd_seq_sync_output_queue(seq);
@@ -204,7 +204,7 @@ static unsigned int get_tick(void)
     int result = snd_seq_get_queue_status(seq, seq_queue, status);
     if (result < 0)
     {
-        MV_Printf("ALSA snd_seq_get_queue_status err %d\n", result);
+        LOG_F(ERROR, "Unable to read ALSA queue status: snd_seq_get_queue_status error %d", result);
         return 0;
     }
 
@@ -268,7 +268,7 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
     result = snd_seq_open(&seq, "default", SND_SEQ_OPEN_OUTPUT, 0);
     if (result < 0)
     {
-        MV_Printf("ALSA snd_seq_open err %d\n", result);
+        LOG_F(ERROR, "Unable to initialize ALSA: snd_seq_open error %d", result);
         ErrorCode = ALSAErr_SeqOpen;
         return ALSAErr_Error;
     }
@@ -284,7 +284,7 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
     if (!deviceFound)
     {
         ALSADrv_MIDI_Shutdown();
-        MV_Printf("ALSA MIDI device not found: %d:%d\n", ALSA_ClientID, ALSA_PortID);
+        LOG_F(ERROR, "Unable to find ALSA device at %d:%d", ALSA_ClientID, ALSA_PortID);
         ErrorCode = ALSAErr_DeviceNotFound;
         return ALSAErr_Error;
     }
@@ -295,7 +295,7 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
     if (seq_port < 0)
     {
         ALSADrv_MIDI_Shutdown();
-        MV_Printf("ALSA snd_seq_create_simple_port err %d\n", seq_port);
+        LOG_F(ERROR, "Unable to create ALSA port: snd_seq_create_simple_port error %d", seq_port);
         ErrorCode = ALSAErr_CreateSimplePort;
         return ALSAErr_Error;
     }
@@ -306,7 +306,7 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
     if (seq_queue < 0)
     {
         ALSADrv_MIDI_Shutdown();
-        MV_Printf("ALSA snd_seq_alloc_queue err %d\n", seq_queue);
+        LOG_F(ERROR, "Unable to allocate ALSA queue: snd_seq_alloc_queue erorr %d", seq_queue);
         ErrorCode = ALSAErr_AllocQueue;
         return ALSAErr_Error;
     }
@@ -315,7 +315,7 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
     if (result < 0)
     {
         ALSADrv_MIDI_Shutdown();
-        MV_Printf("ALSA snd_seq_connect_to err %d\n", result);
+        LOG_F(ERROR, "Unable to connect ALSA port to device at %d:%d: snd_seq_connect_to error %d", ALSA_ClientID, ALSA_PortID, result);
         ErrorCode = ALSAErr_ConnectTo;
         return ALSAErr_Error;
     }
@@ -360,7 +360,7 @@ int ALSADrv_MIDI_StartPlayback(void)
 
     if (pthread_create(&thread, NULL, threadProc, NULL))
     {
-        MV_Printf("ALSA pthread_create returned error\n");
+        LOG_F(ERROR, "Unable to create thread for ALSA playback.");
         ALSADrv_MIDI_HaltPlayback();
         return ALSAErr_PlayThread;
     }
@@ -378,7 +378,7 @@ void ALSADrv_MIDI_HaltPlayback(void)
 
     void *ret;
     if (pthread_join(thread, &ret))
-        MV_Printf("ALSA pthread_join returned error\n");
+        LOG_F(ERROR, "Unable to terminate ALSA playback thread.");
 
     ALSADrv_MIDI_QueueStop();
 
@@ -416,12 +416,12 @@ void ALSADrv_MIDI_QueueStart(void)
         result = snd_seq_start_queue(seq, seq_queue, NULL);
 
         if (result < 0)
-            MV_Printf("ALSA snd_seq_start_queue err %d\n", result);
+            LOG_F(ERROR, "Unable to start ALSA queue: snd_seq_start_queue error %d", result);
 
         do { } while ((result = snd_seq_drain_output(seq)) > 0);
 
         if (result < 0)
-            MV_Printf("ALSA could not drain output: err %d\n", result);
+            LOG_F(ERROR, "Unable to drain ALSA output: snd_seq_drain_output error %d", result);
 
         snd_seq_sync_output_queue(seq);
 
@@ -438,12 +438,12 @@ void ALSADrv_MIDI_QueueStop(void)
         result = snd_seq_stop_queue(seq, seq_queue, NULL);
 
         if (result < 0)
-            MV_Printf("ALSA snd_seq_stop_queue err %d\n", result);
+            LOG_F(ERROR, "Unable to stop ALSA queue: snd_seq_stop_queue error %d", result);
 
         do { } while ((result = snd_seq_drop_output(seq)) > 0);
 
         if (result < 0)
-            MV_Printf("ALSA could not drop output: err %d\n", result);
+            LOG_F(ERROR, "Unable to drop ALSA output: snd_seq_drop_output error %d", result);
 
         snd_seq_sync_output_queue(seq);
 
@@ -465,7 +465,7 @@ std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts(void)
         result = snd_seq_open(&seq, "default", SND_SEQ_OPEN_OUTPUT, 0);
         if (result < 0)
         {
-            MV_Printf("ALSA snd_seq_open err %d\n", result);
+            LOG_F(ERROR, "Unable to initialize ALSA: snd_seq_open error %d", result);
             return devices;
         }
     }

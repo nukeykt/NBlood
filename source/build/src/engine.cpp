@@ -101,6 +101,7 @@ int32_t novoxmips = 1;
 #endif
 static char voxlock[MAXVOXELS][MAXVOXMIPS];
 int32_t voxscale[MAXVOXELS];
+uint8_t voxflags[MAXVOXELS];
 
 static int32_t ggxinc[MAXXSIZ+1], ggyinc[MAXXSIZ+1];
 static int32_t lowrecip[1024], nytooclose;
@@ -316,8 +317,6 @@ void yax_updategrays(int32_t posze)
                 graywallbitmap[j>>3] |= pow2char[j&7];
         }
     }
-
-    calc_sector_reachability();
 }
 
 
@@ -504,6 +503,9 @@ void yax_update(int32_t resetstat)
 #endif
         nextsectbunch[0][i] = nextsectbunch[1][i] = -1;
     }
+
+    Bmemset(yax_updown, -1, sizeof(yax_updown));
+
     for (i=0; i<YAX_MAXBUNCHES; i++)
         headsectbunch[0][i] = headsectbunch[1][i] = -1;
 #if !defined NEW_MAP_FORMAT
@@ -1410,7 +1412,6 @@ static int32_t viewingrangerecip;
 static int8_t globalxshift, globalyshift;
 static int32_t globalxpanning, globalypanning;
 int32_t globalshade, globalorientation;
-int16_t globalpicnum;
 static int16_t globalshiftval;
 #ifdef HIGH_PRECISION_SPRITE
 static int64_t globalzd;
@@ -1765,7 +1766,7 @@ static void classicScanSector(int16_t startsectnum)
 
             if (numscans >= MAXWALLSB-1)
             {
-                OSD_Printf("!!numscans\n");
+                LOG_F(ERROR, "!!numscans");
                 return;
             }
 
@@ -3316,7 +3317,7 @@ static void ceilspritehline(int32_t x2, int32_t y)
 
     x1 = lastx[y]; if (x2 < x1) return;
 
-    v = mulscale20(globalzd,horizlookup[y-globalhoriz+horizycent]);
+    v = int32_t((globalzd*int64_t(horizlookup[y-globalhoriz+horizycent]))>>20);
     bx = (uint32_t)mulscale14(globalx2*x1+globalx1,v) + globalxpanning;
     by = (uint32_t)mulscale14(globaly2*x1+globaly1,v) + globalypanning;
     asm1 = mulscale14(globalx2,v);
@@ -3619,7 +3620,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     shy1 = y1+(shoffs>>15);
     if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
     {
-        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+        LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
         return;
     }
 
@@ -3637,12 +3638,12 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
             // Ridiculously steep gradient?
             if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
                 goto next_most;
             }
             if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
                 goto next_most;
             }
 
@@ -3937,7 +3938,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     shy1 = y1+(shoffs>>15);
     if ((unsigned)shy1 >= SLOPALOOKUPSIZ - 1)
     {
-        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+        LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
         return;
     }
 
@@ -3955,12 +3956,12 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
             // Ridiculously steep gradient?
             if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
                 goto next_most;
             }
             if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
                 goto next_most;
             }
 
@@ -4072,7 +4073,7 @@ static void parascan(char dastat, int32_t bunch)
         globaltilesizy = tsizy;
         globalyscale = 65536 / tsizy;
         globalshiftval = 0;
-        globalzd = divscale32(((tsizy>>1)+dapyoffs), tsizy) + ((uint32_t)globalypanning<<24);
+        globalzd = divscale32(((tsizy>>1)+dapyoffs), tsizy) + (decltype(globalzd)(globalypanning)<<24);
     }
     else
 #endif
@@ -5603,17 +5604,17 @@ draw_as_face_sprite:
             return;
 
         const int32_t topinc = -mulscale10(p1.y,xspan);
-        int32_t top = ((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y))*xspan)>>3;
+        int32_t top = mulscale3((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y)), xspan);
         const int32_t botinc = (p2.y-p1.y)>>8;
         int32_t bot = mulscale11(p1.x-p2.x,xdimen) + mulscale2(sx1-halfxdimen,botinc);
 
         j = sx2+3;
-        z = mulscale20(top,krecipasm(bot));
+        z = divscale10(top,bot);
         lwall[sx1] = (z>>8);
         for (x=sx1+4; x<=j; x+=4)
         {
             top += topinc; bot += botinc;
-            zz = z; z = mulscale20(top,krecipasm(bot));
+            zz = z; z = divscale10(top, bot);
             i = ((z+zz)>>1);
             lwall[x-3] = ((i+zz)>>9);
             lwall[x-2] = (i>>8);
@@ -5968,9 +5969,9 @@ draw_as_face_sprite:
             globaly2 = divscale18(day,bot);
 
             //Calculate globals for hline texture mapping function
-            globalxpanning = (rxi[z]<<12);
-            globalypanning = (rzi[z]<<12);
-            globalzd = decltype(globalzd)(ryi[z])<<12;
+            globalxpanning = rxi[z];
+            globalypanning = rzi[z];
+            globalzd = decltype(globalzd)(ryi[z]);
 
             rzi[0] = mulscale16(rzi[0],viewingrange);
             rzi[1] = mulscale16(rzi[1],viewingrange);
@@ -6243,7 +6244,7 @@ draw_as_face_sprite:
             int32_t shy2;
             if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
             {
-                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sprite %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
+                LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing sprite %d!", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
                 return;
             }
 
@@ -6264,7 +6265,7 @@ draw_as_face_sprite:
                     // Ridiculously steep gradient?
                     if ((unsigned)shy1 >= SLOPALOOKUPSIZ || (unsigned)shy2 >= SLOPALOOKUPSIZ)
                     {
-                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__,
+                        LOG_F(ERROR, "%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!", EDUKE32_FUNCTION, __LINE__,
                                    (unsigned)shy1 >= SLOPALOOKUPSIZ ? shy1 : shy2, spritenum);
                         goto next_most;
                     }
@@ -6479,12 +6480,12 @@ next_most:
             }
 #endif
             dax = globalxpanning; day = globalypanning;
-            globalxpanning = -dmulscale6(globalx1,day,globalx2,dax);
-            globalypanning = -dmulscale6(globaly1,day,globaly2,dax);
+            globalxpanning = -((globalx1*day+globalx2*dax)<<6);
+            globalypanning = -((globaly1*day+globaly2*dax)<<6);
 
             globalx2 = mulscale16(globalx2,viewingrange);
             globaly2 = mulscale16(globaly2,viewingrange);
-            globalzd = mulscale16(globalzd,viewingrangerecip);
+            globalzd = decltype(globalzd)((globalzd*int64_t(viewingrangerecip))>>4);
 
             globalx1 = (globalx1-globalx2)*halfxdimen;
             globaly1 = (globaly1-globaly2)*halfxdimen;
@@ -6710,11 +6711,11 @@ static void renderDrawSprite(int32_t snum)
         return;
 # ifdef POLYMER
     case REND_POLYMER:
-        glEnable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
         polymer_drawsprite(snum);
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
         return;
 # endif
 #endif
@@ -6735,13 +6736,13 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
 # ifdef POLYMER
     else if (videoGetRenderMode() == REND_POLYMER)
     {
-        glEnable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
 
         polymer_drawmaskwall(damaskwallcnt);
 
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
 
         return;
     }
@@ -8226,7 +8227,7 @@ static int32_t engineLoadTables(void)
         {
             static const char *str[3] = { "sine table", "arctangent table",
                                           "sine and arctangent tables" };
-            initprintf("WARNING: Calculated %s differ%s from original!\n",
+            LOG_F(WARNING, "Calculated %s differ%s from original!\n",
                        str[i-1], i==3 ? "" : "s");
         }
 #endif
@@ -8690,7 +8691,7 @@ static void sighandler(int sig, siginfo_t *info, void *ctx)
 int32_t engineFatalError(char const * const msg)
 {
     engineerrstr = msg;
-    initprintf("ERROR: %s\n", engineerrstr);
+    LOG_F(ERROR, "%s", engineerrstr);
     return -1;
 }
 
@@ -9117,7 +9118,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
 #  endif
         polymer_glinit();
         polymer_drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum);
-        glDisable(GL_CULL_FACE);
+        buildgl_setDisabled(GL_CULL_FACE);
         polymost2d = 0;
         return 0;
     }
@@ -9645,8 +9646,8 @@ killsprite:
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
-        glDisable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
         polymost_setClamp(1+2);
 
         if (spritesortcnt < numSprites)
@@ -9712,8 +9713,8 @@ killsprite:
                 renderDrawMaskedWall(i);
         }
 
-        glEnable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
+        buildgl_setEnabled(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);
     }
 #endif
@@ -10309,19 +10310,33 @@ static FORCE_INLINE uint8_t* getreachabilitybitmap(int const sectnum)
 
 int sectorsareconnected(int const sect1, int const sect2)
 {
+    if (!reachablesectors)
+        calc_sector_reachability();
+
     return !!bitmap_test(getreachabilitybitmap(sect1), sect2);
 }
 
 void calc_sector_reachability(void)
 {
-    Bmemset(yax_updown, -1, sizeof(yax_updown));
-    Bmemset(wallsect, -1, sizeof(wallsect));
-
     if (!numsectors)
         return;
 
+    static size_t tablesize = 0;
+    static uint16_t sectcrc = 0;
+    uint16_t crc = getcrc16(sector, sizeof(sectortype) * numsectors, 0x1337);
+
+    if (reachablesectors && sectcrc == crc && tablesize == getreachabilitybitmapsize())
+        return;
+
+    sectcrc = crc;
+    tablesize = getreachabilitybitmapsize();
+
+    Bassert(tablesize);
+
+    Bmemset(wallsect, -1, sizeof(wallsect));
+
     DO_FREE_AND_NULL(reachablesectors);
-    reachablesectors = (uint8_t*)Xcalloc(1, getreachabilitybitmapsize());
+    reachablesectors = (uint8_t*)Xcalloc(1, tablesize);
     auto sectlist = (int16_t *)Balloca(sizeof(int16_t) * numsectors);
 
     for (int sectnum=0; sectnum<numsectors; sectnum++)
@@ -10332,8 +10347,8 @@ void calc_sector_reachability(void)
 
         for (int listidx=0; listidx<nsecs; listidx++)
         {
-            Bassert((unsigned)listidx < numsectors);
-            Bassert((unsigned)sectlist[listidx] < numsectors);
+            Bassert((unsigned)listidx < (unsigned)numsectors);
+            Bassert((unsigned)sectlist[listidx] < (unsigned)numsectors);
 
             auto sec = (usectorptr_t)&sector[sectlist[listidx]];
 
@@ -10456,7 +10471,6 @@ static int32_t engineFinishLoadBoard(const vec3_t* dapos, int16_t* dacursectnum,
 
     calc_sector_reachability();
 
-
     return numremoved;
 }
 
@@ -10479,13 +10493,13 @@ static void check_sprite(int32_t i)
 {
     if ((unsigned)sprite[i].statnum >= MAXSTATUS)
     {
-        initprintf("%sMap error: sprite #%d (%d,%d) with illegal statnum (%d) REMOVED.\n", osd->draw.errorfmt,
+        LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal statnum (%d) was REMOVED.",
                    i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), TrackerCast(sprite[i].statnum));
         remove_sprite(i);
     }
     else if ((unsigned)sprite[i].picnum >= MAXTILES)
     {
-        initprintf("%sMap error: sprite #%d (%d,%d) with illegal picnum (%d) REMOVED.\n", osd->draw.errorfmt,
+        LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal picnum (%d) was REMOVED.",
                    i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), TrackerCast(sprite[i].sectnum));
         remove_sprite(i);
     }
@@ -10499,13 +10513,12 @@ static void check_sprite(int32_t i)
         if (sprite[i].sectnum < 0)
             remove_sprite(i);
 
-        initprintf("%sMap error: sprite #%d (%d,%d) with illegal sector (%d) ", osd->draw.errorfmt,
-                   i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), osectnum);
-
-        if (sprite[i].statnum != MAXSTATUS)
-            initprintf("changed to sector %d.\n", TrackerCast(sprite[i].sectnum));
+        if (sprite[i].sectnum != MAXSECTORS)
+            LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal sector (%d) moved to sector %d.",
+                       i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), osectnum, TrackerCast(sprite[i].sectnum));
         else
-            initprintf("REMOVED.\n");
+            LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal sector (%d) REMOVED.",
+                       i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), osectnum);
     }
 }
 
@@ -10687,7 +10700,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
     int const pos = ktell(fil), len = kfilelength(fil);
 
     if (pos != len)
-        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
+        LOG_F(WARNING, "Ignoring %d bytes of unknown data appended to map file. Saving changes to this file will result in loss of this data.", len - pos);
 
 #ifdef NEW_MAP_FORMAT
 skip_reading_mapbin:
@@ -10757,7 +10770,7 @@ skip_reading_mapbin:
         // Per-map ART
         if (mapInfo && mapInfo->mapart)
         {
-            initprintf("Using mapinfo-defined mapart \"%s\"\n", mapInfo->mapart);
+            LOG_F(INFO, "Using mapinfo-defined mapart %s", mapInfo->mapart);
             artSetupMapArt(mapInfo->mapart);
         }
         else
@@ -11024,7 +11037,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
     int const pos = ktell(fil), len = kfilelength(fil);
 
     if (pos != len)
-        initprintf("warning: ignoring %d bytes of unknown data appended to map file\n", len - pos);
+        LOG_F(WARNING, "Ignoring %d bytes of unknown data appended to map file. Saving changes to this file will result in loss of this data.", len - pos);
 
     kclose(fil);
     // Done reading file.
@@ -11083,14 +11096,14 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
     {
         if ((unsigned)sprite[j].statnum > MAXSTATUS)
         {
-            initprintf("Map error: sprite #%d(%d,%d) with an illegal statnum(%d)\n",
+            LOG_F(ERROR, "Map error: sprite #%d(%d,%d) with illegal statnum (%d)",
                        j,TrackerCast(sprite[j].x),TrackerCast(sprite[j].y),TrackerCast(sprite[j].statnum));
             changespritestat(j,0);
         }
 
         if ((unsigned)sprite[j].sectnum > MAXSECTORS)
         {
-            initprintf("Map error: sprite #%d(%d,%d) with an illegal sectnum(%d)\n",
+            LOG_F(ERROR, "Map error: sprite #%d(%d,%d) with illegal sectnum (%d)",
                        j,TrackerCast(sprite[j].x),TrackerCast(sprite[j].y),TrackerCast(sprite[j].sectnum));
             changespritesect(j,0);
         }
@@ -11124,7 +11137,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
 
     if (fil == buildvfs_fd_invalid)
     {
-        initprintf("Couldn't open \"%s\" for writing: %s\n", filename, strerror(errno));
+        LOG_F(ERROR, "Couldn't open file %s for writing: %s.", filename, strerror(errno));
         return -1;
     }
 
@@ -11363,7 +11376,7 @@ static void PolymostProcessVoxels(void)
 
     g_haveVoxels = 2;
 
-    OSD_Printf("Generating voxel models for Polymost. This may take a while...\n");
+    LOG_F(INFO, "Generating 3D meshes from voxel model data. This may take a while...");
     videoNextPage();
 
     for (bssize_t i=0; i<MAXVOXELS; i++)
@@ -11414,8 +11427,8 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     daupscaledxdim = max(640, daupscaledxdim);
     daupscaledydim = max(400, daupscaledydim);
 
-    if (in3dmode() && videomodereset == 0 && (davidoption == fullscreen) &&
-        (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
+    if (in3dmode() && videomodereset == 0 && (davidoption == fullscreen) && (r_displayindex == g_displayindex)
+        && (xres == daupscaledxdim) && (yres == daupscaledydim) && (bpp == dabpp) && (upscalefactor == daupscalefactor))
         return 0;
 
     Bstrcpy(kensmessage, "!!!! BUILD engine&tools programmed by Ken Silverman of E.G. RI."
@@ -11653,6 +11666,7 @@ void vox_undefine(int32_t const tile)
     }
     voxscale[voxindex] = 65536;
     voxrotate[voxindex>>3] &= ~pow2char[voxindex&7];
+    voxflags[voxindex] = 0;
     tiletovox[tile] = -1;
 
     // TODO: nextvoxid
@@ -11830,6 +11844,18 @@ fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
 
     return rv;
 }
+
+fix16_t __fastcall getq16angledelta(fix16_t first, fix16_t second)
+{
+    first &= 0x7FFFFFF;
+    second &= 0x7FFFFFF;
+
+    if (klabs(fix16_sub(first, second)) < F16(1024))
+        return fix16_sub(second, first);
+    else 
+        return fix16_sub((second > F16(1024)) ? fix16_sub(second, F16(2048)) : second, (first > F16(1024)) ? fix16_sub(first, F16(2048)) : first);
+}
+
 
 //
 // ksqrt
@@ -12019,9 +12045,7 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, in
 
     if (!sectorsareconnected(sect1, sect2))
     {
-#ifndef NDEBUG
-        OSD_Printf("cansee: sector %d can't reach sector %d\n", sect1, sect2);
-#endif
+        DVLOG_F(LOG_DEBUG, "cansee: sector %d can't reach sector %d", sect1, sect2);
         return 0;
     }
 
@@ -12344,7 +12368,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
             cnt--;
             if (cnt==0)
             {
-                initprintf("dragpoint %d: infloop!\n", pointhighlight);
+                LOG_F(ERROR, "dragpoint %d: infloop!", pointhighlight);
                 i = numyaxwalls;
                 break;
             }
@@ -12599,6 +12623,29 @@ void updatesector_tryremaining(int32_t const x, int32_t const y, int16_t *const 
     *sectnum = -1;
 }
 
+// same as above but with z height checks
+void updatesectorz_tryremaining(int32_t const x, int32_t const y, int32_t const z, int16_t *const sectnum)
+{
+    // we need to support passing in a sectnum of -1, unfortunately
+    int16_t const sect = *sectnum == -1 ? numsectors >> 1 : *sectnum;
+    int trycnt = max<int>(numsectors - sect, sect);
+
+    if (inside_exclude_z_p(x, y, z, sect, updatesectorneighbormap))
+        SET_AND_RETURN(*sectnum, sect);
+
+    int16_t highsect = sect, lowsect = sect;
+
+    do
+    {
+        if (highsect < numsectors-1 && inside_exclude_z_p(x, y, z, ++highsect, updatesectorneighbormap))
+            SET_AND_RETURN(*sectnum, highsect);
+        if (lowsect > 0 && inside_exclude_z_p(x, y, z, --lowsect, updatesectorneighbormap))
+            SET_AND_RETURN(*sectnum, lowsect);
+    } while (trycnt--);
+
+    *sectnum = -1;
+}
+
 void updatesector(int32_t const x, int32_t const y, int16_t* const sectnum)
 {
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
@@ -12637,9 +12684,17 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
         while (--wallsleft);
     }
 
-    for (bssize_t i=numsectors-1; i>=0; --i)
-        if (inside_exclude_p(x, y, i, excludesectbitmap))
-            SET_AND_RETURN(*sectnum, i);
+    int16_t const sect = *sectnum == -1 ? numsectors >> 1 : *sectnum;
+    int trycnt = max<int>(numsectors - sect, sect);
+    int16_t highsect = sect, lowsect = sect;
+
+    do
+    {
+        if (highsect < numsectors-1 && inside_exclude_p(x, y, ++highsect, excludesectbitmap))
+            SET_AND_RETURN(*sectnum, highsect);
+        if (lowsect > 0 && inside_exclude_p(x, y, --lowsect, excludesectbitmap))
+            SET_AND_RETURN(*sectnum, lowsect);
+    } while (trycnt--);
 
     *sectnum = -1;
 }
@@ -12739,7 +12794,7 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
     if (sect != -1)
         SET_AND_RETURN(*sectnum, sect);
 
-    updatesector_tryremaining(x, y, sectnum);
+    updatesectorz_tryremaining(x, y, z, sectnum);
 }
 
 void updatesectorneighbor(int32_t const x, int32_t const y, int16_t * const sectnum, int32_t initialMaxDistance /*= INITIALUPDATESECTORDIST*/, int32_t maxDistance /*= MAXUPDATESECTORDIST*/)
@@ -13492,7 +13547,7 @@ int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     auto const wal  = (uwallptr_t)&wall[sec->wallptr];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const w = wal->xy;
     vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
@@ -13511,7 +13566,7 @@ int32_t getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     auto const wal  = (uwallptr_t)&wall[sec->wallptr];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const w = wal->xy;
     vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
@@ -14065,7 +14120,7 @@ void printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const
         palette_t p=getpal(col), b=getpal(backcol);
 
         setpolymost2dview();
-        glDisable(GL_ALPHA_TEST);
+        polymost_setDisabled(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);	// disable writing to the z-buffer
 
         glBegin(GL_POINTS);
@@ -14177,17 +14232,16 @@ static void PolymerProcessModels(void)
 
             if (!warned)
             {
-                OSD_Printf("Post-processing MD3 models for Polymer. This may take a while...\n");
+                LOG_F(INFO, "Processing model data. This may take a while...");
                 videoNextPage();
                 warned = 1;
             }
 
             if (!md3postload_polymer((md3model_t *)models[i]))
-                OSD_Printf("INTERNAL ERROR: mdmodel %s failed postprocessing!\n",
-                           ((md3model_t *)models[i])->head.nam);
+                LOG_F(ERROR, "Failed processing md3model '%s'!", ((md3model_t *)models[i])->head.nam);
 
             if (((md3model_t *)models[i])->head.surfs[0].geometry == NULL)
-                OSD_Printf("INTERNAL ERROR: wtf?\n");
+                LOG_F(ERROR, "Null geometry for md3model '%s'!", ((md3model_t *)models[i])->head.nam);
         }
 //        else
 //            OSD_Printf("mdmodel %d already postprocessed.\n", i);
@@ -14205,8 +14259,8 @@ int32_t videoSetRenderMode(int32_t renderer)
 #ifdef USE_OPENGL
     if (bpp == 8)
     {
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setDisabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
         renderer = REND_CLASSIC;
     }
 # ifdef POLYMER
@@ -14244,6 +14298,8 @@ int32_t videoSetRenderMode(int32_t renderer)
     {
         polymost_init();
     }
+
+    buildgl_resetStateAccounting();
 #endif
 
     return 0;

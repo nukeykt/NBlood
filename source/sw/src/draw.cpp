@@ -2301,7 +2301,7 @@ drawscreen(PLAYERp pp)
     PreUpdatePanel();
 
 
-    smoothratio = min(max(((int32_t) totalclock - ototalclock) * (65536 / synctics),0),65536);
+    smoothratio = calc_smoothratio (totalclock, ototalclock, 40);
     if (GamePaused && !ReloadPrompt) // The checks were brought over from domovethings
         smoothratio = 65536;
 

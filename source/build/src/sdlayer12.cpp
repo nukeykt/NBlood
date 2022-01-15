@@ -77,7 +77,10 @@ int32_t initsystem(void)
 
     if (SDL_Init(sdlinitflags))
     {
-        initprintf("Initialization failed! (%s)\nNon-interactive mode enabled\n", SDL_GetError());
+        LOG_F(ERROR, "SDL initialization failed: %s.", SDL_GetError());
+        LOG_F(WARNING, "Non-interactive mode enabled; this is probably not what you want.");
+        VLOG_F(LOG_GFX, "Video output disabled.");
+
         novideo = 1;
 #ifdef USE_OPENGL
         nogl = 1;
@@ -98,15 +101,7 @@ int32_t initsystem(void)
             initprintf("Failed loading OpenGL driver. GL modes will be unavailable.\n");
             nogl = 1;
         }
-#ifdef POLYMER
-        if (loadglulibrary(getenv("BUILD_GLULIB")))
-        {
-            initprintf("Failed loading GLU.  GL modes will be unavailable.\n");
-            nogl = 1;
-        }
 #endif
-#endif
-
         if (SDL_VideoDriverName(drvname, 32))
             initprintf("Using \"%s\" video driver\n", drvname);
 

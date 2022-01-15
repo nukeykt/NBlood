@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MULTIVC_H_
 
 #include "multivoc.h"
+#include "libasync_config.h"
 
 #define VOC_8BIT            0x0
 #define VOC_16BIT           0x4
@@ -172,11 +173,12 @@ typedef struct VoiceNode
     uint32_t SamplingRate;
     uint32_t RateScale;
     uint32_t position;
-    int Paused;
+    std::atomic<int> Paused;
 
     int handle;
     int priority;
 
+    async::task<int> task;
 } VoiceNode;
 
 typedef struct

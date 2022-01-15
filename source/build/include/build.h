@@ -521,6 +521,8 @@ static inline void inplace_vx_tweak_wall(walltypevx *vxwal, int32_t yaxp)
 int32_t getwalldist(vec2_t const in, int const wallnum);
 int32_t getwalldist(vec2_t const in, int const wallnum, vec2_t * const out);
 
+#include "screenshot.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1038,7 +1040,13 @@ extern float debug1, debug2;
 
 extern int16_t tiletovox[MAXTILES];
 extern int32_t usevoxels, voxscale[MAXVOXELS];
+extern uint8_t voxflags[MAXVOXELS];
 extern char g_haveVoxels;
+
+enum
+{
+    VF_NOTRANS = 1,
+};
 
 #ifdef USE_OPENGL
 extern int32_t usemodels, usehightile;
@@ -1049,6 +1057,7 @@ EXTERN uint16_t h_xsize[MAXTILES], h_ysize[MAXTILES];
 EXTERN int8_t h_xoffs[MAXTILES], h_yoffs[MAXTILES];
 
 EXTERN char *globalpalwritten;
+EXTERN int16_t globalpicnum;
 
 enum {
     GLOBAL_NO_GL_TILESHADES = 1<<0,
@@ -1368,6 +1377,7 @@ int32_t   __fastcall ksqrtasm_old(uint32_t n);
 int32_t   __fastcall ksqrt(uint32_t num);
 int32_t   __fastcall getangle(int32_t xvect, int32_t yvect);
 fix16_t   __fastcall gethiq16angle(int32_t xvect, int32_t yvect);
+fix16_t   __fastcall getq16angledelta(fix16_t first, fix16_t second);
 
 static FORCE_INLINE fix16_t __fastcall getq16angle(int32_t xvect, int32_t yvect)
 {
@@ -1493,9 +1503,6 @@ static FORCE_INLINE int32_t spriteheightofs(int16_t i, int32_t *height, int32_t 
     return spriteheightofsptr((uspriteptr_t)&sprite[i], height, alsotileyofs);
 }
 
-int videoCaptureScreen(const char *filename, char inverseit) ATTRIBUTE((nonnull(1)));
-int videoCaptureScreenTGA(const char *filename, char inverseit) ATTRIBUTE((nonnull(1)));
-
 struct OutputFileCounter {
     uint16_t count = 0;
     buildvfs_FILE opennextfile(char *, char *);
@@ -1550,12 +1557,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 void polymost_glreset(void);
 void polymost_precache(int32_t dapicnum, int32_t dapalnum, int32_t datype);
 
-typedef uint16_t polytintflags_t;
-
 enum cutsceneflags {
     CUTSCENE_FORCEFILTER = 1,
     CUTSCENE_FORCENOFILTER = 2,
     CUTSCENE_TEXTUREFILTER = 4,
+    CUTSCENE_FILTERMASK = CUTSCENE_FORCEFILTER | CUTSCENE_FORCENOFILTER | CUTSCENE_TEXTUREFILTER,
 };
 
 extern int32_t benchmarkScreenshot;
@@ -1564,7 +1570,6 @@ extern int32_t benchmarkScreenshot;
 extern int32_t glanisotropy;
 extern int32_t glusetexcompr;
 extern int32_t gltexfiltermode;
-extern int32_t r_useindexedcolortextures;
 
 enum {
     TEXFILTER_OFF = 0, // GL_NEAREST
@@ -1577,22 +1582,6 @@ extern int32_t gltexmaxsize;
 void gltexapplyprops (void);
 void texcache_invalidate(void);
 
-# ifdef USE_GLEXT
-extern int32_t r_detailmapping;
-extern int32_t r_glowmapping;
-# endif
-
-extern int32_t r_vertexarrays;
-# ifdef USE_GLEXT
-extern int32_t r_vbos;
-extern int32_t r_vbocount;
-# endif
-extern int32_t r_animsmoothing;
-extern int32_t r_parallaxskyclamping;
-extern int32_t r_parallaxskypanning;
-extern int32_t r_fullbrights;
-extern int32_t r_downsize;
-extern int32_t r_downsizevar;
 extern int32_t mdtims, omdtims;
 extern int32_t glrendmode;
 
@@ -1600,14 +1589,6 @@ extern int32_t r_rortexture;
 extern int32_t r_rortexturerange;
 extern int32_t r_rorphase;
 #endif
-
-void hicinit(void);
-void hicsetpalettetint(int32_t palnum, char r, char g, char b, char sr, char sg, char sb, polytintflags_t effect);
-// flags bitset: 1 = don't compress
-int32_t hicsetsubsttex(int32_t picnum, int32_t palnum, const char *filen, float alphacut,
-                       float xscale, float yscale, float specpower, float specfactor, char flags);
-int32_t hicsetskybox(int32_t picnum, int32_t palnum, char *faces[6], int32_t flags);
-int32_t hicclearsubst(int32_t picnum, int32_t palnum);
 
 int32_t Ptile2tile(int32_t tile, int32_t palette) ATTRIBUTE((pure));
 int32_t md_loadmodel(const char *fn);
@@ -1739,6 +1720,13 @@ static FORCE_INLINE int inside_z_p(int32_t const x, int32_t const y, int32_t con
     int32_t cz, fz;
     getzsofslope(sectnum, x, y, &cz, &fz);
     return (z >= cz && z <= fz && inside_p(x, y, sectnum));
+}
+
+static FORCE_INLINE int inside_exclude_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum, const uint8_t *excludesectbitmap)
+{
+    int32_t cz, fz;
+    getzsofslope(sectnum, x, y, &cz, &fz);
+    return (z >= cz && z <= fz && inside_exclude_p(x, y, sectnum, excludesectbitmap));
 }
 
 #define SET_AND_RETURN(Lval, Rval) \

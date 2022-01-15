@@ -3510,7 +3510,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         slidersettings[sldr_mouse] = offset;
 
         gs.MouseSpeed = offset * (MOUSE_SENS_MAX_VALUE/SLDR_MOUSESENSEMAX);
-        CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/8192.f); // fix magic scale factor
+        CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/1024.f); // fix magic scale factor
         break;
 
     case sldr_sndfxvolume:
@@ -3807,7 +3807,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         {
             slidersettings[item->slider] = offset;
             MouseAnalogScale[item->slider - sldr_mousescalex] = offset<<13;
-            CONTROL_SetAnalogAxisScale(item->slider - sldr_mousescalex, offset<<13, controldevice_mouse);
+            CONTROL_SetAnalogAxisSensitivity(item->slider - sldr_mousescalex, (offset<<13) * (1.f/2560.f), controldevice_mouse);
         }
 
         sprintf(tmp_text, "%.2f", (float)(slidersettings[item->slider]<<13) / 65535.f);

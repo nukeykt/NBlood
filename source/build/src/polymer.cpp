@@ -3,6 +3,7 @@
 #if defined USE_OPENGL && defined POLYMER
 
 #include "compat.h"
+#include "common.h"
 
 #define POLYMER_C
 #include "polymer.h"
@@ -10,79 +11,84 @@
 #include "xxhash.h"
 #include "texcache.h"
 
+#define LIBTESS2_IMPLEMENTATION
+
+#include "libtess2.h"
+
 // CVARS
-int32_t         pr_lighting = 1;
-int32_t         pr_normalmapping = 1;
-int32_t         pr_specularmapping = 1;
-int32_t         pr_shadows = 1;
-int32_t         pr_shadowcount = 5;
-int32_t         pr_shadowdetail = 4;
-int32_t         pr_shadowfiltering = 1;
-int32_t         pr_maxlightpasses = 10;
-int32_t         pr_maxlightpriority = PR_MAXLIGHTPRIORITY;
-int32_t         pr_fov = 512;
-double          pr_customaspect = 0.0f;
-int32_t         pr_billboardingmode = 1;
-int32_t         pr_verbosity = 1;       // 0: silent, 1: errors and one-times, 2: multiple-times, 3: flood
-int32_t         pr_wireframe = 0;
-int32_t         pr_vbos = 2;
-int32_t         pr_buckets = 0;
-int32_t         pr_gpusmoothing = 1;
-int32_t         pr_overrideparallax = 0;
-float           pr_parallaxscale = 0.1f;
-float           pr_parallaxbias = 0.0f;
-int32_t         pr_overridespecular = 0;
-float           pr_specularpower = 15.0f;
-float           pr_specularfactor = 1.0f;
-int32_t         pr_highpalookups = 1;
-int32_t         pr_artmapping = 1;
-int32_t         pr_overridehud = 0;
-float           pr_hudxadd = 0.0f;
-float           pr_hudyadd = 0.0f;
-float           pr_hudzadd = 0.0f;
-int32_t         pr_hudangadd = 0;
-int32_t         pr_hudfov = 512;
-float           pr_overridemodelscale = 0.0f;
-int32_t         pr_ati_fboworkaround = 0;
-int32_t         pr_ati_nodepthoffset = 0;
 #ifdef __APPLE__
-int32_t         pr_ati_textureformat_one = 0;
+int32_t pr_ati_textureformat_one = 0;
 #endif
-int32_t         pr_nullrender = 0; // 1: no draw, 2: no draw or updates
+int32_t pr_artmapping         = 1;
+int32_t pr_ati_fboworkaround  = 0;
+int32_t pr_ati_nodepthoffset  = 0;
+int32_t pr_billboardingmode   = 1;
+int32_t pr_buckets            = 0;
+double  pr_customaspect       = 0.0f;
+int32_t pr_fov                = 512;
+int32_t pr_gpusmoothing       = 1;
+int32_t pr_highpalookups      = 1;
+int32_t pr_hudangadd          = 0;
+int32_t pr_hudfov             = 512;
+float   pr_hudxadd            = 0.0f;
+float   pr_hudyadd            = 0.0f;
+float   pr_hudzadd            = 0.0f;
+int32_t pr_lighting           = 1;
+int32_t pr_maxlightpasses     = 10;
+int32_t pr_maxlightpriority   = PR_MAXLIGHTPRIORITY;
+int32_t pr_normalmapping      = 1;
+int32_t pr_nullrender = 0;  // 1: no draw, 2: no draw or updates
+int32_t pr_overridehud        = 0;
+float   pr_overridemodelscale = 0.0f;
+int32_t pr_overrideparallax   = 0;
+int32_t pr_overridespecular   = 0;
+float   pr_parallaxbias       = 0.0f;
+float   pr_parallaxscale      = 0.1f;
+int32_t pr_shadowcount        = 5;
+int32_t pr_shadowdetail       = 4;
+int32_t pr_shadowfiltering    = 1;
+int32_t pr_shadows            = 1;
+float   pr_specularfactor     = 1.0f;
+int32_t pr_specularmapping    = 1;
+float   pr_specularpower      = 15.0f;
+int32_t pr_verbosity          = 1;  // 0: silent, 1: errors and one-times, 2: multiple-times, 3: flood
+int32_t pr_wireframe          = 0;
+int32_t r_pr_constrained    = 1;
+int32_t r_pr_maxlightpasses = 5;  // value of the cvar (not live value), used to detect changes
 
-int32_t         r_pr_maxlightpasses = 5; // value of the cvar (not live value), used to detect changes
-
-GLenum          mapvbousage = GL_STREAM_DRAW;
-GLenum          modelvbousage = GL_STATIC_DRAW;
+GLenum mapvbousage   = GL_STREAM_DRAW;
+GLenum modelvbousage = GL_STATIC_DRAW;
 
 // BUILD DATA
-_prsector       *prsectors[MAXSECTORS];
-_prwall         *prwalls[MAXWALLS];
-_prsprite       *prsprites[MAXSPRITES];
+_prsector *prsectors[MAXSECTORS];
+_prwall *  prwalls[MAXWALLS];
+_prsprite *prsprites[MAXSPRITES];
+
+
 _prmaterial     mdspritematerial;
-_prhighpalookup prhighpalookups[MAXBASEPALS][MAXPALOOKUPS];
+_prhighpalookup *prhighpalookups[MAXBASEPALS];
 
 // One U8 texture per tile
-GLuint          prartmaps[MAXTILES];
+GLuint prartmaps[MAXTILES];
 // 256 U8U8U8 values per basepal
-GLuint          prbasepalmaps[MAXBASEPALS];
+GLuint prbasepalmaps[MAXBASEPALS];
 // numshades full indirections (32*256) per lookup
-GLuint          prlookups[MAXPALOOKUPS];
+GLuint prlookups[MAXPALOOKUPS];
 
-GLuint          prmapvbo;
-const GLsizeiptr proneplanesize = sizeof(_prvert) * 4;
-const GLintptr prwalldatasize = sizeof(_prvert)* 4 * 3; // wall, over and mask planes for every wall
+GLuint   prmapvbo;
 GLintptr prwalldataoffset;
 
-GLuint          prindexringvbo;
-GLuint          *prindexring;
-const GLsizeiptr prindexringsize = 65535;
+GLuint   prindexringvbo;
+GLuint * prindexring;
 GLintptr prindexringoffset;
 
-const GLbitfield prindexringmapflags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+constexpr const GLsizeiptr proneplanesize      = sizeof(_prvert) * 4;
+constexpr const GLintptr   prwalldatasize      = sizeof(_prvert) * 4 * 3;  // wall, over and mask planes for every wall
+constexpr const GLsizeiptr prindexringsize     = 65535;
+constexpr const GLbitfield prindexringmapflags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
-_prbucket       *prbuckethead;
-int32_t         prcanbucket;
+_prbucket *prbuckethead;
+int32_t    prcanbucket;
 
 static inthashtable_t prprogramtable = { nullptr, INTHASH_SIZE(256) };
 static GrowArray<_prprograminfo *> prprogramptrs;
@@ -711,9 +717,8 @@ GLfloat         rootskymodelviewmatrix[16];
 GLfloat         *curskymodelviewmatrix;
 
 static int16_t  sectorqueue[MAXSECTORS];
-static int16_t  querydelay[MAXSECTORS];
 static GLuint   queryid[MAXWALLS];
-static int16_t  drawingstate[MAXSECTORS];
+static uint8_t  drawingstate[(MAXSECTORS+7)>>3];
 
 int16_t         *cursectormasks;
 int16_t         *cursectormaskcount;
@@ -724,15 +729,7 @@ fix16_t         viewangle;
 int32_t         depth;
 _prmirror       mirrors[10];
 
-#if defined __clang__ && defined __APPLE__
-// XXX: OS X 10.9 deprecated GLUtesselator.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-GLUtesselator*  prtess;
-#if defined __clang__ && defined __APPLE__
-#pragma clang diagnostic pop
-#endif
+TESStesselator*  prtess;
 
 static int16_t  cursky;
 static char     curskypal;
@@ -754,7 +751,7 @@ int32_t             polymer_init(void)
 {
     int32_t         i, j, t = timerGetTicks();
 
-    if (pr_verbosity >= 1) OSD_Printf("Initializing Polymer subsystem...\n");
+    if (pr_verbosity >= 1) VLOG_F(LOG_PR, "Initializing Polymer subsystem...");
 
     if (!glinfo.texnpot ||
         !glinfo.depthtex ||
@@ -762,25 +759,26 @@ int32_t             polymer_init(void)
         !glinfo.fbos ||
         !glinfo.rect ||
         !glinfo.multitex ||
-        !glinfo.vbos ||
         !glinfo.occlusionqueries ||
         !glinfo.glsl)
     {
-        OSD_Printf("PR : Your video card driver/combo doesn't support the necessary features!\n");
-        OSD_Printf("PR : Disabling Polymer...\n");
+        VLOG_F(LOG_PR, "Your video card driver/combo doesn't support the necessary features!");
+        VLOG_F(LOG_PR, "Disabling Polymer...");
         return 0;
     }
 
+    buildgl_resetStateAccounting();
     // clean up existing stuff since it will be initialized again if we're re-entering here
     polymer_uninit();
 
-    Bmemset(&prsectors[0], 0, sizeof(prsectors[0]) * MAXSECTORS);
-    Bmemset(&prwalls[0], 0, sizeof(prwalls[0]) * MAXWALLS);
+    Bmemset(&prsectors[0], 0, sizeof(prsectors));
+    Bmemset(&prwalls[0], 0, sizeof(prwalls));
 
-    prtess = bgluNewTess();
+    prtess = tessNewTess(nullptr);
+
     if (prtess == 0)
     {
-        OSD_Printf("PR : Tessellation object initialization failed!\n");
+        VLOG_F(LOG_PR, "Tessellation object initialization failed!");
         return 0;
     }
 
@@ -814,30 +812,39 @@ int32_t             polymer_init(void)
     i = 0;
     while (i < MAXBASEPALS)
     {
+        if (prhighpalookups[i] == nullptr)
+        {
+            i++;
+            continue;
+        }
         j = 0;
         while (j < MAXPALOOKUPS)
         {
-            if (prhighpalookups[i][j].data)
+            if (prhighpalookups[i][j].data == nullptr)
             {
-                glGenTextures(1, &prhighpalookups[i][j].map);
-                polymost_bindTexture(GL_TEXTURE_3D, prhighpalookups[i][j].map);
-                glTexImage3D(GL_TEXTURE_3D,                // target
-                              0,                            // mip level
-                              GL_RGBA,                      // internalFormat
-                              PR_HIGHPALOOKUP_DIM,          // width
-                              PR_HIGHPALOOKUP_DIM,          // height
-                              PR_HIGHPALOOKUP_DIM,          // depth
-                              0,                            // border
-                              GL_BGRA,                      // upload format
-                              GL_UNSIGNED_BYTE,             // upload component type
-                              prhighpalookups[i][j].data);     // data pointer
-                glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-                glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-                glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-                polymost_bindTexture(GL_TEXTURE_3D, 0);
+                j++;
+                continue;
             }
+
+            glGenTextures(1, &prhighpalookups[i][j].map);
+            buildgl_bindTexture(GL_TEXTURE_3D, prhighpalookups[i][j].map);
+            glTexImage3D(GL_TEXTURE_3D,                // target
+                            0,                            // mip level
+                            GL_RGBA,                      // internalFormat
+                            PR_HIGHPALOOKUP_DIM,          // width
+                            PR_HIGHPALOOKUP_DIM,          // height
+                            PR_HIGHPALOOKUP_DIM,          // depth
+                            0,                            // border
+                            GL_BGRA,                      // upload format
+                            GL_UNSIGNED_BYTE,             // upload component type
+                            prhighpalookups[i][j].data);     // data pointer
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            buildgl_bindTexture(GL_TEXTURE_3D, 0);
             j++;
         }
         i++;
@@ -849,16 +856,10 @@ int32_t             polymer_init(void)
         transluctable[1] = 0x55;
     }
 
-#ifndef __APPLE__
-    if (glinfo.debugoutput) {
-        // Enable everything.
-        glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-        glDebugMessageCallbackARB((GLDEBUGPROCARB)polymer_debugoutputcallback, NULL);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-    }
-#endif
+    buildgl_resetSamplerObjects();
+    polymost_initdrawpoly();
 
-    if (pr_verbosity >= 1) OSD_Printf("PR : Initialization complete in %d ms.\n", timerGetTicks()-t);
+    if (pr_verbosity >= 1) VLOG_F(LOG_PR, "Initialization complete in %d ms.", timerGetTicks()-t);
 
     return 1;
 }
@@ -869,28 +870,42 @@ void                polymer_uninit(void)
 
     if (prtess)
     {
-        bgluDeleteTess(prtess);
+        tessDeleteTess(prtess);
         prtess = NULL;
     }
 
     polymer_freeboard();
     polymer_initrendertargets(0);
 
+    if (skyboxdatavbo) glDeleteBuffers(1, &skyboxdatavbo);
+    if (prmapvbo) glDeleteBuffers(1, &prmapvbo);
+    if (prindexringvbo) glDeleteBuffers(1, &prindexringvbo);
+
     i = 0;
     while (i < MAXBASEPALS)
     {
+        if (prhighpalookups[i] == nullptr)
+        {
+            i++;
+            continue;
+        }
+
         j = 0;
         while (j < MAXPALOOKUPS)
         {
-//            if (prhighpalookups[i][j].data) {
-//                DO_FREE_AND_NULL(prhighpalookups[i][j].data);
-//            }
-            if (prhighpalookups[i][j].map) {
+            if (prhighpalookups[i][j].map)
+            {
                 glDeleteTextures(1, &prhighpalookups[i][j].map);
                 prhighpalookups[i][j].map = 0;
             }
+
+            //if (prhighpalookups[i][j].data)
+            //    DO_FREE_AND_NULL(prhighpalookups[i][j].data);
+
             j++;
         }
+
+        //DO_FREE_AND_NULL(prhighpalookups[i]);
         i++;
     }
 
@@ -905,7 +920,7 @@ void                polymer_uninit(void)
     }
 
     if (pr_verbosity >= 3)
-        OSD_Printf("PR: freed %d planelists\n", i);
+        VLOG_F(LOG_PR, "freed %d planelists", i);
 
     inthash_free(&prprogramtable);
 
@@ -916,7 +931,7 @@ void                polymer_uninit(void)
     }
 
     if (pr_verbosity >= 2)
-        OSD_Printf("PR: freed %" PRIi64 " programs\n", prprogramptrs.size());
+        VLOG_F(LOG_PR, "freed %" PRIiPTR " programs", prprogramptrs.size());
 
     prprogramptrs.clear();
 }
@@ -938,7 +953,7 @@ void                polymer_setaspect(int32_t ang)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    bgluPerspective(fang * (360.f/2048.f), aspect, 0.01f, 100.0f);
+    buildgl_setPerspective(fang * (360.f/2048.f), aspect, 0.01f, 100.0f);
 }
 
 void                polymer_glinit(void)
@@ -946,13 +961,13 @@ void                polymer_glinit(void)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    glViewport(windowxy1.x, ydim-(windowxy2.y+1),windowxy2.x-windowxy1.x+1, windowxy2.y-windowxy1.y+1);
+    buildgl_setViewport(windowxy1.x, ydim-(windowxy2.y+1),windowxy2.x-windowxy1.x+1, windowxy2.y-windowxy1.y+1);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    buildgl_setEnabled(GL_DEPTH_TEST);
+    buildgl_setDepthFunc(GL_LEQUAL);
 
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_BLEND);
+    buildgl_setDisabled(GL_ALPHA_TEST);
 
     if (pr_wireframe)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -973,7 +988,7 @@ void                polymer_glinit(void)
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    glEnable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_CULL_FACE);
 }
 
 void                polymer_resetlights(void)
@@ -1025,7 +1040,7 @@ void                polymer_resetlights(void)
     lightcount = 0;
 
     if (!engineLoadMHK(NULL))
-        OSD_Printf("polymer_resetlights: reloaded maphack\n");
+        VLOG_F(LOG_PR, "Refreshed maphack data");
 }
 
 void                polymer_loadboard(void)
@@ -1038,20 +1053,22 @@ void                polymer_loadboard(void)
     prwalldataoffset = numwalls * 2 * sizeof(_prvert);
 
     glGenBuffers(1, &prmapvbo);
-    glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, prmapvbo);
     glBufferData(GL_ARRAY_BUFFER, prwalldataoffset + (numwalls * prwalldatasize), NULL, mapvbousage);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
     glGenBuffers(1, &prindexringvbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prindexringvbo);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, prindexringvbo);
 
     if (pr_buckets)
     {
+        if (prindexring)
+            glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
         glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, prindexringsize * sizeof(GLuint), NULL, prindexringmapflags | GL_DYNAMIC_STORAGE_BIT);
         prindexring = (GLuint*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, prindexringsize * sizeof(GLuint), prindexringmapflags);
     }
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     i = 0;
     while (i < numsectors)
@@ -1073,24 +1090,24 @@ void                polymer_loadboard(void)
 
     polymer_resetlights();
 
-    if (pr_verbosity >= 1 && numsectors) OSD_Printf("PR : Board loaded.\n");
+    if (pr_verbosity >= 1 && numsectors) VLOG_F(LOG_PR, "Board loaded.");
 }
 
 int32_t polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
 {
     //POGOTODO: Polymer should implement this so it's no longer coupled with Polymost & reliant on the fixed-function pipeline
-    glEnable(GL_TEXTURE_2D);
+    buildgl_setEnabled(GL_TEXTURE_2D);
     int32_t returnVal = polymost_printtext256(xpos, ypos, col, backcol, name, fontsize);
-    glDisable(GL_TEXTURE_2D);
+    buildgl_setDisabled(GL_TEXTURE_2D);
     return returnVal;
 }
 
 void polymer_fillpolygon(int32_t npoints)
 {
     //POGOTODO: Polymer should implement this so it's no longer coupled with Polymost & reliant on the fixed-function pipeline
-    glEnable(GL_TEXTURE_2D);
+    buildgl_setEnabled(GL_TEXTURE_2D);
     polymost_fillpolygon(npoints);
-    glDisable(GL_TEXTURE_2D);
+    buildgl_setDisabled(GL_TEXTURE_2D);
 }
 
 // The parallaxed ART sky angle divisor corresponding to a horizfrac of 32768.
@@ -1111,7 +1128,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     // TODO: support for screen resizing
     // frameoffset = frameplace + windowxy1.y*bytesperline + windowxy1.x;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Drawing rooms...\n");
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing rooms...");
 
     // fogcalc_old needs this
     gvisibility = ((float)globalvisibility)*FOGSCALE;
@@ -1121,7 +1138,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     tiltang = (gtang * 90.0f);
 
     pos[0] = (float)daposy;
-    pos[1] = -(float)(daposz) / 16.0f;
+    pos[1] = -(float)(daposz) * (1.f/16.f);
     pos[2] = -(float)daposx;
 
     polymer_updatelights();
@@ -1182,7 +1199,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     if (cursectnum >= 0 && cursectnum < numsectors)
         dacursectnum = cursectnum;
     else if (pr_verbosity>=2)
-        OSD_Printf("PR : got sector %d after update!\n", cursectnum);
+        VLOG_F(LOG_PR, "got sector %d after update!", cursectnum);
 
     // unflag all sectors
     i = numsectors-1;
@@ -1225,9 +1242,9 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
         if (!editstatus && pr_verbosity>=1)
         {
             if ((unsigned)dacursectnum < (unsigned)numsectors)
-                OSD_Printf("PR : EXT sec=%d  z=%d (%d, %d)\n", dacursectnum, daposz, cursectflorz, cursectceilz);
+                VLOG_F(LOG_PR, "EXT sec=%d  z=%d (%d, %d)", dacursectnum, daposz, cursectflorz, cursectceilz);
             else
-                OSD_Printf("PR : EXT sec=%d  z=%d\n", dacursectnum, daposz);
+                VLOG_F(LOG_PR, "EXT sec=%d  z=%d", dacursectnum, daposz);
         }
 
         curmodelviewmatrix = rootmodelviewmatrix;
@@ -1270,15 +1287,15 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     gcosang2 = gcosang*fviewingrange*(1./65536.f);
     gsinang2 = gsinang*fviewingrange*(1./65536.f);
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Rooms drawn.\n");
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Rooms drawn.");
     videoEndDrawing();
 }
 
 void                polymer_drawmasks(void)
 {
-    glEnable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
-//     glEnable(GL_POLYGON_OFFSET_FILL);
+    buildgl_setEnabled(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_BLEND);
+//     buildgl_setEnabled(GL_POLYGON_OFFSET_FILL);
 
 //     while (--spritesortcnt)
 //     {
@@ -1286,7 +1303,7 @@ void                polymer_drawmasks(void)
 //         polymer_drawsprite(spritesortcnt);
 //     }
 
-    glEnable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_CULL_FACE);
 
     if (cursectormaskcount) {
         // We (kind of) queue sector masks near to far, so drawing them in reverse
@@ -1304,12 +1321,15 @@ void                polymer_drawmasks(void)
         DO_FREE_AND_NULL(cursectormasks);
     }
 
-    glDisable(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
 
-//     glDisable(GL_POLYGON_OFFSET_FILL);
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
+//     buildgl_setDisabled(GL_POLYGON_OFFSET_FILL);
+    buildgl_setDisabled(GL_BLEND);
+    buildgl_setDisabled(GL_ALPHA_TEST);
+
+    //polymost_resetVertexPointers(1);
 }
+
 
 void                polymer_editorpick(void)
 {
@@ -1342,55 +1362,36 @@ void                polymer_editorpick(void)
 
         // Apologies to Plagman for littering here, but this feature is quite essential
         {
-            GLdouble model[16];
-            GLdouble proj[16];
+            GLfloat model[16];
+            glGetFloatv(GL_MODELVIEW_MATRIX, model);
+            GLfloat proj[16];
+            glGetFloatv(GL_PROJECTION_MATRIX, proj);
             GLint view[4];
-
-            GLdouble x,y,z;
-            GLfloat scr[3], scrv[3];
-            GLdouble scrx,scry,scrz;
-            GLfloat dadepth;
-
-            int16_t k, bestk=0;
-            GLfloat bestwdistsq = (GLfloat)3.4e38, wdistsq;
-            GLfloat w1[2], w2[2], w21[2], pw1[2], pw2[2];
-            GLfloat ptonline[2];
-            GLfloat scrvxz[2];
-            GLfloat scrvxznorm, scrvxzn[2], scrpxz[2];
-            GLfloat w1d, w2d;
-            walltype *wal = &wall[sector[searchsector].wallptr];
-
-            GLfloat t, svcoeff, p[2];
-            GLfloat *pl;
-
-            glGetDoublev(GL_MODELVIEW_MATRIX, model);
-            glGetDoublev(GL_PROJECTION_MATRIX, proj);
             glGetIntegerv(GL_VIEWPORT, view);
 
+            GLfloat bestwdistsq = (GLfloat)3.4e38, wdistsq;
+            GLfloat w1[2], w2[2], w21[2], pw1[2], pw2[2];
+            walltype *wal = &wall[sector[searchsector].wallptr];
+            
+            GLfloat dadepth;
             glReadPixels(searchx, ydim-searchy, 1,1, GL_DEPTH_COMPONENT, GL_FLOAT, &dadepth);
-            bgluUnProject(searchx, ydim-searchy, dadepth,  model, proj, view,  &x, &y, &z);
-            bgluUnProject(searchx, ydim-searchy, 0.0,  model, proj, view,  &scrx, &scry, &scrz);
+            GLfloat x,y,z;
+            buildgl_unprojectMatrixToViewport({ fsearchx, fydim-fsearchy, dadepth},  model, proj, view,  &x, &y, &z);
+            GLfloat scrx,scry,scrz;
+            buildgl_unprojectMatrixToViewport({ fsearchx, fydim-fsearchy, 0.0},  model, proj, view,  &scrx, &scry, &scrz);
 
-            scr[0]=scrx, scr[1]=scry, scr[2]=scrz;
-
-            scrv[0] = x-scrx;
-            scrv[1] = y-scry;
-            scrv[2] = z-scrz;
-
-            scrvxz[0] = x-scrx;
-            scrvxz[1] = z-scrz;
+            GLfloat scr[3]    = { scrx, scry, scrz };
+            GLfloat scrv[3]   = { x-scrx, y-scry, z-scrz };
+            GLfloat scrvxz[2] = { x-scrx, z-scrz };
 
             if (prsectors[searchsector]==NULL)
             {
-                //OSD_Printf("polymer_editorpick: prsectors[searchsector]==NULL !!!\n");
+                //OSD_Printf("polymer_editorpick: prsectors[searchsector]==NULL !!!");
                 searchwall = sector[num].wallptr;
             }
             else
             {
-                if (searchstat==1)
-                    pl = prsectors[searchsector]->ceil.plane;
-                else
-                    pl = prsectors[searchsector]->floor.plane;
+                auto pl = (searchstat==1) ? prsectors[searchsector]->ceil.plane:prsectors[searchsector]->floor.plane;
 
                 if (pl == NULL)
                 {
@@ -1398,24 +1399,24 @@ void                polymer_editorpick(void)
                     return;
                 }
 
-                t = dot3f(pl,scrv);
-                svcoeff = -(dot3f(pl,scr)+pl[3])/t;
+                GLfloat t = dot3f(pl,scrv);
+                GLfloat svcoeff = -(dot3f(pl,scr)+pl[3])/t;
 
                 // point on plane (x and z)
-                p[0] = scrx + svcoeff*scrv[0];
-                p[1] = scrz + svcoeff*scrv[2];
+                GLfloat p[2] = { scrx + svcoeff*scrv[0], scrz + svcoeff*scrv[2] };
+                int16_t bestk=0;
+                GLfloat w1d, w2d;
 
-                for (k=0; k<sector[searchsector].wallnum; k++)
+                for (int k=0; k<sector[searchsector].wallnum; k++)
                 {
                     w1[1] = -(float)wal[k].x;
                     w1[0] = (float)wal[k].y;
                     w2[1] = -(float)wall[wal[k].point2].x;
                     w2[0] = (float)wall[wal[k].point2].y;
 
-                    scrvxznorm = sqrt(dot2f(scrvxz,scrvxz));
-                    scrvxzn[0] = scrvxz[1]/scrvxznorm;
-                    scrvxzn[1] = -scrvxz[0]/scrvxznorm;
-
+                    GLfloat scrvxznorm = Bsqrtf(dot2f(scrvxz,scrvxz));
+                    GLfloat scrvxzn[2] = { scrvxz[1]/scrvxznorm,
+                                          -scrvxz[0]/scrvxznorm };
                     relvec2f(p,w1, pw1);
                     relvec2f(p,w2, pw2);
                     relvec2f(w2,w1, w21);
@@ -1426,8 +1427,9 @@ void                polymer_editorpick(void)
                     if (w1d <= 0 || w2d <= 0)
                         continue;
 
-                    ptonline[0] = w2[0]+(w2d/(w1d+w2d))*w21[0];
-                    ptonline[1] = w2[1]+(w2d/(w1d+w2d))*w21[1];
+                    GLfloat scrpxz[2];
+                    GLfloat ptonline[2] = { w2[0]+(w2d/(w1d+w2d))*w21[0], 
+                                            w2[1]+(w2d/(w1d+w2d))*w21[1] };
                     relvec2f(p,ptonline, scrpxz);
                     if (dot2f(scrvxz,scrpxz)<0)
                         continue;
@@ -1462,13 +1464,18 @@ void                polymer_inb4rotatesprite(int16_t tilenum, char pal, int8_t s
     _prmaterial     rotatespritematerial;
 
     polymer_getbuildmaterial(&rotatespritematerial, tilenum, pal, shade, 0, method);
-
     rotatespritematerialbits = polymer_bindmaterial(&rotatespritematerial, NULL, 0);
+    buildgl_bindSamplerObject(0, PTH_CLAMPED | ((rotatespritematerialbits & prprogrambits[PR_BIT_ART_MAP].bit) ? PTH_INDEXED : PTH_HIGHTILE));
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+
+    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
+    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
 }
 
 void                polymer_postrotatesprite(void)
 {
     polymer_unbindmaterial(rotatespritematerialbits);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static void         polymer_setupdiffusemodulation(_prplane *plane, GLubyte modulation, const GLubyte *data)
@@ -1497,13 +1504,13 @@ void                polymer_drawmaskwall(int32_t damaskwallcnt)
     _prwall         *w;
     GLubyte         oldcolor[4];
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Masked wall %i...\n", damaskwallcnt);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Masked wall %i", damaskwallcnt);
 
     sec = (usectorptr_t)&sector[wallsect[maskwall[damaskwallcnt]]];
     wal = &wall[maskwall[damaskwallcnt]];
     w = prwalls[maskwall[damaskwallcnt]];
 
-    glEnable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_CULL_FACE);
 
     if (searchit == 2) {
         polymer_drawsearchplane(&w->mask, oldcolor, 0x04, (GLubyte *)&maskwall[damaskwallcnt]);
@@ -1512,7 +1519,7 @@ void                polymer_drawmaskwall(int32_t damaskwallcnt)
         polymer_drawplane(&w->mask);
     }
 
-    glDisable(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
 }
 
 void                polymer_drawsprite(int32_t snum)
@@ -1523,7 +1530,7 @@ void                polymer_drawsprite(int32_t snum)
     auto const tspr = tspriteptr[snum];
     usectorptr_t sec;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Sprite %i...\n", snum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Sprite %i", snum);
 
     if (bad_tspr(tspr))
         return;
@@ -1546,11 +1553,11 @@ void                polymer_drawsprite(int32_t snum)
         tile2model[Ptile2tile(tspr->picnum,tspr->pal)].framenum >= 0 &&
         !(spriteext[spritenum].flags & SPREXT_NOTMD))
     {
-        glEnable(GL_CULL_FACE);
+        buildgl_setEnabled(GL_CULL_FACE);
         SWITCH_CULL_DIRECTION;
         polymer_drawmdsprite(tspr);
         SWITCH_CULL_DIRECTION;
-        glDisable(GL_CULL_FACE);
+        buildgl_setDisabled(GL_CULL_FACE);
         return;
     }
 
@@ -1584,12 +1591,12 @@ void                polymer_drawsprite(int32_t snum)
     case 1:
         prsectors[tspr->sectnum]->wallsproffset += 0.5f;
         if (!depth || mirrors[depth-1].plane)
-            glPolygonOffset(-1.0f, -1.0f);
+            glPolygonOffset(-(1.f/min(2048, sepldist(globalposx-tspr->x, globalposy-tspr->y)>>2)), -64);
         break;
     case 2:
         prsectors[tspr->sectnum]->floorsproffset += 0.5f;
         if (!depth || mirrors[depth-1].plane)
-            glPolygonOffset(-1.0f, -1.0f);
+            glPolygonOffset(-(1.f/min(2048, sepdist(globalposx-tspr->x, globalposy-tspr->y, globalposz-tspr->z)>>5)), -64);
         break;
     }
 
@@ -1607,15 +1614,12 @@ void                polymer_drawsprite(int32_t snum)
                 while (!prlights[i].flags.active)
                     i++;
 
-                if (prlights[i].priority != curpriority)
+                if (prlights[i].priority == curpriority
+                    && sepdist(prlights[i].x-tspr->x, prlights[i].y-tspr->y, prlights[i].z-tspr->z) < (prlights[i].range + 256))
                 {
-                    i++;
-                    j++;
-                    continue;
+                    if (polymer_planeinlight(s->plane, prlights[i]))
+                        s->plane.lights[s->plane.lightcount++] = i;
                 }
-
-                if (polymer_planeinlight(&s->plane, &prlights[i]))
-                    s->plane.lights[s->plane.lightcount++] = i;
 
                 i++;
                 j++;
@@ -1631,22 +1635,22 @@ void                polymer_drawsprite(int32_t snum)
     {
         if ((tspr->cstat & SPR_ALIGN_MASK)==SPR_FLOOR && (tspr->cstat & SPR_YFLIP))
             SWITCH_CULL_DIRECTION;
-        glEnable(GL_CULL_FACE);
+        buildgl_setEnabled(GL_CULL_FACE);
     }
 
     if ((!depth || mirrors[depth-1].plane) && !pr_ati_nodepthoffset)
-        glEnable(GL_POLYGON_OFFSET_FILL);
+        buildgl_setEnabled(GL_POLYGON_OFFSET_FILL);
 
     polymer_drawplane(&s->plane);
 
     if ((!depth || mirrors[depth-1].plane) && !pr_ati_nodepthoffset)
-        glDisable(GL_POLYGON_OFFSET_FILL);
+        buildgl_setDisabled(GL_POLYGON_OFFSET_FILL);
 
     if ((tspr->cstat & 64) && (tspr->cstat & SPR_ALIGN_MASK))
     {
         if ((tspr->cstat & SPR_ALIGN_MASK)==SPR_FLOOR && (tspr->cstat & SPR_YFLIP))
             SWITCH_CULL_DIRECTION;
-        glDisable(GL_CULL_FACE);
+        buildgl_setDisabled(GL_CULL_FACE);
     }
 }
 
@@ -1714,7 +1718,8 @@ int16_t             polymer_addlight(_prlight* light)
     prlights[lighti].planecount = 0;
     prlights[lighti].planelist = NULL;
 
-    polymer_culllight(lighti);
+    if (polymer_culllight(lighti))
+        prlights[lighti].flags.invalidate = 1;
 
     lightcount++;
 
@@ -1727,7 +1732,7 @@ void                polymer_deletelight(int16_t lighti)
     {
 #ifdef DEBUGGINGAIDS
         if (pr_verbosity >= 2)
-            OSD_Printf("PR : Called polymer_deletelight on inactive light\n");
+            VLOG_F(LOG_PR, "Called polymer_deletelight on inactive light");
         // currently known cases: when reloading maphack lights (didn't set maphacklightcnt=0
         // but did loadmaphack()->delete_maphack_lights() after polymer_resetlights())
 #endif
@@ -1776,19 +1781,21 @@ void                polymer_texinvalidate(void)
     while (i >= 0);
 }
 
-void                polymer_definehighpalookup(char basepalnum, char palnum, char *data)
+void polymer_definehighpalookup(uint8_t basepalnum, uint8_t palnum, char *data)
 {
+    if (prhighpalookups[basepalnum] == nullptr)
+        prhighpalookups[basepalnum] = (_prhighpalookup *)Xcalloc(sizeof(_prhighpalookup), MAXPALOOKUPS);
+
+    Bassert(prhighpalookups[basepalnum][palnum].data == nullptr);
+
     prhighpalookups[basepalnum][palnum].data = (char *)Xmalloc(PR_HIGHPALOOKUP_DATA_SIZE);
 
     Bmemcpy(prhighpalookups[basepalnum][palnum].data, data, PR_HIGHPALOOKUP_DATA_SIZE);
 }
 
-int32_t             polymer_havehighpalookup(int32_t basepalnum, int32_t palnum)
+bool polymer_havehighpalookup(uint8_t basepalnum, uint8_t palnum)
 {
-    if ((uint32_t)basepalnum >= MAXBASEPALS || (uint32_t)palnum >= MAXPALOOKUPS)
-        return 0;
-
-    return (prhighpalookups[basepalnum][palnum].data != NULL);
+    return prhighpalookups[basepalnum] != nullptr && prhighpalookups[basepalnum][palnum].data != nullptr;
 }
 
 void                polymer_setrorcallback(rorcallback callback)
@@ -1821,7 +1828,6 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
     int16_t         *localsectormasks;
     int16_t         *localsectormaskcount;
     int32_t         gx, gy, gz, px, py, pz;
-    GLdouble        plane[4];
     float           coeff;
     float           pos[3];
 
@@ -1831,28 +1837,27 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 
     polymer_extractfrustum(localmodelviewmatrix, localprojectionmatrix, frustum);
 
-    Bmemset(querydelay, 0, sizeof(int16_t) * numsectors);
     Bmemset(queryid, 0, sizeof(GLuint) * numwalls);
-    Bmemset(drawingstate, 0, sizeof(int16_t) * numsectors);
+    Bmemset(drawingstate, 0, sizeof(drawingstate));
 
     front = 0;
     back = 1;
     sectorqueue[0] = dacursectnum;
-    drawingstate[dacursectnum] = 1;
+    bitmap_set(drawingstate, dacursectnum);
 
     localspritesortcnt = localmaskwallcnt = 0;
 
     mirrorcount = 0;
 
     localsectormasks = (int16_t *)Xmalloc(sizeof(int16_t) * numsectors);
-    localsectormaskcount = (int16_t *)Xcalloc(sizeof(int16_t), 1);
+    localsectormaskcount = (int16_t *)Xcalloc(1, sizeof(int16_t));
     cursectormasks = localsectormasks;
     cursectormaskcount = localsectormaskcount;
 
-    glDisable(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     polymer_drawsky(cursky, curskypal, curskyshade);
-    glEnable(GL_DEPTH_TEST);
+    buildgl_setEnabled(GL_DEPTH_TEST);
 
     // depth-only occlusion testing pass
 //     overridematerial = 0;
@@ -1901,7 +1906,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         {
             if ((wall[sec->wallptr + i].nextsector >= 0) &&
                 (wallvisible(globalposx, globalposy, sec->wallptr + i)) &&
-                (polymer_planeinfrustum(&prwalls[sec->wallptr + i]->mask, frustum)))
+                (polymer_planeinfrustum(prwalls[sec->wallptr + i]->mask, frustum)))
             {
                 if ((prwalls[sec->wallptr + i]->mask.vertcount == 4) &&
                     !(prwalls[sec->wallptr + i]->underover & 4) &&
@@ -1950,7 +1955,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
                 }
 
                 if (!(wall[sec->wallptr + i].cstat & 32)) {
-                    if (doquery && (!drawingstate[wall[sec->wallptr + i].nextsector]))
+                    if (doquery && !bitmap_test(drawingstate, wall[sec->wallptr + i].nextsector))
                     {
                         float pos[3], sqdist;
                         int32_t oldoverridematerial;
@@ -1975,6 +1980,8 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 
                             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
                             glDepthMask(GL_FALSE);
+
+                            //buildgl_bindSamplerObject(0, PTH_DEPTH_SAMPLER);
 
                             glGenQueries(1, &queryid[sec->wallptr + i]);
                             glBeginQuery(GL_SAMPLES_PASSED, queryid[sec->wallptr + i]);
@@ -2018,11 +2025,11 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 
             for (SECTORS_OF_BUNCH(bunchnum, YAX_CEILING, ns)) {
 
-                if (ns >= 0 && !drawingstate[ns] &&
-                    polymer_planeinfrustum(&prsectors[ns]->ceil, frustum)) {
+                if (ns >= 0 && !bitmap_test(drawingstate, ns) &&
+                    polymer_planeinfrustum(prsectors[ns]->ceil, frustum)) {
 
                     sectorqueue[back++] = ns;
-                    drawingstate[ns] = 1;
+                    bitmap_set(drawingstate, ns);
                 }
             }
         }
@@ -2031,11 +2038,11 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 
             for (SECTORS_OF_BUNCH(bunchnum, YAX_FLOOR, ns)) {
 
-                if (ns >= 0 && !drawingstate[ns] &&
-                    polymer_planeinfrustum(&prsectors[ns]->floor, frustum)) {
+                if (ns >= 0 && !bitmap_test(drawingstate, ns) &&
+                    polymer_planeinfrustum(prsectors[ns]->floor, frustum)) {
 
                     sectorqueue[back++] = ns;
-                    drawingstate[ns] = 1;
+                    bitmap_set(drawingstate, ns);
                 }
             }
         }
@@ -2043,8 +2050,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         i = sec->wallnum-1;
         do
         {
-            if ((queryid[sec->wallptr + i]) &&
-                (!drawingstate[wall[sec->wallptr + i].nextsector]))
+            if ((queryid[sec->wallptr + i]) && !bitmap_test(drawingstate, wall[sec->wallptr + i].nextsector))
             {
                 // REAP
                 result = 0;
@@ -2062,7 +2068,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
                 if (result || !doquery)
                 {
                     sectorqueue[back++] = wall[sec->wallptr + i].nextsector;
-                    drawingstate[wall[sec->wallptr + i].nextsector] = 1;
+                    bitmap_set(drawingstate, wall[sec->wallptr + i].nextsector);
                 }
             } else if (queryid[sec->wallptr + i] &&
                        queryid[sec->wallptr + i] != 0xFFFFFFFF)
@@ -2079,26 +2085,30 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
     polymer_emptybuckets();
 
     // do the actual shaded drawing
-//     overridematerial = 0xFFFFFFFF;
 
-    // go through the sector queue again
-//     front = 0;
-//     while (front < back)
-//     {
-//         sec = &sector[sectorqueue[front]];
-//
-//         polymer_drawsector(sectorqueue[front]);
-//
-//         i = 0;
-//         while (i < sec->wallnum)
-//         {
-//             polymer_drawwall(sectorqueue[front], sec->wallptr + i);
-//
-//             i++;
-//         }
-//
-//         front++;
-//     }
+    if (pr_buckets)
+    {
+        overridematerial = 0xFFFFFFFF;
+
+        //go through the sector queue again
+        front = 0;
+        while (front < back)
+        {
+            sec = (usectorptr_t)&sector[sectorqueue[front]];
+
+            polymer_drawsector(sectorqueue[front], 0);
+
+            i = 0;
+            while (i < sec->wallnum)
+            {
+                polymer_drawwall(sectorqueue[front], sec->wallptr + i);
+
+                i++;
+            }
+
+            front++;
+        }
+    }
 
     i = mirrorcount-1;
     while (i >= 0)
@@ -2115,10 +2125,10 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
 
-        plane[0] = mirrorlist[i].plane->plane[0];
-        plane[1] = mirrorlist[i].plane->plane[1];
-        plane[2] = mirrorlist[i].plane->plane[2];
-        plane[3] = mirrorlist[i].plane->plane[3];
+        GLdouble const plane[4] = { mirrorlist[i].plane->plane[0],
+                                    mirrorlist[i].plane->plane[1],
+                                    mirrorlist[i].plane->plane[2],
+                                    mirrorlist[i].plane->plane[3] };
 
         glClipPlane(GL_CLIP_PLANE0, plane);
 
@@ -2127,7 +2137,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
             polymer_inb4mirror(mirrorlist[i].plane->buffer, mirrorlist[i].plane->plane);
             SWITCH_CULL_DIRECTION;
         }
-        //glEnable(GL_CLIP_PLANE0);
+        //buildgl_setEnabled(GL_CLIP_PLANE0);
 
         if (mirrorlist[i].rorstat == 0 && mirrorlist[i].wallnum >= 0)
             renderPrepareMirror(globalposx, globalposy, globalposz, qglobalang, qglobalhoriz,
@@ -2200,7 +2210,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 
         set_globalpos(gx, gy, gz);
 
-        glDisable(GL_CLIP_PLANE0);
+        buildgl_setDisabled(GL_CLIP_PLANE0);
         if (mirrorlist[i].rorstat == 0)
             SWITCH_CULL_DIRECTION;
         glMatrixMode(GL_MODELVIEW);
@@ -2231,11 +2241,11 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         if (mirrors[depth - 1].plane)
             display_mirror = 0;
 
-        glDisable(GL_CULL_FACE);
+        buildgl_setDisabled(GL_CULL_FACE);
         renderDrawMasks();
-        glEnable(GL_CULL_FACE);
+        buildgl_setEnabled(GL_CULL_FACE);
     }
-    }
+}
 
 static void         polymer_emptybuckets(void)
 {
@@ -2244,11 +2254,11 @@ static void         polymer_emptybuckets(void)
     if (pr_buckets == 0)
         return;
 
-    glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, prmapvbo);
     glVertexPointer(3, GL_FLOAT, sizeof(_prvert), NULL);
     glTexCoordPointer(2, GL_FLOAT, sizeof(_prvert), (GLvoid *)(3 * sizeof(GLfloat)));
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prindexringvbo);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, prindexringvbo);
 
     uint32_t indexcount = 0;
     while (bucket != NULL)
@@ -2297,7 +2307,6 @@ static void         polymer_emptybuckets(void)
         }
 
         int32_t materialbits = polymer_bindmaterial(&bucket->material, NULL, 0);
-
         glDrawElements(GL_TRIANGLES, bucket->count, GL_UNSIGNED_INT, bucket->indiceoffset);
 
         polymer_unbindmaterial(materialbits);
@@ -2307,8 +2316,8 @@ static void         polymer_emptybuckets(void)
         bucket = bucket->next;
     }
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
     prcanbucket = 0;
 }
@@ -2321,12 +2330,10 @@ static _prbucket*   polymer_findbucket(int16_t tilenum, char pal)
 
     Bsprintf(propstr, "%d_%d", tilenum, pal);
 
-    _prbucket *bucketptr = prbuckethead ? (_prbucket *)hash_find(&h_buckets, propstr) : NULL;
-
-    // find bucket
+    _prbucket *bucketptr = (_prbucket *)(prbuckethead ? hash_find(&h_buckets, propstr) : -1);
 
     // no buckets or no bucket found, create one
-    if (bucketptr == NULL || (intptr_t)bucketptr == -1)
+    if ((intptr_t)bucketptr == -1)
     {
         bucketptr = (_prbucket *)Xmalloc(sizeof (_prbucket));
 
@@ -2376,26 +2383,18 @@ static void         polymer_bucketplane(_prplane* plane)
     if (plane->indicescount > 0)
     {
         while (i < plane->indicescount)
-        {
-            bucketptr->indices[bucketptr->count] = plane->indices[i] + plane->mapvbo_vertoffset;
-            bucketptr->count++;
-            i++;
-        }
+            bucketptr->indices[bucketptr->count++] = plane->indices[i++] + plane->mapvbo_vertoffset;
     }
     else
     {
         static const uint32_t quadindices[6] = { 0, 1, 2, 0, 2, 3 };
 
         while (i < 6)
-        {
-            bucketptr->indices[bucketptr->count] = quadindices[i] + plane->mapvbo_vertoffset;
-            bucketptr->count++;
-            i++;
-        }
+            bucketptr->indices[bucketptr->count++] = quadindices[i++] + plane->mapvbo_vertoffset;
     }
 }
 
-static inline _prprograminfo *polymer_getprogram(int32_t materialbits)
+static FORCE_INLINE _prprograminfo *polymer_getprogram(int32_t materialbits)
 {
     intptr_t progptr = inthash_find(&prprogramtable, materialbits);
     return (progptr != -1) ? (_prprograminfo *)progptr : polymer_compileprogram(materialbits);
@@ -2471,11 +2470,11 @@ static void         polymer_drawplane(_prplane* plane)
 
     if (planevbo)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, planevbo);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, planevbo);
         glVertexPointer(3, GL_FLOAT, sizeof(_prvert), (GLvoid *)(geomfbooffset));
         glTexCoordPointer(2, GL_FLOAT, sizeof(_prvert), (GLvoid *)(geomfbooffset + (3 * sizeof(GLfloat))));
         if (plane->indices)
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, plane->ivbo);
+            buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, plane->ivbo);
     } else {
         glVertexPointer(3, GL_FLOAT, sizeof(_prvert), &plane->buffer->x);
         glTexCoordPointer(2, GL_FLOAT, sizeof(_prvert), &plane->buffer->u);
@@ -2512,9 +2511,9 @@ static void         polymer_drawplane(_prplane* plane)
 
     if (planevbo)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
         if (plane->indices)
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 }
 
@@ -2659,12 +2658,12 @@ static int32_t      polymer_initsector(int16_t sectnum)
     usectorptr_t sec;
     _prsector*      s;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initializing sector %i...\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Initializing sector %i", sectnum);
 
     sec = (usectorptr_t)&sector[sectnum];
     s = (_prsector *)Xcalloc(1, sizeof(_prsector));
 
-    s->verts = (GLdouble *)Xcalloc(sec->wallnum, sizeof(GLdouble) * 3);
+    s->verts = (GLfloat *)Xcalloc(sec->wallnum, sizeof(GLfloat) * 3);
     s->floor.buffer = (_prvert *)Xcalloc(sec->wallnum, sizeof(_prvert));
     s->floor.vertcount = sec->wallnum;
     s->ceil.buffer = (_prvert *)Xcalloc(sec->wallnum, sizeof(_prvert));
@@ -2675,76 +2674,69 @@ static int32_t      polymer_initsector(int16_t sectnum)
     glGenBuffers(1, &s->floor.ivbo);
     glGenBuffers(1, &s->ceil.ivbo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, s->floor.vbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, s->floor.vbo);
     glBufferData(GL_ARRAY_BUFFER, sec->wallnum * sizeof(GLfloat) * 5, NULL, mapvbousage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, s->ceil.vbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, s->ceil.vbo);
     glBufferData(GL_ARRAY_BUFFER, sec->wallnum * sizeof(GLfloat) * 5, NULL, mapvbousage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
     s->flags.empty = 1; // let updatesector know that everything needs to go
 
     prsectors[sectnum] = s;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initialized sector %i.\n", sectnum);
+    if (pr_verbosity >= 2) VLOG_F(LOG_PR, "Initialized sector %i.", sectnum);
 
     return 1;
 }
 
 static int32_t      polymer_updatesector(int16_t sectnum)
 {
-    _prsector*      s;
-    usectorptr_t sec;
-    walltype        *wal;
-    int32_t         i, j;
-    int32_t         ceilz, florz;
-    int32_t         heidiff;
-    float           tex, tey;
-    float           secangcos, secangsin, scalecoef, xpancoef, ypancoef;
-    int32_t         needfloor, wallinvalidate;
-    int16_t         curstat, curpicnum, floorpicnum, ceilingpicnum;
-    char            curxpanning, curypanning;
-    _prvert*        curbuffer;
-    float           relscalefactorfloor = 0.0, relscalefactorceil = 0.0, currelscalefactor;
-
     if (pr_nullrender >= 3) return 0;
 
-    s = prsectors[sectnum];
-    sec = (usectorptr_t)&sector[sectnum];
-
-    secangcos = secangsin = 2;
+    _prsector *s = prsectors[sectnum];
 
     if (s == NULL)
     {
-        if (pr_verbosity >= 1) OSD_Printf("PR : Can't update uninitialized sector %i.\n", sectnum);
+        if (pr_verbosity >= 1) VLOG_F(LOG_PR, "Can't update uninitialized sector %i.", sectnum);
         return -1;
     }
+    auto sec = (usectorptr_t)&sector[sectnum];
 
-    needfloor = wallinvalidate = 0;
+    float secangsin = 2;
+    float secangcos = 2;
+    float relscalefactorfloor = 0.f;
+    float relscalefactorceil = 0.f;
+
+    int32_t needfloor = 0;
+    int32_t wallinvalidate = 0;
 
     // geometry
-    wal = &wall[sec->wallptr];
-    i = 0;
-    while (i < sec->wallnum)
+    auto wal = (uwallptr_t)&wall[sec->wallptr];
+    int i = 0;
+
+    do
     {
-        if ((-wal->x != s->verts[(i*3)+2]))
+        if ((-wal->x != Blrintf(s->verts[(i*3)+2])))
         {
             s->verts[(i*3)+2] = s->floor.buffer[i].z = s->ceil.buffer[i].z = -(float)wal->x;
             needfloor = wallinvalidate = 1;
         }
-        if ((wal->y != s->verts[i*3]))
+
+        if ((wal->y != Blrintf(s->verts[i*3])))
         {
             s->verts[i*3] = s->floor.buffer[i].x = s->ceil.buffer[i].x = (float)wal->y;
             needfloor = wallinvalidate = 1;
         }
 
         i++;
-        wal = &wall[sec->wallptr + i];
+        wal++;
     }
+    while (i < sec->wallnum);
 
-    if ((s->flags.empty) ||
-            needfloor ||
+    if (needfloor || 
+            (s->flags.empty) ||
             (sec->floorz != s->floorz) ||
             (sec->ceilingz != s->ceilingz) ||
             (sec->floorheinum != s->floorheinum) ||
@@ -2752,16 +2744,19 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     {
         wallinvalidate = 1;
 
-        wal = &wall[sec->wallptr];
+        wal = (uwallptr_t)&wall[sec->wallptr];
         i = 0;
+
+        int32_t ceilz, florz;
+
         while (i < sec->wallnum)
         {
             getzsofslope(sectnum, wal->x, wal->y, &ceilz, &florz);
-            s->floor.buffer[i].y = -(float)(florz) / 16.0f;
-            s->ceil.buffer[i].y = -(float)(ceilz) / 16.0f;
+            s->floor.buffer[i].y = -(float)(florz) * (1.f/16.f);
+            s->ceil.buffer[i].y = -(float)(ceilz) * (1.f/16.f);
 
             i++;
-            wal = &wall[sec->wallptr + i];
+            wal++;
         }
 
         s->floorz = sec->floorz;
@@ -2772,9 +2767,10 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     else if (sec->visibility != s->visibility)
         wallinvalidate = 1;
 
-    floorpicnum = sec->floorpicnum;
+    int16_t floorpicnum = sec->floorpicnum;
     tileUpdatePicnum(&floorpicnum, sectnum);
-    ceilingpicnum = sec->ceilingpicnum;
+
+    int16_t ceilingpicnum = sec->ceilingpicnum;
     tileUpdatePicnum(&ceilingpicnum, sectnum);
 
     if ((!s->flags.empty) && (!needfloor) &&
@@ -2783,7 +2779,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
 #ifdef USE_STRUCT_TRACKERS
             (s->trackedrev == sectorchanged[sectnum]))
 #else
-            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, visibility) - offsetof(sectortype, ceilingstat)))
+            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat)))
 #endif
         goto attributes;
 
@@ -2822,30 +2818,35 @@ static int32_t      polymer_updatesector(int16_t sectnum)
         }
 
         // now sanely compute relative firstwall angle
-        double arctan = atan2( xy.y, xy.x ) + M_PI / 2.0;
-        secangcos = cos( arctan );
-        secangsin = sin( arctan );
+        float arctan = atan2f(xy.y, xy.x) + (M_PI / 2.f);
+        secangcos    = cosf(arctan);
+        secangsin    = sinf(arctan);
     }
 
-    wal = &wall[sec->wallptr];
+    wal = (uwallptr_t)&wall[sec->wallptr];
     i = 0;
     while (i < sec->wallnum)
     {
-        j = 2;
-        curstat = sec->floorstat;
-        curbuffer = s->floor.buffer;
-        curpicnum = floorpicnum;
-        curxpanning = sec->floorxpanning;
-        curypanning = sec->floorypanning;
-        currelscalefactor = relscalefactorfloor;
+        int j = 2;
+
+        uint16_t curstat   = sec->floorstat;
+        auto     curbuffer = s->floor.buffer;
+        int16_t  curpicnum = floorpicnum;
+        float currelscalefactor = relscalefactorfloor;
+        uint8_t curxpanning = sec->floorxpanning;
+        uint8_t  curypanning = sec->floorypanning;
+        float tex, tey;
+        float xpancoef, ypancoef;
+        int32_t heidiff;
 
         while (j)
         {
             if (j == 1)
             {
-                curstat = sec->ceilingstat;
+                curstat   = sec->ceilingstat;
                 curbuffer = s->ceil.buffer;
                 curpicnum = ceilingpicnum;
+
                 curxpanning = sec->ceilingxpanning;
                 curypanning = sec->ceilingypanning;
                 currelscalefactor = relscalefactorceil;
@@ -2872,9 +2873,9 @@ static int32_t      polymer_updatesector(int16_t sectnum)
                 heidiff = (int32_t)(curbuffer[i].y - curbuffer[0].y);
                 // don't forget the sign, tey could be negative with concave sectors
                 if (tey >= 0)
-                    tey = sqrt((double)((tey * tey) + (heidiff * heidiff)));
+                    tey = Bsqrtf((float)((tey * tey) + (heidiff * heidiff)));
                 else
-                    tey = -sqrt((double)((tey * tey) + (heidiff * heidiff)));
+                    tey = -Bsqrtf((float)((tey * tey) + (heidiff * heidiff)));
             }
 
             if (curstat & 4)
@@ -2883,7 +2884,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
             if (curstat & 16) tex = -tex;
             if (curstat & 32) tey = -tey;
 
-            scalecoef = (curstat & 8) ? 8.0f : 16.0f;
+            float const scalecoef = (curstat & 8) ? 8.0f : 16.0f;
 
             if (curxpanning)
             {
@@ -2907,13 +2908,14 @@ static int32_t      polymer_updatesector(int16_t sectnum)
             j--;
         }
         i++;
-        wal = &wall[sec->wallptr + i];
+        wal++;
     }
 
-    s->floorxpanning = sec->floorxpanning;
+    s->floorxpanning   = sec->floorxpanning;
     s->ceilingxpanning = sec->ceilingxpanning;
-    s->floorypanning = sec->floorypanning;
+    s->floorypanning   = sec->floorypanning;
     s->ceilingypanning = sec->ceilingypanning;
+
 #ifdef USE_STRUCT_TRACKERS
     s->trackedrev = sectorchanged[sectnum];
 #endif
@@ -2925,9 +2927,9 @@ attributes:
     {
         if (pr_nullrender < 2)
         {
-            /*glBindBuffer(GL_ARRAY_BUFFER, s->floor.vbo);
+            /*buildgl_bindBuffer(GL_ARRAY_BUFFER, s->floor.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sec->wallnum * sizeof(GLfloat)* 5, s->floor.buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, s->ceil.vbo);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, s->ceil.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sec->wallnum * sizeof(GLfloat)* 5, s->ceil.buffer);
             */
 
@@ -2936,12 +2938,12 @@ attributes:
 
             GLintptr sector_offset = s->floor.mapvbo_vertoffset * sizeof(_prvert);
             GLsizeiptr cur_sector_size = sec->wallnum * sizeof(_prvert);
-            glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, prmapvbo);
             // floor
             glBufferSubData(GL_ARRAY_BUFFER, sector_offset, cur_sector_size, s->floor.buffer);
             // ceiling
             glBufferSubData(GL_ARRAY_BUFFER, sector_offset + cur_sector_size, cur_sector_size, s->ceil.buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
 
@@ -2982,27 +2984,29 @@ finish:
 
     if (needfloor)
     {
-        polymer_buildfloor(sectnum);
-
-        if (pr_nullrender < 2)
+        if (polymer_buildfloor(sectnum) != -1)
         {
-            if (s->oldindicescount < s->indicescount)
+            if (pr_nullrender < 2)
             {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
-                s->oldindicescount = s->indicescount;
+                if (s->oldindicescount < s->indicescount)
+                {
+                    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
+                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
+                    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
+                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->indicescount * sizeof(GLushort), NULL, mapvbousage);
+                    s->oldindicescount = s->indicescount;
+                }
+                buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
+                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->floor.indices);
+                buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
+                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->ceil.indices);
+                buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             }
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->floor.ivbo);
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->floor.indices);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->ceil.ivbo);
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, s->indicescount * sizeof(GLushort), s->ceil.indices);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
+        else needfloor = -1;
     }
 
-    if (wallinvalidate)
+    if (wallinvalidate && needfloor != -1)
     {
         s->invalidid++;
         polymer_invalidatesectorlights(sectnum);
@@ -3013,128 +3017,112 @@ finish:
     s->flags.empty = 0;
     s->flags.uptodate = 1;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Updated sector %i.\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Updated sector %i.", sectnum);
 
     return 0;
-}
-
-void PR_CALLBACK    polymer_tesserror(GLenum error)
-{
-    /* This callback is called by the tesselator whenever it raises an error.
-       GLU_TESS_ERROR6 is the "no error"/"null" error spam in e1l1 and others. */
-
-    if (pr_verbosity >= 1 && error != GLU_TESS_ERROR6) OSD_Printf("PR : Tesselation error number %i reported : %s.\n", error, bgluErrorString(errno));
-}
-
-void PR_CALLBACK    polymer_tessedgeflag(GLenum error)
-{
-    // Passing an edgeflag callback forces the tesselator to output a triangle list
-    UNREFERENCED_PARAMETER(error);
-}
-
-void PR_CALLBACK    polymer_tessvertex(void* vertex, void* sector)
-{
-    _prsector*      s;
-
-    s = (_prsector*)sector;
-
-    if (s->curindice >= s->indicescount)
-    {
-        if (pr_verbosity >= 2) OSD_Printf("PR : Indice overflow, extending the indices list... !\n");
-        s->indicescount++;
-        s->floor.indices = (GLushort *)Xrealloc(s->floor.indices, s->indicescount * sizeof(GLushort));
-        s->ceil.indices = (GLushort *)Xrealloc(s->ceil.indices, s->indicescount * sizeof(GLushort));
-    }
-    s->ceil.indices[s->curindice] = (intptr_t)vertex;
-    s->curindice++;
 }
 
 static int32_t      polymer_buildfloor(int16_t sectnum)
 {
     // This function tesselates the floor/ceiling of a sector and stores the triangles in a display list.
-    _prsector*      s;
-    usectorptr_t sec;
-    intptr_t        i;
+    if (pr_verbosity >= 2) VLOG_F(LOG_PR, "Tessellating floor of sector %i", sectnum);
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Tesselating floor of sector %i...\n", sectnum);
+    _prsector *s = prsectors[sectnum];
+    auto sec = (usectorptr_t)&sector[sectnum];
 
-    s = prsectors[sectnum];
-    sec = (usectorptr_t)&sector[sectnum];
-
-    if (s == NULL)
+     if (s == NULL)
         return -1;
 
-    if (s->floor.indices == NULL)
+    int i=0, j=0, k=0;
+
+    tessSetOption(prtess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, r_pr_constrained);
+
+    do
     {
-        s->indicescount = (max<int16_t>(3, sec->wallnum) - 2) * 3;
-        s->floor.indices = (GLushort *)Xcalloc(s->indicescount, sizeof(GLushort));
-        s->ceil.indices = (GLushort *)Xcalloc(s->indicescount, sizeof(GLushort));
-    }
-
-    s->curindice = 0;
-
-    bgluTessCallback(prtess, GLU_TESS_VERTEX_DATA, (void (PR_CALLBACK *)(void))polymer_tessvertex);
-    bgluTessCallback(prtess, GLU_TESS_EDGE_FLAG, (void (PR_CALLBACK *)(void))polymer_tessedgeflag);
-    bgluTessCallback(prtess, GLU_TESS_ERROR, (void (PR_CALLBACK *)(void))polymer_tesserror);
-
-    bgluTessProperty(prtess, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_POSITIVE);
-
-    bgluTessBeginPolygon(prtess, s);
-    bgluTessBeginContour(prtess);
-
-    i = 0;
-    while (i < sec->wallnum)
-    {
-        bgluTessVertex(prtess, s->verts + (3 * i), (void *)i);
-        if ((i != (sec->wallnum - 1)) && ((sec->wallptr + i) > wall[sec->wallptr + i].point2))
+        j++;
+        if (wall[sec->wallptr+i].point2 < sec->wallptr+i)
         {
-            bgluTessEndContour(prtess);
-            bgluTessBeginContour(prtess);
+            tessAddContour(prtess, 3, s->verts + (3 * k), sizeof(float) * 3, j);
+            k += j;
+            j=0;
         }
-        i++;
     }
-    bgluTessEndContour(prtess);
-    bgluTessEndPolygon(prtess);
+    while (++i < sec->wallnum);
 
-    i = 0;
-    while (i < s->indicescount)
+    if (!tessTesselate(prtess, TESS_WINDING_POSITIVE, TESS_POLYGONS, 3, 3, nullptr))
     {
-        s->floor.indices[s->indicescount - i - 1] = s->ceil.indices[i];
-
-        i++;
+        debug_break();
+        return -1;
     }
+
+    int numvertices = tessGetVertexCount(prtess);
+    int numelements = tessGetElementCount(prtess);
+    auto elements = tessGetElements(prtess);
+    auto index = tessGetVertexIndices(prtess);
+
+    if (!numelements || !numvertices)
+        return -1;
+
+    // check for tessellation results that have undefined elements or less indices than we already had
+    if (s->floor.indices)
+    {
+        if (numelements * 3 < s->indicescount)
+            return 1;
+
+        for (i = 0; i < numelements * 3; i++)
+            if (index[elements[i]] == TESS_UNDEF && numelements * 3 <= s->indicescount)
+                    return 1;
+    }
+
+    if (s->floor.indices == nullptr || s->indicescount != numelements * 3)
+    {
+        s->floor.indices = (GLushort *)Xrealloc(s->floor.indices, numelements * 3 * sizeof(GLushort));
+        s->ceil.indices  = (GLushort *)Xrealloc(s->ceil.indices, numelements * 3 * sizeof(GLushort));
+        s->indicescount  = numelements * 3;
+    }
+
+    for (j=0; j < s->indicescount; j++)
+    {
+        // FIXME: the tessellator is merging invalid features in the input,
+        // which causes problems with some of the "Star Trek" doors in Duke.
+        // the tessellator's behavior is correct, we just aren't handling it right yet
+
+        s->ceil.indices[j] = index[elements[j]];
+
+        if (index[elements[j]] == TESS_UNDEF)
+        {
+            LOG_F(WARNING, "sector %d is a very sad sector", sectnum);
+            s->ceil.indices[j] = 0;
+        }
+        s->floor.indices[s->indicescount-j-1] = s->ceil.indices[j];
+    }
+
     s->floor.indicescount = s->ceil.indicescount = s->indicescount;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Tesselated floor of sector %i.\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Tessellated floor of sector %i.", sectnum);
 
     return 1;
 }
 
-static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
+static void polymer_drawsector(int16_t sectnum, int32_t domasks)
 {
-    usectorptr_t sec;
-    _prsector*      s;
-    GLubyte         oldcolor[4];
-    int32_t         draw;
-    int32_t         queuedmask;
-
-    if (pr_verbosity >= 3) OSD_Printf("PR : Drawing sector %i...\n", sectnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing sector %i", sectnum);
 
     if (automapping)
         show2dsector[sectnum>>3] |= pow2char[sectnum&7];
 
     gotsector[sectnum>>3] |= pow2char[sectnum&7];
 
-    sec = (usectorptr_t)&sector[sectnum];
-    s = prsectors[sectnum];
-
-    queuedmask = FALSE;
+    auto sec        = (usectorptr_t)&sector[sectnum];
+    auto s          = prsectors[sectnum];
+    int  queuedmask = FALSE;
 
     // If you're thinking of 'optimizing' the following logic, you'd better
     // provide compelling evidence that the generated code is more efficient
     // than what GCC can come up with on its own.
 
-    draw = TRUE;
+    int32_t draw = TRUE;
+
     // Draw masks regardless; avoid all non-masks TROR links
     if (sec->floorstat & 384) {
         draw = domasks;
@@ -3146,20 +3134,31 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
         draw = FALSE;
     }
 
-    if (draw || (searchit == 2)) {
-        if (searchit == 2) {
-            polymer_drawsearchplane(&s->floor, oldcolor, 0x02, (GLubyte *) &sectnum);
+    GLubyte oldcolor[4];
+
+    // this relies on getzsofslope() not clamping the x/y to the sector coordinates.
+    // by calling getzsofslope with coordinates outside of the sector in question,
+    // the slope is extended infinitely and we can test against it to determine visibility.
+
+    int32_t ceilZ, floorZ;
+    getzsofslope(sectnum, globalposx, globalposy, &ceilZ, &floorZ);
+
+    if (globalposz <= floorZ) {
+        if (draw || (searchit == 2)) {
+            if (searchit == 2) {
+                polymer_drawsearchplane(&s->floor, oldcolor, 0x02, (GLubyte *) &sectnum);
+            }
+            else {
+                calc_and_apply_fog(fogshade(sec->floorshade, sec->floorpal), sec->visibility,
+                    get_floor_fogpal(sec));
+                polymer_drawplane(&s->floor);
+            }
+        } else if (!domasks && cursectormaskcount && sec->floorstat & 384) {
+            // If we just skipped a mask, queue it for later
+            cursectormasks[(*cursectormaskcount)++] = sectnum;
+            // Don't queue it twice if the ceiling is also a mask, though.
+            queuedmask = TRUE;
         }
-        else {
-            calc_and_apply_fog(fogshade(sec->floorshade, sec->floorpal), sec->visibility,
-                get_floor_fogpal(sec));
-            polymer_drawplane(&s->floor);
-        }
-    } else if (!domasks && cursectormaskcount && sec->floorstat & 384) {
-        // If we just skipped a mask, queue it for later
-        cursectormasks[(*cursectormaskcount)++] = sectnum;
-        // Don't queue it twice if the ceiling is also a mask, though.
-        queuedmask = TRUE;
     }
 
     draw = TRUE;
@@ -3174,22 +3173,24 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
         draw = FALSE;
     }
 
-    if (draw || (searchit == 2)) {
-        if (searchit == 2) {
-            polymer_drawsearchplane(&s->ceil, oldcolor, 0x01, (GLubyte *) &sectnum);
+    if (globalposz >= ceilZ) {
+        if (draw || (searchit == 2)) {
+            if (searchit == 2) {
+                polymer_drawsearchplane(&s->ceil, oldcolor, 0x01, (GLubyte *) &sectnum);
+            }
+            else {
+                calc_and_apply_fog(fogshade(sec->ceilingshade, sec->ceilingpal), sec->visibility,
+                                   get_ceiling_fogpal(sec));
+                polymer_drawplane(&s->ceil);
+            }
+        } else if (!domasks && !queuedmask && cursectormaskcount &&
+                   (sec->ceilingstat & 384)) {
+            // If we just skipped a mask, queue it for later
+            cursectormasks[(*cursectormaskcount)++] = sectnum;
         }
-        else {
-            calc_and_apply_fog(fogshade(sec->ceilingshade, sec->ceilingpal), sec->visibility,
-                               get_ceiling_fogpal(sec));
-            polymer_drawplane(&s->ceil);
-        }
-    } else if (!domasks && !queuedmask && cursectormaskcount &&
-               (sec->ceilingstat & 384)) {
-        // If we just skipped a mask, queue it for later
-        cursectormasks[(*cursectormaskcount)++] = sectnum;
     }
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Finished drawing sector %i...\n", sectnum);
+    if (pr_verbosity >= 4) VLOG_F(LOG_PR, "Finished drawing sector %i.", sectnum);
 }
 
 // WALLS
@@ -3197,7 +3198,7 @@ static int32_t      polymer_initwall(int16_t wallnum)
 {
     _prwall         *w;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initializing wall %i...\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Initializing wall %i", wallnum);
 
     w = (_prwall *)Xcalloc(1, sizeof(_prwall));
 
@@ -3215,25 +3216,25 @@ static int32_t      polymer_initwall(int16_t wallnum)
     glGenBuffers(1, &w->mask.vbo);
     glGenBuffers(1, &w->stuffvbo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, w->wall.vbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, w->wall.vbo);
     glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 5, NULL, mapvbousage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, w->over.vbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, w->over.vbo);
     glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 5, NULL, mapvbousage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, w->mask.vbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, w->mask.vbo);
     glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 5, NULL, mapvbousage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
     glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat) * 5, NULL, mapvbousage);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
     w->flags.empty = 1;
 
     prwalls[wallnum] = w;
 
-    if (pr_verbosity >= 2) OSD_Printf("PR : Initialized wall %i.\n", wallnum);
+    if (pr_verbosity >= 2) VLOG_F(LOG_PR, "Initialized wall %i.", wallnum);
 
     return 1;
 }
@@ -3288,12 +3289,21 @@ static void         polymer_updatewall(int16_t wallnum)
 
     // yes, this function is messy and unefficient
     // it also works, bitches
+
+    if (sectofwall < 0 || sectofwall >= numsectors || wallnum < 0 || wallnum > numwalls)
+        return;
+
     sec = &sector[sectofwall];
 
-    if (sectofwall < 0 || sectofwall >= numsectors ||
-        wallnum < 0 || wallnum > numwalls ||
-        sec->wallptr > wallnum || wallnum >= (sec->wallptr + sec->wallnum))
+    if (sec->wallptr > wallnum || wallnum >= (sec->wallptr + sec->wallnum))
         return; // yay, corrupt map
+
+    if (sec->floorz == sec->ceilingz)
+    {
+        if (pr_verbosity >= 2)
+            VLOG_F(LOG_PR, "Skipped wall %i.", wallnum);
+        return;
+    }
 
     wal = &wall[wallnum];
     nwallnum = wal->nextwall;
@@ -3318,6 +3328,7 @@ static void         polymer_updatewall(int16_t wallnum)
         w->wall.vertcount = 4;
     }
 
+    globalorientation = wal->cstat;
     wallpicnum = wal->picnum;
     tileUpdatePicnum(&wallpicnum, wallnum+16384);
 
@@ -3327,6 +3338,7 @@ static void         polymer_updatewall(int16_t wallnum)
 
     if (nwallnum >= 0 && nwallnum < numwalls)
     {
+        globalorientation = wall[wallnum].cstat;
         nwallpicnum = wall[nwallnum].picnum;
         tileUpdatePicnum(&nwallpicnum, wallnum+16384);
     }
@@ -3655,17 +3667,17 @@ static void         polymer_updatewall(int16_t wallnum)
         const GLintptr thiswalloffset = prwalldataoffset + (prwalldatasize * wallnum);
         const GLintptr thisoveroffset = thiswalloffset + proneplanesize;
         const GLintptr thismaskoffset = thisoveroffset + proneplanesize;
-        glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, prmapvbo);
         glBufferSubData(GL_ARRAY_BUFFER, thiswalloffset, proneplanesize, w->wall.buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, prmapvbo);
         if (w->over.buffer)
             glBufferSubData(GL_ARRAY_BUFFER, thisoveroffset, proneplanesize, w->over.buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, prmapvbo);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, prmapvbo);
         glBufferSubData(GL_ARRAY_BUFFER, thismaskoffset, proneplanesize, w->mask.buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
         glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(GLfloat)* 5, w->bigportal);
         //glBufferSubData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat)* 5, 4 * sizeof(GLfloat)* 3, w->cap);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
         w->wall.mapvbo_vertoffset = thiswalloffset / sizeof(_prvert);
         w->over.mapvbo_vertoffset = thisoveroffset / sizeof(_prvert);
@@ -3676,7 +3688,7 @@ static void         polymer_updatewall(int16_t wallnum)
     w->flags.uptodate = 1;
     w->flags.invalidtex = 0;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Updated wall %i.\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Updated wall %i.", wallnum);
 }
 
 static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
@@ -3687,7 +3699,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     GLubyte         oldcolor[4];
     int32_t         parallaxedfloor = 0, parallaxedceiling = 0;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Drawing wall %i...\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing wall %i", wallnum);
 
     sec = (usectorptr_t)&sector[sectnum];
     wal = &wall[wallnum];
@@ -3736,12 +3748,12 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     //{
     //    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    //    glBindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
+    //    buildgl_bindBuffer(GL_ARRAY_BUFFER, w->stuffvbo);
     //    glVertexPointer(3, GL_FLOAT, 0, (const GLvoid*)(4 * sizeof(GLfloat) * 5));
 
     //    glDrawArrays(GL_QUADS, 0, 4);
 
-    //    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
     //    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     //}
@@ -3749,7 +3761,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     if (automapping)
         show2dwall[wallnum>>3] |= pow2char[wallnum&7];
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Finished drawing wall %i...\n", wallnum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Finished drawing wall %i.", wallnum);
 }
 
 // HSR
@@ -3769,19 +3781,27 @@ static void         polymer_computeplane(_prplane* p)
     i = 0;
     do
     {
-        vec1[0] = buffer[(INDICE(1))].x - buffer[(INDICE(0))].x; //x1
-        vec1[1] = buffer[(INDICE(1))].y - buffer[(INDICE(0))].y; //y1
-        vec1[2] = buffer[(INDICE(1))].z - buffer[(INDICE(0))].z; //z1
-        vec1[3] = buffer[(INDICE(1))].u - buffer[(INDICE(0))].u; //s1
-        vec1[4] = buffer[(INDICE(1))].v - buffer[(INDICE(0))].v; //t1
+        int const imax = (p->indices) ? (p->indicescount) : (p->vertcount);
+        int const index0 = INDICE(0);
+        if (index0 > imax) return;
+        int const index1 = INDICE(1);
+        if (index1 > imax) return;
+        int const index2 = INDICE(2);
+        if (index2 > imax) return;
 
-        vec2[0] = buffer[(INDICE(2))].x - buffer[(INDICE(1))].x; //x2
-        vec2[1] = buffer[(INDICE(2))].y - buffer[(INDICE(1))].y; //y2
-        vec2[2] = buffer[(INDICE(2))].z - buffer[(INDICE(1))].z; //z2
-        vec2[3] = buffer[(INDICE(2))].u - buffer[(INDICE(1))].u; //s2
-        vec2[4] = buffer[(INDICE(2))].v - buffer[(INDICE(1))].v; //t2
+        vec1[0] = buffer[index1].x - buffer[index0].x; //x1
+        vec1[1] = buffer[index1].y - buffer[index0].y; //y1
+        vec1[2] = buffer[index1].z - buffer[index0].z; //z1
+        vec1[3] = buffer[index1].u - buffer[index0].u; //s1
+        vec1[4] = buffer[index1].v - buffer[index0].v; //t1
 
-        polymer_crossproduct(vec2, vec1, plane);
+        vec2[0] = buffer[index2].x - buffer[index1].x; //x2
+        vec2[1] = buffer[index2].y - buffer[index1].y; //y2
+        vec2[2] = buffer[index2].z - buffer[index1].z; //z2
+        vec2[3] = buffer[index2].u - buffer[index1].u; //s2
+        vec2[4] = buffer[index2].v - buffer[index1].v; //t2
+
+        buildgl_crossproduct(vec2, vec1, plane);
 
         norm = plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2];
 
@@ -3789,32 +3809,31 @@ static void         polymer_computeplane(_prplane* p)
         if (norm >= 15000)
         {
             float tangent[3][3];
-            double det;
+            float det;
 
             // normalize the normal/plane equation and calculate its plane norm
-            norm = -sqrt(norm);
-            norm = 1.0 / norm;
+            norm = -1.f/Bsqrtf(norm);
             plane[0] *= norm;
             plane[1] *= norm;
             plane[2] *= norm;
             plane[3] = -(plane[0] * buffer->x + plane[1] * buffer->y + plane[2] * buffer->z);
 
             // calculate T and B
-            r = 1.0 / (vec1[3] * vec2[4] - vec2[3] * vec1[4]);
+            r = 1.f / (vec1[3] * vec2[4] - vec2[3] * vec1[4]);
 
             // tangent
             tangent[0][0] = (vec2[4] * vec1[0] - vec1[4] * vec2[0]) * r;
             tangent[0][1] = (vec2[4] * vec1[1] - vec1[4] * vec2[1]) * r;
             tangent[0][2] = (vec2[4] * vec1[2] - vec1[4] * vec2[2]) * r;
 
-            polymer_normalize(&tangent[0][0]);
+            buildgl_normalize(&tangent[0][0]);
 
             // bitangent
             tangent[1][0] = (vec1[3] * vec2[0] - vec2[3] * vec1[0]) * r;
             tangent[1][1] = (vec1[3] * vec2[1] - vec2[3] * vec1[1]) * r;
             tangent[1][2] = (vec1[3] * vec2[2] - vec2[3] * vec1[2]) * r;
 
-            polymer_normalize(&tangent[1][0]);
+            buildgl_normalize(&tangent[1][0]);
 
             // normal
             tangent[2][0] = plane[0];
@@ -3831,14 +3850,8 @@ static void         polymer_computeplane(_prplane* p)
           (!p->indices && i < p->vertcount));
 }
 
-static inline void  polymer_crossproduct(const GLfloat* in_a, const GLfloat* in_b, GLfloat* out)
-{
-    out[0] = in_a[1] * in_b[2] - in_a[2] * in_b[1];
-    out[1] = in_a[2] * in_b[0] - in_a[0] * in_b[2];
-    out[2] = in_a[0] * in_b[1] - in_a[1] * in_b[0];
-}
 
-static inline void  polymer_transformpoint(const float* inpos, float* pos, const float* matrix)
+static FORCE_INLINE void polymer_transformpoint(const float *inpos, float *pos, const float *matrix)
 {
     pos[0] = inpos[0] * matrix[0] +
              inpos[1] * matrix[4] +
@@ -3854,25 +3867,12 @@ static inline void  polymer_transformpoint(const float* inpos, float* pos, const
                       + matrix[14];
 }
 
-static inline void  polymer_normalize(float* vec)
+static inline void  polymer_pokesector(int16_t const sectnum)
 {
-    double norm;
-
-    norm = vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
-
-    norm = sqrt(norm);
-    norm = 1.0 / norm;
-    vec[0] *= norm;
-    vec[1] *= norm;
-    vec[2] *= norm;
-}
-
-static inline void  polymer_pokesector(int16_t sectnum)
-{
-    sectortype      *sec = &sector[sectnum];
-    _prsector       *s = prsectors[sectnum];
-    walltype        *wal = &wall[sec->wallptr];
-    int32_t         i = 0;
+    auto sec = (usectorptr_t)&sector[sectnum];
+    auto s   = prsectors[sectnum];
+    auto wal = (uwallptr_t)&wall[sec->wallptr];
+    int  i   = 0;
 
     if (!s->flags.uptodate)
         polymer_updatesector(sectnum);
@@ -3883,11 +3883,9 @@ static inline void  polymer_pokesector(int16_t sectnum)
             polymer_updatesector(wal->nextsector);
         if (!prwalls[sec->wallptr + i]->flags.uptodate)
             polymer_updatewall(sec->wallptr + i);
-
-        i++;
-        wal = &wall[sec->wallptr + i];
+        wal++;
     }
-    while (i < sec->wallnum);
+    while (++i < sec->wallnum);
 }
 
 static void         polymer_extractfrustum(GLfloat* modelview, GLfloat* projection, float* frustum)
@@ -3915,26 +3913,24 @@ static void         polymer_extractfrustum(GLfloat* modelview, GLfloat* projecti
     }
     while (++i < 4);
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Frustum extracted.\n");
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Frustum extracted.");
 }
 
-static inline int32_t polymer_planeinfrustum(_prplane *plane, const float* frustum)
+static inline int polymer_planeinfrustum(_prplane const &plane, const float* frustum)
 {
-    int32_t         i, j, k = -1;
-    i = 4;
-
+    int i=4, j, k;
 
     do
     {
-        int32_t ii = i * 4;
-        j = k = plane->vertcount - 1;
+        int const ii = i * 4;
+        j = k = plane.vertcount - 1;
 
         do
         {
-            k -= ((frustum[ii + 0] * plane->buffer[j].x +
-                   frustum[ii + 1] * plane->buffer[j].y +
-                   frustum[ii + 2] * plane->buffer[j].z +
-                   frustum[ii + 3]) < 0.f);
+            k -= ((frustum[ii+0] * plane.buffer[j].x +
+                   frustum[ii+1] * plane.buffer[j].y +
+                   frustum[ii+2] * plane.buffer[j].z +
+                   frustum[ii+3]) < 0.f);
         }
         while (j--);
 
@@ -3948,12 +3944,9 @@ static inline int32_t polymer_planeinfrustum(_prplane *plane, const float* frust
 
 static inline void  polymer_scansprites(int16_t sectnum, tspriteptr_t localtsprite, int32_t* localspritesortcnt)
 {
-    int32_t         i;
-    spritetype      *spr;
-
-    for (i = headspritesect[sectnum];i >=0;i = nextspritesect[i])
+    for (int i = headspritesect[sectnum];i >=0;i = nextspritesect[i])
     {
-        spr = &sprite[i];
+        auto spr = (uspriteptr_t)&sprite[i];
         if ((((spr->cstat&0x8000) == 0) || (showinvisibility)) &&
                 (spr->xrepeat > 0) && (spr->yrepeat > 0) &&
                 (*localspritesortcnt < maxspritesonscreen))
@@ -3982,7 +3975,7 @@ void                polymer_updatesprite(int32_t snum)
 
     if (pr_nullrender >= 3) return;
 
-    if (pr_verbosity >= 3) OSD_Printf("PR : Updating sprite %i...\n", snum);
+    if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Updating sprite %i", snum);
 
     int32_t const curpicnum = tspr->picnum;
 
@@ -3992,7 +3985,7 @@ void                polymer_updatesprite(int32_t snum)
 
     if (s == NULL)
     {
-        s = prsprites[tspr->owner] = (_prsprite *)Xcalloc(sizeof(_prsprite), 1);
+        s = prsprites[tspr->owner] = (_prsprite *)Xcalloc(1, sizeof(_prsprite));
 
         s->plane.buffer = (_prvert *)Xcalloc(4, sizeof(_prvert));  // XXX
         s->plane.vertcount = 4;
@@ -4005,7 +3998,7 @@ void                polymer_updatesprite(int32_t snum)
         if (pr_nullrender < 2)
         {
             glGenBuffers(1, &s->plane.vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, s->plane.vbo);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, s->plane.vbo);
             glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(_prvert), NULL, mapvbousage);
         }
     }
@@ -4082,7 +4075,7 @@ void                polymer_updatesprite(int32_t snum)
     }
 
     spos[0] = (float)tspr->y;
-    spos[1] = -(float)(tspr->z) / 16.0f;
+    spos[1] = -(float)(tspr->z) * (1.f/16.f);
     spos[2] = -(float)tspr->x;
 
     glMatrixMode(GL_MODELVIEW);
@@ -4125,13 +4118,36 @@ void                polymer_updatesprite(int32_t snum)
         glScalef((float)(xsize), (float)(ysize), 1.0f);
         break;
     case SPR_WALL:
-        ang = (float)((tspr->ang + 1024) & 2047) * (360.f/2048.f);
+        {
+            int16_t wallnum = ((unsigned)tspr->owner >= MAXSPRITES) ? -1 : ornament[tspr->owner].wall;
+            wallspriteinfo_t *ws = ((unsigned)tspr->owner >= MAXSPRITES) ? nullptr : &ornament[tspr->owner];
+            vec2f_t const vf = { ((float)tspr->xrepeat * (float)sintable[(tspr->ang) & 2047] * (1.0f / 65536.f)) * f,
+                                 ((float)tspr->xrepeat * (float)sintable[(tspr->ang + 1536) & 2047] * (1.0f / 65536.f)) * f};
 
-        glTranslatef(spos[0], spos[1], spos[2]);
-        glRotatef(-ang, 0.0f, 1.0f, 0.0f);
-        glTranslatef((float)(-xoff), (float)(yoff-centeryoff), 0.0f);
-        glScalef((float)(xsize), (float)(ysize), 1.0f);
-        break;
+            polymost_checkornamentedsprite(tspr, &wallnum, ws);
+
+            ang = (float)((tspr->ang + 1024) & 2047) * (360.f / 2048.f);
+
+            if (wallnum != -1 && ((ws != nullptr && !ws->invalid) || polymost_testintersection(tspr->xyz, { (int)vf.x, (int)vf.y }, wallnum)))
+            {
+                fix16_t const ang16 = (gethiq16angle(wall[wallnum].x - POINT2(wallnum).x,
+                                                     wall[wallnum].y - POINT2(wallnum).y) + F16(1536)) & 0x7FFFFFF;
+
+                if (fix16_to_float(fix16_abs(getq16angledelta(fix16_from_int(tspr->ang), ang16))) <= MAXINTERSECTIONANGDIFF)
+                {
+                    if (ws != nullptr)
+                        ws->invalid = 0;
+
+                    ang = fix16_to_float(((ang16 + F16(1024)) & 0x7FFFFFF)) * (360.f / 2048.f);
+                }
+            }
+
+            glTranslatef(spos[0], spos[1], spos[2]);
+            glRotatef(-ang, 0.0f, 1.0f, 0.0f);
+            glTranslatef((float)(-xoff), (float)(yoff - centeryoff), 0.0f);
+            glScalef((float)(xsize), (float)(ysize), 1.0f);
+            break;
+        }
     case SPR_FLOOR:
     {
         float const sang = atan2f(float(heinum), 4096.f) * (180.f * float(M_1_PI));
@@ -4179,9 +4195,9 @@ void                polymer_updatesprite(int32_t snum)
     {
         if (alignmask)
         {
-            glBindBuffer(GL_ARRAY_BUFFER, s->plane.vbo);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, s->plane.vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(_prvert), s->plane.buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
         }
         else if (s->plane.vbo) // clean up the vbo if a wall/floor sprite becomes a face sprite
         {
@@ -4211,7 +4227,7 @@ void                polymer_updatesprite(int32_t snum)
                     continue;
                 }
 
-                if (polymer_planeinlight(&s->plane, &prlights[i]))
+                if (polymer_planeinlight(s->plane, prlights[i]))
                     polymer_addplanelight(&s->plane, i);
                 i++;
                 j++;
@@ -4355,30 +4371,26 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         i++;
     }
 
-    glEnable(GL_TEXTURE_2D);
+    buildgl_setEnabled(GL_TEXTURE_2D);
     i = 0;
     j = 0;
     int32_t const increment = PSKYOFF_MAX>>max(3, dapskybits);  // In Polymer, an ART sky has 8 or 16 sides...
+    buildgl_bindSamplerObject(0, PTH_TEMP_SKY_HACK);
     while (i < PSKYOFF_MAX)
     {
-        GLint oldswrap;
         // ... but in case a multi-psky specifies less than 8, repeat cyclically:
         const int8_t tileofs = j&numskytilesm1;
 
         glColor4f(glcolors[tileofs][0], glcolors[tileofs][1], glcolors[tileofs][2], 1.0f);
-        polymost_bindTexture(GL_TEXTURE_2D, glpics[tileofs]);
-
-        glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &oldswrap);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-
+        buildgl_bindTexture(GL_TEXTURE_2D, glpics[tileofs]);
         polymer_drawartskyquad(i, (i + increment) & (PSKYOFF_MAX - 1), height);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, oldswrap);
 
         i += increment;
         ++j;
     }
-    glDisable(GL_TEXTURE_2D);
+
+    buildgl_bindSamplerObject(0, 0);
+    buildgl_setDisabled(GL_TEXTURE_2D);
 }
 
 static void         polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height)
@@ -4409,13 +4421,13 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     {
         glGenBuffers(1, &skyboxdatavbo);
 
-        glBindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
         glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 5 * 6, skyboxdata, modelvbousage);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
 
     tileUpdatePicnum(&tilenum, 0);
 
@@ -4450,18 +4462,18 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
         }
 
         glColor4f(color[0], color[1], color[2], 1.0);
-        glEnable(GL_TEXTURE_2D);
-        polymost_bindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
+        buildgl_setEnabled(GL_TEXTURE_2D);
+        buildgl_bindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
         glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(4 * 5 * i * sizeof(GLfloat)));
         glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), (GLfloat*)(((4 * 5 * i) + 3) * sizeof(GLfloat)));
         glDrawArrays(GL_QUADS, 0, 4);
-        glDisable(GL_TEXTURE_2D);
+        buildgl_setDisabled(GL_TEXTURE_2D);
 
         i++;
     }
     drawingskybox = 0;
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 // MDSPRITES
@@ -4469,7 +4481,6 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 {
     md3model_t*     m;
     mdskinmap_t*    sk;
-    float           *v0, *v1;
     md3surf_t       *s;
     char            targetpal, usinghighpal, foundpalskin;
     float           spos2[3], spos[3], tspos[3], lpos[3], tlpos[3], vec[3], mat[4][4];
@@ -4480,7 +4491,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     GLubyte*        color;
     int32_t         materialbits;
     float           sradius, lradius;
-    int16_t         modellights[PR_MAXLIGHTS];
+    int16_t         modellights[PR_MAXPLANELIGHTS];
     char            modellightcount;
     uint8_t         curpriority;
 
@@ -4510,7 +4521,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         spos2[2] = fglobalposx - x;
     } else {
         spos[0] = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
-        spos[1] = -(float)(tspr->z+spriteext[tspr->owner].mdposition_offset.z) / 16.0f;
+        spos[1] = -(float)(tspr->z+spriteext[tspr->owner].mdposition_offset.z) * (1.f/16.f);
         spos[2] = -(float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x);
 
         spos2[0] = spos2[1] = spos2[2] = 0.0f;
@@ -4596,7 +4607,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 
         offsets[0] = -spriteext[tspr->owner].mdpivot_offset.x / (scale * tspr->xrepeat);
         offsets[1] = -spriteext[tspr->owner].mdpivot_offset.y / (scale * tspr->xrepeat);
-        offsets[2] = (float)(spriteext[tspr->owner].mdpivot_offset.z) / 16.0f / (scale * tspr->yrepeat);
+        offsets[2] = (float)(spriteext[tspr->owner].mdpivot_offset.z) * (1.f/16.f) / (scale * tspr->yrepeat);
 
         glTranslatef(-offsets[0], -offsets[1], -offsets[2]);
 
@@ -4650,8 +4661,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     color[0] = color[1] = color[2] =
         (GLubyte)(((float)(numshades-min(max((tspr->shade * shadescale)+m->shadeoff,0.f),(float)numshades)))/((float)numshades) * 0xFF);
 
-    usinghighpal = (pr_highpalookups &&
-                    prhighpalookups[curbasepal][tspr->pal].map);
+    usinghighpal = (pr_highpalookups && polymer_havehighpalookup(curbasepal, tspr->pal) && prhighpalookups[curbasepal][tspr->pal].map);
 
     // tinting
     polytintflags_t const tintflags = hictinting[tspr->pal].f;
@@ -4720,7 +4730,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         while (curpriority < pr_maxlightpriority)
         {
             i = j = 0;
-            while (j < lightcount)
+            while (j < lightcount && modellightcount < PR_MAXPLANELIGHTS)
             {
                 while (!prlights[i].flags.active)
                     i++;
@@ -4735,7 +4745,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
                 lradius = prlights[i].range / 1000.0f;
 
                 lpos[0] = (float)prlights[i].y;
-                lpos[1] = -(float)prlights[i].z / 16.0f;
+                lpos[1] = -(float)prlights[i].z * (1.f/16.f);
                 lpos[2] = -(float)prlights[i].x;
 
                 polymer_transformpoint(lpos, tlpos, rootmodelviewmatrix);
@@ -4760,8 +4770,8 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     for (surfi=0;surfi<m->head.numsurfs;surfi++)
     {
         s = &m->head.surfs[surfi];
-        v0 = &s->geometry[m->cframe*s->numverts*15];
-        v1 = &s->geometry[m->nframe*s->numverts*15];
+        //float *v0 = &s->geometry[m->cframe*s->numverts*15];
+        //float *v1 = &s->geometry[m->nframe*s->numverts*15];
 
         // debug code for drawing model normals
 //         glDisable(GL_TEXTURE_2D);
@@ -4844,10 +4854,10 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 
         glEnableClientState(GL_NORMAL_ARRAY);
 
-        glBindBuffer(GL_ARRAY_BUFFER, m->texcoords[surfi]);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, m->texcoords[surfi]);
         glTexCoordPointer(2, GL_FLOAT, 0, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, m->geometry[surfi]);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, m->geometry[surfi]);
         glVertexPointer(3, GL_FLOAT, sizeof(float) * 15, (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15));
         glNormalPointer(GL_FLOAT, sizeof(float) * 15, (GLfloat*)(m->cframe * s->numverts * sizeof(float) * 15) + 3);
 
@@ -4857,7 +4867,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
             mdspritematerial.nextframedata = (GLfloat*)(m->nframe * s->numverts * sizeof(float) * 15);
         }
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indices[surfi]);
+        buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indices[surfi]);
 
         curlight = 0;
         do {
@@ -4866,8 +4876,8 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
             polymer_unbindmaterial(materialbits);
         } while ((++curlight < modellightcount) && (curlight < pr_maxlightpasses));
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 
         glDisableClientState(GL_NORMAL_ARRAY);
     }
@@ -4899,18 +4909,18 @@ static void         polymer_loadmodelvbos(md3model_t* m)
     {
         s = &m->head.surfs[i];
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indices[i]);
+        buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indices[i]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, s->numtris * sizeof(md3tri_t), s->tris, modelvbousage);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, m->texcoords[i]);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, m->texcoords[i]);
         glBufferData(GL_ARRAY_BUFFER, s->numverts * sizeof(md3uv_t), s->uv, modelvbousage);
 
-        glBindBuffer(GL_ARRAY_BUFFER, m->geometry[i]);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, m->geometry[i]);
         glBufferData(GL_ARRAY_BUFFER, s->numframes * s->numverts * sizeof(float) * (15), s->geometry, modelvbousage);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
         i++;
     }
 }
@@ -4977,7 +4987,7 @@ static void         polymer_setupartmap(int16_t tilenum, char pal, int32_t meth)
         }
 
         glGenTextures(1, &prartmaps[tilenum]);
-        polymost_bindTexture(GL_TEXTURE_2D, prartmaps[tilenum]);
+        buildgl_bindTexture(GL_TEXTURE_2D, prartmaps[tilenum]);
         glTexImage2D(GL_TEXTURE_2D,
             0,
             GL_RED,
@@ -4987,17 +4997,19 @@ static void         polymer_setupartmap(int16_t tilenum, char pal, int32_t meth)
             GL_RED,
             GL_UNSIGNED_BYTE,
             tempbuffer);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, meth & DAMETH_CLAMPED ? glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, meth & DAMETH_CLAMPED ? glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP : GL_REPEAT);
-        polymost_bindTexture(GL_TEXTURE_2D, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, meth & DAMETH_CLAMPED ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, meth & DAMETH_CLAMPED ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        buildgl_bindTexture(GL_TEXTURE_2D, 0);
         Xfree(tempbuffer);
     }
 
     if (!prbasepalmaps[curbasepal]) {
         glGenTextures(1, &prbasepalmaps[curbasepal]);
-        polymost_bindTexture(GL_TEXTURE_2D, prbasepalmaps[curbasepal]);
+        buildgl_bindTexture(GL_TEXTURE_2D, prbasepalmaps[curbasepal]);
         glTexImage2D(GL_TEXTURE_2D,
             0,
             GL_RGB,
@@ -5007,16 +5019,17 @@ static void         polymer_setupartmap(int16_t tilenum, char pal, int32_t meth)
             GL_RGB,
             GL_UNSIGNED_BYTE,
             basepaltable[curbasepal]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-        polymost_bindTexture(GL_TEXTURE_2D, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        buildgl_bindTexture(GL_TEXTURE_2D, 0);
     }
 
     if (!prlookups[pal]) {
         glGenTextures(1, &prlookups[pal]);
-        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, prlookups[pal]);
+        buildgl_bindTexture(GL_TEXTURE_RECTANGLE_ARB, prlookups[pal]);
         glTexImage2D(GL_TEXTURE_RECTANGLE_ARB,
             0,
             GL_RED,
@@ -5026,11 +5039,12 @@ static void         polymer_setupartmap(int16_t tilenum, char pal, int32_t meth)
             GL_RED,
             GL_UNSIGNED_BYTE,
             palookup[pal]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
-        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        buildgl_bindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
     }
 }
 
@@ -5061,7 +5075,7 @@ static _prbucket*   polymer_getbuildmaterial(_prmaterial* material, int16_t tile
     int32_t usinghighpal = 0;
 
     // Lazily fill in all the textures we need, move this to precaching later
-    if (pr_artmapping && !(globalflags & GLOBAL_NO_GL_TILESHADES) && polymer_eligible_for_artmap(tilenum, pth))
+    if (polymer_useartmapping() && !(globalflags & GLOBAL_NO_GL_TILESHADES) && polymer_eligible_for_artmap(tilenum, pth))
     {
         polytintflags_t const tintflags = hictinting[pal].f;
 
@@ -5091,9 +5105,9 @@ static _prbucket*   polymer_getbuildmaterial(_prmaterial* material, int16_t tile
     }
 
     // PR_BIT_HIGHPALOOKUP_MAP
-    if (pr_highpalookups && prhighpalookups[curbasepal][pal].map &&
-        hicfindsubst(tilenum, 0) &&
-        (curbasepal || (hicfindsubst(tilenum, pal)->palnum != pal)))
+    if (pr_highpalookups && polymer_havehighpalookup(curbasepal, pal)
+        && prhighpalookups[curbasepal][pal].map && hicfindsubst(tilenum, 0)
+        && (curbasepal || (hicfindsubst(tilenum, pal)->palnum != pal)))
     {
         material->highpalookupmap = prhighpalookups[curbasepal][pal].map;
         pal = 0;
@@ -5200,7 +5214,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         programbits |= prprogrambits[PR_BIT_NORMAL_MAP].bit;
 
     // PR_BIT_ART_MAP
-    if (pr_artmapping && material->artmap &&
+    if (polymer_useartmapping() && material->artmap &&
         !(globalflags & GLOBAL_NO_GL_TILESHADES) &&
         (overridematerial & prprogrambits[PR_BIT_ART_MAP].bit)) {
         programbits |= prprogrambits[PR_BIT_ART_MAP].bit;
@@ -5270,11 +5284,12 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // --------- program compiling
     auto &prprogram = *polymer_getprogram(programbits);
 
-    polymost_useShaderProgram(prprogram.handle);
+    buildgl_useShaderProgram(prprogram.handle);
 
     // --------- bit setup
 
     texunit = 0;
+    buildgl_bindSamplerObject(texunit, programbits & prprogrambits[PR_BIT_ART_MAP].bit ? PTH_INDEXED : PTH_HIGHTILE);
 
     // PR_BIT_ANIM_INTERPOLATION
     if (programbits & prprogrambits[PR_BIT_ANIM_INTERPOLATION].bit)
@@ -5316,8 +5331,10 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         pos[1] = fglobalposz * (-1.f/16.f);
         pos[2] = -fglobalposx;
 
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->normalmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, programbits & prprogrambits[PR_BIT_ART_MAP].bit ? PTH_INDEXED : PTH_HIGHTILE);
+
+        buildgl_bindTexture(GL_TEXTURE_2D, material->normalmap);
 
         if (material->mdspritespace == GL_TRUE) {
             float mdspritespacepos[3];
@@ -5358,22 +5375,25 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_ART_MAP
     if (programbits & prprogrambits[PR_BIT_ART_MAP].bit)
     {
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->artmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_INDEXED);
+        buildgl_bindTexture(GL_TEXTURE_2D, material->artmap);
 
         glUniform1i(prprogram.uniform_artMap, texunit);
 
         texunit++;
 
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->basepalmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_INDEXED|PTH_CLAMPED);
+        buildgl_bindTexture(GL_TEXTURE_2D, material->basepalmap);
 
         glUniform1i(prprogram.uniform_basePalMap, texunit);
 
         texunit++;
 
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, material->lookupmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_INDEXED|PTH_CLAMPED);
+        buildgl_bindTexture(GL_TEXTURE_RECTANGLE_ARB, material->lookupmap);
 
         glUniform1i(prprogram.uniform_lookupMap, texunit);
 
@@ -5404,8 +5424,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_DIFFUSE_MAP
     if (programbits & prprogrambits[PR_BIT_DIFFUSE_MAP].bit)
     {
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->diffusemap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit,programbits & prprogrambits[PR_BIT_ART_MAP].bit ? PTH_INDEXED : PTH_HIGHTILE);
+        buildgl_bindTexture(GL_TEXTURE_2D, material->diffusemap);
 
         glUniform1i(prprogram.uniform_diffuseMap, texunit);
         glUniform2fv(prprogram.uniform_diffuseScale, 1, material->diffusescale);
@@ -5416,8 +5437,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_HIGHPALOOKUP_MAP
     if (programbits & prprogrambits[PR_BIT_HIGHPALOOKUP_MAP].bit)
     {
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_3D, material->highpalookupmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_CLAMPED);
+        buildgl_bindTexture(GL_TEXTURE_3D, material->highpalookupmap);
 
         glUniform1i(prprogram.uniform_highPalookupMap, texunit);
 
@@ -5439,8 +5461,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
             scale[1] = material->detailscale[1];
         }
 
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->detailmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_HIGHTILE);
+        buildgl_bindTexture(GL_TEXTURE_2D, material->detailmap);
 
         glUniform1i(prprogram.uniform_detailMap, texunit);
         glUniform2fv(prprogram.uniform_detailScale, 1, scale);
@@ -5460,8 +5483,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_SPECULAR_MAP
     if (programbits & prprogrambits[PR_BIT_SPECULAR_MAP].bit)
     {
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->specmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, programbits & prprogrambits[PR_BIT_ART_MAP].bit ? PTH_INDEXED : PTH_HIGHTILE);
+        buildgl_bindTexture(GL_TEXTURE_2D, material->specmap);
 
         glUniform1i(prprogram.uniform_specMap, texunit);
 
@@ -5484,8 +5508,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_MIRROR_MAP
     if (programbits & prprogrambits[PR_BIT_MIRROR_MAP].bit)
     {
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_RECTANGLE_ARB, material->mirrormap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_CLAMPED);
+        buildgl_bindTexture(GL_TEXTURE_RECTANGLE_ARB, material->mirrormap);
 
         glUniform1i(prprogram.uniform_mirrorMap, texunit);
 
@@ -5500,8 +5525,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     // PR_BIT_GLOW_MAP
     if (programbits & prprogrambits[PR_BIT_GLOW_MAP].bit)
     {
-        polymost_activeTexture(texunit + GL_TEXTURE0);
-        polymost_bindTexture(GL_TEXTURE_2D, material->glowmap);
+        buildgl_activeTexture(texunit + GL_TEXTURE0);
+        buildgl_bindSamplerObject(texunit, PTH_HIGHTILE|PTH_CLAMPED);
+        buildgl_bindTexture(GL_TEXTURE_2D, material->glowmap);
 
         glUniform1i(prprogram.uniform_glowMap, texunit);
 
@@ -5516,7 +5542,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         float color[4];
 
         inpos[0] = (float)prlights[lights[curlight]].y;
-        inpos[1] = -(float)prlights[lights[curlight]].z / 16.0f;
+        inpos[1] = -(float)prlights[lights[curlight]].z * (1.f/16.f);
         inpos[2] = -(float)prlights[lights[curlight]].x;
 
         polymer_transformpoint(inpos, pos, curmodelviewmatrix);
@@ -5544,7 +5570,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
 
             indir[0] = (float)(sintable[(prlights[lights[curlight]].radius+512)&2047]) / 16383.0f;
             indir[1] = (float)(sintable[(prlights[lights[curlight]].faderadius+512)&2047]) / 16383.0f;
-            indir[1] = 1.0 / (indir[1] - indir[0]);
+            indir[1] = 1.f / (indir[1] - indir[0]);
 
             glUniform3fv(prprogram.uniform_spotDir, 1, dir);
             glUniform2fv(prprogram.uniform_spotRadius, 1, indir);
@@ -5569,8 +5595,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
                 // PR_BIT_SHADOW_MAP
                 if (programbits & prprogrambits[PR_BIT_SHADOW_MAP].bit)
                 {
-                    polymost_activeTexture(texunit + GL_TEXTURE0);
-                    polymost_bindTexture(prrts[prlights[lights[curlight]].rtindex].target, prrts[prlights[lights[curlight]].rtindex].z);
+                    buildgl_activeTexture(texunit + GL_TEXTURE0);
+                    buildgl_bindSamplerObject(texunit, PTH_DEPTH_SAMPLER);
+                    buildgl_bindTexture(prrts[prlights[lights[curlight]].rtindex].target, prrts[prlights[lights[curlight]].rtindex].z);
 
                     glUniform1i(prprogram.uniform_shadowMap, texunit);
 
@@ -5580,8 +5607,9 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
                 // PR_BIT_LIGHT_MAP
                 if (programbits & prprogrambits[PR_BIT_LIGHT_MAP].bit)
                 {
-                    polymost_activeTexture(texunit + GL_TEXTURE0);
-                    polymost_bindTexture(GL_TEXTURE_2D, prlights[lights[curlight]].lightmap);
+                    buildgl_activeTexture(texunit + GL_TEXTURE0);
+                    buildgl_bindSamplerObject(texunit, PTH_CLAMPED);
+                    buildgl_bindTexture(GL_TEXTURE_2D, prlights[lights[curlight]].lightmap);
 
                     glUniform1i(prprogram.uniform_lightMap, texunit);
 
@@ -5590,12 +5618,12 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
             }
         }
 
-        range[0] = prlights[lights[curlight]].range  / 1000.0f;
-        range[1] = 1 / (range[0] * range[0]);
+        range[0] = prlights[lights[curlight]].range * (1.f/1000.f);
+        range[1] = 1.f/(range[0]*range[0]);
 
-        color[0] = prlights[lights[curlight]].color[0]   / 255.0f;
-        color[1] = prlights[lights[curlight]].color[1]   / 255.0f;
-        color[2] = prlights[lights[curlight]].color[2]   / 255.0f;
+        color[0] = prlights[lights[curlight]].color[0] * (1.f/255.f);
+        color[1] = prlights[lights[curlight]].color[1] * (1.f/255.f);
+        color[2] = prlights[lights[curlight]].color[2] * (1.f/255.f);
 
         // If this isn't a lighting-only pass, just negate the components
         if (!curlight && prlights[lights[curlight]].publicflags.negative) {
@@ -5616,7 +5644,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &range[1]);
     }
 
-    polymost_activeTexture(GL_TEXTURE0);
+    buildgl_activeTexture(GL_TEXTURE0);
 
     return programbits;
 }
@@ -5648,7 +5676,7 @@ static void         polymer_unbindmaterial(int32_t programbits)
         glDisableVertexAttribArray(prprogram.attrib_N);
     }
 
-    polymost_useShaderProgram(0);
+    buildgl_useShaderProgram(0);
 }
 
 static _prprograminfo *polymer_compileprogram(int32_t programbits)
@@ -5724,25 +5752,25 @@ static _prprograminfo *polymer_compileprogram(int32_t programbits)
 #else
     if (pr_verbosity >= 2)
 #endif
-        OSD_Printf("PR : Compiling GPU program with bits (octal) %o...\n", (unsigned)programbits);
+        VLOG_F(LOG_PR, "Compiling program with bits (octal) %o", (unsigned)programbits);
     if (!linkstatus) {
-        OSD_Printf("PR : Failed to compile GPU program with bits (octal) %o!\n", (unsigned)programbits);
+        VLOG_F(LOG_PR, "Failed to compile program with bits (octal) %o!", (unsigned)programbits);
         if (pr_verbosity >= 1)
         {
             glGetProgramInfoLog(program, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Linking log:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Linking log:\n%s", infobuffer);
 
             glGetShaderInfoLog(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Vertex compile log:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Vertex compile log:\n%s", infobuffer);
 
             glGetShaderInfoLog(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Fragment compile log:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Fragment compile log:\n%s", infobuffer);
 
             glGetShaderSource(vert, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Vertex source dump:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Vertex source dump:\n%s", infobuffer);
 
             glGetShaderSource(frag, PR_INFO_LOG_BUFFER_SIZE, NULL, infobuffer);
-            OSD_Printf("PR : Fragment source dump:\n%s\n", infobuffer);
+            VLOG_F(LOG_PR, "Fragment source dump:\n%s", infobuffer);
         }
     }
 
@@ -5888,10 +5916,9 @@ static void         polymer_updatelights(void)
 
             if (light->radius)
                 polymer_processspotlight(light);
-
-            polymer_culllight(i);
-
-            light->flags.invalidate = 0;
+            
+            if (!polymer_culllight(i))
+                light->flags.invalidate = 0;
         }
 
         if (light->flags.active) {
@@ -5919,7 +5946,7 @@ static void         polymer_updatelights(void)
     while (++i < PR_MAXLIGHTS);
 }
 
-static inline void  polymer_resetplanelights(_prplane* plane)
+static FORCE_INLINE void  polymer_resetplanelights(_prplane* plane)
 {
     Bmemset(&plane->lights[0], -1, sizeof(plane->lights[0]) * plane->lightcount);
     plane->lightcount = 0;
@@ -5932,7 +5959,7 @@ static void         polymer_addplanelight(_prplane* plane, int16_t lighti)
 
     if (plane->lightcount)
     {
-        if (plane->lightcount == PR_MAXLIGHTS - 1)
+        if (plane->lightcount == PR_MAXPLANELIGHTS - 1)
             return;
 
         do
@@ -5976,11 +6003,10 @@ out:
     prlights[lighti].planecount++;
 }
 
-static inline void  polymer_deleteplanelight(_prplane* plane, int16_t lighti)
+static FORCE_INLINE void polymer_deleteplanelight(_prplane *const plane, int16_t const lighti)
 {
-    int32_t         i = plane->lightcount-1;
-
-    while (i >= 0)
+    int i = plane->lightcount - 1;
+    do
     {
         if (plane->lights[i] == lighti)
         {
@@ -5988,26 +6014,22 @@ static inline void  polymer_deleteplanelight(_prplane* plane, int16_t lighti)
             plane->lightcount--;
             return;
         }
-        i--;
     }
+    while (--i >= 0);
 }
 
-static int32_t      polymer_planeinlight(_prplane* plane, _prlight* light)
+static int polymer_planeinlight(_prplane const &plane, _prlight const &light)
 {
-    float           lightpos[3];
-    int32_t         i, j, k, l;
-
-    if (!plane->vertcount)
+    if (!plane.vertcount)
         return 0;
 
-    if (light->radius)
-        return polymer_planeinfrustum(plane, light->frustum);
+    if (light.radius)
+        return polymer_planeinfrustum(plane, light.frustum);
 
-    lightpos[0] = (float)light->y;
-    lightpos[1] = -(float)light->z / 16.0f;
-    lightpos[2] = -(float)light->x;
-
-    i = 0;
+    float const lightpos[3] = { (float)light.y,
+                               -(float)light.z * (1.f/16.f),
+                               -(float)light.x };
+    int i = 0, j, k, l;
 
     do
     {
@@ -6015,12 +6037,12 @@ static int32_t      polymer_planeinlight(_prplane* plane, _prlight* light)
 
         do
         {
-            if ((&plane->buffer[j].x)[i] > (lightpos[i] + light->range)) k++;
-            if ((&plane->buffer[j].x)[i] < (lightpos[i] - light->range)) l++;
+            if ((&plane.buffer[j].x)[i] > (lightpos[i] + light.range)) k++;
+            if ((&plane.buffer[j].x)[i] < (lightpos[i] - light.range)) l++;
         }
-        while (++j < plane->vertcount);
+        while (++j < plane.vertcount);
 
-        if ((k == plane->vertcount) || (l == plane->vertcount))
+        if ((k == plane.vertcount) || (l == plane.vertcount))
             return 0;
     }
     while (++i < 3);
@@ -6028,65 +6050,63 @@ static int32_t      polymer_planeinlight(_prplane* plane, _prlight* light)
     return 1;
 }
 
-static void         polymer_invalidateplanelights(_prplane* plane)
+static FORCE_INLINE void polymer_invalidateplanelights(_prplane const &plane)
 {
-    int32_t         i = plane->lightcount;
+    int i = plane.lightcount;
 
     while (i--)
     {
-        if (((unsigned)plane->lights[i] < PR_MAXLIGHTS) && (prlights[plane->lights[i]].flags.active))
-            prlights[plane->lights[i]].flags.invalidate = 1;
+        if (((unsigned)plane.lights[i] < PR_MAXPLANELIGHTS) && (prlights[plane.lights[i]].flags.active))
+            prlights[plane.lights[i]].flags.invalidate = 1;
     }
 }
 
-static void         polymer_invalidatesectorlights(int16_t sectnum)
+static void polymer_invalidatesectorlights(int16_t const sectnum)
 {
-    int32_t         i;
-    _prsector       *s = prsectors[sectnum];
-    sectortype      *sec = &sector[sectnum];
+    auto s = prsectors[sectnum];
+    auto sec = (usectorptr_t)&sector[sectnum];
 
     if (!s)
         return;
 
-    polymer_invalidateplanelights(&s->floor);
-    polymer_invalidateplanelights(&s->ceil);
+    polymer_invalidateplanelights(s->floor);
+    polymer_invalidateplanelights(s->ceil);
 
-    i = sec->wallnum;
+    int i = sec->wallnum;
 
     while (i--)
     {
-        _prwall         *w;
+        _prwall *w;
         if (!(w = prwalls[sec->wallptr + i])) continue;
 
-        polymer_invalidateplanelights(&w->wall);
-        polymer_invalidateplanelights(&w->over);
-        polymer_invalidateplanelights(&w->mask);
+        polymer_invalidateplanelights(w->wall);
+        polymer_invalidateplanelights(w->over);
+        polymer_invalidateplanelights(w->mask);
     }
 }
 
-static void         polymer_processspotlight(_prlight* light)
+static void polymer_processspotlight(_prlight *const light)
 {
-    float           radius, ang, horizang, lightpos[3];
-
     // hack to avoid lights beams perpendicular to walls
     if ((light->horiz <= 100) && (light->horiz > 90))
         light->horiz = 90;
+
     if ((light->horiz > 100) && (light->horiz < 110))
         light->horiz = 110;
 
-    lightpos[0] = (float)light->y;
-    lightpos[1] = -(float)light->z / 16.0f;
-    lightpos[2] = -(float)light->x;
+    float const lightpos[3] = { (float)light->y,
+                               -(float)light->z * (1.f/16.f),
+                               -(float)light->x };
 
     // calculate the spot light transformations and matrices
-    radius = (float)(light->radius) * (360.f/2048.f);
-    ang = (float)(light->angle) * (360.f/2048.f);
-    horizang = (float)(-getangle(128, light->horiz-100)) * (360.f/2048.f);
+    float const radius   = (float)(light->radius) * (360.f/2048.f);
+    float const ang      = (float)(light->angle) * (360.f/2048.f);
+    float const horizang = (float)(-getangle(128, light->horiz-100)) * (360.f/2048.f);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    bgluPerspective(radius * 2, 1, 0.1f, light->range * (1.f/1000.f));
+    buildgl_setPerspective(radius * 2, 1, 0.1f, light->range * (1.f/1000.f));
     glGetFloatv(GL_PROJECTION_MATRIX, light->proj);
     glPopMatrix();
 
@@ -6106,48 +6126,42 @@ static void         polymer_processspotlight(_prlight* light)
     light->lightmap = 0;
 }
 
-static inline void  polymer_culllight(int16_t lighti)
+static int polymer_culllight(int16_t lighti)
 {
-    _prlight*       light = &prlights[lighti];
-    int32_t         front = 0;
-    int32_t         back = 1;
-    int32_t         i;
-    int32_t         j;
-    int32_t         zdiff;
-    int32_t         checkror;
-    int16_t         bunchnum;
-    int16_t         ns;
-    _prsector       *s;
-    _prwall         *w;
-    sectortype      *sec, *nsec;
+    _prlight const &light = prlights[lighti];
 
-    Bmemset(drawingstate, 0, sizeof(int16_t) * numsectors);
-    drawingstate[light->sector] = 1;
+    int32_t front = 0;
+    int32_t back  = 1;
+    int16_t bunchnum;
 
-    sectorqueue[0] = light->sector;
+    if (!sectorsareconnected(globalcursectnum, light.sector)) return 1;
+
+    Bmemset(drawingstate, 0, sizeof(drawingstate));
+    bitmap_set(drawingstate, light.sector);
+    sectorqueue[0] = light.sector;
 
     do
     {
-        s = prsectors[sectorqueue[front]];
-        sec = &sector[sectorqueue[front]];
+        auto s   = prsectors[sectorqueue[front]];
+        auto sec = (usectorptr_t)&sector[sectorqueue[front]];
 
         polymer_pokesector(sectorqueue[front]);
 
-        checkror = FALSE;
+        int checkror = FALSE;
 
         if (!(sec->floorstat & 1))
         {
-            zdiff = light->z - s->floorz;
+            int32_t zdiff = light.z - s->floorz;
             if (zdiff < 0)
                 zdiff = -zdiff;
             zdiff >>= 4;
 
-            if (!light->radius) {
-                if (zdiff < light->range) {
+            if (!light.radius) {
+                if (zdiff < light.range) {
                     polymer_addplanelight(&s->floor, lighti);
                     checkror = TRUE;
                 }
-            } else if (polymer_planeinlight(&s->floor, light)) {
+            } else if (polymer_planeinlight(s->floor, light)) {
                 polymer_addplanelight(&s->floor, lighti);
                 checkror = TRUE;
             }
@@ -6158,13 +6172,13 @@ static inline void  polymer_culllight(int16_t lighti)
         if (checkror &&
             (bunchnum = yax_getbunch(sectorqueue[front], YAX_FLOOR)) >= 0) {
 
-            for (SECTORS_OF_BUNCH(bunchnum, YAX_CEILING, ns)) {
+            for (int16_t SECTORS_OF_BUNCH(bunchnum, YAX_CEILING, ns)) {
 
-                if (ns >= 0 && !drawingstate[ns] &&
-                    polymer_planeinlight(&prsectors[ns]->ceil, light)) {
+                if (ns >= 0 && !bitmap_test(drawingstate, ns) &&
+                    polymer_planeinlight(prsectors[ns]->ceil, light)) {
 
                     sectorqueue[back++] = ns;
-                    drawingstate[ns] = 1;
+                    bitmap_set(drawingstate, ns);
                 }
             }
         }
@@ -6173,17 +6187,17 @@ static inline void  polymer_culllight(int16_t lighti)
 
         if (!(sec->ceilingstat & 1))
         {
-            zdiff = light->z - s->ceilingz;
+            int32_t zdiff = light.z - s->ceilingz;
             if (zdiff < 0)
                 zdiff = -zdiff;
             zdiff >>= 4;
 
-            if (!light->radius) {
-                if (zdiff < light->range) {
+            if (!light.radius) {
+                if (zdiff < light.range) {
                     polymer_addplanelight(&s->ceil, lighti);
                     checkror = TRUE;
                 }
-            } else if (polymer_planeinlight(&s->ceil, light)) {
+            } else if (polymer_planeinlight(s->ceil, light)) {
                 polymer_addplanelight(&s->ceil, lighti);
                 checkror = TRUE;
             }
@@ -6194,37 +6208,32 @@ static inline void  polymer_culllight(int16_t lighti)
         if (checkror &&
             (bunchnum = yax_getbunch(sectorqueue[front], YAX_CEILING)) >= 0) {
 
-            for (SECTORS_OF_BUNCH(bunchnum, YAX_FLOOR, ns)) {
+            for (int16_t SECTORS_OF_BUNCH(bunchnum, YAX_FLOOR, ns)) {
 
-                if (ns >= 0 && !drawingstate[ns] &&
-                    polymer_planeinlight(&prsectors[ns]->floor, light)) {
+                if (ns >= 0 && !bitmap_test(drawingstate, ns) &&
+                    polymer_planeinlight(prsectors[ns]->floor, light)) {
 
                     sectorqueue[back++] = ns;
-                    drawingstate[ns] = 1;
+                    bitmap_set(drawingstate, ns);
                 }
             }
         }
 #endif
-        i = 0;
-        while (i < sec->wallnum)
+        int i = 0;
+        do
         {
-            w = prwalls[sec->wallptr + i];
-            walltype *wal = &wall[sec->wallptr + i];
+            auto w    = prwalls[sec->wallptr + i];
+            auto wal  = (uwallptr_t)&wall[sec->wallptr + i];
+            auto nsec = (wal->nextsector >= 0 && wal->nextsector < numsectors) ? (usectorptr_t)&sector[wal->nextsector] : nullptr;
 
-            if (wal->nextsector >= 0 && wal->nextsector < numsectors)
-            {
-                nsec = &sector[wal->nextsector];
-            }
-            else
-            {
-                nsec = nullptr;
-            }
+            int j = 0;
 
-            j = 0;
+            if (!wallvisible(light.x, light.y, sec->wallptr + i) && (wal->nextwall == -1 || !wallvisible(light.x, light.y, wal->nextwall)))
+                continue;
 
             if (!(sec->floorstat & 1 && nsec && nsec->floorstat & 1))
             {
-                if (polymer_planeinlight(&w->wall, light)) {
+                if (polymer_planeinlight(w->wall, light)) {
                     polymer_addplanelight(&w->wall, lighti);
                     j++;
                 }
@@ -6232,70 +6241,64 @@ static inline void  polymer_culllight(int16_t lighti)
 
             if (!(sec->ceilingstat & 1 && nsec && nsec->ceilingstat & 1))
             {
-                if (polymer_planeinlight(&w->over, light)) {
+                if (polymer_planeinlight(w->over, light)) {
                     polymer_addplanelight(&w->over, lighti);
                     j++;
                 }
             }
 
             // assume the light hits the middle section if it hits the top and bottom
-            if (wallvisible(light->x, light->y, sec->wallptr + i) &&
-                (j == 2 || polymer_planeinlight(&w->mask, light))) {
+            if (wallvisible(light.x, light.y, sec->wallptr + i) && (j == 2 || polymer_planeinlight(w->mask, light)))
+            {
                 if ((w->mask.vertcount == 4) &&
                     (w->mask.buffer[0].y >= w->mask.buffer[3].y) &&
                     (w->mask.buffer[1].y >= w->mask.buffer[2].y))
-                {
-                    i++;
                     continue;
-                }
 
                 polymer_addplanelight(&w->mask, lighti);
 
-                if ((wall[sec->wallptr + i].nextsector >= 0) &&
-                    (!drawingstate[wall[sec->wallptr + i].nextsector])) {
-                    drawingstate[wall[sec->wallptr + i].nextsector] = 1;
-                    sectorqueue[back] = wall[sec->wallptr + i].nextsector;
-                    back++;
+                int ns = wall[sec->wallptr + i].nextsector;
+
+                if (((unsigned)ns < MAXSECTORS) && !bitmap_test(drawingstate, ns))
+                {
+                    bitmap_set(drawingstate, ns);
+
+                    if (getsectordist(light.xy, ns) < light.range)
+                        sectorqueue[back++] = ns;
                 }
             }
-
-            i++;
         }
+        while (++i < sec->wallnum);
+
+        for (int16_t SPRITES_OF_SECT(sectorqueue[front], i))
+        {
+            _prsprite *s = prsprites[i];
+
+            if ((sprite[i].cstat & 48) == 0 || s == NULL)
+                continue;
+        
+            if (polymer_planeinlight(s->plane, light))
+                polymer_addplanelight(&s->plane, lighti);
+        }
+
         front++;
     }
     while (front != back);
 
-    i = MAXSPRITES-1;
-
-    do
-    {
-        _prsprite *s = prsprites[i];
-
-        if ((sprite[i].cstat & 48) == 0 || s == NULL || sprite[i].statnum == MAXSTATUS || sprite[i].sectnum == MAXSECTORS)
-            continue;
-
-        if (polymer_planeinlight(&s->plane, light))
-            polymer_addplanelight(&s->plane, lighti);
-    }
-    while (i--);
+    return 0;
 }
 
 static void         polymer_prepareshadows(void)
 {
-    fix16_t         oviewangle, oglobalang;
-    int32_t         i, j, k;
-    int32_t         gx, gy, gz;
-    int32_t         oldoverridematerial;
-
     // for wallvisible()
-    gx = globalposx;
-    gy = globalposy;
-    gz = globalposz;
+    int32_t gx = globalposx;
+    int32_t gy = globalposy;
+    int32_t gz = globalposz;
     // build globals used by drawmasks
-    oviewangle = viewangle;
-    oglobalang = qglobalang;
+    fix16_t oviewangle = viewangle;
+    fix16_t oglobalang = qglobalang;
 
-    i = j = k = 0;
+    int i=0, j=0, k=0;
 
     while ((k < lightcount) && (j < pr_shadowcount))
     {
@@ -6307,7 +6310,7 @@ static void         polymer_prepareshadows(void)
         {
             prlights[i].flags.isinview = 0;
             prlights[i].rtindex = j + 1;
-            if (pr_verbosity >= 3) OSD_Printf("PR : Drawing shadow %i...\n", i);
+            if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing shadow %i", i);
 
             glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, prrts[prlights[i].rtindex].fbo);
             glPushAttrib(GL_VIEWPORT_BIT);
@@ -6321,7 +6324,7 @@ static void         polymer_prepareshadows(void)
             glMatrixMode(GL_MODELVIEW);
             glLoadMatrixf(prlights[i].transform);
 
-            glEnable(GL_POLYGON_OFFSET_FILL);
+            buildgl_setEnabled(GL_POLYGON_OFFSET_FILL);
             glPolygonOffset(5, SHADOW_DEPTH_OFFSET);
 
             set_globalpos(prlights[i].x, prlights[i].y, prlights[i].z);
@@ -6330,7 +6333,7 @@ static void         polymer_prepareshadows(void)
             viewangle = fix16_from_int(prlights[i].angle);
             set_globalang(fix16_from_int(prlights[i].angle));
 
-            oldoverridematerial = overridematerial;
+            int32_t oldoverridematerial = overridematerial;
             // smooth model shadows
             overridematerial = prprogrambits[PR_BIT_ANIM_INTERPOLATION].bit;
             // used by alpha-testing for sprite silhouette
@@ -6344,7 +6347,7 @@ static void         polymer_prepareshadows(void)
 
             overridematerial = oldoverridematerial;
 
-            glDisable(GL_POLYGON_OFFSET_FILL);
+            buildgl_setDisabled(GL_POLYGON_OFFSET_FILL);
 
             glMatrixMode(GL_PROJECTION);
             glPopMatrix();
@@ -6409,13 +6412,14 @@ static void         polymer_initrendertargets(int32_t count)
             prrts[i].ydim = ydim;
 
             glGenTextures(1, &prrts[i].color);
-            polymost_bindTexture(prrts[i].target, prrts[i].color);
+            buildgl_bindTexture(prrts[i].target, prrts[i].color);
 
             glTexImage2D(prrts[i].target, 0, GL_RGB, prrts[i].xdim, prrts[i].ydim, 0, GL_RGB, GL_SHORT, NULL);
+            glTexParameteri(prrts[i].target, GL_TEXTURE_BASE_LEVEL, 0);
             glTexParameteri(prrts[i].target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(prrts[i].target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-            glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_T, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
+            glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         } else {
             prrts[i].target = GL_TEXTURE_2D;
             prrts[i].xdim = 128 << pr_shadowdetail;
@@ -6424,24 +6428,26 @@ static void         polymer_initrendertargets(int32_t count)
 
             if (pr_ati_fboworkaround) {
                 glGenTextures(1, &prrts[i].color);
-                polymost_bindTexture(prrts[i].target, prrts[i].color);
+                buildgl_bindTexture(prrts[i].target, prrts[i].color);
 
                 glTexImage2D(prrts[i].target, 0, GL_RGB, prrts[i].xdim, prrts[i].ydim, 0, GL_RGB, GL_SHORT, NULL);
+                glTexParameteri(prrts[i].target, GL_TEXTURE_BASE_LEVEL, 0);
                 glTexParameteri(prrts[i].target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(prrts[i].target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-                glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_T, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
+                glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             }
         }
 
         glGenTextures(1, &prrts[i].z);
-        polymost_bindTexture(prrts[i].target, prrts[i].z);
+        buildgl_bindTexture(prrts[i].target, prrts[i].z);
 
         glTexImage2D(prrts[i].target, 0, GL_DEPTH_COMPONENT, prrts[i].xdim, prrts[i].ydim, 0, GL_DEPTH_COMPONENT, GL_SHORT, NULL);
+        glTexParameteri(prrts[i].target, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(prrts[i].target, GL_TEXTURE_MIN_FILTER, pr_shadowfiltering ? GL_LINEAR : GL_NEAREST);
         glTexParameteri(prrts[i].target, GL_TEXTURE_MAG_FILTER, pr_shadowfiltering ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
-        glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_T, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
+        glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(prrts[i].target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(prrts[i].target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
         glTexParameteri(prrts[i].target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
         glTexParameteri(prrts[i].target, GL_DEPTH_TEXTURE_MODE, GL_ALPHA);
@@ -6460,29 +6466,13 @@ static void         polymer_initrendertargets(int32_t count)
 
         if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
         {
-            OSD_Printf("PR : FBO #%d initialization failed.\n", i);
+            VLOG_F(LOG_PR, "FBO #%d initialization failed.", i);
         }
 
-        polymost_bindTexture(prrts[i].target, 0);
+        buildgl_bindTexture(prrts[i].target, 0);
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
         i++;
-    }
-}
-
-// DEBUG OUTPUT
-void PR_CALLBACK    polymer_debugoutputcallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,GLvoid *userParam)
-{
-    UNREFERENCED_PARAMETER(source);
-    UNREFERENCED_PARAMETER(type);
-    UNREFERENCED_PARAMETER(id);
-    UNREFERENCED_PARAMETER(severity);
-    UNREFERENCED_PARAMETER(length);
-    UNREFERENCED_PARAMETER(userParam);
-
-    if (type == GL_DEBUG_TYPE_ERROR_ARB)
-    {
-        OSD_Printf("PR : Received OpenGL debug message: %s\n", message);
     }
 }
 

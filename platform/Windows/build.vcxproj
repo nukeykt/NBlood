@@ -330,6 +330,7 @@
     <ClCompile Include="..\..\source\build\src\hightile.cpp" />
     <ClCompile Include="..\..\source\build\src\klzw.cpp" />
     <ClCompile Include="..\..\source\build\src\kplib.cpp" />
+    <ClCompile Include="..\..\source\build\src\loguru.cpp" />
     <ClCompile Include="..\..\source\build\src\lz4.c" />
     <ClCompile Include="..\..\source\build\src\md4.cpp" />
     <ClCompile Include="..\..\source\build\src\mdsprite.cpp" />
@@ -454,14 +455,21 @@
     <ClInclude Include="..\..\source\build\include\hightile.h" />
     <ClInclude Include="..\..\source\build\include\klzw.h" />
     <ClInclude Include="..\..\source\build\include\kplib.h" />
+    <ClInclude Include="..\..\source\build\include\libasync.h" />
+    <ClInclude Include="..\..\source\build\include\libasync_config.h" />
     <ClInclude Include="..\..\source\build\include\libdivide.h" />
+    <ClInclude Include="..\..\source\build\include\libdivide_config.h" />
+    <ClInclude Include="..\..\source\build\include\libtess2.h" />
     <ClInclude Include="..\..\source\build\include\linklist.h" />
+    <ClInclude Include="..\..\source\build\include\log.h" />
+    <ClInclude Include="..\..\source\build\include\loguru.hpp" />
     <ClInclude Include="..\..\source\build\include\lru.h" />
     <ClInclude Include="..\..\source\build\include\lz4.h" />
     <ClInclude Include="..\..\source\build\include\md4.h" />
     <ClInclude Include="..\..\source\build\include\mdsprite.h" />
     <ClInclude Include="..\..\source\build\include\microprofile.h" />
     <ClInclude Include="..\..\source\build\include\microprofilehtml.h" />
+    <ClInclude Include="..\..\source\build\include\minicoro.h" />
     <ClInclude Include="..\..\source\build\include\miniz.h" />
     <ClInclude Include="..\..\source\build\include\miniz_common.h" />
     <ClInclude Include="..\..\source\build\include\miniz_export.h" />
@@ -489,6 +497,7 @@
     <ClInclude Include="..\..\source\build\include\renderlayer.h" />
     <ClInclude Include="..\..\source\build\include\rev.h" />
     <ClInclude Include="..\..\source\build\include\scancodes.h" />
+    <ClInclude Include="..\..\source\build\include\screenshot.h" />
     <ClInclude Include="..\..\source\build\include\screentext.h" />
     <ClInclude Include="..\..\source\build\include\scriptfile.h" />
     <ClInclude Include="..\..\source\build\include\sdlayer.h" />
@@ -501,6 +510,7 @@
     <ClInclude Include="..\..\source\build\include\timer.h" />
     <ClInclude Include="..\..\source\build\include\tracker.hpp" />
     <ClInclude Include="..\..\source\build\include\vec.h" />
+    <ClInclude Include="..\..\source\build\include\vectormath.hpp" />
     <ClInclude Include="..\..\source\build\include\vfs.h" />
     <ClInclude Include="..\..\source\build\include\winbits.h" />
     <ClInclude Include="..\..\source\build\include\windows_inc.h" />
