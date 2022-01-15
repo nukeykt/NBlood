@@ -464,41 +464,44 @@ int32_t Anim_Play(const char *fn)
     P_SetGamePalette(g_player[myconnectindex].ps, ANIMPAL, 8 + 2);
 
 #ifdef USE_OPENGL
-    if (!buildgl_samplerObjectsEnabled())
+    if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        auto pth = texcache_fetch(TILE_ANIM, 0, 0, DAMETH_NOMASK);
-        if (pth && pth->glpic)
+        if (!buildgl_samplerObjectsEnabled())
         {
-            int filter = -1;
+            auto pth = texcache_fetch(TILE_ANIM, 0, 0, DAMETH_NOMASK);
+            if (pth && pth->glpic)
+            {
+                int filter = -1;
 
+                switch (anim->frameflags & CUTSCENE_FILTERMASK)
+                {
+                    case CUTSCENE_TEXTUREFILTER:
+                        break;
+                    case CUTSCENE_FORCEFILTER:
+                        filter = TEXFILTER_ON;
+                        break;
+                    case CUTSCENE_FORCENOFILTER:
+                        filter = TEXFILTER_OFF;
+                        break;
+                }
+
+                bind_2d_texture(pth->glpic, filter);
+            }
+        }
+        else
+        {
             switch (anim->frameflags & CUTSCENE_FILTERMASK)
             {
-            case CUTSCENE_TEXTUREFILTER:
-                break;
-            case CUTSCENE_FORCEFILTER:
-                filter = TEXFILTER_ON;
-                break;
-            case CUTSCENE_FORCENOFILTER:
-                filter = TEXFILTER_OFF;
-                break;
+                case CUTSCENE_TEXTUREFILTER:
+                    buildgl_bindSamplerObject(0, (glfiltermodes[gltexfiltermode].min == GL_NEAREST) ? PTH_INDEXED : PTH_FORCEFILTER);
+                    break;
+                case CUTSCENE_FORCEFILTER:
+                    buildgl_bindSamplerObject(0, PTH_FORCEFILTER);
+                    break;
+                case CUTSCENE_FORCENOFILTER:
+                    buildgl_bindSamplerObject(0, PTH_INDEXED);
+                    break;
             }
-
-            bind_2d_texture(pth->glpic, filter);
-        }
-    }
-    else
-    {
-        switch (anim->frameflags & CUTSCENE_FILTERMASK)
-        {
-            case CUTSCENE_TEXTUREFILTER:
-                buildgl_bindSamplerObject(0, (glfiltermodes[gltexfiltermode].min == GL_NEAREST) ? PTH_INDEXED : PTH_FORCEFILTER);
-                break;
-            case CUTSCENE_FORCEFILTER:
-                buildgl_bindSamplerObject(0, PTH_FORCEFILTER);
-                break;
-            case CUTSCENE_FORCENOFILTER:
-                buildgl_bindSamplerObject(0, PTH_INDEXED);
-                break;
         }
     }
 #endif
