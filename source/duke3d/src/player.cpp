@@ -635,12 +635,14 @@ static void P_DoWeaponRumble(int playerNum)
 //    2: set cstat to wall-aligned + random x/y flip
 //
 // TODO: maybe split into 3 cases (hit neither wall nor sprite, hit sprite, hit wall)?
-static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *const hitData, int const spriteOwner,
+
+static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *const hitData, int const STANDALONE_UNUSED(spriteOwner),
                              int const projecTile, int const zvel, int const spawnTile, int const decalTile, int const wallDamage,
                              int const decalFlags)
 {
 #ifdef EDUKE32_STANDALONE
     UNREFERENCED_PARAMETER(playerNum);
+    UNREFERENCED_CONST_PARAMETER(spriteOwner);
 #endif
     if (hitData->wall == -1 && hitData->sprite == -1)
     {

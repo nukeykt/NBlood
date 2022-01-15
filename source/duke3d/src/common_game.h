@@ -56,8 +56,10 @@ extern int     g_addonNum;
 // statements using STANDALONE_EVAL(false, ...) are expected to be optimized away entirely in EDUKE32_STANDALONE builds
 #ifdef EDUKE32_STANDALONE
 # define STANDALONE_EVAL(x, y)  (x)
+# define STANDALONE_UNUSED(x)   UNUSED(x)
 #else
 # define STANDALONE_EVAL(x, y)  (y)
+# define STANDALONE_UNUSED(x)   x
 #endif
 
 enum Games_t {
