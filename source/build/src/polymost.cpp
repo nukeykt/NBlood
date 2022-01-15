@@ -1986,7 +1986,7 @@ static int32_t tile_is_sky(int32_t tilenum)
 #endif
 
 
-static void polymost_setuptexture(const int32_t dameth, int filter)
+void polymost_setuptexture(const int32_t dameth, int filter)
 {
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
 
