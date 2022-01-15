@@ -8300,7 +8300,6 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
-    g_logFlushWindow = 0;
     G_LoadGroups(!g_noAutoLoad && !ud.setup.noautoload);
 //    flushlogwindow = 1;
 
