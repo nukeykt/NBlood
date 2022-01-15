@@ -562,7 +562,7 @@ static int osdfunc_listsymbols(osdcmdptr_t parm)
         else
             inc = Bsnprintf(buf2, osd->draw.cols, "^O%-*s", maxwidth, symb->name);
 
-        strcat_s(buf, osd->draw.cols+maxwidth, buf2);
+        Bstrcat(buf, buf2);
 
         width += inc;
         count++;

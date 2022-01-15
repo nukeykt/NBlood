@@ -94,7 +94,7 @@ enable_if_t<is_integral<T>::value, size_t> buildprintpiece(char * const buf, T x
         while (--numChars);
     }
 
-    strcat_s(buf, BUILDPRINTBUFSIZ, str);
+    Bstrcat(buf, str);
     return totalChars;
 }
 
@@ -109,7 +109,7 @@ enable_if_t<is_integral<T>::value, size_t> buildprintpiece(char * const buf, bin
     for (int p = 0; p < numChars; ++p)
         str[numChars - 1 - p] = '0' + (char)((data >> p) & 1);
 
-    strcat_s(buf, BUILDPRINTBUFSIZ, str);
+    Bstrcat(buf, str);
     return numChars;
 }
 
@@ -124,7 +124,8 @@ enable_if_t<is_integral<T>::value, size_t> buildprintpiece(char * const buf, oct
     for (int p = 0; p < numChars; ++p)
         str[numChars - 1 - p] = '0' + (char)((data >> (p*3)) & 7);
 
-    return strcat_s(buf, BUILDPRINTBUFSIZ, str) ? 0 : numChars;
+    Bstrcat(buf, str);
+    return numChars;
 }
 
 template<typename T>
@@ -139,7 +140,8 @@ enable_if_t<is_integral<T>::value, size_t> buildprintpiece(char * const buf, hex
     for (int p = 0; p < numChars; ++p)
         str[numChars - 1 - p] = hexletters[(int)((data >> (p<<2)) & 0xF)];
 
-    return strcat_s(buf, BUILDPRINTBUFSIZ, str) ? 0 : numChars;
+    Bstrcat(buf, str);
+    return numChars;
 }
 
 template<typename T>
@@ -154,7 +156,8 @@ enable_if_t<is_integral<T>::value, size_t> buildprintpiece(char * const buf, HEX
     for (int p = 0; p < numChars; ++p)
         str[numChars - 1 - p] = HEXletters[(int)((data >> (p<<2)) & 0xF)];
     
-    return strcat_s(buf, BUILDPRINTBUFSIZ, str) ? 0 : numChars;
+    Bstrcat(buf, str);
+    return numChars;
 }
 
 template <typename T>
@@ -165,7 +168,8 @@ FORCE_INLINE size_t buildprintpiece(char * const buf, const T * x)
 
 FORCE_INLINE size_t buildprintpiece(char * const buf, char const * const str)
 {
-    return strcat_s(buf, BUILDPRINTBUFSIZ, str) ? 0 : strlen(str);
+    Bstrcat(buf, str);
+    return Bstrlen(str);
 }
 
 template<typename T>

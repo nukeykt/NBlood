@@ -321,7 +321,7 @@ void cache1d::report(void)
         }
         else
         {
-            strcat_s(buf, 64, "FREE");
+            Bstrcat(buf, "FREE");
             LOG_F(INFO, buf);
             continue;
         }

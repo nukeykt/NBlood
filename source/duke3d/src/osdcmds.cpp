@@ -194,7 +194,7 @@ static int osdcmd_map(osdcmdptr_t parm)
 
                 inc = Bsnprintf(buf2, cols, "%-*s", maxwidth, r->name);
 
-                strcat_s(buf, cols+maxwidth, buf2);
+                Bstrcat(buf, buf2);
 
                 x += inc;
 
