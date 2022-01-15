@@ -3077,7 +3077,7 @@ void RT_DisplayExplosions(void)
 {
 #ifdef USE_OPENGL
     RT_SetTexComb(1);
-    glDisable(GL_DEPTH);
+    glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     glDisable(GL_CULL_FACE);
     glDisable(GL_ALPHA_TEST);
