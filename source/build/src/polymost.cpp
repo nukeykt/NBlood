@@ -30,6 +30,7 @@ int32_t r_detailmapping = 1;
 #endif
 
 int32_t r_animsmoothing = 1;
+int32_t r_brightnesshack = 0;
 int32_t r_downsize;
 int32_t r_downsizevar = -1;
 int32_t r_drawpolyVertsBufferLength = 30000;
@@ -40,6 +41,9 @@ int32_t r_parallaxskyclamping = 1;
 int32_t r_parallaxskypanning = 1;
 int32_t r_polygonmode;     // 0:GL_FILL,1:GL_LINE,2:GL_POINT //FUK
 int32_t r_polymostDebug;
+int32_t r_rortexture;
+int32_t r_rortexturerange;
+int32_t r_rorphase;
 int32_t r_shadeinterpolate = 1;
 int32_t r_skyzbufferhack;
 int32_t r_useindexedcolortextures = 1;
@@ -848,6 +852,15 @@ void polymost_shadeInterpolate(int32_t shadeInterpolate)
     {
         polymost1ShadeInterpolate = shadeInterpolate;
         glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
+    }
+}
+
+void polymost_setBrightness(int brightness)
+{
+    if (gl.currentShaderProgramID == polymost1CurrentShaderProgramID)
+    {
+        polymost1Brightness = 8.f / (brightness + 8.f);
+        glUniform1f(polymost1BrightnessLoc, polymost1Brightness);
     }
 }
 
