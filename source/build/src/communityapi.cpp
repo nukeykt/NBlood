@@ -77,6 +77,8 @@ void communityapiInit()
     Voidwrap_Steam_UnlockAchievement = (VW_VOID_CONSTCHARPTR)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_UnlockAchievement");
     Voidwrap_Steam_SetStat = (VW_VOID_CONSTCHARPTR_INT32)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SetStat");
     Voidwrap_Steam_ResetStats = (VW_VOID)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_ResetStats");
+    Voidwrap_Steam_SetRichPresence = (VW_VOID_CONSTCHARPTR_CONSTCHARPTR)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SetRichPresence");
+    Voidwrap_Steam_ClearRichPresence = (VW_VOID)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_ClearRichPresence");
 #ifdef VWSCREENSHOT
     Voidwrap_Steam_SendScreenshot = (VW_BOOL_SCREENSHOT)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SendScreenshot");
     Voidwrap_Steam_SetCallback_ScreenshotRequested = (VW_SETCALLBACK_VOID)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SetCallback_ScreenshotRequested");
@@ -186,6 +188,34 @@ void communityapiResetStats()
         return;
 
     Voidwrap_Steam_ResetStats();
+#endif
+}
+
+void communityapiSetRichPresence(char const * key, char const * str)
+{
+#ifdef VW_ENABLED
+    if (!steamworks_enabled)
+        return;
+
+    if (nullptr == Voidwrap_Steam_SetRichPresence)
+        return;
+
+    Voidwrap_Steam_SetRichPresence(key, str);
+#else
+    UNREFERENCED_PARAMETER(str);
+#endif
+}
+
+void communityapiClearRichPresence(void)
+{
+#ifdef VW_ENABLED
+    if (!steamworks_enabled)
+        return;
+
+    if (nullptr == Voidwrap_Steam_ClearRichPresence)
+        return;
+
+    Voidwrap_Steam_ClearRichPresence();
 #endif
 }
 

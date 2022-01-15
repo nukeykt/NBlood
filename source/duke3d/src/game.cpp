@@ -5920,6 +5920,7 @@ void G_UpdateAppTitle(char const * const name /*= nullptr*/)
     }
 
     wm_setapptitle(apptitle);
+    communityapiSetRichPresence("status", name ? name : "In menu");
 }
 
 static void G_FreeHashAnim(const char * /*string*/, intptr_t key)
