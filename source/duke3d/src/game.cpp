@@ -6607,8 +6607,8 @@ int app_main(int argc, char const* const* argv)
 
     PrintBuildInfo();
 
-    //if (!g_useCwd)
-    //    G_AddSearchPaths();
+    if (!g_useCwd)
+        G_AddSearchPaths();
 
     g_maxDefinedSkill = 4;
     ud.multimode = 1;
