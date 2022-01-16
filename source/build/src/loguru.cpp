@@ -835,12 +835,12 @@ namespace loguru
 		const char* mode_str = (mode == FileMode::Truncate ? "w" : "a");
 		FILE* file;
 	#ifdef _WIN32
-		errno_t file_error = fopen_s(&file, path, mode_str);
-		if (file_error) {
+		// EDUKE32 MODIFICATION
+		file = _fsopen(path, mode_str, _SH_DENYWR);
 	#else
 		file = fopen(path, mode_str);
-		if (!file) {
 	#endif
+		if (!file) {
 			LOG_F(ERROR, "Failed to open '" LOGURU_FMT(s) "'", path);
 			return false;
 		}
