@@ -161,7 +161,7 @@ void engineSetupAllocator(void)
 }
 
 const char*(*gameVerbosityCallback)(loguru::Verbosity verbosity) = nullptr;
-void engineSetVerbosityCallback(const char* (*cb)(loguru::Verbosity)) { gameVerbosityCallback = cb; }
+void engineSetLogVerbosityCallback(const char* (*cb)(loguru::Verbosity)) { gameVerbosityCallback = cb; }
 
 const char *engineVerbosityCallback(loguru::Verbosity verbosity)
 {
@@ -233,13 +233,15 @@ void engineSetupLogging(int argc, char ** argv)
     loguru::g_preamble_thread = false;
     loguru::set_thread_name("main");
     loguru::set_verbosity_to_name_callback(&engineVerbosityCallback);
-    loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, 0);
+    loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, LOG_ENGINE_MAX);
     loguru::init(argc, argv);
 }
 
 void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode /*= loguru::Truncate*/)
 {
     loguru::g_stderr_verbosity = verbosity;
+    loguru::remove_callback(CB_ENGINE);
+    loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, verbosity);
     loguru::add_file(fn, mode, verbosity);
 }
 

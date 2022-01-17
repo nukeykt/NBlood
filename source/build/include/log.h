@@ -28,6 +28,6 @@ enum loguru_verbosities_engine
 extern bool g_useLogCallback;
 void engineSetupLogging(int argc, char **argv);
 void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode = loguru::Truncate);
-void engineSetVerbosityCallback(const char* (*cb)(loguru::Verbosity));
+void engineSetLogVerbosityCallback(const char* (*cb)(loguru::Verbosity));
 
 #endif // log_h__
