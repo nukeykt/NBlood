@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#include "build.h"
 #include "gun.h"
 #include "engine.h"
 #include "init.h"
@@ -1036,7 +1037,36 @@ void DrawWeapons(int smooth)
     }
 
     if (nWeapon == 3 && var_34 == 1) {
+        // If the weapon is the flamer, draw the pilot light that sits at the muzzle.
         seq_DrawPilotLightSeq(xOffset, yOffset);
+    }
+    else if ((nWeapon == 8 || nWeapon == 9) && windowxy2.y != 0)
+    {
+        // If the current "weapon" is either the normal or explosive death arm (which are treated as "weapons"),
+        // and the window's Y does not equal zero (to avoid inadvertent division by zero below), we determine
+        // special X offsets, since these two produce "gun sequences" that are cut off on the side for screen
+        // ratios that are wider than standard/4:3.
+        //
+        // Rot/mummy and burn death arm "weapons" don't suffer from this issue (they have intrinsically wider art).
+        //
+        // The xOffset calculated below is later added to the standard X offset of 160 when the "gun sequence"
+        // is being drawn.
+        float screenRatio = (float)windowxy2.x / windowxy2.y; // Safe from division by zero.
+        float newX        = ceil(120 * screenRatio);
+
+        // For standard 4:3 ratio (1.333333) or slimmer, we want to add nothing (take the max between zero and
+        // xOffset), all wider ratios must offset.
+        //
+        // Examples which result in no change:
+        // 120 * 1.25       == 150, so (150 - 160) == -10 offset (slimmer than 4:3)
+        // 120 * 1.333333   == 160, so (160 - 160) == 0 offset (this is 4:3)
+        //
+        // Examples which result in positive offsets (all wider than 4:3):
+        // 120 * 1.5        == 180, so (180 - 160) == +20 offset
+        // 120 * 1.6        == 192, so (192 - 160) == +32 offset
+        // 120 * 1.706667   == 205, so (205 - 160) == +45 offset
+        // 120 * 1.777778   == 214, so (214 - 160) == +54 offset
+        xOffset = max(0, int(newX) - 160);
     }
 
     if (nWeapon < 0) {
