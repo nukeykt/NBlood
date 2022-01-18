@@ -739,7 +739,7 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->relAim.dz = 0;
     pPlayer->aimTarget = -1;
     pPlayer->zViewVel = pPlayer->zWeaponVel;
-    if (!(gGameOptions.nGameType == 1 && gGameOptions.bKeepKeysOnRespawn && !bNewLevel))
+    if (!(gGameOptions.nGameType == 1 && gGameOptions.bPlayerKeys > PLAYERKEYSMODE::LOSTONDEATH && !bNewLevel))
         for (int i = 0; i < 8; i++)
             pPlayer->hasKey[i] = gGameOptions.nGameType >= 2;
     pPlayer->hasFlag = 0;
@@ -1092,6 +1092,11 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
             if (pPlayer->hasKey[pItem->type-99]) return 0;
             pPlayer->hasKey[pItem->type-99] = 1;
             pickupSnd = 781;
+            if (gGameOptions.bPlayerKeys == PLAYERKEYSMODE::SHARED) {
+                for (int i = connecthead; i != -1; i = connectpoint2[i]) {
+                    gPlayer[i].hasKey[pItem->type-99] = 1;
+                }
+            }
             break;
         case kItemHealthMedPouch:
         case kItemHealthLifeEssense:

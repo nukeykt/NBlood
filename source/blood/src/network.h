@@ -38,6 +38,12 @@ enum NETWORKMODE {
     NETWORK_CLIENT
 };
 
+enum PLAYERKEYSMODE {
+    LOSTONDEATH = 0,
+    KEPTONRESPAWN,
+    SHARED
+};
+
 #define kNetDefaultPort 23513
 
 extern char packet[576];
@@ -77,7 +83,7 @@ struct PKT_STARTGAME {
     char userMap, userMapName[BMAX_PATH];
     int weaponsV10x;
     bool bFriendlyFire;
-    bool bKeepKeysOnRespawn;
+    PLAYERKEYSMODE bPlayerKeys;
 };
 
 extern PKT_STARTGAME gPacketStartGame;

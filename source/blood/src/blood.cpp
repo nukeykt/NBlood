@@ -617,7 +617,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
         gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
-        gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
+        gGameOptions.bPlayerKeys = gPacketStartGame.bPlayerKeys;
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
@@ -800,7 +800,7 @@ void StartNetworkLevel(void)
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
         gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
-        gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
+        gGameOptions.bPlayerKeys = gPacketStartGame.bPlayerKeys;
         
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;

@@ -164,6 +164,12 @@ const char *pzShowWeaponStrings[] = {
     "VOXEL"
 };
 
+const char *zPlayerKeysStrings[] = {
+    "LOST ON DEATH",
+    "KEPT ON RESPAWN",
+    "SHARED"
+};
+
 char zUserMapName[BMAX_PATH];
 const char *zEpisodeNames[6];
 const char *zLevelNames[6][16];
@@ -320,7 +326,7 @@ CGameMenuItemZCycle itemNetStart5("MONSTERS:", 3, 66, 100, 180, 0, 0, zMonsterSt
 CGameMenuItemZCycle itemNetStart6("WEAPONS:", 3, 66, 110, 180, 0, 0, zWeaponStrings, 4, 0);
 CGameMenuItemZCycle itemNetStart7("ITEMS:", 3, 66, 120, 180, 0, 0, zItemStrings, 3, 0);
 CGameMenuItemZBool itemNetStart8("FRIENDLY FIRE:", 3, 66, 130, 180, true, 0, NULL, NULL);
-CGameMenuItemZBool itemNetStart9("KEEP KEYS ON RESPAWN:", 3, 66, 140, 180, false, 0, NULL, NULL);
+CGameMenuItemZCycle itemNetStart9("PLAYER KEYS:", 3, 66, 140, 180, 0, 0, zPlayerKeysStrings, 3, 0);
 CGameMenuItemZBool itemNetStart10("V1.0x WEAPONS BALANCE:", 3, 66, 150, 180, false, 0, NULL, NULL);
 CGameMenuItemChain itemNetStart11("USER MAP", 3, 66, 160, 180, 0, &menuMultiUserMaps, 0, NULL, 0);
 CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, StartNetGame, 0);
@@ -2240,7 +2246,7 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.itemSettings = itemNetStart7.m_nFocus;
     gPacketStartGame.respawnSettings = 0;
     gPacketStartGame.bFriendlyFire = itemNetStart8.at20;
-    gPacketStartGame.bKeepKeysOnRespawn = itemNetStart9.at20;
+    gPacketStartGame.bPlayerKeys = (PLAYERKEYSMODE) itemNetStart9.m_nFocus;
     ////
     gPacketStartGame.weaponsV10x = itemNetStart10.at20;
     ////
