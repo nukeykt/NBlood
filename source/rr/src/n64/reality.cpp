@@ -372,7 +372,7 @@ int RT_PrepareScript(void)
         {
             g_mapInfo[i * MAXLEVELS + j].filename = (char*)Xcalloc(1, 1);
             if (i == 0 && j < ARRAY_SIZE(rt_level_names))
-                g_mapInfo[i * MAXLEVELS + j].name = strdup(rt_level_names[j]);
+                g_mapInfo[i * MAXLEVELS + j].name = Xstrdup(rt_level_names[j]);
             else
                 g_mapInfo[i * MAXLEVELS + j].name = (char*)Xcalloc(1, 1);
         }
