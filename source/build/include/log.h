@@ -26,7 +26,7 @@ enum loguru_verbosities_engine
 #define CB_ENGINE "engine"
 
 extern bool g_useLogCallback;
-void engineSetupLogging(int argc, char **argv);
+void engineSetupLogging(int &argc, char **argv);
 void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode = loguru::Truncate);
 void engineSetLogVerbosityCallback(const char* (*cb)(loguru::Verbosity));
 

@@ -223,7 +223,7 @@ void engineLogCallback(void *user_data, const loguru::Message &message)
     OSD_Puts(buf);
 }
 
-void engineSetupLogging(int argc, char ** argv)
+void engineSetupLogging(int &argc, char **argv)
 {
     loguru::g_internal_verbosity = LOG_DEBUG;
     loguru::g_preamble_file   = false;
@@ -234,7 +234,10 @@ void engineSetupLogging(int argc, char ** argv)
     loguru::set_thread_name("main");
     loguru::set_verbosity_to_name_callback(&engineVerbosityCallback);
     loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, LOG_ENGINE_MAX);
-    loguru::init(argc, argv);
+
+    loguru::Options initopts;
+    initopts.verbosity_flag = nullptr;
+    loguru::init(argc, argv, initopts);
 }
 
 void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode /*= loguru::Truncate*/)
