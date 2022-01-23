@@ -42,7 +42,7 @@ LONG MiniDumper::TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
 
     LONG    retval   = EXCEPTION_CONTINUE_SEARCH;
     LPCTSTR szResult = "DBGHELP.DLL not found";
-    char    szScratch[_MAX_PATH];
+    char    szScratch[1024];
 
     if (hDll)
     {
@@ -52,7 +52,7 @@ LONG MiniDumper::TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
         {
             char szDumpPath[_MAX_PATH];
 
-            sprintf(szDumpPath, "%s_%u.dmp", m_szAppName, timeGetTime());
+            snprintf(szDumpPath, sizeof(szDumpPath), "%s_%u.dmp", m_szAppName, timeGetTime());
 
             HANDLE hFile = ::CreateFile(szDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, 0, NULL);
 
@@ -65,13 +65,13 @@ LONG MiniDumper::TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
 
                 if (bOK)
                 {
-                    sprintf(szScratch, "Saved dump file to \"%s\"", szDumpPath);
+                    snprintf(szScratch, sizeof(szScratch), "Crash dump written to %s", szDumpPath);
                     szResult = szScratch;
                     retval   = EXCEPTION_EXECUTE_HANDLER;
                 }
                 else
                 {
-                    sprintf(szScratch, "Failed to save dump file to \"%s\" (error %d)", szDumpPath, GetLastError());
+                    snprintf(szScratch, sizeof(szScratch), "Unable to write crash dump to %s: error %d.", szDumpPath, GetLastError());
                     szResult = szScratch;
                 }
 
@@ -79,7 +79,7 @@ LONG MiniDumper::TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
             }
             else
             {
-                sprintf(szScratch, "Failed to create dump file \"%s\" (error %d)", szDumpPath, GetLastError());
+                snprintf(szScratch, sizeof(szScratch), "Unable to write crash dump to %s: error %d", szDumpPath, GetLastError());
                 szResult = szScratch;
             }
         }

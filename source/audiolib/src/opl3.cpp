@@ -1233,7 +1233,7 @@ void OPL3_Generate(opl3_chip *chip, int16_t *buf)
         }
         writebuf->reg &= 0x1ff;
         OPL3_WriteReg(chip, writebuf->reg, writebuf->data);
-        chip->writebuf_cur = (chip->writebuf_cur + 1) % OPL_WRITEBUF_SIZE;
+        chip->writebuf_cur = (chip->writebuf_cur + 1) & (OPL_WRITEBUF_SIZE - 1);
     }
     chip->writebuf_samplecnt++;
 }
@@ -1446,7 +1446,7 @@ void OPL3_WriteRegBuffered(opl3_chip *chip, uint16_t reg, uint8_t v)
     {
         OPL3_WriteReg(chip, writebuf->reg & 0x1ff, writebuf->data);
 
-        chip->writebuf_cur = (writebuf_last + 1) % OPL_WRITEBUF_SIZE;
+        chip->writebuf_cur = (writebuf_last + 1) & (OPL_WRITEBUF_SIZE - 1);
         chip->writebuf_samplecnt = writebuf->time;
     }
 
@@ -1462,7 +1462,7 @@ void OPL3_WriteRegBuffered(opl3_chip *chip, uint16_t reg, uint8_t v)
 
     writebuf->time = time1;
     chip->writebuf_lasttime = time1;
-    chip->writebuf_last = (writebuf_last + 1) % OPL_WRITEBUF_SIZE;
+    chip->writebuf_last = (writebuf_last + 1) & (OPL_WRITEBUF_SIZE - 1);
 }
 
 void OPL3_GenerateStream(opl3_chip *chip, int16_t *sndptr, uint32_t numsamples)

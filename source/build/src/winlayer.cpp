@@ -281,7 +281,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
-    engineCreateAllocator();
+    engineSetupAllocator();
 
     mutex_init(&m_initprintf);
 
@@ -539,9 +539,6 @@ void uninitsystem(void)
     //POGO: there is no equivalent to unloadgldriver() with GLAD's loader, but this shouldn't be a problem.
     //unloadgldriver();
     unloadwgl();
-#ifdef POLYMER
-    unloadglulibrary();
-#endif
 #endif
 }
 
@@ -1589,11 +1586,13 @@ static int sortmodes(const void *a_, const void *b_)
 
     return 0;
 }
-void videoGetModes(void)
+void videoGetModes(int display)
 {
     int32_t cdepths[2] = { 8, 0 };
     int32_t i, j, maxx=0, maxy=0;
     HRESULT result;
+
+    UNREFERENCED_PARAMETER(display);
 
 #ifdef USE_OPENGL
     if (desktopbpp > 8 && !nogl) cdepths[1] = desktopbpp;
@@ -1646,6 +1645,11 @@ void videoGetModes(void)
 #undef CHECK
 #undef ADDMODE
 
+char const* videoGetDisplayName(int display)
+{
+    UNREFERENCED_PARAMETER(display);
+    return "display";
+}
 
 //
 // resetvideomode() -- resets the video system
@@ -2563,15 +2567,6 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
             nogl = 1;
             ReleaseOpenGL();
             return TRUE;
-#ifdef POLYMER
-        }
-        else if (loadglulibrary(getenv("BUILD_GLULIB")))
-        {
-            initprintf("Failure loading GLU. GL modes are unavailable.\n");
-                        nogl = 1;
-                        ReleaseOpenGL();
-                        return TRUE;
-#endif
         }
         else if (GLVersion.major < 2)
         {

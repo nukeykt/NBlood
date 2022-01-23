@@ -909,7 +909,7 @@ InitGame(int32_t argc, char const * const * argv)
         snprintf(tempbuf, ARRAY_SIZE(tempbuf), APPNAME " %s", s_buildRev);
         OSD_SetVersion(tempbuf, 10,0);
     }
-    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", 0);
+    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", "^14", 0);
 
     InitSetup();
 

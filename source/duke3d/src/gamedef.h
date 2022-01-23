@@ -62,13 +62,14 @@ enum
 // "magic" number for { and }, overrides line number in compiled code for later detection
 #define VM_IFELSE_MAGIC 31337
 #define VM_INSTMASK 0xfff
+#define VM_VSIZE_LINE_END -1
 #define VM_DECODE_INST(xxx) ((int)((xxx) & VM_INSTMASK))
 #define VM_DECODE_LINE_NUMBER(xxx) ((int)((xxx) >> 12))
 #define C_CUSTOMERROR(Text, ...)                                                               \
     do                                                                                         \
     {                                                                                          \
         C_ReportError(-1);                                                                     \
-        initprintf("%s:%d: error: " Text "\n", g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
+        LOG_F(ERROR, "%s:%d: " Text, g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
         g_errorCnt++;                                                                          \
     } while (0)
 
@@ -76,9 +77,28 @@ enum
     do                                                                                           \
     {                                                                                            \
         C_ReportError(-1);                                                                       \
-        initprintf("%s:%d: warning: " Text "\n", g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
+        LOG_F(WARNING, "%s:%d: " Text, g_scriptFileName, g_lineNumber, ##__VA_ARGS__); \
         g_warningCnt++;                                                                          \
     } while (0)
+
+struct vmofs
+{
+    char *fn;
+    struct vmofs *next;
+    int offset;
+};
+
+extern struct vmofs *vmoffset;
+
+static inline const char *C_GetFileForOffset(int const offset)
+{
+    auto ofs = vmoffset;
+    while (ofs->offset > offset)
+        ofs = ofs->next;
+    return ofs->fn;    
+}
+
+#define VM_FILENAME(xxx) C_GetFileForOffset((xxx)-apScript)
 
 extern intptr_t const * insptr;
 void VM_ScriptInfo(intptr_t const * const ptr, int const range);
@@ -451,6 +471,7 @@ enum UserdefsLabel_t
     USERDEFS_UW_FRAMERATE,
     USERDEFS_CAMERA_TIME,
     USERDEFS_FOLFVEL,
+    USERDEFS_FOLSVEL,
     USERDEFS_FOLAVEL,
     USERDEFS_FOLX,
     USERDEFS_FOLY,
@@ -609,6 +630,7 @@ enum UserdefsLabel_t
     USERDEFS_GAMEPADACTIVE,
     USERDEFS_M_NEWGAMECUSTOM,
     USERDEFS_M_NEWGAMECUSTOMSUB,
+    USERDEFS_M_NEWGAMECUSTOML3,
     USERDEFS_END
 };
 
@@ -710,6 +732,8 @@ enum ActorLabel_t
     ACTOR_HTUMOVFLAG,
     ACTOR_HTTEMPANG,
     ACTOR_HTSTAYPUT,
+    ACTOR_HTFLOORZOFFSET,
+    ACTOR_HTWATERZOFFSET,
     ACTOR_HTDISPICNUM,
     ACTOR_HTTIMETOSLEEP,
     ACTOR_HTFLOORZ,
@@ -1113,6 +1137,7 @@ enum IterationTypes_t
     TRANSFORM(CON_GETKEYNAME) DELIMITER \
     TRANSFORM(CON_GETLASTPAL) DELIMITER \
     TRANSFORM(CON_GETMUSICPOSITION) DELIMITER \
+    TRANSFORM(CON_GETNGCFLAGS) DELIMITER \
     TRANSFORM(CON_GETPLAYERANGLE) DELIMITER \
     TRANSFORM(CON_GETPNAME) DELIMITER \
     TRANSFORM(CON_GETTEXTURECEILING) DELIMITER \
@@ -1263,6 +1288,7 @@ enum IterationTypes_t
     TRANSFORM(CON_SETGAMEPALETTE) DELIMITER \
     TRANSFORM(CON_SETINPUT) DELIMITER \
     TRANSFORM(CON_SETMUSICPOSITION) DELIMITER \
+    TRANSFORM(CON_SETNGCFLAGS) DELIMITER \
     TRANSFORM(CON_SETPLAYERANGLE) DELIMITER \
     TRANSFORM(CON_SETSPRITE) DELIMITER \
     TRANSFORM(CON_SETTILEDATA) DELIMITER \

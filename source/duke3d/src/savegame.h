@@ -33,7 +33,10 @@ extern "C" {
 
 #define SV_MAJOR_VER 1
 #define SV_MINOR_VER 7
-    
+
+#define MAXSAVEGAMENAMESTRUCT 32
+#define MAXSAVEGAMENAME (MAXSAVEGAMENAMESTRUCT-1)
+
 #pragma pack(push,1)
 typedef struct _savehead
 {
@@ -43,7 +46,8 @@ typedef struct _savehead
     // 16 bytes
 
     uint32_t userbytever;
-    uint32_t scriptcrc;
+    uint8_t filler[2];
+    int16_t health;
 
     uint8_t comprthres;
     uint8_t recdiffsp, diffcompress, synccompress;
@@ -100,15 +104,23 @@ struct savebrief_t
 struct menusave_t
 {
     savebrief_t brief;
-    uint8_t isOldVer = 0;
-    uint8_t isUnreadable = 0;
-    uint8_t isAutoSave = 0;
+
+    union
+    {
+        struct
+        {
+            int isAutoSave     : 1;
+            int isOldScriptVer : 1;
+            int isOldVer       : 1;
+            int isUnreadable   : 1;
+        };
+        uint8_t flags;
+    };
+
     void clear()
     {
         brief.reset();
-        isOldVer = 0;
-        isUnreadable = 0;
-        isAutoSave = 0;
+        flags = 0;
     }
 };
 

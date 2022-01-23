@@ -34,12 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern "C" {
 #endif
 
-#define NUMGAMEFUNCTIONS 63
 #define MAXGAMEFUNCLEN 32
-
-extern char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
-extern const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
-extern const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
 
 enum GameFunction_t
    {
@@ -96,7 +91,7 @@ enum GameFunction_t
    gamefunc_Next_Weapon,
    gamefunc_Previous_Weapon,
    gamefunc_Show_Console,
-   gamefunc_Show_DukeMatch_Scores,
+   gamefunc_Show_Scoreboard,
    gamefunc_Dpad_Select,
    gamefunc_Dpad_Aiming,
    gamefunc_AutoRun,
@@ -106,7 +101,21 @@ enum GameFunction_t
    gamefunc_Alt_Weapon,
    gamefunc_Third_Person_View,
    gamefunc_Toggle_Crouch,
+   NUMGAMEFUNCTIONS
    };
+
+EDUKE32_STATIC_ASSERT(NUMGAMEFUNCTIONS <= 64); // CONTROL_ButtonState and CONTROL_ButtonHeldState are uint64_t
+
+extern char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
+extern const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
+extern const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
+extern const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
+
+// classic order is just integers ascending, hence omitted
+#define keybind_order_classic NULL
+extern const int32_t keybind_order_modern[NUMGAMEFUNCTIONS];
+extern int32_t keybind_order_custom[NUMGAMEFUNCTIONS];
+
 #ifdef __cplusplus
 }
 #endif

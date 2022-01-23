@@ -155,8 +155,8 @@ void dukeConsoleClearBackground(int numcols, int numrows)
 
         polymostSet2dView();
         glColor4f(0.f, 0.f, 0.f, 0.67f);
-        glEnable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
+        buildgl_setDisabled(GL_ALPHA_TEST);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glRecti(0, 0, xdim, i8n8+OSDCHAR_HEIGHT);
         glColor4f(0.f, 0.f, 0.f, 1.f);

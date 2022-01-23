@@ -54,7 +54,7 @@ static int32_t RTS_AddFile(const char *filename)
     if (handle == buildvfs_kfd_invalid)
         return -1;
     else
-        initprintf("RTS file \"%s\" loaded\n", filename);
+        LOG_F(INFO, "Loaded %s", filename);
 
     startlump = rts_numlumps;
 
@@ -62,7 +62,7 @@ static int32_t RTS_AddFile(const char *filename)
     i = kread(handle, &header, sizeof(header));
     if (i != sizeof(header) || Bmemcmp(header.identification, "IWAD", 4))
     {
-        initprintf("RTS file \"%s\" too short or doesn't have IWAD id\n", filename);
+        LOG_F(WARNING, "Unable to load %s: file is truncated or missing IWAD id.", filename);
         kclose(handle);
         return -1;
     }

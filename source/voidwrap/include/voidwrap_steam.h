@@ -16,10 +16,9 @@ VOIDWRAP_API void Voidwrap_Steam_RunCallbacks(void);
 VOIDWRAP_API void Voidwrap_Steam_UnlockAchievement(char const * id);
 VOIDWRAP_API void Voidwrap_Steam_SetStat(char const * id, int32_t value);
 VOIDWRAP_API void Voidwrap_Steam_ResetStats(void);
-
-#ifdef VWDEBUG
+VOIDWRAP_API void Voidwrap_Steam_SetRichPresence(char const * key, char const * str);
+VOIDWRAP_API void Voidwrap_Steam_ClearRichPresence(void);
 VOIDWRAP_API void Voidwrap_Steam_SetCallback_PrintDebug(VW_VOID_CONSTCHARPTR function);
-#endif
 
 #ifdef VWSCREENSHOT
 VOIDWRAP_API bool Voidwrap_Steam_SendScreenshot(char * filepath, int32_t width, int32_t height);
@@ -40,12 +39,11 @@ static VW_VOID Voidwrap_Steam_Shutdown;
 static VW_VOID Voidwrap_Steam_RunCallbacks;
 static VW_VOID Voidwrap_Steam_ResetStats;
 
-static VW_VOID_CONSTCHARPTR       Voidwrap_Steam_UnlockAchievement;
-static VW_VOID_CONSTCHARPTR_INT32 Voidwrap_Steam_SetStat;
-
-#ifdef VWDEBUG
-static VW_SETCALLBACK_VOID_CONSTCHARPTR Voidwrap_Steam_SetCallback_PrintDebug;
-#endif
+static VW_VOID_CONSTCHARPTR              Voidwrap_Steam_UnlockAchievement;
+static VW_VOID_CONSTCHARPTR_INT32        Voidwrap_Steam_SetStat;
+static VW_VOID_CONSTCHARPTR_CONSTCHARPTR Voidwrap_Steam_SetRichPresence;
+static VW_VOID                           Voidwrap_Steam_ClearRichPresence;
+static VW_SETCALLBACK_VOID_CONSTCHARPTR  Voidwrap_Steam_SetCallback_PrintDebug;
 
 #ifdef VWSCREENSHOT
 static VW_BOOL_SCREENSHOT Voidwrap_Steam_SendScreenshot;

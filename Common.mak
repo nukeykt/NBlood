@@ -329,8 +329,6 @@ APPBASENAME ?=
 # Build toggles
 RELEASE := 1
 NOASM := 0
-# EXPERIMENTAL, unfinished x86_64 assembly routines. DO NOT ENABLE.
-USE_ASM64 := 0
 MEMMAP := 0
 CPLUSPLUS := 1
 
@@ -341,6 +339,7 @@ STARTUP_WINDOW ?= 1
 RETAIL_MENU ?= 0
 POLYMER ?= 1
 USE_OPENGL := 1
+SDL_STATIC ?= 0
 
 NOONE_EXTENSIONS ?= 1
 
@@ -476,8 +475,8 @@ endif
 COMMONFLAGS :=
 COMPILERFLAGS := -funsigned-char
 
-CSTD := -std=gnu99
-CXXSTD := -std=gnu++11
+CSTD := -std=gnu11
+CXXSTD := -std=gnu++14
 ifneq (0,$(CLANG))
     CSTD := $(subst gnu,c,$(CSTD))
     CXXSTD := $(subst gnu,c,$(CXXSTD))
@@ -816,9 +815,6 @@ endif
 ifneq (0,$(NOASM))
     COMPILERFLAGS += -DNOASM
 endif
-ifneq (0,$(USE_ASM64))
-    COMPILERFLAGS += -DUSE_ASM64
-endif
 ifneq (0,$(MEMMAP))
     ifeq ($(PLATFORM),DARWIN)
         LINKERFLAGS += -Wl,-map -Wl,$@.memmap
@@ -936,6 +932,12 @@ ifeq ($(RENDERTYPE),SDL)
         endif
     else
         ifneq ($(SDLCONFIG),)
+            ifneq ($(SDL_STATIC),0)
+                override SDLCONFIG_LIBS := -Wl,-Bstatic -l$(SDLNAME) -Wl,-Bdynamic $(strip $(subst -l$(SDLNAME),,$(shell $(SDLCONFIG) --static-libs)))
+                # for some reason SteamRT has a GCC with --enable-default-pie but its SDL2 has it disabled. WTF?
+                LINKERFLAGS += -no-pie
+            endif
+
             SDLCONFIG_CFLAGS := $(strip $(subst -Dmain=SDL_main,,$(shell $(SDLCONFIG) --cflags)))
             SDLCONFIG_LIBS := $(strip $(subst -mwindows,,$(shell $(SDLCONFIG) --libs)))
 

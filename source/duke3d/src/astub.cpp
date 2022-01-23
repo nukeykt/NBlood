@@ -2028,7 +2028,7 @@ static void M32_MoveFX(void)
             {
                 if ((g_sounds[s->lotag].m & SF_MSFX))
                 {
-                    x = dist((spritetype *)&pos,s);
+                    x = dist(&pos,s);
                     if (x < ht && !testbit(g_ambiencePlaying, i) && FX_VoiceAvailable(g_sounds[s->lotag].pr-1))
                     {
                         char om = g_sounds[s->lotag].m;
@@ -2037,7 +2037,7 @@ static void M32_MoveFX(void)
                             for (j = headspritestat[0]; j >= 0; j = nextspritestat[j])
                             {
                                 if (s->picnum == MUSICANDSFX && j != i && sprite[j].lotag < 999 &&
-                                        testbit(g_ambiencePlaying, j) && dist(&sprite[j],(spritetype *)&pos) > x)
+                                        testbit(g_ambiencePlaying, j) && dist(&sprite[j],&pos) > x)
                                 {
                                     S_StopEnvSound(sprite[j].lotag,j);
                                     break;
@@ -2433,7 +2433,6 @@ static inline void pushDisableFog(void)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        glPushAttrib(GL_ENABLE_BIT);
         polymost_setFogEnabled(false);
     }
 #endif
@@ -2444,7 +2443,6 @@ static inline void popDisableFog(void)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        glPopAttrib();
     }
 #endif
 }
@@ -6846,7 +6844,7 @@ static void Keys3d(void)
             if (AIMING_AT_WALL)
             {
                 if (searchisbottom)
-                    SET_PROTECT_BITS(wall[searchbottomwall].cstat, tempcstat, ~256);
+                    SET_PROTECT_BITS(wall[searchbottomwall].cstat, tempcstat, ~(256 + 4096));
 
                 wall[searchbottomwall].picnum = temppicnum;
                 wall[searchbottomwall].shade = tempshade;
@@ -7341,7 +7339,7 @@ static void Keys2d(void)
 
                 yax_update(0);
                 yax_updategrays(pos.z);
-
+                calc_sector_reachability();
                 message("Cleared TROR bunch %d", fb);
                 asksave = 1;
             }
@@ -8495,7 +8493,10 @@ static int osdcmd_artdump(osdcmdptr_t parm)
         last = Batol(parm->parms[1]);
 
     if (first >= MAXUSERTILES || last >= MAXUSERTILES)
+    {
+        Bfclose(f);
         return OSDCMD_SHOWHELP;
+    }
 
     for (uint32_t i = last; i > first; --i)
         if (tileLoad(i))
@@ -10113,7 +10114,7 @@ int32_t ExtInit(void)
 {
     int32_t rv = 0;
 
-    OSD_SetParameters(0, 2, 0, 0, 4, 0, OSD_ERROR, OSDTEXT_RED, 0);
+    OSD_SetParameters(0, 2, 0, 0, 4, 0, OSD_ERROR, OSDTEXT_YELLOW, OSDTEXT_RED, 0);
 
     set_memerr_handler(&M32_HandleMemErr);
 

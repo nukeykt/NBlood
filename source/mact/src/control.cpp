@@ -38,8 +38,11 @@ uint64_t CONTROL_ButtonHeldState = 0;
 
 LastSeenInput CONTROL_LastSeenInput;
 
-float          CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
-float          CONTROL_MouseAxesSensitivity[2];
+float CONTROL_MouseAxesSensitivity[2] = { DEFAULTMOUSESENSITIVITY, DEFAULTMOUSESENSITIVITY };
+float CONTROL_MouseSensitivity     = DEFAULTMOUSESENSITIVITY;
+float CONTROL_MouseSensitivityUnit = DEFAULTMOUSEUNIT;
+float CONTROL_JoySensitivityUnit   = DEFAULTJOYUNIT;
+
 static int32_t CONTROL_NumMouseButtons  = 0;
 static int32_t CONTROL_NumJoyButtons    = 0;
 static int32_t CONTROL_NumJoyAxes       = 0;
@@ -99,8 +102,8 @@ static void controlUpdateMouseState(ControlInfo *const info)
     vec2_t input;
     mouseReadPos(&input.x, &input.y);
     
-    vec2f_t finput = { input.x * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[0] * MOUSESENSITIVITYMULTIPLIER,
-                       input.y * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[1] * MOUSESENSITIVITYMULTIPLIER };
+    vec2f_t finput = { input.x * CONTROL_MouseSensitivityUnit * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[0],
+                       input.y * CONTROL_MouseSensitivityUnit * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[1] };
 
     info->mousex = Blrintf(clamp(finput.x, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
     info->mousey = Blrintf(clamp(finput.y, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
@@ -367,7 +370,7 @@ void CONTROL_ClearAssignments(void)
     memset(CONTROL_KeyMapping, KEYUNDEFINED, sizeof(CONTROL_KeyMapping));
 
     for (auto & i : CONTROL_MouseAxesSensitivity)
-        i = DEFAULTAXISSENSITIVITY;
+        i = DEFAULTMOUSESENSITIVITY;
 
     for (auto & i : joyAxes)
         i.sensitivity = DEFAULTAXISSENSITIVITY;
@@ -498,7 +501,7 @@ static void controlUpdateAxisState(int index, ControlInfo *const info)
         CONTROL_LastSeenInput = LastSeenInput::Joystick;
 
     int const invert = !!a.invert;
-    int const clamped = Blrintf(clamp<float>(a.axis.analog * a.sensitivity * JOYSENSITIVITYMULTIPLIER, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
+    int const clamped = Blrintf(clamp<float>(a.axis.analog * CONTROL_JoySensitivityUnit * a.sensitivity, -MAXSCALEDCONTROLVALUE, MAXSCALEDCONTROLVALUE));
     a.axis.analog  = (clamped ^ -invert) + invert;
 
     switch (a.mapping.analogmap)
@@ -587,7 +590,7 @@ static void controlUpdateFlagsFromButtons(int32_t *const p1)
             if (CONTROL_KeyBinds[MAXBOUNDKEYS + i].cmdstr && mouseButtons[i].state)
             {
                 if (CONTROL_KeyBinds[MAXBOUNDKEYS + i].repeat || (CONTROL_KeyBinds[MAXBOUNDKEYS + i].laststate == 0))
-                    OSD_Dispatch(CONTROL_KeyBinds[MAXBOUNDKEYS + i].cmdstr);
+                    OSD_Dispatch(CONTROL_KeyBinds[MAXBOUNDKEYS + i].cmdstr, true);
             }
             CONTROL_KeyBinds[MAXBOUNDKEYS + i].laststate = mouseButtons[i].state;
         }
@@ -661,7 +664,7 @@ void CONTROL_ProcessBinds(void)
             if (keyPressed && (CONTROL_KeyBinds[i].repeat || (CONTROL_KeyBinds[i].laststate == 0)))
             {
                 CONTROL_LastSeenInput = LastSeenInput::Keyboard;
-                OSD_Dispatch(CONTROL_KeyBinds[i].cmdstr);
+                OSD_Dispatch(CONTROL_KeyBinds[i].cmdstr, true);
             }
 
             CONTROL_KeyBinds[i].laststate = keyPressed;
@@ -721,6 +724,18 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
 
     if (CONTROL_Started) return false;
 
+    static osdcvardata_t cvars_mact [] =
+    {
+        { "in_mousexsens", "horizontal mouse sensitivity multiplier", (void *)&CONTROL_MouseAxesSensitivity[0], CVAR_FLOAT, 0, 100 },
+        { "in_mouseysens", "vertical mouse sensitivity multiplier",   (void *)&CONTROL_MouseAxesSensitivity[1], CVAR_FLOAT, 0, 100 },
+        { "in_mouseunit",  "base mouse input unit",                   (void *)&CONTROL_MouseSensitivityUnit,    CVAR_FLOAT, 0, 1 },
+        { "in_joyunit",    "base controller input unit",              (void *)&CONTROL_JoySensitivityUnit,      CVAR_FLOAT, 0, 1 },
+        { "sensitivity",   "master mouse sensitivity multiplier",     (void *)&CONTROL_MouseSensitivity,        CVAR_FLOAT, 0, 100 },
+    };
+
+    for (auto& cv : cvars_mact)
+        OSD_RegisterCvar(&cv, osdcmd_cvar_set);
+
     ExtGetTime = TimeFunction ? TimeFunction : controlGetTime;
 
     // what the fuck???
@@ -736,17 +751,16 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     KB_Startup();
 
     CONTROL_NumMouseButtons = MAXMOUSEBUTTONS;
-    CONTROL_MousePresent    = MOUSE_Startup();
-    CONTROL_MouseEnabled    = CONTROL_MousePresent;
+    CONTROL_MousePresent    = MOUSE_Startup();    
+
+    if (!(CONTROL_MouseEnabled = CONTROL_MousePresent))
+        DVLOG_F(LOG_INPUT, "No mice found.");
 
     CONTROL_ResetJoystickValues();
 
 #ifdef GEKKO
-    if (CONTROL_MousePresent)
-        initprintf("CONTROL_Startup: Mouse Present\n");
-
-    if (CONTROL_JoyPresent)
-        initprintf("CONTROL_Startup: Joystick Present\n");
+    if (!CONTROL_JoyPresent)
+        DVLOG_F(LOG_INPUT, "No controllers found.");
 #endif
 
     CONTROL_ButtonState     = 0;

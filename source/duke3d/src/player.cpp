@@ -20,9 +20,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "duke3d.h"
 #include "demo.h"
+#include "duke3d.h"
 #include "enet.h"
+#include "input.h"
+#include "savegame.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -104,11 +106,15 @@ static void P_IncurDamage(DukePlayer_t * const pPlayer)
     }
 
     sprite[pPlayer->i].extra = pPlayer->last_extra + playerDamage;
+
+    int const admg = klabs(playerDamage);
+    I_AddForceFeedback((admg << FF_PLAYER_DMG_SCALE), (admg << FF_PLAYER_DMG_SCALE), (admg << FF_PLAYER_TIME_SCALE));
 }
 
 void P_QuickKill(DukePlayer_t * const pPlayer)
 {
     P_PalFrom(pPlayer, 48, 48,48,48);
+    I_AddForceFeedback(pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_TIME_SCALE);
 
     sprite[pPlayer->i].extra = 0;
     sprite[pPlayer->i].cstat |= 32768;
@@ -196,7 +202,7 @@ int32_t A_GetHitscanRange(int spriteNum)
     hitdata_t hitData;
 
     SZ(spriteNum) -= zOffset;
-    hitscan((const vec3_t *)&sprite[spriteNum], SECT(spriteNum), sintable[(SA(spriteNum) + 512) & 2047],
+    hitscan(&sprite[spriteNum].xyz, SECT(spriteNum), sintable[(SA(spriteNum) + 512) & 2047],
             sintable[SA(spriteNum) & 2047], 0, &hitData, CLIPMASK1);
     SZ(spriteNum) += zOffset;
 
@@ -368,12 +374,8 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
         auto const pSprite = (uspriteptr_t)&sprite[returnSprite];
         int        zCenter = 2 * (pSprite->yrepeat * tilesiz[pSprite->picnum].y) + zAdjust;
 
-#ifndef EDUKE32_STANDALONE
-        if (!FURY && aimFlags &&
-            ((pSprite->picnum >= GREENSLIME && pSprite->picnum <= GREENSLIME + 7) || pSprite->picnum == ROTATEGUN || pSprite->cstat & CSTAT_SPRITE_YCENTER))
-#else
-        if (aimFlags && pSprite->cstat & CSTAT_SPRITE_YCENTER)
-#endif
+        if (aimFlags &&
+            (STANDALONE_EVAL(false, (pSprite->picnum >= GREENSLIME && pSprite->picnum <= GREENSLIME + 7) || pSprite->picnum == ROTATEGUN) || pSprite->cstat & CSTAT_SPRITE_YCENTER))
             zCenter -= ZOFFSET3;
 
         int spriteDist = safeldist(g_player[playerNum].ps->i, &sprite[returnSprite]);
@@ -610,6 +612,20 @@ static int Proj_MaybeDamageCF2(int const spriteNum, int const zvel, int const hi
     return 0;
 }
 
+static void P_DoWeaponRumble(int playerNum)
+{
+    if (!joystick.hasRumble || !ud.config.controllerRumble)
+        return;
+
+    auto const pPlayer = g_player[playerNum].ps;
+
+    int const shoots = PWEAPON(playerNum, pPlayer->curr_weapon, Shoots);
+    int const base   = A_CheckSpriteTileFlags(shoots, SFLAG_PROJECTILE) ? Proj_GetProjectile(shoots)->extra : G_DefaultActorHealthForTile(shoots);
+    int const dmg    = clamp(base * PWEAPON(playerNum, pPlayer->curr_weapon, ShotsPerBurst), FF_WEAPON_DMG_MIN, FF_WEAPON_DMG_MAX);
+
+    I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
+}
+
 // Finish shooting hitscan weapon from player <p>. <k> is the inserted SHOTSPARK1.
 // * <spawnObject> is passed to Proj_MaybeSpawn()
 // * <decalTile> and <wallDamage> are for wall impact
@@ -619,12 +635,14 @@ static int Proj_MaybeDamageCF2(int const spriteNum, int const zvel, int const hi
 //    2: set cstat to wall-aligned + random x/y flip
 //
 // TODO: maybe split into 3 cases (hit neither wall nor sprite, hit sprite, hit wall)?
-static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *const hitData, int const spriteOwner,
+
+static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *const hitData, int const STANDALONE_UNUSED(spriteOwner),
                              int const projecTile, int const zvel, int const spawnTile, int const decalTile, int const wallDamage,
                              int const decalFlags)
 {
 #ifdef EDUKE32_STANDALONE
     UNREFERENCED_PARAMETER(playerNum);
+    UNREFERENCED_CONST_PARAMETER(spriteOwner);
 #endif
     if (hitData->wall == -1 && hitData->sprite == -1)
     {
@@ -641,11 +659,11 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
     {
         A_DamageObject(hitData->sprite, spriteNum);
 
+#ifndef EDUKE32_STANDALONE
         if (!FURY && sprite[hitData->sprite].picnum == APLAYER &&
             (ud.ffire == 1 || (!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY) && GTFLAGS(GAMETYPE_TDM) &&
                                g_player[P_Get(hitData->sprite)].ps->team != g_player[P_Get(spriteOwner)].ps->team)))
         {
-#ifndef EDUKE32_STANDALONE
             int jibSprite = A_Spawn(spriteNum, JIBS6);
 
             sprite[spriteNum].xrepeat = sprite[spriteNum].yrepeat = 0;
@@ -653,9 +671,9 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
             sprite[jibSprite].xvel    = 16;
             sprite[jibSprite].xrepeat = sprite[jibSprite].yrepeat = 24;
             sprite[jibSprite].ang += 64 - (krand() & 127);
-#endif
         }
         else
+#endif
         {
             Proj_MaybeSpawn(spriteNum, spawnTile, hitData);
         }
@@ -827,14 +845,18 @@ static void Proj_HandleKnee(hitdata_t *const hitData, int const spriteNum, int c
     if (pPlayer != NULL && pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400)
         sprite[kneeSprite].extra += (pPlayer->max_player_health>>2);
 
+    int const dmg = clamp<int>(sprite[kneeSprite].extra, FF_WEAPON_DMG_MIN, FF_WEAPON_DMG_MAX);
+
     if (hitData->sprite >= 0 && sprite[hitData->sprite].picnum != ACCESSSWITCH && sprite[hitData->sprite].picnum != ACCESSSWITCH2)
     {
+        I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
         A_DamageObject(hitData->sprite, kneeSprite);
         if (playerNum >= 0)
             P_ActivateSwitch(playerNum, hitData->sprite,1);
     }
     else if (hitData->wall >= 0)
     {
+        I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
         HandleHitWall(hitData);
 
         if (wall[hitData->wall].picnum != ACCESSSWITCH && wall[hitData->wall].picnum != ACCESSSWITCH2)
@@ -860,14 +882,9 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER && pProj->flashcolor)
     {
-        int32_t x = ((sintable[(pSprite->ang + 512) & 2047]) >> 7), y = ((sintable[(pSprite->ang) & 2047]) >> 7);
-
-        pSprite->x += x;
-        pSprite->y += y;
-        G_AddGameLight(0, spriteNum, pPlayer->spritezoffset, 8192, pProj->flashcolor, PR_LIGHT_PRIO_MAX_GAME);
+        vec3_t const offset = { -((sintable[(pSprite->ang+512)&2047])>>7), -((sintable[(pSprite->ang)&2047])>>7), PHEIGHT };
+        G_AddGameLight(spriteNum, pSprite->sectnum, offset, 8192, 0, 100, pProj->flashcolor, PR_LIGHT_PRIO_MAX_GAME);
         practor[spriteNum].lightcount = 2;
-        pSprite->x -= x;
-        pSprite->y -= y;
     }
 #endif // POLYMER
 
@@ -1708,15 +1725,9 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
             case RPG__:
             case MORTER__:
                 {
-                    vec2_t const v = { ((sintable[(pSprite->ang + 512) & 2047]) >> 7),
-                                       ((sintable[(pSprite->ang) & 2047]) >> 7) };
-
-                    pSprite->x += v.x;
-                    pSprite->y += v.y;
-                    G_AddGameLight(0, spriteNum, PHEIGHT, 8192, 255 + (95 << 8), PR_LIGHT_PRIO_MAX_GAME);
+                    vec3_t const offset = { -((sintable[(pSprite->ang+512)&2047])>>7), -((sintable[(pSprite->ang)&2047])>>7), PHEIGHT };
+                    G_AddGameLight(spriteNum, pSprite->sectnum, offset, 8192, 0, 100, 255 + (95 << 8), PR_LIGHT_PRIO_MAX_GAME);
                     practor[spriteNum].lightcount = 2;
-                    pSprite->x -= v.x;
-                    pSprite->y -= v.y;
                 }
 
                 break;
@@ -2030,7 +2041,10 @@ static void P_FireWeapon(int playerNum)
         return;
 
     if (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) != KNEE_WEAPON)
+    {
         pPlayer->ammo_amount[pPlayer->curr_weapon]--;
+        P_DoWeaponRumble(playerNum);
+    }
 
     if (PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == FLAMETHROWER_WEAPON && sector[pPlayer->cursectnum].lotag == ST_2_UNDERWATER)
         return;
@@ -2067,16 +2081,10 @@ static void P_FireWeapon(int playerNum)
     if (!(PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_NOVISIBLE))
     {
 #ifdef POLYMER
-        spritetype *s = &sprite[pPlayer->i];
-        int32_t     x = ((sintable[(s->ang + 512) & 2047]) >> 7), y = ((sintable[(s->ang) & 2047]) >> 7);
-
-        s->x += x;
-        s->y += y;
-        G_AddGameLight(0, pPlayer->i, pPlayer->spritezoffset, 8192, PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor),
-                       PR_LIGHT_PRIO_MAX_GAME);
+        auto s = (uspriteptr_t)&sprite[pPlayer->i];
+        vec3_t const offset = { -((sintable[(s->ang+512)&2047])>>7), -((sintable[(s->ang)&2047])>>7), pPlayer->spritezoffset };
+        G_AddGameLight(pPlayer->i, pPlayer->cursectnum, offset, 8192, 0, 100, PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor), PR_LIGHT_PRIO_MAX_GAME);
         practor[pPlayer->i].lightcount = 2;
-        s->x -= x;
-        s->y -= y;
 #endif  // POLYMER
         pPlayer->visibility = 0;
     }
@@ -3146,7 +3154,7 @@ void P_GetInput(int const playerNum)
     auto const pPlayer    = thisPlayer.ps;
     ControlInfo info;
 
-    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
+    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)) || g_saveRequested)
     {
         if (!(pPlayer->gm&MODE_MENU))
             CONTROL_GetInput(&info);
@@ -3260,10 +3268,10 @@ void P_GetInput(int const playerNum)
     {
         if (!localInput.svel)
         {
-            if (BUTTON(gamefunc_Turn_Left) && !(pPlayer->movement_lock & 4) && !localInput.svel)
+            if (BUTTON(gamefunc_Turn_Left) && !(pPlayer->movement_lock & 4))
                 input.svel = keyMove;
 
-            if (BUTTON(gamefunc_Turn_Right) && !(pPlayer->movement_lock & 8) && !localInput.svel)
+            if (BUTTON(gamefunc_Turn_Right) && !(pPlayer->movement_lock & 8))
                 input.svel = -keyMove;
         }
     }
@@ -3426,6 +3434,7 @@ void P_GetInput(int const playerNum)
         if (ud.scrollmode && ud.overhead_on)
         {
             ud.folfvel = input.fvel;
+            ud.folsvel = input.svel;
             ud.folavel = fix16_to_int(input.q16avel);
         }
 
@@ -4027,6 +4036,7 @@ void P_FragPlayer(int playerNum)
     if (pSprite->pal != 1)
     {
         P_PalFrom(pPlayer, 63, 63, 0, 0);
+        I_AddForceFeedback(pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_DMG_SCALE, pPlayer->max_player_health << FF_PLAYER_TIME_SCALE);
 
         pPlayer->pos.z -= ZOFFSET2;
         pSprite->z -= ZOFFSET2;
@@ -4203,28 +4213,24 @@ static void P_ProcessWeapon(int playerNum)
         }
     }
 
-    if (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_GLOWS)
+    int const maybeGlowingWeapon = pPlayer->last_weapon != -1 ? pPlayer->last_weapon : pPlayer->curr_weapon;
+
+    if (PWEAPON(playerNum, maybeGlowingWeapon, Flags) & WEAPON_GLOWS)
     {
         pPlayer->random_club_frame += 64; // Glowing
 
 #ifdef POLYMER
         if (pPlayer->kickback_pic == 0)
         {
-            auto const pSprite     = &sprite[pPlayer->i];
-            int const         glowXOffset = ((sintable[(pSprite->ang + 512) & 2047]) >> 7);
-            int const         glowYOffset = ((sintable[(pSprite->ang) & 2047]) >> 7);
-            int const         glowRange   = 1024 + (sintable[pPlayer->random_club_frame & 2047] >> 3);
+            auto   const pSprite = &sprite[pPlayer->i];
+            vec3_t const offset = { -((sintable[(pSprite->ang+512)&2047])>>7), -((sintable[(pSprite->ang)&2047])>>7), pPlayer->spritezoffset };
 
-            pSprite->x += glowXOffset;
-            pSprite->y += glowYOffset;
+            int const glowRange = (16-klabs(pPlayer->weapon_pos)+(sintable[pPlayer->random_club_frame & 2047]>>10))<<6;
 
-            G_AddGameLight(0, pPlayer->i, pPlayer->spritezoffset, max(glowRange, 0),
-                           PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor), PR_LIGHT_PRIO_HIGH_GAME);
+            G_AddGameLight(pPlayer->i, pPlayer->cursectnum, offset, max(glowRange, 0), 0, 100,
+                           PWEAPON(playerNum, maybeGlowingWeapon, FlashColor), PR_LIGHT_PRIO_HIGH_GAME);
 
             practor[pPlayer->i].lightcount = 2;
-
-            pSprite->x -= glowXOffset;
-            pSprite->y -= glowYOffset;
         }
 #endif
     }
@@ -4316,9 +4322,9 @@ static void P_ProcessWeapon(int playerNum)
                         if (pPlayer->ammo_amount[pPlayer->curr_weapon] > 0)
                         {
                             hitdata_t hitData;
-
-                            hitscan((const vec3_t *)pPlayer, pPlayer->cursectnum, sintable[(fix16_to_int(pPlayer->q16ang) + 512) & 2047],
-                                    sintable[fix16_to_int(pPlayer->q16ang) & 2047], fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 32, &hitData,
+                            int const pq16ang = fix16_to_int(pPlayer->q16ang);
+                            hitscan((const vec3_t *)pPlayer, pPlayer->cursectnum, sintable[(pq16ang + 512) & 2047],
+                                    sintable[pq16ang & 2047], fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 32, &hitData,
                                     CLIPMASK1);
 
                             if ((hitData.sect < 0 || hitData.sprite >= 0) ||
@@ -4440,12 +4446,12 @@ static void P_ProcessWeapon(int playerNum)
                         pipeBombFwdVel = 140;
                         pipeBombZvel   = -512 - (fix16_to_int(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100)) * 20);
                     }
-
+                    int const pq16ang = fix16_to_int(pPlayer->q16ang);
                     int pipeSpriteNum = A_InsertSprite(pPlayer->cursectnum,
-                                       pPlayer->pos.x+(sintable[(fix16_to_int(pPlayer->q16ang)+512)&2047]>>6),
-                                       pPlayer->pos.y+(sintable[fix16_to_int(pPlayer->q16ang)&2047]>>6),
+                                       pPlayer->pos.x+(sintable[(pq16ang +512)&2047]>>6),
+                                       pPlayer->pos.y+(sintable[pq16ang &2047]>>6),
                                        pPlayer->pos.z,PWEAPON(playerNum, pPlayer->curr_weapon, Shoots),-16,9,9,
-                                       fix16_to_int(pPlayer->q16ang),(pipeBombFwdVel+(pPlayer->hbomb_hold_delay<<5)),pipeBombZvel,pPlayer->i,1);
+                                       pq16ang,(pipeBombFwdVel+(pPlayer->hbomb_hold_delay<<5)),pipeBombZvel,pPlayer->i,1);
 
                     pipeBombType = PIPEBOMB_CONTROL(playerNum);
 
@@ -4974,7 +4980,7 @@ void P_ProcessInput(int playerNum)
     {
         if (pSprite->extra > 0 && ud.noclip == 0)
         {
-            OSD_Printf(OSD_ERROR "%s: player killed by cursectnum == -1!\n", EDUKE32_FUNCTION);
+            LOG_F(WARNING, "%s: player killed by cursectnum == -1!", EDUKE32_FUNCTION);
             P_QuickKill(pPlayer);
 #ifndef EDUKE32_STANDALONE
             if (!FURY)
@@ -5382,10 +5388,11 @@ void P_ProcessInput(int playerNum)
                 pPlayer->scream_voice = -1;
             }
 
-            if ((sectorLotag != ST_1_ABOVE_WATER && sectorLotag != ST_2_UNDERWATER) &&
+            if (sectorLotag != ST_1_ABOVE_WATER &&
                 (pPlayer->on_ground == 0 && pPlayer->vel.z > (ACTOR_MAXFALLINGZVEL >> 1)))
             {
                 pPlayer->hard_landing = pPlayer->vel.z >> 10;
+                I_AddForceFeedback((pPlayer->hard_landing << FF_PLAYER_DMG_SCALE), (pPlayer->hard_landing << FF_PLAYER_DMG_SCALE), (pPlayer->hard_landing << FF_PLAYER_TIME_SCALE));
             }
 
             pPlayer->on_ground = 1;
@@ -5485,7 +5492,7 @@ void P_ProcessInput(int playerNum)
             }
         }
 
-        if ((sectorLotag != ST_2_UNDERWATER || ceilZ != pPlayer->truecz) && pPlayer->jumping_counter && pPlayer->pos.z <= (ceilZ + PMINHEIGHT + 128))
+        if (ceilZ != pPlayer->truecz && pPlayer->jumping_counter && pPlayer->pos.z <= (ceilZ + PMINHEIGHT + 128))
         {
             pPlayer->jumping_counter = 0;
             if (pPlayer->vel.z < 0)
@@ -5859,6 +5866,9 @@ RECHECK:
             if (pPlayer->actorsqu >= 0 && sprite[pPlayer->actorsqu].statnum != MAXSTATUS &&
                 dist(&sprite[pPlayer->i], &sprite[pPlayer->actorsqu]) < 1400)
             {
+                int const dmg = G_DefaultActorHealthForTile(KNEE);
+                I_AddForceFeedback((dmg << FF_WEAPON_DMG_SCALE), (dmg << FF_WEAPON_DMG_SCALE), max<int>(FF_WEAPON_MAX_TIME, dmg << FF_WEAPON_TIME_SCALE));
+
                 A_DoGuts(pPlayer->actorsqu, JIBS6, 7);
                 A_Spawn(pPlayer->actorsqu, BLOODPOOL);
                 A_PlaySound(SQUISHED, pPlayer->actorsqu);

@@ -7,13 +7,6 @@
 #include "glad/glad.h"
 #include "hightile.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct { uint8_t r, g, b, a; } coltype;
-typedef struct { float r, g, b, a; } coltypef;
-
 extern int32_t rendmode;
 extern float gtang;
 extern int polymost2d;
@@ -32,7 +25,6 @@ extern struct glfiltermodes glfiltermodes[NUMGLFILTERMODES];
 
 extern void Polymost_prepare_loadboard(void);
 
-void polymost_outputGLDebugMessage(uint8_t severity, const char* format, ...);
 
 //void phex(char v, char *s);
 void polymost_setuptexture(const int32_t dameth, int filter);
@@ -54,27 +46,26 @@ int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall);
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr);
 int32_t polymost_spriteIsModelOrVoxel(tspritetype const * const tspr);
 
-void polymost_resetVertexPointers(void);
 void polymost_disableProgram(void);
+char polymost_getClamp(void);
 void polymost_resetProgram(void);
-void polymost_setTexturePosSize(vec4f_t const &texturePosSize);
-void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize);
-char polymost_getClamp();
+void polymost_resetVertexPointers(void);
 void polymost_setClamp(char clamp);
-void polymost_setVisibility(float visibility);
 void polymost_setFogEnabled(char fogEnabled);
+void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize);
+void polymost_setTexturePosSize(vec4f_t const &texturePosSize);
+void polymost_setVisibility(float visibility);
+void polymost_updatePalette(void);
 void polymost_useColorOnly(char useColorOnly);
-void polymost_usePaletteIndexing(char usePaletteIndexing);
 void polymost_useDetailMapping(char useDetailMapping);
 void polymost_useGlowMapping(char useGlowMapping);
-void polymost_activeTexture(GLenum texture);
-void polymost_bindTexture(GLenum target, uint32_t textureID);
-void polymost_updatePalette(void);
-void polymost_useShaderProgram(uint32_t shaderID);
+void polymost_usePaletteIndexing(char usePaletteIndexing);
+
 GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int* pLength = nullptr);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
+void polymost_initdrawpoly(void);
 void polymost_glinit(void);
 void polymost_glreset(void);
 
@@ -97,13 +88,48 @@ extern float shadescale;
 extern int32_t shadescale_unbounded;
 extern uint8_t alphahackarray[MAXTILES];
 
-extern int32_t r_usenewshading;
-extern int32_t r_usetileshades;
-extern int32_t r_npotwallmode;
-extern int32_t r_brightnesshack;
-extern int32_t polymostcenterhoriz;
+#ifdef POLYMOST2
+extern int32_t r_enablepolymost2;
+#endif // POLYMOST2
 
-extern int16_t globalpicnum;
+#ifdef USE_GLEXT
+extern int32_t r_vbocount;
+extern int32_t r_glowmapping;
+extern int32_t r_detailmapping;
+#endif
+
+extern int32_t r_animsmoothing;
+extern int32_t r_downsize;
+extern int32_t r_downsizevar;
+extern int32_t r_drawpolyVertsBufferLength;
+extern int32_t r_flatsky;
+extern int32_t r_fullbrights;
+extern int32_t r_npotwallmode;
+extern int32_t r_parallaxskyclamping;
+extern int32_t r_parallaxskypanning;
+extern int32_t r_polygonmode;
+extern int32_t r_polymostDebug;
+extern int32_t r_shadeinterpolate;
+extern int32_t r_skyzbufferhack;
+extern int32_t r_useindexedcolortextures;
+extern int32_t r_usenewshading;
+extern int32_t r_usesamplerobjects;
+extern int32_t r_usetileshades;
+extern int32_t r_vertexarrays;
+extern int32_t r_yshearing;
+extern int32_t r_persistentStreamBuffer;
+
+extern int32_t r_brightnesshack;
+
+extern int32_t polymostcenterhoriz;
+extern GLuint drawpolyVertsID;
+
+enum tileshademodes
+{
+    TS_NONE,
+    TS_SHADETABLE,
+    TS_TEXTURE
+};
 
 extern float fogfactor[MAXPALOOKUPS];
 
@@ -113,16 +139,28 @@ static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_
     return !usehightile || !hicfindsubst(picnum, pal, hictinting[pal].f & HICTINT_ALWAYSUSEART);
 }
 
+static FORCE_INLINE int polymost_useindexedtextures(void)
+{
+    return videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures && gltexfiltermode == 0;
+}
+
 static FORCE_INLINE int polymost_usetileshades(void)
 {
-    return r_useindexedcolortextures && r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES);
+    int const idx = polymost_useindexedtextures();
+    int const shd = idx || (r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES));
+    return idx && shd ? TS_SHADETABLE : shd ? TS_TEXTURE : TS_NONE;
+}
+
+static FORCE_INLINE float polymost_getanisotropy(int filtered = 0)
+{
+    return filtered == 0 && polymost_useindexedtextures() ? 1.f : clamp<float>(glanisotropy, 1.f, glinfo.maxanisotropy);
 }
 
 static inline float getshadefactor(int32_t const shade, int32_t const pal)
 {
     // 8-bit tiles, i.e. non-hightiles and non-models, don't get additional
     // glColor() shading with r_usetileshades!
-    if (videoGetRenderMode() == REND_POLYMOST && polymost_usetileshades() && eligible_for_tileshades(globalpicnum, globalpal))
+    if (videoGetRenderMode() == REND_POLYMOST && polymost_usetileshades() != TS_NONE && eligible_for_tileshades(globalpicnum, globalpal))
         return 1.f;
 
     float const fshade = fogfactor[pal] != 0.f ? (float)shade / fogfactor[pal] : 0.f;
@@ -259,6 +297,10 @@ enum pthtyp_flags {
     PTH_N64 = 2048,
     PTH_N64_INTENSIVITY = 4096,
     PTH_N64_SCALED = 8192,
+
+    // temporary until I create separate flags for samplers
+    PTH_DEPTH_SAMPLER = 16384,
+    PTH_TEMP_SKY_HACK = 32768
 };
 
 typedef struct pthtyp_t
@@ -298,24 +340,44 @@ EDUKE32_STATIC_ASSERT(TO_PTH_N64_SCALED(DAMETH_N64_SCALED) == PTH_N64_SCALED);
 
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);
-
-extern int32_t globalnoeffect;
+extern coltype *gloadtile_mdloadskin_shared(char* fn, int32_t picfillen, vec2_t * tsiz, vec2_t * siz, char * onebitalpha, polytintflags_t effect, int32_t dapalnum, char* al);
 extern int32_t drawingskybox;
 extern int32_t hicprecaching;
 extern float fcosglobalang, fsinglobalang;
 extern float fxdim, fydim, fydimen, fviewingrange;
+extern float fsearchx, fsearchy;
 
 extern char ptempbuf[MAXWALLSB<<1];
 
 extern hitdata_t polymost_hitdata;
 
+typedef struct
+{
+    uint32_t rev;
+    vec2f_t fsin;
+    int16_t wall;
+    int8_t dist;
+    int8_t invalid;
+} wallspriteinfo_t;
 
-extern void polymost_setupglowtexture(int32_t texunits, int32_t tex);
-extern void polymost_setupdetailtexture(int32_t texunits, int32_t tex);
+// needs to be this high for XXX-Stacy because the bad sprite in that one isn't even properly ornamented onto the wall!
+#define MAXINTERSECTIONANGDIFF (4.5f)
+#define MAXINTERSECTIONLINEDIST 1
 
-#ifdef __cplusplus
+extern wallspriteinfo_t ornament[MAXSPRITES];
+extern void polymost_checkornamentedsprite(tspriteptr_t tspr, int16_t *wallnum, wallspriteinfo_t* ws);
+extern int32_t polymost_findintersectingwall(tspritetype const &tspr);
+extern int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, int32_t x4, int32_t y4);
+
+static FORCE_INLINE bool polymost_testintersection(vec3_t const &pos, vec2_t const &v, int16_t wallnum)
+{
+    return ((pos.x - v.x) + (pos.x + v.x)) == (wall[wallnum].x + POINT2(wallnum).x)
+        || ((pos.y - v.y) + (pos.y + v.y)) == (wall[wallnum].y + POINT2(wallnum).y)
+        || polymost_lintersect(pos.x - v.x, pos.y - v.y, pos.x + v.x, pos.y + v.y, wall[wallnum].x, wall[wallnum].y, POINT2(wallnum).x, POINT2(wallnum).y);
 }
-#endif
+
+extern void polymost_setupglowtexture(const int32_t texunit, const int32_t glpic, const int32_t flags);
+extern void polymost_setupdetailtexture(const int32_t texunit, const int32_t glpic, const int32_t flags);
 
 #endif
 

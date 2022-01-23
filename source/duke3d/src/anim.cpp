@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mouse.h"
 #include "compat.h"
 #include "input.h"
+#include "texcache.h"
 
 #include "anim.h"
 
@@ -228,7 +229,7 @@ int32_t Anim_Play(const char *fn)
 
     if (!anim)
     {
-        OSD_Printf("Animation %s is undefined!\n", fn);
+        LOG_F(ERROR, "Unable to play %s: undefined cutscene", fn);
         return 0;
     }
 
@@ -280,7 +281,7 @@ int32_t Anim_Play(const char *fn)
 
         if (i)
         {
-            OSD_Printf("Failed reading IVF file: %s\n", animvpx_read_ivf_header_errmsg[i]);
+            LOG_F(ERROR, "Unable to play %s: %s", fn, animvpx_read_ivf_header_errmsg[i]);
             kclose(handle);
             return 0;
         }
@@ -291,7 +292,7 @@ int32_t Anim_Play(const char *fn)
 
         if (animvpx_init_codec(&info, handle, &codec))
         {
-            OSD_Printf("Error initializing VPX codec.\n");
+            LOG_F(ERROR, "Failed initializing VPX codec.");
             animvpx_restore_glstate();
             kclose(handle);
             return 0;
@@ -316,12 +317,12 @@ int32_t Anim_Play(const char *fn)
             i = animvpx_nextpic(&codec, &pic);
             if (i)
             {
-                OSD_Printf("Failed getting next pic: %s\n", animvpx_nextpic_errmsg[i]);
+                LOG_F(ERROR, "Failed getting next pic: %s", animvpx_nextpic_errmsg[i]);
                 if (codec.errmsg)
                 {
-                    OSD_Printf("  %s\n", codec.errmsg);
+                    LOG_F(ERROR, "  %s", codec.errmsg);
                     if (codec.errmsg_detail)
-                        OSD_Printf("  detail: %s\n", codec.errmsg_detail);
+                        LOG_F(ERROR, "  detail: %s", codec.errmsg_detail);
                 }
                 break;
             }
@@ -415,9 +416,6 @@ int32_t Anim_Play(const char *fn)
 #endif
 // ANM playback --- v v v ---
 
-#ifdef USE_OPENGL
-    int32_t ogltexfiltermode = gltexfiltermode;
-#endif
     buildvfs_kfd handle = kopen4load(fn, 0);
 
     if (handle == buildvfs_kfd_invalid)
@@ -427,7 +425,7 @@ int32_t Anim_Play(const char *fn)
 
     if (length <= 4)
     {
-        OSD_Printf("Warning: skipping playback of empty ANM file \"%s\".\n", fn);
+        LOG_F(WARNING, "Unable to play %s: no data.", fn);
         goto end_anim;
     }
 
@@ -455,7 +453,7 @@ int32_t Anim_Play(const char *fn)
     {
         // XXX: ANM_LoadAnim() still checks less than the bare minimum,
         // e.g. ANM file could still be too small and not contain any frames.
-        OSD_Printf("Error: malformed ANM file \"%s\".\n", fn);
+        LOG_F(ERROR, "Unable to play %s: malformed file.", fn);
         goto end_anim;
     }
 
@@ -466,11 +464,46 @@ int32_t Anim_Play(const char *fn)
     P_SetGamePalette(g_player[myconnectindex].ps, ANIMPAL, 8 + 2);
 
 #ifdef USE_OPENGL
-    if ((anim->frameflags & CUTSCENE_TEXTUREFILTER && gltexfiltermode == TEXFILTER_ON) || anim->frameflags & CUTSCENE_FORCEFILTER)
-        gltexfiltermode = TEXFILTER_ON;
-    else
-        gltexfiltermode = TEXFILTER_OFF;
-    gltexapplyprops();
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        if (!buildgl_samplerObjectsEnabled())
+        {
+            auto pth = texcache_fetch(TILE_ANIM, 0, 0, DAMETH_NOMASK);
+            if (pth && pth->glpic)
+            {
+                int filter = -1;
+
+                switch (anim->frameflags & CUTSCENE_FILTERMASK)
+                {
+                    case CUTSCENE_TEXTUREFILTER:
+                        break;
+                    case CUTSCENE_FORCEFILTER:
+                        filter = TEXFILTER_ON;
+                        break;
+                    case CUTSCENE_FORCENOFILTER:
+                        filter = TEXFILTER_OFF;
+                        break;
+                }
+
+                bind_2d_texture(pth->glpic, filter);
+            }
+        }
+        else
+        {
+            switch (anim->frameflags & CUTSCENE_FILTERMASK)
+            {
+                case CUTSCENE_TEXTUREFILTER:
+                    buildgl_bindSamplerObject(0, (glfiltermodes[gltexfiltermode].min == GL_NEAREST) ? PTH_INDEXED : PTH_FORCEFILTER);
+                    break;
+                case CUTSCENE_FORCEFILTER:
+                    buildgl_bindSamplerObject(0, PTH_FORCEFILTER);
+                    break;
+                case CUTSCENE_FORCENOFILTER:
+                    buildgl_bindSamplerObject(0, PTH_INDEXED);
+                    break;
+            }
+        }
+    }
 #endif
 
     if (g_restorePalette == 1)
@@ -490,7 +523,7 @@ int32_t Anim_Play(const char *fn)
     {
         if (i > 4 && totalclock > frametime + 60)
         {
-            OSD_Printf("WARNING: slowdown in %s, skipping playback\n", fn);
+            LOG_F(WARNING, "Unable to maintain framerate playing %s, stopping playback to preserve dignity.", fn);
             goto end_anim_restore_gl;
         }
 
@@ -512,13 +545,15 @@ int32_t Anim_Play(const char *fn)
             goto end_anim_restore_gl;
         }
 
+        I_ClearAllInput();
+
         if (g_restorePalette == 1)
         {
             P_SetGamePalette(g_player[myconnectindex].ps, ANIMPAL, 0);
             g_restorePalette = 0;
         }
 
-        frametime = (int32_t) totalclock;
+        m_mouselastactivity = frametime = (int32_t) totalclock;
 
         videoClearScreen(0);
 
@@ -548,8 +583,6 @@ int32_t Anim_Play(const char *fn)
 
         videoNextPage();
 
-        I_ClearAllInput();
-
         ototalclock += anim->framedelay;
 
         while (soundidx < anim->numsounds && anim->sounds[soundidx].frame <= (uint16_t)i)
@@ -567,10 +600,6 @@ int32_t Anim_Play(const char *fn)
     } while (i < numframes);
 
 end_anim_restore_gl:
-#ifdef USE_OPENGL
-    gltexfiltermode = ogltexfiltermode;
-    gltexapplyprops();
-#endif
 end_anim:
     g_animPtr = NULL;
     I_ClearAllInput();

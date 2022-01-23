@@ -8,6 +8,7 @@
 #define baselayer_h_
 
 #include "compat.h"
+#include "log.h"
 #include "osd.h"
 #include "timer.h"
 
@@ -19,8 +20,7 @@ extern int app_main(int argc, char const * const * argv);
 extern const char* AppProperName;
 extern const char* AppTechnicalName;
 
-void engineCreateAllocator(void);
-void engineDestroyAllocator(void);
+void engineSetupAllocator(void);
 
 #ifdef DEBUGGINGAIDS
 # define DEBUG_MASK_DRAWING
@@ -28,7 +28,7 @@ extern int32_t g_maskDrawMode;
 #endif
 
 #define PRINTF_INITIAL_BUFFER_SIZE 32
-#define MSGBOX_PRINTF_MAX          1024
+#define MSGBOX_PRINTF_MAX          1536
 
 extern char quitevent, appactive;
 extern char modechange;
@@ -50,6 +50,7 @@ extern int32_t startwin_puts(const char *);
 extern int32_t startwin_settitle(const char *);
 extern int32_t startwin_idle(void *);
 extern int32_t startwin_run(void);
+extern bool startwin_isopen(void);
 
 // video
 extern int32_t r_rotatespriteinterp;
@@ -64,19 +65,21 @@ extern char offscreenrendering;
 extern int32_t nofog;
 
 extern int32_t r_maxfps;
+extern int32_t g_numdisplays;
+extern int32_t g_displayindex;
 
 void calc_ylookup(int32_t bpl, int32_t lastyidx);
 
 int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t forced);
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs);
-void    videoGetModes(void);
+void    videoGetModes(int display = -1);
 void    videoResetMode(void);
 void    videoEndDrawing(void);
 void    videoShowFrame(int32_t);
 int32_t videoUpdatePalette(int32_t start, int32_t num);
 int32_t videoSetGamma(void);
 int32_t videoSetVsync(int32_t newSync);
-
+char const* videoGetDisplayName(int display);
 //#define DEBUG_FRAME_LOCKING
 #if !defined DEBUG_FRAME_LOCKING
 void videoBeginDrawing(void);
@@ -115,6 +118,8 @@ struct glinfo_t {
 
     float maxanisotropy;
 
+    int maxTextureSize;
+
     int filled;
 
     union {
@@ -123,7 +128,6 @@ struct glinfo_t {
         {
             int bgra             : 1;
             int bufferstorage    : 1;
-            int clamptoedge      : 1;
             int debugoutput      : 1;
             int depthclamp       : 1;
             int depthtex         : 1;
@@ -132,11 +136,12 @@ struct glinfo_t {
             int multitex         : 1;
             int occlusionqueries : 1;
             int rect             : 1;
+            int reset_notification : 1;
+            int samplerobjects   : 1;
             int shadow           : 1;
             int sync             : 1;
             int texcompr         : 1;
             int texnpot          : 1;
-            int vbos             : 1;
             int vsync            : 1;
         };
     };
@@ -158,7 +163,6 @@ extern char inputdevices;
 #define DEV_KEYBOARD 0x1
 #define DEV_MOUSE    0x2
 #define DEV_JOYSTICK 0x4
-#define DEV_HAPTIC   0x8
 
 // keys
 #define NUMKEYS 256
@@ -223,9 +227,26 @@ typedef struct
     int32_t  numBalls;
     int32_t  numButtons;
     int32_t  numHats;
-    int32_t  isGameController;
     uint32_t validButtons;
+    uint16_t rumbleLow;
+    uint16_t rumbleHigh;
+    uint16_t rumbleTime;
+    union
+    {
+        uint8_t flags;
+        struct
+        {
+            int isGameController : 1;
+            int hasRumble        : 1;
+        };
+    };
 } controllerinput_t;
+
+enum
+{
+    JOY_CONTROLLER = 0x1,
+    JOY_RUMBLE     = 0x2,
+};
 
 extern controllerinput_t joystick;
 
@@ -237,7 +258,6 @@ int32_t initsystem(void);
 void uninitsystem(void);
 void system_getcvars(void);
 
-extern int32_t g_logFlushWindow;
 void initputs(const char *);
 #define buildputs initputs
 int initprintf(const char *, ...) ATTRIBUTE((format(printf,1,2)));
@@ -326,11 +346,32 @@ static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks con
     float const tics  = clk * tfreq * (1.f / (65536.f * 120));
     int const   ratio = tabledivide32_noinline((int)(65536 * tics * gameTicRate), tfreq);
 
-#if 0 //ndef NDEBUG
     if ((unsigned)ratio > 66048)
-        OSD_Printf("calc_smoothratio: ratio: %d\n", ratio);
-#endif
+        DVLOG_F(LOG_DEBUG+1, "calc_smoothratio: ratio: %d", ratio);
+
     return clamp(ratio, 0, 65536);
+}
+
+static inline void debugThreadName(char const *name)
+{
+    loguru::set_thread_name(name);
+
+#if defined _WIN32 && !defined NDEBUG
+    if (IsDebuggerPresent())
+    {
+#pragma pack(push, 8)
+        typedef struct tagTHREADNAME_INFO
+        {
+            DWORD  dwType;     /* must be 0x1000 */
+            LPCSTR szName;     /* pointer to name (in user addr space) */
+            DWORD  dwThreadID; /* thread ID (-1=caller thread) */
+            DWORD  dwFlags;    /* reserved for future use, must be zero */
+        } THREADNAME_INFO;
+#pragma pack(pop)
+        THREADNAME_INFO wtf = { 0x1000, name, (DWORD)-1, 0 };
+        RaiseException(0x406D1388, 0, sizeof(wtf) / sizeof(ULONG_PTR), (const ULONG_PTR *)&wtf);
+    }
+#endif
 }
 
 #include "print.h"

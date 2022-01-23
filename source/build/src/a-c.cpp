@@ -27,19 +27,6 @@
 extern intptr_t asm1, asm2, asm3, asm4;
 extern int32_t globalx3, globaly3;
 
-#ifdef USE_ASM64
-# define A64_ASSIGN(var, val) var=val
-#else
-# define A64_ASSIGN(var, val)
-#endif
-
-#ifdef USE_ASM64
-// variables for a64.yasm
-int32_t a64_bpl, a64_transmode, a64_glogy;
-intptr_t a64_paloffs;
-char *a64_gtrans;
-#endif
-
 static int32_t bpl, transmode = 0;
 static char *gbuf;
 static int32_t glogx, glogy;
@@ -49,14 +36,13 @@ static char *gpal, *ghlinepal, *gtrans;
 static char *gpal2;
 
 //Global variable functions
-void setvlinebpl(int32_t dabpl) { A64_ASSIGN(a64_bpl, dabpl); bpl = dabpl;}
+void setvlinebpl(int32_t dabpl) { bpl = dabpl;}
 void fixtransluscence(intptr_t datransoff)
 {
-    A64_ASSIGN(a64_gtrans, (char *)datransoff);
     gtrans = (char *)datransoff;
 }
-void settransnormal(void) { A64_ASSIGN(a64_transmode, 0); transmode = 0; }
-void settransreverse(void) { A64_ASSIGN(a64_transmode, 1); transmode = 1; }
+void settransnormal(void) { transmode = 0; }
+void settransreverse(void) { transmode = 1; }
 
 
 ///// Ceiling/floor horizontal line functions /////
@@ -473,19 +459,12 @@ void mvlineasm4(bssize_t cnt, char *p)
     Bmemcpy(&vplce[0], &vplc[0], sizeof(uint32_t) * 4);
 }
 
-#ifdef USE_ASM64
-# define GLOGY a64_glogy
-#else
-# define GLOGY glogy
-#endif
-
 void setuptvlineasm(int32_t neglogy, int32_t dosaturate)
 {
-    GLOGY = neglogy;
+    glogy = neglogy;
     set_saturate(dosaturate);
 }
 
-#if !defined USE_ASM64
 // cnt+1 loop iterations!
 int32_t tvlineasm1(int32_t vinc, intptr_t paloffs, bssize_t cnt, uint32_t vplc, intptr_t bufplc, intptr_t p)
 {
@@ -513,17 +492,14 @@ int32_t tvlineasm1(int32_t vinc, intptr_t paloffs, bssize_t cnt, uint32_t vplc, 
 
     return vplc;
 }
-#endif
 
 void setuptvlineasm2(int32_t neglogy, intptr_t paloffs1, intptr_t paloffs2)
 {
-    GLOGY = neglogy;
-    A64_ASSIGN(a64_paloffs, paloffs1);
+    glogy = neglogy;
     gpal = (char *)paloffs1;
     gpal2 = (char *)paloffs2;
 }
 
-#if !defined USE_ASM64
 // Pass: asm1=vinc2, asm2=pend
 // Return: asm1=vplc1, asm2=vplc2
 void tvlineasm2(uint32_t vplc2, int32_t vinc1, intptr_t bufplc1, intptr_t bufplc2, uint32_t vplc1, intptr_t p)
@@ -562,7 +538,6 @@ void tvlineasm2(uint32_t vplc2, int32_t vinc1, intptr_t bufplc1, intptr_t bufplc
     asm1 = vplc1;
     asm2 = vplc2;
 }
-#endif
 
 //Floor sprite horizontal line functions
 void msethlineshift(int32_t logx, int32_t logy) { glogx = logx; glogy = logy; }

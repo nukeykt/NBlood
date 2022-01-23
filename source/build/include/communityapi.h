@@ -17,7 +17,8 @@ char const *communityApiGetPlatformName(void);
 void communityapiUnlockAchievement(char const * id);
 void communityapiSetStat(char const * id, int32_t value);
 void communityapiResetStats(void);
-
+void communityapiSetRichPresence(char const * key, char const* str);
+void communityapiClearRichPresence(void);
 #ifdef VWSCREENSHOT
 void communityapiSendScreenshot(char * filename);
 #endif

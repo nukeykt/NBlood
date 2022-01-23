@@ -594,7 +594,7 @@ void CONFIG_SetupMouse(void)
     }
     for (i=0; i<MAXMOUSEAXES; i++)
     {
-        CONTROL_SetAnalogAxisScale(i, MouseAnalogScale[i], controldevice_mouse);
+        CONTROL_SetAnalogAxisSensitivity(i, MouseAnalogScale[i] * (1.f/2560.f), controldevice_mouse);
     }
 
     CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/8192.f); // fix magic scale factor

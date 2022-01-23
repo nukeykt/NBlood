@@ -84,7 +84,7 @@ void Net_GetPackets(void)
         g_netDisconnect = 0;
 
         if (g_gameQuit)
-            G_GameExit(" ");
+            G_GameExit();
 
         return;
     }
@@ -338,6 +338,8 @@ static netField_t ActorFields[] =
     { ACTF(timetosleep),        16 },
 
     { ACTF(stayput),            16 },
+    { ACTF(floorzoffset),        8 },
+    { ACTF(waterzoffset),        8 },
     { ACTF(dispicnum),          16 },
 
     { ACTF(cgg),            8},
@@ -974,6 +976,8 @@ static void Net_CopyActorFromNet(const netactor_t* netActor, actor_t *gameActor)
     gameActor->timetosleep = netActor->timetosleep;
 
     gameActor->stayput = netActor->stayput;
+    gameActor->floorzoffset = netActor->floorzoffset;
+    gameActor->waterzoffset = netActor->waterzoffset;
     gameActor->dispicnum = netActor->dispicnum;
 
     gameActor->cgg = netActor->cgg;
@@ -1312,6 +1316,8 @@ static void Net_CopyActorToNet(const actor_t* gameActor, netactor_t *netActor)
     netActor->timetosleep = gameActor->timetosleep;
 
     netActor->stayput = gameActor->stayput;
+    netActor->floorzoffset = gameActor->floorzoffset;
+    netActor->waterzoffset = gameActor->waterzoffset;
     netActor->dispicnum = gameActor->dispicnum;
 
     netActor->cgg = gameActor->cgg;
@@ -1983,7 +1989,7 @@ static void Net_ExtractNewGame(newgame_t *newgame, int32_t menuonly)
         ud.player_skill      = newgame->player_skill;
         ud.monsters_off      = newgame->monsters_off;
         ud.respawn_monsters  = newgame->respawn_monsters;
-        ud.respawn_monsters  = newgame->respawn_items;
+        ud.respawn_items     = newgame->respawn_items;
         ud.respawn_inventory = newgame->respawn_inventory;
         ud.ffire             = newgame->ffire;
         ud.noexits           = newgame->noexits;

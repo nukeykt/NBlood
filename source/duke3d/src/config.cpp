@@ -157,7 +157,7 @@ void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy/*=fal
         {
 #if 0 // defined(DEBUGGINGAIDS)
             if (key[0] != 0xff)
-                initprintf("Skipping %s bound to %s\n", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
+                DLOG_F(INFO, "Skipping key '%s' bound to '%s'", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
 #endif
             continue;
         }
@@ -260,6 +260,7 @@ void CONFIG_SetDefaults(void)
     ud.autovote               = 0;
     ud.brightness             = 8;
     ud.camerasprite           = -1;
+    ud.cashman                = 0;
     ud.color                  = 0;
     ud.config.AmbienceToggle  = 1;
     ud.config.AutoAim         = 1;
@@ -290,6 +291,8 @@ void CONFIG_SetDefaults(void)
     ud.display_bonus_screen   = 1;
     ud.drawweapon             = 1;
     ud.fov                    = 90;
+    ud.fta_on                 = 1;
+    ud.god                    = 0;
     ud.hudontop               = 0;
     ud.idplayers              = 1;
     ud.levelstats             = 0;
@@ -608,11 +611,11 @@ void CONFIG_SetGameControllerDefaults()
     static GameControllerButtonSetting const buttons[] =
     {
         { CONTROLLER_BUTTON_A, gamefunc_Open },
-        { CONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
+        { CONTROLLER_BUTTON_B, gamefunc_Inventory },
         { CONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
         { CONTROLLER_BUTTON_BACK, gamefunc_Map },
         { CONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
-        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
+        { CONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Toggle_Crouch },
         { CONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
         { CONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
         { CONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
@@ -660,6 +663,7 @@ void CONFIG_SetGameControllerDefaults()
     ud.config.JoystickAimAssist     = 1;
     ud.config.JoystickAimWeight     = 4;
     ud.config.JoystickViewCentering = 4;
+    ud.config.controllerRumble = 1;
 }
 
 void CONFIG_SetGameControllerDefaultsClear()
@@ -701,8 +705,8 @@ int CONFIG_ReadSetup(void)
         else if (buildvfs_exists(SETUPFILENAME))
         {
             int const i = wm_ynbox("Import Configuration Settings",
-                                   "The configuration file \"%s\" was not found. "
-                                   "Import configuration data from \"%s\"?",
+                                   "Configuration file %s not found. "
+                                   "Import configuration data from %s?",
                                    g_setupFileName, SETUPFILENAME);
             if (i)
                 ud.config.scripthandle = SCRIPT_Load(SETUPFILENAME);
@@ -754,7 +758,7 @@ int CONFIG_ReadSetup(void)
 
         if (!buildvfs_isdir(g_modDir))
         {
-            initprintf("Invalid mod dir in cfg!\n");
+            LOG_F(WARNING, "Invalid user directory specified in cfg file: %s", g_modDir);
             Bsprintf(g_modDir,"/");
         }
     }
@@ -882,12 +886,12 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
 
         buildvfs_fclose(fp);
 
-        OSD_Printf("Wrote %s\n", filename);
+        LOG_F(INFO, "Wrote %s", filename);
 
         return;
     }
 
-    OSD_Printf("Error writing %s: %s\n", filename, strerror(errno));
+    LOG_F(ERROR, "Unable to write %s: %s.", filename, strerror(errno));
 }
 
 void CONFIG_WriteSetup(uint32_t flags)
@@ -1012,7 +1016,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     if ((flags & 2) == 0)
         SCRIPT_Free(ud.config.scripthandle);
 
-    OSD_Printf("Wrote %s\n",g_setupFileName);
+    LOG_F(INFO, "Wrote %s",g_setupFileName);
     CONFIG_WriteSettings();
     Bfflush(NULL);
 }

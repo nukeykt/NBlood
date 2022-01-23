@@ -161,14 +161,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
     int SoundCard = ASS_DirectSound;
 #endif
 
-    MV_Printf("Initializing sound: ");
-
-    if ((unsigned)SoundCard >= ASS_NumSoundCards)
-    {
-        FX_SetErrorCode(FX_InvalidCard);
-        MV_Printf("failed! %s\n", FX_ErrorString(FX_InvalidCard));
-        return FX_Error;
-    }
+    VLOG_F(LOG_ASS, "Initializing Apogee Sound System");
 
     if (SoundDriver_IsPCMSupported(SoundCard) == 0)
     {
@@ -182,7 +175,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
     if (MV_Init(SoundCard, mixrate, numvoices, numchannels, initdata) != MV_Ok)
     {
         FX_SetErrorCode(FX_MultiVocError);
-        MV_Printf("failed! %s\n", MV_ErrorString(MV_DriverError));
+        LOG_F(ERROR, "Failed initializing sound: %s", MV_ErrorString(MV_DriverError));
         status = FX_Error;
     }
 
@@ -190,7 +183,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
 
     if (status == FX_Ok)
     {
-        MV_Printf(": %.1f KHz %s with %d voices\n", MV_MixRate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
+        VLOG_F(LOG_ASS, "Initialized sound at %.1f KHz %s with %d voices", MV_MixRate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
         FX_Installed = TRUE;
     }
 
@@ -346,11 +339,4 @@ int FX_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* le
     }
 
     return handle;
-}
-
-int FX_SetPrintf(int (*function)(const char *, ...))
-{
-    MV_SetPrintf(function);
-
-    return FX_Ok;
 }
