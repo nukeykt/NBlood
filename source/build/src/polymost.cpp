@@ -3719,43 +3719,40 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 }
 
 
-static inline void vsp_finalize_init(int32_t const vcnt)
+template <typename T> static inline void vsp_finalize_init(T & vsp, int const vcnt)
 {
-    for (bssize_t i=0; i<vcnt; ++i)
+    for (native_t i=0; i<vcnt; ++i)
     {
         vsp[i].cy[1] = vsp[i+1].cy[0]; vsp[i].ctag = i;
-        vsp[i].fy[1] = vsp[i+1].fy[0]; vsp[i].ftag = i;
         vsp[i].n = i+1; vsp[i].p = i-1;
 //        vsp[i].tag = -1;
     }
     vsp[vcnt-1].n = 0; vsp[0].p = vcnt-1;
 
     //VSPMAX-1 is dummy empty node
-    for (bssize_t i=vcnt; i<VSPMAX; i++) { vsp[i].n = i+1; vsp[i].p = i-1; }
+    for (native_t i=vcnt; i<VSPMAX; i++) { vsp[i].n = i+1; vsp[i].p = i-1; }
     vsp[VSPMAX-1].n = vcnt; vsp[vcnt].p = VSPMAX-1;
 }
 
-#ifdef YAX_ENABLE
-static inline void yax_vsp_finalize_init(int32_t const yaxbunch, int32_t const vcnt)
+static FORCE_INLINE void vsp_finalize_init(int const vcnt)
 {
-    for (bssize_t i=0; i<vcnt; ++i)
-    {
-        yax_vsp[yaxbunch][i].cy[1] = yax_vsp[yaxbunch][i+1].cy[0]; yax_vsp[yaxbunch][i].ctag = i;
-        yax_vsp[yaxbunch][i].n = i+1; yax_vsp[yaxbunch][i].p = i-1;
-//        vsp[i].tag = -1;
-    }
-    yax_vsp[yaxbunch][vcnt-1].n = 0; yax_vsp[yaxbunch][0].p = vcnt-1;
+    for (native_t i=0; i<vcnt; ++i)
+        vsp[i].fy[1] = vsp[i+1].fy[0], vsp[i].ftag = i;
 
-    //VSPMAX-1 is dummy empty node
-    for (bssize_t i=vcnt; i<VSPMAX; i++) { yax_vsp[yaxbunch][i].n = i+1; yax_vsp[yaxbunch][i].p = i-1; }
-    yax_vsp[yaxbunch][VSPMAX-1].n = vcnt; yax_vsp[yaxbunch][vcnt].p = VSPMAX-1;
+    vsp_finalize_init(vsp, vcnt);
+}
+
+#ifdef YAX_ENABLE
+static FORCE_INLINE void yax_vsp_finalize_init(int const yaxbunch, int const vcnt)
+{
+    vsp_finalize_init(yax_vsp[yaxbunch], vcnt);
 }
 #endif
 
 #define COMBINE_STRIPS
 
 #ifdef COMBINE_STRIPS
-static inline void vsdel(int const i)
+template <typename T> static inline void vsdel(T & vsp, int const i)
 {
     //Delete i
     int const pi = vsp[i].p;
@@ -3771,33 +3768,35 @@ static inline void vsdel(int const i)
     vsp[VSPMAX-1].n = i;
 }
 
-static inline void vsmerge(int const i, int const ni)
+static FORCE_INLINE void vsdel(int const i)
+{
+    vsdel(vsp, i);
+}
+
+static FORCE_INLINE void vsmerge(int const i, int const ni)
 {
     vsp[i].cy[1] = vsp[ni].cy[1];
     vsp[i].fy[1] = vsp[ni].fy[1];
-    vsdel(ni);
+    vsdel(vsp, ni);
 }
 
 # ifdef YAX_ENABLE
-static inline void yax_vsdel(int const yaxbunch, int const i)
+static FORCE_INLINE void yax_vsdel(int const yaxbunch, int const i)
 {
-    //Delete i
-    int const pi = yax_vsp[yaxbunch][i].p;
-    int const ni = yax_vsp[yaxbunch][i].n;
-
-    yax_vsp[yaxbunch][ni].p = pi;
-    yax_vsp[yaxbunch][pi].n = ni;
-
-    //Add i to empty list
-    yax_vsp[yaxbunch][i].n = yax_vsp[yaxbunch][VSPMAX - 1].n;
-    yax_vsp[yaxbunch][i].p = VSPMAX - 1;
-    yax_vsp[yaxbunch][yax_vsp[yaxbunch][VSPMAX - 1].n].p = i;
-    yax_vsp[yaxbunch][VSPMAX - 1].n = i;
+    vsdel(yax_vsp[yaxbunch], i);
 }
+
+static FORCE_INLINE void yax_vsmerge(int const yaxbunch, int const i, int const ni)
+{
+    auto& yvsp = yax_vsp[yaxbunch];
+    yvsp[i].cy[1] = yvsp[ni].cy[1];
+    vsdel(yvsp, ni);
+}
+
 # endif
 #endif
 
-static inline int32_t vsinsaft(int const i)
+template <typename T> static inline int32_t vsinsaft(T & vsp, int const i)
 {
     //i = next element from empty list
     int32_t const r = vsp[VSPMAX-1].n;
@@ -3813,21 +3812,17 @@ static inline int32_t vsinsaft(int const i)
     return r;
 }
 
+static FORCE_INLINE int32_t vsinsaft(int const i)
+{
+    return vsinsaft(vsp, i);
+}
+
 #ifdef YAX_ENABLE
-static inline int32_t yax_vsinsaft(int const yaxbunch, int const i)
+static FORCE_INLINE int32_t yax_vsinsaft(int const yaxbunch, int const i)
 {
     //i = next element from empty list
-    int32_t const r = yax_vsp[yaxbunch][VSPMAX - 1].n;
-    yax_vsp[yaxbunch][yax_vsp[yaxbunch][r].n].p = VSPMAX - 1;
-    yax_vsp[yaxbunch][VSPMAX - 1].n = yax_vsp[yaxbunch][r].n;
-
-    yax_vsp[yaxbunch][r] = yax_vsp[yaxbunch][i]; //copy i to r
-
-    //insert r after i
-    yax_vsp[yaxbunch][r].p = i; yax_vsp[yaxbunch][r].n = yax_vsp[yaxbunch][i].n;
-    yax_vsp[yaxbunch][yax_vsp[yaxbunch][i].n].p = r; yax_vsp[yaxbunch][i].n = r;
-
-    return r;
+    auto& yvsp = yax_vsp[yaxbunch];
+    return vsinsaft(yvsp, i);
 }
 #endif
 
