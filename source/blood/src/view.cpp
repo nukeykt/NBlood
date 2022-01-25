@@ -2435,7 +2435,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->shade = pTSprite->shade;
         pNSprite->xrepeat = 32;
         pNSprite->yrepeat = 32;
-        pNSprite->ang = (gView->pSprite->ang + 512) & 2047; // always face viewer
+        pNSprite->ang = (gCameraAng + 512) & 2047; // always face viewer
         const int nVoxel = voxelIndex[nTile];
         if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
         {
@@ -2444,11 +2444,11 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
             pNSprite->picnum = nVoxel;
             if (pPlayer->curWeapon == 9) // position lifeleech behind player
             {
-                pNSprite->x += mulscale30(128, Cos(gView->pSprite->ang));
-                pNSprite->y += mulscale30(128, Sin(gView->pSprite->ang));
+                pNSprite->x += mulscale30(128, Cos(gCameraAng));
+                pNSprite->y += mulscale30(128, Sin(gCameraAng));
             }
             if ((pPlayer->curWeapon == 9) || (pPlayer->curWeapon == 10))  // make lifeleech/voodoo doll always face viewer like sprite
-                pNSprite->ang = (gView->pSprite->ang + 1024) & 2047;
+                pNSprite->ang = (gCameraAng + 1024) & 2047;
         }
         break;
     }
