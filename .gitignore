@@ -91,6 +91,8 @@ xcuserdata/
 project.xcworkspace/
 *.dSYM/
 
+.vscode
+
 .DS_Store
 ._*
 /source/voidwrap/sdk/

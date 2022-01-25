@@ -81,6 +81,7 @@ void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
 //void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *);
 void ResetVideoColor(CGameMenuItemChain *);
+void ClearUserMapNameOnLevelChange(CGameMenuItemZCycle *);
 #ifdef USE_OPENGL
 void SetupVideoPolymostMenu(CGameMenuItemChain *);
 #endif
@@ -311,10 +312,10 @@ CGameMenu menuMultiUserMaps;
 CGameMenuItemTitle itemNetStartUserMapTitle("USER MAP", 1, 160, 20, 2038);
 CGameMenuFileSelect menuMultiUserMap("", 3, 0, 0, 0, "./", "*.map", zUserMapName);
 
-CGameMenuItemTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
+CGameMenuItemMultiplayerTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemNetStart1("GAME:", 3, 66, 60, 180, 0, 0, zNetGameTypes, 3, 0);
 CGameMenuItemZCycle itemNetStart2("EPISODE:", 3, 66, 70, 180, 0, SetupNetLevels, NULL, 0, 0);
-CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, NULL, NULL, 0, 0);
+CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, ClearUserMapNameOnLevelChange, NULL, 0, 0);
 CGameMenuItemZCycle itemNetStart4("DIFFICULTY:", 3, 66, 90, 180, 0, 0, zDiffStrings, 5, 0);
 CGameMenuItemZCycle itemNetStart5("MONSTERS:", 3, 66, 100, 180, 0, 0, zMonsterStrings, 3, 0);
 CGameMenuItemZCycle itemNetStart6("WEAPONS:", 3, 66, 110, 180, 0, 0, zWeaponStrings, 4, 0);
@@ -2215,6 +2216,11 @@ void QuickLoadGame(void)
     gGameMenuMgr.Deactivate();
 }
 
+void ClearUserMapNameOnLevelChange(CGameMenuItemZCycle *pItem)
+{
+    memset(zUserMapName, 0, sizeof(zUserMapName));
+}
+
 void SetupLevelMenuItem(int nEpisode)
 {
     dassert(nEpisode >= 0 && nEpisode < gEpisodeCount);
@@ -2223,6 +2229,7 @@ void SetupLevelMenuItem(int nEpisode)
 
 void SetupNetLevels(CGameMenuItemZCycle *pItem)
 {
+    memset(zUserMapName, 0, sizeof(zUserMapName));
     SetupLevelMenuItem(pItem->m_nFocus);
 }
 
@@ -2245,7 +2252,7 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.weaponsV10x = itemNetStart10.at20;
     ////
     gPacketStartGame.unk = 0;
-    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, Bstrlen(zUserMapName));
+    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, sizeof(gPacketStartGame.userMapName));
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
 
     netBroadcastNewGame();
