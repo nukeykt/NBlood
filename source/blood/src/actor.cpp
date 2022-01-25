@@ -2385,8 +2385,8 @@ int nDudeToGibClient2 = seqRegisterClient(DudeToGibCallback2);
 int gPostCount = 0;
 
 struct POSTPONE {
-    short at0;
-    short at2;
+    short nSprite;
+    short nStatus;
 };
 
 POSTPONE gPost[kMaxSprites];
@@ -2458,6 +2458,8 @@ int DudeDifficulty[5] = {
 };
 
 void actInit(bool bSaveLoad) {
+    if(!bSaveLoad)
+        gPostCount = 0;
     
     #ifdef NOONE_EXTENSIONS
     if (!gModernMap) {
@@ -6966,7 +6968,7 @@ void actPostSprite(int nSprite, int nStatus)
     if (sprite[nSprite].flags&32)
     {
         for (n = 0; n < gPostCount; n++)
-            if (gPost[n].at0 == nSprite)
+            if (gPost[n].nSprite == nSprite)
                 break;
         dassert(n < gPostCount);
     }
@@ -6976,8 +6978,8 @@ void actPostSprite(int nSprite, int nStatus)
         sprite[nSprite].flags |= 32;
         gPostCount++;
     }
-    gPost[n].at0 = nSprite;
-    gPost[n].at2 = nStatus;
+    gPost[n].nSprite = nSprite;
+    gPost[n].nStatus = nStatus;
 }
 
 void actPostProcess(void)
@@ -6985,10 +6987,10 @@ void actPostProcess(void)
     for (int i = 0; i < gPostCount; i++)
     {
         POSTPONE *pPost = &gPost[i];
-        int nSprite = pPost->at0;
+        int nSprite = pPost->nSprite;
         spritetype *pSprite = &sprite[nSprite];
         pSprite->flags &= ~32;
-        int nStatus = pPost->at2;
+        int nStatus = pPost->nStatus;
         if (nStatus == kStatFree)
         {
             evKill(nSprite, 3);
