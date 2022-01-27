@@ -31,13 +31,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // these two are for m32def.c
 #define C_CUSTOMERROR(Text, ...) do { \
     C_ReportError(-1);                                                  \
-    initprintf("%s:%d: error: " Text "\n", g_szScriptFileName, g_lineNumber, ## __VA_ARGS__); \
+    LOG_F(ERROR, "%s:%d: " Text, g_szScriptFileName, g_lineNumber, ## __VA_ARGS__); \
     C_PrintErrorPosition();  \
     g_numCompilerErrors++; \
     } while (0)
 #define C_CUSTOMWARNING(Text, ...) do { \
     C_ReportError(-1);                                                  \
-    initprintf("%s:%d: warning: " Text "\n", g_szScriptFileName, g_lineNumber, ## __VA_ARGS__); \
+    LOG_F(WARNING, "%s:%d: " Text, g_szScriptFileName, g_lineNumber, ## __VA_ARGS__); \
     C_PrintErrorPosition();    \
     g_numCompilerWarnings++; \
     } while (0)

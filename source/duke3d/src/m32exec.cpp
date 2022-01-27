@@ -2508,7 +2508,7 @@ badindex:
 
         case CON_DEBUG:
             insptr++;
-            initprintf("%d\n",*insptr++);
+            LOG_F(INFO, "%d",*insptr++);
             continue;
 
 // *** strings

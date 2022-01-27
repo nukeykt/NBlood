@@ -625,6 +625,11 @@ void editorMaybeLockMouse(int lock)
 
 int app_main(int argc, char const* const* argv)
 {
+    Bstrcpy(tempbuf, AppProperName);
+    Bstrcat(tempbuf, ".log");
+
+    engineSetLogFile(tempbuf);
+
 #ifdef STARTUP_SETUP_WINDOW
     char cmdsetup = 0;
 #endif
@@ -740,7 +745,7 @@ int app_main(int argc, char const* const* argv)
         G_AddDefModule("editor.def");
 
     if (!loaddefinitionsfile(defsfile))
-        initprintf("Definitions file \"%s\" loaded.\n",defsfile);
+        LOG_F(INFO, "Definitions file '%s' loaded.",defsfile);
 
     for (char * m : g_defModules)
         Xfree(m);
@@ -790,7 +795,7 @@ int app_main(int argc, char const* const* argv)
 #ifdef HAVE_CLIPSHAPE_FEATURE
     int k = engineLoadClipMaps();
     if (k>0)
-        initprintf("There was an error loading the sprite clipping map (status %d).\n", k);
+        LOG_F(ERROR, "There was an error loading the sprite clipping map (status %d).", k);
 
     for (char * f : g_clipMapFiles)
         Xfree(f);
@@ -829,7 +834,7 @@ int app_main(int argc, char const* const* argv)
         {
             ExtUnInit();
             engineUnInit();
-            Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
+            LOG_F(ERROR, "%d * %d not supported in this graphics mode",xdim,ydim);
             Bexit(EXIT_SUCCESS);
         }
 
@@ -852,7 +857,7 @@ int app_main(int argc, char const* const* argv)
         {
             ExtUnInit();
             engineUnInit();
-            Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
+            LOG_F(ERROR, "%d * %d not supported in this graphics mode",xdim,ydim);
             Bexit(EXIT_SUCCESS);
         }
 
@@ -988,15 +993,15 @@ static void loadmhk(int32_t domessage)
     if (!engineLoadMHK(levname))
     {
         if (domessage)
-            message("Loaded map hack file \"%s\"",levname);
+            message("Loaded map hack file '%s'",levname);
         else
-            initprintf("Loaded map hack file \"%s\"\n",levname);
+            LOG_F(INFO, "Loaded map hack file '%s'",levname);
     }
     else
     {
         mhk=2;
         if (domessage)
-            message("No maphack found for map \"%s\"",boardfilename);
+            message("No maphack found for map %s",boardfilename);
     }
 }
 
@@ -6400,7 +6405,7 @@ end_point_dragging:
                 if (joinstat==0)
                 {
                     message("No consistent joining combination found");
-                    OSD_Printf("comp0: c=%d,f=%d;  comp1: c=%d,f=%d  (1:extended, 2:z mismatch, 4:sloped)\n",
+                    LOG_F(WARNING, "comp0: c=%d,f=%d;  comp1: c=%d,f=%d  (1:extended, 2:z mismatch, 4:sloped)",
                                compstat[0][YAX_CEILING], compstat[0][YAX_FLOOR],
                                compstat[1][YAX_CEILING], compstat[1][YAX_FLOOR]);
                     //for (i=0; i<2; i++) for (j=0; j<2; j++) message("%d", compstat[i][j]);
@@ -6464,9 +6469,9 @@ end_point_dragging:
 
                         if (!delayerr)
                             message("Outer wall coordinates must coincide for both components");
-                        OSD_Printf("wal0:%d (%d,%d)--(%d,%d)\n",(int)(wal0-(uwalltype *)wall),
+                        LOG_F(WARNING, "wal0:%d (%d,%d)--(%d,%d)",(int)(wal0-(uwalltype *)wall),
                                    wal0->x,wal0->y, wal0p2->x,wal0p2->y);
-                        OSD_Printf("wal1:%d (%d,%d)--(%d,%d)\n",(int)(wal1-(uwalltype *)wall),
+                        LOG_F(WARNING, "wal1:%d (%d,%d)--(%d,%d)",(int)(wal1-(uwalltype *)wall),
                                    wal1->x,wal1->y, wal1p2->x,wal1p2->y);
 
                         goto end_join_sectors;
@@ -6753,9 +6758,9 @@ end_point_dragging:
 
                             if (uneqbn == 1)
                             {
-                                OSD_Printf("Can't join two sectors with different ceiling bunchnums."
-                                           " To make them equal, join their upper neighbor's floors.\n");
-                                printmessage16("Can't join two sectors with different ceiling bunchnums. See OSD");
+                                LOG_F(WARNING, "Can't join two sectors with different ceiling bunchnums."
+                                           " To make them equal, join their upper neighbor's floors.");
+                                printmessage16("Can't join two sectors with different ceiling bunchnums. See console.");
                                 joinsector[0] = joinsector[1] = -1;
                                 goto end_join_sectors;
                             }
@@ -8540,7 +8545,7 @@ CANCEL:
 
     if (videoSetGameMode(fullscreen,xres,yres,bppgame,upscalefactor) < 0)
     {
-        initprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
+        LOG_F(ERROR, "%d * %d not supported in this graphics mode",xdim,ydim);
         ExtUnInit();
 //        clearfilenames();
         engineUnInit();
@@ -9258,7 +9263,7 @@ int32_t fixspritesectors(void)
         {
             // XXX: This is not the best course of action for
             //  such great corruption.
-            initprintf("NOTE: Deleting sector %d with corrupt %s\n", i, sector[i].wallnum <= 2 ? ".wallnum" : ".wallptr");
+            LOG_F(WARNING, "Deleting sector %d with corrupt %s", i, sector[i].wallnum <= 2 ? ".wallnum" : ".wallptr");
             deletesector(i);
             mkonwinvalid();
             deleted++;
@@ -9293,10 +9298,10 @@ int32_t fixspritesectors(void)
                         {
                             if (printfirsttime == 0)
                             {
-                                initprintf("--------------------\n");
+                                //initprintf("--------------------\n");
                                 printfirsttime = 1;
                             }
-                            initprintf("Changed sectnum of sprite #%d from %d to %d\n",
+                            LOG_F(INFO, "Changed sectnum of sprite #%d from %d to %d",
                                               i, TrackerCast(sprite[i].sectnum), j);
 
                             changespritesect(i, j);
@@ -9556,7 +9561,7 @@ int32_t getnumber_autocomplete(const char *namestart, char ch, int32_t *danum, i
                 if (*danum > 0 && *danum<32768)
                 {
                     diddel = taglab_add(gotstr, *danum);
-                    message("Added label \"%s\" for tag %d%s%s", gotstr, *danum,
+                    message("Added label '%s' for tag %d%s%s", gotstr, *danum,
                             diddel?", deleting old ":"",
                             (!diddel)?"":(diddel==1?"label":"tag"));
                     return 1;
@@ -9568,7 +9573,7 @@ int32_t getnumber_autocomplete(const char *namestart, char ch, int32_t *danum, i
                     {
                         *danum = i;
                         diddel = taglab_add(gotstr, *danum);
-                        message("%sadded label \"%s\" for tag %d%s%s",
+                        message("%sadded label '%s' for tag %d%s%s",
                                 diddel?"Auto-":"Automatically ", gotstr, *danum,
                                 diddel?", deleting old ":"",
                                 (!diddel)?"":(diddel==1?"label":"tag"));
@@ -10519,7 +10524,7 @@ static int32_t parsenamesfile(scriptfile *script)
             char *fn;
             if (scriptfile_getstring(script,&fn))
             {
-                initprintf("Error: Malformed include on line %s:%d\n",
+                LOG_F(ERROR, "%s:%d: Malformed include",
                            script->filename,scriptfile_getlinum(script,cmdtokptr));
                 break;
             }
@@ -10529,12 +10534,12 @@ static int32_t parsenamesfile(scriptfile *script)
             included = scriptfile_fromfile(fn);
             if (!included)
             {
-                initprintf("Error: Failed including %s on line %s:%d\n",
-                           fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(ERROR, "%s:%d: Failed including %s",
+                           script->filename,scriptfile_getlinum(script,cmdtokptr),fn);
                 break;
             }
 
-            initprintf("Including: %s\n", fn);
+            LOG_F(INFO, "Including: %s", fn);
 
             syms += parsenamesfile(included);
             scriptfile_close(included);
@@ -10548,28 +10553,28 @@ static int32_t parsenamesfile(scriptfile *script)
 
             if (scriptfile_getstring(script,&name))
             {
-                initprintf("Error: Malformed define on line %s:%d\n",
+                LOG_F(ERROR, "%s:%d: Malformed define",
                            script->filename, scriptfile_getlinum(script,cmdtokptr));
                 break;
             }
 
             if (scriptfile_getsymbol(script,&number))
             {
-                initprintf("Error: No number given for name \"%s\" on line %s:%d\n",
-                           name, script->filename, scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(ERROR, "%s:%d: No number given for name '%s'",
+                           script->filename, scriptfile_getlinum(script,cmdtokptr),name);
                 break;
             }
 
             if ((unsigned)number >= MAXUSERTILES)
             {
-                initprintf("Error: Constant %d for name \"%s\" out of range on line %s:%d\n",
-                           number, name, script->filename, scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(ERROR, "%s:%d: Constant %d for name '%s' out of range",
+                           script->filename, scriptfile_getlinum(script,cmdtokptr),number, name);
                 break;
             }
 
             if (Bstrlen(name) > 24)
-                initprintf("Warning: Truncating name \"%s\" to 24 characters on line %s:%d\n",
-                           name, script->filename, scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(WARNING, "%s:%d: Truncating name '%s' to 24 characters",
+                           script->filename, scriptfile_getlinum(script,cmdtokptr), name);
 
             Bstrncpyz(names[number], name, 25);
             name = names[number];
@@ -10577,7 +10582,7 @@ static int32_t parsenamesfile(scriptfile *script)
             ++syms;
 
             if (scriptfile_addsymbolvalue(name,number) < 0)
-                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
+                LOG_F(WARNING, "%s:%d: Symbol %s was NOT redefined to %d",
                            name, number, script->filename, scriptfile_getlinum(script,cmdtokptr));
             break;
         }
@@ -10598,10 +10603,10 @@ static void loadnames(const char *namesfile)
     if (!script)
         return;
 
-    initprintf("Loading names file: %s\n", namesfile);
+    LOG_F(INFO, "Loading names file: %s", namesfile);
 
     int32_t const syms = parsenamesfile(script);
-    initprintf("Loaded %d names.\n", syms);
+    LOG_F(INFO, "Loaded %d names.", syms);
 
     scriptfile_close(script);
 

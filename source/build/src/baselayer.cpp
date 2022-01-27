@@ -240,7 +240,7 @@ void engineSetupLogging(int &argc, char **argv)
     loguru::init(argc, argv, initopts);
 }
 
-void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode /*= loguru::Truncate*/)
+void engineSetLogFile(const char* fn, loguru::Verbosity verbosity /*= LOG_ENGINE_MAX*/, loguru::FileMode mode /*= loguru::Truncate*/)
 {
     loguru::g_stderr_verbosity = verbosity;
     loguru::remove_callback(CB_ENGINE);
