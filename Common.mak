@@ -508,6 +508,7 @@ ifeq ($(PLATFORM),WINDOWS)
     endif
 
     COMPILERFLAGS += -DUNDERSCORES
+    COMPILERFLAGS += -mno-ms-bitfields
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
