@@ -749,7 +749,7 @@ void Gv_NewVar(const char *pszLabel, intptr_t lValue, uint32_t dwFlags)
         if (EDUKE32_PREDICT_FALSE(aGameVars[gV].flags & (GAMEVAR_PTR_MASK)))
         {
             C_ReportError(-1);
-            LOG_F(WARNING, "%s:%d: cannot redefine internal gamevar `%s'.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
+            LOG_F(WARNING, "%s:%d: cannot redefine internal gamevar '%s'.",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
             return;
         }
         else if (EDUKE32_PREDICT_FALSE(!(aGameVars[gV].flags & GAMEVAR_SYSTEM)))

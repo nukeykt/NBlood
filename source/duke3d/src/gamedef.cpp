@@ -3694,7 +3694,7 @@ DO_DEFSTATE:
                 if (unlikely(g_currentEvent != EVENT_ANIMATESPRITES))
                 {
                     C_ReportError(-1);
-                    LOG_F(WARNING, "%s:%d: found '%s' outside of EVENT_ANIMATESPRITES\n",g_szScriptFileName,g_lineNumber,tempbuf);
+                    LOG_F(WARNING, "%s:%d: found '%s' outside of EVENT_ANIMATESPRITES",g_szScriptFileName,g_lineNumber,tempbuf);
                     g_numCompilerWarnings++;
                 }
 #endif
