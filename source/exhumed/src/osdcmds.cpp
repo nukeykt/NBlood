@@ -668,9 +668,6 @@ int32_t registerosdcommands(void)
         { "in_mouseflip", "invert vertical mouse movement", (void *)&mouseflip, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "toggles vertical mouse view", (void *)&aimmode, CVAR_BOOL, 0, 1 },
 
-        { "in_mousexsensitivity", "horizontal mouse sensitivity", (void*)&CONTROL_MouseAxesSensitivity[0], CVAR_FLOAT, 0, 25 },
-        { "in_mouseysensitivity", "vertical mouse sensitivity",   (void*)&CONTROL_MouseAxesSensitivity[1], CVAR_FLOAT, 0, 25 },
-
         { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
         { "mus_volume", "controls music volume", (void *)&MusicVolume, CVAR_INT, 0, 255 },
 
@@ -688,8 +685,6 @@ int32_t registerosdcommands(void)
         { "r_precache", "enable/disable the pre-level caching routine", (void *)&useprecache, CVAR_BOOL, 0, 1 },
 
        // { "r_ambientlight", "sets the global map light level",(void *)&r_ambientlight, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-
-        { "sensitivity","changes the mouse sensitivity", (void *)&CONTROL_MouseSensitivity, CVAR_FLOAT|CVAR_FUNCPTR, 0, 25 },
 
         //{ "skill","changes the game skill setting", (void *)&ud.m_player_skill, CVAR_INT|CVAR_FUNCPTR|CVAR_NOSAVE/*|CVAR_NOMULTI*/, 0, 5 },
 
