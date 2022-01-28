@@ -1652,35 +1652,6 @@ int app_main(int argc, char const * const * argv)
 
     auto const hasSetupFilename = strcmp(SetupFilename, SETUPFILENAME);
 
-    if (!hasSetupFilename)
-        Bsnprintf(buffer, ARRAY_SIZE(buffer), APPBASENAME "_cvars.cfg");
-    else
-    {
-        char const * const ext = strchr(SetupFilename, '.');
-        if (ext != nullptr)
-            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_cvars.cfg", int(ext - SetupFilename), SetupFilename);
-        else
-            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_cvars.cfg", SetupFilename);
-    }
-
-    if (OSD_Exec(buffer))
-    {
-        // temporary fallback to unadorned "settings.cfg"
-
-        if (!hasSetupFilename)
-            Bsnprintf(buffer, ARRAY_SIZE(buffer), "settings.cfg");
-        else
-        {
-            char const * const ext = strchr(SetupFilename, '.');
-            if (ext != nullptr)
-                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_settings.cfg", int(ext - SetupFilename), SetupFilename);
-            else
-                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_settings.cfg", SetupFilename);
-        }
-
-        OSD_Exec(buffer);
-    }
-
     // Not neccessary ?
     // CONFIG_SetDefaultKeys(keydefaults, true);
 
@@ -1748,6 +1719,36 @@ int app_main(int argc, char const * const * argv)
     timerInit(120);
     timerSetCallback(ClockStrobe);
     enginecompatibilitymode = ENGINE_19960925;
+
+    if (!hasSetupFilename)
+        Bsnprintf(buffer, ARRAY_SIZE(buffer), APPBASENAME "_cvars.cfg");
+    else
+    {
+        char const * const ext = strchr(SetupFilename, '.');
+        if (ext != nullptr)
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_cvars.cfg", int(ext - SetupFilename), SetupFilename);
+        else
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_cvars.cfg", SetupFilename);
+    }
+
+    if (OSD_Exec(buffer))
+    {
+        // temporary fallback to unadorned "settings.cfg"
+
+        if (!hasSetupFilename)
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "settings.cfg");
+        else
+        {
+            char const * const ext = strchr(SetupFilename, '.');
+            if (ext != nullptr)
+                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_settings.cfg", int(ext - SetupFilename), SetupFilename);
+            else
+                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_settings.cfg", SetupFilename);
+        }
+
+        OSD_Exec(buffer);
+    }
+
     // PORT-TODO: CD audio init
 
     initprintf("Initializing network users\n");
