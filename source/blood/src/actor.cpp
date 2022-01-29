@@ -5679,29 +5679,22 @@ void actProcessSprites(void)
                             if ((hit&0xc000) == 0x4000)
                             {
                                 actRadiusDamage(actSpriteOwnerToSpriteId(pSprite), pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, 200, 1, 20, kDamageExplode, 6, 0);
-                                evPost(pSprite->index, 3, 0, kCallbackFXPodBloodSplat);
                             }
                             else
                             {
                                 int nObject = hit & 0x3fff;
-                                if ((hit&0xc000) != 0xc000 && (nObject < 0 || nObject >= 4096))
-                                    break;
-                                dassert(nObject >= 0 && nObject < kMaxSprites);
-                                spritetype *pObject = &sprite[nObject];
-                                actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, kDamageFall, 12);
-                                evPost(pSprite->index, 3, 0, kCallbackFXPodBloodSplat);
+                                if (((hit&0xc000) == 0xc000) || (VanillaMode() && (nObject >= 0 && nObject < 4096)))
+                                {
+                                    dassert(nObject >= 0 && nObject < kMaxSprites);
+                                    spritetype *pObject = &sprite[nObject];
+                                    actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, kDamageFall, 12);
+                                }
                             }
+                            evPost(pSprite->index, 3, 0, kCallbackFXPodBloodSplat);
                             break;
                         case kThingPodFireBall:
-                        {
-                            int nObject = hit & 0x3fff;
-                            if ((hit&0xc000) != 0xc000 && (nObject < 0 || nObject >= 4096))
-                                break;
-                            dassert(nObject >= 0 && nObject < kMaxSprites);
-                            int UNUSED(nOwner) = actSpriteOwnerToSpriteId(pSprite);
                             actExplodeSprite(pSprite);
                             break;
-                        }
                         }
                     }
                 }
