@@ -1518,7 +1518,7 @@ void debrisBubble(int nSprite) {
         int x = pSprite->x + mulscale30(nDist, Cos(nAngle));
         int y = pSprite->y + mulscale30(nDist, Sin(nAngle));
         int z = bottom - Random(bottom - top);
-        spritetype* pFX = gFX.fxSpawn((FX_ID)(FX_23 + Random(3)), pSprite->sectnum, x, y, z, 0);
+        spritetype* pFX = gFX.fxSpawn((FX_ID)(FX_23 + Random(3)), pSprite->sectnum, x, y, z);
         if (pFX) {
             xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
             yvel[pFX->index] = yvel[nSprite] + Random2(0x1aaaa);
@@ -1676,16 +1676,16 @@ void debrisMove(int listIndex) {
             spritetype* pFX = NULL; spritetype* pFX2 = NULL;
             switch (tileGetSurfType(floorHit)) {
             case kSurfLava:
-                if ((pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ, 0)) == NULL) break;
+                if ((pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ)) == NULL) break;
                 for (i = 0; i < 7; i++) {
-                    if ((pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z, 0)) == NULL) continue;
+                    if ((pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z)) == NULL) continue;
                     xvel[pFX2->index] = Random2(0x6aaaa);
                     yvel[pFX2->index] = Random2(0x6aaaa);
                     zvel[pFX2->index] = -Random(0xd5555);
                 }
                 break;
             case kSurfWater:
-                gFX.fxSpawn(FX_9, pSprite->sectnum, pSprite->x, pSprite->y, floorZ, 0);
+                gFX.fxSpawn(FX_9, pSprite->sectnum, pSprite->x, pSprite->y, floorZ);
                 break;
             }
 
@@ -2789,7 +2789,7 @@ void useEffectGen(XSPRITE* pXSource, spritetype* pSprite) {
                 break;
         }
 
-        if ((pEffect = gFX.fxSpawn((FX_ID)fxId, pSprite->sectnum, pSprite->x, pSprite->y, pos, 0)) != NULL) {
+        if ((pEffect = gFX.fxSpawn((FX_ID)fxId, pSprite->sectnum, pSprite->x, pSprite->y, pos)) != NULL) {
 
             pEffect->owner = pSource->index;
 
@@ -5380,7 +5380,7 @@ void useRandomItemGen(spritetype* pSource, XSPRITE* pXSource) {
         for (short nItem = headspritestat[kStatItem]; nItem >= 0; nItem = nextspritestat[nItem]) {
             spritetype* pItem = &sprite[nItem];
             if ((unsigned int)pItem->type == pXSource->dropMsg && pItem->x == pSource->x && pItem->y == pSource->y && pItem->z == pSource->z) {
-                gFX.fxSpawn((FX_ID)29, pSource->sectnum, pSource->x, pSource->y, pSource->z, 0);
+                gFX.fxSpawn((FX_ID)29, pSource->sectnum, pSource->x, pSource->y, pSource->z);
                 pItem->type = kSpriteDecoration;
                 actPostSprite(nItem, kStatFree);
                 break;
