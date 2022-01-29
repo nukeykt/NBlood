@@ -3047,17 +3047,14 @@ void viewBurnTime(int gScale)
         {
             nScale = scale(nScale, gScale, 600);
         }
-        int xoffset = burnTable[i].nX;
-        if (r_usenewaspect)
+        int nStat = burnTable[i].nStat;
+        if (r_usenewaspect) // stretch to custom aspect ratio
         {
-            xoffset = scale(xoffset-(320>>1), 320>>1, 266>>1); // scale flame position
-            xoffset = scale(xoffset<<16, xscale, yscale); // multiply by window ratio
-            xoffset += (320>>1)<<16; // offset to center
+            nStat |= RS_STRETCH;
+            nStat &= ~RS_ALIGN_MASK;
         }
-        else
-            xoffset <<= 16;
-        rotatesprite(xoffset, burnTable[i].nY<<16, nScale, 0, nTile,
-            0, burnTable[i].nPal, burnTable[i].nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
+        rotatesprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
+            0, burnTable[i].nPal, nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
 }
 
