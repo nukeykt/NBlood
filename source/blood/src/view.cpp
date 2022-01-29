@@ -3024,15 +3024,15 @@ struct {
     int nScale;
     short nX, nY;
 } burnTable[9] = {
-     { 2101, 2, 0, 118784, 10, 220 },
-     { 2101, 2, 0, 110592, 40, 220 },
-     { 2101, 2, 0, 81920, 85, 220 },
-     { 2101, 2, 0, 69632, 120, 220 },
-     { 2101, 2, 0, 61440, 160, 220 },
-     { 2101, 2, 0, 73728, 200, 220 },
-     { 2101, 2, 0, 77824, 235, 220 },
-     { 2101, 2, 0, 110592, 275, 220 },
-     { 2101, 2, 0, 122880, 310, 220 }
+     { 2101, RS_AUTO, 0, 118784, 10, 220 },
+     { 2101, RS_AUTO, 0, 110592, 40, 220 },
+     { 2101, RS_AUTO, 0, 81920, 85, 220 },
+     { 2101, RS_AUTO, 0, 69632, 120, 220 },
+     { 2101, RS_AUTO, 0, 61440, 160, 220 },
+     { 2101, RS_AUTO, 0, 73728, 200, 220 },
+     { 2101, RS_AUTO, 0, 77824, 235, 220 },
+     { 2101, RS_AUTO, 0, 110592, 275, 220 },
+     { 2101, RS_AUTO, 0, 122880, 310, 220 }
 };
 
 void viewBurnTime(int gScale)
@@ -3041,13 +3041,22 @@ void viewBurnTime(int gScale)
 
     for (int i = 0; i < 9; i++)
     {
-        int nTile = burnTable[i].nTile+qanimateoffs(burnTable[i].nTile,32768+i);
+        const int nTile = burnTable[i].nTile+qanimateoffs(burnTable[i].nTile,32768+i);
         int nScale = burnTable[i].nScale;
         if (gScale < 600)
         {
             nScale = scale(nScale, gScale, 600);
         }
-        rotatesprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
+        int xoffset = burnTable[i].nX;
+        if (r_usenewaspect)
+        {
+            xoffset = scale(xoffset-(320>>1), 320>>1, 266>>1); // scale flame position
+            xoffset = scale(xoffset<<16, xscale, yscale); // multiply by window ratio
+            xoffset += (320>>1)<<16; // offset to center
+        }
+        else
+            xoffset <<= 16;
+        rotatesprite(xoffset, burnTable[i].nY<<16, nScale, 0, nTile,
             0, burnTable[i].nPal, burnTable[i].nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
 }
