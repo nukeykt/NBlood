@@ -289,7 +289,7 @@ void fxSpawnBlood(spritetype *pSprite, int a2)
     }
 }
 
-void sub_746D4(spritetype *pSprite, int a2)
+void fxSpawnPodBlood(spritetype *pSprite, int a2)
 {
     UNREFERENCED_PARAMETER(a2);
     if (pSprite->sectnum < 0 || pSprite->sectnum >= numsectors)
