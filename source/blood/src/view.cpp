@@ -3537,13 +3537,13 @@ void viewDrawScreen(void)
             g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->visibility, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
             int vc4, vc8;
             getzsofslope(vcc, vd8, vd4, &vc8, &vc4);
-            if (vd0 >= vc4)
+            if ((vd0 > vc4-(1<<7)) && (gUpperLink[vcc] == -1)) // clamp to floor
             {
-                vd0 = vc4-(gUpperLink[vcc] >= 0 ? 0 : (8<<8));
+                vd0 = vc4-(1<<7);
             }
-            if (vd0 <= vc8)
+            if ((vd0 < vc8+(1<<7)) && (gLowerLink[vcc] == -1)) // clamp to ceiling
             {
-                vd0 = vc8+(gLowerLink[vcc] >= 0 ? 0 : (8<<8));
+                vd0 = vc8+(1<<7);
             }
             v54 = ClipRange(v54, -200, 200);
 RORHACKOTHER:
@@ -3618,13 +3618,13 @@ RORHACKOTHER:
         }
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
-        if (cZ >= vf8)
+        if ((cZ > vf8-(1<<7)) && (gUpperLink[nSectnum] == -1)) // clamp to floor
         {
-            cZ = vf8-(gUpperLink[nSectnum] >= 0 ? 0 : (8<<8));
+            cZ = vf8-(1<<7);
         }
-        if (cZ <= vfc)
+        if ((cZ < vfc+(1<<7)) && (gLowerLink[nSectnum] == -1)) // clamp to ceiling
         {
-            cZ = vfc+(gLowerLink[nSectnum] >= 0 ? 0 : (8<<8));
+            cZ = vfc+(1<<7);
         }
         q16horiz = ClipRange(q16horiz, F16(-200), F16(200));
 RORHACK:
@@ -3714,10 +3714,10 @@ RORHACK:
         if (r_usenewaspect)
             newaspect_enable = 0;
         renderSetAspect(viewingRange, yxAspect);
+#if 0
         int nClipDist = gView->pSprite->clipdist<<2;
         int ve8, vec, vf0, vf4;
         GetZRange(gView->pSprite, &vf4, &vf0, &vec, &ve8, nClipDist, 0);
-#if 0
         int tmpSect = nSectnum;
         if ((vf0 & 0xc000) == 0x4000)
         {
