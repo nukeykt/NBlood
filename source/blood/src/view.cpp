@@ -1138,10 +1138,46 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
     int width = tilesiz[nTile].x+1;
     x <<= 16;
     sprintf(tempbuf, pFormat, nNumber);
-    for (unsigned int i = 0; i < strlen(tempbuf); i++, x += width*nScale)
+    const size_t nLength = strlen(tempbuf);
+    for (size_t i = 0; i < nLength; i++, x += width*nScale)
     {
-        if (tempbuf[i] == ' ') continue;
-        rotatesprite(x, y<<16, nScale, 0, nTile+tempbuf[i]-'0', nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
+        int numTile, numScale, numY;
+        if (tempbuf[i] == ' ')
+            continue;
+        if (tempbuf[i] == '-')
+        {
+            switch (nTile)
+            {
+            default:
+                numTile = kSBarNegative;
+                break;
+            case 2240:
+            case kSBarNumberAmmo:
+                numTile = kSBarNegative+1;
+                break;
+            case kSBarNumberInv:
+                numTile = kSBarNegative+2;
+                break;
+            case kSBarNumberArmor1:
+                numTile = kSBarNegative+3;
+                break;
+            case kSBarNumberArmor2:
+                numTile = kSBarNegative+4;
+                break;
+            case kSBarNumberArmor3:
+                numTile = kSBarNegative+5;
+                break;
+            }
+            numScale = nScale/3;
+            numY = (y<<16) + (1<<15); // offset to center of number row
+        }
+        else // regular number
+        {
+            numTile = nTile+tempbuf[i]-'0';
+            numScale = nScale;
+            numY = y<<16;
+        }
+        rotatesprite(x, numY, numScale, 0, numTile, nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
     }
 }
 
@@ -1254,13 +1290,6 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, max(gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets)); // if we found more than there are, increase the total - some levels have a bugged counter
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
-
-#define kSBarNumberHealth 9220
-#define kSBarNumberAmmo 9230
-#define kSBarNumberInv 9240
-#define kSBarNumberArmor1 9250
-#define kSBarNumberArmor2 9260
-#define kSBarNumberArmor3 9270
 
 struct POWERUPDISPLAY
 {
@@ -1830,6 +1859,10 @@ void viewPrecacheTiles(void)
         tilePrecacheTile(kSBarNumberArmor1 + i, 0);
         tilePrecacheTile(kSBarNumberArmor2 + i, 0);
         tilePrecacheTile(kSBarNumberArmor3 + i, 0);
+    }
+    for (int i = 0; i < 6; i++)
+    {
+        tilePrecacheTile(kSBarNegative + i, 0);
     }
     for (int i = 0; i < 5; i++)
     {
