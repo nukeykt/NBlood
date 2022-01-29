@@ -645,6 +645,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
     memset(xsprite,0,sizeof(xsprite));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
+    memset(spriteext,0,kMaxSprites*sizeof(spriteext_t));
     drawLoadingScreen();
     if (dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC))
     {
