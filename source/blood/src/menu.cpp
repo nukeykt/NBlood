@@ -81,6 +81,9 @@ void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
 //void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *);
 void ResetVideoColor(CGameMenuItemChain *);
+void LoadLastHostConfig(void);
+void LoadLastJoinConfig(void);
+void LoadLastMultiplayerConfig(void);
 #ifdef USE_OPENGL
 void SetupVideoPolymostMenu(CGameMenuItemChain *);
 #endif
@@ -861,8 +864,6 @@ void SetupEpisodeMenu(void)
             pEpisodeItem->bEnable = 1;
             bool first = j == 0;
             menuEpisode.Add(&itemEpisodes[j], first);
-            if (first)
-                SetupLevelMenuItem(j);
             j++;
         }
     }
@@ -952,6 +953,10 @@ void SetupNetStartMenu(void)
     itemNetStart6.SetTextIndex(1);
     itemNetStart7.SetTextIndex(1);
     menuNetStart.Add(&itemBloodQAV, false);
+    LoadLastMultiplayerConfig();
+    int level = itemNetStart3.m_nFocus;
+    SetupLevelMenuItem(itemNetStart2.m_nFocus);
+    itemNetStart3.m_nFocus = level;
 }
 
 void SetupSaveGameMenu(void)
@@ -2071,12 +2076,14 @@ void SetupNetworkMenu(void)
     menuNetworkHost.Add(&itemNetworkHostPort, false);
     menuNetworkHost.Add(&itemNetworkHostHost, false);
     menuNetworkHost.Add(&itemBloodQAV, false);
+    LoadLastHostConfig();
 
     menuNetworkJoin.Add(&itemNetworkJoinTitle, false);
     menuNetworkJoin.Add(&itemNetworkJoinAddress, true);
     menuNetworkJoin.Add(&itemNetworkJoinPort, false);
     menuNetworkJoin.Add(&itemNetworkJoinJoin, false);
     menuNetworkJoin.Add(&itemBloodQAV, false);
+    LoadLastJoinConfig();
 }
 
 void SetupNetworkHostMenu(CGameMenuItemChain *pItem)
@@ -2089,9 +2096,114 @@ void SetupNetworkJoinMenu(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
 }
 
+void Write(buildvfs_fd hFile, void* pData, int nSize)
+{
+    assert(hFile != buildvfs_fd_invalid);
+
+    if (buildvfs_write(hFile, pData, nSize) != nSize)
+        return;
+}
+
+void SaveLastHostConfig(void)
+{
+    buildvfs_fd hFile = buildvfs_open_write("host.cfg");
+    if (hFile == buildvfs_fd_invalid) {
+        return;
+    }
+
+    Write(hFile, &itemNetworkHostPlayerNum.nValue, sizeof(itemNetworkHostPlayerNum.nValue));
+    Write(hFile, zNetPortBuffer, sizeof(zNetPortBuffer));
+    buildvfs_close(hFile);
+}
+
+void SaveLastJoinConfig(void)
+{
+    buildvfs_fd hFile = buildvfs_open_write("join.cfg");
+    if (hFile == buildvfs_fd_invalid) {
+        return;
+    }
+
+    Write(hFile, zNetAddressBuffer, sizeof(zNetAddressBuffer));
+    Write(hFile, zNetPortBuffer, sizeof(zNetPortBuffer));
+    buildvfs_close(hFile);
+}
+
+void SaveLastMultiplayerConfig(void)
+{
+    buildvfs_fd hFile = buildvfs_open_write("multiplayer.cfg");
+    if (hFile == buildvfs_fd_invalid) {
+        return;
+    }
+
+    Write(hFile, &itemNetStart1.m_nFocus, sizeof(itemNetStart1.m_nFocus));
+    Write(hFile, &itemNetStart2.m_nFocus, sizeof(itemNetStart2.m_nFocus));
+    Write(hFile, &itemNetStart3.m_nFocus, sizeof(itemNetStart3.m_nFocus));
+    Write(hFile, &itemNetStart4.m_nFocus, sizeof(itemNetStart4.m_nFocus));
+    Write(hFile, &itemNetStart5.m_nFocus, sizeof(itemNetStart5.m_nFocus));
+    Write(hFile, &itemNetStart6.m_nFocus, sizeof(itemNetStart6.m_nFocus));
+    Write(hFile, &itemNetStart7.m_nFocus, sizeof(itemNetStart7.m_nFocus));
+    Write(hFile, &itemNetStart8.at20, sizeof(itemNetStart8.at20));
+    Write(hFile, &itemNetStart9.at20, sizeof(itemNetStart9.at20));
+    Write(hFile, &itemNetStart10.at20, sizeof(itemNetStart10.at20));
+    buildvfs_close(hFile);
+}
+
+void Read(buildvfs_fd hFile, void* pData, int nSize)
+{
+    assert(hFile != buildvfs_fd_invalid);
+
+    if (buildvfs_read(hFile, pData, nSize) != nSize)
+        return;
+}
+
+void LoadLastHostConfig(void)
+{
+    buildvfs_fd hFile = buildvfs_open_read("host.cfg");
+    if (hFile == buildvfs_fd_invalid) {
+        return;
+    }
+
+    Read(hFile, &itemNetworkHostPlayerNum.nValue, sizeof(itemNetworkHostPlayerNum.nValue));
+    Read(hFile, zNetPortBuffer, sizeof(zNetPortBuffer));
+    buildvfs_close(hFile);
+}
+
+void LoadLastJoinConfig(void)
+{
+    buildvfs_fd hFile = buildvfs_open_read("join.cfg");
+    if (hFile == buildvfs_fd_invalid) {
+        return;
+    }
+
+    Read(hFile, zNetAddressBuffer, sizeof(zNetAddressBuffer));
+    Read(hFile, zNetPortBuffer, sizeof(zNetPortBuffer));
+    buildvfs_close(hFile);
+}
+
+void LoadLastMultiplayerConfig(void)
+{
+    buildvfs_fd hFile = buildvfs_open_read("multiplayer.cfg");
+    if (hFile == buildvfs_fd_invalid) {
+        return;
+    }
+
+    Read(hFile, &itemNetStart1.m_nFocus, sizeof(itemNetStart1.m_nFocus));
+    Read(hFile, &itemNetStart2.m_nFocus, sizeof(itemNetStart2.m_nFocus));
+    Read(hFile, &itemNetStart3.m_nFocus, sizeof(itemNetStart3.m_nFocus));
+    Read(hFile, &itemNetStart4.m_nFocus, sizeof(itemNetStart4.m_nFocus));
+    Read(hFile, &itemNetStart5.m_nFocus, sizeof(itemNetStart5.m_nFocus));
+    Read(hFile, &itemNetStart6.m_nFocus, sizeof(itemNetStart6.m_nFocus));
+    Read(hFile, &itemNetStart7.m_nFocus, sizeof(itemNetStart7.m_nFocus));
+    Read(hFile, &itemNetStart8.at20, sizeof(itemNetStart8.at20));
+    Read(hFile, &itemNetStart9.at20, sizeof(itemNetStart9.at20));
+    Read(hFile, &itemNetStart10.at20, sizeof(itemNetStart10.at20));
+    buildvfs_close(hFile);
+}
+
 void NetworkHostGame(CGameMenuItemChain *pItem)
 {
     UNREFERENCED_PARAMETER(pItem);
+    SaveLastHostConfig();
     sndStopSong();
     FX_StopAllSounds();
     UpdateDacs(0, true);
@@ -2108,6 +2220,7 @@ void NetworkHostGame(CGameMenuItemChain *pItem)
 void NetworkJoinGame(CGameMenuItemChain *pItem)
 {
     UNREFERENCED_PARAMETER(pItem);
+    SaveLastJoinConfig();
     sndStopSong();
     FX_StopAllSounds();
     UpdateDacs(0, true);
@@ -2229,6 +2342,7 @@ void SetupNetLevels(CGameMenuItemZCycle *pItem)
 void StartNetGame(CGameMenuItemChain *pItem)
 {
     UNREFERENCED_PARAMETER(pItem);
+    SaveLastMultiplayerConfig();
     gPacketStartGame.gameType = itemNetStart1.m_nFocus+1;
     if (gPacketStartGame.gameType == 0)
         gPacketStartGame.gameType = 2;
