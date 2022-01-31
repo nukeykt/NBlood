@@ -6586,7 +6586,6 @@ int app_main(int argc, char const* const* argv)
         OSD_SetLogFile(cwd);
         Xfree(homedir);
     }
-    else
 #endif
 
     osdcallbacks_t callbacks = {};
