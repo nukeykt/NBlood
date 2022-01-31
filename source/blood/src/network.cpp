@@ -163,6 +163,7 @@ void netResetToSinglePlayer(void)
     gGameOptions.nGameType = 0;
     gNetMode = NETWORK_NONE;
     UpdateNetworkMenus();
+    gGameMenuMgr.Deactivate();
 }
 
 void netSendPacket(int nDest, char *pBuffer, int nSize)
