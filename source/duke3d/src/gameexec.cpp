@@ -72,7 +72,7 @@ int32_t g_textureVarID   = -1;  // var ID of "TEXTURE"
 int32_t g_thisActorVarID = -1;  // var ID of "THISACTOR"
 int32_t g_structVarIDs   = -1;
 
-GAMEEXEC_STATIC void VM_Execute(int const loop = false);
+GAMEEXEC_STATIC void VM_Execute(int loop = false);
 
 void VM_ScriptInfo(intptr_t const * const ptr, int const range)
 {
@@ -226,7 +226,7 @@ static int VM_CheckSquished(void)
     floorZ = max(floorZ, vm.pActor->floorz);
     ceilZ  = min(ceilZ, vm.pActor->ceilingz);
 
-    if (vm.pSprite->pal == 1 ? (floorZ - ceilZ >= ZOFFSET5 || (pSector->lotag & 32768u)) : (floorZ - ceilZ >= ZOFFSET4))
+    if (vm.pSprite->pal == 1 ? ((floorZ - ceilZ >= ZOFFSET5) | (pSector->lotag & 32768u)) : (floorZ - ceilZ >= ZOFFSET4))
         return 0;
 
     if (vm.pPlayer->ftq != QUOTE_DEAD)
@@ -530,9 +530,9 @@ void A_Fall(int const spriteNum)
     int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);
 #endif
 
-    if (pSprite->z < actor[spriteNum].floorz - AC_FZOFFSET(spriteNum)
+    if ((pSprite->z < actor[spriteNum].floorz - AC_FZOFFSET(spriteNum))
 #ifdef YAX_ENABLE
-            || fbunch >= 0
+            | (fbunch >= 0)
 #endif
        )
     {
@@ -656,7 +656,7 @@ static inline void VM_AddAngle(int const shift, int const goalAng)
 {
     int angDiff = G_GetAngleDelta(vm.pSprite->ang, goalAng) >> shift;
 
-    if ((angDiff > -8 && angDiff < 0) || (angDiff < 8 && angDiff > 0))
+    if ((angDiff > -8 && angDiff < 0) | (angDiff < 8 && angDiff > 0))
         angDiff *= 2;
 
     vm.pSprite->ang += angDiff;
@@ -664,25 +664,19 @@ static inline void VM_AddAngle(int const shift, int const goalAng)
 
 static inline void VM_FacePlayer(int const shift)
 {
-    VM_AddAngle(shift, (vm.pPlayer->newowner >= 0) ? getangle(vm.pPlayer->opos.x - vm.pSprite->x, vm.pPlayer->opos.y - vm.pSprite->y)
-                                                 : getangle(vm.pPlayer->pos.x - vm.pSprite->x, vm.pPlayer->pos.y - vm.pSprite->y));
+    auto& playerVec = (vm.pPlayer->newowner >= 0) ? vm.pPlayer->opos : vm.pPlayer->pos;
+    VM_AddAngle(shift, getangle(playerVec.x - vm.pSprite->x, playerVec.y - vm.pSprite->y));
 }
 
 static inline int32_t VM_GetCeilZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->xy;
-    int const    sectnum = vm.pSprite->sectnum;
-
-    return yax_getceilzofslope(sectnum, vect);
+    return yax_getceilzofslope(vm.pSprite->sectnum, vm.pSprite->xy);
 }
 
 #ifndef EDUKE32_STANDALONE
 static inline int32_t VM_GetFlorZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->xy;
-    int const    sectnum = vm.pSprite->sectnum;
-
-    return yax_getflorzofslope(sectnum, vect);
+    return yax_getflorzofslope(vm.pSprite->sectnum, vm.pSprite->xy);
 }
 #endif
 
@@ -700,9 +694,9 @@ GAMEEXEC_STATIC void VM_Move(void)
 
     AC_COUNT(vm.pData)++;
 
-    if (AC_MOVE_ID(vm.pData) == 0 || movflags == 0)
+    if ((AC_MOVE_ID(vm.pData) == 0) | (movflags == 0))
     {
-        if (deadflag || (vm.pActor->bpos.x != vm.pSprite->x) || (vm.pActor->bpos.y != vm.pSprite->y))
+        if ((deadflag != 0) | (vm.pActor->bpos.xy != vm.pSprite->xy))
             setsprite(vm.spriteNum, &vm.pSprite->xyz);
 
         // this fixes the WW2GI tank not facing the player, as it uses move 0
@@ -896,7 +890,7 @@ static void P_AddWeaponMaybeSwitch(DukePlayer_t * const ps, int const weaponNum)
         int       new_wchoice  = -1;
         int       curr_wchoice = -1;
 
-        for (native_t i=0; i<=FREEZE_WEAPON && (new_wchoice < 0 || curr_wchoice < 0); i++)
+        for (native_t i=0; i<=FREEZE_WEAPON && ((new_wchoice < 0) | (curr_wchoice < 0)); i++)
         {
             int w = g_player[playerNum].wchoice[i];
 
@@ -1332,7 +1326,7 @@ static void ResizeArray(int const arrayNum, int const newSize)
 
     int const oldSize = arr.size;
 
-    if (newSize == oldSize || newSize < 0)
+    if ((newSize == oldSize) | (newSize < 0))
         return;
 #if 0
     OSD_Printf(OSDTEXT_GREEN "CON_RESIZEARRAY: resizing array %s from %d to %d\n",
@@ -1371,8 +1365,8 @@ static void ResizeArray(int const arrayNum, int const newSize)
 #ifdef CON_USE_COMPUTED_GOTO
 # define vInstruction(KEYWORDID) VINST_ ## KEYWORDID
 # define vmErrorCase VINST_CON_OPCODE_END
-# define eval(INSTRUCTION) { goto *jumpTable[min<uint16_t>(INSTRUCTION, CON_OPCODE_END)]; }
-# define dispatch_unconditionally(...) { g_tw = tw = *insptr; eval((VM_DECODE_INST(tw))) }
+# define eval(INSTRUCTION) { goto *jumpTable[INSTRUCTION]; }
+# define dispatch_unconditionally(...) { eval((VM_DECODE_INST((g_tw = tw = *insptr)))) }
 # define dispatch(...) { if (!vm_execution_depth | ((vm.flags & (VM_RETURN|VM_KILL|VM_NOEXECUTE)) != 0)) return; dispatch_unconditionally(__VA_ARGS__); }
 # define abort_after_error(...) return
 # define vInstructionPointer(KEYWORDID) &&VINST_ ## KEYWORDID
@@ -1388,33 +1382,38 @@ static void ResizeArray(int const arrayNum, int const newSize)
 #endif
 
 #if defined _MSC_VER
-#define VM_ASSERT(condition, fmt, ...)       \
-    if (EDUKE32_PREDICT_FALSE(!(condition))) \
-    {                                        \
-        CON_ERRPRINTF(fmt, __VA_ARGS__);     \
-        abort_after_error();                 \
+#define VM_ABORT_IF(condition, fmt, ...)  \
+    if (EDUKE32_PREDICT_FALSE(condition)) \
+    {                                     \
+        CON_ERRPRINTF(fmt, __VA_ARGS__);  \
+        abort_after_error();              \
     }
 #else
-#define VM_ASSERT(condition, ...)            \
-    if (EDUKE32_PREDICT_FALSE(!(condition))) \
-    {                                        \
-        CON_ERRPRINTF(__VA_ARGS__);          \
-        abort_after_error();                 \
+#define VM_ABORT_IF(condition, ...)       \
+    if (EDUKE32_PREDICT_FALSE(condition)) \
+    {                                     \
+        CON_ERRPRINTF(__VA_ARGS__);       \
+        abort_after_error();              \
     }
 #endif
 
-GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
+
+GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
 {
-    // be careful when changing this--the assignment used as a condition doubles as the nullptr check!
-    auto branch = [&](int const x) {
-        if (x || ((insptr = (intptr_t *)insptr[1]) && (VM_DECODE_INST(*insptr) == CON_ELSE)))
+    auto branch = [&](int const x)
+    {
+        if (x || VM_DECODE_INST(*(insptr = (intptr_t *)insptr[1])) == CON_ELSE)
         {
             insptr += 2;
             VM_Execute();
         }
     };
 
-    int vm_execution_depth = loop;
+    auto bad_quote = [](int const q)
+    {
+        return ((unsigned)q >= MAXQUOTES) | (apStrings[q & (MAXQUOTES-1)] == nullptr);
+    };
+
 #ifdef CON_USE_COMPUTED_GOTO
     static void *const jumpTable[] = JUMP_TABLE_ARRAY_LITERAL;
 #else
@@ -2101,7 +2100,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 
                     int const nValue = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT(nValue, "divide by zero!");
+                    VM_ABORT_IF(!nValue, "divide by zero!");
 
                     Gv_DivVar(tw, nValue);
                     dispatch();
@@ -2351,7 +2350,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 
                     int const nValue = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT(nValue, "mod by zero!");
+                    VM_ABORT_IF(!nValue, "mod by zero!");
 
                     Gv_ModVar(tw, nValue);
                     dispatch();
@@ -2393,11 +2392,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   playerNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    tw = *insptr++;
-                    auto const &playerLabel = PlayerLabels[tw];
+                    auto const &playerLabel = PlayerLabels[(tw = *insptr++)];
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ASSERT((unsigned)playerNum < MAXSPRITES && ((playerLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)playerLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)playerNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
                               "%s[%d] invalid for player %d", playerLabel.name, lParm2, playerNum);
 
                     VM_SetPlayer(playerNum, tw, lParm2, Gv_GetVar(*insptr++));
@@ -2408,11 +2406,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   playerNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    tw = *insptr++;
-                    auto const &playerLabel = PlayerLabels[tw];
+                    auto const &playerLabel = PlayerLabels[(tw = *insptr++)];
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ASSERT((unsigned)playerNum < MAXSPRITES && ((playerLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)playerLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)playerNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
                               "%s[%d] invalid for player %d", playerLabel.name, lParm2, playerNum);
 
                     Gv_SetVar(*insptr++, VM_GetPlayer(playerNum, tw, lParm2));
@@ -2423,7 +2420,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d", playerNum);
+                    VM_ABORT_IF((unsigned)playerNum >= MAXPLAYERS, "invalid player %d", playerNum);
                     auto const &playerLabel = PlayerLabels[*insptr++];
 
                     VM_SetStruct(playerLabel.flags, (intptr_t *)((char *)&g_player[playerNum].ps[0] + playerLabel.offset), Gv_GetVar(*insptr++));
@@ -2434,7 +2431,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d", playerNum);
+                    VM_ABORT_IF((unsigned)playerNum >= MAXPLAYERS, "invalid player %d", playerNum);
                     auto const &playerLabel = PlayerLabels[*insptr++];
 
                     Gv_SetVar(*insptr++, VM_GetStruct(playerLabel.flags, (intptr_t *)((char *)&g_player[playerNum].ps[0] + playerLabel.offset)));
@@ -2445,7 +2442,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const wallNum  = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d", wallNum);
+                    VM_ABORT_IF((unsigned)wallNum >= MAXWALLS, "invalid wall %d", wallNum);
 
                     tw = *insptr++;
 
@@ -2457,7 +2454,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const wallNum = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d", wallNum);
+                    VM_ABORT_IF((unsigned)wallNum >= MAXWALLS, "invalid wall %d", wallNum);
 
                     tw = *insptr++;
                     Gv_SetVar(*insptr++, VM_GetWall(wallNum, tw));
@@ -2468,7 +2465,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const wallNum = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d", wallNum);
+                    VM_ABORT_IF((unsigned)wallNum >= MAXWALLS, "invalid wall %d", wallNum);
 
                     auto const &wallLabel = WallLabels[*insptr++];
 
@@ -2480,7 +2477,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const wallNum = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d", wallNum);
+                    VM_ABORT_IF((unsigned)wallNum >= MAXWALLS, "invalid wall %d", wallNum);
                     auto const &wallLabel = WallLabels[*insptr++];
 
                     Gv_SetVar(*insptr++, VM_GetStruct(wallLabel.flags, (intptr_t *)((char *)&wall[wallNum] + wallLabel.offset)));
@@ -2491,7 +2488,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const lSprite = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)lSprite < MAXSPRITES, "invalid sprite %d", lSprite);
+                    VM_ABORT_IF((unsigned)lSprite >= MAXSPRITES, "invalid sprite %d", lSprite);
 
                     tw = *insptr++;
 
@@ -2504,7 +2501,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const lSprite = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)lSprite < MAXSPRITES, "invalid sprite %d", lSprite);
+                    VM_ABORT_IF((unsigned)lSprite >= MAXSPRITES, "invalid sprite %d", lSprite);
 
                     tw = Gv_GetVar(*insptr++, lSprite, vm.playerNum);
 
@@ -2517,7 +2514,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d", playerNum);
+                    VM_ABORT_IF((unsigned)playerNum >= MAXPLAYERS, "invalid player %d", playerNum);
 
                     tw = *insptr++;
 
@@ -2530,7 +2527,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d", playerNum);
+                    VM_ABORT_IF((unsigned)playerNum >= MAXPLAYERS, "invalid player %d", playerNum);
 
                     tw = Gv_GetVar(*insptr++, vm.spriteNum, playerNum);
 
@@ -2543,11 +2540,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   spriteNum  = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    tw = *insptr++;
-                    auto const &actorLabel = ActorLabels[tw];
+                    auto const &actorLabel = ActorLabels[(tw = *insptr++)];
                     int const   lParm2     = (actorLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES && ((actorLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)actorLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)spriteNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)actorLabel.maxParm2),
                               "%s[%d] invalid for sprite %d", actorLabel.name, lParm2, spriteNum);
 
                     VM_SetSprite(spriteNum, tw, lParm2, Gv_GetVar(*insptr++));
@@ -2558,11 +2554,10 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   spriteNum  = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    tw = *insptr++;
-                    auto const &actorLabel = ActorLabels[tw];
+                    auto const &actorLabel = ActorLabels[(tw = *insptr++)];
                     int const   lParm2     = (actorLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES && ((actorLabel.flags & LABEL_HASPARM2) == 0 || (unsigned)lParm2 < (unsigned)actorLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)spriteNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)actorLabel.maxParm2),
                               "%s[%d] invalid for sprite %d", actorLabel.name, lParm2, spriteNum);
 
                     Gv_SetVar(*insptr++, VM_GetSprite(spriteNum, tw, lParm2));
@@ -2573,7 +2568,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &actorLabel = ActorLabels[*insptr++];
 
@@ -2585,7 +2580,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &actorLabel = ActorLabels[*insptr++];
 
@@ -2597,7 +2592,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
                     auto const &spriteLabel = ActorLabels[*insptr++];
 
                     VM_SetStruct(spriteLabel.flags, (intptr_t *)((char *)&sprite[spriteNum] + spriteLabel.offset), Gv_GetVar(*insptr++));
@@ -2608,7 +2603,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &spriteLabel = ActorLabels[*insptr++];
 
@@ -2619,7 +2614,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &spriteExtLabel = ActorLabels[*insptr++];
 
@@ -2631,7 +2626,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &spriteExtLabel = ActorLabels[*insptr++];
 
@@ -2643,7 +2638,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &tsprLabel = TsprLabels[*insptr++];
 
@@ -2655,7 +2650,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     auto const &tsprLabel = TsprLabels[*insptr++];
 
@@ -2667,7 +2662,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     tw = *insptr++;
 
@@ -2679,7 +2674,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     tw = *insptr++;
 
@@ -2691,7 +2686,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     auto const &sectLabel = SectorLabels[*insptr++];
 
@@ -2703,7 +2698,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 insptr++;
                 {
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     auto const &sectLabel = SectorLabels[*insptr++];
 
@@ -3106,7 +3101,7 @@ badindex:
                 dispatch();
 
             vInstruction(CON_IFMULTIPLAYER):
-                branch((g_netServer || g_netClient || ud.multimode > 1));
+                branch(((g_netServer != nullptr) | (g_netClient != nullptr) | (ud.multimode > 1)));
                 dispatch();
 
             vInstruction(CON_IFOUTSIDE):
@@ -3207,7 +3202,7 @@ badindex:
                     vm.pActor->lastv = pSprite->xy;
                 }
 
-                if (tw && (vm.pSprite->statnum == STAT_ACTOR || vm.pSprite->statnum == STAT_STANDABLE))
+                if (tw && ((vm.pSprite->statnum == STAT_ACTOR) | (vm.pSprite->statnum == STAT_STANDABLE)))
                     vm.pActor->timetosleep = SLEEPTIME;
 
                 branch(tw);
@@ -3230,7 +3225,7 @@ badindex:
                 AC_ACTION_COUNT(vm.pData) = 0;
                 AC_CURFRAME(vm.pData)     = 0;
 
-                if (!A_CheckEnemySprite(vm.pSprite) || vm.pSprite->extra > 0)  // hack
+                if (!A_CheckEnemySprite(vm.pSprite) | (vm.pSprite->extra > 0))  // hack
                     if (vm.pSprite->hitag & random_angle)
                         vm.pSprite->ang = krand() & 2047;
                 dispatch();
@@ -3298,7 +3293,7 @@ badindex:
 
             vInstruction(CON_MIKESND):
                 insptr++;
-                VM_ASSERT((unsigned)vm.pSprite->yvel <= (unsigned)g_highestSoundIdx, "invalid sound #%d", vm.pUSprite->yvel);
+                VM_ABORT_IF((unsigned)vm.pSprite->yvel > (unsigned)g_highestSoundIdx, "invalid sound #%d", vm.pUSprite->yvel);
                 if (!S_CheckSoundPlaying(vm.pSprite->yvel))
                     A_PlaySound(vm.pSprite->yvel, vm.spriteNum);
                 dispatch();
@@ -3345,7 +3340,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
+                    VM_ABORT_IF((unsigned)soundNum > (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
 
                     insptr--;
                     branch(A_CheckSoundPlaying(spriteNum, soundNum));
@@ -3354,7 +3349,7 @@ badindex:
 
             vInstruction(CON_IFSOUND):
                 insptr++;
-                VM_ASSERT((unsigned)*insptr <= (unsigned)g_highestSoundIdx, "invalid sound #%d", (int32_t)*insptr);
+                VM_ABORT_IF((unsigned)*insptr > (unsigned)g_highestSoundIdx, "invalid sound #%d", (int32_t)*insptr);
                 branch(S_CheckSoundPlaying(*insptr));
                 //    VM_DoConditional(SoundOwner[*insptr][0].ow == vm.spriteNum);
                 dispatch();
@@ -3365,7 +3360,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
+                    VM_ABORT_IF((unsigned)soundNum > (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
 
                     if (A_CheckSoundPlaying(spriteNum, soundNum))
                         S_StopEnvSound(soundNum, spriteNum);
@@ -3379,7 +3374,7 @@ badindex:
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
                     int const soundNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
+                    VM_ABORT_IF((unsigned)soundNum > (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
 
                     A_PlaySound(soundNum, spriteNum);
 
@@ -3393,7 +3388,7 @@ badindex:
                     int const soundNum  = Gv_GetVar(*insptr++);
                     int const newPitch  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
+                    VM_ABORT_IF((unsigned)soundNum > (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
 
                     S_ChangeSoundPitch(soundNum, spriteNum, newPitch);
 
@@ -3592,7 +3587,7 @@ badindex:
                 AC_MOVE_ID(vm.pData) = *insptr++;
                 vm.pSprite->hitag    = *insptr++;
 
-                if (!A_CheckEnemySprite(vm.pSprite) || vm.pSprite->extra > 0)  // hack
+                if (!A_CheckEnemySprite(vm.pSprite) | (vm.pSprite->extra > 0))  // hack
                     if (vm.pSprite->hitag & random_angle)
                         vm.pSprite->ang = krand() & 2047;
                 dispatch();
@@ -3619,7 +3614,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const clipType  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     A_SetSprite(spriteNum, clipType);
                     dispatch();
@@ -3629,7 +3624,7 @@ badindex:
                 insptr++;
                 {
                     int const sectNum   = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     int const spriteNum = Gv_GetVar(*insptr++);
 
@@ -3641,7 +3636,7 @@ badindex:
                 insptr++;
                 {
                     int const sectNum   = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     int const spriteNum = Gv_GetVar(*insptr++);
 
@@ -3655,7 +3650,7 @@ badindex:
                     int const nTag      = Gv_GetVar(*insptr++);
                     int const playerNum = (*insptr++ == g_thisActorVarID) ? vm.playerNum : Gv_GetVar(insptr[-1]);
 
-                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d", playerNum);
+                    VM_ABORT_IF((unsigned)playerNum >= MAXPLAYERS, "invalid player %d", playerNum);
 
                     G_OperateActivators(nTag, playerNum);
                     dispatch();
@@ -3668,8 +3663,7 @@ badindex:
                     int const nSprite1 = Gv_GetVar(*insptr++);
                     int const nSprite2 = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)nSprite1 < MAXSPRITES && (unsigned)nSprite2 < MAXSPRITES, "invalid sprite %d",
-                              (unsigned)nSprite1 >= MAXSPRITES ? nSprite1 : nSprite2);
+                    VM_ABORT_IF(((unsigned)nSprite1 >= MAXSPRITES) | ((unsigned)nSprite2 >= MAXSPRITES), "invalid sprite pair (%d, %d)", nSprite1, nSprite2);
 
                     int const nResult = cansee(sprite[nSprite1].x, sprite[nSprite1].y, sprite[nSprite1].z, sprite[nSprite1].sectnum,
                                                sprite[nSprite2].x, sprite[nSprite2].y, sprite[nSprite2].z, sprite[nSprite2].sectnum);
@@ -3704,7 +3698,7 @@ badindex:
                     int const gameVar  = *insptr++;
                     int const quoteNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)quoteNum < MAXQUOTES && apStrings[quoteNum], "invalid quote %d", quoteNum);
+                    VM_ABORT_IF(bad_quote(quoteNum), "invalid quote %d", quoteNum);
 
                     Gv_SetVar(gameVar, Bstrlen(apStrings[quoteNum]));
                     dispatch();
@@ -3727,9 +3721,9 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    if (EDUKE32_PREDICT_FALSE(v.tileNum < 0 || v.tileNum + 127 >= MAXTILES))
+                    if (EDUKE32_PREDICT_FALSE((v.tileNum < 0) | (v.tileNum + 127 >= MAXTILES)))
                         CON_ERRPRINTF("invalid base tilenum %d", v.tileNum);
-                    else if (EDUKE32_PREDICT_FALSE((unsigned)v.quoteNum >= MAXQUOTES || apStrings[v.quoteNum] == NULL))
+                    else if (EDUKE32_PREDICT_FALSE(bad_quote(v.quoteNum)))
                         CON_ERRPRINTF("invalid quote %d", v.quoteNum);
                     else
                     {
@@ -3767,7 +3761,7 @@ badindex:
                     int const gameVar = *insptr++;
                     int const statNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)statNum < MAXSTATUS, "invalid status list %d", statNum);
+                    VM_ABORT_IF((unsigned)statNum >= MAXSTATUS, "invalid status list %d", statNum);
 
                     Gv_SetVar(gameVar, headspritestat[statNum]);
                     dispatch();
@@ -3779,7 +3773,7 @@ badindex:
                     int const gameVar   = *insptr++;
                     int const spriteNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     Gv_SetVar(gameVar, prevspritestat[spriteNum]);
                     dispatch();
@@ -3791,7 +3785,7 @@ badindex:
                     int const gameVar   = *insptr++;
                     int const spriteNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     Gv_SetVar(gameVar, nextspritestat[spriteNum]);
                     dispatch();
@@ -3803,7 +3797,7 @@ badindex:
                     int const gameVar = *insptr++;
                     int const sectNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     Gv_SetVar(gameVar, headspritesect[sectNum]);
                     dispatch();
@@ -3815,7 +3809,7 @@ badindex:
                     int const gameVar   = *insptr++;
                     int const spriteNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     Gv_SetVar(gameVar, prevspritesect[spriteNum]);
                     dispatch();
@@ -3827,7 +3821,7 @@ badindex:
                     int const gameVar   = *insptr++;
                     int const spriteNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d", spriteNum);
+                    VM_ABORT_IF((unsigned)spriteNum >= MAXSPRITES, "invalid sprite %d", spriteNum);
 
                     Gv_SetVar(gameVar, nextspritesect[spriteNum]);
                     dispatch();
@@ -3840,8 +3834,8 @@ badindex:
                     int const gameFunc   = Gv_GetVar(*insptr++);
                     int const funcPos    = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)quoteIndex < MAXQUOTES && apStrings[quoteIndex], "invalid quote %d", quoteIndex);
-                    VM_ASSERT((unsigned)gameFunc < NUMGAMEFUNCTIONS, "invalid function %d", gameFunc);
+                    VM_ABORT_IF(bad_quote(quoteIndex), "invalid quote %d", quoteIndex);
+                    VM_ABORT_IF((unsigned)gameFunc >= NUMGAMEFUNCTIONS, "invalid function %d", gameFunc);
 
                     if (funcPos < 2)
                         Bstrcpy(tempbuf, KB_ScanCodeToString(ud.config.KeyboardKeys[gameFunc][funcPos]));
@@ -3863,10 +3857,10 @@ badindex:
                 insptr++;
                 {
                     int const quoteIndex = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)quoteIndex < MAXQUOTES && apStrings[quoteIndex], "invalid quote %d", quoteIndex);
+                    VM_ABORT_IF(((unsigned)quoteIndex >= MAXQUOTES) | (apStrings[quoteIndex & (MAXQUOTES-1)] == nullptr), "invalid quote %d", quoteIndex);
 
                     int const gameFunc   = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)gameFunc < NUMGAMEFUNCTIONS, "invalid function %d", gameFunc);
+                    VM_ABORT_IF((unsigned)gameFunc >= NUMGAMEFUNCTIONS, "invalid function %d", gameFunc);
 
                     static char const s_KeyboardFormat[] = "[%s]";
                     static char const s_JoystickFormat[] = "(%s)";
@@ -3916,12 +3910,11 @@ badindex:
                         int32_t outputQuote, inputQuote, quotePos, quoteLength;
                     } v;
                     Gv_FillWithVars(v);
-
-                    VM_ASSERT((unsigned)v.outputQuote < MAXQUOTES && apStrings[v.outputQuote] != NULL &&
-                              (unsigned)v.inputQuote < MAXQUOTES && apStrings[v.inputQuote] != NULL,
+                    
+                    VM_ABORT_IF(bad_quote(v.outputQuote) | bad_quote(v.inputQuote),
                               "invalid quote %d", (unsigned)v.outputQuote < MAXQUOTES && apStrings[v.outputQuote] ? v.inputQuote : v.outputQuote);
-                    VM_ASSERT((unsigned)v.quotePos < MAXQUOTELEN, "invalid position %d", v.quotePos);
-                    VM_ASSERT(v.quoteLength >= 0, "invalid length %d", v.quoteLength);
+                    VM_ABORT_IF((unsigned)v.quotePos >= MAXQUOTELEN, "invalid position %d", v.quotePos);
+                    VM_ABORT_IF(v.quoteLength <= 0, "invalid length %d", v.quoteLength);
 
                     char *      pOutput = apStrings[v.outputQuote];
                     char const *pInput  = apStrings[v.inputQuote];
@@ -3945,8 +3938,7 @@ badindex:
                     int const quote2  = Gv_GetVar(*insptr++);
                     int const gameVar = *insptr++;
 
-                    VM_ASSERT((unsigned)quote1 < MAXQUOTES && apStrings[quote1] != NULL &&
-                              (unsigned)quote2 < MAXQUOTES && apStrings[quote2] != NULL,
+                    VM_ABORT_IF(bad_quote(quote1) | bad_quote(quote2),
                               "invalid quote %d", (unsigned)quote1 < MAXQUOTES && apStrings[quote1] != NULL ? quote2 : quote1);
 
                     Gv_SetVar(gameVar, strcmp(apStrings[quote1], apStrings[quote2]));
@@ -3973,14 +3965,14 @@ badindex:
                     switch (VM_DECODE_INST(tw))
                     {
                         case CON_GETPNAME:
-                            VM_ASSERT((unsigned)q < MAXQUOTES && apStrings[q], "invalid quote %d", q);
+                            VM_ABORT_IF(bad_quote(q), "invalid quote %d", q);
                             if (g_player[j].user_name[0])
                                 Bstrcpy(apStrings[q], g_player[j].user_name);
                             else
                                 Bsprintf(apStrings[q], "%d", j);
                             break;
                         case CON_QGETSYSSTR:
-                            VM_ASSERT((unsigned)q < MAXQUOTES && apStrings[q], "invalid quote %d", q);
+                            VM_ABORT_IF(bad_quote(q), "invalid quote %d", q);
                             switch (j)
                             {
                                 case STR_MAPNAME:
@@ -3995,19 +3987,19 @@ badindex:
                                     int const levelNum = ud.volume_number * MAXLEVELS + ud.level_number;
                                     const char *pName;
 
-                                    VM_ASSERT((unsigned)levelNum < ARRAY_SIZE(g_mapInfo), "out of bounds map number (vol=%d, lev=%d)\n",
+                                    VM_ABORT_IF((unsigned)levelNum >= ARRAY_SIZE(g_mapInfo), "out of bounds map number (vol=%d, lev=%d)\n",
                                               ud.volume_number, ud.level_number);
 
                                     pName = j == STR_MAPNAME ? g_mapInfo[levelNum].name : g_mapInfo[levelNum].filename;
 
-                                    VM_ASSERT(pName != nullptr, "attempted access to %s of non-existent map (vol=%d, lev=%d)",
+                                    VM_ABORT_IF(pName == nullptr, "attempted access to %s of non-existent map (vol=%d, lev=%d)",
                                                       j == STR_MAPNAME ? "name" : "file name", ud.volume_number, ud.level_number);
 
                                     Bstrcpy(apStrings[q], j == STR_MAPNAME ? g_mapInfo[levelNum].name : g_mapInfo[levelNum].filename);
                                     break;
                                 }
                                 case STR_PLAYERNAME:
-                                    VM_ASSERT((unsigned)vm.playerNum < MAXPLAYERS, "invalid player %d", vm.playerNum);
+                                    VM_ABORT_IF((unsigned)vm.playerNum >= MAXPLAYERS, "invalid player %d", vm.playerNum);
                                     Bstrcpy(apStrings[q], g_player[vm.playerNum].user_name);
                                     break;
                                 case STR_VERSION:
@@ -4022,7 +4014,7 @@ badindex:
                                         break;
                                     }
 
-                                    VM_ASSERT((unsigned)ud.volume_number < MAXVOLUMES, "invalid volume %d", ud.volume_number);
+                                    VM_ABORT_IF((unsigned)ud.volume_number >= MAXVOLUMES, "invalid volume %d", ud.volume_number);
                                     Bstrcpy(apStrings[q], g_volumeNames[ud.volume_number]);
                                     break;
                                 case STR_REVISION:        Bstrcpy(apStrings[q], &s_buildRev[1]);        break;
@@ -4035,17 +4027,17 @@ badindex:
                             }
                             break;
                         case CON_QSTRCAT:
-                            if (EDUKE32_PREDICT_FALSE(apStrings[q] == NULL || apStrings[j] == NULL))
+                            if (EDUKE32_PREDICT_FALSE((apStrings[q] == NULL) | (apStrings[j] == NULL)))
                                 goto nullquote;
                             Bstrncat(apStrings[q], apStrings[j], (MAXQUOTELEN - 1) - Bstrlen(apStrings[q]));
                             break;
                         case CON_QSTRNCAT:
-                            if (EDUKE32_PREDICT_FALSE(apStrings[q] == NULL || apStrings[j] == NULL))
+                            if (EDUKE32_PREDICT_FALSE((apStrings[q] == NULL) | (apStrings[j] == NULL)))
                                 goto nullquote;
                             Bstrncat(apStrings[q], apStrings[j], Gv_GetVar(*insptr++));
                             break;
                         case CON_QSTRCPY:
-                            if (EDUKE32_PREDICT_FALSE(apStrings[q] == NULL || apStrings[j] == NULL))
+                            if (EDUKE32_PREDICT_FALSE((apStrings[q] == NULL) | (apStrings[j] == NULL)))
                                 goto nullquote;
                             if (q != j)
                                 Bstrcpy(apStrings[q], apStrings[j]);
@@ -4064,7 +4056,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const sectNum   = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES && (unsigned)sectNum < MAXSECTORS, "invalid parameters: %d, %d", spriteNum, sectNum);
+                    VM_ABORT_IF(((unsigned)spriteNum >= MAXSPRITES) | ((unsigned)sectNum >= MAXSECTORS), "invalid parameters: %d, %d", spriteNum, sectNum);
 
                     if (sprite[spriteNum].sectnum == sectNum)
                         dispatch();
@@ -4079,7 +4071,7 @@ badindex:
                     int const spriteNum = Gv_GetVar(*insptr++);
                     int const statNum   = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES && (unsigned)statNum < MAXSTATUS, "invalid parameters: %d, %d", spriteNum, statNum);
+                    VM_ABORT_IF(((unsigned)spriteNum >= MAXSPRITES) | ((unsigned)statNum >= MAXSTATUS), "invalid parameters: %d, %d", spriteNum, statNum);
 
                     if (sprite[spriteNum].statnum == statNum)
                         dispatch();
@@ -4087,7 +4079,7 @@ badindex:
                     /* initialize actor data when changing to an actor statnum because there's usually
                     garbage left over from being handled as a hard coded object */
 
-                    if (sprite[spriteNum].statnum > STAT_ZOMBIEACTOR && (statNum == STAT_ACTOR || statNum == STAT_ZOMBIEACTOR))
+                    if (sprite[spriteNum].statnum > STAT_ZOMBIEACTOR && ((statNum == STAT_ACTOR) | (statNum == STAT_ZOMBIEACTOR)))
                     {
                         auto pActor = &actor[spriteNum];
                         auto pSprite = &sprite[spriteNum];
@@ -4125,7 +4117,7 @@ badindex:
                     int const volumeNum = Gv_GetVar(*insptr++);
                     int const levelNum  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)volumeNum < MAXVOLUMES && (unsigned)levelNum < MAXLEVELS, "invalid parameters: %d, %d", volumeNum, levelNum);
+                    VM_ABORT_IF(((unsigned)volumeNum >= MAXVOLUMES) | ((unsigned)levelNum >= MAXLEVELS), "invalid parameters: %d, %d", volumeNum, levelNum);
 
                     ud.m_volume_number = ud.volume_number = volumeNum;
                     ud.m_level_number = ud.level_number = levelNum;
@@ -4172,7 +4164,7 @@ badindex:
                 insptr++;
                 {
                     int const wallNum = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)wallNum < (unsigned)numwalls, "invalid wall %d", wallNum);
+                    VM_ABORT_IF((unsigned)wallNum >= (unsigned)numwalls, "invalid wall %d", wallNum);
 
                     vec2_t    n;
                     Gv_FillWithVars(n);
@@ -4189,7 +4181,7 @@ badindex:
                     vec2_t    in;
                     Gv_FillWithVars(in);
 
-                    VM_ASSERT((unsigned)in.x < MAXSPRITES && (unsigned)in.y < MAXSPRITES, "invalid sprite %d, %d", in.x, in.y);
+                    VM_ABORT_IF(((unsigned)in.x >= MAXSPRITES) | ((unsigned)in.y >= MAXSPRITES), "invalid sprite pair (%d, %d)", in.x, in.y);
 
                     Gv_SetVar(out, (VM_DECODE_INST(tw) == CON_LDIST ? ldist : dist)(&sprite[in.x], &sprite[in.y]));
                     dispatch();
@@ -4258,7 +4250,7 @@ badindex:
             vInstruction(CON_QSPAWN):
                 insptr++;
                 {
-                    VM_ASSERT((unsigned)vm.pSprite->sectnum < MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
+                    VM_ABORT_IF((unsigned)vm.pSprite->sectnum >= MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
 
                     int const tileNum = Gv_GetVar(*insptr++);
                     int const spriteNum = A_Spawn(vm.spriteNum, tileNum);
@@ -4282,7 +4274,7 @@ badindex:
             vInstruction(CON_ESHOOT):
                 insptr++;
                 {
-                    VM_ASSERT((unsigned)vm.pSprite->sectnum < MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
+                    VM_ABORT_IF((unsigned)vm.pSprite->sectnum >= MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
 
                     int j = Gv_GetVar(*insptr++);
                     j = A_Shoot(vm.spriteNum, j);
@@ -4297,7 +4289,7 @@ badindex:
             vInstruction(CON_ZSHOOT):
                 insptr++;
                 {
-                    VM_ASSERT((unsigned)vm.pSprite->sectnum < MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
+                    VM_ABORT_IF((unsigned)vm.pSprite->sectnum >= MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
 
                     int const zvel = (int16_t)Gv_GetVar(*insptr++);
                     int j = A_ShootWithZvel(vm.spriteNum, Gv_GetVar(*insptr++), zvel);
@@ -4322,7 +4314,7 @@ badindex:
                 {
                     int const soundNum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)soundNum <= (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
+                    VM_ABORT_IF((unsigned)soundNum > (unsigned)g_highestSoundIdx, "invalid sound #%d", soundNum);
 
                     switch (VM_DECODE_INST(tw))
                     {
@@ -4349,7 +4341,7 @@ badindex:
                 {
                     int const nQuote = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)nQuote < MAXQUOTES && apStrings[nQuote], "invalid quote %d", nQuote);
+                    VM_ABORT_IF(bad_quote(nQuote), "invalid quote %d", nQuote);
 
                     if (VM_DECODE_INST(tw) == CON_IFCUTSCENE)
                     {
@@ -4419,8 +4411,8 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT(v.scrn[0].x >= 0 && v.scrn[0].y >= 0 && v.scrn[1].x < 320 && v.scrn[1].y < 200, "invalid coordinates\n");
-                    VM_ASSERT((unsigned)v.params[2] < MAXSECTORS, "invalid sector %d", v.params[2]);
+                    VM_ABORT_IF((v.scrn[0].x < 0) | (v.scrn[0].y < 0) | (v.scrn[1].x >= 320) | (v.scrn[1].y >= 200), "invalid coordinates\n");
+                    VM_ABORT_IF((unsigned)v.params[2] >= MAXSECTORS, "invalid sector %d", v.params[2]);
 
                     if (VM_DECODE_INST(tw) != CON_SHOWVIEWQ16 && VM_DECODE_INST(tw) != CON_SHOWVIEWQ16UNBIASED)
                     {
@@ -4446,7 +4438,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.tilenum < MAXTILES, "invalid tilenum %d", v.tilenum);
+                    VM_ABORT_IF((unsigned)v.tilenum >= MAXTILES, "invalid tilenum %d", v.tilenum);
 
                     int32_t alpha = (VM_DECODE_INST(tw) == CON_ROTATESPRITEA) ? Gv_GetVar(*insptr++) : 0;
                     vec2_t bound[2];
@@ -4480,8 +4472,8 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT(v.tilenum >= 0 && v.tilenum + 127 < MAXTILES, "invalid base tilenum %d", v.tilenum);
-                    VM_ASSERT((unsigned)v.nQuote < MAXQUOTES && apStrings[v.nQuote], "invalid quote %d", v.nQuote);
+                    VM_ABORT_IF((v.tilenum < 0) | (v.tilenum + 127 >= MAXTILES), "invalid base tilenum %d", v.tilenum);
+                    VM_ABORT_IF(bad_quote(v.nQuote), "invalid quote %d", v.nQuote);
 
                     int32_t const z = (VM_DECODE_INST(tw) == CON_GAMETEXTZ) ? Gv_GetVar(*insptr++) : 65536;
 
@@ -4503,7 +4495,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT(v.tilenum >= 0 && v.tilenum + 9 < MAXTILES, "invalid base tilenum %d", v.tilenum);
+                    VM_ABORT_IF((v.tilenum < 0) | (v.tilenum + 9 >= MAXTILES), "invalid base tilenum %d", v.tilenum);
 
                     int32_t const nZoom = (VM_DECODE_INST(tw) == CON_DIGITALNUMBERZ) ? Gv_GetVar(*insptr++) : 65536;
 
@@ -4524,7 +4516,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.nQuote < MAXQUOTES && apStrings[v.nQuote], "invalid quote %d", v.nQuote);
+                    VM_ABORT_IF(bad_quote(v.nQuote), "invalid quote %d", v.nQuote);
 
                     minitextshade(v.pos.x, v.pos.y, apStrings[v.nQuote], v.shade, v.pal, 2 + 8 + 16);
                     dispatch();
@@ -4544,8 +4536,8 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT(v.tilenum >= 0 && v.tilenum + 127 < MAXTILES, "invalid base tilenum %d", v.tilenum);
-                    VM_ASSERT((unsigned)v.nQuote < MAXQUOTES && apStrings[v.nQuote], "invalid quote %d", v.nQuote);
+                    VM_ABORT_IF((v.tilenum < 0) | (v.tilenum + 127 >= MAXTILES), "invalid base tilenum %d", v.tilenum);
+                    VM_ABORT_IF(bad_quote(v.nQuote), "invalid quote %d", v.nQuote);
 
                     if (!(v.orientation & ROTATESPRITE_FULL16))
                     {
@@ -4575,7 +4567,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.sectNum < MAXSECTORS, "invalid sector %d", v.sectNum);
+                    VM_ABORT_IF((unsigned)v.sectNum >= MAXSECTORS, "invalid sector %d", v.sectNum);
 
                     int const ceilzvar   = *insptr++;
                     int const ceilhitvar = *insptr++;
@@ -4605,7 +4597,7 @@ badindex:
                 {
                     int const sectnum = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT((unsigned)sectnum < MAXSECTORS, "invalid sector %d", sectnum);
+                    VM_ABORT_IF((unsigned)sectnum >= MAXSECTORS, "invalid sector %d", sectnum);
 
                     if (VM_DECODE_INST(tw) == CON_SECTSETINTERPOLATION)
                         Sect_SetInterpolation(sectnum);
@@ -4690,7 +4682,7 @@ badindex:
                     Gv_FillWithVars(v);
 
                     int16_t sectNum = v.sectNum32;
-                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d", sectNum);
+                    VM_ABORT_IF((unsigned)sectNum >= MAXSECTORS, "invalid sector %d", sectNum);
 
                     Gv_SetVar(
                     returnVar,
@@ -4713,7 +4705,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.sectnum < MAXSECTORS, "invalid sector %d", v.sectnum);
+                    VM_ABORT_IF((unsigned)v.sectnum >= MAXSECTORS, "invalid sector %d", v.sectnum);
 
                     int const sectReturn   = *insptr++;
                     int const wallReturn   = *insptr++;
@@ -4747,7 +4739,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.firstSector < (unsigned)numsectors && (unsigned)v.secondSector < (unsigned)numsectors, "invalid sector %d",
+                    VM_ABORT_IF(((unsigned)v.firstSector >= (unsigned)numsectors) | ((unsigned)v.secondSector >= (unsigned)numsectors), "invalid sector %d",
                               (unsigned)v.firstSector >= (unsigned)numsectors ? v.firstSector : v.secondSector);
 
                     Gv_SetVar(*insptr++, cansee(v.vec1.x, v.vec1.y, v.vec1.z, v.firstSector, v.vec2.x, v.vec2.y, v.vec2.z, v.secondSector));
@@ -4793,7 +4785,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.sectNum < MAXSECTORS, "invalid sector %d", v.sectNum);
+                    VM_ABORT_IF((unsigned)v.sectNum >= MAXSECTORS, "invalid sector %d", v.sectNum);
 
                     int const sectReturn   = *insptr++;
                     int const wallReturn   = *insptr++;
@@ -4843,7 +4835,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.spriteNum < MAXSPRITES, "invalid sprite %d", v.spriteNum);
+                    VM_ABORT_IF((unsigned)v.spriteNum >= MAXSPRITES, "invalid sprite %d", v.spriteNum);
 
                     Gv_SetVar(*insptr++, A_MoveSprite(v.spriteNum, v.vect, v.clipType));
                     dispatch();
@@ -4859,7 +4851,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.spriteNum < MAXSPRITES, "invalid sprite %d", v.spriteNum);
+                    VM_ABORT_IF((unsigned)v.spriteNum >= MAXSPRITES, "invalid sprite %d", v.spriteNum);
 
                     setsprite(v.spriteNum, &v.vect);
                     dispatch();
@@ -4876,7 +4868,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ASSERT((unsigned)v.sectNum < MAXSECTORS, "invalid sector %d", v.sectNum);
+                    VM_ABORT_IF((unsigned)v.sectNum >= MAXSECTORS, "invalid sector %d", v.sectNum);
 
                     Gv_SetVar(*insptr++, (VM_DECODE_INST(tw) == CON_GETFLORZOFSLOPE ? yax_getflorzofslope : yax_getceilzofslope)(v.sectNum, v.vect));
                     dispatch();
@@ -4955,7 +4947,7 @@ badindex:
                 insptr++;
                 int const nQuote = Gv_GetVar(*insptr++);
 
-                VM_ASSERT((unsigned)nQuote < MAXQUOTES && apStrings[nQuote], "invalid quote %d", nQuote);
+                VM_ABORT_IF(bad_quote(nQuote), "invalid quote %d", nQuote);
 
                 communityapiUnlockAchievement(apStrings[nQuote]);
                 dispatch();
@@ -4967,7 +4959,7 @@ badindex:
                 int const nQuote = Gv_GetVar(*insptr++);
                 int const value = Gv_GetVar(*insptr++);
 
-                VM_ASSERT((unsigned)nQuote < MAXQUOTES && apStrings[nQuote], "invalid quote %d", nQuote);
+                VM_ABORT_IF(bad_quote(nQuote), "invalid quote %d", nQuote);
 
                 communityapiSetStat(apStrings[nQuote], value);
                 dispatch();
@@ -4976,7 +4968,7 @@ badindex:
             vInstruction(CON_SPAWN):
                 insptr++;
 
-                VM_ASSERT((unsigned)vm.pSprite->sectnum < MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
+                VM_ABORT_IF((unsigned)vm.pSprite->sectnum >= MAXSECTORS, "invalid sector %d", vm.pUSprite->sectnum);
 
                 A_Spawn(vm.spriteNum, *insptr++);
                 dispatch();
@@ -5167,7 +5159,7 @@ badindex:
 
             vInstruction(CON_SAVEMAPSTATE):
                 insptr++;
-                VM_ASSERT((g_player[myconnectindex].ps->gm & (MODE_EOL | MODE_RESTART | MODE_GAME)) == MODE_GAME,
+                VM_ABORT_IF((g_player[myconnectindex].ps->gm & (MODE_EOL | MODE_RESTART | MODE_GAME)) != MODE_GAME,
                         "attempted to save state in invalid gamemode: %d", g_player[myconnectindex].ps->gm);
                 G_SaveMapState();
                 dispatch();
@@ -5181,7 +5173,7 @@ badindex:
                 insptr++;
                 {
                     int const levelNum = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)levelNum < MAXVOLUMES * MAXLEVELS, "invalid map number %d", levelNum);
+                    VM_ABORT_IF((unsigned)levelNum >= MAXVOLUMES * MAXLEVELS, "invalid map number %d", levelNum);
                     G_FreeMapState(levelNum);
                 }
                 dispatch();
@@ -5238,7 +5230,7 @@ badindex:
 
             vInstruction(CON_PALFROM):
                 insptr++;
-                VM_ASSERT((unsigned)vm.playerNum < MAXPLAYERS, "invalid player %d", vm.playerNum);
+                VM_ABORT_IF((unsigned)vm.playerNum >= MAXPLAYERS, "invalid player %d", vm.playerNum);
                 {
                     palette_t const pal = { uint8_t(insptr[1]), uint8_t(insptr[2]), uint8_t(insptr[3]), uint8_t(insptr[0]) };
                     insptr += 4;
@@ -5267,7 +5259,7 @@ badindex:
                     int const outputQuote = Gv_GetVar(*insptr++);
                     int const inputQuote  = Gv_GetVar(*insptr++);
 
-                    VM_ASSERT(apStrings[inputQuote] != NULL && apStrings[outputQuote] != NULL, "null quote %d", apStrings[inputQuote] ? outputQuote : inputQuote);
+                    VM_ABORT_IF((apStrings[inputQuote] == nullptr) | (apStrings[outputQuote] == nullptr), "null quote %d", apStrings[inputQuote] ? outputQuote : inputQuote);
 
                     auto &inBuf = apStrings[inputQuote];
 
@@ -5607,8 +5599,8 @@ badindex:
                     // -1 for none found
                     // <type> <maxdistvarid> <varid>
                     int const  decodedInst  = VM_DECODE_INST(tw);
-                    int const  actorsOnly   = (decodedInst == CON_FINDNEARACTOR || decodedInst == CON_FINDNEARACTOR3D);
-                    auto const dist_funcptr = (decodedInst == CON_FINDNEARACTOR || decodedInst == CON_FINDNEARSPRITE) ? &ldist : &dist;
+                    int const  actorsOnly   = ((decodedInst == CON_FINDNEARACTOR) | (decodedInst == CON_FINDNEARACTOR3D));
+                    auto const dist_funcptr = ((decodedInst == CON_FINDNEARACTOR) | (decodedInst == CON_FINDNEARSPRITE)) ? &ldist : &dist;
 
                     int const findTile  = *insptr++;
                     int       maxDist   = Gv_GetVar(*insptr++);
@@ -5813,7 +5805,7 @@ badindex:
                 insptr++;
                 int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(*insptr) : vm.playerNum;
 
-                VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d", playerNum);
+                VM_ABORT_IF((unsigned)playerNum >= MAXPLAYERS, "invalid player %d", playerNum);
 
                 if (VM_DECODE_INST(tw) == CON_CHECKAVAILWEAPON)
                     P_CheckWeapon(g_player[playerNum].ps);
@@ -5856,7 +5848,7 @@ badindex:
                 {
                     tw = *insptr++;
                     int const arrayIndex = Gv_GetVar(*insptr++);
-                    VM_ASSERT((unsigned)tw < (unsigned)g_gameArrayCount && (unsigned)arrayIndex < (unsigned)aGameArrays[tw].size, 
+                    VM_ABORT_IF(((unsigned)tw >= (unsigned)g_gameArrayCount) | ((unsigned)arrayIndex >= (unsigned)aGameArrays[tw & (MAXGAMEARRAYS-1)].size), 
                               "invalid array %d or index %d", tw, arrayIndex);
 
                     SetArray(tw, arrayIndex, Gv_GetVar(*insptr++));
@@ -5886,7 +5878,7 @@ badindex:
                 int32_t const arrayNum = *insptr++;
                 int32_t const sequenceSize = *insptr++;
 
-                VM_ASSERT((unsigned)arrayNum < (unsigned)g_gameArrayCount, "invalid array %d", arrayNum);
+                VM_ABORT_IF((unsigned)arrayNum >= (unsigned)g_gameArrayCount, "invalid array %d", arrayNum);
 
                 ResizeArray(arrayNum, sequenceSize);
 
@@ -5902,7 +5894,7 @@ badindex:
                     int const arrayNum      = *insptr++;
                     int const quoteFilename = *insptr++;
 
-                    VM_ASSERT((unsigned)quoteFilename < MAXQUOTES && apStrings[quoteFilename], "invalid quote %d", quoteFilename);
+                    VM_ABORT_IF(bad_quote(quoteFilename), "invalid quote %d", quoteFilename);
 
                     buildvfs_kfd kFile = kopen4loadfrommod(apStrings[quoteFilename], 0);
 
@@ -5971,7 +5963,7 @@ badindex:
                     int const arrayNum      = *insptr++;
                     int const quoteFilename = *insptr++;
 
-                    VM_ASSERT((unsigned)quoteFilename < MAXQUOTES && apStrings[quoteFilename], "invalid quote %d", quoteFilename);
+                    VM_ABORT_IF(bad_quote(quoteFilename), "invalid quote %d", quoteFilename);
 
                     char temp[BMAX_PATH];
 
@@ -6044,7 +6036,7 @@ badindex:
                     int const srcArraySize = (src.flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(src.size) : src.size;
                     int const destArraySize = (dest.flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(dest.size) : dest.size;
 
-                    if (srcArrayIndex > srcArraySize || destArrayIndex > destArraySize)
+                    if ((srcArrayIndex > srcArraySize) | (destArrayIndex > destArraySize))
                         dispatch();
 
                     if ((srcArrayIndex + numElements) > srcArraySize)
@@ -6146,7 +6138,7 @@ badindex:
 
                     int i = 0, ngcIdx[4] = {0};
                     int newIndex = ngcIdx[0] = Gv_GetVar(*insptr++);
-                    if (EDUKE32_PREDICT_FALSE(newIndex < 0 || newIndex >= MAXMENUGAMEPLAYENTRIES))
+                    if (EDUKE32_PREDICT_FALSE((unsigned)newIndex >= MAXMENUGAMEPLAYENTRIES))
                     {
                         CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer 0: %d \n", newIndex);
                         abort_after_error();
@@ -6164,7 +6156,7 @@ badindex:
                         newIndex = Gv_GetVar(*insptr++);
                         ngcIdx[i+1] = newIndex;
 
-                        if (EDUKE32_PREDICT_FALSE(!cmg->subentries || newIndex < 0 || newIndex >= MAXMENUGAMEPLAYENTRIES))
+                        if (EDUKE32_PREDICT_FALSE((!cmg->subentries) | ((unsigned)newIndex >= MAXMENUGAMEPLAYENTRIES)))
                         {
                             CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer %d: %d \n", i+1, newIndex);
                             abort_after_error();
@@ -6279,14 +6271,14 @@ badindex:
             vInstruction(CON_GMAXAMMO):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_ASSERT((unsigned)tw < MAX_WEAPONS, "invalid weapon %d", (int)tw);
+                VM_ABORT_IF((unsigned)tw >= MAX_WEAPONS, "invalid weapon %d", (int)tw);
                 Gv_SetVar(*insptr++, vm.pPlayer->max_ammo_amount[tw]);
                 dispatch();
 
             vInstruction(CON_SMAXAMMO):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_ASSERT((unsigned)tw < MAX_WEAPONS, "invalid weapon %d", (int)tw);
+                VM_ABORT_IF((unsigned)tw >= MAX_WEAPONS, "invalid weapon %d", (int)tw);
                 vm.pPlayer->max_ammo_amount[tw] = Gv_GetVar(*insptr++);
                 dispatch();
 
@@ -6414,7 +6406,7 @@ badindex:
             vInstruction(CON_ACTIVATECHEAT):
                 insptr++;
                 tw = Gv_GetVar(*(insptr++));
-                VM_ASSERT(numplayers == 1 && (g_player[myconnectindex].ps->gm & MODE_GAME), "not in a single-player game.\n");
+                VM_ABORT_IF((numplayers != 1) | ((g_player[myconnectindex].ps->gm & MODE_GAME) != MODE_GAME), "not in a single-player game.\n");
                 osdcmd_cheatsinfo_stat.cheatnum = tw;
                 dispatch();
 
@@ -6519,7 +6511,7 @@ badindex:
             vInstruction(CON_QUOTE):
                 insptr++;
 
-                VM_ASSERT((unsigned)vm.playerNum < MAXPLAYERS, "invalid player %d", vm.playerNum);
+                VM_ABORT_IF((unsigned)vm.playerNum >= MAXPLAYERS, "invalid player %d", vm.playerNum);
 
                 P_DoQuote(*(insptr++) | MAXQUOTES, vm.pPlayer);
                 dispatch();
@@ -6528,7 +6520,7 @@ badindex:
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
 
-                VM_ASSERT((unsigned)tw < MAXQUOTES && apStrings[tw], "invalid quote %d", (int)tw);
+                VM_ABORT_IF(bad_quote(tw), "invalid quote %d", (int)tw);
 
                 G_AddUserQuote(apStrings[tw]);
                 dispatch();
@@ -6537,7 +6529,7 @@ badindex:
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
 
-                VM_ASSERT((unsigned)tw < MAXQUOTES && apStrings[tw], "invalid quote %d", (int)tw);               
+                VM_ABORT_IF(bad_quote(tw), "invalid quote %d", (int)tw);               
                 VLOG_F(LOG_VM, apStrings[tw]);
                 dispatch();
 
@@ -6751,7 +6743,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
             {
                 // hack for 1.3D fire sprites
 #ifndef EDUKE32_STANDALONE
-                if (!FURY && EDUKE32_PREDICT_FALSE(g_scriptVersion == 13 && (vm.pSprite->picnum == FIRE || vm.pSprite->picnum == FIRE2)))
+                if (!FURY && EDUKE32_PREDICT_FALSE(g_scriptVersion == 13 && ((vm.pSprite->picnum == FIRE) | (vm.pSprite->picnum == FIRE2))))
                     return;
 #endif
                 changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);
