@@ -1811,7 +1811,7 @@ static int32_t backup_highlighted_map(mapinfofull_t *mapinfo)
     {
         int32_t startwall, endwall;
 
-        if (hlsectorbitmap[i>>3]&pow2char[i&7])
+        if (bitmap_test(hlsectorbitmap, i))
         {
 #ifdef YAX_ENABLE
             int16_t bn[2], cf;
@@ -2075,7 +2075,7 @@ static int32_t restore_highlighted_map(mapinfofull_t *mapinfo, int32_t forreal)
     Bmemset(hlsectorbitmap, 0, sizeof(hlsectorbitmap));
     for (i=onumsectors; i<newnumsectors; i++)
     {
-        hlsectorbitmap[i>>3] |= pow2char[i&7];
+        bitmap_set(hlsectorbitmap, i);
 
 #ifdef YAX_ENABLE
         for (j=0; j<2; j++)
@@ -2153,7 +2153,7 @@ void ovh_whiteoutgrab(int32_t restoreredwalls)
 
             k = wall[j].nextsector;
 
-            if (hlsectorbitmap[k>>3]&pow2char[k&7])
+            if (bitmap_test(hlsectorbitmap, k))
                 continue;
 #if 0
 //def YAX_ENABLE
@@ -2350,16 +2350,16 @@ void update_highlight(void)
 
     highlightcnt = 0;
     for (i=0; i<numwalls; i++)
-        if (show2dwall[i>>3]&pow2char[i&7])
+        if (bitmap_test(show2dwall, i))
             highlight[highlightcnt++] = i;
     for (i=0; i<MAXSPRITES; i++)
         if (sprite[i].statnum < MAXSTATUS)
         {
-            if (show2dsprite[i>>3]&pow2char[i&7])
+            if (bitmap_test(show2dsprite, i))
                 highlight[highlightcnt++] = i+16384;
         }
         else
-            show2dsprite[i>>3] &= ~pow2char[i&7];
+            bitmap_clear(show2dsprite, i);
 
     if (highlightcnt == 0)
         highlightcnt = -1;
@@ -2374,7 +2374,7 @@ void update_highlightsector(void)
 
     highlightsectorcnt = 0;
     for (i=0; i<numsectors; i++)
-        if (hlsectorbitmap[i>>3]&pow2char[i&7])
+        if (bitmap_test(hlsectorbitmap, i))
         {
             highlightsector[highlightsectorcnt++] = i;
             minhlsectorfloorz = min(minhlsectorfloorz, TrackerCast(sector[i].floorz));
@@ -2635,7 +2635,7 @@ static int32_t trace_loop(int32_t j, uint8_t *visitedwall, int16_t *ignore_ret, 
     UNREFERENCED_PARAMETER(trace_loop_yaxcf);
 #endif
 
-    if (wall[j].nextwall>=0 || (visitedwall[j>>3]&pow2char[j&7]))
+    if (wall[j].nextwall>=0 || bitmap_test(visitedwall, j))
         return 0;
 
     n=2*MAXWALLS;  // simple inf loop check
@@ -2654,9 +2654,9 @@ static int32_t trace_loop(int32_t j, uint8_t *visitedwall, int16_t *ignore_ret, 
 
     do
     {
-        if (j!=refwall && visitedwall[j>>3]&pow2char[j&7])
+        if (j!=refwall && bitmap_test(visitedwall, j))
             ignore = 1;
-        visitedwall[j>>3] |= pow2char[j&7];
+        bitmap_set(visitedwall, j);
 
         if (ignore_ret)
         {
@@ -2867,7 +2867,7 @@ static int32_t sectors_components(int16_t hlsectcnt, const int16_t *hlsector, in
     for (k=1; k<hlsectcnt; k++)
     {
         j = hlsector[k];
-        if ((collsectbitmap[0][j>>3]&pow2char[j&7])==0)
+        if (!bitmap_test(collsectbitmap[0], j))
         {
             // sector j not collected --> more than 1 conn. comp.
             collect_sectors1(collsectlist[1], collsectbitmap[1], &collnumsects[1],
@@ -2882,7 +2882,7 @@ static int32_t sectors_components(int16_t hlsectcnt, const int16_t *hlsector, in
     for (k=0; k<hlsectcnt; k++)
     {
         j = hlsector[k];
-        tmp = (((collsectbitmap[0][j>>3]&pow2char[j&7])!=0) + (((collsectbitmap[1][j>>3]&pow2char[j&7])!=0)<<1));
+        tmp = bitmap_test(collsectbitmap[0], j) + (bitmap_test(collsectbitmap[1], j)<<1);
 
         if (tmp==3)
             return -1;  // components only weakly connected
@@ -2932,7 +2932,7 @@ void SetFirstWall(int32_t sectnum, int32_t wallnum, int32_t alsoynw)
         int16_t cf;
 
         for (i=0; i<numwalls; i++)
-            editwall[i>>3] &= ~pow2char[i&7];
+            bitmap_clear(editwall, i);
 
         for (cf=0; cf<2; cf++)
         {
@@ -2945,14 +2945,14 @@ void SetFirstWall(int32_t sectnum, int32_t wallnum, int32_t alsoynw)
                 tempwall = yax_getnextwall(tempwall, cf);
                 if (tempwall < 0)
                     break;  // corrupt!
-                editwall[tempwall>>3] |= 1<<(tempwall&7);
+                bitmap_set(editwall, tempwall);
             }
         }
 
         for (i=0; i<numsectors; i++)
             for (WALLS_OF_SECTOR(i, j))
             {
-                if (editwall[j>>3]&pow2char[j&7])
+                if (bitmap_test(editwall, j))
                 {
                     setfirstwall(i, j);
                     k++;
@@ -2993,7 +2993,7 @@ void handlesecthighlight1(int32_t i, int32_t sub, int32_t nograycheck)
 
     if (sub)
     {
-        hlsectorbitmap[i>>3] &= ~pow2char[i&7];
+        bitmap_clear(hlsectorbitmap, i);
         for (j=sector[i].wallptr; j<sector[i].wallptr+sector[i].wallnum; j++)
         {
             if (wall[j].nextwall >= 0)
@@ -3003,8 +3003,8 @@ void handlesecthighlight1(int32_t i, int32_t sub, int32_t nograycheck)
     }
     else
     {
-        if (nograycheck || (graysectbitmap[i>>3]&pow2char[i&7])==0)
-            hlsectorbitmap[i>>3] |= pow2char[i&7];
+        if (nograycheck || !bitmap_test(graysectbitmap, i))
+            bitmap_set(hlsectorbitmap, i);
     }
 }
 
@@ -3023,19 +3023,19 @@ static int32_t hl_all_bunch_sectors_p()
         {
             yax_getbunches(highlightsector[i], &cb, &fb);
             if (cb>=0)
-                havebunch[cb>>3] |= pow2char[cb&7];
+                bitmap_set(havebunch, cb);
             if (fb>=0)
-                havebunch[fb>>3] |= pow2char[fb&7];
+                bitmap_set(havebunch, fb);
         }
 
         for (i=0; i<numyaxbunches; i++)
         {
-            if ((havebunch[i>>3] & pow2char[i&7])==0)
+            if (!bitmap_test(havebunch, i))
                 continue;
 
             for (cf=0; cf<2; cf++)
                 for (SECTORS_OF_BUNCH(i,cf, j))
-                    if ((hlsectorbitmap[j>>3]&pow2char[j&7])==0)
+                    if (!bitmap_test(hlsectorbitmap, j))
                         return 0;
         }
     }
@@ -3089,18 +3089,18 @@ static void M32_MarkPointInsertion(int32_t thewall)
 
     // round 1
     for (YAX_ITER_WALLS(thewall, i, tmpcf))
-        editwall[i>>3] |= 1<<(i&7);
+        bitmap_set(editwall, i);
     if (nextw >= 0)
         for (YAX_ITER_WALLS(nextw, i, tmpcf))
-                editwall[i>>3] |= 1<<(i&7);
+                bitmap_set(editwall, i);
     // round 2 (enough?)
     for (YAX_ITER_WALLS(thewall, i, tmpcf))
-        if (wall[i].nextwall >= 0 && (editwall[wall[i].nextwall>>3]&pow2char[wall[i].nextwall&7])==0)
-            editwall[wall[i].nextwall>>3] |= 1<<(wall[i].nextwall&7);
+        if (wall[i].nextwall >= 0 && bitmap_test(editwall, wall[i].nextwall)==0)
+            bitmap_set(editwall, wall[i].nextwall);
     if (nextw >= 0)
         for (YAX_ITER_WALLS(nextw, i, tmpcf))
-            if (wall[i].nextwall >= 0 && (editwall[wall[i].nextwall>>3]&pow2char[wall[i].nextwall&7])==0)
-                editwall[wall[i].nextwall>>3] |= 1<<(wall[i].nextwall&7);
+            if (wall[i].nextwall >= 0 && bitmap_test(editwall, wall[i].nextwall)==0)
+                bitmap_set(editwall, wall[i].nextwall);
 }
 #endif
 
@@ -3122,17 +3122,17 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
     {
         // yax'ed wall -- first find out which walls are affected
         for (i=0; i<numwalls; i++)
-            editwall[i>>3] &= ~pow2char[i&7];
+            bitmap_clear(editwall, i);
 
         M32_MarkPointInsertion(thewall);
 
         for (i=0; i < numwalls; i++)
-            if (editwall[i>>3]&pow2char[i&7])
+            if (bitmap_test(editwall, i))
                 M32_MarkPointInsertion(i);
 
         j = 0;
         for (i=0; i<numwalls; i++)
-            j += !!(editwall[i>>3]&pow2char[i&7]);
+            j += !!(bitmap_test(editwall, i));
         if (max(numwalls,onewnumwalls)+j > MAXWALLS)
         {
             return 0;  // no points inserted, would exceed limits
@@ -3142,7 +3142,7 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
         m = 0;
         for (i=0; i<numwalls /* rises with ins. */; i++)
         {
-            if (editwall[i>>3]&pow2char[i&7])
+            if (bitmap_test(editwall, i))
                 if (wall[i].nextwall<0 || i<wall[i].nextwall) // || !(NEXTWALL(i).cstat&(1<<14)) ??
                 {
                     m += insertpoint(i, dax,day, mapwallnum);
@@ -3151,9 +3151,9 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
 
         for (i=0; i<numwalls; i++)
         {
-            if (editwall[i>>3]&pow2char[i&7])
+            if (bitmap_test(editwall, i))
             {
-                editwall[i>>3] &= ~pow2char[i&7];
+                bitmap_clear(editwall, i);
                 k = yax_getnextwall(i+1, YAX_CEILING);
                 if (k >= 0)
                     yax_setnextwall(i+1, YAX_CEILING, k+1);
@@ -3459,7 +3459,7 @@ static void drawspritelabel(int i)
     int bordercol = blocking ? editorcolors[5] : col;
 
     // group selection
-    if (show2dsprite[i>>3]&pow2char[i&7])
+    if (bitmap_test(show2dsprite, i))
     {
         bordercol = editorcolors[14];
         col = bordercol - (M32_THROB>>1);
@@ -3496,7 +3496,7 @@ static void maybedeletewalls(int32_t dax, int32_t day)
         for (int i=numwalls-1; i>=0; i--)
         {
             if (runi==0)
-                editwall[i>>3] &= ~pow2char[i&7];;
+                bitmap_clear(editwall, i);
 
             if (wall[i].x == POINT2(i).x && wall[i].y == POINT2(i).y)
             {
@@ -3997,7 +3997,7 @@ skipinput:
                 for (i=0; i<numsectors; i++)
                 {
                     YAX_SKIPSECTOR(i);
-                    show2dsector[i>>3] |= pow2char[i&7];
+                    bitmap_set(show2dsector, i);
                 }
 
                 videoSetViewableArea(0, 0, xdim-1, ydim16-1);
@@ -4086,7 +4086,7 @@ skipinput:
                 if (newnumwalls >= 0)
                 {
                     for (i=newnumwalls; i>=numwalls_bak; i--)
-                        editwall[i>>3] |= 1<<(i&7);;
+                        bitmap_set(editwall, i);;
                 }
 
                 i = numwalls-1;
@@ -4100,7 +4100,7 @@ skipinput:
                     if (j>=0 && sector[j].wallptr > i)
                         j--;
 
-                    if (zoom < 768 && !(editwall[i>>3]&pow2char[i&7]))
+                    if (zoom < 768 && !(bitmap_test(editwall, i)))
                         continue;
 
                     YAX_SKIPWALL(i);
@@ -4157,7 +4157,7 @@ skipinput:
             if (highlightsectorcnt >= 0)
             {
                 for (i=0; i<numsectors; i++)
-                    if (hlsectorbitmap[i>>3]&pow2char[i&7])
+                    if (bitmap_test(hlsectorbitmap, i))
                         fillsector(i, -1);
             }
 
@@ -4258,7 +4258,7 @@ skipinput:
                                 if ((highlight[i]&16384)==0)
                                 {
                                     walltype const * const wal = &wall[highlight[i]];
-                                    const int32_t p2=wal->point2, hlp=(show2dwall[p2>>3]&pow2char[p2&7]);
+                                    const int32_t p2=wal->point2, hlp=bitmap_test(show2dwall, p2);
                                     vec3_t v1 = { x, y, 0 }, v2 = { wall[p2].x, wall[p2].y, 0 };
 
                                     isc_transform(&v2.x, &v2.y);
@@ -5140,7 +5140,7 @@ rotate_hlsect_out:
                     if (i < j)
                         j = i;
 
-                    if ((show2dwall[i>>3]&pow2char[i&7])==0)
+                    if ((bitmap_test(show2dwall, i))==0)
                     {
                         message("All loop points must be highlighted to punch");
                         goto end_yax;
@@ -5354,9 +5354,9 @@ end_yax: ;
                             do
                             {
                                 if (!sub)
-                                    show2dwall[i>>3] |= pow2char[i&7];
+                                    bitmap_set(show2dwall, i);
                                 else
-                                    show2dwall[i>>3] &= ~pow2char[i&7];
+                                    bitmap_clear(show2dwall, i);
 
                                 // XXX: this selects too many walls, need something more like
                                 //      those of dragpoint() -- could be still too many for
@@ -5365,9 +5365,9 @@ end_yax: ;
                                     if (j!=i && wall[j].x==wall[i].x && wall[j].y==wall[i].y)
                                     {
                                         if (!sub)
-                                            show2dwall[j>>3] |= pow2char[j&7];
+                                            bitmap_set(show2dwall, j);
                                         else
-                                            show2dwall[j>>3] &= ~pow2char[j&7];
+                                            bitmap_clear(show2dwall, j);
                                     }
 
                                 i = wall[i].point2;
@@ -5389,7 +5389,7 @@ end_yax: ;
                         }
 
                         for (i=0; i<numwalls; i++)
-                            editwall[i>>3] &= ~pow2char[i&7];;
+                            bitmap_clear(editwall, i);
 
                         for (i=0; i<numwalls; i++)
                         {
@@ -5425,18 +5425,18 @@ end_yax: ;
                                         accum_dragged_verts = 1;
                                     }
                                     else
-                                        show2dwall[i>>3] |= pow2char[i&7];
+                                        bitmap_set(show2dwall, i);
                                 }
                                 else
-                                    show2dwall[i>>3] &= ~pow2char[i&7];
+                                    bitmap_clear(show2dwall, i);
                             }
                         }
 
                         if (!sub && (numgraysects > 0 || m32_sideview))
                         {
                             for (i=0; i<numwalls; i++)
-                                if (editwall[i>>3]&pow2char[i&7])
-                                    show2dwall[i>>3] |= pow2char[i&7];
+                                if (bitmap_test(editwall, i))
+                                    bitmap_set(show2dwall, i);
                         }
 
                         for (i=0; i<MAXSPRITES; i++)
@@ -5467,17 +5467,17 @@ end_yax: ;
                                 if (!sub)
                                 {
                                     if (sprite[i].sectnum >= 0)  // don't allow to select sprites in null space
-                                        show2dsprite[i>>3] |= pow2char[i&7];
+                                        bitmap_set(show2dsprite, i);
                                 }
                                 else
-                                    show2dsprite[i>>3] &= ~pow2char[i&7];
+                                    bitmap_clear(show2dsprite, i);
                             }
                         }
 
                         update_highlight();
 
                         for (i=0; i<numwalls; i++)
-                            editwall[i>>3] &= ~pow2char[i&7];
+                            bitmap_clear(editwall, i);
                     }
                 }
             }
@@ -5792,10 +5792,10 @@ end_autoredwall:
 #ifdef YAX_ENABLE
                             if (bunchsel!=-1 && (fb = yax_getbunch(i, YAX_FLOOR))>=0)
                             {
-                                if ((sub || (graysectbitmap[i>>3]&pow2char[i&7])==0) &&
-                                        (bunchbitmap[fb>>3]&pow2char[fb&7])==0)
+                                if ((sub || !bitmap_test(graysectbitmap, i)) &&
+                                        !bitmap_test(bunchbitmap, fb))
                                 {
-                                    bunchbitmap[fb>>3] |= pow2char[fb&7];
+                                    bitmap_set(bunchbitmap, fb);
                                     for (SECTORS_OF_BUNCH(fb, bunchsel, j))
                                         handlesecthighlight1(j, sub, 1);
                                 }
@@ -6049,7 +6049,7 @@ end_after_dragging:
 
                             dragpoint(pointhighlight,dax,day,2);
                             int wn = lastwall(pointhighlight);
-                            editwall[wn>>3] |= pow2char[wn&7];
+                            bitmap_set(editwall, wn);
                         }
                         else if ((pointhighlight&0xc000) == 16384)
                         {
@@ -6374,7 +6374,7 @@ end_point_dragging:
                 for (k=0; k<highlightsectorcnt; k++)
                 {
                     j = highlightsector[k];
-                    comp = !!(collsectbitmap[1][j>>3]&pow2char[j&7]);
+                    comp = !!bitmap_test(collsectbitmap[1], j);
 
                     for (cf=0; cf<2; cf++)
                     {
@@ -6568,7 +6568,7 @@ end_point_dragging:
                         {
                             int32_t movecol = movestat==0 ? 159 : editorcolors[11];
                             for (i=0; i<numsectors; i++)
-                                if (tcollbitmap[i>>3]&pow2char[i&7])
+                                if (bitmap_test(tcollbitmap, i))
                                     fillsector_notrans(i, editorcolors[12]);
 
                             fade_editor_screen(editorcolors[12] | (movecol<<8));
@@ -6911,7 +6911,7 @@ end_point_dragging:
 
 
                 for (i=0; i<numwalls; i++)
-                    editwall[i>>3] &= ~pow2char[i&7];
+                    bitmap_clear(editwall, i);
 
                 newnumwalls = numwalls;
 
@@ -6921,12 +6921,12 @@ end_point_dragging:
                     {
                         int32_t loopnum=MAXWALLS*2;
 
-                        if (editwall[j>>3]&pow2char[j&7])
+                        if (bitmap_test(editwall, j))
                             continue;
 
                         if (wall[j].nextsector == joinsector[1-k])
                         {
-                            editwall[j>>3] |= 1<<(j&7);
+                            bitmap_set(editwall, j);
                             continue;
                         }
 
@@ -6942,7 +6942,7 @@ end_point_dragging:
                                 newnumwalls = -1;
 
                                 for (i=0; i<numwalls; i++)
-                                    editwall[i>>3] &= ~pow2char[i&7];
+                                    bitmap_clear(editwall, i);
 
                                 goto end_join_sectors;
                             }
@@ -6954,7 +6954,7 @@ end_point_dragging:
                             wall[newnumwalls].point2 = newnumwalls+1;
                             newnumwalls++;
 
-                            editwall[i>>3] |= 1<<(i&7);
+                            bitmap_set(editwall, i);
 
                             i = wall[i].point2;
                             if (wall[i].nextsector == joinsector[1-joink])
@@ -6965,7 +6965,7 @@ end_point_dragging:
 
                             loopnum--;
                         }
-                        while (loopnum>0 && ((editwall[i>>3]&pow2char[i&7])==0)
+                        while (loopnum>0 && ((bitmap_test(editwall, i))==0)
                                    && (wall[i].nextsector != joinsector[1-joink]));
 
                         wall[newnumwalls-1].point2 = m;
@@ -7882,8 +7882,8 @@ end_space_handling:
                         {
                             YAX_SKIPWALL(j);
 
-                            if ((touchedwall[j >> 3] & pow2char[j & 7])
-                                || (wall[j].nextwall >= 0 && (touchedwall[wall[j].nextwall >> 3] & pow2char[wall[j].nextwall & 7])))
+                            if (bitmap_test(touchedwall, j)
+                                || (wall[j].nextwall >= 0 && bitmap_test(touchedwall, wall[j].nextwall)))
                                 continue;
 
                             vec2_t pint;
@@ -7894,10 +7894,10 @@ end_space_handling:
                             if (vec2eq(&pint, &wall[j].xy) || vec2eq(&pint, &POINT2(j).xy))
                                 continue;
 
-                            touchedwall[j>>3] |= pow2char[j&7];
+                            bitmap_set(touchedwall, j);
 
                             if (wall[j].nextwall != -1)
-                                touchedwall[wall[j].nextwall>>3] |= pow2char[wall[j].nextwall&7];
+                                bitmap_set(touchedwall, wall[j].nextwall);
 
                             int32_t inspts = M32_InsertPoint(j, pint.x, pint.y, -1, &j);  /* maybe modify j */
 
@@ -7997,14 +7997,14 @@ end_batch_insert_points:
                 if (highlightsectorcnt > 0)
                 {
                     // LShift: force highlighted sector deleting
-                    if (keystatus[sc_LeftShift] || (hlsectorbitmap[i>>3]&pow2char[i&7]))
+                    if (keystatus[sc_LeftShift] || (bitmap_test(hlsectorbitmap, i)))
                     {
                         for (j=highlightsectorcnt-1; j>=0; j--)
                         {
 #ifdef YAX_ENABLE
                             yax_getbunches(highlightsector[j], &cb, &fb);
-                            if (cb>=0) bunchbitmap[cb>>3] |= pow2char[cb&7];
-                            if (fb>=0) bunchbitmap[fb>>3] |= pow2char[fb&7];
+                            if (cb>=0) bitmap_set(bunchbitmap, cb);
+                            if (fb>=0) bitmap_set(bunchbitmap, fb);
 #endif
                             deletesector(highlightsector[j]);
                             for (k=j-1; k>=0; k--)
@@ -8028,8 +8028,8 @@ end_batch_insert_points:
 
 #ifdef YAX_ENABLE
                     yax_getbunches(i, &cb, &fb);
-                    if (cb>=0) bunchbitmap[cb>>3] |= pow2char[cb&7];
-                    if (fb>=0) bunchbitmap[fb>>3] |= pow2char[fb&7];
+                    if (cb>=0) bitmap_set(bunchbitmap, cb);
+                    if (fb>=0) bitmap_set(bunchbitmap, fb);
 #endif
                     deletesector(i);
                     mkonwinvalid();
@@ -8042,9 +8042,9 @@ end_batch_insert_points:
                 for (j=0; j<numsectors; j++)
                 {
                     yax_getbunches(j, &cb, &fb);
-                    if (cb>=0 && (bunchbitmap[cb>>3] & pow2char[cb&7]))
+                    if (cb>=0 && bitmap_test(bunchbitmap, cb))
                         yax_setbunch(j, YAX_CEILING, -1);
-                    if (fb>=0 && (bunchbitmap[fb>>3] & pow2char[fb&7]))
+                    if (fb>=0 && bitmap_test(bunchbitmap, fb))
                         yax_setbunch(j, YAX_FLOOR, -1);
                 }
 #endif
@@ -8869,7 +8869,7 @@ static int32_t getlinehighlight(int32_t xplc, int32_t yplc, int32_t line, int8_t
 
     if (closest>=0 && (j = wall[closest].nextwall) >= 0)
 #ifdef YAX_ENABLE
-    if (m32_sideview || ((graywallbitmap[j>>3]&pow2char[j&7])==0))
+    if (m32_sideview || !bitmap_test(graywallbitmap, j))
 #endif
     {
         //if red line, allow highlighting of both sides
@@ -8967,7 +8967,7 @@ int32_t getpointhighlight(int32_t xplc, int32_t yplc, int32_t point)
 
                 // was (dst <= dist), but this way, when duplicating sprites,
                 // the selected ones are dragged first
-                if (dst < dist || (dst == dist && (show2dsprite[i>>3]&pow2char[i&7])))
+                if (dst < dist || (dst == dist && (bitmap_test(show2dsprite, i))))
                     dist = dst, closest = i+16384;
             }
 
@@ -9120,7 +9120,7 @@ static void do_insertpoint(int32_t w, int32_t dax, int32_t day, int32_t *mapwall
     movewalls(w+1, +1);
     Bmemcpy(&wall[w+1], &wall[w], sizeof(walltype));
 #ifdef YAX_ENABLE
-    editwall[(w+1)>>3] &= ~pow2char[(w+1)&7];
+    bitmap_clear(editwall, w+1);
 #endif
     wall[w].point2 = w+1;
     wall[w+1].x = dax;
@@ -9325,8 +9325,8 @@ static int32_t movewalls(int32_t start, int32_t offs)
         for (i=start; i<numwalls+offs; i++)
         {
             Bmemcpy(&wall[i], &wall[i-offs], sizeof(walltype));
-            int const editw = !!(editwall[(i-offs)>>3]&pow2char[(i-offs)&7]);
-            editwall[i>>3] &= ~pow2char[i&7];
+            int const editw = !!(bitmap_test(editwall, i-offs));
+            bitmap_clear(editwall, i);
             editwall[i>>3] |= editw<<(i&7);
         }
     }
@@ -9335,8 +9335,8 @@ static int32_t movewalls(int32_t start, int32_t offs)
         for (i=numwalls+offs-1; i>=start+offs; i--)
         {
             Bmemcpy(&wall[i], &wall[i-offs], sizeof(walltype));
-            int const editw = !!(editwall[(i-offs)>>3]&pow2char[(i-offs)&7]);
-            editwall[i>>3] &= ~pow2char[i&7];
+            int const editw = !!(bitmap_test(editwall, i-offs));
+            bitmap_clear(editwall, i);
             editwall[i>>3] |= editw<<(i&7);
         }
 
@@ -11118,7 +11118,7 @@ int32_t AutoAlignWalls(int32_t w0, uint32_t flags, int32_t nrecurs)
     {
         //clear visited bits
         Bmemset(visited, 0, sizeof(visited));
-        visited[w0>>3] |= pow2char[w0&7];
+        bitmap_set(visited, w0);
         numaligned = 0;
         lenrepquot = getlenbyrep(wallength(w0), wall[w0].xrepeat);
         wall0 = w0;
@@ -11134,10 +11134,10 @@ int32_t AutoAlignWalls(int32_t w0, uint32_t flags, int32_t nrecurs)
         int const w1b = AlignGetWall(botswap, w1);
 
         //break if this wall would connect us in a loop
-        if (visited[w1>>3]&pow2char[w1&7])
+        if (bitmap_test(visited, w1))
             break;
 
-        visited[w1>>3] |= pow2char[w1&7];
+        bitmap_set(visited, w1);
 
 #ifdef YAX_ENABLE
         if (flags&8)
@@ -11147,7 +11147,7 @@ int32_t AutoAlignWalls(int32_t w0, uint32_t flags, int32_t nrecurs)
                 int const ynw = yax_getnextwall(w0, cf);
 
                 if (ynw >= 0 && wall[ynw].picnum == tilenum && ((wall[ynw].cstat & CSTAT_WALL_ROTATE_90) == rotated)
-                    && (visited[ynw>>3] & pow2char[ynw&7]) == 0)
+                    && !bitmap_test(visited, ynw))
                 {
                     wall[ynw].xrepeat  = wall[w0].xrepeat;
                     wall[ynw].xpanning = wall[w0].xpanning;

@@ -5471,7 +5471,7 @@ static void polymost_drawalls(int32_t const bunch)
 #ifdef YAX_ENABLE
         // this is to prevent double-drawing of translucent masked floors
         if (g_nodraw || r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->floorstat&256)==0 ||
-            yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+            yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
         {
 #endif
         if (!(globalorientation&1))
@@ -5889,7 +5889,7 @@ static void polymost_drawalls(int32_t const bunch)
 #ifdef YAX_ENABLE
         // this is to prevent double-drawing of translucent masked ceilings
         if (g_nodraw || r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->ceilingstat&256)==0 ||
-            yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+            yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
         {
 #endif
         if (!(globalorientation&1))
@@ -6271,10 +6271,10 @@ static void polymost_drawalls(int32_t const bunch)
             for (i=0; i<2; i++)
                 if (checkcf&(1<<i))
                 {
-                    if ((haveymost[bn[i]>>3]&pow2char[bn[i]&7])==0)
+                    if (!bitmap_test(haveymost, bn[i]))
                     {
                         // init yax *most arrays for that bunch
-                        haveymost[bn[i]>>3] |= pow2char[bn[i]&7];
+                        bitmap_set(haveymost, bn[i]);
                         yax_vsp[bn[i]*2][1].x = xbl;
                         yax_vsp[bn[i]*2][2].x = xbr;
                         yax_vsp[bn[i]*2][1].cy[0] = xbb;
@@ -6508,7 +6508,7 @@ static void polymost_drawalls(int32_t const bunch)
         domostpolymethod = DAMETH_NOMASK;
 
         if (nextsectnum >= 0)
-            if ((!(gotsector[nextsectnum>>3]&pow2char[nextsectnum&7])) && testvisiblemost(x0,x1))
+            if (!bitmap_test(gotsector, nextsectnum) && testvisiblemost(x0,x1))
                 polymost_scansector(nextsectnum);
     }
 }
@@ -6543,7 +6543,7 @@ void polymost_scansector(int32_t sectnum)
     if (sectnum < 0) return;
 
     if (automapping)
-        show2dsector[sectnum>>3] |= pow2char[sectnum&7];
+        bitmap_set(show2dsector, sectnum);
 
     sectorborder[0] = sectnum;
     int sectorbordercnt = 1;
@@ -6575,7 +6575,7 @@ void polymost_scansector(int32_t sectnum)
             }
         }
 
-        gotsector[sectnum>>3] |= pow2char[sectnum&7];
+        bitmap_set(gotsector, sectnum);
 
         int const bunchfrst = numbunches;
         int const onumscans = numscans;
@@ -6602,7 +6602,7 @@ void polymost_scansector(int32_t sectnum)
 #ifdef YAX_ENABLE
             if (yax_nomaskpass==0 || !yax_isislandwall(z, !yax_globalcf) || (yax_nomaskdidit=1, 0))
 #endif
-            if ((gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
+            if (!bitmap_test(gotsector, nextsectnum))
             {
                 double const d = fp1.x*fp2.y - fp2.x*fp1.y;
                 vec2d_t const p1 = { fp2.x-fp1.x, fp2.y-fp1.y };
@@ -6616,7 +6616,7 @@ void polymost_scansector(int32_t sectnum)
                     )
                 {
                     sectorborder[sectorbordercnt++] = nextsectnum;
-                    gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
+                    bitmap_set(gotsector, nextsectnum);
                 }
             }
 
@@ -7117,7 +7117,7 @@ void polymost_drawrooms()
         if (automapping)
         {
             for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
-                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
+                bitmap_set(show2dwall, thewall[z]);
         }
 
         numbunches--;
@@ -8832,7 +8832,7 @@ void polymost_drawsprite(int32_t snum)
     }
 
     if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
-        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+        bitmap_set(show2dsprite, spritenum);
 
 _drawsprite_return:
     polymost_identityrotmat();
@@ -9634,7 +9634,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     usehightile = usehitile && usehightile;
     pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
     if (usehightile)
-        loadedhitile[wallnum>>3] |= pow2char[wallnum&7];
+        bitmap_set(loadedhitile, wallnum);
     usehightile = ousehightile;
 
     if (pth)

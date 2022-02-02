@@ -909,7 +909,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
     int64_t const dy = wal->y-wall[p2].y;
     int64_t const dist = dx*dx + dy*dy;
 
-    int const bothSidesHighlighted = ((show2dwall[i>>3]&pow2char[i&7]) && (show2dwall[p2>>3]&pow2char[p2&7]));
+    int const bothSidesHighlighted = bitmap_test(show2dwall, i) && bitmap_test(show2dwall, p2);
 
     if (dist > INT32_MAX)
     {
@@ -1016,7 +1016,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
         }
     }
 
-    if ((zoome >= 256 && editstatus == 1) || show2dwall[i>>3]&pow2char[i&7])
+    if ((zoome >= 256 && editstatus == 1) || bitmap_test(show2dwall, i))
         if ((halfxdim16+x1 >= 2) && (halfxdim16+x1 <= xdim-3) &&
             (midydim16+y1 >= 2) && (midydim16+y1 <= ydim16-3))
         {
@@ -1033,7 +1033,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
                     pointsize++;
             }
 
-            if (show2dwall[i>>3]&pow2char[i&7])
+            if (bitmap_test(show2dwall, i))
                 col = editorcolors[14] - (M32_THROB>>1);
 
             if (m32_sideview)
@@ -1121,7 +1121,7 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
         }
         else // if (highlightcnt > 0)
         {
-            if (show2dsprite[j>>3]&pow2char[j&7])
+            if (bitmap_test(show2dsprite, j))
                 col = editorcolors[14] - (M32_THROB>>1);
         }
     }
@@ -1295,10 +1295,10 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
         for (i=0; i<numwalls; i++)
         {
             int32_t j = wall[i].nextwall;
-            if ((graywallbitmap[i>>3]&pow2char[i&7]) && (j < 0 || (graywallbitmap[j>>3]&pow2char[j&7])))
-                graybitmap[i>>3] |= pow2char[i&7];
+            if (bitmap_test(graywallbitmap, i) && (j < 0 || bitmap_test(graywallbitmap, j)))
+                bitmap_set(graybitmap, i);
             else
-                graybitmap[i>>3] &= ~pow2char[i&7];
+                bitmap_clear(graybitmap, i);
         }
     }
 
@@ -1310,11 +1310,11 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
 #else
         if (alwaysshowgray)
             for (i=numwalls-1; i>=0; i--)
-                if (graybitmap[i>>3]&pow2char[i&7])
+                if (bitmap_test(graybitmap, i))
                     editorDraw2dWall(i, posxe, posye, posze, zoome, 1+2);
 
         for (i=numwalls-1; i>=0; i--)
-            if ((graybitmap[i>>3]&pow2char[i&7])==0)
+            if (!bitmap_test(graybitmap, i))
                 editorDraw2dWall(i, posxe, posye, posze, zoome, 2);
 #endif
     }
@@ -1344,7 +1344,7 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
             if (sprite[j].statnum<MAXSTATUS)
             {
                 // if sprite is highlighted, always draw it
-                if ((show2dsprite[j>>3]&pow2char[j&7])==0)
+                if (!bitmap_test(show2dsprite, j))
                 {
                     if (!m32_sideview && sprite[j].sectnum >= 0)
                         YAX_SKIPSECTOR(sprite[j].sectnum);
@@ -1373,8 +1373,8 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
             int32_t j = m32_wallsprite[i];
             if (j<MAXWALLS)
             {
-                if (alwaysshowgray || !(graybitmap[j>>3]&pow2char[j&7]))
-                    editorDraw2dWall(j, posxe, posye, posze, zoome, !!(graybitmap[j>>3]&pow2char[j&7]));
+                if (alwaysshowgray || !bitmap_test(graybitmap, j))
+                    editorDraw2dWall(j, posxe, posye, posze, zoome, !!bitmap_test(graybitmap, j));
             }
             else
             {

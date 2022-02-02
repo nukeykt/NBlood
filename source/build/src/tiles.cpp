@@ -206,7 +206,7 @@ void artSetupMapArt(const char *filename)
 
 void tileSetupDummy(int32_t const tile)
 {
-    faketile[tile>>3] |= pow2char[tile&7];
+    bitmap_set(faketile, tile);
     DO_FREE_AND_NULL(faketiledata[tile]);
 }
 
@@ -219,7 +219,7 @@ static void tileSetDataSafe(int32_t const tile, int32_t tsiz, char const * const
     {
         faketilesize[tile] = tsiz;
         faketiledata[tile] = (char *) Xrealloc(newtile, tsiz);
-        faketile[tile>>3] |= pow2char[tile&7];
+        bitmap_set(faketile, tile);
         tilefilenum[tile] = MAXARTFILES_TOTAL;
     }
     else
@@ -237,13 +237,13 @@ void tileSetData(int32_t const tile, int32_t tsiz, char const * const buffer)
     {
         faketilesize[tile] = tsiz;
         faketiledata[tile] = (char *) Xrealloc(faketiledata[tile], tsiz);
-        faketile[tile>>3] |= pow2char[tile&7];
+        bitmap_set(faketile, tile);
         tilefilenum[tile] = MAXARTFILES_TOTAL;
     }
     else
     {
         DO_FREE_AND_NULL(faketiledata[tile]);
-        faketile[tile>>3] &= ~pow2char[tile&7];
+        bitmap_clear(faketile, tile);
     }
 }
 
@@ -257,7 +257,7 @@ static void tileSoftDelete(int32_t const tile)
     walock[tile] = CACHE1D_FREE;
     waloff[tile] = 0;
 
-    faketile[tile>>3] &= ~pow2char[tile&7];
+    bitmap_clear(faketile, tile);
 
     Bmemset(&picanm[tile], 0, sizeof(picanm_t));
 }
@@ -513,7 +513,7 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
             {
                 // Tiles having dummytile replacements or those that are
                 // cache1d-locked can't be replaced.
-                if (faketile[i>>3] & pow2char[i&7] || walock[i] >= CACHE1D_LOCKED)
+                if (bitmap_test(faketile, i) || walock[i] >= CACHE1D_LOCKED)
                 {
                     LOG_F(WARNING, "Per-map .art file could not be loaded %s: tile %d is locked by %s.", fn, i, walock[i] >= CACHE1D_LOCKED ? "cache1d" : "dummytile");
                     kclose(fil);
@@ -677,7 +677,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
     int const tfn = tilefilenum[tilenume];
 
     // dummy tiles for highres replacements and tilefromtexture definitions
-    if (faketile[tilenume>>3] & pow2char[tilenume&7])
+    if (bitmap_test(faketile, tilenume))
     {
         if (faketiledata[tilenume] != NULL)
             LZ4_decompress_safe(faketiledata[tilenume], buffer, faketilesize[tilenume], dasiz);

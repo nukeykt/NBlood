@@ -376,9 +376,8 @@ void yax_updategrays(int32_t posze)
 #endif
         // update grayouts due to editorzrange
         keep &= (sector[i].ceilingz >= editorzrange[0] && sector[i].floorz <= editorzrange[1]);
-
         if (!keep)  // outside bounds, gray out!
-            graysectbitmap[i>>3] |= pow2char[i&7];
+            bitmap_set(graysectbitmap, i);
     }
 
 #ifdef YAX_ENABLE
@@ -386,18 +385,18 @@ void yax_updategrays(int32_t posze)
     {
         for (i=0; i<numsectors; i++)
             if (!(mingoodz <= sector[i].ceilingz && sector[i].floorz <= maxgoodz))
-                graysectbitmap[i>>3] |= pow2char[i&7];
+                bitmap_set(graysectbitmap, i);
     }
 #endif
 
     numgraysects = 0;
     for (i=0; i<numsectors; i++)
     {
-        if (graysectbitmap[i>>3]&pow2char[i&7])
+        if (bitmap_test(graysectbitmap, i))
         {
             numgraysects++;
             for (j=sector[i].wallptr; j<sector[i].wallptr+sector[i].wallnum; j++)
-                graywallbitmap[j>>3] |= pow2char[j&7];
+                bitmap_set(graywallbitmap, j);
         }
     }
 }
@@ -620,14 +619,14 @@ void yax_update(int32_t resetstat)
         {
             yax_getbunches(i, &cb, &fb);
             if (cb>=0)
-                havebunch[cb>>3] |= pow2char[cb&7];
+                bitmap_set(havebunch, cb);
             if (fb>=0)
-                havebunch[fb>>3] |= pow2char[fb&7];
+                bitmap_set(havebunch, fb);
         }
 
         for (i=0; i<YAX_MAXBUNCHES; i++)
         {
-            if ((havebunch[i>>3]&pow2char[i&7])==0)
+            if (bitmap_test(havebunch, i)==0)
             {
                 bunchmap[i] = 255;
                 dasub++;
@@ -999,13 +998,13 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 
             for (i=0; i<numsectors; i++)
             {
-                if (!(gotsector[i>>3]&pow2char[i&7]))
+                if (!bitmap_test(gotsector, i))
                     continue;
 
                 j = yax_getbunch(i, cf);
-                if (j >= 0 && !(havebunch[j>>3]&pow2char[j&7]))
+                if (j >= 0 && !bitmap_test(havebunch, j))
                 {
-                    if (videoGetRenderMode() == REND_CLASSIC && (haveymost[j>>3]&pow2char[j&7])==0)
+                    if (videoGetRenderMode() == REND_CLASSIC && bitmap_test(haveymost, j)==0)
                     {
                         yaxdebug("%s, l %d: skipped bunch %d (no *most)", cf?"v":"^", lev, j);
                         continue;
@@ -1015,7 +1014,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                             (cf==0 && globalposz >= sector[i].ceilingz) ||
                             (cf==1 && globalposz <= sector[i].floorz))
                     {
-                        havebunch[j>>3] |= pow2char[j&7];
+                        bitmap_set(havebunch, j);
                         bunches[cf][bnchnum[cf]++] = j;
                         bnchend[lev][cf]++;
                         numhere++;
@@ -1762,7 +1761,7 @@ static void classicScanSector(int16_t startsectnum)
         return;
 
     if (automapping)
-        show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
+        bitmap_set(show2dsector, startsectnum);
 
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;
@@ -1788,8 +1787,8 @@ static void classicScanSector(int16_t startsectnum)
                     if (renderAddTsprite(i, sectnum))
                         break;
         }
-
-        gotsector[sectnum>>3] |= pow2char[sectnum&7];
+        
+        bitmap_set(gotsector, sectnum);
 
         const int32_t onumbunches = numbunches;
         const int32_t onumscans = numscans;
@@ -1820,7 +1819,7 @@ static void classicScanSector(int16_t startsectnum)
 #ifdef YAX_ENABLE
                 if (yax_nomaskpass==0 || !yax_isislandwall(w, !yax_globalcf) || (yax_nomaskdidit=1, 0))
 #endif
-                if ((gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
+                if (bitmap_test(gotsector, nextsectnum) == 0)
                 {
                     // OV: E2L10
                     coord_t temp = (coord_t)x1*y2-(coord_t)x2*y1;
@@ -1833,7 +1832,7 @@ static void classicScanSector(int16_t startsectnum)
                         if (mulscale5(tempint,tempint) <= (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
                         {
                             sectorborder[sectorbordercnt++] = nextsectnum;
-                            gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
+                            bitmap_set(gotsector, nextsectnum);
                         }
                 }
 #endif
@@ -4491,10 +4490,10 @@ static void classicDrawBunches(int32_t bunch)
         for (i=0; i<2; i++)
             if (checkcf&(1<<i))
             {
-                if ((haveymost[bn[i]>>3]&pow2char[bn[i]&7])==0)
+                if (bitmap_test(haveymost, bn[i])==0)
                 {
                     // init yax *most arrays for that bunch
-                    haveymost[bn[i]>>3] |= pow2char[bn[i]&7];
+                    bitmap_set(haveymost, bn[i]);
                     for (x=xdimen*bn[i]; x<xdimen*(bn[i]+1); x++)
                     {
                         yumost[x] = ydimen;
@@ -4533,7 +4532,7 @@ static void classicDrawBunches(int32_t bunch)
 #ifdef YAX_ENABLE
             // this is to prevent double-drawing of translucent masked ceilings
             if (r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->ceilingstat&256)==0 ||
-                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+                yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
 #endif
         {
             if ((sec->ceilingstat&3) == 2)
@@ -4548,7 +4547,7 @@ static void classicDrawBunches(int32_t bunch)
 #ifdef YAX_ENABLE
             // this is to prevent double-drawing of translucent masked floors
             if (r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->floorstat&256)==0 ||
-                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+                yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
 #endif
         {
             if ((sec->floorstat&3) == 2)
@@ -4863,7 +4862,7 @@ static void classicDrawBunches(int32_t bunch)
             if (numhits < 0)
                 return;
 
-            if (!(wal->cstat&32) && (gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
+            if (!(wal->cstat&32) && bitmap_test(gotsector, nextsectnum) == 0)
             {
                 if (umost[x2] < dmost[x2])
                     classicScanSector(nextsectnum);
@@ -6849,7 +6848,7 @@ next_most:
     }
 
     if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
-        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+        bitmap_set(show2dsprite, spritenum);
 }
 
 static void renderDrawSprite(int32_t snum)
@@ -9447,7 +9446,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         if (automapping)
         {
             for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
-                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
+                bitmap_set(show2dwall, thewall[z]);
         }
 
         numbunches--;
@@ -10103,7 +10102,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
     usectorptr_t sec;
 
     for (s=0,sec=(usectorptr_t)&sector[s]; s<numsectors; s++,sec++)
-        if (show2dsector[s>>3]&pow2char[s&7])
+        if (bitmap_test(show2dsector, s))
         {
 #ifdef YAX_ENABLE
             if (yax_getbunch(s, YAX_FLOOR) >= 0 && (sector[s].floorstat&(256+128))==0)
@@ -10168,7 +10167,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
                     tsprite[sortnum++].owner = i;
                 }
             }
-            gotsector[s>>3] |= pow2char[s&7];
+            bitmap_set(gotsector, s);
 
             globalorientation = (int32_t)sec->floorstat;
             if ((globalorientation&1) != 0) continue;
@@ -12478,13 +12477,13 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             wall[w].x = dax;
             wall[w].y = day;
-            walbitmap[w>>3] |= pow2char[w&7];
+            bitmap_set(walbitmap, w);
 
             for (YAX_ITER_WALLS(w, j, tmpcf))
             {
-                if ((walbitmap[j>>3]&pow2char[j&7])==0)
+                if (bitmap_test(walbitmap, j)==0)
                 {
-                    walbitmap[j>>3] |= pow2char[j&7];
+                    bitmap_set(walbitmap, j);
                     yaxwalls[numyaxwalls++] = j;
                 }
             }
@@ -12517,7 +12516,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
                     break;
             }
 
-            if ((walbitmap[w>>3] & pow2char[w&7]))
+            if (bitmap_test(walbitmap, w))
             {
                 if (clockwise)
                     break;
@@ -12534,13 +12533,13 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
         int32_t w;
         // TODO: extern a separate bitmap instead?
         for (w=0; w<numwalls; w++)
-            if (walbitmap[w>>3] & pow2char[w&7])
+            if (bitmap_test(walbitmap, w))
             {
-                editwall[w>>3] |= 1<<(w&7);
+                bitmap_set(editwall, w);
                 if (flags&2)
                 {
                     int wn = lastwall(w);
-                    editwall[wn>>3] |= 1<<(wn&7);
+                    bitmap_set(editwall, wn);
                 }
             }
     }

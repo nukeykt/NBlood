@@ -1146,14 +1146,31 @@ static FORCE_INLINE int nextPow2(int const value)
 
 static CONSTEXPR const char pow2char[8] = {1,2,4,8,16,32,64,128u};
 
-static FORCE_INLINE void bitmap_set(uint8_t *const ptr, int const n) { ptr[n>>3] |= pow2char[n&7]; }
-static FORCE_INLINE void bitmap_clear(uint8_t *const ptr, int const n) { ptr[n>>3] &= ~pow2char[n&7]; }
-static FORCE_INLINE CONSTEXPR char bitmap_test(uint8_t const *const ptr, int const n) { return ptr[n>>3] & pow2char[n&7]; }
+#ifdef __cplusplus
+template <typename T>
+static FORCE_INLINE void bitmap_set(T *const ptr, int const n)
+{
+    EDUKE32_STATIC_ASSERT((sizeof(T) << 3) == CHAR_BIT);
+    ptr[n>>3] |= pow2char[n&7];
+}
+
+template <typename T>
+static FORCE_INLINE void bitmap_clear(T *const ptr, int const n)
+{
+    EDUKE32_STATIC_ASSERT((sizeof(T) << 3) == CHAR_BIT);
+    ptr[n>>3] &= ~pow2char[n&7];
+}
+
+template <typename T>
+static FORCE_INLINE CONSTEXPR bool bitmap_test(T const *const ptr, int const n)
+{
+    EDUKE32_STATIC_ASSERT((sizeof(T) << 3) == CHAR_BIT);
+    return (ptr[n>>3] & pow2char[n&7]) == pow2char[n&7];
+}
 
 ////////// Utility functions //////////
 
 // breadth-first search helpers
-#ifdef __cplusplus
 template <typename T>
 void bfirst_search_init(T *const list, uint8_t *const bitmap, T *const eltnumptr, int const maxelts, int const firstelt)
 {

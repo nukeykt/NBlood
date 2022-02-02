@@ -46,9 +46,9 @@ void paletteInitClosestColorMap(uint8_t const * const pal)
         int32_t const j = (pal1[0]>>FASTPALRIGHTSHIFT)*FASTPALGRIDSIZ*FASTPALGRIDSIZ
             + (pal1[1]>>FASTPALRIGHTSHIFT)*FASTPALGRIDSIZ + (pal1[2]>>FASTPALRIGHTSHIFT)
             + FASTPALGRIDSIZ*FASTPALGRIDSIZ + FASTPALGRIDSIZ + 1;
-        if (colhere[j>>3]&pow2char(j&7)) colnext[i] = colhead[j]; else colnext[i] = -1;
+        if (bitmap_test(colhere, j)) colnext[i] = colhead[j]; else colnext[i] = -1;
         colhead[j] = i;
-        colhere[j>>3] |= pow2char(j&7);
+        bitmap_set(colhere, j);
     }
 
     paletteFlushClosestColor();
@@ -154,7 +154,7 @@ int32_t paletteGetClosestColorWithBlacklistNoCache(int32_t r, int32_t g, int32_t
     {
         int i = colscan[k]+j;
 
-        if ((colhere[i>>3]&pow2char(i&7)) == 0)
+        if (!bitmap_test(colhere, i))
             continue;
 
         i = colhead[i];

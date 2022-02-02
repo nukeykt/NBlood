@@ -710,10 +710,10 @@ const char *ExtGetWallCaption(int16_t wallnum)
 
     Bmemset(tempbuf,0,sizeof(tempbuf));
     
-    if (editwall[wallnum>>3]&pow2char[wallnum&7])
+    if (bitmap_test(editwall, wallnum))
     {
         Bsprintf(tempbuf,"%d", wallength(wallnum));
-        editwall[wallnum>>3] &= ~pow2char[wallnum&7];
+        bitmap_clear(editwall, wallnum);
         return tempbuf;
     }
 
