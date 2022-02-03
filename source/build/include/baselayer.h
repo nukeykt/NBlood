@@ -236,8 +236,8 @@ typedef struct
         uint8_t flags;
         struct
         {
-            int isGameController : 1;
-            int hasRumble        : 1;
+            unsigned int isGameController : 1;
+            unsigned int hasRumble        : 1;
         };
     };
 } controllerinput_t;
