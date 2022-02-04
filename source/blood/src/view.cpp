@@ -1148,7 +1148,8 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
         {
             switch (nTile)
             {
-            default:
+            case 2190:
+            case kSBarNumberHealth:
                 numTile = kSBarNegative;
                 break;
             case 2240:
@@ -1167,6 +1168,8 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
             case kSBarNumberArmor3:
                 numTile = kSBarNegative+5;
                 break;
+            default: // unknown font tile type, skip drawing minus sign
+                continue;
             }
             numScale = nScale/3;
             numY = (y<<16) + (1<<15); // offset to center of number row
