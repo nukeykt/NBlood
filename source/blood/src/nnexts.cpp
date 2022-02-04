@@ -2023,9 +2023,9 @@ void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer) {
                 if (i < 12) pPlayer->ammoCount[i] = 0;
             }
 
-            pPlayer->hasWeapon[1] = true;
-            pPlayer->curWeapon = 0;
-            pPlayer->nextWeapon = 1;
+            pPlayer->hasWeapon[kWeaponPitchfork] = true;
+            pPlayer->curWeapon = kWeaponNone;
+            pPlayer->nextWeapon = kWeaponPitchfork;
 
             WeaponRaise(pPlayer);
             if (pXSource->data2) break;
@@ -2093,7 +2093,7 @@ void trPlayerCtrlGiveStuff(XSPRITE* pXSource, PLAYER* pPlayer, TRPLAYERCTRL* pCt
                     break;
             }
             if (pPlayer->hasWeapon[weapon] && pXSource->data4 == 0) { // switch on it
-                pPlayer->nextWeapon = 0;
+                pPlayer->nextWeapon = kWeaponNone;
 
                 if (pPlayer->sceneQav >= 0 && spriRangeIsFine(pCtrl->qavScene.index)) {
                     XSPRITE* pXScene = &xsprite[sprite[pCtrl->qavScene.index].extra];
@@ -5022,7 +5022,7 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
                 switch (cmd) {
                     case 36:
                         actHealDude(pPlayer->pXSprite, ((pXSprite->data2 > 0) ? ClipHigh(pXSprite->data2, 200) : getDudeInfo(pPlayer->pSprite->type)->startHealth), 200);
-                        pPlayer->curWeapon = 1;
+                        pPlayer->curWeapon = kWeaponPitchfork;
                         break;
                 }
                         

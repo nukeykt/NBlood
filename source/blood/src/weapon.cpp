@@ -1076,7 +1076,7 @@ void ExplodeCan(int, PLAYER *pPlayer)
     evPost(pSprite->index, 3, 0, kCmdOn);
     UseAmmo(pPlayer, 6, gAmmoItemData[0].count);
     StartQAV(pPlayer, 15, -1);
-    pPlayer->curWeapon = 0;
+    pPlayer->curWeapon = kWeaponNone;
     pPlayer->throwPower = 0;
 }
 
@@ -1111,7 +1111,7 @@ void ExplodeBundle(int, PLAYER *pPlayer)
     evPost(pSprite->index, 3, 0, kCmdOn);
     UseAmmo(pPlayer, 5, 1);
     StartQAV(pPlayer, 24, -1, 0);
-    pPlayer->curWeapon = 0;
+    pPlayer->curWeapon = kWeaponNone;
     pPlayer->throwPower = 0;
 }
 
@@ -1517,7 +1517,7 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
             }
         }
         UseAmmo(pPlayer, 9, pPlayer->ammoCount[9]);
-        pPlayer->hasWeapon[10] = 0;
+        pPlayer->hasWeapon[kWeaponVoodoo] = 0;
         pPlayer->weaponState = -1;
     }
 }
@@ -1535,7 +1535,7 @@ void DropVoodoo(int nTrigger, PLAYER *pPlayer)
         evPost(pSprite->index, 3, 90, kCallbackDropVoodoo);
         UseAmmo(pPlayer, 6, gAmmoItemData[0].count);
         UseAmmo(pPlayer, 9, pPlayer->ammoCount[9]);
-        pPlayer->hasWeapon[10] = 0;
+        pPlayer->hasWeapon[kWeaponVoodoo] = 0;
     }
 }
 
@@ -1697,7 +1697,7 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
             pXSprite->data3 = pPlayer->ammoCount[8];
             pPlayer->ammoCount[8] = 0;
         }
-        pPlayer->hasWeapon[9] = 0;
+        pPlayer->hasWeapon[kWeaponLifeLeech] = 0;
     }
 }
 
