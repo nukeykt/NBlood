@@ -1259,6 +1259,12 @@ int A_IncurDamage(int const spriteNum)
         if (pActor->htextra == 0 && STANDALONE_EVAL(false, pActor->htpicnum == SHRINKSPARK) && pSprite->xrepeat < 24)
             return -1;
 
+        int32_t playerDist;
+        int playerNum = A_FindPlayer(pSprite, &playerDist);
+
+        if (VM_OnEvent(EVENT_PREACTORDAMAGE, spriteNum, playerNum, playerDist, 0))
+            return -1;
+
         pSprite->extra -= pActor->htextra;
 
         if ((unsigned)pSprite->owner < MAXSPRITES && sprite[pSprite->owner].statnum < MAXSTATUS && STANDALONE_EVAL(true, pSprite->picnum != RECON))

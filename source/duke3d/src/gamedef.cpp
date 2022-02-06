@@ -1036,6 +1036,7 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_PREUPDATEANGLES",
     "EVENT_POSTUPDATEANGLES",
     "EVENT_GETBONUSTILE",
+    "EVENT_PREACTORDAMAGE",
 };
 
 uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
