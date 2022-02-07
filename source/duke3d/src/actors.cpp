@@ -9215,7 +9215,7 @@ static void G_RecordOldSpritePos(void)
     while (statNum < MAXSTATUS);
 }
 
-static void G_DoEventGame(int const nEventID)
+static void G_DoEventGame(int const nEventID, bool const allowDrawing = true)
 {
     if (!VM_HaveEvent(nEventID))
         return;
@@ -9231,7 +9231,9 @@ static void G_DoEventGame(int const nEventID)
             int32_t   playerDist;
             int const playerNum = A_FindPlayer(&sprite[spriteNum], &playerDist);
             VM_ExecuteEvent(nEventID, spriteNum, playerNum, playerDist);
-            dukeMaybeDrawFrame();
+
+            if (allowDrawing)
+                dukeMaybeDrawFrame();
         }
     }
     while (statNum < MAXSTATUS);
@@ -9247,7 +9249,7 @@ void G_MoveWorld(void)
     MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
 
     VM_OnEvent(EVENT_PREWORLD);
-    G_DoEventGame(EVENT_PREGAME);
+    G_DoEventGame(EVENT_PREGAME, false);
     G_RecordOldSpritePos();
 
     {
