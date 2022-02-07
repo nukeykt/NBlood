@@ -3512,7 +3512,7 @@ badindex:
 
             vInstruction(CON_DEBUG):
                 insptr++;
-                buildprint(*insptr++, "\n");
+                VLOG_F(LOG_VM, "%d", int(*insptr++));
 #ifndef NDEBUG
                 debug_break();
 #endif
@@ -3987,7 +3987,7 @@ badindex:
                                     int const levelNum = ud.volume_number * MAXLEVELS + ud.level_number;
                                     const char *pName;
 
-                                    VM_ABORT_IF((unsigned)levelNum >= ARRAY_SIZE(g_mapInfo), "out of bounds map number (vol=%d, lev=%d)\n",
+                                    VM_ABORT_IF((unsigned)levelNum >= ARRAY_SIZE(g_mapInfo), "out of bounds map number (vol=%d, lev=%d)",
                                               ud.volume_number, ud.level_number);
 
                                     pName = j == STR_MAPNAME ? g_mapInfo[levelNum].name : g_mapInfo[levelNum].filename;
@@ -4411,7 +4411,7 @@ badindex:
                     } v;
                     Gv_FillWithVars(v);
 
-                    VM_ABORT_IF((v.scrn[0].x < 0) | (v.scrn[0].y < 0) | (v.scrn[1].x >= 320) | (v.scrn[1].y >= 200), "invalid coordinates\n");
+                    VM_ABORT_IF((v.scrn[0].x < 0) | (v.scrn[0].y < 0) | (v.scrn[1].x >= 320) | (v.scrn[1].y >= 200), "invalid coordinates");
                     VM_ABORT_IF((unsigned)v.params[2] >= MAXSECTORS, "invalid sector %d", v.params[2]);
 
                     if (VM_DECODE_INST(tw) != CON_SHOWVIEWQ16 && VM_DECODE_INST(tw) != CON_SHOWVIEWQ16UNBIASED)
@@ -6140,7 +6140,7 @@ badindex:
                     int newIndex = ngcIdx[0] = Gv_GetVar(*insptr++);
                     if (EDUKE32_PREDICT_FALSE((unsigned)newIndex >= MAXMENUGAMEPLAYENTRIES))
                     {
-                        CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer 0: %d \n", newIndex);
+                        CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer 0: %d", newIndex);
                         abort_after_error();
                     }
 
@@ -6158,7 +6158,7 @@ badindex:
 
                         if (EDUKE32_PREDICT_FALSE((!cmg->subentries) | ((unsigned)newIndex >= MAXMENUGAMEPLAYENTRIES)))
                         {
-                            CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer %d: %d \n", i+1, newIndex);
+                            CON_ERRPRINTF("Attempting to access undefined ngc menu entry on layer %d: %d", i+1, newIndex);
                             abort_after_error();
                         }
                         cmg = &cmg->subentries[newIndex];
@@ -6293,7 +6293,7 @@ badindex:
 
                     if (EDUKE32_PREDICT_FALSE(!divisor))
                     {
-                        CON_CRITICALERRPRINTF("divide by zero!\n");
+                        CON_CRITICALERRPRINTF("divide by zero!");
                         abort_after_error();
                     }
 
@@ -6311,7 +6311,7 @@ badindex:
 
                     if (EDUKE32_PREDICT_FALSE(!divisor))
                     {
-                        CON_CRITICALERRPRINTF("divide by zero!\n");
+                        CON_CRITICALERRPRINTF("divide by zero!");
                         abort_after_error();
                     }
 
@@ -6406,7 +6406,7 @@ badindex:
             vInstruction(CON_ACTIVATECHEAT):
                 insptr++;
                 tw = Gv_GetVar(*(insptr++));
-                VM_ABORT_IF((numplayers != 1) | ((g_player[myconnectindex].ps->gm & MODE_GAME) != MODE_GAME), "not in a single-player game.\n");
+                VM_ABORT_IF((numplayers != 1) | ((g_player[myconnectindex].ps->gm & MODE_GAME) != MODE_GAME), "not in a single-player game.");
                 osdcmd_cheatsinfo_stat.cheatnum = tw;
                 dispatch();
 
