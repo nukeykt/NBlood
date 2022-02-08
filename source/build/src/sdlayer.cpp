@@ -2552,10 +2552,28 @@ int32_t handleevents(void)
     {
         if (joystick.hasRumble)
         {
-            if (joystick.rumbleLow || joystick.rumbleHigh)
-                SDL_GameControllerRumble(controller, joystick.rumbleLow, joystick.rumbleHigh, joystick.rumbleTime);
+            auto dorumble = [](uint16_t const low, uint16_t const high, uint32_t const time)
+            {
+                if (joystick.isGameController)
+                    SDL_GameControllerRumble(controller, low, high, time);
+                else
+                    SDL_JoystickRumble(joydev, low, high, time);
+            };
 
-            joystick.rumbleTime = joystick.rumbleLow = joystick.rumbleHigh = 0;
+            static uint32_t rumbleZeroTime;
+
+            if (joystick.rumbleLow || joystick.rumbleHigh)
+            {
+                rumbleZeroTime = timerGetTicks() + joystick.rumbleTime;
+
+                dorumble(joystick.rumbleLow, joystick.rumbleHigh, joystick.rumbleTime);
+                joystick.rumbleTime = joystick.rumbleLow = joystick.rumbleHigh = 0;
+            }
+            else if (rumbleZeroTime && timerGetTicks() >= rumbleZeroTime)
+            {
+                rumbleZeroTime = 0;
+                dorumble(0, 0, 0);
+            }
         }
     }
 #endif
