@@ -2484,6 +2484,12 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 //dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
                 if (nXSprite <= 0 || nXSprite >= kMaxXSprites) break;
                 switch (pTSprite->type) {
+                    #ifdef NOONE_EXTENSIONS
+                    case kModernCondition:
+                    case kModernConditionFalse:
+                        if (!gModernMap) break;
+                        fallthrough__;
+                    #endif
                     case kSwitchToggle:
                     case kSwitchOneWay:
                         if (xsprite[nXSprite].state) nAnim = 1;

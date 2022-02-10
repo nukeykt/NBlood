@@ -2568,7 +2568,9 @@ void actInit(bool bSaveLoad) {
                         case kDudeModernCustom:
                         case kDudeModernCustomBurning:
                             pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
-                            seqStartId = genDudeSeqStartId(pXSprite); //  Custom Dude stores it's SEQ in data2
+                            if (pXSprite->data2 > 0 && gSysRes.Lookup(pXSprite->data2, "SEQ"))
+                                seqStartId = pXSprite->data2; //  Custom Dude stores it's SEQ in data2
+                            
                             pXSprite->sysData1 = pXSprite->data3; // move sndStartId to sysData1, because data3 used by the game;
                             pXSprite->data3 = 0;
                             break;
@@ -6693,20 +6695,27 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             }
             if (pSprite->statnum == kStatThing)
             {
-                int t = thingInfo[pSprite->type-kThingBase].mass;
-                if (t > 0 && pVectorData->impulse)
+                // NoOne:
+                // shoting in TNT makes it explode, so type changes to range of 0-8
+                // however statnum changes to 2 (explosion) later in actPostSprite()...
+                // this is why this type range check is required here
+                if (bVanilla || (pSprite->type >= kThingBase && pSprite->type < kThingMax))
                 {
-                    int t2 = divscale8(pVectorData->impulse, t);
-                    xvel[nSprite] += mulscale16(a4, t2);
-                    yvel[nSprite] += mulscale16(a5, t2);
-                    zvel[nSprite] += mulscale16(a6, t2);
-                }
-                if (pVectorData->burnTime)
-                {
-                    XSPRITE *pXSprite = &xsprite[nXSprite];
-                    if (!pXSprite->burnTime)
-                        evPost(nSprite, 3, 0, kCallbackFXFlameLick);
-                    actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->burnTime);
+                    int t = thingInfo[pSprite->type - kThingBase].mass;
+                    if (t > 0 && pVectorData->impulse)
+                    {
+                        int t2 = divscale8(pVectorData->impulse, t);
+                        xvel[nSprite] += mulscale16(a4, t2);
+                        yvel[nSprite] += mulscale16(a5, t2);
+                        zvel[nSprite] += mulscale16(a6, t2);
+                    }
+                    if (pVectorData->burnTime)
+                    {
+                        XSPRITE* pXSprite = &xsprite[nXSprite];
+                        if (!pXSprite->burnTime)
+                            evPost(nSprite, 3, 0, kCallbackFXFlameLick);
+                        actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->burnTime);
+                    }
                 }
             }
             if (pSprite->statnum == kStatDude)
