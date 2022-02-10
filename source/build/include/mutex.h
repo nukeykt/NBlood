@@ -48,16 +48,18 @@ static FORCE_INLINE void mutex_unlock(mutex_t *mutex)
 #endif
 }
 
+#if SDL_MAJOR_VERSION != 1
 static FORCE_INLINE bool mutex_try(mutex_t *mutex)
 {
 #if SDL_MAJOR_VERSION >= 2
     return SDL_AtomicTryLock(mutex);
 #elif defined _WIN32
     return TryEnterCriticalSection(mutex);
-#elif SDL_MAJOR_VERSION == 1
-    return SDL_TryLockMutex(*mutex);
+#else
+# error No mutex try implementation provided.
 #endif
 }
+#endif
 
 #ifdef __cplusplus
 }
