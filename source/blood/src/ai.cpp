@@ -935,7 +935,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
 
                 PLAYER* pPlayer = getPlayerById(pSource->type);
                 if (!pPlayer) return nDamage;
-                if (powerupCheck(pPlayer, kPwUpShadowCloak)) pPlayer->pwUpTime[kPwUpShadowCloak] = 0;
+                //if (powerupCheck(pPlayer, kPwUpShadowCloak)) pPlayer->pwUpTime[kPwUpShadowCloak] = 0;
                 if (readyForCrit(pSource, pSprite)) {
                     nDamage += aiDamageSprite(pSprite, pXSprite, pSource->index, nDmgType, nDamage * (10 - gGameOptions.nDifficulty));
                     if (pXSprite->health > 0) {
@@ -1591,19 +1591,21 @@ void aiInitSprite(spritetype *pSprite)
     pDudeExtraE->active = 0;
     
     #ifdef NOONE_EXTENSIONS
-    int stateTimer = -1, targetMarker = -1;
-    int targetX = 0, targetY = 0, targetZ = 0;
+    unsigned int stateTimer = 0;
+    int targetMarker = -1, targetX = 0, targetY = 0, targetZ = 0;
     
     // dude patrol init
-    if (gModernMap) {
-        
+    if (gModernMap)
+    {
         // must keep it in case of loading save
-        if (pXSprite->dudeFlag4 && spriRangeIsFine(pXSprite->target) && sprite[pXSprite->target].type == kMarkerPath) {
-            stateTimer = pXSprite->stateTimer; targetMarker = pXSprite->target;
-            targetX = pXSprite->targetX; targetY = pXSprite->targetY;
+        if (pXSprite->dudeFlag4 && pXSprite->target > 0 && pXSprite->target < kMaxSprites && sprite[pXSprite->target].type == kMarkerPath)
+        {
+            stateTimer = pXSprite->stateTimer;
+            targetMarker = pXSprite->target;
+            targetX = pXSprite->targetX;
+            targetY = pXSprite->targetY;
             targetZ = pXSprite->targetZ;
         }
-
     }
     #endif
 
@@ -1807,12 +1809,13 @@ void aiInitSprite(spritetype *pSprite)
     }
 
     #ifdef NOONE_EXTENSIONS
-    if (gModernMap) {
-
-        if (pXSprite->dudeFlag4) {
-
+    if (gModernMap)
+    {
+        if (pXSprite->dudeFlag4)
+        {
             // restore dude's path
-            if (spriRangeIsFine(targetMarker)) {
+            if (spriRangeIsFine(targetMarker))
+            {
                 pXSprite->target = targetMarker;
                 pXSprite->targetX = targetX;
                 pXSprite->targetY = targetY;
@@ -1824,22 +1827,22 @@ void aiInitSprite(spritetype *pSprite)
 
             // make dude follow the markers
             bool uwater = spriteIsUnderwater(pSprite);
-            if (pXSprite->target <= 0 || sprite[pXSprite->target].type != kMarkerPath) {
+            if (pXSprite->target <= 0 || sprite[pXSprite->target].type != kMarkerPath)
+            {
                 pXSprite->target = -1; aiPatrolSetMarker(pSprite, pXSprite);
             }
 
-            if (stateTimer > 0) {
+            if (stateTimer > 0)
+            {
                 if (uwater) aiPatrolState(pSprite, kAiStatePatrolWaitW);
                 else if (pXSprite->unused1 & kDudeFlagCrouch) aiPatrolState(pSprite, kAiStatePatrolWaitC);
                 else aiPatrolState(pSprite, kAiStatePatrolWaitL);
-                pXSprite->stateTimer = stateTimer; // restore state timer
+                pXSprite->stateTimer = (unsigned int)stateTimer; // restore state timer
             }
             else if (uwater) aiPatrolState(pSprite, kAiStatePatrolMoveW);
             else if (pXSprite->unused1 & kDudeFlagCrouch) aiPatrolState(pSprite, kAiStatePatrolMoveC);
             else aiPatrolState(pSprite, kAiStatePatrolMoveL);
-
         }
-
     }
     #endif
 
