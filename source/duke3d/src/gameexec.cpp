@@ -6669,26 +6669,26 @@ void A_LoadActor(int const spriteNum)
 void VM_UpdateAnim(int const spriteNum, int32_t * const pData)
 {
     size_t const actionofs = AC_ACTION_ID(pData);
-    auto const actionptr = (actionofs != 0 && actionofs + (ACTION_PARAM_COUNT-1) < (unsigned) g_scriptSize) ? &apScript[actionofs] : NULL;
+    auto const   actionptr = &apScript[actionofs];
+    
+    if ((actionofs == 0) | (actionofs + (ACTION_PARAM_COUNT-1) >= (unsigned) g_scriptSize))
+        return;
 
-    if (actionptr != NULL)
+    int const action_frames = actionptr[ACTION_NUMFRAMES];
+    int const action_incval = actionptr[ACTION_INCVAL];
+    int const action_delay  = actionptr[ACTION_DELAY];
+    auto actionticsptr = &AC_ACTIONTICS(&sprite[spriteNum], &actor[spriteNum]);
+    *actionticsptr += TICSPERFRAME;
+
+    if (*actionticsptr > action_delay)
     {
-        int const action_frames = actionptr[ACTION_NUMFRAMES];
-        int const action_incval = actionptr[ACTION_INCVAL];
-        int const action_delay  = actionptr[ACTION_DELAY];
-        auto actionticsptr = &AC_ACTIONTICS(&sprite[spriteNum], &actor[spriteNum]);
-        *actionticsptr += TICSPERFRAME;
-
-        if (*actionticsptr > action_delay)
-        {
-            *actionticsptr = 0;
-            AC_ACTION_COUNT(pData)++;
-            AC_CURFRAME(pData) += action_incval;
-        }
-
-        if (klabs(AC_CURFRAME(pData)) >= klabs(action_frames * action_incval))
-            AC_CURFRAME(pData) = 0;
+        *actionticsptr = 0;
+        AC_ACTION_COUNT(pData)++;
+        AC_CURFRAME(pData) += action_incval;
     }
+
+    if (klabs(AC_CURFRAME(pData)) >= klabs(action_frames * action_incval))
+        AC_CURFRAME(pData) = 0;
 }
 
 // NORECURSE
