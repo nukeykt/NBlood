@@ -90,6 +90,8 @@ int32_t g_BenchmarkMode = BENCHMARKMODE_OFF;
 
 int32_t g_Debug = 0;
 
+int32_t g_vm_preempt = 1;
+
 #ifndef EDUKE32_STANDALONE
 static const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "NAM.RTS", "NAPALM.RTS", "WW2GI.RTS" };
 #endif

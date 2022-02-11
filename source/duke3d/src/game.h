@@ -317,6 +317,7 @@ extern uint32_t g_frameCounter;
 #define DRAWFRAME_DEFAULT_STACK_SIZE (704  * 1024)
 #define DRAWFRAME_MAX_STACK_SIZE     (1792 * 1024)
 
+extern int32_t g_vm_preempt;
 extern mco_coro* co_drawframe;
 extern void g_switchRoutine(mco_coro *co);
 
@@ -325,7 +326,7 @@ static FORCE_INLINE int dukeMaybeDrawFrame(void)
     // g_frameJustDrawn is set by G_DrawFrame() (and thus by the coroutine)
     // it isn't cleared until the next game tic is processed.
 
-    if (!g_saveRequested && !g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
+    if (g_vm_preempt && !g_saveRequested && !g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
     {
         g_switchRoutine(co_drawframe);
         return 1;

@@ -1741,6 +1741,7 @@ int32_t registerosdcommands(void)
         { "touch_sens_look_y", "touch input sensitivity for looking up/down", (void *) &droidinput.pitch_sens, CVAR_FLOAT, 1, 9 },
         { "touch_invert", "invert look up/down touch input", (void *) &droidinput.invertLook, CVAR_BOOL, 0, 1 },
 #endif
+        { "vm_preempt", "drawing preempts CON VM" CVAR_BOOL_OPTSTR, (void *)&g_vm_preempt, CVAR_BOOL|CVAR_NOSAVE, 0, 1 },
         { "wchoice","weapon priority for automatically switching on empty or pickup", (void *)ud.wchoice, CVAR_STRING|CVAR_FUNCPTR, 0, MAX_WEAPONS },
     };
 
