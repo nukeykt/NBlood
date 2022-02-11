@@ -9492,10 +9492,10 @@ int32_t wallvisible(int32_t const x, int32_t const y, int16_t const wallnum)
     auto w1 = (uwallptr_t)&wall[wallnum];
     auto w2 = (uwallptr_t)&wall[w1->point2];
 
-    int32_t const a1 = getangle(w1->x - x, w1->y - y);
-    int32_t const a2 = getangle(w2->x - x, w2->y - y);
+    int32_t const a1 = gethiq16angle(w1->x - x, w1->y - y);
+    int32_t const a2 = gethiq16angle(w2->x - x, w2->y - y);
 
-    return (((a2 + (2048 - a1)) & 2047) <= 1024);
+    return (((a2 + (F16(2048) - a1)) & 0x7FFFFFF) <= F16(1024));
 }
 
 #if 0
