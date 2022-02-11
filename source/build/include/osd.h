@@ -314,10 +314,6 @@ void OSD_DispatchQueued(void);
 // executes a string
 void OSD_Dispatch(const char *cmd, bool silent = false);
 
-static FORCE_INLINE void OSD_FlushLog(void)
-{
-}
-
 static FORCE_INLINE char const *OSD_GetErrorFmt(void) { return osd->draw.errorfmt; }
 static FORCE_INLINE char const *OSD_GetWarningFmt(void) { return osd->draw.warnfmt; }
 

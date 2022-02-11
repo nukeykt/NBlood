@@ -333,7 +333,6 @@ static void sighandler(int signum)
     //    if (signum==SIGSEGV)
     {
         grabmouse_low(0);
-        OSD_FlushLog();
 
 #if PRINTSTACKONSEGV
         {
