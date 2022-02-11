@@ -76,11 +76,15 @@ GAMEEXEC_STATIC void VM_Execute(int loop = false);
 
 void VM_ScriptInfo(intptr_t const * const ptr, int const range)
 {
-    if (!apScript || !ptr || g_currentEvent == -1)
+    if (!ptr || (g_currentEvent == -1 && insptr == nullptr))
         return;
 
-    for (auto pScript = max<intptr_t const *>(ptr - (range >> 1), apScript),
-                p_end   = min<intptr_t const *>(ptr + (range >> 1), apScript + g_scriptSize);
+    int foundInst = 0;
+    int lastLine = 0;
+    char buf[128];
+
+    for (auto pScript = max<intptr_t const *>(ptr - (range >> 2), apScript),
+                p_end   = min<intptr_t const *>(ptr + (range >> 1) + (range >> 2), apScript + g_scriptSize);
             pScript < p_end;
             ++pScript)
     {        
@@ -88,18 +92,38 @@ void VM_ScriptInfo(intptr_t const * const ptr, int const range)
         int const lineNum = VM_DECODE_LINE_NUMBER(v);
         int const vmInst  = VM_DECODE_INST(v);
 
-        if (lineNum && lineNum != VM_IFELSE_MAGIC && vmInst < CON_OPCODE_END)
-            VLOG_F(LOG_VM, "%5d: %3d: %5d %s (%d)", (int32_t)(pScript-apScript), (int32_t)(pScript-ptr), lineNum, VM_GetKeywordForID(vmInst), vmInst);
-        else
-            VLOG_F(LOG_VM, "%5d: %3d: %d", (int32_t)(pScript - apScript), (int32_t)(pScript - ptr), (int32_t)*pScript);
+        if (lineNum && lineNum != VM_IFELSE_MAGIC && lineNum >= lastLine && lineNum < g_totalLines && vmInst < CON_OPCODE_END)
+        {
+            lastLine = lineNum;
+
+            if (foundInst == 1)
+                VLOG_F(LOG_VM, "%s", buf);
+            else if (foundInst == 2)
+                LOG_F(ERROR, "%s", buf);
+
+            foundInst = 1;
+
+            if (lineNum == VM_DECODE_LINE_NUMBER(g_tw) || vmInst == VM_DECODE_INST(g_tw))
+                foundInst++;
+
+            Bsprintf(buf, "%8s:%5d: [0x%04x] %s", VM_FILENAME(pScript), lineNum, int32_t((pScript - apScript) * sizeof(intptr_t)), VM_GetKeywordForID(vmInst));
+        }
+        else if (foundInst)
+        {
+            char buf2[16];
+
+            if (bitmap_test(bitptr, pScript - apScript))
+                Bsprintf(buf2, " [0x%04x]", int32_t((pScript - apScript) * sizeof(intptr_t)));
+            else Bsprintf(buf2, " %d", int32_t(*pScript));
+
+            Bstrcat(buf, buf2);
+        }
     }
 
     if (ptr == insptr)
     {
         if (vm.pUSprite)
             VLOG_F(LOG_VM, "current actor: %d (%d)", vm.spriteNum, vm.pUSprite->picnum);
-
-        VLOG_F(LOG_VM, "g_errorLineNum: %s:%d, g_tw: %d", VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), VM_DECODE_INST(g_tw));
     }
 }
 
