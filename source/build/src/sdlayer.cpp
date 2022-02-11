@@ -467,6 +467,14 @@ int main(int argc, char *argv[])
 #endif
 
     engineSetupAllocator();
+
+#ifndef __ANDROID__
+    signal(SIGSEGV, sighandler);
+    signal(SIGILL, sighandler);  /* clang -fcatch-undefined-behavior uses an ill. insn */
+    signal(SIGABRT, sighandler);
+    signal(SIGFPE, sighandler);
+#endif
+
     engineSetupLogging(argc, argv);
     
 #if SDL_VERSION_ATLEAST(2, 0, 8)
@@ -508,12 +516,7 @@ int main(int argc, char *argv[])
 
     buildkeytranslationtable();
 
-#ifndef __ANDROID__
-    signal(SIGSEGV, sighandler);
-    signal(SIGILL, sighandler);  /* clang -fcatch-undefined-behavior uses an ill. insn */
-    signal(SIGABRT, sighandler);
-    signal(SIGFPE, sighandler);
-#else
+#ifdef __ANDROID__
     SDL_SetEventFilter(sdlayer_mobilefilter, NULL);
 #endif
 

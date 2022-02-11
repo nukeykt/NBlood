@@ -234,9 +234,17 @@ void engineSetupLogging(int &argc, char **argv)
     loguru::set_thread_name("main");
     loguru::set_verbosity_to_name_callback(&engineVerbosityCallback);
     loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, LOG_ENGINE_MAX);
-
+    loguru::set_fatal_handler([](const loguru::Message& UNUSED(message)){
+        UNREFERENCED_CONST_PARAMETER(message);
+#ifdef DEBUGGINGAIDS
+        debug_break();
+#endif
+        app_crashhandler();
+        Bexit(EXIT_FAILURE);
+    });
     loguru::Options initopts;
     initopts.verbosity_flag = nullptr;
+    initopts.signal_options.unsafe_signal_handler = true;
     loguru::init(argc, argv, initopts);
 }
 
