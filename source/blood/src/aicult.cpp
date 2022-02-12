@@ -115,7 +115,7 @@ static void TeslaSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    if (Chance(dword_138BB0[gGameOptions.nDifficulty]))
+    if (Chance(gCultTeslaFireChance[gGameOptions.nDifficulty]))
     {
         int dx = Cos(pSprite->ang) >> 16;
         int dy = Sin(pSprite->ang) >> 16;
