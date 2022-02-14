@@ -1396,8 +1396,6 @@ void videoGetModes(int display)
 
     modeschecked = 1;
 }
-#else
-void videoGetModes(int display);
 #endif
 
 //
