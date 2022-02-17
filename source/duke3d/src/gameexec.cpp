@@ -6404,9 +6404,12 @@ badindex:
 
             vInstruction(CON_SETMUSICPOSITION):
                 insptr++;
-                Gv_GetVar(*(insptr++));
+                S_SetMusicPosition(Gv_GetVar(*insptr++));
                 dispatch();
-            vInstruction(CON_GETMUSICPOSITION): insptr += 2; dispatch();
+            vInstruction(CON_GETMUSICPOSITION):
+                insptr++;
+                Gv_SetVar(*insptr++, S_GetMusicPosition());
+                dispatch();
 
             vInstruction(CON_ACTIVATECHEAT):
                 insptr++;
