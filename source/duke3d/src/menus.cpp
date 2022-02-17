@@ -259,7 +259,7 @@ static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_BigOptions_Apply = { 4<<16, 16<<16, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRt =     { 4<<16,      0, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRtSections = { 3<<16,      0, -(260<<16) };
-#if !defined EDUKE32_STANDALONE && defined USE_OPENGL && !defined EDUKE32_ANDROID_MENU
+#if !defined EDUKE32_STANDALONE && !defined EDUKE32_ANDROID_MENU
 static MenuEntryFormat_t MEF_SmallOptions =     { 1<<16,      0, -(260<<16) };
 #endif
 static MenuEntryFormat_t MEF_BigCheats =        { 3<<16,      0, -(260<<16) };
@@ -673,7 +673,7 @@ static MenuEntry_t ME_SCREENSETUP_CROSSHAIRSIZE = MAKE_MENUENTRY( s_Scale, &MF_R
 
 static int32_t vpsize;
 static MenuRangeInt32_t MEO_SCREENSETUP_SCREENSIZE = MAKE_MENURANGE( &vpsize, &MF_Redfont, 0, 0, 0, 1, EnforceIntervals );
-#if !defined EDUKE32_STANDALONE && defined USE_OPENGL
+#if !defined EDUKE32_STANDALONE
 static MenuOption_t MEO_SCREENSETUP_SCREENSIZE_TWO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &vpsize );
 #endif
 static MenuEntry_t ME_SCREENSETUP_SCREENSIZE = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_SCREENSIZE, RangeInt32 );
@@ -2451,6 +2451,7 @@ static void Menu_Pre(MenuID_t cm)
         break;
 
     case MENU_RENDERER:
+#ifdef USE_OPENGL
         if (videoGetRenderMode() != REND_CLASSIC)
         {
 #ifdef POLYMER
@@ -2484,6 +2485,7 @@ static void Menu_Pre(MenuID_t cm)
 //        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
 //        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
 //# endif
+#endif
 #endif
         break;
 
