@@ -565,6 +565,19 @@ CGameMenuItemTitle::CGameMenuItemTitle(const char *a1, int a2, int a3, int a4, i
     bEnable = 0;
 }
 
+CGameMenuItemMultiplayerTitle::CGameMenuItemMultiplayerTitle(const char *a1, int a2, int a3, int a4, int a5) : CGameMenuItemTitle(a1, a2, a3, a4, a5)
+{
+}
+
+bool CGameMenuItemMultiplayerTitle::Event(CGameMenuEvent &event)
+{
+    if (event.at0 == kMenuEventInit) {
+        memset(zUserMapName, 0, sizeof(zUserMapName));
+    }
+
+    return CGameMenuItem::Event(event);
+}
+
 void CGameMenuItemTitle::Draw(void)
 {
     if (m_pzText)

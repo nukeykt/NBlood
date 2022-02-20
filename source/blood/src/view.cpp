@@ -2484,6 +2484,12 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 //dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
                 if (nXSprite <= 0 || nXSprite >= kMaxXSprites) break;
                 switch (pTSprite->type) {
+                    #ifdef NOONE_EXTENSIONS
+                    case kModernCondition:
+                    case kModernConditionFalse:
+                        if (!gModernMap) break;
+                        fallthrough__;
+                    #endif
                     case kSwitchToggle:
                     case kSwitchOneWay:
                         if (xsprite[nXSprite].state) nAnim = 1;
@@ -3233,7 +3239,7 @@ void viewUpdateDelirium(void)
     if ((powerCount = powerupCheck(gView, kPwUpDeliriumShroom)) != 0)
     {
         int tilt1 = 170, tilt2 = 170, pitch = 20;
-        int timer = (int)gFrameClock*4;
+        int timer = (int)gFrameClock << 1;
         if (powerCount < 512)
         {
             int powerScale = (powerCount<<16) / 512;
@@ -3350,7 +3356,8 @@ void viewDrawScreen(void)
             newaspect_enable = 1;
             videoSetCorrectedAspect();
         }
-        renderSetAspect(Blrintf(float(viewingrange) * tanf(gFov * (PI/360.f))), yxaspect);
+        const int viewingRange_fov = Blrintf(float(viewingrange) * tanf(gFov * (PI/360.f)));
+        renderSetAspect(viewingRange_fov, yxaspect);
         int cX = gView->pSprite->x;
         int cY = gView->pSprite->y;
         int cZ = gView->zView;
@@ -3568,6 +3575,7 @@ RORHACKOTHER:
             viewProcessSprites(vd8, vd4, vd0, v50, gInterpolate);
             renderDrawMasks();
             renderRestoreTarget();
+            renderSetAspect(viewingRange_fov, yxaspect);
         }
         else
         {

@@ -54,6 +54,7 @@ extern short gQuickSaveSlot;
 extern char strRestoreGameStrings[][16];
 extern char restoreGameDifficulty[];
 extern const char *zDiffStrings[];
+extern char zUserMapName[BMAX_PATH];
 void drawLoadingScreen(void);
 void SetupMenus(void);
 void UpdateNetworkMenus(void);

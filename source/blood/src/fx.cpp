@@ -205,6 +205,8 @@ void CFX::fxProcess(void)
     for (int nSprite = headspritestat[kStatFX]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
+        if (pSprite->statnum == kStatFree) // skip free'd fx sprite
+            continue;
         viewBackupSpriteLoc(nSprite, pSprite);
         short nSector = pSprite->sectnum;
         dassert(nSector >= 0 && nSector < kMaxSectors);
@@ -289,7 +291,7 @@ void fxSpawnBlood(spritetype *pSprite, int a2)
     }
 }
 
-void sub_746D4(spritetype *pSprite, int a2)
+void fxSpawnPodBlood(spritetype *pSprite, int a2)
 {
     UNREFERENCED_PARAMETER(a2);
     if (pSprite->sectnum < 0 || pSprite->sectnum >= numsectors)

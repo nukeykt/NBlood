@@ -74,7 +74,20 @@ AISTATE eelDodgeDownLeft = { kAiStateMove, 0, -1, 90, NULL, MoveDodgeDown, NULL,
 static void BiteSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
-    spritetype *pSprite = &sprite[pXSprite->reference];
+    spritetype* pSprite = &sprite[pXSprite->reference];
+    /*
+     * workaround for
+     * pXSprite->target >= 0 && pXSprite->target < kMaxSprites in file NBlood/source/blood/src/aiboneel.cpp at line 86
+     * The value of pXSprite->target is -1.
+     * copied from lines 177:181
+     * resolves this case, but may cause other issues?
+     */
+    if (pXSprite->target == -1)
+    {
+        aiNewState(pSprite, pXSprite, &eelSearch);
+        return;
+    }
+    
     spritetype *pTarget = &sprite[pXSprite->target];
     int dx = Cos(pSprite->ang) >> 16;
     int dy = Sin(pSprite->ang) >> 16;
@@ -83,18 +96,7 @@ static void BiteSeqCallback(int, int nXSprite)
     DUDEINFO *pDudeInfoT = getDudeInfo(pTarget->type);
     int height = (pSprite->yrepeat*pDudeInfo->eyeHeight)<<2;
     int height2 = (pTarget->yrepeat*pDudeInfoT->eyeHeight)<<2;
-    /*
-     * workaround for 
-     * pXSprite->target >= 0 && pXSprite->target < kMaxSprites in file NBlood/source/blood/src/aiboneel.cpp at line 86
-     * The value of pXSprite->target is -1. 
-     * copied from lines 177:181
-     * resolves this case, but may cause other issues? 
-     */
-    if (pXSprite->target == -1)
-    {
-        aiNewState(pSprite, pXSprite, &eelSearch);
-        return;
-    }
+
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     actFireVector(pSprite, 0, 0, dx, dy, height2-height, kVectorBoneelBite);
 }

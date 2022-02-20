@@ -42,10 +42,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ai.h"
 
 // CONSTANTS
+
+#define TRIGGER_START_CHANNEL_NBLOOD kChannelLevelStartNBLOOD  // uncomment only for Nblood
+//#define TRIGGER_START_CHANNEL_RAZE kChannelLevelStartRAZE  // uncomment only for Raze
+
 // additional non-thing proximity, sight and physics sprites 
 #define kMaxSuperXSprites 512
 #define kMaxTrackingConditions 64
 #define kMaxTracedObjects 32 // per one tracking condition
+
+
 
 // additional physics attributes for debris sprites
 #define kPhysDebrisFloat 0x0008 // *debris* slowly goes up and down from it's position
@@ -154,7 +160,7 @@ OBJ_SECTOR                          = 6,
 };
 
 enum {
-kCondGameBase                       = 0,
+kCondGameBase                       = 1,
 kCondGameMax                        = 50,
 kCondMixedBase                      = 100,
 kCondMixedMax                       = 200,
@@ -404,7 +410,6 @@ int useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT event);
 bool condPush(XSPRITE* pXSprite, int objType, int objIndex);
 bool condRestore(XSPRITE* pXSprite);
 bool condCmp(int val, int arg1, int arg2, int comOp);
-bool condCmpne(int arg1, int arg2, int comOp);
 void condError(XSPRITE* pXCond, const char* pzFormat, ...);
 bool condCheckMixed(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH);
 bool condCheckSector(XSPRITE* pXCond, int cmpOp, bool PUSH);

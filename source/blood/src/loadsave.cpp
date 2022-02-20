@@ -364,7 +364,7 @@ void MyLoadSave::Load(void)
     Read(&skyInfo, sizeof(skyInfo));
 
     *tileSetupSky(0) = skyInfo;
-    gCheatMgr.sub_5BCF4();
+    gCheatMgr.ResetCheats();
 
 }
 

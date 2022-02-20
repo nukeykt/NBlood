@@ -76,9 +76,9 @@ DUDEEXTRA gDudeExtra[kMaxXSprites];
 AISTATE genIdle = {kAiStateGenIdle, 0, -1, 0, NULL, NULL, NULL, NULL };
 AISTATE genRecoil = {kAiStateRecoil, 5, -1, 20, NULL, NULL, NULL, &genIdle };
 
-int dword_138BB0[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
+int gCultTeslaFireChance[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
 
-bool sub_5BDA8(spritetype *pSprite, int nSeq)
+bool dudeIsPlayingSeq(spritetype *pSprite, int nSeq)
 {
     if (pSprite->statnum == kStatDude && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
@@ -935,7 +935,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
 
                 PLAYER* pPlayer = getPlayerById(pSource->type);
                 if (!pPlayer) return nDamage;
-                if (powerupCheck(pPlayer, kPwUpShadowCloak)) pPlayer->pwUpTime[kPwUpShadowCloak] = 0;
+                //if (powerupCheck(pPlayer, kPwUpShadowCloak)) pPlayer->pwUpTime[kPwUpShadowCloak] = 0;
                 if (readyForCrit(pSource, pSprite)) {
                     nDamage += aiDamageSprite(pSprite, pXSprite, pSource->index, nDmgType, nDamage * (10 - gGameOptions.nDifficulty));
                     if (pXSprite->health > 0) {
@@ -1016,13 +1016,13 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                     if (!dudeIsMelee(pXSprite)) {
                         if (inIdle(pXSprite->aiState) || Chance(getDodgeChance(pSprite))) {
                             if (!spriteIsUnderwater(pSprite)) {
-                                if (!canDuck(pSprite) || !sub_5BDA8(pSprite, 14))  aiGenDudeNewState(pSprite, &genDudeDodgeShortL);
+                                if (!canDuck(pSprite) || !dudeIsPlayingSeq(pSprite, 14))  aiGenDudeNewState(pSprite, &genDudeDodgeShortL);
                                 else aiGenDudeNewState(pSprite, &genDudeDodgeShortD);
 
                                 if (Chance(0x0200))
                                     playGenDudeSound(pSprite, kGenDudeSndGotHit);
 
-                            } else if (sub_5BDA8(pSprite, 13)) {
+                            } else if (dudeIsPlayingSeq(pSprite, 13)) {
                                 aiGenDudeNewState(pSprite, &genDudeDodgeShortW);
                             }
                         }
@@ -1057,11 +1057,11 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         case kDudeCultistTNT:
             if (nDmgType != kDamageBurn)
             {
-                if (!sub_5BDA8(pSprite, 14) && !pXSprite->medium)
+                if (!dudeIsPlayingSeq(pSprite, 14) && !pXSprite->medium)
                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                else if (sub_5BDA8(pSprite, 14) && !pXSprite->medium)
+                else if (dudeIsPlayingSeq(pSprite, 14) && !pXSprite->medium)
                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
-                else if (sub_5BDA8(pSprite, 13) && (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo))
+                else if (dudeIsPlayingSeq(pSprite, 13) && (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo))
                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
             }
             else if (nDmgType == kDamageBurn && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
@@ -1591,19 +1591,21 @@ void aiInitSprite(spritetype *pSprite)
     pDudeExtraE->active = 0;
     
     #ifdef NOONE_EXTENSIONS
-    int stateTimer = -1, targetMarker = -1;
-    int targetX = 0, targetY = 0, targetZ = 0;
+    unsigned int stateTimer = 0;
+    int targetMarker = -1, targetX = 0, targetY = 0, targetZ = 0;
     
     // dude patrol init
-    if (gModernMap) {
-        
+    if (gModernMap)
+    {
         // must keep it in case of loading save
-        if (pXSprite->dudeFlag4 && spriRangeIsFine(pXSprite->target) && sprite[pXSprite->target].type == kMarkerPath) {
-            stateTimer = pXSprite->stateTimer; targetMarker = pXSprite->target;
-            targetX = pXSprite->targetX; targetY = pXSprite->targetY;
+        if (pXSprite->dudeFlag4 && pXSprite->target > 0 && pXSprite->target < kMaxSprites && sprite[pXSprite->target].type == kMarkerPath)
+        {
+            stateTimer = pXSprite->stateTimer;
+            targetMarker = pXSprite->target;
+            targetX = pXSprite->targetX;
+            targetY = pXSprite->targetY;
             targetZ = pXSprite->targetZ;
         }
-
     }
     #endif
 
@@ -1807,12 +1809,13 @@ void aiInitSprite(spritetype *pSprite)
     }
 
     #ifdef NOONE_EXTENSIONS
-    if (gModernMap) {
-
-        if (pXSprite->dudeFlag4) {
-
+    if (gModernMap)
+    {
+        if (pXSprite->dudeFlag4)
+        {
             // restore dude's path
-            if (spriRangeIsFine(targetMarker)) {
+            if (spriRangeIsFine(targetMarker))
+            {
                 pXSprite->target = targetMarker;
                 pXSprite->targetX = targetX;
                 pXSprite->targetY = targetY;
@@ -1824,22 +1827,22 @@ void aiInitSprite(spritetype *pSprite)
 
             // make dude follow the markers
             bool uwater = spriteIsUnderwater(pSprite);
-            if (pXSprite->target <= 0 || sprite[pXSprite->target].type != kMarkerPath) {
+            if (pXSprite->target <= 0 || sprite[pXSprite->target].type != kMarkerPath)
+            {
                 pXSprite->target = -1; aiPatrolSetMarker(pSprite, pXSprite);
             }
 
-            if (stateTimer > 0) {
+            if (stateTimer > 0)
+            {
                 if (uwater) aiPatrolState(pSprite, kAiStatePatrolWaitW);
                 else if (pXSprite->unused1 & kDudeFlagCrouch) aiPatrolState(pSprite, kAiStatePatrolWaitC);
                 else aiPatrolState(pSprite, kAiStatePatrolWaitL);
-                pXSprite->stateTimer = stateTimer; // restore state timer
+                pXSprite->stateTimer = (unsigned int)stateTimer; // restore state timer
             }
             else if (uwater) aiPatrolState(pSprite, kAiStatePatrolMoveW);
             else if (pXSprite->unused1 & kDudeFlagCrouch) aiPatrolState(pSprite, kAiStatePatrolMoveC);
             else aiPatrolState(pSprite, kAiStatePatrolMoveL);
-
         }
-
     }
     #endif
 

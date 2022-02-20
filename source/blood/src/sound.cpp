@@ -365,6 +365,8 @@ void sndKillSound(SAMPLE2D *pChannel)
 
 void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
 {
+    if (!SoundToggle)
+        return;
     dassert(nChannel >= -1 && nChannel < kChannelMax);
     SAMPLE2D *pChannel;
     if (nChannel == -1)
