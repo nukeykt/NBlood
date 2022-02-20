@@ -3633,6 +3633,7 @@ RORHACKOTHER:
             cZ = vfc+(gLowerLink[nSectnum] >= 0 ? 0 : (8<<8));
         }
         q16horiz = ClipRange(q16horiz, F16(-200), F16(200));
+        int nCountROR = 0;
 RORHACK:
         int ror_status[16];
         for (int i = 0; i < 16; i++)
@@ -3660,10 +3661,11 @@ RORHACK:
         for (int i = 0; i < 16; i++)
             if (ror_status[i] != TestBitString(gotpic, 4080+i))
                 do_ror_hack = true;
-        if (do_ror_hack)
+        if (do_ror_hack && (nCountROR < 32))
         {
             gView->pSprite->cstat = bakCstat;
             spritesortcnt = 0;
+            nCountROR++;
             goto RORHACK;
         }
         sub_5571C(1);
