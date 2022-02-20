@@ -134,6 +134,13 @@ public:
     //virtual bool Event(CGameMenuEvent &);
 };
 
+class CGameMenuItemMultiplayerTitle : public CGameMenuItemTitle
+{
+public:
+    CGameMenuItemMultiplayerTitle(const char *, int, int, int, int);
+    virtual bool Event(CGameMenuEvent &);
+};
+
 class CGameMenuItemZBool : public CGameMenuItem
 {
 public:
