@@ -904,7 +904,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     m_bPlayerCheated = true;
 }
 
-void CCheatMgr::sub_5BCF4(void)
+void CCheatMgr::ResetCheats(void)
 {
     m_bPlayerCheated = 0;
     playerSetGodMode(gMe, 0);

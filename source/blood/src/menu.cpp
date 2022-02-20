@@ -1581,7 +1581,7 @@ void SetDifficultyAndStart(CGameMenuItemChain *pItem)
     if (gDemo.at1)
         gDemo.StopPlayback();
     gStartNewGame = true;
-    gCheatMgr.sub_5BCF4();
+    gCheatMgr.ResetCheats();
     if (Bstrlen(gGameOptions.szUserMap))
     {
         levelAddUserMap(gGameOptions.szUserMap);

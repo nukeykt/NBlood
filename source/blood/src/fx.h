@@ -95,7 +95,7 @@ public:
 };
 
 void fxSpawnBlood(spritetype *pSprite, int a2);
-void sub_746D4(spritetype *pSprite, int a2);
+void fxSpawnPodBlood(spritetype *pSprite, int a2);
 void fxSpawnEjectingBrass(spritetype *pSprite, int z, int a3, int a4);
 void fxSpawnEjectingShell(spritetype *pSprite, int z, int a3, int a4);
 
