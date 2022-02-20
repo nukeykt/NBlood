@@ -3239,7 +3239,7 @@ void viewUpdateDelirium(void)
     if ((powerCount = powerupCheck(gView, kPwUpDeliriumShroom)) != 0)
     {
         int tilt1 = 170, tilt2 = 170, pitch = 20;
-        int timer = (int)gFrameClock*4;
+        int timer = (int)gFrameClock << 1;
         if (powerCount < 512)
         {
             int powerScale = (powerCount<<16) / 512;
