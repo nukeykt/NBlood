@@ -56,7 +56,7 @@ struct GAMEOPTIONS {
     int nSpecialRespawnTime;
     int weaponsV10x;
     bool bFriendlyFire;
-    bool bKeepKeysOnRespawn;
+    PLAYERKEYSMODE bPlayerKeys;
     char szUserMap[BMAX_PATH];
 };
 
