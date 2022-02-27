@@ -221,10 +221,10 @@ static void myThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
+    int nOwner = spriRangeIsFine(pSprite->owner) ? pSprite->owner : -1;
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
         PLAYER *pPlayer = &gPlayer[p];
-        int nOwner = (pSprite->owner & 0x1000) ? (pSprite->owner&0xfff) : -1;
         if (nOwner == pPlayer->nSprite || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
             continue;
         int x = pPlayer->pSprite->x;
