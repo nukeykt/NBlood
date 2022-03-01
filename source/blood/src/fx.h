@@ -90,7 +90,7 @@ class CFX {
 public:
     void fxKill(int);
     void fxFree(int);
-    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned int);
+    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned int duration = 0);
     void fxProcess(void);
 };
 

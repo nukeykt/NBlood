@@ -3771,7 +3771,7 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
                 case 0:
                 case 4:
                     if (pWallHit) {
-                        spritetype* pFX = gFX.fxSpawn(FX_52, pMissile->sectnum, pMissile->x, pMissile->y, pMissile->z, 0);
+                        spritetype* pFX = gFX.fxSpawn(FX_52, pMissile->sectnum, pMissile->x, pMissile->y, pMissile->z);
                         if (pFX) pFX->ang = (GetWallAngle(nWallHit) + 512) & 2047;
                     }
                     break;
@@ -4438,7 +4438,7 @@ int MoveThing(spritetype *pSprite)
         zvel[nSprite] += 58254;
         if (pSprite->type == kThingZombieHead)
         {
-            spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+            spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
             if (pFX)
             {
                 int v34 = ((int)gFrameClock*3)&2047;
@@ -5050,16 +5050,16 @@ void MoveDude(spritetype *pSprite)
             switch (tileGetSurfType(floorHit))
             {
             case kSurfWater:
-                gFX.fxSpawn(FX_9, pSprite->sectnum, pSprite->x, pSprite->y, floorZ, 0);
+                gFX.fxSpawn(FX_9, pSprite->sectnum, pSprite->x, pSprite->y, floorZ);
                 break;
             case kSurfLava:
             {
-                spritetype *pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ, 0);
+                spritetype *pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ);
                 if (pFX)
                 {
                     for (int i = 0; i < 7; i++)
                     {
-                        spritetype *pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z, 0);
+                        spritetype *pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z);
                         if (pFX2)
                         {
                             xvel[pFX2->index] = Random2(0x6aaaa);
@@ -5901,7 +5901,7 @@ void actProcessSprites(void)
                 int dy = mulscale30(t, Sin(pSprite->ang));
                 for (int i = 0; i < 2; i++)
                 {
-                    spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z, 0);
+                    spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z);
                     if (pFX)
                     {
                         xvel[pFX->index] = dx + Random2(0x8888);
@@ -6644,7 +6644,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                 dassert(nSurf < kSurfMax);
                 if (pVectorData->surfHit[nSurf].fx1 >= 0)
                 {
-                    spritetype *pFX = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx1, nSector, x, y, z, 0);
+                    spritetype *pFX = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx1, nSector, x, y, z);
                     if (pFX)
                     {
                         pFX->ang = (GetWallAngle(nWall)+512)&2047;
@@ -6765,9 +6765,9 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                                 FX_ID t3 = pVectorData->surfHit[nSurf].fx3;
                                 spritetype *pFX = NULL;
                                 if (t2 > FX_NONE && (t3 == FX_NONE || Chance(0x4000)))
-                                    pFX = gFX.fxSpawn(t2, nSector, x, y, z, 0);
+                                    pFX = gFX.fxSpawn(t2, nSector, x, y, z);
                                 else if(t3 > FX_NONE)
-                                    pFX = gFX.fxSpawn(t3, nSector, x, y, z, 0);
+                                    pFX = gFX.fxSpawn(t3, nSector, x, y, z);
                                 if (pFX)
                                 {
                                     zvel[pFX->index] = 0x2222;
@@ -6826,14 +6826,14 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
     
     if (pVectorData->surfHit[nSurf].fx2 >= 0) {
         
-        spritetype* pFX2 = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx2, nSector, x, y, z, 0);
+        spritetype* pFX2 = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx2, nSector, x, y, z);
         if (pFX2 && gModernMap)
             actPropagateSpriteOwner(pFX2, pShooter);
     }
     
     if (pVectorData->surfHit[nSurf].fx3 >= 0) {
         
-        spritetype* pFX3 = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx3, nSector, x, y, z, 0);
+        spritetype* pFX3 = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx3, nSector, x, y, z);
         if (pFX3 && gModernMap)
             actPropagateSpriteOwner(pFX3, pShooter);
 
@@ -6841,9 +6841,9 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
 
 #else
     if (pVectorData->surfHit[nSurf].fx2 >= 0)
-        gFX.fxSpawn(pVectorData->surfHit[nSurf].fx2, nSector, x, y, z, 0);
+        gFX.fxSpawn(pVectorData->surfHit[nSurf].fx2, nSector, x, y, z);
     if (pVectorData->surfHit[nSurf].fx3 >= 0)
-        gFX.fxSpawn(pVectorData->surfHit[nSurf].fx3, nSector, x, y, z, 0);
+        gFX.fxSpawn(pVectorData->surfHit[nSurf].fx3, nSector, x, y, z);
 #endif
 
     if (pVectorData->surfHit[nSurf].fxSnd >= 0)
@@ -6855,7 +6855,7 @@ void FireballSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_11, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_11, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6870,7 +6870,7 @@ void NapalmSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_12, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_12, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6885,7 +6885,7 @@ void sub_3888C(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6900,7 +6900,7 @@ void sub_38938(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_33, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_33, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         int nFX = pFX->index;
