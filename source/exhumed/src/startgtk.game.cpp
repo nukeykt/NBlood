@@ -758,6 +758,10 @@ static GtkWidget *create_window(void)
 
 
 // -- BUILD ENTRY POINTS ------------------------------------------------------
+bool startwin_isopen(void)
+{
+    return gtkenabled && stwidgets.startwin;
+}
 
 int32_t startwin_open(void)
 {

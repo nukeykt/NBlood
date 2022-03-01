@@ -2571,7 +2571,7 @@ intptr_t kzopen(const char *filnam)
         {
             kzfs.comptyp = 0;
             kzfs.seek0 = 0;
-            kzfs.leng = buildvfs_flength(fil);
+            kzfs.leng = buildvfs_flength(kzfs.fil);
             kzfs.pos = 0;
             kzfs.i = 0;
             return (intptr_t)kzfs.fil;

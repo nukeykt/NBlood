@@ -87,12 +87,12 @@ static int SF2_LoadBank(char const *const filename)
 
         if (sf2_synth)
         {
-            MV_Printf(": loaded \"%s\"", filename);
+            VLOG_F(LOG_ASS, "Loaded \"%s\"", filename);
             return SF2_Ok;
         }
     }
 
-    MV_Printf(": error loading \"%s\"!\n", filename);
+    LOG_F(ERROR, "Unable to load \"%s\"!", filename);
     return SF2_Error;
 }
 
@@ -119,7 +119,7 @@ int SF2Drv_MIDI_Init(midifuncs* const funcs)
 
         if (!filename[0])
         {
-            MV_Printf(": no .sf2 data found!\n");
+            LOG_F(WARNING, "No .sf2 data found!");
             return SF2_SetError(SF2_BankError);
         }
     }

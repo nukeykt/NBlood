@@ -42,11 +42,11 @@ void G_ShowParameterHelp(void)
         "Example: " APPBASENAME " -usecwd -cfg myconfig.cfg -map nukeland.map\n\n"
         "Files can be of type [grp|zip|map|con|def]\n"
         "\n"
-        "-cfg [file.cfg]\tUse an alternate configuration file\n"
+        "-cfg [file.cfg]\t\tUse an alternate configuration file\n"
 #ifdef HAVE_CLIPSHAPE_FEATURE
         "-clipmap [file.map]\tLoad an additional clipping map for use with clipshape\n"
 #endif
-        "-connect [host]\tConnect to a multiplayer game\n"
+        "-connect [host]\t\tConnect to a multiplayer game\n"
         "-c#\t\tMultiplayer mode #, 1 = DM, 2 = Co-op, 3 = DM(no spawn)\n"
         "-d [file.edm or #]\tPlay a demo\n"
         "-g [file.grp]\tLoad additional game data\n"
@@ -85,11 +85,10 @@ void G_ShowParameterHelp(void)
         "\nSee " APPBASENAME " -debughelp for additional parameters for debugging"
         ;
 #ifdef WM_MSGBOX_WINDOW
-    Bsnprintf(tempbuf, sizeof(tempbuf), HEAD2 " %s", s_buildRev);
-    wm_msgbox(tempbuf, s);
-#else
-    initprintf("%s\n", s);
+    //Bsnprintf(tempbuf, sizeof(tempbuf), HEAD2 " %s", s_buildRev);
+    //wm_msgbox(tempbuf, s);
 #endif
+    LOG_F(INFO, s);
 }
 
 void G_ShowDebugHelp(void)
@@ -119,7 +118,7 @@ void G_ShowDebugHelp(void)
     Bsnprintf(tempbuf, sizeof(tempbuf), HEAD2 " %s", s_buildRev);
     wm_msgbox(tempbuf, s);
 #else
-    initprintf("%s\n", s);
+    LOG_F(INFO, s);
 #endif
 }
 
@@ -141,13 +140,13 @@ static void G_AddDemo(const char* param)
 
     if (framespertic < 0)
     {
-        initprintf("Play demo %s.\n", g_firstDemoFile);
+        LOG_F(INFO, "Playing demo %s", g_firstDemoFile);
     }
     else
     {
         framespertic = clamp(framespertic, 0, 8)+1;
         // TODO: repeat count and gathering statistics.
-        initprintf("Profile demo %s, %d frames/gametic, repeated 1x.\n", g_firstDemoFile,
+        LOG_F(INFO, "Profile demo %s, %d frames/gametic, repeated 1x.", g_firstDemoFile,
             framespertic-1);
         Demo_PlayFirst(framespertic, 1);
         g_noLogo = 1;
@@ -159,13 +158,10 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
     int16_t i = 1, j;
     const char *c, *k;
 
-    ud.fta_on = 1;
-    ud.god = 0;
     ud.m_respawn_items = 0;
     ud.m_respawn_monsters = 0;
     ud.m_respawn_inventory = 0;
     ud.warp_on = 0;
-    ud.cashman = 0;
     ud.m_ffire = 1;
     ud.m_player_skill = ud.player_skill = 2;
     g_player[0].wchoice[0] = 3;
@@ -193,10 +189,17 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
     if (argc > 1)
     {
-        initprintf("Application parameters: ");
+        tempbuf[0] = 0;
+
+        Bstrcpy(tempbuf, "Application parameters: ");
+
         while (i < argc)
-            initprintf("%s ", argv[i++]);
-        initprintf("\n");
+        {
+            Bstrcat(tempbuf, argv[i++]);
+            Bstrcat(tempbuf, " ");
+        }
+        
+        LOG_F(INFO, "%s", tempbuf);
 
         i = 1;
         do
@@ -325,7 +328,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 #endif
                 if (!Bstrcasecmp(c+1, "noautoload"))
                 {
-                    initprintf("Autoload disabled\n");
+                    LOG_F(INFO, "Autoload disabled");
                     g_noAutoLoad = 1;
                     i++;
                     continue;
@@ -420,7 +423,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     {
                         Xfree(g_rtsNamePtr);
                         g_rtsNamePtr = dup_filename(argv[i+1]);
-                        initprintf("Using RTS file \"%s\".\n", g_rtsNamePtr);
+                        LOG_F(INFO, "Using RTS file %s", g_rtsNamePtr);
                         i++;
                     }
                     i++;
@@ -528,7 +531,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     {
                         uint32_t j = Batol(argv[i+1]);
                         MAXCACHE1DSIZE = j<<10;
-                        initprintf("Cache size: %dkB\n", j);
+                        LOG_F(INFO, "Cache size: %dkB", j);
                         i++;
                     }
                     i++;
@@ -582,7 +585,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 {
                 case 'a':
                     ud.playerai = 1;
-                    initprintf("Other player AI.\n");
+                    LOG_F(INFO, "Other player \"AI.\"");
                     break;
                 case 'c':
                     c++;
@@ -631,7 +634,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     {
                         ud.m_monsters_off = 1;
                         ud.m_player_skill = ud.player_skill = 0;
-                        initprintf("Monsters off.\n");
+                        LOG_F(INFO, "Monsters off.");
                     }
                     break;
                 case 'n':
@@ -639,12 +642,12 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     if (*c == 's' || *c == 'S')
                     {
                         g_noSound = 2;
-                        initprintf("Sound off.\n");
+                        LOG_F(INFO, "Sound off (like you've got a pair).");
                     }
                     else if (*c == 'm' || *c == 'M')
                     {
                         g_noMusic = 1;
-                        initprintf("Music off.\n");
+                        LOG_F(INFO, "Music off.");
                     }
                     else
                     {
@@ -656,7 +659,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     if (*(++c) == 0)
                     {
                         ud.multimode = 1;
-                        initprintf("Fake multiplayer mode: expected number after -q, falling back to 1 player.\n");
+                        LOG_F(INFO, "Fake multiplayer mode: expected number after -q, falling back to 1 player.");
                     }
                     else
                     {
@@ -664,13 +667,12 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
                         if (numpl < 2 || numpl > MAXPLAYERS)
                         {
-                            initprintf("Fake multiplayer mode: expected 2-%d players, falling back to 1.\n",
-                                MAXPLAYERS);
+                            LOG_F(INFO, "Fake multiplayer mode: expected 2-%d players, falling back to 1.", MAXPLAYERS);
                         }
                         else
                         {
                             ud.multimode = numpl;
-                            initprintf("Fake multiplayer mode: %d players.\n", ud.multimode);
+                            LOG_F(INFO, "Fake multiplayer mode: %d players.", ud.multimode);
 
                             g_fakeMultiMode = numpl;
                         }
@@ -684,7 +686,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     break;
                 case 'r':
                     ud.m_recstat = 1;
-                    initprintf("Demo record mode on.\n");
+                    LOG_F(INFO, "Demo record mode on.");
                     break;
                 case 's':
                     c++;
@@ -703,7 +705,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                         ud.m_respawn_items = 1;
                         ud.m_respawn_inventory = 1;
                     }
-                    initprintf("Respawn on.\n");
+                    LOG_F(INFO, "Respawn on.");
                     break;
                 case 'u':
                     g_forceWeaponChoice = 1;
@@ -711,7 +713,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     j = 0;
                     if (*c)
                     {
-                        initprintf("Using favorite weapon order(s).\n");
+                        LOG_F(INFO, "Using favorite weapon order(s).");
                         while (*c)
                         {
                             g_player[0].wchoice[j] = *c-'0';
@@ -738,7 +740,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     }
                     else
                     {
-                        initprintf("Using default weapon orders.\n");
+                        LOG_F(INFO, "Using default weapon orders.");
                         g_player[0].wchoice[0] = 3;
                         g_player[0].wchoice[1] = 4;
                         g_player[0].wchoice[2] = 5;
@@ -798,28 +800,28 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     {
                         clearScriptNamePtr();
                         g_scriptNamePtr = dup_filename(argv[i++]);
-                        initprintf("Using CON file \"%s\".\n", g_scriptNamePtr);
+                        LOG_F(INFO, "Using CON file %s", g_scriptNamePtr);
                         continue;
                     }
                     if (!Bstrcasecmp(k, ".def"))
                     {
                         clearDefNamePtr();
                         g_defNamePtr = dup_filename(argv[i++]);
-                        initprintf("Using DEF file \"%s\".\n", g_defNamePtr);
+                        LOG_F(INFO, "Using DEF file %s", g_defNamePtr);
                         continue;
                     }
                     if (!Bstrcasecmp(k, ".rts"))
                     {
                         Xfree(g_rtsNamePtr);
                         g_rtsNamePtr = dup_filename(argv[i++]);
-                        initprintf("Using RTS file \"%s\".\n", g_rtsNamePtr);
+                        LOG_F(INFO, "Using RTS file %s", g_rtsNamePtr);
                         continue;
                     }
                 }
             }
 
             if (!shortopt || ignored_short_opt)
-                initprintf("Warning: ignored application parameter \"%s\".\n", oc);
+                LOG_F(WARNING, "Ignored application parameter '%s'.", oc);
 
             i++;
         } while (i < argc);

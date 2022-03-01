@@ -247,6 +247,8 @@ memberlabel_t const ActorLabels[]=
     { "htumovflag", ACTOR_HTUMOVFLAG, sizeof(actor[0].movflag) | LABEL_UNSIGNED, 0, offsetof(actor_t, movflag) },
     LABEL(actor, tempang,     "httempang",      ACTOR_HTTEMPANG),
     LABEL(actor, stayput,     "htactorstayput", ACTOR_HTSTAYPUT),
+    LABEL(actor, floorzoffset,"htfloorzoffset", ACTOR_HTFLOORZOFFSET),
+    LABEL(actor, waterzoffset,"htwaterzoffset", ACTOR_HTWATERZOFFSET),
     LABEL(actor, dispicnum,   "htdispicnum",    ACTOR_HTDISPICNUM),
     LABEL(actor, timetosleep, "httimetosleep",  ACTOR_HTTIMETOSLEEP),
     LABEL(actor, floorz,      "htfloorz",       ACTOR_HTFLOORZ),
@@ -940,6 +942,7 @@ memberlabel_t const UserdefsLabels[]=
     { "uw_framerate",           USERDEFS_UW_FRAMERATE,           0, 0, -1 },
     { "camera_time",            USERDEFS_CAMERA_TIME,            0, 0, -1 },
     { "folfvel",                USERDEFS_FOLFVEL,                0, 0, -1 },
+    { "folsvel",                USERDEFS_FOLSVEL,                0, 0, -1 },
     { "folavel",                USERDEFS_FOLAVEL,                0, 0, -1 },
     { "folx",                   USERDEFS_FOLX,                   0, 0, -1 },
     { "foly",                   USERDEFS_FOLY,                   0, 0, -1 },
@@ -1097,7 +1100,8 @@ memberlabel_t const UserdefsLabels[]=
     { "newgamecustomsubopen",   USERDEFS_NEWGAMECUSTOMSUBOPEN,   LABEL_HASPARM2, MAXMENUGAMEPLAYENTRIES, -1 },
     { "gamepadactive",          USERDEFS_GAMEPADACTIVE,          0, 0, -1 },
     { "m_newgamecustom",        USERDEFS_M_NEWGAMECUSTOM,        0, 0, -1 },
-    { "m_newgamecustomsub",     USERDEFS_M_NEWGAMECUSTOMSUB,     0, 0, -1 }
+    { "m_newgamecustomsub",     USERDEFS_M_NEWGAMECUSTOMSUB,     0, 0, -1 },
+    { "m_newgamecustoml3",      USERDEFS_M_NEWGAMECUSTOML3,      0, 0, -1 }
 };
 
 int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
@@ -1135,6 +1139,7 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
         case USERDEFS_UW_FRAMERATE:           labelNum = ud.uw_framerate;                 break;
         case USERDEFS_CAMERA_TIME:            labelNum = ud.camera_time;                  break;
         case USERDEFS_FOLFVEL:                labelNum = ud.folfvel;                      break;
+        case USERDEFS_FOLSVEL:                labelNum = ud.folsvel;                      break;
         case USERDEFS_FOLAVEL:                labelNum = ud.folavel;                      break;
         case USERDEFS_FOLX:                   labelNum = ud.folx;                         break;
         case USERDEFS_FOLY:                   labelNum = ud.foly;                         break;
@@ -1291,6 +1296,7 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
         case USERDEFS_GAMEPADACTIVE:          labelNum = (CONTROL_LastSeenInput == LastSeenInput::Joystick); break;
         case USERDEFS_M_NEWGAMECUSTOM:        labelNum = ud.m_newgamecustom;              break;
         case USERDEFS_M_NEWGAMECUSTOMSUB:     labelNum = ud.m_newgamecustomsub;           break;
+        case USERDEFS_M_NEWGAMECUSTOML3:      labelNum = ud.m_newgamecustoml3;           break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -1333,6 +1339,7 @@ void __fastcall VM_SetUserdef(int const labelNum, int const lParm2, int32_t cons
         case USERDEFS_UW_FRAMERATE:                 ud.uw_framerate                  = iSet; break;
         case USERDEFS_CAMERA_TIME:                  ud.camera_time                   = iSet; break;
         case USERDEFS_FOLFVEL:                      ud.folfvel                       = iSet; break;
+        case USERDEFS_FOLSVEL:                      ud.folsvel                       = iSet; break;
         case USERDEFS_FOLAVEL:                      ud.folavel                       = iSet; break;
         case USERDEFS_FOLX:                         ud.folx                          = iSet; break;
         case USERDEFS_FOLY:                         ud.foly                          = iSet; break;

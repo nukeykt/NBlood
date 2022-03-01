@@ -8300,7 +8300,6 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
-    g_logFlushWindow = 0;
     G_LoadGroups(!g_noAutoLoad && !ud.setup.noautoload);
 //    flushlogwindow = 1;
 
@@ -8447,7 +8446,7 @@ int app_main(int argc, char const * const * argv)
 
     Bsprintf(tempbuf, HEAD2 " %s", s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
-    OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
+    OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, OSDTEXT_DARKRED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
     //if (g_networkMode != NET_DEDICATED_SERVER)

@@ -109,13 +109,13 @@ void VM_DrawTileSmall(int32_t x, int32_t y, int32_t tilenum, int32_t shade, int3
 
 #define CON_ERRPRINTF(Text, ...) do { \
     vm.flags |= VM_RETURN; \
-    OSD_Printf("Line %d, %s: " Text, VM_DECODE_LINE_NUMBER(g_tw), VM_GetKeywordForID(VM_DECODE_INST(g_tw)), ## __VA_ARGS__); \
+    LOG_F(ERROR, "%s:%d: %s: " Text, VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), VM_GetKeywordForID(VM_DECODE_INST(g_tw)), ## __VA_ARGS__); \
 } while (0)
 
 #define CON_CRITICALERRPRINTF(Text, ...) do { \
     vm.flags |= VM_RETURN; \
-    OSD_Printf("Line %d, %s: " Text, VM_DECODE_LINE_NUMBER(g_tw), VM_GetKeywordForID(VM_DECODE_INST(g_tw)), ## __VA_ARGS__); \
-    wm_msgbox(APPNAME, "Line %d, %s: " Text, VM_DECODE_LINE_NUMBER(g_tw), VM_GetKeywordForID(VM_DECODE_INST(g_tw)), ## __VA_ARGS__); \
+    LOG_F(ERROR, "%s:%d: %s: " Text, VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), VM_GetKeywordForID(VM_DECODE_INST(g_tw)), ## __VA_ARGS__); \
+    wm_msgbox(APPNAME, "%s:%d: %s: " Text, VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), VM_GetKeywordForID(VM_DECODE_INST(g_tw)), ## __VA_ARGS__); \
 } while (0)
 
 void G_GetTimeDate(int32_t * pValues);

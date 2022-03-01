@@ -84,6 +84,8 @@ void ResetVideoColor(CGameMenuItemChain *);
 void LoadLastHostConfig(void);
 void LoadLastJoinConfig(void);
 void LoadLastMultiplayerConfig(void);
+void ClearUserMapNameOnLevelChange(CGameMenuItemZCycle *);
+
 #ifdef USE_OPENGL
 void SetupVideoPolymostMenu(CGameMenuItemChain *);
 #endif
@@ -165,6 +167,12 @@ const char *pzShowWeaponStrings[] = {
     "OFF",
     "SPRITE",
     "VOXEL"
+};
+
+const char *zPlayerKeysStrings[] = {
+    "LOST ON DEATH",
+    "KEPT ON RESPAWN",
+    "SHARED"
 };
 
 char zUserMapName[BMAX_PATH];
@@ -250,9 +258,9 @@ CGameMenuItemTitle itemOptionsOldTitle("OPTIONS", 1, 160, 20, 2038);
 CGameMenuItemChain itemOption1("CONTROLS...", 3, 0, 40, 320, 1, &menuControls, -1, NULL, 0);
 CGameMenuItemSlider sliderDetail("DETAIL:", 3, 66, 50, 180, gDetail, 0, 4, 1, SetDetail, -1, -1);
 CGameMenuItemSlider sliderGamma("GAMMA:", 3, 66, 60, 180, gGamma, 0, 15, 2, SetGamma, -1, -1);
-CGameMenuItemSlider sliderMusic("MUSIC:", 3, 66, 70, 180, MusicVolume, 0, 256, 48, SetMusicVol, -1, -1);
-CGameMenuItemSlider sliderSound("SOUND:", 3, 66, 80, 180, FXVolume, 0, 256, 48, SetSoundVol, -1, -1);
-CGameMenuItemSlider sliderCDAudio("CD AUDIO:", 3, 66, 90, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
+CGameMenuItemSlider sliderMusic("MUSIC:", 3, 66, 70, 180, MusicVolume, 0, 255, 48, SetMusicVol, -1, -1);
+CGameMenuItemSlider sliderSound("SOUND:", 3, 66, 80, 180, FXVolume, 0, 255, 48, SetSoundVol, -1, -1);
+CGameMenuItemSlider sliderCDAudio("CD AUDIO:", 3, 66, 90, 180, CDVolume, 0, 255, 48, SetCDVol, -1, -1);
 CGameMenuItemZBool bool3DAudio("3D AUDIO:", 3, 66, 100, 180, gStereo, SetMonoStereo, NULL, NULL);
 CGameMenuItemZBool boolCrosshair("CROSSHAIR:", 3, 66, 110, 180, gAimReticle, SetCrosshair, NULL, NULL);
 CGameMenuItemZCycle itemCycleShowWeapons("SHOW WEAPONS:", 3, 66, 120, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
@@ -263,7 +271,7 @@ CGameMenuItem7EE34 itemOption2("VIDEO MODE...", 3, 0, 160, 320, 1);
 CGameMenuItemChain itemChainParentalLock("PARENTAL LOCK", 3, 0, 170, 320, 1, &menuParentalLock, -1, NULL, 0);
 
 CGameMenuItemTitle itemControlsTitle("CONTROLS", 1, 160, 20, 2038);
-CGameMenuItemSliderFloat sliderMouseSpeed("Mouse Sensitivity:", 1, 10, 70, 300, CONTROL_MouseSensitivity, 0.5f, 16.f, 0.5f, SetMouseSensitivity, -1,-1);
+CGameMenuItemSliderFloat sliderMouseSpeed("Mouse Sensitivity:", 1, 10, 70, 300, CONTROL_MouseSensitivity, .1f, 100.f, 50.f, SetMouseSensitivity, -1,-1);
 CGameMenuItemZBool boolMouseFlipped("Invert Mouse Aim:", 1, 10, 90, 300, gMouseAimingFlipped, SetMouseAimFlipped, NULL, NULL);
 CGameMenuItemSlider sliderTurnSpeed("Key Turn Speed:", 1, 10, 110, 300, gTurnSpeed, 64, 128, 4, SetTurnSpeed, -1, -1);
 CGameMenuItemChain itemChainKeyList("Configure Keys...", 1, 0, 130, 320, 1, &menuKeys, -1, NULL, 0);
@@ -314,16 +322,16 @@ CGameMenu menuMultiUserMaps;
 CGameMenuItemTitle itemNetStartUserMapTitle("USER MAP", 1, 160, 20, 2038);
 CGameMenuFileSelect menuMultiUserMap("", 3, 0, 0, 0, "./", "*.map", zUserMapName);
 
-CGameMenuItemTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
+CGameMenuItemMultiplayerTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemNetStart1("GAME:", 3, 66, 60, 180, 0, 0, zNetGameTypes, 3, 0);
 CGameMenuItemZCycle itemNetStart2("EPISODE:", 3, 66, 70, 180, 0, SetupNetLevels, NULL, 0, 0);
-CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, NULL, NULL, 0, 0);
+CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, ClearUserMapNameOnLevelChange, NULL, 0, 0);
 CGameMenuItemZCycle itemNetStart4("DIFFICULTY:", 3, 66, 90, 180, 0, 0, zDiffStrings, 5, 0);
 CGameMenuItemZCycle itemNetStart5("MONSTERS:", 3, 66, 100, 180, 0, 0, zMonsterStrings, 3, 0);
 CGameMenuItemZCycle itemNetStart6("WEAPONS:", 3, 66, 110, 180, 0, 0, zWeaponStrings, 4, 0);
 CGameMenuItemZCycle itemNetStart7("ITEMS:", 3, 66, 120, 180, 0, 0, zItemStrings, 3, 0);
 CGameMenuItemZBool itemNetStart8("FRIENDLY FIRE:", 3, 66, 130, 180, true, 0, NULL, NULL);
-CGameMenuItemZBool itemNetStart9("KEEP KEYS ON RESPAWN:", 3, 66, 140, 180, false, 0, NULL, NULL);
+CGameMenuItemZCycle itemNetStart9("PLAYER KEYS:", 3, 66, 140, 180, 0, 0, zPlayerKeysStrings, 3, 0);
 CGameMenuItemZBool itemNetStart10("V1.0x WEAPONS BALANCE:", 3, 66, 150, 180, false, 0, NULL, NULL);
 CGameMenuItemChain itemNetStart11("USER MAP", 3, 66, 160, 180, 0, &menuMultiUserMaps, 0, NULL, 0);
 CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, StartNetGame, 0);
@@ -331,9 +339,9 @@ CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, Start
 CGameMenuItemText itemLoadingText("LOADING...", 1, 160, 100, 1);
 
 CGameMenuItemTitle itemSoundsTitle("SOUNDS", 1, 160, 20, 2038);
-CGameMenuItemSlider itemSoundsMusic("MUSIC:", 3, 40, 60, 180, MusicVolume, 0, 256, 48, SetMusicVol, -1, -1);
-CGameMenuItemSlider itemSoundsSound("SOUND:", 3, 40, 70, 180, FXVolume, 0, 256, 48, SetSoundVol, -1, -1);
-CGameMenuItemSlider itemSoundsCDAudio("CD AUDIO:", 3, 40, 80, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
+CGameMenuItemSlider itemSoundsMusic("MUSIC:", 3, 40, 60, 180, MusicVolume, 0, 255, 48, SetMusicVol, -1, -1);
+CGameMenuItemSlider itemSoundsSound("SOUND:", 3, 40, 70, 180, FXVolume, 0, 255, 48, SetSoundVol, -1, -1);
+CGameMenuItemSlider itemSoundsCDAudio("CD AUDIO:", 3, 40, 80, 180, CDVolume, 0, 255, 48, SetCDVol, -1, -1);
 CGameMenuItemZBool itemSounds3DAudio("3D SOUND:", 3, 40, 90, 180, gStereo, SetMonoStereo, NULL, NULL);
 
 CGameMenuItemTitle itemQuitTitle("QUIT", 1, 160, 20, 2038);
@@ -643,7 +651,7 @@ CGameMenuItemZBool itemOptionsSound3DToggle("3D AUDIO:", 3, 66, 80, 180, false, 
 CGameMenuItemSlider itemOptionsSoundSoundVolume("SOUND VOLUME:", 3, 66, 90, 180, &FXVolume, 0, 256, 48, UpdateSoundVolume, -1, -1, kMenuSliderPercent);
 CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 100, 180, &MusicVolume, 0, 256, 48, UpdateMusicVolume, -1, -1, kMenuSliderPercent);
 CGameMenuItemZCycle itemOptionsSoundSampleRate("SAMPLE RATE:", 3, 66, 110, 180, 0, UpdateSoundRate, pzSoundRateStrings, 3, 0);
-CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 256, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
+CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 255, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 130, 180, false, UpdateCDToggle, NULL, NULL);
 CGameMenuItemZCycle itemOptionsSoundMusicDevice("MIDI DRIVER:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, ARRAY_SIZE(pzMusicDeviceStrings), 0);
 CGameMenuItemChain itemOptionsSoundSF2Bank("SF2 BANK", 3, 66, 150, 180, 0, &menuOptionsSoundSF2, 0, NULL, 0);
@@ -681,12 +689,12 @@ void SetupMouseButtonMenu(CGameMenuItemChain *pItem);
 
 CGameMenuItemTitle itemOptionsControlMouseTitle("MOUSE SETUP", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsControlMouseButton("BUTTON ASSIGNMENT", 3, 66, 60, 180, 0, &menuOptionsControlMouseButtonAssignment, 0, SetupMouseButtonMenu, 0);
-CGameMenuItemSliderFloat itemOptionsControlMouseSensitivity("SENSITIVITY:", 3, 66, 70, 180, &CONTROL_MouseSensitivity, 1.f, 10.f, 0.1f, SetMouseSensitivity, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsControlMouseSensitivity("SENSITIVITY:", 3, 66, 70, 180, &CONTROL_MouseSensitivity, 1.f, 50.f, 1.f, SetMouseSensitivity, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsControlMouseAimFlipped("INVERT AIMING:", 3, 66, 80, 180, false, SetMouseAimFlipped, NULL, NULL);
 CGameMenuItemZBool itemOptionsControlMouseAimMode("AIMING TYPE:", 3, 66, 90, 180, false, SetMouseAimMode, "HOLD", "TOGGLE");
 CGameMenuItemZBool itemOptionsControlMouseVerticalAim("VERTICAL AIMING:", 3, 66, 100, 180, false, SetMouseVerticalAim, NULL, NULL);
-CGameMenuItemSliderFloat itemOptionsControlMouseXSensitivity("HORIZ SENS:", 3, 66, 110, 180, &CONTROL_MouseAxesSensitivity[0], 1.f, 10.f, 0.1f, SetMouseXSensitivity, -1, -1, kMenuSliderValue);
-CGameMenuItemSliderFloat itemOptionsControlMouseYSensitivity("VERT SENS:", 3, 66, 120, 180, &CONTROL_MouseAxesSensitivity[1], 1.f, 10.f, 0.1f, SetMouseYSensitivity, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsControlMouseXSensitivity("HORIZ SENS:", 3, 66, 110, 180, &CONTROL_MouseAxesSensitivity[0], 1.f, 50.f, 1.f, SetMouseXSensitivity, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsControlMouseYSensitivity("VERT SENS:", 3, 66, 120, 180, &CONTROL_MouseAxesSensitivity[1], 1.f, 50.f, 1.f, SetMouseYSensitivity, -1, -1, kMenuSliderValue);
 
 void SetupNetworkMenu(void);
 void SetupNetworkHostMenu(CGameMenuItemChain *pItem);
@@ -1585,7 +1593,7 @@ void SetDifficultyAndStart(CGameMenuItemChain *pItem)
     if (gDemo.at1)
         gDemo.StopPlayback();
     gStartNewGame = true;
-    gCheatMgr.sub_5BCF4();
+    gCheatMgr.ResetCheats();
     if (Bstrlen(gGameOptions.szUserMap))
     {
         levelAddUserMap(gGameOptions.szUserMap);
@@ -2261,13 +2269,15 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
-    restoreGameDifficulty[nSlot] = gGameOptions.nDifficulty;
     gGameOptions.nSaveGameSlot = nSlot;
     viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
     gSaveGameNum = nSlot;
-    LoadSave::SaveGame(strSaveGameName);
     gQuickSaveSlot = nSlot;
+    LoadSave::SaveGame(strSaveGameName);
+    gGameOptions.picEntry = gSavedOffset;
+    gSaveGameOptions[nSlot] = gGameOptions;
+    UpdateSavedInfo(nSlot);
     gGameMenuMgr.Deactivate();
     viewSetMessage("Game saved");
 }
@@ -2285,7 +2295,6 @@ void QuickSaveGame(void)
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
-    restoreGameDifficulty[gQuickSaveSlot] = gGameOptions.nDifficulty;
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
     viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
     videoNextPage();
@@ -2328,6 +2337,11 @@ void QuickLoadGame(void)
     gGameMenuMgr.Deactivate();
 }
 
+void ClearUserMapNameOnLevelChange(CGameMenuItemZCycle *pItem)
+{
+    memset(zUserMapName, 0, sizeof(zUserMapName));
+}
+
 void SetupLevelMenuItem(int nEpisode)
 {
     dassert(nEpisode >= 0 && nEpisode < gEpisodeCount);
@@ -2336,6 +2350,7 @@ void SetupLevelMenuItem(int nEpisode)
 
 void SetupNetLevels(CGameMenuItemZCycle *pItem)
 {
+    memset(zUserMapName, 0, sizeof(zUserMapName));
     SetupLevelMenuItem(pItem->m_nFocus);
 }
 
@@ -2354,12 +2369,12 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.itemSettings = itemNetStart7.m_nFocus;
     gPacketStartGame.respawnSettings = 0;
     gPacketStartGame.bFriendlyFire = itemNetStart8.at20;
-    gPacketStartGame.bKeepKeysOnRespawn = itemNetStart9.at20;
+    gPacketStartGame.bPlayerKeys = (PLAYERKEYSMODE) itemNetStart9.m_nFocus;
     ////
     gPacketStartGame.weaponsV10x = itemNetStart10.at20;
     ////
     gPacketStartGame.unk = 0;
-    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, Bstrlen(zUserMapName));
+    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, sizeof(gPacketStartGame.userMapName));
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
 
     netBroadcastNewGame();

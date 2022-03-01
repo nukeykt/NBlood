@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "drivers.h"
 #include "fx_man.h"
+#include "libasync_config.h"
 #include "linklist.h"
 #include "osd.h"
 #include "pitch.h"
@@ -49,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 int MV_XMPInterpolation = XMP_INTERP_NEAREST;
 #endif
+
 
 static void MV_StopVoice(VoiceNode *voice);
 static void MV_ServiceVoc(void);
@@ -88,7 +90,6 @@ VoiceNode  VoicePool;
 
 static int MV_MixPage;
 
-int (*MV_Printf)(const char *fmt, ...) = initprintf;
 static void (*MV_CallBackFunc)(intptr_t);
 
 char *MV_MixDestination;
@@ -100,8 +101,7 @@ int MV_ErrorCode = MV_NotInstalled;
 fix16_t MV_GlobalVolume = fix16_one;
 fix16_t MV_VolumeSmoothFactor = fix16_one;
 
-int MV_Locked;
-
+thread_local int MV_Locked;
 char *MV_MusicBuffer;
 static void (*MV_MusicCallback)(void);
 
@@ -109,6 +109,20 @@ static VoiceNode **MV_Handles;
 
 static bool MV_Mix(VoiceNode * const voice, int const buffer)
 {
+    if (voice->task.valid())
+    {
+        if (!voice->task.ready())
+            return true;
+
+        auto result = voice->task.get();        
+
+        if (result != MV_Ok)
+        {
+            LOG_F(ERROR, "Error playing sound 0x%08" PRIxPTR ": %s", voice->callbackval, MV_ErrorString(result));
+            return false;
+        }
+    }
+
     if (voice->length == 0 && voice->GetSound(voice) != KeepPlaying)
         return false;
 
@@ -175,7 +189,7 @@ void MV_PlayVoice(VoiceNode *voice)
     MV_Lock();
     LL::SortedInsert(&VoiceList, voice, &VoiceNode::priority);
     voice->PannedVolume = voice->GoalVolume;
-    voice->Paused = false;
+    voice->Paused.store(false, std::memory_order_release);
     MV_Unlock();
 }
 
@@ -236,7 +250,8 @@ static void MV_StopVoice(VoiceNode *voice)
 static void MV_ServiceVoc(void)
 {
     // Toggle which buffer we'll mix next
-    ++MV_MixPage &= MV_NumberOfBuffers-1;
+    ++MV_MixPage;
+    MV_MixPage &= MV_NumberOfBuffers-1;
 
     if (MV_ReverbLevel == 0)
     {
@@ -281,7 +296,7 @@ static void MV_ServiceVoc(void)
         {
             next = voice->next;
 
-            if (voice->Paused)
+            if (voice->Paused.load(std::memory_order_acquire))
                 continue;
 
             if (voice->priority == FX_MUSIC_PRIORITY)
@@ -324,7 +339,7 @@ static VoiceNode *MV_GetVoice(int handle)
 {
     if (handle < MV_MINVOICEHANDLE || handle > MV_MaxVoices)
     {
-        MV_Printf("MV_GetVoice(): bad handle (%d)!\n", handle);
+        LOG_F(WARNING, "No voice found for handle 0x%08x", handle);
         return nullptr;
     }
 
@@ -348,6 +363,9 @@ VoiceNode *MV_BeginService(int handle)
         return nullptr;
     }
 
+    if (voice->task.valid() && !voice->task.ready())
+        voice->task.wait();
+
     MV_Lock();
 
     return voice;
@@ -358,7 +376,8 @@ static inline void MV_EndService(void) { MV_Unlock(); }
 int MV_VoicePlaying(int handle)
 {
     Bassert(handle <= MV_MaxVoices);
-    return MV_Installed && MV_Handles[handle - MV_MINVOICEHANDLE] != nullptr;
+    auto voice = MV_Handles[handle - MV_MINVOICEHANDLE];
+    return MV_Installed && voice != nullptr && !voice->Paused.load(std::memory_order_relaxed);
 }
 
 int MV_KillAllVoices(void)
@@ -451,6 +470,7 @@ static inline void MV_FinishAllocation(VoiceNode* voice, uint32_t const allocsiz
 
     voice->rawdatasiz = allocsize;
     voice->rawdataptr = Xaligned_alloc(16, allocsize);
+    Bmemset(voice->rawdataptr, 0, allocsize);
 }
 
 VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
@@ -462,7 +482,7 @@ VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
     {
         auto voice = MV_GetLowestPriorityVoice();
 
-        if (voice != &VoiceList && voice->priority <= priority && voice->handle >= MV_MINVOICEHANDLE)
+        if (voice != &VoiceList && voice->priority <= priority && voice->handle >= MV_MINVOICEHANDLE && FX_SoundValidAndActive(voice->handle))
             MV_Kill(voice->handle);
 
         if (LL::Empty(&VoicePool))
@@ -485,12 +505,12 @@ VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize /* = 0 */)
             handle = MV_MINVOICEHANDLE;
     } while (MV_Handles[handle - MV_MINVOICEHANDLE] != nullptr);
     MV_Handles[handle - MV_MINVOICEHANDLE] = voice;
-    MV_Unlock();
 
     voice->length = 0;
     voice->BlockLength = 0;
     voice->handle = handle;
     voice->next = voice->prev = nullptr;
+    MV_Unlock();
 
     if (allocsize)
         MV_FinishAllocation(voice, allocsize);
@@ -505,17 +525,10 @@ int MV_VoiceAvailable(int priority)
         return TRUE;
 
     MV_Lock();
-
     auto const voice = MV_GetLowestPriorityVoice();
-
-    if (voice == &VoiceList || voice->priority > priority)
-    {
-        MV_Unlock();
-        return FALSE;
-    }
-
     MV_Unlock();
-    return TRUE;
+
+    return (voice == &VoiceList || voice->priority > priority) ? FALSE : TRUE;
 }
 
 void MV_SetVoicePitch(VoiceNode *voice, uint32_t rate, int pitchoffset)
@@ -624,7 +637,7 @@ int MV_PauseVoice(int handle, int pause)
     if (voice == nullptr)
         return MV_Error;
 
-    voice->Paused = pause;
+    voice->Paused.store(pause, std::memory_order_release);
     MV_EndService();
 
     return MV_Ok;
@@ -649,7 +662,7 @@ int MV_GetPosition(int handle, int *position)
 #ifdef HAVE_XMP
         case FMT_XMP:    *position = MV_GetXMPPosition(voice); break;
 #endif
-        default: break;
+        default:         *position = (int)max<intptr_t>(0, (((intptr_t)voice->NextBlock + (intptr_t)voice->position - (intptr_t)voice->rawdataptr) >> 16) * ((voice->channels * voice->bits) >> 3)); break;
     }
 
     MV_EndService();

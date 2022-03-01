@@ -45,7 +45,7 @@ typedef struct {
     char *definedname;  // new
 } sound_t;
 
-#define MAXSOUNDS 4096
+#define MAXSOUNDS 16384
 extern sound_t g_sounds[MAXSOUNDS];
 
 extern int32_t g_numEnvSoundsPlaying;

@@ -183,6 +183,7 @@ static void ReadSaveGameHeaders_CACHE1D(BUILDVFS_FIND_REC *f)
             msv.isOldVer = 0;
 
         msv.isAutoSave = h.isAutoSave();
+        msv.isOldScriptVer = h.userbytever < ud.userbytever;
 
         strncpy(msv.brief.path, fn, ARRAY_SIZE(msv.brief.path));
         ++g_numinternalsaves;
@@ -318,7 +319,7 @@ int32_t G_LoadSaveHeaderNew(char const *fn, savehead_t *saveh)
     {
         if (kdfread_LZ4((char *)waloff[TILE_LOADSHOT], 320, 200, fil) != 200)
         {
-            OSD_Printf("G_LoadSaveHeaderNew(): failed reading screenshot in \"%s\"\n", fn);
+            LOG_F(ERROR, "Failed reading screenshot from %s", fn);
             goto corrupt;
         }
 
@@ -374,7 +375,7 @@ static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfil
     bool loadedMhk = false;
 
     if (mhkInfo && (loadedMhk = (engineLoadMHK(mhkInfo->mhkfile) == 0)))
-        initprintf("Loaded map hack file \"%s\"\n", mhkInfo->mhkfile);
+        LOG_F(INFO, "Loaded %s", mhkInfo->mhkfile);
 
     if (!loadedMhk)
     {
@@ -382,7 +383,7 @@ static void sv_loadMhk(usermaphack_t* const mhkInfo, char* const currentboardfil
         Bstrcpy(bfn, currentboardfilename);
         append_ext_UNSAFE(bfn, ".mhk");
         if (engineLoadMHK(bfn) == 0)
-            initprintf("Loaded map hack file \"%s\"\n", bfn);
+            LOG_F(INFO, "Loaded %s", bfn);
     }
 }
 
@@ -390,7 +391,7 @@ static void sv_loadMapart(usermaphack_t* const mhkInfo, char* const currentboard
 {
     if (mhkInfo && mhkInfo->mapart)
     {
-        initprintf("Using mapinfo-defined mapart \"%s\"\n", mhkInfo->mapart);
+        LOG_F(INFO, "Loading %s", mhkInfo->mapart);
         artSetupMapArt(mhkInfo->mapart);
     }
     else artSetupMapArt(currentboardfilename);
@@ -519,13 +520,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
                     mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
                                  sizeof(usermaphack_t), compare_usermaphacks);
 
-                // only setup art if map differs from previous
-                if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
-                {
-                    sv_loadMapart(mhkInfo, currentboardfilename);
-                    Bstrcpy(previousboardfilename, currentboardfilename);
-                }
-
+                sv_loadMapart(mhkInfo, currentboardfilename);
                 sv_loadMhk(mhkInfo, currentboardfilename);
             }
 
@@ -724,13 +719,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
             mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
                                  sizeof(usermaphack_t), compare_usermaphacks);
 
-        // only setup art if map differs from previous
-        if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
-        {
-            sv_loadMapart(mhkInfo, currentboardfilename);
-            Bstrcpy(previousboardfilename, currentboardfilename);
-        }
-
+        sv_loadMapart(mhkInfo, currentboardfilename);
         sv_loadMhk(mhkInfo, currentboardfilename);
     }
 
@@ -742,7 +731,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     {
         // in theory, we could load into an initial dump first and trivially
         // recover if things go wrong...
-        Bsprintf(tempbuf, "Loading save game file \"%s\" failed (code %d), cannot recover.", sv.path, status);
+        Bsprintf(tempbuf, "Unable to load %s: fatal error %d.", sv.path, status);
         G_GameExit(tempbuf);
     }
 
@@ -787,7 +776,7 @@ void G_DeleteSave(savebrief_t const & sv)
 
     if (G_ModDirSnprintf(temp, sizeof(temp), "%s", sv.path))
     {
-        OSD_Printf("G_SavePlayer: file name \"%s\" too long\n", sv.path);
+        LOG_F(ERROR, "Unable to remove %s: unknown fatal error.", sv.path);
         return;
     }
 
@@ -843,7 +832,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
     {
         if (G_ModDirSnprintf(fn, sizeof(fn), "%s", sv.path))
         {
-            OSD_Printf("G_SavePlayer: file name \"%s\" too long\n", sv.path);
+            LOG_F(ERROR, "Unable to save %s: unknown fatal error.", sv.path);
             goto saveproblem;
         }
         fil = buildvfs_fopen_write(fn);
@@ -854,7 +843,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
         int const len = G_ModDirSnprintfLite(fn, ARRAY_SIZE(fn), SaveName);
         if (len >= ARRAY_SSIZE(fn)-1)
         {
-            OSD_Printf("G_SavePlayer: could not form automatic save path\n");
+            LOG_F(ERROR, "Resulting save filename is too long.");
             goto saveproblem;
         }
         char * zeros = fn + (len-8);
@@ -866,7 +855,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
 
     if (!fil)
     {
-        OSD_Printf("G_SavePlayer: failed opening \"%s\" for writing: %s\n",
+        LOG_F(ERROR, "Unable to open %s for writing: %s.",
                    fn, strerror(errno));
         goto saveproblem;
     }
@@ -1566,7 +1555,7 @@ static const dataspec_t svgm_anmisc[] =
     { DS_SAVEFN, (void *)&sv_preanimateptrsave, 0, 1 },
     { 0, &g_animatePtr[0], sizeof(g_animatePtr[0]), MAXANIMATES },
     { DS_SAVEFN|DS_LOADFN , (void *)&sv_postanimateptr, 0, 1 },
-    { 0, &g_curViewscreen, sizeof(g_curViewscreen), 1 },
+    { 0, &g_curViewscreen, sizeof(g_curViewscreen), 1 }, // unused
     { 0, &g_origins[0], sizeof(g_origins[0]), ARRAY_SIZE(g_origins) },
     { 0, &g_spriteDeleteQueuePos, sizeof(g_spriteDeleteQueuePos), 1 },
     { DS_NOCHK, &g_deleteQueueSize, sizeof(g_deleteQueueSize), 1 },
@@ -1731,6 +1720,7 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
     h.volnum     = ud.volume_number;
     h.levnum     = ud.level_number;
     h.skill      = ud.player_skill;
+    h.health     = sprite[g_player[myconnectindex].ps->i].extra;
 
     Bstrncpyz(h.boardfn, currentboardfilename, sizeof(h.boardfn));
 
@@ -1820,13 +1810,13 @@ int32_t sv_loadheader(buildvfs_kfd fil, int32_t spot, savehead_t *h)
         char headerCstr[sizeof(h->headerstr) + 1];
         Bmemcpy(headerCstr, h->headerstr, sizeof(h->headerstr));
         headerCstr[sizeof(h->headerstr)] = '\0';
-        OSD_Printf("%s %d header reads \"%s\", expected \"E32SAVEGAME\".\n",
+        LOG_F(ERROR, "%s %d header reads '%s', expected 'E32SAVEGAME'.",
                    havedemo ? "Demo":"Savegame", havedemo ? -spot : spot, headerCstr);
         Bmemset(h->headerstr, 0, sizeof(h->headerstr));
         return -2;
     }
 
-    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever < ud.userbytever
+    if (h->majorver != SV_MAJOR_VER || h->minorver != SV_MINOR_VER || h->bytever != BYTEVERSION || h->userbytever > ud.userbytever
         || Bstrncasecmp(g_scriptFileName, h->scriptname, Bstrlen(h->scriptname)))
     {
 #ifndef DEBUGGINGAIDS

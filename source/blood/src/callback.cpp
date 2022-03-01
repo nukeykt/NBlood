@@ -65,7 +65,7 @@ void fxFlameLick(int nSprite) // 0
         int x = pSprite->x + dx;
         int y = pSprite->y + dy;
         int z = bottom-Random(bottom-top);
-        spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z, 0);
+        spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z);
         if (pFX)
         {
             xvel[pFX->index] = xvel[nSprite] + Random2(-dx);
@@ -123,7 +123,7 @@ void FlareBurst(int nSprite) // 2
 void fxFlareSpark(int nSprite) // 3
 {
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -136,7 +136,7 @@ void fxFlareSpark(int nSprite) // 3
 void fxFlareSparkLite(int nSprite) // 4
 {
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -155,7 +155,7 @@ void fxZombieBloodSpurt(int nSprite) // 5
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
-    spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, top, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, top);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x11111);
@@ -178,7 +178,7 @@ void fxZombieBloodSpurt(int nSprite) // 5
 void fxBloodSpurt(int nSprite) // 6
 {
     spritetype *pSprite = &sprite[nSprite];
-    spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         pFX->ang = 0;
@@ -193,7 +193,7 @@ void fxBloodSpurt(int nSprite) // 6
 void fxArcSpark(int nSprite) // 7
 {
     spritetype* pSprite = &sprite[nSprite];
-    spritetype* pFX = gFX.fxSpawn(FX_15, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype* pFX = gFX.fxSpawn(FX_15, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x10000);
@@ -213,7 +213,7 @@ void fxDynPuff(int nSprite) // 8
         int x = pSprite->x + mulscale30(nDist, Cos(pSprite->ang-512));
         int y = pSprite->y + mulscale30(nDist, Sin(pSprite->ang-512));
         int z = pSprite->z;
-        spritetype *pFX = gFX.fxSpawn(FX_7, pSprite->sectnum, x, y, z, 0);
+        spritetype *pFX = gFX.fxSpawn(FX_7, pSprite->sectnum, x, y, z);
         if (pFX)
         {
             xvel[pFX->index] = xvel[nSprite];
@@ -303,7 +303,7 @@ void Respawn(int nSprite) // 9
                 pSprite->cstat &= (unsigned short)~CSTAT_SPRITE_INVISIBLE;
             }
 
-            gFX.fxSpawn(FX_29, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+            gFX.fxSpawn(FX_29, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
             sfxPlay3DSound(pSprite, 350, -1, 0);
             break;
         }
@@ -328,7 +328,7 @@ void PlayerBubble(int nSprite) // 10
             int x = pSprite->x + mulscale30(nDist, Cos(nAngle));
             int y = pSprite->y + mulscale30(nDist, Sin(nAngle));
             int z = bottom-Random(bottom-top);
-            spritetype *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z, 0);
+            spritetype *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z);
             if (pFX)
             {
                 xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -352,7 +352,7 @@ void EnemyBubble(int nSprite) // 11
         int x = pSprite->x + mulscale30(nDist, Cos(nAngle));
         int y = pSprite->y + mulscale30(nDist, Sin(nAngle));
         int z = bottom-Random(bottom-top);
-        spritetype *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z, 0);
+        spritetype *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z);
         if (pFX)
         {
             xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -409,7 +409,7 @@ void fxBloodBits(int nSprite) // 14
     int nDist = Random(16)<<4;
     int x = pSprite->x+mulscale28(nDist, Cos(nAngle));
     int y = pSprite->y+mulscale28(nDist, Sin(nAngle));
-    gFX.fxSpawn(FX_48, pSprite->sectnum, x, y, pSprite->z, 0);
+    gFX.fxSpawn(FX_48, pSprite->sectnum, x, y, pSprite->z);
     if (pSprite->ang == 1024)
     {
         int nChannel = 28+(pSprite->index&2);
@@ -418,7 +418,7 @@ void fxBloodBits(int nSprite) // 14
     }
     if (Chance(0x5000))
     {
-        spritetype *pFX = gFX.fxSpawn(FX_36, pSprite->sectnum, x, y, floorZ-64, 0);
+        spritetype *pFX = gFX.fxSpawn(FX_36, pSprite->sectnum, x, y, floorZ-64);
         if (pFX)
             pFX->ang = nAngle;
     }
@@ -429,7 +429,7 @@ void fxBloodBits(int nSprite) // 14
 void fxTeslaAlt(int nSprite) // 15
 {
     spritetype* pSprite = &sprite[nSprite];
-    spritetype* pFX = gFX.fxSpawn(FX_49, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype* pFX = gFX.fxSpawn(FX_49, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -531,9 +531,9 @@ void fxPodBloodSpray(int nSprite) // 18
     spritetype* pSprite = &sprite[nSprite];
     spritetype* pFX;
     if (pSprite->type == 53)
-        pFX = gFX.fxSpawn(FX_53, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+        pFX = gFX.fxSpawn(FX_53, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     else
-        pFX = gFX.fxSpawn(FX_54, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+        pFX = gFX.fxSpawn(FX_54, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pFX)
     {
         pFX->ang = 0;
@@ -566,13 +566,13 @@ void fxPodBloodSplat(int nSprite) // 19
     if (pSprite->type == 53 || pSprite->type == kThingPodGreenBall)
     {
         if (Chance(0x500) || pSprite->type == kThingPodGreenBall)
-            pFX = gFX.fxSpawn(FX_55, pSprite->sectnum, x, y, floorZ-64, 0);
+            pFX = gFX.fxSpawn(FX_55, pSprite->sectnum, x, y, floorZ-64);
         if (pFX)
             pFX->ang = nAngle;
     }
     else
     {
-        pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, floorZ-64, 0);
+        pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, floorZ-64);
         if (pFX)
             pFX->ang = nAngle;
     }

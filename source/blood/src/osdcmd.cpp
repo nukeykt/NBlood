@@ -1039,9 +1039,6 @@ int32_t registerosdcommands(void)
         { "in_mousedeadzone", "amount of mouse movement to filter out", (void *)&MouseDeadZone, CVAR_INT, 0, 512 },
         { "in_mouseflip", "invert vertical mouse movement", (void *)&gMouseAimingFlipped, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "toggles vertical mouse view", (void *)&gMouseAim, CVAR_BOOL, 0, 1 },
-
-        { "in_mousexsensitivity", "horizontal mouse sensitivity", (void*)&CONTROL_MouseAxesSensitivity[0], CVAR_FLOAT, 0, 25 },
-        { "in_mouseysensitivity", "vertical mouse sensitivity",   (void*)&CONTROL_MouseAxesSensitivity[1], CVAR_FLOAT, 0, 25 },
 //
         { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
         { "mus_restartonload", "restart the music when loading a saved game with the same map or not", (void *)&MusicRestartsOnLoadToggle, CVAR_BOOL, 0, 1 },
@@ -1063,8 +1060,6 @@ int32_t registerosdcommands(void)
         { "r_precache", "enable/disable the pre-level caching routine", (void *)&useprecache, CVAR_BOOL, 0, 1 },
 //
         { "r_ambientlight", "sets the global map light level",(void *)&r_ambientlight, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-
-        { "sensitivity","changes the mouse sensitivity", (void *)&CONTROL_MouseSensitivity, CVAR_FLOAT|CVAR_FUNCPTR, 0, 25 },
 //
 //        { "skill","changes the game skill setting", (void *)&ud.m_player_skill, CVAR_INT|CVAR_FUNCPTR|CVAR_NOSAVE/*|CVAR_NOMULTI*/, 0, 5 },
 //
@@ -1072,8 +1067,8 @@ int32_t registerosdcommands(void)
         { "snd_enabled", "enables/disables sound effects", (void *)&SoundToggle, CVAR_BOOL, 0, 1 },
         { "snd_fxvolume", "controls volume for sound effects", (void *)&FXVolume, CVAR_INT, 0, 255 },
         { "snd_mixrate", "sound mixing rate", (void *)&MixRate, CVAR_INT, 0, 48000 },
-        { "snd_numchannels", "the number of sound channels", (void *)&NumChannels, CVAR_INT, 0, 2 },
-        { "snd_numvoices", "the number of concurrent sounds", (void *)&NumVoices, CVAR_INT, 1, 256 },
+        { "snd_numchannels", "the number of sound channels", (void *)&NumChannels, CVAR_INT, 1, 2 },
+        { "snd_numvoices", "the number of concurrent sounds", (void *)&NumVoices, CVAR_INT, 1, 255 },
 #ifdef ASS_REVERSESTEREO
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ReverseStereo, CVAR_BOOL, 0, 1 },
 #endif

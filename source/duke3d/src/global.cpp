@@ -90,7 +90,7 @@ int32_t g_gametypeFlags[MAXGAMETYPES] =
     GAMETYPE_TDMSPAWN,
 };
 
-double g_gameUpdateAvgTime;
+int32_t g_frameStackSize = DRAWFRAME_DEFAULT_STACK_SIZE;
 
 int32_t g_actorRespawnTime   = 768;
 int32_t g_bouncemineRadius   = 2500;

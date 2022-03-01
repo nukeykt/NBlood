@@ -36,7 +36,7 @@ int S_FindMusicSFX(int sectNum, int *sndptr)
         const int32_t snd = sprite[spriteNum].lotag;
         EDUKE32_STATIC_ASSERT(MAXSOUNDS >= 1000);
 
-        if (PN(spriteNum) == MUSICANDSFX && (unsigned)snd < 1000 && S_SoundIsValid(snd))  // XXX: in other places, 999
+        if (PN(spriteNum) == MUSICANDSFX && snd && (unsigned)snd < 1000 && S_SoundIsValid(snd))  // XXX: in other places, 999
         {
             *sndptr = snd;
             return spriteNum;
@@ -390,8 +390,7 @@ static void G_SetupCamTile(int spriteNum, int tileNum, int smoothRatio)
         goto finishTileSetup;
 #ifdef DEBUGGINGAIDS
     else if (EDUKE32_PREDICT_FALSE(noDraw != 0)) // event return values other than 0 and 1 are reserved
-        OSD_Printf(OSD_ERROR "ERROR: EVENT_DISPLAYROOMSCAMERATILE return value must be 0 or 1, "
-                   "other values are reserved.\n");
+        LOG_F(ERROR, "EVENT_DISPLAYROOMSCAMERATILE return value must be 0 or 1, all other values are reserved.");
 #endif
 
     yax_preparedrawrooms();
@@ -415,40 +414,69 @@ void G_AnimateCamSprite(int smoothRatio)
     return;
 #endif
 
-    if (g_curViewscreen < 0)
-        return;
+    int viewscreenOwners[MAX_ACTIVE_VIEWSCREENS];
+    int viewscreenSizeX[MAX_ACTIVE_VIEWSCREENS];
+    int viewscreenSizeY[MAX_ACTIVE_VIEWSCREENS];
 
-    int const spriteNum = g_curViewscreen;
-
-    if (totalclock >= T1(spriteNum) + ud.camera_time)
+    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
     {
-        auto const pPlayer = g_player[screenpeek].ps;
+        int const spriteNum = g_activeVscrSprite[vscrIndex];
 
-        if (pPlayer->newowner >= 0)
-            OW(spriteNum) = pPlayer->newowner;
-
-        // EDuke32 extension: xvel of viewscreen determines active distance
-        int const activeDist = sprite[spriteNum].xvel > 0 ? sprite[spriteNum].xvel : VIEWSCREEN_ACTIVE_DISTANCE;
-
-        if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < activeDist)
+        if (spriteNum < 0)
         {
-            int const viewscrShift = G_GetViewscreenSizeShift((uspriteptr_t)&sprite[spriteNum]);
-            int const viewscrTile  = TILE_VIEWSCR - viewscrShift;
-
-            if (waloff[viewscrTile] == 0)
-                tileCreate(viewscrTile, tilesiz[PN(spriteNum)].x << viewscrShift, tilesiz[PN(spriteNum)].y << viewscrShift);
-            else
-                walock[viewscrTile] = CACHE1D_UNLOCKED;
-
-            G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
-#ifdef POLYMER
-            // Force texture update on viewscreen sprite in Polymer!
-            if (videoGetRenderMode() == REND_POLYMER)
-                polymer_invalidatesprite(spriteNum);
-#endif
+            viewscreenOwners[vscrIndex] = -1;
+            continue;
         }
 
-        T1(spriteNum) = (int32_t) totalclock;
+        if (totalclock >= T1(spriteNum) + ud.camera_time)
+        {
+            auto const pPlayer = g_player[screenpeek].ps;
+
+            // EDuke32 extension: xvel of viewscreen determines active distance
+            int const activeDist = sprite[spriteNum].xvel > 0 ? sprite[spriteNum].xvel : VIEWSCREEN_ACTIVE_DISTANCE;
+            if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < activeDist)
+            {
+                int const viewscrShift = G_GetViewscreenSizeShift((uspriteptr_t)&sprite[spriteNum]);
+                int const viewscrTile  = TILE_VIEWSCR - viewscrShift - (3*vscrIndex);
+
+                int const tilesizx = tilesiz[PN(spriteNum)].x << viewscrShift;
+                int const tilesizy = tilesiz[PN(spriteNum)].y << viewscrShift;
+
+                viewscreenOwners[vscrIndex] = OW(spriteNum);
+                viewscreenSizeX[vscrIndex] = tilesizx;
+                viewscreenSizeY[vscrIndex] = tilesizy;
+
+                bool tileRef = false;
+                for (int j = 0; j < vscrIndex; j++)
+                {
+                    if (OW(spriteNum) == viewscreenOwners[j] && tilesizx == viewscreenSizeX[j] && tilesizy == viewscreenSizeY[j])
+                    {
+                        g_activeVscrTile[vscrIndex] = g_activeVscrTile[j];
+                        tileRef = true;
+                        break;
+                    }
+                }
+
+                if (!tileRef)
+                {
+                    g_activeVscrTile[vscrIndex] = viewscrTile;
+
+                    if (waloff[viewscrTile] == 0)
+                        tileCreate(viewscrTile, tilesizx, tilesizy);
+                    else
+                        walock[viewscrTile] = CACHE1D_UNLOCKED;
+
+                    G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
+                }
+#ifdef POLYMER
+                // Force texture update on viewscreen sprite in Polymer!
+                if (videoGetRenderMode() == REND_POLYMER)
+                    polymer_invalidatesprite(spriteNum);
+#endif
+            }
+
+            T1(spriteNum) = (int32_t) totalclock;
+        }
     }
 }
 
@@ -736,7 +764,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
                 i = nextsectorneighborz(sectNum,pSector->floorz,1,-1);
                 if (i == -1)
                 {
-                    OSD_Printf("ST_16_PLATFORM_DOWN/ST_17_PLATFORM_UP: bad neighbor for sector %d!\n", sectNum);
+                    LOG_F(WARNING, "ST_16_PLATFORM_DOWN/ST_17_PLATFORM_UP: bad neighbor for sector %d!", sectNum);
                     return;
                 }
                 j = sector[i].floorz;
@@ -766,7 +794,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
 
             if (i == -1)
             {
-                OSD_Printf("ST_18_ELEVATOR_DOWN/ST_19_ELEVATOR_UP: bad neighbor for sector %d!\n", sectNum);
+                LOG_F(WARNING, "ST_18_ELEVATOR_DOWN/ST_19_ELEVATOR_UP: bad neighbor for sector %d!", sectNum);
                 return;
             }
 
@@ -802,7 +830,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
             if (j == -1) j = nextsectorneighborz(sectNum,pSector->ceilingz,1,1);
             if (j == -1)
             {
-                OSD_Printf("ST_29_TEETH_DOOR: bad neighbor for sector %d!\n", sectNum);
+                LOG_F(WARNING, "ST_29_TEETH_DOOR: bad neighbor for sector %d!", sectNum);
                 return;
             }
             j = sector[j].ceilingz;
@@ -813,7 +841,7 @@ void G_OperateSectors(int sectNum, int spriteNum)
             if (j == -1) j = nextsectorneighborz(sectNum,pSector->ceilingz,-1,-1);
             if (j == -1)
             {
-                OSD_Printf("ST_29_TEETH_DOOR: bad neighbor for sector %d!\n", sectNum);
+                LOG_F(WARNING, "ST_29_TEETH_DOOR: bad neighbor for sector %d!", sectNum);
                 return;
             }
             j = sector[j].floorz;
@@ -866,7 +894,7 @@ REDODOOR:
                 j = nextsectorneighborz(sectNum, pSector->ceilingz, 1, 1);
                 if (j == -1)
                 {
-                    OSD_Printf("ST_21_FLOOR_DOOR: bad neighbor for sector %d!\n", sectNum);
+                    LOG_F(WARNING, "ST_21_FLOOR_DOOR: bad neighbor for sector %d!", sectNum);
                     return;
                 }
                 g_animateGoal[i] = sector[j].floorz;
@@ -880,7 +908,7 @@ REDODOOR:
                 i = nextsectorneighborz(sectNum, pSector->ceilingz, 1, 1);
                 if (i == -1)
                 {
-                    OSD_Printf("ST_21_FLOOR_DOOR: bad neighbor for sector %d!\n", sectNum);
+                    LOG_F(WARNING, "ST_21_FLOOR_DOOR: bad neighbor for sector %d!", sectNum);
                     return;
                 }
                 j = sector[i].floorz;
@@ -914,7 +942,7 @@ REDODOOR:
             }
             else
             {
-                OSD_Printf("ST_22_SPLITTING_DOOR: bad neighbor for sector %d; floor neighbor=%d, ceiling neighbor=%d!\n", sectNum, floorNeighbor, ceilingNeighbor);
+                LOG_F(WARNING, "ST_22_SPLITTING_DOOR: bad neighbor for sector %d; floor neighbor=%d, ceiling neighbor=%d!", sectNum, floorNeighbor, ceilingNeighbor);
                 pSector->lotag ^= 0x8000u;
             }
         }
@@ -1115,18 +1143,12 @@ void G_OperateActivators(int lotag, int playerNum)
                         {
                             switch (sprite[foundSprite].lotag)
                             {
-                                case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
-                                case SE_21_DROP_FLOOR:
+                                case SE_36_PROJ_SHOOTER:
                                 case SE_31_FLOOR_RISE_FALL:
                                 case SE_32_CEILING_RISE_FALL:
-                                case SE_36_PROJ_SHOOTER:
-                                    A_CallSound(SECT(spriteNum), foundSprite);
-                                    fallthrough__;
-                                case SE_2_EARTHQUAKE:
+                                case SE_18_INCREMENTAL_SECTOR_RISE_FALL:
                                     actor[foundSprite].t_data[0] = 1 - actor[foundSprite].t_data[0];
-                                    break;
-                                case SE_3_RANDOM_LIGHTS_AFTER_SHOT_OUT:
-                                    actor[foundSprite].t_data[4] = 1 - actor[foundSprite].t_data[4];
+                                    A_CallSound(SECT(spriteNum), foundSprite);
                                     break;
                             }
                         }
@@ -1495,7 +1517,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
 
             if (!hitag && CheckDoorTile(nSwitchPicnum) == 0)
                 S_PlaySound3D(SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, davector);
-            else if (S_SoundIsValid(hitag))
+            else if (hitag && S_SoundIsValid(hitag))
             {
                 if (switchType == SWITCH_SPRITE && (g_sounds[hitag]->flags & SF_TALK) == 0)
                     S_PlaySound3D(hitag, wallOrSprite, davector);
@@ -2938,13 +2960,13 @@ CHECKINV1:
                         }
                     }
 
-                    if (weaponNum == SHRINKER_WEAPON)
+                    if (weaponNum == SHRINKER_WEAPON && (pPlayer->gotweapon & (1<<SHRINKER_WEAPON)))
                         pPlayer->subweapon &= ~(1 << GROW_WEAPON);
-                    else if (weaponNum == GROW_WEAPON)
+                    else if (weaponNum == GROW_WEAPON && (pPlayer->gotweapon & (1<<GROW_WEAPON)))
                         pPlayer->subweapon |= (1<<GROW_WEAPON);
-                    else if (weaponNum == FREEZE_WEAPON)
+                    else if (weaponNum == FREEZE_WEAPON && pPlayer->gotweapon & (1<<FREEZE_WEAPON))
                         pPlayer->subweapon &= ~(1 << FLAMETHROWER_WEAPON);
-                    else if (weaponNum == FLAMETHROWER_WEAPON)
+                    else if (weaponNum == FLAMETHROWER_WEAPON && pPlayer->gotweapon & (1<<FLAMETHROWER_WEAPON))
                         pPlayer->subweapon |= (1<<FLAMETHROWER_WEAPON);
                 }
 
@@ -2987,25 +3009,25 @@ CHECKINV1:
 
                         if (pPlayer->curr_weapon != GROW_WEAPON && pPlayer->curr_weapon != SHRINKER_WEAPON)
                         {
-                            if (pPlayer->ammo_amount[GROW_WEAPON] > 0)
+                            if (pPlayer->ammo_amount[GROW_WEAPON] > 0 && (pPlayer->gotweapon & (1<<GROW_WEAPON)))
                             {
-                                if ((pPlayer->subweapon&(1<<GROW_WEAPON)) == (1<<GROW_WEAPON))
+                                if (pPlayer->subweapon&(1<<GROW_WEAPON))
                                     weaponNum = GROW_WEAPON;
-                                else if (pPlayer->ammo_amount[SHRINKER_WEAPON] == 0)
+                                else if (pPlayer->ammo_amount[SHRINKER_WEAPON] == 0 || !(pPlayer->gotweapon & (1<<SHRINKER_WEAPON)))
                                 {
                                     weaponNum = GROW_WEAPON;
                                     pPlayer->subweapon |= (1<<GROW_WEAPON);
                                 }
                             }
-                            else if (pPlayer->ammo_amount[SHRINKER_WEAPON] > 0)
+                            else if (pPlayer->ammo_amount[SHRINKER_WEAPON] > 0 && (pPlayer->gotweapon & (1<<SHRINKER_WEAPON)))
                                 pPlayer->subweapon &= ~(1<<GROW_WEAPON);
                         }
-                        else if (pPlayer->curr_weapon == SHRINKER_WEAPON)
+                        else if (pPlayer->curr_weapon == SHRINKER_WEAPON && (pPlayer->gotweapon & (1<<GROW_WEAPON)))
                         {
                             pPlayer->subweapon |= (1<<GROW_WEAPON);
                             weaponNum = GROW_WEAPON;
                         }
-                        else
+                        else if (pPlayer->gotweapon & (1<<SHRINKER_WEAPON))
                             pPlayer->subweapon &= ~(1<<GROW_WEAPON);
                     }
 
@@ -3015,25 +3037,25 @@ CHECKINV1:
 
                         if (pPlayer->curr_weapon != FLAMETHROWER_WEAPON && pPlayer->curr_weapon != FREEZE_WEAPON)
                         {
-                            if (pPlayer->ammo_amount[FLAMETHROWER_WEAPON] > 0)
+                            if (pPlayer->ammo_amount[FLAMETHROWER_WEAPON] > 0 && (pPlayer->gotweapon & (1<<FLAMETHROWER_WEAPON)))
                             {
-                                if ((pPlayer->subweapon&(1<<FLAMETHROWER_WEAPON)) == (1<<FLAMETHROWER_WEAPON))
+                                if (pPlayer->subweapon&(1<<FLAMETHROWER_WEAPON))
                                     weaponNum = FLAMETHROWER_WEAPON;
-                                else if (pPlayer->ammo_amount[FREEZE_WEAPON] == 0)
+                                else if (pPlayer->ammo_amount[FREEZE_WEAPON] == 0 || !(pPlayer->gotweapon & (1<<FREEZE_WEAPON)))
                                 {
                                     weaponNum = FLAMETHROWER_WEAPON;
                                     pPlayer->subweapon |= (1<<FLAMETHROWER_WEAPON);
                                 }
                             }
-                            else if (pPlayer->ammo_amount[FREEZE_WEAPON] > 0)
+                            else if (pPlayer->ammo_amount[FREEZE_WEAPON] > 0 && (pPlayer->gotweapon & (1<<FREEZE_WEAPON)))
                                 pPlayer->subweapon &= ~(1<<FLAMETHROWER_WEAPON);
                         }
-                        else if (pPlayer->curr_weapon == FREEZE_WEAPON)
+                        else if (pPlayer->curr_weapon == FREEZE_WEAPON && (pPlayer->gotweapon & (1<<FLAMETHROWER_WEAPON)))
                         {
                             pPlayer->subweapon |= (1<<FLAMETHROWER_WEAPON);
                             weaponNum = FLAMETHROWER_WEAPON;
                         }
-                        else
+                        else if (pPlayer->gotweapon & (1<<FREEZE_WEAPON))
                             pPlayer->subweapon &= ~(1<<FLAMETHROWER_WEAPON);
                     }
 
@@ -3042,7 +3064,7 @@ CHECKINV1:
                         playerBits |= BIT(SK_HOLSTER);
                         pPlayer->weapon_pos = WEAPON_POS_LOWER;
                     }
-                    else if ((uint32_t)weaponNum < MAX_WEAPONS && (pPlayer->gotweapon & (1<<weaponNum)) && (uint32_t)pPlayer->curr_weapon != weaponNum)
+                    else if ((pPlayer->gotweapon & (1<<weaponNum)) && (uint32_t)pPlayer->curr_weapon != weaponNum)
                         switch (weaponNum)
                         {
                         case PISTOL_WEAPON:
@@ -3201,7 +3223,7 @@ int32_t A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
         zOffset = (39 << 8);
 
     SZ(spriteNum) -= zOffset;
-    hitscan((const vec3_t *)&sprite[spriteNum], SECT(spriteNum), sintable[(SA(spriteNum) + 512) & 2047],
+    hitscan(&sprite[spriteNum].xyz, SECT(spriteNum), sintable[(SA(spriteNum) + 512) & 2047],
             sintable[SA(spriteNum) & 2047], 0, &hitData, CLIPMASK1);
     SZ(spriteNum) += zOffset;
 
@@ -3501,13 +3523,22 @@ void P_CheckSectors(int playerNum)
                         A_PlaySound(MONITOR_ACTIVE, pPlayer->i);
                         sprite[nearSprite].owner  = spriteNum;
                         sprite[nearSprite].yvel  |= 2;  // VIEWSCREEN_YVEL
-                        g_curViewscreen           = nearSprite;
+
+                        if (T2(nearSprite) == -1)
+                        {
+                            int newVscrIndex = 0;
+                            while (newVscrIndex < MAX_ACTIVE_VIEWSCREENS && g_activeVscrSprite[newVscrIndex] != -1)
+                                newVscrIndex++;
+                            T2(nearSprite) = newVscrIndex;
+                            if (newVscrIndex < MAX_ACTIVE_VIEWSCREENS)
+                                g_activeVscrSprite[newVscrIndex] = nearSprite;
+                        }
 
                         int const playerSectnum = pPlayer->cursectnum;
                         pPlayer->cursectnum     = SECT(spriteNum);
                         P_UpdateScreenPal(pPlayer);
                         pPlayer->cursectnum     = playerSectnum;
-                        pPlayer->newowner       = spriteNum;
+                        OW(nearSprite) = pPlayer->newowner = spriteNum;
 
                         P_UpdatePosWhenViewingCam(pPlayer);
 

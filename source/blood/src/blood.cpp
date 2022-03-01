@@ -617,7 +617,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
         gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
-        gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
+        gGameOptions.bPlayerKeys = gPacketStartGame.bPlayerKeys;
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
@@ -643,8 +643,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    memset(xsprite,0,sizeof(xsprite));
-    memset(sprite,0,kMaxSprites*sizeof(spritetype));
     drawLoadingScreen();
     if (dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC))
     {
@@ -800,7 +798,7 @@ void StartNetworkLevel(void)
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
         gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
-        gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
+        gGameOptions.bPlayerKeys = gPacketStartGame.bPlayerKeys;
         
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
@@ -1647,39 +1645,10 @@ int app_main(int argc, char const * const * argv)
 
     //Bsprintf(tempbuf, HEAD2 " %s", s_buildRev);
     OSD_SetVersion("Blood", 10, 0);
-    OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
+    OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, OSDTEXT_DARKRED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
     auto const hasSetupFilename = strcmp(SetupFilename, SETUPFILENAME);
-
-    if (!hasSetupFilename)
-        Bsnprintf(buffer, ARRAY_SIZE(buffer), APPBASENAME "_cvars.cfg");
-    else
-    {
-        char const * const ext = strchr(SetupFilename, '.');
-        if (ext != nullptr)
-            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_cvars.cfg", int(ext - SetupFilename), SetupFilename);
-        else
-            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_cvars.cfg", SetupFilename);
-    }
-
-    if (OSD_Exec(buffer))
-    {
-        // temporary fallback to unadorned "settings.cfg"
-
-        if (!hasSetupFilename)
-            Bsnprintf(buffer, ARRAY_SIZE(buffer), "settings.cfg");
-        else
-        {
-            char const * const ext = strchr(SetupFilename, '.');
-            if (ext != nullptr)
-                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_settings.cfg", int(ext - SetupFilename), SetupFilename);
-            else
-                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_settings.cfg", SetupFilename);
-        }
-
-        OSD_Exec(buffer);
-    }
 
     // Not neccessary ?
     // CONFIG_SetDefaultKeys(keydefaults, true);
@@ -1742,12 +1711,42 @@ int app_main(int argc, char const * const * argv)
     LoadSaveSetup();
     LoadSavedInfo();
     gDemo.LoadDemoInfo();
-    initprintf("There are %d demo(s) in the loop\n", gDemo.at59ef);
+    initprintf("There are %d demo(s) in the loop\n", gDemo.nDemosFound);
     initprintf("Loading control setup\n");
     ctrlInit();
     timerInit(120);
     timerSetCallback(ClockStrobe);
     enginecompatibilitymode = ENGINE_19960925;
+
+    if (!hasSetupFilename)
+        Bsnprintf(buffer, ARRAY_SIZE(buffer), APPBASENAME "_cvars.cfg");
+    else
+    {
+        char const * const ext = strchr(SetupFilename, '.');
+        if (ext != nullptr)
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_cvars.cfg", int(ext - SetupFilename), SetupFilename);
+        else
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_cvars.cfg", SetupFilename);
+    }
+
+    if (OSD_Exec(buffer))
+    {
+        // temporary fallback to unadorned "settings.cfg"
+
+        if (!hasSetupFilename)
+            Bsnprintf(buffer, ARRAY_SIZE(buffer), "settings.cfg");
+        else
+        {
+            char const * const ext = strchr(SetupFilename, '.');
+            if (ext != nullptr)
+                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%.*s_settings.cfg", int(ext - SetupFilename), SetupFilename);
+            else
+                Bsnprintf(buffer, ARRAY_SIZE(buffer), "%s_settings.cfg", SetupFilename);
+        }
+
+        OSD_Exec(buffer);
+    }
+
     // PORT-TODO: CD audio init
 
     initprintf("Initializing network users\n");
@@ -1789,7 +1788,7 @@ RESTART:
         goto RESTART;
     }
     UpdateNetworkMenus();
-    if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
+    if (!gDemo.at0 && gDemo.nDemosFound > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
         gDemo.SetupPlayback(NULL);
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     gQuitGame = 0;
@@ -1802,7 +1801,7 @@ RESTART:
     }
     else if (gDemo.at1 && !bAddUserMap && !bNoDemo)
         gDemo.Playback();
-    if (gDemo.at59ef > 0)
+    if (gDemo.nDemosFound > 0)
         gGameMenuMgr.Deactivate();
     if (!bAddUserMap && !gGameStarted)
     {
@@ -1972,7 +1971,7 @@ RESTART:
         }
         if (gGameOptions.nGameType != 0)
         {
-            if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
+            if (!gDemo.at0 && gDemo.nDemosFound > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
                 gDemo.NextDemo();
             videoSetViewableArea(0,0,xdim-1,ydim-1);
             scrSetDac();

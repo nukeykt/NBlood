@@ -2156,6 +2156,19 @@ void trInit(void)
     }
     
     evSend(0, 0, kChannelLevelStart, kCmdOn);
+    #ifdef NOONE_EXTENSIONS
+        if (gModernMap)
+        {
+            #ifdef TRIGGER_START_CHANNEL_NBLOOD
+                evSend(0, 0, TRIGGER_START_CHANNEL_NBLOOD, kCmdOn);
+            #endif
+
+            #ifdef TRIGGER_START_CHANNEL_RAZE
+                 evSend(0, 0, TRIGGER_START_CHANNEL_RAZE, kCmdOn);
+            #endif
+        }
+    #endif
+
     switch (gGameOptions.nGameType) {
         case 1:
             evSend(0, 0, kChannelLevelStartCoop, kCmdOn);
@@ -2233,7 +2246,7 @@ void ActivateGenerator(int nSprite)
         case kGenBubbleMulti: {
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
-            gFX.fxSpawn((pSprite->type == kGenBubble) ? FX_23 : FX_26, pSprite->sectnum, pSprite->x, pSprite->y, top, 0);
+            gFX.fxSpawn((pSprite->type == kGenBubble) ? FX_23 : FX_26, pSprite->sectnum, pSprite->x, pSprite->y, top);
             break;
         }
     }

@@ -9,7 +9,7 @@
 #ifndef pragmas_h_
 #define pragmas_h_
 
-#include "libdivide.h"
+#include "libdivide_config.h"
 
 #ifdef __cplusplus
 extern "C" {

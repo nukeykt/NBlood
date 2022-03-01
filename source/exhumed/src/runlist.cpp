@@ -139,9 +139,9 @@ int runlist_FreeRun(int nRun)
     RunFree[RunCount] = nRun;
     RunCount++;
 
+    RunData[nRun]._4 = -1;
     RunData[nRun]._6 = -1;
     RunData[nRun].nMoves = -1;
-    RunData[nRun]._4 = RunData[nRun]._6;
 
     return 1;
 }
@@ -166,9 +166,9 @@ void runlist_InitRun()
     for (i = 0; i < kMaxRuns; i++)
     {
         RunData[i].nMoves = -1;
+        RunData[i]._4 = -1;
         RunData[i]._6 = -1;
         RunFree[i] = i;
-        RunData[i]._4 = -1;
     }
 
     int nRun = runlist_HeadRun();
@@ -394,29 +394,29 @@ void runlist_InitChan()
     }
 }
 
-void runlist_ChangeChannel(int eax, short nVal)
+void runlist_ChangeChannel(int nChannel, short nVal)
 {
-    if (sRunChannels[eax].b < 0)
+    if (sRunChannels[nChannel].b < 0)
     {
-        short nChannel = ChannelList;
-        ChannelList = eax;
-        sRunChannels[eax].b = nChannel;
+        short tmpChannel = ChannelList;
+        ChannelList = nChannel;
+        sRunChannels[nChannel].b = tmpChannel;
     }
 
-    sRunChannels[eax].c = nVal;
-    sRunChannels[eax].d |= 2;
+    sRunChannels[nChannel].c = nVal;
+    sRunChannels[nChannel].d |= 2;
 }
 
-void runlist_ReadyChannel(short eax)
+void runlist_ReadyChannel(int nChannel)
 {
-    if (sRunChannels[eax].b < 0)
+    if (sRunChannels[nChannel].b < 0)
     {
-        short nChannel = ChannelList;
-        ChannelList = eax;
-        sRunChannels[eax].b = nChannel;
+        short tmpChannel = ChannelList;
+        ChannelList = nChannel;
+        sRunChannels[nChannel].b = tmpChannel;
     }
 
-    sRunChannels[eax].d |= 1;
+    sRunChannels[nChannel].d |= 1;
 }
 
 void runlist_ProcessChannels()

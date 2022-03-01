@@ -125,6 +125,7 @@ enum gamemode_t {
     MODE_TYPE                   = 0x00000010,
     MODE_RESTART                = 0x00000020,
     MODE_SENDTOWHOM             = 0x00000040,
+    MODE_NEWGAME                = 0x00000080,
 };
 
 // Player Actions.

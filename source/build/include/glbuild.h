@@ -2,20 +2,20 @@
 #ifndef BGLBUILD_H_INCLUDED_
 #define BGLBUILD_H_INCLUDED_
 
+#include "baselayer.h"
+#include "build.h"
+#include "compat.h"
+#include "glad/glad.h"
+#include "hash.h"
+
 #ifdef USE_OPENGL
 
 #if !defined GEKKO && !defined EDUKE32_GLES
 # define DYNAMIC_GL
-# define DYNAMIC_GLU
 # define DYNAMIC_GLEXT
 # define USE_GLEXT
 #endif
 
-#if defined EDUKE32_OSX
-# include <OpenGL/glu.h>
-#else
-# include <GL/glu.h>
-#endif
 #if defined EDUKE32_GLES
 # include "jwzgles.h"
 #endif
@@ -25,11 +25,93 @@
 # else
 #  define PR_CALLBACK
 # endif
-// custom error checking
 
-extern GLenum BuildGLError;
-extern void BuildGLErrorCheck(void);
+#define MAXTEXUNIT GL_TEXTURE16
 
+enum glsamplertype
+{
+    SAMPLER_NONE,
+    SAMPLER_NEAREST_CLAMP,
+    SAMPLER_NEAREST_WRAP,
+    SAMPLER_LINEAR_CLAMP,
+    SAMPLER_LINEAR_WRAP,
+    SAMPLER_NEAREST_NEAREST_CLAMP,
+    SAMPLER_NEAREST_NEAREST_WRAP,
+    SAMPLER_CLAMP,
+    SAMPLER_WRAP_T,
+    SAMPLER_WRAP_S,
+    SAMPLER_WRAP_BOTH,
+    SAMPLER_DEPTH,
+    NUM_SAMPLERS
+};
+
+enum glsamplerflags {
+    SAMPLER_NEAREST,
+    SAMPLER_CLAMPED,
+};
+
+struct BuildGLState
+{
+    GLuint currentShaderProgramID;
+    GLenum currentActiveTexture;
+
+    glsamplertype currentBoundSampler[MAXTEXUNIT - GL_TEXTURE0];
+
+    GLint x, y;
+    GLsizei width, height;
+
+    inthashtable_t state[MAXTEXUNIT - GL_TEXTURE0];
+
+    int fullReset;
+};
+
+extern BuildGLState gl;
+extern GLuint samplerObjectIDs[NUM_SAMPLERS];
+
+#define TEXUNIT_INDEX_FROM_NAME(x) (x - GL_TEXTURE0)
+#define ACTIVETEX (gl.currentActiveTexture ? TEXUNIT_INDEX_FROM_NAME(gl.currentActiveTexture) : 0)
+
+extern void buildgl_activeTexture(GLenum texture);
+extern void buildgl_bindBuffer(GLenum target, uint32_t bufferID);
+extern void buildgl_bindSamplerObject(int texunit, int32_t pth_method);
+extern void buildgl_bindTexture(GLenum target, uint32_t textureID);
+extern void buildgl_outputDebugMessage(uint8_t severity, const char *format, ...);
+extern void buildgl_resetSamplerObjects(void);
+extern void buildgl_resetStateAccounting(void);
+extern void buildgl_setAlphaFunc(GLenum func, GLfloat ref);
+extern void buildgl_setDepthFunc(GLenum func);
+extern void buildgl_setDisabled(GLenum key);
+extern void buildgl_setEnabled(GLenum key);
+extern void buildgl_setPerspective(float fovy, float aspect, float zNear, float zFar);
+extern void buildgl_setViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+extern void buildgl_uLookAt(vec3f_t v_eye, vec3f_t v_center, vec3f_t v_up);
+extern void buildgl_useShaderProgram(uint32_t shaderID);
+
+extern void bind_2d_texture(GLuint texture, int filter);
+
+static FORCE_INLINE void  buildgl_crossproduct(const GLfloat* in_a, const GLfloat* in_b, GLfloat* out)
+{
+    out[0] = in_a[1] * in_b[2] - in_a[2] * in_b[1];
+    out[1] = in_a[2] * in_b[0] - in_a[0] * in_b[2];
+    out[2] = in_a[0] * in_b[1] - in_a[1] * in_b[0];
+}
+
+static FORCE_INLINE void  buildgl_normalize(float* vec)
+{
+    float norm = vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
+
+    norm = 1.f/Bsqrtf(norm);
+
+    vec[0] *= norm;
+    vec[1] *= norm;
+    vec[2] *= norm;
+}
+
+extern int  buildgl_unprojectMatrixToViewport(vec3f_t win, const float *modelMatrix, const float *projMatrix, const int *viewport, float *objx, float *objy,
+                                              float *objz);
+
+extern int32_t r_usesamplerobjects; // FIXME: nasty circular include dependency issue
+static FORCE_INLINE bool buildgl_samplerObjectsEnabled(void) { return glinfo.samplerobjects && r_usesamplerobjects; }
 
 //////// dynamic/static API wrapping ////////
 
@@ -61,79 +143,6 @@ extern bwglSetPixelFormatProcPtr bwglSetPixelFormat;
 #define wglSetPixelFormat bwglSetPixelFormat
 #endif
 
-#if defined DYNAMIC_GLU
-
-// GLU
-#if defined __clang__ && defined __APPLE__
-// XXX: OS X 10.9 deprecated GLUtesselator.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-typedef void             (APIENTRY * bgluTessBeginContourProcPtr)(GLUtesselator* tess);
-extern bgluTessBeginContourProcPtr bgluTessBeginContour;
-typedef void             (APIENTRY * bgluTessBeginPolygonProcPtr)(GLUtesselator* tess, GLvoid* data);
-extern bgluTessBeginPolygonProcPtr bgluTessBeginPolygon;
-typedef void             (APIENTRY * bgluTessCallbackProcPtr)(GLUtesselator* tess, GLenum which, void (PR_CALLBACK CallBackFuncProcPtr)());
-extern bgluTessCallbackProcPtr bgluTessCallback;
-typedef void             (APIENTRY * bgluTessEndContourProcPtr)(GLUtesselator* tess);
-extern bgluTessEndContourProcPtr bgluTessEndContour;
-typedef void             (APIENTRY * bgluTessEndPolygonProcPtr)(GLUtesselator* tess);
-extern bgluTessEndPolygonProcPtr bgluTessEndPolygon;
-typedef void             (APIENTRY * bgluTessNormalProcPtr)(GLUtesselator* tess, GLdouble valueX, GLdouble valueY, GLdouble valueZ);
-extern bgluTessNormalProcPtr bgluTessNormal;
-typedef void             (APIENTRY * bgluTessPropertyProcPtr)(GLUtesselator* tess, GLenum which, GLdouble data);
-extern bgluTessPropertyProcPtr bgluTessProperty;
-typedef void             (APIENTRY * bgluTessVertexProcPtr)(GLUtesselator* tess, GLdouble *location, GLvoid* data);
-extern bgluTessVertexProcPtr bgluTessVertex;
-typedef GLUtesselator*   (APIENTRY * bgluNewTessProcPtr)(void);
-extern bgluNewTessProcPtr bgluNewTess;
-typedef void             (APIENTRY * bgluDeleteTessProcPtr)(GLUtesselator* tess);
-extern bgluDeleteTessProcPtr bgluDeleteTess;
-
-#if defined __clang__ && defined __APPLE__
-#pragma clang diagnostic pop
-#endif
-
-typedef void             (APIENTRY * bgluPerspectiveProcPtr)(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar);
-extern bgluPerspectiveProcPtr bgluPerspective;
-
-typedef const GLubyte *  (APIENTRY * bgluErrorStringProcPtr)(GLenum error);
-extern bgluErrorStringProcPtr bgluErrorString;
-
-typedef GLint            (APIENTRY * bgluProjectProcPtr)(GLdouble objX, GLdouble objY, GLdouble objZ, const GLdouble *model, const GLdouble *proj, const GLint	*view, GLdouble* winX, GLdouble* winY, GLdouble* winZ);
-extern bgluProjectProcPtr bgluProject;
-typedef GLint            (APIENTRY * bgluUnProjectProcPtr)(GLdouble winX, GLdouble winY, GLdouble winZ, const GLdouble * model, const GLdouble * proj, const GLint * view, GLdouble* objX, GLdouble* objY, GLdouble* objZ);
-extern bgluUnProjectProcPtr bgluUnProject;
-
-typedef void             (APIENTRY * bgluLookAtProcPtr)(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble centerX, GLdouble centerY, GLdouble centerZ, GLdouble upX, GLdouble upY, GLdouble upZ);
-extern bgluLookAtProcPtr bgluLookAt;
-
-#else
-
-#define bgluTessBeginContour gluTessBeginContour
-#define bgluTessBeginPolygon gluTessBeginPolygon
-#define bgluTessCallback gluTessCallback
-#define bgluTessEndContour gluTessEndContour
-#define bgluTessEndPolygon gluTessEndPolygon
-#define bgluTessNormal gluTessNormal
-#define bgluTessProperty gluTessProperty
-#define bgluTessVertex gluTessVertex
-#define bgluNewTess gluNewTess
-#define bgluDeleteTess gluDeleteTess
-
-#define bgluPerspective gluPerspective
-
-#define bgluErrorString gluErrorString
-
-#define bgluProject gluProject
-#define bgluUnProject gluUnProject
-
-#define bgluLookAt gluLookAt
-
-#endif
-
-
 //////// glGenTextures/glDeleteTextures debugging ////////
 void texdbg_bglGenTextures(GLsizei n, GLuint *textures, const char *srcfn);
 void texdbg_bglDeleteTextures(GLsizei n, const GLuint *textures, const char *srcfn);
@@ -144,7 +153,6 @@ void texdbg_bglDeleteTextures(GLsizei n, const GLuint *textures, const char *src
 # define glGenTextures(numtexs, texnamear) texdbg_bglGenTextures(numtexs, texnamear, __FILE__)
 # define glDeleteTextures(numtexs, texnamear) texdbg_bglDeleteTextures(numtexs, texnamear, __FILE__)
 #endif
-
 #endif //USE_OPENGL
 
 #if !defined RENDERTYPESDL && defined _WIN32 && defined DYNAMIC_GL
@@ -152,11 +160,6 @@ extern char *gldriver;
 
 int32_t loadwgl(const char *driver);
 int32_t unloadwgl(void);
-#endif
-
-#ifdef POLYMER
-int32_t loadglulibrary(const char *driver);
-int32_t unloadglulibrary(void);
 #endif
 
 #endif

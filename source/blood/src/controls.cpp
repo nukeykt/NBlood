@@ -244,7 +244,7 @@ void ctrlGetInput(void)
         viewToggle(gViewMode);
     }
 
-    if (BUTTON(gamefunc_Map_Follow_Mode))
+    if (gViewMode == 4 && BUTTON(gamefunc_Map_Follow_Mode))
     {
         CONTROL_ClearButton(gamefunc_Map_Follow_Mode);
         gFollowMap = !gFollowMap;
@@ -418,10 +418,10 @@ void ctrlGetInput(void)
     if (gInput.forward < keyMove && gInput.forward > -keyMove)
     {
         if (BUTTON(gamefunc_Move_Forward))
-            gInput.forward += keyMove;
+            input.forward += keyMove;
 
         if (BUTTON(gamefunc_Move_Backward))
-            gInput.forward -= keyMove;
+            input.forward -= keyMove;
     }
 
     if (gInput.strafe < keyMove && gInput.strafe > -keyMove)

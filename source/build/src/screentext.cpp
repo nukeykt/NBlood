@@ -230,7 +230,7 @@ vec2_t screentextRender(ScreenText_t const & data)
     int32_t xspace = mulscale16(data.empty.x, data.zoom);
     int32_t yline = mulscale16(data.empty.y, data.zoom);
     int32_t xbetween = mulscale16(data.between.x, data.zoom);
-    int32_t ybetween = mulscale16(data.between.x, data.zoom);
+    int32_t ybetween = mulscale16(data.between.y, data.zoom);
     int32_t constwidth = mulscale16(data.constwidth, data.zoom);
     // size/width/height/spacing/offset values should be multiplied or scaled by zoom (since 100% is 65536, the same as 1<<16)
 

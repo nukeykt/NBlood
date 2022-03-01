@@ -1138,10 +1138,49 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
     int width = tilesiz[nTile].x+1;
     x <<= 16;
     sprintf(tempbuf, pFormat, nNumber);
-    for (unsigned int i = 0; i < strlen(tempbuf); i++, x += width*nScale)
+    const size_t nLength = strlen(tempbuf);
+    for (size_t i = 0; i < nLength; i++, x += width*nScale)
     {
-        if (tempbuf[i] == ' ') continue;
-        rotatesprite(x, y<<16, nScale, 0, nTile+tempbuf[i]-'0', nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
+        int numTile, numScale, numY;
+        if (tempbuf[i] == ' ')
+            continue;
+        if (tempbuf[i] == '-')
+        {
+            switch (nTile)
+            {
+            case 2190:
+            case kSBarNumberHealth:
+                numTile = kSBarNegative;
+                break;
+            case 2240:
+            case kSBarNumberAmmo:
+                numTile = kSBarNegative+1;
+                break;
+            case kSBarNumberInv:
+                numTile = kSBarNegative+2;
+                break;
+            case kSBarNumberArmor1:
+                numTile = kSBarNegative+3;
+                break;
+            case kSBarNumberArmor2:
+                numTile = kSBarNegative+4;
+                break;
+            case kSBarNumberArmor3:
+                numTile = kSBarNegative+5;
+                break;
+            default: // unknown font tile type, skip drawing minus sign
+                continue;
+            }
+            numScale = nScale/3;
+            numY = (y<<16) + (1<<15); // offset to center of number row
+        }
+        else // regular number
+        {
+            numTile = nTile+tempbuf[i]-'0';
+            numScale = nScale;
+            numY = y<<16;
+        }
+        rotatesprite(x, numY, numScale, 0, numTile, nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
     }
 }
 
@@ -1254,13 +1293,6 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, max(gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets)); // if we found more than there are, increase the total - some levels have a bugged counter
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
-
-#define kSBarNumberHealth 9220
-#define kSBarNumberAmmo 9230
-#define kSBarNumberInv 9240
-#define kSBarNumberArmor1 9250
-#define kSBarNumberArmor2 9260
-#define kSBarNumberArmor3 9270
 
 struct POWERUPDISPLAY
 {
@@ -1831,6 +1863,10 @@ void viewPrecacheTiles(void)
         tilePrecacheTile(kSBarNumberArmor2 + i, 0);
         tilePrecacheTile(kSBarNumberArmor3 + i, 0);
     }
+    for (int i = 0; i < 6; i++)
+    {
+        tilePrecacheTile(kSBarNegative + i, 0);
+    }
     for (int i = 0; i < 5; i++)
     {
         tilePrecacheTile(gPackIcons[i], 0);
@@ -2289,19 +2325,21 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->z = getflorzofslope(pTSprite->sectnum, pNSprite->x, pNSprite->y);
         if ((sector[pNSprite->sectnum].floorpicnum >= 4080) && (sector[pNSprite->sectnum].floorpicnum <= 4095) && !VanillaMode()) // if floor has ror, find actual floor
         {
-            int cX = pNSprite->x, cY = pNSprite->y, cZ = pNSprite->z, nSectnum = pNSprite->sectnum;
+            int cX = pNSprite->x, cY = pNSprite->y, cZ = pNSprite->z, cZrel = pNSprite->z, nSectnum = pNSprite->sectnum;
             for (int i = 0; i < 16; i++) // scan through max stacked sectors
             {
                 if (!CheckLink(&cX, &cY, &cZ, &nSectnum)) // if no more floors underneath, abort
                     break;
-                cZ = getflorzofslope(nSectnum, cX, cY);
+                const int newFloorZ = getflorzofslope(nSectnum, cX, cZ);
+                cZrel += newFloorZ - cZ; // get height difference for next sector's ceiling/floor, and add to relative height for shadow
                 if ((sector[nSectnum].floorpicnum < 4080) || (sector[nSectnum].floorpicnum > 4095)) // if current sector is not open air, use as floor for shadow casting, otherwise continue to next sector
                     break;
+                cZ = newFloorZ;
             }
-            pNSprite->x = cX, pNSprite->y = cY, pNSprite->z = cZ, pNSprite->sectnum = nSectnum;
+            pNSprite->z = cZrel;
         }
         pNSprite->shade = 127;
-        pNSprite->cstat |= 2;
+        pNSprite->cstat |= CSTAT_SPRITE_TRANSLUCENT;
         pNSprite->xrepeat = pTSprite->xrepeat;
         pNSprite->yrepeat = pTSprite->yrepeat>>2;
         pNSprite->picnum = pTSprite->picnum;
@@ -2418,7 +2456,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
             pNSprite->picnum = nVoxel;
             if (pPlayer->curWeapon == 9) // position lifeleech behind player
             {
-                pNSprite->x +=  mulscale30(128, Cos(gView->pSprite->ang));
+                pNSprite->x += mulscale30(128, Cos(gView->pSprite->ang));
                 pNSprite->y += mulscale30(128, Sin(gView->pSprite->ang));
             }
             if ((pPlayer->curWeapon == 9) || (pPlayer->curWeapon == 10))  // make lifeleech/voodoo doll always face viewer like sprite
@@ -2484,6 +2522,12 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 //dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
                 if (nXSprite <= 0 || nXSprite >= kMaxXSprites) break;
                 switch (pTSprite->type) {
+                    #ifdef NOONE_EXTENSIONS
+                    case kModernCondition:
+                    case kModernConditionFalse:
+                        if (!gModernMap) break;
+                        fallthrough__;
+                    #endif
                     case kSwitchToggle:
                     case kSwitchOneWay:
                         if (xsprite[nXSprite].state) nAnim = 1;
@@ -3024,15 +3068,15 @@ struct {
     int nScale;
     short nX, nY;
 } burnTable[9] = {
-     { 2101, 2, 0, 118784, 10, 220 },
-     { 2101, 2, 0, 110592, 40, 220 },
-     { 2101, 2, 0, 81920, 85, 220 },
-     { 2101, 2, 0, 69632, 120, 220 },
-     { 2101, 2, 0, 61440, 160, 220 },
-     { 2101, 2, 0, 73728, 200, 220 },
-     { 2101, 2, 0, 77824, 235, 220 },
-     { 2101, 2, 0, 110592, 275, 220 },
-     { 2101, 2, 0, 122880, 310, 220 }
+     { 2101, RS_AUTO, 0, 118784, 10, 220 },
+     { 2101, RS_AUTO, 0, 110592, 40, 220 },
+     { 2101, RS_AUTO, 0, 81920, 85, 220 },
+     { 2101, RS_AUTO, 0, 69632, 120, 220 },
+     { 2101, RS_AUTO, 0, 61440, 160, 220 },
+     { 2101, RS_AUTO, 0, 73728, 200, 220 },
+     { 2101, RS_AUTO, 0, 77824, 235, 220 },
+     { 2101, RS_AUTO, 0, 110592, 275, 220 },
+     { 2101, RS_AUTO, 0, 122880, 310, 220 }
 };
 
 void viewBurnTime(int gScale)
@@ -3041,13 +3085,22 @@ void viewBurnTime(int gScale)
 
     for (int i = 0; i < 9; i++)
     {
-        int nTile = burnTable[i].nTile+qanimateoffs(burnTable[i].nTile,32768+i);
+        const int nTile = burnTable[i].nTile+qanimateoffs(burnTable[i].nTile,32768+i);
         int nScale = burnTable[i].nScale;
         if (gScale < 600)
         {
             nScale = scale(nScale, gScale, 600);
         }
-        rotatesprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
+        int xoffset = burnTable[i].nX;
+        if (r_usenewaspect)
+        {
+            xoffset = scale(xoffset-(320>>1), 320>>1, 266>>1); // scale flame position
+            xoffset = scale(xoffset<<16, xscale, yscale); // multiply by window ratio
+            xoffset += (320>>1)<<16; // offset to center
+        }
+        else
+            xoffset <<= 16;
+        rotatesprite(xoffset, burnTable[i].nY<<16, nScale, 0, nTile,
             0, burnTable[i].nPal, burnTable[i].nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
 }
@@ -3233,7 +3286,7 @@ void viewUpdateDelirium(void)
     if ((powerCount = powerupCheck(gView, kPwUpDeliriumShroom)) != 0)
     {
         int tilt1 = 170, tilt2 = 170, pitch = 20;
-        int timer = (int)gFrameClock*4;
+        int timer = (int)gFrameClock << 1;
         if (powerCount < 512)
         {
             int powerScale = (powerCount<<16) / 512;
@@ -3350,7 +3403,8 @@ void viewDrawScreen(void)
             newaspect_enable = 1;
             videoSetCorrectedAspect();
         }
-        renderSetAspect(Blrintf(float(viewingrange) * tanf(gFov * (PI/360.f))), yxaspect);
+        const int viewingRange_fov = Blrintf(float(viewingrange) * tanf(gFov * (PI/360.f)));
+        renderSetAspect(viewingRange_fov, yxaspect);
         int cX = gView->pSprite->x;
         int cY = gView->pSprite->y;
         int cZ = gView->zView;
@@ -3537,13 +3591,13 @@ void viewDrawScreen(void)
             g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->visibility, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
             int vc4, vc8;
             getzsofslope(vcc, vd8, vd4, &vc8, &vc4);
-            if (vd0 >= vc4)
+            if ((vd0 > vc4-(1<<7)) && (gUpperLink[vcc] == -1)) // clamp to floor
             {
-                vd0 = vc4-(gUpperLink[vcc] >= 0 ? 0 : (8<<8));
+                vd0 = vc4-(1<<7);
             }
-            if (vd0 <= vc8)
+            if ((vd0 < vc8+(1<<7)) && (gLowerLink[vcc] == -1)) // clamp to ceiling
             {
-                vd0 = vc8+(gLowerLink[vcc] >= 0 ? 0 : (8<<8));
+                vd0 = vc8+(1<<7);
             }
             v54 = ClipRange(v54, -200, 200);
 RORHACKOTHER:
@@ -3568,6 +3622,7 @@ RORHACKOTHER:
             viewProcessSprites(vd8, vd4, vd0, v50, gInterpolate);
             renderDrawMasks();
             renderRestoreTarget();
+            renderSetAspect(viewingRange_fov, yxaspect);
         }
         else
         {
@@ -3618,13 +3673,13 @@ RORHACKOTHER:
         }
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
-        if (cZ >= vf8)
+        if ((cZ > vf8-(1<<7)) && (gUpperLink[nSectnum] == -1)) // clamp to floor
         {
-            cZ = vf8-(gUpperLink[nSectnum] >= 0 ? 0 : (8<<8));
+            cZ = vf8-(1<<7);
         }
-        if (cZ <= vfc)
+        if ((cZ < vfc+(1<<7)) && (gLowerLink[nSectnum] == -1)) // clamp to ceiling
         {
-            cZ = vfc+(gLowerLink[nSectnum] >= 0 ? 0 : (8<<8));
+            cZ = vfc+(1<<7);
         }
         q16horiz = ClipRange(q16horiz, F16(-200), F16(200));
 RORHACK:
@@ -3714,10 +3769,10 @@ RORHACK:
         if (r_usenewaspect)
             newaspect_enable = 0;
         renderSetAspect(viewingRange, yxAspect);
+#if 0
         int nClipDist = gView->pSprite->clipdist<<2;
         int ve8, vec, vf0, vf4;
         GetZRange(gView->pSprite, &vf4, &vf0, &vec, &ve8, nClipDist, 0);
-#if 0
         int tmpSect = nSectnum;
         if ((vf0 & 0xc000) == 0x4000)
         {

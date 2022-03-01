@@ -1589,7 +1589,7 @@ void G_ProcessDynamicNameMapping(const char *szLabel, struct dynitem *list, int1
         struct dynitem *di = &list[i];
 #ifdef DEBUGGINGAIDS
         if (g_scriptDebug && di->staticval != lValue)
-            OSD_Printf("REMAP %s (%d) --> %d\n", di->str, di->staticval, lValue);
+            DLOG_F(INFO, "REMAP %s (%d) --> %d", di->str, di->staticval, lValue);
 #endif
         if (!Bstrcmp(di->str, szLabel))
             *di->dynvalptr = lValue;

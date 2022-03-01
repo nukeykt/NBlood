@@ -285,7 +285,7 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
     {
         // Fetch the positions (in screen coordinates) of all the windows we need to tweak
         RECT chrome = {};
-        AdjustWindowRect(&chrome, GetWindowLong(hwndDlg, GWL_STYLE), FALSE);
+        AdjustWindowRect(&chrome, GetWindowLongPtr(hwndDlg, GWL_STYLE), FALSE);
         RECT rdlg;
         GetWindowRect(hwndDlg, &rdlg);
 
@@ -501,6 +501,10 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
     return FALSE;
 }
 
+bool startwin_isopen(void)
+{
+    return !!startupdlg;
+}
 
 int32_t startwin_open(void)
 {

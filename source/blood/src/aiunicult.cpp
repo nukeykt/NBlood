@@ -717,7 +717,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
                                 break;
                             if (IsDudeSprite(pHSprite) && (weaponType != kGenDudeWeaponHitscan || hscn)) {
                                 // dodge a bit in sides
-                                if (pXHSprite->target != pSprite->index) {
+                                if (pXHSprite->health > 0 && pXHSprite->target != pSprite->index) {
                                     if (pExtra->baseDispersion < 1024 && weaponType != kGenDudeWeaponMissile) {
                                         if (spriteIsUnderwater(pSprite)) aiGenDudeNewState(pSprite, &genDudeDodgeShorterW);
                                         else if (inDuck(pXSprite->aiState)) aiGenDudeNewState(pSprite, &genDudeDodgeShorterD);
@@ -918,9 +918,9 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
 
 int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite) {
     UNREFERENCED_PARAMETER(pXSprite);
-    if (sub_5BDA8(pSprite, 14) || spriteIsUnderwater(pSprite,false))
+    if (dudeIsPlayingSeq(pSprite, 14) || spriteIsUnderwater(pSprite,false))
     {
-        if ( !sub_5BDA8(pSprite, 14) || spriteIsUnderwater(pSprite,false))
+        if ( !dudeIsPlayingSeq(pSprite, 14) || spriteIsUnderwater(pSprite,false))
         {
             if (spriteIsUnderwater(pSprite,false))
             {
@@ -1067,6 +1067,9 @@ void aiGenDudeNewState(spritetype* pSprite, AISTATE* pAIState) {
     }
 
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    if (pXSprite->health <= 0 || pXSprite->sysData1 == kGenDudeTransformStatus)
+        return;
+
 
     // redirect dudes which cannot walk to non-walk states
     if (!gGenDudeExtra[pSprite->index].canWalk) {

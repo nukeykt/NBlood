@@ -131,13 +131,13 @@ int32_t engineLoadClipMaps(void)
             continue;
         // Numsprites will now be set!
 
-        initprintf("Loading clip map: %s\n", g_clipMapFiles[fi]);
+        LOG_F(INFO, "Loading clip map %s", g_clipMapFiles[fi]);
 
         if (ournumsectors+numsectors>MAXSECTORS ||
             ournumwalls+numwalls>MAXWALLS ||
             ournumsprites+Numsprites>MAXSPRITES)
         {
-            initprintf("clip map: warning: exceeded limits when loading %s, aborting.\n", g_clipMapFiles[fi]);
+            LOG_F(ERROR, "Clip map %s would exceed engine limits; aborting.", g_clipMapFiles[fi]);
             break;
         }
 
@@ -240,7 +240,7 @@ int32_t engineLoadClipMaps(void)
 
             if (numclipmaps >= CM_MAX)
             {
-                initprintf("warning: reached max clip map number %d, not processing any more\n", CM_MAX);
+                LOG_F(WARNING, "Found too many clip maps (%d max).", CM_MAX);
                 break;
             }
 
@@ -252,8 +252,8 @@ int32_t engineLoadClipMaps(void)
                     for (fi = 0; fi < g_clipMapFilesNum; ++fi)
                         if (k>=fisec[fi])
                             break;
-                    initprintf("clip map \"%s\": error: tried to chain picnum %d (sprite %d) in sector %d which"
-                        " already belongs to picnum %d.\n", g_clipMapFiles[fi], pn, i-fispr[fi], k-fisec[fi],
+                    LOG_F(ERROR, "Error in %s: tried to chain picnum %d (sprite %d) in sector %d which"
+                        " already belongs to picnum %d.", g_clipMapFiles[fi], pn, i-fispr[fi], k-fisec[fi],
                         clipinfo[sectoidx[k]].picnum);
                     engineInitClipMaps();
 
@@ -280,7 +280,7 @@ int32_t engineLoadClipMaps(void)
                     for (fi = 0; fi < g_clipMapFilesNum; ++fi)
                         if (i>=fispr[fi])
                             break;
-                    initprintf("clip map \"%s\": warning: sprite %d pointing neither northward nor southward. %s will be wrong.\n",
+                    LOG_F(WARNING, "Error in %s: sprite %d points neither northward nor southward. %s will be incorrect.",
                         g_clipMapFiles[fi], i-fispr[fi], (sprite[i].cstat&48)==32 ? "Scaling and flipping" : "X-flipping");
                 }
             }
@@ -317,8 +317,8 @@ int32_t engineLoadClipMaps(void)
                                 for (fi = 0; fi < g_clipMapFilesNum; ++fi)
                                     if (ns>=fisec[fi])
                                         break;
-                                initprintf("clip map \"%s\": error: encountered more than one outer sector (%d and %d)"
-                                    " for sprite %d.\n", g_clipMapFiles[fi], outersect-fisec[fi], ns-fisec[fi], i-fispr[fi]);
+                                LOG_F(ERROR, "Error in %s: sprite %d has more than one outer sector (%d and %d).",
+                                                g_clipMapFiles[fi], i-fispr[fi], outersect-fisec[fi], ns-fisec[fi]);
                                 engineInitClipMaps();
 
                                 Xfree(fisec);
@@ -335,8 +335,7 @@ int32_t engineLoadClipMaps(void)
                             for (fi = 0; fi < g_clipMapFilesNum; ++fi)
                                 if (ns>=fisec[fi])
                                     break;
-                            initprintf("clip map \"%s\": error: encountered sector %d belonging to index %d"
-                                " while collecting sectors for sprite %d (index %d).\n",
+                            LOG_F(ERROR, "Error in %s: found sector %d belonging to index %d while collecting sectors for sprite %d (index %d).",
                                 g_clipMapFiles[fi], ns-fisec[fi], sectoidx[ns], i-fispr[fi], numclipmaps);
                             engineInitClipMaps();
 
@@ -351,7 +350,7 @@ int32_t engineLoadClipMaps(void)
 
             if (outersect==-1)
             {
-                initprintf("clip map: INTERNAL ERROR: outersect==-1!\n");
+                LOG_F(ERROR, "INTERNAL CLIP MAP ERROR: outersect==-1!");
                 engineInitClipMaps();
 
                 Xfree(fisec);
@@ -518,7 +517,7 @@ int32_t engineLoadClipMaps(void)
     initspritelists();
 
     if (lwcp > 0)
-        initprintf("Loaded clip map%s.\n", lwcp==1 ? "" : "s");
+        LOG_F(INFO, "Loaded clip map%s.", lwcp==1 ? "" : "s");
 
     Xfree(fisec);
     Xfree(fispr);
@@ -1010,9 +1009,7 @@ static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walld
 
     if (nsecs > (walldist + 8))
     {
-#ifdef DEBUGGINGAIDS
-        OSD_Printf("%s(): initial position (%d, %d) not within initial sector %d; shortest distance %d.\n", EDUKE32_FUNCTION, pos.x, pos.y, *sectnum, nsecs);
-#endif
+        DVLOG_F(LOG_DEBUG+1, "Initial position (%d, %d) not within initial sector %d; shortest distance %d.", pos.x, pos.y, *sectnum, nsecs);
         walldist = 0x7fff;
     }
 
@@ -1334,10 +1331,10 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         }
 
         if (clipmove_warned & 1)
-            OSD_Printf("clipsectnum >= MAXCLIPSECTORS at %d,%d!\n", pos->x, pos->y);
+            LOG_F(ERROR, "clipsectnum >= MAXCLIPSECTORS at (%d,%d)!", pos->x, pos->y);
 
         if (clipmove_warned & 2)
-            OSD_Printf("clipnum >= MAXCLIPNUM at %d,%d!\n", pos->x, pos->y);
+            LOG_F(ERROR, "clipnum >= MAXCLIPNUM at (%d,%d)!", pos->x, pos->y);
 
         ////////// Sprites //////////
 
@@ -1360,7 +1357,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             if (clipsprite_try(spr, clipMin.x, clipMin.y, clipMax.x, clipMax.y))
                 continue;
 #endif
-            vec2_t p1 = *(vec2_t const *)spr;
+            vec2_t p1 = spr->xy;
 
             switch (cstat & (CSTAT_SPRITE_ALIGNMENT_WALL | CSTAT_SPRITE_ALIGNMENT_FLOOR))
             {

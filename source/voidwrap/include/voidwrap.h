@@ -34,6 +34,7 @@ typedef void (*VW_VOID)(void);
 typedef void (*VW_VOID_INT32)(int32_t);
 typedef void (*VW_VOID_CONSTCHARPTR)(char const *);
 typedef void (*VW_VOID_CONSTCHARPTR_INT32)(char const *, int32_t);
+typedef void (*VW_VOID_CONSTCHARPTR_CONSTCHARPTR)(char const *, char const *);
 typedef bool (*VW_BOOL)(void);
 #ifdef VWSCREENSHOT
 typedef bool (*VW_BOOL_SCREENSHOT)(char * filepath, int32_t width, int32_t height);

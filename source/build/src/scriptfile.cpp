@@ -32,7 +32,7 @@ static int scriptfile_eof_error(scriptfile *sf)
 {
     if (scriptfile_eof(sf))
     {
-        initprintf("Error on line %s:%d: unexpected eof\n", sf->filename, scriptfile_getlinum(sf, sf->textptr));
+        LOG_F(ERROR, "%s:%d: Unexpected EOF!", sf->filename, scriptfile_getlinum(sf, sf->textptr));
         return -1;
     }
 
@@ -44,7 +44,7 @@ int32_t scriptfile_getstring(scriptfile *sf, char **retst)
     (*retst) = scriptfile_gettoken(sf);
     if (*retst == NULL)
     {
-        initprintf("Error on line %s:%d: unexpected eof\n",sf->filename,scriptfile_getlinum(sf,sf->textptr));
+        LOG_F(ERROR, "%s:%d: Unexpected EOF!",sf->filename,scriptfile_getlinum(sf,sf->textptr));
         return -2;
     }
     return 0;
@@ -63,7 +63,7 @@ int32_t scriptfile_getnumber(scriptfile *sf, int32_t *num)
     {
         char *p = sf->textptr;
         skipovertoken(sf);
-        initprintf("Error on line %s:%d: expecting int32_t, got \"%s\"\n",sf->filename,scriptfile_getlinum(sf,sf->ltextptr),p);
+        LOG_F(ERROR, "%s:%d: Expected an integer, got '%s'",sf->filename,scriptfile_getlinum(sf,sf->ltextptr),p);
         return -2;
     }
     return 0;
@@ -126,7 +126,7 @@ int32_t scriptfile_getdouble(scriptfile *sf, double *num)
     {
         char *p = sf->textptr;
         skipovertoken(sf);
-        initprintf("Error on line %s:%d: expecting float, got \"%s\"\n",sf->filename,scriptfile_getlinum(sf,sf->ltextptr),p);
+        LOG_F(ERROR, "%s:%d: Expected a float, got '%s'",sf->filename,scriptfile_getlinum(sf,sf->ltextptr),p);
         return -2;
     }
     return 0;
@@ -143,8 +143,8 @@ int scriptfile_getsymbol(scriptfile *sf, int32_t *num)
     if (*e)
     {
         // looks like a string, so find it in the symbol table
-        if (scriptfile_getsymbolvalue(t, num)) return 0;
-        initprintf("Error on line %s:%d: expecting symbol, got \"%s\"\n", sf->filename, scriptfile_getlinum(sf, sf->ltextptr), t);
+        if (scriptfile_getsymbolvalue(t, num)) return 0;        
+        LOG_F(ERROR, "%s:%d: Expected a symbol, got '%s'", sf->filename, scriptfile_getlinum(sf, sf->ltextptr), t);
         return -2;
     }
 
@@ -159,7 +159,7 @@ int32_t scriptfile_getbraces(scriptfile *sf, char **braceend)
 
     if (sf->textptr[0] != '{')
     {
-        initprintf("Error on line %s:%d: expecting '{'\n",sf->filename,scriptfile_getlinum(sf,sf->textptr));
+        LOG_F(ERROR, "%s:%d: Expected '{'",sf->filename,scriptfile_getlinum(sf,sf->textptr));
         return -1;
     }
 
@@ -384,7 +384,7 @@ int32_t scriptfile_getsymbolvalue(char const *name, int32_t *val)
             sscanf(name + 2, "%" PRIx64 "", &x);
 
             if (EDUKE32_PREDICT_FALSE(x > UINT32_MAX))
-                buildprint("warning: number 0x", hex(x), " truncated to 32 bits.\n");
+                LOG_F(WARNING, "value 0x%016" PRIx64 " truncated to 32 bits.", x);
 
             *val = x;
             return 1;

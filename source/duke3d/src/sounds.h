@@ -60,11 +60,13 @@ typedef struct
     int32_t len;
     fix16_t volume;
     int16_t minpitch, maxpitch, distOffset;
-    int8_t  playing;
+    uint8_t  playing;
     uint8_t flags;
     char    priority;
     char    lock;
 } sound_t;
+
+EDUKE32_STATIC_ASSERT(MAXSOUNDINSTANCES <= sizeof(((sound_t *)0)->playing) << 3);
 
 extern voiceinfo_t nullvoice;
 extern sound_t nullsound;
@@ -75,7 +77,7 @@ extern int32_t MusicIsWaveform, MusicVoice;
 
 static FORCE_INLINE bool S_SoundIsValid(int soundNum)
 {
-    return soundNum <= g_highestSoundIdx && g_sounds[soundNum] && g_sounds[soundNum] != &nullsound && g_sounds[soundNum]->ptr;
+    return (unsigned)soundNum <= (unsigned)g_highestSoundIdx && g_sounds[soundNum] && g_sounds[soundNum] != &nullsound && g_sounds[soundNum]->ptr;
 }
 
 static FORCE_INLINE bool S_IsAmbientSFX(int const spriteNum) { return (sprite[spriteNum].picnum == MUSICANDSFX && sprite[spriteNum].lotag < 999); }

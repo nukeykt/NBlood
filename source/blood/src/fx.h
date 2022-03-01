@@ -90,12 +90,12 @@ class CFX {
 public:
     void fxKill(int);
     void fxFree(int);
-    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned int);
+    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned int duration = 0);
     void fxProcess(void);
 };
 
 void fxSpawnBlood(spritetype *pSprite, int a2);
-void sub_746D4(spritetype *pSprite, int a2);
+void fxSpawnPodBlood(spritetype *pSprite, int a2);
 void fxSpawnEjectingBrass(spritetype *pSprite, int z, int a3, int a4);
 void fxSpawnEjectingShell(spritetype *pSprite, int z, int a3, int a4);
 

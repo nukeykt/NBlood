@@ -560,6 +560,7 @@ int32_t map_undoredo(int dir)
     yax_update(0);
     yax_updategrays(pos.z);
 #endif
+    calc_sector_reachability();
     CheckMapCorruption(4, 0);
 
     return 0;

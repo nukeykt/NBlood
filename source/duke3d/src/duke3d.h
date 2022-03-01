@@ -72,6 +72,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MAXVOLUMES          7
 #define MAXLEVELS           64
 #define MAXGAMETYPES        16
+#define MAX_ACTIVE_VIEWSCREENS 64
 
 enum {
     MUS_FIRST_SPECIAL = MAXVOLUMES*MAXLEVELS,
@@ -106,7 +107,8 @@ enum {
 #define TILE_VIEWSCR        (MAXTILES-5)
 // Reserved: TILE_VIEWSCR_1 (MAXTILES-6)
 // Reserved: TILE_VIEWSCR_2 (MAXTILES-7)
-EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
+// Reserved: (MAXTILES-8) to (MAXTILES-196) for additional Viewscreen tilespace
+//EDUKE32_STATIC_ASSERT(4 + (3 * MAX_ACTIVE_VIEWSCREENS) <= MAXTILES-MAXUSERTILES);
 
 // sprites with these statnums should be considered for fixing
 #define ROTFIXSPR_STATNUMP(k) ((k)==STAT_DEFAULT || (k)==STAT_STANDABLE || (k)==STAT_FX || \
@@ -121,6 +123,13 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 // Uncomment the following to remove calls to a.nasm functions with the GL renderers
 // so that debugging with valgrind --smc-check=none is possible:
 //#define DEBUG_VALGRIND_NO_SMC
+
+enum loguru_verbosities_game
+{
+    LOG_VM = LOG_ENGINE_MAX,
+    LOG_CON,
+    LOG_GAME_MAX,
+};
 
 #include "_rts.h"
 #include "actors.h"

@@ -133,10 +133,10 @@ void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
         priority = rVol;
     if (gStereo)
     {
-        MV_Lock();
+        // MV_Lock();
         pBonkle->lChan = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, fix16_one, (intptr_t)&pBonkle->lChan);
         pBonkle->rChan = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, fix16_one, (intptr_t)&pBonkle->rChan);
-        MV_Unlock();
+        // MV_Unlock();
     }
     else
     {
@@ -226,7 +226,7 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int chanId, int nFlags)
     int loopEnd = ClipLow(size - 1, 0);
     if (chanId < 0)
         loopStart = -1;
-    MV_Lock();
+    // MV_Lock();
     char *pData = (char*)gSoundRes.Lock(hRes);
     if (loopStart >= 0)
     {
@@ -255,7 +255,7 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int chanId, int nFlags)
             pBonkle->rChan = 0;
         }
     }
-    MV_Unlock();
+    // MV_Unlock();
 }
 
 // by NoOne: same as previous, but allows to set custom pitch for sound AND volume.
@@ -337,7 +337,7 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int chanId, int nFlags, 
     int loopEnd = ClipLow(size - 1, 0);
     if (chanId < 0)
         loopStart = -1;
-    MV_Lock();
+    // MV_Lock();
     char* pData = (char*)gSoundRes.Lock(hRes);
     if (loopStart >= 0)
     {
@@ -366,7 +366,7 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int chanId, int nFlags, 
             pBonkle->rChan = 0;
         }
     }
-    MV_Unlock();
+    // MV_Unlock();
 }
 
 EXTERN_INLINE void sfxKillSoundInternal(int i)
@@ -458,7 +458,7 @@ void sfxUpdate3DSounds(void)
                 pBonkle->sectnum = pBonkle->pSndSpr->sectnum;
             }
             Calc3DValues(pBonkle);
-            MV_Lock();
+            // MV_Lock();
             if (pBonkle->lChan > 0)
             {
                 if (pBonkle->rChan > 0)
@@ -474,7 +474,7 @@ void sfxUpdate3DSounds(void)
                 FX_SetPan(pBonkle->rChan, rVol, 0, rVol);
                 FX_SetFrequency(pBonkle->rChan, rPitch);
             }
-            MV_Unlock();
+            // MV_Unlock();
         }
         else
         {

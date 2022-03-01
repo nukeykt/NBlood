@@ -658,7 +658,7 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
     }
 
     if (doalloc) glGenTextures(1,(GLuint *)&pth->glpic); //# of textures (make OpenGL allocate structure)
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
 
     // fixtransparency(pic,tsiz,siz,dameth);
 
@@ -725,7 +725,7 @@ void rt_gloadtile_n64(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t 
 void RT_SetShader(void)
 {
 #ifdef USE_OPENGL
-    glUseProgram(rt_shaderprogram);
+    buildgl_useShaderProgram(rt_shaderprogram);
     rt_stexsamplerloc = glGetUniformLocation(rt_shaderprogram, "s_texture");
     rt_stexcombloc = glGetUniformLocation(rt_shaderprogram, "u_texcomb");
     rt_scolor1loc = glGetUniformLocation(rt_shaderprogram, "u_color1");
@@ -947,7 +947,16 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     if (!pth)
         return;
 
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+    }
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -974,8 +983,8 @@ void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
 {
 #ifdef USE_OPENGL
     rt_fxtile = 1;
-    glEnable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_BLEND);
+    buildgl_setDisabled(GL_ALPHA_TEST);
     glColor4f(1.f, 1.f, 1.f, 1.f);
     RT_SetColor1(a4, a5, a6, 255);
     RT_SetColor2(a1, a2, a3, 255);
@@ -987,8 +996,8 @@ void unsetfxcolor(void)
 {
 #ifdef USE_OPENGL
     rt_fxtile = 0;
-    glDisable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_BLEND);
+    buildgl_setEnabled(GL_ALPHA_TEST);
     RT_SetTexComb(0);
 #endif
 }
@@ -996,14 +1005,14 @@ void unsetfxcolor(void)
 void RT_DisplaySky(void)
 {
 #ifdef USE_OPENGL
-    glDisable(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     rt_globaldepth = 0.f;
     setfxcolor(rt_sky_color[1].x, rt_sky_color[1].y, rt_sky_color[1].z, rt_sky_color[0].x, rt_sky_color[0].y, rt_sky_color[0].z);
-    glDisable(GL_BLEND);
+    buildgl_setDisabled(GL_BLEND);
     RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f * ((float)xdim / float(ydim)) * (240.f/320.f), 103.f, 3976, 0);
     glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
+    buildgl_setEnabled(GL_DEPTH_TEST);
 #endif
 }
 
@@ -1039,7 +1048,7 @@ void RT_EnablePolymost()
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glDisable(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
     if (rt_renderactive & 2)
         polymost_resetVertexPointers();
     polymost_setClamp(0);
@@ -1054,10 +1063,13 @@ void RT_LookVectorCalc(float dx, float dy, float dz)
 {
 #ifdef USE_OPENGL
     GLfloat tempmat[16];
+    vec3f_t v_eye = {rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f};
+    vec3f_t v_center = {rt_globalposx * 0.5f + dx, rt_globalposy * 0.5f + dy, rt_globalposz * 0.5f + dz};
+    vec3f_t v_up = {0.f, 0.f, -1.f};
     // TODO: replace
     glPushMatrix();
     glLoadIdentity();
-    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+    buildgl_uLookAt(v_eye, v_center, v_up);
     glGetFloatv(GL_PROJECTION_MATRIX, tempmat);
     rt_look[0].x = tempmat[0];
     rt_look[0].y = tempmat[4];
@@ -1093,8 +1105,13 @@ void RT_SetupMatrix(void)
     glLoadIdentity();
     float fovy = atanf(tanf((float)ud.fov * (fPI / 180.f) / 2.f) * (3.f / 4.f)) * 2.f * (180.f/fPI);
     rt_worldspritefactor = tanf(60.f * (fPI / 180.f) / 2.f) / tanf(fovy * (fPI / 180.f) / 2.f);
-    bgluPerspective(fovy, (float)xdim/(float)ydim, 5.f, 16384.f);
-    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+    buildgl_setPerspective(fovy, (float)xdim/(float)ydim, 5.f, 16384.f);
+
+    vec3f_t v_eye = {rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f};
+    vec3f_t v_center = {rt_globalposx * 0.5f + dx, rt_globalposy * 0.5f + dy, rt_globalposz * 0.5f + dz};
+    vec3f_t v_up = {0.f, 0.f, -1.f};
+    buildgl_uLookAt(v_eye, v_center, v_up);
+
     glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
     RT_LookVectorCalc(dx, dy, dz);
 #endif
@@ -1128,7 +1145,18 @@ void RT_SetTexture(int tilenum, int explosion = 0)
         method = 0;
     pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
     if (pth)
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    {
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        if (!buildgl_samplerObjectsEnabled())
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
+        else
+        {
+            buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+        }
+    }
 
     int clamp = 0;
 
@@ -1894,9 +1922,9 @@ void RT_SetupDrawMask(void)
     viewangsin = sinf(rt_globalang * BANG2RAD);
     RT_SetTexComb(0);
 
-    glEnable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
-    glDisable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_BLEND);
+    buildgl_setEnabled(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_CULL_FACE);
     glDepthMask(GL_FALSE);
 #endif
 }
@@ -2084,7 +2112,16 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
         return;
     
     RT_SetTexClamp(1+2);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+    }
     //rt_globalalpha = 128;
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     glBegin(GL_QUADS);
@@ -2171,7 +2208,16 @@ void RT_DrawSpriteFloor(void)
         return;
     
     RT_SetTexClamp(1+2);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+    }
 
     glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
 
@@ -2308,7 +2354,7 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
         if (rt_fxtile)
         {
             RT_SetTexComb(0);
-            glEnable(GL_ALPHA_TEST);
+            buildgl_setEnabled(GL_ALPHA_TEST);
             rt_fxtile = 0;
             glColor4f(1.f, 1.f, 1.f, 1.f);
         }
@@ -2317,7 +2363,7 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
     {
         if (!rt_fxtile)
         {
-            glDisable(GL_ALPHA_TEST);
+            buildgl_setDisabled(GL_ALPHA_TEST);
             RT_SetTexComb(1);
             rt_fxtile = 1;
         }
@@ -2629,7 +2675,7 @@ void RT_DrawMaskWall(int wallnum)
     if (rt_fxtile)
     {
         RT_SetTexComb(0);
-        glEnable(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_ALPHA_TEST);
         rt_fxtile = 0;
         glColor4f(1.f, 1.f, 1.f, 1.f);
     }
@@ -2759,7 +2805,18 @@ void RT_DrawMaskWall(int wallnum)
         method = 0;
     pthtyp* pth = texcache_fetch(pn, 0, 0, method);
     if (pth)
-        polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    {
+        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+        if (!buildgl_samplerObjectsEnabled())
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
+        else
+        {
+            buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+        }
+    }
 
     int clamp = 0;
 
@@ -3069,11 +3126,11 @@ void RT_DisplayExplosions(void)
 {
 #ifdef USE_OPENGL
     RT_SetTexComb(1);
-    glDisable(GL_DEPTH);
+    buildgl_setEnabled(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
+    buildgl_setDisabled(GL_CULL_FACE);
+    buildgl_setDisabled(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_BLEND);
     for (int i = 0; i < MAXEXPLOSIONS; i++)
     {
         auto& e = explosions[i];
@@ -3301,12 +3358,12 @@ void RT_BOSS2CalcVTX(void)
 void RT_BOSS2Draw(int x, int y, int z, int ang)
 {
 #ifdef USE_OPENGL
-    glEnable(GL_DEPTH_TEST);
+    buildgl_setEnabled(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_BLEND);
+    buildgl_setEnabled(GL_ALPHA_TEST);
     glMatrixMode(GL_MODELVIEW);
-    glDisable(GL_CULL_FACE);
+    buildgl_setDisabled(GL_CULL_FACE);
     glPushMatrix();
     glLoadIdentity();
     glTranslatef(x / 4, y / 4, (z - 0x6800) / 32);
@@ -3397,11 +3454,11 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
         }
     }
     
-    glDisable(GL_ALPHA_TEST);
+    buildgl_setDisabled(GL_ALPHA_TEST);
     glDepthMask(GL_TRUE);
     glClear(GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    buildgl_setEnabled(GL_DEPTH_TEST);
+    buildgl_setDepthFunc(GL_LEQUAL);
 
     globalposx = x;
     globalposy = y;
@@ -3421,9 +3478,9 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     sortspritescnt = 0;
 
     glColor4f(1.f, 1.f, 1.f, 1.f);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    buildgl_setEnabled(GL_TEXTURE_2D);
+    buildgl_setEnabled(GL_DEPTH_TEST);
+    buildgl_setEnabled(GL_CULL_FACE);
     glFrontFace(GL_CCW);
 
     RT_ScanSectors(sectnum);
@@ -3773,7 +3830,7 @@ void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4)
     {
         a4 = clamp(a4, 0, 255);
         RT_SetTexComb(0);
-        glEnable(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_ALPHA_TEST);
         glColor4f(a1 * (1.f / 255.f), a2 * (1.f / 255.f), a3 * (1.f / 255.f), a4 * (1.f / 255.f));
     }
 #endif
@@ -4018,10 +4075,19 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
     if (!pth)
         return;
 
-    glEnable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_setEnabled(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_BLEND);
+    buildgl_setDisabled(GL_DEPTH_TEST);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+    }
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
@@ -4116,10 +4182,19 @@ void RT_RotateSpriteText(float x, float y, float sx, float sy, int tilenum, int 
     if (!pth)
         return;
 
-    glEnable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    polymost_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    buildgl_setEnabled(GL_ALPHA_TEST);
+    buildgl_setEnabled(GL_BLEND);
+    buildgl_setDisabled(GL_DEPTH_TEST);
+    buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+    if (!buildgl_samplerObjectsEnabled())
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        buildgl_bindSamplerObject(0, pth->flags | PTH_HIGHTILE);
+    }
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
@@ -4166,7 +4241,7 @@ void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientat
     else
         setfxcolor(colortable[color][0].x, colortable[color][0].y, colortable[color][0].z,
             colortable[color][1].x, colortable[color][1].y, colortable[color][1].z);
-    glDisable(GL_DEPTH_TEST);
+    buildgl_setDisabled(GL_DEPTH_TEST);
     RT_DisplayTileWorld(x, y, sx, sy, picnum, orientation);
     unsetfxcolor();
 #endif
@@ -4200,7 +4275,7 @@ void RT_RenderScissor(float x1, float y1, float x2, float y2, bool absolute/* = 
     }
 
     glScissor((int)x1, (int)y1, (int)x2 - (int)x1, (int)y2 - (int)y1);
-    glEnable(GL_SCISSOR_TEST);
+    buildgl_setEnabled(GL_SCISSOR_TEST);
 #endif
 }
 
@@ -4208,6 +4283,6 @@ void RT_RenderUnsetScissor(void)
 {
 #ifdef USE_OPENGL
     glScissor(0, 0, xdim, ydim);
-    glDisable(GL_SCISSOR_TEST);
+    buildgl_setDisabled(GL_SCISSOR_TEST);
 #endif
 }
