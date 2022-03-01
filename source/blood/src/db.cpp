@@ -739,9 +739,18 @@ const int nXWallSize = 24;
 
 int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short *pSector, unsigned int *pCRC) {
     char name2[BMAX_PATH]; int16_t tpskyoff[256];
-    memset(show2dsector, 0, sizeof(show2dsector));
-    memset(show2dwall, 0, sizeof(show2dwall));
-    memset(show2dsprite, 0, sizeof(show2dsprite));
+
+    memset(show2dsector,0,sizeof(show2dsector));
+    memset(show2dwall,0,sizeof(show2dwall));
+    memset(show2dsprite,0,sizeof(show2dsprite));
+    memset(spriteext,0,kMaxSprites*sizeof(spriteext_t));
+
+    memset(xvel,0,sizeof(xvel));
+    memset(yvel,0,sizeof(yvel));
+    memset(zvel,0,sizeof(zvel));
+    memset(xsprite,0,sizeof(xsprite));
+    memset(sprite,0,kMaxSprites*sizeof(spritetype));
+
     #ifdef NOONE_EXTENSIONS
     gModernMap = false;
     #endif
