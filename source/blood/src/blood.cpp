@@ -764,7 +764,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (!bVanilla && !gMe->packSlots[1].isActive) // if diving suit is not active, turn off reverb sound effect
         sfxSetReverb(0);
     ambInit();
-    sub_79760();
+    netResetState();
     gCacheMiss = 0;
     gFrame = 0;
     gChokeCounter = 0;
@@ -1772,7 +1772,7 @@ int app_main(int argc, char const * const * argv)
         credLogosDos();
     scrSetDac();
 RESTART:
-    sub_79760();
+    netResetState();
     gViewIndex = myconnectindex;
     gMe = gView = &gPlayer[myconnectindex];
     netBroadcastPlayerInfo(myconnectindex);

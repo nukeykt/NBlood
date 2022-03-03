@@ -218,7 +218,7 @@ void netSendPacketAll(char *pBuffer, int nSize)
             netSendPacket(p, pBuffer, nSize);
 }
 
-void sub_79760(void)
+void netResetState(void)
 {
     gNetFifoClock = gFrameClock = totalclock = 0;
     gNetFifoMasterTail = 0;
@@ -887,7 +887,7 @@ void netInitialize(bool bConsole)
 {
     netDeinitialize();
     memset(gPlayerReady, 0, sizeof(gPlayerReady));
-    sub_79760();
+    netResetState();
 #ifndef NETCODE_DISABLE
     char buffer[128];
     gNetENetServer = gNetENetClient = NULL;
