@@ -2062,7 +2062,7 @@ static void maskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
 
     tweak_tsizes(&tsiz);
 
-    if (EDUKE32_PREDICT_FALSE(palookup[globalpal] == NULL))
+    if (/*EDUKE32_PREDICT_FALSE*/(palookup[globalpal] == NULL))
         globalpal = 0;
 
     intptr_t const fpalookup = FP_OFF(palookup[globalpal]);
@@ -5531,7 +5531,7 @@ draw_as_face_sprite:
         vec2_16_t const span = tilesiz[tilenum];
         vec2_t const siz = { mulscale30(isiz, xv * span.x), mulscale14(isiz, tspr->yrepeat * span.y) };
 
-        if (EDUKE32_PREDICT_FALSE((span.x>>11) >= siz.x || span.y >= (siz.y>>1)))
+        if (/*EDUKE32_PREDICT_FALSE*/((span.x>>11) >= siz.x || span.y >= (siz.y>>1)))
             return;  //Watch out for divscale overflow
 
         vec2_t upscale = {};
