@@ -2139,6 +2139,45 @@ void TenProcess(CGameMenuItem7EA1C *pItem)
     UNREFERENCED_PARAMETER(pItem);
 }
 
+static void UpdateSaveGameItemText(int nSlot)
+{
+    switch (nSlot) // set save slot text flag
+    {
+    case 0:
+        itemSaveGame1.at37 = 0;
+        break;
+    case 1:
+        itemSaveGame2.at37 = 0;
+        break;
+    case 2:
+        itemSaveGame3.at37 = 0;
+        break;
+    case 3:
+        itemSaveGame4.at37 = 0;
+        break;
+    case 4:
+        itemSaveGame5.at37 = 0;
+        break;
+    case 5:
+        itemSaveGame6.at37 = 0;
+        break;
+    case 6:
+        itemSaveGame7.at37 = 0;
+        break;
+    case 7:
+        itemSaveGame8.at37 = 0;
+        break;
+    case 8:
+        itemSaveGame9.at37 = 0;
+        break;
+    case 9:
+        itemSaveGame10.at37 = 0;
+        break;
+    default:
+        break;
+    }
+}
+
 short gQuickLoadSlot = -1;
 short gQuickSaveSlot = -1;
 
@@ -2165,6 +2204,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     gGameOptions.picEntry = gSavedOffset;
     gSaveGameOptions[nSlot] = gGameOptions;
     UpdateSavedInfo(nSlot);
+    UpdateSaveGameItemText(nSlot);
     gGameMenuMgr.Deactivate();
     viewSetMessage("Game saved");
 }
@@ -2189,6 +2229,7 @@ void QuickSaveGame(void)
     gGameOptions.picEntry = gSavedOffset;
     gSaveGameOptions[gQuickSaveSlot] = gGameOptions;
     UpdateSavedInfo(gQuickSaveSlot);
+    UpdateSaveGameItemText(gQuickSaveSlot);
     gGameMenuMgr.Deactivate();
     viewSetMessage("Game saved");
 }
