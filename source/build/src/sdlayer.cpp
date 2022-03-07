@@ -1457,7 +1457,11 @@ int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t fo
 
 char const *videoGetDisplayName(int display)
 {
+#if SDL_MAJOR_VERSION >= 2
     return SDL_GetDisplayName(display);
+#else
+    return "Primary display";
+#endif
 }
 
 static void destroy_window_resources()
@@ -1645,7 +1649,9 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     if (regrab)
         mouseGrabInput(g_mouseLockedToWindow);
 
+#if SDL_MAJOR_VERSION >= 2
     g_displayindex = newdisplayindex;
+#endif
 }
 
 #if SDL_MAJOR_VERSION >= 2
@@ -2571,12 +2577,14 @@ int32_t handleevents(void)
     }
 #endif
 
+#if SDL_MAJOR_VERSION >= 2
     if (g_mouseBits & 2 && osd->flags & OSD_CAPTURE && SDL_HasClipboardText())
     {
         auto text = SDL_GetClipboardText();
         OSD_HandleClipboard(text);
         SDL_free(text);
     }
+#endif
 
     if (inputchecked && g_mouseEnabled)
     {
@@ -2633,6 +2641,7 @@ int32_t handleevents(void)
     }
 #endif
 
+#if SDL_MAJOR_VERSION >= 2
     if (!frameplace && sdl_resize.x)
     {
         if (in3dmode())
@@ -2642,6 +2651,7 @@ int32_t handleevents(void)
 
         sdl_resize = {};
     }
+#endif
 
 #ifndef _WIN32
     startwin_idle(NULL);

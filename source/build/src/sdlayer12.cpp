@@ -168,7 +168,7 @@ static inline char grabmouse_low(char a)
 #endif
 }
 
-void videoGetModes(void)
+void videoGetModes(int display)
 {
     int32_t i, maxx = 0, maxy = 0;
     int32_t j;
