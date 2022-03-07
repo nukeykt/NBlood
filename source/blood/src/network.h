@@ -142,7 +142,7 @@ inline void GetPacketBuffer(char *&p, void *pBuffer, int size)
     p += size;
 }
 
-void sub_79760(void);
+void netResetState(void);
 void netResetToSinglePlayer(void);
 void netBroadcastMessage(int nPlayer, const char *pzMessage);
 void netWaitForEveryone(char a1);
