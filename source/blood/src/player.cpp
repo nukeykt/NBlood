@@ -753,7 +753,7 @@ void playerStart(int nPlayer, int bNewLevel)
     gFullMap = 0;
     pPlayer->throwPower = 0;
     pPlayer->deathTime = 0;
-    pPlayer->nextWeapon = 0;
+    pPlayer->nextWeapon = kWeaponNone;
     xvel[pSprite->index] = yvel[pSprite->index] = zvel[pSprite->index] = 0;
     pInput->q16turn = 0;
     pInput->keyFlags.word = 0;
@@ -826,10 +826,10 @@ void playerReset(PLAYER *pPlayer)
         pPlayer->hasWeapon[i] = gInfiniteAmmo;
         pPlayer->weaponMode[i] = 0;
     }
-    pPlayer->hasWeapon[1] = 1;
-    pPlayer->curWeapon = 0;
+    pPlayer->hasWeapon[kWeaponPitchfork] = 1;
+    pPlayer->curWeapon = kWeaponNone;
     pPlayer->qavCallback = -1;
-    pPlayer->input.newWeapon = 1;
+    pPlayer->input.newWeapon = kWeaponPitchfork;
     for (int i = 0; i < 14; i++)
     {
         pPlayer->weaponOrder[0][i] = dword_136400[i];
@@ -2091,7 +2091,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         }
         pPlayer->deathTime = 0;
         pPlayer->qavLoop = 0;
-        pPlayer->curWeapon = 0;
+        pPlayer->curWeapon = kWeaponNone;
         pPlayer->fraggerId = nSource;
         pPlayer->voodooTargets = 0;
         if (nDamageType == kDamageExplode && nDamage < (9<<4))
@@ -2258,7 +2258,7 @@ void PlayerSurvive(int, int nXSprite)
                 sprintf(buffer, "%s lives again!", gProfile[pPlayer->nPlayer].name);
                 viewSetMessage(buffer);
             }
-            pPlayer->input.newWeapon = 1;
+            pPlayer->input.newWeapon = kWeaponPitchfork;
         }
     }
 }

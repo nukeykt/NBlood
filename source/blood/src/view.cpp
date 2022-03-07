@@ -2454,12 +2454,12 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
             pNSprite->cstat |= 48;
             pNSprite->cstat &= ~8;
             pNSprite->picnum = nVoxel;
-            if (pPlayer->curWeapon == 9) // position lifeleech behind player
+            if (pPlayer->curWeapon == kWeaponLifeLeech) // position lifeleech behind player
             {
                 pNSprite->x += mulscale30(128, Cos(gView->pSprite->ang));
                 pNSprite->y += mulscale30(128, Sin(gView->pSprite->ang));
             }
-            if ((pPlayer->curWeapon == 9) || (pPlayer->curWeapon == 10))  // make lifeleech/voodoo doll always face viewer like sprite
+            if ((pPlayer->curWeapon == kWeaponLifeLeech) || (pPlayer->curWeapon == kWeaponVoodoo))  // make lifeleech/voodoo doll always face viewer like sprite
                 pNSprite->ang = (gView->pSprite->ang + 1024) & 2047;
         }
         break;
@@ -3813,7 +3813,8 @@ RORHACK:
                 else if (gView->pXSprite->health > 0) playerQavSceneDraw(gView, nShade, cX, cY, nPalette);
                 else {
                     gView->sceneQav = gView->weaponQav = -1;
-                    gView->weaponTimer = gView->curWeapon = 0;
+                    gView->weaponTimer = 0;
+                    gView->curWeapon = kWeaponNone;
                 }
             #else
                 WeaponDraw(gView, nShade, cX, cY, nPalette);

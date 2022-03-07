@@ -242,13 +242,13 @@ void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, EVENT event)
             {
                 evKill(pSprite->index, 3);
                 pPlayer->ammoCount[8] = ClipHigh(pPlayer->ammoCount[8]+pXSprite->data3, gAmmoInfo[8].max);
-                pPlayer->hasWeapon[9] = 1;
-                if (pPlayer->curWeapon != 9)
+                pPlayer->hasWeapon[kWeaponLifeLeech] = 1;
+                if (pPlayer->curWeapon != kWeaponLifeLeech)
                 {
                     if (!VanillaMode() && checkFired6or7(pPlayer)) // if tnt/spray is actively used, do not switch weapon
                         break;
                     pPlayer->weaponState = 0;
-                    pPlayer->nextWeapon = 9;
+                    pPlayer->nextWeapon = kWeaponLifeLeech;
                 }
             }
         }

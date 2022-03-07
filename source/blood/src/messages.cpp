@@ -126,9 +126,9 @@ void SetWeapons(bool stat)
         if (!VanillaMode())
         {
             // Keep the pitchfork to avoid freeze
-            gMe->hasWeapon[1] = 1;
-            gMe->curWeapon = 0;
-            gMe->nextWeapon = 1;
+            gMe->hasWeapon[kWeaponPitchfork] = 1;
+            gMe->curWeapon = kWeaponNone;
+            gMe->nextWeapon = kWeaponPitchfork;
         }
         viewSetMessage("You have no weapons.");
     }
@@ -894,9 +894,9 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetWooMode(true);
         powerupActivate(gMe, kPwUpDeliriumShroom);
         gMe->pXSprite->health = 16;
-        gMe->hasWeapon[1] = 1;
-        gMe->curWeapon = 0;
-        gMe->nextWeapon = 1;
+        gMe->hasWeapon[kWeaponPitchfork] = 1;
+        gMe->curWeapon = kWeaponNone;
+        gMe->nextWeapon = kWeaponPitchfork;
         break;
     default:
         break;

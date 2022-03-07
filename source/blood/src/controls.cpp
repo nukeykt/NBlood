@@ -394,13 +394,13 @@ void ctrlGetInput(void)
     if (BUTTON(gamefunc_ProximityBombs))
     {
         CONTROL_ClearButton(gamefunc_ProximityBombs);
-        gInput.newWeapon = 11;
+        gInput.newWeapon = kWeaponProxyTNT;
     }
 
     if (BUTTON(gamefunc_RemoteBombs))
     {
         CONTROL_ClearButton(gamefunc_RemoteBombs);
-        gInput.newWeapon = 12;
+        gInput.newWeapon = kWeaponRemoteTNT;
     }
 
     if (BUTTON(gamefunc_Holster_Weapon))
