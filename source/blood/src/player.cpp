@@ -1479,7 +1479,14 @@ void ProcessInput(PLAYER *pPlayer)
             gViewAngleAdjust += float(speed);
     }
     if (pPlayer == gMe && numplayers == 1)
-        gViewAngleAdjust += float(pSprite->ang - pPlayer->angold);
+    {
+        int nDeltaAngle = pSprite->ang - pPlayer->angold;
+        if (nDeltaAngle >= 1024) // handle unsigned overflow
+            nDeltaAngle += -2048;
+        else if (nDeltaAngle <= -1024)
+            nDeltaAngle += 2048;
+        gViewAngleAdjust += float(nDeltaAngle);
+    }
     pPlayer->q16ang = (pPlayer->q16ang+fix16_from_int(pSprite->ang-pPlayer->angold))&0x7ffffff;
     pPlayer->angold = pSprite->ang = fix16_to_int(pPlayer->q16ang);
     if (!pInput->buttonFlags.jump)
