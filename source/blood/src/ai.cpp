@@ -1569,6 +1569,9 @@ void aiProcessDudes(void) {
 }
 
 void aiInit(void) {
+    memset(cumulDamage, 0, sizeof(cumulDamage));
+    memset(gDudeSlope, 0, sizeof(gDudeSlope));
+    memset(gDudeExtra, 0, sizeof(gDudeExtra));
     for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
         aiInitSprite(&sprite[nSprite]);
     }
@@ -1583,12 +1586,16 @@ void aiInitSprite(spritetype *pSprite)
     XSECTOR *pXSector = NULL;
     if (nXSector > 0)
         pXSector = &xsector[nXSector];
-    DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
+    DUDEEXTRA *pDudeExtra = &gDudeExtra[nXSprite];
     DUDEEXTRA_STATS *pDudeExtraE = &gDudeExtra[nXSprite].stats;
-    pDudeExtra->teslaHit = 0;
     pDudeExtra->clock = 0;
-    pDudeExtraE->thinkTime = 0;
-    pDudeExtraE->active = 0;
+    pDudeExtra->teslaHit = 0;
+    if (!VanillaMode()) // clear these stats for non-vanilla mode
+    {
+        pDudeExtra->sfx_priority = AI_SFX_PRIORITY_0;
+        pDudeExtraE->thinkTime = 0;
+        pDudeExtraE->active = 0;
+    }
     
     #ifdef NOONE_EXTENSIONS
     unsigned int stateTimer = 0;
