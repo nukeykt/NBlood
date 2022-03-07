@@ -148,7 +148,7 @@ void InitMirrors(void)
             int nLink = gUpperLink[i];
             if (nLink < 0)
                 continue;
-            int nLink2 = sprite[nLink].owner /*& 0xfff*/;
+            int nLink2 = sprite[nLink].owner;
             int j = sprite[nLink2].sectnum;
             if (sector[j].ceilingpicnum != 504)
                 ThrowError("Lower link sector %d doesn't have mirror picnum\n", j);
