@@ -925,7 +925,7 @@ void netInitialize(bool bConsole)
         {
             char buffer[128];
             sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
-            viewLoadingScreen(2518, "Network Game", NULL, buffer);
+            viewLoadingScreen(gMenuPicnum, "Network Game", NULL, buffer);
             videoNextPage();
         }
         while (numplayers < gNetPlayers)
@@ -967,7 +967,7 @@ void netInitialize(bool bConsole)
                     {
                         char buffer[128];
                         sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
-                        viewLoadingScreen(2518, "Network Game", NULL, buffer);
+                        viewLoadingScreen(gMenuPicnum, "Network Game", NULL, buffer);
                         videoNextPage();
                     }
                     break;
@@ -999,7 +999,7 @@ void netInitialize(bool bConsole)
                     {
                         char buffer[128];
                         sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
-                        viewLoadingScreen(2518, "Network Game", NULL, buffer);
+                        viewLoadingScreen(gMenuPicnum, "Network Game", NULL, buffer);
                         videoNextPage();
                     }
                     break;
@@ -1061,7 +1061,7 @@ void netInitialize(bool bConsole)
         initprintf("%s\n", buffer);
         if (!bConsole)
         {
-            viewLoadingScreen(2518, "Network Game", NULL, buffer);
+            viewLoadingScreen(gMenuPicnum, "Network Game", NULL, buffer);
             videoNextPage();
         }
         gNetENetClient = enet_host_create(NULL, 1, BLOOD_ENET_CHANNEL_MAX, 0, 0);
@@ -1086,7 +1086,7 @@ void netInitialize(bool bConsole)
         bool bWaitServer = true;
         if (!bConsole)
         {
-            viewLoadingScreen(2518, "Network Game", NULL, "Waiting for server response");
+            viewLoadingScreen(gMenuPicnum, "Network Game", NULL, "Waiting for server response");
             videoNextPage();
         }
         while (bWaitServer)
