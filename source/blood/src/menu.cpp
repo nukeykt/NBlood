@@ -254,9 +254,9 @@ CGameMenuItemTitle itemOptionsOldTitle("OPTIONS", 1, 160, 20, 2038);
 CGameMenuItemChain itemOption1("CONTROLS...", 3, 0, 40, 320, 1, &menuControls, -1, NULL, 0);
 CGameMenuItemSlider sliderDetail("DETAIL:", 3, 66, 50, 180, gDetail, 0, 4, 1, SetDetail, -1, -1);
 CGameMenuItemSlider sliderGamma("GAMMA:", 3, 66, 60, 180, gGamma, 0, 15, 2, SetGamma, -1, -1);
-CGameMenuItemSlider sliderMusic("MUSIC:", 3, 66, 70, 180, MusicVolume, 0, 256, 48, SetMusicVol, -1, -1);
-CGameMenuItemSlider sliderSound("SOUND:", 3, 66, 80, 180, FXVolume, 0, 256, 48, SetSoundVol, -1, -1);
-CGameMenuItemSlider sliderCDAudio("CD AUDIO:", 3, 66, 90, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
+CGameMenuItemSlider sliderMusic("MUSIC:", 3, 66, 70, 180, MusicVolume, 0, 255, 48, SetMusicVol, -1, -1);
+CGameMenuItemSlider sliderSound("SOUND:", 3, 66, 80, 180, FXVolume, 0, 255, 48, SetSoundVol, -1, -1);
+CGameMenuItemSlider sliderCDAudio("CD AUDIO:", 3, 66, 90, 180, CDVolume, 0, 255, 48, SetCDVol, -1, -1);
 CGameMenuItemZBool bool3DAudio("3D AUDIO:", 3, 66, 100, 180, gStereo, SetMonoStereo, NULL, NULL);
 CGameMenuItemZBool boolCrosshair("CROSSHAIR:", 3, 66, 110, 180, gAimReticle, SetCrosshair, NULL, NULL);
 CGameMenuItemZCycle itemCycleShowWeapons("SHOW WEAPONS:", 3, 66, 120, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
@@ -335,9 +335,9 @@ CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, Start
 CGameMenuItemText itemLoadingText("LOADING...", 1, 160, 100, 1);
 
 CGameMenuItemTitle itemSoundsTitle("SOUNDS", 1, 160, 20, 2038);
-CGameMenuItemSlider itemSoundsMusic("MUSIC:", 3, 40, 60, 180, MusicVolume, 0, 256, 48, SetMusicVol, -1, -1);
-CGameMenuItemSlider itemSoundsSound("SOUND:", 3, 40, 70, 180, FXVolume, 0, 256, 48, SetSoundVol, -1, -1);
-CGameMenuItemSlider itemSoundsCDAudio("CD AUDIO:", 3, 40, 80, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
+CGameMenuItemSlider itemSoundsMusic("MUSIC:", 3, 40, 60, 180, MusicVolume, 0, 255, 48, SetMusicVol, -1, -1);
+CGameMenuItemSlider itemSoundsSound("SOUND:", 3, 40, 70, 180, FXVolume, 0, 255, 48, SetSoundVol, -1, -1);
+CGameMenuItemSlider itemSoundsCDAudio("CD AUDIO:", 3, 40, 80, 180, CDVolume, 0, 255, 48, SetCDVol, -1, -1);
 CGameMenuItemZBool itemSounds3DAudio("3D SOUND:", 3, 40, 90, 180, gStereo, SetMonoStereo, NULL, NULL);
 
 CGameMenuItemTitle itemQuitTitle("QUIT", 1, 160, 20, 2038);
@@ -647,7 +647,7 @@ CGameMenuItemZBool itemOptionsSound3DToggle("3D AUDIO:", 3, 66, 80, 180, false, 
 CGameMenuItemSlider itemOptionsSoundSoundVolume("SOUND VOLUME:", 3, 66, 90, 180, &FXVolume, 0, 256, 48, UpdateSoundVolume, -1, -1, kMenuSliderPercent);
 CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 100, 180, &MusicVolume, 0, 256, 48, UpdateMusicVolume, -1, -1, kMenuSliderPercent);
 CGameMenuItemZCycle itemOptionsSoundSampleRate("SAMPLE RATE:", 3, 66, 110, 180, 0, UpdateSoundRate, pzSoundRateStrings, 3, 0);
-CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 256, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
+CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 255, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 130, 180, false, UpdateCDToggle, NULL, NULL);
 CGameMenuItemZCycle itemOptionsSoundMusicDevice("MIDI DRIVER:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, ARRAY_SIZE(pzMusicDeviceStrings), 0);
 CGameMenuItemChain itemOptionsSoundSF2Bank("SF2 BANK", 3, 66, 150, 180, 0, &menuOptionsSoundSF2, 0, NULL, 0);
@@ -2156,13 +2156,15 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
-    restoreGameDifficulty[nSlot] = gGameOptions.nDifficulty;
     gGameOptions.nSaveGameSlot = nSlot;
     viewLoadingScreen(gMenuPicnum, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
     gSaveGameNum = nSlot;
-    LoadSave::SaveGame(strSaveGameName);
     gQuickSaveSlot = nSlot;
+    LoadSave::SaveGame(strSaveGameName);
+    gGameOptions.picEntry = gSavedOffset;
+    gSaveGameOptions[nSlot] = gGameOptions;
+    UpdateSavedInfo(nSlot);
     gGameMenuMgr.Deactivate();
     viewSetMessage("Game saved");
 }
@@ -2180,7 +2182,6 @@ void QuickSaveGame(void)
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
-    restoreGameDifficulty[gQuickSaveSlot] = gGameOptions.nDifficulty;
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
     viewLoadingScreen(gMenuPicnum, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
     videoNextPage();
