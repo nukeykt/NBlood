@@ -125,6 +125,7 @@ int gQuitRequest;
 bool gPaused;
 bool gSaveGameActive;
 int gCacheMiss;
+int gMenuPicnum = 2518; // default menu picnum
 
 enum gametokens
 {
@@ -1688,6 +1689,9 @@ int app_main(int argc, char const * const * argv)
 
     levelLoadDefaults();
 
+    if (!Bstrcmp(pINISelected->zName, "CRYPTIC.INI")) // if currently selected cryptic passage
+        gMenuPicnum = 2046;
+
     loaddefinitionsfile(BLOODWIDESCREENDEF);
     loaddefinitions_game(BLOODWIDESCREENDEF, FALSE);
 
@@ -1878,7 +1882,7 @@ RESTART:
             if (bDraw)
             {
                 videoClearScreen(0);
-                rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
+                rotatesprite(160<<16,100<<16,65536,0,gMenuPicnum,gGameMenuMgr.m_bActive ? 40 : 0,0,0x4a,0,0,xdim-1,ydim-1);
             }
             if (gQuitRequest && !gQuitGame)
                 netBroadcastMyLogoff(gQuitRequest == 2);

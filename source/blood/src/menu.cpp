@@ -1032,6 +1032,7 @@ void SetupLoadGameMenu(void)
     menuLoadGame.Add(&itemLoadGame9, false);
     menuLoadGame.Add(&itemLoadGame10, false);
     menuLoadGame.Add(&itemLoadGamePic, false);
+    itemLoadGamePic.at28 = gMenuPicnum;
     itemLoadGame1.at35 = 0;
     itemLoadGame2.at35 = 0;
     itemLoadGame3.at35 = 0;
@@ -2138,6 +2139,45 @@ void TenProcess(CGameMenuItem7EA1C *pItem)
     UNREFERENCED_PARAMETER(pItem);
 }
 
+static void UpdateSaveGameItemText(int nSlot)
+{
+    switch (nSlot) // set save slot text flag
+    {
+    case 0:
+        itemSaveGame1.at37 = 0;
+        break;
+    case 1:
+        itemSaveGame2.at37 = 0;
+        break;
+    case 2:
+        itemSaveGame3.at37 = 0;
+        break;
+    case 3:
+        itemSaveGame4.at37 = 0;
+        break;
+    case 4:
+        itemSaveGame5.at37 = 0;
+        break;
+    case 5:
+        itemSaveGame6.at37 = 0;
+        break;
+    case 6:
+        itemSaveGame7.at37 = 0;
+        break;
+    case 7:
+        itemSaveGame8.at37 = 0;
+        break;
+    case 8:
+        itemSaveGame9.at37 = 0;
+        break;
+    case 9:
+        itemSaveGame10.at37 = 0;
+        break;
+    default:
+        break;
+    }
+}
+
 short gQuickLoadSlot = -1;
 short gQuickSaveSlot = -1;
 
@@ -2156,7 +2196,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
     gGameOptions.nSaveGameSlot = nSlot;
-    viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
+    viewLoadingScreen(gMenuPicnum, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
     gSaveGameNum = nSlot;
     gQuickSaveSlot = nSlot;
@@ -2164,6 +2204,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     gGameOptions.picEntry = gSavedOffset;
     gSaveGameOptions[nSlot] = gGameOptions;
     UpdateSavedInfo(nSlot);
+    UpdateSaveGameItemText(nSlot);
     gGameMenuMgr.Deactivate();
     viewSetMessage("Game saved");
 }
@@ -2182,12 +2223,13 @@ void QuickSaveGame(void)
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
-    viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
+    viewLoadingScreen(gMenuPicnum, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
     videoNextPage();
     LoadSave::SaveGame(strSaveGameName);
     gGameOptions.picEntry = gSavedOffset;
     gSaveGameOptions[gQuickSaveSlot] = gGameOptions;
     UpdateSavedInfo(gQuickSaveSlot);
+    UpdateSaveGameItemText(gQuickSaveSlot);
     gGameMenuMgr.Deactivate();
     viewSetMessage("Game saved");
 }
@@ -2202,7 +2244,7 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     if (!testkopen(strLoadGameName, 0))
         return;
-    viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[nSlot]);
+    viewLoadingScreen(gMenuPicnum, "Loading", "Loading Saved Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
     gGameMenuMgr.Deactivate();
@@ -2217,7 +2259,7 @@ void QuickLoadGame(void)
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", gQuickLoadSlot);
     if (!testkopen(strLoadGameName, 0))
         return;
-    viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
+    viewLoadingScreen(gMenuPicnum, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
     videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
     gGameMenuMgr.Deactivate();
