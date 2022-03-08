@@ -9305,6 +9305,15 @@ static int32_t registerosdcommands(void)
 #ifdef DEBUGGINGAIDS
     OSD_RegisterFunction("disasm", "disasm [s|e] <state or event number>", osdcmd_disasm);
 #endif
+    
+    static osdcvardata_t cvars_editor[] =
+    {
+        { "cameraheight", "adjust editor camera height", (void*)&kensplayerheight, CVAR_INT, 1, 255 },
+    };
+
+    for (auto & i : cvars_editor)
+        OSD_RegisterCvar(&i, osdcmd_cvar_set);
+
     return 0;
 }
 
