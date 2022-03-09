@@ -338,7 +338,7 @@ spritetype* nnExtSpawnDude(XSPRITE* pXSource, spritetype* pSprite, short nType, 
 
     aiInitSprite(pDude);
 
-    gKillMgr.AddCount(1);
+    gKillMgr.AddCount(pDude);
 
     bool burning = IsBurningDude(pDude);
     if (burning) {

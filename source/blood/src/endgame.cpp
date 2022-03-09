@@ -133,8 +133,16 @@ void CKillMgr::AddCount(int nCount)
     at0 += nCount;
 }
 
+void CKillMgr::AddCount(spritetype* pSprite)
+{
+    dassert(pSprite != NULL);
+    if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
+        at0++;
+}
+
 void CKillMgr::AddKill(spritetype* pSprite)
 {
+    dassert(pSprite != NULL);
     if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
         at4++;
 }
@@ -143,6 +151,7 @@ void CKillMgr::RemoveKill(spritetype* pSprite)
 {
     if (gKillMgr.at4 <= 0)
         return;
+    dassert(pSprite != NULL);
     if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
         at4--;
 }
@@ -155,8 +164,7 @@ void CKillMgr::CountTotalKills(void)
         spritetype* pSprite = &sprite[nSprite];
         if (pSprite->type < kDudeBase || pSprite->type >= kDudeMax)
             ThrowError("Non-enemy sprite (%d) in the enemy sprite list.", nSprite);
-        if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
-            at0++;
+        AddCount(pSprite);
     }
 }
 
