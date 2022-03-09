@@ -41,6 +41,7 @@ public:
     CKillMgr();
     void SetCount(int);
     void AddCount(int);
+    void AddCount(spritetype *pSprite);
     void AddKill(spritetype *pSprite);
     void RemoveKill(spritetype *pSprite);
     void CountTotalKills(void);
