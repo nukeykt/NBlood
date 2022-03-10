@@ -2192,7 +2192,7 @@ void aiGenDudeInitSprite(spritetype* pSprite, XSPRITE* pXSprite) {
     switch (pSprite->type) {
         case kDudeModernCustom: {
             DUDEEXTRA_STATS* pDudeExtraE = &gDudeExtra[pSprite->extra].stats;
-            pDudeExtraE->active = 0;
+            pDudeExtraE->active = pDudeExtraE->thinkTime = 0;
             aiGenDudeNewState(pSprite, &genDudeIdleL);
             break;
         }
