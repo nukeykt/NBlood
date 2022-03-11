@@ -897,7 +897,7 @@ void playerInit(int nPlayer, unsigned int a2)
         playerReset(pPlayer);
 }
 
-char sub_3A158(PLAYER *a1, spritetype *a2)
+char findDroppedLeech(PLAYER *a1, spritetype *a2)
 {
     for (int nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
@@ -1157,7 +1157,7 @@ char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon) {
     int nWeaponType = pWeaponItemData->type;
     int nAmmoType = pWeaponItemData->ammoType;
     if (!pPlayer->hasWeapon[nWeaponType] || gGameOptions.nWeaponSettings == 2 || gGameOptions.nWeaponSettings == 3) {
-        if (pWeapon->type == kItemWeaponLifeLeech && gGameOptions.nGameType > 1 && sub_3A158(pPlayer, NULL))
+        if (pWeapon->type == kItemWeaponLifeLeech && gGameOptions.nGameType > 1 && findDroppedLeech(pPlayer, NULL))
             return 0;
         pPlayer->hasWeapon[nWeaponType] = 1;
         if (nAmmoType == -1) return 0;
@@ -1295,7 +1295,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
                 XSPRITE *pXSprite = &xsprite[*a3];
                 if (pSprite->type == kThingDroppedLifeLeech)
                 {
-                    if (gGameOptions.nGameType > 1 && sub_3A158(pPlayer, pSprite))
+                    if (gGameOptions.nGameType > 1 && findDroppedLeech(pPlayer, pSprite))
                         return -1;
                     pXSprite->data4 = pPlayer->nPlayer;
                     pXSprite->isTriggered = 0;
@@ -2203,7 +2203,7 @@ int UseAmmo(PLAYER *pPlayer, int nAmmoType, int nDec)
     return pPlayer->ammoCount[nAmmoType];
 }
 
-void sub_41250(PLAYER *pPlayer)
+void voodooTarget(PLAYER *pPlayer)
 {
     int v4 = pPlayer->aim.dz;
     int dz = pPlayer->zWeapon-pPlayer->pSprite->z;
