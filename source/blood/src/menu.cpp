@@ -846,19 +846,29 @@ void SetupEpisodeMenu(void)
     menuEpisode.Add(&itemEpisodesTitle, false);
     int height;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &height);
+    int nOffset = 100;
+    for (int i = 0; i < gEpisodeCount; i++)
+    {
+        EPISODEINFO *pEpisode = &gEpisodeInfo[i];
+        if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
+            nOffset -= 10;
+    }
+    nOffset = max(min(nOffset, 55), 35);
     int j = 0;
     for (int i = 0; i < gEpisodeCount; i++)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
         if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
         {
+            if (j >= ARRAY_SSIZE(itemEpisodes))
+                ThrowError("Too many ini episodes to display (max %d).\n", ARRAY_SSIZE(itemEpisodes));
             CGameMenuItemChain7F2F0 *pEpisodeItem = &itemEpisodes[j];
             pEpisodeItem->m_nFont = 1;
             pEpisodeItem->m_nX = 0;
             pEpisodeItem->m_nWidth = 320;
             pEpisodeItem->at20 = 1;
             pEpisodeItem->m_pzText = pEpisode->title;
-            pEpisodeItem->m_nY = 55+(height+8)*j;
+            pEpisodeItem->m_nY = nOffset+(height+8)*j;
             pEpisodeItem->at34 = i;
             pEpisodeItem = &itemEpisodes[j];
             pEpisodeItem->at24 = &menuDifficulty;
@@ -874,7 +884,10 @@ void SetupEpisodeMenu(void)
         }
     }
 
-    itemUserMap.m_nY = 55+(height+8)*j;
+    if (j < 5) // if menu slots are not all filled, add space for user maps item
+        itemUserMap.m_nY = 50+(height+8)*5;
+    else
+        itemUserMap.m_nY = nOffset+(height+8)*j;
     menuEpisode.Add(&itemUserMap, false);
     menuEpisode.Add(&itemBloodQAV, false);
 
