@@ -2139,13 +2139,13 @@ int32_t videoSetGamma(void)
 
     if (sdl_window)
         i = SDL_SetWindowGammaRamp(sdl_window, &gammaTable[0], &gammaTable[256], &gammaTable[512]);
-#else
-    i = SDL_SetGammaRamp(&gammaTable[0], &gammaTable[256], &gammaTable[512]);
-    if (i != -1)
-#endif
-
     if (i < 0)
     {
+#else
+    i = SDL_SetGammaRamp(&gammaTable[0], &gammaTable[256], &gammaTable[512]);
+    if ((i != -1) && (i < 0))
+    {
+#endif
         if (i != INT32_MIN)
             LOG_F(ERROR, "Failed setting window gamma ramp: %s.", SDL_GetError());
 
