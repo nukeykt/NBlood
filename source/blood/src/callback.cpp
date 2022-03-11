@@ -465,7 +465,7 @@ void fxBouncingSleeve(int nSprite) // 16
         dassert(nChannel < 32);
         
         // tommy sleeve
-        if (pSprite->type >= 37 && pSprite->type <= 39) {
+        if (pSprite->type >= FX_37 && pSprite->type <= FX_39) {
             Random(3); 
             sfxPlay3DSound(pSprite, 608 + Random(2), nChannel, 1);
         
@@ -484,19 +484,19 @@ void sleeveStopBouncing(spritetype* pSprite) {
     sfxKill3DSound(pSprite, -1, -1);
 
     switch (pSprite->type) {
-    case 37:
-    case 38:
-    case 39:
+    case FX_37:
+    case FX_38:
+    case FX_39:
         pSprite->picnum = 2465;
         break;
-    case 40:
-    case 41:
-    case 42:
+    case FX_40:
+    case FX_41:
+    case FX_42:
         pSprite->picnum = 2464;
         break;
     }
 
-    pSprite->type = 51;
+    pSprite->type = FX_51; // static spent casing
     pSprite->xrepeat = pSprite->yrepeat = 10;
 }
 
