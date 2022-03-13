@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 extern QAV* weaponQAV[];
 
-char checkFired6or7(PLAYER *pPlayer);
+char checkLitSprayOrTNT(PLAYER *pPlayer);
 void WeaponInit(void);
 void WeaponDraw(PLAYER *pPlayer, int a2, int a3, int a4, int a5);
 void WeaponRaise(PLAYER *pPlayer);

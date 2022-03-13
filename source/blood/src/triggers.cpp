@@ -245,7 +245,7 @@ void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, EVENT event)
                 pPlayer->hasWeapon[kWeaponLifeLeech] = 1;
                 if (pPlayer->curWeapon != kWeaponLifeLeech)
                 {
-                    if (!VanillaMode() && checkFired6or7(pPlayer)) // if tnt/spray is actively used, do not switch weapon
+                    if (!VanillaMode() && checkLitSprayOrTNT(pPlayer)) // if tnt/spray is actively used, do not switch weapon
                         break;
                     pPlayer->weaponState = 0;
                     pPlayer->nextWeapon = kWeaponLifeLeech;
