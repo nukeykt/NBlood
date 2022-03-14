@@ -498,7 +498,9 @@ kAiStatePatrolMax,
 #define kAng90 512
 #define kAng120 682
 #define kAng180 1024
+#define kAng270 1536
 #define kAng360 2048
+#define kAngMask 2047
 
 
 // -------------------------------

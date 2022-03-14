@@ -2083,7 +2083,7 @@ void trPlayerCtrlGiveStuff(XSPRITE* pXSource, PLAYER* pPlayer, TRPLAYERCTRL* pCt
     switch (pXSource->data2) {
         case 1: // give N weapon and default ammo for it
         case 2: // give just N ammo for selected weapon
-            if (weapon <= 0 || weapon > 13) {
+            if (weapon <= kWeaponNone || weapon > kWeaponBeast) {
                 consoleSysMsg("Weapon #%d is out of a weapons range!");
                 break;
             } else if (pXSource->data2 == 2 && pXSource->data4 == 0) {

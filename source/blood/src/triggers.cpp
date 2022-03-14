@@ -245,7 +245,7 @@ void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, EVENT event)
                 pPlayer->hasWeapon[kWeaponLifeLeech] = 1;
                 if (pPlayer->curWeapon != kWeaponLifeLeech)
                 {
-                    if (!VanillaMode() && checkFired6or7(pPlayer)) // if tnt/spray is actively used, do not switch weapon
+                    if (!VanillaMode() && checkLitSprayOrTNT(pPlayer)) // if tnt/spray is actively used, do not switch weapon
                         break;
                     pPlayer->weaponState = 0;
                     pPlayer->nextWeapon = kWeaponLifeLeech;
@@ -841,7 +841,7 @@ void DragPoint(int nWall, int x, int y)
     } while (vb != nWall && vsi > 0);
 }
 
-void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11, char a12)
+void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11, char bAllWalls)
 {
     int x, y;
     int nXSector = sector[nSector].extra;
@@ -856,7 +856,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
     int vbp = interpolate(a8, a11, a3);
     int v14 = vbp - v44;
     int nWall = sector[nSector].wallptr;
-    if (a12)
+    if (bAllWalls)
     {
         for (int i = 0; i < sector[nSector].wallnum; nWall++, i++)
         {
