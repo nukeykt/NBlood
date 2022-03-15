@@ -103,7 +103,8 @@ void credLogosDos(void)
         }
     }
 
-    credReset();
+    if (videoGetRenderMode() == REND_CLASSIC)
+        credReset();
 
     if (!credPlaySmk("GTI.SMK", "gti.wav", 301) && !credPlaySmk("movie/GTI.SMK", "movie/gti.wav", 301))
     {
@@ -198,12 +199,7 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     }
     uint32_t nWidth, nHeight;
     Smacker_GetFrameSize(hSMK, nWidth, nHeight);
-    uint8_t palette[768];
-    uint8_t *pFrame = (uint8_t*)Xmalloc(nWidth*nHeight);
-    walock[kSMKTile] = CACHE1D_PERMANENT;
-    waloff[kSMKTile] = (intptr_t)pFrame;
-    tileSetSize(kSMKTile, nHeight, nWidth);
-
+    uint8_t *pFrame = (uint8_t*)Xcalloc(1,nWidth*nHeight);
     if (!pFrame)
     {
         Smacker_Close(hSMK);
@@ -211,9 +207,22 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         Xfree(pzWAV_);
         return FALSE;
     }
+
     int nFrameRate = Smacker_GetFrameRate(hSMK);
     int nFrames = Smacker_GetNumFrames(hSMK);
+    if (!nFrames || !nFrameRate)
+    {
+        Smacker_Close(hSMK);
+        Xfree(pzSMK_);
+        Xfree(pzWAV_);
+        return FALSE;
+    }
 
+    walock[kSMKTile] = CACHE1D_PERMANENT;
+    waloff[kSMKTile] = (intptr_t)pFrame;
+    tileSetSize(kSMKTile, nHeight, nWidth);
+
+    uint8_t palette[768];
     Smacker_GetPalette(hSMK, palette);
     paletteSetColorTable(kSMKPal, palette);
     videoSetPalette(gBrightness>>2, kSMKPal, 8+2);
