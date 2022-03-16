@@ -199,8 +199,9 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     }
     uint32_t nWidth, nHeight;
     Smacker_GetFrameSize(hSMK, nWidth, nHeight);
-    uint8_t *pFrame = (uint8_t*)Xcalloc(1,nWidth*nHeight);
-    if (!pFrame)
+    int nFrameRate = Smacker_GetFrameRate(hSMK);
+    int nFrames = Smacker_GetNumFrames(hSMK);
+    if (!nWidth || !nHeight || !nFrames || !nFrameRate)
     {
         Smacker_Close(hSMK);
         Xfree(pzSMK_);
@@ -208,9 +209,8 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         return FALSE;
     }
 
-    int nFrameRate = Smacker_GetFrameRate(hSMK);
-    int nFrames = Smacker_GetNumFrames(hSMK);
-    if (!nFrames || !nFrameRate)
+    uint8_t *pFrame = (uint8_t*)Xcalloc(1,nWidth*nHeight);
+    if (!pFrame)
     {
         Smacker_Close(hSMK);
         Xfree(pzSMK_);
