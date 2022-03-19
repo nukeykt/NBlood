@@ -1048,7 +1048,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
             pDudeExtra->teslaHit = 0;
         }
-        const bool fixRandomCultist = (pSprite->inittype >= kDudeBase) && (pSprite->inittype < kDudeMax) && !VanillaMode(); // fix burning cultists randomly switching types underwater
+        const bool fixRandomCultist = (pSprite->inittype >= kDudeBase) && (pSprite->inittype < kDudeMax) && (pSprite->inittype != pSprite->type) && !VanillaMode(); // fix burning cultists randomly switching types underwater
         switch (pSprite->type)
         {
         case kDudeCultistTommy:
