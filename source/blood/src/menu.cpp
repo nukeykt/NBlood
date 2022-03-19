@@ -699,7 +699,7 @@ void NetworkHostGame(CGameMenuItemChain *pItem);
 void NetworkJoinGame(CGameMenuItemChain *pItem);
 
 char zNetAddressBuffer[16] = "localhost";
-char zNetPortBuffer[6];
+char zNetPortBuffer[6] = "23513";
 
 CGameMenuItemTitle itemNetworkTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemChain itemNetworkHost("HOST A GAME", 1, 0, 80, 320, 1, &menuNetworkHost, -1, SetupNetworkHostMenu, 0);
@@ -2078,7 +2078,6 @@ void SetupMouseButtonMenu(CGameMenuItemChain *pItem)
 
 void SetupNetworkMenu(void)
 {
-    sprintf(zNetPortBuffer, "%d", gNetPort);
     if (strlen(gNetAddress) > 0)
         strncpy(zNetAddressBuffer, gNetAddress, sizeof(zNetAddressBuffer)-1);
 
