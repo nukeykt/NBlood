@@ -2806,7 +2806,7 @@ void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite) {
 
     if (pXSource->data2 == 1) {
         
-        if (pPlayer) pPlayer->q16ang = fix16_from_int(pSource->ang);
+        if (pPlayer) pPlayer->q16ang = fix16_from_int(pSource->ang), pPlayer->angold = pSource->ang;
         else if (isDude) xsprite[pSprite->extra].goalAng = pSprite->ang = pSource->ang;
         else pSprite->ang = pSource->ang;
     }
