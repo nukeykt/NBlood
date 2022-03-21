@@ -1341,7 +1341,7 @@ static int C_GetNextKeyword(void) //Returns its code #
     if (EDUKE32_PREDICT_TRUE((i = hash_find(&h_keywords,tempbuf)) >= 0))
     {
         if (i == CON_LEFTBRACE || i == CON_RIGHTBRACE || i == CON_NULLOP)
-            scriptWriteValue(i | (VM_IFELSE_MAGIC<<12));
+            scriptWriteValue(i | LINE_NUMBER | VM_IFELSE_MAGIC_BIT);
         else scriptWriteValue(i | LINE_NUMBER);
 
         textptr += l;
@@ -1951,7 +1951,7 @@ static bool C_CheckEmptyBranch(int tw, intptr_t lastScriptPtr)
         return false;
     }
 
-    if ((*(g_scriptPtr) & VM_INSTMASK) != CON_NULLOP || *(g_scriptPtr)>>12 != VM_IFELSE_MAGIC)
+    if ((*(g_scriptPtr) & VM_INSTMASK) != CON_NULLOP || (*(g_scriptPtr) & VM_IFELSE_MAGIC_BIT) == 0)
         g_skipBranch = false;
 
     if (EDUKE32_PREDICT_FALSE(g_skipBranch))
@@ -1961,7 +1961,7 @@ static bool C_CheckEmptyBranch(int tw, intptr_t lastScriptPtr)
         g_scriptPtr = lastScriptPtr + apScript;
         LOG_F(WARNING, "%s:%d: empty '%s' branch",g_scriptFileName,g_lineNumber,
                    VM_GetKeywordForID(*(g_scriptPtr) & VM_INSTMASK));
-        scriptWriteAtOffset(CON_NULLOP | (VM_IFELSE_MAGIC<<12), g_scriptPtr);
+        scriptWriteAtOffset(CON_NULLOP | LINE_NUMBER | VM_IFELSE_MAGIC_BIT, g_scriptPtr);
         return true;
     }
 
@@ -2602,7 +2602,7 @@ DO_DEFSTATE:
                 LOG_F(WARNING, "%s:%d: expected state, found %s.", g_scriptFileName, g_lineNumber, gl);
                 g_warningCnt++;
                 Xfree(gl);
-                scriptWriteAtOffset(CON_NULLOP, &g_scriptPtr[-1]); // get rid of the state, leaving a nullop to satisfy if conditions
+                scriptWriteAtOffset(CON_NULLOP|LINE_NUMBER, &g_scriptPtr[-1]); // get rid of the state, leaving a nullop to satisfy if conditions
                 continue;  // valid label name, but wrong type
             }
 
@@ -5201,11 +5201,11 @@ repeatcase:
         case CON_RIGHTBRACE:
             g_numBraces--;
 
-            if ((g_scriptPtr[-2]>>12) == (VM_IFELSE_MAGIC) &&
+            if ((g_scriptPtr[-2] & VM_IFELSE_MAGIC_BIT) &&
                 ((g_scriptPtr[-2] & VM_INSTMASK) == CON_LEFTBRACE)) // rewrite "{ }" into "nullop"
             {
                 //            initprintf("%s:%d: rewriting empty braces '{ }' as 'nullop' from right\n",g_szScriptFileName,g_lineNumber);
-                g_scriptPtr[-2] = CON_NULLOP | (VM_IFELSE_MAGIC<<12);
+                g_scriptPtr[-2] = CON_NULLOP | LINE_NUMBER | VM_IFELSE_MAGIC_BIT;
                 g_scriptPtr -= 2;
 
                 if (C_GetKeyword() != CON_ELSE && (g_scriptPtr[-2] & VM_INSTMASK) != CON_ELSE)

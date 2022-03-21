@@ -92,7 +92,7 @@ void VM_ScriptInfo(intptr_t const * const ptr, int const range)
         int const lineNum = VM_DECODE_LINE_NUMBER(v);
         int const vmInst  = VM_DECODE_INST(v);
 
-        if (lineNum && lineNum != VM_IFELSE_MAGIC && lineNum >= lastLine && lineNum < g_totalLines && vmInst < CON_OPCODE_END)
+        if (lineNum && lineNum >= lastLine && lineNum < g_totalLines && (unsigned)vmInst < CON_OPCODE_END)
         {
             lastLine = lineNum;
 
