@@ -68,9 +68,9 @@ public:
             m_head = -1;
         else if (m_count < Capacity)
             ++m_count;
-        if (++m_head == m_tail || m_tail == -1)
+        if ((++m_head == m_tail) | (m_tail == -1))
         {
-            if (ResetItems & RF_FREE)
+            if ((m_tail != -1) & ((ResetItems & RF_FREE) == RF_FREE))
                 Xfree(m_items[m_tail]);
             m_tail = (m_tail + 1) % Capacity;
         }
