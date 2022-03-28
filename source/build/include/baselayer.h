@@ -323,15 +323,14 @@ void maybe_redirect_outputs(void);
 extern uint64_t g_frameDelay;
 static inline uint64_t calcFrameDelay(int maxFPS)
 {
-    uint64_t perfFreq = timerGetNanoTickRate();
-
     switch (maxFPS)
     {
+        case -2: return 0;
         case -1: maxFPS = refreshfreq; break;
-        case 0: perfFreq = 0; break;
+        case 0: maxFPS = 1000; break;
     }
 
-    return tabledivide64(perfFreq, maxFPS);
+    return tabledivide64(timerGetNanoTickRate(), maxFPS);
 }
 extern int engineFPSLimit(void);
 #ifdef __cplusplus
