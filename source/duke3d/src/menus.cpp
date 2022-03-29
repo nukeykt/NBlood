@@ -1271,20 +1271,20 @@ static char const *MEOSN_SOUND_MIDIDRIVER[] = {
 #ifdef _WIN32
     "Windows MME",
 #endif
+    ".sf2 synth",
 #ifdef __linux__
     "ALSA MIDI",
 #endif
-    ".sf2 synth",
 };
 static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
     ASS_OPL3,
 #ifdef _WIN32
     ASS_WinMM,
 #endif
+    ASS_SF2,
 #ifdef __linux__
     ASS_ALSA,
 #endif
-    ASS_SF2,
 };
 
 static MenuOptionSet_t MEOS_SOUND_MIDIDRIVER = MAKE_MENUOPTIONSET( MEOSN_SOUND_MIDIDRIVER, MEOSV_SOUND_MIDIDRIVER, 0x2 );
