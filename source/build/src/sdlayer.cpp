@@ -1590,6 +1590,8 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     SDL_DisplayMode desktopmode;
     SDL_GetDesktopDisplayMode(newdisplayindex, &desktopmode);
 
+    refreshfreq = desktopmode.refresh_rate;
+
     int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
     int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
 
@@ -1610,9 +1612,9 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
         else
 #endif
             refreshfreq = newmode.refresh_rate;
-
-        VLOG_F(LOG_GFX, "Refresh rate: %.2fHz.", refreshfreq);
     }
+
+    VLOG_F(LOG_GFX, "Refresh rate: %.2fHz.", refreshfreq);
 
     SDL_SetWindowSize(sdl_window, x, y);
 
