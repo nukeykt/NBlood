@@ -892,7 +892,7 @@ void maybe_redirect_outputs(void)
 #endif
 }
 
-int engineFPSLimit(void)
+int engineFPSLimit(bool const throttle)
 {
     static uint64_t nextFrameTicks;
     static uint64_t savedFrameDelay;
@@ -900,7 +900,7 @@ int engineFPSLimit(void)
     if (r_maxfps == -2)
         return true;
 
-    g_frameDelay = calcFrameDelay(r_maxfps);
+    g_frameDelay = calcFrameDelay(!throttle || ((unsigned)(r_maxfps-1) < (unsigned)refreshfreq) ? r_maxfps : -1);
 
     uint64_t frameTicks = timerGetNanoTicks();
 

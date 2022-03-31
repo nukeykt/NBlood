@@ -396,7 +396,6 @@ void G_DrawFrags(void);
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t horiz, int32_t smoothratio);
 void G_DrawRooms(int32_t playerNum,int32_t smoothratio);
 void G_DrawTXDigiNumZ(int32_t starttile,int32_t x,int32_t y,int32_t n,int32_t s,int32_t pal,int32_t cs,int32_t x1,int32_t y1,int32_t x2,int32_t y2,int32_t z);
-int engineFPSLimit(void);
 EDUKE32_NORETURN void G_GameExit(const char *msg = nullptr);
 void G_GameQuit(void);
 void G_GetCrosshairColor(void);
