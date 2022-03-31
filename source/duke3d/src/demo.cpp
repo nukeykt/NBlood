@@ -782,7 +782,7 @@ nextdemo_nomenu:
         if (Demo_IsProfiling())
             totalclock += TICSPERFRAME;
 
-        if (engineFPSLimit())
+        if (engineFPSLimit((g_player[myconnectindex].ps->gm & MODE_MENU) == MODE_MENU))
         {
             if (foundemo == 0)
             {

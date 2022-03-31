@@ -7143,7 +7143,7 @@ MAIN_LOOP_RESTART:
         {
             idle();
         }
-        else if (engineFPSLimit() || g_saveRequested)
+        else if (engineFPSLimit((myplayer.gm & MODE_MENU) == MODE_MENU) || g_saveRequested)
         {
             if (!g_saveRequested)
             {

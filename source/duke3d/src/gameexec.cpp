@@ -1298,7 +1298,7 @@ void Screen_Play(void)
         ototalclock = totalclock + 1; // pause game like ANMs
         m_mouselastactivity = (int)totalclock;
 
-        if (!engineFPSLimit())
+        if (!engineFPSLimit(true))
             continue;
 
         videoClearScreen(0);

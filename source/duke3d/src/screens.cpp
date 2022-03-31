@@ -1567,7 +1567,7 @@ void gameDisplay3DRScreen()
 
             while (totalclock < (120 * 7) && !I_GeneralTrigger())
             {
-                if (engineFPSLimit())
+                if (engineFPSLimit(true))
                 {
                     videoClearScreen(0);
                     rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, DREALMS, 0, 0, 2 + 8 + 64 + BGSTRETCH);
@@ -1608,7 +1608,7 @@ void gameDisplayTitleScreen(void)
 #endif
     !I_GeneralTrigger())
     {
-        if (engineFPSLimit())
+        if (engineFPSLimit(true))
         {
             videoClearScreen(0);
             rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, BETASCREEN, 0, 0, 2 + 8 + 64 + BGSTRETCH);
@@ -1837,7 +1837,7 @@ static void G_BonusCutscenes(void)
 
             do
             {
-                if (engineFPSLimit())
+                if (engineFPSLimit(true))
                 {
                     videoClearScreen(0L);
                     rotatesprite_fs(0, 50<<16, 65536L, 0, VICTORY1, 0, 0, 2+8+16+64+128+BGSTRETCH);
@@ -2133,7 +2133,7 @@ static void G_BonusCutscenes(void)
 
             do
             {
-                if (engineFPSLimit())
+                if (engineFPSLimit(true))
                 {
                     totalclocklock = totalclock;
 
@@ -2351,7 +2351,7 @@ void G_BonusScreen(int32_t bonusonly)
             gameHandleEvents();
             MUSIC_Update();
 
-            if (engineFPSLimit())
+            if (engineFPSLimit(true))
             {
                 videoClearScreen(0);
                 G_DisplayMPResultsScreen();
@@ -2402,7 +2402,7 @@ void G_BonusScreen(int32_t bonusonly)
         gameHandleEvents();
         MUSIC_Update();
 
-        if (engineFPSLimit())
+        if (engineFPSLimit(true))
         {
             if (g_player[myconnectindex].ps->gm&MODE_EOL)
             {
