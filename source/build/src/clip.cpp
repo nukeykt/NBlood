@@ -1568,6 +1568,9 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     native_t cnt = clipmoveboxtracenum;
 
+    // In ENGINE_EDUKE32 mode, the loop below may become endless in edge cases. This variable ensures that it will break out eventually.
+    native_t failsafe_cnt = cnt;
+
     do
     {
         if (enginecompatibilitymode == ENGINE_EDUKE32 && (xvect|yvect))
@@ -1643,12 +1646,15 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
         if (enginecompatibilitymode == ENGINE_EDUKE32)
             if (clipupdatesector(vec, sectnum, rad))
+            {
+                failsafe_cnt--;
                 continue;
+            }
 
         pos->x = vec.x;
         pos->y = vec.y;
         cnt--;
-    } while ((xvect|yvect) != 0 && hitwall >= 0 && cnt > 0);
+    } while ((xvect|yvect) != 0 && hitwall >= 0 && cnt > 0 && failsafe_cnt > 0);
 
     if (enginecompatibilitymode != ENGINE_EDUKE32)
         clipmove_compat(pos, sectnum);
