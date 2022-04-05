@@ -289,7 +289,7 @@ void netCheckSync(void)
 
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            OSD_Printf("Checksum: %i\n", gCheckFifo[gCheckTail&255][p]);
+            OSD_Printf("Checksum: %u\n", *gCheckFifo[gCheckTail&255][p]);
             OSD_Printf("Local player index: %i\n", p);
             OSD_Printf("My connect index: %u\n", myconnectindex);
             OSD_Printf("used1: %i\n", gPlayer[p].used1);
@@ -392,7 +392,7 @@ void netCheckSync(void)
                 if (status)
                 {
                     sprintf(buffer, "OUT OF SYNC (%d)", p);
-                    OSD_Printf("OUT OF SYNC\n", gPlayer[p].bobPhase);
+                    OSD_Printf("OUT OF SYNC\n");
                     char *pBuffer = buffer + strlen(buffer);
                     for (unsigned int i = 0; i < 4; i++)
                     {
