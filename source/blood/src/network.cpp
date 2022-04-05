@@ -289,8 +289,9 @@ void netCheckSync(void)
 
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            OSD_Printf("Checksum: %u\n", gCheckFifo[gCheckTail&255][p]);
+            OSD_Printf("Checksum: %i\n", gCheckFifo[gCheckTail&255][p]);
             OSD_Printf("Local player index: %i\n", p);
+            OSD_Printf("My connect index: %u\n", myconnectindex);
             OSD_Printf("used1: %i\n", gPlayer[p].used1);
             OSD_Printf("weaponQav: %i\n", gPlayer[p].weaponQav);
             OSD_Printf("qavCallback: %i\n", gPlayer[p].qavCallback);
