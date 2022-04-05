@@ -289,7 +289,10 @@ void netCheckSync(void)
 
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            OSD_Printf("Checksum: %u\n", *gCheckFifo[gCheckTail&255][p]);
+            OSD_Printf("Checksum 0: %u\n", gCheckFifo[gCheckTail&255][p][0]);
+            OSD_Printf("Checksum 1: %u\n", gCheckFifo[gCheckTail&255][p][1]);
+            OSD_Printf("Checksum 2: %u\n", gCheckFifo[gCheckTail&255][p][2]);
+            OSD_Printf("Checksum 3: %u\n", gCheckFifo[gCheckTail&255][p][3]);
             OSD_Printf("Local player index: %i\n", p);
             OSD_Printf("My connect index: %u\n", myconnectindex);
             OSD_Printf("used1: %i\n", gPlayer[p].used1);
