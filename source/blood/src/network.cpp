@@ -246,10 +246,11 @@ void CalcGameChecksum(void)
         int *pBuffer = &gPlayer[p].used1;
         int sum = 0;
         int length = ((char*)&gPlayer[p+1]-(char*)pBuffer)/4;
-        OSD_Printf("Length: %u\n", pBuffer);
+        OSD_Printf("Length: %u\n", length);
         OSD_Printf("Start pbuffer: %u\n", pBuffer);
         while (length--)
         {
+            OSD_Printf("pbuffer: %u\n", pBuffer);
             sum += *pBuffer++;
         }
         OSD_Printf("End pbuffer: %u\n", pBuffer);
@@ -332,7 +333,7 @@ void netCheckSync(void)
             OSD_Printf("curWeapon: %i and address %u\n", gPlayer[p].curWeapon, &(gPlayer[p].curWeapon));
             OSD_Printf("nextWeapon: %i and address %u\n", gPlayer[p].nextWeapon, &(gPlayer[p].nextWeapon));
             OSD_Printf("weaponTimer: %i and address %u\n", gPlayer[p].weaponTimer, &(gPlayer[p].weaponTimer));
-            OSD_Printf("weaponState: %i and address %u\n", gPlayer[p].weaponState, &(Player[p].weaponState));
+            OSD_Printf("weaponState: %i and address %u\n", gPlayer[p].weaponState, &(gPlayer[p].weaponState));
             OSD_Printf("weaponAmmo: %i and address %u\n", gPlayer[p].weaponAmmo, &(gPlayer[p].weaponAmmo));
             //bool                hasWeapon[kWeaponMax];
             //int                 weaponMode[kWeaponMax];
