@@ -289,15 +289,15 @@ void netCheckSync(void)
 
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            OSD_Printf("Checksum: %d\n", gCheckFifo[gCheckTail&255][p]);
-            OSD_Printf("Local player index: %d\n", p);
-            OSD_Printf("used1: %d\n", gPlayer[p].used1);
-            OSD_Printf("weaponQav: %d\n", gPlayer[p].weaponQav);
-            OSD_Printf("qavCallback: %d\n", gPlayer[p].qavCallback);
-            OSD_Printf("isRunning: %d\n", gPlayer[p].isRunning);
-            OSD_Printf("posture: %d\n", gPlayer[p].posture);
-            OSD_Printf("sceneQav: %d\n", gPlayer[p].sceneQav);
-            OSD_Printf("bobPhase: %d\n", gPlayer[p].bobPhase);
+            OSD_Printf("Checksum: %u\n", gCheckFifo[gCheckTail&255][p]);
+            OSD_Printf("Local player index: %i\n", p);
+            OSD_Printf("used1: %i\n", gPlayer[p].used1);
+            OSD_Printf("weaponQav: %i\n", gPlayer[p].weaponQav);
+            OSD_Printf("qavCallback: %i\n", gPlayer[p].qavCallback);
+            OSD_Printf("isRunning: %u\n", gPlayer[p].isRunning);
+            OSD_Printf("posture: %i\n", gPlayer[p].posture);
+            OSD_Printf("sceneQav: %i\n", gPlayer[p].sceneQav);
+            OSD_Printf("bobPhase: %i\n", gPlayer[p].bobPhase);
 
             if (p != myconnectindex)
             {
@@ -305,6 +305,7 @@ void netCheckSync(void)
                 if (status)
                 {
                     sprintf(buffer, "OUT OF SYNC (%d)", p);
+                    OSD_Printf("OUT OF SYNC\n", gPlayer[p].bobPhase);
                     char *pBuffer = buffer + strlen(buffer);
                     for (unsigned int i = 0; i < 4; i++)
                     {
