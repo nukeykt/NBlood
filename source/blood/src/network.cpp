@@ -261,7 +261,7 @@ void CalcGameChecksum(void)
         gChecksum[2] ^= sum;
         pBuffer = (int*)gPlayer[p].pXSprite;
         sum = 0;
-        length = sizeof(XSPRITE)/4;
+        //length = sizeof(XSPRITE)/4;
         //while (length--)
         //{
         //    sum += *pBuffer++;
@@ -289,6 +289,16 @@ void netCheckSync(void)
 
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
+            OSD_Printf("Checksum: %d\n", gCheckFifo[gCheckTail&255][p]);
+            OSD_Printf("Local player index: %d\n", p);
+            OSD_Printf("used1: %d\n", gPlayer[p].used1);
+            OSD_Printf("weaponQav: %d\n", gPlayer[p].weaponQav);
+            OSD_Printf("qavCallback: %d\n", gPlayer[p].qavCallback);
+            OSD_Printf("isRunning: %d\n", gPlayer[p].isRunning);
+            OSD_Printf("posture: %d\n", gPlayer[p].posture);
+            OSD_Printf("sceneQav: %d\n", gPlayer[p].sceneQav);
+            OSD_Printf("bobPhase: %d\n", gPlayer[p].bobPhase);
+
             if (p != myconnectindex)
             {
                 int status = memcmp(gCheckFifo[gCheckTail&255][p], gCheckFifo[gCheckTail&255][connecthead], 16);
