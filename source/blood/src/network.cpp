@@ -299,8 +299,94 @@ void netCheckSync(void)
             OSD_Printf("posture: %i\n", gPlayer[p].posture);
             OSD_Printf("sceneQav: %i\n", gPlayer[p].sceneQav);
             OSD_Printf("bobPhase: %i\n", gPlayer[p].bobPhase);
+            OSD_Printf("bobAmp: %i\n", gPlayer[p].bobAmp);
+            OSD_Printf("bobHeight: %i\n", gPlayer[p].bobHeight);
+            OSD_Printf("bobWidth: %i\n", gPlayer[p].bobWidth);
+            OSD_Printf("swayPhase: %i\n", gPlayer[p].swayPhase);
+            OSD_Printf("swayAmp: %i\n", gPlayer[p].swayAmp);
+            OSD_Printf("swayHeight: %i\n", gPlayer[p].swayHeight);
+            OSD_Printf("swayWidth: %i\n", gPlayer[p].swayWidth);
+            OSD_Printf("nPlayer: %i\n", gPlayer[p].nPlayer);
+            OSD_Printf("nSprite: %i\n", gPlayer[p].nSprite);
+            OSD_Printf("lifeMode: %i\n", gPlayer[p].lifeMode);
+            OSD_Printf("bloodlust: %i\n", gPlayer[p].bloodlust);
+            OSD_Printf("zView: %i\n", gPlayer[p].zView);
+            OSD_Printf("zViewVel: %i\n", gPlayer[p].zViewVel);
+            OSD_Printf("zWeapon: %i\n", gPlayer[p].zWeapon);
+            OSD_Printf("zWeaponVel: %i\n", gPlayer[p].zWeaponVel);
+            OSD_Printf("q16look: %i\n", gPlayer[p].q16look);
+            OSD_Printf("q16horiz: %i\n", gPlayer[p].q16horiz);
+            OSD_Printf("q16slopehoriz: %i\n", gPlayer[p].q16slopehoriz);
+            OSD_Printf("slope: %i\n", gPlayer[p].slope);
+            OSD_Printf("isUnderwater: %i\n", gPlayer[p].isUnderwater);
+            //bool                hasKey[8];
+            OSD_Printf("hasFlag: %i\n", gPlayer[p].hasFlag);
+            //short               used2[8]; 
+            //int                 damageControl[7];
+            OSD_Printf("curWeapon: %i\n", gPlayer[p].curWeapon);
+            OSD_Printf("nextWeapon: %i\n", gPlayer[p].nextWeapon);
+            OSD_Printf("weaponTimer: %i\n", gPlayer[p].weaponTimer);
+            OSD_Printf("weaponState: %i\n", gPlayer[p].weaponState);
+            OSD_Printf("weaponAmmo: %i\n", gPlayer[p].weaponAmmo);
+            //bool                hasWeapon[kWeaponMax];
+            //int                 weaponMode[kWeaponMax];
+            //int                 weaponOrder[2][kWeaponMax];
+            //int                 ammoCount[12];
+            OSD_Printf("qavLoop: %i\n", gPlayer[p].qavLoop);
+            OSD_Printf("fuseTime: %i\n", gPlayer[p].fuseTime);
+            OSD_Printf("throwTime: %i\n", gPlayer[p].throwTime);
+            OSD_Printf("throwPower: %i\n", gPlayer[p].throwPower);
+            //Aim                 aim;  // world
+            //Aim                 relAim;  // relative
+            OSD_Printf("aimTarget: %i\n", gPlayer[p].aimTarget);
+            OSD_Printf("aimTargetsCount: %i\n", gPlayer[p].aimTargetsCount);
+            //short               aimTargets[16];
+            OSD_Printf("deathTime: %i\n", gPlayer[p].deathTime);
+            //int                 pwUpTime[kMaxPowerUps];
+            OSD_Printf("fragCount: %i\n", gPlayer[p].fragCount);
+            //int                 fragInfo[8];
+            OSD_Printf("teamId: %i\n", gPlayer[p].teamId);
+            OSD_Printf("fraggerId: %i\n", gPlayer[p].fraggerId);
+            OSD_Printf("underwaterTime: %i\n", gPlayer[p].underwaterTime);
+            OSD_Printf("bloodTime: %i\n", gPlayer[p].bloodTime);
+            OSD_Printf("gooTime: %i\n", gPlayer[p].gooTime);
+            OSD_Printf("wetTime: %i\n", gPlayer[p].wetTime);
+            OSD_Printf("bubbleTime: %i\n", gPlayer[p].bubbleTime);
+            OSD_Printf("at306: %i\n", gPlayer[p].at306);
+            OSD_Printf("restTime: %i\n", gPlayer[p].restTime);
+            OSD_Printf("kickPower: %i\n", gPlayer[p].kickPower);
+            OSD_Printf("laughCount: %i\n", gPlayer[p].laughCount);
+            OSD_Printf("spin: %i\n", gPlayer[p].spin);
+            OSD_Printf("godMode: %i\n", gPlayer[p].godMode);
+            OSD_Printf("fallScream: %i\n", gPlayer[p].fallScream);
+            OSD_Printf("cantJump: %i\n", gPlayer[p].cantJump);
+            OSD_Printf("packItemTime: %i\n", gPlayer[p].packItemTime);
+            OSD_Printf("packItemId: %i\n", gPlayer[p].packItemId);
+            //PACKINFO            packSlots[5];
+            //int                 armor[3]; 
+            OSD_Printf("voodooTarget: %i\n", gPlayer[p].voodooTarget);
+            OSD_Printf("voodooTargets: %i\n", gPlayer[p].voodooTargets);
+            OSD_Printf("voodooVar1: %i\n", gPlayer[p].voodooVar1);
+            OSD_Printf("vodooVar2: %i\n", gPlayer[p].vodooVar2);
+            OSD_Printf("flickerEffect: %i\n", gPlayer[p].flickerEffect);
+            OSD_Printf("tiltEffect: %i\n", gPlayer[p].tiltEffect);
+            OSD_Printf("visibility: %i\n", gPlayer[p].visibility);
+            OSD_Printf("painEffect: %i\n", gPlayer[p].painEffect);
+            OSD_Printf("blindEffect: %i\n", gPlayer[p].blindEffect);
+            OSD_Printf("chokeEffect: %i\n", gPlayer[p].chokeEffect);
+            OSD_Printf("handTime: %i\n", gPlayer[p].handTime);
+            OSD_Printf("hand: %i\n", gPlayer[p].hand);
+            OSD_Printf("pickupEffect: %i\n", gPlayer[p].pickupEffect);
+            OSD_Printf("flashEffect: %i\n", gPlayer[p].flashEffect);
+            OSD_Printf("quakeEffect: %i\n", gPlayer[p].quakeEffect);
+            OSD_Printf("q16ang: %i\n", gPlayer[p].q16ang);
+            OSD_Printf("angold: %i\n", gPlayer[p].angold);
+            OSD_Printf("player_par: %i\n", gPlayer[p].player_par);
+            OSD_Printf("nWaterPal: %i\n", gPlayer[p].nWaterPal);
+            //POSTURE             pPosture[kModeMax][kPostureMax];
 
-            if (p != myconnectindex)
+
+            //if (p != myconnectindex)
             {
                 int status = memcmp(gCheckFifo[gCheckTail&255][p], gCheckFifo[gCheckTail&255][connecthead], 16);
                 if (status)
