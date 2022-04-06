@@ -5872,14 +5872,14 @@ draw_as_face_sprite:
 
                     z1 = (xp2-xp1)*(y1-yp1) - (yp2-yp1)*(x1-xp1);
                     z2 = (xp2-xp1)*(y2-yp1) - (yp2-yp1)*(x2-xp1);
-                    if ((z1^z2) >= 0 || z1 == 0 || z2 == 0)
+                    if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
                         x = (z1+z2);
                     else
                     {
                         z1 = (x2-x1)*(yp1-y1) - (y2-y1)*(xp1-x1);
                         z2 = (x2-x1)*(yp2-y1) - (y2-y1)*(xp2-x1);
 
-                        if ((z1^z2) >= 0 || z1 == 0 || z2 == 0)
+                        if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
                             x = -(z1+z2);
                         else
                         {
