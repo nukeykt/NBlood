@@ -803,6 +803,11 @@ int CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(ud.config.scripthandle, "Updates", "LastUpdateCheck", &ud.config.LastUpdateCheck);
 #endif
 
+    // restore localization
+    char locale[64] = "en";
+    SCRIPT_GetString(ud.config.scripthandle, "Misc", "Locale", &locale[0]);
+    localeSetCurrent(locale);
+
     ud.config.setupread = 1;
     return 0;
 }
@@ -1010,6 +1015,10 @@ void CONFIG_WriteSetup(uint32_t flags)
         SCRIPT_PutString(ud.config.scripthandle, "Comm Setup",commmacro,&ud.ridecule[dummy][0]);
     }
 
+    // save localization
+    const char* locale = localeGetCurrent();
+    SCRIPT_PutString(ud.config.scripthandle, "Misc", "Locale", locale ? locale : "en");
+
     SCRIPT_Save(ud.config.scripthandle, g_setupFileName);
 
     if ((flags & 2) == 0)
@@ -1113,4 +1122,3 @@ int CONFIG_SetMapBestTime(uint8_t const * const mapmd4, int32_t tm)
 
     return 0;
 }
-

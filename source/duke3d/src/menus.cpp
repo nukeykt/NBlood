@@ -715,6 +715,13 @@ static MenuLink_t MEO_DISPLAYSETUP_VIDEOSETUP = { MENU_VIDEOSETUP, MA_Advance, }
 static MenuEntry_t ME_DISPLAYSETUP_VIDEOSETUP = MAKE_MENUENTRY( "Video mode", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_VIDEOSETUP, Link );
 #endif
 
+#define MAXLANGUAGES 256
+static int32_t newlanguage = -1;
+
+static char const *MEOSN_DISPLAYSETUP_LANGUAGE[MAXLANGUAGES];
+static MenuOptionSet_t MEOS_DISPLAYSETUP_LANGUAGE = MAKE_MENUOPTIONSETDYN( MEOSN_DISPLAYSETUP_LANGUAGE, NULL, 0, 0x0 );
+static MenuOption_t MEO_DISPLAYSETUP_LANGUAGE  = MAKE_MENUOPTION( &MF_Redfont, &MEOS_DISPLAYSETUP_LANGUAGE, &newlanguage );
+static MenuEntry_t ME_DISPLAYSETUP_LANGUAGE = MAKE_MENUENTRY( "Language:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_LANGUAGE, Option );
 
 static MenuLink_t MEO_ENTERCHEAT = { MENU_CHEATENTRY, MA_None, };
 static MenuEntry_t ME_ENTERCHEAT = MAKE_MENUENTRY( "Enter Cheat Code", &MF_Redfont, &MEF_BigCheats, &MEO_ENTERCHEAT, Link );
@@ -808,6 +815,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP[] = {
     &ME_DISPLAYSETUP_COLORCORR,
 #ifndef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_VIDEOSETUP,
+    &ME_DISPLAYSETUP_LANGUAGE,
     &ME_DISPLAYSETUP_ASPECTRATIO,
     &ME_DISPLAYSETUP_FOV,
     &ME_DISPLAYSETUP_VOXELS,
@@ -2377,6 +2385,33 @@ static void Menu_PopulateVideoSetup()
     MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
 }
 
+static void Menu_PopulateLanguages()
+{
+    int j, localeCount = 0;
+    const char ** locales = localeGetKeys(localeCount);
+    for (j = 0; j < localeCount; j++)
+        MEOSN_DISPLAYSETUP_LANGUAGE[j] = locales[j];
+    MEOS_DISPLAYSETUP_LANGUAGE.numOptions = localeCount;
+
+    if (newlanguage == -1)
+    {
+        const char * curKey = localeGetCurrent();
+        for (j = 0; j < localeCount; j++)
+        {
+            if (curKey == locales[j])
+            {
+                newlanguage = j;
+                break;
+            }
+        }
+    }
+
+    localeSetCurrent(locales[newlanguage]);
+    MenuEntry_DisableOnCondition(&ME_DISPLAYSETUP_LANGUAGE, localeCount <= 1);
+
+    Xfree(locales);
+}
+
 /*
 At present, no true difference is planned between Menu_Pre() and Menu_PreDraw().
 They are separate for purposes of organization.
@@ -2448,6 +2483,8 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size >= 8 && ud.statusbarmode == 0 && !(ud.statusbarflags & STATUSBAR_NOFULL)) +
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
+
+        Menu_PopulateLanguages();
         break;
 
     case MENU_RENDERER:
@@ -2760,7 +2797,7 @@ static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill
 
     auto name = g_mapInfo[(volume * MAXLEVELS) + level].name;
     auto vname = g_volumeNames[volume];
-    
+
     Menu_BlackRectangle(origin.x + ((xoffset-2)<<16), origin.y + ((yoffset-2)<<16), 178<<16, (34-((!!FURY)<<1))<<16, 1);
 
     if (vname)
@@ -2784,7 +2821,7 @@ static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill
         mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(name), MF_Minifont.pal_selected_right);
         yoffset += 8;
     }
-    
+
     mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Difficulty:", MF_Minifont.pal_deselected_right);
     mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(g_skillNames[skill-1]), MF_Minifont.pal_selected_right);
     yoffset += 8;
@@ -5002,6 +5039,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     case MENU_JOYSTICKAXES:
     case MENU_JOYSTICKBTNS:
         Menu_PopulateJoystick();
+        break;
+
+    case MENU_DISPLAYSETUP:
+        newlanguage = -1;
         break;
 
     case MENU_VIDEOSETUP:
