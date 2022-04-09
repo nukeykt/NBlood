@@ -497,6 +497,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 switch (pXSprite->data1) {
                     case kDudeBurningInnocent:
                     case kDudeBurningCultist:
+                    case kDudeBurningZombieAxe:
                     case kDudeBurningZombieButcher:
                     case kDudeBurningTinyCaleb:
                     case kDudeBurningBeast: {
