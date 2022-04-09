@@ -672,7 +672,7 @@ void SetupGibWallState(walltype *pWall, XWALL *pXWall)
         pWall->cstat |= 64;
     if (pWall2)
     {
-        pWall2->cstat |= 1;
+        pWall2->cstat &= ~1;
         if (bVector)
             pWall2->cstat |= 64;
         pWall->cstat |= 16;
