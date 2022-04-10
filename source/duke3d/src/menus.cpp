@@ -1956,18 +1956,18 @@ static void Menu_EraseMatchingBinds(const int32_t sc)
     }
 }
 
-static void Menu_SetKeyboardScanCode(MenuCustom2Col_t* column, const int32_t sc, const bool eraseBinds)
+static void Menu_SetKeyboardScanCode(MenuCustom2Col_t* columnEntry, const int32_t colidx, const int32_t sc, const bool eraseBinds)
 {
     char key[2];
-    key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
-    key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
+    key[0] = ud.config.KeyboardKeys[columnEntry->linkIndex][0];
+    key[1] = ud.config.KeyboardKeys[columnEntry->linkIndex][1];
 
     if (eraseBinds) Menu_EraseMatchingBinds(sc);
-    *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
+    *columnEntry->column[colidx] = sc;
 
-    CONFIG_MapKey(column->linkIndex,
-                    ud.config.KeyboardKeys[column->linkIndex][0], key[0],
-                    ud.config.KeyboardKeys[column->linkIndex][1], key[1]);
+    CONFIG_MapKey(columnEntry->linkIndex,
+                    ud.config.KeyboardKeys[columnEntry->linkIndex][0], key[0],
+                    ud.config.KeyboardKeys[columnEntry->linkIndex][1], key[1]);
 }
 
 /*
@@ -3627,32 +3627,41 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
         {
             if (*column->column[M_KEYBOARDKEYS.currentColumn] != sc)
             {
-                bool alreadyAssigned = false;
-                for (int i = 0; i < M_KEYBOARDKEYS.numEntries; i++)
+                if (*column->column[M_KEYBOARDKEYS.currentColumn ^ 1] == sc)
                 {
-                    if (i == M_KEYBOARDKEYS.currentEntry)
-                        continue;
-
-                    auto iterCol = (MenuCustom2Col_t*) M_KEYBOARDKEYS.entrylist[i]->entry;
-                    if ((*iterCol->column[0] == sc) || (*iterCol->column[1] == sc))
+                    Menu_SetKeyboardScanCode(column, M_KEYBOARDKEYS.currentColumn ^ 1, 0xFF, false);
+                    Menu_SetKeyboardScanCode(column, M_KEYBOARDKEYS.currentColumn, sc, false);
+                }
+                else
+                {
+                    bool alreadyAssigned = false;
+                    for (int i = 0; i < M_KEYBOARDKEYS.numEntries; i++)
                     {
-                        alreadyAssigned = true;
-                        break;
-                    }
-                }
+                        if (i == M_KEYBOARDKEYS.currentEntry)
+                            continue;
 
-                S_PlaySound(PISTOL_BODYHIT);
-                if (cvar_kbconfirm && alreadyAssigned)
-                {
-                    s_saved_scancode = sc;
-                    s_saved_keycolumn = column;
-                    Menu_RefreshBoundGamefuncNames(sc);
-                    KB_ClearKeyDown(sc_N);
-                    KB_ClearKeyDown(sc_Y);
-                    Menu_Change(MENU_KEYOVERRIDEVERIFY);
+                        auto iterCol = (MenuCustom2Col_t*) M_KEYBOARDKEYS.entrylist[i]->entry;
+                        if ((*iterCol->column[0] == sc) || (*iterCol->column[1] == sc))
+                        {
+                            alreadyAssigned = true;
+                            break;
+                        }
+                    }
+
+                    if (cvar_kbconfirm && alreadyAssigned)
+                    {
+                        s_saved_scancode = sc;
+                        s_saved_keycolumn = column;
+                        Menu_RefreshBoundGamefuncNames(sc);
+
+                        KB_ClearKeyDown(sc_N);
+                        KB_ClearKeyDown(sc_Y);
+                        Menu_Change(MENU_KEYOVERRIDEVERIFY);
+                    }
+                    else Menu_SetKeyboardScanCode(column, M_KEYBOARDKEYS.currentColumn, sc, false);
                 }
-                else Menu_SetKeyboardScanCode(column, sc, false);
             }
+            S_PlaySound(PISTOL_BODYHIT);
             KB_ClearKeyDown(sc);
             return -1;
         }
@@ -4563,7 +4572,7 @@ static void Menu_Verify(int32_t input)
     case MENU_KEYOVERRIDEVERIFY:
         Bassert(s_saved_keycolumn != nullptr);
         if (input)
-            Menu_SetKeyboardScanCode(s_saved_keycolumn, s_saved_scancode, input == 1);
+            Menu_SetKeyboardScanCode(s_saved_keycolumn, M_KEYBOARDKEYS.currentColumn, s_saved_scancode, input == 1);
         DO_FREE_AND_NULL(s_override_gfstring);
         break;
 
