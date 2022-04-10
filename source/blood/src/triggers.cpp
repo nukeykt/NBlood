@@ -1829,23 +1829,25 @@ void trMessageWall(unsigned int nWall, EVENT event) {
 }
 
 void trMessageSprite(unsigned int nSprite, EVENT event) {
-    if (sprite[nSprite].statnum != kStatFree) {
-
-        XSPRITE* pXSprite = &xsprite[sprite[nSprite].extra];
-        if (!pXSprite->locked || event.cmd == kCmdUnlock || event.cmd == kCmdToggleLock) {
-            switch (event.cmd) {
-                case kCmdLink:
-                    LinkSprite(nSprite, pXSprite, event);
-                    break;
-                #ifdef NOONE_EXTENSIONS
-                case kCmdModernUse:
-                    modernTypeTrigger(3, nSprite, event);
-                    break;
-                #endif
-                default:
-                    OperateSprite(nSprite, pXSprite, event);
-                    break;
-            }
+    if (sprite[nSprite].statnum == kStatFree)
+        return;
+    SPRITE *pSprite = &sprite[nSprite];
+    if (pSprite->extra < 0 || pSprite->extra >= kMaxXSprites)
+        return;
+    XSPRITE* pXSprite = &xsprite[sprite[nSprite].extra];
+    if (!pXSprite->locked || event.cmd == kCmdUnlock || event.cmd == kCmdToggleLock) {
+        switch (event.cmd) {
+            case kCmdLink:
+                LinkSprite(nSprite, pXSprite, event);
+                break;
+            #ifdef NOONE_EXTENSIONS
+            case kCmdModernUse:
+                modernTypeTrigger(3, nSprite, event);
+                break;
+            #endif
+            default:
+                OperateSprite(nSprite, pXSprite, event);
+                break;
         }
     }
 }
