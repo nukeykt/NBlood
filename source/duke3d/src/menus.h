@@ -38,7 +38,8 @@ extern "C" {
 # define EDUKE32_ANDROID_MENU
 #endif
 
-extern int32_t kbo_type_cvar;
+extern int32_t cvar_kbo_type;
+extern int32_t cvar_kbconfirm;
 
 // #define EDUKE32_SIMPLE_MENU
 

@@ -296,7 +296,8 @@ static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
 
-int32_t kbo_type_cvar = 1;
+int32_t cvar_kbo_type = 1;
+int32_t cvar_kbconfirm = 1;
 
 static int g_lookAxis = -1;
 static int g_turnAxis = -1;
@@ -1955,13 +1956,13 @@ static void Menu_EraseMatchingBinds(const int32_t sc)
     }
 }
 
-static void Menu_SetKeyboardScanCode(MenuCustom2Col_t* column, const int32_t sc, const bool override)
+static void Menu_SetKeyboardScanCode(MenuCustom2Col_t* column, const int32_t sc, const bool eraseBinds)
 {
     char key[2];
     key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
     key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
 
-    if (override) Menu_EraseMatchingBinds(sc);
+    if (eraseBinds) Menu_EraseMatchingBinds(sc);
     *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
 
     CONFIG_MapKey(column->linkIndex,
@@ -1984,7 +1985,7 @@ void Menu_Init(void)
     else
     {
         // else, change based on cvar
-        if (kbo_type_cvar == 1)
+        if (cvar_kbo_type == 1)
             init_keybind_order = keybind_order_modern;
         else
             init_keybind_order = keybind_order_classic;
@@ -3641,7 +3642,7 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
                 }
 
                 S_PlaySound(PISTOL_BODYHIT);
-                if (alreadyAssigned)
+                if (cvar_kbconfirm && alreadyAssigned)
                 {
                     s_saved_scancode = sc;
                     s_saved_keycolumn = column;
