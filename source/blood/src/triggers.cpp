@@ -1023,9 +1023,9 @@ int GetHighestSprite(int nSector, int nStatus, int *a3)
             spritetype *pSprite = &sprite[nSprite];
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
-            if (top-pSprite->z > *a3)
+            if (pSprite->z-top < *a3)
             {
-                *a3 = top-pSprite->z;
+                *a3 = pSprite->z-top;
                 v8 = nSprite;
             }
         }
