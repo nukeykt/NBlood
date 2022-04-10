@@ -997,7 +997,7 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
     {
         int oldZ = pSector->ceilingz;
         baseCeil[nSector] = pSector->ceilingz = pXSector->offCeilZ + mulscale16(dz, GetWaveValue(a3, a4));
-        velCeil[nSector] += (pSector->ceilingz-oldZ)<<8;
+        velCeil[nSector] += pSector->ceilingz-oldZ;
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
             spritetype *pSprite = &sprite[nSprite];
