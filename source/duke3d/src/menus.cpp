@@ -1562,6 +1562,7 @@ static MenuVerify_t M_COLCORRRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_COLCORR, 
 static MenuVerify_t M_KEYSRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_KEYBOARDSETUP, MA_None, };
 static MenuVerify_t M_KEYSCLASSICVERIFY = { CURSOR_CENTER_2LINE, MENU_KEYBOARDSETUP, MA_None, };
 static MenuVerify_t M_JOYSTANDARDVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
+static MenuVerify_t M_KEYOVERRIDEVERIFY = { CURSOR_BOTTOMRIGHT, MENU_KEYBOARDKEYS, MA_None, };
 
 static MenuMessage_t M_NETWAITMASTER = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
 static MenuMessage_t M_NETWAITVOTES = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
@@ -1663,6 +1664,7 @@ static Menu_t Menus[] = {
     { &M_KEYSRESETVERIFY, MENU_KEYSRESETVERIFY, MENU_KEYBOARDSETUP, MA_None, Verify },
     { &M_KEYSCLASSICVERIFY, MENU_KEYSCLASSICVERIFY, MENU_KEYBOARDSETUP, MA_None, Verify },
     { &M_JOYSTANDARDVERIFY, MENU_JOYDEFAULTVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
+    { &M_KEYOVERRIDEVERIFY, MENU_KEYOVERRIDEVERIFY, MENU_KEYBOARDKEYS, MA_None, Verify },
     { &M_ADULTPASSWORD, MENU_ADULTPASSWORD, MENU_GAMESETUP, MA_None, TextForm },
     { &M_RESETPLAYER, MENU_RESETPLAYER, MENU_CLOSE, MA_None, Verify },
     { &M_BUYDUKE, MENU_BUYDUKE, MENU_EPISODE, MA_Return, Message },
@@ -1883,6 +1885,88 @@ static void Menu_PopulateJoystick(void)
         MEL_JOYSTICKAXES[i] = &ME_JOYSTICKAXES[i];
     }
     M_JOYSTICKAXES.numEntries = joystick.numAxes;
+}
+
+#define MAXBNSTRINGLINES 8
+#define MAXBNLINELEN (MAXGAMEFUNCLEN + 3)
+
+// these values are used for the keybind override verification
+static MenuCustom2Col_t* s_saved_keycolumn = nullptr;
+static int32_t s_saved_scancode = 0xFF;
+static char* s_override_gfstring = nullptr;
+static int32_t s_gfstring_linecount = 0;
+
+static void Menu_RefreshBoundGamefuncNames(const int32_t sc)
+{
+    int const bbufsize = MAXBNSTRINGLINES * MAXBNLINELEN + 5;
+    s_override_gfstring = (char*) Xrealloc(s_override_gfstring, bbufsize);
+    s_override_gfstring[0] = '\0';
+
+    s_gfstring_linecount = 0;
+    for (int i = 0; i < M_KEYBOARDKEYS.numEntries && s_gfstring_linecount < MAXBNSTRINGLINES; i++)
+    {
+        if (i == M_KEYBOARDKEYS.currentEntry)
+            continue;
+
+        MenuEntry_t* entryPtr = M_KEYBOARDKEYS.entrylist[i];
+        if (entryPtr == nullptr)
+            continue;
+
+        auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
+        if ((*iterCol->column[0] == sc) | (*iterCol->column[1] == sc))
+        {
+            if (s_gfstring_linecount == MAXBNSTRINGLINES - 1)
+                Bstrncat(s_override_gfstring, "...\n", bbufsize);
+            else
+            {
+                Bsnprintf(tempbuf, MAXBNLINELEN, "\"%s\"\n", M_KEYBOARDKEYS.entrylist[i]->name);
+                Bstrncat(s_override_gfstring, tempbuf, bbufsize);
+            }
+            s_gfstring_linecount++;
+        }
+    }
+}
+
+static void Menu_EraseMatchingBinds(const int32_t sc)
+{
+    char key[2];
+    for (int i = 0; i < M_KEYBOARDKEYS.numEntries; i++)
+    {
+        if (i == M_KEYBOARDKEYS.currentEntry)
+            continue;
+
+        MenuEntry_t* entryPtr = M_KEYBOARDKEYS.entrylist[i];
+        if (entryPtr == nullptr)
+            continue;
+
+        auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
+        if ((*iterCol->column[0] != sc) && (*iterCol->column[1] != sc))
+            continue;
+
+        key[0] = ud.config.KeyboardKeys[iterCol->linkIndex][0];
+        key[1] = ud.config.KeyboardKeys[iterCol->linkIndex][1];
+
+        if (*iterCol->column[0] == sc) *iterCol->column[0] = 0xFF;
+        if (*iterCol->column[1] == sc) *iterCol->column[1] = 0xFF;
+
+        CONFIG_MapKey(iterCol->linkIndex,
+            ud.config.KeyboardKeys[iterCol->linkIndex][0], key[0],
+            ud.config.KeyboardKeys[iterCol->linkIndex][1], key[1]);
+    }
+}
+
+static void Menu_SetKeyboardScanCode(MenuCustom2Col_t* column, const int32_t sc, const bool override)
+{
+    char key[2];
+    key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
+    key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
+
+    if (override) Menu_EraseMatchingBinds(sc);
+    *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
+
+    CONFIG_MapKey(column->linkIndex,
+                    ud.config.KeyboardKeys[column->linkIndex][0], key[0],
+                    ud.config.KeyboardKeys[column->linkIndex][1], key[1]);
 }
 
 /*
@@ -3151,6 +3235,14 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t* entry, const vec2_t origin)
         videoFadeToBlack(1);
         Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller settings to default?");
         break;
+    case MENU_KEYOVERRIDEVERIFY:
+        videoFadeToBlack(1);
+        if (s_override_gfstring)
+        {
+            Bsprintf(tempbuf, "Key already assigned to:\n\n%s\nClear existing binds?", s_override_gfstring);
+            Menu_DrawVerifyPrompt(origin.x, origin.y - (4<<16) - (s_gfstring_linecount * (3<<16)), tempbuf, s_gfstring_linecount + 4);
+        }
+        break;
 
     case MENU_QUIT:
     case MENU_QUIT_INGAME:
@@ -3520,6 +3612,7 @@ static void Menu_PreOptionListDraw(MenuEntry_t *entry, const vec2_t origin)
     }
 }
 
+
 static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
 {
     if (g_currentMenu == MENU_KEYBOARDKEYS)
@@ -3531,18 +3624,35 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
         int32_t sc = KB_GetLastScanCode();
         if (sc != sc_None)
         {
-            char key[2];
-            key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
-            key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
+            if (*column->column[M_KEYBOARDKEYS.currentColumn] != sc)
+            {
+                bool alreadyAssigned = false;
+                for (int i = 0; i < M_KEYBOARDKEYS.numEntries; i++)
+                {
+                    if (i == M_KEYBOARDKEYS.currentEntry)
+                        continue;
 
-            S_PlaySound(PISTOL_BODYHIT);
+                    auto iterCol = (MenuCustom2Col_t*) M_KEYBOARDKEYS.entrylist[i]->entry;
+                    if ((*iterCol->column[0] == sc) || (*iterCol->column[1] == sc))
+                    {
+                        alreadyAssigned = true;
+                        break;
+                    }
+                }
 
-            *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
-
-            CONFIG_MapKey(column->linkIndex, ud.config.KeyboardKeys[column->linkIndex][0], key[0], ud.config.KeyboardKeys[column->linkIndex][1], key[1]);
-
+                S_PlaySound(PISTOL_BODYHIT);
+                if (alreadyAssigned)
+                {
+                    s_saved_scancode = sc;
+                    s_saved_keycolumn = column;
+                    Menu_RefreshBoundGamefuncNames(sc);
+                    KB_ClearKeyDown(sc_N);
+                    KB_ClearKeyDown(sc_Y);
+                    Menu_Change(MENU_KEYOVERRIDEVERIFY);
+                }
+                else Menu_SetKeyboardScanCode(column, sc, false);
+            }
             KB_ClearKeyDown(sc);
-
             return -1;
         }
     }
@@ -4448,6 +4558,12 @@ static void Menu_Verify(int32_t input)
     case MENU_JOYDEFAULTVERIFY:
         if (input)
             CONFIG_SetGameControllerDefaults();
+        break;
+    case MENU_KEYOVERRIDEVERIFY:
+        Bassert(s_saved_keycolumn != nullptr);
+        if (input)
+            Menu_SetKeyboardScanCode(s_saved_keycolumn, s_saved_scancode, input == 1);
+        DO_FREE_AND_NULL(s_override_gfstring);
         break;
 
     case MENU_QUIT:
@@ -6474,6 +6590,7 @@ static void Menu_Recurse(MenuID_t cm, const vec2_t origin)
     case MENU_KEYSRESETVERIFY:
     case MENU_KEYSCLASSICVERIFY:
     case MENU_JOYDEFAULTVERIFY:
+    case MENU_KEYOVERRIDEVERIFY:
     case MENU_ADULTPASSWORD:
     case MENU_CHEATENTRY:
     case MENU_CHEAT_WARP:
@@ -7480,7 +7597,20 @@ static void Menu_RunInput(Menu_t *cm)
             break;
 
         case Verify:
-            if (I_ReturnTrigger() || KB_KeyPressed(sc_N) || Menu_RunInput_MouseReturn())
+            if (g_currentMenu == MENU_KEYOVERRIDEVERIFY && KB_KeyPressed(sc_N))
+            {
+                // special case -- N sets key, but doesn't override other keybinds
+                I_ReturnTriggerClear();
+                KB_ClearKeyDown(sc_N);
+                m_mousecaught = 1;
+
+                Menu_Verify(2);
+
+                Menu_AnimateChange(cm->parentID, cm->parentAnimation);
+
+                S_PlaySound(PISTOL_BODYHIT);
+            }
+            else if (I_ReturnTrigger() || KB_KeyPressed(sc_N) || Menu_RunInput_MouseReturn())
             {
                 I_ReturnTriggerClear();
                 KB_ClearKeyDown(sc_N);
@@ -7492,8 +7622,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 S_PlaySound(EXITMENUSOUND);
             }
-
-            if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
+            else if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
             {
                 auto verify = (MenuVerify_t*)cm->object;
 
