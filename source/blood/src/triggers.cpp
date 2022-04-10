@@ -1831,7 +1831,7 @@ void trMessageWall(unsigned int nWall, EVENT event) {
 void trMessageSprite(unsigned int nSprite, EVENT event) {
     if (sprite[nSprite].statnum == kStatFree)
         return;
-    SPRITE *pSprite = &sprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (pSprite->extra < 0 || pSprite->extra >= kMaxXSprites)
         return;
     XSPRITE* pXSprite = &xsprite[sprite[nSprite].extra];
