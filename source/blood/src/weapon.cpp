@@ -1899,7 +1899,7 @@ char processProxy(PLAYER *pPlayer)
             pPlayer->weaponState = 8;
             StartQAV(pPlayer, 29, nClientThrowProx, 0);
         }
-        break;
+        return 1;
     }
     return 0;
 }
@@ -1915,7 +1915,7 @@ char processRemote(PLAYER *pPlayer)
             pPlayer->weaponState = 11;
             StartQAV(pPlayer, 39, nClientThrowRemote, 0);
         }
-        break;
+        return 1;
     }
     return 0;
 }
