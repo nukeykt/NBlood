@@ -1659,6 +1659,7 @@ void aiInitSprite(spritetype *pSprite)
     case kDudeZombieAxeBuried: {
         pDudeExtraE->thinkTime = 0;
         aiNewState(pSprite, pXSprite, &zombieEIdle);
+        pSprite->flags &= ~1;
         break;
     }
     case kDudeGargoyleFlesh:
