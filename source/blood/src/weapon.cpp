@@ -1049,6 +1049,7 @@ void ThrowCan(int, PLAYER *pPlayer)
     if (pSprite)
     {
         sfxPlay3DSound(pSprite, 441, 0, 0);
+        pSprite->shade = -128;
         evPost(pSprite->index, 3, pPlayer->fuseTime, kCmdOn);
         int nXSprite = pSprite->extra;
         XSPRITE *pXSprite = &xsprite[nXSprite];
