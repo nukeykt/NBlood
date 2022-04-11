@@ -5455,7 +5455,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     LOG_F(ERROR, "Could not find file '%s'.", fileName);
                 else
                 {
-                    LOG_F(ERROR, "Using file '%s' as game data.", fileName);
+                    LOG_F(INFO, "Using file '%s' as game data.", fileName);
                     if (!g_noAutoLoad && !ud.setup.noautoload)
                         G_DoAutoload(fileName);
                 }
