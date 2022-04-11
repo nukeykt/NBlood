@@ -1806,7 +1806,7 @@ char WeaponFindLoaded(PLAYER *pPlayer, int *a2)
             }
         }
     }
-    else if (a2)
+    if (a2)
         *a2 = v14;
     return weapon;
 }
