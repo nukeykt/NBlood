@@ -1578,7 +1578,7 @@ void FireTesla(int nTrigger, PLAYER *pPlayer)
             }
         }
         playerFireMissile(pPlayer, pMissile->at0, pPlayer->aim.dx, pPlayer->aim.dy, pPlayer->aim.dz, pMissile->at4);
-        UseAmmo(pPlayer, 7, pMissile->at8);
+        UseAmmo(pPlayer, pPlayer->weaponAmmo, pMissile->at8);
         sfxPlay3DSound(pSprite, pMissile->atc, 1, 0);
         pPlayer->visibility = pMissile->at10;
         pPlayer->flashEffect = pMissile->at14;
@@ -1679,7 +1679,6 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
         pXSprite->Push = 1;
         pXSprite->Proximity = 1;
         pXSprite->DudeLockout = 1;
-        pXSprite->data4 = ClipHigh(pPlayer->ammoCount[4], 12);
         pXSprite->stateTimer = 1;
         evPost(pMissile->index, 3, 120, kCallbackLeechStateTimer);
         if (gGameOptions.nGameType <= 1)
