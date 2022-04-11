@@ -556,7 +556,7 @@ void fxPodBloodSplat(int nSprite) // 19
     int nDist = Random(16)<<4;
     int x = pSprite->x+mulscale28(nDist, Cos(nAngle));
     int y = pSprite->y+mulscale28(nDist, Sin(nAngle));
-    if (pSprite->ang == 1024)
+    if (pSprite->ang == 1024 && pSprite->type == 53)
     {
         int nChannel = 28+(pSprite->index&2);
         dassert(nChannel < 32);
