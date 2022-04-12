@@ -234,8 +234,8 @@ void sub_5571C(char mode)
 void sub_557C4(int x, int y, int interpolation)
 {
     if (spritesortcnt == 0) return;
-    int nViewSprites = spritesortcnt-1;
-    for (int nTSprite = nViewSprites; nTSprite >= 0; nTSprite--)
+    int nViewSprites = spritesortcnt;
+    for (int nTSprite = nViewSprites-1; nTSprite >= 0; nTSprite--)
     {
         tspritetype *pTSprite = &tsprite[nTSprite];
         pTSprite->xrepeat = pTSprite->yrepeat = 0;
