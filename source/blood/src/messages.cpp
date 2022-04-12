@@ -372,13 +372,13 @@ void CGameMessageMgr::Display(void)
             for (int i = 0; i < initialNrOfDisplayedMsgs; i++)
             {
                 messageStruct* pMessage = &messages[(initialMessagesIndex+i)%kMessageLogSize];
-                if (pMessage->lastTickWhenVisible < gFrameClock)
+                if (pMessage->lastTickWhenVisible <= gFrameClock)
                 {
                     messagesIndex = (messagesIndex+1)%kMessageLogSize;
                     numberOfDisplayedMessages--;
                     continue;
                 }
-                viewDrawText(nFont, pMessage->text, x, y, shade, pMessage->pal, 0, false, 256);
+                viewDrawText(nFont, pMessage->text, x+1, y, shade, pMessage->pal, 0, false, 256);
                 if (gViewMode == 3)
                 {
                     int height;
@@ -423,7 +423,7 @@ void CGameMessageMgr::Display(void)
             for (int i = 0; i < messagesToDisplayCount; i++)
             {
                 messageStruct* pMessage = messagesToDisplay[i];
-                viewDrawText(nFont, pMessage->text, x, y, shade, pMessage->pal, 0, false, 256);
+                viewDrawText(nFont, pMessage->text, x+1, y, shade, pMessage->pal, 0, false, 256);
                 if (gViewMode == 3)
                 {
                     int height;
@@ -438,7 +438,7 @@ void CGameMessageMgr::Display(void)
     }
     if (at9 != 0)
     {
-        at9 = fontHeight*at9/kTicRate;
+        at9 = fontHeight*atd/kTicRate;
         atd += gFrameTicks;
     }
 }
