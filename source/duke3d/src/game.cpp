@@ -4621,7 +4621,7 @@ void G_HandleLocalKeys(void)
 //    CONTROL_ProcessBinds();
     auto &myplayer = *g_player[myconnectindex].ps;
 
-    if (ud.recstat == 2)
+    if (ud.recstat == 2 || (myplayer.gm & MODE_MENU) == MODE_MENU)
     {
         ControlInfo noshareinfo;
         CONTROL_GetInput(&noshareinfo);
