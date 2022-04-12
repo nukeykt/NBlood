@@ -3640,7 +3640,11 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
                         if (i == M_KEYBOARDKEYS.currentEntry)
                             continue;
 
-                        auto iterCol = (MenuCustom2Col_t*) M_KEYBOARDKEYS.entrylist[i]->entry;
+                        MenuEntry_t* entryPtr = M_KEYBOARDKEYS.entrylist[i];
+                        if (entryPtr == nullptr)
+                            continue;
+
+                        auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
                         if ((*iterCol->column[0] == sc) || (*iterCol->column[1] == sc))
                         {
                             alreadyAssigned = true;
