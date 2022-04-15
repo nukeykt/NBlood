@@ -316,7 +316,7 @@ typedef struct mi_segment_s {
   // layout like this to optimize access in `mi_free`
   size_t                 page_shift;     // `1 << page_shift` == the page sizes == `page->block_size * page->reserved` (unless the first page, then `-segment_info_size`).
   _Atomic(mi_threadid_t) thread_id;      // unique id of the thread owning this segment
-  mi_page_kind_t       page_kind;        // kind of pages: small, large, or huge
+  mi_page_kind_t       page_kind;        // kind of pages: small, medium, large, or huge
   mi_page_t            pages[1];         // up to `MI_SMALL_PAGES_PER_SEGMENT` pages
 } mi_segment_t;
 
@@ -521,9 +521,6 @@ typedef struct mi_segments_tld_s {
   size_t              peak_count;   // peak number of segments
   size_t              current_size; // current size of all segments
   size_t              peak_size;    // peak size of all segments
-  size_t              cache_count;  // number of segments in the cache
-  size_t              cache_size;   // total size of all segments in the cache
-  mi_segment_t*       cache;        // (small) cache of segments
   mi_stats_t*         stats;        // points to tld stats
   mi_os_tld_t*        os;           // points to os stats
 } mi_segments_tld_t;
