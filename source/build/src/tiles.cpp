@@ -394,20 +394,33 @@ void tileConvertAnimFormat(int32_t const picnum, uint32_t const picanmdisk)
     thispicanm->sf = ((picanmdisk>>24)&15) | (picanmdisk&192);
 }
 
-void artReadManifest(buildvfs_kfd const fil, artheader_t const * const local)
+void artReadManifest(buildvfs_kfd const fil, artheader_t * const local)
 {
     int16_t *tilesizx = (int16_t *) Xmalloc(local->numtiles * sizeof(int16_t));
     int16_t *tilesizy = (int16_t *) Xmalloc(local->numtiles * sizeof(int16_t));
     kread(fil, tilesizx, local->numtiles*sizeof(int16_t));
     kread(fil, tilesizy, local->numtiles*sizeof(int16_t));
 
+    local->tileread = (uint8_t*)Xcalloc(1, (local->numtiles + 7) >> 3);
+
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
-        tilesiz[i].x = B_LITTLE16(tilesizx[i-local->tilestart]);
-        tilesiz[i].y = B_LITTLE16(tilesizy[i-local->tilestart]);
+        int32_t const localIndex = i - local->tilestart;
+        int16_t const tilex = B_LITTLE16(tilesizx[localIndex]);
+        int16_t const tiley = B_LITTLE16(tilesizy[localIndex]);
+        int32_t const dasiz = tilex * tiley;
 
         uint32_t picanmdisk;
         kread(fil, &picanmdisk, sizeof(uint32_t));
+
+        if (dasiz == 0)
+            continue;
+
+        tilesiz[i].x = tilex;
+        tilesiz[i].y = tiley;
+
+        bitmap_set(local->tileread, localIndex);
+        
         picanmdisk = B_LITTLE32(picanmdisk);
         tileConvertAnimFormat(i, picanmdisk);
     }
@@ -416,15 +429,18 @@ void artReadManifest(buildvfs_kfd const fil, artheader_t const * const local)
     DO_FREE_AND_NULL(tilesizy);
 }
 
-void artPreloadFile(buildvfs_kfd const fil, artheader_t const * const local)
+void artPreloadFile(buildvfs_kfd const fil, artheader_t * const local)
 {
     char *buffer = NULL;
     int32_t buffersize = 0;
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
-        int const dasiz = tilesiz[i].x * tilesiz[i].y;
+        int32_t const localIndex = i - local->tilestart;
+        if (!bitmap_test(local->tileread, localIndex))
+            continue;
 
+        int const dasiz = tilesiz[i].x * tilesiz[i].y;
         if (dasiz == 0)
         {
             tileDelete(i);
@@ -437,17 +453,21 @@ void artPreloadFile(buildvfs_kfd const fil, artheader_t const * const local)
     }
 
     DO_FREE_AND_NULL(buffer);
+    DO_FREE_AND_NULL(local->tileread);
 }
 
-static void artPreloadFileSafe(buildvfs_kfd const fil, artheader_t const * const local)
+static void artPreloadFileSafe(buildvfs_kfd const fil, artheader_t * const local)
 {
     char *buffer = NULL;
     int32_t buffersize = 0;
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
-        int const dasiz = tilesiz[i].x * tilesiz[i].y;
+        int32_t const localIndex = i - local->tilestart;
+        if (!bitmap_test(local->tileread, localIndex))
+            continue;
 
+        int const dasiz = tilesiz[i].x * tilesiz[i].y;
         if (dasiz == 0)
         {
             tileSoftDelete(i);
@@ -460,6 +480,7 @@ static void artPreloadFileSafe(buildvfs_kfd const fil, artheader_t const * const
     }
 
     DO_FREE_AND_NULL(buffer);
+    DO_FREE_AND_NULL(local->tileread);
 }
 
 static const char *artGetIndexedFileName(int32_t tilefilei)
@@ -545,6 +566,10 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
 
             for (bssize_t i=local.tilestart; i<=local.tileend; ++i)
             {
+                int32_t const localIndex = i - local.tilestart;
+                if (!bitmap_test(local.tileread, localIndex))
+                    continue;
+
                 int const dasiz = tilesiz[i].x * tilesiz[i].y;
 
                 tilefilenum[i] = tilefilei;
@@ -553,6 +578,8 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
                 offscount += dasiz;
                 // artsize += ((dasiz+15)&0xfffffff0);
             }
+
+            DO_FREE_AND_NULL(local.tileread);
         }
 
         if (permap)
