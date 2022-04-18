@@ -2532,6 +2532,7 @@ static void Menu_Pre(MenuID_t cm)
         break;
 
     case MENU_DISPLAYSETUP:
+        Menu_PopulateLanguages();
         MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_VOXELS, !g_haveVoxels);
 #ifndef EDUKE32_STANDALONE
 #ifdef USE_OPENGL
@@ -2569,7 +2570,6 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
 
-        Menu_PopulateLanguages();
         break;
 
     case MENU_RENDERER:
