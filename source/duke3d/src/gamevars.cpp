@@ -997,7 +997,7 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
     return returnValue;
 
 badindex:
-    LOG_F(ERROR, "Invalid index %d for '%s'", returnValue,
+    LOG_F(ERROR, "%s:%d: Invalid index %d for '%s'", VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), returnValue,
                   (gameVar & GV_FLAG_ARRAY) ? aGameArrays[gv].szLabel : aGameVars[gv].szLabel);
     return -1;
 }
