@@ -3513,7 +3513,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                 if (pSprite->picnum == FIRELASER)
                 {
-                    for (bssize_t k = -3; k < 2; k++)
+                    for (int k = -3; k < 2; k++)
                     {
                         vec3_t const offset = { (k * sintable[(pSprite->ang + 512) & 2047]) >> 9,
                                                 (k * sintable[pSprite->ang & 2047]) >> 9,
