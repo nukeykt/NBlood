@@ -488,22 +488,32 @@ int LoadSound(const char *sound)
 
     strncpy(szSoundName[i], sound, kMaxSoundNameLen);
 
-    char buffer[32];
+    char buffer[BMAX_PATH];
     buffer[0] = 0;
 
     strncat(buffer, szSoundName[i], kMaxSoundNameLen);
 
-    char *pzTail = buffer+strlen(buffer);
+    char *pzTail = buffer + strlen(buffer);
     while (*pzTail == ' ' && pzTail != buffer)
         *pzTail-- = '\0';
 
-    strcat(buffer, ".voc");
+    static const char *soundfileformats[] = { ".ogg", ".wav", ".voc" };
+    char sndfilename[BMAX_PATH];
+    buildvfs_kfd hSnd = buildvfs_kfd_invalid;
 
-    buildvfs_kfd hVoc = kopen4loadfrommod(buffer, 0);
-
-    if (hVoc != buildvfs_kfd_invalid)
+    for (auto fmt : soundfileformats)
     {
-        int nSize = kfilelength(hVoc);
+        strcpy(sndfilename, buffer);
+        strcat(sndfilename, fmt);
+
+        hSnd = kopen4loadfrommod(sndfilename, 0);
+        if (hSnd != buildvfs_kfd_invalid)
+            break;
+    }
+
+    if (hSnd != buildvfs_kfd_invalid)
+    {
+        int nSize = kfilelength(hSnd);
         SoundLock[i] = 255; // TODO: implement cache lock properly
         SoundLen[i] = nSize;
         g_cache.allocateBlock((intptr_t*)&SoundBuf[i], nSize, &SoundLock[i]);
@@ -511,7 +521,7 @@ int LoadSound(const char *sound)
         if (!SoundBuf[i])
             bail2dos("Error allocating buf '%s' to %lld  (size=%ld)!\n", buffer, (intptr_t)&SoundBuf[i], nSize);
 
-        if (kread(hVoc, SoundBuf[i], nSize) != nSize)
+        if (kread(hSnd, SoundBuf[i], nSize) != nSize)
             bail2dos("Error reading '%s'!\n", buffer);
     }
     else
@@ -522,11 +532,10 @@ int LoadSound(const char *sound)
 
         SoundBuf[i] = NULL;
         SoundLen[i] = 0;
-        //return hVoc;
         return -1;
     }
 
-    kclose(hVoc);
+    kclose(hSnd);
     nSoundCount++;
     return i;
 }
