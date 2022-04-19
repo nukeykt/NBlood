@@ -3515,12 +3515,17 @@ ACTOR_STATIC void G_MoveWeapons(void)
                 {
                     for (bssize_t k = -3; k < 2; k++)
                     {
-                        int const newSprite
-                            = A_InsertSprite(pSprite->sectnum, pSprite->x + ((k * sintable[(pSprite->ang + 512) & 2047]) >> 9),
-                                pSprite->y + ((k * sintable[pSprite->ang & 2047]) >> 9),
-                                pSprite->z + ((k * ksgn(pSprite->zvel)) * klabs(pSprite->zvel / 24)), FIRELASER, -40 + ksgn(k) * (klabs(k) << 2),
-                                pSprite->xrepeat, pSprite->yrepeat, 0, 0, 0, pSprite->owner, 5);
+                        vec3_t const offset = { (k * sintable[(pSprite->ang + 512) & 2047]) >> 9,
+                                                (k * sintable[pSprite->ang & 2047]) >> 9,
+                                                (k * ksgn(pSprite->zvel)) * klabs(pSprite->zvel / 24) };
 
+                        int const newSprite
+                            = A_InsertSprite(pSprite->sectnum, pSprite->x + offset.x,
+                                pSprite->y + offset.y,
+                                pSprite->z + offset.z, FIRELASER, -40 + ksgn(k) * (klabs(k) << 2),
+                                pSprite->xrepeat, pSprite->yrepeat, 0, 0, 0, pSprite->owner, STAT_MISC);
+
+                        actor[newSprite].bpos = actor[spriteNum].bpos + offset;
                         sprite[newSprite].cstat = 128;
                         sprite[newSprite].pal   = pSprite->pal;
                     }
