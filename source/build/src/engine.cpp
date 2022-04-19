@@ -213,7 +213,8 @@ classicht_t *tileLoadHigh(int dapicnum)
     if ((!usehightile) |
         ((paletteloaded & PALETTE_MAIN) != PALETTE_MAIN) |
         (tsiz.x <= 0) | (tsiz.y <= 0) |
-        (!si/* || (si->flags & HICR_INDEXED) != HICR_INDEXED*/))
+        (!si/* || (si->flags & HICR_INDEXED) != HICR_INDEXED*/) |
+        (cht->lock == 254))
         return NULL;
 
     if (!cht->ptr)
@@ -233,6 +234,7 @@ classicht_t *tileLoadHigh(int dapicnum)
 
         if (EDUKE32_PREDICT_FALSE(!picptr | (xsiz <= 0) | (ysiz <= 0)))
         {
+            cht->lock = 254;
             Xfree(picptr);
             return NULL;
         }
@@ -244,6 +246,7 @@ classicht_t *tileLoadHigh(int dapicnum)
 
         if ((tsiz.x != xsiz) | (tsiz.y != ysiz))
         {
+            cht->lock = 254;
             Xfree(picptr);
             return NULL;
         }
