@@ -108,7 +108,7 @@ enum {
 // Reserved: TILE_VIEWSCR_1 (MAXTILES-6)
 // Reserved: TILE_VIEWSCR_2 (MAXTILES-7)
 // Reserved: (MAXTILES-8) to (MAXTILES-196) for additional Viewscreen tilespace
-//EDUKE32_STATIC_ASSERT(4 + (3 * MAX_ACTIVE_VIEWSCREENS) <= MAXTILES-MAXUSERTILES);
+EDUKE32_STATIC_ASSERT(4 + (3 * MAX_ACTIVE_VIEWSCREENS) <= MAXTILES-MAXUSERTILES);
 
 // sprites with these statnums should be considered for fixing
 #define ROTFIXSPR_STATNUMP(k) ((k)==STAT_DEFAULT || (k)==STAT_STANDABLE || (k)==STAT_FX || \

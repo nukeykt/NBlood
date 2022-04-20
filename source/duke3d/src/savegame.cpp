@@ -636,6 +636,11 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
         sjson_destroy_context(ctx);
 
+        for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+        {
+            g_activeVscrSprite[vscrIndex] = -1;
+            g_activeVscrTile[vscrIndex] = -1;
+        }
 
         if (G_EnterLevel(MODE_GAME|MODE_EOL))
             G_BackToMenu();
@@ -644,7 +649,6 @@ int32_t G_LoadPlayer(savebrief_t & sv)
         // postloadplayer(1);
 
         // sv_postudload();
-
 
         VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek);
 
@@ -724,6 +728,12 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     }
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
+
+    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+    {
+        g_activeVscrSprite[vscrIndex] = -1;
+        g_activeVscrTile[vscrIndex] = -1;
+    }
 
     if (status == 2)
         G_NewGame_EnterLevel();
