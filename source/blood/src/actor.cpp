@@ -6302,7 +6302,7 @@ spritetype * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
         pXThing->data1 = (nThingType == kThingBloodBits) ? 19 : 8;
         pXThing->data2 = 0;
         pXThing->data3 = 0;
-        pXThing->data4 = 318;
+        pXThing->data4 = 319;
         pXThing->targetX = (int)gFrameClock+180.0;
         pXThing->locked = 1;
         pXThing->state = 1;
