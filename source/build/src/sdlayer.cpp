@@ -2147,7 +2147,7 @@ int32_t videoSetGamma(void)
     {
 #endif
         if (i != INT32_MIN)
-            LOG_F(ERROR, "Failed setting window gamma ramp: %s.", SDL_GetError());
+            DLOG_F(ERROR, "Failed setting window gamma ramp: %s.", SDL_GetError());
 
 #ifndef EDUKE32_GLES
 #if SDL_MAJOR_VERSION >= 2
