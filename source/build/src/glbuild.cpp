@@ -45,11 +45,10 @@ void buildgl_outputDebugMessage(uint8_t severity, const char* format, ...)
         va_list va;
         buf = (char *)Xrealloc(buf, (size <<= 1));
         va_start(va, format);
-        len = Bvsnprintf(buf, size-1, format, va);
+        len = Bvsnprintf(buf, size, format, va);
         va_end(va);
-    } while ((unsigned)len > size-1);
+    } while ((unsigned)len >= size);
 
-    buf[len] = 0;
     glDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB,
                             GL_DEBUG_TYPE_OTHER_ARB,
                             0,

@@ -65,11 +65,10 @@ int initprintf(const char *f, ...)
         va_list va;
         buf = (char *)Xrealloc(buf, (size <<= 1));
         va_start(va, f);
-        len = Bvsnprintf(buf, size-1, f, va);
+        len = Bvsnprintf(buf, size, f, va);
         va_end(va);
-    } while ((unsigned)len > size-1);
+    } while ((unsigned)len >= size);
 
-    buf[len] = 0;
     initputs(buf);
     Xfree(buf);
 
