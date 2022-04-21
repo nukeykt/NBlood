@@ -981,7 +981,9 @@ typedef struct { int16_t newtile; int16_t owner; } rottile_t;
 EXTERN rottile_t rottile[MAXTILES];
 EXTERN intptr_t waloff[MAXTILES];  // stores pointers to cache  -- SA
 
-EXTERN int32_t windowx, windowy;
+EXTERN vec2_t g_windowPos;
+EXTERN bool g_windowPosValid;
+
 
     //These variables are for auto-mapping with the draw2dscreen function.
     //When you load a new board, these bits are all set to 0 - since

@@ -1246,7 +1246,7 @@ void mouseUninit(void)
 static void SetWindowGrab(SDL_Window *pWindow, int const clipToWindow)
 {
     UNREFERENCED_PARAMETER(pWindow);
-    RECT rect { windowx, windowy, windowx + xdim, windowy + ydim };
+    RECT rect { g_windowPos.x, g_windowPos.y, g_windowPos.x + xdim, g_windowPos.y + ydim };
     ClipCursor(clipToWindow ? &rect : nullptr);
 }
 #define SDL_SetWindowGrab SetWindowGrab
@@ -1667,7 +1667,7 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     int const newdisplayindex = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : displayindex;
 
     if (displayindex != newdisplayindex)
-        windowx = windowy = -1;
+        g_windowPosValid = false;
 
     SDL_DisplayMode desktopmode;
     SDL_GetDesktopDisplayMode(newdisplayindex, &desktopmode);
@@ -1709,8 +1709,8 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     {
         SDL_SetWindowFullscreen(sdl_window, 0);
         SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
-        SDL_SetWindowPosition(sdl_window, (r_windowpositioning && windowx != -1) ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex),
-                                          (r_windowpositioning && windowy != -1) ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex));
+        SDL_SetWindowPosition(sdl_window, g_windowPosValid ? g_windowPos.x : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex),
+                                          g_windowPosValid ? g_windowPos.y : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex));
     }
 
     SDL_FlushEvent(SDL_WINDOWEVENT);
@@ -1794,8 +1794,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             so we have to create a new surface in a different format first
             to force the surface we WANT to be recreated instead of reused. */
 
-        sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                        r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+        sdl_window = SDL_CreateWindow("", g_windowPosValid ? g_windowPos.x : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                          g_windowPosValid ? g_windowPos.y : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | borderless);
 
         if (sdl_window)
@@ -1827,8 +1827,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #endif  // defined USE_OPENGL
     {
         // init
-        sdl_window = SDL_CreateWindow("", r_windowpositioning && windowx != -1 ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                      r_windowpositioning && windowy != -1 ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+        sdl_window = SDL_CreateWindow("", g_windowPosValid ? g_windowPos.x : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                          g_windowPosValid ? g_windowPos.y : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
                                       SDL_WINDOW_RESIZABLE | borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
@@ -2628,8 +2628,9 @@ int32_t handleevents_pollsdl(void)
                     case SDL_WINDOWEVENT_MOVED:
                     {
                         if (fullscreen) break;
-                        windowx = ev.window.data1;
-                        windowy = ev.window.data2;
+                        g_windowPos.x = ev.window.data1;
+                        g_windowPos.y = ev.window.data2;
+                        g_windowPosValid = true;
 
                         r_displayindex = SDL_GetWindowDisplayIndex(sdl_window);
                         modeschecked = 0;
