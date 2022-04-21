@@ -120,7 +120,7 @@ int32_t ExtInit(void)
     getch();
     */
 
-    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO
+    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0, 0); // TODO
 
     bpp = 8;
     if (loadsetup(setupfilename) < 0) buildputs("Configuration file not found, using defaults.\n"), rv = 1;

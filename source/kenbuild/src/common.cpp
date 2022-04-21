@@ -8,6 +8,8 @@
 static const char *defaultgrpfilename = "stuff.dat";
 static const char *defaultdeffilename = "kenbuild.def";
 
+int g_useCwd;
+
 const char *G_DefaultGrpFile(void)
 {
     return defaultgrpfilename;
