@@ -503,7 +503,8 @@ void map_undoredo_free(void)
 
 int32_t map_undoredo(int dir)
 {
-    if (mapstate == NULL) return 1;
+    auto bstatus = mouseReadButtons();
+    if (mapstate == NULL || EDITING_MAP_P()) return 1;
 
     auto const which = dir ? mapstate->next : mapstate->prev;
     if (which == NULL || !which->num[UNDO_SECTORS]) return 1;

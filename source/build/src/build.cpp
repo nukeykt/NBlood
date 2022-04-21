@@ -2122,7 +2122,8 @@ static int32_t restore_highlighted_map(mapinfofull_t *mapinfo, int32_t forreal)
 }
 
 
-static int16_t newnumwalls=-1;
+int16_t newnumwalls=-1;
+int16_t joinsector[2];
 
 void ovh_whiteoutgrab(int32_t restoreredwalls)
 {
@@ -3416,12 +3417,7 @@ static void draw_square(int32_t dax, int32_t day, int32_t ps, int32_t col)
 }
 
 //// Interactive Scaling
-static struct {
-    int8_t active, rotatep;
-    vec2_t piv;  // pivot point
-    int32_t dragx, dragy;  // dragged point
-    int32_t xsc, ysc, ang;
-} isc;
+iscdata_t isc;
 
 static void isc_transform(int32_t *x, int32_t *y)
 {
@@ -3479,8 +3475,6 @@ static void drawspritelabel(int i)
 
     drawsmallabel(dabuffer, editorcolors[0], col, bordercol, s->x, s->y, s->z);
 }
-
-#define EDITING_MAP_P() (newnumwalls>=0 || joinsector[0]>=0 || circlewall>=0 || (bstatus&1) || isc.active)
 
 #define HLMEMBERX(Hl, Member) (*(((Hl)&16384) ? &sprite[(Hl)&16383].Member : &wall[Hl].Member))
 #define HLMEMBER(Hlidx, Member) HLMEMBERX(highlight[Hlidx], Member)
@@ -3794,7 +3788,7 @@ void overheadeditor(void)
     int32_t i, j, k, m=0, mousxplc=0, mousyplc=0, firstx=0, firsty=0, oposz, col;
     int32_t numwalls_bak;
     int32_t startwall=0, endwall, dax, day, x1, y1, x2, y2, x3, y3; //, x4, y4;
-    int16_t bad, joinsector[2];
+    int16_t bad;
     int32_t bstatus, mousewaitmask=0;
     int16_t circlepoints;
     int32_t sectorhighlightx=0, sectorhighlighty=0;
@@ -8477,14 +8471,20 @@ CANCEL:
                 else if (ch == 'u' || ch == 'U')
                 {
                     bad = 0;
-                    if (map_undoredo(0)) printmessage16("Nothing to undo!");
-                    else printmessage16("Revision %d undone",map_revision);
+                    if (!EDITING_MAP_P())
+                    {
+                        if (map_undoredo(0)) printmessage16("Nothing to undo!");
+                        else printmessage16("Revision %d undone",map_revision);
+                    }
                 }
                 else if (ch == 'r' || ch == 'R')
                 {
                     bad = 0;
-                    if (map_undoredo(1)) printmessage16("Nothing to redo!");
-                    else printmessage16("Restored revision %d",map_revision-1);
+                    if (!EDITING_MAP_P())
+                    {
+                        if (map_undoredo(1)) printmessage16("Nothing to redo!");
+                        else printmessage16("Restored revision %d", map_revision - 1);
+                    }
                 }
 #endif
                 else if (ch == 'q' || ch == 'Q')  //Q
