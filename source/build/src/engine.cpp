@@ -13,11 +13,13 @@
 #include "build.h"
 #include "cache1d.h"
 #include "colmatch.h"
+#include "common.h"
 #include "communityapi.h"
 #include "compat.h"
 #include "crc32.h"
 #include "editor.h"
 #include "engine_priv.h"
+#include "kplib.h"
 #include "lz4.h"
 #include "microprofile.h"
 #include "osd.h"
@@ -196,6 +198,94 @@ int32_t bloodhack = 0;
 int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+struct classicht_t
+{
+    intptr_t ptr;
+    vec2_t upscale;
+    char lock;
+};
+
+classicht_t classicht[MAXTILES];
+
+classicht_t *tileLoadHigh(int dapicnum)
+{
+#ifdef USE_OPENGL
+    auto tsiz = tilesiz[dapicnum];
+    auto si   = hicfindsubst(dapicnum, 0, 0);
+    auto cht  = &classicht[dapicnum];
+
+    if ((!usehightile) |
+        ((paletteloaded & PALETTE_MAIN) != PALETTE_MAIN) |
+        (tsiz.x <= 0) | (tsiz.y <= 0) |
+        (!si/* || (si->flags & HICR_INDEXED) != HICR_INDEXED*/) |
+        (cht->lock == 254))
+        return NULL;
+
+    if (!cht->ptr)
+    {
+        char const *fn = si->filename;
+
+        if (!fn || check_file_exist(fn))
+            return NULL;
+
+        int32_t xsiz = 0, ysiz = 0;
+        palette_t *picptr = NULL;
+
+#ifdef WITHKPLIB
+        int32_t const length = kpzbufload(fn);
+        kpzdecode(length, (intptr_t *)&picptr, &xsiz, &ysiz);
+#endif
+
+        if (EDUKE32_PREDICT_FALSE(!picptr | (xsiz <= 0) | (ysiz <= 0)))
+        {
+            cht->lock = 254;
+            Xfree(picptr);
+            return NULL;
+        }
+
+        vec2_t upscale = {};
+
+        while (tsiz.x < xsiz) { tsiz.x <<= 1; upscale.x++; }
+        while (tsiz.y < ysiz) { tsiz.y <<= 1; upscale.y++; }
+
+        if ((tsiz.x != xsiz) | (tsiz.y != ysiz))
+        {
+            cht->lock = 254;
+            Xfree(picptr);
+            return NULL;
+        }
+
+        cht->upscale = upscale;
+        cht->lock = CACHE1D_UNLOCKED;
+        g_cache.allocateBlock(&cht->ptr, xsiz * ysiz, &cht->lock);
+
+        paletteFlushClosestColor();
+
+        auto buf = (char*)cht->ptr;
+        int alphacut = clamp((int)(255.f - 255.f * si->alphacut), 0, 255);
+
+        for (int j = 0; j < ysiz; ++j)
+        {
+            int const ofs = j * xsiz;
+            for (int i = 0; i < xsiz; ++i)
+            {
+                palette_t const *const col = &picptr[ofs + i];
+                buf[(i * ysiz) + j] =
+                (col->f < alphacut) ? 255 : paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
+            }
+        }
+    }
+    else if (cht->lock < CACHE1D_UNLOCKED)
+        cht->lock = CACHE1D_UNLOCKED;
+
+    return cht;
+#else
+    return NULL;
+#endif
+}
+
+static classicht_t *globalht;
+
 static uint8_t *reachablesectors;
 int16_t wallsect[MAXWALLS];
 
@@ -293,9 +383,8 @@ void yax_updategrays(int32_t posze)
 #endif
         // update grayouts due to editorzrange
         keep &= (sector[i].ceilingz >= editorzrange[0] && sector[i].floorz <= editorzrange[1]);
-
         if (!keep)  // outside bounds, gray out!
-            graysectbitmap[i>>3] |= pow2char[i&7];
+            bitmap_set(graysectbitmap, i);
     }
 
 #ifdef YAX_ENABLE
@@ -303,18 +392,18 @@ void yax_updategrays(int32_t posze)
     {
         for (i=0; i<numsectors; i++)
             if (!(mingoodz <= sector[i].ceilingz && sector[i].floorz <= maxgoodz))
-                graysectbitmap[i>>3] |= pow2char[i&7];
+                bitmap_set(graysectbitmap, i);
     }
 #endif
 
     numgraysects = 0;
     for (i=0; i<numsectors; i++)
     {
-        if (graysectbitmap[i>>3]&pow2char[i&7])
+        if (bitmap_test(graysectbitmap, i))
         {
             numgraysects++;
             for (j=sector[i].wallptr; j<sector[i].wallptr+sector[i].wallnum; j++)
-                graywallbitmap[j>>3] |= pow2char[j&7];
+                bitmap_set(graywallbitmap, j);
         }
     }
 }
@@ -537,14 +626,14 @@ void yax_update(int32_t resetstat)
         {
             yax_getbunches(i, &cb, &fb);
             if (cb>=0)
-                havebunch[cb>>3] |= pow2char[cb&7];
+                bitmap_set(havebunch, cb);
             if (fb>=0)
-                havebunch[fb>>3] |= pow2char[fb&7];
+                bitmap_set(havebunch, fb);
         }
 
         for (i=0; i<YAX_MAXBUNCHES; i++)
         {
-            if ((havebunch[i>>3]&pow2char[i&7])==0)
+            if (bitmap_test(havebunch, i)==0)
             {
                 bunchmap[i] = 255;
                 dasub++;
@@ -721,7 +810,7 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
                     bestwalldist = walldist;
                 }
             }
-        }
+                }
 
         bunchsec[bunchnum] = bestsec;
         bunchdist[bunchnum] = bestwalldist;
@@ -916,13 +1005,13 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 
             for (i=0; i<numsectors; i++)
             {
-                if (!(gotsector[i>>3]&pow2char[i&7]))
+                if (!bitmap_test(gotsector, i))
                     continue;
 
                 j = yax_getbunch(i, cf);
-                if (j >= 0 && !(havebunch[j>>3]&pow2char[j&7]))
+                if (j >= 0 && !bitmap_test(havebunch, j))
                 {
-                    if (videoGetRenderMode() == REND_CLASSIC && (haveymost[j>>3]&pow2char[j&7])==0)
+                    if (videoGetRenderMode() == REND_CLASSIC && bitmap_test(haveymost, j)==0)
                     {
                         yaxdebug("%s, l %d: skipped bunch %d (no *most)", cf?"v":"^", lev, j);
                         continue;
@@ -932,7 +1021,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                             (cf==0 && globalposz >= sector[i].ceilingz) ||
                             (cf==1 && globalposz <= sector[i].floorz))
                     {
-                        havebunch[j>>3] |= pow2char[j&7];
+                        bitmap_set(havebunch, j);
                         bunches[cf][bnchnum[cf]++] = j;
                         bnchend[lev][cf]++;
                         numhere++;
@@ -1679,7 +1768,7 @@ static void classicScanSector(int16_t startsectnum)
         return;
 
     if (automapping)
-        show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
+        bitmap_set(show2dsector, startsectnum);
 
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;
@@ -1705,8 +1794,8 @@ static void classicScanSector(int16_t startsectnum)
                     if (renderAddTsprite(i, sectnum))
                         break;
         }
-
-        gotsector[sectnum>>3] |= pow2char[sectnum&7];
+        
+        bitmap_set(gotsector, sectnum);
 
         const int32_t onumbunches = numbunches;
         const int32_t onumscans = numscans;
@@ -1737,7 +1826,7 @@ static void classicScanSector(int16_t startsectnum)
 #ifdef YAX_ENABLE
                 if (yax_nomaskpass==0 || !yax_isislandwall(w, !yax_globalcf) || (yax_nomaskdidit=1, 0))
 #endif
-                if ((gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
+                if (bitmap_test(gotsector, nextsectnum) == 0)
                 {
                     // OV: E2L10
                     coord_t temp = (coord_t)x1*y2-(coord_t)x2*y1;
@@ -1750,7 +1839,7 @@ static void classicScanSector(int16_t startsectnum)
                         if (mulscale5(tempint,tempint) <= (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
                         {
                             sectorborder[sectorbordercnt++] = nextsectnum;
-                            gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
+                            bitmap_set(gotsector, nextsectnum);
                         }
                 }
 #endif
@@ -1896,7 +1985,7 @@ static WSHELPER_DECL void calc_bufplc(intptr_t *bufplc, int32_t lw, vec2_16_t ts
 //    Bassert(i >= 0 && i < tilesiz[globalpicnum].x*tilesiz[globalpicnum].y);
 
     // Address is at the first row of tile storage (which is column-major).
-    *bufplc = waloff[globalpicnum] + i;
+    *bufplc = (globalht ? globalht->ptr : waloff[globalpicnum]) + i;
 }
 
 static WSHELPER_DECL void calc_vplcinc_wall(uint32_t *vplc, int32_t *vinc, inthi_t sw, int32_t y1v)
@@ -1938,6 +2027,25 @@ static WSHELPER_DECL void calc_vplcinc(uint32_t *vplc, int32_t *vinc, const int3
 # endif
 #endif
 
+static intptr_t tileLoadScaled(int const picnum, vec2_t *upscale = nullptr)
+{
+    intptr_t bufplc;
+
+    if ((globalht = tileLoadHigh(picnum)))
+    {
+        bufplc = globalht->ptr;
+
+        if (upscale)
+            *upscale = globalht->upscale;
+    }
+    else
+    {
+        if (waloff[picnum] == 0) tileLoad(picnum);
+        bufplc = waloff[picnum];
+    }
+
+    return bufplc;
+}
 
 //
 // maskwallscan (internal)
@@ -1953,11 +2061,15 @@ static void maskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
 
     setgotpic(globalpicnum);
 
-    if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
+    vec2_t upscale = {};
+    globalbufplc = tileLoadScaled(globalpicnum, &upscale);
+
+    tsiz.x <<= upscale.x;
+    tsiz.y <<= upscale.y;
 
     tweak_tsizes(&tsiz);
 
-    if (EDUKE32_PREDICT_FALSE(palookup[globalpal] == NULL))
+    if (/*EDUKE32_PREDICT_FALSE*/(palookup[globalpal] == NULL))
         globalpal = 0;
 
     intptr_t const fpalookup = FP_OFF(palookup[globalpal]);
@@ -2249,6 +2361,8 @@ static void prepwall(int32_t z, uwallptr_t wal)
     int32_t l=0, ol=0, x;
 
     int32_t walxrepeat = (wal->xrepeat<<3);
+    if (globalht)
+        walxrepeat <<= globalht->upscale.x;
 
     //lwall calculation
     int32_t tmpx = xb1[z]-halfxdimen;
@@ -2671,10 +2785,8 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     tileUpdatePicnum(&globalpicnum, 0);
     setgotpic(globalpicnum);
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return 1;
-    if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
-
-    globalbufplc = waloff[globalpicnum];
-
+    vec2_t upscale = {};
+    globalbufplc = tileLoadScaled(globalpicnum, &upscale);
     globalshade = shade;
     globvis = globalcisibility;
     if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
@@ -2736,7 +2848,7 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     globaly1 = (-globalx1-globaly1)*halfxdimen;
     globalx2 = (globalx2-globaly2)*halfxdimen;
 
-    sethlinesizes(picsiz[globalpicnum]&15,picsiz[globalpicnum]>>4,globalbufplc);
+    sethlinesizes((picsiz[globalpicnum]&15)+upscale.x,(picsiz[globalpicnum]>>4)+upscale.y,globalbufplc);
 
     globalx2 += globaly2*(x1-1);
     globaly1 += globalx1*(x1-1);
@@ -2980,7 +3092,11 @@ static void wallscan(int32_t x1, int32_t x2,
     if ((uwal[x1] > ydimen) && (uwal[x2] > ydimen)) return;
     if ((dwal[x1] < 0) && (dwal[x2] < 0)) return;
 
-    if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
+    vec2_t upscale = {};
+    tileLoadScaled(globalpicnum, &upscale);
+
+    tsiz.x <<= upscale.x;
+    tsiz.y <<= upscale.y;
 
     tweak_tsizes(&tsiz);
 
@@ -3106,7 +3222,15 @@ static void transmaskvline(int32_t x)
 
     intptr_t palookupoffs = FP_OFF(palookup[globalpal]) + getpalookupsh(mulscale16(swall[x],globvis));
 
-    vec2_16_t const ntsiz = { (int16_t)-tilesiz[globalpicnum].x, (int16_t)-tilesiz[globalpicnum].y };
+    vec2_16_t tsiz = tilesiz[globalpicnum];
+
+    if (globalht)
+    {
+        tsiz.x <<= globalht->upscale.x;
+        tsiz.y <<= globalht->upscale.y;
+    }
+
+    vec2_16_t const ntsiz = { (int16_t)-tsiz.x, (int16_t)-tsiz.y };
     intptr_t bufplc;
     calc_bufplc(&bufplc, lwall[x], ntsiz);
     uint32_t vplc;
@@ -3148,7 +3272,15 @@ static void transmaskvline2(int32_t x)
 
     setuptvlineasm2(globalshiftval,palookupoffse[0],palookupoffse[1]);
 
-    vec2_16_t const ntsiz = { (int16_t)-tilesiz[globalpicnum].x, (int16_t)-tilesiz[globalpicnum].y };
+    vec2_16_t tsiz = tilesiz[globalpicnum];
+
+    if (globalht)
+    {
+        tsiz.x <<= globalht->upscale.x;
+        tsiz.y <<= globalht->upscale.y;
+    }
+
+    vec2_16_t const ntsiz = { (int16_t)-tsiz.x, (int16_t)-tsiz.y };
 
     calc_bufplc(&bufplce[0], lwall[x], ntsiz);
     calc_bufplc(&bufplce[1], lwall[x2], ntsiz);
@@ -3201,7 +3333,7 @@ static void transmaskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0))
         return;
 
-    if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
+    tileLoadScaled(globalpicnum);
 
     setuptvlineasm(globalshiftval, saturatevplc);
 
@@ -3506,7 +3638,9 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     tileUpdatePicnum(&globalpicnum, sectnum);
     setgotpic(globalpicnum);
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return;
-    if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
+
+    vec2_t upscale = {};
+    globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
     wal = (uwalltype *)&wall[sec->wallptr];
     wxi = wall[wal->point2].x - wal->x;
@@ -3603,8 +3737,9 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     intptr_t fj = FP_OFF(palookup[globalpal]);
 
-    setupslopevlin_alsotrans((picsiz[globalpicnum]&15) + ((picsiz[globalpicnum]>>4)<<8),
-                             waloff[globalpicnum],-ylookup[1]);
+    vec2_t logsz = { (picsiz[globalpicnum]&15)+upscale.x, (picsiz[globalpicnum]>>4)+upscale.y };
+
+    setupslopevlin_alsotrans(logsz.x + (logsz.y<<8), globalbufplc,-ylookup[1]);
 
     l = Blrintf((globalzd)*(1.f/65536.f));
 
@@ -3830,7 +3965,9 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     tileUpdatePicnum(&globalpicnum, sectnum);
     setgotpic(globalpicnum);
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return;
-    if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
+
+    vec2_t upscale = {};
+    globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
     wal = (uwallptr_t)&wall[sec->wallptr];
     wx = wall[wal->point2].x - wal->x;
@@ -3921,8 +4058,9 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     j = FP_OFF(palookup[globalpal]);
 
-    setupslopevlin_alsotrans((picsiz[globalpicnum]&15) + ((picsiz[globalpicnum]>>4)<<8),
-                             waloff[globalpicnum],-ylookup[1]);
+    vec2_t logsz = { (picsiz[globalpicnum]&15)+upscale.x, (picsiz[globalpicnum]>>4)+upscale.y };
+
+    setupslopevlin_alsotrans(logsz.x + (logsz.y<<8), globalbufplc,-ylookup[1]);
 
     l = (globalzd>>16);
 
@@ -4057,6 +4195,12 @@ static void parascan(char dastat, int32_t bunch)
     if (tsizy==0)
         return;
 
+    vec2_t upscale = {};
+    globalbufplc = tileLoadScaled(globalpicnum, &upscale);
+
+    globalxpanning <<= upscale.x;
+    logtilesizy += upscale.y;
+    tsizy <<= upscale.y;
 
     int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
     int8_t const * const dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
@@ -4071,7 +4215,7 @@ static void parascan(char dastat, int32_t bunch)
     if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
-        globalyscale = 65536 / tsizy;
+        globalyscale = (65536<<upscale.y) / tsizy;
         globalshiftval = 0;
         globalzd = divscale32(((tsizy>>1)+dapyoffs), tsizy) + (decltype(globalzd)(globalypanning)<<24);
     }
@@ -4079,7 +4223,7 @@ static void parascan(char dastat, int32_t bunch)
 #endif
     {
         globalshiftval = 32-globalshiftval;
-        globalyscale = (8<<(globalshiftval-19));
+        globalyscale = (8<<(globalshiftval+upscale.y-19));
         globalzd = (decltype(globalzd)((tsizy >> 1) + dapyoffs) << globalshiftval) + (decltype(globalzd)(globalypanning) << 24);
     }
     globalyscale = divscale16(globalyscale,daptileyscale);
@@ -4089,7 +4233,7 @@ static void parascan(char dastat, int32_t bunch)
     if (dapyscale != 65536)
         globalhoriz = mulscale16(globalhoriz-(ydimen>>1),dapyscale) + (ydimen>>1);
 
-    k = 27 - (picsiz[globalpicnum]&15) - dapskybits;
+    k = 27 - upscale.y - (picsiz[globalpicnum]&15) - dapskybits;
 
     // WGR2 SVN: select new episode after playing wgmicky1 with Polymer
     //  (maybe switched to classic earlier).
@@ -4193,6 +4337,7 @@ static void parascan(char dastat, int32_t bunch)
         globalpicnum = l;
     }
     globalhoriz = globalhorizbak;
+    globalht = nullptr;
 }
 
 
@@ -4204,8 +4349,9 @@ static void setup_globals_wall1(uwallptr_t wal, int32_t dapicnum)
     globalpicnum = dapicnum;
     if ((unsigned)globalpicnum >= MAXTILES) globalpicnum = 0;
     tileUpdatePicnum(&globalpicnum, 16384);
-
-    globalxpanning = wal->xpanning;
+    vec2_t upscale = {};
+    tileLoadScaled(globalpicnum, &upscale);
+    globalxpanning = wal->xpanning<<upscale.x;
     globalypanning = wal->ypanning;
 
     globalshade = wal->shade;
@@ -4215,8 +4361,11 @@ static void setup_globals_wall1(uwallptr_t wal, int32_t dapicnum)
 
 static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t topzref, int32_t botzref)
 {
-    const int32_t logtilesizy = (picsiz[globalpicnum]>>4);
-    const int32_t tsizy = tilesiz[globalpicnum].y;
+    vec2_t upscale = {};
+    if (globalht)
+        upscale = globalht->upscale;
+    const int32_t logtilesizy = (picsiz[globalpicnum]>>4) + upscale.y;
+    const int32_t tsizy = tilesiz[globalpicnum].y << upscale.y;
 
     if (tsizy==0)
     {
@@ -4238,7 +4387,7 @@ static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t t
     if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
-        globalyscale = divscale13(wal->yrepeat, tsizy);
+        globalyscale = divscale13(wal->yrepeat<<upscale.y, tsizy);
         globalshiftval = 0;
     }
     else
@@ -4247,7 +4396,7 @@ static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t t
         // globalshiftval==13 --> globalshiftval==19
         //  ==> upper texture y size limit *here* = 8192
         globalshiftval = 32-globalshiftval;
-        globalyscale = wal->yrepeat<<(globalshiftval-19);
+        globalyscale = wal->yrepeat<<(globalshiftval+upscale.y-19);
     }
 
     if ((globalorientation&4) == 0)
@@ -4354,10 +4503,10 @@ static void classicDrawBunches(int32_t bunch)
         for (i=0; i<2; i++)
             if (checkcf&(1<<i))
             {
-                if ((haveymost[bn[i]>>3]&pow2char[bn[i]&7])==0)
+                if (bitmap_test(haveymost, bn[i])==0)
                 {
                     // init yax *most arrays for that bunch
-                    haveymost[bn[i]>>3] |= pow2char[bn[i]&7];
+                    bitmap_set(haveymost, bn[i]);
                     for (x=xdimen*bn[i]; x<xdimen*(bn[i]+1); x++)
                     {
                         yumost[x] = ydimen;
@@ -4396,7 +4545,7 @@ static void classicDrawBunches(int32_t bunch)
 #ifdef YAX_ENABLE
             // this is to prevent double-drawing of translucent masked ceilings
             if (r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->ceilingstat&256)==0 ||
-                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+                yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
 #endif
         {
             if ((sec->ceilingstat&3) == 2)
@@ -4411,7 +4560,7 @@ static void classicDrawBunches(int32_t bunch)
 #ifdef YAX_ENABLE
             // this is to prevent double-drawing of translucent masked floors
             if (r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->floorstat&256)==0 ||
-                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+                yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
 #endif
         {
             if ((sec->floorstat&3) == 2)
@@ -4539,6 +4688,8 @@ static void classicDrawBunches(int32_t bunch)
                     prepwall(z,wal);
                     wallscan(x1,x2,uplc,dwall,swall,lwall);
 
+                    globalht = nullptr;
+
                     if ((cz[2] >= cz[0]) && (cz[3] >= cz[1]))
                     {
 #ifdef YAX_ENABLE
@@ -4553,7 +4704,7 @@ static void classicDrawBunches(int32_t bunch)
                                     if (umost[x] > dmost[x]) numhits--;
                                 }
 #ifdef YAX_ENABLE
-                        }
+                    }
                         else if (getceilzofslope(sectnum, globalposx, globalposy) <= globalposz)
                             for (x=x1; x<=x2; x++)
                                 if (uplc[x] > umost[x])
@@ -4581,7 +4732,7 @@ static void classicDrawBunches(int32_t bunch)
                                 }
                             }
 #ifdef YAX_ENABLE
-                        }
+                    }
                         else if (getceilzofslope(sectnum, globalposx, globalposy) <= globalposz)
                             for (x=x1; x<=x2; x++)
                                 if (uplc[x] > umost[x])
@@ -4589,7 +4740,7 @@ static void classicDrawBunches(int32_t bunch)
                                     {
                                         umost[x] = uplc[x];
                                         if (umost[x] > dmost[x]) numhits--;
-                                    }
+                }
 #endif
                     }
                 }
@@ -4650,6 +4801,8 @@ static void classicDrawBunches(int32_t bunch)
                     if (gotswall == 0) { gotswall = 1; prepwall(z,wal); }
                     wallscan(x1,x2,uwall,dplc,swall,lwall);
 
+                    globalht = nullptr;
+
                     if ((fz[2] <= fz[0]) && (fz[3] <= fz[1]))
                     {
 #ifdef YAX_ENABLE
@@ -4663,7 +4816,7 @@ static void classicDrawBunches(int32_t bunch)
                                 if (umost[x] > dmost[x]) numhits--;
                             }
 #ifdef YAX_ENABLE
-                        }
+                    }
                         else if (getflorzofslope(sectnum, globalposx, globalposy) >= globalposz)
                             for (x = x1; x <= x2; x++)
                                 if (dplc[x] < dmost[x])
@@ -4691,7 +4844,7 @@ static void classicDrawBunches(int32_t bunch)
                                 }
                             }
 #ifdef YAX_ENABLE
-                        }
+                    }
                         else if (getflorzofslope(sectnum, globalposx, globalposy) >= globalposz)
                             for (x = x1; x <= x2; x++)
                                 if (dplc[x] < dmost[x])
@@ -4699,7 +4852,7 @@ static void classicDrawBunches(int32_t bunch)
                                     {
                                         dmost[x] = dplc[x];
                                         if (umost[x] > dmost[x]) numhits--;
-                                    }
+                }
 #endif
                     }
                 }
@@ -4722,7 +4875,7 @@ static void classicDrawBunches(int32_t bunch)
             if (numhits < 0)
                 return;
 
-            if (!(wal->cstat&32) && (gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
+            if (!(wal->cstat&32) && bitmap_test(gotsector, nextsectnum) == 0)
             {
                 if (umost[x2] < dmost[x2])
                     classicScanSector(nextsectnum);
@@ -4755,6 +4908,8 @@ static void classicDrawBunches(int32_t bunch)
 
             if (gotswall == 0) { gotswall = 1; prepwall(z,wal); }
             wallscan(x1,x2,uplc,dplc,swall,lwall);
+
+            globalht = nullptr;
 
 #ifdef YAX_ENABLE
             // TODO: slopes?
@@ -5199,7 +5354,8 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
 
 static void setup_globals_sprite1(tspriteptr_t tspr, usectorptr_t sec,
                                      int32_t yspan, int32_t yoff, int32_t tilenum,
-                                     int32_t cstat, int32_t *z1ptr, int32_t *z2ptr)
+                                     int32_t cstat, int32_t *z1ptr, int32_t *z2ptr,
+                                     vec2_t upscale = {})
 {
     int32_t logtilesizy, tsizy;
     int32_t z1, z2 = tspr->z - ((yoff*tspr->yrepeat)<<2);
@@ -5215,14 +5371,14 @@ static void setup_globals_sprite1(tspriteptr_t tspr, usectorptr_t sec,
     globalpicnum = tilenum;
     if ((unsigned)globalpicnum >= MAXTILES) globalpicnum = 0;
     // sprite panning
-    globalxpanning = (((256-spriteext[tspr->owner].xpanning)&255) * tilesiz[globalpicnum].x)>>8;
+    globalxpanning = (((256-spriteext[tspr->owner].xpanning)&255) * (tilesiz[globalpicnum].x << upscale.x))>>8;
     globalypanning = 0;
 
     globvis = globalvisibility;
     if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
 
-    logtilesizy = (picsiz[globalpicnum]>>4);
-    tsizy = tilesiz[globalpicnum].y;
+    logtilesizy = (picsiz[globalpicnum]>>4) + upscale.y;
+    tsizy = tilesiz[globalpicnum].y << upscale.y;
 
     globalshiftval = logtilesizy;
 #if !defined CLASSIC_NONPOW2_YSIZE_SPRITES
@@ -5234,14 +5390,14 @@ static void setup_globals_sprite1(tspriteptr_t tspr, usectorptr_t sec,
     if (pow2long[logtilesizy] != tsizy || tsizy >= 512)
     {
         globaltilesizy = tsizy;
-        globalyscale = (1<<22)/(tsizy*tspr->yrepeat);
+        globalyscale = (1<<(22+upscale.y))/(tsizy*tspr->yrepeat);
         globalshiftval = 0;
     }
     else
 #endif
     {
         globalshiftval = 32-globalshiftval;
-        globalyscale = divscale(512,tspr->yrepeat,globalshiftval-19);
+        globalyscale = divscale(512<<upscale.y,tspr->yrepeat,globalshiftval-19);
     }
 
     globalzd = ((int64_t)(globalposz-z1)*globalyscale)<<8;
@@ -5392,8 +5548,11 @@ draw_as_face_sprite:
         vec2_16_t const span = tilesiz[tilenum];
         vec2_t const siz = { mulscale30(isiz, xv * span.x), mulscale14(isiz, tspr->yrepeat * span.y) };
 
-        if (EDUKE32_PREDICT_FALSE((span.x>>11) >= siz.x || span.y >= (siz.y>>1)))
+        if (/*EDUKE32_PREDICT_FALSE*/((span.x>>11) >= siz.x || span.y >= (siz.y>>1)))
             return;  //Watch out for divscale overflow
+
+        vec2_t upscale = {};
+        tileLoadScaled(tilenum, &upscale);
 
         x1 = xb-(siz.x>>1);
         if (span.x&1) x1 += mulscale31(isiz,xv);  //Odd xspans
@@ -5429,12 +5588,12 @@ draw_as_face_sprite:
 
         if ((cstat&4) == 0)
         {
-            linuminc = divscale24(span.x,siz.x);
+            linuminc = divscale24(span.x<<upscale.x,siz.x);
             linum = mulscale8((lx<<8)-x1,linuminc);
         }
         else
         {
-            linuminc = -divscale24(span.x,siz.x);
+            linuminc = -divscale24(span.x<<upscale.x,siz.x);
             linum = mulscale8((lx<<8)-x2,linuminc);
         }
 
@@ -5535,7 +5694,7 @@ draw_as_face_sprite:
                 searchstat = 3; searchit = 1;
             }
 
-        setup_globals_sprite1(tspr, sec, span.y, off.y, tilenum, cstat, &z1, &z2);
+        setup_globals_sprite1(tspr, sec, span.y, off.y, tilenum, cstat, &z1, &z2, upscale);
 
         qinterpolatedown16((intptr_t)&lwall[lx],rx-lx+1,linum,linuminc);
         clearbuf(&swall[lx],rx-lx+1,mulscale19(yp,xdimscale));
@@ -5561,6 +5720,7 @@ draw_as_face_sprite:
             transmaskwallscan(lx,rx, (cstat&8)==0);
 
         drawing_sprite = 0;
+        globalht = nullptr;
     }
     else if ((cstat&48) == 16)
     {
@@ -5603,8 +5763,11 @@ draw_as_face_sprite:
         if (!get_screen_coords(p1, p2, &sx1, &sy1, &sx2, &sy2))
             return;
 
-        const int32_t topinc = -mulscale10(p1.y,xspan);
-        int32_t top = mulscale3((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y)), xspan);
+        vec2_t upscale = {};
+        tileLoadScaled(tilenum, &upscale);
+
+        const int32_t topinc = -mulscale10(p1.y,xspan<<upscale.x);
+        int32_t top = mulscale3((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y)), xspan<<upscale.x);
         const int32_t botinc = (p2.y-p1.y)>>8;
         int32_t bot = mulscale11(p1.x-p2.x,xdimen) + mulscale2(sx1-halfxdimen,botinc);
 
@@ -5623,11 +5786,11 @@ draw_as_face_sprite:
         }
 
         if (lwall[sx1] < 0) lwall[sx1] = 0;
-        if (lwall[sx2] >= xspan) lwall[sx2] = xspan-1;
+        if (lwall[sx2] >= (xspan<<upscale.x)) lwall[sx2] = (xspan<<upscale.x)-1;
 
         if ((swapped^((cstat&4)>0)) > 0)
         {
-            j = xspan-1;
+            j = (xspan<<upscale.x)-1;
             for (x=sx1; x<=sx2; x++)
                 lwall[x] = j-lwall[x];
         }
@@ -5636,7 +5799,7 @@ draw_as_face_sprite:
         rx1[MAXWALLSB-1] = p1.x; ry1[MAXWALLSB-1] = p1.y;
         rx2[MAXWALLSB-1] = p2.x; ry2[MAXWALLSB-1] = p2.y;
 
-        setup_globals_sprite1(tspr, sec, yspan, off.y, tilenum, cstat, &z1, &z2);
+        setup_globals_sprite1(tspr, sec, yspan, off.y, tilenum, cstat, &z1, &z2, upscale);
 
         if ((sec->ceilingstat&1) == 0 && z1 < sec->ceilingz)
             z1 = sec->ceilingz;
@@ -5726,14 +5889,14 @@ draw_as_face_sprite:
 
                     z1 = (xp2-xp1)*(y1-yp1) - (yp2-yp1)*(x1-xp1);
                     z2 = (xp2-xp1)*(y2-yp1) - (yp2-yp1)*(x2-xp1);
-                    if ((z1^z2) >= 0)
+                    if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
                         x = (z1+z2);
                     else
                     {
                         z1 = (x2-x1)*(yp1-y1) - (y2-y1)*(xp1-x1);
                         z2 = (x2-x1)*(yp2-y1) - (y2-y1)*(xp2-x1);
 
-                        if ((z1^z2) >= 0)
+                        if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
                             x = -(z1+z2);
                         else
                         {
@@ -5839,6 +6002,7 @@ draw_as_face_sprite:
             transmaskwallscan(sx1,sx2, (cstat&8)==0);
 
         drawing_sprite = 0;
+        globalht = nullptr;
     }
     else if ((cstat&48) == 32)
     {
@@ -5848,7 +6012,7 @@ draw_as_face_sprite:
 
         if ((cstat&4) > 0) off.x = -off.x;
         if ((cstat&8) > 0) off.y = -off.y;
-        vec2_16_t const span = tilesiz[tilenum];
+        vec2_16_t span = tilesiz[tilenum];
         const int32_t ratio = nsqrtasm(slope * slope + 16777216);
 
         //Rotate center point
@@ -6203,20 +6367,25 @@ draw_as_face_sprite:
         globalpicnum = tilenum;
         if ((unsigned)globalpicnum >= (unsigned)MAXTILES) globalpicnum = 0;
 
-        if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
         setgotpic(globalpicnum);
-        globalbufplc = waloff[globalpicnum];
+
+        vec2_t upscale = {};
+        globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
         if (slope != 0)
         {
             x = picsiz[globalpicnum]; y = ((x>>4)&15); x &= 15;
-            int const ispow2 = (pow2long[x]==span.x && pow2long[y]==span.y);
+            x += upscale.x;
+            y += upscale.y;
             sg1 = { divscale20(sg1.x, span.x) >> 16, divscale20(sg1.y, span.y) >> 16 };
             vec2f_t const tmp = { 256.f/float(span.x), 256.f/float(span.y) };
             sg_f2.x *= tmp.x;
             sg_f2.y *= tmp.y;
             sg_f.x *= tmp.x;
             sg_f.y *= tmp.y;
+            span.x <<= upscale.x;
+            span.y <<= upscale.y;
+            int const ispow2 = (pow2long[x]==span.x && pow2long[y]==span.y);
 
             //asm1 = -(globalzd>>(16-BITSOFPRECISION));
 #define LINTERPSIZ 4
@@ -6226,8 +6395,7 @@ draw_as_face_sprite:
 
             intptr_t fj = FP_OFF(palookup[globalpal]);
 
-            setupslopevlin_alsotrans((picsiz[globalpicnum]&15) + ((picsiz[globalpicnum]>>4)<<8),
-                                     waloff[globalpicnum],-ylookup[1]);
+            setupslopevlin_alsotrans(x + (y<<8),globalbufplc,-ylookup[1]);
 
             int32_t const l = Blrintf((sgzd)*(1.f/65536.f));
 
@@ -6471,6 +6639,8 @@ next_most:
             if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
 
             x = picsiz[globalpicnum]; y = ((x>>4)&15); x &= 15;
+            x += upscale.x;
+            y += upscale.y;
 #if 0
             if (pow2long[x] != xspan)
             {
@@ -6494,6 +6664,9 @@ next_most:
                 msethlineshift(x,y);
             else
                 tsethlineshift(x,y);
+
+            span.x <<= upscale.x;
+            span.y <<= upscale.y;
 
             globalispow2 = (pow2long[x]==span.x && pow2long[y]==span.y);
             globalxspan = span.x;
@@ -6616,8 +6789,8 @@ next_most:
         const int32_t xv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047]*xfactor);
         const int32_t yv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047]*xfactor);
 
-        tspr->x -= mulscale16(xv, off.x);
-        tspr->y -= mulscale16(yv, off.x);
+            tspr->x -= mulscale16(xv, off.x);
+            tspr->y -= mulscale16(yv, off.x);
 
         globvis = globalvisibility;
         if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
@@ -6693,7 +6866,7 @@ next_most:
     }
 
     if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
-        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+        bitmap_set(show2dsprite, spritenum);
 }
 
 static void renderDrawSprite(int32_t snum)
@@ -6768,10 +6941,11 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
     for (bssize_t x=xb1[z]; x<=xb2[z]; x++)
         if (dplc[x] < dwall[x])
             dwall[x] = dplc[x];
-    prepwall(z,wal);
 
     setup_globals_wall1(wal, wal->overpicnum);
     setup_globals_wall2(wal, sec->visibility, z1, z2);
+
+    prepwall(z,wal);
 
     for (bssize_t i=smostwallcnt-1; i>=0; i--)
     {
@@ -6825,6 +6999,8 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
 #endif
         transmaskwallscan(xb1[z],xb2[z], 0);
     }
+
+    globalht = nullptr;
 }
 
 
@@ -7597,9 +7773,10 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         nextv = v;
     }
 
-    if (waloff[picnum] == 0) tileLoad(picnum);
     setgotpic(picnum);
-    bufplc = waloff[picnum];
+
+    vec2_t upscale = {};
+    bufplc = tileLoadScaled(picnum, &upscale);
 
     if (palookup[dapalnum] == NULL) dapalnum = 0;
     palookupoffs = FP_OFF(palookup[dapalnum]) + (getpalookup(0, dashade)<<8);
@@ -7659,6 +7836,15 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         yv2 = -yv2;
         by = (ysiz<<16)-1-by;
     }
+
+    xsiz <<= upscale.x;
+    ysiz <<= upscale.y;
+    xv <<= upscale.x;
+    yv <<= upscale.y;
+    xv2 <<= upscale.x;
+    yv2 <<= upscale.y;
+    bx <<= upscale.x;
+    by <<= upscale.y;
 
 #if defined ENGINE_USING_A_C
     if ((dastat&RS_TRANS1)==0 && ((a&1023) == 0) && (ysiz <= 256))  //vlineasm4 has 256 high limit!
@@ -9301,7 +9487,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         if (automapping)
         {
             for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
-                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
+                bitmap_set(show2dwall, thewall[z]);
         }
 
         numbunches--;
@@ -9347,10 +9533,10 @@ int32_t wallvisible(int32_t const x, int32_t const y, int16_t const wallnum)
     auto w1 = (uwallptr_t)&wall[wallnum];
     auto w2 = (uwallptr_t)&wall[w1->point2];
 
-    int32_t const a1 = getangle(w1->x - x, w1->y - y);
-    int32_t const a2 = getangle(w2->x - x, w2->y - y);
+    int32_t const a1 = gethiq16angle(w1->x - x, w1->y - y);
+    int32_t const a2 = gethiq16angle(w2->x - x, w2->y - y);
 
-    return (((a2 + (2048 - a1)) & 2047) <= 1024);
+    return (((a2 + (F16(2048) - a1)) & 0x7FFFFFF) <= F16(1024));
 }
 
 #if 0
@@ -9957,7 +10143,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
     usectorptr_t sec;
 
     for (s=0,sec=(usectorptr_t)&sector[s]; s<numsectors; s++,sec++)
-        if (show2dsector[s>>3]&pow2char[s&7])
+        if (bitmap_test(show2dsector, s))
         {
 #ifdef YAX_ENABLE
             if (yax_getbunch(s, YAX_FLOOR) >= 0 && (sector[s].floorstat&(256+128))==0)
@@ -10022,7 +10208,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
                     tsprite[sortnum++].owner = i;
                 }
             }
-            gotsector[s>>3] |= pow2char[s&7];
+            bitmap_set(gotsector, s);
 
             globalorientation = (int32_t)sec->floorstat;
             if ((globalorientation&1) != 0) continue;
@@ -12343,13 +12529,13 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             wall[w].x = dax;
             wall[w].y = day;
-            walbitmap[w>>3] |= pow2char[w&7];
+            bitmap_set(walbitmap, w);
 
             for (YAX_ITER_WALLS(w, j, tmpcf))
             {
-                if ((walbitmap[j>>3]&pow2char[j&7])==0)
+                if (bitmap_test(walbitmap, j)==0)
                 {
-                    walbitmap[j>>3] |= pow2char[j&7];
+                    bitmap_set(walbitmap, j);
                     yaxwalls[numyaxwalls++] = j;
                 }
             }
@@ -12382,7 +12568,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
                     break;
             }
 
-            if ((walbitmap[w>>3] & pow2char[w&7]))
+            if (bitmap_test(walbitmap, w))
             {
                 if (clockwise)
                     break;
@@ -12399,13 +12585,13 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
         int32_t w;
         // TODO: extern a separate bitmap instead?
         for (w=0; w<numwalls; w++)
-            if (walbitmap[w>>3] & pow2char[w&7])
+            if (bitmap_test(walbitmap, w))
             {
-                editwall[w>>3] |= 1<<(w&7);
+                bitmap_set(editwall, w);
                 if (flags&2)
                 {
                     int wn = lastwall(w);
-                    editwall[wn>>3] |= 1<<(wn&7);
+                    bitmap_set(editwall, wn);
                 }
             }
     }
@@ -12874,7 +13060,7 @@ restart:
                     mcf = YAX_CEILING;
                     goto restart;
                 }
-            }
+        }
 
             if ((mcf == -1 || mcf == YAX_FLOOR) && z > fz)
             {
@@ -12888,7 +13074,7 @@ restart:
                     mcf = YAX_FLOOR;
                     goto restart;
                 }
-            }
+        }
 #endif
             if ((nofirstzcheck || (z >= cz && z <= fz)) && inside_p(x, y, *sectnum))
                 return;

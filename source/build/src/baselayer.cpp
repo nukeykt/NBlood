@@ -234,13 +234,21 @@ void engineSetupLogging(int &argc, char **argv)
     loguru::set_thread_name("main");
     loguru::set_verbosity_to_name_callback(&engineVerbosityCallback);
     loguru::add_callback(CB_ENGINE, engineLogCallback, nullptr, LOG_ENGINE_MAX);
-
+    loguru::set_fatal_handler([](const loguru::Message& UNUSED(message)){
+        UNREFERENCED_CONST_PARAMETER(message);
+#ifdef DEBUGGINGAIDS
+        debug_break();
+#endif
+        app_crashhandler();
+        Bexit(EXIT_FAILURE);
+    });
     loguru::Options initopts;
     initopts.verbosity_flag = nullptr;
+    initopts.signal_options.unsafe_signal_handler = true;
     loguru::init(argc, argv, initopts);
 }
 
-void engineSetLogFile(const char* fn, loguru::Verbosity verbosity, loguru::FileMode mode /*= loguru::Truncate*/)
+void engineSetLogFile(const char* fn, loguru::Verbosity verbosity /*= LOG_ENGINE_MAX*/, loguru::FileMode mode /*= loguru::Truncate*/)
 {
     loguru::g_stderr_verbosity = verbosity;
     loguru::remove_callback(CB_ENGINE);
@@ -810,7 +818,7 @@ int32_t baselayer_init(void)
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
         { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
-        { "r_maxfps", "limit the frame rate", (void *)&r_maxfps, CVAR_INT | CVAR_FUNCPTR, -1, 1000 },
+        { "r_maxfps", "limit the frame rate", (void *)&r_maxfps, CVAR_INT | CVAR_FUNCPTR, -2, 1000 },
 #ifdef YAX_ENABLE
         { "r_tror_nomaskpass", "enable/disable additional pass in TROR software rendering", (void *)&r_tror_nomaskpass, CVAR_BOOL, 0, 1 },
 #endif
@@ -884,15 +892,15 @@ void maybe_redirect_outputs(void)
 #endif
 }
 
-int engineFPSLimit(void)
+int engineFPSLimit(bool const throttle)
 {
     static uint64_t nextFrameTicks;
     static uint64_t savedFrameDelay;
 
-    if (!r_maxfps)
+    if (r_maxfps == -2)
         return true;
 
-    g_frameDelay = calcFrameDelay(r_maxfps);
+    g_frameDelay = calcFrameDelay(!throttle || ((unsigned)(r_maxfps-1) < (unsigned)refreshfreq) ? r_maxfps : -1);
 
     uint64_t frameTicks = timerGetNanoTicks();
 

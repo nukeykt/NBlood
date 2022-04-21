@@ -175,6 +175,10 @@ Website: www.ilikebigbits.com
 	#define LOGURU_USE_FMTLIB 0
 #endif
 
+#ifndef LOGURU_USE_LOCALE
+	#define LOGURU_USE_LOCALE 0
+#endif
+
 #ifndef LOGURU_WITH_FILEABS
 	#define LOGURU_WITH_FILEABS 0
 #endif
@@ -193,6 +197,14 @@ Website: www.ilikebigbits.com
 		#define LOGURU_RTTI 1
 	#endif
 #endif
+#endif
+
+#ifdef LOGURU_USE_ANONYMOUS_NAMESPACE
+	#define LOGURU_ANONYMOUS_NAMESPACE_BEGIN namespace {
+	#define LOGURU_ANONYMOUS_NAMESPACE_END }
+#else
+	#define LOGURU_ANONYMOUS_NAMESPACE_BEGIN
+	#define LOGURU_ANONYMOUS_NAMESPACE_END
 #endif
 
 // --------------------------------------------------------------------
@@ -250,7 +262,10 @@ Website: www.ilikebigbits.com
 #define LOGURU_FREE(p)        _xfree(p)
 // END EDUKE32 MODIFICATION
 
+#include <stdarg.h>
+
 // --------------------------------------------------------------------
+LOGURU_ANONYMOUS_NAMESPACE_BEGIN
 
 namespace loguru
 {
@@ -637,6 +652,10 @@ namespace loguru
 	LOGURU_EXPORT
 	void log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(4, 5);
 
+	// Actual logging function.
+	LOGURU_EXPORT
+	void vlog(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, va_list) LOGURU_PRINTF_LIKE(4, 0);
+
 	// Log without any preamble or indentation.
 	LOGURU_EXPORT
 	void raw_log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(4, 5);
@@ -647,8 +666,11 @@ namespace loguru
 	{
 	public:
 		LogScopeRAII() : _file(nullptr) {} // No logging
+		LogScopeRAII(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, va_list vlist) LOGURU_PRINTF_LIKE(5, 0);
 		LogScopeRAII(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(5, 6);
 		~LogScopeRAII();
+
+		void Init(LOGURU_FORMAT_STRING_TYPE format, va_list vlist) LOGURU_PRINTF_LIKE(2, 0);
 
 #if defined(_MSC_VER) && _MSC_VER > 1800
 		// older MSVC default move ctors close the scope on move. See
@@ -1022,6 +1044,8 @@ namespace loguru
 	*/
 } // namespace loguru
 
+LOGURU_ANONYMOUS_NAMESPACE_END
+
 // --------------------------------------------------------------------
 // Logging macros
 
@@ -1193,6 +1217,8 @@ namespace loguru
 #include <sstream> // Adds about 38 kLoC on clang.
 #include <string>
 
+LOGURU_ANONYMOUS_NAMESPACE_BEGIN
+
 namespace loguru
 {
 	// Like sprintf, but returns the formated text.
@@ -1307,6 +1333,8 @@ namespace loguru
 	inline long long          referenceable_value(long long          t) { return t; }
 	inline unsigned long long referenceable_value(unsigned long long t) { return t; }
 } // namespace loguru
+
+LOGURU_ANONYMOUS_NAMESPACE_END
 
 // -----------------------------------------------
 // Logging macros:

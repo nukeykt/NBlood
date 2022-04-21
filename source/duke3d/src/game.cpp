@@ -90,6 +90,8 @@ int32_t g_BenchmarkMode = BENCHMARKMODE_OFF;
 
 int32_t g_Debug = 0;
 
+int32_t g_vm_preempt = 1;
+
 #ifndef EDUKE32_STANDALONE
 static const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "NAM.RTS", "NAPALM.RTS", "WW2GI.RTS" };
 #endif
@@ -4619,7 +4621,7 @@ void G_HandleLocalKeys(void)
 //    CONTROL_ProcessBinds();
     auto &myplayer = *g_player[myconnectindex].ps;
 
-    if (ud.recstat == 2)
+    if (ud.recstat == 2 || (myplayer.gm & MODE_MENU) == MODE_MENU)
     {
         ControlInfo noshareinfo;
         CONTROL_GetInput(&noshareinfo);
@@ -5453,7 +5455,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     LOG_F(ERROR, "Could not find file '%s'.", fileName);
                 else
                 {
-                    LOG_F(ERROR, "Using file '%s' as game data.", fileName);
+                    LOG_F(INFO, "Using file '%s' as game data.", fileName);
                     if (!g_noAutoLoad && !ud.setup.noautoload)
                         G_DoAutoload(fileName);
                 }
@@ -6586,7 +6588,6 @@ int app_main(int argc, char const* const* argv)
         OSD_SetLogFile(cwd);
         Xfree(homedir);
     }
-    else
 #endif
 
     osdcallbacks_t callbacks = {};
@@ -7142,7 +7143,7 @@ MAIN_LOOP_RESTART:
         {
             idle();
         }
-        else if (engineFPSLimit() || g_saveRequested)
+        else if (engineFPSLimit((myplayer.gm & MODE_MENU) == MODE_MENU) || g_saveRequested)
         {
             if (!g_saveRequested)
             {

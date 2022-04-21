@@ -54,13 +54,14 @@
 #define LOG_USER 0
 #endif
 
+#include <signal.h>
+
 #ifdef _WIN32
 	#include <direct.h>
     #include <share.h>
 
 	#define localtime_r(a, b) localtime_s(b, a) // No localtime_r with MSVC, but arguments are swapped for localtime_s
 #else
-	#include <signal.h>
 	#include <sys/stat.h> // mkdir
 	#include <unistd.h>   // STDERR_FILENO
 #endif
@@ -81,23 +82,27 @@
 
 // TODO: use defined(_POSIX_VERSION) for some of these things?
 
+#ifndef LOGURU_USE_LOCALE
+	#define LOGURU_USE_LOCALE 0
+#endif
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 	#define LOGURU_PTHREADS    0
 	#define LOGURU_WINTHREADS  1
 	#ifndef LOGURU_STACKTRACES
 		#define LOGURU_STACKTRACES 0
 	#endif
-#elif defined(__rtems__) || defined(__ANDROID__) || defined(__FreeBSD__) || !defined(__GLIBC__)
-	#define LOGURU_PTHREADS    1
-	#define LOGURU_WINTHREADS  0
-	#ifndef LOGURU_STACKTRACES
-		#define LOGURU_STACKTRACES 0
-	#endif
 #else
 	#define LOGURU_PTHREADS    1
 	#define LOGURU_WINTHREADS  0
-	#ifndef LOGURU_STACKTRACES
-		#define LOGURU_STACKTRACES 1
+	#ifdef __GLIBC__
+		#ifndef LOGURU_STACKTRACES
+			#define LOGURU_STACKTRACES 1
+		#endif
+	#else
+		#ifndef LOGURU_STACKTRACES
+			#define LOGURU_STACKTRACES 0
+		#endif
 	#endif
 #endif
 
@@ -145,6 +150,7 @@
    #define LOGURU_PTLS_NAMES 0
 #endif
 
+LOGURU_ANONYMOUS_NAMESPACE_BEGIN
 
 namespace loguru
 {
@@ -496,8 +502,19 @@ namespace loguru
 		for (int arg_it = 1; arg_it < argc; ++arg_it) {
 			auto cmd = argv[arg_it];
 			auto arg_len = strlen(verbosity_flag);
-			bool is_alpha = std::isalpha(cmd[arg_len], std::locale(""));
-			if (strncmp(cmd, verbosity_flag, arg_len) == 0 && !is_alpha) {
+			bool last_is_alpha = false;
+#if LOGURU_USE_LOCALE
+			try {  // locale variant of isalpha will throw on error
+				last_is_alpha = std::isalpha(cmd[arg_len], std::locale(""));
+			}
+			catch (...) {
+				last_is_alpha = std::isalpha(cmd[arg_len]);
+			}
+#else
+			last_is_alpha = std::isalpha(cmd[arg_len]);
+#endif
+
+			if (strncmp(cmd, verbosity_flag, arg_len) == 0 && !last_is_alpha) {
 				out_argc -= 1;
 				auto value_str = cmd + arg_len;
 				if (value_str[0] == '\0') {
@@ -1588,9 +1605,14 @@ namespace loguru
 	{
 		va_list vlist;
 		va_start(vlist, format);
+		vlog(verbosity, file, line, format, vlist);
+		va_end(vlist);
+	}
+
+	void vlog(Verbosity verbosity, const char* file, unsigned line, const char* format, va_list vlist)
+	{
 		auto buff = vtextprintf(format, vlist);
 		log_to_everywhere(1, verbosity, file, line, "", buff.c_str());
-		va_end(vlist);
 	}
 
 	void raw_log(Verbosity verbosity, const char* file, unsigned line, const char* format, ...)
@@ -1617,31 +1639,19 @@ namespace loguru
 		s_needs_flushing = false;
 	}
 
-	LogScopeRAII::LogScopeRAII(Verbosity verbosity, const char* file, unsigned line, const char* format, ...)
-		: _verbosity(verbosity), _file(file), _line(line)
+	LogScopeRAII::LogScopeRAII(Verbosity verbosity, const char* file, unsigned line, const char* format, va_list vlist) :
+		_verbosity(verbosity), _file(file), _line(line)
 	{
-		if (verbosity <= current_verbosity_cutoff()) {
-			std::lock_guard<std::recursive_mutex> lock(s_mutex);
-			_indent_stderr = (verbosity <= g_stderr_verbosity);
-			_start_time_ns = now_ns();
-			va_list vlist;
-			va_start(vlist, format);
-			vsnprintf(_name, sizeof(_name), format, vlist);
-			log_to_everywhere(1, _verbosity, file, line, "{ ", _name);
-			va_end(vlist);
+		this->Init(format, vlist);
+	}
 
-			if (_indent_stderr) {
-				++s_stderr_indentation;
-			}
-
-			for (auto& p : s_callbacks) {
-				if (verbosity <= p.verbosity) {
-					++p.indentation;
-				}
-			}
-		} else {
-			_file = nullptr;
-		}
+	LogScopeRAII::LogScopeRAII(Verbosity verbosity, const char* file, unsigned line, const char* format, ...) :
+		_verbosity(verbosity), _file(file), _line(line)
+	{
+		va_list vlist;
+		va_start(vlist, format);
+		this->Init(format, vlist);
+		va_end(vlist);
 	}
 
 	LogScopeRAII::~LogScopeRAII()
@@ -1671,6 +1681,29 @@ namespace loguru
 #else
 			log_to_everywhere(1, _verbosity, _file, _line, "}", "");
 #endif
+		}
+	}
+
+	void LogScopeRAII::Init(const char* format, va_list vlist)
+	{
+		if (_verbosity <= current_verbosity_cutoff()) {
+			std::lock_guard<std::recursive_mutex> lock(s_mutex);
+			_indent_stderr = (_verbosity <= g_stderr_verbosity);
+			_start_time_ns = now_ns();
+			vsnprintf(_name, sizeof(_name), format, vlist);
+			log_to_everywhere(1, _verbosity, _file, _line, "{ ", _name);
+
+			if (_indent_stderr) {
+				++s_stderr_indentation;
+			}
+
+			for (auto& p : s_callbacks) {
+				if (_verbosity <= p.verbosity) {
+					++p.indentation;
+				}
+			}
+		} else {
+			_file = nullptr;
 		}
 	}
 
@@ -1962,49 +1995,25 @@ namespace loguru
 // 8bodP' 88  YboodP 88  Y8 dP""""Yb 88ood8 8bodP'
 // ----------------------------------------------------------------------------
 
-#ifdef _WIN32
-namespace loguru {
-	void install_signal_handlers(const SignalOptions& signal_options)
-	{
-		(void)signal_options;
-		// TODO: implement signal handlers on windows
-	}
-} // namespace loguru
-
-#else // _WIN32
-
 namespace loguru
 {
-	void write_to_stderr(const char* data, size_t size)
-	{
-		auto result = write(STDERR_FILENO, data, size);
-		(void)result; // Ignore errors.
-	}
+	void write_to_stderr(const char* data, size_t size);
 
 	void write_to_stderr(const char* data)
 	{
 		write_to_stderr(data, strlen(data));
 	}
 
-	void call_default_signal_handler(int signal_number)
-	{
-		struct sigaction sig_action;
-		memset(&sig_action, 0, sizeof(sig_action));
-		sigemptyset(&sig_action.sa_mask);
-		sig_action.sa_handler = SIG_DFL;
+	void call_default_signal_handler(int signal_number);
 
-		// Note: Explicitly ignore sigaction's return value.
-		//       It's only used when setting up the signal handlers.
-		(void) sigaction(signal_number, &sig_action, NULL);
-		kill(getpid(), signal_number);
-	}
-
-	void signal_handler(int signal_number, siginfo_t*, void*)
+	void signal_handler(int signal_number)
 	{
 		const char* signal_name = "UNKNOWN SIGNAL";
 
 		if (signal_number == SIGABRT) { signal_name = "SIGABRT"; }
+#ifndef _WIN32
 		if (signal_number == SIGBUS)  { signal_name = "SIGBUS";  }
+#endif
 		if (signal_number == SIGFPE)  { signal_name = "SIGFPE";  }
 		if (signal_number == SIGILL)  { signal_name = "SIGILL";  }
 		if (signal_number == SIGINT)  { signal_name = "SIGINT";  }
@@ -2057,6 +2066,78 @@ namespace loguru
 
 		call_default_signal_handler(signal_number);
 	}
+} // namespace loguru
+
+#ifdef _WIN32
+namespace loguru
+{
+#ifdef _MSC_VER
+	_crt_signal_t default_handler[NSIG] = {};
+#else
+	__p_sig_fn_t default_handler[NSIG] = {};
+#endif
+
+	void write_to_stderr(const char* data, size_t size)
+	{
+		HANDLE hOut = GetStdHandle(STD_ERROR_HANDLE);
+		WriteFile(hOut, data, size, nullptr, nullptr);
+	}
+
+	void call_default_signal_handler(int signal_number)
+	{
+		if (default_handler[signal_number] && default_handler[signal_number] != SIG_ERR)
+			default_handler[signal_number](signal_number);
+	}
+
+	void install_signal_handlers(const SignalOptions& signal_options)
+	{
+		if (signal_options.sigabrt) {
+			CHECK_F((default_handler[SIGABRT] = signal(SIGABRT, signal_handler)) != SIG_ERR, "Failed to install handler for SIGABRT");
+		}
+		if (signal_options.sigfpe) {
+			CHECK_F((default_handler[SIGFPE] = signal(SIGFPE, signal_handler)) != SIG_ERR, "Failed to install handler for SIGFPE");
+		}
+		if (signal_options.sigill) {
+			CHECK_F((default_handler[SIGILL] = signal(SIGILL, signal_handler)) != SIG_ERR, "Failed to install handler for SIGILL");
+		}
+		if (signal_options.sigint) {
+			CHECK_F((default_handler[SIGINT] = signal(SIGINT, signal_handler)) != SIG_ERR, "Failed to install handler for SIGINT");
+		}
+		if (signal_options.sigsegv) {
+			CHECK_F((default_handler[SIGSEGV] = signal(SIGSEGV, signal_handler)) != SIG_ERR, "Failed to install handler for SIGSEGV");
+		}
+		if (signal_options.sigterm) {
+			CHECK_F((default_handler[SIGTERM] = signal(SIGTERM, signal_handler)) != SIG_ERR, "Failed to install handler for SIGTERM");
+		}
+	}
+} // namespace loguru
+
+#else // _WIN32
+namespace loguru
+{
+	void write_to_stderr(const char* data, size_t size)
+	{
+		auto result = write(STDERR_FILENO, data, size);
+		(void)result; // Ignore errors.
+	}
+
+	void call_default_signal_handler(int signal_number)
+	{
+		struct sigaction sig_action;
+		memset(&sig_action, 0, sizeof(sig_action));
+		sigemptyset(&sig_action.sa_mask);
+		sig_action.sa_handler = SIG_DFL;
+
+		// Note: Explicitly ignore sigaction's return value.
+		//       It's only used when setting up the signal handlers.
+		(void) sigaction(signal_number, &sig_action, NULL);
+		kill(getpid(), signal_number);
+	}
+
+	void signal_handler(int signal_number, siginfo_t*, void*)
+	{
+		signal_handler(signal_number);
+	}
 
 	void install_signal_handlers(const SignalOptions& signal_options)
 	{
@@ -2091,14 +2172,14 @@ namespace loguru
 		}
 	}
 } // namespace loguru
-
 #endif // _WIN32
-
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #elif defined(_MSC_VER)
 #pragma warning(pop)
 #endif
+
+LOGURU_ANONYMOUS_NAMESPACE_END
 
 #endif // LOGURU_IMPLEMENTATION

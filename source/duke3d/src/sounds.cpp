@@ -1015,7 +1015,7 @@ int A_PlaySound(int soundNum, int spriteNum)
 
 void S_StopEnvSound(int soundNum, int spriteNum)
 {
-    if (EDUKE32_PREDICT_FALSE(!S_SoundIsValid(soundNum) || g_sounds[soundNum] == &nullsound || g_sounds[soundNum]->playing == 0))
+    if (EDUKE32_PREDICT_FALSE(!S_SoundIsValid(soundNum)) || g_sounds[soundNum]->playing == 0)
         return;
 
     int j;
@@ -1070,7 +1070,7 @@ void S_StopAllSounds(void)
 
 void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
 {
-    if (EDUKE32_PREDICT_FALSE(g_sounds[soundNum] == &nullsound || g_sounds[soundNum]->playing == 0))
+    if (EDUKE32_PREDICT_FALSE(g_sounds[soundNum] == &nullsound) || g_sounds[soundNum]->playing == 0)
         return;
 
     for (int j=0; j < MAXSOUNDINSTANCES; ++j)

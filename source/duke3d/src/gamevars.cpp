@@ -749,7 +749,7 @@ void Gv_NewVar(const char *pszLabel, intptr_t lValue, uint32_t dwFlags)
         if (EDUKE32_PREDICT_FALSE(aGameVars[gV].flags & (GAMEVAR_PTR_MASK)))
         {
             C_ReportError(-1);
-            LOG_F(WARNING, "%s:%d: cannot redefine internal gamevar `%s'.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
+            LOG_F(WARNING, "%s:%d: cannot redefine internal gamevar '%s'.",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
             return;
         }
         else if (EDUKE32_PREDICT_FALSE(!(aGameVars[gV].flags & GAMEVAR_SYSTEM)))
@@ -997,7 +997,7 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
     return returnValue;
 
 badindex:
-    LOG_F(ERROR, "Invalid index %d for '%s'", returnValue,
+    LOG_F(ERROR, "%s:%d: Invalid index %d for '%s'", VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), returnValue,
                   (gameVar & GV_FLAG_ARRAY) ? aGameArrays[gv].szLabel : aGameVars[gv].szLabel);
     return -1;
 }

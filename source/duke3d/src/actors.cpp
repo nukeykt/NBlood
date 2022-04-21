@@ -3280,7 +3280,8 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
                     case 32768:
                         otherSprite &= (MAXWALLS - 1);
 
-                        if (pProj->workslike & PROJECTILE_BOUNCESOFFMIRRORS && wall[otherSprite].overpicnum == MIRROR)
+                        if (pProj->workslike & PROJECTILE_BOUNCESOFFMIRRORS
+                            && (wall[otherSprite].overpicnum == MIRROR || wall[otherSprite].picnum == MIRROR))
                         {
                             Proj_BounceOffWall(pSprite, otherSprite);
                             pSprite->owner = spriteNum;
@@ -3298,7 +3299,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
                             if (pProj->workslike & PROJECTILE_BOUNCESOFFWALLS && pSprite->yvel > 0)
                             {
-                                if (wall[otherSprite].overpicnum != MIRROR)
+                                if (wall[otherSprite].overpicnum != MIRROR && wall[otherSprite].picnum != MIRROR)
                                     pSprite->yvel--;
 
                                 Proj_BounceOffWall(pSprite, otherSprite);
@@ -3512,14 +3513,19 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                 if (pSprite->picnum == FIRELASER)
                 {
-                    for (bssize_t k = -3; k < 2; k++)
+                    for (int k = -3; k < 2; k++)
                     {
-                        int const newSprite
-                            = A_InsertSprite(pSprite->sectnum, pSprite->x + ((k * sintable[(pSprite->ang + 512) & 2047]) >> 9),
-                                pSprite->y + ((k * sintable[pSprite->ang & 2047]) >> 9),
-                                pSprite->z + ((k * ksgn(pSprite->zvel)) * klabs(pSprite->zvel / 24)), FIRELASER, -40 + ksgn(k) * (klabs(k) << 2),
-                                pSprite->xrepeat, pSprite->yrepeat, 0, 0, 0, pSprite->owner, 5);
+                        vec3_t const offset = { (k * sintable[(pSprite->ang + 512) & 2047]) >> 9,
+                                                (k * sintable[pSprite->ang & 2047]) >> 9,
+                                                (k * ksgn(pSprite->zvel)) * klabs(pSprite->zvel / 24) };
 
+                        int const newSprite
+                            = A_InsertSprite(pSprite->sectnum, pSprite->x + offset.x,
+                                pSprite->y + offset.y,
+                                pSprite->z + offset.z, FIRELASER, -40 + ksgn(k) * (klabs(k) << 2),
+                                pSprite->xrepeat, pSprite->yrepeat, 0, 0, 0, pSprite->owner, STAT_MISC);
+
+                        actor[newSprite].bpos = actor[spriteNum].bpos + offset;
                         sprite[newSprite].cstat = 128;
                         sprite[newSprite].pal   = pSprite->pal;
                     }
@@ -3571,7 +3577,8 @@ ACTOR_STATIC void G_MoveWeapons(void)
                             moveSprite &= (MAXWALLS - 1);
 
                             if (pSprite->picnum != RPG && pSprite->picnum != FREEZEBLAST && pSprite->picnum != SPIT
-                                && (!WORLDTOUR || pSprite->picnum != FIREBALL) && wall[moveSprite].overpicnum == MIRROR)
+                                && (!WORLDTOUR || pSprite->picnum != FIREBALL)
+                                && (wall[moveSprite].overpicnum == MIRROR || wall[moveSprite].picnum == MIRROR))
                             {
                                 Proj_BounceOffWall(pSprite, moveSprite);
                                 pSprite->owner = spriteNum;
@@ -3584,7 +3591,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                                 if (pSprite->picnum == FREEZEBLAST)
                                 {
-                                    if (wall[moveSprite].overpicnum != MIRROR)
+                                    if (wall[moveSprite].overpicnum != MIRROR && wall[moveSprite].picnum != MIRROR)
                                     {
                                         pSprite->extra >>= 1;
                                         pSprite->yvel--;
@@ -9215,7 +9222,7 @@ static void G_RecordOldSpritePos(void)
     while (statNum < MAXSTATUS);
 }
 
-static void G_DoEventGame(int const nEventID)
+static void G_DoEventGame(int const nEventID, bool const allowDrawing = true)
 {
     if (!VM_HaveEvent(nEventID))
         return;
@@ -9231,7 +9238,9 @@ static void G_DoEventGame(int const nEventID)
             int32_t   playerDist;
             int const playerNum = A_FindPlayer(&sprite[spriteNum], &playerDist);
             VM_ExecuteEvent(nEventID, spriteNum, playerNum, playerDist);
-            dukeMaybeDrawFrame();
+
+            if (allowDrawing)
+                dukeMaybeDrawFrame();
         }
     }
     while (statNum < MAXSTATUS);
@@ -9247,7 +9256,7 @@ void G_MoveWorld(void)
     MICROPROFILE_SCOPEI("Game", "MoveWorld", MP_YELLOW);
 
     VM_OnEvent(EVENT_PREWORLD);
-    G_DoEventGame(EVENT_PREGAME);
+    G_DoEventGame(EVENT_PREGAME, false);
     G_RecordOldSpritePos();
 
     {

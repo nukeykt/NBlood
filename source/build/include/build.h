@@ -92,7 +92,7 @@ enum rendmode_t {
 #define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
 
 #define MAXTILES 30720
-#define MAXUSERTILES (MAXTILES-16)  // reserve 16 tiles at the end
+#define MAXUSERTILES (MAXTILES-256)  // reserve 256 tiles at the end
 
 #define MAXVOXELS 1024
 #define MAXSTATUS 1024
@@ -1209,6 +1209,7 @@ typedef struct {
 
 typedef struct artheader_t {
     int32_t tilestart, tileend, numtiles;
+    uint8_t* tileread;
 } artheader_t;
 #define ARTv1_UNITOFFSET ((signed)(4*sizeof(int32_t) + 2*sizeof(int16_t) + sizeof(picanm_t)))
 
@@ -1235,8 +1236,8 @@ int32_t artReadHeader(buildvfs_kfd fil, char const *fn, artheader_t *local);
 int32_t artReadHeaderFromBuffer(uint8_t const *buf, artheader_t *local);
 int32_t artCheckUnitFileHeader(uint8_t const *buf, int32_t length);
 void    tileConvertAnimFormat(int32_t picnum, uint32_t const picanmdisk);
-void    artReadManifest(buildvfs_kfd fil, artheader_t const *local);
-void    artPreloadFile(buildvfs_kfd fil, artheader_t const *local);
+void    artReadManifest(buildvfs_kfd fil, artheader_t * const local);
+void    artPreloadFile(buildvfs_kfd fil, artheader_t * const local);
 int32_t artLoadFiles(const char *filename, int32_t askedsize);
 void    artClearMapArt(void);
 void    artSetupMapArt(const char *filename);

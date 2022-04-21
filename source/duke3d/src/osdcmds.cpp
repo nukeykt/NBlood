@@ -621,7 +621,7 @@ static int osdcmd_setvar(osdcmdptr_t parm)
 
     if (parm->numparms != 2)
         return OSDCMD_SHOWHELP;
-    
+
     int i = hash_find(&h_gamevars, parm->parms[1]);
     int const newValue = (i == -1) ? Batol(parm->parms[1]) : Gv_GetVar(i, g_player[myconnectindex].ps->i, myconnectindex);
 
@@ -1621,7 +1621,9 @@ int32_t registerosdcommands(void)
         { "cl_weaponsway", "weapon sways when moving" CVAR_BOOL_OPTSTR, (void *)&ud.weaponsway, CVAR_BOOL, 0, 1 },
         { "cl_weaponswitch", "bitmask controlling switching weapon when out of ammo or a new weapon is picked up:\n 0: disabled\n 1: if new\n 2: if empty\n 4: determined by wchoice", (void *)&ud.weaponswitch, CVAR_INT|CVAR_MULTI, 0, 7 },
 
-        { "cl_keybindorder", "default order for the keybind menu (overridden by custom order, requires a restart):\n 0: classic\n 1: modern", (void *)&kbo_type_cvar, CVAR_BOOL, 0, 1 },
+        { "cl_keybindorder", "default order for the keybind menu (overridden by custom order, requires a restart):\n 0: classic\n 1: modern", (void *)&cvar_kbo_type, CVAR_BOOL, 0, 1 },
+        { "cl_kbconfirm", "on assigning a keyboard bind, will display a confirmation dialog if key is already assigned:\n 0: disabled\n 1: enabled", (void *)&cvar_kbconfirm, CVAR_BOOL, 0, 1 },
+
 
         { "color", "player palette", (void *)&ud.color, CVAR_INT|CVAR_MULTI, 0, MAXPALOOKUPS-1 },
 
@@ -1741,6 +1743,7 @@ int32_t registerosdcommands(void)
         { "touch_sens_look_y", "touch input sensitivity for looking up/down", (void *) &droidinput.pitch_sens, CVAR_FLOAT, 1, 9 },
         { "touch_invert", "invert look up/down touch input", (void *) &droidinput.invertLook, CVAR_BOOL, 0, 1 },
 #endif
+        { "vm_preempt", "drawing preempts CON VM" CVAR_BOOL_OPTSTR, (void *)&g_vm_preempt, CVAR_BOOL|CVAR_NOSAVE, 0, 1 },
         { "wchoice","weapon priority for automatically switching on empty or pickup", (void *)ud.wchoice, CVAR_STRING|CVAR_FUNCPTR, 0, MAX_WEAPONS },
     };
 
@@ -1847,4 +1850,3 @@ int32_t registerosdcommands(void)
 
     return 0;
 }
-

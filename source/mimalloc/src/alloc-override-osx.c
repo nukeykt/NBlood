@@ -32,8 +32,7 @@ terms of the MIT license. A copy of the license can be found in the file
 extern "C" {
 #endif
 
-#if defined(MAC_OS_X_VERSION_10_6) && \
-    MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 // only available from OSX 10.6
 extern malloc_zone_t* malloc_default_purgeable_zone(void) __attribute__((weak_import));
 #endif
@@ -44,7 +43,7 @@ extern malloc_zone_t* malloc_default_purgeable_zone(void) __attribute__((weak_im
 
 static size_t zone_size(malloc_zone_t* zone, const void* p) {
   MI_UNUSED(zone);
-  //if (!mi_is_in_heap_region(p)){ return 0; } // not our pointer, bail out
+  if (!mi_is_in_heap_region(p)){ return 0; } // not our pointer, bail out
   return mi_usable_size(p);
 }
 
@@ -65,7 +64,7 @@ static void* zone_valloc(malloc_zone_t* zone, size_t size) {
 
 static void zone_free(malloc_zone_t* zone, void* p) {
   MI_UNUSED(zone);
-  mi_free(p);
+  mi_cfree(p);
 }
 
 static void* zone_realloc(malloc_zone_t* zone, void* p, size_t newsize) {
@@ -184,6 +183,10 @@ static boolean_t intro_zone_locked(malloc_zone_t* zone) {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wc99-extensions"
+#endif
+
 static malloc_introspection_t mi_introspect = {
   .enumerator = &intro_enumerator,
   .good_size = &intro_good_size,
@@ -214,7 +217,7 @@ static malloc_zone_t mi_malloc_zone = {
   .batch_free = &zone_batch_free,
   .introspect = &mi_introspect,  
 #if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
-  #if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+  #if defined(MAC_OS_X_VERSION_10_14) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14)
   .version = 10,
   #else
   .version = 9,
@@ -223,7 +226,7 @@ static malloc_zone_t mi_malloc_zone = {
   .memalign = &zone_memalign,
   .free_definite_size = &zone_free_definite_size,
   .pressure_relief = &zone_pressure_relief,
-  #if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+  #if defined(MAC_OS_X_VERSION_10_14) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14)
   .claimed_address = &zone_claimed_address,
   #endif
 #else
@@ -370,7 +373,7 @@ __attribute__((used)) static const struct mi_interpose_s _mi_zone_interposes[]  
   MI_INTERPOSE_MI(_malloc_fork_child),
   MI_INTERPOSE_MI(_malloc_fork_parent),
   MI_INTERPOSE_MI(_malloc_fork_prepare),
-
+  
   MI_INTERPOSE_ZONE(zone_batch_free),
   MI_INTERPOSE_ZONE(zone_batch_malloc),
   MI_INTERPOSE_ZONE(zone_calloc),

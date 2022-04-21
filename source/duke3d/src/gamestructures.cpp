@@ -1002,7 +1002,6 @@ memberlabel_t const UserdefsLabels[]=
     { "team",                   USERDEFS_TEAM,                   0, 0, -1 },
     { "viewbob",                USERDEFS_VIEWBOB,                0, 0, -1 },
     { "weaponsway",             USERDEFS_WEAPONSWAY,             0, 0, -1 },
-    { "angleinterpolation",     USERDEFS_ANGLEINTERPOLATION,     0, 0, -1 },
     { "obituaries",             USERDEFS_OBITUARIES,             0, 0, -1 },
     { "levelstats",             USERDEFS_LEVELSTATS,             0, 0, -1 },
     { "crosshairscale",         USERDEFS_CROSSHAIRSCALE,         0, 0, -1 },
@@ -1201,7 +1200,6 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
         case USERDEFS_TEAM:                   labelNum = ud.team;                         break;
         case USERDEFS_VIEWBOB:                labelNum = ud.viewbob;                      break;
         case USERDEFS_WEAPONSWAY:             labelNum = ud.weaponsway;                   break;
-        case USERDEFS_ANGLEINTERPOLATION:     labelNum = ud.angleinterpolation;           break;
         case USERDEFS_OBITUARIES:             labelNum = ud.obituaries;                   break;
         case USERDEFS_LEVELSTATS:             labelNum = ud.levelstats;                   break;
         case USERDEFS_CROSSHAIRSCALE:         labelNum = ud.crosshairscale;               break;
@@ -1406,7 +1404,6 @@ void __fastcall VM_SetUserdef(int const labelNum, int const lParm2, int32_t cons
         case USERDEFS_TEAM:                         ud.team                          = iSet; break;
         case USERDEFS_VIEWBOB:                      ud.viewbob                       = iSet; break;
         case USERDEFS_WEAPONSWAY:                   ud.weaponsway                    = iSet; break;
-        case USERDEFS_ANGLEINTERPOLATION:           ud.angleinterpolation            = iSet; break;
         case USERDEFS_OBITUARIES:                   ud.obituaries                    = iSet; break;
         case USERDEFS_LEVELSTATS:                   ud.levelstats                    = iSet; break;
         case USERDEFS_CROSSHAIRSCALE:               ud.crosshairscale                = iSet; break;

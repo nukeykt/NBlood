@@ -929,7 +929,10 @@ static void P_PrepForNewLevel(int playerNum, int gameMode)
     g_interpolationCnt = 0;
 
     for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+    {
         g_activeVscrSprite[vscrIndex] = -1;
+        g_activeVscrTile[vscrIndex] = -1;
+    }
 
     randomseed  = 1996;
     screenpeek  = myconnectindex;
@@ -1710,7 +1713,10 @@ void G_ResetTimers(bool saveMoveCnt)
     for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
     {
         if (g_activeVscrSprite[vscrIndex] >= 0)
+        {
             actor[g_activeVscrSprite[vscrIndex]].t_data[0] = 0;
+            actor[g_activeVscrSprite[vscrIndex]].t_data[1] = -1;
+        }
     }
 }
 

@@ -259,7 +259,7 @@ static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_BigOptions_Apply = { 4<<16, 16<<16, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRt =     { 4<<16,      0, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRtSections = { 3<<16,      0, -(260<<16) };
-#if !defined EDUKE32_STANDALONE && defined USE_OPENGL && !defined EDUKE32_ANDROID_MENU
+#if !defined EDUKE32_STANDALONE && !defined EDUKE32_ANDROID_MENU
 static MenuEntryFormat_t MEF_SmallOptions =     { 1<<16,      0, -(260<<16) };
 #endif
 static MenuEntryFormat_t MEF_BigCheats =        { 3<<16,      0, -(260<<16) };
@@ -296,7 +296,8 @@ static char const *MEOSN_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static int32_t MEOSV_Gamefuncs[NUMGAMEFUNCTIONS+1];
 static MenuOptionSet_t MEOS_Gamefuncs = MAKE_MENUOPTIONSET( MEOSN_Gamefuncs, MEOSV_Gamefuncs, 0x1 );
 
-int32_t kbo_type_cvar = 1;
+int32_t cvar_kbo_type = 1;
+int32_t cvar_kbconfirm = 1;
 
 static int g_lookAxis = -1;
 static int g_turnAxis = -1;
@@ -673,7 +674,7 @@ static MenuEntry_t ME_SCREENSETUP_CROSSHAIRSIZE = MAKE_MENUENTRY( s_Scale, &MF_R
 
 static int32_t vpsize;
 static MenuRangeInt32_t MEO_SCREENSETUP_SCREENSIZE = MAKE_MENURANGE( &vpsize, &MF_Redfont, 0, 0, 0, 1, EnforceIntervals );
-#if !defined EDUKE32_STANDALONE && defined USE_OPENGL
+#if !defined EDUKE32_STANDALONE
 static MenuOption_t MEO_SCREENSETUP_SCREENSIZE_TWO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &vpsize );
 #endif
 static MenuEntry_t ME_SCREENSETUP_SCREENSIZE = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_SCREENSIZE, RangeInt32 );
@@ -715,6 +716,13 @@ static MenuLink_t MEO_DISPLAYSETUP_VIDEOSETUP = { MENU_VIDEOSETUP, MA_Advance, }
 static MenuEntry_t ME_DISPLAYSETUP_VIDEOSETUP = MAKE_MENUENTRY( "Video mode", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_VIDEOSETUP, Link );
 #endif
 
+#define MAXLANGUAGES 256
+static int32_t newlanguage = -1;
+
+static char const *MEOSN_DISPLAYSETUP_LANGUAGE[MAXLANGUAGES];
+static MenuOptionSet_t MEOS_DISPLAYSETUP_LANGUAGE = MAKE_MENUOPTIONSETDYN( MEOSN_DISPLAYSETUP_LANGUAGE, NULL, 0, 0x0 );
+static MenuOption_t MEO_DISPLAYSETUP_LANGUAGE  = MAKE_MENUOPTION( &MF_Redfont, &MEOS_DISPLAYSETUP_LANGUAGE, &newlanguage );
+static MenuEntry_t ME_DISPLAYSETUP_LANGUAGE = MAKE_MENUENTRY( "Language:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_LANGUAGE, Option );
 
 static MenuLink_t MEO_ENTERCHEAT = { MENU_CHEATENTRY, MA_None, };
 static MenuEntry_t ME_ENTERCHEAT = MAKE_MENUENTRY( "Enter Cheat Code", &MF_Redfont, &MEF_BigCheats, &MEO_ENTERCHEAT, Link );
@@ -808,6 +816,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP[] = {
     &ME_DISPLAYSETUP_COLORCORR,
 #ifndef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_VIDEOSETUP,
+    &ME_DISPLAYSETUP_LANGUAGE,
     &ME_DISPLAYSETUP_ASPECTRATIO,
     &ME_DISPLAYSETUP_FOV,
     &ME_DISPLAYSETUP_VOXELS,
@@ -1271,20 +1280,20 @@ static char const *MEOSN_SOUND_MIDIDRIVER[] = {
 #ifdef _WIN32
     "Windows MME",
 #endif
+    ".sf2 synth",
 #ifdef __linux__
     "ALSA MIDI",
 #endif
-    ".sf2 synth",
 };
 static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
     ASS_OPL3,
 #ifdef _WIN32
     ASS_WinMM,
 #endif
+    ASS_SF2,
 #ifdef __linux__
     ASS_ALSA,
 #endif
-    ASS_SF2,
 };
 
 static MenuOptionSet_t MEOS_SOUND_MIDIDRIVER = MAKE_MENUOPTIONSET( MEOSN_SOUND_MIDIDRIVER, MEOSV_SOUND_MIDIDRIVER, 0x2 );
@@ -1554,6 +1563,7 @@ static MenuVerify_t M_COLCORRRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_COLCORR, 
 static MenuVerify_t M_KEYSRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_KEYBOARDSETUP, MA_None, };
 static MenuVerify_t M_KEYSCLASSICVERIFY = { CURSOR_CENTER_2LINE, MENU_KEYBOARDSETUP, MA_None, };
 static MenuVerify_t M_JOYSTANDARDVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
+static MenuVerify_t M_KEYOVERRIDEVERIFY = { CURSOR_BOTTOMRIGHT, MENU_KEYBOARDKEYS, MA_None, };
 
 static MenuMessage_t M_NETWAITMASTER = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
 static MenuMessage_t M_NETWAITVOTES = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
@@ -1655,6 +1665,7 @@ static Menu_t Menus[] = {
     { &M_KEYSRESETVERIFY, MENU_KEYSRESETVERIFY, MENU_KEYBOARDSETUP, MA_None, Verify },
     { &M_KEYSCLASSICVERIFY, MENU_KEYSCLASSICVERIFY, MENU_KEYBOARDSETUP, MA_None, Verify },
     { &M_JOYSTANDARDVERIFY, MENU_JOYDEFAULTVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
+    { &M_KEYOVERRIDEVERIFY, MENU_KEYOVERRIDEVERIFY, MENU_KEYBOARDKEYS, MA_None, Verify },
     { &M_ADULTPASSWORD, MENU_ADULTPASSWORD, MENU_GAMESETUP, MA_None, TextForm },
     { &M_RESETPLAYER, MENU_RESETPLAYER, MENU_CLOSE, MA_None, Verify },
     { &M_BUYDUKE, MENU_BUYDUKE, MENU_EPISODE, MA_Return, Message },
@@ -1877,6 +1888,88 @@ static void Menu_PopulateJoystick(void)
     M_JOYSTICKAXES.numEntries = joystick.numAxes;
 }
 
+#define MAXBNSTRINGLINES 8
+#define MAXBNLINELEN (MAXGAMEFUNCLEN + 3)
+
+// these values are used for the keybind override verification
+static MenuCustom2Col_t* s_saved_keycolumn = nullptr;
+static int32_t s_saved_scancode = 0xFF;
+static char* s_override_gfstring = nullptr;
+static int32_t s_gfstring_linecount = 0;
+
+static void Menu_RefreshBoundGamefuncNames(const int32_t sc)
+{
+    int const bbufsize = MAXBNSTRINGLINES * MAXBNLINELEN + 5;
+    s_override_gfstring = (char*) Xrealloc(s_override_gfstring, bbufsize);
+    s_override_gfstring[0] = '\0';
+
+    s_gfstring_linecount = 0;
+    for (int i = 0; i < M_KEYBOARDKEYS.numEntries && s_gfstring_linecount < MAXBNSTRINGLINES; i++)
+    {
+        if (i == M_KEYBOARDKEYS.currentEntry)
+            continue;
+
+        MenuEntry_t* entryPtr = M_KEYBOARDKEYS.entrylist[i];
+        if (entryPtr == nullptr)
+            continue;
+
+        auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
+        if ((*iterCol->column[0] == sc) | (*iterCol->column[1] == sc))
+        {
+            if (s_gfstring_linecount == MAXBNSTRINGLINES - 1)
+                Bstrncat(s_override_gfstring, "...\n", bbufsize);
+            else
+            {
+                Bsnprintf(tempbuf, MAXBNLINELEN, "\"%s\"\n", M_KEYBOARDKEYS.entrylist[i]->name);
+                Bstrncat(s_override_gfstring, tempbuf, bbufsize);
+            }
+            s_gfstring_linecount++;
+        }
+    }
+}
+
+static void Menu_EraseMatchingBinds(const int32_t sc)
+{
+    char key[2];
+    for (int i = 0; i < M_KEYBOARDKEYS.numEntries; i++)
+    {
+        if (i == M_KEYBOARDKEYS.currentEntry)
+            continue;
+
+        MenuEntry_t* entryPtr = M_KEYBOARDKEYS.entrylist[i];
+        if (entryPtr == nullptr)
+            continue;
+
+        auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
+        if ((*iterCol->column[0] != sc) && (*iterCol->column[1] != sc))
+            continue;
+
+        key[0] = ud.config.KeyboardKeys[iterCol->linkIndex][0];
+        key[1] = ud.config.KeyboardKeys[iterCol->linkIndex][1];
+
+        if (*iterCol->column[0] == sc) *iterCol->column[0] = 0xFF;
+        if (*iterCol->column[1] == sc) *iterCol->column[1] = 0xFF;
+
+        CONFIG_MapKey(iterCol->linkIndex,
+            ud.config.KeyboardKeys[iterCol->linkIndex][0], key[0],
+            ud.config.KeyboardKeys[iterCol->linkIndex][1], key[1]);
+    }
+}
+
+static void Menu_SetKeyboardScanCode(MenuCustom2Col_t* columnEntry, const int32_t colidx, const int32_t sc, const bool eraseBinds)
+{
+    char key[2];
+    key[0] = ud.config.KeyboardKeys[columnEntry->linkIndex][0];
+    key[1] = ud.config.KeyboardKeys[columnEntry->linkIndex][1];
+
+    if (eraseBinds) Menu_EraseMatchingBinds(sc);
+    *columnEntry->column[colidx] = sc;
+
+    CONFIG_MapKey(columnEntry->linkIndex,
+                    ud.config.KeyboardKeys[columnEntry->linkIndex][0], key[0],
+                    ud.config.KeyboardKeys[columnEntry->linkIndex][1], key[1]);
+}
+
 /*
 This function prepares data after ART and CON have been processed.
 It also initializes some data in loops rather than statically at compile time.
@@ -1892,7 +1985,7 @@ void Menu_Init(void)
     else
     {
         // else, change based on cvar
-        if (kbo_type_cvar == 1)
+        if (cvar_kbo_type == 1)
             init_keybind_order = keybind_order_modern;
         else
             init_keybind_order = keybind_order_classic;
@@ -2377,6 +2470,33 @@ static void Menu_PopulateVideoSetup()
     MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
 }
 
+static void Menu_PopulateLanguages()
+{
+    int j, localeCount = 0;
+    const char ** locales = localeGetKeys(localeCount);
+    for (j = 0; j < localeCount; j++)
+        MEOSN_DISPLAYSETUP_LANGUAGE[j] = locales[j];
+    MEOS_DISPLAYSETUP_LANGUAGE.numOptions = localeCount;
+
+    if (newlanguage == -1)
+    {
+        const char * curKey = localeGetCurrent();
+        for (j = 0; j < localeCount; j++)
+        {
+            if (curKey == locales[j])
+            {
+                newlanguage = j;
+                break;
+            }
+        }
+    }
+
+    localeSetCurrent(locales[newlanguage]);
+    MenuEntry_DisableOnCondition(&ME_DISPLAYSETUP_LANGUAGE, localeCount <= 1);
+
+    Xfree(locales);
+}
+
 /*
 At present, no true difference is planned between Menu_Pre() and Menu_PreDraw().
 They are separate for purposes of organization.
@@ -2412,6 +2532,7 @@ static void Menu_Pre(MenuID_t cm)
         break;
 
     case MENU_DISPLAYSETUP:
+        Menu_PopulateLanguages();
         MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_VOXELS, !g_haveVoxels);
 #ifndef EDUKE32_STANDALONE
 #ifdef USE_OPENGL
@@ -2448,9 +2569,11 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size >= 8 && ud.statusbarmode == 0 && !(ud.statusbarflags & STATUSBAR_NOFULL)) +
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
+
         break;
 
     case MENU_RENDERER:
+#ifdef USE_OPENGL
         if (videoGetRenderMode() != REND_CLASSIC)
         {
 #ifdef POLYMER
@@ -2484,6 +2607,7 @@ static void Menu_Pre(MenuID_t cm)
 //        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
 //        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
 //# endif
+#endif
 #endif
         break;
 
@@ -2758,7 +2882,7 @@ static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill
 
     auto name = g_mapInfo[(volume * MAXLEVELS) + level].name;
     auto vname = g_volumeNames[volume];
-    
+
     Menu_BlackRectangle(origin.x + ((xoffset-2)<<16), origin.y + ((yoffset-2)<<16), 178<<16, (34-((!!FURY)<<1))<<16, 1);
 
     if (vname)
@@ -2782,7 +2906,7 @@ static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill
         mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(name), MF_Minifont.pal_selected_right);
         yoffset += 8;
     }
-    
+
     mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Difficulty:", MF_Minifont.pal_deselected_right);
     mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(g_skillNames[skill-1]), MF_Minifont.pal_selected_right);
     yoffset += 8;
@@ -3111,6 +3235,14 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t* entry, const vec2_t origin)
     case MENU_JOYDEFAULTVERIFY:
         videoFadeToBlack(1);
         Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset controller settings to default?");
+        break;
+    case MENU_KEYOVERRIDEVERIFY:
+        videoFadeToBlack(1);
+        if (s_override_gfstring)
+        {
+            Bsprintf(tempbuf, "Key already assigned to:\n\n%s\nClear existing binds?", s_override_gfstring);
+            Menu_DrawVerifyPrompt(origin.x, origin.y - (4<<16) - (s_gfstring_linecount * (3<<16)), tempbuf, s_gfstring_linecount + 4);
+        }
         break;
 
     case MENU_QUIT:
@@ -3481,6 +3613,7 @@ static void Menu_PreOptionListDraw(MenuEntry_t *entry, const vec2_t origin)
     }
 }
 
+
 static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
 {
     if (g_currentMenu == MENU_KEYBOARDKEYS)
@@ -3492,18 +3625,48 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
         int32_t sc = KB_GetLastScanCode();
         if (sc != sc_None)
         {
-            char key[2];
-            key[0] = ud.config.KeyboardKeys[column->linkIndex][0];
-            key[1] = ud.config.KeyboardKeys[column->linkIndex][1];
+            if (*column->column[M_KEYBOARDKEYS.currentColumn] != sc)
+            {
+                if (*column->column[M_KEYBOARDKEYS.currentColumn ^ 1] == sc)
+                {
+                    Menu_SetKeyboardScanCode(column, M_KEYBOARDKEYS.currentColumn ^ 1, 0xFF, false);
+                    Menu_SetKeyboardScanCode(column, M_KEYBOARDKEYS.currentColumn, sc, false);
+                }
+                else
+                {
+                    bool alreadyAssigned = false;
+                    for (int i = 0; i < M_KEYBOARDKEYS.numEntries; i++)
+                    {
+                        if (i == M_KEYBOARDKEYS.currentEntry)
+                            continue;
 
+                        MenuEntry_t* entryPtr = M_KEYBOARDKEYS.entrylist[i];
+                        if (entryPtr == nullptr)
+                            continue;
+
+                        auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
+                        if ((*iterCol->column[0] == sc) || (*iterCol->column[1] == sc))
+                        {
+                            alreadyAssigned = true;
+                            break;
+                        }
+                    }
+
+                    if (cvar_kbconfirm && alreadyAssigned)
+                    {
+                        s_saved_scancode = sc;
+                        s_saved_keycolumn = column;
+                        Menu_RefreshBoundGamefuncNames(sc);
+
+                        KB_ClearKeyDown(sc_N);
+                        KB_ClearKeyDown(sc_Y);
+                        Menu_Change(MENU_KEYOVERRIDEVERIFY);
+                    }
+                    else Menu_SetKeyboardScanCode(column, M_KEYBOARDKEYS.currentColumn, sc, false);
+                }
+            }
             S_PlaySound(PISTOL_BODYHIT);
-
-            *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
-
-            CONFIG_MapKey(column->linkIndex, ud.config.KeyboardKeys[column->linkIndex][0], key[0], ud.config.KeyboardKeys[column->linkIndex][1], key[1]);
-
             KB_ClearKeyDown(sc);
-
             return -1;
         }
     }
@@ -4410,6 +4573,12 @@ static void Menu_Verify(int32_t input)
         if (input)
             CONFIG_SetGameControllerDefaults();
         break;
+    case MENU_KEYOVERRIDEVERIFY:
+        Bassert(s_saved_keycolumn != nullptr);
+        if (input)
+            Menu_SetKeyboardScanCode(s_saved_keycolumn, M_KEYBOARDKEYS.currentColumn, s_saved_scancode, input == 1);
+        DO_FREE_AND_NULL(s_override_gfstring);
+        break;
 
     case MENU_QUIT:
     case MENU_QUIT_INGAME:
@@ -5000,6 +5169,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     case MENU_JOYSTICKAXES:
     case MENU_JOYSTICKBTNS:
         Menu_PopulateJoystick();
+        break;
+
+    case MENU_DISPLAYSETUP:
+        newlanguage = -1;
         break;
 
     case MENU_VIDEOSETUP:
@@ -6431,6 +6604,7 @@ static void Menu_Recurse(MenuID_t cm, const vec2_t origin)
     case MENU_KEYSRESETVERIFY:
     case MENU_KEYSCLASSICVERIFY:
     case MENU_JOYDEFAULTVERIFY:
+    case MENU_KEYOVERRIDEVERIFY:
     case MENU_ADULTPASSWORD:
     case MENU_CHEATENTRY:
     case MENU_CHEAT_WARP:
@@ -7437,7 +7611,20 @@ static void Menu_RunInput(Menu_t *cm)
             break;
 
         case Verify:
-            if (I_ReturnTrigger() || KB_KeyPressed(sc_N) || Menu_RunInput_MouseReturn())
+            if (g_currentMenu == MENU_KEYOVERRIDEVERIFY && KB_KeyPressed(sc_N))
+            {
+                // special case -- N sets key, but doesn't override other keybinds
+                I_ReturnTriggerClear();
+                KB_ClearKeyDown(sc_N);
+                m_mousecaught = 1;
+
+                Menu_Verify(2);
+
+                Menu_AnimateChange(cm->parentID, cm->parentAnimation);
+
+                S_PlaySound(PISTOL_BODYHIT);
+            }
+            else if (I_ReturnTrigger() || KB_KeyPressed(sc_N) || Menu_RunInput_MouseReturn())
             {
                 I_ReturnTriggerClear();
                 KB_ClearKeyDown(sc_N);
@@ -7449,8 +7636,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                 S_PlaySound(EXITMENUSOUND);
             }
-
-            if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
+            else if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
             {
                 auto verify = (MenuVerify_t*)cm->object;
 

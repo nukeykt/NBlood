@@ -782,8 +782,10 @@ nextdemo_nomenu:
         if (Demo_IsProfiling())
             totalclock += TICSPERFRAME;
 
-        if (engineFPSLimit())
+        if (engineFPSLimit((g_player[myconnectindex].ps->gm & MODE_MENU) == MODE_MENU))
         {
+            G_HandleLocalKeys();
+
             if (foundemo == 0)
             {
                 G_DrawBackground();
@@ -793,7 +795,6 @@ nextdemo_nomenu:
                 // NOTE: currently, no key/mouse events will be seen while
                 // demo-profiling because we need 'totalclock' for ourselves.
                 // And handleevents() -> sampletimer() would mess that up.
-                G_HandleLocalKeys();
 
                 // Render one frame (potentially many if profiling)
                 if (Demo_IsProfiling())

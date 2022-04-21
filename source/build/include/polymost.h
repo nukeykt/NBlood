@@ -269,6 +269,8 @@ EDUKE32_STATIC_ASSERT(TO_DAMETH_NODOWNSIZE(HICR_NODOWNSIZE) == DAMETH_NODOWNSIZE
 EDUKE32_STATIC_ASSERT(TO_DAMETH_NOTEXCOMPRESS(HICR_NOTEXCOMPRESS) == DAMETH_NOTEXCOMPRESS);
 #define TO_DAMETH_ARTIMMUNITY(hicr_flags) (((hicr_flags)&HICR_ARTIMMUNITY)<<13)
 EDUKE32_STATIC_ASSERT(TO_DAMETH_ARTIMMUNITY(HICR_ARTIMMUNITY) == DAMETH_ARTIMMUNITY);
+#define TO_DAMETH_INDEXED(hicr_flags) (((hicr_flags)&HICR_INDEXED)<<3)
+EDUKE32_STATIC_ASSERT(TO_DAMETH_INDEXED(HICR_INDEXED) == DAMETH_INDEXED);
 
 // Do we want a NPOT-y-as-classic texture for this <dameth> and <ysiz>?
 static FORCE_INLINE int polymost_want_npotytex(int32_t dameth, int32_t ysiz)
@@ -340,7 +342,7 @@ EDUKE32_STATIC_ASSERT(TO_PTH_N64_SCALED(DAMETH_N64_SCALED) == PTH_N64_SCALED);
 
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);
-extern coltype *gloadtile_mdloadskin_shared(char* fn, int32_t picfillen, vec2_t * tsiz, vec2_t * siz, char * onebitalpha, polytintflags_t effect, int32_t dapalnum, char* al);
+extern coltype *gloadtruecolortile_mdloadskin_shared(char* fn, int32_t picfillen, vec2_t * tsiz, vec2_t * siz, char * onebitalpha, polytintflags_t effect, int32_t dapalnum, char* al);
 extern int32_t drawingskybox;
 extern int32_t hicprecaching;
 extern float fcosglobalang, fsinglobalang;

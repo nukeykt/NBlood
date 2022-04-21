@@ -584,7 +584,38 @@ void localeSetCurrent(char const * localeName)
     currentLocale = &myLocale;
 }
 
-char const * localeLookup(char const * str)
+const char * localeGetCurrent(void)
+{
+    if (currentLocale == nullptr)
+        return nullptr;
+
+    for (auto iter = localeList.begin(); iter != localeList.end(); ++iter)
+    {
+        if (currentLocale == &iter->second) return iter->first.str;
+    }
+
+    return nullptr;
+}
+
+const char ** localeGetKeys(int32_t& localeCount)
+{
+    if (currentLocale == nullptr)
+    {
+        localeCount = 0;
+        return nullptr;
+    }
+
+    localeCount = localeList.size();
+    const char ** localeKeyList = (const char **) Xmalloc(localeCount * sizeof(char*));
+
+    int k = 0;
+    for (auto iter = localeList.begin(); iter != localeList.end(); ++iter)
+        localeKeyList[k++] = iter->first.str;
+
+    return localeKeyList;
+}
+
+const char * localeLookup(char const * str)
 {
     if (currentLocale == nullptr)
         return str;

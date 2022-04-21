@@ -25,8 +25,8 @@ const mi_page_t _mi_page_empty = {
   0,       // used
   0,       // xblock_size
   NULL,    // local_free
-  ATOMIC_VAR_INIT(0), // xthread_free
-  ATOMIC_VAR_INIT(0), // xheap
+  MI_ATOMIC_VAR_INIT(0), // xthread_free
+  MI_ATOMIC_VAR_INIT(0), // xheap
   NULL, NULL
 };
 
@@ -91,7 +91,7 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   NULL,
   MI_SMALL_PAGES_EMPTY,
   MI_PAGE_QUEUES_EMPTY,
-  ATOMIC_VAR_INIT(NULL),
+  MI_ATOMIC_VAR_INIT(NULL),
   0,                // tid
   0,                // cookie
   { 0, 0 },         // keys
@@ -112,7 +112,7 @@ static mi_tld_t tld_main = {
   0, false,
   &_mi_heap_main, &_mi_heap_main,
   { { NULL, NULL }, {NULL ,NULL}, {NULL ,NULL, 0},
-    0, 0, 0, 0, 0, 0, NULL,
+    0, 0, 0, 0,
     &tld_main.stats, &tld_main.os
   }, // segments
   { 0, &tld_main.stats },  // os
@@ -123,7 +123,7 @@ mi_heap_t _mi_heap_main = {
   &tld_main,
   MI_SMALL_PAGES_EMPTY,
   MI_PAGE_QUEUES_EMPTY,
-  ATOMIC_VAR_INIT(NULL),
+  MI_ATOMIC_VAR_INIT(NULL),
   0,                // thread id
   0,                // initial cookie
   { 0, 0 },         // the key of the main heap can be fixed (unlike page keys that need to be secure!)
@@ -165,6 +165,68 @@ typedef struct mi_thread_data_s {
   mi_tld_t   tld;
 } mi_thread_data_t;
 
+
+// Thread meta-data is allocated directly from the OS. For
+// some programs that do not use thread pools and allocate and
+// destroy many OS threads, this may causes too much overhead 
+// per thread so we maintain a small cache of recently freed metadata.
+
+#define TD_CACHE_SIZE (8)
+static _Atomic(mi_thread_data_t*) td_cache[TD_CACHE_SIZE];
+
+static mi_thread_data_t* mi_thread_data_alloc(void) {
+  // try to find thread metadata in the cache
+  mi_thread_data_t* td;
+  for (int i = 0; i < TD_CACHE_SIZE; i++) {
+    td = mi_atomic_load_ptr_relaxed(mi_thread_data_t, &td_cache[i]);
+    if (td != NULL) {
+      td = mi_atomic_exchange_ptr_acq_rel(mi_thread_data_t, &td_cache[i], NULL); 
+      if (td != NULL) {
+        return td;
+      }
+    }
+  }
+  // if that fails, allocate directly from the OS
+  td = (mi_thread_data_t*)_mi_os_alloc(sizeof(mi_thread_data_t), &_mi_stats_main);
+  if (td == NULL) {
+    // if this fails, try once more. (issue #257)
+    td = (mi_thread_data_t*)_mi_os_alloc(sizeof(mi_thread_data_t), &_mi_stats_main);
+    if (td == NULL) {
+      // really out of memory
+      _mi_error_message(ENOMEM, "unable to allocate thread local heap metadata (%zu bytes)\n", sizeof(mi_thread_data_t));
+    }
+  }
+  return td;
+}
+
+static void mi_thread_data_free( mi_thread_data_t* tdfree ) {
+  // try to add the thread metadata to the cache
+  for (int i = 0; i < TD_CACHE_SIZE; i++) {
+    mi_thread_data_t* td = mi_atomic_load_ptr_relaxed(mi_thread_data_t, &td_cache[i]);
+    if (td == NULL) {
+      mi_thread_data_t* expected = NULL;
+      if (mi_atomic_cas_ptr_weak_acq_rel(mi_thread_data_t, &td_cache[i], &expected, tdfree)) {
+        return;
+      }
+    }
+  }
+  // if that fails, just free it directly
+  _mi_os_free(tdfree, sizeof(mi_thread_data_t), &_mi_stats_main);
+}
+
+static void mi_thread_data_collect(void) {
+  // free all thread metadata from the cache
+  for (int i = 0; i < TD_CACHE_SIZE; i++) {
+    mi_thread_data_t* td = mi_atomic_load_ptr_relaxed(mi_thread_data_t, &td_cache[i]);
+    if (td != NULL) {
+      td = mi_atomic_exchange_ptr_acq_rel(mi_thread_data_t, &td_cache[i], NULL);
+      if (td != NULL) {
+        _mi_os_free( td, sizeof(mi_thread_data_t), &_mi_stats_main );
+      }
+    }
+  }
+}
+
 // Initialize the thread local default heap, called from `mi_thread_init`
 static bool _mi_heap_init(void) {
   if (mi_heap_is_initialized(mi_get_default_heap())) return true;
@@ -177,16 +239,9 @@ static bool _mi_heap_init(void) {
   }
   else {
     // use `_mi_os_alloc` to allocate directly from the OS
-    mi_thread_data_t* td = (mi_thread_data_t*)_mi_os_alloc(sizeof(mi_thread_data_t), &_mi_stats_main); // Todo: more efficient allocation?
-    if (td == NULL) {
-      // if this fails, try once more. (issue #257)
-      td = (mi_thread_data_t*)_mi_os_alloc(sizeof(mi_thread_data_t), &_mi_stats_main);
-      if (td == NULL) {
-        // really out of memory
-        _mi_error_message(ENOMEM, "unable to allocate thread local heap metadata (%zu bytes)\n", sizeof(mi_thread_data_t));
-        return false;
-      }
-    }
+    mi_thread_data_t* td = mi_thread_data_alloc();
+    if (td == NULL) return false;
+
     // OS allocated so already zero initialized
     mi_tld_t*  tld = &td->tld;
     mi_heap_t* heap = &td->heap;
@@ -242,16 +297,17 @@ static bool _mi_heap_done(mi_heap_t* heap) {
   // free if not the main thread
   if (heap != &_mi_heap_main) {
     mi_assert_internal(heap->tld->segments.count == 0 || heap->thread_id != _mi_thread_id());
-    _mi_os_free(heap, sizeof(mi_thread_data_t), &_mi_stats_main);
+    mi_thread_data_free((mi_thread_data_t*)heap);
   }
-#if 0  
-  // never free the main thread even in debug mode; if a dll is linked statically with mimalloc,
-  // there may still be delete/free calls after the mi_fls_done is called. Issue #207
   else {
+    mi_thread_data_collect(); // free cached thread metadata  
+    #if 0  
+    // never free the main thread even in debug mode; if a dll is linked statically with mimalloc,
+    // there may still be delete/free calls after the mi_fls_done is called. Issue #207
     _mi_heap_destroy_pages(heap);
     mi_assert_internal(heap->tld->heap_backing == &_mi_heap_main);
+    #endif
   }
-#endif
   return false;
 }
 
@@ -325,7 +381,7 @@ bool _mi_is_main_thread(void) {
   return (_mi_heap_main.thread_id==0 || _mi_heap_main.thread_id == _mi_thread_id());
 }
 
-static _Atomic(size_t) thread_count = ATOMIC_VAR_INIT(1);
+static _Atomic(size_t) thread_count = MI_ATOMIC_VAR_INIT(1);
 
 size_t  _mi_current_thread_count(void) {
   return mi_atomic_load_relaxed(&thread_count);
@@ -402,7 +458,7 @@ bool _mi_preloading(void) {
   return os_preloading;
 }
 
-bool mi_is_redirected(void) mi_attr_noexcept {
+mi_decl_nodiscard bool mi_is_redirected(void) mi_attr_noexcept {
   return mi_redirected;
 }
 
@@ -446,7 +502,9 @@ static void mi_process_load(void) {
   MI_UNUSED(dummy);
   #endif
   os_preloading = false;
-  atexit(&mi_process_done);
+  #if !(defined(_WIN32) && defined(MI_SHARED_LIB))  // use Dll process detach (see below) instead of atexit (issue #521)
+  atexit(&mi_process_done);  
+  #endif
   _mi_options_init();
   mi_process_init();
   //mi_stats_reset();-
@@ -504,7 +562,7 @@ void mi_process_init(void) mi_attr_noexcept {
   mi_stats_reset();  // only call stat reset *after* thread init (or the heap tld == NULL)
 
   if (mi_option_is_enabled(mi_option_reserve_huge_os_pages)) {
-    size_t pages = mi_option_get(mi_option_reserve_huge_os_pages);
+    size_t pages = mi_option_get_clamp(mi_option_reserve_huge_os_pages, 0, 128*1024);
     long reserve_at = mi_option_get(mi_option_reserve_huge_os_pages_at);
     if (reserve_at != -1) {
       mi_reserve_huge_os_pages_at(pages, reserve_at, pages*500);
@@ -533,11 +591,13 @@ static void mi_process_done(void) {
   FlsFree(mi_fls_key);  // call thread-done on all threads (except the main thread) to prevent dangling callback pointer if statically linked with a DLL; Issue #208
   #endif
   
-  #if (MI_DEBUG != 0) || !defined(MI_SHARED_LIB)  
-  // free all memory if possible on process exit. This is not needed for a stand-alone process
-  // but should be done if mimalloc is statically linked into another shared library which
-  // is repeatedly loaded/unloaded, see issue #281.
-  mi_collect(true /* force */ );
+  #ifndef MI_SKIP_COLLECT_ON_EXIT
+    #if (MI_DEBUG != 0) || !defined(MI_SHARED_LIB)  
+    // free all memory if possible on process exit. This is not needed for a stand-alone process
+    // but should be done if mimalloc is statically linked into another shared library which
+    // is repeatedly loaded/unloaded, see issue #281.
+    mi_collect(true /* force */ );
+    #endif
   #endif
 
   if (mi_option_is_enabled(mi_option_show_stats) || mi_option_is_enabled(mi_option_verbose)) {
@@ -558,9 +618,14 @@ static void mi_process_done(void) {
     if (reason==DLL_PROCESS_ATTACH) {
       mi_process_load();
     }
-    else if (reason==DLL_THREAD_DETACH) {
-      if (!mi_is_redirected()) mi_thread_done();
+    else if (reason==DLL_PROCESS_DETACH) {
+      mi_process_done();
     }
+    else if (reason==DLL_THREAD_DETACH) {
+      if (!mi_is_redirected()) {
+        mi_thread_done();
+      }
+    }    
     return TRUE;
   }
 
@@ -579,7 +644,7 @@ static void mi_process_done(void) {
     __pragma(comment(linker, "/include:" "__mi_msvc_initu"))
   #endif
   #pragma data_seg(".CRT$XIU")
-  extern "C" _mi_crt_callback_t _mi_msvc_initu[] = { &_mi_process_init };
+  mi_decl_externc _mi_crt_callback_t _mi_msvc_initu[] = { &_mi_process_init };
   #pragma data_seg()
 
 #elif defined(__cplusplus)

@@ -722,7 +722,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
         char al = 255;
         char onebitalpha = 1;
 
-        auto pic = gloadtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, hicfxmask(pal), pal, &al);
+        auto pic = gloadtruecolortile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, hicfxmask(pal), pal, &al);
         if (!pic) return mdloadskin_failed(skinfile, fn);
         hasalpha = (al != 255);
 

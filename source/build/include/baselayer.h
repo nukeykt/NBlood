@@ -68,6 +68,13 @@ extern int32_t r_maxfps;
 extern int32_t g_numdisplays;
 extern int32_t g_displayindex;
 
+extern bool g_ImGuiCaptureInput;
+extern bool g_ImGuiFrameActive;
+extern uint8_t g_ImGuiCapturedDevices;
+extern void engineBeginImGuiFrame(void);
+extern void engineEndImGuiInput(void);
+extern void engineBeginImGuiInput(void);
+
 void calc_ylookup(int32_t bpl, int32_t lastyidx);
 
 int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t forced);
@@ -236,8 +243,8 @@ typedef struct
         uint8_t flags;
         struct
         {
-            int isGameController : 1;
-            int hasRumble        : 1;
+            unsigned int isGameController : 1;
+            unsigned int hasRumble        : 1;
         };
     };
 } controllerinput_t;
@@ -324,17 +331,16 @@ void maybe_redirect_outputs(void);
 extern uint64_t g_frameDelay;
 static inline uint64_t calcFrameDelay(int maxFPS)
 {
-    uint64_t perfFreq = timerGetNanoTickRate();
-
     switch (maxFPS)
     {
+        case -2: return 0;
         case -1: maxFPS = refreshfreq; break;
-        case 0: perfFreq = 0; break;
+        case 0: maxFPS = 1000; break;
     }
 
-    return tabledivide64(perfFreq, maxFPS);
+    return tabledivide64(timerGetNanoTickRate(), maxFPS);
 }
-extern int engineFPSLimit(void);
+extern int engineFPSLimit(bool const throttle = false);
 #ifdef __cplusplus
 }
 #endif

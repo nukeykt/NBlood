@@ -710,10 +710,10 @@ const char *ExtGetWallCaption(int16_t wallnum)
 
     Bmemset(tempbuf,0,sizeof(tempbuf));
     
-    if (editwall[wallnum>>3]&pow2char[wallnum&7])
+    if (bitmap_test(editwall, wallnum))
     {
         Bsprintf(tempbuf,"%d", wallength(wallnum));
-        editwall[wallnum>>3] &= ~pow2char[wallnum&7];
+        bitmap_clear(editwall, wallnum);
         return tempbuf;
     }
 
@@ -1342,7 +1342,7 @@ static void ReadHelpFile(const char *name)
     helppage_t *hp;
     char skip=0;
 
-    initprintf("Loading \"%s\"\n",name);
+    LOG_F(INFO, "Loading %s",name);
 
     if ((fp=fopenfrompath(name,"rb")) == NULL)
     {
@@ -7973,7 +7973,7 @@ int32_t ExtPreSaveMap(void)
                 if (wall[j].point2 < startwall)
                     startwall = wall[j].point2;
             if (sector[i].wallptr != startwall)
-                initprintf("Warning: set sector %d's wallptr to %d (was %d)\n", i,
+                LOG_F(WARNING, "Set sector %d's wallptr to %d (was %d)", i,
                            TrackerCast(sector[i].wallptr), startwall);
             sector[i].wallptr = startwall;
         }
@@ -8063,10 +8063,17 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
         return;
     else
     {
-        initprintf("Application parameters: ");
+        tempbuf[0] = 0;
+
+        Bstrcpy(tempbuf, "Application parameters: ");
+
         while (i < argc)
-            initprintf("%s ", argv[i++]);
-        initprintf("\n");
+        {
+            Bstrcat(tempbuf, argv[i++]);
+            Bstrcat(tempbuf, " ");
+        }
+
+        LOG_F(INFO, "%s", tempbuf);
     }
 
     lengths = (int32_t *)Xmalloc(argc*sizeof(int32_t));
@@ -8151,7 +8158,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     if (sz >= 16<<10 && sz <= 1024<<10)
                     {
                         g_maxCacheSize = sz<<10;
-                        initprintf("Cache size: %dkB\n",sz);
+                        LOG_F(INFO, "Cache size: %dkB",sz);
 
                         COPYARG(i);
                         COPYARG(i+1);
@@ -8293,21 +8300,21 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
             }
             if (!Bstrcasecmp(c+1,"check"))
             {
-                initprintf("Map wall checking on save enabled\n");
+                LOG_F(INFO, "Map wall checking on save enabled");
                 fixmaponsave_walls = 1;
                 i++;
                 continue;
             }
             if (!Bstrcasecmp(c+1,"nocheck"))
             {
-                initprintf("Map wall checking on save disabled\n");
+                LOG_F(INFO, "Map wall checking on save disabled");
                 fixmaponsave_walls = 0;
                 i++;
                 continue;
             }
             if (!Bstrcasecmp(c+1,"noautoload"))
             {
-                initprintf("Autoload disabled\n");
+                LOG_F(INFO, "Autoload disabled");
                 NoAutoLoad = 1;
                 COPYARG(i);
                 i++;
@@ -8443,20 +8450,19 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     if (buildvfs_exists("m32_usecwd"))
         g_useCwd = 1;
 
-    OSD_SetLogFile("mapster32.log");
-    OSD_SetVersion("Mapster32",0,2);
-    initprintf("Mapster32 %s\n", s_buildRev);
+    OSD_SetVersion(AppProperName,0,2);
+    LOG_F(INFO, "Mapster32 %s", s_buildRev);
     PrintBuildInfo();
 
     G_CheckCommandLine(argc,argv);
 
     if (Bstrcmp(setupfilename, SETUPFILENAME))
-        initprintf("Using config file \"%s\".\n",setupfilename);
+        LOG_F(INFO, "Using config file %s",setupfilename);
 
     int dosetup = 0;
 
     if (loadsetup(setupfilename) < 0)
-        initprintf("Configuration file not found, using defaults.\n"), dosetup = 1;
+        LOG_F(INFO, "Configuration file not found, using defaults."), dosetup = 1;
 
     bpp = bppgame;
 
@@ -9299,6 +9305,15 @@ static int32_t registerosdcommands(void)
 #ifdef DEBUGGINGAIDS
     OSD_RegisterFunction("disasm", "disasm [s|e] <state or event number>", osdcmd_disasm);
 #endif
+    
+    static osdcvardata_t cvars_editor[] =
+    {
+        { "cameraheight", "adjust editor camera height", (void*)&kensplayerheight, CVAR_INT, 1, 255 },
+    };
+
+    for (auto & i : cvars_editor)
+        OSD_RegisterCvar(&i, osdcmd_cvar_set);
+
     return 0;
 }
 

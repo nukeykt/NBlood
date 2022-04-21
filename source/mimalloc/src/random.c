@@ -168,16 +168,10 @@ If we cannot get good randomness, we fall back to weak randomness based on a tim
 
 #if defined(_WIN32)
 
-#if !defined(MI_USE_RTLGENRANDOM)
-// We prefer to use BCryptGenRandom instead of RtlGenRandom but it can lead to a deadlock 
-// under the VS debugger when using dynamic overriding.
-#pragma comment (lib,"bcrypt.lib")
-#include <bcrypt.h>
-static bool os_random_buf(void* buf, size_t buf_len) {
-  return (BCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)buf_len, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
-}
-#else
-// Use (unofficial) RtlGenRandom
+#if defined(MI_USE_RTLGENRANDOM) || defined(__cplusplus)
+// We prefer to use BCryptGenRandom instead of (the unofficial) RtlGenRandom but when using 
+// dynamic overriding, we observed it can raise an exception when compiled with C++, and 
+// sometimes deadlocks when also running under the VS debugger.
 #pragma comment (lib,"advapi32.lib")
 #define RtlGenRandom  SystemFunction036
 #ifdef __cplusplus
@@ -190,11 +184,18 @@ BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer, ULONG RandomBufferLength);
 static bool os_random_buf(void* buf, size_t buf_len) {
   return (RtlGenRandom(buf, (ULONG)buf_len) != 0);
 }
+#else
+#pragma comment (lib,"bcrypt.lib")
+#include <bcrypt.h>
+static bool os_random_buf(void* buf, size_t buf_len) {
+  return (BCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)buf_len, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
+}
 #endif
 
 #elif defined(__APPLE__)
 #include <AvailabilityMacros.h>
 #if defined(MAC_OS_X_VERSION_10_10) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_10
+#include <CommonCrypto/CommonCryptoError.h>
 #include <CommonCrypto/CommonRandom.h>
 #endif
 static bool os_random_buf(void* buf, size_t buf_len) {
@@ -239,7 +240,7 @@ static bool os_random_buf(void* buf, size_t buf_len) {
   if (mi_atomic_load_acquire(&no_getrandom)==0) {
     ssize_t ret = syscall(SYS_getrandom, buf, buf_len, GRND_NONBLOCK);
     if (ret >= 0) return (buf_len == (size_t)ret);
-    if (ret != ENOSYS) return false;
+    if (errno != ENOSYS) return false;
     mi_atomic_store_release(&no_getrandom, 1UL); // don't call again, and fall back to /dev/urandom
   }
 #endif

@@ -166,6 +166,8 @@ LocalePtr_t localeGetPtr(const char * localeName);
 void localeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val);
 void localeMaybeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val);
 void localeSetCurrent(const char * localeName);
+const char * localeGetCurrent(void);
+const char ** localeGetKeys(int32_t& localeCount);
 const char * localeLookup(const char * str);
 
 #ifdef __cplusplus

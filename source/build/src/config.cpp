@@ -272,7 +272,7 @@ int32_t loadsetup(const char *fn)
             p++;
             if (!sscanf(p,"%x",&v2))break;
             g_keyRemapTable[v1]=v2;
-            initprintf("Remap %X key to %X\n",v1,v2);
+            LOG_F(INFO, "Remap %X key to %X",v1,v2);
             if ((p=strchr(p,','))==0)break;
             p++;
         }

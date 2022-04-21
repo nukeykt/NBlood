@@ -16,6 +16,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "polymost.h"
 #include "microprofile.h"
 #include "tilepacker.h"
+#include "colmatch.h"
 #include "texcache.h"
 #include "hash.h"
 
@@ -2318,13 +2319,12 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
 
 int gloadtile_willprint;
 
-coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, char *const onebitalpha, polytintflags_t effect,
-                                     int32_t dapalnum, char *const al)
+static bool gloadtile_mdloadskin_check(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, int *isart)
 {
-    int32_t isart = 0;
+    *isart = 0;
     int32_t const length = kpzbufload(fn);
     if (length == 0)
-        return nullptr;
+        return false;
 
     // tsizx/y = replacement texture's natural size
     // xsiz/y = 2^x size of replacement
@@ -2336,14 +2336,14 @@ coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const 
     if (tsiz->x == 0 || tsiz->y == 0)
     {
         if (artCheckUnitFileHeader((uint8_t*)kpzbuf, picfillen))
-            return nullptr;
+            return false;
 
         *tsiz = { B_LITTLE16(B_UNBUF16(&kpzbuf[16])), B_LITTLE16(B_UNBUF16(&kpzbuf[18])) };
 
         if (tsiz->x == 0 || tsiz->y == 0)
-            return nullptr;
+            return false;
 
-        isart = 1;
+        *isart = 1;
     }
 
     if (!glinfo.texnpot)
@@ -2354,11 +2354,65 @@ coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const 
     else
         *siz = *tsiz;
 
-    if (isart)
+    if (*isart)
     {
         if (tsiz->x * tsiz->y + ARTv1_UNITOFFSET > picfillen)
-            return nullptr;// -2;
+            return false;
     }
+
+    return true;
+}
+
+uint8_t *gloadindexedtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, hicreplctyp* hicr)
+{
+    int32_t isart;
+    if (!gloadtile_mdloadskin_check(fn, picfillen, tsiz, siz, &isart))
+        return nullptr;
+
+    uint8_t *pic = (uint8_t *)Xcalloc(tsiz->x, tsiz->y);
+
+    if (isart)
+    {
+        Bmemcpy(pic, &kpzbuf[ARTv1_UNITOFFSET], tsiz->x * tsiz->y);
+    }
+#ifdef WITHKPLIB
+    else
+    {
+        int32_t const bytesperline = tsiz->x * sizeof(coltype);
+        coltype *temppic = (coltype *)Xcalloc(tsiz->y, bytesperline);
+        if (kprender(kpzbuf,picfillen,(intptr_t)temppic,bytesperline,tsiz->x,tsiz->y))
+        {
+            Xfree(pic);
+            Xfree(temppic);
+            return nullptr; //-2;
+        }
+
+        paletteFlushClosestColor();
+
+        int alphacut = clamp((int)(255.f - 255.f * hicr->alphacut), 0, 255);
+
+        for (int j = 0; j < tsiz->y; ++j)
+        {
+            int const ofs = j * tsiz->x;
+            for (int i = 0; i < tsiz->x; ++i)
+            {
+                coltype const *const col = &temppic[ofs + i];
+                pic[(i * tsiz->y) + j] =
+                (col->a < alphacut) ? 255 : paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
+            }
+        }
+        Xfree(temppic);
+    }
+#endif
+    return pic;
+}
+
+coltype *gloadtruecolortile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, char *const onebitalpha, polytintflags_t effect,
+                                             int32_t dapalnum, char *const al)
+{
+    int32_t isart;
+    if (!gloadtile_mdloadskin_check(fn, picfillen, tsiz, siz, &isart))
+        return nullptr;
 
     int32_t const bytesperline = siz->x * sizeof(coltype);
     coltype* pic = (coltype*)Xcalloc(siz->y, bytesperline);
@@ -2480,8 +2534,9 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     texcache_calcid(texcacheid, fn, picfillen+(dapalnum<<8), DAMETH_NARROW_MASKPROPS(dameth), effect & HICTINT_IN_MEMORY);
     int32_t gotcache = texcache_readtexheader(texcacheid, &cachead, 0);
     vec2_t siz = { 0, 0 }, tsiz = { 0, 0 };
+    int32_t indexed = (hicr->flags & HICR_INDEXED) && (dameth & DAMETH_INDEXED);
 
-    if (gotcache && !texcache_loadtile(&cachead, &doalloc, pth))
+    if (!indexed && gotcache && !texcache_loadtile(&cachead, &doalloc, pth))
     {
         tsiz = { cachead.xdim, cachead.ydim };
         hasalpha = !!(cachead.flags & CACHEAD_HASALPHA);
@@ -2491,69 +2546,96 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
         // CODEDUP: mdloadskin
         gotcache = 0;	// the compressed version will be saved to disk
         char al = 255;
-        auto pic = gloadtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, effect, dapalnum, &al);
-        if (!pic) return -1;
 
-        hasalpha = (al != 255);
-        onebitalpha &= hasalpha;
-
-        if ((!(dameth & DAMETH_CLAMPED)) || facen) //Duplicate texture pixels (wrapping tricks for non power of 2 texture sizes)
+        if (indexed)
         {
-            if (siz.x > tsiz.x)  // Copy left to right
+            uint8_t *pic = gloadindexedtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, hicr);
+            if (!pic) return -1;
+
+            hasalpha = 1;
+            gloadtile_willprint=2;
+
+            if ((doalloc&3)==1)
+                glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
+            buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+
+            if (doalloc)
+                polymost_setuptexture(dameth, -1);
+            else if (siz != pth->siz)
             {
-                for (int32_t y = 0, *lptr = (int32_t *)pic; y < tsiz.y; y++, lptr += siz.x)
-                    Bmemcpy(&lptr[tsiz.x], lptr, (siz.x - tsiz.x) << 2);
-            }
-
-            if (siz.y > tsiz.y)  // Copy top to bottom
-                Bmemcpy(&pic[siz.x * tsiz.y], pic, (siz.y - tsiz.y) * siz.x << 2);
-        }
-
-        if (!glinfo.bgra)
-        {
-            for (bssize_t i=siz.x*siz.y, j=0; j<i; j++)
-                swapchar(&pic[j].r, &pic[j].b);
-        }
-
-        // end CODEDUP
-
-        if (tsiz.x>>r_downsize <= tilesiz[dapic].x || tsiz.y>>r_downsize <= tilesiz[dapic].y)
-            hicr->flags |= HICR_ARTIMMUNITY;
-
-        if ((doalloc&3)==1)
-            glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
-        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
-
-        fixtransparency(pic,tsiz,siz,dameth);
-
-        int32_t const texfmt = glinfo.bgra ? GL_BGRA : GL_RGBA;
-
-        if (!doalloc)
-        {
-            vec2_t pthSiz2 = pth->siz;
-            if (!glinfo.texnpot)
-            {
-                for (pthSiz2.x=1; pthSiz2.x < pth->siz.x; pthSiz2.x+=pthSiz2.x) { }
-                for (pthSiz2.y=1; pthSiz2.y < pth->siz.y; pthSiz2.y+=pthSiz2.y) { }
-            }
-            else
-                pthSiz2 = tsiz;
-            if (siz.x > pthSiz2.x ||
-                siz.y > pthSiz2.y)
-            {
-                //POGO: grow our texture to hold the tile data
+                //POGO: resize our texture to match the tile data
                 doalloc = true;
             }
-        }
-        uploadtexture(doalloc,siz,texfmt,pic,tsiz,
-                      dameth | DAMETH_HI | DAMETH_NOFIX |
-                      TO_DAMETH_NODOWNSIZE(hicr->flags) |
-                      TO_DAMETH_NOTEXCOMPRESS(hicr->flags) |
-                      TO_DAMETH_ARTIMMUNITY(hicr->flags) |
-                      (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
-                      (hasalpha ? DAMETH_HASALPHA : 0));
+            uploadtextureindexed(doalloc, {}, tsiz, (intptr_t)pic);
 
-        Xfree(pic);
+            Xfree(pic);
+        }
+        else
+        {
+            coltype *pic = gloadtruecolortile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, effect, dapalnum, &al);
+            if (!pic) return -1;
+
+            hasalpha = (al != 255);
+            onebitalpha &= hasalpha;
+
+            if ((!(dameth & DAMETH_CLAMPED)) || facen) //Duplicate texture pixels (wrapping tricks for non power of 2 texture sizes)
+            {
+                if (siz.x > tsiz.x)  // Copy left to right
+                {
+                    for (int32_t y = 0, *lptr = (int32_t *)pic; y < tsiz.y; y++, lptr += siz.x)
+                        Bmemcpy(&lptr[tsiz.x], lptr, (siz.x - tsiz.x) << 2);
+                }
+
+                if (siz.y > tsiz.y)  // Copy top to bottom
+                    Bmemcpy(&pic[siz.x * tsiz.y], pic, (siz.y - tsiz.y) * siz.x << 2);
+            }
+
+            if (!glinfo.bgra)
+            {
+                for (bssize_t i=siz.x*siz.y, j=0; j<i; j++)
+                    swapchar(&pic[j].r, &pic[j].b);
+            }
+
+            // end CODEDUP
+
+            if (tsiz.x>>r_downsize <= tilesiz[dapic].x || tsiz.y>>r_downsize <= tilesiz[dapic].y)
+                hicr->flags |= HICR_ARTIMMUNITY;
+
+            if ((doalloc&3)==1)
+                glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
+            buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+
+            fixtransparency(pic,tsiz,siz,dameth);
+
+            int32_t const texfmt = glinfo.bgra ? GL_BGRA : GL_RGBA;
+
+            if (!doalloc)
+            {
+                vec2_t pthSiz2 = pth->siz;
+                if (!glinfo.texnpot)
+                {
+                    for (pthSiz2.x=1; pthSiz2.x < pth->siz.x; pthSiz2.x+=pthSiz2.x) { }
+                    for (pthSiz2.y=1; pthSiz2.y < pth->siz.y; pthSiz2.y+=pthSiz2.y) { }
+                }
+                else
+                    pthSiz2 = tsiz;
+                if (siz.x > pthSiz2.x ||
+                    siz.y > pthSiz2.y)
+                {
+                    //POGO: grow our texture to hold the tile data
+                    doalloc = true;
+                }
+            }
+            uploadtexture(doalloc,siz,texfmt,pic,tsiz,
+                          dameth | DAMETH_HI | DAMETH_NOFIX |
+                          TO_DAMETH_NODOWNSIZE(hicr->flags) |
+                          TO_DAMETH_NOTEXCOMPRESS(hicr->flags) |
+                          TO_DAMETH_ARTIMMUNITY(hicr->flags) |
+                          (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
+                          (hasalpha ? DAMETH_HASALPHA : 0));
+
+            Xfree(pic);
+        }
     }
 
     // precalculate scaling parameters for replacement
@@ -2562,7 +2644,8 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     else
         pth->scale = { (float)tsiz.x / (float)tilesiz[dapic].x, (float)tsiz.y / (float)tilesiz[dapic].y };
 
-    polymost_setuptexture(dameth, (hicr->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : -1);
+    if (!indexed)
+        polymost_setuptexture(dameth, (hicr->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : -1);
 
     if (tsiz.x>>r_downsize <= tilesiz[dapic].x || tsiz.y>>r_downsize <= tilesiz[dapic].y)
         hicr->flags |= HICR_ARTIMMUNITY;
@@ -2573,7 +2656,8 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
                  PTH_HIGHTILE | ((facen>0) * PTH_SKYBOX) |
                  (onebitalpha ? PTH_ONEBITALPHA : 0) |
                  (hasalpha ? PTH_HASALPHA : 0) |
-                 ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0);
+                 ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0) |
+                 (indexed ? PTH_INDEXED : 0);
     pth->skyface = facen;
     pth->hicr = hicr;
     pth->siz = tsiz;
@@ -3669,43 +3753,40 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 }
 
 
-static inline void vsp_finalize_init(int32_t const vcnt)
+template <typename T> static inline void vsp_finalize_init(T & vsp, int const vcnt)
 {
-    for (bssize_t i=0; i<vcnt; ++i)
+    for (native_t i=0; i<vcnt; ++i)
     {
         vsp[i].cy[1] = vsp[i+1].cy[0]; vsp[i].ctag = i;
-        vsp[i].fy[1] = vsp[i+1].fy[0]; vsp[i].ftag = i;
         vsp[i].n = i+1; vsp[i].p = i-1;
 //        vsp[i].tag = -1;
     }
     vsp[vcnt-1].n = 0; vsp[0].p = vcnt-1;
 
     //VSPMAX-1 is dummy empty node
-    for (bssize_t i=vcnt; i<VSPMAX; i++) { vsp[i].n = i+1; vsp[i].p = i-1; }
+    for (native_t i=vcnt; i<VSPMAX; i++) { vsp[i].n = i+1; vsp[i].p = i-1; }
     vsp[VSPMAX-1].n = vcnt; vsp[vcnt].p = VSPMAX-1;
 }
 
-#ifdef YAX_ENABLE
-static inline void yax_vsp_finalize_init(int32_t const yaxbunch, int32_t const vcnt)
+static FORCE_INLINE void vsp_finalize_init(int const vcnt)
 {
-    for (bssize_t i=0; i<vcnt; ++i)
-    {
-        yax_vsp[yaxbunch][i].cy[1] = yax_vsp[yaxbunch][i+1].cy[0]; yax_vsp[yaxbunch][i].ctag = i;
-        yax_vsp[yaxbunch][i].n = i+1; yax_vsp[yaxbunch][i].p = i-1;
-//        vsp[i].tag = -1;
-    }
-    yax_vsp[yaxbunch][vcnt-1].n = 0; yax_vsp[yaxbunch][0].p = vcnt-1;
+    for (native_t i=0; i<vcnt; ++i)
+        vsp[i].fy[1] = vsp[i+1].fy[0], vsp[i].ftag = i;
 
-    //VSPMAX-1 is dummy empty node
-    for (bssize_t i=vcnt; i<VSPMAX; i++) { yax_vsp[yaxbunch][i].n = i+1; yax_vsp[yaxbunch][i].p = i-1; }
-    yax_vsp[yaxbunch][VSPMAX-1].n = vcnt; yax_vsp[yaxbunch][vcnt].p = VSPMAX-1;
+    vsp_finalize_init(vsp, vcnt);
+}
+
+#ifdef YAX_ENABLE
+static FORCE_INLINE void yax_vsp_finalize_init(int const yaxbunch, int const vcnt)
+{
+    vsp_finalize_init(yax_vsp[yaxbunch], vcnt);
 }
 #endif
 
 #define COMBINE_STRIPS
 
 #ifdef COMBINE_STRIPS
-static inline void vsdel(int const i)
+template <typename T> static inline void vsdel(T & vsp, int const i)
 {
     //Delete i
     int const pi = vsp[i].p;
@@ -3721,33 +3802,35 @@ static inline void vsdel(int const i)
     vsp[VSPMAX-1].n = i;
 }
 
-static inline void vsmerge(int const i, int const ni)
+static FORCE_INLINE void vsdel(int const i)
+{
+    vsdel(vsp, i);
+}
+
+static FORCE_INLINE void vsmerge(int const i, int const ni)
 {
     vsp[i].cy[1] = vsp[ni].cy[1];
     vsp[i].fy[1] = vsp[ni].fy[1];
-    vsdel(ni);
+    vsdel(vsp, ni);
 }
 
 # ifdef YAX_ENABLE
-static inline void yax_vsdel(int const yaxbunch, int const i)
+static FORCE_INLINE void yax_vsdel(int const yaxbunch, int const i)
 {
-    //Delete i
-    int const pi = yax_vsp[yaxbunch][i].p;
-    int const ni = yax_vsp[yaxbunch][i].n;
-
-    yax_vsp[yaxbunch][ni].p = pi;
-    yax_vsp[yaxbunch][pi].n = ni;
-
-    //Add i to empty list
-    yax_vsp[yaxbunch][i].n = yax_vsp[yaxbunch][VSPMAX - 1].n;
-    yax_vsp[yaxbunch][i].p = VSPMAX - 1;
-    yax_vsp[yaxbunch][yax_vsp[yaxbunch][VSPMAX - 1].n].p = i;
-    yax_vsp[yaxbunch][VSPMAX - 1].n = i;
+    vsdel(yax_vsp[yaxbunch], i);
 }
+
+static FORCE_INLINE void yax_vsmerge(int const yaxbunch, int const i, int const ni)
+{
+    auto& yvsp = yax_vsp[yaxbunch];
+    yvsp[i].cy[1] = yvsp[ni].cy[1];
+    vsdel(yvsp, ni);
+}
+
 # endif
 #endif
 
-static inline int32_t vsinsaft(int const i)
+template <typename T> static inline int32_t vsinsaft(T & vsp, int const i)
 {
     //i = next element from empty list
     int32_t const r = vsp[VSPMAX-1].n;
@@ -3763,21 +3846,17 @@ static inline int32_t vsinsaft(int const i)
     return r;
 }
 
+static FORCE_INLINE int32_t vsinsaft(int const i)
+{
+    return vsinsaft(vsp, i);
+}
+
 #ifdef YAX_ENABLE
-static inline int32_t yax_vsinsaft(int const yaxbunch, int const i)
+static FORCE_INLINE int32_t yax_vsinsaft(int const yaxbunch, int const i)
 {
     //i = next element from empty list
-    int32_t const r = yax_vsp[yaxbunch][VSPMAX - 1].n;
-    yax_vsp[yaxbunch][yax_vsp[yaxbunch][r].n].p = VSPMAX - 1;
-    yax_vsp[yaxbunch][VSPMAX - 1].n = yax_vsp[yaxbunch][r].n;
-
-    yax_vsp[yaxbunch][r] = yax_vsp[yaxbunch][i]; //copy i to r
-
-    //insert r after i
-    yax_vsp[yaxbunch][r].p = i; yax_vsp[yaxbunch][r].n = yax_vsp[yaxbunch][i].n;
-    yax_vsp[yaxbunch][yax_vsp[yaxbunch][i].n].p = r; yax_vsp[yaxbunch][i].n = r;
-
-    return r;
+    auto& yvsp = yax_vsp[yaxbunch];
+    return vsinsaft(yvsp, i);
 }
 #endif
 
@@ -5426,7 +5505,7 @@ static void polymost_drawalls(int32_t const bunch)
 #ifdef YAX_ENABLE
         // this is to prevent double-drawing of translucent masked floors
         if (g_nodraw || r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->floorstat&256)==0 ||
-            yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+            yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
         {
 #endif
         if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
@@ -5854,7 +5933,7 @@ static void polymost_drawalls(int32_t const bunch)
 #ifdef YAX_ENABLE
         // this is to prevent double-drawing of translucent masked ceilings
         if (g_nodraw || r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->ceilingstat&256)==0 ||
-            yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
+            yax_nomaskpass==1 || !bitmap_test(yax_gotsector, sectnum))
         {
 #endif
         if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
@@ -6246,10 +6325,10 @@ static void polymost_drawalls(int32_t const bunch)
             for (i=0; i<2; i++)
                 if (checkcf&(1<<i))
                 {
-                    if ((haveymost[bn[i]>>3]&pow2char[bn[i]&7])==0)
+                    if (!bitmap_test(haveymost, bn[i]))
                     {
                         // init yax *most arrays for that bunch
-                        haveymost[bn[i]>>3] |= pow2char[bn[i]&7];
+                        bitmap_set(haveymost, bn[i]);
                         yax_vsp[bn[i]*2][1].x = xbl;
                         yax_vsp[bn[i]*2][2].x = xbr;
                         yax_vsp[bn[i]*2][1].cy[0] = xbb;
@@ -6483,7 +6562,7 @@ static void polymost_drawalls(int32_t const bunch)
         domostpolymethod = DAMETH_NOMASK;
 
         if (nextsectnum >= 0)
-            if ((!(gotsector[nextsectnum>>3]&pow2char[nextsectnum&7])) && testvisiblemost(x0,x1))
+            if (!bitmap_test(gotsector, nextsectnum) && testvisiblemost(x0,x1))
                 polymost_scansector(nextsectnum);
     }
 }
@@ -6518,7 +6597,7 @@ void polymost_scansector(int32_t sectnum)
     if (sectnum < 0) return;
 
     if (automapping)
-        show2dsector[sectnum>>3] |= pow2char[sectnum&7];
+        bitmap_set(show2dsector, sectnum);
 
     sectorborder[0] = sectnum;
     int sectorbordercnt = 1;
@@ -6550,7 +6629,7 @@ void polymost_scansector(int32_t sectnum)
             }
         }
 
-        gotsector[sectnum>>3] |= pow2char[sectnum&7];
+        bitmap_set(gotsector, sectnum);
 
         int const bunchfrst = numbunches;
         int const onumscans = numscans;
@@ -6577,7 +6656,7 @@ void polymost_scansector(int32_t sectnum)
 #ifdef YAX_ENABLE
             if (yax_nomaskpass==0 || !yax_isislandwall(z, !yax_globalcf) || (yax_nomaskdidit=1, 0))
 #endif
-            if ((gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
+            if (!bitmap_test(gotsector, nextsectnum))
             {
                 double const d = fp1.x*fp2.y - fp2.x*fp1.y;
                 vec2d_t const p1 = { fp2.x-fp1.x, fp2.y-fp1.y };
@@ -6591,7 +6670,7 @@ void polymost_scansector(int32_t sectnum)
                     )
                 {
                     sectorborder[sectorbordercnt++] = nextsectnum;
-                    gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
+                    bitmap_set(gotsector, nextsectnum);
                 }
             }
 
@@ -7094,7 +7173,7 @@ void polymost_drawrooms()
         if (automapping)
         {
             for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
-                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
+                bitmap_set(show2dwall, thewall[z]);
         }
 
         numbunches--;
@@ -8809,7 +8888,7 @@ void polymost_drawsprite(int32_t snum)
     }
 
     if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
-        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+        bitmap_set(show2dsprite, spritenum);
 
 _drawsprite_return:
     polymost_identityrotmat();
@@ -9611,7 +9690,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     usehightile = usehitile && usehightile;
     pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
     if (usehightile)
-        loadedhitile[wallnum>>3] |= pow2char[wallnum&7];
+        bitmap_set(loadedhitile, wallnum);
     usehightile = ousehightile;
 
     if (pth)
