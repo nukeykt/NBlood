@@ -10443,17 +10443,19 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
     return 0;
 }
 
+static FORCE_INLINE size_t getreachabilitybitmapsegmentsize(void)
+{
+    return ((numsectors + 7) >> 3);
+}
 
 static FORCE_INLINE size_t getreachabilitybitmapsize(void)
 {
-    return numsectors * ((numsectors + 7) >> 3);
+    return numsectors * getreachabilitybitmapsegmentsize();
 }
 
 static FORCE_INLINE uint8_t* getreachabilitybitmap(int const sectnum)
 {
-    Bassert(reachablesectors);
-    Bassert(numsectors);
-    return ((uint8_t*)(reachablesectors + (sectnum * tabledivide32_noinline(getreachabilitybitmapsize(), numsectors))));
+    return ((uint8_t*)(reachablesectors + (sectnum * getreachabilitybitmapsegmentsize())));
 }
 
 int sectorsareconnected(int const sect1, int const sect2)
@@ -10477,19 +10479,20 @@ void calc_sector_reachability(void)
         return;
 
     sectcrc = crc;
-    tablesize = getreachabilitybitmapsize();
 
-    Bassert(tablesize);
+    if (!reachablesectors || tablesize != getreachabilitybitmapsize())
+    {
+        tablesize = getreachabilitybitmapsize();
+        DO_FREE_AND_NULL(reachablesectors);
+        reachablesectors = (uint8_t *)Xcalloc(1, tablesize);
+    }
 
     Bmemset(wallsect, -1, sizeof(wallsect));
-
-    DO_FREE_AND_NULL(reachablesectors);
-    reachablesectors = (uint8_t*)Xcalloc(1, tablesize);
     auto sectlist = (int16_t *)Balloca(sizeof(int16_t) * numsectors);
 
     for (int sectnum=0; sectnum<numsectors; sectnum++)
     {
-        uint8_t* sectbitmap = getreachabilitybitmap(sectnum);
+        auto sectbitmap = getreachabilitybitmap(sectnum);
         int16_t nsecs;
         bfirst_search_init(sectlist, sectbitmap, &nsecs, numsectors, sectnum);
 
@@ -10498,13 +10501,25 @@ void calc_sector_reachability(void)
             Bassert((unsigned)listidx < (unsigned)numsectors);
             Bassert((unsigned)sectlist[listidx] < (unsigned)numsectors);
 
-            auto sec = (usectorptr_t)&sector[sectlist[listidx]];
+            int const osectnum = sectlist[listidx];
+            auto sec = (usectorptr_t)&sector[osectnum];
 
             int const startwall = sec->wallptr;
             int const endwall   = sec->wallptr + sec->wallnum;
 
             for (int j=startwall; j<endwall; j++)
-                wallsect[j] = sectlist[listidx];
+                wallsect[j] = osectnum;
+
+            auto othersectbitmap = getreachabilitybitmap(osectnum);
+
+            if (sectnum != osectnum && bitmap_test(othersectbitmap, sectnum))
+            {
+#if 0
+                LOG_F(INFO, "sector %d matches sector %d", sectnum, osectnum);
+#endif
+                Bmemcpy(sectbitmap, othersectbitmap, getreachabilitybitmapsegmentsize());
+                break;
+            }
 
             auto uwal = (uwallptr_t)&wall[startwall];
             for (int j=startwall; j<endwall; j++, uwal++)
@@ -10513,7 +10528,7 @@ void calc_sector_reachability(void)
                 {
                     bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
 #if 0
-                    OSD_Printf("sector %d reaches sector %d\n", sectnum, uwal->nextsector);
+                    LOG_F(INFO, "sector %d reaches sector %d", sectnum, uwal->nextsector);
 #endif
                 }
 
@@ -10522,7 +10537,7 @@ void calc_sector_reachability(void)
                 {
                     bfirst_search_try(sectlist, sectbitmap, &nsecs, upperSect);
 #if 0
-                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, upperSect);
+                    LOG_F(INFO, "sector %d reaches sector %d through TROR", sectnum, upperSect);
 #endif
                 }
 
@@ -10531,7 +10546,7 @@ void calc_sector_reachability(void)
                 {
                     bfirst_search_try(sectlist, sectbitmap, &nsecs, lowerSect);
 #if 0
-                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, lowerSect);
+                    LOG_F(INFO, "sector %d reaches sector %d through TROR", sectnum, lowerSect);
 #endif
                 }
             }
