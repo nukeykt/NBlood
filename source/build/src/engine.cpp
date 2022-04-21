@@ -213,7 +213,7 @@ classicht_t *tileLoadHigh(int dapicnum)
     if ((!usehightile) |
         ((paletteloaded & PALETTE_MAIN) != PALETTE_MAIN) |
         (tsiz.x <= 0) | (tsiz.y <= 0) |
-        (!si/* || (si->flags & HICR_INDEXED) != HICR_INDEXED*/) |
+        (!si || (si->flags & HICR_ARTIMMUNITY) == HICR_ARTIMMUNITY) |
         (cht->lock == 254))
         return NULL;
 
