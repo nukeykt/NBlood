@@ -187,6 +187,8 @@ const char *engineVerbosityCallback(loguru::Verbosity verbosity)
             return "INPT";
         case LOG_NET:
             return "NET";
+        case LOG_PR:
+            return "PR";
         case LOG_DEBUG:
             return "DBG";
     }
