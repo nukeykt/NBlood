@@ -248,7 +248,11 @@ engine_obj := $(obj)/$(engine)
 
 engine_cflags := -I$(engine_src) -I$(mimalloc_inc) -I$(imgui_inc)
 
-engine_deps := mimalloc imgui
+engine_deps := mimalloc
+
+ifneq (1,$(SDL_TARGET))
+    engine_deps += imgui
+endif
 
 ifneq (0,$(USE_PHYSFS))
     engine_deps += physfs

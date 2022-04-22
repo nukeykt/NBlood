@@ -15,15 +15,18 @@
 #include "sdl_inc.h"
 #include "softsurface.h"
 
-
+#if SDL_MAJOR_VERSION >= 2
 # include "imgui.h"
 # include "imgui_impl_sdl.h"
+#ifdef USE_OPENGL
+# include "imgui_impl_opengl3.h"
+#endif
+#endif
 
 #ifdef USE_OPENGL
 # include "glad/glad.h"
 # include "glbuild.h"
 # include "glsurface.h"
-# include "imgui_impl_opengl3.h"
 #endif
 
 #if defined HAVE_GTK2
@@ -121,11 +124,11 @@ static SDL_Surface *loadappicon(void);
 #endif
 
 static mutex_t m_initprintf;
-
+#if SDL_MAJOR_VERSION >= 2
 static ImGuiIO *g_ImGui_IO;
 bool g_ImGuiCaptureInput = true;
+#endif
 uint8_t g_ImGuiCapturedDevices;
-
 #ifdef _WIN32
 # if SDL_MAJOR_VERSION >= 2
 //
@@ -1289,7 +1292,9 @@ void mouseGrabInput(bool grab)
 
 void mouseLockToWindow(char a)
 {
+#if SDL_MAJOR_VERSION >= 2
     if (!g_ImGui_IO || !g_ImGui_IO->WantCaptureMouse)
+#endif
     if (!(a & 2))
     {
         mouseGrabInput(a);
@@ -1300,6 +1305,7 @@ void mouseLockToWindow(char a)
 
     SDL_ShowCursor(newstate);
 
+#if SDL_MAJOR_VERSION >= 2
     if (g_ImGui_IO)
     {
         if (newstate)
@@ -1307,6 +1313,7 @@ void mouseLockToWindow(char a)
         else
             g_ImGui_IO->ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     }
+#endif
 }
 
 
@@ -1506,33 +1513,40 @@ bool g_ImGuiFrameActive;
 void engineBeginImGuiFrame(void)
 {
     Bassert(g_ImGuiFrameActive == false);
+#if SDL_MAJOR_VERSION >= 2
 #ifdef USE_OPENGL
     ImGui_ImplOpenGL3_NewFrame();
 #endif
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
     g_ImGuiFrameActive = true;
+#endif
 }
 
 void engineEndImGuiInput(void)
 {
     keyFlushChars();
     keyFlushScans();
+#if SDL_MAJOR_VERSION >= 2
     ImGui::GetIO().ClearInputKeys();
 //    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     SDL_StopTextInput();
+#endif
 }
 
 void engineBeginImGuiInput(void)
 {
     keyFlushChars();
     keyFlushScans();
+#if SDL_MAJOR_VERSION >= 2
     SDL_StartTextInput();
 //    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+#endif
 }
 
 void engineSetupImGui(void)
 {
+#if SDL_MAJOR_VERSION >= 2
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     g_ImGui_IO = &ImGui::GetIO();
@@ -1551,6 +1565,7 @@ void engineSetupImGui(void)
     g_ImGui_IO->Fonts->AddFontDefault();
     //ImFont* font = g_ImGui_IO->Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\consola.ttf", 12.0f);
     //IM_ASSERT(font != NULL);
+#endif
 }
 
 #ifdef USE_OPENGL
@@ -1990,14 +2005,14 @@ void videoShowFrame(int32_t w)
         {
             glsurface_blitBuffer();
         }
-
+#if SDL_MAJOR_VERSION >= 2
         if (g_ImGuiFrameActive)
         {
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             g_ImGuiFrameActive = false;
         }
-
+#endif
         if ((r_glfinish == 1 && r_finishbeforeswap == 1) || vsync_renderlayer == 2)
         {
             MICROPROFILE_SCOPEI("Engine", "glFinish", MP_GREEN);

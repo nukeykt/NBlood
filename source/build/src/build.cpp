@@ -3598,7 +3598,12 @@ void editorMaybeWarpMouse(int searchx, int searchy)
     // force g_mouseAbs here because we seem to get a frame of rendering with the old values
     // despite pumping the SDL event queue immediately after SDL_WarpMouseInWindow
     g_mouseAbs = { searchx*upscalefactor, searchy*upscalefactor };
+#if SDL_MAJOR_VERSION >= 2
     SDL_WarpMouseInWindow(NULL, searchx*upscalefactor, searchy*upscalefactor);
+#else
+    // this would be FIXME if anyone gave a shit about using the editor with SDL 1.2
+    SDL_WarpMouse(searchx*upscalefactor, searchy*upscalefactor);
+#endif
     handleevents();
     mouseLockToWindow(0);
 #endif
