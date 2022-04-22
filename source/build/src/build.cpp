@@ -7076,10 +7076,11 @@ end_join_sectors:
                     yax_update(0);
                     yax_updategrays(pos.z);
 #endif
-                    calc_sector_reachability();
                     numwalls = newnumwalls;
                     newnumwalls = -1;
                     numsectors++;
+
+                    calc_sector_reachability();
 
                     asksave = 1;
                     printmessage16("Inner loop made into new sector.");
