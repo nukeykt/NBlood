@@ -8616,7 +8616,7 @@ static int osdcmd_upscalefactor(osdcmdptr_t parm)
 
         if (!in3dmode())
         {
-            videoSet2dMode(xres, yres, upscalefactor);
+            videoSet2dMode(fullscreen, xres, yres, upscalefactor);
             return OSDCMD_OK;
         }
 

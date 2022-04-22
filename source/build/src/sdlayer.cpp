@@ -2825,9 +2825,9 @@ int32_t handleevents(void)
     if (!frameplace && sdl_resize.x)
     {
         if (in3dmode())
-            videoSetGameMode(fullscreen, sdl_resize.x & ~1, sdl_resize.y & ~1, bpp, upscalefactor);
+            videoSetGameMode(fullscreen, sdl_resize.x, sdl_resize.y, bpp, upscalefactor);
         else
-            videoSet2dMode(sdl_resize.x & ~1, sdl_resize.y & ~1, upscalefactor);
+            videoSet2dMode(fullscreen, sdl_resize.x, sdl_resize.y, upscalefactor);
 
         sdl_resize = {};
     }

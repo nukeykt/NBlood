@@ -1519,7 +1519,7 @@ int32_t wallvisible(int32_t const x, int32_t const y, int16_t const wallnum);
 
 //void   qsetmode640350(void);
 //void   qsetmode640480(void);
-void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor = 1);
+void videoSet2dMode(char davidoption, int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor = 1);
 void   clear2dscreen(void);
 void   editorDraw2dGrid(int32_t posxe, int32_t posye, int32_t posze, int16_t cursectnum,
                   int16_t ange, int32_t zoome, int16_t gride);

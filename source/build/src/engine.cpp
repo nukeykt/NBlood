@@ -13986,7 +13986,7 @@ void setfirstwall(int16_t sectnum, int16_t newfirstwall)
 //
 // qsetmodeany
 //
-void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor)
+void videoSet2dMode(char davidoption, int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor)
 {
     daupscaledxdim = max(640, min(daupscaledxdim, max(640, daupscaledxdim/daupscalefactor) * daupscalefactor));
     daupscaledydim = max(480, min(daupscaledydim, max(480, daupscaledydim/daupscalefactor) * daupscalefactor));
@@ -13997,7 +13997,7 @@ void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daup
 #endif
 
     g_lastpalettesum = 0;
-    if (videoSetMode(daupscaledxdim,daupscaledydim,8,fullscreen) < 0) return;
+    if (videoSetMode(daupscaledxdim,daupscaledydim,8,davidoption) < 0) return;
 
     upscalefactor = daupscalefactor;
 

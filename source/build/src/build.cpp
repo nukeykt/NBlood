@@ -303,7 +303,7 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
 
     if (!in3dmode())
     {
-        videoSet2dMode(newx, newy, upscalefactor);
+        videoSet2dMode(newfullscreen, newx, newy, upscalefactor);
 
         videoBeginDrawing();	//{{{
         CLEARLINES2D(0, ydim16, 0);
@@ -3809,7 +3809,7 @@ void overheadeditor(void)
     ovh.splitsect = -1;
     ovh.splitstartwall = -1;
 
-    videoSet2dMode(xres, yres, upscalefactor);
+    videoSet2dMode(fullscreen, xres, yres, upscalefactor);
 
     osearchx = searchx;
     osearchy = searchy;
