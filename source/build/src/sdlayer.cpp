@@ -1639,7 +1639,7 @@ int32_t setvideomode_sdlcommon(int32_t *x, int32_t *y, int32_t c, int32_t fs, in
     return 1;
 }
 
-void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int32_t regrab)
+int setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int32_t regrab)
 {
     wm_setapptitle(apptitle);
 
@@ -1685,47 +1685,75 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
         g_windowPosValid = false;
 
     SDL_DisplayMode desktopmode;
-    SDL_GetDesktopDisplayMode(newdisplayindex, &desktopmode);
+    if (SDL_GetDesktopDisplayMode(newdisplayindex, &desktopmode))
+    {
+        LOG_F(ERROR, "Unable to query desktop display mode: %s.", SDL_GetError());
+        return -1;
+    }
 
-    refreshfreq = desktopmode.refresh_rate;
+#ifdef _WIN32
+    if (timingInfo.rateRefresh.uiNumerator && timingInfo.rateRefresh.uiDenominator)
+        refreshfreq = (double)timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
+    else
+#endif
+        refreshfreq = desktopmode.refresh_rate;
 
     int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
     int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
 
     if (fs)
     {
-        SDL_DisplayMode dispmode;
+        SDL_DisplayMode dispmode = { 0, x, y, maxrefreshfreq, nullptr }, newmode;
 
-        dispmode.w            = x;
-        dispmode.h            = y;
-        dispmode.refresh_rate = maxrefreshfreq;
-
-        SDL_DisplayMode newmode;
-        SDL_GetClosestDisplayMode(newdisplayindex, &dispmode, &newmode);
-        SDL_SetWindowDisplayMode(sdl_window, &newmode);
-#ifdef _WIN32
-        if (timingInfo.rateRefresh.uiNumerator)
-            refreshfreq = (double)timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
+        if (SDL_GetClosestDisplayMode(newdisplayindex, &dispmode, &newmode) == nullptr)
+        {
+            LOG_F(ERROR, "Unable to find a fullscreen video mode suitable for or similar to %dx%d at %dHz: %s.", x, y, maxrefreshfreq, SDL_GetError());
+            return -1;
+        }
         else
-#endif
-            refreshfreq = newmode.refresh_rate;
+        {
+            if (SDL_SetWindowDisplayMode(sdl_window, &newmode))
+            {
+                LOG_F(ERROR, "Unable to set video mode: %s.", SDL_GetError());
+                return -1;
+            }
+            else 
+                refreshfreq = newmode.refresh_rate;
+        }
     }
 
-    VLOG_F(LOG_GFX, "Refresh rate: %.2fHz.", refreshfreq);
+    static double lastrefreshfreq;
+
+    if (refreshfreq != lastrefreshfreq)
+    {
+        VLOG_F(LOG_GFX, "Refresh rate: %.2fHz.", refreshfreq);
+        lastrefreshfreq = refreshfreq;
+    }
 
     SDL_SetWindowSize(sdl_window, x, y);
 
     if (fs)
     {
-        SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN);
-        SDL_SetWindowPosition(sdl_window, (int)SDL_WINDOWPOS_UNDEFINED_DISPLAY(newdisplayindex), (int)SDL_WINDOWPOS_UNDEFINED_DISPLAY(newdisplayindex));
+        if (SDL_SetWindowFullscreen(sdl_window, SDL_WINDOW_FULLSCREEN))
+        {
+            LOG_F(ERROR, "Unable to set window fullscreen: %s.", SDL_GetError());
+            return -1;
+        }
+        else SDL_SetWindowPosition(sdl_window, (int)SDL_WINDOWPOS_UNDEFINED_DISPLAY(newdisplayindex), (int)SDL_WINDOWPOS_UNDEFINED_DISPLAY(newdisplayindex));
     }
     else
     {
-        SDL_SetWindowFullscreen(sdl_window, 0);
-        SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
-        SDL_SetWindowPosition(sdl_window, g_windowPosValid ? g_windowPos.x : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex),
-                                          g_windowPosValid ? g_windowPos.y : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex));
+        if (SDL_SetWindowFullscreen(sdl_window, 0))
+        {
+            LOG_F(ERROR, "Unable to set windowed mode: %s.", SDL_GetError());
+            return -1;
+        }
+        else
+        {
+            SDL_SetWindowBordered(sdl_window, borderless ? SDL_FALSE : SDL_TRUE);
+            SDL_SetWindowPosition(sdl_window, g_windowPosValid ? g_windowPos.x : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex),
+                                              g_windowPosValid ? g_windowPos.y : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(newdisplayindex));
+        }
     }
 
     SDL_FlushEvent(SDL_WINDOWEVENT);
@@ -1739,6 +1767,8 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
 #if SDL_MAJOR_VERSION >= 2
     g_displayindex = newdisplayindex;
 #endif
+
+    return 0;
 }
 
 #if SDL_MAJOR_VERSION >= 2
@@ -1752,7 +1782,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     {
         if (ret == 0)
         {
-            setvideomode_sdlcommonpost(x, y, c, fs, regrab);
+            if (setvideomode_sdlcommonpost(x, y, c, fs, regrab))
+                return -1;
         }
         return ret;
     }
@@ -1760,10 +1791,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     VLOG_F(LOG_GFX, "Setting video mode %dx%d (%d-bpp %s).", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
 
     if (sdl_window)
-    {
-        setvideomode_sdlcommonpost(x, y, c, fs, regrab);
-        return 0;
-    }
+        return setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
     int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
 
