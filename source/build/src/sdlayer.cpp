@@ -1681,15 +1681,15 @@ int setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int3
     int const displayindex = SDL_GetWindowDisplayIndex(sdl_window);
     int const newdisplayindex = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : displayindex;
 
-    if (displayindex != newdisplayindex)
-        g_windowPosValid = false;
-
     SDL_DisplayMode desktopmode;
     if (SDL_GetDesktopDisplayMode(newdisplayindex, &desktopmode))
     {
         LOG_F(ERROR, "Unable to query desktop display mode: %s.", SDL_GetError());
         return -1;
     }
+
+    if (displayindex != newdisplayindex || g_windowPos.x + x < 0 || g_windowPos.y + y < 0 || g_windowPos.x > desktopmode.w || g_windowPos.y > desktopmode.h)
+        g_windowPosValid = false;
 
 #ifdef _WIN32
     if (timingInfo.rateRefresh.uiNumerator && timingInfo.rateRefresh.uiDenominator)
