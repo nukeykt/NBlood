@@ -10,9 +10,9 @@ AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: false
-AllowShortIfStatementsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false 
 AllowShortLambdasOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+AllowShortLoopsOnASingleLine: true 
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
 BinPackArguments: true
@@ -40,7 +40,10 @@ MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
 PointerAlignment: Right
 PointerBindsToType: false
+# I'd like to set this but it's too slow for daily use...
+# QualifierAlignment: Right
 ReflowComments: false
+RemoveBracesLLVM: true 
 SortIncludes: true
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
