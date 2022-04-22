@@ -1360,9 +1360,15 @@ void videoGetModes(int display)
 
     if (modeschecked || novideo)
         return;
+    else
+    {
+        auto name = Xstrdup(videoGetDisplayName(display)), shortened = strtok(name, "(");
+        if (!shortened) shortened = name;
+        VLOG_F(LOG_GFX, "Detecting video modes for display %d (%s)...", display, shortened);
+        DO_FREE_AND_NULL(name);
+    }
 
     validmodecnt = 0;
-    VLOG_F(LOG_GFX, "Detecting video modes...");
 
     // do fullscreen modes first
     for (i = 0; i < SDL_GetNumDisplayModes(display); i++)
