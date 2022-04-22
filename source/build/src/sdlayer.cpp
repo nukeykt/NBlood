@@ -2671,13 +2671,17 @@ int32_t handleevents_pollsdl(void)
                     case SDL_WINDOWEVENT_MOVED:
                     {
                         if (fullscreen) break;
-                        g_windowPos.x = ev.window.data1;
-                        g_windowPos.y = ev.window.data2;
+                        g_windowPos = { ev.window.data1, ev.window.data2 };
                         g_windowPosValid = true;
 
-                        r_displayindex = SDL_GetWindowDisplayIndex(sdl_window);
-                        modeschecked = 0;
-                        videoGetModes();
+                        int displayindex = SDL_GetWindowDisplayIndex(sdl_window);
+
+                        if (r_displayindex != displayindex || !modeschecked)
+                        {
+                            r_displayindex = displayindex;
+                            modeschecked = 0;
+                            videoGetModes();
+                        }
                         break;
                     }
                     case SDL_WINDOWEVENT_RESIZED:
