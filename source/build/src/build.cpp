@@ -8480,8 +8480,9 @@ CANCEL:
                     if (!EDITING_MAP_P())
                     {
                         if (map_undoredo(0)) printmessage16("Nothing to undo!");
-                        else printmessage16("Revision %d undone",map_revision);
+                        else printmessage16("Revision %d undone", map_revision);
                     }
+                    else printmessage16("Can't undo or redo while editing!");
                 }
                 else if (ch == 'r' || ch == 'R')
                 {
@@ -8491,6 +8492,7 @@ CANCEL:
                         if (map_undoredo(1)) printmessage16("Nothing to redo!");
                         else printmessage16("Restored revision %d", map_revision - 1);
                     }
+                    else printmessage16("Can't undo or redo while editing!");
                 }
 #endif
                 else if (ch == 'q' || ch == 'Q')  //Q
