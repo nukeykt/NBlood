@@ -311,6 +311,8 @@ static void thinkSwimChase(spritetype *pSprite, XSPRITE *pXSprite)
                     aiNewState(pSprite, pXSprite, &tinycaleb13967C);
             }
         }
+        else
+            aiNewState(pSprite, pXSprite, &tinycaleb13967C);
         return;
     }
     aiNewState(pSprite, pXSprite, &tinycalebSwimGoto);
