@@ -24,7 +24,7 @@ typedef struct hicreplc_t {
     vec2f_t scale;
     float alphacut, specpower, specfactor;
     char palnum;
-    uint8_t flags;
+    uint8_t flags, tfn;
 } hicreplctyp;
 
 typedef uint16_t polytintflags_t;
