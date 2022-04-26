@@ -1001,6 +1001,15 @@ EXTERN char show2dsector[(MAXSECTORS+7)>>3];
 EXTERN char show2dwall[(MAXWALLS+7)>>3];
 EXTERN char show2dsprite[(MAXSPRITES+7)>>3];
 
+struct classicht_t
+{
+    intptr_t ptr;
+    vec2_16_t upscale;
+    char lock;
+};
+
+EXTERN classicht_t classicht[MAXTILES];
+
 // In the editor, gotpic is only referenced from inline assembly;
 // the compiler needs that hint or building with LTO will discard it.
 #if !defined __clang__ && !defined NOASM
@@ -1239,6 +1248,7 @@ void    artClearMapArt(void);
 void    artSetupMapArt(const char *filename);
 bool    tileLoad(int16_t tilenume);
 void    tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer);
+intptr_t tileLoadScaled(int const picnum, vec2_16_t* upscale = nullptr);
 int32_t tileGetCRC32(int16_t tileNum);
 vec2_16_t tileGetSize(int16_t tileNum);
 void    artConvertRGB(palette_t *pic, uint8_t const *buf, int32_t bufsizx, int32_t sizx, int32_t sizy);

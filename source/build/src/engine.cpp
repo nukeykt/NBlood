@@ -194,18 +194,9 @@ static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to dr
 int32_t enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
-struct classicht_t
-{
-    intptr_t ptr;
-    vec2_t upscale;
-    char lock;
-};
-
-classicht_t classicht[MAXTILES];
-
 classicht_t *tileLoadHigh(int dapicnum)
 {
-#ifdef USE_OPENGL
+#ifdef WITHKPLIB
     auto tsiz = tilesiz[dapicnum];
     auto si   = hicfindsubst(dapicnum, 0, 0);
     auto cht  = &classicht[dapicnum];
@@ -219,57 +210,63 @@ classicht_t *tileLoadHigh(int dapicnum)
 
     if (!cht->ptr)
     {
-        char const *fn = si->filename;
-
-        if (!fn || check_file_exist(fn))
-            return NULL;
-
         int32_t xsiz = 0, ysiz = 0;
-        palette_t *picptr = NULL;
+        int32_t const length = kpzbufload(si->filename);
 
-#ifdef WITHKPLIB
-        int32_t const length = kpzbufload(fn);
-        kpzdecode(length, (intptr_t *)&picptr, &xsiz, &ysiz);
-#endif
-
-        if (EDUKE32_PREDICT_FALSE(!picptr | (xsiz <= 0) | (ysiz <= 0)))
+        if (EDUKE32_PREDICT_FALSE(length <= 0))
         {
+invalid:
             cht->lock = 254;
-            Xfree(picptr);
             return NULL;
         }
+        
+        kpgetdim(kpzbuf, length, &xsiz, &ysiz);
 
-        vec2_t upscale = {};
+        if (EDUKE32_PREDICT_FALSE((xsiz <= 0) | (ysiz <= 0)))
+            goto invalid;
+
+        vec2_16_t upscale = {};
 
         while (tsiz.x < xsiz) { tsiz.x <<= 1; upscale.x++; }
         while (tsiz.y < ysiz) { tsiz.y <<= 1; upscale.y++; }
 
-        if ((tsiz.x != xsiz) | (tsiz.y != ysiz))
-        {
-            cht->lock = 254;
-            Xfree(picptr);
-            return NULL;
-        }
+        if ((tsiz.x != xsiz) | (tsiz.y != ysiz) | !(upscale.x | upscale.y))
+            goto invalid;
 
+        auto picptr = (palette_t *)Xmalloc(ysiz * (xsiz << 2));
+        int  result = kprender(kpzbuf, length, (intptr_t)picptr, (xsiz << 2), xsiz, ysiz);
+
+        if (EDUKE32_PREDICT_FALSE(result < 0))
+        {
+            Xfree(picptr);
+            goto invalid;
+        }
+        
         cht->upscale = upscale;
-        cht->lock = CACHE1D_UNLOCKED;
+        cht->lock    = CACHE1D_UNLOCKED;
+        
         g_cache.allocateBlock(&cht->ptr, xsiz * ysiz, &cht->lock);
 
-        paletteFlushClosestColor();
+        //paletteFlushClosestColor();
 
         auto buf = (char*)cht->ptr;
-        int alphacut = clamp((int)(255.f - 255.f * si->alphacut), 0, 255);
+        
+        Bmemset(buf, 255, xsiz * ysiz);
+        
+        int const alphacut = clamp((int)(255.f - 255.f * si->alphacut), 0, 255);
 
         for (int j = 0; j < ysiz; ++j)
         {
             int const ofs = j * xsiz;
             for (int i = 0; i < xsiz; ++i)
             {
-                palette_t const *const col = &picptr[ofs + i];
-                buf[(i * ysiz) + j] =
-                (col->f < alphacut) ? 255 : paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
+                auto col = &picptr[ofs + i];
+                if (col->f >= alphacut)
+                    buf[(i * ysiz) + j] = paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
             }
         }
+        
+        Xfree(picptr);
     }
     else if (cht->lock < CACHE1D_UNLOCKED)
         cht->lock = CACHE1D_UNLOCKED;
@@ -2023,7 +2020,7 @@ static WSHELPER_DECL void calc_vplcinc(uint32_t *vplc, int32_t *vinc, const int3
 # endif
 #endif
 
-static intptr_t tileLoadScaled(int const picnum, vec2_t *upscale = nullptr)
+intptr_t tileLoadScaled(int const picnum, vec2_16_t *upscale/* = nullptr*/)
 {
     intptr_t bufplc;
 
@@ -2057,7 +2054,7 @@ static void maskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
 
     setgotpic(globalpicnum);
 
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
     tsiz.x <<= upscale.x;
@@ -2775,7 +2772,7 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     tileUpdatePicnum(&globalpicnum, 0);
     setgotpic(globalpicnum);
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return 1;
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     globalbufplc = tileLoadScaled(globalpicnum, &upscale);
     globalshade = shade;
     globvis = globalcisibility;
@@ -3082,7 +3079,7 @@ static void wallscan(int32_t x1, int32_t x2,
     if ((uwal[x1] > ydimen) && (uwal[x2] > ydimen)) return;
     if ((dwal[x1] < 0) && (dwal[x2] < 0)) return;
 
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     tileLoadScaled(globalpicnum, &upscale);
 
     tsiz.x <<= upscale.x;
@@ -3629,7 +3626,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     setgotpic(globalpicnum);
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return;
 
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
     wal = (uwalltype *)&wall[sec->wallptr];
@@ -3956,7 +3953,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     setgotpic(globalpicnum);
     if ((tilesiz[globalpicnum].x <= 0) || (tilesiz[globalpicnum].y <= 0)) return;
 
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
     wal = (uwallptr_t)&wall[sec->wallptr];
@@ -4185,7 +4182,7 @@ static void parascan(char dastat, int32_t bunch)
     if (tsizy==0)
         return;
 
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
     globalxpanning <<= upscale.x;
@@ -4339,7 +4336,7 @@ static void setup_globals_wall1(uwallptr_t wal, int32_t dapicnum)
     globalpicnum = dapicnum;
     if ((unsigned)globalpicnum >= MAXTILES) globalpicnum = 0;
     tileUpdatePicnum(&globalpicnum, 16384);
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     tileLoadScaled(globalpicnum, &upscale);
     globalxpanning = wal->xpanning<<upscale.x;
     globalypanning = wal->ypanning;
@@ -4351,7 +4348,7 @@ static void setup_globals_wall1(uwallptr_t wal, int32_t dapicnum)
 
 static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t topzref, int32_t botzref)
 {
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     if (globalht)
         upscale = globalht->upscale;
     const int32_t logtilesizy = (picsiz[globalpicnum]>>4) + upscale.y;
@@ -5345,7 +5342,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
 static void setup_globals_sprite1(tspriteptr_t tspr, usectorptr_t sec,
                                      int32_t yspan, int32_t yoff, int32_t tilenum,
                                      int32_t cstat, int32_t *z1ptr, int32_t *z2ptr,
-                                     vec2_t upscale = {})
+                                     vec2_16_t upscale)
 {
     int32_t logtilesizy, tsizy;
     int32_t z1, z2 = tspr->z - ((yoff*tspr->yrepeat)<<2);
@@ -5537,7 +5534,7 @@ draw_as_face_sprite:
         if (/*EDUKE32_PREDICT_FALSE*/((span.x>>11) >= siz.x || span.y >= (siz.y>>1)))
             return;  //Watch out for divscale overflow
 
-        vec2_t upscale = {};
+        vec2_16_t upscale = {};
         tileLoadScaled(tilenum, &upscale);
 
         x1 = xb-(siz.x>>1);
@@ -5749,7 +5746,7 @@ draw_as_face_sprite:
         if (!get_screen_coords(p1, p2, &sx1, &sy1, &sx2, &sy2))
             return;
 
-        vec2_t upscale = {};
+        vec2_16_t upscale = {};
         tileLoadScaled(tilenum, &upscale);
 
         const int32_t topinc = -mulscale10(p1.y,xspan<<upscale.x);
@@ -6367,7 +6364,7 @@ draw_as_face_sprite:
 
         setgotpic(globalpicnum);
 
-        vec2_t upscale = {};
+        vec2_16_t upscale = {};
         globalbufplc = tileLoadScaled(globalpicnum, &upscale);
 
         if (slope != 0)
@@ -7772,7 +7769,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
     setgotpic(picnum);
 
-    vec2_t upscale = {};
+    vec2_16_t upscale = {};
     bufplc = tileLoadScaled(picnum, &upscale);
 
     if (palookup[dapalnum] == NULL) dapalnum = 0;
