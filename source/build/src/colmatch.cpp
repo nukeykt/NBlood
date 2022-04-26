@@ -80,8 +80,6 @@ void paletteFlushClosestColor(void)
     numcolmatchresults = 0;
 }
 
-#define checkbitfield(field, idx) ((field)[(idx)>>3] & (1u<<((idx)&7)))
-
 // Finds a color index in [0 .. lastokcol] closest to (r, g, b).
 // <lastokcol> must be in [0 .. 255].
 int32_t paletteGetClosestColorWithBlacklist(int32_t const r, int32_t const g, int32_t const b, int32_t const lastokcol, uint8_t const * const blacklist)
@@ -118,7 +116,7 @@ int32_t paletteGetClosestColorWithBlacklist(int32_t const r, int32_t const g, in
     if (mindist != -1)
     {
         uint32_t const idx = colmatchresults[mindist]>>24;
-        if (idx <= (unsigned)lastokcol && (blacklist == nullptr || !checkbitfield(blacklist, idx)))
+        if (idx <= (unsigned)lastokcol && (blacklist == nullptr || !bitmap_test(blacklist, idx)))
             return idx;
     }
 
@@ -164,7 +162,7 @@ int32_t paletteGetClosestColorWithBlacklistNoCache(int32_t r, int32_t g, int32_t
             char const * const pal1 = (char const *)&colmatch_palette[i*3];
             int dist = gdist[pal1[1]+g];
 
-            if (dist >= mindist || i > lastokcol || (blacklist != nullptr && checkbitfield(blacklist, i))) continue;
+            if (dist >= mindist || i > lastokcol || (blacklist != nullptr && bitmap_test(blacklist, i))) continue;
             if ((dist += rdist[pal1[0]+r]) >= mindist) continue;
             if ((dist += bdist[pal1[2]+b]) >= mindist) continue;
 
@@ -181,7 +179,7 @@ int32_t paletteGetClosestColorWithBlacklistNoCache(int32_t r, int32_t g, int32_t
 
     for (bssize_t i = 0; i <= lastokcol; ++i)
     {
-        if (blacklist != nullptr && checkbitfield(blacklist, i))
+        if (blacklist != nullptr && bitmap_test(blacklist, i))
             continue;
 
         char const * const pal1 = (char const *)&colmatch_palette[i*3];

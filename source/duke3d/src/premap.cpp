@@ -37,12 +37,12 @@ static int32_t g_precacheCount;
 static int32_t NET_75_CHECK = 0;
 
 static void flag_precache(int32_t tile, int32_t type)
-{
-    if (!(gotpic[tile>>3] & pow2char[tile&7]))
+{    
+    if (!bitmap_test(gotpic, tile))
         g_precacheCount++;
 
-    gotpic[tile>>3] |= pow2char[tile&7];
-    precachehightile[type][tile>>3] |= pow2char[tile&7];
+    bitmap_set(gotpic, tile);
+    bitmap_set(precachehightile[type], tile);
 }
 
 static void tloadtile(int tilenume, int type)
@@ -426,7 +426,7 @@ static void cacheExtraTextureMaps(int tileNum)
     {
         for (int type = 0; type < 2 && !KB_KeyPressed(sc_Space); type++)
         {
-            if (precachehightile[type][tileNum >> 3] & pow2char[tileNum & 7])
+            if (bitmap_test(precachehightile[type], tileNum))
             {
                 for (int k = 0; k < MAXPALOOKUPS - RESERVEDPALS && !KB_KeyPressed(sc_Space); k++)
                 {
@@ -508,7 +508,7 @@ void G_CacheMapData(void)
             i+=7;
             continue;
         }
-        else if ((gotpic[i>>3] & pow2char[i&7]) != pow2char[i&7])
+            else if (bitmap_test(gotpic, i))
             continue;
 
         if (waloff[i] == 0)
