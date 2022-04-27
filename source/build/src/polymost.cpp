@@ -1175,8 +1175,8 @@ void polymost_glinit()
     polymost_resetVertexPointers();
 
     texcache_init();
-    texcache_loadoffsets();
     texcache_openfiles();
+    texcache_loadoffsets();
 
     texcache_setupmemcache();
     texcache_checkgarbage();
