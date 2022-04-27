@@ -17,7 +17,6 @@
 #include "texcache.h"
 #include "vfs.h"
 
-
 //For loading/conversion only
 static vec3_t voxsiz;
 static int32_t yzsiz, *vbit = 0; //vbit: 1 bit per voxel: 0=air,1=solid
@@ -976,17 +975,34 @@ voxmodel_t *voxload(const char *filnam)
     //else if (!Bstrcasecmp(&filnam[i],".vxl")) { ret = loadvxl(filnam); is8bit = 0; }
     else return NULL;
 
-    voxmodel_t *const vm = (ret >= 0) ? vox2poly() : NULL;
-
-    if (vm)
+    voxmodel_t* vm = NULL;
+    if (ret >= 0)
     {
-        vm->mdnum = 1; //VOXel model id
-        vm->scale = vm->bscale = 1.f;
-        vm->siz.x = voxsiz.x; vm->siz.y = voxsiz.y; vm->siz.z = voxsiz.z;
-        vm->piv.x = voxpiv.x; vm->piv.y = voxpiv.y; vm->piv.z = voxpiv.z;
-        vm->is8bit = is8bit;
+        // file presence is guaranteed
+        buildvfs_kfd filh = kopen4load(filnam, 0);
+        int32_t const filelen = kfilelength(filh);
+        kclose(filh);
 
-        vm->texid = (uint32_t *)Xcalloc(MAXPALOOKUPS, sizeof(uint32_t));
+        char voxcacheid[BMAX_PATH];
+        texcache_calcid(voxcacheid, filnam, filelen, -1, -1);
+
+        // static variable 'gvox' is normally defined by 'vox2poly' -- do same here for safety
+        if (!(gvox = vm = voxcache_fetchvoxmodel(voxcacheid)))
+        {
+            vm = vox2poly();
+            voxcache_writevoxmodel(voxcacheid, vm);
+        }
+
+        if (vm)
+        {
+            vm->mdnum = 1; //VOXel model id
+            vm->scale = vm->bscale = 1.f;
+            vm->siz.x = voxsiz.x; vm->siz.y = voxsiz.y; vm->siz.z = voxsiz.z;
+            vm->piv.x = voxpiv.x; vm->piv.y = voxpiv.y; vm->piv.z = voxpiv.z;
+            vm->is8bit = is8bit;
+
+            vm->texid = (uint32_t*)Xcalloc(MAXPALOOKUPS, sizeof(uint32_t));
+        }
     }
 
     DO_FREE_AND_NULL(shcntmal);
