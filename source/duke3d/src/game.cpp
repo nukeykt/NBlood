@@ -5435,7 +5435,16 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
 
     for (int f = 0; f < NUMGAMEFUNCTIONS; f++)
-       scriptfile_addsymbolvalue(internal_gamefunction_names[f], f);
+       scriptfile_addsymbolvalue(gamefunc_symbol_names[f], f);
+
+#ifndef EDUKE32_STANDALONE
+    scriptfile_addsymbolvalue("gamefunc_Holo_Duke", gamefunc_Holo_Duke);
+    scriptfile_addsymbolvalue("gamefunc_Jetpack", gamefunc_Jetpack);
+    scriptfile_addsymbolvalue("gamefunc_NightVision", gamefunc_NightVision);
+    scriptfile_addsymbolvalue("gamefunc_MedKit", gamefunc_MedKit);
+    scriptfile_addsymbolvalue("gamefunc_Steroids", gamefunc_Steroids);
+    scriptfile_addsymbolvalue("gamefunc_Quick_Kick", gamefunc_Quick_Kick);
+#endif
 
     do
     {
@@ -5833,7 +5842,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                 else if (gamefunc_bitmap & (1ULL << keyIndex))
                 {
                     LOG_F(WARNING, "Duplicate listing of key '%s' near line %s:%d",
-                                internal_gamefunction_names[keyIndex], pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                                gamefunc_symbol_names[keyIndex], pScript->filename, scriptfile_getlinum(pScript, mapPtr));
                     continue;
                 }
 
