@@ -3,6 +3,7 @@
 
 #include "mio.hpp"
 #include "polymost.h"
+#include "mdsprite.h"
 
 #ifdef __cplusplus
 extern "C" {
