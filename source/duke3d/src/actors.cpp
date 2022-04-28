@@ -200,7 +200,8 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
                 ++dmgFuzz;
 
             int dmgTotal = dmgBase + (krand()%(dmgFuzz-dmgBase));
-            if (SpriteProjectile[spriteNum].workslike & PROJECTILE_HITRADIUS_ADDITIVE)
+            if ((globalflags & DUKE3D_GLOBAL_ADDITIVE_HITRADIUS)
+                    | (SpriteProjectile[spriteNum].workslike & PROJECTILE_HITRADIUS_ADDITIVE))
                 dmgActor.htextra += dmgTotal;
             else
                 dmgActor.htextra = dmgTotal;
