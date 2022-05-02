@@ -87,9 +87,9 @@ void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t m
     m_baseAddress = ((uintptr_t)dacachestart + 15) & ~(uintptr_t)0xf;
     m_totalSize   = (dacachesize - (((uintptr_t)(dacachestart)) & 0xf)) & ~(uintptr_t)0xf;
 
-    m_maxBlocks    = MINCACHEINDEXSIZE;
-    m_minBlockSize = minsize >= MINCACHEBLOCKSIZE ? minsize : Bgetpagesize();
-    m_index        = (cacheindex_t *)Xaligned_alloc(m_minBlockSize, m_maxBlocks * sizeof(cacheindex_t));
+    m_maxBlocks = MINCACHEINDEXSIZE;
+    m_alignment = minsize >= MINCACHEBLOCKSIZE ? minsize : Bgetpagesize();
+    m_index     = (cacheindex_t *)Xaligned_alloc(m_alignment, m_maxBlocks * sizeof(cacheindex_t));
 
     reset();
 
@@ -164,11 +164,11 @@ int32_t cache1d::findBlock(int32_t const newbytes, int32_t * const besto, int32_
 
 void cache1d::tryHarder(int32_t const newbytes, int32_t *const besto, int32_t *const bestz)
 {
-    LOG_F(WARNING, "Request for %dKB block exhausted cache!", newbytes >> 10);    
-    LOG_F(WARNING, "Attempting to make it fit...");
+    LOG_F(ERROR, "Request for %dKB block exhausted cache!", newbytes >> 10);    
+    LOG_F(ERROR, "Attempting to make it fit...");
 
-    if (m_minBlockSize > MINCACHEBLOCKSIZE)
-        m_minBlockSize >>= 1;
+    if (m_alignment > MINCACHEBLOCKSIZE)
+        m_alignment >>= 1;
 
     int cnt = m_numBlocks - 1;
 
@@ -187,7 +187,11 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
 {
     // Make all requests a multiple of the minimum block size
     int const askedbytes = newbytes;
-    newbytes = (newbytes + m_minBlockSize-1) & ~(m_minBlockSize-1);
+
+    newbytes = (newbytes + m_alignment-1) & ~(m_alignment-1);
+    
+    if (newbytes > nextPow2(askedbytes))
+        newbytes = nextPow2(askedbytes);
 
 #ifdef DEBUGGINGAIDS
     if (EDUKE32_PREDICT_FALSE(!newlockptr || *newlockptr == 0))
@@ -298,7 +302,7 @@ void cache1d::report(void)
     int32_t usedSize = 0;
     int32_t unusable = 0;
     inthashtable_t h_blocktotile = { nullptr, INTHASH_SIZE(m_maxBlocks) };
-
+    
     inthash_init(&h_blocktotile);
     
     for (native_t j = 0; j < MAXTILES-1; j++)
