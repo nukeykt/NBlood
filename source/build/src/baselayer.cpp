@@ -123,11 +123,17 @@ static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
         uint32_t const missCount     = (uint32_t)stats->missCount.load();
         uint32_t const freeCount     = (uint32_t)stats->freeCount.load();
 
-        LOG_F(INFO, "%12s: %u", "cache hit", cacheHitCount);
-        LOG_F(INFO, "%12s: %u", "hit",       hitCount);
+        if (cacheHitCount)
+            LOG_F(INFO, "%12s: %u", "cache hit", cacheHitCount);
+
+        if (hitCount)
+            LOG_F(INFO, "%12s: %u", "hit",       hitCount);
+
         if (missCount)
             LOG_F(INFO, "%12s: %s%u","miss", osd->draw.errorfmt, missCount);
-        LOG_F(INFO, "%12s: %u",  "freed",     freeCount);
+        
+        if (freeCount)
+            LOG_F(INFO, "%12s: %u",  "freed",     freeCount);
 
         uint32_t const useCount        = cacheHitCount + hitCount + missCount - freeCount;
         uint32_t const bucketBytesUsed = useCount * elementSize;
