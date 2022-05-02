@@ -68,7 +68,7 @@ static void cacheTilesForSprite(int spriteNum)
 {
     if (ud.monsters_off && A_CheckEnemySprite(&sprite[spriteNum])) return;
 
-    int const picnum = sprite[spriteNum].picnum;
+    int const picnum = sprite[spriteNum].picnum == RESPAWN ? sprite[spriteNum].hitag : sprite[spriteNum].picnum;
     int extraTiles = 1;
 
     for (int j = picnum; j <= g_tile[picnum].cacherange; j++)
