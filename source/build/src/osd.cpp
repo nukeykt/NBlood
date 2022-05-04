@@ -764,6 +764,18 @@ static int osdfunc_toggle(osdcmdptr_t parm)
 //
 // OSD_Init() -- Initializes the on-screen display
 //
+
+void mi_log(char *msg, void *arg)
+{
+    UNREFERENCED_PARAMETER(arg);
+    int len = Bstrlen(msg);
+    
+    while (msg[len-1] == '\n')
+        msg[--len] = '\0';
+    
+    VLOG_F(LOG_MEM, "%s", msg);
+};
+
 void OSD_Init(void)
 {
     osd = (osdmain_t *)Xcalloc(1, sizeof(osdmain_t));
@@ -805,7 +817,9 @@ void OSD_Init(void)
 
     hash_init(&h_osd);
     hash_init(&h_cvars);
-
+    
+    mi_register_output((mi_output_fun *)(void *)&mi_log, NULL);
+    
     static osdcvardata_t cvars_osd [] =
     {
         { "osdclipboard", "paste text into console from system clipboard with RMB", (void *) &osd->text.useclipboard, CVAR_BOOL, 0, 1 },
@@ -856,8 +870,6 @@ void OSD_SetLogFile(const char *fn)
         OSD_Init();
 
     osdlogfn = fn;
-
-    mi_register_output((mi_output_fun *)(void *)&OSD_Puts, NULL);
 }
 
 
