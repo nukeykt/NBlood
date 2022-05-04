@@ -1570,7 +1570,7 @@ int app_main(int argc, char const* const* argv)
 
     Bsprintf(tempbuf, "Witchaven %s", s_buildRev);
     OSD_SetVersion(tempbuf, 10, 0);
-    OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
+    OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, OSDTEXT_DARKRED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
     SetupInput();
