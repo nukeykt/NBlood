@@ -156,7 +156,7 @@ static int osdfunc_heapinfo(osdcmdptr_t UNUSED(parm))
 }
 
 void engineSetupAllocator(void)
-{
+{    
     engineCreateAllocator();
 
 #ifdef SMMALLOC_STATS_SUPPORT
@@ -173,31 +173,18 @@ const char *engineVerbosityCallback(loguru::Verbosity verbosity)
     if (gameVerbosityCallback)
     {
         auto str = gameVerbosityCallback(verbosity);
+        
         if (str != nullptr)
             return str;
     }
 
-    switch (verbosity)
-    {
-        default:
-            return nullptr;
-        case LOG_ENGINE:
-            return "ENG";
-        case LOG_GFX:
-            return "GFX";
-        case LOG_GL:
-            return "GL";
-        case LOG_ASS:
-            return "ASS";
-        case LOG_INPUT:
-            return "INPT";
-        case LOG_NET:
-            return "NET";
-        case LOG_PR:
-            return "PR";
-        case LOG_DEBUG:
-            return "DBG";
-    }
+    char const *s[] = { nullptr, "ENG", "GFX", "GL", "ASS", "INPT", "NET", "PR", "MEM" };
+
+    if ((unsigned)verbosity < ARRAY_SIZE(s))
+        return s[verbosity];
+    else if (verbosity == LOG_DEBUG)
+        return "DBG";
+    else return nullptr;
 }
 
 bool g_useLogCallback = true;

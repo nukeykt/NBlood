@@ -19,6 +19,7 @@ enum loguru_verbosities_engine
     LOG_INPUT,
     LOG_NET,
     LOG_PR,
+    LOG_MEM,
     LOG_ENGINE_MAX,
     LOG_DEBUG = INT8_MAX,
 };
