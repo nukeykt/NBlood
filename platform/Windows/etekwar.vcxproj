@@ -187,6 +187,9 @@
     <ProjectReference Include="hmpplay.vcxproj">
       <Project>{acb5467d-9913-4a23-88c8-56a36dfa2db4}</Project>
     </ProjectReference>
+    <ProjectReference Include="imgui.vcxproj">
+      <Project>{c782e1f1-aace-4c00-afaf-3448dac597c5}</Project>
+    </ProjectReference>
     <ProjectReference Include="libsmackerdec.vcxproj">
       <Project>{598f0d83-2c1b-4f7c-b04d-7fdd471c8c45}</Project>
     </ProjectReference>
