@@ -435,8 +435,7 @@ void voxvbofree(voxmodel_t *vm)
 
 static voxmodel_t *vox2poly()
 {
-    gvox = (voxmodel_t *)Xmalloc(sizeof(voxmodel_t));
-    memset(gvox, 0, sizeof(voxmodel_t));
+    gvox = (voxmodel_t *)Xcalloc(1, sizeof(voxmodel_t));
 
     //x is largest dimension, y is 2nd largest dimension
     int32_t x = voxsiz.x, y = voxsiz.y, z = voxsiz.z;

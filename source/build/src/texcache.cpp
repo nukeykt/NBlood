@@ -922,7 +922,7 @@ voxmodel_t* voxcache_fetchvoxmodel(const char* const cacheid)
 
     voxcachedat_t voxd = {};
     size_t vertexsize, indexsize, mytexsize, totalsize;
-    voxmodel_t* vm = (voxmodel_t*)Xmalloc(sizeof(voxmodel_t));
+    voxmodel_t* vm = (voxmodel_t*)Xcalloc(1, sizeof(voxmodel_t));
 
     texcache.dataFilePos = texcache.entries[i]->offset;
     texcache_readdata(&voxd, sizeof(voxd));
