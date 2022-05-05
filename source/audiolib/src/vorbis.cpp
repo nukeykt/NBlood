@@ -33,7 +33,7 @@
 
 #ifdef HAVE_VORBIS
 
-#define BLOCKSIZE MV_MIXBUFFERSIZE
+#define BLOCKSIZE 512
 
 #define OGG_IMPL
 #define VORBIS_IMPL
