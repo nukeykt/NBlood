@@ -56,7 +56,7 @@ bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown
 
 static int osdfunc_printvar(int const cvaridx);
 
-void OSD_UpdateDrawBuffer(void);
+void OSD_UpdateDrawBuffer(bool const skipMutex = 0);
 void OSD_WritePendingLines(void);
 
 void OSD_RegisterCvar(osdcvardata_t * const cvar, int (*func)(osdcmdptr_t))
@@ -1769,15 +1769,17 @@ static int OSD_FilterConsoleMsg(char **putstr)
     return 0;
 }
 
-void OSD_UpdateDrawBuffer(void)
+void OSD_UpdateDrawBuffer(bool const skipMutex /*= 0*/)
 {
     auto &log = osd->log;
 
-    mutex_lock(&log.mutex);
+    if (!skipMutex)
+        mutex_lock(&log.mutex);
 
     if (log.m_lines->isEmpty())
     {
-        mutex_unlock(&log.mutex);
+        if (!skipMutex)
+            mutex_unlock(&log.mutex);
         return;
     }
 
@@ -1853,7 +1855,8 @@ void OSD_UpdateDrawBuffer(void)
         } while (*(++s));
 
     }
-    mutex_unlock(&log.mutex);
+    if (!skipMutex)
+        mutex_unlock(&log.mutex);
 }
 
 // writes lines from osd->log.m_pending to disk and updates osd->log.m_lines
@@ -1871,6 +1874,11 @@ void OSD_WritePendingLines(void)
             if (OSD_FilterConsoleMsg(&putstr) < 2)
             {
                 mutex_lock(&osd->log.mutex);
+                
+                // this is less than ideal
+                if (osd->log.m_lines->isFull())
+                    OSD_UpdateDrawBuffer(true);
+                
                 osd->log.m_lines->pushBack(putstr);
                 mutex_unlock(&osd->log.mutex);
             }
