@@ -547,6 +547,10 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
     return FALSE;
 }
 
+bool startwin_isopen(void)
+{
+    return !!startupdlg;
+}
 
 int32_t startwin_open(void)
 {
