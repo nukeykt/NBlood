@@ -5,7 +5,7 @@
 #include "names.h"
 #include "common_game.h"
 
-static const char *defaultgrpfilename = "stuff.dat";
+static const char *defaultgrpfilename = "STUFF.DAT";
 static const char *defaultdeffilename = "kenbuild.def";
 
 int g_useCwd;

@@ -477,7 +477,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     wm_setapptitle(AppProperName);
 
-    Bstrcpy(boardfilename, "nukeland.map");
+    Bstrcpy(boardfilename, "NUKELAND.MAP");
     netparm = argc;
     for (i=1; i<argc; i++)
     {
@@ -6432,7 +6432,7 @@ void drawtilebackground(/*int thex, int they,*/ short tilenum,
             rotatesprite(x*xsiz<<16,y*ysiz<<16,65536L,0,tilenum,shade,dapalnum,8+16+64+128,cx1,cy1,cx2,cy2);
 }
 
-void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
+extern "C" void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
 void G_Polymer_UnInit(void) { }
 void app_crashhandler(void) { }
 
