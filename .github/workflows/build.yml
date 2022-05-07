@@ -77,7 +77,7 @@ jobs:
       run: make -j2 duke3d sw blood rr exhumed tools CLANG=1
 
   build-linux-clang-nogl:
-    name: "Linux Clang"
+    name: "Linux Clang without GL"
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -89,7 +89,7 @@ jobs:
       run: make -j2 duke3d sw blood rr exhumed tools CLANG=1 USE_OPENGL=0
 
   build-linux-clang-nopolymer:
-    name: "Linux Clang"
+    name: "Linux Clang without Polymer"
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
