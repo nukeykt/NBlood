@@ -74,4 +74,5 @@ jobs:
         brew install sdl2 libogg libvorbis flac libvpx make
         brew unlink lz4
     - name: build
-      run: gmake -j2 duke3d sw blood rr exhumed tools
+      # TODO: Remove "STARTUP_WINDOW=0" once build is fixed
+      run: gmake -j2 duke3d sw blood rr exhumed tools STARTUP_WINDOW=0
