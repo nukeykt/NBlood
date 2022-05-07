@@ -52,6 +52,18 @@ jobs:
     - name: build
       run: make -j2 duke3d sw blood rr exhumed tools
 
+  build-linux-gcc:
+    name: "Linux GCC SDL 1.2"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libsdl1.2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools
+
   build-linux-clang:
     name: "Linux Clang"
     runs-on: ubuntu-latest
@@ -63,6 +75,30 @@ jobs:
         sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
     - name: build
       run: make -j2 duke3d sw blood rr exhumed tools CLANG=1
+
+  build-linux-clang-nogl:
+    name: "Linux Clang"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools CLANG=1 USE_OPENGL=0
+
+  build-linux-clang-nopolymer:
+    name: "Linux Clang"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install-prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed tools CLANG=1 POLYMER=0
 
   build-macos:
     name: "macOS"
