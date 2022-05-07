@@ -52,7 +52,7 @@ jobs:
     - name: build
       run: make -j2 duke3d sw blood rr exhumed tools
 
-  build-linux-gcc:
+  build-linux-gcc-sdl12:
     name: "Linux GCC SDL 1.2"
     runs-on: ubuntu-latest
     steps:
