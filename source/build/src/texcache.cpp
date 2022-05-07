@@ -926,4 +926,103 @@ void texcache_setupmemcache(void)
     }
 }
 
+// ---------------------------------------
+// Voxel 2 Poly Disk Caching
+// ---------------------------------------
+
+#define INITVARS_VOXSIZES(_vs, _is, _ts, _total) do {\
+    _vs = 5 * 4 * ((size_t)vm->qcnt) * sizeof(GLfloat);\
+    _is = 3 * 2 * ((size_t)vm->qcnt) * sizeof(GLuint);\
+    _ts = ((size_t)vm->mytexx) * ((size_t)vm->mytexy) * sizeof(int32_t);\
+    _total = _vs + _is + _ts;\
+} while(0);
+
+struct voxcachedat_t {
+    int32_t qcnt, mytexx, mytexy;
+    int32_t compressed_size;
+};
+
+voxmodel_t* voxcache_fetchvoxmodel(const char* const cacheid)
+{
+    if (!texcache_enabled()) return NULL;
+
+    int32_t i = hash_find(&texcache.hashes, cacheid);
+    if (i < 0 || !texcache.entries[i])
+        return NULL;  // didn't find it
+
+    voxcachedat_t voxd = {};
+    size_t vertexsize, indexsize, mytexsize, totalsize;
+    voxmodel_t* vm = (voxmodel_t*)Xcalloc(1, sizeof(voxmodel_t));
+
+    texcache.dataFilePos = texcache.entries[i]->offset;
+    texcache_readdata(&voxd, sizeof(voxd));
+    vm->mytexx = voxd.mytexx;
+    vm->mytexy = voxd.mytexy;
+    vm->qcnt = voxd.qcnt;
+    INITVARS_VOXSIZES(vertexsize, indexsize, mytexsize, totalsize);
+
+    char* compressed_data = (char*)Xmalloc(voxd.compressed_size);
+    texcache_readdata(compressed_data, voxd.compressed_size);
+
+    char* decompressed_data = (char*)Xmalloc(totalsize);
+    auto bytes = LZ4_decompress_safe(compressed_data, decompressed_data, voxd.compressed_size, totalsize);
+    Xfree(compressed_data);
+
+    UNREFERENCED_PARAMETER(bytes);
+    Bassert(bytes > 0);
+
+    vm->vertex = (GLfloat*)Xmalloc(vertexsize);
+    Bmemcpy(vm->vertex, decompressed_data, vertexsize);
+
+    vm->index = (GLuint*)Xmalloc(indexsize);
+    Bmemcpy(vm->index, &decompressed_data[vertexsize], indexsize);
+
+    vm->mytex = (int32_t*)Xmalloc(mytexsize);
+    Bmemcpy(vm->mytex, &decompressed_data[vertexsize + indexsize], mytexsize);
+
+    Xfree(decompressed_data);
+    return vm;
+}
+
+
+void voxcache_writevoxmodel(const char* const cacheid, voxmodel_t* vm)
+{
+    if (!vm || !texcache_enabled()) return;
+
+    size_t vertexsize, indexsize, mytexsize, totalsize;
+    voxcachedat_t vxdat = { vm->qcnt, vm->mytexx, vm->mytexy, 0 };
+    INITVARS_VOXSIZES(vertexsize, indexsize, mytexsize, totalsize);
+
+    char* srcdata = (char*)Xmalloc(totalsize);
+    Bmemcpy(srcdata, vm->vertex, vertexsize);
+    Bmemcpy(&srcdata[vertexsize], vm->index, indexsize);
+    Bmemcpy(&srcdata[vertexsize + indexsize], vm->mytex, mytexsize);
+
+    int const max_compressed_size = LZ4_compressBound(totalsize);
+    char* targetdata = (char*) Xmalloc(max_compressed_size);
+    int32_t const actual_compressed_size = LZ4_compress_default((const char*)srcdata, targetdata, totalsize, max_compressed_size);
+    Xfree(srcdata);
+
+    Bassert(actual_compressed_size > 0);
+    vxdat.compressed_size = actual_compressed_size;
+    targetdata = (char*)Xrealloc(targetdata, actual_compressed_size);
+
+    buildvfs_fseek_end(texcache.dataFilePtr);
+    size_t const offset = buildvfs_ftell(texcache.dataFilePtr);
+    if (buildvfs_fwrite(&vxdat, sizeof(voxcachedat_t), 1, texcache.dataFilePtr) != 1)
+        goto vxstore_failure;
+    if (buildvfs_fwrite(targetdata, actual_compressed_size, 1, texcache.dataFilePtr) != 1)
+        goto vxstore_failure;
+
+    texcache_postwritetex(cacheid, offset);
+    Xfree(targetdata);
+    return;
+
+vxstore_failure:
+    LOG_F(ERROR, "voxcache mystery error");
+    texcache.current->offset = 0;
+    Xfree(texcache.current->name);
+    Xfree(targetdata);
+}
+
 #endif

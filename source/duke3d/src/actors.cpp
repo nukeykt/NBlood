@@ -199,7 +199,12 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             if (dmgBase == dmgFuzz)
                 ++dmgFuzz;
 
-            dmgActor.htextra = dmgBase + (krand()%(dmgFuzz-dmgBase));
+            int dmgTotal = dmgBase + (krand()%(dmgFuzz-dmgBase));
+            if ((globalflags & DUKE3D_GLOBAL_ADDITIVE_HITRADIUS)
+                    | (SpriteProjectile[spriteNum].workslike & PROJECTILE_HITRADIUS_ADDITIVE))
+                dmgActor.htextra += dmgTotal;
+            else
+                dmgActor.htextra = dmgTotal;
 
             if (!A_CheckSpriteFlags(otherSprite, SFLAG_NODAMAGEPUSH))
             {
@@ -1252,6 +1257,12 @@ int A_IncurDamage(int const spriteNum)
     if (pSprite->picnum != APLAYER)
     {
         if (pActor->htextra == 0 && STANDALONE_EVAL(false, pActor->htpicnum == SHRINKSPARK) && pSprite->xrepeat < 24)
+            return -1;
+
+        int32_t playerDist;
+        int playerNum = A_FindPlayer(pSprite, &playerDist);
+
+        if (VM_OnEvent(EVENT_PREACTORDAMAGE, spriteNum, playerNum, playerDist, 0))
             return -1;
 
         pSprite->extra -= pActor->htextra;

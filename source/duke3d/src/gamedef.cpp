@@ -1036,6 +1036,7 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_PREUPDATEANGLES",
     "EVENT_POSTUPDATEANGLES",
     "EVENT_GETBONUSTILE",
+    "EVENT_PREACTORDAMAGE",
 };
 
 uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
@@ -6286,6 +6287,7 @@ static void C_AddDefaultDefinitions(void)
         { "PF_COOLEXPLOSION1",    PROJECTILE_COOLEXPLOSION1 },
         { "PF_EXPLODEONTIMER",    PROJECTILE_EXPLODEONTIMER },
         { "PF_FORCEIMPACT",       PROJECTILE_FORCEIMPACT },
+        { "PF_HITRADIUS_ADDITIVE", PROJECTILE_HITRADIUS_ADDITIVE },
         { "PF_HITSCAN",           PROJECTILE_HITSCAN },
         { "PF_KNEE",              PROJECTILE_KNEE },
         { "PF_LOSESVELOCITY",     PROJECTILE_LOSESVELOCITY },

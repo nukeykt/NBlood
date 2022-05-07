@@ -65,11 +65,10 @@ int initprintf(const char *f, ...)
         va_list va;
         buf = (char *)Xrealloc(buf, (size <<= 1));
         va_start(va, f);
-        len = Bvsnprintf(buf, size-1, f, va);
+        len = Bvsnprintf(buf, size, f, va);
         va_end(va);
-    } while ((unsigned)len > size-1);
+    } while ((unsigned)len >= size);
 
-    buf[len] = 0;
     initputs(buf);
     Xfree(buf);
 
@@ -188,6 +187,8 @@ const char *engineVerbosityCallback(loguru::Verbosity verbosity)
             return "INPT";
         case LOG_NET:
             return "NET";
+        case LOG_PR:
+            return "PR";
         case LOG_DEBUG:
             return "DBG";
     }
@@ -822,7 +823,6 @@ int32_t baselayer_init(void)
 #ifdef YAX_ENABLE
         { "r_tror_nomaskpass", "enable/disable additional pass in TROR software rendering", (void *)&r_tror_nomaskpass, CVAR_BOOL, 0, 1 },
 #endif
-        { "r_windowpositioning", "enable/disable window position memory", (void *) &r_windowpositioning, CVAR_BOOL, 0, 1 },
         { "vid_gamma","adjusts gamma component of gamma ramp",(void *) &g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
         { "vid_contrast","adjusts contrast component of gamma ramp",(void *) &g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
         { "vid_brightness","adjusts brightness component of gamma ramp",(void *) &g_videoBrightness, CVAR_FLOAT|CVAR_FUNCPTR, -10, 10 },

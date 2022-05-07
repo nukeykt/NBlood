@@ -426,7 +426,7 @@ dwm:
 
     if (activeAdapter.hDc == nullptr)
     {
-        LOG_F(ERROR, "null device context for display: %s windowx: %d windowy: %d.", mi.szDevice, windowx, windowy);
+        LOG_F(ERROR, "null device context for display: %s windowx: %d windowy: %d.", mi.szDevice, g_windowPos.x, g_windowPos.y);
         useDWMsync = 1;
         goto dwm;
     }

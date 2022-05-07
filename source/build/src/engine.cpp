@@ -217,7 +217,7 @@ classicht_t *tileLoadHigh(int dapicnum)
     if ((!usehightile) |
         ((paletteloaded & PALETTE_MAIN) != PALETTE_MAIN) |
         (tsiz.x <= 0) | (tsiz.y <= 0) |
-        (!si/* || (si->flags & HICR_INDEXED) != HICR_INDEXED*/) |
+        (!si || (si->flags & HICR_ARTIMMUNITY) == HICR_ARTIMMUNITY) |
         (cht->lock == 254))
         return NULL;
 
@@ -10481,17 +10481,19 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
     return 0;
 }
 
+static FORCE_INLINE size_t getreachabilitybitmapsegmentsize(void)
+{
+    return ((numsectors + 7) >> 3);
+}
 
 static FORCE_INLINE size_t getreachabilitybitmapsize(void)
 {
-    return numsectors * ((numsectors + 7) >> 3);
+    return numsectors * getreachabilitybitmapsegmentsize();
 }
 
 static FORCE_INLINE uint8_t* getreachabilitybitmap(int const sectnum)
 {
-    Bassert(reachablesectors);
-    Bassert(numsectors);
-    return ((uint8_t*)(reachablesectors + (sectnum * tabledivide32_noinline(getreachabilitybitmapsize(), numsectors))));
+    return ((uint8_t*)(reachablesectors + (sectnum * getreachabilitybitmapsegmentsize())));
 }
 
 int sectorsareconnected(int const sect1, int const sect2)
@@ -10515,19 +10517,20 @@ void calc_sector_reachability(void)
         return;
 
     sectcrc = crc;
-    tablesize = getreachabilitybitmapsize();
 
-    Bassert(tablesize);
+    if (!reachablesectors || tablesize != getreachabilitybitmapsize())
+    {
+        tablesize = getreachabilitybitmapsize();
+        DO_FREE_AND_NULL(reachablesectors);
+        reachablesectors = (uint8_t *)Xcalloc(1, tablesize);
+    }
 
     Bmemset(wallsect, -1, sizeof(wallsect));
-
-    DO_FREE_AND_NULL(reachablesectors);
-    reachablesectors = (uint8_t*)Xcalloc(1, tablesize);
     auto sectlist = (int16_t *)Balloca(sizeof(int16_t) * numsectors);
 
     for (int sectnum=0; sectnum<numsectors; sectnum++)
     {
-        uint8_t* sectbitmap = getreachabilitybitmap(sectnum);
+        auto sectbitmap = getreachabilitybitmap(sectnum);
         int16_t nsecs;
         bfirst_search_init(sectlist, sectbitmap, &nsecs, numsectors, sectnum);
 
@@ -10536,13 +10539,25 @@ void calc_sector_reachability(void)
             Bassert((unsigned)listidx < (unsigned)numsectors);
             Bassert((unsigned)sectlist[listidx] < (unsigned)numsectors);
 
-            auto sec = (usectorptr_t)&sector[sectlist[listidx]];
+            int const osectnum = sectlist[listidx];
+            auto sec = (usectorptr_t)&sector[osectnum];
 
             int const startwall = sec->wallptr;
             int const endwall   = sec->wallptr + sec->wallnum;
 
             for (int j=startwall; j<endwall; j++)
-                wallsect[j] = sectlist[listidx];
+                wallsect[j] = osectnum;
+
+            auto othersectbitmap = getreachabilitybitmap(osectnum);
+
+            if (sectnum != osectnum && bitmap_test(othersectbitmap, sectnum))
+            {
+#if 0
+                LOG_F(INFO, "sector %d matches sector %d", sectnum, osectnum);
+#endif
+                Bmemcpy(sectbitmap, othersectbitmap, getreachabilitybitmapsegmentsize());
+                break;
+            }
 
             auto uwal = (uwallptr_t)&wall[startwall];
             for (int j=startwall; j<endwall; j++, uwal++)
@@ -10551,7 +10566,7 @@ void calc_sector_reachability(void)
                 {
                     bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
 #if 0
-                    OSD_Printf("sector %d reaches sector %d\n", sectnum, uwal->nextsector);
+                    LOG_F(INFO, "sector %d reaches sector %d", sectnum, uwal->nextsector);
 #endif
                 }
 
@@ -10560,7 +10575,7 @@ void calc_sector_reachability(void)
                 {
                     bfirst_search_try(sectlist, sectbitmap, &nsecs, upperSect);
 #if 0
-                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, upperSect);
+                    LOG_F(INFO, "sector %d reaches sector %d through TROR", sectnum, upperSect);
 #endif
                 }
 
@@ -10569,7 +10584,7 @@ void calc_sector_reachability(void)
                 {
                     bfirst_search_try(sectlist, sectbitmap, &nsecs, lowerSect);
 #if 0
-                    OSD_Printf("sector %d reaches sector %d through TROR\n", sectnum, lowerSect);
+                    LOG_F(INFO, "sector %d reaches sector %d through TROR", sectnum, lowerSect);
 #endif
                 }
             }
@@ -14020,7 +14035,7 @@ void setfirstwall(int16_t sectnum, int16_t newfirstwall)
 //
 // qsetmodeany
 //
-void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor)
+void videoSet2dMode(char davidoption, int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daupscalefactor)
 {
     daupscaledxdim = max(640, min(daupscaledxdim, max(640, daupscaledxdim/daupscalefactor) * daupscalefactor));
     daupscaledydim = max(480, min(daupscaledydim, max(480, daupscaledydim/daupscalefactor) * daupscalefactor));
@@ -14031,7 +14046,7 @@ void videoSet2dMode(int32_t daupscaledxdim, int32_t daupscaledydim, int32_t daup
 #endif
 
     g_lastpalettesum = 0;
-    if (videoSetMode(daupscaledxdim,daupscaledydim,8,fullscreen) < 0) return;
+    if (videoSetMode(daupscaledxdim,daupscaledydim,8,davidoption) < 0) return;
 
     upscalefactor = daupscalefactor;
 

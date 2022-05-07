@@ -477,7 +477,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     wm_setapptitle(AppProperName);
 
-    Bstrcpy(boardfilename, "nukeland.map");
+    Bstrcpy(boardfilename, "NUKELAND.MAP");
     netparm = argc;
     for (i=1; i<argc; i++)
     {
@@ -560,7 +560,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
         OSD_SetVersion(tempbuf, 10,0);
     }
-    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO: Add error and red palookup IDs.
+    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0, 0); // TODO: Add error and red palookup IDs.
 
     //Here's an example of TRUE ornamented walls
     //The tileCreate should be called right after artLoadFiles
@@ -1873,16 +1873,16 @@ void shootgun(short snum, const vec3_t *vector,
             if (waloff[MAXTILES-1] != 0) wall[hitinfo.wall].picnum = MAXTILES-1;
             wsayfollow("hello.wav",4096L+(krand()&127)-64,256L,&wall[hitinfo.wall].x,&wall[hitinfo.wall].y,0);
         }
-        else if (((hitinfo.wall < 0) && (hitinfo.sprite < 0) && (hitinfo.pos.z >= vector->z) && ((sector[hitinfo.sect].floorpicnum == SLIME) || (sector[hitinfo.sect].floorpicnum == FLOORMIRROR))) || ((hitinfo.wall >= 0) && (wall[hitinfo.wall].picnum == SLIME)))
+        else if (((hitinfo.wall < 0) && (hitinfo.sprite < 0) && (hitinfo.z >= vector->z) && ((sector[hitinfo.sect].floorpicnum == SLIME) || (sector[hitinfo.sect].floorpicnum == FLOORMIRROR))) || ((hitinfo.wall >= 0) && (wall[hitinfo.wall].picnum == SLIME)))
         {
             //If you shoot slime, make a splash
-            wsayfollow("splash.wav",4096L+(krand()&511)-256,256L,&hitinfo.pos.x,&hitinfo.pos.y,0);
-            spawnsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z,2,0,0,32,64,64,0,0,SPLASH,daang,
+            wsayfollow("splash.wav",4096L+(krand()&511)-256,256L,&hitinfo.x,&hitinfo.y,0);
+            spawnsprite(j,hitinfo.x,hitinfo.y,hitinfo.z,2,0,0,32,64,64,0,0,SPLASH,daang,
                         0,0,0,snum+4096,hitinfo.sect,4,63,0,0); //63=time left for splash
         }
         else
         {
-            wsayfollow("shoot.wav",4096L+(krand()&127)-64,256L,&hitinfo.pos.x,&hitinfo.pos.y,0);
+            wsayfollow("shoot.wav",4096L+(krand()&127)-64,256L,&hitinfo.x,&hitinfo.y,0);
 
             if ((hitinfo.sprite >= 0) && (sprite[hitinfo.sprite].statnum < MAXSTATUS))
                 switch (sprite[hitinfo.sprite].picnum)
@@ -1891,25 +1891,25 @@ void shootgun(short snum, const vec3_t *vector,
                     if (sprite[hitinfo.sprite].lotag > 0) sprite[hitinfo.sprite].lotag -= 10;
                     if (sprite[hitinfo.sprite].lotag > 0)
                     {
-                        wsayfollow("hurt.wav",4096L+(krand()&511)-256,256L,&hitinfo.pos.x,&hitinfo.pos.y,0);
+                        wsayfollow("hurt.wav",4096L+(krand()&511)-256,256L,&hitinfo.x,&hitinfo.y,0);
                         if (sprite[hitinfo.sprite].lotag <= 25)
                             sprite[hitinfo.sprite].cstat |= 2;
                     }
                     else
                     {
-                        wsayfollow("mondie.wav",4096L+(krand()&127)-64,256L,&hitinfo.pos.x,&hitinfo.pos.y,0);
+                        wsayfollow("mondie.wav",4096L+(krand()&127)-64,256L,&hitinfo.x,&hitinfo.y,0);
                         sprite[hitinfo.sprite].z += ((tilesiz[sprite[hitinfo.sprite].picnum].y*sprite[hitinfo.sprite].yrepeat)<<1);
                         sprite[hitinfo.sprite].picnum = GIFTBOX;
                         sprite[hitinfo.sprite].cstat &= ~0x83;    //Should not clip, foot-z
                         changespritestat(hitinfo.sprite,12);
 
-                        spawnsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(32<<8),0,-4,0,32,64,64,
+                        spawnsprite(j,hitinfo.x,hitinfo.y,hitinfo.z+(32<<8),0,-4,0,32,64,64,
                                     0,0,EXPLOSION,daang,0,0,0,snum+4096,
                                     hitinfo.sect,5,31,0,0);
                     }
                     break;
                 case EVILAL:
-                    wsayfollow("blowup.wav",4096L+(krand()&127)-64,256L,&hitinfo.pos.x,&hitinfo.pos.y,0);
+                    wsayfollow("blowup.wav",4096L+(krand()&127)-64,256L,&hitinfo.x,&hitinfo.y,0);
                     sprite[hitinfo.sprite].picnum = EVILALGRAVE;
                     sprite[hitinfo.sprite].cstat = 0;
                     sprite[hitinfo.sprite].xvel = (krand()&255)-128;
@@ -1917,7 +1917,7 @@ void shootgun(short snum, const vec3_t *vector,
                     sprite[hitinfo.sprite].zvel = (krand()&4095)-3072;
                     changespritestat(hitinfo.sprite,9);
 
-                    spawnsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(32<<8),0,-4,0,32,64,64,0,
+                    spawnsprite(j,hitinfo.x,hitinfo.y,hitinfo.z+(32<<8),0,-4,0,32,64,64,0,
                                 0,EXPLOSION,daang,0,0,0,snum+4096,hitinfo.sect,5,31,0,0);
                     //31=time left for explosion
 
@@ -1926,14 +1926,14 @@ void shootgun(short snum, const vec3_t *vector,
                     for (j=connecthead; j>=0; j=connectpoint2[j])
                         if (playersprite[j] == hitinfo.sprite)
                         {
-                            wsayfollow("ouch.wav",4096L+(krand()&127)-64,256L,&hitinfo.pos.x,&hitinfo.pos.y,0);
+                            wsayfollow("ouch.wav",4096L+(krand()&127)-64,256L,&hitinfo.x,&hitinfo.y,0);
                             changehealth(j,-10);
                             break;
                         }
                     break;
                 }
 
-            spawnsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(8<<8),2,-4,0,32,16,16,0,0,
+            spawnsprite(j,hitinfo.x,hitinfo.y,hitinfo.z+(8<<8),2,-4,0,32,16,16,0,0,
                         EXPLOSION,daang,0,0,0,snum+4096,hitinfo.sect,3,63,0,0);
 
             //Sprite starts out with center exactly on wall.
@@ -2188,7 +2188,7 @@ void tagcode(void)
             {
                 vec2_t const pivot = { swingx[i][0], swingy[i][0] };
                 vec2_t const p = { swingx[i][k], swingy[i][k] };
-                rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].pos);
+                rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].xy);
             }
 
             if (swinganginc[i] != 0)
@@ -2224,7 +2224,7 @@ void tagcode(void)
                                 {
                                     vec2_t const pivot = { swingx[i][0], swingy[i][0] };
                                     vec2_t const p = { swingx[i][k], swingy[i][k] };
-                                    rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].pos);
+                                    rotatepoint(pivot, p, swingang[i], &wall[swingwall[i][k]].xy);
                                 }
                                 if (swingang[i] == swingangclosed[i])
                                 {
@@ -3666,7 +3666,7 @@ void view(short snum, vec3_t *v, short *vsectnum, short ang, int horiz)
 
     updatesectorz(v->x,v->y,v->z,vsectnum);
     hitscan(v,*vsectnum,nx,ny,nz,&hitinfo,CLIPMASK1);
-    hx = hitinfo.pos.x-v->x; hy = hitinfo.pos.y-v->y;
+    hx = hitinfo.x-v->x; hy = hitinfo.y-v->y;
     if (klabs(nx)+klabs(ny) > klabs(hx)+klabs(hy))
     {
         *vsectnum = hitinfo.sect;
@@ -6432,7 +6432,7 @@ void drawtilebackground(/*int thex, int they,*/ short tilenum,
             rotatesprite(x*xsiz<<16,y*ysiz<<16,65536L,0,tilenum,shade,dapalnum,8+16+64+128,cx1,cy1,cx2,cy2);
 }
 
-void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
+extern "C" void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
 void G_Polymer_UnInit(void) { }
 void app_crashhandler(void) { }
 

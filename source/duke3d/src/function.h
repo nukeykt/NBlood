@@ -107,7 +107,7 @@ enum GameFunction_t
 EDUKE32_STATIC_ASSERT(NUMGAMEFUNCTIONS <= 64); // CONTROL_ButtonState and CONTROL_ButtonHeldState are uint64_t
 
 extern char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
-extern const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
+extern const char gamefunc_symbol_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 extern const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
 extern const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN];
 

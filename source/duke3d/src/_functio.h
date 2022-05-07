@@ -115,7 +115,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    };
 
 // note: internal ordering is important, must not be changed
-const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
+const char gamefunc_symbol_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    {
    "gamefunc_Move_Forward",
    "gamefunc_Move_Backward",
@@ -149,17 +149,10 @@ const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "gamefunc_Inventory",
    "gamefunc_Inventory_Left",
    "gamefunc_Inventory_Right",
-#ifndef EDUKE32_STANDALONE
-   "gamefunc_Holo_Duke",
-   "gamefunc_Jetpack",
-   "gamefunc_NightVision",
-   "gamefunc_MedKit",
-#else
    "gamefunc_Item_1",
    "gamefunc_Item_2",
    "gamefunc_Item_3",
    "gamefunc_Item_4",
-#endif
    "gamefunc_TurnAround",
    "gamefunc_SendMessage",
    "gamefunc_Map",
@@ -172,13 +165,8 @@ const char internal_gamefunction_names[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "gamefunc_See_Coop_View",
    "gamefunc_Mouse_Aiming",
    "gamefunc_Toggle_Crosshair",
-#ifndef EDUKE32_STANDALONE
-   "gamefunc_Steroids",
-   "gamefunc_Quick_Kick",
-#else
    "gamefunc_Item_5",
    "gamefunc_Melee",
-#endif
    "gamefunc_Next_Weapon",
    "gamefunc_Previous_Weapon",
    "gamefunc_Show_Console",

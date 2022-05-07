@@ -103,9 +103,9 @@ static void PopulateForm(void)
         gtk_list_store_set(modes3d, &iter, 0,buf, 1,i, -1);
         if (i == mode3d)
         {
-            g_signal_handlers_block_by_func(box3d, on_vmode3dcombo_changed, NULL);
+            g_signal_handlers_block_by_func(box3d, (gpointer) on_vmode3dcombo_changed, NULL);
             gtk_combo_box_set_active_iter(box3d, &iter);
-            g_signal_handlers_unblock_by_func(box3d, on_vmode3dcombo_changed, NULL);
+            g_signal_handlers_unblock_by_func(box3d, (gpointer) on_vmode3dcombo_changed, NULL);
         }
     }
 }
@@ -316,7 +316,7 @@ static GtkWidget *create_window(void)
                                GDK_C, GDK_MOD1_MASK,
                                GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(cancelbutton, "clicked", accel_group,
-                               GDK_Escape, 0,
+                               GDK_Escape, (GdkModifierType)0,
                                GTK_ACCEL_VISIBLE);
 
     cancelbuttonalign = gtk_alignment_new(0.5, 0.5, 0, 0);
@@ -344,7 +344,7 @@ static GtkWidget *create_window(void)
                                GDK_S, GDK_MOD1_MASK,
                                GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(startbutton, "clicked", accel_group,
-                               GDK_Return, 0,
+                               GDK_Return, (GdkModifierType)0,
                                GTK_ACCEL_VISIBLE);
 
     startbuttonalign = gtk_alignment_new(0.5, 0.5, 0, 0);
@@ -420,6 +420,10 @@ static GtkWidget *create_window(void)
 }
 
 // -- BUILD ENTRY POINTS ------------------------------------------------------
+bool startwin_isopen(void)
+{
+    return gtkenabled && startwin;
+}
 
 int startwin_open(void)
 {
@@ -523,8 +527,8 @@ int startwin_run(void)
     SetPage(TAB_CONFIG);
 
     settings.fullscreen = fullscreen;
-    settings.xdim3d = xdimgame;
-    settings.ydim3d = ydimgame;
+    settings.xdim3d = xdim;
+    settings.ydim3d = ydim;
     settings.bpp3d = bppgame;
     settings.forcesetup = forcesetup;
     PopulateForm();
@@ -535,8 +539,8 @@ int startwin_run(void)
     if (retval)
     {
         fullscreen = settings.fullscreen;
-        xdimgame = settings.xdim3d;
-        ydimgame = settings.ydim3d;
+        xdim = settings.xdim3d;
+        ydim = settings.ydim3d;
         bppgame = settings.bpp3d;
         forcesetup = settings.forcesetup;
     }

@@ -2796,18 +2796,19 @@ static BOOL CreateAppWindow(int32_t modenum)
         h=height;
     }
 
-    if (windowx == -1)
-        windowx = x;
-
-    if (windowy == -1)
-        windowy = y;
+    if (!g_windowPosValid)
+    {
+        g_windowPos.x = x;
+        g_windowPos.y = y;
+        g_windowPosValid = true;
+    }
 
     SetWindowText(hWindow, apptitle);
     ShowWindow(hWindow, SW_SHOWNORMAL);
     SetForegroundWindow(hWindow);
     SetFocus(hWindow);
 
-    SetWindowPos(hWindow, HWND_TOP, r_windowpositioning && windowx != -1?windowx:x, r_windowpositioning && windowy != -1?windowy:y, w, h, 0);
+    SetWindowPos(hWindow, HWND_TOP, g_windowPos.x, g_windowPos.y, w, h, 0);
 
     // fullscreen?
     if (!fs)
@@ -3333,16 +3334,17 @@ static LRESULT CALLBACK WndProcCallback(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         return TRUE;
 
     case WM_MOVE:
-        //        windowx = LOWORD(lParam);
-        //        windowy = HIWORD(lParam);
+        //        g_windowPos.x = LOWORD(lParam);
+        //        g_windowPos.y = HIWORD(lParam);
         return 0;
 
     case WM_MOVING:
     {
         RECT *RECTYMcRECT = (LPRECT)lParam;
 
-        windowx = RECTYMcRECT->left;
-        windowy = RECTYMcRECT->top;
+        g_windowPos.x = RECTYMcRECT->left;
+        g_windowPos.y = RECTYMcRECT->top;
+        g_windowPosValid = true;
         return 0;
     }
     case WM_CLOSE:

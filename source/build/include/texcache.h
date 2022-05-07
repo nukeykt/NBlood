@@ -3,6 +3,7 @@
 
 #include "mio.hpp"
 #include "polymost.h"
+#include "mdsprite.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +77,9 @@ extern void texcache_openfiles(void);
 extern void texcache_setupmemcache(void);
 extern void texcache_checkgarbage(void);
 extern void texcache_setupindex(void);
+
+extern voxmodel_t* voxcache_fetchvoxmodel(const char* const cacheid);
+extern void voxcache_writevoxmodel(const char* const cacheid, voxmodel_t* vm);
 
 #endif
 

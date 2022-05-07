@@ -58,6 +58,7 @@ extern int16_t searchsector, searchwall, searchstat;  //search output
 extern int16_t searchbottomwall, searchisbottom;
 extern int32_t zmode, kensplayerheight, zlock;
 
+extern int16_t newnumwalls, joinsector[2];
 extern int16_t highlightsector[MAXSECTORS], highlightsectorcnt;
 extern int16_t highlight[MAXWALLS+MAXSPRITES];
 extern int16_t asksave;
@@ -133,6 +134,18 @@ extern void M32_DrawRoomsAndMasks(void);
 
 extern void yax_tweakpicnums(int32_t bunchnum, int32_t cf, int32_t restore);  // editor-only
 extern void M32_ResetFakeRORTiles(void);
+
+//// Interactive Scaling
+struct iscdata_t {
+    int8_t active, rotatep;
+    vec2_t piv;  // pivot point
+    int32_t dragx, dragy;  // dragged point
+    int32_t xsc, ysc, ang;
+};
+
+extern iscdata_t isc;
+
+#define EDITING_MAP_P() (newnumwalls>=0 || joinsector[0]>=0 || circlewall>=0 || (bstatus&1) || isc.active)
 
 // set to 1 to enable:
 #define M32_UNDO 1

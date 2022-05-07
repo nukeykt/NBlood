@@ -731,7 +731,7 @@ ExtInit(void)
     //LogUserTime(TRUE);              // Send true because user is logging
     // in.
 
-    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", 0);
+    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", "^14", 0);
 
     SW_ExtInit();
 

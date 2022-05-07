@@ -8616,7 +8616,7 @@ static int osdcmd_upscalefactor(osdcmdptr_t parm)
 
         if (!in3dmode())
         {
-            videoSet2dMode(xres, yres, upscalefactor);
+            videoSet2dMode(fullscreen, xres, yres, upscalefactor);
             return OSDCMD_OK;
         }
 
@@ -10854,7 +10854,7 @@ static void Keys2d3d(void)
             if (PRESSED_KEYSC(P)) // Ctrl-P: Map playtesting
                 test_map(eitherALT);
 
-        if (PRESSED_KEYSC(Z)) // CTRL+Z
+        if (!EDITING_MAP_P() && PRESSED_KEYSC(Z)) // CTRL+Z
         {
             if (!in3dmode() || m32_3dundo)
             {

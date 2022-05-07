@@ -90,6 +90,12 @@ typedef void (*gtk_container_set_border_width_ptr) (GtkContainer *container, gui
 typedef GType (*gtk_dialog_get_type_ptr) (void) G_GNUC_CONST;
 typedef gint (*gtk_dialog_run_ptr) (GtkDialog *dialog);
 
+// gtkfixed.h
+// TODO: Only needed to fix compilation for Kenbuild. Bring Kenbuild GTK window to parity with other windows, then remove this again.
+typedef GType (*gtk_fixed_get_type_ptr) (void) G_GNUC_CONST;
+typedef GtkWidget* (*gtk_fixed_new_ptr) (void);
+typedef void (*gtk_fixed_put_ptr) (GtkFixed *fixed, GtkWidget *widget, gint x, gint y);
+
 // gtkhbox.h
 typedef GtkWidget* (*gtk_hbox_new_ptr) (gboolean homogeneous, gint spacing);
 
@@ -223,6 +229,7 @@ typedef GtkWidget* (*gtk_widget_ref_ptr) (GtkWidget *widget);
 typedef void (*gtk_widget_set_sensitive_ptr) (GtkWidget *widget, gboolean sensitive);
 typedef void (*gtk_widget_set_size_request_ptr) (GtkWidget *widget, gint width, gint height);
 typedef void (*gtk_widget_show_all_ptr) (GtkWidget *widget);
+typedef void (*gtk_widget_show_ptr) (GtkWidget *widget);
 typedef void (*gtk_widget_unref_ptr) (GtkWidget *widget);
 
 // gtkwindow.h
@@ -279,6 +286,9 @@ struct _dynamicgtksyms {
     gtk_container_set_border_width_ptr gtk_container_set_border_width;
     gtk_dialog_get_type_ptr gtk_dialog_get_type;
     gtk_dialog_run_ptr gtk_dialog_run;
+    gtk_fixed_get_type_ptr gtk_fixed_get_type;
+    gtk_fixed_new_ptr gtk_fixed_new;
+    gtk_fixed_put_ptr gtk_fixed_put;
     gtk_hbox_new_ptr gtk_hbox_new;
     gtk_hbutton_box_new_ptr gtk_hbutton_box_new;
     gtk_image_new_from_pixbuf_ptr gtk_image_new_from_pixbuf;
@@ -365,6 +375,7 @@ struct _dynamicgtksyms {
     gtk_widget_set_sensitive_ptr gtk_widget_set_sensitive;
     gtk_widget_set_size_request_ptr gtk_widget_set_size_request;
     gtk_widget_show_all_ptr gtk_widget_show_all;
+    gtk_widget_show_ptr gtk_widget_show;
     gtk_widget_unref_ptr gtk_widget_unref;
     gtk_window_add_accel_group_ptr gtk_window_add_accel_group;
     gtk_window_get_type_ptr gtk_window_get_type;
@@ -456,6 +467,12 @@ void dynamicgtk_uninit(void);
 // gtkdialog.h
 #define gtk_dialog_get_type dynamicgtksyms.gtk_dialog_get_type
 #define gtk_dialog_run dynamicgtksyms.gtk_dialog_run
+
+// gtkfixed.h
+// TODO: Only needed to fix compilation for Kenbuild. Bring Kenbuild GTK window to parity with other windows, then remove this again.
+#define gtk_fixed_get_type dynamicgtksyms.gtk_fixed_get_type
+#define gtk_fixed_new dynamicgtksyms.gtk_fixed_new
+#define gtk_fixed_put dynamicgtksyms.gtk_fixed_put
 
 // gtkhbox.h
 #define gtk_hbox_new dynamicgtksyms.gtk_hbox_new
@@ -588,6 +605,7 @@ void dynamicgtk_uninit(void);
 #define gtk_widget_set_sensitive dynamicgtksyms.gtk_widget_set_sensitive
 #define gtk_widget_set_size_request dynamicgtksyms.gtk_widget_set_size_request
 #define gtk_widget_show_all dynamicgtksyms.gtk_widget_show_all
+#define gtk_widget_show dynamicgtksyms.gtk_widget_show
 #define gtk_widget_unref dynamicgtksyms.gtk_widget_unref
 
 // gtkwindow.h
