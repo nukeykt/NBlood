@@ -100,14 +100,14 @@ jobs:
     - name: build
       run: make -j2 duke3d sw blood rr exhumed tools CLANG=1 POLYMER=0
 
-  build-macos:
-    name: "macOS"
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: install-prerequisites
-      run: |
-        brew install sdl2 libogg libvorbis flac libvpx make
-        brew unlink lz4
-    - name: build
-      run: gmake -j2 duke3d sw blood rr exhumed tools
+#  build-macos:
+#    name: "macOS"
+#    runs-on: macos-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: install-prerequisites
+#      run: |
+#        brew install sdl2 libogg libvorbis flac libvpx make
+#        brew unlink lz4
+#    - name: build
+#      run: gmake -j2 duke3d sw blood rr exhumed tools
