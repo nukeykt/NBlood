@@ -9222,7 +9222,7 @@ static void G_RecordOldSpritePos(void)
     do
     {
         // Delay until a later point. Fixes a problem where SE7 and Touchplates cannot be activated concurrently.
-        if (statNum == STAT_PLAYER)
+        if ((statNum == STAT_PLAYER) | (statNum == STAT_EFFECTOR))
         {
             statNum++;
             continue;
