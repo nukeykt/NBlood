@@ -222,19 +222,17 @@ uint32_t constexpr FMT_WAVE_MAGIC = FMT_MAGIC('W','A','V','E');
 
 static wavefmt_t FX_ReadFmt(char const * const ptr, uint32_t length)
 {
-    if (length < 12)
+    if (length < 16)
         return FMT_UNKNOWN;
 
-    auto const ptr32 = (uint32_t const *)ptr;
-
-    switch (B_LITTLE32(*ptr32))
+    switch (B_LITTLE32(*(uint32_t const *)ptr))
     {
         case FMT_OGG_MAGIC:  return FMT_VORBIS;
         case FMT_VOC_MAGIC:  return FMT_VOC;
         case FMT_FLAC_MAGIC: return FMT_FLAC;
         case FMT_RIFF_MAGIC:
-            if (B_LITTLE32(ptr32[2]) == FMT_WAVE_MAGIC) return FMT_WAV;
-            if (B_LITTLE32(ptr32[2]) == FMT_CDXA_MAGIC) return FMT_XA;
+            if (B_LITTLE32(((uint32_t const *)ptr)[2]) == FMT_WAVE_MAGIC) return FMT_WAV;
+            if (B_LITTLE32(((uint32_t const *)ptr)[2]) == FMT_CDXA_MAGIC) return FMT_XA;
             break;
         default:
             if (MV_IdentifyXMP(ptr, length)) return FMT_XMP;
