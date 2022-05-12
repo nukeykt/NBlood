@@ -256,7 +256,7 @@ int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitch
 
     int handle = func[FX_ReadFmt(ptr, ptrlength)](ptr, ptrlength, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval);
 
-    if (handle <= MV_Ok)
+    if (EDUKE32_PREDICT_FALSE(handle <= MV_Ok))
     {
         FX_SetErrorCode(FX_MultiVocError);
         handle = FX_Warning;
@@ -274,7 +274,7 @@ int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int a
 
     int handle = func[FX_ReadFmt(ptr, ptrlength)](ptr, ptrlength, loophow, pitchoffset, angle, distance, priority, volume, callbackval);
 
-    if (handle <= MV_Ok)
+    if (EDUKE32_PREDICT_FALSE(handle <= MV_Ok))
     {
         FX_SetErrorCode(FX_MultiVocError);
         handle = FX_Warning;
@@ -288,7 +288,7 @@ int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol
 {
     int handle = MV_PlayRAW(ptr, ptrlength, rate, NULL, NULL, pitchoffset, vol, left, right, priority, volume, callbackval);
 
-    if (handle <= MV_Ok)
+    if (EDUKE32_PREDICT_FALSE(handle <= MV_Ok))
     {
         FX_SetErrorCode(FX_MultiVocError);
         handle = FX_Warning;
@@ -302,7 +302,7 @@ int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loope
 {
     int handle = MV_PlayRAW(ptr, ptrlength, rate, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval);
 
-    if (handle <= MV_Ok)
+    if (EDUKE32_PREDICT_FALSE(handle <= MV_Ok))
     {
         FX_SetErrorCode(FX_MultiVocError);
         handle = FX_Warning;
@@ -317,7 +317,7 @@ int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     int handle = MV_StartDemandFeedPlayback(function, bitdepth, channels, rate,
         pitchoffset, vol, left, right, priority, volume, callbackval, userdata);
 
-    if (handle <= MV_Ok)
+    if (EDUKE32_PREDICT_FALSE(handle <= MV_Ok))
     {
         FX_SetErrorCode(FX_MultiVocError);
         handle = FX_Warning;
@@ -332,7 +332,7 @@ int FX_StartDemandFeedPlayback3D(void (*function)(const char** ptr, uint32_t* le
     int handle = MV_StartDemandFeedPlayback3D(function, bitdepth, channels, rate,
         pitchoffset, angle, distance, priority, volume, callbackval, userdata);
 
-    if (handle <= MV_Ok)
+    if (EDUKE32_PREDICT_FALSE(handle <= MV_Ok))
     {
         FX_SetErrorCode(FX_MultiVocError);
         handle = FX_Warning;
