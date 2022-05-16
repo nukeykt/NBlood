@@ -428,6 +428,7 @@ void Resource::AddExternalResource(const char *name, const char *type, int id, i
         strcpy(node->type, type2);
         strcpy(node->name, name2);
         strcpy(node->path, path);
+        node->id = -1;
     }
     node->size = size;
     node->flags = DICT_EXTERNAL | flags;
@@ -526,6 +527,7 @@ void Resource::AddFromBuffer(const char* name, const char* type, char* data, int
         node->name = (char*)Alloc(nNameLength+1);
         strcpy(node->type, type2);
         strcpy(node->name, name2);
+        node->id = -1;
     }
     node->size = size;
     node->flags = DICT_BUFFER | flags;
