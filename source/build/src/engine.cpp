@@ -5875,7 +5875,19 @@ draw_as_face_sprite:
 
                     z1 = (xp2-xp1)*(y1-yp1) - (yp2-yp1)*(x1-xp1);
                     z2 = (xp2-xp1)*(y2-yp1) - (yp2-yp1)*(x2-xp1);
-                    if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
+                    if ((z1 == 0) | (z2 == 0))
+                    {
+                        if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
+                        {
+                            if (wall[thewall[j]].nextsector == tspr->sectnum)
+                                x = INT32_MIN;
+                            else
+                                x = INT32_MAX;
+                        }
+                        else
+                            x = (z1+z2);
+                    }
+                    else if ((z1^z2) >= 0)
                         x = (z1+z2);
                     else
                     {
