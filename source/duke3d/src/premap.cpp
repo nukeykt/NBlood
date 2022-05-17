@@ -418,56 +418,45 @@ static void G_DoLoadScreen(const char *statustext, int percent)
     }
 }
 
-static void cacheExtraTextureMaps(int tileNum)
+static void cacheExtraTextureMaps(int tileNum, int type)
 {
-    // PRECACHE
-    for (int type = 0; type < 2 && !KB_KeyPressed(sc_Space); type++)
-    {
-        if (bitmap_test(precachehightile[type], tileNum))
-        {
-            tileLoadScaled(tileNum);
-            
-            if (videoGetRenderMode() == REND_CLASSIC)
-                continue;
-            
 #ifdef USE_OPENGL
-            for (int k = 0; k < MAXPALOOKUPS - RESERVEDPALS && !KB_KeyPressed(sc_Space); k++)
-            {
-                // this is the CROSSHAIR_PAL, see screens.cpp
-                if (k == MAXPALOOKUPS - RESERVEDPALS - 1)
-                    break;
+    for (int i = 0; i < MAXPALOOKUPS-RESERVEDPALS-1; i++)
+    {
 #ifdef POLYMER
-                if (videoGetRenderMode() != REND_POLYMER || !polymer_havehighpalookup(0, k))
+        if (videoGetRenderMode() != REND_POLYMER || !polymer_havehighpalookup(0, i))
 #endif
-                    polymost_precache(tileNum, k, type);
-            }
+            polymost_precache(tileNum, i, type);
+    }
 #endif
 
 #ifdef USE_GLEXT
-            if (r_detailmapping)
-                polymost_precache(tileNum, DETAILPAL, type);
+    if (r_detailmapping)
+        polymost_precache(tileNum, DETAILPAL, type);
 
-            if (r_glowmapping)
-                polymost_precache(tileNum, GLOWPAL, type);
+    if (r_glowmapping)
+        polymost_precache(tileNum, GLOWPAL, type);
 #endif
 #ifdef POLYMER
-            if (videoGetRenderMode() == REND_POLYMER)
-            {
-                if (pr_specularmapping)
-                    polymost_precache(tileNum, SPECULARPAL, type);
+    if (videoGetRenderMode() == REND_POLYMER)
+    {
+        if (pr_specularmapping)
+            polymost_precache(tileNum, SPECULARPAL, type);
 
-                if (pr_normalmapping)
-                    polymost_precache(tileNum, NORMALPAL, type);
-            }
-#endif
-        }
+        if (pr_normalmapping)
+            polymost_precache(tileNum, NORMALPAL, type);
     }
+#endif
 }
 
 void G_CacheMapData(void)
 {
     if (ud.recstat == 2 || !ud.config.useprecache)
         return;
+
+    g_precacheCount = 0;
+    Bmemset(gotpic, 0, sizeof(gotpic));
+    Bmemset(precachehightile, 0, sizeof(precachehightile));
 
     S_TryPlaySpecialMusic(MUS_LOADING);
 
@@ -500,42 +489,43 @@ void G_CacheMapData(void)
     }
 
     int cnt = 0;
-    int percentDisplayed = -1;
+    int cntDisplayed = -1;
+    int pctDisplayed = -1;
     int i = 0;
 
-    while (percentDisplayed < 100 && !KB_KeyPressed(sc_Space))
+    while (cnt < g_precacheCount)
     {
-        if (cnt < g_precacheCount)
+        if (bitmap_test(gotpic, i))
         {
-            if (!(i&7) && !gotpic[i>>3])
-            {
-                i += 8;
-                continue;
-            }
-            else if (bitmap_test(gotpic, i))
-            {
-                if (waloff[i] == 0)
-                    tileLoad((int16_t)i);
+            cnt++;
+            
+            if (waloff[i] == 0)
+                tileLoad((int16_t)i);
 
-                cacheExtraTextureMaps(i);
-                gameHandleEvents();
-                MUSIC_Update();
-                cnt++;
+            for (int j = 0; j < 2; j++)
+            {
+                if (bitmap_test(precachehightile[j], i))
+                {
+                    tileLoadScaled(i);
+
+                    if (videoGetRenderMode() != REND_CLASSIC)
+                        cacheExtraTextureMaps(i, j);
+                }
             }
-            i++;
+
+            gameHandleEvents();            
+            if (KB_KeyPressed(sc_Space))
+                break;            
         }
+        i++;
         
-        int const percentComplete = min(100, tabledivide32_noinline(100 * cnt, g_precacheCount));
-
-        // this just prevents the loading screen percentage bar from making large jumps
-        if (percentDisplayed < percentComplete)
+        if (cntDisplayed+(i&7) < cnt-(i&7) && engineFPSLimit(true))
         {
-            if (engineFPSLimit(false))
-            {
-                Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, g_precacheCount);
-                G_DoLoadScreen(tempbuf, percentDisplayed);
-                percentDisplayed = logapproach(percentDisplayed, percentComplete);
-            }
+            int const percentComplete = min(100, tabledivide32(100 * cntDisplayed, g_precacheCount));
+            cntDisplayed = logapproach(cntDisplayed, cnt);
+            pctDisplayed = logapproach(pctDisplayed, percentComplete);
+            Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", pctDisplayed, cntDisplayed, g_precacheCount);
+            G_DoLoadScreen(tempbuf, pctDisplayed);
         }
     }
 
@@ -1991,10 +1981,6 @@ int G_EnterLevel(int gameMode)
     }
 
     p0.q16ang = fix16_from_int(playerAngle);
-
-    g_precacheCount = 0;
-    Bmemset(gotpic, 0, sizeof(gotpic));
-    Bmemset(precachehightile, 0, sizeof(precachehightile));
 
     NET_75_CHECK++; // resetpspritevars attempts to insert player 0's sprite, which isn't going to work because we don't have
                     // the STAT_NETALLOC sprites allocated yet.
