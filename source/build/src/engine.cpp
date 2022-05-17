@@ -14418,6 +14418,8 @@ int32_t videoSetRenderMode(int32_t renderer)
     UNREFERENCED_PARAMETER(renderer);
 
 #ifdef USE_OPENGL
+    buildgl_resetStateAccounting();
+
     if (bpp == 8)
     {
         buildgl_setDisabled(GL_BLEND);
@@ -14459,8 +14461,6 @@ int32_t videoSetRenderMode(int32_t renderer)
     {
         polymost_init();
     }
-
-    buildgl_resetStateAccounting();
 #endif
 
     return 0;
