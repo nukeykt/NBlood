@@ -34,6 +34,12 @@ struct Anim
     short nSprite;
 };
 
+enum
+{
+    kAnimFlag1 = (1 << 2),
+    kAnimLoop  = (1 << 4)
+};
+
 extern Anim AnimList[];
 extern uint8_t AnimFlags[];
 
@@ -41,7 +47,7 @@ void InitAnims();
 void DestroyAnim(int nAnim);
 int BuildAnim(int nSprite, int val, int val2, int x, int y, int z, int nSector, int nRepeat, int nFlag);
 short GetAnimSprite(short nAnim);
-
+void UnlinkIgnitedAnim(int nSprite);
 void FuncAnim(int, int, int);
 void BuildExplosion(short nSprite);
 int BuildSplash(int nSprite, int nSector);

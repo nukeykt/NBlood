@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "engine.h"
 #include "exhumed.h"
 #include "osdcmds.h"
+#include "anims.h"
 #include "map.h"
 #include "sequence.h"
 #include "movie.h"
@@ -2846,6 +2847,7 @@ void mydeletesprite(int nSprite)
         bail2dos("bad sprite value %d handed to mydeletesprite", nSprite);
     }
 
+    UnlinkIgnitedAnim(nSprite);
     deletesprite(nSprite);
 
     if (nSprite == besttarget) {
