@@ -972,7 +972,8 @@ __MOVEQS:
                                 sprite[nSprite].y = y;
                                 sprite[nSprite].z = z;
 
-                                if (QueenHead.field_E < 10) {
+                                if (QueenHead.field_E < 10)
+                                {
                                     for (int i = (10 - QueenHead.field_E) * 2; i > 0; i--)
                                     {
                                         BuildLavaLimb(nSprite, i, GetSpriteHeight(nSprite));

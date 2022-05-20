@@ -451,34 +451,26 @@ void FuncLava(int a, int nDamage, int nRun)
                 {
                     if (nFlag & 0x40)
                     {
-                        int nLimbSprite = BuildLavaLimb(nSprite, LavaList[nLava].nFrame, 64000);
-                        D3PlayFX(StaticSound[kSoundSetLand], nLimbSprite);
+                       int nLimbSprite = BuildLavaLimb(nSprite, LavaList[nLava].nFrame, 64000);
+                       D3PlayFX(StaticSound[kSoundSetLand], nLimbSprite);
                     }
 
                     if (LavaList[nLava].nFrame)
                     {
                         if (nFlag & 0x80)
                         {
-                            int ecx = 0;
-                            do
-                            {
-                                BuildLavaLimb(nSprite, ecx, 64000);
-                                ecx++;
+                            for (int i = 0; i < 20; i++) {
+                                BuildLavaLimb(nSprite, i, 64000);
                             }
-                            while (ecx < 20);
+
                             runlist_ChangeChannel(LavaList[nLava].nChannel, 1);
                         }
                     }
                     else
                     {
-                        int ecx = 0;
-
-                        do
-                        {
-                            BuildLavaLimb(nSprite, ecx, 256);
-                            ecx++;
+                        for (int i = 0; i < 30; i++) {
+                            BuildLavaLimb(nSprite, i, 256);
                         }
-                        while (ecx < 30);
 
                         runlist_DoSubRunRec(sprite[nSprite].owner);
                         runlist_FreeRun(sprite[nSprite].lotag - 1);

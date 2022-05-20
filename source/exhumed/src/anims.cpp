@@ -95,7 +95,7 @@ void UnlinkIgnitedAnim(int nSprite)
 
 void DestroyAnim(int nAnim)
 {
-    short nSprite = AnimList[nAnim].nSprite;
+    int nSprite = AnimList[nAnim].nSprite;
 
     if (nSprite >= 0)
     {
@@ -160,11 +160,11 @@ int BuildAnim(int nSprite, int val, int val2, int x, int y, int z, int nSector, 
     sprite[nSprite].extra = runlist_AddRunRec(sprite[nSprite].lotag - 1, nAnim | 0x100000);
 
     AnimRunRec[nAnim] = runlist_AddRunRec(NewRun, nAnim | 0x100000);
-    AnimList[nAnim].nSprite = nSprite;
+
     AnimFlags[nAnim] = nFlag;
-    AnimList[nAnim].field_2 = 0;
+    AnimList[nAnim].nSprite = nSprite;
+    AnimList[nAnim].nFrame = 0;
     AnimList[nAnim].nSeq = SeqOffsets[val] + val2;
-    AnimList[nAnim].field_4 = 256;
 
     if (nFlag & 0x80) {
         sprite[nSprite].cstat |= 0x2; // set transluscence
@@ -188,31 +188,31 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
 
     assert(nSprite != -1);
 
-    int nMessage = a & 0x7F0000;
+    int nMessage = a & kMessageMask;
 
     switch (nMessage)
     {
         case 0x20000:
         {
-            short var_1C = AnimList[nAnim].field_2;
+            short nFrame = AnimList[nAnim].nFrame;
 
             if (!(sprite[nSprite].cstat & 0x8000))
             {
-                seq_MoveSequence(nSprite, nSeq, var_1C);
+                seq_MoveSequence(nSprite, nSeq, nFrame);
             }
 
             if (sprite[nSprite].statnum == kStatIgnited)
             {
-                short nSpriteB = sprite[nSprite].hitag;
-                if (nSpriteB > -1)
+                int nIgnitedSprite = sprite[nSprite].hitag;
+                if (nIgnitedSprite > -1)
                 {
-                    sprite[nSprite].x = sprite[nSpriteB].x;
-                    sprite[nSprite].y = sprite[nSpriteB].y;
-                    sprite[nSprite].z = sprite[nSpriteB].z;
+                    sprite[nSprite].x = sprite[nIgnitedSprite].x;
+                    sprite[nSprite].y = sprite[nIgnitedSprite].y;
+                    sprite[nSprite].z = sprite[nIgnitedSprite].z;
 
-                    if (sprite[nSpriteB].sectnum != sprite[nSprite].sectnum)
+                    if (sprite[nIgnitedSprite].sectnum != sprite[nSprite].sectnum)
                     {
-                        if (sprite[nSpriteB].sectnum < 0 || sprite[nSpriteB].sectnum >= kMaxSectors)
+                        if (sprite[nIgnitedSprite].sectnum < 0 || sprite[nIgnitedSprite].sectnum >= kMaxSectors)
                         {
                             DestroyAnim(nAnim);
                             mydeletesprite(nSprite);
@@ -220,28 +220,28 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
                         }
                         else
                         {
-                            mychangespritesect(nSprite, sprite[nSpriteB].sectnum);
+                            mychangespritesect(nSprite, sprite[nIgnitedSprite].sectnum);
                         }
                     }
 
-                    if (!var_1C)
+                    if (!nFrame)
                     {
-                        if (sprite[nSpriteB].cstat != 0x8000)
+                        if (sprite[nIgnitedSprite].cstat != 0x8000)
                         {
-                            short hitag2 = sprite[nSpriteB].hitag;
-                            sprite[nSpriteB].hitag--;
+                            int hitag2 = sprite[nIgnitedSprite].hitag;
+                            sprite[nIgnitedSprite].hitag--;
 
                             if (hitag2 >= 15)
                             {
-                                runlist_DamageEnemy(nSpriteB, -1, (sprite[nSpriteB].hitag - 14) * 2);
+                                runlist_DamageEnemy(nIgnitedSprite, -1, (sprite[nIgnitedSprite].hitag - 14) * 2);
 
-                                if (sprite[nSpriteB].shade < 100)
+                                if (sprite[nIgnitedSprite].shade < 100)
                                 {
-                                    sprite[nSpriteB].pal = 0;
-                                    sprite[nSpriteB].shade++;
+                                    sprite[nIgnitedSprite].pal = 0;
+                                    sprite[nIgnitedSprite].shade++;
                                 }
 
-                                if (!(sprite[nSpriteB].cstat & 0x101))
+                                if (!(sprite[nIgnitedSprite].cstat & 0x101))
                                 {
                                     DestroyAnim(nAnim);
                                     mydeletesprite(nSprite);
@@ -250,14 +250,14 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
                             }
                             else
                             {
-                                sprite[nSpriteB].hitag = 1;
+                                sprite[nIgnitedSprite].hitag = 1;
                                 DestroyAnim(nAnim);
                                 mydeletesprite(nSprite);
                             }
                         }
                         else
                         {
-                            sprite[nSpriteB].hitag = 1;
+                            sprite[nIgnitedSprite].hitag = 1;
                             DestroyAnim(nAnim);
                             mydeletesprite(nSprite);
                         }
@@ -265,16 +265,16 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
                 }
             }
 
-            AnimList[nAnim].field_2++;
-            if (AnimList[nAnim].field_2 >= SeqSize[nSeq])
+            AnimList[nAnim].nFrame++;
+            if (AnimList[nAnim].nFrame >= SeqSize[nSeq])
             {
                 if (AnimFlags[nAnim] & 0x10)
                 {
-                    AnimList[nAnim].field_2 = 0;
+                    AnimList[nAnim].nFrame = 0;
                 }
                 else if (nSeq == nPreMagicSeq)
                 {
-                    AnimList[nAnim].field_2 = 0;
+                    AnimList[nAnim].nFrame = 0;
                     AnimList[nAnim].nSeq = nMagicSeq;
                     short nAnimSprite = AnimList[nAnim].nSprite;
                     AnimFlags[nAnim] |= 0x10;
@@ -282,7 +282,7 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
                 }
                 else if (nSeq == nSavePointSeq)
                 {
-                    AnimList[nAnim].field_2 = 0;
+                    AnimList[nAnim].nFrame = 0;
                     AnimList[nAnim].nSeq++;
                     AnimFlags[nAnim] |= 0x10;
                 }
@@ -299,7 +299,7 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
 
         case 0x90000:
         {
-            seq_PlotSequence(a & 0xFFFF, nSeq, AnimList[nAnim].field_2, 0x101);
+            seq_PlotSequence(a & 0xFFFF, nSeq, AnimList[nAnim].nFrame, 0x101);
             tsprite[a & 0xFFFF].owner = -1;
             return;
         }
@@ -311,7 +311,7 @@ void FuncAnim(int a, int UNUSED(b), int nRun)
 
         default:
         {
-            DebugOut("unknown msg %x for anim\n", a & 0x7F0000);
+            DebugOut("unknown msg %x for anim\n", nMessage);
             return;
         }
     }

@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aistuff.h"
 
 void InitQueens();
-int BuildQueen(int nSprite, int x, int y, int z, int nSector, int nAngle, int nVal);
+int BuildQueen(int nSprite, int x, int y, int z, int nSector, int nAngle, int nChannel);
 void FuncQueenEgg(int, int, int);
 void FuncQueenHead(int, int, int);
 void FuncQueen(int, int, int);

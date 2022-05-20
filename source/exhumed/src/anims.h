@@ -29,8 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 struct Anim
 {
     short nSeq;
-    short field_2;
-    short field_4;
+    short nFrame;
     short nSprite;
 };
 

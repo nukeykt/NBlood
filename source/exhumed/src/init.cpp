@@ -137,23 +137,18 @@ static Sprite_6 sprite_6[4096];
 
 bool LoadLevel(int nMap)
 {
-    char fileName_1[80];
-    char fileName_2[32];
+    char fileName[BMAX_PATH];
 
     initspritelists();
 
     if (bUserMap)
     {
         nMap = 0;
-        strcpy(fileName_1, gUserMapFilename);
+        Bstrncpy(fileName, gUserMapFilename, BMAX_PATH);
     }
     else
     {
-        sprintf(fileName_2, "lev%d", nMap);
-
-        fileName_1[0] = '\0';
-        strcat(fileName_1, fileName_2);
-        strcat(fileName_1, ".map");
+        Bsnprintf(fileName, sizeof(fileName), "lev%d.map", nMap);
     }
 
     // init stuff
@@ -382,12 +377,12 @@ bool LoadLevel(int nMap)
     // loadboard has finished
 #endif
     vec3_t startPos;
-    int status = engineLoadBoard(fileName_1, 0, &startPos, &inita, &initsect);
+    int status = engineLoadBoard(fileName, 0, &startPos, &inita, &initsect);
     if (status == -2)
-        status = engineLoadBoardV5V6(fileName_1, 0, &startPos, &inita, &initsect);
+        status = engineLoadBoardV5V6(fileName, 0, &startPos, &inita, &initsect);
     if (status < 0)
     {
-        OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", fileName_1);
+        OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", fileName);
         return false;
     }
 

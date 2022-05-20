@@ -81,7 +81,6 @@ int BuildRa(short nPlayer)
 //	GrabTimeSlot(3);
 
     Ra[nPlayer].nSprite = nSprite;
-
     Ra[nPlayer].nRun = runlist_AddRunRec(NewRun, nPlayer | 0x210000);
     Ra[nPlayer].nTarget = -1;
     Ra[nPlayer].nFrame  = 0;

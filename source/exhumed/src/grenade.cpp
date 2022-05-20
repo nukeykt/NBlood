@@ -40,14 +40,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct Grenade
 {
-    short field_0;
-    short field_2;
-    short nSprite;
-    short field_6;
-    short field_8;
-    short field_A;
-    short field_C;
-    short field_E;
+    int16_t field_0;
+    int16_t field_2;
+    int16_t nSprite;
+    int16_t field_6;
+    int16_t field_8;
+    int16_t field_A;
+    int16_t field_C;
+    int16_t field_E;
     int field_10;
     int x;
     int y;
@@ -56,7 +56,7 @@ struct Grenade
 int nGrenadeCount = 0;
 int nGrenadesFree;
 
-short GrenadeFree[kMaxGrenades];
+int16_t GrenadeFree[kMaxGrenades];
 Grenade GrenadeList[kMaxGrenades];
 
 
@@ -71,12 +71,12 @@ void InitGrenades()
     nGrenadesFree = kMaxGrenades;
 }
 
-short GrabGrenade()
+int GrabGrenade()
 {
     return GrenadeFree[--nGrenadesFree];
 }
 
-void DestroyGrenade(short nGrenade)
+void DestroyGrenade(int nGrenade)
 {
     runlist_DoSubRunRec(GrenadeList[nGrenade].field_6);
     runlist_SubRunRec(GrenadeList[nGrenade].field_8);
@@ -88,7 +88,7 @@ void DestroyGrenade(short nGrenade)
     nGrenadesFree++;
 }
 
-void BounceGrenade(short nGrenade, short nAngle)
+void BounceGrenade(int nGrenade, int nAngle)
 {
     GrenadeList[nGrenade].field_10 >>= 1;
 
@@ -98,17 +98,17 @@ void BounceGrenade(short nGrenade, short nAngle)
     D3PlayFX(StaticSound[kSoundGrenadeDrop], GrenadeList[nGrenade].nSprite);
 }
 
-int ThrowGrenade(short nPlayer, int UNUSED(edx), int UNUSED(ebx), int ecx, int push1)
+int ThrowGrenade(int nPlayer, int UNUSED(edx), int UNUSED(ebx), int ecx, int push1)
 {
     if (nPlayerGrenade[nPlayer] < 0)
         return -1;
 
-    short nGrenade = nPlayerGrenade[nPlayer];
+    int nGrenade = nPlayerGrenade[nPlayer];
 
-    short nGrenadeSprite = GrenadeList[nGrenade].nSprite;
-    short nPlayerSprite = PlayerList[nPlayer].nSprite;
+    int nGrenadeSprite = GrenadeList[nGrenade].nSprite;
+    int nPlayerSprite = PlayerList[nPlayer].nSprite;
 
-    short nAngle = sprite[nPlayerSprite].ang;
+    int nAngle = sprite[nPlayerSprite].ang;
 
     mychangespritesect(nGrenadeSprite, nPlayerViewSect[nPlayer]);
 
@@ -205,43 +205,39 @@ int BuildGrenade(int nPlayer)
     return nSprite;
 }
 
-void ExplodeGrenade(short nGrenade)
+void ExplodeGrenade(int nGrenade)
 {
-    int var_28, var_20;
+    int nSeq, nRepeat;
 
-    short nPlayer = nGrenadePlayer[nGrenade];
+    int nPlayer = nGrenadePlayer[nGrenade];
     int nGrenadeSprite = GrenadeList[nGrenade].nSprite;
-    short nGrenadeSect = sprite[nGrenadeSprite].sectnum;
+    int nGrenadeSect = sprite[nGrenadeSprite].sectnum;
 
     GrenadeList[nGrenade].field_C = 1;
 
     if (SectFlag[nGrenadeSect] & kSectUnderwater)
     {
-        var_28 = 75;
-        var_20 = 60;
+        nSeq = kSeqGrenBubb;
+        nRepeat = 60;
     }
     else
     {
         if (sprite[nGrenadeSprite].z < sector[nGrenadeSect].floorz)
         {
-            var_20 = 200;
-            var_28 = 36;
-
-// TODO		MonoOut("GRENPOW\n");
+            nSeq = kSeqGrenPow;
+            nRepeat = 200;
         }
         else
         {
-            var_28 = 34;
-            var_20 = 150;
-
-// TODO		MonoOut("GRENBOOM\n");
+            nSeq = kSeqGrenBoom;
+            nRepeat = 150;
         }
     }
 
     if (GrenadeList[nGrenade].field_10 < 0)
     {
-        short nPlayerSprite = PlayerList[nPlayer].nSprite;
-        short nAngle = sprite[nPlayerSprite].ang;
+        int nPlayerSprite = PlayerList[nPlayer].nSprite;
+        int nAngle = sprite[nPlayerSprite].ang;
 
         sprite[nGrenadeSprite].z = sprite[nPlayerSprite].z;
         sprite[nGrenadeSprite].x = (Cos(nAngle) >> 5) + sprite[nPlayerSprite].x;
@@ -254,7 +250,7 @@ void ExplodeGrenade(short nGrenade)
         }
     }
 
-    short nDamage = BulletInfo[kWeaponGrenade].nDamage;
+    int nDamage = BulletInfo[kWeaponGrenade].nDamage;
 
     if (nPlayerDouble[nPlayer] > 0) {
         nDamage *= 2;
@@ -262,7 +258,7 @@ void ExplodeGrenade(short nGrenade)
 
     runlist_RadialDamageEnemy(nGrenadeSprite, nDamage, BulletInfo[kWeaponGrenade].nRadius);
 
-    BuildAnim(-1, var_28, 0, sprite[nGrenadeSprite].x, sprite[nGrenadeSprite].y, sprite[nGrenadeSprite].z, sprite[nGrenadeSprite].sectnum, var_20, 4);
+    BuildAnim(-1, nSeq, 0, sprite[nGrenadeSprite].x, sprite[nGrenadeSprite].y, sprite[nGrenadeSprite].z, sprite[nGrenadeSprite].sectnum, nRepeat, 4);
     AddFlash(sprite[nGrenadeSprite].sectnum, sprite[nGrenadeSprite].x, sprite[nGrenadeSprite].y, sprite[nGrenadeSprite].z, 128);
 
     nGrenadePlayer[nGrenade] = -1;
@@ -271,11 +267,11 @@ void ExplodeGrenade(short nGrenade)
 
 void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
 {
-    short nGrenade = RunData[nRun].nVal;
+    int nGrenade = RunData[nRun].nVal;
     assert(nGrenade >= 0 && nGrenade < kMaxGrenades);
 
-    short nGrenadeSprite = GrenadeList[nGrenade].nSprite;
-    short nSeq;
+    int nGrenadeSprite = GrenadeList[nGrenade].nSprite;
+    int nSeq;
 
     if (GrenadeList[nGrenade].field_C)
     {
@@ -310,7 +306,7 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
             GrenadeList[nGrenade].field_E--;
             if (!GrenadeList[nGrenade].field_E)
             {
-                short nPlayer = nGrenadePlayer[nGrenade];
+                int nPlayer = nGrenadePlayer[nGrenade];
 
                 if (GrenadeList[nGrenade].field_10 < 0)
                 {
@@ -339,17 +335,17 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
                     return;
                 }
 
-                int ebp = (GrenadeList[nGrenade].field_2 + GrenadeList[nGrenade].field_0) >> 8;
+                int nFrame = (GrenadeList[nGrenade].field_2 + GrenadeList[nGrenade].field_0) >> 8;
 
                 GrenadeList[nGrenade].field_2 += GrenadeList[nGrenade].field_0;
 
-                if (ebp < 0)
+                if (nFrame < 0)
                 {
                     GrenadeList[nGrenade].field_2 += SeqSize[nSeq] << 8;
                 }
                 else
                 {
-                    if (ebp >= SeqSize[nSeq])
+                    if (nFrame >= SeqSize[nSeq])
                     {
                         if (GrenadeList[nGrenade].field_C)
                         {

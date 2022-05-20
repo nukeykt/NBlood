@@ -1338,38 +1338,38 @@ int BuildFireBall(int nSprite, int a, int b)
 
 int BuildSpark(int nSprite, int nVal)
 {
-    int var_14 = insertsprite(sprite[nSprite].sectnum, 0);
+    int nSparkSprite = insertsprite(sprite[nSprite].sectnum, 0);
 
-    if (var_14 < 0) {
+    if (nSparkSprite < 0) {
         return -1;
     }
 
-    assert(var_14 < kMaxSprites);
+    assert(nSparkSprite < kMaxSprites);
 
-    sprite[var_14].x = sprite[nSprite].x;
-    sprite[var_14].y = sprite[nSprite].y;
-    sprite[var_14].cstat = 0;
-    sprite[var_14].shade = -127;
-    sprite[var_14].pal = 1;
-    sprite[var_14].xoffset = 0;
-    sprite[var_14].yoffset = 0;
-    sprite[var_14].xrepeat = 50;
-    sprite[var_14].yrepeat = 50;
+    sprite[nSparkSprite].x = sprite[nSprite].x;
+    sprite[nSparkSprite].y = sprite[nSprite].y;
+    sprite[nSparkSprite].cstat = 0;
+    sprite[nSparkSprite].shade = -127;
+    sprite[nSparkSprite].pal = 1;
+    sprite[nSparkSprite].xoffset = 0;
+    sprite[nSparkSprite].yoffset = 0;
+    sprite[nSparkSprite].xrepeat = 50;
+    sprite[nSparkSprite].yrepeat = 50;
 
     if (nVal >= 2)
     {
-        sprite[var_14].picnum = kEnergy2;
+        sprite[nSparkSprite].picnum = kEnergy2;
         nSmokeSparks++;
 
         if (nVal == 3)
         {
-            sprite[var_14].xrepeat = 120;
-            sprite[var_14].yrepeat = 120;
+            sprite[nSparkSprite].xrepeat = 120;
+            sprite[nSparkSprite].yrepeat = 120;
         }
         else
         {
-            sprite[var_14].xrepeat = sprite[nSprite].xrepeat + 15;
-            sprite[var_14].yrepeat = sprite[nSprite].xrepeat + 15;
+            sprite[nSparkSprite].xrepeat = sprite[nSprite].xrepeat + 15;
+            sprite[nSparkSprite].yrepeat = sprite[nSprite].xrepeat + 15;
         }
     }
     else
@@ -1378,31 +1378,31 @@ int BuildSpark(int nSprite, int nVal)
 
         if (nVal)
         {
-            sprite[var_14].xvel = Cos(nAngle) >> 5;
-            sprite[var_14].yvel = Sin(nAngle) >> 5;
+            sprite[nSparkSprite].xvel = Cos(nAngle) >> 5;
+            sprite[nSparkSprite].yvel = Sin(nAngle) >> 5;
         }
         else
         {
-            sprite[var_14].xvel = Cos(nAngle) >> 6;
-            sprite[var_14].yvel = Sin(nAngle) >> 6;
+            sprite[nSparkSprite].xvel = Cos(nAngle) >> 6;
+            sprite[nSparkSprite].yvel = Sin(nAngle) >> 6;
         }
 
-        sprite[var_14].zvel = -(RandomSize(4) << 7);
-        sprite[var_14].picnum = kTile985 + nVal;
+        sprite[nSparkSprite].zvel = -(RandomSize(4) << 7);
+        sprite[nSparkSprite].picnum = kTile985 + nVal;
     }
 
-    sprite[var_14].z = sprite[nSprite].z;
-    sprite[var_14].lotag = runlist_HeadRun() + 1;
-    sprite[var_14].clipdist = 1;
-    sprite[var_14].hitag = 0;
+    sprite[nSparkSprite].z = sprite[nSprite].z;
+    sprite[nSparkSprite].lotag = runlist_HeadRun() + 1;
+    sprite[nSparkSprite].clipdist = 1;
+    sprite[nSparkSprite].hitag = 0;
 
 //	GrabTimeSlot(3);
 
-    sprite[var_14].extra = -1;
-    sprite[var_14].owner = runlist_AddRunRec(sprite[var_14].lotag - 1, var_14 | 0x260000);
-    sprite[var_14].hitag = runlist_AddRunRec(NewRun, var_14 | 0x260000);
+    sprite[nSparkSprite].extra = -1;
+    sprite[nSparkSprite].owner = runlist_AddRunRec(sprite[nSparkSprite].lotag - 1, nSparkSprite | 0x260000);
+    sprite[nSparkSprite].hitag = runlist_AddRunRec(NewRun, nSparkSprite | 0x260000);
 
-    return var_14;
+    return nSparkSprite;
 }
 
 void FuncSpark(int a, int UNUSED(b), int nRun)

@@ -1744,7 +1744,7 @@ void PlayerCheckItemPickup(int nPlayer, int nPickupSprite, int valueFlag)
                     short nAnim = sprite[nPickupSprite].owner;
                     AnimList[nAnim].nSeq++;
                     AnimFlags[nAnim] &= 0xEF;
-                    AnimList[nAnim].field_2 = 0;
+                    AnimList[nAnim].nFrame = 0;
 
                     changespritestat(nPickupSprite, 899);
                 }

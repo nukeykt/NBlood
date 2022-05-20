@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kMaxRuns		25600
 #define kMaxChannels	4096
+#define kMessageMask    0x7F0000
 
 struct RunStruct
 {

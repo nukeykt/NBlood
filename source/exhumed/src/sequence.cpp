@@ -164,7 +164,7 @@ short SeqOffsets[kMaxSEQFiles];
 int seq_ReadSequence(const char *seqName)
 {
     int i;
-    char buffer[200];
+    char buffer[BMAX_PATH];
     buffer[0] = '\0';
 
     strcat(buffer, seqName);

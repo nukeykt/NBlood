@@ -60,32 +60,19 @@ void FuncEnergyBlock(int, int, int);
 void FuncSpark(int, int, int);
 
 void SnapBobs(short nSectorA, short nSectorB);
-
 short FindWallSprites(short nSector);
-
 void AddMovingSector(int nSector, int edx, int ebx, int ecx);
-
 int BuildWallSprite(int nSector);
-
 void ProcessTrailSprite(int nSprite, int nLotag, int nHitag);
-
 void AddSectorBob(int nSector, int nHitag, int bx);
-
 int BuildObject(short nSprite, int nOjectType, int nHitag);
-
 int BuildArrow(int nSprite, int nVal);
-
 int BuildFireBall(int nSprite, int a, int b);
-
 void BuildDrip(int nSprite);
-
 int BuildEnergyBlock(short nSector);
-
 int BuildElevC(int arg1, int nChannel, int nSector, int nWallSprite, int arg5, int arg6, int nCount, ...);
 int BuildElevF(int nChannel, int nSector, int nWallSprite, int arg_4, int arg_5, int nCount, ...);
-
 int BuildWallFace(short nChannel, short nWall, short nCount, ...);
-
 int BuildSlide(int nChannel, int edx, int ebx, int ecx, int arg1, int arg2, int arg3);
 
 #endif
