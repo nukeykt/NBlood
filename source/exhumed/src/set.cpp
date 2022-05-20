@@ -132,14 +132,14 @@ int BuildSet(short nSprite, int x, int y, int z, short nSector, short nAngle, in
 
     SetChan[nSet] = nChannel;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nSet | 0x190000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nSet, kRunSet);
 
     // this isn't stored anywhere.
-    runlist_AddRunRec(NewRun, nSet | 0x190000);
+    runlist_AddRunRec(NewRun, nSet, kRunSet);
 
     nCreaturesLeft++;
 
-    return nSet | 0x190000;
+    return nSet;
 }
 
 int BuildSoul(int nSet)
@@ -174,9 +174,9 @@ int BuildSoul(int nSet)
 
 //	GrabTimeSlot(3);
 
-    sprite[nSprite].owner = runlist_AddRunRec(NewRun, nSprite | 0x230000);
+    sprite[nSprite].owner = runlist_AddRunRec(NewRun, nSprite, kRunSoul);
 
-    return nSprite | 0x230000;
+    return nSprite | 0x230000; // TODO: What should this return, ideally/usefully?
 }
 
 void FuncSoul(int a, int UNUSED(b), int nRun)
@@ -565,9 +565,8 @@ void FuncSet(int a, int nDamage, int nRun)
                 {
                     if (nFlag & 0x80)
                     {
-                        // low 16 bits of returned var contains the sprite index, the high 16 the bullet number
                         int nBullet = BuildBullet(nSprite, 11, 0, 0, -1, sprite[nSprite].ang, nTarget + 10000, 1);
-                        SetBulletEnemy(nBullet >> 16, nTarget); // isolate the bullet number (shift off the sprite index)
+                        SetBulletEnemy(nBullet, nTarget);
 
                         SetList[nSet].field_E--;
                         if (SetList[nSet].field_E <= 0 || !RandomBit())

@@ -126,13 +126,13 @@ int BuildLion(short nSprite, int x, int y, int z, short nSector, short nAngle)
     LionList[nLion]._g = 0;
     LionList[nLion]._f = nLion;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nLion | 0x130000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nLion, kRunLion);
 
-    MoveHook[nLion] = runlist_AddRunRec(NewRun, nLion | 0x130000);
+    MoveHook[nLion] = runlist_AddRunRec(NewRun, nLion, kRunLion);
 
     nCreaturesLeft++;
 
-    return nLion | 0x130000;
+    return nLion;
 }
 
 void FuncLion(int a, int nDamage, int nRun)

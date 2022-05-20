@@ -66,6 +66,12 @@ void InitSpider()
     SpiderCount = 0;
 }
 
+int GetSpiderSprite(int nSpider)
+{
+    assert (nSpider >= 0 && nSpider < kMaxSpiders);
+    return SpiderList[nSpider].nSprite;
+}
+
 int BuildSpider(int nSprite, int x, int y, int z, short nSector, int nAngle)
 {
     int nSpider = SpiderCount++;
@@ -116,13 +122,13 @@ int BuildSpider(int nSprite, int x, int y, int z, short nSector, int nAngle)
     SpiderList[nSpider].nTarget = -1;
     SpiderList[nSpider].nHealth = 160;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nSpider | 0xC0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nSpider, kRunSpider);
 
-    SpiderList[nSpider].nRun = runlist_AddRunRec(NewRun, nSpider | 0xC0000);
+    SpiderList[nSpider].nRun = runlist_AddRunRec(NewRun, nSpider, kRunSpider);
 
     nCreaturesLeft++;
 
-    return nSpider | 0xC0000;
+    return nSpider;
 }
 
 void FuncSpider(int a, int nDamage, int nRun)

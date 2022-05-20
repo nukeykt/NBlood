@@ -139,9 +139,10 @@ int runlist_FreeRun(int nRun)
     RunFree[RunCount] = nRun;
     RunCount++;
 
+    RunData[nRun].nRef = -1;
+    RunData[nRun].nVal = -1;
     RunData[nRun]._4 = -1;
     RunData[nRun]._6 = -1;
-    RunData[nRun].nMoves = -1;
 
     return 1;
 }
@@ -165,9 +166,11 @@ void runlist_InitRun()
 
     for (i = 0; i < kMaxRuns; i++)
     {
-        RunData[i].nMoves = -1;
+        RunData[i].nRef = -1;
+        RunData[i].nVal = -1;
         RunData[i]._4 = -1;
         RunData[i]._6 = -1;
+
         RunFree[i] = i;
     }
 
@@ -222,11 +225,12 @@ int runlist_InsertRun(int RunLst, int RunNum)
     return RunNum;
 }
 
-int runlist_AddRunRec(int a, int b)
+int runlist_AddRunRec(int a, int16_t b, int16_t c)
 {
     int nRun = runlist_GrabRun();
 
-    RunData[nRun].nMoves = b; // TODO - split this into the two shorts?
+    RunData[nRun].nVal = b;
+    RunData[nRun].nRef = c;
 
     runlist_InsertRun(a, nRun);
     return nRun;
@@ -268,12 +272,13 @@ void runlist_SubRunRec(int RunPtr)
 {
     assert(RunPtr >= 0 && RunPtr < kMaxRuns);
 
-    RunData[RunPtr].nMoves = -totalmoves;
+    RunData[RunPtr].nRef = -1;
+    RunData[RunPtr].nVal = -1;
 }
 
 void runlist_SendMessageToRunRec(int nRun, int nMessage, int nDamage)
 {
-    int nFunc = RunData[nRun].nRef;// >> 16;
+    int nFunc = RunData[nRun].nRef;
 
     if (nFunc < 0) {
         return;
@@ -301,16 +306,14 @@ void runlist_ExplodeSignalRun()
         nextPtr = RunData[nextPtr]._4;
     }
 
-    // LOOP
     while (nextPtr >= 0)
     {
         int runPtr = nextPtr;
         assert(runPtr < kMaxRuns);
 
-        int val = RunData[runPtr].nMoves;
         nextPtr = RunData[runPtr]._4;
 
-        if (val >= 0)
+        if ((RunData[runPtr].nRef >= 0) || (RunData[runPtr].nVal >= 0))
         {
             runlist_SendMessageToRunRec(runPtr, 0xA0000, 0);
         }
@@ -356,16 +359,16 @@ void runlist_SignalRun(int NxtPtr, int edx)
 
         while (NxtPtr >= 0)
         {
-            int RunPtr = NxtPtr;
+            int runPtr = NxtPtr;
 
-            if (RunPtr >= 0)
+            if (runPtr >= 0)
             {
-                assert(RunPtr < kMaxRuns);
-                int val = RunData[RunPtr].nMoves;
-                NxtPtr = RunData[RunPtr]._4;
+                assert(runPtr < kMaxRuns);
+                NxtPtr = RunData[runPtr]._4;
 
-                if (val >= 0) {
-                    runlist_SendMessageToRunRec(RunPtr, edx, 0);
+                if ((RunData[runPtr].nRef >= 0) || (RunData[runPtr].nVal >= 0))
+                {
+                    runlist_SendMessageToRunRec(runPtr, edx, 0);
                 }
             }
         }
@@ -421,12 +424,8 @@ void runlist_ReadyChannel(int nChannel)
 
 void runlist_ProcessChannels()
 {
-#if 1
     short v0;
     short v1;
-    int v5;
-    short b;
-    short d;
 
     do
     {
@@ -435,19 +434,19 @@ void runlist_ProcessChannels()
 
         while (ChannelList >= 0)
         {
-            b = sRunChannels[ChannelList].b;
-            d = sRunChannels[ChannelList].d;
+            short b = sRunChannels[ChannelList].b;
+            short d = sRunChannels[ChannelList].d;
 
             if (d & 2)
             {
-                sRunChannels[ChannelList].d = d ^ 2;
-                runlist_SignalRun(sRunChannels[ChannelList].a, ChannelList | 0x10000);
+                sRunChannels[ChannelList].d ^= 2;
+                runlist_SignalRun(sRunChannels[ChannelList].a, ChannelList | k0x10000);
             }
 
             if (d & 1)
             {
                 sRunChannels[ChannelList].d ^= 1;
-                runlist_SignalRun(sRunChannels[ChannelList].a, 0x30000);
+                runlist_SignalRun(sRunChannels[ChannelList].a, k0x30000);
             }
 
             if (sRunChannels[ChannelList].d)
@@ -459,7 +458,7 @@ void runlist_ProcessChannels()
                 }
                 else
                 {
-                    v5 = v0;
+                    int v5 = v0;
                     v0 = ChannelList;
                     sRunChannels[v5].b = ChannelList;
                 }
@@ -472,64 +471,6 @@ void runlist_ProcessChannels()
         }
         ChannelList = v1;
     } while (v1 != -1);
-
-#else
-    int edi = -1;
-    int esi = edi;
-
-    while (1)
-    {
-        short nChannel = ChannelList;
-        if (nChannel < 0)
-        {
-            ChannelList = esi;
-            if (esi != -1)
-            {
-                edi = -1;
-                esi = edi;
-                continue;
-            }
-            else {
-                return;
-            }
-        }
-
-        short b = sRunChannels[nChannel].b;
-        short d = sRunChannels[nChannel].d;
-
-        if (d & 2)
-        {
-            sRunChannels[nChannel].d = d ^ 2;
-            runlist_SignalRun(sRunChannels[nChannel].a, ChannelList | 0x10000);
-        }
-
-        if (d & 1)
-        {
-            sRunChannels[nChannel].d = d ^ 1;
-            runlist_SignalRun(sRunChannels[nChannel].a, 0x30000);
-        }
-
-        if (sRunChannels[nChannel].d == 0)
-        {
-            sRunChannels[ChannelList].b = -1;
-        }
-        else
-        {
-            if (esi == -1)
-            {
-                esi = ChannelList;
-                edi = esi;
-            }
-            else
-            {
-                sRunChannels[edi].b = ChannelList;
-                edi = ChannelList;
-            }
-        }
-
-        ChannelList = b;
-    }
-#endif
 }
 
 int runlist_FindChannel(short ax)
@@ -564,7 +505,7 @@ int runlist_AllocChannel(int a)
 void runlist_ExecObjects()
 {
     runlist_ProcessChannels();
-    runlist_SignalRun(RunChain, 0x20000);
+    runlist_SignalRun(RunChain, k0x20000);
 }
 
 void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
@@ -599,15 +540,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwPress = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPress);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPress, kRunSwPressSector);
 
             int nSwPause = BuildSwPause(nChannel, BuildLink(2, -1, 0), 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPause);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPause, kRunSwPause);
             return;
         }
 
@@ -618,15 +559,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].ceilingz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwPress = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPress);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPress, kRunSwPressSector);
 
             int nSwPause = BuildSwPause(nChannel, BuildLink(2, -1, 0), 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPause);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwPause, kRunSwPause);
             return;
         }
 
@@ -667,7 +608,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -678,11 +619,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 400, 400, 2, sector[nextSector].floorz, sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(2, 1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
 
             sector[nSector].floorz = sector[nextSector].floorz;
             return;
@@ -695,15 +636,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
 
             int nSwitch2 = BuildSwNotOnPause(nChannel, BuildLink(2, -1, 0), nSector, 8);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2, kRunSwNotOnPause);
             return;
         }
 
@@ -714,7 +655,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -725,11 +666,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 150);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -740,15 +681,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
 
             int nSwitch2 = BuildSwNotOnPause(nChannel, BuildLink(2, -1, 0), nSector, 8);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2, kRunSwNotOnPause);
             return;
         }
 
@@ -770,7 +711,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, zVal);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -790,11 +731,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, zVal);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 150);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -814,11 +755,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, zVal);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwReady(nChannel, BuildLink(2, 1, 0));
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwReady);
             return;
         }
 
@@ -829,7 +770,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -837,15 +778,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
         {
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].ceilingz, sector[nSector].floorz - 8);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
 
             int nSwitch2 = BuildSwReady(nChannel, BuildLink(2, -1, 0));
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2, kRunSwReady);
             return;
         }
 
@@ -853,11 +794,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
         {
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].ceilingz, sector[nSector].floorz - 8);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwReady(nChannel, BuildLink(2, -1, 0));
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwReady);
             return;
         }
 
@@ -867,17 +808,17 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].floorz, ebx);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int ebx2 = (((sector[nSector].floorz - sector[nSector].ceilingz) / 2) + sector[nSector].ceilingz) - 8;
 
             int nElev2 = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].ceilingz, ebx2);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev2, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
             return;
         }
 
@@ -885,7 +826,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
         {
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(2, 1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
             return;
         }
 
@@ -905,11 +846,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 32767, 200, 2, sector[nSector].floorz, zVal);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), nSpeed * 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -920,11 +861,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -935,11 +876,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 300);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -950,11 +891,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 450);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -965,11 +906,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 600);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -980,11 +921,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 900);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -995,11 +936,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 0x7FFF, 0x7FFF, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
             return;
         }
 
@@ -1010,7 +951,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 0x7FFF, 0x7FFF, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1021,7 +962,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(20, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nextSector].ceilingz, sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1032,7 +973,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(28, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nextSector].ceilingz, sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1057,7 +998,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1068,15 +1009,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 0x7FFF, 0x7FFF, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
 
             int nSwitch2 = BuildSwNotOnPause(nChannel, BuildLink(2, -1, 0), nSector, 8);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2, kRunSwNotOnPause);
             return;
         }
 
@@ -1132,7 +1073,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].ceilingz, zVal);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1143,7 +1084,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].ceilingz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1154,7 +1095,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 0x7FFF, 200, 2, sector[nextSector].floorz, sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1164,17 +1105,17 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].floorz, edx);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int eax = (((sector[nSector].floorz - sector[nSector].ceilingz) / 2) + sector[nSector].ceilingz) - 8;
 
             nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), 200, nSpeed * 100, 2, sector[nSector].ceilingz, eax);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwReady(nChannel, BuildLink(2, 1, 0));
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwReady);
             return;
         }
 
@@ -1184,21 +1125,21 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, eax, sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             eax = ((sector[nSector].floorz - sector[nSector].ceilingz) / 2) + sector[nSector].ceilingz;
 
             nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, eax, sector[nSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressSector);
 
             nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -1208,17 +1149,17 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, eax, sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             eax = ((sector[nSector].floorz - sector[nSector].ceilingz) / 2) + sector[nSector].ceilingz;
 
             nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, eax, sector[nSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPause(nChannel, BuildLink(2, -1, 0), 150);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPause);
             return;
         }
 
@@ -1229,11 +1170,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressSector);
             return;
         }
 
@@ -1244,11 +1185,11 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressSector);
             return;
         }
 
@@ -1259,7 +1200,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1270,7 +1211,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].ceilingz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1278,7 +1219,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
         {
             int nSwitch = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressSector);
 
             // Fall through to case 62
             fallthrough__;
@@ -1294,7 +1235,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1305,15 +1246,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(1, 1), nSector);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
 
             int nSwitch2 = BuildSwNotOnPause(nChannel, BuildLink(1, 1), nSector, 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2, kRunSwNotOnPause);
             return;
         }
 
@@ -1337,7 +1278,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, var_1C,
                 zListB[0], zListB[1], zListB[2], zListB[3], zListB[4], zListB[5], zListB[6], zListB[7]);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1361,14 +1302,14 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, var_20,
                 zListA[0], zListA[1], zListA[2], zListA[3], zListA[4], zListA[5], zListA[6], zListA[7]);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
         case 64:
         {
             int nSwitch = BuildSwStepOn(nChannel, BuildLink(2, 0, 0), nSector);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwStepOn);
             return;
         }
 
@@ -1379,7 +1320,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevF(nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, sector[nSector].floorz, sector[nextSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1391,15 +1332,15 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
 
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, (int)sector[nSector].floorz, (int)sector[nextSector].ceilingz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
 
             int nSwitch = BuildSwPressSector(nChannel, BuildLink(1, 1), nSector, keyMask);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressSector);
 
             int nSwitch2 = BuildSwPause(nChannel, BuildLink(2, -1, 0), 60);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch2, kRunSwPause);
             return;
         }
 
@@ -1407,7 +1348,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
         {
             int nElev = BuildElevC(0, nChannel, nSector, FindWallSprites(nSector), nSpeed * 100, nSpeed * 100, 2, (int)sector[nSector].ceilingz, (int)sector[nSector].floorz);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nElev);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nElev, kRunElev);
             return;
         }
 
@@ -1441,53 +1382,53 @@ void runlist_ProcessWallTag(int nWall, short nLotag, short nHitag)
         case 1:
         {
             int nWallFace = BuildWallFace(nChannel, nWall, 2, wall[nWall].picnum, wall[nWall].picnum + 1);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nWallFace);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nWallFace, kRunWallFace);
 
             int nSwitch = BuildSwPressWall(nChannel, BuildLink(2, nEffectTag, 0), nWall);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressWall);
             return;
         }
 
         case 6:
         {
             int nSwitch = BuildSwPressWall(nChannel, BuildLink(2, 1, 0), nWall);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressWall);
             return;
         }
 
         case 7: // Regular switch
         {
             int nWallFace = BuildWallFace(nChannel, nWall, 2, wall[nWall].picnum, wall[nWall].picnum + 1);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nWallFace);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nWallFace, kRunWallFace);
 
             int nSwitch = BuildSwPressWall(nChannel, BuildLink(1, 1), nWall);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressWall);
             return;
         }
 
         case 8: // Reverse switch
         {
             int nWallFace = BuildWallFace(nChannel, nWall, 2, wall[nWall].picnum, wall[nWall].picnum + 1);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nWallFace);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nWallFace, kRunWallFace);
 
             int nSwitch = BuildSwPressWall(nChannel, BuildLink(2, -1, 0), nWall);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressWall);
             return;
         }
 
         case 9: // Invisible switch
         {
             int nSwitch = BuildSwPressWall(nChannel, BuildLink(2, 1, 1), nWall);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressWall);
             return;
         }
 
         case 10:
         {
             int nSwitch = BuildSwPressWall(nChannel, BuildLink(2, -1, 0), nWall);
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch, kRunSwPressWall);
             return;
         }
 
@@ -1520,7 +1461,7 @@ void runlist_ProcessWallTag(int nWall, short nLotag, short nHitag)
 
             int nSlide = BuildSlide(nChannel, nStart, nLastWall, n2ndLastWall, nWall2, nWall3, nWall4);
 
-            runlist_AddRunRec(sRunChannels[nChannel].a, nSlide);
+            runlist_AddRunRec(sRunChannels[nChannel].a, nSlide, kRunSlide);
             return;
         }
 

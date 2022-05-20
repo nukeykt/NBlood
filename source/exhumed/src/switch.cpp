@@ -108,7 +108,7 @@ int BuildSwReady(int nChannel, short nLink)
     SwitchData[SwitchCount].nChannel = nChannel;
     SwitchData[SwitchCount].nLink = nLink;
 
-    return SwitchCount | 0x10000;
+    return SwitchCount;
 }
 
 void FuncSwReady(int a, int UNUSED(b), int nRun)
@@ -147,7 +147,7 @@ int BuildSwPause(int nChannel, int nLink, int ebx)
     for (int i = kMaxSwitches - 1; i >= SwitchCount; i--)
     {
         if (SwitchData[i].nChannel == nChannel && SwitchData[i].nPause != 0) {
-            return i | 0x20000;
+            return i;
         }
     }
 
@@ -163,7 +163,7 @@ int BuildSwPause(int nChannel, int nLink, int ebx)
     SwitchData[SwitchCount].nPause = ebx;
     SwitchData[SwitchCount].field_8 = -1;
 
-    return SwitchCount | 0x20000;
+    return SwitchCount;
 }
 
 void FuncSwPause(int a, int UNUSED(b), int nRun)
@@ -221,7 +221,7 @@ void FuncSwPause(int a, int UNUSED(b), int nRun)
                 return;
             }
 
-            SwitchData[nSwitch].field_8 = runlist_AddRunRec(NewRun, RunData[nRun].nMoves);
+            SwitchData[nSwitch].field_8 = runlist_AddRunRec(NewRun, RunData[nRun].nVal, RunData[nRun].nRef);
 
             int eax;
 
@@ -252,7 +252,7 @@ int BuildSwStepOn(int nChannel, int nLink, int nSector)
     SwitchData[nSwitch].nSector = nSector;
     SwitchData[nSwitch].field_C = -1;
 
-    return nSwitch | 0x30000;
+    return nSwitch;
 }
 
 void FuncSwStepOn(int a, int UNUSED(b), int nRun)
@@ -285,7 +285,7 @@ void FuncSwStepOn(int a, int UNUSED(b), int nRun)
 
             if (var_14 >= 0)
             {
-                SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nMoves);
+                SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nVal, RunData[nRun].nRef);
             }
 
             return;
@@ -323,7 +323,7 @@ int BuildSwNotOnPause(int nChannel, int nLink, int nSector, int ecx)
     SwitchData[nSwitch].field_8  = -1;
     SwitchData[nSwitch].field_C  = -1;
 
-    return nSwitch | 0x40000;
+    return nSwitch;
 }
 
 void FuncSwNotOnPause(int a, int UNUSED(b), int nRun)
@@ -379,12 +379,12 @@ void FuncSwNotOnPause(int a, int UNUSED(b), int nRun)
             {
                 if (SwitchData[nSwitch].field_8 < 0)
                 {
-                    SwitchData[nSwitch].field_8 = runlist_AddRunRec(NewRun, RunData[nRun].nMoves);
+                    SwitchData[nSwitch].field_8 = runlist_AddRunRec(NewRun, RunData[nRun].nVal, RunData[nRun].nRef);
 
                     short nSector = SwitchData[nSwitch].nSector;
 
                     SwitchData[nSwitch].field_0 = SwitchData[nSwitch].nPause;
-                    SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nMoves);
+                    SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nVal, RunData[nRun].nRef);
                 }
             }
 
@@ -412,7 +412,7 @@ int BuildSwPressSector(int nChannel, int nLink, int nSector, int keyMask)
     SwitchData[nSwitch].field_12 = keyMask;
     SwitchData[nSwitch].field_C = -1;
 
-    return nSwitch | 0x50000;
+    return nSwitch;
 }
 
 void FuncSwPressSector(int a, int UNUSED(b), int nRun)
@@ -447,7 +447,7 @@ void FuncSwPressSector(int a, int UNUSED(b), int nRun)
 
             short nSector = SwitchData[nSwitch].nSector;
 
-            SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nMoves);
+            SwitchData[nSwitch].field_C = runlist_AddRunRec(sector[nSector].lotag - 1, RunData[nRun].nVal, RunData[nRun].nRef);
             return;
         }
 
@@ -485,7 +485,7 @@ int BuildSwPressWall(short nChannel, short nLink, short nWall)
     SwitchData[SwitchCount].field_10 = -1;
     SwitchData[SwitchCount].field_14 = 0;
 
-    return SwitchCount | 0x60000;
+    return SwitchCount;
 }
 
 void FuncSwPressWall(int a, int UNUSED(b), int nRun)
@@ -518,7 +518,7 @@ void FuncSwPressWall(int a, int UNUSED(b), int nRun)
             if (LinkMap[nLink][sRunChannels[nChannel].c] >= 0)
             {
                 short nWall = SwitchData[nSwitch].nWall;
-                SwitchData[nSwitch].field_10 = runlist_AddRunRec(wall[nWall].lotag - 1, RunData[nRun].nMoves);
+                SwitchData[nSwitch].field_10 = runlist_AddRunRec(wall[nWall].lotag - 1, RunData[nRun].nVal, RunData[nRun].nRef);
             }
 
             return;

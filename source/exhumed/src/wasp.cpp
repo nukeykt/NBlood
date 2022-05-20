@@ -87,6 +87,12 @@ void SetWaspVel(short nSprite)
     }
 }
 
+int GetWaspSprite(int nWasp)
+{
+    assert(nWasp >= 0 && nWasp < kMaxWasps);
+    return WaspList[nWasp].nSprite;
+}
+
 int BuildWasp(short nSprite, int x, int y, int z, short nSector, short nAngle)
 {
     if (nWaspCount >= kMaxWasps) {
@@ -167,9 +173,9 @@ int BuildWasp(short nSprite, int x, int y, int z, short nSector, short nAngle)
     WaspList[nWasp].nVelocity = 0;
     WaspList[nWasp].dTime = RandomSize(7) + 127;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nWasp | 0x1E0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nWasp, kRunWasp);
 
-    WaspList[nWasp].nRun = runlist_AddRunRec(NewRun, nWasp | 0x1E0000);
+    WaspList[nWasp].nRun = runlist_AddRunRec(NewRun, nWasp, kRunWasp);
 
     nCreaturesLeft++;
     return nSprite;

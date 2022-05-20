@@ -54,6 +54,7 @@ void DestroyBullet(short nRun);
 int MoveBullet(short nBullet);
 void SetBulletEnemy(short nBullet, short nEnemy);
 int BuildBullet(short nSprite, int nType, int ebx, int ecx, int val1, int nAngle, int val2, int val3);
+int GetBulletSprite(int nBullet);
 void IgniteSprite(int nSprite);
 void FuncBullet(int, int, int);
 void BackUpBullet(int *x, int *y, short nAngle);

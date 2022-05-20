@@ -135,12 +135,12 @@ int BuildScorp(short nSprite, int x, int y, int z, short nSector, short nAngle, 
 
     ScorpChan[nScorp] = nChannel;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nScorp | 0x220000);
-    scorpion[nScorp].f = runlist_AddRunRec(NewRun, nScorp | 0x220000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nScorp, kRunScorp);
+    scorpion[nScorp].f = runlist_AddRunRec(NewRun, nScorp, kRunScorp);
 
     nCreaturesLeft++;
 
-    return nScorp | 0x220000;
+    return nScorp;
 }
 
 void FuncScorp(int a, int nDamage, int nRun)
@@ -376,7 +376,9 @@ void FuncScorp(int a, int nDamage, int nRun)
                         return;
                     }
 
-                    short nBulletSprite = BuildBullet(nSprite, 16, 0, 0, -1, sprite[nSprite].ang, nTarget + 10000, 1) & 0xFFFF;
+                    int nBullet = BuildBullet(nSprite, 16, 0, 0, -1, sprite[nSprite].ang, nTarget + 10000, 1) & 0xFFFF;
+                    int nBulletSprite = GetBulletSprite(nBullet);
+
                     if (nBulletSprite > -1)
                     {
                         PlotCourseToSprite(nBulletSprite, nTarget);
@@ -429,7 +431,7 @@ void FuncScorp(int a, int nDamage, int nRun)
                     int nSpider = BuildSpider(-1, sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].z, sprite[nSprite].sectnum, sprite[nSprite].ang);
                     if (nSpider != -1)
                     {
-                        short nSpiderSprite = nSpider & 0xFFFF;
+                        int nSpiderSprite = GetSpiderSprite(nSpider);
 
                         sprite[nSpiderSprite].ang = RandomSize(11);
 

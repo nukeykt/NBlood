@@ -141,10 +141,11 @@ int BuildRat(short nSprite, int x, int y, int z, short nSector, int nAngle)
     RatList[nRat].f = RandomSize(5);
     RatList[nRat].g = RandomSize(3);
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRat | 0x240000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRat, kRunRat);
 
-    RatList[nRat].nRun = runlist_AddRunRec(NewRun, nRat | 0x240000);
-    return 0;
+    RatList[nRat].nRun = runlist_AddRunRec(NewRun, nRat, kRunRat);
+
+    return nRat;
 }
 
 int FindFood(short nSprite)

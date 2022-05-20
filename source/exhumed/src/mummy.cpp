@@ -121,13 +121,13 @@ int BuildMummy(int nSprite, int x, int y, int z, int nSector, int nAngle)
     MummyList[nMummy].F = nMummy;
     MummyList[nMummy].G = 0;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nMummy | 0xE0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nMummy, kRunMummy);
 
-    MummyList[nMummy].H = runlist_AddRunRec(NewRun, nMummy | 0xE0000);
+    MummyList[nMummy].H = runlist_AddRunRec(NewRun, nMummy, kRunMummy);
 
     nCreaturesLeft++;
 
-    return (nMummy | 0xE0000);
+    return nMummy;
 }
 
 void CheckMummyRevive(short nMummy)
@@ -401,8 +401,9 @@ void FuncMummy(int a, int nDamage, int nRun)
                             {
                                 // FIXME CHECKME - nBullet & 0xFFFF can be -1. Original code doesn't handle this??
 
-                                SetBulletEnemy(nBullet >> 16, nTarget); // isolate the bullet number (shift off the sprite index)
-                                sprite[nBullet & 0xFFFF].pal = 5;
+                                SetBulletEnemy(nBullet, nTarget);
+                                int nBulletSprite = GetBulletSprite(nBullet);
+                                sprite[nBulletSprite].pal = 5;
                             }
                         }
                     }

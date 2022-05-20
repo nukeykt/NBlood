@@ -531,6 +531,12 @@ void SetBulletEnemy(short nBullet, short nEnemy)
     }
 }
 
+int GetBulletSprite(int nBullet)
+{
+    assert(nBullet >= 0 && nBullet < kMaxBullets);
+    return BulletList[nBullet].nSprite;
+}
+
 int BuildBullet(short nSprite, int nType, int UNUSED(ebx), int UNUSED(ecx), int val1, int nAngle, int val2, int val3)
 {
     Bullet sBullet;
@@ -665,8 +671,8 @@ int BuildBullet(short nSprite, int nType, int UNUSED(ebx), int UNUSED(ecx), int 
     pBullet->field_C = val2;
     pBullet->nType = nType;
     pBullet->nSprite = nBulletSprite;
-    pBullet->field_6 = runlist_AddRunRec(sprite[nBulletSprite].lotag - 1, nBullet | 0xB0000);
-    pBullet->field_8 = runlist_AddRunRec(NewRun, nBullet | 0xB0000);
+    pBullet->field_6 = runlist_AddRunRec(sprite[nBulletSprite].lotag - 1, nBullet, kRunBullet);
+    pBullet->field_8 = runlist_AddRunRec(NewRun, nBullet, kRunBullet);
     pBullet->field_13 = val3;
     sprite[nBulletSprite].z += val1;
 
@@ -779,7 +785,7 @@ int BuildBullet(short nSprite, int nType, int UNUSED(ebx), int UNUSED(ecx), int 
         pBullet->z = var_18 >> 3;
     }
 
-    return nBulletSprite | (nBullet << 16);
+    return nBullet;
 }
 
 void FuncBullet(int a, int UNUSED(b), int nRun)

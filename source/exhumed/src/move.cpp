@@ -1435,10 +1435,10 @@ int BuildCreatureChunk(int nVal, int nPic)
 //	GrabTimeSlot(3);
 
     sprite[nSprite].extra = -1;
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nSprite | 0xD0000);
-    sprite[nSprite].hitag = runlist_AddRunRec(NewRun, nSprite | 0xD0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nSprite, kRunCreatureChunk);
+    sprite[nSprite].hitag = runlist_AddRunRec(NewRun, nSprite, kRunCreatureChunk);
 
-    return nSprite | 0xD0000;
+    return nSprite | 0xD0000; // TODO: FIXME
 }
 
 void FuncCreatureChunk(int a, int UNUSED(b), int nRun)

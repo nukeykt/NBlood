@@ -157,9 +157,9 @@ int BuildAnim(int nSprite, int val, int val2, int x, int y, int z, int nSector, 
 
     sprite[nSprite].lotag = runlist_HeadRun() + 1;
     sprite[nSprite].owner = -1;
-    sprite[nSprite].extra = runlist_AddRunRec(sprite[nSprite].lotag - 1, nAnim | 0x100000);
+    sprite[nSprite].extra = runlist_AddRunRec(sprite[nSprite].lotag - 1, nAnim, kRunAnim);
 
-    AnimRunRec[nAnim] = runlist_AddRunRec(NewRun, nAnim | 0x100000);
+    AnimRunRec[nAnim] = runlist_AddRunRec(NewRun, nAnim, kRunAnim);
 
     AnimFlags[nAnim] = nFlag;
     AnimList[nAnim].nSprite = nSprite;

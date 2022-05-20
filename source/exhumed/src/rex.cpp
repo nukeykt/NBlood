@@ -124,14 +124,14 @@ int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, in
 
     RexChan[nRex] = nChannel;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRex | 0x180000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRex, kRunRex);
 
     // this isn't stored anywhere.
-    runlist_AddRunRec(NewRun, nRex | 0x180000);
+    runlist_AddRunRec(NewRun, nRex, kRunRex);
 
     nCreaturesLeft++;
 
-    return nRex | 0x180000;
+    return nRex;
 }
 
 void FuncRex(int a, int nDamage, int nRun)

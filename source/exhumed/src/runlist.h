@@ -30,25 +30,65 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxChannels	4096
 #define kMessageMask    0x7F0000
 
+enum messageTypes
+{
+    k0x10000 = 0x10000,
+    k0x20000 = 0x20000,
+    k0x30000 = 0x30000,
+    k0x80000 = 0x80000,
+    k0x90000 = 0x90000,
+    k0xA0000 = 0xA0000,
+};
+
+enum runTypes 
+{
+    kRunElev = 0,
+    kRunSwReady,
+    kRunSwPause,
+    kRunSwStepOn,
+    kRunSwNotOnPause,
+    kRunSwPressSector,
+    kRunSwPressWall,
+    kRunWallFace,
+    kRunSlide,
+    kRunAnubis,
+    kRunPlayer,
+    kRunBullet,
+    kRunSpider,
+    kRunCreatureChunk,
+    kRunMummy,
+    kRunGrenade,
+    kRunAnim,
+    kRunSnake,
+    kRunFish,
+    kRunLion,
+    kRunBubble,
+    kRunLavaDude,
+    kRunLavaLimb,
+    kRunObject,
+    kRunRex,
+    kRunSet,
+    kRunQueen,
+    kRunQueenHead, // also Tail part?
+    kRunRoach,
+    kRunQueenEgg,
+    kRunWasp,
+    kRunTrap,
+    kRunFishLimb,
+    kRunRa,
+    kRunScorp,
+    kRunSoul,
+    kRunRat,
+    kRunEnergyBlock,
+    kRunSpark,
+};
+
 struct RunStruct
 {
-    union
-    {
-        int nMoves;
-        struct
-        {
-#if B_BIG_ENDIAN == 1
-            short nRef;
-            short nVal;
-#else
-            short nVal;
-            short nRef;
-#endif
-        };
-    };
-
-    short _4;
-    short _6;
+    int16_t nRef;
+    int16_t nVal;
+    int16_t _4;
+    int16_t _6;
 };
 
 struct RunChannel
@@ -71,7 +111,7 @@ void runlist_InitRun();
 
 int runlist_GrabRun();
 int runlist_FreeRun(int nRun);
-int runlist_AddRunRec(int a, int b);
+int runlist_AddRunRec(int a, int16_t b, int16_t c);
 int runlist_HeadRun();
 void runlist_InitChan();
 void runlist_ChangeChannel(int nChannel, short nVal);

@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern short nWaspCount;
 
 void InitWasps();
+int GetWaspSprite(int nWasp);
 int BuildWasp(short nSprite, int x, int y, int z, short nSector, short nAngle);
 void FuncWasp(int eax, int edx, int nRun);
 

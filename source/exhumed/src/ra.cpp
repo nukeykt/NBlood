@@ -70,7 +70,7 @@ int BuildRa(short nPlayer)
     sprite[nSprite].extra = -1;
     sprite[nSprite].lotag = runlist_HeadRun() + 1;
     sprite[nSprite].hitag = 0;
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nPlayer | 0x210000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nPlayer, kRunRa);
     sprite[nSprite].pal = 1;
     sprite[nSprite].xrepeat = 64;
     sprite[nSprite].yrepeat = 64;
@@ -81,14 +81,14 @@ int BuildRa(short nPlayer)
 //	GrabTimeSlot(3);
 
     Ra[nPlayer].nSprite = nSprite;
-    Ra[nPlayer].nRun = runlist_AddRunRec(NewRun, nPlayer | 0x210000);
+    Ra[nPlayer].nRun = runlist_AddRunRec(NewRun, nPlayer, kRunRa);
     Ra[nPlayer].nTarget = -1;
     Ra[nPlayer].nFrame  = 0;
     Ra[nPlayer].nAction = 0;
     Ra[nPlayer].field_C = 0;
     Ra[nPlayer].nPlayer = nPlayer;
 
-    return nPlayer | 0x210000;
+    return nPlayer;
 }
 
 void InitRa()

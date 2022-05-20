@@ -888,11 +888,11 @@ void RestartPlayer(short nPlayer)
 
     nTauntTimer[nPlayer] = RandomSize(3) + 3;
 
-    sprite[nDSprite].owner = runlist_AddRunRec(sprite[nDSprite].lotag - 1, nPlayer | 0xA0000);
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nPlayer | 0xA0000);
+    sprite[nDSprite].owner = runlist_AddRunRec(sprite[nDSprite].lotag - 1, nPlayer, kRunPlayer);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nPlayer, kRunPlayer);
 
     if (PlayerList[nPlayer].nRun < 0) {
-        PlayerList[nPlayer].nRun = runlist_AddRunRec(NewRun, nPlayer | 0xA0000);
+        PlayerList[nPlayer].nRun = runlist_AddRunRec(NewRun, nPlayer, kRunPlayer);
     }
 
     BuildRa(nPlayer);

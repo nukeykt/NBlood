@@ -133,12 +133,12 @@ int BuildRoach(int nType, int nSprite, int x, int y, int z, short nSector, int a
     RoachList[nRoach].nTarget = -1;
     RoachList[nRoach].nHealth = 600;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRoach | 0x1C0000);
-    RoachList[nRoach].field_A = runlist_AddRunRec(NewRun, nRoach | 0x1C0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nRoach, kRunRoach);
+    RoachList[nRoach].field_A = runlist_AddRunRec(NewRun, nRoach, kRunRoach);
 
     nCreaturesLeft++;
 
-    return nRoach | 0x1C0000;
+    return nRoach;
 }
 
 void GoRoach(short nSprite)

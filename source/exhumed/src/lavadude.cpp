@@ -98,8 +98,8 @@ int BuildLavaLimb(int nSprite, int edx, int ebx)
 //	GrabTimeSlot(3);
 
     sprite[nLimbSprite].extra = -1;
-    sprite[nLimbSprite].owner = runlist_AddRunRec(sprite[nLimbSprite].lotag - 1, nLimbSprite | 0x160000);
-    sprite[nLimbSprite].hitag = runlist_AddRunRec(NewRun, nLimbSprite | 0x160000);
+    sprite[nLimbSprite].owner = runlist_AddRunRec(sprite[nLimbSprite].lotag - 1, nLimbSprite, kRunLavaLimb);
+    sprite[nLimbSprite].hitag = runlist_AddRunRec(NewRun, nLimbSprite, kRunLavaLimb);
 
     return nLimbSprite;
 }
@@ -200,12 +200,12 @@ int BuildLava(short nSprite, int x, int y, int UNUSED(z), short nSector, short n
     LavaList[nLava].nChannel = nChannel;
     LavaList[nLava].nFrame = 0;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nLava | 0x150000);
-    LavaList[nLava].nRun = runlist_AddRunRec(NewRun, nLava | 0x150000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nLava, kRunLavaDude);
+    LavaList[nLava].nRun = runlist_AddRunRec(NewRun, nLava, kRunLavaDude);
 
     nCreaturesLeft++;
 
-    return nLava | 0x150000;
+    return nLava;
 }
 
 void FuncLava(int a, int nDamage, int nRun)

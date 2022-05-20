@@ -343,7 +343,7 @@ void BuildTail()
         }
 
         sprite[nTailSprite].lotag = runlist_HeadRun() + 1;
-        sprite[nTailSprite].owner = runlist_AddRunRec(sprite[nTailSprite].lotag - 1, (i + 1) | 0x1B0000);
+        sprite[nTailSprite].owner = runlist_AddRunRec(sprite[nTailSprite].lotag - 1, (i + 1), kRunQueenHead);
         sprite[nTailSprite].shade = -12;
         sprite[nTailSprite].x = x;
         sprite[nTailSprite].y = y;
@@ -441,8 +441,8 @@ int BuildQueenEgg(short nQueen, int nVal)
 
     QueenEgg[nEgg].nAction = nVal;
 
-    sprite[nSprite2].owner = runlist_AddRunRec(sprite[nSprite2].lotag - 1, nEgg | 0x1D0000);
-    QueenEgg[nEgg].field_8 = runlist_AddRunRec(NewRun, nEgg | 0x1D0000);
+    sprite[nSprite2].owner = runlist_AddRunRec(sprite[nSprite2].lotag - 1, nEgg, kRunQueenEgg);
+    QueenEgg[nEgg].field_8 = runlist_AddRunRec(NewRun, nEgg, kRunQueenEgg);
 
     return 0;
 }
@@ -607,7 +607,8 @@ void FuncQueenEgg(int a, int nDamage, int nRun)
                     pEgg->field_C--;
                     if (pEgg->field_C <= 0)
                     {
-                        short nWaspSprite = BuildWasp(-2, sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].z, sprite[nSprite].sectnum, sprite[nSprite].ang);
+                        int nWasp = BuildWasp(-2, sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].z, sprite[nSprite].sectnum, sprite[nSprite].ang);
+                        int nWaspSprite = GetWaspSprite(nWasp);
                         sprite[nSprite].z = sprite[nWaspSprite].z;
 
                         DestroyEgg(nEgg);
@@ -693,9 +694,9 @@ int BuildQueenHead(short nQueen)
     QueenHead.nSprite = nSprite2;
     QueenHead.field_C = 0;
 
-    sprite[nSprite2].owner = runlist_AddRunRec(sprite[nSprite2].lotag - 1, 0x1B0000);
+    sprite[nSprite2].owner = runlist_AddRunRec(sprite[nSprite2].lotag - 1, nQueen, kRunQueenHead);
 
-    QueenHead.field_8 = runlist_AddRunRec(NewRun, 0x1B0000);
+    QueenHead.field_8 = runlist_AddRunRec(NewRun, nQueen, kRunQueenHead);
     QueenHead.field_E = 0;
 
     return 0;
@@ -1139,13 +1140,13 @@ int BuildQueen(int nSprite, int x, int y, int z, int nSector, int nAngle, int nC
 
     nHeadVel = 800;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nQueen | 0x1A0000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nQueen, kRunQueen);
 
-    runlist_AddRunRec(NewRun, nQueen | 0x1A0000);
+    runlist_AddRunRec(NewRun, nQueen, kRunQueen);
 
     nCreaturesLeft++;
 
-    return nQueen | 0x1A0000;
+    return nQueen;
 }
 
 void SetQueenSpeed(short nSprite, int nSpeed)

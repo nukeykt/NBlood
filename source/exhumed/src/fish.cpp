@@ -130,8 +130,8 @@ int BuildFishLimb(short nFish, short edx)
 //	GrabTimeSlot(3);
 
     sprite[nSprite2].extra = -1;
-    sprite[nSprite2].owner = runlist_AddRunRec(sprite[nSprite2].lotag - 1, nFree | 0x200000);
-    sprite[nSprite2].hitag = runlist_AddRunRec(NewRun, nFree | 0x200000);
+    sprite[nSprite2].owner = runlist_AddRunRec(sprite[nSprite2].lotag - 1, nFree, kRunFishLimb);
+    sprite[nSprite2].hitag = runlist_AddRunRec(NewRun, nFree, kRunFishLimb);
 
     return nFree | 0x200000;
 }
@@ -263,8 +263,8 @@ int BuildFish(int nSprite, int x, int y, int z, int nSector, int nAngle)
     FishList[nFish].field_C = 60;
     FishList[nFish].nFrame = 0;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nFish | 0x120000);
-    FishList[nFish].nRun = runlist_AddRunRec(NewRun, nFish | 0x120000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nFish, kRunFish);
+    FishList[nFish].nRun = runlist_AddRunRec(NewRun, nFish, kRunFish);
 
     nCreaturesLeft++;
 

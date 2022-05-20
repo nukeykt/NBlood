@@ -196,13 +196,13 @@ int BuildGrenade(int nPlayer)
     GrenadeList[nGrenade].nSprite = nSprite;
     GrenadeList[nGrenade].field_A = 0;
     GrenadeList[nGrenade].field_C = 0;
-    GrenadeList[nGrenade].field_6 = runlist_AddRunRec(sprite[nSprite].lotag - 1, nGrenade | 0x0F0000);
-    GrenadeList[nGrenade].field_8 = runlist_AddRunRec(NewRun, nGrenade | 0x0F0000);
+    GrenadeList[nGrenade].field_6 = runlist_AddRunRec(sprite[nSprite].lotag - 1, nGrenade, kRunGrenade);
+    GrenadeList[nGrenade].field_8 = runlist_AddRunRec(NewRun, nGrenade, kRunGrenade);
 
     nGrenadePlayer[nGrenade] = nPlayer;
     nPlayerGrenade[nPlayer] = nGrenade;
 
-    return nSprite;
+    return nGrenade;
 }
 
 void ExplodeGrenade(int nGrenade)

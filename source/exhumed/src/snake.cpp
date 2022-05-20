@@ -125,6 +125,8 @@ int BuildSnake(short nPlayer, short zVal)
     if (!nSnakesFree)
         return -1;
 
+    int nSnake = -1;
+
     zVal -= 1280;
 
     short nPlayerSprite = PlayerList[nPlayer].nSprite;
@@ -187,7 +189,7 @@ int BuildSnake(short nPlayer, short zVal)
             nTarget = sPlayerInput[nPlayer].nTarget;
         }
 
-        short nSnake = GrabSnake();
+        nSnake = GrabSnake();
 
 //		GrabTimeSlot(3);
 
@@ -236,10 +238,10 @@ int BuildSnake(short nPlayer, short zVal)
 
             SnakeList[nSnake].nSprites[i] = nSprite;
 
-            sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, ((nSnake << 8) | i) | 0x110000);
+            sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, ((nSnake << 8) | i), kRunSnake);
         }
 
-        SnakeList[nSnake].nRun = runlist_AddRunRec(NewRun, nSnake | 0x110000);
+        SnakeList[nSnake].nRun = runlist_AddRunRec(NewRun, nSnake, kRunSnake);
         SnakeList[nSnake].c[1] = 2;
         SnakeList[nSnake].c[5] = 5;
         SnakeList[nSnake].c[2] = 4;
@@ -263,7 +265,7 @@ int BuildSnake(short nPlayer, short zVal)
         D3PlayFX(StaticSound[kSoundCobraSprite], var_24);
     }
 
-    return nSprite;
+    return nSnake;
 }
 
 int FindSnakeEnemy(short nSnake)

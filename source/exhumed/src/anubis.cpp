@@ -148,9 +148,9 @@ int BuildAnubis(int nSprite, int x, int y, int z, int nSector, int nAngle, uint8
     AnubisList[nAnubis].nTarget = -1;
     AnubisList[nAnubis].g = 0;
 
-    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nAnubis | 0x90000);
+    sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nAnubis, kRunAnubis);
 
-    runlist_AddRunRec(NewRun, nAnubis | 0x90000);
+    runlist_AddRunRec(NewRun, nAnubis, kRunAnubis);
     nCreaturesLeft++;
 
     return nAnubis | 0x90000;

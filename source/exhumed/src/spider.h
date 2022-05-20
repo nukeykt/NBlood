@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aistuff.h"
 
 void InitSpider();
+int GetSpiderSprite(int nSpider);
 int BuildSpider(int nSprite, int x, int y, int z, short nSector, int nAngle);
 void FuncSpider(int a, int b, int nRun);
 
