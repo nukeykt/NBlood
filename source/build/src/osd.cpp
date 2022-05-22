@@ -2334,7 +2334,11 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
                 break;
             fallthrough__;
         case CVAR_RESTARTVID:
-            osdcmd_restartvid(NULL);
+            {
+                int const pr = Bstrncmp(pData.name, "r_pr", 4);
+                if ((!pr && videoGetRenderMode() == REND_POLYMER) || pr)
+                    osdcmd_restartvid(NULL);
+            }
             break;
         case CVAR_INVALIDATEALL:
             gltexinvalidatetype(INVALIDATE_ALL);
