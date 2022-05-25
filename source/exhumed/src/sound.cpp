@@ -584,7 +584,7 @@ void BendAmbientSound(void)
     ActiveSound *pASound = &sActiveSound[nAmbientChannel];
     //AIL_set_sample_playback_rate(pASound->f_e, nDronePitch+11000);
 
-    if (pASound->hFX > -1)
+    if (pASound->hFX > 0)
         FX_SetFrequency(pASound->hFX, nDronePitch+11000);
 }
 
@@ -619,7 +619,7 @@ void CheckAmbience(short nSector)
     }
     else if (nAmbientChannel != -1)
     {
-        if (sActiveSound[nAmbientChannel].hFX > -1)
+        if (sActiveSound[nAmbientChannel].hFX > 0)
             FX_StopSound(sActiveSound[nAmbientChannel].hFX);
 
         sActiveSound[nAmbientChannel].hFX = -1;
@@ -677,12 +677,12 @@ void SoundBigEntrance(void)
         int nLeft, nRight;
         CalcASSPan(63-(i&1)*127, 200, &nLeft, &nRight);
 
-        if (pASound->hFX >= 0)
+        if (pASound->hFX > 0)
             FX_StopSound(pASound->hFX);
 
         pASound->hFX = FX_Play(SoundBuf[kSoundTorchOn], SoundLen[kSoundTorchOn], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, i);
 
-        if (pASound->hFX > -1)
+        if (pASound->hFX > 0)
             FX_SetFrequency(pASound->hFX, 11000+nPitch);
     }
 }
@@ -713,12 +713,12 @@ void StartSwirly(int nActiveSound)
 
     CalcASSPan(nPan, nVolume, &nLeft, &nRight);
 
-    if (pASound->hFX >= 0)
+    if (pASound->hFX > 0)
         FX_StopSound(pASound->hFX);
 
     pASound->hFX = FX_Play(SoundBuf[StaticSound[kSoundMana1]], SoundLen[StaticSound[kSoundMana1]], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, nActiveSound);
 
-//    if (pASound->hFX >= 0)
+//    if (pASound->hFX > 0)
 //y        FX_SetFrequency(pASound->hFX, nPitch);
 
 #if 0
@@ -749,10 +749,10 @@ void UpdateSwirlies()
 
     for (int i = 1; i <= 4; i++, pASound++)
     {
-        if (pASound->hFX < 0 || !FX_SoundActive(pASound->hFX))
+        if (pASound->hFX <= 0 || !FX_SoundActive(pASound->hFX))
             StartSwirly(i);
 
-        if (pASound->hFX >= 0)
+        if (pASound->hFX > 0)
         {
             int nLeft, nRight;
             int nPan = 64+(Sin((int)totalclock<<(4+i))>>8);
@@ -794,7 +794,7 @@ void UpdateSounds()
 
     for (int i = 1; i < kMaxActiveSounds; i++, pASound++)
     {
-        if (pASound->hFX >= 0 && FX_SoundActive(pASound->hFX))
+        if (FX_SoundValidAndActive(pASound->hFX))
         {
             short nSoundSprite = pASound->nSprite;
             int dx, dy;
@@ -905,7 +905,7 @@ int LocalSoundPlaying(void)
     if (!dig)
         return 0;
 
-    return sActiveSound[nLocalChan].hFX >= 0 && FX_SoundActive(sActiveSound[nLocalChan].hFX);
+    return sActiveSound[nLocalChan].hFX > 0 && FX_SoundActive(sActiveSound[nLocalChan].hFX);
 }
 
 int GetLocalSound(void)
@@ -921,7 +921,7 @@ void UpdateLocalSound(void)
     if (!dig)
         return;
 
-    if (sActiveSound[nLocalChan].hFX >= 0)
+    if (sActiveSound[nLocalChan].hFX > 0)
         FX_SetPan(sActiveSound[nLocalChan].hFX, kMaxFXVolume, kMaxFXVolume, kMaxFXVolume);
 }
 
@@ -1003,7 +1003,7 @@ void PlayLocalSound(short nSound, short nRate)
 
     ActiveSound* pASound = &sActiveSound[nLocalChan];
 
-    if (pASound->hFX >= 0)
+    if (pASound->hFX > 0)
         FX_StopSound(pASound->hFX);
 
     pASound->hFX = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, kMaxFXVolume, kMaxFXVolume, kMaxFXVolume, 0, fix16_one, nLocalChan);
@@ -1138,7 +1138,7 @@ short PlayFX2(unsigned short nSound, short nSprite)
 
     for (int i = 1; i < kMaxActiveSounds; i++, pASound++)
     {
-        if (pASound->hFX < 0 || !FX_SoundActive(pASound->hFX))
+        if (pASound->hFX <= 0 || !FX_SoundActive(pASound->hFX))
             vdi = pASound;
         else if (v20 >= pASound->f_c)
         {
@@ -1177,7 +1177,7 @@ short PlayFX2(unsigned short nSound, short nSprite)
             vdi = v28;
     }
 
-    if (vdi->hFX >= 0 && FX_SoundActive(vdi->hFX))
+    if (FX_SoundValidAndActive(vdi->hFX))
     {
         FX_StopSound(vdi->hFX);
         if (vdi->nChannel == nAmbientChannel)
@@ -1279,7 +1279,7 @@ void StopSpriteSound(short nSprite)
 
     for (int i = 0; i < kMaxActiveSounds; i++)
     {
-        if (sActiveSound[i].hFX >= 0 && FX_SoundActive(sActiveSound[i].hFX) && nSprite == sActiveSound[i].nSprite)
+        if (FX_SoundValidAndActive(sActiveSound[i].hFX) && nSprite == sActiveSound[i].nSprite)
         {
             FX_StopSound(sActiveSound[i].hFX);
             return;
@@ -1294,7 +1294,7 @@ void StopAllSounds(void)
 
     for (int i = 0; i < kMaxActiveSounds; i++)
     {
-        if (sActiveSound[i].hFX >= 0)
+        if (sActiveSound[i].hFX > 0)
             FX_StopSound(sActiveSound[i].hFX);
         // AIL_end_sample(sActiveSound[i].hFX);
     }
