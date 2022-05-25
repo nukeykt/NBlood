@@ -199,7 +199,7 @@ struct ActiveSound
     short nChannel;
 };
 
-ActiveSound sActiveSound[kMaxSounds];
+ActiveSound sActiveSound[kMaxActiveSounds];
 
 #if 0
 int AIL_allocate_sample_handle(int);
@@ -314,7 +314,7 @@ void InitSoundInfo(void)
     int i;
     memset(sActiveSound, 255, sizeof(sActiveSound));
 
-    for (i = 0; i < kMaxSounds; i++)
+    for (i = 0; i < kMaxActiveSounds; i++)
     {
         sActiveSound[i].nChannel = 0;
         sActiveSound[i].hFX = -1;
