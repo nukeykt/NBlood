@@ -185,7 +185,7 @@ static void ReadSaveGameHeaders_CACHE1D(BUILDVFS_FIND_REC *f)
         msv.isAutoSave = h.isAutoSave();
         msv.isOldScriptVer = h.userbytever < ud.userbytever;
 
-        strncpy(msv.brief.path, fn, ARRAY_SIZE(msv.brief.path));
+        Bstrncpyz(msv.brief.path, fn, ARRAY_SIZE(msv.brief.path));
         ++g_numinternalsaves;
 
         if (k >= 0 && h.savename[0] != '\0')
@@ -1749,11 +1749,11 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
 
         const time_t t = time(NULL);
         struct tm *  st;
-
-        Bstrncpyz(h.savename, "EDuke32 demo", sizeof(h.savename));
+        
         if (t>=0 && (st = localtime(&t)))
             Bsnprintf(h.savename, sizeof(h.savename), "Demo %04d%02d%02d %s",
                       st->tm_year+1900, st->tm_mon+1, st->tm_mday, s_buildRev);
+        else Bsprintf(h.savename, "EDuke32 demo");
     }
 
 

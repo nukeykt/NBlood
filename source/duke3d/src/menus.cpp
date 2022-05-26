@@ -1919,10 +1919,7 @@ static void Menu_RefreshBoundGamefuncNames(const int32_t sc)
             if (s_gfstring_linecount == MAXBNSTRINGLINES - 1)
                 Bstrncat(s_override_gfstring, "...\n", bbufsize);
             else
-            {
-                Bsnprintf(tempbuf, MAXBNLINELEN, "\"%s\"\n", M_KEYBOARDKEYS.entrylist[i]->name);
-                Bstrncat(s_override_gfstring, tempbuf, bbufsize);
-            }
+                Bsnprintf(tempbuf, bbufsize, "%s\"%s\"\n", s_override_gfstring, M_KEYBOARDKEYS.entrylist[i]->name);
             s_gfstring_linecount++;
         }
     }
@@ -7263,7 +7260,7 @@ static void Menu_RunInput_EntryString_Activate(MenuEntry_t *entry)
     auto object = (MenuString_t*)entry->entry;
 
     if (object->variable)
-        strncpy(typebuf, object->variable, TYPEBUFSIZE);
+        Bstrncpyz(typebuf, object->variable, TYPEBUFSIZE);
     else
         typebuf[0] = '\0';
     object->editfield = typebuf;

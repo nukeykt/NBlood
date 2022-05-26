@@ -300,7 +300,7 @@ static int32_t LoadGroupsCache(void)
         fg->next = grpcache;
         grpcache = fg;
 
-        Bstrncpy(fg->name, fname, BMAX_PATH);
+        Bstrncpyz(fg->name, fname, BMAX_PATH);
         fg->size = fsize;
         fg->mtime = fmtime;
         fg->crcval = fcrcval;
@@ -449,7 +449,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
             }
 
             fgg = (struct grpcache *)Xcalloc(1, sizeof(struct grpcache));
-            Bstrncpy(fgg->name, sidx->name, BMAX_PATH);
+            Bstrncpyz(fgg->name, sidx->name, BMAX_PATH);
             fgg->size = st.st_size;
             fgg->mtime = st.st_mtime;
             fgg->crcval = crcval;

@@ -2440,9 +2440,9 @@ static void Net_ParseServerPacket(ENetEvent *event)
         }
 
         P_ResetPlayer(pbuf[1]);
-        Bmemcpy(&g_player[pbuf[1]].ps->pos.x, &pbuf[2], sizeof(vec3_t) * 2);
+        Bmemcpy(&g_player[pbuf[1]].ps->pos, &pbuf[2], sizeof(vec3_t));
         Bmemcpy(&sprite[g_player[pbuf[1]].ps->i], &pbuf[2], sizeof(vec3_t));
-
+        Bmemcpy(&g_player[pbuf[1]].ps->opos, &pbuf[14], sizeof(vec3_t));
         break;
 
     case PACKET_PLAYER_PING:
@@ -4654,7 +4654,8 @@ void Net_SpawnPlayer(int32_t player)
     packbuf[byteOffset++] = PACKET_PLAYER_SPAWN;
     packbuf[byteOffset++] = player;
 
-    Bmemcpy(&packbuf[byteOffset], &g_player[player].ps->pos.x, sizeof(vec3_t) * 2);
+    Bmemcpy(&packbuf[byteOffset], &g_player[player].ps->pos, sizeof(vec3_t));
+    Bmemcpy(&packbuf[byteOffset], &g_player[player].ps->opos, sizeof(vec3_t));
     byteOffset += sizeof(vec3_t) * 2;
 
     packbuf[byteOffset++] = 0;

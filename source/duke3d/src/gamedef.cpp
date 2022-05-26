@@ -2321,7 +2321,7 @@ static void C_ReplaceQuoteSubstring(const size_t q, char const * const query, ch
             Bstrncpy(tempbuf, apStrings[q], i);
             Bstrcat(tempbuf, replacement);
             Bstrcat(tempbuf, &apStrings[q][i + querylength]);
-            Bstrncpy(apStrings[q], tempbuf, MAXQUOTELEN - 1);
+            Bstrncpyz(apStrings[q], tempbuf, MAXQUOTELEN);
             i = MAXQUOTELEN - querylength - 2;
         }
 }

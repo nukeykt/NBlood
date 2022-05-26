@@ -6554,7 +6554,7 @@ badindex:
                 tw = Gv_GetVar(*insptr++);
 
                 VM_ABORT_IF(bad_quote(tw), "invalid quote %d", (int)tw);               
-                VLOG_F(LOG_VM, apStrings[tw]);
+                VLOG_F(LOG_VM, "%s", apStrings[tw]);
                 dispatch();
 
             vInstruction(CON_RESPAWNHITAG):
