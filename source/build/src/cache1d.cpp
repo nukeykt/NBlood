@@ -338,7 +338,7 @@ void cache1d::report(void)
         else
         {
             Bstrcat(buf, "FREE");
-            LOG_F(INFO, buf);
+            LOG_F(INFO, "%s", buf);
             continue;
         }
 
@@ -373,7 +373,7 @@ void cache1d::report(void)
         if (len < reportLineSize)
             buf[len-1] = '\0';
         
-        LOG_F(INFO, buf);
+        LOG_F(INFO, "%s", buf);
     }
     
     LOG_F(INFO, "Cache size:  %dKB", m_totalSize >> 10);

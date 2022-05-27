@@ -759,9 +759,9 @@ static int osdcmd_crosshaircolor(osdcmdptr_t parm)
     uint8_t const b = Batol(parm->parms[2]);
 
     G_SetCrosshairColor(r,g,b);
-
+    
     if (!OSD_ParsingScript())
-        LOG_F(INFO, parm->raw);
+        LOG_F(INFO, "%s", parm->raw);
 
     return OSDCMD_OK;
 }
@@ -875,9 +875,9 @@ static int osdcmd_bind(osdcmdptr_t parm)
     if (parm->numparms==1 && !Bstrcasecmp(parm->parms[0],"showkeys"))
     {
         for (auto & s : sctokeylut)
-            LOG_F(INFO, s.key);
+            LOG_F(INFO, "%s", s.key);
         for (auto ConsoleButton : ConsoleButtons)
-            LOG_F(INFO, ConsoleButton);
+            LOG_F(INFO, "%s", ConsoleButton);
         return OSDCMD_OK;
     }
 
@@ -947,7 +947,7 @@ static int osdcmd_bind(osdcmdptr_t parm)
         CONTROL_BindMouse(i, tempbuf, repeat, ConsoleButtons[i]);
 
         if (!OSD_ParsingScript())
-            LOG_F(INFO, parm->raw);
+            LOG_F(INFO, "%s", parm->raw);
         return OSDCMD_OK;
     }
 
@@ -1012,7 +1012,7 @@ static int osdcmd_bind(osdcmdptr_t parm)
     }
 
     if (!OSD_ParsingScript())
-        LOG_F(INFO, parm->raw);
+        LOG_F(INFO, "%s", parm->raw);
 
     return OSDCMD_OK;
 }
@@ -1145,7 +1145,7 @@ static int osdcmd_inittimer(osdcmdptr_t parm)
 
     G_InitTimer(Batol(parm->parms[0]));
 
-    LOG_F(INFO, parm->raw);
+    LOG_F(INFO, "%s", parm->raw);
     return OSDCMD_OK;
 }
 

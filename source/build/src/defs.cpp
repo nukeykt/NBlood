@@ -2716,7 +2716,7 @@ static int32_t defsparser(scriptfile *script)
         {
             char *string = NULL;
             scriptfile_getstring(script,&string);
-            LOG_F(INFO, string);
+            LOG_F(INFO, "%s", string);
         }
         break;
 

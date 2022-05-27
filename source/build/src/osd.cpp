@@ -1712,7 +1712,7 @@ int OSD_Printf(const char *f, ...)
     EDUKE32_STATIC_ASSERT(loguru::Verbosity_ERROR == -2);
 
     g_useLogCallback = false;
-    VLOG_F(isError ? (int)loguru::Verbosity_ERROR : (int)loguru::Verbosity_INFO, OSD_StripColors(buf, buf));
+    VLOG_F(isError ? (int)loguru::Verbosity_ERROR : (int)loguru::Verbosity_INFO, "%s", OSD_StripColors(buf, buf));
     Xfree(buf);
     g_useLogCallback = true;
 

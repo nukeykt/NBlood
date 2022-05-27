@@ -685,7 +685,7 @@ int32_t sdlayer_checkversion(void)
                 linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
     }
 
-    LOG_F(INFO, str);
+    LOG_F(INFO, "%s", str);
 
     if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL2_REQUIREDVERSION)
     {
