@@ -35,14 +35,6 @@ ifndef HOSTPLATFORM
             HOSTPLATFORM := DARWIN
         else ifeq ($(findstring BeOS,$(uname)),BeOS)
             HOSTPLATFORM := BEOS
-        else ifeq ($(findstring skyos,$(uname)),skyos)
-            HOSTPLATFORM := SKYOS
-        else ifeq ($(findstring QNX,$(uname)),QNX)
-            HOSTPLATFORM := QNX
-        else ifeq ($(findstring SunOS,$(uname)),SunOS)
-            HOSTPLATFORM := SUNOS
-        else ifeq ($(findstring syllable,$(uname)),syllable)
-            HOSTPLATFORM := SYLLABLE
         endif
     endif
 endif
@@ -83,9 +75,6 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 ifeq ($(PLATFORM),WII)
     EXESUFFIX := .elf
-endif
-ifeq ($(PLATFORM),SKYOS)
-    EXESUFFIX := .app
 endif
 ifeq ($(PLATFORM),WINDOWS)
     EXESUFFIX := .exe
@@ -387,10 +376,10 @@ else ifeq ($(PLATFORM),WII)
     override HAVE_GTK2 := 0
     override HAVE_FLAC := 0
     SDL_TARGET := 1
-else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW QNX SUNOS SYLLABLE))
+else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
     override USE_OPENGL := 0
     override NOASM := 1
-else ifeq ($(PLATFORM),$(filter $(PLATFORM),BEOS SKYOS))
+else ifeq ($(PLATFORM),$(filter $(PLATFORM),BEOS))
     override NOASM := 1
 endif
 
@@ -551,8 +540,6 @@ else ifeq ($(PLATFORM),WII)
     LIBDIRS += -L$(LIBOGC_LIB)
 else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
     COMPILERFLAGS += -D__OPENDINGUX__
-else ifeq ($(PLATFORM),SKYOS)
-    COMPILERFLAGS += -DUNDERSCORES
 else ifeq ($(SUBPLATFORM),LINUX)
     # Locate .so files
     LINKERFLAGS += -Wl,-rpath,'$$ORIGIN' -Wl,-z,origin
@@ -904,9 +891,6 @@ ifeq ($(RENDERTYPE),SDL)
 
     ifeq ($(PLATFORM),WII)
         SDLCONFIG :=
-    else ifeq ($(PLATFORM),SKYOS)
-        COMPILERFLAGS += -I/boot/programs/sdk/include/sdl
-        SDLCONFIG :=
     endif
 
     ifneq ($(strip $(SDLCONFIG)),)
@@ -978,12 +962,6 @@ ifeq ($(PLATFORM),WINDOWS)
     endif
     LIBS += -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid -lpsapi
     # -lshfolder
-else ifeq ($(PLATFORM),SKYOS)
-    LIBS += -lnet
-else ifeq ($(PLATFORM),QNX)
-    LIBS += -lsocket
-else ifeq ($(PLATFORM),SUNOS)
-    LIBS += -lsocket -lnsl
 else ifeq ($(PLATFORM),WII)
     LIBS += -laesnd_tueidj -lfat -lwiiuse -lbte -lwiikeyboard -logc
 else ifeq ($(SUBPLATFORM),LINUX)
