@@ -12225,7 +12225,9 @@ Carsten Bormann
 
 float vorbis_lpc_from_data(float *data,float *lpci,int n,int m){
   double *aut=(double *)alloca(sizeof(*aut)*(m+1));
+  memset(aut, 0, sizeof(*aut)*(m+1));
   double *lpc=(double *)alloca(sizeof(*lpc)*(m));
+  memset(lpc, 0, sizeof(*lpc)*(m));
   double error;
   double epsilon;
   int i,j;
@@ -13298,7 +13300,7 @@ void _vp_noisemask(vorbis_look_psy *p,
 
   int i,n=p->n;
   float *work=(float *)alloca(n*sizeof(*work));
-
+  memset(work, 0, n*sizeof(*work));
   bark_noise_hybridmp(n,p->bark,logmdct,logmask,
                       140.,-1);
 
