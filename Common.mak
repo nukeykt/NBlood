@@ -544,15 +544,12 @@ COMPILERFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
 ifndef OPTOPT
     ifeq ($(findstring x86_64, $(IMPLICIT_ARCH)),x86_64)
         ifeq ($(findstring x86_64h, $(IMPLICIT_ARCH)),x86_64h)
-            OPTOPT := -march=haswell -mmmx -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mpclmul -mavx -mrdrnd -mf16c -mfsgsbase -mavx2 -maes -mfma -mbmi -mbmi2
+            OPTOPT := -march=haswell -msse4.1 -msse4.2 -mpopcnt -mpclmul -mavx -mrdrnd -mf16c -mfsgsbase -mavx2 -maes -mfma -mbmi -mbmi2
             # -mcrc32 -mmovbe
         else
-            ifeq ($(PLATFORM),DARWIN)
-                OPTOPT := -march=core2 -mmmx -msse -msse2 -msse3 -mssse3
-            else
-                OPTOPT := -march=nocona
-            endif
+            OPTOPT := -march=core2
         endif
+        OPTOPT += -mmmx -msse -msse2 -msse3 -mssse3 -mfpmath=sse
     endif
     ifeq ($(findstring i386, $(IMPLICIT_ARCH)),i386)
         ifeq ($(PLATFORM),DARWIN)
