@@ -483,15 +483,7 @@ LIBDIRS :=
 
 ASFORMAT := elf$(BITS)
 ifeq ($(PLATFORM),WINDOWS)
-    LINKERFLAGS += -static-libgcc -static -Wl,--allow-multiple-definition
-    ifeq (0,$(CLANG))
-        L_CXXONLYFLAGS += -static-libstdc++
-    endif
-
-    ifeq (0,$(CLANG))
-        GUI_LIBS += -mwindows
-    endif
-
+    LINKERFLAGS += -static -Wl,-subsystem,windows
     COMPILERFLAGS += -DUNDERSCORES
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
@@ -952,20 +944,14 @@ ifeq ($(PLATFORM),WINDOWS)
     ifneq (0,$(GCC_PREREQ_4))
         L_SSP := -lssp
     endif
-    LIBS += -lmingwex -lgdi32
-    ifneq (0,$(CLANG))
-        LIBS += -pthread
-    else
-        LIBS += -lpthread
-    endif
     ifeq ($(RENDERTYPE),WIN)
         LIBS += -ldxguid
     else ifeq ($(SDL_TARGET),1)
-        LIBS += -ldxguid -lmingw32 -limm32 -lole32 -loleaut32 -lversion
+        LIBS += -ldxguid
     else
-        LIBS += -ldxguid_sdl -lmingw32 -limm32 -lole32 -loleaut32 -lversion -lsetupapi
+        LIBS += -ldxguid_sdl
     endif
-    LIBS += -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid -lpsapi
+    LIBS += -lmingwex -lgdi32 -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid -lpsapi -ldinput -limm32 -lversion -lsetupapi -lole32 -loleaut32
     # -lshfolder
 else ifeq ($(PLATFORM),WII)
     LIBS += -laesnd_tueidj -lfat -lwiiuse -lbte -lwiikeyboard -logc
