@@ -710,7 +710,7 @@ W_GCC_6 := -Wduplicated-cond -Wnull-dereference
 W_GCC_7 := -Wduplicated-branches
 W_GCC_8 := -Warray-bounds=2
 W_GCC_9 := -Wmultistatement-macros
-W_CLANG := -Wno-unused-value -Wno-parentheses -Wno-unknown-warning-option
+W_CLANG := -Wno-unused-value -Wno-parentheses -Wno-unknown-warning-option -Wno-unused-function
 
 ifeq (0,$(CLANG))
     W_CLANG :=
