@@ -650,7 +650,7 @@ int app_main(int argc, char const* const* argv)
 
     editstatus = 1;
 
-    Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
+    Bstrncpyz(game_executable, DefaultGameLocalExec, sizeof(game_executable));
 
     if ((i = ExtPreInit(argc,argv)) < 0) return -1;
 #ifdef STARTUP_SETUP_WINDOW
@@ -11275,7 +11275,7 @@ void test_map(int32_t mode)
                 Bstrncpy(game_executable+slen, DefaultGameExec, sizeof(game_executable)-slen);
             }
             else
-                Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
+                Bstrncpyz(game_executable, DefaultGameLocalExec, sizeof(game_executable));
         }
 
         if (current_cwd[0] != '\0') // Temporarily changing back,
