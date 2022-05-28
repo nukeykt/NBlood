@@ -101,7 +101,7 @@ void G_DoConveyorInterp(int smoothratio)
         
         auto sect = &sector[s->sectnum];
 
-        if ((s->lotag == SE_24_CONVEYOR) | (s->lotag == SE_34_CONVEYOR2))
+        if ((int)(s->lotag == SE_24_CONVEYOR) | (int)(s->lotag == SE_34_CONVEYOR2))
             sect->floorxpanning -= (uint8_t)mulscale16(65536 - smoothratio, sect->floorxpanning - (sect->floorxpanning - (s->yvel >> 7)));
     }
 }
@@ -118,7 +118,7 @@ void G_ResetConveyorInterp(void)
         
         auto sect = &sector[s->sectnum];
 
-        if ((s->lotag == SE_24_CONVEYOR) | (s->lotag == SE_34_CONVEYOR2))
+        if ((int)(s->lotag == SE_24_CONVEYOR) | (int)(s->lotag == SE_34_CONVEYOR2))
             sect->floorxpanning = (uint8_t)actor[i].bpos.x;
     }
 }
