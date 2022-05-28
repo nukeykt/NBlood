@@ -2611,6 +2611,9 @@ static int32_t      polymer_initsector(int16_t sectnum)
     return 1;
 }
 
+#define NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY \
+    (offsetof(sectortype, visibility)+sizeof(sector[0].visibility) - offsetof(sectortype, ceilingstat))
+
 static int32_t      polymer_updatesector(int16_t sectnum)
 {
     if (pr_nullrender >= 3) return 0;
@@ -2699,7 +2702,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
 #ifdef USE_STRUCT_TRACKERS
             (s->trackedrev == sectorchanged[sectnum]))
 #else
-            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat)))
+            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY))
 #endif
         goto attributes;
 
@@ -2870,7 +2873,7 @@ attributes:
     if ((!s->flags.empty) && (!s->flags.invalidtex) &&
             (floorpicnum == s->floorpicnum_anim) &&
             (ceilingpicnum == s->ceilingpicnum_anim) &&
-            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat)))
+            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY))
         goto finish;
 
     s->floor.bucket = polymer_getbuildmaterial(&s->floor.material, floorpicnum, sec->floorpal, sec->floorshade, sec->visibility, (sec->floorstat & 384) ? DAMETH_MASK : DAMETH_NOMASK);
@@ -2896,7 +2899,7 @@ attributes:
     s->flags.invalidtex = 0;
 
     // copy ceilingstat through visibility members
-    Bmemcpy(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat));
+    Bmemcpy((char *)s + offsetof(_prsector, ceilingstat), (char const *)sec + offsetof(sectortype, ceilingstat), NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY);
     s->floorpicnum_anim = floorpicnum;
     s->ceilingpicnum_anim = ceilingpicnum;
 
@@ -3288,7 +3291,7 @@ static void         polymer_updatewall(int16_t wallnum)
     {
         w->invalidid = invalid;
 
-        Bmemcpy(&w->cstat, &wal->cstat, NBYTES_WALL_CSTAT_THROUGH_YPANNING);
+        Bmemcpy((char *)w + offsetof(_prwall, cstat), (char *)wal + offsetof(walltype, cstat), NBYTES_WALL_CSTAT_THROUGH_YPANNING);
 
         w->picnum_anim = wallpicnum;
         w->overpicnum_anim = walloverpicnum;
