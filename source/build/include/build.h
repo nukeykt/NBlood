@@ -633,7 +633,7 @@ EXTERN wallext_t wallext[MAXWALLS];
 EXTERN sectortype sector[MAXSECTORS + M32_FIXME_SECTORS];
 EXTERN walltype wall[MAXWALLS + M32_FIXME_WALLS];
 EXTERN spritetype sprite[MAXSPRITES];
-EXTERN uspritetype tsprite[MAXSPRITESONSCREEN];
+EXTERN tspritetype tsprite[MAXSPRITESONSCREEN];
 #endif
 
 #ifdef USE_STRUCT_TRACKERS
