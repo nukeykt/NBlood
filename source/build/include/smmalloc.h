@@ -389,11 +389,11 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
                 if (enableStatistic)
                 {
-                    buckets[bucketIndex].stats.cacheHitCount.fetch_add(1, std::memory_order_relaxed);
+                    buckets[bucketIndex & (SMM_MAX_BUCKET_COUNT-1)].stats.cacheHitCount.fetch_add(1, std::memory_order_relaxed);
                 }
 #endif
 #if __SANITIZE_ADDRESS__ == 1
-					ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
+                    ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
 #endif
                 return pRes;
             }
@@ -407,11 +407,11 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
                 if (enableStatistic)
                 {
-                    buckets[bucketIndex].stats.hitCount.fetch_add(1, std::memory_order_relaxed);
+                    buckets[bucketIndex & (SMM_MAX_BUCKET_COUNT-1)].stats.hitCount.fetch_add(1, std::memory_order_relaxed);
                 }
 #endif
 #if __SANITIZE_ADDRESS__ == 1
-					ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
+                    ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
 #endif
                 return pRes;
             }
@@ -420,7 +420,7 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
                 if (enableStatistic)
                 {
-                    buckets[bucketIndex].stats.missCount.fetch_add(1, std::memory_order_relaxed);
+                    buckets[bucketIndex & (SMM_MAX_BUCKET_COUNT-1)].stats.missCount.fetch_add(1, std::memory_order_relaxed);
                 }
 #endif
             }
@@ -469,7 +469,7 @@ class Allocator
             PoolBucket* bucket = &buckets[bucketIndex];
             bucket->FreeInterval(p, p);
 #if 0 //__SANITIZE_ADDRESS__ == 1
-				ASAN_POISON_MEMORY_REGION(p, GetBucketElementSize(bucketIndex));
+                ASAN_POISON_MEMORY_REGION(p, GetBucketElementSize(bucketIndex));
 #endif
             return;
         }
@@ -500,7 +500,7 @@ class Allocator
             {
                 // reuse existing memory
 #if __SANITIZE_ADDRESS__ == 1
-					ASAN_UNPOISON_MEMORY_REGION(p, Align(bytesCount, 8));
+                    ASAN_UNPOISON_MEMORY_REGION(p, Align(bytesCount, 8));
 #endif
                 return p;
             }

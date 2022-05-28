@@ -20,6 +20,7 @@
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
 #include "smmalloc.h"
+#include "log.h"
 
 namespace sm
 {
@@ -43,7 +44,7 @@ void TlsPoolBucket::Init(uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWa
     SM_ASSERT(maxElementsCount == 0);
 
     Allocator::PoolBucket* poolBucket = alloc->GetBucketByIndex(bucketIndex);
-
+    ABORT_IF_F(!poolBucket, "TlsPoolBucket::Init: invalid bucket index");
     SM_ASSERT(maxElementsNum >= SMM_MAX_CACHE_ITEMS_COUNT + 2);
     pStorageL1 = pCacheStack;
     numElementsL1 = 0;
@@ -153,8 +154,8 @@ void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initial
 void Allocator::DestroyThreadCache()
 {
 #if __SANITIZE_ADDRESS__ == 1
-		auto buf = this->pBuffer.get();
-		ASAN_UNPOISON_MEMORY_REGION(buf, this->pBufferEnd - buf);
+        auto buf = this->pBuffer.get();
+        ASAN_UNPOISON_MEMORY_REGION(buf, this->pBufferEnd - buf);
 #endif
     for (size_t i = 0; i < SMM_MAX_BUCKET_COUNT; i++)
     {
