@@ -687,7 +687,7 @@ static int S_GetSlot(int soundNum)
     while (++slot < MAXSOUNDINSTANCES);
 
     if (!FX_SoundValidAndActive(snd->voices[bestslot].handle))
-        return MAXSOUNDINSTANCES;
+        return bestslot;
 
     slot = bestslot;
     FX_StopSound(snd->voices[slot].handle);
@@ -900,7 +900,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     if (++g_soundlocks[sndNum] < CACHE1D_LOCKED)
         g_soundlocks[sndNum] = CACHE1D_LOCKED;
 #endif
-
+retry:
     int const sndSlot = S_GetSlot(sndNum);
 
     if (sndSlot >= MAXSOUNDINSTANCES)
@@ -920,8 +920,8 @@ error:
 
     if (bitmap_test(&snd->playing, sndSlot))
     {
-        LOG_F(WARNING, "S_PlaySound3D: slot %d for sound %d already filled", sndSlot, sndNum);
-        goto error;
+        DLOG_F(WARNING, "S_PlaySound3D: slot %d for sound %d already filled", sndSlot, sndNum);
+        goto retry;
     }
     
     bitmap_set(&snd->playing, sndSlot);
