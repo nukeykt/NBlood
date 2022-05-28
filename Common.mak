@@ -238,7 +238,10 @@ ifeq ($(findstring clang,$(CLANG_POTENTIAL_VERSION)),clang)
     endif
 endif
 
+LLD := 0
+
 ifneq (0,$(CLANG))
+    override LLD := 1
     CLANGXXNAME := $(subst clang,clang++,$(CLANGNAME))
     override CC := $(CLANGNAME) -x c
     override CXX := $(CLANGXXNAME) -x c++
@@ -431,11 +434,6 @@ else
     LTO := 1
 endif
 
-ifneq (0,$(CLANG))
-    ifeq ($(PLATFORM),WINDOWS)
-        LTO := 0
-    endif
-endif
 ifeq (0,$(CLANG))
     ifeq (0,$(GCC_PREREQ_4))
         override LTO := 0
@@ -595,9 +593,16 @@ endif
 
 ifneq (0,$(LTO))
     COMPILERFLAGS += -DUSING_LTO
-    COMMONFLAGS += -flto
+    ifeq (0,$(CLANG))
+        COMMONFLAGS += -flto
+    else
+        COMMONFLAGS += -flto=thin
+    endif
 endif
 
+ifeq (1,$(LLD))
+    COMMONFLAGS += -fuse-ld=lld
+endif
 
 ##### Debugging
 
