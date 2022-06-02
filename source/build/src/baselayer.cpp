@@ -477,6 +477,19 @@ int32_t vsync=0;
 int32_t r_finishbeforeswap=0;
 int32_t r_glfinish=0;
 
+struct glinfo_t glinfo =
+{
+    "Unknown",  // vendor
+    "Unknown",  // renderer
+    "0.0.0",    // version
+    "",         // extensions
+
+    1.0,        // max anisotropy
+    64,         // max texture size
+    0,          // structure filled
+    0,          // supported extensions
+};
+
 // DEBUG OUTPUT
 #ifdef USE_OPENGL
 void PR_CALLBACK gl_debugOutputCallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,GLvoid *userParam)
@@ -508,19 +521,6 @@ void PR_CALLBACK gl_debugOutputCallback(GLenum source,GLenum type,GLuint id,GLen
     }
     VLOG_F(type == GL_DEBUG_TYPE_ERROR_ARB ? (int)loguru::Verbosity_ERROR : LOG_GL, "%s (%s severity)", message, s);
 }
-
-struct glinfo_t glinfo =
-{
-    "Unknown",  // vendor
-    "Unknown",  // renderer
-    "0.0.0",    // version
-    "",         // extensions
-
-    1.0,        // max anisotropy
-    64,         // max texture size
-    0,          // structure filled
-    0,          // supported extensions
-};
 
 void fill_glinfo(void)
 {
@@ -799,6 +799,7 @@ int32_t baselayer_init(void)
         { "r_screenaspect","if using r_usenewaspect and in fullscreen, screen aspect ratio in the form XXYY, e.g. 1609 for 16:9",
           (void *) &r_screenxy, SCREENASPECT_CVAR_TYPE, 0, 9999 },
         { "r_fpgrouscan","use floating-point numbers for slope rendering",(void *) &r_fpgrouscan, CVAR_BOOL, 0, 1 },
+        { "r_hightile","enable/disable hightile texture rendering",(void *) &usehightile, CVAR_BOOL, 0, 1 },
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
         { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },

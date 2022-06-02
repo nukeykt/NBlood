@@ -55,7 +55,6 @@ extern char textfont[2048], smalltextfont[2048];
 
 int32_t rendmode=0;
 int32_t usemodels=1;
-int32_t usehightile=1;
 
 typedef struct { float x, cy[2], fy[2]; int32_t tag; int16_t n, p, ctag, ftag; } vsptyp;
 #define VSPMAX 2048 //<- careful!
@@ -9990,7 +9989,6 @@ void polymost_initosdfuncs(void)
         { "r_finishbeforeswap", "run glFinish() before swapping when 'r_glfinish' is 1 and when not using KMT vsync", (void *) &r_finishbeforeswap, CVAR_BOOL, 0, 1 },
         { "r_fullbrights","enable/disable fullbright textures",(void *) &r_fullbrights, CVAR_BOOL, 0, 1 },
         { "r_glfinish", "run glFinish() after swapping buffers when not using KMT vsync", (void *) &r_glfinish, CVAR_BOOL, 0, 1 },
-        { "r_hightile","enable/disable hightile texture rendering",(void *) &usehightile, CVAR_BOOL, 0, 1 },
         { "r_models", "enable/disable model rendering", (void *)&usemodels, CVAR_BOOL, 0, 1 },
         { "r_nofog", "enable/disable GL fog", (void *)&nofog, CVAR_BOOL, 0, 1},
         { "r_npotwallmode", "enable/disable emulation of walls with non-power-of-two height textures (Polymost, r_hightile 0)",

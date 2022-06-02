@@ -419,7 +419,7 @@ static void G_DoLoadScreen(const char *statustext, int percent)
 }
 
 static void cacheExtraTextureMaps(int tileNum, int type)
-{
+{    
 #ifdef USE_OPENGL
     for (int i = 0; i < MAXPALOOKUPS-RESERVEDPALS-1; i++)
     {
@@ -428,6 +428,9 @@ static void cacheExtraTextureMaps(int tileNum, int type)
 #endif
             polymost_precache(tileNum, i, type);
     }
+#else
+    UNREFERENCED_PARAMETER(tileNum);
+    UNREFERENCED_PARAMETER(type);
 #endif
 
 #ifdef USE_GLEXT

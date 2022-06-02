@@ -6,8 +6,6 @@
 
 #include "build.h"
 #include "hightile.h"
-
-#ifdef USE_OPENGL
 #include "baselayer.h"
 #include "compat.h"
 #include "engine_priv.h"
@@ -17,6 +15,7 @@ polytint_t hictinting[MAXPALOOKUPS];
 
 hicreplctyp *hicreplc[MAXTILES];
 int32_t hicinitcounter = 0;
+int32_t usehightile=1;
 
 //
 // find the index into hicreplc[] which contains the replacement tile particulars
@@ -334,51 +333,3 @@ void hictinting_applypixcolor(coltype* tcol, uint8_t pal, bool no_rb_swap)
         break;
     }
 }
-
-#else /* USE_OPENGL */
-
-#include "compat.h"
-
-void hicsetpalettetint(int32_t palnum, char r, char g, char b, char sr, char sg, char sb, polytintflags_t effect)
-{
-    UNREFERENCED_PARAMETER(palnum);
-    UNREFERENCED_PARAMETER(r);
-    UNREFERENCED_PARAMETER(g);
-    UNREFERENCED_PARAMETER(b);
-    UNREFERENCED_PARAMETER(sr);
-    UNREFERENCED_PARAMETER(sg);
-    UNREFERENCED_PARAMETER(sb);
-    UNREFERENCED_PARAMETER(effect);
-}
-int32_t hicsetsubsttex(int32_t picnum, int32_t palnum, const char *filen, float alphacut)
-{
-    UNREFERENCED_PARAMETER(picnum);
-    UNREFERENCED_PARAMETER(palnum);
-    UNREFERENCED_PARAMETER(filen);
-    UNREFERENCED_PARAMETER(alphacut);
-    return 0;
-}
-int32_t hicsetskybox(int32_t picnum, int32_t palnum, char *faces[6], int32_t flags)
-{
-    UNREFERENCED_PARAMETER(picnum);
-    UNREFERENCED_PARAMETER(palnum);
-    UNREFERENCED_PARAMETER(faces);
-    UNREFERENCED_PARAMETER(flags);
-    return 0;
-}
-int32_t hicclearsubst(int32_t picnum, int32_t palnum)
-{
-    UNREFERENCED_PARAMETER(picnum);
-    UNREFERENCED_PARAMETER(palnum);
-    return 0;
-}
-
-void hictinting_applypixcolor(coltype* tcol, uint8_t pal, bool no_rb_swap)
-{
-    UNREFERENCED_PARAMETER(tcol);
-    UNREFERENCED_PARAMETER(pal);
-    UNREFERENCED_PARAMETER(no_rb_swap);
-}
-
-#endif
-

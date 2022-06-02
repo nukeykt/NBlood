@@ -19,6 +19,7 @@
 #include "crc32.h"
 #include "editor.h"
 #include "engine_priv.h"
+#include "hightile.h"
 #include "kplib.h"
 #include "lz4.h"
 #include "microprofile.h"
@@ -32,7 +33,6 @@
 #ifdef USE_OPENGL
 # include "glad/glad.h"
 # include "glsurface.h"
-# include "hightile.h"
 # include "mdsprite.h"
 # ifdef POLYMER
 #  include "polymer.h"

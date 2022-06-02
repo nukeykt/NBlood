@@ -1057,8 +1057,10 @@ enum
     VF_NOTRANS = 1,
 };
 
+extern int32_t usehightile;
+
 #ifdef USE_OPENGL
-extern int32_t usemodels, usehightile;
+extern int32_t usemodels;
 extern int32_t rendmode;
 #endif
 extern uint8_t globalr, globalg, globalb;
