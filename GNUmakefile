@@ -897,6 +897,9 @@ $(games): $$(foreach i,$(roles),$$($$@_$$i)$(EXESUFFIX)) | start
 ebacktrace: $(ebacktrace_dll) | start
 	@$(call LL,$^)
 
+voidwrap: $(voidwrap_lib) | start
+	@$(call LL,$^)
+
 ifeq ($(PLATFORM),WII)
 ifneq ($(ELF2DOL),)
 %$(DOLSUFFIX): %$(EXESUFFIX)
@@ -956,6 +959,9 @@ getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o $(foreach i,tools $(tools_deps)
 $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
+ifneq ($(STRIP),)
+	$(STRIP) $@
+endif
 
 
 ### Main Rules
