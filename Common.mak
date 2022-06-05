@@ -585,10 +585,14 @@ endif
 
 ifneq (0,$(LTO))
     COMPILERFLAGS += -DUSING_LTO
-    ifeq (0,$(CLANG))
-        COMMONFLAGS += -flto
+    ifeq (1,$(LTO))
+        ifeq (0,$(CLANG))
+            COMMONFLAGS += -flto
+        else
+            COMMONFLAGS += -flto=thin
+        endif
     else
-        COMMONFLAGS += -flto=thin
+        COMMONFLAGS += -flto=$(LTO)
     endif
 endif
 
