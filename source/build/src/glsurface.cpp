@@ -141,7 +141,7 @@ bool glsurface_initialize(vec2_t bufferResolution)
          void main()\n\
          {\n\
              vec4 color = texture2D(s_texture, v_texCoord.xy);\n\
-             color.r = c_paletteOffset + c_paletteScale*color.r;\n\
+             color.r = c_paletteScale * color.r + c_paletteOffset;\n\
              color.rgb = texture2D(s_palette, color.rg).rgb;\n\
              \n\
              // DEBUG \n\

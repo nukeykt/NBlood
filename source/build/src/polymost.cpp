@@ -197,7 +197,7 @@ static vec2f_t polymost1Clamp = { 0.f, 0.f };
 static GLint polymost1ShadeLoc = -1;
 static float polymost1Shade = 0.f;
 static GLint polymost1NumShadesLoc = -1;
-static float polymost1NumShades = 64.f;
+static vec2f_t polymost1NumShades = { 64.f, 1.f / 64.f };
 static GLint polymost1VisFactorLoc = -1;
 static float polymost1VisFactor = 128.f;
 static GLint polymost1FogEnabledLoc = -1;
@@ -211,11 +211,7 @@ static float polymost1UseDetailMapping = 0.f;
 static GLint polymost1UseGlowMappingLoc = -1;
 static float polymost1UseGlowMapping = 0.f;
 static GLint polymost1NPOTEmulationLoc = -1;
-static float polymost1NPOTEmulation = 0.f;
-static GLint polymost1NPOTEmulationFactorLoc = -1;
-static float polymost1NPOTEmulationFactor = 1.f;
-static GLint polymost1NPOTEmulationXOffsetLoc = -1;
-static float polymost1NPOTEmulationXOffset = 0.f;
+static vec4f_t polymost1NPOTEmulation = { 0.f, 1.f, 0.f, 1.f };
 static GLint polymost1RotMatrixLoc = -1;
 static float polymost1RotMatrix[16] = { 1.f, 0.f, 0.f, 0.f,
                                         0.f, 1.f, 0.f, 0.f,
@@ -642,8 +638,6 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     polymost1UseDetailMappingLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_useDetailMapping");
     polymost1UseGlowMappingLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_useGlowMapping");
     polymost1NPOTEmulationLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulation");
-    polymost1NPOTEmulationFactorLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationFactor");
-    polymost1NPOTEmulationXOffsetLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationXOffset");
     polymost1RotMatrixLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_rotMatrix");
     polymost1ShadeInterpolateLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_shadeInterpolate");
     polymost1ColorCorrectionLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_colorCorrection");
@@ -655,16 +649,14 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     glUniform2f(polymost1PalswapSizeLoc, polymost1PalswapInnerSize.x, polymost1PalswapInnerSize.y);
     glUniform2f(polymost1ClampLoc, polymost1Clamp.x, polymost1Clamp.y);
     glUniform1f(polymost1ShadeLoc, polymost1Shade);
-    glUniform1f(polymost1NumShadesLoc, polymost1NumShades);
+    glUniform2f(polymost1NumShadesLoc, polymost1NumShades.x, polymost1NumShades.y);
     glUniform1f(polymost1VisFactorLoc, polymost1VisFactor);
     glUniform1f(polymost1FogEnabledLoc, polymost1FogEnabled);
     glUniform1f(polymost1UseColorOnlyLoc, polymost1UseColorOnly);
     glUniform1f(polymost1UsePaletteLoc, polymost1UsePalette);
     glUniform1f(polymost1UseDetailMappingLoc, polymost1UseDetailMapping);
     glUniform1f(polymost1UseGlowMappingLoc, polymost1UseGlowMapping);
-    glUniform1f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation);
-    glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
-    glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
+    glUniform4f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation.x, polymost1NPOTEmulation.y, polymost1NPOTEmulation.z, polymost1NPOTEmulation.w);
     glUniformMatrix4fv(polymost1RotMatrixLoc, 1, false, polymost1RotMatrix);
     glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
     glUniform4f(polymost1ColorCorrectionLoc, g_glColorCorrection.x, g_glColorCorrection.y, g_glColorCorrection.z, g_glColorCorrection.w);
@@ -732,14 +724,12 @@ char polymost_getClamp()
 
 void polymost_setClamp(char clamp)
 {
-    char clampx = clamp&1;
-    char clampy = clamp>>1;
-    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID ||
-        (clampx == polymost1Clamp.x && clampy == polymost1Clamp.y))
+    vec2f_t clampy = { float(clamp & 1), float(clamp >> 1) };
+    
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || clampy == polymost1Clamp)
         return;
 
-    polymost1Clamp.x = clampx;
-    polymost1Clamp.y = clampy;
+    polymost1Clamp = clampy;
     glUniform2f(polymost1ClampLoc, polymost1Clamp.x, polymost1Clamp.y);
 }
 
@@ -764,8 +754,8 @@ static void polymost_setShade(int32_t shade)
     if (numshades != lastNumShades)
     {
         lastNumShades = numshades;
-        polymost1NumShades = numshades;
-        glUniform1f(polymost1NumShadesLoc, polymost1NumShades);
+        polymost1NumShades = { (float)numshades, 1.f / numshades };
+        glUniform2f(polymost1NumShadesLoc, polymost1NumShades.x, polymost1NumShades.y);
     }
 }
 
@@ -838,24 +828,20 @@ void polymost_useGlowMapping(char useGlowMapping)
 
 void polymost_npotEmulation(char npotEmulation, float factor, float xOffset)
 {
-    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || npotEmulation == polymost1NPOTEmulation)
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || npotEmulation == polymost1NPOTEmulation.z)
         return;
 
-    polymost1NPOTEmulation = npotEmulation;
-    glUniform1f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation);
-    polymost1NPOTEmulationFactor = factor;
-    glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
-    polymost1NPOTEmulationXOffset = xOffset;
-    glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
+    polymost1NPOTEmulation = { xOffset, factor, (float)npotEmulation, 1.f/factor };
+    glUniform4f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation.x, polymost1NPOTEmulation.y, polymost1NPOTEmulation.z, polymost1NPOTEmulation.w);
 }
 
 void polymost_shadeInterpolate(int32_t shadeInterpolate)
 {
-    if (gl.currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1ShadeInterpolate = shadeInterpolate;
-        glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
-    }
+    if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || shadeInterpolate == polymost1ShadeInterpolate)
+        return;
+    
+    polymost1ShadeInterpolate = shadeInterpolate;
+    glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
 }
 
 static void polymost_bindPth(pthtyp const * const pPth)

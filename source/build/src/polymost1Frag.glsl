@@ -25,15 +25,13 @@ uniform vec2 u_palswapSize;
 uniform vec2 u_clamp;
 
 uniform float u_shade;
-uniform float u_numShades;
+uniform vec2 u_numShades;
 uniform float u_visFactor;
 uniform float u_fogEnabled;
 
 uniform float u_useColorOnly;
 uniform float u_usePalette;
-uniform float u_npotEmulation;
-uniform float u_npotEmulationFactor;
-uniform float u_npotEmulationXOffset;
+uniform vec4 u_npotEmulation;
 uniform float u_shadeInterpolate;
 
 #ifdef POLYMOST1_EXTENDED
@@ -59,12 +57,10 @@ const vec4 c_vec4_luma_709 = vec4(0.2126, 0.7152, 0.0722, 0.0);
 
 void main()
 {
-    float coordY = mix(gl_TexCoord[0].y,gl_TexCoord[0].x,u_usePalette);
-    float coordX = mix(gl_TexCoord[0].x,gl_TexCoord[0].y,u_usePalette);
-    float period = floor(coordY/u_npotEmulationFactor);
-    coordX += u_npotEmulationXOffset*floor(mod(coordY,u_npotEmulationFactor));
-    coordY = period+mod(coordY,u_npotEmulationFactor);
-    vec2 newCoord = mix(gl_TexCoord[0].xy,mix(vec2(coordX,coordY),vec2(coordY,coordX),u_usePalette),u_npotEmulation);
+    vec2 coord = mix(gl_TexCoord[0].xy,gl_TexCoord[0].yx,u_usePalette);
+    float modCoordYnpotEmulationFactor = mod(coord.y,u_npotEmulation.y);
+    coord.xy = vec2(floor(modCoordYnpotEmulationFactor)*u_npotEmulation.x+coord.x, floor(coord.y*u_npotEmulation.y)+modCoordYnpotEmulationFactor);
+    vec2 newCoord = mix(gl_TexCoord[0].xy,mix(coord.xy,coord.yx,u_usePalette),u_npotEmulation.z);
 #ifdef GL_ARB_shader_texture_lod
     vec2 texCoord = mix(fract(newCoord.xy), clamp(newCoord.xy, c_zero, c_one), u_clamp);
     texCoord = clamp(u_texturePosSize.zw*texCoord, u_halfTexelSize, u_texturePosSize.zw-u_halfTexelSize);
@@ -77,14 +73,12 @@ void main()
     vec4 color = texture2D(s_texture, u_texturePosSize.xy+texCoord);
 #endif
 
-    float shade = clamp((u_shade+max(u_visFactor*v_distance-0.5*u_shadeInterpolate,c_zero)), c_zero, u_numShades-c_one);
+    float shade = clamp((u_shade+clamp(u_visFactor*v_distance-0.5*u_shadeInterpolate,c_zero,u_numShades.x)), c_zero, u_numShades.x-c_one);
     float shadeFrac = mod(shade, c_one);
-    float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, floor(shade)/u_numShades)).r;
-    colorIndex = c_basepalOffset + c_basepalScale*colorIndex;
+    float colorIndex = texture2D(s_palswap, vec2(color.r, floor(shade)*u_numShades.y)*u_palswapSize+u_palswapPos).r * c_basepalScale + c_basepalOffset;
+    float colorIndexNext = texture2D(s_palswap, u_palswapSize*vec2(color.r, (floor(shade)+c_one)*u_numShades.y)+u_palswapPos).r * c_basepalScale + c_basepalOffset;
     vec4 palettedColor = texture2D(s_palette, vec2(colorIndex, c_zero));
-    colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, (floor(shade)+c_one)/u_numShades)).r;
-    colorIndex = c_basepalOffset + c_basepalScale*colorIndex;
-    vec4 palettedColorNext = texture2D(s_palette, vec2(colorIndex, c_zero));
+    vec4 palettedColorNext = texture2D(s_palette, vec2(colorIndexNext, c_zero));
     palettedColor.rgb = mix(palettedColor.rgb, palettedColorNext.rgb, shadeFrac*u_shadeInterpolate);
     float fullbright = mix(u_usePalette*palettedColor.a, c_zero, u_useColorOnly);
     palettedColor.a = c_one-floor(color.r);
@@ -105,14 +99,14 @@ void main()
 
     color.rgb = mix(v_color.rgb*color.rgb, color.rgb, fullbright);
 
-    fullbright = max(c_one-u_fogEnabled, fullbright);
+    fullbright = clamp(-(u_fogEnabled-c_one), fullbright, c_one);
     float fogFactor = clamp((gl_Fog.end-gl_FogFragCoord)*gl_Fog.scale, fullbright, c_one);
     //float fogFactor = clamp(gl_FogFragCoord, fullbright, c_one);
     color.rgb = mix(gl_Fog.color.rgb, color.rgb, fogFactor);
 
 #ifdef POLYMOST1_EXTENDED
     vec4 glowColor = texture2D(s_glow, gl_TexCoord[4].xy);
-    color.rgb = mix(color.rgb, glowColor.rgb, u_useGlowMapping*glowColor.a*(c_one-u_useColorOnly));
+    color.rgb = mix(color.rgb, glowColor.rgb, u_useGlowMapping * glowColor.a * -(u_useColorOnly-c_one));
 #endif
 
     color.a *= v_color.a;
