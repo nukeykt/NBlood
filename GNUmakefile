@@ -26,6 +26,9 @@ source := source
 obj := obj
 
 ### Functions
+# Some of this still needs work--"getfiltered" takes a list of files and strips the paths off of them,
+# while the other functions end up expanding the result later by adding the paths back.
+# This is inefficient, but it was a better use of time than reworking all of this at the moment.
 define parent
 $(word 1,$(subst _, ,$1))
 endef
@@ -41,7 +44,9 @@ endef
 define getdeps
 $(call expanddeps,$1_$2 $(common_$2_deps) engine)
 endef
-
+define getfiltered
+$(filter-out $(strip $($1_excl)), $(subst $($1_src)/, ,$(wildcard $($1_src)/*.c $($1_src)/*.cpp)))
+endef
 
 ##### External Library Definitions
 
@@ -49,39 +54,13 @@ endef
 
 libxmplite := libxmp-lite
 
-libxmplite_objs := \
-    common.c \
-    control.c \
-    dataio.c \
-    effects.c \
-    filter.c \
-    format.c \
-    hio.c \
-    it_load.c \
-    itsex.c \
-    lfo.c \
-    load.c \
-    load_helpers.c \
-    memio.c \
-    mix_all.c \
-    mixer.c \
-    mod_load.c \
-    mtm_load.c \
-    period.c \
-    player.c \
-    read_event.c \
-    s3m_load.c \
-    sample.c \
-    scan.c \
-    smix.c \
-    virtual.c \
-    win32.c \
-    xm_load.c \
-
 libxmplite_root := $(source)/$(libxmplite)
 libxmplite_src := $(libxmplite_root)/src
 libxmplite_inc := $(libxmplite_root)/include
 libxmplite_obj := $(obj)/$(libxmplite)
+
+libxmplite_excl :=
+libxmplite_objs := $(call getfiltered,libxmplite)
 
 libxmplite_cflags := -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DLIBXMP_NO_PROWIZARD -DLIBXMP_NO_DEPACKERS -DBUILDING_STATIC -I$(libxmplite_inc)/libxmp-lite -Wno-unused-parameter -Wno-sign-compare
 
@@ -90,35 +69,28 @@ libxmplite_cflags := -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DLIBXMP_NO_PROWIZARD -DL
 
 physfs := physfs
 
-physfs_objs := \
-    physfs.c \
-    physfs_archiver_7z.c \
-    physfs_archiver_dir.c \
-    physfs_archiver_grp.c \
-    physfs_archiver_hog.c \
-    physfs_archiver_iso9660.c \
-    physfs_archiver_mvl.c \
-    physfs_archiver_qpak.c \
-    physfs_archiver_slb.c \
-    physfs_archiver_unpacked.c \
-    physfs_archiver_vdf.c \
-    physfs_archiver_wad.c \
-    physfs_archiver_zip.c \
-    physfs_byteorder.c \
-    physfs_unicode.c \
-
-ifeq ($(PLATFORM),APPLE)
-    physfs_objs += physfs_platform_apple.m
-else ifeq ($(PLATFORM),WINDOWS)
-    physfs_objs += physfs_platform_windows.c
-else
-    physfs_objs += physfs_platform_unix.c
-endif
-
 physfs_root := $(source)/$(physfs)
 physfs_src := $(physfs_root)/src
 physfs_inc := $(physfs_root)/include
 physfs_obj := $(obj)/$(physfs)
+
+physfs_excl :=
+
+ifeq ($(PLATFORM),WINDOWS)
+    physfs_excl += physfs_platform_unix.c
+else
+    physfs_excl += physfs_platform_windows.c
+endif
+
+ifneq (0,$(USE_PHYSFS))
+    physfs_objs := $(call getfiltered,physfs)
+else
+    physfs_objs :=
+endif
+
+ifeq ($(PLATFORM),APPLE)
+    physfs_objs += physfs_platform_apple.m
+endif
 
 physfs_cflags :=
 
@@ -127,82 +99,80 @@ physfs_cflags :=
 
 glad := glad
 
-glad_objs := \
-    glad.c \
-
 glad_root := $(source)/$(glad)
 glad_src := $(glad_root)/src
 glad_inc := $(glad_root)/include
 glad_obj := $(obj)/$(glad)
 
+glad_excl :=
+
+ifneq ($(RENDERTYPE),WIN)
+    glad_excl += glad_wgl.c
+endif
+
+ifneq (0,$(USE_OPENGL))
+    glad_objs := $(call getfiltered,glad)
+else
+    glad_objs :=
+endif
+
 glad_cflags :=
 
-ifeq ($(RENDERTYPE),WIN)
-    glad_objs += glad_wgl.c
-endif
 
 #### mimalloc
 
 mimalloc := mimalloc
-
-mimalloc_objs := \
-    alloc.c \
-    alloc-aligned.c \
-    alloc-posix.c \
-    arena.c \
-    bitmap.c \
-    heap.c \
-    init.c \
-    options.c \
-    os.c \
-    page.c \
-    random.c \
-    region.c \
-    segment.c \
-    stats.c \
-
-ifeq ($(PLATFORM),APPLE)
-    mimalloc_objs += alloc-override-osx.c
-endif
 
 mimalloc_root := $(source)/$(mimalloc)
 mimalloc_src := $(mimalloc_root)/src
 mimalloc_inc := $(mimalloc_root)/include
 mimalloc_obj := $(obj)/$(mimalloc)
 
-mimalloc_cflags := -D_WIN32_WINNT=0x0600 -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -I$(mimalloc_inc) -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas -Wno-array-bounds -Wno-null-dereference
+mimalloc_excl := \
+    alloc-override.c \
+    page-queue.c \
+    static.c \
+    
+ifneq ($(PLATFORM),APPLE)
+    mimalloc_excl += alloc-override-osx.c
+endif
+    
+mimalloc_objs := $(call getfiltered,mimalloc)
+
+mimalloc_cflags := -D_WIN32_WINNT=0x0600 -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas -Wno-array-bounds -Wno-null-dereference
+
 
 #### imgui
 
 imgui := imgui
-
-imgui_objs := \
-    imgui.cpp \
-    imgui_demo.cpp \
-    imgui_draw.cpp \
-    imgui_impl_opengl3.cpp \
-    imgui_impl_sdl.cpp \
-    imgui_tables.cpp \
-    imgui_widgets.cpp \
 
 imgui_root := $(source)/$(imgui)
 imgui_src := $(imgui_root)/src
 imgui_inc := $(imgui_root)/include
 imgui_obj := $(obj)/$(imgui)
 
+imgui_excl :=
+imgui_objs := $(call getfiltered,imgui)
+
 imgui_cflags := -I$(imgui_inc) -Wno-cast-qual -Wno-cast-function-type -Wno-null-dereference -Wno-stringop-overflow
+
 
 #### Voidwrap
 
 voidwrap := voidwrap
 
-voidwrap_objs := \
-    voidwrap_steam.cpp
-
 voidwrap_root := $(source)/$(voidwrap)
 voidwrap_src := $(voidwrap_root)/src
 voidwrap_inc := $(voidwrap_root)/include
 voidwrap_obj := $(obj)/$(voidwrap)
+
+voidwrap_excl :=
+
+ifneq ($(PLATFORM),WINDOWS)
+    voidwrap_excl += dllmain.cpp
+endif
+
+voidwrap_objs := $(call getfiltered,voidwrap)
 
 ifeq ($(IMPLICIT_ARCH),x86_64)
     ifeq ($(PLATFORM),WINDOWS)
@@ -246,7 +216,7 @@ engine_src := $(engine_root)/src
 engine_inc := $(engine_root)/include
 engine_obj := $(obj)/$(engine)
 
-engine_cflags := -I$(engine_src) -I$(mimalloc_inc) -I$(imgui_inc)
+engine_cflags :=
 
 engine_deps := mimalloc
 
@@ -258,64 +228,9 @@ ifneq (0,$(USE_PHYSFS))
     engine_deps += physfs
 endif
 
-engine_objs := \
-    asan_guarded_allocator.cpp \
-    2d.cpp \
-    baselayer.cpp \
-    cache1d.cpp \
-    clip.cpp \
-    colmatch.cpp \
-    common.cpp \
-    communityapi.cpp \
-    compat.cpp \
-    cpuid.cpp \
-    crc32.cpp \
-    defs.cpp \
-    dxtfilter.cpp \
-    enet.cpp \
-    engine.cpp \
-    fix16.cpp \
-    hash.cpp \
-    hightile.cpp \
-    klzw.cpp \
-    kplib.cpp \
-    loguru.cpp \
-    lz4.c \
-    md4.cpp \
-    mhk.cpp \
-    miniz.c \
-    miniz_tdef.c \
-    miniz_tinfl.c \
-    mmulti.cpp \
-    mutex.cpp \
-    osd.cpp \
-    palette.cpp \
-    pngwrite.cpp \
-    polymost.cpp \
-    polymost1Frag.glsl \
-    polymost1Vert.glsl \
-    pragmas.cpp \
-    rev.cpp \
-    screenshot.cpp \
-    screentext.cpp \
-    scriptfile.cpp \
-    sjson.cpp \
-    smalltextfont.cpp \
-    smmalloc.cpp \
-    smmalloc_generic.cpp \
-    smmalloc_tls.cpp \
-    softsurface.cpp \
-    texcache.cpp \
-    textfont.cpp \
-    tiles.cpp \
-    timer.cpp \
-    vfs.cpp \
-    xxhash.c \
-
 engine_editor_objs := \
     build.cpp \
     config.cpp \
-    defs.cpp \
 
 engine_tools_objs := \
     colmatch.cpp \
@@ -331,18 +246,71 @@ engine_tools_objs := \
     smmalloc_tls.cpp \
     vfs.cpp \
 
+engine_excl := \
+    a-c.cpp \
+    sdlayer12.cpp \
+    sdlkeytrans.cpp \
+    startgtk.editor.cpp \
+    startwin.editor.cpp \
+    $(engine_editor_objs) \
+        
+ifeq (1,$(USE_OPENGL))
+    engine_deps += glad
+else
+    engine_excl += \
+        glbuild.cpp \
+        glsurface.cpp \
+        mdsprite.cpp \
+        polymer.cpp \
+        polymost.cpp \
+        tilepacker.cpp \
+        voxmodel.cpp \
+    
+endif
+
+ifeq ($(PLATFORM),WINDOWS)
+    ifeq ($(STARTUP_WINDOW),1)
+        engine_editor_objs += startwin.editor.cpp
+    endif
+else    
+    engine_excl += winbits.cpp
+endif
+
+ifeq ($(PLATFORM),WII)
+    LINKERFLAGS += -Wl,-wrap,c_default_exceptionhandler
+else
+    engine_excl += wiibits.cpp
+endif
+
+ifeq ($(RENDERTYPE),SDL)
+    ifeq (1,$(HAVE_GTK2))
+        ifeq ($(STARTUP_WINDOW),1)
+            engine_editor_objs += startgtk.editor.cpp
+        endif
+    else
+        engine_excl += gtkbits.cpp dynamicgtk.cpp
+    endif
+    
+    engine_excl += winlayer.cpp rawinput.cpp
+else
+    engine_excl += sdlayer.cpp
+endif
+
+ifeq ($(USE_LIBVPX),0)
+    engine_excl += animvpx.cpp
+endif
+
+engine_objs := \
+    $(call getfiltered,engine) \
+    polymost1Frag.glsl \
+    polymost1Vert.glsl \
+
 ifeq (0,$(NOASM))
   engine_objs += a.nasm
 else
   engine_objs += a-c.cpp
 endif
-ifeq (1,$(USE_OPENGL))
-    engine_objs += glbuild.cpp glsurface.cpp voxmodel.cpp mdsprite.cpp tilepacker.cpp
-    engine_deps += glad
-    ifeq (1,$(POLYMER))
-        engine_objs += polymer.cpp
-    endif
-endif
+
 ifeq ($(PLATFORM),DARWIN)
     engine_objs += osxbits.mm
     engine_tools_objs += osxbits.mm
@@ -355,33 +323,6 @@ ifeq ($(PLATFORM),DARWIN)
         endif
     endif
 endif
-ifeq ($(PLATFORM),WINDOWS)
-    engine_objs += winbits.cpp
-    ifeq ($(STARTUP_WINDOW),1)
-        engine_editor_objs += startwin.editor.cpp
-    endif
-endif
-ifeq ($(PLATFORM),WII)
-    engine_objs += wiibits.cpp
-    LINKERFLAGS += -Wl,-wrap,c_default_exceptionhandler
-endif
-ifeq ($(RENDERTYPE),SDL)
-    engine_objs += sdlayer.cpp
-
-    ifeq (1,$(HAVE_GTK2))
-        engine_objs += gtkbits.cpp dynamicgtk.cpp
-        ifeq ($(STARTUP_WINDOW),1)
-            engine_editor_objs += startgtk.editor.cpp
-        endif
-    endif
-endif
-ifeq ($(RENDERTYPE),WIN)
-    engine_objs += winlayer.cpp rawinput.cpp
-endif
-
-ifneq ($(USE_LIBVPX),0)
-    engine_objs += animvpx.cpp
-endif
 
 
 #### mact
@@ -393,56 +334,38 @@ mact_src := $(mact_root)/src
 mact_inc := $(mact_root)/include
 mact_obj := $(obj)/$(mact)
 
-mact_objs := \
-    animlib.cpp \
-    control.cpp \
-    joystick.cpp \
-    keyboard.cpp \
-    scriplib.cpp \
+mact_excl :=
+mact_objs := $(call getfiltered,mact)
 
+mact_cflags :=
 
 #### AudioLib
 
 audiolib := audiolib
-
-audiolib_objs := \
-    driver_adlib.cpp \
-    driver_sf2.cpp \
-    drivers.cpp \
-    flac.cpp \
-    formats.cpp \
-    fx_man.cpp \
-    gmtimbre.cpp \
-    midi.cpp \
-    mix.cpp \
-    mixst.cpp \
-    multivoc.cpp \
-    music.cpp \
-    opl3.cpp \
-    pitch.cpp \
-    vorbis.cpp \
-    xa.cpp \
-    xmp.cpp \
 
 audiolib_root := $(source)/$(audiolib)
 audiolib_src := $(audiolib_root)/src
 audiolib_inc := $(audiolib_root)/include
 audiolib_obj := $(obj)/$(audiolib)
 
-audiolib_cflags :=
-
 audiolib_deps :=
 
-ifeq ($(PLATFORM),WINDOWS)
-    audiolib_objs += driver_directsound.cpp driver_winmm.cpp 
+audiolib_excl := \
+    music_external.cpp \
+    
+ifneq ($(PLATFORM),WINDOWS)
+    audiolib_excl += driver_directsound.cpp driver_winmm.cpp 
 endif
-ifeq ($(SUBPLATFORM),LINUX)
-    audiolib_objs += driver_alsa.cpp
+ifneq ($(SUBPLATFORM),LINUX)
+    audiolib_excl += driver_alsa.cpp
+endif
+ifneq ($(RENDERTYPE),SDL)
+    audiolib_excl += driver_sdl.cpp
 endif
 
-ifeq ($(RENDERTYPE),SDL)
-    audiolib_objs += driver_sdl.cpp
-endif
+audiolib_objs := $(call getfiltered,audiolib)
+
+audiolib_cflags :=
 
 ifneq (0,$(HAVE_XMP))
     audiolib_cflags += -I$(libxmplite_inc)
@@ -461,7 +384,7 @@ tools_root := $(source)/$(tools)
 tools_src := $(tools_root)/src
 tools_obj := $(obj)/$(tools)
 
-tools_cflags := $(engine_cflags)
+tools_cflags := $(engine_cflags) -I$(engine_src)
 
 tools_deps := engine_tools mimalloc
 
@@ -562,14 +485,14 @@ duke3d_src := $(duke3d_root)/src
 duke3d_rsrc := $(duke3d_root)/rsrc
 duke3d_obj := $(obj)/$(duke3d)
 
-ifeq ($(FURY),1)
+ifneq (,$(APPBASENAME))
     ifeq ($(PLATFORM),WINDOWS)
-        duke3d_rsrc := $(duke3d_root)/rsrc/fury
+        duke3d_rsrc := $(duke3d_root)/rsrc/$(APPBASENAME)
     endif
-    duke3d_obj := $(obj)/fury
+    duke3d_obj := $(obj)/$(APPBASENAME)
 endif
 
-duke3d_cflags := -I$(duke3d_src)
+duke3d_cflags :=
 
 common_editor_deps := duke3d_common_editor engine_editor
 
@@ -592,42 +515,24 @@ duke3d_common_editor_objs := \
     m32exec.cpp \
     m32vars.cpp \
 
-duke3d_game_objs := \
-    actors.cpp \
-    anim.cpp \
-    cheats.cpp \
-    cmdline.cpp \
-    common.cpp \
-    config.cpp \
-    demo.cpp \
-    dnames.cpp \
-    game.cpp \
-    gamedef.cpp \
-    gameexec.cpp \
-    gamestructures.cpp \
-    gamevars.cpp \
-    global.cpp \
-    grpscan.cpp \
-    input.cpp \
-    menus.cpp \
-    network.cpp \
-    osdcmds.cpp \
-    osdfuncs.cpp \
-    player.cpp \
-    premap.cpp \
-    rts.cpp \
-    savegame.cpp \
-    sbar.cpp \
-    screens.cpp \
-    sector.cpp \
-    sounds.cpp \
-    text.cpp \
-
 duke3d_editor_objs := \
     astub.cpp \
     common.cpp \
     grpscan.cpp \
     sounds_mapster32.cpp \
+    
+duke3d_excl := \
+    in_android.cpp \
+    m32structures.cpp \
+    mdump.cpp \
+    startgtk.game.cpp \
+    startwin.game.cpp \
+    $(duke3d_common_editor_objs) \
+    $(duke3d_editor_objs) \
+        
+duke3d_game_objs := $(call getfiltered,duke3d) \
+    common.cpp \
+    grpscan.cpp \
 
 duke3d_game_rsrc_objs :=
 duke3d_editor_rsrc_objs :=
@@ -691,7 +596,7 @@ sw_src := $(sw_root)/src
 sw_rsrc := $(sw_root)/rsrc
 sw_obj := $(obj)/$(sw)
 
-sw_cflags := -I$(sw_src)
+sw_cflags :=
 
 sw_game_deps := audiolib mact
 sw_editor_deps := audiolib
@@ -702,80 +607,6 @@ sw_editor := wangulator
 sw_game_proper := VoidSW
 sw_editor_proper := Wangulator
 
-sw_game_objs := \
-    actor.cpp \
-    ai.cpp \
-    anim.cpp \
-    border.cpp \
-    break.cpp \
-    bunny.cpp \
-    cache.cpp \
-    cheats.cpp \
-    colormap.cpp \
-    common.cpp \
-    config.cpp \
-    console.cpp \
-    coolg.cpp \
-    coolie.cpp \
-    copysect.cpp \
-    demo.cpp \
-    draw.cpp \
-    eel.cpp \
-    game.cpp \
-    girlninj.cpp \
-    goro.cpp \
-    grpscan.cpp \
-    hornet.cpp \
-    interp.cpp \
-    interpsh.cpp \
-    interpso.cpp \
-    inv.cpp \
-    jplayer.cpp \
-    jsector.cpp \
-    jweapon.cpp \
-    lava.cpp \
-    light.cpp \
-    mclip.cpp \
-    mdastr.cpp \
-    menus.cpp \
-    miscactr.cpp \
-    morph.cpp \
-    network.cpp \
-    ninja.cpp \
-    panel.cpp \
-    player.cpp \
-    predict.cpp \
-    quake.cpp \
-    ripper.cpp \
-    ripper2.cpp \
-    rooms.cpp \
-    rotator.cpp \
-    rts.cpp \
-    save.cpp \
-    saveable.cpp \
-    scrip2.cpp \
-    sector.cpp \
-    serp.cpp \
-    setup.cpp \
-    skel.cpp \
-    skull.cpp \
-    slidor.cpp \
-    sounds.cpp \
-    spike.cpp \
-    sprite.cpp \
-    sumo.cpp \
-    swconfig.cpp \
-    sync.cpp \
-    text.cpp \
-    track.cpp \
-    vator.cpp \
-    vis.cpp \
-    wallmove.cpp \
-    warp.cpp \
-    weapon.cpp \
-    zilla.cpp \
-    zombie.cpp \
-
 sw_editor_objs := \
     bldscript.cpp \
     brooms.cpp \
@@ -785,6 +616,16 @@ sw_editor_objs := \
     jbhlp.cpp \
     jnstub.cpp \
 
+sw_excl := \
+    startgtk.game.cpp \
+    startwin.game.cpp \
+    $(sw_editor_objs) \
+        
+sw_game_objs := $(call getfiltered,sw) \
+    colormap.cpp \
+    common.cpp \
+    grpscan.cpp \
+    
 sw_game_rsrc_objs :=
 sw_editor_rsrc_objs :=
 sw_game_gen_objs :=
@@ -811,7 +652,7 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 
-#### Final setup
+#### Includes
 
 COMPILERFLAGS += \
     -I$(engine_inc) \
@@ -945,13 +786,9 @@ libklzw$(DLLSUFFIX): $(engine_src)/klzw.cpp
 %$(EXESUFFIX): $(tools_obj)/%.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) $(RECIPE_RESULT_LINK)
-
-enumdisplay$(EXESUFFIX): $(tools_obj)/enumdisplay.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
-	$(LINK_STATUS)
-	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) -lgdi32 $(RECIPE_RESULT_LINK)
-getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
-	$(LINK_STATUS)
-	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) -ldinput $(RECIPE_RESULT_LINK)
+ifneq ($(STRIP),)
+	$(STRIP) $@
+endif
 
 
 ### Voidwrap

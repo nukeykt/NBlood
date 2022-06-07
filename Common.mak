@@ -304,7 +304,7 @@ endif
 
 ##### Toggles
 
-#  CPLUSPLUS - 1 := enable C++ building
+#  CPLUSPLUS - 1 := enable building C source as C++
 #  RELEASE - 1 := no debugging
 #  FORCEDEBUG:
 #    1 := Include debug symbols even when generating release code.
