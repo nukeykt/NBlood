@@ -90,6 +90,8 @@ constexpr const GLbitfield prindexringmapflags = GL_MAP_WRITE_BIT | GL_MAP_PERSI
 _prbucket *prbuckethead;
 int32_t    prcanbucket;
 
+static bool prdidsky;
+
 static inthashtable_t prprogramtable = { nullptr, INTHASH_SIZE(256) };
 static GrowArray<_prprograminfo *> prprogramptrs;
 
@@ -1076,8 +1078,6 @@ void                polymer_loadboard(void)
         i++;
     }
 
-    polymer_getsky();
-
     polymer_resetlights();
 
     if (pr_verbosity >= 1 && numsectors) VLOG_F(LOG_PR, "Board loaded.");
@@ -1847,6 +1847,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 //     overridematerial = 0;
 
     prcanbucket = 1;
+    prdidsky = false;
 
     while (front != back)
     {
@@ -3052,9 +3053,16 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     } else if (yax_getbunch(sectnum, YAX_FLOOR) >= 0) {
         draw = FALSE;
     }
+
     // Parallaxed
     if (sec->floorstat & 1) {
         draw = FALSE;
+
+        if (!prdidsky)
+        {
+            polymer_getsky(sec->floorpicnum, sec->floorpal, sec->floorshade);
+            prdidsky = true;
+        }
     }
 
     GLubyte oldcolor[4];
@@ -3091,9 +3099,16 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     } else if (yax_getbunch(sectnum, YAX_CEILING) >= 0) {
         draw = FALSE;
     }
+
     // Parallaxed
     if (sec->ceilingstat & 1) {
         draw = FALSE;
+
+        if (!prdidsky)
+        {
+            polymer_getsky(sec->ceilingpicnum, sec->ceilingpal, sec->ceilingshade);
+            prdidsky = true;
+        }
     }
 
     if (globalposz >= ceilZ) {
@@ -4161,42 +4176,30 @@ void                polymer_updatesprite(int32_t snum)
 }
 
 // SKIES
-static void         polymer_getsky(void)
+static void polymer_getsky(int16_t picnum, uint8_t pal, int8_t shade)
 {
-    int32_t         i;
+    int32_t horizfrac;
 
-    i = 0;
-    while (i < numsectors)
+    cursky = picnum;
+    curskypal = pal;
+    curskyshade = shade;
+
+    getpsky(cursky, &horizfrac, NULL, NULL, NULL);
+
+    switch (horizfrac)
     {
-        if (sector[i].ceilingstat & 1)
-        {
-            int32_t horizfrac;
-
-            cursky = sector[i].ceilingpicnum;
-            curskypal = sector[i].ceilingpal;
-            curskyshade = sector[i].ceilingshade;
-
-            getpsky(cursky, &horizfrac, NULL, NULL, NULL);
-
-            switch (horizfrac)
-            {
-            case 0:
-                // psky always at same level wrt screen
-                curskyangmul = 0.f;
-                break;
-            case 65536:
-                // psky horiz follows camera horiz
-                curskyangmul = 1.f;
-                break;
-            default:
-                // sky has hard-coded parallax
-                curskyangmul = 1/DEFAULT_ARTSKY_ANGDIV;
-                break;
-            }
-
-            return;
-        }
-        i++;
+    case 0:
+        // psky always at same level wrt screen
+        curskyangmul = 0.f;
+        break;
+    case 65536:
+        // psky horiz follows camera horiz
+        curskyangmul = 1.f;
+        break;
+    default:
+        // sky has hard-coded parallax
+        curskyangmul = 1 / DEFAULT_ARTSKY_ANGDIV;
+        break;
     }
 }
 
