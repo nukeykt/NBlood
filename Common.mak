@@ -632,13 +632,11 @@ ifeq (0,$(FORCEDEBUG))
 else
     COMPILERFLAGS += -DDEBUGGINGAIDS=$(FORCEDEBUG)
 
-    ifeq (2,$(FORCEDEBUG))
-        ifneq (0,$(CLANG))
+    ifneq (0,$(CLANG))
+        COMMONFLAGS += $(ASAN_FLAGS)
+    else ifneq (,$(filter 1 2 3 4 5 6,$(GCC_MAJOR)))
+        ifneq (,$(filter 0 1,$(GCC_MINOR)))
             COMMONFLAGS += $(ASAN_FLAGS)
-        else ifneq (,$(filter 1 2 3 4 5 6,$(GCC_MAJOR)))
-            ifneq (,$(filter 0 1,$(GCC_MINOR)))
-                COMMONFLAGS += $(ASAN_FLAGS)
-            endif
         endif
     endif
 endif
