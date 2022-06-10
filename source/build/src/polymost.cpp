@@ -112,6 +112,7 @@ static int32_t persistentStreamBuffer = r_persistentStreamBuffer;
 static int32_t drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
 GLuint drawpolyVertsID = 0;
 static GLint drawpolyVertsOffset = 0;
+static GLint drawpolyVertsCnt = 0;
 static int32_t drawpolyVertsSubBufferIndex = 0;
 static GLsync drawpolyVertsSync[3] = { 0 };
 static float defaultDrawpolyVertsArray[MAX_DRAWPOLY_VERTS*5];
@@ -3101,7 +3102,47 @@ static void polymost_polyeditorfunc(vec2f_t const * const dpxy, int n)
 
 static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, int32_t method);
 
-static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32_t method)
+void polymost_startBufferedDrawing(int nn)
+{
+    if (nn * 5 + drawpolyVertsOffset > (drawpolyVertsSubBufferIndex + 1) * drawpolyVertsBufferLength)
+    {
+        if (persistentStreamBuffer)
+        {
+            // lock this sub buffer
+            polymost_lockSubBuffer(drawpolyVertsSubBufferIndex);
+            drawpolyVertsSubBufferIndex = (drawpolyVertsSubBufferIndex + 1) % 3;
+            drawpolyVertsOffset = drawpolyVertsSubBufferIndex * drawpolyVertsBufferLength;
+            // wait for the next sub buffer to become available before writing to it
+            // our buffer size should be long enough that no waiting is ever necessary
+            polymost_waitForSubBuffer(drawpolyVertsSubBufferIndex);
+        }
+        else
+        {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * drawpolyVertsBufferLength, NULL, GL_STREAM_DRAW);
+            drawpolyVertsOffset = 0;
+        }
+    }
+}
+
+void polymost_bufferVert(vec3f_t const v, vec2f_t const t)
+{
+    uint32_t off = persistentStreamBuffer ? drawpolyVertsOffset : 0;
+    *(vec3f_t *)(&drawpolyVerts[(off + drawpolyVertsCnt) * 5]) = v;
+    *(vec2f_t*)(&drawpolyVerts[(off + drawpolyVertsCnt) * 5 + 3]) = t;
+    drawpolyVertsCnt++;
+}    
+
+void polymost_finishBufferedDrawing(int mode)
+{
+    if (!persistentStreamBuffer)
+        glBufferSubData(GL_ARRAY_BUFFER, drawpolyVertsOffset * sizeof(float) * 5, drawpolyVertsCnt * sizeof(float) * 5, drawpolyVerts);
+    
+    glDrawArrays(mode, drawpolyVertsOffset, drawpolyVertsCnt);
+    drawpolyVertsOffset += drawpolyVertsCnt;
+    drawpolyVertsCnt = 0;
+}
+
+static void polymost_drawpoly(vec2f_t const* const dpxy, int32_t const n, int32_t method)
 {
     if (doeditorcheck && editstatus)
         polymost_polyeditorfunc(dpxy, n);
@@ -3520,97 +3561,39 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
             if (nn < 3) continue;
 
-            if (nn+drawpolyVertsOffset > (drawpolyVertsSubBufferIndex+1)*drawpolyVertsBufferLength)
-            {
-                if (persistentStreamBuffer)
-                {
-                    // lock this sub buffer
-                    polymost_lockSubBuffer(drawpolyVertsSubBufferIndex);
-                    drawpolyVertsSubBufferIndex = (drawpolyVertsSubBufferIndex+1)%3;
-                    drawpolyVertsOffset = drawpolyVertsSubBufferIndex*drawpolyVertsBufferLength;
-                    // wait for the next sub buffer to become available before writing to it
-                    // our buffer size should be long enough that no waiting is ever necessary
-                    polymost_waitForSubBuffer(drawpolyVertsSubBufferIndex);
-                }
-                else
-                {
-                    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*5*drawpolyVertsBufferLength, NULL, GL_STREAM_DRAW);
-                    drawpolyVertsOffset = 0;
-                }
-            }
+            polymost_startBufferedDrawing(nn);
 
             vec2f_t const invtsiz2 = { 1.f / tsiz2.x, 1.f / tsiz2.y };
-            uint32_t off = persistentStreamBuffer ? drawpolyVertsOffset : 0;
-            for (i = 0; i<nn; ++i)
+            for (i = 0; i < nn; ++i)
             {
                 vec2f_t const o = { uu[i], vv[i] };
                 vec3f_t const p = { o.x * ngx.d + o.y * ngy.d + ngo.d,
                                     o.x * ngx.u + o.y * ngy.u + ngo.u,
                                     o.x * ngx.v + o.y * ngy.v + ngo.v };
-                float const r = 1.f/p.d;
+                float const r = 1.f / p.d;
 
-                //update verts
-                drawpolyVerts[(off+i)*5] = (o.x - ghalfx) * r * grhalfxdown10x;
-                drawpolyVerts[(off+i)*5+1] = (ghalfy - o.y) * r * grhalfxdown10;
-                drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
-
-                //update texcoords
-                drawpolyVerts[(off+i)*5+3] = (p.u * r - du0 + uoffs) * invtsiz2.x;
-                drawpolyVerts[(off+i)*5+4] = p.v * r * invtsiz2.y;
+                polymost_bufferVert({ (o.x - ghalfx) * r * grhalfxdown10x, (ghalfy - o.y) * r * grhalfxdown10, r * (1.f / 1024.f) },
+                                    { (p.u * r - du0 + uoffs) * invtsiz2.x, p.v * r * invtsiz2.y });
             }
 
-            if (!persistentStreamBuffer)
-            {
-                glBufferSubData(GL_ARRAY_BUFFER, drawpolyVertsOffset*sizeof(float)*5, nn*sizeof(float)*5, drawpolyVerts);
-            }
-
-            glDrawArrays(GL_TRIANGLE_FAN, drawpolyVertsOffset, nn);
-            drawpolyVertsOffset += nn;
+            polymost_finishBufferedDrawing(GL_TRIANGLE_FAN);
         }
     }
     else
     {
-        if (npoints+drawpolyVertsOffset > (drawpolyVertsSubBufferIndex+1)*drawpolyVertsBufferLength)
-        {
-            if (persistentStreamBuffer)
-            {
-                // lock this sub buffer
-                polymost_lockSubBuffer(drawpolyVertsSubBufferIndex);
-                drawpolyVertsSubBufferIndex = (drawpolyVertsSubBufferIndex+1)%3;
-                drawpolyVertsOffset = drawpolyVertsSubBufferIndex*drawpolyVertsBufferLength;
-                // wait for the next sub buffer to become available before writing to it
-                // our buffer size should be long enough that no waiting is ever necessary
-                polymost_waitForSubBuffer(drawpolyVertsSubBufferIndex);
-            }
-            else
-            {
-                glBufferData(GL_ARRAY_BUFFER, sizeof(float)*5*drawpolyVertsBufferLength, NULL, GL_STREAM_DRAW);
-                drawpolyVertsOffset = 0;
-            }
-        }
+        polymost_startBufferedDrawing(npoints);
 
         vec2f_t const scale = { 1.f / tsiz2.x * hacksc.x, 1.f / tsiz2.y * hacksc.y };
-        uint32_t off = persistentStreamBuffer ? drawpolyVertsOffset : 0;
         for (bssize_t i = 0; i < npoints; ++i)
         {
             float const r = 1.f / dd[i];
 
-            //update verts
-            drawpolyVerts[(off+i)*5] = (px[i] - ghalfx) * r * grhalfxdown10x;
-            drawpolyVerts[(off+i)*5+1] = (ghalfy - py[i]) * r * grhalfxdown10;
-            drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
-
-            //update texcoords
-            drawpolyVerts[(off+i)*5+3] = uu[i] * r * scale.x;
-            drawpolyVerts[(off+i)*5+4] = vv[i] * r * scale.y;
+            polymost_bufferVert({ (px[i] - ghalfx) * r * grhalfxdown10x, (ghalfy - py[i]) * r * grhalfxdown10, r * (1.f / 1024.f) },
+                { uu[i] * r * scale.x, vv[i] * r * scale.y });
         }
 
-        if (!persistentStreamBuffer)
-        {
-            glBufferSubData(GL_ARRAY_BUFFER, drawpolyVertsOffset*sizeof(float)*5, npoints*sizeof(float)*5, drawpolyVerts);
-        }
-        glDrawArrays(GL_TRIANGLE_FAN, drawpolyVertsOffset, npoints);
-        drawpolyVertsOffset += npoints;
+        polymost_finishBufferedDrawing(GL_TRIANGLE_FAN);
+
     }
 
     if (videoGetRenderMode() != REND_POLYMOST)
@@ -9777,18 +9760,18 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     lastglpolygonmode = 0;
 
+    int const namelen = Bstrlen(name);
+    
     if (backcol >= 0)
     {
-        int const c = Bstrlen(name);
-
         glColor4ub(b.r,b.g,b.b,255);
 
         glBegin(GL_QUADS);
 
         glVertex2i(xpos,ypos);
         glVertex2i(xpos,ypos+(fontsize?6:8));
-        glVertex2i(xpos+(c<<(3-fontsize)), ypos+(fontsize ? 6 : 8));
-        glVertex2i(xpos+(c<<(3-fontsize)), ypos);
+        glVertex2i(xpos+(namelen<<(3-fontsize)), ypos+(fontsize ? 6 : 8));
+        glVertex2i(xpos+(namelen<<(3-fontsize)), ypos);
 
         glEnd();
     }
@@ -9799,18 +9782,18 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
     vec2f_t const tc = { fontsize ? (4.f / 256.f) : (8.f / 256.f),
                          fontsize ? (6.f / 128.f) : (8.f / 128.f) };
 
-    glBegin(GL_QUADS);
+    polymost_startBufferedDrawing(namelen * 4);
 
-    for (bssize_t c=0; name[c]; ++c)
+    for (bssize_t c = 0; name[c]; ++c)
     {
-        if (name[c] == '^' && isdigit(name[c+1]))
+        if (name[c] == '^' && isdigit(name[c + 1]))
         {
             char smallbuf[8];
             int bi = 0;
 
-            while (isdigit(name[c+1]) && bi<3)
+            while (isdigit(name[c + 1]) && bi < 3)
             {
-                smallbuf[bi++]=name[c+1];
+                smallbuf[bi++] = name[c + 1];
                 c++;
             }
 
@@ -9820,7 +9803,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
             {
                 col = Batol(smallbuf);
 
-                if ((unsigned) col >= 256)
+                if ((unsigned)col >= 256)
                     col = 0;
             }
 
@@ -9834,22 +9817,14 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
         vec2f_t const t = { (float)(name[c] % 32) * (1.0f / 32.f),
                             (float)((name[c] / 32) + (fontsize * 8)) * (1.0f / 16.f) };
 
-        glTexCoord2f(t.x, t.y);
-        glVertex2i(xpos, ypos);
-
-        glTexCoord2f(t.x + tc.x, t.y);
-        glVertex2i(xpos + (8 >> fontsize), ypos);
-
-        glTexCoord2f(t.x + tc.x, t.y + tc.y);
-        glVertex2i(xpos + (8 >> fontsize), ypos + (fontsize ? 6 : 8));
-
-        glTexCoord2f(t.x, t.y + tc.y);
-        glVertex2i(xpos, ypos + (fontsize ? 6 : 8));
-
+        polymost_bufferVert(vec3f_t { (float)xpos, (float)ypos, 0.f }, t);
+        polymost_bufferVert(vec3f_t { (float)xpos + (8 >> fontsize), (float)ypos, 0.f }, { t.x + tc.x, t.y });
+        polymost_bufferVert(vec3f_t { (float)(xpos + (8 >> fontsize)), (float)(ypos + (fontsize ? 6 : 8)), 0.f }, { t.x + tc.x, t.y + tc.y });
+        polymost_bufferVert(vec3f_t { (float)xpos, (float)(ypos + (fontsize ? 6 : 8)), 0.f }, { t.x, t.y + tc.y });
         xpos += (8>>fontsize);
     }
 
-    glEnd();
+    polymost_finishBufferedDrawing(GL_QUADS);
 
     glDepthMask(GL_TRUE);	// re-enable writing to the z-buffer
 

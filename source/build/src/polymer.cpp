@@ -4238,9 +4238,19 @@ static void         polymer_initartsky(void)
 
     for (int i = 0; i < PSKYOFF_MAX; i++)
     {
-        artskydata[i * 2 + 0] = -cos(i * factor);
-        artskydata[i * 2 + 1] = sin(i * factor);
+        artskydata[i * 2 + 0] = -cosf(i * factor);
+        artskydata[i * 2 + 1] = sinf(i * factor);
     }
+}
+
+static inline void polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height)
+{
+    polymost_startBufferedDrawing(4);
+    polymost_bufferVert({ artskydata[(p1 * 2) + 1], height, artskydata[p1 * 2] }, { 0.f, 0.f });
+    polymost_bufferVert({ artskydata[(p1 * 2) + 1], -height, artskydata[p1 * 2] }, { 0.0f, 1.0f });
+    polymost_bufferVert({ artskydata[(p2 * 2) + 1], -height, artskydata[p2 * 2] }, { 1.0f, 1.0f });
+    polymost_bufferVert({ artskydata[(p2 * 2) + 1], height, artskydata[p2 * 2] }, { 1.0f, 0.0f });
+    polymost_finishBufferedDrawing(GL_QUADS);
 }
 
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade)
@@ -4297,6 +4307,11 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         i++;
     }
 
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+
+    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
+    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
+
     buildgl_setEnabled(GL_TEXTURE_2D);
     i = 0;
     j = 0;
@@ -4317,24 +4332,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
     buildgl_bindSamplerObject(0, 0);
     buildgl_setDisabled(GL_TEXTURE_2D);
-}
-
-static void         polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height)
-{
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p1 * 2) + 1], height, skybox[p1 * 2]);
-    glVertex3f(artskydata[(p1 * 2) + 1], height, artskydata[p1 * 2]);
-    glTexCoord2f(0.0f, 1.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p1 * 2) + 1], -height, skybox[p1 * 2]);
-    glVertex3f(artskydata[(p1 * 2) + 1], -height, artskydata[p1 * 2]);
-    glTexCoord2f(1.0f, 1.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p2 * 2) + 1], -height, skybox[p2 * 2]);
-    glVertex3f(artskydata[(p2 * 2) + 1], -height, artskydata[p2 * 2]);
-    glTexCoord2f(1.0f, 0.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p2 * 2) + 1], height, skybox[p2 * 2]);
-    glVertex3f(artskydata[(p2 * 2) + 1], height, artskydata[p2 * 2]);
-    glEnd();
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shade)
