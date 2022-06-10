@@ -4401,7 +4401,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
 }
 
 // MDSPRITES
-static void         polymer_drawmdsprite(tspriteptr_t tspr)
+void polymer_drawmdsprite(tspriteptr_t tspr)
 {
     md3model_t*     m;
     mdskinmap_t*    sk;
@@ -4429,38 +4429,39 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 
     // Hackish, but that means it's a model drawn by rotatesprite.
     if (tspriteptr[maxspritesonscreen] == tspr) {
-        float       x, y, z;
-
         spos[0] = fglobalposy;
         spos[1] = fglobalposz * (-1.f/16.f);
         spos[2] = -fglobalposx;
 
         // The coordinates are actually floats disguised as int in this case
-        memcpy(&x, &tspr->x, sizeof(float));
-        memcpy(&y, &tspr->y, sizeof(float));
-        memcpy(&z, &tspr->z, sizeof(float));
+        vec3f_t v = *(vec3f_t*)&tspr->xyz;
 
-        spos2[0] = y - globalposy;
-        spos2[1] = (z - fglobalposz) * (-1.f/16.f);
-        spos2[2] = fglobalposx - x;
+        spos2[0] = v.y - fglobalposy;
+        spos2[1] = (v.z - fglobalposz) * (-1.f/16.f);
+        spos2[2] = fglobalposx - v.x;
+
+        ang = fix16_to_float((fix16_from_int((tspr->ang+spriteext[tspr->owner].mdangoff-globalang) & 2047) + qglobalang) & 0x7FFFFFF) * (360.f/2048.f);
     } else {
         spos[0] = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
         spos[1] = -(float)(tspr->z+spriteext[tspr->owner].mdposition_offset.z) * (1.f/16.f);
         spos[2] = -(float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x);
 
         spos2[0] = spos2[1] = spos2[2] = 0.0f;
+
+        ang = (float)((tspr->ang+spriteext[tspr->owner].mdangoff) & 2047) * (360.f/2048.f);
     }
 
-    ang = (float)((tspr->ang+spriteext[tspr->owner].mdangoff) & 2047) * (360.f/2048.f);
     ang -= 90.0f;
+
     if (((tspr->cstat>>4) & 3) == 2)
         ang -= 90.0f;
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    scale = (1.0/4.0);
-    scale *= m->scale;
+
+    scale = m->scale * 0.25f;
+    
     if (pr_overridemodelscale) {
         scale *= pr_overridemodelscale;
     } else {
@@ -4468,13 +4469,11 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     }
 
     if (tspriteptr[maxspritesonscreen] == tspr) {
-        float playerang, radplayerang, cosminusradplayerang, sinminusradplayerang, hudzoom;
-
-        playerang = (globalang & 2047) * (360.f/2048.f) - 90.0f;
-        radplayerang = (globalang & 2047) * (2.0f * fPI / 2048.0f);
-        cosminusradplayerang = cos(-radplayerang);
-        sinminusradplayerang = sin(-radplayerang);
-        hudzoom = 65536.0 / spriteext[tspr->owner].mdpivot_offset.z;
+        float playerang = fix16_to_float(qglobalang & 0x7FFFFFF) * (360.f/2048.f) - 90.0f;
+        float radplayerang = fix16_to_float(qglobalang & 0x7FFFFFF) * (2.0f * fPI / 2048.0f);
+        float cosminusradplayerang = cosf(-radplayerang);
+        float sinminusradplayerang = sinf(-radplayerang);
+        float hudzoom = 65536.f / spriteext[tspr->owner].mdpivot_offset.z;
 
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(horizang, -cosminusradplayerang, 0.0f, sinminusradplayerang);

@@ -1859,8 +1859,18 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
     k1 = ((float)(tspr->y+spriteext[tspr->owner].mdposition_offset.y-globalposy))*f*(1.f/1024.f);
     f = gcosang2*gshang/gvrcorrection;
     g = gsinang2*gshang/gvrcorrection;
-    k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+1024)&2047] * (1.f/16384.f);
-    k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+ 512)&2047] * (1.f/16384.f);
+    
+    if (tspriteptr[maxspritesonscreen] == tspr)
+    {
+        k4 = sinf(fix16_to_float((fix16_from_int((tspr->ang - globalang + spriteext[tspr->owner].mdangoff + 1024) & 2047) + qglobalang) & 0x7FFFFFF) * BANG2RAD);
+        k5 = sinf(fix16_to_float((fix16_from_int((tspr->ang - globalang + spriteext[tspr->owner].mdangoff + 512) & 2047) + qglobalang) & 0x7FFFFFF) * BANG2RAD);
+    }
+    else
+    {
+        k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+1024)&2047] * (1.f/16384.f);
+        k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+ 512)&2047] * (1.f/16384.f);
+    }
+
     k2 = k0*(1-k4)+k1*k5;
     k3 = k1*(1-k4)-k0*k5;
     k6 = f*gstang - gsinang*gctang; k7 = g*gstang + gcosang*gctang;

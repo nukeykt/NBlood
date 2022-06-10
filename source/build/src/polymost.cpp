@@ -9015,6 +9015,8 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
     polymost_setFogEnabled(false);
 
+    tspriteptr[maxspritesonscreen] = &tspr;
+    
     if (videoGetRenderMode() == REND_POLYMOST)
         polymost_mddraw(&tspr);
 # ifdef POLYMER
@@ -9022,7 +9024,6 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     {
         int32_t fov;
 
-        tspriteptr[maxspritesonscreen] = &tspr;
 
         buildgl_setEnabled(GL_ALPHA_TEST);
         buildgl_setEnabled(GL_BLEND);
@@ -9046,12 +9047,14 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
         spriteext[tspr.owner].mdpivot_offset.z = 0;
         spriteext[tspr.owner].mdroll = 0;
-        tspriteptr[maxspritesonscreen] = nullptr;
 
         buildgl_setDisabled(GL_ALPHA_TEST);
         buildgl_setDisabled(GL_BLEND);
     }
 # endif
+
+    tspriteptr[maxspritesonscreen] = nullptr;
+    
     if (!nofog) polymost_setFogEnabled(true);
 
     gvrcorrection = ogvrcorrection;
