@@ -147,6 +147,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -172,6 +173,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <OptimizeReferences>true</OptimizeReferences>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -305,7 +307,7 @@
     </ProjectReference>
     <ProjectReference Include="mimalloc.vcxproj">
       <Project>{1150264b-19c6-4c32-a204-cb79e96d5492}</Project>
-    </ProjectReference>    
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\kenbuild\rsrc\gameres.rc" />
