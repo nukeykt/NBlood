@@ -262,6 +262,167 @@ CONDITION_TYPE_NAMES gCondTypeNames[7] = {
 
 };
 
+
+// SPRITES_NEAR_SECTORS
+// Intended for move sprites that is close to the outside walls with
+// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
+// --------------------------------------------------------------------------
+SPRINSECT gSprNSect;
+
+void SPRINSECT::Init(int nDist)
+{
+    Free();
+
+    int i, j, k, nSprites;
+    int* collected = (int*)Bmalloc(sizeof(int)*kMaxSprites);
+    for (i = 0; i < numsectors; i++)
+    {
+        sectortype* pSect = &sector[i];
+        if (!isMovableSector(pSect->type))
+            continue;
+
+        switch (pSect->type) {
+        case kSectorZMotionSprite:
+        case kSectorSlideMarked:
+        case kSectorRotateMarked:
+            continue;
+            // only allow non-marked sectors
+        default:
+            break;
+        }
+
+        nSprites = getSpritesNearWalls(i, collected, kMaxSprites, nDist);
+
+        // exclude sprites that is not allowed
+        for (j = nSprites - 1; j >= 0; j--)
+        {
+            spritetype* pSpr = &sprite[collected[j]];
+            if ((pSpr->cstat & 0x6000) && pSpr->sectnum >= 0)
+            {
+                // if *next* sector is movable, exclude to avoid fighting
+                if (!isMovableSector(sector[pSpr->sectnum].type))
+                {
+                    switch (pSpr->statnum) {
+                    default:
+                        continue;
+                    case kStatMarker:
+                    case kStatPathMarker:
+                        if (pSpr->flags & 0x1) continue;
+                        // no break
+                    case kStatDude:
+                        break;
+                    }
+                }
+            }
+
+            nSprites--;
+            for (k = j; k < nSprites; k++)
+                collected[k] = collected[k + 1];
+        }
+
+        if (nSprites > 0)
+        {
+            db = (SPRITES*)Brealloc(db, ((unsigned int)(length + 1)) * sizeof(SPRITES));
+            dassert(db != NULL);
+
+            SPRITES* pEntry = &db[length];
+            Bmemset(pEntry->sprites, -1, sizeof(pEntry->sprites));
+            Bmemcpy(pEntry->sprites, collected, sizeof(pEntry->sprites[0]) * ClipHigh(nSprites, kMaxSprNear));
+            pEntry->nSector = i;
+            length++;
+        }
+    }
+
+    Bfree(collected);
+}
+
+int* SPRINSECT::GetSprPtr(int nSector)
+{
+    unsigned int i;
+    for (i = 0; i < length; i++)
+    {
+        if (db[i].nSector == (unsigned int)nSector && db[i].sprites[0] >= 0)
+            return (int*)db[i].sprites;
+    }
+    return NULL;
+}
+
+void SPRINSECT::Free()
+{
+    length = 0;
+    if (db)
+        Bfree(db), db = NULL;
+}
+
+bool SPRINSECT::Alloc(int nLength)
+{
+    Free();
+    if (nLength <= 0)
+        return false;
+
+    db = (SPRITES*)Bmalloc(nLength * sizeof(SPRITES));
+    dassert(db != NULL);
+        
+    length = nLength;
+    while (nLength--)
+    {
+        SPRITES* pEntry = &db[nLength];
+        Bmemset(pEntry->sprites, -1, sizeof(pEntry->sprites));
+    }
+
+    return true;
+}
+
+void SPRINSECT::Save(LoadSave* pSave)
+{
+    unsigned int i, j;
+    pSave->Write(&length, sizeof(length));  // total db length
+    for (i = 0; i < length; i++)
+    {
+        // owner sector
+        pSave->Write(&db[i].nSector, sizeof(db[i].nSector));
+        
+        j = 0;
+        while (j < kMaxSprNear)
+        {
+            pSave->Write(&db[i].sprites[j], sizeof(db[i].sprites[j]));
+            if (db[i].sprites[j] == -1) // sprites end reached
+                break;
+
+            j++;
+        }
+    }
+
+}
+
+void SPRINSECT::Load(LoadSave* pLoad)
+{
+    unsigned int i, j;
+
+    pLoad->Read(&i, sizeof(length));
+    if (!Alloc(i))
+        return; // the length is zero
+
+    for (i = 0; i < length; i++)
+    {
+        // owner sector
+        pLoad->Read(&db[i].nSector, sizeof(db[i].nSector));
+        
+        j = 0;
+        while (j < kMaxSprNear)
+        {
+            pLoad->Read(&db[i].sprites[j], sizeof(db[i].sprites[j]));
+            if (db[i].sprites[j] == -1) // sprites end reached
+                break;
+
+            j++;
+        }
+
+    }
+}
+
+// --------------------------------------------------------------------
+
 void nnExResetPatrolBonkles() {
 
     for (int i = 0; i < kMaxPatrolFoundSounds; i++) {
@@ -270,6 +431,7 @@ void nnExResetPatrolBonkles() {
     }
 
 }
+
 
 // for actor.cpp
 //-------------------------------------------------------------------------
@@ -7948,6 +8110,118 @@ void clampSprite(spritetype* pSprite, int which) {
 
     }
 
+}
+
+bool isMovableSector(int nType)
+{
+    return (nType && nType != kSectorDamage && nType != kSectorTeleport && nType != kSectorCounter);
+}
+
+bool isMovableSector(sectortype* pSect)
+{
+    if (isMovableSector(pSect->type) && pSect->extra > 0)
+    {
+        XSECTOR* pXSect = &xsector[pSect->extra];
+        return (pXSect->busy && !pXSect->unused1);
+    }
+
+    return false;
+}
+
+int getSpritesNearWalls(int nSrcSect, int* spriOut, int nMax, int nDist)
+{
+    int i, j, c = 0, nWall, nSect, swal, ewal;
+    int xi, yi, wx, wy, lx, ly, sx, sy, qx, qy, num, den;
+    int* skip = (int*)Bmalloc(sizeof(int) * kMaxSprites);
+    if (!skip)
+        return c;
+
+    Bmemset(skip, 0, sizeof(int) * kMaxSprites);
+    swal = sector[nSrcSect].wallptr;
+    ewal = swal + sector[nSrcSect].wallnum - 1;
+
+    for (i = swal; i <= ewal; i++)
+    {
+        nSect = wall[i].nextsector;
+        if (nSect < 0)
+            continue;
+
+        nWall = i;
+        wx = wall[nWall].x;	wy = wall[nWall].y;
+        lx = wall[wall[nWall].point2].x - wx;
+        ly = wall[wall[nWall].point2].y - wy;
+
+        for (j = headspritesect[nSect]; j >= 0; j = nextspritesect[j])
+        {
+            if (skip[j])
+                continue;
+
+            sx = sprite[j].x;	qx = sx - wx;
+            sy = sprite[j].y;	qy = sy - wy;
+            num = dmulscale4(qx, lx, qy, ly);
+            den = dmulscale4(lx, lx, ly, ly);
+
+            if (num > 0 && num < den)
+            {
+                xi = wx + scale(lx, num, den);
+                yi = wy + scale(ly, num, den);
+                if (approxDist(xi - sx, yi - sy) <= nDist)
+                {
+                    skip[j] = 1; spriOut[c] = j;
+                    if (++c == nMax)
+                    {
+                        Bfree(skip);
+                        return c;
+                    }
+                }
+            }
+        }
+    }
+    
+    Bfree(skip);
+    return c;
+}
+
+class nnExtLoadSave : public LoadSave
+{
+    const char* nnExtBlkSign[2] =
+    {
+        "nnExt>", // block starts
+        "<nnExt", // block ends
+    };
+
+    virtual void Load(void);
+    virtual void Save(void);
+};
+
+void nnExtLoadSave::Load(void)
+{
+    char tmp[32];
+    if (!gModernMap)
+        return;
+
+    memset(tmp, 0, sizeof(tmp));
+    Read(tmp, Bstrlen(nnExtBlkSign[0]));
+    gSprNSect.Load(this); // load sprites near walls
+    Read(tmp, Bstrlen(nnExtBlkSign[1]));
+}
+
+void nnExtLoadSave::Save(void)
+{
+    int i;
+    char tmp[32];
+    if (!gModernMap)
+        return;
+
+    i = Bsprintf(tmp, nnExtBlkSign[0]); Write(tmp, i);
+    gSprNSect.Save(this); // save sprites near walls
+    i = Bsprintf(tmp, nnExtBlkSign[1]); Write(tmp, i);
+}
+
+static nnExtLoadSave* myLoadSave;
+void nnExtLoadSaveConstruct(void)
+{
+    myLoadSave = new nnExtLoadSave();
 }
 #endif
 

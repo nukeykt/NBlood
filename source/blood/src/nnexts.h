@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "warp.h"
 #include "triggers.h"
 #include "ai.h"
+#include "loadsave.h"
 
 // CONSTANTS
 
@@ -188,6 +189,36 @@ kPatrolMoveForward                  = 0,
 kPatrolMoveBackward                 = 1,
 };
 
+// - CLASSES ------------------------------------------------------------------
+
+// SPRITES_NEAR_SECTORS
+// Intended for move sprites that is close to the outside walls with
+// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
+// --------------------------------------------------------------------------
+class SPRINSECT
+{
+    #define kMaxSprNear 256
+    #define kWallDist	16
+    
+    private:
+        struct SPRITES
+        {
+            unsigned int nSector;
+            signed   int sprites[kMaxSprNear + 1];
+        };
+        SPRITES* db;
+        unsigned int length;
+        bool Alloc(int nLength); // normally should be used when loading saved game
+    public:
+        void Free();
+        void Init(int nDist = kWallDist); // used in trInit to collect the sprites before translation
+        void Save(LoadSave* pSave);
+        void Load(LoadSave* pLoad);
+        int* GetSprPtr(int nSector);
+        ~SPRINSECT() { Free(); };
+
+};
+
 // - STRUCTS ------------------------------------------------------------------
 struct SPRITEMASS { // sprite mass info for getSpriteMassBySize();
     int seqId;
@@ -286,7 +317,7 @@ extern short gPhysSpritesCount;
 extern short gImpactSpritesCount;
 extern short gTrackingCondsCount;
 extern AISTATE genPatrolStates[kPatrolStateSize];
-
+extern SPRINSECT gSprNSect;
 
 // - INLINES -------------------------------------------------------------------
 inline bool xsprIsFine(spritetype* pSpr) {
@@ -463,6 +494,9 @@ inline bool aiInPatrolState(int nAiStateType) {
 bool readyForCrit(spritetype* pHunter, spritetype* pVictim);
 int sectorInMotion(int nSector);
 void clampSprite(spritetype* pSprite, int which = 0x03);
+int getSpritesNearWalls(int nSrcSect, int* spriOut, int nMax, int nDist);
+bool isMovableSector(int nType);
+bool isMovableSector(sectortype* pSect);
 #endif
 
 ////////////////////////////////////////////////////////////////////////
