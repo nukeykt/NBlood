@@ -86,8 +86,8 @@ static FORCE_INLINE void MV_Unlock(void)
 }
 
 int  MV_VoicePlaying(int handle);
-int  MV_KillAllVoices(void);
-int  MV_Kill(int handle);
+int  MV_KillAllVoices(bool useCallBack = true);
+int  MV_Kill(int handle, bool useCallBack = true);
 int  MV_VoicesPlaying(void);
 int  MV_VoiceAvailable(int priority);
 int  MV_SetPitch(int handle, int pitchoffset);
