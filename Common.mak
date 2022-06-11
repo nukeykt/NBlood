@@ -458,7 +458,7 @@ endif
 ##### Instantiate variables
 
 COMMONFLAGS :=
-COMPILERFLAGS := -funsigned-char
+COMPILERFLAGS := -funsigned-char -frounding-math
 
 CSTD := -std=gnu11
 CXXSTD := -std=gnu++14
