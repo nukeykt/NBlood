@@ -23,8 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #pragma once
 
 #define kMaxXSprites 16384
-#define kMaxXWalls 512
-#define kMaxXSectors 512
+#define kMaxXWalls kMaxWalls
+#define kMaxXSectors kMaxSectors
 
 #ifdef NOONE_EXTENSIONS
 extern bool gModernMap;
