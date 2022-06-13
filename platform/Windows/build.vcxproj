@@ -537,8 +537,8 @@
       <Command>echo char const *%(Filename) = R^"shader( &gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp
 type %(Identity) &gt;&gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp
 echo )shader^"; &gt;&gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp</Command>
-      <Message>Compiling shader to %(Identity).obj</Message>
-      <Inputs>"..\..\source\build\src\polymost1Frag.glsl"</Inputs>
+      <Message>Compiling shader to $(IntermediateOutputPath)%(Filename)%(Extension).cpp</Message>
+      <Inputs>%(Identity)</Inputs>
       <Outputs>$(IntermediateOutputPath)%(Filename)%(Extension).cpp</Outputs>
     </CustomBuild>
     <ClCompile Include="$(IntermediateOutputPath)\polymost1Frag.glsl.cpp" Filter="Source Files/Generated" />
@@ -547,8 +547,8 @@ echo )shader^"; &gt;&gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp</C
       <Command>echo char const *%(Filename) = R^"shader( &gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp
 type %(Identity) &gt;&gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp
 echo )shader^"; &gt;&gt; $(IntermediateOutputPath)%(Filename)%(Extension).cpp</Command>
-      <Message>Compiling shader to %(Identity).obj</Message>
-      <Inputs>"..\..\source\build\src\polymost1Vert.glsl"</Inputs>
+      <Message>Compiling shader to $(IntermediateOutputPath)%(Filename)%(Extension).cpp</Message>
+      <Inputs>%(Identity)</Inputs>
       <Outputs>$(IntermediateOutputPath)%(Filename)%(Extension).cpp</Outputs>
     </CustomBuild>
     <ClCompile Include="$(IntermediateOutputPath)\polymost1Vert.glsl.cpp" Filter="Source Files/Generated" />
