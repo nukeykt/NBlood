@@ -1806,15 +1806,15 @@ static inline int16_t tspriteGetSlope(tspriteptr_t const tspr)
     return uint8_t(tspr->xoffset) + (uint8_t(tspr->yoffset) << 8);
 }
 
-static inline int32_t spriteGetZOfSlope(uint16_t const spritenum, int32_t dax, int32_t day)
+static inline int32_t spriteGetZOfSlope(uint16_t const spritenum, vec2_t pos)
 {
     auto const spr = &sprite[spritenum];
     int16_t const heinum = spriteGetSlope(spritenum);
     if (heinum == 0)
         return spr->z;
 
-    int const j = dmulscale4(sintable[(spr->ang+1024)&2047], day-spr->y,
-                            -sintable[(spr->ang+512)&2047], dax-spr->x);
+    int const j = dmulscale4(sintable[(spr->ang+1024)&2047], pos.y-spr->y,
+                            -sintable[(spr->ang+512)&2047], pos.x-spr->x);
     return spr->z + mulscale18(heinum,j);
 }
 

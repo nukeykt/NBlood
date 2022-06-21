@@ -1221,7 +1221,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
             vec2_t const p1 = wal->xy;
             vec2_t const p2 = wal2->xy;
-            vec2_t const d  = { p2.x-p1.x, p2.y-p1.y };
+            vec2_t const d = p2 - p1;
 
             if (d.x * (pos->y-p1.y) < (pos->x-p1.x) * d.y)
                 continue;  //If wall's not facing you
@@ -1319,7 +1319,10 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 v.y = walldist; if (d.x < 0) v.y = -v.y;
 
                 if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
+                {
+                    DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
                     v.x >>= 1, v.y >>= 1;
+                }
 
                 addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.x, p2.y+v.y, objtype);
             }
@@ -1390,8 +1393,16 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
                     if (clipinsideboxline(cent.x, cent.y, p1.x, p1.y, p2.x, p2.y, rad) != 0)
                     {
-                        vec2_t const v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
-                                           mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
+                        vec2_t v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
+                                     mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
+                        vec2_t const d = p2 - p1;
+                        vec2_t const vv = v;
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
+                        {
+                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                            v.x >>= 1, v.y >>= 1;
+                        }
 
                         if ((p1.x-pos->x) * (p2.y-pos->y) >= (p2.x-pos->x) * (p1.y-pos->y))  // Front
                             addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.y, p2.y-v.x, (int16_t)j+49152);
@@ -1402,6 +1413,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                             addclipline(p2.x-v.x, p2.y-v.y, p1.x-v.y, p1.y+v.x, (int16_t)j+49152);
                         }
 
+                        v = vv;
+                                                                        
                         //Side blocker
                         if ((p2.x-p1.x) * (pos->x-p1.x)+(p2.y-p1.y) * (pos->y-p1.y) < 0)
                             addclipline(p1.x-v.y, p1.y+v.x, p1.x+v.x, p1.y+v.y, (int16_t)j+49152, true);
@@ -1413,52 +1426,11 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             }
 
             case CSTAT_SPRITE_ALIGNMENT_FLOOR:
-            {
-                if (pos->z > spr->z-flordist && pos->z < spr->z+ceildist)
-                {
-                    if ((cstat&64) != 0)
-                        if ((pos->z > spr->z) == ((cstat&8)==0))
-                            continue;
-
-                    rxi[0] = p1.x;
-                    ryi[0] = p1.y;
-
-                    get_floorspr_points(spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
-                        &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
-
-                    vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                       mulscale14(sintable[(spr->ang-256)&2047], walldist) };
-
-                    if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[1], ryi[1], rxi[0], ryi[0], rad) != 0)
-                            addclipline(rxi[1]-v.y, ryi[1]+v.x, rxi[0]+v.x, ryi[0]+v.y, (int16_t)j+49152);
-                    }
-                    else if ((rxi[2]-pos->x) * (ryi[3]-pos->y) < (rxi[3]-pos->x) * (ryi[2]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[3], ryi[3], rxi[2], ryi[2], rad) != 0)
-                            addclipline(rxi[3]+v.y, ryi[3]-v.x, rxi[2]-v.x, ryi[2]-v.y, (int16_t)j+49152);
-                    }
-
-                    if ((rxi[1]-pos->x) * (ryi[2]-pos->y) < (rxi[2]-pos->x) * (ryi[1]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[2], ryi[2], rxi[1], ryi[1], rad) != 0)
-                            addclipline(rxi[2]-v.x, ryi[2]-v.y, rxi[1]-v.y, ryi[1]+v.x, (int16_t)j+49152);
-                    }
-                    else if ((rxi[3]-pos->x) * (ryi[0]-pos->y) < (rxi[0]-pos->x) * (ryi[3]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[0], ryi[0], rxi[3], ryi[3], rad) != 0)
-                            addclipline(rxi[0]+v.x, ryi[0]+v.y, rxi[3]+v.y, ryi[3]-v.x, (int16_t)j+49152);
-                    }
-                }
-                break;
-            }
-
             case CSTAT_SPRITE_ALIGNMENT_SLOPE:
             {
                 int32_t const heinum = spriteGetSlope(j);
-
-                int32_t const sz = spriteGetZOfSlope(j, pos->x, pos->y);
+                int32_t const sz = spriteGetZOfSlope(j, pos->xy);
+                
                 if (pos->z > sz-flordist && pos->z < sz+ceildist)
                 {
                     if ((cstat&64) != 0)
@@ -1469,31 +1441,71 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     ryi[0] = p1.y;
 
                     get_floorspr_points(spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
-                        &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
+                        &ryi[0], &ryi[1], &ryi[2], &ryi[3], heinum);
 
-                    vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                       mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                 mulscale14(sintable[(spr->ang-256)&2047], walldist) };
 
                     if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
                     {
                         if (clipinsideboxline(cent.x, cent.y, rxi[1], ryi[1], rxi[0], ryi[0], rad) != 0)
+                        {
+                            vec2_t const d  = { rxi[1]-rxi[0], ryi[1]-ryi[0] };
+
+                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[0]-v.y) < (pos->x-rxi[0]-v.x) * d.y)
+                            {
+                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                                v.x >>= 1, v.y >>= 1;
+                            }
+
                             addclipline(rxi[1]-v.y, ryi[1]+v.x, rxi[0]+v.x, ryi[0]+v.y, (int16_t)j+49152);
+                        }
                     }
                     else if ((rxi[2]-pos->x) * (ryi[3]-pos->y) < (rxi[3]-pos->x) * (ryi[2]-pos->y))
                     {
                         if (clipinsideboxline(cent.x, cent.y, rxi[3], ryi[3], rxi[2], ryi[2], rad) != 0)
+                        {
+                            vec2_t const d  = { rxi[3]-rxi[2], ryi[3]-ryi[2] };
+
+                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[2]-v.y) < (pos->x-rxi[2]-v.x) * d.y)
+                            {
+                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                                v.x >>= 1, v.y >>= 1;
+                            }
+
                             addclipline(rxi[3]+v.y, ryi[3]-v.x, rxi[2]-v.x, ryi[2]-v.y, (int16_t)j+49152);
+                        }
                     }
 
                     if ((rxi[1]-pos->x) * (ryi[2]-pos->y) < (rxi[2]-pos->x) * (ryi[1]-pos->y))
                     {
                         if (clipinsideboxline(cent.x, cent.y, rxi[2], ryi[2], rxi[1], ryi[1], rad) != 0)
+                        {
+                            vec2_t const d  = { rxi[2]-rxi[1], ryi[2]-ryi[1] };
+
+                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[1]-v.y) < (pos->x-rxi[1]-v.x) * d.y)
+                            {
+                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                                v.x >>= 1, v.y >>= 1;
+                            }
+
                             addclipline(rxi[2]-v.x, ryi[2]-v.y, rxi[1]-v.y, ryi[1]+v.x, (int16_t)j+49152);
+                        }                            
                     }
                     else if ((rxi[3]-pos->x) * (ryi[0]-pos->y) < (rxi[0]-pos->x) * (ryi[3]-pos->y))
                     {
                         if (clipinsideboxline(cent.x, cent.y, rxi[0], ryi[0], rxi[3], ryi[3], rad) != 0)
+                        {
+                            vec2_t const d  = { rxi[0]-rxi[3], ryi[0]-ryi[3] };
+
+                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[3]-v.y) < (pos->x-rxi[3]-v.x) * d.y)
+                            {
+                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                                v.x >>= 1, v.y >>= 1;
+                            }
+
                             addclipline(rxi[0]+v.x, ryi[0]+v.y, rxi[3]+v.y, ryi[3]-v.x, (int16_t)j+49152);
+                        }                            
                     }
                 }
                 if (heinum == 0)
@@ -1503,45 +1515,50 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 const int32_t sinang = sintable[spr->ang&2047];
                 vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
                 vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
-                vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
-
-                if (spr->cstat & 4)
-                    adjofs.x = -adjofs.x;
-
-                if (spr->cstat & 8)
-                    adjofs.y = -adjofs.y;
-
-                int32_t const centerx = ((span.x >> 1) + adjofs.x) * repeat.x;
-                int32_t const centery = ((span.y >> 1) + adjofs.y) * repeat.y;
-                int32_t const rspanx = span.x * repeat.x;
-                int32_t const rspany = span.y * repeat.y;
+                vec2_t const adjofs = { picanm[tilenum].xofs * -((int)!!(spr->cstat & 4)),
+                                        picanm[tilenum].yofs * -((int)!!(spr->cstat & 8))};
+                vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x,
+                                        ((span.y >> 1) + adjofs.y) * repeat.y };
+                vec2_t const rspan = span * repeat;
                 int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
-                int32_t zz[3] = { pos->z, pos->z + flordist, pos->z - ceildist };
+                int32_t const zz[3] = { pos->z, pos->z + flordist, pos->z - ceildist };
+
                 for (int k = 0; k < 3; k++)
                 {
-                    int32_t jj = divscale18(spr->z - zz[k], heinum);
-                    int32_t jj2 = mulscale12(jj, ratio);
-                    if (jj2 > (centery<<8) || jj2 < ((centery - rspany)<<8))
+                    int32_t const jj = divscale18(spr->z - zz[k], heinum);
+                    int32_t const jj2 = mulscale12(jj, ratio);
+                    
+                    if (jj2 > (center.y<<8) || jj2 < ((center.y - rspan.y)<<8))
                         continue;
-                    int32_t x1 = spr->x + mulscale16(sinang, centerx) + mulscale24(jj, cosang);
-                    int32_t y1 = spr->y - mulscale16(cosang, centerx) + mulscale24(jj, sinang);
-                    int32_t x2 = x1 - mulscale16(sinang, rspanx);
-                    int32_t y2 = y1 + mulscale16(cosang, rspanx);
 
-                    vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                       mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    vec2_t const v1 = { spr->x + mulscale16(sinang, center.x) + mulscale24(jj, cosang),
+                                        spr->y - mulscale16(cosang, center.x) + mulscale24(jj, sinang) };
+                    
+                    vec2_t const v2 = { v1.x - mulscale16(sinang, rspan.x),
+                                        v1.y + mulscale16(cosang, rspan.x) };
 
-                    if (clipinsideboxline(cent.x, cent.y, x1, y1, x2, y2, rad) != 0)
+                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                 mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    
+                    if (clipinsideboxline(cent.x, cent.y, v1.x, v1.y, v2.x, v2.y, rad) != 0)
                     {
-                        if ((x1-pos->x) * (y2-pos->y) >= (x2-pos->x) * (y1-pos->y))
+                        vec2_t const d = v2 - v1;
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-v1.y-v.y) < (pos->x-v1.x-v.x) * d.y)
                         {
-                            addclipline(x1+v.x, y1+v.y, x2+v.y, y2-v.x, (int16_t)j+49152);
+                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                            v.x >>= 1, v.y >>= 1;
+                        }
+                        
+                        if ((v1.x-pos->x) * (v2.y-pos->y) >= (v2.x-pos->x) * (v1.y-pos->y))
+                        {
+                            addclipline(v1.x+v.x, v1.y+v.y, v2.x+v.y, v2.y-v.x, (int16_t)j+49152);
                         }
                         else
                         {
                             if ((cstat & 64) != 0)
                                 continue;
-                            addclipline(x2-v.x, y2-v.y, x1-v.y, y1+v.x, (int16_t)j+49152);
+                            addclipline(v2.x-v.x, v2.y-v.y, v1.x-v.y, v1.y+v.x, (int16_t)j+49152);
                         }
                     }
                 }
@@ -2134,7 +2151,7 @@ restart_grand:
                     case CSTAT_SPRITE_ALIGNMENT_FLOOR:
                     case CSTAT_SPRITE_ALIGNMENT_SLOPE:
                     {
-                        daz = spriteGetZOfSlope(j, pos->x, pos->y); daz2 = daz;
+                        daz = spriteGetZOfSlope(j, pos->xy); daz2 = daz;
 
                         if ((cstat&64) != 0 && (pos->z > daz) == ((cstat&8)==0))
                             continue;
