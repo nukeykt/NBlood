@@ -1767,7 +1767,7 @@ void videoShowFrame(int32_t w)
 
         SwapBuffers(hDC);
 #ifdef USE_OPENGL
-        polymost_resetVertexPointers();
+        polymost_resetState();
 #endif
         return;
     }

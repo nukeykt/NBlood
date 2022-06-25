@@ -553,27 +553,31 @@ static void Polymost_DetermineTextureFormatSupport(void);
 // reset vertex pointers to polymost default
 void polymost_resetVertexPointers()
 {
-    buildgl_outputDebugMessage(3, "polymost_resetVertexPointers()");
-    buildgl_resetStateAccounting();
     buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
-
-    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
-    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
+    
+    glVertexPointer(3, GL_FLOAT, 5 * sizeof(float), 0);
+    glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
 
 #ifdef USE_GLEXT
     if (r_detailmapping)
     {
         glClientActiveTexture(GL_TEXTURE3);
-        glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
+        glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
     }
     if (r_glowmapping)
     {
         glClientActiveTexture(GL_TEXTURE4);
-        glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
+        glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
     }
     glClientActiveTexture(GL_TEXTURE0);
 #endif
+}
 
+void polymost_resetState()
+{
+    buildgl_outputDebugMessage(3, "polymost_resetState()");
+    buildgl_resetStateAccounting();
+    polymost_resetVertexPointers();
     polymost_resetProgram();
 }
 
@@ -1170,7 +1174,7 @@ void polymost_glinit()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    polymost_resetVertexPointers();
+    polymost_resetState();
 
     texcache_init();
     texcache_openfiles();
@@ -1189,7 +1193,7 @@ void polymost_glinit()
 void polymost_init()
 {
     lastbasepal = -1;
-    polymost_resetVertexPointers();
+    polymost_resetState();
 }
 
 ////////// VISIBILITY FOG ROUTINES //////////

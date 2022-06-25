@@ -50,6 +50,7 @@ int32_t polymost_spriteIsModelOrVoxel(tspritetype const * const tspr);
 
 void polymost_disableProgram(void);
 char polymost_getClamp(void);
+void polymost_resetState(void);
 void polymost_resetProgram(void);
 void polymost_resetVertexPointers(void);
 void polymost_setClamp(char clamp);

@@ -2096,7 +2096,7 @@ void videoShowFrame(int32_t w)
         if (w != -1)
         {
             if (bpp > 8)
-                polymost_resetVertexPointers();
+                polymost_resetState();
             else
                 glsurface_refresh();
         }
