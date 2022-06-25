@@ -1081,14 +1081,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         mat[12] = -mat[12];
     }
 
-    if (shadowHack)
-    {
-        buildgl_setDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
-//        glDepthRange(0.0, 0.9999);
-    }
-
-//    glPushAttrib(GL_POLYGON_BIT);
-
     if ((grhalfxdown10x >= 0) ^ ((globalorientation&8) != 0) ^ ((globalorientation&4) != 0))
         glFrontFace(GL_CW);
     else
@@ -1118,13 +1110,19 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         pc[3] *= 1.0f - spriteext[tspr->owner].alpha;
 
         handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
-
-        if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
-            buildgl_setEnabled(GL_BLEND);  // else buildgl_setDisabled(GL_BLEND);
     }
-    else pc[3] = 1.f;
-    //------------
+    else
+    {
+        pc[3] = 1.f;
 
+        if (shadowHack)
+            handle_blend(0, 0, 0);
+    }
+    
+    if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
+        buildgl_setEnabled(GL_BLEND);
+    else buildgl_setDisabled(GL_BLEND);
+    
     //transform to Build coords
     float omat[16];
     Bmemcpy(omat, mat, sizeof(omat));
@@ -1194,8 +1192,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     glDrawElements(GL_TRIANGLES, m->qcnt*2*3, GL_UNSIGNED_INT, 0);
 
-    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
-    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    //buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
+    //buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
@@ -1204,12 +1202,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     //------------
     buildgl_setDisabled(GL_CULL_FACE);
-//    glPopAttrib();
-    if (shadowHack)
-    {
-        buildgl_setDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
-//        glDepthRange(0.0, 0.99999);
-    }
     glLoadIdentity();
 
     globalnoeffect = 0;

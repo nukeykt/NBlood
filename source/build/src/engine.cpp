@@ -7031,26 +7031,22 @@ static void renderDrawSprite(int32_t snum)
 {
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
 
-    switch (videoGetRenderMode())
+#ifdef USE_OPENGL    
+    if (videoGetRenderMode() != REND_CLASSIC)
     {
-    case REND_CLASSIC:
-        classicDrawSprite(snum);
-        return;
-#ifdef USE_OPENGL
-    case REND_POLYMOST:
-        polymost_drawsprite(snum);
-        return;
-# ifdef POLYMER
-    case REND_POLYMER:
-        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_ALPHA_TEST);        
         buildgl_setEnabled(GL_BLEND);
-        polymer_drawsprite(snum);
-        buildgl_setDisabled(GL_BLEND);
-        buildgl_setDisabled(GL_ALPHA_TEST);
+
+        if (videoGetRenderMode() == REND_POLYMOST)
+            polymost_drawsprite(snum);
+# ifdef POLYMER
+        else polymer_drawsprite(snum);
+# endif        
         return;
-# endif
-#endif
     }
+#endif
+
+    classicDrawSprite(snum);
 }
 
 
@@ -7062,22 +7058,21 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
 
     //============================================================================= //POLYMOST BEGINS
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST) { polymost_drawmaskwall(damaskwallcnt); return; }
-# ifdef POLYMER
-    else if (videoGetRenderMode() == REND_POLYMER)
+#ifdef USE_OPENGL    
+    if (videoGetRenderMode() != REND_CLASSIC)
     {
-        buildgl_setEnabled(GL_ALPHA_TEST);
-        buildgl_setEnabled(GL_BLEND);
-
-        polymer_drawmaskwall(damaskwallcnt);
-
-        buildgl_setDisabled(GL_BLEND);
-        buildgl_setDisabled(GL_ALPHA_TEST);
-
+        if (videoGetRenderMode() == REND_POLYMOST)
+            polymost_drawmaskwall(damaskwallcnt);
+# ifdef POLYMER
+        else
+        {
+            buildgl_setEnabled(GL_ALPHA_TEST);
+            buildgl_setEnabled(GL_BLEND);
+            polymer_drawmaskwall(damaskwallcnt);
+        }
+# endif
         return;
     }
-#endif
 #endif
     //============================================================================= //POLYMOST ENDS
 
@@ -9967,8 +9962,6 @@ killsprite:
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
-        buildgl_setDisabled(GL_BLEND);
-        buildgl_setEnabled(GL_ALPHA_TEST);
         polymost_setClamp(1+2);
 
         if (spritesortcnt < numSprites)
@@ -10034,8 +10027,6 @@ killsprite:
                 renderDrawMaskedWall(i);
         }
 
-        buildgl_setEnabled(GL_BLEND);
-        buildgl_setEnabled(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);
     }
 #endif

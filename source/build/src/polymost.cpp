@@ -342,7 +342,7 @@ void gltexapplyprops(void)
 
             bind_2d_texture(pth->glpic, filter);
 
-            if (r_fullbrights && pth->flags & PTH_HASFULLBRIGHT)
+            if (pth->flags & PTH_HASFULLBRIGHT)
                 bind_2d_texture(pth->ofb->glpic, filter);
         }
     }
@@ -3673,12 +3673,12 @@ static void polymost_drawpoly(vec2f_t const* const dpxy, int32_t const n, int32_
 
         polymost_setFogEnabled(false);
 
-        buildgl_setDepthFunc(GL_EQUAL);
+        buildgl_setEnabled(GL_ALPHA_TEST);
 
         polymost_drawpoly(dpxy, n, method_);
 
-        buildgl_setDepthFunc(GL_LEQUAL);
-
+        buildgl_setDisabled(GL_ALPHA_TEST);
+        
         if (!nofog)
             polymost_setFogEnabled(true);
 
@@ -9755,7 +9755,6 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
     polymostSet2dView();	// disables blending, texturing, and depth testing
 
     buildgl_bindSamplerObject(0, 0);
-    buildgl_setDisabled(GL_ALPHA_TEST);
     glDepthMask(GL_FALSE);	// disable writing to the z-buffer
 
 //    glPushAttrib(GL_POLYGON_BIT|GL_ENABLE_BIT);
@@ -9781,6 +9780,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
         glEnd();
     }
 
+    buildgl_setEnabled(GL_ALPHA_TEST);
     buildgl_setEnabled(GL_BLEND);
     glColor4ub(p.r,p.g,p.b,255);
 
