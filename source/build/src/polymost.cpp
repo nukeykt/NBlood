@@ -2755,7 +2755,7 @@ int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr)
     if (!usehightile)
         return false;
 
-    uint8_t pal = tspr->shade;
+    uint8_t pal = tspr->pal;
     if (palookup[pal] == NULL)
         pal = 0;
 
