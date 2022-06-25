@@ -2235,10 +2235,10 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
         }
         uploadtexture(doalloc, siz, GL_BGRA, pic, tsiz,
                       dameth | DAMETH_ARTIMMUNITY |
-                      (dapic >= MAXUSERTILES ? (DAMETH_NOTEXCOMPRESS|DAMETH_NODOWNSIZE) : 0) | /* never process these short-lived tiles */
-                      (hasfullbright ? DAMETH_HASFULLBRIGHT : 0) |
-                      (npoty ? DAMETH_NPOTWALL : 0) |
-                      (hasalpha ? (DAMETH_HASALPHA|DAMETH_ONEBITALPHA) : 0));
+                      ((dapic >= MAXUSERTILES) * (DAMETH_NOTEXCOMPRESS|DAMETH_NODOWNSIZE)) | /* never process these short-lived tiles */
+                      (hasfullbright * DAMETH_HASFULLBRIGHT) |
+                      (npoty * DAMETH_NPOTWALL) |
+                      (hasalpha * (DAMETH_HASALPHA|DAMETH_ONEBITALPHA)));
 
         Xfree(pic);
     }
@@ -2599,8 +2599,8 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
                           TO_DAMETH_NODOWNSIZE(hicr->flags) |
                           TO_DAMETH_NOTEXCOMPRESS(hicr->flags) |
                           TO_DAMETH_ARTIMMUNITY(hicr->flags) |
-                          (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
-                          (hasalpha ? DAMETH_HASALPHA : 0));
+                          (onebitalpha * DAMETH_ONEBITALPHA) |
+                          (hasalpha * DAMETH_HASALPHA));
 
             Xfree(pic);
         }
@@ -2622,10 +2622,10 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     pth->effects = effect;
     pth->flags = TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) |
                  PTH_HIGHTILE | ((facen>0) * PTH_SKYBOX) |
-                 (onebitalpha ? PTH_ONEBITALPHA : 0) |
-                 (hasalpha ? PTH_HASALPHA : 0) |
-                 ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0) |
-                 (indexed ? PTH_INDEXED : 0);
+                 (onebitalpha * PTH_ONEBITALPHA) |
+                 (hasalpha * PTH_HASALPHA) |
+                 ((!!(hicr->flags & HICR_FORCEFILTER)) * PTH_FORCEFILTER) |
+                 (indexed * PTH_INDEXED);
     pth->skyface = facen;
     pth->hicr = hicr;
     pth->siz = tsiz;
