@@ -1354,7 +1354,7 @@ void   neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange
                int32_t *neartaghitdist, int32_t neartagrange, uint8_t tagsearch,
                int32_t (*blacklist_sprite_func)(int32_t)) ATTRIBUTE((nonnull(6,7,8)));
 int32_t   cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1,
-                 int32_t x2, int32_t y2, int32_t z2, int16_t sect2);
+                 int32_t x2, int32_t y2, int32_t z2, int16_t sect2, int32_t wallmask = CSTAT_WALL_1WAY);
 int32_t   inside(int32_t x, int32_t y, int16_t sectnum);
 void   calc_sector_reachability(void);
 int    sectorsareconnected(int const, int const);

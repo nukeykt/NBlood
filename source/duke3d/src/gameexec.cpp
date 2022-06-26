@@ -4762,11 +4762,14 @@ badindex:
                         int32_t secondSector;
                     } v;
                     Gv_FillWithVars(v);
+                    
+                    int32_t returnvar = *insptr++;
+                    int32_t wallmask = Gv_GetVar(*insptr++);
 
                     VM_ABORT_IF(((unsigned)v.firstSector >= (unsigned)numsectors) | ((unsigned)v.secondSector >= (unsigned)numsectors), "invalid sector %d",
                               (unsigned)v.firstSector >= (unsigned)numsectors ? v.firstSector : v.secondSector);
 
-                    Gv_SetVar(*insptr++, cansee(v.vec1.x, v.vec1.y, v.vec1.z, v.firstSector, v.vec2.x, v.vec2.y, v.vec2.z, v.secondSector));
+                    Gv_SetVar(returnvar, cansee(v.vec1.x, v.vec1.y, v.vec1.z, v.firstSector, v.vec2.x, v.vec2.y, v.vec2.z, v.secondSector, wallmask));
                     dispatch();
                 }
 
