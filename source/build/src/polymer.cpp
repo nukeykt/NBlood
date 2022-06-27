@@ -1464,7 +1464,7 @@ static void         polymer_setupdiffusemodulation(_prplane *plane, GLubyte modu
     plane->material.diffusemodulation[3] = 0xFF;
 }
 
-static void         polymer_drawsearchplane(_prplane *plane, GLubyte *oldcolor, GLubyte modulation, GLubyte *data)
+static void         polymer_drawsearchplane(_prplane *plane, GLubyte *oldcolor, GLubyte modulation, GLubyte const *data)
 {
     Bmemcpy(oldcolor, plane->material.diffusemodulation, sizeof(GLubyte) * 4);
 
@@ -1477,23 +1477,28 @@ static void         polymer_drawsearchplane(_prplane *plane, GLubyte *oldcolor, 
 
 void                polymer_drawmaskwall(int32_t damaskwallcnt)
 {
-    usectorptr_t      sec;
-    walltype        *wal;
-    _prwall         *w;
     GLubyte         oldcolor[4];
 
     if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Masked wall %i", damaskwallcnt);
 
-    sec = (usectorptr_t)&sector[wallsect[maskwall[damaskwallcnt]]];
-    wal = &wall[maskwall[damaskwallcnt]];
-    w = prwalls[maskwall[damaskwallcnt]];
+    int16_t const wallnum = maskwall[damaskwallcnt];
+    
+    auto sec = (usectorptr_t)&sector[wallsect[wallnum]];
+    auto wal = &wall[wallnum];
+    auto w   = prwalls[wallnum];
 
     buildgl_setEnabled(GL_CULL_FACE);
 
     if (searchit == 2) {
-        polymer_drawsearchplane(&w->mask, oldcolor, 0x04, (GLubyte *)&maskwall[damaskwallcnt]);
+        polymer_drawsearchplane(&w->mask, oldcolor, 0x04, (GLubyte const *)&wallnum);
     } else {
         calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+#ifdef NEW_MAP_FORMAT
+        uint8_t const blend = wal->blend;
+#else
+        uint8_t const blend = wallext[wallnum].blend;
+#endif
+        handle_blend(!!(wal->cstat & CSTAT_WALL_TRANSLUCENT), blend, !!(wal->cstat & CSTAT_WALL_TRANS_FLIP));
         polymer_drawplane(&w->mask);
     }
 
@@ -1526,6 +1531,7 @@ void                polymer_drawsprite(int32_t snum)
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
     calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
+    handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
 
     if (usemodels && tile2model[Ptile2tile(tspr->picnum,tspr->pal)].modelid >= 0 &&
         tile2model[Ptile2tile(tspr->picnum,tspr->pal)].framenum >= 0 &&
