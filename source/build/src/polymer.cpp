@@ -1533,9 +1533,12 @@ void                polymer_drawsprite(int32_t snum)
     calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
     handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
 
-    if (usemodels && tile2model[Ptile2tile(tspr->picnum,tspr->pal)].modelid >= 0 &&
-        tile2model[Ptile2tile(tspr->picnum,tspr->pal)].framenum >= 0 &&
-        !(spriteext[spritenum].flags & SPREXT_NOTMD))
+    int32_t pTile = Ptile2tile(tspr->picnum,tspr->pal);
+
+    if (usemodels && tile2model[pTile].modelid >= 0 &&
+        tile2model[pTile].framenum >= 0 &&
+        !(spriteext[spritenum].flags & SPREXT_NOTMD) &&
+        models[tile2model[pTile].modelid]->mdnum != 1)
     {
         buildgl_setEnabled(GL_CULL_FACE);
         SWITCH_CULL_DIRECTION;
