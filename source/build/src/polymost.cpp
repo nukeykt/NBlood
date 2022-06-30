@@ -9763,18 +9763,18 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     lastglpolygonmode = 0;
 
-    int const namelen = Bstrlen(name);
-    
     if (backcol >= 0)
     {
+        int const c = Bstrlen(name);
+
         glColor4ub(b.r,b.g,b.b,255);
 
         glBegin(GL_QUADS);
 
         glVertex2i(xpos,ypos);
         glVertex2i(xpos,ypos+(fontsize?6:8));
-        glVertex2i(xpos+(namelen<<(3-fontsize)), ypos+(fontsize ? 6 : 8));
-        glVertex2i(xpos+(namelen<<(3-fontsize)), ypos);
+        glVertex2i(xpos+(c<<(3-fontsize)), ypos+(fontsize ? 6 : 8));
+        glVertex2i(xpos+(c<<(3-fontsize)), ypos);
 
         glEnd();
     }
@@ -9786,9 +9786,9 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
     vec2f_t const tc = { fontsize ? (4.f / 256.f) : (8.f / 256.f),
                          fontsize ? (6.f / 128.f) : (8.f / 128.f) };
 
-    polymost_startBufferedDrawing(namelen * 4);
+    glBegin(GL_QUADS);
 
-    for (bssize_t c = 0; name[c]; ++c)
+    for (bssize_t c=0; name[c]; ++c)
     {
         if (name[c] == '^' && isdigit(name[c + 1]))
         {
@@ -9821,14 +9821,22 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
         vec2f_t const t = { (float)(name[c] % 32) * (1.0f / 32.f),
                             (float)((name[c] / 32) + (fontsize * 8)) * (1.0f / 16.f) };
 
-        polymost_bufferVert(vec3f_t { (float)xpos, (float)ypos, 0.f }, t);
-        polymost_bufferVert(vec3f_t { (float)xpos + (8 >> fontsize), (float)ypos, 0.f }, { t.x + tc.x, t.y });
-        polymost_bufferVert(vec3f_t { (float)(xpos + (8 >> fontsize)), (float)(ypos + (fontsize ? 6 : 8)), 0.f }, { t.x + tc.x, t.y + tc.y });
-        polymost_bufferVert(vec3f_t { (float)xpos, (float)(ypos + (fontsize ? 6 : 8)), 0.f }, { t.x, t.y + tc.y });
+        glTexCoord2f(t.x, t.y);
+        glVertex2i(xpos, ypos);
+
+        glTexCoord2f(t.x + tc.x, t.y);
+        glVertex2i(xpos + (8 >> fontsize), ypos);
+
+        glTexCoord2f(t.x + tc.x, t.y + tc.y);
+        glVertex2i(xpos + (8 >> fontsize), ypos + (fontsize ? 6 : 8));
+
+        glTexCoord2f(t.x, t.y + tc.y);
+        glVertex2i(xpos, ypos + (fontsize ? 6 : 8));
+
         xpos += (8>>fontsize);
     }
 
-    polymost_finishBufferedDrawing(GL_QUADS);
+    glEnd();
 
     glDepthMask(GL_TRUE);	// re-enable writing to the z-buffer
 
