@@ -11695,7 +11695,8 @@ static void PolymostProcessVoxels(void)
 
     LOG_F(INFO, "Generating 3D meshes from voxel model data. This may take a while...");
     videoNextPage();
-
+    double time = timerGetFractionalTicks();
+    int cnt = 0;
     for (bssize_t i=0; i<MAXVOXELS; i++)
     {
         if (voxfilenames[i])
@@ -11706,8 +11707,10 @@ static void PolymostProcessVoxels(void)
             voxvboalloc(voxmodels[i]);
 # endif
             DO_FREE_AND_NULL(voxfilenames[i]);
+            cnt++;
         }
     }
+    LOG_F(INFO, "Generated 3D meshes for %d voxels in %.2f ms.", cnt, timerGetFractionalTicks() - time);
 }
 
 static void PolymostFreeVBOs(void)
