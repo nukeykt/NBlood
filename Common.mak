@@ -992,9 +992,9 @@ ifneq (,$(wildcard .git))
             VC_REV := $(VC_REV)[$(VC_BRANCH)]
         endif
     endif
-    ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
-        REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
-    endif
+endif
+ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
+    REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
 endif
 
 ##### Allow standard environment variables to take precedence, to help package maintainers.
