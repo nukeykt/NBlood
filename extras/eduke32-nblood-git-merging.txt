@@ -1,0 +1,25 @@
+## EDuke32 -> NBlood git merging instructions, based on Hendricks266's notes ##
+
+# One-time setup (from the NBlood repository)
+git remote add eduke32 https://voidpoint.io/terminx/eduke32.git
+
+# Preparation for merger (in the EDuke32 repository)
+1. Update the branch tmp/nblood-engine from the remote EDuke32 repository,
+and then checkout it.
+2. Ensure it is up to date with NBlood changes by deleting all contents of
+source/ from the local filesystem and replacing them with NBlood's contents,
+sans directories not existing in the EDuke32 repository, like blood or hmpplay.
+If git gui shows unstaged changes, make new commits or
+squash updates into existing commits.
+3. Rebase the branch over master. Resolve any conflicts so that
+the separated commits remain meaningful. Force-push the branch.
+
+# Attempt to merge (into the NBlood repository)
+git fetch eduke32
+git merge eduke32/master
+
+# Only if there are conflicts, fix them, stage the changes and then
+git merge --continue
+
+# Then push
+git push origin master
