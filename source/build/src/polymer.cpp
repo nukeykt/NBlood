@@ -90,6 +90,8 @@ constexpr const GLbitfield prindexringmapflags = GL_MAP_WRITE_BIT | GL_MAP_PERSI
 _prbucket *prbuckethead;
 int32_t    prcanbucket;
 
+static bool prdidsky;
+
 static inthashtable_t prprogramtable = { nullptr, INTHASH_SIZE(256) };
 static GrowArray<_prprograminfo *> prprogramptrs;
 
@@ -1086,8 +1088,6 @@ void                polymer_loadboard(void)
         i++;
     }
 
-    polymer_getsky();
-
     polymer_resetlights();
 
     if (pr_verbosity >= 1 && numsectors) VLOG_F(LOG_PR, "Board loaded.");
@@ -1863,6 +1863,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 //     overridematerial = 0;
 
     prcanbucket = 1;
+    prdidsky = false;
 
     while (front != back)
     {
@@ -2691,6 +2692,9 @@ static int32_t      polymer_initsector(int16_t sectnum)
     return 1;
 }
 
+#define NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY \
+    (offsetof(sectortype, visibility)+sizeof(sector[0].visibility) - offsetof(sectortype, ceilingstat))
+
 static int32_t      polymer_updatesector(int16_t sectnum)
 {
     if (pr_nullrender >= 3) return 0;
@@ -2779,7 +2783,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
 #ifdef USE_STRUCT_TRACKERS
             (s->trackedrev == sectorchanged[sectnum]))
 #else
-            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat)))
+            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY))
 #endif
         goto attributes;
 
@@ -2950,7 +2954,7 @@ attributes:
     if ((!s->flags.empty) && (!s->flags.invalidtex) &&
             (floorpicnum == s->floorpicnum_anim) &&
             (ceilingpicnum == s->ceilingpicnum_anim) &&
-            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat)))
+            !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY))
         goto finish;
 
     s->floor.bucket = polymer_getbuildmaterial(&s->floor.material, floorpicnum, sec->floorpal, sec->floorshade, sec->visibility, (sec->floorstat & 384) ? DAMETH_MASK : DAMETH_NOMASK);
@@ -2976,7 +2980,7 @@ attributes:
     s->flags.invalidtex = 0;
 
     // copy ceilingstat through visibility members
-    Bmemcpy(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, fogpal) - offsetof(sectortype, ceilingstat));
+    Bmemcpy((char *)s + offsetof(_prsector, ceilingstat), (char const *)sec + offsetof(sectortype, ceilingstat), NBYTES_SECTOR_CEILINGSTAT_THROUGH_VISIBILITY);
     s->floorpicnum_anim = floorpicnum;
     s->ceilingpicnum_anim = ceilingpicnum;
 
@@ -3129,9 +3133,16 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     } else if (yax_getbunch(sectnum, YAX_FLOOR) >= 0) {
         draw = FALSE;
     }
+
     // Parallaxed
     if (sec->floorstat & 1) {
         draw = FALSE;
+
+        if (!prdidsky)
+        {
+            polymer_getsky(sec->floorpicnum, sec->floorpal, sec->floorshade);
+            prdidsky = true;
+        }
     }
 
     GLubyte oldcolor[4];
@@ -3168,9 +3179,16 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     } else if (yax_getbunch(sectnum, YAX_CEILING) >= 0) {
         draw = FALSE;
     }
+
     // Parallaxed
     if (sec->ceilingstat & 1) {
         draw = FALSE;
+
+        if (!prdidsky)
+        {
+            polymer_getsky(sec->ceilingpicnum, sec->ceilingpal, sec->ceilingshade);
+            prdidsky = true;
+        }
     }
 
     if (globalposz >= ceilZ) {
@@ -3368,7 +3386,7 @@ static void         polymer_updatewall(int16_t wallnum)
     {
         w->invalidid = invalid;
 
-        Bmemcpy(&w->cstat, &wal->cstat, NBYTES_WALL_CSTAT_THROUGH_YPANNING);
+        Bmemcpy((char *)w + offsetof(_prwall, cstat), (char *)wal + offsetof(walltype, cstat), NBYTES_WALL_CSTAT_THROUGH_YPANNING);
 
         w->picnum_anim = wallpicnum;
         w->overpicnum_anim = walloverpicnum;
@@ -4238,42 +4256,30 @@ void                polymer_updatesprite(int32_t snum)
 }
 
 // SKIES
-static void         polymer_getsky(void)
+static void polymer_getsky(int16_t picnum, uint8_t pal, int8_t shade)
 {
-    int32_t         i;
+    int32_t horizfrac;
 
-    i = 0;
-    while (i < numsectors)
+    cursky = picnum;
+    curskypal = pal;
+    curskyshade = shade;
+
+    getpsky(cursky, &horizfrac, NULL, NULL, NULL);
+
+    switch (horizfrac)
     {
-        if (sector[i].ceilingstat & 1)
-        {
-            int32_t horizfrac;
-
-            cursky = sector[i].ceilingpicnum;
-            curskypal = sector[i].ceilingpal;
-            curskyshade = sector[i].ceilingshade;
-
-            getpsky(cursky, &horizfrac, NULL, NULL, NULL);
-
-            switch (horizfrac)
-            {
-            case 0:
-                // psky always at same level wrt screen
-                curskyangmul = 0.f;
-                break;
-            case 65536:
-                // psky horiz follows camera horiz
-                curskyangmul = 1.f;
-                break;
-            default:
-                // sky has hard-coded parallax
-                curskyangmul = 1/DEFAULT_ARTSKY_ANGDIV;
-                break;
-            }
-
-            return;
-        }
-        i++;
+    case 0:
+        // psky always at same level wrt screen
+        curskyangmul = 0.f;
+        break;
+    case 65536:
+        // psky horiz follows camera horiz
+        curskyangmul = 1.f;
+        break;
+    default:
+        // sky has hard-coded parallax
+        curskyangmul = 1 / DEFAULT_ARTSKY_ANGDIV;
+        break;
     }
 }
 
@@ -4312,9 +4318,19 @@ static void         polymer_initartsky(void)
 
     for (int i = 0; i < PSKYOFF_MAX; i++)
     {
-        artskydata[i * 2 + 0] = -cos(i * factor);
-        artskydata[i * 2 + 1] = sin(i * factor);
+        artskydata[i * 2 + 0] = -cosf(i * factor);
+        artskydata[i * 2 + 1] = sinf(i * factor);
     }
+}
+
+static inline void polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height)
+{
+    polymost_startBufferedDrawing(4);
+    polymost_bufferVert({ artskydata[(p1 * 2) + 1], height, artskydata[p1 * 2] }, { 0.f, 0.f });
+    polymost_bufferVert({ artskydata[(p1 * 2) + 1], -height, artskydata[p1 * 2] }, { 0.0f, 1.0f });
+    polymost_bufferVert({ artskydata[(p2 * 2) + 1], -height, artskydata[p2 * 2] }, { 1.0f, 1.0f });
+    polymost_bufferVert({ artskydata[(p2 * 2) + 1], height, artskydata[p2 * 2] }, { 1.0f, 0.0f });
+    polymost_finishBufferedDrawing(GL_QUADS);
 }
 
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade)
@@ -4371,6 +4387,11 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         i++;
     }
 
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
+
+    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
+    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
+
     buildgl_setEnabled(GL_TEXTURE_2D);
     i = 0;
     j = 0;
@@ -4391,24 +4412,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
     buildgl_bindSamplerObject(0, 0);
     buildgl_setDisabled(GL_TEXTURE_2D);
-}
-
-static void         polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height)
-{
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p1 * 2) + 1], height, skybox[p1 * 2]);
-    glVertex3f(artskydata[(p1 * 2) + 1], height, artskydata[p1 * 2]);
-    glTexCoord2f(0.0f, 1.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p1 * 2) + 1], -height, skybox[p1 * 2]);
-    glVertex3f(artskydata[(p1 * 2) + 1], -height, artskydata[p1 * 2]);
-    glTexCoord2f(1.0f, 1.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p2 * 2) + 1], -height, skybox[p2 * 2]);
-    glVertex3f(artskydata[(p2 * 2) + 1], -height, artskydata[p2 * 2]);
-    glTexCoord2f(1.0f, 0.0f);
-    //OSD_Printf("PR: drawing %f %f %f\n", skybox[(p2 * 2) + 1], height, skybox[p2 * 2]);
-    glVertex3f(artskydata[(p2 * 2) + 1], height, artskydata[p2 * 2]);
-    glEnd();
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shade)
@@ -4477,7 +4481,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
 }
 
 // MDSPRITES
-static void         polymer_drawmdsprite(tspriteptr_t tspr)
+void polymer_drawmdsprite(tspriteptr_t tspr)
 {
     md3model_t*     m;
     mdskinmap_t*    sk;
@@ -4505,38 +4509,39 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 
     // Hackish, but that means it's a model drawn by rotatesprite.
     if (tspriteptr[maxspritesonscreen] == tspr) {
-        float       x, y, z;
-
         spos[0] = fglobalposy;
         spos[1] = fglobalposz * (-1.f/16.f);
         spos[2] = -fglobalposx;
 
         // The coordinates are actually floats disguised as int in this case
-        memcpy(&x, &tspr->x, sizeof(float));
-        memcpy(&y, &tspr->y, sizeof(float));
-        memcpy(&z, &tspr->z, sizeof(float));
+        vec3f_t v = *(vec3f_t*)&tspr->xyz;
 
-        spos2[0] = y - globalposy;
-        spos2[1] = (z - fglobalposz) * (-1.f/16.f);
-        spos2[2] = fglobalposx - x;
+        spos2[0] = v.y - fglobalposy;
+        spos2[1] = (v.z - fglobalposz) * (-1.f/16.f);
+        spos2[2] = fglobalposx - v.x;
+
+        ang = fix16_to_float((fix16_from_int((tspr->ang+spriteext[tspr->owner].mdangoff-globalang) & 2047) + qglobalang) & 0x7FFFFFF) * (360.f/2048.f);
     } else {
         spos[0] = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
         spos[1] = -(float)(tspr->z+spriteext[tspr->owner].mdposition_offset.z) * (1.f/16.f);
         spos[2] = -(float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x);
 
         spos2[0] = spos2[1] = spos2[2] = 0.0f;
+
+        ang = (float)((tspr->ang+spriteext[tspr->owner].mdangoff) & 2047) * (360.f/2048.f);
     }
 
-    ang = (float)((tspr->ang+spriteext[tspr->owner].mdangoff) & 2047) * (360.f/2048.f);
     ang -= 90.0f;
+
     if (((tspr->cstat>>4) & 3) == 2)
         ang -= 90.0f;
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    scale = (1.0/4.0);
-    scale *= m->scale;
+
+    scale = m->scale * 0.25f;
+    
     if (pr_overridemodelscale) {
         scale *= pr_overridemodelscale;
     } else {
@@ -4544,13 +4549,11 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     }
 
     if (tspriteptr[maxspritesonscreen] == tspr) {
-        float playerang, radplayerang, cosminusradplayerang, sinminusradplayerang, hudzoom;
-
-        playerang = (globalang & 2047) * (360.f/2048.f) - 90.0f;
-        radplayerang = (globalang & 2047) * (2.0f * fPI / 2048.0f);
-        cosminusradplayerang = cos(-radplayerang);
-        sinminusradplayerang = sin(-radplayerang);
-        hudzoom = 65536.0 / spriteext[tspr->owner].mdpivot_offset.z;
+        float playerang = fix16_to_float(qglobalang & 0x7FFFFFF) * (360.f/2048.f) - 90.0f;
+        float radplayerang = fix16_to_float(qglobalang & 0x7FFFFFF) * (2.0f * fPI / 2048.0f);
+        float cosminusradplayerang = cosf(-radplayerang);
+        float sinminusradplayerang = sinf(-radplayerang);
+        float hudzoom = 65536.f / spriteext[tspr->owner].mdpivot_offset.z;
 
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(horizang, -cosminusradplayerang, 0.0f, sinminusradplayerang);

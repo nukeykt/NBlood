@@ -493,10 +493,9 @@ void S_Cleanup(void)
 
         auto &snd   = g_sounds[num];
         auto &voice = snd->voices[voiceindex];
-
         int const spriteNum = voice.owner;
-
-        Bassert(bitmap_test(&snd->playing, voiceindex));
+        
+        DVLOG_IF_F(LOG_DEBUG, !bitmap_test(&snd->playing, voiceindex), "Sound %d index %d is not playing", num, voiceindex);
         bitmap_clear(&snd->playing, voiceindex);
 
         if (snd->flags & SF_TALK && g_dukeTalk)
@@ -688,7 +687,7 @@ static int S_GetSlot(int soundNum)
     while (++slot < MAXSOUNDINSTANCES);
 
     if (!FX_SoundValidAndActive(snd->voices[bestslot].handle))
-        return MAXSOUNDINSTANCES;
+        return bestslot;
 
     slot = bestslot;
     FX_StopSound(snd->voices[slot].handle);
@@ -848,7 +847,13 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
         int slot = 0;
         while (slot < MAXSOUNDINSTANCES && snd->voices[slot].handle != voice)
             slot++;
-        Bassert(slot < MAXSOUNDINSTANCES);
+        
+        if (EDUKE32_PREDICT_FALSE(slot >= MAXSOUNDINSTANCES))
+        {
+            LOG_F(WARNING, "S_PlaySound3D: slot >= MAXSOUNDINSTANCES!");
+            return -1;
+        }        
+            
         snd->voices[slot].owner = spriteNum;
 
         return voice;
@@ -895,11 +900,13 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     if (++g_soundlocks[sndNum] < CACHE1D_LOCKED)
         g_soundlocks[sndNum] = CACHE1D_LOCKED;
 #endif
-
+retry:
     int const sndSlot = S_GetSlot(sndNum);
 
     if (sndSlot >= MAXSOUNDINSTANCES)
     {
+        LOG_F(WARNING, "S_PlaySound3D: sndSlot >= MAXSOUNDINSTANCES!");
+error:
 #ifdef CACHING_DOESNT_SUCK
         g_soundlocks[sndNum]--;
 #endif
@@ -909,14 +916,14 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     int const repeatp = (snd->flags & SF_LOOP);
 
     if (repeatp && (snd->flags & SF_ONEINST_INTERNAL) && snd->playing)
-    {
-#ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[sndNum]--;
-#endif
-        return -1;
-    }
+        goto error; // OK, this one isn't actually an error
 
-    Bassert(bitmap_test(&snd->playing, sndSlot) == 0);
+    if (bitmap_test(&snd->playing, sndSlot))
+    {
+        DLOG_F(WARNING, "S_PlaySound3D: slot %d for sound %d already filled", sndSlot, sndNum);
+        goto retry;
+    }
+    
     bitmap_set(&snd->playing, sndSlot);
 
     S_FillVoiceInfo(&snd->voices[sndSlot], spriteNum, -1, sndist >> 6);
@@ -931,10 +938,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     {
         LOG_F(ERROR, "Unable to play %s: unsupported format or file corrupt.", snd->filename);
         bitmap_clear(&snd->playing, sndSlot);
-#ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[sndNum]--;
-#endif
-        return -1;
+        goto error;
     }
 
     snd->voices[sndSlot].handle = voice;
@@ -975,15 +979,22 @@ int S_PlaySound(int num)
 
     if (sndnum >= MAXSOUNDINSTANCES)
     {
+        LOG_F(WARNING, "S_PlaySound: sndnum >= MAXSOUNDINSTANCES!");
+error:
 #ifdef CACHING_DOESNT_SUCK
         g_soundlocks[num]--;
 #endif
         return -1;
     }
 
-    Bassert(bitmap_test(&snd->playing, sndnum) == 0);
+    if (bitmap_test(&snd->playing, sndnum))
+    {
+        LOG_F(WARNING, "S_PlaySound: slot %d for sound %d already filled", sndnum, num);
+        goto error;
+    }
+    
     bitmap_set(&snd->playing, sndnum);
-
+    
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
@@ -996,10 +1007,7 @@ int S_PlaySound(int num)
     {
         LOG_F(ERROR, "Error attempting to play %s", snd->filename);
         bitmap_clear(&snd->playing, sndnum);
-#ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[num]--;
-#endif
-        return -1;
+        goto error;
     }
 
     snd->voices[sndnum].handle = voice;

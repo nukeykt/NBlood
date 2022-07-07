@@ -193,7 +193,7 @@ size_t buildprint(Args... args)
     size_t const len = buildprint_internal__(buf, args...);
 
     g_useLogCallback = false;
-    LOG_F(INFO, buf);
+    LOG_F(INFO, "%s", buf);
     g_useLogCallback = true;
 
     initputs(buf);

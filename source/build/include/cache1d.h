@@ -52,7 +52,7 @@ private:
 
     intptr_t m_baseAddress{};
     int32_t  m_totalSize{};
-    int32_t  m_minBlockSize{};
+    int32_t  m_alignment{};
 
     int m_maxBlocks{};
     int m_numBlocks{};

@@ -546,8 +546,8 @@ static void tsf_region_operator(struct tsf_region* region, tsf_u16 genOper, unio
 
 		_GEN_MAX = 59,
 	};
-	#define _TSFREGIONOFFSET(TYPE, FIELD) (unsigned char)(((TYPE*)&((struct tsf_region*)0)->FIELD) - (TYPE*)0)
-	#define _TSFREGIONENVOFFSET(TYPE, ENV, FIELD) (unsigned char)(((TYPE*)&((&(((struct tsf_region*)0)->ENV))->FIELD)) - (TYPE*)0)
+	#define _TSFREGIONOFFSET(TYPE, FIELD) (unsigned char)(((TYPE*)&((struct tsf_region*)0x1DEADF00L)->FIELD) - (TYPE*)0x1DEADF00L)
+	#define _TSFREGIONENVOFFSET(TYPE, ENV, FIELD) (unsigned char)(((TYPE*)&((&(((struct tsf_region*)0x1DEADF00L)->ENV))->FIELD)) - (TYPE*)0x1DEADF00L)
 	static const struct { unsigned char mode, offset; } genMetas[_GEN_MAX] =
 	{
 		{ GEN_UINT_ADD                     , _TSFREGIONOFFSET(unsigned int, offset               ) }, // 0 StartAddrsOffset

@@ -12,20 +12,38 @@
 
 libdivide::libdivide_s64_t divtable64[DIVTABLESIZE];
 libdivide::libdivide_s32_t divtable32[DIVTABLESIZE];
+libdivide::libdivide_s64_branchfree_t bfdivtable64[DIVTABLESIZE];
+libdivide::libdivide_s32_branchfree_t bfdivtable32[DIVTABLESIZE];
+
+decltype(divideu32) *divideu32_noinline = divideu32;
+decltype(divideu64) *divideu64_noinline = divideu64;
+decltype(tabledivide32) *tabledivide32_noinline = tabledivide32;
+decltype(tabledivide64) *tabledivide64_noinline = tabledivide64;
+
+decltype(divideu32_branchfree) *divideu32_branchfree_noinline = divideu32_branchfree;
+decltype(divideu64_branchfree) *divideu64_branchfree_noinline = divideu64_branchfree;
+decltype(tabledivide32_branchfree) *tabledivide32_branchfree_noinline = tabledivide32_branchfree;
+decltype(tabledivide64_branchfree) *tabledivide64_branchfree_noinline = tabledivide64_branchfree;
+
+int64_t lastd_s64;
+int64_t lastd_s64_b;
+
+int32_t lastd_s32;
+int32_t lastd_s32_b;
 
 void initdivtables(void)
 {
+    using namespace libdivide;
+
     for (int i = 1; i < DIVTABLESIZE; ++i)
     {
-        divtable64[i] = libdivide::libdivide_s64_gen(i);
-        divtable32[i] = libdivide::libdivide_s32_gen(i);
+        divtable64[i] = libdivide_s64_gen(i);
+        divtable32[i] = libdivide_s32_gen(i);
+
+        bfdivtable64[i] = libdivide_s64_branchfree_gen(i);
+        bfdivtable32[i] = libdivide_s32_branchfree_gen(i);
     }
 }
-
-uint32_t divideu32_noinline(uint32_t n, uint32_t d) { return divideu32(n, d); }
-uint64_t divideu64_noinline(uint64_t n, uint64_t d) { return divideu64(n, d); }
-int32_t tabledivide32_noinline(int32_t n, int32_t d) { return tabledivide32(n, d); }
-int64_t tabledivide64_noinline(int64_t n, int64_t d) { return tabledivide64(n, d); }
 
 #if defined(__GNUC__) && defined(__i386__) && !defined(NOASM)	// NOASM
 

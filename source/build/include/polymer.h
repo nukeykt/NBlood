@@ -422,7 +422,7 @@ static inline int32_t polymer_planeinfrustum(_prplane const &plane, const float*
 static inline void  polymer_scansprites(int16_t sectnum, tspriteptr_t tsprite, int32_t* spritesortcnt);
 static void         polymer_updatesprite(int32_t snum);
 // SKIES
-static void         polymer_getsky(void);
+static void         polymer_getsky(int16_t picnum, uint8_t pal, int8_t shade);
 static void         polymer_drawsky(int16_t tilenum, char palnum, int8_t shade);
 static void         polymer_initartsky(void);
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade);

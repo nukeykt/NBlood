@@ -1859,8 +1859,18 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
     k1 = ((float)(tspr->y+spriteext[tspr->owner].mdposition_offset.y-globalposy))*f*(1.f/1024.f);
     f = gcosang2*gshang/gvrcorrection;
     g = gsinang2*gshang/gvrcorrection;
-    k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+1024)&2047] * (1.f/16384.f);
-    k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+ 512)&2047] * (1.f/16384.f);
+    
+    if (tspriteptr[maxspritesonscreen] == tspr)
+    {
+        k4 = sinf(fix16_to_float((fix16_from_int((tspr->ang - globalang + spriteext[tspr->owner].mdangoff + 1024) & 2047) + qglobalang) & 0x7FFFFFF) * BANG2RAD);
+        k5 = sinf(fix16_to_float((fix16_from_int((tspr->ang - globalang + spriteext[tspr->owner].mdangoff + 512) & 2047) + qglobalang) & 0x7FFFFFF) * BANG2RAD);
+    }
+    else
+    {
+        k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+1024)&2047] * (1.f/16384.f);
+        k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].mdangoff+ 512)&2047] * (1.f/16384.f);
+    }
+
     k2 = k0*(1-k4)+k1*k5;
     k3 = k1*(1-k4)-k0*k5;
     k6 = f*gstang - gsinang*gctang; k7 = g*gstang + gcosang*gctang;
@@ -2281,34 +2291,40 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             //POGOTODO: if we add support for palette indexing on model skins, the texture for the palswap could be setup here
             texunits += 4;
 
-            i = r_detailmapping ? mdloadskin((md2model_t *) m, skinNum, DETAILPAL, surfi) : 0;
-
-            if (i)
+            if ((i = r_detailmapping ? mdloadskin((md2model_t *) m, skinNum, DETAILPAL, surfi) : 0))
             {
-                polymost_useDetailMapping(true);
-
                 auto sk = mdgetskinmap(m, DETAILPAL, skinNum, surfi);
-                f = sk->param;
-                polymost_setupdetailtexture(GL_TEXTURE3, i, (sk->flags& HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
+                
+                if (sk != nullptr)
+                {
+                    polymost_useDetailMapping(true);
+                    polymost_setupdetailtexture(GL_TEXTURE3, i, (sk->flags & HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
 
-                glMatrixMode(GL_TEXTURE);
-                glLoadIdentity();
-                glTranslatef(xpanning, ypanning, 1.0f);
-                glScalef(f, f, 1.0f);
-                glMatrixMode(GL_MODELVIEW);
+                    f = sk->param;
+                    
+                    glMatrixMode(GL_TEXTURE);
+                    glLoadIdentity();
+                    glTranslatef(xpanning, ypanning, 1.0f);
+                    glScalef(f, f, 1.0f);
+                    glMatrixMode(GL_MODELVIEW);
+                }
+                else VLOG_F(LOG_ENGINE, "polymost_md3draw: detail skin %d has no skinmap", skinNum);
             }
 
-            i = r_glowmapping ? mdloadskin((md2model_t *) m, skinNum, GLOWPAL, surfi) : 0;
-
-            if (i)
+            if ((i = r_glowmapping ? mdloadskin((md2model_t *) m, skinNum, GLOWPAL, surfi) : 0))
             {
-                polymost_useGlowMapping(true);
                 auto sk = mdgetskinmap(m, GLOWPAL, skinNum, surfi);
-                polymost_setupglowtexture(GL_TEXTURE4, i, (sk->flags& HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
-                glMatrixMode(GL_TEXTURE);
-                glLoadIdentity();
-                glTranslatef(xpanning, ypanning, 1.0f);
-                glMatrixMode(GL_MODELVIEW);
+
+                if (sk != nullptr)
+                {
+                    polymost_useGlowMapping(true);
+                    polymost_setupglowtexture(GL_TEXTURE4, i, (sk->flags & HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
+                    glMatrixMode(GL_TEXTURE);
+                    glLoadIdentity();
+                    glTranslatef(xpanning, ypanning, 1.0f);
+                    glMatrixMode(GL_MODELVIEW);
+                }
+                else VLOG_F(LOG_ENGINE, "polymost_md3draw: glow skin %d has no skinmap", skinNum);
             }
 
             if (r_vertexarrays)
@@ -2554,7 +2570,7 @@ mdmodel_t *mdload(const char *filnam)
 
         // smuggle the file name into the model struct.
         // head.nam is unused as far as I can tell
-        Bstrncpyz(vm3->head.nam, filnam, sizeof(vm3->head.nam));
+        Bstrncpyz(vm3->head.nam, filnam, sizeof(vm3->head.nam)-1);
 
         md3postload_common(vm3);
 

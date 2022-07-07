@@ -650,7 +650,7 @@ int app_main(int argc, char const* const* argv)
 
     editstatus = 1;
 
-    Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
+    Bstrncpyz(game_executable, DefaultGameLocalExec, sizeof(game_executable));
 
     if ((i = ExtPreInit(argc,argv)) < 0) return -1;
 #ifdef STARTUP_SETUP_WINDOW
@@ -8495,8 +8495,9 @@ CANCEL:
                     if (!EDITING_MAP_P())
                     {
                         if (map_undoredo(0)) printmessage16("Nothing to undo!");
-                        else printmessage16("Revision %d undone",map_revision);
+                        else printmessage16("Revision %d undone", map_revision);
                     }
+                    else printmessage16("Can't undo or redo while editing!");
                 }
                 else if (ch == 'r' || ch == 'R')
                 {
@@ -8506,6 +8507,7 @@ CANCEL:
                         if (map_undoredo(1)) printmessage16("Nothing to redo!");
                         else printmessage16("Restored revision %d", map_revision - 1);
                     }
+                    else printmessage16("Can't undo or redo while editing!");
                 }
 #endif
                 else if (ch == 'q' || ch == 'Q')  //Q
@@ -11288,7 +11290,7 @@ void test_map(int32_t mode)
                 Bstrncpy(game_executable+slen, DefaultGameExec, sizeof(game_executable)-slen);
             }
             else
-                Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
+                Bstrncpyz(game_executable, DefaultGameLocalExec, sizeof(game_executable));
         }
 
         if (current_cwd[0] != '\0') // Temporarily changing back,

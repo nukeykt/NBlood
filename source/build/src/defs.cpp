@@ -11,17 +11,13 @@
 #include "baselayer.h"
 #include "scriptfile.h"
 #include "cache1d.h"
+#include "hightile.h"
 #include "kplib.h"
 #include "lz4.h"
 #include "common.h"
 #include "mdsprite.h"  // md3model_t
 #include "colmatch.h"
 #include "screentext.h"
-
-#ifdef USE_OPENGL
-# include "hightile.h"
-#endif
-
 #include "vfs.h"
 
 enum scripttoken_t
@@ -287,7 +283,7 @@ static int32_t Defs_ImportTileFromTexture(char const * const fn, int32_t const t
 
 #ifdef USE_OPENGL
         if (istexture)
-            hicsetsubsttex(tile, 0, fn, (float)(255-alphacut) * (1.f/255.f), 1.0f, 1.0f, 1.0f, 1.0f, HICR_ARTIMMUNITY);
+            hicsetsubsttex(tile, 0, fn, (float)(255-alphacut) * (1.f/255.f), 1.0f, 1.0f, 1.0f, 1.0f, HICR_ARTIMMUNITY|HICR_NOCHT);
 #endif
 
         return 1;
@@ -307,7 +303,7 @@ static int32_t Defs_ImportTileFromTexture(char const * const fn, int32_t const t
 
 #ifdef USE_OPENGL
     if (istexture)
-        hicsetsubsttex(tile, 0, fn, (float)(255-alphacut) * (1.f/255.f), 1.0f, 1.0f, 1.0, 1.0, HICR_ARTIMMUNITY);
+        hicsetsubsttex(tile, 0, fn, (float)(255-alphacut) * (1.f/255.f), 1.0f, 1.0f, 1.0, 1.0, HICR_ARTIMMUNITY|HICR_NOCHT);
 #else
     UNREFERENCED_PARAMETER(istexture);
 #endif
@@ -512,9 +508,7 @@ static int32_t defsparser(scriptfile *script)
             if (scriptfile_getnumber(script,&g)) break;
             if (scriptfile_getnumber(script,&b)) break;
             if (scriptfile_getnumber(script,&f)) break; //effects
-#ifdef USE_OPENGL
             hicsetpalettetint(pal,r,g,b,0,0,0,f);
-#endif
         }
         break;
         case T_ALPHAHACK:
@@ -2239,9 +2233,7 @@ static int32_t defsparser(scriptfile *script)
                 break;
             }
 
-#ifdef USE_OPENGL
             hicsetpalettetint(pal,red,green,blue,shadered,shadegreen,shadeblue,flags);
-#endif
         }
         break;
         case T_MAKEPALOOKUP:
@@ -2373,9 +2365,7 @@ static int32_t defsparser(scriptfile *script)
                     int32_t pal=-1, xsiz = 0, ysiz = 0;
                     char *fn = NULL;
                     double alphacut = -1.0, xscale = 1.0, yscale = 1.0, specpower = 1.0, specfactor = 1.0;
-#ifdef USE_OPENGL
                     char flags = 0;
-#endif
 
                     static const tokenlist texturetokens_pal[] =
                     {
@@ -2411,7 +2401,6 @@ static int32_t defsparser(scriptfile *script)
                             scriptfile_getdouble(script,&specpower); break;
                         case T_SPECFACTOR:
                             scriptfile_getdouble(script,&specfactor); break;
-#ifdef USE_OPENGL
                         case T_NOCOMPRESS:
                             flags |= HICR_NOTEXCOMPRESS; break;
                         case T_NODOWNSIZE:
@@ -2422,7 +2411,6 @@ static int32_t defsparser(scriptfile *script)
                             flags |= HICR_ARTIMMUNITY; break;
                         case T_INDEXED:
                             flags |= HICR_INDEXED|HICR_NOTEXCOMPRESS|HICR_NODOWNSIZE; break;
-#endif
                         case T_ORIGSIZEX:
                             scriptfile_getnumber(script, &xsiz);
                             break;
@@ -2455,12 +2443,10 @@ static int32_t defsparser(scriptfile *script)
                         Bmemset(&picanm[tile], 0, sizeof(picanm_t));
                         tileSetupDummy(tile);
                     }
-#ifdef USE_OPENGL
                     xscale = 1.0f / xscale;
                     yscale = 1.0f / yscale;
 
                     hicsetsubsttex(tile,pal,fn,alphacut,xscale,yscale, specpower, specfactor,flags);
-#endif
                 }
                 break;
                 case T_DETAIL: case T_GLOW: case T_SPECULAR: case T_NORMAL:
@@ -2741,7 +2727,7 @@ static int32_t defsparser(scriptfile *script)
         {
             char *string = NULL;
             scriptfile_getstring(script,&string);
-            LOG_F(INFO, string);
+            LOG_F(INFO, "%s", string);
         }
         break;
 

@@ -10854,9 +10854,11 @@ static void Keys2d3d(void)
             if (PRESSED_KEYSC(P)) // Ctrl-P: Map playtesting
                 test_map(eitherALT);
 
-        if (!EDITING_MAP_P() && PRESSED_KEYSC(Z)) // CTRL+Z
+        if (PRESSED_KEYSC(Z)) // CTRL+Z
         {
-            if (!in3dmode() || m32_3dundo)
+            if (EDITING_MAP_P())
+                message("Can't undo or redo while editing!");
+            else if (!in3dmode() || m32_3dundo)
             {
                 if (eitherSHIFT)
                 {

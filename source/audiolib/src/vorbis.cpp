@@ -33,7 +33,7 @@
 
 #ifdef HAVE_VORBIS
 
-#define BLOCKSIZE MV_MIXBUFFERSIZE
+#define BLOCKSIZE 512
 
 #define OGG_IMPL
 #define VORBIS_IMPL
@@ -94,23 +94,28 @@ static void MV_GetVorbisCommentLoops(VoiceNode *voice, vorbis_comment *vc)
             }
         }
     }
-
+    
+    auto vd    = (vorbis_data *)voice->rawdataptr;
+    auto total = ov_pcm_total(&vd->vf, -1);
+    
     if (vc_loopstart != nullptr)
     {
         const ogg_int64_t ov_loopstart = Batol(vc_loopstart);
-        if (ov_loopstart >= 0) // a loop starting at 0 is valid
+        if ((unsigned)(ov_loopstart-1) <= total)
         {
             voice->Loop.Start = (const char *) (intptr_t) ov_loopstart;
             voice->Loop.Size  = 1;
         }
+        else LOG_F(WARNING, "MV_GetVorbisCommentLoops: loop start is beyond end of data");
     }
     if (vc_loopend != nullptr)
     {
         if (voice->Loop.Size > 0)
         {
             const ogg_int64_t ov_loopend = Batol(vc_loopend);
-            if (ov_loopend > 0) // a loop ending at 0 is invalid
+            if ((unsigned)(ov_loopend-1) <= total)
                 voice->Loop.End = (const char *) (intptr_t) ov_loopend;
+            else LOG_F(WARNING, "MV_GetVorbisCommentLoops: loop end is beyond end of data");
         }
     }
     if (vc_looplength != nullptr)
@@ -120,6 +125,7 @@ static void MV_GetVorbisCommentLoops(VoiceNode *voice, vorbis_comment *vc)
             const ogg_int64_t ov_looplength = Batol(vc_looplength);
             if (ov_looplength > 0) // a loop of length 0 is invalid
                 voice->Loop.End = (const char *) ((intptr_t) ov_looplength + (intptr_t) voice->Loop.Start);
+            else LOG_F(WARNING, "MV_GetVorbisCommentLoops: loop length is zero");
         }
     }
 }

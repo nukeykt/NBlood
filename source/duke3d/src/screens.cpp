@@ -35,6 +35,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sbar.h"
 #include "screens.h"
 
+#include <cfloat>
+
 #define COLOR_RED redcol
 #define COLOR_WHITE whitecol
 

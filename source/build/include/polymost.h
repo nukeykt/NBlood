@@ -41,6 +41,9 @@ void polymost_initosdfuncs(void);
 void polymost_drawrooms(void);
 void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang, fix16_t dahoriz, int16_t mirrorWall);
 void polymost_completeMirror();
+void polymost_startBufferedDrawing(int nn);
+void polymost_bufferVert(vec3f_t const v, vec2f_t const t);
+void polymost_finishBufferedDrawing(int mode);
 
 int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall);
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr);

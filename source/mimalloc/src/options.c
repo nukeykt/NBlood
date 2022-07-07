@@ -74,7 +74,7 @@ static mi_option_desc_t options[_mi_option_last] =
   { 1, UNINIT, MI_OPTION(eager_region_commit) },
   { 0, UNINIT, MI_OPTION(reset_decommits) },     // reset uses MADV_FREE/MADV_DONTNEED
   #endif
-  { 0, UNINIT, MI_OPTION(large_os_pages) },      // use large OS pages, use only with eager commit to prevent fragmentation of VMA's
+  { 1, UNINIT, MI_OPTION(large_os_pages) },      // use large OS pages, use only with eager commit to prevent fragmentation of VMA's
   { 0, UNINIT, MI_OPTION(reserve_huge_os_pages) },  // per 1GiB huge pages
   { -1, UNINIT, MI_OPTION(reserve_huge_os_pages_at) }, // reserve huge pages at node N
   { 0, UNINIT, MI_OPTION(reserve_os_memory)     },
@@ -119,7 +119,7 @@ mi_decl_nodiscard long mi_option_get(mi_option_t option) {
   if (option < 0 || option >= _mi_option_last) return 0;
   mi_option_desc_t* desc = &options[option];
   mi_assert(desc->option == option);  // index should match the option
-  if (mi_unlikely(desc->init == UNINIT)) {
+  if mi_unlikely(desc->init == UNINIT) {
     mi_option_init(desc);
   }
   return desc->value;

@@ -124,7 +124,7 @@ void G_ShowDebugHelp(void)
 
 static void G_AddDemo(const char* param)
 {
-    Bstrncpy(tempbuf, param, sizeof(tempbuf));
+    Bstrncpyz(tempbuf, param, sizeof(tempbuf));
     char * colon = (char *) Bstrchr(tempbuf, ':');
     int32_t framespertic=-1, numrepeats=1;
 

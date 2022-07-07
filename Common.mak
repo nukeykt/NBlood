@@ -35,14 +35,6 @@ ifndef HOSTPLATFORM
             HOSTPLATFORM := DARWIN
         else ifeq ($(findstring BeOS,$(uname)),BeOS)
             HOSTPLATFORM := BEOS
-        else ifeq ($(findstring skyos,$(uname)),skyos)
-            HOSTPLATFORM := SKYOS
-        else ifeq ($(findstring QNX,$(uname)),QNX)
-            HOSTPLATFORM := QNX
-        else ifeq ($(findstring SunOS,$(uname)),SunOS)
-            HOSTPLATFORM := SUNOS
-        else ifeq ($(findstring syllable,$(uname)),syllable)
-            HOSTPLATFORM := SYLLABLE
         endif
     endif
 endif
@@ -83,9 +75,6 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 ifeq ($(PLATFORM),WII)
     EXESUFFIX := .elf
-endif
-ifeq ($(PLATFORM),SKYOS)
-    EXESUFFIX := .app
 endif
 ifeq ($(PLATFORM),WINDOWS)
     EXESUFFIX := .exe
@@ -249,7 +238,10 @@ ifeq ($(findstring clang,$(CLANG_POTENTIAL_VERSION)),clang)
     endif
 endif
 
+LLD := 0
+
 ifneq (0,$(CLANG))
+    override LLD := 1
     CLANGXXNAME := $(subst clang,clang++,$(CLANGNAME))
     override CC := $(CLANGNAME) -x c
     override CXX := $(CLANGXXNAME) -x c++
@@ -389,10 +381,10 @@ else ifeq ($(PLATFORM),WII)
     override HAVE_GTK2 := 0
     override HAVE_FLAC := 0
     SDL_TARGET := 1
-else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW QNX SUNOS SYLLABLE))
+else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
     override USE_OPENGL := 0
     override NOASM := 1
-else ifeq ($(PLATFORM),$(filter $(PLATFORM),BEOS SKYOS))
+else ifeq ($(PLATFORM),$(filter $(PLATFORM),BEOS))
     override NOASM := 1
 endif
 
@@ -444,11 +436,6 @@ else
     LTO := 1
 endif
 
-ifneq (0,$(CLANG))
-    ifeq ($(PLATFORM),WINDOWS)
-        LTO := 0
-    endif
-endif
 ifeq (0,$(CLANG))
     ifeq (0,$(GCC_PREREQ_4))
         override LTO := 0
@@ -473,7 +460,7 @@ endif
 ##### Instantiate variables
 
 COMMONFLAGS :=
-COMPILERFLAGS := -funsigned-char
+COMPILERFLAGS := -funsigned-char -frounding-math
 
 CSTD := -std=gnu11
 CXXSTD := -std=gnu++14
@@ -498,15 +485,7 @@ LIBDIRS :=
 
 ASFORMAT := elf$(BITS)
 ifeq ($(PLATFORM),WINDOWS)
-    LINKERFLAGS += -static-libgcc -static -Wl,--allow-multiple-definition
-    ifeq (0,$(CLANG))
-        L_CXXONLYFLAGS += -static-libstdc++
-    endif
-
-    ifeq (0,$(CLANG))
-        GUI_LIBS += -mwindows
-    endif
-
+    LINKERFLAGS += -static -Wl,-subsystem,windows
     COMPILERFLAGS += -DUNDERSCORES
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
@@ -553,8 +532,6 @@ else ifeq ($(PLATFORM),WII)
     LIBDIRS += -L$(LIBOGC_LIB)
 else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
     COMPILERFLAGS += -D__OPENDINGUX__
-else ifeq ($(PLATFORM),SKYOS)
-    COMPILERFLAGS += -DUNDERSCORES
 else ifeq ($(SUBPLATFORM),LINUX)
     # Locate .so files
     LINKERFLAGS += -Wl,-rpath,'$$ORIGIN' -Wl,-z,origin
@@ -569,15 +546,12 @@ COMPILERFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
 ifndef OPTOPT
     ifeq ($(findstring x86_64, $(IMPLICIT_ARCH)),x86_64)
         ifeq ($(findstring x86_64h, $(IMPLICIT_ARCH)),x86_64h)
-            OPTOPT := -march=haswell -mmmx -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mpopcnt -mpclmul -mavx -mrdrnd -mf16c -mfsgsbase -mavx2 -maes -mfma -mbmi -mbmi2
+            OPTOPT := -march=haswell -msse4.1 -msse4.2 -mpopcnt -mpclmul -mavx -mrdrnd -mf16c -mfsgsbase -mavx2 -maes -mfma -mbmi -mbmi2
             # -mcrc32 -mmovbe
         else
-            ifeq ($(PLATFORM),DARWIN)
-                OPTOPT := -march=core2 -mmmx -msse -msse2 -msse3 -mssse3
-            else
-                OPTOPT := -march=nocona
-            endif
+            OPTOPT := -march=core2
         endif
+        OPTOPT += -mmmx -msse -msse2 -msse3 -mssse3 -mfpmath=sse
     endif
     ifeq ($(findstring i386, $(IMPLICIT_ARCH)),i386)
         ifeq ($(PLATFORM),DARWIN)
@@ -610,9 +584,20 @@ endif
 
 ifneq (0,$(LTO))
     COMPILERFLAGS += -DUSING_LTO
-    COMMONFLAGS += -flto
+    ifeq (1,$(LTO))
+        ifeq (0,$(CLANG))
+            COMMONFLAGS += -flto
+        else
+            COMMONFLAGS += -flto=thin
+        endif
+    else
+        COMMONFLAGS += -flto=$(LTO)
+    endif
 endif
 
+ifeq (1,$(LLD))
+    COMMONFLAGS += -fuse-ld=lld
+endif
 
 ##### Debugging
 
@@ -728,7 +713,7 @@ W_GCC_6 := -Wduplicated-cond -Wnull-dereference
 W_GCC_7 := -Wduplicated-branches
 W_GCC_8 := -Warray-bounds=2
 W_GCC_9 := -Wmultistatement-macros
-W_CLANG := -Wno-unused-value -Wno-parentheses -Wno-unknown-warning-option
+W_CLANG := -Wno-unused-value -Wno-parentheses -Wno-unknown-warning-option -Wno-unused-function
 
 ifeq (0,$(CLANG))
     W_CLANG :=
@@ -909,9 +894,6 @@ ifeq ($(RENDERTYPE),SDL)
 
     ifeq ($(PLATFORM),WII)
         SDLCONFIG :=
-    else ifeq ($(PLATFORM),SKYOS)
-        COMPILERFLAGS += -I/boot/programs/sdk/include/sdl
-        SDLCONFIG :=
     endif
 
     ifneq ($(strip $(SDLCONFIG)),)
@@ -968,27 +950,15 @@ ifeq ($(PLATFORM),WINDOWS)
     ifneq (0,$(GCC_PREREQ_4))
         L_SSP := -lssp
     endif
-    LIBS += -lmingwex -lgdi32
-    ifneq (0,$(CLANG))
-        LIBS += -pthread
-    else
-        LIBS += -lpthread
-    endif
     ifeq ($(RENDERTYPE),WIN)
         LIBS += -ldxguid
     else ifeq ($(SDL_TARGET),1)
-        LIBS += -ldxguid -lmingw32 -limm32 -lole32 -loleaut32 -lversion
+        LIBS += -ldxguid
     else
-        LIBS += -ldxguid_sdl -lmingw32 -limm32 -lole32 -loleaut32 -lversion -lsetupapi
+        LIBS += -ldxguid_sdl
     endif
-    LIBS += -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid -lpsapi
+    LIBS += -lmingwex -lgdi32 -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi -luuid -lpsapi -ldinput -limm32 -lversion -lsetupapi -lole32 -loleaut32
     # -lshfolder
-else ifeq ($(PLATFORM),SKYOS)
-    LIBS += -lnet
-else ifeq ($(PLATFORM),QNX)
-    LIBS += -lsocket
-else ifeq ($(PLATFORM),SUNOS)
-    LIBS += -lsocket -lnsl
 else ifeq ($(PLATFORM),WII)
     LIBS += -laesnd_tueidj -lfat -lwiiuse -lbte -lwiikeyboard -logc
 else ifeq ($(SUBPLATFORM),LINUX)

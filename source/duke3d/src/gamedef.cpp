@@ -2321,7 +2321,7 @@ static void C_ReplaceQuoteSubstring(const size_t q, char const * const query, ch
             Bstrncpy(tempbuf, apStrings[q], i);
             Bstrcat(tempbuf, replacement);
             Bstrcat(tempbuf, &apStrings[q][i + querylength]);
-            Bstrncpy(apStrings[q], tempbuf, MAXQUOTELEN - 1);
+            Bstrncpyz(apStrings[q], tempbuf, MAXQUOTELEN);
             i = MAXQUOTELEN - querylength - 2;
         }
 }
@@ -4728,6 +4728,16 @@ ifvar:
             C_GetManyVars(tw==CON_CANSEE?8:7);
             C_GetManyVarsType(GAMEVAR_READONLY,tw==CON_CANSEE?1:6);
             if (tw==CON_HITSCAN) C_GetNextVar();
+            if (tw == CON_CANSEE)
+            {
+                if (C_GetKeyword() == -1)
+                    C_GetNextVar();
+                else
+                {
+                    scriptWriteValue(GV_FLAG_CONSTANT);
+                    scriptWriteValue(CSTAT_WALL_1WAY);
+                }
+            }
             continue;
 
         case CON_CANSEESPR:

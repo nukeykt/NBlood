@@ -42,69 +42,121 @@ extern int32_t reciptable[2048], fpuasm;
 #define by(x) ((uint8_t)(x))  // byte cast
 
 #define DIVTABLESIZE 16384
+extern void initdivtables(void);
 
 extern libdivide::libdivide_s64_t divtable64[DIVTABLESIZE];
 extern libdivide::libdivide_s32_t divtable32[DIVTABLESIZE];
-extern void initdivtables(void);
+
+extern libdivide::libdivide_s64_branchfree_t bfdivtable64[DIVTABLESIZE];
+extern libdivide::libdivide_s32_branchfree_t bfdivtable32[DIVTABLESIZE];
+
+extern int64_t lastd_s64;
+extern int64_t lastd_s64_b;
+
+extern int32_t lastd_s32;
+extern int32_t lastd_s32_b;
 
 static inline uint32_t divideu32(uint32_t const n, uint32_t const d)
 {
-    static libdivide::libdivide_u32_t udiv;
+    using namespace libdivide;
+
+    static libdivide_u32_t udiv;
     static uint32_t lastd;
 
-    if (d == lastd)
-        goto skip;
+    if (d != lastd)
+        udiv = libdivide_u32_gen((lastd = d));
 
-    udiv = libdivide::libdivide_u32_gen((lastd = d));
-skip:
-    return libdivide::libdivide_u32_do(n, &udiv);
+    return libdivide_u32_do(n, &udiv);
 }
 
 static inline uint64_t divideu64(uint64_t const n, uint64_t const d)
 {
-    static libdivide::libdivide_u64_t udiv;
+    using namespace libdivide;
+
+    static libdivide_u64_t udiv;
     static uint64_t lastd;
 
-    if (d == lastd)
-        goto skip;
+    if (d != lastd)
+        udiv = libdivide_u64_gen((lastd = d));
 
-    udiv = libdivide::libdivide_u64_gen((lastd = d));
-skip:
-    return libdivide::libdivide_u64_do(n, &udiv);
+    return libdivide_u64_do(n, &udiv);
+}
+
+static inline uint32_t divideu32_branchfree(uint32_t const n, uint32_t const d)
+{
+    using namespace libdivide;
+
+    static libdivide_u32_branchfree_t udiv;
+    static uint32_t lastd;
+
+    if (d != lastd)
+        udiv = libdivide_u32_branchfree_gen((lastd = d));
+
+    return libdivide_u32_branchfree_do(n, &udiv);
+}
+
+static inline uint64_t divideu64_branchfree(uint64_t const n, uint64_t const d)
+{
+    using namespace libdivide;
+
+    static libdivide_u64_branchfree_t udiv;
+    static uint64_t lastd;
+
+    if (d != lastd)
+        udiv = libdivide_u64_branchfree_gen((lastd = d));
+
+    return libdivide_u64_branchfree_do(n, &udiv);
 }
 
 static inline int64_t tabledivide64(int64_t const n, int64_t const d)
 {
-    static libdivide::libdivide_s64_t sdiv;
-    static int64_t lastd;
-    auto const dptr = ((uint64_t)d < DIVTABLESIZE) ? &divtable64[d] : &sdiv;
+    using namespace libdivide;
 
-    if (d == lastd || dptr != &sdiv)
-        goto skip;
+    if ((d != lastd_s64) & !((uint64_t)d < DIVTABLESIZE))
+        divtable64[0] = libdivide_s64_gen((lastd_s64 = d));
 
-    sdiv = libdivide::libdivide_s64_gen((lastd = d));
-skip:
-    return libdivide::libdivide_s64_do(n, dptr);
+    return libdivide_s64_do(n, &divtable64[((uint64_t)d < DIVTABLESIZE) * d]);
 }
 
 static inline int32_t tabledivide32(int32_t const n, int32_t const d)
 {
-    static libdivide::libdivide_s32_t sdiv;
-    static int32_t lastd;
-    auto const dptr = ((uint32_t)d < DIVTABLESIZE) ? &divtable32[d] : &sdiv;
+    using namespace libdivide;
+    
+    if ((d != lastd_s32) & !((uint32_t)d < DIVTABLESIZE))
+        divtable32[0] = libdivide_s32_gen((lastd_s32 = d));
 
-    if (d == lastd || dptr != &sdiv)
-        goto skip;
-
-    sdiv = libdivide::libdivide_s32_gen((lastd = d));
-skip:
-    return libdivide::libdivide_s32_do(n, dptr);
+    return libdivide_s32_do(n, &divtable32[((uint32_t)d < DIVTABLESIZE) * d]);
 }
 
-extern uint32_t divideu32_noinline(uint32_t n, uint32_t d);
-extern uint64_t divideu64_noinline(uint64_t n, uint64_t d);
-extern int32_t tabledivide32_noinline(int32_t n, int32_t d);
-extern int64_t tabledivide64_noinline(int64_t n, int64_t d);
+static inline int64_t tabledivide64_branchfree(int64_t const n, int64_t const d)
+{
+    using namespace libdivide;
+
+    if ((d != lastd_s64_b) & !((uint64_t)d < DIVTABLESIZE))
+        bfdivtable64[0] = libdivide_s64_branchfree_gen((lastd_s64_b = d));
+
+    return libdivide_s64_branchfree_do(n, &bfdivtable64[((uint64_t)d < DIVTABLESIZE) * d]);
+}
+
+static inline int32_t tabledivide32_branchfree(int32_t const n, int32_t const d)
+{
+    using namespace libdivide;
+
+    if ((d != lastd_s32_b) & !((uint32_t)d < DIVTABLESIZE))
+        bfdivtable32[0] = libdivide_s32_branchfree_gen((lastd_s32_b = d));
+
+    return libdivide_s32_branchfree_do(n, &bfdivtable32[((uint32_t)d < DIVTABLESIZE) * d]);
+}
+
+extern decltype(divideu32) *divideu32_noinline;
+extern decltype(divideu64) *divideu64_noinline;
+extern decltype(tabledivide32) *tabledivide32_noinline;
+extern decltype(tabledivide64)* tabledivide64_noinline;
+
+extern decltype(divideu32_branchfree)* divideu32_branchfree_noinline;
+extern decltype(divideu64_branchfree)* divideu64_branchfree_noinline;
+extern decltype(tabledivide32_branchfree) *tabledivide32_branchfree_noinline;
+extern decltype(tabledivide64_branchfree) *tabledivide64_branchfree_noinline;
 
 #ifdef GEKKO
 static inline int32_t divscale(int32_t eax, int32_t ebx, int32_t ecx) { return dw(tabledivide64(ldexp(eax, ecx), ebx)); }

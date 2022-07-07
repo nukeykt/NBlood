@@ -56,7 +56,7 @@ bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown
 
 static int osdfunc_printvar(int const cvaridx);
 
-void OSD_UpdateDrawBuffer(void);
+void OSD_UpdateDrawBuffer(bool const skipMutex = 0);
 void OSD_WritePendingLines(void);
 
 void OSD_RegisterCvar(osdcvardata_t * const cvar, int (*func)(osdcmdptr_t))
@@ -764,6 +764,18 @@ static int osdfunc_toggle(osdcmdptr_t parm)
 //
 // OSD_Init() -- Initializes the on-screen display
 //
+
+void mi_log(char *msg, void *arg)
+{
+    UNREFERENCED_PARAMETER(arg);
+    int len = Bstrlen(msg);
+    
+    while (msg[len-1] == '\n')
+        msg[--len] = '\0';
+    
+    VLOG_F(LOG_MEM, "%s", msg);
+};
+
 void OSD_Init(void)
 {
     osd = (osdmain_t *)Xcalloc(1, sizeof(osdmain_t));
@@ -805,7 +817,9 @@ void OSD_Init(void)
 
     hash_init(&h_osd);
     hash_init(&h_cvars);
-
+    
+    mi_register_output((mi_output_fun *)(void *)&mi_log, NULL);
+    
     static osdcvardata_t cvars_osd [] =
     {
         { "osdclipboard", "paste text into console from system clipboard with RMB", (void *) &osd->text.useclipboard, CVAR_BOOL, 0, 1 },
@@ -856,8 +870,6 @@ void OSD_SetLogFile(const char *fn)
         OSD_Init();
 
     osdlogfn = fn;
-
-    mi_register_output((mi_output_fun *)(void *)&OSD_Puts, NULL);
 }
 
 
@@ -1700,7 +1712,7 @@ int OSD_Printf(const char *f, ...)
     EDUKE32_STATIC_ASSERT(loguru::Verbosity_ERROR == -2);
 
     g_useLogCallback = false;
-    VLOG_F(isError ? (int)loguru::Verbosity_ERROR : (int)loguru::Verbosity_INFO, OSD_StripColors(buf, buf));
+    VLOG_F(isError ? (int)loguru::Verbosity_ERROR : (int)loguru::Verbosity_INFO, "%s", OSD_StripColors(buf, buf));
     Xfree(buf);
     g_useLogCallback = true;
 
@@ -1757,15 +1769,17 @@ static int OSD_FilterConsoleMsg(char **putstr)
     return 0;
 }
 
-void OSD_UpdateDrawBuffer(void)
+void OSD_UpdateDrawBuffer(bool const skipMutex /*= 0*/)
 {
     auto &log = osd->log;
 
-    mutex_lock(&log.mutex);
+    if (!skipMutex)
+        mutex_lock(&log.mutex);
 
     if (log.m_lines->isEmpty())
     {
-        mutex_unlock(&log.mutex);
+        if (!skipMutex)
+            mutex_unlock(&log.mutex);
         return;
     }
 
@@ -1841,7 +1855,8 @@ void OSD_UpdateDrawBuffer(void)
         } while (*(++s));
 
     }
-    mutex_unlock(&log.mutex);
+    if (!skipMutex)
+        mutex_unlock(&log.mutex);
 }
 
 // writes lines from osd->log.m_pending to disk and updates osd->log.m_lines
@@ -1859,6 +1874,11 @@ void OSD_WritePendingLines(void)
             if (OSD_FilterConsoleMsg(&putstr) < 2)
             {
                 mutex_lock(&osd->log.mutex);
+                
+                // this is less than ideal
+                if (osd->log.m_lines->isFull())
+                    OSD_UpdateDrawBuffer(true);
+                
                 osd->log.m_lines->pushBack(putstr);
                 mutex_unlock(&osd->log.mutex);
             }
@@ -2314,7 +2334,11 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
                 break;
             fallthrough__;
         case CVAR_RESTARTVID:
-            osdcmd_restartvid(NULL);
+            {
+                int const pr = Bstrncmp(pData.name, "r_pr", 4);
+                if ((!pr && videoGetRenderMode() == REND_POLYMER) || pr)
+                    osdcmd_restartvid(NULL);
+            }
             break;
         case CVAR_INVALIDATEALL:
             gltexinvalidatetype(INVALIDATE_ALL);

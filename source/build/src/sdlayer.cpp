@@ -73,8 +73,6 @@ bool startwin_isopen(void) { return false; }
 //#define SDL_WM_GrabInput(x) SDL_WM_GrabInput(SDL_GRAB_OFF)
 //#define SDL_ShowCursor(x) SDL_ShowCursor(SDL_ENABLE)
 
-#define SURFACE_FLAGS	(SDL_SWSURFACE|SDL_HWPALETTE|SDL_HWACCEL)
-
 // undefine to restrict windowed resolutions to conventional sizes
 #define ANY_WINDOWED_SIZE
 
@@ -86,13 +84,17 @@ char quitevent=0, appactive=1, novideo=0;
 // video
 static SDL_Surface *sdl_surface/*=NULL*/;
 
+static vec2_t sdl_resize;
+static int sdl_minimized;
+
 #if SDL_MAJOR_VERSION >= 2
 static SDL_Window *sdl_window;
 static SDL_GLContext sdl_context;
-static vec2_t sdl_resize;
-static int sdl_minimized;
+static int vsync_unsupported;
 #endif
 
+static int32_t vsync_renderlayer;
+int32_t maxrefreshfreq=0;
 int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline;
 double refreshfreq = 59.0;
 intptr_t frameplace=0;
@@ -108,9 +110,6 @@ static uint16_t sysgamma[3][256];
 // OpenGL stuff
 char nogl=0;
 #endif
-static int32_t vsync_renderlayer;
-static int vsync_unsupported;
-int32_t maxrefreshfreq=0;
 // last gamma, contrast, brightness
 static float lastvidgcb[3];
 
@@ -685,7 +684,7 @@ int32_t sdlayer_checkversion(void)
                 linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
     }
 
-    LOG_F(INFO, str);
+    LOG_F(INFO, "%s", str);
 
     if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL2_REQUIREDVERSION)
     {
@@ -1495,6 +1494,7 @@ char const *videoGetDisplayName(int display)
 #if SDL_MAJOR_VERSION >= 2
     return SDL_GetDisplayName(display);
 #else
+    UNREFERENCED_PARAMETER(display);
     return "Primary display";
 #endif
 }
@@ -2015,8 +2015,6 @@ void videoEndDrawing(void)
 //
 // showframe() -- update the display
 //
-#if SDL_MAJOR_VERSION >= 2
-
 #ifdef __ANDROID__
 extern "C" void AndroidDrawControls();
 #endif
@@ -2086,7 +2084,11 @@ void videoShowFrame(int32_t w)
 
         {
             MICROPROFILE_SCOPEI("Engine", "SDL_GL_SwapWindow", MP_GREEN3);
+#if SDL_MAJOR_VERSION >= 2            
             SDL_GL_SwapWindow(sdl_window);
+#else
+            SDL_GL_SwapBuffers();
+#endif
         }
 
         if (r_glfinish == 1 && r_finishbeforeswap == 0 && vsync_renderlayer != 2)
@@ -2122,7 +2124,7 @@ void videoShowFrame(int32_t w)
     if (SDL_MUSTLOCK(sdl_surface)) SDL_LockSurface(sdl_surface);
     softsurface_blitBuffer((uint32_t*) sdl_surface->pixels, sdl_surface->format->BitsPerPixel);
     if (SDL_MUSTLOCK(sdl_surface)) SDL_UnlockSurface(sdl_surface);
-
+#if SDL_MAJOR_VERSION >= 2
     if (SDL_UpdateWindowSurface(sdl_window))
     {
         // If a fullscreen X11 window is minimized then this may be required.
@@ -2130,10 +2132,12 @@ void videoShowFrame(int32_t w)
         sdl_surface = SDL_GetWindowSurface(sdl_window);
         SDL_UpdateWindowSurface(sdl_window);
     }
-
+#else
+    SDL_Flip(sdl_surface);
+#endif
     MicroProfileFlip();
 }
-#endif
+
 //
 // setpalette() -- set palette values
 //
@@ -2432,7 +2436,7 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 #endif
             }
             break;
-
+            
         case SDL_QUIT:
             quitevent = 1;
             return -1;
@@ -2832,7 +2836,6 @@ int32_t handleevents(void)
     }
 #endif
 
-#if SDL_MAJOR_VERSION >= 2
     if (!frameplace && sdl_resize.x)
     {
         if (in3dmode())
@@ -2842,7 +2845,6 @@ int32_t handleevents(void)
 
         sdl_resize = {};
     }
-#endif
 
 #ifndef _WIN32
     startwin_idle(NULL);

@@ -112,10 +112,6 @@ extern float g_videoGamma, g_videoContrast, g_videoBrightness;
 
 #define GAMMA_CALC ((int32_t)(min(max((float)((g_videoGamma - 1.0f) * 10.0f), 0.f), 15.f)))
 
-#ifdef USE_OPENGL
-extern int32_t (*baselayer_osdcmd_vidmode_func)(osdcmdptr_t parm);
-extern int osdcmd_glinfo(osdcmdptr_t parm);
-
 struct glinfo_t {
     const char *vendor;
     const char *renderer;
@@ -155,6 +151,9 @@ struct glinfo_t {
 
 extern struct glinfo_t glinfo;
 
+#ifdef USE_OPENGL
+extern int32_t (*baselayer_osdcmd_vidmode_func)(osdcmdptr_t parm);
+extern int osdcmd_glinfo(osdcmdptr_t parm);
 extern void fill_glinfo(void);
 #endif
 

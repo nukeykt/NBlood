@@ -89,6 +89,40 @@ void G_DoInterpolations(int smoothRatio)
     }
 }
 
+void G_DoConveyorInterp(int smoothratio)
+{
+    for (int SPRITES_OF(STAT_EFFECTOR, i))
+    {
+        auto s = &sprite[i];
+        auto a = &actor[i];
+        
+        if (s->picnum != SECTOREFFECTOR || a->t_data[4])
+            continue;
+        
+        auto sect = &sector[s->sectnum];
+
+        if ((int)(s->lotag == SE_24_CONVEYOR) | (int)(s->lotag == SE_34_CONVEYOR2))
+            sect->floorxpanning -= (uint8_t)mulscale16(65536 - smoothratio, sect->floorxpanning - (sect->floorxpanning - (s->yvel >> 7)));
+    }
+}
+
+void G_ResetConveyorInterp(void)
+{
+    for (int SPRITES_OF(STAT_EFFECTOR, i))
+    {
+        auto s = &sprite[i];
+        auto a = &actor[i];
+        
+        if (s->picnum != SECTOREFFECTOR || a->t_data[4])
+            continue;
+        
+        auto sect = &sector[s->sectnum];
+
+        if ((int)(s->lotag == SE_24_CONVEYOR) | (int)(s->lotag == SE_34_CONVEYOR2))
+            sect->floorxpanning = (uint8_t)actor[i].bpos.x;
+    }
+}
+
 void G_ClearCameraView(DukePlayer_t *ps)
 {
     ps->newowner = -1;
@@ -200,7 +234,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
                 ++dmgFuzz;
 
             int dmgTotal = dmgBase + (krand()%(dmgFuzz-dmgBase));
-            if ((globalflags & DUKE3D_GLOBAL_ADDITIVE_HITRADIUS)
+            if ((duke3d_globalflags & DUKE3D_GLOBAL_ADDITIVE_HITRADIUS)
                     | (SpriteProjectile[spriteNum].workslike & PROJECTILE_HITRADIUS_ADDITIVE))
                 dmgActor.htextra += dmgTotal;
             else
@@ -8069,6 +8103,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 }
             }
             pSector->floorxpanning += SP(spriteNum)>>7;
+            actor[spriteNum].bpos.x = pSector->floorxpanning;
 
             break;
         }
@@ -9222,7 +9257,7 @@ static void G_RecordOldSpritePos(void)
     do
     {
         // Delay until a later point. Fixes a problem where SE7 and Touchplates cannot be activated concurrently.
-        if (statNum == STAT_PLAYER)
+        if ((statNum == STAT_PLAYER) | (statNum == STAT_EFFECTOR))
         {
             statNum++;
             continue;

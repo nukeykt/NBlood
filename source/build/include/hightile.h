@@ -23,7 +23,8 @@ typedef struct hicreplc_t {
     struct hicskybox_t *skybox;
     vec2f_t scale;
     float alphacut, specpower, specfactor;
-    char palnum, flags;
+    char palnum;
+    uint8_t flags, tfn;
 } hicreplctyp;
 
 typedef uint16_t polytintflags_t;
@@ -124,6 +125,7 @@ enum
     HICR_NODOWNSIZE = 16,
     HICR_ARTIMMUNITY = 32,
     HICR_INDEXED = 64,
+    HICR_NOCHT = 128,
 };
 
 // hictinting[].f / gloadtile_hi() and mdloadskin() <effect> arg bits

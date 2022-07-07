@@ -825,6 +825,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
     G_DoInterpolations(smoothRatio);
     G_AnimateCamSprite(smoothRatio);
+    G_DoConveyorInterp(smoothRatio);
     G_InterpolateLights(smoothRatio);
 
     if (ud.camerasprite >= 0)
@@ -1211,6 +1212,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
     }
 
     G_RestoreInterpolations();
+    G_ResetConveyorInterp();
 
     {
         // Totalclock count of last step of p->visibility converging towards

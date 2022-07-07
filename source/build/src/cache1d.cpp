@@ -87,9 +87,9 @@ void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t m
     m_baseAddress = ((uintptr_t)dacachestart + 15) & ~(uintptr_t)0xf;
     m_totalSize   = (dacachesize - (((uintptr_t)(dacachestart)) & 0xf)) & ~(uintptr_t)0xf;
 
-    m_maxBlocks    = MINCACHEINDEXSIZE;
-    m_minBlockSize = minsize >= MINCACHEBLOCKSIZE ? minsize : Bgetpagesize();
-    m_index        = (cacheindex_t *)Xaligned_alloc(m_minBlockSize, m_maxBlocks * sizeof(cacheindex_t));
+    m_maxBlocks = MINCACHEINDEXSIZE;
+    m_alignment = minsize >= MINCACHEBLOCKSIZE ? minsize : Bgetpagesize();
+    m_index     = (cacheindex_t *)Xaligned_alloc(m_alignment, m_maxBlocks * sizeof(cacheindex_t));
 
     reset();
 
@@ -164,11 +164,11 @@ int32_t cache1d::findBlock(int32_t const newbytes, int32_t * const besto, int32_
 
 void cache1d::tryHarder(int32_t const newbytes, int32_t *const besto, int32_t *const bestz)
 {
-    LOG_F(WARNING, "Request for %dKB block exhausted cache!", newbytes >> 10);    
-    LOG_F(WARNING, "Attempting to make it fit...");
+    LOG_F(ERROR, "Request for %dKB block exhausted cache!", newbytes >> 10);    
+    LOG_F(ERROR, "Attempting to make it fit...");
 
-    if (m_minBlockSize > MINCACHEBLOCKSIZE)
-        m_minBlockSize >>= 1;
+    if (m_alignment > MINCACHEBLOCKSIZE)
+        m_alignment >>= 1;
 
     int cnt = m_numBlocks - 1;
 
@@ -187,7 +187,11 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
 {
     // Make all requests a multiple of the minimum block size
     int const askedbytes = newbytes;
-    newbytes = (newbytes + m_minBlockSize-1) & ~(m_minBlockSize-1);
+
+    newbytes = (newbytes + m_alignment-1) & ~(m_alignment-1);
+    
+    if (newbytes > nextPow2(askedbytes))
+        newbytes = nextPow2(askedbytes);
 
 #ifdef DEBUGGINGAIDS
     if (EDUKE32_PREDICT_FALSE(!newlockptr || *newlockptr == 0))
@@ -298,63 +302,78 @@ void cache1d::report(void)
     int32_t usedSize = 0;
     int32_t unusable = 0;
     inthashtable_t h_blocktotile = { nullptr, INTHASH_SIZE(m_maxBlocks) };
-
+    
     inthash_init(&h_blocktotile);
-
+    
     for (native_t j = 0; j < MAXTILES-1; j++)
+    {
         if (waloff[j])
             inthash_add(&h_blocktotile, waloff[j], j, true);
 
-    auto buf = (char*)Balloca(64);
+        if (classicht[j].ptr)
+            inthash_add(&h_blocktotile, classicht[j].ptr, j, true);
+
+        if (tiletovox[j] != -1)
+        {
+            for (int i=0; i<MAXVOXMIPS; i++)
+                if (voxoff[tiletovox[j]][i])
+                    inthash_add(&h_blocktotile, (intptr_t)voxoff[tiletovox[j]][i], j, true);
+        }
+    }
+
+    LOG_F(INFO, "Block listing:");
+    
+    int constexpr reportLineSize = 128;
+    auto buf = (char*)Balloca(reportLineSize);
 
     for (int i = 0; i < m_numBlocks-1; i++)
     {
         buf[0] = '\0';
-        Bsnprintf(buf, 64, "CAC:%4d ", i);
-
-        int len = Bstrlen(buf);
+        int len = Bsnprintf(buf, reportLineSize, "%4d ", i);
 
         if (m_index[i].hand)            
         {
-            Bsnprintf(buf+len, 64-len, "OFS:0x%08x ", (int32_t)(*m_index[i].hand - m_baseAddress));
-            len = Bstrlen(buf);
+            len += Bsnprintf(buf+len, reportLineSize-len, "@ %x: ", (int32_t)(*m_index[i].hand - m_baseAddress));
         }
         else
         {
             Bstrcat(buf, "FREE");
-            LOG_F(INFO, buf);
+            LOG_F(INFO, "%s", buf);
             continue;
         }
 
-        Bsnprintf(buf+len, 64-len, "SIZ:%5db ", m_index[i].leng);
-        len = Bstrlen(buf);
-
+        len += Bsnprintf(buf+len, reportLineSize-len, "SIZ:%5d ", m_index[i].leng);
         unusable += m_index[i].ovh;
 
-        Bsnprintf(buf+len, 64-len, "WSTD:%4db ", m_index[i].ovh);
-        len = Bstrlen(buf);
+        len += Bsnprintf(buf+len, reportLineSize-len, "USE:%5d ", m_index[i].leng-m_index[i].ovh);
 
+        len += Bsnprintf(buf+len, reportLineSize-len, "DEAD:%4d ", m_index[i].ovh);
+        
         if (m_index[i].lock)
         {
-            Bsnprintf(buf+len, 64-len, "LCK:%d ", *m_index[i].lock);
+            len += Bsnprintf(buf+len, reportLineSize-len, "LCK:%d ", *m_index[i].lock);
 
             if (*m_index[i].lock)
                 usedSize += m_index[i].leng;
         }
         else
-            Bsnprintf(buf+len, 64-len, "LCK:NULL ");
-
-        len = Bstrlen(buf);
+            len += Bsnprintf(buf+len, reportLineSize-len, "LCK:NULL ");
 
         int const tile = inthash_find(&h_blocktotile, *m_index[i].hand);
 
         if (tile != -1)
         {
-            Bsnprintf(buf+len, 64-len, "PIC:%5d ", tile);
-            len = Bstrlen(buf);
+            auto typestr = *m_index[i].hand == waloff[tile] ? "ART:%4d " :
+                           *m_index[i].hand == classicht[tile].ptr ? "HI:%4d " :
+                           "VOX:%4d "; // needs to be last or else we have to loop through voxoff[tile][]
+                
+            len += Bsnprintf(buf + len, reportLineSize - len, typestr, tile);
         }
-
-        LOG_F(INFO, buf);
+        
+        if (len < reportLineSize)
+            buf[len-1] = '\0';
+        
+        LOG_F(INFO, "%s", buf);
     }
     
     LOG_F(INFO, "Cache size:  %dKB", m_totalSize >> 10);
@@ -362,8 +381,7 @@ void cache1d::report(void)
     LOG_F(INFO, "Remaining:   %dKB", (m_totalSize - usedSize) >> 10);
     LOG_F(INFO, "Block count: %d/%d",m_numBlocks, m_maxBlocks);
 
-    LOG_F(INFO, "%d KB (%.2f%%) space made unusable by %d KB block alignment.", unusable >> 10, (float)unusable / m_totalSize * 100.f,
-               m_minBlockSize >> 10);
+    LOG_F(INFO, "%d KB (%.2f%%) space made unusable by block alignment.", unusable >> 10, (float)unusable / m_totalSize * 100.f);
 
     inthash_free(&h_blocktotile);
 }

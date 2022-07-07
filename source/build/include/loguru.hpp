@@ -1088,6 +1088,7 @@ LOGURU_ANONYMOUS_NAMESPACE_END
 
 // Message is optional
 #define ABORT_F(...) loguru::log_and_abort(0, "ABORT: ", __FILE__, __LINE__, __VA_ARGS__)
+#define ABORT_IF_F(cond, ...) (LOGURU_PREDICT_TRUE((cond) == false)) ? (void)0 : loguru::log_and_abort(0, "ABORT: ", __FILE__, __LINE__, __VA_ARGS__)
 
 // --------------------------------------------------------------------
 // CHECK_F macros:
@@ -1130,19 +1131,19 @@ LOGURU_ANONYMOUS_NAMESPACE_END
 
 #if LOGURU_DEBUG_LOGGING
 	// Debug logging enabled:
-	#define DLOG_F(verbosity_name, ...)     LOG_F(verbosity_name, __VA_ARGS__)
-	#define DVLOG_F(verbosity, ...)         VLOG_F(verbosity, __VA_ARGS__)
-	#define DLOG_IF_F(verbosity_name, ...)  LOG_IF_F(verbosity_name, __VA_ARGS__)
-	#define DVLOG_IF_F(verbosity, ...)      VLOG_IF_F(verbosity, __VA_ARGS__)
-	#define DRAW_LOG_F(verbosity_name, ...) RAW_LOG_F(verbosity_name, __VA_ARGS__)
-	#define DRAW_VLOG_F(verbosity, ...)     RAW_VLOG_F(verbosity, __VA_ARGS__)
+	#define DLOG_F(verbosity_name, ...)          LOG_F(verbosity_name, __VA_ARGS__)
+	#define DVLOG_F(verbosity, ...)              VLOG_F(verbosity, __VA_ARGS__)
+	#define DLOG_IF_F(verbosity_name, cond, ...) LOG_IF_F(verbosity_name, cond, __VA_ARGS__)
+	#define DVLOG_IF_F(verbosity, cond, ...)     VLOG_IF_F(verbosity, cond, __VA_ARGS__)
+	#define DRAW_LOG_F(verbosity_name, ...)      RAW_LOG_F(verbosity_name, __VA_ARGS__)
+	#define DRAW_VLOG_F(verbosity, ...)          RAW_VLOG_F(verbosity, __VA_ARGS__)
 #else
 	// Debug logging disabled:
 	// EDUKE32 MODIFICATION
 	#define DLOG_F(verbosity_name, ...) do {} while(0)
 	#define DVLOG_F(verbosity, ...) do {} while(0)
-	#define DLOG_IF_F(verbosity_name, ...) do {} while(0)
-	#define DVLOG_IF_F(verbosity, ...) do {} while(0)
+	#define DLOG_IF_F(verbosity_name, cond, ...) do {} while(0)
+	#define DVLOG_IF_F(verbosity, cond, ...) do {} while(0)
 	#define DRAW_LOG_F(verbosity_name, ...) do {} while(0)
 	#define DRAW_VLOG_F(verbosity, ...) do {} while(0)
 	// END EDUKE32 MODIFICATION

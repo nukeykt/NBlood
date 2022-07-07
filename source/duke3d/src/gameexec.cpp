@@ -3226,7 +3226,7 @@ badindex:
                     vm.pActor->lastv = pSprite->xy;
                 }
 
-                if (tw && ((vm.pSprite->statnum == STAT_ACTOR) | (vm.pSprite->statnum == STAT_STANDABLE)))
+                if (tw && ((int)(vm.pSprite->statnum == STAT_ACTOR) | (int)(vm.pSprite->statnum == STAT_STANDABLE)))
                     vm.pActor->timetosleep = SLEEPTIME;
 
                 branch(tw);
@@ -3249,7 +3249,7 @@ badindex:
                 AC_ACTION_COUNT(vm.pData) = 0;
                 AC_CURFRAME(vm.pData)     = 0;
 
-                if (!A_CheckEnemySprite(vm.pSprite) | (vm.pSprite->extra > 0))  // hack
+                if ((int)!A_CheckEnemySprite(vm.pSprite) | (int)(vm.pSprite->extra > 0))  // hack
                     if (vm.pSprite->hitag & random_angle)
                         vm.pSprite->ang = krand() & 2047;
                 dispatch();
@@ -3611,7 +3611,7 @@ badindex:
                 AC_MOVE_ID(vm.pData) = *insptr++;
                 vm.pSprite->hitag    = *insptr++;
 
-                if (!A_CheckEnemySprite(vm.pSprite) | (vm.pSprite->extra > 0))  // hack
+                if ((int)!A_CheckEnemySprite(vm.pSprite) | (int)(vm.pSprite->extra > 0))  // hack
                     if (vm.pSprite->hitag & random_angle)
                         vm.pSprite->ang = krand() & 2047;
                 dispatch();
@@ -4762,11 +4762,14 @@ badindex:
                         int32_t secondSector;
                     } v;
                     Gv_FillWithVars(v);
+                    
+                    int32_t returnvar = *insptr++;
+                    int32_t wallmask = Gv_GetVar(*insptr++);
 
                     VM_ABORT_IF(((unsigned)v.firstSector >= (unsigned)numsectors) | ((unsigned)v.secondSector >= (unsigned)numsectors), "invalid sector %d",
                               (unsigned)v.firstSector >= (unsigned)numsectors ? v.firstSector : v.secondSector);
 
-                    Gv_SetVar(*insptr++, cansee(v.vec1.x, v.vec1.y, v.vec1.z, v.firstSector, v.vec2.x, v.vec2.y, v.vec2.z, v.secondSector));
+                    Gv_SetVar(returnvar, cansee(v.vec1.x, v.vec1.y, v.vec1.z, v.firstSector, v.vec2.x, v.vec2.y, v.vec2.z, v.secondSector, wallmask));
                     dispatch();
                 }
 
@@ -6554,7 +6557,7 @@ badindex:
                 tw = Gv_GetVar(*insptr++);
 
                 VM_ABORT_IF(bad_quote(tw), "invalid quote %d", (int)tw);               
-                VLOG_F(LOG_VM, apStrings[tw]);
+                VLOG_F(LOG_VM, "%s", apStrings[tw]);
                 dispatch();
 
             vInstruction(CON_RESPAWNHITAG):
@@ -6767,7 +6770,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
             {
                 // hack for 1.3D fire sprites
 #ifndef EDUKE32_STANDALONE
-                if (!FURY && EDUKE32_PREDICT_FALSE(g_scriptVersion == 13 && ((vm.pSprite->picnum == FIRE) | (vm.pSprite->picnum == FIRE2))))
+                if (!FURY && EDUKE32_PREDICT_FALSE(g_scriptVersion == 13 && ((int)(vm.pSprite->picnum == FIRE) | (int)(vm.pSprite->picnum == FIRE2))))
                     return;
 #endif
                 changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);

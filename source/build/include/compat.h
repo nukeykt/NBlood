@@ -1201,8 +1201,12 @@ static FORCE_INLINE uint16_t system_15bit_rand(void) { return ((uint16_t)rand())
 // Copy min(strlen(src)+1, n) characters into dst, always terminate with a NUL.
 static FORCE_INLINE char *Bstrncpyz(char *dst, const char *src, bsize_t n)
 {
-    Bstrncpy(dst, src, n);
-    dst[n-1] = 0;
+    if (n > 0)
+    {
+        Bmemcpy(dst, src, min(Bstrlen(src)+1, n-1));
+        dst[n-1] = '\0';
+    }
+    
     return dst;
 }
 

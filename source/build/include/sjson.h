@@ -550,6 +550,7 @@ static inline void sjson__page_del(sjson__node_page* page, sjson_node* ptr)
 {
     sjson_assert(page->iter != page->capacity && "Cannot delete more objects");
     sjson_assert(sjson__page_valid(page, ptr) && "Pointer does not belong to page");
+    ABORT_IF_F(!page, "sjson__page_del: cannot delete object from NULL page");
     page->ptrs[page->iter++] = ptr;
 }
 
@@ -722,6 +723,7 @@ static inline sjson_node* sjson__new_node(sjson_context* ctx, sjson_tag tag)
     }
 
     sjson_node* node = sjson__page_new(npage);
+    ABORT_IF_F(!node, "sjson__new_node: node page capacity is full");
     sjson_memset(node, 0x0, sizeof(sjson_node));
     node->tag = tag;
     return node;
@@ -1363,6 +1365,7 @@ sjson_node *sjson_mknull(sjson_context* ctx)
 sjson_node *sjson_mkbool(sjson_context* ctx, bool b)
 {
     sjson_node *ret = sjson__new_node(ctx, SJSON_BOOL);
+    ABORT_IF_F(!ret, "sjson_mkbool: out of memory");
     ret->bool_ = b;
     return ret;
 }
@@ -1370,6 +1373,7 @@ sjson_node *sjson_mkbool(sjson_context* ctx, bool b)
 static sjson_node *sjson__mkstring(sjson_context* ctx, char *s)
 {
     sjson_node *ret = sjson__new_node(ctx, SJSON_STRING);
+    ABORT_IF_F(!ret, "sjson__mkstring: out of memory");
     ret->string_ = s;
     return ret;
 }
@@ -1382,6 +1386,7 @@ sjson_node *sjson_mkstring(sjson_context* ctx, const char *s)
 sjson_node *sjson_mknumber(sjson_context* ctx, double n)
 {
     sjson_node *node = sjson__new_node(ctx, SJSON_NUMBER);
+    ABORT_IF_F(!node, "sjson_mknumber: out of memory");
     node->number_ = n;
     return node;
 }
@@ -1398,6 +1403,7 @@ sjson_node *sjson_mkobject(sjson_context* ctx)
 
 static void sjson__append_node(sjson_node *parent, sjson_node *child)
 {
+    ABORT_IF_F(!child | !parent, "sjson__append_node: invalid arguments");
     child->parent = parent;
     child->prev = parent->children.tail;
     child->next = NULL;
@@ -1411,6 +1417,7 @@ static void sjson__append_node(sjson_node *parent, sjson_node *child)
 
 static void sjson__prepend_node(sjson_node *parent, sjson_node *child)
 {
+    ABORT_IF_F(!child | !parent, "sjson__prepend_node: invalid arguments");    
     child->parent = parent;
     child->prev = NULL;
     child->next = parent->children.head;

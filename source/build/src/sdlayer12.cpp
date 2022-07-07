@@ -1,8 +1,15 @@
 // SDL 1.2 compatibility.
 
+#include "build.h"
+#include "mutex.h"
+
 #include <SDL/SDL_events.h>
 
+#define SURFACE_FLAGS	(SDL_SWSURFACE|SDL_HWPALETTE|SDL_HWACCEL|SDL_RESIZABLE)
+
 #ifdef _WIN32
+#include "winbits.h"
+
 HWND win_gethwnd(void)
 {
     struct SDL_SysWMinfo wmInfo;
@@ -10,7 +17,7 @@ HWND win_gethwnd(void)
 
     if (SDL_GetWMInfo(&wmInfo) != 1)
     {
-        initprintf("win_gethwnd: SDL_GetWindowWMInfo() failed: %s\n", SDL_GetError());
+        LOG_F(ERROR, "Couldn't get window handle");
         return 0;
     }
 
@@ -27,7 +34,7 @@ int32_t videoSetVsync(int32_t newSync)
 
     videoResetMode();
     if (videoSetGameMode(fullscreen, xres, yres, bpp, upscalefactor))
-        OSD_Printf("restartvid: Reset failed...\n");
+        LOG_F(ERROR, "Failed to set video mode!");
 
     return newSync;
 }
@@ -39,14 +46,22 @@ int32_t sdlayer_checkversion(void)
 
     SDL_VERSION(&compiled);
 
-    initprintf("Initializing SDL system interface "
-               "(compiled against SDL version %d.%d.%d, found version %d.%d.%d)\n",
-               compiled.major, compiled.minor, compiled.patch, linked->major, linked->minor, linked->patch);
+    int constexpr bufsiz = 128;
+    auto buf = (char*)Balloca(bufsiz);
+    buf[0] = 0;
+
+    if (!Bmemcmp(&compiled, &linked, sizeof(SDL_version)))
+        Bsnprintf(buf, bufsiz, "Initializing SDL %d.%d.%d", compiled.major, compiled.minor, compiled.patch);
+    else
+        Bsnprintf(buf, bufsiz, "Initializing SDL %d.%d.%d (built against version %d.%d.%d)",
+            linked->major, linked->minor, linked->patch, compiled.major, compiled.minor, compiled.patch);
+
+    LOG_F(INFO, "%s", buf);
 
     if (SDL_VERSIONNUM(linked->major, linked->minor, linked->patch) < SDL_REQUIREDVERSION)
     {
         /*reject running under SDL versions older than what is stated in sdl_inc.h */
-        initprintf("You need at least v%d.%d.%d of SDL to run this game\n", SDL_MIN_X, SDL_MIN_Y, SDL_MIN_Z);
+        LOG_F(ERROR, "You need SDL %d.%d.%d or newer to run %s.",SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z,apptitle);
         return -1;
     }
 
@@ -98,12 +113,12 @@ int32_t initsystem(void)
 #ifdef USE_OPENGL
         if (SDL_GL_LoadLibrary(0))
         {
-            initprintf("Failed loading OpenGL driver. GL modes will be unavailable.\n");
+            LOG_F(ERROR, "Failed loading OpenGL driver: %s; all OpenGL modes are unavailable.", SDL_GetError());
             nogl = 1;
         }
 #endif
         if (SDL_VideoDriverName(drvname, 32))
-            initprintf("Using \"%s\" video driver\n", drvname);
+            LOG_F(INFO, "Using '%s' video driver.", drvname);
 
         wm_setapptitle(apptitle);
     }
@@ -170,6 +185,8 @@ static inline char grabmouse_low(char a)
 
 void videoGetModes(int display)
 {
+    UNREFERENCED_PARAMETER(display);
+    
     int32_t i, maxx = 0, maxy = 0;
     int32_t j;
     static int32_t cdepths[] = { 8,
@@ -275,10 +292,13 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     {
         if (ret == 0)
         {
-            setvideomode_sdlcommonpost(x, y, c, fs, regrab);
+            if (setvideomode_sdlcommonpost(x, y, c, fs, regrab))
+                return -1;
         }
         return ret;
     }
+
+    VLOG_F(LOG_GFX, "Setting video mode %dx%d (%d-bpp %s).", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
 
     // restore gamma before we change video modes if it was changed
     if (sdl_surface && gammabrightness)
@@ -290,7 +310,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     // deinit
     destroy_window_resources();
 
-    initprintf("Setting video mode %dx%d (%d-bpp %s)\n", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
 
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
@@ -309,7 +328,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         } sdlayer_gl_attributes [] =
         {
             { SDL_GL_DOUBLEBUFFER, 1 },
-            { SDL_GL_STENCIL_SIZE, 8 },
+            { SDL_GL_STENCIL_SIZE, 1 },
             { SDL_GL_ACCELERATED_VISUAL, 1 },
             { SDL_GL_SWAP_CONTROL, vsync_renderlayer },
         };
@@ -330,10 +349,12 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             }
             ovsync = vsync_renderlayer;
         }
-        sdl_surface = SDL_SetVideoMode(x, y, c, SDL_OPENGL | ((fs & 1) ? SDL_FULLSCREEN : 0));
+        sdl_surface = SDL_SetVideoMode(x, y, c, SDL_RESIZABLE | SDL_OPENGL | ((fs & 1) ? SDL_FULLSCREEN : 0));
         if (!sdl_surface)
         {
-            initprintf("Unable to set video mode!\n");
+            LOG_F(ERROR, "Unable to set video mode: SDL_SetVideoMode failed: %s.", SDL_GetError());
+            nogl = 1;
+            destroy_window_resources();
             return -1;
         }
 
@@ -347,7 +368,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
         if (!sdl_surface)
         {
-            initprintf("Unable to set video mode!\n");
+            LOG_F(ERROR, "Unable to set video mode: SDL_SetVideoMode failed: %s.", SDL_GetError());
             return -1;
         }
     }
@@ -356,57 +377,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     return 0;
 }
-
-//
-// showframe() -- update the display
-//
-void videoShowFrame(int32_t w)
-{
-    UNREFERENCED_PARAMETER(w);
-
-#ifdef USE_OPENGL
-    if (!nogl)
-    {
-        if (bpp > 8)
-        {
-            if (palfadedelta)
-                fullscreen_tint_gl(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
-            fullscreen_tint_gl_blood();
-        }
-        else
-        {
-            glsurface_blitBuffer();
-        }
-
-        SDL_GL_SwapBuffers();
-
-        if (w != -1)
-        {
-            if (bpp > 8)
-                polymost_resetVertexPointers();
-            else
-                glsurface_refresh();
-        }
-
-        return;
-    }
-#endif
-
-    if (offscreenrendering) return;
-
-    if (lockcount)
-    {
-        printf("Frame still locked %d times when showframe() called.\n", lockcount);
-        while (lockcount) videoEndDrawing();
-    }
-
-    if (SDL_MUSTLOCK(sdl_surface)) SDL_LockSurface(sdl_surface);
-    softsurface_blitBuffer((uint32_t*) sdl_surface->pixels, sdl_surface->format->BitsPerPixel);
-    if (SDL_MUSTLOCK(sdl_surface)) SDL_UnlockSurface(sdl_surface);
-
-    SDL_Flip(sdl_surface);
-}
-
 
 // SDL 1.2 specific event handling
 int32_t handleevents_pollsdl(void)
@@ -485,6 +455,11 @@ int32_t handleevents_pollsdl(void)
                     if (ev.active.state & SDL_APPMOUSEFOCUS)
                         g_mouseInsideWindow = ev.active.gain;
                 }
+                break;
+
+            case SDL_VIDEORESIZE:
+                if (fullscreen) break;
+                sdl_resize = { ev.resize.w & ~1, ev.resize.h & ~1 };
                 break;
 
             // SDL_MOUSEMOTION needs to fall through to default... this is just GEKKO processing!
