@@ -6687,54 +6687,218 @@ next_most:
             lwall[x] = startumost[x+windowxy1.x]-windowxy1.y;
             swall[x] = startdmost[x+windowxy1.x]-windowxy1.y;
         }
-        for (i=smostwallcnt-1; i>=0; i--)
+        if ((tspr->cstat & 48) == 16)
         {
-            j = smostwall[i];
-            if ((xb1[j] > rx) || (xb2[j] < lx)) continue;
-            if ((yp <= yb1[j]) && (yp <= yb2[j])) continue;
-            if (spritewallfront(tspr,(int32_t)thewall[j]) && ((yp <= yb1[j]) || (yp <= yb2[j]))) continue;
+            const int32_t xspan = tilesiz[tilenum].x;
+            const int32_t yspan = tilesiz[tilenum].y;
+            const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
+            const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
 
-            const int32_t dalx2 = max(xb1[j],lx);
-            const int32_t darx2 = min(xb2[j],rx);
+            i = (xspan>>1) + off.x;
+            x1 = tspr->x-globalposx-mulscale16(xv,i); x2 = x1+mulscale16(xv,xspan);
+            y1 = tspr->y-globalposy-mulscale16(yv,i); y2 = y1+mulscale16(yv,xspan);
 
-            switch (smostwalltype[i])
+            vec2_t p1 = get_rel_coords(x1, y1);
+            vec2_t p2 = get_rel_coords(x2, y2);
+
+            if (p1.y <= 0 && p2.y <= 0)
+                return;
+
+            x1 += globalposx; y1 += globalposy;
+            x2 += globalposx; y2 += globalposy;
+
+            if (dmulscale32(p1.x, p2.y, -p2.x, p1.y) >= 0)  // If wall's NOT facing you
             {
-            case 0:
-                if (dalx2 <= darx2)
+                const vec2_t pt = p2;
+                p2 = p1;
+                p1 = pt;
+                i = x1, x1 = x2, x2 = i;
+                i = y1, y1 = y2, y2 = i;
+            }
+
+            for (i=smostwallcnt-1; i>=0; i--)
+            {
+                j = smostwall[i];
+
+                if (xb1[j] > rx || xb2[j] < lx)
+                    continue;
+
+                int32_t dalx2 = xb1[j];
+                int32_t darx2 = xb2[j];
+
+                if (max(p1.y,p2.y) > min(yb1[j],yb2[j]))
                 {
-                    if ((dalx2 == lx) && (darx2 == rx)) return;
-                    //clearbufbyte(&swall[dalx2],(darx2-dalx2+1)*sizeof(swall[0]),0L);
-                    for (x=dalx2; x<=darx2; x++) swall[x] = 0;
-                }
-                break;
-            case 1:
-                k = smoststart[i] - xb1[j];
-                x = dalx2;
-#ifdef CLASSIC_SLICE_BY_4
-                for (; x<=darx2-2; x+=2)
-                {
-                    if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
-                    if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
-                }
+                    if (min(p1.y,p2.y) > max(yb1[j],yb2[j]))
+                    {
+                        x = INT32_MIN;
+                    }
+                    else
+                    {
+                        x = thewall[j]; xp1 = wall[x].x; yp1 = wall[x].y;
+                        x = wall[x].point2; xp2 = wall[x].x; yp2 = wall[x].y;
+
+                        z1 = (xp2-xp1)*(y1-yp1) - (yp2-yp1)*(x1-xp1);
+                        z2 = (xp2-xp1)*(y2-yp1) - (yp2-yp1)*(x2-xp1);
+                        if ((z1 == 0) | (z2 == 0))
+                        {
+                            if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
+                            {
+                                if (wall[thewall[j]].nextsector == tspr->sectnum)
+                                    x = INT32_MIN;
+                                else
+                                    x = INT32_MAX;
+                            }
+                            else
+                                x = (z1+z2);
+                        }
+                        else if ((z1^z2) >= 0)
+                            x = (z1+z2);
+                        else
+                        {
+                            z1 = (x2-x1)*(yp1-y1) - (y2-y1)*(xp1-x1);
+                            z2 = (x2-x1)*(yp2-y1) - (y2-y1)*(xp2-x1);
+
+                            if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
+                                x = -(z1+z2);
+                            else
+                            {
+                                if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
+                                {
+                                    if (wall[thewall[j]].nextsector == tspr->sectnum)
+                                        x = INT32_MIN;
+                                    else
+                                        x = INT32_MAX;
+                                }
+                                else
+                                {
+                                    x = INT32_MAX;
+#if 0
+                                    //INTERSECTION!
+                                    x = (xp1-globalposx) + scale(xp2-xp1,z1,z1-z2);
+                                    y = (yp1-globalposy) + scale(yp2-yp1,z1,z1-z2);
+
+                                    yp1 = dmulscale14(x,cosviewingrangeglobalang,y,sinviewingrangeglobalang);
+
+                                    if (yp1 > 0)
+                                    {
+                                        xp1 = dmulscale14(y,cosglobalang,-x,singlobalang);
+
+                                        x = halfxdimen + scale(xp1,halfxdimen,yp1);
+                                        if (xp1 >= 0) x++;   //Fix for SIGNED divide
+
+                                        if (z1 < 0)
+                                            { if (dalx2 < x) dalx2 = x; }
+                                        else
+                                            { if (darx2 > x) darx2 = x; }
+                                        x = INT32_MIN+1;
+                                    }
+                                    else
+                                        x = INT32_MAX;
 #endif
-                for (; x<=darx2; x++)
-                    if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
-                break;
-            case 2:
-                k = smoststart[i] - xb1[j];
-                x = dalx2;
+                                }
+                            }
+                        }
+                    }
+
+                    if (x < 0)
+                    {
+                        if (dalx2 < lx) dalx2 = lx;
+                        if (darx2 > rx) darx2 = rx;
+
+                        switch (smostwalltype[i])
+                        {
+                        case 0:
+                            if (dalx2 <= darx2)
+                            {
+                                if ((dalx2 == lx) && (darx2 == rx)) return;
+                                //clearbufbyte(&dwall[dalx2],(darx2-dalx2+1)*sizeof(dwall[0]),0L);
+                                for (k=dalx2; k<=darx2; k++) swall[k] = 0;
+                            }
+                            break;
+                        case 1:
+                            k = smoststart[i] - xb1[j];
+                            x = dalx2;
 #ifdef CLASSIC_SLICE_BY_4
-                for (; x<=darx2-4; x+=4)
-                {
-                    if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
-                    if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
-                    if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
-                    if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
-                }
+                            for (; x<=darx2-2; x+=2)
+                            {
+                                if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                                if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
+                            }
 #endif
-                for (; x<=darx2; x++)
-                    if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
-                break;
+                            for (; x<=darx2; x++)
+                                if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                            break;
+                        case 2:
+                            k = smoststart[i] - xb1[j];
+                            x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                            for (; x<=darx2-4; x+=4)
+                            {
+                                if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                                if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
+                                if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
+                                if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
+                            }
+#endif
+                            for (; x<=darx2; x++)
+                                if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (i=smostwallcnt-1; i>=0; i--)
+            {
+                j = smostwall[i];
+                if ((xb1[j] > rx) || (xb2[j] < lx)) continue;
+                if ((yp <= yb1[j]) && (yp <= yb2[j])) continue;
+                if (spritewallfront(tspr,(int32_t)thewall[j]) && ((yp <= yb1[j]) || (yp <= yb2[j]))) continue;
+
+                const int32_t dalx2 = max(xb1[j],lx);
+                const int32_t darx2 = min(xb2[j],rx);
+
+                switch (smostwalltype[i])
+                {
+                case 0:
+                    if (dalx2 <= darx2)
+                    {
+                        if ((dalx2 == lx) && (darx2 == rx)) return;
+                        //clearbufbyte(&swall[dalx2],(darx2-dalx2+1)*sizeof(swall[0]),0L);
+                        for (x=dalx2; x<=darx2; x++) swall[x] = 0;
+                    }
+                    break;
+                case 1:
+                    k = smoststart[i] - xb1[j];
+                    x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                    for (; x<=darx2-2; x+=2)
+                    {
+                        if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                        if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
+                    }
+#endif
+                    for (; x<=darx2; x++)
+                        if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                    break;
+                case 2:
+                    k = smoststart[i] - xb1[j];
+                    x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                    for (; x<=darx2-4; x+=4)
+                    {
+                        if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                        if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
+                        if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
+                        if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
+                    }
+#endif
+                    for (; x<=darx2; x++)
+                        if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                    break;
+                }
             }
         }
 
