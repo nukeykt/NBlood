@@ -951,7 +951,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 1) == 0 && pXItem->state) {
                         pPlayer->hasFlag |= 1;
                         pPlayer->used2[0] = pItem->index;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOff);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOff, pPlayer->nSprite);
                         sprintf(buffer, "%s stole Blue Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8007, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -963,7 +963,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 1) != 0 && !pXItem->state) {
                         pPlayer->hasFlag &= ~1;
                         pPlayer->used2[0] = -1;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOn);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOn, pPlayer->nSprite);
                         sprintf(buffer, "%s returned Blue Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8003, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -974,7 +974,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->used2[1] = -1;
                         gPlayerScores[pPlayer->teamId] += 10;
                         gPlayerScoreTicks[pPlayer->teamId] += 240;
-                        evSend(0, 0, 81, kCmdOn);
+                        evSend(0, 0, 81, kCmdOn, pPlayer->nSprite);
                         sprintf(buffer, "%s captured Red Flag!", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8001, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -995,7 +995,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 2) == 0 && pXItem->state) {
                         pPlayer->hasFlag |= 2;
                         pPlayer->used2[1] = pItem->index;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOff);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOff, pPlayer->nSprite);
                         sprintf(buffer, "%s stole Red Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8006, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1007,7 +1007,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     {
                         pPlayer->hasFlag &= ~2;
                         pPlayer->used2[1] = -1;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOn);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOn, pPlayer->nSprite);
                         sprintf(buffer, "%s returned Red Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8002, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1018,7 +1018,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->used2[0] = -1;
                         gPlayerScores[pPlayer->teamId] += 10;
                         gPlayerScoreTicks[pPlayer->teamId] += 240;
-                        evSend(0, 0, 80, kCmdOn);
+                        evSend(0, 0, 80, kCmdOn, pPlayer->nSprite);
                         sprintf(buffer, "%s captured Blue Flag!", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8000, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1221,7 +1221,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     else if (pSprite->extra > 0) {
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
         if (pXSprite->Pickup)
-            trTriggerSprite(pSprite->index, pXSprite, kCmdSpritePickup);
+            trTriggerSprite(pSprite->index, pXSprite, kCmdSpritePickup, pPlayer->nSprite);
     }
         
     if (!actCheckRespawn(pSprite)) 
@@ -1316,7 +1316,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
                     zvel[*a2] += mulscale16(z, t2);
                 }
                 if (pXSprite->Push && !pXSprite->state && !pXSprite->isTriggered)
-                    trTriggerSprite(*a2, pXSprite, kCmdSpritePush);
+                    trTriggerSprite(*a2, pXSprite, kCmdSpritePush, pPlayer->nSprite);
             }
             break;
         case 0:
@@ -1544,7 +1544,7 @@ void ProcessInput(PLAYER *pPlayer)
                     sndStartSample(3062, 255, 2, 0);
                 }
                 if (!key || pPlayer->hasKey[key])
-                    trTriggerSector(a2, pXSector, kCmdSpritePush);
+                    trTriggerSector(a2, pXSector, kCmdSpritePush, pPlayer->nSprite);
                 else if (pPlayer == gMe)
                 {
                     viewSetMessage("That requires a key.");
@@ -1562,7 +1562,9 @@ void ProcessInput(PLAYER *pPlayer)
                 sndStartSample(3062, 255, 2, 0);
             }
             if (!key || pPlayer->hasKey[key])
-                trTriggerWall(a2, pXWall, kCmdWallPush);
+            {
+                trTriggerWall(a2, pXWall, kCmdWallPush, pPlayer->nSprite);
+            }
             else if (pPlayer == gMe)
             {
                 viewSetMessage("That requires a key.");
@@ -1577,7 +1579,7 @@ void ProcessInput(PLAYER *pPlayer)
             if (pXSprite->locked && pPlayer == gMe && pXSprite->lockMsg)
                 trTextOver(pXSprite->lockMsg);
             if (!key || pPlayer->hasKey[key])
-                trTriggerSprite(a2, pXSprite, kCmdSpritePush);
+                trTriggerSprite(a2, pXSprite, kCmdSpritePush, pPlayer->nSprite);
             else if (pPlayer == gMe)
             {
                 viewSetMessage("That requires a key.");
@@ -1961,16 +1963,16 @@ void FragPlayer(PLAYER *pPlayer, int nSprite)
         if (nTeam1 == 0)
         {
             if (nTeam1 != nTeam2)
-                evSend(0, 0, 15, kCmdToggle);
+                evSend(0, 0, 15, kCmdToggle, pPlayer->nSprite);
             else
-                evSend(0, 0, 16, kCmdToggle);
+                evSend(0, 0, 16, kCmdToggle, pPlayer->nSprite);
         }
         else
         {
             if (nTeam1 == nTeam2)
-                evSend(0, 0, 16, kCmdToggle);
+                evSend(0, 0, 16, kCmdToggle, pPlayer->nSprite);
             else
-                evSend(0, 0, 15, kCmdToggle);
+                evSend(0, 0, 15, kCmdToggle, pPlayer->nSprite);
         }
     }
 }
@@ -2152,7 +2154,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
     {
         powerupClear(pPlayer);
         if (nXSector > 0 && xsector[nXSector].Exit)
-            trTriggerSector(pSprite->sectnum, &xsector[nXSector], kCmdSectorExit);
+            trTriggerSector(pSprite->sectnum, &xsector[nXSector], kCmdSectorExit, nSource);
         pSprite->flags |= 7;
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -2160,7 +2162,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
                 gPlayer[p].fraggerId = -1;
         }
         FragPlayer(pPlayer, nSource);
-        trTriggerSprite(nSprite, pXSprite, kCmdOff);
+        trTriggerSprite(nSprite, pXSprite, kCmdOff, nSource);
 
         #ifdef NOONE_EXTENSIONS
         // allow drop items and keys in multiplayer

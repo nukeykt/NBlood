@@ -71,6 +71,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kModernTypeFlag4 0x0004
 #define kModernTypeFlag8 0x0008
 #define kModernTypeFlag16 0x0010
+#define kModernTypeFlag64 0x0040
 
 #define kMaxRandomizeRetries 16
 #define kPercFull 100
@@ -95,6 +96,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kMinAllowedPowerup kPwUpFeatherFall
 #define kMaxAllowedPowerup kMaxPowerUps
+
+#define kCauserGame (kMaxSprites - 1)
 
 // modern statnums
 enum {
@@ -142,6 +145,7 @@ kModernPlayerControl                = 500, /// WIP
 kModernCondition                    = 501, /// WIP, sends command only if specified conditions == true
 kModernConditionFalse               = 502, /// WIP, sends command only if specified conditions != true
 kModernSlopeChanger                 = 504,
+kModernVelocityChanger              = 506,
 kGenModernMissileUniversal          = 704,
 kGenModernSound                     = 708,
 };
@@ -218,6 +222,7 @@ class SPRINSECT
         ~SPRINSECT() { Free(); };
 
 };
+
 
 // - STRUCTS ------------------------------------------------------------------
 struct SPRITEMASS { // sprite mass info for getSpriteMassBySize();
@@ -318,19 +323,15 @@ extern short gImpactSpritesCount;
 extern short gTrackingCondsCount;
 extern AISTATE genPatrolStates[kPatrolStateSize];
 extern SPRINSECT gSprNSect;
-
-// - INLINES -------------------------------------------------------------------
-inline bool xsprIsFine(spritetype* pSpr) {
-    return (pSpr && xspriRangeIsFine(pSpr->extra) && !(pSpr->flags & kHitagFree) && !(pSpr->flags & kHitagRespawn));
-}
 // - FUNCTIONS ------------------------------------------------------------------
+inline bool xsprIsFine(spritetype* pSpr);
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
 void nnExtInitModernStuff(bool bSaveLoad);
 void nnExtProcessSuperSprites(void);
 bool nnExtIsImmune(spritetype* pSprite, int dmgType, int minScale = 16);
 int nnExtRandom(int a, int b);
 void nnExtResetGlobals();
-void nnExtTriggerObject(int objType, int objIndex, int command);
+void nnExtTriggerObject(int objType, int objIndex, int command, int causerID);
 //  -------------------------------------------------------------------------   //
 spritetype* randomDropPickupObject(spritetype* pSprite, short prevItem);
 spritetype* randomSpawnDude(XSPRITE* pXSource, spritetype* pSprite, int a3, int a4);
@@ -382,12 +383,13 @@ void useSectorLigthChanger(XSPRITE* pXSource, XSECTOR* pXSector);
 void useTargetChanger(XSPRITE* pXSource, spritetype* pSprite);
 void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex);
 void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex);
-void useSequentialTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState);
-void useRandomTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState);
+void useSequentialTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState, int causerID);
+void useRandomTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState, int causerID);
 void useDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
 void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
+void useVelocityChanger(XSPRITE* pXSource, int causerID, short objType, int objIndex);
 bool txIsRanged(XSPRITE* pXSource);
-void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernSend);
+void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernSend, int causerID);
 //  -------------------------------------------------------------------------   //
 void trPlayerCtrlLink(XSPRITE* pXSource, PLAYER* pPlayer, bool checkCondition);
 void trPlayerCtrlSetRace(XSPRITE* pXSource, PLAYER* pPlayer);
@@ -402,11 +404,11 @@ void trPlayerCtrlGiveStuff(XSPRITE* pXSource, PLAYER* pPlayer, TRPLAYERCTRL* pCt
 void trPlayerCtrlUsePackItem(XSPRITE* pXSource, PLAYER* pPlayer, int evCmd);
 //  -------------------------------------------------------------------------   //
 void modernTypeTrigger(int type, int nDest, EVENT event);
-char modernTypeSetSpriteState(int nSprite, XSPRITE* pXSprite, int nState);
+char modernTypeSetSpriteState(int nSprite, XSPRITE* pXSprite, int nState, int causerID);
 bool modernTypeOperateSector(int nSector, sectortype* pSector, XSECTOR* pXSector, EVENT event);
 bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite, EVENT event);
 bool modernTypeOperateWall(int nWall, walltype* pWall, XWALL* pXWall, EVENT event);
-void modernTypeSendCommand(int nSprite, int channel, COMMAND_ID command);
+void modernTypeSendCommand(int nSprite, int channel, COMMAND_ID command, int causerID);
 //  -------------------------------------------------------------------------   //
 bool playerSizeShrink(PLAYER* pPlayer, int divider);
 bool playerSizeGrow(PLAYER* pPlayer, int multiplier);
@@ -453,6 +455,11 @@ XSPRITE* evrListRedirectors(int objType, int objXIndex, XSPRITE* pXRedir, int* t
 XSPRITE* evrIsRedirector(int nSprite);
 int listTx(XSPRITE* pXRedir, int tx);
 void seqSpawnerOffSameTx(XSPRITE* pXSource);
+void triggerTouchSprite(spritetype* pSprite, int nHSprite);
+void triggerTouchWall(spritetype* pSprite, int nHWall);
+void killEvents(int nRx, int nCmd);
+void changeSpriteAngle(spritetype* pSpr, int nAng);
+int getVelocityAngle(spritetype* pSpr);
 //  -------------------------------------------------------------------------   //
 void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite);
 void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite);
@@ -490,6 +497,7 @@ inline bool aiInPatrolState(AISTATE* pAiState) {
 inline bool aiInPatrolState(int nAiStateType) {
     return (nAiStateType >= kAiStatePatrolBase && nAiStateType < kAiStatePatrolMax);
 }
+
 //  -------------------------------------------------------------------------   //
 bool readyForCrit(spritetype* pHunter, spritetype* pVictim);
 int sectorInMotion(int nSector);

@@ -382,7 +382,7 @@ static void ThrowThing(int nXIndex, bool impact) {
     if (impact == true && dist <= 7680) xsprite[pThing->extra].Impact = true;
     else {
         xsprite[pThing->extra].Impact = false;
-        evPost(pThing->index, 3, 120 * Random(2) + 120, kCmdOn);
+        evPost(pThing->index, 3, 120 * Random(2) + 120, kCmdOn, pSprite->index);
     }
 }
 
@@ -1707,7 +1707,7 @@ void genDudeTransform(spritetype* pSprite) {
     XSPRITE* pXIncarnation = getNextIncarnation(pXSprite);
     if (pXIncarnation == NULL) {
         if (pXSprite->sysData1 == kGenDudeTransformStatus) pXSprite->sysData1 = 0;
-        trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+        trTriggerSprite(pSprite->index, pXSprite, kCmdOff, pSprite->index);
         return;
     }
     
@@ -1723,7 +1723,7 @@ void genDudeTransform(spritetype* pSprite) {
     pXIncarnation->triggerOff = false;
 
     // trigger dude death before transform
-    trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+    trTriggerSprite(pSprite->index, pXSprite, kCmdOff, pSprite->index);
 
     pSprite->type = pSprite->inittype = pIncarnation->type;
     pSprite->flags = pIncarnation->flags;
