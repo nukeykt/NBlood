@@ -3072,7 +3072,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             gPlayer[p].fraggerId = -1;
     }
     if (pSprite->type != kDudeCultistBeast)
-        trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+        trTriggerSprite(pSprite->index, pXSprite, kCmdOff, nKillerSprite);
 
     pSprite->flags |= 7;
     if (VanillaMode()) {
@@ -3598,7 +3598,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                     break;
             }
 
-            trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+            trTriggerSprite(pSprite->index, pXSprite, kCmdOff, nSource);
             
             switch (pSprite->type) {
                 case kThingObjectGib:
@@ -3999,7 +3999,10 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
     
     #ifdef NOONE_EXTENSIONS
     if (gModernMap && pXSpriteHit && pXSpriteHit->state != pXSpriteHit->restState && pXSpriteHit->Impact)
-        trTriggerSprite(nSpriteHit, pXSpriteHit, kCmdSpriteImpact);
+    {
+        int nOwner = actSpriteOwnerToSpriteId(pMissile);
+        trTriggerSprite(nSpriteHit, pXSpriteHit, kCmdSpriteImpact, (nOwner >= 0) ? nOwner : kCauserGame);
+    }
     #endif
     pMissile->cstat &= ~257;
 }
@@ -4322,37 +4325,22 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
 
     #ifdef NOONE_EXTENSIONS
     // add more trigger statements for Touch flag
-    if (gModernMap && IsDudeSprite(pSprite)) {
-        
+    if (gModernMap && IsDudeSprite(pSprite))
+    {
         // Touch sprites
-        int nHSprite = -1;
         if ((gSpriteHit[nXSprite].hit & 0xc000) == 0xc000)
-            nHSprite = gSpriteHit[nXSprite].hit & 0x3fff;
-        else if ((gSpriteHit[nXSprite].florhit & 0xc000) == 0xc000)
-            nHSprite = gSpriteHit[nXSprite].florhit & 0x3fff;
-        else if ((gSpriteHit[nXSprite].ceilhit & 0xc000) == 0xc000)
-            nHSprite = gSpriteHit[nXSprite].ceilhit & 0x3fff;
+            triggerTouchSprite(pSprite, gSpriteHit[nXSprite].hit & 0x3fff);
+        
+        if ((gSpriteHit[nXSprite].florhit & 0xc000) == 0xc000)
+            triggerTouchSprite(pSprite, gSpriteHit[nXSprite].florhit & 0x3fff);
+        
+        if ((gSpriteHit[nXSprite].ceilhit & 0xc000) == 0xc000)
+            triggerTouchSprite(pSprite, gSpriteHit[nXSprite].ceilhit & 0x3fff);
 
-        if (spriRangeIsFine(nHSprite) && xspriRangeIsFine(sprite[nHSprite].extra)) {
-            XSPRITE* pXHSprite = &xsprite[sprite[nHSprite].extra];
-            if (pXHSprite->Touch && !pXHSprite->isTriggered && (!pXHSprite->DudeLockout || IsPlayerSprite(pSprite)))
-                trTriggerSprite(nHSprite, pXHSprite, kCmdSpriteTouch);
-        }
 
         // Touch walls
-        int nHWall = -1;
-        if ((gSpriteHit[nXSprite].hit & 0xc000) == 0x8000) {
-            nHWall = gSpriteHit[nXSprite].hit & 0x3fff;
-            if (wallRangeIsFine(nHWall) && xwallRangeIsFine(wall[nHWall].extra)) {
-                XWALL* pXHWall = &xwall[wall[nHWall].extra];
-                if (pXHWall->triggerTouch && !pXHWall->isTriggered && (!pXHWall->dudeLockout || IsPlayerSprite(pSprite)))
-                    trTriggerWall(nHWall, pXHWall, kCmdWallTouch);
-            }
-        }
-
-        // enough to reset gSpriteHit values
-        if (nHWall != -1 || nHSprite != -1) xvel[nSprite] += 5;
-
+        if ((gSpriteHit[nXSprite].hit & 0xc000) == 0x8000)
+            triggerTouchWall(pSprite, gSpriteHit[nXSprite].hit & 0x3fff);
     }
     #endif
 }
@@ -4636,14 +4624,14 @@ void MoveDude(spritetype *pSprite)
             }
             #ifdef NOONE_EXTENSIONS
             if (!gModernMap && pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
-                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, pSprite->index);
             #else
                 if (pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
                     trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
             #endif
 
             if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
-                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush);
+                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush, pSprite->index);
 
             break;
         }
@@ -4655,7 +4643,7 @@ void MoveDude(spritetype *pSprite)
             if (pHitWall->extra > 0)
                 pHitXWall = &xwall[pHitWall->extra];
             if (pDudeInfo->lockOut && pHitXWall && pHitXWall->triggerPush && !pHitXWall->key && !pHitXWall->dudeLockout && !pHitXWall->state && !pHitXWall->busy && !pPlayer)
-                trTriggerWall(nHitWall, pHitXWall, kCmdWallPush);
+                trTriggerWall(nHitWall, pHitXWall, kCmdWallPush, pSprite->index);
             if (pHitWall->nextsector != -1)
             {
                 sectortype *pHitSector = &sector[pHitWall->nextsector];
@@ -4663,7 +4651,7 @@ void MoveDude(spritetype *pSprite)
                 if (pHitSector->extra > 0)
                     pHitXSector = &xsector[pHitSector->extra];
                 if (pDudeInfo->lockOut && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->dudeLockout && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
-                    trTriggerSector(pHitWall->nextsector, pHitXSector, kCmdSectorPush);
+                    trTriggerSector(pHitWall->nextsector, pHitXSector, kCmdSectorPush, pSprite->index);
                 if (top < pHitSector->ceilingz || bottom > pHitSector->floorz)
                 {
                     // ???
@@ -4689,7 +4677,7 @@ void MoveDude(spritetype *pSprite)
         else
             pXSector = NULL;
         if (pXSector && pXSector->Exit && (pPlayer || !pXSector->dudeLockout))
-            trTriggerSector(pSprite->sectnum, pXSector, kCmdSectorExit);
+            trTriggerSector(pSprite->sectnum, pXSector, kCmdSectorExit, pSprite->index);
         ChangeSpriteSect(nSprite, nSector);
         
         nXSector = sector[nSector].extra;
@@ -4698,7 +4686,7 @@ void MoveDude(spritetype *pSprite)
 
             if (sector[nSector].type == kSectorTeleport)
                 pXSector->data = pPlayer ? nSprite : -1;
-            trTriggerSector(nSector, pXSector, kCmdSectorEnter);
+            trTriggerSector(nSector, pXSector, kCmdSectorEnter, pSprite->index);
         }
 
         nSector = pSprite->sectnum;
@@ -5230,7 +5218,7 @@ int MoveMissile(spritetype *pSprite)
                 XWALL *pXWall = &xwall[pWall->extra];
                 if (pXWall->triggerVector)
                 {
-                    trTriggerWall(gHitInfo.hitwall, pXWall, kCmdWallImpact);
+                    trTriggerWall(gHitInfo.hitwall, pXWall, kCmdWallImpact, pOwner ? pOwner->index : pSprite->index);
                     if (!(pWall->cstat&64))
                     {
                         vdi = -1;
@@ -5573,7 +5561,7 @@ void actProcessSprites(void)
                                 #endif
                             }
                             if (pSprite->owner == -1) actPropagateSpriteOwner(pSprite, pSprite2);
-                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
+                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity, nSprite2);
                         }
                     }
                 }
@@ -5649,7 +5637,7 @@ void actProcessSprites(void)
                     {
                         XSPRITE *pXSprite = &xsprite[nXSprite];
                         if (pXSprite->Impact)
-                            trTriggerSprite(nSprite, pXSprite, kCmdOff);
+                            trTriggerSprite(nSprite, pXSprite, kCmdOff, ((hit & 0xc000) == 0xc000) ? (hit & 0x3fff) : kCauserGame);
                         switch (pSprite->type) {
                         case kThingDripWater:
                         case kThingDripBlood:
@@ -5753,7 +5741,7 @@ void actProcessSprites(void)
             if (nWall == -1)
                 break;
             XWALL *pXWall = &xwall[wall[nWall].extra];
-            trTriggerWall(nWall, pXWall, kCmdWallImpact);
+            trTriggerWall(nWall, pXWall, kCmdWallImpact, nOwner);
         }
         
         for (int nSprite2 = headspritestat[kStatDude]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
@@ -5854,7 +5842,7 @@ void actProcessSprites(void)
                     if (/*pXImpact->state == pXImpact->restState ||*/ !TestBitString(sectmap, pImpact->sectnum) || !CheckProximity(pImpact, x, y, z, nSector, radius))
                         continue;
                     
-                    trTriggerSprite(pImpact->index, pXImpact, kCmdSpriteImpact);
+                    trTriggerSprite(pImpact->index, pXImpact, kCmdSpriteImpact, nOwner);
                 }
             }
 
@@ -5983,7 +5971,7 @@ void actProcessSprites(void)
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
                     if ((unsigned int)pXSprite2->health > 0 && IsPlayerSprite(pSprite2)) {
                         if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, 128))
-                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
+                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity, nSprite2);
                     }
                 }
             }
@@ -6666,7 +6654,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             {
                 XWALL *pXWall = &xwall[nXWall];
                 if (pXWall->triggerVector)
-                    trTriggerWall(nWall, pXWall, kCmdWallImpact);
+                    trTriggerWall(nWall, pXWall, kCmdWallImpact, pShooter->index);
             }
             break;
         }
@@ -6688,7 +6676,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             {
                 XSPRITE *pXSprite = &xsprite[nXSprite];
                 if (pXSprite->Vector)
-                    trTriggerSprite(nSprite, pXSprite, kCmdSpriteImpact);
+                    trTriggerSprite(nSprite, pXSprite, kCmdSpriteImpact, pShooter->index);
             }
             if (pSprite->statnum == kStatThing)
             {
