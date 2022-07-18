@@ -458,7 +458,7 @@ endif
 ##### Instantiate variables
 
 COMMONFLAGS :=
-COMPILERFLAGS := -funsigned-char -frounding-math
+COMPILERFLAGS := -funsigned-char
 
 CSTD := -std=gnu11
 CXXSTD := -std=gnu++14
@@ -685,6 +685,10 @@ endif
 
 ifneq (0,$(KRANDDEBUG))
     COMMONFLAGS += -fno-inline -fno-inline-functions -fno-inline-functions-called-once
+endif
+
+ifneq (0,$(CLANG))
+    COMMONFLAGS += -frounding-math
 endif
 
 COMMONFLAGS += -fno-strict-aliasing -fno-threadsafe-statics $(F_JUMP_TABLES) $(F_NO_STACK_PROTECTOR)
