@@ -70,7 +70,7 @@ int initprintf(const char *f, ...)
     } while ((unsigned)len >= size);
 
     initputs(buf);
-    LOG_F(INFO, buf); // also log to nblood.log
+    LOG_F(INFO, buf); // also write to the .log file
     Xfree(buf);
 
     return len;
