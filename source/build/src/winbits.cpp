@@ -7,9 +7,11 @@
 #include "build.h"
 #include "cache1d.h"
 #include "compat.h"
+#include "editor.h"
 #include "osd.h"
 #include "renderlayer.h"
 
+#include <avrt.h>
 #include <mmsystem.h>
 #include <winnls.h>
 #include <winternl.h>
@@ -45,6 +47,17 @@ typedef DWORD(WINAPI *PFNPOWERSETACTIVESCHEME)(HKEY, CONST GUID *);
 
 static PFNPOWERGETACTIVESCHEME powrprof_PowerGetActiveScheme;
 static PFNPOWERSETACTIVESCHEME powrprof_PowerSetActiveScheme;
+
+static HMODULE hAVRT;
+static HANDLE hMMTHREAD;
+
+typedef HANDLE(WINAPI *PFNAVSETMMTHREADCHARACTERISTICS)(LPCSTR, LPDWORD);
+typedef BOOL(WINAPI* PFNAVREVERTMMTHREADCHARACTERISTICS)(HANDLE);
+typedef BOOL(WINAPI* PFNAVSETMMTHREADPRIORITY)(HANDLE, AVRT_PRIORITY);
+
+static PFNAVSETMMTHREADCHARACTERISTICS    avrt_AvSetMmThreadCharacteristics;
+static PFNAVREVERTMMTHREADCHARACTERISTICS avrt_AvRevertMmThreadCharacteristics;
+static PFNAVSETMMTHREADPRIORITY           avrt_AvSetMmThreadPriority;
 
 void windowsSetupTimer(int const useNtTimer)
 {
@@ -339,9 +352,25 @@ void windowsPlatformInit(void)
             powrprof_PowerSetActiveScheme = (PFNPOWERSETACTIVESCHEME)(void(*))GetProcAddress(hPOWRPROF, "PowerSetActiveScheme");
 
             if (powrprof_PowerGetActiveScheme == nullptr || powrprof_PowerSetActiveScheme == nullptr)
+            {
                 LOG_F(ERROR, "PowerGetActiveScheme or PowerSetActiveScheme symbols missing from powrprof.dll!");
+                hPOWRPROF = NULL;
+            }
             else if (!systemPowerSchemeGUID)
                 powrprof_PowerGetActiveScheme(NULL, &systemPowerSchemeGUID);
+        }
+
+        if (!hAVRT && (hAVRT = LoadLibrary("avrt.dll")))
+        {
+            avrt_AvSetMmThreadCharacteristics    = (PFNAVSETMMTHREADCHARACTERISTICS)   (void(*))GetProcAddress(hAVRT, "AvSetMmThreadCharacteristicsA");
+            avrt_AvSetMmThreadPriority           = (PFNAVSETMMTHREADPRIORITY)          (void(*))GetProcAddress(hAVRT, "AvSetMmThreadPriority");
+            avrt_AvRevertMmThreadCharacteristics = (PFNAVREVERTMMTHREADCHARACTERISTICS)(void(*))GetProcAddress(hAVRT, "AvRevertMmThreadCharacteristics");
+
+            if (avrt_AvSetMmThreadCharacteristics == nullptr || avrt_AvSetMmThreadPriority == nullptr || avrt_AvRevertMmThreadCharacteristics == nullptr)
+            {
+                LOG_F(ERROR, "AvSetMmThreadCharacteristicsA, AvSetMmThreadPriority or AvRevertMmThreadCharacteristics symbols missing from avrt.dll!");
+                hAVRT = NULL;
+            }
         }
     }
 }
@@ -500,6 +529,17 @@ void windowsDwmSetupComposition(int const compEnable)
 
 void windowsPlatformCleanup(void)
 {
+    if (hAVRT)
+    {
+        if (hMMTHREAD)
+        {
+            avrt_AvRevertMmThreadCharacteristics(hMMTHREAD);
+            hMMTHREAD = NULL;
+        }
+        FreeLibrary(hAVRT);
+        hAVRT = NULL;
+    }
+
     if (g_singleInstanceSemaphore)
         CloseHandle(g_singleInstanceSemaphore);
 
@@ -615,6 +655,8 @@ HKL windowsGetSystemKeyboardLayout(void)
 void windowsHandleFocusChange(int const appactive)
 {
     static HANDLE hProcess = GetCurrentProcess();
+    static DWORD index = 0;
+
 #ifndef DEBUGGINGAIDS
     win_silentfocuschange = true;
 #endif
@@ -622,7 +664,34 @@ void windowsHandleFocusChange(int const appactive)
     if (appactive)
     {
         if (win_boostpriority)
+        {
             SetPriorityClass(hProcess, win_boostpriority == 1 ? ABOVE_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
+        
+            if (!editorIsInitialized())
+            {
+                if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
+                    LOG_F(ERROR, "Error setting thread priority: %s.", windowsGetErrorMessage(GetLastError()));
+            
+                if (hAVRT)
+                {
+                    if (hMMTHREAD || (hMMTHREAD = avrt_AvSetMmThreadCharacteristics(TEXT("Games"), &index)))
+                    {
+                        DLOG_IF_F(INFO, !win_silentfocuschange, "Successfully set AVRT thread characteristics with index %d.", index);
+                        
+                        if (!avrt_AvSetMmThreadPriority(hMMTHREAD, AVRT_PRIORITY_CRITICAL))
+                        {
+                            auto err = GetLastError();
+                            LOG_F(ERROR, "Error setting AVRT thread priority: error %ld: %s.", err, windowsGetErrorMessage(err));
+                        }
+                    }
+                    else
+                    {
+                        auto err = GetLastError();
+                        LOG_F(ERROR, "Error setting AVRT thread characteristics with index %ld: error %ld: %s.", index, err, windowsGetErrorMessage(err));
+                    }
+                }
+            }
+        }
         
         windowsSetupTimer(win_systemtimermode);
         windowsSetKeyboardLayout(enUSLayoutString, true);
@@ -633,8 +702,27 @@ void windowsHandleFocusChange(int const appactive)
     else
     {
         if (win_boostpriority)
-            SetPriorityClass(hProcess, win_boostpriority == 1 ? IDLE_PRIORITY_CLASS : BELOW_NORMAL_PRIORITY_CLASS);
+        {
+            if (!SetPriorityClass(hProcess, win_boostpriority == 1 || editorIsInitialized() ? IDLE_PRIORITY_CLASS : BELOW_NORMAL_PRIORITY_CLASS))
+                LOG_F(ERROR, "Error setting thread priority: %s.", windowsGetErrorMessage(GetLastError()));
 
+            if (hAVRT && hMMTHREAD)
+            {
+                if (!avrt_AvRevertMmThreadCharacteristics(hMMTHREAD))
+                {
+                    auto err = GetLastError();
+                    LOG_F(ERROR, "Error reverting AVRT thread characteristics: error %ld: %s.", err, windowsGetErrorMessage(err));
+                }
+                else
+                {
+                    DLOG_IF_F(INFO, !win_silentfocuschange, "Successfully reverted AVRT thread characteristics.");
+                    
+                    index = 0;
+                    hMMTHREAD = NULL;
+                }
+            }
+        }
+        
         windowsSetupTimer(0);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
 
