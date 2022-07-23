@@ -9,7 +9,7 @@
 #include "build.h"
 #include "editor.h"
 
-int32_t editorgridextent = 131072;
+int32_t editorgridextent = -1;
 
 ////////// editor side view //////////
 int32_t m32_sideview = 0;

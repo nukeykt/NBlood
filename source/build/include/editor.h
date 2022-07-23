@@ -100,6 +100,11 @@ extern int32_t graphicsmode;
 extern int32_t grid, autogrid;
 extern int32_t editorgridextent;	// in engine.c
 
+static FORCE_INLINE bool editorIsInitialized(void)
+{
+    return editorgridextent != -1;
+}
+
 extern char game_executable[BMAX_PATH];
 extern const char* DefaultGameExec;
 extern const char* DefaultGameLocalExec;

@@ -111,6 +111,8 @@ int32_t loadsetup(const char *fn)
     char val[VL];
     int32_t i;
 
+    editorgridextent = 131072;
+
     if ((fp = buildvfs_fopen_read(fn)) == NULL) return -1;
 
     if (readconfig(fp, "usecwd", val, VL) > 0) g_useCwd = (atoi_safe(val) != 0);
