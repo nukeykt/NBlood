@@ -4470,7 +4470,7 @@ skip:
             fallthrough__;
         case SHOTGUNSHELL__:
             t->cstat |= 12;
-            if (T1(i) > 2) t->cstat &= ~16;
+            if (T1(i) > 2) t->cstat &= ~12;
             else if (T1(i) > 1) t->cstat &= ~4;
             break;
         case FRAMEEFFECT1_13__:
