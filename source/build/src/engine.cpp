@@ -90,7 +90,7 @@ static char *voxfilenames[MAXVOXELS];
 char g_haveVoxels;
 //#define kloadvoxel loadvoxel
 
-int32_t novoxmips = 1;
+int32_t novoxmips = 0;
 
 //These variables need to be copied into BUILD
 #define MAXXSIZ 256
@@ -5007,8 +5007,8 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     j = getpalookup(mulscale21(globvis,i), dashade)<<8;
     setupdrawslab(ylookup[1], FP_OFF(palookup[dapal])+j);
 
-    j = 1310720;
-    //j *= min(daxscale,dayscale); j >>= 6;  //New hacks (for sized-down voxels)
+    j = 2097152;
+    j *= max(daxscale,dayscale); j >>= 5;  //New hacks (for sized-down voxels)
     for (k=0; k<MAXVOXMIPS; k++)
     {
         if (i < j) { i = k; break; }
@@ -5026,7 +5026,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     }
 
     char *davoxptr = (char *)voxoff[daindex][i];
-    if (!davoxptr && i > 0) { davoxptr = (char *)voxoff[daindex][0]; mip = i; i = 0;}
+    while (!davoxptr && i > 0) { davoxptr = (char *)voxoff[daindex][--i]; mip = i;}
     if (!davoxptr)
         return;
 
@@ -11913,12 +11913,105 @@ void videoNextPage(void)
     numframes++;
 }
 
+uint8_t voxpal[768];
+uint8_t maxvoxcol;
+
+void getVoxelColorMap(char* davoxptr, uint8_t *bitmap)
+{
+    Bmemset(bitmap, -1, 32);
+    maxvoxcol = 0;
+
+    int32_t *longptr = (int32_t *)davoxptr;
+
+    int32_t xsiz = B_LITTLE32(longptr[0]);
+    int32_t ysiz = B_LITTLE32(longptr[1]);
+
+    davoxptr += (6<<2);
+
+    longptr = (int32_t *)davoxptr;
+
+    int32_t const xyvoxoffs = (xsiz+1)<<2;
+
+    for (int x = 0; x < xsiz; ++x)
+    {
+        intptr_t const slabxoffs = (intptr_t)&davoxptr[B_LITTLE32(longptr[x])];
+        int16_t *const shortptr = (int16_t *)&davoxptr[((x*(ysiz+1))<<1) + xyvoxoffs];
+
+        for (int y = 0; y < ysiz; ++y)
+        {
+            char *voxptr = (char *)(B_LITTLE16(shortptr[y])+slabxoffs);
+            char *const voxend = (char *)(B_LITTLE16(shortptr[y+1])+slabxoffs);
+
+            for (; voxptr<voxend; voxptr+=voxptr[1]+3)
+            {
+                uint8_t zleng = voxptr[1];
+                uint8_t offs = 0;
+
+                do
+                {
+                    uint8_t coloridx = voxptr[3+offs];
+                    
+                    if (coloridx > maxvoxcol)
+                        maxvoxcol = coloridx;
+                    
+                    bitmap_clear(bitmap, coloridx);
+                    offs++;
+                } while (--zleng);
+            }
+
+        }
+    }
+}
+
+void applyVoxelColorMap(char* davoxptr, uint8_t *bitmap)
+{
+    int32_t *longptr = (int32_t *)davoxptr;
+
+    int32_t xsiz = B_LITTLE32(longptr[0]);
+    int32_t ysiz = B_LITTLE32(longptr[1]);
+
+    davoxptr += (6<<2);
+
+    longptr = (int32_t *)davoxptr;
+    int32_t const xyvoxoffs = (xsiz+1)<<2;
+
+    for (int x = 0; x < xsiz; ++x)
+    {
+        const intptr_t slabxoffs = (intptr_t)&davoxptr[B_LITTLE32(longptr[x])];
+        int16_t *const shortptr = (int16_t *)&davoxptr[((x*(ysiz+1))<<1) + xyvoxoffs];
+
+        for (int y = 0; y < ysiz; ++y)
+        {
+            char *voxptr = (char *)(B_LITTLE16(shortptr[y])+slabxoffs);
+            char *const voxend = (char *)(B_LITTLE16(shortptr[y+1])+slabxoffs);
+            
+            for (; voxptr<voxend; voxptr+=voxptr[1]+3)
+            {
+                uint8_t zleng = voxptr[1];
+                uint8_t offs = 0;
+
+                do
+                {
+                    uint8_t coloridx = voxptr[3+offs];
+                    if (coloridx != 255 && bitmap_test(bitmap, coloridx))
+                    {
+                        rgb24_t const& color = *(rgb24_t*)&(IsPaletteIndexFullbright(coloridx)?voxpal:palette)[coloridx * 3];
+                        voxptr[3 + offs] = paletteGetClosestColorWithBlacklist(color.r, color.g, color.b, maxvoxcol, bitmap);
+                    }
+                    offs++;
+                } while (--zleng);
+            }
+        }
+    }
+}
+
+
 //
 // qloadkvx
 //
 int32_t qloadkvx(int32_t voxindex, const char *filename)
 {
-    if ((unsigned)voxindex >= MAXVOXELS)
+    if ((unsigned)voxindex >= MAXVOXELS || (paletteloaded & PALETTE_MAIN) != PALETTE_MAIN)
         return -1;
 
     const buildvfs_kfd fil = kopen4load(filename, 0);
@@ -11928,10 +12021,41 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
     int32_t lengcnt = 0;
     const int32_t lengtot = kfilelength(fil);
 
-    for (bssize_t i=0; i<MAXVOXMIPS; i++)
+    if (lengtot < 768)
     {
-        int32_t dasiz;
+        LOG_F(ERROR, "qloadkvx: file %s is truncated", filename);
+        return -1;
+    }
+
+    klseek(fil, -768, SEEK_END);
+    
+    maxvoxcol = 0;
+
+    for (int i=0; i<256; i++)
+    {
+        char c[3];
+        kread(fil, c, 3);
+        *(int32_t *)&voxpal[i] = B_LITTLE32((c[0]<<18) + (c[1]<<10) + (c[2]<<2) + (i<<24));   
+    }
+
+    klseek(fil, 0, SEEK_SET);
+
+    auto bitmap = (uint8_t*)Balloca(32);
+    int32_t lastsiz=0;
+
+    for (int i=0; i<MAXVOXMIPS; i++)
+    {
+        int32_t dasiz=0;
         kread(fil, &dasiz, 4); dasiz = B_LITTLE32(dasiz);
+
+        // this is a terrible heuristic based on the worst cases of poorly generated mipmaps found in Ion Fury
+        if (lengcnt >= lengtot-768 || dasiz < ((lastsiz/9) << 1))
+        {
+            DLOG_IF_F(INFO, i != MAXVOXMIPS-1 && lengcnt < lengtot-768, "qloadkvx: only loaded %d mipmaps from %s, resave file in SLAB6X to resolve", i, filename);
+            break;
+        }
+
+        lastsiz = dasiz;
 
         //Must store filenames to use cacheing system :(
         voxlock[voxindex][i] = CACHE1D_PERMANENT;
@@ -11939,12 +12063,14 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
 
         char *ptr = (char *) voxoff[voxindex][i];
         kread(fil, ptr, dasiz);
+        
+        if (i == 0)
+            getVoxelColorMap(ptr, bitmap);
+        else
+            applyVoxelColorMap(ptr, bitmap);
 
         lengcnt += dasiz+4;
-        if (lengcnt >= lengtot-768)
-            break;
     }
-
     kclose(fil);
 
 #ifdef USE_OPENGL
