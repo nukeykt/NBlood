@@ -108,7 +108,7 @@ static int32_t drawpoly_srepeat = 0, drawpoly_trepeat = 0;
 #define BUFFER_OFFSET(bytes) (GLintptr) ((GLubyte*) NULL + (bytes))
 // these cvars are never used directly in rendering -- only when glinit() is called/renderer reset
 // We do this because we don't want to accidentally overshoot our existing buffer's bounds
-static int32_t persistentStreamBuffer = r_persistentStreamBuffer;
+static bool persistentStreamBuffer = !!r_persistentStreamBuffer;
 static int32_t drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
 GLuint drawpolyVertsID = 0;
 static GLint drawpolyVertsOffset = 0;
@@ -891,7 +891,7 @@ void polymost_initdrawpoly(void)
 #endif
 
     drawpolyVertsBufferLength = r_drawpolyVertsBufferLength;
-    persistentStreamBuffer = r_persistentStreamBuffer;
+    persistentStreamBuffer = !!r_persistentStreamBuffer;
 
     drawpolyVertsOffset = 0;
     drawpolyVertsSubBufferIndex = 0;
@@ -3128,10 +3128,9 @@ void polymost_startBufferedDrawing(int nn)
 
 void polymost_bufferVert(vec3f_t const v, vec2f_t const t)
 {
-    uint32_t off = persistentStreamBuffer ? drawpolyVertsOffset : 0;
-    *(vec3f_t *)(&drawpolyVerts[(off + drawpolyVertsCnt) * 5]) = v;
-    *(vec2f_t*)(&drawpolyVerts[(off + drawpolyVertsCnt) * 5 + 3]) = t;
-    drawpolyVertsCnt++;
+    uint32_t const off = (persistentStreamBuffer * drawpolyVertsOffset + drawpolyVertsCnt++) * 5;
+    *(vec3f_t *)(&drawpolyVerts[off]) = v;
+    *(vec2f_t*)(&drawpolyVerts[off+3]) = t;
 }    
 
 void polymost_finishBufferedDrawing(int mode)
