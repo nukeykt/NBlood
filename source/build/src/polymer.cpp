@@ -4269,7 +4269,7 @@ static inline void polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade)
 {
     pthtyp*         pth;
-    GLuint          glpics[PSKYOFF_MAX];
+    //GLuint          glpics[PSKYOFF_MAX];
     GLfloat         glcolors[PSKYOFF_MAX][3];
     int32_t         i, j;
     GLfloat         height = 2.45f / 2.0f;
@@ -4291,7 +4291,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         if (!waloff[picnum])
             tileLoad(picnum);
         pth = texcache_fetch(picnum, palnum, 0, DAMETH_NOMASK);
-        glpics[i] = pth ? pth->glpic : 0;
+        //glpics[i] = pth ? pth->glpic : 0;
 
         glcolors[i][0] = glcolors[i][1] = glcolors[i][2] = getshadefactor(shade);
 
@@ -4319,25 +4319,20 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
         i++;
     }
-
-    buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
-
-    glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
-    glTexCoordPointer(2, GL_FLOAT, 5*sizeof(float), (GLvoid*) (3*sizeof(float)));
-
     buildgl_setEnabled(GL_TEXTURE_2D);
     i = 0;
     j = 0;
     int32_t const increment = PSKYOFF_MAX>>max(3, dapskybits);  // In Polymer, an ART sky has 8 or 16 sides...
-    buildgl_bindSamplerObject(0, PTH_TEMP_SKY_HACK);
+//    buildgl_bindSamplerObject(0, PTH_TEMP_SKY_HACK);
     while (i < PSKYOFF_MAX)
     {
         // ... but in case a multi-psky specifies less than 8, repeat cyclically:
         const int8_t tileofs = j&numskytilesm1;
-
+        polymer_inb4rotatesprite(tilenum+dapskyoff[tileofs], palnum, shade, DAMETH_CLAMPED);
         glColor4f(glcolors[tileofs][0], glcolors[tileofs][1], glcolors[tileofs][2], 1.0f);
-        buildgl_bindTexture(GL_TEXTURE_2D, glpics[tileofs]);
+        //buildgl_bindTexture(GL_TEXTURE_2D, glpics[tileofs]);
         polymer_drawartskyquad(i, (i + increment) & (PSKYOFF_MAX - 1), height);
+        polymer_postrotatesprite();
 
         i += increment;
         ++j;
@@ -4345,7 +4340,6 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
     buildgl_bindSamplerObject(0, 0);
     buildgl_setDisabled(GL_TEXTURE_2D);
-    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shade)
@@ -4367,6 +4361,11 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     buildgl_bindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
 
     tileUpdatePicnum(&tilenum, 0);
+
+    _prmaterial     skymaterial;
+    polymer_getbuildmaterial(&skymaterial, tilenum, palnum, shade, 0, PTH_HIGHTILE|PTH_CLAMPED);
+    auto skymaterialbits = polymer_bindmaterial(&skymaterial, NULL, 0);
+    buildgl_bindSamplerObject(0, PTH_HIGHTILE|PTH_CLAMPED);
 
     i = 0;
     while (i < 6)
@@ -4410,6 +4409,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     }
     drawingskybox = 0;
 
+    polymer_unbindmaterial(skymaterialbits);
     buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -5221,7 +5221,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     auto &prprogram = *polymer_getprogram(programbits);
 
     buildgl_useShaderProgram(prprogram.handle);
-
+    
     // --------- bit setup
 
     texunit = 0;
