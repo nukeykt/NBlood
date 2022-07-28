@@ -126,6 +126,7 @@ typedef struct      s_prmaterial {
 
 typedef struct      s_prrograminfo {
     GLuint          handle;
+    GLint           uniform_colorCorrection;
     // PR_BIT_ANIM_INTERPOLATION
     GLint           attrib_nextFrameData;
     GLint           attrib_nextFrameNormal;

@@ -472,8 +472,8 @@ int osdcmd_restartmap(osdcmdptr_t UNUSED(parm))
 
 static int osdcmd_vidmode(osdcmdptr_t parm)
 {
-    int32_t newbpp = ud.setup.bpp, newwidth = ud.setup.xdim,
-            newheight = ud.setup.ydim, newfs = ud.setup.fullscreen;
+    int32_t newbpp = bpp, newwidth = xres,
+            newheight = yres, newfs = fullscreen;
     int32_t tmp;
 
     if (parm->numparms < 1 || parm->numparms > 4) return OSDCMD_SHOWHELP;
@@ -506,7 +506,7 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     if (videoSetGameMode(newfs,newwidth,newheight,newbpp,upscalefactor))
     {
         LOG_F(ERROR, "Failed to set video mode!");
-        if (videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, upscalefactor))
+        if (videoSetGameMode(fullscreen, xres, yres, bpp, upscalefactor))
             G_GameExit("Failed to set video mode!");
     }
     ud.setup.bpp = newbpp;

@@ -1,4 +1,4 @@
-#version 110
+#version 120
 #extension GL_ARB_shader_texture_lod : enable
 
 //include an additional space here so that we can programmatically search for and disable this preprocessor definition easily
@@ -52,6 +52,10 @@ const float c_one = 1.0;
 const float c_two = 2.0;
 const vec4 c_vec4_one = vec4(c_one);
 const float c_wrapThreshold = 0.9;
+
+uniform vec4 u_colorCorrection;
+const vec2 c_vec2_zero_one = vec2(c_zero, c_one);
+const vec4 c_vec4_luma_709 = vec4(0.2126, 0.7152, 0.0722, 0.0);
 
 void main()
 {
@@ -113,5 +117,12 @@ void main()
 
     color.a *= v_color.a;
 
-    gl_FragData[0] = color;
+    vec4 v_cc = vec4(u_colorCorrection.x - c_one, 0.5 * -(u_colorCorrection.y-c_one), -(u_colorCorrection.z-c_one), 1.0);
+    gl_FragData[0] = mat4(c_vec2_zero_one.yxxx, c_vec2_zero_one.xyxx, c_vec2_zero_one.xxyx, v_cc.xxxw)
+                   * mat4(u_colorCorrection.ywww, u_colorCorrection.wyww, u_colorCorrection.wwyw, v_cc.yyyw)
+                   * mat4((c_vec4_luma_709.xxxw * v_cc.z) + u_colorCorrection.zwww,
+                          (c_vec4_luma_709.yyyw * v_cc.z) + u_colorCorrection.wzww,
+                          (c_vec4_luma_709.zzzw * v_cc.z) + u_colorCorrection.wwzw,
+                          c_vec2_zero_one.xxxy)
+                   * color;
 }

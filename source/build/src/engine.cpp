@@ -138,7 +138,7 @@ int32_t globalflags;
 
 float g_videoGamma = DEFAULT_GAMMA;
 float g_videoContrast = DEFAULT_CONTRAST;
-float g_videoBrightness = DEFAULT_BRIGHTNESS;
+float g_videoSaturation = DEFAULT_SATURATION;
 
 //Textured Map variables
 static char globalpolytype;

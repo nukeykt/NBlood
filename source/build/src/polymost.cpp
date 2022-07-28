@@ -223,6 +223,8 @@ static float polymost1RotMatrix[16] = { 1.f, 0.f, 0.f, 0.f,
                                         0.f, 0.f, 0.f, 1.f };
 static GLint polymost1ShadeInterpolateLoc = -1;
 static float polymost1ShadeInterpolate = 1.f;
+static GLint polymost1ColorCorrectionLoc = -1;
+vec4f_t g_glColorCorrection = { 1.f, 1.f, 1.f, 0.f };
 
 static inline float float_trans(uint32_t maskprops, uint8_t blend)
 {
@@ -644,6 +646,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     polymost1NPOTEmulationXOffsetLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationXOffset");
     polymost1RotMatrixLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_rotMatrix");
     polymost1ShadeInterpolateLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_shadeInterpolate");
+    polymost1ColorCorrectionLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_colorCorrection");
 
     //set the uniforms to the current values
     glUniform4f(polymost1TexturePosSizeLoc, polymost1TexturePosSize.x, polymost1TexturePosSize.y, polymost1TexturePosSize.z, polymost1TexturePosSize.w);
@@ -664,6 +667,15 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
     glUniformMatrix4fv(polymost1RotMatrixLoc, 1, false, polymost1RotMatrix);
     glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
+    glUniform4f(polymost1ColorCorrectionLoc, g_glColorCorrection.x, g_glColorCorrection.y, g_glColorCorrection.z, g_glColorCorrection.w);
+}
+
+void polymost_setColorCorrection(vec4f_t const &colorCorrection)
+{
+    if (!gl.currentShaderProgramID || gl.currentShaderProgramID != polymost1CurrentShaderProgramID)
+        return;
+
+    glUniform4f(polymost1ColorCorrectionLoc, colorCorrection.x, colorCorrection.y, colorCorrection.z, colorCorrection.w);
 }
 
 void polymost_setTexturePosSize(vec4f_t const &texturePosSize)

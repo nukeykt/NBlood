@@ -62,6 +62,9 @@ void polymost_useColorOnly(char useColorOnly);
 void polymost_useDetailMapping(char useDetailMapping);
 void polymost_useGlowMapping(char useGlowMapping);
 void polymost_usePaletteIndexing(char usePaletteIndexing);
+void polymost_setColorCorrection(vec4f_t const& colorCorrection);
+
+extern vec4f_t g_glColorCorrection;
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 

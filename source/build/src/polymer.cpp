@@ -678,6 +678,9 @@ static const _prprogrambit   prprogrambits[PR_BIT_COUNT] = {
         "  gl_Position = gl_ModelViewProjectionMatrix * curVertex;\n"
         "}\n",
         // frag_def
+        "uniform vec4 u_colorCorrection;\n"
+        "const vec4 c_vec4_luma_709 = vec4(0.2126, 0.7152, 0.0722, 0.0);\n"
+        "const vec2 c_vec2_zero_one = vec2(0.0, 1.0);\n"
         "void main(void)\n"
         "{\n"
         "  vec3 commonTexCoord = vec3(gl_TexCoord[0].st, 0.0);\n"
@@ -697,7 +700,17 @@ static const _prprogrambit   prprogrambits[PR_BIT_COUNT] = {
         "  vec3 lightTexel = vec3(1.0, 1.0, 1.0);\n"
         "\n",
         // frag_prog
-        "  gl_FragColor = result;\n"
+        "  vec4 v_cc = vec4(u_colorCorrection.x - 1.0, 0.5 * -(u_colorCorrection.y - 1.0), -(u_colorCorrection.z - 1.0), 1.0);\n"
+        "  gl_FragColor =\n"
+        "               mat4(c_vec2_zero_one.yxxx, c_vec2_zero_one.xyxx, c_vec2_zero_one.xxyx, v_cc.xxxw) *\n"
+        "#ifndef PR_LIGHTING_PASS\n"
+        "               mat4(u_colorCorrection.ywww, u_colorCorrection.wyww, u_colorCorrection.wwyw, v_cc.yyyw) *\n"
+        "#endif\n"
+        "               mat4((c_vec4_luma_709.xxxw * v_cc.z) + u_colorCorrection.zwww,\n"
+        "                      (c_vec4_luma_709.yyyw * v_cc.z) + u_colorCorrection.wzww,\n"
+        "                      (c_vec4_luma_709.zzzw * v_cc.z) + u_colorCorrection.wwzw,\n"
+        "                      c_vec2_zero_one.xxxy) *\n"
+        "               result;\n"
         "}\n",
     }
 };
@@ -5243,7 +5256,11 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
         if (prlights[lights[curlight]].publicflags.negative) {
             glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
         }
+
+        glUniform4f(prprogram.uniform_colorCorrection, min(1.0f, g_glColorCorrection.x), g_glColorCorrection.y, g_glColorCorrection.z, g_glColorCorrection.w);
     }
+    else
+        glUniform4f(prprogram.uniform_colorCorrection, g_glColorCorrection.x, g_glColorCorrection.y, g_glColorCorrection.z, g_glColorCorrection.w);
 
     // PR_BIT_NORMAL_MAP
     if (programbits & (1 << PR_BIT_NORMAL_MAP))
@@ -5699,6 +5716,8 @@ static _prprograminfo *polymer_compileprogram(int32_t programbits)
 
     // --------- ATTRIBUTE/UNIFORM LOCATIONS
 
+    prprogram.uniform_colorCorrection = glGetUniformLocation(program, "u_colorCorrection");
+    
     if (programbits & (1 << PR_BIT_ANIM_INTERPOLATION))
     {
         prprogram.attrib_nextFrameData   = glGetAttribLocation(program, "nextFrameData");

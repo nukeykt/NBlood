@@ -823,11 +823,10 @@ int app_main(int argc, char const* const* argv)
     if (cursectnum == -1)
     {
         vid_gamma_3d = g_videoGamma;
-        vid_brightness_3d = g_videoBrightness;
         vid_contrast_3d = g_videoContrast;
 
-        g_videoGamma = g_videoContrast = 1.0;
-        g_videoBrightness = 0.0;
+        g_videoGamma = DEFAULT_GAMMA;
+        g_videoContrast = DEFAULT_CONTRAST;
 
         videoSetPalette(0,0,0);
         if (videoSetGameMode(fullscreen, xdim, ydim, 8, upscalefactor) < 0)
@@ -845,7 +844,6 @@ int app_main(int argc, char const* const* argv)
 
         g_videoGamma = vid_gamma_3d;
         g_videoContrast = vid_contrast_3d;
-        g_videoBrightness = vid_brightness_3d;
 
         vid_gamma_3d = vid_contrast_3d = vid_brightness_3d = -1;
 
@@ -1621,10 +1619,9 @@ void editinput(void)
 
         vid_gamma_3d = g_videoGamma;
         vid_contrast_3d = g_videoContrast;
-        vid_brightness_3d = g_videoBrightness;
 
-        g_videoGamma = g_videoContrast = 1.0;
-        g_videoBrightness = 0.0;
+        g_videoGamma = DEFAULT_GAMMA;
+        g_videoContrast = DEFAULT_CONTRAST;
 
         videoSetPalette(0,0,0);
 
@@ -1634,9 +1631,8 @@ void editinput(void)
 
         g_videoGamma = vid_gamma_3d;
         g_videoContrast = vid_contrast_3d;
-        g_videoBrightness = vid_brightness_3d;
 
-        vid_gamma_3d = vid_contrast_3d = vid_brightness_3d = -1;
+        vid_gamma_3d = vid_contrast_3d = -1;
 
         videoSetPalette(GAMMA_CALC,0,0);
     }
