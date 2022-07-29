@@ -15,6 +15,7 @@
 #include <mmsystem.h>
 #include <winnls.h>
 #include <winternl.h>
+#include <winnt.h>
 
 #include <system_error>
 
@@ -30,7 +31,7 @@ static int win_silentfocuschange;
 
 static HANDLE  g_singleInstanceSemaphore = nullptr;
 static int32_t win_togglecomposition;
-static int32_t win_systemtimermode;
+static int32_t win_systemtimermode = 1;
 static int32_t win_performancemode;
 
 static OSVERSIONINFOEX osv;
@@ -50,6 +51,7 @@ static PFNPOWERSETACTIVESCHEME powrprof_PowerSetActiveScheme;
 
 static HMODULE hAVRT;
 static HANDLE hMMTHREAD;
+static HMODULE hNTDLL;
 
 typedef HANDLE(WINAPI *PFNAVSETMMTHREADCHARACTERISTICS)(LPCSTR, LPDWORD);
 typedef BOOL(WINAPI* PFNAVREVERTMMTHREADCHARACTERISTICS)(HANDLE);
@@ -59,94 +61,106 @@ static PFNAVSETMMTHREADCHARACTERISTICS    avrt_AvSetMmThreadCharacteristics;
 static PFNAVREVERTMMTHREADCHARACTERISTICS avrt_AvRevertMmThreadCharacteristics;
 static PFNAVSETMMTHREADPRIORITY           avrt_AvSetMmThreadPriority;
 
-void windowsSetupTimer(int const useNtTimer)
+typedef NTSTATUS(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
+typedef NTSTATUS(NTAPI* PFNQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
+
+static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
+static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
+
+// convert Windows' NTSTATUS codes to regular Win32 error codes so we can print error strings if any of our bullshit undocumented API usage fails
+DWORD windowsConvertNTSTATUS(LONG ntstatus)
+{
+    DWORD oldError = GetLastError();    
+    OVERLAPPED o = {};
+    o.Internal = ntstatus;
+    
+    DWORD br;
+    GetOverlappedResult(NULL, &o, &br, FALSE);
+    
+    DWORD result = GetLastError();
+    SetLastError(oldError);
+    
+    return result;
+}
+
+void windowsSetupTimer(bool const appHasFocus)
 {
     if (ntdll_wine_get_version)
         return;
 
-    typedef HRESULT(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
-    typedef HRESULT(NTAPI* PFNQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
-
     TIMECAPS timeCaps;
+    MMRESULT result = timeGetDevCaps(&timeCaps, sizeof(TIMECAPS));
+    
+    if (result != MMSYSERR_NOERROR)
+        LOG_F(ERROR, "timeGetDevCaps() failed: MMRESULT: %d", result);
+    
+    static UINT timePeriod;
 
-    if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
+    if (timePeriod && (result = timeEndPeriod(timePeriod)) != TIMERR_NOERROR)
+        LOG_F(ERROR, "timeEndPeriod(%d) failed: MMRESULT: %d", timePeriod, result);        
+    
+    timePeriod = 0;
+
+    NTSTATUS status;
+    static ULONG timePeriodNT;
+
+    if (timePeriodNT && !NT_SUCCESS(status = ntdll_NtSetTimerResolution(timePeriodNT, FALSE, &timePeriodNT)))
     {
+        LOG_F(ERROR, "NtSetTimerResolution(%ld) unset failed: NTSTATUS: 0x%08x (%s)", timePeriodNT, (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
+        win_systemtimermode = 0;
+    }
+    
+    timePeriodNT = 0;
+    
+    if (!appHasFocus)
+    {
+        DLOG_IF_F(INFO, !win_silentfocuschange, "System timer resolution requests cleared");
+        return;
+    }
+    
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
-        int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
+    int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
 #else
-        static constexpr int const onBattery = 0;
+    static constexpr int const onBattery = 0;
 #endif
-        static int     timePeriod;
-        static ULONG   ntTimerRes;
-        static HMODULE hNTDLL = GetModuleHandle("ntdll.dll");
 
-        static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
-        static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
+    if (!onBattery && hNTDLL && win_systemtimermode == 1)
+    {
+        ULONG minRes, maxRes, actualRes;
 
-        if (useNtTimer)
+        if (NT_SUCCESS(status = ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes)))
         {
-            if (!onBattery)
+            if (NT_SUCCESS(status = ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes)))
             {
-                ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
-                ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
-
-                if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
-                {
-                    LOG_F(ERROR, "NtQueryTimerResolution or NtSetTimerResolution symbols missing from ntdll.dll!");
-                    goto failsafe;
-                }
-
-                ULONG minRes, maxRes, actualRes;
-
-                ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
-
-                if (ntTimerRes != 0)
-                {
-                    if (ntTimerRes == actualRes)
-                        return;
-
-                    ntdll_NtSetTimerResolution(actualRes, FALSE, &actualRes);
-                }
-
-                ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes);
-
-                ntTimerRes = actualRes;
-                timePeriod = 0;
-
-                if (!win_silentfocuschange)
-                    LOG_F(INFO, "Initialized %.1fms system timer", actualRes / 10000.0);
-
+                timePeriodNT = actualRes;
+                LOG_IF_F(INFO, !win_silentfocuschange, "Set %.1fms timer resolution", actualRes * (1.0 / 10000.0));
                 return;
             }
-            else if (!win_silentfocuschange)
-                LOG_F(WARNING, "Low-latency timer mode not supported on battery power!");
+            else
+            {
+                LOG_F(ERROR, "NtSetTimerResolution(%ld) failed: NTSTATUS: 0x%08x (%s)", maxRes, (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
+                win_systemtimermode = 0;
+            }
         }
-        else if (ntTimerRes != 0)
+        else
         {
-            ntdll_NtSetTimerResolution(ntTimerRes, FALSE, &ntTimerRes);
-            ntTimerRes = 0;
+            LOG_F(ERROR, "NtQueryTimerResolution() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
+            win_systemtimermode = 0;
         }
+    }
+    
+    if (!timePeriodNT)
+    {
+        int const newPeriod = clamp(1u << onBattery, timeCaps.wPeriodMin, timeCaps.wPeriodMax);    
 
-failsafe:
-        int const newPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
-            
-        if (timePeriod != 0)
+        if ((result = timeBeginPeriod(newPeriod)) != TIMERR_NOERROR)
+            LOG_F(ERROR, "timeBeginPeriod(%d) failed: MMRESULT: %d", newPeriod, result);
+        else
         {
-            if (timePeriod == newPeriod)
-                return;
-
-            timeEndPeriod(timePeriod);
+            timePeriod = newPeriod;
+            LOG_IF_F(INFO, !win_silentfocuschange, "Set %u.0ms timer resolution", newPeriod);
+            return;
         }
-
-        timeBeginPeriod(newPeriod);
-
-        timePeriod = newPeriod;
-        ntTimerRes = 0;
-
-        if (!win_silentfocuschange)
-            LOG_F(INFO, "Initialized %ums system timer", newPeriod);
-
-        return;
     }
 
     LOG_F(ERROR, "Unable to configure system timer!");
@@ -300,7 +314,7 @@ static int osdcmd_win_systemtimermode(osdcmdptr_t parm)
     if (r != OSDCMD_OK)
         return r;
 
-    windowsSetupTimer(win_systemtimermode);
+    windowsSetupTimer(true);
 
     return OSDCMD_OK;
 }
@@ -342,7 +356,7 @@ void windowsPlatformInit(void)
         OSD_RegisterCvar(&cvars_win[i], osdcmd_cvar_set);
 
     windowsPrintVersion();
-    windowsSetupTimer(0);
+    //windowsSetupTimer(0);
 
     if (osv.dwMajorVersion >= 6)
     {
@@ -373,6 +387,19 @@ void windowsPlatformInit(void)
             }
         }
     }
+    
+    if (!hNTDLL && (hNTDLL = GetModuleHandle("ntdll.dll")))
+    {
+        ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
+        ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
+
+        if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
+        {
+            LOG_F(ERROR, "NtQueryTimerResolution or NtSetTimerResolution symbols missing from ntdll.dll!");
+            hNTDLL = NULL;
+            win_systemtimermode = 0;
+        }
+    }    
 }
 
 typedef UINT D3DKMT_HANDLE;
@@ -693,7 +720,7 @@ void windowsHandleFocusChange(int const appactive)
             }
         }
         
-        windowsSetupTimer(win_systemtimermode);
+        windowsSetupTimer(true);
         windowsSetKeyboardLayout(enUSLayoutString, true);
 
         if (win_performancemode && systemPowerSchemeGUID)
@@ -723,7 +750,7 @@ void windowsHandleFocusChange(int const appactive)
             }
         }
         
-        windowsSetupTimer(0);
+        windowsSetupTimer(false);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
 
         if (win_performancemode && systemPowerSchemeGUID)
