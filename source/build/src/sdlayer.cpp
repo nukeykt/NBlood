@@ -1896,6 +1896,10 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     MicroProfileGpuInitGL();
 #endif
 
+#ifdef _WIN32
+    windowsHandleFocusChange(1);
+#endif
+
     return 0;
 }
 #endif
