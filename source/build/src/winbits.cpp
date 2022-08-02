@@ -22,7 +22,7 @@
 # define EBACKTRACEDLL "ebacktrace1.dll"
 #endif
 
-int32_t    win_priorityclass;
+int32_t    win_boostpriority = 2;
 char       win_silentvideomodeswitch;
 static int win_silentfocuschange;
 
@@ -297,12 +297,12 @@ void windowsPlatformInit(void)
     static osdcvardata_t cvars_win[] = {
         { "win_togglecomposition", "disables Windows Vista/7 DWM composition", (void *)&win_togglecomposition, CVAR_BOOL, 0, 1 },
 
-        { "win_priorityclass",
+        { "win_boostpriority",
           "Windows process priority class:\n"
-          "  -1: do not alter process priority\n"
-          "   0: HIGH when game has focus, NORMAL when interacting with other programs\n"
-          "   1: NORMAL when game has focus, IDLE when interacting with other programs",
-          (void *)&win_priorityclass, CVAR_INT, -1, 1 },
+          "   0: do not alter process priority\n"
+          "   1: ABOVE NORMAL when game has focus, IDLE when interacting with other programs"
+          "   2: HIGH when game has focus, BELOW NORMAL when interacting with other programs\n",
+          (void *)&win_boostpriority, CVAR_INT, 0, 2 },
 
         { "win_performancemode",
           "Windows performance mode:\n"
@@ -614,15 +614,16 @@ HKL windowsGetSystemKeyboardLayout(void)
 
 void windowsHandleFocusChange(int const appactive)
 {
+    static HANDLE hProcess = GetCurrentProcess();
 #ifndef DEBUGGINGAIDS
     win_silentfocuschange = true;
 #endif
 
     if (appactive)
     {
-        if (win_priorityclass != -1)
-            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? BELOW_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
-
+        if (win_boostpriority)
+            SetPriorityClass(hProcess, win_boostpriority == 1 ? ABOVE_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
+        
         windowsSetupTimer(win_systemtimermode);
         windowsSetKeyboardLayout(enUSLayoutString, true);
 
@@ -631,13 +632,13 @@ void windowsHandleFocusChange(int const appactive)
     }
     else
     {
-        if (win_priorityclass != -1)
-            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
+        if (win_boostpriority)
+            SetPriorityClass(hProcess, win_boostpriority == 1 ? IDLE_PRIORITY_CLASS : BELOW_NORMAL_PRIORITY_CLASS);
 
         windowsSetupTimer(0);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
 
-        if (systemPowerSchemeGUID)
+        if (win_performancemode && systemPowerSchemeGUID)
             powrprof_PowerSetActiveScheme(NULL, systemPowerSchemeGUID);
     }
 

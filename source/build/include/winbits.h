@@ -18,7 +18,7 @@
 
 // TODO: actually make the layout switching unnecessary :/
 
-extern int32_t win_priorityclass;
+extern int32_t win_boostpriority;
 extern char    win_silentvideomodeswitch;
 extern DWM_TIMING_INFO timingInfo;
 

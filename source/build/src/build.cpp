@@ -657,7 +657,7 @@ int app_main(int argc, char const* const* argv)
     if (i) cmdsetup = 1;
 #endif
 #ifdef _WIN32
-    win_priorityclass = 1;
+    win_boostpriority = 1;
 #endif
 
     for (i=1; i<argc; i++)
