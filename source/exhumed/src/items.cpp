@@ -147,7 +147,7 @@ void BuildItemAnim(short nSprite)
 
 void DestroyItemAnim(short nSprite)
 {
-    short nAnim = sprite[nSprite].owner;
+    int16_t nAnim = sprite[nSprite].owner;
 
     if (nAnim >= 0) {
         DestroyAnim(nAnim);
