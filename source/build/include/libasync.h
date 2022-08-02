@@ -917,7 +917,7 @@ struct LIBASYNC_CACHELINE_ALIGN task_base: public ref_count_base<task_base, task
 	void run_continuation(Sched& sched, task_ptr&& cont)
 	{
 		LIBASYNC_TRY {
-			detail::schedule_task(sched, std::move(cont));
+            detail::schedule_task(sched, cont);
 		} LIBASYNC_CATCH(...) {
 			// This is suboptimal, but better than letting the exception leak
 			cont->vtable->cancel(cont.get(), std::current_exception());
@@ -2044,8 +2044,14 @@ public:
 };
 
 // Spawn a function asynchronously
+#if (__cplusplus >= 201703L)
+// Use std::invoke_result instead of std::result_of for C++17 or greater because std::result_of was deprecated in C++17 and removed in C++20
+template<typename Sched, typename Func>
+task<typename detail::remove_task<std::invoke_result_t<std::decay_t<Func>>>::type> spawn(Sched& sched, Func&& f)
+#else
 template<typename Sched, typename Func>
 task<typename detail::remove_task<typename std::result_of<typename std::decay<Func>::type()>::type>::type> spawn(Sched& sched, Func&& f)
+#endif
 {
 	// Using result_of in the function return type to work around bugs in the Intel
 	// C++ compiler.
