@@ -501,13 +501,13 @@ dwm:
             if (NT_SUCCESS(status = gdi32_D3DKMTCloseAdapter((D3DKMT_CLOSEADAPTER *)&vBlankEvent)))
                 return;
             else
-                LOG_F(ERROR, "D3DKMTCloseAdapter() FAILED! NTSTATUS: 0x%x.", (unsigned)status);
+                LOG_F(ERROR, "D3DKMTCloseAdapter() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
         }
         else
-            LOG_F(ERROR, "D3DKMTWaitForVerticalBlankEvent() FAILED! NTSTATUS: 0x%x.", (unsigned)status);
+            LOG_F(ERROR, "D3DKMTWaitForVerticalBlankEvent() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
     }
     else
-        LOG_F(ERROR, "D3DKMTOpenAdapterFromHdc() FAILED! NTSTATUS: 0x%x.", (unsigned)status);
+        LOG_F(ERROR, "D3DKMTOpenAdapterFromHdc() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
 
     LOG_F(ERROR, "Unable to use D3DKMT, falling back to DWM sync.");
 
@@ -541,8 +541,8 @@ void windowsDwmSetupComposition(int const compEnable)
         HRESULT result = dwmapi_DwmGetCompositionTimingInfo(nullptr, &timingInfo);
 
         if (FAILED(result))
-            LOG_F(ERROR, "DwmGetCompositionTimingInfo() FAILED! HRESULT: %s (0x%x).",
-                         std::system_category().message(result).c_str(), (unsigned)result);
+            LOG_F(ERROR, "DwmGetCompositionTimingInfo() failed: HRESULT: 0x%08x (%s).",
+                         (unsigned)result, std::system_category().message(result).c_str());
     }
 
     if (win_togglecomposition && dwmapi_DwmEnableComposition && osv.dwMinorVersion < 2)
