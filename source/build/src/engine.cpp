@@ -6690,7 +6690,7 @@ next_most:
         if ((tspr->cstat & 48) == 16)
         {
             const int32_t xspan = tilesiz[tilenum].x;
-            const int32_t yspan = tilesiz[tilenum].y;
+            //const int32_t yspan = tilesiz[tilenum].y;
             const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
             const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
 
