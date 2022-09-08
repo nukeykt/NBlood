@@ -274,66 +274,52 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
     switch (face)
     {
     case 0:
-        ny = y1; x2 = x0; x0 = x1; x1 = x2;
-        for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-            for (int xx=0; xx<x; xx++)
+        ny = y1; x2 = x0; x0 = x1; x1 = x2; break;
+    case 1:
+        ny = y0; y0++; y1++; y2++; break;
+    case 2:
+        nz = z1; y0 = y2; y2 = y1; y1 = y0; z0++; z1++; z2++; break;
+    case 3:
+        nz = z0; break;
+    case 4:
+        nx = x1; y2 = y0; y0 = y1; y1 = y2; x0++; x1++; x2++; break;
+    case 5:
+        nx = x0; break;
+    }
+
+    for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
+        for (int xx=0; xx<x; xx++)
+        {
+            switch (face)
             {
+            case 0:
                 if (i < 3) { nx = x1+x-1-xx; nz = z1+yy; } //back
                 else { nx = x1+y-1-yy; nz = z1+xx; }
-                lptr[xx] = getvox(nx, ny, nz);
-            }
-        break;
-    case 1:
-        ny = y0; y0++; y1++; y2++;
-        for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-            for (int xx=0; xx<x; xx++)
-            {
+                break;
+            case 1:
                 if (i < 3) { nx = x0+xx;     nz = z0+yy; } //front
                 else { nx = x0+yy;     nz = z0+xx; }
-                lptr[xx] = getvox(nx, ny, nz);
-            }
-        break;
-    case 2:
-        nz = z1; y0 = y2; y2 = y1; y1 = y0; z0++; z1++; z2++;
-        for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-            for (int xx=0; xx<x; xx++)
-            {
+                break;
+            case 2:
                 if (i < 3) { nx = x1-x+xx;   ny = y1-1-yy; } //bot
                 else { nx = x1-1-yy;   ny = y1-1-xx; }
-                lptr[xx] = getvox(nx, ny, nz);
-            }
-        break;
-    case 3:
-        nz = z0;
-        for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-            for (int xx = 0; xx < x; xx++)
-            {
+                break;
+            case 3:
                 if (i < 3) { nx = x0+xx;     ny = y0+yy; } //top
                 else { nx = x0+yy;     ny = y0+xx; }
-                lptr[xx] = getvox(nx, ny, nz);
-            }
-        break;
-    case 4:
-        nx = x1; y2 = y0; y0 = y1; y1 = y2; x0++; x1++; x2++;
-        for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-            for (int xx = 0; xx < x; xx++)
-            {
+                break;
+            case 4:
                 if (i < 3) { ny = y1+x-1-xx; nz = z1+yy; } //right
                 else { ny = y1+y-1-yy; nz = z1+xx; }
-                lptr[xx] = getvox(nx, ny, nz);
-            }
-        break;
-    case 5:
-        nx = x0;
-        for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-            for (int xx = 0; xx < x; xx++)
-            {
+                break;
+            case 5:
                 if (i < 3) { ny = y0+xx;     nz = z0+yy; } //left
                 else { ny = y0+yy;     nz = z0+xx; }
-                lptr[xx] = getvox(nx, ny, nz);
+                break;
             }
-        break;
-    }
+
+            lptr[xx] = getvox(nx, ny, nz);
+        }
 
     //Extend borders horizontally
     for (int xx=0; xx<VOXBORDWIDTH; xx++)
