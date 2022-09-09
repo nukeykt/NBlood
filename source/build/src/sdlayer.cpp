@@ -1499,11 +1499,15 @@ static void destroy_window_resources()
 #endif
 
 #if SDL_MAJOR_VERSION >= 2
+    if (g_ImGui_IO)
+    {
 #ifdef USE_OPENGL
-    ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplOpenGL3_Shutdown();
 #endif
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+        g_ImGui_IO = NULL;
+    }
 
     if (sdl_context)
         SDL_GL_DeleteContext(sdl_context);
