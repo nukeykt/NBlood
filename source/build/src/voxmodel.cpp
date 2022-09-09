@@ -1182,8 +1182,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     glDrawElements(GL_TRIANGLES, m->qcnt*2*3, GL_UNSIGNED_INT, 0);
 
-    //buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
-    //buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ARRAY_BUFFER, 0);
+    buildgl_bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
