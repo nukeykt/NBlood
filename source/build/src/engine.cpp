@@ -1091,6 +1091,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
     g_nodraw = 0;
     scansector_collectsprites = 0;
 
+#if 0
     if (editstatus==1 && in3dmode())
     {
         if (videoGetRenderMode() == REND_CLASSIC)
@@ -1106,7 +1107,8 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
         }
 #endif
     }
-
+#endif
+    
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
