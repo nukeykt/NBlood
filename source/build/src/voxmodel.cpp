@@ -418,18 +418,22 @@ static voxmodel_t *vox2poly()
     gvox = (voxmodel_t *)Xcalloc(1, sizeof(voxmodel_t));
 
     //x is largest dimension, y is 2nd largest dimension
-    auto vdim = voxsiz;
+    int32_t x = voxsiz.x, y = voxsiz.y, z = voxsiz.z;
 
-    if (vdim.x < vdim.y && vdim.x < vdim.z)
-        vdim.x = vdim.z;
-    else if (vdim.y < vdim.z)
-        vdim.y = vdim.z;
+    if (x < y && x < z)
+        x = z;
+    else if (y < z)
+        y = z;
 
-    if (vdim.x < vdim.y)
-        vdim = { vdim.y, vdim.z, vdim.x };
+    if (x < y)
+    {
+        z = x;
+        x = y;
+        y = z;
+    }
 
-    shcntp = vdim.x;
-    int32_t i = vdim.x*vdim.y*sizeof(int32_t);
+    shcntp = x;
+    int32_t i = x*y*sizeof(int32_t);
 
     shcntmal = (int32_t *)Xmalloc(i);
     memset(shcntmal, 0, i);
