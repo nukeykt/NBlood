@@ -143,7 +143,7 @@ struct PLAYER
     bool                hasKey[8];
     char                hasFlag;
     short               used2[8];  // ??
-    int                 damageControl[7];
+    int                 damageControl[kDamageMax];
     char                curWeapon;
     char                nextWeapon;
     int                 weaponTimer;
