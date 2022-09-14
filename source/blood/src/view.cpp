@@ -3497,7 +3497,7 @@ void viewDrawScreen(void)
         {
             CalcPosition(gView->pSprite, (int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum, fix16_to_int(cA), q16horiz);
         }
-        CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
+        const char bLink = CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
         int v78 = gViewInterpolate ? interpolateang(gScreenTiltO, gScreenTilt, gInterpolate) : gScreenTilt;
         char v14 = 0;
         char v10 = 0;
@@ -3694,15 +3694,15 @@ RORHACK:
         for (int i = 0; i < 16; i++)
             ror_status[i] = TestBitString(gotpic, 4080+i);
         fix16_t deliriumPitchI = gViewInterpolate ? interpolate(fix16_from_int(deliriumPitchO), fix16_from_int(deliriumPitch), gInterpolate) : fix16_from_int(deliriumPitch);
-        DrawMirrors(cX, cY, cZ, cA, q16horiz + fix16_from_int(defaultHoriz) + deliriumPitchI, gInterpolate, gViewIndex);
+        DrawMirrors(cX, cY, cZ, cA, q16horiz + fix16_from_int(defaultHoriz) + deliriumPitchI, gInterpolate, bLink && !VanillaMode() ? gViewIndex : -1); // only hide self sprite while traversing between sector
         int bakCstat = gView->pSprite->cstat;
-        if (gViewPos == 0)
+        if (gViewPos == 0) // don't render self while in first person view
         {
-            gView->pSprite->cstat |= 32768;
+            gView->pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
         }
-        else
+        else // chase camera - render as transparent
         {
-            gView->pSprite->cstat |= 514;
+            gView->pSprite->cstat |= CSTAT_SPRITE_TRANSLUCENT_INVERT | CSTAT_SPRITE_TRANSLUCENT;
         }
 #ifdef POLYMER
         if (videoGetRenderMode() == REND_POLYMER)
