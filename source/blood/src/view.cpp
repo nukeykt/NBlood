@@ -4232,6 +4232,9 @@ void ViewLoadSave::Load(void)
     Read(&deliriumTilt, sizeof(deliriumTilt));
     Read(&deliriumTurn, sizeof(deliriumTurn));
     Read(&deliriumPitch, sizeof(deliriumPitch));
+    gScreenTiltO = gScreenTilt;
+    deliriumTurnO = deliriumTurn;
+    deliriumPitchO = deliriumPitch;
 }
 
 void ViewLoadSave::Save(void)
