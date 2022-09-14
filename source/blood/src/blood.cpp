@@ -762,7 +762,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     InitMirrors();
     gFrameClock = 0;
     trInit();
-    if (!bVanilla && !gMe->packSlots[1].isActive) // if diving suit is not active, turn off reverb sound effect
+    if (!VanillaMode() && !packItemActive(gMe, kPackDivingSuit) && !powerupCheck(gMe, kPwUpReflectShots)) // if diving suit/reflective shots powerup is not active, turn off reverb sound effect
         sfxSetReverb(0);
     ambInit();
     netResetState();

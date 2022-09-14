@@ -5984,16 +5984,16 @@ void actProcessSprites(void)
                     actDamageSprite(nSprite, pSprite, kDamageDrown, 12);
                 if (pPlayer->isUnderwater)
                 {
-                    char bActive = packItemActive(pPlayer, 1);
-                    if (bActive || pPlayer->godMode)
+                    const char bDivingSuit = packItemActive(pPlayer, kPackDivingSuit);
+                    if (bDivingSuit || pPlayer->godMode)
                         pPlayer->underwaterTime = 1200;
                     else
                         pPlayer->underwaterTime = ClipLow(pPlayer->underwaterTime-4, 0);
-                    if (pPlayer->underwaterTime < 1080 && packCheckItem(pPlayer, 1) && !bActive)
-                        packUseItem(pPlayer, 1);
+                    if (pPlayer->underwaterTime < 1080 && packCheckItem(pPlayer, kPackDivingSuit) && !bDivingSuit)
+                        packUseItem(pPlayer, kPackDivingSuit);
                     if (!pPlayer->underwaterTime)
                     {
-                        pPlayer->chokeEffect += 4;
+                        pPlayer->chokeEffect += kTicsPerFrame;
                         if (Chance(pPlayer->chokeEffect))
                             actDamageSprite(nSprite, pSprite, kDamageDrown, 3<<4);
                     }
@@ -6005,7 +6005,7 @@ void actProcessSprites(void)
                 }
                 else if (gGameOptions.nGameType == 0)
                 {
-                    if (pPlayer->pXSprite->health > 0 && pPlayer->restTime >= 1200 && Chance(0x200))
+                    if (pPlayer->pXSprite && (pPlayer->pXSprite->health > 0) && (pPlayer->restTime >= 1200) && Chance(0x200))
                     {
                         pPlayer->restTime = -1;
                         sfxPlay3DSound(pSprite, 3100+Random(11), 0, 2);

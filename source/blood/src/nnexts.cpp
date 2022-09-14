@@ -2212,7 +2212,7 @@ void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer) {
             if (pXSource->data2) break;
             fallthrough__;
         case 3: // erase all pack items
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < kPackMax; i++) {
                 pPlayer->packSlots[i].isActive = false;
                 pPlayer->packSlots[i].curAmount = 0;
             }
