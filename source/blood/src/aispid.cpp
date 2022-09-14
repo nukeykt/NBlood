@@ -173,13 +173,12 @@ static void SpidBirthSeqCallback(int, int nXSprite)
     
     spritetype *pSpawn = NULL;
     if (IsPlayerSprite(pTarget) && pDudeExtraE->birthCounter < 10) {
-        
-        if (nDist < 0x1a00 && nDist > 0x1400 && klabs(pSprite->ang-nAngle) < pDudeInfo->periphery)
-            pSpawn = actSpawnDude(pSprite, kDudeSpiderRed, pSprite->clipdist, 0);
-        else if (nDist < 0x1400 && nDist > 0xc00 && klabs(pSprite->ang-nAngle) < pDudeInfo->periphery)
-            pSpawn = actSpawnDude(pSprite, kDudeSpiderBrown, pSprite->clipdist, 0);
-        else if (nDist < 0xc00 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
-            pSpawn = actSpawnDude(pSprite, kDudeSpiderBrown, pSprite->clipdist, 0);
+        if (klabs(pSprite->ang-nAngle) < pDudeInfo->periphery) {
+            if (nDist < 0x1a00 && nDist > 0x1400)
+                pSpawn = actSpawnDude(pSprite, kDudeSpiderRed, pSprite->clipdist, 0);
+            else if ((nDist < 0xc00) || (nDist < 0x1400 && nDist > 0xc00))
+                pSpawn = actSpawnDude(pSprite, kDudeSpiderBrown, pSprite->clipdist, 0);
+        }
         
         if (pSpawn) {
             pDudeExtraE->birthCounter++;
