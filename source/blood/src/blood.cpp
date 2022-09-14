@@ -1036,7 +1036,7 @@ void ProcessFrame(void)
                 return;
             }
         }
-        if (gPlayer[i].input.keyFlags.restart)
+        if (gPlayer[i].input.keyFlags.restart) // if restart requested from ProcessInput()
         {
             gPlayer[i].input.keyFlags.restart = 0;
             levelRestart();
@@ -1815,6 +1815,7 @@ RESTART:
     }
     ready2send = 1;
     static bool frameJustDrawn;
+    static int nGammaMenu = 0;
     while (!gQuitGame)
     {
         bool bDraw;
@@ -1882,7 +1883,11 @@ RESTART:
             if (bDraw)
             {
                 videoClearScreen(0);
-                rotatesprite(160<<16,100<<16,65536,0,gMenuPicnum,gGameMenuMgr.m_bActive ? 40 : 0,0,0x4a,0,0,xdim-1,ydim-1);
+                if (gGameMenuMgr.m_bActive && (nGammaMenu < 40))
+                    nGammaMenu += 2;
+                else if (!gGameMenuMgr.m_bActive && (nGammaMenu > 0))
+                    nGammaMenu -= 1;
+                rotatesprite(160<<16,100<<16,65536,0,gMenuPicnum,nGammaMenu,0,0x4a,0,0,xdim-1,ydim-1);
             }
             if (gQuitRequest && !gQuitGame)
                 netBroadcastMyLogoff(gQuitRequest == 2);
