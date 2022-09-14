@@ -546,7 +546,7 @@ void netBroadcastMyLogoff(bool bRestart)
 void netBroadcastPlayerInfo(int nPlayer)
 {
     PROFILE *pProfile = &gProfile[nPlayer];
-    strcpy(pProfile->name, szPlayerName);
+    Bstrncpyz(pProfile->name, szPlayerName, sizeof(szPlayerName));
     pProfile->skill = gSkill;
     pProfile->nAutoAim = gAutoAim;
     pProfile->nWeaponSwitch = gWeaponSwitch;
