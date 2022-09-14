@@ -300,26 +300,26 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         #endif
         case kItemFeatherFall:
         case kItemJumpBoots:
-            pPlayer->damageControl[0]++;
+            pPlayer->damageControl[kDamageFall]++;
             break;
         case kItemReflectShots: // reflective shots
             if (pPlayer == gMe && gGameOptions.nGameType == 0)
                 sfxSetReverb2(1);
             break;
         case kItemDeathMask:
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < kDamageMax; i++)
                 pPlayer->damageControl[i]++;
             break;
         case kItemDivingSuit: // diving suit
-            pPlayer->damageControl[4]++;
+            pPlayer->damageControl[kDamageDrown]++;
             if (pPlayer == gMe && gGameOptions.nGameType == 0)
                 sfxSetReverb(1);
             break;
         case kItemGasMask:
-            pPlayer->damageControl[4]++;
+            pPlayer->damageControl[kDamageDrown]++;
             break;
         case kItemArmorAsbest:
-            pPlayer->damageControl[1]++;
+            pPlayer->damageControl[kDamageBurn]++;
             break;
         case kItemTwoGuns:
             pPlayer->input.newWeapon = pPlayer->curWeapon;
@@ -351,15 +351,15 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         #endif
         case kItemFeatherFall:
         case kItemJumpBoots:
-            pPlayer->damageControl[0]--;
+            pPlayer->damageControl[kDamageFall]--;
             break;
         case kItemDeathMask:
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < kDamageMax; i++)
                 pPlayer->damageControl[i]--;
             break;
         case kItemDivingSuit:
-            pPlayer->damageControl[4]--;
-            if (pPlayer == gMe && VanillaMode() ? true : pPlayer->pwUpTime[24] == 0)
+            pPlayer->damageControl[kDamageDrown]--;
+            if ((pPlayer == gMe) && (VanillaMode() || !powerupCheck(pPlayer, kPwUpReflectShots)))
                 sfxSetReverb(0);
             break;
         case kItemReflectShots:
@@ -367,10 +367,10 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
                 sfxSetReverb(0);
             break;
         case kItemGasMask:
-            pPlayer->damageControl[4]--;
+            pPlayer->damageControl[kDamageDrown]--;
             break;
         case kItemArmorAsbest:
-            pPlayer->damageControl[1]--;
+            pPlayer->damageControl[kDamageBurn]--;
             break;
         case kItemTwoGuns:
             pPlayer->input.newWeapon = pPlayer->curWeapon;
@@ -595,20 +595,20 @@ void playerSetRace(PLAYER *pPlayer, int nLifeMode)
     // By NoOne: don't forget to change clipdist for grow and shrink modes
     pPlayer->pSprite->clipdist = pDudeInfo->clipdist;
     
-    for (int i = 0; i < 7; i++)
-        pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[pPlayer->nPlayer].skill], pDudeInfo->startDamage[i]);
+    for (int i = 0; i < kDamageMax; i++)
+        pDudeInfo->curDamage[i] = mulscale8(Handicap[gProfile[pPlayer->nPlayer].skill], pDudeInfo->startDamage[i]);
 }
 
 void playerSetGodMode(PLAYER *pPlayer, char bGodMode)
 {
     if (bGodMode)
     {
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < kDamageMax; i++)
             pPlayer->damageControl[i]++;
     }
     else
     {
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < kDamageMax; i++)
             pPlayer->damageControl[i]--;
     }
     pPlayer->godMode = bGodMode;
@@ -754,7 +754,7 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->hasFlag = 0;
     for (int i = 0; i < 8; i++)
         pPlayer->used2[i] = -1;
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < kDamageMax; i++)
         pPlayer->damageControl[i] = 0;
     if (pPlayer->godMode)
         playerSetGodMode(pPlayer, 1);
@@ -830,7 +830,7 @@ void playerReset(PLAYER *pPlayer)
         3, 4, 2, 8, 9, 10, 7, 1, 1, 1, 1, 1, 1, 1
     };
     dassert(pPlayer != NULL);
-    for (int i = 0; i < 14; i++)
+    for (int i = 0; i < kWeaponMax; i++)
     {
         pPlayer->hasWeapon[i] = gInfiniteAmmo;
         pPlayer->weaponMode[i] = 0;
@@ -839,7 +839,7 @@ void playerReset(PLAYER *pPlayer)
     pPlayer->curWeapon = kWeaponNone;
     pPlayer->qavCallback = -1;
     pPlayer->input.newWeapon = kWeaponPitchfork;
-    for (int i = 0; i < 14; i++)
+    for (int i = 0; i < kWeaponMax; i++)
     {
         pPlayer->weaponOrder[0][i] = dword_136400[i];
         pPlayer->weaponOrder[1][i] = dword_136438[i];

@@ -114,7 +114,7 @@ void SetAmmo(bool stat)
 
 void SetWeapons(bool stat)
 {
-    for (int i = 0; i < 14; i++)
+    for (int i = 0; i < kWeaponMax; i++)
     {
         gMe->hasWeapon[i] = stat;
     }
