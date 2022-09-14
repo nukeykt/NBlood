@@ -872,15 +872,12 @@ void LocalKeys(void)
         }
         else if (gGameOptions.nGameType == 3)
         {
-            int oldViewIndex = gViewIndex;
             do
             {
                 gViewIndex = connectpoint2[gViewIndex];
                 if (gViewIndex == -1)
                     gViewIndex = connecthead;
-                if (oldViewIndex == gViewIndex || gMe->teamId == gPlayer[gViewIndex].teamId)
-                    break;
-            } while (oldViewIndex != gViewIndex);
+            } while ((gViewIndex != myconnectindex) && !IsTargetTeammate(gMe, gPlayer[gViewIndex].pSprite));
             gView = &gPlayer[gViewIndex];
         }
     }
