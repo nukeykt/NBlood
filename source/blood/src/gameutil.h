@@ -49,7 +49,7 @@ enum {
 };
 
 
-// by NoOne: functions to quickly check range of specifical arrays
+// by NoOne: functions to quickly check range of specific arrays
 inline bool spriRangeIsFine(int nIndex) {
     return (nIndex >= 0 && nIndex < kMaxSprites);
 }

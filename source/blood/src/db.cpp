@@ -748,7 +748,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
     memset(xvel,0,sizeof(xvel));
     memset(yvel,0,sizeof(yvel));
     memset(zvel,0,sizeof(zvel));
-    memset(xsprite,0,sizeof(xsprite));
+    memset(xsprite,0,kMaxXSprites*sizeof(XSPRITE));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
 
     #ifdef NOONE_EXTENSIONS
@@ -1263,14 +1263,12 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         else
         {
             initprintf("Corrupted Map file");
-            gSysRes.Unlock(pNode);
             return -1;
         }
     }
     else if (gSongId != 0)
     {
         initprintf("Corrupted Map file");
-        gSysRes.Unlock(pNode);
         return -1;
     }
 
@@ -1343,7 +1341,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSector)
 {
     char sMapExt[BMAX_PATH];
-    char sBakExt[BMAX_PATH];
+    //char sBakExt[BMAX_PATH];
     int16_t tpskyoff[256];
     int nSpriteNum;
     psky_t *pSky = tileSetupSky(0);
@@ -1711,6 +1709,7 @@ int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSe
 int32_t qloadboard(const char* filename, char flags, vec3_t* dapos, int16_t* daang, int16_t* dacursectnum)
 {
     // NUKE-TODO: implement flags, see mapedit.cpp
+    UNREFERENCED_PARAMETER(flags);
     return dbLoadMap(filename, &dapos->x, &dapos->y, &dapos->z, (short*)daang, (short*)dacursectnum, NULL);
 }
 
