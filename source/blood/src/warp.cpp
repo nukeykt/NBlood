@@ -34,10 +34,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 #endif
 
-ZONE gStartZone[8];
+ZONE gStartZone[kMaxPlayers];
 #ifdef NOONE_EXTENSIONS
-    ZONE gStartZoneTeam1[8];
-    ZONE gStartZoneTeam2[8];
+    ZONE gStartZoneTeam1[kMaxPlayers];
+    ZONE gStartZoneTeam2[kMaxPlayers];
     bool gTeamsSpawnUsed = false;
 #endif
 void warpInit(void)
