@@ -2458,9 +2458,10 @@ int DudeDifficulty[5] = {
 };
 
 void actInit(bool bSaveLoad) {
-    if(!bSaveLoad)
+    if (!bSaveLoad) { // reset postpone count on new level
         gPostCount = 0;
-    
+    }
+
     #ifdef NOONE_EXTENSIONS
     if (!gModernMap) {
         initprintf("> This map *does not* provide modern features.\n");
@@ -2978,7 +2979,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             aiSetGenIdleState(pSprite, pXSprite); // set idle state
             
             if (pXSprite->key > 0) // drop keys
-                actDropObject(pSprite, kItemKeyBase + pXSprite->key - 1);
+                actDropObject(pSprite, kItemKeyBase + (pXSprite->key - 1));
             
             if (pXSprite->dropMsg > 0) // drop items
                 actDropObject(pSprite, pXSprite->dropMsg);
@@ -4488,7 +4489,6 @@ int MoveThing(spritetype *pSprite)
             v8 = 0x4000|nSector;
         }
         else if (zvel[nSprite] == 0)
-
             pSprite->flags &= ~4;
     }
     else
@@ -4856,7 +4856,7 @@ void MoveDude(spritetype *pSprite)
                     const bool fixRandomCultist = (pSprite->inittype >= kDudeBase) && (pSprite->inittype < kDudeMax) && (pSprite->inittype != pSprite->type) && !VanillaMode(); // fix burning cultists randomly switching types underwater
                     if (fixRandomCultist)
                         pSprite->type = pSprite->inittype;
-                    else if (Chance(chance))
+                    else if (Chance(chance)) // vanilla behavior
                         pSprite->type = kDudeCultistTommy;
                     else
                         pSprite->type = kDudeCultistShotgun;
@@ -5743,7 +5743,7 @@ void actProcessSprites(void)
             XWALL *pXWall = &xwall[wall[nWall].extra];
             trTriggerWall(nWall, pXWall, kCmdWallImpact, nOwner);
         }
-        
+
         for (int nSprite2 = headspritestat[kStatDude]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
         {
             spritetype *pDude = &sprite[nSprite2];
@@ -6474,7 +6474,7 @@ int actGetRespawnTime(spritetype *pSprite) {
     if (pSprite->extra <= 0) return -1; 
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
     if (IsDudeSprite(pSprite) && !IsPlayerSprite(pSprite)) {
-        if (pXSprite->respawn == 2 || (pXSprite->respawn != 1 && gGameOptions.nMonsterSettings == 2)) 
+        if (pXSprite->respawn == 2 || (pXSprite->respawn != 1 && gGameOptions.nMonsterSettings == 2))
             return gGameOptions.nMonsterRespawnTime;
         return -1;
     }
@@ -6487,7 +6487,7 @@ int actGetRespawnTime(spritetype *pSprite) {
     }
 
     if (IsAmmoSprite(pSprite)) {
-        if (pXSprite->respawn == 2 || (pXSprite->respawn != 1 && gGameOptions.nWeaponSettings != 0)) 
+        if (pXSprite->respawn == 2 || (pXSprite->respawn != 1 && gGameOptions.nWeaponSettings != 0))
             return gGameOptions.nWeaponRespawnTime;
         return -1;
     }
@@ -7126,7 +7126,7 @@ void G_AddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange,
 void actDoLight(int nSprite)
 {
     auto const pSprite = &sprite[nSprite];
-    int savedFires = 0;
+    //int savedFires = 0;
     if (((sector[pSprite->sectnum].floorz - sector[pSprite->sectnum].ceilingz) < 16) || pSprite->z > sector[pSprite->sectnum].floorz)
     {
         if (gPolymerLight[nSprite].lightptr != NULL)

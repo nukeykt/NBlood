@@ -37,7 +37,7 @@ static Resource gBarfRes;
 #define kMaxDefines         1000
 #define kMaxParseLevels     5
 static int nCmdDefines = 0;
-static int nDefines = 0;
+//static int nDefines = 0;
 
 static int gParseLevel = 0;
 int dword_44CE0[kMaxParseLevels] = { 0, 0, 0, 0, 0 };
@@ -424,7 +424,7 @@ uint8_t RFS::GetNextTag()
                     break;
                 }
 
-                if (eax == 0 && strlen(tags[i]._value) == ebp)
+                if ((eax == 0) && ((int)strlen(tags[i]._value) == ebp))
                 {
                     scriptBuffer[ebp] = 0;
                     return tags[i]._index;
@@ -761,9 +761,9 @@ void ParseScript(const char *scriptFileName)
                         break;
                     }
                     else {
-                        //if (isDefine) {
+                        if (isDefine) {
                         //    AddDefine(fileName, scriptValue);
-                        //}
+                        }
 
                         nFlags |= DICT_ID;
                         ID = scriptValue;
@@ -939,7 +939,7 @@ void sub_11DF0(char *filePath, char flags, int ID)
     char zDirectory[BMAX_PATH];
     char zFilename[BMAX_PATH];
     char zType[BMAX_PATH];
-    buildvfs_fd handle;
+    //buildvfs_fd handle;
 
     SplitPath(filePath, zDirectory, zFilename, zType);
 
