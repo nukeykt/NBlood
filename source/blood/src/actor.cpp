@@ -2534,11 +2534,17 @@ void actInit(bool bSaveLoad) {
     
     if (gGameOptions.nMonsterSettings == 0) {
         gKillMgr.SetCount(0);
-        while (headspritestat[kStatDude] >= 0) {
+        int nSprite = headspritestat[kStatDude];
+        while (nSprite >= 0) {
             spritetype *pSprite = &sprite[headspritestat[kStatDude]];
+            if (IsPlayerSprite(pSprite)) { // do not delete player sprites (causes game to crash on load save)
+                nSprite = nextspritestat[nSprite];
+                continue;
+            }
             if (pSprite->extra > 0 && pSprite->extra < kMaxXSprites && xsprite[pSprite->extra].key > 0) // Drop Key
                 actDropObject(pSprite, kItemKeyBase + (xsprite[pSprite->extra].key - 1));
-            DeleteSprite(headspritestat[kStatDude]);
+            DeleteSprite(nSprite);
+            nSprite = headspritestat[kStatDude]; // start all over again until only player sprites are left
         }
     } else {
         // by NoOne: WTF is this?
