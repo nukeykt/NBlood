@@ -982,7 +982,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         if (dword_28E3D4 == 3 && myconnectindex == connecthead)
                         {
                             sprintf(buffer, "frag A killed B\n");
-                            sub_7AC28(buffer);
+                            netBroadcastFrag(buffer);
                         }
 #endif
                     }
@@ -1026,7 +1026,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         if (dword_28E3D4 == 3 && myconnectindex == connecthead)
                         {
                             sprintf(buffer, "frag B killed A\n");
-                            sub_7AC28(buffer);
+                            netBroadcastFrag(buffer);
                         }
 #endif
                     }
@@ -1892,7 +1892,7 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
     if (myconnectindex == connecthead)
     {
         sprintf(buffer, "frag %d killed %d\n", pKiller->nPlayer+1, pVictim->nPlayer+1);
-        sub_7AC28(buffer);
+        netBroadcastFrag(buffer);
         buffer[0] = 0;
     }
     if (nKiller == nVictim)

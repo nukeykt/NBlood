@@ -619,7 +619,7 @@ void netWaitForEveryone(char a1)
     } while (p >= 0);
 }
 
-void sub_7AC28(const char *pzString)
+void netBroadcastFrag(const char *pzString)
 {
     if (numplayers < 2)
         return;
