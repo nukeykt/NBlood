@@ -121,10 +121,10 @@ void DoSectorLighting(void)
         dassert(sector[nSector].extra == nXSector);
         if (pXSector->shade)
         {
-            int v4 = pXSector->shade;
+            int nShade = pXSector->shade;
             if (pXSector->shadeFloor)
             {
-                sector[nSector].floorshade -= v4;
+                sector[nSector].floorshade -= nShade;
                 if (pXSector->color)
                 {
                     int nTemp = pXSector->floorpal;
@@ -134,7 +134,7 @@ void DoSectorLighting(void)
             }
             if (pXSector->shadeCeiling)
             {
-                sector[nSector].ceilingshade -= v4;
+                sector[nSector].ceilingshade -= nShade;
                 if (pXSector->color)
                 {
                     int nTemp = pXSector->ceilpal;
@@ -148,7 +148,7 @@ void DoSectorLighting(void)
                 int nEndWall = nStartWall + sector[nSector].wallnum;
                 for (int j = nStartWall; j < nEndWall; j++)
                 {
-                    wall[j].shade -= v4;
+                    wall[j].shade -= nShade;
                     if (pXSector->color)
                     {
                         wall[j].pal = sector[nSector].floorpal;
@@ -159,17 +159,18 @@ void DoSectorLighting(void)
         }
         if (pXSector->shadeAlways || pXSector->busy)
         {
-            int t1 = pXSector->wave;
-            int t2 = pXSector->amplitude;
+            int nPhase = pXSector->wave;
+            int nAmp = pXSector->amplitude;
             if (!pXSector->shadeAlways && pXSector->busy)
             {
-                t2 = mulscale16(t2, pXSector->busy);
+                nAmp = mulscale16(nAmp, pXSector->busy);
             }
-            int v4 = GetWaveValue(t1, pXSector->phase*8+pXSector->freq*(int)totalclock, t2);
+            int nFreq = pXSector->freq;
+            int nShade = GetWaveValue(nPhase, (pXSector->phase*8)+(nFreq*(int)totalclock), nAmp);
             if (pXSector->shadeFloor)
             {
-                sector[nSector].floorshade = ClipRange(sector[nSector].floorshade+v4, -128, 127);
-                if (pXSector->color && v4 != 0)
+                sector[nSector].floorshade = ClipRange(sector[nSector].floorshade+nShade, -128, 127);
+                if (pXSector->color && nShade != 0)
                 {
                     int nTemp = pXSector->floorpal;
                     pXSector->floorpal = sector[nSector].floorpal;
@@ -178,8 +179,8 @@ void DoSectorLighting(void)
             }
             if (pXSector->shadeCeiling)
             {
-                sector[nSector].ceilingshade = ClipRange(sector[nSector].ceilingshade+v4, -128, 127);
-                if (pXSector->color && v4 != 0)
+                sector[nSector].ceilingshade = ClipRange(sector[nSector].ceilingshade+nShade, -128, 127);
+                if (pXSector->color && nShade != 0)
                 {
                     int nTemp = pXSector->ceilpal;
                     pXSector->ceilpal = sector[nSector].ceilingpal;
@@ -192,14 +193,14 @@ void DoSectorLighting(void)
                 int nEndWall = nStartWall + sector[nSector].wallnum;
                 for (int j = nStartWall; j < nEndWall; j++)
                 {
-                    wall[j].shade = ClipRange(wall[j].shade+v4, -128, 127);
-                    if (pXSector->color && v4 != 0)
+                    wall[j].shade = ClipRange(wall[j].shade+nShade, -128, 127);
+                    if (pXSector->color && nShade != 0)
                     {
                         wall[j].pal = sector[nSector].floorpal;
                     }
                 }
             }
-            pXSector->shade = v4;
+            pXSector->shade = nShade;
         }
     }
 }
