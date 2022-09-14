@@ -2456,8 +2456,8 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
             pNSprite->picnum = nVoxel;
             if (pPlayer->curWeapon == kWeaponLifeLeech) // position lifeleech behind player
             {
-                pNSprite->x += mulscale30(128, Cos(gView->pSprite->ang));
-                pNSprite->y += mulscale30(128, Sin(gView->pSprite->ang));
+                pNSprite->x += mulscale30(128, Cos(gCameraAng));
+                pNSprite->y += mulscale30(128, Sin(gCameraAng));
             }
             if ((pPlayer->curWeapon == kWeaponLifeLeech) || (pPlayer->curWeapon == kWeaponVoodoo))  // make lifeleech/voodoo doll always face viewer like sprite
                 pNSprite->ang = (gView->pSprite->ang + 1024) & 2047;
@@ -2604,7 +2604,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                         pTSprite->cstat &= ~(4|8);
                         pTSprite->yoffset += picanm[pTSprite->picnum].yofs;
                         pTSprite->picnum = voxelIndex[pTSprite->picnum];
-                        if (!voxoff[pTSprite->picnum])
+                        if (!voxoff[pTSprite->picnum][0])
                             qloadvoxel(pTSprite->picnum);
                         if ((picanm[nTile].extra&7) == 7)
                         {
