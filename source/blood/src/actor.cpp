@@ -6163,7 +6163,8 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     pSprite2->cstat |= 0x1101;
     pSprite2->clipdist = getDudeInfo(nDude+kDudeBase)->clipdist;
     pXSprite2->health = getDudeInfo(nDude+kDudeBase)->startHealth<<4;
-    pXSprite2->respawn = 1;
+    if (!VanillaMode()) // don't allow newly spawned enemies to respawn
+        pXSprite2->respawn = 1;
     if (gSysRes.Lookup(getDudeInfo(nDude+kDudeBase)->seqStartID, "SEQ"))
         seqSpawn(getDudeInfo(nDude+kDudeBase)->seqStartID, 3, pSprite2->extra, -1);
     
