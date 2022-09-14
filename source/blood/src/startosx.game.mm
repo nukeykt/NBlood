@@ -741,6 +741,11 @@ settings;
 
 static StartupWindow *startwin = nil;
 
+bool startwin_isopen(void)
+{
+    return (startwin != nil);
+}
+
 int startwin_open(void)
 {
     // fix for "ld: absolute address to symbol _NSApp in a different linkage unit not supported"
