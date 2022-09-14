@@ -427,7 +427,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         predict.at30 = (predict.at30+pInput->q16turn)&0x7ffffff;
     if (pInput->keyFlags.spin180)
         if (!predict.at4c)
-            predict.at4c = -1024;
+            predict.at4c = -kAng180;
     if (predict.at4c < 0)
     {
         int speed;
@@ -3529,10 +3529,10 @@ void viewDrawScreen(void)
                     tiltdim = 320;
                 }
                 renderSetTarget(TILTBUFFER, tiltdim, tiltdim);
-                int nAng = v78&511;
-                if (nAng > 256)
+                int nAng = v78&(kAng90-1);
+                if (nAng > kAng45)
                 {
-                    nAng = 512-nAng;
+                    nAng = kAng90-nAng;
                 }
                 renderSetAspect(mulscale16(vr, dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)), yxaspect);
             }
@@ -3743,10 +3743,10 @@ RORHACK:
                 {
                     vrc = 64+32+4+2+1+1024;
                 }
-                int nAng = v78 & 511;
-                if (nAng > 256)
+                int nAng = v78 & (kAng90-1);
+                if (nAng > kAng45)
                 {
-                    nAng = 512 - nAng;
+                    nAng = kAng90 - nAng;
                 }
                 int nScale = dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)>>tiltcs;
                 rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
