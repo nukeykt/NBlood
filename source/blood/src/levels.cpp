@@ -96,6 +96,9 @@ void levelPlayIntroScene(int nEpisode)
     viewResizeView(gViewSize);
     credReset();
     scrSetDac();
+    ControlInfo info;
+    CONTROL_GetInput(&info); // clear mouse and all input after cutscene has finished playing
+    ctrlClearAllInput();
 }
 
 void levelPlayEndScene(int nEpisode)
