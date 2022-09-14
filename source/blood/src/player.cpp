@@ -1368,7 +1368,7 @@ void ProcessInput(PLAYER *pPlayer)
     if (pInput->buttonFlags.byte || pInput->forward || pInput->strafe || pInput->q16turn)
         pPlayer->restTime = 0;
     else if (pPlayer->restTime >= 0)
-        pPlayer->restTime += 4;
+        pPlayer->restTime += kTicsPerFrame;
     WeaponProcess(pPlayer);
     if (pXSprite->health == 0)
     {
@@ -1378,7 +1378,7 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->angold = pSprite->ang = getangle(sprite[pPlayer->fraggerId].x - pSprite->x, sprite[pPlayer->fraggerId].y - pSprite->y);
             pPlayer->q16ang = fix16_from_int(pSprite->ang);
         }
-        pPlayer->deathTime += 4;
+        pPlayer->deathTime += kTicsPerFrame;
         if (!bSeqStat)
         {
             if (bVanilla)
