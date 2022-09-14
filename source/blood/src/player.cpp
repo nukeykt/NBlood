@@ -1471,28 +1471,24 @@ void ProcessInput(PLAYER *pPlayer)
     if (pInput->keyFlags.spin180)
     {
         if (!pPlayer->spin)
-            pPlayer->spin = -1024;
+            pPlayer->spin = -kAng180;
         pInput->keyFlags.spin180 = 0;
     }
     if (pPlayer->spin < 0)
     {
-        int speed;
-        if (pPlayer->posture == 1)
-            speed = 64;
-        else
-            speed = 128;
+        const int speed = (pPlayer->posture == kPostureSwim) ? 64 : 128;
         pPlayer->spin = min(pPlayer->spin+speed, 0);
         pPlayer->q16ang += fix16_from_int(speed);
         if (pPlayer == gMe && numplayers == 1)
-            gViewAngleAdjust += float(speed);
+            gViewAngleAdjust += float(ClipHigh(-pPlayer->spin, speed)); // don't overturn when nearing end of spin
     }
     if (pPlayer == gMe && numplayers == 1)
     {
         int nDeltaAngle = pSprite->ang - pPlayer->angold;
-        if (nDeltaAngle >= 1024) // handle unsigned overflow
-            nDeltaAngle += -2048;
-        else if (nDeltaAngle <= -1024)
-            nDeltaAngle += 2048;
+        if (nDeltaAngle > kAng180) // handle unsigned overflow
+            nDeltaAngle += -kAng360;
+        else if (nDeltaAngle < -kAng180)
+            nDeltaAngle += kAng360;
         gViewAngleAdjust += float(nDeltaAngle);
     }
     pPlayer->q16ang = (pPlayer->q16ang+fix16_from_int(pSprite->ang-pPlayer->angold))&0x7ffffff;
