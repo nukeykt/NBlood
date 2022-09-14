@@ -224,7 +224,7 @@ void CGameMenuMgr::Process(void)
     CGameMenuEvent event;
     event.at0 = 0;
     event.at2 = 0;
-    char key;
+    char key = 0;
     if (!pActiveMenu->MouseEvent(event) && (key = keyGetScan()) != 0 )
     {
         keyFlushScans();
@@ -277,6 +277,28 @@ void CGameMenuMgr::Process(void)
             event.at0 = kMenuEventKey;
             break;
         }
+    }
+    else if (CONTROL_JoystickEnabled && !key)
+    {
+        static int32_t joyold = 0;
+        int32_t joy = JOYSTICK_GetControllerButtons();
+        JOYSTICK_ClearAllButtons();
+        if (joy != joyold)
+        {
+            if (joy & (1 << CONTROLLER_BUTTON_DPAD_UP))
+                event.at0 = kMenuEventUp;
+            else if (joy & (1 << CONTROLLER_BUTTON_DPAD_DOWN))
+                event.at0 = kMenuEventDown;
+            else if (joy & (1 << CONTROLLER_BUTTON_DPAD_LEFT))
+                event.at0 = kMenuEventLeft;
+            else if (joy & (1 << CONTROLLER_BUTTON_DPAD_RIGHT))
+                event.at0 = kMenuEventRight;
+            else if (joy & (1 << CONTROLLER_BUTTON_A))
+                event.at0 = kMenuEventEnter;
+            else if ((joy & (1 << CONTROLLER_BUTTON_B)) || (joy & (1 << CONTROLLER_BUTTON_START)))
+                event.at0 = kMenuEventEscape;
+        }
+        joyold = joy;
     }
     if (pActiveMenu->Event(event))
         Pop();
@@ -658,6 +680,8 @@ bool CGameMenuItemZBool::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
+    case kMenuEventLeft:
+    case kMenuEventRight:
     case kMenuEventEnter:
     case kMenuEventSpace:
         at20 = !at20;

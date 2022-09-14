@@ -45,6 +45,7 @@ extern int32_t JoystickAnalogueAxes[MAXJOYAXES];
 extern int32_t JoystickAnalogueScale[MAXJOYAXES];
 extern int32_t JoystickAnalogueDead[MAXJOYAXES];
 extern int32_t JoystickAnalogueSaturate[MAXJOYAXES];
+extern int32_t JoystickAnalogueInvert[MAXJOYAXES];
 extern uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 extern int32_t scripthandle;
 extern int32_t setupread;

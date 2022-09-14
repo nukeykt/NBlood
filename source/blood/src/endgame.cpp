@@ -81,6 +81,12 @@ void CEndGameMgr::ProcessKeys(void)
     //else
     {
         char ch = keyGetScan();
+        if (CONTROL_JoystickEnabled && !ch)
+        {
+            int32_t joy = JOYSTICK_GetControllerButtons();
+            JOYSTICK_ClearAllButtons();
+            ch = joy == (1 << CONTROLLER_BUTTON_START);
+        }
         if (!ch)
             return;
         if (gGameOptions.nGameType > 0 || numplayers > 1)
