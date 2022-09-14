@@ -736,7 +736,7 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->kickPower = 0;
     pPlayer->laughCount = 0;
     pPlayer->spin = 0;
-    pPlayer->posture = 0;
+    pPlayer->posture = kPostureStand;
     pPlayer->voodooTarget = -1;
     pPlayer->voodooTargets = 0;
     pPlayer->voodooVar1 = 0;
@@ -816,7 +816,7 @@ void playerStart(int nPlayer, int bNewLevel)
     }
     if (IsUnderwaterSector(pSprite->sectnum))
     {
-        pPlayer->posture = 1;
+        pPlayer->posture = kPostureSwim;
         pPlayer->pXSprite->medium = kMediumWater;
     }
 }
@@ -1415,7 +1415,7 @@ void ProcessInput(PLAYER *pPlayer)
         }
         return;
     }
-    if (pPlayer->posture == 1)
+    if (pPlayer->posture == kPostureSwim)
     {
         int x = Cos(pSprite->ang);
         int y = Sin(pSprite->ang);
@@ -1501,15 +1501,15 @@ void ProcessInput(PLAYER *pPlayer)
         pPlayer->cantJump = 0;
 
     switch (pPlayer->posture) {
-    case 1:
+    case kPostureSwim:
         if (pInput->buttonFlags.jump)
             zvel[nSprite] -= pPosture->normalJumpZ;//0x5b05;
         if (pInput->buttonFlags.crouch)
             zvel[nSprite] += pPosture->normalJumpZ;//0x5b05;
         break;
-    case 2:
+    case kPostureCrouch:
         if (!pInput->buttonFlags.crouch)
-            pPlayer->posture = 0;
+            pPlayer->posture = kPostureStand;
         break;
     default:
         if (!pPlayer->cantJump && pInput->buttonFlags.jump && pXSprite->height == 0) {
@@ -1524,7 +1524,7 @@ void ProcessInput(PLAYER *pPlayer)
         }
 
         if (pInput->buttonFlags.crouch)
-            pPlayer->posture = 2;
+            pPlayer->posture = kPostureCrouch;
         break;
     }
     if (pInput->keyFlags.action)
@@ -1793,7 +1793,7 @@ void playerProcess(PLAYER *pPlayer)
     pPlayer->zWeapon += pPlayer->zWeaponVel>>8;
     pPlayer->bobPhase = ClipLow(pPlayer->bobPhase-4, 0);
     nSpeed >>= 16;
-    if (pPlayer->posture == 1)
+    if (pPlayer->posture == kPostureSwim)
     {
         pPlayer->bobAmp = (pPlayer->bobAmp+17)&2047;
         pPlayer->swayAmp = (pPlayer->swayAmp+17)&2047;
@@ -1836,7 +1836,7 @@ void playerProcess(PLAYER *pPlayer)
     if (!pXSprite->health)
         return;
     pPlayer->isUnderwater = 0;
-    if (pPlayer->posture == 1)
+    if (pPlayer->posture == kPostureSwim)
     {
         pPlayer->isUnderwater = 1;
         int nSector = pSprite->sectnum;
@@ -1857,10 +1857,10 @@ void playerProcess(PLAYER *pPlayer)
     int nType = kDudePlayer1-kDudeBase;
     switch (pPlayer->posture)
     {
-    case 1:
+    case kPostureSwim:
         seqSpawn(dudeInfo[nType].seqStartID+9, 3, nXSprite, -1);
         break;
-    case 2:
+    case kPostureCrouch:
         seqSpawn(dudeInfo[nType].seqStartID+10, 3, nXSprite, -1);
         break;
     default:
