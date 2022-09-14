@@ -194,7 +194,6 @@ void FontSet(int id, int tile, int space)
         QFONT *pQFont = (QFONT*)gSysRes.Load(hQFont);
         for (int i = 32; i < 128; i++)
         {
-            int const nTile = tile + i - 32;
             QFONTCHAR* pChar = &pQFont->at20[i];
             yoff = min(yoff, pQFont->atf + pChar->oy);
         }
@@ -430,16 +429,11 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
             predict.at4c = -kAng180;
     if (predict.at4c < 0)
     {
-        int speed;
-        if (predict.at48 == 1)
-            speed = 64;
-        else
-            speed = 128;
-
+        const int speed = (predict.at48 == 1) ? 64 : 128;
         predict.at4c = min(predict.at4c+speed, 0);
         predict.at30 += fix16_from_int(speed);
         if (numplayers > 1 && gPrediction)
-            gViewAngleAdjust += float(speed);
+            gViewAngleAdjust += float(ClipHigh(-predict.at4c, speed)); // don't overturn when nearing end of spin
     }
 
     if (!predict.at71)
@@ -1556,7 +1550,7 @@ void flashTeamScore(ClockTicks arg, int team, bool show)
 
 void viewDrawCtfHud(ClockTicks arg)
 {
-    if (0 == gViewSize)
+    if (gViewSize == 0)
     {
         flashTeamScore(arg, 0, false);
         flashTeamScore(arg, 1, false);
@@ -2630,9 +2624,8 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         if ((pTSprite->cstat&48) != 48 && usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[nSprite].flags&SPREXT_NOTMD))
         {
             int const nRootTile = pTSprite->picnum;
-            int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
-
 #if 0
+            int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
             if (tiletovox[nAnimTile] != -1)
             {
                 pTSprite->yoffset += picanm[nAnimTile].yofs;
@@ -3458,8 +3451,6 @@ void viewDrawScreen(void)
         }
         if (gView == gMe && (numplayers <= 1 || gPrediction) && gView->pXSprite->health != 0 && !VanillaMode())
         {
-            CONSTEXPR int upAngle = 289;
-            CONSTEXPR int downAngle = -347;
             fix16_t q16look;
             cA = gViewAngle;
             q16look = gViewLook;
@@ -3503,8 +3494,8 @@ void viewDrawScreen(void)
         char v10 = 0;
         bool bDelirium = powerupCheck(gView, kPwUpDeliriumShroom) > 0;
         static bool bDeliriumOld = false;
-        int tiltcs, tiltdim;
-        char v4 = powerupCheck(gView, kPwUpCrystalBall) > 0;
+        int tiltcs = 0, tiltdim = 320;
+        const char bCrystalBall = (powerupCheck(gView, kPwUpCrystalBall) > 0) && (gNetPlayers > 1);
 #ifdef USE_OPENGL
         renderSetRollAngle(0);
 #endif
@@ -3523,11 +3514,6 @@ void viewDrawScreen(void)
                     tiltcs = 1;
                     tiltdim = 640;
                 }
-                else
-                {
-                    tiltcs = 0;
-                    tiltdim = 320;
-                }
                 renderSetTarget(TILTBUFFER, tiltdim, tiltdim);
                 int nAng = v78&(kAng90-1);
                 if (nAng > kAng45)
@@ -3541,7 +3527,7 @@ void viewDrawScreen(void)
                 renderSetRollAngle(v78);
 #endif
         }
-        else if (v4 && gNetPlayers > 1)
+        else if (bCrystalBall)
         {
             int tmp = ((int)totalclock/240)%(gNetPlayers-1);
             int i = connecthead;
@@ -3851,7 +3837,7 @@ RORHACK:
             rotatesprite(0, 200<<16, 65536, 0, 2358, 0, 0, 256+22, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(320<<16, 200<<16, 65536, 1024, 2358, 0, 0, 512+18, gViewX0, gViewY0, gViewX1, gViewY1);
         }
-        if (v4 && gNetPlayers > 1)
+        if (bCrystalBall)
         {
             DoLensEffect();
             viewingRange = viewingrange;
