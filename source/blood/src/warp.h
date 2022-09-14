@@ -27,7 +27,7 @@ struct ZONE {
     int x, y, z;
     short sectnum, ang;
 };
-extern ZONE gStartZone[8];
+extern ZONE gStartZone[kMaxPlayers];
 
 void warpInit(void);
 int CheckLink(spritetype *pSprite);
