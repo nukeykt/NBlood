@@ -7063,15 +7063,13 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
 #ifdef USE_OPENGL    
     if (videoGetRenderMode() != REND_CLASSIC)
     {
+        buildgl_setEnabled(GL_ALPHA_TEST);
+        buildgl_setEnabled(GL_BLEND);
+        
         if (videoGetRenderMode() == REND_POLYMOST)
             polymost_drawmaskwall(damaskwallcnt);
 # ifdef POLYMER
-        else
-        {
-            buildgl_setEnabled(GL_ALPHA_TEST);
-            buildgl_setEnabled(GL_BLEND);
-            polymer_drawmaskwall(damaskwallcnt);
-        }
+        else polymer_drawmaskwall(damaskwallcnt);
 # endif
         return;
     }
