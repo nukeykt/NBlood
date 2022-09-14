@@ -4782,7 +4782,7 @@ void MoveDude(spritetype *pSprite)
         case kMarkerLowGoo:
             pXSprite->medium = kMediumNormal;
             if (pPlayer) {
-                pPlayer->posture = 0;
+                pPlayer->posture = kPostureStand;
                 pPlayer->bubbleTime = 0;
                 if (!pPlayer->cantJump && pPlayer->input.buttonFlags.jump) {
                     zvel[nSprite] = -0x6aaaa;
@@ -4834,7 +4834,7 @@ void MoveDude(spritetype *pSprite)
                 }
                 #endif
 
-                pPlayer->posture = 1;
+                pPlayer->posture = kPostureSwim;
                 pXSprite->burnTime = 0;
                 pPlayer->bubbleTime = klabs(zvel[nSprite]) >> 12;
                 evPost(nSprite, 3, 0, kCallbackPlayerBubble);
