@@ -185,9 +185,12 @@ bool CheckProximityPoint(int nX1, int nY1, int nZ1, int nX2, int nY2, int nZ2, i
     int oY = klabs(nY2-nY1)>>4;
     if (oY >= nDist)
         return 0;
-    int oZ = klabs(nZ2-nZ1)>>4;
-    if (oZ >= nDist)
-        return 0;
+    if (nZ2 != nZ1)
+    {
+        int oZ = klabs(nZ2-nZ1)>>8;
+        if (oZ >= nDist)
+            return 0;
+    }
     if (approxDist(oX, oY) >= nDist) return 0;
     return 1;
 }
