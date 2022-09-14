@@ -528,12 +528,12 @@ CGameMenuItemSliderFloat itemOptionsDisplayColorBrightness("BRIGHTNESS:", 3, 66,
 CGameMenuItemSliderFloat itemOptionsDisplayColorVisibility("VISIBILITY:", 3, 66, 170, 180, &r_ambientlight, 0.125f, 4.f, 0.125f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
 CGameMenuItemChain itemOptionsDisplayColorReset("RESET TO DEFAULTS", 3, 66, 180, 180, 0, NULL, 0, ResetVideoColor, 0);
 
+#ifdef USE_OPENGL
 const char *pzTextureModeStrings[] = {
     "CLASSIC",
     "FILTERED"
 };
 
-#ifdef USE_OPENGL
 int nTextureModeValues[] = {
     TEXFILTER_OFF,
     TEXFILTER_ON
@@ -2602,7 +2602,9 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
         return;
     }
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot);
+    memset(gGameOptions.szUserGameName, 0, sizeof(gGameOptions.szSaveGameName));
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
+    memset(gGameOptions.szSaveGameName, 0, sizeof(gGameOptions.szSaveGameName));
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
     gGameOptions.nSaveGameSlot = nSlot;
     viewLoadingScreen(gMenuPicnum, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
@@ -2629,7 +2631,9 @@ void QuickSaveGame(void)
         return;
     }*/
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot);
+    memset(gGameOptions.szUserGameName, 0, sizeof(gGameOptions.szSaveGameName));
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
+    memset(gGameOptions.szSaveGameName, 0, sizeof(gGameOptions.szSaveGameName));
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
     viewLoadingScreen(gMenuPicnum, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
@@ -2676,6 +2680,7 @@ void QuickLoadGame(void)
 
 void ClearUserMapNameOnLevelChange(CGameMenuItemZCycle *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     memset(zUserMapName, 0, sizeof(zUserMapName));
 }
 
@@ -2710,7 +2715,7 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.weaponsV10x = itemNetStart10.at20;
     ////
     gPacketStartGame.unk = 0;
-    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, sizeof(gPacketStartGame.userMapName));
+    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, sizeof(zUserMapName));
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
 
     netBroadcastNewGame();
@@ -2801,5 +2806,5 @@ void drawLoadingScreen(void)
     }
     else
         sprintf(buffer, "%s", zNetGameTypes[gGameOptions.nGameType-1]);
-    viewLoadingScreen(2049, buffer, levelGetTitle(), NULL);
+    viewLoadingScreen(kLoadScreen, buffer, levelGetTitle(), NULL);
 }
