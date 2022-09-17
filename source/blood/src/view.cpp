@@ -2447,7 +2447,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->shade = pTSprite->shade;
         pNSprite->xrepeat = 32;
         pNSprite->yrepeat = 32;
-        pNSprite->ang = (gView->pSprite->ang + 512) & 2047; // always face viewer
+        pNSprite->ang = (gCameraAng + kAng90) & kAngMask; // always face viewer
         const int nVoxel = voxelIndex[nTile];
         if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
         {
