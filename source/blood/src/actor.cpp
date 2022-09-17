@@ -4627,7 +4627,7 @@ void MoveDude(spritetype *pSprite)
                 trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, pSprite->index);
             #else
                 if (pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, pSprite->index);
             #endif
 
             if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)

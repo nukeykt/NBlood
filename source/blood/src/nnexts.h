@@ -97,8 +97,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMinAllowedPowerup kPwUpFeatherFall
 #define kMaxAllowedPowerup kMaxPowerUps
 
-#define kCauserGame (kMaxSprites - 1)
-
 // modern statnums
 enum {
 kStatModernBase                     = 20,
