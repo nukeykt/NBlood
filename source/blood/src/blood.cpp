@@ -1107,7 +1107,7 @@ void ProcessFrame(void)
         gChokeCounter += (kTicsPerFrame<<1);
         while (gChokeCounter >= kTicsPerSec)
         {
-            gChoke.at1c(gMe);
+            gChoke.Process(gMe);
             gChokeCounter -= kTicsPerSec;
         }
     }
@@ -1780,7 +1780,7 @@ int app_main(int argc, char const * const * argv)
     initprintf("Initializing sound system\n");
     sndInit();
     sfxInit();
-    gChoke.sub_83ff0(518, sub_84230);
+    gChoke.Init(518);
     if (bAddUserMap)
     {
         levelAddUserMap(gUserMapFilename);
