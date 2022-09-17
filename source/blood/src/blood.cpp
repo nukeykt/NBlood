@@ -1884,7 +1884,7 @@ RESTART:
             {
                 videoClearScreen(0);
                 if (gGameMenuMgr.m_bActive && (nGammaMenu < 40))
-                    nGammaMenu += 2;
+                    nGammaMenu += 5;
                 else if (!gGameMenuMgr.m_bActive && (nGammaMenu > 0))
                     nGammaMenu -= 1;
                 rotatesprite(160<<16,100<<16,65536,0,gMenuPicnum,nGammaMenu,0,0x4a,0,0,xdim-1,ydim-1);
