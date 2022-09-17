@@ -994,6 +994,27 @@ void LocalKeys(void)
             break;
         }
     }
+    else if (CONTROL_JoystickEnabled)
+    {
+        static int32_t joyold = 0;
+        int32_t joy = JOYSTICK_GetControllerButtons() == (1 << CONTROLLER_BUTTON_START);
+        if (joy && !joyold)
+        {
+            JOYSTICK_ClearAllButtons();
+            if (gGameStarted && (gPlayer[myconnectindex].pXSprite->health != 0 || gGameOptions.nGameType > 0))
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMainWithSave,-1);
+            }
+            else
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMain,-1);
+            }
+        }
+        joyold = joy;
+        return;
+    }
 }
 
 bool gRestartGame = false;

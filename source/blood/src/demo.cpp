@@ -318,24 +318,39 @@ void CDemo::ProcessKeys(void)
         char nKey;
         while ((nKey = keyGetScan()) != 0)
         {
-	        char UNUSED(alt) = keystatus[0x38] | keystatus[0xb8];
-	        char UNUSED(ctrl) = keystatus[0x1d] | keystatus[0x9d];
+	        char UNUSED(alt) = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
+	        char UNUSED(ctrl) = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
             switch (nKey)
             {
-            case 1:
+            case sc_Escape:
                 if (!CGameMenuMgr::m_bActive)
                 {
                     gGameMenuMgr.Push(&menuMain, -1);
                     at2 = 1;
                 }
                 break;
-            case 0x58:
+            case sc_F12:
                 gViewIndex = connectpoint2[gViewIndex];
                 if (gViewIndex == -1)
                     gViewIndex = connecthead;
                 gView = &gPlayer[gViewIndex];
                 break;
             }
+        }
+        if (!nKey && CONTROL_JoystickEnabled)
+        {
+            static int32_t joyold = 0;
+            int32_t joy = JOYSTICK_GetControllerButtons() == (1 << CONTROLLER_BUTTON_START);
+            if (joy && !joyold)
+            {
+                JOYSTICK_ClearAllButtons();
+                if (!CGameMenuMgr::m_bActive)
+                {
+                    gGameMenuMgr.Push(&menuMain, -1);
+                    at2 = 1;
+                }
+            }
+            joyold = joy;
         }
         break;
     default:
