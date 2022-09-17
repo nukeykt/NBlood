@@ -644,6 +644,12 @@ void playerResetPowerUps(PLAYER* pPlayer)
             continue;
         pPlayer->pwUpTime[i] = 0;
     }
+    if (!VanillaMode() && (pPlayer == gView)) // reset delirium tilt view variables
+    {
+        gScreenTiltO = gScreenTilt = 0;
+        deliriumTurnO = deliriumTurn = 0;
+        deliriumPitchO = deliriumPitch = 0;
+    }
 }
 
 void playerResetPosture(PLAYER* pPlayer) {
