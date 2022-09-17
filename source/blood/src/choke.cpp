@@ -31,100 +31,96 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "qav.h"
 #include "resource.h"
 
+CChoke gChoke;
 
-void CChoke::sub_83F54(char *a1, int _x, int _y, void (*a2)(PLAYER*))
+void CChoke::Init(char *pzFile, int _x, int _y)
 {
-    at14 = _x;
-    at18 = _y;
-    at0 = a1;
-    at1c = a2;
-    if (!at4 && at0)
+    x = _x;
+    y = _y;
+    if (!hQav && pzFile)
     {
-        at4 = gSysRes.Lookup(at0, "QAV");
-        if (!at4)
-            ThrowError("Could not load QAV %s\n", at0);
-        at8 = (QAV*)gSysRes.Lock(at4);
-        at8->nSprite = -1;
-        at8->x = at14;
-        at8->y = at18;
-        at8->Preload();
-        sub_84218();
+        hQav = gSysRes.Lookup(pzFile, "QAV");
+        if (!hQav)
+            ThrowError("Could not load QAV %s\n", pzFile);
+        pQav = (QAV*)gSysRes.Lock(hQav);
+        pQav->nSprite = -1;
+        pQav->x = x;
+        pQav->y = y;
+        pQav->Preload();
+        chokeTimeInit();
     }
 }
 
-void CChoke::sub_83ff0(int a1, void(*a2)(PLAYER*))
+void CChoke::Init(int qavId)
 {
-    at0 = NULL;
-    at1c = a2;
-    if (!at4 && a1 != -1)
+    if (!hQav && qavId != -1)
     {
-        at4 = gSysRes.Lookup(a1, "QAV");
-        if (!at4)
-            ThrowError("Could not load QAV %d\n", a1);
-        at8 = (QAV*)gSysRes.Lock(at4);
-        at8->nSprite = -1;
-        at8->x = at14;
-        at8->y = at18;
-        at8->Preload();
-        sub_84218();
+        hQav = gSysRes.Lookup(qavId, "QAV");
+        if (!hQav)
+            ThrowError("Could not load QAV %d\n", qavId);
+        pQav = (QAV*)gSysRes.Lock(hQav);
+        pQav->nSprite = -1;
+        pQav->x = x;
+        pQav->y = y;
+        pQav->Preload();
+        chokeTimeInit();
     }
 }
 
-void CChoke::sub_84080(char *a1, void(*a2)(PLAYER*))
+void CChoke::Init(char *pzFile)
 {
-    at0 = a1;
-    at1c = a2;
-    if (!at4 && at0)
+    if (!hQav && pzFile)
     {
-        at4 = gSysRes.Lookup(at0, "QAV");
-        if (!at4)
-            ThrowError("Could not load QAV %s\n", at0);
-        at8 = (QAV*)gSysRes.Lock(at4);
-        at8->nSprite = -1;
-        at8->x = at14;
-        at8->y = at18;
-        at8->Preload();
-        sub_84218();
+        hQav = gSysRes.Lookup(pzFile, "QAV");
+        if (!hQav)
+            ThrowError("Could not load QAV %s\n", pzFile);
+        pQav = (QAV*)gSysRes.Lock(hQav);
+        pQav->nSprite = -1;
+        pQav->x = x;
+        pQav->y = y;
+        pQav->Preload();
+        chokeTimeInit();
     }
 }
 
-void CChoke::sub_84110(int x, int y)
+void CChoke::Draw(int x, int y)
 {
-    if (!at4)
+    if (!hQav)
         return;
-    ClockTicks v4 = gFrameClock;
+    const ClockTicks bakClock = gFrameClock;
     gFrameClock = totalclock;
-    at8->x = x;
-    at8->y = y;
-    int vd = (int)totalclock-at10;
-    at10 = (int)totalclock;
-    atc -= vd;
-    if (atc <= 0 || atc > at8->at10)
-        atc = at8->at10;
-    int vdi = at8->at10-atc;
-    at8->Play(vdi-vd, vdi, -1, NULL);
-    int vb = windowxy1.x;
-    int v10 = windowxy1.y;
-    int vc = windowxy2.x;
-    int v8 = windowxy2.y;
-    windowxy1.x = windowxy1.y = 0;
+    pQav->x = x;
+    pQav->y = y;
+    int diff = (int)totalclock-clock;
+    clock = (int)totalclock;
+    duration -= diff;
+    if (duration <= 0 || duration > pQav->at10)
+        duration = pQav->at10;
+    int vdi = pQav->at10-duration;
+    pQav->Play(vdi-diff, vdi, -1, NULL);
+    const int win1x = windowxy1.x;
+    const int win1y = windowxy1.y;
+    const int win2x = windowxy2.x;
+    const int win2y = windowxy2.y;
+    windowxy1.x = 0;
+    windowxy1.y = 0;
     windowxy2.x = xdim-1;
     windowxy2.y = ydim-1;
-    at8->Draw(vdi, 10, 0, 0);
-    windowxy1.x = vb;
-    windowxy1.y = v10;
-    windowxy2.x = vc;
-    windowxy2.y = v8;
-    gFrameClock = v4;
+    pQav->Draw(vdi, 10, 0, 0);
+    windowxy1.x = win1x;
+    windowxy1.y = win1y;
+    windowxy2.x = win2x;
+    windowxy2.y = win2y;
+    gFrameClock = bakClock;
 }
 
-void CChoke::sub_84218()
+void CChoke::chokeTimeInit()
 {
-    atc = at8->at10;
-    at10 = (int)totalclock;
+    duration = pQav->at10;
+    clock = (int)totalclock;
 }
 
-void sub_84230(PLAYER *pPlayer)
+void CChoke::Process(PLAYER *pPlayer)
 {
     int t = gGameOptions.nDifficulty+2;
     if (pPlayer->handTime < 64)
@@ -132,5 +128,3 @@ void sub_84230(PLAYER *pPlayer)
     if (pPlayer->handTime > (7-gGameOptions.nDifficulty)*5)
         pPlayer->blindEffect = ClipHigh(pPlayer->blindEffect+t*4, 128);
 }
-
-CChoke gChoke;
