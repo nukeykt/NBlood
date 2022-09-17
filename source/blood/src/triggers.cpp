@@ -181,7 +181,11 @@ void AddBusy(int a1, BUSYID a2, int nDelta)
 
     if (i == gBusyCount)
     {
+    #ifdef NOONE_EXTENSIONS
         if ((!gModernMap && gBusyCount >= kMaxBusyCountVanilla) || gBusyCount >= kMaxBusyCount)
+    #else
+        if (gBusyCount >= kMaxBusyCountVanilla)
+    #endif
         {
             consoleSysMsg("Failed to AddBusy for #%d! Max busy reached (%d)", a1, gBusyCount);
             return;
@@ -2095,7 +2099,7 @@ void trProcessBusy(void)
             if (!gModernMap || !xsector[sector[gBusy[i].at0].extra].unused1) nStatus = gBusyProc[gBusy[i].atc](gBusy[i].at0, gBusy[i].at8, -1);
             else nStatus = 3; // allow to pause/continue motion for sectors any time by sending special command
         #else
-            nStatus = gBusyProc[gBusy[i].atc](gBusy[i].at0, gBusy[i].at8);
+            nStatus = gBusyProc[gBusy[i].atc](gBusy[i].at0, gBusy[i].at8, -1);
         #endif
         switch (nStatus) {
             case 1:

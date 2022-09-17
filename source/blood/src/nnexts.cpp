@@ -524,7 +524,7 @@ bool nnExtIsImmune(spritetype* pSprite, int dmgType, int minScale) {
         else if (IsDudeSprite(pSprite)) {
             if (IsPlayerSprite(pSprite)) return (gPlayer[pSprite->type - kDudePlayer1].damageControl[dmgType]);
             else if (pSprite->type == kDudeModernCustom) return (gGenDudeExtra[pSprite->index].dmgControl[dmgType] <= minScale);
-            else return (getDudeInfo(pSprite->type)->at70[dmgType] <= minScale);
+            else return (getDudeInfo(pSprite->type)->curDamage[dmgType] <= minScale);
         }
     }
 
@@ -2194,7 +2194,7 @@ void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer) {
         case 1: // erase weapons
             WeaponLower(pPlayer);
 
-            for (int i = 0; i < 14; i++) {
+            for (int i = 0; i < kWeaponMax; i++) {
                 pPlayer->hasWeapon[i] = false;
                 // also erase ammo
                 if (i < 12) pPlayer->ammoCount[i] = 0;

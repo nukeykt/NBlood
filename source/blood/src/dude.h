@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #pragma once
+#include "actor.h"
 #include "blood.h"
 struct DUDEINFO {
     short seqStartID; // seq
@@ -45,8 +46,8 @@ struct DUDEINFO {
     int backSpeed; // backward speed (unused)
     int angSpeed; // turn speed
     int nGibType[3]; // which gib used when explode dude
-    int startDamage[7]; // start damage shift
-    int at70[7]; // real damage? Hmm?
+    int startDamage[kDamageMax]; // start damage shift
+    int curDamage[kDamageMax]; // current damage stat (post-shift)
     int at8c; // unused ?
     int at90; // unused ?
 };

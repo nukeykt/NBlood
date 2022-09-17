@@ -105,6 +105,8 @@ void _consoleSysMsg(const char* pMessage, ...);
 #define kDmgElectric 6
 #define kDmgMax 7
 
+#define kCauserGame (kMaxSprites - 1)
+
 // MEDIUM /////////////////////////////////////////////////////
 enum {
 kMediumNormal                   = 0,

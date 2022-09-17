@@ -185,6 +185,7 @@ void Container::Remove(Widget* widget)
 
 void Container::Paint(int x, int y, char a3)
 {
+    UNREFERENCED_PARAMETER(a3);
     for (Widget* pWidget = at2e.at14; pWidget != &at2e; pWidget = pWidget->at14)
     {
         pWidget->Paint(x + pWidget->at0, y + pWidget->at4, at26 == pWidget);
@@ -296,6 +297,7 @@ TitleBar::TitleBar(int a1, int a2, int a3, int a4, const char *a5) : Widget(a1, 
 
 void TitleBar::Paint(int x, int y, char a3)
 {
+    UNREFERENCED_PARAMETER(a3);
     gColor = gStdColor[1];
     gfxFillBox(x, y, x + at8, y + atc);
     DrawBevel(x, y, x + at8, y + atc, gStdColor[9], gStdColor[30]);
@@ -347,6 +349,7 @@ Button::Button(int a1, int a2, int a3, int a4, void (*a5)(Widget*)) : Widget(a1,
 
 void Button::Paint(int x, int y, char a3)
 {
+    UNREFERENCED_PARAMETER(a3);
     gColor = gStdColor[0];
     gfxHLine(y, x + 1, x + at8 - 2);
     gfxHLine(y + atc - 1, x + 1, x + at8 - 2);
@@ -445,6 +448,7 @@ void TextButton::HandleEvent(GEVENT* event)
 
 void BitButton::Paint(int x, int y, char a3)
 {
+    UNREFERENCED_PARAMETER(a3);
     gColor = gStdColor[0];
     gfxHLine(y, x + 1, x + at8 - 2);
     gfxHLine(y + atc -1, x + 1, x + at8 - 2);

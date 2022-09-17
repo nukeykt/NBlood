@@ -657,7 +657,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     gSecretMgr.Clear();
     gLevelTime = 0;
     automapping = 1;
-  
+
     int modernTypesErased = 0;
     for (int i = 0; i < kMaxSprites; i++)
     {
@@ -676,7 +676,10 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             
             #ifdef NOONE_EXTENSIONS
             if (!gModernMap && nnExtEraseModernStuff(pSprite, pXSprite))
+            {
                modernTypesErased++;
+               continue;
+            }
             #endif
         }
     }
@@ -872,15 +875,12 @@ void LocalKeys(void)
         }
         else if (gGameOptions.nGameType == 3)
         {
-            int oldViewIndex = gViewIndex;
             do
             {
                 gViewIndex = connectpoint2[gViewIndex];
                 if (gViewIndex == -1)
                     gViewIndex = connecthead;
-                if (oldViewIndex == gViewIndex || gMe->teamId == gPlayer[gViewIndex].teamId)
-                    break;
-            } while (oldViewIndex != gViewIndex);
+            } while ((gViewIndex != myconnectindex) && !IsTargetTeammate(gMe, gPlayer[gViewIndex].pSprite));
             gView = &gPlayer[gViewIndex];
         }
     }
@@ -994,6 +994,27 @@ void LocalKeys(void)
             break;
         }
     }
+    else if (CONTROL_JoystickEnabled)
+    {
+        static int32_t joyold = 0;
+        int32_t joy = JOYSTICK_GetControllerButtons() == (1 << CONTROLLER_BUTTON_START);
+        if (joy && !joyold)
+        {
+            JOYSTICK_ClearAllButtons();
+            if (gGameStarted && (gPlayer[myconnectindex].pXSprite->health != 0 || gGameOptions.nGameType > 0))
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMainWithSave,-1);
+            }
+            else
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMain,-1);
+            }
+        }
+        joyold = joy;
+        return;
+    }
 }
 
 bool gRestartGame = false;
@@ -1068,7 +1089,7 @@ void ProcessFrame(void)
     }
     trProcessBusy();
     evProcess((int)gFrameClock);
-    seqProcess(4);
+    seqProcess(kTicsPerFrame);
     DoSectorPanning();
     actProcessSprites();
     actPostProcess();
@@ -1083,18 +1104,16 @@ void ProcessFrame(void)
     sfxUpdate3DSounds();
     if (gMe->hand == 1)
     {
-#define CHOKERATE 8
-#define TICRATE 30
-        gChokeCounter += CHOKERATE;
-        while (gChokeCounter >= TICRATE)
+        gChokeCounter += (kTicsPerFrame<<1);
+        while (gChokeCounter >= kTicsPerSec)
         {
             gChoke.at1c(gMe);
-            gChokeCounter -= TICRATE;
+            gChokeCounter -= kTicsPerSec;
         }
     }
     gLevelTime++;
     gFrame++;
-    gFrameClock += 4;
+    gFrameClock += kTicsPerFrame;
     if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
     {
         ready2send = 0;
@@ -1718,7 +1737,7 @@ int app_main(int argc, char const * const * argv)
     initprintf("There are %d demo(s) in the loop\n", gDemo.nDemosFound);
     initprintf("Loading control setup\n");
     ctrlInit();
-    timerInit(120);
+    timerInit(CLOCKTICKSPERSECOND);
     timerSetCallback(ClockStrobe);
     enginecompatibilitymode = ENGINE_19960925;
 
@@ -1840,7 +1859,7 @@ RESTART:
                     do
                     {
                         netGetInput();
-                        gNetFifoClock += 4;
+                        gNetFifoClock += kTicsPerFrame;
                         while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
                         {
                             int i;

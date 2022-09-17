@@ -420,11 +420,11 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int 
                     bakCstat = gPlayer[viewPlayer].pSprite->cstat;
                     if (gViewPos == 0)
                     {
-                        gPlayer[viewPlayer].pSprite->cstat |= 32768;
+                        gPlayer[viewPlayer].pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     }
                     else
                     {
-                        gPlayer[viewPlayer].pSprite->cstat |= 514;
+                        gPlayer[viewPlayer].pSprite->cstat |= CSTAT_SPRITE_TRANSLUCENT_INVERT | CSTAT_SPRITE_TRANSLUCENT;
                     }
                 }
 #ifdef POLYMER
@@ -462,11 +462,11 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int 
                     bakCstat = gPlayer[viewPlayer].pSprite->cstat;
                     if (gViewPos == 0)
                     {
-                        gPlayer[viewPlayer].pSprite->cstat |= 32768;
+                        gPlayer[viewPlayer].pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     }
                     else
                     {
-                        gPlayer[viewPlayer].pSprite->cstat |= 514;
+                        gPlayer[viewPlayer].pSprite->cstat |= CSTAT_SPRITE_TRANSLUCENT_INVERT | CSTAT_SPRITE_TRANSLUCENT;
                     }
                 }
 #ifdef POLYMER

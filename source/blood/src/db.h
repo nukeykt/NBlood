@@ -277,7 +277,7 @@ struct SPRITEHIT {
 
 #pragma pack(pop)
 
-extern unsigned short gStatCount[kMaxStatus + 1];;
+extern unsigned short gStatCount[kMaxStatus + 1];
 
 extern bool byte_1A76C6, byte_1A76C7, byte_1A76C8;
 extern MAPHEADER2 byte_19AE44;

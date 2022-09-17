@@ -185,9 +185,12 @@ bool CheckProximityPoint(int nX1, int nY1, int nZ1, int nX2, int nY2, int nZ2, i
     int oY = klabs(nY2-nY1)>>4;
     if (oY >= nDist)
         return 0;
-    int oZ = klabs(nZ2-nZ1)>>4;
-    if (oZ >= nDist)
-        return 0;
+    if (nZ2 != nZ1)
+    {
+        int oZ = klabs(nZ2-nZ1)>>8;
+        if (oZ >= nDist)
+            return 0;
+    }
     if (approxDist(oX, oY) >= nDist) return 0;
     return 1;
 }
@@ -624,52 +627,35 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
         }
         if (gHitInfo.hitsect >= 0)
         {
+            int nSprite, nLink;
             if (dz > 0)
             {
-                if (gUpperLink[gHitInfo.hitsect] < 0)
+                nSprite = gUpperLink[gHitInfo.hitsect];
+                if (nSprite < 0)
                     return 2;
-                int nSprite = gUpperLink[gHitInfo.hitsect];
-                int nLink = sprite[nSprite].owner & 0x3fff;
-                gHitInfo.hitsect = -1;
-                gHitInfo.hitwall = -1;
-                gHitInfo.hitsprite = -1;
-                x1 = gHitInfo.hitx + sprite[nLink].x - sprite[nSprite].x;
-                y1 = gHitInfo.hity + sprite[nLink].y - sprite[nSprite].y;
-                z1 = gHitInfo.hitz + sprite[nLink].z - sprite[nSprite].z;
-                pos = { x1, y1, z1 };
-                hitData.xyz.z = gHitInfo.hitz;
-                hitscan(&pos, sprite[nLink].sectnum, dx, dy, dz<<4, &hitData, CLIPMASK1);
-                gHitInfo.hitsect = hitData.sect;
-                gHitInfo.hitwall = hitData.wall;
-                gHitInfo.hitsprite = hitData.sprite;
-                gHitInfo.hitx = hitData.xyz.x;
-                gHitInfo.hity = hitData.xyz.y;
-                gHitInfo.hitz = hitData.xyz.z;
-                continue;
             }
             else
             {
-                if (gLowerLink[gHitInfo.hitsect] < 0)
+                nSprite = gLowerLink[gHitInfo.hitsect];
+                if (nSprite < 0)
                     return 1;
-                int nSprite = gLowerLink[gHitInfo.hitsect];
-                int nLink = sprite[nSprite].owner & 0x3fff;
-                gHitInfo.hitsect = -1;
-                gHitInfo.hitwall = -1;
-                gHitInfo.hitsprite = -1;
-                x1 = gHitInfo.hitx + sprite[nLink].x - sprite[nSprite].x;
-                y1 = gHitInfo.hity + sprite[nLink].y - sprite[nSprite].y;
-                z1 = gHitInfo.hitz + sprite[nLink].z - sprite[nSprite].z;
-                pos = { x1, y1, z1 };
-                hitData.xyz.z = gHitInfo.hitz;
-                hitscan(&pos, sprite[nLink].sectnum, dx, dy, dz<<4, &hitData, CLIPMASK1);
-                gHitInfo.hitsect = hitData.sect;
-                gHitInfo.hitwall = hitData.wall;
-                gHitInfo.hitsprite = hitData.sprite;
-                gHitInfo.hitx = hitData.xyz.x;
-                gHitInfo.hity = hitData.xyz.y;
-                gHitInfo.hitz = hitData.xyz.z;
-                continue;
             }
+            nLink = sprite[nSprite].owner & 0x3fff;
+            gHitInfo.hitsect = gHitInfo.hitwall = gHitInfo.hitsprite = -1;
+            x1 = gHitInfo.hitx + sprite[nLink].x - sprite[nSprite].x;
+            y1 = gHitInfo.hity + sprite[nLink].y - sprite[nSprite].y;
+            z1 = gHitInfo.hitz + sprite[nLink].z - sprite[nSprite].z;
+            pos = { x1, y1, z1 };
+            hitData.xyz.z = gHitInfo.hitz;
+            hitscan(&pos, sprite[nLink].sectnum,
+                dx, dy, dz << 4, &hitData, CLIPMASK1);
+            gHitInfo.hitsect = hitData.sect;
+            gHitInfo.hitwall = hitData.wall;
+            gHitInfo.hitsprite = hitData.sprite;
+            gHitInfo.hitx = hitData.xyz.x;
+            gHitInfo.hity = hitData.xyz.y;
+            gHitInfo.hitz = hitData.xyz.z;
+            continue;
         }
         return -1;
     }

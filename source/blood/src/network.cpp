@@ -546,7 +546,7 @@ void netBroadcastMyLogoff(bool bRestart)
 void netBroadcastPlayerInfo(int nPlayer)
 {
     PROFILE *pProfile = &gProfile[nPlayer];
-    strcpy(pProfile->name, szPlayerName);
+    Bstrncpyz(pProfile->name, szPlayerName, sizeof(szPlayerName));
     pProfile->skill = gSkill;
     pProfile->nAutoAim = gAutoAim;
     pProfile->nWeaponSwitch = gWeaponSwitch;
@@ -619,7 +619,7 @@ void netWaitForEveryone(char a1)
     } while (p >= 0);
 }
 
-void sub_7AC28(const char *pzString)
+void netBroadcastFrag(const char *pzString)
 {
     if (numplayers < 2)
         return;
@@ -1308,7 +1308,7 @@ void faketimerhandler(void)
 #if 0
     if (gGameClock >= gNetFifoClock && ready2send)
     {
-        gNetFifoClock += 4;
+        gNetFifoClock += kTicsPerFrame;
         netGetInput();
     }
 #endif

@@ -154,7 +154,7 @@ struct PLAYER
     bool                hasKey[8];
     char                hasFlag;
     short               used2[8];  // ??
-    int                 damageControl[7];
+    int                 damageControl[kDamageMax];
     char                curWeapon;
     char                nextWeapon;
     int                 weaponTimer;
@@ -252,10 +252,10 @@ void playerResetPosture(PLAYER* pPlayer);
 extern PLAYER  gPlayer[kMaxPlayers];
 extern PLAYER *gMe, *gView;
 
+extern PROFILE gProfile[kMaxPlayers];
+
 extern bool gBlueFlagDropped;
 extern bool gRedFlagDropped;
-
-extern PROFILE gProfile[kMaxPlayers];
 
 extern int         gPlayerScores[kMaxPlayers];
 extern ClockTicks  gPlayerScoreTicks[kMaxPlayers];

@@ -55,13 +55,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 #endif
 
-PROFILE gProfile[kMaxPlayers];
-
 PLAYER gPlayer[kMaxPlayers];
 PLAYER *gMe, *gView;
 
+PROFILE gProfile[kMaxPlayers];
+
 bool gBlueFlagDropped = false;
 bool gRedFlagDropped = false;
+
+int gPlayerScores[kMaxPlayers];
+ClockTicks gPlayerScoreTicks[kMaxPlayers];
 
 // V = has effect in game, X = no effect in game
 POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
@@ -300,26 +303,26 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         #endif
         case kItemFeatherFall:
         case kItemJumpBoots:
-            pPlayer->damageControl[0]++;
+            pPlayer->damageControl[kDamageFall]++;
             break;
         case kItemReflectShots: // reflective shots
             if (pPlayer == gMe && gGameOptions.nGameType == 0)
                 sfxSetReverb2(1);
             break;
         case kItemDeathMask:
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < kDamageMax; i++)
                 pPlayer->damageControl[i]++;
             break;
         case kItemDivingSuit: // diving suit
-            pPlayer->damageControl[4]++;
+            pPlayer->damageControl[kDamageDrown]++;
             if (pPlayer == gMe && gGameOptions.nGameType == 0)
                 sfxSetReverb(1);
             break;
         case kItemGasMask:
-            pPlayer->damageControl[4]++;
+            pPlayer->damageControl[kDamageDrown]++;
             break;
         case kItemArmorAsbest:
-            pPlayer->damageControl[1]++;
+            pPlayer->damageControl[kDamageBurn]++;
             break;
         case kItemTwoGuns:
             pPlayer->input.newWeapon = pPlayer->curWeapon;
@@ -351,14 +354,14 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         #endif
         case kItemFeatherFall:
         case kItemJumpBoots:
-            pPlayer->damageControl[0]--;
+            pPlayer->damageControl[kDamageFall]--;
             break;
         case kItemDeathMask:
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < kDamageMax; i++)
                 pPlayer->damageControl[i]--;
             break;
         case kItemDivingSuit:
-            pPlayer->damageControl[4]--;
+            pPlayer->damageControl[kDamageDrown]--;
             if ((pPlayer == gMe) && (VanillaMode() || !powerupCheck(pPlayer, kPwUpReflectShots)))
                 sfxSetReverb(0);
             break;
@@ -367,10 +370,10 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
                 sfxSetReverb(0);
             break;
         case kItemGasMask:
-            pPlayer->damageControl[4]--;
+            pPlayer->damageControl[kDamageDrown]--;
             break;
         case kItemArmorAsbest:
-            pPlayer->damageControl[1]--;
+            pPlayer->damageControl[kDamageBurn]--;
             break;
         case kItemTwoGuns:
             pPlayer->input.newWeapon = pPlayer->curWeapon;
@@ -600,20 +603,20 @@ void playerSetRace(PLAYER *pPlayer, int nLifeMode)
     // By NoOne: don't forget to change clipdist for grow and shrink modes
     pPlayer->pSprite->clipdist = pDudeInfo->clipdist;
     
-    for (int i = 0; i < 7; i++)
-        pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[pPlayer->nPlayer].skill], pDudeInfo->startDamage[i]);
+    for (int i = 0; i < kDamageMax; i++)
+        pDudeInfo->curDamage[i] = mulscale8(Handicap[gProfile[pPlayer->nPlayer].skill], pDudeInfo->startDamage[i]);
 }
 
 void playerSetGodMode(PLAYER *pPlayer, char bGodMode)
 {
     if (bGodMode)
     {
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < kDamageMax; i++)
             pPlayer->damageControl[i]++;
     }
     else
     {
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < kDamageMax; i++)
             pPlayer->damageControl[i]--;
     }
     pPlayer->godMode = bGodMode;
@@ -741,7 +744,7 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->kickPower = 0;
     pPlayer->laughCount = 0;
     pPlayer->spin = 0;
-    pPlayer->posture = 0;
+    pPlayer->posture = kPostureStand;
     pPlayer->voodooTarget = -1;
     pPlayer->voodooTargets = 0;
     pPlayer->voodooVar1 = 0;
@@ -759,7 +762,7 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->hasFlag = 0;
     for (int i = 0; i < 8; i++)
         pPlayer->used2[i] = -1;
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < kDamageMax; i++)
         pPlayer->damageControl[i] = 0;
     if (pPlayer->godMode)
         playerSetGodMode(pPlayer, 1);
@@ -821,7 +824,7 @@ void playerStart(int nPlayer, int bNewLevel)
     }
     if (IsUnderwaterSector(pSprite->sectnum))
     {
-        pPlayer->posture = 1;
+        pPlayer->posture = kPostureSwim;
         pPlayer->pXSprite->medium = kMediumWater;
     }
 }
@@ -835,7 +838,7 @@ void playerReset(PLAYER *pPlayer)
         3, 4, 2, 8, 9, 10, 7, 1, 1, 1, 1, 1, 1, 1
     };
     dassert(pPlayer != NULL);
-    for (int i = 0; i < 14; i++)
+    for (int i = 0; i < kWeaponMax; i++)
     {
         pPlayer->hasWeapon[i] = gInfiniteAmmo;
         pPlayer->weaponMode[i] = 0;
@@ -844,7 +847,7 @@ void playerReset(PLAYER *pPlayer)
     pPlayer->curWeapon = kWeaponNone;
     pPlayer->qavCallback = -1;
     pPlayer->input.newWeapon = kWeaponPitchfork;
-    for (int i = 0; i < 14; i++)
+    for (int i = 0; i < kWeaponMax; i++)
     {
         pPlayer->weaponOrder[0][i] = dword_136400[i];
         pPlayer->weaponOrder[1][i] = dword_136438[i];
@@ -875,23 +878,20 @@ void playerReset(PLAYER *pPlayer)
     playerResetPosture(pPlayer);
 }
 
-int gPlayerScores[kMaxPlayers];
-ClockTicks gPlayerScoreTicks[kMaxPlayers];
-
 void playerResetScores(int nPlayer)
 {
     PLAYER *pPlayer = &gPlayer[nPlayer];
     pPlayer->fragCount = 0;
     memset(pPlayer->fragInfo, 0, sizeof(pPlayer->fragInfo));
     memset(gPlayerScores, 0, sizeof(gPlayerScores));
-    memset(gPlayerScoreTicks, 0, sizeof(gPlayerScoreTicks));
+    memset((void *)gPlayerScoreTicks, 0, sizeof(gPlayerScoreTicks));
 }
 
 void playerInit(int nPlayer, unsigned int a2)
 {
     PLAYER *pPlayer = &gPlayer[nPlayer];
     if (!(a2&1))
-        memset(pPlayer, 0, sizeof(PLAYER));
+        memset((void *)pPlayer, 0, sizeof(PLAYER));
     pPlayer->nPlayer = nPlayer;
     pPlayer->teamId = nPlayer;
     if (gGameOptions.nGameType == 3)
@@ -987,7 +987,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         if (dword_28E3D4 == 3 && myconnectindex == connecthead)
                         {
                             sprintf(buffer, "frag A killed B\n");
-                            sub_7AC28(buffer);
+                            netBroadcastFrag(buffer);
                         }
 #endif
                     }
@@ -1031,7 +1031,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         if (dword_28E3D4 == 3 && myconnectindex == connecthead)
                         {
                             sprintf(buffer, "frag B killed A\n");
-                            sub_7AC28(buffer);
+                            netBroadcastFrag(buffer);
                         }
 #endif
                     }
@@ -1373,7 +1373,7 @@ void ProcessInput(PLAYER *pPlayer)
     if (pInput->buttonFlags.byte || pInput->forward || pInput->strafe || pInput->q16turn)
         pPlayer->restTime = 0;
     else if (pPlayer->restTime >= 0)
-        pPlayer->restTime += 4;
+        pPlayer->restTime += kTicsPerFrame;
     WeaponProcess(pPlayer);
     if (pXSprite->health == 0)
     {
@@ -1383,7 +1383,7 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->angold = pSprite->ang = getangle(sprite[pPlayer->fraggerId].x - pSprite->x, sprite[pPlayer->fraggerId].y - pSprite->y);
             pPlayer->q16ang = fix16_from_int(pSprite->ang);
         }
-        pPlayer->deathTime += 4;
+        pPlayer->deathTime += kTicsPerFrame;
         if (!bSeqStat)
         {
             if (bVanilla)
@@ -1420,7 +1420,7 @@ void ProcessInput(PLAYER *pPlayer)
         }
         return;
     }
-    if (pPlayer->posture == 1)
+    if (pPlayer->posture == kPostureSwim)
     {
         int x = Cos(pSprite->ang);
         int y = Sin(pSprite->ang);
@@ -1476,28 +1476,24 @@ void ProcessInput(PLAYER *pPlayer)
     if (pInput->keyFlags.spin180)
     {
         if (!pPlayer->spin)
-            pPlayer->spin = -1024;
+            pPlayer->spin = -kAng180;
         pInput->keyFlags.spin180 = 0;
     }
     if (pPlayer->spin < 0)
     {
-        int speed;
-        if (pPlayer->posture == 1)
-            speed = 64;
-        else
-            speed = 128;
+        const int speed = (pPlayer->posture == kPostureSwim) ? 64 : 128;
         pPlayer->spin = min(pPlayer->spin+speed, 0);
         pPlayer->q16ang += fix16_from_int(speed);
         if (pPlayer == gMe && numplayers == 1)
-            gViewAngleAdjust += float(speed);
+            gViewAngleAdjust += float(ClipHigh(-pPlayer->spin, speed)); // don't overturn when nearing end of spin
     }
     if (pPlayer == gMe && numplayers == 1)
     {
         int nDeltaAngle = pSprite->ang - pPlayer->angold;
-        if (nDeltaAngle >= 1024) // handle unsigned overflow
-            nDeltaAngle += -2048;
-        else if (nDeltaAngle <= -1024)
-            nDeltaAngle += 2048;
+        if (nDeltaAngle > kAng180) // handle unsigned overflow
+            nDeltaAngle += -kAng360;
+        else if (nDeltaAngle < -kAng180)
+            nDeltaAngle += kAng360;
         gViewAngleAdjust += float(nDeltaAngle);
     }
     pPlayer->q16ang = (pPlayer->q16ang+fix16_from_int(pSprite->ang-pPlayer->angold))&0x7ffffff;
@@ -1506,15 +1502,15 @@ void ProcessInput(PLAYER *pPlayer)
         pPlayer->cantJump = 0;
 
     switch (pPlayer->posture) {
-    case 1:
+    case kPostureSwim:
         if (pInput->buttonFlags.jump)
             zvel[nSprite] -= pPosture->normalJumpZ;//0x5b05;
         if (pInput->buttonFlags.crouch)
             zvel[nSprite] += pPosture->normalJumpZ;//0x5b05;
         break;
-    case 2:
+    case kPostureCrouch:
         if (!pInput->buttonFlags.crouch)
-            pPlayer->posture = 0;
+            pPlayer->posture = kPostureStand;
         break;
     default:
         if (!pPlayer->cantJump && pInput->buttonFlags.jump && pXSprite->height == 0) {
@@ -1529,7 +1525,7 @@ void ProcessInput(PLAYER *pPlayer)
         }
 
         if (pInput->buttonFlags.crouch)
-            pPlayer->posture = 2;
+            pPlayer->posture = kPostureCrouch;
         break;
     }
     if (pInput->keyFlags.action)
@@ -1798,7 +1794,7 @@ void playerProcess(PLAYER *pPlayer)
     pPlayer->zWeapon += pPlayer->zWeaponVel>>8;
     pPlayer->bobPhase = ClipLow(pPlayer->bobPhase-4, 0);
     nSpeed >>= 16;
-    if (pPlayer->posture == 1)
+    if (pPlayer->posture == kPostureSwim)
     {
         pPlayer->bobAmp = (pPlayer->bobAmp+17)&2047;
         pPlayer->swayAmp = (pPlayer->swayAmp+17)&2047;
@@ -1841,7 +1837,7 @@ void playerProcess(PLAYER *pPlayer)
     if (!pXSprite->health)
         return;
     pPlayer->isUnderwater = 0;
-    if (pPlayer->posture == 1)
+    if (pPlayer->posture == kPostureSwim)
     {
         pPlayer->isUnderwater = 1;
         int nSector = pSprite->sectnum;
@@ -1862,10 +1858,10 @@ void playerProcess(PLAYER *pPlayer)
     int nType = kDudePlayer1-kDudeBase;
     switch (pPlayer->posture)
     {
-    case 1:
+    case kPostureSwim:
         seqSpawn(dudeInfo[nType].seqStartID+9, 3, nXSprite, -1);
         break;
-    case 2:
+    case kPostureCrouch:
         seqSpawn(dudeInfo[nType].seqStartID+10, 3, nXSprite, -1);
         break;
     default:
@@ -1901,7 +1897,7 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
     if (myconnectindex == connecthead)
     {
         sprintf(buffer, "frag %d killed %d\n", pKiller->nPlayer+1, pVictim->nPlayer+1);
-        sub_7AC28(buffer);
+        netBroadcastFrag(buffer);
         buffer[0] = 0;
     }
     if (nKiller == nVictim)

@@ -146,7 +146,7 @@ void netResetState(void);
 void netResetToSinglePlayer(void);
 void netBroadcastMessage(int nPlayer, const char *pzMessage);
 void netWaitForEveryone(char a1);
-void sub_7AC28(const char *pzString);
+void netBroadcastFrag(const char *pzString);
 void netGetPackets(void);
 void netBroadcastTaunt(int nPlayer, int nTaunt);
 void CalcGameChecksum(void);

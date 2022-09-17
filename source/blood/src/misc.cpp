@@ -138,7 +138,7 @@ void ChangeExtension(char *pzFile, const char *pzExt)
 void SplitPath(const char *pzPath, char *pzDirectory, char *pzFile, char *pzType)
 {
     int const nLength = Bstrlen(pzPath);
-    const char *pDirectory = pzPath+nLength;
+    //const char *pDirectory = pzPath+nLength;
     const char *pDot = NULL;
     for (int i = nLength-1; i >= 0; i--)
     {
