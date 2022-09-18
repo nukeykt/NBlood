@@ -33,10 +33,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 CChoke gChoke;
 
-void CChoke::Init(char *pzFile, int _x, int _y)
+void CChoke::Init(char *pzFile, int _x, int _y, void (*pCallback)(PLAYER *))
 {
     x = _x;
     y = _y;
+    Process = pCallback;
     if (!hQav && pzFile)
     {
         hQav = gSysRes.Lookup(pzFile, "QAV");
@@ -51,8 +52,9 @@ void CChoke::Init(char *pzFile, int _x, int _y)
     }
 }
 
-void CChoke::Init(int qavId)
+void CChoke::Init(int qavId, void (*pCallback)(PLAYER *))
 {
+    Process = pCallback;
     if (!hQav && qavId != -1)
     {
         hQav = gSysRes.Lookup(qavId, "QAV");
@@ -67,8 +69,9 @@ void CChoke::Init(int qavId)
     }
 }
 
-void CChoke::Init(char *pzFile)
+void CChoke::Init(char *pzFile, void (*pCallback)(PLAYER *))
 {
+    Process = pCallback;
     if (!hQav && pzFile)
     {
         hQav = gSysRes.Lookup(pzFile, "QAV");
@@ -118,13 +121,4 @@ void CChoke::chokeTimeInit()
 {
     duration = pQav->at10;
     clock = (int)totalclock;
-}
-
-void CChoke::Process(PLAYER *pPlayer)
-{
-    int t = gGameOptions.nDifficulty+2;
-    if (pPlayer->handTime < 64)
-        pPlayer->handTime = ClipHigh(pPlayer->handTime+t, 64);
-    if (pPlayer->handTime > (7-gGameOptions.nDifficulty)*5)
-        pPlayer->blindEffect = ClipHigh(pPlayer->blindEffect+t*4, 128);
 }
