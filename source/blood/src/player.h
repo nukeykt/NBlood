@@ -325,3 +325,4 @@ void        voodooTarget(PLAYER *pPlayer);
 void        playerLandingSound(PLAYER *pPlayer);
 void        PlayerSurvive(int, int nXSprite);
 void        PlayerKneelsOver(int, int nXSprite);
+void        playerHandChoke(PLAYER *pPlayer);

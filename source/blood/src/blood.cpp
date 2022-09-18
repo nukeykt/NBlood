@@ -1780,7 +1780,7 @@ int app_main(int argc, char const * const * argv)
     initprintf("Initializing sound system\n");
     sndInit();
     sfxInit();
-    gChoke.Init(518);
+    gChoke.Init(518, playerHandChoke);
     if (bAddUserMap)
     {
         levelAddUserMap(gUserMapFilename);

@@ -2290,6 +2290,15 @@ void PlayerKneelsOver(int, int nXSprite)
     }
 }
 
+void playerHandChoke(PLAYER *pPlayer)
+{
+    int t = gGameOptions.nDifficulty+2;
+    if (pPlayer->handTime < 64)
+        pPlayer->handTime = ClipHigh(pPlayer->handTime+t, 64);
+    if (pPlayer->handTime > (7-gGameOptions.nDifficulty)*5)
+        pPlayer->blindEffect = ClipHigh(pPlayer->blindEffect+t*4, 128);
+}
+
 class PlayerLoadSave : public LoadSave
 {
 public:

@@ -38,10 +38,11 @@ public:
         clock = 0;
         x = 0;
         y = 0;
+        Process = NULL;
     };
-    void Init(char *pzFile, int _x, int _y);
-    void Init(int qavId);
-    void Init(char *pzFile);
+    void Init(char *pzFile, int _x, int _y, void (*pCallback)(PLAYER *));
+    void Init(int qavId, void (*pCallback)(PLAYER *));
+    void Init(char *pzFile, void (*pCallback)(PLAYER *));
     void Draw(int x, int y);
     DICTNODE *hQav;
     QAV *pQav;
@@ -49,7 +50,7 @@ public:
     int clock;
     int x;
     int y;
-    void Process(PLAYER *);
+    void (*Process)(PLAYER *);
 private:
     void chokeTimeInit(void);
 };
