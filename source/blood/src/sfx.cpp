@@ -272,7 +272,7 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int chanId, int nFlags, 
     if (size <= 0) return;
     
     if (pitch <= 0) pitch = pEffect->pitch;
-    else pitch -= Random(pEffect->pitchRange);
+    else pitch -= QRandom(pEffect->pitchRange);
 
     int v14;
     v14 = mulscale16(pitch, sndGetRate(pEffect->format));
