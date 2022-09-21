@@ -8308,10 +8308,10 @@ void seqSpawnerOffSameTx(XSPRITE* pXSource) {
 // it allows to set custom next level instead of taking it from INI file.
 void levelEndLevelCustom(int nLevel) {
 
-    gGameOptions.uGameFlags |= 1;
+    gGameOptions.uGameFlags |= kGameFlagContinuing;
 
     if (nLevel >= 16 || nLevel < 0) {
-        gGameOptions.uGameFlags |= 2;
+        gGameOptions.uGameFlags |= kGameFlagEnding;
         gGameOptions.nLevel = 0;
         return;
     }
