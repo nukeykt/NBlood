@@ -896,7 +896,7 @@ void SetupEpisodeMenu(void)
     for (int i = 0; i < gEpisodeCount; i++)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
-        if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
+        if (!pEpisode->bloodbath || gGameOptions.nGameType != kGameTypeSinglePlayer)
             nOffset -= 10;
     }
     nOffset = max(min(nOffset, 55), 35);
@@ -904,7 +904,7 @@ void SetupEpisodeMenu(void)
     for (int i = 0; i < gEpisodeCount; i++)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
-        if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
+        if (!pEpisode->bloodbath || gGameOptions.nGameType != kGameTypeSinglePlayer)
         {
             if (j >= ARRAY_SSIZE(itemEpisodes))
                 ThrowError("Too many ini episodes to display (max %d).\n", ARRAY_SSIZE(itemEpisodes));
@@ -945,7 +945,7 @@ void SetupMainMenu(void)
 {
     menuMain.Add(&itemMainTitle, false);
     menuMain.Add(&itemMain1, true);
-    if (gGameOptions.nGameType > 0)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer)
     {
         itemMain1.at24 = &menuNetStart;
         itemMain1.at28 = 2;
@@ -968,7 +968,7 @@ void SetupMainMenuWithSave(void)
 {
     menuMainWithSave.Add(&itemMainSaveTitle, false);
     menuMainWithSave.Add(&itemMainSave1, true);
-    if (gGameOptions.nGameType > 0)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer)
     {
         itemMainSave1.at24 = &menuNetStart;
         itemMainSave1.at28 = 2;
@@ -1223,7 +1223,7 @@ void SetupOptionsMenu(void)
     menuOptionsGame.Add(&itemOptionsGameWeaponSwitch, false);
 
     //////////////////////
-    if (gGameOptions.nGameType == 0) {
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer) {
         menuOptionsGame.Add(&itemOptionsGameBoolWeaponsV10X, false);
     }
     /////////////////////
@@ -1586,7 +1586,7 @@ void SetupMenus(void)
 
 void UpdateNetworkMenus(void)
 {
-    if (gGameOptions.nGameType > 0)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer)
     {
         itemMain1.at24 = &menuNetStart;
         itemMain1.at28 = 2;
@@ -1596,7 +1596,7 @@ void UpdateNetworkMenus(void)
         itemMain1.at24 = &menuEpisode;
         itemMain1.at28 = -1;
     }
-    if (gGameOptions.nGameType > 0)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer)
     {
         itemMainSave1.at24 = &menuNetStart;
         itemMainSave1.at28 = 2;
@@ -1636,7 +1636,7 @@ void ResetKeysClassic(CGameMenuItemChain *)
 ////
 void SetWeaponsV10X(CGameMenuItemZBool* pItem)
 {
-    if (gGameOptions.nGameType == 0) {
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer) {
         gWeaponsV10x = pItem->at20;
         gGameOptions.weaponsV10x = pItem->at20;
     }
@@ -2594,7 +2594,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 {
     char strSaveGameName[BMAX_PATH];
     int nSlot = pItem->at28;
-    if (gGameOptions.nGameType > 0 || !gGameStarted)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer || !gGameStarted)
         return;
     if (event->at0 != 6/* || strSaveGameName[0]*/)
     {
@@ -2623,7 +2623,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 void QuickSaveGame(void)
 {
     char strSaveGameName[BMAX_PATH];
-    if (gGameOptions.nGameType > 0 || !gGameStarted)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer || !gGameStarted)
         return;
     /*if (strSaveGameName[0])
     {
@@ -2652,7 +2652,7 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     UNREFERENCED_PARAMETER(event);
     char strLoadGameName[BMAX_PATH];
     int nSlot = pItem->at28;
-    if (gGameOptions.nGameType > 0)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         return;
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     if (!testkopen(strLoadGameName, 0))
@@ -2667,7 +2667,7 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 void QuickLoadGame(void)
 {
     char strLoadGameName[BMAX_PATH];
-    if (gGameOptions.nGameType > 0)
+    if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         return;
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", gQuickLoadSlot);
     if (!testkopen(strLoadGameName, 0))
@@ -2726,7 +2726,7 @@ void StartNetGame(CGameMenuItemChain *pItem)
 void Restart(CGameMenuItemChain *pItem)
 {
     UNREFERENCED_PARAMETER(pItem);
-    if (gGameOptions.nGameType == 0 || numplayers == 1)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer || numplayers == 1)
     {
         gQuitGame = true;
         gRestartGame = true;
@@ -2739,7 +2739,7 @@ void Restart(CGameMenuItemChain *pItem)
 void Quit(CGameMenuItemChain *pItem)
 {
     UNREFERENCED_PARAMETER(pItem);
-    if (gGameOptions.nGameType == 0 || numplayers == 1)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer || numplayers == 1)
         gQuitGame = true;
     else
         gQuitRequest = 1;
@@ -2797,7 +2797,7 @@ void MenuSetupEpisodeInfo(void)
 void drawLoadingScreen(void)
 {
     char buffer[80];
-    if (gGameOptions.nGameType == 0)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer)
     {
         if (gDemo.at1)
             sprintf(buffer, "Loading Demo");

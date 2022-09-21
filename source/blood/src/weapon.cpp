@@ -1681,7 +1681,7 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
         pXSprite->DudeLockout = 1;
         pXSprite->stateTimer = 1;
         evPost(pMissile->index, 3, 120, kCallbackLeechStateTimer);
-        if (gGameOptions.nGameType <= 1)
+        if (gGameOptions.nGameType <= kGameTypeCoop)
         {
             int nAmmo = pPlayer->ammoCount[8];
             if (nAmmo < 25 && pPlayer->pXSprite->health > ((25-nAmmo)<<4))
@@ -2550,7 +2550,7 @@ void WeaponProcess(PLAYER *pPlayer) {
             }
             return;
         case kWeaponLifeLeech:
-            if (gGameOptions.nGameType <= 1 && !checkAmmo2(pPlayer, 8, 1) && pPlayer->pXSprite->health < (25 << 4))
+            if (gGameOptions.nGameType <= kGameTypeCoop && !checkAmmo2(pPlayer, 8, 1) && pPlayer->pXSprite->health < (25 << 4))
             {
                 sfxPlay3DSound(pPlayer->pSprite, 494, 2, 0);
                 StartQAV(pPlayer, 116, nClientFireLifeLeech, 0);

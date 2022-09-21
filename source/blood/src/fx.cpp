@@ -144,7 +144,7 @@ spritetype * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned 
     int nSector2 = nSector;
     if (!FindSector(x, y, z, &nSector2))
         return NULL;
-    if (gbAdultContent && gGameOptions.nGameType <= 0)
+    if (gbAdultContent && gGameOptions.nGameType == kGameTypeSinglePlayer)
     {
         switch (nFx)
         {
@@ -278,7 +278,7 @@ void fxSpawnBlood(spritetype *pSprite, int a2)
     int nSector = pSprite->sectnum;
     if (!FindSector(pSprite->x, pSprite->y, pSprite->z, &nSector))
         return;
-    if (gbAdultContent && gGameOptions.nGameType <= 0)
+    if (gbAdultContent && gGameOptions.nGameType == kGameTypeSinglePlayer)
         return;
     spritetype *pBlood = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
     if (pBlood)
@@ -299,7 +299,7 @@ void fxSpawnPodBlood(spritetype *pSprite, int a2)
     int nSector = pSprite->sectnum;
     if (!FindSector(pSprite->x, pSprite->y, pSprite->z, &nSector))
         return;
-    if (gbAdultContent && gGameOptions.nGameType <= 0)
+    if (gbAdultContent && gGameOptions.nGameType == kGameTypeSinglePlayer)
         return;
     spritetype *pSpawn;
     if (pSprite->type == kDudePodGreen)

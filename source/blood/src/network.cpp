@@ -160,7 +160,7 @@ void netResetToSinglePlayer(void)
     myconnectindex = connecthead = 0;
     gInitialNetPlayers = gNetPlayers = numplayers = 1;
     connectpoint2[0] = -1;
-    gGameOptions.nGameType = 0;
+    gGameOptions.nGameType = kGameTypeSinglePlayer;
     gNetMode = NETWORK_NONE;
     UpdateNetworkMenus();
     gGameMenuMgr.Deactivate();
@@ -273,7 +273,7 @@ void CalcGameChecksum(void)
 void netCheckSync(void)
 {
     char buffer[80];
-    if (gGameOptions.nGameType == 0)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer)
         return;
     if (numplayers == 1)
         return;
@@ -728,7 +728,7 @@ void netGetInput(void)
     GINPUT &input = gFifoInput[gNetFifoHead[myconnectindex]&255][myconnectindex];
     input = gNetInput;
     gNetFifoHead[myconnectindex]++;
-    if (gGameOptions.nGameType == 0 || numplayers == 1)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer || numplayers == 1)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -1151,7 +1151,7 @@ void netInitialize(bool bConsole)
         initprintf("Successfully connected to server\n");
     }
     gNetENetInit = true;
-    gGameOptions.nGameType = 2;
+    gGameOptions.nGameType = kGameTypeBloodBath;
 #else
     netResetToSinglePlayer();
 #endif

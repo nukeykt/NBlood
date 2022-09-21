@@ -59,7 +59,7 @@ void warpInit(void)
                 XSPRITE *pXSprite = &xsprite[nXSprite];
                 switch (pSprite->type) {
                     case kMarkerSPStart:
-                        if (gGameOptions.nGameType < 2 && pXSprite->data1 >= 0 && pXSprite->data1 < kMaxPlayers) {
+                        if ((gGameOptions.nGameType <= kGameTypeCoop) && pXSprite->data1 >= 0 && pXSprite->data1 < kMaxPlayers) {
                             ZONE *pZone = &gStartZone[pXSprite->data1];
                             pZone->x = pSprite->x;
                             pZone->y = pSprite->y;
@@ -71,7 +71,7 @@ void warpInit(void)
                         break;
                     case kMarkerMPStart:
                         if (pXSprite->data1 >= 0 && pXSprite->data2 < kMaxPlayers) {
-                            if (gGameOptions.nGameType >= 2) {
+                            if (gGameOptions.nGameType >= kGameTypeBloodBath) {
                                 // default if BB or teams without data2 specified
                                 ZONE* pZone = &gStartZone[pXSprite->data1];
                                 pZone->x = pSprite->x;
@@ -82,7 +82,7 @@ void warpInit(void)
                             
                                 #ifdef NOONE_EXTENSIONS
                                     // fill player spawn position according team of player in TEAMS mode.
-                                    if (gModernMap && gGameOptions.nGameType == 3) {
+                                    if (gModernMap && gGameOptions.nGameType == kGameTypeTeams) {
                                         if (pXSprite->data2 == 1) {
                                             pZone = &gStartZoneTeam1[team1];
                                             pZone->x = pSprite->x;

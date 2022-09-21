@@ -685,7 +685,7 @@ void nnExtInitModernStuff(bool bSaveLoad) {
     OSD_RegisterFunction("nnext_ifshow", "nnext_ifshow: makes kModernCondition sprites visable", osdShowIFSprites);
 
     // use true random only for single player mode, otherwise use Blood's default one.
-    if (gGameOptions.nGameType == 0 && !VanillaMode()) {
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer && !VanillaMode()) {
         
         gStdRandom.seed(std::random_device()());
 
@@ -4111,7 +4111,7 @@ bool condCheckPlayer(XSPRITE* pXCond, int cmpOp, bool PUSH) {
             if (!condCmp(pPlayer->nPlayer + 1, arg1, arg2, cmpOp) || !spriRangeIsFine(pPlayer->nSprite)) return false;
             else if (PUSH) condPush(pXCond, OBJ_SPRITE, pPlayer->nSprite);
             return (pPlayer->nPlayer >= 0);
-        case 1: return condCmp((gGameOptions.nGameType != 3) ? 0 : pPlayer->teamId + 1, arg1, arg2, cmpOp); // compare team
+        case 1: return condCmp((gGameOptions.nGameType != kGameTypeTeams) ? 0 : pPlayer->teamId + 1, arg1, arg2, cmpOp); // compare team
         case 2: return (arg1 > 0 && arg1 < 8 && pPlayer->hasKey[arg1 - 1]);
         case 3: return (arg1 > 0 && arg1 < 15 && pPlayer->hasWeapon[arg1 - 1]);
         case 4: return condCmp(pPlayer->curWeapon, arg1, arg2, cmpOp);

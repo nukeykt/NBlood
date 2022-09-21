@@ -2874,7 +2874,7 @@ spritetype *actDropKey(spritetype *pSprite, int nType)
     if (pSprite && pSprite->statnum < kMaxStatus && nType >= kItemKeyBase && nType < kItemKeyMax)
     {
         pSprite2 = actDropItem(pSprite, nType);
-        if (pSprite2 && gGameOptions.nGameType == 1)
+        if (pSprite2 && gGameOptions.nGameType == kGameTypeCoop)
         {
             if (pSprite2->extra == -1)
                 dbInsertXSprite(pSprite2->index);
@@ -2892,7 +2892,7 @@ spritetype *actDropFlag(spritetype *pSprite, int nType)
     if (pSprite && pSprite->statnum < kMaxStatus && (nType == kItemFlagA || nType == kItemFlagB))
     {
         pSprite2 = actDropItem(pSprite, nType);
-        if (pSprite2 && gGameOptions.nGameType == 3)
+        if (pSprite2 && gGameOptions.nGameType == kGameTypeTeams)
         {
             evPost(pSprite2->index, 3, 1800, kCallbackReturnFlag);
         }
@@ -3085,10 +3085,10 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     if (VanillaMode()) {
         if (IsPlayerSprite(pKillerSprite)) {
             PLAYER *pPlayer = &gPlayer[pKillerSprite->type - kDudePlayer1];
-            if (gGameOptions.nGameType == 1)
+            if (gGameOptions.nGameType == kGameTypeCoop)
                 pPlayer->fragCount++;
         }
-    } else if (gGameOptions.nGameType == 1 && IsPlayerSprite(pKillerSprite) && pSprite->statnum == kStatDude) {
+    } else if (gGameOptions.nGameType == kGameTypeCoop && IsPlayerSprite(pKillerSprite) && pSprite->statnum == kStatDude) {
             switch (pSprite->type) {
                 case kDudeBat:
                 case kDudeRat:
@@ -5541,9 +5541,9 @@ void actProcessSprites(void)
                                 pPlayer2 = &gPlayer[pSprite2->type - kDudePlayer1];
                             if (nSprite2 == nOwner || pSprite2->type == kDudeZombieAxeBuried || pSprite2->type == kDudeRat || pSprite2->type == kDudeBat)
                                 continue;
-                            if (gGameOptions.nGameType == 3 && pPlayer2 && pPlayer->teamId == pPlayer2->teamId)
+                            if (gGameOptions.nGameType == kGameTypeTeams && pPlayer2 && pPlayer->teamId == pPlayer2->teamId)
                                 continue;
-                            if (gGameOptions.nGameType == 1 && pPlayer2)
+                            if (gGameOptions.nGameType == kGameTypeCoop && pPlayer2)
                                 continue;
                             proxyDist = 512;
                         }
@@ -6009,7 +6009,7 @@ void actProcessSprites(void)
                         sfxPlay3DSound(pSprite, 709, 100, 2);
                     pPlayer->bubbleTime = ClipLow(pPlayer->bubbleTime-4, 0);
                 }
-                else if (gGameOptions.nGameType == 0)
+                else if (gGameOptions.nGameType == kGameTypeSinglePlayer)
                 {
                     if (pPlayer->pXSprite->health > 0 && pPlayer->restTime >= 1200 && Chance(0x200))
                     {
@@ -6500,7 +6500,7 @@ int actGetRespawnTime(spritetype *pSprite) {
     }
 
     if (IsItemSprite(pSprite)) {
-        if (pXSprite->respawn == 3 && gGameOptions.nGameType == 1) return 0;
+        if (pXSprite->respawn == 3 && gGameOptions.nGameType == kGameTypeCoop) return 0;
         else if (pXSprite->respawn == 2 || (pXSprite->respawn != 1 && gGameOptions.nItemSettings != 0)) {
             switch (pSprite->type) {
                 case kItemShadowCloak:

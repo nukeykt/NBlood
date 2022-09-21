@@ -666,9 +666,9 @@ void DropVoodoo(int nSprite) // unused
                 {
                     if (pPlayer2)
                     {
-                        if (gGameOptions.nGameType == 1)
+                        if (gGameOptions.nGameType == kGameTypeCoop)
                             continue;
-                        if (gGameOptions.nGameType == 3 && pPlayer->teamId == pPlayer2->teamId)
+                        if (gGameOptions.nGameType == kGameTypeTeams && pPlayer->teamId == pPlayer2->teamId)
                             continue;
                         int t = 0x8000/ClipLow(gNetPlayers-1, 1);
                         if (!powerupCheck(pPlayer2, kPwUpDeathMask))
