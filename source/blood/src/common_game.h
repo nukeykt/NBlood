@@ -115,6 +115,15 @@ kGameTypeBloodBath              = 2,
 kGameTypeTeams                  = 3,
 };
 
+// GAMEFLAGS //////////////////////////////////////////////////
+enum {
+kGameFlagNone                   =  0,
+kGameFlagContinuing             =  1 << 0,
+kGameFlagEnding                 =  1 << 1,
+kGameFlagPlayIntro              =  1 << 2,
+kGameFlagPlayOutro              =  1 << 3,
+};
+
 // MEDIUM /////////////////////////////////////////////////////
 enum {
 kMediumNormal                   = 0,

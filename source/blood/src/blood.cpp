@@ -595,19 +595,19 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     netWaitForEveryone(0);
     if (gGameOptions.nGameType == kGameTypeSinglePlayer)
     {
-        if (!(gGameOptions.uGameFlags&1))
+        if (!(gGameOptions.uGameFlags&kGameFlagContinuing))
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
         if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
             && gEpisodeInfo[gGameOptions.nEpisode].cutsceneASmkPath[0])
-            gGameOptions.uGameFlags |= 4;
-        if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0 && !Bstrlen(gGameOptions.szUserMap))
+            gGameOptions.uGameFlags |= kGameFlagPlayIntro;
+        if ((gGameOptions.uGameFlags&kGameFlagPlayIntro) && gDemo.at1 == 0 && !Bstrlen(gGameOptions.szUserMap))
             levelPlayIntroScene(gGameOptions.nEpisode);
 
         ///////
         gGameOptions.weaponsV10x = gWeaponsV10x;
         ///////
     }
-    else if (gGameOptions.nGameType != kGameTypeSinglePlayer && !(gGameOptions.uGameFlags&1))
+    else if (gGameOptions.nGameType != kGameTypeSinglePlayer && !(gGameOptions.uGameFlags&kGameFlagContinuing))
     {
         gGameOptions.nEpisode = gPacketStartGame.episodeId;
         gGameOptions.nLevel = gPacketStartGame.levelId;
@@ -635,7 +635,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gView = gMe;
         gViewIndex = myconnectindex;
     }
-    if (gameOptions->uGameFlags&1)
+    if (gameOptions->uGameFlags&kGameFlagContinuing) // if episode is in progress, remember player stats
     {
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
@@ -721,7 +721,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     evInit();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        if (!(gameOptions->uGameFlags&1)) // if new game
+        if (!(gameOptions->uGameFlags&kGameFlagContinuing)) // if new game
         {
             if (numplayers == 1)
             {
@@ -735,7 +735,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             playerResetScores(i);
         playerStart(i, 1);
     }
-    if (gameOptions->uGameFlags&1)
+    if (gameOptions->uGameFlags&kGameFlagContinuing) // if episode is in progress, restore player stats
     {
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
@@ -759,7 +759,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             pPlayer->nextWeapon = gPlayerTemp[i].nextWeapon;
         }
     }
-    gameOptions->uGameFlags &= ~3;
+    gameOptions->uGameFlags &= ~(kGameFlagContinuing|kGameFlagEnding);
     scrSetDac();
     PreloadCache();
     InitMirrors();
@@ -791,7 +791,7 @@ void StartNetworkLevel(void)
 {
     if (gDemo.at0)
         gDemo.Close();
-    if (!(gGameOptions.uGameFlags&1))
+    if (!(gGameOptions.uGameFlags&kGameFlagContinuing))
     {
         gGameOptions.nEpisode = gPacketStartGame.episodeId;
         gGameOptions.nLevel = gPacketStartGame.levelId;
@@ -1114,7 +1114,7 @@ void ProcessFrame(void)
     gLevelTime++;
     gFrame++;
     gFrameClock += kTicsPerFrame;
-    if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
+    if ((gGameOptions.uGameFlags&kGameFlagContinuing) && !gStartNewGame)
     {
         ready2send = 0;
         if (gNetPlayers > 1 && gNetMode == NETWORK_SERVER && gPacketMode == PACKETMODE_1 && myconnectindex == connecthead)
@@ -1129,16 +1129,16 @@ void ProcessFrame(void)
             gDemo.Close();
         sndFadeSong(4000);
         seqKillAll();
-        if (gGameOptions.uGameFlags&2)
+        if (gGameOptions.uGameFlags&kGameFlagEnding)
         {
             if (gGameOptions.nGameType == kGameTypeSinglePlayer)
             {
-                if (gGameOptions.uGameFlags&8)
+                if (gGameOptions.uGameFlags&kGameFlagPlayOutro)
                     levelPlayEndScene(gGameOptions.nEpisode);
                 gGameMenuMgr.Deactivate();
                 gGameMenuMgr.Push(&menuCredits,-1);
             }
-            gGameOptions.uGameFlags &= ~3;
+            gGameOptions.uGameFlags &= ~(kGameFlagContinuing|kGameFlagEnding);
             gRestartGame = 1;
             gQuitGame = 1;
         }
