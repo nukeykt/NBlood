@@ -1278,7 +1278,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
         );
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
     y += nHeight+1;
-    if (gGameOptions.nGameType != 3)
+    if (gGameOptions.nGameType != kGameTypeTeams)
         sprintf(buffer, "K:%d/%d", gKillMgr.at4, max(gKillMgr.at4, gKillMgr.at0));
     else
         sprintf(buffer, "K:%d", pPlayer->fragCount);
@@ -1599,7 +1599,7 @@ void UpdateStatusBar(ClockTicks arg)
 
     int nPalette = 0;
 
-    if (gGameOptions.nGameType == 3)
+    if (gGameOptions.nGameType == kGameTypeTeams)
     {
         if (pPlayer->teamId & 1)
             nPalette = 7;
@@ -1642,7 +1642,7 @@ void UpdateStatusBar(ClockTicks arg)
             DrawStatNumber("%3d", num, kSBarNumberAmmo, 267, 187, 0, 0, 512);
         }
 
-        if (gGameOptions.nGameType < 2) // don't show keys for bloodbath/teams as all players have every key
+        if (gGameOptions.nGameType <= kGameTypeCoop) // don't show keys for bloodbath/teams as all players have every key
         {
             for (int i = 0; i < 6; i++)
             {
@@ -1697,7 +1697,7 @@ void UpdateStatusBar(ClockTicks arg)
         }
         DrawPackItemInStatusBar(pPlayer, 286, 186, 302, 183, 512);
 
-        if (gGameOptions.nGameType < 2) // don't show keys for bloodbath/teams as all players have every key
+        if (gGameOptions.nGameType <= kGameTypeCoop) // don't show keys for bloodbath/teams as all players have every key
         {
             for (int i = 0; i < 6; i++)
             {
@@ -1814,9 +1814,9 @@ void UpdateStatusBar(ClockTicks arg)
         viewDrawPowerUps(pPlayer);
     }
 
-    if (gGameOptions.nGameType < 1) return;
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer) return;
 
-    if (gGameOptions.nGameType == 3)
+    if (gGameOptions.nGameType == kGameTypeTeams)
     {
         if (VanillaMode())
         {
@@ -1950,7 +1950,7 @@ void viewResizeView(int size)
         gViewX1 = xdim-1;
         gViewY0 = 0;
         gViewY1 = ydim-1;
-        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType <= 3)
+        if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
@@ -1965,7 +1965,7 @@ void viewResizeView(int size)
         gViewY0 = 0;
         gViewX1 = xdim-1;
         gViewY1 = ydim-1-(25*ydim)/200;
-        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType <= 3)
+        if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
@@ -2743,13 +2743,13 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         case kStatItem: {
             switch (pTSprite->type) {
                 case kItemFlagABase:
-                    if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == 3) {
+                    if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == kGameTypeTeams) {
                         auto pNTSprite = viewAddEffect(nTSprite, kViewEffectBigFlag);
                         if (pNTSprite) pNTSprite->pal = 10;
                     }
                     break;
                 case kItemFlagBBase:
-                    if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == 3) {
+                    if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == kGameTypeTeams) {
                         auto pNTSprite = viewAddEffect(nTSprite, kViewEffectBigFlag);
                         if (pNTSprite) pNTSprite->pal = 7;
                     }
@@ -2847,7 +2847,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     viewAddEffect(nTSprite, kViewEffectReflectiveBall);
                 }
                 
-                if (gShowWeapon && gGameOptions.nGameType > 0 && gView) {
+                if (gShowWeapon && gGameOptions.nGameType != kGameTypeSinglePlayer && gView) {
                     viewAddEffect(nTSprite, kViewEffectShowWeapon);
                 }
                 
@@ -2861,7 +2861,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     }
                 }
                 
-                if (pPlayer->hasFlag > 0 && gGameOptions.nGameType == 3) {
+                if (pPlayer->hasFlag > 0 && gGameOptions.nGameType == kGameTypeTeams) {
                     if (pPlayer->hasFlag&1)  {
                         auto pNTSprite = viewAddEffect(nTSprite, kViewEffectFlag);
                         if (pNTSprite)
@@ -3373,7 +3373,7 @@ void viewDrawScreen(void)
     if (delta < 0)
         delta = 0;
     lastUpdate = totalclock;
-    if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
+    if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != kGameTypeSinglePlayer))
     {
         gInterpolate = ((totalclock-gNetFifoClock)+4).toScale16()/4;
     }
@@ -3386,7 +3386,7 @@ void viewDrawScreen(void)
         CalcInterpolations();
     }
 
-    if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
+    if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != kGameTypeSinglePlayer))
         rotatespritesmoothratio = gInterpolate;
     else
         rotatespritesmoothratio = 65536;

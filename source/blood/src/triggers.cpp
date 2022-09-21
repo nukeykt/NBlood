@@ -618,7 +618,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         }
         break;
     case kSoundPlayer:
-        if (gGameOptions.nGameType == 0)
+        if (gGameOptions.nGameType == kGameTypeSinglePlayer)
         {
             if (gMe->pXSprite->health <= 0)
                 break;

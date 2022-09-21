@@ -144,7 +144,7 @@ void sub_2541C(int x, int y, int z, short a)
             }
             int x1 = dmulscale16(px, nCos, -py, nSin);
             int y1 = dmulscale16(py, nCos2, px, nSin2);
-            if (i == gView->nPlayer || gGameOptions.nGameType == 1)
+            if (i == gView->nPlayer || gGameOptions.nGameType == kGameTypeCoop)
             {
                 int nTile = pSprite->picnum;
                 int ceilZ, ceilHit, floorZ, floorHit;

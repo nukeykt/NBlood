@@ -107,6 +107,14 @@ void _consoleSysMsg(const char* pMessage, ...);
 
 #define kCauserGame (kMaxSprites - 1)
 
+// GAMETYPES //////////////////////////////////////////////////
+enum {
+kGameTypeSinglePlayer           = 0,
+kGameTypeCoop                   = 1,
+kGameTypeBloodBath              = 2,
+kGameTypeTeams                  = 3,
+};
+
 // MEDIUM /////////////////////////////////////////////////////
 enum {
 kMediumNormal                   = 0,

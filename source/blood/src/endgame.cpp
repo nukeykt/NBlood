@@ -49,7 +49,7 @@ void CEndGameMgr::Draw(void)
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &nHeight);
     rotatesprite(160<<16, 20<<16, 65536, 0, 2038, -128, 0, 6|8, 0, 0, xdim-1, ydim-1);
     int nY = 20 - nHeight / 2;
-    if (gGameOptions.nGameType == 0)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer)
     {
         viewDrawText(1, "LEVEL STATS", 160, nY, -128, 0, 1, 0);
         if (CCheatMgr::m_bPlayerCheated)
@@ -89,7 +89,7 @@ void CEndGameMgr::ProcessKeys(void)
         }
         if (!ch)
             return;
-        if (gGameOptions.nGameType > 0 || numplayers > 1)
+        if (gGameOptions.nGameType != kGameTypeSinglePlayer || numplayers > 1)
             netWaitForEveryone(0);
         Finish();
     }
@@ -177,7 +177,7 @@ void CKillMgr::CountTotalKills(void)
 void CKillMgr::Draw(void)
 {
     char pBuffer[40];
-    if (gGameOptions.nGameType == 0)
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer)
     {
         viewDrawText(1, "KILLS:", 75, 50, -128, 0, 0, 1);
         sprintf(pBuffer, "%2d", at4);
@@ -233,7 +233,7 @@ void CSecretMgr::Found(int nType)
         return;
     } else nSuperSecretsFound++;
 
-    if (gGameOptions.nGameType == 0) {
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer) {
         switch (Random(2)) {
             case 0:
                 viewSetMessage("A secret is revealed.", 0, MESSAGE_PRIORITY_SECRET);

@@ -257,14 +257,14 @@ inline bool IsTargetTeammate(PLAYER *pSourcePlayer, spritetype *pTargetSprite)
         return false;
     if (!IsPlayerSprite(pTargetSprite))
         return false;
-    if (gGameOptions.nGameType == 1 || gGameOptions.nGameType == 3)
+    if (gGameOptions.nGameType == kGameTypeCoop || gGameOptions.nGameType == kGameTypeTeams)
     {
         PLAYER *pTargetPlayer = &gPlayer[pTargetSprite->type - kDudePlayer1];
         if (pSourcePlayer != pTargetPlayer)
         {
-            if (gGameOptions.nGameType == 1)
+            if (gGameOptions.nGameType == kGameTypeCoop)
                 return true;
-            if (gGameOptions.nGameType == 3 && (pSourcePlayer->teamId & 3) == (pTargetPlayer->teamId & 3))
+            if (gGameOptions.nGameType == kGameTypeTeams && (pSourcePlayer->teamId & 3) == (pTargetPlayer->teamId & 3))
                 return true;
         }
     }
