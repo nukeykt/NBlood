@@ -1991,6 +1991,7 @@ void WeaponProcess(PLAYER *pPlayer) {
     }
     #endif
 
+    char bTNTRemoteProxyCycling = 1;
     if (pPlayer->pXSprite->health == 0)
     {
         pPlayer->qavLoop = 0;
@@ -2106,6 +2107,10 @@ void WeaponProcess(PLAYER *pPlayer) {
                 return;
             }
         }
+        else
+        {
+            bTNTRemoteProxyCycling = 0; // next weapon should bypass tnt cycling logic
+        }
         pPlayer->input.newWeapon = weapon;
     }
     if (pPlayer->input.keyFlags.prevWeapon)
@@ -2127,6 +2132,10 @@ void WeaponProcess(PLAYER *pPlayer) {
                 pPlayer->nextWeapon = weapon;
                 return;
             }
+        }
+        else
+        {
+            bTNTRemoteProxyCycling = 0; // prev weapon should bypass tnt cycling logic
         }
         pPlayer->input.newWeapon = weapon;
     }
@@ -2174,7 +2183,7 @@ void WeaponProcess(PLAYER *pPlayer) {
                 pPlayer->curWeapon = oldWeapon;
             }
         }
-        if (pPlayer->input.newWeapon == kWeaponTNT)
+        if (bTNTRemoteProxyCycling && (pPlayer->input.newWeapon == kWeaponTNT))
         {
             if (pPlayer->curWeapon == kWeaponTNT)
             {
