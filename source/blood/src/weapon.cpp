@@ -2082,13 +2082,13 @@ void WeaponProcess(PLAYER *pPlayer) {
     }
     if ((pPlayer->curWeapon == kWeaponNone) && (pPlayer->input.newWeapon != kWeaponNone) && !VanillaMode()) // if player is switching weapon (and not holstered), clear next/prev keyflags
     {
-        pPlayer->input.keyFlags.nextWeapon = kWeaponNone;
-        pPlayer->input.keyFlags.prevWeapon = kWeaponNone;
+        pPlayer->input.keyFlags.nextWeapon = 0;
+        pPlayer->input.keyFlags.prevWeapon = 0;
     }
     const KEYFLAGS oldKeyFlags = pPlayer->input.keyFlags; // used to fix next/prev weapon issue for banned weapons
     if (pPlayer->input.keyFlags.nextWeapon)
     {
-        pPlayer->input.keyFlags.nextWeapon = kWeaponNone;
+        pPlayer->input.keyFlags.nextWeapon = 0;
         if (VanillaMode())
         {
             pPlayer->weaponState = 0;
@@ -2110,7 +2110,7 @@ void WeaponProcess(PLAYER *pPlayer) {
     }
     if (pPlayer->input.keyFlags.prevWeapon)
     {
-        pPlayer->input.keyFlags.prevWeapon = kWeaponNone;
+        pPlayer->input.keyFlags.prevWeapon = 0;
         if (VanillaMode())
         {
             pPlayer->weaponState = 0;
