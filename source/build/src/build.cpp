@@ -625,7 +625,7 @@ void editorMaybeLockMouse(int lock)
 
 int app_main(int argc, char const* const* argv)
 {
-    Bstrcpy(tempbuf, AppProperName);
+    Bstrcpy(tempbuf, AppTechnicalName);
     Bstrcat(tempbuf, ".log");
 
     engineSetLogFile(tempbuf);
