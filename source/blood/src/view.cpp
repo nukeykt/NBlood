@@ -3838,7 +3838,7 @@ RORHACK:
             rotatesprite(0, 200<<16, 65536, 0, 2358, 0, 0, 256+22, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(320<<16, 200<<16, 65536, 1024, 2358, 0, 0, 512+18, gViewX0, gViewY0, gViewX1, gViewY1);
         }
-        if (bCrystalBall)
+        if (bCrystalBall && waloff[4079])
         {
             DoLensEffect();
             viewingRange = viewingrange;
