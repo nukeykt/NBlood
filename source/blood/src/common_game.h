@@ -80,7 +80,9 @@ void _consoleSysMsg(const char* pMessage, ...);
 #define kTicsPerFrame 4
 #define kTicsPerSec (kTicRate/kTicsPerFrame)
 
+#define LENSBUFFER 4077
 #define TILTBUFFER 4078
+#define CRYSTALBALLBUFFER 4079
 
 #define kExplodeMax 8
 

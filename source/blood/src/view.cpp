@@ -1906,7 +1906,7 @@ void viewInit(void)
         lensTable[i] = B_LITTLE32(lensTable[i]);
     }
 #endif
-    char *data = tileAllocTile(4077, kLensSize, kLensSize, 0, 0);
+    char *data = tileAllocTile(LENSBUFFER, kLensSize, kLensSize, 0, 0);
     memset(data, 255, kLensSize*kLensSize);
     gGameMessageMgr.SetState(gMessageState);
     gGameMessageMgr.SetCoordinates(1, 1);
@@ -3142,14 +3142,16 @@ void viewSetErrorMessage(const char *pMessage)
 
 void DoLensEffect(void)
 {
-    char *d = (char*)waloff[4077];
+    char *d = (char*)waloff[LENSBUFFER];
     dassert(d != NULL);
-    char *s = (char*)waloff[4079];
+    char *s = (char*)waloff[CRYSTALBALLBUFFER];
     dassert(s != NULL);
     for (int i = 0; i < kLensSize*kLensSize; i++, d++)
+    {
         if (lensTable[i] >= 0)
             *d = s[lensTable[i]];
-    tileInvalidate(4077, -1, -1);
+    }
+    tileInvalidate(LENSBUFFER, -1, -1);
 }
 
 void UpdateDacs(int nPalette, bool bNoTint)
@@ -3492,7 +3494,7 @@ void viewDrawScreen(void)
         }
         const char bLink = CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
         int v78 = gViewInterpolate ? interpolateang(gScreenTiltO, gScreenTilt, gInterpolate) : gScreenTilt;
-        char v14 = 0;
+        char nPalCrystalBall = 0;
         bool bDelirium = powerupCheck(gView, kPwUpDeliriumShroom) > 0;
         static bool bDeliriumOld = false;
         int tiltcs = 0, tiltdim = 320;
@@ -3543,11 +3545,11 @@ void viewDrawScreen(void)
             }
             PLAYER *pOther = &gPlayer[i];
             //othercameraclock = gGameClock;
-            if (!waloff[4079])
+            if (!waloff[CRYSTALBALLBUFFER])
             {
-                tileAllocTile(4079, 128, 128, 0, 0);
+                tileAllocTile(CRYSTALBALLBUFFER, 128, 128, 0, 0);
             }
-            renderSetTarget(4079, 128, 128);
+            renderSetTarget(CRYSTALBALLBUFFER, 128, 128);
             renderSetAspect(65536, 78643);
             int vd8 = pOther->pSprite->x;
             int vd4 = pOther->pSprite->y;
@@ -3576,9 +3578,7 @@ void viewDrawScreen(void)
             CalcOtherPosition(pOther->pSprite, &vd8, &vd4, &vd0, &vcc, v50, 0);
             CheckLink(&vd8, &vd4, &vd0, &vcc);
             if (IsUnderwaterSector(vcc))
-            {
-                v14 = 10;
-            }
+                nPalCrystalBall = 10;
             memcpy(bakMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, otherMirrorGotpic, 2);
             g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->visibility, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
@@ -3838,13 +3838,13 @@ RORHACK:
             rotatesprite(0, 200<<16, 65536, 0, 2358, 0, 0, 256+22, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(320<<16, 200<<16, 65536, 1024, 2358, 0, 0, 512+18, gViewX0, gViewY0, gViewX1, gViewY1);
         }
-        if (bCrystalBall && waloff[4079])
+        if (bCrystalBall && waloff[CRYSTALBALLBUFFER])
         {
             DoLensEffect();
             viewingRange = viewingrange;
             yxAspect = yxaspect;
             renderSetAspect(65536, 54613);
-            rotatesprite(280<<16, 35<<16, 53248, 512, 4077, 0, v14, 512+6, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(280<<16, 35<<16, 53248, kAng90, LENSBUFFER, 0, nPalCrystalBall, 512+6, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(280<<16, 35<<16, 53248, 0, 1683, 0, 0, 512+35, gViewX0, gViewY0, gViewX1, gViewY1);
             renderSetAspect(viewingRange, yxAspect);
         }
