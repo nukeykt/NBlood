@@ -3519,6 +3519,7 @@ static void C_AddDefaultDefinitions(void)
     C_AddDefinition("EVENT_PRESAVEMAP", EVENT_PRESAVEMAP, LABEL_EVENT);
     C_AddDefinition("EVENT_PREDRAW2DSCREEN", EVENT_PREDRAW2DSCREEN, LABEL_EVENT);
     C_AddDefinition("EVENT_GETNUMBER", EVENT_GETNUMBER, LABEL_EVENT);
+    C_AddDefinition("EVENT_INIT", EVENT_INIT, LABEL_EVENT);
 
     C_AddDefinition("CLIPMASK0", CLIPMASK0, LABEL_DEFINE);
     C_AddDefinition("CLIPMASK1", CLIPMASK1, LABEL_DEFINE);
@@ -3754,6 +3755,7 @@ void C_Compile(const char *filenameortext, int32_t isfilename)
         LOG_F(INFO, "--- Compiling: %s (%d bytes)",mptr,fs);
         Bstrcpy(g_szScriptFileName, mptr);   // JBF 20031130: Store currently compiling file name
         Xfree(mptr);
+        VM_OnEvent(EVENT_INIT, -1);
     }
     else
     {
