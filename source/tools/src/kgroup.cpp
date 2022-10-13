@@ -105,6 +105,8 @@ int main(int argc, char **argv)
         exit(0);
     }
 
+    engineCreateAllocator();
+
     numfiles = 0;
     for(i=argc-1;i>1;i--)
     {

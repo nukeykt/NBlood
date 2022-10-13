@@ -55,6 +55,8 @@ int main(int argc, char **argv)
         return(0);
     }
 
+    engineCreateAllocator();
+
     if ((fil = Bopen(argv[1],BO_BINARY|BO_RDONLY,BS_IREAD)) == -1)
     {
         Bprintf("Error: %s could not be opened\n",argv[1]);
