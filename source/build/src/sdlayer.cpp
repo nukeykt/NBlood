@@ -1861,8 +1861,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         {
             LOG_F(ERROR, "Unable to set video mode: %s failed: %s.", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
             nogl = 1;
-            destroy_window_resources();
-            return -1;
         }
 
         gladLoadGLLoader(SDL_GL_GetProcAddress);
@@ -1870,8 +1868,13 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         {
             LOG_F(ERROR, "Video driver does not support OpenGL version 2 or greater; all OpenGL modes are unavailable.");
             nogl = 1;
+        }
+
+        if (nogl)
+        {
             destroy_window_resources();
-            return -1;
+            // If c == 8, retry without hardware accelaration
+            return videoSetMode(x, y, c, fs);
         }
 
         SDL_GL_SetSwapInterval(sdlayer_getswapinterval(vsync_renderlayer));
