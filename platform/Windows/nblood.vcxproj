@@ -34,7 +34,9 @@
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <EnableASAN>true</EnableASAN>
+  </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <EnableASAN>true</EnableASAN>
   </PropertyGroup>
@@ -232,6 +234,7 @@
     <ClCompile Include="..\..\source\blood\src\misc.cpp" />
     <ClCompile Include="..\..\source\blood\src\network.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnexts.cpp" />
+    <ClCompile Include="..\..\source\blood\src\nnextsif.cpp" />
     <ClCompile Include="..\..\source\blood\src\osdcmd.cpp" />
     <ClCompile Include="..\..\source\blood\src\player.cpp" />
     <ClCompile Include="..\..\source\blood\src\qav.cpp" />
@@ -339,6 +342,7 @@
     <ClInclude Include="..\..\source\blood\src\messages.h" />
     <ClInclude Include="..\..\source\blood\src\mirrors.h" />
     <ClInclude Include="..\..\source\blood\src\nnexts.h" />
+    <ClInclude Include="..\..\source\blood\src\nnextsif.h" />
     <ClInclude Include="..\..\source\blood\src\warp.h" />
     <ClInclude Include="..\..\source\blood\src\inifile.h" />
     <ClInclude Include="..\..\source\blood\src\iob.h" />

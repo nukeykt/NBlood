@@ -53,7 +53,8 @@ kChannelPlayer7,
 // channel of event causer
 kChannelEventCauser                 = 50,
 // map requires modern features to work properly
-kChannelMapModernize                = 60,
+kChannelMapModernRev1                = 60,
+kChannelMapModernRev2                = 61,
 /////////////////////////////
 kChannelTeamAFlagCaptured           = 80,
 kChannelTeamBFlagCaptured,
