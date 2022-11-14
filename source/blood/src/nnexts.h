@@ -49,9 +49,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // additional non-thing proximity, sight and physics sprites 
 #define kMaxSuperXSprites 512
-#define kMaxTrackingConditions 64
-#define kMaxTracedObjects 32 // per one tracking condition
-
 
 
 // additional physics attributes for debris sprites
@@ -75,8 +72,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kMaxRandomizeRetries 16
 #define kPercFull 100
-#define kCondRange 100
-
 #define kPatrolStateSize 42
 #define kPatrolAlarmSeeDist 10000
 #define kPatrolAlarmHearDist 10000
@@ -162,67 +157,20 @@ OBJ_SPRITE                          = 3,
 OBJ_SECTOR                          = 6,
 };
 
-enum {
-kCondGameBase                       = 1,
-kCondGameMax                        = 50,
-kCondMixedBase                      = 100,
-kCondMixedMax                       = 200,
-kCondWallBase                       = 200,
-kCondWallMax                        = 300,
-kCondSectorBase                     = 300,
-kCondSectorMax                      = 400,
-kCondPlayerBase                     = 400,
-kCondPlayerMax                      = 450,
-kCondDudeBase                       = 450,
-kCondDudeMax                        = 500,
-kCondSpriteBase                     = 500,
-kCondSpriteMax                      = 600,
-};
-
-enum {
-kCondSerialSector                   = 100000,
-kCondSerialWall                     = 200000,
-kCondSerialSprite                   = 300000,
-kCondSerialMax                      = 400000,
-};
 
 enum {
 kPatrolMoveForward                  = 0,
 kPatrolMoveBackward                 = 1,
 };
 
-// - CLASSES ------------------------------------------------------------------
-
-// SPRITES_NEAR_SECTORS
-// Intended for move sprites that is close to the outside walls with
-// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
-// --------------------------------------------------------------------------
-class SPRINSECT
+// - STRUCTS ------------------------------------------------------------------
+#pragma pack(push, 1)
+struct OBJECT
 {
-    #define kMaxSprNear 256
-    #define kWallDist	16
-    
-    private:
-        struct SPRITES
-        {
-            unsigned int nSector;
-            signed   int sprites[kMaxSprNear + 1];
-        };
-        SPRITES* db;
-        unsigned int length;
-        bool Alloc(int nLength); // normally should be used when loading saved game
-    public:
-        void Free();
-        void Init(int nDist = kWallDist); // used in trInit to collect the sprites before translation
-        void Save(LoadSave* pSave);
-        void Load(LoadSave* pLoad);
-        int* GetSprPtr(int nSector);
-        ~SPRINSECT() { Free(); };
-
+    unsigned int type : 8;
+    unsigned int index : 16;
 };
 
-
-// - STRUCTS ------------------------------------------------------------------
 struct SPRITEMASS { // sprite mass info for getSpriteMassBySize();
     int seqId;
     short picnum; // mainly needs for moving debris
@@ -270,18 +218,6 @@ struct TRPLAYERCTRL { // this one for controlling the player using triggers (mov
     QAVSCENE qavScene;
 };
 
-struct OBJECTS_TO_TRACK {
-    signed int type:     3;
-    unsigned int index:  16;
-    unsigned int cmd:    8;
-};
-
-struct TRCONDITION {
-    signed   int xindex:    16;
-    unsigned int length:    8;
-    OBJECTS_TO_TRACK obj[kMaxTracedObjects];
-};
-
 struct PATROL_FOUND_SOUNDS {
 
     int snd;
@@ -289,14 +225,205 @@ struct PATROL_FOUND_SOUNDS {
     int cur;
 
 };
+#pragma pack(pop)
 
-struct CONDITION_TYPE_NAMES {
+// - CLASSES ------------------------------------------------------------------
+class IDLIST
+{
+    typedef void (*IDLIST_PROCESS_FUNC)(int32_t nId);
 
-    int rng1;
-    int rng2;
-    char name[32];
+private:
+    int32_t* db;
+    int32_t  length;
+public:
+    IDLIST(bool spawnDb)
+    {
+        length = 0;
+        db = NULL;
+        if (spawnDb)
+            Init();
+    }
+    ~IDLIST() { Free(); }
+
+    void Init()
+    {
+        Free();
+        db = (int32_t*)Bmalloc(sizeof(int32_t));
+        dassert(db != NULL);
+        db[0] = -1;
+    }
+
+    void Free()
+    {
+        length = 0;
+        if (db)
+            Bfree(db), db = NULL;
+    }
+
+    int Add(int nID)
+    {
+        register int t = length;
+        db[length++] = nID;
+        db = (int32_t*)Brealloc(db, (length + 1) * sizeof(int32_t));
+        dassert(db != NULL);
+        db[length] = -1;
+        return t;
+    }
+
+    int AddIfNot(int nID)
+    {
+        register int t;
+        if ((t = Find(nID)) >= 0)
+            return t;
+
+        return Add(nID);
+    }
+
+    bool Remove(int nID, bool isListId = false)
+    {
+        if (!isListId && (nID = Find(nID)) < 0)
+            return false;
+
+        if (nID < length)
+            memmove(&db[nID], &db[nID + 1], (length - nID) * sizeof(int32_t));
+
+        if (length > 0)
+        {
+            db = (int32_t*)Brealloc(db, length * sizeof(int32_t));
+            dassert(db != NULL);
+            db[--length] = -1;
+        } else
+        {
+            Init();
+        }
+
+        return true;
+    }
+
+    int Find(int nID)
+    {
+        register int i = length;
+        while (--i >= 0 && db[i] != nID);
+        return i;
+    }
+
+    bool Exists(int nID) { return (Find(nID) >= 0); }
+    int32_t* GetPtr() { return (int32_t*)db; }
+    int32_t GetLength() { return length; }
+    int32_t SizeOf() { return (length + 1) * sizeof(int32_t); }
+
+    void Process(IDLIST_PROCESS_FUNC pFunc)
+    {
+        if (!length)
+            return;
+
+        int32_t* pDb = db;
+        while (*pDb >= 0)
+            pFunc(*pDb++);
+    }
 
 };
+
+
+class OBJECT_LIST
+{
+#define kMaxType 255
+
+private:
+    OBJECT* db;
+    int externalCount;
+    int internalCount;
+    void MarkEnd()
+    {
+        db[externalCount].type = kMaxType;
+        db[externalCount].index = 0;
+    }
+
+    void Init()
+    {
+        db = (OBJECT*)Bmalloc(sizeof(OBJECT));
+        externalCount = 0, internalCount = 1;
+        MarkEnd();
+    }
+
+    void Free()
+    {
+        if (db)
+            free(db);
+
+        externalCount = 0;
+        internalCount = 0;
+        db = NULL;
+    }
+public:
+    OBJECT_LIST() { Init(); }
+    ~OBJECT_LIST() { Free(); }
+    OBJECT* Ptr() { return &db[0]; }
+    int Length() { return externalCount; }
+
+    int Add(int nType, int nIndex, BOOL check = FALSE)
+    {
+        int retn = -1;
+        if (check && (retn = Find(nType, nIndex)) >= 0)
+            return retn;
+
+
+        OBJECT* pDb = (OBJECT*)realloc(db, sizeof(OBJECT) * (internalCount + 1));
+        if (pDb)
+        {
+            db = pDb;
+            db[externalCount].type = nType;
+            db[externalCount].index = nIndex;
+            retn = externalCount;
+            externalCount++;
+            internalCount++;
+        }
+
+        MarkEnd();
+        return retn;
+    }
+
+    int Find(int nType, int nIndex)
+    {
+        register int i;
+        for (i = 0; i < externalCount; i++)
+        {
+            if (db[i].type == nType && db[i].index == nIndex)
+                return i;
+        }
+
+        return -1;
+    }
+};
+
+// SPRITES_NEAR_SECTORS
+// Intended for move sprites that is close to the outside walls with
+// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
+// --------------------------------------------------------------------------
+class SPRINSECT
+{
+#define kMaxSprNear 256
+#define kWallDist	16
+
+private:
+    struct SPRITES
+    {
+        unsigned int nSector;
+        signed   int sprites[kMaxSprNear + 1];
+    };
+    SPRITES* db;
+    unsigned int length;
+    bool Alloc(int nLength); // normally should be used when loading saved game
+public:
+    void Free();
+    void Init(int nDist = kWallDist); // used in trInit to collect the sprites before translation
+    void Save(LoadSave* pSave);
+    void Load(LoadSave* pLoad);
+    int* GetSprPtr(int nSector);
+    ~SPRINSECT() { Free(); };
+
+};
+
 
 // - VARIABLES ------------------------------------------------------------------
 extern bool gTeamsSpawnUsed;
@@ -309,7 +436,6 @@ extern MISSILEINFO_EXTRA gMissileInfoExtra[kMissileMax];
 extern DUDEINFO_EXTRA gDudeInfoExtra[kDudeMax];
 extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
-extern TRCONDITION gCondition[kMaxTrackingConditions];
 extern short gProxySpritesList[kMaxSuperXSprites];
 extern short gSightSpritesList[kMaxSuperXSprites];
 extern short gPhysSpritesList[kMaxSuperXSprites];
@@ -318,7 +444,6 @@ extern short gProxySpritesCount;
 extern short gSightSpritesCount;
 extern short gPhysSpritesCount;
 extern short gImpactSpritesCount;
-extern short gTrackingCondsCount;
 extern AISTATE genPatrolStates[kPatrolStateSize];
 extern SPRINSECT gSprNSect;
 // - FUNCTIONS ------------------------------------------------------------------
@@ -437,18 +562,6 @@ void windGenStopWindOnSectors(XSPRITE* pXSource);
 int getSpriteMassBySize(spritetype* pSprite);
 bool ceilIsTooLow(spritetype* pSprite);
 void levelEndLevelCustom(int nLevel);
-int useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT event);
-bool condPush(XSPRITE* pXSprite, int objType, int objIndex);
-bool condRestore(XSPRITE* pXSprite);
-bool condCmp(int val, int arg1, int arg2, int comOp);
-void condError(XSPRITE* pXCond, const char* pzFormat, ...);
-bool condCheckMixed(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH);
-bool condCheckSector(XSPRITE* pXCond, int cmpOp, bool PUSH);
-bool condCheckWall(XSPRITE* pXCond, int cmpOp, bool PUSH);
-bool condCheckSprite(XSPRITE* pXCond, int cmpOp, bool PUSH);
-bool condCheckPlayer(XSPRITE* pXCond, int cmpOp, bool PUSH);
-bool condCheckDude(XSPRITE* pXCond, int cmpOp, bool PUSH);
-void condUpdateObjectIndex(int objType, int oldIndex, int newIndex);
 XSPRITE* evrListRedirectors(int objType, int objXIndex, XSPRITE* pXRedir, int* tx);
 XSPRITE* evrIsRedirector(int nSprite);
 int listTx(XSPRITE* pXRedir, int tx);
@@ -503,6 +616,13 @@ void clampSprite(spritetype* pSprite, int which = 0x03);
 int getSpritesNearWalls(int nSrcSect, int* spriOut, int nMax, int nDist);
 bool isMovableSector(int nType);
 bool isMovableSector(sectortype* pSect);
+bool isUnderwaterSector(XSECTOR* pXSect);
+bool isUnderwaterSector(sectortype* pSect);
+bool isUnderwaterSector(int nSector);
+
+int getDigitFromValue(int nVal, int nOffs);
+void killEffectGenCallbacks(XSPRITE* pXSource);
+inline bool rngok(int val, int rngA, int rngB) { return (val >= rngA && val < rngB); }
 #endif
 
 ////////////////////////////////////////////////////////////////////////

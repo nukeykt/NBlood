@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifdef NOONE_EXTENSIONS
 #include <random>
 #include "nnexts.h"
+#include "nnextsif.h"
 #include "eventq.h"
 #include "aiunicult.h"
 #include "triggers.h"
@@ -77,10 +78,6 @@ short gEffectGenCallbacks[] = {
 
 
 TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
-
-TRCONDITION gCondition[kMaxTrackingConditions];
-short gTrackingCondsCount;
-
 std::default_random_engine gStdRandom;
 
 VECTORINFO_EXTRA gVectorInfoExtra[] = {
@@ -250,19 +247,6 @@ AISTATE genPatrolStates[] = {
     //-------------------------------------------------------------------------------
 
 };
-
-CONDITION_TYPE_NAMES gCondTypeNames[7] = {
-    
-    {kCondGameBase,     kCondGameMax,   "Game"},
-    {kCondMixedBase,    kCondMixedMax,  "Mixed"},
-    {kCondWallBase,     kCondWallMax,   "Wall"},
-    {kCondSectorBase,   kCondSectorMax, "Sector"},
-    {kCondPlayerBase,   kCondPlayerMax, "Player"},
-    {kCondDudeBase,     kCondDudeMax,   "Enemy"},
-    {kCondSpriteBase,   kCondSpriteMax, "Sprite"},
-
-};
-
 
 // SPRITES_NEAR_SECTORS
 // Intended for move sprites that is close to the outside walls with
@@ -625,33 +609,11 @@ void nnExtResetGlobals() {
     memset(gSightSpritesList, -1, sizeof(gSightSpritesList));   memset(gProxySpritesList, -1, sizeof(gProxySpritesList));
     memset(gPhysSpritesList, -1, sizeof(gPhysSpritesList));     memset(gImpactSpritesList, -1, sizeof(gImpactSpritesList));
 
-    // reset tracking conditions, if any
-    if (gTrackingCondsCount > 0) {
-        for (int i = 0; i < gTrackingCondsCount; i++) {
-            TRCONDITION* pCond = &gCondition[i];
-            for (int k = 0; k < pCond->length; k++) {
-                pCond->obj[k].index = pCond->obj[k].cmd = 0;
-                pCond->obj[k].type = -1;
-            }
-
-            pCond->length = 0;
-        }
-
-        gTrackingCondsCount = 0;
-    }
+    // free all condition trackers
+    conditionsTrackingClear();
 
     // clear sprite mass cache
-    for (int i = 0; i < kMaxSprites; i++) {
-        
-        gSpriteMass[i].seqId        = 0;
-        gSpriteMass[i].picnum       = 0;
-        gSpriteMass[i].xrepeat      = 0;
-        gSpriteMass[i].yrepeat      = 0;
-        gSpriteMass[i].mass         = 0;
-        gSpriteMass[i].airVel       = 0;
-        gSpriteMass[i].fraction     = 0;
-    
-    }
+    memset(gSpriteMass, 0, sizeof(gSpriteMass));
 
 }
 static int osdShowIFSprites(osdcmdptr_t UNUSED(parm)) {
@@ -716,14 +678,6 @@ void nnExtInitModernStuff(bool bSaveLoad) {
             case kDudeModernCustom:
             case kDudeModernCustomBurning:
                 getSpriteMassBySize(pSprite); // create mass cache
-                break;
-            case kModernCondition:
-            case kModernConditionFalse:
-                if (bSaveLoad) break;
-                else if (!pXSprite->rxID && pXSprite->data1 > kCondGameMax) condError(pXSprite,"\nThe condition must have RX ID!\nSPRITE #%d", pSprite->index);
-                else if (!pXSprite->txID && !pSprite->flags) {
-                    consoleSysMsg("The condition must have TX ID or hitag to be set: RX ID %d, SPRITE #%d", pXSprite->rxID, pSprite->index);
-                }
                 break;
         }
 
@@ -849,12 +803,9 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                 case kModernPlayerControl:
                     switch (pXSprite->command) {
                         case kCmdLink:
-                            if (pXSprite->data1 < 1 || pXSprite->data1 > kMaxPlayers)
+                            if (pXSprite->data1 && !rngok(pXSprite->data1, 1, kMaxPlayers + 1))
                                 ThrowError("\nPlayer Control (SPRITE #%d):\nPlayer out of a range (data1 = %d)", pSprite->index, pXSprite->data1);
                             
-                            //if (numplayers < pXSprite->data1)
-                                //ThrowError("\nPlayer Control (SPRITE #%d):\n There is no player #%d", pSprite->index, pXSprite->data1);
-
                             if (pXSprite->rxID && pXSprite->rxID != kChannelLevelStart)
                                 ThrowError("\nPlayer Control (SPRITE #%d) with Link command should have no RX ID!", pSprite->index, pXSprite->data1);
 
@@ -862,7 +813,11 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                                 ThrowError("\nPlayer Control (SPRITE #%d):\nTX ID should be in range of %d and %d!", pSprite->index, kChannelUser, kChannelMax);
 
                             // only one linker per player allowed
-                            for (int nSprite = headspritestat[kStatModernPlayerLinker]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+                            for (int nSprite = headspritestat[kStatModernPlayerLinker]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+                            {
+                                if (nSprite == pSprite->index)
+                                    continue;
+
                                 XSPRITE* pXCtrl = &xsprite[sprite[nSprite].extra];
                                 if (pXSprite->data1 == pXCtrl->data1)
                                     ThrowError("\nPlayer Control (SPRITE #%d):\nPlayer %d already linked with different player control sprite #%d!", pSprite->index, pXSprite->data1, nSprite);
@@ -879,24 +834,28 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                     break;
                 case kModernCondition:
                 case kModernConditionFalse:
-                    if (pXSprite->busyTime > 0) {
-                        
-                        if (pXSprite->waitTime > 0) {
-                            pXSprite->busyTime += ClipHigh(((pXSprite->waitTime * 120) / 10), 4095); pXSprite->waitTime = 0;
+                    if (pXSprite->busyTime > 0)
+                    {
+                        if (pXSprite->waitTime > 0)
+                        {
+                            pXSprite->busyTime = ClipHigh(pXSprite->busyTime + ((pXSprite->waitTime * 120) / 10), 4095); pXSprite->waitTime = 0;
                             consoleSysMsg("Summing busyTime and waitTime for tracking condition #%d, RX ID %d. Result = %d ticks", pSprite->index, pXSprite->rxID, pXSprite->busyTime);
                         }
 
                         pXSprite->busy = pXSprite->busyTime;
                     }
                     
-                    if (pXSprite->waitTime && pXSprite->command >= kCmdNumberic)
-                        condError(pXSprite, "Delay is not available when using numberic commands (%d - %d)", kCmdNumberic, 255);
-
                     pXSprite->Decoupled = false; // must go through operateSprite always
-                    pXSprite->Sight     = pXSprite->Impact  = pXSprite->Touch   = pXSprite->triggerOff     = false;
-                    pXSprite->Proximity = pXSprite->Push    = pXSprite->Vector  = pXSprite->triggerOn      = false;
+                    pXSprite->Sight     = pXSprite->Impact  = pXSprite->Touch   = false;
+                    pXSprite->Proximity = pXSprite->Push    = pXSprite->Vector  = false;
                     pXSprite->state = pXSprite->restState = 0;
                     
+                    if (gModernMap == 2 && pXSprite->triggerOn && !pXSprite->triggerOff)
+                        pSprite->flags |= kModernTypeFlag64;
+                    else
+                        pSprite->flags &= ~kModernTypeFlag64;
+                    
+                    pXSprite->triggerOn = pXSprite->triggerOff = false;
                     pXSprite->targetX = pXSprite->targetY = pXSprite->targetZ = pXSprite->target = pXSprite->sysData2 = -1;
                     ChangeSpriteStat(pSprite->index, kStatModernCondition);
                     int oldStat = pSprite->cstat; pSprite->cstat = 0;
@@ -976,83 +935,9 @@ void nnExtInitModernStuff(bool bSaveLoad) {
         }
     }
 
-    // collect objects for tracking conditions
-    for (int i = headspritestat[kStatModernCondition]; i >= 0; i = nextspritestat[i]) {
-        spritetype* pSprite = &sprite[i]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
-
-        if (pXSprite->busyTime <= 0 || pXSprite->isTriggered) continue;
-        else if (gTrackingCondsCount >= kMaxTrackingConditions)
-            ThrowError("\nMax (%d) tracking conditions reached!", kMaxTrackingConditions);
-            
-        int count = 0;
-        TRCONDITION* pCond = &gCondition[gTrackingCondsCount];
-
-        for (int i = 0; i < kMaxXSprites; i++) {
-            if (!spriRangeIsFine(xsprite[i].reference) || xsprite[i].txID != pXSprite->rxID || xsprite[i].reference == pSprite->index)
-                continue;
-
-            XSPRITE* pXSpr = &xsprite[i]; spritetype* pSpr = &sprite[pXSpr->reference];
-            int index = pXSpr->reference; int cmd = pXSpr->command;
-            switch (pSpr->type) {
-                case kSwitchToggle: // exceptions
-                case kSwitchOneWay: // exceptions
-                    continue;
-                case kModernPlayerControl:
-                    if (pSpr->statnum != kStatModernPlayerLinker || !bSaveLoad) break;
-                    // assign player sprite after savegame loading
-                    index = pXSpr->sysData1;
-                    cmd = xsprite[sprite[index].extra].command;
-                    break;
-            }
-
-            if (pSpr->type == kModernCondition || pSpr->type == kModernConditionFalse)
-                condError(pXSprite, "Tracking condition always must be first in condition sequence!");
-
-            if (count >= kMaxTracedObjects)
-                condError(pXSprite, "Max(%d) objects to track reached for condition #%d, RXID: %d!");
-
-            pCond->obj[count].type = OBJ_SPRITE;
-            pCond->obj[count].index = index;
-            pCond->obj[count++].cmd = cmd;
-        }
-
-        for (int i = 0; i < kMaxXSectors; i++) {
-            if (!sectRangeIsFine(xsector[i].reference) || xsector[i].txID != pXSprite->rxID) continue;
-            else if (count >= kMaxTracedObjects)
-                condError(pXSprite, "Max(%d) objects to track reached for condition #%d, RXID: %d!");
-
-            pCond->obj[count].type = OBJ_SECTOR;
-            pCond->obj[count].index = xsector[i].reference;
-            pCond->obj[count++].cmd = xsector[i].command;
-        }
-
-        for (int i = 0; i < kMaxXWalls; i++) {
-            if (!wallRangeIsFine(xwall[i].reference) || xwall[i].txID != pXSprite->rxID)
-                continue;
-
-            walltype* pWall = &wall[xwall[i].reference];
-            switch (pWall->type) {
-                case kSwitchToggle: // exceptions
-                case kSwitchOneWay: // exceptions
-                    continue;
-            }
-
-            if (count >= kMaxTracedObjects)
-                condError(pXSprite, "Max(%d) objects to track reached for condition #%d, RXID: %d!");
-                
-            pCond->obj[count].type = OBJ_WALL;
-            pCond->obj[count].index = xwall[i].reference;
-            pCond->obj[count++].cmd = xwall[i].command;
-        }
-
-        if (pXSprite->data1 > kCondGameMax && count == 0)
-            consoleSysMsg("No objects to track found for condition #%d, RXID: %d!", pSprite->index, pXSprite->rxID);
-
-        pCond->length = count;
-        pCond->xindex = pSprite->extra;
-        gTrackingCondsCount++;
-
-    }
+    // prepare conditions for use
+    if (gStatCount[kStatModernCondition])
+        conditionsInit(bSaveLoad);
 }
 
 
@@ -1231,37 +1116,7 @@ void windGenDoVerticalWind(XSPRITE* pXSource, int nSector) {
 
 void nnExtProcessSuperSprites() {
 
-    // process tracking conditions
-    if (gTrackingCondsCount > 0)
-    {
-        for (int i = 0; i < gTrackingCondsCount; i++)
-        {
-            TRCONDITION* pCond = &gCondition[i]; XSPRITE* pXCond = &xsprite[pCond->xindex];
-            if (pXCond->locked || pXCond->isTriggered || ++pXCond->busy < pXCond->busyTime)
-                continue;
-
-            pXCond->busy = 0;
-            if (pCond->length > 0)
-            {
-                for (int k = 0; k < pCond->length; k++)
-                {
-                    EVENT evn;
-                    evn.index = pCond->obj[k].index;   evn.cmd = pCond->obj[k].cmd;
-                    evn.type = pCond->obj[k].type;     evn.funcID = kCallbackMax;
-                    evn.causer = kCauserGame;
-                    useCondition(&sprite[pXCond->reference], pXCond, evn);
-                }
-            }
-            else if (pXCond->data1 >= kCondGameBase && pXCond->data1 < kCondGameMax)
-            {
-                EVENT evn;
-                evn.index = pXCond->reference;     evn.cmd = pXCond->command;
-                evn.type = OBJ_SPRITE;            evn.funcID = kCallbackMax;
-                evn.causer = kCauserGame;
-                useCondition(&sprite[pXCond->reference], pXCond, evn);
-            }
-        }
-    }
+    conditionsTrackingProcess();							// process tracking conditions
     
     // process floor oriented kModernWindGenerator to create a vertical wind in the sectors
     for (int i = headspritestat[kStatModernWindGen]; i != -1; i = nextspritestat[i]) {
@@ -2079,23 +1934,8 @@ void trPlayerCtrlLink(XSPRITE* pXSource, PLAYER* pPlayer, bool checkCondition) {
     pPlayer->pXSprite->dropMsg          = pXSource->dropMsg;
 
     // let's check if there is tracking condition expecting objects with this TX id
-    if (checkCondition && pXSource->txID >= kChannelUser) {
-        for (int i = 0; i < gTrackingCondsCount; i++) {
-            
-            TRCONDITION* pCond = &gCondition[i];
-            if (xsprite[pCond->xindex].rxID != pXSource->txID)
-                continue;
-                
-            // search for player control sprite and replace it with actual player sprite
-            for (int k = 0; k < pCond->length; k++) {
-                if (pCond->obj[k].type != OBJ_SPRITE || pCond->obj[k].index != pXSource->reference) continue;
-                pCond->obj[k].index = pPlayer->nSprite;
-                pCond->obj[k].cmd = pPlayer->pXSprite->command;
-                break;
-            }
-
-        }
-    }
+    if (checkCondition && pXSource->txID >= kChannelUser)
+        conditionsLinkPlayer(pXSource, pPlayer);
 }
 
 void trPlayerCtrlSetRace(XSPRITE* pXSource, PLAYER* pPlayer) {
@@ -3617,934 +3457,6 @@ void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index) {
     }
 }
 
-int condSerialize(int objType, int objIndex) {
-    switch (objType) {
-        case OBJ_SECTOR: return kCondSerialSector + objIndex;
-        case OBJ_WALL:   return kCondSerialWall + objIndex;
-        case OBJ_SPRITE: return kCondSerialSprite + objIndex;
-    }
-    ThrowError("Unknown object type %d, index %d", objType, objIndex)
-    return -1;
-}
-
-void condUnserialize(int serial, int* objType, int* objIndex) {
-    if (serial >= kCondSerialSector && serial < kCondSerialWall) {
-        
-        *objIndex = serial - kCondSerialSector;
-        *objType = OBJ_SECTOR; 
-
-    } else if (serial >= kCondSerialWall && serial < kCondSerialSprite) {
-        
-        *objIndex = serial - kCondSerialWall;
-        *objType = OBJ_WALL; 
-
-    } else if (serial >= kCondSerialSprite && serial < kCondSerialMax) {
-        
-        *objIndex = serial - kCondSerialSprite;
-        *objType = OBJ_SPRITE; 
-
-    } else {
-        
-        ThrowError("%d is not condition serial!");
-
-    }
-}
-
-bool condPush(XSPRITE* pXSprite, int objType, int objIndex) {
-    pXSprite->targetX = condSerialize(objType, objIndex);
-    return true;
-}
-
-bool condRestore(XSPRITE* pXSprite) {
-    pXSprite->targetX = pXSprite->targetY;
-    return true;
-}
-
-// normal comparison
-bool condCmp(int val, int arg1, int arg2, int comOp) {
-    if (comOp & 0x2000) return (comOp & CSTAT_SPRITE_BLOCK) ? (val > arg1) : (val >= arg1); // blue sprite
-    else if (comOp & 0x4000) return (comOp & CSTAT_SPRITE_BLOCK) ? (val < arg1) : (val <= arg1); // green sprite
-    else if (comOp & CSTAT_SPRITE_BLOCK) {
-        if (arg1 > arg2) ThrowError("Value of argument #1 (%d) must be less than value of argument #2 (%d)", arg1, arg2);
-        return (val >= arg1 && val <= arg2);
-    }
-    else return (val == arg1);
-}
-
-void condError(XSPRITE* pXCond, const char* pzFormat, ...) {
-    
-    char buffer[256]; char buffer2[512]; char condType[32] = "Unknown";
-    for (int i = 0; i < 7; i++) {
-        if (pXCond->data1 < gCondTypeNames[i].rng1 || pXCond->data1 >= gCondTypeNames[i].rng2) continue;
-        Bstrcpy(condType, gCondTypeNames[i].name);
-        Bstrupr(condType);
-        break;
-    }
-   
-    Bsprintf(buffer, "\n\n%s CONDITION RX: %d, TX: %d, SPRITE: #%d RETURNS:\n", condType, pXCond->rxID, pXCond->txID, pXCond->reference);
-    va_list args;
-    va_start(args, pzFormat);
-    vsprintf(buffer2, pzFormat, args);
-    ThrowError(Bstrcat(buffer, buffer2));
-}
-
-bool condCheckGame(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH) {
-
-    UNREFERENCED_PARAMETER(event);
-    UNREFERENCED_PARAMETER(PUSH);
-
-    //int var = -1;
-    int cond = pXCond->data1; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; int arg3 = pXCond->data4;
-
-    switch (cond) {
-        case 1:  return condCmp(gLevelTime / (kTicsPerSec * 60), arg1, arg2, cmpOp);            // compare level minutes
-        case 2:  return condCmp((gLevelTime / kTicsPerSec) % 60, arg1, arg2, cmpOp);            // compare level seconds
-        case 3:  return condCmp(((gLevelTime % kTicsPerSec) * 33) / 10, arg1, arg2, cmpOp);     // compare level mseconds
-        case 4:  return condCmp(gLevelTime, arg1, arg2, cmpOp);                                 // compare level time (unsafe)
-        case 5:  return condCmp(gKillMgr.at4, arg1, arg2, cmpOp);                               // compare current global kills counter
-        case 6:  return condCmp(gKillMgr.at0, arg1, arg2, cmpOp);                               // compare total global kills counter
-        case 7:  return condCmp(gSecretMgr.nNormalSecretsFound, arg1, arg2, cmpOp);             // compare how many secrets found
-        case 8:  return condCmp(gSecretMgr.nAllSecrets, arg1, arg2, cmpOp);                     // compare total secrets
-        /*----------------------------------------------------------------------------------------------------------------------------------*/
-        case 20: return condCmp(gVisibility, arg1, arg2, cmpOp);                                // compare global visibility value
-        /*----------------------------------------------------------------------------------------------------------------------------------*/
-        case 30: return Chance((0x10000 * arg3) / kPercFull);                                   // check chance
-        case 31: return condCmp(nnExtRandom(arg1, arg2), arg1, arg2, cmpOp);
-        /*----------------------------------------------------------------------------------------------------------------------------------*/
-        case 47: return condCmp(gStatCount[ClipRange(arg3, 0, kMaxStatus)], arg1, arg2, cmpOp); // compare counter of specific statnum sprites
-        case 48: return condCmp(Numsprites, arg1, arg2, cmpOp);                                 // compare counter of total sprites
-    
-    }
-
-    condError(pXCond, "Unexpected condition id (%d)!", cond);
-    return false;
-}
-
-bool condCheckMixed(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH) {
-    
-    UNREFERENCED_PARAMETER(PUSH);
-    
-    //int var = -1;
-    int cond = pXCond->data1 - kCondMixedBase; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; int arg3 = pXCond->data4;
-    
-    int objType = -1; int objIndex = -1;
-    condUnserialize(pXCond->targetX, &objType, &objIndex);
-
-    switch (cond) {
-        case 0:  return (objType == OBJ_SECTOR && sectRangeIsFine(objIndex)); // is a sector?
-        case 5:  return (objType == OBJ_WALL && wallRangeIsFine(objIndex));   // is a wall?
-        case 10: return (objType == OBJ_SPRITE && spriRangeIsFine(objIndex)); // is a sprite?
-        case 15: // x-index is fine?
-            switch (objType) {
-                case OBJ_WALL: return xwallRangeIsFine(wall[objIndex].extra);
-                case OBJ_SPRITE: return xspriRangeIsFine(sprite[objIndex].extra);
-                case OBJ_SECTOR: return xsectRangeIsFine(sector[objIndex].extra);
-            }
-            break;
-        case 20: // type in a range?
-            switch (objType) {
-                case OBJ_WALL:
-                    return condCmp(wall[objIndex].type, arg1, arg2, cmpOp);
-                case OBJ_SPRITE:
-                    return condCmp(sprite[objIndex].type, arg1, arg2, cmpOp);
-                case OBJ_SECTOR:
-                    return condCmp(sector[objIndex].type, arg1, arg2, cmpOp);
-            }
-            break;
-        case 24:
-        case 25: case 26: case 27:
-        case 28: case 29: case 30:
-        case 31: case 32: case 33:
-            switch (objType) {
-                case OBJ_WALL: {
-                    walltype* pObj = &wall[objIndex];
-                    switch (cond) {
-                        case 24: return condCmp(surfType[wall[objIndex].picnum], arg1, arg2, cmpOp);
-                        case 25: return condCmp(pObj->picnum, arg1, arg2, cmpOp);
-                        case 26: return condCmp(pObj->pal, arg1, arg2, cmpOp);
-                        case 27: return condCmp(pObj->shade, arg1, arg2, cmpOp);
-                        case 28: return (arg3) ? condCmp((pObj->cstat & arg3), arg1, arg2, cmpOp) : (pObj->cstat & arg1);
-                        case 29: return (arg3) ? condCmp((pObj->hitag & arg3), arg1, arg2, cmpOp) : (pObj->hitag & arg1);
-                        case 30: return condCmp(pObj->xrepeat, arg1, arg2, cmpOp);
-                        case 31: return condCmp(pObj->xpanning, arg1, arg2, cmpOp);
-                        case 32: return condCmp(pObj->yrepeat, arg1, arg2, cmpOp);
-                        case 33: return condCmp(pObj->ypanning, arg1, arg2, cmpOp);
-                    }
-                    break;
-                }
-                case OBJ_SPRITE: {
-                    spritetype* pObj = &sprite[objIndex];
-                    switch (cond) {
-                        case 24: return condCmp(surfType[sprite[objIndex].picnum], arg1, arg2, cmpOp);
-                        case 25: return condCmp(pObj->picnum, arg1, arg2, cmpOp);
-                        case 26: return condCmp(pObj->pal, arg1, arg2, cmpOp);
-                        case 27: return condCmp(pObj->shade, arg1, arg2, cmpOp);
-                        case 28: return (arg3) ? condCmp((pObj->cstat & arg3), arg1, arg2, cmpOp) : (pObj->cstat & arg1);
-                        case 29: return (arg3) ? condCmp((pObj->hitag & arg3), arg1, arg2, cmpOp) : (pObj->hitag & arg1);
-                        case 30: return condCmp(pObj->xrepeat, arg1, arg2, cmpOp);
-                        case 31: return condCmp(pObj->xoffset, arg1, arg2, cmpOp);
-                        case 32: return condCmp(pObj->yrepeat, arg1, arg2, cmpOp);
-                        case 33: return condCmp(pObj->yoffset, arg1, arg2, cmpOp);
-                    }
-                    break;
-                }
-                case OBJ_SECTOR: {
-                    sectortype* pObj = &sector[objIndex];
-                    switch (cond) {
-                        case 24:
-                            switch (arg3) {
-                                default: return (condCmp(surfType[sector[objIndex].floorpicnum], arg1, arg2, cmpOp) || condCmp(surfType[sector[objIndex].ceilingpicnum], arg1, arg2, cmpOp));
-                                case 1: return condCmp(surfType[sector[objIndex].floorpicnum], arg1, arg2, cmpOp);
-                                case 2: return condCmp(surfType[sector[objIndex].ceilingpicnum], arg1, arg2, cmpOp);
-                            }
-                            break;
-                        case 25:
-                            switch (arg3) {
-                                default: return (condCmp(pObj->floorpicnum, arg1, arg2, cmpOp) || condCmp(pObj->ceilingpicnum, arg1, arg2, cmpOp));
-                                case 1:  return condCmp(pObj->floorpicnum, arg1, arg2, cmpOp);
-                                case 2:  return condCmp(pObj->ceilingpicnum, arg1, arg2, cmpOp);
-                            }
-                            break;
-                        case 26: 
-                            switch (arg3) {
-                                default: return (condCmp(pObj->floorpal, arg1, arg2, cmpOp) || condCmp(pObj->ceilingpal, arg1, arg2, cmpOp));
-                                case 1:  return condCmp(pObj->floorpal, arg1, arg2, cmpOp);
-                                case 2:  return condCmp(pObj->ceilingpal, arg1, arg2, cmpOp);
-                            }
-                            break;
-                        case 27:
-                            switch (arg3) {
-                                default: return (condCmp(pObj->floorshade, arg1, arg2, cmpOp) || condCmp(pObj->ceilingshade, arg1, arg2, cmpOp));
-                                case 1:  return condCmp(pObj->floorshade, arg1, arg2, cmpOp);
-                                case 2:  return condCmp(pObj->ceilingshade, arg1, arg2, cmpOp);
-                            }
-                            break;
-                        // !!!
-                        case 28:
-                            switch (arg3) {
-                                default: return ((pObj->floorstat & arg1) || (pObj->ceilingstat & arg1));
-                                case 1:  return (pObj->floorstat & arg1);
-                                case 2:  return (pObj->ceilingstat & arg1);
-                            }
-                            break;
-                        case 29: return (arg3) ? condCmp((pObj->hitag & arg3), arg1, arg2, cmpOp) : (pObj->hitag & arg1);
-                        case 30: return condCmp(pObj->floorxpanning, arg1, arg2, cmpOp);
-                        case 31: return condCmp(pObj->ceilingxpanning, arg1, arg2, cmpOp);
-                        case 32: return condCmp(pObj->floorypanning, arg1, arg2, cmpOp);
-                        case 33: return condCmp(pObj->ceilingypanning, arg1, arg2, cmpOp);
-                    }
-                    break;
-                }
-            }
-            break;
-        case 41:  case 42:  case 43:
-        case 44:  case 50:  case 51:
-        case 52:  case 53:  case 54:
-        case 55:  case 56:  case 57:
-        case 58:  case 59:  case 70:
-        case 71:
-            switch (objType) {
-                case OBJ_WALL: {
-                    if (!xwallRangeIsFine(wall[objIndex].extra))
-                        return condCmp(0, arg1, arg2, cmpOp);
-                    
-                    XWALL* pXObj =  &xwall[wall[objIndex].extra];
-                    switch (cond) {
-                        case 41: return condCmp(pXObj->data, arg1, arg2, cmpOp);
-                        case 50: return condCmp(pXObj->rxID, arg1, arg2, cmpOp);
-                        case 51: return condCmp(pXObj->txID, arg1, arg2, cmpOp);
-                        case 52: return pXObj->locked;
-                        case 53: return pXObj->triggerOn;
-                        case 54: return pXObj->triggerOff;
-                        case 55: return pXObj->triggerOnce;
-                        case 56: return pXObj->isTriggered;
-                        case 57: return pXObj->state;
-                        case 58: return condCmp((kPercFull * pXObj->busy) / 65536, arg1, arg2, cmpOp);
-                        case 59: return pXObj->dudeLockout;
-                        case 70:
-                            switch (arg3) {
-                                default: return (condCmp(seqGetID(0, wall[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetID(4, wall[objIndex].extra), arg1, arg2, cmpOp));
-                                case 1:  return condCmp(seqGetID(0, wall[objIndex].extra), arg1, arg2, cmpOp);
-                                case 2:  return condCmp(seqGetID(4, wall[objIndex].extra), arg1, arg2, cmpOp);
-                            }
-                            break;
-                        case 71:
-                            switch (arg3) {
-                                default: return (condCmp(seqGetStatus(0, wall[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetStatus(4, wall[objIndex].extra), arg1, arg2, cmpOp));
-                                case 1:  return condCmp(seqGetStatus(0, wall[objIndex].extra), arg1, arg2, cmpOp);
-                                case 2:  return condCmp(seqGetStatus(4, wall[objIndex].extra), arg1, arg2, cmpOp);
-                            }
-                            break;
-                    }
-                    break;
-                }
-                case OBJ_SPRITE: {
-                    if (!xspriRangeIsFine(sprite[objIndex].extra))
-                        return condCmp(0, arg1, arg2, cmpOp);
-                    
-                    XSPRITE* pXObj = &xsprite[sprite[objIndex].extra];
-                    switch (cond) {
-                        case 41: case 42:
-                        case 43: case 44:
-                            return condCmp(getDataFieldOfObject(OBJ_SPRITE, objIndex, 1 + cond - 41), arg1, arg2, cmpOp);
-                        case 50: return condCmp(pXObj->rxID, arg1, arg2, cmpOp);
-                        case 51: return condCmp(pXObj->txID, arg1, arg2, cmpOp);
-                        case 52: return pXObj->locked;
-                        case 53: return pXObj->triggerOn;
-                        case 54: return pXObj->triggerOff;
-                        case 55: return pXObj->triggerOnce;
-                        case 56: return pXObj->isTriggered;
-                        case 57: return pXObj->state;
-                        case 58: return condCmp((kPercFull * pXObj->busy) / 65536, arg1, arg2, cmpOp);
-                        case 59: return pXObj->DudeLockout;
-                        case 70: return condCmp(seqGetID(3, sprite[objIndex].extra), arg1, arg2, cmpOp);
-                        case 71: return condCmp(seqGetStatus(3, sprite[objIndex].extra), arg1, arg2, cmpOp);
-                    }
-                    break;
-                }
-                case OBJ_SECTOR: {
-                    if (!xsectRangeIsFine(sector[objIndex].extra))
-                        return condCmp(0, arg1, arg2, cmpOp);
-                    
-                    XSECTOR* pXObj = &xsector[sector[objIndex].extra];
-                    switch (cond) {
-                        case 41: return condCmp(pXObj->data, arg1, arg2, cmpOp);
-                        case 50: return condCmp(pXObj->rxID, arg1, arg2, cmpOp);
-                        case 51: return condCmp(pXObj->txID, arg1, arg2, cmpOp);
-                        case 52: return pXObj->locked;
-                        case 53: return pXObj->triggerOn;
-                        case 54: return pXObj->triggerOff;
-                        case 55: return pXObj->triggerOnce;
-                        case 56: return pXObj->isTriggered;
-                        case 57: return pXObj->state;
-                        case 58:
-                            return condCmp((kPercFull * pXObj->busy) / 65536, arg1, arg2, cmpOp);
-                        case 59: return pXObj->dudeLockout;
-                        case 70:
-                            switch (arg3) {
-                                default: return (condCmp(seqGetID(1, sector[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetID(2, sector[objIndex].extra), arg1, arg2, cmpOp));
-                                case 1:  return condCmp(seqGetID(1, sector[objIndex].extra), arg1, arg2, cmpOp);
-                                case 2:  return condCmp(seqGetID(2, sector[objIndex].extra), arg1, arg2, cmpOp);
-                            }
-                            break;
-                        case 71:
-                            switch (arg3) {
-                                default: return (condCmp(seqGetStatus(1, sector[objIndex].extra), arg1, arg2, cmpOp) || condCmp(seqGetStatus(2, sector[objIndex].extra), arg1, arg2, cmpOp));
-                                case 1:  return condCmp(seqGetStatus(1, sector[objIndex].extra), arg1, arg2, cmpOp);
-                                case 2:  return condCmp(seqGetStatus(2, sector[objIndex].extra), arg1, arg2, cmpOp);
-                            }
-                            break;
-                    }
-                    break;
-                }
-            }
-            break;
-        case 99: return condCmp(event.cmd, arg1, arg2, cmpOp);  // this codition received specified command?
-    }
-
-    condError(pXCond, "Unexpected condition id (%d)!", cond);
-    return false;
-}
-
-bool condCheckSector(XSPRITE* pXCond, int cmpOp, bool PUSH) {
-
-    int var = -1;
-    int cond = pXCond->data1 - kCondSectorBase; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; //int arg3 = pXCond->data4;
-    
-    int objType = -1; int objIndex = -1;
-    condUnserialize(pXCond->targetX, &objType, &objIndex);
-
-    if (objType != OBJ_SECTOR || !sectRangeIsFine(objIndex))
-        condError(pXCond, "Object #%d (objType: %d) is not a sector!", objIndex, objType);
-
-    sectortype* pSect = &sector[objIndex];
-    XSECTOR* pXSect = (xsectRangeIsFine(pSect->extra)) ? &xsector[pSect->extra] : NULL;
-
-    if (cond < (kCondRange >> 1)) {
-        switch (cond) {
-        default: break;
-        case 0: return condCmp(pSect->visibility, arg1, arg2, cmpOp);
-        case 5: return condCmp(pSect->floorheinum, arg1, arg2, cmpOp);
-        case 6: return condCmp(pSect->ceilingheinum, arg1, arg2, cmpOp);
-        case 10: // required sprite type is in current sector?
-            for (var = headspritesect[objIndex]; var >= 0; var = nextspritesect[var]) {
-                if (!condCmp(sprite[var].type, arg1, arg2, cmpOp)) continue;
-                else if (PUSH) condPush(pXCond, OBJ_SPRITE, var);
-                return true;
-            }
-            return false;
-        }
-    } else if (pXSect) {
-        switch (cond) {
-            default: break;
-            case 50: return pXSect->Underwater;
-            case 51: return condCmp(pXSect->Depth, arg1, arg2, cmpOp);
-            case 55: // compare floor height (in %)
-            case 56: { // compare ceil height (in %)
-                int h = 0; int curH = 0;
-                switch (pSect->type) {
-                case kSectorZMotion:
-                case kSectorRotate:
-                case kSectorSlide:
-                    if (cond == 55)
-                    {
-                        h = ClipLow(abs(pXSect->onFloorZ - pXSect->offFloorZ), 1);
-                        curH = abs(pSect->floorz - pXSect->offFloorZ);
-                    }
-                    else
-                    {
-                        h = ClipLow(abs(pXSect->onCeilZ - pXSect->offCeilZ), 1);
-                        curH = abs(pSect->ceilingz - pXSect->offCeilZ);
-                    }
-                    return condCmp((kPercFull * curH) / h, arg1, arg2, cmpOp);
-                default:
-                    condError(pXCond, "Usupported sector type %d", pSect->type);
-                    return false;
-                }
-            }
-            case 57: // this sector in movement?
-                return !pXSect->unused1;
-        }
-    } else {
-        switch (cond) {
-            default: return false;
-            case 55:
-            case 56:
-                return condCmp(0, arg1, arg2, cmpOp);
-        }
-    }
-    
-    condError(pXCond, "Unexpected condition id (%d)!", cond);
-    return false;
-}
-
-bool condCheckWall(XSPRITE* pXCond, int cmpOp, bool PUSH) {
-
-    UNREFERENCED_PARAMETER(PUSH);
-    
-    int var = -1;
-    int cond = pXCond->data1 - kCondWallBase; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; //int arg3 = pXCond->data4;
-    
-    int objType = -1; int objIndex = -1;
-    condUnserialize(pXCond->targetX, &objType, &objIndex);
-
-    if (objType != OBJ_WALL || !wallRangeIsFine(objIndex))
-        condError(pXCond, "Object #%d (objType: %d) is not a wall!", objIndex, objType);
-        
-    walltype* pWall = &wall[objIndex];
-    //XWALL* pXWall = (xwallRangeIsFine(pWall->extra)) ? &xwall[pWall->extra] : NULL;
-    
-    if (cond < (kCondRange >> 1)) {
-        switch (cond) {
-            default: break;
-            case 0:
-                return condCmp(pWall->overpicnum, arg1, arg2, cmpOp);
-            case 5:
-                if (!sectRangeIsFine((var = sectorofwall(objIndex)))) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, var);
-                return true;
-            case 10: // this wall is a mirror?                          // must be as constants here
-                return (pWall->type != kWallStack && condCmp(pWall->picnum, 4080, (4080 + 16) - 1, 0));
-            case 15:
-                if (!sectRangeIsFine(pWall->nextsector)) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, pWall->nextsector);
-                return true;
-            case 20:
-                if (!wallRangeIsFine(pWall->nextwall)) return false;
-                else if (PUSH) condPush(pXCond, OBJ_WALL, pWall->nextwall);
-                return true;
-            case 25: // next wall belongs to sector?
-                if (!sectRangeIsFine(var = sectorofwall(pWall->nextwall))) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, var);
-                return true;
-            /*case 57: // someone touching this wall?
-                for (int i = headspritestat[kStatDude]; i >= 0; i = nextspritestat[i]) {
-                    if (!xspriRangeIsFine(sprite[i].extra) || (gSpriteHit[sprite[i].extra].hit & 0xc000) != 0x8000) continue;
-                    else if ((gSpriteHit[sprite[i].extra].hit & 0x3fff) != objIndex) continue;
-                    else if (PUSH) {
-                        condPush(pXCond, OBJ_SPRITE, i);
-                        return true;
-                    }
-                }
-                return false;*/
-        }
-    }
-
-    condError(pXCond, "Unexpected condition id (%d)!", cond);
-    return false;
-}
-
-bool condCheckPlayer(XSPRITE* pXCond, int cmpOp, bool PUSH) {
-
-    int var = -1; PLAYER* pPlayer = NULL;
-    int cond = pXCond->data1 - kCondPlayerBase; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; int arg3 = pXCond->data4;
-
-    int objType = -1; int objIndex = -1;
-    condUnserialize(pXCond->targetX, &objType, &objIndex);
-
-    if (objType != OBJ_SPRITE || !spriRangeIsFine(objIndex))
-    {
-        condError(pXCond, "Object #%d (objType: %d) is not a sprite!", objIndex, objType);
-    }
-
-    for (int i = 0; i < kMaxPlayers; i++)
-    {
-        if (objIndex != gPlayer[i].nSprite) continue;
-        pPlayer = &gPlayer[i];
-        break;
-    }
-    
-    if (!pPlayer) {
-        condError(pXCond, "Object #%d (objType: %d) is not a player!", objIndex, objType);
-        return false;
-    }
-
-    spritetype* pSpr = pPlayer->pSprite;
-
-    switch (cond) {
-        case 0: // check if this player is connected
-            if (!condCmp(pPlayer->nPlayer + 1, arg1, arg2, cmpOp) || !spriRangeIsFine(pPlayer->nSprite)) return false;
-            else if (PUSH) condPush(pXCond, OBJ_SPRITE, pPlayer->nSprite);
-            return (pPlayer->nPlayer >= 0);
-        case 1: return condCmp((gGameOptions.nGameType != kGameTypeTeams) ? 0 : pPlayer->teamId + 1, arg1, arg2, cmpOp); // compare team
-        case 2: return (arg1 > 0 && arg1 < 8 && pPlayer->hasKey[arg1 - 1]);
-        case 3: return (arg1 > 0 && arg1 < 15 && pPlayer->hasWeapon[arg1 - 1]);
-        case 4: return condCmp(pPlayer->curWeapon, arg1, arg2, cmpOp);
-        case 5: return (arg1 > 0 && arg1 < 6 && condCmp(pPlayer->packSlots[arg1 - 1].curAmount, arg2, arg3, cmpOp));
-        case 6: return (arg1 > 0 && arg1 < 6 && pPlayer->packSlots[arg1 - 1].isActive);
-        case 7: return condCmp(pPlayer->packItemId + 1, arg1, arg2, cmpOp);
-        case 8: // check for powerup amount in seconds
-            if (arg3 > 0 && arg3 <= (kMaxAllowedPowerup - (kMinAllowedPowerup << 1) + 1)) {
-                var = (kMinAllowedPowerup + arg3) - 1; // allowable powerups
-                return condCmp(pPlayer->pwUpTime[var] / 100, arg1, arg2, cmpOp);
-            }
-            condError(pXCond, "Unexpected powerup #%d", arg3);
-            return false;
-        case 9:
-            if (!spriRangeIsFine(pPlayer->fraggerId)) return false;
-            else if (PUSH) condPush(pXCond, OBJ_SPRITE, pPlayer->fraggerId);
-            return true;
-        case 10: // check keys pressed
-            switch (arg1) {
-            case 1:  return (pPlayer->input.forward > 0);            // forward
-            case 2:  return (pPlayer->input.forward < 0);            // backward
-            case 3:  return (pPlayer->input.strafe > 0);             // left
-            case 4:  return (pPlayer->input.strafe < 0);             // right
-            case 5:  return (pPlayer->input.buttonFlags.jump);       // jump
-            case 6:  return (pPlayer->input.buttonFlags.crouch);     // crouch
-            case 7:  return (pPlayer->input.buttonFlags.shoot);      // normal fire weapon
-            case 8:  return (pPlayer->input.buttonFlags.shoot2);     // alt fire weapon
-            case 9:  return (pPlayer->input.keyFlags.action);        // use
-            default:
-                condError(pXCond, "Specify a correct key!");
-                break;
-            }
-            return false;
-        case 11: return (pPlayer->isRunning);
-        case 12: return (pPlayer->fallScream); // falling in abyss?
-        case 13: return condCmp(pPlayer->lifeMode + 1, arg1, arg2, cmpOp);
-        case 14: return condCmp(pPlayer->posture + 1, arg1, arg2, cmpOp);
-        case 46: return condCmp(pPlayer->sceneQav, arg1, arg2, cmpOp);
-        case 47: return (pPlayer->godMode || powerupCheck(pPlayer, kPwUpDeathMask));
-        case 48: return isShrinked(pSpr);
-        case 49: return isGrown(pSpr);
-    }
-
-    condError(pXCond, "Unexpected condition #%d!", cond);
-    return false;
-}
-
-bool condCheckDude(XSPRITE* pXCond, int cmpOp, bool PUSH) {
-
-    int var = -1;
-    int cond = pXCond->data1 - kCondDudeBase; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; int arg3 = pXCond->data4;
-    
-    int objType = -1; int objIndex = -1;
-    condUnserialize(pXCond->targetX, &objType, &objIndex);
-    if (objType != OBJ_SPRITE || !spriRangeIsFine(objIndex))
-        condError(pXCond, "Object #%d (objType: %d) is not a sprite!", objIndex, objType);
-
-    spritetype* pSpr = &sprite[objIndex];
-    if (!xsprIsFine(pSpr) || pSpr->type == kThingBloodChunks)
-        condError(pXCond, "Object #%d (objType: %d) is dead!", objIndex, objType);
-    
-    if (!IsDudeSprite(pSpr) || IsPlayerSprite(pSpr))
-    {
-        condError(pXCond, "Object #%d (objType: %d) is not an enemy!", objIndex, objType);
-    }
-
-    XSPRITE* pXSpr = &xsprite[pSpr->extra];
-    switch (cond) {
-        default: break;
-        case 0: // dude have any targets?
-            if (!spriRangeIsFine(pXSpr->target)) return false;
-            else if (!IsDudeSprite(&sprite[pXSpr->target]) && sprite[pXSpr->target].type != kMarkerPath) return false;
-            else if (PUSH) condPush(pXCond, OBJ_SPRITE, pXSpr->target);
-            return true;
-        case 1: return aiFightDudeIsAffected(pXSpr); // dude affected by ai fight?
-        case 2: // distance to the target in a range?
-        case 3: // is the target visible?
-        case 4: // is the target visible with periphery?
-        {
-
-            if (!spriRangeIsFine(pXSpr->target))
-                condError(pXCond, "Dude #%d have no target!", objIndex);
-
-            spritetype* pTrgt = &sprite[pXSpr->target];
-            DUDEINFO* pInfo = getDudeInfo(pSpr->type);
-            int eyeAboveZ = pInfo->eyeHeight * pSpr->yrepeat << 2;
-            int dx = pTrgt->x - pSpr->x; int dy = pTrgt->y - pSpr->y;
-
-            switch (cond) {
-                case 2: 
-                    var = condCmp(approxDist(dx, dy), arg1 * 512, arg2 * 512, cmpOp);
-                    break;
-                case 3:
-                case 4:
-                    var = cansee(pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, pTrgt->x, pTrgt->y, pTrgt->z - eyeAboveZ, pTrgt->sectnum);
-                    if (cond == 4 && var > 0) {
-                        var = ((1024 + getangle(dx, dy) - pSpr->ang) & 2047) - 1024;
-                        var = (klabs(var) < ((arg1 <= 0) ? pInfo->periphery : ClipHigh(arg1, 2048)));
-                    }
-                    break;
-            }
-
-            if (var <= 0) return false;
-            else if (PUSH) condPush(pXCond, OBJ_SPRITE, pXSpr->target);
-            return true;
-
-        }
-        case 5: return pXSpr->dudeFlag4;
-        case 6: return pXSpr->dudeDeaf;
-        case 7: return pXSpr->dudeGuard;
-        case 8: return pXSpr->dudeAmbush;
-        case 9: return (pXSpr->unused1 & kDudeFlagStealth);
-        case 10: // check if the marker is busy with another dude
-        case 11: // check if the marker is reached
-            if (!pXSpr->dudeFlag4 || !spriRangeIsFine(pXSpr->target) || sprite[pXSpr->target].type != kMarkerPath) return false;
-            switch (cond) {
-            case 10:
-                    var = aiPatrolMarkerBusy(pSpr->index, pXSpr->target);
-                    if (!spriRangeIsFine(var)) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SPRITE, var);
-                    break;
-            case 11:
-                    if (!aiPatrolMarkerReached(pSpr, pXSpr)) return false;
-                    else if (PUSH) condPush(pXCond, OBJ_SPRITE, pXSpr->target);
-                    break;
-            }
-            return true;
-        case 12: // compare spot progress value in %
-            if (!pXSpr->dudeFlag4 || !spriRangeIsFine(pXSpr->target) || sprite[pXSpr->target].type != kMarkerPath) var = 0;
-        else if (!(pXSpr->unused1 & kDudeFlagStealth) || pXSpr->data3 < 0 || pXSpr->data3 > kMaxPatrolSpotValue) var = 0;
-            else var = (kPercFull * pXSpr->data3) / kMaxPatrolSpotValue;
-            return condCmp(var, arg1, arg2, cmpOp);
-        case 15: return getDudeInfo(pSpr->type)->lockOut; // dude allowed to interact with objects?
-    case 16: return condCmp(pXSpr->aiState->stateType, arg1, arg2, cmpOp);
-    case 17: return condCmp(pXSpr->stateTimer, arg1, arg2, cmpOp);
-    case 20: // kDudeModernCustom conditions
-    case 21:
-    case 22:
-    case 23:
-    case 24:
-            switch (pSpr->type) {
-            case kDudeModernCustom:
-            case kDudeModernCustomBurning:
-                switch (cond) {
-                    case 20: // life leech is thrown?
-                        var = genDudeExtra(pSpr)->nLifeLeech;
-                        if (!spriRangeIsFine(var)) return false;
-                        else if (PUSH) condPush(pXCond, OBJ_SPRITE, var);
-                        return true;
-                    case 21: // life leech is destroyed?
-                        var = genDudeExtra(pSpr)->nLifeLeech;
-                        if (!spriRangeIsFine(var) && pSpr->owner == kMaxSprites - 1) return true;
-                        else if (PUSH) condPush(pXCond, OBJ_SPRITE, var);
-                        return false;
-                    case 22: // are required amount of dudes is summoned?
-                        return condCmp(gGenDudeExtra[pSpr->index].slaveCount, arg1, arg2, cmpOp);
-                case 23: // check if dude can...
-                    switch (arg3) {
-                        case 1: return genDudeExtra(pSpr)->canAttack;
-                        case 2: return genDudeExtra(pSpr)->canBurn;
-                        case 3: return genDudeExtra(pSpr)->canDuck;
-                        case 4: return genDudeExtra(pSpr)->canElectrocute;
-                        case 5: return genDudeExtra(pSpr)->canFly;
-                        case 6: return genDudeExtra(pSpr)->canRecoil;
-                        case 7: return genDudeExtra(pSpr)->canSwim;
-                        case 8: return genDudeExtra(pSpr)->canWalk;
-                        default: condError(pXCond, "Invalid argument %d", arg3); break;
-                    }
-                        break;
-                case 24: // compare weapon dispersion
-                    return condCmp(genDudeExtra(pSpr)->baseDispersion, arg1, arg2, cmpOp);
-                }
-            break;
-            default:
-                condError(pXCond, "Dude #%d is not a Custom Dude!", objIndex);
-                return false;
-            }
-    }
-
-    condError(pXCond, "Unexpected condition #%d!", cond);
-    return false;
-}
-
-bool condCheckSprite(XSPRITE* pXCond, int cmpOp, bool PUSH) {
-
-    int var = -1, var3 = -1; PLAYER* pPlayer = NULL;
-    int cond = pXCond->data1 - kCondSpriteBase; int arg1 = pXCond->data2;
-    int arg2 = pXCond->data3; int arg3 = pXCond->data4;
-    
-    int objType = -1; int objIndex = -1;
-    condUnserialize(pXCond->targetX, &objType, &objIndex);
-
-    if (objType != OBJ_SPRITE || !spriRangeIsFine(objIndex))
-        condError(pXCond, "Object #%d (objType: %d) is not a sprite!", cond, objIndex, objType);
-
-    spritetype* pSpr = &sprite[objIndex];
-    XSPRITE* pXSpr = (xspriRangeIsFine(pSpr->extra)) ? &xsprite[pSpr->extra] : NULL;
-    
-    if (cond < (kCondRange >> 1)) {
-        switch (cond) {
-            default: break;
-            case 0: return condCmp((arg3 == 0) ? (pSpr->ang & 2047) : pSpr->ang, arg1, arg2, cmpOp);
-            case 5: return condCmp(pSpr->statnum, arg1, arg2, cmpOp);
-            case 6: return ((pSpr->flags & kHitagRespawn) || pSpr->statnum == kStatRespawn);
-            case 7: return condCmp(spriteGetSlope(pSpr->index), arg1, arg2, cmpOp);
-            case 10: return condCmp(pSpr->clipdist, arg1, arg2, cmpOp);
-            case 15:
-                if (!spriRangeIsFine(pSpr->owner)) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SPRITE, pSpr->owner);
-                return true;
-            case 20: // stays in a sector?
-                if (!sectRangeIsFine(pSpr->sectnum)) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, pSpr->sectnum);
-                return true;
-            case 25:
-                if (arg3 == 1)
-                {
-                    if (arg1 == 0)
-                    {
-                        if ((var = condCmp(xvel[pSpr->index], arg1, arg2, cmpOp)) == true) return var;
-                        if ((var = condCmp(yvel[pSpr->index], arg1, arg2, cmpOp)) == true) return var;
-                        if ((var = condCmp(zvel[pSpr->index], arg1, arg2, cmpOp)) == true) return var;
-                    }
-                    else if (arg1 == 1) return condCmp(xvel[pSpr->index], arg1, arg2, cmpOp);
-                    else if (arg1 == 2) return condCmp(yvel[pSpr->index], arg1, arg2, cmpOp);
-                    else if (arg1 == 3) return condCmp(zvel[pSpr->index], arg1, arg2, cmpOp);
-                }
-                else if (arg1 == 0) return (xvel[pSpr->index] || yvel[pSpr->index] || zvel[pSpr->index]);
-                else if (arg1 == 1) return (xvel[pSpr->index]);
-                else if (arg1 == 2) return (yvel[pSpr->index]);
-                else if (arg1 == 3) return (zvel[pSpr->index]);
-                break;
-            case 30:
-                if (!spriteIsUnderwater(pSpr) && !spriteIsUnderwater(pSpr, true)) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, pSpr->sectnum);
-                return true;
-            case 31: 
-                if (arg1 == -1)
-                {
-                    for (var = 0; var < kDmgMax; var++)
-                    {
-                        if (!nnExtIsImmune(pSpr, arg1, 0))
-                            return false;
-                    }
-
-                    return true;
-                }
-                return nnExtIsImmune(pSpr, arg1, 0);
-            case 35: // hitscan: ceil?
-            case 36: // hitscan: floor?
-            case 37: // hitscan: wall?
-            case 38: // hitscan: sprite?
-                switch (arg1) {
-                    case  0: arg1 = CLIPMASK0 | CLIPMASK1; break;
-                    case  1: arg1 = CLIPMASK0; break;
-                    case  2: arg1 = CLIPMASK1; break;
-                }
-
-                if ((pPlayer = getPlayerById(pSpr->type)) != NULL)
-                    var = HitScan(pSpr, pPlayer->zWeapon, pPlayer->aim.dx, pPlayer->aim.dy, pPlayer->aim.dz, arg1, arg3 << 1);
-                else if (IsDudeSprite(pSpr))
-                    var = HitScan(pSpr, pSpr->z, Cos(pSpr->ang) >> 16, Sin(pSpr->ang) >> 16, gDudeSlope[pSpr->extra], arg1, arg3 << 1);
-                else if ((pSpr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
-                {
-                    var3 = (pSpr->cstat & CSTAT_SPRITE_YFLIP) ? (0x10000 << 1) : -(0x10000 << 1);
-                    var = HitScan(pSpr, pSpr->z, Cos(pSpr->ang) >> 16, Sin(pSpr->ang) >> 16, var3, arg1, arg3 << 1);
-                }
-                else
-                {
-                    var = HitScan(pSpr, pSpr->z, Cos(pSpr->ang) >> 16, Sin(pSpr->ang) >> 16, 0, arg1, arg3 << 1);
-                }
-
-                if (var < 0)
-                    return false;
-
-                switch (cond) {
-                    case 35:
-                        if (var != 1) return false;
-                        else if (PUSH) condPush(pXCond, OBJ_SECTOR, gHitInfo.hitsect);
-                        return true;
-                    case 36:
-                        if (var != 2) return false;
-                        else if (PUSH) condPush(pXCond, OBJ_SECTOR, gHitInfo.hitsect);
-                        return true;
-                    case 37:
-                        if (var != 0 && var != 4) return false;
-                        else if (PUSH) condPush(pXCond, OBJ_WALL, gHitInfo.hitwall);
-                        return true;
-                    case 38:
-                        if (var != 3) return false;
-                        else if (PUSH) condPush(pXCond, OBJ_SPRITE, gHitInfo.hitsprite);
-                        return true;
-                }
-                break;
-            case 45: // this sprite is a target of some dude?
-                for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
-                    if (pSpr->index == nSprite) continue;
-
-                    spritetype* pDude = &sprite[nSprite];
-                    if (IsDudeSprite(pDude) && xspriRangeIsFine(pDude->extra)) {
-                        XSPRITE* pXDude = &xsprite[pDude->extra];
-                        if (pXDude->health <= 0 || pXDude->target != pSpr->index) continue;
-                        else if (PUSH) condPush(pXCond, OBJ_SPRITE, nSprite);
-                        return true;
-                    }
-                }
-                return false;
-        }
-    } else if (pXSpr) {
-        switch (cond) {
-            default: break;
-            case 50: // compare hp (in %)
-                if (IsDudeSprite(pSpr)) var = (pXSpr->sysData2 > 0) ? ClipRange(pXSpr->sysData2 << 4, 1, 65535) : getDudeInfo(pSpr->type)->startHealth << 4;
-                else if (pSpr->type == kThingBloodChunks) return condCmp(0, arg1, arg2, cmpOp);
-                else if (pSpr->type >= kThingBase && pSpr->type < kThingMax) var = thingInfo[pSpr->type - kThingBase].startHealth << 4;
-                return condCmp((kPercFull * pXSpr->health) / ClipLow(var, 1), arg1, arg2, cmpOp);
-            case 55: // touching ceil of sector?
-                if ((gSpriteHit[pSpr->extra].ceilhit & 0xc000) != 0x4000) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, gSpriteHit[pSpr->extra].ceilhit & 0x3fff);
-                return true;
-            case 56: // touching floor of sector?
-                if ((gSpriteHit[pSpr->extra].florhit & 0xc000) != 0x4000) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SECTOR, gSpriteHit[pSpr->extra].florhit & 0x3fff);
-                return true;
-            case 57: // touching walls of sector?
-                if ((gSpriteHit[pSpr->extra].hit & 0xc000) != 0x8000) return false;
-                else if (PUSH) condPush(pXCond, OBJ_WALL, gSpriteHit[pSpr->extra].hit & 0x3fff);
-                return true;
-            case 58: // touching another sprite?
-                switch (arg3) {
-                    case 0:
-                    case 1:
-                        if ((gSpriteHit[pSpr->extra].florhit & 0xc000) == 0xc000) var = gSpriteHit[pSpr->extra].florhit & 0x3fff;
-                        if (arg3 || var >= 0) break;
-                        fallthrough__;
-                    case 2:
-                        if ((gSpriteHit[pSpr->extra].hit & 0xc000) == 0xc000) var = gSpriteHit[pSpr->extra].hit & 0x3fff;
-                        if (arg3 || var >= 0) break;
-                        fallthrough__;
-                    case 3:
-                        if ((gSpriteHit[pSpr->extra].ceilhit & 0xc000) == 0xc000) var = gSpriteHit[pSpr->extra].ceilhit & 0x3fff;
-                        break;
-                }
-                
-                // check if something touching this sprite
-                if (var < 0 && sectRangeIsFine(pSpr->sectnum))
-                {
-                    int i;
-                    for (i = headspritesect[pSpr->sectnum]; i >= 0; i = nextspritesect[i])
-                    {
-                        switch (arg3) {
-                            case 0:
-                            case 1:
-                                if ((gSpriteHit[i].ceilhit & 0xc000) == 0xc000 && (gSpriteHit[i].ceilhit & 0x3fff) == objIndex) var = i;
-                                if (arg3 || var >= 0) break;
-                                fallthrough__;
-                            case 2:
-                                if ((gSpriteHit[i].hit & 0xc000) == 0xc000 && (gSpriteHit[i].hit & 0x3fff) == objIndex) var = i;
-                                if (arg3 || var >= 0) break;
-                                fallthrough__;
-                            case 3:
-                                if ((gSpriteHit[i].florhit & 0xc000) == 0xc000 && (gSpriteHit[i].florhit & 0x3fff) == objIndex) var = i;
-                                break;
-                        }
-                    }
-                }
-                if (var < 0) return false;
-                else if (PUSH) condPush(pXCond, OBJ_SPRITE, var);
-                return true;
-            case 65: // compare burn time (in %)
-                var = (IsDudeSprite(pSpr)) ? 2400 : 1200;
-                if (!condCmp((kPercFull * pXSpr->burnTime) / var, arg1, arg2, cmpOp)) return false;
-                else if (PUSH && spriRangeIsFine(pXSpr->burnSource)) condPush(pXCond, OBJ_SPRITE, pXSpr->burnSource);
-                return true;
-            case 66: // any flares stuck in this sprite?
-                for (int nSprite = headspritestat[kStatFlare]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
-                    spritetype* pFlare = &sprite[nSprite];
-                    if (!xspriRangeIsFine(pFlare->extra) || (pFlare->flags & kHitagFree))
-                        continue;
-                    
-                    XSPRITE* pXFlare = &xsprite[pFlare->extra];
-                    if (!spriRangeIsFine(pXFlare->target) || pXFlare->target != objIndex) continue;
-                    else if (PUSH) condPush(pXCond, OBJ_SPRITE, nSprite);
-                    return true;
-                }
-                return false;
-            case 70:
-                return condCmp(getSpriteMassBySize(pSpr), arg1, arg2, cmpOp); // mass of the sprite in a range?
-        }
-    } else {
-        switch (cond) {
-            default: return false;
-            case 50:
-            case 65:
-            case 70:
-                return condCmp(0, arg1, arg2, cmpOp);
-        }
-    }
-
-    condError(pXCond, "Unexpected condition id (%d)!", cond);
-    return false;
-}
-
-// this updates index of object in all conditions
-void condUpdateObjectIndex(int objType, int oldIndex, int newIndex) {
-
-    // update index in tracking conditions first
-    for (int i = 0; i < gTrackingCondsCount; i++) {
-
-        TRCONDITION* pCond = &gCondition[i];
-        for (int k = 0; k < pCond->length; k++) {
-            if (pCond->obj[k].type != objType || pCond->obj[k].index != oldIndex) continue;
-            pCond->obj[k].index = newIndex;
-            break;
-        }
-
-    }
-
-    int oldSerial = condSerialize(objType, oldIndex);
-    int newSerial = condSerialize(objType, newIndex);
-
-    // then update serials
-    for (int nSpr = headspritestat[kStatModernCondition]; nSpr >= 0; nSpr = nextspritestat[nSpr]) {
-        
-        XSPRITE* pXCond = &xsprite[sprite[nSpr].extra];
-        if (pXCond->targetX == oldSerial) pXCond->targetX = newSerial;
-        if (pXCond->targetY == oldSerial) pXCond->targetY = newSerial;
-
-    }
-
-    return;
-}
 
 bool valueIsBetween(int val, int min, int max) {
     return (val > min && val < max);
@@ -5178,9 +4090,24 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
         switch (pSprite->type) {
             case kModernCondition:
             case kModernConditionFalse:
-                pXSprite->restState = 0;
-                if (pXSprite->busyTime <= 0) break;
-                else if (!pXSprite->locked) pXSprite->busy = 0;
+            #ifdef CONDITIONS_USE_BUBBLE_ACTION
+                switch (event.cmd)
+                {
+                    case kCmdLock:
+                    case kCmdUnlock:
+                        conditionsBubble(pXSprite, conditionsSetIsLocked, pXSprite->locked); // same action for whole branch
+                        break;
+                    default:
+                        conditionsSetIsLocked(pXSprite, pXSprite->locked);
+                        break;
+                }
+            #else
+                conditionsSetIsLocked(pXSprite, pXSprite->locked);
+            #endif
+                break;
+            case kModernEffectSpawner:
+                if (!pXSprite->locked) break;
+                killEffectGenCallbacks(pXSprite);
                 break;
         }
        
@@ -5341,7 +4268,12 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
         case kModernEffectSpawner:
             switch (event.cmd) {
             case kCmdOff:
-                if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                if (pXSprite->state == 1)
+                {
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    if (pSprite->type == kModernEffectSpawner)
+                        killEffectGenCallbacks(pXSprite);
+                }
                 break;
             case kCmdOn:
                 evKill(nSprite, 3, causerID); // queue overflow protect
@@ -5810,98 +4742,6 @@ void useSequentialTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState, int cause
         SetSpriteState(pSource->index, pXSource, pXSource->state ^ 1, causerID);
         //evSend(pSource->index, OBJ_SPRITE, pXSource->txID, (COMMAND_ID)pXSource->command);
 
-}
-
-int useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT event) {
-
-    int objType = event.type; int objIndex = event.index;
-    bool srcIsCondition = false;
-    if (objType == OBJ_SPRITE && objIndex != pSource->index)
-        srcIsCondition = (sprite[objIndex].type == kModernCondition || sprite[objIndex].type == kModernConditionFalse);
-
-    // if it's a tracking condition, it must ignore all the commands sent from objects
-    if (pXSource->busyTime > 0 && event.funcID != kCallbackMax) return -1;
-    else if (!srcIsCondition) { // save object serials in the stack and make copy of initial object
-
-        pXSource->targetX = pXSource->targetY = condSerialize(objType, objIndex);
-
-    } else { // or grab serials of objects from previous conditions
-
-        pXSource->targetX = xsprite[sprite[objIndex].extra].targetX;
-        pXSource->targetY = xsprite[sprite[objIndex].extra].targetY;
-
-    }
-    
-    int retn = 0;
-    int cond = pXSource->data1; bool ok = false; bool RVRS = (pSource->type == kModernConditionFalse);
-    bool RSET = (pXSource->command == kCmdNumberic + 36); bool PUSH = (pXSource->command == kCmdNumberic);
-    int comOp = pSource->cstat; // comparison operator
-
-    if (pXSource->restState == 0)
-    {
-        if (cond == 0) ok = true; // dummy
-        else if (cond >= kCondGameBase && cond < kCondGameMax) ok = condCheckGame(pXSource, event, comOp, PUSH);
-        else if (cond >= kCondMixedBase && cond < kCondMixedMax) ok = condCheckMixed(pXSource, event, comOp, PUSH);
-        else if (cond >= kCondWallBase && cond < kCondWallMax) ok = condCheckWall(pXSource, comOp, PUSH);
-        else if (cond >= kCondSectorBase && cond < kCondSectorMax) ok = condCheckSector(pXSource, comOp, PUSH);
-        else if (cond >= kCondPlayerBase && cond < kCondPlayerMax) ok = condCheckPlayer(pXSource, comOp, PUSH);
-        else if (cond >= kCondDudeBase && cond < kCondDudeMax) ok = condCheckDude(pXSource, comOp, PUSH);
-        else if (cond >= kCondSpriteBase && cond < kCondSpriteMax) ok = condCheckSprite(pXSource, comOp, PUSH);
-        else condError(pXSource,"Unexpected condition id %d!", cond);
-
-        pXSource->state = (ok ^ RVRS);
-        
-        if (pXSource->waitTime > 0 && pXSource->state > 0)
-        {
-            pXSource->restState = 1;
-            evKill(pSource->index, OBJ_SPRITE); // it's probably fine to use standard evKill here
-            evPost(pSource->index, OBJ_SPRITE, (pXSource->waitTime * 120) / 10, kCmdRepeat, event.causer);
-            return -1;
-        }
-    }
-    else if (event.cmd == kCmdRepeat)
-    {
-        pXSource->restState = 0;
-    }
-    else
-    {
-        return -1;
-    }
-
-    retn = pXSource->state;
-    if (pXSource->state)
-    {
-        pXSource->isTriggered = pXSource->triggerOnce;
-        
-        if (RSET)
-            condRestore(pXSource); // reset focus to the initial object
-
-        // send command to rx bucket
-        if (pXSource->txID)
-        {
-            condUnserialize(pXSource->targetX, &objType, &objIndex);
-            evSend(pSource->index, OBJ_SPRITE, pXSource->txID, (COMMAND_ID)pXSource->command, (objType == OBJ_SPRITE) ? objIndex : kCauserGame);
-        }
-
-        if (pSource->flags)
-        {
-            // send it for object currently in the focus
-            if (pSource->flags & kModernTypeFlag1)
-            {
-                condUnserialize(pXSource->targetX, &objType, &objIndex);
-                nnExtTriggerObject(objType, objIndex, pXSource->command, pSource->index);
-            }
-
-            // send it for initial object
-            if ((pSource->flags & kModernTypeFlag2) && (pXSource->targetX != pXSource->targetY || !(pSource->hitag & kModernTypeFlag1)))
-            {
-                condUnserialize(pXSource->targetY, &objType, &objIndex);
-                nnExtTriggerObject(objType, objIndex, pXSource->command, pSource->index);
-            }
-        }
-    }
-
-    return retn;
 }
 
 void useRandomItemGen(spritetype* pSource, XSPRITE* pXSource) {
@@ -7603,6 +6443,7 @@ int aiPatrolSearchTargets(spritetype* pSprite, XSPRITE* pXSprite) {
     nnExResetPatrolBonkles();
     int i, j, f, mod, x, y, z, dx, dy, nDist, eyeAboveZ, target = -1, sndCnt = 0, seeDist, hearDist, feelDist, seeChance, hearChance;
     bool stealth = (pXSprite->unused1 & kDudeFlagStealth); bool blind = (pXSprite->dudeGuard); bool deaf = (pXSprite->dudeDeaf);
+    int nRandomSkill = Random(gGameOptions.nDifficulty);
 
     // search for player targets
     for (i = connecthead; i != -1; i = connectpoint2[i]) {
@@ -7710,7 +6551,7 @@ int aiPatrolSearchTargets(spritetype* pSprite, XSPRITE* pXSprite) {
                 }
 
                 f = ClipLow((hearDist - ((nDist1 < hearDist) ? nDist1 : nDist2)) / 8, 0);
-                hearChance += mulscale8(pBonk->vol, f) + Random(gGameOptions.nDifficulty);
+                hearChance += mulscale8(pBonk->vol, f) + nRandomSkill;
                 if (hearChance >= kMaxPatrolSpotValue)
                     break;
 
@@ -8457,6 +7298,59 @@ int getVelocityAngle(spritetype* pSpr)
     return getangle(xvel[pSpr->index] >> 12, yvel[pSpr->index] >> 12);
 }
 
+void killEffectGenCallbacks(int oId, int oType = OBJ_SPRITE)
+{
+    register int l = sizeof(gEffectGenCallbacks) / sizeof(gEffectGenCallbacks[0]);
+    while (--l >= 0)
+        evKill(oId, oType, (CALLBACK_ID)gEffectGenCallbacks[l]);
+}
+
+void killEffectGenCallbacks(XSPRITE* pXSource)
+{
+    register int i, j;
+    if (pXSource->data2 < kEffectGenCallbackBase)
+        return;
+
+    switch (pXSource->txID)
+    {
+        case kChannelZero:  // self 
+            killEffectGenCallbacks(pXSource->reference);
+            break;
+        case kChannelAllPlayers: // player sprites
+            for (i = connecthead; i >= 0; i = connectpoint2[i])
+            {
+                if (gPlayer[i].nSprite >= 0)
+                    killEffectGenCallbacks(gPlayer[i].nSprite);
+            }
+            break;
+        case kChannelEventCauser: // worst case...
+            for (i = 0; i < numsectors; i++)
+            {
+                for (j = headspritesect[i]; j >= 0; j = nextspritesect[j])
+                    killEffectGenCallbacks(j);
+            }
+            break;
+        default:
+            if (pXSource->txID >= kChannelUser) // TX ID scope
+            {
+                for (i = bucketHead[pXSource->txID]; i < bucketHead[pXSource->txID + 1]; i++)
+                {
+                    if (rxBucket[i].type == OBJ_SPRITE)
+                        killEffectGenCallbacks(rxBucket[i].index);
+                }
+            }
+            else if (rngok(pXSource->txID, kChannelPlayer0, kChannelPlayer0 + kMaxPlayers - 1))
+            {
+                // player sprites
+                PLAYER* pPlayer = getPlayerById(pXSource->txID - kChannelPlayer0);
+                if (pPlayer && pPlayer->nSprite >= 0)
+                    killEffectGenCallbacks(pPlayer->nSprite);
+            }
+            break;
+
+    }
+}
+
 bool xsprIsFine(spritetype* pSpr)
 {
     if (pSpr && xspriRangeIsFine(pSpr->extra) && !(pSpr->flags & kHitagFree))
@@ -8467,6 +7361,10 @@ bool xsprIsFine(spritetype* pSpr)
 
     return false;
 }
+
+bool isUnderwaterSector(XSECTOR* pXSect) { return pXSect->Underwater; }
+bool isUnderwaterSector(sectortype* pSect) { return (pSect->extra > 0 && isUnderwaterSector(&xsector[pSect->extra])); }
+bool isUnderwaterSector(int nSector) { return isUnderwaterSector(&sector[nSector]); }
 
 bool isMovableSector(int nType)
 {
@@ -8536,6 +7434,16 @@ int getSpritesNearWalls(int nSrcSect, int* spriOut, int nMax, int nDist)
     
     Bfree(skip);
     return c;
+}
+
+int getDigitFromValue(int nVal, int nOffs)
+{
+    char t[16];
+    int l = Bsprintf(t, "%d", abs(nVal));
+    if (nOffs < l && rngok(t[nOffs], 48, 58))
+        return t[nOffs] - 48;
+
+    return -1;
 }
 
 class nnExtLoadSave : public LoadSave

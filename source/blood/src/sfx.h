@@ -41,6 +41,7 @@ struct BONKLE
 
 extern BONKLE Bonkle[256];
 extern BONKLE* BonkleCache[256];
+extern int nBonkles;
 
 void sfxInit(void);
 void sfxTerm(void);

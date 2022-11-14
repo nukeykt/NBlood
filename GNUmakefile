@@ -885,7 +885,8 @@ blood_game_objs := \
 	weapon.cpp \
 
 ifeq ($(NOONE_EXTENSIONS),1)
-    blood_game_objs += nnexts.cpp
+    blood_game_objs += nnextsif.cpp
+	blood_game_objs += nnexts.cpp
     blood_game_objs += aiunicult.cpp
 endif
 

@@ -53,6 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "messages.h"
 #ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#include "nnextsif.h"
 #endif
 
 PLAYER gPlayer[kMaxPlayers];
@@ -789,18 +790,19 @@ void playerStart(int nPlayer, int bNewLevel)
     playerQavSceneReset(pPlayer); // reset qav scene
     
     // assign or update player's sprite index for conditions
-    if (gModernMap) {
-
-        for (int nSprite = headspritestat[kStatModernPlayerLinker]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+    if (gModernMap)
+    {
+        for (int nSprite = headspritestat[kStatModernPlayerLinker]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+        {
             XSPRITE* pXCtrl = &xsprite[sprite[nSprite].extra];
-            if (pXCtrl->data1 == pPlayer->nPlayer + 1) {
+            if (!pXCtrl->data1 || pXCtrl->data1 == pPlayer->nPlayer + 1)
+            {
                 int nSpriteOld = pXCtrl->sysData1;
                 trPlayerCtrlLink(pXCtrl, pPlayer, (nSpriteOld < 0) ? true : false);
                 if (nSpriteOld > 0)
-                    condUpdateObjectIndex(OBJ_SPRITE, nSpriteOld, pXCtrl->sysData1);
+                    conditionsUpdateIndex(OBJ_SPRITE, nSpriteOld, pXCtrl->sysData1);
             }
         }
-
     }
 
     #endif

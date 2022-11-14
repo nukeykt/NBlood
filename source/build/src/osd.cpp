@@ -767,6 +767,9 @@ static int osdfunc_toggle(osdcmdptr_t parm)
 
 void mi_log(char *msg, void *arg)
 {
+    if (!msg || msg[0] == '\n')
+        return;
+
     UNREFERENCED_PARAMETER(arg);
     int len = Bstrlen(msg);
     

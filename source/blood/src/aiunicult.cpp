@@ -1122,62 +1122,59 @@ void aiGenDudeNewState(spritetype* pSprite, AISTATE* pAIState) {
     
 bool playGenDudeSound(spritetype* pSprite, int mode) {
     
-    if (mode < kGenDudeSndTargetSpot || mode >= kGenDudeSndMax) return false;
-    GENDUDESND* sndInfo =& gCustomDudeSnd[mode]; bool gotSnd = false;
+    if (!rngok(mode, kGenDudeSndTargetSpot, kGenDudeSndMax) || !rngok(pSprite->extra, 1, kMaxXSprites))
+        return false;
+
+    GENDUDESND* sndInfo =& gCustomDudeSnd[mode];
     short sndStartId = xsprite[pSprite->extra].sysData1; int rand = sndInfo->randomRange;
     int sndId = (sndStartId <= 0) ? sndInfo->defaultSndId : sndStartId + sndInfo->sndIdOffset;
     GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
 
-    // let's check if there same sounds already played by other dudes
-    // so we won't get a lot of annoying screams in the same time and ensure sound played in it's full length (if not interruptable)
-    if (pExtra->sndPlaying && !sndInfo->interruptable) {
-        for (int i = 0; i < 256; i++) {
-            if (Bonkle[i].sfxId <= 0) continue;
-            for (int a = 0; a < rand; a++) {
-                if (sndId + a == Bonkle[i].sfxId) {
-                    if (Bonkle[i].lChan <= 0) {
-                        pExtra->sndPlaying = false;
-                        break;
-                    }
-                    return true;
-                }
-            }
-        }
-
-        pExtra->sndPlaying = false;
-        
-    }
-
     if (sndId < 0) return false;
-    else if (sndStartId <= 0) { sndId += Random(rand); gotSnd = true; }
-    else {
-
+    else if (sndStartId <= 0) sndId += Random(rand);
+    else
+    {
         // Let's try to get random snd
         int maxRetries = 5;
-        while (maxRetries-- > 0) {
+        while (--maxRetries > 0)
+        {
             int random = Random(rand);
             if (!gSoundRes.Lookup(sndId + random, "SFX")) continue;
             sndId = sndId + random;
-            gotSnd = true;
             break;
         }
 
         // If no success in getting random snd, get first existing one
-        if (gotSnd == false) {
+        if (maxRetries <= 0)
+        {
             int maxSndId = sndId + rand;
-            while (sndId++ < maxSndId) {
-                if (!gSoundRes.Lookup(sndId, "SFX")) continue;
-                gotSnd = true;
-                break;
+            while (sndId < maxSndId && !gSoundRes.Lookup(sndId++, "SFX"));
+        }
+    }
+    
+    // let's check if there same sounds already played by other dudes
+    // so we won't get a lot of annoying screams in the same time and
+    // ensure sound played in it's full length (if not interruptable)
+    if (pExtra->sndPlaying && !sndInfo->interruptable)
+    {
+        register int i = nBonkles;
+        while(--i >= 0)
+        {
+            BONKLE* pBonk = &Bonkle[i];
+            if (pBonk->sfxId == sndId)
+            {
+                if (!pBonk->hSnd)
+                    break;
+
+                return true;
             }
         }
 
+        pExtra->sndPlaying = false;
     }
 
-    if (gotSnd == false) return false;
-    else if (sndInfo->aiPlaySound) aiPlay3DSound(pSprite, sndId, AI_SFX_PRIORITY_2, -1);
+    if (sndInfo->aiPlaySound) aiPlay3DSound(pSprite, sndId, AI_SFX_PRIORITY_2, -1);
     else sfxPlay3DSound(pSprite, sndId, -1, 0);
-    
     pExtra->sndPlaying = true;
     return true;
 }
