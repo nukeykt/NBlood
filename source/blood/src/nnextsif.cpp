@@ -40,8 +40,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 #include "nnextsif.h"
 
-#define LENGTH(x) 					        (sizeof(x) / sizeof(x[0]))
-#define EVTIME2TICKS(x)                     ((x * 120) / 10)
 #define kSerialStep					        100000
 
 #define kPushRange                          3
