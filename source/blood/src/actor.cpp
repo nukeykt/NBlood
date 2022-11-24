@@ -5819,44 +5819,62 @@ void actProcessSprites(void)
         }
 
         #ifdef NOONE_EXTENSIONS
-        if (pXSprite->data1 != 0) {
-            
-            // add impulse for sprites from physics list
-            if (gPhysSpritesCount > 0 && pExplodeInfo->dmgType != 0) {
-                for (int i = 0; i < gPhysSpritesCount; i++) {
-                    if (gPhysSpritesList[i] == -1) continue;
-                    else if (sprite[gPhysSpritesList[i]].sectnum < 0 || (sprite[gPhysSpritesList[i]].flags & kHitagFree) != 0)
-                        continue;
+        if (gModernMap && pXSprite->data1)
+        {
+            IDLIST* pList;  int32_t len;
+            int32_t* pDb; spritetype* pSpr;
 
-                    spritetype* pDebris = &sprite[gPhysSpritesList[i]];
-                    if (!TestBitString(sectmap, pDebris->sectnum) || !CheckProximity(pDebris, x, y, z, nSector, radius)) continue;
-                    else debrisConcuss(nOwner, i, x, y, z, pExplodeInfo->dmgType);
+            if (pExplodeInfo->dmgType != 0)
+            {
+                pList = &gPhysSpritesList;
+                pDb = pList->Last(); len = pList->Length();
+                
+                // add impulse for sprites from physics list
+                while (--len >= 0)
+                {
+                    pSpr = &sprite[*pDb];
+                    if (!(pSpr->flags & kHitagFree))
+                    {
+                        if (!isOnRespawn(pSpr) && TestBitString(sectmap, pSpr->sectnum) && CheckProximity(pSpr, x, y, z, nSector, radius))
+                            debrisConcuss(nOwner, pSpr->index, x, y, z, pExplodeInfo->dmgType);
+
+                        pDb--;
+                        continue;
+                    }
                 }
             }
+
+            
+            pList = &gImpactSpritesList;
+            pDb = pList->Last(); len = pList->Length();
 
             // trigger sprites from impact list
-            if (gImpactSpritesCount > 0) {
-                for (int i = 0; i < gImpactSpritesCount; i++) {
-                    if (gImpactSpritesList[i] == -1) continue;
-                    else if (sprite[gImpactSpritesList[i]].sectnum < 0 || (sprite[gImpactSpritesList[i]].flags & kHitagFree) != 0)
+            while (--len >= 0)
+            {
+                pSpr = &sprite[*pDb];
+                if (!(pSpr->flags & kHitagFree))
+                {
+                    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+                    if (pXSpr->Impact && !pXSpr->isTriggered)
+                    {
+                        if (!isOnRespawn(pSpr) && TestBitString(sectmap, pSpr->sectnum) && CheckProximity(pSpr, x, y, z, nSector, radius))
+                            trTriggerSprite(pSpr->index, pXSpr, kCmdSpriteImpact, (nOwner >= 0) ? nOwner : nSprite);
+                        
+                        pDb--;
                         continue;
-
-                    spritetype* pImpact = &sprite[gImpactSpritesList[i]];
-                    if (pImpact->extra <= 0)
-                        continue;
-                    XSPRITE* pXImpact = &xsprite[pImpact->extra];
-                    if (/*pXImpact->state == pXImpact->restState ||*/ !TestBitString(sectmap, pImpact->sectnum) || !CheckProximity(pImpact, x, y, z, nSector, radius))
-                        continue;
-                    
-                    trTriggerSprite(pImpact->index, pXImpact, kCmdSpriteImpact, (nOwner >= 0) ? nOwner : nSprite);
+                    }
                 }
-            }
 
+                // remove and refresh ptr!
+                pDb = pList->Remove(*pDb);
+            }
         }
         
-        if (!gModernMap || !(pSprite->flags & kModernTypeFlag1)) {
-            // if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
-            // via sprite statnum 2.
+        if (!gModernMap || !(pSprite->flags & kModernTypeFlag1))
+        {
+            // do not remove explosion.
+            // can be useful when designer wants put explosion
+            // generator in map manually via sprite statnum 2.
             pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
             pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
             pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
@@ -6781,35 +6799,31 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             }
             #ifdef NOONE_EXTENSIONS
             // add impulse for sprites from physics list
-            if (gPhysSpritesCount > 0 && pVectorData->impulse) {
-                
-                if (xspriRangeIsFine(pSprite->extra)) {
-                    
-                    XSPRITE* pXSprite = &xsprite[pSprite->extra];
-                    if (pXSprite->physAttr & kPhysDebrisVector) {
-                        
+            if (gPhysSpritesList.Length() && pVectorData->impulse && xspriRangeIsFine(pSprite->extra))
+            {
+                XSPRITE* pXSprite = &xsprite[pSprite->extra];
+                if (pXSprite->physAttr & kPhysDebrisVector)
+                {
                     int impulse = divscale6(pVectorData->impulse, ClipLow(gSpriteMass[pSprite->extra].mass, 10));
                     xvel[nSprite] += mulscale16(a4, impulse);
                     yvel[nSprite] += mulscale16(a5, impulse);
                     zvel[nSprite] += mulscale16(a6, impulse);
 
-                    if (pVectorData->burnTime != 0) {
-                        if (!xsprite[nXSprite].burnTime) evPost(nSprite, 3, 0, kCallbackFXFlameLick);
-                        actBurnSprite(actSpriteIdToOwnerId(nShooter), &xsprite[nXSprite], pVectorData->burnTime);
+                    if (pVectorData->burnTime != 0)
+                    {
+                        if (!pXSprite->burnTime)
+                            evPost(nSprite, 3, 0, kCallbackFXFlameLick);
+
+                        actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->burnTime);
                     }
 
-                        if (pSprite->type >= kThingBase && pSprite->type < kThingMax) {
-                            pSprite->statnum = kStatThing; // temporary change statnum property
-                            actDamageSprite(nShooter, pSprite, pVectorData->dmgType, pVectorData->dmg << 4);
-                            pSprite->statnum = kStatDecoration; // return statnum property back
+                    if (IsThingSprite(pSprite))
+                    {
+                        pSprite->statnum = kStatThing; // temporary change statnum property
+                        actDamageSprite(nShooter, pSprite, pVectorData->dmgType, pVectorData->dmg << 4);
+                        pSprite->statnum = kStatDecoration; // return statnum property back
+                    }
                 }
-
-            }
-
-
-                }
-
-
             }
             #endif
             break;
@@ -7005,11 +7019,47 @@ void actPostProcess(void)
 
 void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    UNREFERENCED_PARAMETER(pXSprite);
+    //UNREFERENCED_PARAMETER(pXSprite);
     pSprite->flags &= ~2;
     int nXSprite = pSprite->extra;
     pSprite->z -= 4 << 8;
     int nSurface = tileGetSurfType(gSpriteHit[nXSprite].florhit);
+ 
+#ifdef NOONE_EXTENSIONS
+    if (gModernMap)
+    {
+        XSPRITE* pXOwner = pXSprite; // so data2 info will be taken from current xsprite
+        if (spriRangeIsFine(pSprite->owner))
+        {
+            spritetype* pOwner = &sprite[pSprite->owner];
+            if (xspriRangeIsFine(pOwner->extra))
+                pXOwner = &xsprite[pOwner->extra]; // or from generator sprite
+        }
+
+        switch (pSprite->type) {
+        case kThingDripWater:
+            switch (nSurface) {
+                case kSurfWater:
+                    seqSpawn(6, 3, nXSprite, -1);
+                    if (pXOwner->data2 >= 0)
+                        sfxPlay3DSound(pSprite, (!pXOwner->data2) ? 356 : pXOwner->data2, -1, 0);
+                    return;
+                default:
+                    seqSpawn(7, 3, nXSprite, -1);
+                    if (pXOwner->data2 >= 0)
+                        sfxPlay3DSound(pSprite, (!pXOwner->data2) ? 354 : pXOwner->data2, -1, 0);
+                    return;
+            }
+            return;
+        case kThingDripBlood:
+            seqSpawn(8, 3, nXSprite, -1);
+            if (pXOwner->data2 >= 0)
+                sfxPlay3DSound(pSprite, (!pXOwner->data2) ? 354 : pXOwner->data2, -1, 0);
+            return;
+        }
+    }
+#endif
+
     switch (pSprite->type) {
         case kThingDripWater:
             switch (nSurface) {

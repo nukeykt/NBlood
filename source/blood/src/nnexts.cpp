@@ -47,6 +47,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sfx.h"
 #include "seq.h"
 #include "ai.h"
+#include "gib.h"
 
 #define kMaxPatrolFoundSounds 256 //sizeof(Bonkle) / sizeof(Bonkle[0])
 PATROL_FOUND_SOUNDS patrolBonkles[kMaxPatrolFoundSounds];
@@ -54,14 +55,11 @@ PATROL_FOUND_SOUNDS patrolBonkles[kMaxPatrolFoundSounds];
 bool gAllowTrueRandom = false;
 bool gEventRedirectsUsed = false;
 SPRITEMASS gSpriteMass[];   // cache for getSpriteMassBySize();
-short gProxySpritesList[];  // list of additional sprites which can be triggered by Proximity
-short gProxySpritesCount;   // current count
-short gSightSpritesList[];  // list of additional sprites which can be triggered by Sight
-short gSightSpritesCount;   // current count
-short gPhysSpritesList[];   // list of additional sprites which can be affected by physics
-short gPhysSpritesCount;    // current count
-short gImpactSpritesList[];
-short gImpactSpritesCount;
+
+IDLIST gProxySpritesList(false);
+IDLIST gSightSpritesList(false);
+IDLIST gImpactSpritesList(false);
+IDLIST gPhysSpritesList(false);
 int gVisibleSpr = 0;
 
 short gEffectGenCallbacks[] = {
@@ -417,6 +415,230 @@ void nnExResetPatrolBonkles() {
 
 }
 
+char idListProcessProxySprite(int32_t nSpr)
+{
+    register int i, okDist;
+
+    spritetype* pSpr = &sprite[nSpr];
+    if (pSpr->extra <= 0 || (pSpr->flags & kHitagFree)) return kListREMOVE;
+    else if (isOnRespawn(pSpr))
+        return kListSKIP; // don't process
+
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+    if (pXSpr->locked) return kListSKIP; // don't process
+    else if (pXSpr->isTriggered || !pXSpr->Proximity) return kListREMOVE; // remove from the list
+    else if (!pXSpr->Interrutable && pXSpr->state != pXSpr->restState) // just time out
+        return kListSKIP;
+
+    okDist = (pSpr->statnum == kStatDude) ? 96 : ClipLow(pSpr->clipdist * 3, 32);
+
+    // only check players
+    if (pXSpr->DudeLockout)
+    {
+        PLAYER* pPlayer;
+        for (i = connecthead; i >= 0; i = connectpoint2[i])
+        {
+            pPlayer = &gPlayer[i];
+            if (!xsprIsFine(pPlayer->pSprite) || pPlayer->pXSprite->health <= 0)
+                continue;
+
+            if (CheckProximity(pPlayer->pSprite, pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, okDist))
+                trTriggerSprite(nSpr, pXSpr, kCmdSpriteProximity, pPlayer->nSprite);
+        }
+    }
+    // check all dudes
+    else
+    {
+        spritetype* pDude;
+        for (i = headspritestat[kStatDude]; i >= 0; i = nextspritestat[i])
+        {
+            pDude = &sprite[i];
+            if (!xsprIsFine(pDude) || xsprite[sprite[i].extra].health <= 0) continue;
+            else if (CheckProximity(pDude, pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, okDist))
+                trTriggerSprite(nSpr, pXSpr, kCmdSpriteProximity, i);
+        }
+    }
+    
+    return kListOK;
+}
+
+char idListProcessSightSprite(int32_t nSpr)
+{
+    static int z[3];
+    register int i, j;
+    spritetype* pSpr = &sprite[nSpr];
+    PLAYER* pPlayer; spritetype* pPlaySpr;
+
+    if (pSpr->extra <= 0 || (pSpr->flags & kHitagFree)) return kListREMOVE;
+    else if (isOnRespawn(pSpr))
+        return kListSKIP; // don't process
+
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+    if (pXSpr->locked)  return kListSKIP; // don't process
+    else if (pXSpr->isTriggered || (!pXSpr->Sight && !pXSpr->unused3)) return kListREMOVE; // remove from the list
+    else if (!pXSpr->Interrutable && pXSpr->state != pXSpr->restState)
+        return kListSKIP; // just time out
+
+    // sprite is drawn for one of players
+    if ((pXSpr->unused3 & kTriggerSpriteScreen) && gGameOptions.nGameType == kGameTypeSinglePlayer && TestBitString(show2dsprite, nSpr))
+    {
+        pPlayer = gMe;
+        if (xsprIsFine(pPlayer->pSprite) && pPlayer->pXSprite->health)
+        {
+            trTriggerSprite(nSpr, pXSpr, kCmdSpriteSight, pPlayer->nSprite);
+            ClearBitString(show2dsprite, nSpr);
+        }
+
+        return kListOK;
+    }
+
+    // check players
+    for (i = connecthead; i >= 0; i = connectpoint2[i])
+    {
+        pPlayer = &gPlayer[i];
+        if (!xsprIsFine(pPlayer->pSprite) || pPlayer->pXSprite->health <= 0)
+            continue;
+
+        pPlaySpr = pPlayer->pSprite; z[0] = pPlaySpr->z; GetSpriteExtents(pPlaySpr, &z[1], &z[2]);
+        for (j = 0; j < 3; j++)
+        {
+            if (cansee(pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, pPlaySpr->x, pPlaySpr->y, z[j], pPlaySpr->sectnum))
+            {
+                if (pXSpr->Sight)
+                {
+                    trTriggerSprite(nSpr, pXSpr, kCmdSpriteSight, pPlayer->nSprite);
+                }
+                else if (pXSpr->unused3 & kTriggerSpriteAim)
+                {
+                    bool vector = (pSpr->cstat & CSTAT_SPRITE_BLOCK_HITSCAN);
+                    if (!vector)
+                        pSpr->cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
+
+                    HitScan(pPlaySpr, pPlayer->zWeapon, pPlayer->aim.dx, pPlayer->aim.dy, pPlayer->aim.dz, CLIPMASK0 | CLIPMASK1, 0);
+                    if (gHitInfo.hitsprite == nSpr)
+                        trTriggerSprite(nSpr, pXSpr, kCmdSpriteSight, pPlayer->nSprite);
+
+                    if (!vector)
+                        pSpr->cstat &= ~CSTAT_SPRITE_BLOCK_HITSCAN;
+                }
+
+                break;
+            }
+        }
+    }
+
+    return kListOK;
+}
+
+char idListProcessPhysSprite(int32_t nSpr)
+{
+    spritetype* pSpr = &sprite[nSpr];
+    if (pSpr->extra <= 0 || (pSpr->flags & kHitagFree))
+        return kListREMOVE;
+
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+    if (!(pXSpr->physAttr & kPhysMove) && !(pXSpr->physAttr & kPhysGravity))
+        return kListREMOVE;
+
+    viewBackupSpriteLoc(nSpr, pSpr);
+    
+    XSECTOR* pXSector = (sector[pSpr->sectnum].extra >= 0) ? &xsector[sector[pSpr->sectnum].extra] : NULL;
+    
+    bool uwater = false;
+    int mass = gSpriteMass[pSpr->extra].mass;
+    int airVel = gSpriteMass[pSpr->extra].airVel;
+
+    int top, bottom;
+    GetSpriteExtents(pSpr, &top, &bottom);
+
+    if (pXSector != NULL)
+    {
+        if ((uwater = pXSector->Underwater) != 0)
+            airVel <<= 6;
+
+        if (pXSector->panVel != 0 && getflorzofslope(pSpr->sectnum, pSpr->x, pSpr->y) <= bottom)
+        {
+            int angle = pXSector->panAngle; int speed = 0;
+            if (pXSector->panAlways || pXSector->state || pXSector->busy)
+            {
+                speed = pXSector->panVel << 9;
+                if (!pXSector->panAlways && pXSector->busy)
+                    speed = mulscale16(speed, pXSector->busy);
+            }
+
+            if (sector[pSpr->sectnum].floorstat & 64)
+                angle = (angle + GetWallAngle(sector[pSpr->sectnum].wallptr) + 512) & 2047;
+            
+            int dx = mulscale30(speed, Cos(angle));
+            int dy = mulscale30(speed, Sin(angle));
+            xvel[nSpr] += dx;
+            yvel[nSpr] += dy;
+
+        }
+    }
+
+    actAirDrag(pSpr, airVel);
+
+    if (pXSpr->physAttr & kPhysDebrisTouch)
+    {
+        PLAYER* pPlayer = NULL;
+        for (int a = connecthead; a != -1; a = connectpoint2[a])
+        {
+            pPlayer = &gPlayer[a];
+            if ((gSpriteHit[pPlayer->pSprite->extra].hit & 0xc000) == 0xc000 && (gSpriteHit[pPlayer->pSprite->extra].hit & 0x3fff) == nSpr)
+            {
+                int nSpeed = approxDist(xvel[pPlayer->pSprite->index], yvel[pPlayer->pSprite->index]);
+                nSpeed = ClipLow(nSpeed - mulscale6(nSpeed, mass), 0x9000 - (mass << 3));
+
+                xvel[nSpr] += mulscale30(nSpeed, Cos(pPlayer->pSprite->ang));
+                yvel[nSpr] += mulscale30(nSpeed, Sin(pPlayer->pSprite->ang));
+
+                gSpriteHit[pSpr->extra].hit = pPlayer->pSprite->index | 0xc000;
+            }
+        }
+    }
+
+    if (pXSpr->physAttr & kPhysGravity) pXSpr->physAttr |= kPhysFalling;
+    if ((pXSpr->physAttr & kPhysFalling) || xvel[nSpr] || yvel[nSpr] || zvel[nSpr] || velFloor[pSpr->sectnum] || velCeil[pSpr->sectnum])
+        debrisMove(nSpr);
+
+    if (xvel[nSpr] || yvel[nSpr])
+        pXSpr->goalAng = getangle(xvel[nSpr], yvel[nSpr]) & 2047;
+
+    int ang = pSpr->ang & 2047;
+    if ((uwater = spriteIsUnderwater(pSpr)) == false)
+        evKill(nSpr, 3, kCallbackEnemeyBubble);
+    else if (Chance(0x1000 - mass))
+    {
+        if (zvel[nSpr] > 0x100)
+            debrisBubble(nSpr);
+
+        if (ang == pXSpr->goalAng)
+        {
+            pXSpr->goalAng = (pSpr->ang + Random3(kAng60)) & 2047;
+            debrisBubble(nSpr);
+        }
+    }
+
+    int angStep = ClipLow(mulscale8(1, ((abs(xvel[nSpr]) + abs(yvel[nSpr])) >> 5)), (uwater) ? 1 : 0);
+    if (ang < pXSpr->goalAng)
+        pSpr->ang = ClipHigh(ang + angStep, pXSpr->goalAng);
+    else if (ang > pXSpr->goalAng)
+        pSpr->ang = ClipLow(ang - angStep, pXSpr->goalAng);
+
+    int nSector = pSpr->sectnum;
+    int cz = getceilzofslope(nSector, pSpr->x, pSpr->y);
+    int fz = getflorzofslope(nSector, pSpr->x, pSpr->y);
+
+    GetSpriteExtents(pSpr, &top, &bottom);
+    if (fz >= bottom && gLowerLink[nSector] < 0 && !(sector[nSector].ceilingstat & 0x1))
+        pSpr->z += ClipLow(cz - top, 0);
+    
+    if (cz <= top && gUpperLink[nSector] < 0 && !(sector[nSector].floorstat & 0x1))
+        pSpr->z += ClipHigh(fz - bottom, 0);
+
+    return kListOK;
+}
 
 // for actor.cpp
 //-------------------------------------------------------------------------
@@ -599,15 +821,13 @@ void nnExtTriggerObject(int objType, int objIndex, int command, int causerID) {
     return;
 }
 
-void nnExtResetGlobals() {
+void nnExtResetGlobals()
+{
     gAllowTrueRandom = gEventRedirectsUsed = false;
 
-    // reset counters
-    gProxySpritesCount = gSightSpritesCount = gPhysSpritesCount = gImpactSpritesCount = 0;
-
-    // fill arrays with negative values to avoid index 0 situation
-    memset(gSightSpritesList, -1, sizeof(gSightSpritesList));   memset(gProxySpritesList, -1, sizeof(gProxySpritesList));
-    memset(gPhysSpritesList, -1, sizeof(gPhysSpritesList));     memset(gImpactSpritesList, -1, sizeof(gImpactSpritesList));
+    // clear lists
+    gProxySpritesList.Free();       gSightSpritesList.Free();
+    gImpactSpritesList.Free();      gPhysSpritesList.Free();
 
     // free all condition trackers
     conditionsTrackingClear();
@@ -615,36 +835,18 @@ void nnExtResetGlobals() {
     // clear sprite mass cache
     memset(gSpriteMass, 0, sizeof(gSpriteMass));
 
+    // clear custom dude info
+    memset(gGenDudeExtra, 0, sizeof(gGenDudeExtra));
+
 }
-static int osdShowIFSprites(osdcmdptr_t UNUSED(parm)) {
-
-    int cnt = 0;
-    for (int i = 0; i < kMaxSprites; i++)
-    {
-        if (sprite[i].statnum >= kMaxStatus) continue;
-        else if (sprite[i].type == kModernCondition || sprite[i].type == kModernConditionFalse)
-        {
-            if (sprite[i].cstat & CSTAT_SPRITE_INVISIBLE)
-            {
-                sprite[i].cstat &= ~CSTAT_SPRITE_INVISIBLE;
-                cnt++;
-            }
-        }
-    }
-    
-    if (cnt <= 0)
-        OSD_Printf("No condition sprites found!\n");
-
-    gVisibleSpr |= 0x01;
-    OSD_Printf("%d sprites are visible now.\n", cnt);
-    return cnt;
-}
-
 
 void nnExtInitModernStuff(bool bSaveLoad) {
     
     nnExtResetGlobals();
-    OSD_RegisterFunction("nnext_ifshow", "nnext_ifshow: makes kModernCondition sprites visable", osdShowIFSprites);
+
+    // initialize super xsprites lists
+    gProxySpritesList.Init(kListEndDefault,  kMaxSuperXSprites);     gSightSpritesList.Init(kListEndDefault, kMaxSuperXSprites);
+    gImpactSpritesList.Init(kListEndDefault, kMaxSuperXSprites);     gPhysSpritesList.Init(kListEndDefault,  kMaxSuperXSprites);
 
     // use true random only for single player mode, otherwise use Blood's default one.
     if (gGameOptions.nGameType == kGameTypeSinglePlayer && !VanillaMode()) {
@@ -682,17 +884,17 @@ void nnExtInitModernStuff(bool bSaveLoad) {
         }
 
         // init after loading save file
-        if (bSaveLoad) {
-
+        if (bSaveLoad)
+        {
             // add in list of physics affected sprites
-            if (pXSprite->physAttr != 0) {
-                //xvel[pSprite->index] = yvel[pSprite->index] = zvel[pSprite->index] = 0;
-
-                gPhysSpritesList[gPhysSpritesCount++] = pSprite->index; // add sprite index
+            if (pXSprite->physAttr != 0)
+            {
+                gPhysSpritesList.Add(pSprite->index);
                 getSpriteMassBySize(pSprite); // create mass cache
             }
 
-            if (pXSprite->data3 != pXSprite->sysData1) {
+            if (pXSprite->data3 != pXSprite->sysData1)
+            {
                 switch (pSprite->statnum) {
                 case kStatDude:
                     switch (pSprite->type) {
@@ -705,8 +907,9 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                 }
             }
 
-        } else {
-            
+        }
+        else
+        {
             // auto set going On and going Off if both are empty
             if (pXSprite->txID && !pXSprite->triggerOn && !pXSprite->triggerOff)
                 pXSprite->triggerOn = pXSprite->triggerOff = true;
@@ -731,9 +934,6 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                     case kStatModernEventRedirector:
                         sysStat = (pSprite->type != kModernRandomTX && pSprite->type != kModernSequentialTX);
                         break;
-                    case kStatModernWindGen:
-                        sysStat = (pSprite->type != kModernWindGenerator);
-                        break;
                     case kStatModernPlayerLinker:
                     case kStatModernQavScene:
                         sysStat = (pSprite->type != kModernPlayerControl);
@@ -745,6 +945,11 @@ void nnExtInitModernStuff(bool bSaveLoad) {
             }
 
             switch (pSprite->type) {
+                case kThingObjectExplode:
+                case kThingObjectGib:
+                    pXSprite->sysData1 = pSprite->flags;
+                    pSprite->flags = 0;
+                    break;
                 case kModernRandomTX:
                 case kModernSequentialTX:
                     if (pXSprite->command != kCmdLink) break;
@@ -753,7 +958,6 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                     break;
                 case kModernWindGenerator:
                     pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
-                    ChangeSpriteStat(pSprite->index, kStatModernWindGen);
                     break;
                 case kModernDudeTargetChanger:
                 case kModernObjDataAccumulator:
@@ -865,10 +1069,8 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                     
                     if (oldStat & 0x2000) pSprite->cstat |= 0x2000;
                     else if (oldStat & 0x4000) pSprite->cstat |= 0x4000;
-
-                    if (!(gVisibleSpr & 0x01))
-                        pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
-
+                    
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     break;
             }
 
@@ -887,49 +1089,49 @@ void nnExtInitModernStuff(bool bSaveLoad) {
         }
 
         // make Proximity flag work not just for dudes and things...
-        if (pXSprite->Proximity && gProxySpritesCount < kMaxSuperXSprites) {
-            switch (pSprite->statnum) {
+        if (pXSprite->Proximity)
+        {
+            switch (pSprite->statnum)
+            {
                 case kStatFX:           case kStatExplosion:            case kStatItem:
                 case kStatPurge:        case kStatSpares:               case kStatFlare:
                 case kStatInactive:     case kStatFree:                 case kStatMarker:
                 case kStatThing:        case kStatDude:                 case kStatModernPlayerLinker:
                     break;
                 default:
-                    gProxySpritesList[gProxySpritesCount++] = pSprite->index;
-                    if (gProxySpritesCount == kMaxSuperXSprites)
-                        ThrowError("Max (%d) *additional* Proximity sprites reached!", kMaxSuperXSprites);
+                    gProxySpritesList.Add(pSprite->index);
                     break;
             }
         }
 
         // make Sight, Screen, Aim flags work not just for dudes and things...
-        if ((pXSprite->Sight || pXSprite->unused3) && gSightSpritesCount < kMaxSuperXSprites) {
-            switch (pSprite->statnum) {
+        if ((pXSprite->Sight || pXSprite->unused3))
+        {
+            switch (pSprite->statnum)
+            {
                 case kStatFX:           case kStatExplosion:            case kStatItem:
                 case kStatPurge:        case kStatSpares:               case kStatFlare:
                 case kStatInactive:     case kStatFree:                 case kStatMarker:
                 case kStatModernPlayerLinker:
                     break;
                 default:
-                    gSightSpritesList[gSightSpritesCount++] = pSprite->index;
-                    if (gSightSpritesCount == kMaxSuperXSprites)
-                        ThrowError("Max (%d) Sight sprites reached!", kMaxSuperXSprites);
+                    gSightSpritesList.Add(pSprite->index);
                     break;
             }
         }
 
         // make Impact flag work for sprites that affected by explosions...
-        if (pXSprite->Impact && gImpactSpritesCount < kMaxSuperXSprites) {
-            switch (pSprite->statnum) {
+        if (pXSprite->Impact)
+        {
+            switch (pSprite->statnum)
+            {
                 case kStatFX:           case kStatExplosion:            case kStatItem:
                 case kStatPurge:        case kStatSpares:               case kStatFlare:
                 case kStatInactive:     case kStatFree:                 case kStatMarker:
                 case kStatModernPlayerLinker:
                     break;
                 default:
-                    gImpactSpritesList[gImpactSpritesCount++] = pSprite->index;
-                    if (gImpactSpritesCount == kMaxSuperXSprites)
-                        ThrowError("Max (%d) *additional* Impact sprites reached!", kMaxSuperXSprites);
+                    gImpactSpritesList.Add(pSprite->index);
                     break;
             }
         }
@@ -1057,319 +1259,12 @@ spritetype* randomSpawnDude(XSPRITE* pXSource, spritetype* pSprite, int a3, int 
 }
 
 //-------------------------
-void windGenDoVerticalWind(XSPRITE* pXSource, int nSector) {
-
-
-    //spritetype* pSource = &sprite[pXSource->reference];
-    int j, val, maxZ, zdiff; bool maxZfound = false;
-   
-    // find maxz marker first
-    for (j = headspritesect[nSector]; j != -1; j = nextspritesect[j]) {
-        if (sprite[j].type == kMarkerOn && sprite[j].statnum != kStatMarker) {
-
-            maxZ = sprite[j].z;
-            maxZfound = true;
-            break;
-
-        }
-    }
-
-
-    for (j = headspritesect[nSector]; j != -1; j = nextspritesect[j]) {
-
-        spritetype* pSpr = &sprite[j];
-        
-        switch (pSpr->statnum) {
-            case kStatFree:
-                continue;
-            case kStatFX:
-                if (zvel[pSpr->index]) break;
-                continue;
-            case kStatThing:
-            case kStatDude:
-                if (pSpr->flags & kPhysGravity) break;
-                continue;
-            default:
-                if (pSpr->extra > 0 && xsprite[pSpr->extra].physAttr & kPhysGravity) break;
-                continue;
-        }
-
-        
-        if (maxZfound && pSpr->z <= maxZ) {
-            
-            zdiff = pSpr->z - maxZ;
-            if (zvel[pSpr->index] < 0) zvel[pSpr->index] += mulscale16(zvel[pSpr->index] >> 4, zdiff);
-            continue;
-
-        }
-
-        val = -mulscale16(pXSource->sysData2 * 64, 0x10000);
-        if (zvel[pSpr->index] >= 0) zvel[pSpr->index] += val;
-        else zvel[pSpr->index] = val;
-
-        pSpr->z += zvel[pSpr->index] >> 12;
-
-    }
-
-}
-
-
-void nnExtProcessSuperSprites() {
-
-    conditionsTrackingProcess();							// process tracking conditions
-    
-    // process floor oriented kModernWindGenerator to create a vertical wind in the sectors
-    for (int i = headspritestat[kStatModernWindGen]; i != -1; i = nextspritestat[i]) {
-        
-        spritetype* pWind = &sprite[i];
-        if (!(pWind->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) || pWind->statnum >= kMaxStatus || pWind->extra <= 0)
-            continue;
-
-        XSPRITE* pXWind = &xsprite[pWind->extra];
-        if (!pXWind->state || pXWind->locked)
-            continue;
-
-        int j, rx;
-        bool fWindAlways = (pWind->flags & kModernTypeFlag1);
-
-        if (pXWind->txID) {
-                
-            rx = pXWind->txID;
-            for (j = bucketHead[rx]; j < bucketHead[rx + 1]; j++) {
-                if (rxBucket[j].type != OBJ_SECTOR)
-                    continue;
-
-                XSECTOR* pXSector = &xsector[sector[rxBucket[j].index].extra];
-                if ((!pXSector->locked) && (fWindAlways || pXSector->windAlways || pXSector->busy))
-                    windGenDoVerticalWind(pXWind, rxBucket[j].index);
-            }
-
-            XSPRITE* pXRedir = NULL; // check redirected TX buckets
-            while ((pXRedir = evrListRedirectors(OBJ_SPRITE, sprite[pXWind->reference].extra, pXRedir, &rx)) != NULL) {
-                for (j = bucketHead[rx]; j < bucketHead[rx + 1]; j++) {
-                    if (rxBucket[j].type != OBJ_SECTOR)
-                        continue;
-
-                    XSECTOR* pXSector = &xsector[sector[rxBucket[j].index].extra];
-                    if ((!pXSector->locked) && (fWindAlways || pXSector->windAlways || pXSector->busy))
-                        windGenDoVerticalWind(pXWind, rxBucket[j].index);
-                }
-            }
-
-        } else if (sectRangeIsFine(pWind->sectnum)) {
-            
-            sectortype* pSect = &sector[pWind->sectnum];
-            XSECTOR* pXSector = (pSect->extra > 0) ? &xsector[pSect->extra] : NULL;
-            if ((fWindAlways) || (pXSector && !pXSector->locked && (pXSector->windAlways || pXSector->busy)))
-                windGenDoVerticalWind(pXWind, pWind->sectnum);
-
-        }
-
-    }
-
-    // process additional proximity sprites
-    if (gProxySpritesCount > 0) {
-        for (int i = 0; i < gProxySpritesCount; i++) {
-            if (!xsprIsFine(&sprite[gProxySpritesList[i]]))
-                continue;
-
-            spritetype* pProxSpr = &sprite[gProxySpritesList[i]]; XSPRITE* pXProxSpr = &xsprite[pProxSpr->extra];
-            if ((!pXProxSpr->Interrutable && pXProxSpr->state != pXProxSpr->restState) || pXProxSpr->locked == 1 || pXProxSpr->isTriggered)
-                continue;  // don't process locked or triggered sprites
-
-            short okDist = (IsDudeSprite(pProxSpr)) ? 96 : ClipLow(pProxSpr->clipdist * 3, 32);
-            int x = sprite[gProxySpritesList[i]].x;	int y = sprite[gProxySpritesList[i]].y;
-            int z = sprite[gProxySpritesList[i]].z;	int index = sprite[gProxySpritesList[i]].index;
-            int sectnum = sprite[gProxySpritesList[i]].sectnum;
-
-            if (!pXProxSpr->DudeLockout)
-            {
-                for (int nAffected = headspritestat[kStatDude]; nAffected >= 0; nAffected = nextspritestat[nAffected])
-                {
-                    if (!xsprIsFine(&sprite[nAffected]) || xsprite[sprite[nAffected].extra].health <= 0) continue;
-                    else if (CheckProximity(&sprite[nAffected], x, y, z, sectnum, okDist))
-                        trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity, nAffected);
-                }
-            }
-            else
-            {
-                for (int a = connecthead; a >= 0; a = connectpoint2[a])
-                {
-                    PLAYER* pPlayer = &gPlayer[a];
-                    if (!pPlayer || !xsprIsFine(pPlayer->pSprite) || pPlayer->pXSprite->health <= 0)
-                        continue;
-
-                    if (gPlayer[a].pXSprite->health > 0 && CheckProximity(gPlayer[a].pSprite, x, y, z, sectnum, okDist))
-                        trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity, pPlayer->nSprite);
-                }
-            }
-        }
-    }
-
-    // process sight sprites (for players only)
-    if (gSightSpritesCount > 0) {
-        for (int i = 0; i < gSightSpritesCount; i++) {
-            if (!xsprIsFine(&sprite[gSightSpritesList[i]]))
-                continue;
-
-            XSPRITE* pXSightSpr = &xsprite[sprite[gSightSpritesList[i]].extra];
-            if ((!pXSightSpr->Interrutable && pXSightSpr->state != pXSightSpr->restState) || pXSightSpr->locked == 1 ||
-                pXSightSpr->isTriggered) continue; // don't process locked or triggered sprites
-
-            int index = sprite[gSightSpritesList[i]].index;
-
-            // sprite is drawn for one of players
-            if ((pXSightSpr->unused3 & kTriggerSpriteScreen) && TestBitString(show2dsprite, index))
-            {
-                trTriggerSprite(index, pXSightSpr, kCmdSpriteSight, kCauserGame); // !!! no way to get causer?
-                ClearBitString(show2dsprite, index);
-                continue;
-            }
-
-            int x = sprite[gSightSpritesList[i]].x;	int y = sprite[gSightSpritesList[i]].y;
-            int z = sprite[gSightSpritesList[i]].z; int sectnum = sprite[gSightSpritesList[i]].sectnum;
-            int ztop2, zbot2;
-            
-            for (int a = connecthead; a >= 0; a = connectpoint2[a])
-            {
-                PLAYER* pPlayer = &gPlayer[a];
-                if (!pPlayer || !xsprIsFine(pPlayer->pSprite) || pPlayer->pXSprite->health <= 0)
-                    continue;
-
-                spritetype* pPlaySprite = pPlayer->pSprite;
-                GetSpriteExtents(pPlaySprite, &ztop2, &zbot2);
-                if (cansee(x, y, z, sectnum, pPlaySprite->x, pPlaySprite->y, ztop2, pPlaySprite->sectnum))
-                {
-                    if (pXSightSpr->Sight)
-                        trTriggerSprite(index, pXSightSpr, kCmdSpriteSight, pPlayer->nSprite);
-
-                    if (pXSightSpr->unused3 & kTriggerSpriteAim)
-                    {
-                        bool vector = (sprite[index].cstat & CSTAT_SPRITE_BLOCK_HITSCAN);
-                        if (!vector)
-                            sprite[index].cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
-
-                        HitScan(pPlaySprite, pPlayer->zWeapon, pPlayer->aim.dx, pPlayer->aim.dy, pPlayer->aim.dz, CLIPMASK0 | CLIPMASK1, 0);
-                        
-                        //VectorScan(pPlaySprite, 0, pPlayer->zWeapon, pPlayer->aim.dx, pPlayer->aim.dy, pPlayer->aim.dz, 0, 1);
-
-                        if (!vector)
-                            sprite[index].cstat &= ~CSTAT_SPRITE_BLOCK_HITSCAN;
-
-                        if (gHitInfo.hitsprite == index)
-                            trTriggerSprite(index, pXSightSpr, kCmdSpriteSight, pPlayer->nSprite);
-                    }
-
-                }
-
-            }
-        }
-    }
-
-    // process Debris sprites for movement
-    if (gPhysSpritesCount > 0) {
-        for (int i = 0; i < gPhysSpritesCount; i++) {
-            if (gPhysSpritesList[i] == -1) continue;
-            else if (sprite[gPhysSpritesList[i]].statnum == kStatFree || (sprite[gPhysSpritesList[i]].flags & kHitagFree) != 0) {
-                gPhysSpritesList[i] = -1;
-                continue;
-            }
-
-            XSPRITE* pXDebris = &xsprite[sprite[gPhysSpritesList[i]].extra];
-            if (!(pXDebris->physAttr & kPhysMove) && !(pXDebris->physAttr & kPhysGravity)) {
-                gPhysSpritesList[i] = -1;
-                continue;
-            }
-
-            spritetype* pDebris = &sprite[gPhysSpritesList[i]];
-            int idx = pDebris->index;
-
-            XSECTOR* pXSector = (sector[pDebris->sectnum].extra >= 0) ? &xsector[sector[pDebris->sectnum].extra] : NULL;
-            viewBackupSpriteLoc(idx, pDebris);
-            
-            bool uwater = false;
-            int mass = gSpriteMass[pDebris->extra].mass;
-            int airVel = gSpriteMass[pDebris->extra].airVel;
-
-            int top, bottom;
-            GetSpriteExtents(pDebris, &top, &bottom);
-            
-            if (pXSector != NULL) {
-                
-                if ((uwater = pXSector->Underwater) != 0) airVel <<= 6;
-                if (pXSector->panVel != 0 && getflorzofslope(pDebris->sectnum, pDebris->x, pDebris->y) <= bottom) {
-                    
-                    int angle = pXSector->panAngle; int speed = 0;
-                    if (pXSector->panAlways || pXSector->state || pXSector->busy) {
-                        speed = pXSector->panVel << 9;
-                        if (!pXSector->panAlways && pXSector->busy)
-                            speed = mulscale16(speed, pXSector->busy);
-                    }
-                    if (sector[pDebris->sectnum].floorstat & 64)
-                        angle = (angle + GetWallAngle(sector[pDebris->sectnum].wallptr) + 512) & 2047;
-                    int dx = mulscale30(speed, Cos(angle));
-                    int dy = mulscale30(speed, Sin(angle));
-                    xvel[idx] += dx;
-                    yvel[idx] += dy;
-
-                }
-                
-            }
-
-            actAirDrag(pDebris, airVel);
-
-            if (pXDebris->physAttr & kPhysDebrisTouch) {
-                PLAYER* pPlayer = NULL;
-                for (int a = connecthead; a != -1; a = connectpoint2[a]) {
-                    pPlayer = &gPlayer[a];
-                    if ((gSpriteHit[pPlayer->pSprite->extra].hit & 0xc000) == 0xc000  && (gSpriteHit[pPlayer->pSprite->extra].hit & 0x3fff) == idx) {
-                        
-                            int nSpeed = approxDist(xvel[pPlayer->pSprite->index], yvel[pPlayer->pSprite->index]);
-                            nSpeed = ClipLow(nSpeed - mulscale6(nSpeed, mass), 0x9000 - (mass << 3));
-
-                            xvel[idx] += mulscale30(nSpeed, Cos(pPlayer->pSprite->ang));
-                            yvel[idx] += mulscale30(nSpeed, Sin(pPlayer->pSprite->ang));
-                            
-                            gSpriteHit[pDebris->extra].hit = pPlayer->pSprite->index | 0xc000;
-
-                    }
-                }
-            }
-            
-            if (pXDebris->physAttr & kPhysGravity) pXDebris->physAttr |= kPhysFalling;
-            if ((pXDebris->physAttr & kPhysFalling) || xvel[idx] || yvel[idx] || zvel[idx] || velFloor[pDebris->sectnum] || velCeil[pDebris->sectnum])
-                debrisMove(i);
-
-            if (xvel[idx] || yvel[idx])
-                pXDebris->goalAng = getangle(xvel[idx], yvel[idx]) & 2047;
-
-            int ang = pDebris->ang & 2047;
-            if ((uwater = spriteIsUnderwater(pDebris)) == false) evKill(idx, 3, kCallbackEnemeyBubble);
-            else if (Chance(0x1000 - mass)) {
-                
-                if (zvel[idx] > 0x100) debrisBubble(idx);
-                if (ang == pXDebris->goalAng) {
-                   pXDebris->goalAng = (pDebris->ang + Random3(kAng60)) & 2047;
-                   debrisBubble(idx);
-                }
-
-            }
-
-            int angStep = ClipLow(mulscale8(1, ((abs(xvel[idx]) + abs(yvel[idx])) >> 5)), (uwater) ? 1 : 0);
-            if (ang < pXDebris->goalAng) pDebris->ang = ClipHigh(ang + angStep, pXDebris->goalAng);
-            else if (ang > pXDebris->goalAng) pDebris->ang = ClipLow(ang - angStep, pXDebris->goalAng);
-
-            int nSector = pDebris->sectnum;
-            int cz = getceilzofslope(nSector, pDebris->x, pDebris->y);
-            int fz = getflorzofslope(nSector, pDebris->x, pDebris->y);
-            
-            GetSpriteExtents(pDebris, &top, &bottom);
-            if (fz >= bottom && gLowerLink[nSector] < 0 && !(sector[nSector].ceilingstat & 0x1)) pDebris->z += ClipLow(cz - top, 0);
-            if (cz <= top && gUpperLink[nSector] < 0 && !(sector[nSector].floorstat & 0x1)) pDebris->z += ClipHigh(fz - bottom, 0);
-
-        }
-    }
-
+void nnExtProcessSuperSprites()
+{
+    conditionsTrackingProcess();							            // process tracking conditions
+    gProxySpritesList.Process(idListProcessProxySprite, true);          // process additional proximity sprites
+    gSightSpritesList.Process(idListProcessSightSprite, true);          // process sight sprites (for players only)
+    gPhysSpritesList.Process(idListProcessPhysSprite,   true);          // process Debris sprites for movement
 }
 
 // this function plays sound predefined in missile info
@@ -1486,56 +1381,40 @@ int getSpriteMassBySize(spritetype* pSprite) {
     return cached->mass;
 }
 
-int debrisGetIndex(int nSprite) {
-    if (sprite[nSprite].extra < 0 || xsprite[sprite[nSprite].extra].physAttr == 0)
-        return -1;
+void debrisConcuss(int nOwner, int nDebris, int x, int y, int z, int dmg)
+{
+    bool thing;
+    int dx, dy, dz, size, t;
+    spritetype* pSpr = &sprite[nDebris];
+    if (pSpr->extra <= 0)
+        return;
 
-    for (int i = 0; i < gPhysSpritesCount; i++) {
-        if (gPhysSpritesList[i] != nSprite) continue;
-        return i;
-    }
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
 
-    return -1;
-}
+    dx = pSpr->x - x; dy = pSpr->y - y; dz = (pSpr->z - z) >> 4;
+    dmg = scale(0x40000, dmg, 0x40000 + dx * dx + dy * dy + dz * dz);
+    size = (tilesiz[pSpr->picnum].x * pSpr->xrepeat * tilesiz[pSpr->picnum].y * pSpr->yrepeat) >> 1;
+    thing = (pSpr->type >= kThingBase && pSpr->type < kThingMax);
 
-int debrisGetFreeIndex(void) {
-    for (int i = 0; i < kMaxSuperXSprites; i++) {
-        if (gPhysSpritesList[i] == -1 || sprite[gPhysSpritesList[i]].statnum == kStatFree) return i;
-
-        else if ((sprite[gPhysSpritesList[i]].flags & kHitagFree) || sprite[gPhysSpritesList[i]].extra < 0) return i;
-        else if (xsprite[sprite[gPhysSpritesList[i]].extra].physAttr == 0) return i;
-    }
-
-    return -1;
-}
-
-void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg) {
-    spritetype* pSprite = (gPhysSpritesList[listIndex] >= 0) ? &sprite[gPhysSpritesList[listIndex]] : NULL;
-    if (pSprite != NULL && xspriRangeIsFine(pSprite->extra)) {
-        int dx = pSprite->x - x; int dy = pSprite->y - y; int dz = (pSprite->z - z) >> 4;
-        dmg = scale(0x40000, dmg, 0x40000 + dx * dx + dy * dy + dz * dz);
-        bool thing = (pSprite->type >= kThingBase && pSprite->type < kThingMax);
-        int size = (tilesiz[pSprite->picnum].x * pSprite->xrepeat * tilesiz[pSprite->picnum].y * pSprite->yrepeat) >> 1;
-        if (xsprite[pSprite->extra].physAttr & kPhysDebrisExplode) {
-            if (gSpriteMass[pSprite->extra].mass > 0) {
-                int t = scale(dmg, size, gSpriteMass[pSprite->extra].mass);
-
-                xvel[pSprite->index] += mulscale16(t, dx);
-                yvel[pSprite->index] += mulscale16(t, dy);
-                zvel[pSprite->index] += mulscale16(t, dz);
-            }
-
-            if (thing)
-                pSprite->statnum = kStatThing; // temporary change statnum property
+    if (pXSpr->physAttr & kPhysDebrisExplode)
+    {
+        if (gSpriteMass[pSpr->extra].mass > 0)
+        {
+            t = scale(dmg, size, gSpriteMass[pSpr->extra].mass);
+            xvel[pSpr->index] += mulscale16(t, dx);
+            yvel[pSpr->index] += mulscale16(t, dy);
+            zvel[pSpr->index] += mulscale16(t, dz);
         }
 
-        actDamageSprite(nOwner, pSprite, kDamageExplode, dmg);
-        
         if (thing)
-            pSprite->statnum = kStatDecoration; // return statnum property back
-
-        return;
+            pSpr->statnum = kStatThing; // temporary change statnum property
     }
+
+    actDamageSprite(nOwner, pSpr, kDamageExplode, dmg);
+
+    if (thing)
+        pSpr->statnum = kStatDecoration; // return statnum property back
+    
 }
 
 void debrisBubble(int nSprite) {
@@ -1564,122 +1443,128 @@ void debrisBubble(int nSprite) {
         evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
 }
 
-void debrisMove(int listIndex) {
-
-    if (!(sprite[gPhysSpritesList[listIndex]].extra > 0 && sprite[gPhysSpritesList[listIndex]].extra < kMaxXSprites)) {
-        gPhysSpritesList[listIndex] = -1;
-        return;
-    } else if (!(sprite[gPhysSpritesList[listIndex]].sectnum >= 0 && sprite[gPhysSpritesList[listIndex]].sectnum < kMaxSectors)) {
-        gPhysSpritesList[listIndex] = -1;
-        return;
-    }
-
-    int nSprite = gPhysSpritesList[listIndex];
-    int nXSprite = sprite[nSprite].extra;       XSPRITE* pXDebris = &xsprite[nXSprite];
-    spritetype* pSprite = &sprite[nSprite];     int nSector = pSprite->sectnum;
+void debrisMove(int nSpr)
+{
+    spritetype* pSpr = &sprite[nSpr]; XSPRITE* pXSpr = &xsprite[pSpr->extra];
+    int nSect = pSpr->sectnum; int nXSpr = pSpr->extra;
 
     int top, bottom, i;
-    GetSpriteExtents(pSprite, &top, &bottom);
+    GetSpriteExtents(pSpr, &top, &bottom);
 
     int moveHit = 0;
-    int floorDist = (bottom - pSprite->z) >> 2;
-    int ceilDist = (pSprite->z - top) >> 2;
-    int clipDist = pSprite->clipdist << 2;
-    int mass = gSpriteMass[nXSprite].mass;
+    int floorDist = (bottom - pSpr->z) >> 2;
+    int ceilDist = (pSpr->z - top) >> 2;
+    int clipDist = pSpr->clipdist << 2;
+    int mass = gSpriteMass[nXSpr].mass;
 
     bool uwater = false;
-    int tmpFraction = gSpriteMass[pSprite->extra].fraction;
-    if (sector[nSector].extra >= 0 && xsector[sector[nSector].extra].Underwater) {
+    int tmpFraction = gSpriteMass[pSpr->extra].fraction;
+    if (sector[nSect].extra >= 0 && xsector[sector[nSect].extra].Underwater)
+    {
         tmpFraction >>= 1;
         uwater = true;
     }
 
-    if (xvel[nSprite] || yvel[nSprite]) {
+    if (xvel[nSpr] || yvel[nSpr])
+    {
+        short oldcstat = pSpr->cstat;
+        pSpr->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+        moveHit = gSpriteHit[nXSpr].hit = ClipMove((int*)&pSpr->x, (int*)&pSpr->y, (int*)&pSpr->z, &nSect, xvel[nSpr] >> 12,
+            yvel[nSpr] >> 12, clipDist, ceilDist, floorDist, CLIPMASK0);
 
-        short oldcstat = pSprite->cstat;
-        pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
-
-        moveHit = gSpriteHit[nXSprite].hit = ClipMove((int*)&pSprite->x, (int*)&pSprite->y, (int*)&pSprite->z, &nSector, xvel[nSprite] >> 12,
-            yvel[nSprite] >> 12, clipDist, ceilDist, floorDist, CLIPMASK0);
-
-        pSprite->cstat = oldcstat;
-        if (pSprite->sectnum != nSector) {
-            if (!sectRangeIsFine(nSector)) return;
-            else ChangeSpriteSect(nSprite, nSector);
+        pSpr->cstat = oldcstat;
+        if (pSpr->sectnum != nSect)
+        {
+            if (!sectRangeIsFine(nSect))
+                return;
+            
+            ChangeSpriteSect(nSpr, nSect);
         }
 
-        if (sector[nSector].type >= kSectorPath && sector[nSector].type <= kSectorRotate) {
-            short nSector2 = nSector;
-            if (pushmove_old(&pSprite->x, &pSprite->y, &pSprite->z, &nSector2, clipDist, ceilDist, floorDist, CLIPMASK0) != -1)
-                nSector = nSector2;
+        if (sector[nSect].type >= kSectorPath && sector[nSect].type <= kSectorRotate)
+        {
+            short nSect2 = nSect;
+            if (pushmove_old(&pSpr->x, &pSpr->y, &pSpr->z, &nSect2, clipDist, ceilDist, floorDist, CLIPMASK0) != -1)
+                nSect = nSect2;
         }
 
-        if ((gSpriteHit[nXSprite].hit & 0xc000) == 0x8000) {
-            i = moveHit = gSpriteHit[nXSprite].hit & 0x3fff;
-            actWallBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], i, tmpFraction);
+        if ((gSpriteHit[nXSpr].hit & 0xc000) == 0x8000)
+        {
+            i = moveHit = gSpriteHit[nXSpr].hit & 0x3fff;
+            actWallBounceVector((int*)&xvel[nSect], (int*)&yvel[nSpr], i, tmpFraction);
         }
 
-    } else if (!FindSector(pSprite->x, pSprite->y, pSprite->z, &nSector)) {
+    }
+    
+    if (nSect < 0 && !FindSector(pSpr->x, pSpr->y, pSpr->z, &nSect)) 
         return;
+    else if (pSpr->sectnum != nSect)
+    {
+        ChangeSpriteSect(nSpr, nSect);
+        nSect = pSpr->sectnum;
     }
 
-    if (pSprite->sectnum != nSector) {
-        dassert(nSector >= 0 && nSector < kMaxSectors);
-        ChangeSpriteSect(nSprite, nSector);
-        nSector = pSprite->sectnum;
-    }
+    if (sector[nSect].extra > 0)
+        uwater = xsector[sector[nSect].extra].Underwater;
 
-    if (sector[nSector].extra > 0)
-        uwater = xsector[sector[nSector].extra].Underwater;
-
-    if (zvel[nSprite])
-        pSprite->z += zvel[nSprite] >> 8;
+    if (zvel[nSpr])
+        pSpr->z += zvel[nSpr] >> 8;
 
     int ceilZ, ceilHit, floorZ, floorHit;
-    GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, clipDist, CLIPMASK0, PARALLAXCLIP_CEILING | PARALLAXCLIP_FLOOR);
-    GetSpriteExtents(pSprite, &top, &bottom);
+    GetZRange(pSpr, &ceilZ, &ceilHit, &floorZ, &floorHit, clipDist, CLIPMASK0, PARALLAXCLIP_CEILING | PARALLAXCLIP_FLOOR);
+    GetSpriteExtents(pSpr, &top, &bottom);
 
-    if ((pXDebris->physAttr & kPhysDebrisSwim) && uwater) {
-
+    if ((pXSpr->physAttr & kPhysDebrisSwim) && uwater)
+    {
         int vc = 0;
-        int cz = getceilzofslope(nSector, pSprite->x, pSprite->y);
-        int fz = getflorzofslope(nSector, pSprite->x, pSprite->y);
+        int cz = getceilzofslope(nSect, pSpr->x, pSpr->y);
+        int fz = getflorzofslope(nSect, pSpr->x, pSpr->y);
         int div = ClipLow(bottom - top, 1);
 
-        if (gLowerLink[nSector] >= 0) cz += (cz < 0) ? 0x500 : -0x500;
-        if (top > cz && (!(pXDebris->physAttr & kPhysDebrisFloat) || fz <= bottom << 2))
-            zvel[nSprite] -= divscale8((bottom - ceilZ) >> 6, mass);
+        if (gLowerLink[nSect] >= 0)
+            cz += (cz < 0) ? 0x500 : -0x500;
+        
+        if (top > cz && (!(pXSpr->physAttr & kPhysDebrisFloat) || fz <= bottom << 2))
+            zvel[nSpr] -= divscale8((bottom - ceilZ) >> 6, mass);
 
         if (fz < bottom)
             vc = 58254 + ((bottom - fz) * -80099) / div;
 
-        if (vc) {
-            pSprite->z += ((vc << 2) >> 1) >> 8;
-            zvel[nSprite] += vc;
+        if (vc)
+        {
+            pSpr->z += ((vc << 2) >> 1) >> 8;
+            zvel[nSpr] += vc;
         }
 
-    } else if ((pXDebris->physAttr & kPhysGravity) && bottom < floorZ) {
-
-        pSprite->z += 455;
-        zvel[nSprite] += 58254;
-
+    }
+    else if ((pXSpr->physAttr & kPhysGravity) && bottom < floorZ)
+    {
+        pSpr->z += 455;
+        zvel[nSpr] += 58254;
     }
 
-    if ((i = CheckLink(pSprite)) != 0) {
-        GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, clipDist, CLIPMASK0, PARALLAXCLIP_CEILING | PARALLAXCLIP_FLOOR);
-        if (!(pSprite->cstat & CSTAT_SPRITE_INVISIBLE)) {
-            switch (i) {
+    if ((i = CheckLink(pSpr)) != 0)
+    {
+        GetZRange(pSpr, &ceilZ, &ceilHit, &floorZ, &floorHit, clipDist, CLIPMASK0, PARALLAXCLIP_CEILING | PARALLAXCLIP_FLOOR);
+        if (!(pSpr->cstat & CSTAT_SPRITE_INVISIBLE))
+        {
+            switch (i)
+            {
                 case kMarkerUpWater:
                 case kMarkerUpGoo:
-                    int pitch = (150000 - (gSpriteMass[pSprite->extra].mass << 9)) + Random3(8192);
-                    sfxPlay3DSoundCP(pSprite, 720, -1, 0, pitch, 75 - Random(40));
-                    if (!spriteIsUnderwater(pSprite)) {
-                        evKill(pSprite->index, 3, kCallbackEnemeyBubble);
-                    } else {
-                        evPost(pSprite->index, 3, 0, kCallbackEnemeyBubble);
-                        for (int i = 2; i <= 5; i++) {
+                    int pitch = (150000 - (gSpriteMass[pSpr->extra].mass << 9)) + Random3(8192);
+                    sfxPlay3DSoundCP(pSpr, 720, -1, 0, pitch, 75 - Random(40));
+                    if (!spriteIsUnderwater(pSpr))
+                    {
+                        evKill(pSpr->index, 3, kCallbackEnemeyBubble);
+                    }
+                    else
+                    {
+                        evPost(pSpr->index, 3, 0, kCallbackEnemeyBubble);
+                        for (int i = 2; i <= 5; i++)
+                        {
                             if (Chance(0x5000 * i))
-                                evPost(pSprite->index, 3, Random(5), kCallbackEnemeyBubble);
+                                evPost(pSpr->index, 3, Random(5), kCallbackEnemeyBubble);
                         }
                     }
                     break;
@@ -1687,100 +1572,103 @@ void debrisMove(int listIndex) {
         }
     }
 
-    GetSpriteExtents(pSprite, &top, &bottom);
+    GetSpriteExtents(pSpr, &top, &bottom);
 
-    if (floorZ <= bottom) {
+    if (floorZ <= bottom)
+    {
+        gSpriteHit[nXSpr].florhit = floorHit;
+        int v30 = zvel[nSpr] - velFloor[pSpr->sectnum];
 
-        gSpriteHit[nXSprite].florhit = floorHit;
-        int v30 = zvel[nSprite] - velFloor[pSprite->sectnum];
+        if (v30 > 0)
+        {
+            pXSpr->physAttr |= kPhysFalling;
+            actFloorBounceVector((int*)&xvel[nSpr], (int*)&yvel[nSpr], (int*)&v30, pSpr->sectnum, tmpFraction);
+            zvel[nSpr] = v30;
 
-        if (v30 > 0) {
-
-            pXDebris->physAttr |= kPhysFalling;
-            actFloorBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], (int*)&v30, pSprite->sectnum, tmpFraction);
-            zvel[nSprite] = v30;
-
-            if (klabs(zvel[nSprite]) < 0x10000) {
-                zvel[nSprite] = velFloor[pSprite->sectnum];
-                pXDebris->physAttr &= ~kPhysFalling;
+            if (klabs(zvel[nSpr]) < 0x10000)
+            {
+                zvel[nSpr] = velFloor[pSpr->sectnum];
+                pXSpr->physAttr &= ~kPhysFalling;
             }
 
             moveHit = floorHit;
             spritetype* pFX = NULL; spritetype* pFX2 = NULL;
-            switch (tileGetSurfType(floorHit)) {
-            case kSurfLava:
-                if ((pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ)) == NULL) break;
-                for (i = 0; i < 7; i++) {
-                    if ((pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z)) == NULL) continue;
-                    xvel[pFX2->index] = Random2(0x6aaaa);
-                    yvel[pFX2->index] = Random2(0x6aaaa);
-                    zvel[pFX2->index] = -Random(0xd5555);
-                }
-                break;
-            case kSurfWater:
-                gFX.fxSpawn(FX_9, pSprite->sectnum, pSprite->x, pSprite->y, floorZ);
-                break;
+            switch (tileGetSurfType(floorHit))
+            {
+                case kSurfLava:
+                    if ((pFX = gFX.fxSpawn(FX_10, pSpr->sectnum, pSpr->x, pSpr->y, floorZ)) == NULL) break;
+                    for (i = 0; i < 7; i++)
+                    {
+                        if ((pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z)) == NULL) continue;
+                        xvel[pFX2->index] = Random2(0x6aaaa);
+                        yvel[pFX2->index] = Random2(0x6aaaa);
+                        zvel[pFX2->index] = -Random(0xd5555);
+                    }
+                    break;
+                case kSurfWater:
+                    gFX.fxSpawn(FX_9, pSpr->sectnum, pSpr->x, pSpr->y, floorZ);
+                    break;
             }
-
-        } else if (zvel[nSprite] == 0) {
-
-            pXDebris->physAttr &= ~kPhysFalling;
-
+        }
+        else if (zvel[nSpr] == 0)
+        {
+            pXSpr->physAttr &= ~kPhysFalling;
         }
 
-    } else {
-
-        gSpriteHit[nXSprite].florhit = 0;
-        if (pXDebris->physAttr & kPhysGravity)
-            pXDebris->physAttr |= kPhysFalling;
-
+    }
+    else
+    {
+        gSpriteHit[nXSpr].florhit = 0;
+        if (pXSpr->physAttr & kPhysGravity)
+            pXSpr->physAttr |= kPhysFalling;
     }
 
-    if (top <= ceilZ) {
-
-        gSpriteHit[nXSprite].ceilhit = moveHit = ceilHit;
-        pSprite->z += ClipLow(ceilZ - top, 0);
-        if (zvel[nSprite] <= 0 && (pXDebris->physAttr & kPhysFalling))
-            zvel[nSprite] = mulscale16(-zvel[nSprite], 0x2000);
-
-    } else {
-
-        gSpriteHit[nXSprite].ceilhit = 0;
-        GetSpriteExtents(pSprite, &top, &bottom);
-
+    if (top <= ceilZ)
+    {
+        gSpriteHit[nXSpr].ceilhit = moveHit = ceilHit;
+        pSpr->z += ClipLow(ceilZ - top, 0);
+        if (zvel[nSpr] <= 0 && (pXSpr->physAttr & kPhysFalling))
+            zvel[nSpr] = mulscale16(-zvel[nSpr], 0x2000);
+    }
+    else
+    {
+        gSpriteHit[nXSpr].ceilhit = 0;
+        GetSpriteExtents(pSpr, &top, &bottom);
     }
 
-    if (moveHit && pXDebris->Impact && !pXDebris->locked && !pXDebris->isTriggered && (pXDebris->state == pXDebris->restState || pXDebris->Interrutable)) {
-        if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
-            changespritestat(nSprite, kStatThing);
+    if (moveHit && pXSpr->Impact && !pXSpr->locked && !pXSpr->isTriggered && (pXSpr->state == pXSpr->restState || pXSpr->Interrutable))
+    {
+        if (IsThingSprite(pSpr))
+            ChangeSpriteStat(nSpr, kStatThing);
 
-        trTriggerSprite(pSprite->index, pXDebris, kCmdToggle, nSprite);
-
+        trTriggerSprite(nSpr, pXSpr, kCmdToggle, nSpr);
     }
 
-    if (!xvel[nSprite] && !yvel[nSprite]) return;
-    else if ((floorHit & 0xc000) == 0xc000) {
+    if (!xvel[nSpr] && !yvel[nSpr]) return;
+    else if ((floorHit & 0xc000) == 0xc000)
+    {
 
-        int nHitSprite = floorHit & 0x3fff;
-        if ((sprite[nHitSprite].cstat & 0x30) == 0) {
-            xvel[nSprite] += mulscale2(4, pSprite->x - sprite[nHitSprite].x);
-            yvel[nSprite] += mulscale2(4, pSprite->y - sprite[nHitSprite].y);
+        int nHSpr = floorHit & 0x3fff;
+        if ((sprite[nHSpr].cstat & 0x30) == 0)
+        {
+            xvel[nSpr] += mulscale2(4, pSpr->x - sprite[nHSpr].x);
+            yvel[nSpr] += mulscale2(4, pSpr->y - sprite[nHSpr].y);
             return;
         }
     }
 
-    pXDebris->height = ClipLow(floorZ - bottom, 0) >> 8;
-    if (uwater || pXDebris->height >= 0x100)
+    pXSpr->height = ClipLow(floorZ - bottom, 0) >> 8;
+    if (uwater || pXSpr->height >= 0x100)
         return;
 
     int nDrag = 0x2a00;
-    if (pXDebris->height > 0)
-        nDrag -= scale(nDrag, pXDebris->height, 0x100);
+    if (pXSpr->height > 0)
+        nDrag -= scale(nDrag, pXSpr->height, 0x100);
 
-    xvel[nSprite] -= mulscale16r(xvel[nSprite], nDrag);
-    yvel[nSprite] -= mulscale16r(yvel[nSprite], nDrag);
-    if (approxDist(xvel[nSprite], yvel[nSprite]) < 0x1000)
-        xvel[nSprite] = yvel[nSprite] = 0;
+    xvel[nSpr] -= mulscale16r(xvel[nSpr], nDrag);
+    yvel[nSpr] -= mulscale16r(yvel[nSpr], nDrag);
+    if (approxDist(xvel[nSpr], yvel[nSpr]) < 0x1000)
+        xvel[nSpr] = yvel[nSpr] = 0;
 
 }
 
@@ -2371,7 +2259,7 @@ void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex) {
                 if ((old & kHitagRespawn) && !(pSprite->flags & kHitagRespawn)) pSprite->flags |= kHitagRespawn;
 
                 // prepare things for different (debris) physics.
-                thing2debris = (pSprite->statnum == kStatThing && debrisGetFreeIndex() >= 0);
+                thing2debris = (pSprite->statnum == kStatThing);
             }
 
             // data2 = sprite physics settings
@@ -2499,52 +2387,41 @@ void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex) {
 
                     }
 
-                    int nIndex = debrisGetIndex(objIndex); // check if there is no sprite in list
+                    bool exists = gPhysSpritesList.Exists(objIndex); // check if there is no sprite in list
 
                     // adding physics sprite in list
                     if ((flags & kPhysGravity) != 0 || (flags & kPhysMove) != 0)
                     {
-
                         if (oldFlags == 0)
                             xvel[objIndex] = yvel[objIndex] = zvel[objIndex] = 0;
 
-                        if (nIndex != -1)
+                        pXSprite->physAttr = flags; // update physics attributes
+                        
+                        if (!exists)
                         {
-                            pXSprite->physAttr = flags; // just update physics attributes
-
-                        }
-                        else if ((nIndex = debrisGetFreeIndex()) < 0)
-                        {
-                            viewSetSystemMessage("Max (%d) Physics affected sprites reached!", kMaxSuperXSprites);
-                        }
-                        else
-                        {
-                            pXSprite->physAttr = flags; // update physics attributes
-
                             // allow things to became debris, so they use different physics...
-                            if (pSprite->statnum == kStatThing) changespritestat(objIndex, 0);
+                            if (pSprite->statnum == kStatThing) ChangeSpriteStat(objIndex, 0);
 
                             // set random goal ang for swimming so they start turning
                             if ((flags & kPhysDebrisSwim) && !xvel[objIndex] && !yvel[objIndex] && !zvel[objIndex])
-                                pXSprite->goalAng = (pSprite->ang + Random3(kAng45)) & 2047;
-                            
+                                pXSprite->goalAng = (pSprite->ang + Random3(kAng45)) & kAngMask;
+
                             if (pXSprite->physAttr & kPhysDebrisVector)
                                 pSprite->cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
 
-                            gPhysSpritesList[nIndex] = objIndex;
-                            if (nIndex >= gPhysSpritesCount) gPhysSpritesCount++;
+                            gPhysSpritesList.Add(objIndex);
                             getSpriteMassBySize(pSprite); // create physics cache
                         }
-
-                    
                     }
-                    // removing physics from sprite in list (don't remove sprite from list)
-                    else if (nIndex != -1)
+                    // removing physics from sprite in list
+                    else if (exists)
                     {
                         pXSprite->physAttr = flags;
                         xvel[objIndex] = yvel[objIndex] = zvel[objIndex] = 0;
-                        if (pSprite->lotag >= kThingBase && pSprite->lotag < kThingMax)
-                            changespritestat(objIndex, kStatThing);  // if it was a thing - restore statnum
+                        if (IsThingSprite(pSprite))
+                            ChangeSpriteStat(objIndex, kStatThing);  // if it was a thing - restore statnum
+
+                        gPhysSpritesList.Remove(objIndex);
                     }
                     break;
                 }
@@ -2812,7 +2689,7 @@ void useVelocityChanger(XSPRITE* pXSource, int causerID, short objType, int objI
             }
 
             // debris physics for sprites that is allowed
-            if (t && ((t = debrisGetIndex(pSpr->index)) >= 0 || (t = debrisGetFreeIndex()) >= 0))
+            if (t)
             {
                 if (pSpr->extra <= 0)
                     dbInsertXSprite(pSpr->index);
@@ -2824,11 +2701,12 @@ void useVelocityChanger(XSPRITE* pXSource, int causerID, short objType, int objI
                 }
 
                 XSPRITE* pXSpr = &xsprite[pSpr->extra];
-                pXSpr->physAttr = pXSource->physAttr, gPhysSpritesList[t] = pSpr->index;
-                
-                getSpriteMassBySize(pSpr);
-                if (t >= gPhysSpritesCount)
-                    gPhysSpritesCount++;
+                pXSpr->physAttr = pXSource->physAttr;
+                if (!gPhysSpritesList.Exists(pSpr->index))
+                {
+                    getSpriteMassBySize(pSpr);
+                    gPhysSpritesList.Add(pSpr->index);
+                }
             }
         }
 
@@ -2997,49 +2875,75 @@ void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite) {
     }
 }
 
+void effectGenPropagateAppearance(spritetype* pSrc, spritetype* pDest, spritetype* pFx)
+{
+    if (pSrc->flags & kModernTypeFlag1)
+    {
+        pFx->pal = pSrc->pal;
+        pFx->xoffset = pSrc->xoffset;
+        pFx->yoffset = pSrc->yoffset;
+        pFx->xrepeat = pSrc->xrepeat;
+        pFx->yrepeat = pSrc->yrepeat;
+        pFx->shade = pSrc->shade;
+    }
 
-void useEffectGen(XSPRITE* pXSource, spritetype* pSprite) {
-    
+    if (pSrc->flags & kModernTypeFlag2)
+    {
+        pFx->cstat = pSrc->cstat;
+        if (pFx->cstat & CSTAT_SPRITE_INVISIBLE)
+            pFx->cstat &= ~CSTAT_SPRITE_INVISIBLE;
+    }
+
+    if (pSrc->flags & kModernTypeFlag8)
+        pFx->ang = pDest->ang;
+    else if (pSrc->flags & kModernTypeFlag4)
+        pFx->ang = pSrc->ang;
+
+    if (pSrc->flags & kModernTypeFlag16)
+        pFx->picnum = pSrc->picnum;
+}
+
+void useEffectGen(XSPRITE* pXSource, spritetype* pSpr)
+{
+    int pos, top, bottom;
     int fxId = (pXSource->data3 <= 0) ? pXSource->data2 : pXSource->data2 + Random(pXSource->data3 + 1);
     spritetype* pSource = &sprite[pXSource->reference];
-    if (pSprite == NULL)
-        pSprite = pSource;
+    spritetype* pFx = NULL;
+    
+    if (pSpr == NULL)
+        pSpr = pSource;
 
+    if (pSpr->sectnum < 0)
+        return;
 
-    if (!xspriRangeIsFine(pSprite->extra)) return;
-    else if (fxId >= kEffectGenCallbackBase) {
-        
-        int length = sizeof(gEffectGenCallbacks) / sizeof(gEffectGenCallbacks[0]);
-        if (fxId < kEffectGenCallbackBase + length) {
-            
-            fxId = gEffectGenCallbacks[fxId - kEffectGenCallbackBase];
-            evKill(pSprite->index, OBJ_SPRITE, (CALLBACK_ID)fxId);
-            evPost(pSprite->index, OBJ_SPRITE, 0, (CALLBACK_ID)fxId);
+    GetSpriteExtents(pSpr, &top, &bottom);
 
-        }
-        
-    } else if (valueIsBetween(fxId, 0, kFXMax)) {
-
-        int pos, top, bottom; GetSpriteExtents(pSprite, &top, &bottom);
-        spritetype* pEffect = NULL;
-
+    if (rngok(fxId, kEffectGenCallbackBase, kEffectGenCallbackBase + LENGTH(gEffectGenCallbacks)))
+    {
+        fxId = gEffectGenCallbacks[fxId - kEffectGenCallbackBase];
+        evKill(pSpr->index, OBJ_SPRITE, (CALLBACK_ID)fxId);
+        evPost(pSpr->index, OBJ_SPRITE, 0, (CALLBACK_ID)fxId);
+    }
+    else if (valueIsBetween(fxId, 0, kFXMax))
+    {
         // select where exactly effect should be spawned
-        switch (pXSource->data4) {
+        switch (pXSource->data4)
+        {
             case 1:
                 pos = bottom;
                 break;
             case 2: // middle
-                pos = pSprite->z + (tilesiz[pSprite->picnum].y / 2 + picanm[pSprite->picnum].yofs);
+                pos = pSpr->z + (tilesiz[pSpr->picnum].y / 2 + picanm[pSpr->picnum].yofs);
                 break;
             case 3:
             case 4:
-                if (sectRangeIsFine(pSprite->sectnum))
+                if (sectRangeIsFine(pSpr->sectnum))
                 {
                     if (pXSource->data4 == 3)
-                        pos = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+                        pos = getflorzofslope(pSpr->sectnum, pSpr->x, pSpr->y);
                     else
-                        pos = getceilzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
-                    
+                        pos = getceilzofslope(pSpr->sectnum, pSpr->x, pSpr->y);
+
                     break;
                 }
                 fallthrough__;
@@ -3047,37 +2951,15 @@ void useEffectGen(XSPRITE* pXSource, spritetype* pSprite) {
                 pos = top;
                 break;
         }
-
-        if ((pEffect = gFX.fxSpawn((FX_ID)fxId, pSprite->sectnum, pSprite->x, pSprite->y, pos)) != NULL) {
-
-            pEffect->owner = pSource->index;
-
-            if (pSource->flags & kModernTypeFlag1) {
-                pEffect->pal = pSource->pal;
-                pEffect->xoffset = pSource->xoffset;
-                pEffect->yoffset = pSource->yoffset;
-                pEffect->xrepeat = pSource->xrepeat;
-                pEffect->yrepeat = pSource->yrepeat;
-                pEffect->shade = pSource->shade;
-            }
-
-            if (pSource->flags & kModernTypeFlag2) {
-                pEffect->cstat = pSource->cstat;
-                if (pEffect->cstat & CSTAT_SPRITE_INVISIBLE)
-                    pEffect->cstat &= ~CSTAT_SPRITE_INVISIBLE;
-            }
-
-            if (pSource->flags & kModernTypeFlag4)
-            {
-                pEffect->ang = pSource->ang;
-            }
-
-            if (pEffect->cstat & CSTAT_SPRITE_ONE_SIDED)
-                pEffect->cstat &= ~CSTAT_SPRITE_ONE_SIDED;
-
+        
+        if ((pFx = gFX.fxSpawn((FX_ID)fxId, pSpr->sectnum, pSpr->x, pSpr->y, pos)) != NULL)
+        {
+            pFx->owner = pSource->index;
+            effectGenPropagateAppearance(pSource, pSpr, pFx);
+            if (pFx->cstat & CSTAT_SPRITE_ONE_SIDED)
+                pFx->cstat &= ~CSTAT_SPRITE_ONE_SIDED;
         }
     }
-
 }
 
 
@@ -3101,11 +2983,6 @@ void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector) {
     if ((pXSource->data1 & 0x0001))
         windVel = nnExtRandom(0, windVel);
     
-    // process vertical wind in nnExtProcessSuperSprites();
-    if ((pSource->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)) {
-        pXSource->sysData2 = windVel << 1;
-        return;
-    }
 
     pXSector->windVel = windVel;
     if ((pSource->flags & kModernTypeFlag1))
@@ -3216,108 +3093,156 @@ void useSpriteDamager(XSPRITE* pXSource, int objType, int objIndex) {
     }
 }
 
-void damageSprites(XSPRITE* pXSource, spritetype* pSprite) {
-    spritetype* pSource = &sprite[pXSource->reference];
-    if (!IsDudeSprite(pSprite) || !xspriRangeIsFine(pSprite->extra) || xsprite[pSprite->extra].health <= 0 || pXSource->data3 < 0)
+void damageSprites(XSPRITE* pXSource, spritetype* pSpr)
+{
+    if (!IsDudeSprite(pSpr) || !xsprIsFine(pSpr) || pXSource->data3 < 0)
+        return;
+
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+    if (pXSpr->health <= 0 || pXSpr->locked)
         return;
     
-
+    PLAYER* pPlayer = getPlayerById(pSpr->type);
+    if (pPlayer && (powerupCheck(pPlayer, kPwUpDeathMask) || pPlayer->godMode))
+        return;
+    
     int health = 0;
-    XSPRITE* pXSprite = &xsprite[pSprite->extra]; PLAYER* pPlayer = getPlayerById(pSprite->type);
     int dmgType = (pXSource->data2 >= kDmgFall) ? ClipHigh(pXSource->data2, kDmgElectric) : -1;
-    int dmg = pXSprite->health << 4; int armor[3];
+    int dmg = pXSpr->health; int armor[sizeof(gPlayer[0].armor)];
 
-    bool godMode = (pPlayer && ((dmgType >= 0 && pPlayer->damageControl[dmgType]) || powerupCheck(pPlayer, kPwUpDeathMask) || pPlayer->godMode
-                            /*|| seqGetID(3, pSprite->extra) == getDudeInfo(pSprite->type)->seqStartID + 16*/)); // kneeling
+    spritetype* pSource = &sprite[pXSource->reference];
+    bool immune         = (dmgType >= 0 && nnExtIsImmune(pSpr, dmgType, 0));
+    bool showEffects    = !(pSource->flags & kModernTypeFlag2); // show it by default
+    bool setHealth      = (!(pSource->flags & kModernTypeFlag8) || immune);
+    bool forceRecoil    = (pSource->flags & kModernTypeFlag4);
+    bool death          = false;
+    
 
-    if (godMode || pXSprite->locked) return;
-    else if (pXSource->data3) {
-        if (pSource->flags & kModernTypeFlag1) dmg = ClipHigh(pXSource->data3 << 1, 65535);
-        else if (pXSprite->sysData2 > 0) dmg = (ClipHigh(pXSprite->sysData2 << 4, 65535) * pXSource->data3) / kPercFull;
-        else dmg = ((getDudeInfo(pSprite->type)->startHealth << 4) * pXSource->data3) / kPercFull;
-
-        health = pXSprite->health - dmg;
+    if (pXSource->data3 > 0)
+    {
+        if (pSource->flags & kModernTypeFlag1)      dmg = ClipHigh(pXSource->data3 << 1, 65535);
+        else if (pXSpr->sysData2 > 0)               dmg = (ClipHigh(pXSpr->sysData2 << 4, 65535) * pXSource->data3) / kPercFull;
+        else                                        dmg = ((getDudeInfo(pSpr->type)->startHealth << 4) * pXSource->data3) / kPercFull;
+        
+        health = ClipLow(pXSpr->health - dmg, 0);
     }
 
-    if (dmgType >= kDmgFall) {
-        if (dmg < pXSprite->health << 4) {
-            
-            if (!nnExtIsImmune(pSprite, dmgType, 0)) {
+    death = (health <= 0);
 
-                if (pPlayer) {
+    if (!death)
+    {
+        if (dmgType >= kDmgFall && !immune)
+        {
+            if (pPlayer)
+            {
+                playerDamageArmor(pPlayer, (DAMAGE_TYPE)dmgType, dmg);
 
-                    playerDamageArmor(pPlayer, (DAMAGE_TYPE)dmgType, dmg);
-                    for (int i = 0; i < 3; armor[i] = pPlayer->armor[i], pPlayer->armor[i] = 0, i++);
-                    actDamageSprite(pSource->index, pSprite, (DAMAGE_TYPE)dmgType, dmg);
-                    for (int i = 0; i < 3; pPlayer->armor[i] = armor[i], i++);
+                memcpy(armor, pPlayer->armor, sizeof(armor)); memset(pPlayer->armor, 0, sizeof(armor));
+                actDamageSprite(pSource->index, pSpr, (DAMAGE_TYPE)dmgType, dmg); // we need clear damage (no armor)
+                memcpy(pPlayer->armor, armor, sizeof(armor));
+            }
+            else
+            {
+                actDamageSprite(pSource->index, pSpr, (DAMAGE_TYPE)dmgType, dmg);
+            }
+        }
 
-                } else {
+        // check again if dude still alive
+        if (IsDudeSprite(pSpr) && xsprIsFine(pSpr))
+        {
+            if (pXSpr->health <= 0)
+            {
+                if (dmgType < 0)
+                    death = true;
+                else
+                    return;
+            }
+            else if (IsBurningDude(pSpr))
+            {
+                if (!rngok(pXSpr->burnTime, 1, 1200))
+                    actBurnSprite(pSource->index, pXSpr, 1200);
 
-                    actDamageSprite(pSource->index, pSprite, (DAMAGE_TYPE)dmgType, dmg);
+                return;
+            }
+            else if (setHealth)
+            {
+                pXSpr->health = health;
+            }
+
+            // still may going to death 
+            if (!death)
+            {
+                if (showEffects)
+                {
+                    switch (dmgType)
+                    {
+                        case kDmgBurn:
+                            if (!rngok(pXSpr->burnTime, 1, 1200))
+                            {
+                                actBurnSprite(pSource->index, pXSpr, ClipLow(dmg >> 1, 128));
+                                evKill(pSpr->index, OBJ_SPRITE, kCallbackFXFlameLick);
+                                evPost(pSpr->index, OBJ_SPRITE, 0, kCallbackFXFlameLick); // show flames
+                            }
+                            break;
+                        case kDmgElectric:
+                            forceRecoil = true; // show tesla recoil animation
+                            break;
+                        case kDmgBullet:
+                            evKill(pSpr->index, OBJ_SPRITE, kCallbackFXBloodSpurt);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                if (Chance(0x10000 >> i))
+                                    fxSpawnBlood(pSpr, 0);
+                            }
+                            break;
+                        case kDmgChoke:
+                            if (!pPlayer || !Chance(0x2000)) break;
+                            else pPlayer->blindEffect += ClipHigh(dmg << 2, 128);
+                            break;
+                    }
                 }
 
-            } else {
-                
-                consoleSysMsg("Dude type %d is immune to damage type %d!", pSprite->type, dmgType);
-            
+                if (forceRecoil && !pPlayer)
+                {
+                    pXSpr->data3 = 32767; // to be sure dude will play the animation
+                    gDudeExtra[pSpr->extra].teslaHit = (dmgType == kDmgElectric);
+                    if (pXSpr->aiState->stateType != kAiStateRecoil)
+                        RecoilDude(pSpr, pXSpr);
+                }
             }
-
         }
-        else if (!pPlayer) actKillDude(pSource->index, pSprite, (DAMAGE_TYPE)dmgType, dmg);
-        else playerDamageSprite(pSource->index, pPlayer, (DAMAGE_TYPE)dmgType, dmg);
+        else
+        {
+            return;
+        }
     }
-    else if ((pXSprite->health = ClipLow(health, 1)) > 16);
-    else if (!pPlayer) actKillDude(pSource->index, pSprite, kDamageBullet, dmg);
-    else playerDamageSprite(pSource->index, pPlayer, kDamageBullet, dmg);
 
-    if (pXSprite->health > 0) {
-        
-        if (!(pSource->flags & kModernTypeFlag8))
-            pXSprite->health = health;
-        
-        bool showEffects = !(pSource->flags & kModernTypeFlag2); // show it by default
-        bool forceRecoil =  (pSource->flags & kModernTypeFlag4);
-        
-        if (showEffects) {
-            
-            switch (dmgType) {
+    if (death)
+    {
+        if (dmgType < 0 || immune)
+            dmgType = kDmgBullet;
+
+        if (pPlayer)
+        {
+            playerDamageSprite(pSource->index, pPlayer, (DAMAGE_TYPE)dmgType, dmg);
+        }
+        else
+        {
+            switch (dmgType)
+            {
+                case kDmgExplode:
+                    break;
                 case kDmgBurn:
-                    if (pXSprite->burnTime > 0) break;
-                    actBurnSprite(pSource->index, pXSprite, ClipLow(dmg >> 1, 128));
-                    evKill(pSprite->index, OBJ_SPRITE, kCallbackFXFlameLick);
-                    evPost(pSprite->index, OBJ_SPRITE, 0, kCallbackFXFlameLick); // show flames
+                    if (!IsBurningDude(pSpr) || pXSpr->burnTime <= 0) break;
+                    return;
+                default:
+                    pXSpr->health = 0x1000; // so it wont turn into gib immediately
                     break;
-                case kDmgElectric:
-                    forceRecoil = true; // show tesla recoil animation
-                    break;
-                case kDmgBullet:
-                    evKill(pSprite->index, OBJ_SPRITE, kCallbackFXBloodSpurt);
-                    for (int i = 1; i < 6; i++) {
-                        
-                        if (Chance(0x16000 >> i))
-                            fxSpawnBlood(pSprite, dmg << 4);
-                    }
-                    break;
-                case kDmgChoke:
-                    if (!pPlayer || !Chance(0x2000)) break;
-                    else pPlayer->blindEffect += dmg << 2;
-
             }
 
+            actKillDude(pSource->index, pSpr, (DAMAGE_TYPE)dmgType, dmg);
         }
-
-
-        if (forceRecoil && !pPlayer) {
-
-            pXSprite->data3 = 32767;
-            gDudeExtra[pSprite->extra].teslaHit = (dmgType == kDmgElectric) ? 1 : 0;
-            if (pXSprite->aiState->stateType != kAiStateRecoil)
-                RecoilDude(pSprite, pXSprite);
-        }
-
     }
-
-    return;
 }
 
 void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index) {
@@ -3544,6 +3469,11 @@ void modernTypeTrigger(int destObjType, int destObjIndex, EVENT event) {
     }
 
     switch (pSource->type) {
+        case kThingObjectExplode:
+        case kThingObjectGib:
+            if (destObjType != OBJ_SPRITE) break;
+            useGibObject(pXSource, &sprite[destObjIndex]);
+            break;
         // allows teleport any sprite from any location to the source destination
         case kMarkerWarpDest:
             if (destObjType != OBJ_SPRITE) break;
@@ -3596,7 +3526,7 @@ void modernTypeTrigger(int destObjType, int destObjIndex, EVENT event) {
         // change sector lighting dynamically
         case kModernSectorFXChanger:
             if (destObjType != OBJ_SECTOR) break;
-            useSectorLigthChanger(pXSource, &xsector[sector[destObjIndex].extra]);
+            useSectorLigthChanger(pXSource, &sector[destObjIndex]);
             break;
         // change target of dudes and make it fight
         case kModernDudeTargetChanger:
@@ -4175,6 +4105,21 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
             else if (event.cmd != kCmdToggle && event.cmd != kCmdOff && event.cmd != kCmdSpriteImpact) return true;
             DudeToGibCallback1(nSprite, pSprite->extra); // set proper gib type just in case DATAs was changed from the outside.
             return false;
+        case kThingObjectGib:
+        case kThingObjectExplode:
+            switch (event.cmd)
+            {
+                case kCmdOff:
+                case kCmdOn:
+                    if (!SetSpriteState(nSprite, pXSprite, event.cmd, causerID)) return true;
+                    break;
+                default:
+                    if (!SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, causerID)) return true;
+                    break;
+            }
+            if (!(pXSprite->sysData1 & kModernTypeFlag128)) useGibObject(pXSprite, pSprite);
+            else if (pXSprite->txID) modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, causerID);
+            return true;
         case kModernCondition:
         case kModernConditionFalse:
             if (!pXSprite->isTriggered) useCondition(pSprite, pXSprite, event);
@@ -4249,18 +4194,17 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
                 return true;
             }
             fallthrough__;
-        /*case kModernVelocityChanger:
+        case kModernSectorFXChanger:
             if (pXSprite->txID <= 0)
             {
                 if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, causerID) == 1)
-                    useVelocityChanger(pXSprite, OBJ_SECTOR, pSprite->sectnum);
+                    useSectorLigthChanger(pXSprite, NULL);
                 return true;
             }
-            fallthrough__;*/
+            fallthrough__;
         case kModernSlopeChanger:
         case kModernObjSizeChanger:
         case kModernObjPicnumChanger:
-        case kModernSectorFXChanger:
         case kModernObjDataChanger:
             modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, causerID);
             return true;
@@ -4369,6 +4313,37 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
                     break;
             }
             pXSprite->dropMsg = pXSprite->data4;
+            return true;
+        case kGenDripWater:
+        case kGenDripBlood:
+            switch (event.cmd) {
+                case kCmdOff:
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    break;
+                case kCmdRepeat:
+                {
+                    int top, bottom;
+                    GetSpriteExtents(pSprite, &top, &bottom);
+                    spritetype* pThing = actSpawnThing(pSprite->sectnum, pSprite->x, pSprite->y, bottom, (pSprite->type == kGenDripWater) ? kThingDripWater : kThingDripBlood);
+                    actPropagateSpriteOwner(pThing, pSprite);
+                    if (pXSprite->data4)
+                        zvel[pThing->index] = mulscale8(0x10000, pXSprite->data4);
+
+                    if (pXSprite->txID)
+                        evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    
+                    if (pXSprite->busyTime)
+                        evPost(nSprite, 3, 120 * (Random2(pXSprite->data1) + pXSprite->busyTime) / 10, kCmdRepeat, causerID);
+                    break;
+                }
+                default:
+                    if (!pXSprite->state)
+                    {
+                        SetSpriteState(nSprite, pXSprite, 1, causerID);
+                        evPost(nSprite, 3, 0, kCmdRepeat, causerID);
+                    }
+                    break;
+            }
             return true;
         case kGenTrigger:
             if (!(pSprite->flags & kModernTypeFlag1)) return false; // work as vanilla generator
@@ -4762,26 +4737,18 @@ void useRandomItemGen(spritetype* pSource, XSPRITE* pXSource) {
     spritetype* pDrop = randomDropPickupObject(pSource, pXSource->dropMsg);
     
 
-    if (pDrop != NULL) {
-        
+    if (pDrop != NULL)
+    {
         clampSprite(pDrop);
 
-    // check if generator affected by physics
-        if (debrisGetIndex(pSource->index) != -1 && (pDrop->extra >= 0 || dbInsertXSprite(pDrop->index) > 0)) {
-            
-        int nIndex = debrisGetFreeIndex();
-        if (nIndex >= 0) {
-            xsprite[pDrop->extra].physAttr |= kPhysMove | kPhysGravity | kPhysFalling; // must fall always
-            pSource->cstat &= ~CSTAT_SPRITE_BLOCK;
-
-            gPhysSpritesList[nIndex] = pDrop->index;
-            if (nIndex >= gPhysSpritesCount) gPhysSpritesCount++;
+        // check if generator affected by physics
+        if (gPhysSpritesList.Exists(pSource->index) && (pDrop->extra > 0 || dbInsertXSprite(pDrop->index) > 0))
+        {
+            xsprite[pDrop->extra].physAttr |= (kPhysMove | kPhysGravity | kPhysFalling); // must fall always
+            pDrop->cstat &= ~CSTAT_SPRITE_BLOCK;
+            gPhysSpritesList.AddIfNotExists(pDrop->index);
             getSpriteMassBySize(pDrop); // create mass cache
         }
-        
-    }
-    
-    
     }
 
 }
@@ -4935,24 +4902,26 @@ void useIncDecGen(XSPRITE* pXSource, short objType, int objIndex) {
 }
 
 
-void sprite2sectorSlope(spritetype* pSprite, sectortype* pSector, char rel, bool forcez) {
-    
+void sprite2sectorSlope(spritetype* pSpr, sectortype* pSect, char rel, bool forcez) {
+
     int slope = 0, z = 0;
-    switch (rel) {
+    switch (rel)
+    {
         default:
-            z = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
-            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && pSprite->extra > 0 && xsprite[pSprite->extra].Touch) z--;
-            slope = pSector->floorheinum;
+            z = getflorzofslope(pSpr->sectnum, pSpr->x, pSpr->y);
+            if ((pSpr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR && pSpr->extra > 0 && xsprite[pSpr->extra].Touch) z--;
+            slope = pSect->floorheinum;
             break;
         case 1:
-            z = getceilzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
-            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && pSprite->extra > 0 && xsprite[pSprite->extra].Touch) z++;
-            slope = pSector->ceilingheinum;
+            z = getceilzofslope(pSpr->sectnum, pSpr->x, pSpr->y);
+            if ((pSpr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR && pSpr->extra > 0 && xsprite[pSpr->extra].Touch) z++;
+            slope = pSect->ceilingheinum;
             break;
     }
 
-    spriteSetSlope(pSprite->index, slope);
-    if (forcez) pSprite->z = z;
+    spriteSetSlope(pSpr->index, slope);
+    if (forcez)
+        pSpr->z = z;
 }
 
 void useSlopeChanger(XSPRITE* pXSource, int objType, int objIndex) {
@@ -4964,115 +4933,117 @@ void useSlopeChanger(XSPRITE* pXSource, int objType, int objIndex) {
     if (pSource->flags & kModernTypeFlag1) slope = ClipRange(pXSource->data2, -32767, 32767);
     else slope = (32767 / kPercFull) * ClipRange(pXSource->data2, -kPercFull, kPercFull);
 
-    if (objType == OBJ_SECTOR) {
-        
+    if (objType == OBJ_SECTOR)
+    {
         sectortype* pSect = &sector[objIndex];
 
-        switch (pXSource->data1) {
-        case 2:
-        case 0:
-            if (slope == 0) pSect->floorstat &= ~0x0002;
-            else if (!(pSect->floorstat & 0x0002))
-                pSect->floorstat |= 0x0002;
+        switch (pXSource->data1)
+        {
+            case 2:
+            case 0:
+                if (slope == 0) pSect->floorstat &= ~0x0002;
+                else if (!(pSect->floorstat & 0x0002))
+                    pSect->floorstat |= 0x0002;
 
-            // just set floor slopew
-            if (flag2) {
+                // just set floor slopew
+                if (flag2)
+                {
+                    pSect->floorheinum = slope;
+                }
+                else
+                {
+                    // force closest floor aligned sprites to inherit slope of the sector's floor
+                    for (i = headspritesect[objIndex], oslope = pSect->floorheinum; i != -1; i = nextspritesect[i])
+                    {
+                        if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLOPE) continue;
+                        else if (getflorzofslope(objIndex, sprite[i].x, sprite[i].y) - kSlopeDist <= sprite[i].z)
+                        {
+                            sprite2sectorSlope(&sprite[i], &sector[objIndex], 0, true);
 
-                pSect->floorheinum = slope;
+                            // set new slope of floor
+                            pSect->floorheinum = slope;
 
-            } else {
+                            // force sloped sprites to be on floor slope z
+                            sprite2sectorSlope(&sprite[i], &sector[objIndex], 0, true);
 
-                // force closest floor aligned sprites to inherit slope of the sector's floor
-                for (i = headspritesect[objIndex], oslope = pSect->floorheinum; i != -1; i = nextspritesect[i]) {
-                    if (!(sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)) continue;
-                    else if (getflorzofslope(objIndex, sprite[i].x, sprite[i].y) - kSlopeDist <= sprite[i].z) {
-
-                        sprite2sectorSlope(&sprite[i], &sector[objIndex], 0, true);
-
-                        // set new slope of floor
-                        pSect->floorheinum = slope;
-
-                        // force sloped sprites to be on floor slope z
-                        sprite2sectorSlope(&sprite[i], &sector[objIndex], 0, true);
-
-                        // restore old slope for next sprite
-                        pSect->floorheinum = oslope;
-
+                            // restore old slope for next sprite
+                            pSect->floorheinum = oslope;
+                        }
                     }
+
+                    // finally set new slope of floor
+                    pSect->floorheinum = slope;
                 }
 
-                // finally set new slope of floor
-                pSect->floorheinum = slope;
+                if (pXSource->data1 == 0) break;
+                fallthrough__;
+            case 1:
+                if (slope == 0) pSect->ceilingstat &= ~0x0002;
+                else if (!(pSect->ceilingstat & 0x0002))
+                    pSect->ceilingstat |= 0x0002;
 
-            }
-
-            if (pXSource->data1 == 0) break;
-            fallthrough__;
-        case 1:
-            if (slope == 0) pSect->ceilingstat &= ~0x0002;
-            else if (!(pSect->ceilingstat & 0x0002))
-                pSect->ceilingstat |= 0x0002;
-
-            // just set ceiling slope
-            if (flag2) {
-
-                pSect->ceilingheinum = slope;
-
-            } else {
-
-                // force closest floor aligned sprites to inherit slope of the sector's ceiling
-                for (i = headspritesect[objIndex], oslope = pSect->ceilingheinum; i != -1; i = nextspritesect[i]) {
-                    if (!(sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)) continue;
-                    else if (getceilzofslope(objIndex, sprite[i].x, sprite[i].y) + kSlopeDist >= sprite[i].z) {
-
-                        sprite2sectorSlope(&sprite[i], &sector[objIndex], 1, true);
-
-                        // set new slope of ceiling
-                        pSect->ceilingheinum = slope;
-
-                        // force sloped sprites to be on ceiling slope z
-                        sprite2sectorSlope(&sprite[i], &sector[objIndex], 1, true);
-
-                        // restore old slope for next sprite
-                        pSect->ceilingheinum = oslope;
-
-                    }
+                // just set ceiling slope
+                if (flag2)
+                {
+                    pSect->ceilingheinum = slope;
                 }
+                else
+                {
+                    // force closest floor aligned sprites to inherit slope of the sector's ceiling
+                    for (i = headspritesect[objIndex], oslope = pSect->ceilingheinum; i != -1; i = nextspritesect[i])
+                    {
+                        if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLOPE) continue;
+                        else if (getceilzofslope(objIndex, sprite[i].x, sprite[i].y) + kSlopeDist >= sprite[i].z)
+                        {
+                            sprite2sectorSlope(&sprite[i], &sector[objIndex], 1, true);
 
-                // finally set new slope of ceiling
-                pSect->ceilingheinum = slope;
+                            // set new slope of ceiling
+                            pSect->ceilingheinum = slope;
 
-            }
-            break;
+                            // force sloped sprites to be on ceiling slope z
+                            sprite2sectorSlope(&sprite[i], &sector[objIndex], 1, true);
+
+                            // restore old slope for next sprite
+                            pSect->ceilingheinum = oslope;
+                        }
+                    }
+
+                    // finally set new slope of ceiling
+                    pSect->ceilingheinum = slope;
+                }
+                break;
         }
 
         // let's give a little impulse to the physics sprites...
-        for (i = headspritesect[objIndex]; i != -1; i = nextspritesect[i]) {
-
-            if (sprite[i].extra > 0 && xsprite[sprite[i].extra].physAttr > 0) {
+        for (i = headspritesect[objIndex]; i != -1; i = nextspritesect[i])
+        {
+            if (sprite[i].extra > 0 && xsprite[sprite[i].extra].physAttr > 0)
+            {
                 xsprite[sprite[i].extra].physAttr |= kPhysFalling;
                 zvel[i]++;
-                
-            } else if ((sprite[i].statnum == kStatThing || sprite[i].statnum == kStatDude) && (sprite[i].flags & kPhysGravity)) {
+            }
+            else if ((sprite[i].statnum == kStatThing || sprite[i].statnum == kStatDude) && (sprite[i].flags & kPhysGravity))
+            {
                 sprite[i].flags |= kPhysFalling;
                 zvel[i]++;
             }
-
         }
-
-    } else if (objType == OBJ_SPRITE) {
-        
+    }
+    else if (objType == OBJ_SPRITE)
+    {
         spritetype* pSpr = &sprite[objIndex];
-        if (!(pSpr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)) pSpr->cstat |= CSTAT_SPRITE_ALIGNMENT_FLOOR;
-        if ((pSpr->cstat & CSTAT_SPRITE_ALIGNMENT_SLOPE) != CSTAT_SPRITE_ALIGNMENT_SLOPE)
+        if ((pSpr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR) pSpr->cstat |= CSTAT_SPRITE_ALIGNMENT_FLOOR;
+        if ((pSpr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLOPE)
             pSpr->cstat |= CSTAT_SPRITE_ALIGNMENT_SLOPE;
 
-        switch (pXSource->data4) {
+        switch (pXSource->data4)
+        {
             case 1:
             case 2:
             case 3:
                 if (!sectRangeIsFine(pSpr->sectnum)) break;
-                switch (pXSource->data4) {
+                switch (pXSource->data4)
+                {
                     case 1: sprite2sectorSlope(pSpr, &sector[pSpr->sectnum], 0, flag2); break;
                     case 2: sprite2sectorSlope(pSpr, &sector[pSpr->sectnum], 1, flag2); break;
                     case 3:
@@ -5109,12 +5080,31 @@ void useDataChanger(XSPRITE* pXSource, int objType, int objIndex) {
     }
 }
 
-void useSectorLigthChanger(XSPRITE* pXSource, XSECTOR* pXSector) {
+void useSectorLigthChanger(XSPRITE* pXSource, sectortype* pSect) {
     
-    int i, nExtra = sector[pXSector->reference].extra;
+    XSECTOR* pXSector = NULL;
     spritetype* pSource = &sprite[pXSource->reference];
     bool relative = (pSource->flags & kModernTypeFlag16);
-
+    int i, nExtra;
+    
+    if (pSect != NULL)
+    {
+        pXSector = &xsector[pSect->extra];
+        nExtra = sector[pXSector->reference].extra;
+    }
+    else if (xsectRangeIsFine(sector[pSource->sectnum].extra))
+    {
+        pSect = &sector[pSource->sectnum];
+        pXSector = &xsector[pSect->extra];
+        nExtra = pSect->extra;
+    }
+    else
+    {
+        pSect = &sector[pSource->sectnum];
+        nExtra = dbInsertXSector(pSource->sectnum);
+        pXSector = &xsector[nExtra];
+    }
+    
     if (valueIsBetween(pXSource->data1, -1, 32767))
     {
         if (relative)
@@ -5182,13 +5172,9 @@ void useSectorLigthChanger(XSPRITE* pXSource, XSECTOR* pXSector) {
     }
 
     // add to shadeList
-    for (i = 0; i < shadeCount; i++)
-    {
-        if (shadeList[i] == nExtra)
-            break;
-    }
-
-    if (i >= shadeCount && i < kMaxXSectors - 1)
+    i = shadeCount;
+    while (--i >= 0 && shadeList[i] != nExtra);
+    if (i < 0)
         shadeList[shadeCount++] = nExtra;
     
 }
@@ -5472,6 +5458,208 @@ void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex) {
                 wall[objIndex].pal = pXSource->data3;
             break;
     }
+}
+
+bool seqForceOverride(spritetype* pSpr, SEQINST* pInst, bool ovrPic, bool ovrPal, bool ovrShd, bool ovrRep, bool ovrCst, bool setTimer)
+{
+    bool xrp, yrp, plu; 
+    bool killSeq = (ovrPic || ovrShd);
+    Seq* pSeq;
+
+    UNREFERENCED_PARAMETER(ovrCst);
+
+    if (pInst && ((pSeq = pInst->pSequence) != NULL))
+    {
+        if (!killSeq)
+        {
+            seqCanOverride(pSeq, 1, &xrp, &yrp, &plu);
+            killSeq = (ovrRep && (!xrp || !yrp));
+            if (!killSeq)
+                killSeq = (ovrPal && !plu);
+        }
+
+        if (killSeq)
+        {
+            if (setTimer && (pSeq->flags & 2)) // remove when done flag
+            {
+                evKill(pSpr->index, OBJ_SPRITE, (CALLBACK_ID)kCallbackRemove);
+                evPost(pSpr->index, OBJ_SPRITE, pInst->timeCount * kTicsPerFrame, (CALLBACK_ID)kCallbackRemove); // post remove with new time
+            }
+
+            seqKill(OBJ_SPRITE, pSpr->extra);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+void gibPropagateAppearance(XSPRITE* pXSrc, spritetype* pFrom, spritetype* pDest)
+{
+    int t, flags = pXSrc->sysData1;
+    bool xrp = true, yrp = true, plu = true;
+    bool setPal = (flags & kModernTypeFlag1);
+    bool setShd = (flags & kModernTypeFlag2);
+    bool setRep = (flags & kModernTypeFlag4);
+    bool setPic = (flags & kModernTypeFlag8);
+    bool setCst = (flags & kModernTypeFlag16);
+    bool setAng = (flags & kModernTypeFlag32);
+    bool killSeq = (setPic || setShd);
+
+    
+    if (pDest->extra) // check and kill seq animation so sprites can inherit appearance
+        seqForceOverride(pDest, GetInstance(OBJ_SPRITE, pDest->extra), setPic, setPal, setShd, setRep, setCst, !pXSrc->busyTime);
+
+    
+    if (pDest->extra > 0 && (t = seqGetID(OBJ_SPRITE, pDest->extra)) >= 0)
+    {
+        Seq* pSeq = (Seq*)gSysRes.Load(gSysRes.Lookup(t, "SEQ"));
+        if (pSeq)
+        {
+            if (!killSeq)
+            {
+                seqCanOverride(pSeq, 1, &xrp, &yrp, &plu);
+                killSeq = (setRep && (!xrp || !yrp));
+                if (!killSeq)
+                    killSeq = (setPal && !plu);
+            }
+
+            if (killSeq)
+            {
+                if (!pXSrc->busyTime && (pSeq->flags & 2)) // remove when done flag
+                {
+                    SEQINST* pInst = GetInstance(OBJ_SPRITE, pDest->extra);
+                    evKill(pDest->index, OBJ_SPRITE, (CALLBACK_ID)kCallbackRemove);
+                    evPost(pDest->index, OBJ_SPRITE, pInst->timeCount * kTicsPerFrame, (CALLBACK_ID)kCallbackRemove); // post remove with new time
+                }
+
+                seqKill(OBJ_SPRITE, pDest->extra);
+            }
+        }
+    }
+
+    // override remove timer
+    if (pXSrc->busyTime)
+    {
+        evKill(pDest->index, OBJ_SPRITE, (CALLBACK_ID)kCallbackRemove);
+        evPost(pDest->index, OBJ_SPRITE, EVTIME2TICKS(pXSrc->busyTime), (CALLBACK_ID)kCallbackRemove); // post remove with new time
+    }
+
+    if (setPal)
+        pDest->pal = pFrom->pal;
+
+    if (setShd)
+        pDest->shade = pFrom->shade;
+
+    if (setRep)
+    {
+        pDest->xrepeat = pFrom->xrepeat;
+        pDest->yrepeat = pFrom->yrepeat;
+    }
+
+    if (setPic)
+        pDest->picnum = pFrom->picnum;
+
+    if (setCst)
+    {
+        pDest->cstat = pFrom->cstat;
+        if (pDest->cstat & CSTAT_SPRITE_INVISIBLE)
+            pDest->cstat &= ~CSTAT_SPRITE_INVISIBLE;
+    }
+
+    if (setAng)
+    {
+        pDest->ang = pFrom->ang;
+    }
+    else
+    {
+        t = pDest->ang;
+        while(t == pDest->ang)
+            pDest->ang = Random2(kAng360) & kAngMask;
+    }
+}
+
+void useGibObject(XSPRITE* pXSource, spritetype* pSpr)
+{
+    spritetype* pEff;
+    spritetype* pSource = &sprite[pXSource->reference];
+
+    if (!pSpr)
+        pSpr = pSource;
+
+    static int a[3];
+    register int e, i = pSpr->index;
+    a[0] = ClipRange(pXSource->data1, 0, 31);
+    a[1] = ClipRange(pXSource->data2, 0, 31);
+    a[2] = ClipRange(pXSource->data3, 0, 31);
+
+    e = (pXSource->burnTime || mapRev2()) ? 3 : 2;
+
+    bool fromSrc = !(pXSource->sysData1 & kModernTypeFlag64);
+    bool toDest = ((pXSource->sysData1 & kModernTypeFlag128) && pXSource->txID);
+    bool remove = (!toDest && !(pSource->cstat & CSTAT_SPRITE_INVISIBLE));
+
+    if (!pXSource->sysData1)
+    {
+        i = 0;
+        while (i < e)   // just create new sprites
+        {
+            if (a[i])
+                GibSprite(pSpr, (GIBTYPE)(a[i] - 1), NULL, NULL);
+
+            i++;
+        }
+    }
+    else
+    {
+        IDLIST fxList(true);
+
+        // i don't think there is other easy way to know
+        // which sprites belongs to current objects, so...
+
+        // collect all potential effect sprites in this sector
+        for (i = headspritesect[pSpr->sectnum]; i >= 0; i = nextspritesect[i])
+        {
+            pEff = &sprite[i];
+            if (pEff->owner == pSource->index || (pEff->flags & kHitagFree)) continue;
+            else if (pEff->statnum == kStatFX || pEff->statnum == kStatThing)
+                fxList.Add(i);
+        }
+
+        i = 0;
+        while (i < e) // create new sprites
+        {
+            if (a[i])
+                GibSprite(pSpr, (GIBTYPE)(a[i] - 1), NULL, NULL);
+
+            i++;
+        }
+
+        // propagate only to new sprites
+        for (i = headspritesect[pSpr->sectnum]; i >= 0; i = nextspritesect[i])
+        {
+            pEff = &sprite[i];
+            if (pEff->flags & kHitagFree)  continue;
+            else if (pEff->statnum != kStatFX && pEff->statnum != kStatThing) continue;
+            else if (pEff->owner != pSource->index && !fxList.Exists(i))
+            {
+                gibPropagateAppearance(pXSource, (fromSrc) ? pSource : pSpr, &sprite[i]);
+                pEff->owner = pSource->index;
+            }
+        }
+
+        //viewSetSystemMessage("%d / %d / %d", fxList.Length(), fxList.SizeOf(), gStatCount[kStatFX]);
+        fxList.Free();
+    }
+
+    if (pXSource->data4 > 0)
+        sfxPlay3DSound(pSpr->x, pSpr->y, pSpr->z, pXSource->data4, pSpr->sectnum);
+
+    if (pXSource->dropMsg > 0)
+        actDropObject(pSource, pXSource->dropMsg);
+
+    if (remove)
+        actPostSprite(pSource->index, kStatFree);
 }
 
 //---------------------------------------
@@ -7444,6 +7632,41 @@ int getDigitFromValue(int nVal, int nOffs)
         return t[nOffs] - 48;
 
     return -1;
+}
+
+bool isOnRespawn(spritetype* pSpr)
+{
+    if (pSpr->flags & kHitagRespawn)
+    {
+        switch (pSpr->statnum)
+        {
+            case kStatDude:
+            case kStatThing:
+            case kStatItem:
+                return true;
+        }
+    }
+
+    return false;
+}
+
+bool seqCanOverride(Seq* pSeq, int nFrame, bool* xrp, bool* yrp, bool* plu)
+{
+    SEQFRAME* pFrame;
+    *xrp = *yrp = *plu = true;
+    if (!pSeq)
+        return true;
+
+    while (nFrame < pSeq->nFrames)
+    {
+        pFrame = &pSeq->frames[nFrame++];
+        if (pFrame->xrepeat) *xrp = false;
+        if (pFrame->yrepeat) *yrp = false;
+        if (pFrame->pal)     *plu = false;
+        // TO DO: ...add check for cstat
+    }
+
+    return (*xrp && *yrp && *plu);
 }
 
 class nnExtLoadSave : public LoadSave

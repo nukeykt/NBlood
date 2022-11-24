@@ -41,15 +41,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "triggers.h"
 #include "ai.h"
 #include "loadsave.h"
+#include "seq.h"
 
 // CONSTANTS
+#define LENGTH(x) 					        (sizeof(x) / sizeof(x[0]))
+#define EVTIME2TICKS(x)                     ((x * 120) / 10)
 
 #define TRIGGER_START_CHANNEL_NBLOOD kChannelLevelStartNBLOOD  // uncomment only for Nblood
 //#define TRIGGER_START_CHANNEL_RAZE kChannelLevelStartRAZE  // uncomment only for Raze
 
-// additional non-thing proximity, sight and physics sprites 
-#define kMaxSuperXSprites 512
-
+#define kMaxSuperXSprites    0  // 0 means no limit
 
 // additional physics attributes for debris sprites
 #define kPhysDebrisFloat 0x0008 // *debris* slowly goes up and down from it's position
@@ -68,7 +69,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kModernTypeFlag4 0x0004
 #define kModernTypeFlag8 0x0008
 #define kModernTypeFlag16 0x0010
+#define kModernTypeFlag32 0x0020
 #define kModernTypeFlag64 0x0040
+#define kModernTypeFlag128 0x0080
+#define kModernTypeFlag256 0x0100
 
 #define kMaxRandomizeRetries 16
 #define kPercFull 100
@@ -101,7 +105,6 @@ kStatModernEventRedirector          = 22,
 kStatModernPlayerLinker             = 23,
 kStatModernBrokenDudeLeech          = 24,
 kStatModernQavScene                 = 25,
-kStatModernWindGen                  = 26,
 kStatModernStealthRegion            = 27,
 kStatModernTmp                      = 39,
 kStatModernMax                      = 40,
@@ -227,30 +230,44 @@ struct PATROL_FOUND_SOUNDS {
 };
 #pragma pack(pop)
 
+
+inline bool rngok(int val, int rngA, int rngB) { return (val >= rngA && val < rngB); }
+inline bool mapRev1() { return (gModernMap == 1); }
+inline bool mapRev2() { return (gModernMap == 2); }
+
 // - CLASSES ------------------------------------------------------------------
+#define kListEndDefault     -1
+
+enum {
+kListSKIP                   = 0,
+kListOK                     = 1,
+kListREMOVE                 = 2,
+};
+
 class IDLIST
 {
-    typedef void (*IDLIST_PROCESS_FUNC)(int32_t nId);
-
 private:
-    int32_t* db;
-    int32_t  length;
+    int32_t*  db;
+    int32_t   length;
+    int32_t   limit;
+    int32_t   EOL;
 public:
-    IDLIST(bool spawnDb)
-    {
-        length = 0;
-        db = NULL;
-        if (spawnDb)
-            Init();
-    }
     ~IDLIST() { Free(); }
+    IDLIST(bool spawnDb, int nEOL = kListEndDefault, int nLimit = 0)
+    {
+        length = 0; db = NULL;
+        limit = nLimit; EOL = nEOL;
+        if (spawnDb)
+            Init(EOL, nLimit);
+    }
 
-    void Init()
+    void Init(int nEOL = kListEndDefault, int nLimit = 0)
     {
         Free();
+        limit = nLimit; EOL = nEOL;
         db = (int32_t*)Bmalloc(sizeof(int32_t));
         dassert(db != NULL);
-        db[0] = -1;
+        db[0] = EOL;
     }
 
     void Free()
@@ -260,66 +277,101 @@ public:
             Bfree(db), db = NULL;
     }
 
-    int Add(int nID)
+    int32_t* Add(int nID)
     {
-        register int t = length;
-        db[length++] = nID;
+        if (limit > 0 && length >= limit)
+            ThrowError("Limit of %d items in list reached!", limit);
+
+        register int t = length; db[length++] = nID;
         db = (int32_t*)Brealloc(db, (length + 1) * sizeof(int32_t));
         dassert(db != NULL);
-        db[length] = -1;
-        return t;
+        
+        db[length] = EOL;
+        return &db[t];
     }
 
-    int AddIfNot(int nID)
+    int32_t* AddIfNotExists(int nID)
     {
         register int t;
-        if ((t = Find(nID)) >= 0)
-            return t;
+        if ((t = Find(nID)) != EOL)
+            return &db[t];
 
         return Add(nID);
     }
 
-    bool Remove(int nID, bool isListId = false)
+    int32_t* Remove(int nID, bool internalIndex = false)
     {
-        if (!isListId && (nID = Find(nID)) < 0)
-            return false;
+        if (!internalIndex && (nID = Find(nID)) == EOL)
+            return First();
 
         if (nID < length)
             memmove(&db[nID], &db[nID + 1], (length - nID) * sizeof(int32_t));
 
         if (length > 0)
         {
+            // we realloc to length because Add reallocs to length + 1
             db = (int32_t*)Brealloc(db, length * sizeof(int32_t));
             dassert(db != NULL);
-            db[--length] = -1;
-        } else
+            db[--length] = EOL;
+        }
+        else
         {
-            Init();
+            Init(EOL, limit);
         }
 
-        return true;
+        return &db[nID];
     }
 
     int Find(int nID)
     {
         register int i = length;
-        while (--i >= 0 && db[i] != nID);
-        return i;
+        while (--i >= 0)
+        {
+            if (db[i] == nID)
+                return i;
+        }
+
+        return EOL;
     }
 
-    bool Exists(int nID) { return (Find(nID) >= 0); }
-    int32_t* GetPtr() { return (int32_t*)db; }
-    int32_t GetLength() { return length; }
-    int32_t SizeOf() { return (length + 1) * sizeof(int32_t); }
-
-    void Process(IDLIST_PROCESS_FUNC pFunc)
+    int32_t* PtrTo(int nID, bool internalIndex)
     {
-        if (!length)
-            return;
+        if (internalIndex)
+            return (rngok(nID, 0, length)) ? &db[nID] : NULL;
 
-        int32_t* pDb = db;
-        while (*pDb >= 0)
-            pFunc(*pDb++);
+        return ((nID = Find(nID)) != EOL) ? &db[nID] : NULL;
+    }
+
+    bool Exists(int nID)        { return (Find(nID) != EOL); }
+    int32_t* First()            { return &db[0]; }
+    int32_t* Last()             { return &db[ClipLow(length - 1, 0)]; }
+    int32_t Length()            { return length; }
+    int32_t EndSign()           { return EOL; }
+    int32_t SizeOf()            { return (length + 1) * sizeof(int32_t); }
+
+    void Process(char(*pFunc)(int32_t), bool reverse)
+    {
+        register int i;
+        if (reverse)
+        {
+            i = length;
+            while (--i >= 0)
+            {
+                if (pFunc(db[i]) == kListREMOVE)
+                    Remove(i, true);
+            }
+        }
+        else
+        {
+            i = 0;
+            while (db[i] != EOL)
+            {
+                if (pFunc(db[i]) == kListREMOVE)
+                    Remove(i, true);
+                else
+                    i++;
+            }
+        }
     }
 
 };
@@ -361,7 +413,7 @@ public:
     OBJECT* Ptr() { return &db[0]; }
     int Length() { return externalCount; }
 
-    int Add(int nType, int nIndex, BOOL check = FALSE)
+    int Add(int nType, int nIndex, bool check = false)
     {
         int retn = -1;
         if (check && (retn = Find(nType, nIndex)) >= 0)
@@ -436,16 +488,14 @@ extern MISSILEINFO_EXTRA gMissileInfoExtra[kMissileMax];
 extern DUDEINFO_EXTRA gDudeInfoExtra[kDudeMax];
 extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
-extern short gProxySpritesList[kMaxSuperXSprites];
-extern short gSightSpritesList[kMaxSuperXSprites];
-extern short gPhysSpritesList[kMaxSuperXSprites];
-extern short gImpactSpritesList[kMaxSuperXSprites];
-extern short gProxySpritesCount;
-extern short gSightSpritesCount;
-extern short gPhysSpritesCount;
-extern short gImpactSpritesCount;
 extern AISTATE genPatrolStates[kPatrolStateSize];
 extern SPRINSECT gSprNSect;
+
+extern IDLIST gProxySpritesList;
+extern IDLIST gSightSpritesList;
+extern IDLIST gImpactSpritesList;
+extern IDLIST gPhysSpritesList;
+
 // - FUNCTIONS ------------------------------------------------------------------
 inline bool xsprIsFine(spritetype* pSpr);
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
@@ -463,11 +513,9 @@ int randomGetDataValue(XSPRITE* pXSprite, int randType);
 void sfxPlayMissileSound(spritetype* pSprite, int missileId);
 void sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 //  -------------------------------------------------------------------------   //
-int debrisGetIndex(int nSprite);
-int debrisGetFreeIndex(void);
-void debrisBubble(int nSprite);
-void debrisMove(int listIndex);
-void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg);
+void debrisBubble(int nSpr);
+void debrisMove(int nSpr);
+void debrisConcuss(int nOwner, int nSpr, int x, int y, int z, int dmg);
 //  -------------------------------------------------------------------------   //
 void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite);
 
@@ -502,7 +550,7 @@ void useUniMissileGen(XSPRITE* pXSource, spritetype* pSprite);
 void useSoundGen(XSPRITE* pXSource, spritetype* pSprite);
 void useIncDecGen(XSPRITE* pXSource, short objType, int objIndex);
 void useDataChanger(XSPRITE* pXSource, int objType, int objIndex);
-void useSectorLigthChanger(XSPRITE* pXSource, XSECTOR* pXSector);
+void useSectorLigthChanger(XSPRITE* pXSource, sectortype* pSect);
 void useTargetChanger(XSPRITE* pXSource, spritetype* pSprite);
 void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex);
 void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex);
@@ -511,6 +559,7 @@ void useRandomTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState, int causerID)
 void useDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
 void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
 void useVelocityChanger(XSPRITE* pXSource, int causerID, short objType, int objIndex);
+void useGibObject(XSPRITE* pXSource, spritetype* pSpr);
 bool txIsRanged(XSPRITE* pXSource);
 void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernSend, int causerID);
 //  -------------------------------------------------------------------------   //
@@ -620,9 +669,11 @@ bool isUnderwaterSector(XSECTOR* pXSect);
 bool isUnderwaterSector(sectortype* pSect);
 bool isUnderwaterSector(int nSector);
 
+bool isOnRespawn(spritetype* pSpr);
 int getDigitFromValue(int nVal, int nOffs);
 void killEffectGenCallbacks(XSPRITE* pXSource);
-inline bool rngok(int val, int rngA, int rngB) { return (val >= rngA && val < rngB); }
+bool seqCanOverride(Seq* pSeq, int nFrame, bool* xrp, bool* yrp, bool* plu);
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////
