@@ -4122,7 +4122,7 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
             return true;
         case kModernCondition:
         case kModernConditionFalse:
-            if (!pXSprite->isTriggered) useCondition(pSprite, pXSprite, event);
+            if (!pXSprite->isTriggered) useCondition(pSprite, pXSprite, &event);
             return true;
         // add spawn random dude feature - works only if at least 2 data fields are not empty.
         case kMarkerDudeSpawn:
