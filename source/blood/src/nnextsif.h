@@ -43,7 +43,7 @@ void conditionsTrackingClear();
 void conditionsTrackingProcess();
 void conditionsLinkPlayer(XSPRITE* pXCtrl, PLAYER* pPlay);
 void conditionsUpdateIndex(int oType, int oldIndex, int newIndex);
-void useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT event);
+void useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT* pEvn);
 
 #ifdef CONDITIONS_USE_BUBBLE_ACTION
     void conditionsSetIsLocked(XSPRITE* pXSprite, int nValue);
