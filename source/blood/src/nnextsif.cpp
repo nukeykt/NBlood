@@ -928,7 +928,7 @@ static char sprChkOwner(void)           { return helperChkSprite(pSpr->owner); }
 static char sprChkSector(void)          { return helperChkSector(pSpr->sectnum); }
 static char sprCmpVelocityNew(void)
 {
-    switch (arg1)
+    switch (arg3)
     {
         case 0:		return (Cmp(xvel[pSpr->index]) || Cmp(yvel[pSpr->index]) || Cmp(zvel[pSpr->index]));
         case 1:		return Cmp(xvel[pSpr->index]);

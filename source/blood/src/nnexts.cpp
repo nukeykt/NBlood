@@ -60,7 +60,18 @@ IDLIST gProxySpritesList(false);
 IDLIST gSightSpritesList(false);
 IDLIST gImpactSpritesList(false);
 IDLIST gPhysSpritesList(false);
-int gVisibleSpr = 0;
+
+// SPRITES_NEAR_SECTORS
+// Intended for move sprites that is close to the outside walls with
+// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
+// --------------------------------------------------------------------------
+SPRINSECT gSprNSect;
+// --------------------------------------------------------------------
+
+// indicate if object is part of trigger
+// sequence that contains event
+// causer channel
+OBJECT_STATUS1* gEvCauser = NULL;
 
 short gEffectGenCallbacks[] = {
     
@@ -182,6 +193,17 @@ DUDEINFO_EXTRA gDudeInfoExtra[] = {
 
 };
 
+short gSysStatnum[][2] =
+{
+    {kModernStealthRegion,          kStatModernStealthRegion},
+    {kModernDudeTargetChanger,      kStatModernDudeTargetChanger},
+    {kModernCondition,              kStatModernCondition},
+    {kModernConditionFalse,         kStatModernCondition},
+    {kModernRandomTX,               kStatModernEventRedirector},
+    {kModernSequentialTX,           kStatModernEventRedirector},
+    {kModernPlayerControl,          kStatModernPlayerLinker},
+    {kModernPlayerControl,          kStatModernPlayerLinker},
+};
 
 AISTATE genPatrolStates[] = {
 
@@ -246,166 +268,6 @@ AISTATE genPatrolStates[] = {
 
 };
 
-// SPRITES_NEAR_SECTORS
-// Intended for move sprites that is close to the outside walls with
-// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
-// --------------------------------------------------------------------------
-SPRINSECT gSprNSect;
-
-void SPRINSECT::Init(int nDist)
-{
-    Free();
-
-    int i, j, k, nSprites;
-    int* collected = (int*)Bmalloc(sizeof(int)*kMaxSprites);
-    for (i = 0; i < numsectors; i++)
-    {
-        sectortype* pSect = &sector[i];
-        if (!isMovableSector(pSect->type))
-            continue;
-
-        switch (pSect->type) {
-        case kSectorZMotionSprite:
-        case kSectorSlideMarked:
-        case kSectorRotateMarked:
-            continue;
-            // only allow non-marked sectors
-        default:
-            break;
-        }
-
-        nSprites = getSpritesNearWalls(i, collected, kMaxSprites, nDist);
-
-        // exclude sprites that is not allowed
-        for (j = nSprites - 1; j >= 0; j--)
-        {
-            spritetype* pSpr = &sprite[collected[j]];
-            if ((pSpr->cstat & 0x6000) && pSpr->sectnum >= 0)
-            {
-                // if *next* sector is movable, exclude to avoid fighting
-                if (!isMovableSector(sector[pSpr->sectnum].type))
-                {
-                    switch (pSpr->statnum) {
-                    default:
-                        continue;
-                    case kStatMarker:
-                    case kStatPathMarker:
-                        if (pSpr->flags & 0x1) continue;
-                        // no break
-                    case kStatDude:
-                        break;
-                    }
-                }
-            }
-
-            nSprites--;
-            for (k = j; k < nSprites; k++)
-                collected[k] = collected[k + 1];
-        }
-
-        if (nSprites > 0)
-        {
-            db = (SPRITES*)Brealloc(db, ((unsigned int)(length + 1)) * sizeof(SPRITES));
-            dassert(db != NULL);
-
-            SPRITES* pEntry = &db[length];
-            Bmemset(pEntry->sprites, -1, sizeof(pEntry->sprites));
-            Bmemcpy(pEntry->sprites, collected, sizeof(pEntry->sprites[0]) * ClipHigh(nSprites, kMaxSprNear));
-            pEntry->nSector = i;
-            length++;
-        }
-    }
-
-    Bfree(collected);
-}
-
-int* SPRINSECT::GetSprPtr(int nSector)
-{
-    unsigned int i;
-    for (i = 0; i < length; i++)
-    {
-        if (db[i].nSector == (unsigned int)nSector && db[i].sprites[0] >= 0)
-            return (int*)db[i].sprites;
-    }
-    return NULL;
-}
-
-void SPRINSECT::Free()
-{
-    length = 0;
-    if (db)
-        Bfree(db), db = NULL;
-}
-
-bool SPRINSECT::Alloc(int nLength)
-{
-    Free();
-    if (nLength <= 0)
-        return false;
-
-    db = (SPRITES*)Bmalloc(nLength * sizeof(SPRITES));
-    dassert(db != NULL);
-        
-    length = nLength;
-    while (nLength--)
-    {
-        SPRITES* pEntry = &db[nLength];
-        Bmemset(pEntry->sprites, -1, sizeof(pEntry->sprites));
-    }
-
-    return true;
-}
-
-void SPRINSECT::Save(LoadSave* pSave)
-{
-    unsigned int i, j;
-    pSave->Write(&length, sizeof(length));  // total db length
-    for (i = 0; i < length; i++)
-    {
-        // owner sector
-        pSave->Write(&db[i].nSector, sizeof(db[i].nSector));
-        
-        j = 0;
-        while (j < kMaxSprNear)
-        {
-            pSave->Write(&db[i].sprites[j], sizeof(db[i].sprites[j]));
-            if (db[i].sprites[j] == -1) // sprites end reached
-                break;
-
-            j++;
-        }
-    }
-
-}
-
-void SPRINSECT::Load(LoadSave* pLoad)
-{
-    unsigned int i, j;
-
-    pLoad->Read(&i, sizeof(length));
-    if (!Alloc(i))
-        return; // the length is zero
-
-    for (i = 0; i < length; i++)
-    {
-        // owner sector
-        pLoad->Read(&db[i].nSector, sizeof(db[i].nSector));
-        
-        j = 0;
-        while (j < kMaxSprNear)
-        {
-            pLoad->Read(&db[i].sprites[j], sizeof(db[i].sprites[j]));
-            if (db[i].sprites[j] == -1) // sprites end reached
-                break;
-
-            j++;
-        }
-
-    }
-}
-
-// --------------------------------------------------------------------
-
 void nnExResetPatrolBonkles() {
 
     for (int i = 0; i < kMaxPatrolFoundSounds; i++) {
@@ -418,9 +280,10 @@ void nnExResetPatrolBonkles() {
 char idListProcessProxySprite(int32_t nSpr)
 {
     register int i, okDist;
+    bool causerPart;
 
     spritetype* pSpr = &sprite[nSpr];
-    if (pSpr->extra <= 0 || (pSpr->flags & kHitagFree)) return kListREMOVE;
+    if (pSpr->flags & kHitagFree) return kListREMOVE;
     else if (isOnRespawn(pSpr))
         return kListSKIP; // don't process
 
@@ -431,6 +294,8 @@ char idListProcessProxySprite(int32_t nSpr)
         return kListSKIP;
 
     okDist = (pSpr->statnum == kStatDude) ? 96 : ClipLow(pSpr->clipdist * 3, 32);
+    causerPart = isPartOfCauserScript(OBJ_SPRITE, nSpr);
+
 
     // only check players
     if (pXSpr->DudeLockout)
@@ -443,7 +308,11 @@ char idListProcessProxySprite(int32_t nSpr)
                 continue;
 
             if (CheckProximity(pPlayer->pSprite, pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, okDist))
+            {
                 trTriggerSprite(nSpr, pXSpr, kCmdSpriteProximity, pPlayer->nSprite);
+                if (!causerPart)
+                    break; // no point to keep going
+            }
         }
     }
     // check all dudes
@@ -455,7 +324,11 @@ char idListProcessProxySprite(int32_t nSpr)
             pDude = &sprite[i];
             if (!xsprIsFine(pDude) || xsprite[sprite[i].extra].health <= 0) continue;
             else if (CheckProximity(pDude, pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, okDist))
+            {
                 trTriggerSprite(nSpr, pXSpr, kCmdSpriteProximity, i);
+                if (!causerPart)
+                    break; // no point to keep going
+            }
         }
     }
     
@@ -468,8 +341,9 @@ char idListProcessSightSprite(int32_t nSpr)
     register int i, j;
     spritetype* pSpr = &sprite[nSpr];
     PLAYER* pPlayer; spritetype* pPlaySpr;
+    bool causerPart;
 
-    if (pSpr->extra <= 0 || (pSpr->flags & kHitagFree)) return kListREMOVE;
+    if (pSpr->flags & kHitagFree) return kListREMOVE;
     else if (isOnRespawn(pSpr))
         return kListSKIP; // don't process
 
@@ -491,6 +365,8 @@ char idListProcessSightSprite(int32_t nSpr)
 
         return kListOK;
     }
+
+    causerPart = isPartOfCauserScript(OBJ_SPRITE, nSpr);
 
     // check players
     for (i = connecthead; i >= 0; i = connectpoint2[i])
@@ -525,6 +401,9 @@ char idListProcessSightSprite(int32_t nSpr)
                 break;
             }
         }
+
+        if (j < 3 && !causerPart)
+            break; // no point to keep going
     }
 
     return kListOK;
@@ -533,7 +412,7 @@ char idListProcessSightSprite(int32_t nSpr)
 char idListProcessPhysSprite(int32_t nSpr)
 {
     spritetype* pSpr = &sprite[nSpr];
-    if (pSpr->extra <= 0 || (pSpr->flags & kHitagFree))
+    if (pSpr->flags & kHitagFree)
         return kListREMOVE;
 
     XSPRITE* pXSpr = &xsprite[pSpr->extra];
@@ -840,8 +719,469 @@ void nnExtResetGlobals()
 
 }
 
+
+void getSectorWalls(int nSect, int* swal, int* ewal)
+{
+    *swal = sector[nSect].wallptr;
+    *ewal = *swal + sector[nSect].wallnum - 1;
+}
+
+bool isMultiTx(short nSpr)
+{
+    register int i, j = 0;
+    if (sprite[nSpr].statnum < kStatFree && (sprite[nSpr].type == 25 || sprite[nSpr].type == 26))
+    {
+        for (i = 0; i < 4; i++)
+            if (rngok(getDataFieldOfObject(OBJ_SPRITE, nSpr, i + 1), 1, kChannelUserMax)) j++;
+    }
+
+    return (j > 0);
+}
+
+bool multiTxGetRange(int nSpr, int out[4])
+{
+    register int j;
+    XSPRITE* pXSpr = &xsprite[sprite[nSpr].extra];
+    for (j = 0; j < 4; j++) out[j] = 0;
+
+    if (rngok(pXSpr->data1, 1, kChannelUserMax) && pXSpr->data2 == 0 && pXSpr->data3 == 0 && rngok(pXSpr->data4, 1, kChannelUserMax))
+    {
+        if (pXSpr->data1 > pXSpr->data4)
+        {
+            j = pXSpr->data4;
+            pXSpr->data4 = pXSpr->data1;
+            pXSpr->data1 = j;
+        }
+
+        out[0] = pXSpr->data1;
+        out[1] = pXSpr->data4;
+        return true; // ranged
+    }
+
+    for (j = 0; j < 4; j++) out[j] = getDataFieldOfObject(OBJ_SPRITE, nSpr, j + 1);
+    return false; // normal
+}
+
+bool multiTxPointsRx(int rx, short nSpr)
+{
+    register int j; int txrng[4];
+
+    // ranged
+    if (multiTxGetRange(nSpr, txrng))
+        return (rngok(rx, txrng[0], txrng[1] + 1));
+
+
+    // normal
+    for (j = 0; j < 4; j++)
+    {
+        if (rx == txrng[j])
+            return true;
+    }
+
+    return false;
+
+}
+
+int collectObjectsByChannel(int nChannel, bool rx, OBJECT_LIST* pOut, char flags)
+{
+    bool ok, link = false, unlink = false;
+    register int i = numsectors;
+    int c = 0, j, s, e, f;
+
+    //return 0;
+
+    switch (flags & 0x30)
+    {
+    case 0x10:	link = true;    break;
+    case 0x20:	unlink = true;    break;
+    }
+
+    while (--i >= 0)
+    {
+        getSectorWalls(i, &s, &e);
+        for (j = s; j <= e; j++)
+        {
+            if (wall[j].extra > 0)
+            {
+                XWALL* pXObj = &xwall[wall[j].extra];
+                if ((rx && pXObj->rxID == nChannel) || (!rx && pXObj->txID == nChannel))
+                {
+                    if (link || unlink)
+                    {
+                        ok = ((f = collectObjectsByChannel(nChannel, !rx, NULL, 0)) > 0 && (f != 1 || pXObj->rxID != pXObj->txID));
+                        if ((!ok && link) || (ok && unlink))
+                            continue;
+                    }
+
+                    if (pOut)
+                        pOut->Add(OBJ_WALL, j);
+
+                    c++;
+                }
+            }
+        }
+
+        for (j = headspritesect[i]; j >= 0; j = nextspritesect[j])
+        {
+            if (sprite[j].extra > 0)
+            {
+                XSPRITE* pXObj = &xsprite[sprite[j].extra];
+                if ((rx && pXObj->rxID == nChannel) || (!rx && ((isMultiTx(j) && multiTxPointsRx(nChannel, j)) || pXObj->txID == nChannel)))
+                {
+                    if (link || unlink)
+                    {
+                        ok = ((f = collectObjectsByChannel(nChannel, !rx, NULL, 0)) > 0 && (f != 1 || pXObj->rxID != pXObj->txID));
+                        if ((!ok && link) || (ok && unlink))
+                            continue;
+                    }
+
+                    if (pOut)
+                        pOut->Add(OBJ_SPRITE, j);
+
+                    c++;
+                }
+            }
+        }
+
+        if (sector[i].extra > 0)
+        {
+            XSECTOR* pXObj = &xsector[sector[i].extra];
+            if ((rx && pXObj->rxID == nChannel) || (!rx && pXObj->txID == nChannel))
+            {
+                if (link || unlink)
+                {
+                    ok = ((f = collectObjectsByChannel(nChannel, !rx, NULL, 0)) > 0 && (f != 1 || pXObj->rxID != pXObj->txID));
+                    if ((!ok && link) || (ok && unlink))
+                        continue;
+                }
+
+                if (pOut)
+                    pOut->Add(OBJ_SECTOR, i);
+
+                c++;
+            }
+        }
+    }
+
+    return c;
+}
+
+int getChannelOf(int objType, int objIdx, bool rx)
+{
+    switch (objType)
+    {
+        case OBJ_WALL:      return (rx) ? xwall[wall[objIdx].extra].rxID     : xwall[wall[objIdx].extra].txID;
+        case OBJ_SPRITE:    return (rx) ? xsprite[sprite[objIdx].extra].rxID : xsprite[sprite[objIdx].extra].txID;
+        case OBJ_SECTOR:    return (rx) ? xsector[sector[objIdx].extra].rxID : xsector[sector[objIdx].extra].txID;
+    }
+
+    return -1;
+}
+
+int collectBranchByChannel(int nChannelA, bool rx, OBJECT_LIST* pOut)
+{
+    register int i = 0, l, nChannelB;
+    OBJECT_LIST objects; OBJECT* pObj;
+
+    collectObjectsByChannel(nChannelA, rx, &objects, 0);
+    pObj = objects.Ptr(); l = objects.Length();
+
+    while (i < l)
+    {
+        if (pOut->Find(pObj->type, pObj->index) < 0)
+        {
+            pOut->Add(pObj->type, pObj->index);
+            if ((nChannelB = getChannelOf(pObj->type, pObj->index, true)) > 0)
+                collectBranchByChannel(nChannelB, false, pOut);
+        }
+
+        pObj++;
+        i++;
+    }
+
+    return l;
+}
+
+void nnExtInitCauserTable()
+{
+    OBJECT_LIST objects; OBJECT* pObj;
+    register int t = sizeof(OBJECT_STATUS1) * (OBJ_SECTOR + 1);
+    collectBranchByChannel(kChannelEventCauser, false, &objects);
+
+    if (!gEvCauser)
+        gEvCauser = (OBJECT_STATUS1*)Bmalloc(t);
+
+    memset(gEvCauser, 0, t);
+
+    pObj = objects.Ptr(); t = objects.Length();
+    while (--t >= 0)
+    {
+        if (getChannelOf(pObj->type, pObj->index, false) > 0)
+            gEvCauser[pObj->type].id[pObj->index].ok = 1;
+
+        pObj++;
+    }
+}
+
+
+void nnExtInitSprite(int nSpr, bool bSaveLoad)
+{
+    register int i;
+    spritetype* pSpr = &sprite[nSpr];
+    if ((pSpr->flags & kHitagFree))
+        return;
+
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+
+    switch (pSpr->type)
+    {
+        case kModernRandomTX:
+        case kModernSequentialTX:
+            if (pXSpr->command == kCmdLink) gEventRedirectsUsed = true;
+            break;
+        case kDudeModernCustom:
+        case kDudeModernCustomBurning:
+            getSpriteMassBySize(pSpr); // create mass cache
+            if (bSaveLoad && pXSpr->data3 != pXSpr->sysData1)
+            {
+                pXSpr->data3 = pXSpr->sysData1; // move sndStartId back from sysData1 to data3 
+            }
+            break;
+    }
+
+    // init after loading save file
+    if (bSaveLoad)
+    {
+        // add in list of physics affected sprites
+        if (pXSpr->physAttr != 0)
+        {
+            gPhysSpritesList.Add(pSpr->index);
+            getSpriteMassBySize(pSpr); // create mass cache
+        }
+    }
+    else
+    {
+        // auto set going On and going Off if both are empty
+        if (pXSpr->txID && !pXSpr->triggerOn && !pXSpr->triggerOff)
+            pXSpr->triggerOn = pXSpr->triggerOff = true;
+
+        // copy custom start health to avoid overwrite by kThingBloodChunks
+        if (IsDudeSprite(pSpr))
+            pXSpr->sysData2 = pXSpr->data4;
+
+        // check reserved statnums
+        if (rngok(pSpr->statnum, kStatModernBase, kStatModernMax))
+        {
+            i = (signed int)LENGTH(gSysStatnum);
+            while(--i >= 0)
+            {
+                if (pSpr->statnum == gSysStatnum[i][1] && pSpr->type == gSysStatnum[i][0])
+                    break;
+            }
+            
+            if (i < 0)
+                ThrowError("Sprite statnum %d on sprite #%d is in a range of reserved (%d - %d)!", pSpr->statnum, pSpr->index, kStatModernBase, kStatModernMax);
+        }
+
+        switch (pSpr->type)
+        {
+            case kGenBubble:
+            case kGenBubbleMulti:
+                // convert in effect gen
+                pSpr->type = kModernEffectSpawner;
+                pSpr->flags = 0;
+                pXSpr->data2 = (pSpr->type == kGenBubble) ? FX_23 : FX_26;
+                pXSpr->data3 = 0;
+                pXSpr->data4 = 0;
+                break;
+            case kThingObjectExplode:
+            case kThingObjectGib:
+                // copy flags so 32 can be used
+                pXSpr->sysData1 = pSpr->flags;
+                pSpr->flags = 0;
+                break;
+            case kModernRandomTX:
+            case kModernSequentialTX:
+                if (pXSpr->command != kCmdLink) break;
+                // add statnum for faster redirects search
+                ChangeSpriteStat(pSpr->index, kStatModernEventRedirector);
+                break;
+            case kModernWindGenerator:
+                pSpr->cstat &= ~CSTAT_SPRITE_BLOCK;
+                break;
+            case kModernDudeTargetChanger:
+            case kModernObjDataAccumulator:
+            case kModernRandom:
+            case kModernRandom2:
+            case kModernStealthRegion:
+                pSpr->cstat &= ~CSTAT_SPRITE_BLOCK;
+                pSpr->cstat |= CSTAT_SPRITE_INVISIBLE;
+                switch (pSpr->type) {
+                        // stealth regions for patrolling enemies
+                    case kModernStealthRegion:
+                        ChangeSpriteStat(pSpr->index, kStatModernStealthRegion);
+                        break;
+                        // add statnum for faster dude searching
+                    case kModernDudeTargetChanger:
+                        ChangeSpriteStat(pSpr->index, kStatModernDudeTargetChanger);
+                        if (pXSpr->busyTime <= 0) pXSpr->busyTime = 5;
+                        pXSpr->command = kCmdLink;
+                        break;
+                        // remove kStatItem status from random item generators
+                    case kModernRandom:
+                    case kModernRandom2:
+                        ChangeSpriteStat(pSpr->index, kStatDecoration);
+                        pXSpr->sysData1 = pXSpr->command; // save the command so spawned item can inherit it
+                        pXSpr->command = kCmdLink;  // generator itself can't send commands
+                        break;
+                }
+                break;
+            case kModernThingTNTProx:
+                pXSpr->Proximity = true;
+                break;
+            case kDudeModernCustom:
+                if (pXSpr->txID <= 0) break;
+                for (i = headspritestat[kStatDude]; i >= 0; i = nextspritestat[i])
+                {
+                    XSPRITE* pXDude = &xsprite[sprite[i].extra];
+                    if (pXDude->rxID != pXSpr->txID)
+                        continue;
+
+                    ChangeSpriteStat(i, kStatInactive);
+                    i = headspritestat[kStatDude];
+                }
+                break;
+            case kDudePodMother:
+            case kDudeTentacleMother:
+                pXSpr->state = 1;
+                break;
+            case kModernPlayerControl:
+                switch (pXSpr->command)
+                {
+                    case kCmdLink:
+                        if (pXSpr->data1 && !rngok(pXSpr->data1, 1, kMaxPlayers + 1))
+                            ThrowError("\nPlayer Control (SPRITE #%d):\nPlayer out of a range (data1 = %d)", pSpr->index, pXSpr->data1);
+
+                        if (pXSpr->rxID && pXSpr->rxID != kChannelLevelStart)
+                            ThrowError("\nPlayer Control (SPRITE #%d) with Link command should have no RX ID!", pSpr->index, pXSpr->data1);
+
+                        if (pXSpr->txID && pXSpr->txID < kChannelUser)
+                            ThrowError("\nPlayer Control (SPRITE #%d):\nTX ID should be in range of %d and %d!", pSpr->index, kChannelUser, kChannelMax);
+
+                        // only one linker per player allowed
+                        for (i = headspritestat[kStatModernPlayerLinker]; i >= 0; i = nextspritestat[i])
+                        {
+                            XSPRITE* pXCtrl = &xsprite[sprite[i].extra];
+                            if (pXSpr->data1 == pXCtrl->data1)
+                                ThrowError("\nPlayer Control (SPRITE #%d):\nPlayer %d already linked with different player control sprite #%d!", pSpr->index, pXSpr->data1, i);
+                        }
+                        pXSpr->sysData1 = -1;
+                        pSpr->cstat &= ~CSTAT_SPRITE_BLOCK;
+                        ChangeSpriteStat(pSpr->index, kStatModernPlayerLinker);
+                        break;
+                    case 67: // play qav animation
+                        if (pXSpr->txID >= kChannelUser && !pXSpr->waitTime) pXSpr->waitTime = 1;
+                        ChangeSpriteStat(pSpr->index, kStatModernQavScene);
+                        break;
+                }
+                break;
+            case kModernCondition:
+            case kModernConditionFalse:
+                if (pXSpr->busyTime > 0)
+                {
+                    pXSpr->busy = pXSpr->busyTime;
+                    if (pXSpr->waitTime > 0)
+                    {
+                        pXSpr->busy += EVTIME2TICKS(pXSpr->waitTime); pXSpr->waitTime = 0;
+                        consoleSysMsg("Summing busyTime and waitTime for tracking condition #%d, RX ID %d. Result = %d ticks", pSpr->index, pXSpr->rxID, pXSpr->busyTime);
+                    }
+                }
+
+                pXSpr->Decoupled    = false; // must go through operateSprite always
+                pXSpr->Sight        = pXSpr->Impact    = pXSpr->Touch  = false;
+                pXSpr->Proximity    = pXSpr->Push      = pXSpr->Vector = false;
+                pXSpr->state        = pXSpr->restState = 0;
+
+                if (gModernMap == 2 && pXSpr->triggerOn && !pXSpr->triggerOff)
+                    pSpr->flags |= kModernTypeFlag64;
+                else
+                    pSpr->flags &= ~kModernTypeFlag64;
+
+                pXSpr->triggerOn    = pXSpr->triggerOff = false;
+                pXSpr->targetX      = pXSpr->targetY    = pXSpr->targetZ = pXSpr->target = pXSpr->sysData2 = -1;
+                ChangeSpriteStat(pSpr->index, kStatModernCondition);
+                pSpr->cstat |= CSTAT_SPRITE_INVISIBLE;
+                break;
+        }
+
+        // the following trigger flags are senseless to have together
+        if ((pXSpr->Touch && (pXSpr->Proximity || pXSpr->Sight) && pXSpr->DudeLockout)
+            || (pXSpr->Touch && pXSpr->Proximity && !pXSpr->Sight)) pXSpr->Touch = false;
+
+        if (pXSpr->Proximity && pXSpr->Sight && pXSpr->DudeLockout)
+            pXSpr->Proximity = false;
+
+        // very quick fix for floor sprites with Touch trigger flag if their Z is equals sector floorz / ceilgz
+        if (pSpr->sectnum >= 0 && pXSpr->Touch && (pSpr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+        {
+            if (pSpr->z == sector[pSpr->sectnum].floorz) pSpr->z--;
+            else if (pSpr->z == sector[pSpr->sectnum].ceilingz)
+                pSpr->z++;
+        }
+    }
+
+    // make Proximity flag work not just for dudes and things...
+    if (pXSpr->Proximity)
+    {
+        switch (pSpr->statnum)
+        {
+            case kStatFX:           case kStatExplosion:            case kStatItem:
+            case kStatPurge:        case kStatSpares:               case kStatFlare:
+            case kStatInactive:     case kStatFree:                 case kStatMarker:
+            case kStatThing:        case kStatDude:                 case kStatModernPlayerLinker:
+                break;
+            default:
+                gProxySpritesList.Add(pSpr->index);
+                break;
+        }
+    }
+
+    // make Sight, Screen, Aim flags work not just for dudes and things...
+    if (pXSpr->Sight || pXSpr->unused3)
+    {
+        switch (pSpr->statnum)
+        {
+            case kStatFX:           case kStatExplosion:            case kStatItem:
+            case kStatPurge:        case kStatSpares:               case kStatFlare:
+            case kStatInactive:     case kStatFree:                 case kStatMarker:
+            case kStatModernPlayerLinker:
+                break;
+            default:
+                gSightSpritesList.Add(pSpr->index);
+                break;
+        }
+    }
+
+    // make Impact flag work for sprites that affected by explosions...
+    if (pXSpr->Impact)
+    {
+        switch (pSpr->statnum)
+        {
+            case kStatFX:           case kStatExplosion:            case kStatItem:
+            case kStatPurge:        case kStatSpares:               case kStatFlare:
+            case kStatInactive:     case kStatFree:                 case kStatMarker:
+            case kStatModernPlayerLinker:
+                break;
+            default:
+                gImpactSpritesList.Add(pSpr->index);
+                break;
+        }
+    }
+}
+
 void nnExtInitModernStuff(bool bSaveLoad) {
     
+    register int i, j;
     nnExtResetGlobals();
 
     // initialize super xsprites lists
@@ -849,293 +1189,34 @@ void nnExtInitModernStuff(bool bSaveLoad) {
     gImpactSpritesList.Init(kListEndDefault, kMaxSuperXSprites);     gPhysSpritesList.Init(kListEndDefault,  kMaxSuperXSprites);
 
     // use true random only for single player mode, otherwise use Blood's default one.
-    if (gGameOptions.nGameType == kGameTypeSinglePlayer && !VanillaMode()) {
-        
+    if (gGameOptions.nGameType == kGameTypeSinglePlayer)
+    {
+        i = kMaxRandomizeRetries;
         gStdRandom.seed(std::random_device()());
 
         // since true random is not working if compiled with old mingw versions, we should
         // check if it works in game and if not - switch to using in-game random function.
-        for (int i = kMaxRandomizeRetries; i >= 0; i--) {
+        while (--i >= 0)
+        {
             std::uniform_int_distribution<int> dist_a_b(0, 100);
-            if (gAllowTrueRandom || i <= 0) break;
-            else if (dist_a_b(gStdRandom) != 0)
-                gAllowTrueRandom = true;
+            if (dist_a_b(gStdRandom) == 0) continue;
+            gAllowTrueRandom = true;
+            break;
         }
-
     }
 
-    if (!gAllowTrueRandom) initprintf("> STD randomness is not available, using in-game random function(s).\n");
-    else initprintf("> Using STD randomness function(s).\n");
+    consoleSysMsg("STD randomness %s available!", (gAllowTrueRandom) ? "is" : "is not");
     
-    for (int i = 0; i < kMaxXSprites; i++) {
-
-        if (xsprite[i].reference < 0) continue;
-        XSPRITE* pXSprite = &xsprite[i];  spritetype* pSprite = &sprite[pXSprite->reference];
-        
-        switch (pSprite->type) {
-            case kModernRandomTX:
-            case kModernSequentialTX:
-                if (pXSprite->command == kCmdLink) gEventRedirectsUsed = true;
-                break;
-            case kDudeModernCustom:
-            case kDudeModernCustomBurning:
-                getSpriteMassBySize(pSprite); // create mass cache
-                break;
-        }
-
-        // init after loading save file
-        if (bSaveLoad)
-        {
-            // add in list of physics affected sprites
-            if (pXSprite->physAttr != 0)
-            {
-                gPhysSpritesList.Add(pSprite->index);
-                getSpriteMassBySize(pSprite); // create mass cache
-            }
-
-            if (pXSprite->data3 != pXSprite->sysData1)
-            {
-                switch (pSprite->statnum) {
-                case kStatDude:
-                    switch (pSprite->type) {
-                    case kDudeModernCustom:
-                    case kDudeModernCustomBurning:
-                        pXSprite->data3 = pXSprite->sysData1; // move sndStartId back from sysData1 to data3 
-                        break;
-                    }
-                    break;
-                }
-            }
-
-        }
-        else
-        {
-            // auto set going On and going Off if both are empty
-            if (pXSprite->txID && !pXSprite->triggerOn && !pXSprite->triggerOff)
-                pXSprite->triggerOn = pXSprite->triggerOff = true;
-            
-            // copy custom start health to avoid overwrite by kThingBloodChunks
-            if (IsDudeSprite(pSprite))
-                pXSprite->sysData2 = pXSprite->data4;
-            
-            // check reserved statnums
-            if (pSprite->statnum >= kStatModernBase && pSprite->statnum < kStatModernMax) {
-                bool sysStat = true;
-                switch (pSprite->statnum) {
-                    case kStatModernStealthRegion:
-                        sysStat = (pSprite->type != kModernStealthRegion);
-                        break;
-                    case kStatModernDudeTargetChanger:
-                        sysStat = (pSprite->type != kModernDudeTargetChanger);
-                        break;
-                    case kStatModernCondition:
-                        sysStat = (pSprite->type != kModernCondition && pSprite->type != kModernConditionFalse);
-                        break;
-                    case kStatModernEventRedirector:
-                        sysStat = (pSprite->type != kModernRandomTX && pSprite->type != kModernSequentialTX);
-                        break;
-                    case kStatModernPlayerLinker:
-                    case kStatModernQavScene:
-                        sysStat = (pSprite->type != kModernPlayerControl);
-                        break;
-                }
-
-                if (sysStat)
-                    ThrowError("Sprite statnum %d on sprite #%d is in a range of reserved (%d - %d)!", pSprite->statnum, pSprite->index, kStatModernBase, kStatModernMax);
-            }
-
-            switch (pSprite->type) {
-                case kThingObjectExplode:
-                case kThingObjectGib:
-                    pXSprite->sysData1 = pSprite->flags;
-                    pSprite->flags = 0;
-                    break;
-                case kModernRandomTX:
-                case kModernSequentialTX:
-                    if (pXSprite->command != kCmdLink) break;
-                    // add statnum for faster redirects search
-                    ChangeSpriteStat(pSprite->index, kStatModernEventRedirector);
-                    break;
-                case kModernWindGenerator:
-                    pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
-                    break;
-                case kModernDudeTargetChanger:
-                case kModernObjDataAccumulator:
-                case kModernRandom:
-                case kModernRandom2:
-                case kModernStealthRegion:
-                    pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
-                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
-                    switch (pSprite->type) {
-                        // stealth regions for patrolling enemies
-                        case kModernStealthRegion:
-                            ChangeSpriteStat(pSprite->index, kStatModernStealthRegion);
-                            break;
-                        // add statnum for faster dude searching
-                        case kModernDudeTargetChanger:
-                            ChangeSpriteStat(pSprite->index, kStatModernDudeTargetChanger);
-                            if (pXSprite->busyTime <= 0) pXSprite->busyTime = 5;
-                            pXSprite->command = kCmdLink;
-                            break;
-                        // remove kStatItem status from random item generators
-                        case kModernRandom:
-                        case kModernRandom2:
-                            ChangeSpriteStat(pSprite->index, kStatDecoration);
-                            pXSprite->sysData1 = pXSprite->command; // save the command so spawned item can inherit it
-                            pXSprite->command  = kCmdLink;  // generator itself can't send commands
-                            break;
-                    }
-                    break;
-                case kModernThingTNTProx:
-                    pXSprite->Proximity = true;
-                    break;
-                case kDudeModernCustom: 
-                    if (pXSprite->txID <= 0) break;
-                    for (int nSprite = headspritestat[kStatDude], found = 0; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
-                        XSPRITE* pXSpr = &xsprite[sprite[nSprite].extra];
-                        if (pXSpr->rxID != pXSprite->txID) continue;
-                        else if (found) ThrowError("\nCustom dude (TX ID %d):\nOnly one incarnation allowed per channel!", pXSprite->txID);
-                        changespritestat(nSprite, kStatInactive);
-                        nSprite = headspritestat[kStatDude];
-                        found++;
-                    }
-                    break;
-                case kDudePodMother:
-                case kDudeTentacleMother:
-                    pXSprite->state = 1;
-                    break;
-                case kModernPlayerControl:
-                    switch (pXSprite->command) {
-                        case kCmdLink:
-                            if (pXSprite->data1 && !rngok(pXSprite->data1, 1, kMaxPlayers + 1))
-                                ThrowError("\nPlayer Control (SPRITE #%d):\nPlayer out of a range (data1 = %d)", pSprite->index, pXSprite->data1);
-                            
-                            if (pXSprite->rxID && pXSprite->rxID != kChannelLevelStart)
-                                ThrowError("\nPlayer Control (SPRITE #%d) with Link command should have no RX ID!", pSprite->index, pXSprite->data1);
-
-                            if (pXSprite->txID && pXSprite->txID < kChannelUser)
-                                ThrowError("\nPlayer Control (SPRITE #%d):\nTX ID should be in range of %d and %d!", pSprite->index, kChannelUser, kChannelMax);
-
-                            // only one linker per player allowed
-                            for (int nSprite = headspritestat[kStatModernPlayerLinker]; nSprite >= 0; nSprite = nextspritestat[nSprite])
-                            {
-                                if (nSprite == pSprite->index)
-                                    continue;
-
-                                XSPRITE* pXCtrl = &xsprite[sprite[nSprite].extra];
-                                if (pXSprite->data1 == pXCtrl->data1)
-                                    ThrowError("\nPlayer Control (SPRITE #%d):\nPlayer %d already linked with different player control sprite #%d!", pSprite->index, pXSprite->data1, nSprite);
-                            }
-                            pXSprite->sysData1 = -1;
-                            pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
-                            ChangeSpriteStat(pSprite->index, kStatModernPlayerLinker);
-                            break;
-                        case 67: // play qav animation
-                            if (pXSprite->txID >= kChannelUser && !pXSprite->waitTime) pXSprite->waitTime = 1;
-                            ChangeSpriteStat(pSprite->index, kStatModernQavScene);
-                            break;
-                    }
-                    break;
-                case kModernCondition:
-                case kModernConditionFalse:
-                    if (pXSprite->busyTime > 0)
-                    {
-                        if (pXSprite->waitTime > 0)
-                        {
-                            pXSprite->busyTime = ClipHigh(pXSprite->busyTime + ((pXSprite->waitTime * 120) / 10), 4095); pXSprite->waitTime = 0;
-                            consoleSysMsg("Summing busyTime and waitTime for tracking condition #%d, RX ID %d. Result = %d ticks", pSprite->index, pXSprite->rxID, pXSprite->busyTime);
-                        }
-
-                        pXSprite->busy = pXSprite->busyTime;
-                    }
-                    
-                    pXSprite->Decoupled = false; // must go through operateSprite always
-                    pXSprite->Sight     = pXSprite->Impact  = pXSprite->Touch   = false;
-                    pXSprite->Proximity = pXSprite->Push    = pXSprite->Vector  = false;
-                    pXSprite->state = pXSprite->restState = 0;
-                    
-                    if (gModernMap == 2 && pXSprite->triggerOn && !pXSprite->triggerOff)
-                        pSprite->flags |= kModernTypeFlag64;
-                    else
-                        pSprite->flags &= ~kModernTypeFlag64;
-                    
-                    pXSprite->triggerOn = pXSprite->triggerOff = false;
-                    pXSprite->targetX = pXSprite->targetY = pXSprite->targetZ = pXSprite->target = pXSprite->sysData2 = -1;
-                    ChangeSpriteStat(pSprite->index, kStatModernCondition);
-                    int oldStat = pSprite->cstat; pSprite->cstat = 0;
-                    
-                    if (oldStat & CSTAT_SPRITE_BLOCK) 
-                        pSprite->cstat |= CSTAT_SPRITE_BLOCK;
-                    
-                    if (oldStat & 0x2000) pSprite->cstat |= 0x2000;
-                    else if (oldStat & 0x4000) pSprite->cstat |= 0x4000;
-                    
-                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
-                    break;
-            }
-
-            // the following trigger flags are senseless to have together
-            if ((pXSprite->Touch && (pXSprite->Proximity || pXSprite->Sight) && pXSprite->DudeLockout)
-                    || (pXSprite->Touch && pXSprite->Proximity && !pXSprite->Sight)) pXSprite->Touch = false;
-
-            if (pXSprite->Proximity && pXSprite->Sight && pXSprite->DudeLockout)
-                pXSprite->Proximity = false;
-            
-            // very quick fix for floor sprites with Touch trigger flag if their Z is equals sector floorz / ceilgz
-            if (pSprite->sectnum >= 0 && pXSprite->Touch && (pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)) {
-                if (pSprite->z == sector[pSprite->sectnum].floorz) pSprite->z--;
-                else if (pSprite->z == sector[pSprite->sectnum].ceilingz) pSprite->z++;
-            }
-        }
-
-        // make Proximity flag work not just for dudes and things...
-        if (pXSprite->Proximity)
-        {
-            switch (pSprite->statnum)
-            {
-                case kStatFX:           case kStatExplosion:            case kStatItem:
-                case kStatPurge:        case kStatSpares:               case kStatFlare:
-                case kStatInactive:     case kStatFree:                 case kStatMarker:
-                case kStatThing:        case kStatDude:                 case kStatModernPlayerLinker:
-                    break;
-                default:
-                    gProxySpritesList.Add(pSprite->index);
-                    break;
-            }
-        }
-
-        // make Sight, Screen, Aim flags work not just for dudes and things...
-        if ((pXSprite->Sight || pXSprite->unused3))
-        {
-            switch (pSprite->statnum)
-            {
-                case kStatFX:           case kStatExplosion:            case kStatItem:
-                case kStatPurge:        case kStatSpares:               case kStatFlare:
-                case kStatInactive:     case kStatFree:                 case kStatMarker:
-                case kStatModernPlayerLinker:
-                    break;
-                default:
-                    gSightSpritesList.Add(pSprite->index);
-                    break;
-            }
-        }
-
-        // make Impact flag work for sprites that affected by explosions...
-        if (pXSprite->Impact)
-        {
-            switch (pSprite->statnum)
-            {
-                case kStatFX:           case kStatExplosion:            case kStatItem:
-                case kStatPurge:        case kStatSpares:               case kStatFlare:
-                case kStatInactive:     case kStatFree:                 case kStatMarker:
-                case kStatModernPlayerLinker:
-                    break;
-                default:
-                    gImpactSpritesList.Add(pSprite->index);
-                    break;
-            }
-        }
+    i = numsectors;
+    while (--i >= 0)
+    {
+        // initialize sprites
+        for (j = headspritesect[i]; j >= 0; j = nextspritesect[j])
+            nnExtInitSprite(j, bSaveLoad);
     }
+
+    // prepare event causer sequence table
+    nnExtInitCauserTable();
 
     // prepare conditions for use
     if (gStatCount[kStatModernCondition])
@@ -3469,6 +3550,12 @@ void modernTypeTrigger(int destObjType, int destObjIndex, EVENT event) {
     }
 
     switch (pSource->type) {
+        case kThingDripBlood:
+        case kThingDripWater:
+            if (destObjType != OBJ_SPRITE) break;
+            useDripGenerator(pXSource, &sprite[destObjIndex]);
+            break;
+        // spawn gibs with extended settings
         case kThingObjectExplode:
         case kThingObjectGib:
             if (destObjType != OBJ_SPRITE) break;
@@ -3989,21 +4076,10 @@ bool modernTypeOperateSector(int nSector, sectortype* pSector, XSECTOR* pXSector
 
 }
 
-void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite) {
-
-    genDudeSpawn(pXSource, pSprite, pSprite->clipdist << 1);
-        
-}
-
-void useDudeSpawn(XSPRITE* pXSource, spritetype* pSprite) {
-
-    if (randomSpawnDude(pXSource, pSprite, pSprite->clipdist << 1, 0) == NULL)
-        nnExtSpawnDude(pXSource, pSprite, pXSource->data1, pSprite->clipdist << 1, 0);
-}
-
 bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite, EVENT event) {
 
     int causerID = event.causer;
+
     if (event.cmd >= kCmdLock && event.cmd <= kCmdToggleLock) {
         switch (event.cmd) {
             case kCmdLock:
@@ -4151,29 +4227,28 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
         case kModernSpriteDamager:
             switch (event.cmd) {
                 case kCmdOff:
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                     else if (pXSprite->data1 == 0 && sectRangeIsFine(pSprite->sectnum)) useSpriteDamager(pXSprite, OBJ_SECTOR, pSprite->sectnum);
                     else if (pXSprite->data1 >= 666 && pXSprite->data1 < 669) useSpriteDamager(pXSprite, -1, -1);
-                    else {
-
+                    else
+                    {
                         PLAYER* pPlayer = getPlayerById(pXSprite->data1);
                         if (pPlayer != NULL)
                             useSpriteDamager(pXSprite, OBJ_SPRITE, pPlayer->pSprite->index);
                     }
 
-                    if (pXSprite->busyTime > 0)
+                    if (pXSprite->busyTime)
                         evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
@@ -4220,12 +4295,13 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
                 }
                 break;
             case kCmdOn:
-                evKill(nSprite, 3, causerID); // queue overflow protect
-                if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                evKill(nSprite, OBJ_SPRITE, causerID);
+                SetSpriteState(nSprite, pXSprite, 1, causerID);
                 if (pSprite->type == kModernSeqSpawner) seqSpawnerOffSameTx(pXSprite);
                 fallthrough__;
             case kCmdRepeat:
-                if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                else if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                 else if (pSprite->type == kModernSeqSpawner) useSeqSpawnerGen(pXSprite, 3, pSprite->index);
                 else useEffectGen(pXSprite, NULL);
 
@@ -4233,50 +4309,51 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
                     evPost(nSprite, 3, ClipLow((int(pXSprite->busyTime) + Random2(pXSprite->data1)) * 120 / 10, 0), kCmdRepeat, causerID);
                 break;
             default:
-                if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                 break;
             }
             return true;
         case kModernWindGenerator:
             switch (event.cmd) {
                 case kCmdOff:
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     windGenStopWindOnSectors(pXSprite);
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                     else useSectorWindGen(pXSprite, NULL);
 
-                    if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
+                    if (pXSprite->busyTime)
+                        evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
         case kModernVelocityChanger:
             switch (event.cmd) {
                 case kCmdOff:
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID > 0) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                     else useVelocityChanger(pXSprite, causerID, OBJ_SECTOR, pSprite->sectnum);
-                    if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
+                    if (pXSprite->busyTime)
+                        evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
@@ -4290,26 +4367,30 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
             switch (event.cmd) {
                 case kCmdOff:
                     if (pXSprite->data4 == 3) aiFightActivateDudes(pXSprite->txID);
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    if (pXSprite->txID <= 0 || !aiFightGetDudesForBattle(pXSprite)) {
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID <= 0 || !aiFightGetDudesForBattle(pXSprite))
+                    {
                         aiFightFreeAllTargets(pXSprite);
                         evPost(nSprite, 3, 0, kCmdOff, causerID);
                         break;
-                    } else {
+                    }
+                    else
+                    {
                         modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                     }
 
-                    if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
+                    if (pXSprite->busyTime)
+                        evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             pXSprite->dropMsg = pXSprite->data4;
@@ -4320,74 +4401,76 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
                 case kCmdOff:
                     SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
+                case kCmdOn:
+                    evKill(nSprite, OBJ_SPRITE, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    fallthrough__;
                 case kCmdRepeat:
-                {
-                    int top, bottom;
-                    GetSpriteExtents(pSprite, &top, &bottom);
-                    spritetype* pThing = actSpawnThing(pSprite->sectnum, pSprite->x, pSprite->y, bottom, (pSprite->type == kGenDripWater) ? kThingDripWater : kThingDripBlood);
-                    actPropagateSpriteOwner(pThing, pSprite);
-                    if (pXSprite->data4)
-                        zvel[pThing->index] = mulscale8(0x10000, pXSprite->data4);
-
-                    if (pXSprite->txID)
-                        evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
-                    
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID) modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    else useDripGenerator(pXSprite, pSprite);
                     if (pXSprite->busyTime)
                         evPost(nSprite, 3, 120 * (Random2(pXSprite->data1) + pXSprite->busyTime) / 10, kCmdRepeat, causerID);
                     break;
-                }
                 default:
-                    if (!pXSprite->state)
-                    {
-                        SetSpriteState(nSprite, pXSprite, 1, causerID);
-                        evPost(nSprite, 3, 0, kCmdRepeat, causerID);
-                    }
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
+        case kGenMissileFireball:
+            // true  = do not repeat if disabled (set as operated here)
+            // false = set as NOT operated here (opertate in vanilla code)
+            return (event.cmd == kCmdRepeat && !pXSprite->state);
         case kGenTrigger:
-            if (!(pSprite->flags & kModernTypeFlag1)) return false; // work as vanilla generator
+            if (!(pSprite->flags & kModernTypeFlag1))
+            {
+                // true  = do not repeat if disabled (set as operated here)
+                // false = set as NOT operated here (opertate in vanilla code)
+                return (event.cmd == kCmdRepeat && !pXSprite->state);
+            }
             switch (event.cmd) { // work as fast generator
                 case kCmdOff:
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    if (pXSprite->txID)
-                        evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
-                    if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID) evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    if (pXSprite->busyTime)
+                        evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
         case kModernObjDataAccumulator:
             switch (event.cmd) {
                 case kCmdOff:
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    // force OFF after *all* TX objects reach the goal value
-                    if (pSprite->flags == kModernTypeFlag0 && incDecGoalValueIsReached(pXSprite)) {
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pSprite->flags == kModernTypeFlag0 && incDecGoalValueIsReached(pXSprite))
+                    {
+                        // force OFF after *all* TX objects reach the goal value
                         evPost(nSprite, 3, 0, kCmdOff, causerID);
                         break;
                     }
                     
                     modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
-                    if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
+                    if (pXSprite->busyTime)
+                        evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
@@ -4395,20 +4478,20 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
         case kModernRandom2:
             switch (event.cmd) {
                 case kCmdOff:
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    useRandomItemGen(pSprite, pXSprite);
-                    if (pXSprite->busyTime > 0)
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else useRandomItemGen(pSprite, pXSprite);
+                    if (pXSprite->busyTime)
                         evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat, causerID);
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
@@ -4536,45 +4619,45 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
         case kGenModernSound:
             switch (event.cmd) {
             case kCmdOff:
-                if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                SetSpriteState(nSprite, pXSprite, 0, causerID);
                 break;
             case kCmdOn:
-                evKill(nSprite, 3, causerID); // queue overflow protect
-                if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                evKill(nSprite, OBJ_SPRITE, causerID);
+                SetSpriteState(nSprite, pXSprite, 1, causerID);
                 fallthrough__;
             case kCmdRepeat:
-                if (pXSprite->txID)  modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                else if (pXSprite->txID)  modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                 else useSoundGen(pXSprite, pSprite);
                 
-                if (pXSprite->busyTime > 0)
+                if (pXSprite->busyTime)
                     evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat, causerID);
                 break;
             default:
-                if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                 break;
             }
             return true;
         case kGenModernMissileUniversal:
             switch (event.cmd) {
                 case kCmdOff:
-                    if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, causerID);
+                    SetSpriteState(nSprite, pXSprite, 0, causerID);
                     break;
                 case kCmdOn:
-                    evKill(nSprite, 3, causerID); // queue overflow protect
-                    if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, causerID);
+                    evKill(nSprite, OBJ_SPRITE, causerID);
+                    SetSpriteState(nSprite, pXSprite, 1, causerID);
                     fallthrough__;
                 case kCmdRepeat:
-                    if (pXSprite->txID)  modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
+                    if (event.cmd == kCmdRepeat && !pXSprite->state) break;
+                    else if (pXSprite->txID)  modernTypeSendCommand(nSprite, pXSprite->txID, (COMMAND_ID)pXSprite->command, causerID);
                     else useUniMissileGen(pXSprite, pSprite);
                     
-                    if (pXSprite->busyTime > 0)
+                    if (pXSprite->busyTime)
                         evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat, causerID);
 
                     break;
                 default:
-                    if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, causerID);
-                    else evPost(nSprite, 3, 0, kCmdOff, causerID);
+                    evPost(nSprite, 3, 0, (COMMAND_ID)(pXSprite->state ^ 1), causerID);
                     break;
             }
             return true;
@@ -5460,6 +5543,28 @@ void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex) {
     }
 }
 
+void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite) {
+
+    genDudeSpawn(pXSource, pSprite, pSprite->clipdist << 1);
+
+}
+
+void useDripGenerator(XSPRITE* pXSource, spritetype* pSprite)
+{
+    int top, bottom;
+    GetSpriteExtents(pSprite, &top, &bottom);
+    spritetype* pThing = actSpawnThing(pSprite->sectnum, pSprite->x, pSprite->y, bottom, (pSprite->type == kGenDripWater) ? kThingDripWater : kThingDripBlood);
+    actPropagateSpriteOwner(pThing, pSprite);
+    if (pXSource->data4)
+        zvel[pThing->index] = mulscale8(0x10000, pXSource->data4);
+}
+
+void useDudeSpawn(XSPRITE* pXSource, spritetype* pSprite) {
+
+    if (randomSpawnDude(pXSource, pSprite, pSprite->clipdist << 1, 0) == NULL)
+        nnExtSpawnDude(pXSource, pSprite, pXSource->data1, pSprite->clipdist << 1, 0);
+}
+
 bool seqForceOverride(spritetype* pSpr, SEQINST* pInst, bool ovrPic, bool ovrPal, bool ovrShd, bool ovrRep, bool ovrCst, bool setTimer)
 {
     bool xrp, yrp, plu; 
@@ -6058,11 +6163,20 @@ void aiPatrolState(spritetype* pSprite, int state) {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    
+    if (!rngok(pXSprite->target, 0, kMaxSprites))
+    {
+        aiPatrolStop(pSprite, -1);
+        return;
+    }
+
     spritetype* pMarker = &sprite[pXSprite->target];
+    if (pMarker->type != kMarkerPath || !xsprIsFine(pMarker))
+    {
+        aiPatrolStop(pSprite, -1);
+        return;
+    }
+
     XSPRITE* pXMarker = &xsprite[pMarker->extra];
-    dassert(pMarker->type == kMarkerPath);
 
     bool nSeqOverride = false, crouch = false;
     int i, seq = -1, start = 0, end = kPatrolStateSize;
@@ -6117,7 +6231,10 @@ void aiPatrolState(spritetype* pSprite, int state) {
         seq = 11537, nSeqOverride = true;  // these don't have idle crouch seq for some reason...
 
     if (seq < 0)
-        return aiPatrolStop(pSprite, -1);
+    {
+        aiPatrolStop(pSprite, -1);
+        return;
+    }
 
     for (i = start; i < end; i++) {
 
@@ -7667,6 +7784,16 @@ bool seqCanOverride(Seq* pSeq, int nFrame, bool* xrp, bool* yrp, bool* plu)
     }
 
     return (*xrp && *yrp && *plu);
+}
+
+void getRxBucket(int nChannel, int* nStart, int* nEnd, RXBUCKET** pRx)
+{
+    *nStart = bucketHead[nChannel];
+    *nEnd = bucketHead[nChannel + 1];
+
+    if (pRx)
+        *pRx = &rxBucket[*nStart];
+
 }
 
 class nnExtLoadSave : public LoadSave
