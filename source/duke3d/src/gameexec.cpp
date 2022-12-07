@@ -2419,7 +2419,7 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     auto const &playerLabel = PlayerLabels[(tw = *insptr++)];
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ABORT_IF(((unsigned)playerNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)playerNum >= MAXPLAYERS) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
                               "%s[%d] invalid for player %d", playerLabel.name, lParm2, playerNum);
 
                     VM_SetPlayer(playerNum, tw, lParm2, Gv_GetVar(*insptr++));
@@ -2433,7 +2433,7 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     auto const &playerLabel = PlayerLabels[(tw = *insptr++)];
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ABORT_IF(((unsigned)playerNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)playerNum >= MAXPLAYERS) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
                               "%s[%d] invalid for player %d", playerLabel.name, lParm2, playerNum);
 
                     Gv_SetVar(*insptr++, VM_GetPlayer(playerNum, tw, lParm2));
