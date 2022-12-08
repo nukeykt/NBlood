@@ -1157,7 +1157,7 @@ bool playGenDudeSound(spritetype* pSprite, int mode) {
     // ensure sound played in it's full length (if not interruptable)
     if (pExtra->sndPlaying && !sndInfo->interruptable)
     {
-        register int i = nBonkles;
+        int i = nBonkles;
         while(--i >= 0)
         {
             BONKLE* pBonk = &Bonkle[i];

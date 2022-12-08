@@ -296,7 +296,7 @@ public:
         if (limit > 0 && length >= limit)
             ThrowError("Limit of %d items in list reached!", limit);
 
-        register int t = length; db[length++] = nID;
+        int t = length; db[length++] = nID;
         db = (int32_t*)Brealloc(db, (length + 1) * sizeof(int32_t));
         dassert(db != NULL);
         
@@ -306,7 +306,7 @@ public:
 
     int32_t* AddIfNotExists(int nID)
     {
-        register int t;
+        int t;
         if ((t = Find(nID)) != EOL)
             return &db[t];
 
@@ -338,7 +338,7 @@ public:
 
     int Find(int nID)
     {
-        register int i = length;
+        int i = length;
         while (--i >= 0)
         {
             if (db[i] == nID)
@@ -365,7 +365,7 @@ public:
 
     void Process(char(*pFunc)(int32_t), bool reverse)
     {
-        register int i;
+        int i;
         if (reverse)
         {
             i = length;
@@ -451,7 +451,7 @@ public:
 
     int Find(int nType, int nIndex)
     {
-        register int i;
+        int i;
         for (i = 0; i < externalCount; i++)
         {
             if (db[i].type == nType && db[i].index == nIndex)

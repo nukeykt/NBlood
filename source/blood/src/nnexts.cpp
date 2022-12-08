@@ -279,7 +279,7 @@ void nnExResetPatrolBonkles() {
 
 char idListProcessProxySprite(int32_t nSpr)
 {
-    register int i, okDist;
+    int i, okDist;
     bool causerPart;
 
     spritetype* pSpr = &sprite[nSpr];
@@ -338,7 +338,7 @@ char idListProcessProxySprite(int32_t nSpr)
 char idListProcessSightSprite(int32_t nSpr)
 {
     static int z[3];
-    register int i, j;
+    int i, j;
     spritetype* pSpr = &sprite[nSpr];
     PLAYER* pPlayer; spritetype* pPlaySpr;
     bool causerPart;
@@ -728,7 +728,7 @@ void getSectorWalls(int nSect, int* swal, int* ewal)
 
 bool isMultiTx(short nSpr)
 {
-    register int i, j = 0;
+    int i, j = 0;
     if (sprite[nSpr].statnum < kStatFree && (sprite[nSpr].type == 25 || sprite[nSpr].type == 26))
     {
         for (i = 0; i < 4; i++)
@@ -740,7 +740,7 @@ bool isMultiTx(short nSpr)
 
 bool multiTxGetRange(int nSpr, int out[4])
 {
-    register int j;
+    int j;
     XSPRITE* pXSpr = &xsprite[sprite[nSpr].extra];
     for (j = 0; j < 4; j++) out[j] = 0;
 
@@ -764,7 +764,7 @@ bool multiTxGetRange(int nSpr, int out[4])
 
 bool multiTxPointsRx(int rx, short nSpr)
 {
-    register int j; int txrng[4];
+    int j; int txrng[4];
 
     // ranged
     if (multiTxGetRange(nSpr, txrng))
@@ -785,7 +785,7 @@ bool multiTxPointsRx(int rx, short nSpr)
 int collectObjectsByChannel(int nChannel, bool rx, OBJECT_LIST* pOut, char flags)
 {
     bool ok, link = false, unlink = false;
-    register int i = numsectors;
+    int i = numsectors;
     int c = 0, j, s, e, f;
 
     //return 0;
@@ -880,7 +880,7 @@ int getChannelOf(int objType, int objIdx, bool rx)
 
 int collectBranchByChannel(int nChannelA, bool rx, OBJECT_LIST* pOut)
 {
-    register int i = 0, l, nChannelB;
+    int i = 0, l, nChannelB;
     OBJECT_LIST objects; OBJECT* pObj;
 
     collectObjectsByChannel(nChannelA, rx, &objects, 0);
@@ -905,7 +905,7 @@ int collectBranchByChannel(int nChannelA, bool rx, OBJECT_LIST* pOut)
 void nnExtInitCauserTable()
 {
     OBJECT_LIST objects; OBJECT* pObj;
-    register int t = sizeof(OBJECT_STATUS1) * (OBJ_SECTOR + 1);
+    int t = sizeof(OBJECT_STATUS1) * (OBJ_SECTOR + 1);
     collectBranchByChannel(kChannelEventCauser, false, &objects);
 
     if (!gEvCauser)
@@ -926,7 +926,7 @@ void nnExtInitCauserTable()
 
 void nnExtInitSprite(int nSpr, bool bSaveLoad)
 {
-    register int i;
+    int i;
     spritetype* pSpr = &sprite[nSpr];
     if ((pSpr->flags & kHitagFree))
         return;
@@ -1181,7 +1181,7 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
 
 void nnExtInitModernStuff(bool bSaveLoad) {
     
-    register int i, j;
+    int i, j;
     nnExtResetGlobals();
 
     // initialize super xsprites lists
@@ -5693,7 +5693,7 @@ void useGibObject(XSPRITE* pXSource, spritetype* pSpr)
         pSpr = pSource;
 
     static int a[3];
-    register int e, i = pSpr->index;
+    int e, i = pSpr->index;
     a[0] = ClipRange(pXSource->data1, 0, 31);
     a[1] = ClipRange(pXSource->data2, 0, 31);
     a[2] = ClipRange(pXSource->data3, 0, 31);
@@ -7605,14 +7605,14 @@ int getVelocityAngle(spritetype* pSpr)
 
 void killEffectGenCallbacks(int oId, int oType = OBJ_SPRITE)
 {
-    register int l = sizeof(gEffectGenCallbacks) / sizeof(gEffectGenCallbacks[0]);
+    int l = sizeof(gEffectGenCallbacks) / sizeof(gEffectGenCallbacks[0]);
     while (--l >= 0)
         evKill(oId, oType, (CALLBACK_ID)gEffectGenCallbacks[l]);
 }
 
 void killEffectGenCallbacks(XSPRITE* pXSource)
 {
-    register int i, j;
+    int i, j;
     if (pXSource->data2 < kEffectGenCallbackBase)
         return;
 
