@@ -228,7 +228,7 @@ static char helperChkWall(int nWall)
 
 static char helperCmpHeight(char ceil)
 {
-    register int nHeigh1, nHeigh2;
+    int nHeigh1, nHeigh2;
     switch (pSect->type)
     {
         case kSectorZMotion:
@@ -306,10 +306,10 @@ static char helperCmpSeq(int (*pFunc) (int, int))
 
 static char helperChkHitscan(int nWhat)
 {
-    register int nAng = pSpr->ang & kAngMask;
-    register int nOldStat = pSpr->cstat;
-    register int nHit = -1, nSlope = 0;
-    register int nMask = -1;
+    int nAng = pSpr->ang & kAngMask;
+    int nOldStat = pSpr->cstat;
+    int nHit = -1, nSlope = 0;
+    int nMask = -1;
 
     if ((nOldStat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLOPE)
         nSlope = spriteGetSlope(pSpr->index);
@@ -386,7 +386,7 @@ static char helperChkHitscan(int nWhat)
 
 static char helperChkMarker(int nWhat)
 {
-    register int t;
+    int t;
     if (pXSpr->dudeFlag4 && spriRangeIsFine(pXSpr->target) && sprite[pXSpr->target].type == kMarkerPath)
     {
         switch (nWhat) {
@@ -415,12 +415,12 @@ static char helperChkMarker(int nWhat)
 
 static char helperChkTarget(int nWhat)
 {
-    register int t = 0;
+    int t = 0;
     if (spriRangeIsFine(pXSpr->target))
     {
         spritetype* pTrgt = &sprite[pXSpr->target]; DUDEINFO* pInfo = getDudeInfo(pSpr->type);
-        register int eyeAboveZ = pInfo->eyeHeight * pSpr->yrepeat << 2;
-        register int dx = pTrgt->x - pSpr->x; int dy = pTrgt->y - pSpr->y;
+        int eyeAboveZ = pInfo->eyeHeight * pSpr->yrepeat << 2;
+        int dx = pTrgt->x - pSpr->x; int dy = pTrgt->y - pSpr->y;
 
         switch (nWhat) {
             case 1:
@@ -449,7 +449,7 @@ static char helperChkTarget(int nWhat)
 
 static char helperChkRoom(short* pArray, int nWhat)
 {
-    register int t = pArray[objIndex];
+    int t = pArray[objIndex];
     if (t >= 0)
     {
         if (PUSH)
@@ -495,7 +495,7 @@ static char gamCmpStatnumCount(void)    { return Cmp(gStatCount[ClipRange(arg3, 
 static char gamCmpNumsprites(void)      { return Cmp(Numsprites); }
 static char gamChkPlayerConnect(void)
 {
-    register int i;
+    int i;
     for (i = connecthead; i >= 0; i = connectpoint2[i])
     {
         if (gPlayer[i].nPlayer + 1 != arg3) continue;
@@ -520,7 +520,7 @@ static char sectCmpFloorSlope(void)     { return Cmp(pSect->floorheinum); }
 static char sectCmpCeilSlope(void)      { return Cmp(pSect->ceilingheinum); }
 static char sectChkSprTypeInSect(void)
 {
-    register int i;
+    int i;
     for (i = headspritesect[objIndex]; i >= 0; i = nextspritesect[i])
     {
         if (!Cmp(sprite[i].type)) continue;
@@ -548,7 +548,7 @@ static char wallChkIsMirror(void)
 {
 #if 0
     // new ROR code
-    register int i = mirrorcnt;
+    int i = mirrorcnt;
     while (--i >= 0)
     {
         if (mirror[i].type == 0 && mirror[i].id == objIndex)
@@ -890,7 +890,7 @@ static char mixCmpObjXIndex(void)
 
 static char mixCmpSerials(void)
 {
-    register unsigned int i = 0, d;
+    unsigned int i = 0, d;
     int serials[kPushRange + 1] = { pXCond->targetX,  pXCond->targetY,  pXCond->targetZ,  pXCond->sysData1 };
     int t[3];
     
@@ -928,7 +928,7 @@ static char sprChkOwner(void)           { return helperChkSprite(pSpr->owner); }
 static char sprChkSector(void)          { return helperChkSector(pSpr->sectnum); }
 static char sprCmpVelocityNew(void)
 {
-    switch (arg1)
+    switch (arg3)
     {
         case 0:		return (Cmp(xvel[pSpr->index]) || Cmp(yvel[pSpr->index]) || Cmp(zvel[pSpr->index]));
         case 1:		return Cmp(xvel[pSpr->index]);
@@ -960,7 +960,7 @@ static char sprCmpChkVelocity(void)
 static char sprChkUnderwater(void)      { return isUnderwaterSector(pSpr->sectnum); }
 static char sprChkDmgImmune(void)
 {
-    register int i;
+    int i;
     if (arg1 == -1)
     {
         for (i = 0; i < kDmgMax; i++)
@@ -982,7 +982,7 @@ static char sprChkHitscanSpr(void)      { return helperChkHitscan(4); }
 static char sprChkHitscanMasked(void)   { return helperChkHitscan(5); }
 static char sprChkIsTarget(void)
 {
-    register int i;
+    int i;
     for (i = headspritestat[kStatDude]; i >= 0; i = nextspritestat[i])
     {
         if (pSpr->index == i)
@@ -1002,7 +1002,7 @@ static char sprChkIsTarget(void)
 /**---------------------------------------------------------------------------**/
 static char sprCmpHealth(void)
 {
-    register int t = 0;
+    int t = 0;
     if (IsDudeSprite(pSpr))
         t = (pXSpr->sysData2 > 0) ? ClipRange(pXSpr->sysData2 << 4, 1, 65535) : getDudeInfo(pSpr->type)->startHealth << 4;
     else if (pSpr->type == kThingBloodChunks)
@@ -1036,7 +1036,7 @@ static char sprChkTouchWall(void)
 /**---------------------------------------------------------------------------**/
 static char sprChkTouchSpite(void)
 {
-    register int id = -1;
+    int id = -1;
     SPRITEHIT* pHit;
 
     if (xAvail)
@@ -1095,7 +1095,7 @@ static char sprChkTouchSpite(void)
 /**---------------------------------------------------------------------------**/
 static char sprCmpBurnTime(void)
 {
-    register int t = (IsDudeSprite(pSpr)) ? 2400 : 1200;
+    int t = (IsDudeSprite(pSpr)) ? 2400 : 1200;
     if (!Cmp((kPercFull * pXSpr->burnTime) / t)) return false;
     else if (PUSH && spriRangeIsFine(pXSpr->burnSource)) Push(EVOBJ_SPRITE, pXSpr->burnSource);
     return true;
@@ -1103,7 +1103,7 @@ static char sprCmpBurnTime(void)
 /**---------------------------------------------------------------------------**/
 static char sprChkIsFlareStuck(void)
 {
-    register int i;
+    int i;
     for (i = headspritestat[kStatFlare]; i >= 0; i = nextspritestat[i])
     {
         spritetype* pFlare = &sprite[i];
@@ -1163,7 +1163,7 @@ static char gdudCmpAiStateTimer(void)       { return Cmp(pXSpr->stateTimer); };
 static char cdudChkLeechThrown(void) { return helperChkSprite(genDudeExtra(pSpr)->nLifeLeech); };
 static char cdudChkLeechDead(void)
 {
-    register int t;
+    int t;
     t = genDudeExtra(pSpr)->nLifeLeech;
     if (!spriRangeIsFine(t) && pSpr->owner == kMaxSprites - 1) return true;
     else if (PUSH) Push(EVOBJ_SPRITE, t);
@@ -1211,7 +1211,7 @@ static char plyChkPackItemActive(void)      { return (valueIsBetween(arg1, 0, 6)
 static char plyCmpPackItemSelect(void)      { return Cmp(pPlayer->packItemId + 1); }
 static char plyCmpPowerupAmount(void)
 {
-    register int t;
+    int t;
     if (arg3 > 0 && arg3 <= (kMaxAllowedPowerup - (kMinAllowedPowerup << 1) + 1))
     {
         t = (kMinAllowedPowerup + arg3) - 1; // allowable powerups
@@ -1271,7 +1271,7 @@ static char plyCmpAmmo(void)
 }
 static char plyChkSpriteItOwns(void)
 { 
-    register int i;
+    int i;
     if (rngok(arg3, 0, kMaxStatus + 1))
     {
         for (i = headspritestat[arg3]; i >= 0; i = nextspritestat[i])
@@ -1586,7 +1586,7 @@ static char CheckCustomDude()
 
 static char CheckPlayer()
 {
-    register int i;
+    int i;
     if (objType == EVOBJ_SPRITE && rngok(objIndex, 0, kMaxSprites))
     {
         pSpr = &sprite[objIndex];
@@ -1685,7 +1685,7 @@ static void Push(int oType, int oIndex)
 
 static void Restore()
 {
-    register int t;
+    int t;
     switch (pXCond->command - kCmdPop)
     {
         case 0:
@@ -2000,7 +2000,7 @@ void conditionsTrackingAlloc(bool bSaveLoad)
 
 void conditionsTrackingClear()
 {
-    register int i = gTrackingConditionsListLength;
+    int i = gTrackingConditionsListLength;
     if (gTrackingConditionsList)
     {
         while (--i >= 0)
@@ -2028,8 +2028,8 @@ void conditionsTrackingProcess()
     TRACKING_CONDITION* pTr;
     XSPRITE* pXSpr;
     
-    register int i = gTrackingConditionsListLength;
-    register int t;
+    int i = gTrackingConditionsListLength;
+    int t;
 
     while (--i >= 0)
     {
@@ -2050,8 +2050,8 @@ void conditionsTrackingProcess()
 
 void conditionsLinkPlayer(XSPRITE* pXCtrl, PLAYER* pPlay)
 {
-    register int i = gTrackingConditionsListLength;
-    register int t;
+    int i = gTrackingConditionsListLength;
+    int t;
     OBJECT* o;
 
     // search for player control sprite and replace it with actual player sprite
@@ -2080,8 +2080,8 @@ void conditionsLinkPlayer(XSPRITE* pXCtrl, PLAYER* pPlay)
 // this updates index of object in all conditions
 void conditionsUpdateIndex(int oType, int oldIndex, int newIndex)
 {
-    register int i = gTrackingConditionsListLength;
-    register int t;
+    int i = gTrackingConditionsListLength;
+    int t;
     OBJECT* o;
 
     // update index in tracking conditions first
@@ -2292,7 +2292,7 @@ void useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT* pEvn)
 #ifdef CONDITIONS_USE_BUBBLE_ACTION
 void conditionsBubble(XSPRITE* pXStart, void(*pActionFunc)(XSPRITE*, int), int nValue)
 {
-    register int i, j;
+    int i, j;
 
     pActionFunc(pXStart, nValue);
 

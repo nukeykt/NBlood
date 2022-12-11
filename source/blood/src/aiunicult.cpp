@@ -1157,7 +1157,7 @@ bool playGenDudeSound(spritetype* pSprite, int mode) {
     // ensure sound played in it's full length (if not interruptable)
     if (pExtra->sndPlaying && !sndInfo->interruptable)
     {
-        register int i = nBonkles;
+        int i = nBonkles;
         while(--i >= 0)
         {
             BONKLE* pBonk = &Bonkle[i];
@@ -1250,14 +1250,23 @@ void killDudeLeech(spritetype* pLeech) {
 }
     
 XSPRITE* getNextIncarnation(XSPRITE* pXSprite) {
-    for (int i = bucketHead[pXSprite->txID]; i < bucketHead[pXSprite->txID + 1]; i++) {
-        if (rxBucket[i].type != 3 || rxBucket[i].index == pXSprite->reference)
-            continue;
-        
-        if (sprite[rxBucket[i].index].statnum == kStatInactive)
-            return &xsprite[sprite[rxBucket[i].index].extra];
+    
+    RXBUCKET* pRx; int s, e, t = -1;
+    getRxBucket(pXSprite->txID, &s, &e, &pRx);
+    while (s < e)
+    {
+        if (pRx->type == OBJ_SPRITE && sprite[pRx->index].statnum == kStatInactive)
+        {
+            t = pRx->index;
+            if (nnExtRandom(0, 6) == 3)
+                break;
+        }
+
+        pRx++;
+        s++;
     }
-    return NULL;
+
+    return (t >= 0) ? &xsprite[sprite[t].extra] : NULL;
 }
 
 bool dudeIsMelee(XSPRITE* pXSprite) {
@@ -1788,13 +1797,15 @@ void genDudeTransform(spritetype* pSprite) {
             // re-init sprite
             aiInitSprite(pSprite);
 
-            // try to restore target
-            if (target == -1) aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
-            else aiSetTarget(pXSprite, target);
+            if (!pXSprite->dudeFlag4)
+            {
+                // try to restore target
+                if (target == -1) aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                else aiSetTarget(pXSprite, target);
 
-            // finally activate it
-            aiActivateDude(pSprite, pXSprite);
-
+                // finally activate it
+                aiActivateDude(pSprite, pXSprite);
+            }
             break;
     }
     pXIncarnation->triggerOn = triggerOn;

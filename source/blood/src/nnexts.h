@@ -228,6 +228,20 @@ struct PATROL_FOUND_SOUNDS {
     int cur;
 
 };
+
+struct OBJECT_STATUS1
+{
+    struct
+    {
+        unsigned int ok : 1;
+    }
+#if kMaxSprites >= kMaxSectors
+    id[kMaxSprites];
+#else
+    id[kMaxSectors];
+#endif
+};
+
 #pragma pack(pop)
 
 
@@ -282,7 +296,7 @@ public:
         if (limit > 0 && length >= limit)
             ThrowError("Limit of %d items in list reached!", limit);
 
-        register int t = length; db[length++] = nID;
+        int t = length; db[length++] = nID;
         db = (int32_t*)Brealloc(db, (length + 1) * sizeof(int32_t));
         dassert(db != NULL);
         
@@ -292,7 +306,7 @@ public:
 
     int32_t* AddIfNotExists(int nID)
     {
-        register int t;
+        int t;
         if ((t = Find(nID)) != EOL)
             return &db[t];
 
@@ -324,7 +338,7 @@ public:
 
     int Find(int nID)
     {
-        register int i = length;
+        int i = length;
         while (--i >= 0)
         {
             if (db[i] == nID)
@@ -351,11 +365,11 @@ public:
 
     void Process(char(*pFunc)(int32_t), bool reverse)
     {
-        register int i;
+        int i;
         if (reverse)
         {
             i = length;
-            while (--i >= 0)
+            while (--i >= 0 && db[i] != EOL)
             {
                 if (pFunc(db[i]) == kListREMOVE)
                     Remove(i, true);
@@ -437,7 +451,7 @@ public:
 
     int Find(int nType, int nIndex)
     {
-        register int i;
+        int i;
         for (i = 0; i < externalCount; i++)
         {
             if (db[i].type == nType && db[i].index == nIndex)
@@ -447,35 +461,6 @@ public:
         return -1;
     }
 };
-
-// SPRITES_NEAR_SECTORS
-// Intended for move sprites that is close to the outside walls with
-// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
-// --------------------------------------------------------------------------
-class SPRINSECT
-{
-#define kMaxSprNear 256
-#define kWallDist	16
-
-private:
-    struct SPRITES
-    {
-        unsigned int nSector;
-        signed   int sprites[kMaxSprNear + 1];
-    };
-    SPRITES* db;
-    unsigned int length;
-    bool Alloc(int nLength); // normally should be used when loading saved game
-public:
-    void Free();
-    void Init(int nDist = kWallDist); // used in trInit to collect the sprites before translation
-    void Save(LoadSave* pSave);
-    void Load(LoadSave* pLoad);
-    int* GetSprPtr(int nSector);
-    ~SPRINSECT() { Free(); };
-
-};
-
 
 // - VARIABLES ------------------------------------------------------------------
 extern bool gTeamsSpawnUsed;
@@ -489,12 +474,12 @@ extern DUDEINFO_EXTRA gDudeInfoExtra[kDudeMax];
 extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
 extern AISTATE genPatrolStates[kPatrolStateSize];
-extern SPRINSECT gSprNSect;
 
 extern IDLIST gProxySpritesList;
 extern IDLIST gSightSpritesList;
 extern IDLIST gImpactSpritesList;
 extern IDLIST gPhysSpritesList;
+extern OBJECT_STATUS1* gEvCauser;
 
 // - FUNCTIONS ------------------------------------------------------------------
 inline bool xsprIsFine(spritetype* pSpr);
@@ -560,6 +545,7 @@ void useDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
 void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite);
 void useVelocityChanger(XSPRITE* pXSource, int causerID, short objType, int objIndex);
 void useGibObject(XSPRITE* pXSource, spritetype* pSpr);
+void useDripGenerator(XSPRITE* pXSource, spritetype* pSprite);
 bool txIsRanged(XSPRITE* pXSource);
 void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernSend, int causerID);
 //  -------------------------------------------------------------------------   //
@@ -668,12 +654,192 @@ bool isMovableSector(sectortype* pSect);
 bool isUnderwaterSector(XSECTOR* pXSect);
 bool isUnderwaterSector(sectortype* pSect);
 bool isUnderwaterSector(int nSector);
-
 bool isOnRespawn(spritetype* pSpr);
 int getDigitFromValue(int nVal, int nOffs);
 void killEffectGenCallbacks(XSPRITE* pXSource);
 bool seqCanOverride(Seq* pSeq, int nFrame, bool* xrp, bool* yrp, bool* plu);
+void getRxBucket(int nChannel, int* nStart, int* nEnd, RXBUCKET** pRx = NULL);
+inline bool isPartOfCauserScript(int objType, int objIndex)
+{
+    return gEvCauser[objType].id[objIndex].ok;
+}
 
+// SPRITES_NEAR_SECTORS
+// Intended for move sprites that is close to the outside walls with
+// TranslateSector and/or zTranslateSector similar to Powerslave(Exhumed) way
+// --------------------------------------------------------------------------
+class SPRINSECT
+{
+#define kMaxSprNear 256
+#define kWallDist	16
+
+private:
+    //-----------------------------------------------------------------------------------
+    struct SPRITES
+    {
+        unsigned int nSector;
+        signed   int sprites[kMaxSprNear + 1];
+    };
+    SPRITES* db;
+    unsigned int length;
+    //-----------------------------------------------------------------------------------
+    bool Alloc(int nLength) // normally should be used when loading saved game
+    {
+        Free();
+        if (nLength <= 0)
+            return false;
+
+        db = (SPRITES*)Bmalloc(nLength * sizeof(SPRITES));
+        dassert(db != NULL);
+
+        length = nLength;
+        while (nLength--)
+        {
+            SPRITES* pEntry = &db[nLength];
+            Bmemset(pEntry->sprites, -1, sizeof(pEntry->sprites));
+        }
+
+        return true;
+    }
+    //-----------------------------------------------------------------------------------
+public:
+    void Free()
+    {
+        length = 0;
+        if (db)
+            Bfree(db), db = NULL;
+    }
+    //-----------------------------------------------------------------------------------
+    void Init(int nDist = kWallDist) // used in trInit to collect the sprites before translation
+    {
+        Free();
+
+        int i, j, k, nSprites;
+        int* collected = (int*)Bmalloc(sizeof(int) * kMaxSprites);
+        for (i = 0; i < numsectors; i++)
+        {
+            sectortype* pSect = &sector[i];
+            if (!isMovableSector(pSect->type))
+                continue;
+
+            switch (pSect->type) {
+            case kSectorZMotionSprite:
+            case kSectorSlideMarked:
+            case kSectorRotateMarked:
+                continue;
+                // only allow non-marked sectors
+            default:
+                break;
+            }
+
+            nSprites = getSpritesNearWalls(i, collected, kMaxSprites, nDist);
+
+            // exclude sprites that is not allowed
+            for (j = nSprites - 1; j >= 0; j--)
+            {
+                spritetype* pSpr = &sprite[collected[j]];
+                if ((pSpr->cstat & 0x6000) && pSpr->sectnum >= 0)
+                {
+                    // if *next* sector is movable, exclude to avoid fighting
+                    if (!isMovableSector(sector[pSpr->sectnum].type))
+                    {
+                        switch (pSpr->statnum) {
+                        default:
+                            continue;
+                        case kStatMarker:
+                        case kStatPathMarker:
+                            if (pSpr->flags & 0x1) continue;
+                            // no break
+                        case kStatDude:
+                            break;
+                        }
+                    }
+                }
+
+                nSprites--;
+                for (k = j; k < nSprites; k++)
+                    collected[k] = collected[k + 1];
+            }
+
+            if (nSprites > 0)
+            {
+                db = (SPRITES*)Brealloc(db, ((unsigned int)(length + 1)) * sizeof(SPRITES));
+                dassert(db != NULL);
+
+                SPRITES* pEntry = &db[length];
+                Bmemset(pEntry->sprites, -1, sizeof(pEntry->sprites));
+                Bmemcpy(pEntry->sprites, collected, sizeof(pEntry->sprites[0]) * ClipHigh(nSprites, kMaxSprNear));
+                pEntry->nSector = i;
+                length++;
+            }
+        }
+
+        Bfree(collected);
+    }
+    //-----------------------------------------------------------------------------------
+    void Save(LoadSave* pSave)
+    {
+        unsigned int i, j;
+        pSave->Write(&length, sizeof(length));  // total db length
+        for (i = 0; i < length; i++)
+        {
+            // owner sector
+            pSave->Write(&db[i].nSector, sizeof(db[i].nSector));
+
+            j = 0;
+            while (j < kMaxSprNear)
+            {
+                pSave->Write(&db[i].sprites[j], sizeof(db[i].sprites[j]));
+                if (db[i].sprites[j] == -1) // sprites end reached
+                    break;
+
+                j++;
+            }
+        }
+    }
+    //-----------------------------------------------------------------------------------
+    void Load(LoadSave* pLoad)
+    {
+        unsigned int i, j;
+
+        pLoad->Read(&i, sizeof(length));
+        if (!Alloc(i))
+            return; // the length is zero
+
+        for (i = 0; i < length; i++)
+        {
+            // owner sector
+            pLoad->Read(&db[i].nSector, sizeof(db[i].nSector));
+
+            j = 0;
+            while (j < kMaxSprNear)
+            {
+                pLoad->Read(&db[i].sprites[j], sizeof(db[i].sprites[j]));
+                if (db[i].sprites[j] == -1) // sprites end reached
+                    break;
+
+                j++;
+            }
+
+        }
+    }
+    //-----------------------------------------------------------------------------------
+    int* GetSprPtr(int nSector)
+    {
+        unsigned int i;
+        for (i = 0; i < length; i++)
+        {
+            if (db[i].nSector == (unsigned int)nSector && db[i].sprites[0] >= 0)
+                return (int*)db[i].sprites;
+        }
+        return NULL;
+    }
+    //-----------------------------------------------------------------------------------
+    ~SPRINSECT() { Free(); };
+
+};
+
+extern SPRINSECT gSprNSect;
 #endif
 
 ////////////////////////////////////////////////////////////////////////

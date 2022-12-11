@@ -600,7 +600,7 @@ void evKill(int a1, int a2)
 void evKill(int idx, int type, int causer)
 {
     #ifdef NOONE_EXTENSIONS
-    if (gModernMap)
+    if (gModernMap && isPartOfCauserScript(type, idx))
         eventQ.Kill(idx, type, causer);
     else
     #endif
