@@ -1482,13 +1482,6 @@ static void C_GetNextVarType(int32_t type)
 
     C_GetNextLabelName();
 
-    if (EDUKE32_PREDICT_FALSE(hash_find(&h_keywords,LAST_LABEL)>=0))
-    {
-        g_errorCnt++;
-        C_ReportError(ERROR_ISAKEYWORD);
-        return;
-    }
-
     C_SkipComments();
 
     if (*textptr == '[' || *textptr == '.')     //read of array as a gamevar
@@ -1776,13 +1769,6 @@ static int32_t C_GetNextValue(int32_t type)
         l++;
     }
     tempbuf[l] = 0;
-
-    if (EDUKE32_PREDICT_FALSE(hash_find(&h_keywords,tempbuf /*label+(g_numLabels<<6)*/)>=0))
-    {
-        g_errorCnt++;
-        C_ReportError(ERROR_ISAKEYWORD);
-        textptr+=l;
-    }
 
     int32_t i = hash_find(&h_labels,tempbuf);
 
