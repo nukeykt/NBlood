@@ -7762,15 +7762,16 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         // r_rotatespriteinterp 1: only interpolate when explicitly requested with RS_LERP
         // r_rotatespriteinterp 2: interpolate if the picnum or size matches regardless of RS_LERP being set
         // r_rotatespriteinterp 3: relax above picnum check to include the next tile, with potentially undesirable results
-
+#pragma pack(push, 1)
         static struct sm
         {
             vec4_t lerp, goal;
             int16_t picnum, flags;
             ClockTicks clock;
         } smooth[MAXUNIQHUDID];
-        
-        auto &sm  = smooth[uniqid];
+#pragma pack(pop)
+
+        auto &sm  = smooth[uniqid & (MAXUNIQHUDID-1)];
         auto &sm0 = smooth[0];
 
         vec4_t const goal  = { sx, sy, z, a };
