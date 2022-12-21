@@ -623,8 +623,8 @@ endif
 # for a list of possible ASan and UBsan options.
 
 ASAN_FLAGS := -fsanitize=address -fsanitize=bounds,enum,float-cast-overflow
-ASAN_FLAGS := $(ASAN_FLAGS),signed-integer-overflow,unsigned-integer-overflow
-ASAN_FLAGS := $(ASAN_FLAGS),undefined,return,null,pointer-overflow,float-divide-by-zero
+ASAN_FLAGS := $(ASAN_FLAGS),signed-integer-overflow
+ASAN_FLAGS := $(ASAN_FLAGS),undefined,return,null,pointer-overflow
 #ASAN_FLAGS := $(ASAN_FLAGS) -fsanitize-undefined-trap-on-error
 
 ifeq (0,$(FORCEDEBUG))
