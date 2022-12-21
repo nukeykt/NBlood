@@ -9738,7 +9738,7 @@ static inline void    drawmaskleaf(_maskleaf* wall)
 }
 #endif
 
-static inline int32_t sameside(const _equation *eq, const vec2f_t *p1, const vec2f_t *p2)
+static inline bool sameside(const _equation *eq, const vec2f_t *p1, const vec2f_t *p2)
 {
     const float sign1 = (eq->a * p1->x) + (eq->b * p1->y) + eq->c;
     const float sign2 = (eq->a * p2->x) + (eq->b * p2->y) + eq->c;
@@ -9979,6 +9979,14 @@ static void DrawDebugSpriteMarkers()
 #endif
 }
 
+enum class Sides
+{
+    none  = 0,
+    left  = 1,
+    right = 2,
+    both  = left | right,
+};
+
 //
 // drawmasks
 //
@@ -10107,6 +10115,24 @@ killsprite:
         _equation const p1eq   = equation(pos.x, pos.y, dot.x, dot.y);
         _equation const p2eq   = equation(pos.x, pos.y, dot2.x, dot2.y);
 
+        auto maskwall_separates = [&](vec2f_t const &spr)
+        {
+            // Does the maskwall separate the sprite from camera?
+            return !sameside(&maskeq, &spr, &pos);
+        };
+
+        auto wall_cone_sides = [&](vec2f_t const &spr)
+        {
+            // For each of the two rays from the camera to the two wall-points:
+            // does position 'spr' fall into the inside of the so-defined "cone"?
+            const bool inleft = sameside(&p1eq, &middle, &spr);
+            const bool inright = sameside(&p2eq, &middle, &spr);
+
+            static_assert((int)Sides::left == 1 && (int)Sides::right == 2, "");
+
+            return static_cast<Sides>((int)inleft | (inright << 1));
+        };
+
 #ifdef USE_OPENGL
         if (isPolymost)
             polymost_setClamp(1 + 2);
@@ -10119,31 +10145,27 @@ killsprite:
 
             if (tspriteptr[i] != NULL)
             {
-                vec2f_t spr;
                 auto const tspr = tspriteptr[i];
+                vec2f_t spr{(float)tspr->x, (float)tspr->y};
 
-                spr.x = (float)tspr->x;
-                spr.y = (float)tspr->y;
-
-                if (!sameside(&maskeq, &spr, &pos))
+                if (maskwall_separates(spr))
                 {
-                    // Sprite and camera are on different sides of the
-                    // masked wall.
+                    // Sprite and camera are on different sides of the masked wall. Check:
+                    // is that particular maskwall relevant for this sprite, i.e. does the
+                    // former obstruct the latter? If yes, we want to draw the sprite first.
 
-                    // Check if the sprite is inside the 'cone' given by
-                    // the rays from the camera to the two wall-points.
-                    const int32_t inleft = sameside(&p1eq, &middle, &spr);
-                    const int32_t inright = sameside(&p2eq, &middle, &spr);
-
-                    int32_t ok = (inleft && inright);
+                    auto const sides = wall_cone_sides(spr);
+                    bool ok = (sides == Sides::both);
 
                     if (!ok)
                     {
-                        // If not, check if any of the border points are...
+                        // No, considering the sprite's center point alone. But maybe if its
+                        // border points are taken into account?
                         int32_t xx[4] = { tspr->x };
                         int32_t yy[4] = { tspr->y };
                         int32_t numpts;
 
+                        bool const inleft = (int)sides & (int)Sides::left;
                         const _equation pineq = inleft ? p1eq : p2eq;
 
                         if ((tspr->cstat & 48) == 32)
@@ -10172,17 +10194,17 @@ killsprite:
 
                         for (int32_t jj = 0; jj < numpts; jj++)
                         {
-                            spr.x = (float)xx[jj];
-                            spr.y = (float)yy[jj];
+                            spr = {(float)xx[jj], (float)yy[jj]};
 
-                            if (!sameside(&maskeq, &spr, &pos))  // behind the maskwall,
-                                if ((sameside(&p1eq, &middle, &spr) &&  // inside the 'cone',
-                                        sameside(&p2eq, &middle, &spr))
-                                        || !sameside(&pineq, &middle, &spr))  // or on the other outside.
-                                {
-                                    ok = 1;
-                                    break;
-                                }
+                            // NOTE: using 'pineq' of the center point.
+                            bool const new_ok = maskwall_separates(spr) &&
+                                (wall_cone_sides(spr) == Sides::both || !sameside(&pineq, &middle, &spr));
+
+                            if (new_ok)
+                            {
+                                ok = true;
+                                break;
+                            }
                         }
                     }
 
