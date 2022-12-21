@@ -11088,8 +11088,7 @@ skip_reading_mapbin:
 
         system_getcvars();
 
-        auto mapInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-                                            sizeof(usermaphack_t), compare_usermaphacks);
+        auto mapInfo = find_usermaphack();
 
         // Per-map ART
         if (mapInfo && mapInfo->mapart)

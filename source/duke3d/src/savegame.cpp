@@ -517,8 +517,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
             {
                 usermaphack_t* mhkInfo = NULL;
                 if (sv_loadBoardMD4(currentboardfilename) == 0)
-                    mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-                                 sizeof(usermaphack_t), compare_usermaphacks);
+                    mhkInfo = find_usermaphack();
 
                 sv_loadMapart(mhkInfo, currentboardfilename);
                 sv_loadMhk(mhkInfo, currentboardfilename);
@@ -720,8 +719,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     {
         usermaphack_t* mhkInfo = NULL;
         if (sv_loadBoardMD4(currentboardfilename) == 0)
-            mhkInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-                                 sizeof(usermaphack_t), compare_usermaphacks);
+            mhkInfo = find_usermaphack();
 
         sv_loadMapart(mhkInfo, currentboardfilename);
         sv_loadMhk(mhkInfo, currentboardfilename);

@@ -1789,8 +1789,8 @@ static void G_LoadMapHack(char *outbuf, const char *filename)
 
     if (G_TryMapHack(outbuf) && usermaphacks != NULL)
     {
-        auto pMapInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-                                                 sizeof(usermaphack_t), compare_usermaphacks);
+        auto pMapInfo = find_usermaphack();
+
         if (pMapInfo)
             G_TryMapHack(pMapInfo->mhkfile);
     }

@@ -611,6 +611,7 @@ extern usermaphack_t g_loadedMapHack;
 extern int compare_usermaphacks(const void *, const void *);
 extern usermaphack_t *usermaphacks;
 extern int32_t num_usermaphacks;
+extern usermaphack_t *find_usermaphack();
 
 #if !defined DEBUG_MAIN_ARRAYS
 EXTERN spriteext_t *spriteext;
