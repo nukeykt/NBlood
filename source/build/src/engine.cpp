@@ -9823,22 +9823,23 @@ static void sortsprites(int const start, int const end)
             for (bssize_t k = i; k < j; k++)
             {
                 auto const s = tspriteptr[k];
-
-                spritesxyz[k].z = s->z;
+                int32_t z = s->z;
 
                 if ((s->cstat & 48) != 32)
                 {
                     int32_t const yoff  = picanm[s->picnum].yofs + s->yoffset;
                     int32_t const yspan = (tilesiz[s->picnum].y * s->yrepeat << 2);
 
-                    spritesxyz[k].z -= (yoff * s->yrepeat) << 2;
+                    z -= (yoff * s->yrepeat) << 2;
 
                     if (!(s->cstat & 128))
-                        spritesxyz[k].z -= (yspan >> 1);
+                        z -= (yspan >> 1);
 
-                    if (klabs(spritesxyz[k].z - globalposz) < (yspan >> 1))
-                        spritesxyz[k].z = globalposz;
+                    if (klabs(z - globalposz) < (yspan >> 1))
+                        z = globalposz;
                 }
+
+                spritesxyz[k].z = z;
             }
 
             for (bssize_t k = i + 1; k < j; k++)
@@ -9856,12 +9857,136 @@ static void sortsprites(int const start, int const end)
     }
 }
 
+static void PolymostPrepareMasks()
+{
+#ifdef USE_OPENGL
+    int32_t i = spritesortcnt - 1;
+    spritesortcnt = 0;
+    int32_t back = i;
+
+    for (; i >= 0; --i)
+    {
+        if (polymost_spriteHasTranslucency(&tsprite[i]))
+        {
+            tspriteptr[spritesortcnt] = &tsprite[i];
+            ++spritesortcnt;
+        }
+        else
+        {
+            tspriteptr[back] = &tsprite[i];
+            --back;
+        }
+    }
+#endif
+}
+
+static void PolymostDrawMasks(int32_t numSprites)
+{
+#ifdef USE_OPENGL
+    polymost_setClamp(1 + 2);
+
+    if (spritesortcnt < numSprites)
+    {
+        for (bssize_t i = numSprites - 1; i >= spritesortcnt; /* 'i' set at and of loop */)
+        {
+            int32_t const py = spritesxyz[i].y;
+            int32_t const pcstat = tspriteptr[i]->cstat & 48;
+            int32_t const pangle = tspriteptr[i]->ang;
+            int j = i - 1;
+
+            if (!polymost_spriteIsModelOrVoxel(tspriteptr[i]))
+            {
+                while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
+                    && !polymost_spriteIsModelOrVoxel(tspriteptr[j]))
+                {
+                    j--;
+                }
+            }
+
+            if (i - j == 1)
+            {
+//                debugmask_add(i | 32768, tspriteptr[i]->owner);
+                renderDrawSprite(i);
+                tspriteptr[i] = NULL;
+            }
+            else
+            {
+                glDepthMask(GL_FALSE);
+
+                for (bssize_t k = i; k > j; k--)
+                {
+//                    debugmask_add(k | 32768, tspriteptr[k]->owner);
+                    renderDrawSprite(k);
+                }
+
+                glDepthMask(GL_TRUE);
+
+                glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+                for (bssize_t k = i; k > j; k--)
+                {
+                    renderDrawSprite(k);
+                    tspriteptr[k] = NULL;
+                }
+
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            }
+
+            i = j;
+        }
+    }
+
+    polymost_setClamp(0);
+    int32_t numMaskWalls = maskwallcnt;
+    maskwallcnt = 0;
+    for (int32_t i = 0; i < numMaskWalls; i++)
+    {
+        if (polymost_maskWallHasTranslucency((uwalltype *) &wall[thewall[maskwall[i]]]))
+        {
+            maskwall[maskwallcnt] = maskwall[i];
+            maskwallcnt++;
+        }
+        else
+            renderDrawMaskedWall(i);
+    }
+
+    glDepthMask(GL_FALSE);
+#endif
+}
+
+static void DrawDebugSpriteMarkers()
+{
+#if 0
+    for (int32_t i = spritesortcnt - 1; i >= 0; i--)
+    {
+        double  xs = tspriteptr[i]->x - globalposx;
+        double  ys = tspriteptr[i]->y - globalposy;
+        int32_t zs = tspriteptr[i]->z - globalposz;
+
+        int32_t xp = ys * cosglobalang - xs * singlobalang;
+        int32_t yp = (zs << 1);
+        int32_t zp = xs * cosglobalang + ys * singlobalang;
+
+        xs = ((double)xp * (halfxdimen << 12) / zp) + ((halfxdimen + windowxy1.x) << 12);
+        ys = ((double)yp * (xdimenscale << 12) / zp) + ((globalhoriz + windowxy1.y) << 12);
+
+        if (xs >= INT32_MIN && xs <= INT32_MAX && ys >= INT32_MIN && ys <= INT32_MAX)
+        {
+            renderDrawLine(xs - 65536, ys - 65536, xs + 65536, ys + 65536, 31);
+            renderDrawLine(xs + 65536, ys - 65536, xs - 65536, ys + 65536, 31);
+        }
+    }
+#endif
+}
+
 //
 // drawmasks
 //
 void renderDrawMasks(void)
 {
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
+
+    bool const isPolymost = (videoGetRenderMode() == REND_POLYMOST);
 
 #ifdef DEBUG_MASK_DRAWING
         static struct {
@@ -9880,36 +10005,17 @@ void renderDrawMasks(void)
 #else
 # define debugmask_add(dispidx, idx) do {} while (0)
 #endif
-    int32_t i = spritesortcnt-1;
     int32_t numSprites = spritesortcnt;
 
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST)
+    if (isPolymost)
+        PolymostPrepareMasks();
+    else
     {
-        spritesortcnt = 0;
-        int32_t back = i;
-        for (; i >= 0; --i)
-        {
-            if (polymost_spriteHasTranslucency(&tsprite[i]))
-            {
-                tspriteptr[spritesortcnt] = &tsprite[i];
-                ++spritesortcnt;
-            } else
-            {
-                tspriteptr[back] = &tsprite[i];
-                --back;
-            }
-        }
-    } else
-#endif
-    {
-        for (; i >= 0; --i)
-        {
+        for (int32_t i = spritesortcnt - 1; i >= 0; --i)
             tspriteptr[i] = &tsprite[i];
-        }
     }
 
-    for (i = numSprites - 1; i >= 0; --i)
+    for (int32_t i = numSprites - 1; i >= 0; --i)
     {
         const int32_t xs = tspriteptr[i]->x - globalposx, ys = tspriteptr[i]->y - globalposy;
         const int32_t yp = dmulscale6(xs, cosviewingrangeglobalang, ys, sinviewingrangeglobalang);
@@ -9937,6 +10043,7 @@ killsprite:
                 if (i >= spritesortcnt)
                 {
                     --numSprites;
+
                     if (i != numSprites)
                     {
                         tspriteptr[i] = tspriteptr[numSprites];
@@ -9948,6 +10055,7 @@ killsprite:
                 {
                     --numSprites;
                     --spritesortcnt;
+
                     if (i != numSprites)
                     {
                         tspriteptr[i] = tspriteptr[spritesortcnt];
@@ -9958,9 +10066,11 @@ killsprite:
                         spritesxyz[spritesortcnt].y = spritesxyz[numSprites].y;
                     }
                 }
+
                 continue;
             }
         }
+
         spritesxyz[i].y = yp;
     }
 
@@ -9969,101 +10079,10 @@ killsprite:
 
     videoBeginDrawing(); //{{{
 
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST)
-    {
-        polymost_setClamp(1 + 2);
+    if (isPolymost)
+        PolymostDrawMasks(numSprites);
 
-        if (spritesortcnt < numSprites)
-        {
-            for (bssize_t i = numSprites - 1; i >= spritesortcnt; /* 'i' set at and of loop */)
-            {
-                int32_t const py = spritesxyz[i].y;
-                int32_t const pcstat = tspriteptr[i]->cstat & 48;
-                int32_t const pangle = tspriteptr[i]->ang;
-                int j = i - 1;
-
-                if (!polymost_spriteIsModelOrVoxel(tspriteptr[i]))
-                {
-                    while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
-                        && !polymost_spriteIsModelOrVoxel(tspriteptr[j]))
-                    {
-                        j--;
-                    }
-                }
-
-                if (i - j == 1)
-                {
-                    debugmask_add(i | 32768, tspriteptr[i]->owner);
-                    renderDrawSprite(i);
-                    tspriteptr[i] = NULL;
-                }
-                else
-                {
-                    glDepthMask(GL_FALSE);
-
-                    for (bssize_t k = i; k > j; k--)
-                    {
-                        debugmask_add(k | 32768, tspriteptr[k]->owner);
-                        renderDrawSprite(k);
-                    }
-
-                    glDepthMask(GL_TRUE);
-
-                    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-                    
-                    for (bssize_t k = i; k > j; k--)
-                    {
-                        renderDrawSprite(k);
-                        tspriteptr[k] = NULL;
-                    }
-
-                    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-                }
-
-                i = j;
-            }
-        }
-
-        polymost_setClamp(0);
-        int32_t numMaskWalls = maskwallcnt;
-        maskwallcnt = 0;
-        for (i = 0; i < numMaskWalls; i++)
-        {
-            if (polymost_maskWallHasTranslucency((uwalltype *) &wall[thewall[maskwall[i]]]))
-            {
-                maskwall[maskwallcnt] = maskwall[i];
-                maskwallcnt++;
-            }
-            else
-                renderDrawMaskedWall(i);
-        }
-
-        glDepthMask(GL_FALSE);
-    }
-#endif
-
-#if 0
-    for (i = spritesortcnt - 1; i >= 0; i--)
-    {
-        double  xs = tspriteptr[i]->x - globalposx;
-        double  ys = tspriteptr[i]->y - globalposy;
-        int32_t zs = tspriteptr[i]->z - globalposz;
-
-        int32_t xp = ys * cosglobalang - xs * singlobalang;
-        int32_t yp = (zs << 1);
-        int32_t zp = xs * cosglobalang + ys * singlobalang;
-
-        xs = ((double)xp * (halfxdimen << 12) / zp) + ((halfxdimen + windowxy1.x) << 12);
-        ys = ((double)yp * (xdimenscale << 12) / zp) + ((globalhoriz + windowxy1.y) << 12);
-
-        if (xs >= INT32_MIN && xs <= INT32_MAX && ys >= INT32_MIN && ys <= INT32_MAX)
-        {
-            drawline256(xs - 65536, ys - 65536, xs + 65536, ys + 65536, 31);
-            drawline256(xs + 65536, ys - 65536, xs - 65536, ys + 65536, 31);
-        }
-    }
-#endif
+    DrawDebugSpriteMarkers();
 
     vec2f_t pos;
 
@@ -10089,10 +10108,10 @@ killsprite:
         _equation const p2eq   = equation(pos.x, pos.y, dot2.x, dot2.y);
 
 #ifdef USE_OPENGL
-        if (videoGetRenderMode() == REND_POLYMOST)
+        if (isPolymost)
             polymost_setClamp(1 + 2);
 #endif
-        i = spritesortcnt;
+        int32_t i = spritesortcnt;
 
         while (i)
         {
@@ -10180,14 +10199,14 @@ killsprite:
 
         debugmask_add(maskwall[maskwallcnt], thewall[maskwall[maskwallcnt]]);
 #ifdef USE_OPENGL
-        if (videoGetRenderMode() == REND_POLYMOST)
+        if (isPolymost)
             polymost_setClamp(0);
 #endif
         renderDrawMaskedWall(maskwallcnt);
     }
 
 #ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST)
+    if (isPolymost)
         polymost_setClamp(1 + 2);
 #endif
     while (spritesortcnt)
@@ -10195,13 +10214,13 @@ killsprite:
         --spritesortcnt;
         if (tspriteptr[spritesortcnt] != NULL)
         {
-            debugmask_add(i | 32768, tspriteptr[i]->owner);
+            debugmask_add(spritesortcnt | 32768, tspriteptr[spritesortcnt]->owner);
             renderDrawSprite(spritesortcnt);
             tspriteptr[spritesortcnt] = NULL;
         }
     }
 #ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST)
+    if (isPolymost)
     {
         glDepthMask(GL_TRUE);
         polymost_setClamp(0);
@@ -10215,7 +10234,7 @@ killsprite:
 #ifdef DEBUG_MASK_DRAWING
     if (g_maskDrawMode && videoGetRenderMode() == REND_CLASSIC)
     {
-        for (i = 0; i < dmasknum; i++)
+        for (int32_t i = 0; i < dmasknum; i++)
         {
             EDUKE32_STATIC_ASSERT(MAXWALLS <= 32768 && MAXSPRITES <= 32768);
             int32_t spritep = !!(debugmask[i].di & 32768);
