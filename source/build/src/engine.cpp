@@ -1461,7 +1461,7 @@ static int32_t smoststart[MAXWALLSB];
 static char smostwalltype[MAXWALLSB];
 static int32_t smostwall[MAXWALLSB], smostwallcnt = -1;
 
-static vec3_t spritesxyz[MAXSPRITESONSCREEN+1];
+static vec3_t spritesxyz[MAXSPRITESONSCREEN + 1];
 
 int32_t xdimen = -1, xdimenrecip, halfxdimen, xdimenscale, xdimscale;
 float fxdimen = -1.f;
@@ -9738,7 +9738,7 @@ static inline void    drawmaskleaf(_maskleaf* wall)
 }
 #endif
 
-static inline int32_t         sameside(const _equation *eq, const vec2f_t *p1, const vec2f_t *p2)
+static inline int32_t sameside(const _equation *eq, const vec2f_t *p1, const vec2f_t *p2)
 {
     const float sign1 = (eq->a * p1->x) + (eq->b * p1->y) + eq->c;
     const float sign2 = (eq->a * p2->x) + (eq->b * p2->y) + eq->c;
@@ -9748,101 +9748,110 @@ static inline int32_t         sameside(const _equation *eq, const vec2f_t *p1, c
 // x1, y1: in/out
 // rest x/y: out
 
-
-
 #ifdef DEBUG_MASK_DRAWING
 int32_t g_maskDrawMode = 0;
 #endif
 
 static inline int comparetsprites(int const k, int const l)
 {
+    auto const *const kspr = tspriteptr[k];
+    auto const *const lspr = tspriteptr[l];
+
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
-        if ((tspriteptr[k]->cstat & 48) != (tspriteptr[l]->cstat & 48))
-            return (tspriteptr[k]->cstat & 48) - (tspriteptr[l]->cstat & 48);
+        if ((kspr->cstat & 48) != (lspr->cstat & 48))
+            return (kspr->cstat & 48) - (lspr->cstat & 48);
 
-        if ((tspriteptr[k]->cstat & 48) == 16 && tspriteptr[k]->ang != tspriteptr[l]->ang)
-            return tspriteptr[k]->ang - tspriteptr[l]->ang;
+        if ((kspr->cstat & 48) == 16 && kspr->ang != lspr->ang)
+            return kspr->ang - lspr->ang;
     }
 #endif
-    if (tspriteptr[k]->statnum != tspriteptr[l]->statnum)
-        return tspriteptr[k]->statnum - tspriteptr[l]->statnum;
+    if (kspr->statnum != lspr->statnum)
+        return kspr->statnum - lspr->statnum;
 
-    if (tspriteptr[k]->x == tspriteptr[l]->x &&
-        tspriteptr[k]->y == tspriteptr[l]->y &&
-        tspriteptr[k]->z == tspriteptr[l]->z &&
-        (tspriteptr[k]->cstat & 48) == (tspriteptr[l]->cstat & 48) &&
-        tspriteptr[k]->owner != tspriteptr[l]->owner)
-        return tspriteptr[k]->owner - tspriteptr[l]->owner;
+    if (kspr->x == lspr->x &&
+        kspr->y == lspr->y &&
+        kspr->z == lspr->z &&
+        (kspr->cstat & 48) == (lspr->cstat & 48) &&
+        kspr->owner != lspr->owner)
+        return kspr->owner - lspr->owner;
 
-    if (klabs(spritesxyz[k].z-globalposz) != klabs(spritesxyz[l].z-globalposz))
-        return klabs(spritesxyz[k].z-globalposz)-klabs(spritesxyz[l].z-globalposz);
+    if (klabs(spritesxyz[k].z - globalposz) != klabs(spritesxyz[l].z - globalposz))
+        return klabs(spritesxyz[k].z - globalposz) - klabs(spritesxyz[l].z - globalposz);
 
     return 0;
 }
 
 static void sortsprites(int const start, int const end)
 {
-    int32_t i, gap, y, ys;
-
     if (start >= end)
         return;
 
-    gap = 1; while (gap < end - start) gap = (gap<<1)+1;
-    for (gap>>=1; gap>0; gap>>=1)   //Sort sprite list
-        for (i=start; i<end-gap; i++)
-            for (bssize_t l=i; l>=start; l-=gap)
+    int32_t gap = 1;
+    while (gap < end - start) gap = (gap << 1) + 1;
+
+    // Sort sprite list
+    for (gap >>= 1; gap > 0; gap >>= 1)
+        for (int32_t i = start; i < end - gap; i++)
+            for (bssize_t l = i; l >= start; l -= gap)
             {
-                if (spritesxyz[l].y <= spritesxyz[l+gap].y) break;
-                swapptr(&tspriteptr[l],&tspriteptr[l+gap]);
-                swaplong(&spritesxyz[l].x,&spritesxyz[l+gap].x);
-                swaplong(&spritesxyz[l].y,&spritesxyz[l+gap].y);
+                if (spritesxyz[l].y <= spritesxyz[l + gap].y)
+                    break;
+
+                swapptr(&tspriteptr[l], &tspriteptr[l + gap]);
+                swaplong(&spritesxyz[l].x, &spritesxyz[l + gap].x);
+                swaplong(&spritesxyz[l].y, &spritesxyz[l + gap].y);
             }
 
-    ys = spritesxyz[start].y; i = start;
-    for (bssize_t j=start+1; j<=end; j++)
+    int32_t ys = spritesxyz[start].y;
+    int32_t i = start;
+
+    for (bssize_t j = start + 1; j <= end; j++)
     {
         if (j < end)
         {
-            y = spritesxyz[j].y;
+            int32_t y = spritesxyz[j].y;
             if (y == ys)
                 continue;
 
             ys = y;
         }
 
-        if (j > i+1)
+        if (j > i + 1)
         {
-            for (bssize_t k=i; k<j; k++)
+            for (bssize_t k = i; k < j; k++)
             {
                 auto const s = tspriteptr[k];
 
                 spritesxyz[k].z = s->z;
-                if ((s->cstat&48) != 32)
+
+                if ((s->cstat & 48) != 32)
                 {
-                    int32_t yoff = picanm[s->picnum].yofs + s->yoffset;
-                    int32_t yspan = (tilesiz[s->picnum].y*s->yrepeat<<2);
+                    int32_t const yoff  = picanm[s->picnum].yofs + s->yoffset;
+                    int32_t const yspan = (tilesiz[s->picnum].y * s->yrepeat << 2);
 
-                    spritesxyz[k].z -= (yoff*s->yrepeat)<<2;
+                    spritesxyz[k].z -= (yoff * s->yrepeat) << 2;
 
-                    if (!(s->cstat&128))
-                        spritesxyz[k].z -= (yspan>>1);
-                    if (klabs(spritesxyz[k].z-globalposz) < (yspan>>1))
+                    if (!(s->cstat & 128))
+                        spritesxyz[k].z -= (yspan >> 1);
+
+                    if (klabs(spritesxyz[k].z - globalposz) < (yspan >> 1))
                         spritesxyz[k].z = globalposz;
                 }
             }
 
-            for (bssize_t k=i+1; k<j; k++)
-                for (bssize_t l=i; l<k; l++)
+            for (bssize_t k = i + 1; k < j; k++)
+                for (bssize_t l = i; l < k; l++)
                     if (comparetsprites(k, l) < 0)
                     {
-                        swapptr(&tspriteptr[k],&tspriteptr[l]);
-                        vec3_t tv3 = spritesxyz[k];
+                        swapptr(&tspriteptr[k], &tspriteptr[l]);
+                        vec3_t tv3    = spritesxyz[k];
                         spritesxyz[k] = spritesxyz[l];
                         spritesxyz[l] = tv3;
                     }
         }
+
         i = j;
     }
 }
@@ -9900,24 +9909,24 @@ void renderDrawMasks(void)
         }
     }
 
-    for (i=numSprites-1; i>=0; --i)
+    for (i = numSprites - 1; i >= 0; --i)
     {
-        const int32_t xs = tspriteptr[i]->x-globalposx, ys = tspriteptr[i]->y-globalposy;
-        const int32_t yp = dmulscale6(xs,cosviewingrangeglobalang,ys,sinviewingrangeglobalang);
+        const int32_t xs = tspriteptr[i]->x - globalposx, ys = tspriteptr[i]->y - globalposy;
+        const int32_t yp = dmulscale6(xs, cosviewingrangeglobalang, ys, sinviewingrangeglobalang);
 #ifdef USE_OPENGL
         const int32_t modelp = polymost_spriteIsModelOrVoxel(tspriteptr[i]);
 #endif
 
-        if (yp > (4<<8))
+        if (yp > (4 << 8))
         {
-            const int32_t xp = dmulscale6(ys,cosglobalang,-xs,singlobalang);
+            const int32_t xp = dmulscale6(ys, cosglobalang, -xs, singlobalang);
 
-            if (mulscale24(labs(xp+yp),xdimen) >= yp)
+            if (mulscale24(labs(xp + yp), xdimen) >= yp)
                 goto killsprite;
 
-            spritesxyz[i].x = scale(xp+yp,xdimen<<7,yp);
+            spritesxyz[i].x = scale(xp + yp, xdimen << 7, yp);
         }
-        else if ((tspriteptr[i]->cstat&48) == 0)
+        else if ((tspriteptr[i]->cstat & 48) == 0)
         {
 killsprite:
 #ifdef USE_OPENGL
@@ -9963,16 +9972,17 @@ killsprite:
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
-        polymost_setClamp(1+2);
+        polymost_setClamp(1 + 2);
 
         if (spritesortcnt < numSprites)
         {
-            for (bssize_t i = numSprites-1; i >= spritesortcnt;)
+            for (bssize_t i = numSprites - 1; i >= spritesortcnt; /* 'i' set at and of loop */)
             {
-                int32_t py = spritesxyz[i].y;
-                int32_t pcstat = tspriteptr[i]->cstat & 48;
-                int32_t pangle = tspriteptr[i]->ang;
+                int32_t const py = spritesxyz[i].y;
+                int32_t const pcstat = tspriteptr[i]->cstat & 48;
+                int32_t const pangle = tspriteptr[i]->ang;
                 int j = i - 1;
+
                 if (!polymost_spriteIsModelOrVoxel(tspriteptr[i]))
                 {
                     while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
@@ -9981,6 +9991,7 @@ killsprite:
                         j--;
                     }
                 }
+
                 if (i - j == 1)
                 {
                     debugmask_add(i | 32768, tspriteptr[i]->owner);
@@ -10008,8 +10019,8 @@ killsprite:
                     }
 
                     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
                 }
+
                 i = j;
             }
         }
@@ -10033,25 +10044,25 @@ killsprite:
 #endif
 
 #if 0
-        for (i=spritesortcnt-1; i>=0; i--)
+    for (i = spritesortcnt - 1; i >= 0; i--)
+    {
+        double  xs = tspriteptr[i]->x - globalposx;
+        double  ys = tspriteptr[i]->y - globalposy;
+        int32_t zs = tspriteptr[i]->z - globalposz;
+
+        int32_t xp = ys * cosglobalang - xs * singlobalang;
+        int32_t yp = (zs << 1);
+        int32_t zp = xs * cosglobalang + ys * singlobalang;
+
+        xs = ((double)xp * (halfxdimen << 12) / zp) + ((halfxdimen + windowxy1.x) << 12);
+        ys = ((double)yp * (xdimenscale << 12) / zp) + ((globalhoriz + windowxy1.y) << 12);
+
+        if (xs >= INT32_MIN && xs <= INT32_MAX && ys >= INT32_MIN && ys <= INT32_MAX)
         {
-            double xs = tspriteptr[i]->x-globalposx;
-            double ys = tspriteptr[i]->y-globalposy;
-            int32_t zs = tspriteptr[i]->z-globalposz;
-
-            int32_t xp = ys*cosglobalang-xs*singlobalang;
-            int32_t yp = (zs<<1);
-            int32_t zp = xs*cosglobalang+ys*singlobalang;
-
-            xs = ((double)xp*(halfxdimen<<12)/zp)+((halfxdimen+windowxy1.x)<<12);
-            ys = ((double)yp*(xdimenscale<<12)/zp)+((globalhoriz+windowxy1.y)<<12);
-
-            if (xs >= INT32_MIN && xs <= INT32_MAX && ys >= INT32_MIN && ys <= INT32_MAX)
-            {
-                drawline256(xs-65536,ys-65536,xs+65536,ys+65536,31);
-                drawline256(xs+65536,ys-65536,xs-65536,ys+65536,31);
-            }
+            drawline256(xs - 65536, ys - 65536, xs + 65536, ys + 65536, 31);
+            drawline256(xs + 65536, ys - 65536, xs - 65536, ys + 65536, 31);
         }
+    }
 #endif
 
     vec2f_t pos;
@@ -10069,23 +10080,24 @@ killsprite:
 
         maskwallcnt--;
 
-        vec2f_t dot    = { (float)wall[w].x, (float)wall[w].y };
-        vec2f_t dot2   = { (float)wall[wall[w].point2].x, (float)wall[wall[w].point2].y };
-        vec2f_t middle = { (dot.x + dot2.x) * .5f, (dot.y + dot2.y) * .5f };
+        vec2f_t const dot    = { (float)wall[w].x, (float)wall[w].y };
+        vec2f_t const dot2   = { (float)wall[wall[w].point2].x, (float)wall[wall[w].point2].y };
+        vec2f_t const middle = { (dot.x + dot2.x) * .5f, (dot.y + dot2.y) * .5f };
 
-        _equation maskeq = equation(dot.x, dot.y, dot2.x, dot2.y);
-        _equation p1eq   = equation(pos.x, pos.y, dot.x, dot.y);
-        _equation p2eq   = equation(pos.x, pos.y, dot2.x, dot2.y);
+        _equation const maskeq = equation(dot.x, dot.y, dot2.x, dot2.y);
+        _equation const p1eq   = equation(pos.x, pos.y, dot.x, dot.y);
+        _equation const p2eq   = equation(pos.x, pos.y, dot2.x, dot2.y);
 
 #ifdef USE_OPENGL
         if (videoGetRenderMode() == REND_POLYMOST)
-            polymost_setClamp(1+2);
+            polymost_setClamp(1 + 2);
 #endif
-
         i = spritesortcnt;
+
         while (i)
         {
             i--;
+
             if (tspriteptr[i] != NULL)
             {
                 vec2f_t spr;
@@ -10111,7 +10123,7 @@ killsprite:
                         // If not, check if any of the border points are...
                         int32_t xx[4] = { tspr->x };
                         int32_t yy[4] = { tspr->y };
-                        int32_t numpts, jj;
+                        int32_t numpts;
 
                         const _equation pineq = inleft ? p1eq : p2eq;
 
@@ -10139,7 +10151,7 @@ killsprite:
                                 tspriteptr[i]->ang = oang;
                         }
 
-                        for (jj=0; jj<numpts; jj++)
+                        for (int32_t jj = 0; jj < numpts; jj++)
                         {
                             spr.x = (float)xx[jj];
                             spr.y = (float)yy[jj];
@@ -10176,7 +10188,7 @@ killsprite:
 
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
-        polymost_setClamp(1+2);
+        polymost_setClamp(1 + 2);
 #endif
     while (spritesortcnt)
     {
@@ -10203,7 +10215,7 @@ killsprite:
 #ifdef DEBUG_MASK_DRAWING
     if (g_maskDrawMode && videoGetRenderMode() == REND_CLASSIC)
     {
-        for (i=0; i<dmasknum; i++)
+        for (i = 0; i < dmasknum; i++)
         {
             EDUKE32_STATIC_ASSERT(MAXWALLS <= 32768 && MAXSPRITES <= 32768);
             int32_t spritep = !!(debugmask[i].di & 32768);
