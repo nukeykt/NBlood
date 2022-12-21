@@ -9861,8 +9861,9 @@ static void PolymostPrepareMasks()
 {
 #ifdef USE_OPENGL
     int32_t i = spritesortcnt - 1;
-    spritesortcnt = 0;
     int32_t back = i;
+
+    spritesortcnt = 0;
 
     for (; i >= 0; --i)
     {
@@ -9937,8 +9938,10 @@ static void PolymostDrawMasks(int32_t numSprites)
     }
 
     polymost_setClamp(0);
+
     int32_t numMaskWalls = maskwallcnt;
     maskwallcnt = 0;
+
     for (int32_t i = 0; i < numMaskWalls; i++)
     {
         if (polymost_maskWallHasTranslucency((uwalltype *) &wall[thewall[maskwall[i]]]))
@@ -9987,6 +9990,35 @@ enum class Sides
     both  = left | right,
 };
 
+static int32_t GetCornerPoints(tspriteptr_t tspr, int32_t (&xx)[4], int32_t (&yy)[4])
+{
+    bool const isOnFloor = (tspr->cstat & 48) == 32;
+
+    if (isOnFloor)
+    {
+        get_floorspr_points(tspr, 0, 0,
+                            &xx[0], &xx[1], &xx[2], &xx[3],
+                            &yy[0], &yy[1], &yy[2], &yy[3],
+                            tspriteGetSlope(tspr));
+    }
+    else
+    {
+        const int32_t oang = tspr->ang;
+
+        // Consider face sprites as wall sprites with camera ang.
+        // XXX: factor 4/5 needed?
+        if ((tspr->cstat & 48) != 16)
+            tspr->ang = globalang;
+
+        get_wallspr_points(tspr, &xx[0], &xx[1], &yy[0], &yy[1]);
+
+        if ((tspr->cstat & 48) != 16)
+            tspr->ang = oang;
+    }
+
+    return isOnFloor ? 4 : 2;
+}
+
 //
 // drawmasks
 //
@@ -9997,15 +10029,15 @@ void renderDrawMasks(void)
     bool const isPolymost = (videoGetRenderMode() == REND_POLYMOST);
 
 #ifdef DEBUG_MASK_DRAWING
-        static struct {
-            int16_t di;  // &32768: &32767 is tspriteptr[], else thewall[] index
-            int16_t i;   // sprite[] or wall[] index
-        } debugmask[MAXWALLSB + MAXSPRITESONSCREEN + 1];
+    static struct {
+        int16_t di;  // &32768: &32767 is tspriteptr[], else thewall[] index
+        int16_t i;   // sprite[] or wall[] index
+    } debugmask[MAXWALLSB + MAXSPRITESONSCREEN + 1];
 
-        int32_t dmasknum = 0;
+    int32_t dmasknum = 0;
 
 # define debugmask_add(dispidx, idx) do { \
-        if (g_maskDrawMode && videoGetRenderMode()==REND_CLASSIC) { \
+        if (g_maskDrawMode && videoGetRenderMode() == REND_CLASSIC) { \
             debugmask[dmasknum].di = dispidx; \
             debugmask[dmasknum++].i = idx; \
         } \
@@ -10102,7 +10134,7 @@ killsprite:
     while (maskwallcnt)
     {
         // PLAG: sorting stuff
-        const int32_t w = (videoGetRenderMode()==REND_POLYMER) ?
+        const int32_t w = (videoGetRenderMode() == REND_POLYMER) ?
             maskwall[maskwallcnt-1] : thewall[maskwall[maskwallcnt-1]];
 
         maskwallcnt--;
@@ -10163,34 +10195,10 @@ killsprite:
                         // border points are taken into account?
                         int32_t xx[4] = { tspr->x };
                         int32_t yy[4] = { tspr->y };
-                        int32_t numpts;
 
                         bool const inleft = (int)sides & (int)Sides::left;
                         const _equation pineq = inleft ? p1eq : p2eq;
-
-                        if ((tspr->cstat & 48) == 32)
-                        {
-                            numpts = 4;
-                            get_floorspr_points(tspr, 0, 0,
-                                                &xx[0], &xx[1], &xx[2], &xx[3],
-                                                &yy[0], &yy[1], &yy[2], &yy[3],
-                                                tspriteGetSlope(tspr));
-                        }
-                        else
-                        {
-                            const int32_t oang = tspr->ang;
-                            numpts = 2;
-
-                            // Consider face sprites as wall sprites with camera ang.
-                            // XXX: factor 4/5 needed?
-                            if ((tspr->cstat & 48) != 16)
-                                tspriteptr[i]->ang = globalang;
-
-                            get_wallspr_points(tspr, &xx[0], &xx[1], &yy[0], &yy[1]);
-
-                            if ((tspr->cstat & 48) != 16)
-                                tspriteptr[i]->ang = oang;
-                        }
+                        int32_t const numpts = GetCornerPoints(tspr, xx, yy);
 
                         for (int32_t jj = 0; jj < numpts; jj++)
                         {
@@ -10219,11 +10227,11 @@ killsprite:
             }
         }
 
-        debugmask_add(maskwall[maskwallcnt], thewall[maskwall[maskwallcnt]]);
 #ifdef USE_OPENGL
         if (isPolymost)
             polymost_setClamp(0);
 #endif
+        debugmask_add(maskwall[maskwallcnt], thewall[maskwall[maskwallcnt]]);
         renderDrawMaskedWall(maskwallcnt);
     }
 
