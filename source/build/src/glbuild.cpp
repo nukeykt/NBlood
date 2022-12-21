@@ -71,7 +71,7 @@ void buildgl_resetStateAccounting()
 
     for (auto i=GL_TEXTURE0;i<MAXTEXUNIT;i++)
     {
-        gl.currentBoundSampler[TEXUNIT_INDEX_FROM_NAME(i)] = (glsamplertype)-1;
+        gl.currentBoundSampler[TEXUNIT_INDEX_FROM_NAME(i)] = SAMPLER_INVALID;
         gl.state[TEXUNIT_INDEX_FROM_NAME(i)].count = 64;
         inthash_init(&gl.state[TEXUNIT_INDEX_FROM_NAME(i)]);
     }

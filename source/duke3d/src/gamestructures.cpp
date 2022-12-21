@@ -352,8 +352,8 @@ memberlabel_t const TsprLabels[] =
 memberlabel_t const PlayerLabels[] = 
 {
     MEMBER(g_player[0].ps, zoom,                        PLAYER_ZOOM),
-    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
-    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
+    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, (int16_t)MAX_LOOGIES, -1 },
+    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, (int16_t)MAX_LOOGIES, -1 },
     MEMBER(g_player[0].ps, numloogs,                    PLAYER_NUMLOOGS),
     MEMBER(g_player[0].ps, loogcnt,                     PLAYER_LOOGCNT),
      LABEL(g_player[0].ps, pos.x,    "posx",            PLAYER_POSX),

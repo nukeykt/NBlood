@@ -30,6 +30,7 @@
 
 enum glsamplertype
 {
+    SAMPLER_INVALID = -1,
     SAMPLER_NONE,
     SAMPLER_NEAREST_CLAMP,
     SAMPLER_NEAREST_WRAP,

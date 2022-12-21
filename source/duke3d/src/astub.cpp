@@ -2095,7 +2095,7 @@ static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,in
     static int32_t tempsectorpicnum[MAXSECTORS];
 
     int32_t j=0,k=0;
-    int32_t floor1=0,floor2=0,ok=0,fofmode=0,draw_both=0;
+    int32_t floor1 = 0, floor2 = 0, fofmode = 0, draw_both = 0;
     int32_t offx,offy,offz;
 
     if (sprite[spnum].ang!=512) return;
@@ -2128,7 +2128,6 @@ static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,in
 
     // sectnum=sprite[j].sectnum;
     // sectnum=cursectnum;
-    ok++;
 
     /*  recursive?
     for(j=0;j<MAXSPRITES;j++)
@@ -2141,19 +2140,15 @@ static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,in
     }
     */
 
-    // if(ok==0) { Message("no fof",RED); return; }
-
     for (j=0; j<MAXSPRITES; j++)
     {
         if (sprite[j].picnum==1 && sprite[j].lotag==fofmode && sprite[j].hitag==sprite[floor1].hitag)
         {
             floor1=j;
             fofmode=sprite[j].lotag;
-            ok++;
             break;
         }
     }
-    // if(ok==1) { Message("no floor1",RED); return; }
 
     if (fofmode==40) k=41;
     else k=40;
@@ -2163,7 +2158,6 @@ static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,in
         if (sprite[j].picnum==1 && sprite[j].lotag==k && sprite[j].hitag==sprite[floor1].hitag)
         {
             floor2=j;
-            ok++;
             break;
         }
     }
@@ -2186,8 +2180,6 @@ static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,in
         offz -= SPRITESEC(floor1).floorz;
     else
         offz -= SPRITESEC(floor1).ceilingz;
-
-    // if(ok==2) { Message("no floor2",RED); return; }
 
     for (j=0; j<MAXSPRITES; j++) // raise ceiling or floor
     {
@@ -9955,7 +9947,6 @@ static int32_t parseconsounds(scriptfile *script)
 {
     int32_t tokn;
     char *cmdtokptr;
-    int32_t num_invalidsounds=0;
 
     tokenlist cstokens[] =
     {
@@ -10019,22 +10010,17 @@ static int32_t parseconsounds(scriptfile *script)
             {
                 initprintf("Warning: invalid sound definition %s (sound number < 0 or >= MAXSOUNDS) on line %s:%d\n",
                            definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                num_invalidsounds++;
                 break;
             }
 
             if (scriptfile_getstring(script, &filename))
-            {
-                num_invalidsounds++;
                 break;
-            }
 
             slen = Bstrlen(filename);
             if (slen >= BMAX_PATH)
             {
                 initprintf("Warning: invalid sound definition %s (filename too long) on line %s:%d\n",
                            definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                num_invalidsounds++;
                 break;
             }
 
@@ -10047,7 +10033,6 @@ static int32_t parseconsounds(scriptfile *script)
             if (0)
             {
 BAD:
-                num_invalidsounds++;
                 break;
             }
 

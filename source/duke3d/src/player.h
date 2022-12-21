@@ -175,6 +175,8 @@ typedef struct {
     uint32_t extbits;
 } input_t;
 
+#define MAX_LOOGIES 6
+
 // XXX: r1625 changed a lot types here, among others
 //  * int32_t --> int16_t
 //  * int16_t --> int8_t
@@ -202,7 +204,7 @@ typedef struct {
 
     uint16_t frag, fraggedself;
 
-    vec2_16_t loogie[6];
+    vec2_16_t loogie[MAX_LOOGIES];
     int16_t filler[102]; // jesus fucking christ
 
     int16_t olook_ang;
