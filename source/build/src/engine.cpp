@@ -1554,8 +1554,8 @@ uint8_t vgapal16[4*256] =
 };
 
 int16_t searchit;
-int32_t searchx = -1, searchy;                          //search input
-int16_t searchsector, searchwall, searchstat;     //search output
+int32_t searchx = -1, searchy;                 // search input
+int16_t searchsector, searchwall, searchstat;  // search output
 
 // SEARCHBOTTOMWALL:
 //   When aiming at a the bottom part of a 2-sided wall whose bottom part
