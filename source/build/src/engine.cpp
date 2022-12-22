@@ -10196,19 +10196,17 @@ killsprite:
                         int32_t xx[4] = { tspr->x };
                         int32_t yy[4] = { tspr->y };
 
-                        bool const inleft = (int)sides & (int)Sides::left;
-                        const _equation pineq = inleft ? p1eq : p2eq;
-                        int32_t const numpts = GetCornerPoints(tspr, xx, yy);
+                        int32_t const otherSide = (int)Sides::both - (int)sides;
+                        int32_t const numpts    = GetCornerPoints(tspr, xx, yy);
 
                         for (int32_t jj = 0; jj < numpts; jj++)
                         {
                             spr = {(float)xx[jj], (float)yy[jj]};
 
-                            // NOTE: using 'pineq' of the center point.
-                            bool const new_ok = maskwall_separates(spr) &&
-                                (wall_cone_sides(spr) == Sides::both || !sameside(&pineq, &middle, &spr));
-
-                            if (new_ok)
+                            // Relative to the sprite center: is the border point still on the
+                            // same side of the masked wall but now on the other side of the
+                            // wall-cone ray which gave rise to the "outside" status?
+                            if (maskwall_separates(spr) && ((int)wall_cone_sides(spr) & otherSide) != 0)
                             {
                                 ok = true;
                                 break;

@@ -373,16 +373,15 @@ static inline void get_wallspr_points(void const * const ptr, int32_t *x1, int32
     const int32_t tilenum=spr->picnum, ang=spr->ang;
     const int32_t xrepeat = spr->xrepeat;
     int32_t xoff = picanm[tilenum].xofs + spr->xoffset;
-    int32_t k, l, dax, day;
 
     if (spr->cstat&4)
         xoff = -xoff;
 
-    dax = sintable[ang&2047]*xrepeat;
-    day = sintable[(ang+1536)&2047]*xrepeat;
+    int32_t const dax = sintable[ang&2047]*xrepeat;
+    int32_t const day = sintable[(ang+1536)&2047]*xrepeat;
 
-    l = tilesiz[tilenum].x;
-    k = (l>>1)+xoff;
+    int32_t const l = tilesiz[tilenum].x;
+    int32_t const k = (l>>1)+xoff;
 
     *x1 -= mulscale16(dax,k);
     *x2 = *x1 + mulscale16(dax,l);
@@ -403,7 +402,7 @@ static inline void get_floorspr_points(void const * const ptr, int32_t px, int32
     const int32_t cosang = sintable[(spr->ang+512)&2047];
     const int32_t sinang = sintable[spr->ang&2047];
 
-    vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
+    vec2_t const span   = { tilesiz[tilenum].x, tilesiz[tilenum].y };
     vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
 
     vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
