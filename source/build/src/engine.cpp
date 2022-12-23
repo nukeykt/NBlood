@@ -9990,6 +9990,20 @@ enum class Sides
     both  = left | right,
 };
 
+static vec2_t GetCenterPoint(tspriteptr_t tspr) {
+    switch (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) {
+    case CSTAT_SPRITE_ALIGNMENT_WALL:
+        return get_wallspr_center(tspr);
+    case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+    case CSTAT_SPRITE_ALIGNMENT_FACING:
+    case CSTAT_SPRITE_ALIGNMENT_SLOPE:
+        // TODO: implement.
+        return tspr->xy;
+    }
+
+    EDUKE32_UNREACHABLE_SECTION(abort());
+}
+
 static int32_t GetCornerPoints(tspriteptr_t tspr, int32_t (&xx)[4], int32_t (&yy)[4])
 {
     bool const isOnFloor = (tspr->cstat & 48) == 32;
@@ -10178,7 +10192,8 @@ killsprite:
             if (tspriteptr[i] != NULL)
             {
                 auto const tspr = tspriteptr[i];
-                vec2f_t spr{(float)tspr->x, (float)tspr->y};
+                vec2_t const cen = GetCenterPoint(tspr);
+                vec2f_t spr{(float)cen.x, (float)cen.y};
 
                 if (maskwall_separates(spr))
                 {
