@@ -9995,7 +9995,9 @@ static vec2_t GetCenterPoint(tspriteptr_t tspr) {
     case CSTAT_SPRITE_ALIGNMENT_WALL:
         return get_wallspr_center(tspr);
     case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+        return get_floorspr_center(tspr);
     case CSTAT_SPRITE_ALIGNMENT_FACING:
+        // TODO: implement?
     case CSTAT_SPRITE_ALIGNMENT_SLOPE:
         // TODO: implement.
         return tspr->xy;

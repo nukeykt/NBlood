@@ -418,14 +418,14 @@ static inline void get_wallspr_points(void const * const ptr, int32_t *x1, int32
     *y2 = *y1 + mulscale16(day,l);
 }
 
-// x1, y1: in/out
-// rest x/y: out
-static inline void get_floorspr_points(void const * const ptr, int32_t px, int32_t py,
-                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
-                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
-                                int32_t const heinum)
+struct floorsprite_dims
 {
-    auto spr = (uspriteptr_t)ptr;
+    int32_t cosang, sinang;
+    vec2_t span, repeat, adjofs;
+};
+
+static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, int32_t heinum)
+{
     const int32_t tilenum = spr->picnum;
     const int32_t cosang = sintable[(spr->ang+512)&2047];
     const int32_t sinang = sintable[spr->ang&2047];
@@ -434,8 +434,6 @@ static inline void get_floorspr_points(void const * const ptr, int32_t px, int32
     vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
 
     vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
-
-    int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
 
     if (heinum == 0)
     {
@@ -448,6 +446,37 @@ static inline void get_floorspr_points(void const * const ptr, int32_t px, int32
 
     if (spr->cstat & 8)
         adjofs.y = -adjofs.y;
+
+    return {cosang, sinang, span, repeat, adjofs};
+}
+
+static inline vec2_t get_floorspr_center(void const *const ptr)
+{
+    auto const *spr = (uspriteptr_t)ptr;
+    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR);
+
+    auto const    dims   = get_floorspr_dims(spr, 0);
+    int32_t const cosang = dims.cosang, sinang = dims.sinang;
+    vec2_t const  center = dims.adjofs * dims.repeat;
+
+    int32_t const dx = dmulscale16(sinang, center.x, cosang, center.y);
+    int32_t const dy = dmulscale16(sinang, center.y, -cosang, center.x);
+
+    return { spr->x + dx, spr->y + dy };
+}
+
+// x1, y1: in/out
+// rest x/y: out
+static inline void get_floorspr_points(void const * const ptr, int32_t px, int32_t py,
+                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
+                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
+                                int32_t const heinum)
+{
+    auto const    dims   = get_floorspr_dims((uspriteptr_t)ptr, heinum);
+    int32_t const cosang = dims.cosang, sinang = dims.sinang;
+    vec2_t const  span = dims.span, repeat = dims.repeat, adjofs = dims.adjofs;
+
+    int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
 
     vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x, ((span.y >> 1) + adjofs.y) * repeat.y };
     vec2_t const rspan  = { span.x * repeat.x, span.y * repeat.y };
