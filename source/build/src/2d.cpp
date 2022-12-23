@@ -1146,9 +1146,10 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
 
         int32_t dx = mulscale11(sintable[(ang+2560)&2047], zoome) / 768;
         int32_t dy = mulscale11(sintable[(ang+2048)&2047], zoome) / 768;
+        int32_t const odx = dx, ody = dy;
         dy = scalescreeny(dy);
 
-        editorDraw2dLineMiddle(x1, y1, x1+dx, y1+dy, col);
+        editorDraw2dLineMiddle(x1, y1, x1+dx, y1+dy, col);  // Front
 
         if (hitblocking)
         {
@@ -1212,14 +1213,13 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
             int32_t const fx = mulscale6(tilesiz[spr->picnum].x, spr->xrepeat);
             int32_t const one=(((ang+256)&512) == 0), no=!one;
 
-            dx = mulscale11(sintable[(ang+2560)&2047], zoome) / 6144;
-            dy = mulscale11(sintable[(ang+2048)&2047], zoome) / 6144;
-            dy = scalescreeny(dy);
-
-            editorDraw2dLineMiddle(x1, y1, x1+dx, y1+dy, col);
             if (!(spr->cstat&64))  // not 1-sided
             {
-                editorDraw2dLineMiddle(x1, y1, x1-dx, y1-dy, col);
+                dx = odx / 8;
+                dy = ody / 8;
+                dy = scalescreeny(dy);
+
+                editorDraw2dLineMiddle(x1, y1, x1-dx, y1-dy, col);  // Back
                 if (hitblocking)
                 {
                     editorDraw2dLineMiddle(x1-no, y1-one, x1-dx-no, y1-dy-one, col);
@@ -1237,8 +1237,8 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
             dy = mulscale13(sintable[(ang+512)&2047], zoome) * fx / 4096;
             dy = scalescreeny(dy);
 
-            editorDraw2dLineMiddle(x1, y1, x1-dx, y1-dy, col);
-            editorDraw2dLineMiddle(x1, y1, x1+dx, y1+dy, col);
+            editorDraw2dLineMiddle(x1, y1, x1-dx, y1-dy, col);  // Right
+            editorDraw2dLineMiddle(x1, y1, x1+dx, y1+dy, col);  // Left
 
             if (hitblocking)
             {
