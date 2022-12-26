@@ -7767,20 +7767,20 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         {
             vec4_t lerp, goal;
             int16_t picnum, flags;
-            uint32_t clock;
+            ClockTicks clock;
         } smooth[MAXUNIQHUDID];
-
+        
         auto &sm  = smooth[uniqid];
         auto &sm0 = smooth[0];
 
         vec4_t const goal  = { sx, sy, z, a };
-        auto const   clock = timer120();
+        auto const   clock = totalclock;
 
         sm0 = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK), clock };
         
         auto lerpWouldLookDerp = [&](void)
         {
-            return !(dastat & RS_LERP) || !sm.clock || clock - sm.clock > 4
+            return !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
                    || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
                    && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
         };
