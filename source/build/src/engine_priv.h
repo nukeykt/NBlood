@@ -424,7 +424,7 @@ struct floorsprite_dims
     vec2_t span, repeat, adjofs;
 };
 
-static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, int32_t heinum)
+static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, bool sloped)
 {
     const int32_t tilenum = spr->picnum;
     const int32_t cosang = sintable[(spr->ang+512)&2047];
@@ -435,8 +435,9 @@ static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, int32_t heinu
 
     vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
 
-    if (heinum == 0)
+    if (!sloped)
     {
+        // For sloped sprites, '[xy]offset' encode the slope.
         adjofs.x += spr->xoffset;
         adjofs.y += spr->yoffset;
     }
@@ -450,12 +451,12 @@ static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, int32_t heinu
     return {cosang, sinang, span, repeat, adjofs};
 }
 
-static inline vec2_t get_floorspr_center(void const *const ptr)
+static inline vec2_t get_floorspr_center(void const *const ptr, bool sloped)
 {
     auto const *spr = (uspriteptr_t)ptr;
     Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR);
 
-    auto const    dims   = get_floorspr_dims(spr, 0);
+    auto const    dims   = get_floorspr_dims(spr, sloped);
     int32_t const cosang = dims.cosang, sinang = dims.sinang;
     vec2_t const  center = dims.adjofs * dims.repeat;
 
@@ -472,7 +473,7 @@ static inline void get_floorspr_points(void const * const ptr, int32_t px, int32
                                 int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
                                 int32_t const heinum)
 {
-    auto const    dims   = get_floorspr_dims((uspriteptr_t)ptr, heinum);
+    auto const    dims   = get_floorspr_dims((uspriteptr_t)ptr, heinum != 0);
     int32_t const cosang = dims.cosang, sinang = dims.sinang;
     vec2_t const  span = dims.span, repeat = dims.repeat, adjofs = dims.adjofs;
 
