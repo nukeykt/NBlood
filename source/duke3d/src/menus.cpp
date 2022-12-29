@@ -2907,9 +2907,12 @@ static void msaveloadtext(const vec2_t& origin, int level, int volume, int skill
         yoffset += 8;
     }
 
-    mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Difficulty:", MF_Minifont.pal_deselected_right);
-    mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(g_skillNames[skill-1]), MF_Minifont.pal_selected_right);
-    yoffset += 8;
+    if (skill > 0)
+    {
+        mminitext(origin.x + (xoffset << 16), origin.y + (yoffset << 16), "Difficulty:", MF_Minifont.pal_deselected_right);
+        mminitext(origin.x + (xoffset2 << 16), origin.y + (yoffset << 16), localeLookup(g_skillNames[skill-1]), MF_Minifont.pal_selected_right);
+        yoffset += 8;
+    }
 
     if (savehead.health && (unsigned)savehead.health <= (unsigned)g_maxPlayerHealth)
     {
