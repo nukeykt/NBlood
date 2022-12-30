@@ -1,8 +1,17 @@
 // Voidwrap - A Steam API wrapper.
 
 #define VOIDWRAP_ISEXPORTING
+
 #include "voidwrap_steam.h"
+
 #include "steam_api.h"
+
+#include <cstdarg>
+#include <cstddef>
+
+#ifndef UNREFERENCED_PARAMETER
+# define UNREFERENCED_PARAMETER(x) (x) = (x)
+#endif
 
 static uint64_t AppID;
 static VW_VOID_CONSTCHARPTR Callback_PrintDebug;
