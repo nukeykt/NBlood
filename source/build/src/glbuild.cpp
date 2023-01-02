@@ -255,7 +255,10 @@ void buildgl_bindSamplerObject(int texunit, int32_t pth_method)
     if (!buildgl_samplerObjectsEnabled())
     {
         gl.currentBoundSampler[texunit] = SAMPLER_NONE;
-        glBindSampler(texunit, 0);
+
+        if (glinfo.samplerobjects)
+            glBindSampler(texunit, 0);
+        
         return;
     }
 
