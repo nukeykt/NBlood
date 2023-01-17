@@ -56,11 +56,11 @@ extern BUSY gBusy[kMaxBusyCount];
 extern int gBusyCount;
 
 void trTriggerSector(unsigned int nSector, XSECTOR *pXSector, int command, int causerID);
-void trMessageSector(unsigned int nSector, EVENT event);
+void trMessageSector(unsigned int nSector, const EVENT &event);
 void trTriggerWall(unsigned int nWall, XWALL *pXWall, int command, int causerID);
-void trMessageWall(unsigned int nWall, EVENT event);
+void trMessageWall(unsigned int nWall, const EVENT &event);
 void trTriggerSprite(unsigned int nSprite, XSPRITE *pXSprite, int command, int causerID);
-void trMessageSprite(unsigned int nSprite, EVENT event);
+void trMessageSprite(unsigned int nSprite, const EVENT &event);
 void trProcessBusy(void);
 void trInit(void);
 void trTextOver(int nId);
