@@ -128,7 +128,7 @@ void SetLocalChan(int nChannel);
 int GetLocalSound();
 void UpdateLocalSound();
 void StopLocalSound();
-void PlayLocalSound(short nSound, short val);
+void PlayLocalSound(int nSound, int nRate);
 int LoadSound(const char* sound);
 
 void BendAmbientSound();
