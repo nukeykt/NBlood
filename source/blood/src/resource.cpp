@@ -92,6 +92,14 @@ void Resource::Init(const char *filename)
     if (filename)
     {
         handle = kopen4loadfrommod(filename, 0);
+        if (handle == -1)
+        {
+            const char *e = "File not found ";
+            char error[100];
+            strcat(error, e);
+            strcat(error, filename);
+            ThrowError(error);
+        }
         if (handle != -1)
         {
             int nFileLength = kfilelength(handle);
