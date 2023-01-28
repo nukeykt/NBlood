@@ -23,7 +23,7 @@
     <ProjectGuid>{108A8AF0-327A-4565-86A3-D27F7C36D2CA}</ProjectGuid>
     <RootNamespace>rednukem</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

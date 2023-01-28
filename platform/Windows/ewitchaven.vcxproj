@@ -23,7 +23,7 @@
     <ProjectGuid>{4DFF3799-5B57-4CE7-B34C-F4FB1DA06844}</ProjectGuid>
     <RootNamespace>ewitchaven</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>ewitchaven</ProjectName>
   </PropertyGroup>

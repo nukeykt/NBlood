@@ -23,7 +23,7 @@
     <ProjectGuid>{5407CB5A-4B15-41FA-B79B-8B386A14D275}</ProjectGuid>
     <RootNamespace>nblood</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>nblood</ProjectName>
   </PropertyGroup>
@@ -110,7 +110,6 @@
     </Link>
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -122,6 +121,8 @@
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;RENDERTYPESDL=1;MIXERTYPEWIN=1;SDL_USEFOLDER;SDL_TARGET=2;USE_OPENGL=1;POLYMER=1;STARTUP_WINDOW;USE_LIBVPX;HAVE_VORBIS;HAVE_XMP;NOONE_EXTENSIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalOptions>/Zc:externC- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

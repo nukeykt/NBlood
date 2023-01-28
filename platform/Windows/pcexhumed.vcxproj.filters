@@ -17,7 +17,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="pcexhumed.exe.manifest" />
+    <Manifest Include="exhumed.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\exhumed\src\snake.cpp">

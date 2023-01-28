@@ -23,7 +23,7 @@
     <ProjectGuid>{20883F4B-FD36-4975-9472-F1B51BAC0F4B}</ProjectGuid>
     <RootNamespace>etekwar</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>etekwar</ProjectName>
   </PropertyGroup>
