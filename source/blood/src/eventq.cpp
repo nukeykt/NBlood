@@ -62,17 +62,17 @@ public:
 EventQueue eventQ;
 void EventQueue::Kill(int a1, int a2)
 {
-    PQueue->Kill([=](EVENT nItem)->bool {return (nItem.index == a1 && nItem.type == a2); });
+    PQueue->Kill([=](const EVENT &nItem)->bool {return (nItem.index == a1 && nItem.type == a2); });
 }
 
 void EventQueue::Kill(int idx, int type, int causer)
 {
-    PQueue->Kill([=](EVENT nItem)->bool { return (nItem.index == idx && nItem.type == type && nItem.causer == causer); });
+    PQueue->Kill([=](const EVENT &nItem)->bool { return (nItem.index == idx && nItem.type == type && nItem.causer == causer); });
 }
 
 void EventQueue::Kill(int a1, int a2, CALLBACK_ID a3)
 {
-    PQueue->Kill([=](EVENT nItem)->bool {return (nItem.index == a1 && nItem.type == a2 && nItem.cmd == kCmdCallback && nItem.funcID == (unsigned int)a3); });
+    PQueue->Kill([=](const EVENT &nItem)->bool {return (nItem.index == a1 && nItem.type == a2 && nItem.cmd == kCmdCallback && nItem.funcID == (unsigned int)a3); });
 }
 
 RXBUCKET rxBucket[kChannelMax+1];

@@ -375,6 +375,8 @@ void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
         pChannel = &Channel[nChannel];
     if (pChannel->hVoice > 0)
         sndKillSound(pChannel);
+    nVolume *= 80;
+    nVolume = clamp(nVolume, 0, 255); // clamp to range that audiolib accepts
     int hFile = kopen4loadfrommod(pzFile, 0);
     if (hFile == -1)
         return;
