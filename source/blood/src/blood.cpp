@@ -1700,6 +1700,12 @@ int app_main(int argc, char const * const * argv)
     }
     else
     {
+        //Load ART files for the correct game by cleaning search paths
+        if (Bstrcmp(pINISelected->zName, "CRYPTIC.INI"))
+        {
+            const char *BloodCPPath = G_GetGamePath(kGame_Cryptic);
+            G_RemoveSearchPaths(BloodCPPath);
+        }
         if (!tileInit(0,NULL))
             ThrowError("TILES###.ART files not found");
     }

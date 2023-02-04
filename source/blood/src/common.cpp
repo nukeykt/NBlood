@@ -43,7 +43,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
 char *g_grpNamePtr = NULL;
-
+char g_BloodCrypticPath[BMAX_PATH] = { 0 };
+char g_BloodPath[BMAX_PATH] = { 0 };
 void clearGrpNamePtr(void)
 {
     Xfree(g_grpNamePtr);
@@ -358,6 +359,7 @@ void G_AddSearchPaths(void)
     if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 299030)", "InstallLocation", buf, &bufsize))
     {
         addsearchpath(buf);
+        strncpy(g_BloodPath, buf, sizeof(buf));
         found = true;
     }
 
@@ -366,12 +368,14 @@ void G_AddSearchPaths(void)
     if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1207658856)", "path", buf, &bufsize))
     {
         addsearchpath(buf);
+        strncpy(g_BloodPath, buf, sizeof(buf));
         found = true;
     }
     bufsize = sizeof(buf);
     if (!found && Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGONEUNITONEBLOOD", "PATH", buf, &bufsize))
     {
         addsearchpath(buf);
+        strncpy(g_BloodPath, buf, sizeof(buf));
         found = true;
     }
 
@@ -385,6 +389,7 @@ void G_AddSearchPaths(void)
         addsearchpath(buf);
         strncpy(suffix, "/addons/Cryptic Passage", remaining);
         addsearchpath(buf);
+        strncpy(g_BloodCrypticPath, buf, sizeof(buf));
         found = true;
     }
 
@@ -398,10 +403,32 @@ void G_AddSearchPaths(void)
         addsearchpath(buf);
         strncpy(suffix, "/addons/Cryptic Passage", remaining);
         addsearchpath(buf);
+        strncpy(g_BloodCrypticPath, buf, sizeof(buf));
         found = true;
     }
 #endif
 #endif
+}
+
+void G_RemoveSearchPaths(const char *gamePath)
+{
+  removesearchpath(gamePath);  
+}
+
+char const* G_GetGamePath(Games_t game)
+{
+    const char *path = NULL;
+    switch (game)
+    {
+    case kGame_Blood:
+        path = g_BloodPath;
+        break;
+    case kGame_Cryptic:
+        path = g_BloodCrypticPath;
+        break;
+    }
+
+    return path;
 }
 
 void G_CleanupSearchPaths(void)
