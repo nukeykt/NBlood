@@ -1607,7 +1607,7 @@ int app_main(int argc, char const * const * argv)
     ParseOptions();
     G_ExtInit();
 
-    if (!g_useCwd)
+    if (!g_useCwd && !g_pathOverride)
         G_AddSearchPaths();
 
     // used with binds for fast function lookup

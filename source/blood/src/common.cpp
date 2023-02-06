@@ -92,6 +92,7 @@ void G_SetupGlobalPsky(void)
 
 static char g_rootDir[BMAX_PATH];
 
+bool g_pathOverride;
 int g_useCwd;
 int32_t g_groupFileHandle;
 
@@ -128,6 +129,7 @@ void G_ExtInit(void)
     {
         int32_t i;
         struct strllist *s;
+        g_pathOverride = true;
         while (CommandPaths)
         {
             s = CommandPaths->next;
@@ -136,6 +138,7 @@ void G_ExtInit(void)
             {
                 initprintf("Failed adding %s for game data: %s\n", CommandPaths->str,
                            i==-1 ? "not a directory" : "no such directory");
+                g_pathOverride = false;
             }
 
             Xfree(CommandPaths->str);

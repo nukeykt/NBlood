@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "misc.h"
 #include "network.h"
 
+extern bool g_pathOverride;
 extern int g_useCwd;
 #ifndef APPNAME
 #define APPNAME "NBlood"
