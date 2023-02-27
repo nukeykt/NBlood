@@ -232,6 +232,7 @@ char szSoundName[kMaxSounds][kMaxSoundNameLen];
 char *SoundBuf[kMaxSounds];
 int SoundLen[kMaxSounds];
 char SoundLock[kMaxSounds];
+int SoundSampleRate[kMaxSounds];
 
 extern char message_text[80];
 extern short message_timer;
@@ -357,6 +358,8 @@ void InitFX(void)
     nCreepyTimer = kCreepyCount;
 
     SetMasterFXVolume(FXVolume);
+
+    memset(SoundSampleRate, -1, sizeof(SoundSampleRate));
 
 #if 0
     int status = FX_Init(FXDevice, NumVoices, NumChannels, NumBits, MixRate);
@@ -858,7 +861,22 @@ void UpdateSounds()
                 FX_SetPan(pASound->hFX, nVolume, nLeft, nRight);
 
                 if (nPitch < 0)
-                    FX_SetFrequency(pASound->hFX, 7000);
+                {
+                    int nFreq = 0;
+                    if (SoundSampleRate[pASound->nSound] < 0)
+                    {
+                        FX_GetFrequency(pASound->hFX, &nFreq);
+                        SoundSampleRate[pASound->nSound] = nFreq; // cache original sample rate
+                    }
+                    else
+                    {
+                        nFreq = SoundSampleRate[pASound->nSound];
+                    }
+
+                    // handle replacement sounds with different, higher rates.
+                    int nFinalPitch = 7000 * (nFreq / 11025);
+                    FX_SetFrequency(pASound->hFX, nFinalPitch);
+                }
 
                 pASound->f_4 = nVolume;
                 pASound->nAngle = nSoundAng;
@@ -982,7 +1000,7 @@ void SetMasterFXVolume(int nVolume)
     FX_SetVolume(nVolume);
 }
 
-void PlayLocalSound(short nSound, short nRate)
+void PlayLocalSound(int nSound, int nRate)
 {
     if (!SoundToggle)
         return;
@@ -1011,8 +1029,19 @@ void PlayLocalSound(short nSound, short nRate)
     if (nRate)
     {
         int nFreq = 0;
-        FX_GetFrequency(pASound->hFX, &nFreq);
-        FX_SetFrequency(pASound->hFX, nFreq+nRate);
+        if (SoundSampleRate[nSound] < 0)
+        {
+            FX_GetFrequency(pASound->hFX, &nFreq);
+            SoundSampleRate[nSound] = nFreq; // cache original sample rate
+        }
+        else
+        {
+            nFreq = SoundSampleRate[nSound];
+        }
+
+        // handle replacement sounds with different, higher rates.
+        int nFinalRate = nRate * (nFreq / 11025);
+        FX_SetFrequency(pASound->hFX, nFreq + nFinalRate);
     }
 #if 0
     AIL_init_sample(pASound->f_e);
@@ -1224,8 +1253,19 @@ short PlayFX2(unsigned short nSound, short nSprite)
         if (nPitch)
         {
             int nFreq = 0;
-            FX_GetFrequency(vdi->hFX, &nFreq);
-            FX_SetFrequency(vdi->hFX, nFreq+nPitch);
+            if (SoundSampleRate[nSound] < 0)
+            {
+                FX_GetFrequency(vdi->hFX, &nFreq);
+                SoundSampleRate[nSound] = nFreq; // cache original sample rate
+            }
+            else
+            {
+                nFreq = SoundSampleRate[nSound];
+            }
+
+            // handle replacement sounds with different, higher rates.
+            int nFinalPitch = nPitch * (nFreq / 11025);
+            FX_SetFrequency(vdi->hFX, nFreq + nFinalPitch);
         }
 #if 0
         AIL_init_sample(vdi->f_e);

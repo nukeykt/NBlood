@@ -1531,7 +1531,7 @@ int getDodgeChance(spritetype* pSprite) {
 
 }
 
-void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT event)
+void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, const EVENT &event)
 {
     if (event.cmd == kCmdOff) {
         actPostSprite(pSprite->index, kStatFree);

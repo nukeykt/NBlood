@@ -453,7 +453,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         break;
     default:
         if (!predict.at6f && predict.at71 && predict.at6a == 0) {
-            if (packItemActive(pPlayer, 4)) predict.at64 = pPosture->pwupJumpZ;//-0x175555;
+            if (packItemActive(pPlayer, kPackJumpBoots)) predict.at64 = pPosture->pwupJumpZ;//-0x175555;
             else predict.at64 = pPosture->normalJumpZ;//-0xbaaaa;
             predict.at6f = 1;
         }
@@ -1199,7 +1199,7 @@ void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nStat, int nSc
     rotatesprite(x<<16, y<<16, nScale, 0, nTile, 0, 0, nStat|90, 0, 0, sbx, ydim-1);
 }
 
-int gPackIcons[5] = {
+int gPackIcons[kPackMax] = {
     2569, 2564, 2566, 2568, 2560
 };
 
@@ -1209,7 +1209,7 @@ struct PACKICON2 {
     int nYOffs;
 };
 
-PACKICON2 gPackIcons2[] = {
+PACKICON2 gPackIcons2[kPackMax] = {
     { 519, (int)(65536*0.5), 0 },
     { 830, (int)(65536*0.3), 0 },
     { 760, (int)(65536*0.6), 0 },
@@ -1392,12 +1392,12 @@ void viewDrawAimedPlayerName(void)
 
 void viewDrawPack(PLAYER *pPlayer, int x, int y)
 {
-    int packs[5];
+    int packs[kPackMax];
     if (pPlayer->packItemTime)
     {
         int nPacks = 0;
         int width = 0;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < kPackMax; i++)
         {
             if (pPlayer->packSlots[i].curAmount)
             {
@@ -1867,7 +1867,7 @@ void viewPrecacheTiles(void)
     {
         tilePrecacheTile(kSBarNegative + i, 0);
     }
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < kPackMax; i++)
     {
         tilePrecacheTile(gPackIcons[i], 0);
         tilePrecacheTile(gPackIcons2[i].nTile, 0);
@@ -1906,7 +1906,7 @@ void viewInit(void)
         lensTable[i] = B_LITTLE32(lensTable[i]);
     }
 #endif
-    char *data = tileAllocTile(4077, kLensSize, kLensSize, 0, 0);
+    char *data = tileAllocTile(LENSBUFFER, kLensSize, kLensSize, 0, 0);
     memset(data, 255, kLensSize*kLensSize);
     gGameMessageMgr.SetState(gMessageState);
     gGameMessageMgr.SetCoordinates(1, 1);
@@ -2447,7 +2447,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->shade = pTSprite->shade;
         pNSprite->xrepeat = 32;
         pNSprite->yrepeat = 32;
-        pNSprite->ang = (gView->pSprite->ang + 512) & 2047; // always face viewer
+        pNSprite->ang = (gCameraAng + kAng90) & kAngMask; // always face viewer
         const int nVoxel = voxelIndex[nTile];
         if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
         {
@@ -3142,14 +3142,16 @@ void viewSetErrorMessage(const char *pMessage)
 
 void DoLensEffect(void)
 {
-    char *d = (char*)waloff[4077];
+    char *d = (char*)waloff[LENSBUFFER];
     dassert(d != NULL);
-    char *s = (char*)waloff[4079];
+    char *s = (char*)waloff[CRYSTALBALLBUFFER];
     dassert(s != NULL);
     for (int i = 0; i < kLensSize*kLensSize; i++, d++)
+    {
         if (lensTable[i] >= 0)
             *d = s[lensTable[i]];
-    tileInvalidate(4077, -1, -1);
+    }
+    tileInvalidate(LENSBUFFER, -1, -1);
 }
 
 void UpdateDacs(int nPalette, bool bNoTint)
@@ -3492,8 +3494,7 @@ void viewDrawScreen(void)
         }
         const char bLink = CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
         int v78 = gViewInterpolate ? interpolateang(gScreenTiltO, gScreenTilt, gInterpolate) : gScreenTilt;
-        char v14 = 0;
-        char v10 = 0;
+        char nPalCrystalBall = 0;
         bool bDelirium = powerupCheck(gView, kPwUpDeliriumShroom) > 0;
         static bool bDeliriumOld = false;
         int tiltcs = 0, tiltdim = 320;
@@ -3506,7 +3507,7 @@ void viewDrawScreen(void)
             if (videoGetRenderMode() == REND_CLASSIC)
             {
                 int vr = viewingrange;
-                walock[TILTBUFFER] = 255;
+                walock[TILTBUFFER] = CACHE1D_PERMANENT;
                 if (!waloff[TILTBUFFER])
                 {
                     tileAllocTile(TILTBUFFER, 640, 640, 0, 0);
@@ -3544,11 +3545,11 @@ void viewDrawScreen(void)
             }
             PLAYER *pOther = &gPlayer[i];
             //othercameraclock = gGameClock;
-            if (!waloff[4079])
+            if (!waloff[CRYSTALBALLBUFFER])
             {
-                tileAllocTile(4079, 128, 128, 0, 0);
+                tileAllocTile(CRYSTALBALLBUFFER, 128, 128, 0, 0);
             }
-            renderSetTarget(4079, 128, 128);
+            renderSetTarget(CRYSTALBALLBUFFER, 128, 128);
             renderSetAspect(65536, 78643);
             int vd8 = pOther->pSprite->x;
             int vd4 = pOther->pSprite->y;
@@ -3577,9 +3578,7 @@ void viewDrawScreen(void)
             CalcOtherPosition(pOther->pSprite, &vd8, &vd4, &vd0, &vcc, v50, 0);
             CheckLink(&vd8, &vd4, &vd0, &vcc);
             if (IsUnderwaterSector(vcc))
-            {
-                v14 = 10;
-            }
+                nPalCrystalBall = 10;
             memcpy(bakMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, otherMirrorGotpic, 2);
             g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->visibility, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
@@ -3822,7 +3821,7 @@ RORHACK:
         {
             viewBurnTime(gView->pXSprite->burnTime);
         }
-        if (packItemActive(gView, 1))
+        if (packItemActive(gView, kPackDivingSuit))
         {
             rotatesprite(0, 0, 65536, 0, 2344, 0, 0, 256+18, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(320<<16, 0, 65536, 1024, 2344, 0, 0, 512+22, gViewX0, gViewY0, gViewX1, gViewY1);
@@ -3839,14 +3838,14 @@ RORHACK:
             rotatesprite(0, 200<<16, 65536, 0, 2358, 0, 0, 256+22, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(320<<16, 200<<16, 65536, 1024, 2358, 0, 0, 512+18, gViewX0, gViewY0, gViewX1, gViewY1);
         }
-        if (bCrystalBall)
+        if (bCrystalBall && waloff[CRYSTALBALLBUFFER])
         {
             DoLensEffect();
             viewingRange = viewingrange;
             yxAspect = yxaspect;
             renderSetAspect(65536, 54613);
-            rotatesprite(280<<16, 35<<16, 53248, 512, 4077, v10, v14, 512+6, gViewX0, gViewY0, gViewX1, gViewY1);
-            rotatesprite(280<<16, 35<<16, 53248, 0, 1683, v10, 0, 512+35, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(280<<16, 35<<16, 53248, kAng90, LENSBUFFER, 0, nPalCrystalBall, 512+6, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(280<<16, 35<<16, 53248, 0, 1683, 0, 0, 512+35, gViewX0, gViewY0, gViewX1, gViewY1);
             renderSetAspect(viewingRange, yxAspect);
         }
         

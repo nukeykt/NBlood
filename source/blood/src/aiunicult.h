@@ -195,7 +195,7 @@ int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite);
 bool doExplosion(spritetype* pSprite, int nType);
 spritetype* genDudeSpawn(XSPRITE* pXSource, spritetype* pSprite, int nDist);
 void genDudeTransform(spritetype* pSprite);
-void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT a3);
+void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, const EVENT &a3);
 int getDodgeChance(spritetype* pSprite);
 int getRecoilChance(spritetype* pSprite);
 bool dudeIsMelee(XSPRITE* pXSprite);

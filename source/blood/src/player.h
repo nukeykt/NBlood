@@ -53,6 +53,17 @@ enum
     kPostureMax    = 3,
 };
 
+// inventory pack
+enum
+{
+    kPackMedKit      = 0,
+    kPackDivingSuit  = 1,
+    kPackCrystalBall = 2,
+    kPackBeastVision = 3,
+    kPackJumpBoots   = 4,
+    kPackMax         = 5,
+};
+
 struct PACKINFO
 {
     bool isActive;       // is active (0/1)
@@ -188,7 +199,7 @@ struct PLAYER
     bool                cantJump;
     int                 packItemTime;  // pack timer
     int                 packItemId;    // pack id 1: diving suit, 2: crystal ball, 3: beast vision 4: jump boots
-    PACKINFO            packSlots[5];  // at325 [1]: diving suit, [2]: crystal ball, [3]: beast vision [4]: jump boots
+    PACKINFO            packSlots[kPackMax];
     int                 armor[3];      // armor
     //int               at342;
     //int               at346;

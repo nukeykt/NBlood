@@ -367,7 +367,7 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
                 sfxSetReverb(0);
             break;
         case kItemReflectShots:
-            if (pPlayer == gMe && VanillaMode() ? true : pPlayer->packSlots[1].isActive == 0)
+            if ((pPlayer == gMe) && (VanillaMode() || !packItemActive(pPlayer, kPackDivingSuit)))
                 sfxSetReverb(0);
             break;
         case kItemGasMask:
@@ -423,7 +423,12 @@ void powerupProcess(PLAYER *pPlayer)
 
 void powerupClear(PLAYER *pPlayer)
 {
-    for (int i = kMaxPowerUps-1; i >= 0; i--)
+    if (!VanillaMode() && (pPlayer == gMe)) // turn off reverb sound effects
+    {
+        if (packItemActive(pPlayer, kPackDivingSuit) || powerupCheck(pPlayer, kPwUpReflectShots)) // if diving suit/reflective shots powerup is active, turn off reverb effect
+            sfxSetReverb(0);
+    }
+    for (int i = 0; i < kMaxPowerUps; i++)
     {
         pPlayer->pwUpTime[i] = 0;
     }
@@ -437,18 +442,18 @@ int packItemToPowerup(int nPack)
 {
     int nPowerUp = -1;
     switch (nPack) {
-        case 0:
+        case kPackMedKit:
             break;
-        case 1:
+        case kPackDivingSuit:
             nPowerUp = kPwUpDivingSuit;
             break;
-        case 2:
+        case kPackCrystalBall:
             nPowerUp = kPwUpCrystalBall;
             break;
-        case 3:
+        case kPackBeastVision:
             nPowerUp = kPwUpBeastVision;
             break;
-        case 4:
+        case kPackJumpBoots:
             nPowerUp = kPwUpJumpBoots;
             break;
         default:
@@ -462,20 +467,20 @@ int powerupToPackItem(int nPowerUp)
 {
     switch (nPowerUp) {
         case kPwUpDivingSuit:
-            return 1;
+            return kPackDivingSuit;
         case kPwUpCrystalBall:
-            return 2;
+            return kPackCrystalBall;
         case kPwUpBeastVision:
-            return 3;
+            return kPackBeastVision;
         case kPwUpJumpBoots:
-            return 4;
+            return kPackJumpBoots;
     }
     return -1;
 }
 
 char packAddItem(PLAYER *pPlayer, unsigned int nPack)
 {
-    if (nPack <= 4)
+    if (nPack < kPackMax)
     {
         if (pPlayer->packSlots[nPack].curAmount >= 100)
             return 0;
@@ -505,13 +510,13 @@ char packItemActive(PLAYER *pPlayer, int nPack)
 
 void packUseItem(PLAYER *pPlayer, int nPack)
 {
-    char v4 = 0;
+    char bActivate = 0;
     int nPowerUp = -1;
     if (pPlayer->packSlots[nPack].curAmount > 0)
     {
         switch (nPack)
         {
-        case 0:
+        case kPackMedKit:
         {
             XSPRITE *pXSprite = pPlayer->pXSprite;
             unsigned int health = pXSprite->health>>4;
@@ -519,24 +524,24 @@ void packUseItem(PLAYER *pPlayer, int nPack)
             {
                 int heal = ClipHigh(100-health, pPlayer->packSlots[0].curAmount);
                 actHealDude(pXSprite, heal, 100);
-                pPlayer->packSlots[0].curAmount -= heal;
+                pPlayer->packSlots[kPackMedKit].curAmount -= heal;
             }
             break;
         }
-        case 1:
-            v4 = 1;
+        case kPackDivingSuit:
+            bActivate = 1;
             nPowerUp = kPwUpDivingSuit;
             break;
-        case 2:
-            v4 = 1;
+        case kPackCrystalBall:
+            bActivate = 1;
             nPowerUp = kPwUpCrystalBall;
             break;
-        case 3:
-            v4 = 1;
+        case kPackBeastVision:
+            bActivate = 1;
             nPowerUp = kPwUpBeastVision;
             break;
-        case 4:
-            v4 = 1;
+        case kPackJumpBoots:
+            bActivate = 1;
             nPowerUp = kPwUpJumpBoots;
             break;
         default:
@@ -545,7 +550,7 @@ void packUseItem(PLAYER *pPlayer, int nPack)
         }
     }
     pPlayer->packItemTime = 0;
-    if (v4)
+    if (bActivate)
         powerupSetState(pPlayer, nPowerUp, pPlayer->packSlots[nPack].isActive);
 }
 
@@ -553,7 +558,7 @@ void packPrevItem(PLAYER *pPlayer)
 {
     if (pPlayer->packItemTime > 0)
     {
-        for (int nPrev = ClipLow(pPlayer->packItemId-1,0); nPrev >= 0; nPrev--)
+        for (int nPrev = ClipLow(pPlayer->packItemId-1,kPackMedKit); nPrev >= kPackMedKit; nPrev--)
         {
             if (pPlayer->packSlots[nPrev].curAmount)
             {
@@ -569,7 +574,7 @@ void packNextItem(PLAYER *pPlayer)
 {
     if (pPlayer->packItemTime > 0)
     {
-        for (int nNext = ClipHigh(pPlayer->packItemId+1,5); nNext < 5; nNext++)
+        for (int nNext = ClipHigh(pPlayer->packItemId+1,kPackMax); nNext < kPackMax; nNext++)
         {
             if (pPlayer->packSlots[nNext].curAmount)
             {
@@ -639,6 +644,12 @@ void playerResetPowerUps(PLAYER* pPlayer)
         if (!VanillaMode() && (i == kPwUpJumpBoots || i == kPwUpDivingSuit || i == kPwUpCrystalBall || i == kPwUpBeastVision))
             continue;
         pPlayer->pwUpTime[i] = 0;
+    }
+    if (!VanillaMode() && (pPlayer == gView)) // reset delirium tilt view variables
+    {
+        gScreenTiltO = gScreenTilt = 0;
+        deliriumTurnO = deliriumTurn = 0;
+        deliriumPitchO = deliriumPitch = 0;
     }
 }
 
@@ -864,7 +875,7 @@ void playerReset(PLAYER *pPlayer)
     pPlayer->qavLoop = 0;
     pPlayer->packItemId = -1;
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < kPackMax; i++) {
         pPlayer->packSlots[i].isActive = 0;
         pPlayer->packSlots[i].curAmount = 0;
     }
@@ -1512,11 +1523,11 @@ void ProcessInput(PLAYER *pPlayer)
     default:
         if (!pPlayer->cantJump && pInput->buttonFlags.jump && pXSprite->height == 0) {
             #ifdef NOONE_EXTENSIONS
-            if ((packItemActive(pPlayer, 4) && pPosture->pwupJumpZ != 0) || pPosture->normalJumpZ != 0)
+            if ((packItemActive(pPlayer, kPackJumpBoots) && pPosture->pwupJumpZ != 0) || pPosture->normalJumpZ != 0)
             #endif
                 sfxPlay3DSound(pSprite, 700, 0, 0);
 
-            if (packItemActive(pPlayer, 4)) zvel[nSprite] = pPosture->pwupJumpZ; //-0x175555;
+            if (packItemActive(pPlayer, kPackJumpBoots)) zvel[nSprite] = pPosture->pwupJumpZ; //-0x175555;
             else zvel[nSprite] = pPosture->normalJumpZ; //-0xbaaaa;
             pPlayer->cantJump = 1;
         }
@@ -1711,26 +1722,26 @@ void ProcessInput(PLAYER *pPlayer)
     if (pInput->useFlags.useBeastVision)
     {
         pInput->useFlags.useBeastVision = 0;
-        if (pPlayer->packSlots[3].curAmount > 0)
-            packUseItem(pPlayer, 3);
+        if (pPlayer->packSlots[kPackBeastVision].curAmount > 0)
+            packUseItem(pPlayer, kPackBeastVision);
     }
     if (pInput->useFlags.useCrystalBall)
     {
         pInput->useFlags.useCrystalBall = 0;
-        if (pPlayer->packSlots[2].curAmount > 0)
-            packUseItem(pPlayer, 2);
+        if (pPlayer->packSlots[kPackCrystalBall].curAmount > 0)
+            packUseItem(pPlayer, kPackCrystalBall);
     }
     if (pInput->useFlags.useJumpBoots)
     {
         pInput->useFlags.useJumpBoots = 0;
-        if (pPlayer->packSlots[4].curAmount > 0)
-            packUseItem(pPlayer, 4);
+        if (pPlayer->packSlots[kPackJumpBoots].curAmount > 0)
+            packUseItem(pPlayer, kPackJumpBoots);
     }
     if (pInput->useFlags.useMedKit)
     {
         pInput->useFlags.useMedKit = 0;
-        if (pPlayer->packSlots[0].curAmount > 0)
-            packUseItem(pPlayer, 0);
+        if (pPlayer->packSlots[kPackMedKit].curAmount > 0)
+            packUseItem(pPlayer, kPackMedKit);
     }
     if (pInput->keyFlags.holsterWeapon)
     {
@@ -1849,8 +1860,8 @@ void playerProcess(PLAYER *pPlayer)
     {
         pPlayer->underwaterTime = 1200;
         pPlayer->chokeEffect = 0;
-        if (packItemActive(pPlayer, 1))
-            packUseItem(pPlayer, 1);
+        if (packItemActive(pPlayer, kPackDivingSuit))
+            packUseItem(pPlayer, kPackDivingSuit);
     }
     int nType = kDudePlayer1-kDudeBase;
     switch (pPlayer->posture)

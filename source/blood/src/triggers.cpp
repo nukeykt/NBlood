@@ -213,7 +213,7 @@ void ReverseBusy(int a1, BUSYID a2)
     }
 }
 
-unsigned int GetSourceBusy(EVENT a1)
+unsigned int GetSourceBusy(const EVENT &a1)
 {
     int nIndex = a1.index;
     switch (a1.type)
@@ -240,7 +240,7 @@ unsigned int GetSourceBusy(EVENT a1)
     return 0;
 }
 
-void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, EVENT event)
+void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, const EVENT &event)
 {
     switch (event.cmd) {
     case kCmdSpritePush:
@@ -322,7 +322,7 @@ void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, EVENT event)
 
 void ActivateGenerator(int);
 
-void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
+void OperateSprite(int nSprite, XSPRITE *pXSprite, const EVENT &event)
 {
     int causerID = event.causer;
     spritetype *pSprite = &sprite[nSprite];
@@ -692,7 +692,7 @@ void SetupGibWallState(walltype *pWall, XWALL *pXWall)
     }
 }
 
-void OperateWall(int nWall, XWALL *pXWall, EVENT event) {
+void OperateWall(int nWall, XWALL *pXWall, const EVENT &event) {
     
     int causerID = event.causer;
     walltype *pWall = &wall[nWall];
@@ -1495,7 +1495,7 @@ int PathBusy(unsigned int nSector, unsigned int a2, int causerID)
     return 0;
 }
 
-void OperateDoor(unsigned int nSector, XSECTOR *pXSector, EVENT event, BUSYID busyWave) 
+void OperateDoor(unsigned int nSector, XSECTOR *pXSector, const EVENT &event, BUSYID busyWave) 
 {
     switch (event.cmd) {
         case kCmdOff:
@@ -1597,7 +1597,7 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
     }
 }
 
-void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT event)
+void OperatePath(unsigned int nSector, XSECTOR *pXSector, const EVENT &event)
 {
     int nSprite;
     spritetype *pSprite = NULL;
@@ -1643,7 +1643,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT event)
     }
 }
 
-void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT event)
+void OperateSector(unsigned int nSector, XSECTOR *pXSector, const EVENT &event)
 {
     dassert(nSector < (unsigned int)numsectors);
     sectortype *pSector = &sector[nSector];
@@ -1774,7 +1774,7 @@ void InitPath(unsigned int nSector, XSECTOR *pXSector)
         evPost(nSector, 6, 0, kCmdOn, kCauserGame);
 }
 
-void LinkSector(int nSector, XSECTOR *pXSector, EVENT event)
+void LinkSector(int nSector, XSECTOR *pXSector, const EVENT &event)
 {
     sectortype *pSector = &sector[nSector];
     int nBusy = GetSourceBusy(event);
@@ -1801,7 +1801,7 @@ void LinkSector(int nSector, XSECTOR *pXSector, EVENT event)
     }
 }
 
-void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT event) {
+void LinkSprite(int nSprite, XSPRITE *pXSprite, const EVENT &event) {
     spritetype *pSprite = &sprite[nSprite];
     int nBusy = GetSourceBusy(event);
 
@@ -1831,7 +1831,7 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT event) {
     }
 }
 
-void LinkWall(int nWall, XWALL *pXWall, EVENT event)
+void LinkWall(int nWall, XWALL *pXWall, const EVENT &event)
 {
     int nBusy = GetSourceBusy(event);
     pXWall->busy = nBusy;
@@ -1911,7 +1911,7 @@ void trTriggerSprite(unsigned int nSprite, XSPRITE *pXSprite, int command, int c
 }
 
 
-void trMessageSector(unsigned int nSector, EVENT event) {
+void trMessageSector(unsigned int nSector, const EVENT &event) {
     dassert(nSector < (unsigned int)numsectors);
     dassert(sector[nSector].extra > 0 && sector[nSector].extra < kMaxXSectors);
     XSECTOR *pXSector = &xsector[sector[nSector].extra];
@@ -1932,7 +1932,7 @@ void trMessageSector(unsigned int nSector, EVENT event) {
     }
 }
 
-void trMessageWall(unsigned int nWall, EVENT event) {
+void trMessageWall(unsigned int nWall, const EVENT &event) {
     dassert(nWall < (unsigned int)numwalls);
     dassert(wall[nWall].extra > 0 && wall[nWall].extra < kMaxXWalls);
     
@@ -1954,7 +1954,7 @@ void trMessageWall(unsigned int nWall, EVENT event) {
     }
 }
 
-void trMessageSprite(unsigned int nSprite, EVENT event) {
+void trMessageSprite(unsigned int nSprite, const EVENT &event) {
     if (sprite[nSprite].statnum == kStatFree)
         return;
     spritetype *pSprite = &sprite[nSprite];
