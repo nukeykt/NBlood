@@ -193,17 +193,6 @@ DUDEINFO_EXTRA gDudeInfoExtra[] = {
 
 };
 
-short gSysStatnum[][2] =
-{
-    {kModernStealthRegion,          kStatModernStealthRegion},
-    {kModernDudeTargetChanger,      kStatModernDudeTargetChanger},
-    {kModernCondition,              kStatModernCondition},
-    {kModernConditionFalse,         kStatModernCondition},
-    {kModernRandomTX,               kStatModernEventRedirector},
-    {kModernSequentialTX,           kStatModernEventRedirector},
-    {kModernPlayerControl,          kStatModernPlayerLinker},
-    {kModernPlayerControl,          kStatModernPlayerLinker},
-};
 
 AISTATE genPatrolStates[] = {
 
@@ -968,20 +957,6 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
         // copy custom start health to avoid overwrite by kThingBloodChunks
         if (IsDudeSprite(pSpr))
             pXSpr->sysData2 = pXSpr->data4;
-
-        // check reserved statnums
-        if (rngok(pSpr->statnum, kStatModernBase, kStatModernMax))
-        {
-            i = (signed int)LENGTH(gSysStatnum);
-            while(--i >= 0)
-            {
-                if (pSpr->statnum == gSysStatnum[i][1] && pSpr->type == gSysStatnum[i][0])
-                    break;
-            }
-            
-            if (i < 0)
-                ThrowError("Sprite statnum %d on sprite #%d is in a range of reserved (%d - %d)!", pSpr->statnum, pSpr->index, kStatModernBase, kStatModernMax);
-        }
 
         switch (pSpr->type)
         {
