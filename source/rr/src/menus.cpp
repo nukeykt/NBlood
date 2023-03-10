@@ -4835,6 +4835,11 @@ static void Menu_Verify(int32_t input)
 
             ((MenuString_t*)M_SAVE.entrylist[M_SAVE.currentEntry]->entry)->editfield = NULL;
         }
+        else
+        {
+            KB_FlushKeyboardQueue();
+            KB_ClearKeysDown();
+        }
         break;
 
     case MENU_LOADDELVERIFY:
