@@ -132,12 +132,9 @@ mimalloc_excl := \
     alloc-override.c \
     page-queue.c \
     static.c \
-    
-ifneq ($(PLATFORM),APPLE)
-    mimalloc_excl += alloc-override-osx.c
-endif
-    
+
 mimalloc_objs := $(call getfiltered,mimalloc,*.c)
+mimalloc_objs += prim/prim.c
 
 mimalloc_cflags := -D_WIN32_WINNT=0x0600 -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas -Wno-array-bounds -Wno-null-dereference
 
