@@ -566,6 +566,15 @@ __udivmoddi4(a, b, rem)
 		*rem = ur;
 	return uq;
 }
+
+quad_t
+__divmoddi4(a, b, rem)
+    quad_t a, b, *rem;
+{
+  quad_t d = __divdi3(a,b);
+  *rem = a - (d*b);
+  return d;
+}
 #else
 static int __attribute__((unused)) dummy;
 #endif /* defined (_X86_) && !defined (__x86_64__) */
