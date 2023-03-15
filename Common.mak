@@ -584,7 +584,7 @@ ifneq (0,$(LTO))
     COMPILERFLAGS += -DUSING_LTO
     ifeq (1,$(LTO))
         ifeq (0,$(CLANG))
-            COMMONFLAGS += -flto
+            COMMONFLAGS += -flto=12
         else
             COMMONFLAGS += -flto=thin
         endif
