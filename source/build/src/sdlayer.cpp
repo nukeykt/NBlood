@@ -17,7 +17,7 @@
 
 #if SDL_MAJOR_VERSION >= 2
 # include "imgui.h"
-# include "imgui_impl_sdl.h"
+# include "imgui_impl_sdl2.h"
 #ifdef USE_OPENGL
 # include "imgui_impl_opengl3.h"
 #endif
