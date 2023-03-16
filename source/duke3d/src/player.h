@@ -275,7 +275,7 @@ typedef struct
     int horizAngleAdjust;
     int horizSkew;
 
-    double lastViewUpdate;
+    uint64_t lastViewUpdate;
 
     int32_t netsynctime;
     int32_t pcolor, pteam;
@@ -370,7 +370,7 @@ extern int32_t          g_numObituaries;
 extern int32_t          g_numSelfObituaries;
 extern int32_t          mouseyaxismode;
 extern int32_t          ticrandomseed;
-extern double           g_lastInputTicks;
+extern uint64_t         g_lastInputTicks;
 
 #define SHOOT_HARDCODED_ZVEL INT32_MIN
 
