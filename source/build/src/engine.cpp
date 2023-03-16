@@ -915,7 +915,7 @@ static void yax_copytsprites()
             }
         }
 
-        if (spritesortcnt >= maxspritesonscreen)
+        if (spritesortcnt >= MAXSPRITESONSCREEN)
             break;
 
         tspriteptr_t tsp = renderAddTSpriteFromSprite(spritenum);
@@ -1601,7 +1601,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         if (numyaxbunches==0)
         {
 #endif
-            if (spritesortcnt >= maxspritesonscreen)
+            if (spritesortcnt >= MAXSPRITESONSCREEN)
                 return 1;
 
             renderAddTSpriteFromSprite(z);
@@ -1614,7 +1614,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
     {
         int16_t *sortcnt = &yax_spritesortcnt[yax_globallev];
 
-        if (*sortcnt >= maxspritesonscreen)
+        if (*sortcnt >= MAXSPRITESONSCREEN)
             return 1;
 
         yax_tsprite[yax_globallev][*sortcnt] = z;
@@ -1642,7 +1642,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         if (cb>=0 && spr->z+spzofs-spheight < sector[sectnum].ceilingz)
         {
             sortcnt = &yax_spritesortcnt[yax_globallev-1];
-            if (*sortcnt < maxspritesonscreen)
+            if (*sortcnt < MAXSPRITESONSCREEN)
             {
                 yax_tsprite[yax_globallev-1][*sortcnt] = z|MAXSPRITES;
                 (*sortcnt)++;
@@ -1651,7 +1651,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         if (fb>=0 && spr->z+spzofs > sector[sectnum].floorz)
         {
             sortcnt = &yax_spritesortcnt[yax_globallev+1];
-            if (*sortcnt < maxspritesonscreen)
+            if (*sortcnt < MAXSPRITESONSCREEN)
             {
                 yax_tsprite[yax_globallev+1][*sortcnt] = z|(MAXSPRITES<<1);
                 (*sortcnt)++;
@@ -10254,6 +10254,10 @@ killsprite:
     if (isPolymost)
         polymost_setClamp(1 + 2);
 #endif
+
+    if (spritesortcnt > maxspritesonscreen)
+        spritesortcnt = maxspritesonscreen;
+
     while (spritesortcnt)
     {
         --spritesortcnt;

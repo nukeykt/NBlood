@@ -3884,7 +3884,7 @@ static inline void  polymer_scansprites(int16_t sectnum, tspriteptr_t localtspri
         auto spr = (uspriteptr_t)&sprite[i];
         if ((((spr->cstat&0x8000) == 0) || (showinvisibility)) &&
                 (spr->xrepeat > 0) && (spr->yrepeat > 0) &&
-                (*localspritesortcnt < maxspritesonscreen))
+                (*localspritesortcnt < MAXSPRITESONSCREEN))
         {
             // this function's localtsprite is either the tsprite global or
             // polymer_drawroom's locattsprite, so no aliasing

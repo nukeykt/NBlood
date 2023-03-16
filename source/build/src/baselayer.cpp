@@ -800,6 +800,7 @@ int32_t baselayer_init(void)
           (void *) &r_screenxy, SCREENASPECT_CVAR_TYPE, 0, 9999 },
         { "r_fpgrouscan","use floating-point numbers for slope rendering",(void *) &r_fpgrouscan, CVAR_BOOL, 0, 1 },
         { "r_hightile","enable/disable hightile texture rendering",(void *) &usehightile, CVAR_BOOL, 0, 1 },
+        { "r_maxspritesonscreen","maximum number of sprites to draw per frame",(void *) &maxspritesonscreen, CVAR_INT, 0, MAXSPRITESONSCREEN },
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
         { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
