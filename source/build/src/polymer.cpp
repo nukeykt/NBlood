@@ -4347,6 +4347,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     tileUpdatePicnum(&tilenum, 0);
 
     _prmaterial     skymaterial;
+    drawingskybox = 1;
     polymer_getbuildmaterial(&skymaterial, tilenum, palnum, shade, 0, PTH_HIGHTILE|PTH_CLAMPED);
     auto skymaterialbits = polymer_bindmaterial(&skymaterial, NULL, 0);
     buildgl_bindSamplerObject(0, PTH_HIGHTILE|PTH_CLAMPED);

@@ -237,6 +237,7 @@ int32_t hicsetskybox( int32_t picnum, int32_t palnum, char *faces[6], int32_t fl
         hrn->skybox->face[j] = Xstrdup(faces[j]);
 
     hrn->flags = flags;
+    hrn->scale = { 1.f, 1.f };
 
     if (hr == NULL)
     {
