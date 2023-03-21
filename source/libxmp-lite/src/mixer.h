@@ -30,15 +30,19 @@ struct mixer_voice {
 	int fidx;		/* mixer function index */
 	int ins;		/* instrument number */
 	int smp;		/* sample number */
+	int start;		/* loop start */
 	int end;		/* loop end */
 	int act;		/* nna info & status of voice */
+	int key;		/* key for DCA note check */
 	int old_vl;		/* previous volume, left channel */
 	int old_vr;		/* previous volume, right channel */
 	int sleft;		/* last left sample output, in 32bit */
 	int sright;		/* last right sample output, in 32bit */
 #define VOICE_RELEASE	(1 << 0)
-#define ANTICLICK	(1 << 1)	
+#define ANTICLICK	(1 << 1)
 #define SAMPLE_LOOP	(1 << 2)
+#define VOICE_REVERSE	(1 << 3)
+#define VOICE_BIDIR	(1 << 4)
 	int flags;		/* flags */
 	void *sptr;		/* sample pointer */
 #ifdef LIBXMP_PAULA_SIMULATOR
@@ -74,5 +78,6 @@ double	libxmp_mixer_getvoicepos(struct context_data *, int);
 void	libxmp_mixer_setnote	(struct context_data *, int, int);
 void	libxmp_mixer_setperiod	(struct context_data *, int, double);
 void	libxmp_mixer_release	(struct context_data *, int, int);
+void	libxmp_mixer_reverse	(struct context_data *, int, int);
 
 #endif /* LIBXMP_MIXER_H */

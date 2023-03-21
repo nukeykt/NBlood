@@ -32,9 +32,14 @@
 #define IT_LINEAR_FREQ	0x08
 #define IT_OLD_FX	0x10
 #define IT_LINK_GXX	0x20
+#define IT_MIDI_WHEEL	0x40
+#define IT_MIDI_CONFIG	0x80
 
 /* IT special */
 #define IT_HAS_MSG	0x01
+#define IT_EDIT_HISTORY	0x02
+#define IT_HIGHLIGHTS	0x04
+#define IT_SPEC_MIDICFG	0x08
 
 /* IT instrument flags */
 #define IT_INST_SAMPLE	0x01
@@ -61,6 +66,7 @@
 #define IT_CVT_DIFF	0x04	/* Compressed sample flag */
 #define IT_CVT_BYTEDIFF	0x08	/* 'safe to ignore' according to ittech.txt */
 #define IT_CVT_12BIT	0x10	/* 'safe to ignore' according to ittech.txt */
+#define IT_CVT_ADPCM	0xff	/* Special: always indicates Modplug ADPCM4 */
 
 /* IT envelope flags */
 #define IT_ENV_ON	0x01

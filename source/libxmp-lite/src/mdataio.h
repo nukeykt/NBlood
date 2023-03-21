@@ -2,7 +2,6 @@
 #define LIBXMP_MDATAIO_H
 
 #include <stddef.h>
-#include <limits.h>
 #include "common.h"
 
 static inline ptrdiff_t CAN_READ(MFILE *m)
@@ -43,7 +42,7 @@ static inline uint16 mread16l(MFILE *m, int *err)
 	} else {
 		m->pos += can_read;
 		if(err) *err = EOF;
-		return EOF;
+		return 0xffff;
 	}
 }
 
@@ -58,7 +57,7 @@ static inline uint16 mread16b(MFILE *m, int *err)
 	} else {
 		m->pos += can_read;
 		if(err) *err = EOF;
-		return EOF;
+		return 0xffff;
 	}
 }
 
@@ -73,7 +72,7 @@ static inline uint32 mread24l(MFILE *m, int *err)
 	} else {
 		m->pos += can_read;
 		if(err) *err = EOF;
-		return EOF;
+		return 0xffffffff;
 	}
 }
 
@@ -88,7 +87,7 @@ static inline uint32 mread24b(MFILE *m, int *err)
 	} else {
 		m->pos += can_read;
 		if(err) *err = EOF;
-		return EOF;
+		return 0xffffffff;
 	}
 }
 
@@ -103,7 +102,7 @@ static inline uint32 mread32l(MFILE *m, int *err)
 	} else {
 		m->pos += can_read;
 		if(err) *err = EOF;
-		return EOF;
+		return 0xffffffff;
 	}
 }
 
@@ -118,7 +117,7 @@ static inline uint32 mread32b(MFILE *m, int *err)
 	} else {
 		m->pos += can_read;
 		if(err) *err = EOF;
-		return EOF;
+		return 0xffffffff;
 	}
 }
 

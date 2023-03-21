@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+#ifndef LIBXMP_LOADERS_MOD_H
+#define LIBXMP_LOADERS_MOD_H
+
 struct mod_instrument {
 	uint8 name[22];		/* Instrument name */
 	uint16 size;		/* Sample length in 16-bit words */
@@ -41,7 +44,6 @@ struct mod_header {
 	uint8 magic[4];
 };
 
-
 #ifndef LIBXMP_CORE_PLAYER
 /* Soundtracker 15-instrument module header */
 
@@ -53,3 +55,5 @@ struct st_header {
 	uint8 order[128];
 };
 #endif
+
+#endif  /* LIBXMP_LOADERS_MOD_H */

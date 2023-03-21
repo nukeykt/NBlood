@@ -68,7 +68,9 @@ static const float resonance_table[128] = {
 
 
 #if !defined(HAVE_POWF) || defined(__DJGPP__) || defined(__WATCOMC__)
-#define powf pow /* Watcom doesn't have powf. DJGPP have a C-only implementation in libm. */
+/* Watcom doesn't have powf. DJGPP have a C-only implementation in libm. */
+#undef powf
+#define powf(f1_,f2_) (float)pow((f1_),(f2_))
 #endif
 
 

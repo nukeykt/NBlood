@@ -72,8 +72,13 @@ static void do_toneporta(struct context_data *ctx,
 {
 	struct module_data *m = &ctx->m;
 	struct xmp_instrument *instrument = &m->mod.xxi[xc->ins];
-	int mapped = instrument->map[xc->key].ins;
 	struct xmp_subinstrument *sub;
+	int mapped_xpo = 0;
+	int mapped = 0;
+
+	if (IS_VALID_NOTE(xc->key)) {
+		mapped = instrument->map[xc->key].ins;
+	}
 
 	if (mapped >= instrument->nsm) {
 		mapped = 0;
@@ -81,11 +86,13 @@ static void do_toneporta(struct context_data *ctx,
 
 	sub = &instrument->sub[mapped];
 
-	if (note >= 1 && note <= 0x80 && (uint32)xc->ins < m->mod.ins) {
+	if (IS_VALID_NOTE(note - 1) && (uint32)xc->ins < m->mod.ins) {
 		note--;
+		if (IS_VALID_NOTE(xc->key_porta)) {
+			mapped_xpo = instrument->map[xc->key_porta].xpo;
+		}
 		xc->porta.target = libxmp_note_to_period(ctx, note + sub->xpo +
-			instrument->map[xc->key_porta].xpo, xc->finetune,
-			xc->per_adj);
+			mapped_xpo, xc->finetune, xc->per_adj);
 	}
 	xc->porta.dir = xc->period < xc->porta.target ? 1 : -1;
 }
@@ -357,7 +364,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 			h = MSN(fxp);
 			l = LSN(fxp);
 			xc->vol.slide2 = h ? h : -l;
-		}		
+		}
 		break;
 	case FX_JUMP:		/* Order jump */
 		p->flow.pbreak = 1;
@@ -442,6 +449,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 			xc->retrig.val = fxp;
 			xc->retrig.count = LSN(xc->retrig.val) + 1;
 			xc->retrig.type = 0;
+			xc->retrig.limit = 0;
 			break;
 		case EX_F_VSLIDE_UP:	/* Fine volume slide up */
 			EFFECT_MEMORY(fxp, xc->fine_vol.up_memory);
@@ -506,7 +514,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 		if (fxp) {
 			SET(FINE_BEND);
 			xc->freq.fslide = fxp;
-		} 
+		}
 		break;
 	case FX_PATT_DELAY:
 	    fx_patt_delay:
@@ -563,7 +571,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 	/* From the OpenMPT VolColMemory.it test case:
 	 * "Volume column commands a, b, c and d (volume slide) share one
 	 *  effect memory, but it should not be shared with Dxy in the effect
-	 *  column. 
+	 *  column.
 	 */
 	case FX_VSLIDE_UP_2:	/* Fine volume slide up */
 		EFFECT_MEMORY(fxp, xc->vol.memory2);
@@ -692,6 +700,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 		if (note) {
 			xc->retrig.count = LSN(xc->retrig.val) + 1;
 		}
+		xc->retrig.limit = 0;
 		SET(RETRIG);
 		break;
 	case FX_TREMOR:			/* Tremor */
@@ -724,6 +733,9 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 		break;
 	case FX_SURROUND:
 		xc->pan.surround = fxp;
+		break;
+	case FX_REVERSE:	/* Play forward/backward */
+		libxmp_virt_reverse(ctx, chn, fxp);
 		break;
 
 #ifndef LIBXMP_CORE_DISABLE_IT
@@ -818,12 +830,25 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 		}
 		break;
 	case FX_FLT_CUTOFF:
-		if (fxp < 0xfe || xc->filter.resonance > 0) {
-			xc->filter.cutoff = fxp;
-		}
+		xc->filter.cutoff = fxp;
 		break;
 	case FX_FLT_RESN:
 		xc->filter.resonance = fxp;
+		break;
+	case FX_MACRO_SET:
+		xc->macro.active = LSN(fxp);
+		break;
+	case FX_MACRO:
+		SET(MIDI_MACRO);
+		xc->macro.val = fxp;
+		xc->macro.slide = 0;
+		break;
+	case FX_MACROSMOOTH:
+		if (ctx->p.speed && xc->macro.val < 0x80) {
+			SET(MIDI_MACRO);
+			xc->macro.target = fxp;
+			xc->macro.slide = ((float)fxp - xc->macro.val) / ctx->p.speed;
+		}
 		break;
 	case FX_PANBRELLO:	/* Panbrello */
 		SET(PANBRELLO);
@@ -928,7 +953,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 			h = MSN(fxp);
 			l = LSN(fxp);
 			xc->vol.fslide = h ? h : -l;
-		}		
+		}
 		break;
 	case FX_NSLIDE_DN:
 	case FX_NSLIDE_UP:
@@ -939,6 +964,7 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 				xc->retrig.val = MSN(fxp);
 				xc->retrig.count = MSN(fxp) + 1;
 				xc->retrig.type = 0;
+				xc->retrig.limit = 0;
 			}
 
 			if (fxt == FX_NSLIDE_UP || fxt == FX_NSLIDE_R_UP)
@@ -1060,6 +1086,41 @@ void libxmp_process_fx(struct context_data *ctx, struct channel_data *xc, int ch
 			RESET_PER(VIBRATO);
 		}
 		SET_LFO_NOTZERO(&xc->vibrato.lfo, 669, 1);
+		break;
+
+	/* ULT effects */
+
+	case FX_ULT_TPORTA:	/* ULT tone portamento */
+		/* Like normal persistent tone portamento, except:
+		 *
+		 * 1) Despite the documentation claiming 300 cancels tone
+		 * portamento, it actually reuses the last parameter.
+		 *
+		 * 2) A 3xx without a note will reuse the last target note.
+		 */
+		if (!IS_VALID_INSTRUMENT(xc->ins))
+			break;
+		SET_PER(TONEPORTA);
+		EFFECT_MEMORY(fxp, xc->porta.memory);
+		EFFECT_MEMORY(note, xc->porta.note_memory);
+		do_toneporta(ctx, xc, note);
+		xc->porta.slide = fxp;
+		if (fxp == 0)
+			RESET_PER(TONEPORTA);
+		break;
+
+	/* Archimedes (!Tracker, Digital Symphony, et al.) effects */
+
+	case FX_LINE_JUMP:	/* !Tracker and Digital Symphony "Line Jump" */
+		/* Jump to a line within the current order. In Digital Symphony
+		 * this can be combined with position jump (like pattern break)
+		 * and overrides the pattern break line in lower channels. */
+		if (p->flow.pbreak == 0) {
+			p->flow.pbreak = 1;
+			p->flow.jump = p->ord;
+		}
+		p->flow.jumpline = fxp;
+		p->flow.jump_in_pat = p->ord;
 		break;
 #endif
 

@@ -56,20 +56,30 @@ struct retrig_control {
 #define FINE_VOLS_2	(1 << 25)
 #define KEY_OFF		(1 << 26)	/* for IT release on envloop end */
 #define TREMOR		(1 << 27)	/* for XM tremor */
+#define MIDI_MACRO	(1 << 28)	/* IT midi macro */
 
 #define NOTE_FADEOUT	(1 << 0)
-#define NOTE_RELEASE	(1 << 1)
+#define NOTE_ENV_RELEASE (1 << 1)	/* envelope sustain loop release */
 #define NOTE_END	(1 << 2)
 #define NOTE_CUT	(1 << 3)
 #define NOTE_ENV_END	(1 << 4)
 #define NOTE_SAMPLE_END	(1 << 5)
 #define NOTE_SET	(1 << 6)	/* for IT portamento after keyoff */
-#define NOTE_SUSEXIT	(1 << 7)	/* for delayed note release */
+#define NOTE_SUSEXIT	(1 << 7)	/* for delayed envelope release */
 #define NOTE_KEY_CUT	(1 << 8)	/* note cut with XMP_KEY_CUT event */
 #define NOTE_GLISSANDO	(1 << 9)
+#define NOTE_SAMPLE_RELEASE (1 << 10)	/* sample sustain loop release */
 
+/* Most of the time, these should be set/reset together. */
+#define NOTE_RELEASE	(NOTE_ENV_RELEASE | NOTE_SAMPLE_RELEASE)
+
+/* Note: checking the data pointer for samples should be good enough to filter
+ * broken samples, since libxmp_load_sample will always allocate it for valid
+ * samples of >0 length and bound the loop values for these samples. */
 #define IS_VALID_INSTRUMENT(x) ((uint32)(x) < mod->ins && mod->xxi[(x)].nsm > 0)
 #define IS_VALID_INSTRUMENT_OR_SFX(x) (((uint32)(x) < mod->ins && mod->xxi[(x)].nsm > 0) || (smix->ins > 0 && (uint32)(x) < mod->ins + smix->ins))
+#define IS_VALID_SAMPLE(x) ((uint32)(x) < mod->smp && mod->xxs[(x)].data != NULL)
+#define IS_VALID_NOTE(x) ((uint32)(x) < XMP_MAX_KEYS)
 
 struct instrument_vibrato {
 	int phase;
@@ -147,6 +157,7 @@ struct channel_data {
 		int val;	/* Retrig value */
 		int count;	/* Retrig counter */
 		int type;	/* Retrig type */
+		int limit;	/* Number of retrigs */
 	} retrig;
 
 	struct {
@@ -163,6 +174,9 @@ struct channel_data {
 #ifndef LIBXMP_CORE_DISABLE_IT
 		int fslide2;
 		int memory2;	/* Volume slide effect memory */
+#endif
+#ifndef LIBXMP_CORE_PLAYER
+		int target;	/* Target for persistent volslide */
 #endif
 	} vol;
 
@@ -194,6 +208,7 @@ struct channel_data {
 		int dir;	/* Tone portamento up/down directionh */
 		int slide;	/* Delta for tone portamento */
 		int memory;	/* Tone portamento effect memory */
+		int note_memory;/* Tone portamento note memory (ULT) */
 	} porta;
 
 	struct {
@@ -207,7 +222,7 @@ struct channel_data {
 		int fslide;	/* Pan fine slide value */
 		int memory;	/* Pan slide effect memory */
 		int surround;	/* Surround channel flag */
-	} pan;	
+	} pan;
 
 	struct {
 		int speed;
@@ -224,8 +239,17 @@ struct channel_data {
 		int cutoff;	/* IT filter cutoff frequency */
 		int resonance;	/* IT filter resonance */
 		int envelope;	/* IT filter envelope */
+		int can_disable;/* IT hack: allow disabling for cutoff 127 */
 	} filter;
 
+	struct {
+		float val;	/* Current macro effect (use float for slides) */
+		float target;	/* Current macro target (smooth macro) */
+		float slide;	/* Current macro slide (smooth macro) */
+		int active;	/* Current active parameterized macro */
+		int finalvol;	/* Previous tick calculated volume (0-0x400) */
+		int notepan;	/* Previous tick note panning (0x80 center) */
+	} macro;
 #endif
 
 #ifndef LIBXMP_CORE_PLAYER

@@ -328,6 +328,9 @@ int hio_seek(HIO_HANDLE *h, long offset, int whence)
 		if (ret < 0) {
 			h->error = errno;
 		}
+		else if (h->error == EOF) {
+			h->error = 0;
+		}
 		break;
 #endif // EDUKE32_DISABLED
 	case HIO_HANDLE_TYPE_MEMORY:
@@ -335,12 +338,18 @@ int hio_seek(HIO_HANDLE *h, long offset, int whence)
 		if (ret < 0) {
 			h->error = EINVAL;
 		}
+		else if (h->error == EOF) {
+			h->error = 0;
+		}
 		break;
 #ifdef EDUKE32_DISABLED
 	case HIO_HANDLE_TYPE_CBFILE:
 		ret = cbseek(h->handle.cbfile, offset, whence);
 		if (ret < 0) {
 			h->error = EINVAL;
+		}
+		else if (h->error == EOF) {
+			h->error = 0;
 		}
 		break;
 #endif // EDUKE32_DISABLED
@@ -411,7 +420,7 @@ HIO_HANDLE *hio_open(const char *path, const char *mode)
 {
 	HIO_HANDLE *h;
 
-	h = (HIO_HANDLE *)calloc(1, sizeof (HIO_HANDLE));
+	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL)
 		goto err;
 
@@ -435,18 +444,23 @@ HIO_HANDLE *hio_open(const char *path, const char *mode)
 }
 #endif // EDUKE32_DISABLED
 
-HIO_HANDLE *hio_open_mem(const void *ptr, long size)
+HIO_HANDLE *hio_open_mem(const void *ptr, long size, int free_after_use)
 {
 	HIO_HANDLE *h;
 
 	if (size <= 0) return NULL;
-	h = (HIO_HANDLE *)calloc(1, sizeof (HIO_HANDLE));
+	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL)
 		return NULL;
 
 	h->type = HIO_HANDLE_TYPE_MEMORY;
-	h->handle.mem = mopen(ptr, size);
+	h->handle.mem = mopen(ptr, size, free_after_use);
 	h->size = size;
+
+	if (!h->handle.mem) {
+		free(h);
+		h = NULL;
+	}
 
 	return h;
 }
@@ -456,7 +470,7 @@ HIO_HANDLE *hio_open_file(FILE *f)
 {
 	HIO_HANDLE *h;
 
-	h = (HIO_HANDLE *)calloc(1, sizeof (HIO_HANDLE));
+	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL)
 		return NULL;
 
@@ -491,7 +505,7 @@ HIO_HANDLE *hio_open_callbacks(void *priv, struct xmp_callbacks callbacks)
 	if (!f)
 		return NULL;
 
-	h = (HIO_HANDLE *)calloc(1, sizeof(HIO_HANDLE));
+	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL) {
 		cbclose(f);
 		return NULL;
@@ -509,7 +523,7 @@ HIO_HANDLE *hio_open_callbacks(void *priv, struct xmp_callbacks callbacks)
 }
 #endif // EDUKE32_DISABLED
 
-int hio_close(HIO_HANDLE *h)
+static int hio_close_internal(HIO_HANDLE *h)
 {
 	int ret = -1;
 
@@ -528,7 +542,60 @@ int hio_close(HIO_HANDLE *h)
 		break;
 #endif // EDUKE32_DISABLED
 	}
+	return ret;
+}
 
+#ifdef EDUKE32_DISABLED
+/* hio_close + hio_open_mem. Reuses the same HIO_HANDLE. */
+int hio_reopen_mem(const void *ptr, long size, int free_after_use, HIO_HANDLE *h)
+{
+	MFILE *m;
+	int ret;
+	if (size <= 0) return -1;
+
+	m = mopen(ptr, size, free_after_use);
+	if (m == NULL) {
+		return -1;
+	}
+
+	ret = hio_close_internal(h);
+	if (ret < 0) {
+		m->free_after_use = 0;
+		mclose(m);
+		return ret;
+	}
+
+	h->type = HIO_HANDLE_TYPE_MEMORY;
+	h->handle.mem = m;
+	h->size = size;
+	return 0;
+}
+
+/* hio_close + hio_open_file. Reuses the same HIO_HANDLE. */
+int hio_reopen_file(FILE *f, int close_after_use, HIO_HANDLE *h)
+{
+	long size = get_size(f);
+	int ret;
+	if (size < 0) {
+		return -1;
+	}
+
+	ret = hio_close_internal(h);
+	if (ret < 0) {
+		return -1;
+	}
+
+	h->noclose = !close_after_use;
+	h->type = HIO_HANDLE_TYPE_FILE;
+	h->handle.file = f;
+	h->size = size;
+	return 0;
+}
+#endif // EDUKE32_DISABLED
+
+int hio_close(HIO_HANDLE *h)
+{
+	int ret = hio_close_internal(h);
 	free(h);
 	return ret;
 }

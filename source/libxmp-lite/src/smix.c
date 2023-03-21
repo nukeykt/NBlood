@@ -34,7 +34,9 @@ struct xmp_instrument *libxmp_get_instrument(struct context_data *ctx, int ins)
 	struct xmp_module *mod = &m->mod;
 	struct xmp_instrument *xxi;
 
-	if (ins < mod->ins) {
+	if (ins < 0) {
+		xxi = NULL;
+	} else if (ins < mod->ins) {
 		xxi = &mod->xxi[ins];
 	} else if (ins < mod->ins + smix->ins) {
 		xxi = &smix->xxi[ins - mod->ins];
@@ -52,7 +54,9 @@ struct xmp_sample *libxmp_get_sample(struct context_data *ctx, int smp)
 	struct xmp_module *mod = &m->mod;
 	struct xmp_sample *xxs;
 
-	if (smp < mod->smp) {
+	if (smp < 0) {
+		xxs = NULL;
+	} else if (smp < mod->smp) {
 		xxs = &mod->xxs[smp];
 	} else if (smp < mod->smp + smix->smp) {
 		xxs = &smix->xxs[smp - mod->smp];
@@ -72,11 +76,11 @@ int xmp_start_smix(xmp_context opaque, int chn, int smp)
 		return -XMP_ERROR_STATE;
 	}
 
-	smix->xxi = (struct xmp_instrument *)calloc(sizeof (struct xmp_instrument), smp);
+	smix->xxi = (struct xmp_instrument *) calloc(smp, sizeof(struct xmp_instrument));
 	if (smix->xxi == NULL) {
 		goto err;
 	}
-	smix->xxs = (struct xmp_sample *)calloc(sizeof (struct xmp_sample), smp);
+	smix->xxs = (struct xmp_sample *) calloc(smp, sizeof(struct xmp_sample));
 	if (smix->xxs == NULL) {
 		goto err1;
 	}
@@ -106,7 +110,7 @@ int xmp_smix_play_instrument(xmp_context opaque, int ins, int note, int vol, int
 		return -XMP_ERROR_STATE;
 	}
 
-	if (chn >= smix->chn || ins >= mod->ins) {
+	if (chn >= smix->chn || chn < 0 || ins >= mod->ins || ins < 0) {
 		return -XMP_ERROR_INVALID;
 	}
 
@@ -116,7 +120,7 @@ int xmp_smix_play_instrument(xmp_context opaque, int ins, int note, int vol, int
 
 	event = &p->inject_event[mod->chn + chn];
 	memset(event, 0, sizeof (struct xmp_event));
-	event->note = note + 1;
+	event->note = (note < XMP_MAX_KEYS) ? note + 1 : note;
 	event->ins = ins + 1;
 	event->vol = vol + 1;
 	event->_flag = 1;
@@ -137,7 +141,7 @@ int xmp_smix_play_sample(xmp_context opaque, int ins, int note, int vol, int chn
 		return -XMP_ERROR_STATE;
 	}
 
-	if (chn >= smix->chn || ins >= smix->ins) {
+	if (chn >= smix->chn || chn < 0 || ins >= smix->ins || ins < 0) {
 		return -XMP_ERROR_INVALID;
 	}
 
@@ -147,7 +151,7 @@ int xmp_smix_play_sample(xmp_context opaque, int ins, int note, int vol, int chn
 
 	event = &p->inject_event[mod->chn + chn];
 	memset(event, 0, sizeof (struct xmp_event));
-	event->note = note + 1;
+	event->note = (note < XMP_MAX_KEYS) ? note + 1 : note;
 	event->ins = mod->ins + ins + 1;
 	event->vol = vol + 1;
 	event->_flag = 1;
@@ -199,10 +203,10 @@ int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 		retval = -XMP_ERROR_SYSTEM;
 		goto err;
 	}
-		
+
 	/* Init instrument */
 
-	xxi->sub = calloc(sizeof(struct xmp_subinstrument), 1);
+	xxi->sub = (struct xmp_subinstrument *) calloc(1, sizeof(struct xmp_subinstrument));
 	if (xxi->sub == NULL) {
 		retval = -XMP_ERROR_SYSTEM;
 		goto err1;
@@ -265,7 +269,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 	xxs->lpe = 0;
 	xxs->flg = bits == 16 ? XMP_SAMPLE_16BIT : 0;
 
-	xxs->data = malloc(size + 8);
+	xxs->data = (unsigned char *) malloc(size + 8);
 	if (xxs->data == NULL) {
 		retval = -XMP_ERROR_SYSTEM;
 		goto err2;
@@ -287,7 +291,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 	hio_close(h);
 
 	return 0;
-	
+
     err2:
 	free(xxi->sub);
 	xxi->sub = NULL;
