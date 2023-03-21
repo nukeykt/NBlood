@@ -822,22 +822,27 @@ $$($1_obj)/%.$$o: $$($1_src)/%.yasm | $$($1_obj)
 
 $$($1_obj)/%.$$o: $$($1_src)/%.c | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_C) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_src)/%.cpp | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_CXX) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_src)/%.m | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_OBJC) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_src)/%.mm | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_OBJCXX) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_obj)/%.c | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_C) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_src)/%.glsl | $$($1_obj)
@@ -847,16 +852,19 @@ $$($1_obj)/%.$$o: $$($1_src)/%.glsl | $$($1_obj)
 	@$$(call CAT,$$<) >> $$($1_obj)/$$(<F).cpp
 	@$$(call RAW_ECHO,$$(paren_close)shader";) >> $$($1_obj)/$$(<F).cpp
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_CXX) $$($1_cflags) -c $$($1_obj)/$$(<F).cpp -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 ## Cosmetic stuff
 
 $$($1_obj)/%.$$o: $$($1_rsrc)/%.rc | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(RC) -i $$< -o $$@ --include-dir=$$(engine_inc) --include-dir=$$($1_src) --include-dir=$$($1_rsrc) -DPOLYMER=$$(POLYMER) $(REVFLAG) $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_rsrc)/%.c | $$($1_obj)
 	$$(COMPILE_STATUS)
+	$$(call MKDIR,$$(dir $$@))
 	$$(RECIPE_IF) $$(COMPILER_C) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%_banner.c: $$($1_rsrc)/%.bmp | $$($1_obj)
