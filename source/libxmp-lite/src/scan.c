@@ -602,7 +602,7 @@ int libxmp_scan_sequences(struct context_data *ctx)
 	int seq;
 	unsigned char temp_ep[XMP_MAX_MOD_LENGTH];
 
-	s = (struct scan_data *) realloc(p->scan, MAX(1, mod->len) * sizeof(struct scan_data));
+	s = (struct scan_data *) Xrealloc(p->scan, MAX(1, mod->len) * sizeof(struct scan_data));
 	if (!s) {
 		D_(D_CRIT "failed to allocate scan data");
 		return -1;
@@ -648,7 +648,7 @@ int libxmp_scan_sequences(struct context_data *ctx)
 	}
 
 	if (seq < mod->len) {
-		s = (struct scan_data *) realloc(p->scan, seq * sizeof(struct scan_data));
+		s = (struct scan_data *) Xrealloc(p->scan, seq * sizeof(struct scan_data));
 		if (s != NULL) {
 			p->scan = s;
 		}

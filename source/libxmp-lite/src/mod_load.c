@@ -670,7 +670,7 @@ skip_test:
     /* Load and convert patterns */
     D_(D_INFO "Stored patterns: %d", mod->pat);
 
-    if ((patbuf = (uint8 *) malloc(64 * 4 * mod->chn)) == NULL) {
+    if ((patbuf = (uint8 *) Xmalloc(64 * 4 * mod->chn)) == NULL) {
 	return -1;
     }
 
@@ -678,12 +678,12 @@ skip_test:
 	uint8 *mod_event;
 
 	if (libxmp_alloc_pattern_tracks(mod, i, 64) < 0) {
-	    free(patbuf);
+	    Xfree(patbuf);
 	    return -1;
 	}
 
 	if (hio_read(patbuf, 64 * 4 * mod->chn, 1, f) < 1) {
-	    free(patbuf);
+	    Xfree(patbuf);
 	    return -1;
 	}
 
@@ -747,7 +747,7 @@ skip_test:
 	    }
 	}
     }
-    free(patbuf);
+    Xfree(patbuf);
 
 #ifndef LIBXMP_CORE_PLAYER
     switch (tracker_id) {

@@ -248,7 +248,7 @@ int libxmp_load_sample(struct module_data *m, HIO_HANDLE *f, int flags, struct x
 	}
 
 	/* add guard bytes before the buffer for higher order interpolation */
-	xxs->data = (unsigned char *) malloc(bytelen + extralen + 4);
+	xxs->data = (unsigned char *) Xmalloc(bytelen + extralen + 4);
 	if (xxs->data == NULL) {
 		goto err;
 	}
@@ -369,7 +369,7 @@ int libxmp_load_sample(struct module_data *m, HIO_HANDLE *f, int flags, struct x
 void libxmp_free_sample(struct xmp_sample *s)
 {
 	if (s->data) {
-		free(s->data - 4);
-		s->data = NULL;		/* prevent double free in PCM load error */
+		Xfree(s->data - 4);
+		s->data = NULL;		/* prevent double Xfree in PCM load error */
 	}
 }

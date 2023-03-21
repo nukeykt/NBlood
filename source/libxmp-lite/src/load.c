@@ -70,7 +70,7 @@ static char *get_dirname(const char *name)
 
 	if ((p = strrchr(name, '/')) != NULL) {
 		len = p - name + 1;
-		dirname = (char *) malloc(len + 1);
+		dirname = (char *) Xmalloc(len + 1);
 		if (dirname != NULL) {
 			memcpy(dirname, name, len);
 			dirname[len] = 0;
@@ -531,26 +531,26 @@ void xmp_release_module(xmp_context opaque)
 
 	if (mod->xxt != NULL) {
 		for (i = 0; i < mod->trk; i++) {
-			free(mod->xxt[i]);
+			Xfree(mod->xxt[i]);
 		}
-		free(mod->xxt);
+		Xfree(mod->xxt);
 		mod->xxt = NULL;
 	}
 
 	if (mod->xxp != NULL) {
 		for (i = 0; i < mod->pat; i++) {
-			free(mod->xxp[i]);
+			Xfree(mod->xxp[i]);
 		}
-		free(mod->xxp);
+		Xfree(mod->xxp);
 		mod->xxp = NULL;
 	}
 
 	if (mod->xxi != NULL) {
 		for (i = 0; i < mod->ins; i++) {
-			free(mod->xxi[i].sub);
-			free(mod->xxi[i].extra);
+			Xfree(mod->xxi[i].sub);
+			Xfree(mod->xxi[i].extra);
 		}
-		free(mod->xxi);
+		Xfree(mod->xxi);
 		mod->xxi = NULL;
 	}
 
@@ -558,23 +558,23 @@ void xmp_release_module(xmp_context opaque)
 		for (i = 0; i < mod->smp; i++) {
 			libxmp_free_sample(&mod->xxs[i]);
 		}
-		free(mod->xxs);
+		Xfree(mod->xxs);
 		mod->xxs = NULL;
 	}
 
-	free(m->xtra);
-	free(m->midi);
+	Xfree(m->xtra);
+	Xfree(m->midi);
 	m->xtra = NULL;
 	m->midi = NULL;
 
 	libxmp_free_scan(ctx);
 
-	free(m->comment);
+	Xfree(m->comment);
 	m->comment = NULL;
 
 	D_("free dirname/basename");
-	free(m->dirname);
-	free(m->basename);
+	Xfree(m->dirname);
+	Xfree(m->basename);
 	m->basename = NULL;
 	m->dirname = NULL;
 }

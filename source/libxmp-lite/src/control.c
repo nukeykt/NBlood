@@ -31,7 +31,7 @@ xmp_context xmp_create_context(void)
 {
 	struct context_data *ctx;
 
-	ctx = (struct context_data *) calloc(1, sizeof(struct context_data));
+	ctx = (struct context_data *) Xcalloc(1, sizeof(struct context_data));
 	if (ctx == NULL) {
 		return NULL;
 	}
@@ -51,8 +51,8 @@ void xmp_free_context(xmp_context opaque)
 	if (ctx->state > XMP_STATE_UNLOADED)
 		xmp_release_module(opaque);
 
-	free(m->instrument_path);
-	free(opaque);
+	Xfree(m->instrument_path);
+	Xfree(opaque);
 }
 
 static void set_position(struct context_data *ctx, int pos, int dir)
@@ -557,7 +557,7 @@ int xmp_set_instrument_path(xmp_context opaque, const char *path)
 	struct module_data *m = &ctx->m;
 
 	if (m->instrument_path != NULL)
-		free(m->instrument_path);
+		Xfree(m->instrument_path);
 
 	m->instrument_path = libxmp_strdup(path);
 	if (m->instrument_path == NULL) {

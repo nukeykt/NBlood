@@ -327,7 +327,7 @@ static int load_patterns(struct module_data *m, int version, HIO_HANDLE *f)
 
 	D_(D_INFO "Stored patterns: %d", mod->pat - 1);
 
-	if ((patbuf = (uint8 *) calloc(1, 65536)) == NULL) {
+	if ((patbuf = (uint8 *) Xcalloc(1, 65536)) == NULL) {
 		return -1;
 	}
 
@@ -356,11 +356,11 @@ static int load_patterns(struct module_data *m, int version, HIO_HANDLE *f)
 		}
 	}
 
-	free(patbuf);
+	Xfree(patbuf);
 	return 0;
 
 err:
-	free(patbuf);
+	Xfree(patbuf);
 	return -1;
 }
 
@@ -405,20 +405,20 @@ static int oggdec(struct module_data *m, HIO_HANDLE *f, struct xmp_sample *xxs, 
 	uint8 *data;
 	int16 *pcm16 = NULL;
 
-	if ((data = (uint8 *)calloc(1, len)) == NULL)
+	if ((data = (uint8 *)Xcalloc(1, len)) == NULL)
 		return -1;
 
 	hio_read32b(f);
 	if (hio_error(f) != 0 || hio_read(data, 1, len - 4, f) != len - 4) {
-		free(data);
+		Xfree(data);
 		return -1;
 	}
 
 	n = stb_vorbis_decode_memory(data, len, &ch, &rate, &pcm16);
-	free(data);
+	Xfree(data);
 
 	if (n <= 0) {
-		free(pcm16);
+		Xfree(pcm16);
 		return -1;
 	}
 
@@ -430,9 +430,9 @@ static int oggdec(struct module_data *m, HIO_HANDLE *f, struct xmp_sample *xxs, 
 		for (i = 0; i < n; i++) {
 			pcm[i] = pcm16[i] >> 8;
 		}
-		pcm = (uint8 *)realloc(pcm16, n);
+		pcm = (uint8 *)Xrealloc(pcm16, n);
 		if (pcm == NULL) {
-			free(pcm16);
+			Xfree(pcm16);
 			return -1;
 		}
 		pcm16 = (int16 *)pcm;
@@ -444,7 +444,7 @@ static int oggdec(struct module_data *m, HIO_HANDLE *f, struct xmp_sample *xxs, 
 #endif
 
 	ret = libxmp_load_sample(m, NULL, flags, xxs, pcm16);
-	free(pcm16);
+	Xfree(pcm16);
 
 	return ret;
 }

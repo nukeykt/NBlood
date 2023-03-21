@@ -96,7 +96,7 @@ MFILE *mopen(const void *ptr, long size, int free_after_use)
 {
 	MFILE *m;
 
-	m = (MFILE *) malloc(sizeof(MFILE));
+	m = (MFILE *) Xmalloc(sizeof(MFILE));
 	if (m == NULL)
 		return NULL;
 
@@ -111,8 +111,8 @@ MFILE *mopen(const void *ptr, long size, int free_after_use)
 int mclose(MFILE *m)
 {
 	if (m->free_after_use)
-		free((void *)m->start);
-	free(m);
+		Xfree((void *)m->start);
+	Xfree(m);
 	return 0;
 }
 

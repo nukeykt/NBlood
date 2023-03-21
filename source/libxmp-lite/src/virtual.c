@@ -101,7 +101,7 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 
 	p->virt.maxvoc = libxmp_mixer_numvoices(ctx, num);
 
-	p->virt.voice_array = (struct mixer_voice *) calloc(p->virt.maxvoc,
+	p->virt.voice_array = (struct mixer_voice *) Xcalloc(p->virt.maxvoc,
 						sizeof(struct mixer_voice));
 	if (p->virt.voice_array == NULL)
 		goto err;
@@ -115,7 +115,7 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 	/* Initialize Paula simulator */
 	if (IS_AMIGA_MOD()) {
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			p->virt.voice_array[i].paula = (struct paula_state *) calloc(1, sizeof(struct paula_state));
+			p->virt.voice_array[i].paula = (struct paula_state *) Xcalloc(1, sizeof(struct paula_state));
 			if (p->virt.voice_array[i].paula == NULL) {
 				goto err2;
 			}
@@ -124,7 +124,7 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 	}
 #endif
 
-	p->virt.virt_channel = (struct virt_channel *) malloc(p->virt.virt_channels *
+	p->virt.virt_channel = (struct virt_channel *) Xmalloc(p->virt.virt_channels *
 							sizeof(struct virt_channel));
 	if (p->virt.virt_channel == NULL)
 		goto err2;
@@ -142,11 +142,11 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 #ifdef LIBXMP_PAULA_SIMULATOR
 	if (IS_AMIGA_MOD()) {
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			free(p->virt.voice_array[i].paula);
+			Xfree(p->virt.voice_array[i].paula);
 		}
 	}
 #endif
-	free(p->virt.voice_array);
+	Xfree(p->virt.voice_array);
 	p->virt.voice_array = NULL;
       err:
 	return -1;
@@ -164,7 +164,7 @@ void libxmp_virt_off(struct context_data *ctx)
 	/* Free Paula simulator state */
 	if (IS_AMIGA_MOD()) {
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			free(p->virt.voice_array[i].paula);
+			Xfree(p->virt.voice_array[i].paula);
 		}
 	}
 #endif
@@ -173,8 +173,8 @@ void libxmp_virt_off(struct context_data *ctx)
 	p->virt.virt_channels = 0;
 	p->virt.num_tracks = 0;
 
-	free(p->virt.voice_array);
-	free(p->virt.virt_channel);
+	Xfree(p->virt.voice_array);
+	Xfree(p->virt.virt_channel);
 	p->virt.voice_array = NULL;
 	p->virt.virt_channel = NULL;
 }
@@ -247,7 +247,7 @@ static int alloc_voice(struct context_data *ctx, int chn)
 	struct player_data *p = &ctx->p;
 	int i;
 
-	/* Find free voice */
+	/* Find Xfree voice */
 	for (i = 0; i < p->virt.maxvoc; i++) {
 		if (p->virt.voice_array[i].chn == FREE)
 			break;

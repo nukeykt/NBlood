@@ -420,7 +420,7 @@ HIO_HANDLE *hio_open(const char *path, const char *mode)
 {
 	HIO_HANDLE *h;
 
-	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
+	h = (HIO_HANDLE *) Xcalloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL)
 		goto err;
 
@@ -438,7 +438,7 @@ HIO_HANDLE *hio_open(const char *path, const char *mode)
     err3:
 	fclose(h->handle.file);
     err2:
-	free(h);
+	Xfree(h);
     err:
 	return NULL;
 }
@@ -449,7 +449,7 @@ HIO_HANDLE *hio_open_mem(const void *ptr, long size, int free_after_use)
 	HIO_HANDLE *h;
 
 	if (size <= 0) return NULL;
-	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
+	h = (HIO_HANDLE *) Xcalloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL)
 		return NULL;
 
@@ -458,7 +458,7 @@ HIO_HANDLE *hio_open_mem(const void *ptr, long size, int free_after_use)
 	h->size = size;
 
 	if (!h->handle.mem) {
-		free(h);
+		Xfree(h);
 		h = NULL;
 	}
 
@@ -470,7 +470,7 @@ HIO_HANDLE *hio_open_file(FILE *f)
 {
 	HIO_HANDLE *h;
 
-	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
+	h = (HIO_HANDLE *) Xcalloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL)
 		return NULL;
 
@@ -479,7 +479,7 @@ HIO_HANDLE *hio_open_file(FILE *f)
 	h->handle.file = f;
 	h->size = get_size(f);
 	if (h->size < 0) {
-		free(h);
+		Xfree(h);
 		return NULL;
 	}
 
@@ -505,7 +505,7 @@ HIO_HANDLE *hio_open_callbacks(void *priv, struct xmp_callbacks callbacks)
 	if (!f)
 		return NULL;
 
-	h = (HIO_HANDLE *) calloc(1, sizeof(HIO_HANDLE));
+	h = (HIO_HANDLE *) Xcalloc(1, sizeof(HIO_HANDLE));
 	if (h == NULL) {
 		cbclose(f);
 		return NULL;
@@ -516,7 +516,7 @@ HIO_HANDLE *hio_open_callbacks(void *priv, struct xmp_callbacks callbacks)
 	h->size = cbfilelength(f);
 	if (h->size < 0) {
 		cbclose(f);
-		free(h);
+		Xfree(h);
 		return NULL;
 	}
 	return h;
@@ -596,7 +596,7 @@ int hio_reopen_file(FILE *f, int close_after_use, HIO_HANDLE *h)
 int hio_close(HIO_HANDLE *h)
 {
 	int ret = hio_close_internal(h);
-	free(h);
+	Xfree(h);
 	return ret;
 }
 

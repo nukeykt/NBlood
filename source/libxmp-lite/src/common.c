@@ -37,7 +37,7 @@ int libxmp_init_instrument(struct module_data *m)
 	struct xmp_module *mod = &m->mod;
 
 	if (mod->ins > 0) {
-		mod->xxi = (struct xmp_instrument *) calloc(mod->ins, sizeof(struct xmp_instrument));
+		mod->xxi = (struct xmp_instrument *) Xcalloc(mod->ins, sizeof(struct xmp_instrument));
 		if (mod->xxi == NULL)
 			return -1;
 	}
@@ -51,10 +51,10 @@ int libxmp_init_instrument(struct module_data *m)
 			return -1;
 		}
 
-		mod->xxs = (struct xmp_sample *) calloc(mod->smp, sizeof(struct xmp_sample));
+		mod->xxs = (struct xmp_sample *) Xcalloc(mod->smp, sizeof(struct xmp_sample));
 		if (mod->xxs == NULL)
 			return -1;
-		m->xtra = (struct extra_sample_data *) calloc(mod->smp, sizeof(struct extra_sample_data));
+		m->xtra = (struct extra_sample_data *) Xcalloc(mod->smp, sizeof(struct extra_sample_data));
 		if (m->xtra == NULL)
 			return -1;
 
@@ -82,19 +82,19 @@ int libxmp_realloc_samples(struct module_data *m, int new_size)
 	if (new_size == 0) {
 		/* Don't rely on implementation-defined realloc(x,0) behavior. */
 		mod->smp = 0;
-		free(mod->xxs);
+		Xfree(mod->xxs);
 		mod->xxs = NULL;
-		free(m->xtra);
+		Xfree(m->xtra);
 		m->xtra = NULL;
 		return 0;
 	}
 
-	xxs = (struct xmp_sample *) realloc(mod->xxs, sizeof(struct xmp_sample) * new_size);
+	xxs = (struct xmp_sample *) Xrealloc(mod->xxs, sizeof(struct xmp_sample) * new_size);
 	if (xxs == NULL)
 		return -1;
 	mod->xxs = xxs;
 
-	xtra = (struct extra_sample_data *) realloc(m->xtra, sizeof(struct extra_sample_data) * new_size);
+	xtra = (struct extra_sample_data *) Xrealloc(m->xtra, sizeof(struct extra_sample_data) * new_size);
 	if (xtra == NULL)
 		return -1;
 	m->xtra = xtra;
@@ -119,7 +119,7 @@ int libxmp_alloc_subinstrument(struct xmp_module *mod, int i, int num)
 	if (num == 0)
 		return 0;
 
-	mod->xxi[i].sub = (struct xmp_subinstrument *) calloc(num, sizeof(struct xmp_subinstrument));
+	mod->xxi[i].sub = (struct xmp_subinstrument *) Xcalloc(num, sizeof(struct xmp_subinstrument));
 	if (mod->xxi[i].sub == NULL)
 		return -1;
 
@@ -128,11 +128,11 @@ int libxmp_alloc_subinstrument(struct xmp_module *mod, int i, int num)
 
 int libxmp_init_pattern(struct xmp_module *mod)
 {
-	mod->xxt = (struct xmp_track **) calloc(mod->trk, sizeof(struct xmp_track *));
+	mod->xxt = (struct xmp_track **) Xcalloc(mod->trk, sizeof(struct xmp_track *));
 	if (mod->xxt == NULL)
 		return -1;
 
-	mod->xxp = (struct xmp_pattern **) calloc(mod->pat, sizeof(struct xmp_pattern *));
+	mod->xxp = (struct xmp_pattern **) Xcalloc(mod->pat, sizeof(struct xmp_pattern *));
 	if (mod->xxp == NULL)
 		return -1;
 
@@ -145,7 +145,7 @@ int libxmp_alloc_pattern(struct xmp_module *mod, int num)
 	if (num < 0 || num >= mod->pat || mod->xxp[num] != NULL)
 		return -1;
 
-	mod->xxp[num] = (struct xmp_pattern *) calloc(1, sizeof(struct xmp_pattern) +
+	mod->xxp[num] = (struct xmp_pattern *) Xcalloc(1, sizeof(struct xmp_pattern) +
 							 sizeof(int) * (mod->chn - 1));
 	if (mod->xxp[num] == NULL)
 		return -1;
@@ -159,7 +159,7 @@ int libxmp_alloc_track(struct xmp_module *mod, int num, int rows)
 	if (num < 0 || num >= mod->trk || mod->xxt[num] != NULL || rows <= 0)
 		return -1;
 
-	mod->xxt[num] = (struct xmp_track *) calloc(1,  sizeof(struct xmp_track) +
+	mod->xxt[num] = (struct xmp_track *) Xcalloc(1,  sizeof(struct xmp_track) +
 							sizeof(struct xmp_event) * (rows - 1));
 	if (mod->xxt[num] == NULL)
 		return -1;
@@ -586,7 +586,7 @@ void libxmp_apply_mpt_preamp(struct module_data *m)
 char *libxmp_strdup(const char *src)
 {
 	size_t len = strlen(src) + 1;
-	char *buf = (char *) malloc(len);
+	char *buf = (char *) Xmalloc(len);
 	if (buf) {
 		memcpy(buf, src, len);
 	}

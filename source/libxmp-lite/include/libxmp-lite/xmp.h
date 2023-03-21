@@ -5,6 +5,8 @@
 # include <emscripten.h>
 #endif
 
+#include "compat.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

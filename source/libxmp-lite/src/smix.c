@@ -76,11 +76,11 @@ int xmp_start_smix(xmp_context opaque, int chn, int smp)
 		return -XMP_ERROR_STATE;
 	}
 
-	smix->xxi = (struct xmp_instrument *) calloc(smp, sizeof(struct xmp_instrument));
+	smix->xxi = (struct xmp_instrument *) Xcalloc(smp, sizeof(struct xmp_instrument));
 	if (smix->xxi == NULL) {
 		goto err;
 	}
-	smix->xxs = (struct xmp_sample *) calloc(smp, sizeof(struct xmp_sample));
+	smix->xxs = (struct xmp_sample *) Xcalloc(smp, sizeof(struct xmp_sample));
 	if (smix->xxs == NULL) {
 		goto err1;
 	}
@@ -91,7 +91,7 @@ int xmp_start_smix(xmp_context opaque, int chn, int smp)
 	return 0;
 
     err1:
-	free(smix->xxi);
+	Xfree(smix->xxi);
 	smix->xxi = NULL;
     err:
 	return -XMP_ERROR_INTERNAL;
@@ -206,7 +206,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 
 	/* Init instrument */
 
-	xxi->sub = (struct xmp_subinstrument *) calloc(1, sizeof(struct xmp_subinstrument));
+	xxi->sub = (struct xmp_subinstrument *) Xcalloc(1, sizeof(struct xmp_subinstrument));
 	if (xxi->sub == NULL) {
 		retval = -XMP_ERROR_SYSTEM;
 		goto err1;
@@ -269,7 +269,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 	xxs->lpe = 0;
 	xxs->flg = bits == 16 ? XMP_SAMPLE_16BIT : 0;
 
-	xxs->data = (unsigned char *) malloc(size + 8);
+	xxs->data = (unsigned char *) Xmalloc(size + 8);
 	if (xxs->data == NULL) {
 		retval = -XMP_ERROR_SYSTEM;
 		goto err2;
@@ -293,7 +293,7 @@ int xmp_smix_load_sample(xmp_context opaque, int num, const char *path)
 	return 0;
 
     err2:
-	free(xxi->sub);
+	Xfree(xxi->sub);
 	xxi->sub = NULL;
     err1:
 	hio_close(h);
@@ -312,7 +312,7 @@ int xmp_smix_release_sample(xmp_context opaque, int num)
 	}
 
 	libxmp_free_sample(&smix->xxs[num]);
-	free(smix->xxi[num].sub);
+	Xfree(smix->xxi[num].sub);
 
 	smix->xxs[num].data = NULL;
 	smix->xxi[num].sub = NULL;
@@ -330,8 +330,8 @@ void xmp_end_smix(xmp_context opaque)
 		xmp_smix_release_sample(opaque, i);
 	}
 
-	free(smix->xxs);
-	free(smix->xxi);
+	Xfree(smix->xxs);
+	Xfree(smix->xxi);
 	smix->xxs = NULL;
 	smix->xxi = NULL;
 }

@@ -258,7 +258,7 @@ static int load_it_midi_config(struct module_data *m, HIO_HANDLE *f)
 {
 	int i;
 
-	m->midi = (struct midi_macro_data *) calloc(1, sizeof(struct midi_macro_data));
+	m->midi = (struct midi_macro_data *) Xcalloc(1, sizeof(struct midi_macro_data));
 	if (m->midi == NULL)
 		return -1;
 
@@ -512,7 +512,7 @@ static int load_old_it_instrument(struct xmp_instrument *xxi, HIO_HANDLE *f)
 	xxi->vol = 0x40;
 
 	if (k) {
-		xxi->sub = (struct xmp_subinstrument *) calloc(k, sizeof(struct xmp_subinstrument));
+		xxi->sub = (struct xmp_subinstrument *) Xcalloc(k, sizeof(struct xmp_subinstrument));
 		if (xxi->sub == NULL) {
 			return -1;
 		}
@@ -663,7 +663,7 @@ static int load_new_it_instrument(struct xmp_instrument *xxi, HIO_HANDLE *f)
 	xxi->vol = i2h.gbv >> 1;
 
 	if (k) {
-		xxi->sub = (struct xmp_subinstrument *) calloc(k, sizeof(struct xmp_subinstrument));
+		xxi->sub = (struct xmp_subinstrument *) Xcalloc(k, sizeof(struct xmp_subinstrument));
 		if (xxi->sub == NULL)
 			return -1;
 
@@ -727,7 +727,7 @@ static int load_it_sample(struct module_data *m, int i, int start,
 	uint8 buf[80];
 
 	if (sample_mode) {
-		mod->xxi[i].sub = (struct xmp_subinstrument *) calloc(1, sizeof(struct xmp_subinstrument));
+		mod->xxi[i].sub = (struct xmp_subinstrument *) Xcalloc(1, sizeof(struct xmp_subinstrument));
 		if (mod->xxi[i].sub == NULL) {
 			return -1;
 		}
@@ -888,7 +888,7 @@ static int load_it_sample(struct module_data *m, int i, int start,
 				force_sample_length(xxs, xtra, left << 3);
 			}
 
-			decbuf = (uint8 *) calloc(1, xxs->len * 2);
+			decbuf = (uint8 *) Xcalloc(1, xxs->len * 2);
 			if (decbuf == NULL)
 				return -1;
 
@@ -910,11 +910,11 @@ static int load_it_sample(struct module_data *m, int i, int start,
 			ret = libxmp_load_sample(m, NULL, SAMPLE_FLAG_NOLOAD | cvt,
 					  &mod->xxs[i], decbuf);
 			if (ret < 0) {
-				free(decbuf);
+				Xfree(decbuf);
 				return -1;
 			}
 
-			free(decbuf);
+			Xfree(decbuf);
 		} else {
 			if (libxmp_load_sample(m, f, cvt, &mod->xxs[i], NULL) < 0)
 				return -1;
@@ -1126,18 +1126,18 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 	}
 
 	if (mod->ins) {
-		pp_ins = (uint32 *) calloc(4, mod->ins);
+		pp_ins = (uint32 *) Xcalloc(4, mod->ins);
 		if (pp_ins == NULL)
 			goto err;
 	} else {
 		pp_ins = NULL;
 	}
 
-	pp_smp = (uint32 *) calloc(4, mod->smp);
+	pp_smp = (uint32 *) Xcalloc(4, mod->smp);
 	if (pp_smp == NULL)
 		goto err2;
 
-	pp_pat = (uint32 *) calloc(4, mod->pat);
+	pp_pat = (uint32 *) Xcalloc(4, mod->pat);
 	if (pp_pat == NULL)
 		goto err3;
 
@@ -1377,13 +1377,13 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 		}
 	}
 
-	free(pp_pat);
-	free(pp_smp);
-	free(pp_ins);
+	Xfree(pp_pat);
+	Xfree(pp_smp);
+	Xfree(pp_ins);
 
 	/* Song message */
 	if (ifh.special & IT_HAS_MSG) {
-		if ((m->comment = (char *)malloc(ifh.msglen)) != NULL) {
+		if ((m->comment = (char *)Xmalloc(ifh.msglen)) != NULL) {
 			hio_seek(f, start + ifh.msgofs, SEEK_SET);
 
 			D_(D_INFO "Message length : %d", ifh.msglen);
@@ -1440,11 +1440,11 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 	return 0;
 
 err4:
-	free(pp_pat);
+	Xfree(pp_pat);
 err3:
-	free(pp_smp);
+	Xfree(pp_smp);
 err2:
-	free(pp_ins);
+	Xfree(pp_ins);
 err:
 	return -1;
 }

@@ -304,7 +304,7 @@ static int mtm_load(struct module_data *m, HIO_HANDLE *f, const int start)
 
 	/* Comments */
 	if (mfh.extralen) {
-		m->comment = (char *)malloc(mfh.extralen + 1);
+		m->comment = (char *)Xmalloc(mfh.extralen + 1);
 		if (m->comment) {
 			/* Comments are stored in 40 byte ASCIIZ lines. */
 			int len = hio_read(m->comment, 1, mfh.extralen, f);
