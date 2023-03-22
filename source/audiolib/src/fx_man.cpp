@@ -95,7 +95,7 @@ static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
         AL_SetStereo(AL_Stereo);
 #ifdef HAVE_XMP
     else if (!Bstrcasecmp(parm->name, "mus_xmp_interpolation"))
-        MV_SetXMPInterpolation();
+        MV_SetXMPInterpolation(MV_XMPInterpolation);
 #endif
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
     else if (!Bstrcasecmp(parm->name, "snd_sdl_audiodriver"))
@@ -132,7 +132,7 @@ void FX_InitCvars(void)
 #ifdef _WIN32
         { "mus_mme_device", "select Windows MME MIDI output device", (void*) &WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
 #endif
-#if defined HAVE_XMP && 0
+#if defined HAVE_XMP
         { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void*) &MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
 #endif
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
