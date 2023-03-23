@@ -6712,7 +6712,7 @@ int app_main(int argc, char const* const* argv)
     G_ScanGroups();
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (!Bgetenv("SteamTenfoot") && (readSetup < 0 || (!g_noSetup && (ud.configversion != BYTEVERSION_EDUKE32 || ud.setup.forcesetup)) || g_commandSetup))
+    if (g_commandSetup || (!Bgetenv("SteamTenfoot") && (readSetup < 0 || (!g_noSetup && (ud.configversion != BYTEVERSION_EDUKE32 || ud.setup.forcesetup)))))
     {
         if (quitevent || !startwin_run())
         {
