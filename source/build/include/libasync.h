@@ -94,6 +94,15 @@
 # define LIBASYNC_ASSERT(pred, except, message) ((void)0)
 #endif
 
+// Allow user memory allocator
+#ifndef LIBASYNC_ALIGNED_ALLOC
+# define LIBASYNC_ALIGNED_ALLOC(size, align) aligned_alloc(size, align)
+#endif
+
+#ifndef LIBASYNC_ALIGNED_FREE
+# define LIBASYNC_ALIGNED_FREE(ptr) aligned_free(ptr)
+#endif
+
 // Annotate move constructors and move assignment with noexcept to allow objects
 // to be moved if they are in containers. Compilers which don't support noexcept
 // will usually move regardless.
@@ -895,11 +904,11 @@ struct LIBASYNC_CACHELINE_ALIGN task_base: public ref_count_base<task_base, task
 	// Use aligned memory allocation
 	static void* operator new(std::size_t size)
 	{
-		return aligned_alloc(size, LIBASYNC_CACHELINE_SIZE);
+		return LIBASYNC_ALIGNED_ALLOC(size, LIBASYNC_CACHELINE_SIZE);
 	}
 	static void operator delete(void* ptr)
 	{
-		aligned_free(ptr);
+		LIBASYNC_ALIGNED_FREE(ptr);
 	}
 
 	// Initialize task state
