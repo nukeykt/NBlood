@@ -127,10 +127,13 @@ char *Bgethomedir(void)
     return Xstrdup(cwd);
 #else
     char const *e;
-    if ((e = getenv("XDG_CONFIG_HOME")) == NULL)
-        if ((e = getenv("HOME")) == NULL)
-            if ((e = getpwuid(getuid())->pw_dir) == NULL)
+    if ((e = getenv("XDG_CONFIG_HOME")) == NULL || e[0] == '\0')
+        if ((e = getenv("HOME")) == NULL || e[0] == '\0')
+        {
+            auto const pw = getpwuid(getuid());
+            if (pw == NULL || (e = pw->pw_dir) == NULL || e[0] == '\0')
                 return NULL;
+        }
     return Xstrdup(e);
 #endif
 }
