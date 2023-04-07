@@ -751,11 +751,15 @@ define BUILDRULE
 $$($1_$2)$$(EXESUFFIX): $$(foreach i,$(call getdeps,$1,$2),$$(call expandobjs,$$i)) $$($1_$2_miscdeps) | $$($1_$2_orderonlydeps)
 	$$(LINK_STATUS)
 	$$(call MKDIR,"$$(obj)/$$($1_$2)")
-	$$(RECIPE_IF) $$(LINKER) -save-temps=obj -dumpdir $$(obj)/$$($1_$2)/ -o $$@ $$^ $$(GUI_LIBS) $$($1_$2_ldflags) $$(LIBDIRS) $$(LIBS) $$(RECIPE_RESULT_LINK)
+ifeq ($$(LLD),0)
+	$$(eval override LF := -save-temps=obj -dumpdir $$(obj)/$$($1_$2))
+else
+	$$(eval override LF :=)
+endif
+	$$(RECIPE_IF) $$(LINKER) $$(LF) -o $$@ $$^ $$(GUI_LIBS) $$($1_$2_ldflags) $$(LIBDIRS) $$(LIBS) $$(RECIPE_RESULT_LINK)
 ifeq ($$(PLATFORM),WII)
 ifneq ($$(ELF2DOL),)
 	$$(ELF2DOL) $$@ $$($1_$2)$$(DOLSUFFIX)
-	$$(call RMDIR,"$$(obj)/$$($1_$2)")
 endif
 endif
 ifneq ($$(STRIP),)
@@ -766,6 +770,7 @@ ifeq ($$(PLATFORM),DARWIN)
 	$(call MKDIR,"$$($1_$2_proper).app/Contents/MacOS")
 	cp -f "$$($1_$2)$$(EXESUFFIX)" "$$($1_$2_proper).app/Contents/MacOS/"
 endif
+	$$(call RMDIR,"$$(obj)/$$($1_$2)")
 
 endef
 
@@ -786,18 +791,28 @@ libklzw$(DLLSUFFIX): $(engine_src)/klzw.cpp
 %$(EXESUFFIX): $(tools_obj)/%.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(call MKDIR,"$(tools_obj)/$*")
-	$(RECIPE_IF) $(LINKER) -save-temps=obj -dumpdir $(tools_obj)/$*/ -o $@ $^ $(LIBDIRS) $(LIBS) $(RECIPE_RESULT_LINK)
-	$(call RMDIR,"$(tools_obj)/$*")
+ifeq ($(LLD),0)
+	$(eval override LF := -save-temps=obj -dumpdir $(tools_obj)/$*)
+else
+	$(eval override LF :=)
+endif
+	$(RECIPE_IF) $(LINKER) $(LF) -o $@ $^ $(LIBDIRS) $(LIBS) $(RECIPE_RESULT_LINK)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
+	$(call RMDIR,"$(tools_obj)/$*")
 
 
 ### Voidwrap
 
 $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
-	$(RECIPE_IF) $(LINKER) -save-temps=obj -dumpdir $(voidwrap_obj)/ -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
+ifeq ($(LLD),0)
+	$(eval override LF := -save-temps=obj -dumpdir $(voidwrap_obj))
+else
+	$(eval override LF :=)
+endif
+	$(RECIPE_IF) $(LINKER) $(LF) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
