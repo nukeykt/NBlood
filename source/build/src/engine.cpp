@@ -329,7 +329,7 @@ static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall,
 int32_t numgraysects = 0;
 uint8_t graysectbitmap[(MAXSECTORS+7)>>3];
 uint8_t graywallbitmap[(MAXWALLS+7)>>3];
-int32_t autogray = 0, showinnergray = 1;
+int32_t autogray = 0, showinnergray = 1, showgraysectors = 1;
 
 //#define YAX_DEBUG_YMOSTS
 
@@ -344,6 +344,11 @@ int32_t engine_screenshot = 0;
 int32_t get_alwaysshowgray(void)
 {
     return showinnergray || !(editorzrange[0]==INT32_MIN && editorzrange[1]==INT32_MAX);
+}
+
+int32_t get_skipgraysectors(void)
+{
+    return numgraysects && !showgraysectors && !(editorzrange[0]==INT32_MIN && editorzrange[1]==INT32_MAX);
 }
 
 void yax_updategrays(int32_t posze)

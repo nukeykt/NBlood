@@ -7360,7 +7360,7 @@ static void Keys2d(void)
         if (eitherALT)
         {
             showinnergray = !showinnergray;
-            printmessage16("Display grayed out walls: %s", ONOFF(showinnergray));
+            printmessage16("Display grayed-out walls: %s", ONOFF(showinnergray));
         }
         else
         {
@@ -7374,31 +7374,39 @@ static void Keys2d(void)
     // Ctrl-R set editor z range to hightlightsectors' c/f bounds
     if (eitherCTRL && PRESSED_KEYSC(R))
     {
-        if (highlightsectorcnt <= 0)
+        if (eitherALT)
         {
-            editorzrange[0] = INT32_MIN;
-            editorzrange[1] = INT32_MAX;
-            printmessage16("Reset Z range");
+            showgraysectors = !showgraysectors;
+            printmessage16("Display grayed-out sectors: %s", ONOFF(showgraysectors));
         }
         else
         {
-            int32_t damin=INT32_MAX, damax=INT32_MIN;
-
-            for (i=0; i<highlightsectorcnt; i++)
+            if (highlightsectorcnt <= 0)
             {
-                damin = min(damin, TrackerCast(sector[highlightsector[i]].ceilingz));
-                damax = max(damax, TrackerCast(sector[highlightsector[i]].floorz));
+                editorzrange[0] = INT32_MIN;
+                editorzrange[1] = INT32_MAX;
+                printmessage16("Reset Z range");
             }
-
-            if (damin < damax)
+            else
             {
-                editorzrange[0] = damin;
-                editorzrange[1] = damax;
-                printmessage16("Set Z range to highlighted sector bounds (%d..%d)",
-                               editorzrange[0], editorzrange[1]);
+                int32_t damin=INT32_MAX, damax=INT32_MIN;
+
+                for (i=0; i<highlightsectorcnt; i++)
+                {
+                    damin = min(damin, TrackerCast(sector[highlightsector[i]].ceilingz));
+                    damax = max(damax, TrackerCast(sector[highlightsector[i]].floorz));
+                }
+
+                if (damin < damax)
+                {
+                    editorzrange[0] = damin;
+                    editorzrange[1] = damax;
+                    printmessage16("Set Z range to highlighted sector bounds (%d..%d)",
+                                   editorzrange[0], editorzrange[1]);
+                }
             }
+            yax_updategrays(pos.z);
         }
-        yax_updategrays(pos.z);
     }
 
     if (PRESSED_KEYSC(T))  // T (tag)

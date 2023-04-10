@@ -158,6 +158,7 @@ enum rendmode_t {
 # endif
 
 int32_t get_alwaysshowgray(void);  // editor only
+int32_t get_skipgraysectors(void);
 void yax_updategrays(int32_t posze);
 
 #ifdef YAX_ENABLE

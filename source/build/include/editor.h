@@ -127,7 +127,7 @@ extern int32_t showambiencesounds;
 extern int32_t numgraysects;
 extern uint8_t graysectbitmap[(MAXSECTORS+7)>>3];
 extern uint8_t graywallbitmap[(MAXWALLS+7)>>3];
-extern int32_t autogray, showinnergray;
+extern int32_t autogray, showinnergray, showgraysectors;
 
 extern void drawgradient(void);
 

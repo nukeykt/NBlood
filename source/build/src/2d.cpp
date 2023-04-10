@@ -1269,13 +1269,13 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
     int32_t const posxe=pos->x, posye=pos->y, posze=pos->z;
     uint8_t *graybitmap = (uint8_t *) tempbuf;
     int32_t const alwaysshowgray = get_alwaysshowgray();
+    auto const skipgraysectors = get_skipgraysectors();
 
     if (in3dmode()) return;
 
     editorSetup2dSideView();
 
     videoBeginDrawing(); //{{{
-
 
     if (editstatus == 0)
     {
@@ -1312,12 +1312,22 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
 #else
         if (alwaysshowgray)
             for (int32_t i = numwalls - 1; i >= 0; i--)
+            {
+                if (skipgraysectors)
+                    YAX_SKIPSECTOR(sectorofwall(i));
+
                 if (bitmap_test(graybitmap, i))
                     editorDraw2dWall(i, posxe, posye, posze, zoome, 1+2);
+            }
 
         for (int32_t i = numwalls - 1; i >= 0; i--)
+        {
+            if (skipgraysectors)
+                YAX_SKIPSECTOR(sectorofwall(i));
+
             if (!bitmap_test(graybitmap, i))
                 editorDraw2dWall(i, posxe, posye, posze, zoome, 2);
+        }
 #endif
     }
     else
@@ -1375,11 +1385,17 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
             int32_t j = m32_wallsprite[i];
             if (j<MAXWALLS)
             {
+                if (skipgraysectors)
+                    YAX_SKIPSECTOR(sectorofwall(j));
+
                 if (alwaysshowgray || !bitmap_test(graybitmap, j))
                     editorDraw2dWall(j, posxe, posye, posze, zoome, !!bitmap_test(graybitmap, j));
             }
             else
             {
+                if (skipgraysectors)
+                    YAX_SKIPSECTOR(sectorofwall(sprite[j-MAXWALLS].sectnum));
+
                 if (!alwaysshowgray && sprite[j-MAXWALLS].sectnum>=0)
                     YAX_SKIPSECTOR(sprite[j-MAXWALLS].sectnum);
 
