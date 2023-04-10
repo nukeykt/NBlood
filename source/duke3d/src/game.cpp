@@ -463,9 +463,6 @@ static void G_OROR_DupeSprites(spritetype const *sp)
     int32_t k;
     spritetype const *refsp;
 
-    if ((unsigned)sp->yvel >= (unsigned)g_mostConcurrentPlayers)
-        return;
-
     refsp = &sprite[sp->yvel];
 
     for (SPRITES_OF_SECT(sp->sectnum, k))
