@@ -157,7 +157,7 @@ void Gv_NewVar(const char *pszLabel, intptr_t lValue, uint32_t dwFlags)
         if (aGameVars[i].dwFlags & GAMEVAR_PTR_MASK)
         {
             C_ReportError(-1);
-            initprintf("%s:%d: warning: cannot redefine internal gamevar `%s'.\n",g_szScriptFileName,g_lineNumber,label+(g_numLabels<<6));
+            initprintf("%s:%d: warning: cannot redefine internal gamevar `%s'.\n",g_szScriptFileName,g_lineNumber,pszLabel);
             return;
         }
         else if (!(aGameVars[i].dwFlags & GAMEVAR_SYSTEM))
