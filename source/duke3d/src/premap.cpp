@@ -1303,7 +1303,7 @@ static void prelevel(int g)
     //Bmemset(zhit, 0, sizeof(zhit));
     Bmemset(show2dsector, 0, sizeof(show2dsector));
 #ifdef LEGACY_ROR
-    Bmemset(ror_protectedsectors, 0, MAXSECTORS);
+    Bmemset(ror_protectedsectors, 0, sizeof(ror_protectedsectors));
 #endif
     g_cloudCnt = 0;
 

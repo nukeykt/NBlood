@@ -453,7 +453,7 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
 }
 
 #ifdef LEGACY_ROR
-char ror_protectedsectors[MAXSECTORS];
+char ror_protectedsectors[(MAXSECTORS+7)>>3];
 static int32_t drawing_ror = 0;
 static int32_t ror_sprite = -1;
 
@@ -534,7 +534,7 @@ static void G_SE40(int32_t smoothratio)
                 {
                     SE40backupStat[i] = sector[i].ceilingstat;
                     SE40backupZ[i] = sector[i].ceilingz;
-                    if (!ror_protectedsectors[i] || sp->lotag == 41)
+                    if (!bitmap_test(ror_protectedsectors, i) || sp->lotag == 41)
                     {
                         sector[i].ceilingstat = 1;
                         sector[i].ceilingz += newz;
@@ -556,7 +556,7 @@ static void G_SE40(int32_t smoothratio)
                 {
                     SE40backupStat[i] = sector[i].floorstat;
                     SE40backupZ[i] = sector[i].floorz;
-                    if (!ror_protectedsectors[i] || sp->lotag == 41)
+                    if (!bitmap_test(ror_protectedsectors, i) || sp->lotag == 41)
                     {
                         sector[i].floorstat = 1;
                         sector[i].floorz = +newz;
@@ -2876,7 +2876,7 @@ int A_Spawn(int spriteNum, int tileNum)
                 goto SPAWN_END;
                 break;
             case 46:
-                ror_protectedsectors[pSprite->sectnum] = 1;
+                bitmap_set(ror_protectedsectors, pSprite->sectnum);
                 /* XXX: fall-through intended? */
                 fallthrough__;
 #endif
