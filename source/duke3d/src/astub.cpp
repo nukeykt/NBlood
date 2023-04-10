@@ -10516,6 +10516,9 @@ void ExtPreCheckKeys(void) // just before drawrooms
     if (showambiencesounds)
     {
         for (ii=0; ii<numsectors; ii++)
+        {
+            YAX_SKIPSECTOR(ii);
+
             for (i=headspritesect[ii]; i>=0; i=nextspritesect[i])
             {
                 int32_t radius, col;
@@ -10544,6 +10547,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
                 editorDraw2dCircle(halfxdim16+xp1, midydim16+yp1, radius, scalescreeny(16384), col);
                 drawlinepat = 0xffffffff;
             }
+        }
     }
 
     videoEndDrawing();  //}}}
