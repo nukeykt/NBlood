@@ -2482,6 +2482,11 @@ int32_t handleevents_pollsdl(void)
 
         switch (ev.type)
         {
+            case SDL_DROPFILE:
+                if (g_fileDropCallback && ev.drop.type == SDL_DROPFILE)
+                    g_fileDropCallback(ev.drop.file);
+                SDL_free(ev.drop.file);
+                break;
             case SDL_TEXTINPUT:
                 j = 0;
                 do

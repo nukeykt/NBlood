@@ -283,6 +283,7 @@ int32_t handleevents_peekkeys(void);
 extern void (*keypresscallback)(int32_t,int32_t);
 extern void (*g_mouseCallback)(int32_t,int32_t);
 extern void (*g_controllerHotplugCallback)(void);
+extern void (*g_fileDropCallback)(const char*);
 
 int32_t initinput(void(*hotplugCallback)(void) = NULL);
 void uninitinput(void);

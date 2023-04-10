@@ -372,6 +372,8 @@ void joySetCallback(void (*callback)(int32_t, int32_t)) { joystick.pCallback = c
 void joyReadButtons(int32_t *pResult) { *pResult = appactive ? joystick.bits : 0; }
 bool joyHasButton(int button) { return !!(joystick.validButtons & (1 << button)); }
 
+void (*g_fileDropCallback)(char const *);
+
 #if defined __linux || defined EDUKE32_BSD || defined __APPLE__
 # include <sys/mman.h>
 #endif

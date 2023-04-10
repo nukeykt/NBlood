@@ -461,6 +461,19 @@ static void m32_keypresscallback(int32_t code, int32_t downp)
     VM_OnEvent(EVENT_KEYPRESS, -1);
 }
 
+static void fileDropCallback(char const *fn)
+{
+    if (asksave)
+        message("You have unsaved changes.");
+    else
+    {
+        auto ret = LoadBoard(fn, 0);
+
+        if (ret)
+            message("^13Invalid map format, nothing loaded (code %d).", ret);
+    }
+}
+
 void M32_ResetFakeRORTiles(void)
 {
 #ifdef POLYMER
@@ -753,6 +766,8 @@ int app_main(int argc, char const* const* argv)
 
     if (enginePostInit())
         M32_FatalEngineError();
+
+    g_fileDropCallback = fileDropCallback;
 
     ExtPostInit();
 
