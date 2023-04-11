@@ -10,6 +10,8 @@
 #include "editor.h"
 
 int32_t editorgridextent = -1;
+int32_t spriteinsertmode = 0;
+
 
 ////////// editor side view //////////
 int32_t m32_sideview = 0;

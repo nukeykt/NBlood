@@ -4549,6 +4549,12 @@ static void Keys3d(void)
         message("Grid locking %s", gridlock ? "on" : "off");
     }
 
+    if (eitherCTRL && eitherALT && PRESSED_KEYSC(W))
+    {
+        spriteinsertmode = !spriteinsertmode;
+        message("Sprite insertion clips non-hitscan sprites: %s", ONOFF(spriteinsertmode));
+    }
+
     if (PRESSED_KEYSC(V))  //V
     {
         if (ASSERT_AIMING)

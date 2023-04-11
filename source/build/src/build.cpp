@@ -238,7 +238,7 @@ static int32_t menuselect(void);
 static int32_t menuselect_auto(int, int); //PK
 
 static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day);
-static void correct_ornamented_sprite(int32_t i, int32_t hitw);
+static void correct_ornamented_sprite(int32_t i, hitdata_t const &hit);
 
 static int32_t getfilenames(const char *path, const char *kind);
 
@@ -1543,7 +1543,7 @@ void editinput(void)
 #endif
                 hitscan((const vec3_t *)&pos,cursectnum,              //Start position
                     da.x,da.y,dz, //vector of 3D ang
-                    &hit,CLIPMASK1);
+                    &hit,spriteinsertmode ? CLIPMASK1 | (CSTAT_SPRITE_BLOCK << 16) : CLIPMASK1);
 
             if (hit.sect >= 0)
             {
@@ -1569,12 +1569,12 @@ void editinput(void)
                     spriteoncfz(i, &cz, &fz);
                     sprite[i].z = clamp2(hit.z, cz, fz);
 
-                    if (AIMING_AT_WALL || AIMING_AT_MASKWALL)
+                    if (AIMING_AT_WALL || AIMING_AT_MASKWALL || (AIMING_AT_SPRITE && (sprite[searchwall].cstat & CSTAT_SPRITE_ALIGNMENT_SLAB) == CSTAT_SPRITE_ALIGNMENT_WALL))
                     {
                         sprite[i].cstat &= ~48;
                         sprite[i].cstat |= (16+64);
 
-                        correct_ornamented_sprite(i, hit.wall);
+                        correct_ornamented_sprite(i, hit);
                     }
                     else
                         sprite[i].cstat |= (tilesiz[sprite[i].picnum].y>=32);
@@ -2318,21 +2318,27 @@ static void duplicate_selected_sprites(void)
     }
 }
 
-static void correct_ornamented_sprite(int32_t i, int32_t hitw)
+static void correct_ornamented_sprite(int32_t i, hitdata_t const &hit)
 {
     int32_t j;
 
-    if (hitw >= 0)
+    if (hit.sprite >= 0)
     {
-        sprite[i].ang = (getangle(POINT2(hitw).x-wall[hitw].x,
-                                  POINT2(hitw).y-wall[hitw].y)+512)&2047;
+        if (klabs(ang - sprite[hit.sprite].ang) < 1024)
+            sprite[i].ang = (sprite[hit.sprite].ang + 1024) & 2047;
+        else sprite[i].ang = sprite[hit.sprite].ang;
+    }
+    else if (hit.wall >= 0)
+    {
+        sprite[i].ang = (getangle(POINT2(hit.wall).x-wall[hit.wall].x,
+                                  POINT2(hit.wall).y-wall[hit.wall].y)+512)&2047;
 
         //Make sure sprite's in right sector
         if (inside(sprite[i].x, sprite[i].y, sprite[i].sectnum) != 1)
         {
-            j = wall[hitw].point2;
-            sprite[i].x -= ksgn(wall[j].y-wall[hitw].y);
-            sprite[i].y += ksgn(wall[j].x-wall[hitw].x);
+            j = wall[hit.wall].point2;
+            sprite[i].x -= ksgn(wall[j].y-wall[hit.wall].y);
+            sprite[i].y += ksgn(wall[j].x-wall[hit.wall].x);
         }
     }
 }
@@ -2345,7 +2351,7 @@ void DoSpriteOrnament(int32_t i)
             sintable[(sprite[i].ang+1536)&2047],
             sintable[(sprite[i].ang+1024)&2047],
             0,
-            &hit,CLIPMASK1);
+            &hit,spriteinsertmode ? CLIPMASK1 | (CSTAT_SPRITE_BLOCK << 16) : CLIPMASK1);
 
     if (hit.sect == -1)
         return;
@@ -2353,7 +2359,7 @@ void DoSpriteOrnament(int32_t i)
     sprite[i].xyz = hit.xyz;
     changespritesect(i, hit.sect);
 
-    correct_ornamented_sprite(i, hit.wall);
+    correct_ornamented_sprite(i, hit);
 }
 
 void update_highlight(void)

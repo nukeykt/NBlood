@@ -10,6 +10,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 
 #include "build.h"
 #include "common.h"
+#include "editor.h"
 #include "engine_priv.h"
 #include "kplib.h"
 #include "mdsprite.h"
@@ -4762,7 +4763,7 @@ void polymost_editorfunc(void)
     hitallsprites = 1;
 
     hitscan((const vec3_t *) &vect, globalcursectnum, //Start position
-        v.x, v.y, v.z, hit, 0xffff0030);
+        v.x, v.y, v.z, hit, spriteinsertmode ? 0xffff0030 | (CSTAT_SPRITE_BLOCK << 16) : 0xffff0030);
 
     hitallsprites = 0;
 }

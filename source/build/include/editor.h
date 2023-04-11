@@ -86,7 +86,7 @@ extern int16_t startang, startsectnum;
 extern int32_t lastpm16time, synctics;
 extern int32_t halfxdim16, midydim16, zoom;
 extern int32_t ydim16, bppgame, forcesetup;
-extern int32_t unrealedlook, quickmapcycling;
+extern int32_t unrealedlook, quickmapcycling, spriteinsertmode;
 extern int32_t pk_turnaccel,pk_turndecel,pk_uedaccel;
 extern int32_t revertCTRL,scrollamount;
 extern int32_t autosave;
