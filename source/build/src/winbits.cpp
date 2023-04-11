@@ -703,7 +703,7 @@ void windowsHandleFocusChange(int const appactive)
                 {
                     if (hMMTHREAD || (hMMTHREAD = avrt_AvSetMmThreadCharacteristics(TEXT("Games"), &index)))
                     {
-                        DLOG_IF_F(INFO, !win_silentfocuschange, "Successfully set AVRT thread characteristics with index %d.", index);
+                        DLOG_IF_F(INFO, !win_silentfocuschange, "Successfully set AVRT thread characteristics with index %d.", (int)index);
                         
                         if (!avrt_AvSetMmThreadPriority(hMMTHREAD, AVRT_PRIORITY_CRITICAL))
                         {
