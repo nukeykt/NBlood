@@ -2057,9 +2057,9 @@ static void maskwallscan(int32_t x1, int32_t x2, int32_t saturatevplc)
     if ((dwall[x1] < 0) && (dwall[x2] < 0)) return;
 
     vec2_16_t tsiz = tilesiz[globalpicnum];
-    if ((tsiz.x <= 0) || (tsiz.y <= 0)) return;
-
     setgotpic(globalpicnum);
+
+    if ((tsiz.x <= 0) || (tsiz.y <= 0)) return;
 
     vec2_16_t upscale = {};
     globalbufplc = tileLoadScaled(globalpicnum, &upscale);
