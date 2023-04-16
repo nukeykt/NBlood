@@ -134,6 +134,7 @@ void IniFile::Load()
         kread(fp, pBuffer, nSize);
         LoadRes(pBuffer);
         Xfree(pBuffer);
+        kclose(fp);
     }
     else
         curNode->next = &head;
@@ -273,7 +274,7 @@ bool IniFile::FindKey(const char *key)
         c = *pEqual;
         *pEqual = '\0';
 
-        if (strcmp(key, curNode->name) == 0)
+        if (Bstrcasecmp(key, curNode->name) == 0)
         {
             // strings match
             *pEqual = c;

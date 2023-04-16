@@ -2086,9 +2086,23 @@ void FuncPlayer(int a, int nDamage, int nRun)
                 if (var_54 != sprite[nPlayerSprite].sectnum) {
                     mychangespritesect(nPlayerSprite, var_54);
                 }
+
+                // Vanilla change: Below block moved up from below, so it's only if we're not in noclip mode.
+                if (inside(sprite[nPlayerSprite].x, sprite[nPlayerSprite].y, sprite[nPlayerSprite].sectnum) != 1)
+                {
+                    mychangespritesect(nPlayerSprite, spr_sectnum);
+
+                    sprite[nPlayerSprite].x = spr_x;
+                    sprite[nPlayerSprite].y = spr_y;
+
+                    if (zVel < sprite[nPlayerSprite].zvel) {
+                        sprite[nPlayerSprite].zvel = zVel;
+                    }
+                }
             }
 
             // loc_1A6E4
+#if 0 // Vanilla change: this block moved above. Don't do this check if we're in noclip cheat mode so we can walk through all walls.
             if (inside(sprite[nPlayerSprite].x, sprite[nPlayerSprite].y, sprite[nPlayerSprite].sectnum) != 1)
             {
                 mychangespritesect(nPlayerSprite, spr_sectnum);
@@ -2100,6 +2114,7 @@ void FuncPlayer(int a, int nDamage, int nRun)
                     sprite[nPlayerSprite].zvel = zVel;
                 }
             }
+#endif
 
 //			int _bTouchFloor = bTouchFloor;
             short bUnderwater = SectFlag[sprite[nPlayerSprite].sectnum] & kSectUnderwater;
@@ -2325,30 +2340,30 @@ loc_1AB8E:
                 {
                     if ((nMove & 0xC000) == 0x8000)
                     {
-                        int var_C4 = sprite[nPlayerSprite].x;
-                        int var_D4 = sprite[nPlayerSprite].y;
-                        int var_C8 = sprite[nPlayerSprite].z;
+                        int prevX = sprite[nPlayerSprite].x;
+                        int prevY = sprite[nPlayerSprite].y;
+                        int prevZ = sprite[nPlayerSprite].z;
+                        int prevSect = sprite[nPlayerSprite].sectnum;
 
                         mychangespritesect(nPlayerSprite, nViewSect);
 
                         sprite[nPlayerSprite].x = spr_x;
                         sprite[nPlayerSprite].y = spr_y;
 
-                        int var_FC = sector[nViewSect].floorz + (-5120);
-
-                        sprite[nPlayerSprite].z = var_FC;
+                        int newZ = sector[nViewSect].floorz + (-5120);
+                        sprite[nPlayerSprite].z = newZ;
 
                         if ((movesprite(nPlayerSprite, x, y, 0, 5120, 0, CLIPMASK0) & 0xC000) == 0x8000)
                         {
-                            mychangespritesect(nPlayerSprite, sprite[nPlayerSprite].sectnum);
+                            mychangespritesect(nPlayerSprite, prevSect);
 
-                            sprite[nPlayerSprite].x = var_C4;
-                            sprite[nPlayerSprite].y = var_D4;
-                            sprite[nPlayerSprite].z = var_C8;
+                            sprite[nPlayerSprite].x = prevX;
+                            sprite[nPlayerSprite].y = prevY;
+                            sprite[nPlayerSprite].z = prevZ;
                         }
                         else
                         {
-                            sprite[nPlayerSprite].z = var_FC - 256;
+                            sprite[nPlayerSprite].z = newZ - 256;
                             D3PlayFX(StaticSound[kSoundJonWade], nPlayerSprite);
                         }
                     }

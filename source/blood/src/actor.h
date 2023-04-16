@@ -177,6 +177,7 @@ extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
 extern short gAffectedXWalls[kMaxXWalls];
 
+void DudeToGibCallback1(int, int nXSprite);
 template<typename T> bool IsPlayerSprite(T const * const pSprite)
 {
     return pSprite->type >= kDudePlayer1 && pSprite->type <= kDudePlayer8;

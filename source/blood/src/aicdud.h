@@ -2,6 +2,11 @@
 /*
 Copyright (C) 2010-2019 EDuke32 developers and contributors
 Copyright (C) 2019 Nuke.YKT
+Copyright (C) NoOne
+
+*****************************************************************
+NoOne: AI code for Custom Dude system.
+*****************************************************************
 
 This file is part of NBlood.
 
@@ -20,32 +25,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+#ifdef NOONE_EXTENSIONS
 #pragma once
-#include "ai.h"
+#include "nnextcdud.h"
 
-extern AISTATE cultistBurnIdle;
-extern AISTATE cultistBurnChase;
-extern AISTATE cultistBurnGoto;
-extern AISTATE cultistBurnSearch;
-extern AISTATE cultistBurnAttack;
-extern AISTATE zombieABurnChase;
-extern AISTATE zombieABurnGoto;
-extern AISTATE zombieABurnSearch;
-extern AISTATE zombieABurnAttack;
-extern AISTATE zombieFBurnChase;
-extern AISTATE zombieFBurnGoto;
-extern AISTATE zombieFBurnSearch;
-extern AISTATE zombieFBurnAttack;
-extern AISTATE innocentBurnChase;
-extern AISTATE innocentBurnGoto;
-extern AISTATE innocentBurnSearch;
-extern AISTATE innocentBurnAttack;
-extern AISTATE beastBurnChase;
-extern AISTATE beastBurnGoto;
-extern AISTATE beastBurnSearch;
-extern AISTATE beastBurnAttack;
-extern AISTATE tinycalebBurnChase;
-extern AISTATE tinycalebBurnGoto;
-extern AISTATE tinycalebBurnSearch;
-extern AISTATE tinycalebBurnAttack;
-
+extern AISTATE gCdudeStateTemplate[kCdudeStateNormalMax][kCdudePostureMax];
+extern AISTATE gCdudeStateAttackTemplate[kCdudePostureMax];
+extern AISTATE gCdudeStateDyingTemplate[kCdudePostureMax];
+void cdudeDoExplosion(CUSTOMDUDE* pDude);
+#endif
