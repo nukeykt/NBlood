@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 #include "nnextsif.h"
 #include "eventq.h"
-#include "aiunicult.h"
+#include "aicdud.h"
 #include "triggers.h"
 #include "sectorfx.h"
 #include "globals.h"
@@ -47,19 +47,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sfx.h"
 #include "seq.h"
 #include "ai.h"
-#include "gib.h"
+#ifdef WITHKPLIB
+#include "kplib.h"
+#endif
 
 #define kMaxPatrolFoundSounds 256 //sizeof(Bonkle) / sizeof(Bonkle[0])
 PATROL_FOUND_SOUNDS patrolBonkles[kMaxPatrolFoundSounds];
 
 bool gAllowTrueRandom = false;
 bool gEventRedirectsUsed = false;
+bool gExternalFilesAdded = false;
 SPRITEMASS gSpriteMass[];   // cache for getSpriteMassBySize();
 
 IDLIST gProxySpritesList(false);
 IDLIST gSightSpritesList(false);
 IDLIST gImpactSpritesList(false);
 IDLIST gPhysSpritesList(false);
+IDLIST gFlwSpritesList(false);
+
+EXTERNAL_FILES_LIST gExternFiles[] =
+{
+    { kCdudeFileNamePrefixWild, kCdudeFileExt },
+};
 
 // SPRITES_NEAR_SECTORS
 // Intended for move sprites that is close to the outside walls with
@@ -88,6 +97,13 @@ short gEffectGenCallbacks[] = {
 
 TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 std::default_random_engine gStdRandom;
+
+EXPLOSION_EXTRA gExplodeExtra[] =
+{
+    {3, 303, true},     {4, 304, false},    {4, 305, false},
+    {9, 307, true},     {5, 307, true},     {4, 303, false},
+    {4, 303, false},    {4, 303, false},
+};
 
 VECTORINFO_EXTRA gVectorInfoExtra[] = {
     1207,1207,      1001,1001,      4001,4002,
@@ -188,7 +204,7 @@ DUDEINFO_EXTRA gDudeInfoExtra[] = {
     { false,  true,   0, 8, 9, 9, 11, 10 },         // 251
     { false,  false,  -1, -1, -1, -1, -1, -1 },     // 252
     { false,  false,  -1, -1, -1, -1, -1, -1 },     // 253
-    { false,  false,  0, 9, 17, 13, 17, 14 },       // 254
+    { false,  false,  0, 3, 2, 5, 1, 4 },           // 254 (seq offsets is dude AI state offsets here!)
     { false,  false,  -1, -1, -1, -1, -1, -1 },     // 255
 
 };
@@ -206,12 +222,14 @@ AISTATE genPatrolStates[] = {
     { kAiStatePatrolMoveL, 0, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveL, 6, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveL, 7, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
+    { kAiStatePatrolMoveL, 3, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL }, // +1
 
     { kAiStatePatrolTurnL, 9, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnL, 8, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnL, 0, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnL, 6, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnL, 7, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
+    { kAiStatePatrolTurnL, 3, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL }, // +1
 
     //-------------------------------------------------------------------------------
 
@@ -221,6 +239,7 @@ AISTATE genPatrolStates[] = {
     { kAiStatePatrolWaitW, 17, -1, 0, NULL, NULL, aiPatrolThink, NULL },
     { kAiStatePatrolWaitW, 8, -1, 0, NULL, NULL, aiPatrolThink, NULL },
     { kAiStatePatrolWaitW, 9, -1, 0, NULL, NULL, aiPatrolThink, NULL },
+    { kAiStatePatrolWaitW, 2, -1, 0, NULL, NULL, aiPatrolThink, NULL }, // +1
 
     { kAiStatePatrolMoveW, 0, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveW, 10, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
@@ -229,6 +248,8 @@ AISTATE genPatrolStates[] = {
     { kAiStatePatrolMoveW, 9, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveW, 7, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveW, 6, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
+    { kAiStatePatrolMoveW, 5, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL }, // +1
+
 
     { kAiStatePatrolTurnW, 0, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnW, 10, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
@@ -237,6 +258,7 @@ AISTATE genPatrolStates[] = {
     { kAiStatePatrolTurnW, 9, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnW, 7, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnW, 6, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
+    { kAiStatePatrolTurnW, 5, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL }, // +1
 
     //-------------------------------------------------------------------------------
 
@@ -244,14 +266,17 @@ AISTATE genPatrolStates[] = {
     { kAiStatePatrolWaitC, 11, -1, 0, NULL, NULL, aiPatrolThink, NULL },
     { kAiStatePatrolWaitC, 10, -1, 0, NULL, NULL, aiPatrolThink, NULL },
     { kAiStatePatrolWaitC, 14, -1, 0, NULL, NULL, aiPatrolThink, NULL },
+    { kAiStatePatrolWaitC, 1, -1, 0, NULL, NULL, aiPatrolThink, NULL }, // +1
 
     { kAiStatePatrolMoveC, 14, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveC, 10, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
     { kAiStatePatrolMoveC, 9, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL },
+    { kAiStatePatrolMoveC, 4, -1, 0, NULL, aiPatrolMove, aiPatrolThink, NULL }, // +1
 
     { kAiStatePatrolTurnC, 14, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnC, 10, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
     { kAiStatePatrolTurnC, 9, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
+    { kAiStatePatrolTurnC, 4, -1, 0, aiPatrolRandGoalAng, aiPatrolTurn, aiPatrolThink, NULL },
 
     //-------------------------------------------------------------------------------
 
@@ -508,6 +533,89 @@ char idListProcessPhysSprite(int32_t nSpr)
     return kListOK;
 }
 
+char dudeIsAlive(spritetype* pSpr)
+{
+    return (pSpr->statnum == kStatDude && xsprIsFine(pSpr) && xsprite[pSpr->extra].health);
+}
+
+int nnExtGetStartHealth(spritetype* pSpr)
+{
+    int nRetn = 0;
+    if (IsDudeSprite(pSpr))
+    {
+        XSPRITE* pXSpr = xspriRangeIsFine(pSpr->extra) ? &xsprite[pSpr->extra] : NULL;
+        if (IsPlayerSprite(pSpr))       nRetn = gPlayerTemplate[pSpr->type - kDudePlayer1].startHealth;
+        else if (pXSpr && pXSpr->data4) nRetn = pXSpr->data4;
+        else                            nRetn = getDudeInfo(pSpr->type)->startHealth;
+    }
+
+    return ClipHigh(nRetn << 4, 65535);
+}
+
+void followTarget(spritetype* pSpr, spritetype* pTarg, int nMaxAng)
+{
+    if (cansee(pSpr->x, pSpr->y, pSpr->z, pSpr->sectnum, pTarg->x, pTarg->y, pTarg->z, pTarg->sectnum))
+    {
+        int zt, zb;
+        int dx = pTarg->x - pSpr->x;
+        int dy = pTarg->y - pSpr->y;
+        
+        int nAng = getangle(dx, dy);
+        int nDAng = klabs(((nAng + kAng180 - pSpr->ang) & kAngMask) - kAng180);
+        
+        if (nMaxAng && nDAng >= nMaxAng)
+            return;
+        
+        GetSpriteExtents(pSpr, &zt, &zb);
+
+        int dz = pTarg->z - zb;
+        int zv = zvel[pSpr->index];
+        int vAng = getVelocityAngle(pSpr);
+        int dAng = (nAng - vAng) & kAngMask;
+        RotatePoint(&xvel[pSpr->index], &yvel[pSpr->index], dAng, pSpr->x, pSpr->y);
+        pSpr->ang = nAng;
+
+        if (!(pSpr->flags & kPhysGravity))
+        {
+            if ((zv > 0 && pTarg->z < zb) || (zv < 0 && pTarg->z > pSpr->z))
+                zvel[pSpr->index] = 0;
+        }
+
+        zvel[pSpr->index] += dz;
+    }
+}
+
+char idListProcessFollowSprite(int32_t nSpr)
+{
+    spritetype* pSpr = &sprite[nSpr];
+    if ((pSpr->flags & kHitagFree) || pSpr->owner < 0)
+        return kListREMOVE;
+
+    spritetype* pOwn = &sprite[pSpr->owner];
+    if (!dudeIsAlive(pOwn))
+        return kListREMOVE;
+    
+    XSPRITE* pXSpr = &xsprite[pSpr->extra];
+    if (spriRangeIsFine(pXSpr->sysData1) && pXSpr->goalAng)
+    {
+        spritetype* pTarg = &sprite[pXSpr->sysData1];
+        if (dudeIsAlive(pTarg))
+        {
+            if (IsPlayerSprite(pTarg))
+            {
+                PLAYER* pPlayer = &gPlayer[pTarg->type - kDudePlayer1];
+                if (powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
+                    return kListSKIP;
+            }
+
+            followTarget(pSpr, pTarg, pXSpr->goalAng);
+            return kListOK;
+        }
+    }
+
+    return kListREMOVE;
+}
+
 // for actor.cpp
 //-------------------------------------------------------------------------
 
@@ -589,15 +697,117 @@ spritetype* nnExtSpawnDude(XSPRITE* pXSource, spritetype* pSprite, short nType, 
     return pDude;
 }
 
+// unlike vanilla, this one won't impact missile for no reason...
+spritetype* nnExtFireMissile(spritetype* pSpr, int a2, int a3, int a4, int a5, int a6, int nType)
+{
+    HITINFO* pHit = &gHitInfo; spritetype* pShot;
+    MissileType* pInfo = &missileInfo[nType - kMissileBase];
+    int nClip = pInfo->clipDist + pSpr->clipdist; int nHit;
+    int x = pSpr->x + mulscale28(nClip, Cos(pSpr->ang));
+    int y = pSpr->y + mulscale28(nClip, Sin(pSpr->ang));
+    int z = pSpr->z;
+
+    nnExtOffsetPos(a2, 0, a3, pSpr->ang, &x, &y, &z);
+    if ((nHit = HitScan(pSpr, z, x - pSpr->x, y - pSpr->y, 0, CLIPMASK0, nClip)) >= 0)
+    {
+        switch (nHit)
+        {
+            case 0:
+            case 3:
+                if (pHit->hitsprite >= 0)
+                {
+                    switch (sprite[pHit->hitsprite].statnum)
+                    {
+                        case kStatProjectile:
+                            nHit = -1;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                if (nHit >= 0)
+                {
+                    x = pHit->hitx - mulscale30(Cos(pSpr->ang), 16);
+                    y = pHit->hity - mulscale30(Sin(pSpr->ang), 16);
+                }
+                break;
+            default:
+                x = pHit->hitx - mulscale28(pInfo->clipDist << 1, Cos(pSpr->ang));
+                y = pHit->hity - mulscale28(pInfo->clipDist << 1, Sin(pSpr->ang));
+                break;
+        }
+    }
+
+    if ((pShot = actSpawnSprite(pSpr->sectnum, x, y, z, kStatProjectile, true)) != NULL)
+    {
+        XSPRITE* pXShot = &xsprite[pShot->extra];
+        
+        pShot->type     = nType;
+        pShot->shade    = pInfo->shade;
+        pShot->pal      = 0;
+        pShot->clipdist = pInfo->clipDist;
+        pShot->flags    = kPhysMove;
+        pShot->xrepeat  = pInfo->xrepeat;
+        pShot->yrepeat  = pInfo->yrepeat;
+        pShot->picnum   = pInfo->picnum;
+        pShot->ang      = (pSpr->ang + pInfo->angleOfs) & kAngMask;
+
+        xvel[pShot->index] = mulscale14(pInfo->velocity, a4);
+        yvel[pShot->index] = mulscale14(pInfo->velocity, a5);
+        zvel[pShot->index] = mulscale14(pInfo->velocity, a6);
+
+        SetBitString(show2dsprite, pShot->index);
+        actBuildMissile(pShot, pShot->extra, pShot->index);
+        actPropagateSpriteOwner(pShot, pSpr);
+        
+        pShot->cstat &= ~CSTAT_SPRITE_BLOCK; // projectiles don't even need this
+        pXShot->target = -1;
+
+        if (nHit >= 0)
+        {
+            actImpactMissile(pShot, nHit);
+            return NULL;
+        }
+
+        evPost(pShot->index, OBJ_SPRITE, 600, kCallbackRemove);
+    }
+
+    return pShot;
+}
+
+spritetype* nnExtSpawnDude(spritetype* pSrc, int nType, int x, int y, int z)
+{
+    spritetype* pSpawn = actSpawnSprite(pSrc, kStatDude);
+    if (!pSpawn)
+        return NULL;
+
+    pSpawn->type        = nType;
+    pSpawn->inittype    = pSpawn->type;
+    pSpawn->ang         = pSrc->ang;
+    pSpawn->cstat       |= 0x1101;
+    pSpawn->owner       = pSrc->index;
+    pSpawn->clipdist    = getDudeInfo(nType)->clipdist;
+
+    vec3_t pos = { x, y, z };
+    setsprite(pSpawn->index, &pos);
+
+    XSPRITE* pXSpawn    = &xsprite[pSpawn->extra];
+    pXSpawn->health     = nnExtDudeStartHealth(pSpawn, pXSpawn->data4);
+    pXSpawn->respawn    = 1;
+    return pSpawn;
+}
 
 bool nnExtIsImmune(spritetype* pSprite, int dmgType, int minScale) {
 
-    if (dmgType >= kDmgFall && dmgType < kDmgMax && pSprite->extra >= 0 && xsprite[pSprite->extra].locked != 1) {
+    if (dmgType >= kDmgFall && dmgType < kDmgMax && pSprite->extra >= 0 && xsprite[pSprite->extra].locked != 1)
+    {
         if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
             return (thingInfo[pSprite->type - kThingBase].dmgControl[dmgType] <= minScale);
-        else if (IsDudeSprite(pSprite)) {
+        else if (IsDudeSprite(pSprite))
+        {
             if (IsPlayerSprite(pSprite)) return (gPlayer[pSprite->type - kDudePlayer1].damageControl[dmgType]);
-            else if (pSprite->type == kDudeModernCustom) return (gGenDudeExtra[pSprite->index].dmgControl[dmgType] <= minScale);
+            else if (pSprite->type == kDudeModernCustom) return (cdudeGet(pSprite->index)->GetDamage(-1, dmgType) <= minScale);
             else return (getDudeInfo(pSprite->type)->curDamage[dmgType] <= minScale);
         }
     }
@@ -696,15 +906,16 @@ void nnExtResetGlobals()
     // clear lists
     gProxySpritesList.Free();       gSightSpritesList.Free();
     gImpactSpritesList.Free();      gPhysSpritesList.Free();
+    gFlwSpritesList.Free();
+
+    // free all custom dudes
+    cdudeFree();
 
     // free all condition trackers
     conditionsTrackingClear();
 
     // clear sprite mass cache
     memset(gSpriteMass, 0, sizeof(gSpriteMass));
-
-    // clear custom dude info
-    memset(gGenDudeExtra, 0, sizeof(gGenDudeExtra));
 
 }
 
@@ -930,10 +1141,20 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
             break;
         case kDudeModernCustom:
         case kDudeModernCustomBurning:
-            getSpriteMassBySize(pSpr); // create mass cache
-            if (bSaveLoad && pXSpr->data3 != pXSpr->sysData1)
+            if (bSaveLoad && pSpr->statnum != kStatInactive)
             {
-                pXSpr->data3 = pXSpr->sysData1; // move sndStartId back from sysData1 to data3 
+                pXSpr->data3 = pXSpr->sysData1; // move sndStartId back from sysData1 to data3
+                if (pXSpr->health <= 0)         // it's a dying dude
+                {
+                    ChangeSpriteStat(pSpr->index, kStatThing);
+                    pSpr->type = kThingBloodChunks;
+                    
+                    // don't let pending dude to be destroyed
+                    if (pSpr->flags & kHitagRespawn)
+                        pXSpr->isTriggered = 1;
+                    else
+                        DudeToGibCallback1(pSpr->index, pSpr->extra);
+                }
             }
             break;
     }
@@ -1013,18 +1234,6 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
                 break;
             case kModernThingTNTProx:
                 pXSpr->Proximity = true;
-                break;
-            case kDudeModernCustom:
-                if (pXSpr->txID <= 0) break;
-                for (i = headspritestat[kStatDude]; i >= 0; i = nextspritestat[i])
-                {
-                    XSPRITE* pXDude = &xsprite[sprite[i].extra];
-                    if (pXDude->rxID != pXSpr->txID)
-                        continue;
-
-                    ChangeSpriteStat(i, kStatInactive);
-                    i = headspritestat[kStatDude];
-                }
                 break;
             case kDudePodMother:
             case kDudeTentacleMother:
@@ -1162,6 +1371,7 @@ void nnExtInitModernStuff(bool bSaveLoad) {
     // initialize super xsprites lists
     gProxySpritesList.Init(kListEndDefault,  kMaxSuperXSprites);     gSightSpritesList.Init(kListEndDefault, kMaxSuperXSprites);
     gImpactSpritesList.Init(kListEndDefault, kMaxSuperXSprites);     gPhysSpritesList.Init(kListEndDefault,  kMaxSuperXSprites);
+    gFlwSpritesList.Init(kListEndDefault, kMaxSuperXSprites);
 
     // use true random only for single player mode, otherwise use Blood's default one.
     if (gGameOptions.nGameType == kGameTypeSinglePlayer)
@@ -1196,6 +1406,23 @@ void nnExtInitModernStuff(bool bSaveLoad) {
     // prepare conditions for use
     if (gStatCount[kStatModernCondition])
         conditionsInit(bSaveLoad);
+
+    // prepare custom dudes array
+    cdudeAlloc();
+
+    if (!gExternalFilesAdded)
+    {
+        // add external files from the mod directory
+        // to the resource system (cdudes scripts etc)
+
+        char modDir[BMAX_PATH] = "./";
+        if (g_modDir[0] != '/' || g_modDir[1] != 0)
+            Bsprintf(modDir, g_modDir);
+
+        i = nnExtResAddExternalFiles(&gSysRes, modDir, gExternFiles, LENGTH(gExternFiles));
+        consoleSysMsg("There is %d extra external files added in total.", i);
+        gExternalFilesAdded = true;
+    }
 }
 
 
@@ -1321,6 +1548,7 @@ void nnExtProcessSuperSprites()
     gProxySpritesList.Process(idListProcessProxySprite, true);          // process additional proximity sprites
     gSightSpritesList.Process(idListProcessSightSprite, true);          // process sight sprites (for players only)
     gPhysSpritesList.Process(idListProcessPhysSprite,   true);          // process Debris sprites for movement
+    gFlwSpritesList.Process(idListProcessFollowSprite,  true);          // process projectiles and things for following target
 }
 
 // this function plays sound predefined in missile info
@@ -1340,28 +1568,27 @@ int getSpriteMassBySize(spritetype* pSprite) {
     if (pSprite->extra < 0) {
         ThrowError("getSpriteMassBySize: pSprite->extra < 0");
 
-    } else if (IsDudeSprite(pSprite)) {
-
-        switch (pSprite->type) {
-        case kDudePodMother: // fake dude, no seq
-            break;
-        case kDudeModernCustom:
-        case kDudeModernCustomBurning:
-            seqId = xsprite[pSprite->extra].data2;
-            clipDist = gGenDudeExtra[pSprite->index].initVals[2];
-            break;
-        default:
-            seqId = getDudeInfo(pSprite->type)->seqStartID;
-            break;
-        }
-
-    } else  {
-
-        seqId = seqGetID(3, pSprite->extra);
-
     }
 
     SPRITEMASS* cached = &gSpriteMass[pSprite->extra];
+    if (IsDudeSprite(pSprite))
+    {
+        switch (pSprite->type)
+        {
+            case kDudeModernCustom:
+            case kDudeModernCustomBurning:
+            case kDudePodMother: //no seq
+                break;
+            default:
+                seqId = getDudeInfo(pSprite->type)->seqStartID;
+                break;
+        }
+    }
+    else
+    {
+        seqId = seqGetID(3, pSprite->extra);
+    }
+
     if (((seqId >= 0 && seqId == cached->seqId) || pSprite->picnum == cached->picnum) && pSprite->xrepeat == cached->xrepeat &&
         pSprite->yrepeat == cached->yrepeat && clipDist == cached->clipdist) {
         return cached->mass;
@@ -1748,7 +1975,7 @@ void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite) {
     switch (pSprite->type) {
     case kDudeModernCustom:
     case kDudeModernCustomBurning:
-        aiGenDudeNewState(pSprite, &genIdle);
+        cdudeGet(pSprite)->NewState(kCdudeStateGenIdle);
         break;
     default:
         aiNewState(pSprite, pXSprite, &genIdle);
@@ -1996,7 +2223,7 @@ void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer) {
             if (pXSource->data2) break;
             fallthrough__;
         case 3: // erase all pack items
-            for (int i = 0; i < kPackMax; i++) {
+            for (int i = 0; i < 5; i++) {
                 pPlayer->packSlots[i].isActive = false;
                 pPlayer->packSlots[i].curAmount = 0;
             }
@@ -2133,8 +2360,7 @@ void trPlayerCtrlUsePowerup(XSPRITE* pXSource, PLAYER* pPlayer, int evCmd) {
 
 void useObjResizer(XSPRITE* pXSource, short objType, int objIndex) {
     switch (objType) {
-        // for sectors
-    case 6:
+        case OBJ_SECTOR:
         if (valueIsBetween(pXSource->data1, -1, 32767))
             sector[objIndex].floorxpanning = ClipRange(pXSource->data1, 0, 255);
 
@@ -2147,45 +2373,26 @@ void useObjResizer(XSPRITE* pXSource, short objType, int objIndex) {
         if (valueIsBetween(pXSource->data4, -1, 65535))
             sector[objIndex].ceilingypanning = ClipRange(pXSource->data4, 0, 255);
         break;
-        // for sprites
-    case OBJ_SPRITE: {
-
-        bool fit = false;
+        case OBJ_SPRITE:
         // resize by seq scaling
-        if (sprite[pXSource->reference].flags & kModernTypeFlag1) {
-            
-            if (valueIsBetween(pXSource->data1, -255, 32767)) {
+            if (sprite[pXSource->reference].flags & kModernTypeFlag1)
+            {
+                if (valueIsBetween(pXSource->data1, -255, 32767))
+                {
                 int mulDiv = (valueIsBetween(pXSource->data2, 0, 257)) ? pXSource->data2 : 256;
                 if (pXSource->data1 > 0) xsprite[sprite[objIndex].extra].scale = mulDiv * ClipHigh(pXSource->data1, 25);
                 else if (pXSource->data1 < 0) xsprite[sprite[objIndex].extra].scale = mulDiv / ClipHigh(abs(pXSource->data1), 25);
                 else xsprite[sprite[objIndex].extra].scale = 0;
-                fit = true;
             }
-
+            }
         // resize by repeats
-        } else {
-
-            if (valueIsBetween(pXSource->data1, -1, 32767)) {
+            else
+            {
+                if (valueIsBetween(pXSource->data1, -1, 32767))
                 sprite[objIndex].xrepeat = ClipRange(pXSource->data1, 0, 255);
-                fit = true;
-            }
             
-            if (valueIsBetween(pXSource->data2, -1, 32767)) {
+                if (valueIsBetween(pXSource->data2, -1, 32767))
                 sprite[objIndex].yrepeat = ClipRange(pXSource->data2, 0, 255);
-                fit = true;
-            }
-
-        }
-
-        if (fit && (sprite[objIndex].type == kDudeModernCustom || sprite[objIndex].type == kDudeModernCustomBurning)) {
-            
-            // request properties update for custom dude
-            gGenDudeExtra[objIndex].updReq[kGenDudePropertySpriteSize] = true;
-            gGenDudeExtra[objIndex].updReq[kGenDudePropertyAttack] = true;
-            gGenDudeExtra[objIndex].updReq[kGenDudePropertyMass] = true;
-            gGenDudeExtra[objIndex].updReq[kGenDudePropertyDmgScale] = true;
-            evPost(objIndex, 3, kGenDudeUpdTimeRate, kCallbackGenDudeUpdate);
-
         }
 
         if (valueIsBetween(pXSource->data3, -1, 32767))
@@ -2194,7 +2401,6 @@ void useObjResizer(XSPRITE* pXSource, short objType, int objIndex) {
         if (valueIsBetween(pXSource->data4, -1, 65535))
             sprite[objIndex].yoffset = ClipRange(pXSource->data4, 0, 255);
         break;
-    }
     case OBJ_WALL:
         if (valueIsBetween(pXSource->data1, -1, 32767))
             wall[objIndex].xrepeat = ClipRange(pXSource->data1, 0, 255);
@@ -3838,13 +4044,14 @@ void aiFightAlarmDudesInSight(spritetype* pSprite, int max) {
     }
 }
 
-bool aiFightUnitCanFly(spritetype* pDude) {
+bool aiFightUnitCanFly(spritetype* pDude)
+{
     return (IsDudeSprite(pDude) && gDudeInfoExtra[pDude->type - kDudeBase].flying);
 }
 
-bool aiFightIsMeleeUnit(spritetype* pDude) {
-    if (pDude->type == kDudeModernCustom) return (pDude->extra >= 0 && dudeIsMelee(&xsprite[pDude->extra]));
-    else return (IsDudeSprite(pDude) && gDudeInfoExtra[pDude->type - kDudeBase].melee);
+bool aiFightIsMeleeUnit(spritetype* pDude)
+{
+    return (IsDudeSprite(pDude) && gDudeInfoExtra[pDude->type - kDudeBase].melee);
 }
 
 int aiFightGetTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
@@ -4490,7 +4697,7 @@ bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite
             }
             return true;
         case kModernThingEnemyLifeLeech:
-            dudeLeechOperate(pSprite, pXSprite, event);
+            cdudeLeechOperate(pSprite, pXSprite);
             return true;
         case kModernPlayerControl: { // WIP
             PLAYER* pPlayer = NULL; int cmd = (event.cmd >= kCmdNumberic) ? event.cmd : pXSprite->command;
@@ -4893,7 +5100,7 @@ void useUniMissileGen(XSPRITE* pXSource, spritetype* pSprite) {
 void useSoundGen(XSPRITE* pXSource, spritetype* pSprite) {
     //spritetype* pSource = &sprite[pXSource->reference];
     int pitch = pXSource->data4 << 1; if (pitch < 2000) pitch = 0;
-    sfxPlay3DSoundCP(pSprite, pXSource->data2, -1, 0, pitch, pXSource->data3);
+    sfxPlay3DSoundCP(pSprite, pXSource->data2, -1, 0, pitch, ClipRange(pXSource->data3, -1, 255));
 }
 
 void useIncDecGen(XSPRITE* pXSource, short objType, int objIndex) {
@@ -5281,16 +5488,20 @@ void useTargetChanger(XSPRITE* pXSource, spritetype* pSprite) {
 
     spritetype* pPlayer = aiFightTargetIsPlayer(pXSprite);
     // special handling for player(s) if target changer data4 > 2.
-    if (pPlayer != NULL) {
-        if (pXSource->data4 == 3) {
+    if (pPlayer != NULL)
+    {
+        if (pXSource->data4 == 3)
+        {
             aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
             aiSetGenIdleState(pSprite, pXSprite);
-            if (pSprite->type == kDudeModernCustom && leechIsDropped(pSprite))
-                removeLeech(leechIsDropped(pSprite));
-        } else if (pXSource->data4 == 4) {
+            if (pSprite->type == kDudeModernCustom)
+                cdudeGet(pSprite)->LeechPickup();
+        }
+        else if (pXSource->data4 == 4)
+        {
             aiSetTarget(pXSprite, pPlayer->x, pPlayer->y, pPlayer->z);
-            if (pSprite->type == kDudeModernCustom && leechIsDropped(pSprite))
-                removeLeech(leechIsDropped(pSprite));
+            if (pSprite->type == kDudeModernCustom)
+                cdudeGet(pSprite)->LeechPickup();
         }
     }
 
@@ -5520,7 +5731,7 @@ void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex) {
 
 void useCustomDudeSpawn(XSPRITE* pXSource, spritetype* pSprite) {
 
-    genDudeSpawn(pXSource, pSprite, pSprite->clipdist << 1);
+    cdudeSpawn(pXSource, pSprite, pSprite->clipdist << 1);
 
 }
 
@@ -5993,60 +6204,67 @@ int getDataFieldOfObject(int objType, int objIndex, int dataIndex) {
 
 bool setDataValueOfObject(int objType, int objIndex, int dataIndex, int value) {
     switch (objType) {
-        case OBJ_SPRITE: {
-            XSPRITE* pXSprite = &xsprite[sprite[objIndex].extra];
+        case OBJ_SPRITE:
+        {
+            spritetype* pSpr = &sprite[objIndex];
+            XSPRITE* pXSpr = &xsprite[sprite[objIndex].extra];
 
+            CUSTOMDUDE* pDude = NULL;
+            if (IsDudeSprite(pSpr))
+            {
+                if (pXSpr->health <= 0)
+                    return true;
+
+                switch (pSpr->type)
+                {
+                    case kDudeModernCustom:
+                    case kDudeModernCustomBurning:
+                        pDude = cdudeGet(pSpr->index);
+                        break;
+                }
+            }
+            else
+            {
             // exceptions
-            if (IsDudeSprite(&sprite[objIndex]) && pXSprite->health <= 0) return true;
-            switch (sprite[objIndex].type) {
+                switch (pSpr->type)
+                {
                 case kThingBloodBits:
                 case kThingBloodChunks:
                 case kThingZombieHead:
                     return true;
-                    break;
+                }
             }
 
             switch (dataIndex) {
                 case 1:
-                    xsprite[sprite[objIndex].extra].data1 = value;
-                    switch (sprite[objIndex].type) {
+                    pXSpr->data1 = value;
+                    switch (pSpr->type)
+                    {
                         case kSwitchCombo:
-                            if (value == xsprite[sprite[objIndex].extra].data2) SetSpriteState(objIndex, &xsprite[sprite[objIndex].extra], 1, kCauserGame);
-                            else SetSpriteState(objIndex, &xsprite[sprite[objIndex].extra], 0, kCauserGame);
-                            break;
-                        case kDudeModernCustom:
-                        case kDudeModernCustomBurning:
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertyWeapon] = true;
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertyDmgScale] = true;
-                            evPost(objIndex, 3, kGenDudeUpdTimeRate, kCallbackGenDudeUpdate);
-                            break;
+                            if (value == pXSpr->data2) SetSpriteState(objIndex, pXSpr, 1, kCauserGame);
+                            else SetSpriteState(objIndex, pXSpr, 0, kCauserGame);
+                            return true;
                     }
+
+                    if (pDude)
+                        CUSTOMDUDE_SETUP::Setup(pDude);
+
                     return true;
                 case 2:
-                    xsprite[sprite[objIndex].extra].data2 = value;
-                    switch (sprite[objIndex].type) {
-                        case kDudeModernCustom:
-                        case kDudeModernCustomBurning:
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertySpriteSize] = true;
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertyMass] = true;
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertyDmgScale] = true;
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertyStates] = true;
-                            gGenDudeExtra[objIndex].updReq[kGenDudePropertyAttack] = true;
-                            evPost(objIndex, 3, kGenDudeUpdTimeRate, kCallbackGenDudeUpdate);
-                            break;
-                    }
+                    pXSpr->data2 = value;
+                    if (pDude && pDude->version == 1)
+                        CUSTOMDUDE_SETUP::Setup(pDude);
                     return true;
                 case 3:
-                    xsprite[sprite[objIndex].extra].data3 = value;
-                    switch (sprite[objIndex].type) {
-                        case kDudeModernCustom:
-                        case kDudeModernCustomBurning:
-                            xsprite[sprite[objIndex].extra].sysData1 = value;
-                            break;
+                    pXSpr->data3 = value;
+                    if (pDude && pDude->version == 1)
+                    {
+                        pXSpr->sysData1 = value;
+                        CUSTOMDUDE_SETUP::Setup(pDude);
                     }
                     return true;
                 case 4:
-                    xsprite[sprite[objIndex].extra].data4 = value;
+                    pXSpr->data4 = value;
                     return true;
                 default:
                     return false;
@@ -6130,9 +6348,19 @@ void nnExtAiSetDirection(spritetype* pSprite, XSPRITE* pXSprite, int a3) {
     }
 }
 
-
 /// patrol functions
 // ------------------------------------------------
+void aiPatrolState(spritetype* pSpr, XSPRITE* pXSpr, AISTATE* pState, int nSeq)
+{
+    pXSpr->stateTimer = pState->stateTicks; pXSpr->aiState = pState;
+    if (gSysRes.Lookup(nSeq, "SEQ"))
+        seqSpawn(nSeq, 3, pSpr->extra, pState->funcId);
+
+    if (pState->enterFunc)
+        pState->enterFunc(pSpr, pXSpr);
+}
+
+
 void aiPatrolState(spritetype* pSprite, int state) {
 
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -6151,58 +6379,34 @@ void aiPatrolState(spritetype* pSprite, int state) {
         return;
     }
 
-    XSPRITE* pXMarker = &xsprite[pMarker->extra];
-
-    bool nSeqOverride = false, crouch = false;
-    int i, seq = -1, start = 0, end = kPatrolStateSize;
-    
     DUDEINFO_EXTRA* pExtra = &gDudeInfoExtra[pSprite->type - kDudeBase];
+    XSPRITE* pXMarker = &xsprite[pMarker->extra];
+    bool nSeqOverride = false, crouch = false;
+    int i, seq = -1;
     
-    switch (state) {
-        case kAiStatePatrolWaitL:
-            seq = pExtra->idlgseqofs;
-            start = 0; end = 2;
-            break;
-        case kAiStatePatrolMoveL:
-            seq = pExtra->mvegseqofs;
-            start = 2, end = 7;
-            break;
-        case kAiStatePatrolTurnL:
-            seq = pExtra->mvegseqofs;
-            start = 7, end = 12;
-            break;
-        case kAiStatePatrolWaitW:
-            seq = pExtra->idlwseqofs;
-            start = 12; end = 18;
-            break;
-        case kAiStatePatrolMoveW:
-            seq = pExtra->mvewseqofs;
-            start = 18; end = 25;
-            break;
-        case kAiStatePatrolTurnW:
-            seq = pExtra->mvewseqofs;
-            start = 25; end = 32;
-            break;
+    switch (state)
+    {
+        case kAiStatePatrolWaitL:   seq = pExtra->idlgseqofs;   break;
+        case kAiStatePatrolMoveL:   seq = pExtra->mvegseqofs;   break;
+        case kAiStatePatrolTurnL:   seq = pExtra->mvegseqofs;   break;
+        case kAiStatePatrolWaitW:   seq = pExtra->idlwseqofs;   break;
+        case kAiStatePatrolMoveW:   seq = pExtra->mvewseqofs;   break;
+        case kAiStatePatrolTurnW:   seq = pExtra->mvewseqofs;   break;
         case kAiStatePatrolWaitC:
-            seq = pExtra->idlcseqofs;
-            start = 32; end = 36;
-            crouch = true;
-            break;
         case kAiStatePatrolMoveC:
-            seq = pExtra->mvecseqofs;
-            start = 36; end = 39;
-            crouch = true;
-            break;
         case kAiStatePatrolTurnC:
-            seq = pExtra->mvecseqofs;
-            start = 39; end = kPatrolStateSize;
             crouch = true;
+            switch (state)
+            {
+                case kAiStatePatrolWaitC:   seq = pExtra->idlcseqofs;   break;
+                case kAiStatePatrolMoveC:   seq = pExtra->mvecseqofs;   break;
+                case kAiStatePatrolTurnC:   seq = pExtra->mvecseqofs;   break;
+            }
             break;
     }
 
-    
     if (pXMarker->data4 > 0) seq = pXMarker->data4, nSeqOverride = true;
-    else if (!nSeqOverride && state == kAiStatePatrolWaitC && (pSprite->type == kDudeCultistTesla || pSprite->type == kDudeCultistTNT))
+    else if (state == kAiStatePatrolWaitC && (pSprite->type == kDudeCultistTesla || pSprite->type == kDudeCultistTNT))
         seq = 11537, nSeqOverride = true;  // these don't have idle crouch seq for some reason...
 
     if (seq < 0)
@@ -6211,26 +6415,42 @@ void aiPatrolState(spritetype* pSprite, int state) {
         return;
     }
 
-    for (i = start; i < end; i++) {
-
+    for (i = 0; i < kPatrolStateSize; i++)
+    {
         AISTATE* newState = &genPatrolStates[i];
-        if (newState->stateType != state || (!nSeqOverride && seq != newState->seqId))
+        if (newState->stateType != state)
             continue;
 
-        if (pSprite->type == kDudeModernCustom) aiGenDudeNewState(pSprite, newState);
-        else aiNewState(pSprite, pXSprite, newState);
+        if (!nSeqOverride)
+        {
+            if (seq != newState->seqId)
+                continue;
+            
+            if (pSprite->type == kDudeModernCustom)
+            {
+                if (!rngok(seq, 0, kCdudeStateMax))
+            continue;
 
+                CUSTOMDUDE* pDude = cdudeGet(pSprite->index);
+                AISTATE* pState = (AISTATE*)pDude->states;
+                seq = pState[seq].seqId;
+                if (seq <= 0)
+                    continue;
+            }
+            else
+            {
+                seq += getDudeInfo(pSprite->type)->seqStartID;
+            }
+        }
+
+        aiPatrolState(pSprite, pXSprite, newState, seq);
         if (crouch) pXSprite->unused1 |= kDudeFlagCrouch;
         else pXSprite->unused1 &= ~kDudeFlagCrouch;
-
-        if (nSeqOverride)
-            seqSpawn(seq, OBJ_SPRITE, pSprite->extra);
-
         return;
-
     }
 
-    if (i == end) {
+    if (i == kPatrolStateSize)
+    {
         viewSetSystemMessage("No patrol state #%d found for dude #%d (type = %d)", state, pSprite->index, pSprite->type);
         aiPatrolStop(pSprite, -1);
     }
@@ -6449,11 +6669,9 @@ void aiPatrolStop(spritetype* pSprite, int target, bool alarm) {
 
         } else {
 
-            
+            pXSprite->target = pSprite->index;
             aiInitSprite(pSprite);
             aiSetTarget(pXSprite, pXSprite->targetX, pXSprite->targetY, pXSprite->targetZ);
-            
-
         }
         
         pXSprite->dudeFlag4 = patrol; // this must be kept so enemy can patrol after respawn again
@@ -6489,9 +6707,11 @@ void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite) {
     if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax) || !spriRangeIsFine(pXSprite->target))
         return;
 
-
+    int nFrontSpeed, nTurnSpeed;
     int dudeIdx = pSprite->type - kDudeBase;
-    switch (pSprite->type) {
+
+    switch (pSprite->type)
+    {
         case kDudeCultistShotgunProne:  dudeIdx = kDudeCultistShotgun - kDudeBase;  break;
         case kDudeCultistTommyProne:    dudeIdx = kDudeCultistTommy - kDudeBase;    break;
     }
@@ -6501,6 +6721,27 @@ void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite) {
     DUDEINFO* pDudeInfo = &dudeInfo[dudeIdx];
     DUDEINFO_EXTRA* pExtra = &gDudeInfoExtra[dudeIdx];
     
+    switch (pSprite->type)
+    {
+        case kDudeModernCustom:
+        case kDudeModernCustomBurning:
+        {
+            int nPosture;
+            CUSTOMDUDE* pDude = cdudeGet(pSprite->index);
+            if (spriteIsUnderwater(pSprite))                nPosture = kCdudePostureW;
+            else if (pXSprite->unused1 & kDudeFlagCrouch)   nPosture = kCdudePostureC;
+            else                                            nPosture = kCdudePostureL;
+
+            nFrontSpeed = pDude->GetVelocity(nPosture, kParVelocityForward);
+            nTurnSpeed  = pDude->GetVelocity(nPosture, kParVelocityTurn);
+            break;
+        }
+        default:
+            nFrontSpeed = pDudeInfo->frontSpeed;
+            nTurnSpeed  = (pDudeInfo->angSpeed << 2) >> 4;
+            break;
+    }
+
     int dx = (pTarget->x - pSprite->x);
     int dy = (pTarget->y - pSprite->y);
     int dz = (pTarget->z - (pSprite->z - pDudeInfo->eyeHeight)) * 6;
@@ -6519,10 +6760,8 @@ void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite) {
         pSprite->flags |= kPhysGravity | kPhysFalling;
     }
 
-    int nTurnRange = (pDudeInfo->angSpeed << 2) >> 4;
     int nAng = ((pXSprite->goalAng + 1024 - pSprite->ang) & 2047) - 1024;
-    pSprite->ang = (pSprite->ang + ClipRange(nAng, -nTurnRange, nTurnRange)) & 2047;
-        
+    pSprite->ang = (pSprite->ang + ClipRange(nAng, -nTurnSpeed, nTurnSpeed)) & 2047;
     if (klabs(nAng) > goalAng || ((pXTarget->waitTime > 0 || pXTarget->data1 == pXTarget->data2) && aiPatrolMarkerReached(pSprite, pXSprite)))
     {
         xvel[pSprite->index] = 0;
@@ -6550,17 +6789,9 @@ void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite) {
     } 
     else
     {
-        int frontSpeed = pDudeInfo->frontSpeed;
-        switch (pSprite->type) {
-            case kDudeModernCustom:
-            case kDudeModernCustomBurning:
-                frontSpeed = gGenDudeExtra[pSprite->index].moveSpeed;
-                break;
-        }
-
-        frontSpeed = aiPatrolGetVelocity(frontSpeed, pXTarget->busyTime);
-        xvel[pSprite->index] += mulscale30(frontSpeed, Cos(pSprite->ang));
-        yvel[pSprite->index] += mulscale30(frontSpeed, Sin(pSprite->ang));
+        nFrontSpeed = aiPatrolGetVelocity(nFrontSpeed, pXTarget->busyTime);
+        xvel[pSprite->index] += mulscale30(nFrontSpeed, Cos(pSprite->ang));
+        yvel[pSprite->index] += mulscale30(nFrontSpeed, Sin(pSprite->ang));
     }
 
     vel = mulscale16(vel, approxDist(dx, dy) << 6);
@@ -6687,15 +6918,14 @@ bool spritesTouching(int nXSprite1, int nXSprite2) {
     return (spriRangeIsFine(nHSprite) && sprite[nHSprite].extra == nXSprite2);
 }
 
-bool aiCanCrouch(spritetype* pSprite) {
-    
+bool aiCanCrouch(spritetype* pSprite)
+{
     if (pSprite->type >= kDudeBase && pSprite->type < kDudeVanillaMax)
         return (gDudeInfoExtra[pSprite->type - kDudeBase].idlcseqofs >= 0 && gDudeInfoExtra[pSprite->type - kDudeBase].mvecseqofs >= 0);
     else if (pSprite->type == kDudeModernCustom || pSprite->type == kDudeModernCustomBurning)
-        return gGenDudeExtra[pSprite->index].canDuck;
+        return cdudeGet(pSprite->index)->CanCrouch();
 
     return false;
-
 }
 
 
@@ -7098,9 +7328,20 @@ void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite) {
 
     
     bool crouch = (pXSprite->unused1 & kDudeFlagCrouch), uwater = spriteIsUnderwater(pSprite);
-    if (!spriRangeIsFine(nMarker) || (pSprite->type == kDudeModernCustom && ((uwater && !canSwim(pSprite)) || !canWalk(pSprite)))) {
+    if (!spriRangeIsFine(nMarker))
+    {
         aiPatrolStop(pSprite, -1);
         return;
+    }
+
+    if (pSprite->type == kDudeModernCustom)
+    {
+        CUSTOMDUDE* pDude = cdudeGet(pSprite);
+        if ((uwater && !pDude->CanSwim()) || !pDude->CanMove())
+        {
+        aiPatrolStop(pSprite, -1);
+        return;
+    }
     }
     
     spritetype* pMarker = &sprite[nMarker]; XSPRITE* pXMarker = &xsprite[pMarker->extra];
@@ -7498,12 +7739,6 @@ void callbackMakeMissileBlocking(int nSprite) // 23
     sprite[nSprite].cstat |= CSTAT_SPRITE_BLOCK;
 }
 
-void callbackGenDudeUpdate(int nSprite) // 24
-{
-    if (spriRangeIsFine(nSprite))
-        genDudeUpdate(&sprite[nSprite]);
-}
-
 void clampSprite(spritetype* pSprite, int which) {
 
     int zTop, zBot;
@@ -7642,6 +7877,156 @@ bool xsprIsFine(spritetype* pSpr)
     return false;
 }
 
+void nnExtOffsetPos(int oX, int oY, int oZ, int nAng, int* x, int* y, int* z)
+{
+    // left, right
+    if (oX)
+    {
+        if (x) *x -= mulscale30(oX, Cos(nAng + kAng90));
+        if (y) *y -= mulscale30(oX, Sin(nAng + kAng90));
+    }
+
+    // forward, backward
+    if (oY)
+    {
+        if (x) *x += mulscale30r(Cos(nAng), oY);
+        if (y) *y += mulscale30r(Sin(nAng), oY);
+    }
+
+    // top, bottom
+    if (oZ && z)
+        *z += oZ;
+
+}
+
+char nnExtOffsetSprite(spritetype* pSpr, int oX, int oY, int oZ)
+{
+    int x = pSpr->x;    int z = pSpr->z;
+    int y = pSpr->y;    int s = pSpr->sectnum;
+
+    nnExtOffsetPos(oX, oY, oZ, pSpr->ang, &x, &y, &z);
+
+    if (s >= 0)
+    {
+        if (FindSector(x, y, z, &s) || FindSector(x, y, &s))
+        {
+            if (s != pSpr->sectnum)
+                ChangeSpriteSect(pSpr->index, s);
+
+            pSpr->x = x;
+            pSpr->y = y;
+            pSpr->z = z;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+
+void nnExtScaleVelocity(spritetype* pSpr, int nVel, int dx, int dy, int dz, char which)
+{
+    if (which & 0x01)
+    {
+        xvel[pSpr->index] = mulscale14(nVel, dx);
+        yvel[pSpr->index] = mulscale14(nVel, dy);
+    }
+
+    if (which & 0x02)
+    {
+        zvel[pSpr->index] = mulscale14(nVel, dz);
+    }
+}
+
+
+void nnExtScaleVelocityRel(spritetype* pSpr, int nVel, int dx, int dy, int dz, char which)
+{
+    if (which & 0x01)
+    {
+        xvel[pSpr->index] += mulscale14(nVel, dx);
+        yvel[pSpr->index] += mulscale14(nVel, dy);
+    }
+
+    if (which & 0x02)
+    {
+        zvel[pSpr->index] += mulscale14(nVel, dz);
+    }
+}
+
+int nnExtResAddExternalFiles(Resource* pIn, const char* pPath, EXTERNAL_FILES_LIST* pList, int nLen)
+{
+    char match[BMAX_PATH], dir[BMAX_PATH], name[BMAX_PATH], ext[BMAX_PATH];
+    EXTERNAL_FILES_LIST* ptr; BDIR* pDir; Bdirent* pEntry;
+    int i, nRetn = 0;
+    char* pMatch;
+
+    for (i = 0; i < nLen; i++)
+    {
+        ptr = &pList[i];
+
+        Bmemset(match, 0, sizeof(match)); pMatch = match;
+        pMatch += Bsprintf(pMatch, "%s",  (ptr->name) ? ptr->name : "*");
+        pMatch += Bsprintf(pMatch, ".%s", (ptr->ext) ? ptr->ext   : "*");
+
+        if ((pDir = Bopendir(pPath)) != NULL)
+        {
+            while ((pEntry = Breaddir(pDir)) != NULL)
+            {
+                if (Bwildmatch(pEntry->name, match))
+                {
+                    SplitPath(pEntry->name, dir, name, ext);
+                    pIn->AddExternalResource(name, ext);
+                    nRetn++;
+                }
+            }
+
+            Bclosedir(pDir);
+        }
+    }
+
+    return nRetn;
+}
+
+DICTNODE* nnExtResFileSearch(Resource* pIn, const char* pName, const char* pExt, char external)
+{
+    int nLenA = Bstrlen(pName), nLenB;
+    int i = pIn->count;
+    DICTNODE* pFile;
+
+    while(--i >= 0)  // from bottom we can meet it faster
+    {
+        pFile = &pIn->dict[i];
+        if ((external && (pFile->flags & DICT_EXTERNAL)) || !external)
+        {
+            if (Bstrcasecmp(pFile->type, pExt) == 0 && Bstrncasecmp(pName, pFile->name, nLenA) == 0)
+            {
+                nLenB = Bstrlen(pFile->name);
+                if (nLenB == nLenA || (nLenB > nLenA && pFile->name[nLenA] == '_'))
+                {
+                    //consoleSysMsg("FILE: %s / %s.%s", pFile->name, pName, pExt);
+                    return pFile;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
+void nnExtSprScaleSet(spritetype* pSpr, int nScale)
+{
+    pSpr->xrepeat = ClipRange(mulscale8(pSpr->xrepeat, nScale), 0, 255);
+    pSpr->yrepeat = ClipRange(mulscale8(pSpr->yrepeat, nScale), 0, 255);
+}
+
+void nnExtCoSin(int nAng, int* x, int* y, int nShift)
+{
+    *x = Cos(nAng) >> nShift;
+    *y = Sin(nAng) >> nShift;
+}
+
 bool isUnderwaterSector(XSECTOR* pXSect) { return pXSect->Underwater; }
 bool isUnderwaterSector(sectortype* pSect) { return (pSect->extra > 0 && isUnderwaterSector(&xsector[pSect->extra])); }
 bool isUnderwaterSector(int nSector) { return isUnderwaterSector(&sector[nSector]); }
@@ -7660,6 +8045,12 @@ bool isMovableSector(sectortype* pSect)
     }
 
     return false;
+}
+
+char spriteIsUnderwater(spritetype* pSprite, char oldWay)
+{
+    return ((sector[pSprite->sectnum].extra >= 0 && xsector[sector[pSprite->sectnum].extra].Underwater)
+        || (oldWay && (xsprite[pSprite->extra].medium == kMediumWater || xsprite[pSprite->extra].medium == kMediumGoo)));
 }
 
 int getSpritesNearWalls(int nSrcSect, int* spriOut, int nMax, int nDist)
@@ -7769,6 +8160,59 @@ void getRxBucket(int nChannel, int* nStart, int* nEnd, RXBUCKET** pRx)
     if (pRx)
         *pRx = &rxBucket[*nStart];
 
+}
+
+int nnExtGibSprite(spritetype* pSpr, IDLIST* pOut, GIBTYPE nGibType, CGibPosition* pPos, CGibVelocity* pVel)
+{
+    int i;
+    spritetype* pEff;
+    int nSect = pSpr->sectnum;
+    int nSectBackup = nSect;
+
+    if (nSect < 0)
+        return 0;
+
+    if (pPos && FindSector(pPos->x, pPos->y, &nSect))
+        pSpr->sectnum = nSect;
+
+    // collect all potential effect sprites in this sector
+    for (i = headspritesect[pSpr->sectnum]; i >= 0; i = nextspritesect[i])
+    {
+        pEff = &sprite[i];
+        if (pEff->owner == pSpr->index || (pEff->flags & kHitagFree)) continue;
+        else if (pEff->statnum == kStatFX || pEff->statnum == kStatThing)
+            pOut->Add(pEff->index);
+    }
+
+    // create new sprites
+    GibSprite(pSpr, (GIBTYPE)nGibType, pPos, pVel);
+
+    // only new sprites must left
+    for (i = headspritesect[pSpr->sectnum]; i >= 0; i = nextspritesect[i])
+    {
+        pEff = &sprite[i];
+        if (pEff->flags & kHitagFree)  continue;
+        else if (pEff->statnum != kStatFX && pEff->statnum != kStatThing) continue;
+        else if (pEff->owner != pSpr->index)
+        {
+            if (pOut->Exists(pEff->index)) pOut->Remove(pEff->index);
+            else pOut->Add(pEff->index);
+        }
+    }
+
+    if (pPos)
+        pSpr->sectnum = nSectBackup;
+
+    return pOut->Length();
+    
+}
+
+int nnExtDudeStartHealth(spritetype* pSpr, int nHealth)
+{
+    if (nHealth)
+        return ClipRange(nHealth << 4, 0, 65535);
+
+    return getDudeInfo(pSpr->type)->startHealth << 4;
 }
 
 class nnExtLoadSave : public LoadSave

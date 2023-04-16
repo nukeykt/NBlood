@@ -46,7 +46,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
-#include "aiunicult.h"
 #endif
 
 void fxFlameLick(int nSprite) // 0
@@ -84,7 +83,9 @@ void Remove(int nSprite) // 1
     if (pSprite->extra > 0)
         seqKill(3, pSprite->extra);
     sfxKill3DSound(pSprite, 0, -1);
-    DeleteSprite(nSprite);
+    
+    if (pSprite->statnum < kStatFree)
+        DeleteSprite(nSprite);
 }
 
 void FlareBurst(int nSprite) // 2
@@ -271,8 +272,17 @@ void Respawn(int nSprite) // 9
                 pSprite->z = baseSprite[nSprite].z;
                 pSprite->cstat |= 0x1101;
                 #ifdef NOONE_EXTENSIONS
-                if (!gModernMap || pXSprite->sysData2 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
-                else pXSprite->health = ClipRange(pXSprite->sysData2 << 4, 1, 65535);
+                
+                if (gModernMap)
+                {
+                    pXSprite->health = nnExtDudeStartHealth(pSprite, pXSprite->sysData2);
+                    if (pXSprite->dudeFlag4) // return dude to the patrol state
+                    {
+                        pXSprite->data3 = 0;
+                        pXSprite->target = -1;
+                    }
+                }
+                else pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
 
                 switch (pSprite->type) {
                     default:
@@ -281,15 +291,10 @@ void Respawn(int nSprite) // 9
                             seqSpawn(getDudeInfo(nType + kDudeBase)->seqStartID, 3, pSprite->extra, -1);
                         break;
                     case kDudeModernCustom:
-                        seqSpawn(genDudeSeqStartId(pXSprite), 3, pSprite->extra, -1);
+                    case kDudeModernCustomBurning:
                         break;
                 }
                 
-                // return dude to the patrol state
-                if (gModernMap && pXSprite->dudeFlag4) {
-                    pXSprite->data3 = 0;
-                    pXSprite->target = -1;
-                }
                 #else
                 pSprite->clipdist = getDudeInfo(nType + kDudeBase)->clipdist;
                 pXSprite->health = getDudeInfo(nType + kDudeBase)->startHealth << 4;
@@ -731,6 +736,25 @@ void DropVoodoo(int nSprite) // unused
     }
 }
 
+#ifdef NOONE_EXTENSIONS
+void fxPodGreenBloodSpray(int nSprite) // 24
+{
+    spritetype* pSprite = &sprite[nSprite];
+    spritetype* pFX;
+    
+    pFX = gFX.fxSpawn(FX_53, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z);
+    if (pFX)
+    {
+        pFX->ang = 0;
+        xvel[pFX->index] = xvel[nSprite] >> 8;
+        yvel[pFX->index] = yvel[nSprite] >> 8;
+        zvel[pFX->index] = zvel[nSprite] >> 8;
+    }
+
+    evPost(nSprite, 3, 6, kCallbackFxPodGreenBloodSpray);
+}
+#endif
+
 void(*gCallback[kCallbackMax])(int) =
 {
     fxFlameLick,
@@ -758,6 +782,6 @@ void(*gCallback[kCallbackMax])(int) =
     #ifdef NOONE_EXTENSIONS
     callbackUniMissileBurst, // the code is in nnexts.cpp
     callbackMakeMissileBlocking, // the code is in nnexts.cpp
-    callbackGenDudeUpdate, // the code is in nnexts.cpp
+    fxPodGreenBloodSpray,
     #endif
 };

@@ -37,9 +37,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "seq.h"
 #include "sfx.h"
 #include "trig.h"
-#ifdef NOONE_EXTENSIONS
-#include "nnexts.h"
-#endif
 
 static void BurnSeqCallback(int, int);
 static void thinkSearch(spritetype*, XSPRITE*);
@@ -78,12 +75,6 @@ AISTATE tinycalebBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thi
 AISTATE tinycalebBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &tinycalebBurnSearch };
 AISTATE tinycalebBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &tinycalebBurnSearch };
 AISTATE tinycalebBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &tinycalebBurnChase };
-
-AISTATE genDudeBurnIdle = { kAiStateIdle, 3, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE genDudeBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE genDudeBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &genDudeBurnSearch };
-AISTATE genDudeBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &genDudeBurnSearch };
-AISTATE genDudeBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &genDudeBurnChase };
 
 static void BurnSeqCallback(int, int)
 {
@@ -126,11 +117,6 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
         case kDudeBurningTinyCaleb:
             aiNewState(pSprite, pXSprite, &tinycalebBurnSearch);
             break;
-        #ifdef NOONE_EXTENSIONS
-        case kDudeModernCustomBurning:
-            aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
-            break;
-        #endif
         }
     }
     aiThinkTarget(pSprite, pXSprite);
@@ -160,11 +146,6 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         case kDudeBurningTinyCaleb:
             aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
             break;
-        #ifdef NOONE_EXTENSIONS
-        case kDudeModernCustomBurning:
-            aiNewState(pSprite, pXSprite, &genDudeBurnGoto);
-            break;
-        #endif
         }
         return;
     }
@@ -198,11 +179,6 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         case kDudeBurningTinyCaleb:
             aiNewState(pSprite, pXSprite, &tinycalebBurnSearch);
             break;
-        #ifdef NOONE_EXTENSIONS
-        case kDudeModernCustomBurning:
-            aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
-            break;
-        #endif
         }
         return;
     }
@@ -238,11 +214,6 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     case kDudeBurningTinyCaleb:
                         aiNewState(pSprite, pXSprite, &tinycalebBurnAttack);
                         break;
-                    #ifdef NOONE_EXTENSIONS
-                    case kDudeModernCustomBurning:
-                        aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
-                        break;
-                    #endif
                     }
                 }
                 return;
@@ -270,11 +241,6 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
     case kDudeBurningTinyCaleb:
         aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
         break;
-    #ifdef NOONE_EXTENSIONS
-    case kDudeModernCustomBurning:
-        aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
-        break;
-    #endif
     }
     pXSprite->target = -1;
 }

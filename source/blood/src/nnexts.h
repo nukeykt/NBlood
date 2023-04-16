@@ -42,9 +42,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ai.h"
 #include "loadsave.h"
 #include "seq.h"
+#include "nnextstr.h"
+#include "gib.h"
 
 // CONSTANTS
-#define LENGTH(x) 					        (sizeof(x) / sizeof(x[0]))
+#define LENGTH(x) 					        (int)(sizeof(x) / sizeof(x[0]))
 #define EVTIME2TICKS(x)                     ((x * 120) / 10)
 
 #define TRIGGER_START_CHANNEL_NBLOOD kChannelLevelStartNBLOOD  // uncomment only for Nblood
@@ -76,7 +78,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kMaxRandomizeRetries 16
 #define kPercFull 100
-#define kPatrolStateSize 42
+#define kPatrolStateSize 50
 #define kPatrolAlarmSeeDist 10000
 #define kPatrolAlarmHearDist 10000
 #define kMaxPatrolVelocity 500000
@@ -174,21 +176,30 @@ struct OBJECT
     unsigned int index : 16;
 };
 
-struct SPRITEMASS { // sprite mass info for getSpriteMassBySize();
-    int seqId;
-    short picnum; // mainly needs for moving debris
-    short xrepeat;
-    short yrepeat;
-    short clipdist; // mass multiplier
-    int mass;
-    short airVel; // mainly needs for moving debris
-    int fraction; // mainly needs for moving debris
+// sprite mass info
+struct SPRITEMASS
+{
+    signed   int seqId      : 32;
+    unsigned int picnum     : 16;
+    unsigned int xrepeat    : 8;
+    unsigned int yrepeat    : 8;
+    unsigned int clipdist   : 8; // mass multiplier
+    unsigned int mass       : 32;
+    unsigned int airVel     : 10;
+    unsigned int fraction   : 16;
 };
 
 struct QAVSCENE { // this one stores qavs anims that can be played by trigger
     short index = -1;  // index of sprite which triggered qav scene
     QAV* qavResrc = NULL;
     short dummy = -1;
+};
+
+struct EXPLOSION_EXTRA
+{
+    unsigned int seq : 5;
+    unsigned int snd : 9;
+    unsigned int ground : 1;
 };
 
 struct THINGINFO_EXTRA {
@@ -242,10 +253,17 @@ struct OBJECT_STATUS1
 #endif
 };
 
+struct EXTERNAL_FILES_LIST
+{
+    const char* name;
+    const char* ext;
+};
+
 #pragma pack(pop)
 
 
 inline bool rngok(int val, int rngA, int rngB) { return (val >= rngA && val < rngB); }
+inline bool irngok(int val, int rngA, int rngB) { return (val >= rngA && val <= rngB); }
 inline bool mapRev1() { return (gModernMap == 1); }
 inline bool mapRev2() { return (gModernMap == 2); }
 
@@ -470,6 +488,7 @@ extern ZONE gStartZoneTeam2[kMaxPlayers];
 extern THINGINFO_EXTRA gThingInfoExtra[kThingMax];
 extern VECTORINFO_EXTRA gVectorInfoExtra[kVectorMax];
 extern MISSILEINFO_EXTRA gMissileInfoExtra[kMissileMax];
+extern EXPLOSION_EXTRA gExplodeExtra[kExplosionMax];
 extern DUDEINFO_EXTRA gDudeInfoExtra[kDudeMax];
 extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
@@ -479,10 +498,11 @@ extern IDLIST gProxySpritesList;
 extern IDLIST gSightSpritesList;
 extern IDLIST gImpactSpritesList;
 extern IDLIST gPhysSpritesList;
+extern IDLIST gFlwSpritesList;
 extern OBJECT_STATUS1* gEvCauser;
 
 // - FUNCTIONS ------------------------------------------------------------------
-inline bool xsprIsFine(spritetype* pSpr);
+bool xsprIsFine(spritetype* pSpr);
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
 void nnExtInitModernStuff(bool bSaveLoad);
 void nnExtProcessSuperSprites(void);
@@ -581,7 +601,6 @@ void playerQavSceneReset(PLAYER* pPlayer);
 //  -------------------------------------------------------------------------   //
 void callbackUniMissileBurst(int nSprite);
 void callbackMakeMissileBlocking(int nSprite);
-void callbackGenDudeUpdate(int nSprite);
 //  -------------------------------------------------------------------------   //
 PLAYER* getPlayerById(short id);
 bool isGrown(spritetype* pSprite);
@@ -659,10 +678,32 @@ int getDigitFromValue(int nVal, int nOffs);
 void killEffectGenCallbacks(XSPRITE* pXSource);
 bool seqCanOverride(Seq* pSeq, int nFrame, bool* xrp, bool* yrp, bool* plu);
 void getRxBucket(int nChannel, int* nStart, int* nEnd, RXBUCKET** pRx = NULL);
-inline bool isPartOfCauserScript(int objType, int objIndex)
+void nnExtOffsetPos(int oX, int oY, int oZ, int nAng, int* x, int* y, int* z);
+char nnExtOffsetSprite(spritetype* pSpr, int oX, int oY, int oZ);
+char spriteIsUnderwater(spritetype* pSprite, char oldWay = false);
+char dudeIsAlive(spritetype* pSpr);
+int nnExtGetStartHealth(spritetype* pSpr);
+
+FORCE_INLINE bool isPartOfCauserScript(int objType, int objIndex) { return gEvCauser[objType].id[objIndex].ok; }
+FORCE_INLINE int perc2val(int reqPerc, int val) { return (val * reqPerc) / 100; }
+FORCE_INLINE void nnExtOffsetPos(POINT3D* pOffs, int nAng, int* x, int* y, int* z)
 {
-    return gEvCauser[objType].id[objIndex].ok;
+    nnExtOffsetPos(pOffs->x, pOffs->y, pOffs->z, nAng, x, y, z);
 }
+
+int nnExtDudeStartHealth(spritetype* pSpr, int nHealth);
+void nnExtScaleVelocity(spritetype* pSpr, int nVel, int dx, int dy, int dz, char which = 0x03);
+void nnExtScaleVelocityRel(spritetype* pSpr, int nVel, int dx, int dy, int dz, char which = 0x03);
+int nnExtGibSprite(spritetype* pSpr, IDLIST* pOut, GIBTYPE nGibType, CGibPosition* pPos, CGibVelocity* pVel);
+spritetype* nnExtFireMissile(spritetype* pSpr, int a2, int a3, int a4, int a5, int a6, int nType);
+spritetype* nnExtSpawnDude(spritetype* pSrc, int nType, int x, int y, int z);
+
+void nnExtSprScaleSet(spritetype* pSpr, int nScale);
+void nnExtCoSin(int nAng, int* x, int* y, int nShift = 16);
+DICTNODE* nnExtResFileSearch(Resource* pIn, const char* pName, const char* pExt, char external = true);
+int nnExtResAddExternalFiles(Resource* pIn, const char* pPath, EXTERNAL_FILES_LIST* pList, int nLen);
+void getSectorWalls(int nSect, int* swal, int* ewal);
+
 
 // SPRITES_NEAR_SECTORS
 // Intended for move sprites that is close to the outside walls with

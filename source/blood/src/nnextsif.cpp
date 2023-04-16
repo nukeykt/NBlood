@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 #include "view.h"
 #include "endgame.h"
-#include "aiunicult.h"
+#include "aicdud.h"
 #include "mmulti.h"
 #include "nnexts.h"
 #include "nnextsif.h"
@@ -1160,28 +1160,41 @@ static char gdudCmpAiStateTimer(void)       { return Cmp(pXSpr->stateTimer); };
 
 /** CUSTOM DUDE functions
 ********************************************************************************/
-static char cdudChkLeechThrown(void) { return helperChkSprite(genDudeExtra(pSpr)->nLifeLeech); };
-static char cdudChkLeechDead(void)
+static char cdudChkLeechThrown(void)
 {
-    int t;
-    t = genDudeExtra(pSpr)->nLifeLeech;
-    if (!spriRangeIsFine(t) && pSpr->owner == kMaxSprites - 1) return true;
-    else if (PUSH) Push(EVOBJ_SPRITE, t);
+    CUSTOMDUDE* pDude = cdudeGet(pSpr);
+    if (!pDude->IsLeechBroken() && pDude->pXLeech)
+        return helperChkSprite(pDude->pXLeech->reference);
+
     return false;
 };
-static char cdudCmpSummoned(void)       { return Cmp(gGenDudeExtra[pSpr->index].slaveCount); };
+static char cdudChkLeechDead(void)
+{
+    CUSTOMDUDE* pDude = cdudeGet(pSpr);
+    if (pDude->IsLeechBroken()) return true;
+    else if (PUSH && pDude->pXLeech) Push(EVOBJ_SPRITE, pDude->pXLeech->reference);
+    return false;
+};
+static char cdudCmpSummoned(void)
+{
+    IDLIST* pSlaves = cdudeGet(pSpr)->pSlaves;
+    if (!pSlaves)
+        return Cmp(0);
+
+    return Cmp(pSlaves->Length());
+};
 static char cdudChkIfAble(void)
 {
     switch (arg3)
     {
-        case 1: return genDudeExtra(pSpr)->canAttack;
-        case 2: return genDudeExtra(pSpr)->canBurn;
-        case 3: return genDudeExtra(pSpr)->canDuck;
-        case 4: return genDudeExtra(pSpr)->canElectrocute;
-        case 5: return genDudeExtra(pSpr)->canFly;
-        case 6: return genDudeExtra(pSpr)->canRecoil;
-        case 7: return genDudeExtra(pSpr)->canSwim;
-        case 8: return genDudeExtra(pSpr)->canWalk;
+        case 1: return false;
+        case 2: return cdudeGet(pSpr)->CanBurn();
+        case 3: return cdudeGet(pSpr)->CanCrouch();
+        case 4: return cdudeGet(pSpr)->CanElectrocute();
+        case 5: return false;
+        case 6: return cdudeGet(pSpr)->CanRecoil();
+        case 7: return cdudeGet(pSpr)->CanSwim();
+        case 8: return cdudeGet(pSpr)->CanMove();
         default:
             Error(gErrors[kErrInvalidArgsPass]);
             break;
@@ -1189,7 +1202,14 @@ static char cdudChkIfAble(void)
 
     return false;
 };
-static char cdudCmpDispersion(void)         { return Cmp(genDudeExtra(pSpr)->baseDispersion); };
+static char cdudCmpDispersion(void)
+{
+    CUSTOMDUDE_WEAPON* pWeapon = cdudeGet(pSpr)->pWeapon;
+    if (!pWeapon)
+        return Cmp(0);
+
+    return Cmp(pWeapon->dispersion[0]);
+};
 
 
 

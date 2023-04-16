@@ -35,7 +35,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <EnableASAN>true</EnableASAN>
+    <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <EnableASAN>true</EnableASAN>
@@ -197,7 +197,7 @@
     <ClCompile Include="..\..\source\blood\src\airat.cpp" />
     <ClCompile Include="..\..\source\blood\src\aispid.cpp" />
     <ClCompile Include="..\..\source\blood\src\aitchern.cpp" />
-    <ClCompile Include="..\..\source\blood\src\aiunicult.cpp" />
+    <ClCompile Include="..\..\source\blood\src\aicdud.cpp" />
     <ClCompile Include="..\..\source\blood\src\aizomba.cpp" />
     <ClCompile Include="..\..\source\blood\src\aizombf.cpp" />
     <ClCompile Include="..\..\source\blood\src\asound.cpp" />
@@ -233,8 +233,10 @@
     <ClCompile Include="..\..\source\blood\src\mirrors.cpp" />
     <ClCompile Include="..\..\source\blood\src\misc.cpp" />
     <ClCompile Include="..\..\source\blood\src\network.cpp" />
+    <ClCompile Include="..\..\source\blood\src\nnextcdud.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnexts.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnextsif.cpp" />
+    <ClCompile Include="..\..\source\blood\src\nnextstr.cpp" />
     <ClCompile Include="..\..\source\blood\src\osdcmd.cpp" />
     <ClCompile Include="..\..\source\blood\src\player.cpp" />
     <ClCompile Include="..\..\source\blood\src\qav.cpp" />
@@ -309,7 +311,7 @@
     <ClInclude Include="..\..\source\blood\src\airat.h" />
     <ClInclude Include="..\..\source\blood\src\aispid.h" />
     <ClInclude Include="..\..\source\blood\src\aitchern.h" />
-    <ClInclude Include="..\..\source\blood\src\aiunicult.h" />
+    <ClInclude Include="..\..\source\blood\src\aicdud.h" />
     <ClInclude Include="..\..\source\blood\src\aizomba.h" />
     <ClInclude Include="..\..\source\blood\src\aizombf.h" />
     <ClInclude Include="..\..\source\blood\src\asound.h" />
@@ -341,8 +343,10 @@
     <ClInclude Include="..\..\source\blood\src\menu.h" />
     <ClInclude Include="..\..\source\blood\src\messages.h" />
     <ClInclude Include="..\..\source\blood\src\mirrors.h" />
+    <ClInclude Include="..\..\source\blood\src\nnextcdud.h" />
     <ClInclude Include="..\..\source\blood\src\nnexts.h" />
     <ClInclude Include="..\..\source\blood\src\nnextsif.h" />
+    <ClInclude Include="..\..\source\blood\src\nnextstr.h" />
     <ClInclude Include="..\..\source\blood\src\warp.h" />
     <ClInclude Include="..\..\source\blood\src\inifile.h" />
     <ClInclude Include="..\..\source\blood\src\iob.h" />

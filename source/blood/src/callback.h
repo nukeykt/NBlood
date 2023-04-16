@@ -50,7 +50,7 @@ enum CALLBACK_ID {
     #ifdef NOONE_EXTENSIONS
     kCallbackMissileBurst = 22,
     kCallbackMissileSpriteBlock = 23,
-    kCallbackGenDudeUpdate      = 24,
+    kCallbackFxPodGreenBloodSpray = 24,
     #endif
     kCallbackMax,
 };
