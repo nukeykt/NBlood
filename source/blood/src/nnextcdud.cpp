@@ -1377,7 +1377,7 @@ char CUSTOMDUDE_SETUP::DescriptParamExist(const char* pGroupName, const char* pP
 
 char CUSTOMDUDE_SETUP::DescriptLoad(int nID)
 {   
-    char tmp[BMAX_PATH]; BYTE* pRawIni = NULL;
+    char tmp[BMAX_PATH]; unsigned char* pRawIni = NULL;
     const char* fname = kCdudeFileNamePrefix;
     const char* fext = kCdudeFileExt;
 
@@ -1387,10 +1387,10 @@ char CUSTOMDUDE_SETUP::DescriptLoad(int nID)
         if ((hIni = nnExtResFileSearch(&gSysRes, tmp, fext)) == NULL) // name not found
             hIni = gSysRes.Lookup(nID, fext); // try by ID
 
-        if (hIni && (pRawIni = (BYTE*)gSysRes.Load(hIni)) != NULL)
+        if (hIni && (pRawIni = (unsigned char*)gSysRes.Load(hIni)) != NULL)
         {
             int nBytes = hIni->size;
-            BYTE* pRawNew = (BYTE*)Bmalloc(nBytes + 1);
+            unsigned char* pRawNew = (unsigned char*)Bmalloc(nBytes + 1);
             dassert(pRawNew != NULL);
             int i, j, c, nLineLen = 0;
 
@@ -1425,7 +1425,7 @@ char CUSTOMDUDE_SETUP::DescriptLoad(int nID)
                 }
             }
 
-            pIni = new IniFile((BYTE*)pRawNew);
+            pIni = new IniFile((unsigned char*)pRawNew);
             Bfree(pRawNew);
             return true;
         }
