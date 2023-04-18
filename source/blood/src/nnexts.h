@@ -135,7 +135,6 @@ kItemShroomGrow                     = 129,
 kItemShroomShrink                   = 130,
 kItemModernMapLevel                 = 150,  // once picked up, draws whole minimap
 kDudeModernCustom                   = kDudeVanillaMax,
-kDudeModernCustomBurning            = 255,
 kModernThingTNTProx                 = 433, // detects only players
 kModernThingThrowableRock           = 434, // does small damage if hits target
 kModernThingEnemyLifeLeech          = 435, // the same as normal, except it aims in specified target only

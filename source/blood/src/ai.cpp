@@ -228,7 +228,6 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
         break;
     #ifdef NOONE_EXTENSIONS
     case kDudeModernCustom:
-    case kDudeModernCustomBurning:
         return cdudeGet(pSprite)->CanMove(pXSector, Crusher, Water, Underwater, Depth, bottom, floorZ);
     #endif
     case kDudeZombieAxeNormal:
@@ -400,7 +399,6 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
     }
 #ifdef NOONE_EXTENSIONS
     case kDudeModernCustom:
-    case kDudeModernCustomBurning:
         cdudeGet(pSprite)->Activate();
         return;
 #endif
@@ -936,12 +934,8 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 return nDamage;
             }
 
-            switch (pSprite->type)
-            {
-                case kDudeModernCustom:
-                case kDudeModernCustomBurning:
-                    return cdudeGet(pSprite)->Damage(nSource, nDmgType, nDamage);
-            }
+            if (IsCustomDude(pSprite))
+                return cdudeGet(pSprite)->Damage(nSource, nDmgType, nDamage);
         }
         #endif
 
@@ -1085,7 +1079,6 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
         switch (pSprite->type) {
         #ifdef NOONE_EXTENSIONS
         case kDudeModernCustom:
-        case kDudeModernCustomBurning:
             cdudeGet(pSprite)->Recoil();
             break;
         #endif
@@ -1417,7 +1410,6 @@ void aiProcessDudes(void)
                 break;
             #ifdef NOONE_EXTENSIONS
             case kDudeModernCustom:
-            case kDudeModernCustomBurning:
                 cdudeGet(pSprite)->Process();
                 break;
             #endif
@@ -1617,7 +1609,6 @@ void aiInitSprite(spritetype *pSprite)
         break;
     #ifdef NOONE_EXTENSIONS
     case kDudeModernCustom:
-    case kDudeModernCustomBurning:
         if (!gModernMap) break;
         CUSTOMDUDE_SETUP::Setup(pSprite, pXSprite);
         cdudeGet(pSprite->index)->InitSprite();

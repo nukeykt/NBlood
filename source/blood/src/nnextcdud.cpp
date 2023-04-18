@@ -781,6 +781,7 @@ void CUSTOMDUDE::InitSprite(void)
 
         StatusRem(kCdudeStatusAwaked);
         StatusRem(kCdudeStatusRespawn);
+        StatusRem(kCdudeStatusBurning);
         StatusRem(kCdudeStatusDying);
     }
 
@@ -1031,14 +1032,13 @@ void CUSTOMDUDE::Kill(int nFrom, int nDmgType, int nDmg)
             if (CanBurn() && !IsBurning())
             {
                 evKill(pSpr->index, OBJ_SPRITE, kCallbackFXFlameLick);
-                pSpr->type = kDudeModernCustomBurning;
                 sfxPlay3DSound(pSpr, 361, -1, -1);
-                pInfo = getDudeInfo(pSpr->type);
+                StatusSet(kCdudeStatusBurning);
                 PlaySound(kCdudeSndBurning);
 
-                
-                pXSpr->health = pInfo->startHealth << 4;
+                pXSpr->health = kCdudeBurningHealth;
                 NewState(kCdudeBurnStateSearch);
+                damage.Set(256, kDmgBurn);
                 return;
             }
         }
