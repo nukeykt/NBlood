@@ -936,6 +936,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
 
             if (IsCustomDude(pSprite))
                 return cdudeGet(pSprite)->Damage(nSource, nDmgType, nDamage);
+
         }
         #endif
 

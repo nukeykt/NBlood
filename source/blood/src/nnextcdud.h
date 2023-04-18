@@ -1412,8 +1412,8 @@ class CUSTOMDUDEV2_SETUP : CUSTOMDUDE_SETUP
 void cdudeFree();
 CUSTOMDUDE* cdudeAlloc();
 CUSTOMDUDE* cdudeGet(int nIndex);
-FORCE_INLINE CUSTOMDUDE* cdudeGet(spritetype* pSpr)     { return cdudeGet(pSpr->index); };
 FORCE_INLINE char IsCustomDude(spritetype* pSpr)        { return (pSpr->type == kDudeModernCustom); }
+FORCE_INLINE CUSTOMDUDE* cdudeGet(spritetype* pSpr) { return cdudeGet(pSpr->index); };
 spritetype* cdudeSpawn(XSPRITE* pXSource, spritetype* pSprite, int nDist);
 void cdudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite);
 #endif
