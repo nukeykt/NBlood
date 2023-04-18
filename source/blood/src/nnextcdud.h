@@ -62,6 +62,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kCdudeMinSeeDist            3000
 #define kCdudeMinHearDist           (kCdudeMinSeeDist >> 1)
+#define kCdudeBurningHealth         (25 << 4)
 
 class CUSTOMDUDE;
 extern int nCdudeAppearanceCallback;
@@ -361,8 +362,9 @@ kCdudeStatusAwaked              = 0x01,
 kCdudeStatusForceCrouch         = 0x02,
 kCdudeStatusSleep               = 0x04,
 kCdudeStatusMorph               = 0x08,
-kCdudeStatusDying               = 0x10,
-kCdudeStatusRespawn             = 0x20,
+kCdudeStatusBurning             = 0x10,
+kCdudeStatusDying               = 0x20,
+kCdudeStatusRespawn             = 0x40,
 };
 
 #pragma pack(push, 1)
@@ -1224,13 +1226,13 @@ class CUSTOMDUDE
         FORCE_INLINE int  GetStateSeq(int nState, int nPosture)     { return states[nState][nPosture].seqId; }
         FORCE_INLINE int  GetVelocity(int nPosture, int nVelType)   { return velocity[nPosture].id[nVelType]; }
         FORCE_INLINE int  GetVelocity(int nVelType)                 { return GetVelocity(posture, nVelType); }
-        FORCE_INLINE char IsBurning(void)                           { return (pSpr->type == kDudeModernCustomBurning); }
         FORCE_INLINE char IsUnderwater(void)                        { return (pXSpr->medium != kMediumNormal); }
         FORCE_INLINE char IsCrouching(void)                         { return (posture == kCdudePostureC); }
         FORCE_INLINE char SeqPlaying(void)                          { return (seqGetStatus(OBJ_SPRITE, pSpr->extra) >= 0); }
         FORCE_INLINE char IsAttacking(void)                         { return (pXSpr->aiState->stateType == kAiStateAttack); }
         FORCE_INLINE char IsKnockout(void)                          { return (pXSpr->aiState->stateType == kAiStateKnockout); }
         FORCE_INLINE char IsRecoil(void)                            { return (pXSpr->aiState->stateType == kAiStateRecoil); }
+        FORCE_INLINE char IsBurning(void)                           { return StatusTest(kCdudeStatusBurning); }
         FORCE_INLINE char IsMorphing(void)                          { return StatusTest(kCdudeStatusMorph); }
         FORCE_INLINE char IsDying(void)                             { return StatusTest(kCdudeStatusDying); }
         FORCE_INLINE char IsSleeping(void)                          { return StatusTest(kCdudeStatusSleep); }
@@ -1410,6 +1412,7 @@ class CUSTOMDUDEV2_SETUP : CUSTOMDUDE_SETUP
 void cdudeFree();
 CUSTOMDUDE* cdudeAlloc();
 CUSTOMDUDE* cdudeGet(int nIndex);
+FORCE_INLINE char IsCustomDude(spritetype* pSpr)        { return (pSpr->type == kDudeModernCustom); }
 FORCE_INLINE CUSTOMDUDE* cdudeGet(spritetype* pSpr) { return cdudeGet(pSpr->index); };
 spritetype* cdudeSpawn(XSPRITE* pXSource, spritetype* pSprite, int nDist);
 void cdudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite);

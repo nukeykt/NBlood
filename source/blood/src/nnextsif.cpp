@@ -1575,7 +1575,6 @@ static char CheckCustomDude()
                 Error(gErrors[kErrInvalidObject], objIndex, objType, "custom dude");
                 return false;
             case kDudeModernCustom:
-            case kDudeModernCustomBurning:
                 break;
             default:
                 Error(gErrors[kErrInvalidObject], objIndex, objType, "custom dude");

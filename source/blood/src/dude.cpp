@@ -1551,7 +1551,6 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         10240,		                        // hear distance
         51200,	                            // seeing distance
         kAng90,	                            // vision periphery
-        //			    0,
         618,                                // melee distance
         5,			                        // flee health
         5,			                        // hinder damage
@@ -1563,44 +1562,12 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         34952,		                        // sideSpeed
         13981,		                        // backSpeed
         256,		                        // angSpeed
-        //			    0,
         7,	-1, 18,	                        // nGibType
         256, 256, 256, 256, 256, 256, 256,
         0, 0, 0, 0, 0, 0, 0,
         0,
         0
     },
-    //255 -  kDudeModernCustomBurning
-    {
-        4096,		// start sequence ID
-        25,			// start health
-        5,			// mass
-        120,
-        48,			// clip distance
-        41,			// eye above z
-        20,
-        12800,		// hear distance
-        51200,		// seeing distance
-        kAng60,	// vision periphery
-        //						0,
-        0,			// melee distance
-        10,			// flee health
-        10,			// hinder damage
-        0x0100,		// change target chance
-        0x0010,		// change target to kin chance
-        0x8000,		// alertChance
-        true,		// lockout
-        58254,			// frontSpeed
-        46603,			// sideSpeed
-        34952,			// backSpeed
-        384,			// angSpeed
-        //              0,
-        7,	-1, -1,		// nGibType
-        256, 256, 256, 256, 256, 256, 256,
-        0, 0, 0, 0, 0, 0, 0,
-        0,
-        0
-    }
 };
 
 DUDEINFO gPlayerTemplate[4] = 

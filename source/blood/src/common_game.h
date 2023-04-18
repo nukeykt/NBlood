@@ -360,7 +360,7 @@ enum {
     kDudeBurningTinyCaleb = 252,
     kDudeBurningBeast = 253,
     kDudeVanillaMax = 254,
-    kDudeMax = 256,
+    kDudeMax,
     
     kMissileBase = 300,
     kMissileButcherKnife = kMissileBase,

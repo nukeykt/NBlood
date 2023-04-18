@@ -844,7 +844,6 @@ bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite) {
             break;
         case kItemModernMapLevel:
         case kDudeModernCustom:
-        case kDudeModernCustomBurning:
         case kModernThingTNTProx:
         case kModernThingEnemyLifeLeech:
             pSprite->type = kSpriteDecoration;
@@ -1140,7 +1139,6 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
             if (pXSpr->command == kCmdLink) gEventRedirectsUsed = true;
             break;
         case kDudeModernCustom:
-        case kDudeModernCustomBurning:
             if (bSaveLoad && pSpr->statnum != kStatInactive)
             {
                 pXSpr->data3 = pXSpr->sysData1; // move sndStartId back from sysData1 to data3
@@ -1576,7 +1574,6 @@ int getSpriteMassBySize(spritetype* pSprite) {
         switch (pSprite->type)
         {
             case kDudeModernCustom:
-            case kDudeModernCustomBurning:
             case kDudePodMother: //no seq
                 break;
             default:
@@ -1974,7 +1971,6 @@ bool ceilIsTooLow(spritetype* pSprite) {
 void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite) {
     switch (pSprite->type) {
     case kDudeModernCustom:
-    case kDudeModernCustomBurning:
         cdudeGet(pSprite)->NewState(kCdudeStateGenIdle);
         break;
     default:
@@ -6134,8 +6130,10 @@ bool IsBurningDude(spritetype* pSprite) {
     case kDudeBurningZombieButcher:
     case kDudeBurningTinyCaleb:
     case kDudeBurningBeast:
-    case kDudeModernCustomBurning:
         return true;
+    case kDudeModernCustom:
+        CUSTOMDUDE* pDude = cdudeGet(pSprite);
+        return (pDude->StatusTest(kCdudeStatusBurning));
     }
 
     return false;
@@ -6215,13 +6213,8 @@ bool setDataValueOfObject(int objType, int objIndex, int dataIndex, int value) {
                 if (pXSpr->health <= 0)
                     return true;
 
-                switch (pSpr->type)
-                {
-                    case kDudeModernCustom:
-                    case kDudeModernCustomBurning:
-                        pDude = cdudeGet(pSpr->index);
-                        break;
-                }
+                if (IsCustomDude(pSpr))
+                    pDude = cdudeGet(pSpr->index);
             }
             else
             {
@@ -6724,7 +6717,6 @@ void aiPatrolMove(spritetype* pSprite, XSPRITE* pXSprite) {
     switch (pSprite->type)
     {
         case kDudeModernCustom:
-        case kDudeModernCustomBurning:
         {
             int nPosture;
             CUSTOMDUDE* pDude = cdudeGet(pSprite->index);
@@ -6922,7 +6914,7 @@ bool aiCanCrouch(spritetype* pSprite)
 {
     if (pSprite->type >= kDudeBase && pSprite->type < kDudeVanillaMax)
         return (gDudeInfoExtra[pSprite->type - kDudeBase].idlcseqofs >= 0 && gDudeInfoExtra[pSprite->type - kDudeBase].mvecseqofs >= 0);
-    else if (pSprite->type == kDudeModernCustom || pSprite->type == kDudeModernCustomBurning)
+    else if (IsCustomDude(pSprite))
         return cdudeGet(pSprite->index)->CanCrouch();
 
     return false;

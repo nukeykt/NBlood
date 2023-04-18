@@ -2579,7 +2579,6 @@ void actInit(bool bSaveLoad) {
                     {
                         #ifdef NOONE_EXTENSIONS
                         case kDudeModernCustom:
-                        case kDudeModernCustomBurning:
                         case kDudePodMother:
                             if (gModernMap)
                             {
@@ -2621,14 +2620,10 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
         int mass = 0;
         if (IsDudeSprite(pSprite)) {
 
-            mass = getDudeInfo(pSprite->type)->mass;
             #ifdef NOONE_EXTENSIONS
-                switch (pSprite->type) {
-                case kDudeModernCustom:
-                case kDudeModernCustomBurning:
-                    mass = cdudeGet(pSprite)->mass;
-                    break;
-                }
+            mass = (IsCustomDude(pSprite)) ? cdudeGet(pSprite)->mass : getDudeInfo(pSprite->type)->mass;
+            #else
+            mass = getDudeInfo(pSprite->type)->mass;
             #endif
 
         } else if (pSprite->type >= kThingBase && pSprite->type < kThingMax) {
@@ -2940,7 +2935,6 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     switch (pSprite->type) {
     #ifdef NOONE_EXTENSIONS
     case kDudeModernCustom:
-    case kDudeModernCustomBurning:
         cdudeGet(pSprite)->Kill(nKillerSprite, damageType, damage);
             return;
     #endif
@@ -3466,7 +3460,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                     if (spriRangeIsFine(pSprite->owner))
                     {
                         spritetype* pOwner = &sprite[pSprite->owner];
-                        if (pOwner->type == kDudeModernCustom || pOwner->type == kDudeModernCustomBurning)
+                        if (IsCustomDude(pOwner))
                             cdudeGet(pOwner)->LeechKill(false);
                     }
                     #endif
@@ -3981,14 +3975,10 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                     if ((IsPlayerSprite(pSprite) && isShrinked(pSprite)) || (IsPlayerSprite(pSprite2) && isGrown(pSprite2))) {
 
                         int mass1 = getDudeInfo(pSprite2->type)->mass;
-                        int mass2 = getDudeInfo(pSprite->type)->mass;
-                        switch (pSprite->type) {
-                            case kDudeModernCustom:
-                            case kDudeModernCustomBurning:
-                                mass2 = cdudeGet(pSprite)->mass;
-                                break;
-                        }
-                        if (mass1 > mass2) {
+                        int mass2 = (IsCustomDude(pSprite)) ? cdudeGet(pSprite)->mass : getDudeInfo(pSprite->type)->mass;
+
+                        if (mass1 > mass2)
+                        {
                             int dmg = abs((mass1 - mass2) * (pSprite2->clipdist - pSprite->clipdist));
                             if (IsDudeSprite(pSprite2)) {
                                 if (dmg > 0)
@@ -4032,21 +4022,18 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         if (sprite[nHitSprite].extra > 0)
         {
             spritetype *pSprite2 = &sprite[nHitSprite];
-            //XSPRITE *pXSprite2 = &Xsprite[pSprite2->extra];
-            
+
             #ifdef NOONE_EXTENSIONS
             // add size shroom abilities
-            if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite))) {
-                if (xvel[pSprite->xvel] != 0 && IsDudeSprite(pSprite2)) {
+            if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
+            {
+                if (xvel[pSprite->xvel] != 0 && IsDudeSprite(pSprite2))
+                {
                     int mass1 = getDudeInfo(pSprite->type)->mass;
-                    int mass2 = getDudeInfo(pSprite2->type)->mass;
-                    switch (pSprite2->type) {
-                        case kDudeModernCustom:
-                        case kDudeModernCustomBurning:
-                            mass2 = cdudeGet(pSprite2)->mass;
-                            break;
-                    }
-                    if (mass1 > mass2) {
+                    int mass2 = (IsCustomDude(pSprite2)) ? cdudeGet(pSprite2)->mass : getDudeInfo(pSprite2->type)->mass;
+
+                    if (mass1 > mass2)
+                    {
                         actKickObject(pSprite, pSprite2);
                         sfxPlay3DSound(pSprite, 357, -1, 1);
                         int dmg = (mass1 - mass2) + abs(xvel[pSprite->index] >> 16);
@@ -4093,17 +4080,13 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             
             #ifdef NOONE_EXTENSIONS
             // add size shroom abilities
-            if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite))) {
-                
+            if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
+            {
                 int mass1 = getDudeInfo(pSprite->type)->mass;
-                int mass2 = getDudeInfo(pSprite2->type)->mass;
-                switch (pSprite2->type) {
-                    case kDudeModernCustom:
-                    case kDudeModernCustomBurning:
-                        mass2 = cdudeGet(pSprite2)->mass;
-                        break;
-                }
-                if (mass1 > mass2 && IsDudeSprite(pSprite2)) {
+                int mass2 = (IsCustomDude(pSprite2)) ? cdudeGet(pSprite2)->mass : getDudeInfo(pSprite2->type)->mass;
+
+                if (mass1 > mass2 && IsDudeSprite(pSprite2))
+                {
                     if ((IsPlayerSprite(pSprite2) && Chance(0x500)) || !IsPlayerSprite(pSprite2))
                         actKickObject(pSprite, pSprite2);
 
@@ -6579,19 +6562,10 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             }
             if (pSprite->statnum == kStatDude)
             {
-                int t = getDudeInfo(pSprite->type)->mass;
-                
                 #ifdef NOONE_EXTENSIONS
-                if (IsDudeSprite(pSprite))
-                {
-                    switch (pSprite->type)
-                    {
-                        case kDudeModernCustom:
-                        case kDudeModernCustomBurning:
-                            t = cdudeGet(pSprite->index)->mass;
-                            break;
-                    }
-                }
+                int t = (IsCustomDude(pSprite)) ? cdudeGet(pSprite->index)->mass : getDudeInfo(pSprite->type)->mass;
+                #else
+                int t = getDudeInfo(pSprite->type)->mass;
                 #endif
 
                 if (t > 0 && pVectorData->impulse)

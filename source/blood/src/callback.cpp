@@ -291,7 +291,6 @@ void Respawn(int nSprite) // 9
                             seqSpawn(getDudeInfo(nType + kDudeBase)->seqStartID, 3, pSprite->extra, -1);
                         break;
                     case kDudeModernCustom:
-                    case kDudeModernCustomBurning:
                         break;
                 }
                 
