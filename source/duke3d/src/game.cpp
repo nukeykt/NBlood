@@ -3700,6 +3700,10 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
     int32_t j, frameOffset, playerNum;
     intptr_t l;
 
+#ifdef LEGACY_ROR
+    ror_sprite = -1;
+#endif
+
     if (spritesortcnt == 0)
     {
 #ifdef DEBUGGINGAIDS
@@ -3707,9 +3711,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
 #endif
         return;
     }
-#ifdef LEGACY_ROR
-    ror_sprite = -1;
-#endif
+
     for (j=spritesortcnt-1; j>=0; j--)
     {
         auto const t = &tsprite[j];
