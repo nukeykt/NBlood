@@ -673,9 +673,7 @@ static MenuEntry_t ME_SCREENSETUP_CROSSHAIRSIZE = MAKE_MENUENTRY( s_Scale, &MF_R
 
 static int32_t vpsize;
 static MenuRangeInt32_t MEO_SCREENSETUP_SCREENSIZE = MAKE_MENURANGE( &vpsize, &MF_Redfont, 0, 0, 0, 1, EnforceIntervals );
-#if !defined EDUKE32_STANDALONE
 static MenuOption_t MEO_SCREENSETUP_SCREENSIZE_TWO = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &vpsize );
-#endif
 static MenuEntry_t ME_SCREENSETUP_SCREENSIZE = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_SCREENSIZE, RangeInt32 );
 static MenuRangeInt32_t MEO_SCREENSETUP_TEXTSIZE = MAKE_MENURANGE( &ud.textscale, &MF_Redfont, 100, 400, 0, 16, DisplayTypePercent );
 static MenuEntry_t ME_SCREENSETUP_TEXTSIZE = MAKE_MENUENTRY( s_Scale, &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SCREENSETUP_TEXTSIZE, RangeInt32 );
@@ -2534,10 +2532,11 @@ static void Menu_Pre(MenuID_t cm)
     case MENU_DISPLAYSETUP:
         Menu_PopulateLanguages();
         MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_VOXELS, !g_haveVoxels);
-#ifndef EDUKE32_STANDALONE
 #ifdef USE_OPENGL
         MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_UPSCALING, videoGetRenderMode() > REND_CLASSIC);
+#ifndef EDUKE32_STANDALONE
         MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_RENDERER, videoGetRenderMode() < REND_POLYMOST);
+#endif
 #ifdef TEXFILTER_MENU_OPTIONS
         MEO_DISPLAYSETUP_TEXFILTER.options->optionNames = MEOSN_DISPLAYSETUP_TEXFILTER[0];
 #endif
@@ -2607,7 +2606,6 @@ static void Menu_Pre(MenuID_t cm)
 //        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
 //        MenuEntry_HideOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
 //# endif
-#endif
 #endif
         break;
 
