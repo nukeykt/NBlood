@@ -165,7 +165,7 @@ typedef int32_t  mi_ssize_t;
 // Derived constants
 #define MI_SEGMENT_SIZE                   (MI_ZU(1)<<MI_SEGMENT_SHIFT)
 #define MI_SEGMENT_ALIGN                  (MI_SEGMENT_SIZE)
-#define MI_SEGMENT_MASK                   (MI_SEGMENT_ALIGN - 1)
+#define MI_SEGMENT_MASK                   ((uintptr_t)(MI_SEGMENT_ALIGN - 1))
 
 #define MI_SMALL_PAGE_SIZE                (MI_ZU(1)<<MI_SMALL_PAGE_SHIFT)
 #define MI_MEDIUM_PAGE_SIZE               (MI_ZU(1)<<MI_MEDIUM_PAGE_SHIFT)
@@ -284,15 +284,14 @@ typedef struct mi_page_s {
   // "owned" by the segment
   uint8_t               segment_idx;       // index in the segment `pages` array, `page == &segment->pages[page->segment_idx]`
   uint8_t               segment_in_use:1;  // `true` if the segment allocated this page
-  uint8_t               is_reset:1;        // `true` if the page memory was reset
   uint8_t               is_committed:1;    // `true` if the page virtual memory is committed
-  uint8_t               is_zero_init:1;    // `true` if the page was zero initialized
+  uint8_t               is_zero_init:1;    // `true` if the page was initially zero initialized
 
   // layout like this to optimize access in `mi_malloc` and `mi_free`
   uint16_t              capacity;          // number of blocks committed, must be the first field, see `segment.c:page_clear`
   uint16_t              reserved;          // number of blocks reserved in memory
   mi_page_flags_t       flags;             // `in_full` and `has_aligned` flags (8 bits)
-  uint8_t               is_zero:1;         // `true` if the blocks in the free list are zero initialized
+  uint8_t               free_is_zero:1;    // `true` if the blocks in the free list are zero initialized
   uint8_t               retire_expire:7;   // expiration count for retired blocks
 
   mi_block_t*           free;              // list of available free blocks (`malloc` allocates from this list)
@@ -313,6 +312,10 @@ typedef struct mi_page_s {
 
 
 
+// ------------------------------------------------------
+// Mimalloc segments contain mimalloc pages
+// ------------------------------------------------------
+
 typedef enum mi_page_kind_e {
   MI_PAGE_SMALL,    // small blocks go into 64KiB pages inside a segment
   MI_PAGE_MEDIUM,   // medium blocks go into 512KiB pages inside a segment
@@ -320,17 +323,55 @@ typedef enum mi_page_kind_e {
   MI_PAGE_HUGE      // huge blocks (>512KiB) are put into a single page in a segment of the exact size (but still 2MiB aligned)
 } mi_page_kind_t;
 
+
+// Memory can reside in arena's, direct OS allocated, or statically allocated. The memid keeps track of this.
+typedef enum mi_memkind_e {
+  MI_MEM_NONE,      // not allocated
+  MI_MEM_EXTERNAL,  // not owned by mimalloc but provided externally (via `mi_manage_os_memory` for example)
+  MI_MEM_STATIC,    // allocated in a static area and should not be freed (for arena meta data for example)
+  MI_MEM_OS,        // allocated from the OS
+  MI_MEM_OS_HUGE,   // allocated as huge os pages
+  MI_MEM_OS_REMAP,  // allocated in a remapable area (i.e. using `mremap`)
+  MI_MEM_ARENA      // allocated from an arena (the usual case)
+} mi_memkind_t;
+
+static inline bool mi_memkind_is_os(mi_memkind_t memkind) {
+  return (memkind >= MI_MEM_OS && memkind <= MI_MEM_OS_REMAP);
+}
+
+typedef struct mi_memid_os_info {
+  void*         base;               // actual base address of the block (used for offset aligned allocations)
+  size_t        alignment;          // alignment at allocation
+} mi_memid_os_info_t;
+
+typedef struct mi_memid_arena_info {
+  size_t        block_index;        // index in the arena
+  mi_arena_id_t id;                 // arena id (>= 1)
+  bool          is_exclusive;       // the arena can only be used for specific arena allocations
+} mi_memid_arena_info_t;
+
+typedef struct mi_memid_s {
+  union {
+    mi_memid_os_info_t    os;       // only used for MI_MEM_OS
+    mi_memid_arena_info_t arena;    // only used for MI_MEM_ARENA
+  } mem;
+  bool          is_pinned;          // `true` if we cannot decommit/reset/protect in this memory (e.g. when allocated using large OS pages)
+  bool          initially_committed;// `true` if the memory was originally allocated as committed
+  bool          initially_zero;     // `true` if the memory was originally zero initialized
+  mi_memkind_t  memkind;
+} mi_memid_t;
+
+
 // Segments are large allocated memory blocks (2MiB on 64 bit) from
 // the OS. Inside segments we allocated fixed size _pages_ that
 // contain blocks.
 typedef struct mi_segment_s {
-  // memory fields
-  size_t               memid;            // id for the os-level memory manager
-  bool                 mem_is_pinned;    // `true` if we cannot decommit/reset/protect in this memory (i.e. when allocated using large OS pages)
-  bool                 mem_is_committed; // `true` if the whole segment is eagerly committed
-  size_t               mem_alignment;    // page alignment for huge pages (only used for alignment > MI_ALIGNMENT_MAX)
-  size_t               mem_align_offset; // offset for huge page alignment (only used for alignment > MI_ALIGNMENT_MAX)
-
+  // constant fields
+  mi_memid_t           memid;            // id for the os-level memory manager
+  bool                 allow_decommit;
+  bool                 allow_purge;
+  size_t               segment_size;     // for huge pages this may be different from `MI_SEGMENT_SIZE`
+  
   // segment fields
   _Atomic(struct mi_segment_s*) abandoned_next;
   struct mi_segment_s* next;             // must be the first segment field after abandoned_next -- see `segment.c:segment_init`
@@ -341,7 +382,6 @@ typedef struct mi_segment_s {
 
   size_t               used;             // count of pages in use (`used <= capacity`)
   size_t               capacity;         // count of available pages (`#free + used`)
-  size_t               segment_size;     // for huge pages this may be different from `MI_SEGMENT_SIZE`
   size_t               segment_info_size;// space we are using from the first page for segment meta-data and possible guard pages.
   uintptr_t            cookie;           // verify addresses in secure mode: `_mi_ptr_cookie(segment) == segment->cookie`
 
@@ -410,6 +450,7 @@ struct mi_heap_s {
   mi_page_queue_t       pages[MI_BIN_FULL + 1];              // queue of pages for each size class (or "bin")
   _Atomic(mi_block_t*)  thread_delayed_free;
   mi_threadid_t         thread_id;                           // thread this heap belongs too
+  mi_arena_id_t         arena_id;                            // arena id if the heap belongs to a specific arena (or 0)  
   uintptr_t             cookie;                              // random cookie to verify pointers (see `_mi_ptr_cookie`)
   uintptr_t             keys[2];                             // two random keys used to encode the `thread_delayed_free` list
   mi_random_ctx_t       random;                              // random number context used for secure allocation
@@ -486,6 +527,7 @@ typedef struct mi_stats_s {
   mi_stat_count_t reserved;
   mi_stat_count_t committed;
   mi_stat_count_t reset;
+  mi_stat_count_t purged;
   mi_stat_count_t page_committed;
   mi_stat_count_t segments_abandoned;
   mi_stat_count_t pages_abandoned;
@@ -498,6 +540,8 @@ typedef struct mi_stats_s {
   mi_stat_counter_t pages_extended;
   mi_stat_counter_t mmap_calls;
   mi_stat_counter_t commit_calls;
+  mi_stat_counter_t reset_calls;
+  mi_stat_counter_t purge_calls;
   mi_stat_counter_t page_no_retire;
   mi_stat_counter_t searches;
   mi_stat_counter_t normal_count;
@@ -549,7 +593,7 @@ typedef struct mi_os_tld_s {
 typedef struct mi_segments_tld_s {
   mi_segment_queue_t  small_free;   // queue of segments with free small pages
   mi_segment_queue_t  medium_free;  // queue of segments with free medium pages
-  mi_page_queue_t     pages_reset;  // queue of freed pages that can be reset
+  mi_page_queue_t     pages_purge;  // queue of freed pages that are delay purged
   size_t              count;        // current number of segments;
   size_t              peak_count;   // peak number of segments
   size_t              current_size; // current size of all segments

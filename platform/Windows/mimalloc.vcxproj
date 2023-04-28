@@ -67,10 +67,15 @@
     <ClCompile Include="..\..\source\mimalloc\src\page.c" />
     <ClCompile Include="..\..\source\mimalloc\src\prim\windows\prim.c" />
     <ClCompile Include="..\..\source\mimalloc\src\random.c" />
-    <ClCompile Include="..\..\source\mimalloc\src\region.c" />
+    <ClCompile Include="..\..\source\mimalloc\src\segment-map.c" />
     <ClCompile Include="..\..\source\mimalloc\src\segment.c" />
     <ClCompile Include="..\..\source\mimalloc\src\static.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\mimalloc\src\stats.c" />
   </ItemGroup>

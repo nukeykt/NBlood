@@ -79,9 +79,6 @@
     <ClCompile Include="..\..\source\mimalloc\src\random.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\mimalloc\src\region.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\mimalloc\src\segment.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,6 +90,9 @@
     </ClCompile>
     <ClCompile Include="..\..\source\mimalloc\src\prim\windows\prim.c">
       <Filter>Source Files\prim</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\mimalloc\src\segment-map.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
