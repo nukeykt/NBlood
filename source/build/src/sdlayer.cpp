@@ -653,34 +653,26 @@ int32_t sdlayer_checkversion(void);
 int32_t sdlayer_checkversion(void)
 {
     SDL_version compiled;
-    auto str = (char*)Balloca(128);
+    auto str = (char*)Balloca(256);
     str[0] = 0;
 
     SDL_GetVersion(&linked);
 
-    // odd-numbered SDL patch levels are dev snapshots, even-numbered are proper releases
     // string is in the format "https://github.com/libsdl-org/SDL.git@bfd2f8993f173535efe436f8e60827cc44351bea"
     char const *rev;
 
-    if (linked.patch & 1 && (rev = SDL_GetRevision()))
+    if ((rev = SDL_GetRevision()) && Bstrlen(rev) > 0)
     {
-        char buf[10] = {};
-
-        int len = Bstrlen(rev);
-
-        if (len > 49 && rev[len-41] == '@')
-            Bmemcpy(buf, &rev[len-40], 9);
-
-        Bsnprintf(str, 128, "Initializing SDL %s (%d.%d.%d snapshot)", buf, linked.major, linked.minor, linked.patch);
+        Bsnprintf(str, 256, "Initializing SDL %d.%d.%d (%s)", linked.major, linked.minor, linked.patch, rev);
     }
     else
     {
         SDL_VERSION(&compiled);
 
         if (!Bmemcmp(&compiled, &linked, sizeof(SDL_version)))
-            Bsnprintf(str, 128, "Initializing SDL %d.%d.%d", compiled.major, compiled.minor, compiled.patch);
+            Bsnprintf(str, 256, "Initializing SDL %d.%d.%d", compiled.major, compiled.minor, compiled.patch);
         else
-            Bsnprintf(str, 128, "Initializing SDL %d.%d.%d (built against version %d.%d.%d)",
+            Bsnprintf(str, 256, "Initializing SDL %d.%d.%d (built against version %d.%d.%d)",
                 linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
     }
 
