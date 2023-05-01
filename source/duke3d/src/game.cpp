@@ -1360,7 +1360,7 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
         fatal_exit("Too many sprites spawned.");
     }
 
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
     g_spriteStat.numins++;
 #endif
 
@@ -3706,7 +3706,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
 
     if (spritesortcnt == 0)
     {
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
         g_spriteStat.numonscreen = 0;
 #endif
         return;
@@ -4530,7 +4530,7 @@ skip:
             G_DoEventAnimSprites(j);
     }
 
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
     g_spriteStat.numonscreen = spritesortcnt;
 #endif
 }
