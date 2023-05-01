@@ -1170,7 +1170,7 @@ static MenuEntry_t ME_COLCORR_RESET = MAKE_MENUENTRY( "Reset To Defaults", &MF_R
 #endif
 #define MAX_VISIBILITY 2.f
 #ifndef EDUKE32_RETAIL_MENU
-static MenuRangeFloat_t MEO_COLCORR_AMBIENT = MAKE_MENURANGE( &r_ambientlight, &MF_Bluefont, MIN_VISIBILITY, MAX_VISIBILITY, 0.f, 50, DisplayTypePercent );
+static MenuRangeFloat_t MEO_COLCORR_AMBIENT = MAKE_MENURANGE( &r_ambientlight, &MF_Bluefont, MIN_VISIBILITY, MAX_VISIBILITY, 0.f, 98, DisplayTypePercent);
 static MenuEntry_t ME_COLCORR_AMBIENT = MAKE_MENUENTRY( "Visibility:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_COLCORR_AMBIENT, RangeFloat );
 #endif
 static MenuEntry_t *MEL_COLCORR[] = {
