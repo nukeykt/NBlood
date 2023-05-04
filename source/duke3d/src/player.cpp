@@ -4414,7 +4414,7 @@ static void P_ProcessWeapon(int playerNum)
                         break;
 
                     case KNEE_WEAPON:
-                        if (pPlayer->quick_kick == 0)
+                        if (dukeAllowQuickKick() || pPlayer->quick_kick == 0)
                         {
                             (*weaponFrame) = 1;
                             if (PWEAPON(playerNum, pPlayer->curr_weapon, InitialSound) > 0)

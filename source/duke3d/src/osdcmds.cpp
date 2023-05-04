@@ -1606,6 +1606,7 @@ int32_t registerosdcommands(void)
 
         { "cl_cheatmask", "bitmask controlling cheats unlocked in menu", (void *)&cl_cheatmask, CVAR_UINT, 0, ~0 },
         { "cl_democams", "third-person cameras in demos" CVAR_BOOL_OPTSTR, (void *)&ud.democams, CVAR_BOOL, 0, 1 },
+        { "cl_kickmode", "quick kick behavior:\n 0: automatic based on script version\n 1: 1.3D\n 2: 1.4+", (void*)&ud.kick_mode, CVAR_INT, 0, 2 },
         { "cl_runmode", "run key behavior with cl_autorun enabled:\n 0: walk\n 1: do nothing", (void *)&ud.runkey_mode, CVAR_BOOL, 0, 1 },
 
         { "cl_showcoords", "DEBUG: coordinate display", (void *)&ud.coords, CVAR_INT, 0,
