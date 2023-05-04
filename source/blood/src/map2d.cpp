@@ -135,7 +135,7 @@ void sub_2541C(int x, int y, int z, short a)
             spritetype *pSprite = pPlayer->pSprite;
             int px = pSprite->x-x;
             int py = pSprite->y-y;
-            int pa = (pSprite->ang-a)&2047;
+            int pa = (pSprite->ang-a)&kAngMask;
             if (i == gView->nPlayer)
             {
                 px = 0;
