@@ -2323,20 +2323,32 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         if (!pNSprite)
             break;
         pNSprite->z = getflorzofslope(pTSprite->sectnum, pNSprite->x, pNSprite->y);
-        if ((sector[pNSprite->sectnum].floorpicnum >= 4080) && (sector[pNSprite->sectnum].floorpicnum <= 4095) && !VanillaMode()) // if floor has ror, find actual floor
+        if (!VanillaMode()) // support better floor detection for shadows (detect fake floors/allows ROR traversal)
         {
-            int cX = pNSprite->x, cY = pNSprite->y, cZ = pNSprite->z, cZrel = pNSprite->z, nSectnum = pNSprite->sectnum;
-            for (int i = 0; i < 16; i++) // scan through max stacked sectors
+            int ceilZ, ceilHit, floorZ, floorHit;
+            GetZRangeAtXYZ(pTSprite->x, pTSprite->y, pTSprite->z, pTSprite->sectnum, &ceilZ, &ceilHit, &floorZ, &floorHit, pTSprite->clipdist<<2, CLIPMASK0, PARALLAXCLIP_CEILING|PARALLAXCLIP_FLOOR);
+            if (((floorHit&0xc000) == 0xc000) && spriRangeIsFine(floorHit&0x3fff) && ((sprite[floorHit&0x3fff].cstat & (CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_ALIGNMENT_FLOOR|CSTAT_SPRITE_INVISIBLE)) == (CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_ALIGNMENT_FLOOR))) // if there is a fake floor under us, use fake floor as the shadow position
             {
-                if (!CheckLink(&cX, &cY, &cZ, &nSectnum)) // if no more floors underneath, abort
-                    break;
-                const int newFloorZ = getflorzofslope(nSectnum, cX, cZ);
-                cZrel += newFloorZ - cZ; // get height difference for next sector's ceiling/floor, and add to relative height for shadow
-                if ((sector[nSectnum].floorpicnum < 4080) || (sector[nSectnum].floorpicnum > 4095)) // if current sector is not open air, use as floor for shadow casting, otherwise continue to next sector
-                    break;
-                cZ = newFloorZ;
+                int top, bottom;
+                GetSpriteExtents(&sprite[floorHit&0x3fff], &top, &bottom);
+                pNSprite->z = top;
+                pNSprite->z--; // offset from fake floor so it isn't z-fighting when being rendered
             }
-            pNSprite->z = cZrel;
+            else if ((sector[pNSprite->sectnum].floorpicnum >= 4080) && (sector[pNSprite->sectnum].floorpicnum <= 4095)) // if floor has ror, find actual floor
+            {
+                int cX = pNSprite->x, cY = pNSprite->y, cZ = pNSprite->z, cZrel = pNSprite->z, nSectnum = pNSprite->sectnum;
+                for (int i = 0; i < 16; i++) // scan through max stacked sectors
+                {
+                    if (!CheckLink(&cX, &cY, &cZ, &nSectnum)) // if no more floors underneath, abort
+                        break;
+                    const int newFloorZ = getflorzofslope(nSectnum, cX, cZ);
+                    cZrel += newFloorZ - cZ; // get height difference for next sector's ceiling/floor, and add to relative height for shadow
+                    if ((sector[nSectnum].floorpicnum < 4080) || (sector[nSectnum].floorpicnum > 4095)) // if current sector is not open air, use as floor for shadow casting, otherwise continue to next sector
+                        break;
+                    cZ = newFloorZ;
+                }
+                pNSprite->z = cZrel;
+            }
         }
         pNSprite->shade = 127;
         pNSprite->cstat |= CSTAT_SPRITE_TRANSLUCENT;
