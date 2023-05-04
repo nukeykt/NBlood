@@ -281,20 +281,20 @@ void scrSetupUnfade(void)
 
 void scrFadeAmount(int amount)
 {
-	for (int i = 0; i < 256; i++)
-	{
-		curDAC[i].red = interpolate(fromDAC[i].red, toRGB.red, amount);
+    for (int i = 0; i < 256; i++)
+    {
+        curDAC[i].red = interpolate(fromDAC[i].red, toRGB.red, amount);
         curDAC[i].green = interpolate(fromDAC[i].green, toRGB.green, amount);
         curDAC[i].blue = interpolate(fromDAC[i].blue, toRGB.blue, amount);
-	}
-	gSetDacRange(0, 256, curDAC);
+    }
+    gSetDacRange(0, 256, curDAC);
 }
 
 void scrSetDac(void)
 {
-	if (DacInvalid)
-		gSetDacRange(0, 256, baseDAC);
-	DacInvalid = 0;
+    if (DacInvalid)
+        gSetDacRange(0, 256, baseDAC);
+    DacInvalid = 0;
 }
 
 void scrInit(void)
