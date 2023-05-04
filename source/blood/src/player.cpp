@@ -558,7 +558,7 @@ void packPrevItem(PLAYER *pPlayer)
 {
     if (pPlayer->packItemTime > 0)
     {
-        for (int nPrev = ClipLow(pPlayer->packItemId-1,kPackMedKit); nPrev >= kPackMedKit; nPrev--)
+        for (int nPrev = ClipLow(pPlayer->packItemId-1,kPackBase); nPrev >= kPackBase; nPrev--)
         {
             if (pPlayer->packSlots[nPrev].curAmount)
             {
@@ -675,7 +675,7 @@ void playerStart(int nPlayer, int bNewLevel)
     // normal start position
     if (gGameOptions.nGameType <= 1)
         pStartZone = &gStartZone[nPlayer];
-    
+
     #ifdef NOONE_EXTENSIONS
     // let's check if there is positions of teams is specified
     // if no, pick position randomly, just like it works in vanilla.

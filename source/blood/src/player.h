@@ -56,7 +56,8 @@ enum
 // inventory pack
 enum
 {
-    kPackMedKit      = 0,
+    kPackBase        = 0,
+    kPackMedKit      = kPackBase,
     kPackDivingSuit  = 1,
     kPackCrystalBall = 2,
     kPackBeastVision = 3,
