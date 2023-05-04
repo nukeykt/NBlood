@@ -764,8 +764,10 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->aimTarget = -1;
     pPlayer->zViewVel = pPlayer->zWeaponVel;
     if (!(gGameOptions.nGameType == kGameTypeCoop && gGameOptions.bPlayerKeys > PLAYERKEYSMODE::LOSTONDEATH && !bNewLevel))
+    {
         for (int i = 0; i < 8; i++)
             pPlayer->hasKey[i] = gGameOptions.nGameType >= kGameTypeBloodBath;
+    }
     pPlayer->hasFlag = 0;
     for (int i = 0; i < 8; i++)
         pPlayer->used2[i] = -1;
