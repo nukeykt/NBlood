@@ -306,6 +306,7 @@ int InsertSprite(int nSector, int nStat)
     pSprite->extra = -1;
     pSprite->index = nSprite;
     xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
+    qsprite_filler[nSprite] = 0;
 
 #ifdef POLYMER
     gPolymerLight[nSprite].lightId = -1;
@@ -750,6 +751,9 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
     memset(zvel,0,sizeof(zvel));
     memset(xsprite,0,kMaxXSprites*sizeof(XSPRITE));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
+
+    memset(qsprite_filler,0,sizeof(qsprite_filler));
+    memset(qsector_filler,0,sizeof(qsector_filler));
 
     #ifdef NOONE_EXTENSIONS
     gModernMap = false;
