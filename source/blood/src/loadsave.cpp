@@ -110,8 +110,13 @@ void LoadSave::LoadGame(char *pzFile)
     seqKillAll();
     if (!gGameStarted)
     {
-        memset(xsprite, 0, sizeof(xsprite));
+        memset(xvel,0,sizeof(xvel[0])*kMaxSprites);
+        memset(yvel,0,sizeof(yvel[0])*kMaxSprites);
+        memset(zvel,0,sizeof(zvel[0])*kMaxSprites);
+        memset(xsprite, 0, sizeof(XSPRITE)*kMaxXSprites);
         memset(sprite, 0, sizeof(spritetype)*kMaxSprites);
+        memset(qsprite_filler,0,sizeof(qsprite_filler[0])*kMaxSprites);
+        memset(qsector_filler,0,sizeof(qsector_filler[0])*kMaxSectors);
         automapping = 1;
     }
     hLFile = kopen4load(pzFile, 0);
@@ -276,6 +281,8 @@ void MyLoadSave::Load(void)
     memset(wall, 0, sizeof(wall[0])*kMaxWalls);
     memset(sprite, 0, sizeof(sprite[0])*kMaxSprites);
     memset(spriteext, 0, sizeof(spriteext[0])*kMaxSprites);
+    memset(qsprite_filler,0,sizeof(qsprite_filler[0])*kMaxSprites);
+    memset(qsector_filler,0,sizeof(qsector_filler[0])*kMaxSectors);
     Read(sector, sizeof(sector[0])*numsectors);
     Read(wall, sizeof(wall[0])*numwalls);
     Read(sprite, sizeof(sprite[0])*kMaxSprites);
