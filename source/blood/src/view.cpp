@@ -3505,7 +3505,7 @@ void viewDrawScreen(void)
             CalcPosition(gView->pSprite, (int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum, fix16_to_int(cA), q16horiz);
         }
         const char bLink = CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
-        int v78 = gViewInterpolate ? interpolateang(gScreenTiltO, gScreenTilt, gInterpolate) : gScreenTilt;
+        int nTilt = gViewInterpolate ? interpolateang(gScreenTiltO, gScreenTilt, gInterpolate) : gScreenTilt;
         char nPalCrystalBall = 0;
         bool bDelirium = powerupCheck(gView, kPwUpDeliriumShroom) > 0;
         static bool bDeliriumOld = false;
@@ -3514,7 +3514,7 @@ void viewDrawScreen(void)
 #ifdef USE_OPENGL
         renderSetRollAngle(0);
 #endif
-        if (v78 || bDelirium)
+        if (nTilt || bDelirium)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
             {
@@ -3530,7 +3530,7 @@ void viewDrawScreen(void)
                     tiltdim = 640;
                 }
                 renderSetTarget(TILTBUFFER, tiltdim, tiltdim);
-                int nAng = v78&(kAng90-1);
+                int nAng = nTilt&(kAng90-1);
                 if (nAng > kAng45)
                 {
                     nAng = kAng90-nAng;
@@ -3539,7 +3539,7 @@ void viewDrawScreen(void)
             }
 #ifdef USE_OPENGL
             else
-                renderSetRollAngle(v78);
+                renderSetRollAngle(nTilt);
 #endif
         }
         else if (bCrystalBall)
@@ -3731,7 +3731,7 @@ RORHACK:
         renderDrawMasks();
         gView->pSprite->cstat = bakCstat;
 
-        if (v78 || bDelirium)
+        if (nTilt || bDelirium)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
             {
@@ -3742,13 +3742,13 @@ RORHACK:
                 {
                     vrc = 64+32+4+2+1+1024;
                 }
-                int nAng = v78 & (kAng90-1);
+                int nAng = nTilt & (kAng90-1);
                 if (nAng > kAng45)
                 {
                     nAng = kAng90 - nAng;
                 }
                 int nScale = dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)>>tiltcs;
-                rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(160<<16, 100<<16, nScale, nTilt+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
             }
 #ifdef USE_OPENGL
             else
