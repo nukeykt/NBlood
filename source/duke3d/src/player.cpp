@@ -5411,12 +5411,13 @@ void P_ProcessInput(int playerNum)
                 //Smooth on the ground
                 int Zdiff = ((floorZ - floorZOffset) - pPlayer->pos.z) >> 1;
 
-                if (klabs(Zdiff) < 256)
+                // why does this even exist?
+                if (klabs(Zdiff) < pPlayer->floorzcutoff)
                     Zdiff = 0;
                 else if (!playerShrunk)
                     pPlayer->pos.z += Zdiff;
 
-                pPlayer->vel.z -= 768;
+                pPlayer->vel.z -= pPlayer->floorzrebound;
 
                 if (pPlayer->vel.z < 0)
                     pPlayer->vel.z = 0;

@@ -205,9 +205,9 @@ typedef struct {
     uint16_t frag, fraggedself;
 
     vec2_16_t loogie[MAX_LOOGIES];
-    int16_t filler[102]; // jesus fucking christ
+    int16_t filler[100]; // jesus fucking christ
 
-    int16_t olook_ang;
+    int16_t floorzrebound, floorzcutoff, olook_ang;
     int16_t floorzoffset, spritezoffset, minwaterzdist, waterzoffset, shrunkzoffset;
     int16_t crouchzincrement, crouchspeedmodifier, swimspeedmodifier;
     int16_t swimzincrement, minswimzvel, maxswimzvel;

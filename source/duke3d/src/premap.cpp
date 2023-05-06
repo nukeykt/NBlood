@@ -652,6 +652,9 @@ static inline void P_ResetTintFade(DukePlayer_t *const pPlayer)
 
 void P_ResetOffsets(DukePlayer_t *const pPlayer)
 {
+    pPlayer->floorzrebound = 768;
+    pPlayer->floorzcutoff  = 256;
+
     pPlayer->floorzoffset  = 40 << 8;
     pPlayer->waterzoffset  = 34 << 8;
     pPlayer->minwaterzdist = 16 << 8;

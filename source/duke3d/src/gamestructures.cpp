@@ -566,6 +566,8 @@ memberlabel_t const PlayerLabels[] =
     MEMBER(g_player[0].ps, jetpackzincrement,           PLAYER_JETPACKZINCREMENT),
     MEMBER(g_player[0].ps, olook_ang,                   PLAYER_OLOOK_ANG),
     MEMBER(g_player[0].ps, orotscrnang,                 PLAYER_OROTSCRNANG),
+    MEMBER(g_player[0].ps, floorzrebound,               PLAYER_FLOORZREBOUND),
+    MEMBER(g_player[0].ps, floorzcutoff,                PLAYER_FLOORZCUTOFF),
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)
