@@ -8686,6 +8686,8 @@ static void SaveBoardAndPrintMessage(const char *fn)
                     saveboard_savedtags?"and tags ":"", f, saveboard_fixedsprites);
         else
             message("Saved board %sto %s.", saveboard_savedtags?"and tags ":"", f);
+
+        asksave = 0;
     }
     else
     {
