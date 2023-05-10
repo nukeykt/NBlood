@@ -1008,9 +1008,9 @@ namespace loguru
 		if (!name)
 		{
 			if (verbosity <= Verbosity_FATAL) {
-				name = "FATL";
+				name = "FATAL";
 			} else if (verbosity == Verbosity_ERROR) {
-				name = "ERR";
+				name = "ERROR";
 			} else if (verbosity == Verbosity_WARNING) {
 				name = "WARN";
 			} else if (verbosity == Verbosity_INFO) {
