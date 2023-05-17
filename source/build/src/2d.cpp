@@ -1055,39 +1055,44 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
 
 int32_t editorGet2dSpriteColor(int32_t spr)
 {
-    int const picnum = sprite[spr].picnum;
-    int pal = sprite[spr].pal;
+    int const picnum  = sprite[spr].picnum;
+    int       pal     = sprite[spr].pal;
     int const tilecol = tilecols[picnum];
 
-    if (palookup[pal] == NULL || (tilecol && palookup[pal][tilecol] == 0))
+    if (palookup[pal] == NULL || (tilecol && klabs(palookup[pal][tilecol]-blackcol) <= 4))
         pal = 0;
 
-    if (tilecol) return palookup[pal][tilecol];
+    if (tilecol && palookup[pal]) return palookup[pal][tilecol];
+    if (!waloff[picnum] && !tileLoad(picnum)) return editorcolors[3];
 
-    if (!waloff[picnum]) tileLoad(picnum);
-    if (!waloff[picnum]) return editorcolors[3];
+    Bassert(waloff[picnum]);
 
     // Calculate 2D mode tile color.
 
-    uint32_t cols[256];
+    uint32_t cols[256] = {};
 
-    Bmemset(cols, 0, sizeof(cols));
+    auto      texbuf = (const uint8_t *)waloff[picnum];
+    int const siz    = tilesiz[picnum].x * tilesiz[picnum].y;
 
-    const uint8_t *const texbuf = (const uint8_t *) waloff[picnum];
-
-    for (bssize_t i = 0; i < tilesiz[picnum].x * tilesiz[picnum].y; i++)
+    for (int i = 0; i < siz; i++)
         cols[texbuf[i]]++;
 
-    unsigned col = 0, cnt = 0;
+    int col = 0;
 
-    for (bssize_t i = 0; i < 240; i++)
+    for (int i = 0, cnt = 0; i < 240; i++)
         if (cols[i] > cnt)
             col = i, cnt = cols[i];
 
-    while (col < 240 && curpalette[col+1].r > curpalette[col].r)
-        col++;
-
-    tilecols[picnum] = col - 4;
+    if (whitecol > blackcol)
+    {
+        while (col < 240 && curpalette[col + 1].r + curpalette[col + 1].g + curpalette[col + 1].b > curpalette[col].r + curpalette[col].g + curpalette[col].b) col++;
+        tilecols[picnum] = clamp(col - 4, 0, 239);
+    }
+    else
+    {
+        while (col > 0 && curpalette[col - 1].r + curpalette[col - 1].g + curpalette[col - 1].b > curpalette[col].r + curpalette[col].g + curpalette[col].b) col--;
+        tilecols[picnum] = clamp(col + 4, 0, 239);
+    }
 
     return palookup[pal][tilecols[picnum]];
 }
