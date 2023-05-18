@@ -5007,9 +5007,6 @@ static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t
         pPlayer->pos.z = floorZ - PMINHEIGHT;
 }
 
-
-#define GETZRANGECLIPDISTOFFSET 16
-
 void P_ProcessInput(int playerNum)
 {
     auto &thisPlayer = g_player[playerNum];
@@ -5051,39 +5048,59 @@ void P_ProcessInput(int playerNum)
 
     // sectorLotag can be set to 0 later on, but the same block sets spritebridge to 1
     int sectorLotag       = sector[pPlayer->cursectnum].lotag;
-    int getZRangeClipDist = pPlayer->clipdist - GETZRANGECLIPDISTOFFSET;
-    int getZRangeOffset   = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && sectorLotag != ST_2_UNDERWATER && ((pPlayer->on_ground && !pPlayer->jumping_toggle)))
+    int getZRangeClipDist = pPlayer->clipdist >> 1;
+    int const stepHeight  = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && sectorLotag != ST_2_UNDERWATER && ((pPlayer->on_ground && !pPlayer->jumping_toggle)))
                             || (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1)))
                             ? pPlayer->autostep_sbw
                             : pPlayer->autostep;
 
     int32_t floorZ, ceilZ, highZhit, lowZhit;
-    int const stepHeight = getZRangeOffset;
 
     // if not running Ion Fury, purposely break part of the clipping system
     // this is what makes Duke step up onto sprite constructions he shouldn't automatically step up onto
     if (!FURY)
     {
-        getZRangeOffset   = 0;
         getZRangeClipDist = pPlayer->clipdist - 1;
+        getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ, &highZhit, &floorZ, &lowZhit, getZRangeClipDist, CLIPMASK0);
     }
     else
     {
-        // we want to take these into account for getzrange() but not for the clipmove() call below
-        // this isn't taken into account when getZRangeOffset is initialized above because we first need
-        // the stepHeight value without this factored in
-        if (sectorLotag != ST_2_UNDERWATER)
-        {
-            if (pPlayer->pos.z + getZRangeOffset > actor[pPlayer->i].floorz - PMINHEIGHT)
-                getZRangeOffset -= klabs((pPlayer->pos.z + getZRangeOffset) - (actor[pPlayer->i].floorz - PMINHEIGHT));
-            else if (pPlayer->pos.z + getZRangeOffset < actor[pPlayer->i].ceilingz + PMINHEIGHT)
-                getZRangeOffset += klabs((actor[pPlayer->i].ceilingz + PMINHEIGHT) - (pPlayer->pos.z + getZRangeOffset));
-        }
-    }
+        uint16_t const ocstat = pSprite->cstat;
+        pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
 
-    pPlayer->pos.z += getZRangeOffset;
-    getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ, &highZhit, &floorZ, &lowZhit, getZRangeClipDist, CLIPMASK0);
-    pPlayer->pos.z -= getZRangeOffset;
+        int32_t cz[3], fz[3], hzhit[3], lzhit[3];
+        vec3_t pos[3] = { pPlayer->pos, pPlayer->pos, pPlayer->pos };
+
+        pos[0].z += stepHeight;
+        pos[1].z += stepHeight>>1;
+
+        for (int i = 0; i < 3; ++i)
+            getzrange(&pos[i], pPlayer->cursectnum, &cz[i], &hzhit[i], &fz[i], &lzhit[i], getZRangeClipDist, CLIPMASK0);
+
+        pSprite->cstat = ocstat;
+
+        ceilZ    = cz[2];
+        highZhit = hzhit[2];
+
+        for (int i = 0; i < 2; ++i)
+            if (hzhit[i] == hzhit[i+1])
+            {
+                ceilZ    = cz[i];
+                highZhit = hzhit[i];
+                break;
+            }
+
+        floorZ  = fz[0];
+        lowZhit = lzhit[0];
+
+        for (int i = 0; i < 2; ++i)
+            if (lzhit[i] == lzhit[i+1])
+            {
+                floorZ  = fz[i];
+                lowZhit = lzhit[i];
+                break;
+            }
+    }
 
     pPlayer->spritebridge = 0;
     pPlayer->sbs          = 0;
