@@ -663,7 +663,7 @@ static void G_PrintCoords(int32_t snum)
         printcoordsline("SECT= %d", sectnum);
     //    Bsprintf(tempbuf,"SEED= %d",randomseed);
     //    printext256(x,y+45,COLOR_WHITE,-1,tempbuf,0);
-
+    printcoordsline("FZ= %d CZ=%d", actor[ps->i].floorz, actor[ps->i].ceilingz);
     printcoordsline("THOLD= %d", ps->transporter_hold);
 
     if (ud.coords < 2)
