@@ -1986,6 +1986,12 @@ int G_EnterLevel(int gameMode)
         G_LoadMapHack(levelName, m.filename);
     }
 
+    if ((unsigned)p0.cursectnum >= (unsigned)numsectors)
+    {
+        LOG_F(ERROR, "Unable to load %s: bad player start point!", G_HaveUserMap() ? boardfilename : m.filename);
+        return 1;
+    }
+
     p0.q16ang = fix16_from_int(playerAngle);
 
     NET_75_CHECK++; // resetpspritevars attempts to insert player 0's sprite, which isn't going to work because we don't have
