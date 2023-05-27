@@ -241,7 +241,9 @@ endif
 LLD := 0
 
 ifneq (0,$(CLANG))
-    override LLD := 1
+    ifneq ($(PLATFORM),DARWIN)
+        override LLD := 1
+    endif
     CLANGXXNAME := $(subst clang,clang++,$(CLANGNAME))
     override CC := $(CLANGNAME) -x c
     override CXX := $(CLANGXXNAME) -x c++
