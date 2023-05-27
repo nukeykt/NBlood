@@ -743,7 +743,7 @@ static StartupWindow *startwin = nil;
 
 bool startwin_isopen(void)
 {
-    return (startwin != nil);
+    return startwin != nil;
 }
 
 int startwin_open(void)
