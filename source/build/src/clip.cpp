@@ -1194,7 +1194,7 @@ static void clipmove_sprite(vec3_t * const pos, int32_t const spriteClipSector, 
                 if (clipinsideboxline(cent.x, cent.y, p1.x, p1.y, p2.x, p2.y, rad) != 0)
                 {
                     vec2_t v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
-                                mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
+                        mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
                     vec2_t const d = p2 - p1;
                     vec2_t const vv = v;
 
@@ -1229,7 +1229,7 @@ static void clipmove_sprite(vec3_t * const pos, int32_t const spriteClipSector, 
         case CSTAT_SPRITE_ALIGNMENT_SLOPE:
         {
             int32_t const heinum = spriteGetSlope(j);
-            int32_t const sz = spriteGetZOfSlope(j, pos->xy);
+            int32_t sz = spriteGetZOfSlope(j, pos->xy);
 
             if (pos->z > sz-flordist && pos->z < sz+ceildist)
             {
@@ -1244,7 +1244,7 @@ static void clipmove_sprite(vec3_t * const pos, int32_t const spriteClipSector, 
                     &ryi[0], &ryi[1], &ryi[2], &ryi[3], heinum);
 
                 vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                            mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    mulscale14(sintable[(spr->ang-256)&2047], walldist) };
 
                 if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
                 {
@@ -1316,12 +1316,12 @@ static void clipmove_sprite(vec3_t * const pos, int32_t const spriteClipSector, 
             vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
             vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
             vec2_t const adjofs = { picanm[tilenum].xofs * -((int)!!(spr->cstat & 4)),
-                                    picanm[tilenum].yofs * -((int)!!(spr->cstat & 8))};
+                picanm[tilenum].yofs * -((int)!!(spr->cstat & 8))};
             vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x,
-                                    ((span.y >> 1) + adjofs.y) * repeat.y };
+                ((span.y >> 1) + adjofs.y) * repeat.y };
             vec2_t const rspan = span * repeat;
             int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
-            int32_t const zz[3] = { pos->z, pos->z + flordist, pos->z - ceildist };
+            int32_t const zz[3] = { pos->z, pos->z+flordist, pos->z-ceildist };
 
             for (int k = 0; k < 3; k++)
             {
@@ -1332,16 +1332,23 @@ static void clipmove_sprite(vec3_t * const pos, int32_t const spriteClipSector, 
                     continue;
 
                 vec2_t const v1 = { spr->x + mulscale16(sinang, center.x) + mulscale24(jj, cosang),
-                                    spr->y - mulscale16(cosang, center.x) + mulscale24(jj, sinang) };
+                    spr->y - mulscale16(cosang, center.x) + mulscale24(jj, sinang) };
 
                 vec2_t const v2 = { v1.x - mulscale16(sinang, rspan.x),
-                                    v1.y + mulscale16(cosang, rspan.x) };
+                    v1.y + mulscale16(cosang, rspan.x) };
 
                 vec2_t v = { mulscale14(sintable[(spr->ang+1024+256+512)&2047], walldist),
-                            mulscale14(sintable[(spr->ang+1024+256)&2047], walldist) };
+                    mulscale14(sintable[(spr->ang+1024+256)&2047], walldist) };
 
                 if (clipinsideboxline(cent.x, cent.y, v1.x, v1.y, v2.x, v2.y, rad) != 0)
                 {
+                    vec2_t p;
+                    getclosestpointonline(pos->xy, v1, v2, &p);
+                    sz = spriteGetZOfSlope(j, p);
+
+                    if (pos->z < sz-flordist || pos->z > sz+ceildist)
+                        continue;
+
                     vec2_t const d = v2 - v1;
 
                     if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-v1.y-v.y) < (pos->x-v1.x-v.x) * d.y)
@@ -2193,7 +2200,6 @@ restart_grand:
         {
             const int32_t cstat = sprite[j].cstat;
             int32_t daz = 0, daz2 = 0;
-            int32_t clipz = 0, clipz2 = 0;
 
             if (cstat&dasprclipmask)
             {
@@ -2239,8 +2245,23 @@ restart_grand:
                     {
                         daz = daz2 = spriteGetZOfSlope(j, pos->xy);
 
+                        vec2_t v2, v3, v4;
+                        get_floorspr_points(&sprite[j], pos->x, pos->y, &v1.x, &v2.x, &v3.x, &v4.x,
+                                            &v1.y, &v2.y, &v3.y, &v4.y, spriteGetSlope(j));
+
                         if ((cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLOPE)
                         {
+                            int32_t zmin, zmax;
+                            vec2_t sv[] = { v1 + pos->xy, v3 + pos->xy };
+                            zmin = zmax = sprite[j].z;
+
+                            for (int i=0; i<2; i++)
+                            {
+                                int32_t sz = spriteGetZOfSlope(j, sv[i]);
+                                if (zmin > sz) zmin = sz;
+                                if (zmax < sz) zmax = sz;
+                            }
+
                             vec2_t p[4];
                             const int wd = walldist + 4;
                             p[0] = p[1] = p[2] = p[3] = pos->xy;
@@ -2248,23 +2269,20 @@ restart_grand:
                             p[1].x += wd; p[1].y -= wd;
                             p[2].x -= wd; p[2].y += wd;
                             p[3].x -= wd; p[3].y -= wd;
-                            clipz = clipz2 = spriteGetZOfSlope(j, p[0]);
-                            for (bssize_t i = 1; i < 3; i++)
+
+                            for (int i=0; i<4; i++)
                             {
                                 int32_t pz = spriteGetZOfSlope(j, p[i]);
-                                if (clipz < pz)
-                                    clipz = pz;
-                                if (clipz2 > pz)
-                                    clipz2 = pz;
+                                if (daz < pz) daz = pz;
+                                if (daz2 > pz) daz2 = pz;
                             }
+
+                            daz  = clamp(daz, zmin, zmax);
+                            daz2 = clamp(daz2, zmin, zmax);
                         }
 
                         if ((cstat&64) != 0 && (pos->z > daz) == ((cstat&8)==0))
                             continue;
-
-                        vec2_t v2, v3, v4;
-                        get_floorspr_points(&sprite[j], pos->x, pos->y, &v1.x, &v2.x, &v3.x, &v4.x,
-                                            &v1.y, &v2.y, &v3.y, &v4.y, spriteGetSlope(j));
 
                         vec2_t const da = { mulscale14(sintable[(sprite[j].ang - 256 + 512) & 2047], walldist + 4),
                                             mulscale14(sintable[(sprite[j].ang - 256) & 2047], walldist + 4) };
@@ -2277,32 +2295,26 @@ restart_grand:
                     }
                 }
 
-                if ((cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_SLOPE)
-                {
-                    clipz = daz;
-                    clipz2 = daz2;
-                }
-
                 if (clipyou != 0)
                 {
-                    if ((pos->z > daz) && (clipz > *ceilz
+                    if ((pos->z > daz) && (daz > *ceilz
 #ifdef YAX_ENABLE
                                            || (daz == *ceilz && yax_getbunch(clipsectorlist[i], YAX_CEILING)>=0)
 #endif
                             ))
                     {
-                        *ceilz = clipz;
+                        *ceilz = daz;
                         *ceilhit = j+49152;
                     }
 
-                    if ((pos->z < daz2) && (clipz2 < *florz
+                    if ((pos->z < daz2) && (daz2 < *florz
 #ifdef YAX_ENABLE
                                             // can have a floor-sprite lying directly on the floor!
                                             || (daz2 == *florz && yax_getbunch(clipsectorlist[i], YAX_FLOOR)>=0)
 #endif
                             ))
                     {
-                        *florz = clipz2;
+                        *florz = daz2;
                         *florhit = j+49152;
                     }
                 }

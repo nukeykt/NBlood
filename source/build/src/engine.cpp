@@ -298,11 +298,9 @@ void initcrc16()
 }
 
 // adapted from build.c
-static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
+void getclosestpointonline(vec2_t const p, vec2_t w, vec2_t w2, vec2_t *const closest)
 {
-    vec2_t const w  = wall[dawall].xy;
-    vec2_t const w2 = wall[wall[dawall].point2].xy;
-    vec2_t const d  = { w2.x - w.x, w2.y - w.y };
+    vec2_t const d = w2 - w;
 
     int64_t i = d.x * ((int64_t)p.x - w.x) + d.y * ((int64_t)p.y - w.y);
 
@@ -323,6 +321,11 @@ static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall,
     i = tabledivide64((i << 15), j) << 15;
 
     *closest = { (int32_t)(w.x + ((d.x * i) >> 30)), (int32_t)(w.y + ((d.y * i) >> 30)) };
+}
+
+static FORCE_INLINE void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
+{
+    getclosestpointonline(p, wall[dawall].xy, wall[wall[dawall].point2].xy, closest);
 }
 
 ////////// YAX //////////
