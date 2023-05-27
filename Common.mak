@@ -743,7 +743,7 @@ ifeq (0,$(CLANG))
                 ifneq (,$(filter 4 5,$(GCC_MAJOR)))
                     W_GCC_6 :=
                 endif
-            endif     
+            endif
         endif
     endif
 
