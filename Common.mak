@@ -841,8 +841,13 @@ else ifeq ($(PLATFORM),DARWIN)
         COMPILERFLAGS += -I/opt/local/include
     endif
     ifneq ($(shell brew --version &>/dev/null; echo $$?),127)
-        LIBDIRS += -L/usr/local/lib
-        COMPILERFLAGS += -I/usr/local/include
+        ifneq (,$(wildcard /opt/homebrew/))
+            LIBDIRS += -L/opt/homebrew/lib
+            COMPILERFLAGS += -I/opt/homebrew/include
+        else
+            LIBDIRS += -L/usr/local/lib
+            COMPILERFLAGS += -I/usr/local/include
+        endif
     endif
     ifneq ($(shell fink --version &>/dev/null; echo $$?),127)
         LIBDIRS += -L/sw/lib
