@@ -86,8 +86,8 @@ static FORCE_INLINE void MV_Unlock(void)
 }
 
 int  MV_VoicePlaying(int handle);
-int  MV_KillAllVoices(void);
-int  MV_Kill(int handle);
+int  MV_KillAllVoices(bool useCallBack = true);
+int  MV_Kill(int handle, bool useCallBack = true);
 int  MV_VoicesPlaying(void);
 int  MV_VoiceAvailable(int priority);
 int  MV_SetPitch(int handle, int pitchoffset);
@@ -144,7 +144,7 @@ int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *init
 int  MV_Shutdown(void);
 void MV_HookMusicRoutine(void (*callback)(void));
 void MV_UnhookMusicRoutine(void);
-void MV_SetXMPInterpolation(void);
+void MV_SetXMPInterpolation(int interp);
 
 struct MV_MusicRoutineBuffer
 {

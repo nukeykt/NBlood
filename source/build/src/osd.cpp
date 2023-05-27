@@ -765,7 +765,7 @@ static int osdfunc_toggle(osdcmdptr_t parm)
 // OSD_Init() -- Initializes the on-screen display
 //
 
-void mi_log(char *msg, void *arg)
+void mi_log(const char *msg, void *arg)
 {
     if (!msg || msg[0] == '\n')
         return;
@@ -773,10 +773,10 @@ void mi_log(char *msg, void *arg)
     UNREFERENCED_PARAMETER(arg);
     int len = Bstrlen(msg);
     
-    while (msg[len-1] == '\n')
-        msg[--len] = '\0';
+    while (len > 0 && msg[len-1] == '\n')
+        len--;
     
-    VLOG_F(LOG_MEM, "%s", msg);
+    VLOG_F(LOG_MEM, "%.*s", len, msg);
 };
 
 void OSD_Init(void)
@@ -1755,7 +1755,9 @@ static inline void OSD_LineFeed(void)
 static int OSD_FilterConsoleMsg(char **putstr)
 {
     static int errorCnt;
-    int const isError = !Bstrncmp(*putstr, osd->draw.errorfmt, osd->draw.errfmtlen);
+
+    char const *errorfmt = osd->draw.errorfmt;
+    int const   isError  = errorfmt && !Bstrncmp(*putstr, errorfmt, osd->draw.errfmtlen);
 
     if (isError && (unsigned)++errorCnt >(unsigned)osd->log.maxerrors)
     {

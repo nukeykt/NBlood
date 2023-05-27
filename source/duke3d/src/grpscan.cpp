@@ -513,7 +513,6 @@ int32_t ScanGroups(void)
 
     if (usedgrpcache)
     {
-        int32_t i = 0;
         buildvfs_FILE fp = buildvfs_fopen_write(GRPCACHEFILE);
         if (fp)
         {
@@ -522,7 +521,6 @@ int32_t ScanGroups(void)
                 fgg = fg->next;
                 fprintf(fp, "\"%s\" %d %d %d\n", fg->name, fg->size, fg->mtime, fg->crcval);
                 Xfree(fg);
-                i++;
             }
             buildvfs_fclose(fp);
         }

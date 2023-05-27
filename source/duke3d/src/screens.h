@@ -30,7 +30,7 @@ static inline int G_LastMapInfoIndex(void)
     return ud.volume_number*MAXLEVELS + ud.last_level-1;
 }
 
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
 typedef struct {
     uint32_t lastgtic;
     uint32_t lastnumins, numins;

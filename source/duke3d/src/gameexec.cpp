@@ -2419,7 +2419,7 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     auto const &playerLabel = PlayerLabels[(tw = *insptr++)];
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ABORT_IF(((unsigned)playerNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)playerNum >= MAXPLAYERS) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
                               "%s[%d] invalid for player %d", playerLabel.name, lParm2, playerNum);
 
                     VM_SetPlayer(playerNum, tw, lParm2, Gv_GetVar(*insptr++));
@@ -2433,7 +2433,7 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     auto const &playerLabel = PlayerLabels[(tw = *insptr++)];
                     int const   lParm2      = (playerLabel.flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
-                    VM_ABORT_IF(((unsigned)playerNum >= MAXSPRITES) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
+                    VM_ABORT_IF(((unsigned)playerNum >= MAXPLAYERS) | ((unsigned)lParm2 > (unsigned)playerLabel.maxParm2),
                               "%s[%d] invalid for player %d", playerLabel.name, lParm2, playerNum);
 
                     Gv_SetVar(*insptr++, VM_GetPlayer(playerNum, tw, lParm2));
@@ -5132,7 +5132,7 @@ badindex:
                 int const playerXVel = sprite[vm.pPlayer->i].xvel;
                 int const syncBits   = g_player[vm.playerNum].input.bits;
 
-                if (((moveFlags & pducking) && vm.pPlayer->on_ground && TEST_SYNC_KEY(syncBits, SK_CROUCH))
+                if (((moveFlags & pducking) && (FURY || vm.pPlayer->on_ground) && TEST_SYNC_KEY(syncBits, SK_CROUCH))
                     || ((moveFlags & pfalling) && vm.pPlayer->jumping_counter == 0 && !vm.pPlayer->on_ground && vm.pPlayer->vel.z > 2048)
                     || ((moveFlags & pjumping) && vm.pPlayer->jumping_counter > 348)
                     || ((moveFlags & pstanding) && playerXVel >= 0 && playerXVel < 8)

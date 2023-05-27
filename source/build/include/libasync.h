@@ -94,6 +94,15 @@
 # define LIBASYNC_ASSERT(pred, except, message) ((void)0)
 #endif
 
+// Allow user memory allocator
+#ifndef LIBASYNC_ALIGNED_ALLOC
+# define LIBASYNC_ALIGNED_ALLOC(size, align) aligned_alloc(size, align)
+#endif
+
+#ifndef LIBASYNC_ALIGNED_FREE
+# define LIBASYNC_ALIGNED_FREE(ptr) aligned_free(ptr)
+#endif
+
 // Annotate move constructors and move assignment with noexcept to allow objects
 // to be moved if they are in containers. Compilers which don't support noexcept
 // will usually move regardless.
@@ -895,11 +904,11 @@ struct LIBASYNC_CACHELINE_ALIGN task_base: public ref_count_base<task_base, task
 	// Use aligned memory allocation
 	static void* operator new(std::size_t size)
 	{
-		return aligned_alloc(size, LIBASYNC_CACHELINE_SIZE);
+		return LIBASYNC_ALIGNED_ALLOC(size, LIBASYNC_CACHELINE_SIZE);
 	}
 	static void operator delete(void* ptr)
 	{
-		aligned_free(ptr);
+		LIBASYNC_ALIGNED_FREE(ptr);
 	}
 
 	// Initialize task state
@@ -917,7 +926,7 @@ struct LIBASYNC_CACHELINE_ALIGN task_base: public ref_count_base<task_base, task
 	void run_continuation(Sched& sched, task_ptr&& cont)
 	{
 		LIBASYNC_TRY {
-			detail::schedule_task(sched, std::move(cont));
+            detail::schedule_task(sched, cont);
 		} LIBASYNC_CATCH(...) {
 			// This is suboptimal, but better than letting the exception leak
 			cont->vtable->cancel(cont.get(), std::current_exception());
@@ -985,8 +994,8 @@ struct task_base_deleter {
 template<typename Result>
 struct task_result_holder: public task_base {
 	union {
-		typename std::aligned_storage<sizeof(Result), std::alignment_of<Result>::value>::type result;
-		std::aligned_storage<sizeof(std::exception_ptr), std::alignment_of<std::exception_ptr>::value>::type except;
+		alignas(Result) std::uint8_t result[sizeof(Result)];
+		alignas(std::exception_ptr) std::uint8_t except[sizeof(std::exception_ptr)];
 
 		// Scheduler that should be used to schedule this task. The scheduler
 		// type has been erased and is held by vtable->schedule.
@@ -1027,7 +1036,7 @@ struct task_result_holder<Result&>: public task_base {
 	union {
 		// Store as pointer internally
 		Result* result;
-		std::aligned_storage<sizeof(std::exception_ptr), std::alignment_of<std::exception_ptr>::value>::type except;
+		alignas(std::exception_ptr) std::uint8_t except[sizeof(std::exception_ptr)];
 		void* sched;
 	};
 
@@ -1052,7 +1061,7 @@ struct task_result_holder<Result&>: public task_base {
 template<>
 struct task_result_holder<fake_void>: public task_base {
 	union {
-		std::aligned_storage<sizeof(std::exception_ptr), std::alignment_of<std::exception_ptr>::value>::type except;
+		alignas(std::exception_ptr) std::uint8_t except[sizeof(std::exception_ptr)];
 		void* sched;
 	};
 
@@ -1163,7 +1172,7 @@ struct func_base<Func, typename std::enable_if<std::is_empty<Func>::value>::type
 // Class to hold a function object and initialize/destroy it at any time
 template<typename Func, typename = void>
 struct func_holder {
-	typename std::aligned_storage<sizeof(Func), std::alignment_of<Func>::value>::type func;
+	alignas(Func) std::uint8_t func[sizeof(Func)];
 
 	Func& get_func()
 	{
@@ -2044,8 +2053,14 @@ public:
 };
 
 // Spawn a function asynchronously
+#if (__cplusplus >= 201703L)
+// Use std::invoke_result instead of std::result_of for C++17 or greater because std::result_of was deprecated in C++17 and removed in C++20
+template<typename Sched, typename Func>
+task<typename detail::remove_task<std::invoke_result_t<std::decay_t<Func>>>::type> spawn(Sched& sched, Func&& f)
+#else
 template<typename Sched, typename Func>
 task<typename detail::remove_task<typename std::result_of<typename std::decay<Func>::type()>::type>::type> spawn(Sched& sched, Func&& f)
+#endif
 {
 	// Using result_of in the function return type to work around bugs in the Intel
 	// C++ compiler.
@@ -3092,7 +3107,7 @@ template<typename T>
 class singleton {
 	std::mutex lock;
 	std::atomic<bool> init_flag;
-	typename std::aligned_storage<sizeof(T), std::alignment_of<T>::value>::type storage;
+	alignas(T) std::uint8_t storage[sizeof(T)];
 
 	static singleton instance;
 
@@ -3142,8 +3157,8 @@ enum wait_type {
 //
 // The event object is lazily initialized to avoid unnecessary API calls.
 class task_wait_event {
-	std::aligned_storage<sizeof(std::mutex), std::alignment_of<std::mutex>::value>::type m;
-	std::aligned_storage<sizeof(std::condition_variable), std::alignment_of<std::condition_variable>::value>::type c;
+	alignas(std::mutex) std::uint8_t m[sizeof(std::mutex)];
+	alignas(std::condition_variable) std::uint8_t c[sizeof(std::condition_variable)];
 	int event_mask;
 	bool initialized;
 

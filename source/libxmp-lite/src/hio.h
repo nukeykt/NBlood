@@ -4,7 +4,6 @@
 #ifdef EDUKE32_DISABLED
 #include "callbackio.h"
 #endif // EDUKE32_DISABLED
-#include <stddef.h>
 #include "memio.h"
 
 #define HIO_HANDLE_TYPE(x) ((x)->type)
@@ -53,7 +52,7 @@ int	hio_error	(HIO_HANDLE *);
 #ifdef EDUKE32_DISABLED
 HIO_HANDLE *hio_open	(const char *, const char *);
 #endif // EDUKE32_DISABLED
-HIO_HANDLE *hio_open_mem  (const void *, long);
+HIO_HANDLE *hio_open_mem  (const void *, long, int);
 #ifdef EDUKE32_DISABLED
 HIO_HANDLE *hio_open_file (FILE *);
 HIO_HANDLE *hio_open_file2 (FILE *);/* allows fclose()ing the file by libxmp */

@@ -18,7 +18,7 @@
 
 // TODO: actually make the layout switching unnecessary :/
 
-extern int32_t win_priorityclass;
+extern int32_t win_boostpriority;
 extern char    win_silentvideomodeswitch;
 extern DWM_TIMING_INFO timingInfo;
 
@@ -35,7 +35,6 @@ void    windowsShowError(const char *m);
 void    windowsPlatformCleanup(void);
 void    windowsPlatformInit(void);
 int     windowsPreInit(void);
-void    windowsSetupTimer(int useNtTimer);
 void    windowsSetKeyboardLayout(char const *layout, int focusChanged = false);
 void    windowsWaitForVBlank(void);
 #endif // winbits_h__

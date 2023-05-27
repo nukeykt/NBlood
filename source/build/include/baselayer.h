@@ -104,11 +104,19 @@ extern int32_t lockcount;
 } while(0)
 #endif
 
-extern float g_videoGamma, g_videoContrast, g_videoBrightness;
+extern float g_videoGamma, g_videoContrast, g_videoSaturation;
 
-#define DEFAULT_GAMMA 1.0f
-#define DEFAULT_CONTRAST 1.0f
-#define DEFAULT_BRIGHTNESS 0.0f
+#define DEFAULT_GAMMA      1.0f
+#define DEFAULT_CONTRAST   1.0f
+#define DEFAULT_SATURATION 1.0f
+
+#define MAX_GAMMA      1.25f
+#define MAX_CONTRAST   1.5f
+#define MAX_SATURATION 2.0f
+
+#define MIN_GAMMA      0.75f
+#define MIN_CONTRAST   0.5f
+#define MIN_SATURATION 0.0f
 
 #define GAMMA_CALC ((int32_t)(min(max((float)((g_videoGamma - 1.0f) * 10.0f), 0.f), 15.f)))
 
@@ -275,6 +283,7 @@ int32_t handleevents_peekkeys(void);
 extern void (*keypresscallback)(int32_t,int32_t);
 extern void (*g_mouseCallback)(int32_t,int32_t);
 extern void (*g_controllerHotplugCallback)(void);
+extern void (*g_fileDropCallback)(const char*);
 
 int32_t initinput(void(*hotplugCallback)(void) = NULL);
 void uninitinput(void);
@@ -347,7 +356,7 @@ static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks con
 {
     int const   tfreq = (int)floorf(refreshfreq * 120 / timerGetClockRate());
     int const   clk   = (totalclk - ototalclk).toScale16();
-    float const tics  = clk * tfreq * (1.f / (65536.f * 120));
+    float const tics  = ((1.f / 65536.f) * (1.f / 120.f)) * tfreq * clk;
     int const   ratio = tabledivide32_noinline((int)(65536 * tics * gameTicRate), tfreq);
 
     if ((unsigned)ratio > 66048)

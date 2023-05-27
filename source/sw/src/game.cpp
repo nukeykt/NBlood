@@ -139,7 +139,6 @@ short IntroAnimCount = 0;
 short PlayingLevel = -1;
 SWBOOL GraphicsMode = FALSE;
 char CacheLastLevel[32] = "";
-char PlayerNameArg[32] = "";
 SWBOOL CleanExit = FALSE;
 SWBOOL DemoModeMenuInit = FALSE;
 SWBOOL FinishAnim = 0;
@@ -3742,8 +3741,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
         {
             if (cnt <= argc-2)
             {
-                strncpy(PlayerNameArg, argv[++cnt], SIZ(PlayerNameArg)-1);
-                PlayerNameArg[SIZ(PlayerNameArg)-1] = '\0';
+                strncpy(CommPlayerName, argv[++cnt], SIZ(CommPlayerName)-1);
+                CommPlayerName[SIZ(CommPlayerName)-1] = '\0';
             }
         }
         else if (Bstrncasecmp(arg, "f8",2) == 0)

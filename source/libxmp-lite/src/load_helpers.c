@@ -127,7 +127,7 @@ char *libxmp_adjust_string(char *s)
 	int i;
 
 	for (i = 0; i < strlen(s); i++) {
-		if (!isprint((int)s[i]) || ((uint8) s[i] > 127))
+		if (!isprint((unsigned char)s[i]) || ((uint8) s[i] > 127))
 			s[i] = ' ';
 	}
 
@@ -150,9 +150,21 @@ static void check_envelope(struct xmp_envelope *env)
 		env->flg &= ~XMP_ENVELOPE_LOOP;
 	}
 
-	/* Disable envelope loop if invalid sustain */
-	if (env->sus >= env->npt) {
-		env->flg &= ~XMP_ENVELOPE_ON;
+	/* Disable envelope sustain if invalid sustain */
+	if (env->sus >= env->npt || env->sue >= env->npt) {
+		env->flg &= ~XMP_ENVELOPE_SUS;
+	}
+}
+
+static void clamp_volume_envelope(struct module_data *m, struct xmp_envelope *env)
+{
+	/* Clamp broken values in the volume envelope to the expected range. */
+	if (env->flg & XMP_ENVELOPE_ON) {
+		int i;
+		for (i = 0; i < env->npt; i++) {
+			int16 *data = &env->data[i * 2 + 1];
+			CLAMP(*data, 0, m->volbase);
+		}
 	}
 }
 
@@ -173,23 +185,21 @@ void libxmp_load_prologue(struct context_data *ctx)
 	m->period_type = PERIOD_AMIGA;
 	m->comment = NULL;
 	m->scan_cnt = NULL;
+	m->midi = NULL;
 
 	/* Set defaults */
-    	m->mod.pat = 0;
-    	m->mod.trk = 0;
-    	m->mod.chn = 4;
-    	m->mod.ins = 0;
-    	m->mod.smp = 0;
-    	m->mod.spd = 6;
-    	m->mod.bpm = 125;
-    	m->mod.len = 0;
-    	m->mod.rst = 0;
+	m->mod.pat = 0;
+	m->mod.trk = 0;
+	m->mod.chn = 4;
+	m->mod.ins = 0;
+	m->mod.smp = 0;
+	m->mod.spd = 6;
+	m->mod.bpm = 125;
+	m->mod.len = 0;
+	m->mod.rst = 0;
 
 #ifndef LIBXMP_CORE_PLAYER
 	m->extra = NULL;
-#endif
-#ifndef LIBXMP_CORE_DISABLE_IT
-	m->xsmp = NULL;
 #endif
 
 	m->time_factor = DEFAULT_TIME_FACTOR;
@@ -209,7 +219,7 @@ void libxmp_load_epilogue(struct context_data *ctx)
 	struct xmp_module *mod = &m->mod;
 	int i, j;
 
-    	mod->gvl = m->gvol;
+	mod->gvl = m->gvol;
 
 	/* Sanity check for module parameters */
 	CLAMP(mod->len, 0, XMP_MAX_MOD_LENGTH);
@@ -230,7 +240,7 @@ void libxmp_load_epilogue(struct context_data *ctx)
 	if (mod->spd <= 0 || mod->spd > 255) {
 		mod->spd = 6;
 	}
-	CLAMP(mod->bpm, XMP_MIN_BPM, 255);
+	CLAMP(mod->bpm, XMP_MIN_BPM, 1000);
 
 	/* Set appropriate values for instrument volumes and subinstrument
 	 * global volumes when QUIRK_INSVOL is not set, to keep volume values
@@ -254,7 +264,27 @@ void libxmp_load_epilogue(struct context_data *ctx)
 		check_envelope(&mod->xxi[i].aei);
 		check_envelope(&mod->xxi[i].fei);
 		check_envelope(&mod->xxi[i].pei);
+		clamp_volume_envelope(m, &mod->xxi[i].aei);
 	}
+
+#ifndef LIBXMP_CORE_DISABLE_IT
+	/* TODO: there's no unintrusive and clean way to get this struct into
+	 * libxmp_load_sample currently, so bound these fields here for now. */
+	for (i = 0; i < mod->smp; i++) {
+		struct xmp_sample *xxs = &mod->xxs[i];
+		struct extra_sample_data *xtra = &m->xtra[i];
+		if (xtra->sus < 0) {
+			xtra->sus = 0;
+		}
+		if (xtra->sue > xxs->len) {
+			xtra->sue = xxs->len;
+		}
+		if (xtra->sus >= xxs->len || xtra->sus >= xtra->sue) {
+			xtra->sus = xtra->sue = 0;
+			xxs->flg &= ~(XMP_SAMPLE_SLOOP | XMP_SAMPLE_SLOOP_BIDIR);
+		}
+	}
+#endif
 
 	p->filter = 0;
 	p->mode = XMP_MODE_AUTO;
@@ -283,7 +313,7 @@ int libxmp_prepare_scan(struct context_data *ctx)
 		return 0;
 	}
 
-	m->scan_cnt = (uint8 **)calloc(sizeof (uint8 *), mod->len);
+	m->scan_cnt = (uint8 **) Xcalloc(mod->len, sizeof(uint8 *));
 	if (m->scan_cnt == NULL)
 		return -XMP_ERROR_SYSTEM;
 
@@ -299,7 +329,7 @@ int libxmp_prepare_scan(struct context_data *ctx)
 		}
 
 		pat = pat_idx >= mod->pat ? NULL : mod->xxp[pat_idx];
-		m->scan_cnt[i] = (uint8 *)calloc(1, pat && pat->rows ? pat->rows : 1);
+		m->scan_cnt[i] = (uint8 *) Xcalloc(1, (pat && pat->rows)? pat->rows : 1);
 		if (m->scan_cnt[i] == NULL)
 			return -XMP_ERROR_SYSTEM;
 	}
@@ -316,13 +346,13 @@ void libxmp_free_scan(struct context_data *ctx)
 
 	if (m->scan_cnt) {
 		for (i = 0; i < mod->len; i++)
-			free(m->scan_cnt[i]);
+			Xfree(m->scan_cnt[i]);
 
-		free(m->scan_cnt);
+		Xfree(m->scan_cnt);
 		m->scan_cnt = NULL;
 	}
 
-	free(p->scan);
+	Xfree(p->scan);
 	p->scan = NULL;
 }
 

@@ -352,8 +352,8 @@ memberlabel_t const TsprLabels[] =
 memberlabel_t const PlayerLabels[] = 
 {
     MEMBER(g_player[0].ps, zoom,                        PLAYER_ZOOM),
-    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
-    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, (int16_t)ARRAY_SIZE(g_player[0].ps->loogie), -1 },
+    {                                "loogiex",         PLAYER_LOOGIEX, LABEL_HASPARM2, (int16_t)MAX_LOOGIES, -1 },
+    {                                "loogiey",         PLAYER_LOOGIEY, LABEL_HASPARM2, (int16_t)MAX_LOOGIES, -1 },
     MEMBER(g_player[0].ps, numloogs,                    PLAYER_NUMLOOGS),
     MEMBER(g_player[0].ps, loogcnt,                     PLAYER_LOOGCNT),
      LABEL(g_player[0].ps, pos.x,    "posx",            PLAYER_POSX),
@@ -566,6 +566,8 @@ memberlabel_t const PlayerLabels[] =
     MEMBER(g_player[0].ps, jetpackzincrement,           PLAYER_JETPACKZINCREMENT),
     MEMBER(g_player[0].ps, olook_ang,                   PLAYER_OLOOK_ANG),
     MEMBER(g_player[0].ps, orotscrnang,                 PLAYER_OROTSCRNANG),
+    MEMBER(g_player[0].ps, floorzrebound,               PLAYER_FLOORZREBOUND),
+    MEMBER(g_player[0].ps, floorzcutoff,                PLAYER_FLOORZCUTOFF),
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)
@@ -1100,7 +1102,8 @@ memberlabel_t const UserdefsLabels[]=
     { "gamepadactive",          USERDEFS_GAMEPADACTIVE,          0, 0, -1 },
     { "m_newgamecustom",        USERDEFS_M_NEWGAMECUSTOM,        0, 0, -1 },
     { "m_newgamecustomsub",     USERDEFS_M_NEWGAMECUSTOMSUB,     0, 0, -1 },
-    { "m_newgamecustoml3",      USERDEFS_M_NEWGAMECUSTOML3,      0, 0, -1 }
+    { "m_newgamecustoml3",      USERDEFS_M_NEWGAMECUSTOML3,      0, 0, -1 },
+    { "kick_mode",              USERDEFS_KICK_MODE,              0, 0, -1 },
 };
 
 int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
@@ -1295,6 +1298,7 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
         case USERDEFS_M_NEWGAMECUSTOM:        labelNum = ud.m_newgamecustom;              break;
         case USERDEFS_M_NEWGAMECUSTOMSUB:     labelNum = ud.m_newgamecustomsub;           break;
         case USERDEFS_M_NEWGAMECUSTOML3:      labelNum = ud.m_newgamecustoml3;           break;
+        case USERDEFS_KICK_MODE:              labelNum = ud.kick_mode;                    break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -1507,6 +1511,7 @@ void __fastcall VM_SetUserdef(int const labelNum, int const lParm2, int32_t cons
                 if (iSet & (1u<<b))
                     ME_NEWGAMECUSTOMSUBENTRIES[lParm2][b].flags = 0;
             break;
+        case USERDEFS_KICK_MODE:                    ud.kick_mode                     = iSet; break;
     }
 }
 

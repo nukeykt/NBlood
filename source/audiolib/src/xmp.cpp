@@ -177,14 +177,14 @@ void MV_ReleaseXMPVoice(VoiceNode * voice)
     ALIGNED_FREE_AND_NULL(xd);
 }
 
-void MV_SetXMPInterpolation(void)
+void MV_SetXMPInterpolation(int interp)
 {
     if (!MV_Installed)
         return;
 
     for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
         if (voice->wavetype == FMT_XMP)
-            xmp_set_player(((xmp_data *)voice->rawdataptr)->ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
+            xmp_set_player(((xmp_data *)voice->rawdataptr)->ctx, XMP_PLAYER_INTERP, interp);
 }
 
 #else

@@ -372,6 +372,8 @@ void joySetCallback(void (*callback)(int32_t, int32_t)) { joystick.pCallback = c
 void joyReadButtons(int32_t *pResult) { *pResult = appactive ? joystick.bits : 0; }
 bool joyHasButton(int button) { return !!(joystick.validButtons & (1 << button)); }
 
+void (*g_fileDropCallback)(char const *);
+
 #if defined __linux || defined EDUKE32_BSD || defined __APPLE__
 # include <sys/mman.h>
 #endif
@@ -769,7 +771,7 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
 
     if (r != OSDCMD_OK) return r;
 
-    if (!Bstrcasecmp(parm->name, "vid_gamma") || !Bstrcasecmp(parm->name, "vid_brightness") || !Bstrcasecmp(parm->name, "vid_contrast"))
+    if (!Bstrcasecmp(parm->name, "vid_gamma") || !Bstrcasecmp(parm->name, "vid_contrast") || !Bstrcasecmp(parm->name, "vid_saturation"))
     {
         videoSetPalette(GAMMA_CALC,0,0);
         return r;
@@ -800,6 +802,7 @@ int32_t baselayer_init(void)
           (void *) &r_screenxy, SCREENASPECT_CVAR_TYPE, 0, 9999 },
         { "r_fpgrouscan","use floating-point numbers for slope rendering",(void *) &r_fpgrouscan, CVAR_BOOL, 0, 1 },
         { "r_hightile","enable/disable hightile texture rendering",(void *) &usehightile, CVAR_BOOL, 0, 1 },
+        { "r_maxspritesonscreen","maximum number of sprites to draw per frame",(void *) &maxspritesonscreen, CVAR_INT, 0, MAXSPRITESONSCREEN },
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
         { "r_rotatespriteinterp", "interpolate repeated rotatesprite calls", (void *)&r_rotatespriteinterp, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
@@ -807,9 +810,9 @@ int32_t baselayer_init(void)
 #ifdef YAX_ENABLE
         { "r_tror_nomaskpass", "enable/disable additional pass in TROR software rendering", (void *)&r_tror_nomaskpass, CVAR_BOOL, 0, 1 },
 #endif
-        { "vid_gamma","adjusts gamma component of gamma ramp",(void *) &g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-        { "vid_contrast","adjusts contrast component of gamma ramp",(void *) &g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-        { "vid_brightness","adjusts brightness component of gamma ramp",(void *) &g_videoBrightness, CVAR_FLOAT|CVAR_FUNCPTR, -10, 10 },
+        { "vid_gamma","gamma/brightness correction",(void *) &g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, (int)floor(MIN_GAMMA), (int)ceil(MAX_GAMMA) },
+        { "vid_contrast","contrast correction",(void *) &g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, (int)floor(MIN_CONTRAST), (int)ceil(MAX_CONTRAST) },
+        { "vid_saturation","saturation correction",(void *) &g_videoSaturation, CVAR_FLOAT|CVAR_FUNCPTR, (int)floor(MIN_SATURATION), (int)ceil(MAX_SATURATION) },
         { "screenshot_dir", "Screenshot save path",  (void*)screenshot_dir, CVAR_STRING, 0, sizeof(screenshot_dir) - 1 },
 #ifdef DEBUGGINGAIDS
         { "debug1","debug counter",(void *) &debug1, CVAR_FLOAT, -100000, 100000 },

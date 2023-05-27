@@ -1,6 +1,6 @@
 /*
 Minimal asymmetric stackful cross-platform coroutine library in pure C.
-minicoro - v0.1.2 - 02/Sep/2021
+minicoro - v0.1.3 - 27/Jan/2022
 Eduardo Bart - edub4rt@gmail.com
 https://github.com/edubart/minicoro
 
@@ -36,8 +36,8 @@ Most platforms are supported through different methods:
 | iOS          | ARM/ARM64        | N/A               |
 | Windows      | x86_64           | Windows fibers    |
 | Linux        | x86_64/i686      | ucontext          |
-| Mac OS X     | x86_64           | ucontext          |
-| WebAssembly  | N/A              | Emscripten fibers |
+| Mac OS X     | x86_64/ARM/ARM64 | ucontext          |
+| WebAssembly  | N/A              | Emscripten fibers / Binaryen asyncify |
 | Raspberry Pi | ARM              | ucontext          |
 | RISC-V       | rv64/rv32        | ucontext          |
 
@@ -56,7 +56,11 @@ to create, resume, yield or destroy a coroutine.
 - The `mco_coro` object is not thread safe, you should lock each coroutine into a thread.
 - Stack space is fixed, it cannot grow. By default it has about 56KB of space, this can be changed on coroutine creation.
 - Take care to not cause stack overflows (run out of stack space), otherwise your program may crash or not, the behavior is undefined.
-- On WebAssembly you must compile with emscripten flag `-s ASYNCIFY=1`.
+- On WebAssembly you must compile with Emscripten flag `-s ASYNCIFY=1`.
+- The WebAssembly Binaryen asyncify method can be used when explicitly enabled,
+you may want to do this only to use minicoro with WebAssembly native interpreters
+(no Web browser). This method is confirmed to work well with Emscripten toolchain,
+however it fails on other WebAssembly toolchains like WASI SDK.
 
 # Introduction
 
@@ -182,6 +186,7 @@ The following can be defined to change the library behavior:
 - `MCO_USE_ASM`               - Force use of assembly context switch implementation.
 - `MCO_USE_UCONTEXT`          - Force use of ucontext context switch implementation.
 - `MCO_USE_FIBERS`            - Force use of fibers context switch implementation.
+- `MCO_USE_ASYNCIFY`          - Force use of Binaryen asyncify context switch implementation.
 - `MCO_USE_VALGRIND`          - Define if you want run with valgrind to fix accessing memory errors.
 
 # License
@@ -321,7 +326,7 @@ extern "C" {
 #define MCO_MAGIC_NUMBER 0x7E3CB1A9
 
 /* Detect implementation based on OS, arch and compiler. */
-#if !defined(MCO_USE_UCONTEXT) && !defined(MCO_USE_FIBERS) && !defined(MCO_USE_ASM)
+#if !defined(MCO_USE_UCONTEXT) && !defined(MCO_USE_FIBERS) && !defined(MCO_USE_ASM) && !defined(MCO_USE_ASYNCIFY)
   #if defined(_WIN32)
     #if (defined(__GNUC__) && defined(__x86_64__)) || (defined(_MSC_VER) && defined(_M_X64))
       #define MCO_USE_ASM
@@ -332,6 +337,8 @@ extern "C" {
     #define MCO_USE_UCONTEXT
   #elif defined(__EMSCRIPTEN__)
     #define MCO_USE_FIBERS
+  #elif defined(__wasm__)
+    #define MCO_USE_ASYNCIFY
   #else
     #if __GNUC__ >= 3 /* Assembly extension supported. */
       #if defined(__x86_64__) || \
@@ -404,6 +411,16 @@ extern "C" {
     #define MCO_FORCE_INLINE __inline
   #else /* No inline support. */
     #define MCO_FORCE_INLINE
+  #endif
+#endif
+
+#ifndef MCO_NO_INLINE
+  #ifdef __GNUC__
+    #define MCO_NO_INLINE __attribute__((noinline))
+  #elif defined(_MSC_VER)
+    #define MCO_NO_INLINE __declspec(noinline)
+  #else
+    #define MCO_NO_INLINE
   #endif
 #endif
 
@@ -485,11 +502,11 @@ static MCO_FORCE_INLINE void _mco_prepare_jumpin(mco_coro* co) {
 
 static MCO_FORCE_INLINE void _mco_prepare_jumpout(mco_coro* co) {
   /* Switch back to the previous running coroutine. */
-  MCO_ASSERT(mco_running() == co);
+  /* MCO_ASSERT(mco_running() == co); */
   mco_coro* prev_co = co->prev_co;
   co->prev_co = NULL;
   if(prev_co) {
-    MCO_ASSERT(prev_co->state == MCO_NORMAL);
+    /* MCO_ASSERT(prev_co->state == MCO_NORMAL); */
     prev_co->state = MCO_RUNNING;
   }
   mco_current_co = prev_co;
@@ -512,7 +529,7 @@ static MCO_FORCE_INLINE void _mco_prepare_jumpout(mco_coro* co) {
 static void _mco_jumpin(mco_coro* co);
 static void _mco_jumpout(mco_coro* co);
 
-static void _mco_main(mco_coro* co) {
+static MCO_NO_INLINE void _mco_main(mco_coro* co) {
   co->func(co); /* Run the coroutine function. */
   co->state = MCO_DEAD; /* Coroutine finished successfully, set state to dead. */
   _mco_jumpout(co); /* Jump back to the old context .*/
@@ -580,66 +597,67 @@ _MCO_ASM_BLOB static unsigned char _mco_wrap_main_code[] = {
 };
 
 _MCO_ASM_BLOB static unsigned char _mco_switch_code[] = {
-  0x48, 0x8d, 0x05, 0x52, 0x01, 0x00, 0x00,               /* lea    0x152(%rip),%rax */
-  0x48, 0x89, 0x01,                                       /* mov    %rax,(%rcx) */
-  0x48, 0x89, 0x61, 0x08,                                 /* mov    %rsp,0x8(%rcx) */
-  0x48, 0x89, 0x69, 0x10,                                 /* mov    %rbp,0x10(%rcx) */
-  0x48, 0x89, 0x59, 0x18,                                 /* mov    %rbx,0x18(%rcx) */
-  0x4c, 0x89, 0x61, 0x20,                                 /* mov    %r12,0x20(%rcx) */
-  0x4c, 0x89, 0x69, 0x28,                                 /* mov    %r13,0x28(%rcx) */
-  0x4c, 0x89, 0x71, 0x30,                                 /* mov    %r14,0x30(%rcx) */
-  0x4c, 0x89, 0x79, 0x38,                                 /* mov    %r15,0x38(%rcx) */
-  0x48, 0x89, 0x79, 0x40,                                 /* mov    %rdi,0x40(%rcx) */
-  0x48, 0x89, 0x71, 0x48,                                 /* mov    %rsi,0x48(%rcx) */
-  0x66, 0x0f, 0xd6, 0x71, 0x50,                           /* movq   %xmm6,0x50(%rcx) */
-  0x66, 0x0f, 0xd6, 0x79, 0x60,                           /* movq   %xmm7,0x60(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0x41, 0x70,                     /* movq   %xmm8,0x70(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0x89, 0x80, 0x00, 0x00, 0x00,   /* movq   %xmm9,0x80(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0x91, 0x90, 0x00, 0x00, 0x00,   /* movq   %xmm10,0x90(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0x99, 0xa0, 0x00, 0x00, 0x00,   /* movq   %xmm11,0xa0(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0xa1, 0xb0, 0x00, 0x00, 0x00,   /* movq   %xmm12,0xb0(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0xa9, 0xc0, 0x00, 0x00, 0x00,   /* movq   %xmm13,0xc0(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0xb1, 0xd0, 0x00, 0x00, 0x00,   /* movq   %xmm14,0xd0(%rcx) */
-  0x66, 0x44, 0x0f, 0xd6, 0xb9, 0xe0, 0x00, 0x00, 0x00,   /* movq   %xmm15,0xe0(%rcx) */
-  0x65, 0x4c, 0x8b, 0x14, 0x25, 0x30, 0x00, 0x00, 0x00,   /* mov    %gs:0x30,%r10 */
-  0x49, 0x8b, 0x42, 0x20,                                 /* mov    0x20(%r10),%rax */
-  0x48, 0x89, 0x81, 0xf0, 0x00, 0x00, 0x00,               /* mov    %rax,0xf0(%rcx) */
-  0x49, 0x8b, 0x82, 0x78, 0x14, 0x00, 0x00,               /* mov    0x1478(%r10),%rax */
-  0x48, 0x89, 0x81, 0xf8, 0x00, 0x00, 0x00,               /* mov    %rax,0xf8(%rcx) */
-  0x49, 0x8b, 0x42, 0x10,                                 /* mov    0x10(%r10),%rax */
-  0x48, 0x89, 0x81, 0x00, 0x01, 0x00, 0x00,               /* mov    %rax,0x100(%rcx) */
-  0x49, 0x8b, 0x42, 0x08,                                 /* mov    0x8(%r10),%rax */
-  0x48, 0x89, 0x81, 0x08, 0x01, 0x00, 0x00,               /* mov    %rax,0x108(%rcx) */
-  0x48, 0x8b, 0x82, 0x08, 0x01, 0x00, 0x00,               /* mov    0x108(%rdx),%rax */
-  0x49, 0x89, 0x42, 0x08,                                 /* mov    %rax,0x8(%r10) */
-  0x48, 0x8b, 0x82, 0x00, 0x01, 0x00, 0x00,               /* mov    0x100(%rdx),%rax */
-  0x49, 0x89, 0x42, 0x10,                                 /* mov    %rax,0x10(%r10) */
-  0x48, 0x8b, 0x82, 0xf8, 0x00, 0x00, 0x00,               /* mov    0xf8(%rdx),%rax */
-  0x49, 0x89, 0x82, 0x78, 0x14, 0x00, 0x00,               /* mov    %rax,0x1478(%r10) */
-  0x48, 0x8b, 0x82, 0xf0, 0x00, 0x00, 0x00,               /* mov    0xf0(%rdx),%rax */
-  0x49, 0x89, 0x42, 0x20,                                 /* mov    %rax,0x20(%r10) */
-  0xf3, 0x44, 0x0f, 0x7e, 0xba, 0xe0, 0x00, 0x00, 0x00,   /* movq   0xe0(%rdx),%xmm15 */
-  0xf3, 0x44, 0x0f, 0x7e, 0xb2, 0xd0, 0x00, 0x00, 0x00,   /* movq   0xd0(%rdx),%xmm14 */
-  0xf3, 0x44, 0x0f, 0x7e, 0xaa, 0xc0, 0x00, 0x00, 0x00,   /* movq   0xc0(%rdx),%xmm13 */
-  0xf3, 0x44, 0x0f, 0x7e, 0xa2, 0xb0, 0x00, 0x00, 0x00,   /* movq   0xb0(%rdx),%xmm12 */
-  0xf3, 0x44, 0x0f, 0x7e, 0x9a, 0xa0, 0x00, 0x00, 0x00,   /* movq   0xa0(%rdx),%xmm11 */
-  0xf3, 0x44, 0x0f, 0x7e, 0x92, 0x90, 0x00, 0x00, 0x00,   /* movq   0x90(%rdx),%xmm10 */
-  0xf3, 0x44, 0x0f, 0x7e, 0x8a, 0x80, 0x00, 0x00, 0x00,   /* movq   0x80(%rdx),%xmm9 */
-  0xf3, 0x44, 0x0f, 0x7e, 0x42, 0x70,                     /* movq   0x70(%rdx),%xmm8 */
-  0xf3, 0x0f, 0x7e, 0x7a, 0x60,                           /* movq   0x60(%rdx),%xmm7 */
-  0xf3, 0x0f, 0x7e, 0x72, 0x50,                           /* movq   0x50(%rdx),%xmm6 */
-  0x48, 0x8b, 0x72, 0x48,                                 /* mov    0x48(%rdx),%rsi */
-  0x48, 0x8b, 0x7a, 0x40,                                 /* mov    0x40(%rdx),%rdi */
-  0x4c, 0x8b, 0x7a, 0x38,                                 /* mov    0x38(%rdx),%r15 */
-  0x4c, 0x8b, 0x72, 0x30,                                 /* mov    0x30(%rdx),%r14 */
-  0x4c, 0x8b, 0x6a, 0x28,                                 /* mov    0x28(%rdx),%r13 */
-  0x4c, 0x8b, 0x62, 0x20,                                 /* mov    0x20(%rdx),%r12 */
-  0x48, 0x8b, 0x5a, 0x18,                                 /* mov    0x18(%rdx),%rbx */
-  0x48, 0x8b, 0x6a, 0x10,                                 /* mov    0x10(%rdx),%rbp */
-  0x48, 0x8b, 0x62, 0x08,                                 /* mov    0x8(%rdx),%rsp */
-  0xff, 0x22,                                             /* jmpq   *(%rdx) */
-  0xc3,                                                   /* retq    */
-  0x90, 0x90, 0x90, 0x90, 0x90, 0x90,                     /* nop */
+  0x48, 0x8d, 0x05, 0x3e, 0x01, 0x00, 0x00,              /* lea    0x13e(%rip),%rax    */
+  0x48, 0x89, 0x01,                                      /* mov    %rax,(%rcx)         */
+  0x48, 0x89, 0x61, 0x08,                                /* mov    %rsp,0x8(%rcx)      */
+  0x48, 0x89, 0x69, 0x10,                                /* mov    %rbp,0x10(%rcx)     */
+  0x48, 0x89, 0x59, 0x18,                                /* mov    %rbx,0x18(%rcx)     */
+  0x4c, 0x89, 0x61, 0x20,                                /* mov    %r12,0x20(%rcx)     */
+  0x4c, 0x89, 0x69, 0x28,                                /* mov    %r13,0x28(%rcx)     */
+  0x4c, 0x89, 0x71, 0x30,                                /* mov    %r14,0x30(%rcx)     */
+  0x4c, 0x89, 0x79, 0x38,                                /* mov    %r15,0x38(%rcx)     */
+  0x48, 0x89, 0x79, 0x40,                                /* mov    %rdi,0x40(%rcx)     */
+  0x48, 0x89, 0x71, 0x48,                                /* mov    %rsi,0x48(%rcx)     */
+  0x0f, 0x11, 0x71, 0x50,                                /* movups %xmm6,0x50(%rcx)    */
+  0x0f, 0x11, 0x79, 0x60,                                /* movups %xmm7,0x60(%rcx)    */
+  0x44, 0x0f, 0x11, 0x41, 0x70,                          /* movups %xmm8,0x70(%rcx)    */
+  0x44, 0x0f, 0x11, 0x89, 0x80, 0x00, 0x00, 0x00,        /* movups %xmm9,0x80(%rcx)    */
+  0x44, 0x0f, 0x11, 0x91, 0x90, 0x00, 0x00, 0x00,        /* movups %xmm10,0x90(%rcx)   */
+  0x44, 0x0f, 0x11, 0x99, 0xa0, 0x00, 0x00, 0x00,        /* movups %xmm11,0xa0(%rcx)   */
+  0x44, 0x0f, 0x11, 0xa1, 0xb0, 0x00, 0x00, 0x00,        /* movups %xmm12,0xb0(%rcx)   */
+  0x44, 0x0f, 0x11, 0xa9, 0xc0, 0x00, 0x00, 0x00,        /* movups %xmm13,0xc0(%rcx)   */
+  0x44, 0x0f, 0x11, 0xb1, 0xd0, 0x00, 0x00, 0x00,        /* movups %xmm14,0xd0(%rcx)   */
+  0x44, 0x0f, 0x11, 0xb9, 0xe0, 0x00, 0x00, 0x00,        /* movups %xmm15,0xe0(%rcx)   */
+  0x65, 0x4c, 0x8b, 0x14, 0x25, 0x30, 0x00, 0x00, 0x00,  /* mov    %gs:0x30,%r10       */
+  0x49, 0x8b, 0x42, 0x20,                                /* mov    0x20(%r10),%rax     */
+  0x48, 0x89, 0x81, 0xf0, 0x00, 0x00, 0x00,              /* mov    %rax,0xf0(%rcx)     */
+  0x49, 0x8b, 0x82, 0x78, 0x14, 0x00, 0x00,              /* mov    0x1478(%r10),%rax   */
+  0x48, 0x89, 0x81, 0xf8, 0x00, 0x00, 0x00,              /* mov    %rax,0xf8(%rcx)     */
+  0x49, 0x8b, 0x42, 0x10,                                /* mov    0x10(%r10),%rax     */
+  0x48, 0x89, 0x81, 0x00, 0x01, 0x00, 0x00,              /* mov    %rax,0x100(%rcx)    */
+  0x49, 0x8b, 0x42, 0x08,                                /* mov    0x8(%r10),%rax      */
+  0x48, 0x89, 0x81, 0x08, 0x01, 0x00, 0x00,              /* mov    %rax,0x108(%rcx)    */
+  0x48, 0x8b, 0x82, 0x08, 0x01, 0x00, 0x00,              /* mov    0x108(%rdx),%rax    */
+  0x49, 0x89, 0x42, 0x08,                                /* mov    %rax,0x8(%r10)      */
+  0x48, 0x8b, 0x82, 0x00, 0x01, 0x00, 0x00,              /* mov    0x100(%rdx),%rax    */
+  0x49, 0x89, 0x42, 0x10,                                /* mov    %rax,0x10(%r10)     */
+  0x48, 0x8b, 0x82, 0xf8, 0x00, 0x00, 0x00,              /* mov    0xf8(%rdx),%rax     */
+  0x49, 0x89, 0x82, 0x78, 0x14, 0x00, 0x00,              /* mov    %rax,0x1478(%r10)   */
+  0x48, 0x8b, 0x82, 0xf0, 0x00, 0x00, 0x00,              /* mov    0xf0(%rdx),%rax     */
+  0x49, 0x89, 0x42, 0x20,                                /* mov    %rax,0x20(%r10)     */
+  0x44, 0x0f, 0x10, 0xba, 0xe0, 0x00, 0x00, 0x00,        /* movups 0xe0(%rdx),%xmm15   */
+  0x44, 0x0f, 0x10, 0xb2, 0xd0, 0x00, 0x00, 0x00,        /* movups 0xd0(%rdx),%xmm14   */
+  0x44, 0x0f, 0x10, 0xaa, 0xc0, 0x00, 0x00, 0x00,        /* movups 0xc0(%rdx),%xmm13   */
+  0x44, 0x0f, 0x10, 0xa2, 0xb0, 0x00, 0x00, 0x00,        /* movups 0xb0(%rdx),%xmm12   */
+  0x44, 0x0f, 0x10, 0x9a, 0xa0, 0x00, 0x00, 0x00,        /* movups 0xa0(%rdx),%xmm11   */
+  0x44, 0x0f, 0x10, 0x92, 0x90, 0x00, 0x00, 0x00,        /* movups 0x90(%rdx),%xmm10   */
+  0x44, 0x0f, 0x10, 0x8a, 0x80, 0x00, 0x00, 0x00,        /* movups 0x80(%rdx),%xmm9    */
+  0x44, 0x0f, 0x10, 0x42, 0x70,                          /* movups 0x70(%rdx),%xmm8    */
+  0x0f, 0x10, 0x7a, 0x60,                                /* movups 0x60(%rdx),%xmm7    */
+  0x0f, 0x10, 0x72, 0x50,                                /* movups 0x50(%rdx),%xmm6    */
+  0x48, 0x8b, 0x72, 0x48,                                /* mov    0x48(%rdx),%rsi     */
+  0x48, 0x8b, 0x7a, 0x40,                                /* mov    0x40(%rdx),%rdi     */
+  0x4c, 0x8b, 0x7a, 0x38,                                /* mov    0x38(%rdx),%r15     */
+  0x4c, 0x8b, 0x72, 0x30,                                /* mov    0x30(%rdx),%r14     */
+  0x4c, 0x8b, 0x6a, 0x28,                                /* mov    0x28(%rdx),%r13     */
+  0x4c, 0x8b, 0x62, 0x20,                                /* mov    0x20(%rdx),%r12     */
+  0x48, 0x8b, 0x5a, 0x18,                                /* mov    0x18(%rdx),%rbx     */
+  0x48, 0x8b, 0x6a, 0x10,                                /* mov    0x10(%rdx),%rbp     */
+  0x48, 0x8b, 0x62, 0x08,                                /* mov    0x8(%rdx),%rsp      */
+  0xff, 0x22,                                            /* jmpq   *(%rdx)             */
+  0xc3,                                                  /* retq                       */
+  0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,        /* nop                        */
+  0x90, 0x90,                                            /* nop                        */
 };
 
 void (*_mco_wrap_main)(void) = (void(*)(void))(void*)_mco_wrap_main_code;
@@ -1083,7 +1101,7 @@ __asm__(
   ".hidden _mco_switch\n"
   "_mco_switch:\n"
 #endif
-  
+
   "  mov x10, sp\n"
   "  mov x11, x30\n"
   "  stp x19, x20, [x0, #(0*16)]\n"
@@ -1475,6 +1493,103 @@ static MCO_FORCE_INLINE void _mco_init_desc_sizes(mco_desc* desc, size_t stack_s
 
 /* ---------------------------------------------------------------------------------------------- */
 
+#ifdef MCO_USE_ASYNCIFY
+
+typedef struct _asyncify_stack_region {
+  void* start;
+  void* limit;
+} _asyncify_stack_region;
+
+typedef struct _mco_context {
+  int rewind_id;
+  _asyncify_stack_region stack_region;
+} _mco_context;
+
+__attribute__((import_module("asyncify"), import_name("start_unwind"))) void _asyncify_start_unwind(void*);
+__attribute__((import_module("asyncify"), import_name("stop_unwind")))  void _asyncify_stop_unwind();
+__attribute__((import_module("asyncify"), import_name("start_rewind"))) void _asyncify_start_rewind(void*);
+__attribute__((import_module("asyncify"), import_name("stop_rewind")))  void _asyncify_stop_rewind();
+
+MCO_NO_INLINE void _mco_jumpin(mco_coro* co) {
+  _mco_context* context = (_mco_context*)co->context;
+  _mco_prepare_jumpin(co);
+  if(context->rewind_id > 0) { /* Begin rewinding until last yield point. */
+    _asyncify_start_rewind(&context->stack_region);
+  }
+  _mco_main(co); /* Run the coroutine function. */
+  _asyncify_stop_unwind(); /* Stop saving coroutine stack. */
+}
+
+static MCO_NO_INLINE void _mco_finish_jumpout(mco_coro* co, volatile int rewind_id) {
+  _mco_context* context = (_mco_context*)co->context;
+  int next_rewind_id = context->rewind_id + 1;
+  if(rewind_id == next_rewind_id) { /* Begins unwinding the stack (save locals and call stack to rewind later) */
+    _mco_prepare_jumpout(co);
+    context->rewind_id = next_rewind_id;
+    _asyncify_start_unwind(&context->stack_region);
+  } else if(rewind_id == context->rewind_id) { /* Continue from yield point. */
+    _asyncify_stop_rewind();
+  }
+  /* Otherwise, we should be rewinding, let it continue... */
+}
+
+MCO_NO_INLINE void _mco_jumpout(mco_coro* co) {
+  _mco_context* context = (_mco_context*)co->context;
+  /*
+  Save rewind point into a local, that should be restored when rewinding.
+  That is "rewind_id != co->rewind_id + 1" may be true when rewinding.
+  Use volatile here just to be safe from compiler optimizing this out.
+  */
+  volatile int rewind_id = context->rewind_id + 1;
+  _mco_finish_jumpout(co, rewind_id);
+}
+
+static mco_result _mco_create_context(mco_coro* co, mco_desc* desc) {
+  /* Determine the context address. */
+  size_t co_addr = (size_t)co;
+  size_t context_addr = _mco_align_forward(co_addr + sizeof(mco_coro), 16);
+  size_t storage_addr = _mco_align_forward(context_addr + sizeof(_mco_context), 16);
+  size_t stack_addr = _mco_align_forward(storage_addr + desc->storage_size, 16);
+  /* Initialize context. */
+  _mco_context* context = (_mco_context*)context_addr;
+  memset(context, 0, sizeof(_mco_context));
+  /* Initialize storage. */
+  unsigned char* storage = (unsigned char*)storage_addr;
+  memset(storage, 0, desc->storage_size);
+  /* Initialize stack. */
+  void *stack_base = (void*)stack_addr;
+  size_t stack_size = desc->stack_size;
+#ifdef MCO_ZERO_MEMORY
+  memset(stack_base, 0, stack_size);
+#endif
+  context->stack_region.start = stack_base;
+  context->stack_region.limit = (void*)((size_t)stack_base + stack_size);
+  co->context = context;
+  co->stack_base = stack_base;
+  co->stack_size = stack_size;
+  co->storage = storage;
+  co->storage_size = desc->storage_size;
+  return MCO_SUCCESS;
+}
+
+static void _mco_destroy_context(mco_coro* co) {
+  /* Nothing to do. */
+  _MCO_UNUSED(co);
+}
+
+static MCO_FORCE_INLINE void _mco_init_desc_sizes(mco_desc* desc, size_t stack_size) {
+  desc->coro_size = _mco_align_forward(sizeof(mco_coro), 16) +
+                    _mco_align_forward(sizeof(_mco_context), 16) +
+                    _mco_align_forward(desc->storage_size, 16) +
+                    _mco_align_forward(stack_size, 16) +
+                    16;
+  desc->stack_size = stack_size; /* This is just a hint, it won't be the real one. */
+}
+
+#endif /* MCO_USE_ASYNCIFY */
+
+/* ---------------------------------------------------------------------------------------------- */
+
 mco_desc mco_desc_init(void (*func)(mco_coro* co), size_t stack_size) {
   if(stack_size != 0) {
     /* Stack size should be at least `MCO_MIN_STACK_SIZE`. */
@@ -1632,6 +1747,9 @@ mco_result mco_yield(mco_coro* co) {
     MCO_LOG("attempt to yield an invalid coroutine");
     return MCO_INVALID_COROUTINE;
   }
+#ifdef MCO_USE_ASYNCIFY
+  /* Asyncify already checks for stack overflow. */
+#else
   /* This check happens when the stack overflow already happened, but better later than never. */
   volatile size_t dummy;
   size_t stack_addr = (size_t)&dummy;
@@ -1641,6 +1759,7 @@ mco_result mco_yield(mco_coro* co) {
     MCO_LOG("coroutine stack overflow, try increasing the stack size");
     return MCO_STACK_OVERFLOW;
   }
+#endif
   if(co->state != MCO_RUNNING) {  /* Can only yield coroutines that are running. */
     MCO_LOG("attempt to yield a coroutine that is not running");
     return MCO_NOT_RUNNING;
@@ -1671,7 +1790,7 @@ mco_result mco_push(mco_coro* co, const void* src, size_t len) {
   } else if(len > 0) {
     size_t bytes_stored = co->bytes_stored + len;
     if(bytes_stored > co->storage_size) {
-      MCO_LOG("attempt to push bytes too many bytes into coroutine storage");
+      MCO_LOG("attempt to push too many bytes into coroutine storage");
       return MCO_NOT_ENOUGH_SPACE;
     }
     if(!src) {
@@ -1743,7 +1862,7 @@ mco_coro* mco_running(void) {
   return mco_current_co;
 }
 #else
-static mco_coro* _mco_running(void) {
+static MCO_NO_INLINE mco_coro* _mco_running(void) {
   return mco_current_co;
 }
 mco_coro* mco_running(void) {
@@ -1827,7 +1946,7 @@ For more information, please refer to <http://unlicense.org/>
 ===============================================================================
 ALTERNATIVE 2 - MIT No Attribution
 ===============================================================================
-Copyright (c) 2021 Eduardo Bart (https://github.com/edubart/minicoro)
+Copyright (c) 2021-2022 Eduardo Bart (https://github.com/edubart/minicoro)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

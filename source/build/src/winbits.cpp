@@ -7,12 +7,15 @@
 #include "build.h"
 #include "cache1d.h"
 #include "compat.h"
+#include "editor.h"
 #include "osd.h"
 #include "renderlayer.h"
 
+#include <avrt.h>
 #include <mmsystem.h>
 #include <winnls.h>
 #include <winternl.h>
+#include <winnt.h>
 
 #include <system_error>
 
@@ -22,13 +25,13 @@
 # define EBACKTRACEDLL "ebacktrace1.dll"
 #endif
 
-int32_t    win_priorityclass;
+int32_t    win_boostpriority = 2;
 char       win_silentvideomodeswitch;
 static int win_silentfocuschange;
 
 static HANDLE  g_singleInstanceSemaphore = nullptr;
 static int32_t win_togglecomposition;
-static int32_t win_systemtimermode;
+static int32_t win_systemtimermode = 1;
 static int32_t win_performancemode;
 
 static OSVERSIONINFOEX osv;
@@ -46,94 +49,118 @@ typedef DWORD(WINAPI *PFNPOWERSETACTIVESCHEME)(HKEY, CONST GUID *);
 static PFNPOWERGETACTIVESCHEME powrprof_PowerGetActiveScheme;
 static PFNPOWERSETACTIVESCHEME powrprof_PowerSetActiveScheme;
 
-void windowsSetupTimer(int const useNtTimer)
+static HMODULE hAVRT;
+static HANDLE hMMTHREAD;
+static HMODULE hNTDLL;
+
+typedef HANDLE(WINAPI *PFNAVSETMMTHREADCHARACTERISTICS)(LPCSTR, LPDWORD);
+typedef BOOL(WINAPI* PFNAVREVERTMMTHREADCHARACTERISTICS)(HANDLE);
+typedef BOOL(WINAPI* PFNAVSETMMTHREADPRIORITY)(HANDLE, AVRT_PRIORITY);
+
+static PFNAVSETMMTHREADCHARACTERISTICS    avrt_AvSetMmThreadCharacteristics;
+static PFNAVREVERTMMTHREADCHARACTERISTICS avrt_AvRevertMmThreadCharacteristics;
+static PFNAVSETMMTHREADPRIORITY           avrt_AvSetMmThreadPriority;
+
+typedef NTSTATUS(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
+typedef NTSTATUS(NTAPI* PFNQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
+
+static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
+static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
+
+// convert Windows' NTSTATUS codes to regular Win32 error codes so we can print error strings if any of our bullshit undocumented API usage fails
+DWORD windowsConvertNTSTATUS(LONG ntstatus)
+{
+    DWORD oldError = GetLastError();    
+    OVERLAPPED o = {};
+    o.Internal = ntstatus;
+    
+    DWORD br;
+    GetOverlappedResult(NULL, &o, &br, FALSE);
+    
+    DWORD result = GetLastError();
+    SetLastError(oldError);
+    
+    return result;
+}
+
+void windowsSetupTimer(bool const appHasFocus)
 {
     if (ntdll_wine_get_version)
         return;
 
-    typedef HRESULT(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
-    typedef HRESULT(NTAPI* PFNQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
-
     TIMECAPS timeCaps;
+    MMRESULT result = timeGetDevCaps(&timeCaps, sizeof(TIMECAPS));
+    
+    if (result != MMSYSERR_NOERROR)
+        LOG_F(ERROR, "timeGetDevCaps() failed: MMRESULT: %d", result);
+    
+    static UINT timePeriod;
 
-    if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
+    if (timePeriod && (result = timeEndPeriod(timePeriod)) != TIMERR_NOERROR)
+        LOG_F(ERROR, "timeEndPeriod(%d) failed: MMRESULT: %d", timePeriod, result);        
+    
+    timePeriod = 0;
+
+    NTSTATUS status;
+    static ULONG timePeriodNT;
+
+    if (timePeriodNT && !NT_SUCCESS(status = ntdll_NtSetTimerResolution(timePeriodNT, FALSE, &timePeriodNT)))
     {
+        LOG_F(ERROR, "NtSetTimerResolution(%ld) unset failed: NTSTATUS: 0x%08x (%s)", timePeriodNT, (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
+        win_systemtimermode = 0;
+    }
+    
+    timePeriodNT = 0;
+    
+    if (!appHasFocus)
+    {
+        DLOG_IF_F(INFO, !win_silentfocuschange, "System timer resolution requests cleared");
+        return;
+    }
+    
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
-        int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
+    int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
 #else
-        static constexpr int const onBattery = 0;
+    static constexpr int const onBattery = 0;
 #endif
-        static int     timePeriod;
-        static ULONG   ntTimerRes;
-        static HMODULE hNTDLL = GetModuleHandle("ntdll.dll");
 
-        static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
-        static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
+    if (!onBattery && hNTDLL && win_systemtimermode == 1)
+    {
+        ULONG minRes, maxRes, actualRes;
 
-        if (useNtTimer)
+        if (NT_SUCCESS(status = ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes)))
         {
-            if (!onBattery)
+            if (NT_SUCCESS(status = ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes)))
             {
-                ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
-                ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
-
-                if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
-                {
-                    LOG_F(ERROR, "NtQueryTimerResolution or NtSetTimerResolution symbols missing from ntdll.dll!");
-                    goto failsafe;
-                }
-
-                ULONG minRes, maxRes, actualRes;
-
-                ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
-
-                if (ntTimerRes != 0)
-                {
-                    if (ntTimerRes == actualRes)
-                        return;
-
-                    ntdll_NtSetTimerResolution(actualRes, FALSE, &actualRes);
-                }
-
-                ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes);
-
-                ntTimerRes = actualRes;
-                timePeriod = 0;
-
-                if (!win_silentfocuschange)
-                    LOG_F(INFO, "Initialized %.1fms system timer", actualRes / 10000.0);
-
+                timePeriodNT = actualRes;
+                LOG_IF_F(INFO, !win_silentfocuschange, "Set %.1fms timer resolution", actualRes * (1.0 / 10000.0));
                 return;
             }
-            else if (!win_silentfocuschange)
-                LOG_F(WARNING, "Low-latency timer mode not supported on battery power!");
+            else
+            {
+                LOG_F(ERROR, "NtSetTimerResolution(%ld) failed: NTSTATUS: 0x%08x (%s)", maxRes, (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
+                win_systemtimermode = 0;
+            }
         }
-        else if (ntTimerRes != 0)
+        else
         {
-            ntdll_NtSetTimerResolution(ntTimerRes, FALSE, &ntTimerRes);
-            ntTimerRes = 0;
+            LOG_F(ERROR, "NtQueryTimerResolution() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
+            win_systemtimermode = 0;
         }
+    }
+    
+    if (!timePeriodNT)
+    {
+        int const newPeriod = clamp(1u << onBattery, timeCaps.wPeriodMin, timeCaps.wPeriodMax);    
 
-failsafe:
-        int const newPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
-            
-        if (timePeriod != 0)
+        if ((result = timeBeginPeriod(newPeriod)) != TIMERR_NOERROR)
+            LOG_F(ERROR, "timeBeginPeriod(%d) failed: MMRESULT: %d", newPeriod, result);
+        else
         {
-            if (timePeriod == newPeriod)
-                return;
-
-            timeEndPeriod(timePeriod);
+            timePeriod = newPeriod;
+            LOG_IF_F(INFO, !win_silentfocuschange, "Set %u.0ms timer resolution", newPeriod);
+            return;
         }
-
-        timeBeginPeriod(newPeriod);
-
-        timePeriod = newPeriod;
-        ntTimerRes = 0;
-
-        if (!win_silentfocuschange)
-            LOG_F(INFO, "Initialized %ums system timer", newPeriod);
-
-        return;
     }
 
     LOG_F(ERROR, "Unable to configure system timer!");
@@ -287,7 +314,7 @@ static int osdcmd_win_systemtimermode(osdcmdptr_t parm)
     if (r != OSDCMD_OK)
         return r;
 
-    windowsSetupTimer(win_systemtimermode);
+    windowsSetupTimer(true);
 
     return OSDCMD_OK;
 }
@@ -297,12 +324,12 @@ void windowsPlatformInit(void)
     static osdcvardata_t cvars_win[] = {
         { "win_togglecomposition", "disables Windows Vista/7 DWM composition", (void *)&win_togglecomposition, CVAR_BOOL, 0, 1 },
 
-        { "win_priorityclass",
+        { "win_boostpriority",
           "Windows process priority class:\n"
-          "  -1: do not alter process priority\n"
-          "   0: HIGH when game has focus, NORMAL when interacting with other programs\n"
-          "   1: NORMAL when game has focus, IDLE when interacting with other programs",
-          (void *)&win_priorityclass, CVAR_INT, -1, 1 },
+          "   0: do not alter process priority\n"
+          "   1: ABOVE NORMAL when game has focus, IDLE when interacting with other programs"
+          "   2: HIGH when game has focus, BELOW NORMAL when interacting with other programs\n",
+          (void *)&win_boostpriority, CVAR_INT, 0, 2 },
 
         { "win_performancemode",
           "Windows performance mode:\n"
@@ -329,7 +356,7 @@ void windowsPlatformInit(void)
         OSD_RegisterCvar(&cvars_win[i], osdcmd_cvar_set);
 
     windowsPrintVersion();
-    windowsSetupTimer(0);
+    //windowsSetupTimer(0);
 
     if (osv.dwMajorVersion >= 6)
     {
@@ -339,11 +366,40 @@ void windowsPlatformInit(void)
             powrprof_PowerSetActiveScheme = (PFNPOWERSETACTIVESCHEME)(void(*))GetProcAddress(hPOWRPROF, "PowerSetActiveScheme");
 
             if (powrprof_PowerGetActiveScheme == nullptr || powrprof_PowerSetActiveScheme == nullptr)
+            {
                 LOG_F(ERROR, "PowerGetActiveScheme or PowerSetActiveScheme symbols missing from powrprof.dll!");
+                hPOWRPROF = NULL;
+            }
             else if (!systemPowerSchemeGUID)
                 powrprof_PowerGetActiveScheme(NULL, &systemPowerSchemeGUID);
         }
+
+        if (!hAVRT && (hAVRT = LoadLibrary("avrt.dll")))
+        {
+            avrt_AvSetMmThreadCharacteristics    = (PFNAVSETMMTHREADCHARACTERISTICS)   (void(*))GetProcAddress(hAVRT, "AvSetMmThreadCharacteristicsA");
+            avrt_AvSetMmThreadPriority           = (PFNAVSETMMTHREADPRIORITY)          (void(*))GetProcAddress(hAVRT, "AvSetMmThreadPriority");
+            avrt_AvRevertMmThreadCharacteristics = (PFNAVREVERTMMTHREADCHARACTERISTICS)(void(*))GetProcAddress(hAVRT, "AvRevertMmThreadCharacteristics");
+
+            if (avrt_AvSetMmThreadCharacteristics == nullptr || avrt_AvSetMmThreadPriority == nullptr || avrt_AvRevertMmThreadCharacteristics == nullptr)
+            {
+                LOG_F(ERROR, "AvSetMmThreadCharacteristicsA, AvSetMmThreadPriority or AvRevertMmThreadCharacteristics symbols missing from avrt.dll!");
+                hAVRT = NULL;
+            }
+        }
     }
+    
+    if (!hNTDLL && (hNTDLL = GetModuleHandle("ntdll.dll")))
+    {
+        ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
+        ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
+
+        if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
+        {
+            LOG_F(ERROR, "NtQueryTimerResolution or NtSetTimerResolution symbols missing from ntdll.dll!");
+            hNTDLL = NULL;
+            win_systemtimermode = 0;
+        }
+    }    
 }
 
 typedef UINT D3DKMT_HANDLE;
@@ -445,13 +501,13 @@ dwm:
             if (NT_SUCCESS(status = gdi32_D3DKMTCloseAdapter((D3DKMT_CLOSEADAPTER *)&vBlankEvent)))
                 return;
             else
-                LOG_F(ERROR, "D3DKMTCloseAdapter() FAILED! NTSTATUS: 0x%x.", (unsigned)status);
+                LOG_F(ERROR, "D3DKMTCloseAdapter() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
         }
         else
-            LOG_F(ERROR, "D3DKMTWaitForVerticalBlankEvent() FAILED! NTSTATUS: 0x%x.", (unsigned)status);
+            LOG_F(ERROR, "D3DKMTWaitForVerticalBlankEvent() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
     }
     else
-        LOG_F(ERROR, "D3DKMTOpenAdapterFromHdc() FAILED! NTSTATUS: 0x%x.", (unsigned)status);
+        LOG_F(ERROR, "D3DKMTOpenAdapterFromHdc() failed: NTSTATUS: 0x%08x (%s)", (unsigned)status, windowsGetErrorMessage(windowsConvertNTSTATUS(status)));
 
     LOG_F(ERROR, "Unable to use D3DKMT, falling back to DWM sync.");
 
@@ -485,8 +541,8 @@ void windowsDwmSetupComposition(int const compEnable)
         HRESULT result = dwmapi_DwmGetCompositionTimingInfo(nullptr, &timingInfo);
 
         if (FAILED(result))
-            LOG_F(ERROR, "DwmGetCompositionTimingInfo() FAILED! HRESULT: %s (0x%x).",
-                         std::system_category().message(result).c_str(), (unsigned)result);
+            LOG_F(ERROR, "DwmGetCompositionTimingInfo() failed: HRESULT: 0x%08x (%s).",
+                         (unsigned)result, std::system_category().message(result).c_str());
     }
 
     if (win_togglecomposition && dwmapi_DwmEnableComposition && osv.dwMinorVersion < 2)
@@ -500,6 +556,17 @@ void windowsDwmSetupComposition(int const compEnable)
 
 void windowsPlatformCleanup(void)
 {
+    if (hAVRT)
+    {
+        if (hMMTHREAD)
+        {
+            avrt_AvRevertMmThreadCharacteristics(hMMTHREAD);
+            hMMTHREAD = NULL;
+        }
+        FreeLibrary(hAVRT);
+        hAVRT = NULL;
+    }
+
     if (g_singleInstanceSemaphore)
         CloseHandle(g_singleInstanceSemaphore);
 
@@ -614,16 +681,46 @@ HKL windowsGetSystemKeyboardLayout(void)
 
 void windowsHandleFocusChange(int const appactive)
 {
+    static HANDLE hProcess = GetCurrentProcess();
+    static DWORD index = 0;
+
 #ifndef DEBUGGINGAIDS
     win_silentfocuschange = true;
 #endif
 
     if (appactive)
     {
-        if (win_priorityclass != -1)
-            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? BELOW_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
-
-        windowsSetupTimer(win_systemtimermode);
+        if (win_boostpriority)
+        {
+            SetPriorityClass(hProcess, win_boostpriority == 1 ? ABOVE_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
+        
+            if (!editorIsInitialized())
+            {
+                if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
+                    LOG_F(ERROR, "Error setting thread priority: %s.", windowsGetErrorMessage(GetLastError()));
+            
+                if (hAVRT)
+                {
+                    if (hMMTHREAD || (hMMTHREAD = avrt_AvSetMmThreadCharacteristics(TEXT("Games"), &index)))
+                    {
+                        DLOG_IF_F(INFO, !win_silentfocuschange, "Successfully set AVRT thread characteristics with index %d.", (int)index);
+                        
+                        if (!avrt_AvSetMmThreadPriority(hMMTHREAD, AVRT_PRIORITY_CRITICAL))
+                        {
+                            auto err = GetLastError();
+                            LOG_F(ERROR, "Error setting AVRT thread priority: error %ld: %s.", err, windowsGetErrorMessage(err));
+                        }
+                    }
+                    else
+                    {
+                        auto err = GetLastError();
+                        LOG_F(ERROR, "Error setting AVRT thread characteristics with index %ld: error %ld: %s.", index, err, windowsGetErrorMessage(err));
+                    }
+                }
+            }
+        }
+        
+        windowsSetupTimer(true);
         windowsSetKeyboardLayout(enUSLayoutString, true);
 
         if (win_performancemode && systemPowerSchemeGUID)
@@ -631,13 +728,32 @@ void windowsHandleFocusChange(int const appactive)
     }
     else
     {
-        if (win_priorityclass != -1)
-            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
+        if (win_boostpriority)
+        {
+            if (!SetPriorityClass(hProcess, win_boostpriority == 1 || editorIsInitialized() ? IDLE_PRIORITY_CLASS : BELOW_NORMAL_PRIORITY_CLASS))
+                LOG_F(ERROR, "Error setting thread priority: %s.", windowsGetErrorMessage(GetLastError()));
 
-        windowsSetupTimer(0);
+            if (hAVRT && hMMTHREAD)
+            {
+                if (!avrt_AvRevertMmThreadCharacteristics(hMMTHREAD))
+                {
+                    auto err = GetLastError();
+                    LOG_F(ERROR, "Error reverting AVRT thread characteristics: error %ld: %s.", err, windowsGetErrorMessage(err));
+                }
+                else
+                {
+                    DLOG_IF_F(INFO, !win_silentfocuschange, "Successfully reverted AVRT thread characteristics.");
+                    
+                    index = 0;
+                    hMMTHREAD = NULL;
+                }
+            }
+        }
+        
+        windowsSetupTimer(false);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
 
-        if (systemPowerSchemeGUID)
+        if (win_performancemode && systemPowerSchemeGUID)
             powrprof_PowerSetActiveScheme(NULL, systemPowerSchemeGUID);
     }
 

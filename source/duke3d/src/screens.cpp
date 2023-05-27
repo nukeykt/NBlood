@@ -626,16 +626,16 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
 #define printcoordsline(fmt, ...) do { \
     Bsprintf(tempbuf, fmt, ## __VA_ARGS__); \
-    printext256(20, y+=9, COLOR_WHITE, -1, tempbuf, 0); \
+    printext256(x, y+=9, COLOR_WHITE, -1, tempbuf, 0); \
 } while (0)
 
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
 sprstat_t g_spriteStat;
 #endif
 
 static void G_PrintCoords(int32_t snum)
 {
-    const int32_t x = g_Debug ? 288 : 0;
+    const int32_t x = g_Debug ? 288 : 1;
     int32_t y = 0;
 
     auto const ps = g_player[snum].ps;
@@ -648,71 +648,73 @@ static void G_PrintCoords(int32_t snum)
         else if (g_netServer || ud.multimode > 1)
             y = 24;
     }
-    Bsprintf(tempbuf, "XYZ= (%d, %d, %d)", ps->pos.x, ps->pos.y, ps->pos.z);
-    printext256(x, y, COLOR_WHITE, -1, tempbuf, 0);
+    y -= 8;
+    printcoordsline("XYZ= (%d, %d, %d)", ps->pos.x, ps->pos.y, ps->pos.z);
     char ang[16], horiz[16], horizoff[16];
     fix16_to_str(ps->q16ang, ang, 2);
     fix16_to_str(ps->q16horiz, horiz, 2);
     fix16_to_str(ps->q16horizoff, horizoff, 2);
-    Bsprintf(tempbuf, "A/H/HO= %s, %s, %s", ang, horiz, horizoff);
-    printext256(x, y+9, COLOR_WHITE, -1, tempbuf, 0);
-    Bsprintf(tempbuf, "VEL= (%d, %d, %d) + (%d, %d, 0)",
+    printcoordsline("A/H/HO= %s, %s, %s", ang, horiz, horizoff);
+    printcoordsline("VEL= (%d, %d, %d) + (%d, %d, 0)",
         ps->vel.x>>14, ps->vel.y>>14, ps->vel.z, ps->fric.x>>5, ps->fric.y>>5);
-    printext256(x, y+18, COLOR_WHITE, -1, tempbuf, 0);
-    Bsprintf(tempbuf, "OG= %d  SBRIDGE=%d SBS=%d", ps->on_ground, ps->spritebridge, ps->sbs);
-    printext256(x, y+27, COLOR_WHITE, -1, tempbuf, 0);
+    printcoordsline("OG= %d  SBRIDGE=%d SBS=%d", ps->on_ground, ps->spritebridge, ps->sbs);
     if (sectnum >= 0)
-        Bsprintf(tempbuf, "SECT= %d (LO=%d EX=%d)", sectnum,
+        printcoordsline("SECT= %d (LO=%d EX=%d)", sectnum,
             TrackerCast(sector[sectnum].lotag), TrackerCast(sector[sectnum].extra));
     else
-        Bsprintf(tempbuf, "SECT= %d", sectnum);
-    printext256(x, y+36, COLOR_WHITE, -1, tempbuf, 0);
+        printcoordsline("SECT= %d", sectnum);
     //    Bsprintf(tempbuf,"SEED= %d",randomseed);
     //    printext256(x,y+45,COLOR_WHITE,-1,tempbuf,0);
-    y -= 9;
+
+    printcoordsline("THOLD= %d", ps->transporter_hold);
+
+    if (ud.coords < 2)
+        return;
 
     y += 7;
-    Bsprintf(tempbuf, "THOLD= %d", ps->transporter_hold);
-    printext256(x, y+54, COLOR_WHITE, -1, tempbuf, 0);
-    Bsprintf(tempbuf, "GAMETIC= %u, TOTALCLOCK=%d", g_moveThingsCount, (int32_t) totalclock);
-    printext256(x, y+63, COLOR_WHITE, -1, tempbuf, 0);
-#ifdef DEBUGGINGAIDS
-    Bsprintf(tempbuf, "NUMSPRITES= %d", Numsprites);
-    printext256(x, y+72, COLOR_WHITE, -1, tempbuf, 0);
+    printcoordsline("GAMETIC= %u, TOTALCLOCK=%d", g_moveThingsCount, (int32_t) totalclock);
+#if 1//def DEBUGGINGAIDS
+    printcoordsline("NUMSPRITES= %d", Numsprites);
     if (g_moveThingsCount > g_spriteStat.lastgtic + REALGAMETICSPERSEC)
     {
         g_spriteStat.lastgtic = g_moveThingsCount;
         g_spriteStat.lastnumins = g_spriteStat.numins;
         g_spriteStat.numins = 0;
     }
-    Bsprintf(tempbuf, "INSERTIONS/s= %u", g_spriteStat.lastnumins);
-    printext256(x, y+81, COLOR_WHITE, -1, tempbuf, 0);
-    Bsprintf(tempbuf, "ONSCREEN= %d", g_spriteStat.numonscreen);
-    printext256(x, y+90, COLOR_WHITE, -1, tempbuf, 0);
-    y += 3*9;
+    printcoordsline("INSERTIONS/s= %u", g_spriteStat.lastnumins);
+    printcoordsline("ONSCREEN= %d", g_spriteStat.numonscreen);
 #endif
-    y += 7;
-    Bsprintf(tempbuf, "VR=%.03f  YX=%.03f", (double) dr_viewingrange/65536.0, (double) dr_yxaspect/65536.0);
-    printext256(x, y+72, COLOR_WHITE, -1, tempbuf, 0);
 
 #ifdef USE_OPENGL
-    if (ud.coords == 2)
+    if (ud.coords < 3)
+        return;
+
+    y += 7;
+    printcoordsline("VR=%.03f  YX=%.03f", (double) dr_viewingrange/65536.0, (double) dr_yxaspect/65536.0);
+    //   y=16;
+
+    printcoordsline("rendmode= %d", videoGetRenderMode());
+    printcoordsline("r_ambientlight= %.03f", r_ambientlight);
+
+    if (rendmode >= 3)
     {
-        y=16;
-
-        printcoordsline("rendmode = %d", videoGetRenderMode());
-        printcoordsline("r_ambientlight = %.03f", r_ambientlight);
-
-        if (rendmode >= 3)
-        {
-            if (rendmode==3)
-                printcoordsline("r_usenewshading = %d", r_usenewshading);
-# ifdef POLYMER
-            else
-                printcoordsline("r_pr_artmapping = %d", pr_artmapping);
+        if (!polymost_useindexedtextures()
+#ifdef POLYMER
+            && (rendmode != 4 || pr_artmapping)
 #endif
-            printcoordsline("r_usetileshades = %d", r_usetileshades);
+            )
+        {
+            printcoordsline("r_usenewshading= %d", r_usenewshading);
         }
+
+        if (rendmode == 3)
+            printcoordsline("r_useindexedcolortextures= %d", r_useindexedcolortextures);
+#ifdef POLYMER
+        else
+            printcoordsline("r_pr_artmapping= %d", pr_artmapping);
+#endif
+        printcoordsline("r_usetileshades= %d", r_usetileshades);
+        printcoordsline("r_texfilter= %s", glfiltermodes[gltexfiltermode].name);
     }
 #endif
 }

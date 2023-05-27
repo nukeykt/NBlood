@@ -1773,7 +1773,7 @@ void videoShowFrame(int32_t w)
 
         SwapBuffers(hDC);
 #ifdef USE_OPENGL
-        polymost_resetVertexPointers();
+        polymost_resetState();
 #endif
         return;
     }
@@ -1982,9 +1982,9 @@ int32_t videoSetGamma(void)
 {
     int32_t i;
     static DDGAMMARAMP gammaTable;
-    float gamma = max(0.1f,min(4.f,g_videoGamma));
-    float contrast = max(0.1f,min(3.f,g_videoContrast));
-    float bright = max(-0.8f,min(0.8f,g_videoBrightness));
+    float gamma = max(MIN_GAMMA, min(MAX_GAMMA, g_videoGamma));
+    float contrast = max(MIN_CONTRAST, min(MAX_CONTRAST, g_videoContrast));
+    float bright = max(MIN_BRIGHTNESS, min(MAX_BRIGHTNESS, g_videoBrightness));
 
     double invgamma = 1 / gamma;
     double norm = pow(255., invgamma - 1);

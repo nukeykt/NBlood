@@ -111,6 +111,8 @@ int32_t loadsetup(const char *fn)
     char val[VL];
     int32_t i;
 
+    editorgridextent = 131072;
+
     if ((fp = buildvfs_fopen_read(fn)) == NULL) return -1;
 
     if (readconfig(fp, "usecwd", val, VL) > 0) g_useCwd = (atoi_safe(val) != 0);
@@ -138,9 +140,8 @@ int32_t loadsetup(const char *fn)
 #ifdef POLYMER
     if (readconfig(fp, "rendmode", val, VL) > 0) { i = atoi_safe(val); glrendmode = i; }
 #endif
-    if (readconfig(fp, "vid_gamma", val, VL) > 0) g_videoGamma = clampd(Bstrtod(val, NULL), 0.0, 10.0);
-    if (readconfig(fp, "vid_brightness", val, VL) > 0) g_videoBrightness = clampd(Bstrtod(val, NULL), -10.0, 10.0);
-    if (readconfig(fp, "vid_contrast", val, VL) > 0) g_videoContrast = clampd(Bstrtod(val, NULL), 0.0, 10.0);
+    if (readconfig(fp, "vid_gamma", val, VL) > 0) g_videoGamma = clampd(Bstrtod(val, NULL), MIN_GAMMA, MAX_GAMMA);
+    if (readconfig(fp, "vid_contrast", val, VL) > 0) g_videoContrast = clampd(Bstrtod(val, NULL), MIN_CONTRAST, MAX_CONTRAST);
 #ifdef RENDERTYPEWIN
     if (readconfig(fp, "maxrefreshfreq", val, VL) > 0) maxrefreshfreq = atoi_safe(val);
 #endif
@@ -441,7 +442,6 @@ int32_t writesetup(const char *fn)
              "\n"
              "; 3D mode brightness setting\n"
              "vid_gamma = %g\n"
-             "vid_brightness = %g\n"
              "vid_contrast = %g\n"
              "\n"
              "; Game executable used for map testing\n"
@@ -643,7 +643,6 @@ int32_t writesetup(const char *fn)
 #endif
              g_windowPos.x, g_windowPos.y,
              vid_gamma_3d>=0?vid_gamma_3d:g_videoGamma,
-             vid_brightness_3d>=0?vid_brightness_3d:g_videoBrightness,
              vid_contrast_3d>=0?vid_contrast_3d:g_videoContrast,
              game_executable,
 #if 0

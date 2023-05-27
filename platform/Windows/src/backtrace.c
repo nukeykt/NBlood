@@ -45,6 +45,10 @@
 # define EBACKTRACE64
 #endif
 
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+
 #include <bfd.h>
 #include <psapi.h>
 #include <stdlib.h>
@@ -133,11 +137,11 @@ lookup_section(bfd *abfd, asection *sec, void *opaque_data)
     if (data->func)
         return;
 
-    if (!(bfd_get_section_flags(abfd, sec) & SEC_ALLOC))
+    if (!(bfd_section_flags(sec) & SEC_ALLOC))
         return;
 
-    vma = bfd_get_section_vma(abfd, sec);
-    if (data->counter < vma || vma + bfd_get_section_size(sec) <= data->counter)
+    vma = bfd_section_vma(sec);
+    if (data->counter < vma || vma + bfd_section_size(sec) <= data->counter)
         return;
 
     bfd_find_nearest_line(abfd, sec, data->symbol, data->counter - vma, &(data->file), &(data->func), &(data->line));
@@ -445,7 +449,7 @@ __declspec(dllexport) void SetTechnicalName(const char* input)
 }
 __declspec(dllexport) void SetProperName(const char* input)
 {
-    strncpy(propername, input, MAX_PATH);
+    strncpy(propername, input, MAX_PATH-1);
 }
 
 static char * g_output = NULL;
@@ -498,13 +502,16 @@ exception_filter(LPEXCEPTION_POINTERS info)
     if (!initialized)
         return EXCEPTION_CONTINUE_SEARCH; // EXCEPTION_CONTINUE_EXECUTION
 
-    ExceptionPrinted = (char*)calloc(strlen(g_output) + 37 + 2*MAX_PATH, sizeof(char));
+    static char const s_exception1[] = "\nPlease send ";
+    static char const s_exception2[] = " to the maintainers of ";
+    static char const s_exception3[] = ".";
+    ExceptionPrinted = (char*)calloc(strlen(g_output) + sizeof(s_exception1)-1 + sizeof(s_exception2)-1 + sizeof(s_exception3)-1 + 2*MAX_PATH, sizeof(char));
     strcpy(ExceptionPrinted, g_output);
-    strcat(ExceptionPrinted, "\nPlease send ");
+    strcat(ExceptionPrinted, s_exception1);
     strcat(ExceptionPrinted, crashlogfilename);
-    strcat(ExceptionPrinted, " to the maintainers of ");
+    strcat(ExceptionPrinted, s_exception2);
     strcat(ExceptionPrinted, propername);
-    strcat(ExceptionPrinted, ".");
+    strcat(ExceptionPrinted, s_exception3);
 
     {
         DWORD error = 0;
@@ -620,6 +627,7 @@ int __printf__ ( const char * format, ... );
 int libintl_fprintf ( FILE * stream, const char * format, ... );
 int libintl_sprintf ( char * str, const char * format, ... );
 int libintl_snprintf ( char *buffer, int buf_size, const char *format, ... );
+int libintl_asprintf ( char ** strp, const char * format, ... );
 int libintl_vprintf ( const char * format, va_list arg );
 int libintl_vfprintf ( FILE * stream, const char * format, va_list arg );
 int libintl_vsprintf ( char * str, const char * format, va_list arg );
@@ -658,6 +666,15 @@ int libintl_snprintf ( char *buffer, int buf_size, const char *format, ... )
     va_list arg;
     va_start(arg, format);
     value = vsnprintf ( buffer, buf_size, format, arg );
+    va_end(arg);
+    return value;
+}
+int libintl_asprintf ( char ** strp, const char * format, ... )
+{
+    int value;
+    va_list arg;
+    va_start(arg, format);
+    value = vasprintf ( strp, format, arg );
     va_end(arg);
     return value;
 }

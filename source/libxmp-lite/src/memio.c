@@ -46,13 +46,16 @@ size_t mread(void *buf, size_t size, size_t num, MFILE *m)
 	}
 
 	if (should_read > can_read) {
-		should_read = can_read;
+		memcpy(buf, m->start + m->pos, can_read);
+		m->pos += can_read;
+
+		return can_read / size;
+	} else {
+		memcpy(buf, m->start + m->pos, should_read);
+		m->pos += should_read;
+
+		return num;
 	}
-
-	memcpy(buf, m->start + m->pos, should_read);
-	m->pos += should_read;
-
-	return should_read / size;
 }
 
 
@@ -89,24 +92,27 @@ int meof(MFILE *m)
 	return CAN_READ(m) <= 0;
 }
 
-MFILE *mopen(const void *ptr, long size)
+MFILE *mopen(const void *ptr, long size, int free_after_use)
 {
 	MFILE *m;
 
-	m = (MFILE *)malloc(sizeof (MFILE));
+	m = (MFILE *) Xmalloc(sizeof(MFILE));
 	if (m == NULL)
 		return NULL;
 
 	m->start = (const unsigned char *)ptr;
 	m->pos = 0;
 	m->size = size;
+	m->free_after_use = free_after_use;
 
 	return m;
 }
 
 int mclose(MFILE *m)
 {
-	free(m);
+	if (m->free_after_use)
+		Xfree((void *)m->start);
+	Xfree(m);
 	return 0;
 }
 

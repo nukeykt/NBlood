@@ -175,6 +175,8 @@ typedef struct {
     uint32_t extbits;
 } input_t;
 
+#define MAX_LOOGIES 6
+
 // XXX: r1625 changed a lot types here, among others
 //  * int32_t --> int16_t
 //  * int16_t --> int8_t
@@ -202,10 +204,10 @@ typedef struct {
 
     uint16_t frag, fraggedself;
 
-    vec2_16_t loogie[6];
-    int16_t filler[102]; // jesus fucking christ
+    vec2_16_t loogie[MAX_LOOGIES];
+    int16_t filler[100]; // jesus fucking christ
 
-    int16_t olook_ang;
+    int16_t floorzrebound, floorzcutoff, olook_ang;
     int16_t floorzoffset, spritezoffset, minwaterzdist, waterzoffset, shrunkzoffset;
     int16_t crouchzincrement, crouchspeedmodifier, swimspeedmodifier;
     int16_t swimzincrement, minswimzvel, maxswimzvel;
@@ -273,7 +275,7 @@ typedef struct
     int horizAngleAdjust;
     int horizSkew;
 
-    double lastViewUpdate;
+    uint64_t lastViewUpdate;
 
     int32_t netsynctime;
     int32_t pcolor, pteam;
@@ -368,7 +370,7 @@ extern int32_t          g_numObituaries;
 extern int32_t          g_numSelfObituaries;
 extern int32_t          mouseyaxismode;
 extern int32_t          ticrandomseed;
-extern double           g_lastInputTicks;
+extern uint64_t         g_lastInputTicks;
 
 #define SHOOT_HARDCODED_ZVEL INT32_MIN
 

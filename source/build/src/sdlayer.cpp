@@ -17,7 +17,7 @@
 
 #if SDL_MAJOR_VERSION >= 2
 # include "imgui.h"
-# include "imgui_impl_sdl.h"
+# include "imgui_impl_sdl2.h"
 #ifdef USE_OPENGL
 # include "imgui_impl_opengl3.h"
 #endif
@@ -110,8 +110,8 @@ static uint16_t sysgamma[3][256];
 // OpenGL stuff
 char nogl=0;
 #endif
-// last gamma, contrast, brightness
-static float lastvidgcb[3];
+// last gamma, contrast
+static float lastvidgcb[2];
 
 //#define KEY_PRINT_DEBUG
 
@@ -653,34 +653,26 @@ int32_t sdlayer_checkversion(void);
 int32_t sdlayer_checkversion(void)
 {
     SDL_version compiled;
-    auto str = (char*)Balloca(128);
+    auto str = (char*)Balloca(256);
     str[0] = 0;
 
     SDL_GetVersion(&linked);
 
-    // odd-numbered SDL patch levels are dev snapshots, even-numbered are proper releases
     // string is in the format "https://github.com/libsdl-org/SDL.git@bfd2f8993f173535efe436f8e60827cc44351bea"
     char const *rev;
 
-    if (linked.patch & 1 && (rev = SDL_GetRevision()))
+    if ((rev = SDL_GetRevision()) && Bstrlen(rev) > 0)
     {
-        char buf[10] = {};
-
-        int len = Bstrlen(rev);
-
-        if (len > 49 && rev[len-41] == '@')
-            Bmemcpy(buf, &rev[len-40], 9);
-
-        Bsnprintf(str, 128, "Initializing SDL %s (%d.%d.%d snapshot)", buf, linked.major, linked.minor, linked.patch);
+        Bsnprintf(str, 256, "Initializing SDL %d.%d.%d (%s)", linked.major, linked.minor, linked.patch, rev);
     }
     else
     {
         SDL_VERSION(&compiled);
 
         if (!Bmemcmp(&compiled, &linked, sizeof(SDL_version)))
-            Bsnprintf(str, 128, "Initializing SDL %d.%d.%d", compiled.major, compiled.minor, compiled.patch);
+            Bsnprintf(str, 256, "Initializing SDL %d.%d.%d", compiled.major, compiled.minor, compiled.patch);
         else
-            Bsnprintf(str, 128, "Initializing SDL %d.%d.%d (built against version %d.%d.%d)",
+            Bsnprintf(str, 256, "Initializing SDL %d.%d.%d (built against version %d.%d.%d)",
                 linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
     }
 
@@ -1509,11 +1501,15 @@ static void destroy_window_resources()
 #endif
 
 #if SDL_MAJOR_VERSION >= 2
+    if (g_ImGui_IO)
+    {
 #ifdef USE_OPENGL
-    ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplOpenGL3_Shutdown();
 #endif
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+        g_ImGui_IO = NULL;
+    }
 
     if (sdl_context)
         SDL_GL_DeleteContext(sdl_context);
@@ -1650,7 +1646,7 @@ int32_t setvideomode_sdlcommon(int32_t *x, int32_t *y, int32_t c, int32_t fs, in
     }
 
     // clear last gamma/contrast/brightness so that it will be set anew
-    lastvidgcb[0] = lastvidgcb[1] = lastvidgcb[2] = 0.0f;
+    lastvidgcb[0] = lastvidgcb[1] = 0.0f;
 
     return 1;
 }
@@ -1679,17 +1675,20 @@ int setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int3
 #ifndef EDUKE32_GLES
     if (!gammabrightness)
     {
-        //        float f = 1.0 + ((float)curbrightness / 10.0);
+        if (nogl)
+        {
 #if SDL_MAJOR_VERSION >= 2
-        if (SDL_GetWindowGammaRamp(sdl_window, sysgamma[0], sysgamma[1], sysgamma[2]) == 0)
+            if (SDL_GetWindowGammaRamp(sdl_window, sysgamma[0], sysgamma[1], sysgamma[2]) == 0)
 #else
-        if (SDL_GetGammaRamp(sysgamma[0], sysgamma[1], sysgamma[2]) >= 0)
+            if (SDL_GetGammaRamp(sysgamma[0], sysgamma[1], sysgamma[2]) >= 0)
 #endif
-            gammabrightness = 1;
+                gammabrightness = 1;
 
-        // see if gamma really is working by trying to set the brightness
-        if (gammabrightness && videoSetGamma() < 0)
-            gammabrightness = 0;  // nope
+            // see if gamma really is working by trying to set the brightness
+            if (gammabrightness && videoSetGamma() < 0)
+                gammabrightness = 0;  // nope
+        }
+        else gammabrightness = 1;
     }
 #endif
 
@@ -1864,8 +1863,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         {
             LOG_F(ERROR, "Unable to set video mode: %s failed: %s.", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
             nogl = 1;
-            destroy_window_resources();
-            return -1;
         }
 
         gladLoadGLLoader(SDL_GL_GetProcAddress);
@@ -1873,8 +1870,13 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         {
             LOG_F(ERROR, "Video driver does not support OpenGL version 2 or greater; all OpenGL modes are unavailable.");
             nogl = 1;
+        }
+
+        if (nogl)
+        {
             destroy_window_resources();
-            return -1;
+            // If c == 8, retry without hardware accelaration
+            return videoSetMode(x, y, c, fs);
         }
 
         SDL_GL_SetSwapInterval(sdlayer_getswapinterval(vsync_renderlayer));
@@ -1901,6 +1903,10 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
 #if MICROPROFILE_ENABLED != 0
     MicroProfileGpuInitGL();
+#endif
+
+#ifdef _WIN32
+    windowsHandleFocusChange(1);
 #endif
 
     return 0;
@@ -2104,7 +2110,7 @@ void videoShowFrame(int32_t w)
         if (w != -1)
         {
             if (bpp > 8)
-                polymost_resetVertexPointers();
+                polymost_resetState();
             else
                 glsurface_refresh();
         }
@@ -2173,16 +2179,26 @@ int32_t videoSetGamma(void)
     if (novideo)
         return 0;
 
+#ifdef USE_OPENGL    
+    if (!nogl)
+    {
+        g_glColorCorrection = { g_videoGamma, g_videoContrast, g_videoSaturation, 0.f };
+
+        if (videoGetRenderMode() == REND_POLYMOST)
+            polymost_setColorCorrection(g_glColorCorrection);
+        return 0;
+    }
+#endif
+    
     int32_t i;
     uint16_t gammaTable[768];
-    float gamma = max(0.1f, min(4.f, g_videoGamma));
-    float contrast = max(0.1f, min(3.f, g_videoContrast));
-    float bright = max(-0.8f, min(0.8f, g_videoBrightness));
+    float gamma = max(MIN_GAMMA, min(MAX_GAMMA, g_videoGamma));
+    float contrast = max(MIN_CONTRAST, min(MAX_CONTRAST, g_videoContrast));
 
     float invgamma = 1.f / gamma;
     float norm = powf(255.f, invgamma - 1.f);
 
-    if (lastvidgcb[0] == gamma && lastvidgcb[1] == contrast && lastvidgcb[2] == bright)
+    if (lastvidgcb[0] == gamma && lastvidgcb[1] == contrast)
         return 0;
 
     // This formula is taken from Doomsday
@@ -2192,8 +2208,6 @@ int32_t videoSetGamma(void)
         float val = max(0.f, i * contrast - (contrast - 1.f) * 127.f);
         if (gamma != 1.f)
             val = powf(val, invgamma) / norm;
-
-        val += bright * 128.f;
 
         gammaTable[i] = gammaTable[i + 256] = gammaTable[i + 512] = (uint16_t)max(0.f, min(65535.f, val * 256.f));
     }
@@ -2207,27 +2221,18 @@ int32_t videoSetGamma(void)
     {
 #else
     i = SDL_SetGammaRamp(&gammaTable[0], &gammaTable[256], &gammaTable[512]);
-    if ((i != -1) && (i < 0))
+    if (/*(i != -1) && */(i < 0))
     {
 #endif
         if (i != INT32_MIN)
             DLOG_F(ERROR, "Failed setting window gamma ramp: %s.", SDL_GetError());
 
-#ifndef EDUKE32_GLES
-#if SDL_MAJOR_VERSION >= 2
-        if (sdl_window)
-            SDL_SetWindowGammaRamp(sdl_window, &sysgamma[0][0], &sysgamma[1][0], &sysgamma[2][0]);
-#else
-        SDL_SetGammaRamp(&sysgamma[0][0], &sysgamma[1][0], &sysgamma[2][0]);
-#endif
         gammabrightness = 0;
-#endif
     }
     else
     {
         lastvidgcb[0] = gamma;
         lastvidgcb[1] = contrast;
-        lastvidgcb[2] = bright;
 
         gammabrightness = 1;
     }
@@ -2480,6 +2485,11 @@ int32_t handleevents_pollsdl(void)
 
         switch (ev.type)
         {
+            case SDL_DROPFILE:
+                if (g_fileDropCallback && ev.drop.type == SDL_DROPFILE)
+                    g_fileDropCallback(ev.drop.file);
+                SDL_free(ev.drop.file);
+                break;
             case SDL_TEXTINPUT:
                 j = 0;
                 do

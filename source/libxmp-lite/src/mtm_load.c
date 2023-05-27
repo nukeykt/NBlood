@@ -50,7 +50,6 @@ struct mtm_instrument_header {
 static int mtm_test(HIO_HANDLE *, char *, const int);
 static int mtm_load(struct module_data *, HIO_HANDLE *, const int);
 
-extern const struct format_loader libxmp_loader_mtm;
 const struct format_loader libxmp_loader_mtm = {
 	"Multitracker",
 	mtm_test,
@@ -76,10 +75,11 @@ static int mtm_test(HIO_HANDLE *f, char *t, const int start)
 static int mtm_load(struct module_data *m, HIO_HANDLE *f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
-	int i, j;
+	int i, j, k;
 	struct mtm_file_header mfh;
 	struct mtm_instrument_header mih;
 	uint8 mt[192];
+	int fxx[2];
 
 	LOAD_INIT();
 
@@ -162,7 +162,7 @@ static int mtm_load(struct module_data *m, HIO_HANDLE *f, const int start)
 		xxs->len = mih.length;
 		xxs->lps = mih.loop_start;
 		xxs->lpe = mih.loopend;
-		xxs->flg = xxs->lpe ? XMP_SAMPLE_LOOP : 0;	/* 1 == Forward loop */
+		xxs->flg = (xxs->lpe > 2) ? XMP_SAMPLE_LOOP : 0;	/* 1 == Forward loop */
 		if (mfh.attr & 1) {
 			xxs->flg |= XMP_SAMPLE_16BIT;
 			xxs->len >>= 1;
@@ -193,6 +193,7 @@ static int mtm_load(struct module_data *m, HIO_HANDLE *f, const int start)
 
 	D_(D_INFO "Stored tracks: %d", mod->trk - 1);
 
+	fxx[0] = fxx[1] = 0;
 	for (i = 0; i < mod->trk; i++) {
 
 		if (libxmp_alloc_track(mod, i, mfh.rows) < 0)
@@ -217,6 +218,11 @@ static int mtm_load(struct module_data *m, HIO_HANDLE *f, const int start)
 			e->fxp = d[2];
 			if (e->fxt > FX_SPEED) {
 				e->fxt = e->fxp = 0;
+			}
+
+			/* See tempo mode detection below. */
+			if (e->fxt == FX_SPEED) {
+				fxx[e->fxp >= 0x20] = 1;
 			}
 
 			/* Set pan effect translation */
@@ -248,8 +254,80 @@ static int mtm_load(struct module_data *m, HIO_HANDLE *f, const int start)
 		}
 	}
 
+	/* Tempo mode detection.
+	 *
+	 * The MTM tempo effect has an unusual property: when speed is set, the
+	 * tempo resets to 125, and when tempo is set, the speed resets to 6.
+	 * Modules that use both speed and tempo effects need to emulate this.
+	 * See: Absolve the Ambience by Sybaris, Soma by Ranger Rick.
+	 *
+	 * Dual Module Player and other DOS players did not know about this and
+	 * did not implement support for it, and instead used Protracker Fxx.
+	 * Many MTM authors created modules that rely on this which are various
+	 * degrees of broken in the tracker they were made with! Several MTMs
+	 * by Phoenix and Silent Mode expect this. The majority of them can be
+	 * detected by checking for high Fxx and low Fxx on the same row.
+	 */
+	if (fxx[0] && fxx[1]) {
+		/* Both used, check patterns. */
+		D_(D_INFO "checking patterns for MT or DMP Fxx effect usage");
+		for (i = 0; i < mod->pat; i++) {
+			for (j = 0; j < mfh.rows; j++) {
+				fxx[0] = fxx[1] = 0;
+				for (k = 0; k < mod->chn; k++) {
+					struct xmp_event *e = &EVENT(i, k, j);
+					if (e->fxt == FX_SPEED) {
+						fxx[e->fxp >= 0x20] = 1;
+					}
+				}
+				if (fxx[0] && fxx[1]) {
+					/* Same row, no change required */
+					D_(D_INFO "probably DMP (%d:%d)", i, j);
+					goto probably_dmp;
+				}
+			}
+		}
+		D_(D_INFO "probably MT; injecting speed/BPM reset effects");
+		for (i = 0; i < mod->pat; i++) {
+			for (j = 0; j < mfh.rows; j++) {
+				for (k = 0; k < mod->chn; k++) {
+					struct xmp_event *e = &EVENT(i, k, j);
+					if (e->fxt == FX_SPEED) {
+						e->f2t = FX_SPEED;
+						e->f2p = (e->fxp < 0x20) ? 125 : 6;
+					}
+				}
+			}
+		}
+	}
+    probably_dmp:
+
 	/* Comments */
-	hio_seek(f, mfh.extralen, SEEK_CUR);
+	if (mfh.extralen) {
+		m->comment = (char *)Xmalloc(mfh.extralen + 1);
+		if (m->comment) {
+			/* Comments are stored in 40 byte ASCIIZ lines. */
+			int len = hio_read(m->comment, 1, mfh.extralen, f);
+			int line, last_line = 0;
+
+			for (i = 0; i + 40 <= len; i += 40) {
+				if (m->comment[i] != '\0')
+					last_line = i + 40;
+			}
+			for (j = 0, line = 0; line < last_line; line += 40) {
+				char *pos = m->comment + line;
+				for (i = 0; i < 39; i++) {
+					if (pos[i] == '\0')
+						break;
+					m->comment[j++] = pos[i];
+				}
+				m->comment[j++] = '\n';
+			}
+			m->comment[j] = '\0';
+		} else {
+			hio_seek(f, mfh.extralen, SEEK_CUR);
+		}
+	}
 
 	/* Read samples */
 	D_(D_INFO "Stored samples: %d", mod->smp);

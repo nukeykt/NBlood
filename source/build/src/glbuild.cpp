@@ -62,14 +62,16 @@ void buildgl_outputDebugMessage(uint8_t severity, const char* format, ...)
 void buildgl_resetStateAccounting()
 {
     for (auto i=GL_TEXTURE0;i<MAXTEXUNIT;i++)
+    {
+        buildgl_bindSamplerObject(TEXUNIT_INDEX_FROM_NAME(i), 0);
         inthash_free(&gl.state[TEXUNIT_INDEX_FROM_NAME(i)]);
+    }
 
     Bmemset(&gl, 0, sizeof(BuildGLState));
 
     for (auto i=GL_TEXTURE0;i<MAXTEXUNIT;i++)
     {
-        buildgl_bindSamplerObject(TEXUNIT_INDEX_FROM_NAME(i), 0);
-        gl.currentBoundSampler[TEXUNIT_INDEX_FROM_NAME(i)] = (glsamplertype)-1;
+        gl.currentBoundSampler[TEXUNIT_INDEX_FROM_NAME(i)] = SAMPLER_INVALID;
         gl.state[TEXUNIT_INDEX_FROM_NAME(i)].count = 64;
         inthash_init(&gl.state[TEXUNIT_INDEX_FROM_NAME(i)]);
     }
@@ -182,6 +184,9 @@ void buildgl_resetSamplerObjects(void)
     glanisotropy    = clamp<int>(glanisotropy, 1, glinfo.maxanisotropy);
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
 
+    if (!glinfo.samplerobjects)
+        return;
+
     auto &f = glfiltermodes[gltexfiltermode];
 
     if (!glIsSampler(samplerObjectIDs[1]))
@@ -253,7 +258,10 @@ void buildgl_bindSamplerObject(int texunit, int32_t pth_method)
     if (!buildgl_samplerObjectsEnabled())
     {
         gl.currentBoundSampler[texunit] = SAMPLER_NONE;
-        glBindSampler(texunit, 0);
+
+        if (glinfo.samplerobjects)
+            glBindSampler(texunit, 0);
+        
         return;
     }
 

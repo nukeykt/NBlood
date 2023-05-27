@@ -21,7 +21,8 @@
 #endif
 
 #if defined __linux || defined EDUKE32_BSD
-# include <libgen.h> // for dirname()
+#include <libgen.h>  // for dirname()
+#include <pwd.h>     // for getpwuid()
 #endif
 #if defined EDUKE32_BSD
 # include <limits.h> // for PATH_MAX
@@ -125,8 +126,14 @@ char *Bgethomedir(void)
         drv[1] = '\0';
     return Xstrdup(cwd);
 #else
-    char *e = getenv("HOME");
-    if (!e) return NULL;
+    char const *e;
+    if ((e = getenv("XDG_CONFIG_HOME")) == NULL || e[0] == '\0')
+        if ((e = getenv("HOME")) == NULL || e[0] == '\0')
+        {
+            auto const pw = getpwuid(getuid());
+            if (pw == NULL || (e = pw->pw_dir) == NULL || e[0] == '\0')
+                return NULL;
+        }
     return Xstrdup(e);
 #endif
 }

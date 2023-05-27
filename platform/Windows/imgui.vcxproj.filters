@@ -27,7 +27,7 @@
     <ClInclude Include="..\..\source\imgui\include\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\imgui\include\imgui_impl_sdl.h">
+    <ClInclude Include="..\..\source\imgui\include\imgui_impl_sdl2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\imgui\include\imgui_impl_opengl3.h">
@@ -53,7 +53,7 @@
     <ClCompile Include="..\..\source\imgui\src\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\imgui\src\imgui_impl_sdl.cpp">
+    <ClCompile Include="..\..\source\imgui\src\imgui_impl_sdl2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\imgui\src\imgui_impl_opengl3.cpp">

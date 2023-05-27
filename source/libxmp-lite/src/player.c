@@ -53,7 +53,6 @@ static const struct retrig_control rval[] = {
 	{   0,  1,  1 }, {   1,  1,  1 }, {   2,  1,  1 }, {   4,  1,  1 },
 	{   8,  1,  1 }, {  16,  1,  1 }, {   0,  3,  2 }, {   0,  2,  1 },
 	{   0,  0,  1 }		/* Note cut */
-
 };
 
 
@@ -111,6 +110,9 @@ static int get_envelope(struct xmp_envelope *env, int x, int def)
 	y1 = data[idx + 1];
 	x2 = data[idx + 2];
 	y2 = data[idx + 3];
+
+	/* Interpolation requires x1 <= x <= x2 */
+	if (x < x1 || x2 < x1) return y1;
 
 	return x2 == x1 ? y2 : ((y2 - y1) * (x - x1) / (x2 - x1)) + y1;
 }
@@ -249,6 +251,218 @@ static int check_envelope_fade(struct xmp_envelope *env, int x)
 }
 
 
+#ifndef LIBXMP_CORE_DISABLE_IT
+
+/* Impulse Tracker's filter effects are implemented using its MIDI macros.
+ * Any module can customize these and they are parameterized using various
+ * player and mixer values, which requires parsing them here instead of in
+ * the loader. Since they're MIDI macros, they can contain actual MIDI junk
+ * that needs to be skipped, and one macro may have multiple IT commands. */
+
+struct midi_stream
+{
+	const char *pos;
+	int buffer;
+	int param;
+};
+
+static int midi_nibble(struct context_data *ctx, struct channel_data *xc,
+		       int chn, struct midi_stream *in)
+{
+	struct xmp_instrument *xxi;
+	struct mixer_voice *vi;
+	int voc, val, byte = -1;
+	if (in->buffer >= 0) {
+		val = in->buffer;
+		in->buffer = -1;
+		return val;
+	}
+
+	while (*in->pos) {
+		val = *(in->pos)++;
+		if (val >= '0' && val <= '9') return val - '0';
+		if (val >= 'A' && val <= 'F') return val - 'A' + 10;
+		switch (val) {
+		case 'z':			/* Macro parameter */
+			byte = in->param;
+			break;
+		case 'n':			/* Host key */
+			byte = xc->key & 0x7f;
+			break;
+		case 'h':			/* Host channel */
+			byte = chn;
+			break;
+		case 'o':			/* Offset effect memory */
+			/* Intentionally not clamped, see ZxxSecrets.it */
+			byte = xc->offset.memory;
+			break;
+		case 'm':			/* Voice reverse flag */
+			voc = libxmp_virt_mapchannel(ctx, chn);
+			vi = (voc >= 0) ? &ctx->p.virt.voice_array[voc] : NULL;
+			byte = vi ? !!(vi->flags & VOICE_REVERSE) : 0;
+			break;
+		case 'v':			/* Note velocity */
+			xxi = libxmp_get_instrument(ctx, xc->ins);
+			byte = ((uint32)ctx->p.gvol *
+				(uint32)xc->volume *
+				(uint32)xc->mastervol *
+				(uint32)xc->gvl *
+				(uint32)(xxi ? xxi->vol : 0x40)) >> 24UL;
+			CLAMP(byte, 1, 127);
+			break;
+		case 'u':			/* Computed velocity */
+			byte = xc->macro.finalvol >> 3;
+			CLAMP(byte, 1, 127);
+			break;
+		case 'x':			/* Note panning */
+			byte = xc->macro.notepan >> 1;
+			CLAMP(byte, 0, 127);
+			break;
+		case 'y':			/* Computed panning */
+			byte = xc->info_finalpan >> 1;
+			CLAMP(byte, 0, 127);
+			break;
+		case 'a':			/* Ins MIDI Bank hi */
+		case 'b':			/* Ins MIDI Bank lo */
+		case 'p':			/* Ins MIDI Program */
+		case 's':			/* MPT: SysEx checksum */
+			byte = 0;
+			break;
+		case 'c':			/* Ins MIDI Channel */
+			return 0;
+		}
+
+		/* Byte output */
+		if (byte >= 0) {
+			in->buffer = byte & 0xf;
+			return (byte >> 4) & 0xf;
+		}
+	}
+	return -1;
+}
+
+static int midi_byte(struct context_data *ctx, struct channel_data *xc,
+		     int chn, struct midi_stream *in)
+{
+	int a = midi_nibble(ctx, xc, chn, in);
+	int b = midi_nibble(ctx, xc, chn, in);
+	return (a >= 0 && b >= 0) ? (a << 4) | b : -1;
+}
+
+static void apply_midi_macro_effect(struct channel_data *xc, int type, int val)
+{
+	switch (type) {
+	case 0:			/* Filter cutoff */
+		xc->filter.cutoff = val << 1;
+		break;
+	case 1:			/* Filter resonance */
+		xc->filter.resonance = val << 1;
+		break;
+	}
+}
+
+static void execute_midi_macro(struct context_data *ctx, struct channel_data *xc,
+			       int chn, struct midi_macro *midi, int param)
+{
+	struct midi_stream in;
+	int byte, cmd, val;
+
+	in.pos = midi->data;
+	in.buffer = -1;
+	in.param = param;
+
+	while (*in.pos) {
+		/* Very simple MIDI 1.0 parser--most bytes can just be ignored
+		 * (or passed through, if libxmp gets MIDI output). All bytes
+		 * with bit 7 are statuses which interrupt unfinished messages
+		 * ("Data Types: Status Bytes") or are real time messages.
+		 * This holds even for SysEx messages, which end at ANY non-
+		 * real time status ("System Common Messages: EOX").
+		 *
+		 * IT intercepts internal "messages" that begin with F0 F0,
+		 * which in MIDI is a useless zero-length SysEx followed by
+		 * a second SysEx. They are four bytes long including F0 F0,
+		 * and shouldn't be passed through. OpenMPT also uses F0 F1.
+		 */
+		cmd = -1;
+		byte = midi_byte(ctx, xc, chn, &in);
+		if (byte == 0xf0) {
+			byte = midi_byte(ctx, xc, chn, &in);
+			if (byte == 0xf0 || byte == 0xf1)
+				cmd = byte & 0xf;
+		}
+		if (cmd < 0) {
+			if (byte == 0xfa || byte == 0xfc || byte == 0xff) {
+				/* These real time statuses can appear anywhere
+				 * (even in SysEx) and reset the channel filter
+				 * params. See: OpenMPT ZxxSecrets.it */
+				apply_midi_macro_effect(xc, 0, 127);
+				apply_midi_macro_effect(xc, 1, 0);
+			}
+			continue;
+		}
+		cmd = midi_byte(ctx, xc, chn, &in) | (cmd << 8);
+		val = midi_byte(ctx, xc, chn, &in);
+		if (cmd < 0 || cmd >= 0x80 || val < 0 || val >= 0x80) {
+			continue;
+		}
+		apply_midi_macro_effect(xc, cmd, val);
+	}
+}
+
+/* This needs to occur before all process_* functions:
+ * - It modifies the filter parameters, used by process_frequency.
+ * - process_volume and process_pan apply slide effects, which the
+ *   filter parameters expect to occur after macro effect parsing. */
+static void update_midi_macro(struct context_data *ctx, int chn)
+{
+	struct player_data *p = &ctx->p;
+	struct module_data *m = &ctx->m;
+	struct channel_data *xc = &p->xc_data[chn];
+	struct midi_macro_data *midicfg = m->midi;
+	struct midi_macro *macro;
+	int val;
+
+	if (TEST(MIDI_MACRO) && HAS_QUIRK(QUIRK_FILTER)) {
+		if (xc->macro.slide > 0) {
+			xc->macro.val += xc->macro.slide;
+			if (xc->macro.val > xc->macro.target) {
+				xc->macro.val = xc->macro.target;
+				xc->macro.slide = 0;
+			}
+		} else if (xc->macro.slide < 0) {
+			xc->macro.val += xc->macro.slide;
+			if (xc->macro.val < xc->macro.target) {
+				xc->macro.val = xc->macro.target;
+				xc->macro.slide = 0;
+			}
+		} else if (p->frame) {
+			/* Execute non-smooth macros on frame 0 only */
+			return;
+		}
+
+		val = (int)xc->macro.val;
+		if (val >= 0x80) {
+			if (midicfg) {
+				macro = &midicfg->fixed[val - 0x80];
+				execute_midi_macro(ctx, xc, chn, macro, val);
+			} else if (val < 0x90) {
+				/* Default fixed macro: set resonance */
+				apply_midi_macro_effect(xc, 1, (val - 0x80) << 3);
+			}
+		} else if (midicfg) {
+			macro = &midicfg->param[xc->macro.active];
+			execute_midi_macro(ctx, xc, chn, macro, val);
+		} else if (xc->macro.active == 0) {
+			/* Default parameterized macro 0: set filter cutoff */
+			apply_midi_macro_effect(xc, 0, val);
+		}
+	}
+}
+
+#endif /* LIBXMP_CORE_DISABLE_IT */
+
+
 #ifndef LIBXMP_CORE_PLAYER
 
 /* From http://www.un4seen.com/forum/?topic=7554.0
@@ -268,23 +482,39 @@ static const int invloop_table[] = {
 	0, 5, 6, 7, 8, 10, 11, 13, 16, 19, 22, 26, 32, 43, 64, 128
 };
 
-static void update_invloop(struct module_data *m, struct channel_data *xc)
+static void update_invloop(struct context_data *ctx, struct channel_data *xc)
 {
-	struct xmp_sample *xxs = &m->mod.xxs[xc->smp];
-	int len;
+	struct xmp_sample *xxs = libxmp_get_sample(ctx, xc->smp);
+	struct module_data *m = &ctx->m;
+	int lps, len = -1;
 
 	xc->invloop.count += invloop_table[xc->invloop.speed];
 
-	if ((xxs->flg & XMP_SAMPLE_LOOP) && xc->invloop.count >= 128) {
+	if (xxs != NULL) {
+		if (xxs->flg & XMP_SAMPLE_LOOP) {
+			lps = xxs->lps;
+			len = xxs->lpe - lps;
+		} else if (xxs->flg & XMP_SAMPLE_SLOOP) {
+			/* Some formats that support invert loop use sustain
+			 * loops instead (Digital Symphony). */
+			lps = m->xtra[xc->smp].sus;
+			len = m->xtra[xc->smp].sue - lps;
+		}
+	}
+
+	if (len >= 0 && xc->invloop.count >= 128) {
 		xc->invloop.count = 0;
-		len = xxs->lpe - xxs->lps;
 
 		if (++xc->invloop.pos > len) {
 			xc->invloop.pos = 0;
 		}
 
+		if (xxs->data == NULL) {
+			return;
+		}
+
 		if (~xxs->flg & XMP_SAMPLE_16BIT) {
-			xxs->data[xxs->lps + xc->invloop.pos] ^= 0xff;
+			xxs->data[lps + xc->invloop.pos] ^= 0xff;
 		}
 	}
 }
@@ -624,7 +854,7 @@ static int tremor_s3m(struct context_data *ctx, int chn, int finalvol)
  * Update channel data
  */
 
-#define DOENV_RELEASE ((TEST_NOTE(NOTE_RELEASE) || act == VIRT_ACTION_OFF))
+#define DOENV_RELEASE ((TEST_NOTE(NOTE_ENV_RELEASE) || act == VIRT_ACTION_OFF))
 
 static void process_volume(struct context_data *ctx, int chn, int act)
 {
@@ -648,7 +878,7 @@ static void process_volume(struct context_data *ctx, int chn, int act)
 		/* If IT, only apply fadeout on note release if we don't
 		 * have envelope, or if we have envelope loop
 		 */
-		if (TEST_NOTE(NOTE_RELEASE) || act == VIRT_ACTION_OFF) {
+		if (TEST_NOTE(NOTE_ENV_RELEASE) || act == VIRT_ACTION_OFF) {
 			if ((~instrument->aei.flg & XMP_ENVELOPE_ON) ||
 			    (instrument->aei.flg & XMP_ENVELOPE_LOOP)) {
 				fade = 1;
@@ -656,12 +886,12 @@ static void process_volume(struct context_data *ctx, int chn, int act)
 		}
 	} else {
 		if (~instrument->aei.flg & XMP_ENVELOPE_ON) {
-			if (TEST_NOTE(NOTE_RELEASE)) {
+			if (TEST_NOTE(NOTE_ENV_RELEASE)) {
 				xc->fadeout = 0;
 			}
 		}
 
-		if (TEST_NOTE(NOTE_RELEASE) || act == VIRT_ACTION_OFF) {
+		if (TEST_NOTE(NOTE_ENV_RELEASE) || act == VIRT_ACTION_OFF) {
 			fade = 1;
 		}
 	}
@@ -765,6 +995,9 @@ static void process_volume(struct context_data *ctx, int chn, int act)
 	} else {
 		finalvol = tremor_s3m(ctx, chn, finalvol);
 	}
+#ifndef LIBXMP_CORE_DISABLE_IT
+	xc->macro.finalvol = finalvol;
+#endif
 
 	if (chn < m->mod.chn) {
 		finalvol = finalvol * p->master_vol / 100;
@@ -949,12 +1182,12 @@ static void process_frequency(struct context_data *ctx, int chn, int act)
 
 	/* For xmp_get_frame_info() */
 	xc->info_pitchbend = linear_bend >> 7;
-	xc->info_period = final_period * 4096;
+	xc->info_period = MIN(final_period * 4096, INT_MAX);
 
 	if (IS_PERIOD_MODRNG()) {
-		CLAMP(xc->info_period,
-			libxmp_note_to_period(ctx, MAX_NOTE_MOD, xc->finetune, 0) * 4096,
-			libxmp_note_to_period(ctx, MIN_NOTE_MOD, xc->finetune, 0) * 4096);
+		const double min_period = libxmp_note_to_period(ctx, MAX_NOTE_MOD, xc->finetune, 0) * 4096;
+		const double max_period = libxmp_note_to_period(ctx, MIN_NOTE_MOD, xc->finetune, 0) * 4096;
+		CLAMP(xc->info_period, min_period, max_period);
 	} else if (xc->info_period < (1 << 12)) {
 		xc->info_period = (1 << 12);
 	}
@@ -980,17 +1213,21 @@ static void process_frequency(struct context_data *ctx, int chn, int act)
 
 	if (cutoff > 0xff) {
 		cutoff = 0xff;
-	} else if (cutoff < 0xff) {
+	}
+	/* IT: cutoff 127 + resonance 0 turns off the filter, but this
+	 * is only applied when playing a new note without toneporta.
+	 * All other combinations take effect immediately.
+	 * See OpenMPT filter-reset.it, filter-reset-carry.it */
+	if (cutoff < 0xfe || resonance > 0 || xc->filter.can_disable) {
 		int a0, b0, b1;
 		libxmp_filter_setup(s->freq, cutoff, resonance, &a0, &b0, &b1);
 		libxmp_virt_seteffect(ctx, chn, DSP_EFFECT_FILTER_A0, a0);
 		libxmp_virt_seteffect(ctx, chn, DSP_EFFECT_FILTER_B0, b0);
 		libxmp_virt_seteffect(ctx, chn, DSP_EFFECT_FILTER_B1, b1);
 		libxmp_virt_seteffect(ctx, chn, DSP_EFFECT_RESONANCE, resonance);
+		libxmp_virt_seteffect(ctx, chn, DSP_EFFECT_CUTOFF, cutoff);
+		xc->filter.can_disable = 0;
 	}
-
-	/* Always set cutoff */
-	libxmp_virt_seteffect(ctx, chn, DSP_EFFECT_CUTOFF, cutoff);
 
 #endif
 }
@@ -1021,6 +1258,7 @@ static void process_pan(struct context_data *ctx, int chn, int act)
 			libxmp_lfo_update(&xc->panbrello.lfo);
 		}
 	}
+	xc->macro.notepan = xc->pan.val + panbrello + 0x80;
 #endif
 
 	channel_pan = xc->pan.val;
@@ -1083,13 +1321,19 @@ static void update_volume(struct context_data *ctx, int chn)
 
 #ifndef LIBXMP_CORE_PLAYER
 		if (TEST_PER(VOL_SLIDE)) {
-			if (xc->vol.slide > 0 && xc->volume > m->volbase) {
-				xc->volume = m->volbase;
-				RESET_PER(VOL_SLIDE);
+			if (xc->vol.slide > 0) {
+				int target = MAX(xc->vol.target - 1, m->volbase);
+				if (xc->volume > target) {
+					xc->volume = target;
+					RESET_PER(VOL_SLIDE);
+				}
 			}
-			if (xc->vol.slide < 0 && xc->volume < 0) {
-				xc->volume = 0;
-				RESET_PER(VOL_SLIDE);
+			if (xc->vol.slide < 0) {
+				int target = xc->vol.target > 0 ? MIN(0, xc->vol.target - 1) : 0;
+				if (xc->volume < target) {
+					xc->volume = target;
+					RESET_PER(VOL_SLIDE);
+				}
 			}
 		}
 #endif
@@ -1202,10 +1446,11 @@ static void update_frequency(struct context_data *ctx, int chn)
 	case PERIOD_LINEAR:
 		CLAMP(xc->period, MIN_PERIOD_L, MAX_PERIOD_L);
 		break;
-	case PERIOD_MODRNG:
-		CLAMP(xc->period,
-			libxmp_note_to_period(ctx, MAX_NOTE_MOD, xc->finetune, 0),
-			libxmp_note_to_period(ctx, MIN_NOTE_MOD, xc->finetune, 0));
+	case PERIOD_MODRNG: {
+		const double min_period = libxmp_note_to_period(ctx, MAX_NOTE_MOD, xc->finetune, 0);
+		const double max_period = libxmp_note_to_period(ctx, MIN_NOTE_MOD, xc->finetune, 0);
+		CLAMP(xc->period, min_period, max_period);
+		}
 		break;
 	}
 
@@ -1264,6 +1509,11 @@ static void play_channel(struct context_data *ctx, int chn)
 		}
 	}
 
+#ifndef LIBXMP_CORE_DISABLE_IT
+	/* IT MIDI macros need to update regardless of the current voice state. */
+	update_midi_macro(ctx, chn);
+#endif
+
 	act = libxmp_virt_cstat(ctx, chn);
 	if (act == VIRT_INVALID) {
 		/* We need this to keep processing global volume slides */
@@ -1301,9 +1551,16 @@ static void play_channel(struct context_data *ctx, int chn)
 			xc->volume += rval[xc->retrig.type].s;
 			xc->volume *= rval[xc->retrig.type].m;
 			xc->volume /= rval[xc->retrig.type].d;
-                	xc->retrig.count = LSN(xc->retrig.val);
+			xc->retrig.count = LSN(xc->retrig.val);
+
+			if (xc->retrig.limit > 0) {
+				/* Limit the number of retriggers. */
+				--xc->retrig.limit;
+				if (xc->retrig.limit == 0)
+					RESET(RETRIG);
+			}
 		}
-        }
+	}
 
 	/* Do keyoff */
 	if (xc->keyoff) {
@@ -1311,7 +1568,7 @@ static void play_channel(struct context_data *ctx, int chn)
 			SET_NOTE(NOTE_RELEASE);
 	}
 
-	libxmp_virt_release(ctx, chn, TEST_NOTE(NOTE_RELEASE));
+	libxmp_virt_release(ctx, chn, TEST_NOTE(NOTE_SAMPLE_RELEASE));
 
 	update_volume(ctx, chn);
 	update_frequency(ctx, chn);
@@ -1322,13 +1579,13 @@ static void play_channel(struct context_data *ctx, int chn)
 	process_pan(ctx, chn, act);
 
 #ifndef LIBXMP_CORE_PLAYER
-	if (HAS_QUIRK(QUIRK_PROTRACK) && xc->ins < mod->ins) {
-		update_invloop(m, xc);
+	if (HAS_QUIRK(QUIRK_PROTRACK | QUIRK_INVLOOP) && xc->ins < mod->ins) {
+		update_invloop(ctx, xc);
 	}
 #endif
 
 	if (TEST_NOTE(NOTE_SUSEXIT)) {
-		SET_NOTE(NOTE_RELEASE);
+		SET_NOTE(NOTE_ENV_RELEASE);
 	}
 
 	xc->info_position = libxmp_virt_getvoicepos(ctx, chn);
@@ -1365,13 +1622,14 @@ static void next_order(struct context_data *ctx)
 	struct flow_control *f = &p->flow;
 	struct module_data *m = &ctx->m;
 	struct xmp_module *mod = &m->mod;
+	int reset_gvol = 0;
 	int mark;
 
 	do {
-    		p->ord++;
+		p->ord++;
 
 		/* Restart module */
-		mark = HAS_QUIRK(QUIRK_MARKER) && mod->xxo[p->ord] == 0xff;
+		mark = HAS_QUIRK(QUIRK_MARKER) && p->ord < mod->len && mod->xxo[p->ord] == 0xff;
 		if (p->ord >= mod->len || mark) {
 			if (mod->rst > mod->len ||
 			    mod->xxo[mod->rst] >= mod->pat ||
@@ -1384,11 +1642,19 @@ static void next_order(struct context_data *ctx)
 					p->ord = m->seq_data[p->sequence].entry_point;
 				}
 			}
-
-			p->gvol = m->xxo_info[p->ord].gvl;
+			/* This might be a marker, so delay updating global
+			 * volume until an actual pattern is found */
+			reset_gvol = 1;
 		}
 	} while (mod->xxo[p->ord] >= mod->pat);
 
+	if (reset_gvol)
+		p->gvol = m->xxo_info[p->ord].gvl;
+
+#ifndef LIBXMP_CORE_PLAYER
+	/* Archimedes line jump -- don't reset time tracking. */
+	if (f->jump_in_pat != p->ord)
+#endif
 	p->current_time = m->xxo_info[p->ord].time;
 
 	f->num_rows = mod->xxp[mod->xxo[p->ord]]->rows;
@@ -1401,6 +1667,8 @@ static void next_order(struct context_data *ctx)
 	p->frame = 0;
 
 #ifndef LIBXMP_CORE_PLAYER
+	f->jump_in_pat = -1;
+
 	/* Reset persistent effects at new pattern */
 	if (HAS_QUIRK(QUIRK_PERPAT)) {
 		int chn;
@@ -1429,16 +1697,16 @@ static void next_row(struct context_data *ctx)
 
 		next_order(ctx);
 	} else {
-		if (f->loop_chn) {
-			p->row = f->loop[f->loop_chn - 1].start - 1;
-			f->loop_chn = 0;
-		}
-
 		if (f->rowdelay == 0) {
 			p->row++;
 			f->rowdelay_set = 0;
 		} else {
 			f->rowdelay--;
+		}
+
+		if (f->loop_chn) {
+			p->row = f->loop[f->loop_chn - 1].start;
+			f->loop_chn = 0;
 		}
 
 		/* check end of pattern */
@@ -1486,6 +1754,21 @@ static void update_from_ord_info(struct context_data *ctx)
 
 #ifndef LIBXMP_CORE_PLAYER
 	p->st26_speed = oinfo->st26_speed;
+#endif
+}
+
+void libxmp_reset_flow(struct context_data *ctx)
+{
+	struct flow_control *f = &ctx->p.flow;
+	f->jumpline = 0;
+	f->jump = -1;
+	f->pbreak = 0;
+	f->loop_chn = 0;
+	f->delay = 0;
+	f->rowdelay = 0;
+	f->rowdelay_set = 0;
+#ifndef LIBXMP_CORE_PLAYER
+	f->jump_in_pat = -1;
 #endif
 }
 
@@ -1542,8 +1825,11 @@ int xmp_start_player(xmp_context opaque, int rate, int format)
 		mod->len = 0;
 	}
 
-	if (mod->len == 0 || mod->chn == 0) {
+	if (mod->len == 0) {
 		/* set variables to sane state */
+		/* Note: previously did this for mod->chn == 0, which caused
+		 * crashes on invalid order 0s. 0 channel modules are technically
+		 * valid (if useless) so just let them play normally. */
 		p->ord = p->scan[0].ord = 0;
 		p->row = p->scan[0].row = 0;
 		f->end_point = 0;
@@ -1560,19 +1846,15 @@ int xmp_start_player(xmp_context opaque, int rate, int format)
 		goto err;
 	}
 
-	f->delay = 0;
-	f->jumpline = 0;
-	f->jump = -1;
-	f->pbreak = 0;
-	f->rowdelay_set = 0;
+	libxmp_reset_flow(ctx);
 
-	f->loop = (struct pattern_loop *)calloc(p->virt.virt_channels, sizeof(struct pattern_loop));
+	f->loop = (struct pattern_loop *) Xcalloc(p->virt.virt_channels, sizeof(struct pattern_loop));
 	if (f->loop == NULL) {
 		ret = -XMP_ERROR_SYSTEM;
 		goto err;
 	}
 
-	p->xc_data = (struct channel_data *)calloc(p->virt.virt_channels, sizeof(struct channel_data));
+	p->xc_data = (struct channel_data *) Xcalloc(p->virt.virt_channels, sizeof(struct channel_data));
 	if (p->xc_data == NULL) {
 		ret = -XMP_ERROR_SYSTEM;
 		goto err1;
@@ -1581,11 +1863,14 @@ int xmp_start_player(xmp_context opaque, int rate, int format)
 	/* Reset our buffer pointers */
 	xmp_play_buffer(opaque, NULL, 0, 0);
 
-#ifndef LIBXMP_CORE_PLAYER
+#ifndef LIBXMP_CORE_DISABLE_IT
 	for (i = 0; i < p->virt.virt_channels; i++) {
 		struct channel_data *xc = &p->xc_data[i];
+		xc->filter.cutoff = 0xff;
+#ifndef LIBXMP_CORE_PLAYER
 		if (libxmp_new_channel_extras(ctx, xc) < 0)
 			goto err2;
+#endif
 	}
 #endif
 	reset_channels(ctx);
@@ -1596,11 +1881,11 @@ int xmp_start_player(xmp_context opaque, int rate, int format)
 
 #ifndef LIBXMP_CORE_PLAYER
     err2:
-	free(p->xc_data);
+	Xfree(p->xc_data);
 	p->xc_data = NULL;
 #endif
     err1:
-	free(f->loop);
+	Xfree(f->loop);
 	f->loop = NULL;
     err:
 	return ret;
@@ -1820,8 +2105,8 @@ void xmp_end_player(xmp_context opaque)
 
 	libxmp_virt_off(ctx);
 
-	free(p->xc_data);
-	free(f->loop);
+	Xfree(p->xc_data);
+	Xfree(f->loop);
 
 	p->xc_data = NULL;
 	f->loop = NULL;

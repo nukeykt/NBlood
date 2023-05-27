@@ -164,7 +164,7 @@ typedef struct {
     int32_t camera_time,folfvel,folsvel,folavel,folx,foly,fola;
     int32_t reccnt,crosshairscale;
 
-    int32_t runkey_mode,statusbarscale,mouseaiming,weaponswitch,drawweapon;   // JBF 20031125
+    int32_t runkey_mode,kick_mode,statusbarscale,mouseaiming,weaponswitch,drawweapon;   // JBF 20031125
     int32_t democams,color,msgdisptime,statusbarmode;
     int32_t m_noexits,noexits,autovote,automsg,idplayers;
     int32_t team, viewbob, weaponsway, althud, weaponscale, textscale;
@@ -300,7 +300,7 @@ static inline int Menu_HaveUserMap(void)
 extern const char *G_DefaultRtsFile(void);
 
 #ifdef LEGACY_ROR
-extern char ror_protectedsectors[MAXSECTORS];
+extern char ror_protectedsectors[(MAXSECTORS+7)>>3];
 #endif
 
 extern float r_ambientlight;
@@ -438,6 +438,19 @@ static inline int G_GetTeamPalette(int team)
 extern int G_StartRTS(int lumpNum, int localPlayer);
 
 extern void G_MaybeAllocPlayer(int32_t pnum);
+
+static inline int dukeAllowQuickKick(void)
+{
+    switch (ud.kick_mode)
+    {
+    default:
+        return g_scriptVersion == 13;
+    case 1:
+        return 1;
+    case 2:
+        return 0;
+    }
+}
 
 static inline int32_t gameHandleEvents(void)
 {

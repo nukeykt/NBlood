@@ -33,7 +33,6 @@
 static int it_test(HIO_HANDLE *, char *, const int);
 static int it_load(struct module_data *, HIO_HANDLE *, const int);
 
-extern const struct format_loader libxmp_loader_it;
 const struct format_loader libxmp_loader_it = {
 	"Impulse Tracker",
 	it_test,
@@ -82,9 +81,9 @@ static const uint8 fx[32] = {
 	/* W */ FX_GVOL_SLIDE,
 	/* X */ FX_SETPAN,
 	/* Y */ FX_PANBRELLO,
-	/* Z */ FX_FLT_CUTOFF,
+	/* Z */ FX_MACRO,
 	/* ? */ FX_NONE,
-	/* ? */ FX_NONE,
+	/* / */ FX_MACROSMOOTH,
 	/* ? */ FX_NONE,
 	/* ? */ FX_NONE,
 	/* ? */ FX_NONE
@@ -138,9 +137,16 @@ static void xlat_fx(int c, struct xmp_event *e, uint8 *last_fxp, int new_fx)
 			e->fxt = FX_SETPAN;
 			e->fxp = l << 4;
 			break;
-		case 0x9:	/* 0x91 = set surround */
-			e->fxt = FX_SURROUND;
-			e->fxp = l;
+		case 0x9:
+			if (l == 0 || l == 1) {
+				/* 0x91 = set surround */
+				e->fxt = FX_SURROUND;
+				e->fxp = l;
+			} else if (l == 0xe || l == 0xf) {
+				/* 0x9f Play reverse (MPT) */
+				e->fxt = FX_REVERSE;
+				e->fxp = l - 0xe;
+			}
 			break;
 		case 0xa:	/* High offset */
 			e->fxt = FX_HIOFFSET;
@@ -159,16 +165,12 @@ static void xlat_fx(int c, struct xmp_event *e, uint8 *last_fxp, int new_fx)
 			e->fxt = FX_IT_ROWDELAY;
 			e->fxp = l;
 			break;
+		case 0xf:	/* Set parametered macro */
+			e->fxt = FX_MACRO_SET;
+			e->fxp = l;
+			break;
 		default:
 			e->fxt = e->fxp = 0;
-		}
-		break;
-	case FX_FLT_CUTOFF:
-		if (e->fxp > 0x7f && e->fxp < 0x90) {	/* Resonance */
-			e->fxt = FX_FLT_RESN;
-			e->fxp = (e->fxp - 0x80) * 16;
-		} else {	/* Cutoff */
-			e->fxp *= 2;
 		}
 		break;
 	case FX_TREMOR:
@@ -252,6 +254,34 @@ static void fix_name(uint8 *s, int l)
 }
 
 
+static int load_it_midi_config(struct module_data *m, HIO_HANDLE *f)
+{
+	int i;
+
+	m->midi = (struct midi_macro_data *) Xcalloc(1, sizeof(struct midi_macro_data));
+	if (m->midi == NULL)
+		return -1;
+
+	/* Skip global MIDI macros */
+	if (hio_seek(f, 9 * 32, SEEK_CUR) < 0)
+		return -1;
+
+	/* SFx macros */
+	for (i = 0; i < 16; i++) {
+		if (hio_read(m->midi->param[i].data, 1, 32, f) < 32)
+			return -1;
+		m->midi->param[i].data[31] = '\0';
+	}
+	/* Zxx macros */
+	for (i = 0; i < 128; i++) {
+		if (hio_read(m->midi->fixed[i].data, 1, 32, f) < 32)
+			return -1;
+		m->midi->fixed[i].data[31] = '\0';
+	}
+	return 0;
+}
+
+
 static int read_envelope(struct xmp_envelope *ei, struct it_envelope *env,
 			  HIO_HANDLE *f)
 {
@@ -307,7 +337,7 @@ static int read_envelope(struct xmp_envelope *ei, struct it_envelope *env,
 	return 0;
 }
 
-static void identify_tracker(struct module_data *m, struct it_file_header *ifh)
+static void identify_tracker(struct module_data *m, struct it_file_header *ifh, int *is_mpt_116)
 {
 #ifndef LIBXMP_CORE_PLAYER
 	char tracker_name[40];
@@ -331,6 +361,7 @@ static void identify_tracker(struct module_data *m, struct it_file_header *ifh)
 			strcpy(tracker_name, "ModPlug Tracker 1.16");
 			/* ModPlug Tracker files aren't really IMPM 2.00 */
 			ifh->cmwt = sample_mode ? 0x100 : 0x214;
+			*is_mpt_116 = 1;
 		} else if (ifh->cwt == 0x0216) {
 			strcpy(tracker_name, "Impulse Tracker 2.14v3");
 		} else if (ifh->cwt == 0x0217) {
@@ -346,6 +377,7 @@ static void identify_tracker(struct module_data *m, struct it_file_header *ifh)
 	case 0x7f:
 		if (ifh->cwt == 0x0888) {
 			strcpy(tracker_name, "OpenMPT 1.17");
+			*is_mpt_116 = 1;
 		} else if (ifh->cwt == 0x7fff) {
 			strcpy(tracker_name, "munch.py");
 		} else {
@@ -480,7 +512,7 @@ static int load_old_it_instrument(struct xmp_instrument *xxi, HIO_HANDLE *f)
 	xxi->vol = 0x40;
 
 	if (k) {
-		xxi->sub = (struct xmp_subinstrument *)calloc(sizeof(struct xmp_subinstrument), k);
+		xxi->sub = (struct xmp_subinstrument *) Xcalloc(k, sizeof(struct xmp_subinstrument));
 		if (xxi->sub == NULL) {
 			return -1;
 		}
@@ -631,7 +663,7 @@ static int load_new_it_instrument(struct xmp_instrument *xxi, HIO_HANDLE *f)
 	xxi->vol = i2h.gbv >> 1;
 
 	if (k) {
-		xxi->sub = (struct xmp_subinstrument *)calloc(sizeof(struct xmp_subinstrument), k);
+		xxi->sub = (struct xmp_subinstrument *) Xcalloc(k, sizeof(struct xmp_subinstrument));
 		if (xxi->sub == NULL)
 			return -1;
 
@@ -665,7 +697,7 @@ static int load_new_it_instrument(struct xmp_instrument *xxi, HIO_HANDLE *f)
 	return 0;
 }
 
-static void force_sample_length(struct xmp_sample *xxs, int len)
+static void force_sample_length(struct xmp_sample *xxs, struct extra_sample_data *xtra, int len)
 {
 	xxs->len = len;
 
@@ -674,6 +706,14 @@ static void force_sample_length(struct xmp_sample *xxs, int len)
 
 	if (xxs->lps >= xxs->len)
 		xxs->flg &= ~XMP_SAMPLE_LOOP;
+
+	if (xtra) {
+		if (xtra->sue > xxs->len)
+			xtra->sue = xxs->len;
+
+		if(xtra->sus >= xxs->len)
+			xxs->flg &= ~(XMP_SAMPLE_SLOOP | XMP_SAMPLE_SLOOP_BIDIR);
+	}
 }
 
 static int load_it_sample(struct module_data *m, int i, int start,
@@ -681,12 +721,13 @@ static int load_it_sample(struct module_data *m, int i, int start,
 {
 	struct it_sample_header ish;
 	struct xmp_module *mod = &m->mod;
-	struct xmp_sample *xxs, *xsmp;
+	struct extra_sample_data *xtra;
+	struct xmp_sample *xxs;
 	int j, k;
 	uint8 buf[80];
 
 	if (sample_mode) {
-		mod->xxi[i].sub = (struct xmp_subinstrument *)calloc(sizeof(struct xmp_subinstrument), 1);
+		mod->xxi[i].sub = (struct xmp_subinstrument *) Xcalloc(1, sizeof(struct xmp_subinstrument));
 		if (mod->xxi[i].sub == NULL) {
 			return -1;
 		}
@@ -705,7 +746,7 @@ static int load_it_sample(struct module_data *m, int i, int start,
 	}
 
 	xxs = &mod->xxs[i];
-	xsmp = &m->xsmp[i];
+	xtra = &m->xtra[i];
 
 	memcpy(ish.dosname, buf + 4, 12);
 	ish.zero = buf[16];
@@ -743,14 +784,8 @@ static int load_it_sample(struct module_data *m, int i, int start,
 	xxs->flg |= ish.flags & IT_SMP_BSLOOP ? XMP_SAMPLE_SLOOP_BIDIR : 0;
 
 	if (ish.flags & IT_SMP_SLOOP) {
-		memcpy(xsmp, xxs, sizeof (struct xmp_sample));
-		xsmp->lps = ish.sloopbeg;
-		xsmp->lpe = ish.sloopend;
-		xsmp->flg |= XMP_SAMPLE_LOOP;
-		xsmp->flg &= ~XMP_SAMPLE_LOOP_BIDIR;
-		if (ish.flags & IT_SMP_BSLOOP) {
-			xsmp->flg |= XMP_SAMPLE_LOOP_BIDIR;
-		}
+		xtra->sus = ish.sloopbeg;
+		xtra->sue = ish.sloopend;
 	}
 
 	if (sample_mode) {
@@ -821,6 +856,9 @@ static int load_it_sample(struct module_data *m, int i, int start,
 		if (xxs->lpe > xxs->len || xxs->lps >= xxs->lpe)
 			xxs->flg &= ~XMP_SAMPLE_LOOP;
 
+		if (ish.convert == IT_CVT_ADPCM)
+			cvt |= SAMPLE_FLAG_ADPCM;
+
 		if (~ish.convert & IT_CVT_SIGNED)
 			cvt |= SAMPLE_FLAG_UNS;
 
@@ -847,12 +885,10 @@ static int load_it_sample(struct module_data *m, int i, int start,
 				   "resizing to %ld",
 				   i, xxs->len, min_size, left, left << 3);
 
-				force_sample_length(xxs, left << 3);
-				if (ish.flags & IT_SMP_SLOOP)
-					force_sample_length(xsmp, left << 3);
+				force_sample_length(xxs, xtra, left << 3);
 			}
 
-			decbuf = calloc(1, xxs->len * 2);
+			decbuf = (uint8 *) Xcalloc(1, xxs->len * 2);
 			if (decbuf == NULL)
 				return -1;
 
@@ -871,40 +907,15 @@ static int load_it_sample(struct module_data *m, int i, int start,
 						  ish.convert & IT_CVT_DIFF);
 			}
 
-			if (ish.flags & IT_SMP_SLOOP) {
-				long pos = hio_tell(f);
-				if (pos < 0) {
-					free(decbuf);
-					return -1;
-				}
-				ret = libxmp_load_sample(m, NULL, SAMPLE_FLAG_NOLOAD |
-							cvt, &m->xsmp[i], decbuf);
-				if (ret < 0) {
-					free(decbuf);
-					return -1;
-				}
-				hio_seek(f, pos, SEEK_SET);
-			}
-
 			ret = libxmp_load_sample(m, NULL, SAMPLE_FLAG_NOLOAD | cvt,
 					  &mod->xxs[i], decbuf);
 			if (ret < 0) {
-				free(decbuf);
+				Xfree(decbuf);
 				return -1;
 			}
 
-			free(decbuf);
+			Xfree(decbuf);
 		} else {
-			if (ish.flags & IT_SMP_SLOOP) {
-				long pos = hio_tell(f);
-				if (pos < 0) {
-					return -1;
-				}
-				if (libxmp_load_sample(m, f, cvt, &m->xsmp[i], NULL) < 0)
-					return -1;
-				hio_seek(f, pos, SEEK_SET);
-			}
-
 			if (libxmp_load_sample(m, f, cvt, &mod->xxs[i], NULL) < 0)
 				return -1;
 		}
@@ -1050,6 +1061,7 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 	uint32 *pp_smp;		/* Pointers to samples */
 	uint32 *pp_pat;		/* Pointers to patterns */
 	int new_fx, sample_mode;
+	int is_mpt_116 = 0;
 
 	LOAD_INIT();
 
@@ -1081,8 +1093,8 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 	ifh.pwd = hio_read8(f);
 
 	/* Sanity check */
-	if (ifh.gv > 0x80 || ifh.mv > 0x80) {
-		D_(D_CRIT "invalid gv (%u) or mv (%u)", ifh.gv, ifh.mv);
+	if (ifh.gv > 0x80) {
+		D_(D_CRIT "invalid gv (%u)", ifh.gv);
 		goto err;
 	}
 
@@ -1114,18 +1126,18 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 	}
 
 	if (mod->ins) {
-		pp_ins = (uint32 *)calloc(4, mod->ins);
+		pp_ins = (uint32 *) Xcalloc(4, mod->ins);
 		if (pp_ins == NULL)
 			goto err;
 	} else {
 		pp_ins = NULL;
 	}
 
-	pp_smp = (uint32 *)calloc(4, mod->smp);
+	pp_smp = (uint32 *) Xcalloc(4, mod->smp);
 	if (pp_smp == NULL)
 		goto err2;
 
-	pp_pat = (uint32 *)calloc(4, mod->pat);
+	pp_pat = (uint32 *) Xcalloc(4, mod->pat);
 	if (pp_pat == NULL)
 		goto err3;
 
@@ -1177,9 +1189,20 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 	for (i = 0; i < mod->pat; i++)
 		pp_pat[i] = hio_read32l(f);
 
+	if ((ifh.flags & IT_MIDI_CONFIG) || (ifh.special & IT_SPEC_MIDICFG)) {
+		/* Skip edit history if it exists. */
+		if (ifh.special & IT_EDIT_HISTORY) {
+			int skip = hio_read16l(f) * 8;
+			if (hio_error(f) || (skip && hio_seek(f, skip, SEEK_CUR) < 0))
+				goto err4;
+		}
+		if (load_it_midi_config(m, f) < 0)
+			goto err4;
+	}
+
 	m->c4rate = C4_NTSC_RATE;
 
-	identify_tracker(m, &ifh);
+	identify_tracker(m, &ifh, &is_mpt_116);
 
 	MODULE_INFO();
 
@@ -1192,14 +1215,6 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 
 	if (libxmp_init_instrument(m) < 0)
 		goto err4;
-
-	/* Alloc extra samples for sustain loop */
-	if (mod->smp > 0) {
-		m->xsmp = (struct xmp_sample *)calloc(sizeof (struct xmp_sample), mod->smp);
-		if (m->xsmp == NULL) {
-			goto err4;
-		}
-	}
 
 	D_(D_INFO "Instruments: %d", mod->ins);
 
@@ -1362,14 +1377,13 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 		}
 	}
 
-	free(pp_pat);
-	free(pp_smp);
-	free(pp_ins);
+	Xfree(pp_pat);
+	Xfree(pp_smp);
+	Xfree(pp_ins);
 
 	/* Song message */
-
 	if (ifh.special & IT_HAS_MSG) {
-		if ((m->comment = (char *)malloc(ifh.msglen)) != NULL) {
+		if ((m->comment = (char *)Xmalloc(ifh.msglen)) != NULL) {
 			hio_seek(f, start + ifh.msgofs, SEEK_SET);
 
 			D_(D_INFO "Message length : %d", ifh.msglen);
@@ -1414,16 +1428,23 @@ static int it_load(struct module_data *m, HIO_HANDLE *f, const int start)
 
 	m->gvolbase = 0x80;
 	m->gvol = ifh.gv;
+	m->mvolbase = 48;
+	m->mvol = ifh.mv;
 	m->read_event_type = READ_EVENT_IT;
+
+#ifndef LIBXMP_CORE_PLAYER
+	if (is_mpt_116)
+		libxmp_apply_mpt_preamp(m);
+#endif
 
 	return 0;
 
 err4:
-	free(pp_pat);
+	Xfree(pp_pat);
 err3:
-	free(pp_smp);
+	Xfree(pp_smp);
 err2:
-	free(pp_ins);
+	Xfree(pp_ins);
 err:
 	return -1;
 }

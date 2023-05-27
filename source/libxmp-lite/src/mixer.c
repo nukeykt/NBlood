@@ -45,7 +45,23 @@
 #define LIM16_HI	 32767
 #define LIM16_LO	-32768
 
+struct loop_data
+{
+#define LOOP_PROLOGUE 1
+#define LOOP_EPILOGUE 2
+	void *sptr;
+	int start;
+	int end;
+	int first_loop;
+	int _16bit;
+	int active;
+	uint32 prologue[LOOP_PROLOGUE];
+	uint32 epilogue[LOOP_EPILOGUE];
+};
+
 #define MIX_FN(x) void libxmp_mix_##x(struct mixer_voice *, int32 *, int, int, int, int, int, int, int)
+
+#define ANTICLICK_FPSHIFT	24
 
 MIX_FN(mono_8bit_nearest);
 MIX_FN(mono_8bit_linear);
@@ -209,8 +225,10 @@ static void do_anticlick(struct context_data *ctx, int voc, int32 *buf, int coun
 	struct player_data *p = &ctx->p;
 	struct mixer_data *s = &ctx->s;
 	struct mixer_voice *vi = &p->virt.voice_array[voc];
-	int smp_l, smp_r, max_x2;
+	int smp_l, smp_r;
 	int discharge = s->ticksize >> ANTICLICK_SHIFT;
+	int stepmul, stepval;
+	uint32 stepmul_sq;
 
 	smp_r = vi->sright;
 	smp_l = vi->sleft;
@@ -231,14 +249,23 @@ static void do_anticlick(struct context_data *ctx, int voc, int32 *buf, int coun
 		return;
 	}
 
-	max_x2 = count * count;
+	stepval = (1 << ANTICLICK_FPSHIFT) / count;
+	stepmul = stepval * count;
 
-	while (count--) {
-		if (~s->format & XMP_FORMAT_MONO) {
-			*buf++ += (count * (smp_r >> 10) / max_x2 * count) << 10;
+	if (~s->format & XMP_FORMAT_MONO) {
+		while ((stepmul -= stepval) > 0) {
+			/* Truncate to 16-bits of precision so the product is 32-bits. */
+			stepmul_sq = stepmul >> (ANTICLICK_FPSHIFT - 16);
+			stepmul_sq *= stepmul_sq;
+			*buf++ += (stepmul_sq * (int64)smp_r) >> 32;
+			*buf++ += (stepmul_sq * (int64)smp_l) >> 32;
 		}
-
-		*buf++ += (count * (smp_l >> 10) / max_x2 * count) << 10;
+	} else {
+		while ((stepmul -= stepval) > 0) {
+			stepmul_sq = stepmul >> (ANTICLICK_FPSHIFT - 16);
+			stepmul_sq *= stepmul_sq;
+			*buf++ += (stepmul_sq * (int64)smp_l) >> 32;
+		}
 	}
 }
 
@@ -256,6 +283,7 @@ static void set_sample_end(struct context_data *ctx, int voc, int end)
 
 	if (end) {
 		SET_NOTE(NOTE_SAMPLE_END);
+		vi->fidx &= ~FLAG_ACTIVE;
 		if (HAS_QUIRK(QUIRK_RSTCHN)) {
 			libxmp_virt_resetvoice(ctx, voc, 0);
 		}
@@ -264,45 +292,164 @@ static void set_sample_end(struct context_data *ctx, int voc, int end)
 	}
 }
 
-static void adjust_voice_end(struct mixer_voice *vi, struct xmp_sample *xxs)
+/* Back up sample data before and after loop and replace it for interpolation.
+ * TODO: use an overlap buffer like OpenMPT? This is easier, but a little dirty. */
+static void init_sample_wraparound(struct mixer_data *s, struct loop_data *ld,
+				   struct mixer_voice *vi, struct xmp_sample *xxs)
 {
-	if (xxs->flg & XMP_SAMPLE_LOOP) {
+	int bidir;
+	int i;
+
+	if (!vi->sptr || s->interp == XMP_INTERP_NEAREST || (~xxs->flg & XMP_SAMPLE_LOOP)) {
+		ld->active = 0;
+		return;
+	}
+
+	ld->sptr = vi->sptr;
+	ld->start = vi->start;
+	ld->end = vi->end;
+	ld->first_loop = !(vi->flags & SAMPLE_LOOP);
+	ld->_16bit = (xxs->flg & XMP_SAMPLE_16BIT);
+	ld->active = 1;
+
+	bidir = vi->flags & VOICE_BIDIR;
+
+	if (ld->_16bit) {
+		uint16 *start = (uint16 *)vi->sptr + vi->start;
+		uint16 *end = (uint16 *)vi->sptr + vi->end;
+
+		if (!ld->first_loop) {
+			for (i = 0; i < LOOP_PROLOGUE; i++) {
+				int j = i - LOOP_PROLOGUE;
+				ld->prologue[i] = start[j];
+				start[j] = bidir ? start[-1 - j] : end[j];
+			}
+		}
+		for (i = 0; i < LOOP_EPILOGUE; i++) {
+			ld->epilogue[i] = end[i];
+			end[i] = bidir ? end[-1 - i] : start[i];
+		}
+	} else {
+		uint8 *start = (uint8 *)vi->sptr + vi->start;
+		uint8 *end = (uint8 *)vi->sptr + vi->end;
+
+		if (!ld->first_loop) {
+			for (i = 0; i < LOOP_PROLOGUE; i++) {
+				int j = i - LOOP_PROLOGUE;
+				ld->prologue[i] = start[j];
+				start[j] = bidir ? start[-1 - j] : end[j];
+			}
+		}
+		for (i = 0; i < LOOP_EPILOGUE; i++) {
+			ld->epilogue[i] = end[i];
+			end[i] = bidir ? end[-1 - i] : start[i];
+		}
+	}
+}
+
+/* Restore old sample data from before and after loop. */
+static void reset_sample_wraparound(struct loop_data *ld)
+{
+	int i;
+
+	if (!ld->active)
+		return;
+
+	if (ld->_16bit) {
+		uint16 *start = (uint16 *)ld->sptr + ld->start;
+		uint16 *end = (uint16 *)ld->sptr + ld->end;
+
+		if (!ld->first_loop) {
+			for (i = 0; i < LOOP_PROLOGUE; i++)
+				start[i - LOOP_PROLOGUE] = ld->prologue[i];
+		}
+		for (i = 0; i < LOOP_EPILOGUE; i++)
+			end[i] = ld->epilogue[i];
+	} else {
+		uint8 *start = (uint8 *)ld->sptr + ld->start;
+		uint8 *end = (uint8 *)ld->sptr + ld->end;
+
+		if (!ld->first_loop) {
+			for (i = 0; i < LOOP_PROLOGUE; i++)
+				start[i - LOOP_PROLOGUE] = ld->prologue[i];
+		}
+		for (i = 0; i < LOOP_EPILOGUE; i++)
+			end[i] = ld->epilogue[i];
+	}
+}
+
+static int has_active_sustain_loop(struct context_data *ctx, struct mixer_voice *vi,
+				   struct xmp_sample *xxs)
+{
+#ifndef LIBXMP_CORE_DISABLE_IT
+	struct module_data *m = &ctx->m;
+	return vi->smp < m->mod.smp && (xxs->flg & XMP_SAMPLE_SLOOP) && (~vi->flags & VOICE_RELEASE);
+#endif
+	return 0;
+}
+
+static int has_active_loop(struct context_data *ctx, struct mixer_voice *vi,
+			   struct xmp_sample *xxs)
+{
+	return (xxs->flg & XMP_SAMPLE_LOOP) || has_active_sustain_loop(ctx, vi, xxs);
+}
+
+/* Update the voice endpoints based on current sample loop state. */
+static void adjust_voice_end(struct context_data *ctx, struct mixer_voice *vi,
+			     struct xmp_sample *xxs, struct extra_sample_data *xtra)
+{
+	vi->flags &= ~VOICE_BIDIR;
+
+	if (xtra && has_active_sustain_loop(ctx, vi, xxs)) {
+		vi->start = xtra->sus;
+		vi->end = xtra->sue;
+		if (xxs->flg & XMP_SAMPLE_SLOOP_BIDIR) vi->flags |= VOICE_BIDIR;
+
+	} else if (xxs->flg & XMP_SAMPLE_LOOP) {
+		vi->start = xxs->lps;
 		if ((xxs->flg & XMP_SAMPLE_LOOP_FULL) && (~vi->flags & SAMPLE_LOOP)) {
 			vi->end = xxs->len;
 		} else {
 			vi->end = xxs->lpe;
+			if (xxs->flg & XMP_SAMPLE_LOOP_BIDIR) vi->flags |= VOICE_BIDIR;
 		}
 	} else {
+		vi->start = 0;
 		vi->end = xxs->len;
 	}
 }
 
-static void loop_reposition(struct context_data *ctx, struct mixer_voice *vi, struct xmp_sample *xxs)
+static int loop_reposition(struct context_data *ctx, struct mixer_voice *vi,
+			   struct xmp_sample *xxs, struct extra_sample_data *xtra)
 {
-#ifndef LIBXMP_CORE_DISABLE_IT
-	struct module_data *m = &ctx->m;
-#endif
-	int loop_size = xxs->lpe - xxs->lps;
+	int loop_changed = !(vi->flags & SAMPLE_LOOP);
 
-	/* Reposition for next loop */
-	vi->pos -= loop_size;		/* forward loop */
-	vi->end = xxs->lpe;
 	vi->flags |= SAMPLE_LOOP;
 
-	if (xxs->flg & XMP_SAMPLE_LOOP_BIDIR) {
-		vi->end += loop_size;	/* unrolled loop */
-		vi->pos -= loop_size;	/* forward loop */
+	if(loop_changed)
+		adjust_voice_end(ctx, vi, xxs, xtra);
 
-#ifndef LIBXMP_CORE_DISABLE_IT
-		/* OpenMPT Bidi-Loops.it: "In Impulse Tracker’s software mixer,
-		 * ping-pong loops are shortened by one sample. 
-		 */
-		if (IS_PLAYER_MODE_IT()) {
-			vi->end--;
-			vi->pos++;
+	if (~vi->flags & VOICE_BIDIR) {
+		/* Reposition for next loop */
+		if (~vi->flags & VOICE_REVERSE)
+			vi->pos -= vi->end - vi->start;
+		else
+			vi->pos += vi->end - vi->start;
+	} else {
+		/* Bidirectional loop: switch directions */
+		vi->flags ^= VOICE_REVERSE;
+
+		/* Wrap voice position around endpoint */
+		if (vi->flags & VOICE_REVERSE) {
+			/* OpenMPT Bidi-Loops.it: "In Impulse Tracker's software
+			 * mixer, ping-pong loops are shortened by one sample."
+			 */
+			vi->pos = vi->end * 2 - ctx->s.bidir_adjust - vi->pos;
+		} else {
+			vi->pos = vi->start * 2 - vi->pos;
 		}
-#endif
 	}
+	return loop_changed;
 }
 
 
@@ -316,7 +463,10 @@ void libxmp_mixer_prepare(struct context_data *ctx)
 
 	s->ticksize = s->freq * m->time_factor * m->rrate / p->bpm / 1000;
 
-	bytelen = s->ticksize * sizeof(int);
+	if (s->ticksize < (1 << ANTICLICK_SHIFT))
+		s->ticksize = 1 << ANTICLICK_SHIFT;
+
+	bytelen = s->ticksize * sizeof(int32);
 	if (~s->format & XMP_FORMAT_MONO) {
 		bytelen *= 2;
 	}
@@ -331,13 +481,14 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 	struct mixer_data *s = &ctx->s;
 	struct module_data *m = &ctx->m;
 	struct xmp_module *mod = &m->mod;
+	struct extra_sample_data *xtra;
 	struct xmp_sample *xxs;
 	struct mixer_voice *vi;
-	double step;
+	struct loop_data loop_data;
+	double step, step_dir;
 	int samples, size;
-	int vol_l, vol_r, voc, usmp;
+	int vol, vol_l, vol_r, voc, usmp;
 	int prev_l, prev_r = 0;
-	int lps, lpe;
 	int32 *buf_pos;
 	MIX_FP  mix_fn;
 	MIX_FP *mixerset;
@@ -368,6 +519,13 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 	}
 #endif
 
+#ifndef LIBXMP_CORE_DISABLE_IT
+	/* OpenMPT Bidi-Loops.it: "In Impulse Tracker's software
+	 * mixer, ping-pong loops are shortened by one sample."
+	 */
+	s->bidir_adjust = IS_PLAYER_MODE_IT() ? 1 : 0;
+#endif
+
 	libxmp_mixer_prepare(ctx);
 
 	for (voc = 0; voc < p->virt.maxvoc; voc++) {
@@ -391,66 +549,56 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 			continue;
 		}
 
+		/* Negative positions can be left over from some
+		 * loop edge cases. These can be safely clamped. */
+		if (vi->pos < 0.0)
+			vi->pos = 0.0;
+
 		vi->pos0 = vi->pos;
 
 		buf_pos = s->buf32;
+		vol = vi->vol;
+
+		/* Mix volume (S3M and IT) */
+		if (m->mvolbase > 0 && m->mvol != m->mvolbase) {
+			vol = vol * m->mvol / m->mvolbase;
+		}
+
 		if (vi->pan == PAN_SURROUND) {
-			vol_r = vi->vol * 0x80;
-			vol_l = -vi->vol * 0x80;
+			vol_r = vol * 0x80;
+			vol_l = -vol * 0x80;
 		} else {
-			vol_r = vi->vol * (0x80 - vi->pan);
-			vol_l = vi->vol * (0x80 + vi->pan);
+			vol_r = vol * (0x80 - vi->pan);
+			vol_l = vol * (0x80 + vi->pan);
 		}
 
 		if (vi->smp < mod->smp) {
 			xxs = &mod->xxs[vi->smp];
+			xtra = &m->xtra[vi->smp];
 			c5spd = m->xtra[vi->smp].c5spd;
 		} else {
 			xxs = &ctx->smix.xxs[vi->smp - mod->smp];
+			xtra = NULL;
 			c5spd = m->c4rate;
 		}
 
 		step = C4_PERIOD * c5spd / s->freq / vi->period;
 
-		if (step < 0.001) {	/* otherwise m5v-nwlf.it crashes */
+		/* Don't allow <=0, otherwise m5v-nwlf.it crashes
+		 * Extremely high values that can cause undefined float/int
+		 * conversion are also possible for c5spd modules. */
+		if (step < 0.001 || step > (double)SHRT_MAX) {
 			continue;
 		}
 
-#ifndef LIBXMP_CORE_DISABLE_IT
-		if (xxs->flg & XMP_SAMPLE_SLOOP && vi->smp < mod->smp) {
-			if (~vi->flags & VOICE_RELEASE) {
-				if (vi->pos < m->xsmp[vi->smp].lpe) {
-					xxs = &m->xsmp[vi->smp];
-				}
-			}
-		}
-
-		adjust_voice_end(vi, xxs);
-#endif
-
-		lps = xxs->lps;
-		lpe = xxs->lpe;
-
-		if (p->flags & XMP_FLAGS_FIXLOOP) {
-			lps >>= 1;
-		}
-
-		if (xxs->flg & XMP_SAMPLE_LOOP_BIDIR) {
-			vi->end += lpe - lps;
-
-#ifndef LIBXMP_CORE_DISABLE_IT
-			if (IS_PLAYER_MODE_IT()) {
-				vi->end--;
-			}
-#endif
-		}
+		adjust_voice_end(ctx, vi, xxs, xtra);
+		init_sample_wraparound(s, &loop_data, vi, xxs);
 
 		rampsize = s->ticksize >> ANTICLICK_SHIFT;
 		delta_l = (vol_l - vi->old_vl) / rampsize;
 		delta_r = (vol_r - vi->old_vr) / rampsize;
 
-		usmp = 0;
-		for (size = s->ticksize; size > 0; ) {
+		for (size = usmp = s->ticksize; size > 0; ) {
 			int split_noloop = 0;
 
 			if (p->xc_data[vi->chn].split) {
@@ -459,20 +607,34 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 
 			/* How many samples we can write before the loop break
 			 * or sample end... */
-			if (vi->pos >= vi->end) {
-				samples = 0;
-				usmp = 1;
+			if (~vi->flags & VOICE_REVERSE) {
+				if (vi->pos >= vi->end) {
+					samples = 0;
+					if (--usmp <= 0)
+						break;
+				} else {
+					double c = ceil(((double)vi->end - vi->pos) / step);
+					/* ...inside the tick boundaries */
+					if (c > size) {
+						c = size;
+					}
+					samples = c;
+				}
+				step_dir = step;
 			} else {
-				int c = ceil(((double)vi->end - vi->pos) / step);
-				/* ...inside the tick boundaries */
-				if (c > size) {
-					c = size;
+				/* Reverse */
+				if (vi->pos <= vi->start) {
+					samples = 0;
+					if (--usmp <= 0)
+						break;
+				} else {
+					double c = ceil((vi->pos - (double)vi->start) / step);
+					if (c > size) {
+						c = size;
+					}
+					samples = c;
 				}
-
-				samples = c;
-				if (samples > 0) {
-					usmp = 0;
-				}
+				step_dir = -step;
 			}
 
 			if (vi->vol) {
@@ -496,7 +658,7 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 #ifndef LIBXMP_CORE_DISABLE_IT
 				/* See OpenMPT env-flt-max.it */
 				if (vi->filter.cutoff >= 0xfe &&
-                                    vi->filter.resonance == 0) {
+				    vi->filter.resonance == 0) {
 					mixer_id &= ~FLAG_FILTER;
 				}
 #endif
@@ -521,7 +683,7 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 
 					if (mix_fn != NULL) {
 						mix_fn(vi, buf_pos, samples,
-							vol_l >> 8, vol_r >> 8, step * (1 << SMIX_SHIFT), rsize, delta_l, delta_r);
+							vol_l >> 8, vol_r >> 8, step_dir * (1 << SMIX_SHIFT), rsize, delta_l, delta_r);
 					}
 
 					buf_pos += mix_size;
@@ -537,31 +699,43 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 				}
 			}
 
-			vi->pos += step * samples;
+			vi->pos += step_dir * samples;
 
 			/* No more samples in this tick */
-			size -= samples + usmp;
+			size -= samples;
 			if (size <= 0) {
-				if (xxs->flg & XMP_SAMPLE_LOOP) {
-					if (vi->pos + step > vi->end) {
-						vi->pos += step;
-						loop_reposition(ctx, vi, xxs);
+				if (has_active_loop(ctx, vi, xxs)) {
+					/* This isn't particularly important for
+					 * forward loops, but reverse loops need
+					 * to be corrected here to avoid their
+					 * negative positions getting clamped
+					 * in later ticks. */
+					if (((~vi->flags & VOICE_REVERSE) && vi->pos >= vi->end) ||
+					    ((vi->flags & VOICE_REVERSE) && vi->pos <= vi->start)) {
+						if (loop_reposition(ctx, vi, xxs, xtra)) {
+							reset_sample_wraparound(&loop_data);
+							init_sample_wraparound(s, &loop_data, vi, xxs);
+						}
 					}
 				}
 				continue;
 			}
 
 			/* First sample loop run */
-			if ((~xxs->flg & XMP_SAMPLE_LOOP) || split_noloop) {
+			if (!has_active_loop(ctx, vi, xxs) || split_noloop) {
 				do_anticlick(ctx, voc, buf_pos, size);
 				set_sample_end(ctx, voc, 1);
 				size = 0;
 				continue;
 			}
 
-			loop_reposition(ctx, vi, xxs);
+			if (loop_reposition(ctx, vi, xxs, xtra)) {
+				reset_sample_wraparound(&loop_data);
+				init_sample_wraparound(s, &loop_data, vi, xxs);
+			}
 		}
 
+		reset_sample_wraparound(&loop_data);
 		vi->old_vl = vol_l;
 		vi->old_vr = vol_r;
 	}
@@ -581,7 +755,7 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 		downmix_int_8bit(s->buffer, s->buf32, size, s->amplify,
 				s->format & XMP_FORMAT_UNSIGNED ? 0x80 : 0);
 	} else {
-		downmix_int_16bit((int16 *)s->buffer, s->buf32, size,s->amplify,
+		downmix_int_16bit((int16 *)s->buffer, s->buf32, size, s->amplify,
 				s->format & XMP_FORMAT_UNSIGNED ? 0x8000 : 0);
 	}
 
@@ -594,12 +768,14 @@ void libxmp_mixer_voicepos(struct context_data *ctx, int voc, double pos, int ac
 	struct module_data *m = &ctx->m;
 	struct mixer_voice *vi = &p->virt.voice_array[voc];
 	struct xmp_sample *xxs;
-	int lps;
+	struct extra_sample_data *xtra;
 
 	if (vi->smp < m->mod.smp) {
- 		xxs = &m->mod.xxs[vi->smp];
+		xxs = &m->mod.xxs[vi->smp];
+		xtra = &m->xtra[vi->smp];
 	} else {
- 		xxs = &ctx->smix.xxs[vi->smp - m->mod.smp];
+		xxs = &ctx->smix.xxs[vi->smp - m->mod.smp];
+		xtra = NULL;
 	}
 
 	if (xxs->flg & XMP_SAMPLE_SYNTH) {
@@ -608,29 +784,16 @@ void libxmp_mixer_voicepos(struct context_data *ctx, int voc, double pos, int ac
 
 	vi->pos = pos;
 
-	adjust_voice_end(vi, xxs);
+	adjust_voice_end(ctx, vi, xxs, xtra);
 
 	if (vi->pos >= vi->end) {
-		if (xxs->flg & XMP_SAMPLE_LOOP) {
-			vi->pos = xxs->lps;
-		} else {
-			vi->pos = xxs->len;
-		}
-	}
-
-	lps = xxs->lps;
-	if (p->flags & XMP_FLAGS_FIXLOOP) {
-		lps >>= 1;
-	}
-
-	if (xxs->flg & XMP_SAMPLE_LOOP_BIDIR) {
-		vi->end += (xxs->lpe - lps);
-
-#ifndef LIBXMP_CORE_DISABLE_IT
-		if (IS_PLAYER_MODE_IT()) {
-			vi->end--;
-		}
-#endif
+		vi->pos = vi->end;
+		/* Restart forward sample loops. */
+		if ((~vi->flags & VOICE_REVERSE) && has_active_loop(ctx, vi, xxs))
+			loop_reposition(ctx, vi, xxs, xtra);
+	} else if ((vi->flags & VOICE_REVERSE) && vi->pos <= 0.1) {
+		/* Hack: 0 maps to the end for reversed samples. */
+		vi->pos = vi->end;
 	}
 
 	if (ac) {
@@ -648,12 +811,6 @@ double libxmp_mixer_getvoicepos(struct context_data *ctx, int voc)
 
 	if (xxs->flg & XMP_SAMPLE_SYNTH) {
 		return 0;
-	}
-
-	if (xxs->flg & XMP_SAMPLE_LOOP_BIDIR) {
-		if (vi->pos >= xxs->lpe) {
-			return xxs->lpe - (vi->pos - xxs->lpe) - 1;
-		}
 	}
 
 	return vi->pos;
@@ -674,7 +831,7 @@ void libxmp_mixer_setpatch(struct context_data *ctx, int voc, int smp, int ac)
 	vi->smp = smp;
 	vi->vol = 0;
 	vi->pan = 0;
-	vi->flags &= ~SAMPLE_LOOP;
+	vi->flags &= ~(SAMPLE_LOOP | VOICE_REVERSE | VOICE_BIDIR);
 
 	vi->fidx = 0;
 
@@ -746,9 +903,39 @@ void libxmp_mixer_release(struct context_data *ctx, int voc, int rel)
 	struct mixer_voice *vi = &p->virt.voice_array[voc];
 
 	if (rel) {
+#ifndef LIBXMP_CORE_DISABLE_IT
+		/* Cancel voice reverse when releasing an active sustain loop,
+		 * unless the main loop is bidirectional. This is done both for
+		 * bidirectional sustain loops and for forward sustain loops
+		 * that have been reversed with MPT S9F Play Backward. */
+		if (~vi->flags & VOICE_RELEASE) {
+			struct xmp_sample *xxs = libxmp_get_sample(ctx, vi->smp);
+
+			if (has_active_sustain_loop(ctx, vi, xxs) &&
+			    (~xxs->flg & XMP_SAMPLE_LOOP_BIDIR))
+				vi->flags &= ~VOICE_REVERSE;
+		}
+#endif
 		vi->flags |= VOICE_RELEASE;
 	} else {
 		vi->flags &= ~VOICE_RELEASE;
+	}
+}
+
+void libxmp_mixer_reverse(struct context_data *ctx, int voc, int rev)
+{
+	struct player_data *p = &ctx->p;
+	struct mixer_voice *vi = &p->virt.voice_array[voc];
+
+	/* Don't reverse samples that have already ended */
+	if (~vi->fidx & FLAG_ACTIVE) {
+		return;
+	}
+
+	if (rev) {
+		vi->flags |= VOICE_REVERSE;
+	} else {
+		vi->flags &= ~VOICE_REVERSE;
 	}
 }
 
@@ -801,11 +988,11 @@ int libxmp_mixer_on(struct context_data *ctx, int rate, int format, int c4rate)
 {
 	struct mixer_data *s = &ctx->s;
 
-	s->buffer = (char *) calloc(2, XMP_MAX_FRAMESIZE);
+	s->buffer = (char *) Xcalloc(2, XMP_MAX_FRAMESIZE);
 	if (s->buffer == NULL)
 		goto err;
 
-	s->buf32 = (int32 *) calloc(sizeof(int32), XMP_MAX_FRAMESIZE);
+	s->buf32 = (int32 *) Xcalloc(sizeof(int32), XMP_MAX_FRAMESIZE);
 	if (s->buf32 == NULL)
 		goto err1;
 
@@ -813,16 +1000,17 @@ int libxmp_mixer_on(struct context_data *ctx, int rate, int format, int c4rate)
 	s->format = format;
 	s->amplify = DEFAULT_AMPLIFY;
 	s->mix = DEFAULT_MIX;
-	/* s->pbase = C4_PERIOD * c4rate / s->freq; */(void) c4rate;
+	/* s->pbase = C4_PERIOD * c4rate / s->freq; */
 	s->interp = XMP_INTERP_LINEAR;	/* default interpolation type */
 	s->dsp = XMP_DSP_LOWPASS;	/* enable filters by default */
 	/* s->numvoc = SMIX_NUMVOC; */
 	s->dtright = s->dtleft = 0;
+	s->bidir_adjust = 0;
 
 	return 0;
 
     err1:
-	free(s->buffer);
+	Xfree(s->buffer);
 	s->buffer = NULL;
     err:
 	return -1;
@@ -832,8 +1020,8 @@ void libxmp_mixer_off(struct context_data *ctx)
 {
 	struct mixer_data *s = &ctx->s;
 
-	free(s->buffer);
-	free(s->buf32);
+	Xfree(s->buffer);
+	Xfree(s->buf32);
 	s->buf32 = NULL;
 	s->buffer = NULL;
 }

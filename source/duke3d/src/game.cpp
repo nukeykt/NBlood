@@ -453,7 +453,7 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
 }
 
 #ifdef LEGACY_ROR
-char ror_protectedsectors[MAXSECTORS];
+char ror_protectedsectors[(MAXSECTORS+7)>>3];
 static int32_t drawing_ror = 0;
 static int32_t ror_sprite = -1;
 
@@ -462,9 +462,6 @@ static void G_OROR_DupeSprites(spritetype const *sp)
     // dupe the sprites touching the portal to the other sector
     int32_t k;
     spritetype const *refsp;
-
-    if ((unsigned)sp->yvel >= (unsigned)g_mostConcurrentPlayers)
-        return;
 
     refsp = &sprite[sp->yvel];
 
@@ -537,7 +534,7 @@ static void G_SE40(int32_t smoothratio)
                 {
                     SE40backupStat[i] = sector[i].ceilingstat;
                     SE40backupZ[i] = sector[i].ceilingz;
-                    if (!ror_protectedsectors[i] || sp->lotag == 41)
+                    if (!bitmap_test(ror_protectedsectors, i) || sp->lotag == 41)
                     {
                         sector[i].ceilingstat = 1;
                         sector[i].ceilingz += newz;
@@ -559,7 +556,7 @@ static void G_SE40(int32_t smoothratio)
                 {
                     SE40backupStat[i] = sector[i].floorstat;
                     SE40backupZ[i] = sector[i].floorz;
-                    if (!ror_protectedsectors[i] || sp->lotag == 41)
+                    if (!bitmap_test(ror_protectedsectors, i) || sp->lotag == 41)
                     {
                         sector[i].floorstat = 1;
                         sector[i].floorz = +newz;
@@ -1363,7 +1360,7 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
         fatal_exit("Too many sprites spawned.");
     }
 
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
     g_spriteStat.numins++;
 #endif
 
@@ -2879,7 +2876,7 @@ int A_Spawn(int spriteNum, int tileNum)
                 goto SPAWN_END;
                 break;
             case 46:
-                ror_protectedsectors[pSprite->sectnum] = 1;
+                bitmap_set(ror_protectedsectors, pSprite->sectnum);
                 /* XXX: fall-through intended? */
                 fallthrough__;
 #endif
@@ -3703,16 +3700,18 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
     int32_t j, frameOffset, playerNum;
     intptr_t l;
 
+#ifdef LEGACY_ROR
+    ror_sprite = -1;
+#endif
+
     if (spritesortcnt == 0)
     {
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
         g_spriteStat.numonscreen = 0;
 #endif
         return;
     }
-#ifdef LEGACY_ROR
-    ror_sprite = -1;
-#endif
+
     for (j=spritesortcnt-1; j>=0; j--)
     {
         auto const t = &tsprite[j];
@@ -4470,7 +4469,7 @@ skip:
             fallthrough__;
         case SHOTGUNSHELL__:
             t->cstat |= 12;
-            if (T1(i) > 2) t->cstat &= ~16;
+            if (T1(i) > 2) t->cstat &= ~12;
             else if (T1(i) > 1) t->cstat &= ~4;
             break;
         case FRAMEEFFECT1_13__:
@@ -4531,7 +4530,7 @@ skip:
             G_DoEventAnimSprites(j);
     }
 
-#ifdef DEBUGGINGAIDS
+#if 1//def DEBUGGINGAIDS
     g_spriteStat.numonscreen = spritesortcnt;
 #endif
 }
@@ -6712,7 +6711,7 @@ int app_main(int argc, char const* const* argv)
     G_ScanGroups();
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (!Bgetenv("SteamTenfoot") && (readSetup < 0 || (!g_noSetup && (ud.configversion != BYTEVERSION_EDUKE32 || ud.setup.forcesetup)) || g_commandSetup))
+    if (g_commandSetup || (!Bgetenv("SteamTenfoot") && (readSetup < 0 || (!g_noSetup && (ud.configversion != BYTEVERSION_EDUKE32 || ud.setup.forcesetup)))))
     {
         if (quitevent || !startwin_run())
         {

@@ -282,6 +282,10 @@ int32_t findfrompath(const char *fn, char **where)
     // pathsearchmode == 0: tests current dir and then the dirs of the path stack
     // pathsearchmode == 1: tests fn without modification, then like for pathsearchmode == 0
 
+    // sanity check -- abort if filename is empty
+    if (!fn || !fn[0])
+        return -1;
+
     if (pathsearchmode)
     {
         // test unmolested filename first

@@ -652,6 +652,9 @@ static inline void P_ResetTintFade(DukePlayer_t *const pPlayer)
 
 void P_ResetOffsets(DukePlayer_t *const pPlayer)
 {
+    pPlayer->floorzrebound = 768;
+    pPlayer->floorzcutoff  = 256;
+
     pPlayer->floorzoffset  = 40 << 8;
     pPlayer->waterzoffset  = 34 << 8;
     pPlayer->minwaterzdist = 16 << 8;
@@ -1303,7 +1306,7 @@ static void prelevel(int g)
     //Bmemset(zhit, 0, sizeof(zhit));
     Bmemset(show2dsector, 0, sizeof(show2dsector));
 #ifdef LEGACY_ROR
-    Bmemset(ror_protectedsectors, 0, MAXSECTORS);
+    Bmemset(ror_protectedsectors, 0, sizeof(ror_protectedsectors));
 #endif
     g_cloudCnt = 0;
 
@@ -1789,8 +1792,8 @@ static void G_LoadMapHack(char *outbuf, const char *filename)
 
     if (G_TryMapHack(outbuf) && usermaphacks != NULL)
     {
-        auto pMapInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-                                                 sizeof(usermaphack_t), compare_usermaphacks);
+        auto pMapInfo = find_usermaphack();
+
         if (pMapInfo)
             G_TryMapHack(pMapInfo->mhkfile);
     }

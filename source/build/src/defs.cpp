@@ -1990,7 +1990,8 @@ static int32_t defsparser(scriptfile *script)
 
                 case T_ROTATE:
                     voxrotate[lastvoxid>>3] |= pow2char[lastvoxid&7];
-                
+                    break;
+
                 case T_NOTRANS:
                     voxflags[lastvoxid] |= VF_NOTRANS;
                     break;

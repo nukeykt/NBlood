@@ -35,11 +35,13 @@
 
 #include "loader.h"
 #include "xm.h"
+#ifndef LIBXMP_CORE_PLAYER
+#include "vorbis.h"
+#endif
 
 static int xm_test(HIO_HANDLE *, char *, const int);
 static int xm_load(struct module_data *, HIO_HANDLE *, const int);
 
-extern const struct format_loader libxmp_loader_xm;
 const struct format_loader libxmp_loader_xm = {
 	"Fast Tracker II",
 	xm_test,
@@ -61,15 +63,16 @@ static int xm_test(HIO_HANDLE *f, char *t, const int start)
 	return 0;
 }
 
-static int load_xm_pattern(struct module_data *m, int num, int version, HIO_HANDLE *f)
+static int load_xm_pattern(struct module_data *m, int num, int version,
+			   uint8 *patbuf, HIO_HANDLE *f)
 {
 	const int headsize = version > 0x0102 ? 9 : 8;
 	struct xmp_module *mod = &m->mod;
 	struct xm_pattern_header xph;
 	struct xmp_event *event;
-	uint8 *patbuf, *pat, b;
-	int j, r;
-	int size;
+	uint8 *pat, b;
+	int j, k, r;
+	int size, size_read;
 
 	xph.length = hio_read32l(f);
 	xph.packing = hio_read8(f);
@@ -100,199 +103,213 @@ static int load_xm_pattern(struct module_data *m, int num, int version, HIO_HAND
 	}
 
 	size = xph.datasize;
+	pat = patbuf;
 
-	pat = patbuf = (uint8 *)calloc(1, size);
-	if (patbuf == NULL) {
-		goto err;
+	size_read = hio_read(patbuf, 1, size, f);
+	if (size_read < size) {
+		memset(patbuf + size_read, 0, size - size_read);
 	}
 
-	hio_read(patbuf, 1, size, f);
-	for (j = 0; j < (mod->chn * r); j++) {
+	for (j = 0; j < r; j++) {
+		for (k = 0; k < mod->chn; k++) {
+			/*
+			if ((pat - patbuf) >= xph.datasize)
+				break;
+			*/
 
-		/*if ((pat - patbuf) >= xph.datasize)
-		   break; */
+			event = &EVENT(num, k, j);
 
-		event = &EVENT(num, j % mod->chn, j / mod->chn);
-
-		if (--size < 0) {
-			goto err2;
-		}
-
-		if ((b = *pat++) & XM_EVENT_PACKING) {
-			if (b & XM_EVENT_NOTE_FOLLOWS) {
-				if (--size < 0)
-					goto err2;
-				event->note = *pat++;
+			if (--size < 0) {
+				goto err;
 			}
-			if (b & XM_EVENT_INSTRUMENT_FOLLOWS) {
-				if (--size < 0)
-					goto err2;
+
+			if ((b = *pat++) & XM_EVENT_PACKING) {
+				if (b & XM_EVENT_NOTE_FOLLOWS) {
+					if (--size < 0)
+						goto err;
+					event->note = *pat++;
+				}
+				if (b & XM_EVENT_INSTRUMENT_FOLLOWS) {
+					if (--size < 0)
+						goto err;
+					event->ins = *pat++;
+				}
+				if (b & XM_EVENT_VOLUME_FOLLOWS) {
+					if (--size < 0)
+						goto err;
+					event->vol = *pat++;
+				}
+				if (b & XM_EVENT_FXTYPE_FOLLOWS) {
+					if (--size < 0)
+						goto err;
+					event->fxt = *pat++;
+				}
+				if (b & XM_EVENT_FXPARM_FOLLOWS) {
+					if (--size < 0)
+						goto err;
+					event->fxp = *pat++;
+				}
+			} else {
+				size -= 4;
+				if (size < 0)
+					goto err;
+				event->note = b;
 				event->ins = *pat++;
-			}
-			if (b & XM_EVENT_VOLUME_FOLLOWS) {
-				if (--size < 0)
-					goto err2;
 				event->vol = *pat++;
-			}
-			if (b & XM_EVENT_FXTYPE_FOLLOWS) {
-				if (--size < 0)
-					goto err2;
 				event->fxt = *pat++;
-			}
-			if (b & XM_EVENT_FXPARM_FOLLOWS) {
-				if (--size < 0)
-					goto err2;
 				event->fxp = *pat++;
 			}
-		} else {
-			size -= 4;
-			if (size < 0)
-				goto err2;
-			event->note = b;
-			event->ins = *pat++;
-			event->vol = *pat++;
-			event->fxt = *pat++;
-			event->fxp = *pat++;
-		}
 
-		/* Sanity check */
-		switch (event->fxt) {
-		case 18:
-		case 19:
-		case 22:
-		case 23:
-		case 24:
-		case 26:
-		case 28:
-		case 30:
-		case 31:
-		case 32:
-			event->fxt = 0;
-		}
-		if (event->fxt > 34) {
-			event->fxt = 0;
-		}
-
-		if (event->note == 0x61) {
-			/* See OpenMPT keyoff+instr.xm test case */
-			if (event->fxt == 0x0e && MSN(event->fxp) == 0x0d) {
-				event->note = XMP_KEY_OFF;
-			} else {
-				event->note =
-				    event->ins ? XMP_KEY_FADE : XMP_KEY_OFF;
+			/* Sanity check */
+			switch (event->fxt) {
+			case 18:
+			case 19:
+			case 22:
+			case 23:
+			case 24:
+			case 26:
+			case 28:
+			case 30:
+			case 31:
+			case 32:
+				event->fxt = 0;
 			}
-		} else if (event->note > 0) {
-			event->note += 12;
-		}
-
-		if (event->fxt == 0x0e) {
-			if (MSN(event->fxp) == EX_FINETUNE) {
-				unsigned char val = (LSN(event->fxp) - 8) & 0xf;
-				event->fxp = (EX_FINETUNE << 4) | val;
+			if (event->fxt > 34) {
+				event->fxt = 0;
 			}
-			switch (event->fxp) {
-			case 0x43:
-			case 0x73:
-				event->fxp--;
+
+			if (event->note == 0x61) {
+				/* See OpenMPT keyoff+instr.xm test case */
+				if (event->fxt == 0x0e && MSN(event->fxp) == 0x0d) {
+					event->note = XMP_KEY_OFF;
+				} else {
+					event->note =
+					event->ins ? XMP_KEY_FADE : XMP_KEY_OFF;
+				}
+			} else if (event->note > 0) {
+				event->note += 12;
+			}
+
+			if (event->fxt == 0x0e) {
+				if (MSN(event->fxp) == EX_FINETUNE) {
+					unsigned char val = (LSN(event->fxp) - 8) & 0xf;
+					event->fxp = (EX_FINETUNE << 4) | val;
+				}
+				switch (event->fxp) {
+				case 0x43:
+				case 0x73:
+					event->fxp--;
+					break;
+				}
+			}
+			if (event->fxt == FX_XF_PORTA && MSN(event->fxp) == 0x09) {
+				/* Translate MPT hacks */
+				switch (LSN(event->fxp)) {
+				case 0x0:	/* Surround off */
+				case 0x1:	/* Surround on */
+					event->fxt = FX_SURROUND;
+					event->fxp = LSN(event->fxp);
+					break;
+				case 0xe:	/* Play forward */
+				case 0xf:	/* Play reverse */
+					event->fxt = FX_REVERSE;
+					event->fxp = LSN(event->fxp) - 0xe;
+				}
+			}
+
+			if (!event->vol) {
+				continue;
+			}
+
+			/* Volume set */
+			if ((event->vol >= 0x10) && (event->vol <= 0x50)) {
+				event->vol -= 0x0f;
+				continue;
+			}
+
+			/* Volume column effects */
+			switch (event->vol >> 4) {
+			case 0x06:	/* Volume slide down */
+				event->f2t = FX_VOLSLIDE_2;
+				event->f2p = event->vol - 0x60;
+				break;
+			case 0x07:	/* Volume slide up */
+				event->f2t = FX_VOLSLIDE_2;
+				event->f2p = (event->vol - 0x70) << 4;
+				break;
+			case 0x08:	/* Fine volume slide down */
+				event->f2t = FX_EXTENDED;
+				event->f2p =
+				(EX_F_VSLIDE_DN << 4) | (event->vol - 0x80);
+				break;
+			case 0x09:	/* Fine volume slide up */
+				event->f2t = FX_EXTENDED;
+				event->f2p =
+				(EX_F_VSLIDE_UP << 4) | (event->vol - 0x90);
+				break;
+			case 0x0a:	/* Set vibrato speed */
+				event->f2t = FX_VIBRATO;
+				event->f2p = (event->vol - 0xa0) << 4;
+				break;
+			case 0x0b:	/* Vibrato */
+				event->f2t = FX_VIBRATO;
+				event->f2p = event->vol - 0xb0;
+				break;
+			case 0x0c:	/* Set panning */
+				event->f2t = FX_SETPAN;
+				event->f2p = (event->vol - 0xc0) << 4;
+				break;
+			case 0x0d:	/* Pan slide left */
+				event->f2t = FX_PANSL_NOMEM;
+				event->f2p = (event->vol - 0xd0) << 4;
+				break;
+			case 0x0e:	/* Pan slide right */
+				event->f2t = FX_PANSL_NOMEM;
+				event->f2p = event->vol - 0xe0;
+				break;
+			case 0x0f:	/* Tone portamento */
+				event->f2t = FX_TONEPORTA;
+				event->f2p = (event->vol - 0xf0) << 4;
+
+				/* From OpenMPT TonePortamentoMemory.xm:
+				* "Another nice bug (...) is the combination of both
+				*  portamento commands (Mx and 3xx) in the same cell:
+				*  The 3xx parameter is ignored completely, and the Mx
+				*  parameter is doubled. (M2 3FF is the same as M4 000)
+				*/
+				if (event->fxt == FX_TONEPORTA
+				|| event->fxt == FX_TONE_VSLIDE) {
+					if (event->fxt == FX_TONEPORTA) {
+						event->fxt = 0;
+					} else {
+						event->fxt = FX_VOLSLIDE;
+					}
+					event->fxp = 0;
+
+					if (event->f2p < 0x80) {
+						event->f2p <<= 1;
+					} else {
+						event->f2p = 0xff;
+					}
+				}
+
+				/* From OpenMPT porta-offset.xm:
+				* "If there is a portamento command next to an offset
+				*  command, the offset command is ignored completely. In
+				*  particular, the offset parameter is not memorized."
+				*/
+				if (event->fxt == FX_OFFSET
+				&& event->f2t == FX_TONEPORTA) {
+					event->fxt = event->fxp = 0;
+				}
 				break;
 			}
+			event->vol = 0;
 		}
-
-		if (!event->vol) {
-			continue;
-		}
-
-		/* Volume set */
-		if ((event->vol >= 0x10) && (event->vol <= 0x50)) {
-			event->vol -= 0x0f;
-			continue;
-		}
-
-		/* Volume column effects */
-		switch (event->vol >> 4) {
-		case 0x06:	/* Volume slide down */
-			event->f2t = FX_VOLSLIDE_2;
-			event->f2p = event->vol - 0x60;
-			break;
-		case 0x07:	/* Volume slide up */
-			event->f2t = FX_VOLSLIDE_2;
-			event->f2p = (event->vol - 0x70) << 4;
-			break;
-		case 0x08:	/* Fine volume slide down */
-			event->f2t = FX_EXTENDED;
-			event->f2p =
-			    (EX_F_VSLIDE_DN << 4) | (event->vol - 0x80);
-			break;
-		case 0x09:	/* Fine volume slide up */
-			event->f2t = FX_EXTENDED;
-			event->f2p =
-			    (EX_F_VSLIDE_UP << 4) | (event->vol - 0x90);
-			break;
-		case 0x0a:	/* Set vibrato speed */
-			event->f2t = FX_VIBRATO;
-			event->f2p = (event->vol - 0xa0) << 4;
-			break;
-		case 0x0b:	/* Vibrato */
-			event->f2t = FX_VIBRATO;
-			event->f2p = event->vol - 0xb0;
-			break;
-		case 0x0c:	/* Set panning */
-			event->f2t = FX_SETPAN;
-			event->f2p = (event->vol - 0xc0) << 4;
-			break;
-		case 0x0d:	/* Pan slide left */
-			event->f2t = FX_PANSL_NOMEM;
-			event->f2p = (event->vol - 0xd0) << 4;
-			break;
-		case 0x0e:	/* Pan slide right */
-			event->f2t = FX_PANSL_NOMEM;
-			event->f2p = event->vol - 0xe0;
-			break;
-		case 0x0f:	/* Tone portamento */
-			event->f2t = FX_TONEPORTA;
-			event->f2p = (event->vol - 0xf0) << 4;
-
-			/* From OpenMPT TonePortamentoMemory.xm:
-			 * "Another nice bug (...) is the combination of both
-			 *  portamento commands (Mx and 3xx) in the same cell:
-			 *  The 3xx parameter is ignored completely, and the Mx
-			 *  parameter is doubled. (M2 3FF is the same as M4 000)
-			 */
-			if (event->fxt == FX_TONEPORTA
-			    || event->fxt == FX_TONE_VSLIDE) {
-				if (event->fxt == FX_TONEPORTA) {
-					event->fxt = 0;
-				} else {
-					event->fxt = FX_VOLSLIDE;
-				}
-				event->fxp = 0;
-
-				if (event->f2p < 0x80) {
-					event->f2p <<= 1;
-				} else {
-					event->f2p = 0xff;
-				}
-			}
-
-			/* From OpenMPT porta-offset.xm:
-			 * "If there is a portamento command next to an offset
-			 *  command, the offset command is ignored completely. In
-			 *  particular, the offset parameter is not memorized."
-			 */
-			if (event->fxt == FX_OFFSET
-			    && event->f2t == FX_TONEPORTA) {
-				event->fxt = event->fxp = 0;
-			}
-			break;
-		}
-		event->vol = 0;
 	}
-	free(patbuf);
 
 	return 0;
 
-err2:
-	free(patbuf);
 err:
 	return -1;
 }
@@ -300,6 +317,7 @@ err:
 static int load_patterns(struct module_data *m, int version, HIO_HANDLE *f)
 {
 	struct xmp_module *mod = &m->mod;
+	uint8 *patbuf;
 	int i, j;
 
 	mod->pat++;
@@ -309,8 +327,12 @@ static int load_patterns(struct module_data *m, int version, HIO_HANDLE *f)
 
 	D_(D_INFO "Stored patterns: %d", mod->pat - 1);
 
+	if ((patbuf = (uint8 *) Xcalloc(1, 65536)) == NULL) {
+		return -1;
+	}
+
 	for (i = 0; i < mod->pat - 1; i++) {
-		if (load_xm_pattern(m, i, version, f) < 0) {
+		if (load_xm_pattern(m, i, version, patbuf, f) < 0) {
 			goto err;
 		}
 	}
@@ -334,20 +356,99 @@ static int load_patterns(struct module_data *m, int version, HIO_HANDLE *f)
 		}
 	}
 
+	Xfree(patbuf);
 	return 0;
 
 err:
+	Xfree(patbuf);
 	return -1;
 }
 
 /* Packed structures size */
-#define XM_INST_HEADER_SIZE 33
-#define XM_INST_SIZE 208
+#define XM_INST_HEADER_SIZE 29
+#define XM_INST_SIZE 212
 
 /* grass.near.the.house.xm defines 23 samples in instrument 1. FT2 docs
  * specify at most 16. See https://github.com/libxmp/libxmp/issues/168
  * for more details. */
 #define XM_MAX_SAMPLES_PER_INST 32
+
+#ifndef LIBXMP_CORE_PLAYER
+#define MAGIC_OGGS	0x4f676753
+
+static int is_ogg_sample(HIO_HANDLE *f, struct xmp_sample *xxs)
+{
+	/* uint32 size; */
+	uint32 id;
+
+	/* Sample must be at least 4 bytes long to be an OGG sample.
+	 * Bonnie's Bookstore music.oxm contains zero length samples
+	 * followed immediately by OGG samples. */
+	if (xxs->len < 4)
+		return 0;
+
+	/* size = */ hio_read32l(f);
+	id = hio_read32b(f);
+	if (hio_error(f) != 0 || hio_seek(f, -8, SEEK_CUR) < 0)
+		return 0;
+
+	if (id != MAGIC_OGGS) {		/* copy input data if not Ogg file */
+		return 0;
+	}
+
+	return 1;
+}
+
+static int oggdec(struct module_data *m, HIO_HANDLE *f, struct xmp_sample *xxs, int len)
+{
+	int i, n, ch, rate, ret, flags = 0;
+	uint8 *data;
+	int16 *pcm16 = NULL;
+
+	if ((data = (uint8 *)Xcalloc(1, len)) == NULL)
+		return -1;
+
+	hio_read32b(f);
+	if (hio_error(f) != 0 || hio_read(data, 1, len - 4, f) != len - 4) {
+		Xfree(data);
+		return -1;
+	}
+
+	n = stb_vorbis_decode_memory(data, len, &ch, &rate, &pcm16);
+	Xfree(data);
+
+	if (n <= 0) {
+		Xfree(pcm16);
+		return -1;
+	}
+
+	xxs->len = n;
+
+	if ((xxs->flg & XMP_SAMPLE_16BIT) == 0) {
+		uint8 *pcm = (uint8 *)pcm16;
+
+		for (i = 0; i < n; i++) {
+			pcm[i] = pcm16[i] >> 8;
+		}
+		pcm = (uint8 *)Xrealloc(pcm16, n);
+		if (pcm == NULL) {
+			Xfree(pcm16);
+			return -1;
+		}
+		pcm16 = (int16 *)pcm;
+	}
+
+	flags |= SAMPLE_FLAG_NOLOAD;
+#ifdef WORDS_BIGENDIAN
+	flags |= SAMPLE_FLAG_BIGEND;
+#endif
+
+	ret = libxmp_load_sample(m, NULL, flags, xxs, pcm16);
+	Xfree(pcm16);
+
+	return ret;
+}
+#endif
 
 static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 {
@@ -377,8 +478,12 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 		 * instruments, but file may end abruptly before that. Also covers
 		 * XMLiTE stripped modules and truncated files. This test will not
 		 * work if file has trailing garbage.
+		 *
+		 * Note: loading 4 bytes past the instrument header to get the
+		 * sample header size (if it exists). This is NOT considered to
+		 * be part of the instrument header.
 		 */
-		if (hio_read(buf, 33, 1, f) != 1) {
+		if (hio_read(buf, XM_INST_HEADER_SIZE + 4, 1, f) != 1) {
 			D_(D_WARN "short read in instrument header data");
 			break;
 		}
@@ -390,6 +495,11 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 		xih.sh_size = readmem32l(buf + 29);	/* Sample header size */
 
 		/* Sanity check */
+		if ((int)xih.size < XM_INST_HEADER_SIZE) {
+			D_(D_CRIT "instrument %d: instrument header size:%d", i + 1, xih.size);
+			return -1;
+		}
+
 		if (xih.samples > XM_MAX_SAMPLES_PER_INST || (xih.samples > 0 && xih.sh_size > 0x100)) {
 			D_(D_CRIT "instrument %d: samples:%d sample header size:%d", i + 1, xih.samples, xih.sh_size);
 			return -1;
@@ -417,7 +527,7 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 			 * generalization should take care of both cases.
 			 */
 
-			if (hio_seek(f, (int)xih.size - XM_INST_HEADER_SIZE, SEEK_CUR) < 0) {
+			if (hio_seek(f, (int)xih.size - (XM_INST_HEADER_SIZE + 4), SEEK_CUR) < 0) {
 				return -1;
 			}
 
@@ -428,17 +538,13 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 			return -1;
 		}
 
-		if (xih.size < XM_INST_HEADER_SIZE) {
-			return -1;
-		}
-
 		/* for BoobieSqueezer (see http://boobie.rotfl.at/)
 		 * It works pretty much the same way as Impulse Tracker's sample
 		 * only mode, where it will strip off the instrument data.
 		 */
 		if (xih.size < XM_INST_HEADER_SIZE + XM_INST_SIZE) {
 			memset(&xi, 0, sizeof(struct xm_instrument));
-			hio_seek(f, xih.size - XM_INST_HEADER_SIZE, SEEK_CUR);
+			hio_seek(f, xih.size - (XM_INST_HEADER_SIZE + 4), SEEK_CUR);
 		} else {
 			uint8 *b = buf;
 
@@ -509,7 +615,7 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 			for (j = 12; j < 108; j++) {
 				xxi->map[j].ins = xi.sample[j - 12];
 				if (xxi->map[j].ins >= xxi->nsm)
-					xxi->map[j].ins = -1;
+					xxi->map[j].ins = 0xff;
 			}
 		}
 
@@ -577,6 +683,12 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 				xxs->lps >>= 1;
 				xxs->lpe >>= 1;
 			}
+			if (xsh[j].type & XM_SAMPLE_STEREO) {
+				/* xxs->flg |= XMP_SAMPLE_STEREO; */
+				xxs->len >>= 1;
+				xxs->lps >>= 1;
+				xxs->lpe >>= 1;
+			}
 
 			xxs->flg |= xsh[j].type & XM_LOOP_FORWARD ? XMP_SAMPLE_LOOP : 0;
 			xxs->flg |= xsh[j].type & XM_LOOP_PINGPONG ? XMP_SAMPLE_LOOP | XMP_SAMPLE_LOOP_BIDIR : 0;
@@ -596,6 +708,7 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 		total_sample_size = 0;
 		for (j = 0; j < xxi->nsm; j++) {
 			struct xmp_subinstrument *sub = &xxi->sub[j];
+			struct xmp_sample *xxs = &mod->xxs[sub->sid];
 			int flags;
 
 			flags = SAMPLE_FLAG_DIFF;
@@ -607,7 +720,20 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 
 			if (version > 0x0103) {
 			        D_(D_INFO "  read sample: index:%d sample id:%d", j, sub->sid);
-				if (libxmp_load_sample(m, f, flags, &mod->xxs[sub->sid], NULL) < 0) {
+
+#ifndef LIBXMP_CORE_PLAYER
+				if (is_ogg_sample(f, xxs)) {
+					if (oggdec(m, f, xxs, xsh[j].length) < 0) {
+						return -1;
+					}
+
+					D_(D_INFO "  sample is vorbis");
+					total_sample_size += xsh[j].length;
+					continue;
+				}
+#endif
+
+				if (libxmp_load_sample(m, f, flags, xxs, NULL) < 0) {
 					return -1;
 				}
 				if (flags & SAMPLE_FLAG_ADPCM) {
@@ -615,6 +741,12 @@ static int load_instruments(struct module_data *m, int version, HIO_HANDLE *f)
 					total_sample_size += 16 + ((xsh[j].length + 1) >> 1);
 				} else {
 					total_sample_size += xsh[j].length;
+				}
+
+				/* TODO: implement stereo samples.
+				 * For now, just skip the right channel. */
+				if (xsh[j].type & XM_SAMPLE_STEREO) {
+					hio_seek(f, xsh[j].length >> 1, SEEK_CUR);
 				}
 			}
 		}
@@ -641,6 +773,7 @@ static int xm_load(struct module_data *m, HIO_HANDLE * f, const int start)
 	int i, j;
 	struct xm_file_header xfh;
 	char tracker_name[21];
+	int is_mpt_116 = 0;
 	int len;
 	uint8 buf[80];
 
@@ -667,19 +800,32 @@ static int xm_load(struct module_data *m, HIO_HANDLE * f, const int start)
 	xfh.bpm = readmem16l(buf + 78);		/* Default BPM */
 
 	/* Sanity checks */
-	if (xfh.songlen > 256 || xfh.patterns > 256 || xfh.instruments > 255) {
-		D_(D_CRIT "Sanity check: %d %d %d", xfh.songlen, xfh.patterns, xfh.instruments);
+	if (xfh.songlen > 256) {
+		D_(D_CRIT "bad song length: %d", xfh.songlen);
+		return -1;
+	}
+	if (xfh.patterns > 256) {
+		D_(D_CRIT "bad pattern count: %d", xfh.patterns);
+		return -1;
+	}
+	if (xfh.instruments > 255) {
+		D_(D_CRIT "bad instrument count: %d", xfh.instruments);
 		return -1;
 	}
 
-	if (xfh.restart > 255 || xfh.channels > XMP_MAX_CHANNELS) {
-		D_(D_CRIT "Sanity check: %d %d", xfh.restart, xfh.channels);
+	if (xfh.restart > 255) {
+		D_(D_CRIT "bad restart position: %d", xfh.restart);
+		return -1;
+	}
+	if (xfh.channels > XMP_MAX_CHANNELS) {
+		D_(D_CRIT "bad channel count: %d", xfh.channels);
 		return -1;
 	}
 
-	if (xfh.tempo >= 32 || xfh.bpm < 32 || xfh.bpm > 255) {
+	/* FT2 and MPT allow up to 255 BPM. OpenMPT allows up to 1000 BPM. */
+	if (xfh.tempo >= 32 || xfh.bpm < 32 || xfh.bpm > 1000) {
 		if (memcmp("MED2XM", xfh.tracker, 6)) {
-			D_(D_CRIT "Sanity check: %d %d", xfh.tempo, xfh.bpm);
+			D_(D_CRIT "bad tempo or BPM: %d %d", xfh.tempo, xfh.bpm);
 			return -1;
 		}
 	}
@@ -687,10 +833,11 @@ static int xm_load(struct module_data *m, HIO_HANDLE * f, const int start)
 	/* Honor header size -- needed by BoobieSqueezer XMs */
 	len = xfh.headersz - 0x14;
 	if (len < 0 || len > 256) {
-		D_(D_CRIT "Sanity check: %d", len);
+		D_(D_CRIT "bad XM header length: %d", len);
 		return -1;
 	}
 
+	memset(xfh.order, 0, sizeof(xfh.order));
 	if (hio_read(xfh.order, len, 1, f) != 1) {	/* Pattern order table */
 		D_(D_CRIT "error reading orders");
 		return -1;
@@ -745,6 +892,13 @@ static int xm_load(struct module_data *m, HIO_HANDLE * f, const int start)
 	if (!strncmp(tracker_name, "FastTracker v 2.00", 18)) {
 		strcpy(tracker_name, "old ModPlug Tracker");
 		m->quirk &= ~QUIRK_FT2BUGS;
+		is_mpt_116 = 1;
+	}
+
+	if (is_mpt_116) {
+		m->mvolbase = 48;
+		m->mvol = 48;
+		libxmp_apply_mpt_preamp(m);
 	}
 
 	libxmp_set_type(m, "%s XM %d.%02d", tracker_name, xfh.version >> 8, xfh.version & 0xff);

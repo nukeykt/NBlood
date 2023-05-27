@@ -31,11 +31,6 @@
 #endif
 
 
-static inline int is_valid_note(int note)
-{
-	return (note >= 0 && note < XMP_MAX_KEYS);
-}
-
 static struct xmp_subinstrument *get_subinstrument(struct context_data *ctx,
 						   int ins, int key)
 {
@@ -45,7 +40,7 @@ static struct xmp_subinstrument *get_subinstrument(struct context_data *ctx,
 
 	if (IS_VALID_INSTRUMENT(ins)) {
 		instrument = &mod->xxi[ins];
-		if (is_valid_note(key)) {
+		if (IS_VALID_NOTE(key)) {
 			int mapped = instrument->map[key].ins;
 			if (mapped != 0xff && mapped >= 0 && mapped < instrument->nsm)
 			  	return &instrument->sub[mapped];
@@ -123,18 +118,8 @@ static void set_effect_defaults(struct context_data *ctx, int note,
 				struct channel_data *xc, int is_toneporta)
 {
 	struct module_data *m = &ctx->m;
-	struct xmp_module *mod = &m->mod;
-	struct smix_data *smix = &ctx->smix;
 
 	if (sub != NULL && note >= 0) {
-		struct xmp_instrument *xxi;
-
-		if (xc->ins >= mod->ins) {
-			xxi = &smix->xxi[xc->ins - mod->ins];
-		} else {
-			xxi = &mod->xxi[xc->ins];
-		}
-
 		if (!HAS_QUIRK(QUIRK_PROTRACK)) {
 			xc->finetune = sub->fin;
 		}
@@ -143,16 +128,16 @@ static void set_effect_defaults(struct context_data *ctx, int note,
 #ifndef LIBXMP_CORE_DISABLE_IT
 		if (sub->ifc & 0x80) {
 			xc->filter.cutoff = (sub->ifc - 0x80) * 2;
-		} else if (~xxi->fei.flg & XMP_ENVELOPE_FLT) {
-			xc->filter.cutoff = 0xff;
 		}
 		xc->filter.envelope = 0x100;
 
 		if (sub->ifr & 0x80) {
 			xc->filter.resonance = (sub->ifr - 0x80) * 2;
-		} /* else {
-			xc->filter.resonance = 0;
-		} */
+		}
+
+		/* IT: on a new note without toneporta, allow a computed cutoff
+		 * of 127 with resonance 0 to disable the filter. */
+		xc->filter.can_disable = !is_toneporta;
 #endif
 
 		/* TODO: should probably expand the LFO period size instead
@@ -229,13 +214,14 @@ static void set_period_ft2(struct context_data *ctx, int note,
 #ifndef LIBXMP_CORE_PLAYER
 #define IS_SFX_PITCH(x) ((x) == FX_PITCH_ADD || (x) == FX_PITCH_SUB)
 #define IS_TONEPORTA(x) ((x) == FX_TONEPORTA || (x) == FX_TONE_VSLIDE \
-		|| (x) == FX_PER_TPORTA)
+		|| (x) == FX_PER_TPORTA || (x) == FX_ULT_TPORTA \
+		|| (x) == FX_FAR_TPORTA)
 #else
 #define IS_TONEPORTA(x) ((x) == FX_TONEPORTA || (x) == FX_TONE_VSLIDE)
 #endif
 
 #define set_patch(ctx,chn,ins,smp,note) \
-	libxmp_virt_setpatch(ctx, chn, ins, smp, note, 0, 0, 0)
+	libxmp_virt_setpatch(ctx, chn, ins, smp, note, 0, 0, 0, 0)
 
 static int read_event_mod(struct context_data *ctx, struct xmp_event *e, int chn)
 {
@@ -307,7 +293,7 @@ static int read_event_mod(struct context_data *ctx, struct xmp_event *e, int chn
 		if (e->note == XMP_KEY_OFF) {
 			SET_NOTE(NOTE_RELEASE);
 			use_ins_vol = 0;
-		} else if (!is_toneporta && is_valid_note(e->note - 1)) {
+		} else if (!is_toneporta && IS_VALID_NOTE(e->note - 1)) {
 			xc->key = e->note - 1;
 			RESET_NOTE(NOTE_END);
 
@@ -320,7 +306,7 @@ static int read_event_mod(struct context_data *ctx, struct xmp_event *e, int chn
 				note = xc->key + sub->xpo + transp;
 				smp = sub->sid;
 
-				if (mod->xxs[smp].len == 0) {
+				if (!IS_VALID_SAMPLE(smp)) {
 					smp = -1;
 				}
 
@@ -346,6 +332,7 @@ static int read_event_mod(struct context_data *ctx, struct xmp_event *e, int chn
 	if (e->vol) {
 		xc->volume = e->vol - 1;
 		SET(NEW_VOL);
+		RESET_PER(VOL_SLIDE); /* FIXME: should this be for FAR only? */
 	}
 
 	/* Secondary effect handled first */
@@ -389,6 +376,7 @@ static int sustain_check(struct xmp_envelope *env, int idx)
 {
 	return (env &&
 		(env->flg & XMP_ENVELOPE_ON) &&
+		(env->flg & XMP_ENVELOPE_SUS) &&
 		(~env->flg & XMP_ENVELOPE_LOOP) &&
 		idx == env->data[env->sus << 1]);
 }
@@ -636,7 +624,7 @@ static int read_event_ft2(struct context_data *ctx, struct xmp_event *e, int chn
 	 *  and remains in the memory."
 	 */
 	sub = NULL;
-	if (is_valid_note(key - 1)) {
+	if (IS_VALID_NOTE(key - 1)) {
 		int k = key - 1;
 		sub = get_subinstrument(ctx, xc->ins, k);
 		if (!new_invalid_ins && sub != NULL) {
@@ -649,7 +637,7 @@ static int read_event_ft2(struct context_data *ctx, struct xmp_event *e, int chn
 		}
 	}
 
-	if (is_valid_note(key - 1)) {
+	if (IS_VALID_NOTE(key - 1)) {
 		xc->key = --key;
 		xc->fadeout = 0x10000;
 		RESET_NOTE(NOTE_END);
@@ -667,7 +655,7 @@ static int read_event_ft2(struct context_data *ctx, struct xmp_event *e, int chn
 			note = key + sub->xpo + transp;
 			smp = sub->sid;
 
-			if (mod->xxs[smp].len == 0) {
+			if (!IS_VALID_SAMPLE(smp)) {
 				smp = -1;
 			}
 
@@ -823,7 +811,7 @@ static int read_event_st3(struct context_data *ctx, struct xmp_event *e, int chn
 			if (not_same_ins) {
 				xc->offset.val = 0;
 			}
-		} else if (is_valid_note(e->note - 1)) {
+		} else if (IS_VALID_NOTE(e->note - 1)) {
 			xc->key = e->note - 1;
 			RESET_NOTE(NOTE_END);
 
@@ -836,7 +824,7 @@ static int read_event_st3(struct context_data *ctx, struct xmp_event *e, int chn
 				note = xc->key + sub->xpo + transp;
 				smp = sub->sid;
 
-				if (mod->xxs[smp].len == 0) {
+				if (!IS_VALID_SAMPLE(smp)) {
 					smp = -1;
 				}
 
@@ -970,10 +958,10 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 	int is_toneporta, is_release;
 	int candidate_ins;
 	int reset_env;
+	int reset_susloop;
 	int use_ins_vol;
 	int sample_mode;
 	int toneporta_offset;
-	int disabled_toneporta;
 	int retrig_ins;
 	struct xmp_event ev;
 
@@ -996,11 +984,11 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 	is_toneporta = 0;
 	is_release = 0;
 	reset_env = 0;
+	reset_susloop = 0;
 	use_ins_vol = 0;
 	candidate_ins = xc->ins;
 	sample_mode = !HAS_QUIRK(QUIRK_VIRTUAL);
 	toneporta_offset = 0;
-	disabled_toneporta = 0;
 	retrig_ins = 0;
 
 	/* Keyoff + instrument retrigs current instrument in old fx mode */
@@ -1034,7 +1022,7 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 		is_toneporta = 1;
 	}
 
-	if (TEST_NOTE(NOTE_RELEASE | NOTE_FADEOUT)) {
+	if (TEST_NOTE(NOTE_ENV_RELEASE | NOTE_FADEOUT)) {
 		is_release = 1;
 	}
 
@@ -1044,10 +1032,8 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 
 	/* Off-Porta.it */
 	if (is_toneporta && ev.fxt == FX_OFFSET) {
-		disabled_toneporta = 1;
-		is_toneporta = 0;
+		toneporta_offset = 1;
  		if (!HAS_QUIRK(QUIRK_PRENV)) {
-			toneporta_offset = 1;
 			RESET_NOTE(NOTE_ENV_END);
 		}
 	}
@@ -1086,9 +1072,11 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 
 		if (set_new_ins) {
 			SET(NEW_INS);
-			use_ins_vol = 1;
 			reset_env = 1;
 		}
+		/* Sample default volume is always enabled if a valid sample
+		 * is provided (Atomic Playboy, default_volume.it). */
+		use_ins_vol = 1;
 		xc->per_flags = 0;
 
 		if (IS_VALID_INSTRUMENT(ins)) {
@@ -1128,7 +1116,10 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 				}
 			}
 		} else {
-			/* In sample mode invalid ins cut previous ins */
+			/* In sample mode invalid instruments cut the current
+			 * note (OpenMPT SampleNumberChange.it).
+			 * TODO: portamento_sustain.it order 3 row 19: when
+			 * sample release is set, this isn't always done? */
 			if (sample_mode) {
 				xc->volume = 0;
 			}
@@ -1142,13 +1133,14 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 
 	/* Check note */
 
-	if (key && !new_invalid_ins) {
+	if (key) {
 		SET(NEW_NOTE);
 		SET_NOTE(NOTE_SET);
 
 		if (key == XMP_KEY_FADE) {
 			SET_NOTE(NOTE_FADEOUT);
 			reset_env = 0;
+			reset_susloop = 0;
 			use_ins_vol = 0;
 		} else if (key == XMP_KEY_CUT) {
 			SET_NOTE(NOTE_END | NOTE_CUT | NOTE_KEY_CUT);
@@ -1170,24 +1162,27 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 			 * However, never reset the envelope (see OpenMPT wnoteoff.it).
 			 */
 			reset_env = 0;
+			reset_susloop = 0;
 			if (!ev.ins) {
 				use_ins_vol = 0;
 			}
-		} else {
+		} else if (!new_invalid_ins) {
+			/* Sample sustain release should always carry for tone
+			 * portamento, and is not reset unless a note is
+			 * present (Atomic Playboy, portamento_sustain.it). */
 			/* portamento_after_keyoff.it test case */
 			/* also see suburban_streets o13 c45 */
-			if (ev.ins || !is_toneporta) {
-				if (!disabled_toneporta) {
-					reset_env = 1;
-				}
+			if (!is_toneporta) {
+				reset_env = 1;
+				reset_susloop = 1;
 			}
 
 			if (is_toneporta) {
 				if (not_same_ins || TEST_NOTE(NOTE_END)) {
 					SET(NEW_INS);
-					RESET_NOTE(NOTE_RELEASE|NOTE_SUSEXIT|NOTE_FADEOUT);
+					RESET_NOTE(NOTE_ENV_RELEASE|NOTE_SUSEXIT|NOTE_FADEOUT);
 				} else {
-					if (is_valid_note(key - 1)) {
+					if (IS_VALID_NOTE(key - 1)) {
 						xc->key_porta = key - 1;
 					}
 					key = 0;
@@ -1196,7 +1191,9 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 		}
 	}
 
-	if (is_valid_note(key - 1) && !new_invalid_ins) {
+	/* TODO: instrument change+porta(+release?) doesn't require a key.
+	 * Order 3/row 11 of portamento_sustain.it should change the sample. */
+	if (IS_VALID_NOTE(key - 1) && !new_invalid_ins) {
 		if (TEST_NOTE(NOTE_CUT)) {
 			use_ins_vol = 1;	/* See OpenMPT NoteOffInstr.it */
 		}
@@ -1208,20 +1205,30 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 		if (sub != NULL) {
 			int transp = mod->xxi[candidate_ins].map[key].xpo;
 			int smp, to;
+			int dct;
 			int rvv;
+
+			/* Clear note delay before duplicating channels:
+			 * it_note_delay_nna.it */
+			xc->delay = 0;
 
 			note = key + sub->xpo + transp;
 			smp = sub->sid;
-			if (smp >= mod->smp || mod->xxs[smp].len == 0) {
+			if (!IS_VALID_SAMPLE(smp)) {
 				smp = -1;
 			}
+			dct = sub->dct;
 
 			if (not_same_smp) {
 				fix_period(ctx, chn, sub);
-				libxmp_virt_resetchannel(ctx, chn);
+				/* Toneporta, even when not executed, disables
+				 * NNA and DCAs for the current note:
+				 * portamento_nna_sample.it, gxsmp2.it */
+				libxmp_virt_setnna(ctx, chn, XMP_INST_NNA_CUT);
+				dct = XMP_INST_DCT_OFF;
 			}
 			to = libxmp_virt_setpatch(ctx, chn, candidate_ins, smp,
-				note, sub->nna, sub->dct, sub->dca);
+				note, key, sub->nna, dct, sub->dca);
 
 			/* Random value for volume swing */
 			rvv = sub->rvv & 0xff;
@@ -1289,10 +1296,13 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 
 	if (reset_env) {
 		if (ev.note) {
-			RESET_NOTE(NOTE_RELEASE|NOTE_SUSEXIT|NOTE_FADEOUT);
+			RESET_NOTE(NOTE_ENV_RELEASE|NOTE_SUSEXIT|NOTE_FADEOUT);
 		}
 		/* Set after copying to new virtual channel (see ambio.it) */
 		xc->fadeout = 0x10000;
+	}
+	if (reset_susloop && ev.note) {
+		RESET_NOTE(NOTE_SAMPLE_RELEASE);
 	}
 
 	/* See OpenMPT wnoteoff.it vs noteoff3.it */
@@ -1316,7 +1326,7 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 
 			if (TEST_NOTE(NOTE_CUT)) {
 				reset_envelopes(ctx, xc);
-			} else if (!toneporta_offset) {
+			} else if (!toneporta_offset || HAS_QUIRK(QUIRK_PRENV)) {
 				reset_envelopes_carry(ctx, xc);
 			}
 			RESET_NOTE(NOTE_CUT);
@@ -1346,6 +1356,8 @@ static int read_event_it(struct context_data *ctx, struct xmp_event *e, int chn)
 
 	if (note >= 0) {
 		xc->note = note;
+	}
+	if (note >= 0 || toneporta_offset) {
 		libxmp_virt_voicepos(ctx, chn, xc->offset.val);
 	}
 
@@ -1430,7 +1442,7 @@ static int read_event_med(struct context_data *ctx, struct xmp_event *e, int chn
 			SET_NOTE(NOTE_END);
 			xc->period = 0;
 			libxmp_virt_resetchannel(ctx, chn);
-		} else if (!is_toneporta && IS_VALID_INSTRUMENT(xc->ins) && is_valid_note(e->note - 1)) {
+		} else if (!is_toneporta && IS_VALID_INSTRUMENT(xc->ins) && IS_VALID_NOTE(e->note - 1)) {
 			struct xmp_instrument *xxi = &mod->xxi[xc->ins];
 
 			xc->key = e->note - 1;
@@ -1455,7 +1467,7 @@ static int read_event_med(struct context_data *ctx, struct xmp_event *e, int chn
 				note = xc->key + sub->xpo + transp;
 				smp = sub->sid;
 
-				if (mod->xxs[smp].len == 0) {
+				if (!IS_VALID_SAMPLE(smp)) {
 					smp = -1;
 				}
 
@@ -1520,7 +1532,7 @@ static int read_event_smix(struct context_data *ctx, struct xmp_event *e, int ch
 	struct xmp_module *mod = &m->mod;
 	struct channel_data *xc = &p->xc_data[chn];
 	struct xmp_subinstrument *sub;
-	int is_smix_ins;
+	struct xmp_instrument *xxi;
 	int ins, note, transp, smp;
 
 	xc->flags = 0;
@@ -1528,33 +1540,39 @@ static int read_event_smix(struct context_data *ctx, struct xmp_event *e, int ch
 	if (!e->ins)
 		return 0;
 
-	is_smix_ins = 0;
 	ins = e->ins - 1;
 	SET(NEW_INS);
-	xc->fadeout = 0x10000;
 	xc->per_flags = 0;
 	xc->offset.val = 0;
-	RESET_NOTE(NOTE_RELEASE);
+	RESET_NOTE(NOTE_RELEASE|NOTE_FADEOUT);
 
-	xc->ins = ins;
-
-	if (ins >= mod->ins && ins < mod->ins + smix->ins) {
-		is_smix_ins = 1;
-		xc->ins_fade = smix->xxi[xc->ins - mod->ins].rls;
+	xxi = libxmp_get_instrument(ctx, ins);
+	if (xxi != NULL) {
+		xc->ins_fade = xxi->rls;
 	}
+	xc->ins = ins;
 
 	SET(NEW_NOTE);
 
 	if (e->note == XMP_KEY_OFF) {
 		SET_NOTE(NOTE_RELEASE);
 		return 0;
+	} else if (e->note == XMP_KEY_FADE) {
+		SET_NOTE(NOTE_FADEOUT);
+		return 0;
+	} else if (e->note == XMP_KEY_CUT) {
+		SET_NOTE(NOTE_END);
+		xc->period = 0;
+		libxmp_virt_resetchannel(ctx, chn);
+		return 0;
 	}
 
 	xc->key = e->note - 1;
+	xc->fadeout = 0x10000;
 	RESET_NOTE(NOTE_END);
 
-	if (is_smix_ins) {
-		sub = &smix->xxi[xc->ins - mod->ins].sub[0];
+	if (ins >= mod->ins && ins < mod->ins + smix->ins) {
+		sub = &xxi->sub[0];
 		if (sub == NULL) {
 			return 0;
 		}
@@ -1569,15 +1587,15 @@ static int read_event_smix(struct context_data *ctx, struct xmp_event *e, int ch
 			xc->smp = smp;
 		}
 	} else {
-		sub = is_valid_note(xc->key) ?
+		sub = IS_VALID_NOTE(xc->key) ?
 			get_subinstrument(ctx, xc->ins, xc->key) : NULL;
 		if (sub == NULL) {
 			return 0;
 		}
-		transp = mod->xxi[xc->ins].map[xc->key].xpo;
+		transp = xxi->map[xc->key].xpo;
 		note = xc->key + sub->xpo + transp;
 		smp = sub->sid;
-		if (mod->xxs[smp].len == 0)
+		if (!IS_VALID_SAMPLE(smp))
 			smp = -1;
 		if (smp >= 0 && smp < mod->smp) {
 			set_patch(ctx, chn, xc->ins, smp, note);

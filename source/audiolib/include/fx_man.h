@@ -135,8 +135,8 @@ static FORCE_INLINE int FX_Pan3D(int handle, int angle, int distance)
 static FORCE_INLINE int FX_SoundActive(int handle) { return MV_VoicePlaying(handle); }
 static FORCE_INLINE int FX_SoundValidAndActive(int handle) { return handle > 0 && MV_VoicePlaying(handle); }
 static FORCE_INLINE int FX_SoundsPlaying(void) { return MV_VoicesPlaying(); }
-static FORCE_INLINE int FX_StopSound(int handle) { return FX_CheckMVErr(MV_Kill(handle)); }
-static FORCE_INLINE int FX_StopAllSounds(void) { return FX_CheckMVErr(MV_KillAllVoices()); }
+static FORCE_INLINE int FX_StopSound(int handle, bool useCallBack = true) { return FX_CheckMVErr(MV_Kill(handle, useCallBack)); }
+static FORCE_INLINE int FX_StopAllSounds(bool useCallBack = true) { return FX_CheckMVErr(MV_KillAllVoices(useCallBack)); }
 
 #ifdef __cplusplus
 }

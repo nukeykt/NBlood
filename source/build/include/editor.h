@@ -86,7 +86,7 @@ extern int16_t startang, startsectnum;
 extern int32_t lastpm16time, synctics;
 extern int32_t halfxdim16, midydim16, zoom;
 extern int32_t ydim16, bppgame, forcesetup;
-extern int32_t unrealedlook, quickmapcycling;
+extern int32_t unrealedlook, quickmapcycling, spriteinsertmode;
 extern int32_t pk_turnaccel,pk_turndecel,pk_uedaccel;
 extern int32_t revertCTRL,scrollamount;
 extern int32_t autosave;
@@ -99,6 +99,11 @@ extern int32_t graphicsmode;
 
 extern int32_t grid, autogrid;
 extern int32_t editorgridextent;	// in engine.c
+
+static FORCE_INLINE bool editorIsInitialized(void)
+{
+    return editorgridextent != -1;
+}
 
 extern char game_executable[BMAX_PATH];
 extern const char* DefaultGameExec;
@@ -122,7 +127,7 @@ extern int32_t showambiencesounds;
 extern int32_t numgraysects;
 extern uint8_t graysectbitmap[(MAXSECTORS+7)>>3];
 extern uint8_t graywallbitmap[(MAXWALLS+7)>>3];
-extern int32_t autogray, showinnergray;
+extern int32_t autogray, showinnergray, showgraysectors;
 
 extern void drawgradient(void);
 

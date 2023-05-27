@@ -26,8 +26,7 @@ static int32_t *vcolhashead = 0, vcolhashsizm1;
 typedef struct { int32_t p, c, n; } voxcol_t;
 static voxcol_t *vcol = 0; int32_t vnum = 0, vmax = 0;
 
-typedef struct { int16_t x, y; } spoint2d;
-static spoint2d *shp;
+static vec2_u16_t *shp;
 static int32_t *shcntmal, *shcnt = 0, shcntp;
 
 static int32_t mytexo5, *zbit, gmaxx, gmaxy, garea, pow2m1[33];
@@ -42,9 +41,9 @@ uint32_t gloadtex_indexed(const int32_t *picbuf, int32_t xsiz, int32_t ysiz)
     const coltype *const pic = (const coltype *)picbuf;
     char *pic2 = (char *)Xmalloc(xsiz*ysiz*sizeof(char));
 
-    for (bssize_t i=0; i < ysiz; i++)
+    for (int i=0; i < ysiz; i++)
     {
-        for (bssize_t j=0; j < xsiz; j++)
+        for (int j=0; j < xsiz; j++)
         {
             pic2[j*ysiz+i] = pic[i*xsiz+j].a;
         }
@@ -73,11 +72,12 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
 
     // Correct for GL's RGB order; also apply gamma here:
     const coltype *const pic = (const coltype *)picbuf;
-    coltype *pic2 = (coltype *)Xmalloc(xsiz*ysiz*sizeof(coltype));
+    int32_t const cnt = xsiz * ysiz;
+    coltype *pic2 = (coltype *)Xmalloc(cnt * sizeof(coltype));
 
     if (!is8bit)
     {
-        for (bssize_t i=xsiz*ysiz-1; i>=0; i--)
+        for (int32_t i = 0; i < cnt; ++i)
         {
             coltype &tcol = pic2[i];
             tcol.b = cptr[pic[i].r];
@@ -93,7 +93,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
         if (palookup[dapal] == NULL)
             dapal = 0;
 
-        for (bssize_t i=xsiz*ysiz-1; i>=0; i--)
+        for (int32_t i = 0; i < cnt; ++i)
         {
             const int32_t ii = palookup[dapal][pic[i].a];
 
@@ -149,31 +149,29 @@ static void putvox(int32_t x, int32_t y, int32_t z, int32_t col)
 #if 0
 static void setzrange0(int32_t *lptr, int32_t z0, int32_t z1)
 {
-    if (!((z0^z1)&~31)) { lptr[z0>>5] &= ((~-(1<<SHIFTMOD32(z0)))|-(1<<SHIFTMOD32(z1))); return; }
+    int32_t const m0 = ~-(1<<SHIFTMOD32(z0));
+    int32_t const m1 = -(1<<SHIFTMOD32(z1));
+    if (!((z0^z1)&~31)) { lptr[z0>>5] &= m0|m1; return; }
     int32_t z = (z0>>5), ze = (z1>>5);
-    lptr[z] &=~-(1<<SHIFTMOD32(z0));
+    lptr[z] &= m0;
     for (z++; z<ze; z++) lptr[z] = 0;
-    lptr[z] &= -(1<<SHIFTMOD32(z1));
+    lptr[z] &= m1;
 }
 #endif
 //Set all bits in vbit from (x,y,z0) to (x,y,z1-1) to 1's
 static void setzrange1(int32_t *lptr, int32_t z0, int32_t z1)
 {
-    if (!((z0^z1)&~31)) { lptr[z0>>5] |= ((~-(1<<SHIFTMOD32(z1)))&-(1<<SHIFTMOD32(z0))); return; }
+    int32_t const m0 = -(1<<SHIFTMOD32(z0));
+    int32_t const m1 = ~-(1<<SHIFTMOD32(z1));
+    if (!((z0^z1)&~31)) { lptr[z0>>5] |= m1&m0; return; }
     int32_t z = (z0>>5), ze = (z1>>5);
-    lptr[z] |= -(1<<SHIFTMOD32(z0));
+    lptr[z] |= m0;
     for (z++; z<ze; z++) lptr[z] = -1;
-    lptr[z] |=~-(1<<SHIFTMOD32(z1));
+    lptr[z] |= m1;
 }
 
-static int32_t isrectfree(int32_t x0, int32_t y0, int32_t dx, int32_t dy)
+static bool isrectfree(int32_t x0, int32_t y0, int32_t dx, int32_t dy)
 {
-#if 0
-    int32_t i, j, x;
-    i = y0*gvox->mytexx + x0;
-    for (dy=0; dy; dy--, i+=gvox->mytexx)
-        for (x=0; x<dx; x++) { j = i+x; if (zbit[j>>5]&(1<<SHIFTMOD32(j))) return 0; }
-#else
     int32_t i = y0*mytexo5 + (x0>>5);
     dx += x0-1;
     const int32_t c = (dx>>5) - (x0>>5);
@@ -203,18 +201,11 @@ static int32_t isrectfree(int32_t x0, int32_t y0, int32_t dx, int32_t dy)
                 return 0;
         }
     }
-#endif
     return 1;
 }
 
 static void setrect(int32_t x0, int32_t y0, int32_t dx, int32_t dy)
 {
-#if 0
-    int32_t i, j, y;
-    i = y0*gvox->mytexx + x0;
-    for (y=0; y<dy; y++, i+=gvox->mytexx)
-        for (x=0; x<dx; x++) { j = i+x; zbit[j>>5] |= (1<<SHIFTMOD32(j)); }
-#else
     int32_t i = y0*mytexo5 + (x0>>5);
     dx += x0-1;
     const int32_t c = (dx>>5) - (x0>>5);
@@ -240,7 +231,6 @@ static void setrect(int32_t x0, int32_t y0, int32_t dx, int32_t dy)
             zbit[i+x] |= m1;
         }
     }
-#endif
 }
 
 static void cntquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, int32_t z1,
@@ -302,8 +292,8 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
         nx = x0; break;
     }
 
-    for (bssize_t yy=0; yy<y; yy++, lptr+=gvox->mytexx)
-        for (bssize_t xx=0; xx<x; xx++)
+    for (int yy=0; yy<y; yy++, lptr+=gvox->mytexx)
+        for (int xx=0; xx<x; xx++)
         {
             switch (face)
             {
@@ -337,8 +327,8 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
         }
 
     //Extend borders horizontally
-    for (bssize_t yy=VOXBORDWIDTH; yy<y+VOXBORDWIDTH; yy++)
-        for (bssize_t xx=0; xx<VOXBORDWIDTH; xx++)
+    for (int xx=0; xx<VOXBORDWIDTH; xx++)
+        for (int yy=VOXBORDWIDTH; yy<y+VOXBORDWIDTH; yy++)
         {
             lptr = &gvox->mytex[(shp[z].y+yy)*gvox->mytexx + shp[z].x];
             lptr[xx] = lptr[VOXBORDWIDTH];
@@ -346,7 +336,7 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
         }
 
     //Extend borders vertically
-    for (bssize_t yy=0; yy<VOXBORDWIDTH; yy++)
+    for (int yy=0; yy<VOXBORDWIDTH; yy++)
     {
         Bmemcpy(&gvox->mytex[(shp[z].y+yy)*gvox->mytexx + shp[z].x],
                 &gvox->mytex[(shp[z].y+VOXBORDWIDTH)*gvox->mytexx + shp[z].x],
@@ -362,11 +352,10 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
     qptr->v[1].x = x1; qptr->v[1].y = y1; qptr->v[1].z = z1;
     qptr->v[2].x = x2; qptr->v[2].y = y2; qptr->v[2].z = z2;
 
-    for (bssize_t j=0; j<3; j++)
-    {
-        qptr->v[j].u = shp[z].x+VOXBORDWIDTH;
-        qptr->v[j].v = shp[z].y+VOXBORDWIDTH;
-    }
+    constexpr vec2_u16_t vbw = { VOXBORDWIDTH, VOXBORDWIDTH };
+    
+    for (int j=0; j<3; j++)
+        qptr->v[j].uv = shp[z]+vbw;
 
     if (i < 3)
         qptr->v[1].u += x;
@@ -376,11 +365,8 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
     qptr->v[2].u += x;
     qptr->v[2].v += y;
 
-    qptr->v[3].u = qptr->v[0].u - qptr->v[1].u + qptr->v[2].u;
-    qptr->v[3].v = qptr->v[0].v - qptr->v[1].v + qptr->v[2].v;
-    qptr->v[3].x = qptr->v[0].x - qptr->v[1].x + qptr->v[2].x;
-    qptr->v[3].y = qptr->v[0].y - qptr->v[1].y + qptr->v[2].y;
-    qptr->v[3].z = qptr->v[0].z - qptr->v[1].z + qptr->v[2].z;
+    qptr->v[3].uv  = qptr->v[0].uv  - qptr->v[1].uv  + qptr->v[2].uv;
+    qptr->v[3].xyz = qptr->v[0].xyz - qptr->v[1].xyz + qptr->v[2].xyz;
 
     if (gqfacind[face] < 0)
         gqfacind[face] = gvox->qcnt;
@@ -390,16 +376,15 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
 
 static inline int32_t isolid(int32_t x, int32_t y, int32_t z)
 {
-    if ((uint32_t)x >= (uint32_t)voxsiz.x) return 0;
-    if ((uint32_t)y >= (uint32_t)voxsiz.y) return 0;
-    if ((uint32_t)z >= (uint32_t)voxsiz.z) return 0;
+    if (((uint32_t)x >= (uint32_t)voxsiz.x) | ((uint32_t)y >= (uint32_t)voxsiz.y) | ((uint32_t)z >= (uint32_t)voxsiz.z))
+        return 0;
 
     z += x*yzsiz + y*voxsiz.z;
 
-    return vbit[z>>5] & (1<<SHIFTMOD32(z));
+    return (vbit[z>>5] & (1<<SHIFTMOD32(z))) != 0;
 }
 
-static FORCE_INLINE int isair(int32_t i)
+static FORCE_INLINE int isair(int const i)
 {
     return !(vbit[i>>5] & (1<<SHIFTMOD32(i)));
 }
@@ -477,7 +462,7 @@ static voxmodel_t *vox2poly()
 
     int32_t ov, oz=0;
 
-    for (bssize_t cnt=0; cnt<2; cnt++)
+    for (int cnt=0; cnt<2; cnt++)
     {
         void (*daquad)(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t) =
             cnt == 0 ? cntquad : addquad;
@@ -488,9 +473,9 @@ static voxmodel_t *vox2poly()
         int32_t v = 0;
 
         for (i=-1; i<=1; i+=2)
-            for (bssize_t y=0; y<voxsiz.y; y++)
-                for (bssize_t x=0; x<=voxsiz.x; x++)
-                    for (bssize_t z=0; z<=voxsiz.z; z++)
+            for (int y=0; y<voxsiz.y; y++)
+                for (int x=0; x<=voxsiz.x; x++)
+                    for (int z=0; z<=voxsiz.z; z++)
                     {
                         ov = v; v = (isolid(x, y, z) && (!isolid(x, y+i, z)));
                         if ((by0[z] >= 0) && ((by0[z] != oz) || (v >= ov)))
@@ -504,9 +489,9 @@ static voxmodel_t *vox2poly()
                     }
 
         for (i=-1; i<=1; i+=2)
-            for (bssize_t z=0; z<voxsiz.z; z++)
-                for (bssize_t x=0; x<=voxsiz.x; x++)
-                    for (bssize_t y=0; y<=voxsiz.y; y++)
+            for (int z=0; z<voxsiz.z; z++)
+                for (int x=0; x<=voxsiz.x; x++)
+                    for (int y=0; y<=voxsiz.y; y++)
                     {
                         ov = v; v = (isolid(x, y, z) && (!isolid(x, y, z-i)));
                         if ((by0[y] >= 0) && ((by0[y] != oz) || (v >= ov)))
@@ -520,9 +505,9 @@ static voxmodel_t *vox2poly()
                     }
 
         for (i=-1; i<=1; i+=2)
-            for (bssize_t x=0; x<voxsiz.x; x++)
-                for (bssize_t y=0; y<=voxsiz.y; y++)
-                    for (bssize_t z=0; z<=voxsiz.z; z++)
+            for (int x=0; x<voxsiz.x; x++)
+                for (int y=0; y<=voxsiz.y; y++)
+                    for (int z=0; z<=voxsiz.z; z++)
                     {
                         ov = v; v = (isolid(x, y, z) && (!isolid(x-i, y, z)));
                         if ((by0[z] >= 0) && ((by0[z] != oz) || (v >= ov)))
@@ -537,12 +522,12 @@ static voxmodel_t *vox2poly()
 
         if (!cnt)
         {
-            shp = (spoint2d *)Xmalloc(gvox->qcnt*sizeof(spoint2d));
+            shp = (vec2_u16_t *)Xmalloc(gvox->qcnt*sizeof(vec2_u16_t));
 
             int32_t sc = 0;
 
-            for (bssize_t y=gmaxy; y; y--)
-                for (bssize_t x=gmaxx; x>=y; x--)
+            for (int y=gmaxy; y; y--)
+                for (int x=gmaxx; x>=y; x--)
                 {
                     i = shcnt[y*shcntp+x]; shcnt[y*shcntp+x] = sc; //shcnt changes from counter to head index
 
@@ -576,10 +561,11 @@ skindidntfit:
             memset(zbit, 0, i);
 
             v = gvox->mytexx*gvox->mytexy;
-            for (bssize_t z=0; z<sc; z++)
+            constexpr vec2_u16_t vbw = { (VOXBORDWIDTH<<1), (VOXBORDWIDTH<<1) };
+            
+            for (int z=0; z<sc; z++)
             {
-                const int32_t dx = shp[z].x + (VOXBORDWIDTH<<1);
-                const int32_t dy = shp[z].y + (VOXBORDWIDTH<<1);
+                auto d = shp[z] + vbw;
                 i = v;
 
                 int32_t x0, y0;
@@ -587,11 +573,11 @@ skindidntfit:
                 do
                 {
 #if (VOXUSECHAR != 0)
-                    x0 = ((rand()&32767)*(min(gvox->mytexx, 255)-dx))>>15;
-                    y0 = ((rand()&32767)*(min(gvox->mytexy, 255)-dy))>>15;
+                    x0 = ((rand()&32767)*(min(gvox->mytexx, 255)-d.x))>>15;
+                    y0 = ((rand()&32767)*(min(gvox->mytexy, 255)-d.y))>>15;
 #else
-                    x0 = ((rand()&32767)*(gvox->mytexx+1-dx))>>15;
-                    y0 = ((rand()&32767)*(gvox->mytexy+1-dy))>>15;
+                    x0 = ((rand()&32767)*(gvox->mytexx+1-d.x))>>15;
+                    y0 = ((rand()&32767)*(gvox->mytexy+1-d.y))>>15;
 #endif
                     i--;
                     if (i < 0) //Time-out! Very slow if this happens... but at least it still works :P
@@ -624,14 +610,14 @@ skindidntfit:
 
                         goto skindidntfit;
                     }
-                } while (!isrectfree(x0, y0, dx, dy));
+                } while (!isrectfree(x0, y0, d.x, d.y));
 
-                while (y0 && isrectfree(x0, y0-1, dx, 1))
+                while (y0 && isrectfree(x0, y0-1, d.x, 1))
                     y0--;
-                while (x0 && isrectfree(x0-1, y0, 1, dy))
+                while (x0 && isrectfree(x0-1, y0, 1, d.y))
                     x0--;
 
-                setrect(x0, y0, dx, dy);
+                setrect(x0, y0, d.x, d.y);
                 shp[z].x = x0; shp[z].y = y0; //Overwrite size with top-left location
             }
 
@@ -654,17 +640,14 @@ skindidntfit:
 
     for (int i = 0; i < gvox->qcnt; i++)
     {
-        const vert_t *const vptr = &gquad[i].v[0];
-
-        const int32_t xx = vptr[0].x + vptr[2].x;
-        const int32_t yy = vptr[0].y + vptr[2].y;
-        const int32_t zz = vptr[0].z + vptr[2].z;
+        auto const vptr = &gquad[i].v[0];
+        auto const vsum = vptr[0].xyz + vptr[2].xyz;
 
         for (int j=0; j<4; j++)
         {
-            gvox->vertex[((i<<2)+j)*5+0] = ((float)vptr[j].x) - phack[xx>vptr[j].x*2] + phack[xx<vptr[j].x*2];
-            gvox->vertex[((i<<2)+j)*5+1] = ((float)vptr[j].y) - phack[yy>vptr[j].y*2] + phack[yy<vptr[j].y*2];
-            gvox->vertex[((i<<2)+j)*5+2] = ((float)vptr[j].z) - phack[zz>vptr[j].z*2] + phack[zz<vptr[j].z*2];
+            gvox->vertex[((i<<2)+j)*5+0] = ((float)vptr[j].x) - phack[vsum.x>(vptr[j].x<<1)] + phack[vsum.x<(vptr[j].x<<1)];
+            gvox->vertex[((i<<2)+j)*5+1] = ((float)vptr[j].y) - phack[vsum.y>(vptr[j].y<<1)] + phack[vsum.y<(vptr[j].y<<1)];
+            gvox->vertex[((i<<2)+j)*5+2] = ((float)vptr[j].z) - phack[vsum.z>(vptr[j].z<<1)] + phack[vsum.z<(vptr[j].z<<1)];
 
             gvox->vertex[((i<<2)+j)*5+3] = ((float)vptr[j].u)*ru;
             gvox->vertex[((i<<2)+j)*5+4] = ((float)vptr[j].v)*rv;
@@ -679,6 +662,8 @@ skindidntfit:
         gvox->index[((i<<1)+1)*3+2] = (i<<2)+3;
     }
 
+    DO_FREE_AND_NULL(gquad);
+    
     return gvox;
 }
 
@@ -701,10 +686,10 @@ static void read_pal(buildvfs_kfd fil, int32_t pal[256])
 {
     klseek(fil, -768, SEEK_END);
 
-    for (bssize_t i=0; i<256; i++)
+    for (int i=0; i<256; i++)
     {
         char c[3];
-        kread(fil, c, 3);
+        kread(fil, c, sizeof(c));
 //#if B_BIG_ENDIAN != 0
         pal[i] = B_LITTLE32((c[0]<<18) + (c[1]<<10) + (c[2]<<2) + (i<<24));
 //#endif
@@ -737,32 +722,39 @@ static int32_t loadvox(const char *filnam)
 
     char *const tbuf = (char *)Xmalloc(voxsiz.z*sizeof(uint8_t));
 
-    klseek(fil, 12, SEEK_SET);
-    for (bssize_t x=0; x<voxsiz.x; x++)
-        for (bssize_t y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    klseek(fil, sizeof(vec3_t), SEEK_SET);
+    for (int x=0; x<voxsiz.x; x++)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
             kread(fil, tbuf, voxsiz.z);
 
-            for (bssize_t z=voxsiz.z-1; z>=0; z--)
+            for (int32_t z = 0; z < voxsiz.z; ++z)
                 if (tbuf[z] != 255)
                 {
                     const int32_t i = j+z;
                     vbit[i>>5] |= (1<<SHIFTMOD32(i));
                 }
-        }
 
-    klseek(fil, 12, SEEK_SET);
-    for (bssize_t x=0; x<voxsiz.x; x++)
-        for (bssize_t y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+            j += voxsiz.z;
+        }
+    }
+
+    klseek(fil, sizeof(vec3_t), SEEK_SET);
+    for (int x=0; x<voxsiz.x; x++)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
             kread(fil, tbuf, voxsiz.z);
 
-            for (bssize_t z=0; z<voxsiz.z; z++)
+            for (int z=0; z<voxsiz.z; z++)
             {
                 if (tbuf[z] == 255)
                     continue;
 
-                if (!x || !y || !z || x == voxsiz.x-1 || y == voxsiz.y-1 || z == voxsiz.z-1)
+                if (!x | !y | !z | (x == voxsiz.x-1) | (y == voxsiz.y-1) | (z == voxsiz.z-1))
                 {
                     putvox(x, y, z, pal[tbuf[z]]);
                     continue;
@@ -770,15 +762,18 @@ static int32_t loadvox(const char *filnam)
 
                 const int32_t k = j+z;
 
-                if (isair(k-yzsiz) || isair(k+yzsiz) ||
-                    isair(k-voxsiz.z) || isair(k+voxsiz.z) ||
-                    isair(k-1) || isair(k+1))
+                if (isair(k-yzsiz) | isair(k+yzsiz) |
+                    isair(k-voxsiz.z) | isair(k+voxsiz.z) |
+                    isair(k-1) | isair(k+1))
                 {
                     putvox(x, y, z, pal[tbuf[z]]);
                     continue;
                 }
             }
+
+            j += voxsiz.z;
         }
+    }
 
     Xfree(tbuf);
     kclose(fil);
@@ -788,32 +783,37 @@ static int32_t loadvox(const char *filnam)
 
 static int32_t loadkvx(const char *filnam)
 {
-    int32_t i, mip1leng;
-
     const buildvfs_kfd fil = kopen4load(filnam, 0);
     if (fil == buildvfs_kfd_invalid)
         return -1;
 
-    kread(fil, &mip1leng, 4); mip1leng = B_LITTLE32(mip1leng);
+    int32_t mip1leng;
+    kread(fil, &mip1leng, sizeof(int32_t));
     kread(fil, &voxsiz, sizeof(vec3_t));
 #if B_BIG_ENDIAN != 0
+    mip1leng = B_LITTLE32(mip1leng);
     voxsiz.x = B_LITTLE32(voxsiz.x);
     voxsiz.y = B_LITTLE32(voxsiz.y);
     voxsiz.z = B_LITTLE32(voxsiz.z);
 #endif
-    kread(fil, &i, 4); voxpiv.x = (float)B_LITTLE32(i)*(1.f/256.f);
-    kread(fil, &i, 4); voxpiv.y = (float)B_LITTLE32(i)*(1.f/256.f);
-    kread(fil, &i, 4); voxpiv.z = (float)B_LITTLE32(i)*(1.f/256.f);
+
+    vec3_t v;
+    kread(fil, &v, sizeof(vec3_t));
+    voxpiv.x = (float)B_LITTLE32(v.x)*(1.f/256.f);
+    voxpiv.y = (float)B_LITTLE32(v.y)*(1.f/256.f);
+    voxpiv.z = (float)B_LITTLE32(v.z)*(1.f/256.f);
     klseek(fil, (voxsiz.x+1)<<2, SEEK_CUR);
 
     const int32_t ysizp1 = voxsiz.y+1;
-    i = voxsiz.x*ysizp1*sizeof(int16_t);
+    int32_t const xyoffscnt = voxsiz.x * ysizp1;
+    int32_t const xyoffssiz = xyoffscnt * sizeof(uint16_t);
 
-    uint16_t *xyoffs = (uint16_t *)Xmalloc(i);
-    kread(fil, xyoffs, i);
-
-    for (i=i/sizeof(int16_t)-1; i>=0; i--)
+    uint16_t *xyoffs = (uint16_t *)Xmalloc(xyoffssiz);
+    kread(fil, xyoffs, xyoffssiz);
+#if B_BIG_ENDIAN != 0
+    for (int32_t i = 0; i < xyoffscnt; ++i)
         xyoffs[i] = B_LITTLE16(xyoffs[i]);
+#endif
 
     int32_t pal[256];
     read_pal(fil, pal);
@@ -827,23 +827,23 @@ static int32_t loadkvx(const char *filnam)
     vcolhashsizm1--; //approx to numvoxs!
     alloc_vcolhashead();
 
-    klseek(fil, 28+((voxsiz.x+1)<<2)+((ysizp1*voxsiz.x)<<1), SEEK_SET);
+    klseek(fil, (7 * sizeof(int32_t)) + ((voxsiz.x+1)<<2) + ((ysizp1*voxsiz.x)<<1), SEEK_SET);
 
-    i = kfilelength(fil)-ktell(fil);
-    char *const tbuf = (char *)Xmalloc(i);
+    int32_t const tbufsiz = kfilelength(fil)-ktell(fil);
+    char *const tbuf = (char *)Xmalloc(tbufsiz);
 
-    kread(fil, tbuf, i);
+    kread(fil, tbuf, tbufsiz);
     kclose(fil);
 
     char *cptr = tbuf;
 
-    for (bssize_t x=0; x<voxsiz.x; x++) //Set surface voxels to 1 else 0
-        for (bssize_t y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    for (int x=0; x<voxsiz.x; x++) //Set surface voxels to 1 else 0
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
-            i = xyoffs[x*ysizp1+y+1] - xyoffs[x*ysizp1+y];
-            if (!i)
-                continue;
-
+            int32_t const idx = x*ysizp1+y;
+            int32_t i = xyoffs[idx+1] - xyoffs[idx];
             int32_t z1 = 0;
 
             while (i)
@@ -860,10 +860,13 @@ static int32_t loadkvx(const char *filnam)
 
                 setzrange1(vbit, j+z0, j+z1);  // PK: oob in AMC TC dev if vbit alloc'd w/o +1
 
-                for (bssize_t z=z0; z<z1; z++)
+                for (int z=z0; z<z1; z++)
                     putvox(x, y, z, pal[*cptr++]);
             }
+
+            j += voxsiz.z;
         }
+    }
 
     Xfree(tbuf);
     Xfree(xyoffs);
@@ -873,18 +876,17 @@ static int32_t loadkvx(const char *filnam)
 
 static int32_t loadkv6(const char *filnam)
 {
-    int32_t i;
-
     const buildvfs_kfd fil = kopen4load(filnam, 0);
     if (fil == buildvfs_kfd_invalid)
         return -1;
 
-    kread(fil, &i, 4);
-    if (B_LITTLE32(i) != 0x6c78764b)
+    int32_t magic;
+    kread(fil, &magic, sizeof(int32_t));
+    if (magic != B_LITTLE32(0x6c78764b)) // "Kvxl"
     {
         kclose(fil);
         return -1;
-    } //Kvxl
+    }
 
     kread(fil, &voxsiz, sizeof(vec3_t));
 #if B_BIG_ENDIAN != 0
@@ -892,21 +894,33 @@ static int32_t loadkv6(const char *filnam)
     voxsiz.y = B_LITTLE32(voxsiz.y);
     voxsiz.z = B_LITTLE32(voxsiz.z);
 #endif
-    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.x = *(float*)&i;
-    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.y = *(float*)&i;
-    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.z = *(float*)&i;
+
+    vec3_t v;
+    kread(fil, &v, sizeof(vec3_t));
+#if B_BIG_ENDIAN != 0
+    v.x = B_LITTLE32(v.x);
+    v.y = B_LITTLE32(v.y);
+    v.z = B_LITTLE32(v.z);
+#endif
+    EDUKE32_STATIC_ASSERT(sizeof(vec3_t) == sizeof(vec3f_t));
+    memcpy(&voxpiv, &v, sizeof(vec3_t));
 
     int32_t numvoxs;
-    kread(fil, &numvoxs, 4); numvoxs = B_LITTLE32(numvoxs);
+    kread(fil, &numvoxs, sizeof(int32_t));
+    numvoxs = B_LITTLE32(numvoxs);
 
-    uint16_t *const ylen = (uint16_t *)Xmalloc(voxsiz.x*voxsiz.y*sizeof(int16_t));
+    int32_t const ylencnt = voxsiz.x * voxsiz.y;
+    int32_t const ylensiz = ylencnt * sizeof(uint16_t);
+    uint16_t *const ylen = (uint16_t *)Xmalloc(ylensiz);
 
-    klseek(fil, 32+(numvoxs<<3)+(voxsiz.x<<2), SEEK_SET);
-    kread(fil, ylen, voxsiz.x*voxsiz.y*sizeof(int16_t));
-    for (i=voxsiz.x*voxsiz.y-1; i>=0; i--)
+    klseek(fil, (8 * sizeof(int32_t)) + (numvoxs<<3) + (voxsiz.x<<2), SEEK_SET);
+    kread(fil, ylen, ylensiz);
+#if B_BIG_ENDIAN != 0
+    for (int32_t i = 0; i < ylencnt; ++i)
         ylen[i] = B_LITTLE16(ylen[i]);
+#endif
 
-    klseek(fil, 32, SEEK_SET);
+    klseek(fil, 8 * sizeof(int32_t), SEEK_SET);
 
     alloc_vbit();
 
@@ -917,15 +931,17 @@ static int32_t loadkv6(const char *filnam)
     vcolhashsizm1--;
     alloc_vcolhashead();
 
-    for (bssize_t x=0; x<voxsiz.x; x++)
-        for (bssize_t y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    for (int x=0; x<voxsiz.x; x++)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
             int32_t z1 = voxsiz.z;
 
-            for (i=ylen[x*voxsiz.y+y]; i>0; i--)
+            for (int32_t i = 0, i_end = ylen[x*voxsiz.y+y]; i < i_end; ++i)
             {
                 char c[8];
-                kread(fil, c, 8); //b,g,r,a,z_lo,z_hi,vis,dir
+                kread(fil, c, sizeof(c)); //b,g,r,a,z_lo,z_hi,vis,dir
 
                 const int32_t z0 = B_LITTLE16(B_UNBUF16(&c[4]));
 
@@ -937,7 +953,10 @@ static int32_t loadkv6(const char *filnam)
                 putvox(x, y, z0, B_LITTLE32(B_UNBUF32(&c[0]))&0xffffff);
                 z1 = z0+1;
             }
+
+            j += voxsiz.z;
         }
+    }
 
     Xfree(ylen);
     kclose(fil);
@@ -996,8 +1015,8 @@ voxmodel_t *voxload(const char *filnam)
         {
             vm->mdnum = 1; //VOXel model id
             vm->scale = vm->bscale = 1.f;
-            vm->siz.x = voxsiz.x; vm->siz.y = voxsiz.y; vm->siz.z = voxsiz.z;
-            vm->piv.x = voxpiv.x; vm->piv.y = voxpiv.y; vm->piv.z = voxpiv.z;
+            vm->siz = voxsiz;
+            vm->piv = voxpiv;
             vm->is8bit = is8bit;
 
             vm->texid = (uint32_t*)Xcalloc(MAXPALOOKUPS, sizeof(uint32_t));
@@ -1195,14 +1214,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         mat[12] = -mat[12];
     }
 
-    if (shadowHack)
-    {
-        buildgl_setDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
-//        glDepthRange(0.0, 0.9999);
-    }
-
-//    glPushAttrib(GL_POLYGON_BIT);
-
     if ((grhalfxdown10x >= 0) ^ ((globalorientation&8) != 0) ^ ((globalorientation&4) != 0))
         glFrontFace(GL_CW);
     else
@@ -1226,19 +1237,28 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if (have_basepal_tint())
         hictinting_apply(pc, MAXPALOOKUPS - 1);
 
-    if (!shadowHack && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) != VF_NOTRANS)
+    int32_t const voxid = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_SLAB) == CSTAT_SPRITE_ALIGNMENT_SLAB
+                        ? tspr->picnum
+                        : tiletovox[tspr->picnum];
+    if (!shadowHack && (voxflags[voxid] & VF_NOTRANS) != VF_NOTRANS)
     {
         pc[3] = (tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) ? glblend[tspr->blend].def[!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT)].alpha : 1.0f;
         pc[3] *= 1.0f - spriteext[tspr->owner].alpha;
 
         handle_blend(!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT), tspr->blend, !!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT));
-
-        if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
-            buildgl_setEnabled(GL_BLEND);  // else buildgl_setDisabled(GL_BLEND);
     }
-    else pc[3] = 1.f;
-    //------------
+    else
+    {
+        pc[3] = 1.f;
 
+        if (shadowHack)
+            handle_blend(0, 0, 0);
+    }
+    
+    if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
+        buildgl_setEnabled(GL_BLEND);
+    else buildgl_setDisabled(GL_BLEND);
+    
     //transform to Build coords
     float omat[16];
     Bmemcpy(omat, mat, sizeof(omat));
@@ -1318,12 +1338,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     //------------
     buildgl_setDisabled(GL_CULL_FACE);
-//    glPopAttrib();
-    if (shadowHack)
-    {
-        buildgl_setDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
-//        glDepthRange(0.0, 0.99999);
-    }
     glLoadIdentity();
 
     globalnoeffect = 0;

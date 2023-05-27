@@ -15,7 +15,7 @@ int	libxmp_virt_on		(struct context_data *, int);
 void	libxmp_virt_off		(struct context_data *);
 int	libxmp_virt_mute	(struct context_data *, int, int);
 int	libxmp_virt_setpatch	(struct context_data *, int, int, int, int,
-				 int, int, int);
+				 int, int, int, int);
 int	libxmp_virt_cvt8bit	(void);
 void	libxmp_virt_setnote	(struct context_data *, int, int);
 void	libxmp_virt_setsmp	(struct context_data *, int, int);
@@ -33,6 +33,7 @@ void	libxmp_virt_resetchannel(struct context_data *, int);
 void	libxmp_virt_resetvoice	(struct context_data *, int, int);
 void	libxmp_virt_reset	(struct context_data *);
 void	libxmp_virt_release	(struct context_data *, int, int);
+void	libxmp_virt_reverse	(struct context_data *, int, int);
 int	libxmp_virt_getroot	(struct context_data *, int);
 
 #endif /* LIBXMP_VIRTUAL_H */

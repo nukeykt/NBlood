@@ -1134,7 +1134,7 @@ CONSTEXPR size_t logbasenegative(T n)
 #define isPow2OrZero(v) (((v) & ((v) - 1)) == 0)
 #define isPow2(v) (isPow2OrZero(v) && (v))
 
-static FORCE_INLINE int nextPow2(int const value)
+static FORCE_INLINE CONSTEXPR_CXX14 int nextPow2(int const value)
 {
     int i = 1;
     while (i < value)

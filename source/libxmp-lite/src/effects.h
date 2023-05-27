@@ -59,7 +59,7 @@
 #define FX_F_NSLIDE_DN	0x75
 #define FX_F_NSLIDE_UP	0x76
 
-/* Persistent effects -- for FNK and FAR */
+/* Persistent effects -- for FNK */
 #define FX_PER_PORTA_DN	0x78
 #define FX_PER_PORTA_UP	0x79
 #define FX_PER_TPORTA	0x7a
@@ -75,6 +75,21 @@
 #define FX_669_TPORTA	0x62
 #define FX_669_FINETUNE	0x63
 #define FX_669_VIBRATO	0x64
+
+/* FAR effects */
+#define FX_FAR_PORTA_UP	0x65	/* FAR pitch offset up */
+#define FX_FAR_PORTA_DN	0x66	/* FAR pitch offset down */
+#define FX_FAR_TPORTA	0x67	/* FAR persistent tone portamento */
+#define FX_FAR_TEMPO	0x68	/* FAR coarse tempo and tempo mode */
+#define FX_FAR_F_TEMPO	0x69	/* FAR fine tempo slide up/down */
+#define FX_FAR_VIBDEPTH	0x6a	/* FAR set vibrato depth */
+#define FX_FAR_VIBRATO	0x6b	/* FAR persistent vibrato */
+#define FX_FAR_SLIDEVOL	0x6c	/* FAR persistent slide-to-volume */
+#define FX_FAR_RETRIG	0x6d	/* FAR retrigger */
+#define FX_FAR_DELAY	0x6e	/* FAR note offset */
+
+/* Other frequency based effects (ULT, etc) */
+#define FX_ULT_TPORTA   0x6f
 #endif
 
 #ifndef LIBXMP_CORE_DISABLE_IT
@@ -92,6 +107,9 @@
 #define FX_PANBRELLO_WF	0x8b
 #define FX_HIOFFSET	0x8c
 #define FX_IT_BREAK	0x8e	/* like FX_BREAK with hex parameter */
+#define FX_MACRO_SET	0xbd	/* Set active IT parametered MIDI macro */
+#define FX_MACRO	0xbe	/* Execute IT MIDI macro */
+#define FX_MACROSMOOTH	0xbf	/* Execute IT MIDI macro slide */
 #endif
 
 #ifndef LIBXMP_CORE_PLAYER
@@ -119,9 +137,11 @@
 #define FX_VOL_SUB	0xb7	/* SFX change volume down */
 #define FX_PITCH_ADD	0xb8	/* SFX add steps to current note */
 #define FX_PITCH_SUB	0xb9	/* SFX add steps to current note */
+#define FX_LINE_JUMP	0xba	/* Archimedes jump to line in current order */
 #endif
 
 #define FX_SURROUND	0x8d	/* S3M/IT */
+#define FX_REVERSE	0x8f	/* XM/IT/others: play forward/reverse */
 #define FX_S3M_SPEED	0xa3	/* S3M */
 #define FX_VOLSLIDE_2	0xa4
 #define FX_FINETUNE	0xa6

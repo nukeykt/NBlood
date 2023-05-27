@@ -3,6 +3,41 @@
   <ItemGroup>
     <Filter Include="Header Files" />
     <Filter Include="Source Files" />
+    <Filter Include="Source Files\prim">
+      <UniqueIdentifier>{6e703464-90cc-46a0-9e05-b2886366637b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-new-delete.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-override.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc\atomic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc\internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc\prim.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc\track.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\include\mimalloc\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\src\bitmap.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\mimalloc\src\prim\windows\etw.h">
+      <Filter>Source Files\prim</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\mimalloc\src\alloc.c">
@@ -11,7 +46,7 @@
     <ClCompile Include="..\..\source\mimalloc\src\alloc-aligned.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\mimalloc\src\alloc-override-osx.c">
+    <ClCompile Include="..\..\source\mimalloc\src\alloc-override.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\mimalloc\src\alloc-posix.c">
@@ -44,9 +79,6 @@
     <ClCompile Include="..\..\source\mimalloc\src\random.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\mimalloc\src\region.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\mimalloc\src\segment.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -56,31 +88,11 @@
     <ClCompile Include="..\..\source\mimalloc\src\stats.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\mimalloc\src\alloc-override.c">
+    <ClCompile Include="..\..\source\mimalloc\src\prim\windows\prim.c">
+      <Filter>Source Files\prim</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\mimalloc\src\segment-map.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\source\mimalloc\include\mimalloc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-atomic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-new-delete.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-override.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\mimalloc\include\mimalloc-types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\mimalloc\src\bitmap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

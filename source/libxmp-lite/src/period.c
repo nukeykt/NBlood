@@ -183,13 +183,13 @@ double libxmp_note_to_period(struct context_data *ctx, int n, int f, double adj)
 
 	switch (m->period_type) {
 	case PERIOD_LINEAR:
-		per = (240.0 - d) * 16;			/* Linear */
+		per = (240.0 - d) * 16;				/* Linear */
 		break;
 	case PERIOD_CSPD:
-		per = 8363.0 * pow(2, n / 12) / 32 + f;	/* Hz */
+		per = 8363.0 * pow(2, n / 12.0) / 32 + f;	/* Hz */
 		break;
 	default:
-		per = PERIOD_BASE / pow(2, d / 12);	/* Amiga */
+		per = PERIOD_BASE / pow(2, d / 12);		/* Amiga */
 	}
 
 #ifndef LIBXMP_CORE_PLAYER
@@ -225,7 +225,7 @@ int libxmp_period_to_bend(struct context_data *ctx, double p, int n, double adj)
 	struct module_data *m = &ctx->m;
 	double d;
 
-	if (n == 0) {
+	if (n == 0 || p < 0.1) {
 		return 0;
 	}
 
@@ -261,3 +261,25 @@ void libxmp_c2spd_to_note(int c2spd, int *n, int *f)
 	*n = c / 128;
 	*f = c % 128;
 }
+
+#ifndef LIBXMP_CORE_PLAYER
+/* Gravis Ultrasound frequency increments in steps of Hz/1024, where Hz is the
+ * current rate of the card and is dependent on the active channel count.
+ * For <=14 channels, the rate is 44100. For 15 to 32 channels, the rate is
+ * round(14 * 44100 / active_channels).
+ */
+static const double GUS_rates[19] = {
+	/* <= 14 */ 44100.0,
+	/* 15-20 */ 41160.0,  38587.5,  36317.65, 34300.0, 32494.74, 30870.0,
+	/* 21-26 */ 29400.0,  28063.64, 26843.48, 25725.0, 24696.0,  23746.15,
+	/* 27-32 */ 22866.67, 22050.0,  21289.66, 20580.0, 19916.13, 19294.75
+};
+
+/* Get a Gravis Ultrasound frequency offset in Hz for a given number of steps.
+ */
+double libxmp_gus_frequency_steps(int num_steps, int num_channels_active)
+{
+	CLAMP(num_channels_active, 14, 32);
+	return (num_steps * GUS_rates[num_channels_active - 14]) / 1024.0;
+}
+#endif

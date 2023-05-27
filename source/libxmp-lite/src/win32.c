@@ -31,3 +31,17 @@ int libxmp_snprintf (char *str, size_t sz, const char *fmt, ...)
 }
 
 #endif
+
+/* Win32 debug message helper by Mirko Buffoni */
+#if defined(_MSC_VER) && defined(DEBUG)
+void libxmp_msvc_dbgprint(const char *format, ...)
+{
+	va_list argptr;
+
+	/* do the output */
+	va_start(argptr, format);
+	vprintf(format, argptr);
+	printf("\n");
+	va_end(argptr);
+}
+#endif

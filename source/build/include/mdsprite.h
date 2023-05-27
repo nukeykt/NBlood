@@ -189,7 +189,11 @@ typedef struct
 #if (VOXUSECHAR != 0)
 typedef struct { uint8_t x, y, z, u, v; } vert_t;
 #else
-typedef struct { uint16_t x, y, z, u, v; } vert_t;
+typedef struct
+{
+    union { struct { uint16_t x, y, z; }; vec3_u16_t xyz; };
+    union { struct { uint16_t u, v; }; vec2_u16_t uv; };
+} vert_t;
 #endif
 
 typedef struct { vert_t v[4]; } voxrect_t;

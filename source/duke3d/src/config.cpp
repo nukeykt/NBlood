@@ -294,6 +294,7 @@ void CONFIG_SetDefaults(void)
     ud.god                    = 0;
     ud.hudontop               = 0;
     ud.idplayers              = 1;
+    ud.kick_mode              = 0;
     ud.levelstats             = 0;
     ud.lockout                = 0;
     ud.m_marker               = 1;

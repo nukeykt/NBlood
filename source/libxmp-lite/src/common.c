@@ -21,32 +21,12 @@
  */
 
 #include <ctype.h>
-
-#include "common.h"
-
-#ifndef LIBXMP_CORE_PLAYER
-#if defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <limits.h>
-#elif defined(__OS2__) || defined(__EMX__)
-#define INCL_DOS
-#define INCL_DOSERRORS
-#include <os2.h>
-#elif defined(__DJGPP__)
-#include <dos.h>
-#include <io.h>
-#elif defined(LIBXMP_AMIGA)
-#ifdef __amigaos4__
-#define __USE_INLINE__
-#endif
-#include <proto/dos.h>
-#elif defined(HAVE_DIRENT)
+#if defined(HAVE_DIRENT)
+#include <sys/types.h>
 #include <dirent.h>
 #endif
-#endif /* LIBXMP_CORE_PLAYER */
+
+#include "common.h"
 
 #include "xmp.h"
 #include "period.h"
@@ -57,7 +37,7 @@ int libxmp_init_instrument(struct module_data *m)
 	struct xmp_module *mod = &m->mod;
 
 	if (mod->ins > 0) {
-		mod->xxi = (struct xmp_instrument *)calloc(sizeof (struct xmp_instrument), mod->ins);
+		mod->xxi = (struct xmp_instrument *) Xcalloc(mod->ins, sizeof(struct xmp_instrument));
 		if (mod->xxi == NULL)
 			return -1;
 	}
@@ -71,10 +51,10 @@ int libxmp_init_instrument(struct module_data *m)
 			return -1;
 		}
 
-		mod->xxs = (struct xmp_sample *)calloc(sizeof (struct xmp_sample), mod->smp);
+		mod->xxs = (struct xmp_sample *) Xcalloc(mod->smp, sizeof(struct xmp_sample));
 		if (mod->xxs == NULL)
 			return -1;
-		m->xtra = (struct extra_sample_data *)calloc(sizeof (struct extra_sample_data), mod->smp);
+		m->xtra = (struct extra_sample_data *) Xcalloc(mod->smp, sizeof(struct extra_sample_data));
 		if (m->xtra == NULL)
 			return -1;
 
@@ -102,19 +82,19 @@ int libxmp_realloc_samples(struct module_data *m, int new_size)
 	if (new_size == 0) {
 		/* Don't rely on implementation-defined realloc(x,0) behavior. */
 		mod->smp = 0;
-		free(mod->xxs);
+		Xfree(mod->xxs);
 		mod->xxs = NULL;
-		free(m->xtra);
+		Xfree(m->xtra);
 		m->xtra = NULL;
 		return 0;
 	}
 
-	xxs = (struct xmp_sample *)realloc(mod->xxs, sizeof(struct xmp_sample) * new_size);
+	xxs = (struct xmp_sample *) Xrealloc(mod->xxs, sizeof(struct xmp_sample) * new_size);
 	if (xxs == NULL)
 		return -1;
 	mod->xxs = xxs;
 
-	xtra = (struct extra_sample_data *)realloc(m->xtra, sizeof(struct extra_sample_data) * new_size);
+	xtra = (struct extra_sample_data *) Xrealloc(m->xtra, sizeof(struct extra_sample_data) * new_size);
 	if (xtra == NULL)
 		return -1;
 	m->xtra = xtra;
@@ -139,7 +119,7 @@ int libxmp_alloc_subinstrument(struct xmp_module *mod, int i, int num)
 	if (num == 0)
 		return 0;
 
-	mod->xxi[i].sub = (struct xmp_subinstrument *)calloc(sizeof (struct xmp_subinstrument), num);
+	mod->xxi[i].sub = (struct xmp_subinstrument *) Xcalloc(num, sizeof(struct xmp_subinstrument));
 	if (mod->xxi[i].sub == NULL)
 		return -1;
 
@@ -148,11 +128,11 @@ int libxmp_alloc_subinstrument(struct xmp_module *mod, int i, int num)
 
 int libxmp_init_pattern(struct xmp_module *mod)
 {
-	mod->xxt = (struct xmp_track **)calloc(sizeof (struct xmp_track *), mod->trk);
+	mod->xxt = (struct xmp_track **) Xcalloc(mod->trk, sizeof(struct xmp_track *));
 	if (mod->xxt == NULL)
 		return -1;
 
-	mod->xxp = (struct xmp_pattern **)calloc(sizeof (struct xmp_pattern *), mod->pat);
+	mod->xxp = (struct xmp_pattern **) Xcalloc(mod->pat, sizeof(struct xmp_pattern *));
 	if (mod->xxp == NULL)
 		return -1;
 
@@ -165,8 +145,8 @@ int libxmp_alloc_pattern(struct xmp_module *mod, int num)
 	if (num < 0 || num >= mod->pat || mod->xxp[num] != NULL)
 		return -1;
 
-	mod->xxp[num] = (struct xmp_pattern *)calloc(1, sizeof (struct xmp_pattern) +
-        				sizeof (int) * (mod->chn - 1));
+	mod->xxp[num] = (struct xmp_pattern *) Xcalloc(1, sizeof(struct xmp_pattern) +
+							 sizeof(int) * (mod->chn - 1));
 	if (mod->xxp[num] == NULL)
 		return -1;
 
@@ -179,8 +159,8 @@ int libxmp_alloc_track(struct xmp_module *mod, int num, int rows)
 	if (num < 0 || num >= mod->trk || mod->xxt[num] != NULL || rows <= 0)
 		return -1;
 
-	mod->xxt[num] = (struct xmp_track *)calloc(sizeof (struct xmp_track) +
-			       sizeof (struct xmp_event) * (rows - 1), 1);
+	mod->xxt[num] = (struct xmp_track *) Xcalloc(1,  sizeof(struct xmp_track) +
+							sizeof(struct xmp_event) * (rows - 1));
 	if (mod->xxt[num] == NULL)
 		return -1;
 
@@ -224,6 +204,7 @@ int libxmp_alloc_pattern_tracks(struct xmp_module *mod, int num, int rows)
 	return 0;
 }
 
+#ifndef LIBXMP_CORE_PLAYER
 /* Some formats explicitly allow more than 256 rows (e.g. OctaMED). This function
  * allows those formats to work without disrupting the sanity check for other formats.
  */
@@ -243,6 +224,7 @@ int libxmp_alloc_pattern_tracks_long(struct xmp_module *mod, int num, int rows)
 
 	return 0;
 }
+#endif
 
 char *libxmp_instrument_name(struct xmp_module *mod, int i, uint8 *r, int n)
 {
@@ -259,7 +241,7 @@ char *libxmp_copy_adjust(char *s, uint8 *r, int n)
 	strncpy(s, (char *)r, n);
 
 	for (i = 0; s[i] && i < n; i++) {
-		if (!isprint((int)s[i]) || ((uint8)s[i] > 127))
+		if (!isprint((unsigned char)s[i]) || ((uint8)s[i] > 127))
 			s[i] = '.';
 	}
 
@@ -281,22 +263,27 @@ void libxmp_read_title(HIO_HANDLE *f, char *t, int s)
 
 	memset(t, 0, s + 1);
 
-	hio_read(buf, 1, s, f);		/* coverity[check_return] */
+	s = hio_read(buf, 1, s, f);
 	buf[s] = 0;
 	libxmp_copy_adjust(t, buf, s);
 }
 
 #ifndef LIBXMP_CORE_PLAYER
 
-int libxmp_test_name(uint8 *s, int n)
+int libxmp_test_name(const uint8 *s, int n, int flags)
 {
 	int i;
 
 	for (i = 0; i < n; i++) {
+		if (s[i] == '\0' && (flags & TEST_NAME_IGNORE_AFTER_0))
+			break;
+		if (s[i] == '\r' && (flags & TEST_NAME_IGNORE_AFTER_CR))
+			break;
 		if (s[i] > 0x7f)
 			return -1;
 		/* ACS_Team2.mod has a backspace in instrument name */
-		if (s[i] > 0 && s[i] < 32 && s[i] != 0x08)
+		/* Numerous ST modules from Music Channel BBS have char 14. */
+		if (s[i] > 0 && s[i] < 32 && s[i] != 0x08 && s[i] != 0x0e)
 			return -1;
 	}
 
@@ -351,7 +338,6 @@ int libxmp_copy_name_for_fopen(char *dest, const char *name, int n)
 	dest[i] = '\0';
 	return 0;
 }
-#endif
 
 /*
  * Honor Noisetracker effects:
@@ -376,7 +362,7 @@ int libxmp_copy_name_for_fopen(char *dest, const char *name, int n)
  * module players erroneously interpret as "newer-version-trackers commands".
  * Which they aren't.
  */
-void libxmp_decode_noisetracker_event(struct xmp_event *event, uint8 *mod_event)
+void libxmp_decode_noisetracker_event(struct xmp_event *event, const uint8 *mod_event)
 {
 	int fxt;
 
@@ -392,8 +378,9 @@ void libxmp_decode_noisetracker_event(struct xmp_event *event, uint8 *mod_event)
 
 	libxmp_disable_continue_fx(event);
 }
+#endif
 
-void libxmp_decode_protracker_event(struct xmp_event *event, uint8 *mod_event)
+void libxmp_decode_protracker_event(struct xmp_event *event, const uint8 *mod_event)
 {
 	int fxt = LSN(mod_event[2]);
 
@@ -435,72 +422,23 @@ void libxmp_disable_continue_fx(struct xmp_event *event)
 /* libxmp_check_filename_case(): */
 /* Given a directory, see if file exists there, ignoring case */
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__DJGPP__)  || \
+    defined(__OS2__) || defined(__EMX__)   || \
+    defined(_DOS) || defined(LIBXMP_AMIGA) || \
+    defined(__riscos__) || \
+    /* case-insensitive file system: directly probe the file */\
+    \
+   !defined(HAVE_DIRENT) /* or, target does not have dirent. */
 int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
 {
-	char path[_MAX_PATH];
-	DWORD rc;
-	/* win32 is case-insensitive: directly probe the file. */
+	char path[XMP_MAXPATH];
 	snprintf(path, sizeof(path), "%s/%s", dir, name);
-	rc = GetFileAttributesA(path);
-	if (rc == (DWORD)(-1)) return 0;
-	if (rc & FILE_ATTRIBUTE_DIRECTORY) return 0;
+	if (! (libxmp_get_filetype(path) & XMP_FILETYPE_FILE))
+		return 0;
 	strncpy(new_name, name, size);
 	return 1;
 }
-#elif defined(__OS2__) || defined(__EMX__)
-int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
-{
-	char path[CCHMAXPATH];
-	FILESTATUS3 fs;
-	/* os/2 is case-insensitive: directly probe the file. */
-	snprintf(path, sizeof(path), "%s/%s", dir, name);
-	if (DosQueryPathInfo(path, FIL_STANDARD, &fs, sizeof(fs)) != NO_ERROR) return 0;
-	if (fs.attrFile & FILE_DIRECTORY) return 0;
-	strncpy(new_name, name, size);
-	return 1;
-}
-#elif defined(__DJGPP__)
-int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
-{
-	char path[256];
-	int attr;
-	/* dos is case-insensitive: directly probe the file. */
-	snprintf(path, sizeof(path), "%s/%s", dir, name);
-	attr = _chmod(path, 0);
-	if (attr == -1) return 0;
-	if (attr & (_A_SUBDIR|_A_VOLID)) return 0;
-	strncpy(new_name, name, size);
-	return 1;
-}
-#elif defined(LIBXMP_AMIGA)
-#ifdef __amigaos4__
-#include <dos/obsolete.h>
-#endif
-int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
-{
-	char path[256]; BPTR lock;
-	struct FileInfoBlock *fib;
-	int found = 0;
-	/* amigados is case-insensitive: directly probe the file. */
-	snprintf(path, sizeof(path), "%s/%s", dir, name);
-	lock = Lock((const STRPTR)path, ACCESS_READ);
-	if (lock) {
-		fib = (struct FileInfoBlock*) AllocDosObject(DOS_FIB, NULL);
-		if (fib != NULL) {
-		    if (Examine(lock, fib)) {
-			if (fib->fib_DirEntryType < 0) {
-				found = 1;
-				strncpy(new_name, name, size);
-			}
-		    }
-		    FreeDosObject(DOS_FIB, fib);
-		}
-		UnLock(lock);
-	}
-	return found;
-}
-#elif defined(HAVE_DIRENT)
+#else /* target has dirent */
 int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
 {
 	int found = 0;
@@ -522,11 +460,6 @@ int libxmp_check_filename_case(const char *dir, const char *name, char *new_name
 	closedir(dirp);
 
 	return found;
-}
-#else
-int libxmp_check_filename_case(const char *dir, const char *name, char *new_name, int size)
-{
-	return 0;
 }
 #endif
 
@@ -551,6 +484,7 @@ void libxmp_set_type(struct module_data *m, const char *fmt, ...)
 	va_end(ap);
 }
 
+#ifndef LIBXMP_CORE_PLAYER
 static int schism_tracker_date(int year, int month, int day)
 {
 	int mm = (month + 9) % 12;
@@ -573,7 +507,7 @@ void libxmp_schism_tracker_string(char *buf, size_t size, int s_ver, int l_ver)
 {
 	if (s_ver >= 0x50) {
 		/* time_t epoch_sec = 1256947200; */
-		int t = schism_tracker_date(2009, 10, 31);
+		int64 t = schism_tracker_date(2009, 10, 31);
 		int year, month, day, dayofyear;
 
 		if (s_ver == 0xfff) {
@@ -583,11 +517,11 @@ void libxmp_schism_tracker_string(char *buf, size_t size, int s_ver, int l_ver)
 
 		/* Date algorithm reimplemented from OpenMPT.
 		 */
-		year = (int)(((int64)t * 10000L + 14780) / 3652425);
-		dayofyear = t - (365 * year + (year / 4) - (year / 100) + (year / 400));
+		year = (int)((t * 10000L + 14780) / 3652425);
+		dayofyear = t - (365L * year + (year / 4) - (year / 100) + (year / 400));
 		if (dayofyear < 0) {
 			year--;
-			dayofyear = t - (365 * year + (year / 4) - (year / 100) + (year / 400));
+			dayofyear = t - (365L * year + (year / 4) - (year / 100) + (year / 400));
 		}
 		month = (100 * dayofyear + 52) / 3060;
 		day = dayofyear - (month * 306 + 5) / 10 + 1;
@@ -600,4 +534,61 @@ void libxmp_schism_tracker_string(char *buf, size_t size, int s_ver, int l_ver)
 	} else {
 		snprintf(buf, size, "Schism Tracker 0.%x", s_ver);
 	}
+}
+
+/* Old MPT modules (from MPT <=1.16, older versions of OpenMPT) rely on a
+ * pre-amp routine that scales mix volume down. This is based on the module's
+ * channel count and a tracker pre-amp setting that isn't saved in the module.
+ * This setting defaults to 128. When fixed to 128, it can be optimized out.
+ *
+ * In OpenMPT, this pre-amp routine is only available in the MPT and OpenMPT
+ * 1.17 RC1 and RC2 mix modes. Changing a module to the compatible or 1.17 RC3
+ * mix modes will permanently disable it for that module. OpenMPT applies the
+ * old mix modes to MPT <=1.16 modules, "IT 8.88", and in old OpenMPT-made
+ * modules that specify one of these mix modes in their extended properties.
+ *
+ * Set mod->chn and m->mvol first!
+ */
+void libxmp_apply_mpt_preamp(struct module_data *m)
+{
+	/* OpenMPT uses a slightly different table. */
+	static const uint8 preamp_table[16] =
+	{
+		0x60, 0x60, 0x60, 0x70,	/* 0-7 */
+		0x80, 0x88, 0x90, 0x98,	/* 8-15 */
+		0xA0, 0xA4, 0xA8, 0xB0,	/* 16-23 */
+		0xB4, 0xB8, 0xBC, 0xC0,	/* 24-31 */
+	};
+
+	int chn = m->mod.chn;
+	CLAMP(chn, 1, 31);
+
+	m->mvol = (m->mvol * 96) / preamp_table[chn >> 1];
+
+	/* Pre-amp is applied like this in the mixers of libmodplug/libopenmpt
+	 * (still vastly simplified).
+
+	int preamp = 128;
+
+	if (preamp > 128) {
+		preamp = 128 + ((preamp - 128) * (chn + 4)) / 16;
+	}
+	preamp = preamp * m->mvol / 64;
+	preamp = (preamp << 7) / preamp_table[chn >> 1];
+
+	...
+
+	channel_volume_16bit = (channel_volume_16bit * preamp) >> 7;
+	*/
+}
+#endif
+
+char *libxmp_strdup(const char *src)
+{
+	size_t len = strlen(src) + 1;
+	char *buf = (char *) Xmalloc(len);
+	if (buf) {
+		memcpy(buf, src, len);
+	}
+	return buf;
 }

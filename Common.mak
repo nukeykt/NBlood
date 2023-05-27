@@ -241,7 +241,9 @@ endif
 LLD := 0
 
 ifneq (0,$(CLANG))
-    override LLD := 1
+    ifneq ($(PLATFORM),DARWIN)
+        override LLD := 1
+    endif
     CLANGXXNAME := $(subst clang,clang++,$(CLANGNAME))
     override CC := $(CLANGNAME) -x c
     override CXX := $(CLANGXXNAME) -x c++
@@ -299,12 +301,15 @@ else
     ifeq ($(findstring x86_64,$(IMPLICIT_ARCH)),x86_64)
         BITS := 64
     endif
+    ifeq ($(findstring arm64,$(IMPLICIT_ARCH)),arm64)
+        BITS := 64
+    endif
 endif
 
 
 ##### Toggles
 
-#  CPLUSPLUS - 1 := enable C++ building
+#  CPLUSPLUS - 1 := enable building C source as C++
 #  RELEASE - 1 := no debugging
 #  FORCEDEBUG:
 #    1 := Include debug symbols even when generating release code.
@@ -460,7 +465,7 @@ endif
 ##### Instantiate variables
 
 COMMONFLAGS :=
-COMPILERFLAGS := -funsigned-char -frounding-math
+COMPILERFLAGS := -funsigned-char
 
 CSTD := -std=gnu11
 CXXSTD := -std=gnu++14
@@ -511,14 +516,16 @@ else ifeq ($(PLATFORM),DARWIN)
     COMMONFLAGS += $(ARCH)
 
     ifneq ($(findstring x86_64,$(IMPLICIT_ARCH)),x86_64)
-        LINKERFLAGS += -read_only_relocs suppress
+        ifneq ($(findstring arm64,$(IMPLICIT_ARCH)),arm64)
+            LINKERFLAGS += -read_only_relocs suppress
+        endif
     endif
 
     COMPILERFLAGS += -DUNDERSCORES
     ASFORMAT := macho
     ASFLAGS += -DUNDERSCORES
 
-    ifeq ($(findstring x86_64,$(IMPLICIT_ARCH)),x86_64)
+    ifeq ($(BITS),64)
         ASFORMAT += 64
     endif
 else ifeq ($(PLATFORM),WII)
@@ -582,11 +589,15 @@ ifeq ($(PACKAGE_REPOSITORY),0)
     COMMONFLAGS += -O$(OPTLEVEL) $(OPTOPT)
 endif
 
+define LF
+-save-temps=obj -dumpdir $1
+endef
+
 ifneq (0,$(LTO))
     COMPILERFLAGS += -DUSING_LTO
     ifeq (1,$(LTO))
         ifeq (0,$(CLANG))
-            COMMONFLAGS += -flto
+            COMMONFLAGS += -flto=12
         else
             COMMONFLAGS += -flto=thin
         endif
@@ -597,6 +608,11 @@ endif
 
 ifeq (1,$(LLD))
     COMMONFLAGS += -fuse-ld=lld
+    LF :=
+endif
+
+ifeq ($(PLATFORM),DARWIN)
+    LF :=
 endif
 
 ##### Debugging
@@ -625,8 +641,8 @@ endif
 # for a list of possible ASan and UBsan options.
 
 ASAN_FLAGS := -fsanitize=address -fsanitize=bounds,enum,float-cast-overflow
-ASAN_FLAGS := $(ASAN_FLAGS),signed-integer-overflow,unsigned-integer-overflow
-ASAN_FLAGS := $(ASAN_FLAGS),undefined,return,null,pointer-overflow,float-divide-by-zero
+ASAN_FLAGS := $(ASAN_FLAGS),signed-integer-overflow
+ASAN_FLAGS := $(ASAN_FLAGS),undefined,return,null,pointer-overflow
 #ASAN_FLAGS := $(ASAN_FLAGS) -fsanitize-undefined-trap-on-error
 
 ifeq (0,$(FORCEDEBUG))
@@ -634,13 +650,11 @@ ifeq (0,$(FORCEDEBUG))
 else
     COMPILERFLAGS += -DDEBUGGINGAIDS=$(FORCEDEBUG)
 
-    ifeq (2,$(FORCEDEBUG))
-        ifneq (0,$(CLANG))
+    ifneq (0,$(CLANG))
+        COMMONFLAGS += $(ASAN_FLAGS)
+    else ifneq (,$(filter 1 2 3 4 5 6,$(GCC_MAJOR)))
+        ifneq (,$(filter 0 1,$(GCC_MINOR)))
             COMMONFLAGS += $(ASAN_FLAGS)
-        else ifneq (,$(filter 1 2 3 4 5 6,$(GCC_MAJOR)))
-            ifneq (,$(filter 0 1,$(GCC_MINOR)))
-                COMMONFLAGS += $(ASAN_FLAGS)
-            endif
         endif
     endif
 endif
@@ -689,6 +703,10 @@ endif
 
 ifneq (0,$(KRANDDEBUG))
     COMMONFLAGS += -fno-inline -fno-inline-functions -fno-inline-functions-called-once
+endif
+
+ifneq (0,$(CLANG))
+    COMMONFLAGS += -frounding-math
 endif
 
 COMMONFLAGS += -fno-strict-aliasing -fno-threadsafe-statics $(F_JUMP_TABLES) $(F_NO_STACK_PROTECTOR)
@@ -844,8 +862,13 @@ else ifeq ($(PLATFORM),DARWIN)
         COMPILERFLAGS += -I/opt/local/include
     endif
     ifneq ($(shell brew --version &>/dev/null; echo $$?),127)
-        LIBDIRS += -L/usr/local/lib
-        COMPILERFLAGS += -I/usr/local/include
+        ifneq (,$(wildcard /opt/homebrew/))
+            LIBDIRS += -L/opt/homebrew/lib
+            COMPILERFLAGS += -I/opt/homebrew/include
+        else
+            LIBDIRS += -L/usr/local/lib
+            COMPILERFLAGS += -I/usr/local/include
+        endif
     endif
     ifneq ($(shell fink --version &>/dev/null; echo $$?),127)
         LIBDIRS += -L/sw/lib
@@ -915,7 +938,7 @@ ifeq ($(RENDERTYPE),SDL)
     else
         ifneq ($(SDLCONFIG),)
             ifneq ($(SDL_STATIC),0)
-                override SDLCONFIG_LIBS := -Wl,-Bstatic -l$(SDLNAME) -Wl,-Bdynamic $(strip $(subst -l$(SDLNAME),,$(shell $(SDLCONFIG) --static-libs)))
+                override SDLCONFIG_LIBS := -Wl,-Bstatic -l$(SDLNAME) -Wl,-Bdynamic $(strip $(subst -l$(SDLNAME),,$(shell CC=$(CC) $(SDLCONFIG) --static-libs)))
                 # for some reason SteamRT has a GCC with --enable-default-pie but its SDL2 has it disabled. WTF?
                 LINKERFLAGS += -no-pie
             endif
@@ -997,9 +1020,9 @@ ifneq (,$(wildcard .git))
             VC_REV := $(VC_REV)[$(VC_BRANCH)]
         endif
     endif
-    ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
-        REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
-    endif
+endif
+ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
+    REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
 endif
 
 ##### Allow standard environment variables to take precedence, to help package maintainers.

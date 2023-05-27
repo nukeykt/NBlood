@@ -13,6 +13,16 @@ int compare_usermaphacks(const void *a, const void *b)
 usermaphack_t *usermaphacks;
 int32_t num_usermaphacks;
 
+usermaphack_t *find_usermaphack()
+{
+    if (!usermaphacks)
+        return nullptr;
+
+    auto *res = bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks, sizeof(usermaphack_t), compare_usermaphacks);
+
+    return (usermaphack_t *)res;
+}
+
 #ifdef POLYMER
 static int16_t maphacklightcnt=0;
 static int16_t maphacklight[PR_MAXLIGHTS];

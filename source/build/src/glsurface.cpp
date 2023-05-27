@@ -23,6 +23,7 @@ static GLuint quadVertsID = 0;
 static GLuint shaderProgramID = 0;
 static GLint texSamplerLoc = -1;
 static GLint paletteSamplerLoc = -1;
+static GLint colorCorrectionLoc = -1;
 
 static GLuint compileShader(GLenum shaderType, const char* const source)
 {
@@ -122,7 +123,7 @@ bool glsurface_initialize(vec2_t bufferResolution)
              v_texCoord = i_texCoord;\n\
          }\n";
     const char* const FRAGMENT_SHADER_CODE =
-        "#version 110\n\
+        "#version 120\n\
          \n\
          //s_texture points to an indexed color texture\n\
          uniform sampler2D s_texture;\n\
@@ -133,18 +134,28 @@ bool glsurface_initialize(vec2_t bufferResolution)
          \n\
          const float c_paletteScale = 255.0/256.0;\n\
          const float c_paletteOffset = 0.5/256.0;\n\
+         uniform vec4 u_colorCorrection;\n\
+         const vec2 c_vec2_zero_one = vec2(0.0, 1.0);\n\
+         const vec4 c_vec4_luma_709 = vec4(0.2126, 0.7152, 0.0722, 0.0);\n\
          \n\
          void main()\n\
          {\n\
              vec4 color = texture2D(s_texture, v_texCoord.xy);\n\
-             color.r = c_paletteOffset + c_paletteScale*color.r;\n\
+             color.r = c_paletteScale * color.r + c_paletteOffset;\n\
              color.rgb = texture2D(s_palette, color.rg).rgb;\n\
              \n\
              // DEBUG \n\
              //color = texture2D(s_palette, v_texCoord.xy);\n\
              //color = texture2D(s_texture, v_texCoord.xy);\n\
              \n\
-             gl_FragColor = color;\n\
+             vec4 v_cc = vec4(u_colorCorrection.x - 1.0, 0.5 * -(u_colorCorrection.y - 1.0), -(u_colorCorrection.z - 1.0), 1.0);\n\
+             gl_FragColor = mat4(c_vec2_zero_one.yxxx, c_vec2_zero_one.xyxx, c_vec2_zero_one.xxyx, v_cc.xxxw)\n\
+                          * mat4(u_colorCorrection.ywww, u_colorCorrection.wyww, u_colorCorrection.wwyw, v_cc.yyyw)\n\
+                          * mat4((c_vec4_luma_709.xxxw * v_cc.z) + u_colorCorrection.zwww,\n\
+                                 (c_vec4_luma_709.yyyw * v_cc.z) + u_colorCorrection.wzww,\n\
+                                 (c_vec4_luma_709.zzzw * v_cc.z) + u_colorCorrection.wwzw,\n\
+                                 c_vec2_zero_one.xxxy)\n\
+                          * color;\n\
          }\n";
 
     if (!glIsProgram(shaderProgramID))
@@ -167,9 +178,11 @@ bool glsurface_initialize(vec2_t bufferResolution)
 
     texSamplerLoc = glGetUniformLocation(shaderProgramID, "s_texture");
     paletteSamplerLoc = glGetUniformLocation(shaderProgramID, "s_palette");
+    colorCorrectionLoc = glGetUniformLocation(shaderProgramID, "u_colorCorrection");
 
     glUniform1i(texSamplerLoc, 0);
     glUniform1i(paletteSamplerLoc, 1);
+    glUniform4f(colorCorrectionLoc, g_glColorCorrection.x, g_glColorCorrection.y, g_glColorCorrection.z, g_glColorCorrection.w);
 
     return true;
 }
@@ -238,6 +251,9 @@ void glsurface_blitBuffer()
 {
     if (!buffer)
         return;
+
+    if (colorCorrectionLoc != -1)
+        glUniform4f(colorCorrectionLoc, g_glColorCorrection.x, g_glColorCorrection.y, g_glColorCorrection.z, g_glColorCorrection.w);
 
     buildgl_activeTexture(GL_TEXTURE0);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bufferRes.x, bufferRes.y, GL_RED, GL_UNSIGNED_BYTE, (void*) buffer);

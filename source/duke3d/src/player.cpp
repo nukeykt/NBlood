@@ -2986,7 +2986,7 @@ enddisplayweapon:;
 
 int32_t g_myAimMode, g_myAimStat, g_oldAimStat;
 int32_t mouseyaxismode = -1;
-double g_lastInputTicks;
+uint64_t g_lastInputTicks;
 
 enum inputlock_t
 {
@@ -3034,15 +3034,15 @@ void P_UpdateAngles(int const playerNum, input_t &input)
         thisPlayer.input = pInput;
     }
 
-    auto const currentHiTicks    = timerGetFractionalTicks();
-    double     elapsedInputTicks = currentHiTicks - thisPlayer.lastViewUpdate;
+    auto const currentNanoTicks  = timerGetNanoTicks();
+    auto       elapsedInputTicks = currentNanoTicks - thisPlayer.lastViewUpdate;
 
     if (!thisPlayer.lastViewUpdate)
         elapsedInputTicks = 0;
 
-    thisPlayer.lastViewUpdate = currentHiTicks;
+    thisPlayer.lastViewUpdate = currentNanoTicks;
 
-    auto scaleToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
+    auto scaleToInterval = [=](double x) { return x * REALGAMETICSPERSEC / ((double)timerGetNanoTickRate() / min<double>(elapsedInputTicks, timerGetNanoTickRate())); };
 
     int const movementLocked = P_CheckLockedMovement(playerNum);
 
@@ -3090,13 +3090,18 @@ void P_UpdateAngles(int const playerNum, input_t &input)
 
         if (currentSector >= 0)
         {
-            int const slopeZ = yax_getflorzofslope(pPlayer->cursectnum, adjustedPosition);
-            if ((pPlayer->cursectnum == currentSector) || (klabs(yax_getflorzofslope(currentSector, adjustedPosition) - slopeZ) <= ZOFFSET6))
-                pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(mulscale16(pPlayer->truefz - slopeZ, 160))));
+            int const slopeZ = yax_getflorzofslope(currentSector, adjustedPosition);
+            int const floorZ = yax_getflorzofslope(pPlayer->cursectnum, pPlayer->pos.xy);
+
+            if ((pPlayer->cursectnum == currentSector) || (klabs(floorZ - slopeZ) <= ZOFFSET6))
+            {
+                pPlayer->q16horizoff = fix16_from_float(fix16_to_float(pPlayer->q16horizoff) + scaleToInterval((floorZ - slopeZ) * 160 * (1.f/65536.f)));
+                LOG_F(INFO, "%g", fix16_to_float(pPlayer->q16horizoff));
+            }
         }
     }
 
-    // view centering only works if there's no input on the right stick (looking/aiming) and the player is moving forward/backward, not strafing
+    // view centering is only used if there's no input on the right stick (looking/aiming) and the player is moving forward/backward, not strafing
     if (pPlayer->aim_mode&AM_CENTERING && !input.q16avel && !input.q16horz && input.fvel)
     {
         if (pPlayer->q16horiz >= F16(99) && pPlayer->q16horiz <= F16(100))
@@ -3124,12 +3129,16 @@ void P_UpdateAngles(int const playerNum, input_t &input)
                 pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, scaled);
         }
     }
-    else if (pPlayer->q16horizoff > F16(1))
-        pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((pPlayer->q16horizoff >> 3) + fix16_one))));
-    else if (pPlayer->q16horizoff < F16(-1))
-        pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float((-pPlayer->q16horizoff >> 3) + fix16_one))));
-    else if (pPlayer->q16horizoff >= F16(-1) && pPlayer->q16horizoff <= F16(1))
-        pPlayer->q16horizoff = 0;
+    else if (pPlayer->q16horizoff > F16(0))
+    {        
+        pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float(fix16_div(pPlayer->q16horizoff, F16(8))))));
+        pPlayer->q16horizoff = fix16_max(pPlayer->q16horizoff, 0);
+    }
+    else if (pPlayer->q16horizoff < F16(0))
+    {
+        pPlayer->q16horizoff = fix16_sadd(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(-fix16_to_float(fix16_div(pPlayer->q16horizoff, F16(8))))));
+        pPlayer->q16horizoff = fix16_min(pPlayer->q16horizoff, 0);
+    }
 
     if (thisPlayer.horizSkew)
         pPlayer->q16horiz = fix16_sadd(pPlayer->q16horiz, fix16_from_float(scaleToInterval(thisPlayer.horizSkew)));
@@ -3228,15 +3237,15 @@ void P_GetInput(int const playerNum)
 
     input_t input {};
 
-    auto const currentHiTicks    = timerGetFractionalTicks();
-    double     elapsedInputTicks = currentHiTicks - g_lastInputTicks;
+    auto const currentNanoTicks  = timerGetNanoTicks();
+    auto       elapsedInputTicks = currentNanoTicks - g_lastInputTicks;
 
     if (!g_lastInputTicks)
         elapsedInputTicks = 0;
 
-    g_lastInputTicks = currentHiTicks;
+    g_lastInputTicks = currentNanoTicks;
 
-    auto scaleToInterval = [=](double x) { return x * REALGAMETICSPERSEC / (1000.0 / min(elapsedInputTicks, 1000.0)); };
+    auto scaleToInterval = [=](double x) { return x * REALGAMETICSPERSEC / ((double)timerGetNanoTickRate() / min<double>(elapsedInputTicks, timerGetNanoTickRate())); };
 
     if (BUTTON(gamefunc_Strafe))
     {
@@ -4405,7 +4414,7 @@ static void P_ProcessWeapon(int playerNum)
                         break;
 
                     case KNEE_WEAPON:
-                        if (pPlayer->quick_kick == 0)
+                        if (dukeAllowQuickKick() || pPlayer->quick_kick == 0)
                         {
                             (*weaponFrame) = 1;
                             if (PWEAPON(playerNum, pPlayer->curr_weapon, InitialSound) > 0)
@@ -4994,7 +5003,7 @@ void P_ProcessInput(int playerNum)
     // sectorLotag can be set to 0 later on, but the same block sets spritebridge to 1
     int sectorLotag       = sector[pPlayer->cursectnum].lotag;
     int getZRangeClipDist = pPlayer->clipdist - GETZRANGECLIPDISTOFFSET;
-    int getZRangeOffset   = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && sectorLotag != ST_2_UNDERWATER && (FURY || (pPlayer->on_ground && !pPlayer->jumping_toggle)))
+    int getZRangeOffset   = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && sectorLotag != ST_2_UNDERWATER && ((pPlayer->on_ground && !pPlayer->jumping_toggle)))
                             || (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1)))
                             ? pPlayer->autostep_sbw
                             : pPlayer->autostep;
@@ -5402,12 +5411,13 @@ void P_ProcessInput(int playerNum)
                 //Smooth on the ground
                 int Zdiff = ((floorZ - floorZOffset) - pPlayer->pos.z) >> 1;
 
-                if (klabs(Zdiff) < 256)
+                // why does this even exist?
+                if (klabs(Zdiff) < pPlayer->floorzcutoff)
                     Zdiff = 0;
                 else if (!playerShrunk)
                     pPlayer->pos.z += Zdiff;
 
-                pPlayer->vel.z -= 768;
+                pPlayer->vel.z -= pPlayer->floorzrebound;
 
                 if (pPlayer->vel.z < 0)
                     pPlayer->vel.z = 0;

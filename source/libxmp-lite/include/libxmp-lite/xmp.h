@@ -1,15 +1,21 @@
 #ifndef XMP_H
 #define XMP_H
 
+#if defined(EMSCRIPTEN)
+# include <emscripten.h>
+#endif
+
+#include "compat.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define XMP_VERSION "4.5.0"
-#define XMP_VERCODE 0x040500
+#define XMP_VERSION "4.5.1"
+#define XMP_VERCODE 0x040501
 #define XMP_VER_MAJOR 4
 #define XMP_VER_MINOR 5
-#define XMP_VER_RELEASE 0
+#define XMP_VER_RELEASE 1
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 # if defined(BUILDING_STATIC)
@@ -26,7 +32,6 @@ extern "C" {
 #elif defined(__SUNPRO_C) && defined(XMP_LDSCOPE_GLOBAL)
 # define LIBXMP_EXPORT __global
 #elif defined(EMSCRIPTEN)
-# include <emscripten.h>
 # define LIBXMP_EXPORT EMSCRIPTEN_KEEPALIVE
 # define LIBXMP_EXPORT_VAR
 #else

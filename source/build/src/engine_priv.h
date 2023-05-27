@@ -11,6 +11,8 @@
 #ifndef ENGINE_PRIV_H
 #define ENGINE_PRIV_H
 
+#include "build.h"
+
 #define MAXPERMS 512
 #define MAXARTFILES_BASE 200
 #define MAXARTFILES_TOTAL 220
@@ -33,9 +35,11 @@ extern "C" {
 }
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+#if !defined __cplusplus
+# error This header can only be used as C++.
 #endif
+
+extern "C" {
 
 extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[4096+256], ATTRIBUTE((used)) sqrtable_old[2048];
 
@@ -350,9 +354,7 @@ static FORCE_INLINE void set_globalpos(int32_t const x, int32_t const y, int32_t
     globalposz = z, fglobalposz = (float)z;
 }
 
-#ifdef __cplusplus
-}
-#endif
+}  // extern "C"
 
 template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tileptr, int const obj)
 {
@@ -365,26 +367,51 @@ template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tilept
         tile = rottile[tile].newtile;
 }
 
+struct wallsprite_dims
+{
+    int32_t dax, day;  // {sin,-cos}(angle) * xrepeat
+    int32_t tilesizx;  // tilesiz[].x;
+    int32_t xoff;      // (tile + sprite) xoffset
+};
+
+static inline wallsprite_dims get_wallspr_dims(uspriteptr_t spr)
+{
+    const int32_t tilenum = spr->picnum, ang = spr->ang;
+    const int32_t xrepeat = spr->xrepeat;
+    int32_t xoff = picanm[tilenum].xofs + spr->xoffset;
+
+    if (spr->cstat&4)
+        xoff = -xoff;
+
+    int32_t const dax = sintable[ang&2047]*xrepeat;
+    int32_t const day = sintable[(ang+1536)&2047]*xrepeat;
+
+    return {dax, day, tilesiz[tilenum].x, xoff};
+}
+
+static inline vec2_t get_wallspr_center(void const *const ptr)
+{
+    auto const *spr = (uspriteptr_t)ptr;
+    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL);
+
+    auto const    dims = get_wallspr_dims(spr);
+    int32_t const k    = dims.xoff;
+
+    return { spr->x - mulscale16(dims.dax, k), spr->y - mulscale16(dims.day, k) };
+}
+
 // x1, y1: in/out
 // rest x/y: out
 static inline void get_wallspr_points(void const * const ptr, int32_t *x1, int32_t *x2, int32_t *y1, int32_t *y2)
 {
     //These lines get the 2 points of the rotated sprite
     //Given: (x1, y1) starts out as the center point
-    auto spr = (uspriteptr_t)ptr;
-    const int32_t tilenum=spr->picnum, ang=spr->ang;
-    const int32_t xrepeat = spr->xrepeat;
-    int32_t xoff = picanm[tilenum].xofs + spr->xoffset;
-    int32_t k, l, dax, day;
+    auto const dims = get_wallspr_dims((uspriteptr_t)ptr);
 
-    if (spr->cstat&4)
-        xoff = -xoff;
-
-    dax = sintable[ang&2047]*xrepeat;
-    day = sintable[(ang+1536)&2047]*xrepeat;
-
-    l = tilesiz[tilenum].x;
-    k = (l>>1)+xoff;
+    int32_t const dax = dims.dax;
+    int32_t const day = dims.day;
+    int32_t const l = dims.tilesizx;
+    int32_t const k = (l>>1) + dims.xoff;
 
     *x1 -= mulscale16(dax,k);
     *x2 = *x1 + mulscale16(dax,l);
@@ -393,27 +420,26 @@ static inline void get_wallspr_points(void const * const ptr, int32_t *x1, int32
     *y2 = *y1 + mulscale16(day,l);
 }
 
-// x1, y1: in/out
-// rest x/y: out
-static inline void get_floorspr_points(void const * const ptr, int32_t px, int32_t py,
-                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
-                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
-                                int32_t const heinum)
+struct floorsprite_dims
 {
-    auto spr = (uspriteptr_t)ptr;
+    int32_t cosang, sinang;
+    vec2_t span, repeat, adjofs;
+};
+
+static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, bool sloped)
+{
     const int32_t tilenum = spr->picnum;
     const int32_t cosang = sintable[(spr->ang+512)&2047];
     const int32_t sinang = sintable[spr->ang&2047];
 
-    vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
+    vec2_t const span   = { tilesiz[tilenum].x, tilesiz[tilenum].y };
     vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
 
     vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
 
-    int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
-
-    if (heinum == 0)
+    if (!sloped)
     {
+        // For sloped sprites, '[xy]offset' encode the slope.
         adjofs.x += spr->xoffset;
         adjofs.y += spr->yoffset;
     }
@@ -423,6 +449,37 @@ static inline void get_floorspr_points(void const * const ptr, int32_t px, int32
 
     if (spr->cstat & 8)
         adjofs.y = -adjofs.y;
+
+    return {cosang, sinang, span, repeat, adjofs};
+}
+
+static inline vec2_t get_floorspr_center(void const *const ptr, bool sloped)
+{
+    auto const *spr = (uspriteptr_t)ptr;
+    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR);
+
+    auto const    dims   = get_floorspr_dims(spr, sloped);
+    int32_t const cosang = dims.cosang, sinang = dims.sinang;
+    vec2_t const  center = dims.adjofs * dims.repeat;
+
+    int32_t const dx = dmulscale16(sinang, center.x, cosang, center.y);
+    int32_t const dy = dmulscale16(sinang, center.y, -cosang, center.x);
+
+    return { spr->x + dx, spr->y + dy };
+}
+
+// x1, y1: in/out
+// rest x/y: out
+static inline void get_floorspr_points(void const * const ptr, int32_t px, int32_t py,
+                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
+                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
+                                int32_t const heinum)
+{
+    auto const    dims   = get_floorspr_dims((uspriteptr_t)ptr, heinum != 0);
+    int32_t const cosang = dims.cosang, sinang = dims.sinang;
+    vec2_t const  span = dims.span, repeat = dims.repeat, adjofs = dims.adjofs;
+
+    int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
 
     vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x, ((span.y >> 1) + adjofs.y) * repeat.y };
     vec2_t const rspan  = { span.x * repeat.x, span.y * repeat.y };

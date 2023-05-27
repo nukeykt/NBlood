@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <limits.h>
 #include "common.h"
 #include "virtual.h"
 #include "mixer.h"
@@ -102,8 +101,8 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 
 	p->virt.maxvoc = libxmp_mixer_numvoices(ctx, num);
 
-	p->virt.voice_array = (struct mixer_voice *)calloc(p->virt.maxvoc,
-				sizeof(struct mixer_voice));
+	p->virt.voice_array = (struct mixer_voice *) Xcalloc(p->virt.maxvoc,
+						sizeof(struct mixer_voice));
 	if (p->virt.voice_array == NULL)
 		goto err;
 
@@ -116,7 +115,7 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 	/* Initialize Paula simulator */
 	if (IS_AMIGA_MOD()) {
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			p->virt.voice_array[i].paula = calloc(1, sizeof (struct paula_state));
+			p->virt.voice_array[i].paula = (struct paula_state *) Xcalloc(1, sizeof(struct paula_state));
 			if (p->virt.voice_array[i].paula == NULL) {
 				goto err2;
 			}
@@ -125,8 +124,8 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 	}
 #endif
 
-	p->virt.virt_channel = (struct virt_channel *)malloc(p->virt.virt_channels *
-				sizeof(struct virt_channel));
+	p->virt.virt_channel = (struct virt_channel *) Xmalloc(p->virt.virt_channels *
+							sizeof(struct virt_channel));
 	if (p->virt.virt_channel == NULL)
 		goto err2;
 
@@ -143,11 +142,11 @@ int libxmp_virt_on(struct context_data *ctx, int num)
 #ifdef LIBXMP_PAULA_SIMULATOR
 	if (IS_AMIGA_MOD()) {
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			free(p->virt.voice_array[i].paula);
+			Xfree(p->virt.voice_array[i].paula);
 		}
 	}
 #endif
-	free(p->virt.voice_array);
+	Xfree(p->virt.voice_array);
 	p->virt.voice_array = NULL;
       err:
 	return -1;
@@ -165,7 +164,7 @@ void libxmp_virt_off(struct context_data *ctx)
 	/* Free Paula simulator state */
 	if (IS_AMIGA_MOD()) {
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			free(p->virt.voice_array[i].paula);
+			Xfree(p->virt.voice_array[i].paula);
 		}
 	}
 #endif
@@ -174,8 +173,8 @@ void libxmp_virt_off(struct context_data *ctx)
 	p->virt.virt_channels = 0;
 	p->virt.num_tracks = 0;
 
-	free(p->virt.voice_array);
-	free(p->virt.virt_channel);
+	Xfree(p->virt.voice_array);
+	Xfree(p->virt.virt_channel);
 	p->virt.voice_array = NULL;
 	p->virt.virt_channel = NULL;
 }
@@ -190,7 +189,7 @@ void libxmp_virt_reset(struct context_data *ctx)
 	}
 
 	/* CID 129203 (#1 of 1): Useless call (USELESS_CALL)
-	 * Call is only useful for its return value, which is ignored. 
+	 * Call is only useful for its return value, which is ignored.
 	 *
 	 * libxmp_mixer_numvoices(ctx, p->virt.maxvoc);
 	 */
@@ -248,7 +247,7 @@ static int alloc_voice(struct context_data *ctx, int chn)
 	struct player_data *p = &ctx->p;
 	int i;
 
-	/* Find free voice */
+	/* Find Xfree voice */
 	for (i = 0; i < p->virt.maxvoc; i++) {
 		if (p->virt.voice_array[i].chn == FREE)
 			break;
@@ -353,6 +352,18 @@ void libxmp_virt_release(struct context_data *ctx, int chn, int rel)
 	libxmp_mixer_release(ctx, voc, rel);
 }
 
+void libxmp_virt_reverse(struct context_data *ctx, int chn, int rev)
+{
+	struct player_data *p = &ctx->p;
+	int voc;
+
+	if ((voc = map_virt_channel(p, chn)) < 0) {
+		return;
+	}
+
+	libxmp_mixer_reverse(ctx, voc, rev);
+}
+
 void libxmp_virt_setpan(struct context_data *ctx, int chn, int pan)
 {
 	struct player_data *p = &ctx->p;
@@ -419,7 +430,12 @@ void libxmp_virt_setsmp(struct context_data *ctx, int chn, int smp)
 void libxmp_virt_setnna(struct context_data *ctx, int chn, int nna)
 {
 	struct player_data *p = &ctx->p;
+	struct module_data *m = &ctx->m;
 	int voc;
+
+	if (!HAS_QUIRK(QUIRK_VIRTUAL)) {
+		return;
+	}
 
 	if ((voc = map_virt_channel(p, chn)) < 0) {
 		return;
@@ -429,7 +445,7 @@ void libxmp_virt_setnna(struct context_data *ctx, int chn, int nna)
 }
 
 static void check_dct(struct context_data *ctx, int i, int chn, int ins,
-			int smp, int note, int nna, int dct, int dca)
+			int smp, int key, int nna, int dct, int dca)
 {
 	struct player_data *p = &ctx->p;
 	struct mixer_voice *vi = &p->virt.voice_array[i];
@@ -440,15 +456,15 @@ static void check_dct(struct context_data *ctx, int i, int chn, int ins,
 	if (vi->root == chn && vi->ins == ins) {
 
 		if (nna == XMP_INST_NNA_CUT) {
-		    libxmp_virt_resetvoice(ctx, i, 1);
-		    return;
+			libxmp_virt_resetvoice(ctx, i, 1);
+			return;
 		}
 
 		vi->act = nna;
 
 		if ((dct == XMP_INST_DCT_INST) ||
 		    (dct == XMP_INST_DCT_SMP && vi->smp == smp) ||
-		    (dct == XMP_INST_DCT_NOTE && vi->note == note)) {
+		    (dct == XMP_INST_DCT_NOTE && vi->key == key)) {
 
 			if (nna == XMP_INST_NNA_OFF && dca == XMP_INST_DCA_FADE) {
 				vi->act = VIRT_ACTION_OFF;
@@ -479,7 +495,7 @@ void libxmp_virt_setnote(struct context_data *ctx, int chn, int note)
 }
 
 int libxmp_virt_setpatch(struct context_data *ctx, int chn, int ins, int smp,
-		    			int note, int nna, int dct, int dca)
+			 int note, int key, int nna, int dct, int dca)
 {
 	struct player_data *p = &ctx->p;
 	int voc, vfree;
@@ -497,7 +513,7 @@ int libxmp_virt_setpatch(struct context_data *ctx, int chn, int ins, int smp,
 		int i;
 
 		for (i = 0; i < p->virt.maxvoc; i++) {
-			check_dct(ctx, i, chn, ins, smp, note, nna, dct, dca);
+			check_dct(ctx, i, chn, ins, smp, key, nna, dct, dca);
 		}
 	}
 #endif
@@ -512,7 +528,7 @@ int libxmp_virt_setpatch(struct context_data *ctx, int chn, int ins, int smp,
 				return -1;
 			}
 
-			for (chn = p->virt.num_tracks;
+			for (chn = p->virt.num_tracks; chn < p->virt.virt_channels &&
 			     p->virt.virt_channel[chn++].map > FREE;) ;
 
 			p->virt.voice_array[voc].chn = --chn;
@@ -535,6 +551,7 @@ int libxmp_virt_setpatch(struct context_data *ctx, int chn, int ins, int smp,
 	libxmp_mixer_setnote(ctx, voc, note);
 	p->virt.voice_array[voc].ins = ins;
 	p->virt.voice_array[voc].act = nna;
+	p->virt.voice_array[voc].key = key;
 
 	return chn;
 }
