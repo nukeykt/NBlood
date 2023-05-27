@@ -81,7 +81,6 @@ CDUDC,
 CSPR,
 };
 
-#pragma pack(push, 1)
 struct CHECKFUNC_INFO
 {
     char (*pFunc)( void );              // function to call the condition
@@ -104,7 +103,6 @@ struct TRACKING_CONDITION
     unsigned int id             : 16;   // x-sprite index of condition
     OBJECT_LIST* objects;               // a dynamic list of objects it contains
 };
-#pragma pack(pop)
 
 static const char* gErrors[] =
 {

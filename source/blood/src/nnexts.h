@@ -188,12 +188,6 @@ struct SPRITEMASS
     unsigned int fraction   : 16;
 };
 
-struct QAVSCENE { // this one stores qavs anims that can be played by trigger
-    short index = -1;  // index of sprite which triggered qav scene
-    QAV* qavResrc = NULL;
-    short dummy = -1;
-};
-
 struct EXPLOSION_EXTRA
 {
     unsigned int seq : 5;
@@ -227,10 +221,6 @@ struct DUDEINFO_EXTRA {
     
 };
 
-struct TRPLAYERCTRL { // this one for controlling the player using triggers (movement speed, jumps and other stuff)
-    QAVSCENE qavScene;
-};
-
 struct PATROL_FOUND_SOUNDS {
 
     int snd;
@@ -252,13 +242,23 @@ struct OBJECT_STATUS1
 #endif
 };
 
+#pragma pack(pop)
+
+struct QAVSCENE { // this one stores qavs anims that can be played by trigger
+    QAV* qavResrc = NULL;
+    short index = -1;  // index of sprite which triggered qav scene
+    short dummy = -1;
+};
+
+struct TRPLAYERCTRL { // this one for controlling the player using triggers (movement speed, jumps and other stuff)
+    QAVSCENE qavScene;
+};
+
 struct EXTERNAL_FILES_LIST
 {
     const char* name;
     const char* ext;
 };
-
-#pragma pack(pop)
 
 
 inline bool rngok(int val, int rngA, int rngB) { return (val >= rngA && val < rngB); }

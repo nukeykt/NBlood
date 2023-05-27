@@ -30,15 +30,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnextstr.h"
 #include "nnexts.h"
 
-#pragma pack(push, 1)
 struct NAMED_TYPE
 {
     unsigned int id;
     const char* text;
 };
-#pragma pack(pop)
 
-NAMED_TYPE gBoolNames[] =
+static const NAMED_TYPE gBoolNames[] =
 {
     { false, "0" },
     { true, "1" },
@@ -189,7 +187,7 @@ int btoi(const char* str)
     if (str)
     {
         int i;
-        NAMED_TYPE* pEntry = gBoolNames;
+        const NAMED_TYPE* pEntry = gBoolNames;
         for (i = 0; i < LENGTH(gBoolNames); i++)
         {
             if (Bstrcasecmp(str, pEntry->text) == 0)

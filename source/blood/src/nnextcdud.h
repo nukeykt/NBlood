@@ -367,13 +367,11 @@ kCdudeStatusDying               = 0x20,
 kCdudeStatusRespawn             = 0x40,
 };
 
-#pragma pack(push, 1)
 struct PARAM
 {
     unsigned int id             : 8;
     const char* text;
 };
-#pragma pack(pop)
 
 class ARG_PICK_WEAPON
 {
