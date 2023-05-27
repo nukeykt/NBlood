@@ -96,7 +96,7 @@ char *osx_gethomedir(void)
     char *returnpath = NULL;
 
     if (Cpath)
-        returnpath = Bstrdup(Cpath);
+        returnpath = Xstrdup(Cpath);
 
     [path release];
 
@@ -113,7 +113,7 @@ char *osx_getsupportdir(int32_t local)
         const char *Cpath = [[paths objectAtIndex:0] UTF8String];
 
         if (Cpath)
-            returnpath = Bstrdup(Cpath);
+            returnpath = Xstrdup(Cpath);
     }
 
     [paths release];
@@ -153,7 +153,7 @@ char *osx_getappdir(void)
 
     s = CFStringGetCStringPtr(str, CFStringGetSystemEncoding());
     if (s) {
-        dir = strdup(s);
+        dir = Xstrdup(s);
     }
     CFRelease(str);
 
@@ -170,7 +170,7 @@ char *osx_getapplicationsdir(int32_t local)
         const char *Cpath = [[paths objectAtIndex:0] UTF8String];
 
         if (Cpath)
-            returnpath = Bstrdup(Cpath);
+            returnpath = Xstrdup(Cpath);
     }
 
     [paths release];
@@ -188,7 +188,7 @@ char *osx_getdocumentsdir(int32_t local)
         const char *Cpath = [[paths objectAtIndex:0] UTF8String];
 
         if (Cpath)
-            returnpath = Bstrdup(Cpath);
+            returnpath = Xstrdup(Cpath);
     }
 
     [paths release];
