@@ -355,7 +355,7 @@ static inline int32_t calc_smoothratio(ClockTicks const totalclk, ClockTicks con
 {
     int const   tfreq = (int)floorf(refreshfreq * 120 / timerGetClockRate());
     int const   clk   = (totalclk - ototalclk).toScale16();
-    float const tics  = clk * tfreq * (1.f / (65536.f * 120));
+    float const tics  = ((1.f / 65536.f) * (1.f / 120.f)) * tfreq * clk;
     int const   ratio = tabledivide32_noinline((int)(65536 * tics * gameTicRate), tfreq);
 
     if ((unsigned)ratio > 66048)
