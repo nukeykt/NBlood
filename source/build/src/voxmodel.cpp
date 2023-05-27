@@ -72,11 +72,12 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
 
     // Correct for GL's RGB order; also apply gamma here:
     const coltype *const pic = (const coltype *)picbuf;
-    coltype *pic2 = (coltype *)Xmalloc(xsiz*ysiz*sizeof(coltype));
+    int32_t const cnt = xsiz * ysiz;
+    coltype *pic2 = (coltype *)Xmalloc(cnt * sizeof(coltype));
 
     if (!is8bit)
     {
-        for (int i=xsiz*ysiz-1; i>=0; i--)
+        for (int32_t i = 0; i < cnt; ++i)
         {
             coltype &tcol = pic2[i];
             tcol.b = cptr[pic[i].r];
@@ -92,7 +93,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
         if (palookup[dapal] == NULL)
             dapal = 0;
 
-        for (int i=xsiz*ysiz-1; i>=0; i--)
+        for (int32_t i = 0; i < cnt; ++i)
         {
             const int32_t ii = palookup[dapal][pic[i].a];
 
@@ -688,7 +689,7 @@ static void read_pal(buildvfs_kfd fil, int32_t pal[256])
     for (int i=0; i<256; i++)
     {
         char c[3];
-        kread(fil, c, 3);
+        kread(fil, c, sizeof(c));
 //#if B_BIG_ENDIAN != 0
         pal[i] = B_LITTLE32((c[0]<<18) + (c[1]<<10) + (c[2]<<2) + (i<<24));
 //#endif
@@ -721,23 +722,30 @@ static int32_t loadvox(const char *filnam)
 
     char *const tbuf = (char *)Xmalloc(voxsiz.z*sizeof(uint8_t));
 
-    klseek(fil, 12, SEEK_SET);
+    klseek(fil, sizeof(vec3_t), SEEK_SET);
     for (int x=0; x<voxsiz.x; x++)
-        for (int y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
             kread(fil, tbuf, voxsiz.z);
 
-            for (int z=voxsiz.z-1; z>=0; z--)
+            for (int32_t z = 0; z < voxsiz.z; ++z)
                 if (tbuf[z] != 255)
                 {
                     const int32_t i = j+z;
                     vbit[i>>5] |= (1<<SHIFTMOD32(i));
                 }
-        }
 
-    klseek(fil, 12, SEEK_SET);
+            j += voxsiz.z;
+        }
+    }
+
+    klseek(fil, sizeof(vec3_t), SEEK_SET);
     for (int x=0; x<voxsiz.x; x++)
-        for (int y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
             kread(fil, tbuf, voxsiz.z);
 
@@ -762,7 +770,10 @@ static int32_t loadvox(const char *filnam)
                     continue;
                 }
             }
+
+            j += voxsiz.z;
         }
+    }
 
     Xfree(tbuf);
     kclose(fil);
@@ -772,32 +783,37 @@ static int32_t loadvox(const char *filnam)
 
 static int32_t loadkvx(const char *filnam)
 {
-    int32_t i, mip1leng;
-
     const buildvfs_kfd fil = kopen4load(filnam, 0);
     if (fil == buildvfs_kfd_invalid)
         return -1;
 
-    kread(fil, &mip1leng, 4); mip1leng = B_LITTLE32(mip1leng);
+    int32_t mip1leng;
+    kread(fil, &mip1leng, sizeof(int32_t));
     kread(fil, &voxsiz, sizeof(vec3_t));
 #if B_BIG_ENDIAN != 0
+    mip1leng = B_LITTLE32(mip1leng);
     voxsiz.x = B_LITTLE32(voxsiz.x);
     voxsiz.y = B_LITTLE32(voxsiz.y);
     voxsiz.z = B_LITTLE32(voxsiz.z);
 #endif
-    kread(fil, &i, 4); voxpiv.x = (float)B_LITTLE32(i)*(1.f/256.f);
-    kread(fil, &i, 4); voxpiv.y = (float)B_LITTLE32(i)*(1.f/256.f);
-    kread(fil, &i, 4); voxpiv.z = (float)B_LITTLE32(i)*(1.f/256.f);
+
+    vec3_t v;
+    kread(fil, &v, sizeof(vec3_t));
+    voxpiv.x = (float)B_LITTLE32(v.x)*(1.f/256.f);
+    voxpiv.y = (float)B_LITTLE32(v.y)*(1.f/256.f);
+    voxpiv.z = (float)B_LITTLE32(v.z)*(1.f/256.f);
     klseek(fil, (voxsiz.x+1)<<2, SEEK_CUR);
 
     const int32_t ysizp1 = voxsiz.y+1;
-    i = voxsiz.x*ysizp1*sizeof(int16_t);
+    int32_t const xyoffscnt = voxsiz.x * ysizp1;
+    int32_t const xyoffssiz = xyoffscnt * sizeof(uint16_t);
 
-    uint16_t *xyoffs = (uint16_t *)Xmalloc(i);
-    kread(fil, xyoffs, i);
-
-    for (i=i/sizeof(int16_t)-1; i>=0; i--)
+    uint16_t *xyoffs = (uint16_t *)Xmalloc(xyoffssiz);
+    kread(fil, xyoffs, xyoffssiz);
+#if B_BIG_ENDIAN != 0
+    for (int32_t i = 0; i < xyoffscnt; ++i)
         xyoffs[i] = B_LITTLE16(xyoffs[i]);
+#endif
 
     int32_t pal[256];
     read_pal(fil, pal);
@@ -811,23 +827,23 @@ static int32_t loadkvx(const char *filnam)
     vcolhashsizm1--; //approx to numvoxs!
     alloc_vcolhashead();
 
-    klseek(fil, 28+((voxsiz.x+1)<<2)+((ysizp1*voxsiz.x)<<1), SEEK_SET);
+    klseek(fil, (7 * sizeof(int32_t)) + ((voxsiz.x+1)<<2) + ((ysizp1*voxsiz.x)<<1), SEEK_SET);
 
-    i = kfilelength(fil)-ktell(fil);
-    char *const tbuf = (char *)Xmalloc(i);
+    int32_t const tbufsiz = kfilelength(fil)-ktell(fil);
+    char *const tbuf = (char *)Xmalloc(tbufsiz);
 
-    kread(fil, tbuf, i);
+    kread(fil, tbuf, tbufsiz);
     kclose(fil);
 
     char *cptr = tbuf;
 
     for (int x=0; x<voxsiz.x; x++) //Set surface voxels to 1 else 0
-        for (int y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
-            i = xyoffs[x*ysizp1+y+1] - xyoffs[x*ysizp1+y];
-            if (!i)
-                continue;
-
+            int32_t const idx = x*ysizp1+y;
+            int32_t i = xyoffs[idx+1] - xyoffs[idx];
             int32_t z1 = 0;
 
             while (i)
@@ -847,7 +863,10 @@ static int32_t loadkvx(const char *filnam)
                 for (int z=z0; z<z1; z++)
                     putvox(x, y, z, pal[*cptr++]);
             }
+
+            j += voxsiz.z;
         }
+    }
 
     Xfree(tbuf);
     Xfree(xyoffs);
@@ -857,18 +876,17 @@ static int32_t loadkvx(const char *filnam)
 
 static int32_t loadkv6(const char *filnam)
 {
-    int32_t i;
-
     const buildvfs_kfd fil = kopen4load(filnam, 0);
     if (fil == buildvfs_kfd_invalid)
         return -1;
 
-    kread(fil, &i, 4);
-    if (B_LITTLE32(i) != 0x6c78764b)
+    int32_t magic;
+    kread(fil, &magic, sizeof(int32_t));
+    if (magic != B_LITTLE32(0x6c78764b)) // "Kvxl"
     {
         kclose(fil);
         return -1;
-    } //Kvxl
+    }
 
     kread(fil, &voxsiz, sizeof(vec3_t));
 #if B_BIG_ENDIAN != 0
@@ -876,21 +894,33 @@ static int32_t loadkv6(const char *filnam)
     voxsiz.y = B_LITTLE32(voxsiz.y);
     voxsiz.z = B_LITTLE32(voxsiz.z);
 #endif
-    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.x = *(float*)&i;
-    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.y = *(float*)&i;
-    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.z = *(float*)&i;
+
+    vec3_t v;
+    kread(fil, &v, sizeof(vec3_t));
+#if B_BIG_ENDIAN != 0
+    v.x = B_LITTLE32(v.x);
+    v.y = B_LITTLE32(v.y);
+    v.z = B_LITTLE32(v.z);
+#endif
+    EDUKE32_STATIC_ASSERT(sizeof(vec3_t) == sizeof(vec3f_t));
+    memcpy(&voxpiv, &v, sizeof(vec3_t));
 
     int32_t numvoxs;
-    kread(fil, &numvoxs, 4); numvoxs = B_LITTLE32(numvoxs);
+    kread(fil, &numvoxs, sizeof(int32_t));
+    numvoxs = B_LITTLE32(numvoxs);
 
-    uint16_t *const ylen = (uint16_t *)Xmalloc(voxsiz.x*voxsiz.y*sizeof(int16_t));
+    int32_t const ylencnt = voxsiz.x * voxsiz.y;
+    int32_t const ylensiz = ylencnt * sizeof(uint16_t);
+    uint16_t *const ylen = (uint16_t *)Xmalloc(ylensiz);
 
-    klseek(fil, 32+(numvoxs<<3)+(voxsiz.x<<2), SEEK_SET);
-    kread(fil, ylen, voxsiz.x*voxsiz.y*sizeof(int16_t));
-    for (i=voxsiz.x*voxsiz.y-1; i>=0; i--)
+    klseek(fil, (8 * sizeof(int32_t)) + (numvoxs<<3) + (voxsiz.x<<2), SEEK_SET);
+    kread(fil, ylen, ylensiz);
+#if B_BIG_ENDIAN != 0
+    for (int32_t i = 0; i < ylencnt; ++i)
         ylen[i] = B_LITTLE16(ylen[i]);
+#endif
 
-    klseek(fil, 32, SEEK_SET);
+    klseek(fil, 8 * sizeof(int32_t), SEEK_SET);
 
     alloc_vbit();
 
@@ -902,14 +932,16 @@ static int32_t loadkv6(const char *filnam)
     alloc_vcolhashead();
 
     for (int x=0; x<voxsiz.x; x++)
-        for (int y=0, j=x*yzsiz; y<voxsiz.y; y++, j+=voxsiz.z)
+    {
+        int32_t j = x * yzsiz;
+        for (int y=0; y<voxsiz.y; y++)
         {
             int32_t z1 = voxsiz.z;
 
-            for (i=ylen[x*voxsiz.y+y]; i>0; i--)
+            for (int32_t i = 0, i_end = ylen[x*voxsiz.y+y]; i < i_end; ++i)
             {
                 char c[8];
-                kread(fil, c, 8); //b,g,r,a,z_lo,z_hi,vis,dir
+                kread(fil, c, sizeof(c)); //b,g,r,a,z_lo,z_hi,vis,dir
 
                 const int32_t z0 = B_LITTLE16(B_UNBUF16(&c[4]));
 
@@ -921,7 +953,10 @@ static int32_t loadkv6(const char *filnam)
                 putvox(x, y, z0, B_LITTLE32(B_UNBUF32(&c[0]))&0xffffff);
                 z1 = z0+1;
             }
+
+            j += voxsiz.z;
         }
+    }
 
     Xfree(ylen);
     kclose(fil);
