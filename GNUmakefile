@@ -285,7 +285,7 @@ engine_excl := \
     startgtk.editor.cpp \
     startwin.editor.cpp \
     $(engine_editor_objs) \
-        
+
 ifeq (1,$(USE_OPENGL))
     engine_deps += glad
 else
@@ -297,14 +297,14 @@ else
         polymost.cpp \
         tilepacker.cpp \
         voxmodel.cpp \
-    
+
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
     ifeq ($(STARTUP_WINDOW),1)
         engine_editor_objs += startwin.editor.cpp
     endif
-else    
+else
     engine_excl += winbits.cpp
 endif
 
@@ -322,7 +322,7 @@ ifeq ($(RENDERTYPE),SDL)
     else
         engine_excl += gtkbits.cpp dynamicgtk.cpp
     endif
-    
+
     engine_excl += winlayer.cpp rawinput.cpp
 else
     engine_excl += sdlayer.cpp
@@ -385,9 +385,9 @@ audiolib_deps :=
 
 audiolib_excl := \
     music_external.cpp \
-    
+
 ifneq ($(PLATFORM),WINDOWS)
-    audiolib_excl += driver_directsound.cpp driver_winmm.cpp 
+    audiolib_excl += driver_directsound.cpp driver_winmm.cpp
 endif
 ifneq ($(SUBPLATFORM),LINUX)
     audiolib_excl += driver_alsa.cpp
@@ -618,7 +618,7 @@ duke3d_editor_objs := \
     common.cpp \
     grpscan.cpp \
     sounds_mapster32.cpp \
-    
+
 duke3d_excl := \
     in_android.cpp \
     m32structures.cpp \
@@ -627,7 +627,7 @@ duke3d_excl := \
     startwin.game.cpp \
     $(duke3d_common_editor_objs) \
     $(duke3d_editor_objs) \
-        
+
 duke3d_game_objs := $(call getfiltered,duke3d,*.cpp) \
     common.cpp \
     grpscan.cpp \
@@ -996,12 +996,12 @@ sw_excl := \
     startgtk.game.cpp \
     startwin.game.cpp \
     $(sw_editor_objs) \
-        
+
 sw_game_objs := $(call getfiltered,sw,*.cpp) \
     colormap.cpp \
     common.cpp \
     grpscan.cpp \
-    
+
 sw_game_rsrc_objs :=
 sw_editor_rsrc_objs :=
 sw_game_gen_objs :=

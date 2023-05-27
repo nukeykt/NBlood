@@ -3447,7 +3447,8 @@ static void nonpow2_thline(intptr_t bufplc, uint32_t bx, int32_t cntup16, uint32
 //
 static void ceilspritehline(int32_t x2, int32_t y)
 {
-    int32_t x1, v, bx, by;
+    int32_t x1, bx, by;
+    int64_t v;
 
     //x = x1 + (x2-x1)t + (y1-y2)u  ~  x = 160v
     //y = y1 + (y2-y1)t + (x2-x1)u  ~  y = (scrx-160)v
@@ -3455,13 +3456,13 @@ static void ceilspritehline(int32_t x2, int32_t y)
 
     x1 = lastx[y]; if (x2 < x1) return;
 
-    v = int32_t((globalzd*int64_t(horizlookup[y-globalhoriz+horizycent]))>>20);
-    bx = (uint32_t)mulscale14(globalx2*x1+globalx1,v) + globalxpanning;
-    by = (uint32_t)mulscale14(globaly2*x1+globaly1,v) + globalypanning;
-    asm1 = mulscale14(globalx2,v);
-    asm2 = mulscale14(globaly2,v);
+    v = (globalzd*int64_t(horizlookup[y-globalhoriz+horizycent]))>>20;
+    bx = (uint32_t)(((globalx2*x1+globalx1)*v)>>14) + globalxpanning;
+    by = (uint32_t)(((globaly2*x1+globaly1)*v)>>14) + globalypanning;
+    asm1 = int32_t((globalx2*v)>>14);
+    asm2 = int32_t((globaly2*v)>>14);
 
-    asm3 = FP_OFF(palookup[globalpal]) + getpalookupsh(mulscale28(klabs(v),globvis));
+    asm3 = FP_OFF(palookup[globalpal]) + getpalookupsh(int32_t((abs(v)*globvis)>>28));
 
     if (globalispow2)
     {
@@ -6172,7 +6173,7 @@ draw_as_face_sprite:
 
         //Clip edge 1
         int32_t npoints2 = 0;
-        int32_t zzsgn = rxi[0]+rzi[0], zsgn;
+        int64_t zzsgn = rxi[0]+rzi[0], zsgn;
         for (z=0; z<npoints; z++)
         {
             zz = z+1; if (zz == npoints) zz = 0;
@@ -6184,10 +6185,10 @@ draw_as_face_sprite:
             }
             if ((zsgn^zzsgn) < 0)
             {
-                int32_t t = divscale30(zsgn,zsgn-zzsgn);
-                rxi2[npoints2] = rxi[z] + mulscale30(t,rxi[zz]-rxi[z]);
-                ryi2[npoints2] = ryi[z] + mulscale30(t,ryi[zz]-ryi[z]);
-                rzi2[npoints2] = rzi[z] + mulscale30(t,rzi[zz]-rzi[z]);
+                int64_t t = divscale64(zsgn,zsgn-zzsgn, 30);
+                rxi2[npoints2] = rxi[z] + int32_t((t * (rxi[zz]-rxi[z])) >> 30);
+                ryi2[npoints2] = ryi[z] + int32_t((t * (ryi[zz]-ryi[z])) >> 30);
+                rzi2[npoints2] = rzi[z] + int32_t((t * (rzi[zz]-rzi[z])) >> 30);
                 npoints2++;
             }
         }
@@ -6207,10 +6208,10 @@ draw_as_face_sprite:
             }
             if ((zsgn^zzsgn) < 0)
             {
-                int32_t t = divscale30(zsgn,zsgn-zzsgn);
-                rxi[npoints] = rxi2[z] + mulscale30(t,rxi2[zz]-rxi2[z]);
-                ryi[npoints] = ryi2[z] + mulscale30(t,ryi2[zz]-ryi2[z]);
-                rzi[npoints] = rzi2[z] + mulscale30(t,rzi2[zz]-rzi2[z]);
+                int64_t t = divscale64(zsgn,zsgn-zzsgn, 30);
+                rxi[npoints] = rxi2[z] + int32_t((t * (rxi2[zz]-rxi2[z])) >> 30);
+                ryi[npoints] = ryi2[z] + int32_t((t * (ryi2[zz]-ryi2[z])) >> 30);
+                rzi[npoints] = rzi2[z] + int32_t((t * (rzi2[zz]-rzi2[z])) >> 30);
                 npoints++;
             }
         }
@@ -6218,11 +6219,11 @@ draw_as_face_sprite:
 
         //Clip edge 3
         npoints2 = 0;
-        zzsgn = ryi[0]*halfxdimen + (rzi[0]*(globalhoriz-0));
+        zzsgn = ryi[0]*int64_t(halfxdimen) + (rzi[0]*int64_t(globalhoriz-0));
         for (z=0; z<npoints; z++)
         {
             zz = z+1; if (zz == npoints) zz = 0;
-            zsgn = zzsgn; zzsgn = ryi[zz]*halfxdimen + (rzi[zz]*(globalhoriz-0));
+            zsgn = zzsgn; zzsgn = ryi[zz]*int64_t(halfxdimen) + (rzi[zz]*int64_t(globalhoriz-0));
             if (zsgn >= 0)
             {
                 rxi2[npoints2] = rxi[z];
@@ -6232,10 +6233,10 @@ draw_as_face_sprite:
             }
             if ((zsgn^zzsgn) < 0)
             {
-                int32_t t = divscale30(zsgn,zsgn-zzsgn);
-                rxi2[npoints2] = rxi[z] + mulscale30(t,rxi[zz]-rxi[z]);
-                ryi2[npoints2] = ryi[z] + mulscale30(t,ryi[zz]-ryi[z]);
-                rzi2[npoints2] = rzi[z] + mulscale30(t,rzi[zz]-rzi[z]);
+                int64_t t = divscale64(zsgn,zsgn-zzsgn, 30);
+                rxi2[npoints2] = rxi[z] + int32_t((t * (rxi[zz]-rxi[z])) >> 30);
+                ryi2[npoints2] = ryi[z] + int32_t((t * (ryi[zz]-ryi[z])) >> 30);
+                rzi2[npoints2] = rzi[z] + int32_t((t * (rzi[zz]-rzi[z])) >> 30);
                 npoints2++;
             }
         }
@@ -6243,11 +6244,11 @@ draw_as_face_sprite:
 
         //Clip edge 4
         npoints = 0;
-        zzsgn = ryi2[0]*halfxdimen + (rzi2[0]*(globalhoriz-ydimen));
+        zzsgn = ryi2[0]*int64_t(halfxdimen) + (rzi2[0]*int64_t(globalhoriz-ydimen));
         for (z=0; z<npoints2; z++)
         {
             zz = z+1; if (zz == npoints2) zz = 0;
-            zsgn = zzsgn; zzsgn = ryi2[zz]*halfxdimen + (rzi2[zz]*(globalhoriz-ydimen));
+            zsgn = zzsgn; zzsgn = ryi2[zz]*int64_t(halfxdimen) + (rzi2[zz]*int64_t(globalhoriz-ydimen));
             if (zsgn <= 0)
             {
                 rxi[npoints] = rxi2[z];
@@ -6257,7 +6258,7 @@ draw_as_face_sprite:
             }
             if ((zsgn^zzsgn) < 0)
             {
-                int32_t t = divscale30(zsgn,zsgn-zzsgn);
+                int64_t t = divscale64(zsgn,zsgn-zzsgn, 30);
                 rxi[npoints] = rxi2[z] + mulscale30(t,rxi2[zz]-rxi2[z]);
                 ryi[npoints] = ryi2[z] + mulscale30(t,ryi2[zz]-ryi2[z]);
                 rzi[npoints] = rzi2[z] + mulscale30(t,rzi2[zz]-rzi2[z]);

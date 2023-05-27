@@ -1537,8 +1537,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     vec2_t const v2 = { v1.x - mulscale16(sinang, rspan.x),
                                         v1.y + mulscale16(cosang, rspan.x) };
 
-                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                 mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    vec2_t v = { mulscale14(sintable[(spr->ang+1024+256+512)&2047], walldist),
+                                 mulscale14(sintable[(spr->ang+1024+256)&2047], walldist) };
                     
                     if (clipinsideboxline(cent.x, cent.y, v1.x, v1.y, v2.x, v2.y, rad) != 0)
                     {
@@ -2108,6 +2108,7 @@ restart_grand:
         {
             const int32_t cstat = sprite[j].cstat;
             int32_t daz, daz2;
+            int32_t clipz = 0, clipz2 = 0;
 
             if (cstat&dasprclipmask)
             {
@@ -2151,7 +2152,27 @@ restart_grand:
                     case CSTAT_SPRITE_ALIGNMENT_FLOOR:
                     case CSTAT_SPRITE_ALIGNMENT_SLOPE:
                     {
-                        daz = spriteGetZOfSlope(j, pos->xy); daz2 = daz;
+                        daz = daz2 = spriteGetZOfSlope(j, pos->xy);
+
+                        if ((cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLOPE)
+                        {
+                            vec2_t p[4];
+                            const int wd = walldist + 4;
+                            p[0] = p[1] = p[2] = p[3] = pos->xy;
+                            p[0].x += wd; p[0].y += wd;
+                            p[1].x += wd; p[1].y -= wd;
+                            p[2].x -= wd; p[2].y += wd;
+                            p[3].x -= wd; p[3].y -= wd;
+                            clipz = clipz2 = spriteGetZOfSlope(j, p[0]);
+                            for (bssize_t i = 1; i < 3; i++)
+                            {
+                                int32_t pz = spriteGetZOfSlope(j, p[i]);
+                                if (clipz < pz)
+                                    clipz = pz;
+                                if (clipz2 > pz)
+                                    clipz2 = pz;
+                            }
+                        }
 
                         if ((cstat&64) != 0 && (pos->z > daz) == ((cstat&8)==0))
                             continue;
@@ -2171,26 +2192,32 @@ restart_grand:
                     }
                 }
 
+                if ((cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_SLOPE)
+                {
+                    clipz = daz;
+                    clipz2 = daz2;
+                }
+
                 if (clipyou != 0)
                 {
-                    if ((pos->z > daz) && (daz > *ceilz
+                    if ((pos->z > daz) && (clipz > *ceilz
 #ifdef YAX_ENABLE
                                            || (daz == *ceilz && yax_getbunch(clipsectorlist[i], YAX_CEILING)>=0)
 #endif
                             ))
                     {
-                        *ceilz = daz;
+                        *ceilz = clipz;
                         *ceilhit = j+49152;
                     }
 
-                    if ((pos->z < daz2) && (daz2 < *florz
+                    if ((pos->z < daz2) && (clipz2 < *florz
 #ifdef YAX_ENABLE
                                             // can have a floor-sprite lying directly on the floor!
                                             || (daz2 == *florz && yax_getbunch(clipsectorlist[i], YAX_FLOOR)>=0)
 #endif
                             ))
                     {
-                        *florz = daz2;
+                        *florz = clipz2;
                         *florhit = j+49152;
                     }
                 }
