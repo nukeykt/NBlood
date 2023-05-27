@@ -609,6 +609,10 @@ ifeq (1,$(LLD))
     LF :=
 endif
 
+ifeq ($(PLATFORM),DARWIN)
+    LF :=
+endif
+
 ##### Debugging
 
 ifneq ($(RELEASE)$(FORCEDEBUG),10)
