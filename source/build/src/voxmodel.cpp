@@ -1123,7 +1123,10 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if (have_basepal_tint())
         hictinting_apply(pc, MAXPALOOKUPS - 1);
 
-    if (!shadowHack && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) != VF_NOTRANS)
+    int32_t const voxid = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_SLAB) == CSTAT_SPRITE_ALIGNMENT_SLAB
+                        ? tspr->picnum
+                        : tiletovox[tspr->picnum];
+    if (!shadowHack && (voxflags[voxid] & VF_NOTRANS) != VF_NOTRANS)
     {
         pc[3] = (tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) ? glblend[tspr->blend].def[!!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT_INVERT)].alpha : 1.0f;
         pc[3] *= 1.0f - spriteext[tspr->owner].alpha;
