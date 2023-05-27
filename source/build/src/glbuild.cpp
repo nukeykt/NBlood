@@ -184,6 +184,9 @@ void buildgl_resetSamplerObjects(void)
     glanisotropy    = clamp<int>(glanisotropy, 1, glinfo.maxanisotropy);
     gltexfiltermode = clamp(gltexfiltermode, 0, NUMGLFILTERMODES-1);
 
+    if (!glinfo.samplerobjects)
+        return;
+
     auto &f = glfiltermodes[gltexfiltermode];
 
     if (!glIsSampler(samplerObjectIDs[1]))
