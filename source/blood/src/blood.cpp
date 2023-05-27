@@ -1563,8 +1563,6 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
-    win_priorityclass = 0;
-
     G_ExtPreInit(argc, argv);
 
 #ifdef DEBUGGINGAIDS
