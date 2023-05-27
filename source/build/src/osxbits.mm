@@ -125,7 +125,7 @@ char *osx_getappdir(void)
 {
     CFBundleRef mainBundle;
     CFURLRef resUrl, fullUrl;
-	CFStringRef str;
+    CFStringRef str;
     const char *s;
     char *dir = NULL;
 
@@ -145,7 +145,7 @@ char *osx_getappdir(void)
         resUrl = fullUrl;
     }
 
-	str = CFURLCopyFileSystemPath(resUrl, kCFURLPOSIXPathStyle);
+    str = CFURLCopyFileSystemPath(resUrl, kCFURLPOSIXPathStyle);
     CFRelease(resUrl);
     if (!str) {
         return NULL;
