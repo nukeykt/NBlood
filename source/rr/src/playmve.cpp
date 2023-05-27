@@ -115,7 +115,7 @@ public:
     };
 
     AudioData audio;
-    mutex_t mutex;
+    mutex_t mutex{};
 
 private:
     struct DecodeMap
@@ -206,7 +206,6 @@ InterplayDecoder::InterplayDecoder()
     bIsPlaying = false;
     bAudioStarted = false;
 
-    mutex   = 0;
     nWidth  = 0;
     nHeight = 0;
     nFrame  = 0;

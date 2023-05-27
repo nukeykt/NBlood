@@ -586,7 +586,7 @@ int CONFIG_ReadSetup()
         }
     }
 
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", &maxrefreshfreq);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &gSetup.bpp);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenHeight", &gSetup.ydim);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenMode", &gSetup.fullscreen);
