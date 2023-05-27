@@ -210,6 +210,11 @@ static struct
 
 static StartupWinController *startwin = nil;
 
+bool startwin_isopen(void)
+{
+    return startwin != nil;
+}
+
 int startwin_open(void)
 {
     if (startwin != nil) return 1;
