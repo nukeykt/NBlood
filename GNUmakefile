@@ -429,7 +429,7 @@ kenbuild_editor := ekenbuild-editor
 kenbuild_game_deps := audiolib
 
 kenbuild_game_proper := EKenBuild
-kenbuild_editor_proper := EKenBuild Editor
+kenbuild_editor_proper := EKenBuild-Editor
 
 kenbuild_game_objs := \
     common.cpp \
