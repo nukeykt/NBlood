@@ -301,6 +301,9 @@ else
     ifeq ($(findstring x86_64,$(IMPLICIT_ARCH)),x86_64)
         BITS := 64
     endif
+    ifeq ($(findstring arm64,$(IMPLICIT_ARCH)),arm64)
+        BITS := 64
+    endif
 endif
 
 
@@ -511,14 +514,16 @@ else ifeq ($(PLATFORM),DARWIN)
     COMMONFLAGS += $(ARCH)
 
     ifneq ($(findstring x86_64,$(IMPLICIT_ARCH)),x86_64)
-        LINKERFLAGS += -read_only_relocs suppress
+        ifneq ($(findstring arm64,$(IMPLICIT_ARCH)),arm64)
+            LINKERFLAGS += -read_only_relocs suppress
+        endif
     endif
 
     COMPILERFLAGS += -DUNDERSCORES
     ASFORMAT := macho
     ASFLAGS += -DUNDERSCORES
 
-    ifeq ($(findstring x86_64,$(IMPLICIT_ARCH)),x86_64)
+    ifeq ($(BITS),64)
         ASFORMAT += 64
     endif
 else ifeq ($(PLATFORM),WII)
