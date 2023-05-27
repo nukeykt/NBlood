@@ -85,6 +85,7 @@ extern void buildgl_setDisabled(GLenum key);
 extern void buildgl_setEnabled(GLenum key);
 extern void buildgl_setPerspective(float fovy, float aspect, float zNear, float zFar);
 extern void buildgl_setViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+extern void buildgl_uLookAt(vec3f_t v_eye, vec3f_t v_center, vec3f_t v_up);
 extern void buildgl_useShaderProgram(uint32_t shaderID);
 
 extern void bind_2d_texture(GLuint texture, int filter);
