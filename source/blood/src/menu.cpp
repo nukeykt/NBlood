@@ -522,9 +522,9 @@ CGameMenuItemChain itemOptionsDisplayModeApply("APPLY CHANGES", 3, 66, 125, 180,
 void PreDrawDisplayColor(CGameMenuItem *);
 
 CGameMenuItemTitle itemOptionsDisplayColorTitle("COLOR CORRECTION", 1, 160, 20, -1);
-CGameMenuItemSliderFloat itemOptionsDisplayColorGamma("GAMMA:", 3, 66, 140, 180, &g_videoGamma, 0.3f, 4.f, 0.1f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
-CGameMenuItemSliderFloat itemOptionsDisplayColorContrast("CONTRAST:", 3, 66, 150, 180, &g_videoContrast, 0.1f, 2.7f, 0.05f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
-CGameMenuItemSliderFloat itemOptionsDisplayColorBrightness("BRIGHTNESS:", 3, 66, 160, 180, &g_videoBrightness, -0.8f, 0.8f, 0.05f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsDisplayColorGamma("GAMMA:", 3, 66, 140, 180, &g_videoGamma, MIN_GAMMA, MAX_GAMMA, 0.1f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsDisplayColorContrast("CONTRAST:", 3, 66, 150, 180, &g_videoContrast, MIN_CONTRAST, MAX_CONTRAST, 0.05f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
+CGameMenuItemSliderFloat itemOptionsDisplayColorSaturation("SATURATION:", 3, 66, 160, 180, &g_videoSaturation, MIN_SATURATION, MAX_SATURATION, 0.05f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
 CGameMenuItemSliderFloat itemOptionsDisplayColorVisibility("VISIBILITY:", 3, 66, 170, 180, &r_ambientlight, 0.125f, 4.f, 0.125f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
 CGameMenuItemChain itemOptionsDisplayColorReset("RESET TO DEFAULTS", 3, 66, 180, 180, 0, NULL, 0, ResetVideoColor, 0);
 
@@ -1318,13 +1318,13 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorTitle, false);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorGamma, true);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorContrast, false);
-    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorBrightness, false);
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorSaturation, false);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorVisibility, false);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorReset, false);
     menuOptionsDisplayColor.Add(&itemBloodQAV, false);
 
     itemOptionsDisplayColorContrast.pPreDrawCallback = PreDrawDisplayColor;
-    itemOptionsDisplayColorBrightness.pPreDrawCallback = PreDrawDisplayColor;
+    itemOptionsDisplayColorSaturation.pPreDrawCallback = PreDrawDisplayColor;
 
 #ifdef USE_OPENGL
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTitle, false);
@@ -1924,7 +1924,7 @@ void UpdateVideoColorMenu(CGameMenuItemSliderFloat *pItem)
     UNREFERENCED_PARAMETER(pItem);
     g_videoGamma = itemOptionsDisplayColorGamma.fValue;
     g_videoContrast = itemOptionsDisplayColorContrast.fValue;
-    g_videoBrightness = itemOptionsDisplayColorBrightness.fValue;
+    g_videoSaturation = itemOptionsDisplayColorSaturation.fValue;
     r_ambientlight = itemOptionsDisplayColorVisibility.fValue;
     r_ambientlightrecip = 1.f/r_ambientlight;
     gBrightness = GAMMA_CALC<<2;
@@ -1935,7 +1935,7 @@ void PreDrawDisplayColor(CGameMenuItem *pItem)
 {
     if (pItem == &itemOptionsDisplayColorContrast)
         pItem->bEnable = gammabrightness;
-    else if (pItem == &itemOptionsDisplayColorBrightness)
+    else if (pItem == &itemOptionsDisplayColorSaturation)
         pItem->bEnable = gammabrightness;
 }
 
@@ -1944,7 +1944,7 @@ void ResetVideoColor(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     g_videoGamma = DEFAULT_GAMMA;
     g_videoContrast = DEFAULT_CONTRAST;
-    g_videoBrightness = DEFAULT_BRIGHTNESS;
+    g_videoSaturation = DEFAULT_SATURATION;
     gBrightness = 0;
     r_ambientlight = r_ambientlightrecip = 1.f;
     videoSetPalette(gBrightness>>2, gLastPal, 0);

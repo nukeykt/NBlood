@@ -1262,30 +1262,35 @@ static MenuEntry_t *MEL_RENDERERSETUP_POLYMER [] = {
 #endif
 
 #ifdef EDUKE32_ANDROID_MENU
-static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, 1.f, 2.5f, 0.f, 39, 1 );
+static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, 1.f, MAX_GAMMA, 0.f, 39, DisplayTypeInteger );
 #else
-static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, 0.3f, 4.f, 0.f, 38, 1 );
+static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, MIN_GAMMA, MAX_GAMMA, 0.f, 51, DisplayTypePercent );
 #endif
-static MenuEntry_t ME_COLCORR_GAMMA = MAKE_MENUENTRY( "Gamma:", &MF_Redfont, &MEF_ColorCorrect, &MEO_COLCORR_GAMMA, RangeFloat );
-static MenuRangeFloat_t MEO_COLCORR_CONTRAST = MAKE_MENURANGE( &g_videoContrast, &MF_Bluefont, 0.1f, 2.7f, 0.f, 53, 1 );
-static MenuEntry_t ME_COLCORR_CONTRAST = MAKE_MENUENTRY( "Contrast:", &MF_Redfont, &MEF_ColorCorrect, &MEO_COLCORR_CONTRAST, RangeFloat );
-static MenuRangeFloat_t MEO_COLCORR_BRIGHTNESS = MAKE_MENURANGE( &g_videoBrightness, &MF_Bluefont, -0.8f, 0.8f, 0.f, 33, 1 );
-static MenuEntry_t ME_COLCORR_BRIGHTNESS = MAKE_MENUENTRY( "Brightness:", &MF_Redfont, &MEF_ColorCorrect, &MEO_COLCORR_BRIGHTNESS, RangeFloat );
-static MenuEntry_t ME_COLCORR_RESET = MAKE_MENUENTRY( "Reset To Defaults", &MF_Redfont, &MEF_ColorCorrect, &MEO_NULL, Link );
+static MenuEntry_t ME_COLCORR_GAMMA = MAKE_MENUENTRY( "Brightness:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_COLCORR_GAMMA, RangeFloat );
+
+static MenuRangeFloat_t MEO_COLCORR_CONTRAST = MAKE_MENURANGE( &g_videoContrast, &MF_Bluefont, MIN_CONTRAST, MAX_CONTRAST, 0.f, 51, DisplayTypePercent );
+static MenuEntry_t ME_COLCORR_CONTRAST = MAKE_MENUENTRY( "Contrast:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_COLCORR_CONTRAST, RangeFloat );
+
+static MenuRangeFloat_t MEO_COLCORR_SATURATION = MAKE_MENURANGE( &g_videoSaturation, &MF_Bluefont, MIN_SATURATION, MAX_SATURATION, 0.f, 51, DisplayTypePercent );
+static MenuEntry_t ME_COLCORR_SATURATION = MAKE_MENUENTRY( "Saturation:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_COLCORR_SATURATION, RangeFloat );
+
+static MenuLink_t MEO_COLCORR_RESET = { MENU_COLCORRRESETVERIFY, MA_None, };
+static MenuEntry_t ME_COLCORR_RESET = MAKE_MENUENTRY( "Reset To Defaults", &MF_Redfont, &MEF_BigOptionsRt, &MEO_COLCORR_RESET, Link );
 #ifdef EDUKE32_ANDROID_MENU
-#define MINVIS 1.f
+#define MIN_VISIBILITY 1.f
 #else
-#define MINVIS 0.125f
+#define MIN_VISIBILITY 0.02f
 #endif
+#define MAX_VISIBILITY 2.f
 #ifndef EDUKE32_SIMPLE_MENU
-static MenuRangeFloat_t MEO_COLCORR_AMBIENT = MAKE_MENURANGE( &r_ambientlight, &MF_Bluefont, MINVIS, 4.f, 0.f, 32, 1 );
-static MenuEntry_t ME_COLCORR_AMBIENT = MAKE_MENUENTRY( "Visibility:", &MF_Redfont, &MEF_ColorCorrect, &MEO_COLCORR_AMBIENT, RangeFloat );
+static MenuRangeFloat_t MEO_COLCORR_AMBIENT = MAKE_MENURANGE( &r_ambientlight, &MF_Bluefont, MIN_VISIBILITY, MAX_VISIBILITY, 0.f, 98, DisplayTypePercent);
+static MenuEntry_t ME_COLCORR_AMBIENT = MAKE_MENUENTRY( "Visibility:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_COLCORR_AMBIENT, RangeFloat );
 #endif
 static MenuEntry_t *MEL_COLCORR[] = {
     &ME_COLCORR_GAMMA,
 #ifndef EDUKE32_ANDROID_MENU
     &ME_COLCORR_CONTRAST,
-    &ME_COLCORR_BRIGHTNESS,
+    &ME_COLCORR_SATURATION,
 #endif
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_COLCORR_AMBIENT,
@@ -1705,6 +1710,7 @@ static MenuVerify_t M_SAVEVERIFY = { CURSOR_CENTER_2LINE, MENU_SAVE, MA_None, };
 static MenuVerify_t M_SAVEDELVERIFY = { CURSOR_CENTER_3LINE, MENU_SAVE, MA_None, };
 static MenuVerify_t M_RESETPLAYER = { CURSOR_CENTER_3LINE, MENU_CLOSE, MA_None, };
 
+static MenuVerify_t M_COLCORRRESETVERIFY = { CURSOR_CENTER_2LINE, MENU_COLCORR, MA_None, };
 static MenuVerify_t M_JOYSTANDARDVERIFY = { CURSOR_CENTER_2LINE, MENU_JOYSTICKSETUP, MA_None, };
 static MenuMessage_t M_NETWAITMASTER = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
 static MenuMessage_t M_NETWAITVOTES = { CURSOR_BOTTOMRIGHT, MENU_NULL, MA_None, };
@@ -1822,6 +1828,7 @@ static Menu_t Menus[] = {
     { &M_NEWVERIFY, MENU_NEWVERIFY, MENU_PREVIOUS, MA_Return, Verify },
     { &M_SAVEVERIFY, MENU_SAVEVERIFY, MENU_SAVE, MA_None, Verify },
     { &M_SAVEDELVERIFY, MENU_SAVEDELVERIFY, MENU_SAVE, MA_None, Verify },
+    { &M_COLCORRRESETVERIFY, MENU_COLCORRRESETVERIFY, MENU_COLCORR, MA_None, Verify },
     { &M_JOYSTANDARDVERIFY, MENU_JOYDEFAULTVERIFY, MENU_JOYSTICKSETUP, MA_None, Verify },
     { &M_ADULTPASSWORD, MENU_ADULTPASSWORD, MENU_GAMESETUP, MA_None, TextForm },
     { &M_RESETPLAYER, MENU_RESETPLAYER, MENU_CLOSE, MA_None, Verify },
@@ -2599,8 +2606,8 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_COLCORR:
     case MENU_COLCORR_INGAME:
-        MenuEntry_DisableOnCondition(&ME_COLCORR_CONTRAST, !gammabrightness);
-        MenuEntry_DisableOnCondition(&ME_COLCORR_BRIGHTNESS, !gammabrightness);
+        MenuEntry_HideOnCondition(&ME_COLCORR_CONTRAST, !gammabrightness || nogl);
+        MenuEntry_HideOnCondition(&ME_COLCORR_SATURATION, !gammabrightness || nogl);
         break;
 
     case MENU_CHEATS:
@@ -3052,6 +3059,10 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     case MENU_NEWVERIFY:
         videoFadeToBlack(1);
         Menu_DrawVerifyPrompt(origin.x, origin.y, "Abort this game?");
+        break;
+    case MENU_COLCORRRESETVERIFY:
+        videoFadeToBlack(1);
+        Menu_DrawVerifyPrompt(origin.x, origin.y, "Reset color correction to defaults?");
         break;
     case MENU_JOYDEFAULTVERIFY:
         videoFadeToBlack(1);
@@ -4384,7 +4395,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     {
         g_videoGamma = DEFAULT_GAMMA;
         g_videoContrast = DEFAULT_CONTRAST;
-        g_videoBrightness = DEFAULT_BRIGHTNESS;
+        g_videoSaturation = DEFAULT_SATURATION;
         ud.brightness = 0;
         r_ambientlight = r_ambientlightrecip = 1.f;
         videoSetPalette(ud.brightness>>2,g_player[myconnectindex].ps->palette,0);
@@ -4646,7 +4657,7 @@ static int32_t Menu_EntryRangeFloatDidModify(MenuEntry_t *entry)
         ud.brightness = GAMMA_CALC<<2;
         videoSetPalette(ud.brightness>>2, g_player[myconnectindex].ps->palette, 0);
     }
-    else if (entry == &ME_COLCORR_CONTRAST || entry == &ME_COLCORR_BRIGHTNESS)
+    else if (entry == &ME_COLCORR_CONTRAST || entry == &ME_COLCORR_SATURATION)
     {
         videoSetPalette(ud.brightness>>2, g_player[myconnectindex].ps->palette, 0);
     }
@@ -4851,6 +4862,18 @@ static void Menu_Verify(int32_t input)
             G_DeleteSave(g_menusaves[M_SAVE.currentEntry-1].brief);
             Menu_SaveReadHeaders();
             M_SAVE.currentEntry = clamp(M_SAVE.currentEntry, 0, (int32_t)g_nummenusaves);
+        }
+        break;
+
+    case MENU_COLCORRRESETVERIFY:
+        if (input)
+        {
+            g_videoGamma = DEFAULT_GAMMA;
+            g_videoContrast = DEFAULT_CONTRAST;
+            g_videoSaturation = DEFAULT_SATURATION;
+            ud.brightness = 0;
+            r_ambientlight = r_ambientlightrecip = 1.f;
+            videoSetPalette(ud.brightness>>2,g_player[myconnectindex].ps->palette,0);
         }
         break;
 
@@ -6858,6 +6881,7 @@ static void Menu_Recurse(MenuID_t cm, const vec2_t origin)
     case MENU_LOADDELVERIFY:
     case MENU_SAVEVERIFY:
     case MENU_SAVEDELVERIFY:
+    case MENU_COLCORRRESETVERIFY:
     case MENU_JOYDEFAULTVERIFY:
     case MENU_ADULTPASSWORD:
     case MENU_CHEATENTRY:
