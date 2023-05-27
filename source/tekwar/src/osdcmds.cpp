@@ -712,9 +712,9 @@ int32_t registerosdcommands(void)
 
         //{ "team","change team in multiplayer", (void *)&ud.team, CVAR_INT|CVAR_MULTI, 0, 3 },
 
-        { "vid_gamma","adjusts gamma component of gamma ramp",(void *)&g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-        { "vid_contrast","adjusts contrast component of gamma ramp",(void *)&g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
-        { "vid_brightness","adjusts brightness component of gamma ramp",(void *)&g_videoBrightness, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
+        { "vid_gamma","gamma/brightness correction",(void *) &g_videoGamma, CVAR_FLOAT|CVAR_FUNCPTR, (int)floor(MIN_GAMMA), (int)ceil(MAX_GAMMA) },
+        { "vid_contrast","contrast correction",(void *) &g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, (int)floor(MIN_CONTRAST), (int)ceil(MAX_CONTRAST) },
+        { "vid_saturation","saturation correction",(void *) &g_videoSaturation, CVAR_FLOAT|CVAR_FUNCPTR, (int)floor(MIN_SATURATION), (int)ceil(MAX_SATURATION) },
         //{ "wchoice","sets weapon autoselection order", (void *)ud.wchoice, CVAR_STRING|CVAR_FUNCPTR, 0, MAX_WEAPONS },
     };
 
