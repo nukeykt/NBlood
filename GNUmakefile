@@ -751,12 +751,7 @@ define BUILDRULE
 $$($1_$2)$$(EXESUFFIX): $$(foreach i,$(call getdeps,$1,$2),$$(call expandobjs,$$i)) $$($1_$2_miscdeps) | $$($1_$2_orderonlydeps)
 	$$(LINK_STATUS)
 	$$(call MKDIR,"$$(obj)/$$($1_$2)")
-ifeq ($$(LLD),0)
-	$$(eval override LF := -save-temps=obj -dumpdir $$(obj)/$$($1_$2))
-else
-	$$(eval override LF :=)
-endif
-	$$(RECIPE_IF) $$(LINKER) $$(LF) -o $$@ $$^ $$(GUI_LIBS) $$($1_$2_ldflags) $$(LIBDIRS) $$(LIBS) $$(RECIPE_RESULT_LINK)
+	$$(RECIPE_IF) $$(LINKER) $$(call LF,$$(obj)/$$($1_$2)) -o $$@ $$^ $$(GUI_LIBS) $$($1_$2_ldflags) $$(LIBDIRS) $$(LIBS) $$(RECIPE_RESULT_LINK)
 ifeq ($$(PLATFORM),WII)
 ifneq ($$(ELF2DOL),)
 	$$(ELF2DOL) $$@ $$($1_$2)$$(DOLSUFFIX)
@@ -791,12 +786,7 @@ libklzw$(DLLSUFFIX): $(engine_src)/klzw.cpp
 %$(EXESUFFIX): $(tools_obj)/%.$o $(foreach i,tools $(tools_deps),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(call MKDIR,"$(tools_obj)/$*")
-ifeq ($(LLD),0)
-	$(eval override LF := -save-temps=obj -dumpdir $(tools_obj)/$*)
-else
-	$(eval override LF :=)
-endif
-	$(RECIPE_IF) $(LINKER) $(LF) -o $@ $^ $(LIBDIRS) $(LIBS) $(RECIPE_RESULT_LINK)
+	$(RECIPE_IF) $(LINKER) $(call LF,$(tools_obj)/$*) -o $@ $^ $(LIBDIRS) $(LIBS) $(RECIPE_RESULT_LINK)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
@@ -807,12 +797,7 @@ endif
 
 $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
-ifeq ($(LLD),0)
-	$(eval override LF := -save-temps=obj -dumpdir $(voidwrap_obj))
-else
-	$(eval override LF :=)
-endif
-	$(RECIPE_IF) $(LINKER) $(LF) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
+	$(RECIPE_IF) $(LINKER) $(call LF,$(voidwrap_obj)) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif

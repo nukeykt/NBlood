@@ -587,6 +587,10 @@ ifeq ($(PACKAGE_REPOSITORY),0)
     COMMONFLAGS += -O$(OPTLEVEL) $(OPTOPT)
 endif
 
+define LF
+-save-temps=obj -dumpdir $1
+endef
+
 ifneq (0,$(LTO))
     COMPILERFLAGS += -DUSING_LTO
     ifeq (1,$(LTO))
@@ -602,6 +606,7 @@ endif
 
 ifeq (1,$(LLD))
     COMMONFLAGS += -fuse-ld=lld
+    LF :=
 endif
 
 ##### Debugging
