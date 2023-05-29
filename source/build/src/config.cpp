@@ -642,8 +642,8 @@ int32_t writesetup(const char *fn)
              maxrefreshfreq,
 #endif
              g_windowPos.x, g_windowPos.y,
-             vid_gamma_3d>=0?vid_gamma_3d:g_videoGamma,
-             vid_contrast_3d>=0?vid_contrast_3d:g_videoContrast,
+             g_videoGamma,
+             g_videoContrast,
              game_executable,
 #if 0
              option[7]>>4, option[2],
