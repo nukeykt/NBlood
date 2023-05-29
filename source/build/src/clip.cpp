@@ -2107,7 +2107,7 @@ restart_grand:
         for (bssize_t j=headspritesect[clipsectorlist[i]]; j>=0; j=nextspritesect[j])
         {
             const int32_t cstat = sprite[j].cstat;
-            int32_t daz, daz2;
+            int32_t daz = 0, daz2 = 0;
             int32_t clipz = 0, clipz2 = 0;
 
             if (cstat&dasprclipmask)
