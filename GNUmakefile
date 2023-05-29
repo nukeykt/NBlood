@@ -149,6 +149,14 @@ imgui_inc := $(imgui_root)/include
 imgui_obj := $(obj)/$(imgui)
 
 imgui_excl :=
+
+ifneq ($(RENDERTYPE),SDL)
+    imgui_excl += imgui_impl_sdl2.cpp
+endif
+ifneq ($(RENDERTYPE),WIN)
+    imgui_excl += imgui_impl_win32.cpp
+endif
+
 imgui_objs := $(call getfiltered,imgui,*.cpp)
 
 imgui_cflags := -I$(imgui_inc) -Wno-cast-qual -Wno-cast-function-type -Wno-null-dereference -Wno-stringop-overflow
@@ -279,18 +287,19 @@ else
     engine_excl += wiibits.cpp
 endif
 
-ifeq ($(RENDERTYPE),SDL)
-    ifeq (1,$(HAVE_GTK2))
-        ifeq ($(STARTUP_WINDOW),1)
-            engine_editor_objs += startgtk.editor.cpp
-        endif
-    else
-        engine_excl += gtkbits.cpp dynamicgtk.cpp
-    endif
-
-    engine_excl += winlayer.cpp rawinput.cpp
-else
+ifneq ($(RENDERTYPE),SDL)
     engine_excl += sdlayer.cpp
+endif
+ifneq ($(RENDERTYPE),WIN)
+    engine_excl += winlayer.cpp rawinput.cpp
+endif
+
+ifeq (1,$(HAVE_GTK2))
+    ifeq ($(STARTUP_WINDOW),1)
+        engine_editor_objs += startgtk.editor.cpp
+    endif
+else
+    engine_excl += gtkbits.cpp dynamicgtk.cpp
 endif
 
 ifeq ($(USE_LIBVPX),0)

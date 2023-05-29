@@ -32,6 +32,7 @@
     <ClInclude Include="..\..\source\imgui\include\imgui_impl_opengl3.h" />
     <ClInclude Include="..\..\source\imgui\include\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="..\..\source\imgui\include\imgui_impl_sdl2.h" />
+    <ClInclude Include="..\..\source\imgui\include\imgui_impl_win32.h" />
     <ClInclude Include="..\..\source\imgui\include\imgui_internal.h" />
     <ClInclude Include="..\..\source\imgui\include\imstb_rectpack.h" />
     <ClInclude Include="..\..\source\imgui\include\imstb_textedit.h" />
@@ -43,6 +44,9 @@
     <ClCompile Include="..\..\source\imgui\src\imgui_draw.cpp" />
     <ClCompile Include="..\..\source\imgui\src\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\source\imgui\src\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="..\..\source\imgui\src\imgui_impl_win32.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\imgui\src\imgui_tables.cpp" />
     <ClCompile Include="..\..\source\imgui\src\imgui_widgets.cpp" />
   </ItemGroup>

@@ -1978,7 +1978,7 @@ int32_t videoSetGamma(void)
     static DDGAMMARAMP gammaTable;
     float gamma = max(MIN_GAMMA, min(MAX_GAMMA, g_videoGamma));
     float contrast = max(MIN_CONTRAST, min(MAX_CONTRAST, g_videoContrast));
-    float bright = max(MIN_BRIGHTNESS, min(MAX_BRIGHTNESS, g_videoBrightness));
+    float bright = 0.f; // FIXME
 
     double invgamma = 1 / gamma;
     double norm = pow(255., invgamma - 1);
