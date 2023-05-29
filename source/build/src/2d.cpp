@@ -1079,9 +1079,13 @@ int32_t editorGet2dSpriteColor(int32_t spr)
 
     int col = 0;
 
-    for (int i = 0, cnt = 0; i < 240; i++)
+    uint32_t cnt = 0;
+    for (int i = 0; i < 240; ++i)
         if (cols[i] > cnt)
-            col = i, cnt = cols[i];
+        {
+            col = i;
+            cnt = cols[i];
+        }
 
     if (whitecol > blackcol)
     {
