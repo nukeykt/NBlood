@@ -5,109 +5,76 @@ on:
     branches:
       - master
   pull_request: {}
+  merge_group: {}
 
 jobs:
 
-  build-windows-x86_64:
-    name: "Windows MSYS2 x86_64"
+  build-windows-msys2:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64 GCC
+            sys: mingw64
+            env: x86_64
+          - name: i686 GCC
+            sys: mingw32
+            env: i686
+            pkg: nasm
+    name: Windows MSYS2 ${{matrix.name}}
     runs-on: windows-latest
     defaults:
       run:
         shell: msys2 {0}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW64
+        msystem: ${{matrix.sys}}
         update: true
-        install: git mingw-w64-x86_64-toolchain make
+        cache: true
+        install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
     - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG=""
+      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
 
-  build-windows-i686:
-    name: "Windows MSYS2 i686"
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - uses: actions/checkout@v2
-    - uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW32
-        update: true
-        install: git mingw-w64-i686-toolchain make nasm
-    - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG=""
-
-  build-linux-gcc:
-    name: "Linux GCC"
+  build-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: GCC
+            pkg: libsdl2-dev
+          - name: GCC SDL 1.2
+            pkg: libsdl1.2-dev
+            opt: SDL_TARGET=1
+          - name: Clang
+            pkg: libsdl2-dev clang
+            opt: CLANG=1
+          - name: Clang without GL
+            pkg: libsdl2-dev clang
+            opt: CLANG=1 USE_OPENGL=0
+          - name: Clang without Polymer
+            pkg: libsdl2-dev clang
+            opt: CLANG=1 POLYMER=0
+    name: Linux ${{matrix.name}}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install-prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev
+        sudo apt-get -y install libflac-dev libvpx-dev libgtk2.0-dev ${{matrix.pkg}}
     - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools
-
-  build-linux-gcc-sdl12:
-    name: "Linux GCC SDL 1.2"
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: install-prerequisites
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libsdl1.2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev
-    - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDL_TARGET=1
-
-  build-linux-clang:
-    name: "Linux Clang"
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: install-prerequisites
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
-    - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools CLANG=1
-
-  build-linux-clang-nogl:
-    name: "Linux Clang without GL"
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: install-prerequisites
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
-    - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools CLANG=1 USE_OPENGL=0
-
-  build-linux-clang-nopolymer:
-    name: "Linux Clang without Polymer"
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: install-prerequisites
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libsdl2-dev libvorbis-dev libflac-dev libvpx-dev libglu1-mesa-dev libgtk2.0-dev clang
-    - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools CLANG=1 POLYMER=0
+      run: make -j2 duke3d sw blood rr exhumed kenbuild tools ${{matrix.opt}}
 
   build-macos:
-    name: "macOS"
+    name: macOS Clang
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install-prerequisites
       run: |
-        brew install sdl2 libogg libvorbis flac libvpx make
+        brew install sdl2 flac libvpx make
         brew unlink lz4
     - name: build
       run: gmake -j2 duke3d sw blood rr exhumed kenbuild tools
