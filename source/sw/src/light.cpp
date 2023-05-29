@@ -108,12 +108,10 @@ void SectorLightShade(SPRITEp sp, short intensity)
 void DiffuseLighting(SPRITEp sp)
 {
     short i, nexti;
-    short count;
     short shade;
     SPRITEp dsp;
 
     // diffused lighting
-    count = 0;
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_LIGHTING_DIFFUSE],i,nexti)
     {
         dsp = &sprite[i];
@@ -131,8 +129,6 @@ void DiffuseLighting(SPRITEp sp)
             dsp->pal = sp->pal;
 
         SectorLightShade(dsp, shade);
-
-        count++;
     }
 }
 

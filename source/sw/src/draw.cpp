@@ -1739,7 +1739,6 @@ void DrawCheckKeys(PLAYERp pp)
 void DrawMessageInput(void)
 {
     short w,h;
-    static SWBOOL cur_show;
     short c;
 
     // Used to make cursor fade in and out
@@ -1748,8 +1747,6 @@ void DrawMessageInput(void)
     if (MessageInputMode)
     {
         MNU_MeasureString(MessageInputString, &w, &h);
-
-        cur_show ^= 1;
 
         MNU_DrawString(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,1,ROTATE_SPRITE_SCREEN_CLIP);
         rotatesprite((TEXT_XCENTER(w)+w+7)<<16,(MESSAGE_LINE+3)<<16,64<<9,0,COINCURSOR+((totalclock>>3)%7),c,0,
@@ -1760,7 +1757,6 @@ void DrawMessageInput(void)
 void DrawMessageInput(void)
 {
     short w,h;
-    static SWBOOL cur_show;
     short c;
 
     // Used to make cursor fade in and out
@@ -1769,8 +1765,6 @@ void DrawMessageInput(void)
     if (MessageInputMode)
     {
         MNU_MeasureSmallString(MessageInputString, &w, &h);
-
-        cur_show ^= 1;
 
         minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
         rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
@@ -1783,7 +1777,6 @@ void DrawConInput(void)
 #define PANELINPUTX 30
 #define PANELINPUTY 100
     short w,h;
-    static SWBOOL cur_show;
     short c;
 
     // Used to make cursor fade in and out
@@ -1792,8 +1785,6 @@ void DrawConInput(void)
     if (ConInputMode)
     {
         MNU_MeasureSmallString(MessageInputString, &w, &h);
-
-        cur_show ^= 1;
 
         MNU_DrawSmallString(PANELINPUTX, PANELINPUTY, MessageInputString,1,17);
         rotatesprite((PANELINPUTX+w+1)<<16,(PANELINPUTY)<<16,65536L,0,2992,c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);

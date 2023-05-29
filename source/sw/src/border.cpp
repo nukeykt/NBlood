@@ -345,7 +345,6 @@ BORDER_INFO BorderInfoValues[] =
 void DrawBorder(PLAYERp pp, short x, short y, short x2, short y2)
 {
     short i,j,k,l;
-    short count = 0;
 
     for (i = 0; i < xdim; i += tilesiz[BORDER_TILE].x)
     {
@@ -358,28 +357,24 @@ void DrawBorder(PLAYERp pp, short x, short y, short x2, short y2)
             {
                 // draw top box of the border
                 pSpawnFullScreenSpriteBox(pp, ID_BORDER_TOP, BORDER_TILE, PRI_BACK, i, j, x, y, windowxy1.x-1, y2);
-                count++;
             }
 
             if (RectOverlap(i, j, k, l, windowxy2.x+1, y, x2, y2))
             {
                 // draw bottom box of the border
                 pSpawnFullScreenSpriteBox(pp, ID_BORDER_BOTTOM, BORDER_TILE, PRI_BACK, i, j, windowxy2.x+1, y, x2, y2);
-                count++;
             }
 
             if (RectOverlap(i, j, k, l, windowxy1.x, y, windowxy2.x, windowxy1.y-1))
             {
                 // draw left box of the border
                 pSpawnFullScreenSpriteBox(pp, ID_BORDER_LEFT, BORDER_TILE, PRI_BACK, i, j, windowxy1.x, y, windowxy2.x, windowxy1.y-1);
-                count++;
             }
 
             if (RectOverlap(i, j, k, l, windowxy1.x, windowxy2.y+1, windowxy2.x, y2))
             {
                 // draw right box of the border
                 pSpawnFullScreenSpriteBox(pp, ID_BORDER_RIGHT, BORDER_TILE, PRI_BACK, i, j, windowxy1.x, windowxy2.y+1, windowxy2.x, y2);
-                count++;
             }
         }
     }
@@ -388,7 +383,6 @@ void DrawBorder(PLAYERp pp, short x, short y, short x2, short y2)
 void DrawPanelBorderSides(PLAYERp pp, short x, short y, short x2, short y2, short panl, short panr)
 {
     short i,j,k,l;
-    short count = 0;
 
     for (i = 0; i < xdim; i += tilesiz[BORDER_TILE].x)
     {
@@ -400,13 +394,11 @@ void DrawPanelBorderSides(PLAYERp pp, short x, short y, short x2, short y2, shor
             if (RectOverlap(i, j, k, l, x, y, panl, y2))
             {
                 pSpawnFullScreenSpriteBox(pp, ID_PANEL_BORDER_LEFT, BORDER_TILE, PRI_BACK, i, j, x, y, panl, y2);
-                count++;
             }
 
             if (RectOverlap(i, j, k, l, panr, y, x2, y2))
             {
                 pSpawnFullScreenSpriteBox(pp, ID_PANEL_BORDER_RIGHT, BORDER_TILE, PRI_BACK, i, j, panr, y, x2, y2);
-                count++;
             }
         }
     }
