@@ -169,7 +169,7 @@ enum searchpathtypes_t {
 
 extern int g_addonNum;
 
-typedef enum basepal_ {
+typedef enum sw_basepal_ {
     BASEPAL = 0,
     DREALMSPAL,
     TITLEPAL,
