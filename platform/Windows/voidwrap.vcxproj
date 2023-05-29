@@ -222,45 +222,17 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+  <PropertyGroup>
     <IncludePath>../../source/voidwrap/sdk/public/steam;../../source/voidwrap/include;../../source/build/include;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)_steam_$(PlatformShortName)</TargetName>
     <LibraryPath>../../source/voidwrap/sdk/redistributable_bin;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\..\</OutDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../source/voidwrap/sdk/public/steam;../../source/voidwrap/include;../../source/build/include;$(IncludePath)</IncludePath>
-    <TargetName>$(ProjectName)_steam_$(PlatformShortName)</TargetName>
-    <LibraryPath>../../source/voidwrap/sdk/redistributable_bin/win64;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\..\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../source/voidwrap/sdk/public/steam;../../source/voidwrap/include;../../source/build/include;$(IncludePath)</IncludePath>
-    <TargetName>$(ProjectName)_steam_$(PlatformShortName)</TargetName>
-    <LibraryPath>../../source/voidwrap/sdk/redistributable_bin/win64;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../source/voidwrap/sdk/public/steam;../../source/voidwrap/include;../../source/build/include;$(IncludePath)</IncludePath>
-    <TargetName>$(ProjectName)_steam_$(PlatformShortName)</TargetName>
-    <LibraryPath>../../source/voidwrap/sdk/redistributable_bin;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\..\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../source/voidwrap/sdk/public/steam;../../source/voidwrap/include;../../source/build/include;$(IncludePath)</IncludePath>
-    <TargetName>$(ProjectName)_steam_$(PlatformShortName)</TargetName>
-    <LibraryPath>../../source/voidwrap/sdk/redistributable_bin/win64;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\..\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../source/voidwrap/sdk/public/steam;../../source/voidwrap/include;../../source/build/include;$(IncludePath)</IncludePath>
-    <TargetName>$(ProjectName)_steam_$(PlatformShortName)</TargetName>
-    <LibraryPath>../../source/voidwrap/sdk/redistributable_bin/win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
