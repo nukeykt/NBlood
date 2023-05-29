@@ -21,8 +21,8 @@
 # define REFCLSID const CLSID&
 # define REFFMTID const FMTID&
 #else
-# define REFGUID const GUID* const
-# define REFIID const IID* const
-# define REFCLSID const CLSID* const
-# define REFFMTID const FMTID* const
+# define REFGUID const GUID*
+# define REFIID const IID*
+# define REFCLSID const CLSID*
+# define REFFMTID const FMTID*
 #endif
