@@ -295,6 +295,9 @@
     <ProjectReference Include="glad.vcxproj">
       <Project>{6ac1d997-8dae-4343-8dd8-da2a1ca63212}</Project>
     </ProjectReference>
+    <ProjectReference Include="imgui.vcxproj">
+      <Project>{c782e1f1-aace-4c00-afaf-3448dac597c5}</Project>
+    </ProjectReference>
     <ProjectReference Include="libxmp-lite.vcxproj">
       <Project>{32d4cf70-a3d6-4cea-81d7-64c743980276}</Project>
     </ProjectReference>
