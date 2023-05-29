@@ -34,9 +34,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #ifndef common_public_
 #define common_public_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 //****************************************************************************
 //
@@ -181,7 +178,4 @@ typedef enum basepal_ {
     BASEPALCOUNT
 } basepal_t;
 
-#ifdef __cplusplus
-};
-#endif
 #endif
