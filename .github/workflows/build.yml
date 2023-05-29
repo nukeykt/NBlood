@@ -21,6 +21,10 @@ jobs:
             sys: mingw32
             env: i686
             pkg: nasm
+          - name: x86_64 GCC without SDL
+            sys: mingw64
+            env: x86_64
+            opt: RENDERTYPE=WIN
     name: Windows MSYS2 ${{matrix.name}}
     runs-on: windows-latest
     defaults:
