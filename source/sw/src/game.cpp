@@ -4802,6 +4802,7 @@ SEND_MESSAGE:
                     }
                 }
                 else
+                {
                     TRAVERSE_CONNECT(pnum)
                     {
                         if (pnum != myconnectindex)
@@ -4809,7 +4810,8 @@ SEND_MESSAGE:
                             SW_SendMessage(pnum, ds);
                         }
                     }
-                    adduserquote(MessageInputString);
+                }
+                adduserquote(MessageInputString);
                 quotebot += 8;
                 quotebotgoal = quotebot;
             }
