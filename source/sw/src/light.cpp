@@ -159,7 +159,7 @@ void DoLightingMatch(short match, short state)
             if (state == -1)
                 state = !TEST_BOOL1(sp);
 
-            if (state == ON)
+            if (state == short{ON})
             {
                 SET_BOOL1(sp);
                 sp->shade = -LIGHT_MaxBright(sp);
@@ -186,7 +186,7 @@ void DoLightingMatch(short match, short state)
             if (state == -1)
                 state = !TEST_BOOL1(sp);
 
-            if (state == ON)
+            if (state == short{ON})
             {
                 // allow fade or flicker
                 SET_BOOL1(sp);
@@ -209,14 +209,14 @@ void DoLightingMatch(short match, short state)
             //if (state == -1)
             //    state = !TEST_BOOL1(sp);
 
-            if (state == ON)
+            if (state == short{ON})
             {
                 if (LIGHT_Dir(sp) == 1)
                 {
                     LIGHT_DirChange(sp);
                 }
             }
-            else if (state == OFF)
+            else if (state == short{OFF})
             {
                 if (LIGHT_Dir(sp) == 0)
                 {
@@ -237,7 +237,7 @@ void DoLightingMatch(short match, short state)
             if (state == -1)
                 state = !TEST_BOOL1(sp);
 
-            if (state == ON)
+            if (state == short{ON})
             {
                 // allow fade or flicker
                 SET_BOOL1(sp);

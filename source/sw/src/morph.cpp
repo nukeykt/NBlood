@@ -147,12 +147,12 @@ DoSOevent(short match, short state)
                 }
             }
 
-            if (state == ON)
+            if (state == short{ON})
             {
                 spin_adj = (int)SP_TAG3(me_sp);
                 vel_adj = SP_TAG7(me_sp);
             }
-            else if (state == OFF)
+            else if (state == short{OFF})
             {
                 spin_adj = -(int)SP_TAG3(me_sp);
                 vel_adj = -SP_TAG7(me_sp);

@@ -1014,7 +1014,7 @@ AnimateSwitch(SPRITEp sp, short tgt_value)
 
         sp->picnum -= 1;
 
-        if (tgt_value == ON)
+        if (tgt_value == short{ON})
         {
             AnimateSwitch(sp, tgt_value);
             return ON;
