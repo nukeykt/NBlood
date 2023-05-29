@@ -241,20 +241,4 @@ static const char *mouseclickeddefaults_modern[] =
     "",
     ""
 };
-
-
-static const char *mouseanalogdefaults[] =
-{
-    "analog_turning",
-    "analog_moving",
-};
-
-
-static const char *mousedigitaldefaults[] =
-{
-    "",
-    "",
-    "",
-    "",
-};
 #endif
