@@ -3624,6 +3624,9 @@ void editorMaybeWarpMouse(int searchx, int searchy)
 #endif
     handleevents();
     mouseLockToWindow(0);
+#else
+    UNREFERENCED_PARAMETER(searchx);
+    UNREFERENCED_PARAMETER(searchy);
 #endif
 }
 

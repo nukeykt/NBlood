@@ -29,6 +29,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #include "keys.h"
 #include "game.h"
+#include "config.h"
 #include "tags.h"
 #include "names2.h"
 #include "network.h"
@@ -65,7 +66,6 @@ SYNC BUG NOTES:
 static uint8_t tempbuf[576], packbuf[576];
 int PlayClock;
 extern SWBOOL PauseKeySet;
-extern char CommPlayerName[32];
 
 gNET gNet;
 extern short PlayerQuitMenuLevel;

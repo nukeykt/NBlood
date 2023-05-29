@@ -109,10 +109,10 @@ struct menusave_t
     {
         struct
         {
-            int isAutoSave     : 1;
-            int isOldScriptVer : 1;
-            int isOldVer       : 1;
-            int isUnreadable   : 1;
+            unsigned int isAutoSave     : 1;
+            unsigned int isOldScriptVer : 1;
+            unsigned int isOldVer       : 1;
+            unsigned int isUnreadable   : 1;
         };
         uint8_t flags;
     };

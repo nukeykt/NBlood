@@ -1150,7 +1150,7 @@ const char *damagename[] =
     "WPN_SHOTGUN","WPN_MICRO",
     "WPN_GRENADE","WPN_MINE",
     "WPN_RAIL","WPN_HEART",
-    "WPN_HOTHEAD","WPN_NAPALM"
+    "WPN_HOTHEAD","WPN_NAPALM",
     "WPN_RING","WPN_ROCKET",
     "WPN_SWORD","WPN_FIST",
     "DMG_NAPALM","DMG_MIRV_METEOR",

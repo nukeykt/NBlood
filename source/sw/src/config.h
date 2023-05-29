@@ -59,8 +59,6 @@ struct ud_setup_t {
     int32_t noautoload = 0;
 };
 
-extern "C" {
-
 extern ud_setup_t ud_setup;
 #endif
 
@@ -142,7 +140,4 @@ int32_t CONFIG_FunctionNameToNum(const char *func);
 const char *CONFIG_AnalogNumToName(int32_t func);
 int32_t CONFIG_AnalogNameToNum(const char *func);
 
-#ifdef __cplusplus
-};
-#endif
 #endif

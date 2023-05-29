@@ -342,7 +342,6 @@ MenuItem joyaxes_i[] =
 MenuGroup joyaxessetupgroup = {65, 5, "^Joystick Axes", joyaxes_i, pic_newgametitl, 0, m_defshade, NULL, NULL, 1};
 
 
-static char AdvancedMouseAxisFunctions[4][MAXAXISFUNCTIONLENGTH] = { "", "", "", "" };
 MenuItem advancedmouse_i[] =
 {
     {DefSlider(sldr_mousescalex, 0, "X-Axis Scale"), OPT_XS,     OPT_LINE(0), 1, m_defshade, 0, NULL, NULL, NULL},

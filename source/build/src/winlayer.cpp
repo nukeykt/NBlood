@@ -262,16 +262,13 @@ static void divcommon(int32_t *ap, int32_t *bp)
 //
 // WinMain() -- main Windows entry point
 //
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE /*hPrevInst*/, LPSTR /*lpCmdLine*/, int /*nCmdShow*/)
 {
     int32_t r;
 #ifdef USE_OPENGL
     char *argp;
 #endif
     HDC hdc;
-
-    UNREFERENCED_PARAMETER(lpCmdLine);
-    UNREFERENCED_PARAMETER(nCmdShow);
 
     hInstance = hInst;
 
@@ -630,7 +627,7 @@ int32_t handleevents(void)
 //
 // initinput() -- init input system
 //
-int32_t initinput(void(*hotplugCallback)(void) /*= NULL*/)
+int32_t initinput(void(* /*hotplugCallback*/ )(void) /*= NULL*/)
 {
     g_mouseEnabled=0;
     memset(keystatus, 0, sizeof(keystatus));
@@ -907,7 +904,7 @@ static BOOL InitDirectInput(void)
         }
     }
 
-    aDirectInputCreateA = (HRESULT(WINAPI *)(HINSTANCE, DWORD, LPDIRECTINPUT7A *, LPUNKNOWN))GetProcAddress(hDInputDLL, "DirectInputCreateA");
+    aDirectInputCreateA = (HRESULT(WINAPI *)(HINSTANCE, DWORD, LPDIRECTINPUT7A *, LPUNKNOWN))(void(*))GetProcAddress(hDInputDLL, "DirectInputCreateA");
     if (!aDirectInputCreateA) windowsShowError("Error fetching DirectInputCreateA()");
 
     result = aDirectInputCreateA(hInstance, DIRECTINPUT_VERSION, &lpDI, NULL);
@@ -1268,25 +1265,25 @@ static const char *GetDInputError(HRESULT code)
         return "DIERR_BADDRIVERVER";
     case DIERR_BETADIRECTINPUTVERSION:
         return "DIERR_BETADIRECTINPUTVERSION";
-    case DIERR_DEVICEFULL:
+    case (HRESULT)DIERR_DEVICEFULL:
         return "DIERR_DEVICEFULL";
     case DIERR_DEVICENOTREG:
         return "DIERR_DEVICENOTREG";
-    case DIERR_EFFECTPLAYING:
+    case (HRESULT)DIERR_EFFECTPLAYING:
         return "DIERR_EFFECTPLAYING";
-    case DIERR_HASEFFECTS:
+    case (HRESULT)DIERR_HASEFFECTS:
         return "DIERR_HASEFFECTS";
     case DIERR_GENERIC:
         return "DIERR_GENERIC";
     case DIERR_HANDLEEXISTS:
         return "DIERR_HANDLEEXISTS";
-    case DIERR_INCOMPLETEEFFECT:
+    case (HRESULT)DIERR_INCOMPLETEEFFECT:
         return "DIERR_INCOMPLETEEFFECT";
     case DIERR_INPUTLOST:
         return "DIERR_INPUTLOST";
     case DIERR_INVALIDPARAM:
         return "DIERR_INVALIDPARAM";
-    case DIERR_MOREDATA:
+    case (HRESULT)DIERR_MOREDATA:
         return "DIERR_MOREDATA";
     case DIERR_NOAGGREGATION:
         return "DIERR_NOAGGREGATION";
@@ -1294,11 +1291,11 @@ static const char *GetDInputError(HRESULT code)
         return "DIERR_NOINTERFACE";
     case DIERR_NOTACQUIRED:
         return "DIERR_NOTACQUIRED";
-    case DIERR_NOTBUFFERED:
+    case (HRESULT)DIERR_NOTBUFFERED:
         return "DIERR_NOTBUFFERED";
-    case DIERR_NOTDOWNLOADED:
+    case (HRESULT)DIERR_NOTDOWNLOADED:
         return "DIERR_NOTDOWNLOADED";
-    case DIERR_NOTEXCLUSIVEACQUIRED:
+    case (HRESULT)DIERR_NOTEXCLUSIVEACQUIRED:
         return "DIERR_NOTEXCLUSIVEACQUIRED";
     case DIERR_NOTFOUND:
         return "DIERR_NOTFOUND";
@@ -1984,7 +1981,7 @@ int32_t videoSetGamma(void)
     static DDGAMMARAMP gammaTable;
     float gamma = max(MIN_GAMMA, min(MAX_GAMMA, g_videoGamma));
     float contrast = max(MIN_CONTRAST, min(MAX_CONTRAST, g_videoContrast));
-    float bright = max(MIN_BRIGHTNESS, min(MAX_BRIGHTNESS, g_videoBrightness));
+    float bright = 0.f; // FIXME
 
     double invgamma = 1 / gamma;
     double norm = pow(255., invgamma - 1);
@@ -2086,7 +2083,7 @@ static BOOL InitDirectDraw(void)
     }
 
     // get the pointer to DirectDrawEnumerate
-    aDirectDrawEnumerate = (decltype(aDirectDrawEnumerate))GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
+    aDirectDrawEnumerate = (decltype(aDirectDrawEnumerate))(void(*))GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
     if (!aDirectDrawEnumerate)
     {
         windowsShowError("Error fetching DirectDrawEnumerate()");
@@ -2099,7 +2096,7 @@ static BOOL InitDirectDraw(void)
     aDirectDrawEnumerate(InitDirectDraw_enum, NULL);
 
     // get the pointer to DirectDrawCreate
-    aDirectDrawCreate = (decltype(aDirectDrawCreate))GetProcAddress(hDDrawDLL, "DirectDrawCreate");
+    aDirectDrawCreate = (decltype(aDirectDrawCreate))(void(*))GetProcAddress(hDDrawDLL, "DirectDrawCreate");
     if (!aDirectDrawCreate)
     {
         windowsShowError("Error fetching DirectDrawCreate()");

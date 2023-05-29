@@ -277,9 +277,9 @@ typedef struct      s_prsector {
     int16_t         floorpicnum_anim, ceilingpicnum_anim;
 
     struct          {
-        int         empty       : 1;
-        int         uptodate    : 1;
-        int         invalidtex  : 1;
+        unsigned int    empty       : 1;
+        unsigned int    uptodate    : 1;
+        unsigned int    invalidtex  : 1;
     }               flags;
     uint32_t        invalidid;
     uint32_t        trackedrev;
@@ -311,9 +311,9 @@ typedef struct      s_prwall {
     char            underover;
     uint32_t        invalidid;
     struct          {
-        int         empty       : 1;
-        int         uptodate    : 1;
-        int         invalidtex  : 1;
+        unsigned int    empty       : 1;
+        unsigned int    uptodate    : 1;
+        unsigned int    invalidtex  : 1;
     }               flags;
     uint32_t        trackedrev;
 }                   _prwall;

@@ -307,8 +307,6 @@ getsyncstat(void)
 {
     int i;
     PLAYERp pp = Player + myconnectindex;
-    unsigned int val;
-    static unsigned int count;
 
     if (!CommEnabled)
         return;
@@ -320,9 +318,6 @@ getsyncstat(void)
     {
         pp->syncval[pp->syncvalhead & (SYNCFIFOSIZ - 1)][i] = (*SyncFunc[i])();
     }
-
-    val = pp->syncval[pp->syncvalhead & (SYNCFIFOSIZ - 1)][0];
-    count += val;
 
     pp->syncvalhead++;
 }
