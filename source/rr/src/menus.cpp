@@ -7927,6 +7927,7 @@ static void Menu_RunInput(Menu_t *cm)
                 auto *verify = (MenuVerify_t*)cm->object;
 
                 I_AdvanceTriggerClear();
+                KB_FlushKeyboardQueue();
                 KB_ClearKeyDown(sc_Y);
                 m_mousecaught = 1;
 
