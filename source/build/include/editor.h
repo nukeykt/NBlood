@@ -168,6 +168,11 @@ enum
 typedef struct mapundo_
 {
     int32_t revision;
+
+    vec3_t  startpos;
+    int16_t startang;
+    int16_t startsectnum;
+
     int32_t num[3];  // numsectors, numwalls, numsprites
 
     // These exist temporarily as sector/wall/sprite data, but are always compressed
@@ -175,7 +180,7 @@ typedef struct mapundo_
     char *lz4Blocks[3];  // sector, wall, sprite
     int   lz4Size[3];
 
-    uintptr_t crc[3];
+    XXH64_hash_t crc[3];
 
     struct mapundo_ *next;  // 'redo' loads this
     struct mapundo_ *prev;  // 'undo' loads this
