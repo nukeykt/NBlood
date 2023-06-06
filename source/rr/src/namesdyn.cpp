@@ -37,7 +37,7 @@ struct dynitem
     int32_t *dynvalptr;
     const int16_t staticval;
     const int16_t staticval_rr;
-    const int16_t staticval_dn64;
+    const int16_t staticval_dn64 = 0;
 };
 
 static struct dynitem g_dynTileList[] =
