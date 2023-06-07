@@ -757,7 +757,7 @@ static inline void spriteSetSlope(uint16_t const spritenum, int16_t const heinum
 
 static inline int16_t spriteGetSlope(uint16_t const spritenum)
 {
-    auto const spr = &sprite[spritenum];
+    auto const spr = (uspriteptr_t)&sprite[spritenum];
     uint16_t const cstat = spr->cstat & CSTAT_SPRITE_ALIGNMENT_MASK;
     if (cstat != CSTAT_SPRITE_ALIGNMENT_SLOPE)
         return 0;
@@ -1810,7 +1810,7 @@ static inline int16_t tspriteGetSlope(tspriteptr_t const tspr)
 
 static inline int32_t spriteGetZOfSlope(uint16_t const spritenum, vec2_t pos)
 {
-    auto const spr = &sprite[spritenum];
+    auto const spr = (uspriteptr_t)&sprite[spritenum];
     int16_t const heinum = spriteGetSlope(spritenum);
     if (heinum == 0)
         return spr->z;
