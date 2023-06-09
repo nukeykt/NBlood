@@ -1775,6 +1775,7 @@ int app_main(int argc, char const * const * argv)
     scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
     scrSetGamma(gGamma);
     viewResizeView(gViewSize);
+    vsync = videoSetVsync(vsync);
     initprintf("Initializing sound system\n");
     sndInit();
     sfxInit();
