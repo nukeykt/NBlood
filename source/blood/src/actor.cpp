@@ -2689,7 +2689,7 @@ int actFloorBounceVector(int *x, int *y, int *z, int nSector, int a5)
 
 void actRadiusDamage(int nSprite, int x, int y, int z, int nSector, int nDist, int baseDmg, int distDmg, DAMAGE_TYPE dmgType, int flags, int burn)
 {
-    char sectmap[(kMaxSectors+7)>>3];
+    char sectmap[bitmap_size(kMaxSectors)];
     int nOwner = actSpriteIdToOwnerId(nSprite);
     gAffectedSectors[0] = 0;
     gAffectedXWalls[0] = 0;
@@ -5552,7 +5552,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[kStatExplosion]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        char sectmap[(kMaxSectors+7)>>3];
+        char sectmap[bitmap_size(kMaxSectors)];
         spritetype *pSprite = &sprite[nSprite];
 
         if (pSprite->flags & 32)

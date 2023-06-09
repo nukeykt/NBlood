@@ -96,7 +96,7 @@ static void SlashSeqCallback(int, int nXSprite)
 
 static void StompSeqCallback(int, int nXSprite)
 {
-    char sectmap[(kMaxSectors+7)>>3];
+    char sectmap[bitmap_size(kMaxSectors)];
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];

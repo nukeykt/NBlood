@@ -2580,7 +2580,7 @@ void WeaponProcess(PLAYER *pPlayer) {
 
 void teslaHit(spritetype *pMissile, int a2)
 {
-    char sectmap[(kMaxSectors+7)>>3];
+    char sectmap[bitmap_size(kMaxSectors)];
     int x = pMissile->x;
     int y = pMissile->y;
     int z = pMissile->z;

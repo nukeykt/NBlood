@@ -216,7 +216,7 @@ void tilePreloadTile(int nTile)
 }
 
 int nPrecacheCount;
-char precachehightile[2][(MAXTILES+7)>>3];
+char precachehightile[2][bitmap_size(MAXTILES)];
 
 void tilePrecacheTile(int nTile, int nType)
 {
