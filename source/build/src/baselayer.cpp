@@ -86,7 +86,6 @@ void initputs(const char *buf)
 
     // terrible hack... the start window relies on newlines, but we don't have them at the end of the buffer anymore
     int len = Bstrlen(buf);
-    Bassert(len > 0);
 
     if (buf[len] == '\n')
         startwin_puts(buf);

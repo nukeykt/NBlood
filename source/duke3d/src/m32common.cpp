@@ -449,6 +449,10 @@ void create_map_snapshot(void)
     mapstate->num[UNDO_WALLS]   = numwalls;
     mapstate->num[UNDO_SPRITES] = Numsprites;
 
+    mapstate->startpos     = startpos;
+    mapstate->startang     = startang;
+    mapstate->startsectnum = startsectnum;
+
     if (numsectors)
     {
         XXH64_hash_t temphash = XXH3_64bits((uint8_t *)sector, numsectors*sizeof(sectortype));
@@ -514,6 +518,10 @@ int32_t map_undoredo(int dir)
     numsectors   = mapstate->num[UNDO_SECTORS];
     numwalls     = mapstate->num[UNDO_WALLS];
     map_revision = mapstate->revision;
+
+    startpos     = mapstate->startpos;
+    startang     = mapstate->startang;
+    startsectnum = mapstate->startsectnum;
 
     Bmemset(show2dsector, 0, sizeof(show2dsector));
 

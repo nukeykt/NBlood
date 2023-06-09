@@ -6385,21 +6385,6 @@ static void Keys3d(void)
 
     ////////////////////
 
-    if (PRESSED_KEYSC(F11))  //F11 - brightness
-    {
-        static int16_t brightness = -1;
-
-        if (brightness==-1)
-            brightness = ((int16_t)((g_videoGamma-1.0)*10.0))&15;
-
-        brightness = brightness + (1-2*eitherSHIFT);
-        brightness &= 15;
-
-        g_videoGamma = 1.0 + ((float)brightness / 10.0);
-        videoSetPalette(brightness, BASEPAL, 0);
-        message("Brightness: %d/16", brightness+1);
-    }
-
     if (PRESSED_KEYSC(TAB))  //TAB
     {
         if (ASSERT_AIMING)
@@ -10796,6 +10781,21 @@ static void Keys2d3d(void)
                 message("2d3d mode %s", m32_2d3dmode ? "enabled" : "disabled");
             }
         }
+    }
+
+    if (PRESSED_KEYSC(F11))  //F11 - brightness
+    {
+        static int16_t brightness = -1;
+
+        if (brightness==-1)
+            brightness = ((int16_t)((g_videoGamma-1.0)*16.0))&15;
+
+        brightness = brightness + (1-2*eitherSHIFT);
+        brightness &= 15;
+
+        g_videoGamma = 1.0 + ((float)brightness / 16.0);
+        videoSetPalette(brightness, BASEPAL, 0);
+        message("Brightness: %d/16", brightness+1);
     }
 
     if (keystatus[KEYSC_QUOTE] && PRESSED_KEYSC(A)) // 'A

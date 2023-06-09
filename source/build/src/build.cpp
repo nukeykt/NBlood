@@ -72,10 +72,6 @@ int32_t graphicsmode = 0;
 
 int32_t synctics = 0, lockclock = 0;
 
-// those ones save the respective 3d video vars while in 2d mode
-// so that exiting from mapster32 in 2d mode saves the correct ones
-float vid_gamma_3d=-1, vid_contrast_3d=-1, vid_brightness_3d=-1;
-
 int32_t bppgame = 8;
 int32_t forcesetup = 1;
 
@@ -835,16 +831,8 @@ int app_main(int argc, char const* const* argv)
     keySetCallback(&m32_keypresscallback);
     editorMaybeLockMouse(0);
 
-
     if (cursectnum == -1)
     {
-        vid_gamma_3d = g_videoGamma;
-        vid_contrast_3d = g_videoContrast;
-
-        g_videoGamma = DEFAULT_GAMMA;
-        g_videoContrast = DEFAULT_CONTRAST;
-
-        videoSetPalette(0,0,0);
         if (videoSetGameMode(fullscreen, xdim, ydim, 8, upscalefactor) < 0)
         {
             ExtUnInit();
@@ -854,16 +842,8 @@ int app_main(int argc, char const* const* argv)
         }
 
         system_getcvars();
-
         overheadeditor();
         keystatus[buildkeys[BK_MODE2D_3D]] = 0;
-
-        g_videoGamma = vid_gamma_3d;
-        g_videoContrast = vid_contrast_3d;
-
-        vid_gamma_3d = vid_contrast_3d = vid_brightness_3d = -1;
-
-        videoSetPalette(GAMMA_CALC,0,0);
     }
     else
     {
@@ -876,9 +856,9 @@ int app_main(int argc, char const* const* argv)
         }
 
         system_getcvars();
-
-        videoSetPalette(GAMMA_CALC,0,0);
     }
+
+    videoSetPalette(GAMMA_CALC,0,0);
 
 CANCEL:
     quitflag = 0;
@@ -1632,25 +1612,9 @@ void editinput(void)
 
     if (keystatus[buildkeys[BK_MODE2D_3D]] && !m32_is2d3dmode())  // Enter
     {
-
-        vid_gamma_3d = g_videoGamma;
-        vid_contrast_3d = g_videoContrast;
-
-        g_videoGamma = DEFAULT_GAMMA;
-        g_videoContrast = DEFAULT_CONTRAST;
-
-        videoSetPalette(0,0,0);
-
         keystatus[buildkeys[BK_MODE2D_3D]] = 0;
         overheadeditor();
         keystatus[buildkeys[BK_MODE2D_3D]] = 0;
-
-        g_videoGamma = vid_gamma_3d;
-        g_videoContrast = vid_contrast_3d;
-
-        vid_gamma_3d = vid_contrast_3d = -1;
-
-        videoSetPalette(GAMMA_CALC,0,0);
     }
 }
 
