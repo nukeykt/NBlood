@@ -202,6 +202,7 @@ void communityapiSetRichPresence(char const * key, char const * str)
 
     Voidwrap_Steam_SetRichPresence(key, str);
 #else
+    UNREFERENCED_PARAMETER(key);
     UNREFERENCED_PARAMETER(str);
 #endif
 }
