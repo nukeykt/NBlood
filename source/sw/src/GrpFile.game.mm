@@ -27,7 +27,8 @@
 - (id)initWithGrpfile:(grpfile_t const *)grpfile
 {
     self = [super init];
-    if (self) {
+    if (self)
+    {
         fg = grpfile;
         namestring = [NSString stringWithCString:fg->type->name encoding:NSUTF8StringEncoding];
         [namestring retain];
