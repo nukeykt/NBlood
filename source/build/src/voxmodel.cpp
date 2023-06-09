@@ -149,8 +149,8 @@ static void putvox(int32_t x, int32_t y, int32_t z, int32_t col)
 #if 0
 static void setzrange0(int32_t *lptr, int32_t z0, int32_t z1)
 {
-    int32_t const m0 = ~-(1<<SHIFTMOD32(z0));
-    int32_t const m1 = -(1<<SHIFTMOD32(z1));
+    int32_t const m0 = ~(~0u<<SHIFTMOD32(z0));
+    int32_t const m1 = ~0u<<SHIFTMOD32(z1);
     if (!((z0^z1)&~31)) { lptr[z0>>5] &= m0|m1; return; }
     int32_t z = (z0>>5), ze = (z1>>5);
     lptr[z] &= m0;
@@ -161,8 +161,8 @@ static void setzrange0(int32_t *lptr, int32_t z0, int32_t z1)
 //Set all bits in vbit from (x,y,z0) to (x,y,z1-1) to 1's
 static void setzrange1(int32_t *lptr, int32_t z0, int32_t z1)
 {
-    int32_t const m0 = -(1<<SHIFTMOD32(z0));
-    int32_t const m1 = ~-(1<<SHIFTMOD32(z1));
+    int32_t const m0 = ~0u<<SHIFTMOD32(z0);
+    int32_t const m1 = ~(~0u<<SHIFTMOD32(z1));
     if (!((z0^z1)&~31)) { lptr[z0>>5] |= m1&m0; return; }
     int32_t z = (z0>>5), ze = (z1>>5);
     lptr[z] |= m0;
