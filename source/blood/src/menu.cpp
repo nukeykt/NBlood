@@ -962,6 +962,10 @@ void SetupMainMenu(void)
     menuMain.Add(&itemMain6, false);
     menuMain.Add(&itemMain7, false);
     menuMain.Add(&itemBloodQAV, false);
+
+#ifdef NETCODE_DISABLE
+    itemMain2.bEnable = 0; // disable multiplayer menu item for non-netcode build
+#endif
 }
 
 void SetupMainMenuWithSave(void)
