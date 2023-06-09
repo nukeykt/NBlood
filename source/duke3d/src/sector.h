@@ -76,7 +76,7 @@ typedef struct {
     uint16_t g_earthquakeTime;
     int8_t g_playerSpawnCnt;
 
-    uint8_t show2dsector[(MAXSECTORS+7)>>3];
+    uint8_t show2dsector[bitmap_size(MAXSECTORS)];
 
     actor_t actor[MAXSPRITES];
     playerspawn_t g_playerSpawnPoints[MAXPLAYERS];

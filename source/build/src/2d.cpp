@@ -1271,7 +1271,7 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
 // draw2dscreen
 //
 
-static int8_t tempbuf[(MAXWALLS+7)>>3];
+static int8_t tempbuf[bitmap_size(MAXWALLS)];
 
 void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int32_t zoome, int16_t gride)
 {
@@ -1302,7 +1302,7 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
     m32_swcnt = 0;
 
     if (numgraysects==0)
-        Bmemset(graybitmap, 0, (numwalls+7)>>3);
+        Bmemset(graybitmap, 0, bitmap_size(numwalls));
     else
     {
         for (int32_t i = 0; i < numwalls; i++)

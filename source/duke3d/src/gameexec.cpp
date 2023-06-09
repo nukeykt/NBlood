@@ -384,7 +384,7 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
 }
 
 //zhit_t zhit[MAXSPRITES];
-//static uint8_t zhseen[(MAXSECTORS+7)>>3];
+//static uint8_t zhseen[bitmap_size(MAXSECTORS)];
 
 //static inline uint16_t getsectorzsum(int const sectnum)
 //{

@@ -300,7 +300,7 @@ static inline int Menu_HaveUserMap(void)
 extern const char *G_DefaultRtsFile(void);
 
 #ifdef LEGACY_ROR
-extern char ror_protectedsectors[(MAXSECTORS+7)>>3];
+extern char ror_protectedsectors[bitmap_size(MAXSECTORS)];
 #endif
 
 extern float r_ambientlight;

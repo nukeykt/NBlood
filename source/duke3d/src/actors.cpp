@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # define ACTOR_STATIC static
 #endif
 
-uint8_t g_radiusDmgStatnums[(MAXSTATUS+7)>>3];
+uint8_t g_radiusDmgStatnums[bitmap_size(MAXSTATUS)];
 
 #define DELETE_SPRITE_AND_CONTINUE(KX) do { A_DeleteSprite(KX); goto next_sprite; } while (0)
 
@@ -307,7 +307,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     auto const pSprite = (uspriteptr_t)&sprite[spriteNum];
 
     int16_t numSectors, sectorList[MAXDAMAGESECTORS];
-    uint8_t * const sectorMap = (uint8_t *)Balloca((numsectors+7)>>3);
+    uint8_t * const sectorMap = (uint8_t *)Balloca(bitmap_size(numsectors));
     bfirst_search_init(sectorList, sectorMap, &numSectors, numsectors, pSprite->sectnum);
 
 #ifndef EDUKE32_STANDALONE
@@ -321,11 +321,11 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     int const forceFromRadiusDamage = max<int>((blastRadius * dmg4) - min<int>(UINT16_MAX, dist(pSprite, &g_player[myconnectindex].ps->pos) << 3), 0);
     I_AddForceFeedback(forceFromRadiusDamage, forceFromRadiusDamage, dmg3);
 
-    auto wallTouched = (uint8_t *)Balloca((numwalls+7)>>3);
-    Bmemset(wallTouched, 0, (numwalls+7)>>3);
+    auto wallTouched = (uint8_t *)Balloca(bitmap_size(numwalls));
+    Bmemset(wallTouched, 0, bitmap_size(numwalls));
 
-    auto wallCanSee = (uint8_t *)Balloca((numwalls+7)>>3);
-    Bmemset(wallCanSee, 0, (numwalls+7)>>3);
+    auto wallCanSee = (uint8_t *)Balloca(bitmap_size(numwalls));
+    Bmemset(wallCanSee, 0, bitmap_size(numwalls));
 
     for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
     {
