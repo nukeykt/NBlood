@@ -203,7 +203,7 @@ void CViewMap::Draw(void)
     if (gViewSize > 3)
         nViewY = gViewY1S-16;
     else
-        nViewY = gViewY0S+1;
+        nViewY = gViewY0S + (!VanillaMode() && (gGameOptions.nGameType == kGameTypeSinglePlayer) ? 6 : 1);
     viewDrawText(3, pBuffer, gViewX1S, nViewY, -128, 0, 2, 0, 256);
 
     if (gViewMap.bFollowMode)
