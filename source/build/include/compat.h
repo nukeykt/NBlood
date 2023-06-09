@@ -53,7 +53,9 @@
 ////////// Language detection //////////
 
 #if defined __STDC__
-# if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L
+# if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201710L
+#  define CSTD 2017
+# elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L
 #  define CSTD 2011
 # elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
 #  define CSTD 1999
