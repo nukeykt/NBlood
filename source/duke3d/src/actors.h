@@ -404,7 +404,7 @@ extern int32_t      g_noEnemies;
 extern int32_t      otherp;
 extern int32_t      ticrandomseed;
 extern projectile_t SpriteProjectile[MAXSPRITES];
-extern uint8_t      g_radiusDmgStatnums[(MAXSTATUS+7)>>3];
+extern uint8_t      g_radiusDmgStatnums[bitmap_size(MAXSTATUS)];
 
 int dukeValidateSectorEffectorPlaysSound(int);
 int dukeValidateSectorPlaysSound(int);

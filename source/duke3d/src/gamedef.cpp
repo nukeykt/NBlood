@@ -1069,8 +1069,8 @@ static void C_SetScriptSize(int32_t newsize)
     G_Util_PtrToIdx2(&g_tile[0].execPtr, MAXTILES, sizeof(tiledata_t), apScript, P2I_FWD_NON0);
     G_Util_PtrToIdx2(&g_tile[0].loadPtr, MAXTILES, sizeof(tiledata_t), apScript, P2I_FWD_NON0);
 
-    size_t old_bitptr_size = (((g_scriptSize + 7) >> 3) + 1) * sizeof(uint8_t);
-    size_t new_bitptr_size = (((newsize + 7) >> 3) + 1) * sizeof(uint8_t);
+    size_t old_bitptr_size = (bitmap_size(g_scriptSize) + 1) * sizeof(uint8_t);
+    size_t new_bitptr_size = (bitmap_size(newsize) + 1) * sizeof(uint8_t);
 
     auto newscript = (intptr_t *)Xrealloc(apScript, newsize * sizeof(intptr_t));
     bitptr = (uint8_t *)Xrealloc(bitptr, new_bitptr_size);
@@ -6532,7 +6532,7 @@ void C_Compile(const char *fileName)
     Xfree(apScript);
 
     apScript = (intptr_t *)Xcalloc(1, g_scriptSize * sizeof(intptr_t));
-    bitptr   = (uint8_t *)Xcalloc(1, (((g_scriptSize + 7) >> 3) + 1) * sizeof(uint8_t));
+    bitptr   = (uint8_t *)Xcalloc(1, (bitmap_size(g_scriptSize) + 1) * sizeof(uint8_t));
 
     g_errorCnt   = 0;
     g_labelCnt   = 0;

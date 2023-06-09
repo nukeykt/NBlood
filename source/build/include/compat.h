@@ -53,7 +53,9 @@
 ////////// Language detection //////////
 
 #if defined __STDC__
-# if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L
+# if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201710L
+#  define CSTD 2017
+# elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L
 #  define CSTD 2011
 # elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
 #  define CSTD 1999
@@ -317,7 +319,7 @@
 # define EDUKE32_CPU_X86
 #elif defined _M_PPC || defined __powerpc__ || defined __powerpc64__
 # define EDUKE32_CPU_PPC
-#elif defined __MIPSEL__ || defined __mips_isa_rev
+#elif defined __mips__ || defined __MIPSEL__ || defined __MIPSEB__ || defined __mips_isa_rev
 # define EDUKE32_CPU_MIPS
 #endif
 
@@ -331,10 +333,10 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 
 #if defined(__linux)
 # include <endian.h>
-# if __BYTE_ORDER == __LITTLE_ENDIAN
+# if __BYTE_ORDER == __LITTLE_ENDIAN || __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #  define B_LITTLE_ENDIAN 1
 #  define B_BIG_ENDIAN    0
-# elif __BYTE_ORDER == __BIG_ENDIAN
+# elif __BYTE_ORDER == __BIG_ENDIAN || __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #  define B_LITTLE_ENDIAN 0
 #  define B_BIG_ENDIAN    1
 # endif
@@ -1142,9 +1144,11 @@ static FORCE_INLINE CONSTEXPR_CXX14 int nextPow2(int const value)
     return i;
 }
 
-////////// Bitfield manipulation //////////
-
 static CONSTEXPR const char pow2char[8] = {1,2,4,8,16,32,64,128u};
+
+////////// Bitmap data structure //////////
+
+#define bitmap_size(N) (((N) + 7) >> 3)
 
 #ifdef __cplusplus
 template <typename T>
@@ -1168,13 +1172,11 @@ static FORCE_INLINE CONSTEXPR bool bitmap_test(T const *const ptr, int const n)
     return (ptr[n>>3] & pow2char[n&7]) == pow2char[n&7];
 }
 
-////////// Utility functions //////////
-
 // breadth-first search helpers
 template <typename T>
 void bfirst_search_init(T *const list, uint8_t *const bitmap, T *const eltnumptr, int const maxelts, int const firstelt)
 {
-    Bmemset(bitmap, 0, (maxelts+7)>>3);
+    Bmemset(bitmap, 0, bitmap_size(maxelts));
 
     list[0] = firstelt;
     bitmap_set(bitmap, firstelt);
@@ -1191,6 +1193,8 @@ void bfirst_search_try(T *const list, uint8_t *const bitmap, T *const eltnumptr,
     }
 }
 #endif
+
+////////// Utility functions //////////
 
 #if RAND_MAX == 32767
 static FORCE_INLINE uint16_t system_15bit_rand(void) { return (uint16_t)rand(); }

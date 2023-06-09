@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "vfs.h"
 
-static uint8_t precachehightile[2][(MAXTILES+7)>>3];
+static uint8_t precachehightile[2][bitmap_size(MAXTILES)];
 static int32_t g_precacheCount;
 
 

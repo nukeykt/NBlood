@@ -1001,9 +1001,9 @@ EXTERN bool g_windowPosValid;
     //   show2dsprite[spritenum>>3] &= ~(1<<(spritenum&7));
 
 EXTERN int automapping;
-EXTERN char show2dsector[(MAXSECTORS+7)>>3];
-EXTERN char show2dwall[(MAXWALLS+7)>>3];
-EXTERN char show2dsprite[(MAXSPRITES+7)>>3];
+EXTERN char show2dsector[bitmap_size(MAXSECTORS)];
+EXTERN char show2dwall[bitmap_size(MAXWALLS)];
+EXTERN char show2dsprite[bitmap_size(MAXSPRITES)];
 
 struct classicht_t
 {
@@ -1022,20 +1022,20 @@ EXTERN classicht_t classicht[MAXTILES];
 # define GOTPIC_USED
 #endif
 
-EXTERN char GOTPIC_USED gotpic[(MAXTILES+7)>>3];
-EXTERN char gotsector[(MAXSECTORS+7)>>3];
+EXTERN char GOTPIC_USED gotpic[bitmap_size(MAXTILES)];
+EXTERN char gotsector[bitmap_size(MAXSECTORS)];
 
 EXTERN char editorcolors[256];
 EXTERN char editorcolorsdef[256];
 
-EXTERN char faketile[(MAXTILES+7)>>3];
+EXTERN char faketile[bitmap_size(MAXTILES)];
 EXTERN char *faketiledata[MAXTILES];
 EXTERN int faketilesize[MAXTILES];
 
 EXTERN char spritecol2d[MAXTILES][2];
 EXTERN uint8_t tilecols[MAXTILES];
 
-EXTERN char editwall[(MAXWALLS+7)>>3];
+EXTERN char editwall[bitmap_size(MAXWALLS)];
 
 extern uint8_t vgapal16[4*256];
 

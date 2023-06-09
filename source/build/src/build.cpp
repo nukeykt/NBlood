@@ -158,7 +158,7 @@ static vec2_t tempxyar[MAXWALLS];
 
 static int32_t mousx, mousy;
 int16_t prefixtiles[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-uint8_t hlsectorbitmap[(MAXSECTORS+7)>>3];  // show2dsector is already taken...
+uint8_t hlsectorbitmap[bitmap_size(MAXSECTORS)];  // show2dsector is already taken...
 static int32_t minhlsectorfloorz, numhlsecwalls;
 int32_t searchlock = 0;
 
@@ -166,7 +166,7 @@ int32_t searchlock = 0;
 //  - hl_all_bunch_sectors_p
 //  - AlignWalls
 //  - trace_loop
-static uint8_t visited[(MAXWALLS+7)>>3];
+static uint8_t visited[bitmap_size(MAXWALLS)];
 
 int32_t m32_2d3dmode = 0;
 int32_t m32_2d3dsize = 4;
@@ -2631,7 +2631,7 @@ static void updatesprite1(int16_t i)
 
 #ifdef YAX_ENABLE
 // highlighted OR grayed-out sectors:
-static uint8_t hlorgraysectbitmap[(MAXSECTORS+7)>>3];
+static uint8_t hlorgraysectbitmap[bitmap_size(MAXSECTORS)];
 static int32_t ask_above_or_below(void);
 #else
 # define hlorgraysectbitmap hlsectorbitmap
@@ -2828,7 +2828,7 @@ void reset_highlight(void)  // walls and sprites
 #ifdef YAX_ENABLE
 static int16_t collnumsects[2];
 static int16_t collsectlist[2][MAXSECTORS];
-static uint8_t collsectbitmap[2][(MAXSECTORS+7)>>3];
+static uint8_t collsectbitmap[2][bitmap_size(MAXSECTORS)];
 
 static void collect_sectors1(int16_t *sectlist, uint8_t *sectbitmap, int16_t *numsectptr,
                              int16_t startsec, int32_t alsoyaxnext, int32_t alsoonw)
@@ -3037,7 +3037,7 @@ static int32_t hl_all_bunch_sectors_p()
 
     if (numyaxbunches > 0)
     {
-        Bmemset(havebunch, 0, (numyaxbunches+7)>>3);
+        Bmemset(havebunch, 0, bitmap_size(numyaxbunches));
         for (i=0; i<highlightsectorcnt; i++)
         {
             yax_getbunches(highlightsector[i], &cb, &fb);
@@ -5541,7 +5541,7 @@ end_yax: ;
                     // didmakered: 'bad'!
                     int32_t didmakered = (highlightsectorcnt<0) || eitherCTRL, hadouterpoint=0;
 #ifdef YAX_ENABLE
-                    for (i=0; i<(MAXSECTORS+7)>>3; i++)
+                    for (i=0; i<bitmap_size(MAXSECTORS); i++)
                         hlorgraysectbitmap[i] = hlsectorbitmap[i]|graysectbitmap[i];
 #endif
                     for (i=0; i<highlightsectorcnt; i++)
@@ -5771,7 +5771,7 @@ end_autoredwall:
 #ifdef YAX_ENABLE
                     // home: ceilings, end: floors
                     int32_t fb, bunchsel = keystatus[sc_End] ? 1 : (keystatus[sc_Home] ? 0 : -1);
-                    uint8_t bunchbitmap[(YAX_MAXBUNCHES+7)>>3];
+                    uint8_t bunchbitmap[bitmap_size(YAX_MAXBUNCHES)];
                     Bmemset(bunchbitmap, 0, sizeof(bunchbitmap));
 #endif
                     if (!m32_sideview)
@@ -6578,7 +6578,7 @@ end_point_dragging:
                     if (onwisvalid())
                     {
                         static int16_t ocollsectlist[MAXSECTORS];
-                        static uint8_t tcollbitmap[(MAXSECTORS+7)>>3];
+                        static uint8_t tcollbitmap[bitmap_size(MAXSECTORS)];
                         int16_t ocollnumsects=collnumsects[movestat], tmpsect;
 
                         Bmemcpy(ocollsectlist, collsectlist[movestat], ocollnumsects*sizeof(int16_t));
@@ -6593,7 +6593,7 @@ end_point_dragging:
                                 tmpsect = sectorofwall(onextwall[j]);
                                 sectors_components(1, &tmpsect, 1,0);
 
-                                for (m=0; m<(numsectors+7)>>3; m++)
+                                for (m=0; m<bitmap_size(numsectors); m++)
                                     tcollbitmap[m] |= collsectbitmap[0][m];
                                 moveonwp = 1;
                             }
@@ -7910,7 +7910,7 @@ end_space_handling:
 
                     for (i=0; i<numdrawnwalls; i++)
                     {
-                        char touchedwall[(MAXWALLS+7)>>3];
+                        char touchedwall[bitmap_size(MAXWALLS)];
                         Bmemset(touchedwall, 0, sizeof(touchedwall));
 
                         for (j=numwalls-1; j>=0; j--)  /* j may be modified in loop */
@@ -8006,7 +8006,7 @@ end_batch_insert_points:
 
 #ifdef YAX_ENABLE
             int16_t cb, fb;
-            uint8_t bunchbitmap[(YAX_MAXBUNCHES+7)>>3];
+            uint8_t bunchbitmap[bitmap_size(YAX_MAXBUNCHES)];
             Bmemset(bunchbitmap, 0, sizeof(bunchbitmap));
 #endif
             keystatus[sc_Delete] = 0;

@@ -453,7 +453,7 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
 }
 
 #ifdef LEGACY_ROR
-char ror_protectedsectors[(MAXSECTORS+7)>>3];
+char ror_protectedsectors[bitmap_size(MAXSECTORS)];
 static int32_t drawing_ror = 0;
 static int32_t ror_sprite = -1;
 

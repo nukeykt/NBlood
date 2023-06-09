@@ -1234,7 +1234,7 @@ static void cmpspecdata(const dataspec_t *spec, uint8_t **dumpvar, uint8_t **dif
 {
     uint8_t * dump   = *dumpvar;
     uint8_t * diff   = *diffvar;
-    int       nbytes = (getnumvar(spec) + 7) >> 3;
+    int       nbytes = bitmap_size(getnumvar(spec));
     int const slen   = Bstrlen((const char *)spec->ptr);
 
     Bmemcpy(diff, spec->ptr, slen);
@@ -1290,7 +1290,7 @@ static int32_t applydiff(const dataspec_t *spec, uint8_t **dumpvar, uint8_t **di
 {
     uint8_t * dump   = *dumpvar;
     uint8_t * diff   = *diffvar;
-    int const nbytes = (getnumvar(spec)+7)>>3;
+    int const nbytes = bitmap_size(getnumvar(spec));
     int const slen   = Bstrlen((const char *)spec->ptr);
 
     if (Bmemcmp(diff, spec->ptr, slen))  // check STRING magic (sync check)
@@ -1424,7 +1424,7 @@ static void sv_preprojectileload();
 static void sv_postprojectileload();
 
 static projectile_t *savegame_projectiledata;
-static uint8_t       savegame_projectiles[(MAXTILES + 7) >> 3];
+static uint8_t       savegame_projectiles[bitmap_size(MAXTILES)];
 static int32_t       savegame_projectilecnt = 0;
 
 static int32_t savegame_labelcnt;
@@ -1540,7 +1540,7 @@ static const dataspec_t svgm_script[] =
     { DS_NOCHK|DS_LOADFN, (void *) &sv_prelabelload, 0, 1 },
     { DS_NOCHK|DS_DYNAMIC|DS_CNT(savegame_labelcnt), &savegame_labels, 1<<6, (intptr_t)&savegame_labelcnt },
     { DS_SAVEFN, (void *) &sv_preprojectilesave, 0, 1 },
-    { 0, savegame_projectiles, sizeof(uint8_t), (MAXTILES + 7) >> 3 },
+    { 0, savegame_projectiles, sizeof(uint8_t), bitmap_size(MAXTILES) },
     { DS_LOADFN, (void *) &sv_preprojectileload, 0, 1 },
     { DS_DYNAMIC|DS_CNT(savegame_projectilecnt), &savegame_projectiledata, sizeof(projectile_t), (intptr_t)&savegame_projectilecnt },
     { DS_SAVEFN, (void *) &sv_postprojectilesave, 0, 1 },
@@ -1568,7 +1568,7 @@ static const dataspec_t svgm_anmisc[] =
     { 0, &g_spriteDeleteQueuePos, sizeof(g_spriteDeleteQueuePos), 1 },
     { DS_NOCHK, &g_deleteQueueSize, sizeof(g_deleteQueueSize), 1 },
     { DS_CNT(g_deleteQueueSize), &SpriteDeletionQueue[0], sizeof(int16_t), (intptr_t)&g_deleteQueueSize },
-    { 0, &show2dsector[0], sizeof(uint8_t), (MAXSECTORS+7)>>3 },
+    { 0, &show2dsector[0], sizeof(uint8_t), bitmap_size(MAXSECTORS) },
     { DS_NOCHK, &g_cloudCnt, sizeof(g_cloudCnt), 1 },
     { 0, &g_cloudSect[0], sizeof(g_cloudSect), 1 },
     { 0, &g_cloudX, sizeof(g_cloudX), 1 },
@@ -1649,7 +1649,7 @@ static void sv_makevarspec()
 
         if (aGameArrays[i].flags & GAMEARRAY_BITMAP)
         {
-            svgm_vars[vcnt].size = (aGameArrays[i].size + 7) >> 3;
+            svgm_vars[vcnt].size = bitmap_size(aGameArrays[i].size);
             svgm_vars[vcnt].cnt  = 1;  // assumed constant throughout demo, i.e. no RESIZEARRAY
         }
         else

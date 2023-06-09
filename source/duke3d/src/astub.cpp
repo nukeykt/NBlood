@@ -178,7 +178,7 @@ static char spriteshades[MAXSPRITES];
 static char wallpals[MAXWALLS];
 static char sectorpals[MAXSECTORS][2];
 static char spritepals[MAXSPRITES];
-static uint8_t wallflag[(MAXWALLS+7)>>3];
+static uint8_t wallflag[bitmap_size(MAXWALLS)];
 
 #ifdef YAX_ENABLE
 static uint8_t havebunch[YAX_MAXBUNCHES];
@@ -218,7 +218,7 @@ static int32_t yax_checkslope(int16_t sectnum, int32_t othersectnum)
 #endif
 
 // tile marking in tile selector for custom creation of tile groups
-static uint8_t tilemarked[(MAXTILES+7)>>3];
+static uint8_t tilemarked[bitmap_size(MAXTILES)];
 
 #ifdef POLYMER
 static int16_t spritelightid[MAXSPRITES];
@@ -1994,7 +1994,7 @@ static void SoundDisplay(void)
 int32_t AmbienceToggle = 1;
 int32_t ParentalLock = 0;
 
-uint8_t g_ambiencePlaying[(MAXSPRITES+7)>>3];
+uint8_t g_ambiencePlaying[bitmap_size(MAXSPRITES)];
 
 #define testbit(bitarray, i) (bitarray[(i)>>3] & pow2char[(i)&7])
 #define setbit(bitarray, i) bitarray[(i)>>3] |= pow2char[(i)&7]
@@ -3516,7 +3516,7 @@ static void tilescreen_drawrest(int32_t iSelected, int32_t showmsg)
 static int32_t DrawTiles(int32_t iTopLeft, int32_t iSelected, int32_t nXTiles, int32_t nYTiles,
                          int32_t TileDim, int32_t offset, int32_t showmsg)
 {
-    static uint8_t loadedhitile[(MAXTILES + 7) >> 3];
+    static uint8_t loadedhitile[bitmap_size(MAXTILES)];
 
 #ifdef USE_OPENGL
     int32_t const lazyselector = !osdvisible && g_lazy_tileselector && usehightile;
@@ -6715,7 +6715,7 @@ static void Keys3d(void)
             static const char *addnstr[4] = {"", "+stat+panning", "+stat", "+stat + panning (some)"};
 
             static int16_t sectlist[MAXSECTORS];
-            static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
+            static uint8_t sectbitmap[bitmap_size(MAXSECTORS)];
             int16_t sectcnt, sectnum;
 
             i = searchsector;

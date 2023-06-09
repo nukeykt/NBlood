@@ -32,10 +32,12 @@
 - (id)init
 {
     self = [super init];
-    if (self) {
+    if (self)
+    {
         list = [[NSMutableArray alloc] init];
 
-        for (grpfile_t const * p = foundgrps; p; p=p->next) {
+        for (grpfile_t const * p = foundgrps; p; p=p->next)
+        {
             [list addObject:[[GrpFile alloc] initWithGrpfile:p]];
         }
     }
@@ -57,7 +59,8 @@
 - (int)findIndexForGrpname:(NSString*)grpname
 {
     NSUInteger i, listcount = [list count];
-    for (i=0; i<listcount; i++) {
+    for (i=0; i<listcount; i++)
+    {
         if ([[[list objectAtIndex:i] grpname] isEqual:grpname]) return i;
     }
     return -1;
@@ -70,7 +73,8 @@
     UNREFERENCED_PARAMETER(aTableView);
 
     NSParameterAssert((NSUInteger)rowIndex < [list count]);
-    switch ([[aTableColumn identifier] intValue]) {
+    switch ([[aTableColumn identifier] intValue])
+    {
         case 0:	// name column
             return [[list objectAtIndex:rowIndex] name];
         case 1:	// grp column

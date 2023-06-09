@@ -526,7 +526,7 @@ void S_Callback(intptr_t num)
 
                 if (sprite[i].picnum == MUSICANDSFX && sector[sprite[i].sectnum].lotag < 3 && sprite[i].lotag < 999)
                 {
-                    extern uint8_t g_ambiencePlaying[(MAXSPRITES+7)>>3];
+                    extern uint8_t g_ambiencePlaying[bitmap_size(MAXSPRITES)];
 
                     g_ambiencePlaying[i>>3] &= ~pow2char[i&7];
 

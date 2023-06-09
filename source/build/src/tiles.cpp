@@ -403,7 +403,7 @@ void artReadManifest(buildvfs_kfd const fil, artheader_t * const local)
     kread(fil, tilesizx, local->numtiles*sizeof(int16_t));
     kread(fil, tilesizy, local->numtiles*sizeof(int16_t));
 
-    local->tileread = (uint8_t*)Xcalloc(1, (local->numtiles + 7) >> 3);
+    local->tileread = (uint8_t*)Xcalloc(1, bitmap_size(local->numtiles));
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {

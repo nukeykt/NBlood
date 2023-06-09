@@ -19,13 +19,13 @@ static int32_t clipsectnum, origclipsectnum, layerclipsectnum, clipspritenum;
 int16_t clipsectorlist[MAXCLIPSECTORS];
 static int16_t origclipsectorlist[MAXCLIPSECTORS];
 static int16_t layerclipsectorlist[MAXCLIPSECTORS];
-static uint8_t clipsectormap[(MAXSECTORS+7)>>3];
-static uint8_t origclipsectormap[(MAXSECTORS+7)>>3];
+static uint8_t clipsectormap[bitmap_size(MAXSECTORS)];
+static uint8_t origclipsectormap[bitmap_size(MAXSECTORS)];
 #ifdef HAVE_CLIPSHAPE_FEATURE
 static int16_t clipspritelist[MAXCLIPNUM];  // sector-like sprite clipping
 #endif
 static int16_t clipobjectval[MAXCLIPNUM];
-static uint8_t clipignore[(MAXCLIPNUM+7)>>3];
+static uint8_t clipignore[bitmap_size(MAXCLIPNUM)];
 
 ////// sector-like clipping for sprites //////
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -1014,8 +1014,8 @@ static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walld
     }
 
     static int16_t sectlist[MAXSECTORS];
-    static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
-    static uint8_t insidemap[(MAXSECTORS+7)>>3];
+    static uint8_t sectbitmap[bitmap_size(MAXSECTORS)];
+    static uint8_t insidemap[bitmap_size(MAXSECTORS)];
 
     Bmemset(insidemap, 0, sizeof(insidemap));
     bitmap_set(insidemap, *sectnum);
@@ -1164,7 +1164,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     clipmove_warned = 0;
 
-    Bmemset(clipsectormap, 0, (numsectors+7)>>3);
+    Bmemset(clipsectormap, 0, bitmap_size(numsectors));
     bitmap_set(clipsectormap, *sectnum);
 
     do
@@ -1181,7 +1181,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 // init sector-like sprites for clipping
                 origclipsectnum = clipsectnum;
                 Bmemcpy(origclipsectorlist, clipsectorlist, clipsectnum*sizeof(clipsectorlist[0]));
-                Bmemcpy(origclipsectormap, clipsectormap, (numsectors+7)>>3);
+                Bmemcpy(origclipsectormap, clipsectormap, bitmap_size(numsectors));
 
                 // replace sector and wall with clip map
                 engineSetClipMap(&origmapinfo, &clipmapinfo);
@@ -1576,7 +1576,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
         clipsectnum = origclipsectnum;
         Bmemcpy(clipsectorlist, origclipsectorlist, clipsectnum*sizeof(clipsectorlist[0]));
-        Bmemcpy(clipsectormap, origclipsectormap, (numsectors+7)>>3);
+        Bmemcpy(clipsectormap, origclipsectormap, bitmap_size(numsectors));
     }
 #endif
 
@@ -1710,7 +1710,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             clipsectorlist[0] = *sectnum;
             clipsectnum = 1;
 
-            Bmemset(clipsectormap, 0, (numsectors + 7) >> 3);
+            Bmemset(clipsectormap, 0, bitmap_size(numsectors));
             bitmap_set(clipsectormap, *sectnum);
         }
 
@@ -1894,7 +1894,7 @@ void getzrange(const vec3_t *pos, int16_t sectnum,
     clipsectorlist[0] = sectnum;
     clipsectnum = 1;
     clipspritenum = 0;
-    Bmemset(clipsectormap, 0, (numsectors+7)>>3);
+    Bmemset(clipsectormap, 0, bitmap_size(numsectors));
     bitmap_set(clipsectormap, sectnum);
 
 #ifdef HAVE_CLIPSHAPE_FEATURE

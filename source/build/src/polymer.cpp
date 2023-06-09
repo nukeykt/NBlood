@@ -708,7 +708,7 @@ GLfloat         *curskymodelviewmatrix;
 
 static int16_t  sectorqueue[MAXSECTORS];
 static GLuint   queryid[MAXWALLS];
-static uint8_t  drawingstate[(MAXSECTORS+7)>>3];
+static uint8_t  drawingstate[bitmap_size(MAXSECTORS)];
 
 int16_t         *cursectormasks;
 int16_t         *cursectormaskcount;

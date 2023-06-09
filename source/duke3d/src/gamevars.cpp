@@ -238,7 +238,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
         A_(!kread_and_test(kFile, buf, s_ms_len));
         A_(!Bmemcmp(buf, s_mapstate, s_ms_len));
 
-        uint8_t savedStateMap[(MAXVOLUMES * MAXLEVELS + 7) >> 3] = {};
+        uint8_t savedStateMap[bitmap_size(MAXVOLUMES * MAXLEVELS)] = {};
         A_(kdfread_LZ4(savedStateMap, sizeof(savedStateMap), 1, kFile) == 1);
 
         A_(!kread_and_test(kFile, &savedVarCount, sizeof(savedVarCount)));
@@ -474,7 +474,7 @@ void Gv_WriteSave(buildvfs_FILE fil)
     }
 
 
-    uint8_t savedStateMap[(MAXVOLUMES * MAXLEVELS + 7) >> 3] = {};
+    uint8_t savedStateMap[bitmap_size(MAXVOLUMES * MAXLEVELS)] = {};
     int32_t worldStateCount = 0;
 
     for (native_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
@@ -842,7 +842,7 @@ static int Gv_GetArrayIndex(const char *szArrayLabel)
 size_t __fastcall Gv_GetArrayAllocSizeForCount(int const arrayIdx, size_t const count)
 {
     if (aGameArrays[arrayIdx].flags & GAMEARRAY_BITMAP)
-        return (count + 7) >> 3;
+        return bitmap_size(count);
 
     return count * Gv_GetArrayElementSize(arrayIdx);
 }
