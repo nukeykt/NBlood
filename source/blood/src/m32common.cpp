@@ -737,7 +737,7 @@ static int32_t csc_s, csc_i;
 static int32_t check_spritelist_consistency()
 {
     int32_t ournumsprites=0;
-    static uint8_t havesprite[(MAXSPRITES+7)>>3];
+    static uint8_t havesprite[bitmap_size(MAXSPRITES)];
 
     csc_s = csc_i = -1;
 
@@ -768,7 +768,7 @@ static int32_t check_spritelist_consistency()
 
     // SECTOR LIST
 
-    Bmemset(havesprite, 0, (Numsprites+7)>>3);
+    Bmemset(havesprite, 0, bitmap_size(Numsprites));
 
     for (bssize_t s=0; s<numsectors; s++)
     {
@@ -913,7 +913,7 @@ int32_t CheckMapCorruption(int32_t printfromlev, uint64_t tryfixing)
 
     if (!corruptcheck_noalreadyrefd)
     {
-        seen_nextwalls = (uint8_t *)Xcalloc((numwalls+7)>>3,1);
+        seen_nextwalls = (uint8_t *)Xcalloc(bitmap_size(numwalls),1);
         lastnextwallsource = (int16_t *)Xmalloc(numwalls*sizeof(lastnextwallsource[0]));
     }
 

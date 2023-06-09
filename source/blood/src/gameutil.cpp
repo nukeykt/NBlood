@@ -797,7 +797,7 @@ unsigned int ClipMove(int *x, int *y, int *z, int *nSector, int xv, int yv, int 
 
 int GetClosestSectors(int nSector, int x, int y, int nDist, short *pSectors, char *pSectBit)
 {
-    char sectbits[(kMaxSectors+7)>>3];
+    char sectbits[bitmap_size(kMaxSectors)];
     dassert(pSectors != NULL);
     memset(sectbits, 0, sizeof(sectbits));
     pSectors[0] = nSector;
@@ -806,7 +806,7 @@ int GetClosestSectors(int nSector, int x, int y, int nDist, short *pSectors, cha
     int i = 0;
     if (pSectBit)
     {
-        memset(pSectBit, 0, (kMaxSectors+7)>>3);
+        memset(pSectBit, 0, bitmap_size(kMaxSectors));
         SetBitString(pSectBit, nSector);
     }
     while (i < n)
@@ -843,7 +843,7 @@ int GetClosestSectors(int nSector, int x, int y, int nDist, short *pSectors, cha
 
 int GetClosestSpriteSectors(int nSector, int x, int y, int nDist, short *pSectors, char *pSectBit, short *pWalls)
 {
-    char sectbits[(kMaxSectors+7)>>3];
+    char sectbits[bitmap_size(kMaxSectors)];
     dassert(pSectors != NULL);
     memset(sectbits, 0, sizeof(sectbits));
     pSectors[0] = nSector;
@@ -852,7 +852,7 @@ int GetClosestSpriteSectors(int nSector, int x, int y, int nDist, short *pSector
     int i = 0;
     if (pSectBit)
     {
-        memset(pSectBit, 0, (kMaxSectors+7)>>3);
+        memset(pSectBit, 0, bitmap_size(kMaxSectors));
         SetBitString(pSectBit, nSector);
     }
     while (i < n)

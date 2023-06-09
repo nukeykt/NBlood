@@ -682,9 +682,9 @@ static void Gv_AddSystemVars(void)
 //    Gv_NewArray("picsiz", (void *)picsiz, MAXTILES, GAMEARRAY_READONLY|GAMEARRAY_OFCHAR);
     Gv_NewArray("picanm", (void *)picanm, MAXTILES, GAMEARRAY_READONLY|GAMEARRAY_INT32);
 
-    Gv_NewArray("show2dsector", (void *)show2dsector, (MAXSECTORS+7)>>3, GAMEARRAY_READONLY|GAMEARRAY_UINT8);
-    Gv_NewArray("show2dwall", (void *)show2dwall, (MAXWALLS+7)>>3, GAMEARRAY_READONLY|GAMEARRAY_UINT8);
-    Gv_NewArray("show2dsprite", (void *)show2dsprite, (MAXSPRITES+7)>>3, GAMEARRAY_READONLY|GAMEARRAY_UINT8);
+    Gv_NewArray("show2dsector", (void *)show2dsector, bitmap_size(MAXSECTORS), GAMEARRAY_READONLY|GAMEARRAY_UINT8);
+    Gv_NewArray("show2dwall", (void *)show2dwall, bitmap_size(MAXWALLS), GAMEARRAY_READONLY|GAMEARRAY_UINT8);
+    Gv_NewArray("show2dsprite", (void *)show2dsprite, bitmap_size(MAXSPRITES), GAMEARRAY_READONLY|GAMEARRAY_UINT8);
 
     Gv_NewArray("keystatus", (void *)keystatus, 256, GAMEARRAY_WARN|GAMEARRAY_UINT8);
     Gv_NewArray("alphakeys", (void *)alphakeys, sizeof(alphakeys), GAMEARRAY_READONLY|GAMEARRAY_UINT8);

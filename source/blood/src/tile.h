@@ -49,7 +49,7 @@ extern signed char tileShade[kMaxTiles];
 extern short voxelIndex[kMaxTiles];
 
 extern int nPrecacheCount;
-extern char precachehightile[2][(MAXTILES+7)>>3];
+extern char precachehightile[2][bitmap_size(MAXTILES)];
 
 extern int32_t MAXCACHE1DSIZE;
 

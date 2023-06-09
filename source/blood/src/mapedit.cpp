@@ -198,7 +198,7 @@ static char spriteshades[MAXSPRITES];
 static char wallpals[MAXWALLS];
 static char sectorpals[MAXSECTORS][2];
 static char spritepals[MAXSPRITES];
-static uint8_t wallflag[(MAXWALLS+7)>>3];
+static uint8_t wallflag[bitmap_size(MAXWALLS)];
 
 #ifdef YAX_ENABLE
 static uint8_t havebunch[YAX_MAXBUNCHES];
@@ -238,7 +238,7 @@ static int32_t yax_checkslope(int16_t sectnum, int32_t othersectnum)
 #endif
 
 // tile marking in tile selector for custom creation of tile groups
-static uint8_t tilemarked[(MAXTILES+7)>>3];
+static uint8_t tilemarked[bitmap_size(MAXTILES)];
 
 #ifdef POLYMER
 static int16_t spritelightid[MAXSPRITES];
@@ -5563,7 +5563,7 @@ static int32_t DrawTiles(int32_t iTopLeft, int32_t iSelected, int32_t nXTiles, i
     int32_t lazyselector = g_lazy_tileselector;
 #endif
     int32_t runi=0;
-    static uint8_t loadedhitile[(MAXTILES+7)>>3];
+    static uint8_t loadedhitile[bitmap_size(MAXTILES)];
 
 #ifdef USE_OPENGL
     polymostSet2dView();
@@ -8735,7 +8735,7 @@ static void Keys3d(void)
             static const char *addnstr[4] = {"", "+stat+panning", "+stat", "+stat + panning (some)"};
 
             static int16_t sectlist[MAXSECTORS];
-            static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
+            static uint8_t sectbitmap[bitmap_size(MAXSECTORS)];
             int16_t sectcnt, sectnum;
 
             i = searchsector;
