@@ -988,7 +988,7 @@ void G_AddGameLight(int spriteNum, int sectNum, vec3_t const &offset, int lightR
 
         if (s->pal)
         {
-            int colidx = paletteGetClosestColorWithBlacklist(pr_light.color[0], pr_light.color[1], pr_light.color[2], 254, PaletteIndexFullbrights);
+            int colidx = paletteGetClosestColorWithBlacklist(pr_light.color[0], pr_light.color[1], pr_light.color[2], 254, PaletteIndexFullbright);
             colidx = palookup[s->pal][colidx];
             pr_actor->lightcolidx = colidx;
             pr_light.color[0] = curpalette[colidx].r;

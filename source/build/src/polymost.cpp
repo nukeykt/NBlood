@@ -1885,7 +1885,7 @@ void uploadbasepalette(int32_t basepalnum)
         basepalWFullBrightInfo[i*4] = basepaltable[basepalnum][i*3];
         basepalWFullBrightInfo[i*4+1] = basepaltable[basepalnum][i*3+1];
         basepalWFullBrightInfo[i*4+2] = basepaltable[basepalnum][i*3+2];
-        basepalWFullBrightInfo[i*4+3] = 0-(IsPaletteIndexFullbright(i) != 0);
+        basepalWFullBrightInfo[i*4+3] = 0-(bitmap_test(PaletteIndexFullbright, i) != 0);
     }
 
     char allocateTexture = !paletteTextureIDs[basepalnum];
@@ -2158,13 +2158,13 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
                     if (!fullbrightloadingpass)
                     {
                         // regular texture
-                        if (IsPaletteIndexFullbright(dacol) && dofullbright)
+                        if (bitmap_test(PaletteIndexFullbright, dacol) && dofullbright)
                             hasfullbright = 1;
                     }
                     else
                     {
                         // texture with only fullbright areas
-                        if (!IsPaletteIndexFullbright(dacol))    // regular colors
+                        if (!bitmap_test(PaletteIndexFullbright, dacol))    // regular colors
                         {
                             wpptr->a = 0;
                             hasalpha = 1;

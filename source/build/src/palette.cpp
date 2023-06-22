@@ -284,7 +284,7 @@ void paletteLoadFromDisk(void)
     kclose(fil);
 }
 
-uint8_t PaletteIndexFullbrights[32];
+uint8_t PaletteIndexFullbright[bitmap_size(256)];
 
 void palettePostLoadTables(void)
 {
@@ -307,7 +307,7 @@ void palettePostLoadTables(void)
     whitecol = paletteGetClosestColor(255, 255, 255);
     redcol = paletteGetClosestColor(255, 0, 0);
 
-    // Bmemset(PaletteIndexFullbrights, 0, sizeof(PaletteIndexFullbrights));
+    // Bmemset(PaletteIndexFullbright, 0, sizeof(PaletteIndexFullbright));
     for (bssize_t c = 0; c < 255; ++c) // skipping transparent color
     {
         uint8_t const index = palookup0[c];
@@ -321,7 +321,7 @@ void palettePostLoadTables(void)
             if (EDUKE32_PREDICT_FALSE(palookup0[s] != index))
                 goto PostLoad_NotFullbright;
 
-        SetPaletteIndexFullbright(c);
+        bitmap_set(PaletteIndexFullbright, c);
 
         PostLoad_NotFullbright: ;
     }
@@ -336,7 +336,7 @@ void palettePostLoadTables(void)
             {
                 uint8_t const index = palookup0[c];
                 uint8_t const * const color = &palette[index*3];
-                if (!IsPaletteIndexFullbright(index) && memcmp(blackcolor, color, sizeof(rgb24_t)))
+                if (!bitmap_test(PaletteIndexFullbright, index) && memcmp(blackcolor, color, sizeof(rgb24_t)))
                     goto PostLoad_FoundShade;
             }
         }
@@ -350,7 +350,7 @@ void palettePostLoadTables(void)
             continue;
 
         palette_t *edcol = (palette_t *) &vgapal16[4*i];
-        editorcolors[i] = paletteGetClosestColorWithBlacklist(edcol->b, edcol->g, edcol->r, 254, PaletteIndexFullbrights);
+        editorcolors[i] = paletteGetClosestColorWithBlacklist(edcol->b, edcol->g, edcol->r, 254, PaletteIndexFullbright);
     }
 }
 

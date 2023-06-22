@@ -12083,7 +12083,7 @@ void applyVoxelColorMap(char* davoxptr, uint8_t *bitmap)
                     uint8_t coloridx = voxptr[3+offs];
                     if (coloridx != 255 && bitmap_test(bitmap, coloridx))
                     {
-                        rgb24_t const& color = *(rgb24_t*)&(IsPaletteIndexFullbright(coloridx)?voxpal:palette)[coloridx * 3];
+                        rgb24_t const& color = *(rgb24_t*)&(bitmap_test(PaletteIndexFullbright, coloridx)?voxpal:palette)[coloridx * 3];
                         voxptr[3 + offs] = paletteGetClosestColorWithBlacklist(color.r, color.g, color.b, maxvoxcol, bitmap);
                     }
                     offs++;
