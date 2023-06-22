@@ -49,6 +49,12 @@
 # define EDUKE32_MSVC_CXX_PREREQ(major) 0
 #endif
 
+#ifdef __INTEL_COMPILER
+# define EDUKE32_ICC_PREREQ(major) ((major) <= __INTEL_COMPILER)
+#else
+# define EDUKE32_ICC_PREREQ(major) 0
+#endif
+
 
 ////////// Language detection //////////
 
