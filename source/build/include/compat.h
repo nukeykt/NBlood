@@ -129,8 +129,11 @@
 # define ATTRIBUTE_OPTIMIZE(str)
 #endif
 
+// must be placed before return type and at both declaration and definition
 #if EDUKE32_GCC_PREREQ(4,0)
 # define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#elif EDUKE32_MSVC_PREREQ(1700)
+# define WARN_UNUSED_RESULT _Check_return_
 #else
 # define WARN_UNUSED_RESULT
 #endif
