@@ -183,11 +183,16 @@
 # define EDUKE32_NORETURN __attribute__((noreturn))
 #endif
 
-#if 1 && defined(__OPTIMIZE__) && (defined __GNUC__ || __has_builtin(__builtin_expect))
-# define EDUKE32_PREDICT_TRUE(x)       __builtin_expect(!!(x),1)
-# define EDUKE32_PREDICT_FALSE(x)     __builtin_expect(!!(x),0)
+#if 1 && defined(__OPTIMIZE__) && ( \
+  EDUKE32_GCC_PREREQ(3,0) || \
+  EDUKE32_ICC_PREREQ(800) || \
+  defined __clang__ || \
+  __has_builtin(__builtin_expect) \
+)
+# define EDUKE32_PREDICT_TRUE(x)  __builtin_expect(!!(x),1)
+# define EDUKE32_PREDICT_FALSE(x) __builtin_expect(!!(x),0)
 #else
-# define EDUKE32_PREDICT_TRUE(x) (x)
+# define EDUKE32_PREDICT_TRUE(x)  (x)
 # define EDUKE32_PREDICT_FALSE(x) (x)
 #endif
 

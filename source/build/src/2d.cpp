@@ -27,11 +27,7 @@ static vec3_t m32_viewplane;
 
 static void drawpixel_safe(void *s, char a)
 {
-#if defined __GNUC__
-    if (__builtin_expect((intptr_t) s >= frameplace && (intptr_t) s < frameplace+bytesperline*ydim, 1))
-#else
-    if ((intptr_t) s >= frameplace && (intptr_t) s < frameplace+bytesperline*ydim)
-#endif
+    if (EDUKE32_PREDICT_TRUE((intptr_t) s >= frameplace && (intptr_t) s < frameplace+bytesperline*ydim))
         drawpixel(s, a);
 #ifdef DEBUGGINGAIDS
     else
