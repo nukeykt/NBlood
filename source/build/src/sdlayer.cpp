@@ -1892,7 +1892,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
 #if MICROPROFILE_ENABLED != 0
-    MicroProfileGpuInitGL();
+    if (!nogl)
+        MicroProfileGpuInitGL();
 #endif
 
 #ifdef _WIN32
