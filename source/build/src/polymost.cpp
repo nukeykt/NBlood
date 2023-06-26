@@ -486,7 +486,8 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
 void polymost_glreset()
 {
     buildgl_resetStateAccounting();
-    buildgl_activeTexture(GL_TEXTURE0);
+    if (!nogl)
+        buildgl_activeTexture(GL_TEXTURE0);
 
     for (bssize_t i=0; i<=MAXPALOOKUPS-1; i++)
     {
@@ -542,7 +543,9 @@ void polymost_glreset()
 
     // texcache_freeptrs();
     texcache_syncmemcache();
-    polymost_initdrawpoly();
+
+    if (!nogl)
+        polymost_initdrawpoly();
 
     DVLOG_F(LOG_DEBUG, "polymost_glreset()");
 }
