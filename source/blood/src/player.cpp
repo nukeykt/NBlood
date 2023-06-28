@@ -1482,7 +1482,12 @@ void ProcessInput(PLAYER *pPlayer)
         }
     }
     if (pInput->q16turn)
-        pPlayer->q16ang = (pPlayer->q16ang+pInput->q16turn)&0x7ffffff;
+    {
+        if (bVanilla)
+            pPlayer->q16ang = ((pPlayer->q16ang&0x7ff0000)+(pInput->q16turn&0x7ff0000))&0x7ffffff;
+        else
+            pPlayer->q16ang = (pPlayer->q16ang+pInput->q16turn)&0x7ffffff;
+    }
     if (pInput->keyFlags.spin180)
     {
         if (!pPlayer->spin)

@@ -423,7 +423,12 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         }
     }
     if (pInput->q16turn)
-        predict.at30 = (predict.at30+pInput->q16turn)&0x7ffffff;
+    {
+        if (bVanilla)
+            predict.at30 = ((predict.at30&0x7ff0000)+(pInput->q16turn&0x7ff0000))&0x7ffffff;
+        else
+            predict.at30 = (predict.at30+pInput->q16turn)&0x7ffffff;
+    }
     if (pInput->keyFlags.spin180)
         if (!predict.at4c)
             predict.at4c = -kAng180;
