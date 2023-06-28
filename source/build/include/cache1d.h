@@ -35,10 +35,8 @@ class cache1d
 public:
     void    initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t minsize = 0);
     void    allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlockptr);
-    void    tryHarder(int32_t const newbytes, int32_t * const besto, int32_t * const bestz);
 
     void    ageBlocks(void);
-    int32_t findBlock(int32_t const newbytes, int32_t * const besto, int32_t * const bestz);
     void    report(void);
     void    reset(void);
 
@@ -52,7 +50,6 @@ private:
 
     intptr_t m_baseAddress{};
     int32_t  m_totalSize{};
-    int32_t  m_alignment{};
 
     int m_maxBlocks{};
     int m_numBlocks{};
