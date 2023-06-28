@@ -582,7 +582,7 @@ void CDemo::ReadInput(int nCount)
             pInput->syncFlags.run = bitReader.readBit();
             bitReader.skipBits(26);
             pInput->forward = bitReader.readSigned(8) << 8;
-            pInput->q16turn = fix16_from_int(bitReader.readSigned(16) >> 2);
+            pInput->q16turn = fix16_from_int(bitReader.readSigned(16)) >> 2;
             pInput->strafe = bitReader.readSigned(8) << 8;
             pInput->buttonFlags.jump = bitReader.readBit();
             pInput->buttonFlags.crouch = bitReader.readBit();
