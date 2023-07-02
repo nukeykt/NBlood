@@ -759,8 +759,8 @@ define BUILDRULE
 
 $$($1_$2)$$(EXESUFFIX): $$(foreach i,$(call getdeps,$1,$2),$$(call expandobjs,$$i)) $$($1_$2_miscdeps) | $$($1_$2_orderonlydeps)
 	$$(LINK_STATUS)
-	$$(call MKDIR,"$$(obj)/$$($1_$2)")
-	$$(RECIPE_IF) $$(LINKER) $$(call LF,$$(obj)/$$($1_$2)) -o $$@ $$^ $$(GUI_LIBS) $$($1_$2_ldflags) $$(LIBDIRS) $$(LIBS) $$(RECIPE_RESULT_LINK)
+	$$(call MKDIR,"$$(obj)/$$($1_$2)_dump")
+	$$(RECIPE_IF) $$(LINKER) $$(call LF,$$(obj)/$$($1_$2)_dump) -o $$@ $$^ $$(GUI_LIBS) $$($1_$2_ldflags) $$(LIBDIRS) $$(LIBS) $$(RECIPE_RESULT_LINK)
 ifeq ($$(PLATFORM),WII)
 ifneq ($$(ELF2DOL),)
 	$$(ELF2DOL) $$@ $$($1_$2)$$(DOLSUFFIX)
@@ -774,7 +774,7 @@ ifeq ($$(PLATFORM),DARWIN)
 	$(call MKDIR,"$$($1_$2_proper).app/Contents/MacOS")
 	cp -f "$$($1_$2)$$(EXESUFFIX)" "$$($1_$2_proper).app/Contents/MacOS/"
 endif
-	$$(call RMDIR,"$$(obj)/$$($1_$2)")
+	$$(call RMDIR,"$$(obj)/$$($1_$2)_dump")
 
 endef
 
