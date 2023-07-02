@@ -109,7 +109,7 @@ static int32_t lzwcompress(const char *lzwinbuf, int32_t uncompleng, char *lzwou
     shortptr = (int16_t *)lzwoutbuf;
     shortptr[0] = B_LITTLE16((int16_t)uncompleng);
 
-    if ((bitmap_size(bitcnt)) < uncompleng)
+    if (bitmap_size(bitcnt) < uncompleng)
     {
         shortptr[1] = B_LITTLE16((int16_t)addrcnt);
         return bitmap_size(bitcnt);

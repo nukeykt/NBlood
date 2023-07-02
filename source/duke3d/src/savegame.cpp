@@ -404,6 +404,23 @@ static int different_user_map;
 
 #include "sjson.h"
 
+static void sv_update_app_title(int mapidx)
+{
+    if (mapidx >= 0) // if a valid map is active
+        G_UpdateAppTitle(Menu_HaveUserMap() ? boardfilename : g_mapInfo[mapidx].name);
+    else
+        G_UpdateAppTitle();
+}
+
+static void sv_update_filename(char * filename, const int mapidx, const int maxpath) {
+    if (boardfilename[0])
+        Bstrncpyz(filename, boardfilename, maxpath);
+    else if (g_mapInfo[mapidx].filename)
+        Bstrncpyz(filename, g_mapInfo[mapidx].filename, maxpath);
+    else
+        filename[0] = '\0';
+}
+
 // XXX: keyboard input 'blocked' after load fail? (at least ESC?)
 int32_t G_LoadPlayer(savebrief_t & sv)
 {
@@ -485,7 +502,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
         ud.returnvar[0] = level;
         volume = VM_OnEventWithReturn(EVENT_VALIDATESTART, g_player[myconnectindex].ps->i, myconnectindex, volume);
         level = ud.returnvar[0];
-
+        int const mapidx = volume*MAXLEVELS + level;
 
         {
             // CODEDUP from non-isExt branch, with simplifying assumptions
@@ -504,14 +521,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
             ud.m_player_skill = skill;
 
             boardfilename[0] = '\0';
-
-            int const mapIdx = volume*MAXLEVELS + level;
-
-            if (boardfilename[0])
-                Bstrcpy(currentboardfilename, boardfilename);
-            else if (g_mapInfo[mapIdx].filename)
-                Bstrcpy(currentboardfilename, g_mapInfo[mapIdx].filename);
-
+            sv_update_filename(currentboardfilename, mapidx, BMAX_PATH);
 
             if (currentboardfilename[0])
             {
@@ -522,8 +532,6 @@ int32_t G_LoadPlayer(savebrief_t & sv)
                 sv_loadMapart(mhkInfo, currentboardfilename);
                 sv_loadMhk(mhkInfo, currentboardfilename);
             }
-
-            currentboardfilename[0] = '\0';
 
             // G_NewGame_EnterLevel();
         }
@@ -649,6 +657,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
         // sv_postudload();
 
+        sv_update_app_title(mapidx);
         VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek);
 
         return 0;
@@ -702,18 +711,13 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     ud.m_volume_number = h.volnum;
     ud.m_level_number = h.levnum;
     ud.m_player_skill = h.skill;
+    int const mapidx = h.volnum*MAXLEVELS + h.levnum;
 
     EDUKE32_STATIC_ASSERT(sizeof(h.boardfn) < sizeof(boardfilename));
     different_user_map = Bstrncmp(boardfilename, h.boardfn, sizeof(h.boardfn));
     // NOTE: size arg is (unconventionally) that of the source, it being smaller.
     Bstrncpyz(boardfilename, h.boardfn, sizeof(h.boardfn) /*!*/);
-
-    int const mapIdx = h.volnum*MAXLEVELS + h.levnum;
-
-    if (boardfilename[0])
-        Bstrcpy(currentboardfilename, boardfilename);
-    else if (g_mapInfo[mapIdx].filename)
-        Bstrcpy(currentboardfilename, g_mapInfo[mapIdx].filename);
+    sv_update_filename(currentboardfilename, mapidx, BMAX_PATH);
 
     if (currentboardfilename[0])
     {
@@ -724,8 +728,6 @@ int32_t G_LoadPlayer(savebrief_t & sv)
         sv_loadMapart(mhkInfo, currentboardfilename);
         sv_loadMhk(mhkInfo, currentboardfilename);
     }
-
-    Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
 
     for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
     {
@@ -744,6 +746,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     }
 
     sv_postudload();  // ud.m_XXX = ud.XXX
+    sv_update_app_title(mapidx);
     VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek, -1, h.userbytever);
     kclose(fil);
 
@@ -1730,7 +1733,7 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
     h.skill      = ud.player_skill;
     h.health     = sprite[g_player[myconnectindex].ps->i].extra;
 
-    Bstrncpyz(h.boardfn, currentboardfilename, sizeof(h.boardfn));
+    sv_update_filename(h.boardfn, h.volnum*MAXLEVELS + h.levnum, sizeof(h.boardfn));
 
     if (spot >= 0)
     {
@@ -1747,7 +1750,7 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
 
         const time_t t = time(NULL);
         struct tm *  st;
-        
+
         if (t>=0 && (st = localtime(&t)))
             Bsnprintf(h.savename, sizeof(h.savename), "Demo %04d%02d%02d %s",
                       st->tm_year+1900, st->tm_mon+1, st->tm_mday, s_buildRev);

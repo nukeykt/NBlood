@@ -494,7 +494,8 @@ static GLuint polymost2_compileShader(GLenum shaderType, const char* const sourc
 void polymost_glreset()
 {
     buildgl_resetStateAccounting();
-    buildgl_activeTexture(GL_TEXTURE0);
+    if (!nogl)
+        buildgl_activeTexture(GL_TEXTURE0);
 
     for (bssize_t i=0; i<=MAXPALOOKUPS-1; i++)
     {
@@ -551,7 +552,9 @@ void polymost_glreset()
 
     // texcache_freeptrs();
     texcache_syncmemcache();
-    polymost_initdrawpoly();
+
+    if (!nogl)
+        polymost_initdrawpoly();
 
     DVLOG_F(LOG_DEBUG, "polymost_glreset()");
 }
@@ -1920,7 +1923,7 @@ void uploadbasepalette(int32_t basepalnum)
         basepalWFullBrightInfo[i*4] = basepaltable[basepalnum][i*3];
         basepalWFullBrightInfo[i*4+1] = basepaltable[basepalnum][i*3+1];
         basepalWFullBrightInfo[i*4+2] = basepaltable[basepalnum][i*3+2];
-        basepalWFullBrightInfo[i*4+3] = 0-(IsPaletteIndexFullbright(i) != 0);
+        basepalWFullBrightInfo[i*4+3] = 0-(bitmap_test(PaletteIndexFullbright, i) != 0);
     }
 
     char allocateTexture = !paletteTextureIDs[basepalnum];
@@ -2193,13 +2196,13 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
                     if (!fullbrightloadingpass)
                     {
                         // regular texture
-                        if (IsPaletteIndexFullbright(dacol) && dofullbright)
+                        if (bitmap_test(PaletteIndexFullbright, dacol) && dofullbright)
                             hasfullbright = 1;
                     }
                     else
                     {
                         // texture with only fullbright areas
-                        if (!IsPaletteIndexFullbright(dacol))    // regular colors
+                        if (!bitmap_test(PaletteIndexFullbright, dacol))    // regular colors
                         {
                             wpptr->a = 0;
                             hasalpha = 1;

@@ -33,9 +33,7 @@ extern uint8_t curbasepal;
 
 #define paletteGetBlendTable(blend) (blendtable[blend])
 
-extern uint8_t PaletteIndexFullbrights[32];
-#define IsPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] & (1u<<((col)&7)))
-#define SetPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] |= (1u<<((col)&7)))
+extern uint8_t PaletteIndexFullbright[bitmap_size(256)];
 
 typedef struct {
     char r, g, b, f;

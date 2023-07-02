@@ -12131,7 +12131,7 @@ void applyVoxelColorMap(char* davoxptr, uint8_t *bitmap)
                     uint8_t coloridx = voxptr[3+offs];
                     if (coloridx != 255 && bitmap_test(bitmap, coloridx))
                     {
-                        rgb24_t const& color = *(rgb24_t*)&(IsPaletteIndexFullbright(coloridx)?voxpal:palette)[coloridx * 3];
+                        rgb24_t const& color = *(rgb24_t*)&(bitmap_test(PaletteIndexFullbright, coloridx)?voxpal:palette)[coloridx * 3];
                         voxptr[3 + offs] = paletteGetClosestColorWithBlacklist(color.r, color.g, color.b, maxvoxcol, bitmap);
                     }
                     offs++;
@@ -14836,15 +14836,16 @@ static void PolymerProcessModels(void)
 //
 int32_t videoSetRenderMode(int32_t renderer)
 {
-    UNREFERENCED_PARAMETER(renderer);
-
 #ifdef USE_OPENGL
     buildgl_resetStateAccounting();
 
     if (bpp == 8)
     {
-        buildgl_setDisabled(GL_BLEND);
-        buildgl_setDisabled(GL_ALPHA_TEST);
+        if (!nogl)
+        {
+            buildgl_setDisabled(GL_BLEND);
+            buildgl_setDisabled(GL_ALPHA_TEST);
+        }
         renderer = REND_CLASSIC;
     }
 # ifdef POLYMER
@@ -14865,7 +14866,8 @@ int32_t videoSetRenderMode(int32_t renderer)
         polymer_uninit();
     }
 # else
-    else renderer = REND_POLYMOST;
+    else
+        renderer = REND_POLYMOST;
 # endif
 
     // Fixes mirror glitches that occur when changing the renderer.
@@ -14882,6 +14884,8 @@ int32_t videoSetRenderMode(int32_t renderer)
     {
         polymost_init();
     }
+#else
+    UNREFERENCED_PARAMETER(renderer);
 #endif
 
     return 0;
