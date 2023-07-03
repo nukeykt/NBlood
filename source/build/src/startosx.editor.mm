@@ -384,13 +384,17 @@ static struct {
     int idx3d = -1;
     int xdim = 0, ydim = 0, bpp = 0;
 
-    if (firstTime) {
+    if (firstTime)
+    {
         xdim = settings.xdim3d;
         ydim = settings.ydim3d;
         bpp  = settings.bpp3d;
-    } else {
+    }
+    else
+    {
         mode3d = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
-        if (mode3d >= 0) {
+        if (mode3d >= 0)
+        {
             xdim = validmode[mode3d].xdim;
             ydim = validmode[mode3d].ydim;
             bpp = validmode[mode3d].bpp;
@@ -399,10 +403,12 @@ static struct {
 
 
     mode3d = videoCheckMode(&xdim, &ydim, bpp, fullscreen, 1);
-    if (mode3d < 0) {
+    if (mode3d < 0)
+    {
         int i, cd[] = { 32, 24, 16, 15, 8, 0 };
         for (i=0; cd[i]; ) { if (cd[i] >= bpp) i++; else break; }
-        for ( ; cd[i]; i++) {
+        for ( ; cd[i]; i++)
+        {
             mode3d = videoCheckMode(&xdim, &ydim, cd[i], fullscreen, 1);
             if (mode3d < 0) continue;
             break;
@@ -414,8 +420,10 @@ static struct {
 
     modeslist3d = [[NSMutableArray alloc] init];
 
-    for (i = 0; i < validmodecnt; i++) {
-        if (fullscreen == validmode[i].fs) {
+    for (i = 0; i < validmodecnt; i++)
+    {
+        if (fullscreen == validmode[i].fs)
+        {
             if (i == mode3d) idx3d = [modeslist3d count];
             [modeslist3d addObject:[NSNumber numberWithInt:i]];
             [videoMode3DPUButton addItemWithTitle:[NSString stringWithFormat:@"%d %C %d %d-bpp",
@@ -445,7 +453,8 @@ static struct {
     UNREFERENCED_PARAMETER(sender);
 
     int mode = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
-    if (mode >= 0) {
+    if (mode >= 0)
+    {
         settings.xdim3d = validmode[mode].xdim;
         settings.ydim3d = validmode[mode].ydim;
         settings.bpp3d = validmode[mode].bpp;
@@ -514,7 +523,8 @@ static struct {
     [messagesView replaceCharactersInRange:end withString:str];
     [text endEditing];
 
-    if (shouldAutoScroll) {
+    if (shouldAutoScroll)
+    {
         end.location = [text length];
         end.length = 0;
         [messagesView scrollRangeToVisible:end];
@@ -631,7 +641,8 @@ int startwin_run(void)
     [startwin setupMessagesMode];
     [nsapp updateWindows];
 
-    if (retval) {
+    if (retval)
+    {
         fullscreen = settings.fullscreen;
         xdim = settings.xdim3d;
         ydim = settings.ydim3d;
