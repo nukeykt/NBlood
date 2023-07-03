@@ -541,7 +541,7 @@ typedef struct {
         uint64_t ptrfill;
 #endif
     };
-    
+
     float    alpha;
     uint16_t flags;
 
@@ -1632,7 +1632,7 @@ typedef struct
     char        pal;
 } tile2model_t;
 
-# define EXTRATILES (MAXTILES/8)
+#define EXTRATILES ((INT16_MAX-255)-MAXTILES)
 
 EXTERN int32_t mdinited;
 EXTERN tile2model_t tile2model[MAXTILES+EXTRATILES];
