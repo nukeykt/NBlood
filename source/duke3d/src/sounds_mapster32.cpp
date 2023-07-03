@@ -528,7 +528,7 @@ void S_Callback(intptr_t num)
                 {
                     extern uint8_t g_ambiencePlaying[bitmap_size(MAXSPRITES)];
 
-                    g_ambiencePlaying[i>>3] &= ~pow2char[i&7];
+                    bitmap_clear(g_ambiencePlaying, i);
 
                     if (j < k-1)
                     {

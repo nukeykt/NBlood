@@ -647,7 +647,6 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
     int j, cnt;
     int dist;
     int tposx, tposy; // Camera
-    int *longptr;
     fix16_t tang;
 
 //    long tx, ty, tz, tpang;             // Interpolate so mirror doesn't
@@ -663,29 +662,32 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
             camplayerview = 1;
     }
 
-    // WARNING!  Assuming (MIRRORLABEL&31) = 0 and MAXMIRRORS = 64 <-- JBF: wrong
-    longptr = (int *)&gotpic[MIRRORLABEL >> 3];
-    if (longptr && (longptr[0] || longptr[1]))
+    EDUKE32_STATIC_ASSERT((MIRRORLABEL & 7) == 0);
+    EDUKE32_STATIC_ASSERT(MAXMIRRORS == 8);
+    auto const gotpicptr = (uint8_t const *)&gotpic[MIRRORLABEL>>3];
+    auto const gotmirrors = gotpicptr[0];
+
+    if (gotmirrors)
     {
         uint32_t oscilation_delta = ototalclock - oscilationclock;
         oscilation_delta -= oscilation_delta % 4;
         oscilationclock += oscilation_delta;
         oscilation_delta *= 2;
         for (cnt = MAXMIRRORS - 1; cnt >= 0; cnt--)
-            //if (TEST_GOTPIC(cnt + MIRRORLABEL) || TEST_GOTPIC(cnt + CAMSPRITE))
-            if (TEST_GOTPIC(cnt + MIRRORLABEL) || ((unsigned)mirror[cnt].campic < MAXTILES && TEST_GOTPIC(mirror[cnt].campic)))
+            //if (bitmap_test(gotpic, cnt + MIRRORLABEL) || bitmap_test(gotpic, cnt + CAMSPRITE))
+            if (bitmap_test(gotpic, cnt + MIRRORLABEL) || ((unsigned)mirror[cnt].campic < MAXTILES && bitmap_test(gotpic, mirror[cnt].campic)))
             {
                 bIsWallMirror = FALSE;
-                if (TEST_GOTPIC(cnt + MIRRORLABEL))
+                if (bitmap_test(gotpic, cnt + MIRRORLABEL))
                 {
                     bIsWallMirror = TRUE;
-                    RESET_GOTPIC(cnt + MIRRORLABEL);
+                    bitmap_clear(gotpic, cnt + MIRRORLABEL);
                 }
-                //else if (TEST_GOTPIC(cnt + CAMSPRITE))
-                else if ((unsigned)mirror[cnt].campic < MAXTILES && TEST_GOTPIC(mirror[cnt].campic))
+                //else if (bitmap_test(gotpic, cnt + CAMSPRITE))
+                else if ((unsigned)mirror[cnt].campic < MAXTILES && bitmap_test(gotpic, mirror[cnt].campic))
                 {
-                    //RESET_GOTPIC(cnt + CAMSPRITE);
-                    RESET_GOTPIC(mirror[cnt].campic);
+                    //bitmap_clear(gotpic, cnt + CAMSPRITE);
+                    bitmap_clear(gotpic, mirror[cnt].campic);
                 }
 
                 mirrorinview = TRUE;

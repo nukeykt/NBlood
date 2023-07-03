@@ -406,7 +406,7 @@ SectorSetup(void)
 
     for (i = 0; i < numsectors; i++)
     {
-        tag = LOW_TAG(i);
+        tag = sector[i].lotag;
 
 // DOH! NOT AGAIN! :(
 //ASSERT(wall[4568].lotag != 307);
@@ -714,7 +714,7 @@ FindSectorByTag(int x, int y, int tag)
 
     for (i = 0; i < numsectors; i++)
     {
-        if (LOW_TAG(i) == tag)
+        if (sector[i].lotag == tag)
         {
             // get the delta of the door/elevator
             wallnum = sector[i].wallptr;
@@ -897,7 +897,7 @@ OperateSector(short sectnum, short player_is_operating)
     //CON_Message("Operating sectnum %d",sectnum);
     //CON_Message("stag = %d, lock = %d",SectUser[sectnum]->stag,SECT_LOCK_DOOR);
 
-    switch (LOW_TAG(sectnum))
+    switch (sector[sectnum].lotag)
     {
 
     case TAG_VATOR:
@@ -922,7 +922,7 @@ OperateWall(short /*wallnum*/, short /*player_is_operating*/)
 #if 0
     WALLp wallp = &wall[wallnum];
 
-    switch (LOW_TAG_WALL(wallnum))
+    switch (wallp->lotag)
     {
     }
 #endif
@@ -2103,7 +2103,7 @@ OperateTripTrigger(PLAYERp pp)
 #endif
 
     // old method
-    switch (LOW_TAG(pp->cursectnum))
+    switch (sector[pp->cursectnum].lotag)
     {
     // same tag for sector as for switch
     case TAG_LEVEL_EXIT_SWITCH:
@@ -2239,7 +2239,7 @@ OperateContinuousTrigger(PLAYERp pp)
     if (pp->cursectnum < 0)
         return;
 
-    switch (LOW_TAG(pp->cursectnum))
+    switch (sector[pp->cursectnum].lotag)
     {
     case TAG_TRIGGER_MISSILE_TRAP:
     {
@@ -2684,7 +2684,7 @@ PlayerOperateEnv(PLAYERp pp)
             // Trigger operations
             //
 
-            switch (LOW_TAG(pp->cursectnum))
+            switch (sector[pp->cursectnum].lotag)
             {
             case TAG_VATOR:
                 DoVatorOperate(pp, pp->cursectnum);

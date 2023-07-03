@@ -515,23 +515,6 @@ int StdRandomRange(int range);
 
 #define KEY_EXT(scan) (KEY_PRESSED(scan) | KEY_PRESSED(scan+128))
 
-#define TEST_GOTSECTOR(sect_num) (TEST(gotsector[(sect_num) >> 3], 1 << ((sect_num) & 7)))
-#define RESET_GOTSECTOR(sect_num) (RESET(gotsector[(sect_num) >> 3], 1 << ((sect_num) & 7)))
-#define SET_GOTSECTOR(sect_num) (SET(gotsector[(sect_num) >> 3], 1 << ((sect_num) & 7)))
-
-#define TEST_GOTPIC(tile_num) (TEST(gotpic[(tile_num) >> 3], 1 << ((tile_num) & 7)))
-#define RESET_GOTPIC(tile_num) (RESET(gotpic[(tile_num) >> 3], 1 << ((tile_num) & 7)))
-#define SET_GOTPIC(tile_num) (SET(gotpic[(tile_num) >> 3], 1 << ((tile_num) & 7)))
-
-#define LOW_TAG(sectnum) ( sector[sectnum].lotag )
-#define HIGH_TAG(sectnum) ( sector[sectnum].hitag )
-
-#define LOW_TAG_SPRITE(spnum) ( sprite[(spnum)].lotag )
-#define HIGH_TAG_SPRITE(spnum) ( sprite[(spnum)].hitag )
-
-#define LOW_TAG_WALL(wallnum) ( wall[(wallnum)].lotag )
-#define HIGH_TAG_WALL(wallnum) ( wall[(wallnum)].hitag )
-
 #define SEC(value) ((value)*120)
 
 #define CEILING_DIST (Z(4))

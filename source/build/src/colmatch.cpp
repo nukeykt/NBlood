@@ -16,8 +16,6 @@ static int32_t colscan[27];
 
 static uint8_t const * colmatch_palette;
 
-#define pow2char(x) (1u << (x))
-
 //
 // paletteInitClosestColor
 //

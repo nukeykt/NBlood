@@ -632,7 +632,7 @@ void yax_update(int32_t resetstat)
 
         for (i=0; i<YAX_MAXBUNCHES; i++)
         {
-            if (bitmap_test(havebunch, i)==0)
+            if (!bitmap_test(havebunch, i))
             {
                 bunchmap[i] = 255;
                 dasub++;
@@ -796,12 +796,12 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
 
             for (j=startwall; j<endwall; j++)
             {
-/*
+#if 0
                 if ((w=yax_getnextwall(j,!yax_globalcf))>=0)
                     if ((ns=wall[w].nextsector)>=0)
-                        if ((lastgotsector[ns>>3]&pow2char[ns&7])==0)
+                        if (!bitmap_test(lastgotsector, ns))
                             continue;
-*/
+#endif
                 walldist = yax_walldist(j);
                 if (walldist < bestwalldist)
                 {
@@ -1010,7 +1010,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                 j = yax_getbunch(i, cf);
                 if (j >= 0 && !bitmap_test(havebunch, j))
                 {
-                    if (videoGetRenderMode() == REND_CLASSIC && bitmap_test(haveymost, j)==0)
+                    if (videoGetRenderMode() == REND_CLASSIC && !bitmap_test(haveymost, j))
                     {
                         yaxdebug("%s, l %d: skipped bunch %d (no *most)", cf?"v":"^", lev, j);
                         continue;
@@ -1828,7 +1828,7 @@ static void classicScanSector(int16_t startsectnum)
 #ifdef YAX_ENABLE
                 if (yax_nomaskpass==0 || !yax_isislandwall(w, !yax_globalcf) || (yax_nomaskdidit=1, 0))
 #endif
-                if (bitmap_test(gotsector, nextsectnum) == 0)
+                if (!bitmap_test(gotsector, nextsectnum))
                 {
                     // OV: E2L10
                     coord_t temp = (coord_t)x1*y2-(coord_t)x2*y1;
@@ -1910,7 +1910,7 @@ void printscans(void)
 
     for (bssize_t s=0; s<numscans; s++)
     {
-        if (bunchp2[s] >= 0 && (didscan[s>>3] & pow2char[s&7])==0)
+        if (bunchp2[s] >= 0 && !bitmap_test(didscan, s))
         {
             printf("scan ");
 
@@ -1922,13 +1922,13 @@ void printscans(void)
 
                 printf("%s%d(%d) ", cond ? "!" : "", z, thewall[z]);
 
-                if (didscan[z>>3] & pow2char[z&7])
+                if (bitmap_test(didscan, z))
                 {
                     printf("*");
                     break;
                 }
 
-                didscan[z>>3] |= pow2char[z&7];
+                bitmap_set(didscan, z);
                 z = bunchp2[z];
             } while (z >= 0);
 
@@ -4480,7 +4480,7 @@ static void classicDrawBunches(int32_t bunch)
         int16_t bn[2];
 # if 0
         int32_t obunchchk = (1 && yax_globalbunch>=0 &&
-                             haveymost[yax_globalbunch>>3]&pow2char[yax_globalbunch&7]);
+                             bitmap_test(haveymost, yax_globalbunch));
 
         // if (obunchchk)
         const int32_t x2 = yax_globalbunch*xdimen;
@@ -4500,7 +4500,7 @@ static void classicDrawBunches(int32_t bunch)
         for (i=0; i<2; i++)
             if (checkcf&(1<<i))
             {
-                if (bitmap_test(haveymost, bn[i])==0)
+                if (!bitmap_test(haveymost, bn[i]))
                 {
                     // init yax *most arrays for that bunch
                     bitmap_set(haveymost, bn[i]);
@@ -4872,7 +4872,7 @@ static void classicDrawBunches(int32_t bunch)
             if (numhits < 0)
                 return;
 
-            if (!(wal->cstat&32) && bitmap_test(gotsector, nextsectnum) == 0)
+            if (!(wal->cstat&32) && !bitmap_test(gotsector, nextsectnum))
             {
                 if (umost[x2] < dmost[x2])
                     classicScanSector(nextsectnum);
@@ -12880,7 +12880,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             for (YAX_ITER_WALLS(w, j, tmpcf))
             {
-                if (bitmap_test(walbitmap, j)==0)
+                if (!bitmap_test(walbitmap, j))
                 {
                     bitmap_set(walbitmap, j);
                     yaxwalls[numyaxwalls++] = j;

@@ -1888,7 +1888,7 @@ void uploadbasepalette(int32_t basepalnum)
         basepalWFullBrightInfo[i*4] = basepaltable[basepalnum][i*3];
         basepalWFullBrightInfo[i*4+1] = basepaltable[basepalnum][i*3+1];
         basepalWFullBrightInfo[i*4+2] = basepaltable[basepalnum][i*3+2];
-        basepalWFullBrightInfo[i*4+3] = 0-(bitmap_test(PaletteIndexFullbright, i) != 0);
+        basepalWFullBrightInfo[i*4+3] = 0-!!bitmap_test(PaletteIndexFullbright, i);
     }
 
     char allocateTexture = !paletteTextureIDs[basepalnum];

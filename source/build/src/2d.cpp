@@ -869,9 +869,9 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
 #if 0
     if (editstatus == 0)
     {
-        if ((show2dwall[i>>3]&pow2char[i&7]) == 0) return;
-        if ((j >= 0) && (i > j))
-            if ((show2dwall[j>>3]&pow2char[j&7]) > 0) return;
+        if (!bitmap_test(show2dwall, i)) return;
+        if (j >= 0 && i > j)
+            if (bitmap_test(show2dwall, j)) return;
     }
     else
 #endif

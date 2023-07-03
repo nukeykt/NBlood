@@ -2200,9 +2200,9 @@ void FAF_DrawRooms(int x, int y, int z, fix16_t q16ang, fix16_t q16horiz, short 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_CEILING_FLOOR_PIC_OVERRIDE], i, nexti)
     {
         // manually set gotpic
-        if (TEST_GOTSECTOR(sprite[i].sectnum))
+        if (bitmap_test(gotsector, sprite[i].sectnum))
         {
-            SET_GOTPIC(FAF_MIRROR_PIC);
+            bitmap_set(gotpic, FAF_MIRROR_PIC);
         }
 
         if (SPRITE_TAG3(i) == 0)
@@ -2446,9 +2446,9 @@ drawscreen(PLAYERp pp)
     // Only animate lava if its picnum is on screen
     // gotpic is a bit array where the tile number's bit is set
     // whenever it is drawn (ceilings, walls, sprites, etc.)
-    if ((gotpic[SLIME >> 3] & (1 << (SLIME & 7))) > 0)
+    if (bitmap_test(gotpic, SLIME))
     {
-        gotpic[SLIME >> 3] &= ~(1 << (SLIME & 7));
+        bitmap_clear(gotpic, SLIME);
 
 #if 0
         if (waloff[SLIME])
@@ -2461,7 +2461,7 @@ drawscreen(PLAYERp pp)
 
     if (i >= 0)
     {
-        show2dsector[i>>3] |= (1<<(i&7));
+        bitmap_set(show2dsector, i);
         walltype *wal = &wall[sector[i].wallptr];
         for (j=sector[i].wallnum; j>0; j--,wal++)
         {
@@ -2472,7 +2472,7 @@ drawscreen(PLAYERp pp)
             if (nextwall < MAXWALLS && wall[nextwall].cstat&0x0071) continue;
             if (sector[i].lotag == 32767) continue;
             if (sector[i].ceilingz >= sector[i].floorz) continue;
-            show2dsector[i>>3] |= (1<<(i&7));
+            bitmap_set(show2dsector, i);
         }
     }
 

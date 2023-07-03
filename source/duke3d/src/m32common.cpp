@@ -782,10 +782,10 @@ static int32_t check_spritelist_consistency()
             if (i >= MAXSPRITES)
                 return 5;  // oob sprite index in list, or Numsprites inconsistent
 
-            if (havesprite[i>>3]&pow2char[i&7])
+            if (bitmap_test(havesprite, i))
                 return 6;  // have a cycle in the list
 
-            havesprite[i>>3] |= pow2char[i&7];
+            bitmap_set(havesprite, i);
 
             if (sprite[i].sectnum != s)
                 return 7;  // .sectnum inconsistent with list
@@ -800,7 +800,7 @@ static int32_t check_spritelist_consistency()
     {
         csc_i = i;
 
-        if (sprite[i].statnum!=MAXSTATUS && !(havesprite[i>>3]&pow2char[i&7]))
+        if (sprite[i].statnum!=MAXSTATUS && !bitmap_test(havesprite, i))
             return 9;  // have a sprite in the world not in sector list
     }
 
@@ -821,10 +821,10 @@ static int32_t check_spritelist_consistency()
 
             // have a cycle in the list, or status list inconsistent with
             // sector list (*)
-            if (!(havesprite[i>>3]&pow2char[i&7]))
+            if (!bitmap_test(havesprite, i))
                 return 11;
 
-            havesprite[i>>3] &= ~pow2char[i&7];
+            bitmap_clear(havesprite, i);
 
             if (sprite[i].statnum != s)
                 return 12;  // .statnum inconsistent with list
@@ -841,7 +841,7 @@ static int32_t check_spritelist_consistency()
 
         // Status list contains only a proper subset of the sprites in the
         // sector list.  Reverse case is handled by (*)
-        if (havesprite[i>>3]&pow2char[i&7])
+        if (bitmap_test(havesprite, i))
             return 14;
     }
 
@@ -1176,7 +1176,7 @@ int32_t CheckMapCorruption(int32_t printfromlev, uint64_t tryfixing)
                 // Check for ".nextwall already referenced from wall ..."
                 if (!corruptcheck_noalreadyrefd && nw>=0 && nw<numwalls)
                 {
-                    if (seen_nextwalls[nw>>3]&pow2char[nw&7])
+                    if (bitmap_test(seen_nextwalls, nw))
                     {
                         const int32_t onumct = numcorruptthings;
 

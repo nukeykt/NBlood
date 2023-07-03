@@ -670,7 +670,7 @@ void computergetinput(int snum, SW_PACKET *syn)
         clearbufbyte(dashow2dsector,bitmap_size(MAXSECTORS),0L);
         searchsect[0] = startsect;
         searchparent[0] = -1;
-        dashow2dsector[startsect>>3] |= (1<<(startsect&7));
+        bitmap_set(dashow2dsector, startsect);
         for (splc=0,send=1; splc<send; splc++)
         {
             startwall = sector[searchsect[splc]].wallptr;
@@ -685,9 +685,9 @@ void computergetinput(int snum, SW_PACKET *syn)
                     continue;
                 if (getflorzofslope(j,dx,dy) < getflorzofslope(searchsect[splc],dx,dy)-(72<<8))
                     continue;
-                if ((dashow2dsector[j>>3]&(1<<(j&7))) == 0)
+                if (!bitmap_test(dashow2dsector, j))
                 {
-                    dashow2dsector[j>>3] |= (1<<(j&7));
+                    bitmap_set(dashow2dsector, j);
                     searchsect[send] = (short)j;
                     searchparent[send] = (short)splc;
                     send++;
@@ -695,7 +695,7 @@ void computergetinput(int snum, SW_PACKET *syn)
                     {
                         clearbufbyte(dashow2dsector,bitmap_size(MAXSECTORS),0L);
                         for (k=send-1; k>=0; k=searchparent[k])
-                            dashow2dsector[searchsect[k]>>3] |= (1<<(searchsect[k]&7));
+                            bitmap_set(dashow2dsector, searchsect[k]);
 
                         for (k=send-1; k>=0; k=searchparent[k])
                             if (!searchparent[k]) break;
@@ -745,9 +745,9 @@ void computergetinput(int snum, SW_PACKET *syn)
                 if (sprite[i].lotag == 7)
                 {
                     j = sprite[sprite[i].owner].sectnum;
-                    if ((dashow2dsector[j>>3]&(1<<(j&7))) == 0)
+                    if (!bitmap_test(dashow2dsector, j))
                     {
-                        dashow2dsector[j>>3] |= (1<<(j&7));
+                        bitmap_set(dashow2dsector, j);
                         searchsect[send] = (short)j;
                         searchparent[send] = (short)splc;
                         send++;
@@ -755,7 +755,7 @@ void computergetinput(int snum, SW_PACKET *syn)
                         {
                             clearbufbyte(dashow2dsector,bitmap_size(MAXSECTORS),0L);
                             for (k=send-1; k>=0; k=searchparent[k])
-                                dashow2dsector[searchsect[k]>>3] |= (1<<(searchsect[k]&7));
+                                bitmap_set(dashow2dsector, searchsect[k]);
 
                             for (k=send-1; k>=0; k=searchparent[k])
                                 if (!searchparent[k]) break;

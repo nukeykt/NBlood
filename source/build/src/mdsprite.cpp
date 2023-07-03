@@ -404,13 +404,13 @@ int32_t md_thinoutmodel(int32_t modelid, uint8_t *usedframebitmap)
         }
 
         for (i=anm->startframe; i<anm->endframe; i++)
-            usedframebitmap[i>>3] |= pow2char[i&7];
+            bitmap_set(usedframebitmap, i);
     }
 
     sub = 0;
     for (i=0; i<m->numframes; i++)
     {
-        if (!(usedframebitmap[i>>3]&pow2char[i&7]))
+        if (!bitmap_test(usedframebitmap, i))
         {
             sub++;
             otonframe[i] = -1;

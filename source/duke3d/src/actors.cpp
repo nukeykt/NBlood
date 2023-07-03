@@ -345,7 +345,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
             vec2_t  p        = pSprite->xy;
             int32_t walldist = blastRadius - 1;
 
-            if (bitmap_test(wallTouched, w) == 0)
+            if (!bitmap_test(wallTouched, w))
                 walldist = getwalldist(p, w, &p);
 
             if (walldist < blastRadius)
@@ -373,7 +373,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                 if (pWall->nextwall != -1)
                     bitmap_set(wallTouched, pWall->nextwall);
 
-                if (bitmap_test(wallCanSee, w) == 1 || cansee(vect.x, vect.y, vect.z, aSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
+                if (bitmap_test(wallCanSee, w) || cansee(vect.x, vect.y, vect.z, aSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
                 {
                     bitmap_set(wallCanSee, w);
 

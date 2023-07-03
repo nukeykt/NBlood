@@ -1026,7 +1026,7 @@ static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walld
     {
         int const listsectnum = sectlist[sectcnt];
 
-        if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
+        if (!bitmap_test(insidemap, listsectnum) && inside(pos.x, pos.y, listsectnum) == 1)
         {
             *sectnum = listsectnum;
             return 0;
@@ -1050,7 +1050,7 @@ static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walld
     {
         int const listsectnum = sectlist[sectcnt];
 
-        if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
+        if (!bitmap_test(insidemap, listsectnum) && inside(pos.x, pos.y, listsectnum) == 1)
         {
             // add sector to clipping list so the next call to clipupdatesector()
             // finishes in the loop above this one
@@ -1328,7 +1328,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             }
             else if (wal->nextsector>=0)
             {
-                if (bitmap_test(clipsectormap, wal->nextsector) == 0)
+                if (!bitmap_test(clipsectormap, wal->nextsector))
                     addclipsect(wal->nextsector);
             }
         }
@@ -1826,7 +1826,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                             updatesector(vect->x, vect->y, sectnum);
                         }
                     }
-                    else if (bitmap_test(clipsectormap, wal->nextsector) == 0)
+                    else if (!bitmap_test(clipsectormap, wal->nextsector))
                         addclipsect(wal->nextsector);
                 }
 
@@ -2010,7 +2010,7 @@ restart_grand:
                     if (((sec->floorstat&1) == 0) && (pos->z >= sec->floorz-(3<<8))) continue;
                 }
 
-                if (bitmap_test(clipsectormap, k) == 0)
+                if (!bitmap_test(clipsectormap, k))
                     addclipsect(k);
 
                 if (((v1.x < xmin + MAXCLIPDIST) && (v2.x < xmin + MAXCLIPDIST)) ||
