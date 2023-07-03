@@ -352,10 +352,10 @@ ResetBuildFAF(void)
 SWBOOL
 PicInView(short tile_num, SWBOOL reset)
 {
-    if (TEST(gotpic[tile_num >> 3], 1 << (tile_num & 7)))
+    if (bitmap_test(gotpic, tile_num))
     {
         if (reset)
-            RESET(gotpic[tile_num >> 3], 1 << (tile_num & 7));
+            bitmap_clear(gotpic, tile_num);
 
         return TRUE;
     }
@@ -626,9 +626,9 @@ FindFloorView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum)
 SWBOOL
 SectorInScene(short tile_num)
 {
-    if (TEST(gotsector[tile_num >> 3], 1 << (tile_num & 7)))
+    if (bitmap_test(gotsector, tile_num))
     {
-        RESET(gotsector[tile_num >> 3], 1 << (tile_num & 7));
+        bitmap_clear(gotsector, tile_num);
         return TRUE;
     }
 

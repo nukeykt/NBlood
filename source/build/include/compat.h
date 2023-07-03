@@ -1180,7 +1180,14 @@ static FORCE_INLINE void bitmap_clear(T *const ptr, int const n)
 }
 
 template <typename T>
-static FORCE_INLINE CONSTEXPR bool bitmap_test(T const *const ptr, int const n)
+static FORCE_INLINE void bitmap_flip(T *const ptr, int const n)
+{
+    EDUKE32_STATIC_ASSERT((sizeof(T) << 3) == CHAR_BIT);
+    ptr[n>>3] ^= pow2char[n&7];
+}
+
+template <typename T>
+static FORCE_INLINE CONSTEXPR WARN_UNUSED_RESULT bool bitmap_test(T const *const ptr, int const n)
 {
     EDUKE32_STATIC_ASSERT((sizeof(T) << 3) == CHAR_BIT);
     return (ptr[n>>3] & pow2char[n&7]) == pow2char[n&7];

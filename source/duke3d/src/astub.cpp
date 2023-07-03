@@ -181,7 +181,7 @@ static char spritepals[MAXSPRITES];
 static uint8_t wallflag[bitmap_size(MAXWALLS)];
 
 #ifdef YAX_ENABLE
-static uint8_t havebunch[YAX_MAXBUNCHES];
+static uint8_t havebunch[bitmap_size(YAX_MAXBUNCHES)];
 static int32_t *tempzar[YAX_MAXBUNCHES];
 
 static int32_t yax_invalidop()
@@ -1996,10 +1996,6 @@ int32_t ParentalLock = 0;
 
 uint8_t g_ambiencePlaying[bitmap_size(MAXSPRITES)];
 
-#define testbit(bitarray, i) (bitarray[(i)>>3] & pow2char[(i)&7])
-#define setbit(bitarray, i) bitarray[(i)>>3] |= pow2char[(i)&7]
-#define clearbit(bitarray, i) bitarray[(i)>>3] &= ~pow2char[(i)&7]
-
 // adapted from actors.c
 static void M32_MoveFX(void)
 {
@@ -2013,9 +2009,9 @@ static void M32_MoveFX(void)
 
         if (s->picnum != MUSICANDSFX)
         {
-            if (testbit(g_ambiencePlaying, i))
+            if (bitmap_test(g_ambiencePlaying, i))
             {
-                clearbit(g_ambiencePlaying, i);
+                bitmap_clear(g_ambiencePlaying, i);
                 S_StopEnvSound(s->lotag, i);
             }
         }
@@ -2029,7 +2025,7 @@ static void M32_MoveFX(void)
                 if ((g_sounds[s->lotag].m & SF_MSFX))
                 {
                     x = dist(&pos,s);
-                    if (x < ht && !testbit(g_ambiencePlaying, i) && FX_VoiceAvailable(g_sounds[s->lotag].pr-1))
+                    if (x < ht && !bitmap_test(g_ambiencePlaying, i) && FX_VoiceAvailable(g_sounds[s->lotag].pr-1))
                     {
                         char om = g_sounds[s->lotag].m;
                         if (g_numEnvSoundsPlaying == NumVoices)
@@ -2037,7 +2033,7 @@ static void M32_MoveFX(void)
                             for (j = headspritestat[0]; j >= 0; j = nextspritestat[j])
                             {
                                 if (s->picnum == MUSICANDSFX && j != i && sprite[j].lotag < 999 &&
-                                        testbit(g_ambiencePlaying, j) && dist(&sprite[j],&pos) > x)
+                                    bitmap_test(g_ambiencePlaying, j) && dist(&sprite[j],&pos) > x)
                                 {
                                     S_StopEnvSound(sprite[j].lotag,j);
                                     break;
@@ -2049,11 +2045,11 @@ static void M32_MoveFX(void)
                         g_sounds[s->lotag].m |= SF_LOOP;
                         A_PlaySound(s->lotag,i);
                         g_sounds[s->lotag].m = om;
-                        setbit(g_ambiencePlaying, i);
+                        bitmap_set(g_ambiencePlaying, i);
                     }
-                    if (x >= ht && testbit(g_ambiencePlaying, i))
+                    if (x >= ht && bitmap_test(g_ambiencePlaying, i))
                     {
-                        clearbit(g_ambiencePlaying, i);
+                        bitmap_clear(g_ambiencePlaying, i);
                         S_StopEnvSound(s->lotag,i);
                     }
                 }
@@ -2102,9 +2098,9 @@ static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,in
 
     // Things are a little different now, as we allow for masked transparent
     // floors and ceilings. So the FOF textures is no longer required
-    //	if (!(gotpic[FOF>>3]&(1<<(FOF&7))))
+    //	if (!bitmap_test(gotpic, FOF))
     //		return;
-    //	gotpic[FOF>>3] &= ~(1<<(FOF&7));
+    //	bitmap_clear(gotpic, FOF);
 
     if (tilesiz[562].x)
     {
@@ -3065,7 +3061,7 @@ static int32_t editorGetTile(int32_t idInitialTile)
 
                     for (; dir == 0 || dir * (kend - k) >= 1; k += dir)
                     {
-                        tilemarked[localartlookup[k]>>3] ^= pow2char[localartlookup[k]&7];
+                        bitmap_flip(tilemarked, localartlookup[k]);
                         if (dir == 0)
                             break;
                     }
@@ -3118,7 +3114,7 @@ static int32_t OnSaveTileGroup(void)
         TMPERRMSG_RETURN("Cannot save tile group: maximum number of groups (%d) exceeded.", MAX_TILE_GROUPS);
 
     for (i=0; i<MAXUSERTILES; i++)
-        n += !!(tilemarked[i>>3]&pow2char[i&7]);
+        n += !!bitmap_test(tilemarked, i);
 
     if (n==0)
         TMPERRMSG_RETURN("Cannot save tile group: no tiles marked.");
@@ -3159,7 +3155,7 @@ static int32_t OnSaveTileGroup(void)
             TMPERRMSG_RETURN("Could not seek to end of file `%s'.", default_tiles_cfg);
 
 #define TTAB "\t"
-#define TBITCHK(i) ((i)<MAXUSERTILES && (tilemarked[(i)>>3]&pow2char[(i)&7]))
+#define TBITCHK(i) ((i) < MAXUSERTILES && bitmap_test(tilemarked, (i)))
         Bfprintf(fp, OURNEWL);
         Bfprintf(fp, "tilegroup \"%s\"" OURNEWL"{" OURNEWL, name);
         Bfprintf(fp, TTAB "hotkey \"%c\"" OURNEWL OURNEWL, hotkey);
@@ -3180,7 +3176,7 @@ static int32_t OnSaveTileGroup(void)
                 for (k=lasti; k<i; k++)
                 {
                     s_TileGroups[tile_groups].pIds[j++] = k;
-                    tilemarked[k>>3] &= ~pow2char[k&7];
+                    bitmap_clear(tilemarked, k);
                 }
 
                 lasti = -1;
@@ -3199,7 +3195,7 @@ static int32_t OnSaveTileGroup(void)
             for (k=lasti; k<MAXUSERTILES; k++)
             {
                 s_TileGroups[tile_groups].pIds[j++] = k;
-                tilemarked[k>>3] &= ~pow2char[k&7];
+                bitmap_clear(tilemarked, k);
             }
             Bfprintf(fp, TTAB "tilerange %d %d" OURNEWL, lasti, MAXUSERTILES-1);
         }
@@ -3207,7 +3203,7 @@ static int32_t OnSaveTileGroup(void)
 
         k = 0;
         for (i=0; i<MAXUSERTILES; i++)
-            if (tilemarked[i>>3]&pow2char[i&7])
+            if (bitmap_test(tilemarked, i))
             {
                 k = 1;
                 break;
@@ -3420,7 +3416,7 @@ static void tilescreen_drawbox(int32_t iTopLeft, int32_t iSelected, int32_t nXTi
                                int32_t TileDim, int32_t offset,
                                int32_t tileNum, int32_t idTile)
 {
-    int32_t marked = (IsValidTile(idTile) && tilemarked[idTile>>3]&pow2char[idTile&7]);
+    int32_t marked = (IsValidTile(idTile) && bitmap_test(tilemarked, idTile));
 
     //
     // Draw white box around currently selected tile or marked tile
@@ -3553,7 +3549,7 @@ restart:
 #endif
             int32_t const idTile = localartlookup[tileNum];
 
-            if (loadedhitile[idTile >> 3] & pow2char[idTile & 7])
+            if (bitmap_test(loadedhitile, idTile))
             {
                 if (runi==1)
                     continue;
@@ -4191,7 +4187,7 @@ static void mouseaction_movesprites(int32_t *sumxvect, int32_t *sumyvect, int32_
         dayvect = yvect;
     }
 
-    if (highlightcnt<=0 || (show2dsprite[searchwall>>3] & pow2char[searchwall&7])==0)
+    if (highlightcnt <= 0 || !bitmap_test(show2dsprite, searchwall))
     {
         clipmove(&tvec, &tsect, daxvect,dayvect, sp->clipdist,64<<4,64<<4, spnoclip?1:CLIPMASK0);
         setsprite(searchwall, &tvec);
@@ -4692,7 +4688,7 @@ static void Keys3d(void)
             message("Sprite %d deleted",searchwall);
             if (AmbienceToggle)
             {
-                clearbit(g_ambiencePlaying, searchwall);
+                bitmap_clear(g_ambiencePlaying, searchwall);
                 S_StopEnvSound(sprite[searchwall].lotag, searchwall);
             }
             asksave = 1;
@@ -5070,7 +5066,7 @@ static void Keys3d(void)
                 {
                     k=eitherSHIFT?1:16;
 
-                    if (highlightsectorcnt > 0 && (hlsectorbitmap[searchsector>>3]&pow2char[searchsector&7]))
+                    if (highlightsectorcnt > 0 && bitmap_test(hlsectorbitmap, searchsector))
                     {
                         while (k-- > 0)
                         {
@@ -5112,14 +5108,14 @@ static void Keys3d(void)
             {
                 int32_t clamped=0;
 
-                k = (highlightsectorcnt>0 && (hlsectorbitmap[searchsector>>3]&pow2char[searchsector&7]));
+                k = (highlightsectorcnt>0 && bitmap_test(hlsectorbitmap, searchsector));
                 tsign *= (1+3*eitherCTRL);
 
                 if (k == 0)
                 {
                     if (ASSERT_AIMING)
                     {
-                        if (!eitherSHIFT && AIMING_AT_SPRITE && (show2dsprite[searchwall>>3]&pow2char[searchwall&7]))
+                        if (!eitherSHIFT && AIMING_AT_SPRITE && bitmap_test(show2dsprite, searchwall))
                         {
                             for (i=0; i<highlightcnt; i++)
                                 if (highlight[i]&16384)
@@ -5323,7 +5319,7 @@ static void Keys3d(void)
         k = 0;
         if (highlightsectorcnt > 0 && searchsector>=0 && searchsector<numsectors)
         {
-            if (hlsectorbitmap[searchsector>>3]&pow2char[searchsector&7])
+            if (bitmap_test(hlsectorbitmap, searchsector))
                 k = highlightsectorcnt;
         }
 
@@ -5390,10 +5386,10 @@ static void Keys3d(void)
                     SECTORFLD(sect,z, moveFloors) += dz;
 #ifdef YAX_ENABLE
                     bunchnum = yax_getbunch(sect, moveFloors);
-                    if (bunchnum >= 0 && !(havebunch[bunchnum>>3]&pow2char[bunchnum&7]))
+                    if (bunchnum >= 0 && !bitmap_test(havebunch, bunchnum))
                     {
                         maxbunchnum = max(maxbunchnum, bunchnum);
-                        havebunch[bunchnum>>3] |= pow2char[bunchnum&7];
+                        bitmap_set(havebunch, bunchnum);
                         tempzar[bunchnum] = &SECTORFLD(sect,z, moveFloors);
                     }
 #endif
@@ -5407,9 +5403,9 @@ static void Keys3d(void)
                 for (i=0; i<numsectors; i++)
                 {
                     yax_getbunches(i, &cb, &fb);
-                    if (cb >= 0 && (havebunch[cb>>3]&pow2char[cb&7]))
+                    if (cb >= 0 && bitmap_test(havebunch, cb))
                         sector[i].ceilingz = *tempzar[cb];
-                    if (fb >= 0 && (havebunch[fb>>3]&pow2char[fb&7]))
+                    if (fb >= 0 && bitmap_test(havebunch, fb))
                         sector[i].floorz = *tempzar[fb];
                 }
             }
@@ -5438,7 +5434,7 @@ static void Keys3d(void)
             }
             else
             {
-                k = !!(show2dsprite[searchwall>>3]&pow2char[searchwall&7]);
+                k = !!bitmap_test(show2dsprite, searchwall);
 
                 tsign *= (updownunits << ((eitherCTRL && mouseaction)*3));
 
@@ -5763,9 +5759,9 @@ static void Keys3d(void)
                 sprite[searchwall].lotag =
                     _getnumber256("Sprite lotag: ", sprite[searchwall].lotag, BTAG_MAX, 0+j, &MusicAndSFXTagText);
 
-                if (testbit(g_ambiencePlaying, searchwall) && sprite[searchwall].lotag != oldtag)
+                if (bitmap_test(g_ambiencePlaying, searchwall) && sprite[searchwall].lotag != oldtag)
                 {
-                    clearbit(g_ambiencePlaying, searchwall);
+                    bitmap_clear(g_ambiencePlaying, searchwall);
                     S_StopEnvSound(oldtag, searchwall);
                 }
             }
@@ -7267,7 +7263,7 @@ static void Keys2d(void)
 
 ///__bigcomment__
 
-    if ((i=tcursectornum)>=0 && g_fillCurSector && (hlsectorbitmap[i>>3]&pow2char[i&7])==0)
+    if ((i=tcursectornum)>=0 && g_fillCurSector && !bitmap_test(hlsectorbitmap, i))
     {
         int32_t col = editorcolors[4];
 #ifdef YAX_ENABLE
@@ -10233,7 +10229,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
 
                     for (w = start_wall; w < end_wall; w++)
                     {
-                        if (!(wallflag[w>>3]&pow2char[w&7]))
+                        if (!bitmap_test(wallflag, w))
                         {
                             wallshades[w] = wall[w].shade;
                             wallpals[w] = wall[w].pal;
@@ -10241,7 +10237,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
                             wall[w].shade = sprite[i].shade;
                             wall[w].pal = sprite[i].pal;
 
-                            wallflag[w>>3] |= pow2char[w&7];
+                            bitmap_set(wallflag, w);
                         }
                         // removed: same thing with nextwalls
                     }
@@ -10972,11 +10968,11 @@ void ExtCheckKeys(void)
 
             for (w = start_wall; w < end_wall; w++)
             {
-                if (wallflag[w>>3]&pow2char[w&7])
+                if (bitmap_test(wallflag, w))
                 {
                     wall[w].shade = wallshades[w];
                     wall[w].pal = wallpals[w];
-                    wallflag[w>>3] &= ~pow2char[w&7];
+                    bitmap_clear(wallflag, w);
                 }
                 // removed: same thing with nextwalls
             }

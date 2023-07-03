@@ -473,7 +473,7 @@ BREAK_INFOp SetupWallForBreak(WALLp wallp)
 
         // set for cacheing
         if (break_info->breaknum >= 0)
-            SET_GOTPIC(break_info->breaknum);
+            bitmap_set(gotpic, break_info->breaknum);
     }
 
     if (wallp->overpicnum > 0 && TEST(wallp->cstat, CSTAT_WALL_MASKED))
@@ -523,7 +523,7 @@ BREAK_INFOp SetupSpriteForBreak(SPRITEp sp)
 
         // set for cacheing
         if (break_info->breaknum >= 0)
-            SET_GOTPIC(break_info->breaknum);
+            bitmap_set(gotpic, break_info->breaknum);
     }
 
     return break_info;

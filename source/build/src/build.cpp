@@ -2674,19 +2674,20 @@ static int32_t trace_loop(int32_t j, uint8_t *visitedwall, int16_t *ignore_ret, 
 
         while (wall[j].nextwall>=0 && n>0)
         {
-#if 0
-//def YAX_ENABLE
+#if 0 && defined YAX_ENABLE
             if (yaxp)
             {
                 int32_t ns = wall[j].nextsector;
-                if ((hlsectorbitmap[ns>>3]&pow2char[ns&7])==0)
+                if (!bitmap_test(hlsectorbitmap, ns))
                     break;
             }
 #endif
             j = wall[wall[j].nextwall].point2;
-//            if (j!=refwall && (visitedwall[j>>3]&pow2char[j&7]))
-//                ignore = 1;
-//            visitedwall[j>>3] |= pow2char[j&7];
+#if 0
+            if (j != refwall && bitmap_test(visitedwall, j))
+                ignore = 1;
+            bitmap_set(visitedwall, j);
+#endif
             n--;
         }
     }
@@ -3078,11 +3079,11 @@ static void M32_MarkPointInsertion(int32_t thewall)
                 bitmap_set(editwall, i);
     // round 2 (enough?)
     for (YAX_ITER_WALLS(thewall, i, tmpcf))
-        if (wall[i].nextwall >= 0 && bitmap_test(editwall, wall[i].nextwall)==0)
+        if (wall[i].nextwall >= 0 && !bitmap_test(editwall, wall[i].nextwall))
             bitmap_set(editwall, wall[i].nextwall);
     if (nextw >= 0)
         for (YAX_ITER_WALLS(nextw, i, tmpcf))
-            if (wall[i].nextwall >= 0 && bitmap_test(editwall, wall[i].nextwall)==0)
+            if (wall[i].nextwall >= 0 && !bitmap_test(editwall, wall[i].nextwall))
                 bitmap_set(editwall, wall[i].nextwall);
 }
 #endif
@@ -3115,7 +3116,7 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
 
         j = 0;
         for (i=0; i<numwalls; i++)
-            j += !!(bitmap_test(editwall, i));
+            j += !!bitmap_test(editwall, i);
         if (max(numwalls,onewnumwalls)+j > MAXWALLS)
         {
             return 0;  // no points inserted, would exceed limits
@@ -4084,7 +4085,7 @@ skipinput:
                     if (j>=0 && sector[j].wallptr > i)
                         j--;
 
-                    if (zoom < 768 && !(bitmap_test(editwall, i)))
+                    if (zoom < 768 && !bitmap_test(editwall, i))
                         continue;
 
                     YAX_SKIPWALL(i);
@@ -5138,7 +5139,7 @@ rotate_hlsect_out:
                     if (i < j)
                         j = i;
 
-                    if ((bitmap_test(show2dwall, i))==0)
+                    if (!bitmap_test(show2dwall, i))
                     {
                         message("All loop points must be highlighted to punch");
                         goto end_yax;
@@ -6963,8 +6964,8 @@ end_point_dragging:
 
                             loopnum--;
                         }
-                        while (loopnum>0 && ((bitmap_test(editwall, i))==0)
-                                   && (wall[i].nextsector != joinsector[1-joink]));
+                        while (loopnum > 0 && !bitmap_test(editwall, i)
+                                   && wall[i].nextsector != joinsector[1-joink]);
 
                         wall[newnumwalls-1].point2 = m;
 
@@ -7996,7 +7997,7 @@ end_batch_insert_points:
                 if (highlightsectorcnt > 0)
                 {
                     // LShift: force highlighted sector deleting
-                    if (keystatus[sc_LeftShift] || (bitmap_test(hlsectorbitmap, i)))
+                    if (keystatus[sc_LeftShift] || bitmap_test(hlsectorbitmap, i))
                     {
                         for (j=highlightsectorcnt-1; j>=0; j--)
                         {
@@ -8976,7 +8977,7 @@ int32_t getpointhighlight(int32_t xplc, int32_t yplc, int32_t point)
 
                 // was (dst <= dist), but this way, when duplicating sprites,
                 // the selected ones are dragged first
-                if (dst < dist || (dst == dist && (bitmap_test(show2dsprite, i))))
+                if (dst < dist || (dst == dist && bitmap_test(show2dsprite, i)))
                     dist = dst, closest = i+16384;
             }
 

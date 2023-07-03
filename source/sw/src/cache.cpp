@@ -418,7 +418,7 @@ PreCacheTable(short table[], int num)
 
     for (j = 0; j < num; j++)
     {
-        SET(gotpic[table[j]>>3], 1<<(table[j]&7));
+        bitmap_set(gotpic, table[j]);
     }
 }
 
@@ -429,7 +429,7 @@ PreCacheRange(short start_pic, short end_pic)
 
     for (j = start_pic; j <= end_pic; j++)
     {
-        SET(gotpic[j>>3], 1<<(j&7));
+        bitmap_set(gotpic, j);
     }
 }
 
@@ -458,7 +458,7 @@ void PreCacheOverride(void)
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_CEILING_FLOOR_PIC_OVERRIDE], i, nexti)
     {
         ASSERT(SPRITE_TAG2(i) >= 0 && SPRITE_TAG2(i) <= MAXTILES);
-        SET_GOTPIC(SPRITE_TAG2(i));
+        bitmap_set(gotpic, SPRITE_TAG2(i));
     }
 }
 
@@ -659,26 +659,24 @@ precache(void)
     for (sectp = sector; sectp < &sector[numsectors]; sectp++)
     {
         j = sectp->ceilingpicnum;
-
-        SET(gotpic[j>>3], 1<<(j&7));
+        bitmap_set(gotpic, j);
 
         if (TEST(picanm[j].sf, PICANM_ANIMTYPE_MASK) >> PICANM_ANIMTYPE_SHIFT)
         {
             for (i = 1; i <= picanm[j].num; i++)
             {
-                SET(gotpic[(j+i)>>3], 1<<((j+i)&7));
+                bitmap_set(gotpic, j+i);
             }
         }
 
         j = sectp->floorpicnum;
-
-        SET(gotpic[j>>3], 1<<(j&7));
+        bitmap_set(gotpic, j);
 
         if (TEST(picanm[j].sf, PICANM_ANIMTYPE_MASK) >> PICANM_ANIMTYPE_SHIFT)
         {
             for (i = 1; i <= picanm[j].num; i++)
             {
-                SET(gotpic[(j+i)>>3], 1<<((j+i)&7));
+                bitmap_set(gotpic, j+i);
             }
         }
 
@@ -687,27 +685,26 @@ precache(void)
     for (wp = wall; wp < &wall[numwalls]; wp++)
     {
         j = wp->picnum;
-
-        SET(gotpic[j>>3], 1<<(j&7));
+        bitmap_set(gotpic, j);
 
         if (TEST(picanm[j].sf, PICANM_ANIMTYPE_MASK) >> PICANM_ANIMTYPE_SHIFT)
         {
             for (i = 1; i <= picanm[j].num; i++)
             {
-                SET(gotpic[(j+i)>>3], 1<<((j+i)&7));
+                bitmap_set(gotpic, j+i);
             }
         }
 
         if (wp->overpicnum > 0 && wp->overpicnum < MAXTILES)
         {
             j = wp->overpicnum;
-            SET(gotpic[j>>3], 1<<(j&7));
+            bitmap_set(gotpic, j);
 
             if (TEST(picanm[j].sf, PICANM_ANIMTYPE_MASK) >> PICANM_ANIMTYPE_SHIFT)
             {
                 for (i = 1; i <= picanm[j].num; i++)
                 {
-                    SET(gotpic[(j+i)>>3], 1<<((j+i)&7));
+                    bitmap_set(gotpic, j+i);
                 }
             }
 
@@ -719,8 +716,7 @@ precache(void)
         if (sp->statnum < MAXSTATUS)
         {
             j = sp->picnum;
-
-            SET(gotpic[j>>3], 1<<(j&7));
+            bitmap_set(gotpic, j);
         }
     }
 }

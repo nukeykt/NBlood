@@ -1032,7 +1032,7 @@ static void G_SetupRotfixedSprites(void)
 
 static void G_SetupLightSwitches()
 {
-    auto tagbitmap = (uint8_t *)Xcalloc(65536 >> 3, 1);
+    auto tagbitmap = (uint8_t *)Xcalloc(bitmap_size(65536), 1);
 
     for (int nextSprite, SPRITES_OF_STAT_SAFE(STAT_DEFAULT, spriteNum, nextSprite))
     {
@@ -1062,7 +1062,7 @@ static void G_SetupLightSwitches()
                     if (i == 0)
                     {
                         uint16_t const tag = s.lotag;
-                        tagbitmap[tag >> 3] |= 1 << (tag & 7);
+                        bitmap_set(tagbitmap, tag);
                     }
 
                     break;
@@ -1075,7 +1075,7 @@ static void G_SetupLightSwitches()
     {
         uint16_t const tag = sprite[j].hitag;
 
-        if (sprite[j].lotag == SE_12_LIGHT_SWITCH && tagbitmap[tag>>3] & pow2char[tag&7])
+        if (sprite[j].lotag == SE_12_LIGHT_SWITCH && bitmap_test(tagbitmap, tag))
             actor[j].t_data[0] = 1;
     }
 

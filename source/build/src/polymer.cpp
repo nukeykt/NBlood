@@ -1626,7 +1626,7 @@ void                polymer_drawsprite(int32_t snum)
     }
 
     if (automapping == 1)
-        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+        bitmap_set(show2dsprite, spritenum);
 
     if ((tspr->cstat & 64) && (tspr->cstat & SPR_ALIGN_MASK))
     {
@@ -3110,9 +3110,9 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Drawing sector %i", sectnum);
 
     if (automapping)
-        show2dsector[sectnum>>3] |= pow2char[sectnum&7];
+        bitmap_set(show2dsector, sectnum);
 
-    gotsector[sectnum>>3] |= pow2char[sectnum&7];
+    bitmap_set(gotsector, sectnum);
 
     auto sec        = (usectorptr_t)&sector[sectnum];
     auto s          = prsectors[sectnum];
@@ -3774,7 +3774,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     //}
 
     if (automapping)
-        show2dwall[wallnum>>3] |= pow2char[wallnum&7];
+        bitmap_set(show2dwall, wallnum);
 
     if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Finished drawing wall %i.", wallnum);
 }

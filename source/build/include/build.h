@@ -213,8 +213,8 @@ static FORCE_INLINE CONSTEXPR int32_t yax_waltosecmask(int32_t const walclipmask
 void yax_preparedrawrooms(void);
 void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_t),
                    int16_t sectnum, int32_t didmirror, int32_t smoothr);
-# define YAX_SKIPSECTOR(i) if (graysectbitmap[(i)>>3]&pow2char[(i)&7]) continue
-# define YAX_SKIPWALL(i) if (graywallbitmap[(i)>>3]&pow2char[(i)&7]) continue
+# define YAX_SKIPSECTOR(i) if (bitmap_test(graysectbitmap, (i))) continue
+# define YAX_SKIPWALL(i) if (bitmap_test(graywallbitmap, (i))) continue
 #else
 # define yax_preparedrawrooms()
 # define yax_drawrooms(SpriteAnimFunc, sectnum, didmirror, smoothr)
@@ -995,10 +995,10 @@ EXTERN bool g_windowPosValid;
     //bit-mapped.
     //If you want draw2dscreen() to show sprite #54 then you say:
     //   spritenum = 54;
-    //   show2dsprite[spritenum>>3] |= (1<<(spritenum&7));
+    //   bitmap_set(show2dsprite, spritenum);
     //And if you want draw2dscreen() to not show sprite #54 then you say:
     //   spritenum = 54;
-    //   show2dsprite[spritenum>>3] &= ~(1<<(spritenum&7));
+    //   bitmap_clear(show2dsprite, spritenum);
 
 EXTERN int automapping;
 EXTERN char show2dsector[bitmap_size(MAXSECTORS)];

@@ -330,9 +330,9 @@ static int animatevel[MAXANIMATES], animateacc[MAXANIMATES], animatecnt = 0;
         spr2->owner = owner2;                                               \
         spr2->lotag = lotag2; spr2->hitag = hitag2; spr2->extra = extra2;   \
         copybuf(&spr2->x,&osprite[newspriteindex2].x,3);                    \
-        show2dsprite[newspriteindex2>>3] &= ~(1<<(newspriteindex2&7));      \
-        if (show2dsector[sectnum2>>3]&(1<<(sectnum2&7)))                    \
-            show2dsprite[newspriteindex2>>3] |= (1<<(newspriteindex2&7));   \
+        bitmap_clear(show2dsprite, newspriteindex2);                        \
+        if (bitmap_test(show2dsector, sectnum2))                            \
+            bitmap_set(show2dsprite, newspriteindex2);                      \
         clearbufbyte(&spriteext[newspriteindex2], sizeof(spriteext_t), 0);  \
     }
 #else
@@ -353,9 +353,9 @@ static int animatevel[MAXANIMATES], animateacc[MAXANIMATES], animatecnt = 0;
         spr2->owner = owner2;                                               \
         spr2->lotag = lotag2; spr2->hitag = hitag2; spr2->extra = extra2;   \
         copybuf(&spr2->x,&osprite[newspriteindex2].x,3);                    \
-        show2dsprite[newspriteindex2>>3] &= ~(1<<(newspriteindex2&7));      \
-        if (show2dsector[sectnum2>>3]&(1<<(sectnum2&7)))                    \
-            show2dsprite[newspriteindex2>>3] |= (1<<(newspriteindex2&7));   \
+        bitmap_clear(show2dsprite, newspriteindex2);                        \
+        if (bitmap_test(show2dsector, sectnum2))                            \
+            bitmap_set(show2dsprite, newspriteindex2);                      \
     }
 #endif
 
@@ -1970,7 +1970,7 @@ void shootgun(short snum, const vec3_t *vector,
 
 void analyzesprites(int dax, int day)
 {
-    int i, j=0, k, *intptr;
+    int i, j=0, k;
     vec3_t *ospr;
     tspriteptr_t tspr;
 
@@ -2009,9 +2009,9 @@ void analyzesprites(int dax, int day)
                     tspr->cstat |= 48;
                     tspr->picnum = voxid_PLAYER;
 
-                    intptr = (int32_t *)voxoff[voxid_PLAYER][0];
-                    tspr->xrepeat = scale(tspr->xrepeat,56,intptr[2]);
-                    tspr->yrepeat = scale(tspr->yrepeat,56,intptr[2]);
+                    auto const voxptr = (int32_t const *)voxoff[voxid_PLAYER][0];
+                    tspr->xrepeat = scale(tspr->xrepeat,56,voxptr[2]);
+                    tspr->yrepeat = scale(tspr->yrepeat,56,voxptr[2]);
                     tspr->shade -= 6;
                 }
                 break;
@@ -3703,7 +3703,7 @@ void drawscreen(short snum, int dasmoothratio)
     int x1, y1, x2, y2, ox1, oy1, ox2, oy2, dist, maxdist;
     vec3_t cpos;
     int choriz, czoom, tposx, tposy;
-    int tiltlock, *intptr, ovisibility, oparallaxvisibility;
+    int tiltlock, ovisibility, oparallaxvisibility;
     short cang, csect;
     fix16_t tang;
     char ch, *ptr, *ptr2, *ptr3, *ptr4;
@@ -3961,7 +3961,7 @@ void drawscreen(short snum, int dasmoothratio)
 #endif
             }
 
-            if ((gotpic[FLOORMIRROR>>3]&(1<<(FLOORMIRROR&7))) > 0)
+            if (bitmap_test(gotpic, FLOORMIRROR))
             {
                 dist = 0x7fffffff; i = 0;
                 for (k=floormirrorcnt-1; k>=0; k--)
@@ -4019,7 +4019,7 @@ void drawscreen(short snum, int dasmoothratio)
                     }
                     videoEndDrawing(); //}}}
                 }
-                gotpic[FLOORMIRROR>>3] &= ~(1<<(FLOORMIRROR&7));
+                bitmap_clear(gotpic, FLOORMIRROR);
             }
 
 
@@ -4031,13 +4031,16 @@ void drawscreen(short snum, int dasmoothratio)
                 view(playersprite[snum],&cpos,&csect,cang,choriz);
             }
 
-            //WARNING!  Assuming (MIRRORLABEL&31) = 0 and MAXMIRRORS = 64
-            intptr = (int *)&gotpic[MIRRORLABEL>>3];   // CHECK!
-            if (intptr[0]|intptr[1])
+            EDUKE32_STATIC_ASSERT((MIRRORLABEL & 31) == 0);
+            EDUKE32_STATIC_ASSERT(MAXMIRRORS == 64);
+            auto const gotpicptr = (uint32_t const *)&gotpic[MIRRORLABEL>>3];
+            auto const gotmirrors = gotpicptr[0] | gotpicptr[1];
+
+            if (gotmirrors)
                 for (i=MAXMIRRORS-1; i>=0; i--)
-                    if (gotpic[(i+MIRRORLABEL)>>3]&(1<<(i&7)))
+                    if (bitmap_test(gotpic, i+MIRRORLABEL))
                     {
-                        gotpic[(i+MIRRORLABEL)>>3] &= ~(1<<(i&7));
+                        bitmap_clear(gotpic, i+MIRRORLABEL);
 
                         //Prepare drawrooms for drawing mirror and calculate reflected
                         //position into tposx, tposy, and tang (tpos.z == cpos.z)
@@ -4131,9 +4134,9 @@ void drawscreen(short snum, int dasmoothratio)
     //Only animate lava if its picnum is on screen
     //gotpic is a bit array where the tile number's bit is set
     //whenever it is drawn (ceilings, walls, sprites, etc.)
-    if ((gotpic[SLIME>>3]&(1<<(SLIME&7))) > 0)
+    if (bitmap_test(gotpic, SLIME))
     {
-        gotpic[SLIME>>3] &= ~(1<<(SLIME&7));
+        bitmap_clear(gotpic, SLIME);
         if (waloff[SLIME] != 0)
         {
             movelava((char *)waloff[SLIME]);
@@ -4141,7 +4144,7 @@ void drawscreen(short snum, int dasmoothratio)
         }
     }
 
-    if ((show2dsector[cursectnum[snum]>>3]&(1<<(cursectnum[snum]&7))) == 0)
+    if (!bitmap_test(show2dsector, cursectnum[snum]))
         searchmap(cursectnum[snum]);
 
     if (dimensionmode[snum] != 3)
@@ -5002,9 +5005,9 @@ void warpsprite(short spritenum)
     copybuf(&sprite[spritenum].x,&osprite[spritenum].x,3);
     changespritesect(spritenum,dasectnum);
 
-    show2dsprite[spritenum>>3] &= ~(1<<(spritenum&7));
-    if (show2dsector[dasectnum>>3]&(1<<(dasectnum&7)))
-        show2dsprite[spritenum>>3] |= (1<<(spritenum&7));
+    bitmap_clear(show2dsprite, spritenum);
+    if (bitmap_test(show2dsector, dasectnum))
+        bitmap_set(show2dsprite, spritenum);
 }
 
 void initlava(void)
@@ -5955,8 +5958,8 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
         {
             k = wal->nextwall; if (k < 0) continue;
 
-            if ((show2dwall[j>>3]&(1<<(j&7))) == 0) continue;
-            if ((k > j) && ((show2dwall[k>>3]&(1<<(k&7))) > 0)) continue;
+            if (!bitmap_test(show2dwall, j)) continue;
+            if (k > j && bitmap_test(show2dwall, k)) continue;
 
             if (sector[wal->nextsector].ceilingz == z1)
                 if (sector[wal->nextsector].floorz == z2)
@@ -5992,7 +5995,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
     k = playersprite[screenpeek];
     for (i=0; i<numsectors; i++)
         for (j=headspritesect[i]; j>=0; j=nextspritesect[j])
-            if ((show2dsprite[j>>3]&(1<<(j&7))) > 0)
+            if (bitmap_test(show2dsprite, j))
             {
                 spr = &sprite[j]; if (spr->cstat&0x8000) continue;
                 col = 56;
@@ -6048,7 +6051,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                     }
                     else
                     {
-                        if (((gotsector[i>>3]&(1<<(i&7))) > 0) && (czoom > 96))
+                        if (bitmap_test(gotsector, i) && czoom > 96)
                         {
                             daang = (spr->ang-cang)&2047;
                             if (j == playersprite[screenpeek]) { x1 = 0; y1 = 0; daang = 0; }
@@ -6147,7 +6150,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
         {
             if (wal->nextwall >= 0) continue;
 
-            if ((show2dwall[j>>3]&(1<<(j&7))) == 0) continue;
+            if (!bitmap_test(show2dwall, j)) continue;
 
             if (tilesiz[wal->picnum].x == 0) continue;
             if (tilesiz[wal->picnum].y == 0) continue;
@@ -6302,14 +6305,19 @@ void searchmap(short startsector)
     short dapic;
     walltype *wal;
 
-    if ((startsector < 0) || (startsector >= numsectors)) return;
-    for (i=0; i<(MAXSECTORS>>3); i++) show2dsector[i] = 0;
-    for (i=0; i<(MAXWALLS>>3); i++) show2dwall[i] = 0;
-    for (i=0; i<(MAXSPRITES>>3); i++) show2dsprite[i] = 0;
+    if (startsector < 0 || startsector >= numsectors)
+        return;
+
+    for (i = 0; i < bitmap_size(MAXWALLS); i++)
+        show2dwall[i] = 0;
+    for (i = 0; i < bitmap_size(MAXSPRITES); i++)
+        show2dsprite[i] = 0;
+    for (i = 0; i < bitmap_size(MAXSECTORS); i++)
+        show2dsector[i] = 0;
 
     //Search your area recursively & set all show2dsector/show2dwalls
     tempshort[0] = startsector;
-    show2dsector[startsector>>3] |= (1<<(startsector&7));
+    bitmap_set(show2dsector, startsector);
     dapic = sector[startsector].ceilingpicnum;
     if (waloff[dapic] == 0) tileLoad(dapic);
     dapic = sector[startsector].floorpicnum;
@@ -6321,16 +6329,16 @@ void searchmap(short startsector)
         endwall = startwall + sector[dasect].wallnum;
         for (i=startwall,wal=&wall[startwall]; i<endwall; i++,wal++)
         {
-            show2dwall[i>>3] |= (1<<(i&7));
+            bitmap_set(show2dwall, i);
             dapic = wall[i].picnum;
             if (waloff[dapic] == 0) tileLoad(dapic);
             dapic = wall[i].overpicnum;
             if (((dapic&0xfffff000) == 0) && (waloff[dapic] == 0)) tileLoad(dapic);
 
             j = wal->nextsector;
-            if ((j >= 0) && ((show2dsector[j>>3]&(1<<(j&7))) == 0))
+            if (j >= 0 && !bitmap_test(show2dsector, j))
             {
-                show2dsector[j>>3] |= (1<<(j&7));
+                bitmap_set(show2dsector, j);
 
                 dapic = sector[j].ceilingpicnum;
                 if (waloff[dapic] == 0) tileLoad(dapic);
@@ -6343,7 +6351,7 @@ void searchmap(short startsector)
 
         for (i=headspritesect[dasect]; i>=0; i=nextspritesect[i])
         {
-            show2dsprite[i>>3] |= (1<<(i&7));
+            bitmap_set(show2dsprite, i);
             dapic = sprite[i].picnum;
             if (waloff[dapic] == 0) tileLoad(dapic);
         }

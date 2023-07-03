@@ -341,7 +341,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     //Draw red lines
     for (i=numsectors-1; i>=0; i--)
     {
-        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
+        if (!bitmap_test(show2dsector, i)) continue;
 
         startwall = sector[i].wallptr;
         endwall = sector[i].wallptr + sector[i].wallnum;
@@ -357,7 +357,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             if (sector[wal->nextsector].ceilingz == z1 && sector[wal->nextsector].floorz == z2)
                     if (((wal->cstat|wall[wal->nextwall].cstat)&(16+32)) == 0) continue;
 
-            if (!(show2dsector[wal->nextsector>>3]&pow2char[wal->nextsector&7]))
+            if (!bitmap_test(show2dsector, wal->nextsector))
                 col = editorcolors[7];
             else continue;
 
@@ -382,7 +382,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     k = g_player[screenpeek].ps->i;
     if (!FURY) for (i=numsectors-1; i>=0; i--)
     {
-        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
+        if (!bitmap_test(show2dsector, i)) continue;
         for (j=headspritesect[i]; j>=0; j=nextspritesect[j])
         {
             spr = &sprite[j];
@@ -538,7 +538,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     //Draw white lines
     for (i=numsectors-1; i>=0; i--)
     {
-        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
+        if (!bitmap_test(show2dsector, i)) continue;
 
         startwall = sector[i].wallptr;
         endwall = sector[i].wallptr + sector[i].wallnum;
@@ -1029,7 +1029,7 @@ void G_DisplayRest(int32_t smoothratio)
     {
         const walltype *wal = &wall[sector[i].wallptr];
 
-        show2dsector[i>>3] |= pow2char[i&7];
+        bitmap_set(show2dsector, i);
         for (j=sector[i].wallnum; j>0; j--, wal++)
         {
             i = wal->nextsector;
@@ -1038,7 +1038,7 @@ void G_DisplayRest(int32_t smoothratio)
             if (wall[wal->nextwall].cstat&0x0071) continue;
             if (sector[i].lotag == 32767) continue;
             if (sector[i].ceilingz >= sector[i].floorz) continue;
-            show2dsector[i>>3] |= pow2char[i&7];
+            bitmap_set(show2dsector, i);
         }
     }
 

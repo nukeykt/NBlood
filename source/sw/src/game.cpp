@@ -613,18 +613,20 @@ MapSetAll2D(uint8_t fill)
 {
     int i;
 
-    for (i = 0; i < (MAXWALLS >> 3); i++)
+    for (i = 0; i < bitmap_size(MAXWALLS); i++)
         show2dwall[i] = fill;
-    for (i = 0; i < (MAXSPRITES >> 3); i++)
+    for (i = 0; i < bitmap_size(MAXSPRITES); i++)
         show2dsprite[i] = fill;
-
-    //for (i = 0; i < (MAXSECTORS >> 3); i++)
+#if 0
+    for (i = 0; i < bitmap_size(MAXSECTORS); i++)
+        show2dsector[i] = fill;
+#else
     for (i = 0; i < MAXSECTORS; i++)
     {
         if (sector[i].ceilingpicnum != 342 && sector[i].floorpicnum != 342)
-            show2dsector[i>>3] |= (1<<(i&7));
-        //show2dsector[i] = fill;
+            bitmap_set(show2dsector, i);
     }
+#endif
 }
 
 void
@@ -5570,9 +5572,9 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
             if ((unsigned)k >= MAXWALLS)
                 continue;
 
-            if ((show2dwall[j >> 3] & (1 << (j & 7))) == 0)
+            if (!bitmap_test(show2dwall, j))
                 continue;
-            if ((k > j) && ((show2dwall[k >> 3] & (1 << (k & 7))) > 0))
+            if (k > j && bitmap_test(show2dwall, k))
                 continue;
 
             if (sector[wal->nextsector].ceilingz == z1)
@@ -5628,7 +5630,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                     goto SHOWSPRITE;
                 }
             }
-            if ((show2dsprite[j >> 3] & (1 << (j & 7))) > 0)
+            if (bitmap_test(show2dsprite, j))
             {
 SHOWSPRITE:
                 spr = &sprite[j];
@@ -5684,7 +5686,7 @@ SHOWSPRITE:
                         }
                         else
                         {
-                            if (((gotsector[i >> 3] & (1 << (i & 7))) > 0) && (czoom > 192))
+                            if (bitmap_test(gotsector, i) && czoom > 192)
                             {
                                 daang = (spr->ang - cang) & 2047;
                                 if (j == Player[screenpeek].PlayerSprite)
@@ -5823,7 +5825,7 @@ SHOWSPRITE:
             if ((uint16_t)wal->nextwall < MAXWALLS)
                 continue;
 
-            if ((show2dwall[j >> 3] & (1 << (j & 7))) == 0)
+            if (!bitmap_test(show2dwall, j))
                 continue;
 
             if (tilesiz[wal->picnum].x == 0)

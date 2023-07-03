@@ -1311,7 +1311,7 @@ static int32_t applydiff(const dataspec_t *spec, uint8_t **dumpvar, uint8_t **di
         if (cnt < 0) return 1;
 
         eltnum++;
-        if (((*diffvar+slen)[eltnum>>3] & pow2char[eltnum&7]) == 0)
+        if (!bitmap_test(*diffvar+slen, eltnum))
         {
             dump += spec->size * cnt;
             continue;
@@ -2230,7 +2230,7 @@ static void sv_preprojectileload()
 
     for (int i = 0; i < MAXTILES; i++)
     {
-        if (savegame_projectiles[i>>3] & pow2char[i&7])
+        if (bitmap_test(savegame_projectiles, i))
             savegame_projectilecnt++;
     }
 
@@ -2242,7 +2242,7 @@ static void sv_postprojectileload()
 {
     for (int i = 0, cnt = 0; i < MAXTILES; i++)
     {
-        if (savegame_projectiles[i>>3] & pow2char[i&7])
+        if (bitmap_test(savegame_projectiles, i))
         {
             C_AllocProjectile(i);
             Bmemcpy(g_tile[i].proj, &savegame_projectiledata[cnt++], sizeof(projectile_t));

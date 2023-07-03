@@ -137,7 +137,7 @@ static FORCE_INLINE int __fastcall Gv_GetArrayValue(int const id, int index)
         case GAMEARRAY_INT8:   return   ((int8_t   *)aGameArrays[id].pValues)[index];
         case GAMEARRAY_UINT16: return   ((uint16_t *)aGameArrays[id].pValues)[index];
         case GAMEARRAY_UINT8:  return   ((uint8_t  *)aGameArrays[id].pValues)[index];
-        case GAMEARRAY_BITMAP: return !!(((uint8_t *)aGameArrays[id].pValues)[index >> 3] & pow2char[index & 7]);
+        case GAMEARRAY_BITMAP: return !!bitmap_test((uint8_t *)aGameArrays[id].pValues, index);
     }
 }
 

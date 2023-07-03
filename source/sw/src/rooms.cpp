@@ -650,10 +650,10 @@ FAF_ConnectFloor(short sectnum)
 SWBOOL
 PicInView(short tile_num, SWBOOL reset)
 {
-    if (TEST(gotpic[tile_num >> 3], 1 << (tile_num & 7)))
+    if (bitmap_test(gotpic, tile_num))
     {
         if (reset)
-            RESET(gotpic[tile_num >> 3], 1 << (tile_num & 7));
+            bitmap_clear(gotpic, tile_num);
 
         return TRUE;
     }
