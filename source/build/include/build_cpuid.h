@@ -20,7 +20,7 @@ struct cpuinfo_t
 
     struct
     {
-        int invariant_tsc : 1;
+        unsigned int invariant_tsc : 1;
     } features;
 };
 
