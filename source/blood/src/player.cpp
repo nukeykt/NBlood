@@ -1384,7 +1384,8 @@ void ProcessInput(PLAYER *pPlayer)
         pPlayer->restTime = 0;
     else if (pPlayer->restTime >= 0)
         pPlayer->restTime += kTicsPerFrame;
-    WeaponProcess(pPlayer);
+    if (VanillaMode() || pXSprite->health == 0)
+        WeaponProcess(pPlayer);
     if (pXSprite->health == 0)
     {
         char bSeqStat = playerSeqPlaying(pPlayer, 16);
@@ -1710,6 +1711,8 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->q16slopehoriz = 0;
     }
     pPlayer->slope = (-fix16_to_int(pPlayer->q16horiz))<<7;
+    if (!VanillaMode())
+        WeaponProcess(pPlayer);
     if (pInput->keyFlags.prevItem)
     {
         pInput->keyFlags.prevItem = 0;
