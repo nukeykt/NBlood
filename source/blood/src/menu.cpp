@@ -580,6 +580,7 @@ void UpdateDetailTex(CGameMenuItemZBool *pItem);
 void UpdateGlowTex(CGameMenuItemZBool *pItem);
 void Update3DModels(CGameMenuItemZBool *pItem);
 void UpdateDeliriumBlur(CGameMenuItemZBool *pItem);
+void UpdateYShrearing(CGameMenuItemZBool *pItem);
 #ifdef USE_OPENGL
 void PreDrawDisplayPolymost(CGameMenuItem *pItem);
 CGameMenuItemTitle itemOptionsDisplayPolymostTitle("POLYMOST SETUP", 1, 160, 20, 2038);
@@ -593,6 +594,7 @@ CGameMenuItemZBool itemOptionsDisplayPolymostDetailTex("DETAIL TEXTURES:", 3, 66
 CGameMenuItemZBool itemOptionsDisplayPolymostGlowTex("GLOW TEXTURES:", 3, 66, 130, 180, 0, UpdateGlowTex, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayPolymost3DModels("3D MODELS:", 3, 66, 140, 180, 0, Update3DModels, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayPolymostDeliriumBlur("DELIRIUM EFFECT BLUR:", 3, 66, 150, 180, 0, UpdateDeliriumBlur, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayPolymostYShearing("Y-SHEARING:", 3, 66, 160, 180, 0, UpdateYShrearing, NULL, NULL);
 #endif
 
 void UpdateSoundToggle(CGameMenuItemZBool *pItem);
@@ -1342,6 +1344,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostGlowTex, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymost3DModels, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostDeliriumBlur, false);
+    menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostYShearing, false);
     menuOptionsDisplayPolymost.Add(&itemBloodQAV, false);
 
     itemOptionsDisplayPolymostTexQuality.pPreDrawCallback = PreDrawDisplayPolymost;
@@ -1985,6 +1988,7 @@ void SetupVideoPolymostMenu(CGameMenuItemChain *pItem)
     itemOptionsDisplayPolymostGlowTex.at20 = r_glowmapping;
     itemOptionsDisplayPolymost3DModels.at20 = usemodels;
     itemOptionsDisplayPolymostDeliriumBlur.at20 = gDeliriumBlur;
+    itemOptionsDisplayPolymostYShearing.at20 = r_yshearing;
 }
 
 void UpdateTextureMode(CGameMenuItemZCycle *pItem)
@@ -2050,6 +2054,11 @@ void Update3DModels(CGameMenuItemZBool *pItem)
 void UpdateDeliriumBlur(CGameMenuItemZBool *pItem)
 {
     gDeliriumBlur = pItem->at20;
+}
+
+void UpdateYShrearing(CGameMenuItemZBool *pItem)
+{
+    r_yshearing = pItem->at20;
 }
 
 void PreDrawDisplayPolymost(CGameMenuItem *pItem)
