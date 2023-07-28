@@ -5004,7 +5004,7 @@ typedef zint_t voxint_t;
 static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int32_t dasprang,
                              int32_t daxscale, int32_t dayscale, int32_t daindex,
                              int8_t dashade, char dapal, const int32_t *daumost, const int32_t *dadmost,
-                             const int8_t cstat, const int32_t clipcf, int32_t floorz, int32_t ceilingz)
+                             const int16_t cstat, const int32_t clipcf, int32_t floorz, int32_t ceilingz)
 {
     int32_t i, j, k, x, y, mip;
 
@@ -10916,7 +10916,7 @@ static void check_sprite(int32_t i)
     else if ((unsigned)sprite[i].picnum >= MAXTILES)
     {
         LOG_F(ERROR, "Error in map file: sprite #%d (%d,%d) with illegal picnum (%d) was REMOVED.",
-                   i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), TrackerCast(sprite[i].sectnum));
+                   i, TrackerCast(sprite[i].x), TrackerCast(sprite[i].y), TrackerCast(sprite[i].picnum));
         remove_sprite(i);
     }
     else if ((unsigned)sprite[i].sectnum >= (unsigned)numsectors)
@@ -14897,4 +14897,3 @@ void tileInvalidate(int16_t tilenume, int32_t pal, int32_t how)
 /*
  * vim:ts=8:
  */
-
