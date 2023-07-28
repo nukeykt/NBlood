@@ -147,7 +147,7 @@ typedef struct
 EDUKE32_STATIC_ASSERT(sizeof(actor_t) == 96);
 
 #ifdef POLYMER
-typedef struct  
+typedef struct
 {
     _prlight *lightptr;              // 4b/8b  aligned on 96 bytes
     vec3_t lightoffset;
@@ -415,7 +415,6 @@ int A_IncurDamage(int spriteNum);
 void A_AddToDeleteQueue(int spriteNum);
 void A_DeleteSprite(int spriteNum);
 void A_DoGuts(int spriteNum, int tileNum, int spawnCnt);
-void A_DoGutsDir(int spriteNum, int tileNum, int spawnCnt);
 int A_GetClipdist(int spriteNum);
 void A_MoveCyclers(void);
 void A_MoveDummyPlayers(void);
