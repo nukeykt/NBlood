@@ -388,15 +388,21 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
     return returnSprite;
 }
 
-static void Proj_MaybeSpawn(int spriteNum, int projecTile, const hitdata_t *hitData)
+static void Proj_DirectSpawn(int spriteNum, int projecTile, const hitdata_t *hitData)
 {
-    // atwith < 0 is for hard-coded projectiles
-    projectile_t *const pProj      = Proj_GetProjectile(projecTile);
-    int                 spawnTile  = projecTile < 0 ? -projecTile : pProj->spawns;
-
-    if (spawnTile >= 0)
+    if (projecTile >= 0)
     {
-        int spawned = A_Spawn(spriteNum, spawnTile);
+        int spawned = A_Spawn(spriteNum, projecTile);
+        A_SetHitData(spawned, hitData);
+    }
+}
+
+static void Proj_IndirectSpawn(int spriteNum, int projecTile, const hitdata_t *hitData)
+{
+    projectile_t *const pProj = Proj_GetProjectile(projecTile);
+    if (pProj->spawns >= 0)
+    {
+        int spawned = A_Spawn(spriteNum, pProj->spawns);
 
         if (projecTile >= 0)
         {
@@ -409,6 +415,14 @@ static void Proj_MaybeSpawn(int spriteNum, int projecTile, const hitdata_t *hitD
 
         A_SetHitData(spawned, hitData);
     }
+}
+
+static void Proj_Spawn(int spriteNum, uint16_t projecTile, const hitdata_t *hitData, bool directSpawn)
+{
+    if (directSpawn)
+        Proj_DirectSpawn(spriteNum, projecTile, hitData);
+    else
+        Proj_IndirectSpawn(spriteNum, projecTile, hitData);
 }
 
 // <extra>: damage that this shotspark does
@@ -638,7 +652,7 @@ static void P_DoWeaponRumble(int playerNum)
 
 static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *const hitData, int const STANDALONE_UNUSED(spriteOwner),
                              int const projecTile, int const zvel, int const spawnTile, int const decalTile, int const wallDamage,
-                             int const decalFlags)
+                             int const decalFlags, bool directProjecTileSpawn)
 {
 #ifdef EDUKE32_STANDALONE
     UNREFERENCED_PARAMETER(playerNum);
@@ -653,7 +667,7 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
             return -1;
         }
 
-        Proj_MaybeSpawn(spriteNum, spawnTile, hitData);
+        Proj_Spawn(spriteNum, spawnTile, hitData, directProjecTileSpawn);
     }
     else if (hitData->sprite >= 0)
     {
@@ -675,7 +689,7 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
         else
 #endif
         {
-            Proj_MaybeSpawn(spriteNum, spawnTile, hitData);
+            Proj_Spawn(spriteNum, spawnTile, hitData, directProjecTileSpawn);
         }
 #ifndef EDUKE32_STANDALONE
         if (!FURY && playerNum >= 0 && CheckShootSwitchTile(sprite[hitData->sprite].picnum))
@@ -689,7 +703,7 @@ static int P_PostFireHitscan(int playerNum, int const spriteNum, hitdata_t *cons
     {
         auto const hitWall = (uwallptr_t)&wall[hitData->wall];
 
-        Proj_MaybeSpawn(spriteNum, spawnTile, hitData);
+        Proj_Spawn(spriteNum, spawnTile, hitData, directProjecTileSpawn);
 
         if (CheckDoorTile(hitWall->picnum) == 1)
             goto SKIPBULLETHOLE;
@@ -760,7 +774,7 @@ SKIPBULLETHOLE:
 
 // Finish shooting hitscan weapon from actor (sprite <i>).
 static int A_PostFireHitscan(const hitdata_t *hitData, int const spriteNum, int const projecTile, int const zvel, int const shootAng,
-                             int const extra, int const spawnTile, int const wallDamage)
+                             int const extra, int const spawnTile, int const wallDamage, bool directProjecTileSpawn)
 {
     int const returnSprite = Proj_InsertShotspark(hitData, spriteNum, projecTile, 24, shootAng, extra);
 
@@ -769,14 +783,14 @@ static int A_PostFireHitscan(const hitdata_t *hitData, int const spriteNum, int 
         A_DamageObject(hitData->sprite, returnSprite);
 
         if (sprite[hitData->sprite].picnum != APLAYER)
-            Proj_MaybeSpawn(returnSprite, spawnTile, hitData);
+            Proj_Spawn(returnSprite, spawnTile, hitData, directProjecTileSpawn);
         else
             sprite[returnSprite].xrepeat = sprite[returnSprite].yrepeat = 0;
     }
     else if (hitData->wall >= 0)
     {
         A_DamageWall(returnSprite, hitData->wall, hitData->xyz, wallDamage);
-        Proj_MaybeSpawn(returnSprite, spawnTile, hitData);
+        Proj_Spawn(returnSprite, spawnTile, hitData, directProjecTileSpawn);
     }
     else
     {
@@ -785,7 +799,7 @@ static int A_PostFireHitscan(const hitdata_t *hitData, int const spriteNum, int 
             sprite[returnSprite].xrepeat = 0;
             sprite[returnSprite].yrepeat = 0;
         }
-        else Proj_MaybeSpawn(returnSprite, spawnTile, hitData);
+        else Proj_Spawn(returnSprite, spawnTile, hitData, directProjecTileSpawn);
     }
 
     return returnSprite;
@@ -926,13 +940,13 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
             otherSprite = Proj_InsertShotspark(&hitData, spriteNum, projecTile, 10, shootAng, Proj_GetDamage(pProj));
 
             if (P_PostFireHitscan(playerNum, otherSprite, &hitData, spriteNum, projecTile, zvel, projecTile, pProj->decal,
-                                  projecTile, 1 + 2) < 0)
+                                  projecTile, 1 + 2, false) < 0)
                 return -1;
         }
         else
         {
             otherSprite =
-            A_PostFireHitscan(&hitData, spriteNum, projecTile, zvel, shootAng, Proj_GetDamage(pProj), projecTile, projecTile);
+            A_PostFireHitscan(&hitData, spriteNum, projecTile, zvel, shootAng, Proj_GetDamage(pProj), projecTile, projecTile, false);
         }
 
         if ((krand() & 255) < 4 && pProj->isound >= 0)
@@ -1203,13 +1217,12 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             {
                 spawnedSprite = Proj_InsertShotspark(&hitData, spriteNum, projecTile, 10, shootAng, G_DefaultActorHealthForTile(projecTile) + (krand() % 6));
 
-                if (P_PostFireHitscan(playerNum, spawnedSprite, &hitData, spriteNum, projecTile, Zvel, -SMALLSMOKE, BULLETHOLE, SHOTSPARK1, 0) < 0)
+                if (P_PostFireHitscan(playerNum, spawnedSprite, &hitData, spriteNum, projecTile, Zvel, SMALLSMOKE, BULLETHOLE, SHOTSPARK1, 0, true) < 0)
                     return -1;
             }
             else
             {
-                spawnedSprite = A_PostFireHitscan(&hitData, spriteNum, projecTile, Zvel, shootAng, G_DefaultActorHealthForTile(projecTile), -SMALLSMOKE,
-                    SHOTSPARK1);
+                spawnedSprite = A_PostFireHitscan(&hitData, spriteNum, projecTile, Zvel, shootAng, G_DefaultActorHealthForTile(projecTile), SMALLSMOKE, SHOTSPARK1, true);
             }
 
             if ((krand() & 255) < 4)
@@ -3130,7 +3143,7 @@ void P_UpdateAngles(int const playerNum, input_t &input)
         }
     }
     else if (pPlayer->q16horizoff > F16(0))
-    {        
+    {
         pPlayer->q16horizoff = fix16_ssub(pPlayer->q16horizoff, fix16_from_float(scaleToInterval(fix16_to_float(fix16_div(pPlayer->q16horizoff, F16(8))))));
         pPlayer->q16horizoff = fix16_max(pPlayer->q16horizoff, 0);
     }
@@ -3177,7 +3190,7 @@ void P_GetInput(int const playerNum)
     }
 
     CONTROL_ProcessBinds();
-    
+
     if (ud.mouseaiming)
         g_myAimMode = BUTTON(gamefunc_Mouse_Aiming);
     else
@@ -3272,7 +3285,7 @@ void P_GetInput(int const playerNum)
     input.q16horz = fix16_ssub(input.q16horz, fix16_from_float(scaleToInterval(info.dpitch * 16.0 / analogExtent)));
     input.svel -= lrint(scaleToInterval(info.dx * keyMove / analogExtent));
     input.fvel -= lrint(scaleToInterval(info.dz * keyMove / analogExtent));
-    
+
     if (BUTTON(gamefunc_Strafe))
     {
         if (!localInput.svel)
