@@ -1157,6 +1157,21 @@ skip_check:
             }
             continue;
 
+        case CON_WHILEVARE:
+        {
+            instype *savedinsptr=insptr+2;
+            int32_t j;
+            do
+            {
+                insptr=savedinsptr;
+                j = (Gv_GetVar(*(insptr-1)) == *insptr);
+                VM_DoConditional(j);
+            }
+            while (j && !vm.flags);
+            vm.flags &= ~VMFLAG_BREAK;
+            continue;
+        }
+
         case CON_WHILEVARN:
         {
             instype *savedinsptr=insptr+2;
@@ -1180,6 +1195,23 @@ skip_check:
             {
                 insptr=savedinsptr;
                 j = (Gv_GetVar(*(insptr-1)) < *insptr);
+                VM_DoConditional(j);
+            }
+            while (j && !vm.flags);
+            vm.flags &= ~VMFLAG_BREAK;
+            continue;
+        }
+
+        case CON_WHILEVARVARE:
+        {
+            int32_t j;
+            instype *savedinsptr=insptr+2;
+            do
+            {
+                insptr=savedinsptr;
+                j = Gv_GetVar(*(insptr-1));
+                j = (j == Gv_GetVar(*insptr++));
+                insptr--;
                 VM_DoConditional(j);
             }
             while (j && !vm.flags);
