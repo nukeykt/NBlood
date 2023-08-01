@@ -8,22 +8,22 @@ Blood port based on EDuke32
 1. Extract NBlood to a new directory
 2. Copy the following files from Blood 1.21 to NBlood folder:
 
-   BLOOD.INI  
-   BLOOD.RFF  
-   BLOOD000.DEM, ..., BLOOD003.DEM (optional)  
-   CP01.MAP, ..., CP09.MAP (optional, Cryptic Passage)  
-   CPART07.AR_ (optional, Cryptic Passage)  
-   CPART15.AR_ (optional, Cryptic Passage)  
-   CPBB01.MAP, ..., CPBB04.MAP (optional, Cryptic Passage)  
-   CPSL.MAP (optional, Cryptic Passage)  
-   CRYPTIC.INI (optional, Cryptic Passage)  
-   CRYPTIC.SMK (optional, Cryptic Passage)  
-   CRYPTIC.WAV (optional, Cryptic Passage)  
-   GUI.RFF  
-   SOUNDS.RFF  
-   SURFACE.DAT  
-   TILES000.ART, ..., TILES017.ART  
-   VOXEL.DAT  
+   BLOOD.INI
+   BLOOD.RFF
+   BLOOD000.DEM, ..., BLOOD003.DEM (optional)
+   CP01.MAP, ..., CP09.MAP (optional, Cryptic Passage)
+   CPART07.AR_ (optional, Cryptic Passage)
+   CPART15.AR_ (optional, Cryptic Passage)
+   CPBB01.MAP, ..., CPBB04.MAP (optional, Cryptic Passage)
+   CPSL.MAP (optional, Cryptic Passage)
+   CRYPTIC.INI (optional, Cryptic Passage)
+   CRYPTIC.SMK (optional, Cryptic Passage)
+   CRYPTIC.WAV (optional, Cryptic Passage)
+   GUI.RFF
+   SOUNDS.RFF
+   SURFACE.DAT
+   TILES000.ART, ..., TILES017.ART
+   VOXEL.DAT
 
 3. Optionally, if you want to use CD audio tracks instead of MIDI, provide FLAC/OGG recordings in following format: bloodXX.flac/ogg, where XX is track number. Make sure to enable Redbook audio option in sound menu.
 4. Optionally, if you want cutscenes and you have the original CD, copy the `movie` folder into NBlood's folder (the folder itself too).
@@ -43,8 +43,8 @@ A port of the PC version of Exhumed based on EDuke32
 1. Extract PCExhumed to a new directory.
 2. Copy the following files from the PC retail version of Exhumed or Powerslave (Exhumed preferred), or the Powerslave demo available at http://www.jonof.id.au/build.games/ps. Beta, pre-release or other demo versions not supported.
 
-   STUFF.DAT  
-   DEMO.VCR  
+   STUFF.DAT
+   DEMO.VCR
    BOOK.MOV
 
 3. Recommended (but optional) - Add the games CD audio tracks as OGG files in the format exhumedXX.ogg or trackXX.ogg (where XX is the track number) to the same folder as
