@@ -37,7 +37,9 @@ jobs:
         cache: true
         install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
     - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
+      run: |
+        git fetch --unshallow
+        make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
     - name: prepare artifacts
       run: |
         mkdir -p upload/nblood/
