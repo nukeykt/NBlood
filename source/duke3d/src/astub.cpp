@@ -3571,8 +3571,7 @@ restart:
                 y = YTile * TileDim + offset;
 
 #ifdef USE_OPENGL
-                if (polymost_drawtilescreen(x, y, idTile, TileDim, s_TileZoom,
-                                            usehitile, loadedhitile))
+                if (polymost_drawtilescreen(x, y, idTile, TileDim, s_TileZoom, usehitile, loadedhitile))
 #endif
                     classic_drawtilescreen(x, y, idTile, TileDim, pRawPixels);
             }

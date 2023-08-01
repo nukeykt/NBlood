@@ -180,6 +180,7 @@ const tokenmap_t altkeyw[] =
     { "ifxor", CON_IFVARVARXOR },
     { "ifeither", CON_IFVARVAREITHER },
     { "ifboth", CON_IFVARVARBOTH },
+    { "whilee", CON_WHILEVARVARE },
     { "whilen", CON_WHILEVARVARN },
     { "whilel", CON_WHILEVARVARL },
 };
@@ -280,6 +281,7 @@ const char *keyw[] =
     "ifvarxor",
     "ifvareither",
     "ifvarboth",
+    "whilevare",
     "whilevarn",
     "whilevarl",
 
@@ -298,6 +300,7 @@ const char *keyw[] =
     "ifvarvarxor",
     "ifvarvareither",
     "ifvarvarboth",
+    "whilevarvare",
     "whilevarvarn",
     "whilevarvarl",
 
@@ -2913,6 +2916,7 @@ repeatcase:
     case CON_IFVARXOR:
     case CON_IFVAREITHER:
     case CON_IFVARBOTH:
+    case CON_WHILEVARE:
     case CON_WHILEVARN:
     case CON_WHILEVARL:
 // ---
@@ -2927,6 +2931,7 @@ repeatcase:
     case CON_IFVARVARXOR:
     case CON_IFVARVAREITHER:
     case CON_IFVARVARBOTH:
+    case CON_WHILEVARVARE:
     case CON_WHILEVARVARN:
     case CON_WHILEVARVARL:
 // ---
@@ -3038,7 +3043,7 @@ repeatcase:
         tscrptr = (instype *)apScript+offset;
         *tscrptr = (g_scriptPtr-apScript)-offset;  // relative offset
 
-        if (tw != CON_WHILEVARN && tw != CON_WHILEVARVARN)
+        if (tw != CON_WHILEVARE && tw != CON_WHILEVARVARE && tw != CON_WHILEVARN && tw != CON_WHILEVARVARN && tw != CON_WHILEVARL && tw != CON_WHILEVARVARL)
         {
             j = C_GetKeyword();
 

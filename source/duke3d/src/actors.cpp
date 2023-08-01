@@ -860,31 +860,6 @@ void A_DoGuts(int spriteNum, int tileNum, int spawnCnt)
         sprite[i].pal = pSprite->pal;
     }
 }
-
-void A_DoGutsDir(int spriteNum, int tileNum, int spawnCnt)
-{
-    auto const s      = (uspriteptr_t)&sprite[spriteNum];
-    vec2_t     repeat = { 32, 32 };
-
-    if (A_CheckEnemySprite(s) && s->xrepeat < 16)
-        repeat.x = repeat.y = 8;
-
-    int gutZ = s->z-ZOFFSET3;
-    int floorZ = getflorzofslope(s->sectnum,s->x,s->y);
-
-    if (gutZ > (floorZ-ZOFFSET3))
-        gutZ = floorZ-ZOFFSET3;
-
-    if (s->picnum == COMMANDER)
-        gutZ -= (24<<8);
-
-    for (bssize_t j=spawnCnt; j>0; j--)
-    {
-        int const i = A_InsertSprite(s->sectnum, s->x, s->y, gutZ, tileNum, -32, repeat.x, repeat.y, krand() & 2047,
-                                     256 + (krand() & 127), -512 - (krand() & 2047), spriteNum, 5);
-        sprite[i].pal = s->pal;
-    }
-}
 #endif
 
 static int32_t G_ToggleWallInterpolation(int32_t wallNum, int32_t setInterpolation)

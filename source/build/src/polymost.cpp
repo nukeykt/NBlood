@@ -9636,7 +9636,7 @@ void polymost_fillpolygon(int32_t npoints)
     }
 }
 
-int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, int32_t dimen, int32_t tilezoom,
+int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t tilenum, int32_t dimen, int32_t tilezoom,
                                 int32_t usehitile, uint8_t *loadedhitile)
 {
     float xdime, ydime, xdimepad, ydimepad, scx, scy, ratio = 1.f;
@@ -9646,21 +9646,21 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     if (videoGetRenderMode() < REND_POLYMOST || !in3dmode())
         return -1;
 
-    buildgl_outputDebugMessage(3, "polymost_drawtilescreen(tilex:%d, tiley:%d, wallnum:%d, dimen:%d, tilezoom:%d, usehitile:%d, loadedhitile:%p)",
-                                  tilex, tiley, wallnum, dimen, tilezoom, usehitile, loadedhitile);
+    buildgl_outputDebugMessage(3, "polymost_drawtilescreen(tilex:%d, tiley:%d, tilenum:%d, dimen:%d, tilezoom:%d, usehitile:%d, loadedhitile:%p)",
+                                  tilex, tiley, tilenum, dimen, tilezoom, usehitile, loadedhitile);
 
     if (!glinfo.texnpot)
     {
-        i = (1<<(picsiz[wallnum]&15)); if (i < tilesiz[wallnum].x) i += i; xdimepad = (float)i;
-        i = (1<<(picsiz[wallnum]>>4)); if (i < tilesiz[wallnum].y) i += i; ydimepad = (float)i;
+        i = (1<<(picsiz[tilenum]&15)); if (i < tilesiz[tilenum].x) i += i; xdimepad = (float)i;
+        i = (1<<(picsiz[tilenum]>>4)); if (i < tilesiz[tilenum].y) i += i; ydimepad = (float)i;
     }
     else
     {
-        xdimepad = (float)tilesiz[wallnum].x;
-        ydimepad = (float)tilesiz[wallnum].y;
+        xdimepad = (float)tilesiz[tilenum].x;
+        ydimepad = (float)tilesiz[tilenum].y;
     }
-    xdime = (float)tilesiz[wallnum].x; xdimepad = xdime/xdimepad;
-    ydime = (float)tilesiz[wallnum].y; ydimepad = ydime/ydimepad;
+    xdime = (float)tilesiz[tilenum].x; xdimepad = xdime/xdimepad;
+    ydime = (float)tilesiz[tilenum].y; ydimepad = ydime/ydimepad;
 
     if ((xdime <= dimen) && (ydime <= dimen))
     {
@@ -9679,9 +9679,9 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
     int32_t const ousehightile = usehightile;
     usehightile = usehitile && usehightile;
-    pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
+    pth = texcache_fetch(tilenum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && polymost_useindexedtextures() ? DAMETH_INDEXED : 0));
     if (usehightile)
-        bitmap_set(loadedhitile, wallnum);
+        bitmap_set(loadedhitile, tilenum);
     usehightile = ousehightile;
 
     if (pth)
@@ -10151,12 +10151,12 @@ void polymost_precache(int32_t dapicnum, int32_t dapalnum, int32_t datype)
 
 #include "compat.h"
 
-int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, int32_t dimen,
+int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t tilenum, int32_t dimen,
                                 int32_t usehitile, uint8_t *loadedhitile)
 {
     UNREFERENCED_PARAMETER(tilex);
     UNREFERENCED_PARAMETER(tiley);
-    UNREFERENCED_PARAMETER(wallnum);
+    UNREFERENCED_PARAMETER(tilenum);
     UNREFERENCED_PARAMETER(dimen);
     UNREFERENCED_PARAMETER(usehitile);
     UNREFERENCED_PARAMETER(loadedhitile);

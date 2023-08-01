@@ -2708,7 +2708,7 @@ int A_Spawn(int spriteNum, int tileNum)
 #ifdef POLYMER
             if (pSprite->yrepeat > 32)
             {
-                G_AddGameLight(newSprite, pSprite->sectnum, { 0, 0, LIGHTZOFF(spriteNum) }, 32768, 0, 100,255+(95<<8), PR_LIGHT_PRIO_MAX_GAME);
+                G_AddGameLight(newSprite, pSprite->sectnum, { 0, 0, LIGHTZOFF(newSprite) }, 32768, 0, 100,255+(95<<8), PR_LIGHT_PRIO_MAX_GAME);
                 practor[newSprite].lightcount = 2;
             }
             fallthrough__;

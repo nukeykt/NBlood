@@ -565,8 +565,10 @@ static tokenmap_t const vm_keywords[] =
     { "useractor",              CON_USERACTOR },
     { "userquote",              CON_USERQUOTE },
     { "wackplayer",             CON_WACKPLAYER },
+    { "whilevare",              CON_WHILEVARE },
     { "whilevarl",              CON_WHILEVARL },
     { "whilevarn",              CON_WHILEVARN },
+    { "whilevarvare",           CON_WHILEVARVARE },
     { "whilevarvarl",           CON_WHILEVARVARL },
     { "whilevarvarn",           CON_WHILEVARVARN },
     { "writearraytofile",       CON_WRITEARRAYTOFILE },
@@ -608,6 +610,7 @@ static tokenmap_t const vm_keywords[] =
     { "ifxor",                  CON_IFVARVARXOR },
     { "ifeither",               CON_IFVARVAREITHER },
     { "ifboth",                 CON_IFVARVARBOTH },
+    { "whilee",                 CON_WHILEVARVARE },
     { "whilen",                 CON_WHILEVARVARN },
     { "whilel",                 CON_WHILEVARVARL },
     { "abs",                    CON_KLABS },
@@ -690,6 +693,7 @@ static const vec2_t varvartable[] =
     { CON_SHIFTVARVARL,      CON_SHIFTVARL },
     { CON_SHIFTVARVARR,      CON_SHIFTVARR },
     { CON_SUBVARVAR,         CON_SUBVAR },
+    { CON_WHILEVARVARE,      CON_WHILEVARE },
     { CON_WHILEVARVARL,      CON_WHILEVARL },
     { CON_WHILEVARVARN,      CON_WHILEVARN },
     { CON_XORVARVAR,         CON_XORVAR },
@@ -714,6 +718,7 @@ static const vec2_t globalvartable[] =
     { CON_IFVARN,         CON_IFVARN_GLOBAL },
     { CON_IFVAROR,        CON_IFVAROR_GLOBAL },
     { CON_IFVARXOR,       CON_IFVARXOR_GLOBAL },
+    { CON_WHILEVARE,      CON_WHILEVARE_GLOBAL },
     { CON_WHILEVARL,      CON_WHILEVARL_GLOBAL },
     { CON_WHILEVARN,      CON_WHILEVARN_GLOBAL },
 
@@ -750,6 +755,7 @@ static const vec2_t playervartable[] =
     { CON_IFVARN,         CON_IFVARN_PLAYER },
     { CON_IFVAROR,        CON_IFVAROR_PLAYER },
     { CON_IFVARXOR,       CON_IFVARXOR_PLAYER },
+    { CON_WHILEVARE,      CON_WHILEVARE_PLAYER },
     { CON_WHILEVARL,      CON_WHILEVARL_PLAYER },
     { CON_WHILEVARN,      CON_WHILEVARN_PLAYER },
 
@@ -786,6 +792,7 @@ static const vec2_t actorvartable[] =
     { CON_IFVARN,         CON_IFVARN_ACTOR },
     { CON_IFVAROR,        CON_IFVAROR_ACTOR },
     { CON_IFVARXOR,       CON_IFVARXOR_ACTOR },
+    { CON_WHILEVARE,      CON_WHILEVARE_ACTOR },
     { CON_WHILEVARL,      CON_WHILEVARL_ACTOR },
     { CON_WHILEVARN,      CON_WHILEVARN_ACTOR },
 
@@ -2659,7 +2666,7 @@ DO_DEFSTATE:
             // (see top of this files for flags)
 
             //Skip comments before calling the check in order to align the textptr onto the label
-            C_SkipComments(); 
+            C_SkipComments();
             if (EDUKE32_PREDICT_FALSE(isdigit(*textptr) || (*textptr == '-')))
             {
                 g_errorCnt++;
@@ -4503,6 +4510,7 @@ setvarvar:
         case CON_IFVARVARN:
         case CON_IFVARVAROR:
         case CON_IFVARVARXOR:
+        case CON_WHILEVARVARE:
         case CON_WHILEVARVARL:
         case CON_WHILEVARVARN:
             {
@@ -4552,7 +4560,7 @@ setvarvar:
                 auto const tempscrptr = apScript + offset;
                 scriptWritePointer((intptr_t)g_scriptPtr, tempscrptr);
 
-                if (tw != CON_WHILEVARVARN && tw != CON_WHILEVARVARL)
+                if (tw != CON_WHILEVARVARE && tw != CON_WHILEVARVARN && tw != CON_WHILEVARVARL)
                 {
                     j = C_GetKeyword();
 
@@ -4577,6 +4585,7 @@ setvarvar:
         case CON_IFVARN:
         case CON_IFVAROR:
         case CON_IFVARXOR:
+        case CON_WHILEVARE:
         case CON_WHILEVARL:
         case CON_WHILEVARN:
             {
@@ -4605,7 +4614,7 @@ ifvar:
                 auto const tempscrptr = apScript + offset;
                 scriptWritePointer((intptr_t)g_scriptPtr, tempscrptr);
 
-                if (tw != CON_WHILEVARN && tw != CON_WHILEVARL)
+                if (tw != CON_WHILEVARE && tw != CON_WHILEVARN && tw != CON_WHILEVARL)
                 {
                     j = C_GetKeyword();
 
