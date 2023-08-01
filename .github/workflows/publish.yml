@@ -1,0 +1,52 @@
+name: Publish
+
+# Only trigger, when the build workflow succeeded
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Build]
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Prepare files
+      run: |
+        mkdir -p template/nblood/
+        mkdir -p template/rednukem/
+        mkdir -p template/pcexhumed/
+        cp -a package/common/* template/nblood/
+        cp -a package/common/* template/rednukem/
+        cp -a package/common/* template/pcexhumed/
+        cp README.md template/nblood/readme.txt
+        cp README.md template/rednukem/readme.txt
+        cp README.md template/pcexhumed/readme.txt
+        cp nblood.pk3 template/nblood/
+        cp dn64widescreen.pk3 template/rednukem/
+    - uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: build.yml
+        workflow_conclusion: success
+        path: upload/
+
+    - name: Package
+      run: |
+        sudo apt-get update
+        sudo apt-get install 7zip
+        cd upload/
+        ls -R
+        for i in */ ; do cd "$i" ; cp -a ../../template/* ./ ; for j in */ ; do cd "$j" ; 7zz a -mx9 -ms=on -t7z -m0=lzma2 -mmt2 "../../${j%/}_${i%/}_$(date +%Y%m%d)-$(git rev-list --count HEAD).7z" * ; cd .. ; done ; cd .. ; done
+
+    - name: Publish
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: false
+        title: "Latest Build"
+        files: |
+            upload/*.7z
