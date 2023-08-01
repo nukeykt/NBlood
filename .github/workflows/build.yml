@@ -21,6 +21,27 @@ jobs:
             sys: mingw32
             env: i686
             pkg: nasm
+    name: Windows MSYS2 ${{matrix.name}}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{matrix.sys}}
+        update: true
+        cache: true
+        install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
+    - name: build
+      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
+
+  build-windows-msys2-testonly:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - name: x86_64 GCC without SDL
             sys: mingw64
             env: x86_64
