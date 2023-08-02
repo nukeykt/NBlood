@@ -3899,7 +3899,35 @@ RORHACK:
     }
     if (gViewMode == 4)
     {
-        gViewMap.Process(gView->pSprite);
+        int cX = 0, cY = 0, nAng = 0;
+        if (gViewMap.bFollowMode) // calculate get current player position for 2d map for follow mode
+        {
+            cX = gView->pSprite->x, cY = gView->pSprite->y, nAng = gView->pSprite->ang;
+            if (!VanillaMode()) // interpolate angle for 2d map view
+            {
+                fix16_t cA = gView->q16ang;
+                if (gViewInterpolate)
+                {
+                    if (numplayers > 1 && gView == gMe && gPrediction && gMe->pXSprite->health > 0)
+                    {
+                        cX = interpolate(predictOld.at50, predict.at50, gInterpolate);
+                        cY = interpolate(predictOld.at54, predict.at54, gInterpolate);
+                        cA = interpolateangfix16(predictOld.at30, predict.at30, gInterpolate);
+                    }
+                    else
+                    {
+                        VIEW *pView = &gPrevView[gViewIndex];
+                        cX = interpolate(pView->at50, cX, gInterpolate);
+                        cY = interpolate(pView->at54, cY, gInterpolate);
+                        cA = interpolateangfix16(pView->at30, cA, gInterpolate);
+                    }
+                }
+                if (gView == gMe && (numplayers <= 1 || gPrediction) && gView->pXSprite->health != 0)
+                    cA = gViewAngle;
+                nAng = fix16_to_int(cA);
+            }
+        }
+        gViewMap.Process(cX, cY, nAng);
     }
     viewDrawInterface(delta);
     int zn = ((gView->zWeapon-gView->zView-(12<<8))>>7)+220;
