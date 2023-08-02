@@ -214,14 +214,14 @@ void CViewMap::Draw(void)
         viewResizeView(viewSize);
 }
 
-void CViewMap::Process(spritetype *pSprite)
+void CViewMap::Process(int nX, int nY, short nAng)
 {
     nZoom = gZoom;
     if (bFollowMode)
     {
-        x = pSprite->x;
-        y = pSprite->y;
-        angle = pSprite->ang;
+        x = nX;
+        y = nY;
+        angle = nAng;
     }
     else
     {

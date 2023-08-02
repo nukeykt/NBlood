@@ -34,7 +34,7 @@ public:
     CViewMap();
     void Init(int, int, int, short, char);
     void Draw(void);
-    void Process(spritetype *pSprite);
+    void Process(int nX, int nY, short nAng);
     void SetPos(int *, int*);
     void FollowMode(char);
 };
