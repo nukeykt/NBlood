@@ -108,6 +108,9 @@ const char *GetVersionString(void)
         char * const pHyphen = strchr(gVersionStringBuf, '-');
         if (pHyphen != nullptr)
             pHyphen[0] = '\0';
+        char * const pLeftBracket = strchr(gVersionStringBuf, '[');
+        if (pLeftBracket != nullptr)
+            pLeftBracket[0] = '\0';
     }
     return gVersionString;
 }
