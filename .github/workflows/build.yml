@@ -29,16 +29,19 @@ jobs:
         shell: msys2 {0}
     steps:
     - uses: actions/checkout@v3
+
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
         update: true
         cache: true
         install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
+
     - name: build
       run: |
         git fetch --unshallow
         make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
+
     - name: prepare artifacts
       if: github.ref == 'refs/heads/master'
       run: |
@@ -48,6 +51,7 @@ jobs:
         cp nblood.exe upload/nblood/
         cp rednukem.exe upload/rednukem/
         cp pcexhumed.exe upload/pcexhumed/
+
     - uses: actions/upload-artifact@v2
       if: github.ref == 'refs/heads/master'
       with:
@@ -71,12 +75,14 @@ jobs:
         shell: msys2 {0}
     steps:
     - uses: actions/checkout@v3
+
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
         update: true
         cache: true
         install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
+
     - name: build
       run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
 
@@ -103,10 +109,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
     - name: install-prerequisites
       run: |
         sudo apt-get update
         sudo apt-get -y install libflac-dev libvpx-dev libgtk2.0-dev ${{matrix.pkg}}
+
     - name: build
       run: make -j2 duke3d sw blood rr exhumed kenbuild tools ${{matrix.opt}}
 
@@ -115,9 +123,11 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
+
     - name: install-prerequisites
       run: |
         brew install sdl2 flac libvpx make
         brew unlink lz4
+
     - name: build
       run: gmake -j2 duke3d sw blood rr exhumed kenbuild tools
