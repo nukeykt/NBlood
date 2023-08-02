@@ -13,6 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Prepare files
       run: |
         mkdir -p template/nblood/
@@ -26,6 +27,7 @@ jobs:
         cp README.md template/pcexhumed/readme.txt
         cp nblood.pk3 template/nblood/
         cp dn64widescreen.pk3 template/rednukem/
+
     - uses: dawidd6/action-download-artifact@v2
       with:
         workflow: build.yml
@@ -33,20 +35,22 @@ jobs:
         path: upload/
 
     - name: Package
+      id: create-7z-packages
       run: |
         sudo apt-get update
         sudo apt-get install 7zip
         git fetch --unshallow
+        revision="r$(git rev-list --count HEAD)"
+        echo "revision=$revision" >> $GITHUB_OUTPUT
         cd upload/
         ls -R
-        for i in */ ; do cd "$i" ; cp -a ../../template/* ./ ; for j in */ ; do cd "$j" ; 7zz a -mx9 -ms=on -t7z -m0=lzma2 -mmt2 "../../${j%/}_${i%/}_$(date +%Y%m%d)-r$(git rev-list --count HEAD).7z" * ; cd .. ; done ; cd .. ; done
+        for i in */ ; do cd "$i" ; cp -a ../../template/* ./ ; for j in */ ; do cd "$j" ; 7zz a -mx9 -ms=on -t7z -m0=lzma2 -mmt2 "../../${j%/}_${i%/}_$(date +%Y%m%d)-$revision.7z" * ; cd .. ; done ; cd .. ; done
 
     - name: Publish
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest"
         prerelease: false
-        title: "Latest Build"
+        title: "${{ steps.create-7z-packages.outputs.revision }}"
         files: |
             upload/*.7z
