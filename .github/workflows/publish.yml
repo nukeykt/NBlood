@@ -2,11 +2,10 @@ name: Publish
 
 # Only trigger, when the build workflow succeeded
 on:
-  workflow_dispatch:
   workflow_run:
     workflows: [Build]
-    types:
-      - completed
+    types: [completed]
+    branches: [master]
 
 jobs:
   release:
