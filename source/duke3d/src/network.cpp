@@ -4719,7 +4719,7 @@ void Net_Connect(const char *srvaddr)
 {
     ENetAddress address;
     ENetEvent   event;
-    char *      addrstr = NULL;
+    char *addrstr = NULL, *remainingAddrstr = NULL;
 
     const int32_t cNumberOfRetries = 4;
 
@@ -4738,9 +4738,9 @@ void Net_Connect(const char *srvaddr)
         return;
     }
 
-    addrstr = strtok(oursrvaddr, ":");
+    addrstr = Bstrtoken(oursrvaddr, ":", &remainingAddrstr, 1);
     enet_address_set_host(&address, addrstr);
-    addrstr      = strtok(NULL, ":");
+    addrstr = Bstrtoken(NULL, ":", &remainingAddrstr, 1);
     address.port = addrstr == NULL ? g_netPort : Batoi(addrstr);
 
     g_netClientPeer = enet_host_connect(g_netClient, &address, CHAN_MAX, 0);

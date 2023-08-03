@@ -278,7 +278,8 @@ int MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn /*= nu
 #endif
 
     auto ext = Xstrdup(fn);
-    auto const c = Bsnprintf(g_musicFileName, sizeof(g_musicFileName), "%s/external%s", Bgethomedir(), strtok(ext,"."));
+    char *dummy = NULL;
+    auto const c = Bsnprintf(g_musicFileName, sizeof(g_musicFileName), "%s/external%s", Bgethomedir(), Bstrtoken(ext,".", &dummy, 1));
     g_musicFileName[c] = '\0';
     Xfree(ext);
 

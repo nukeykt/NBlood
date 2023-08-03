@@ -317,11 +317,12 @@ void writesettings(void) // save binds and aliases to <cfgname>_m32_settings.cfg
 {
     buildvfs_FILE fp;
     char *ptr = Xstrdup(setupfilename);
+    char *dummy = NULL;
     char tempbuf[128];
 
     if (!Bstrcmp(setupfilename, defaultsetupfilename))
         Bsprintf(tempbuf, "m32_settings.cfg");
-    else Bsprintf(tempbuf, "%s_m32_settings.cfg", strtok(ptr, "."));
+    else Bsprintf(tempbuf, "%s_m32_settings.cfg", Bstrtoken(ptr, ".", &dummy, 1));
 
     fp = buildvfs_fopen_write(tempbuf);
 

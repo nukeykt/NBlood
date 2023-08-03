@@ -10107,7 +10107,8 @@ int32_t ExtInit(void)
     registerosdcommands();
 
     {
-        char *ptr = Xstrdup(setupfilename), *p = strtok(ptr,".");
+        char *dummy = NULL;
+        char *ptr = Xstrdup(setupfilename), *p = Bstrtoken(ptr, ".", &dummy, 1);
         if (!Bstrcmp(setupfilename, SETUPFILENAME))
             Bsprintf(tempbuf, "m32_settings.cfg");
         else Bsprintf(tempbuf,"%s_m32_settings.cfg",p);

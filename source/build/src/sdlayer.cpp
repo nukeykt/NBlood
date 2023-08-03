@@ -1343,6 +1343,7 @@ static char modeschecked=0;
 #if SDL_MAJOR_VERSION >= 2
 void videoGetModes(int display)
 {
+    char *dummy = NULL;
     int32_t i, maxx = 0, maxy = 0;
     SDL_DisplayMode dispmode;
 
@@ -1353,7 +1354,7 @@ void videoGetModes(int display)
         return;
     else
     {
-        auto name = Xstrdup(videoGetDisplayName(display)), shortened = strtok(name, "(");
+        auto name = Xstrdup(videoGetDisplayName(display)), shortened = Bstrtoken(name, "(", &dummy, 1);
         if (!shortened) shortened = name;
         VLOG_F(LOG_GFX, "Detecting video modes for display %d (%s)...", display, shortened);
         DO_FREE_AND_NULL(name);
