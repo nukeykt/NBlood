@@ -1,7 +1,7 @@
 /*
 ** Author: Eric Veach, July 1994.
 ** Author: Mikko Mononen, July 2009.
-* 
+*
 ** Gutted for EDuke32, Aug 2021.
 */
 
@@ -207,14 +207,14 @@ int tessGetElementCount(TESStesselator const *tess);
 
 // tessGetElements() - Returns pointer to the first element.
 const TESSindex* tessGetElements(TESStesselator const *tess);
-	
+
 struct BucketAlloc *createBucketAlloc(TESSalloc* alloc,
 									  unsigned int itemSize, unsigned int bucketSize);
 static void *bucketAlloc(struct BucketAlloc *ba);
 static void bucketFree(struct BucketAlloc *ba, void *ptr);
 static void deleteBucketAlloc(struct BucketAlloc *ba);
 
-typedef struct TESSmesh TESSmesh; 
+typedef struct TESSmesh TESSmesh;
 typedef struct TESSvertex TESSvertex;
 typedef struct TESSface TESSface;
 typedef struct TESShalfEdge TESShalfEdge;
@@ -574,7 +574,7 @@ struct TESStesselator {
 
 	int processCDT;	/* option to run Constrained Delayney pass. */
 	int reverseContours; /* tessAddContour() will treat CCW contours as CW and vice versa */
-    
+
 	/*** state needed for the line sweep ***/
 	int	windingRule;	/* rule for determining polygon interior */
 
@@ -717,7 +717,7 @@ static void ComputeNormal(TESStesselator *tess, GLfloat * const norm)
 	for(int i = 0; i < 3; ++i) {
 		auto c = v->coords[i];
 		minVal[i] = maxVal[i] = c;
-		minVert[i] = maxVert[i] = v;		
+		minVert[i] = maxVert[i] = v;
 	}
 
 	for(v = vHead->next; v != vHead; v = v->next) {
@@ -1122,7 +1122,7 @@ static int tessMeshSetWindingNumber(TESSmesh *mesh, int value, int keepOnlyBound
 			/* Both regions are interior, or both are exterior. */
 			if(!keepOnlyBoundary) {
 				e->winding = 0;
-			} else {			
+			} else {
 				if (!tessMeshDelete(mesh, e)) return 0;
 			}
 		}
@@ -1198,7 +1198,7 @@ TESStesselator* tessNewTess(TESSalloc* alloc)
 	tess->bmax[1] = 0;
 
 	tess->reverseContours = 0;
-    
+
 	tess->windingRule = TESS_WINDING_ODD;
 	tess->processCDT = 0;
 
@@ -1608,7 +1608,7 @@ int tessTesselate(TESStesselator *tess, int windingRule, int elementType,
 
 	tessMeshCheckMesh(mesh);
 
-	if (elementType == TESS_BOUNDARY_CONTOURS) 
+	if (elementType == TESS_BOUNDARY_CONTOURS)
 		OutputContours(tess, mesh, clampedVertexSize);     /* output contours */
 	else
 		OutputPolymesh(tess, mesh, elementType, polySize, clampedVertexSize);     /* output polygons */
@@ -1734,8 +1734,8 @@ static void bucketFree(struct BucketAlloc *ba, void *ptr)
 			inBounds = 1;
 			break;
 		}
-		bucket = bucket->next;			
-	}		
+		bucket = bucket->next;
+	}
 
 	if (inBounds)
 	{
@@ -1764,7 +1764,7 @@ static void deleteBucketAlloc(struct BucketAlloc *ba)
 		auto next = bucket->next;
 		alloc->memfree(alloc->userData, bucket);
 		bucket = next;
-	}		
+	}
 
 	ba->freelist = 0;
 	ba->buckets = 0;
@@ -1881,7 +1881,7 @@ static void MakeFace(TESSface *newFace, TESShalfEdge *eOrig, TESSface *fNext)
 {
 	auto fNew = newFace;
 
-	assert(fNew != NULL); 
+	assert(fNew != NULL);
 
 	/* insert in circular doubly-linked list before fNext */
 	auto fPrev = fNext->prev;
@@ -1985,9 +1985,9 @@ static TESShalfEdge *tessMeshMakeEdge(TESSmesh *mesh)
 	if (newVertex1 == NULL || newVertex2 == NULL || newFace == NULL) {
 		if (newVertex1 != NULL) bucketFree(mesh->vertexBucket, newVertex1);
 		if (newVertex2 != NULL) bucketFree(mesh->vertexBucket, newVertex2);
-		if (newFace != NULL) bucketFree(mesh->faceBucket, newFace);     
+		if (newFace != NULL) bucketFree(mesh->faceBucket, newFace);
 		return NULL;
-	} 
+	}
 
 	auto e = MakeEdge(mesh, &mesh->eHead);
 	if (e == NULL) return NULL;
@@ -2055,7 +2055,7 @@ static int tessMeshSplice(TESSmesh *mesh, TESShalfEdge *eOrg, TESShalfEdge *eDst
 		eOrg->Org->anEdge = eOrg;
 	}
 	if(!joiningLoops) {
-		TESSface *newFace = (TESSface*)bucketAlloc(mesh->faceBucket);  
+		TESSface *newFace = (TESSface*)bucketAlloc(mesh->faceBucket);
 		if (newFace == NULL) return 0;
 
 		/* We split one loop into two -- the new loop is eDst->Lface.
@@ -2102,7 +2102,7 @@ static int tessMeshDelete(TESSmesh *mesh, TESShalfEdge *eDel)
 		Splice(eDel, eDel->Oprev);
 		if(!joiningLoops) {
 			TESSface *newFace= (TESSface*)bucketAlloc(mesh->faceBucket);
-			if (newFace == NULL) return 0; 
+			if (newFace == NULL) return 0;
 
 			/* We are splitting one loop into two -- create a new loop for eDel. */
 			MakeFace(newFace, eDel, eDel->Lface);
@@ -2198,7 +2198,7 @@ static TESShalfEdge *tessMeshSplitEdge(TESSmesh *mesh, TESShalfEdge *eOrg)
 */
 static TESShalfEdge *tessMeshConnect(TESSmesh *mesh, TESShalfEdge *eOrg, TESShalfEdge *eDst)
 {
-	int joiningLoops = FALSE;  
+	int joiningLoops = FALSE;
 	auto eNew = MakeEdge(mesh, eOrg);
 	if (eNew == NULL) return NULL;
 
@@ -2292,7 +2292,7 @@ static TESSmesh *tessMeshNewMesh(TESSalloc *alloc)
 	auto mesh = (TESSmesh *)alloc->memalloc(alloc->userData, sizeof(TESSmesh));
 	if (mesh == NULL)
 		return NULL;
-	
+
 	alloc->meshEdgeBucketSize = clamp(alloc->meshEdgeBucketSize, 16, 4096);
 	alloc->meshVertexBucketSize = clamp(alloc->meshVertexBucketSize, 16, 4096);
 	alloc->meshFaceBucketSize = clamp(alloc->meshFaceBucketSize, 16, 4096);
@@ -2397,7 +2397,7 @@ static int tessMeshMergeConvexFaces(TESSmesh *mesh, int maxVertsPerFace)
 		auto eSym = e->Sym;
         if (!eSym)
 			continue;
-		
+
 		// Both faces must be inside
         if (!e->Lface || !e->Lface->inside)
             continue;
@@ -2813,16 +2813,16 @@ static PQhandle pqHeapInsert(TESSalloc* alloc, PriorityQHeap *pq, PQkey keyNew)
 
 			// If the heap overflows, double its size.
 			pq->max <<= 1;
-			pq->nodes = (PQnode *)alloc->memrealloc(alloc->userData, pq->nodes, 
+			pq->nodes = (PQnode *)alloc->memrealloc(alloc->userData, pq->nodes,
 				(size_t)((pq->max + 1) * sizeof(pq->nodes[0])));
 			if (pq->nodes == NULL) {
-				pq->nodes = saveNodes;	// restore ptr to free upon return 
+				pq->nodes = saveNodes;	// restore ptr to free upon return
 				return INV_HANDLE;
 			}
 			pq->handles = (PQhandleElem *)alloc->memrealloc(alloc->userData, pq->handles,
 				(size_t) ((pq->max + 1) * sizeof(pq->handles[0])));
 			if (pq->handles == NULL) {
-				pq->handles = saveHandles; // restore ptr to free upon return 
+				pq->handles = saveHandles; // restore ptr to free upon return
 				return INV_HANDLE;
 			}
 		}
@@ -2918,13 +2918,13 @@ static PriorityQ *pqNewPriorityQ(TESSalloc *alloc, int size, int (*leq)(PQkey ke
 	pq->max = size; //INIT_SIZE;
 	pq->initialized = FALSE;
 	pq->leq = leq;
-	
+
 	return pq;
 }
 
 static inline void pqDeletePriorityQ(TESSalloc* alloc, PriorityQ *pq)
 {
-	assert(pq != NULL); 
+	assert(pq != NULL);
 	if (pq->heap != NULL) pqHeapDeletePriorityQ(alloc, pq->heap);
 	if (pq->order != NULL) alloc->memfree(alloc->userData, pq->order);
 	if (pq->keys != NULL) alloc->memfree(alloc->userData, pq->keys);
@@ -3006,7 +3006,7 @@ static int pqInit(TESSalloc* alloc, PriorityQ *pq)
 	return 1;
 }
 
-/* returns INV_HANDLE iff out of memory */ 
+/* returns INV_HANDLE iff out of memory */
 static PQhandle pqInsert(TESSalloc *alloc, PriorityQ *pq, PQkey keyNew)
 {
     if (pq->initialized)
@@ -3034,7 +3034,7 @@ static PQhandle pqInsert(TESSalloc *alloc, PriorityQ *pq, PQkey keyNew)
         }
     }
 
-	assert(curr != INV_HANDLE); 
+	assert(curr != INV_HANDLE);
 	pq->keys[curr] = keyNew;
 
 	/* Negative handles index the sorted array. */
@@ -3206,7 +3206,7 @@ static int FixUpperEdge(TESStesselator *tess, ActiveRegion *reg, TESShalfEdge *n
 	reg->eUp = newEdge;
 	newEdge->activeRegion = reg;
 
-	return 1; 
+	return 1;
 }
 
 static ActiveRegion *TopLeftRegion(TESStesselator *tess, ActiveRegion *reg)
@@ -3575,7 +3575,7 @@ static int CheckForLeftSplice(TESStesselator *tess, ActiveRegion *regUp)
 		/* eUp->Dst is below eLo, so splice eUp->Dst into eLo */
 		regUp->dirty = regLo->dirty = TRUE;
 		auto e = tessMeshSplitEdge(tess->mesh, eLo);
-		if (e == NULL) longjmp(tess->env,1);    
+		if (e == NULL) longjmp(tess->env,1);
 		if (!tessMeshSplice(tess->mesh, eUp->Lnext, eLo->Sym)) longjmp(tess->env,1);
 		e->Rface->inside = regUp->inside;
 	}
@@ -3680,7 +3680,7 @@ static int CheckForIntersect(TESStesselator *tess, ActiveRegion *regUp)
 		if(dstUp == tess->event) {
 			/* Splice dstUp into eLo, and process the new region(s) */
 			if (tessMeshSplitEdge(tess->mesh, eLo->Sym) == NULL) longjmp(tess->env,1);
-			if (!tessMeshSplice(tess->mesh, eUp->Lnext, eLo->Oprev)) longjmp(tess->env,1); 
+			if (!tessMeshSplice(tess->mesh, eUp->Lnext, eLo->Oprev)) longjmp(tess->env,1);
 			regLo = regUp;
 			regUp = TopRightRegion(regUp);
 			auto e = RegionBelow(regUp)->eUp->Rprev;
@@ -4203,14 +4203,14 @@ static void RemoveDegenerateEdges(TESStesselator *tess)
 static int InitPriorityQ(TESStesselator *tess)
 {
 	int vertexCount = 0;
-	
+
 	auto vHead = &tess->mesh->vHead;
 	for(auto v = vHead->next; v != vHead; v = v->next)
 		vertexCount++;
 
 	/* Make sure there is enough space for sentinels. */
 	vertexCount += MAX(8, tess->alloc.extraVertices);
-	
+
 	auto pq = tess->pq = pqNewPriorityQ(&tess->alloc, vertexCount, (int (*)(PQkey, PQkey)) tesvertLeq);
 	if (pq == NULL) return 0;
 
@@ -4345,7 +4345,7 @@ static GLfloat tesedgeEval(TESSvertex const *u, TESSvertex const *v, TESSvertex 
 		if(gapL < gapR)
 			return (v->t - u->t) + (u->t - w->t) * (gapL / (gapL + gapR));
 		else
-			return (v->t - w->t) + (w->t - u->t) * (gapR / (gapL + gapR));		
+			return (v->t - w->t) + (w->t - u->t) * (gapR / (gapL + gapR));
 	}
 	/* vertical line */
 	return 0;

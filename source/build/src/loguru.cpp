@@ -498,7 +498,7 @@ namespace loguru
 	{
 		int arg_dest = 1;
 		int out_argc = argc;
-		
+
 		for (int arg_it = 1; arg_it < argc; ++arg_it) {
 			auto cmd = argv[arg_it];
 			auto arg_len = strlen(verbosity_flag);

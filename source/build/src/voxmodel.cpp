@@ -353,7 +353,7 @@ static void addquad(int32_t x0, int32_t y0, int32_t z0, int32_t x1, int32_t y1, 
     qptr->v[2].x = x2; qptr->v[2].y = y2; qptr->v[2].z = z2;
 
     constexpr vec2_u16_t vbw = { VOXBORDWIDTH, VOXBORDWIDTH };
-    
+
     for (int j=0; j<3; j++)
         qptr->v[j].uv = shp[z]+vbw;
 
@@ -562,7 +562,7 @@ skindidntfit:
 
             v = gvox->mytexx*gvox->mytexy;
             constexpr vec2_u16_t vbw = { (VOXBORDWIDTH<<1), (VOXBORDWIDTH<<1) };
-            
+
             for (int z=0; z<sc; z++)
             {
                 auto d = shp[z] + vbw;
@@ -663,7 +663,7 @@ skindidntfit:
     }
 
     DO_FREE_AND_NULL(gquad);
-    
+
     return gvox;
 }
 
@@ -1140,11 +1140,11 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         if (shadowHack)
             handle_blend(0, 0, 0);
     }
-    
+
     if (!(tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
         buildgl_setEnabled(GL_BLEND);
     else buildgl_setDisabled(GL_BLEND);
-    
+
     //transform to Build coords
     float omat[16];
     Bmemcpy(omat, mat, sizeof(omat));

@@ -1231,7 +1231,7 @@ static FORCE_INLINE char *Bstrncpyz(char *dst, const char *src, bsize_t n)
         Bmemcpy(dst, src, min(Bstrlen(src)+1, n-1));
         dst[n-1] = '\0';
     }
-    
+
     return dst;
 }
 

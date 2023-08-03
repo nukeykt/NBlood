@@ -940,4 +940,3 @@ void SCRIPT_PutDouble
 
     SCRIPT_AddEntry(scripthandle, sectionname, entryname, raw);
 }
-

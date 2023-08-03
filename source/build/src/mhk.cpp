@@ -168,7 +168,7 @@ int32_t engineLoadMHK(const char *filename)
             break;
 
         // angoff <xx>
-        case T_ANGOFF:     
+        case T_ANGOFF:
             if (scriptfile_getnumber(script, &read)) break;
             if (whichsprite < 0) { ignoreThisShit(); break; }
             spriteext[whichsprite].mdangoff = (int16_t) read;

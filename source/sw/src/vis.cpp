@@ -183,4 +183,3 @@ int SpawnVis(short Parent, short sectnum, int x, int y, int z, int amt)
 
     return SpriteNum;
 }
-

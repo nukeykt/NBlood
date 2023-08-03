@@ -77,4 +77,3 @@ typedef struct
 
 extern const GAME_SET gs_defaults;
 extern GAME_SET gs;
-

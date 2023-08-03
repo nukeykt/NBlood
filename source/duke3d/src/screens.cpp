@@ -2641,4 +2641,3 @@ void G_BonusScreen(int32_t bonusonly)
         }
     } while (1);
 }
-

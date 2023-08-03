@@ -220,7 +220,7 @@ invalid:
             cht->lock = 254;
             return NULL;
         }
-        
+
         kpgetdim(kpzbuf, length, &xsiz, &ysiz);
 
         if (EDUKE32_PREDICT_FALSE((xsiz <= 0) | (ysiz <= 0)))
@@ -242,18 +242,18 @@ invalid:
             Xfree(picptr);
             goto invalid;
         }
-        
+
         cht->upscale = upscale;
         cht->lock    = CACHE1D_UNLOCKED;
-        
+
         g_cache.allocateBlock(&cht->ptr, xsiz * ysiz, &cht->lock);
 
         //paletteFlushClosestColor();
 
         auto buf = (char*)cht->ptr;
-        
+
         Bmemset(buf, 255, xsiz * ysiz);
-        
+
         int const alphacut = clamp((int)(255.f - 255.f * si->alphacut), 0, 255);
 
         for (int j = 0; j < ysiz; ++j)
@@ -266,7 +266,7 @@ invalid:
                     buf[(i * ysiz) + j] = paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
             }
         }
-        
+
         Xfree(picptr);
     }
     else if (cht->lock < CACHE1D_UNLOCKED)
@@ -1114,7 +1114,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 #endif
     }
 #endif
-    
+
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
@@ -1796,7 +1796,7 @@ static void classicScanSector(int16_t startsectnum)
                     if (renderAddTsprite(i, sectnum))
                         break;
         }
-        
+
         bitmap_set(gotsector, sectnum);
 
         const int32_t onumbunches = numbunches;
@@ -1835,7 +1835,7 @@ static void classicScanSector(int16_t startsectnum)
                     int32_t tempint = temp;
                     if (
 #ifdef YAX_ENABLE
-                        yax_globallev == YAX_MAXDRAWS && 
+                        yax_globallev == YAX_MAXDRAWS &&
 #endif
                         ((uint64_t)tempint+262144) < 524288)  // BXY_MAX?
                         if (mulscale5(tempint,tempint) <= (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
@@ -5316,7 +5316,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
 
                         if (z1 < um) { yplc = yinc*(um-z1); z1 = um; }
                         else yplc = 0;
-                        
+
                         if (cstat & 8)
                             yinc = -yinc;
                         if (cstat & 8)
@@ -7041,17 +7041,17 @@ static void renderDrawSprite(int32_t snum)
 {
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
 
-#ifdef USE_OPENGL    
+#ifdef USE_OPENGL
     if (videoGetRenderMode() != REND_CLASSIC)
     {
-        buildgl_setEnabled(GL_ALPHA_TEST);        
+        buildgl_setEnabled(GL_ALPHA_TEST);
         buildgl_setEnabled(GL_BLEND);
 
         if (videoGetRenderMode() == REND_POLYMOST)
             polymost_drawsprite(snum);
 # ifdef POLYMER
         else polymer_drawsprite(snum);
-# endif        
+# endif
         return;
     }
 #endif
@@ -7068,12 +7068,12 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
 
     //============================================================================= //POLYMOST BEGINS
-#ifdef USE_OPENGL    
+#ifdef USE_OPENGL
     if (videoGetRenderMode() != REND_CLASSIC)
     {
         buildgl_setEnabled(GL_ALPHA_TEST);
         buildgl_setEnabled(GL_BLEND);
-        
+
         if (videoGetRenderMode() == REND_POLYMOST)
             polymost_drawmaskwall(damaskwallcnt);
 # ifdef POLYMER
@@ -7786,7 +7786,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         auto const   clock = totalclock;
 
         sm0 = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK), clock };
-        
+
         auto lerpWouldLookDerp = [&](void)
         {
             return !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
@@ -7796,7 +7796,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
         if (lerpWouldLookDerp())
             sm.lerp = sm.goal = sm0.goal;
-        else 
+        else
         {
             sm0.lerp = { sm.goal.x - mulscale16(65536-rotatespritesmoothratio, sm.goal.x - sm.lerp.x),
                          sm.goal.y - mulscale16(65536-rotatespritesmoothratio, sm.goal.y - sm.lerp.y),
@@ -9299,7 +9299,7 @@ void set_globalang(fix16_t const ang)
     fcosglobalang = fcosang;
     fsinglobalang = fsinang;
 #endif
-    
+
     cosglobalang = (int)fcosang;
     singlobalang = (int)fsinang;
 
@@ -11103,7 +11103,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read sprites //////////
 
-    if (kread_and_test(fil,&numsprites,2)) goto error; 
+    if (kread_and_test(fil,&numsprites,2)) goto error;
     numsprites = B_LITTLE16(numsprites);
     if ((unsigned)numsprites >= MYMAXSPRITES()+1) goto error;
 
@@ -11236,7 +11236,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
         numsectors = 0;
         numwalls   = 0;
         kclose(fil);
-        return -1; 
+        return -1;
     }
 
     switch (mapversion)
@@ -11437,7 +11437,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
                 v6spr.lotag   = B_LITTLE16(v6spr.lotag);
                 v6spr.hitag   = B_LITTLE16(v6spr.hitag);
                 v6spr.extra   = B_LITTLE16(v6spr.extra);
-                
+
                 convertv6sprv7(&v6spr, &sprite[i]);
                 check_sprite(i);
             }
@@ -11880,7 +11880,7 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     OSD_ResizeDisplay(xdim, ydim);
 
     videoAllocateBuffers();
-    
+
     //Force drawrooms to call dosetaspect & recalculate stuff
     oxyaspect = oxdimen = oviewingrange = -1;
 
@@ -12038,10 +12038,10 @@ void getVoxelColorMap(char* davoxptr, uint8_t *bitmap)
                 do
                 {
                     uint8_t coloridx = voxptr[3+offs];
-                    
+
                     if (coloridx > maxvoxcol)
                         maxvoxcol = coloridx;
-                    
+
                     bitmap_clear(bitmap, coloridx);
                     offs++;
                 } while (--zleng);
@@ -12072,7 +12072,7 @@ void applyVoxelColorMap(char* davoxptr, uint8_t *bitmap)
         {
             char *voxptr = (char *)(B_LITTLE16(shortptr[y])+slabxoffs);
             char *const voxend = (char *)(B_LITTLE16(shortptr[y+1])+slabxoffs);
-            
+
             for (; voxptr<voxend; voxptr+=voxptr[1]+3)
             {
                 uint8_t zleng = voxptr[1];
@@ -12116,14 +12116,14 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
     }
 
     klseek(fil, -768, SEEK_END);
-    
+
     maxvoxcol = 0;
 
     for (int i=0; i<256; i++)
     {
         char c[3];
         kread(fil, c, 3);
-        *(int32_t *)&voxpal[i] = B_LITTLE32((c[0]<<18) + (c[1]<<10) + (c[2]<<2) + (i<<24));   
+        *(int32_t *)&voxpal[i] = B_LITTLE32((c[0]<<18) + (c[1]<<10) + (c[2]<<2) + (i<<24));
     }
 
     klseek(fil, 0, SEEK_SET);
@@ -12151,7 +12151,7 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
 
         char *ptr = (char *) voxoff[voxindex][i];
         kread(fil, ptr, dasiz);
-        
+
         if (i == 0)
             getVoxelColorMap(ptr, bitmap);
         else
@@ -12385,7 +12385,7 @@ fix16_t __fastcall getq16angledelta(fix16_t first, fix16_t second)
 
     if (klabs(fix16_sub(first, second)) < F16(1024))
         return fix16_sub(second, first);
-    else 
+    else
         return fix16_sub((second > F16(1024)) ? fix16_sub(second, F16(2048)) : second, (first > F16(1024)) ? fix16_sub(first, F16(2048)) : first);
 }
 
@@ -13339,7 +13339,7 @@ void updatesectorneighbor(int32_t const x, int32_t const y, int16_t * const sect
         int16_t nsecs;
         bfirst_search_init(updatesectorneighborlist, updatesectorneighbormap, &nsecs, MAXSECTORS, initialsectnum);
 
-        int32_t const initialDistance = getsectordist({x, y}, initialsectnum);        
+        int32_t const initialDistance = getsectordist({x, y}, initialsectnum);
 
         // initialDistance == 0 means the point passed to getsectordist was inside the passed sectnum
         if (initialDistance == 0)
@@ -13385,7 +13385,7 @@ restart:
 #endif
     uint32_t const correctedsectnum = (unsigned)*sectnum;
     if (correctedsectnum < (unsigned)numsectors)
-    {    
+    {
         int16_t nsecs;
         bfirst_search_init(updatesectorneighborlist, updatesectorneighbormap, &nsecs, MAXSECTORS, correctedsectnum);
 
@@ -14444,7 +14444,7 @@ void videoSet2dMode(int32_t daxdim, int32_t daydim)
 
     qsetmode = ((daxdim<<16)|(daydim&0xffff));
 }
-#endif // 
+#endif //
 
 static int32_t printext_checkypos(int32_t ypos, int32_t *yminptr, int32_t *ymaxptr)
 {

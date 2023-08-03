@@ -37,4 +37,3 @@
 - (NSString *)grpname;
 - (grpfile_t const *)entryptr;
 @end
-

@@ -8098,4 +8098,3 @@ saveable_module saveable_panel =
     saveable_panel_data,
     SIZ(saveable_panel_data)
 };
-

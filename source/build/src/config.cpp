@@ -183,7 +183,7 @@ int32_t loadsetup(const char *fn)
             g_windowPosValid = true;
         }
     }
-    
+
     if (readconfig(fp, "keyconsole", val, VL) > 0)
     {
         keys[BK_CONSOLE] = Bstrtol(val, NULL, 16);

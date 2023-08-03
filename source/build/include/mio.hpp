@@ -365,7 +365,7 @@ public:
      * handle (which is closed when the object destructs or `unmap` is called), which is
      * then used to memory map the requested region. Upon failure, `error` is set to
      * indicate the reason and the object remains in an unmapped state.
-     * 
+     *
      * The entire file is mapped.
      */
     template<typename String>
@@ -404,7 +404,7 @@ public:
      * `handle`, which must be a valid file handle, which is used to memory map the
      * requested region. Upon failure, `error` is set to indicate the reason and the
      * object remains in an unmapped state.
-     * 
+     *
      * The entire file is mapped.
      */
     void map(const handle_type handle, std::error_code& error)

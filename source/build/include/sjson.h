@@ -3,7 +3,7 @@
 // License: https://github.com/septag/sjson#license-bsd-2-clause
 //
 // Original code by Joseph A. Adams (joeyadams3.14159@gmail.com)
-// 
+//
 // sjson.h - v1.1.1 - Fast single header json encoder/decoder
 //		This is actually a fork of Joseph's awesome Json encoder/decoder code from his repo:
 //		https://github.com/rustyrussell/ccan/tree/master/ccan/json
@@ -15,7 +15,7 @@
 //		- Single header C-file
 //		- UTF8 support
 //		- Fast with minimal allocations (Object pool, String pool, ..)
-//		- Overriable malloc/free/memcpy/.. 
+//		- Overriable malloc/free/memcpy/..
 //	    - Have both Json Decoder/Encoder
 //		- Encoder supports pretify
 //		- No dependencies
@@ -26,7 +26,7 @@
 //		sjson_tag		Json object tag type, string, number, object, etc..
 //		sjson_node		Data structure that represents json DOM node
 //		sjson_context	Encoder/decoder context, almost all API functions need a context to allocate and manage memory
-//						It's not thread-safe, so don't use the same context in multiple threads					
+//						It's not thread-safe, so don't use the same context in multiple threads
 //	API:
 //	--- CREATION
 //		sjson_create_context	creates a json context:
@@ -40,7 +40,7 @@
 //								@PARAM alloc_user		A user-defined pointer that is passed to allocations, in case you override memory alloc functions
 //	   sjson_destroy_context	Destroys a json context and frees all memory
 //								after the context destroys, all created json nodes will become invalid
-//	   
+//
 //	   sjson_reset_context		Resets the context. No memory will be freed, just resets the buffers so they can be reused
 //								but the DOM nodes and strings will be invalidated next time you parse or decode a json
 //
@@ -50,14 +50,14 @@
 //							    Generated string can be freed by calling 'sjson_free_string' on the returned pointer
 //	   sjson_stringify			Encodes the json root node to pretty json string
 //								@PARAM space sets number of spaces for tab, example two-space for a tab is "  "
-//	   sjson_free_string		String pointer returned by stringify and encode should be freed by calling this function		
-//	   sjson_validate			Validates the json string, returns false if json string is invalid	
+//	   sjson_free_string		String pointer returned by stringify and encode should be freed by calling this function
+//	   sjson_validate			Validates the json string, returns false if json string is invalid
 //
 // --- LOOKUP/TRAVERSE
-//	   sjson_find_element		Finds an element by index inside array 		
-//	   sjson_find_member		Finds an element by name inside object				
-//	   sjson_find_member_nocase	Finds an element by name inside object, ignores case			
-//	   sjson_first_child		Gets first child of Object or Array types		
+//	   sjson_find_element		Finds an element by index inside array
+//	   sjson_find_member		Finds an element by name inside object
+//	   sjson_find_member_nocase	Finds an element by name inside object, ignores case
+//	   sjson_first_child		Gets first child of Object or Array types
 //	   sjson_foreach			Iterates through an Object or array child elements, first parameter should be a pre-defined json_node*
 //
 // --- HIGHER LEVEL LOOKUP
@@ -71,12 +71,12 @@
 //
 // --- CONSTRUCTION
 //	   sjson_mknull				Creates a NULL type json node
-//	   sjson_mknumber			Creates and sets a number type json node	
-//	   sjson_mkstring			Creates and sets a string type json node	
-//	   sjson_mkobject			Creates an object type json node		
-//	   sjson_mkarray			Creates an array type json node 	
+//	   sjson_mknumber			Creates and sets a number type json node
+//	   sjson_mkstring			Creates and sets a string type json node
+//	   sjson_mkobject			Creates an object type json node
+//	   sjson_mkarray			Creates an array type json node
 //	   sjson_mkbool				Creates and sets boolean type json node
-//	   sjson_append_element		Appends the node to the end of an array 
+//	   sjson_append_element		Appends the node to the end of an array
 //	   sjson_prepend_element	Prepends the node to the beginning of an array
 //	   sjson_append_member		Appends the node to the members of an object, should provide the key name to the element
 //	   sjson_prepend_member		Prepends the node to the members of an object, should provide the key name to the element
@@ -94,13 +94,13 @@
 //	   sjson_put_floats			Add float array with a key(name) to the child of the specified parent node
 //	   sjson_put_ints			Add integer array with a key(name) to the child of the specified parent node
 //	   sjson_put_string			Add string array with a key(name) to the child of the specified parent node
-//     
+//
 // --- DEBUG
 //	   sjson_check				Checks and validates the json DOM node recursively
 //								Returns false and writes a report to 'errmsg' parameter if DOM document has any encoding problems
 //
 // IMPLEMENTATION:
-//	
+//
 //	   To include and implement sjson in your project, you should define SJSON_IMPLEMENTATION before including sjson.h
 //	   You can also override memory allocation or any libc functions that the library uses to your own
 //	   Here's a list of stuff that can be overriden:
@@ -115,7 +115,7 @@
 //			- sjson_strcpy
 //			- sjson_strcmp
 //          - sjson_snprintf
-//		 MEMORY 
+//		 MEMORY
 //			- sjson_memcpy
 //			- sjson_memset
 //			- sjson_out_of_memory			happens when sjson cannot allocate memory internally
@@ -125,7 +125,7 @@
 //			#define sjson_malloc(user, size)			MyMalloc(user, size)
 //			#define sjson_free(user, ptr)				MyFree(user, ptr)
 //			#define sjson_realloc(user, ptr, size)		MyRealloc(user, ptr, size)
-//	   		#include "sjson.h"	
+//	   		#include "sjson.h"
 //			...
 //
 // NOTE: on sjson_reset_context
@@ -181,13 +181,13 @@ typedef struct sjson_node
     struct sjson_node* parent; // only if parent is an object or array (NULL otherwise)
     struct sjson_node* prev;
     struct sjson_node* next;
-    
-    char* key;                 // only if parent is an object (NULL otherwise). Must be valid UTF-8. 
-    
+
+    char* key;                 // only if parent is an object (NULL otherwise). Must be valid UTF-8.
+
     sjson_tag tag;
     union {
         bool bool_;     // SJSON_BOOL
-        char* string_;  // SJSON_STRING: Must be valid UTF-8. 
+        char* string_;  // SJSON_STRING: Must be valid UTF-8.
         double number_; // SJSON_NUMBER
         struct {
             struct sjson_node* head;
@@ -209,7 +209,7 @@ sjson_context* sjson_create_context(int pool_size, int str_buffer_size, void* al
 void 		   sjson_destroy_context(sjson_context* ctx);
 void 		   sjson_reset_context(sjson_context* ctx);
 
-// Encoding, decoding, and validation 
+// Encoding, decoding, and validation
 sjson_node* sjson_decode(sjson_context* ctx, const char* json);
 char*	    sjson_encode(sjson_context* ctx, const sjson_node* node);
 char*	    sjson_encode_string(sjson_context* ctx, const char* str);
@@ -242,7 +242,7 @@ bool        sjson_get_uint16s(uint16_t* out, int count, sjson_node* parent, cons
          (i) != NULL;                                \
          (i) = (i)->next)
 
-// Construction and manipulation 
+// Construction and manipulation
 sjson_node* sjson_mknull(sjson_context* ctx);
 sjson_node* sjson_mkbool(sjson_context* ctx, bool b);
 sjson_node* sjson_mkstring(sjson_context* ctx, const char *s);
@@ -343,7 +343,7 @@ bool sjson_check(const sjson_node* node, char errmsg[256]);
 #   define sjson_snprintf                snprintf
 #endif
 
-#ifndef sjson_strcmp 
+#ifndef sjson_strcmp
 #	include <string.h>
 #	define sjson_strcmp(_a, _b) 		 strcmp(_a, _b)
 #endif
@@ -362,10 +362,10 @@ bool sjson_check(const sjson_node* node, char errmsg[256]);
 #	ifdef _WIN32
 #		include <string.h>
 #		define sjson_stricmp(_a, _b) 	 _stricmp(_a, _b)
-#	else                           
-#		include <string.h>         
+#	else
+#		include <string.h>
 #		define sjson_stricmp(_a, _b) 	 strcasecmp(_a, _b)
-#	endif	
+#	endif
 #endif
 
 #ifndef sjson_strlen
@@ -378,7 +378,7 @@ bool sjson_check(const sjson_node* node, char errmsg[256]);
 #   ifdef _MSC_VER
 #       define sjson_strcpy(_a, _s, _b)      strcpy_s(_a, _s, _b)
 #   else
-#       define sjson_strcpy(_a, _s, _b)      strcpy(_a, _b) 
+#       define sjson_strcpy(_a, _s, _b)      strcpy(_a, _b)
 #   endif
 #endif
 
@@ -402,12 +402,12 @@ typedef struct sjson__node_page
     struct sjson__node_page* prev;
 } sjson__node_page;
 
-typedef struct sjson_context 
+typedef struct sjson_context
 {
     void*			  alloc_user;
     int				  pool_size;
     int 		      str_buffer_size;
-    sjson__node_page* node_pages;	
+    sjson__node_page* node_pages;
     sjson__str_page*  str_pages;
     sjson__str_page*  cur_str_page;
     char*			  cur_str;
@@ -442,11 +442,11 @@ static inline void sjson__sb_grow(sjson_context* ctx, sjson__sb* sb, int need)
 {
     size_t length = sb->cur - sb->start;
     size_t alloc = sb->end - sb->start + 1;
-    
+
     do {
         alloc <<= 1;
     } while (alloc <= length + need);
-    
+
     sb->start = (char*)sjson_realloc(ctx->alloc_user, sb->start, alloc);
     if (sb->start == NULL) {
         sjson_out_of_memory();
@@ -492,7 +492,7 @@ static inline void sjson__sb_free(sjson_context* ctx, sjson__sb* sb)
 static inline sjson__node_page* sjson__page_create(void* alloc_user, int capacity)
 {
     capacity = sjson__align_mask(capacity, 15);
-    uint8_t* buff = (uint8_t*)sjson_malloc(alloc_user, 
+    uint8_t* buff = (uint8_t*)sjson_malloc(alloc_user,
                 sizeof(sjson__node_page) + (sizeof(sjson_node) + sizeof(sjson_node*))*capacity);
     if (!buff) {
         sjson_out_of_memory();
@@ -540,7 +540,7 @@ static inline bool sjson__page_full(const sjson__node_page* page)
 static inline bool sjson__page_valid(const sjson__node_page* page, sjson_node* ptr)
 {
     uintptr_t uptr = (uintptr_t)ptr;
-    bool inbuf = uptr >= (uintptr_t)page->buff && 
+    bool inbuf = uptr >= (uintptr_t)page->buff &&
                  uptr < (uintptr_t)(page->buff + page->capacity*sizeof(sjson_node));
     bool valid = (uintptr_t)((uint8_t*)ptr - (uint8_t*)page->buff) % sizeof(sjson_node) == 0;
     return inbuf & valid;
@@ -560,7 +560,7 @@ static inline void sjson__page_add_list(sjson__node_page** pfirst, sjson__node_p
         (*pfirst)->prev = node;
         node->next = *pfirst;
     }
-    
+
     *pfirst = node;
 }
 
@@ -572,7 +572,7 @@ static inline void sjson__page_remove_list(sjson__node_page** pfirst, sjson__nod
         node->next->prev = node->prev;
     if (*pfirst == node)
         *pfirst = node->next;
-    node->prev = node->next = NULL;	
+    node->prev = node->next = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -601,13 +601,13 @@ static inline void sjson__str_page_destroy(sjson__str_page* page, void* alloc_us
     sjson_free(alloc_user, page);
 }
 
-static inline char* sjson__str_page_ptr(sjson__str_page* page) 
+static inline char* sjson__str_page_ptr(sjson__str_page* page)
 {
     char* buff = (char*)(page + 1);
     return buff + page->offset;
 }
 
-static inline char* sjson__str_page_startptr(sjson__str_page* page) 
+static inline char* sjson__str_page_startptr(sjson__str_page* page)
 {
     return (char*)(page + 1);
 }
@@ -627,7 +627,7 @@ static inline void sjson__str_page_add_list(sjson__str_page** pfirst, sjson__str
     if (*pfirst) {
         (*pfirst)->prev = node;
         node->next = *pfirst;
-    }	
+    }
     *pfirst = node;
 }
 
@@ -639,7 +639,7 @@ static inline void sjson__str_page_remove_list(sjson__str_page** pfirst, sjson__
         node->next->prev = node->prev;
     if (*pfirst == node)
         *pfirst = node->next;
-    node->prev = node->next = NULL;	
+    node->prev = node->next = NULL;
 }
 
 sjson_context* sjson_create_context(int pool_size, int str_buffer_size, void* alloc_user)
@@ -694,7 +694,7 @@ void sjson_destroy_context(sjson_context* ctx)
 
 void sjson_reset_context(sjson_context* ctx)
 {
-    // 
+    //
     for (sjson__node_page* npage = ctx->node_pages; npage; npage = npage->next) {
         int capacity = npage->capacity;
         npage->iter = capacity;
@@ -702,7 +702,7 @@ void sjson_reset_context(sjson_context* ctx)
             npage->ptrs[capacity - i - 1] = &npage->buff[i];
     }
 
-    // 
+    //
     for (sjson__str_page* spage = ctx->str_pages; spage; spage = spage->next) {
         spage->offset = 0;
     }
@@ -713,9 +713,9 @@ void sjson_reset_context(sjson_context* ctx)
 static inline sjson_node* sjson__new_node(sjson_context* ctx, sjson_tag tag)
 {
     sjson__node_page* npage = ctx->node_pages;
-    while (npage && sjson__page_full(npage)) 
+    while (npage && sjson__page_full(npage))
         npage = npage->next;
-    
+
     if (npage == NULL) {
         npage = sjson__page_create(ctx->alloc_user, ctx->pool_size);
         sjson_assert(npage);
@@ -729,12 +729,12 @@ static inline sjson_node* sjson__new_node(sjson_context* ctx, sjson_tag tag)
     return node;
 }
 
-static inline void sjson__del_node(sjson_context* ctx, sjson_node* node) 
+static inline void sjson__del_node(sjson_context* ctx, sjson_node* node)
 {
     sjson__node_page* npage = ctx->node_pages;
-    while (npage && !sjson__page_valid(npage, node)) 
+    while (npage && !sjson__page_valid(npage, node))
         npage = npage->next;
-    
+
     sjson_assert(npage && "sjson_node doesn't belong to any page - check the pointer");
     sjson__page_del(npage, node);
 }
@@ -803,7 +803,7 @@ static inline char* sjson__str_grow(sjson_context* ctx, int grow_sz)
             sjson__str_page_remove_list(&ctx->str_pages, spage);
             sjson__str_page_destroy(spage, ctx->alloc_user);
         }
-            
+
         ctx->cur_str_page = newspage;
         ctx->cur_str = ptr;
         return ptr;
@@ -866,7 +866,7 @@ typedef uint32_t json__uchar_t;
 static int sjson__utf8_validate_cz(const char *s)
 {
     unsigned char c = *s++;
-    
+
     if (c <= 0x7F) {        /* 00..7F */
         return 1;
     } else if (c <= 0xC1) { /* 80..C1 */
@@ -876,33 +876,33 @@ static int sjson__utf8_validate_cz(const char *s)
         /* Make sure subsequent byte is in the range 0x80..0xBF. */
         if (((unsigned char)*s++ & 0xC0) != 0x80)
             return 0;
-        
+
         return 2;
     } else if (c <= 0xEF) { /* E0..EF */
         /* Disallow overlong 3-byte sequence. */
         if (c == 0xE0 && (unsigned char)*s < 0xA0)
             return 0;
-        
+
         /* Disallow U+D800..U+DFFF. */
         if (c == 0xED && (unsigned char)*s > 0x9F)
             return 0;
-        
+
         /* Make sure subsequent bytes are in the range 0x80..0xBF. */
         if (((unsigned char)*s++ & 0xC0) != 0x80)
             return 0;
         if (((unsigned char)*s++ & 0xC0) != 0x80)
             return 0;
-        
+
         return 3;
     } else if (c <= 0xF4) { /* F0..F4 */
         /* Disallow overlong 4-byte sequence. */
         if (c == 0xF0 && (unsigned char)*s < 0x90)
             return 0;
-        
+
         /* Disallow codepoints beyond U+10FFFF. */
         if (c == 0xF4 && (unsigned char)*s > 0x8F)
             return 0;
-        
+
         /* Make sure subsequent bytes are in the range 0x80..0xBF. */
         if (((unsigned char)*s++ & 0xC0) != 0x80)
             return 0;
@@ -910,7 +910,7 @@ static int sjson__utf8_validate_cz(const char *s)
             return 0;
         if (((unsigned char)*s++ & 0xC0) != 0x80)
             return 0;
-        
+
         return 4;
     } else {                /* F5..FF */
         return 0;
@@ -921,13 +921,13 @@ static int sjson__utf8_validate_cz(const char *s)
 static bool sjson__utf8_validate(const char *s)
 {
     int len;
-    
+
     for (; *s != 0; s += len) {
         len = sjson__utf8_validate_cz(s);
         if (len == 0)
             return false;
     }
-    
+
     return true;
 }
 
@@ -941,7 +941,7 @@ static bool sjson__utf8_validate(const char *s)
 static int sjson__utf8_read_char(const char *s, json__uchar_t *out)
 {
     const unsigned char *c = (const unsigned char*) s;
-    
+
     sjson_assert(sjson__utf8_validate_cz(s));
 
     if (c[0] <= 0x7F) {
@@ -980,7 +980,7 @@ static int sjson__utf8_read_char(const char *s, json__uchar_t *out)
 static int sjson__utf8_write_char(json__uchar_t unicode, char *out)
 {
     unsigned char *o = (unsigned char*) out;
-    
+
     sjson_assert(unicode <= 0x10FFFF && !(unicode >= 0xD800 && unicode <= 0xDFFF));
 
     if (unicode <= 0x7F) {
@@ -1032,9 +1032,9 @@ static bool sjson__from_surrogate_pair(uint16_t uc, uint16_t lc, json__uchar_t *
 static void sjson__to_surrogate_pair(json__uchar_t unicode, uint16_t *uc, uint16_t *lc)
 {
     json__uchar_t n;
-    
+
     sjson_assert(unicode >= 0x10000 && unicode <= 0x10FFFF);
-    
+
     n = unicode - 0x10000;
     *uc = ((n >> 10) & 0x3FF) | 0xD800;
     *lc = (n & 0x3FF) | 0xDC00;
@@ -1076,17 +1076,17 @@ sjson_node *sjson_decode(sjson_context* ctx, const char *json)
 {
     const char *s = json;
     sjson_node *ret;
-    
+
     sjson__skip_space(&s);
     if (!sjson__parse_value(ctx, &s, &ret))
         return NULL;
-    
+
     sjson__skip_space(&s);
     if (*s != 0) {
         sjson_delete_node(ctx, ret);
         return NULL;
     }
-    
+
     return ret;
 }
 
@@ -1099,9 +1099,9 @@ char* sjson_encode_string(sjson_context* ctx, const char *str)
 {
     sjson__sb sb;
     sjson__sb_init(ctx, &sb, ctx->str_buffer_size);
-    
+
     sjson__emit_string(ctx, &sb, str);
-    
+
     return sjson__sb_finish(&sb);
 }
 
@@ -1109,12 +1109,12 @@ char* sjson_stringify(sjson_context* ctx, const sjson_node *node, const char *sp
 {
     sjson__sb sb;
     sjson__sb_init(ctx, &sb, ctx->str_buffer_size);
-    
+
     if (space != NULL)
         sjson__emit_value_indented(ctx, &sb, node, space, 0);
     else
         sjson__emit_value(ctx, &sb, node);
-    
+
     return sjson__sb_finish(&sb);
 }
 
@@ -1127,7 +1127,7 @@ void sjson_delete_node(sjson_context* ctx, sjson_node *node)
 {
     if (node != NULL) {
         sjson_remove_from_parent(node);
-        
+
         switch (node->tag) {
             case SJSON_ARRAY:
             case SJSON_OBJECT:
@@ -1141,7 +1141,7 @@ void sjson_delete_node(sjson_context* ctx, sjson_node *node)
             }
             default:;
         }
-        
+
         sjson__del_node(ctx, node);
     }
 }
@@ -1149,15 +1149,15 @@ void sjson_delete_node(sjson_context* ctx, sjson_node *node)
 bool sjson_validate(sjson_context* ctx, const char *json)
 {
     const char *s = json;
-    
+
     sjson__skip_space(&s);
     if (!sjson__parse_value(ctx, &s, NULL))
         return false;
-    
+
     sjson__skip_space(&s);
     if (*s != 0)
         return false;
-    
+
     return true;
 }
 
@@ -1165,45 +1165,45 @@ sjson_node *sjson_find_element(sjson_node *array, int index)
 {
     sjson_node *element;
     int i = 0;
-    
+
     if (array == NULL || array->tag != SJSON_ARRAY)
         return NULL;
-    
+
     sjson_foreach(element, array) {
         if (i == index)
             return element;
         i++;
     }
-    
+
     return NULL;
 }
 
 sjson_node *sjson_find_member(sjson_node *object, const char *name)
 {
     sjson_node *member;
-    
+
     if (object == NULL || object->tag != SJSON_OBJECT)
         return NULL;
-    
+
     sjson_foreach(member, object)
         if (sjson_strcmp(member->key, name) == 0)
             return member;
-    
+
     return NULL;
 }
 
 sjson_node* sjson_find_member_nocase(sjson_node* object, const char *name)
 {
     sjson_node *member;
-    
+
     if (object == NULL || object->tag != SJSON_OBJECT)
         return NULL;
-    
+
     sjson_foreach(member, object)
         if (sjson_stricmp(member->key, name) == 0)
             return member;
-    
-    return NULL;	
+
+    return NULL;
 }
 
 sjson_node *sjson_first_child(const sjson_node *node)
@@ -1241,7 +1241,7 @@ float sjson_get_float(sjson_node* parent, const char* key, float default_val)
         return (float)p->number_;
     } else {
         return default_val;
-    }	
+    }
 }
 
 double sjson_get_double(sjson_node* parent, const char* key, double default_val)
@@ -1309,7 +1309,7 @@ bool sjson_get_ints(int* out, int count, sjson_node* parent, const char* key)
     }
 }
 
-bool sjson_get_uints(uint32_t* out, int count, sjson_node* parent, const char* key) 
+bool sjson_get_uints(uint32_t* out, int count, sjson_node* parent, const char* key)
 {
     sjson_node* p = key ? sjson_find_member(parent, key) : parent;
     if (p) {
@@ -1322,10 +1322,10 @@ bool sjson_get_uints(uint32_t* out, int count, sjson_node* parent, const char* k
         return index == count;
     } else {
         return false;
-    }    
+    }
 }
 
-bool sjson_get_int16s(int16_t* out, int count, sjson_node* parent, const char* key) 
+bool sjson_get_int16s(int16_t* out, int count, sjson_node* parent, const char* key)
 {
     sjson_node* p = key ? sjson_find_member(parent, key) : parent;
     if (p) {
@@ -1341,7 +1341,7 @@ bool sjson_get_int16s(int16_t* out, int count, sjson_node* parent, const char* k
     }
 }
 
-bool sjson_get_uint16s(uint16_t* out, int count, sjson_node* parent, const char* key) 
+bool sjson_get_uint16s(uint16_t* out, int count, sjson_node* parent, const char* key)
 {
     sjson_node* p = key ? sjson_find_member(parent, key) : parent;
     if (p) {
@@ -1407,7 +1407,7 @@ static void sjson__append_node(sjson_node *parent, sjson_node *child)
     child->parent = parent;
     child->prev = parent->children.tail;
     child->next = NULL;
-    
+
     if (parent->children.tail != NULL)
         parent->children.tail->next = child;
     else
@@ -1417,11 +1417,11 @@ static void sjson__append_node(sjson_node *parent, sjson_node *child)
 
 static void sjson__prepend_node(sjson_node *parent, sjson_node *child)
 {
-    ABORT_IF_F(!child | !parent, "sjson__prepend_node: invalid arguments");    
+    ABORT_IF_F(!child | !parent, "sjson__prepend_node: invalid arguments");
     child->parent = parent;
     child->prev = NULL;
     child->next = parent->children.head;
-    
+
     if (parent->children.head != NULL)
         parent->children.head->prev = child;
     else
@@ -1439,7 +1439,7 @@ void sjson_append_element(sjson_node *array, sjson_node *element)
 {
     sjson_assert(array->tag == SJSON_ARRAY);
     sjson_assert(element->parent == NULL);
-    
+
     sjson__append_node(array, element);
 }
 
@@ -1447,7 +1447,7 @@ void sjson_prepend_element(sjson_node *array, sjson_node *element)
 {
     sjson_assert(array->tag == SJSON_ARRAY);
     sjson_assert(element->parent == NULL);
-    
+
     sjson__prepend_node(array, element);
 }
 
@@ -1455,7 +1455,7 @@ void sjson_append_member(sjson_context* ctx, sjson_node *object, const char *key
 {
     sjson_assert(object->tag == SJSON_OBJECT);
     sjson_assert(value->parent == NULL);
-    
+
     sjson__append_member(object, sjson__strdup(ctx, key), value);
 }
 
@@ -1463,7 +1463,7 @@ void sjson_prepend_member(sjson_context* ctx, sjson_node *object, const char *ke
 {
     sjson_assert(object->tag == SJSON_OBJECT);
     sjson_assert(value->parent == NULL);
-    
+
     value->key = sjson__strdup(ctx, key);
     sjson__prepend_node(object, value);
 }
@@ -1471,7 +1471,7 @@ void sjson_prepend_member(sjson_context* ctx, sjson_node *object, const char *ke
 void sjson_remove_from_parent(sjson_node *node)
 {
     sjson_node *parent = node->parent;
-    
+
     if (parent != NULL) {
         if (node->prev != NULL)
             node->prev->next = node->next;
@@ -1481,7 +1481,7 @@ void sjson_remove_from_parent(sjson_node *node)
             node->next->prev = node->prev;
         else
             parent->children.tail = node->prev;
-        
+
         node->parent = NULL;
         node->prev = node->next = NULL;
         node->key = NULL;
@@ -1499,7 +1499,7 @@ sjson_node* sjson_put_array(sjson_context* ctx, sjson_node* parent, const char* 
 {
     sjson_node* n = sjson_mkarray(ctx);
     sjson_append_member(ctx, parent, key, n);
-    return n;    
+    return n;
 }
 
 sjson_node* sjson_put_int(sjson_context* ctx, sjson_node* parent, const char* key, int val)
@@ -1623,7 +1623,7 @@ sjson_node* sjson_put_strings(sjson_context* ctx, sjson_node* parent, const char
 static bool sjson__parse_value(sjson_context* ctx, const char **sp, sjson_node **out)
 {
     const char *s = *sp;
-    
+
     switch (*s) {
         case 'n':
             if (sjson__expect_literal(&s, "null")) {
@@ -1633,7 +1633,7 @@ static bool sjson__parse_value(sjson_context* ctx, const char **sp, sjson_node *
                 return true;
             }
             return false;
-        
+
         case 'f':
             if (sjson__expect_literal(&s, "false")) {
                 if (out)
@@ -1642,7 +1642,7 @@ static bool sjson__parse_value(sjson_context* ctx, const char **sp, sjson_node *
                 return true;
             }
             return false;
-        
+
         case 't':
             if (sjson__expect_literal(&s, "true")) {
                 if (out)
@@ -1651,7 +1651,7 @@ static bool sjson__parse_value(sjson_context* ctx, const char **sp, sjson_node *
                 return true;
             }
             return false;
-        
+
         case '"': {
             char *str = NULL;
             if (sjson__parse_string(ctx, &s, out ? &str : NULL)) {
@@ -1662,21 +1662,21 @@ static bool sjson__parse_value(sjson_context* ctx, const char **sp, sjson_node *
             }
             return false;
         }
-        
+
         case '[':
             if (sjson__parse_array(ctx, &s, out)) {
                 *sp = s;
                 return true;
             }
             return false;
-        
+
         case '{':
             if (sjson__parse_object(ctx, &s, out)) {
                 *sp = s;
                 return true;
             }
             return false;
-        
+
         default: {
             double num;
             if (sjson__parse_number(&s, out ? &num : NULL)) {
@@ -1695,34 +1695,34 @@ static bool sjson__parse_array(sjson_context* ctx, const char **sp, sjson_node *
     const char *s = *sp;
     sjson_node *ret = out ? sjson_mkarray(ctx) : NULL;
     sjson_node *element = NULL;
-    
+
     if (*s++ != '[')
         goto failure;
     sjson__skip_space(&s);
-    
+
     if (*s == ']') {
         s++;
         goto success;
     }
-    
+
     for (;;) {
         if (!sjson__parse_value(ctx, &s, out ? &element : NULL))
             goto failure;
         sjson__skip_space(&s);
-        
+
         if (out)
             sjson_append_element(ret, element);
-        
+
         if (*s == ']') {
             s++;
             goto success;
         }
-        
+
         if (*s++ != ',')
             goto failure;
         sjson__skip_space(&s);
     }
-    
+
 success:
     *sp = s;
     if (out)
@@ -1740,42 +1740,42 @@ static bool sjson__parse_object(sjson_context* ctx, const char **sp, sjson_node 
     sjson_node *ret = out ? sjson_mkobject(ctx) : NULL;
     char *key = NULL;
     sjson_node *value = NULL;
-    
+
     if (*s++ != '{')
         goto failure;
     sjson__skip_space(&s);
-    
+
     if (*s == '}') {
         s++;
         goto success;
     }
-    
+
     for (;;) {
         if (!sjson__parse_string(ctx, &s, out ? &key : NULL))
             goto failure;
         sjson__skip_space(&s);
-        
+
         if (*s++ != ':')
             goto failure_free_key;
         sjson__skip_space(&s);
-        
+
         if (!sjson__parse_value(ctx, &s, out ? &value : NULL))
             goto failure_free_key;
         sjson__skip_space(&s);
-        
+
         if (out)
             sjson__append_member(ret, key, value);
-        
+
         if (*s == '}') {
             s++;
             goto success;
         }
-        
+
         if (*s++ != ',')
             goto failure;
         sjson__skip_space(&s);
     }
-    
+
 success:
     *sp = s;
     if (out)
@@ -1797,17 +1797,17 @@ static bool sjson__parse_string(sjson_context* ctx, const char **sp, char **out)
 
     if (*s++ != '"')
         return false;
-    
+
     if (out) {
         b = sjson__str_begin(ctx, 4);
         src = b;
     } else {
         b = throwaway_buffer;
     }
-    
+
     while (*s != '"') {
         unsigned char c = *s++;
-        
+
         /* Parse next character, and write it to b. */
         if (c == '\\') {
             c = *s++;
@@ -1836,10 +1836,10 @@ static bool sjson__parse_string(sjson_context* ctx, const char **sp, char **out)
                 {
                     uint16_t uc, lc;
                     json__uchar_t unicode;
-                    
+
                     if (!sjson__parse_hex16(&s, &uc))
                         goto failed;
-                    
+
                     if (uc >= 0xD800 && uc <= 0xDFFF) {
                         /* Handle UTF-16 surrogate pair. */
                         if (*s++ != '\\' || *s++ != 'u' || !sjson__parse_hex16(&s, &lc))
@@ -1852,7 +1852,7 @@ static bool sjson__parse_string(sjson_context* ctx, const char **sp, char **out)
                     } else {
                         unicode = uc;
                     }
-                    
+
                     b += sjson__utf8_write_char(unicode, b);
                     break;
                 }
@@ -1866,7 +1866,7 @@ static bool sjson__parse_string(sjson_context* ctx, const char **sp, char **out)
         } else {
             /* Validate and echo a UTF-8 character. */
             int len;
-            
+
             s--;
             len = sjson__utf8_validate_cz(s);
             if (len == 0)
@@ -1875,7 +1875,7 @@ static bool sjson__parse_string(sjson_context* ctx, const char **sp, char **out)
             while (len--)
                 *b++ = *s++;
         }
-        
+
         /*
          * Update sb to know about the new bytes,
          * and set up b to write another character.
@@ -1889,7 +1889,7 @@ static bool sjson__parse_string(sjson_context* ctx, const char **sp, char **out)
         }
     }
     s++;
-    
+
     if (out) {
         *b = '\0';
         *out = sjson__str_end(ctx);
@@ -2026,7 +2026,7 @@ void sjson__emit_value_indented(sjson_context* ctx, sjson__sb* out, const sjson_
 static void sjson__emit_array(sjson_context* ctx, sjson__sb* out, const sjson_node *array)
 {
     const sjson_node *element;
-    
+
     sjson__sb_putc(ctx, out, '[');
     sjson_foreach(element, array) {
         sjson__emit_value(ctx, out, element);
@@ -2040,18 +2040,18 @@ static void sjson__emit_array_indented(sjson_context* ctx, sjson__sb* out, const
 {
     const sjson_node *element = array->children.head;
     int i;
-    
+
     if (element == NULL) {
         sjson__sb_puts(ctx, out, "[]");
         return;
     }
-    
+
     sjson__sb_puts(ctx, out, "[\n");
     while (element != NULL) {
         for (i = 0; i < indent_level + 1; i++)
             sjson__sb_puts(ctx, out, space);
         sjson__emit_value_indented(ctx, out, element, space, indent_level + 1);
-        
+
         element = element->next;
         sjson__sb_puts(ctx, out, element != NULL ? ",\n" : "\n");
     }
@@ -2063,7 +2063,7 @@ static void sjson__emit_array_indented(sjson_context* ctx, sjson__sb* out, const
 static void sjson__emit_object(sjson_context* ctx, sjson__sb* out, const sjson_node *object)
 {
     const sjson_node *member;
-    
+
     sjson__sb_putc(ctx, out, '{');
     sjson_foreach(member, object) {
         sjson__emit_string(ctx, out, member->key);
@@ -2079,12 +2079,12 @@ static void sjson__emit_object_indented(sjson_context* ctx, sjson__sb* out, cons
 {
     const sjson_node *member = object->children.head;
     int i;
-    
+
     if (member == NULL) {
         sjson__sb_puts(ctx, out, "{}");
         return;
     }
-    
+
     sjson__sb_puts(ctx, out, "{\n");
     while (member != NULL) {
         for (i = 0; i < indent_level + 1; i++)
@@ -2092,7 +2092,7 @@ static void sjson__emit_object_indented(sjson_context* ctx, sjson__sb* out, cons
         sjson__emit_string(ctx, out, member->key);
         sjson__sb_puts(ctx, out, ": ");
         sjson__emit_value_indented(ctx, out, member, space, indent_level + 1);
-        
+
         member = member->next;
         sjson__sb_puts(ctx, out, member != NULL ? ",\n" : "\n");
     }
@@ -2106,20 +2106,20 @@ void sjson__emit_string(sjson_context* ctx, sjson__sb* out, const char *str)
     bool escape_unicode = false;
     const char *s = str;
     char *b;
-    
+
     sjson_assert(sjson__utf8_validate(str));
-    
+
     /*
      * 14 bytes is enough space to write up to two
      * \uXXXX escapes and two quotation marks.
      */
     sjson__sb_need(ctx, out, 14);
     b = out->cur;
-    
+
     *b++ = '"';
     while (*s != 0) {
         unsigned char c = *s++;
-        
+
         /* Encode the next character, and write it to b. */
         switch (c) {
             case '"':
@@ -2152,10 +2152,10 @@ void sjson__emit_string(sjson_context* ctx, sjson__sb* out, const char *str)
                 break;
             default: {
                 int len;
-                
+
                 s--;
                 len = sjson__utf8_validate_cz(s);
-                
+
                 if (len == 0) {
                     /*
                      * Handle invalid UTF-8 character gracefully in production
@@ -2178,9 +2178,9 @@ void sjson__emit_string(sjson_context* ctx, sjson__sb* out, const char *str)
                 } else if (c < 0x1F || (c >= 0x80 && escape_unicode)) {
                     /* Encode using \u.... */
                     uint32_t unicode;
-                    
+
                     s += sjson__utf8_read_char(s, &unicode);
-                    
+
                     if (unicode <= 0xFFFF) {
                         *b++ = '\\';
                         *b++ = 'u';
@@ -2202,11 +2202,11 @@ void sjson__emit_string(sjson_context* ctx, sjson__sb* out, const char *str)
                     while (len--)
                         *b++ = *s++;
                 }
-                
+
                 break;
             }
         }
-    
+
         /*
          * Update *out to know about the new bytes,
          * and set up b to write another encoded character.
@@ -2216,7 +2216,7 @@ void sjson__emit_string(sjson_context* ctx, sjson__sb* out, const char *str)
         b = out->cur;
     }
     *b++ = '"';
-    
+
     out->cur = b;
 }
 
@@ -2230,7 +2230,7 @@ static void sjson__emit_number(sjson_context* ctx, sjson__sb* out, double num)
      */
     char buf[64];
     sjson_snprintf(buf, sizeof(buf), "%.16g", num);
-    
+
     if (sjson__number_is_valid(buf))
         sjson__sb_puts(ctx, out, buf);
     else
@@ -2250,11 +2250,11 @@ static bool sjson__number_is_valid(const char *num)
 static bool sjson__expect_literal(const char **sp, const char *str)
 {
     const char *s = *sp;
-    
+
     while (*str != '\0')
         if (*s++ != *str++)
             return false;
-    
+
     *sp = s;
     return true;
 }
@@ -2285,7 +2285,7 @@ static bool sjson__parse_hex16(const char **sp, uint16_t *out)
         ret <<= 4;
         ret += tmp;
     }
-    
+
     if (out)
         *out = ret;
     *sp = s;
@@ -2299,12 +2299,12 @@ static bool sjson__parse_hex16(const char **sp, uint16_t *out)
 static int sjson__write_hex16(char *out, uint16_t val)
 {
     const char *hex = "0123456789ABCDEF";
-    
+
     *out++ = hex[(val >> 12) & 0xF];
     *out++ = hex[(val >> 8)  & 0xF];
     *out++ = hex[(val >> 4)  & 0xF];
     *out++ = hex[ val        & 0xF];
-    
+
     return 4;
 }
 
@@ -2315,13 +2315,13 @@ bool sjson_check(const sjson_node* node, char errmsg[256])
                 sjson_snprintf(errmsg, 256, __VA_ARGS__); \
             return false; \
         } while (0)
-    
+
     if (node->key != NULL && !sjson__utf8_validate(node->key))
         problem("key contains invalid UTF-8");
-    
+
     if (!sjson__tag_is_valid(node->tag))
         problem("tag is invalid (%u)", node->tag);
-    
+
     if (node->tag == SJSON_BOOL) {
 #if 0
         if (node->bool_ != false && node->bool_ != true)
@@ -2335,7 +2335,7 @@ bool sjson_check(const sjson_node* node, char errmsg[256])
     } else if (node->tag == SJSON_ARRAY || node->tag == SJSON_OBJECT) {
         sjson_node *head = node->children.head;
         sjson_node *tail = node->children.tail;
-        
+
         if (head == NULL || tail == NULL) {
             if (head != NULL)
                 problem("tail is NULL, but head is not");
@@ -2344,10 +2344,10 @@ bool sjson_check(const sjson_node* node, char errmsg[256])
         } else {
             sjson_node *child;
             sjson_node *last = NULL;
-            
+
             if (head->prev != NULL)
                 problem("First child's prev pointer is not NULL");
-            
+
             for (child = head; child != NULL; last = child, child = child->next) {
                 if (child == node)
                     problem("node is its own child");
@@ -2355,28 +2355,28 @@ bool sjson_check(const sjson_node* node, char errmsg[256])
                     problem("child->next == child (cycle)");
                 if (child->next == head)
                     problem("child->next == head (cycle)");
-                
+
                 if (child->parent != node)
                     problem("child does not point back to parent");
                 if (child->next != NULL && child->next->prev != child)
                     problem("child->next does not point back to child");
-                
+
                 if (node->tag == SJSON_ARRAY && child->key != NULL)
                     problem("Array element's key is not NULL");
                 if (node->tag == SJSON_OBJECT && child->key == NULL)
                     problem("Object member's key is NULL");
-                
+
                 if (!sjson_check(child, errmsg))
                     return false;
             }
-            
+
             if (last != tail)
                 problem("tail does not match pointer found by starting at head and following next links");
         }
     }
-    
+
     return true;
-    
+
     #undef problem
 }
 

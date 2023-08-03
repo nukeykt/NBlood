@@ -144,7 +144,7 @@ int SF2Drv_MIDI_Init(midifuncs* const funcs)
     funcs->SetVolume         = SF2_SetVolume;
 
     SF2_Volume = MIDI_MaxVolume;
-    
+
     return SF2_Ok;
 }
 

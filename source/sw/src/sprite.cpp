@@ -7716,4 +7716,3 @@ saveable_module saveable_sprite =
     saveable_sprite_data,
     SIZ(saveable_sprite_data)
 };
-

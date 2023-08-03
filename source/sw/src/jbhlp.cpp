@@ -217,5 +217,3 @@ void ContextHelp(short spritenum)
     }
     while (t!='@' && t!='#');
 }
-
-

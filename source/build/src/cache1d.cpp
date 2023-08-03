@@ -164,7 +164,7 @@ int32_t cache1d::findBlock(int32_t const newbytes, int32_t * const besto, int32_
 
 void cache1d::tryHarder(int32_t const newbytes, int32_t *const besto, int32_t *const bestz)
 {
-    LOG_F(ERROR, "Request for %dKB block exhausted cache!", newbytes >> 10);    
+    LOG_F(ERROR, "Request for %dKB block exhausted cache!", newbytes >> 10);
     LOG_F(ERROR, "Attempting to make it fit...");
 
     if (m_alignment > MINCACHEBLOCKSIZE)
@@ -189,7 +189,7 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
     int const askedbytes = newbytes;
 
     newbytes = (newbytes + m_alignment-1) & ~(m_alignment-1);
-    
+
     if (newbytes > nextPow2(askedbytes))
         newbytes = nextPow2(askedbytes);
 
@@ -214,7 +214,7 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
 
     // if we can't find a block, try to age the cache until we can
     // it's better than the alternative of aborting the entire program
-    
+
     if (findBlock(newbytes, &besto, &bestz) == INT32_MAX)
         tryHarder(newbytes, &besto, &bestz);
 
@@ -302,9 +302,9 @@ void cache1d::report(void)
     int32_t usedSize = 0;
     int32_t unusable = 0;
     inthashtable_t h_blocktotile = { nullptr, INTHASH_SIZE(m_maxBlocks) };
-    
+
     inthash_init(&h_blocktotile);
-    
+
     for (native_t j = 0; j < MAXTILES-1; j++)
     {
         if (waloff[j])
@@ -322,7 +322,7 @@ void cache1d::report(void)
     }
 
     LOG_F(INFO, "Block listing:");
-    
+
     int constexpr reportLineSize = 128;
     auto buf = (char*)Balloca(reportLineSize);
 
@@ -331,7 +331,7 @@ void cache1d::report(void)
         buf[0] = '\0';
         int len = Bsnprintf(buf, reportLineSize, "%4d ", i);
 
-        if (m_index[i].hand)            
+        if (m_index[i].hand)
         {
             len += Bsnprintf(buf+len, reportLineSize-len, "@ %x: ", (int32_t)(*m_index[i].hand - m_baseAddress));
         }
@@ -348,7 +348,7 @@ void cache1d::report(void)
         len += Bsnprintf(buf+len, reportLineSize-len, "USE:%5d ", m_index[i].leng-m_index[i].ovh);
 
         len += Bsnprintf(buf+len, reportLineSize-len, "DEAD:%4d ", m_index[i].ovh);
-        
+
         if (m_index[i].lock)
         {
             len += Bsnprintf(buf+len, reportLineSize-len, "LCK:%d ", *m_index[i].lock);
@@ -366,16 +366,16 @@ void cache1d::report(void)
             auto typestr = *m_index[i].hand == waloff[tile] ? "ART:%4d " :
                            *m_index[i].hand == classicht[tile].ptr ? "HI:%4d " :
                            "VOX:%4d "; // needs to be last or else we have to loop through voxoff[tile][]
-                
+
             len += Bsnprintf(buf + len, reportLineSize - len, typestr, tile);
         }
-        
+
         if (len < reportLineSize)
             buf[len-1] = '\0';
-        
+
         LOG_F(INFO, "%s", buf);
     }
-    
+
     LOG_F(INFO, "Cache size:  %dKB", m_totalSize >> 10);
     LOG_F(INFO, "Used:        %dKB", usedSize >> 10);
     LOG_F(INFO, "Remaining:   %dKB", (m_totalSize - usedSize) >> 10);

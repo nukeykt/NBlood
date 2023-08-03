@@ -61,4 +61,3 @@ private:
 extern cache1d g_cache;
 
 #endif // cache1d_h_
-

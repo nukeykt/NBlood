@@ -1350,7 +1350,7 @@ void                polymer_editorpick(void)
             GLfloat bestwdistsq = (GLfloat)3.4e38, wdistsq;
             GLfloat w1[2], w2[2], w21[2], pw1[2], pw2[2];
             walltype *wal = &wall[sector[searchsector].wallptr];
-            
+
             GLfloat dadepth;
             glReadPixels(searchx, ydim-searchy, 1,1, GL_DEPTH_COMPONENT, GL_FLOAT, &dadepth);
             GLfloat x,y,z;
@@ -1406,7 +1406,7 @@ void                polymer_editorpick(void)
                         continue;
 
                     GLfloat scrpxz[2];
-                    GLfloat ptonline[2] = { w2[0]+(w2d/(w1d+w2d))*w21[0], 
+                    GLfloat ptonline[2] = { w2[0]+(w2d/(w1d+w2d))*w21[0],
                                             w2[1]+(w2d/(w1d+w2d))*w21[1] };
                     relvec2f(p,ptonline, scrpxz);
                     if (dot2f(scrvxz,scrpxz)<0)
@@ -1482,7 +1482,7 @@ void                polymer_drawmaskwall(int32_t damaskwallcnt)
     if (pr_verbosity >= 3) VLOG_F(LOG_PR, "Masked wall %i", damaskwallcnt);
 
     int16_t const wallnum = maskwall[damaskwallcnt];
-    
+
     auto sec = (usectorptr_t)&sector[wallsect[wallnum]];
     auto wal = &wall[wallnum];
     auto w   = prwalls[wallnum];
@@ -2656,7 +2656,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     }
     while (i < sec->wallnum);
 
-    if (needfloor || 
+    if (needfloor ||
             (s->flags.empty) ||
             (sec->floorz != s->floorz) ||
             (sec->ceilingz != s->ceilingz) ||
@@ -3989,9 +3989,9 @@ void                polymer_updatesprite(int32_t snum)
 
     tilexoff = (usehightile && h_xsize[curpicnum]) ? h_xoffs[curpicnum] : picanm[curpicnum].xofs;
     tileyoff = (usehightile && h_xsize[curpicnum]) ? h_yoffs[curpicnum] : picanm[curpicnum].yofs;
-    
+
     heinum = tspriteGetSlope(tspr);
-    
+
     if (heinum == 0)
     {
         tilexoff += (int32_t)tspr->xoffset;
@@ -4459,7 +4459,7 @@ void polymer_drawmdsprite(tspriteptr_t tspr)
     glLoadIdentity();
 
     scale = m->scale * 0.25f;
-    
+
     if (pr_overridemodelscale) {
         scale *= pr_overridemodelscale;
     } else {
@@ -5206,7 +5206,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     auto &prprogram = *polymer_getprogram(programbits);
 
     buildgl_useShaderProgram(prprogram.handle);
-    
+
     // --------- bit setup
 
     texunit = 0;
@@ -5702,7 +5702,7 @@ static _prprograminfo *polymer_compileprogram(int32_t programbits)
     // --------- ATTRIBUTE/UNIFORM LOCATIONS
 
     prprogram.uniform_colorCorrection = glGetUniformLocation(program, "u_colorCorrection");
-    
+
     if (programbits & (1 << PR_BIT_ANIM_INTERPOLATION))
     {
         prprogram.attrib_nextFrameData   = glGetAttribLocation(program, "nextFrameData");
@@ -5797,7 +5797,7 @@ static void         polymer_updatelights(void)
 
             if (light->radius)
                 polymer_processspotlight(light);
-            
+
             if (!polymer_culllight(i))
                 light->flags.invalidate = 0;
         }
@@ -6157,7 +6157,7 @@ static int polymer_culllight(int16_t lighti)
 
             if ((sprite[i].cstat & 48) == 0 || s == NULL)
                 continue;
-        
+
             if (polymer_planeinlight(s->plane, light))
                 polymer_addplanelight(&s->plane, lighti);
         }

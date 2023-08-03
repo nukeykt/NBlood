@@ -94,10 +94,10 @@ static void MV_GetVorbisCommentLoops(VoiceNode *voice, vorbis_comment *vc)
             }
         }
     }
-    
+
     auto vd    = (vorbis_data *)voice->rawdataptr;
     auto total = ov_pcm_total(&vd->vf, -1);
-    
+
     if (vc_loopstart != nullptr)
     {
         const ogg_int64_t ov_loopstart = Batol(vc_loopstart);
@@ -420,7 +420,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
         MV_PlayVoice(voice);
         return MV_Ok;
     });
-    
+
     return voice->handle;
 }
 

@@ -143,7 +143,7 @@ int scriptfile_getsymbol(scriptfile *sf, int32_t *num)
     if (*e)
     {
         // looks like a string, so find it in the symbol table
-        if (scriptfile_getsymbolvalue(t, num)) return 0;        
+        if (scriptfile_getsymbolvalue(t, num)) return 0;
         LOG_F(ERROR, "%s:%d: Expected a symbol, got '%s'", sf->filename, scriptfile_getlinum(sf, sf->ltextptr), t);
         return -2;
     }

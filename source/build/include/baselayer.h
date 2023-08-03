@@ -393,4 +393,3 @@ static inline void debugThreadName(char const *name)
 #include "print.h"
 
 #endif // baselayer_h_
-

@@ -36,4 +36,3 @@ static inline void idle(int const msec = 1)
 #error "Already using the " build_interface_layer_ ". Can't now use Windows."
 #endif
 #endif // build_interface_layer_
-

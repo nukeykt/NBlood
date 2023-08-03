@@ -20,7 +20,7 @@ typedef struct hashitem  // size is 12/24 bytes.
     struct hashitem *next;
 } hashitem_t;
 
-typedef struct  
+typedef struct
 {
     uint32_t v;
     libdivide::libdivide_u32_t d;

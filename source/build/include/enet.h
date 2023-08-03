@@ -948,12 +948,12 @@ extern "C" {
     ENET_API void       enet_host_destroy(ENetHost *);
     ENET_API ENetPeer * enet_host_connect(ENetHost *, ENetAddress *, size_t, enet_uint32);
     ENET_API int        enet_host_check_events(ENetHost *, ENetEvent *);
-    ENET_API int        enet_host_service(ENetHost *, ENetEvent *, enet_uint32);    
+    ENET_API int        enet_host_service(ENetHost *, ENetEvent *, enet_uint32);
     ENET_API int        enet_host_send_raw(ENetHost *, ENetAddress *, enet_uint8 *, size_t);
     ENET_API int        enet_host_send_raw_ex(ENetHost *host, ENetAddress* address, enet_uint8* data, size_t skipBytes, size_t bytesToSend);
     ENET_API void       enet_host_set_intercept(ENetHost *, const ENetInterceptCallback);
     ENET_API void       enet_host_flush(ENetHost *);
-    ENET_API void       enet_host_broadcast(ENetHost *, enet_uint8, ENetPacket *);    
+    ENET_API void       enet_host_broadcast(ENetHost *, enet_uint8, ENetPacket *);
     ENET_API void       enet_host_compress(ENetHost *, const ENetCompressor *);
     ENET_API void       enet_host_channel_limit(ENetHost *, size_t);
     ENET_API void       enet_host_bandwidth_limit(ENetHost *, enet_uint32, enet_uint32);
@@ -4581,7 +4581,7 @@ extern "C" {
         }
     }
 
-    /** Sends raw data to specified address. Useful when you want to send unconnected data using host's socket.         
+    /** Sends raw data to specified address. Useful when you want to send unconnected data using host's socket.
      *  @param host host sending data
      *  @param address destination address
      *  @param data data pointer

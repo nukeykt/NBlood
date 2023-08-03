@@ -759,7 +759,7 @@ static int osdcmd_crosshaircolor(osdcmdptr_t parm)
     uint8_t const b = Batol(parm->parms[2]);
 
     G_SetCrosshairColor(r,g,b);
-    
+
     if (!OSD_ParsingScript())
         LOG_F(INFO, "%s", parm->raw);
 

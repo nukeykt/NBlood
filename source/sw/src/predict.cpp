@@ -223,4 +223,3 @@ CorrectPrediction(int actualfifoplc)
         DoPrediction(ppp);
     }
 }
-

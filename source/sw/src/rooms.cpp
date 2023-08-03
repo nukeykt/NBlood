@@ -1146,4 +1146,3 @@ DrawOverlapRoom(int tx, int ty, int tz, fix16_t tq16ang, fix16_t tq16horiz, shor
         }
     }
 }
-

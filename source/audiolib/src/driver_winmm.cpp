@@ -6,17 +6,17 @@
  modify it under the terms of the GNU General Public License
  as published by the Free Software Foundation; either version 2
  of the License, or (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- 
+
  See the GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
+
  */
 
 /**
@@ -108,7 +108,7 @@ const char *WinMMDrv_ErrorString(int ErrorNumber)
 static void midi_error(MMRESULT rv, const char *str)
 {
     const char * errtxt = "?";
-    
+
     switch (rv)
     {
         case MMSYSERR_NOERROR:      errtxt = "MMSYSERR_NOERROR";      break;
@@ -303,7 +303,7 @@ static void midi_flush_current_buffer(void)
 }
 
 static void midi_setup_event(int length, unsigned char **data)
-{ 
+{
     int i = currentMidiBuffer->hdr.dwBytesRecorded / sizeof(DWORD);
     auto evt = (MIDIEVENT *)&currentMidiBuffer->data[i];
 
@@ -326,7 +326,7 @@ static void midi_setup_event(int length, unsigned char **data)
    If insufficient space can be found in the buffer,
    what is there is flushed to the stream and a new
    buffer large enough is allocated.
-   
+
    Returns a pointer to starting writing at in 'data'.
  */
 static BOOL midi_get_buffer(int length, unsigned char **data)
@@ -610,7 +610,7 @@ int WinMMDrv_MIDI_Init(midifuncs * funcs)
     funcs->SysEx             = MME_SysEx;
 
     midiInstalled = TRUE;
-    
+
     return WinMMErr_Ok;
 }
 

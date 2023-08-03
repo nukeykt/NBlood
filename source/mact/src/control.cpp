@@ -101,7 +101,7 @@ static void controlUpdateMouseState(ControlInfo *const info)
 {
     vec2_t input;
     mouseReadPos(&input.x, &input.y);
-    
+
     vec2f_t finput = { input.x * CONTROL_MouseSensitivityUnit * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[0],
                        input.y * CONTROL_MouseSensitivityUnit * CONTROL_MouseSensitivity * CONTROL_MouseAxesSensitivity[1] };
 
@@ -244,7 +244,7 @@ void CONTROL_MapButton(int whichfunction, int whichbutton, int doubleclicked, co
     default:
         return;
     }
-    
+
     if (doubleclicked)
         set->doubleclicked = whichfunction;
     else
@@ -485,7 +485,7 @@ static void controlUpdateAxisState(int index, ControlInfo *const info)
 
     if (axisScaled10k >= a.saturation)
         out->analog = 32767 * ksgn(in);
-    else 
+    else
     {
         // this assumes there are two sticks comprised of axes 0 and 1, and 2 and 3... because when isGameController is true, there are
         if (index <= CONTROLLER_AXIS_LEFTY || (joystick.isGameController && (index <= CONTROLLER_AXIS_RIGHTY)))
@@ -751,7 +751,7 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     KB_Startup();
 
     CONTROL_NumMouseButtons = MAXMOUSEBUTTONS;
-    CONTROL_MousePresent    = MOUSE_Startup();    
+    CONTROL_MousePresent    = MOUSE_Startup();
 
     if (!(CONTROL_MouseEnabled = CONTROL_MousePresent))
         DVLOG_F(LOG_INPUT, "No mice found.");
@@ -925,7 +925,7 @@ void CONTROL_ClearUserInput(UserInput * info)
     if (info->b_escape)
     {
         KB_ClearKeyDown(sc_Escape);
-        userInput.buttonCleared[3] = true;    
+        userInput.buttonCleared[3] = true;
     }
     inputchecked = 1;
 }

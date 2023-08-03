@@ -80,7 +80,7 @@ int AdLibDrv_MIDI_Init(midifuncs * const funcs)
     funcs->SetVolume         = AL_SetVolume;
 
     AL_Volume = MIDI_MaxVolume;
-    
+
     return AdLibErr_Ok;
 }
 

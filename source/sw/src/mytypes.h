@@ -154,4 +154,3 @@ typedef unsigned char SWBOOL;
 #define BETWEEN(x,low,high) (((x) >= (low)) && ((x) <= (high)))
 
 #endif
-

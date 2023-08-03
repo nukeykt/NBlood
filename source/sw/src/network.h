@@ -186,4 +186,3 @@ void CheckVersion(int GameVersion);
 void SW_SendMessage(short pnum,const char *text);
 void PauseGame(void);
 void ResumeGame(void);
-

@@ -460,4 +460,3 @@ saveable_module saveable_rotator =
     // data
     NULL,0
 };
-

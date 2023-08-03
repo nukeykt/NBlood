@@ -775,7 +775,7 @@ int CONFIG_ReadSetup(void)
         SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "Out", &ud.lockout);
         SCRIPT_GetString(ud.config.scripthandle, "Screen Setup", "Password", &ud.pwlockout[0]);
     }
-    
+
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenBPP", &ud.setup.bpp);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenDisplay", &r_displayindex);
@@ -789,7 +789,7 @@ int CONFIG_ReadSetup(void)
         g_windowPos = windowPos;
         g_windowPosValid = true;
     }
-    
+
     if (ud.setup.bpp < 8) ud.setup.bpp = 32;
 
 #ifdef POLYMER
@@ -942,7 +942,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     }
 
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", maxrefreshfreq, FALSE, FALSE);
-    
+
     if (g_windowPosValid)
     {
         SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPosX", g_windowPos.x, FALSE, FALSE);

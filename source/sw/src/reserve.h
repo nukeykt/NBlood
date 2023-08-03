@@ -42,4 +42,3 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #define SAVE_SCREEN_XSIZE 160L
 #define SAVE_SCREEN_YSIZE 100L
 #endif
-

@@ -155,7 +155,7 @@ enable_if_t<is_integral<T>::value, size_t> buildprintpiece(char * const buf, HEX
 
     for (int p = 0; p < numChars; ++p)
         str[numChars - 1 - p] = HEXletters[(int)((data >> (p<<2)) & 0xF)];
-    
+
     Bstrcat(buf, str);
     return numChars;
 }
