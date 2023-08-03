@@ -1082,6 +1082,7 @@ void netInitialize(bool bConsole)
         {
             initprintf("Could not connect to %s:%i\n", gNetAddress, gNetPort);
             netDeinitialize();
+            netResetToSinglePlayer();
             return;
         }
         bool bWaitServer = true;
