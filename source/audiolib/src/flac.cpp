@@ -334,7 +334,7 @@ static playbackstatus MV_GetNextFLACBlock(VoiceNode *voice)
     /*
         if (!decode_status)
         {
-            MV_Printf("MV_GetNextFLACBlock: %s\n", FLAC__StreamDecoderStateString[decode_state]);
+            LOG_F(INFO, "MV_GetNextFLACBlock: %s", FLAC__StreamDecoderStateString[decode_state]);
             return NoMoreData;
         }
     */

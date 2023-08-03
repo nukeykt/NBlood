@@ -220,7 +220,7 @@ static void midi_flush_current_buffer(void)
 
     if (!currentMidiBuffer)
     {
-//        MV_Printf("no buffer\n");
+        //LOG_F(INFO, "no buffer");
         return;
     }
     auto evt = (MIDIEVENT *)&currentMidiBuffer->data[0];
@@ -263,7 +263,7 @@ static void midi_flush_current_buffer(void)
         if (rv != MMSYSERR_NOERROR)
             midi_error(rv, "midi_flush_current_buffer: error in midiStreamOut");
 
-        //MV_Printf("MME midi_flush_current_buffer queued buffer %p\n", currentMidiBuffer);
+        //LOG_F(INFO, "MME midi_flush_current_buffer queued buffer %p", currentMidiBuffer);
     }
     else
     {
@@ -277,7 +277,7 @@ static void midi_flush_current_buffer(void)
                 // busy-wait for Windows to be done with it
                 WaitForSingleObject(midiBufferFinishedEvent, INFINITE);
 
-                //MV_Printf("MME midi_flush_current_buffer sent immediate long\n");
+                //LOG_F(INFO, "MME midi_flush_current_buffer sent immediate long");
             }
             else
                 midi_error(rv, "midi_flush_current_buffer: error in midiOutLongMsg");
@@ -415,7 +415,7 @@ static inline void midi_sequence_event(void)
         return;
     }
 
-    //MV_Printf("MME midi_sequence_event buffered\n");
+    //LOG_F(INFO, "MME midi_sequence_event buffered");
 
     midiLastEventTime = midiThreadTimer;
 }
@@ -621,11 +621,11 @@ void WinMMDrv_MIDI_Shutdown(void)
 
     if (midiStream)
     {
-        // MV_Printf("stopping stream\n");
+        // LOG_F(INFO, "stopping stream");
         auto rv = midiStreamClose(midiStream);
         if (rv != MMSYSERR_NOERROR)
             midi_error(rv, "WinMMDrv_MIDI_Shutdown: error in midiStreamClose");
-        // MV_Printf("stream stopped\n");
+        // LOG_F(INFO, "stream stopped");
 
         midiStream = 0;
     }
@@ -787,7 +787,7 @@ void midi_destroy_thread(void)
     {
         SetEvent(midiThreadQuitEvent);
         WaitForSingleObject(midiThread, INFINITE);
-        // MV_Printf("MME MIDI_HaltPlayback synched\n");
+        // LOG_F(INFO,"MME MIDI_HaltPlayback synched");
         CloseHandle(midiThread);
         midiThread = 0;
         CloseHandle(midiThreadQuitEvent);
@@ -831,7 +831,7 @@ void WinMMDrv_MIDI_HaltPlayback(void)
 
 void WinMMDrv_MIDI_SetTempo(int tempo, int division)
 {
-    //MV_Printf("MIDI_SetTempo %d/%d\n", tempo, division);
+    //LOG_F(INFO, "MIDI_SetTempo %d/%d", tempo, division);
     MIDIPROPTEMPO   propTempo   = { sizeof(MIDIPROPTEMPO), (DWORD)(60000000l / tempo) };
     MIDIPROPTIMEDIV propTimediv = { sizeof(MIDIPROPTIMEDIV), (DWORD)division };
 
