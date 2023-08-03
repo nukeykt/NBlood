@@ -114,7 +114,7 @@ static bool MV_Mix(VoiceNode * const voice, int const buffer)
         if (!voice->task.ready())
             return true;
 
-        auto result = voice->task.get();        
+        auto result = voice->task.get();
 
         if (result != MV_Ok)
         {
@@ -605,7 +605,7 @@ int MV_GetFrequency(int handle, int *frequency)
 ---------------------------------------------------------------------*/
 
 void MV_SetVoiceMixMode(VoiceNode *voice)
-{    
+{
     // stereo look-up table
     static constexpr decltype(voice->mix) mixslut[]
     = { MV_MixStereo<uint8_t, int16_t>,       MV_MixMono<uint8_t, int16_t>,       MV_MixStereo<int16_t, int16_t>,       MV_MixMono<int16_t, int16_t>,

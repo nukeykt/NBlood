@@ -49,4 +49,3 @@ int nfCheckCP(int other); //Addfaz NatFree
 #define genericmultifunction mmulti_generic
 
 #endif  // mmulti_h_
-

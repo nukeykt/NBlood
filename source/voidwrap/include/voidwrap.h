@@ -18,7 +18,7 @@ typedef HINSTANCE VW_LIBHANDLE;
 #else
 # include <dlfcn.h>
 # ifdef VOIDWRAP_ISEXPORTING
-#  define VOIDWRAP_API __attribute__ ((visibility("default"))) 
+#  define VOIDWRAP_API __attribute__ ((visibility("default")))
 # else
 #  define VOIDWRAP_API
 # endif

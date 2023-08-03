@@ -1321,4 +1321,3 @@ ScreenLoad(MFILE_READ fin)
 
     renderRestoreTarget();
 }
-

@@ -191,4 +191,3 @@ void dynamicgtk_uninit(void)
     handle = NULL;
     memset(&dynamicgtksyms, 0, sizeof(dynamicgtksyms));
 }
-

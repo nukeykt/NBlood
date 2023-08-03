@@ -23,4 +23,3 @@ objectValueForTableColumn:(NSTableColumn *)aTableColumn
 	    row:(NSInteger)rowIndex;
 - (int)numberOfRowsInTableView:(NSTableView *)aTableView;
 @end
-

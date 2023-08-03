@@ -890,4 +890,3 @@ void CONFIG_WriteSetup(void)
 
     CONFIG_WriteCvars();
 }
-

@@ -29,7 +29,7 @@
 // Call these functions from your code:
 //  MicroProfileOnThreadCreate
 //  MicroProfileMouseButton
-//  MicroProfileMousePosition 
+//  MicroProfileMousePosition
 //  MicroProfileModKey
 //  MicroProfileFlip  				<-- Call this once per frame
 //  MicroProfileDraw  				<-- Call this once per frame
@@ -221,17 +221,17 @@ MICROPROFILE_API int64_t MicroProfileTicksPerSecondCpu();
 #define MP_TICK() mach_absolute_time()
 inline int64_t MicroProfileTicksPerSecondCpu()
 {
-    static int64_t nTicksPerSecond = 0;	
-    if(nTicksPerSecond == 0) 
+    static int64_t nTicksPerSecond = 0;
+    if(nTicksPerSecond == 0)
     {
-        mach_timebase_info_data_t sTimebaseInfo;	
+        mach_timebase_info_data_t sTimebaseInfo;
         mach_timebase_info(&sTimebaseInfo);
         nTicksPerSecond = 1000000000ll * sTimebaseInfo.denom / sTimebaseInfo.numer;
     }
     return nTicksPerSecond;
 }
 inline uint64_t MicroProfileGetCurrentThreadId()
-{	
+{
     uint64_t tid;
     pthread_threadid_np(nullptr, &tid);
     return tid;
@@ -284,7 +284,7 @@ typedef uint32_t MicroProfileProcessIdType;
 #endif
 
 
-#ifndef MP_GETCURRENTTHREADID 
+#ifndef MP_GETCURRENTTHREADID
 #define MP_GETCURRENTTHREADID() 0
 typedef uint32_t MicroProfileThreadIdType;
 #endif
@@ -457,11 +457,11 @@ MICROPROFILE_API void MicroProfileOnThreadCreate(const char* pThreadName); //sho
 MICROPROFILE_API void MicroProfileOnThreadExit(); //call on exit to reuse log
 MICROPROFILE_API void MicroProfileSetForceEnable(bool bForceEnable);
 MICROPROFILE_API bool MicroProfileGetForceEnable();
-MICROPROFILE_API void MicroProfileSetEnableAllGroups(bool bEnable); 
-MICROPROFILE_API void MicroProfileEnableCategory(const char* pCategory); 
-MICROPROFILE_API void MicroProfileDisableCategory(const char* pCategory); 
+MICROPROFILE_API void MicroProfileSetEnableAllGroups(bool bEnable);
+MICROPROFILE_API void MicroProfileEnableCategory(const char* pCategory);
+MICROPROFILE_API void MicroProfileDisableCategory(const char* pCategory);
 MICROPROFILE_API bool MicroProfileGetEnableAllGroups();
-MICROPROFILE_API void MicroProfileSetForceMetaCounters(bool bEnable); 
+MICROPROFILE_API void MicroProfileSetForceMetaCounters(bool bEnable);
 MICROPROFILE_API bool MicroProfileGetForceMetaCounters();
 MICROPROFILE_API void MicroProfileEnableMetaCounter(const char* pMet);
 MICROPROFILE_API void MicroProfileDisableMetaCounter(const char* pMet);
@@ -562,7 +562,7 @@ struct MicroProfileScopeHandler
 
 #ifndef MICROPROFILE_MAX_THREADS
 #define MICROPROFILE_MAX_THREADS 32
-#endif 
+#endif
 
 #define MP_AUTO              0xffffffff
 //from http://fugal.net/vim/rgbtxt.html
@@ -1241,8 +1241,8 @@ struct MicroProfileScopeHandler
 #endif
 
 
-#ifndef MICROPROFILE_CONTEXT_SWITCH_TRACE 
-#if defined(_WIN32) 
+#ifndef MICROPROFILE_CONTEXT_SWITCH_TRACE
+#if defined(_WIN32)
 #define MICROPROFILE_CONTEXT_SWITCH_TRACE 1
 #elif defined(__APPLE__) && !TARGET_OS_IPHONE
 #define MICROPROFILE_CONTEXT_SWITCH_TRACE 1
@@ -1287,13 +1287,13 @@ enum MicroProfileDrawMask
 
 enum MicroProfileDrawBarsMask
 {
-    MP_DRAW_TIMERS 				= 0x1,	
-    MP_DRAW_AVERAGE				= 0x2,	
-    MP_DRAW_MAX					= 0x4,	
+    MP_DRAW_TIMERS 				= 0x1,
+    MP_DRAW_AVERAGE				= 0x2,
+    MP_DRAW_MAX					= 0x4,
     MP_DRAW_MIN					= 0x8,
     MP_DRAW_CALL_COUNT			= 0x10,
     MP_DRAW_TIMERS_EXCLUSIVE 	= 0x20,
-    MP_DRAW_AVERAGE_EXCLUSIVE 	= 0x40,	
+    MP_DRAW_AVERAGE_EXCLUSIVE 	= 0x40,
     MP_DRAW_MAX_EXCLUSIVE		= 0x80,
     MP_DRAW_META_FIRST			= 0x100,
     MP_DRAW_ALL 				= 0xffffffff,
@@ -1451,7 +1451,7 @@ struct MicroProfile
     uint32_t nAggregateFrames;
 
     uint64_t nAggregateFlipTick;
-    
+
     uint32_t nDisplay;
     uint32_t nBars;
     uint64_t nActiveGroup;
@@ -1489,7 +1489,7 @@ struct MicroProfile
     MicroProfileGroupInfo 	GroupInfo[MICROPROFILE_MAX_GROUPS];
     MicroProfileTimerInfo 	TimerInfo[MICROPROFILE_MAX_TIMERS];
     uint8_t					TimerToGroup[MICROPROFILE_MAX_TIMERS];
-    
+
     MicroProfileTimer 		AccumTimers[MICROPROFILE_MAX_TIMERS];
     uint64_t				AccumMaxTimers[MICROPROFILE_MAX_TIMERS];
     uint64_t				AccumMinTimers[MICROPROFILE_MAX_TIMERS];
@@ -1500,7 +1500,7 @@ struct MicroProfile
     uint64_t				FrameExclusive[MICROPROFILE_MAX_TIMERS];
 
     MicroProfileTimer 		Aggregate[MICROPROFILE_MAX_TIMERS];
-    uint64_t				AggregateMax[MICROPROFILE_MAX_TIMERS];	
+    uint64_t				AggregateMax[MICROPROFILE_MAX_TIMERS];
     uint64_t				AggregateMin[MICROPROFILE_MAX_TIMERS];
     uint64_t				AggregateExclusive[MICROPROFILE_MAX_TIMERS];
     uint64_t				AggregateMaxExclusive[MICROPROFILE_MAX_TIMERS];
@@ -1509,12 +1509,12 @@ struct MicroProfile
     uint64_t 				FrameGroup[MICROPROFILE_MAX_GROUPS];
     uint64_t 				AccumGroup[MICROPROFILE_MAX_GROUPS];
     uint64_t 				AccumGroupMax[MICROPROFILE_MAX_GROUPS];
-    
+
     uint64_t 				AggregateGroup[MICROPROFILE_MAX_GROUPS];
     uint64_t 				AggregateGroupMax[MICROPROFILE_MAX_GROUPS];
 
 
-    struct 
+    struct
     {
         uint64_t nCounters[MICROPROFILE_MAX_TIMERS];
 
@@ -1570,7 +1570,7 @@ struct MicroProfile
     uint8_t						nContextSwitchHoverCpu;
     uint8_t						nContextSwitchHoverCpuNext;
 
-    uint32_t					nContextSwitchPut;	
+    uint32_t					nContextSwitchPut;
     MicroProfileContextSwitch 	ContextSwitch[MICROPROFILE_CONTEXT_SWITCH_BUFFER_SIZE];
 
     MicroProfileThread			WebServerThread;
@@ -1595,7 +1595,7 @@ struct MicroProfile
     uint32_t					nCounterHistoryPut;
     int64_t 					nCounterHistory[MICROPROFILE_GRAPH_HISTORY][MICROPROFILE_MAX_COUNTERS]; //flipped to make swapping cheap, drawing more expensive.
     int64_t 					nCounterMax[MICROPROFILE_MAX_COUNTERS];
-    int64_t 					nCounterMin[MICROPROFILE_MAX_COUNTERS];	
+    int64_t 					nCounterMin[MICROPROFILE_MAX_COUNTERS];
 #endif
 
     uint32_t					nGpuFrameTimer;
@@ -1626,13 +1626,13 @@ inline uint64_t MicroProfileLogTimerIndex(MicroProfileLogEntry Index)
 inline MicroProfileLogEntry MicroProfileMakeLogIndex(uint64_t nBegin, MicroProfileToken nToken, int64_t nTick)
 {
     return (nBegin<<61) | (MP_LOG_INDEX_MASK&(nToken<<48)) | (MP_LOG_TICK_MASK&nTick);
-} 
+}
 
 inline int64_t MicroProfileLogTickDifference(MicroProfileLogEntry Start, MicroProfileLogEntry End)
 {
     uint64_t nStart = Start;
     uint64_t nEnd = End;
-    int64_t nDifference = ((nEnd<<16) - (nStart<<16)); 
+    int64_t nDifference = ((nEnd<<16) - (nStart<<16));
     return nDifference >> 16;
 }
 
@@ -1689,8 +1689,8 @@ inline uint16_t MicroProfileGetGroupIndex(MicroProfileToken t)
 #endif
 int64_t MicroProfileTicksPerSecondCpu()
 {
-    static int64_t nTicksPerSecond = 0;	
-    if(nTicksPerSecond == 0) 
+    static int64_t nTicksPerSecond = 0;
+    if(nTicksPerSecond == 0)
     {
         QueryPerformanceFrequency((LARGE_INTEGER*)&nTicksPerSecond);
     }
@@ -1739,7 +1739,7 @@ inline void MicroProfileThreadJoin(MicroProfileThread* pThread)
 #define MP_INVALID_SOCKET(f) (f < 0)
 #endif
 
-#endif 
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -2203,7 +2203,7 @@ const char* MicroProfileCounterFullName(int nCounter)
     int nOffset = 0;
     while(nIndex >= 0 && nOffset < (int)sizeof(Buffer)-2)
     {
-        uint32_t nLen = S.CounterInfo[nNodes[nIndex]].nNameLen + nOffset;// < sizeof(Buffer)-1 
+        uint32_t nLen = S.CounterInfo[nNodes[nIndex]].nNameLen + nOffset;// < sizeof(Buffer)-1
         nLen = MicroProfileMin((uint32_t)(sizeof(Buffer) - 2 - nOffset), nLen);
         memcpy(&Buffer[nOffset], S.CounterInfo[nNodes[nIndex]].pName, nLen);
 
@@ -2650,7 +2650,7 @@ void MicroProfileFlipCpu()
         MicroProfileFrameState* pFramePut = &S.Frames[S.nFramePut];
         MicroProfileFrameState* pFrameCurrent = &S.Frames[S.nFrameCurrent];
         MicroProfileFrameState* pFrameNext = &S.Frames[nFrameNext];
-        
+
         pFramePut->nFrameStartCpu = MP_TICK();
         pFramePut->nFrameStartGpuTimer = S.nGpuFrameTimer;
 
@@ -2722,7 +2722,7 @@ void MicroProfileFlipCpu()
                 for(uint32_t i = 0; i < MICROPROFILE_MAX_THREADS; ++i)
                 {
                     MicroProfileThreadLog* pLog = S.Pool[i];
-                    if(!pLog) 
+                    if(!pLog)
                         continue;
 
                     uint8_t* pGroupStackPos = &pLog->nGroupStackPos[0];
@@ -2763,8 +2763,8 @@ void MicroProfileFlipCpu()
                             }
                         }
                     }
-                    
-                    
+
+
                     uint32_t* pStack = &pLog->nStack[0];
                     int64_t* pChildTickStack = &pLog->nChildTickStack[0];
                     uint32_t nStackPos = pLog->nStackPos;
@@ -2806,7 +2806,7 @@ void MicroProfileFlipCpu()
                                 uint8_t nGroup = pTimerToGroup[nTimer];
                                 MP_ASSERT(nGroup < MICROPROFILE_MAX_GROUPS);
                                 if(nStackPos)
-                                {									
+                                {
                                     int64_t nTickStart = pLog->Log[pStack[nStackPos-1]];
                                     int64_t nTicks = MicroProfileLogTickDifference(nTickStart, LE);
                                     int64_t nChildTicks = pChildTickStack[nStackPos];
@@ -2845,11 +2845,11 @@ void MicroProfileFlipCpu()
                 MICROPROFILE_SCOPE(g_MicroProfileAccumulate);
                 for(uint32_t i = 0; i < S.nTotalTimers; ++i)
                 {
-                    S.AccumTimers[i].nTicks += S.Frame[i].nTicks;				
+                    S.AccumTimers[i].nTicks += S.Frame[i].nTicks;
                     S.AccumTimers[i].nCount += S.Frame[i].nCount;
                     S.AccumMaxTimers[i] = MicroProfileMax(S.AccumMaxTimers[i], S.Frame[i].nTicks);
                     S.AccumMinTimers[i] = MicroProfileMin(S.AccumMinTimers[i], S.Frame[i].nTicks);
-                    S.AccumTimersExclusive[i] += S.FrameExclusive[i];				
+                    S.AccumTimersExclusive[i] += S.FrameExclusive[i];
                     S.AccumMaxTimersExclusive[i] = MicroProfileMax(S.AccumMaxTimersExclusive[i], S.FrameExclusive[i]);
                 }
 
@@ -2875,7 +2875,7 @@ void MicroProfileFlipCpu()
                         Meta.nSumAccum += nSum;
                         Meta.nSumAccumMax = MicroProfileMax(Meta.nSumAccumMax, nSum);
                     }
-                }			
+                }
             }
             for(uint32_t i = 0; i < MICROPROFILE_MAX_GRAPHS; ++i)
             {
@@ -2908,16 +2908,16 @@ void MicroProfileFlipCpu()
         memcpy(&S.AggregateMaxExclusive[0], &S.AccumMaxTimersExclusive[0], sizeof(S.AggregateMaxExclusive[0]) * S.nTotalTimers);
 
         memcpy(&S.AggregateGroup[0], &S.AccumGroup[0], sizeof(S.AggregateGroup));
-        memcpy(&S.AggregateGroupMax[0], &S.AccumGroupMax[0], sizeof(S.AggregateGroup));		
+        memcpy(&S.AggregateGroupMax[0], &S.AccumGroupMax[0], sizeof(S.AggregateGroup));
 
         for(uint32_t i = 0; i < MICROPROFILE_MAX_THREADS; ++i)
         {
             MicroProfileThreadLog* pLog = S.Pool[i];
-            if(!pLog) 
+            if(!pLog)
                 continue;
-            
+
             memcpy(&pLog->nAggregateGroupTicks[0], &pLog->nGroupTicks[0], sizeof(pLog->nAggregateGroupTicks));
-            
+
             if(nAggregateClear)
             {
                 memset(&pLog->nGroupTicks[0], 0, sizeof(pLog->nGroupTicks));
@@ -2958,7 +2958,7 @@ void MicroProfileFlipCpu()
             memset(&S.AccumTimersExclusive[0], 0, sizeof(S.AggregateExclusive[0]) * S.nTotalTimers);
             memset(&S.AccumMaxTimersExclusive[0], 0, sizeof(S.AccumMaxTimersExclusive[0]) * S.nTotalTimers);
             memset(&S.AccumGroup[0], 0, sizeof(S.AggregateGroup));
-            memset(&S.AccumGroupMax[0], 0, sizeof(S.AggregateGroup));		
+            memset(&S.AccumGroupMax[0], 0, sizeof(S.AggregateGroup));
 
             S.nAggregateFlipCount = 0;
             S.nFlipAggregate = 0;
@@ -3578,15 +3578,15 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
         MP_ASSERT(i == S.GroupInfo[i].nGroupIndex);
         float fToMs = S.GroupInfo[i].Type == MicroProfileTokenTypeCpu ? fToMsCPU : fToMsGPU;
         uint32_t nColor = S.TimerInfo[i].nColor;
-        MicroProfilePrintf(CB, Handle, "GroupInfo[%d] = MakeGroup(%d, \"%s\", %d, %d, %d, %f, %f, %f, '#%06x');\n", 
-            S.GroupInfo[i].nGroupIndex, 
-            S.GroupInfo[i].nGroupIndex, 
-            S.GroupInfo[i].pName, 
-            S.GroupInfo[i].nCategory, 
-            S.GroupInfo[i].nNumTimers, 
-            S.GroupInfo[i].Type == MicroProfileTokenTypeGpu?1:0, 
-            fToMs * S.AggregateGroup[i], 
-            fToMs * S.AggregateGroup[i] / nAggregateFrames, 
+        MicroProfilePrintf(CB, Handle, "GroupInfo[%d] = MakeGroup(%d, \"%s\", %d, %d, %d, %f, %f, %f, '#%06x');\n",
+            S.GroupInfo[i].nGroupIndex,
+            S.GroupInfo[i].nGroupIndex,
+            S.GroupInfo[i].pName,
+            S.GroupInfo[i].nCategory,
+            S.GroupInfo[i].nNumTimers,
+            S.GroupInfo[i].Type == MicroProfileTokenTypeGpu?1:0,
+            fToMs * S.AggregateGroup[i],
+            fToMs * S.AggregateGroup[i] / nAggregateFrames,
             fToMs * S.AggregateGroupMax[i],
             ((MICROPROFILE_UNPACK_RED(nColor) & 0xff) << 16) | ((MICROPROFILE_UNPACK_GREEN(nColor) & 0xff) << 8) | (MICROPROFILE_UNPACK_BLUE(nColor) & 0xff));
     }
@@ -3615,7 +3615,7 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
         uint32_t nColor = S.TimerInfo[i].nColor;
         uint32_t nColorDark = (nColor >> 1) & ~0x80808080;
         MicroProfilePrintf(CB, Handle, "TimerInfo[%d] = MakeTimer(%d, \"%s\", %d, '#%06x','#%06x', %f, %f, %f, %f, %f, %f, %d, %f,\n",
-            S.TimerInfo[i].nTimerIndex, S.TimerInfo[i].nTimerIndex, S.TimerInfo[i].pName, S.TimerInfo[i].nGroupIndex, 
+            S.TimerInfo[i].nTimerIndex, S.TimerInfo[i].nTimerIndex, S.TimerInfo[i].pName, S.TimerInfo[i].nGroupIndex,
             ((MICROPROFILE_UNPACK_RED(nColor) & 0xff) << 16) | ((MICROPROFILE_UNPACK_GREEN(nColor) & 0xff) << 8) | (MICROPROFILE_UNPACK_BLUE(nColor) & 0xff),
             ((MICROPROFILE_UNPACK_RED(nColorDark) & 0xff) << 16) | ((MICROPROFILE_UNPACK_GREEN(nColorDark) & 0xff) << 8) | (MICROPROFILE_UNPACK_BLUE(nColorDark) & 0xff),
             pAverage[nIdx],
@@ -3751,7 +3751,7 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
             Formatted,
             (int64_t)nLimit,
             FormattedLimit,
-            S.CounterInfo[i].eFormat == MICROPROFILE_COUNTER_FORMAT_BYTES ? 1 : 0, 
+            S.CounterInfo[i].eFormat == MICROPROFILE_COUNTER_FORMAT_BYTES ? 1 : 0,
             fCounterPrc,
             fBoxPrc
             );
@@ -4050,14 +4050,14 @@ void MicroProfileDumpHtml(MicroProfileWriteCallback CB, void* Handle, int nMaxFr
     {
         nTimerCounterSort[i] = i;
     }
-    std::sort(nGroupCounterSort, nGroupCounterSort + S.nGroupCount, 
+    std::sort(nGroupCounterSort, nGroupCounterSort + S.nGroupCount,
         [nGroupCounter](const uint32_t l, const uint32_t r)
         {
             return nGroupCounter[l] > nGroupCounter[r];
         }
     );
 
-    std::sort(nTimerCounterSort, nTimerCounterSort + S.nTotalTimers, 
+    std::sort(nTimerCounterSort, nTimerCounterSort + S.nTotalTimers,
         [nTimerCounter](const uint32_t l, const uint32_t r)
         {
             return nTimerCounter[l] > nTimerCounter[r];
@@ -4227,7 +4227,7 @@ void MicroProfileCompressedWriteSocket(void* Handle, size_t nSize, const char* p
     mz_stream& Stream = pState->Stream;
     unsigned char* pDeflateInEnd = const_cast<unsigned char *>(Stream.next_in) + Stream.avail_in;
     unsigned char* pDeflateInStart = &pState->DeflateIn[0];
-    unsigned char* pDeflateInRealEnd = &pState->DeflateIn[MICROPROFILE_COMPRESS_CHUNK];	
+    unsigned char* pDeflateInRealEnd = &pState->DeflateIn[MICROPROFILE_COMPRESS_CHUNK];
     pState->nSize += nSize;
     if(nSize <= (size_t)(pDeflateInRealEnd - pDeflateInEnd))
     {
@@ -4244,7 +4244,7 @@ void MicroProfileCompressedWriteSocket(void* Handle, size_t nSize, const char* p
         {
             pState->nFlushes++;
             MicroProfileCompressedSocketFlush(pState);
-            pDeflateInRealEnd = &pState->DeflateIn[MICROPROFILE_COMPRESS_CHUNK];	
+            pDeflateInRealEnd = &pState->DeflateIn[MICROPROFILE_COMPRESS_CHUNK];
             if(pDeflateInEnd == pDeflateInRealEnd)
             {
                 if(Stream.avail_in)
@@ -4260,7 +4260,7 @@ void MicroProfileCompressedWriteSocket(void* Handle, size_t nSize, const char* p
         size_t nSpace = pDeflateInRealEnd - pDeflateInEnd;
         size_t nBytes = MicroProfileMin(nSpace, nSize);
         MP_ASSERT(nBytes + pDeflateInEnd <= pDeflateInRealEnd);
-        memcpy((void*)pDeflateInEnd, pData, nBytes); 
+        memcpy((void*)pDeflateInEnd, pData, nBytes);
         Stream.avail_in += nBytes;
         nSize -= nBytes;
         pData += nBytes;
@@ -4450,9 +4450,9 @@ void* MicroProfileWebServerUpdate(void*)
     uint32_t nPortBegin = MICROPROFILE_WEBSERVER_PORT;
     uint32_t nPortEnd = nPortBegin + 20;
 
-    struct sockaddr_in Addr; 
-    Addr.sin_family = AF_INET; 
-    Addr.sin_addr.s_addr = INADDR_ANY; 
+    struct sockaddr_in Addr;
+    Addr.sin_family = AF_INET;
+    Addr.sin_addr.s_addr = INADDR_ANY;
     for(uint32_t nPort = nPortBegin; nPort < nPortEnd; ++nPort)
     {
         Addr.sin_port = htons(nPort);
@@ -4545,7 +4545,7 @@ void MicroProfileContextSwitchSearch(uint32_t* pContextSwitchStart, uint32_t* pC
     MICROPROFILE_SCOPE(g_MicroProfileContextSwitchSearch);
     uint32_t nContextSwitchPut = S.nContextSwitchPut;
     uint64_t nContextSwitchStart, nContextSwitchEnd;
-    nContextSwitchStart = nContextSwitchEnd = (nContextSwitchPut + MICROPROFILE_CONTEXT_SWITCH_BUFFER_SIZE - 1) % MICROPROFILE_CONTEXT_SWITCH_BUFFER_SIZE;		
+    nContextSwitchStart = nContextSwitchEnd = (nContextSwitchPut + MICROPROFILE_CONTEXT_SWITCH_BUFFER_SIZE - 1) % MICROPROFILE_CONTEXT_SWITCH_BUFFER_SIZE;
     int64_t nSearchEnd = nBaseTicksEndCpu + MicroProfileMsToTick(30.f, MicroProfileTicksPerSecondCpu());
     int64_t nSearchBegin = nBaseTicksCpu - MicroProfileMsToTick(30.f, MicroProfileTicksPerSecondCpu());
     for(uint32_t i = 0; i < MICROPROFILE_CONTEXT_SWITCH_BUFFER_SIZE; ++i)

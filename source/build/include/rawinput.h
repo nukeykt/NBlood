@@ -21,4 +21,3 @@ BOOL RI_CaptureInput(BOOL grab, HWND target);
 #endif
 
 #endif // rawinput_h_
-

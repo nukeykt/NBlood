@@ -37,7 +37,7 @@
 // disable warning C4146: unary minus operator applied
 // to unsigned type, result still unsigned
 #pragma warning(disable : 4146)
-// disable warning C4204: nonstandard extension used : non-constant aggregate 
+// disable warning C4204: nonstandard extension used : non-constant aggregate
 // initializer
 //
 // It's valid C99
@@ -240,7 +240,7 @@ static LIBDIVIDE_INLINE int16_t libdivide_s16_do_raw(
 static LIBDIVIDE_INLINE int16_t libdivide_s16_do(
     int16_t numer, const struct libdivide_s16_t* denom);
 static LIBDIVIDE_INLINE uint16_t libdivide_u16_do_raw(
-    uint16_t numer, uint16_t magic, uint8_t more);    
+    uint16_t numer, uint16_t magic, uint8_t more);
 static LIBDIVIDE_INLINE uint16_t libdivide_u16_do(
     uint16_t numer, const struct libdivide_u16_t* denom);
 static LIBDIVIDE_INLINE int32_t libdivide_s32_do(
@@ -764,7 +764,7 @@ uint16_t libdivide_u16_do_raw(uint16_t numer, uint16_t magic, uint8_t more) {
             // don't need to mask them off.
             return q >> more;
         }
-    }    
+    }
 }
 
 uint16_t libdivide_u16_do(uint16_t numer, const struct libdivide_u16_t* denom) {

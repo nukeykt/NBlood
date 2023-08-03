@@ -991,4 +991,3 @@ void LoadCustomInfoFromScript(const char *filename)
     scriptfile_close(script);
     scriptfile_clearsymbols();
 }
-

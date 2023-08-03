@@ -582,4 +582,3 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #define TAG_WALL_ALIGN_SLOPE_TO_POINT    550
 #endif
-

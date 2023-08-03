@@ -563,4 +563,3 @@ SetRedrawScreen(PLAYERp pp)
     // test at redrawing the whole screen
     RedrawScreen = TRUE;
 }
-

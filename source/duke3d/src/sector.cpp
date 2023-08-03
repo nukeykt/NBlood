@@ -3606,4 +3606,3 @@ void P_CheckSectors(int playerNum)
         }
     }
 }
-

@@ -154,7 +154,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
 {
     if (FX_Installed)
         FX_Shutdown();
-   
+
 #if defined RENDERTYPESDL
     int SoundCard = ASS_SDL;
 #elif defined RENDERTYPEWIN

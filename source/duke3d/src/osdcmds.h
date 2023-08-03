@@ -50,4 +50,3 @@ extern uint32_t cl_cheatmask;
 #endif
 
 #endif	// osdcmds_h_
-

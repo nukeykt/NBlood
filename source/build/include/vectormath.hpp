@@ -5252,7 +5252,7 @@ inline const Matrix4 inverse(const Matrix4 & mat)
     // sseRor is just a macro using _mm_shuffle_ps().
     tt = _L4;
     tt2 = sseRor(_L3, 1);
-    Vc = _mm_mul_ps(tt2, sseRor(tt, 0)); 
+    Vc = _mm_mul_ps(tt2, sseRor(tt, 0));
     Va = _mm_mul_ps(tt2, sseRor(tt, 2));
     Vb = _mm_mul_ps(tt2, sseRor(tt, 3));
 
@@ -5293,9 +5293,9 @@ inline const Matrix4 inverse(const Matrix4 & mat)
     tt = sseRor(_L1, 1);
     Va = _mm_mul_ps(tt, Vb);
     Vb = _mm_mul_ps(tt, Vc);
-    Vc = _mm_mul_ps(tt, _L2); 
+    Vc = _mm_mul_ps(tt, _L2);
 
-    r1 = _mm_sub_ps(sseRor(Va, 1), sseRor(Vc, 2)); 
+    r1 = _mm_sub_ps(sseRor(Va, 1), sseRor(Vc, 2));
     r2 = _mm_sub_ps(sseRor(Vb, 2), sseRor(Vb, 0));
     r3 = _mm_sub_ps(sseRor(Va, 0), sseRor(Vc, 1));
 

@@ -422,7 +422,7 @@ void artReadManifest(buildvfs_kfd const fil, artheader_t * const local)
         tilesiz[i].y = tiley;
 
         bitmap_set(local->tileread, localIndex);
-        
+
         picanmdisk = B_LITTLE32(picanmdisk);
         tileConvertAnimFormat(i, picanmdisk);
     }

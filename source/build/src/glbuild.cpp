@@ -173,7 +173,7 @@ void buildgl_bindTexture(GLenum target, uint32_t textureID)
         {
             if (textureID == 0)
                 inthash_delete(&gl.state[ACTIVETEX], target);
-            else 
+            else
                 inthash_add(&gl.state[ACTIVETEX], target, textureID, 1);
         }
     }
@@ -250,7 +250,7 @@ void buildgl_resetSamplerObjects(void)
 
     s = samplerObjectIDs[SAMPLER_DEPTH];
     glSamplerParameteri(s, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-    glSamplerParameteri(s, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);    
+    glSamplerParameteri(s, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 }
 
 void buildgl_bindSamplerObject(int texunit, int32_t pth_method)
@@ -261,7 +261,7 @@ void buildgl_bindSamplerObject(int texunit, int32_t pth_method)
 
         if (glinfo.samplerobjects)
             glBindSampler(texunit, 0);
-        
+
         return;
     }
 

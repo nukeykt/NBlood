@@ -743,7 +743,7 @@ static void G_ReadGLFrame(void)
 
     // Save OpenGL screenshot with Duke3D palette
     // NOTE: maybe need to move this to the engine...
-    
+
     static char lock;
     static palette_t *frame;
 
@@ -6492,7 +6492,7 @@ static void drawframe_entry(mco_coro *co)
         for (auto &gv : aGameVars)
         {
             if ((gv.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK)) == 0)
-            {            
+            {
                 MICROPROFILE_COUNTER_SET(gv.szLabel, gv.global);
             }
         }
@@ -7103,7 +7103,7 @@ MAIN_LOOP_RESTART:
 
         if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME)
         {
-            do 
+            do
             {
                 if (g_networkMode != NET_DEDICATED_SERVER && (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0)
                 {

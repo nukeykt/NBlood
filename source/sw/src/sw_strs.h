@@ -46,4 +46,3 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #define S_QUIT7  "COME BACK ANY TIME, WE ARE ALWAYS"
 #define S_QUIT7A "LOOKING FOR A SACK OF RIPPER CHOW!"
 #define S_QUIT8  "LET'S MAKE A STEALTHY EXIT TO DOS!"
-

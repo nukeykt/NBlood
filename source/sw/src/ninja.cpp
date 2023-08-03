@@ -2592,4 +2592,3 @@ saveable_module saveable_ninja =
     saveable_ninja_data,
     SIZ(saveable_ninja_data)
 };
-

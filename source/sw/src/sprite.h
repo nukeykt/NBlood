@@ -81,4 +81,3 @@ struct InventoryDecl_t
 extern struct InventoryDecl_t InventoryDecls[InvDecl_TOTAL];
 
 #endif
-

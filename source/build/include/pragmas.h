@@ -121,7 +121,7 @@ static inline int64_t tabledivide64(int64_t const n, int64_t const d)
 static inline int32_t tabledivide32(int32_t const n, int32_t const d)
 {
     using namespace libdivide;
-    
+
     if ((d != lastd_s32) & !((uint32_t)d < DIVTABLESIZE))
         divtable32[0] = libdivide_s32_gen((lastd_s32 = d));
 

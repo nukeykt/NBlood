@@ -775,7 +775,7 @@ int CONFIG_ReadSetup(void)
         SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "Out", &ud.lockout);
         SCRIPT_GetString(ud.config.scripthandle, "Screen Setup", "Password", &ud.pwlockout[0]);
     }
-    
+
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenBPP", &ud.setup.bpp);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenDisplay", &r_displayindex);
@@ -789,7 +789,7 @@ int CONFIG_ReadSetup(void)
         g_windowPos = windowPos;
         g_windowPosValid = true;
     }
-    
+
     if (ud.setup.bpp < 8) ud.setup.bpp = 32;
 
 #ifdef POLYMER
@@ -816,8 +816,9 @@ int CONFIG_ReadSetup(void)
 
 void CONFIG_ReadSettings(void)
 {
+    char *dummy = NULL;
     char *const setupFileName = Xstrdup(g_setupFileName);
-    char *const p = strtok(setupFileName, ".");
+    char *const p = Bstrtoken(setupFileName, ".", &dummy, 1);
 
     if (!p || !Bstrcmp(g_setupFileName, SETUPFILENAME))
         Bsprintf(tempbuf, "settings.cfg");
@@ -837,12 +838,13 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
 {
     if (ud.config.setupread != 2) return;
 
+    char *dummy = NULL;
     char filename[BMAX_PATH];
 
     if (!Bstrcmp(g_setupFileName, SETUPFILENAME))
         Bsprintf(filename, "settings.cfg");
     else
-        Bsprintf(filename, "%s_settings.cfg", strtok(g_setupFileName, "."));
+        Bsprintf(filename, "%s_settings.cfg", Bstrtoken(g_setupFileName, ".", &dummy, 1));
 
     buildvfs_FILE fp = buildvfs_fopen_write(filename);
 
@@ -940,7 +942,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     }
 
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", maxrefreshfreq, FALSE, FALSE);
-    
+
     if (g_windowPosValid)
     {
         SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "WindowPosX", g_windowPos.x, FALSE, FALSE);

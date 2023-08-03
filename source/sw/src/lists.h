@@ -65,5 +65,3 @@ typedef
 #define EMPTY(list)          (((LIST) list)->Next == (LIST) list)
 
 #endif
-
-

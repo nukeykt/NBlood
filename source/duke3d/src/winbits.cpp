@@ -39,7 +39,7 @@ int32_t windowsCheckForUpdates(char *buffer)
     struct hostent *h;
     char const *host = "www.eduke32.com";
     char const *req = "GET http://www.eduke32.com/VERSION HTTP/1.0\r\n\r\n\r\n";
-    char *tok;
+    char *tok, *restBuf = NULL;
     char tempbuf[2048],otherbuf[16],ver[16];
     SOCKET mysock;
     WSADATA ws;
@@ -91,9 +91,9 @@ int32_t windowsCheckForUpdates(char *buffer)
 
     Bmemcpy(&otherbuf, &tempbuf, sizeof(otherbuf));
 
-    strtok(otherbuf, " ");
+    Bstrtoken(otherbuf, " ", &restBuf, 1);
 
-    if ((tok = strtok(NULL, " ")) == NULL)
+    if ((tok = Bstrtoken(NULL, " ", &restBuf, 1)) == NULL)
         goto done;
 
     if (Batol(tok) == 200)

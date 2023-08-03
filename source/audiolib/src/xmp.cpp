@@ -30,7 +30,7 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
     }
 
     auto ctx = ((xmp_data *)voice->rawdataptr)->ctx;
-    
+
     if (xmp_play_frame(ctx) != 0)
     {
 #if 0
@@ -118,7 +118,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     xd->length = length;
 
     voice->task = async::spawn([voice]() -> int
-    {    
+    {
         auto xd = (xmp_data *)voice->rawdataptr;
         auto ctx = xd->ctx;
 

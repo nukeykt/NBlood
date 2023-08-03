@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 template <typename T> struct vec2
 {
-    T x, y; 
+    T x, y;
 
     inline bool operator==(vec2<T> const c) { return (x == c.x) & (y == c.y); }
     inline bool operator!=(vec2<T> const c) { return (x != c.x) | (y != c.y); }
@@ -39,7 +39,7 @@ template <typename T> struct vec3
     const vec3<T> operator+(const vec3<T> &rhs) const { return { (T)(x + rhs.x), (T)(y + rhs.y), (T)(z + rhs.z) }; }
     const vec3<T> operator-(const vec3<T> &rhs) const { return { (T)(x - rhs.x), (T)(y - rhs.y), (T)(z - rhs.z) }; }
     const vec3<T> operator*(const vec3<T> &rhs) const { return { (T)(x * rhs.x), (T)(y * rhs.y), (T)(z * rhs.z) }; }
-    
+
     vec3<T> &operator+=(const vec2<T>& rhs) { xy += rhs; return *this; }
     vec3<T> &operator-=(const vec2<T>& rhs) { xy -= rhs; return *this; }
     vec3<T> &operator*=(const vec2<T>& rhs) { xy *= rhs; return *this; }
@@ -55,19 +55,19 @@ template <typename T> struct vec4
     };
     inline bool operator==(vec4<T> const &c) { return (x == c.x) & (y == c.y) & (z == c.z) & (a == c.a); }
     inline bool operator!=(vec4<T> const &c) { return (x != c.x) | (y != c.y) | (z != c.z) | (a != c.a); }
-    
+
     vec4<T> &operator+=(const vec4<T>& rhs) { x += rhs.x; y += rhs.y; z+= rhs.z; a += rhs.a; return *this; }
     vec4<T> &operator-=(const vec4<T>& rhs) { x -= rhs.x; y -= rhs.y; z-= rhs.z; a -= rhs.a; return *this; }
     vec4<T> &operator*=(const vec4<T>& rhs) { x *= rhs.x; y *= rhs.y; z*= rhs.z; a *= rhs.a; return *this; }
 
     const vec4<T> operator+(const vec4<T> &rhs) const { return { (T)(x + rhs.x), (T)(y + rhs.y), (T)(z + rhs.z), (T)(a + rhs.a) }; }
     const vec4<T> operator-(const vec4<T> &rhs) const { return { (T)(x - rhs.x), (T)(y - rhs.y), (T)(z - rhs.z), (T)(a - rhs.a) }; }
-    const vec4<T> operator*(const vec4<T> &rhs) const { return { (T)(x * rhs.x), (T)(y * rhs.y), (T)(z * rhs.z), (T)(a * rhs.a) }; }    
+    const vec4<T> operator*(const vec4<T> &rhs) const { return { (T)(x * rhs.x), (T)(y * rhs.y), (T)(z * rhs.z), (T)(a * rhs.a) }; }
 
     vec4<T> &operator+=(const vec3<T>& rhs) { xyz += rhs; return *this; }
     vec4<T> &operator-=(const vec3<T>& rhs) { xyz -= rhs; return *this; }
     vec4<T> &operator*=(const vec3<T>& rhs) { xyz *= rhs; return *this; }
-    
+
     vec4<T> &operator+=(const vec2<T>& rhs) { xy += rhs; return *this; }
     vec4<T> &operator-=(const vec2<T>& rhs) { xy -= rhs; return *this; }
     vec4<T> &operator*=(const vec2<T>& rhs) { xy *= rhs; return *this; }

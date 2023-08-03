@@ -37,4 +37,3 @@
     row:(NSInteger)rowIndex;
 - (int)numberOfRowsInTableView:(NSTableView *)aTableView;
 @end
-

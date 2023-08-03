@@ -2712,7 +2712,3 @@ ScreenSaveSetup(void)
 
     return SAVE_SCREEN_TILE;
 }
-
-
-
-

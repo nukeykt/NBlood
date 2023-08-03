@@ -137,4 +137,3 @@ char g_setupFileName[BMAX_PATH] = SETUPFILENAME;
 #ifdef __cplusplus
 }
 #endif
-

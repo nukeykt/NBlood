@@ -265,4 +265,3 @@ int videoCaptureScreenTGA(const char *filename, char inverseit)
     return 0;
 }
 #undef HICOLOR
-

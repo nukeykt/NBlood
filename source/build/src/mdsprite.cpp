@@ -1088,7 +1088,7 @@ static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
     m->uv = (md2uv_t *)Xmalloc(head.numuv*sizeof(md2uv_t));
 
     klseek(fil,head.ofsframes,SEEK_SET);
-    if (kread_and_test(fil,(char *)m->frames,m->numframes*m->framebytes)) { md2free(m); return nullptr; } 
+    if (kread_and_test(fil,(char *)m->frames,m->numframes*m->framebytes)) { md2free(m); return nullptr; }
     if (m->numglcmds > 0)
     {
         klseek(fil, head.ofsglcmds, SEEK_SET);
@@ -1096,9 +1096,9 @@ static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
     }
 
     klseek(fil, head.ofstris, SEEK_SET);
-    if (kread_and_test(fil, (char *)m->tris, head.numtris * sizeof(md2tri_t))) { md2free(m); return nullptr; } 
+    if (kread_and_test(fil, (char *)m->tris, head.numtris * sizeof(md2tri_t))) { md2free(m); return nullptr; }
     klseek(fil, head.ofsuv, SEEK_SET);
-    if (kread_and_test(fil, (char *)m->uv, head.numuv * sizeof(md2uv_t))) { md2free(m); return nullptr; } 
+    if (kread_and_test(fil, (char *)m->uv, head.numuv * sizeof(md2uv_t))) { md2free(m); return nullptr; }
 #if B_BIG_ENDIAN != 0
     {
         char *f = (char *)m->frames;
@@ -1859,7 +1859,7 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
     k1 = ((float)(tspr->y+spriteext[tspr->owner].mdposition_offset.y-globalposy))*f*(1.f/1024.f);
     f = gcosang2*gshang/gvrcorrection;
     g = gsinang2*gshang/gvrcorrection;
-    
+
     if (tspriteptr[maxspritesonscreen] == tspr)
     {
         k4 = sinf(fix16_to_float((fix16_from_int((tspr->ang - globalang + spriteext[tspr->owner].mdangoff + 1024) & 2047) + qglobalang) & 0x7FFFFFF) * BANG2RAD);
@@ -2294,14 +2294,14 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             if ((i = r_detailmapping ? mdloadskin((md2model_t *) m, skinNum, DETAILPAL, surfi) : 0))
             {
                 auto sk = mdgetskinmap(m, DETAILPAL, skinNum, surfi);
-                
+
                 if (sk != nullptr)
                 {
                     polymost_useDetailMapping(true);
                     polymost_setupdetailtexture(GL_TEXTURE3, i, (sk->flags & HICR_FORCEFILTER) ? (PTH_HIGHTILE | PTH_FORCEFILTER) : PTH_HIGHTILE);
 
                     f = sk->param;
-                    
+
                     glMatrixMode(GL_TEXTURE);
                     glLoadIdentity();
                     glTranslatef(xpanning, ypanning, 1.0f);

@@ -567,7 +567,7 @@ static void Polymost_DetermineTextureFormatSupport(void);
 void polymost_resetVertexPointers()
 {
     buildgl_bindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
-    
+
     glVertexPointer(3, GL_FLOAT, 5 * sizeof(float), 0);
     glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
 
@@ -744,7 +744,7 @@ char polymost_getClamp()
 void polymost_setClamp(char clamp)
 {
     vec2f_t clampy = { float(clamp & 1), float(clamp >> 1) };
-    
+
     if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || clampy == polymost1Clamp)
         return;
 
@@ -858,7 +858,7 @@ void polymost_shadeInterpolate(int32_t shadeInterpolate)
 {
     if (gl.currentShaderProgramID != polymost1CurrentShaderProgramID || shadeInterpolate == polymost1ShadeInterpolate)
         return;
-    
+
     polymost1ShadeInterpolate = shadeInterpolate;
     glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
 }
@@ -1029,7 +1029,7 @@ void polymost_glinit()
              0.5f, 0.0f, 0.0f, 1.0f, 0.0f  //bottom-right
         };
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
-    
+
     //specify format/arrangement for vertex positions:
     glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float) * 5, 0);
     //specify format/arrangement for vertex texture coords:
@@ -1121,7 +1121,7 @@ void polymost_glinit()
     GLuint polymost1BasicVertexShaderID = 0;
     GLuint polymost1ExtendedFragmentShaderID = 0;
     GLuint polymost1BasicFragmentShaderID = 0;
-    
+
     if (!glIsProgram(polymost1ExtendedShaderProgramID))
     {
         polymost1ExtendedShaderProgramID = glCreateProgram();
@@ -2786,7 +2786,7 @@ int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr)
     if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum] && (voxflags[tspr->picnum] & VF_NOTRANS) == VF_NOTRANS)
         return false;
 
-    if ((tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || (tspr->clipdist & TSPR_FLAGS_DRAW_LAST) || 
+    if ((tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || (tspr->clipdist & TSPR_FLAGS_DRAW_LAST) ||
         ((unsigned)tspr->owner < MAXSPRITES && spriteext[tspr->owner].alpha))
         return true;
 
@@ -3170,13 +3170,13 @@ void polymost_bufferVert(vec3f_t const v, vec2f_t const t)
     uint32_t const off = (persistentStreamBuffer * drawpolyVertsOffset + drawpolyVertsCnt++) * 5;
     *(vec3f_t *)(&drawpolyVerts[off]) = v;
     *(vec2f_t*)(&drawpolyVerts[off+3]) = t;
-}    
+}
 
 void polymost_finishBufferedDrawing(int mode)
 {
     if (!persistentStreamBuffer)
         glBufferSubData(GL_ARRAY_BUFFER, drawpolyVertsOffset * sizeof(float) * 5, drawpolyVertsCnt * sizeof(float) * 5, drawpolyVerts);
-    
+
     glDrawArrays(mode, drawpolyVertsOffset, drawpolyVertsCnt);
     drawpolyVertsOffset += drawpolyVertsCnt;
     drawpolyVertsCnt = 0;
@@ -3716,7 +3716,7 @@ static void polymost_drawpoly(vec2f_t const* const dpxy, int32_t const n, int32_
         polymost_drawpoly(dpxy, n, method_);
 
         buildgl_setDisabled(GL_ALPHA_TEST);
-        
+
         if (!nofog)
             polymost_setFogEnabled(true);
 
@@ -3993,7 +3993,7 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
             firstnode = i;
             continue;
         }
-        
+
         if (n0.x >= dm1.x)
             break;
 
@@ -5147,7 +5147,7 @@ void fgetzsofslope(usectorptr_t sec, float dax, float day, float* ceilz, float *
 
     int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
     if (i == 0) return;
-    
+
     float const j = (d.x*(day-wal->y)-d.y*(dax-wal->x))*(1.f/8.f);
     if (sec->ceilingstat&2)
         *ceilz += (sec->ceilingheinum*j)/i;
@@ -5171,7 +5171,7 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
         xys[i].x = v.x * r + ghalfx;
         xys[i].y = v.y * r + ghalfy;
     }
-    
+
     float const fglobalang = fix16_to_float(qglobalang);
     int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
     int8_t const * dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
@@ -5434,7 +5434,7 @@ static void polymost_drawalls(int32_t const bunch)
 
         xtex2.u = ytex2.u = otex2.u = 0;
         xtex2.v = ytex2.v = otex2.v = 0;
-        
+
         // Floor
 
         if (searchit == 2
@@ -5450,7 +5450,7 @@ static void polymost_drawalls(int32_t const bunch)
         }
 
 #ifdef YAX_ENABLE
-        
+
         int32_t checkcf = 0;
         int16_t bn[2] = {};
 
@@ -5874,12 +5874,12 @@ static void polymost_drawalls(int32_t const bunch)
             }
         }
 #endif
-        
+
         doeditorcheck = 0;
 
         // Ceiling
- 
-        if (searchit == 2      
+
+        if (searchit == 2
 #ifdef YAX_ENABLE
             && (yax_getbunch(sectnum, YAX_CEILING) < 0 || showinvisibility || (sec->floorstat&(256+128)) || klabs(yax_globallev-YAX_MAXDRAWS)==YAX_MAXDRAWS)
 #endif
@@ -6303,7 +6303,7 @@ static void polymost_drawalls(int32_t const bunch)
             }
         }
 #endif
-        
+
         doeditorcheck = 0;
 
 #ifdef YAX_ENABLE
@@ -6422,7 +6422,7 @@ static void polymost_drawalls(int32_t const bunch)
             if (((ofy0 < fy0) || (ofy1 < fy1)) && (!((sec->floorstat&sector[nextsectnum].floorstat)&1)))
             {
                 uwallptr_t nwal;
-               
+
                 if (searchit == 2)
                 {
                     psectnum = sectnum;
@@ -7042,7 +7042,7 @@ void polymost_drawrooms()
     }
     //else if (!g_nodraw) { videoEndDrawing(); return; }
 #endif
-    
+
     doeditorcheck = 0;
 
     if (searchit >= 1)
@@ -7973,7 +7973,7 @@ void polymost_mdeditorfunc(tspriteptr_t const tspr)
     s0 = { ghalfx * p0.x * ryp0 + ghalfx, ((float)(xyz.z - globalposz)) * gyxscale * ryp0 + ghoriz };
 
     float const f = ryp0 * fxdimen * (1.0f / 160.f);
-    
+
     vec2_16_t const oldsiz = tilesiz[globalpicnum];
     vec2_t tsiz = { oldsiz.x, oldsiz.y };
 
@@ -9078,7 +9078,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     polymost_setFogEnabled(false);
 
     tspriteptr[maxspritesonscreen] = &tspr;
-    
+
     if (videoGetRenderMode() == REND_POLYMOST)
         polymost_mddraw(&tspr);
 # ifdef POLYMER
@@ -9116,7 +9116,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 # endif
 
     tspriteptr[maxspritesonscreen] = nullptr;
-    
+
     if (!nofog) polymost_setFogEnabled(true);
 
     gvrcorrection = ogvrcorrection;
@@ -9207,7 +9207,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
 #endif
 
     int32_t method = DAMETH_CLAMPED; //Use OpenGL clamping - dorotatesprite never repeats
-    
+
     if (!(dastat & RS_NOMASK))
     {
         buildgl_setEnabled(GL_ALPHA_TEST);
@@ -9803,7 +9803,7 @@ int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t b
 
     bricolor(&p, col);
     bricolor(&b, arbackcol);
-    
+
     if (videoGetRenderMode() < REND_POLYMOST || !in3dmode() || (!polymosttext && gen_font_glyph_tex() < 0))
         return -1;
 

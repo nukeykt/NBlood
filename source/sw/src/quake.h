@@ -36,4 +36,3 @@ int SetPlayerQuake(PLAYERp mpp);
 int SetNuclearQuake(int16_t Weapon);
 int SetSumoQuake(int16_t SpriteNum);
 int SetSumoFartQuake(int16_t SpriteNum);
-

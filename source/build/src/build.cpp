@@ -745,7 +745,7 @@ int app_main(int argc, char const* const* argv)
     if (!bloodhack)
         artLoadFiles("tiles%03i.art", g_maxCacheSize);
 
-    Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");    
+    Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");
 
     InitCustomColors();
 
@@ -1078,7 +1078,7 @@ static void mainloop_move(void)
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.x += (angvel / 32);
             }
-#endif // 
+#endif //
         }
         else
         {
@@ -1110,7 +1110,7 @@ static void mainloop_move(void)
                 silentmessage("2d3d x:%d y:%d", m32_2d3d.x, m32_2d3d.y);
                 m32_2d3d.y -= (vel / 64);
             }
-#endif // 
+#endif //
         }
         else
 

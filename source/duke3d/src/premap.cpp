@@ -37,7 +37,7 @@ static int32_t g_precacheCount;
 static int32_t NET_75_CHECK = 0;
 
 static void flag_precache(int32_t tile, int32_t type)
-{    
+{
     if (!bitmap_test(gotpic, tile))
         g_precacheCount++;
 
@@ -419,7 +419,7 @@ static void G_DoLoadScreen(const char *statustext, int percent)
 }
 
 static void cacheExtraTextureMaps(int tileNum, int type)
-{    
+{
 #ifdef USE_OPENGL
     for (int i = 0; i < MAXPALOOKUPS-RESERVEDPALS-1; i++)
     {
@@ -501,7 +501,7 @@ void G_CacheMapData(void)
         if (bitmap_test(gotpic, i))
         {
             cnt++;
-            
+
             if (waloff[i] == 0)
                 tileLoad((int16_t)i);
 
@@ -516,12 +516,12 @@ void G_CacheMapData(void)
                 }
             }
 
-            gameHandleEvents();            
+            gameHandleEvents();
             if (KB_KeyPressed(sc_Space))
-                break;            
+                break;
         }
         i++;
-        
+
         if (cntDisplayed+(i&7) < cnt-(i&7) && engineFPSLimit(true))
         {
             int const percentComplete = min(100, tabledivide32(100 * cntDisplayed, g_precacheCount));

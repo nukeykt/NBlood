@@ -1157,4 +1157,3 @@ static void _MIDI_InitEMIDI(void)
 
     _MIDI_ResetTracks();
 }
-

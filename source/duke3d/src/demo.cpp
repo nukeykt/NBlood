@@ -73,7 +73,7 @@ void Demo_PrepareWarp(void)
 
 static void Demo_SetAllClocks(int32_t clocktime)
 {
-    totalclock = ototalclock = lockclock = clocktime;    
+    totalclock = ototalclock = lockclock = clocktime;
 }
 
 static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine

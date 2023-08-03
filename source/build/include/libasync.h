@@ -3515,18 +3515,18 @@ static void generic_wait_handler(task_wait_handle wait_task)
 // Wait handler function, per-thread, defaults to generic version
 struct pthread_emulation_thread_wait_handler_key_initializer {
 	pthread_key_t key;
-		
+
 	pthread_emulation_thread_wait_handler_key_initializer()
 	{
 		pthread_key_create(&key, nullptr);
 	}
-		
+
 	~pthread_emulation_thread_wait_handler_key_initializer()
 	{
 		pthread_key_delete(key);
 	}
 };
-	
+
 static pthread_key_t get_thread_wait_handler_key()
 {
 	static pthread_emulation_thread_wait_handler_key_initializer initializer;
@@ -3548,7 +3548,7 @@ static void set_thread_wait_handler_(wait_handler handler)
 	thread_wait_handler = handler;
 #endif
 }
-	
+
 static wait_handler get_thread_wait_handler()
 {
 #if defined(EMULATE_PTHREAD_THREAD_LOCAL)
@@ -3757,7 +3757,7 @@ struct threadpool_data_wrapper {
 #if defined(EMULATE_PTHREAD_THREAD_LOCAL)
 struct pthread_emulation_threadpool_data_initializer {
 	pthread_key_t key;
-	
+
 	pthread_emulation_threadpool_data_initializer()
 	{
 		pthread_key_create(&key, [](void* wrapper_ptr) {
@@ -3765,13 +3765,13 @@ struct pthread_emulation_threadpool_data_initializer {
 			delete wrapper;
 		});
 	}
-		
+
 	~pthread_emulation_threadpool_data_initializer()
 	{
 		pthread_key_delete(key);
 	}
 };
-	
+
 static pthread_key_t get_local_threadpool_data_key()
 {
 	static pthread_emulation_threadpool_data_initializer initializer;
@@ -3785,7 +3785,7 @@ static THREAD_LOCAL threadpool_data* owning_threadpool = nullptr;
 // Current thread's index in the pool
 static THREAD_LOCAL std::size_t thread_id;
 #endif
-	
+
 static void create_threadpool_data(threadpool_data* owning_threadpool_, std::size_t thread_id_)
 {
 #if defined(EMULATE_PTHREAD_THREAD_LOCAL)
@@ -3796,7 +3796,7 @@ static void create_threadpool_data(threadpool_data* owning_threadpool_, std::siz
 	thread_id = thread_id_;
 #endif
 }
-	
+
 static threadpool_data_wrapper get_threadpool_data_wrapper()
 {
 #if defined(EMULATE_PTHREAD_THREAD_LOCAL)
@@ -4071,7 +4071,7 @@ threadpool_scheduler::~threadpool_scheduler()
 void threadpool_scheduler::schedule(task_run_handle t)
 {
 	detail::threadpool_data_wrapper wrapper = detail::get_threadpool_data_wrapper();
-	
+
 	// Check if we are in the thread pool
 	if (wrapper.owning_threadpool == impl.get()) {
 		// Push the task onto our task queue
@@ -4117,4 +4117,3 @@ void threadpool_scheduler::schedule(task_run_handle t)
 # pragma GCC visibility pop
 #endif
 #endif
-

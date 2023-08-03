@@ -554,4 +554,3 @@ getsyncbyte()
     }
 */
 #endif
-

@@ -46,4 +46,3 @@ void StripFilename(char *path);
 void ExtractFileBase(char *path, char *dest);
 
 int ParseNum(char *str);
-

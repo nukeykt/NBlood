@@ -337,4 +337,3 @@ static inline void OSD_SetHistory(int idx, const char *src)
 extern int osdcmd_restartvid(osdcmdptr_t parm);
 
 #endif // osd_h_
-

@@ -95,10 +95,10 @@ void G_DoConveyorInterp(int smoothratio)
     {
         auto s = &sprite[i];
         auto a = &actor[i];
-        
+
         if (s->picnum != SECTOREFFECTOR || a->t_data[4])
             continue;
-        
+
         auto sect = &sector[s->sectnum];
 
         if ((int)(s->lotag == SE_24_CONVEYOR) | (int)(s->lotag == SE_34_CONVEYOR2))
@@ -112,10 +112,10 @@ void G_ResetConveyorInterp(void)
     {
         auto s = &sprite[i];
         auto a = &actor[i];
-        
+
         if (s->picnum != SECTOREFFECTOR || a->t_data[4])
             continue;
-        
+
         auto sect = &sector[s->sectnum];
 
         if ((int)(s->lotag == SE_24_CONVEYOR) | (int)(s->lotag == SE_34_CONVEYOR2))
@@ -339,7 +339,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
         int const endWall   = listSector.wallnum + startWall;
 
         int w = startWall;
-        
+
         for (auto pWall = (uwallptr_t)&wall[startWall]; w < endWall; ++w, ++pWall)
         {
             vec2_t  p        = pSprite->xy;
@@ -427,7 +427,7 @@ wallsfinished:
             if (pDamage != pSprite && bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
             {
                 int spriteDist = dist(pSprite, pDamage);
-                
+
                 if (pDamage->picnum == APLAYER)
                 {
                     int const  playerNum = P_Get(damageSprite);
@@ -968,7 +968,7 @@ void G_AddGameLight(int spriteNum, int sectNum, vec3_t const &offset, int lightR
             pr_actor->lightcolidx = colidx;
             pr_light.color[0] = curpalette[colidx].r;
             pr_light.color[1] = curpalette[colidx].g;
-            pr_light.color[2] = curpalette[colidx].b;            
+            pr_light.color[2] = curpalette[colidx].b;
         }
         else
             pr_actor->lightcolidx = 0;
@@ -1026,14 +1026,14 @@ void G_AddGameLight(int spriteNum, int sectNum, vec3_t const &offset, int lightR
         int colidx = pr_actor->lightcolidx;
         pr_light.color[0] = curpalette[colidx].r;
         pr_light.color[1] = curpalette[colidx].g;
-        pr_light.color[2] = curpalette[colidx].b;          
+        pr_light.color[2] = curpalette[colidx].b;
     }
 #else
     auto unusedParameterWarningsOnConstReferencesSuck = offset;
     UNREFERENCED_PARAMETER(unusedParameterWarningsOnConstReferencesSuck);
     UNREFERENCED_PARAMETER(lightRadius);
     UNREFERENCED_PARAMETER(spriteNum);
-    UNREFERENCED_PARAMETER(sectNum);    
+    UNREFERENCED_PARAMETER(sectNum);
     UNREFERENCED_PARAMETER(lightRange);
     UNREFERENCED_PARAMETER(lightHoriz);
     UNREFERENCED_PARAMETER(lightColor);
@@ -1064,7 +1064,7 @@ void G_InterpolateLights(int smoothratio)
         auto pActor = &actor[pr_light.owner];
         auto &pr_actor = practor[pr_light.owner];
 
-        pr_light.xyz = pSprite->xyz;        
+        pr_light.xyz = pSprite->xyz;
         pr_light.xyz -= pr_actor.lightoffset;
         pr_light.xyz -= { mulscale16(65536 - smoothratio, pSprite->x - pActor->bpos.x),
                          mulscale16(65536 - smoothratio, pSprite->y - pActor->bpos.y),
@@ -1772,7 +1772,7 @@ next_sprite:
 }
 
 ACTOR_STATIC void G_MoveFallers(void)
-{    
+{
     int spriteNum = headspritestat[STAT_FALLER];
 
     while (spriteNum >= 0)
@@ -1869,7 +1869,7 @@ next_sprite:
 }
 
 ACTOR_STATIC void G_MoveStandables(void)
-{    
+{
     int spriteNum = headspritestat[STAT_STANDABLE], j, switchPic;
 
     while (spriteNum >= 0)
@@ -3678,7 +3678,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                                 sprite[newSprite].xrepeat = 6;
                                 sprite[newSprite].yrepeat = 6;
                             }
-                                
+
                             sprite[newSprite].xy -= Proj_GetOffset(newSprite);
 
                             if (pSprite->xrepeat >= 10 && (moveSprite & 49152) == 16384)
@@ -8224,7 +8224,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 if (pSprite->owner == spriteNum)
                 {
                     pSprite->owner = A_FindLocatorWithHiLoTags(pSprite->hitag, pData[0], -1);
-                    
+
                     //reset our elapsed time since reaching a locator
                     pData[1] = 0;
                     //store our starting point
@@ -8829,7 +8829,7 @@ static void A_DoLight(int spriteNum)
         {
             if (!(--practor[spriteNum].lightcount))
                 A_DeleteLight(spriteNum);
-        }    
+        }
     }
     else if (((sector[pSprite->sectnum].floorz - sector[pSprite->sectnum].ceilingz) < 16) || pSprite->z > sector[pSprite->sectnum].floorz || pSprite->z > actor[spriteNum].floorz ||
         (pSprite->picnum != SECTOREFFECTOR && ((pSprite->cstat & 32768) || pSprite->yrepeat < 4)) ||
@@ -8957,7 +8957,7 @@ static void A_DoLight(int spriteNum)
                 if (!practor[spriteNum].lightcount)
                 {
                     // XXX: This block gets CODEDUP'd too much.
-                    vec3_t const offset = { ((sintable[(pSprite->ang+512)&2047])>>6), ((sintable[(pSprite->ang)&2047])>>6), LIGHTZOFF(spriteNum) };                
+                    vec3_t const offset = { ((sintable[(pSprite->ang+512)&2047])>>6), ((sintable[(pSprite->ang)&2047])>>6), LIGHTZOFF(spriteNum) };
                     G_AddGameLight(spriteNum, pSprite->sectnum, offset, LIGHTRAD(spriteNum), 0, 100,
                         240+(160<<8)+(80<<16), pSprite->yrepeat > 32 ? PR_LIGHT_PRIO_HIGH_GAME : PR_LIGHT_PRIO_LOW_GAME);
                 }
@@ -9030,7 +9030,7 @@ static void A_DoLight(int spriteNum)
             case RPG__:
                 G_AddGameLight(spriteNum, pSprite->sectnum, { 0, 0, LIGHTZOFF(spriteNum) }, LIGHTRAD3(spriteNum)<<2, 0, 100,255+(95<<8), PR_LIGHT_PRIO_LOW_GAME);
                 break;
-            case SHOTSPARK1__:            
+            case SHOTSPARK1__:
                 if (AC_ACTION_COUNT(actor[spriteNum].t_data) == 0) // check for first frame of action
                 {
                     vec3_t const offset = { ((sintable[(pSprite->ang+512)&2047])>>6), ((sintable[(pSprite->ang)&2047])>>6), LIGHTZOFF(spriteNum) };

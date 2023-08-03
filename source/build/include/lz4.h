@@ -83,7 +83,7 @@ extern "C" {
 *  Control library symbols visibility.
 */
 
-#define LZ4LIB_VISIBILITY 
+#define LZ4LIB_VISIBILITY
 
 #ifndef LZ4LIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)

@@ -1405,4 +1405,3 @@ void CON_DumpSoundList(void)
     CON_Message("Sounds dumped to dbg.foo");
 
 }
-

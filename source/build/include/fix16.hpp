@@ -58,7 +58,7 @@ class Fix16 {
         Fix16 &operator&=(const Fix16 & rhs) { m_value = fix16_from_int(fix16_to_int(m_value) & fix16_to_int(rhs.m_value)); return *this; }
         Fix16 &operator&=(const fix16_t rhs) { m_value = fix16_from_int(fix16_to_int(m_value) & fix16_to_int(rhs)); return *this; }
         Fix16 &operator&=(const int16_t rhs) { m_value = fix16_from_int(fix16_to_int(m_value) & rhs); return *this; }
-        
+
         Fix16 &operator^=(const Fix16 & rhs) { m_value = fix16_from_int(fix16_to_int(m_value) ^ fix16_to_int(rhs.m_value)); return *this; }
         Fix16 &operator^=(const fix16_t rhs) { m_value = fix16_from_int(fix16_to_int(m_value) ^ fix16_to_int(rhs)); return *this; }
         Fix16 &operator^=(const int16_t rhs) { m_value = fix16_from_int(fix16_to_int(m_value) ^ rhs); return *this; }
@@ -74,7 +74,7 @@ class Fix16 {
         Fix16 &operator>>=(const Fix16 & rhs) { m_value >>= rhs.m_value; return *this; }
         Fix16 &operator>>=(const fix16_t rhs) { m_value >>= rhs; return *this; }
         Fix16 &operator>>=(const int16_t rhs) { m_value >>= fix16_from_int(rhs); return *this; }
-        
+
         const Fix16 operator+(const Fix16 & other) const { return fix16_add(m_value, other.m_value); }
         const Fix16 operator+(const fix16_t other) const { return fix16_add(m_value, other); }
         const Fix16 operator+(const double  other) const { return fix16_add(m_value, fix16_from_dbl(other)); }

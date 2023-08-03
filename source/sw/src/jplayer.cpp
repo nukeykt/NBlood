@@ -896,4 +896,3 @@ void computergetinput(int snum, SW_PACKET *syn)
         }
     */
 }
-

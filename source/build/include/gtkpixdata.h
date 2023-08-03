@@ -21,4 +21,3 @@ extern const EDuke32_GdkPixdata startbanner_pixdata;
 #ifdef __cplusplus
 }
 #endif
-

@@ -198,7 +198,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
             Bstrcat(tempbuf, argv[i++]);
             Bstrcat(tempbuf, " ");
         }
-        
+
         LOG_F(INFO, "%s", tempbuf);
 
         i = 1;

@@ -33,7 +33,7 @@ EDUKE32_STATIC_ASSERT(CLOCK_FREQ <= 1000000000ULL && CLOCK_FREQ >= 1000000ULL);
 # define CLOCK_TYPE CLOCK_MONOTONIC_RAW
 #else
 # define CLOCK_TYPE CLOCK_MONOTONIC
-#endif  
+#endif
 
 static int sys_timer;
 uint64_t   clockLastSampleTime;
@@ -93,7 +93,7 @@ static FORCE_INLINE ATTRIBUTE((flatten)) void timerFenceRDTSC(void)
 }
 
 static FORCE_INLINE ATTRIBUTE((flatten)) uint64_t timerSampleRDTSC(void)
-{    
+{
     timerFenceRDTSC();  // We need to serialize the instruction stream before executing RDTSC.
     uint64_t const result = eduke32_rdtsc();
     timerFenceRDTSC();  // Some sources suggest serialization is also necessary or desirable after RDTSC.

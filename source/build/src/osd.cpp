@@ -156,9 +156,10 @@ const char * OSD_StripColors(char *outBuf, const char *inBuf)
 
 void OSD_HandleClipboard(char* const text)
 {
+    char *remainingText = NULL;
     if (!osd->text.useclipboard) return;
     auto buf = (char*) Xcalloc(1, Bstrlen(text));
-    char const* cp = strtok(text, "\r\n");
+    char const* cp = Bstrtoken(text, "\r\n", &remainingText, 1);
     int cnt = 0;
 
     while (cp != NULL)
@@ -166,7 +167,7 @@ void OSD_HandleClipboard(char* const text)
         ++osd->execdepth;
         OSD_Dispatch(cp);
         --osd->execdepth;
-        cp = strtok(NULL, "\r\n");
+        cp = Bstrtoken(NULL, "\r\n", &remainingText, 1);
         cnt++;
     }
 
@@ -180,6 +181,7 @@ int OSD_Exec(const char *szScript)
     int err = 0;
     int32_t len = 0;
     buildvfs_kfd handle;
+    char *remainingBuf = NULL;
 
     if ((handle = kopen4load(szScript, 0)) == buildvfs_kfd_invalid)
         err = 1;
@@ -206,13 +208,13 @@ int OSD_Exec(const char *szScript)
     kclose(handle);
     buf[len] = '\0';
 
-    char const *cp = strtok(buf, "\r\n");
+    char const *cp = Bstrtoken(buf, "\r\n", &remainingBuf, 1);
 
     ++osd->execdepth;
     while (cp != NULL)
     {
         OSD_Dispatch(cp);
-        cp = strtok(NULL, "\r\n");
+        cp = Bstrtoken(NULL, "\r\n", &remainingBuf, 1);
     }
     --osd->execdepth;
 
@@ -772,10 +774,10 @@ void mi_log(const char *msg, void *arg)
 
     UNREFERENCED_PARAMETER(arg);
     int len = Bstrlen(msg);
-    
+
     while (len > 0 && msg[len-1] == '\n')
         len--;
-    
+
     VLOG_F(LOG_MEM, "%.*s", len, msg);
 };
 
@@ -820,9 +822,9 @@ void OSD_Init(void)
 
     hash_init(&h_osd);
     hash_init(&h_cvars);
-    
+
     mi_register_output((mi_output_fun *)(void *)&mi_log, NULL);
-    
+
     static osdcvardata_t cvars_osd [] =
     {
         { "osdclipboard", "paste text into console from system clipboard with RMB", (void *) &osd->text.useclipboard, CVAR_BOOL, 0, 1 },
@@ -1879,11 +1881,11 @@ void OSD_WritePendingLines(void)
             if (OSD_FilterConsoleMsg(&putstr) < 2)
             {
                 mutex_lock(&osd->log.mutex);
-                
+
                 // this is less than ideal
                 if (osd->log.m_lines->isFull())
                     OSD_UpdateDrawBuffer(true);
-                
+
                 osd->log.m_lines->pushBack(putstr);
                 mutex_unlock(&osd->log.mutex);
             }

@@ -25,9 +25,9 @@ hicreplctyp *hicfindsubst(int picnum, int palnum, int nozero)
     if (!hicreplc[picnum] || !hicinitcounter) return nullptr;
 
     uint8_t const tfn = tilefilenum[picnum];
-    
+
     do
-    {                
+    {
         for (auto hr = hicreplc[picnum]; hr; hr = hr->next)
             if ((hr->palnum == palnum) & (hr->tfn == tfn))
                 return hr;
@@ -50,9 +50,9 @@ hicreplctyp *hicfindskybox(int picnum, int palnum, int nozero)
     if (!hicreplc[picnum] || !hicinitcounter) return nullptr;
 
     uint8_t const tfn = tilefilenum[picnum];
-    
+
     do
-    {        
+    {
         for (auto hr = hicreplc[picnum]; hr; hr = hr->next)
             if (hr->skybox && ((hr->palnum == palnum) & (hr->tfn == tfn)))
                 return hr;
