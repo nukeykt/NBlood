@@ -8,45 +8,103 @@ on:
 
 jobs:
 
-  build-windows-msys2:
+  build:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: x86_64 GCC
+          - name: Windows MSYS2 x86_64 GCC
+            os: windows-latest
+            shell: 'msys2 {0}'
             sys: mingw64
             env: x86_64
+            make: make
+            opt: SDLCONFIG=
             publish-as: win64
-          - name: i686 GCC
+          - name: Windows MSYS2 i686 GCC
+            os: windows-latest
+            shell: 'msys2 {0}'
             sys: mingw32
             env: i686
+            make: make
+            opt: SDLCONFIG=
             pkg: nasm
             publish-as: win32
-          - name: x86_64 GCC without SDL
+          - name: Windows MSYS2 x86_64 GCC without SDL
+            os: windows-latest
+            shell: 'msys2 {0}'
             sys: mingw64
             env: x86_64
+            make: make
             opt: RENDERTYPE=WIN
-    name: Windows MSYS2 ${{matrix.name}}
-    runs-on: windows-latest
+          - name: Linux GCC
+            os: ubuntu-latest
+            shell: bash
+            pkg: libsdl2-dev
+            make: make
+          - name: Linux GCC SDL 1.2
+            os: ubuntu-latest
+            shell: bash
+            pkg: libsdl1.2-dev
+            opt: SDL_TARGET=1
+            make: make
+          - name: Linux Clang
+            os: ubuntu-latest
+            shell: bash
+            pkg: libsdl2-dev clang
+            opt: CLANG=1
+            make: make
+          - name: Linux Clang without GL
+            os: ubuntu-latest
+            shell: bash
+            pkg: libsdl2-dev clang
+            opt: CLANG=1 USE_OPENGL=0
+            make: make
+          - name: Linux Clang without Polymer
+            os: ubuntu-latest
+            shell: bash
+            pkg: libsdl2-dev clang
+            opt: CLANG=1 POLYMER=0
+            make: make
+          - name: macOS Clang
+            os: macos-latest
+            shell: sh
+            make: gmake
+    name: ${{matrix.name}}
+    runs-on: ${{matrix.os}}
     defaults:
       run:
-        shell: msys2 {0}
+        shell: ${{matrix.shell}}
     steps:
     - uses: actions/checkout@v3
 
-    - uses: msys2/setup-msys2@v2
+    - name: install-prerequisites-windows-msys2
+      if: matrix.shell == 'msys2 {0}'
+      uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
         update: true
         cache: true
         install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
 
+    - name: install-prerequisites-linux
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libflac-dev libvpx-dev libgtk2.0-dev ${{matrix.pkg}}
+
+    - name: install-prerequisites-macos
+      if: runner.os == 'macOS'
+      run: |
+        brew install sdl2 flac libvpx make ${{matrix.pkg}}
+        brew unlink lz4
+
     - name: fetch full history
       if: github.ref == 'refs/heads/master' && matrix.publish-as != ''
       run: git fetch --unshallow
 
     - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
+      run: ${{matrix.make}} -j2 duke3d sw blood rr exhumed kenbuild tools ${{matrix.opt}}
 
     - name: prepare artifacts
       if: github.ref == 'refs/heads/master' && matrix.publish-as != ''
@@ -64,49 +122,3 @@ jobs:
         name: ${{matrix.publish-as}}
         path: upload/
         if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
-
-  build-linux:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: GCC
-            pkg: libsdl2-dev
-          - name: GCC SDL 1.2
-            pkg: libsdl1.2-dev
-            opt: SDL_TARGET=1
-          - name: Clang
-            pkg: libsdl2-dev clang
-            opt: CLANG=1
-          - name: Clang without GL
-            pkg: libsdl2-dev clang
-            opt: CLANG=1 USE_OPENGL=0
-          - name: Clang without Polymer
-            pkg: libsdl2-dev clang
-            opt: CLANG=1 POLYMER=0
-    name: Linux ${{matrix.name}}
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: install-prerequisites
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libflac-dev libvpx-dev libgtk2.0-dev ${{matrix.pkg}}
-
-    - name: build
-      run: make -j2 duke3d sw blood rr exhumed kenbuild tools ${{matrix.opt}}
-
-  build-macos:
-    name: macOS Clang
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: install-prerequisites
-      run: |
-        brew install sdl2 flac libvpx make
-        brew unlink lz4
-
-    - name: build
-      run: gmake -j2 duke3d sw blood rr exhumed kenbuild tools
