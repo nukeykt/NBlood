@@ -16,54 +16,12 @@ jobs:
           - name: x86_64 GCC
             sys: mingw64
             env: x86_64
-            label: win64
+            publish-as: win64
           - name: i686 GCC
             sys: mingw32
             env: i686
             pkg: nasm
-            label: win32
-    name: Windows MSYS2 ${{matrix.name}}
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - uses: actions/checkout@v3
-
-    - uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{matrix.sys}}
-        update: true
-        cache: true
-        install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
-
-    - name: build
-      run: |
-        git fetch --unshallow
-        make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
-
-    - name: prepare artifacts
-      if: github.ref == 'refs/heads/master'
-      run: |
-        mkdir -p upload/nblood/
-        mkdir -p upload/rednukem/
-        mkdir -p upload/pcexhumed/
-        cp nblood.exe upload/nblood/
-        cp rednukem.exe upload/rednukem/
-        cp pcexhumed.exe upload/pcexhumed/
-
-    - uses: actions/upload-artifact@v2
-      if: github.ref == 'refs/heads/master'
-      with:
-        name: ${{matrix.label}}
-        path: upload/
-        if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
-
-  build-windows-msys2-testonly:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
+            publish-as: win32
           - name: x86_64 GCC without SDL
             sys: mingw64
             env: x86_64
@@ -83,8 +41,29 @@ jobs:
         cache: true
         install: git mingw-w64-${{matrix.env}}-toolchain make ${{matrix.pkg}}
 
+    - name: fetch full history
+      if: github.ref == 'refs/heads/master' && matrix.publish-as != ''
+      run: git fetch --unshallow
+
     - name: build
       run: make -j2 duke3d sw blood rr exhumed kenbuild tools SDLCONFIG= ${{matrix.opt}}
+
+    - name: prepare artifacts
+      if: github.ref == 'refs/heads/master' && matrix.publish-as != ''
+      run: |
+        mkdir -p upload/nblood/
+        mkdir -p upload/rednukem/
+        mkdir -p upload/pcexhumed/
+        cp nblood.exe upload/nblood/
+        cp rednukem.exe upload/rednukem/
+        cp pcexhumed.exe upload/pcexhumed/
+
+    - uses: actions/upload-artifact@v2
+      if: github.ref == 'refs/heads/master' && matrix.publish-as != ''
+      with:
+        name: ${{matrix.publish-as}}
+        path: upload/
+        if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
 
   build-linux:
     strategy:
