@@ -5469,6 +5469,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         {
             char *fileName;
 
+            int32_t bakpathsearchmode = pathsearchmode;
             pathsearchmode = 1;
             if (!scriptfile_getstring(pScript,&fileName) && firstPass)
             {
@@ -5482,7 +5483,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                 }
             }
 
-            pathsearchmode = 0;
+            pathsearchmode = bakpathsearchmode;
         }
         break;
         case T_CACHESIZE:
