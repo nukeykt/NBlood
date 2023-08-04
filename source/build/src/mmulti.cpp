@@ -88,7 +88,7 @@ static char *pakmem;
 static int pakmemi = 1;
 
 #define NETPORT 0x5bd9
-static SOCKET mysock;
+static SOCKET mysock = (SOCKET) INVALID_SOCKET;
 static int myip, myport = NETPORT, otherip[MAXPLAYERS], otherport[MAXPLAYERS];
 static int snatchip = 0, snatchport = 0, netready = 0;
 
