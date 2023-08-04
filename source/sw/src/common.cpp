@@ -158,8 +158,8 @@ static void SW_AddSearchPaths()
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
-    char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
-    char *xdg_config_path = getenv("XDG_CONFIG_DIR");
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_DIR");
 
     // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
@@ -200,8 +200,6 @@ static void SW_AddSearchPaths()
     }
 
     Xfree(homepath);
-    Xfree(xdg_docs_path);
-    Xfree(xdg_config_path);
 
     addsearchpath("/usr/share/games/jfsw");
     addsearchpath("/usr/local/share/games/jfsw");
