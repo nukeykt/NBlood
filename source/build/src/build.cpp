@@ -10001,7 +10001,6 @@ static int32_t menuselect(void)
     int32_t listsize;
     int32_t i;
     char ch, buffer[96];
-    const int32_t bakpathsearchmode = pathsearchmode;
 
     Bstrcpy(selectedboardfilename, g_oldpath);
     tweak_sboardfilename();
@@ -10283,8 +10282,6 @@ static int32_t menuselect(void)
 
         return 0;
     }
-
-    pathsearchmode = bakpathsearchmode;
 
     return -1;
 }
