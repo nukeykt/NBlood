@@ -949,7 +949,8 @@ void viewCorrectPrediction(void)
     }
     spritetype *pSprite = gMe->pSprite;
     VIEW *pView = &predictFifo[(gNetFifoTail-1)&255];
-    if (gMe->q16ang != pView->at30 || pView->at24 != gMe->q16horiz || pView->at50 != pSprite->x || pView->at54 != pSprite->y || pView->at58 != pSprite->z)
+    const char bCalPrediction = !VanillaMode() || (gMe->q16ang != pView->at30 || pView->at24 != gMe->q16horiz || pView->at50 != pSprite->x || pView->at54 != pSprite->y || pView->at58 != pSprite->z);
+    if (bCalPrediction)
     {
         viewInitializePrediction();
         predictOld = gPrevView[myconnectindex];
