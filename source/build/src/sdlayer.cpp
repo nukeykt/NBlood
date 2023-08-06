@@ -2096,6 +2096,38 @@ void videoShowFrame(int32_t w)
 
         MicroProfileFlip();
 
+        if (glinfo.reset_notification)
+        {
+            static const auto glGetGraphicsReset = glGetGraphicsResetStatus ? glGetGraphicsResetStatus : glGetGraphicsResetStatusKHR;
+            auto status = glGetGraphicsReset();
+            if (status != GL_NO_ERROR)
+            {
+                do
+                {
+                    switch (status)
+                    {
+                    case GL_GUILTY_CONTEXT_RESET:
+                        LOG_F(ERROR, "OPENGL CONTEXT LOST: GUILTY!");
+                        break;
+                    case GL_INNOCENT_CONTEXT_RESET:
+                        LOG_F(ERROR, "OPENGL CONTEXT LOST: INNOCENT!");
+                        break;
+                    case GL_UNKNOWN_CONTEXT_RESET:
+                        LOG_F(ERROR, "OPENGL CONTEXT LOST!");
+                        break;
+                    }
+                } while ((status = glGetGraphicsReset()) != GL_NO_ERROR);
+
+                videoResetMode();
+
+                if (videoSetGameMode(fullscreen, xres, yres, bpp, upscalefactor))
+                {
+                    LOG_F(ERROR, "Failed to reset video mode after lost OpenGL context; terminating.");
+                    Bexit(EXIT_FAILURE);
+                }
+            }
+        }
+
         // attached overlays and streaming hooks tend to change the GL state without setting it back
 
         if (w != -1)
@@ -2728,14 +2760,6 @@ int32_t handleevents_pollsdl(void)
 }
 #endif
 
-/**
- * Returns true after at least 100ms have passed to prevent bottlenecking the handleevents() function.
- */
-static INLINE bool shouldPollGlResetStatus(uint64_t lastGlResetStatusTicks)
-{
-    return timerGetNanoTicks() - lastGlResetStatusTicks >= (timerGetNanoTickRate() / 10);
-}
-
 int32_t handleevents(void)
 {
 #ifdef __ANDROID__
@@ -2810,42 +2834,6 @@ int32_t handleevents(void)
     timerUpdateClock();
 
     communityapiRunCallbacks();
-
-#ifdef USE_OPENGL
-    static uint64_t lastGlResetStatusTicks = 0;
-    if (!nogl && glinfo.reset_notification && shouldPollGlResetStatus(lastGlResetStatusTicks))
-    {
-        lastGlResetStatusTicks = timerGetNanoTicks();
-        static const auto glGetGraphicsReset = glGetGraphicsResetStatusKHR ? glGetGraphicsResetStatusKHR : glGetGraphicsResetStatus;
-        auto status = glGetGraphicsReset();
-        if (status != GL_NO_ERROR)
-        {
-            do
-            {
-                switch (status)
-                {
-                    case GL_GUILTY_CONTEXT_RESET:
-                        LOG_F(ERROR, "OPENGL CONTEXT LOST: GUILTY!");
-                        break;
-                    case GL_INNOCENT_CONTEXT_RESET:
-                        LOG_F(ERROR, "OPENGL CONTEXT LOST: INNOCENT!");
-                        break;
-                    case GL_UNKNOWN_CONTEXT_RESET:
-                        LOG_F(ERROR, "OPENGL CONTEXT LOST!");
-                        break;
-                }
-            } while ((status = glGetGraphicsReset()) != GL_NO_ERROR);
-
-            videoResetMode();
-
-            if (videoSetGameMode(fullscreen,xres,yres,bpp,upscalefactor))
-            {
-                LOG_F(ERROR, "Failed to reset video mode after lost OpenGL context; terminating.");
-                Bexit(EXIT_FAILURE);
-            }
-        }
-    }
-#endif
 
     if (!frameplace && sdl_resize.x)
     {
