@@ -572,7 +572,9 @@ void A_Fall(int const spriteNum)
 #endif
         if (pSprite->z >= actor[spriteNum].floorz - AC_FZOFFSET(spriteNum))
         {
+            actor[spriteNum].bpos.z -= pSprite->z;
             pSprite->z = actor[spriteNum].floorz - AC_FZOFFSET(spriteNum);
+            actor[spriteNum].bpos.z += pSprite->z;
             pSprite->zvel = 0;
         }
 }
@@ -1117,13 +1119,16 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         }
     }
 
+    actor[spriteNum].bpos.z -= pSprite->z;
     if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->xy))
     {
         pSprite->z = newZ + A_GetWaterZOffset(spriteNum);
+        actor[spriteNum].bpos.z += pSprite->z;
         return;
     }
 
     pSprite->z = newZ;
+    actor[spriteNum].bpos.z += pSprite->z;
     pSprite->zvel = 0;
 }
 
