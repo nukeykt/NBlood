@@ -169,7 +169,7 @@ static void SW_AddSearchPaths()
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
     const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
-    const char *xdg_config_path = getenv("XDG_CONFIG_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
     // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
@@ -196,7 +196,7 @@ static void SW_AddSearchPaths()
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Shadow_Warrior_Classic_Complete", SW_Add_GOG_SWCC_Linux);
 
     if (xdg_config_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/VoidSW", xdg_config_path);
+        Bsnprintf(buf, sizeof(buf), "%s/voidsw", xdg_config_path);
         SW_AddPathAndMusic(buf);
     }
 

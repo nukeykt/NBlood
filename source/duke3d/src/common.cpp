@@ -598,7 +598,7 @@ void G_AddSearchPaths(void)
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
     const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
-    const char *xdg_config_path = getenv("XDG_CONFIG_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
     // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
@@ -625,7 +625,7 @@ void G_AddSearchPaths(void)
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "ION_Fury", Fury_Add_GOG_Linux);
 
     if (xdg_config_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/EDuke32", xdg_config_path);
+        Bsnprintf(buf, sizeof(buf), "%s/eduke32", xdg_config_path);
         addsearchpath(buf);
     }
 
