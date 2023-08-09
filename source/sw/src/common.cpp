@@ -151,6 +151,18 @@ static void SW_AddSteamPaths(const char *basepath)
 #endif
 #endif
 
+#if defined __linux__ || defined EDUKE32_BSD || defined EDUKE32_OSX
+static void SW_AddPathAndMusic(const char *path)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s", path);
+    addsearchpath(buf);
+    Bsnprintf(buf, sizeof(buf), "%s/music", path);
+    addsearchpath(buf);
+}
+#endif
+
 static void SW_AddSearchPaths()
 {
 #ifndef EDUKE32_STANDALONE
@@ -158,8 +170,8 @@ static void SW_AddSearchPaths()
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
-    char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
-    char *xdg_config_path = getenv("XDG_CONFIG_DIR");
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
     // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
@@ -186,28 +198,26 @@ static void SW_AddSearchPaths()
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Shadow_Warrior_Classic_Complete", SW_Add_GOG_SWCC_Linux);
 
     if (xdg_config_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/VoidSW", xdg_config_path);
-        addsearchpath(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/voidsw", xdg_config_path);
+        SW_AddPathAndMusic(buf);
     }
 
     if (xdg_docs_path) {
         Bsnprintf(buf, sizeof(buf), "%s/VoidSW", xdg_docs_path);
-        addsearchpath(buf);
+        SW_AddPathAndMusic(buf);
     }
     else {
         Bsnprintf(buf, sizeof(buf), "%s/Documents/VoidSW", homepath);
-        addsearchpath(buf);
+        SW_AddPathAndMusic(buf);
     }
 
     Xfree(homepath);
-    Xfree(xdg_docs_path);
-    Xfree(xdg_config_path);
 
-    addsearchpath("/usr/share/games/jfsw");
-    addsearchpath("/usr/local/share/games/jfsw");
-    addsearchpath("/usr/share/games/voidsw");
-    addsearchpath("/usr/local/share/games/voidsw");
-    addsearchpath("/app/extensions/extra");
+    SW_AddPathAndMusic("/usr/share/games/jfsw");
+    SW_AddPathAndMusic("/usr/local/share/games/jfsw");
+    SW_AddPathAndMusic("/usr/share/games/voidsw");
+    SW_AddPathAndMusic("/usr/local/share/games/voidsw");
+    SW_AddPathAndMusic("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
     int32_t i;
@@ -242,9 +252,9 @@ static void SW_AddSearchPaths()
     for (i = 0; i < 2; i++)
     {
         Bsnprintf(buf, sizeof(buf), "%s/JFSW", support[i]);
-        addsearchpath(buf);
+        SW_AddPathAndMusic(buf);
         Bsnprintf(buf, sizeof(buf), "%s/VoidSW", support[i]);
-        addsearchpath(buf);
+        SW_AddPathAndMusic(buf);
     }
 
     for (i = 0; i < 2; i++)
