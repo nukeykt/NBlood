@@ -151,6 +151,7 @@ static void SW_AddSteamPaths(const char *basepath)
 #endif
 #endif
 
+#if defined __linux__ || defined EDUKE32_BSD || defined EDUKE32_OSX
 static void SW_AddPathAndMusic(const char *path)
 {
     char buf[BMAX_PATH];
@@ -160,6 +161,7 @@ static void SW_AddPathAndMusic(const char *path)
     Bsnprintf(buf, sizeof(buf), "%s/music", path);
     addsearchpath(buf);
 }
+#endif
 
 static void SW_AddSearchPaths()
 {
@@ -211,11 +213,11 @@ static void SW_AddSearchPaths()
 
     Xfree(homepath);
 
-    addsearchpath("/usr/share/games/jfsw");
-    addsearchpath("/usr/local/share/games/jfsw");
-    addsearchpath("/usr/share/games/voidsw");
-    addsearchpath("/usr/local/share/games/voidsw");
-    addsearchpath("/app/extensions/extra");
+    SW_AddPathAndMusic("/usr/share/games/jfsw");
+    SW_AddPathAndMusic("/usr/local/share/games/jfsw");
+    SW_AddPathAndMusic("/usr/share/games/voidsw");
+    SW_AddPathAndMusic("/usr/local/share/games/voidsw");
+    SW_AddPathAndMusic("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
     int32_t i;
@@ -250,9 +252,9 @@ static void SW_AddSearchPaths()
     for (i = 0; i < 2; i++)
     {
         Bsnprintf(buf, sizeof(buf), "%s/JFSW", support[i]);
-        addsearchpath(buf);
+        SW_AddPathAndMusic(buf);
         Bsnprintf(buf, sizeof(buf), "%s/VoidSW", support[i]);
-        addsearchpath(buf);
+        SW_AddPathAndMusic(buf);
     }
 
     for (i = 0; i < 2; i++)
