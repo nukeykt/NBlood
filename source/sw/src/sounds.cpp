@@ -1322,10 +1322,10 @@ void MusicStartup(void)
 
 void COVER_SetReverb(int amt)
 {
-    if (gs.AltReverb)
+    if (gs.AltReverb) // use reverb from blood
     {
         FX_SetReverb(amt ? 128 : 0);
-        FX_SetReverbDelay(amt ? 10 : 0);
+        FX_SetReverbDelay(10);
     }
     else
     {
