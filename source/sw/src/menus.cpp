@@ -198,10 +198,11 @@ MenuItem sound_i[] =
 
     //{DefButton(btn_talking, 0, "Talking"), OPT_XS,            OPT_LINE(4), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
     {DefButton(btn_ambience, 0, "Ambience"), OPT_XS,          OPT_LINE(4), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
+    {DefButton(btn_reverb, 0, "Alt Reverb"), OPT_XS,          OPT_LINE(5), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
 #ifdef ASS_REVERSESTEREO
-    {DefButton(btn_flipstereo, 0, "Flip Stereo"), OPT_XS,     OPT_LINE(5), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
+    {DefButton(btn_flipstereo, 0, "Flip Stereo"), OPT_XS,     OPT_LINE(6), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
 #endif
-    //{DefButton(btn_playcd, 0, "Play CD"), OPT_XS,         OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
+    //{DefButton(btn_playcd, 0, "Play CD"), OPT_XS,         OPT_LINE(7), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefNone}
 };
 
@@ -2103,6 +2104,7 @@ MNU_InitMenus(void)
 
     buttonsettings[btn_voxels] = gs.Voxels;
     buttonsettings[btn_ambience] = gs.Ambient;
+    buttonsettings[btn_reverb] = gs.AltReverb;
     buttonsettings[btn_playcd] = gs.PlayCD;
     buttonsettings[btn_flipstereo] = gs.FlipStereo;
     buttonsettings[btn_stats] = gs.Stats;
@@ -3340,6 +3342,10 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
                         StopAmbientSound();
                 }
             }
+            break;
+        case btn_reverb:
+            last_value = gs.AltReverb;
+            gs.AltReverb = state = buttonsettings[item->button];
             break;
         case btn_flipstereo:
             last_value = gs.FlipStereo;

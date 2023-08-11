@@ -1322,7 +1322,15 @@ void MusicStartup(void)
 
 void COVER_SetReverb(int amt)
 {
-    FX_SetReverb(amt);
+    if (gs.AltReverb)
+    {
+        FX_SetReverb(amt ? 128 : 0);
+        FX_SetReverbDelay(amt ? 10 : 0);
+    }
+    else
+    {
+        FX_SetReverb(amt);
+    }
 }
 
 /*
