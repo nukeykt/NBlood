@@ -7798,6 +7798,13 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
             sm.lerp = sm.goal = sm0.goal;
         else
         {
+            if (dastat & RS_NOPOSLERP)
+                sm.lerp.xy = sm.goal.xy = sm0.goal.xy;
+            if (dastat & RS_NOZOOMLERP)
+                sm.lerp.z = sm.goal.z = sm0.goal.z;
+            if (dastat & RS_NOANGLERP)
+                sm.lerp.a = sm.goal.a = sm0.goal.a;
+
             sm0.lerp = { sm.goal.x - mulscale16(65536-rotatespritesmoothratio, sm.goal.x - sm.lerp.x),
                          sm.goal.y - mulscale16(65536-rotatespritesmoothratio, sm.goal.y - sm.lerp.y),
                          sm.goal.z - mulscale16(65536-rotatespritesmoothratio, sm.goal.z - sm.lerp.z),
