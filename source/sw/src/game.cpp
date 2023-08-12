@@ -212,6 +212,7 @@ const GAME_SET gs_defaults =
     TRUE, // Music on
     TRUE, // talking
     TRUE, // ambient
+    FALSE, // alt reverb
     FALSE, // Flip Stereo
 
 // Network game settings

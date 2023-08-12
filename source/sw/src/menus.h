@@ -206,7 +206,7 @@ typedef enum
 {
     btn_none, btn_auto_run, btn_crosshair, btn_auto_aim,
     btn_mouse_aim, btn_messages, btn_mouse_invert, btn_bobbing, btn_shadows,
-    btn_sound, btn_music, btn_talking, btn_ambience, btn_flipstereo,
+    btn_sound, btn_music, btn_talking, btn_ambience, btn_reverb, btn_flipstereo,
     btn_res0, btn_res1, btn_res2, btn_res3, btn_res4, btn_res5, btn_res6,
     btn_markers, btn_teamplay, btn_friendlyfire,btn_parental,btn_nuke,
     btn_voxels, btn_stats, btn_playcd,

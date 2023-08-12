@@ -51,6 +51,7 @@ typedef struct
     SWBOOL MusicOn;
     SWBOOL Talking;
     SWBOOL Ambient;
+    SWBOOL AltReverb;
     SWBOOL FlipStereo;
 // Net Options from Menus
     uint8_t NetGameType;   // 0=DeathMatch [spawn], 1=Cooperative 2=DeathMatch [no spawn]
