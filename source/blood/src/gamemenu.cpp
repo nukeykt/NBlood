@@ -41,6 +41,7 @@ CGameMenuMgr gGameMenuMgr;
 
 extern CGameMenuItemPicCycle itemSorryPicCycle;
 extern CGameMenuItemQAV itemBloodQAV;
+static CGameMenuItemZEdit *pGameMenuItemZEdit = NULL;
 
 CMenuTextMgr::CMenuTextMgr()
 {
@@ -122,6 +123,8 @@ bool CGameMenuMgr::Push(CGameMenu *pMenu, int nItem)
     InitializeMenu();
     m_menuchange_watchpoint = 1;
     m_mousecaught = 1;
+    if (pGameMenuItemZEdit) // deselect last actively edited item
+        pGameMenuItemZEdit->at30 = 0, pGameMenuItemZEdit = NULL;
     return true;
 }
 
@@ -137,6 +140,8 @@ void CGameMenuMgr::Pop(void)
             pActiveMenu = pMenuStack[nMenuPointer-1];
 
         m_menuchange_watchpoint = 1;
+        if (pGameMenuItemZEdit) // deselect last actively edited item
+            pGameMenuItemZEdit->at30 = 0, pGameMenuItemZEdit = NULL;
     }
     m_mousecaught = 1;
 }
@@ -1906,7 +1911,6 @@ void CGameMenuItemZEdit::Draw(void)
 bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
 {
     static char buffer[256];
-    static CGameMenuItemZEdit *pGameMenuItemZEdit = NULL;
     // Hack
     if (event.at2 == sc_kpad_2 || event.at2 == sc_kpad_4 || event.at2 == sc_kpad_6 || event.at2 == sc_kpad_8)
         event.at0 = kMenuEventKey;
@@ -1936,7 +1940,7 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
             at30 = 0;
             return false;
         }
-        else // unselect previously edited item
+        else // deselect last actively edited item
         {
             if (!pGameMenuItemZEdit)
                 pGameMenuItemZEdit = this;
