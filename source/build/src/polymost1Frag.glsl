@@ -60,7 +60,7 @@ void main()
 {
     vec2 coord = mix(gl_TexCoord[0].xy,gl_TexCoord[0].yx,u_usePalette);
     float modCoordYnpotEmulationFactor = mod(coord.y,u_npotEmulation.y);
-    coord.xy = vec2(floor(modCoordYnpotEmulationFactor)*u_npotEmulation.x+coord.x, floor(coord.y*u_npotEmulation.y)+modCoordYnpotEmulationFactor);
+    coord.xy = vec2(floor(modCoordYnpotEmulationFactor)*u_npotEmulation.x+coord.x, floor(coord.y*u_npotEmulation.w)+modCoordYnpotEmulationFactor);
     vec2 newCoord = mix(gl_TexCoord[0].xy,mix(coord.xy,coord.yx,u_usePalette),u_npotEmulation.z);
 #ifdef GL_ARB_shader_texture_lod
     vec2 texCoord = mix(fract(newCoord.xy), clamp(newCoord.xy, c_zero, c_one), u_clamp);
@@ -106,12 +106,10 @@ void main()
     color.rgb = mix(gl_Fog.color.rgb, color.rgb, fogFactor);
 
 #ifdef POLYMOST1_EXTENDED
-    coordY = mix(gl_TexCoord[4].y,gl_TexCoord[4].x,u_usePalette);
-    coordX = mix(gl_TexCoord[4].x,gl_TexCoord[4].y,u_usePalette);
-    period = floor(coordY/u_npotEmulationFactor);
-    coordX += u_npotEmulationXOffset*floor(mod(coordY,u_npotEmulationFactor));
-    coordY = period+mod(coordY,u_npotEmulationFactor);
-    newCoord = mix(gl_TexCoord[4].xy,mix(vec2(coordX,coordY),vec2(coordY,coordX),u_usePalette),u_npotEmulation);
+    coord = mix(gl_TexCoord[4].xy,gl_TexCoord[4].yx,u_usePalette);
+    modCoordYnpotEmulationFactor = mod(coord.y,u_npotEmulation.y);
+    coord.xy = vec2(floor(modCoordYnpotEmulationFactor)*u_npotEmulation.x+coord.x, floor(coord.y*u_npotEmulation.w)+modCoordYnpotEmulationFactor);
+    newCoord = mix(gl_TexCoord[4].xy,mix(coord.xy,coord.yx,u_usePalette),u_npotEmulation.z);
     vec4 glowColor = texture2D(s_glow, newCoord);
     color.rgb = mix(color.rgb, glowColor.rgb, u_useGlowMapping * glowColor.a * -(u_useColorOnly-c_one));
 #endif
