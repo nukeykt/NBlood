@@ -59,7 +59,7 @@ void main()
 {
     vec2 coord = mix(gl_TexCoord[0].xy,gl_TexCoord[0].yx,u_usePalette);
     float modCoordYnpotEmulationFactor = mod(coord.y,u_npotEmulation.y);
-    coord.xy = vec2(floor(modCoordYnpotEmulationFactor)*u_npotEmulation.x+coord.x, floor(coord.y*u_npotEmulation.y)+modCoordYnpotEmulationFactor);
+    coord.xy = vec2(floor(modCoordYnpotEmulationFactor)*u_npotEmulation.x+coord.x, floor(coord.y*u_npotEmulation.w)+modCoordYnpotEmulationFactor);
     vec2 newCoord = mix(gl_TexCoord[0].xy,mix(coord.xy,coord.yx,u_usePalette),u_npotEmulation.z);
 #ifdef GL_ARB_shader_texture_lod
     vec2 texCoord = mix(fract(newCoord.xy), clamp(newCoord.xy, c_zero, c_one), u_clamp);
