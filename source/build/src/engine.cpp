@@ -7787,14 +7787,18 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
         sm0 = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK), clock };
 
-        auto lerpWouldLookDerp = [&](void)
-        {
-            return !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
-                   || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
-                   && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
-        };
+        bool const lerpWouldLookDerp = !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
+                                       || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
+                                       && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
 
-        if (lerpWouldLookDerp())
+        if (clock - sm.clock >= 4 || sm0.goal != sm.goal)
+        {
+            sm.lerp = sm.goal;
+            sm.goal = sm0.goal;
+            sm.clock = sm0.clock;
+        }
+
+        if (lerpWouldLookDerp)
             sm.lerp = sm.goal = sm0.goal;
         else
         {
@@ -7813,13 +7817,6 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
         sm.picnum = sm0.picnum;
         sm.flags  = sm0.flags;
-
-        if (clock - sm.clock > 1 || sm0.goal != sm.goal)
-        {
-            sm.lerp  = sm.goal;
-            sm.goal  = sm0.goal;
-            sm.clock = sm0.clock;
-        }
 
         if (r_rotatespriteinterp)
         {
