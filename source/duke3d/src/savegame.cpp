@@ -2522,7 +2522,9 @@ static void postloadplayer(int32_t savegamep)
     //7
     for (i=0; i<MAXPLAYERS; i++)
     {
-        if (g_player[i].ps->gravity == 0 && g_player[i].ps->floorzoffset == 0)
+        // This ensures compatibility with some older savegames where these values didn't exist.
+        if ((g_player[i].ps->gravity == 0 && g_player[i].ps->floorzoffset == 0)
+            || (g_player[i].ps->floorzrebound == 0 && g_player[i].ps->floorzcutoff == 0))
             P_ResetOffsets(g_player[i].ps);
 
         g_player[i].playerquitflag = 1;
