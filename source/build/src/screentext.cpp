@@ -206,7 +206,7 @@ static inline void AddCoordsFromRotation(vec2_t *coords, const vec2_t *unitDirec
 // screentext
 vec2_t screentextRender(ScreenText_t const & data)
 {
-    if (data.text == NULL)
+    if (data.text == NULL || data.zoom <= 0)
         return {};
 
     glyph_t const * text = data.text;
