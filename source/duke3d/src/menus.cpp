@@ -1889,23 +1889,23 @@ static void Menu_PopulateJoystick(void)
     M_JOYSTICKAXES.numEntries = joystick.numAxes;
 }
 
-#define MAXBNSTRINGLINES 8
-#define MAXBNLINELEN (MAXGAMEFUNCLEN + 3)
+static char const s_ellipsis[] = "...";
+
+#define MAX_GAMEFUNC_CONFLICTS 8
+#define OVERRIDE_MESSAGE_BUFSIZE (MAX_GAMEFUNC_CONFLICTS * (MAXGAMEFUNCLEN + 1) + ARRAY_SIZE(s_ellipsis))
 
 // these values are used for the keybind override verification
-static MenuCustom2Col_t* s_saved_keycolumn = nullptr;
-static int32_t s_saved_scancode = 0xFF;
-static char* s_override_gfstring = nullptr;
-static int32_t s_gfstring_linecount = 0;
+static MenuCustom2Col_t* s_savedKeyColumn = nullptr;
+static int32_t s_savedScanCode = 0xFF;
 
+static int32_t numConflictingGamefuncs = 0;
+static char s_overrideGamefuncMessage[OVERRIDE_MESSAGE_BUFSIZE];
 static void Menu_RefreshBoundGamefuncNames(const int32_t sc)
 {
-    int const bbufsize = MAXBNSTRINGLINES * MAXBNLINELEN + 5;
-    s_override_gfstring = (char*) Xrealloc(s_override_gfstring, bbufsize);
-    s_override_gfstring[0] = '\0';
-
-    s_gfstring_linecount = 0;
-    for (int i = 0; i < M_KEYBOARDKEYS.numEntries && s_gfstring_linecount < MAXBNSTRINGLINES; i++)
+    numConflictingGamefuncs = 0;
+    s_overrideGamefuncMessage[0] = '\0';
+    size_t bytesWritten = 0;
+    for (int i = 0; i < M_KEYBOARDKEYS.numEntries && numConflictingGamefuncs <= MAX_GAMEFUNC_CONFLICTS; ++i)
     {
         if (i == M_KEYBOARDKEYS.currentEntry)
             continue;
@@ -1917,11 +1917,12 @@ static void Menu_RefreshBoundGamefuncNames(const int32_t sc)
         auto iterCol = (MenuCustom2Col_t*) entryPtr->entry;
         if ((*iterCol->column[0] == sc) | (*iterCol->column[1] == sc))
         {
-            if (s_gfstring_linecount == MAXBNSTRINGLINES - 1)
-                Bstrncat(s_override_gfstring, "...\n", bbufsize);
-            else
-                Bsnprintf(tempbuf, bbufsize, "%s\"%s\"\n", s_override_gfstring, M_KEYBOARDKEYS.entrylist[i]->name);
-            s_gfstring_linecount++;
+            size_t const bytesRemaining = OVERRIDE_MESSAGE_BUFSIZE - bytesWritten;
+            char const * const name = numConflictingGamefuncs < MAX_GAMEFUNC_CONFLICTS
+                                    ? M_KEYBOARDKEYS.entrylist[i]->name
+                                    : s_ellipsis;
+            bytesWritten += Bsnprintf(s_overrideGamefuncMessage + bytesWritten, bytesRemaining, "%s\n", name);
+            ++numConflictingGamefuncs;
         }
     }
 }
@@ -3239,10 +3240,10 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t* entry, const vec2_t origin)
         break;
     case MENU_KEYOVERRIDEVERIFY:
         videoFadeToBlack(1);
-        if (s_override_gfstring)
+        if (s_overrideGamefuncMessage[0])
         {
-            Bsprintf(tempbuf, "Key already assigned to:\n\n%s\nClear existing binds?", s_override_gfstring);
-            Menu_DrawVerifyPrompt(origin.x, origin.y - (4<<16) - (s_gfstring_linecount * (3<<16)), tempbuf, s_gfstring_linecount + 4);
+            Bsnprintf(tempbuf, ARRAY_SIZE(tempbuf), "Key already assigned to:\n\n%s\nClear existing binds?", s_overrideGamefuncMessage);
+            Menu_DrawVerifyPrompt(origin.x, origin.y - (4<<16) - (numConflictingGamefuncs * (3<<16)), tempbuf, numConflictingGamefuncs + 4);
         }
         break;
 
@@ -3655,8 +3656,8 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
 
                     if (cvar_kbconfirm && alreadyAssigned)
                     {
-                        s_saved_scancode = sc;
-                        s_saved_keycolumn = column;
+                        s_savedScanCode = sc;
+                        s_savedKeyColumn = column;
                         Menu_RefreshBoundGamefuncNames(sc);
 
                         KB_ClearKeyDown(sc_N);
@@ -4575,10 +4576,9 @@ static void Menu_Verify(int32_t input)
             CONFIG_SetGameControllerDefaults();
         break;
     case MENU_KEYOVERRIDEVERIFY:
-        Bassert(s_saved_keycolumn != nullptr);
+        Bassert(s_savedKeyColumn != nullptr);
         if (input)
-            Menu_SetKeyboardScanCode(s_saved_keycolumn, M_KEYBOARDKEYS.currentColumn, s_saved_scancode, input == 1);
-        DO_FREE_AND_NULL(s_override_gfstring);
+            Menu_SetKeyboardScanCode(s_savedKeyColumn, M_KEYBOARDKEYS.currentColumn, s_savedScanCode, input == 1);
         break;
 
     case MENU_QUIT:
