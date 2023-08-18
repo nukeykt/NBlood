@@ -133,7 +133,7 @@ static void VM_DeleteSprite(int const spriteNum, int const playerNum)
         return;
 
     // if player was set to squish, first stop that...
-    if (EDUKE32_PREDICT_FALSE(playerNum >= 0 && g_player[playerNum].ps->actorsqu == spriteNum))
+    if (playerNum >= 0 && g_player[playerNum].ps->actorsqu == spriteNum)
         g_player[playerNum].ps->actorsqu = -1;
 
     A_DeleteSprite(spriteNum);
@@ -278,7 +278,7 @@ static int VM_CheckSquished(void)
         vm.pSprite->xvel = 0;
 
 #ifndef EDUKE32_STANDALONE
-    if (EDUKE32_PREDICT_FALSE(vm.pSprite->pal == 1)) // frozen
+    if (vm.pSprite->pal == 1) // frozen
     {
         vm.pActor->htpicnum = SHOTSPARK1;
         vm.pActor->htextra  = 1;
@@ -557,9 +557,9 @@ void A_Fall(int const spriteNum)
     auto const pSprite = &sprite[spriteNum];
     int spriteGravity = g_spriteGravity;
 
-    if (EDUKE32_PREDICT_FALSE(G_CheckForSpaceFloor(pSprite->sectnum)))
+    if (G_CheckForSpaceFloor(pSprite->sectnum))
         spriteGravity = 0;
-    else if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER || EDUKE32_PREDICT_FALSE(G_CheckForSpaceCeiling(pSprite->sectnum)))
+    else if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER || G_CheckForSpaceCeiling(pSprite->sectnum))
         spriteGravity = g_spriteGravity/6;
 
     int32_t ceilhit, florhit;
@@ -1077,9 +1077,9 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 
     pSprite->xoffset = pSprite->yoffset = 0;
 
-    if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER || EDUKE32_PREDICT_FALSE(G_CheckForSpaceCeiling(pSprite->sectnum)))
+    if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER || G_CheckForSpaceCeiling(pSprite->sectnum))
         spriteGravity = g_spriteGravity/6;
-    else if (EDUKE32_PREDICT_FALSE(G_CheckForSpaceFloor(pSprite->sectnum)))
+    else if (G_CheckForSpaceFloor(pSprite->sectnum))
         spriteGravity = 0;
 
     if (!actor[spriteNum].cgg-- || (sector[pSprite->sectnum].floorstat&2))
@@ -5669,7 +5669,7 @@ breakfor:
                                     if (structType == STRUCT_SPRITE)
                                     {
                                         secondaryIndex = (ActorLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++, vm.spriteNum, vm.playerNum) : -1;
-                                        returnValue = VM_GetSprite(index, labelNum, (EDUKE32_PREDICT_FALSE(secondaryIndex < 0)) ? 0: secondaryIndex);
+                                        returnValue = VM_GetSprite(index, labelNum, (secondaryIndex < 0) ? 0: secondaryIndex);
                                     }
                                     else
                                         returnValue = VM_GetStruct(ActorLabels[labelNum].flags, (intptr_t *)((intptr_t)&sprite[index] + ActorLabels[labelNum].offset));
@@ -5725,8 +5725,8 @@ breakfor:
                                     labelName = PlayerLabels[labelNum].name;
                                     if (structType == STRUCT_PLAYER)
                                     {
-                                        secondaryIndex = (EDUKE32_PREDICT_FALSE(PlayerLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++, vm.spriteNum, vm.playerNum) : -1;
-                                        returnValue = VM_GetPlayer(index, labelNum, (EDUKE32_PREDICT_FALSE(secondaryIndex < 0)) ? 0: secondaryIndex);
+                                        secondaryIndex = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++, vm.spriteNum, vm.playerNum) : -1;
+                                        returnValue = VM_GetPlayer(index, labelNum, (secondaryIndex < 0) ? 0: secondaryIndex);
                                     }
                                     else returnValue = VM_GetStruct(PlayerLabels[labelNum].flags, (intptr_t *)((intptr_t)&g_player[index].ps[0] + PlayerLabels[labelNum].offset));
                                     break;
@@ -5775,8 +5775,8 @@ breakfor:
                                 case STRUCT_USERDEF:
                                     structName = "userdef";
                                     labelName = UserdefsLabels[labelNum].name;
-                                    secondaryIndex = (EDUKE32_PREDICT_FALSE(UserdefsLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++) : -1;
-                                    returnValue   = VM_GetUserdef(labelNum, (EDUKE32_PREDICT_FALSE(secondaryIndex < 0)) ? 0: secondaryIndex);
+                                    secondaryIndex = (UserdefsLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : -1;
+                                    returnValue   = VM_GetUserdef(labelNum, (secondaryIndex < 0) ? 0: secondaryIndex);
                                     break;
                                 default:
                                     // invalid struct type -- this should never happen
@@ -5785,7 +5785,7 @@ breakfor:
                             }
 
                             Bsprintf(tempbuf, "%s:%d: addlog %s", VM_FILENAME(insptr), VM_DECODE_LINE_NUMBER(g_tw), structName);
-                            if (EDUKE32_PREDICT_TRUE(index >= 0))
+                            if (index >= 0)
                             {
                                 Bsprintf(szBuf, "[%d]", index);
                                 Bstrcat(tempbuf, szBuf);
@@ -5794,7 +5794,7 @@ breakfor:
                             Bsprintf(szBuf, ".%s", labelName);
                             Bstrcat(tempbuf, szBuf);
 
-                            if (EDUKE32_PREDICT_FALSE(secondaryIndex >= 0))
+                            if (secondaryIndex >= 0)
                             {
                                 Bsprintf(szBuf, "[%d]", secondaryIndex);
                                 Bstrcat(tempbuf, szBuf);
@@ -6967,7 +6967,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     }
 #endif
 
-    if (EDUKE32_PREDICT_FALSE((unsigned)vm.pSprite->sectnum >= MAXSECTORS))
+    if ((unsigned)vm.pSprite->sectnum >= MAXSECTORS)
     {
         if (A_CheckEnemySprite(vm.pSprite))
             P_AddKills(vm.pPlayer, 1);
@@ -7005,7 +7005,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
             {
                 // hack for 1.3D fire sprites
 #ifndef EDUKE32_STANDALONE
-                if (!FURY && EDUKE32_PREDICT_FALSE(g_scriptVersion == 13 && ((int)(vm.pSprite->picnum == FIRE) | (int)(vm.pSprite->picnum == FIRE2))))
+                if (!FURY && (g_scriptVersion == 13 && ((int)(vm.pSprite->picnum == FIRE) | (int)(vm.pSprite->picnum == FIRE2))))
                     return;
 #endif
                 changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);
