@@ -412,13 +412,38 @@ static void sv_update_app_title(int mapidx)
         G_UpdateAppTitle();
 }
 
-static void sv_update_filename(char * filename, const int mapidx, const int maxpath) {
+static void sv_update_filename(char * filename, const int mapidx, const int maxpath)
+{
     if (boardfilename[0])
         Bstrncpyz(filename, boardfilename, maxpath);
     else if (g_mapInfo[mapidx].filename)
         Bstrncpyz(filename, g_mapInfo[mapidx].filename, maxpath);
     else
         filename[0] = '\0';
+}
+
+static void sv_viewscreen_cleanup()
+{
+    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+    {
+        if (g_activeVscrTile[vscrIndex] >= 0)
+            walock[g_activeVscrTile[vscrIndex]] = CACHE1D_UNLOCKED;
+        g_activeVscrSprite[vscrIndex] = -1;
+        g_activeVscrTile[vscrIndex] = -1;
+    }
+
+    int spriteNum = headspritestat[STAT_STANDABLE];
+    while (spriteNum >= 0)
+    {
+        switch (tileGetMapping(sprite[spriteNum].picnum)) {
+            case VIEWSCREEN__:
+            case VIEWSCREEN2__:
+                T1(spriteNum) = 0;
+                T2(spriteNum) = -1;
+            break;
+        }
+        spriteNum = nextspritestat[spriteNum];
+    }
 }
 
 // XXX: keyboard input 'blocked' after load fail? (at least ESC?)
@@ -643,20 +668,12 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
         sjson_destroy_context(ctx);
 
-        for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
-        {
-            g_activeVscrSprite[vscrIndex] = -1;
-            g_activeVscrTile[vscrIndex] = -1;
-        }
-
         if (G_EnterLevel(MODE_GAME|MODE_EOL))
             G_BackToMenu();
 
-
+        sv_viewscreen_cleanup();
         // postloadplayer(1);
-
         // sv_postudload();
-
         sv_update_app_title(mapidx);
         VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek);
 
@@ -729,12 +746,6 @@ int32_t G_LoadPlayer(savebrief_t & sv)
         sv_loadMhk(mhkInfo, currentboardfilename);
     }
 
-    for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
-    {
-        g_activeVscrSprite[vscrIndex] = -1;
-        g_activeVscrTile[vscrIndex] = -1;
-    }
-
     if (status == 2)
         G_NewGame_EnterLevel();
     else if ((status = sv_loadsnapshot(fil, 0, &h)))  // read the rest...
@@ -746,6 +757,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     }
 
     sv_postudload();  // ud.m_XXX = ud.XXX
+    sv_viewscreen_cleanup();
     sv_update_app_title(mapidx);
     VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek, -1, h.userbytever);
     kclose(fil);
