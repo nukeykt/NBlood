@@ -4652,8 +4652,9 @@ static void P_ProcessWeapon(int playerNum)
                 {
                     if (!(PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_SEMIAUTO))
                     {
-                        if (TEST_SYNC_KEY(playerBits, SK_FIRE) == 0 && (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_RESET || WW2GI))
+                        if (TEST_SYNC_KEY(playerBits, SK_FIRE) == 0 && WW2GI)
                             *weaponFrame = PWEAPON(playerNum, pPlayer->curr_weapon, TotalTime);
+
                         if (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_FIREEVERYTHIRD)
                         {
                             if (((*(weaponFrame))%3) == 0)
@@ -4675,6 +4676,10 @@ static void P_ProcessWeapon(int playerNum)
 //                                P_DoWeaponSpawn(snum);
                             }
                         }
+
+                        if (TEST_SYNC_KEY(playerBits, SK_FIRE) == 0 && !WW2GI && (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_RESET))
+                            *weaponFrame = PWEAPON(playerNum, pPlayer->curr_weapon, TotalTime);
+
                         if (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_RESET
                             && (*weaponFrame) > PWEAPON(playerNum, pPlayer->curr_weapon, TotalTime)
                                                 - PWEAPON(playerNum, pPlayer->curr_weapon, HoldDelay)
