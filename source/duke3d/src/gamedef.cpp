@@ -66,21 +66,25 @@ static bool g_checkingCase;
 static bool g_dynamicSoundMapping;
 static bool g_dynamicTileMapping;
 static bool g_labelsOnly;
-static bool g_processingState;
 static bool g_skipBranch;
 static bool g_switchCountPhase = false;
 
+static int g_processingState;
 static int g_checkingIfElse;
 static int g_checkingSwitch;
 static int g_lastKeyword = -1;
 static int g_numBraces;
 static int g_numCases;
 
-static intptr_t apScriptGameEventEnd[MAXEVENTS];
+static intptr_t* apScriptGameEventEnd;
 static intptr_t g_scriptActorOffset;
 static intptr_t g_scriptEventBreakOffset;
 static intptr_t g_scriptEventChainOffset;
 static intptr_t g_scriptEventOffset;
+
+static intptr_t* apScriptStateEnd;
+static intptr_t g_scriptStateBreakOffset;
+static intptr_t g_scriptStateChainOffset;
 
 // The pointer to the start of the case table in a switch statement.
 // First entry is 'default' code.
@@ -166,6 +170,7 @@ static tokenmap_t const vm_keywords[] =
     { "angoff",                 CON_ANGOFF },
     { "angoffvar",              CON_ANGOFF },
     { "appendevent",            CON_APPENDEVENT },
+    { "appendstate",            CON_APPENDSTATE },
     { "betaname",               CON_BETANAME },
     { "break",                  CON_BREAK },
     { "cactor",                 CON_CACTOR },
@@ -425,6 +430,7 @@ static tokenmap_t const vm_keywords[] =
     { "paper",                  CON_PAPER },
     { "pkick",                  CON_PKICK },
     { "precache",               CON_PRECACHE },
+    { "prependstate",           CON_PREPENDSTATE },
     { "prevspritesect",         CON_PREVSPRITESECT },
     { "prevspritestat",         CON_PREVSPRITESTAT },
     { "preloadtrackslotforswap", CON_PRELOADTRACKSLOTFORSWAP },
@@ -1047,6 +1053,7 @@ const char *EventNames[MAXEVENTS] =
 };
 
 uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
+uint8_t *bitstate; // pointer to bitmap of which bytecode positions contain the label index of a state
 
 hashtable_t h_arrays   = { MAXGAMEARRAYS >> 1, NULL };
 hashtable_t h_gamevars = { MAXGAMEVARS >> 1, NULL };
@@ -1077,11 +1084,13 @@ static void C_SetScriptSize(int32_t newsize)
 
     auto newscript = (intptr_t *)Xrealloc(apScript, newsize * sizeof(intptr_t));
     bitptr = (uint8_t *)Xrealloc(bitptr, new_bitptr_size);
+    bitstate = (uint8_t *)Xrealloc(bitstate, new_bitptr_size);
 
     if (newsize > g_scriptSize)
     {
         Bmemset(&newscript[g_scriptSize], 0, (newsize - g_scriptSize) * sizeof(intptr_t));
         Bmemset(&bitptr[old_bitptr_size], 0, new_bitptr_size - old_bitptr_size);
+        Bmemset(&bitstate[old_bitptr_size], 0, new_bitptr_size - old_bitptr_size);
     }
 
     if (apScript != newscript)
@@ -1269,20 +1278,34 @@ static void C_GetNextLabelName(void)
 
 static inline void scriptWriteValue(int32_t const value)
 {
-    bitmap_clear(bitptr, g_scriptPtr-apScript);
+    auto const index = g_scriptPtr - apScript;
+    bitmap_clear(bitptr, index);
+    bitmap_clear(bitstate, index);
     *g_scriptPtr++ = value;
 }
 
 // addresses passed to these functions must be within the block of memory pointed to by apScript
 static inline void scriptWriteAtOffset(int32_t const value, intptr_t * const addr)
 {
-    bitmap_clear(bitptr, addr-apScript);
+    auto const index = addr - apScript;
+    bitmap_clear(bitptr, index);
+    bitmap_clear(bitstate, index);
     *(addr) = value;
 }
 
 static inline void scriptWritePointer(intptr_t const value, intptr_t * const addr)
 {
-    bitmap_set(bitptr, addr-apScript);
+    auto const index = addr - apScript;
+    bitmap_set(bitptr, index);
+    bitmap_clear(bitstate, index);
+    *(addr) = value;
+}
+
+static inline void scriptWriteStateLocation(int32_t const value, intptr_t * const addr)
+{
+    auto const index = addr - apScript;
+    bitmap_clear(bitptr, index);
+    bitmap_set(bitstate, index);
     *(addr) = value;
 }
 
@@ -2553,7 +2576,7 @@ DO_DEFSTATE:
                 labelcode[g_labelCnt] = g_scriptPtr-apScript;
                 labeltype[g_labelCnt] = LABEL_STATE;
 
-                g_processingState = 1;
+                g_processingState = g_labelCnt;
                 Bsprintf(g_szCurrentBlockName,"%s",LAST_LABEL);
 
                 if (EDUKE32_PREDICT_FALSE(hash_find(&h_keywords,LAST_LABEL)>=0))
@@ -2600,8 +2623,64 @@ DO_DEFSTATE:
                 VLOG_F(LOG_CON, "%s:%d: debug: state label '%s'.", g_scriptFileName, g_lineNumber, label+(j<<6));
 
             // 'state' type labels are always script addresses, as far as I can see
-            scriptWritePointer((intptr_t)(apScript+labelcode[j]), g_scriptPtr++);
+            scriptWriteStateLocation(j, g_scriptPtr++); // write label index into the bytecode to be updated at the end of processing
             continue;
+
+        case CON_PREPENDSTATE:
+        case CON_APPENDSTATE:
+        {
+            if (EDUKE32_PREDICT_FALSE(g_processingState || g_scriptActorOffset))
+            {
+                C_ReportError(ERROR_FOUNDWITHIN);
+                g_errorCnt++;
+                continue;
+            }
+
+            C_GetNextLabelName();
+            g_scriptPtr--;
+
+            int const currentOffset = g_scriptPtr - apScript;
+            int const stateLabelNum = hash_find(&h_labels, LAST_LABEL);
+
+            if (EDUKE32_PREDICT_FALSE(stateLabelNum < 0))
+            {
+                C_ReportError(-1);
+                LOG_F(ERROR, "%s:%d: error: state '%s' not found.", g_scriptFileName, g_lineNumber, LAST_LABEL);
+                g_errorCnt++;
+                g_scriptPtr++;
+                continue;
+            }
+
+            if (EDUKE32_PREDICT_FALSE((labeltype[stateLabelNum] & LABEL_STATE) != LABEL_STATE))
+            {
+                char* gl = (char*)C_GetLabelType(labeltype[stateLabelNum]);
+                C_ReportError(-1);
+                LOG_F(ERROR, "%s:%d: expected state, found %s.", g_scriptFileName, g_lineNumber, gl);
+                g_errorCnt++;
+                g_scriptPtr++;
+                continue;  // valid label name, but wrong type
+            }
+
+            g_processingState = stateLabelNum;
+            Bsprintf(g_szCurrentBlockName, "%s", LAST_LABEL);
+            LOG_F(INFO, "Processing State %s", g_szCurrentBlockName);
+
+            if (tw == CON_PREPENDSTATE)
+            {
+                g_scriptStateChainOffset = labelcode[stateLabelNum];
+                labelcode[stateLabelNum] = currentOffset;
+            }
+            else
+            {
+                auto previous_state_end = apScript + apScriptStateEnd[stateLabelNum];
+                scriptWriteAtOffset(CON_JUMP | LINE_NUMBER, previous_state_end++);
+                scriptWriteAtOffset(GV_FLAG_CONSTANT, previous_state_end++);
+                C_FillEventBreakStackWithJump((intptr_t*)*previous_state_end, currentOffset);
+                scriptWriteAtOffset(currentOffset, previous_state_end++);
+            }
+
+            continue;
+        }
 
         case CON_ENDS:
             if (EDUKE32_PREDICT_FALSE(g_processingState == 0))
@@ -2625,7 +2704,29 @@ DO_DEFSTATE:
                 g_checkingSwitch = 0; // can't be checking anymore...
             }
 
-            g_processingState = 0;
+            if (g_scriptStateChainOffset) // Prepending a state?
+            {
+                g_scriptPtr--;
+                scriptWriteValue(CON_JUMP | LINE_NUMBER);
+                scriptWriteValue(GV_FLAG_CONSTANT);
+                scriptWriteValue(g_scriptStateChainOffset);
+                scriptWriteValue(CON_ENDS | LINE_NUMBER);
+
+                C_FillEventBreakStackWithJump((intptr_t*)g_scriptStateBreakOffset, g_scriptStateChainOffset);
+
+                g_scriptStateChainOffset = 0;
+            }
+            else
+            {
+                int const stateLabelNum = g_processingState;
+                // pad space for the next potential appendstate
+                apScriptStateEnd[stateLabelNum] = &g_scriptPtr[-1] - apScript;
+                scriptWriteValue(CON_ENDS | LINE_NUMBER);
+                scriptWriteValue(g_scriptStateBreakOffset);
+                scriptWriteValue(CON_ENDS | LINE_NUMBER);
+            }
+
+            g_processingState = g_scriptStateBreakOffset = 0;
             Bsprintf(g_szCurrentBlockName,"(none)");
             continue;
 
@@ -6058,6 +6159,14 @@ repeatcase:
                 scriptWriteValue(g_scriptEventBreakOffset);
                 g_scriptEventBreakOffset = &g_scriptPtr[-1] - apScript;
             }
+            else if (g_processingState)
+            {
+                g_scriptPtr--;
+                scriptWriteValue(CON_JUMP | LINE_NUMBER);
+                scriptWriteValue(GV_FLAG_CONSTANT);
+                scriptWriteValue(g_scriptStateBreakOffset);
+                g_scriptStateBreakOffset = &g_scriptPtr[-1] - apScript;
+            }
             continue;
 
         case CON_SCRIPTSIZE:
@@ -6483,7 +6592,8 @@ static int C_GetLabelIndex(int32_t val, int type)
 void C_Compile(const char *fileName)
 {
     Bmemset(apScriptEvents, 0, sizeof(apScriptEvents));
-    Bmemset(apScriptGameEventEnd, 0, sizeof(apScriptGameEventEnd));
+    apScriptGameEventEnd = (intptr_t *)Xcalloc(MAXEVENTS, sizeof(intptr_t));
+    apScriptStateEnd = (intptr_t *)Xcalloc(MAXLABELS, sizeof(intptr_t));
 
     for (auto & i : g_tile)
         Bmemset(&i, 0, sizeof(tiledata_t));
@@ -6538,6 +6648,7 @@ void C_Compile(const char *fileName)
 
     apScript = (intptr_t *)Xcalloc(1, g_scriptSize * sizeof(intptr_t));
     bitptr   = (uint8_t *)Xcalloc(1, (bitmap_size(g_scriptSize) + 1) * sizeof(uint8_t));
+    bitstate = (uint8_t *)Xcalloc(1, (bitmap_size(g_scriptSize) + 1) * sizeof(uint8_t));
 
     g_errorCnt   = 0;
     g_labelCnt   = 0;
@@ -6576,8 +6687,9 @@ void C_Compile(const char *fileName)
         }
     }
 
-    for (intptr_t i : apScriptGameEventEnd)
+    for (auto p = apScriptGameEventEnd, p_end = p + MAXEVENTS; p < p_end; ++p)
     {
+        auto i = *p;
         if (!i)
             continue;
 
@@ -6592,12 +6704,44 @@ void C_Compile(const char *fileName)
         }
     }
 
+    for (auto p = apScriptStateEnd, p_end = p + MAXLABELS; p < p_end; ++p)
+    {
+        auto i = *p;
+        if (!i)
+            continue;
+
+        auto const stateEnd = apScript + i;
+        auto breakPtr = (intptr_t*)*(stateEnd + 2);
+
+        while (breakPtr)
+        {
+            breakPtr = apScript + (intptr_t)breakPtr;
+            scriptWriteAtOffset(CON_ENDS | LINE_NUMBER, breakPtr - 2);
+            breakPtr = (intptr_t*)*breakPtr;
+        }
+    }
+
+    for (int i = 0; i < g_scriptSize - 1; ++i)
+    {
+        if (bitmap_test(bitstate, i))
+        {
+            auto const bytecodePtr = apScript + i;
+            auto const oldValue = *bytecodePtr;
+            auto const newValue = (intptr_t)(apScript + labelcode[oldValue]);
+            scriptWritePointer(newValue, bytecodePtr);
+        }
+    }
+
     g_totalLines += g_lineNumber;
 
     C_SetScriptSize(g_scriptPtr-apScript+8);
 
     VLOG_F(LOG_CON, "Compiled %d bytes in %ums%s", (int)((intptr_t)g_scriptPtr - (intptr_t)apScript),
                timerGetTicks() - startcompiletime, C_ScriptVersionString(g_scriptVersion));
+
+    DO_FREE_AND_NULL(apScriptGameEventEnd);
+    DO_FREE_AND_NULL(apScriptStateEnd);
+    DO_FREE_AND_NULL(bitstate);
 
     for (auto i : tables_free)
         hash_free(i);
