@@ -961,7 +961,7 @@ static void VM_AddWeapon(DukePlayer_t * const pPlayer, int const weaponNum, int 
     }
     else if (pPlayer->ammo_amount[weaponNum] >= pPlayer->max_ammo_amount[weaponNum])
     {
-        vm.flags |= VM_NOEXECUTE;
+        vm.flags |= VM_RETURN;
         return;
     }
 
@@ -978,7 +978,7 @@ static void VM_AddAmmo(DukePlayer_t * const pPlayer, int const weaponNum, int co
 
     if (pPlayer->ammo_amount[weaponNum] >= pPlayer->max_ammo_amount[weaponNum])
     {
-        vm.flags |= VM_NOEXECUTE;
+        vm.flags |= VM_RETURN;
         return;
     }
 
@@ -1163,7 +1163,7 @@ static int32_t VM_ResetPlayer(int const playerNum, int32_t vmFlags, int32_t cons
             QuickLoadFailure:
             g_player[playerNum].ps->gm = MODE_RESTART;
         }
-        vmFlags |= VM_NOEXECUTE;
+        vmFlags |= VM_RETURN;
     }
     else
     {
@@ -1395,7 +1395,7 @@ static void ResizeArray(int const arrayNum, int const newSize)
 # define vmErrorCase VINST_CON_OPCODE_END
 # define eval(INSTRUCTION) { goto *jumpTable[INSTRUCTION]; }
 # define dispatch_unconditionally(...) { eval((VM_DECODE_INST((g_tw = tw = *insptr)))) }
-# define dispatch(...) { if (!vm_execution_depth | ((vm.flags & (VM_RETURN|VM_KILL|VM_NOEXECUTE)) != 0)) return; dispatch_unconditionally(__VA_ARGS__); }
+# define dispatch(...) { if (!vm_execution_depth | ((vm.flags & (VM_RETURN|VM_KILL)) != 0)) return; dispatch_unconditionally(__VA_ARGS__); }
 # define abort_after_error(...) return
 # define vInstructionPointer(KEYWORDID) &&VINST_ ## KEYWORDID
 # define COMMA ,
@@ -6703,7 +6703,7 @@ badindex:
         }
 #ifndef CON_USE_COMPUTED_GOTO
     }
-    while (vm_execution_depth && (vm.flags & (VM_RETURN|VM_KILL|VM_NOEXECUTE)) == 0);
+    while (vm_execution_depth && (vm.flags & (VM_RETURN|VM_KILL)) == 0);
 #endif
 }
 
@@ -6722,7 +6722,7 @@ void A_LoadActor(int const spriteNum)
     vm.playerDist = -1;                           // Distance
     vm.pPlayer    = g_player[0].ps;
 
-    vm.flags &= ~(VM_RETURN|VM_KILL|VM_NOEXECUTE);
+    vm.flags &= ~(VM_RETURN|VM_KILL);
 
     if ((unsigned)vm.pSprite->sectnum >= MAXSECTORS)
     {
