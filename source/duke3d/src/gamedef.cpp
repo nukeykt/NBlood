@@ -72,6 +72,7 @@ static bool g_switchCountPhase = false;
 static int g_processingState;
 static int g_checkingIfElse;
 static int g_checkingSwitch;
+static int g_checkingLoop;
 static int g_lastKeyword = -1;
 static int g_numBraces;
 static int g_numCases;
@@ -192,6 +193,7 @@ static tokenmap_t const vm_keywords[] =
     { "clipmove",               CON_CLIPMOVE },
     { "clipmovenoslide",        CON_CLIPMOVENOSLIDE },
     { "cmenu",                  CON_CMENU },
+    { "continue",               CON_CONTINUE },
     { "copy",                   CON_COPY },
     { "cos",                    CON_COS },
     { "count",                  CON_COUNT },
@@ -245,6 +247,7 @@ static tokenmap_t const vm_keywords[] =
     { "eshootvar",              CON_ESHOOT },
     { "espawnvar",              CON_ESPAWN },
     { "eventloadactor",         CON_EVENTLOADACTOR },
+    { "exit",                   CON_EXIT },
     { "ezshootvar",             CON_EZSHOOT },
     { "fall",                   CON_FALL },
     { "findnearactor3dvar",     CON_FINDNEARACTOR3D },
@@ -4649,15 +4652,23 @@ setvarvar:
                 auto const offset = g_scriptPtr - apScript;
                 g_scriptPtr++; // Leave a spot for the fail location
 
+                auto const isLoop = tw == CON_WHILEVARVARE || tw == CON_WHILEVARVARN || tw == CON_WHILEVARVARL;
+
+                if (isLoop)
+                    ++g_checkingLoop;
+
                 C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
 
+                if (isLoop)
+                    --g_checkingLoop;
+
                 auto const tempscrptr = apScript + offset;
                 scriptWritePointer((intptr_t)g_scriptPtr, tempscrptr);
 
-                if (tw != CON_WHILEVARVARE && tw != CON_WHILEVARVARN && tw != CON_WHILEVARVARL)
+                if (!isLoop)
                 {
                     j = C_GetKeyword();
 
@@ -4703,15 +4714,23 @@ ifvar:
                 auto const offset = g_scriptPtr - apScript;
                 g_scriptPtr++; //Leave a spot for the fail location
 
+                auto const isLoop = tw == CON_WHILEVARE || tw == CON_WHILEVARN || tw == CON_WHILEVARL;
+
+                if (isLoop)
+                    ++g_checkingLoop;
+
                 C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
 
+                if (isLoop)
+                    --g_checkingLoop;
+
                 auto const tempscrptr = apScript + offset;
                 scriptWritePointer((intptr_t)g_scriptPtr, tempscrptr);
 
-                if (tw != CON_WHILEVARE && tw != CON_WHILEVARN && tw != CON_WHILEVARL)
+                if (!isLoop)
                 {
                     j = C_GetKeyword();
 
@@ -4743,7 +4762,9 @@ ifvar:
             intptr_t const offset = g_scriptPtr-apScript;
             g_scriptPtr++; //Leave a spot for the location to jump to after completion
 
+            ++g_checkingLoop;
             C_ParseCommand();
+            --g_checkingLoop;
 
             // write relative offset
             auto const tscrptr = (intptr_t *) apScript+offset;
@@ -6133,6 +6154,21 @@ repeatcase:
             {
                 g_checkingCase = false;
                 return 1;
+            }
+            continue;
+
+        case CON_CONTINUE:
+            g_scriptPtr--;
+            scriptWriteValue(CON_BREAK | LINE_NUMBER);
+            fallthrough__;
+        case CON_EXIT:
+            if (!g_checkingLoop)
+            {
+                C_ReportError(-1);
+                LOG_F(ERROR, "%s:%d: found '%s' statement when not in loop", g_scriptFileName,
+                      g_lineNumber, tw == CON_EXIT ? "exit" : "continue");
+                ++g_errorCnt;
+                continue;
             }
             continue;
 
