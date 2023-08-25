@@ -1048,10 +1048,6 @@ const char *EventNames[MAXEVENTS] =
 
 uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
 
-#define BITPTR_SET(x) bitmap_set(bitptr, x)
-#define BITPTR_CLEAR(x) bitmap_clear(bitptr, x)
-#define BITPTR_IS_POINTER(x) bitmap_test(bitptr, x)
-
 hashtable_t h_arrays   = { MAXGAMEARRAYS >> 1, NULL };
 hashtable_t h_gamevars = { MAXGAMEVARS >> 1, NULL };
 hashtable_t h_labels   = { MAXLABELS >> 1, NULL };
@@ -1060,7 +1056,7 @@ static void C_SetScriptSize(int32_t newsize)
 {
     for (int i = 0; i < g_scriptSize - 1; ++i)
     {
-        if (BITPTR_IS_POINTER(i))
+        if (bitmap_test(bitptr, i))
         {
             if (EDUKE32_PREDICT_FALSE(apScript[i] < (intptr_t)apScript || apScript[i] > (intptr_t)g_scriptPtr))
             {
@@ -1099,7 +1095,7 @@ static void C_SetScriptSize(int32_t newsize)
 
     for (int i = 0; i < smallestSize - 1; ++i)
     {
-        if (BITPTR_IS_POINTER(i))
+        if (bitmap_test(bitptr, i))
             apScript[i] += (intptr_t)apScript;
     }
 
@@ -1273,20 +1269,20 @@ static void C_GetNextLabelName(void)
 
 static inline void scriptWriteValue(int32_t const value)
 {
-    BITPTR_CLEAR(g_scriptPtr-apScript);
+    bitmap_clear(bitptr, g_scriptPtr-apScript);
     *g_scriptPtr++ = value;
 }
 
 // addresses passed to these functions must be within the block of memory pointed to by apScript
 static inline void scriptWriteAtOffset(int32_t const value, intptr_t * const addr)
 {
-    BITPTR_CLEAR(addr-apScript);
+    bitmap_clear(bitptr, addr-apScript);
     *(addr) = value;
 }
 
 static inline void scriptWritePointer(intptr_t const value, intptr_t * const addr)
 {
-    BITPTR_SET(addr-apScript);
+    bitmap_set(bitptr, addr-apScript);
     *(addr) = value;
 }
 

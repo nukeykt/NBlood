@@ -72,8 +72,8 @@ extern "C" {
 
 enum vmflags_t
 {
-    VM_RETURN    = 0x00000001,
-    VM_KILL      = 0x00000002,
+    VM_RETURN     = 1<<0,
+    VM_KILL       = 1<<1,
 };
 
 extern int32_t ticrandomseed;

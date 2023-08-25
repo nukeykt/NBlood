@@ -84,9 +84,9 @@ void VM_ScriptInfo(intptr_t const * const ptr, int const range)
     char buf[128];
 
     for (auto pScript = max<intptr_t const *>(ptr - (range >> 2), apScript),
-                p_end   = min<intptr_t const *>(ptr + (range >> 1) + (range >> 2), apScript + g_scriptSize);
-            pScript < p_end;
-            ++pScript)
+                p_end = min<intptr_t const *>(ptr + (range >> 1) + (range >> 2), apScript + g_scriptSize);
+         pScript < p_end;
+         ++pScript)
     {
         auto &v = *pScript;
         int const lineNum = VM_DECODE_LINE_NUMBER(v);
@@ -604,7 +604,6 @@ GAMEEXEC_STATIC void VM_AlterAng(int32_t const moveFlags)
     int const elapsedTics = (AC_COUNT(vm.pData))&31;
 
     if (EDUKE32_PREDICT_FALSE((unsigned)AC_MOVE_ID(vm.pData) >= (unsigned)g_scriptSize-1))
-
     {
         AC_MOVE_ID(vm.pData) = 0;
         VLOG_F(LOG_VM, "bad moveptr for actor %d (%d)!", vm.spriteNum, vm.pUSprite->picnum);
@@ -632,12 +631,12 @@ GAMEEXEC_STATIC void VM_AlterAng(int32_t const moveFlags)
         vm.pSprite->owner = (holoDukeSprite >= 0
                              && cansee(sprite[holoDukeSprite].x, sprite[holoDukeSprite].y, sprite[holoDukeSprite].z, sprite[holoDukeSprite].sectnum,
                                        vm.pSprite->x, vm.pSprite->y, vm.pSprite->z, vm.pSprite->sectnum))
-          ? holoDukeSprite
-          : vm.pPlayer->i;
+                          ? holoDukeSprite
+                          : vm.pPlayer->i;
 
         int const goalAng = (sprite[vm.pSprite->owner].picnum == APLAYER)
-                  ? getangle(vm.pActor->lastv.x - vm.pSprite->x, vm.pActor->lastv.y - vm.pSprite->y)
-                  : getangle(sprite[vm.pSprite->owner].x - vm.pSprite->x, sprite[vm.pSprite->owner].y - vm.pSprite->y);
+                          ? getangle(vm.pActor->lastv.x - vm.pSprite->x, vm.pActor->lastv.y - vm.pSprite->y)
+                          : getangle(sprite[vm.pSprite->owner].x - vm.pSprite->x, sprite[vm.pSprite->owner].y - vm.pSprite->y);
 
         if (vm.pSprite->xvel && vm.pSprite->picnum != DRONE)
         {
@@ -893,8 +892,10 @@ GAMEEXEC_STATIC void VM_Move(void)
             }
         }
         else if (vm.pSprite->picnum == APLAYER)
+        {
             if (vm.pSprite->z < vm.pActor->ceilingz+ZOFFSET5)
                 vm.pSprite->z = vm.pActor->ceilingz+ZOFFSET5;
+        }
 
         vm.pActor->movflag = A_MoveSprite(vm.spriteNum, { (spriteXvel * (sintable[(angDiff + 512) & 2047])) >> 14,
                                                           (spriteXvel * (sintable[angDiff & 2047])) >> 14, vm.pSprite->zvel },
@@ -2808,7 +2809,8 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
             vInstruction(CON_ENDA):
             vInstruction(CON_BREAK):
             vInstruction(CON_ENDS):
-            vInstruction(CON_ENDEVENT): return;
+            vInstruction(CON_ENDEVENT):
+                return;
 
             vInstruction(CON_JUMP):  // this is used for event chaining
                 insptr++;
@@ -5222,11 +5224,11 @@ badindex:
                     nResult = 1;
                 else if ((moveFlags & pfacing))
                 {
-                    nResult
-                    = (vm.pSprite->picnum == APLAYER && (g_netServer || ud.multimode > 1))
-                      ? G_GetAngleDelta(fix16_to_int(g_player[otherp].ps->q16ang),
-                                        getangle(vm.pPlayer->pos.x - g_player[otherp].ps->pos.x, vm.pPlayer->pos.y - g_player[otherp].ps->pos.y))
-                      : G_GetAngleDelta(fix16_to_int(vm.pPlayer->q16ang), getangle(vm.pSprite->x - vm.pPlayer->pos.x, vm.pSprite->y - vm.pPlayer->pos.y));
+                    nResult = (vm.pSprite->picnum == APLAYER && (g_netServer || ud.multimode > 1))
+                            ? G_GetAngleDelta(fix16_to_int(g_player[otherp].ps->q16ang),
+                                              getangle(vm.pPlayer->pos.x - g_player[otherp].ps->pos.x, vm.pPlayer->pos.y - g_player[otherp].ps->pos.y))
+                            : G_GetAngleDelta(fix16_to_int(vm.pPlayer->q16ang),
+                                              getangle(vm.pSprite->x - vm.pPlayer->pos.x, vm.pSprite->y - vm.pPlayer->pos.y));
 
                     nResult = (nResult > -128 && nResult < 128);
                 }
