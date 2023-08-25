@@ -5886,8 +5886,7 @@ out:
 
 static FORCE_INLINE void polymer_deleteplanelight(_prplane *const plane, int16_t const lighti)
 {
-    int i = plane->lightcount - 1;
-    do
+    for (int i = plane->lightcount - 1; i >= 0; --i)
     {
         if (plane->lights[i] == lighti)
         {
@@ -5896,7 +5895,6 @@ static FORCE_INLINE void polymer_deleteplanelight(_prplane *const plane, int16_t
             return;
         }
     }
-    while (--i >= 0);
 }
 
 static int polymer_planeinlight(_prplane const &plane, _prlight const &light)
