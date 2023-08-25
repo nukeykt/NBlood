@@ -110,16 +110,17 @@ void G_GetCrosshairColor(void)
 
     // find the brightest color in the original 8-bit tile
     int32_t ii = tilesiz[CROSSHAIR].x * tilesiz[CROSSHAIR].y;
-    int32_t bri = 0, j = 0, i;
+    size_t bri = 0, j = 0, i;
 
     Bassert(ii > 0);
 
     do
     {
-        if (*ptr != 255)
+        size_t c = *ptr;
+        if (c != 255)
         {
-            i = curpalette[(int32_t) *ptr].r+curpalette[(int32_t) *ptr].g+curpalette[(int32_t) *ptr].b;
-            if (i > j) { j = i; bri = *ptr; }
+            i = curpalette[c].r + curpalette[c].g + curpalette[c].b;
+            if (i > j) { j = i; bri = c; }
         }
         ptr++;
     } while (--ii);
