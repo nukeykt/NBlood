@@ -7827,6 +7827,9 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         }
     }
 
+    if (daalpha == 255) // No sense trying to draw something invisible.
+        return;
+
     //============================================================================= //POLYMOST BEGINS
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
@@ -7950,9 +7953,6 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
     // Alpha handling
     if (!(dastat&RS_TRANS1) && daalpha > 0)
     {
-        if (daalpha == 255)
-            return;
-
         if (numalphatabs != 0)
         {
             if (falpha_to_blend((float)daalpha / 255.0f, &dastat, &dablend, RS_TRANS1, RS_TRANS2))
