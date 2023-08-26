@@ -158,7 +158,7 @@ AMB_INFO ambarray[] =
 
 #define MAXSONGS        10              // This is the max songs per episode
 
-SWBOOL OpenSound(VOC_INFOp vp, int *handle, int *length);
+static SWBOOL OpenSound(VOC_INFOp vp, buildvfs_kfd * handle, int * length);
 int ReadSound(int handle, VOC_INFOp vp, int length);
 
 // 3d sound engine function prototype
@@ -797,7 +797,7 @@ SWBOOL CacheSound(int num, int /*type*/)
     // if no data we need to cache it in
     if (!vp->data)
     {
-        int handle;
+        buildvfs_kfd handle;
         int length;
 
         if (!OpenSound(vp, &handle, &length))
@@ -1137,8 +1137,8 @@ void PlaySoundRTS(int rts_num)
 
 ///////////////////////////////////////////////
 
-SWBOOL
-OpenSound(VOC_INFOp vp, int *handle, int *length)
+static SWBOOL
+OpenSound(VOC_INFOp vp, buildvfs_kfd * handle, int * length)
 {
     *handle = kopen4load(vp->name, 0);
 
@@ -1172,11 +1172,11 @@ ReadSound(int handle, VOC_INFOp vp, int length)
 SWBOOL
 LoadSong(const char *filename)
 {
-    int handle;
+    buildvfs_kfd handle;
     int size;
     char *ptr;
 
-    if ((handle = kopen4load(filename, 0)) == -1)
+    if ((handle = kopen4load(filename, 0)) == buildvfs_kfd_invalid)
     {
         return FALSE;
     }
@@ -1307,8 +1307,7 @@ void MusicStartup(void)
     MusicInitialized = TRUE;
     MUSIC_SetVolume(gs.MusicVolume);
 
-    auto const fil = kopen4load("swtimbr.tmb", 0);
-
+    buildvfs_kfd const fil = kopen4load("swtimbr.tmb", 0);
     if (fil != buildvfs_kfd_invalid)
     {
         int l = kfilelength(fil);

@@ -1796,7 +1796,7 @@ LogoLevel(void)
     if (g_noLogo)
         return;
 
-    int fin;
+    buildvfs_kfd fin;
     unsigned char pal[PAL_SIZE];
     UserInput uinfo = { FALSE, FALSE, FALSE, dir_None };
 
@@ -3193,12 +3193,12 @@ void DosScreen(void)
 
 #define DOS_SCREEN_SIZE (4000-(80*2))
 #define DOS_SCREEN_PTR ((void *)(0xB8000))
-    int fin;
+    buildvfs_kfd fin;
     int i;
     char buffer[DOS_SCREEN_SIZE];
 
     fin = kopen4load(DOS_SCREEN_NAME,0);
-    if (fin == -1)
+    if (fin == buildvfs_kfd_invalid)
         return;
 
     kread(fin, buffer, sizeof(buffer));
@@ -3296,10 +3296,10 @@ int DetectShareware(void)
 #define DOS_SCREEN_NAME_SW  "SHADSW.BIN"
 #define DOS_SCREEN_NAME_REG "SWREG.BIN"
 
-    int h;
+    buildvfs_kfd h;
 
     h = kopen4load(DOS_SCREEN_NAME_SW,1);
-    if (h >= 0)
+    if (h != buildvfs_kfd_invalid)
     {
         SW_GameFlags |= GAMEFLAG_SHAREWARE;
         kclose(h);
@@ -3307,7 +3307,7 @@ int DetectShareware(void)
     }
 
     h = kopen4load(DOS_SCREEN_NAME_REG,1);
-    if (h >= 0)
+    if (h != buildvfs_kfd_invalid)
     {
         SW_GameFlags &= ~GAMEFLAG_SHAREWARE;
         kclose(h);
@@ -3976,13 +3976,13 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
         else if (Bstrncasecmp(arg, "map", 3) == 0 && !SW_SHAREWARE && cnt+1 < argc)
         {
-            int fil;
+            buildvfs_kfd fil;
 
             strcpy(UserMapName, argv[++cnt]);
             if (strchr(UserMapName, '.') == 0)
                 strcat(UserMapName, ".map");
 
-            if ((fil = kopen4load(UserMapName,0)) == -1)
+            if ((fil = kopen4load(UserMapName,0)) == buildvfs_kfd_invalid)
             {
                 wm_msgbox(apptitle, "ERROR: Could not find user map %s!", UserMapName);
                 kclose(fil);
@@ -5832,6 +5832,7 @@ extern char tilefilenum[MAXTILES]; //0-11
 #if 0
 loadtile(short tilenume)
 {
+    buildvfs_kfd artfil = buildvfs_kfd_invalid;
     char *ptr;
     int i;
     char zerochar = 0;
@@ -5842,7 +5843,7 @@ loadtile(short tilenume)
     i = tilefilenum[tilenume];
     if (i != artfilnum)
     {
-        if (artfil != -1)
+        if (artfil != buildvfs_kfd_invalid)
             kclose(artfil);
         artfilnum = i;
         artfilplc = 0L;

@@ -160,8 +160,7 @@ void S_MusicStartup(void)
 
     MUSIC_SetVolume(ud.config.MusicVolume);
 
-    auto const fil = kopen4load("d3dtimbr.tmb", 0);
-
+    buildvfs_kfd const fil = kopen4load("d3dtimbr.tmb", 0);
     if (fil != buildvfs_kfd_invalid)
     {
         int l = kfilelength(fil);

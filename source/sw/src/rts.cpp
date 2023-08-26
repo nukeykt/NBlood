@@ -70,8 +70,9 @@ int32_t RTS_AddFile(char *filename)
 {
     wadinfo_t  header;
     lumpinfo_t *lump_p;
-    int32_t     i;
-    int32_t      handle, length;
+    buildvfs_kfd handle;
+    int32_t      i;
+    int32_t      length;
     int32_t      startlump;
     filelump_t *fileinfo, *fileinfoo;
 
@@ -80,7 +81,7 @@ int32_t RTS_AddFile(char *filename)
 //      FIXME: shared opens
 
     handle = kopen4load(filename, 0);
-    if (handle < 0)
+    if (handle == buildvfs_kfd_invalid)
     {
         buildprintf("RTS file %s was not found\n",filename);
         return -1;

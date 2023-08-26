@@ -5311,10 +5311,11 @@ int loadgame(void)
 {
     int dummy = 0;
     int i;
-    int fil;
+    buildvfs_kfd fil;
     int tmpanimateptr[MAXANIMATES];
 
-    if ((fil = kopen4load("save0000.gam",0)) == -1) return -1;
+    if ((fil = kopen4load("save0000.gam",0)) == buildvfs_kfd_invalid)
+        return -1;
 
     kdfread(&numplayers,4,1,fil);
     kdfread(&myconnectindex,4,1,fil);

@@ -842,7 +842,7 @@ char const * kfileparent(int32_t const handle)
     return groupname[groupnum];
 }
 
-int32_t kopen4load(const char *filename, char searchfirst)
+buildvfs_kfd kopen4load(const char *filename, char searchfirst)
 {
     int32_t newhandle = MAXOPENFILES-1;
 

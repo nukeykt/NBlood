@@ -118,7 +118,8 @@ long GetAToken(char *name, char *tc, long length)
 
 void ContextHelp(short spritenum)
 {
-    int fp,x=0,y=4;
+    buildvfs_kfd fp;
+    int x=0,y=4;
     char t,*tc;
     char name[20];
     char *filebuffer;
@@ -131,7 +132,7 @@ void ContextHelp(short spritenum)
 
     clearmidstatbar16();
 
-    if ((fp=kopen4load("swbhelp.hlp",0)) == -1)
+    if ((fp=kopen4load("swbhelp.hlp",0)) == buildvfs_kfd_invalid)
     {
         Msg("ERROR: Help file not found.",M_RED);
         return;

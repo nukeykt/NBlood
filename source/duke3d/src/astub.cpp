@@ -1241,7 +1241,8 @@ void ExtShowWallData(int16_t wallnum)       //F6
 // formerly Show2dText and Show3dText
 static void ShowFileText(const char *name)
 {
-    int32_t fp,t;
+    buildvfs_kfd fp;
+    int32_t t;
     uint8_t x=0,y=4,xmax=0,xx=0,col=0;
 
     if (!in3dmode())
@@ -1250,7 +1251,7 @@ static void ShowFileText(const char *name)
         drawgradient();
     }
 
-    if ((fp=kopen4load(name,0)) == -1)
+    if ((fp=kopen4load(name,0)) == buildvfs_kfd_invalid)
     {
         Bsprintf(tempbuf, "ERROR: file \"%s\" not found.", name);
         if (in3dmode())
