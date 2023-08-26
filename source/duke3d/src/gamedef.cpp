@@ -6188,6 +6188,12 @@ repeatcase:
                 g_checkingCase = false;
                 return 1;
             }
+            else if (g_checkingLoop)
+            {
+                C_ReportError(-1);
+                LOG_F(WARNING, "%s:%d: found 'break' inside loop, use 'exit' or 'continue'.", g_scriptFileName, g_lineNumber);
+                ++g_warningCnt;
+            }
             else if (g_scriptEventOffset)
             {
                 g_scriptPtr--;
