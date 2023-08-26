@@ -7802,17 +7802,28 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
         sm0 = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK), clock };
 
-        auto lerpWouldLookDerp = [&](void)
-        {
-            return !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
-                   || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
-                   && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
-        };
+        bool const lerpWouldLookDerp = !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
+                                       || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
+                                       && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
 
-        if (lerpWouldLookDerp())
+        if (clock - sm.clock >= 4 || sm0.goal != sm.goal)
+        {
+            sm.lerp = sm.goal;
+            sm.goal = sm0.goal;
+            sm.clock = sm0.clock;
+        }
+
+        if (lerpWouldLookDerp)
             sm.lerp = sm.goal = sm0.goal;
         else
         {
+            if (dastat & RS_NOPOSLERP)
+                sm.lerp.xy = sm.goal.xy = sm0.goal.xy;
+            if (dastat & RS_NOZOOMLERP)
+                sm.lerp.z = sm.goal.z = sm0.goal.z;
+            if (dastat & RS_NOANGLERP)
+                sm.lerp.a = sm.goal.a = sm0.goal.a;
+
             sm0.lerp = { sm.goal.x - mulscale16(65536-rotatespritesmoothratio, sm.goal.x - sm.lerp.x),
                          sm.goal.y - mulscale16(65536-rotatespritesmoothratio, sm.goal.y - sm.lerp.y),
                          sm.goal.z - mulscale16(65536-rotatespritesmoothratio, sm.goal.z - sm.lerp.z),
@@ -7822,13 +7833,6 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
         sm.picnum = sm0.picnum;
         sm.flags  = sm0.flags;
 
-        if (clock - sm.clock > 1 || sm0.goal != sm.goal)
-        {
-            sm.lerp  = sm.goal;
-            sm.goal  = sm0.goal;
-            sm.clock = sm0.clock;
-        }
-
         if (r_rotatespriteinterp)
         {
             sx = sm0.lerp.x;
@@ -7837,6 +7841,9 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
             a  = sm0.lerp.a;
         }
     }
+
+    if (daalpha == 255) // No sense trying to draw something invisible.
+        return;
 
     //============================================================================= //POLYMOST BEGINS
 #ifdef USE_OPENGL
@@ -7961,9 +7968,6 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
     // Alpha handling
     if (!(dastat&RS_TRANS1) && daalpha > 0)
     {
-        if (daalpha == 255)
-            return;
-
         if (numalphatabs != 0)
         {
             if (falpha_to_blend((float)daalpha / 255.0f, &dastat, &dablend, RS_TRANS1, RS_TRANS2))

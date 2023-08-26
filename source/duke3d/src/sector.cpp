@@ -2427,10 +2427,14 @@ void A_DamageObject_Duke3D(int spriteNum, int const dmgSrc)
                     if ((sprite[spriteNum].cstat & 48) == 0)
                         SA(spriteNum)          = (sprite[dmgSrc].ang + 1024) & 2047;
                     sprite[spriteNum].xvel  = -(sprite[dmgSrc].extra << 2);
+
                     int16_t sectNum = SECT(spriteNum);
-                    pushmove(&sprite[spriteNum].xyz, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
-                    if (sectNum != SECT(spriteNum) && (unsigned)sectNum < MAXSECTORS)
-                        changespritesect(spriteNum, sectNum);
+                    if ((unsigned)sectNum < MAXSECTORS)
+                    {
+                        pushmove(&sprite[spriteNum].xyz, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
+                        if (sectNum != SECT(spriteNum) && (unsigned)sectNum < MAXSECTORS)
+                            changespritesect(spriteNum, sectNum);
+                    }
                 }
             }
 

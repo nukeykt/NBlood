@@ -28,11 +28,13 @@
 #include "smmalloc.h"
 #include <stdlib.h>
 
+#ifndef MIMALLOC_OVERRIDE_H
 struct Header
 {
     void* p;
     size_t size;
 };
+#endif
 
 sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid() { return nullptr; }
 
@@ -49,6 +51,9 @@ void sm::GenericAllocator::Destroy(sm::GenericAllocator::TInstance instance) { S
 void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size_t bytesCount, size_t alignment)
 {
     SMMALLOC_UNUSED(instance);
+#ifdef MIMALLOC_OVERRIDE_H
+    return mi_malloc_aligned(bytesCount, alignment);
+#else
     if (alignment < sm::Allocator::kMinValidAlignment)
     {
         alignment = sm::Allocator::kMinValidAlignment;
@@ -56,13 +61,7 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
     void* p;
     void** p2;
     size_t offset = alignment - 1 + sizeof(Header);
-    if ((p = (void*)
-#ifdef MIMALLOC_OVERRIDE_H
-        mi_malloc_aligned(bytesCount + offset, alignment)
-#else
-        std::malloc(bytesCount + offset)
-#endif
-        ) == NULL)
+    if ((p = (void*)std::malloc(bytesCount + offset)) == NULL)
     {
         return NULL;
     }
@@ -72,19 +71,20 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
     h->p = p;
     h->size = bytesCount;
     return p2;
+#endif
 }
 
 void sm::GenericAllocator::Free(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
+#ifdef MIMALLOC_OVERRIDE_H
+    mi_free(p);
+#else
     if (!p)
     {
         return;
     }
     Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p) - sizeof(Header));
-#ifdef MIMALLOC_OVERRIDE_H
-    mi_free(h->p);
-#else
     std::free(h->p);
 #endif
 }
@@ -93,6 +93,9 @@ void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, vo
 {
     SMMALLOC_UNUSED(instance);
 
+#ifdef MIMALLOC_OVERRIDE_H
+    return mi_realloc_aligned(p, bytesCount, alignment);
+#else
     void* p2 = Alloc(instance, bytesCount, alignment);
     if (!p2)
     {
@@ -109,12 +112,16 @@ void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, vo
 
     Free(instance, p);
     return p2;
+#endif
 }
 
 size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
 
+#ifdef MIMALLOC_OVERRIDE_H
+    return mi_usable_size(p);
+#else
     if (!p)
     {
         return 0;
@@ -122,5 +129,7 @@ size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance inst
 
     Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p) - sizeof(Header));
     return h->size;
+#endif
 }
+
 #endif // __SANITIZE_ADDRESS__

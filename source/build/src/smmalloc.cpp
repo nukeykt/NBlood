@@ -154,8 +154,8 @@ void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initial
 void Allocator::DestroyThreadCache()
 {
 #if __SANITIZE_ADDRESS__ == 1
-        auto buf = this->pBuffer.get();
-        ASAN_UNPOISON_MEMORY_REGION(buf, this->pBufferEnd - buf);
+    auto buf = this->pBuffer.get();
+    ASAN_UNPOISON_MEMORY_REGION(buf, this->pBufferEnd - buf);
 #endif
     for (size_t i = 0; i < SMM_MAX_BUCKET_COUNT; i++)
     {

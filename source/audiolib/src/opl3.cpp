@@ -218,7 +218,7 @@ static int16_t OPL3_EnvelopeCalcExp(uint32_t level)
     {
         level = 0x1fff;
     }
-    return (exprom[level & 0xff] << 1) >> (level >> 8);
+    return (exprom[level & 0xffu] << 1) >> (level >> 8);
 }
 
 static int16_t OPL3_EnvelopeCalcSin0(uint16_t phase, uint16_t envelope)
@@ -232,11 +232,11 @@ static int16_t OPL3_EnvelopeCalcSin0(uint16_t phase, uint16_t envelope)
     }
     if (phase & 0x100)
     {
-        out = logsinrom[(phase & 0xff) ^ 0xff];
+        out = logsinrom[(phase & 0xffu) ^ 0xffu];
     }
     else
     {
-        out = logsinrom[phase & 0xff];
+        out = logsinrom[phase & 0xffu];
     }
     return OPL3_EnvelopeCalcExp(out + (envelope << 3)) ^ neg;
 }
@@ -251,11 +251,11 @@ static int16_t OPL3_EnvelopeCalcSin1(uint16_t phase, uint16_t envelope)
     }
     else if (phase & 0x100)
     {
-        out = logsinrom[(phase & 0xff) ^ 0xff];
+        out = logsinrom[(phase & 0xffu) ^ 0xffu];
     }
     else
     {
-        out = logsinrom[phase & 0xff];
+        out = logsinrom[phase & 0xffu];
     }
     return OPL3_EnvelopeCalcExp(out + (envelope << 3));
 }
@@ -266,11 +266,11 @@ static int16_t OPL3_EnvelopeCalcSin2(uint16_t phase, uint16_t envelope)
     phase &= 0x3ff;
     if (phase & 0x100)
     {
-        out = logsinrom[(phase & 0xff) ^ 0xff];
+        out = logsinrom[(phase & 0xffu) ^ 0xffu];
     }
     else
     {
-        out = logsinrom[phase & 0xff];
+        out = logsinrom[phase & 0xffu];
     }
     return OPL3_EnvelopeCalcExp(out + (envelope << 3));
 }
@@ -285,7 +285,7 @@ static int16_t OPL3_EnvelopeCalcSin3(uint16_t phase, uint16_t envelope)
     }
     else
     {
-        out = logsinrom[phase & 0xff];
+        out = logsinrom[phase & 0xffu];
     }
     return OPL3_EnvelopeCalcExp(out + (envelope << 3));
 }
@@ -305,11 +305,11 @@ static int16_t OPL3_EnvelopeCalcSin4(uint16_t phase, uint16_t envelope)
     }
     else if (phase & 0x80)
     {
-        out = logsinrom[((phase ^ 0xff) << 1) & 0xff];
+        out = logsinrom[((phase ^ 0xffu) << 1u) & 0xffu];
     }
     else
     {
-        out = logsinrom[(phase << 1) & 0xff];
+        out = logsinrom[(phase << 1u) & 0xffu];
     }
     return OPL3_EnvelopeCalcExp(out + (envelope << 3)) ^ neg;
 }
@@ -324,11 +324,11 @@ static int16_t OPL3_EnvelopeCalcSin5(uint16_t phase, uint16_t envelope)
     }
     else if (phase & 0x80)
     {
-        out = logsinrom[((phase ^ 0xff) << 1) & 0xff];
+        out = logsinrom[((phase ^ 0xffu) << 1u) & 0xffu];
     }
     else
     {
-        out = logsinrom[(phase << 1) & 0xff];
+        out = logsinrom[(phase << 1u) & 0xffu];
     }
     return OPL3_EnvelopeCalcExp(out + (envelope << 3));
 }
@@ -379,7 +379,7 @@ enum envelope_gen_num
 
 static void OPL3_EnvelopeUpdateKSL(opl3_slot *slot)
 {
-    int16_t ksl = (kslrom[slot->channel->f_num >> 6] << 2)
+    int16_t ksl = (kslrom[slot->channel->f_num >> 6u] << 2)
                - ((0x08 - slot->channel->block) << 5);
     if (ksl < 0)
     {
@@ -465,7 +465,7 @@ static void OPL3_EnvelopeCalc(opl3_slot *slot)
         }
         else
         {
-            shift = (rate_hi & 0x03) + eg_incstep[rate_lo][slot->chip->timer & 0x03];
+            shift = (rate_hi & 0x03) + eg_incstep[rate_lo][slot->chip->timer & 0x03u];
             if (shift & 0x04)
             {
                 shift = 0x03;
@@ -1001,7 +1001,7 @@ static void OPL3_ChannelWriteD0(opl3_channel* channel, uint8_t data)
 {
     if (channel->chip->stereoext)
     {
-        channel->leftpan = panpot_lut[data ^ 0xff];
+        channel->leftpan = panpot_lut[data ^ 0xffu];
         channel->rightpan = panpot_lut[data];
     }
 }
@@ -1069,12 +1069,12 @@ static void OPL3_ChannelSet4Op(opl3_chip *chip, uint8_t data)
         if ((data >> bit) & 0x01)
         {
             chip->channel[chnum].chtype = ch_4op;
-            chip->channel[chnum + 3].chtype = ch_4op2;
+            chip->channel[chnum + 3u].chtype = ch_4op2;
         }
         else
         {
             chip->channel[chnum].chtype = ch_2op;
-            chip->channel[chnum + 3].chtype = ch_2op;
+            chip->channel[chnum + 3u].chtype = ch_2op;
         }
     }
 }
@@ -1279,16 +1279,16 @@ void OPL3_Reset(opl3_chip *chip, uint32_t samplerate)
         channel = &chip->channel[channum];
         local_ch_slot = ch_slot[channum];
         channel->slots[0] = &chip->slot[local_ch_slot];
-        channel->slots[1] = &chip->slot[local_ch_slot + 3];
+        channel->slots[1] = &chip->slot[local_ch_slot + 3u];
         chip->slot[local_ch_slot].channel = channel;
-        chip->slot[local_ch_slot + 3].channel = channel;
+        chip->slot[local_ch_slot + 3u].channel = channel;
         if ((channum % 9) < 3)
         {
-            channel->pair = &chip->channel[channum + 3];
+            channel->pair = &chip->channel[channum + 3u];
         }
         else if ((channum % 9) < 6)
         {
-            channel->pair = &chip->channel[channum - 3];
+            channel->pair = &chip->channel[channum - 3u];
         }
         channel->chip = chip;
         channel->out[0] = &chip->zeromod;
@@ -1357,43 +1357,43 @@ void OPL3_WriteReg(opl3_chip *chip, uint16_t reg, uint8_t v)
         break;
     case 0x20:
     case 0x30:
-        if (ad_slot[regm & 0x1f] >= 0)
+        if (ad_slot[regm & 0x1fu] >= 0)
         {
-            OPL3_SlotWrite20(&chip->slot[18 * high + ad_slot[regm & 0x1f]], v);
+            OPL3_SlotWrite20(&chip->slot[18u * high + ad_slot[regm & 0x1fu]], v);
         }
         break;
     case 0x40:
     case 0x50:
-        if (ad_slot[regm & 0x1f] >= 0)
+        if (ad_slot[regm & 0x1fu] >= 0)
         {
-            OPL3_SlotWrite40(&chip->slot[18 * high + ad_slot[regm & 0x1f]], v);
+            OPL3_SlotWrite40(&chip->slot[18u * high + ad_slot[regm & 0x1fu]], v);
         }
         break;
     case 0x60:
     case 0x70:
-        if (ad_slot[regm & 0x1f] >= 0)
+        if (ad_slot[regm & 0x1fu] >= 0)
         {
-            OPL3_SlotWrite60(&chip->slot[18 * high + ad_slot[regm & 0x1f]], v);
+            OPL3_SlotWrite60(&chip->slot[18u * high + ad_slot[regm & 0x1fu]], v);
         }
         break;
     case 0x80:
     case 0x90:
-        if (ad_slot[regm & 0x1f] >= 0)
+        if (ad_slot[regm & 0x1fu] >= 0)
         {
-            OPL3_SlotWrite80(&chip->slot[18 * high + ad_slot[regm & 0x1f]], v);
+            OPL3_SlotWrite80(&chip->slot[18u * high + ad_slot[regm & 0x1fu]], v);
         }
         break;
     case 0xe0:
     case 0xf0:
-        if (ad_slot[regm & 0x1f] >= 0)
+        if (ad_slot[regm & 0x1fu] >= 0)
         {
-            OPL3_SlotWriteE0(&chip->slot[18 * high + ad_slot[regm & 0x1f]], v);
+            OPL3_SlotWriteE0(&chip->slot[18u * high + ad_slot[regm & 0x1fu]], v);
         }
         break;
     case 0xa0:
         if ((regm & 0x0f) < 9)
         {
-            OPL3_ChannelWriteA0(&chip->channel[9 * high + (regm & 0x0f)], v);
+            OPL3_ChannelWriteA0(&chip->channel[9u * high + (regm & 0x0fu)], v);
         }
         break;
     case 0xb0:
@@ -1405,28 +1405,28 @@ void OPL3_WriteReg(opl3_chip *chip, uint16_t reg, uint8_t v)
         }
         else if ((regm & 0x0f) < 9)
         {
-            OPL3_ChannelWriteB0(&chip->channel[9 * high + (regm & 0x0f)], v);
+            OPL3_ChannelWriteB0(&chip->channel[9u * high + (regm & 0x0fu)], v);
             if (v & 0x20)
             {
-                OPL3_ChannelKeyOn(&chip->channel[9 * high + (regm & 0x0f)]);
+                OPL3_ChannelKeyOn(&chip->channel[9u * high + (regm & 0x0fu)]);
             }
             else
             {
-                OPL3_ChannelKeyOff(&chip->channel[9 * high + (regm & 0x0f)]);
+                OPL3_ChannelKeyOff(&chip->channel[9u * high + (regm & 0x0fu)]);
             }
         }
         break;
     case 0xc0:
         if ((regm & 0x0f) < 9)
         {
-            OPL3_ChannelWriteC0(&chip->channel[9 * high + (regm & 0x0f)], v);
+            OPL3_ChannelWriteC0(&chip->channel[9u * high + (regm & 0x0fu)], v);
         }
         break;
 #if OPL_ENABLE_STEREOEXT
     case 0xd0:
         if ((regm & 0x0f) < 9)
         {
-            OPL3_ChannelWriteD0(&chip->channel[9 * high + (regm & 0x0f)], v);
+            OPL3_ChannelWriteD0(&chip->channel[9u * high + (regm & 0x0fu)], v);
         }
         break;
 #endif
