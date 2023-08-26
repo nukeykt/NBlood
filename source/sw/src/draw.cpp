@@ -2259,8 +2259,6 @@ drawscreen(PLAYERp pp)
 #if 0
     if (TenScreenMode)
     {
-#define TEN_PIC 5109
-
         flushperms();
         // note - could put Order Info Pages at the top like this also
         rotatesprite(0,0,65536L,0,TEN_PIC,0,0,

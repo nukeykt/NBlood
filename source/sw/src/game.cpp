@@ -298,6 +298,7 @@ int krandcount;
 void BOT_DeleteAllBots(void);
 void BotPlayerInsert(PLAYERp pp);
 void SybexScreen(void);
+void TenScreen(void);
 void DosScreen(void);
 void PlayTheme(void);
 void MenuLevel(void);
@@ -1806,7 +1807,7 @@ LogoLevel(void)
     // PreCache Anim
     LoadAnm(0);
 
-    if ((fin = kopen4load("3drealms.pal", 0)) != -1)
+    if ((fin = kopen4load("3drealms.pal", 0)) != buildvfs_kfd_invalid)
     {
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
@@ -1964,83 +1965,56 @@ SybexScreen(void)
     if (CommEnabled)
         return;
 
-    rotatesprite(0, 0, RS_SCALE, 0, 5261, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
+    if (tilesiz[SYBEX_PIC].x <= 0)
+        return;
+
+    rotatesprite(0, 0, RS_SCALE, 0, SYBEX_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
     videoNextPage();
 
     ResetKeys();
     while (!KeyPressed() && !quitevent) handleevents();
 }
 
-// CTW REMOVED
-/*
 void
 TenScreen(void)
-    {
-    char called;
-    int fin;
-    char backup_pal[256*3];
-    char pal[PAL_SIZE];
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    int i;
-    uint32_t bak;
-    int bakready2send;
-
+{
     if (CommEnabled)
         return;
 
-    bak = totalclock;
+    if (tilesiz[TEN_PIC].x <= 0)
+        return;
 
-    flushperms();
-    clearview(0);
-    nextpage();
+    //videoNextPage();
+    //FadeOut(0, 0);
 
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
+    buildvfs_kfd fin;
+    if ((fin = kopen4load("ten.pal", 0)) != buildvfs_kfd_invalid)
+    {
+        unsigned char pal[PAL_SIZE];
 
-    GetPaletteFromVESA(pal);
-    memcpy(backup_pal, pal, PAL_SIZE);
-
-    if ((fin = kopen4load("ten.pal", 0)) != -1)
-        {
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
-        }
 
-    // palette to black
-    FadeOut(0, 0);
-    bakready2send = ready2send;
-    //totalclock = 0;
-    //ototalclock = 0;
+        for (auto & c : pal)
+            c <<= 2;
 
-    flushperms();
-    // draw it
+        paletteSetColorTable(TENPAL, pal);
+        videoSetPalette(gs.Brightness, TENPAL, 2);
+
+        videoClearViewableArea(0L);
+    }
+
     rotatesprite(0, 0, RS_SCALE, 0, TEN_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    // bring to the front - still back palette
-    nextpage();
-    // set pal
-    SetPaletteToVESA(pal);
+    videoNextPage();
     //FadeIn(0, 3);
-    ResetKeys();
 
+    ResetKeys();
     while (!KeyPressed() && !quitevent) handleevents();
 
-    palookup[0] = palook_bak;
-
-    clearview(0);
-    nextpage();
-    SetPaletteToVESA(backup_pal);
-
-    // put up a blank screen while loading
-    clearview(0);
-    nextpage();
-
-    ready2send = bakready2send;
-    totalclock = bak;
-    }
-*/
-// CTW REMOVED END
+    videoClearViewableArea(0L);
+    videoNextPage();
+    videoSetPalette(gs.Brightness, BASEPAL, 2);
+}
 
 void DrawMenuLevelScreen(void)
 {
