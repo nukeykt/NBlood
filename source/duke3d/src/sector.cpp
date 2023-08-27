@@ -1564,7 +1564,8 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t &vPos, int w
     int16_t sectNum = -1;
     walltype *pWall = &wall[wallNum];
 
-    if ((g_tile[pWall->overpicnum].flags & SFLAG_DAMAGEEVENT) || (g_tile[pWall->picnum].flags & SFLAG_DAMAGEEVENT))
+    if (((unsigned)pWall->overpicnum < MAXTILES && (g_tile[pWall->overpicnum].flags & SFLAG_DAMAGEEVENT))
+        || ((unsigned)pWall->picnum < MAXTILES && (g_tile[pWall->picnum].flags & SFLAG_DAMAGEEVENT)))
     {
         if (VM_OnEventWithReturn(EVENT_DAMAGEWALL, spriteNum, -1, wallNum) < 0)
             return;
