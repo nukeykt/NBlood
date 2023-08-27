@@ -329,7 +329,7 @@ void initsb(char dadigistat, char damusistat, int dasamplerate, char danumspeake
         frqtable[i] = j;
         j = mulscale30(j,1137589835);  //(pow(2,1/12)<<30) = 1137589835
     }
-    for(i=0;i>=-14;i--) frqtable[i&255] = (frqtable[(i+12)&255]>>1);
+    for(i=0;i>=-14;i--) frqtable[unsigned(i&255)] = (frqtable[unsigned((i+12)&255)]>>1);
 
     loadwaves("WAVES.KWV");
 
@@ -703,12 +703,13 @@ void wsay(const char *dafilename, int dafreq, int volume1, int volume2)
 
 void loadwaves(const char *wavename)
 {
-    int fil, i, j, dawaversionum;
+    buildvfs_kfd fil;
+    int i, j, dawaversionum;
     char filename[80];
 
     strcpy(filename,wavename);
     if (strstr(filename,".KWV") == 0) strcat(filename,".KWV");
-    if ((fil = kopen4load(filename,0)) == -1)
+    if ((fil = kopen4load(filename,0)) == buildvfs_kfd_invalid)
         if (strcmp(filename,"WAVES.KWV") != 0)
         {
             strcpy(filename,"WAVES.KWV");
@@ -717,7 +718,7 @@ void loadwaves(const char *wavename)
 
     totsndbytes = 0;
 
-    if (fil != -1)
+    if (fil != buildvfs_kfd_invalid)
     {
         if (strcmp(kwvname,filename) == 0) { kclose(fil); return; }
         strcpy(kwvname,filename);
@@ -759,7 +760,7 @@ void loadwaves(const char *wavename)
             { printf("Not enough memory for digital music!\n"); exit(0); }
     }
     for(i=0;i<MAXWAVES;i++) wavoffs[i] += (intptr_t)snd;
-    if (fil != -1)
+    if (fil != buildvfs_kfd_invalid)
     {
         kread(fil,snd,totsndbytes);
         kclose(fil);
@@ -769,7 +770,7 @@ void loadwaves(const char *wavename)
 
 int loadsong(const char *_filename)
 {
-    int fil;
+    buildvfs_kfd fil;
     char filename[256];
 
     Bstrcpy(filename, _filename);
@@ -778,7 +779,7 @@ int loadsong(const char *_filename)
     musicoff();
     Bstrupr(filename);
     if (strstr(filename,".KDM") == 0) strcat(filename,".KDM");
-    if ((fil = kopen4load(filename,0)) == -1)
+    if ((fil = kopen4load(filename,0)) == buildvfs_kfd_invalid)
     {
         printf("I cannot load %s.\n",filename);
         uninitsb();

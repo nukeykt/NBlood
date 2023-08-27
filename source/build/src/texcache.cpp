@@ -915,14 +915,14 @@ void texcache_setupmemcache(void)
     if (error || !texcache.rw_mmap.is_mapped())
     {
         if (error)
-            initprintf("Failed mapping texcache! Error %d (%s).\n", error.value(), error.message().c_str());
+            LOG_F(ERROR, "Failed mapping texcache! Error %d: %s", error.value(), error.message().c_str());
 
         texcache_clearmemcache();
         return;
     }
     else
     {
-        initprintf("Mapped %d byte texcache\n", (int)texcache.rw_mmap.length());
+        LOG_F(INFO, "Mapped %d byte texcache", (int)texcache.rw_mmap.length());
     }
 }
 

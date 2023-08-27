@@ -266,7 +266,7 @@ SWBOOL ExitLevel = FALSE;
 int16_t OrigCommPlayers=0;
 extern uint8_t CommPlayers;
 extern SWBOOL CommEnabled;
-extern int bufferjitter;
+extern unsigned int bufferjitter;
 
 SWBOOL CameraTestMode = FALSE;
 
@@ -298,6 +298,7 @@ int krandcount;
 void BOT_DeleteAllBots(void);
 void BotPlayerInsert(PLAYERp pp);
 void SybexScreen(void);
+void TenScreen(void);
 void DosScreen(void);
 void PlayTheme(void);
 void MenuLevel(void);
@@ -732,7 +733,7 @@ void LoadDemoRun(void)
                 break;
         }
         if (i == ARRAY_SSIZE(DemoName))
-            initputs("WARNING: demos.run is too long, ignoring remaining files\n");
+            LOG_F(WARNING, "demos.run is too long, ignoring remaining files");
 
         fclose(fin);
     }
@@ -749,7 +750,7 @@ void LoadDemoRun(void)
                 break;
         }
         if (i == ARRAY_SSIZE(DemoText))
-            initputs("WARNING: demotxt.run is too long, trimming the text\n");
+            LOG_F(WARNING, "demotxt.run is too long, trimming the text");
 
         fclose(fin);
     }
@@ -778,9 +779,9 @@ void Set_GameMode(void)
 
     if (result < 0)
     {
-        buildprintf("Failure setting video mode %dx%dx%d %s! Attempting safer mode...",
-                    ud_setup.ScreenWidth,ud_setup.ScreenHeight,ud_setup.ScreenBPP,
-                    ud_setup.ScreenMode ? "fullscreen" : "windowed");
+        LOG_F(ERROR, "Failure setting video mode %dx%dx%d %s! Attempting safer mode...",
+                     ud_setup.ScreenWidth,ud_setup.ScreenHeight,ud_setup.ScreenBPP,
+                     ud_setup.ScreenMode ? "fullscreen" : "windowed");
         ud_setup.ScreenMode = 0;
         ud_setup.ScreenWidth = 640;
         ud_setup.ScreenHeight = 480;
@@ -889,8 +890,8 @@ extern int startwin_run(void);
 
 static void SW_FatalEngineError(void)
 {
-    wm_msgbox("Build Engine Initialisation Error",
-              "There was a problem initialising the Build engine: %s", engineerrstr);
+    wm_msgbox("Build Engine Initialization Error",
+              "There was a problem initializing the engine: %s", engineerrstr);
     exit(1);
 }
 
@@ -936,7 +937,7 @@ InitGame(int32_t argc, char const * const * argv)
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
         NetBroadcastMode = (networkmode == MMULTI_MODE_P2P);
-        buildputs("Waiting for players...\n");
+        LOG_F(INFO, "Waiting for players...");
         while (initmultiplayerscycle())
         {
             handleevents();
@@ -997,7 +998,7 @@ InitGame(int32_t argc, char const * const * argv)
 
     // LoadImages will now proceed to steal all the remaining heap space
     //_outtext("\n\n\n\n\n\n\n\n");
-    //buildputs("Loading sound and graphics...\n");
+    //LOG_F(INFO, "Loading sound and graphics...");
     //AnimateCacheCursor();
     LoadImages("tiles%03i.art");
 
@@ -1027,7 +1028,13 @@ InitGame(int32_t argc, char const * const * argv)
     if (!SW_SHAREWARE)
         LoadCustomInfoFromScript("swcustom.txt");   // Load user customisation information
 
-    if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
+    char const * const deffile = G_DefFile();
+    uint32_t stime = timerGetTicks();
+    if (!loaddefinitionsfile(deffile))
+    {
+        uint32_t etime = timerGetTicks();
+        LOG_F(INFO, "Definitions file '%s' loaded in %d ms.", deffile, etime-stime);
+    }
 
     for (char * m : g_defModules)
         Xfree(m);
@@ -1795,7 +1802,7 @@ LogoLevel(void)
     if (g_noLogo)
         return;
 
-    int fin;
+    buildvfs_kfd fin;
     unsigned char pal[PAL_SIZE];
     UserInput uinfo = { FALSE, FALSE, FALSE, dir_None };
 
@@ -1806,7 +1813,7 @@ LogoLevel(void)
     // PreCache Anim
     LoadAnm(0);
 
-    if ((fin = kopen4load("3drealms.pal", 0)) != -1)
+    if ((fin = kopen4load("3drealms.pal", 0)) != buildvfs_kfd_invalid)
     {
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
@@ -1964,83 +1971,56 @@ SybexScreen(void)
     if (CommEnabled)
         return;
 
-    rotatesprite(0, 0, RS_SCALE, 0, 5261, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
+    if (tilesiz[SYBEX_PIC].x <= 0)
+        return;
+
+    rotatesprite(0, 0, RS_SCALE, 0, SYBEX_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
     videoNextPage();
 
     ResetKeys();
     while (!KeyPressed() && !quitevent) handleevents();
 }
 
-// CTW REMOVED
-/*
 void
 TenScreen(void)
-    {
-    char called;
-    int fin;
-    char backup_pal[256*3];
-    char pal[PAL_SIZE];
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    int i;
-    uint32_t bak;
-    int bakready2send;
-
+{
     if (CommEnabled)
         return;
 
-    bak = totalclock;
+    if (tilesiz[TEN_PIC].x <= 0)
+        return;
 
-    flushperms();
-    clearview(0);
-    nextpage();
+    //videoNextPage();
+    //FadeOut(0, 0);
 
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
+    buildvfs_kfd fin;
+    if ((fin = kopen4load("ten.pal", 0)) != buildvfs_kfd_invalid)
+    {
+        unsigned char pal[PAL_SIZE];
 
-    GetPaletteFromVESA(pal);
-    memcpy(backup_pal, pal, PAL_SIZE);
-
-    if ((fin = kopen4load("ten.pal", 0)) != -1)
-        {
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
-        }
 
-    // palette to black
-    FadeOut(0, 0);
-    bakready2send = ready2send;
-    //totalclock = 0;
-    //ototalclock = 0;
+        for (auto & c : pal)
+            c <<= 2;
 
-    flushperms();
-    // draw it
+        paletteSetColorTable(TENPAL, pal);
+        videoSetPalette(gs.Brightness, TENPAL, 2);
+
+        videoClearViewableArea(0L);
+    }
+
     rotatesprite(0, 0, RS_SCALE, 0, TEN_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    // bring to the front - still back palette
-    nextpage();
-    // set pal
-    SetPaletteToVESA(pal);
+    videoNextPage();
     //FadeIn(0, 3);
-    ResetKeys();
 
+    ResetKeys();
     while (!KeyPressed() && !quitevent) handleevents();
 
-    palookup[0] = palook_bak;
-
-    clearview(0);
-    nextpage();
-    SetPaletteToVESA(backup_pal);
-
-    // put up a blank screen while loading
-    clearview(0);
-    nextpage();
-
-    ready2send = bakready2send;
-    totalclock = bak;
-    }
-*/
-// CTW REMOVED END
+    videoClearViewableArea(0L);
+    videoNextPage();
+    videoSetPalette(gs.Brightness, BASEPAL, 2);
+}
 
 void DrawMenuLevelScreen(void)
 {
@@ -2918,15 +2898,13 @@ Control(int32_t argc, char const * const * argv)
 void
 _Assert(const char *expr, const char *strFile, unsigned uLine)
 {
-    buildprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
+    LOG_F(ERROR, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
     debug_break();
 
     TerminateGame();
 
 #if 1 /* defined RENDERTYPEWIN */
     wm_msgbox(apptitle, "%s", ds);
-#else
-    printf("Assertion failed: %s\n %s, line %u\n", expr, strFile, uLine);
 #endif
     exit(0);
 }
@@ -3219,12 +3197,12 @@ void DosScreen(void)
 
 #define DOS_SCREEN_SIZE (4000-(80*2))
 #define DOS_SCREEN_PTR ((void *)(0xB8000))
-    int fin;
+    buildvfs_kfd fin;
     int i;
     char buffer[DOS_SCREEN_SIZE];
 
     fin = kopen4load(DOS_SCREEN_NAME,0);
-    if (fin == -1)
+    if (fin == buildvfs_kfd_invalid)
         return;
 
     kread(fin, buffer, sizeof(buffer));
@@ -3322,10 +3300,10 @@ int DetectShareware(void)
 #define DOS_SCREEN_NAME_SW  "SHADSW.BIN"
 #define DOS_SCREEN_NAME_REG "SWREG.BIN"
 
-    int h;
+    buildvfs_kfd h;
 
     h = kopen4load(DOS_SCREEN_NAME_SW,1);
-    if (h >= 0)
+    if (h != buildvfs_kfd_invalid)
     {
         SW_GameFlags |= GAMEFLAG_SHAREWARE;
         kclose(h);
@@ -3333,7 +3311,7 @@ int DetectShareware(void)
     }
 
     h = kopen4load(DOS_SCREEN_NAME_REG,1);
-    if (h >= 0)
+    if (h != buildvfs_kfd_invalid)
     {
         SW_GameFlags &= ~GAMEFLAG_SHAREWARE;
         kclose(h);
@@ -3475,7 +3453,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     wm_setapptitle(APPNAME);
 
-    initprintf(APPNAME " %s\n", s_buildRev);
+    LOG_F(INFO, APPNAME " %s", s_buildRev);
     PrintBuildInfo();
 
     OSD_SetFunctions(
@@ -3487,10 +3465,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     if (argc > 1)
     {
-        buildputs("Application parameters: ");
+        char tempbuf[1024];
+        size_t constexpr size = ARRAY_SIZE(tempbuf);
+        size_t bytesWritten = Bsnprintf(tempbuf, size, "Application parameters:");
         for (i = 1; i < argc; ++i)
-            buildprintf("%s ", argv[i]);
-        buildputs("\n");
+            bytesWritten += Bsnprintf(tempbuf + bytesWritten, size - bytesWritten, " %s", argv[i]);
+        LOG_F(INFO, "%s", tempbuf);
     }
 
     SW_ExtInit();
@@ -3509,8 +3489,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
                 const char * dir = arg+1;
                 int err = addsearchpath(dir);
                 if (err < 0)
-                    buildprintf("Failed adding %s for game data: %s\n", dir,
-                                err==-1 ? "not a directory" : "no such directory");
+                    LOG_F(ERROR, "Failed adding %s for game data: %s", dir,
+                                 err==-1 ? "not a directory" : "no such directory");
             }
         }
     }
@@ -3536,8 +3516,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     if (enginePreInit())
     {
-        wm_msgbox("Build Engine Initialisation Error",
-                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        wm_msgbox("Build Engine Initialization Error",
+                  "There was a problem initializing the engine: %s", engineerrstr);
         exit(1);
     }
 
@@ -3560,11 +3540,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     if (!g_useCwd)
         SW_CleanupSearchPaths();
 
-    if (!DetectShareware())
-    {
-        if (SW_SHAREWARE) buildputs("Detected shareware GRP\n");
-        else buildputs("Detected registered GRP\n");
-    }
+    DetectShareware();
 
     if (SW_SHAREWARE)
     {
@@ -3602,11 +3578,11 @@ int32_t app_main(int32_t argc, char const * const * argv)
     DebugOperate = TRUE;
 
     if (SW_SHAREWARE)
-        buildputs("SHADOW WARRIOR(tm) Version 1.2 (Shareware Version)\n");
+        LOG_F(INFO, "SHADOW WARRIOR(tm) Version 1.2 (Shareware Version)");
     else
-        buildputs("SHADOW WARRIOR(tm) Version 1.2\n");
+        LOG_F(INFO, "SHADOW WARRIOR(tm) Version 1.2");
 
-    buildputs("Copyright (c) 1997 3D Realms Entertainment\n");
+    LOG_F(INFO, "Copyright (c) 1997 3D Realms Entertainment");
 
     UserMapName[0] = '\0';
 
@@ -4002,13 +3978,13 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
         else if (Bstrncasecmp(arg, "map", 3) == 0 && !SW_SHAREWARE && cnt+1 < argc)
         {
-            int fil;
+            buildvfs_kfd fil;
 
             strcpy(UserMapName, argv[++cnt]);
             if (strchr(UserMapName, '.') == 0)
                 strcat(UserMapName, ".map");
 
-            if ((fil = kopen4load(UserMapName,0)) == -1)
+            if ((fil = kopen4load(UserMapName,0)) == buildvfs_kfd_invalid)
             {
                 wm_msgbox(apptitle, "ERROR: Could not find user map %s!", UserMapName);
                 kclose(fil);
@@ -4023,7 +3999,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             if (strlen(arg) > 1)
             {
                 if (initgroupfile(arg+1) >= 0)
-                    buildprintf("Added %s\n", arg+1);
+                    LOG_F(INFO, "Added %s", arg+1);
             }
         }
         else if (Bstrncasecmp(arg, "h", 1) == 0 && !SW_SHAREWARE)
@@ -5858,6 +5834,7 @@ extern char tilefilenum[MAXTILES]; //0-11
 #if 0
 loadtile(short tilenume)
 {
+    buildvfs_kfd artfil = buildvfs_kfd_invalid;
     char *ptr;
     int i;
     char zerochar = 0;
@@ -5868,7 +5845,7 @@ loadtile(short tilenume)
     i = tilefilenum[tilenume];
     if (i != artfilnum)
     {
-        if (artfil != -1)
+        if (artfil != buildvfs_kfd_invalid)
             kclose(artfil);
         artfilnum = i;
         artfilplc = 0L;
@@ -5990,7 +5967,7 @@ int osdcmd_restartvid(const osdfuncparm_t *parm)
 
     videoResetMode();
     if (videoSetGameMode(fullscreen, xdim, ydim, bpp, upscalefactor))
-        buildputs("restartvid: Reset failed...\n");
+        LOG_F(WARNING, "restartvid: Reset failed...");
 
     return OSDCMD_OK;
 }

@@ -1520,7 +1520,7 @@ static void Net_SyncPlayer(ENetEvent *event)
     if (numplayers + g_netPlayersWaiting >= MAXPLAYERS)
     {
         enet_peer_disconnect_later(event->peer, DISC_SERVER_FULL);
-        initprintf("Refused peer; server full.\n");
+        LOG_F(INFO, "Refused peer; server full.");
         return;
     }
 
@@ -1659,28 +1659,28 @@ static void Net_ReceiveDisconnect(ENetEvent *event)
     switch (event->data)
     {
     case DISC_BAD_PASSWORD:
-        initprintf("Bad password.\n");
+        LOG_F(ERROR, "Bad password.");
         return;
     case DISC_VERSION_MISMATCH:
-        initprintf("Version mismatch.\n");
+        LOG_F(ERROR, "Version mismatch.");
         return;
     case DISC_INVALID:
-        initprintf("Invalid data detected.\n");
+        LOG_F(ERROR, "Invalid data detected.");
         return;
     case DISC_SERVER_QUIT:
-        initprintf("The server is quitting.\n");
+        LOG_F(ERROR, "The server is quitting.");
         return;
     case DISC_SERVER_FULL:
-        initprintf("The server is full.\n");
+        LOG_F(ERROR, "The server is full.");
         return;
     case DISC_KICKED:
-        initprintf("You have been kicked from the server.\n");
+        LOG_F(ERROR, "You have been kicked from the server.");
         return;
     case DISC_BANNED:
-        initprintf("You are banned from this server.\n");
+        LOG_F(ERROR, "You are banned from this server.");
         return;
     default:
-        initprintf("Disconnected.\n");
+        LOG_F(INFO, "Disconnected.");
         return;
     }
 }
@@ -1777,13 +1777,13 @@ static void Net_ReceiveChallenge(uint8_t *pbuf, int32_t packbufleng, ENetEvent *
     if (byteVersion != BYTEVERSION || netVersion != NETVERSION)
     {
         enet_peer_disconnect_later(event->peer, DISC_VERSION_MISMATCH);
-        initprintf("Bad client protocol: version %u.%u\n", byteVersion, netVersion);
+        LOG_F(ERROR, "Bad client protocol: version %u.%u", byteVersion, netVersion);
         return;
     }
     if (crc != Bcrc32((uint8_t *)g_netPassword, Bstrlen(g_netPassword), 0))
     {
         enet_peer_disconnect_later(event->peer, DISC_BAD_PASSWORD);
-        initprintf("Bad password from client.\n");
+        LOG_F(ERROR, "Bad password from client.");
         return;
     }
 
@@ -2070,7 +2070,7 @@ static void Net_ParseClientPacket(ENetEvent *event)
     NET_DEBUG_VAR enum DukePacket_t packetType = (enum DukePacket_t)pbuf[0];
 
 #ifdef PACKET_RECV_PRINT
-    initprintf("Received Packet: type: %d : len %d\n", pbuf[0], packbufleng);
+    LOG_F(INFO, "Received Packet: type: %d : len %d", pbuf[0], packbufleng);
 #endif
     switch (pbuf[0])
     {
@@ -2137,7 +2137,7 @@ static void Net_HandleClientPackets(void)
         if (playeridx < 0 || playeridx >= MAXPLAYERS)
         {
             enet_peer_disconnect_later(event.peer, DISC_INVALID);
-            buildprint("Invalid player id (", playeridx, ") from client.\n");
+            LOG_F(ERROR, "Invalid player id (%" PRIiPTR ") from client.", playeridx);
             continue;
         }
 
@@ -2200,7 +2200,7 @@ static void Net_HandleClientPackets(void)
             enet_host_broadcast(g_netServer, CHAN_GAMESTATE,
             enet_packet_create(&packbuf[0], 6, ENET_PACKET_FLAG_RELIABLE));
 
-            initprintf("%s disconnected.\n", g_player[playeridx].user_name);
+            LOG_F(INFO, "%s disconnected.", g_player[playeridx].user_name);
             event.peer->data = NULL;
 
             Dbg_PacketSent(PACKET_PLAYER_DISCONNECTED);
@@ -2391,7 +2391,7 @@ static void Net_ParseServerPacket(ENetEvent *event)
     --packbufleng;
 
 #ifdef PACKET_RECV_PRINT
-    initprintf("Received Packet: type: %d : len %d\n", pbuf[0], packbufleng);
+    LOG_F(INFO, "Received Packet: type: %d : len %d", pbuf[0], packbufleng);
 #endif
     switch (pbuf[0])
     {
@@ -4733,7 +4733,7 @@ void Net_Connect(const char *srvaddr)
 
     if (g_netClient == NULL)
     {
-        initprintf("An error occurred while trying to create an ENet client host.\n");
+        LOG_F(ERROR, "An error occurred while trying to create an ENet client host.");
         Xfree(oursrvaddr);
         return;
     }
@@ -4747,7 +4747,7 @@ void Net_Connect(const char *srvaddr)
 
     if (g_netClientPeer == NULL)
     {
-        initprintf("No available peers for initiating an ENet connection.\n");
+        LOG_F(INFO, "No available peers for initiating an ENet connection.");
         Xfree(oursrvaddr);
         return;
     }
@@ -4757,7 +4757,7 @@ void Net_Connect(const char *srvaddr)
         /* Wait up to 5 seconds for the connection attempt to succeed. */
         if (enet_host_service(g_netClient, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
         {
-            initprintf("Connection to %s:%d succeeded.\n", oursrvaddr, address.port);
+            LOG_F(INFO, "Connection to %s:%d succeeded.", oursrvaddr, address.port);
             Net_AllocatePacketBuffer();
             Xfree(oursrvaddr);
             return;
@@ -4768,9 +4768,9 @@ void Net_Connect(const char *srvaddr)
             /* received. Reset the peer in the event the 5 seconds   */
             /* had run out without any significant event.            */
             enet_peer_reset(g_netClientPeer);
-            initprintf("Connection to %s:%d failed.\n", oursrvaddr, address.port);
+            LOG_F(ERROR, "Connection to %s:%d failed.", oursrvaddr, address.port);
         }
-        initprintf(connectCount ? "Retrying...\n" : "Giving up connection attempt.\n");
+        LOG_F(INFO, connectCount ? "Retrying..." : "Giving up connection attempt.");
     }
 
     // [75] note: it only gets here if there was an error

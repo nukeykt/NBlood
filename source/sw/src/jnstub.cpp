@@ -685,11 +685,10 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 {
     SW_ExtPreInit(argc, argv);
 
-    OSD_SetLogFile("wangulator.log");
     char tempbuf[256];
     snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
-    buildprintf("%s\n", tempbuf);
+    LOG_F(INFO, "%s", tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -749,7 +748,10 @@ ExtInit(void)
         */
     bpp = 32;
     if (loadsetup(SETUPFILENAME) < 0)
-        buildputs("Configuration file not found, using defaults.\n"), rv = 1;
+    {
+        LOG_F(INFO, "Configuration file not found, using defaults.");
+        rv = 1;
+    }
     Bmemcpy((void *)buildkeys,(void *)default_buildkeys,NUMBUILDKEYS);       //Trick to make build use setup.dat keys
     if (option[4] > 0)
         option[4] = 0;
@@ -781,8 +783,8 @@ int32_t ExtPostStartupWindow(void)
 
     if (engineInit())
     {
-        wm_msgbox("Build Engine Initialisation Error",
-                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        wm_msgbox("Build Engine Initialization Error",
+                  "There was a problem initializing the engine: %s", engineerrstr);
         return -1;
     }
 

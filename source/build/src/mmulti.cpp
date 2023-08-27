@@ -130,7 +130,7 @@ void nfIncCP()  //function to handle currentplayer increment
         if (nfCurrentPlayer >= numplayers)
         {
             nfFinished = 1; //Set NatFree finished flag. Perform non-natfree networking routines
-            initprintf("natfree: all players accounted for.\n");
+            LOG_F(INFO, "natfree: all players accounted for.");
             return;
         }
     }
@@ -277,7 +277,7 @@ int netread(int *other, char *dabuf, int bufsiz)  //0:no packets in buffer
                 {
                     if (otherport[nfCurrentPlayer] != snatchport) //If Port numbers do not match
                     {
-                        initprintf("natfree: port number for player %d changed from %d to %d.\n",nfCurrentPlayer,otherport[nfCurrentPlayer],snatchport);
+                        LOG_F(INFO, "natfree: port number for player %d changed from %d to %d.",nfCurrentPlayer,otherport[nfCurrentPlayer],snatchport);
                         otherport[nfCurrentPlayer] = snatchport; //Correct the port number
                     }
                 }
@@ -727,14 +727,14 @@ int mmulti_getpacket(int *retother, unsigned char *bufptr)
                         /*Addfaz NatFree Start*/
                         if (natfree && !nfCheckHF(other))
                         {
-                            initprintf("natfree: heard from player %d\n", other);
+                            LOG_F(INFO, "natfree: heard from player %d", other);
                             HeardFrom[other] = 1;
                             HeardFrom2[other] = 1;
                             nfIncCP();
                         }
                         else
                         {
-                            initprintf("mmulti: player %d connected! (%d.%d.%d.%d:%d)\n", other, otherip[other]&255,(otherip[other]>>8)&255,(otherip[other]>>16)&255,(((unsigned int)otherip[other])>>24),otherport[other]);
+                            LOG_F(INFO, "mmulti: player %d connected! (%d.%d.%d.%d:%d)", other, otherip[other]&255,(otherip[other]>>8)&255,(otherip[other]>>16)&255,(((unsigned int)otherip[other])>>24),otherport[other]);
                         }
                         /*Addfaz NatFree End*/
 
@@ -761,7 +761,7 @@ int mmulti_getpacket(int *retother, unsigned char *bufptr)
                         /*Addfaz NatFree Start*/
                         if (natfree)
                         {
-                            initprintf("natfree: heard from player %d (head).\n", connecthead);
+                            LOG_F(INFO, "natfree: heard from player %d (head).", connecthead);
                             HeardFrom[connecthead] = 1;
                             HeardFrom2[connecthead] = 1;
                             nfIncCP();
@@ -812,7 +812,7 @@ int mmulti_getpacket(int *retother, unsigned char *bufptr)
                 /*Addfaz NatFree Start*/
                 if (natfree && !HeardFrom2[nfCurrentPlayer] && i == nfCurrentPlayer)
                 {
-                    initprintf("natfree: heard from player %d.\n", i);
+                    LOG_F(INFO, "natfree: heard from player %d.", i);
                     HeardFrom2[nfCurrentPlayer] = 1;
                     HeardFrom[nfCurrentPlayer] = 1;
                     nfIncCP();
@@ -846,7 +846,7 @@ int getexternaladdress(char *buffer, const char *host, int port)
 
         if (WSAStartup(0x101,&ws) == SOCKET_ERROR)
         {
-            initprintf("mmulti: Winsock error in getexternaladdress() (%d)\n",errno);
+            LOG_F(ERROR, "mmulti: Winsock error in getexternaladdress() (%d)",errno);
             return(0);
         }
         wsainitialized = 1;
@@ -855,7 +855,7 @@ int getexternaladdress(char *buffer, const char *host, int port)
 
     if ((h=gethostbyname(host)) == NULL)
     {
-        initprintf("mmulti: gethostbyname() error in getexternaladdress() (%d)\n",h_errno);
+        LOG_F(ERROR, "mmulti: gethostbyname() error in getexternaladdress() (%d)", h_errno);
         return(0);
     }
 
@@ -869,24 +869,24 @@ int getexternaladdress(char *buffer, const char *host, int port)
 
     if (mysock == INVALID_SOCKET)
     {
-        initprintf("mmulti: socket() error in getexternaladdress() (%d)\n",errno);
+        LOG_F(ERROR, "mmulti: socket() error in getexternaladdress() (%d)", errno);
         return(0);
     }
 
     if (connect(mysock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr)) == SOCKET_ERROR)
     {
-        initprintf("mmulti: connect() error in getexternaladdress() (%d)\n",errno);
+        LOG_F(ERROR, "mmulti: connect() error in getexternaladdress() (%d)", errno);
         return(0);
     }
 
     bytes_sent = send(mysock, req, strlen(req), 0);
     if (bytes_sent == SOCKET_ERROR)
     {
-        initprintf("mmulti: send() error in getexternaladdress() (%d)\n",errno);
+        LOG_F(ERROR, "mmulti: send() error in getexternaladdress() (%d)", errno);
         return(0);
     }
 
-    //    initprintf("sent %d bytes\n",bytes_sent);
+    // LOG_F(INFO, "mmulti: sent %d bytes", bytes_sent);
     recv(mysock, (char *)&tempbuf, sizeof(tempbuf), 0);
     closesocket(mysock);
     j = Bstrlen(text);

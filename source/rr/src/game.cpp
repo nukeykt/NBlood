@@ -7806,7 +7806,7 @@ static void G_FatalEngineError(void)
     wm_msgbox("Build Engine Initialization Error",
               "There was a problem initializing the Build engine: %s", engineerrstr);
     G_Cleanup();
-    ERRprintf("G_Startup: There was a problem initializing the Build engine: %s\n", engineerrstr);
+    LOG_F(ERROR, "G_Startup: There was a problem initializing the Build engine: %s", engineerrstr);
     app_exit(6);
 }
 
@@ -8280,7 +8280,7 @@ int app_main(int argc, char const * const * argv)
     {
         wm_msgbox("Build Engine Initialization Error",
                   "There was a problem initializing the Build engine: %s", engineerrstr);
-        ERRprintf("app_main: There was a problem initializing the Build engine: %s\n", engineerrstr);
+        LOG_F(ERROR, "app_main: There was a problem initializing the Build engine: %s", engineerrstr);
         app_exit(2);
     }
 
@@ -8453,7 +8453,7 @@ int app_main(int argc, char const * const * argv)
     {
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
-            ERRprintf("There was an error initializing the CONTROL system.\n");
+            LOG_F(ERROR, "There was an error initializing the CONTROL system.");
             engineUnInit();
             app_exit(5);
         }

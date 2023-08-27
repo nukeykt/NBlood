@@ -1241,7 +1241,8 @@ void ExtShowWallData(int16_t wallnum)       //F6
 // formerly Show2dText and Show3dText
 static void ShowFileText(const char *name)
 {
-    int32_t fp,t;
+    buildvfs_kfd fp;
+    int32_t t;
     uint8_t x=0,y=4,xmax=0,xx=0,col=0;
 
     if (!in3dmode())
@@ -1250,7 +1251,7 @@ static void ShowFileText(const char *name)
         drawgradient();
     }
 
-    if ((fp=kopen4load(name,0)) == -1)
+    if ((fp=kopen4load(name,0)) == buildvfs_kfd_invalid)
     {
         Bsprintf(tempbuf, "ERROR: file \"%s\" not found.", name);
         if (in3dmode())
@@ -9328,10 +9329,11 @@ static void parsegroupfiles_include(const char *fn, scriptfile *script, const ch
     if (!included)
     {
         if (!Bstrcasecmp(cmdtokptr,"null"))
-            initprintf("Warning: Failed including %s as module\n", fn);
+            LOG_F(WARNING, "warning: failed including %s as module", fn);
         else
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+            LOG_F(WARNING, "%s:%d: warning: failed including %s",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr),
+                           fn);
     }
     else
     {
@@ -9423,8 +9425,9 @@ static int32_t parsegroupfiles(scriptfile *script)
             if (scriptfile_getsymbol(script, &number)) break;
 
             if (EDUKE32_PREDICT_FALSE(scriptfile_addsymbolvalue(name, number) < 0))
-                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
-                           name, number, script->filename, scriptfile_getlinum(script, cmdtokptr));
+                LOG_F(WARNING, "%s:%d: warning: symbol %s was NOT redefined to %d",
+                               script->filename, scriptfile_getlinum(script, cmdtokptr),
+                               name, number);
             break;
         }
         case T_NOAUTOLOAD:
@@ -9482,7 +9485,8 @@ static int32_t parsegroupfiles(scriptfile *script)
 
             if (soundNum==-1)
             {
-                initprintf("Error: missing ID for sound definition near line %s:%d\n", script->filename, scriptfile_getlinum(script, tokenPtr));
+                LOG_F(ERROR, "%s:%d: error: missing ID for sound definition",
+                             script->filename, scriptfile_getlinum(script, tokenPtr));
                 break;
             }
 
@@ -9490,7 +9494,8 @@ static int32_t parsegroupfiles(scriptfile *script)
                 break;
 
             if (S_DefineSound(soundNum, fileName, definedName, minpitch, maxpitch, priority, type, distance, volume) == -1)
-                initprintf("Error: invalid sound ID on line %s:%d\n", script->filename, scriptfile_getlinum(script, tokenPtr));
+                LOG_F(ERROR, "%s:%d: error: invalid sound ID",
+                             script->filename, scriptfile_getlinum(script, tokenPtr));
         }
         break;
         case T_GLOBALGAMEFLAGS:
@@ -9572,8 +9577,9 @@ int32_t parsetilegroups(scriptfile *script)
                 included = scriptfile_fromfile(fn);
                 if (!included)
                 {
-                    initprintf("Warning: Failed including %s on line %s:%d\n",
-                               fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+                    LOG_F(WARNING, "%s:%d: warning: failed including %s",
+                                   script->filename, scriptfile_getlinum(script,cmdtokptr),
+                                   fn);
                 }
                 else
                 {
@@ -9591,8 +9597,9 @@ int32_t parsetilegroups(scriptfile *script)
             if (scriptfile_getstring(script,&name)) break;
             if (scriptfile_getsymbol(script,&number)) break;
             if (scriptfile_addsymbolvalue(name,number) < 0)
-                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
-                           name,number,script->filename,scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(WARNING, "%s:%d: warning: symbol %s was NOT redefined to %d",
+                               script->filename, scriptfile_getlinum(script,cmdtokptr),
+                               name, number);
             break;
         }
         case T_TILEGROUP:
@@ -9892,10 +9899,11 @@ static void parseconsounds_include(const char *fn, scriptfile *script, const cha
     if (!included)
     {
         if (!Bstrcasecmp(cmdtokptr,"null"))
-            initprintf("Warning: Failed including %s as module\n", fn);
+            LOG_F(WARNING, "warning: failed including %s as module", fn);
         else
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+            LOG_F(WARNING, "%s:%d: warning: failed including %s",
+                           script->filename,scriptfile_getlinum(script,cmdtokptr),
+                           fn);
     }
     else
     {
@@ -9953,8 +9961,9 @@ static int32_t parseconsounds(scriptfile *script)
             if (scriptfile_getstring(script,&name)) break;
             if (scriptfile_getsymbol(script,&number)) break;
             if (scriptfile_addsymbolvalue(name,number) < 0)
-                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
-                           name,number,script->filename,scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(WARNING, "%s:%d: warning: symbol %s was NOT redefined to %d",
+                                script->filename, scriptfile_getlinum(script,cmdtokptr),
+                                name, number);
             break;
         }
         case T_GAMESTARTUP:
@@ -9975,8 +9984,9 @@ static int32_t parseconsounds(scriptfile *script)
 
             if (sndnum < 0 || sndnum >= MAXSOUNDS)
             {
-                initprintf("Warning: invalid sound definition %s (sound number < 0 or >= MAXSOUNDS) on line %s:%d\n",
-                           definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(WARNING, "%s:%d: warning: invalid sound definition %s (sound number < 0 or >= MAXSOUNDS)",
+                               script->filename,scriptfile_getlinum(script,cmdtokptr),
+                               definedname);
                 break;
             }
 
@@ -9986,8 +9996,9 @@ static int32_t parseconsounds(scriptfile *script)
             slen = Bstrlen(filename);
             if (slen >= BMAX_PATH)
             {
-                initprintf("Warning: invalid sound definition %s (filename too long) on line %s:%d\n",
-                           definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(WARNING, "%s:%d: warning: invalid sound definition %s (filename too long)",
+                               script->filename,scriptfile_getlinum(script,cmdtokptr),
+                               definedname);
                 break;
             }
 
@@ -10004,7 +10015,8 @@ BAD:
             }
 
             if (S_DefineSound(sndnum, filename, definedname, ps, pe, pr, m, vo, volume) == -1)
-                initprintf("Error: invalid sound ID on line %s:%d\n", script->filename, scriptfile_getlinum(script, cmdtokptr));
+                LOG_F(ERROR, "%s:%d: error: invalid sound ID",
+                             script->filename, scriptfile_getlinum(script, cmdtokptr));
 
             break;
         }
@@ -10023,12 +10035,12 @@ static int32_t loadconsounds(const char *fn)
     scriptfile *script;
     int32_t ret;
 
-    initprintf("Loading sounds from \"%s\"\n",fn);
+    LOG_F(INFO, "Loading sounds from \"%s\"",fn);
 
     script = scriptfile_fromfile(fn);
     if (!script)
     {
-        initprintf("Error loading sounds: file \"%s\" not found.\n", fn);
+        LOG_F(ERROR, "Error loading sounds: file \"%s\" not found.", fn);
         return -1;
     }
     ret = parseconsounds(script);
@@ -10041,14 +10053,14 @@ static int32_t loadconsounds(const char *fn)
     g_scriptModules.clear();
 
     if (ret < 0)
-        initprintf("There was an error parsing \"%s\".\n", fn);
+        LOG_F(ERROR, "There was an error parsing \"%s\".", fn);
     else if (ret == 0)
-        initprintf("\"%s\" doesn't contain sound definitions. No sounds loaded.\n", fn);
+        LOG_F(INFO, "\"%s\" doesn't contain sound definitions. No sounds loaded.", fn);
     else
-        initprintf("Loaded %d sound definitions.\n", ret);
+        LOG_F(INFO, "Loaded %d sound definitions.", ret);
 
     if (g_visibility != 512)
-        initprintf("Global visibility: %d\n", g_visibility);
+        LOG_F(INFO, "Global visibility: %d", g_visibility);
 
     scriptfile_close(script);
     scriptfile_clearsymbols();
@@ -10073,7 +10085,7 @@ static void m32script_interrupt_handler(int signo)
 
 static void M32_HandleMemErr(int32_t line, const char *file, const char *func)
 {
-    initprintf("Out of memory in %s:%d (%s)\n", file, line, func);
+    LOG_F(ERROR, "Out of memory in %s:%d (%s)", file, line, func);
     osdcmd_quit(NULL);
 }
 
@@ -10139,7 +10151,7 @@ int32_t ExtPostStartupWindow(void)
 
     if (engineInit())
     {
-        initprintf("There was a problem initializing the engine.\n");
+        LOG_F(ERROR, "There was a problem initializing the engine: %s", engineerrstr);
         return -1;
     }
 

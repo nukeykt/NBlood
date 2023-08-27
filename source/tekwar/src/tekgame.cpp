@@ -588,7 +588,7 @@ void InstallEngine()
             "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
         //TODO:
         //G_Cleanup();
-        ERRprintf("G_Startup: There was a problem initializing the engine: %s\n", engineerrstr);
+        LOG_F(ERROR, "G_Startup: There was a problem initializing the engine: %s", engineerrstr);
         exit(6);
     }
     if (videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, 0) < 0)
@@ -716,8 +716,8 @@ int app_main(int argc, char const * const argv[])
      CONFIG_ReadSetup();
 
      if (enginePreInit()) {
-          wm_msgbox("Build Engine Initialisation Error",
-               "There was a problem initialising the Build engine: %s", engineerrstr);
+          wm_msgbox("Build Engine Initialization Error",
+               "There was a problem initializing the Build engine: %s", engineerrstr);
           exit(1);
      }
 

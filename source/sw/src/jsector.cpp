@@ -349,7 +349,7 @@ JS_InitMirrors(void)
             {
                 if (mirrorcnt >= MAXMIRRORS)
                 {
-                    buildprintf("MAXMIRRORS reached! Skipping mirror wall[%d]\n", i);
+                    LOG_F(WARNING, "MAXMIRRORS reached! Skipping mirror wall[%d]", i);
                     wall[i].overpicnum = sector[s].ceilingpicnum;
                     continue;
                 }
@@ -402,8 +402,8 @@ JS_InitMirrors(void)
 
                     if (!Found_Cam)
                     {
-                        buildprintf("Could not find the camera view sprite for match %d\n",TrackerCast(wall[i].hitag));
-                        buildprintf("Map Coordinates: x = %d, y = %d\n",TrackerCast(wall[i].x),TrackerCast(wall[i].y));
+                        LOG_F(WARNING, "Could not find the camera view sprite for match %d (Map Coordinates: x = %d, y = %d)",
+                                       TrackerCast(wall[i].hitag), TrackerCast(wall[i].x), TrackerCast(wall[i].y));
                         break;
                     }
 
@@ -430,9 +430,8 @@ JS_InitMirrors(void)
 
                         if (!Found_Cam)
                         {
-                            buildprintf("Did not find drawtotile for camera number %d\n",mirrorcnt);
-                            buildprintf("wall[%d].hitag == %d\n",i,TrackerCast(wall[i].hitag));
-                            buildprintf("Map Coordinates: x = %d, y = %d\n", TrackerCast(wall[i].x), TrackerCast(wall[i].y));
+                            LOG_F(WARNING, "Did not find drawtotile for camera number %d (wall[%d].hitag == %d, Map Coordinates: x = %d, y = %d)",
+                                            mirrorcnt, i, TrackerCast(wall[i].hitag), TrackerCast(wall[i].x), TrackerCast(wall[i].y));
                             RESET_BOOL1(&sprite[mirror[mirrorcnt].camera]);
                         }
                     }
@@ -801,8 +800,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
                         if (mirror[cnt].campic == -1)
                         {
                             TerminateGame();
-                            buildprintf("Missing campic for mirror %d\n",cnt);
-                            buildprintf("Map Coordinates: x = %d, y = %d\n",midx,midy);
+                            LOG_F(ERROR, "Missing campic for mirror %d (Map Coordinates: x = %d, y = %d)", cnt, midx, midy);
                             exit(0);
                         }
 

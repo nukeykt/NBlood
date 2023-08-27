@@ -51,11 +51,11 @@ extern int DemoRecCnt;                    // Can only record 1-player game
 
 // Demo File - reading from group
 #if DEMO_FILE_TYPE == DEMO_FILE_GROUP
-typedef long DFILE;
+typedef buildvfs_kfd DFILE;
 #define DREAD(ptr, size, num, handle) kread((handle),(ptr),(size)*(num))
 #define DOPEN_READ(name) kopen4load(name,0)
 #define DCLOSE(handle) kclose(handle)
-#define DF_ERR -1
+#define DF_ERR buildvfs_kfd_invalid
 #else
 typedef FILE *DFILE;
 #define DREAD(ptr, size, num,handle) fread((ptr),(size),(num),(handle))

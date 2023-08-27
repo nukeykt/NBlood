@@ -28,7 +28,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "cache1d.h"
 
 typedef BFILE* MFILE_WRITE;
-typedef int32_t MFILE_READ;
+typedef buildvfs_kfd MFILE_READ;
 #define MREAD(ptr, size, num,handle) kdfread((ptr),(size),(num),(handle))
 #define MWRITE(ptr, size, num,handle) dfwrite((ptr),(size),(num),(handle))
 #define MOPEN_WRITE(name) Bfopen(name,"wb")
@@ -36,4 +36,4 @@ typedef int32_t MFILE_READ;
 #define MCLOSE_WRITE(handle) Bfclose(handle)
 #define MCLOSE_READ(handle) kclose(handle)
 #define MOPEN_WRITE_ERR 0
-#define MOPEN_READ_ERR -1
+#define MOPEN_READ_ERR buildvfs_kfd_invalid

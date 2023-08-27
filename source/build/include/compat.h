@@ -699,13 +699,6 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 # define Bsqrtf sqrtf
 #endif
 
-// redefined for apple/ppc, which chokes on stderr when linking...
-#if defined EDUKE32_OSX && defined __BIG_ENDIAN__
-# define ERRprintf(fmt, ...) printf(fmt, ## __VA_ARGS__)
-#else
-# define ERRprintf(fmt, ...) fprintf(stderr, fmt, ## __VA_ARGS__)
-#endif
-
 #ifdef __ANDROID__
 void eduke32_exit_return(int) ATTRIBUTE((noreturn));
 # define exit(x) eduke32_exit_return(x)

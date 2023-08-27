@@ -1065,7 +1065,7 @@ static void C_SetScriptSize(int32_t newsize)
             if (EDUKE32_PREDICT_FALSE(apScript[i] < (intptr_t)apScript || apScript[i] > (intptr_t)g_scriptPtr))
             {
                 g_errorCnt++;
-                buildprint("Internal compiler error at ", i, " (0x", hex(i), ")\n");
+                LOG_F(ERROR, "Internal compiler error at %d (0x%x)", i, i);
                 VM_ScriptInfo(&apScript[i], 16);
             }
             else

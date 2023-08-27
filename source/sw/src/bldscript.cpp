@@ -87,10 +87,10 @@ SWBOOL    tokenready;                     // only TRUE if UnGetToken was just ca
 SWBOOL LoadScriptFile(const char *filename)
 {
     int size, readsize;
-    int fp;
+    buildvfs_kfd fp;
 
 
-    if ((fp=kopen4load(filename,0)) == -1)
+    if ((fp=kopen4load(filename,0)) == buildvfs_kfd_invalid)
     {
         // If there's no script file, forget it.
         return FALSE;

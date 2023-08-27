@@ -158,7 +158,7 @@ AMB_INFO ambarray[] =
 
 #define MAXSONGS        10              // This is the max songs per episode
 
-SWBOOL OpenSound(VOC_INFOp vp, int *handle, int *length);
+static SWBOOL OpenSound(VOC_INFOp vp, buildvfs_kfd * handle, int * length);
 int ReadSound(int handle, VOC_INFOp vp, int length);
 
 // 3d sound engine function prototype
@@ -526,12 +526,12 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                     }
                 }
 
-                buildprintf("Can't find CD track %i!\n", cdaudio_track);
+                LOG_F(ERROR, "Can't find CD track %i!", cdaudio_track);
             }
             else
             {
-                buildprintf("Make sure to have \"??\" as a placeholder for the track number in your WaveformTrackName!\n");
-                buildprintf("  e.g. WaveformTrackName = \"MUSIC/Track??\"\n");
+                LOG_F(ERROR, "Make sure to have \"??\" as a placeholder for the track number in your WaveformTrackName!");
+                LOG_F(ERROR, "  e.g. WaveformTrackName = \"MUSIC/Track??\"");
             }
         }
     }
@@ -797,7 +797,7 @@ SWBOOL CacheSound(int num, int /*type*/)
     // if no data we need to cache it in
     if (!vp->data)
     {
-        int handle;
+        buildvfs_kfd handle;
         int length;
 
         if (!OpenSound(vp, &handle, &length))
@@ -1137,8 +1137,8 @@ void PlaySoundRTS(int rts_num)
 
 ///////////////////////////////////////////////
 
-SWBOOL
-OpenSound(VOC_INFOp vp, int *handle, int *length)
+static SWBOOL
+OpenSound(VOC_INFOp vp, buildvfs_kfd * handle, int * length)
 {
     *handle = kopen4load(vp->name, 0);
 
@@ -1172,11 +1172,11 @@ ReadSound(int handle, VOC_INFOp vp, int length)
 SWBOOL
 LoadSong(const char *filename)
 {
-    int handle;
+    buildvfs_kfd handle;
     int size;
     char *ptr;
 
-    if ((handle = kopen4load(filename, 0)) == -1)
+    if ((handle = kopen4load(filename, 0)) == buildvfs_kfd_invalid)
     {
         return FALSE;
     }
@@ -1227,7 +1227,7 @@ SoundStartup(void)
     int status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n", FX_ErrorString(status));
+        LOG_F(ERROR, "Sound error: %s", FX_ErrorString(status));
         return;
     }
 
@@ -1265,7 +1265,7 @@ SoundShutdown(void)
     int status = FX_Shutdown();
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n", FX_ErrorString(status));
+        LOG_F(ERROR, "Sound error: %s", FX_ErrorString(status));
     }
 }
 
@@ -1299,7 +1299,7 @@ void MusicStartup(void)
     }
     else
     {
-        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
+        LOG_F(ERROR, "Music error: %s", MUSIC_ErrorString(status));
         gs.MusicOn = FALSE;
         return;
     }
@@ -1307,8 +1307,7 @@ void MusicStartup(void)
     MusicInitialized = TRUE;
     MUSIC_SetVolume(gs.MusicVolume);
 
-    auto const fil = kopen4load("swtimbr.tmb", 0);
-
+    buildvfs_kfd const fil = kopen4load("swtimbr.tmb", 0);
     if (fil != buildvfs_kfd_invalid)
     {
         int l = kfilelength(fil);
@@ -1356,7 +1355,7 @@ MusicShutdown(void)
     int status = MUSIC_Shutdown();
     if (status != MUSIC_Ok)
     {
-        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
+        LOG_F(ERROR, "Music error: %s", MUSIC_ErrorString(status));
     }
 }
 

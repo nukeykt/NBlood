@@ -223,7 +223,6 @@ void AnimZilla(int frame, int numframes)
 
 unsigned char *LoadAnm(short anim_num)
 {
-    int handle;
     int length;
     unsigned char *animbuf;
 
@@ -239,8 +238,8 @@ unsigned char *LoadAnm(short anim_num)
 
     if (anm_ptr[anim_num] == 0)
     {
-        handle = kopen4load(ANIMname[ANIMnum], 0);
-        if (handle == -1)
+        buildvfs_kfd handle = kopen4load(ANIMname[ANIMnum], 0);
+        if (handle == buildvfs_kfd_invalid)
             return NULL;
         length = kfilelength(handle);
 
@@ -263,7 +262,6 @@ playanm(short anim_num)
 {
     unsigned char *animbuf;
     int i, length = 0, numframes = 0;
-    int32_t handle = -1;
     UserInput uinfo = { FALSE, FALSE, FALSE, dir_None };
 
     ANIMnum = anim_num;
@@ -282,8 +280,8 @@ playanm(short anim_num)
         return;
 
     // [JM] Temporary, needed to get the file's length for ANIM_LoadAnim. !CHECKME!
-    handle = kopen4load(ANIMname[ANIMnum], 0);
-    if (handle == -1) return;
+    buildvfs_kfd handle = kopen4load(ANIMname[ANIMnum], 0);
+    if (handle == buildvfs_kfd_invalid) return;
     length = kfilelength(handle);
     kclose(handle);
 

@@ -96,11 +96,10 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
 
-    OSD_SetLogFile("ekenbuild-editor.log");
     char tempbuf[256];
     snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
-    buildprintf("%s\n", tempbuf);
+    LOG_F(INFO, "%s", tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -123,7 +122,11 @@ int32_t ExtInit(void)
     OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0, 0); // TODO
 
     bpp = 8;
-    if (loadsetup(setupfilename) < 0) buildputs("Configuration file not found, using defaults.\n"), rv = 1;
+    if (loadsetup(setupfilename) < 0)
+    {
+        LOG_F(INFO, "Configuration file not found, using defaults.");
+        rv = 1;
+    }
     Bmemcpy(buildkeys, default_buildkeys, NUMBUILDKEYS);   //Trick to make build use setup.dat keys
     if (option[4] > 0) option[4] = 0;
 
@@ -144,7 +147,7 @@ int32_t ExtPostStartupWindow(void)
 
     if (engineInit())
     {
-        initprintf("There was a problem initializing the engine.\n");
+        LOG_F(ERROR, "There was a problem initializing the engine: %s", engineerrstr);
         return -1;
     }
 

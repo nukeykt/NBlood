@@ -796,7 +796,7 @@ void SetupInput()
 {
     if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, CLKIPS))
     {
-        ERRprintf("There was an error initializing the CONTROL system.\n");
+        LOG_F(ERROR, "There was an error initializing the CONTROL system.");
         engineUnInit();
         Bexit(5);
     }

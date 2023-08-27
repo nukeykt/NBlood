@@ -10722,8 +10722,6 @@ SpawnFireballFlames(int16_t SpriteNum, int16_t enemy)
 {
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
-    SPRITEp ep;
-    USERp eu;
     SPRITEp np;
     USERp nu;
     short New;
@@ -10733,8 +10731,8 @@ SpawnFireballFlames(int16_t SpriteNum, int16_t enemy)
 
     if (enemy >= 0)
     {
-        ep = &sprite[enemy];
-        eu = User[enemy];
+        auto ep = (uspritetype const *)&sprite[enemy];
+        USER const * eu = User[enemy];
 
         // test for already burned
         if (TEST(ep->extra, SPRX_BURNABLE) && ep->shade > 40)
@@ -10795,12 +10793,17 @@ SpawnFireballFlames(int16_t SpriteNum, int16_t enemy)
     np->hitag = LUMINOUS; //Always full brightness
 
     if (enemy >= 0)
+    {
+        USERp eu = User[enemy];
         eu->flame = New;
+    }
 
     np->xrepeat = 16;
     np->yrepeat = 16;
     if (enemy >= 0)
     {
+        auto ep = (uspritetype const *)&sprite[enemy];
+
         // large flame for trees and such
         if (TEST(ep->extra, SPRX_BURNABLE))
         {

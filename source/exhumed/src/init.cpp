@@ -474,7 +474,7 @@ void InstallEngine()
                   "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
         //TODO:
         //G_Cleanup();
-        ERRprintf("G_Startup: There was a problem initializing the engine: %s\n", engineerrstr);
+        LOG_F(ERROR, "G_Startup: There was a problem initializing the engine: %s", engineerrstr);
         exit(6);
     }
     if (videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, 0) < 0)

@@ -240,7 +240,7 @@ void paletteLoadFromDisk(void)
 
         if (numshades <= 1)
         {
-            initprintf("Warning: Invalid number of shades in \"palette.dat\"!\n");
+            LOG_F(WARNING, "invalid number of shades in \"palette.dat\"!");
             numshades = 0;
             return kclose(fil);
         }
@@ -294,7 +294,7 @@ void paletteLoadFromDisk(void)
         uint8_t addblendtabs;
         if (kread_and_test(fil, &addblendtabs, 1))
         {
-            initprintf("Warning: failed reading additional blending table count\n");
+            LOG_F(WARNING, "failed reading additional blending table count");
             return kclose(fil);
         }
 
@@ -304,17 +304,17 @@ void paletteLoadFromDisk(void)
         {
             if (kread_and_test(fil, &blendnum, 1))
             {
-                initprintf("Warning: failed reading additional blending table index\n");
+                LOG_F(WARNING, "failed reading additional blending table index");
                 Xfree(tab);
                 return kclose(fil);
             }
 
             if (paletteGetBlendTable(blendnum) != NULL)
-                initprintf("Warning: duplicate blending table index %3d encountered\n", blendnum);
+                LOG_F(WARNING, "duplicate blending table index %3d encountered", blendnum);
 
             if (kread_and_test(fil, tab, 256*256))
             {
-                initprintf("Warning: failed reading additional blending table\n");
+                LOG_F(WARNING, "failed reading additional blending table");
                 Xfree(tab);
                 return kclose(fil);
             }
@@ -328,7 +328,7 @@ void paletteLoadFromDisk(void)
         if (!kread_and_test(fil, &lognumalphatabs, 1))
         {
             if (!(lognumalphatabs >= 1 && lognumalphatabs <= 7))
-                initprintf("invalid lognumalphatabs value, must be in [1 .. 7]\n");
+                LOG_F(ERROR, "invalid lognumalphatabs value, must be in [1 .. 7]");
             else
                 numalphatabs = 1<<lognumalphatabs;
         }
@@ -465,7 +465,7 @@ int32_t paletteLoadLookupTable(buildvfs_kfd fp)
 
         if (palnum >= 256-RESERVEDPALS)
         {
-            initprintf("ERROR: attempt to load lookup at reserved pal %d\n", palnum);
+            LOG_F(ERROR, "attempt to load lookup for reserved pal %d", palnum);
             return -2;
         }
 

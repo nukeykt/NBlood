@@ -315,8 +315,8 @@ int32_t engineLoadMHK(const char *filename)
             {
                 if (maphacklightcnt == PR_MAXLIGHTS)
                 {
-                    initprintf("warning: max light count %d exceeded, "
-                        "ignoring further light defs\n", PR_MAXLIGHTS);
+                    LOG_F(WARNING, "%s:%d: warning: max light count %d exceeded, ignoring further light defs",
+                                   script->filename, scriptfile_getlinum(script, cmdtokptr), PR_MAXLIGHTS);
                     toomanylights = 1;
                     break;
                 }

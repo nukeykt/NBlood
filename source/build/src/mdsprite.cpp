@@ -32,7 +32,7 @@ static int32_t addtileP(int32_t model,int32_t tile,int32_t pallet)
     UNREFERENCED_PARAMETER(model);
     if (curextra==MAXTILES+EXTRATILES-1)
     {
-        initprintf("warning: max EXTRATILES reached\n");
+        LOG_F(WARNING, "max EXTRATILES reached");
         return curextra;
     }
 
@@ -399,7 +399,7 @@ int32_t md_thinoutmodel(int32_t modelid, uint8_t *usedframebitmap)
     {
         if (anm->endframe <= anm->startframe)
         {
-//            initprintf("backward anim %d-%d\n", anm->startframe, anm->endframe);
+            // LOG_F(WARNING, "backward anim %d-%d", anm->startframe, anm->endframe);
             return -3;
         }
 
@@ -450,7 +450,7 @@ int32_t md_thinoutmodel(int32_t modelid, uint8_t *usedframebitmap)
     for (anm=m->animations; anm; anm=anm->next)
     {
         if (otonframe[anm->startframe]==-1 || otonframe[anm->endframe-1]==-1)
-            initprintf("md %d WTF: anm %d %d\n", modelid, anm->startframe, anm->endframe);
+            LOG_F(WARNING, "md %d WTF: anm %d %d", modelid, anm->startframe, anm->endframe);
 
         anm->startframe = otonframe[anm->startframe];
         anm->endframe = otonframe[anm->endframe-1];
@@ -460,7 +460,7 @@ int32_t md_thinoutmodel(int32_t modelid, uint8_t *usedframebitmap)
         if (tile2model[i].modelid == modelid)
         {
             if (otonframe[tile2model[i].framenum]==-1)
-                initprintf("md %d WTF: tile %d, fr %d\n", modelid, i, tile2model[i].framenum);
+                LOG_F(WARNING, "md %d WTF: tile %d, fr %d", modelid, i, tile2model[i].framenum);
             tile2model[i].framenum = otonframe[tile2model[i].framenum];
         }
 
@@ -1695,8 +1695,8 @@ int      md3postload_polymer(md3model_t *m)
 #ifdef DEBUG_MODEL_MEM
         i = (m->head.numframes * s->numverts * sizeof(float) * 15);
         if (i > 1<<20)
-            initprintf("size %d (%d fr, %d v): md %s surf %d/%d\n", i, m->head.numframes, s->numverts,
-                       m->head.nam, surfi, m->head.numsurfs);
+            LOG_F(INFO, "size %d (%d fr, %d v): md %s surf %d/%d", i, m->head.numframes, s->numverts,
+                        m->head.nam, surfi, m->head.numsurfs);
 #endif
         s->geometry = (float *)Xcalloc(m->head.numframes * s->numverts * 15, sizeof(float));
 
@@ -2551,7 +2551,7 @@ mdmodel_t *mdload(const char *filnam)
     switch (B_LITTLE32(i))
     {
     case IDP2_MAGIC:
-//        initprintf("Warning: model \"%s\" is version IDP2; wanted version IDP3\n",filnam);
+        // LOG_F(WARNING, "model \"%s\" is version IDP2; wanted version IDP3", filnam);
         vm = (mdmodel_t *)md2load(fil,filnam);
         break; //IDP2
     case IDP3_MAGIC:

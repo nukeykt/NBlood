@@ -55,7 +55,7 @@ typedef struct
 } PREDICT, *PREDICTp;
 
 PREDICT Predict[MOVEFIFOSIZ];
-int predictmovefifoplc;
+unsigned int predictmovefifoplc;
 
 void DoPlayerSectorUpdatePreMove(PLAYERp);
 void DoPlayerSectorUpdatePostMove(PLAYERp);

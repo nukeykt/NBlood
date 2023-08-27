@@ -1634,7 +1634,7 @@ int app_main(int argc, char const * const * argv)
         wm_msgbox("Build Engine Initialization Error",
                   "There was a problem initializing the Build engine: %s", engineerrstr);
 #endif
-        ERRprintf("app_main: There was a problem initializing the Build engine: %s\n", engineerrstr);
+        LOG_F(ERROR, "app_main: There was a problem initializing the Build engine: %s", engineerrstr);
         Bexit(2);
     }
 

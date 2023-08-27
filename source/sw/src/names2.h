@@ -1248,4 +1248,7 @@ enum STAT_ENUMS
 
 #define FLOORBLOOD1 389
 
+#define TEN_PIC 5109
+#define SYBEX_PIC 5261
+
 #endif

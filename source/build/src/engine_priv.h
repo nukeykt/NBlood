@@ -269,7 +269,7 @@ static FORCE_INLINE int32_t yax_isislandwall(int32_t line, int32_t cf) { return 
 extern char m32_debugstr[64][128];
 extern int32_t m32_numdebuglines;
 # define yaxdebug(fmt, ...)  do { if (m32_numdebuglines<64) Bsnprintf(m32_debugstr[m32_numdebuglines++], 128, fmt, ##__VA_ARGS__); } while (0)
-# define yaxprintf(fmt, ...) do { initprintf(fmt, ##__VA_ARGS__); } while (0)
+# define yaxprintf(fmt, ...) do { LOG_F(INFO, fmt, ##__VA_ARGS__); } while (0)
 #else
 # define yaxdebug(fmt, ...)
 # define yaxprintf(fmt, ...)
@@ -456,7 +456,7 @@ static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, bool sloped)
 static inline vec2_t get_floorspr_center(void const *const ptr, bool sloped)
 {
     auto const *spr = (uspriteptr_t)ptr;
-    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR);
+    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == (sloped ? CSTAT_SPRITE_ALIGNMENT_SLOPE : CSTAT_SPRITE_ALIGNMENT_FLOOR));
 
     auto const    dims   = get_floorspr_dims(spr, sloped);
     int32_t const cosang = dims.cosang, sinang = dims.sinang;

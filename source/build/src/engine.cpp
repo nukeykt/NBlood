@@ -1054,7 +1054,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 
                     if (k < 0)
                     {
-                        yaxprintf("%s, l %d: skipped bunch %d\n", cf?"v":"^", lev, j);
+                        yaxprintf("%s, l %d: skipped bunch %d", cf?"v":"^", lev, j);
                         continue;
                     }
 
@@ -8478,7 +8478,7 @@ static void dosetaspect(void)
                 no_radarang2 = 1;
 #ifdef DEBUGGINGAIDS
                 if (editstatus)
-                    initprintf("no rad2\n");
+                    LOG_F(INFO, "no rad2");
 #endif
                 break;
             }
@@ -9043,7 +9043,7 @@ static void sighandler(int sig, siginfo_t *info, void *ctx)
         default:
             s = "?! (unknown)"; break;
         }
-        ERRprintf("Caught SIGFPE at address %p, code %s. Aborting.\n", info->si_addr, s);
+        LOG_F(ERROR, "Caught SIGFPE at address %p, code %s. Aborting.", info->si_addr, s);
         break;
     default:
         break;
@@ -11584,7 +11584,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
 #ifdef NEW_MAP_FORMAT
     if (mapversion == 10)
     {
-        initprintf("Saving of TROR maps not yet accessible in the Lunatic preview build\n");
+        LOG_F(ERROR, "Saving of TROR maps not yet accessible with NEW_MAP_FORMAT");
         return -1;
 //        return saveboard_maptext(filename, dapos, daang, dacursectnum);
     }
@@ -13718,7 +13718,8 @@ void rotatesprite_(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,
     //  bit RS_CENTERORIGIN: see dorotspr_handle_bit2
     ////////////////////
 
-    if (((dastat & RS_PERM) == 0) || (numpages < 2) || (beforedrawrooms != 0))
+    auto const impermanent = (dastat & RS_PERM) == 0 || videoGetRenderMode() == REND_POLYMER;
+    if (impermanent || (numpages < 2) || (beforedrawrooms != 0))
     {
         videoBeginDrawing(); //{{{
         dorotatesprite(sx,sy,z,a,picnum,dashade,dapalnum,dastat,daalpha,dablend,cx1,cy1,cx2,cy2,guniqhudid);
@@ -13729,7 +13730,7 @@ void rotatesprite_(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,
             (sx == (160<<16)) && (sy == (100<<16)) && (z == 65536L) && (a == 0) && ((dastat&RS_TRANS1) == 0))
         permhead = permtail = 0;
 
-    if ((dastat & RS_PERM) == 0)
+    if (impermanent)
         return;
 
     if (numpages >= 2)
