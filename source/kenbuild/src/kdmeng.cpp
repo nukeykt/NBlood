@@ -329,7 +329,7 @@ void initsb(char dadigistat, char damusistat, int dasamplerate, char danumspeake
         frqtable[i] = j;
         j = mulscale30(j,1137589835);  //(pow(2,1/12)<<30) = 1137589835
     }
-    for(i=0;i>=-14;i--) frqtable[i&255] = (frqtable[(i+12)&255]>>1);
+    for(i=0;i>=-14;i--) frqtable[unsigned(i&255)] = (frqtable[unsigned((i+12)&255)]>>1);
 
     loadwaves("WAVES.KWV");
 

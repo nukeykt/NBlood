@@ -1868,7 +1868,7 @@ void shootgun(short snum, const vec3_t *vector,
                 daz2,                                   //Z vector of 3D ang
                 &hitinfo,CLIPMASK1);
 
-        if (wall[hitinfo.wall].picnum == KENPICTURE)
+        if ((unsigned)hitinfo.wall < MAXWALLS && wall[hitinfo.wall].picnum == KENPICTURE)
         {
             if (waloff[MAXTILES-1] != 0) wall[hitinfo.wall].picnum = MAXTILES-1;
             wsayfollow("hello.wav",4096L+(krand()&127)-64,256L,&wall[hitinfo.wall].x,&wall[hitinfo.wall].y,0);
@@ -3482,7 +3482,7 @@ void processinput(short snum)
                 neartagsector = i;
         }
 
-        if (wall[neartagwall].lotag == 7)  //Water fountain
+        if ((unsigned)neartagwall < MAXWALLS && wall[neartagwall].lotag == 7)  //Water fountain
         {
             if (wall[neartagwall].overpicnum == WATERFOUNTAIN)
             {
