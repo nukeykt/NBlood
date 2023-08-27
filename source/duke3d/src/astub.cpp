@@ -6047,8 +6047,8 @@ static void Keys3d(void)
             }
             else if (AIMING_AT_SPRITE)
             {
-                auto const cstat = sprite[searchwall].cstat & CSTAT_SPRITE_ALIGNMENT_MASK;
-                if (cstat == CSTAT_SPRITE_ALIGNMENT_FLOOR || cstat == CSTAT_SPRITE_ALIGNMENT_SLOPE)
+                auto const cstat = sprite[searchwall].cstat;
+                if (cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
                 {
                     int32_t oldslope = spriteGetSlope(searchwall);
                     int32_t newslope = clamp(oldslope + tsign*i, -BHEINUM_MAX, BHEINUM_MAX);

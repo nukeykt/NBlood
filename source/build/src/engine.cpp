@@ -5499,7 +5499,7 @@ static void classicDrawSprite(int32_t snum)
 
     if (tsprflags & TSPR_FLAGS_SLAB)
         vtilenum = tilenum; // if the game wants voxels, it gets voxels
-    else if ((cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR && usevoxels && tiletovox[tilenum] != -1 && spritenum != -1 && !(spriteext[spritenum].flags&SPREXT_NOTMD))
+    else if (!(cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && usevoxels && tiletovox[tilenum] != -1 && spritenum != -1 && !(spriteext[spritenum].flags&SPREXT_NOTMD))
     {
         vtilenum = tiletovox[tilenum];
         tsprflags |= TSPR_FLAGS_SLAB;
@@ -6362,7 +6362,7 @@ draw_as_face_sprite:
         drawing_sprite = 0;
         globalht = nullptr;
     }
-    else if ((cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    else if (cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         if ((cstat&64) != 0)
             if ((globalposz > tspriteGetZOfSlope(tspr, globalposx, globalposy)) == ((cstat&8)==0))
@@ -9840,7 +9840,7 @@ static void sortsprites(int const start, int const end)
                 auto const s = tspriteptr[k];
                 int32_t z = s->z;
 
-                if ((s->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR)
+                if (!(s->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR))
                 {
                     int32_t const yoff  = picanm[s->picnum].yofs + s->yoffset;
                     int32_t const yspan = (tilesiz[s->picnum].y * s->yrepeat << 2);

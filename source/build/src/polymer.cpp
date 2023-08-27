@@ -1583,6 +1583,7 @@ void                polymer_drawsprite(int32_t snum)
             glPolygonOffset(-(1.f/min(2048, sepldist(globalposx-tspr->x, globalposy-tspr->y)>>2)), -64);
         break;
     case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+    case CSTAT_SPRITE_ALIGNMENT_SLOPE:
         prsectors[tspr->sectnum]->floorsproffset += 0.5f;
         if (!depth || mirrors[depth-1].plane)
             glPolygonOffset(-(1.f/min(2048, sepdist(globalposx-tspr->x, globalposy-tspr->y, globalposz-tspr->z)>>5)), -64);
@@ -1622,7 +1623,7 @@ void                polymer_drawsprite(int32_t snum)
 
     if ((tspr->cstat & 64) && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT))
     {
-        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR && (tspr->cstat & CSTAT_SPRITE_YFLIP))
+        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && (tspr->cstat & CSTAT_SPRITE_YFLIP))
             SWITCH_CULL_DIRECTION;
         buildgl_setEnabled(GL_CULL_FACE);
     }
@@ -1637,7 +1638,7 @@ void                polymer_drawsprite(int32_t snum)
 
     if ((tspr->cstat & 64) && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT))
     {
-        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR && (tspr->cstat & CSTAT_SPRITE_YFLIP))
+        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && (tspr->cstat & CSTAT_SPRITE_YFLIP))
             SWITCH_CULL_DIRECTION;
         buildgl_setDisabled(GL_CULL_FACE);
     }
@@ -3908,7 +3909,7 @@ void                polymer_updatesprite(int32_t snum)
 
     const uint32_t cs = tspr->cstat;
     const uint32_t alignmask = (cs & CSTAT_SPRITE_ALIGNMENT);
-    const uint8_t flooraligned = (alignmask == CSTAT_SPRITE_ALIGNMENT_FLOOR);
+    const uint8_t flooraligned = !!(cs & CSTAT_SPRITE_ALIGNMENT_FLOOR);
 
     if (pr_nullrender >= 3) return;
 
@@ -4086,6 +4087,7 @@ void                polymer_updatesprite(int32_t snum)
             break;
         }
     case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+    case CSTAT_SPRITE_ALIGNMENT_SLOPE:
     {
         float const sang = atan2f(float(heinum), 4096.f) * (180.f * float(M_1_PI));
         ang = (float)((tspr->ang + 1024) & 2047) * (360.f/2048.f);
@@ -4455,7 +4457,7 @@ void polymer_drawmdsprite(tspriteptr_t tspr)
 
     ang -= 90.0f;
 
-    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    if (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
         ang -= 90.0f;
 
     glMatrixMode(GL_MODELVIEW);
@@ -4489,7 +4491,7 @@ void polymer_drawmdsprite(tspriteptr_t tspr)
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(-ang, 0.0f, 1.0f, 0.0f);
     }
-    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    if (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         glTranslatef(0.0f, 0.0, -(float)(tilesiz[tspr->picnum].y * tspr->yrepeat) / 8.0f);
         glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
@@ -4497,7 +4499,7 @@ void polymer_drawmdsprite(tspriteptr_t tspr)
     else
         glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
 
-    if ((tspr->cstat & 128) && ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR))
+    if ((tspr->cstat & 128) && !(tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR))
         glTranslatef(0.0f, 0.0, -(float)(tilesiz[tspr->picnum].y * tspr->yrepeat) / 8.0f);
 
     // yoffset differs from zadd in that it does not follow cstat&8 y-flipping
