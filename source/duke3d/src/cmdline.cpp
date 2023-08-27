@@ -155,7 +155,6 @@ static void G_AddDemo(const char* param)
 
 void G_CheckCommandLine(int32_t argc, char const * const * argv)
 {
-    int16_t i = 1, j;
     const char *c, *k;
 
     ud.m_respawn_items = 0;
@@ -178,7 +177,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
     // pre-form the default 10 clipmaps
-    for (j = '0'; j<='9'; ++j)
+    for (int j = '0'; j<='9'; ++j)
     {
         char clipshape[16] = "_clipshape0.map";
 
@@ -189,19 +188,13 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
     if (argc > 1)
     {
-        tempbuf[0] = 0;
-
-        Bstrcpy(tempbuf, "Application parameters: ");
-
-        while (i < argc)
-        {
-            Bstrcat(tempbuf, argv[i++]);
-            Bstrcat(tempbuf, " ");
-        }
-
+        size_t constexpr size = ARRAY_SIZE(tempbuf);
+        size_t bytesWritten = Bsnprintf(tempbuf, size, "Application parameters:");
+        for (int i = 1; i < argc; ++i)
+            bytesWritten += Bsnprintf(tempbuf + bytesWritten, size - bytesWritten, " %s", argv[i]);
         LOG_F(INFO, "%s", tempbuf);
 
-        i = 1;
+        int i = 1;
         do
         {
             const char *const oc = argv[i];
@@ -320,7 +313,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 #if defined RENDERTYPEWIN
                 if (!Bstrcasecmp(c+1, "nodinput"))
                 {
-                    initprintf("DirectInput (joystick) support disabled\n");
+                    LOG_F(INFO, "DirectInput (joystick) support disabled");
                     di_disabled = 1;
                     i++;
                     continue;
@@ -708,9 +701,10 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     LOG_F(INFO, "Respawn on.");
                     break;
                 case 'u':
+                {
                     g_forceWeaponChoice = 1;
                     c++;
-                    j = 0;
+                    int j = 0;
                     if (*c)
                     {
                         LOG_F(INFO, "Using favorite weapon order(s).");
@@ -755,6 +749,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                         Bsprintf(ud.wchoice, "3457860291");
                     }
                     break;
+                }
                 case 'v':
                     c++;
                     ud.warp_on = 1;

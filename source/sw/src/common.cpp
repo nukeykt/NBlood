@@ -438,7 +438,7 @@ void SW_ExtInit()
         {
             clearGrpNamePtr();
             g_grpNamePtr = dup_filename(cp);
-            initprintf("Using \"%s\" as main GRP file\n", g_grpNamePtr);
+            LOG_F(INFO, "Using \"%s\" as main GRP file", g_grpNamePtr);
         }
     }
 #endif
@@ -472,10 +472,10 @@ static int32_t SW_TryLoadingGrp(char const * const grpfile, internalgrpfile cons
     int32_t i;
 
     if ((i = initgroupfile(grpfile)) == -1)
-        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
+        LOG_F(WARNING, "Could not find main data file \"%s\"!", grpfile);
     else
     {
-        initprintf("Using \"%s\" as main game data file.\n", grpfile);
+        LOG_F(INFO, "Using \"%s\" as main game data file.", grpfile);
         if (type)
         {
             if (type->postprocessing)

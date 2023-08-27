@@ -270,10 +270,10 @@ void ReadGameSetup(int32_t scripthandle)
         SCRIPT_GetNumber(scripthandle, "Options", "Chickens",&dummy);
         if (dummy != -1) GamePlays = dummy;
 
-        buildprintf(
+        LOG_F(INFO,
             "\n"
             "You have played Shadow Warrior %d times.  Please call and order the full\n"
-            "version at 1(800)-3DREALMS or see the ORDER.FRM file.\n\n"
+            "version at 1(800)-3DREALMS or see the ORDER.FRM file.\n"
             ,GamePlays);
 
         GamePlays++;

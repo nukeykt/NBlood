@@ -733,7 +733,7 @@ void LoadDemoRun(void)
                 break;
         }
         if (i == ARRAY_SSIZE(DemoName))
-            initputs("WARNING: demos.run is too long, ignoring remaining files\n");
+            LOG_F(WARNING, "demos.run is too long, ignoring remaining files");
 
         fclose(fin);
     }
@@ -750,7 +750,7 @@ void LoadDemoRun(void)
                 break;
         }
         if (i == ARRAY_SSIZE(DemoText))
-            initputs("WARNING: demotxt.run is too long, trimming the text\n");
+            LOG_F(WARNING, "demotxt.run is too long, trimming the text");
 
         fclose(fin);
     }
@@ -779,9 +779,9 @@ void Set_GameMode(void)
 
     if (result < 0)
     {
-        buildprintf("Failure setting video mode %dx%dx%d %s! Attempting safer mode...",
-                    ud_setup.ScreenWidth,ud_setup.ScreenHeight,ud_setup.ScreenBPP,
-                    ud_setup.ScreenMode ? "fullscreen" : "windowed");
+        LOG_F(ERROR, "Failure setting video mode %dx%dx%d %s! Attempting safer mode...",
+                     ud_setup.ScreenWidth,ud_setup.ScreenHeight,ud_setup.ScreenBPP,
+                     ud_setup.ScreenMode ? "fullscreen" : "windowed");
         ud_setup.ScreenMode = 0;
         ud_setup.ScreenWidth = 640;
         ud_setup.ScreenHeight = 480;
@@ -890,8 +890,8 @@ extern int startwin_run(void);
 
 static void SW_FatalEngineError(void)
 {
-    wm_msgbox("Build Engine Initialisation Error",
-              "There was a problem initialising the Build engine: %s", engineerrstr);
+    wm_msgbox("Build Engine Initialization Error",
+              "There was a problem initializing the engine: %s", engineerrstr);
     exit(1);
 }
 
@@ -937,7 +937,7 @@ InitGame(int32_t argc, char const * const * argv)
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
         NetBroadcastMode = (networkmode == MMULTI_MODE_P2P);
-        buildputs("Waiting for players...\n");
+        LOG_F(INFO, "Waiting for players...");
         while (initmultiplayerscycle())
         {
             handleevents();
@@ -998,7 +998,7 @@ InitGame(int32_t argc, char const * const * argv)
 
     // LoadImages will now proceed to steal all the remaining heap space
     //_outtext("\n\n\n\n\n\n\n\n");
-    //buildputs("Loading sound and graphics...\n");
+    //LOG_F(INFO, "Loading sound and graphics...");
     //AnimateCacheCursor();
     LoadImages("tiles000.art");
 
@@ -1028,7 +1028,13 @@ InitGame(int32_t argc, char const * const * argv)
     if (!SW_SHAREWARE)
         LoadCustomInfoFromScript("swcustom.txt");   // Load user customisation information
 
-    if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
+    char const * const deffile = G_DefFile();
+    uint32_t stime = timerGetTicks();
+    if (!loaddefinitionsfile(deffile))
+    {
+        uint32_t etime = timerGetTicks();
+        LOG_F(INFO, "Definitions file '%s' loaded in %d ms.", deffile, etime-stime);
+    }
 
     for (char * m : g_defModules)
         Xfree(m);
@@ -2892,15 +2898,13 @@ Control(int32_t argc, char const * const * argv)
 void
 _Assert(const char *expr, const char *strFile, unsigned uLine)
 {
-    buildprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
+    LOG_F(ERROR, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
     debug_break();
 
     TerminateGame();
 
 #if 1 /* defined RENDERTYPEWIN */
     wm_msgbox(apptitle, "%s", ds);
-#else
-    printf("Assertion failed: %s\n %s, line %u\n", expr, strFile, uLine);
 #endif
     exit(0);
 }
@@ -3449,7 +3453,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     wm_setapptitle(APPNAME);
 
-    initprintf(APPNAME " %s\n", s_buildRev);
+    LOG_F(INFO, APPNAME " %s", s_buildRev);
     PrintBuildInfo();
 
     OSD_SetFunctions(
@@ -3461,10 +3465,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     if (argc > 1)
     {
-        buildputs("Application parameters: ");
+        char tempbuf[1024];
+        size_t constexpr size = ARRAY_SIZE(tempbuf);
+        size_t bytesWritten = Bsnprintf(tempbuf, size, "Application parameters:");
         for (i = 1; i < argc; ++i)
-            buildprintf("%s ", argv[i]);
-        buildputs("\n");
+            bytesWritten += Bsnprintf(tempbuf + bytesWritten, size - bytesWritten, " %s", argv[i]);
+        LOG_F(INFO, "%s", tempbuf);
     }
 
     SW_ExtInit();
@@ -3483,8 +3489,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
                 const char * dir = arg+1;
                 int err = addsearchpath(dir);
                 if (err < 0)
-                    buildprintf("Failed adding %s for game data: %s\n", dir,
-                                err==-1 ? "not a directory" : "no such directory");
+                    LOG_F(ERROR, "Failed adding %s for game data: %s", dir,
+                                 err==-1 ? "not a directory" : "no such directory");
             }
         }
     }
@@ -3510,8 +3516,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     if (enginePreInit())
     {
-        wm_msgbox("Build Engine Initialisation Error",
-                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        wm_msgbox("Build Engine Initialization Error",
+                  "There was a problem initializing the engine: %s", engineerrstr);
         exit(1);
     }
 
@@ -3534,11 +3540,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     if (!g_useCwd)
         SW_CleanupSearchPaths();
 
-    if (!DetectShareware())
-    {
-        if (SW_SHAREWARE) buildputs("Detected shareware GRP\n");
-        else buildputs("Detected registered GRP\n");
-    }
+    DetectShareware();
 
     if (SW_SHAREWARE)
     {
@@ -3576,11 +3578,11 @@ int32_t app_main(int32_t argc, char const * const * argv)
     DebugOperate = TRUE;
 
     if (SW_SHAREWARE)
-        buildputs("SHADOW WARRIOR(tm) Version 1.2 (Shareware Version)\n");
+        LOG_F(INFO, "SHADOW WARRIOR(tm) Version 1.2 (Shareware Version)");
     else
-        buildputs("SHADOW WARRIOR(tm) Version 1.2\n");
+        LOG_F(INFO, "SHADOW WARRIOR(tm) Version 1.2");
 
-    buildputs("Copyright (c) 1997 3D Realms Entertainment\n");
+    LOG_F(INFO, "Copyright (c) 1997 3D Realms Entertainment");
 
     UserMapName[0] = '\0';
 
@@ -3997,7 +3999,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             if (strlen(arg) > 1)
             {
                 if (initgroupfile(arg+1) >= 0)
-                    buildprintf("Added %s\n", arg+1);
+                    LOG_F(INFO, "Added %s", arg+1);
             }
         }
         else if (Bstrncasecmp(arg, "h", 1) == 0 && !SW_SHAREWARE)
@@ -5965,7 +5967,7 @@ int osdcmd_restartvid(const osdfuncparm_t *parm)
 
     videoResetMode();
     if (videoSetGameMode(fullscreen, xdim, ydim, bpp, upscalefactor))
-        buildputs("restartvid: Reset failed...\n");
+        LOG_F(WARNING, "restartvid: Reset failed...");
 
     return OSDCMD_OK;
 }

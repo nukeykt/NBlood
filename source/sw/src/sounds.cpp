@@ -526,12 +526,12 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                     }
                 }
 
-                buildprintf("Can't find CD track %i!\n", cdaudio_track);
+                LOG_F(ERROR, "Can't find CD track %i!", cdaudio_track);
             }
             else
             {
-                buildprintf("Make sure to have \"??\" as a placeholder for the track number in your WaveformTrackName!\n");
-                buildprintf("  e.g. WaveformTrackName = \"MUSIC/Track??\"\n");
+                LOG_F(ERROR, "Make sure to have \"??\" as a placeholder for the track number in your WaveformTrackName!");
+                LOG_F(ERROR, "  e.g. WaveformTrackName = \"MUSIC/Track??\"");
             }
         }
     }
@@ -1227,7 +1227,7 @@ SoundStartup(void)
     int status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n", FX_ErrorString(status));
+        LOG_F(ERROR, "Sound error: %s", FX_ErrorString(status));
         return;
     }
 
@@ -1265,7 +1265,7 @@ SoundShutdown(void)
     int status = FX_Shutdown();
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n", FX_ErrorString(status));
+        LOG_F(ERROR, "Sound error: %s", FX_ErrorString(status));
     }
 }
 
@@ -1299,7 +1299,7 @@ void MusicStartup(void)
     }
     else
     {
-        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
+        LOG_F(ERROR, "Music error: %s", MUSIC_ErrorString(status));
         gs.MusicOn = FALSE;
         return;
     }
@@ -1355,7 +1355,7 @@ MusicShutdown(void)
     int status = MUSIC_Shutdown();
     if (status != MUSIC_Ok)
     {
-        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
+        LOG_F(ERROR, "Music error: %s", MUSIC_ErrorString(status));
     }
 }
 

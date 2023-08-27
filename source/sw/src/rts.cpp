@@ -83,7 +83,7 @@ int32_t RTS_AddFile(char *filename)
     handle = kopen4load(filename, 0);
     if (handle == buildvfs_kfd_invalid)
     {
-        buildprintf("RTS file %s was not found\n",filename);
+        LOG_F(ERROR, "RTS file %s not found", filename);
         return -1;
     }
 
@@ -94,7 +94,7 @@ int32_t RTS_AddFile(char *filename)
     kread(handle, &header, sizeof(header));
     if (strncmp(header.identification,"IWAD",4))
     {
-        buildprintf("RTS file %s doesn't have IWAD id\n",filename);
+        LOG_F(ERROR, "RTS file %s doesn't have IWAD id", filename);
         kclose(handle);
         return -1;
     }
@@ -104,7 +104,7 @@ int32_t RTS_AddFile(char *filename)
     fileinfo = fileinfoo = (filelump_t*)Xmalloc(length);
     if (!fileinfo)
     {
-        buildprintf("RTS file could not allocate header info\n");
+        LOG_F(ERROR, "RTS file could not allocate header info");
         kclose(handle);
         return -1;
     }
@@ -158,11 +158,14 @@ void RTS_Init(char *filename)
     numlumps = 0;
     lumpinfo = NULL;   // will be realloced as lumps are added
 
-//   printf("RTS Manager Started\n");
+    // LOG_F(INFO, "RTS Manager Started");
     if (RTS_AddFile(filename)) return;
 
-    if (!numlumps) return;
-//      buildprintf ("RTS_Init: no files found");
+    if (!numlumps)
+    {
+        // LOG_F(ERROR, "RTS_Init: no files found");
+        return;
+    }
 
     //
     // set up caching
@@ -234,7 +237,7 @@ int32_t RTS_SoundLength(int32_t lump)
 {
     lump++;
     if (lump >= numlumps)
-        buildprintf("RTS_SoundLength: %i >= numlumps",lump);
+        LOG_F(ERROR, "RTS_SoundLength: %i >= numlumps", lump);
     return lumpinfo[lump].size;
 }
 
@@ -250,7 +253,7 @@ char *RTS_GetSoundName(int32_t i)
 {
     i++;
     if (i>=numlumps)
-        buildprintf("RTS_GetSoundName: %i >= numlumps",i);
+        LOG_F(ERROR, "RTS_GetSoundName: %i >= numlumps", i);
     return &(lumpinfo[i].name[0]);
 }
 
@@ -268,9 +271,9 @@ void RTS_ReadLump(int32_t lump, intptr_t dest)
     lumpinfo_t *l;
 
     if (lump >= numlumps)
-        buildprintf("RTS_ReadLump: %i >= numlumps",lump);
+        LOG_F(ERROR, "RTS_ReadLump: %i >= numlumps", lump);
     if (lump < 0)
-        buildprintf("RTS_ReadLump: %i < 0",lump);
+        LOG_F(ERROR, "RTS_ReadLump: %i < 0", lump);
     l = lumpinfo+lump;
     klseek(l->handle, l->position, SEEK_SET);
     kread(l->handle,(void *)dest,l->size);
@@ -291,7 +294,7 @@ void *RTS_GetSound(int32_t lump)
 {
     lump++;
     if ((uint16_t)lump >= (uint16_t)numlumps)
-        buildprintf("RTS_GetSound: %i >= %i\n",lump,numlumps);
+        LOG_F(ERROR, "RTS_GetSound: %i >= %i", lump, numlumps);
 
     if (lumpcache[lump] == (intptr_t)NULL)
     {
@@ -320,10 +323,9 @@ void *RTS_GetSound(int32_t lump)
 {
     lump++;
     if ((uint16_t)lump >= numlumps)
-        buildprintf("RTS_GetSound: %i >= numlumps",lump);
-
+        LOG_F(ERROR, "RTS_GetSound: %i >= numlumps", lump);
     else if (lump < 0)
-        buildprintf("RTS_GetSound: %i < 0\n",lump);
+        LOG_F(ERROR, "RTS_GetSound: %i < 0", lump);
 
     if (lumpcache[lump] == NULL)
     {

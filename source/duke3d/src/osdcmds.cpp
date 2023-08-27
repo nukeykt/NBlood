@@ -1768,7 +1768,7 @@ int32_t registerosdcommands(void)
 #if !defined NETCODE_DISABLE
     OSD_RegisterFunction("connect","connect: connects to a multiplayer game", osdcmd_connect);
     OSD_RegisterFunction("disconnect","disconnect: disconnects from the local multiplayer game", osdcmd_disconnect);
-    OSD_RegisterFunction("dumpmapstates", "Dumps current snapshots to CL/Srv_MapStates.bin", osdcmd_dumpmapstate);
+    OSD_RegisterFunction("dumpmapstates", "dumps current snapshots to CL/Srv_MapStates.bin", osdcmd_dumpmapstate);
 #if 0
     OSD_RegisterFunction("kick","kick <id>: kicks a multiplayer client.  See listplayers.", osdcmd_kick);
     OSD_RegisterFunction("kickban","kickban <id>: kicks a multiplayer client and prevents them from reconnecting.  See listplayers.", osdcmd_kickban);
@@ -1776,7 +1776,7 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("listplayers","listplayers: lists currently connected multiplayer clients", osdcmd_listplayers);
     OSD_RegisterFunction("name","name: change your multiplayer nickname", osdcmd_name);
     OSD_RegisterFunction("password","password: sets multiplayer game password", osdcmd_password);
-    OSD_RegisterFunction("playerinfo", "Prints information about the current player", osdcmd_playerinfo);
+    OSD_RegisterFunction("playerinfo", "prints information about the current player", osdcmd_playerinfo);
 #endif
 
     if (VOLUMEONE)
@@ -1819,7 +1819,7 @@ int32_t registerosdcommands(void)
 
     OSD_RegisterFunction("locale","locale: changes the locale", osdcmd_locale);
 
-    OSD_RegisterFunction("music","music E<ep>L<lev>: change music", osdcmd_music);
+    OSD_RegisterFunction("music","music E<ep>L<lev>: changes music", osdcmd_music);
 
     OSD_RegisterFunction("noclip","noclip: toggles clipping mode", osdcmd_noclip);
 
@@ -1845,7 +1845,7 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("unbindall","unbindall: unbinds all keys", osdcmd_unbindall);
     OSD_RegisterFunction("unbound", NULL, osdcmd_unbound);
 
-    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: change the video mode",osdcmd_vidmode);
+    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: changes the video mode",osdcmd_vidmode);
 #ifdef USE_OPENGL
     baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
 #endif

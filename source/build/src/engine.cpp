@@ -1050,7 +1050,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 
                     if (k < 0)
                     {
-                        yaxprintf("%s, l %d: skipped bunch %d\n", cf?"v":"^", lev, j);
+                        yaxprintf("%s, l %d: skipped bunch %d", cf?"v":"^", lev, j);
                         continue;
                     }
 
@@ -8459,7 +8459,7 @@ static void dosetaspect(void)
                 no_radarang2 = 1;
 #ifdef DEBUGGINGAIDS
                 if (editstatus)
-                    initprintf("no rad2\n");
+                    LOG_F(INFO, "no rad2");
 #endif
                 break;
             }
@@ -9012,7 +9012,7 @@ static void sighandler(int sig, siginfo_t *info, void *ctx)
         default:
             s = "?! (unknown)"; break;
         }
-        ERRprintf("Caught SIGFPE at address %p, code %s. Aborting.\n", info->si_addr, s);
+        LOG_F(ERROR, "Caught SIGFPE at address %p, code %s. Aborting.", info->si_addr, s);
         break;
     default:
         break;
@@ -11538,7 +11538,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
 #ifdef NEW_MAP_FORMAT
     if (mapversion == 10)
     {
-        initprintf("Saving of TROR maps not yet accessible in the Lunatic preview build\n");
+        LOG_F(ERROR, "Saving of TROR maps not yet accessible with NEW_MAP_FORMAT");
         return -1;
 //        return saveboard_maptext(filename, dapos, daang, dacursectnum);
     }

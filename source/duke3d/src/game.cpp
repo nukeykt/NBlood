@@ -1367,7 +1367,7 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
         G_DumpDebugInfo();
         LOG_F(ERROR, "Failed spawning pic %d spr from pic %d spr %d at x:%d,y:%d,z:%d,sect:%d",
                           s_pn,s_ow < 0 ? -1 : TrackerCast(sprite[s_ow].picnum),s_ow,s_x,s_y,s_z,whatsect);
-        ERRprintf("Too many sprites spawned.");
+        LOG_F(ERROR, "Too many sprites spawned.");
         fatal_exit("Too many sprites spawned.");
     }
 
@@ -5200,25 +5200,11 @@ FAKE_F3:
 
 static int parsedefinitions_game(scriptfile *, int);
 
-static void parsedefinitions_game_include(const char *fileName, scriptfile *pScript, const char *cmdtokptr, int const firstPass)
+static void parsedefinitions_game_include(const char *fileName, scriptfile * /*pScript*/, const char * /*cmdtokptr*/, int const firstPass)
 {
     scriptfile *included = scriptfile_fromfile(fileName);
 
-    if (!included)
-    {
-        if (!Bstrcasecmp(cmdtokptr,"null") || pScript == NULL) // this is a bit overboard to prevent unused parameter warnings
-            {
-           // initprintf("Warning: Failed including %s as module\n", fn);
-            }
-/*
-        else
-            {
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
-            }
-*/
-    }
-    else
+    if (included)
     {
         parsedefinitions_game(included, firstPass);
         scriptfile_close(included);
@@ -5261,16 +5247,15 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
         // frame numbers start at 1 for us
         if (frameNum <= 0)
         {
-            LOG_F(ERROR, "Frame number must be greater than zero on line %s:%d", pScript->filename,
-                       scriptfile_getlinum(pScript, pScript->ltextptr));
+            LOG_F(ERROR, "%s:%d: error: frame number must be greater than zero",
+                         pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
             break;
         }
 
         if (frameNum < lastFrameNum)
         {
-            LOG_F(ERROR, "Frame numbers must be in (not necessarily strictly)"
-                       " ascending order (line %s:%d)",
-                       pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
+            LOG_F(ERROR, "%s:%d: error: frame numbers must be in (not necessarily strictly) ascending order",
+                         pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
             break;
         }
 
@@ -5278,8 +5263,9 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
 
         if ((unsigned)soundNum >= MAXSOUNDS && soundNum != -1)
         {
-            LOG_F(ERROR, "Sound number #%d invalid on line %s:%d", soundNum, pScript->filename,
-                       scriptfile_getlinum(pScript, pScript->ltextptr));
+            LOG_F(ERROR, "%s:%d: error: sound number #%d invalid",
+                         pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr),
+                         soundNum);
             break;
         }
 
@@ -5337,8 +5323,8 @@ static int newgamesubchoice_recursive(scriptfile *pScript, MenuGameplayEntry ent
 
     if ((unsigned)subChoiceID >= MAXMENUGAMEPLAYENTRIES)
     {
-        LOG_F(ERROR, "Maximum subchoices exceeded near line %s:%d",
-            pScript->filename, scriptfile_getlinum(pScript, subChoicePtr));
+        LOG_F(ERROR, "%s:%d: error: maximum subchoices exceeded",
+                     pScript->filename, scriptfile_getlinum(pScript, subChoicePtr));
         pScript->textptr = subChoiceEnd+1;
         return -1;
     }
@@ -5520,8 +5506,9 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             if (scriptfile_getsymbol(pScript, &number)) break;
 
             if (EDUKE32_PREDICT_FALSE(scriptfile_addsymbolvalue(name, number) < 0))
-                LOG_F(WARNING, "Symbol %s unable to be redefined to %d on line %s:%d",
-                           name, number, pScript->filename, scriptfile_getlinum(pScript, pToken));
+                LOG_F(WARNING, "%s:%d: warning: symbol %s unable to be redefined to %d",
+                               pScript->filename, scriptfile_getlinum(pScript, pToken),
+                               name, number);
             break;
         }
         case T_NOAUTOLOAD:
@@ -5551,8 +5538,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             {
                 if (musicID==NULL)
                 {
-                    LOG_F(ERROR, "Missing ID for music definition near line %s:%d",
-                               pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: missing ID for music definition",
+                                 pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
                     break;
                 }
 
@@ -5560,7 +5547,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     break;
 
                 if (S_DefineMusic(musicID, fileName) == -1)
-                    LOG_F(ERROR, "Invalid music ID on line %s:%d", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: invalid music ID",
+                                 pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
             }
         }
         break;
@@ -5654,8 +5642,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
             if (!animPtr)
             {
-                LOG_F(ERROR, "Expected animation filename on line %s:%d",
-                    pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                LOG_F(ERROR, "%s:%d: error: expected animation filename",
+                             pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
                 break;
             }
 
@@ -5700,7 +5688,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             {
                 if (soundNum==-1)
                 {
-                    LOG_F(ERROR, "Missing ID for sound definition near line %s:%d", pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: missing ID for sound definition",
+                                 pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
                     break;
                 }
 
@@ -5709,7 +5698,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
                 // maybe I should have just packed this into a sound_t and passed a reference...
                 if (S_DefineSound(soundNum, fileName, minpitch, maxpitch, priority, type, distance, volume) == -1)
-                    LOG_F(ERROR, "Invalid sound ID on line %s:%d", pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: invalid sound ID",
+                                 pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
             }
         }
         break;
@@ -5741,8 +5731,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
                         if ((unsigned)choiceID >= MAXMENUGAMEPLAYENTRIES)
                         {
-                            LOG_F(ERROR, "Maximum choices exceeded near line %s:%d",
-                                pScript->filename, scriptfile_getlinum(pScript, choicePtr));
+                            LOG_F(ERROR, "%s:%d: error: maximum choices exceeded",
+                                         pScript->filename, scriptfile_getlinum(pScript, choicePtr));
                             pScript->textptr = choiceEnd+1;
                             break;
                         }
@@ -5837,8 +5827,9 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
                 if (currSlot >= NUMGAMEFUNCTIONS)
                 {
-                    LOG_F(ERROR, "Key remap exceeds number of valid gamefunctions %d near line %s:%d",
-                                NUMGAMEFUNCTIONS, pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                    LOG_F(ERROR, "%s:%d: error: key remap exceeds number of valid gamefunctions %d",
+                                 pScript->filename, scriptfile_getlinum(pScript, mapPtr),
+                                 NUMGAMEFUNCTIONS);
                     pScript->textptr = keyRemapEnd+1;
                     break;
                 }
@@ -5848,14 +5839,16 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
                 if (keyIndex < 0 || keyIndex >= NUMGAMEFUNCTIONS)
                 {
-                    LOG_F(ERROR, "Invalid key index %d near line %s:%d",
-                                keyIndex, pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                    LOG_F(ERROR, "%s:%d: error: invalid key index %d",
+                                 pScript->filename, scriptfile_getlinum(pScript, mapPtr),
+                                 keyIndex);
                     continue;
                 }
                 else if (gamefunc_bitmap & (1ULL << keyIndex))
                 {
-                    LOG_F(WARNING, "Duplicate listing of key '%s' near line %s:%d",
-                                gamefunc_symbol_names[keyIndex], pScript->filename, scriptfile_getlinum(pScript, mapPtr));
+                    LOG_F(WARNING, "%s:%d: warning: duplicate listing of key '%s'",
+                                   pScript->filename, scriptfile_getlinum(pScript, mapPtr),
+                                   gamefunc_symbol_names[keyIndex]);
                     continue;
                 }
 
@@ -6190,7 +6183,7 @@ static void G_FatalEngineInitError(void)
 #endif
     G_Cleanup();
     Bsprintf(tempbuf, "There was a problem initializing the engine: %s", engineerrstr);
-    ERRprintf("%s", tempbuf);
+    LOG_F(ERROR, "%s", tempbuf);
     fatal_exit(tempbuf);
 }
 
@@ -6292,7 +6285,7 @@ static void G_Startup(void)
     // after dynamic tile remapping (from C_Compile) and loading tiles.
     picanm[LOADSCREEN].sf |= PICANM_NOFULLBRIGHT_BIT;
 
-//    initprintf("Loading palette/lookups...\n");
+    // LOG_F(INFO, "Loading palette/lookups...");
     G_LoadLookups();
 
     screenpeek = myconnectindex;
@@ -6667,9 +6660,6 @@ int app_main(int argc, char const* const* argv)
     CONFIG_ReadSetup();
 
 #if defined(_WIN32) && !defined (EDUKE32_STANDALONE)
-
-//    initprintf("build %d\n",(uint8_t)Batoi(BUILDDATE));
-
     if (ud.config.CheckForUpdates == 1)
     {
         if (time(NULL) - ud.config.LastUpdateCheck > UPDATEINTERVAL)
@@ -6816,14 +6806,14 @@ int app_main(int argc, char const* const* argv)
 
     Anim_Init();
 
-    const char *defsfile = G_DefFile();
+    char const * const deffile = G_DefFile();
     uint32_t stime = timerGetTicks();
-    if (!loaddefinitionsfile(defsfile))
+    if (!loaddefinitionsfile(deffile))
     {
         uint32_t etime = timerGetTicks();
-        LOG_F(INFO, "Definitions file '%s' loaded in %d ms.", defsfile, etime-stime);
+        LOG_F(INFO, "Definitions file '%s' loaded in %d ms.", deffile, etime-stime);
     }
-    loaddefinitions_game(defsfile, FALSE);
+    loaddefinitions_game(deffile, FALSE);
 
     for (char * m : g_defModules)
         Xfree(m);

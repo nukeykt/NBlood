@@ -150,7 +150,7 @@ void GetToken(SWBOOL crossline)
     if (script_p >= scriptend_p)
     {
         if (!crossline)
-            buildprintf("Error: Line %i is incomplete\n",scriptline);
+            LOG_F(ERROR, "Line %i is incomplete", scriptline);
         endofscript = TRUE;
         return;
     }
@@ -164,14 +164,14 @@ skipspace:
         if (script_p >= scriptend_p)
         {
             if (!crossline)
-                buildprintf("Error: Line %i is incomplete\n",scriptline);
+                LOG_F(ERROR, "Line %i is incomplete", scriptline);
             endofscript = TRUE;
             return;
         }
         if (*script_p++ == '\n')
         {
             if (!crossline)
-                buildprintf("Error: Line %i is incomplete\n",scriptline);
+                LOG_F(ERROR, "Line %i is incomplete", scriptline);
             scriptline++;
         }
     }
@@ -179,7 +179,7 @@ skipspace:
     if (script_p >= scriptend_p)
     {
         if (!crossline)
-            buildprintf("Error: Line %i is incomplete\n",scriptline);
+            LOG_F(ERROR, "Line %i is incomplete", scriptline);
         endofscript = TRUE;
         return;
     }
@@ -187,7 +187,7 @@ skipspace:
     if (*script_p == '#')   // # is comment field
     {
         if (!crossline)
-            buildprintf("Error: Line %i is incomplete\n",scriptline);
+            LOG_F(ERROR, "Line %i is incomplete", scriptline);
         while (*script_p++ != '\n')
             if (script_p >= scriptend_p)
             {
@@ -208,7 +208,7 @@ skipspace:
         if (script_p == scriptend_p)
             break;
         ASSERT(token_p != &token[MAXTOKEN]);
-//          buildprintf("Error: Token too large on line %i\n",scriptline);
+        // LOG_F(ERROR, "Token too large on line %i", scriptline);
     }
 
     *token_p = 0;
@@ -610,9 +610,9 @@ void LoadCustomInfoFromScript(const char *filename)
             // first map file in LevelInfo[] is bogus, last map file is NULL
             if (curmap < 1 || curmap > MAX_LEVELS_REG)
             {
-                buildprintf("Error: map number %d not in range 1-%d on line %s:%d\n",
-                            curmap, MAX_LEVELS_REG, script->filename,
-                            scriptfile_getlinum(script,mapnumptr));
+                LOG_F(ERROR, "%s:%d: error: map number %d not in range 1-%d",
+                             script->filename, scriptfile_getlinum(script,mapnumptr),
+                             curmap, MAX_LEVELS_REG);
                 script->textptr = braceend;
                 break;
             }
@@ -684,9 +684,9 @@ void LoadCustomInfoFromScript(const char *filename)
                     break;
                 }
                 default:
-                    buildprintf("Error on line %s:%d\n",
-                                script->filename,
-                                scriptfile_getlinum(script,script->ltextptr));
+                    LOG_F(ERROR, "%s:%d: error",
+                                 script->filename,
+                                 scriptfile_getlinum(script,script->ltextptr));
                     break;
                 }
             }
@@ -703,9 +703,9 @@ void LoadCustomInfoFromScript(const char *filename)
             // first map file in LevelInfo[] is bogus, last map file is NULL
             if ((unsigned)--curmap >= 2u)
             {
-                buildprintf("Error: episode number %d not in range 1-2 on line %s:%d\n",
-                            curmap, script->filename,
-                            scriptfile_getlinum(script,epnumptr));
+                LOG_F(ERROR, "%s:%d: error: episode number %d not in range 1-2",
+                             script->filename, scriptfile_getlinum(script,epnumptr),
+                             curmap);
                 script->textptr = braceend;
                 break;
             }
@@ -735,9 +735,9 @@ void LoadCustomInfoFromScript(const char *filename)
                     break;
                 }
                 default:
-                    buildprintf("Error on line %s:%d\n",
-                                script->filename,
-                                scriptfile_getlinum(script,script->ltextptr));
+                    LOG_F(ERROR, "%s:%d: error",
+                                 script->filename,
+                                 scriptfile_getlinum(script,script->ltextptr));
                     break;
                 }
             }
@@ -754,9 +754,9 @@ void LoadCustomInfoFromScript(const char *filename)
             // first map file in LevelInfo[] is bogus, last map file is NULL
             if ((unsigned)--curmap >= 4u)
             {
-                buildprintf("Error: skill number %d not in range 1-4 on line %s:%d\n",
-                            curmap, script->filename,
-                            scriptfile_getlinum(script,epnumptr));
+                LOG_F(ERROR, "%s:%d: error: skill number %d not in range 1-4",
+                             script->filename, scriptfile_getlinum(script,epnumptr),
+                             curmap);
                 script->textptr = braceend;
                 break;
             }
@@ -777,9 +777,9 @@ void LoadCustomInfoFromScript(const char *filename)
                     break;
                 }
                 default:
-                    buildprintf("Error on line %s:%d\n",
-                                script->filename,
-                                scriptfile_getlinum(script,script->ltextptr));
+                    LOG_F(ERROR, "%s:%d: error",
+                                 script->filename,
+                                 scriptfile_getlinum(script,script->ltextptr));
                     break;
                 }
             }
@@ -856,9 +856,9 @@ void LoadCustomInfoFromScript(const char *filename)
 
             if ((unsigned)--in >= (unsigned)InvDecl_TOTAL)
             {
-                buildprintf("Error: inventory item number not in range 1-%d on line %s:%d\n",
-                            InvDecl_TOTAL, script->filename,
-                            scriptfile_getlinum(script,invnumptr));
+                LOG_F(ERROR, "%s:%d: error: inventory item number not in range 1-%d",
+                             script->filename, scriptfile_getlinum(script,invnumptr),
+                             InvDecl_TOTAL);
                 script->textptr = braceend;
                 break;
             }
@@ -876,9 +876,9 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getnumber(script, &amt)) break;
                     break;
                 default:
-                    buildprintf("Error on line %s:%d\n",
-                                script->filename,
-                                scriptfile_getlinum(script,script->ltextptr));
+                    LOG_F(ERROR, "%s:%d: error",
+                                 script->filename,
+                                 scriptfile_getlinum(script,script->ltextptr));
                     break;
                 }
             }
@@ -908,9 +908,9 @@ void LoadCustomInfoFromScript(const char *filename)
 
             if ((unsigned)--in >= (unsigned)SIZ(weaponmap))
             {
-                buildprintf("Error: weapon number not in range 1-%d on line %s:%d\n",
-                            (int)SIZ(weaponmap), script->filename,
-                            scriptfile_getlinum(script,wpnnumptr));
+                LOG_F(ERROR, "%s:%d: error: weapon number not in range 1-%d",
+                             script->filename, scriptfile_getlinum(script,wpnnumptr),
+                             (int)SIZ(weaponmap));
                 script->textptr = braceend;
                 break;
             }
@@ -943,9 +943,9 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getnumber(script, &wpickup)) break;
                     break;
                 default:
-                    buildprintf("Error on line %s:%d\n",
-                                script->filename,
-                                scriptfile_getlinum(script,script->ltextptr));
+                    LOG_F(ERROR, "%s:%d: error",
+                                 script->filename,
+                                 scriptfile_getlinum(script,script->ltextptr));
                     break;
                 }
             }
@@ -981,9 +981,9 @@ void LoadCustomInfoFromScript(const char *filename)
         case CM_SECRET:
         case CM_QUIT:
         default:
-            buildprintf("Error on line %s:%d\n",
-                        script->filename,
-                        scriptfile_getlinum(script,script->ltextptr));
+            LOG_F(ERROR, "%s:%d: error",
+                         script->filename,
+                         scriptfile_getlinum(script,script->ltextptr));
             break;
         }
     }

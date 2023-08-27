@@ -931,7 +931,7 @@ static int32_t defsparser(scriptfile *script)
                 if (orig_crc32 == tile_crc32)
                     have_crc32 = 0;
                 else
-                    DLOG_F(WARNING, "tilefromtexture: CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d", tile, orig_crc32, tile_crc32);
+                    DLOG_F(WARNING, "tilefromtexture: CRC32 of tile %d doesn't match! CRC32: 0x%08X, Expected: 0x%08X", tile, orig_crc32, tile_crc32);
             }
 
             vec2_16_t orig_size{};
@@ -941,13 +941,13 @@ static int32_t defsparser(scriptfile *script)
                 if (orig_size.x == tile_size.x && orig_size.y == tile_size.y)
                     have_size = 0;
                 else
-                    LOG_F(WARNING, "tilefromtexture: size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
+                    DLOG_F(WARNING, "tilefromtexture: size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
             }
 
             if (have_crc32 || have_size)
             {
 #if 0
-                initprintf("tilefromtexture %d { ifmatch { size %d %d crc32 %d } }\n", tile, orig_size.x, orig_size.y, orig_crc32);
+                DLOG_F(INFO, "tilefromtexture %d { ifmatch { size %d %d crc32 0x%08X } }", tile, orig_size.x, orig_size.y, orig_crc32);
 #endif
                 break;
             }
@@ -1487,7 +1487,6 @@ static int32_t defsparser(scriptfile *script)
                 int32_t token = getatoken(script,modeltokens,ARRAY_SIZE(modeltokens));
                 switch (token)
                 {
-                    //case T_ERROR: initprintf("Error on line %s:%d in model tokens\n", script->filename,script->linenum); break;
                 case T_SCALE:
                     scriptfile_getdouble(script,&scale); break;
                 case T_SHADE:
@@ -1904,9 +1903,9 @@ static int32_t defsparser(scriptfile *script)
                 md_thinoutmodel(lastmodelid, usedframebitmap);
 #  ifdef DEBUG_MODEL_MEM
                 if (i>=0 && i<onumframes)
-                    initprintf("used %d/%d frames: %s\n", i, onumframes, modelfn);
+                    LOG_F(INFO, "used %d/%d frames: %s", i, onumframes, modelfn);
                 else if (i<0)
-                    initprintf("md_thinoutmodel returned %d: %s\n", i, modelfn);
+                    LOG_F(INFO, "md_thinoutmodel returned %d: %s", i, modelfn);
 #  endif
             }
 # endif
@@ -1965,7 +1964,6 @@ static int32_t defsparser(scriptfile *script)
             {
                 switch (getatoken(script, voxeltokens, ARRAY_SIZE(voxeltokens)))
                 {
-                    //case T_ERROR: initprintf("Error on line %s:%d in voxel tokens\n", script->filename,linenum); break;
                 case T_TILE:
                     scriptfile_getsymbol(script,&tilex);
 
@@ -2044,7 +2042,6 @@ static int32_t defsparser(scriptfile *script)
             {
                 switch (getatoken(script,skyboxtokens,ARRAY_SIZE(skyboxtokens)))
                 {
-                    //case T_ERROR: initprintf("Error on line %s:%d in skybox tokens\n",script->filename,linenum); break;
                 case T_TILE:
                     scriptfile_getsymbol(script,&tile); break;
                 case T_PAL:

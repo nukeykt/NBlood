@@ -141,7 +141,7 @@ void netsendpacket(int ind, uint8_t* buf, int len)
     {
         if ((unsigned)len > sizeof(packbuf))
         {
-            buildprintf("netsendpacket(): packet length > %d!\n",(int)sizeof(packbuf));
+            LOG_F(WARNING, "netsendpacket(): packet length > %d!", (int)sizeof(packbuf));
             len = sizeof(packbuf);
         }
 
@@ -182,7 +182,7 @@ void netbroadcastpacket(uint8_t* buf, int len)
     {
         if ((unsigned)len > sizeof(packbuf))
         {
-            buildprintf("netbroadcastpacket(): packet length > %d!\n",(int)sizeof(packbuf));
+            LOG_F(WARNING, "netbroadcastpacket(): packet length > %d!", (int)sizeof(packbuf));
             len = sizeof(packbuf);
         }
 
@@ -308,7 +308,7 @@ int netgetpacket(int *ind, uint8_t* buf)
     }
     else
     {
-        buildprintf("netgetpacket(): Got a proxy message from %d instead of %d\n",*ind,connecthead);
+        LOG_F(ERROR, "netgetpacket(): Got a proxy message from %d instead of %d", *ind, connecthead);
     }
     return 0;
 }
@@ -581,8 +581,8 @@ CheckVersion(int GameVersion)
         {
             if (GameVersion != Player[pnum].PlayerVersion)
             {
-                buildprintf("CheckVersion(): player %d has version %d, expecting %d\n",
-                            pnum, Player[pnum].PlayerVersion, GameVersion);
+                LOG_F(ERROR, "CheckVersion(): player %d has version %d, expecting %d",
+                             pnum, Player[pnum].PlayerVersion, GameVersion);
 
                 adduserquote(VERSION_MSG);
                 adduserquote(VERSION_MSG);
@@ -640,7 +640,7 @@ waitforeverybody(void)
     if (!CommEnabled)
         return;
 
-    buildprintf("waitforeverybody() #%d\n", Player[myconnectindex].playerreadyflag + 1);
+    LOG_F(INFO, "waitforeverybody() #%d", Player[myconnectindex].playerreadyflag + 1);
 
     //tenDbLprintf(gTenLog, 3, "in w4e");
     //tenDbFlushLog(gTenLog);
@@ -1645,7 +1645,7 @@ getpackets(void)
             break;
 
         case PACKET_TYPE_PROXY:
-            buildputs("getpackets(): nested proxy packets!?\n");
+            LOG_F(ERROR, "getpackets(): nested proxy packets!?");
             break;
 
         default:

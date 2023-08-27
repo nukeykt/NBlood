@@ -244,7 +244,7 @@ int ScanGroups(void)
 {
     struct grpcache *fg, *fgg;
 
-    buildputs("Scanning for game data...\n");
+    LOG_F(INFO, "Searching for game data...");
 
     LoadGroupsCache();
 

@@ -249,7 +249,7 @@ int32_t taglab_save(const char *mapname)
     buildvfs_fd fil;
     if ((fil = buildvfs_open_write(buf)) == buildvfs_fd_invalid)
     {
-        initprintf("Couldn't open \"%s\" for writing: %s\n", buf, strerror(errno));
+        LOG_F(ERROR, "Couldn't open \"%s\" for writing: %s", buf, strerror(errno));
         return -1;
     }
 
@@ -762,7 +762,7 @@ static int32_t check_spritelist_consistency()
 
     if (ournumsprites != Numsprites)
     {
-        initprintf("ournumsprites=%d, Numsprites=%d\n", ournumsprites, Numsprites);
+        LOG_F(INFO, "ournumsprites=%d, Numsprites=%d", ournumsprites, Numsprites);
         return 4;  // counting sprites by statnum!=MAXSTATUS inconsistent with Numsprites
     }
 

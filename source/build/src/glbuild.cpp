@@ -506,7 +506,7 @@ static void *getproc_(const char *s, int32_t *err, int32_t fatal, int32_t extens
 #endif
     if (!t && fatal)
     {
-        initprintf("Failed to find %s in %s\n", s, gldriver);
+        LOG_F(ERROR, "Failed to find %s in %s", s, gldriver);
         *err = 1;
     }
     return t;
@@ -527,7 +527,7 @@ int32_t loadwgl(const char *driver)
     hGLDLL = LoadLibrary(driver);
     if (!hGLDLL)
     {
-        initprintf("Failed loading \"%s\"\n", driver);
+        LOG_F(ERROR, "Failed loading \"%s\"", driver);
         return -1;
     }
 
@@ -618,7 +618,8 @@ void texdbg_bglGenTextures(GLsizei n, GLuint *textures, const char *srcfn)
     {
         GLuint const t = textures[i];
         if (t < texnameallocsize && bitmap_test(texnameused, t))
-            initprintf("texdebug %x Gen: overwriting used tex name %u from %x\n", hash, t, texnamefromwhere[t]);
+            DLOG_F(INFO, "texdebug %x Gen: overwriting used tex name %u from %x",
+                         hash, t, texnamefromwhere[t]);
     }
 
     bglGenTextures(n, textures);
@@ -652,10 +653,10 @@ void texdbg_bglDeleteTextures(GLsizei n, const GLuint *textures, const char *src
         if (t < texnameallocsize)
         {
             if (!bitmap_test(texnameused, t))
-                initprintf("texdebug %x Del: deleting unused tex name %u\n", hash, t);
+                DLOG_F(INFO, "texdebug %x Del: deleting unused tex name %u", hash, t);
             else if (bitmap_test(texnameused, t) && texnamefromwhere[t] != hash)
-                initprintf("texdebug %x Del: deleting foreign tex name %u from %x\n", hash,
-                           t, texnamefromwhere[t]);
+                DLOG_F(INFO, "texdebug %x Del: deleting foreign tex name %u from %x",
+                             hash, t, texnamefromwhere[t]);
         }
     }
 

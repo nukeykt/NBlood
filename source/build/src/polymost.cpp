@@ -1602,7 +1602,7 @@ static int32_t Polymost_TryDummyTexture(coltype const * const pic, int32_t const
         ++formats;
     }
 
-    initputs("No texture formats supported?!\n");
+    LOG_F(ERROR, "No texture formats supported?!");
 
     return 0;
 }

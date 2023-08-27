@@ -83,12 +83,12 @@ int32_t S_SoundStartup(void)
     initdata = (void *) win_gethwnd(); // used for DirectSound
 #endif
 
-    initprintf("Initializing sound... ");
+    LOG_F(INFO, "Initializing sound...");
 
     status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
-        initprintf("Sound startup error: %s\n", FX_ErrorString(status));
+        LOG_F(ERROR, "Sound startup error: %s", FX_ErrorString(status));
         return -2;
     }
 
@@ -118,7 +118,7 @@ void S_SoundShutdown(void)
 
     int status = FX_Shutdown();
     if (status != FX_Ok)
-        initprintf("Sound shutdown error: %s\n", FX_ErrorString(status));
+        LOG_F(ERROR, "Sound shutdown error: %s", FX_ErrorString(status));
 }
 
 int32_t S_LoadSound(uint32_t num)
@@ -172,7 +172,7 @@ int32_t S_DefineSound(int sndidx, const char * filename, const char * definednam
         Xfree(snd.definedname);
     }
     if (duplicate)
-        initprintf("warning: duplicate sound #%d, overwriting\n", sndidx);
+        LOG_F(WARNING, "duplicate sound #%d, overwriting", sndidx);
 
     if (!duplicate)
     {

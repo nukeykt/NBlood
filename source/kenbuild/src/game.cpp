@@ -365,7 +365,7 @@ int osdcmd_restartvid(const osdfuncparm_t *parm)
 
     videoResetMode();
     if (videoSetGameMode(fullscreen, xdim, ydim, bpp, upscalefactor))
-        buildputs("restartvid: Reset failed...\n");
+        LOG_F(ERROR, "restartvid: Reset failed...");
 
     return OSDCMD_OK;
 }
@@ -396,7 +396,7 @@ static int osdcmd_vidmode(const osdfuncparm_t *parm)
     }
 
     if (videoSetGameMode(newfullscreen, newx, newy, newbpp, upscalefactor))
-        buildputs("vidmode: Mode change failed!\n");
+        LOG_F(ERROR, "vidmode: Mode change failed!");
     screensize = xdim+1;
     return OSDCMD_OK;
 }
@@ -445,7 +445,7 @@ static void Ken_UninitAll(void)
 
 static void Ken_FatalEngineError(void)
 {
-    buildprintf("There was a problem initialising the engine: %s.\n", engineerrstr);
+    LOG_F(ERROR, "There was a problem initializing the engine: %s", engineerrstr);
 }
 
 int32_t app_main(int32_t argc, char const * const * argv)
@@ -458,22 +458,32 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     OSD_SetLogFile("ekenbuild.log");
 
-    initprintf("%s %s\n", AppProperName, s_buildRev);
+    LOG_F(INFO, "%s %s", AppProperName, s_buildRev);
     PrintBuildInfo();
+
+    if (argc > 1)
+    {
+        char tempbuf[1024];
+        size_t constexpr size = ARRAY_SIZE(tempbuf);
+        size_t bytesWritten = Bsnprintf(tempbuf, size, "Application parameters:");
+        for (i = 1; i < argc; ++i)
+            bytesWritten += Bsnprintf(tempbuf + bytesWritten, size - bytesWritten, " %s", argv[i]);
+        LOG_F(INFO, "%s", tempbuf);
+    }
 
     if (enginePreInit())
     {
-        wm_msgbox("Build Engine Initialisation Error",
-                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        wm_msgbox("Build Engine Initialization Error",
+                  "There was a problem initializing the engine: %s", engineerrstr);
         exit(1);
     }
 
-    OSD_RegisterFunction("restartvid","restartvid: reinitialise the video mode",osdcmd_restartvid);
-    OSD_RegisterFunction("vidmode","vidmode [xdim ydim] [bpp] [fullscreen]: immediately change the video mode",osdcmd_vidmode);
+    OSD_RegisterFunction("restartvid","restartvid: reinitializes the video mode",osdcmd_restartvid);
+    OSD_RegisterFunction("vidmode","vidmode [xdim ydim] [bpp] [fullscreen]: changes the video mode",osdcmd_vidmode);
 #ifdef USE_OPENGL
     baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
 #endif
-    OSD_RegisterFunction("map", "map [filename]: load a map", osdcmd_map);
+    OSD_RegisterFunction("map", "map [filename]: loads a map", osdcmd_map);
 
     wm_setapptitle(AppProperName);
 
@@ -496,7 +506,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     if ((i = Ken_loadsetup(setupfilename)) < 0)
-        buildputs("Configuration file not found, using defaults.\n");
+        LOG_F(INFO, "Configuration file not found, using defaults.");
 
     wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
 
@@ -524,7 +534,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     //initmultiplayers(argc-netparm,&argv[netparm],option[4],option[5],0);
     if (initmultiplayersparms(argc-netparm,&argv[netparm]))
     {
-        buildputs("Waiting for players...\n");
+        LOG_F(INFO, "Waiting for players...");
         while (initmultiplayerscycle())
         {
             handleevents();
@@ -539,7 +549,14 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     artLoadFiles("tiles000.art",1048576);                      //Load artwork
     Ken_LoadVoxels();
-    if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
+
+    char const * const deffile = G_DefFile();
+    uint32_t stime = timerGetTicks();
+    if (!loaddefinitionsfile(deffile))
+    {
+        uint32_t etime = timerGetTicks();
+        LOG_F(INFO, "Definitions file '%s' loaded in %d ms.", deffile, etime-stime);
+    }
 
     if (enginePostInit())
     {
@@ -567,7 +584,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     //Since it resets the tile cache for each call.
     if (tileCreate(SLIME,128,128) == 0)    //If enough memory
     {
-        buildputs("Not enough memory for slime!\n");
+        LOG_F(ERROR, "Not enough memory for slime!");
         exit(0);
     }
     if (tileCreate(MAXTILES-1,64,64) != 0)    //If enough memory

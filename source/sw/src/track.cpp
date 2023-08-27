@@ -633,7 +633,7 @@ TrackSetup(void)
         {
             int i, nexti;
             auto const sp = (uspritetype const *)&sprite[headspritestat[STAT_TRACK+ndx]];
-            buildprintf("WARNING: Did not find first point of Track Number %d, x %d, y %d\n", ndx, sp->x, sp->y);
+            LOG_F(WARNING, "Did not find first point of Track Number %d, x %d, y %d", ndx, sp->x, sp->y);
             for (i=headspritestat[STAT_TRACK+ndx]; i>=0; i=nexti)
             {
                 // neuter the track's sprite list
@@ -1590,7 +1590,7 @@ PlaceActorsOnTracks(void)
 
         if (Track[u->track].NumPoints == 0)
         {
-            buildprintf("WARNING: Sprite %d (%d, %d) placed on track %d with no points!\n", i, TrackerCast(sp->x), TrackerCast(sp->y), u->track);
+            LOG_F(WARNING, "Sprite %d (%d, %d) placed on track %d with no points!", i, TrackerCast(sp->x), TrackerCast(sp->y), u->track);
             continue;
         }
 

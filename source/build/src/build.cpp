@@ -558,8 +558,8 @@ static void M32_FatalEngineError(void)
 #ifdef DEBUGGINGAIDS
     debug_break();
 #endif
-    Bsprintf(tempbuf, "There was a problem initializing the engine: %s\n", engineerrstr);
-    ERRprintf("%s", tempbuf);
+    Bsprintf(tempbuf, "There was a problem initializing the engine: %s", engineerrstr);
+    LOG_F(ERROR, "%s", tempbuf);
     fatal_exit(tempbuf);
 }
 
@@ -648,11 +648,11 @@ int app_main(int argc, char const* const* argv)
     pathsearchmode = 1;		// unrestrict findfrompath so that full access to the filesystem can be had
 
 #ifdef USE_OPENGL
-    OSD_RegisterFunction("restartvid","restartvid: reinitialize the video mode",osdcmd_restartvid);
-    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: immediately change the video mode",osdcmd_vidmode);
+    OSD_RegisterFunction("restartvid","restartvid: reinitializes the video mode",osdcmd_restartvid);
+    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: changes the video mode",osdcmd_vidmode);
     baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
 #else
-    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim>: immediately change the video mode",osdcmd_vidmode);
+    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim>: changes the video mode",osdcmd_vidmode);
 #endif
 
     wm_setapptitle(AppProperName);
