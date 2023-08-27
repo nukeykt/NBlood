@@ -7531,6 +7531,7 @@ void polymost2_drawsprite(int32_t snum)
     usectorptr_t sec;
 
     int32_t spritenum = tspr->owner;
+    auto const tsprflags = tspr->clipdist;
 
     tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
 
@@ -8115,6 +8116,8 @@ void polymost_drawsprite(int32_t snum)
 
     buildgl_outputDebugMessage(3, "polymost_drawsprite(snum:%d)", snum);
 
+    auto const tsprflags = tspr->clipdist;
+
     if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)
         tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
 
@@ -8139,7 +8142,7 @@ void polymost_drawsprite(int32_t snum)
         int const flag = usehightile && h_xsize[globalpicnum];
         off = { flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs,
                 flag ? h_yoffs[globalpicnum] : picanm[globalpicnum].yofs };
-        if (!(tspr->clipdist & TSPR_FLAGS_SLOPE_SPRITE))
+        if (!(tsprflags & TSPR_FLAGS_SLOPE_SPRITE))
         {
             off.x += tspr->xoffset;
             off.y += tspr->yoffset;
