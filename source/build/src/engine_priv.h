@@ -454,7 +454,7 @@ static inline floorsprite_dims get_floorspr_dims(uspriteptr_t spr, bool sloped)
 static inline vec2_t get_floorspr_center(void const *const ptr, bool sloped)
 {
     auto const *spr = (uspriteptr_t)ptr;
-    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR);
+    Bassert((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == (sloped ? CSTAT_SPRITE_ALIGNMENT_SLOPE : CSTAT_SPRITE_ALIGNMENT_FLOOR));
 
     auto const    dims   = get_floorspr_dims(spr, sloped);
     int32_t const cosang = dims.cosang, sinang = dims.sinang;
