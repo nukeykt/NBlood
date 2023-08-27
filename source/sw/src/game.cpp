@@ -266,7 +266,7 @@ SWBOOL ExitLevel = FALSE;
 int16_t OrigCommPlayers=0;
 extern uint8_t CommPlayers;
 extern SWBOOL CommEnabled;
-extern int bufferjitter;
+extern unsigned int bufferjitter;
 
 SWBOOL CameraTestMode = FALSE;
 

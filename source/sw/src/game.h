@@ -1121,11 +1121,11 @@ struct PLAYERstruct
     SW_PACKET input;
 
     //FIFO queue to hold values while faketimerhandler is called from within the drawing routing
-#define MOVEFIFOSIZ 256
+#define MOVEFIFOSIZ 256u
     SW_PACKET inputfifo[MOVEFIFOSIZ];
 
 
-    int movefifoend;
+    unsigned int movefifoend;
     int myminlag;
     int syncvalhead;
 #define MAXSYNCBYTES 16
@@ -2286,7 +2286,7 @@ extern SWBOOL GamePaused;
 extern int locselectedgun;
 
 //FIFO queue to hold values while faketimerhandler is called from within the drawing routing
-extern int movefifoplc, movefifoend[];
+extern unsigned int movefifoplc; //, movefifoend[];
 
 
 extern SWBOOL MoveSkip4, MoveSkip2, MoveSkip8;

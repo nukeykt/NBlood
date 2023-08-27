@@ -73,7 +73,7 @@ extern SWBOOL QuitFlag;
 
 //#define NET_DEBUG_MSGS
 
-#define TIMERUPDATESIZ 32
+#define TIMERUPDATESIZ 32u
 
 //SW_PACKET fsync;
 
@@ -87,11 +87,12 @@ SWBOOL ready2send = 0;
 
 SWBOOL CommEnabled = FALSE;
 uint8_t CommPlayers = 0;
-int movefifoplc, movefifosendplc; //, movefifoend[MAX_SW_PLAYERS];
+unsigned int movefifoplc, movefifosendplc; //, movefifoend[MAX_SW_PLAYERS];
 unsigned int MoveThingsCount;
 
 //int myminlag[MAX_SW_PLAYERS];
-int mymaxlag, otherminlag, bufferjitter = 1;
+int mymaxlag, otherminlag;
+unsigned int bufferjitter = 1;
 extern char sync_first[MAXSYNCBYTES][60];
 extern int sync_found;
 
@@ -972,7 +973,7 @@ void faketimerhandler(void) { ; }
 void
 UpdateInputs(void)
 {
-    int i, j, k;
+    int i, j;
     PLAYERp pp;
     void getinput(SW_PACKET *, SWBOOL);
     extern SWBOOL BotMode;
@@ -1070,7 +1071,7 @@ UpdateInputs(void)
     {
         if (i != myconnectindex)
         {
-            k = (Player[myconnectindex].movefifoend - 1) - Player[i].movefifoend;
+            int k = (Player[myconnectindex].movefifoend - 1) - Player[i].movefifoend;
             Player[i].myminlag = min(Player[i].myminlag, k);
             mymaxlag = max(mymaxlag, k);
         }

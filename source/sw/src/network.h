@@ -108,7 +108,7 @@ extern SWBOOL PredictionOn;
 extern PLAYER PredictPlayer;
 extern PLAYERp ppp;
 extern short predictangpos[MOVEFIFOSIZ];
-extern int predictmovefifoplc;
+extern unsigned int predictmovefifoplc;
 extern SWBOOL Prediction;
 extern short NumSyncBytes;
 
