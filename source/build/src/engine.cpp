@@ -13669,7 +13669,8 @@ void rotatesprite_(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,
     //  bit RS_CENTERORIGIN: see dorotspr_handle_bit2
     ////////////////////
 
-    if (((dastat & RS_PERM) == 0) || (numpages < 2) || (beforedrawrooms != 0))
+    auto const impermanent = (dastat & RS_PERM) == 0 || videoGetRenderMode() == REND_POLYMER;
+    if (impermanent || (numpages < 2) || (beforedrawrooms != 0))
     {
         videoBeginDrawing(); //{{{
         dorotatesprite(sx,sy,z,a,picnum,dashade,dapalnum,dastat,daalpha,dablend,cx1,cy1,cx2,cy2,guniqhudid);
@@ -13680,7 +13681,7 @@ void rotatesprite_(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,
             (sx == (160<<16)) && (sy == (100<<16)) && (z == 65536L) && (a == 0) && ((dastat&RS_TRANS1) == 0))
         permhead = permtail = 0;
 
-    if ((dastat & RS_PERM) == 0)
+    if (impermanent)
         return;
 
     if (numpages >= 2)

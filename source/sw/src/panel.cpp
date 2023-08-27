@@ -7578,7 +7578,8 @@ pDisplaySprites(PLAYERp pp)
         extern SWBOOL UsingMenus;
         if (TEST(psp->flags, PANF_KILL_AFTER_SHOW) && !TEST(psp->flags, PANF_NOT_ALL_PAGES) && !UsingMenus)
         {
-            psp->numpages = 0;
+            if (videoGetRenderMode() != REND_POLYMER)
+                psp->numpages = 0;
             SET(flags, ROTATE_SPRITE_ALL_PAGES);
         }
 #endif
