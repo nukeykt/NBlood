@@ -576,12 +576,6 @@ DoMotionBlur(tspritetype const * const tsp)
 
 }
 
-void SetVoxelSprite(SPRITEp sp, short pic)
-{
-    SET(sp->cstat, CSTAT_SPRITE_ALIGNMENT_SLAB);
-    sp->picnum = pic;
-}
-
 void WarpCopySprite(void)
 {
     SPRITEp sp1, sp2, sp;

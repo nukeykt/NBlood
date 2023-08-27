@@ -1723,7 +1723,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             for (i=headspritesect[clipsectorlist[clipsectcnt]]; i>=0; i=nextspritesect[i])
             {
                 spr = &sprite[i];
-                if (((spr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) && ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)) continue;
+                if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) continue;
                 if ((spr->cstat&dasprclipmask) == 0) continue;
 
                 dax = (vect->x)-spr->x; day = (vect->y)-spr->y;

@@ -2023,7 +2023,8 @@ void analyzesprites(int dax, int day)
                     if (voxid_PLAYER == -1)
                         break;
 
-                    tspr->cstat |= CSTAT_SPRITE_ALIGNMENT_SLAB;
+                    tspr->clipdist |= TSPR_FLAGS_SLAB;
+                    tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
                     tspr->picnum = voxid_PLAYER;
 
                     auto const voxptr = (int32_t const *)voxoff[voxid_PLAYER][0];
@@ -2036,7 +2037,8 @@ void analyzesprites(int dax, int day)
                 if (voxid_BROWNMONSTER == -1)
                     break;
 
-                tspr->cstat |= CSTAT_SPRITE_ALIGNMENT_SLAB;
+                tspr->clipdist |= TSPR_FLAGS_SLAB;
+                tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
                 tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }

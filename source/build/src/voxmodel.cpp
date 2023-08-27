@@ -1074,7 +1074,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     zoff = m->siz.z*.5f;
     if (!(tspr->cstat&128))
         zoff += m->piv.z;
-    else if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)
+    else if (!(tsprflags & TSPR_FLAGS_SLAB))
     {
         zoff += m->piv.z;
         zoff -= m->siz.z*.5f;
@@ -1125,7 +1125,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if (have_basepal_tint())
         hictinting_apply(pc, MAXPALOOKUPS - 1);
 
-    int32_t const voxid = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLAB
+    int32_t const voxid = (tsprflags & TSPR_FLAGS_SLAB)
                         ? tspr->picnum
                         : tiletovox[tspr->picnum];
     if (!shadowHack && (voxflags[voxid] & VF_NOTRANS) != VF_NOTRANS)

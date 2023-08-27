@@ -598,6 +598,7 @@ enum
     TSPR_FLAGS_NO_SHADOW = 1u<<2u,
     TSPR_FLAGS_INVISIBLE_WITH_SHADOW = 1u<<3u,
     TSPR_FLAGS_SLOPE_SPRITE = 1u<<4u,
+    TSPR_FLAGS_SLAB = 1u<<5u,
 };
 
 EXTERN int32_t guniqhudid;

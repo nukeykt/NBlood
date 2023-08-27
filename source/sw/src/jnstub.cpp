@@ -575,7 +575,8 @@ ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_
             {
                 // Turn on voxels
                 tspr->picnum = aVoxelArray[tspr->picnum];       // Get the voxel number
-                tspr->cstat |= CSTAT_SPRITE_ALIGNMENT_SLAB;     // Set stat to voxelize sprite
+                tspr->clipdist |= TSPR_FLAGS_SLAB;              // Set stat to voxelize sprite
+                tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
             }
         }
     }

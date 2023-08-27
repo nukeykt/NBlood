@@ -2728,9 +2728,9 @@ static inline pthtyp *our_texcache_fetch(int32_t dameth)
 
 static inline bool polymost_spriteIsLegacyVoxel(tspritetype const * const tspr)
 {
-    auto const cstat = tspr->cstat;
+    auto const tsprflags = tspr->clipdist;
     auto const picnum = tspr->picnum;
-    return (cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && (unsigned)picnum < MAXVOXELS && voxmodels[picnum];
+    return (tsprflags & TSPR_FLAGS_SLAB) && (unsigned)picnum < MAXVOXELS && voxmodels[picnum];
 }
 
 static inline bool polymost_spriteIsModernVoxel(tspritetype const * const tspr)
@@ -7546,7 +7546,7 @@ void polymost2_drawsprite(int32_t snum)
 
     vec2f_t off = { 0.f, 0.f };
 
-    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)  // only non-voxel sprites should do this
+    if (!(tsprflags & TSPR_FLAGS_SLAB))  // only non-voxel sprites should do this
     {
         int const flag = usehightile && h_xsize[globalpicnum];
         off.x = (float)((int32_t)tspr->xoffset + (flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs));
@@ -7596,7 +7596,7 @@ void polymost2_drawsprite(int32_t snum)
     //POGO: some comments seem to indicate that spinning sprites were intended to be supported before the
     //      decision was made to implement that behaviour with voxels.
     //      Skip SLAB aligned sprites when not rendering as voxels.
-    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB)
+    if (tsprflags & TSPR_FLAGS_SLAB)
     {
         return;
     }
@@ -8118,7 +8118,7 @@ void polymost_drawsprite(int32_t snum)
 
     auto const tsprflags = tspr->clipdist;
 
-    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)
+    if (!(tsprflags & TSPR_FLAGS_SLAB))
         tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
 
     globalpicnum = tspr->picnum;
@@ -8137,7 +8137,7 @@ void polymost_drawsprite(int32_t snum)
 
     vec2_t off = { 0, 0 };
 
-    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)  // only non-voxel sprites should do this
+    if (!(tsprflags & TSPR_FLAGS_SLAB))  // only non-voxel sprites should do this
     {
         int const flag = usehightile && h_xsize[globalpicnum];
         off = { flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs,
