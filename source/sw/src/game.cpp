@@ -5628,9 +5628,9 @@ SHOWSPRITE:
                     spry = sprite[j].y;
                 }
 
-                switch (spr->cstat & 48)
+                switch (spr->cstat & CSTAT_SPRITE_ALIGNMENT)
                 {
-                case 0:  // Regular sprite
+                case CSTAT_SPRITE_ALIGNMENT_FACING:  // Regular sprite
                     if (p >= 0 && Player[p].PlayerSprite == j)
                     {
                         ox = sprx - cposx;
@@ -5688,7 +5688,7 @@ SHOWSPRITE:
                         }
                     }
                     break;
-                case 16: // Rotated sprite
+                case CSTAT_SPRITE_ALIGNMENT_WALL: // Rotated sprite
                     x1 = sprx;
                     y1 = spry;
                     tilenum = spr->picnum;
@@ -5720,7 +5720,7 @@ SHOWSPRITE:
                                    x2 + (xdim << 11), y2 + (ydim << 11), col);
 
                     break;
-                case 32:    // Floor sprite
+                case CSTAT_SPRITE_ALIGNMENT_FLOOR:    // Floor sprite
                     if (dimensionmode == 5)
                     {
                         tilenum = spr->picnum;

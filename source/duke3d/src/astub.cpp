@@ -4234,17 +4234,17 @@ static int32_t addtobyte(int8_t *byte, int32_t num)
 
 static void toggle_sprite_alignment(int32_t spritenum)
 {
-    static const char *aligntype[4] = { "view", "wall", "floor", "???" };
+    static const char *aligntype[4] = { "view", "wall", "floor", "sloped" };
 
     int32_t i = sprite[spritenum].cstat;
 
-    if ((i&48) < 32)
-        i += 16;
+    if ((i & CSTAT_SPRITE_ALIGNMENT) < CSTAT_SPRITE_ALIGNMENT_FLOOR)
+        i += CSTAT_SPRITE_ALIGNMENT_WALL;
     else
-        i &= ~48;
+        i &= ~CSTAT_SPRITE_ALIGNMENT;
     sprite[spritenum].cstat = i;
 
-    message("Sprite %d now %s aligned", spritenum, aligntype[(i&48)/16]);
+    message("Sprite %d now %s aligned", spritenum, aligntype[(i & CSTAT_SPRITE_ALIGNMENT) / CSTAT_SPRITE_ALIGNMENT_WALL]);
     asksave = 1;
 }
 
@@ -4886,7 +4886,7 @@ static void Keys3d(void)
         {
             i = sprite[searchwall].cstat;
             i ^= 64;
-            if ((i&48) == 32)
+            if ((i & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
             {
                 i &= ~8;
                 if ((i&64) && pos.z>sprite[searchwall].z)
@@ -5260,7 +5260,7 @@ static void Keys3d(void)
             else if (AIMING_AT_SPRITE)
             {
                 i = sprite[searchwall].cstat;
-                if (((i&48) == 32) && ((i&64) == 0))
+                if (((i & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR) && ((i&64) == 0))
                 {
                     sprite[searchwall].cstat &= ~0xc;
                     sprite[searchwall].cstat |= ((i&4)^4);
@@ -7572,7 +7572,7 @@ static void Keys2d(void)
             {
                 changedir = 1-(j&2);
 
-                if ((ppointhighlight&0xc000) == 16384 && (sprite[cursprite].cstat & 48))
+                if ((ppointhighlight&0xc000) == 16384 && (sprite[cursprite].cstat & CSTAT_SPRITE_ALIGNMENT))
                 {
                     uint8_t *repeat = (k==0) ? &sprite[cursprite].xrepeat : &sprite[cursprite].yrepeat;
                     *repeat = max<uint8_t>(4, changechar(*repeat, changedir, smooshy, 1));
@@ -10393,14 +10393,14 @@ void ExtPreCheckKeys(void) // just before drawrooms
         {
             auto pSprite = (uspriteptr_t)&sprite[i];
 
-            if ((pSprite->cstat & 48) != 0 || pSprite->statnum == MAXSTATUS || (unsigned)pSprite->sectnum >= MAXSECTORS) continue;
+            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING || pSprite->statnum == MAXSTATUS || (unsigned)pSprite->sectnum >= MAXSECTORS) continue;
             if (bitmap_test(graysectbitmap, pSprite->sectnum)) continue;
 
             int daang = 0, flags = 0, shade = 0, frames = 0;
             int picnum = pSprite->picnum;
             int32_t xp1, yp1;
 
-            if ((sprite[i].cstat & 48) != 0 || sprite[i].statnum == MAXSTATUS) continue;
+            if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING || sprite[i].statnum == MAXSTATUS) continue;
 
             ii++;
 
@@ -10613,7 +10613,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
             if (tspr->sectnum<0)
                 continue;
 
-            const int32_t wallaligned = (tspr->cstat & 16);
+            const int32_t wallaligned = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_WALL);
             const int32_t fpal = sector[tspr->sectnum].floorpal;
 
             // 1st rule

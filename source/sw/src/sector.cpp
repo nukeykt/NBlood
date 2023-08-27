@@ -1036,7 +1036,7 @@ SectorExp(short SpriteNum, short sectnum, short orig_ang, int zh)
     USERp eu;
     int x,y,z;
 
-    RESET(sp->cstat, CSTAT_SPRITE_ALIGNMENT_WALL|CSTAT_SPRITE_ALIGNMENT_FLOOR);
+    RESET(sp->cstat, CSTAT_SPRITE_ALIGNMENT_MASK);
     SectorMidPoint(sectnum, &x, &y, &z);
     sp->ang = orig_ang;
     sp->x = x;

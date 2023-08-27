@@ -561,7 +561,7 @@ int A_GetClipdist(int spriteNum)
             if ((SpriteProjectile[spriteNum].workslike & PROJECTILE_REALCLIPDIST) == 0)
                 clipDist = 16;
         }
-        else if ((pSprite->cstat & 48) == 16)
+        else if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
             clipDist = 0;
         else if (A_CheckEnemySprite(pSprite))
         {

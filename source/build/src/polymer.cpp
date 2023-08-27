@@ -1587,7 +1587,7 @@ void                polymer_drawsprite(int32_t snum)
         break;
     }
 
-    if ((cs & 48) == 0)
+    if ((cs & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
     {
         int32_t curpriority = 0;
 
@@ -3928,7 +3928,7 @@ void                polymer_updatesprite(int32_t snum)
         s->hash = 0xDEADBEEF;
     }
 
-    if ((tspr->cstat & 48) && !s->plane.vbo)
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) && !s->plane.vbo)
     {
         if (pr_nullrender < 2)
         {
@@ -3938,7 +3938,7 @@ void                polymer_updatesprite(int32_t snum)
         }
     }
 
-    if (tspr->cstat & 48 && searchit != 2)
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) && searchit != 2)
     {
         uint32_t const changed = XXH3_64bits((uint8_t *) tspr, offsetof(spritetype, owner));
 
@@ -6153,7 +6153,7 @@ static int polymer_culllight(int16_t lighti)
         {
             _prsprite *s = prsprites[i];
 
-            if ((sprite[i].cstat & 48) == 0 || s == NULL)
+            if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING || s == NULL)
                 continue;
 
             if (polymer_planeinlight(s->plane, light))

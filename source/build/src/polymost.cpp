@@ -6550,15 +6550,17 @@ void polymost_scansector(int32_t sectnum)
 
             vec2_t const s = { spr->x-globalposx, spr->y-globalposy };
 
-            if ((spr->cstat&48) ||
+            if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) ||
                 (usemodels && tile2model[spr->picnum].modelid>=0) ||
                 ((s.x * gcosang) + (s.y * gsinang) > 0))
             {
-                if ((spr->cstat&(64+48))!=(64+16) ||
+                if ((spr->cstat & (CSTAT_SPRITE_ONE_SIDED|CSTAT_SPRITE_ALIGNMENT)) != (CSTAT_SPRITE_ONE_SIDED|CSTAT_SPRITE_ALIGNMENT_WALL) ||
                     (usevoxels && tiletovox[spr->picnum] >= 0 && voxmodels[tiletovox[spr->picnum]]) ||
                     dmulscale6(sintable[(spr->ang+512)&2047],-s.x, sintable[spr->ang&2047],-s.y) > 0)
+                {
                     if (renderAddTsprite(z, sectnum))
                         break;
+                }
             }
         }
 
@@ -8100,7 +8102,7 @@ void polymost_drawsprite(int32_t snum)
 
     buildgl_outputDebugMessage(3, "polymost_drawsprite(snum:%d)", snum);
 
-    if ((tspr->cstat&48) != 48)
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)
         tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
 
     globalpicnum = tspr->picnum;
@@ -8119,7 +8121,7 @@ void polymost_drawsprite(int32_t snum)
 
     vec2_t off = { 0, 0 };
 
-    if ((globalorientation & 48) != 48)  // only non-voxel sprites should do this
+    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB)  // only non-voxel sprites should do this
     {
         int const flag = usehightile && h_xsize[globalpicnum];
         off = { flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs,
@@ -8152,7 +8154,7 @@ void polymost_drawsprite(int32_t snum)
             break;  // else, render as flat sprite
         }
 
-        if (usevoxels && (tspr->cstat & 48) != 48 && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]])
+        if (usevoxels && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]])
         {
             if (polymost_voxdraw(voxmodels[tiletovox[tspr->picnum]], tspr))
             {
@@ -8164,7 +8166,7 @@ void polymost_drawsprite(int32_t snum)
             break;  // else, render as flat sprite
         }
 
-        if ((tspr->cstat & 48) == 48 && voxmodels[tspr->picnum])
+        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum])
         {
             polymost_voxdraw(voxmodels[tspr->picnum], tspr);
 
