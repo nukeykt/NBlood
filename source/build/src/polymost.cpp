@@ -2726,6 +2726,19 @@ static inline pthtyp *our_texcache_fetch(int32_t dameth)
     return texcache_fetch(globalpicnum, globalpal, getpalookup(0, globalshade), dameth);
 }
 
+static inline bool polymost_spriteIsLegacyVoxel(tspritetype const * const tspr)
+{
+    auto const cstat = tspr->cstat;
+    auto const picnum = tspr->picnum;
+    return (cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && (unsigned)picnum < MAXVOXELS && voxmodels[picnum];
+}
+
+static inline bool polymost_spriteIsModernVoxel(tspritetype const * const tspr)
+{
+    auto const picnum = tspr->picnum;
+    return !polymost_spriteIsLegacyVoxel(tspr) && usevoxels && (unsigned)tiletovox[picnum] < MAXVOXELS && voxmodels[tiletovox[picnum]];
+}
+
 int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall)
 {
     if (wall->cstat & CSTAT_WALL_TRANSLUCENT)
@@ -2745,10 +2758,10 @@ int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall)
 
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr)
 {
-    if (usevoxels && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]] && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) == VF_NOTRANS)
+    if (polymost_spriteIsModernVoxel(tspr) && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) == VF_NOTRANS)
         return false;
 
-    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum] && (voxflags[tspr->picnum] & VF_NOTRANS) == VF_NOTRANS)
+    if (polymost_spriteIsLegacyVoxel(tspr) && (voxflags[tspr->picnum] & VF_NOTRANS) == VF_NOTRANS)
         return false;
 
     if ((tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || (tspr->clipdist & TSPR_FLAGS_DRAW_LAST) ||
@@ -2776,10 +2789,10 @@ int32_t polymost_spriteIsModelOrVoxel(tspritetype const * const tspr)
         tile2model[Ptile2tile(tspr->picnum, tspr->pal)].framenum >= 0)
         return true;
 
-    if (usevoxels && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]])
+    if (polymost_spriteIsModernVoxel(tspr))
         return true;
 
-    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum])
+    if (polymost_spriteIsLegacyVoxel(tspr))
         return true;
 
     return false;
@@ -7564,13 +7577,13 @@ void polymost2_drawsprite(int32_t snum)
             break;  // else, render as flat sprite
         }
 
-        if (usevoxels && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]])
+        if (polymost_spriteIsModernVoxel(tspr))
         {
             if (polymost_voxdraw(voxmodels[tiletovox[tspr->picnum]], tspr)) return;
             break;  // else, render as flat sprite
         }
 
-        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum])
+        if (polymost_spriteIsLegacyVoxel(tspr))
         {
             polymost_voxdraw(voxmodels[tspr->picnum], tspr);
             return;
@@ -8154,7 +8167,7 @@ void polymost_drawsprite(int32_t snum)
             break;  // else, render as flat sprite
         }
 
-        if (usevoxels && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLAB && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]])
+        if (polymost_spriteIsModernVoxel(tspr))
         {
             if (polymost_voxdraw(voxmodels[tiletovox[tspr->picnum]], tspr))
             {
@@ -8166,7 +8179,7 @@ void polymost_drawsprite(int32_t snum)
             break;  // else, render as flat sprite
         }
 
-        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLAB && voxmodels[tspr->picnum])
+        if (polymost_spriteIsLegacyVoxel(tspr))
         {
             polymost_voxdraw(voxmodels[tspr->picnum], tspr);
 
