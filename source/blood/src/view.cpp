@@ -2486,8 +2486,8 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         const int nVoxel = voxelIndex[nTile];
         if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
         {
-            pNSprite->cstat |= 48;
-            pNSprite->cstat &= ~8;
+            pNSprite->clipdist |= TSPR_FLAGS_SLAB;
+            pNSprite->cstat &= ~(8|CSTAT_SPRITE_ALIGNMENT);
             pNSprite->picnum = nVoxel;
             if (pPlayer->curWeapon == kWeaponLifeLeech) // position lifeleech behind player
             {
@@ -2547,6 +2547,8 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         {
             continue;
         }
+
+        auto const tsprflags = pTSprite->clipdist;
 
         if (gViewInterpolate && TestBitString(gInterpolateSprite, nSprite) && !(pTSprite->flags&512))
         {
@@ -2640,8 +2642,8 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 {
                     if ((pTSprite->flags&kHitagRespawn) == 0)
                     {
-                        pTSprite->cstat |= 48;
-                        pTSprite->cstat &= ~(4|8);
+                        pTSprite->clipdist |= TSPR_FLAGS_SLAB;
+                        pTSprite->cstat &= ~(4|8|CSTAT_SPRITE_ALIGNMENT);
                         pTSprite->yoffset += picanm[pTSprite->picnum].yofs;
                         pTSprite->picnum = voxelIndex[pTSprite->picnum];
                         if (!voxoff[pTSprite->picnum][0])
@@ -2661,7 +2663,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             nAnim--;
         }
 
-        if ((pTSprite->cstat&48) != 48 && usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+        if (!(tsprflags & TSPR_FLAGS_SLAB) && usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[nSprite].flags&SPREXT_NOTMD))
         {
             int const nRootTile = pTSprite->picnum;
 #if 0
@@ -2680,7 +2682,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
 
 #ifdef USE_OPENGL
-        if ((pTSprite->cstat&48) != 48 && usemodels && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+        if (!(tsprflags & TSPR_FLAGS_SLAB) && usemodels && !(spriteext[nSprite].flags&SPREXT_NOTMD))
         {
             int const nRootTile = pTSprite->picnum;
             int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+nSprite);

@@ -1528,10 +1528,12 @@ void                polymer_drawsprite(int32_t snum)
     if (bad_tspr(tspr))
         return;
 
-    if ((tspr->clipdist & TSPR_FLAGS_NO_SHADOW) && (depth && !mirrors[depth-1].plane))
+    auto const tsprflags = tspr->clipdist;
+
+    if ((tsprflags & TSPR_FLAGS_NO_SHADOW) && (depth && !mirrors[depth-1].plane))
         return;
 
-    if ((tspr->clipdist & TSPR_FLAGS_INVISIBLE_WITH_SHADOW) && (!depth || mirrors[depth-1].plane))
+    if ((tsprflags & TSPR_FLAGS_INVISIBLE_WITH_SHADOW) && (!depth || mirrors[depth-1].plane))
         return;
 
     int const spritenum = tspr->owner;
@@ -1597,7 +1599,7 @@ void                polymer_drawsprite(int32_t snum)
         break;
     }
 
-    if ((cs & 48) == 0)
+    if ((cs & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
     {
         int32_t curpriority = 0;
 
@@ -4008,7 +4010,7 @@ void                polymer_updatesprite(int32_t snum)
         s->hash = 0xDEADBEEF;
     }
 
-    if ((tspr->cstat & 48) && !s->plane.vbo)
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) && !s->plane.vbo)
     {
         if (pr_nullrender < 2)
         {
@@ -4018,7 +4020,7 @@ void                polymer_updatesprite(int32_t snum)
         }
     }
 
-    if (tspr->cstat & 48 && searchit != 2)
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) && searchit != 2)
     {
         uint32_t const changed = XXH3_64bits((uint8_t *) tspr, offsetof(spritetype, owner));
 
@@ -4505,6 +4507,8 @@ void polymer_drawmdsprite(tspriteptr_t tspr)
     if (m->indices == NULL)
         polymer_loadmodelvbos(m);
 
+    auto const tsprflags = tspr->clipdist;
+
     // Hackish, but that means it's a model drawn by rotatesprite.
     if (tspriteptr[maxspritesonscreen] == tspr) {
         spos[0] = fglobalposy;
@@ -4824,7 +4828,7 @@ void polymer_drawmdsprite(tspriteptr_t tspr)
         if (!mdspritematerial.diffusemap)
             continue;
 
-        if (!(tspr->clipdist & TSPR_FLAGS_MDHACK))
+        if (!(tsprflags & TSPR_FLAGS_MDHACK))
         {
             mdspritematerial.detailmap =
                     mdloadskin((md2model_t *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,DETAILPAL,surfi);
@@ -6233,7 +6237,7 @@ static int polymer_culllight(int16_t lighti)
         {
             _prsprite *s = prsprites[i];
 
-            if ((sprite[i].cstat & 48) == 0 || s == NULL)
+            if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING || s == NULL)
                 continue;
 
             if (polymer_planeinlight(s->plane, light))

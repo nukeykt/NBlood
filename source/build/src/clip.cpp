@@ -281,7 +281,7 @@ int32_t engineLoadClipMaps(void)
                         if (i>=fispr[fi])
                             break;
                     LOG_F(WARNING, "Error in %s: sprite %d points neither northward nor southward. %s will be incorrect.",
-                        g_clipMapFiles[fi], i-fispr[fi], (sprite[i].cstat&48)==32 ? "Scaling and flipping" : "X-flipping");
+                        g_clipMapFiles[fi], i-fispr[fi], (sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR ? "Scaling and flipping" : "X-flipping");
                 }
             }
 
@@ -1362,7 +1362,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 #endif
             vec2_t p1 = spr->xy;
 
-            switch (cstat & (CSTAT_SPRITE_ALIGNMENT_WALL | CSTAT_SPRITE_ALIGNMENT_FLOOR))
+            switch (cstat & CSTAT_SPRITE_ALIGNMENT_MASK)
             {
             case CSTAT_SPRITE_ALIGNMENT_FACING:
                 if (p1.x >= clipMin.x && p1.x <= clipMax.x && p1.y >= clipMin.y && p1.y <= clipMax.y)
@@ -1723,7 +1723,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             for (i=headspritesect[clipsectorlist[clipsectcnt]]; i>=0; i=nextspritesect[i])
             {
                 spr = &sprite[i];
-                if (((spr->cstat&48) != 0) && ((spr->cstat&48) != 48)) continue;
+                if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) continue;
                 if ((spr->cstat&dasprclipmask) == 0) continue;
 
                 dax = (vect->x)-spr->x; day = (vect->y)-spr->y;

@@ -1999,9 +1999,11 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     if (m->vbos == NULL)
         mdloadvbos(m);
 
-    //    if ((tspr->cstat&48) == 32) return 0;
+    // if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR) return 0;
 
     updateanimation((md2model_t *)m, tspr, lpal);
+
+    auto const tsprflags = tspr->clipdist;
 
     //create current&next frame's vertex list from whole list
 
@@ -2029,9 +2031,9 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
     // Parkar: Moved up to be able to use k0 for the y-flipping code
     k0 = (float)tspr->z+spriteext[tspr->owner].mdposition_offset.z;
-    f = ((globalorientation&8) && (sprite[tspr->owner].cstat&48)!=0) ? -4.f : 4.f;
+    f = ((globalorientation&8) && (sprite[tspr->owner].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) ? -4.f : 4.f;
     k0 -= (tspr->yoffset*tspr->yrepeat)*f;
-    if ((globalorientation&128) && !((globalorientation&48)==32))
+    if ((globalorientation&128) && (globalorientation & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR)
         k0 += (float)(sizyrep<<1);
 
     // Parkar: Changed to use the same method as centeroriented sprites
@@ -2054,7 +2056,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
     // floor aligned
     k1 = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
-    if ((globalorientation&48)==32)
+    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         m0.z = -m0.z; m1.z = -m1.z; a0.z = -a0.z;
         m0.y = -m0.y; m1.y = -m1.y; a0.y = -a0.y;
@@ -2073,7 +2075,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     md3_vox_calcmat_common(tspr, &a0, f, mat);
 
     // floor aligned
-    if ((globalorientation&48)==32)
+    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         f = mat[4]; mat[4] = mat[8]*16.f; mat[8] = -f*(1.f/16.f);
         f = mat[5]; mat[5] = mat[9]*16.f; mat[9] = -f*(1.f/16.f);
@@ -2088,7 +2090,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     // to use Z-buffer hacks to hide overdraw problems with the flat-tsprite-on-floor shadows,
     // also disabling detail, glow, normal, and specular maps.
 
-    if (tspr->clipdist & TSPR_FLAGS_MDHACK)
+    if (tsprflags & TSPR_FLAGS_MDHACK)
     {
 #ifdef __arm__ // GL ES has a glDepthRangef and the loss of precision is OK there
         float f = (float) (tspr->owner + 1) * (std::numeric_limits<float>::epsilon() * 8.0);
@@ -2161,7 +2163,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (sext->mdpivot_offset.y)  // Compare with SCREEN_FACTORS above
             a0.y = (float) sext->mdpivot_offset.y * f;
 
-        if ((sext->mdpivot_offset.z) && !(tspr->clipdist & TSPR_FLAGS_MDHACK))  // Compare with SCREEN_FACTORS above
+        if ((sext->mdpivot_offset.z) && !(tsprflags & TSPR_FLAGS_MDHACK))  // Compare with SCREEN_FACTORS above
             a0.z = (float)(((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR) ? -sext->mdpivot_offset.z : sext->mdpivot_offset.z) / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
 
         k0 = (float)sintable[(sext->mdpitch+512)&2047] * (1.f/16384.f);
@@ -2285,7 +2287,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         glTranslatef(xpanning, ypanning, 1.0f);
         glMatrixMode(GL_MODELVIEW);
 
-        if (!(tspr->clipdist & TSPR_FLAGS_MDHACK))
+        if (!(tsprflags & TSPR_FLAGS_MDHACK))
         {
 #ifdef USE_GLEXT
             //POGOTODO: if we add support for palette indexing on model skins, the texture for the palswap could be setup here

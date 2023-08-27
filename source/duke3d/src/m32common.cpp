@@ -553,7 +553,8 @@ int32_t map_undoredo(int dir)
     // insert sprites
     for (int i=0; i<mapstate->num[UNDO_SPRITES]; i++)
     {
-        if ((sprite[i].cstat & 48) == 48 && (sprite[i].xoffset|sprite[i].yoffset) == 0) sprite[i].cstat &= ~48;
+        if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLOPE && (sprite[i].xoffset|sprite[i].yoffset) == 0)
+            sprite[i].cstat &= ~CSTAT_SPRITE_ALIGNMENT_SLOPE;
         Bassert((unsigned)sprite[i].sectnum < (unsigned)numsectors
                    && (unsigned)sprite[i].statnum < MAXSTATUS);
         insertsprite(sprite[i].sectnum, sprite[i].statnum);
@@ -1318,7 +1319,7 @@ end_wall_loop_checks:
         {
             const int32_t tilenum = sprite[i].picnum;
 
-            if (tilenum >= 1 && tilenum <= 9 && (sprite[i].cstat&48))
+            if (tilenum >= 1 && tilenum <= 9 && (sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT))
             {
                 const int32_t onumct = numcorruptthings;
 

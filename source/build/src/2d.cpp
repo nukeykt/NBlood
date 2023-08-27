@@ -1245,7 +1245,8 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
 {
     auto const spr = &sprite[j];
     int16_t const blocking = (spr->cstat&1), hitblocking = (spr->cstat&256);
-    int16_t const flooraligned = (spr->cstat&48) >= 32, wallaligned = (spr->cstat&48) == 16;
+    int16_t const flooraligned = spr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR;
+    int16_t const wallaligned = (spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL;
 
     int16_t const angofs = m32_sideview ? m32_sideang : 0;
     int32_t const ang = spr->ang + angofs;

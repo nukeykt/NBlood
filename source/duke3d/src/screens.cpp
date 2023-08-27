@@ -396,9 +396,9 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             sprx = spr->x;
             spry = spr->y;
 
-            if ((spr->cstat&257) != 0) switch (spr->cstat&48)
+            if ((spr->cstat&257) != 0) switch (spr->cstat & CSTAT_SPRITE_ALIGNMENT)
             {
-            case 0:
+            case CSTAT_SPRITE_ALIGNMENT_FACING:
                 //                    break;
 
                 ox = sprx-cposx;
@@ -422,7 +422,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
                     x1+x2+(xdim<<11), y1+y3+(ydim<<11), col);
                 break;
 
-            case 16:
+            case CSTAT_SPRITE_ALIGNMENT_WALL:
                 if (spr->picnum == LASERLINE)
                 {
                     x1 = sprx;
@@ -457,14 +457,14 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
                 break;
 
-            case 32:
-            case 48:
+            case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+            case CSTAT_SPRITE_ALIGNMENT_SLOPE:
                 heinum = spriteGetSlope(j);
                 ratio = ksqrt(heinum * heinum + 16777216);
                 tilenum = spr->picnum;
                 xoff = picanm[tilenum].xofs;
                 yoff = picanm[tilenum].yofs;
-                if ((spr->cstat & 48) != 48)
+                if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_SLOPE)
                 {
                     xoff += spr->xoffset;
                     yoff += spr->yoffset;

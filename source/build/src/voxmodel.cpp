@@ -1155,19 +1155,21 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if ((intptr_t)m == (intptr_t)(-1)) // hackhackhack
         return 0;
 
-    if ((tspr->cstat&48)==32)
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
         return 0;
 
     buildgl_outputDebugMessage(3, "polymost_voxdraw(m:%p, tspr:%p)", m, tspr);
 
     //updateanimation((md2model *)m,tspr);
 
+    auto const tsprflags = tspr->clipdist;
+
     vec3f_t m0 = { m->scale, m->scale, m->scale };
     vec3f_t a0 = { 0, 0, m->zadd*m->scale };
 
     k0 = m->bscale / 64.f;
     f = (float) tspr->xrepeat * (256.f/320.f) * k0;
-    if ((sprite[tspr->owner].cstat&48)==16)
+    if ((sprite[tspr->owner].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
         f *= 1.25f;
     a0.y -= tspr->xoffset*sintable[(spriteext[tspr->owner].mdangoff+512)&2047]*(1.f/(64.f*16384.f));
     a0.x += tspr->xoffset*sintable[(spriteext[tspr->owner].mdangoff)&2047]*(1.f/(64.f*16384.f));
@@ -1181,12 +1183,12 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     m0.z *= f; a0.z *= f;
 
     k0 = (float) (tspr->z+spriteext[tspr->owner].mdposition_offset.z);
-    f = ((globalorientation&8) && (sprite[tspr->owner].cstat&48)!=0) ? -4.f : 4.f;
+    f = ((globalorientation&8) && (sprite[tspr->owner].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) ? -4.f : 4.f;
     k0 -= (tspr->yoffset*tspr->yrepeat)*f*m->bscale;
     zoff = m->siz.z*.5f;
     if (!(tspr->cstat&128))
         zoff += m->piv.z;
-    else if ((tspr->cstat&48) != 48)
+    else if (!(tsprflags & TSPR_FLAGS_SLAB))
     {
         zoff += m->piv.z;
         zoff -= m->siz.z*.5f;
@@ -1196,7 +1198,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     f = (65536.f*512.f) / ((float)xdimen*viewingrange);
     g = 32.f / ((float)xdimen*gxyaspect);
 
-    int const shadowHack = !!(tspr->clipdist & TSPR_FLAGS_MDHACK);
+    int const shadowHack = !!(tsprflags & TSPR_FLAGS_MDHACK);
 
     m0.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x-globalposx)) * (1.f/1024.f) + a0.y) * f;
     m0.x *=-f; a0.x = (((float)(tspr->y+spriteext[tspr->owner].mdposition_offset.y-globalposy)) * -(1.f/1024.f) + a0.x) * -f;
@@ -1237,7 +1239,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if (have_basepal_tint())
         hictinting_apply(pc, MAXPALOOKUPS - 1);
 
-    int32_t const voxid = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_SLAB) == CSTAT_SPRITE_ALIGNMENT_SLAB
+    int32_t const voxid = (tsprflags & TSPR_FLAGS_SLAB)
                         ? tspr->picnum
                         : tiletovox[tspr->picnum];
     if (!shadowHack && (voxflags[voxid] & VF_NOTRANS) != VF_NOTRANS)

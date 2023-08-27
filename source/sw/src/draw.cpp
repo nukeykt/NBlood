@@ -411,7 +411,7 @@ DoShadows(tspriteptr_t tsp, int viewz, SWBOOL mirror)
     loz = tu->loz;
     if (tu->lo_sp)
     {
-        if (!TEST(tu->lo_sp->cstat, CSTAT_SPRITE_ALIGNMENT_WALL | CSTAT_SPRITE_ALIGNMENT_FLOOR))
+        if (!TEST(tu->lo_sp->cstat, CSTAT_SPRITE_ALIGNMENT_MASK))
         {
             loz = DoShadowFindGroundPoint(tsp);
         }
@@ -574,12 +574,6 @@ DoMotionBlur(tspritetype const * const tsp)
         spritesortcnt++;
     }
 
-}
-
-void SetVoxelSprite(SPRITEp sp, short pic)
-{
-    SET(sp->cstat, CSTAT_SPRITE_ALIGNMENT_SLAB);
-    sp->picnum = pic;
 }
 
 void WarpCopySprite(void)

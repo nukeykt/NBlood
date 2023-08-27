@@ -1555,7 +1555,7 @@ void adjustSprites()
         spritetype* pSprite = &sprite[i];
         if (pSprite->statnum < kMaxStatus)
         {
-            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLAB) pSprite->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
+            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_MASK) pSprite->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
             if (pSprite->statnum == 1) continue;
 
             // don't turn unnamed types in Decoration

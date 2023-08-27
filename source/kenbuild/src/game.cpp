@@ -2023,7 +2023,8 @@ void analyzesprites(int dax, int day)
                     if (voxid_PLAYER == -1)
                         break;
 
-                    tspr->cstat |= 48;
+                    tspr->clipdist |= TSPR_FLAGS_SLAB;
+                    tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
                     tspr->picnum = voxid_PLAYER;
 
                     auto const voxptr = (int32_t const *)voxoff[voxid_PLAYER][0];
@@ -2036,7 +2037,8 @@ void analyzesprites(int dax, int day)
                 if (voxid_BROWNMONSTER == -1)
                     break;
 
-                tspr->cstat |= 48;
+                tspr->clipdist |= TSPR_FLAGS_SLAB;
+                tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
                 tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }
@@ -2841,14 +2843,14 @@ void statuslistcode(void)
             {
                 if (sprite[hitobject&4095].picnum == BOUNCYMAT)
                 {
-                    if ((sprite[hitobject&4095].cstat&48) == 0)
+                    if ((sprite[hitobject&4095].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
                     {
                         sprite[i].xvel = -sprite[i].xvel;
                         sprite[i].yvel = -sprite[i].yvel;
                         sprite[i].zvel = -sprite[i].zvel;
                         dist = 255;
                     }
-                    else if ((sprite[hitobject&4095].cstat&48) == 16)
+                    else if ((sprite[hitobject&4095].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
                     {
                         j = sprite[hitobject&4095].ang;
 
@@ -4074,7 +4076,8 @@ void drawscreen(short snum, int dasmoothratio)
 
                         drawrooms(tposx,tposy,cpos.z,fix16_to_int(tang),choriz,mirrorsector[i]|MAXSECTORS);
                         for (j=0,tspr=&tsprite[0]; j<spritesortcnt; j++,tspr++)
-                            if ((tspr->cstat&48) == 0) tspr->cstat |= 4;
+                            if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
+                                tspr->cstat |= 4;
                         analyzesprites(tposx,tposy);
                         renderDrawMasks();
 
@@ -6037,9 +6040,9 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                     spry = osprite[j].y+mulscale16(spry-osprite[j].y,l);
                 }
 
-                switch (spr->cstat&48)
+                switch (spr->cstat & CSTAT_SPRITE_ALIGNMENT)
                 {
-                case 0:
+                case CSTAT_SPRITE_ALIGNMENT_FACING:
                     ox = sprx-cposx; oy = spry-cposy;
                     x1 = dmulscale16(ox,xvect,-oy,yvect);
                     y1 = dmulscale16(oy,xvect2,ox,yvect2);
@@ -6077,7 +6080,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                         }
                     }
                     break;
-                case 16:
+                case CSTAT_SPRITE_ALIGNMENT_WALL:
                     x1 = sprx; y1 = spry;
                     tilenum = spr->picnum;
                     xoff = (int)picanm[tilenum].xofs+((int)spr->xoffset);
@@ -6100,7 +6103,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                                 x2+(xdim<<11),y2+(ydim<<11),col);
 
                     break;
-                case 32:
+                case CSTAT_SPRITE_ALIGNMENT_FLOOR:
                     if (dimensionmode[screenpeek] == 1)
                     {
                         tilenum = spr->picnum;

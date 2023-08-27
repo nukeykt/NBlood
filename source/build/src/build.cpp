@@ -1006,9 +1006,9 @@ void spriteoncfz(int32_t i, int32_t *czptr, int32_t *fzptr)
     int32_t height, zofs;
 
     getzsofslope(sprite[i].sectnum, sprite[i].x,sprite[i].y, czptr, fzptr);
-    if ((sprite[i].cstat&48)==32)
+    if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
         return;
-    if ((sprite[i].cstat&48)==48)
+    if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLOPE)
     {
         int32_t const heinum = spriteGetSlope(i);
         int32_t const ratio = divscale12(heinum, ksqrt(heinum*heinum+16777216));
@@ -1550,10 +1550,10 @@ void editinput(void)
                     spriteoncfz(i, &cz, &fz);
                     sprite[i].z = clamp2(hit.z, cz, fz);
 
-                    if (AIMING_AT_WALL || AIMING_AT_MASKWALL || (AIMING_AT_SPRITE && (sprite[searchwall].cstat & CSTAT_SPRITE_ALIGNMENT_SLAB) == CSTAT_SPRITE_ALIGNMENT_WALL))
+                    if (AIMING_AT_WALL || AIMING_AT_MASKWALL || (AIMING_AT_SPRITE && (sprite[searchwall].cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_WALL))
                     {
-                        sprite[i].cstat &= ~48;
-                        sprite[i].cstat |= (16+64);
+                        sprite[i].cstat &= ~CSTAT_SPRITE_ALIGNMENT;
+                        sprite[i].cstat |= CSTAT_SPRITE_ONE_SIDED|CSTAT_SPRITE_ALIGNMENT_WALL;
 
                         correct_ornamented_sprite(i, hit);
                     }
@@ -2440,7 +2440,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
 
 void correct_sprite_yoffset(int32_t i)
 {
-    if ((sprite[i].cstat&48) >= 32)
+    if (sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
         return;
     int32_t tileyofs = picanm[sprite[i].picnum].yofs;
     int32_t tileysiz = tilesiz[sprite[i].picnum].y;
@@ -3741,7 +3741,7 @@ extern void editorFlipHighlightedSectors(int about_x, int doMirror)
                         sprite[j].ang = (2048-sprite[j].ang)&2047; //flip ang about 512
                     }
 
-                    if (doMirror && (sprite[j].cstat & 0x30))
+                    if (doMirror && (sprite[j].cstat & CSTAT_SPRITE_ALIGNMENT))
                         sprite[j].cstat ^= 4;  // mirror sprites about dax/day (don't mirror monsters)
 
                     j = nextspritesect[j];

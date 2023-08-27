@@ -1637,7 +1637,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         (*sortcnt)++;
 
         // now check whether the tsprite needs duplication into another level
-        if ((spr->cstat&48)==32)
+        if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
             return 0;
 
         int16_t cb, fb;
@@ -1795,8 +1795,8 @@ static void classicScanSector(int16_t startsectnum)
 
             vec2_t const s = { spr->x-globalposx, spr->y-globalposy };
 
-            if ((spr->cstat&48) || ((coord_t)s.x*cosglobalang+(coord_t)s.y*singlobalang > 0))
-                if ((spr->cstat&(64+48))!=(64+16) || dmulscale6(sintable[(spr->ang+512)&2047],-s.x, sintable[spr->ang&2047],-s.y) > 0)
+            if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) || ((coord_t)s.x*cosglobalang+(coord_t)s.y*singlobalang > 0))
+                if ((spr->cstat & (CSTAT_SPRITE_ONE_SIDED|CSTAT_SPRITE_ALIGNMENT)) != (CSTAT_SPRITE_ONE_SIDED|CSTAT_SPRITE_ALIGNMENT_WALL) || dmulscale6(sintable[(spr->ang+512)&2047],-s.x, sintable[spr->ang&2047],-s.y) > 0)
                     if (renderAddTsprite(i, sectnum))
                         break;
         }
@@ -5014,7 +5014,7 @@ typedef zint_t voxint_t;
 static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int32_t dasprang,
                              int32_t daxscale, int32_t dayscale, int32_t daindex,
                              int8_t dashade, char dapal, const int32_t *daumost, const int32_t *dadmost,
-                             const int16_t cstat, const int32_t clipcf, int32_t floorz, int32_t ceilingz)
+                             const int16_t cstat, const int32_t tsprflags, int32_t floorz, int32_t ceilingz)
 {
     int32_t i, j, k, x, y, mip;
 
@@ -5108,7 +5108,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     int32_t zoff = dazsiz<<14;
     if (!(cstat & 128))
         zoff += dazpivot<<7;
-    else if ((cstat&48) != 48)
+    else if (!(tsprflags & TSPR_FLAGS_SLAB))
     {
         zoff += dazpivot<<7;
         zoff -= dazsiz<<14;
@@ -5271,7 +5271,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
                 const int32_t l2 = mulscale(distrecip[clamp((ny+yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale, 12+mip);
                 int32_t cz1 = 0, cz2 = INT32_MAX;
 
-                if (clipcf)
+                if (!(tsprflags & TSPR_FLAGS_SLAB)) // clipcf
                 {
                     cz1 = mulscale32((ceilingoff < 0) ? l1 : l2, ceilingoff) + globalhoriz;
                     cz2 = mulscale32((flooroff < 0) ? l2 : l1, flooroff) + globalhoriz;
@@ -5477,8 +5477,9 @@ static void classicDrawSprite(int32_t snum)
     auto const sec = (usectorptr_t)&sector[sectnum];
 
     int32_t cstat=tspr->cstat, tilenum;
+    auto tsprflags = tspr->clipdist;
 
-    if ((cstat&48) != 48)
+    if (!(tsprflags & TSPR_FLAGS_SLAB))
         tileUpdatePicnum(&tspr->picnum, spritenum+32768);
 
     if (!(cstat&2) && alpha > 0.0f)
@@ -5510,15 +5511,16 @@ static void classicDrawSprite(int32_t snum)
 
     tilenum = tspr->picnum;
 
-    if ((cstat&48)==48)
+    if (tsprflags & TSPR_FLAGS_SLAB)
         vtilenum = tilenum; // if the game wants voxels, it gets voxels
-    else if ((cstat & 48) != 32 && usevoxels && tiletovox[tilenum] != -1 && spritenum != -1 && !(spriteext[spritenum].flags&SPREXT_NOTMD))
+    else if ((cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR && usevoxels && tiletovox[tilenum] != -1 && spritenum != -1 && !(spriteext[spritenum].flags&SPREXT_NOTMD))
     {
         vtilenum = tiletovox[tilenum];
-        cstat |= 48;
+        tsprflags |= TSPR_FLAGS_SLAB;
+        cstat &= ~CSTAT_SPRITE_ALIGNMENT;
     }
 
-    if ((cstat&48) != 48)
+    if (!(tsprflags & TSPR_FLAGS_SLAB))
     {
         if (spritenum < 0 || tilesiz[tilenum].x <= 0 || tilesiz[tilenum].y <= 0)
             return;
@@ -5542,7 +5544,358 @@ static void classicDrawSprite(int32_t snum)
         off.y += tspr->yoffset;
     }
 
-    if ((cstat&48) == 0)
+    if (tsprflags & TSPR_FLAGS_SLAB)
+    {
+        const int32_t daxrepeat = ((sprite[spritenum].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL) ?
+            (tspr->xrepeat * 5) / 4 :
+            tspr->xrepeat;
+
+        const int32_t lx = 0, rx = xdimen-1;
+
+        Bassert(rx+windowxy1.x < xdim);
+
+        for (x=lx; x<=rx; x++)
+        {
+            lwall[x] = startumost[x+windowxy1.x]-windowxy1.y;
+            swall[x] = startdmost[x+windowxy1.x]-windowxy1.y;
+        }
+        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
+        {
+            const int32_t xspan = tilesiz[tilenum].x;
+            //const int32_t yspan = tilesiz[tilenum].y;
+            const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
+            const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
+
+            i = (xspan>>1) + off.x;
+            x1 = tspr->x-globalposx-mulscale16(xv,i); x2 = x1+mulscale16(xv,xspan);
+            y1 = tspr->y-globalposy-mulscale16(yv,i); y2 = y1+mulscale16(yv,xspan);
+
+            vec2_t p1 = get_rel_coords(x1, y1);
+            vec2_t p2 = get_rel_coords(x2, y2);
+
+            if (p1.y <= 0 && p2.y <= 0)
+                return;
+
+            x1 += globalposx; y1 += globalposy;
+            x2 += globalposx; y2 += globalposy;
+
+            if (dmulscale32(p1.x, p2.y, -p2.x, p1.y) >= 0)  // If wall's NOT facing you
+            {
+                const vec2_t pt = p2;
+                p2 = p1;
+                p1 = pt;
+                i = x1, x1 = x2, x2 = i;
+                i = y1, y1 = y2, y2 = i;
+            }
+
+            for (i=smostwallcnt-1; i>=0; i--)
+            {
+                j = smostwall[i];
+
+                if (xb1[j] > rx || xb2[j] < lx)
+                    continue;
+
+                int32_t dalx2 = xb1[j];
+                int32_t darx2 = xb2[j];
+
+                if (max(p1.y,p2.y) > min(yb1[j],yb2[j]))
+                {
+                    if (min(p1.y,p2.y) > max(yb1[j],yb2[j]))
+                    {
+                        x = INT32_MIN;
+                    }
+                    else
+                    {
+                        x = thewall[j]; xp1 = wall[x].x; yp1 = wall[x].y;
+                        x = wall[x].point2; xp2 = wall[x].x; yp2 = wall[x].y;
+
+                        z1 = (xp2-xp1)*(y1-yp1) - (yp2-yp1)*(x1-xp1);
+                        z2 = (xp2-xp1)*(y2-yp1) - (yp2-yp1)*(x2-xp1);
+                        if ((z1 == 0) | (z2 == 0))
+                        {
+                            if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
+                            {
+                                if (wall[thewall[j]].nextsector == tspr->sectnum)
+                                    x = INT32_MIN;
+                                else
+                                    x = INT32_MAX;
+                            }
+                            else
+                                x = (z1+z2);
+                        }
+                        else if ((z1^z2) >= 0)
+                            x = (z1+z2);
+                        else
+                        {
+                            z1 = (x2-x1)*(yp1-y1) - (y2-y1)*(xp1-x1);
+                            z2 = (x2-x1)*(yp2-y1) - (y2-y1)*(xp2-x1);
+
+                            if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
+                                x = -(z1+z2);
+                            else
+                            {
+                                if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
+                                {
+                                    if (wall[thewall[j]].nextsector == tspr->sectnum)
+                                        x = INT32_MIN;
+                                    else
+                                        x = INT32_MAX;
+                                }
+                                else
+                                {
+                                    x = INT32_MAX;
+#if 0
+                                    //INTERSECTION!
+                                    x = (xp1-globalposx) + scale(xp2-xp1,z1,z1-z2);
+                                    y = (yp1-globalposy) + scale(yp2-yp1,z1,z1-z2);
+
+                                    yp1 = dmulscale14(x,cosviewingrangeglobalang,y,sinviewingrangeglobalang);
+
+                                    if (yp1 > 0)
+                                    {
+                                        xp1 = dmulscale14(y,cosglobalang,-x,singlobalang);
+
+                                        x = halfxdimen + scale(xp1,halfxdimen,yp1);
+                                        if (xp1 >= 0) x++;   //Fix for SIGNED divide
+
+                                        if (z1 < 0)
+                                            { if (dalx2 < x) dalx2 = x; }
+                                        else
+                                            { if (darx2 > x) darx2 = x; }
+                                        x = INT32_MIN+1;
+                                    }
+                                    else
+                                        x = INT32_MAX;
+#endif
+                                }
+                            }
+                        }
+                    }
+
+                    if (x < 0)
+                    {
+                        if (dalx2 < lx) dalx2 = lx;
+                        if (darx2 > rx) darx2 = rx;
+
+                        switch (smostwalltype[i])
+                        {
+                        case 0:
+                            if (dalx2 <= darx2)
+                            {
+                                if ((dalx2 == lx) && (darx2 == rx)) return;
+                                //clearbufbyte(&dwall[dalx2],(darx2-dalx2+1)*sizeof(dwall[0]),0L);
+                                for (k=dalx2; k<=darx2; k++) swall[k] = 0;
+                            }
+                            break;
+                        case 1:
+                            k = smoststart[i] - xb1[j];
+                            x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                            for (; x<=darx2-2; x+=2)
+                            {
+                                if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                                if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
+                            }
+#endif
+                            for (; x<=darx2; x++)
+                                if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                            break;
+                        case 2:
+                            k = smoststart[i] - xb1[j];
+                            x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                            for (; x<=darx2-4; x+=4)
+                            {
+                                if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                                if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
+                                if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
+                                if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
+                            }
+#endif
+                            for (; x<=darx2; x++)
+                                if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (i=smostwallcnt-1; i>=0; i--)
+            {
+                j = smostwall[i];
+                if ((xb1[j] > rx) || (xb2[j] < lx)) continue;
+                if ((yp <= yb1[j]) && (yp <= yb2[j])) continue;
+                if (spritewallfront(tspr,(int32_t)thewall[j]) && ((yp <= yb1[j]) || (yp <= yb2[j]))) continue;
+
+                const int32_t dalx2 = max(xb1[j],lx);
+                const int32_t darx2 = min(xb2[j],rx);
+
+                switch (smostwalltype[i])
+                {
+                case 0:
+                    if (dalx2 <= darx2)
+                    {
+                        if ((dalx2 == lx) && (darx2 == rx)) return;
+                        //clearbufbyte(&swall[dalx2],(darx2-dalx2+1)*sizeof(swall[0]),0L);
+                        for (x=dalx2; x<=darx2; x++) swall[x] = 0;
+                    }
+                    break;
+                case 1:
+                    k = smoststart[i] - xb1[j];
+                    x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                    for (; x<=darx2-2; x+=2)
+                    {
+                        if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                        if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
+                    }
+#endif
+                    for (; x<=darx2; x++)
+                        if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
+                    break;
+                case 2:
+                    k = smoststart[i] - xb1[j];
+                    x = dalx2;
+#ifdef CLASSIC_SLICE_BY_4
+                    for (; x<=darx2-4; x+=4)
+                    {
+                        if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                        if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
+                        if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
+                        if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
+                    }
+#endif
+                    for (; x<=darx2; x++)
+                        if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
+                    break;
+                }
+            }
+        }
+
+        if (lwall[rx] >= swall[rx])
+        {
+            for (x=lx; x<rx; x++)
+                if (lwall[x] < swall[x]) break;
+            if (x == rx) return;
+        }
+
+        for (i=0; i<MAXVOXMIPS; i++)
+            if (!voxoff[vtilenum][i])
+            {
+                if (loadvoxel_replace)
+                    loadvoxel_replace(vtilenum);
+                break;
+            }
+
+        const int32_t *const longptr = (int32_t *)voxoff[vtilenum][0];
+        if (longptr == NULL)
+        {
+            globalshade = 32;
+            tspr->xrepeat = tspr->yrepeat = 255;
+            goto draw_as_face_sprite;
+        }
+
+        int32_t nxrepeat, nyrepeat;
+
+        if (voxscale[vtilenum] == 65536)
+        {
+            nxrepeat = (daxrepeat<<16);
+            nyrepeat = (((int32_t)tspr->yrepeat)<<16);
+        }
+        else
+        {
+            nxrepeat = daxrepeat*voxscale[vtilenum];
+            nyrepeat = ((int32_t)tspr->yrepeat)*voxscale[vtilenum];
+        }
+
+        off.x = tspr->xoffset;
+        off.y = /*picanm[sprite[tspr->owner].picnum].yofs +*/ tspr->yoffset;
+        if (cstat & 4) off.x = -off.x;
+        if ((cstat & 8) && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) off.y = -off.y;
+        tspr->z -= off.y * tspr->yrepeat << 2;
+
+        const float xfactor = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_WALL ? (256.f/320.f) : 1.f;
+        const int32_t xv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047]*xfactor);
+        const int32_t yv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047]*xfactor);
+
+            tspr->x -= mulscale16(xv, off.x);
+            tspr->y -= mulscale16(yv, off.x);
+
+        globvis = globalvisibility;
+        if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
+
+#ifdef YAX_ENABLE
+        if (yax_globallev==YAX_MAXDRAWS || searchit==2)
+#endif
+        if (searchit >= 1 && yp > (4<<8) && (searchy >= lwall[searchx] && searchy < swall[searchx]))
+        {
+            int32_t const xdsiz = divscale19(xdimenscale,yp);
+            int32_t const xv = mulscale16(nxrepeat,xyaspect);
+
+            int32_t const xspan = ((B_LITTLE32(longptr[0]) + B_LITTLE32(longptr[1])) >> 1);
+            int32_t const yspan = B_LITTLE32(longptr[2]);
+
+            vec2_t const siz = { mulscale_triple30(xdsiz, xv, xspan), mulscale_triple30(xdsiz, nyrepeat, yspan) };
+
+            //Watch out for divscale overflow
+            if (((xspan>>11) < siz.x) && (yspan < (siz.y>>1)))
+            {
+                x1 = xb-(siz.x>>1);
+                if (xspan&1) x1 += mulscale31(xdsiz,xv);  //Odd xspans
+                i = mulscale30(xdsiz,xv*off.x);
+                if ((cstat&4) == 0) x1 -= i; else x1 += i;
+
+                y1 = mulscale16(tspr->z-globalposz,xdsiz);
+
+                if (!(cstat & 128))
+                    y1 -= mulscale16(mulscale22(B_LITTLE32(longptr[5]), nyrepeat), xdsiz);
+                //y1 -= mulscale30(xdsiz,nyrepeat*yoff);
+                y1 += (globalhoriz<<8)-siz.y;
+                //if (cstat&128)  //Already fixed up above
+                y1 += (siz.y>>1);
+
+                x2 = x1+siz.x-1;
+                y2 = y1+siz.y-1;
+                if ((y1|255) < (y2|255) && searchx >= (x1>>8)+1 && searchx <= (x2>>8))
+                {
+                    int32_t startum, startdm;
+
+                    if ((sec->ceilingstat&3) == 0)
+                        startum = globalhoriz+mulscale24(xdsiz,sec->ceilingz-globalposz)-1;
+                    else
+                        startum = 0;
+
+                    if ((sec->floorstat&3) == 0)
+                        startdm = globalhoriz+mulscale24(xdsiz,sec->floorz-globalposz)+1;
+                    else
+                        startdm = INT32_MAX;
+
+                    //sprite
+                    if (searchy >= max(startum,(y1>>8)) && searchy < min(startdm,(y2>>8)))
+                    {
+                        searchsector = sectnum; searchwall = spritenum;
+                        searchstat = 3; searchit = 1;
+                    }
+                }
+            }
+        }
+
+        x = tspr->x + spriteext[spritenum].mdposition_offset.x;
+        y = tspr->y + spriteext[spritenum].mdposition_offset.y;
+        z = tspr->z + spriteext[spritenum].mdposition_offset.z;
+
+        i = (int32_t)tspr->ang+1536;
+        i += spriteext[spritenum].mdangoff;
+
+        const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : INT32_MIN;
+        const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
+
+        classicDrawVoxel(x,y,z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
+            tspr->shade,tspr->pal,lwall,swall,tspr->cstat,tsprflags,floorz,ceilingz);
+    }
+    else if ((cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
     {
         int32_t startum, startdm;
         int32_t linum, linuminc;
@@ -5729,7 +6082,7 @@ draw_as_face_sprite:
         drawing_sprite = 0;
         globalht = nullptr;
     }
-    else if ((cstat&48) == 16)
+    else if ((cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
     {
         const int32_t xspan = tilesiz[tilenum].x;
         const int32_t yspan = tilesiz[tilenum].y;
@@ -6023,7 +6376,7 @@ draw_as_face_sprite:
         drawing_sprite = 0;
         globalht = nullptr;
     }
-    else if ((cstat&48) == 32)
+    else if ((cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         if ((cstat&64) != 0)
             if ((globalposz > tspriteGetZOfSlope(tspr, globalposx, globalposy)) == ((cstat&8)==0))
@@ -6695,357 +7048,6 @@ next_most:
             ceilspritescan(lx,rx-1);
             globalispow2 = 1;
         }
-    }
-    else if ((cstat&48) == 48)
-    {
-        const int32_t daxrepeat = ((sprite[spritenum].cstat&48)==16) ?
-            (tspr->xrepeat * 5) / 4 :
-            tspr->xrepeat;
-
-        const int32_t lx = 0, rx = xdimen-1;
-
-        Bassert(rx+windowxy1.x < xdim);
-
-        for (x=lx; x<=rx; x++)
-        {
-            lwall[x] = startumost[x+windowxy1.x]-windowxy1.y;
-            swall[x] = startdmost[x+windowxy1.x]-windowxy1.y;
-        }
-        if ((tspr->cstat & 48) == 16)
-        {
-            const int32_t xspan = tilesiz[tilenum].x;
-            //const int32_t yspan = tilesiz[tilenum].y;
-            const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
-            const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
-
-            i = (xspan>>1) + off.x;
-            x1 = tspr->x-globalposx-mulscale16(xv,i); x2 = x1+mulscale16(xv,xspan);
-            y1 = tspr->y-globalposy-mulscale16(yv,i); y2 = y1+mulscale16(yv,xspan);
-
-            vec2_t p1 = get_rel_coords(x1, y1);
-            vec2_t p2 = get_rel_coords(x2, y2);
-
-            if (p1.y <= 0 && p2.y <= 0)
-                return;
-
-            x1 += globalposx; y1 += globalposy;
-            x2 += globalposx; y2 += globalposy;
-
-            if (dmulscale32(p1.x, p2.y, -p2.x, p1.y) >= 0)  // If wall's NOT facing you
-            {
-                const vec2_t pt = p2;
-                p2 = p1;
-                p1 = pt;
-                i = x1, x1 = x2, x2 = i;
-                i = y1, y1 = y2, y2 = i;
-            }
-
-            for (i=smostwallcnt-1; i>=0; i--)
-            {
-                j = smostwall[i];
-
-                if (xb1[j] > rx || xb2[j] < lx)
-                    continue;
-
-                int32_t dalx2 = xb1[j];
-                int32_t darx2 = xb2[j];
-
-                if (max(p1.y,p2.y) > min(yb1[j],yb2[j]))
-                {
-                    if (min(p1.y,p2.y) > max(yb1[j],yb2[j]))
-                    {
-                        x = INT32_MIN;
-                    }
-                    else
-                    {
-                        x = thewall[j]; xp1 = wall[x].x; yp1 = wall[x].y;
-                        x = wall[x].point2; xp2 = wall[x].x; yp2 = wall[x].y;
-
-                        z1 = (xp2-xp1)*(y1-yp1) - (yp2-yp1)*(x1-xp1);
-                        z2 = (xp2-xp1)*(y2-yp1) - (yp2-yp1)*(x2-xp1);
-                        if ((z1 == 0) | (z2 == 0))
-                        {
-                            if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
-                            {
-                                if (wall[thewall[j]].nextsector == tspr->sectnum)
-                                    x = INT32_MIN;
-                                else
-                                    x = INT32_MAX;
-                            }
-                            else
-                                x = (z1+z2);
-                        }
-                        else if ((z1^z2) >= 0)
-                            x = (z1+z2);
-                        else
-                        {
-                            z1 = (x2-x1)*(yp1-y1) - (y2-y1)*(xp1-x1);
-                            z2 = (x2-x1)*(yp2-y1) - (y2-y1)*(xp2-x1);
-
-                            if (((z1^z2) >= 0) | (z1 == 0) | (z2 == 0))
-                                x = -(z1+z2);
-                            else
-                            {
-                                if ((xp2-xp1)*(tspr->y-yp1) == (tspr->x-xp1)*(yp2-yp1))
-                                {
-                                    if (wall[thewall[j]].nextsector == tspr->sectnum)
-                                        x = INT32_MIN;
-                                    else
-                                        x = INT32_MAX;
-                                }
-                                else
-                                {
-                                    x = INT32_MAX;
-#if 0
-                                    //INTERSECTION!
-                                    x = (xp1-globalposx) + scale(xp2-xp1,z1,z1-z2);
-                                    y = (yp1-globalposy) + scale(yp2-yp1,z1,z1-z2);
-
-                                    yp1 = dmulscale14(x,cosviewingrangeglobalang,y,sinviewingrangeglobalang);
-
-                                    if (yp1 > 0)
-                                    {
-                                        xp1 = dmulscale14(y,cosglobalang,-x,singlobalang);
-
-                                        x = halfxdimen + scale(xp1,halfxdimen,yp1);
-                                        if (xp1 >= 0) x++;   //Fix for SIGNED divide
-
-                                        if (z1 < 0)
-                                            { if (dalx2 < x) dalx2 = x; }
-                                        else
-                                            { if (darx2 > x) darx2 = x; }
-                                        x = INT32_MIN+1;
-                                    }
-                                    else
-                                        x = INT32_MAX;
-#endif
-                                }
-                            }
-                        }
-                    }
-
-                    if (x < 0)
-                    {
-                        if (dalx2 < lx) dalx2 = lx;
-                        if (darx2 > rx) darx2 = rx;
-
-                        switch (smostwalltype[i])
-                        {
-                        case 0:
-                            if (dalx2 <= darx2)
-                            {
-                                if ((dalx2 == lx) && (darx2 == rx)) return;
-                                //clearbufbyte(&dwall[dalx2],(darx2-dalx2+1)*sizeof(dwall[0]),0L);
-                                for (k=dalx2; k<=darx2; k++) swall[k] = 0;
-                            }
-                            break;
-                        case 1:
-                            k = smoststart[i] - xb1[j];
-                            x = dalx2;
-#ifdef CLASSIC_SLICE_BY_4
-                            for (; x<=darx2-2; x+=2)
-                            {
-                                if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
-                                if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
-                            }
-#endif
-                            for (; x<=darx2; x++)
-                                if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
-                            break;
-                        case 2:
-                            k = smoststart[i] - xb1[j];
-                            x = dalx2;
-#ifdef CLASSIC_SLICE_BY_4
-                            for (; x<=darx2-4; x+=4)
-                            {
-                                if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
-                                if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
-                                if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
-                                if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
-                            }
-#endif
-                            for (; x<=darx2; x++)
-                                if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (i=smostwallcnt-1; i>=0; i--)
-            {
-                j = smostwall[i];
-                if ((xb1[j] > rx) || (xb2[j] < lx)) continue;
-                if ((yp <= yb1[j]) && (yp <= yb2[j])) continue;
-                if (spritewallfront(tspr,(int32_t)thewall[j]) && ((yp <= yb1[j]) || (yp <= yb2[j]))) continue;
-
-                const int32_t dalx2 = max(xb1[j],lx);
-                const int32_t darx2 = min(xb2[j],rx);
-
-                switch (smostwalltype[i])
-                {
-                case 0:
-                    if (dalx2 <= darx2)
-                    {
-                        if ((dalx2 == lx) && (darx2 == rx)) return;
-                        //clearbufbyte(&swall[dalx2],(darx2-dalx2+1)*sizeof(swall[0]),0L);
-                        for (x=dalx2; x<=darx2; x++) swall[x] = 0;
-                    }
-                    break;
-                case 1:
-                    k = smoststart[i] - xb1[j];
-                    x = dalx2;
-#ifdef CLASSIC_SLICE_BY_4
-                    for (; x<=darx2-2; x+=2)
-                    {
-                        if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
-                        if (smost[k+x+1] > lwall[x+1]) lwall[x+1] = smost[k+x+1];
-                    }
-#endif
-                    for (; x<=darx2; x++)
-                        if (smost[k+x] > lwall[x]) lwall[x] = smost[k+x];
-                    break;
-                case 2:
-                    k = smoststart[i] - xb1[j];
-                    x = dalx2;
-#ifdef CLASSIC_SLICE_BY_4
-                    for (; x<=darx2-4; x+=4)
-                    {
-                        if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
-                        if (smost[k+x+1] < swall[x+1]) swall[x+1] = smost[k+x+1];
-                        if (smost[k+x+2] < swall[x+2]) swall[x+2] = smost[k+x+2];
-                        if (smost[k+x+3] < swall[x+3]) swall[x+3] = smost[k+x+3];
-                    }
-#endif
-                    for (; x<=darx2; x++)
-                        if (smost[k+x] < swall[x]) swall[x] = smost[k+x];
-                    break;
-                }
-            }
-        }
-
-        if (lwall[rx] >= swall[rx])
-        {
-            for (x=lx; x<rx; x++)
-                if (lwall[x] < swall[x]) break;
-            if (x == rx) return;
-        }
-
-        for (i=0; i<MAXVOXMIPS; i++)
-            if (!voxoff[vtilenum][i])
-            {
-                if (loadvoxel_replace)
-                    loadvoxel_replace(vtilenum);
-                break;
-            }
-
-        const int32_t *const longptr = (int32_t *)voxoff[vtilenum][0];
-        if (longptr == NULL)
-        {
-            globalshade = 32;
-            tspr->xrepeat = tspr->yrepeat = 255;
-            goto draw_as_face_sprite;
-        }
-
-        int32_t nxrepeat, nyrepeat;
-
-        if (voxscale[vtilenum] == 65536)
-        {
-            nxrepeat = (daxrepeat<<16);
-            nyrepeat = (((int32_t)tspr->yrepeat)<<16);
-        }
-        else
-        {
-            nxrepeat = daxrepeat*voxscale[vtilenum];
-            nyrepeat = ((int32_t)tspr->yrepeat)*voxscale[vtilenum];
-        }
-
-        off.x = tspr->xoffset;
-        off.y = /*picanm[sprite[tspr->owner].picnum].yofs +*/ tspr->yoffset;
-        if (cstat & 4) off.x = -off.x;
-        if ((cstat & 8) && (tspr->cstat&48) != 0) off.y = -off.y;
-        tspr->z -= off.y * tspr->yrepeat << 2;
-
-        const float xfactor = (tspr->cstat&48) != 16 ? (256.f/320.f) : 1.f;
-        const int32_t xv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047]*xfactor);
-        const int32_t yv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047]*xfactor);
-
-            tspr->x -= mulscale16(xv, off.x);
-            tspr->y -= mulscale16(yv, off.x);
-
-        globvis = globalvisibility;
-        if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
-
-#ifdef YAX_ENABLE
-        if (yax_globallev==YAX_MAXDRAWS || searchit==2)
-#endif
-        if (searchit >= 1 && yp > (4<<8) && (searchy >= lwall[searchx] && searchy < swall[searchx]))
-        {
-            int32_t const xdsiz = divscale19(xdimenscale,yp);
-            int32_t const xv = mulscale16(nxrepeat,xyaspect);
-
-            int32_t const xspan = ((B_LITTLE32(longptr[0]) + B_LITTLE32(longptr[1])) >> 1);
-            int32_t const yspan = B_LITTLE32(longptr[2]);
-
-            vec2_t const siz = { mulscale_triple30(xdsiz, xv, xspan), mulscale_triple30(xdsiz, nyrepeat, yspan) };
-
-            //Watch out for divscale overflow
-            if (((xspan>>11) < siz.x) && (yspan < (siz.y>>1)))
-            {
-                x1 = xb-(siz.x>>1);
-                if (xspan&1) x1 += mulscale31(xdsiz,xv);  //Odd xspans
-                i = mulscale30(xdsiz,xv*off.x);
-                if ((cstat&4) == 0) x1 -= i; else x1 += i;
-
-                y1 = mulscale16(tspr->z-globalposz,xdsiz);
-
-                if (!(cstat & 128))
-                    y1 -= mulscale16(mulscale22(B_LITTLE32(longptr[5]), nyrepeat), xdsiz);
-                //y1 -= mulscale30(xdsiz,nyrepeat*yoff);
-                y1 += (globalhoriz<<8)-siz.y;
-                //if (cstat&128)  //Already fixed up above
-                y1 += (siz.y>>1);
-
-                x2 = x1+siz.x-1;
-                y2 = y1+siz.y-1;
-                if ((y1|255) < (y2|255) && searchx >= (x1>>8)+1 && searchx <= (x2>>8))
-                {
-                    int32_t startum, startdm;
-
-                    if ((sec->ceilingstat&3) == 0)
-                        startum = globalhoriz+mulscale24(xdsiz,sec->ceilingz-globalposz)-1;
-                    else
-                        startum = 0;
-
-                    if ((sec->floorstat&3) == 0)
-                        startdm = globalhoriz+mulscale24(xdsiz,sec->floorz-globalposz)+1;
-                    else
-                        startdm = INT32_MAX;
-
-                    //sprite
-                    if (searchy >= max(startum,(y1>>8)) && searchy < min(startdm,(y2>>8)))
-                    {
-                        searchsector = sectnum; searchwall = spritenum;
-                        searchstat = 3; searchit = 1;
-                    }
-                }
-            }
-        }
-
-        x = tspr->x + spriteext[spritenum].mdposition_offset.x;
-        y = tspr->y + spriteext[spritenum].mdposition_offset.y;
-        z = tspr->z + spriteext[spritenum].mdposition_offset.z;
-
-        i = (int32_t)tspr->ang+1536;
-        i += spriteext[spritenum].mdangoff;
-
-        const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : INT32_MIN;
-        const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
-
-        classicDrawVoxel(x,y,z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
-            tspr->shade,tspr->pal,lwall,swall,tspr->cstat,(tspr->cstat&48)!=48,floorz,ceilingz);
     }
 
     if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
@@ -9810,10 +9812,10 @@ static inline int comparetsprites(int const k, int const l)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
-        if ((kspr->cstat & 48) != (lspr->cstat & 48))
-            return (kspr->cstat & 48) - (lspr->cstat & 48);
+        if ((kspr->cstat & CSTAT_SPRITE_ALIGNMENT) != (lspr->cstat & CSTAT_SPRITE_ALIGNMENT))
+            return (kspr->cstat & CSTAT_SPRITE_ALIGNMENT) - (lspr->cstat & CSTAT_SPRITE_ALIGNMENT);
 
-        if ((kspr->cstat & 48) == 16 && kspr->ang != lspr->ang)
+        if ((kspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL && kspr->ang != lspr->ang)
             return kspr->ang - lspr->ang;
     }
 #endif
@@ -9823,7 +9825,7 @@ static inline int comparetsprites(int const k, int const l)
     if (kspr->x == lspr->x &&
         kspr->y == lspr->y &&
         kspr->z == lspr->z &&
-        (kspr->cstat & 48) == (lspr->cstat & 48) &&
+        (kspr->cstat & CSTAT_SPRITE_ALIGNMENT) == (lspr->cstat & CSTAT_SPRITE_ALIGNMENT) &&
         kspr->owner != lspr->owner)
         return kspr->owner - lspr->owner;
 
@@ -9875,7 +9877,7 @@ static void sortsprites(int const start, int const end)
                 auto const s = tspriteptr[k];
                 int32_t z = s->z;
 
-                if ((s->cstat & 48) != 32)
+                if ((s->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR)
                 {
                     int32_t const yoff  = picanm[s->picnum].yofs + s->yoffset;
                     int32_t const yspan = (tilesiz[s->picnum].y * s->yrepeat << 2);
@@ -9941,13 +9943,13 @@ static void PolymostDrawMasks(int32_t numSprites)
         for (bssize_t i = numSprites - 1; i >= spritesortcnt; /* 'i' set at and of loop */)
         {
             int32_t const py = spritesxyz[i].y;
-            int32_t const pcstat = tspriteptr[i]->cstat & 48;
+            int32_t const pcstat = tspriteptr[i]->cstat & CSTAT_SPRITE_ALIGNMENT;
             int32_t const pangle = tspriteptr[i]->ang;
             int j = i - 1;
 
             if (!polymost_spriteIsModelOrVoxel(tspriteptr[i]))
             {
-                while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
+                while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & CSTAT_SPRITE_ALIGNMENT) && (pcstat != CSTAT_SPRITE_ALIGNMENT_WALL || pangle == tspriteptr[j]->ang)
                     && !polymost_spriteIsModelOrVoxel(tspriteptr[j]))
                 {
                     j--;
@@ -10073,12 +10075,12 @@ static int32_t GetCornerPoints(tspriteptr_t tspr, int32_t (&xx)[4], int32_t (&yy
 
         // Consider face sprites as wall sprites with camera ang.
         // XXX: factor 4/5 needed?
-        if ((tspr->cstat & 48) != 16)
+        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_WALL)
             tspr->ang = globalang;
 
         get_wallspr_points(tspr, &xx[0], &xx[1], &yy[0], &yy[1]);
 
-        if ((tspr->cstat & 48) != 16)
+        if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_WALL)
             tspr->ang = oang;
     }
 
@@ -10138,7 +10140,7 @@ void renderDrawMasks(void)
 
             spritesxyz[i].x = scale(xp + yp, xdimen << 7, yp);
         }
-        else if ((tspriteptr[i]->cstat & 48) == 0)
+        else if ((tspriteptr[i]->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
         {
 killsprite:
 #ifdef USE_OPENGL
@@ -10458,7 +10460,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
                 if (sprite[i].cstat & 32768)
                     continue;
 
-                if ((sprite[i].cstat & 48) >= 32)
+                if (sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
                 {
                     if ((sprite[i].cstat & (64 + 8)) == (64 + 8))
                         continue;
@@ -10570,7 +10572,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
     for (s=sortnum-1; s>=0; s--)
     {
         auto const spr = (uspritetype * )&sprite[tsprite[s].owner];
-        if ((spr->cstat&48) >= 32)
+        if (spr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
         {
             const int32_t xspan = tilesiz[spr->picnum].x;
             const int32_t yspan = tilesiz[spr->picnum].y;
@@ -10861,8 +10863,8 @@ static int32_t engineFinishLoadBoard(const vec3_t* dapos, int16_t* dacursectnum,
     {
         int32_t removeit = 0;
 
-        if ((sprite[i].cstat & 48) == 48 && (sprite[i].xoffset|sprite[i].yoffset) == 0)
-            sprite[i].cstat &= ~48;
+        if ((sprite[i].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_SLOPE && (sprite[i].xoffset|sprite[i].yoffset) == 0)
+            sprite[i].cstat &= ~CSTAT_SPRITE_ALIGNMENT_SLOPE;
 
         if (sprite[i].statnum == MAXSTATUS)
         {

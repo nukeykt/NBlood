@@ -291,7 +291,8 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
                 if (voxid_PLAYER == -1)
                     break;
 
-                tspr->cstat |= 48;
+                tspr->clipdist |= TSPR_FLAGS_SLAB;
+                tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
                 tspr->picnum = voxid_PLAYER;
 
                 longptr = (int32_t *)voxoff[voxid_PLAYER][0];
@@ -303,7 +304,8 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
                 if (voxid_BROWNMONSTER == -1)
                     break;
 
-                tspr->cstat |= 48;
+                tspr->clipdist |= TSPR_FLAGS_SLAB;
+                tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT;
                 tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }

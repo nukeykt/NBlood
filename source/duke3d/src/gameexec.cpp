@@ -502,7 +502,7 @@ void A_GetZLimits(int const spriteNum)
     {
         pActor->flags &= ~SFLAG_NOFLOORSHADOW;
 
-        if ((florhit & 49152) == 49152 && (sprite[florhit & (MAXSPRITES - 1)].cstat & 48) == 0)
+        if ((florhit & 49152) == 49152 && (sprite[florhit & (MAXSPRITES - 1)].cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
         {
             auto const hitspr = (uspriteptr_t)&sprite[florhit & (MAXSPRITES - 1)];
 
@@ -530,7 +530,7 @@ void A_GetZLimits(int const spriteNum)
     if ((ceilhit&49152) == 49152)
     {
         auto const pCeil = &sprite[ceilhit&(MAXSPRITES-1)];
-        if ((pCeil->cstat&48) == 0 && pCeil->z >= pActor->floorz)
+        if ((pCeil->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING && pCeil->z >= pActor->floorz)
             pActor->ceilingz = oceilz;
     }
 }
