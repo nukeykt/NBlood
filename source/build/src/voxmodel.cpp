@@ -1155,7 +1155,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     if ((intptr_t)m == (intptr_t)(-1)) // hackhackhack
         return 0;
 
-    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    if (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR)
         return 0;
 
     buildgl_outputDebugMessage(3, "polymost_voxdraw(m:%p, tspr:%p)", m, tspr);

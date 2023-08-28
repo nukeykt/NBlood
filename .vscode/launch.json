@@ -1,0 +1,77 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug EDuke32",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/eduke32",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/eduke32.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug Mapster32",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/mapster32",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/mapster32.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug VoidSW",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/voidsw",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/voidsw.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug Wangulator",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/wangulator",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/wangulator.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug EKenBuild",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/ekenbuild",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/ekenbuild.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug EKenBuild-Editor",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/ekenbuild-editor",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/ekenbuild-editor.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        }
+    ]
+}

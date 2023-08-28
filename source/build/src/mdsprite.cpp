@@ -1999,7 +1999,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     if (m->vbos == NULL)
         mdloadvbos(m);
 
-    // if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR) return 0;
+    // if (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) return 0;
 
     updateanimation((md2model_t *)m, tspr, lpal);
 
@@ -2033,7 +2033,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     k0 = (float)tspr->z+spriteext[tspr->owner].mdposition_offset.z;
     f = ((globalorientation&8) && (sprite[tspr->owner].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) ? -4.f : 4.f;
     k0 -= (tspr->yoffset*tspr->yrepeat)*f;
-    if ((globalorientation&128) && (globalorientation & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    if ((globalorientation&128) && !(globalorientation & CSTAT_SPRITE_ALIGNMENT_FLOOR))
         k0 += (float)(sizyrep<<1);
 
     // Parkar: Changed to use the same method as centeroriented sprites
@@ -2056,7 +2056,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 
     // floor aligned
     k1 = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
-    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    if (globalorientation & CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         m0.z = -m0.z; m1.z = -m1.z; a0.z = -a0.z;
         m0.y = -m0.y; m1.y = -m1.y; a0.y = -a0.y;
@@ -2075,7 +2075,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     md3_vox_calcmat_common(tspr, &a0, f, mat);
 
     // floor aligned
-    if ((globalorientation & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
+    if (globalorientation & CSTAT_SPRITE_ALIGNMENT_FLOOR)
     {
         f = mat[4]; mat[4] = mat[8]*16.f; mat[8] = -f*(1.f/16.f);
         f = mat[5]; mat[5] = mat[9]*16.f; mat[9] = -f*(1.f/16.f);
@@ -2164,7 +2164,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
             a0.y = (float) sext->mdpivot_offset.y * f;
 
         if ((sext->mdpivot_offset.z) && !(tsprflags & TSPR_FLAGS_MDHACK))  // Compare with SCREEN_FACTORS above
-            a0.z = (float)(((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR) ? -sext->mdpivot_offset.z : sext->mdpivot_offset.z) / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
+            a0.z = (float)((tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) ? -sext->mdpivot_offset.z : sext->mdpivot_offset.z) / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
 
         k0 = (float)sintable[(sext->mdpitch+512)&2047] * (1.f/16384.f);
         k1 = (float)sintable[sext->mdpitch&2047] * (1.f/16384.f);
