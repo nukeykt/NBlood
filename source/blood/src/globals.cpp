@@ -39,8 +39,7 @@ int gFrame;
 int gFrameRate;
 int gGamma;
 
-char *gVersionString;
-char gVersionStringBuf[16];
+char gVersionString[16];
 
 Resource gSysRes;
 
@@ -96,18 +95,10 @@ void __dassert(const char * pzExpr, const char * pzFile, int nLine)
     exit(0);
 }
 
-const char *GetVersionString(void)
+void InitVersionString(void)
 {
-    if (!gVersionString)
-    {
-        gVersionString = gVersionStringBuf;
-        if (!gVersionString)
-            return NULL;
-
-        Bstrncpyz(gVersionStringBuf, s_buildRev, sizeof(gVersionStringBuf));
-        char * const pHyphen = strchr(gVersionStringBuf, '-');
-        if (pHyphen != nullptr)
-            pHyphen[0] = '\0';
-    }
-    return gVersionString;
+    Bstrncpyz(gVersionString, s_buildRev, sizeof(gVersionString));
+    char * const pHyphen = strchr(gVersionString, '-');
+    if (pHyphen != nullptr)
+        pHyphen[0] = '\0';
 }

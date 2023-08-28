@@ -1788,6 +1788,8 @@ int app_main(int argc, char const * const * argv)
     SetupMenus();
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
 
+    InitVersionString();
+
     OSD_Exec("autoexec.cfg");
 
     if (!bQuickStart)
