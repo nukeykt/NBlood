@@ -5798,10 +5798,11 @@ static void classicDrawSprite(int32_t snum)
         off.x = tspr->xoffset;
         off.y = /*picanm[sprite[tspr->owner].picnum].yofs +*/ tspr->yoffset;
         if (cstat & 4) off.x = -off.x;
-        if ((cstat & 8) && (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING) off.y = -off.y;
+        if ((cstat & 8) && ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_FACING || (tspr->clipdist & TSPR_FLAGS_SLAB)))
+            off.y = -off.y;
         tspr->z -= off.y * tspr->yrepeat << 2;
 
-        const float xfactor = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_WALL ? (256.f/320.f) : 1.f;
+        const float xfactor = ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_WALL || (tspr->clipdist & TSPR_FLAGS_SLAB)) ? (256.f/320.f) : 1.f;
         const int32_t xv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047]*xfactor);
         const int32_t yv = (int32_t)(tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047]*xfactor);
 
@@ -5878,7 +5879,7 @@ static void classicDrawSprite(int32_t snum)
         const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
 
         classicDrawVoxel(x,y,z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
-            tspr->shade,tspr->pal,lwall,swall,tspr->cstat,tsprflags,floorz,ceilingz);
+            tspr->shade,tspr->pal,lwall,swall,tspr->cstat,tspr->clipdist,floorz,ceilingz);
     }
     else if ((cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FACING)
     {
