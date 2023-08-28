@@ -1,0 +1,61 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Build EDuke32 and Mapster32 Debug",
+            "linux": {
+                "command": "make RELEASE=0",
+                "details": "GNU Make for Linux"
+            },
+            "windows": {
+                "command": "mingw32-make.exe RELEASE=0",
+                "detail": "GNU Make with mingw32 for Windows"
+            },
+            "group": "build",
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
+            "label": "Build VoidSW and Wangulator Debug",
+            "linux": {
+                "command": "make sw RELEASE=0",
+                "details": "GNU Make for Linux"
+            },
+            "windows": {
+                "command": "mingw32-make.exe sw RELEASE=0",
+                "detail": "GNU Make with mingw32 for Windows"
+            },
+            "group": "build",
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
+            "label": "Build EKenbuild and EKenbuild-Editor Debug",
+            "linux": {
+                "command": "make kenbuild RELEASE=0",
+                "details": "GNU Make for Linux"
+            },
+            "windows": {
+                "command": "mingw32-make.exe kenbuild RELEASE=0",
+                "detail": "GNU Make with mingw32 for Windows"
+            },
+            "group": "build",
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
+            "label": "Clean all",
+            "linux": {
+                "command": "make clean",
+                "details": "GNU Make for Linux"
+            },
+            "windows": {
+                "command": "mingw32-make.exe clean",
+                "detail": "GNU Make with mingw32 for Windows"
+            },
+            "group": "build",
+            "problemMatcher": [],
+        }
+    ]
+}
