@@ -5781,13 +5781,11 @@ static void classicDrawSprite(int32_t snum)
             if (x == rx) return;
         }
 
-        for (i=0; i<MAXVOXMIPS; i++)
-            if (!voxoff[vtilenum][i])
-            {
-                if (loadvoxel_replace)
-                    loadvoxel_replace(vtilenum);
-                break;
-            }
+        if (!voxoff[vtilenum][0])
+        {
+            if (loadvoxel_replace)
+                loadvoxel_replace(vtilenum);
+        }
 
         const int32_t *const longptr = (int32_t *)voxoff[vtilenum][0];
         if (longptr == NULL)
