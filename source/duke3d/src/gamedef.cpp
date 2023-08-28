@@ -6228,6 +6228,15 @@ repeatcase:
             continue;
 
         case CON_TERMINATE:
+            if (!g_processingState && !g_scriptEventOffset)
+            {
+                C_ReportError(-1);
+                LOG_F(ERROR, "%s:%d: found 'terminate' statement outside of a state or event", g_scriptFileName, g_lineNumber);
+                ++g_errorCnt;
+                continue;
+            }
+            continue;
+
         case CON_FALL:
         case CON_GETLASTPAL:
         case CON_GETTEXTURECEILING:
