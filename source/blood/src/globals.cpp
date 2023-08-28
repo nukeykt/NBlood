@@ -40,6 +40,7 @@ int gFrameRate;
 int gGamma;
 
 char gVersionString[16];
+int gVersionPal;
 
 Resource gSysRes;
 
@@ -98,7 +99,15 @@ void __dassert(const char * pzExpr, const char * pzFile, int nLine)
 void InitVersionString(void)
 {
     Bstrncpyz(gVersionString, s_buildRev, sizeof(gVersionString));
+
     char * const pHyphen = strchr(gVersionString, '-');
     if (pHyphen != nullptr)
         pHyphen[0] = '\0';
+
+    char * const pBracket = strchr(gVersionString, '[');
+    if (pBracket != nullptr)
+    {
+        pBracket[0] = '\0';
+        gVersionPal = 9;
+    }
 }

@@ -49,3 +49,4 @@ extern Resource gSysRes;
 
 void InitVersionString(void);
 extern char gVersionString[16];
+extern int gVersionPal;
