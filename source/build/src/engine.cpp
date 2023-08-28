@@ -12252,7 +12252,7 @@ void vox_undefine(int32_t const tile)
         voxlock[voxindex][j] = CACHE1D_FREE;
         voxoff[voxindex][j] = 0;
     }
-    voxrotate[voxindex>>3] &= ~pow2char[voxindex&7];
+    bitmap_clear(voxrotate, voxindex);
     voxscale[voxindex] = 65536;
     voxflags[voxindex] = 0;
     tiletovox[tile] = -1;

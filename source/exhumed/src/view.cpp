@@ -243,7 +243,7 @@ static void analyzesprites()
             int const nRootTile = pTSprite->picnum;
             int const nVoxel = tiletovox[pTSprite->picnum];
 
-            if (nVoxel != -1 && ((voxrotate[nVoxel >> 3] & pow2char[nVoxel & 7]) != 0 || (picanm[nRootTile].extra & 7) == 7))
+            if (nVoxel != -1 && (bitmap_test(voxrotate, nVoxel) || (picanm[nRootTile].extra & 7) == 7))
                 pTSprite->ang = (pTSprite->ang + ((int)totalclock << 3)) & kAngleMask;
 
             if (pTSprite->picnum == 736) // invincibility sprite needs to always face player

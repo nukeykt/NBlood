@@ -1417,7 +1417,7 @@ static int32_t defsparser(scriptfile *script)
                 break; //voxel filename
 
             // begin downstream
-            while (nextvoxid < MAXVOXELS && (voxreserve[nextvoxid>>3]&(1<<(nextvoxid&7))))
+            while (nextvoxid < MAXVOXELS && bitmap_test(voxreserve, nextvoxid))
                 nextvoxid++;
             // end downstream
 
@@ -1961,7 +1961,7 @@ static int32_t defsparser(scriptfile *script)
             if (scriptfile_getbraces(script,&voxelend)) break;
 
             // begin downstream
-            while (nextvoxid < MAXVOXELS && (voxreserve[nextvoxid>>3]&(1<<(nextvoxid&7))))
+            while (nextvoxid < MAXVOXELS && bitmap_test(voxreserve, nextvoxid))
                 nextvoxid++;
             // end downstream
 
