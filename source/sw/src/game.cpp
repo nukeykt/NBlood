@@ -212,7 +212,6 @@ const GAME_SET gs_defaults =
     TRUE, // Music on
     TRUE, // talking
     TRUE, // ambient
-    FALSE, // alt reverb
     FALSE, // Flip Stereo
 
 // Network game settings
@@ -236,6 +235,7 @@ const GAME_SET gs_defaults =
     FALSE,
     TRUE,
     90, // FOV
+    FALSE, // alt reverb
 };
 GAME_SET gs;
 
