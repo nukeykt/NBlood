@@ -3606,11 +3606,11 @@ static void ReadHelpFile(const char *name)
     helppage_t *hp;
     char skip=0;
 
-    initprintf("Loading \"%s\"\n",name);
+    LOG_F(INFO, "Loading \"%s\"",name);
 
     if ((fp=fopenfrompath(name,"rb")) == NULL)
     {
-        initprintf("Error initializing integrated help: file \"%s\" not found.\n", name);
+        LOG_F(ERROR, "Error initializing integrated help: file \"%s\" not found.", name);
         return;
     }
 
@@ -8623,7 +8623,7 @@ static void Keys3d(void)
                                 dx = -dx;
                             dx /= 1<<((picsiz[tile]&15) - !!(bits&8));
                             dy /= 1<<((picsiz[tile]>>4) - !!(bits&8));
-//initprintf("int=(%d,%d), dx=%.03f dy=%.03f\n", intx,inty, dx, dy);
+//LOG_F(INFO, "int=(%d,%d), dx=%.03f dy=%.03f", intx,inty, dx, dy);
                             CEILINGFLOOR(searchsector, xpanning) =
                                 CEILINGFLOOR(tempsectornum, xpanning) + (int32_t)dx;
                             CEILINGFLOOR(searchsector, ypanning) =
@@ -10101,7 +10101,7 @@ int32_t ExtPreSaveMap(void)
                 if (wall[j].point2 < startwall)
                     startwall = wall[j].point2;
             if (sector[i].wallptr != startwall)
-                initprintf("Warning: set sector %d's wallptr to %d (was %d)\n", i,
+                LOG_F(WARNING, "set sector %d's wallptr to %d (was %d)", i,
                            TrackerCast(sector[i].wallptr), startwall);
             sector[i].wallptr = startwall;
         }
@@ -10280,7 +10280,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     if (sz >= 16<<10 && sz <= 1024<<10)
                     {
                         MAXCACHE1DSIZE = sz<<10;
-                        initprintf("Cache size: %dkB\n",sz);
+                        LOG_F(INFO, "Cache size: %dkB",sz);
 
                         COPYARG(i);
                         COPYARG(i+1);
@@ -10422,21 +10422,21 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
             //}
             if (!Bstrcasecmp(c+1,"check"))
             {
-                initprintf("Map wall checking on save enabled\n");
+                LOG_F(INFO, "Map wall checking on save enabled");
                 fixmaponsave_walls = 1;
                 i++;
                 continue;
             }
             if (!Bstrcasecmp(c+1,"nocheck"))
             {
-                initprintf("Map wall checking on save disabled\n");
+                LOG_F(INFO, "Map wall checking on save disabled");
                 fixmaponsave_walls = 0;
                 i++;
                 continue;
             }
             if (!Bstrcasecmp(c+1,"noautoload"))
             {
-                initprintf("Autoload disabled\n");
+                LOG_F(INFO, "Autoload disabled");
                 NoAutoLoad = 1;
                 COPYARG(i);
                 i++;
@@ -10572,7 +10572,7 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 
     OSD_SetLogFile("nmapedit.log");
     OSD_SetVersion("NMapedit",0,2);
-    initprintf("NMapedit %s\n", s_buildRev);
+    LOG_F(INFO, "NMapedit %s", s_buildRev);
     PrintBuildInfo();
 
     G_CheckCommandLine(argc,argv);
@@ -11368,10 +11368,11 @@ static void parsegroupfiles_include(const char *fn, scriptfile *script, const ch
     if (!included)
     {
         if (!Bstrcasecmp(cmdtokptr,"null"))
-            initprintf("Warning: Failed including %s as module\n", fn);
+            LOG_F(WARNING, "warning: failed including %s as module", fn);
         else
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+            LOG_F(WARNING, "%s:%d: warning: failed including %s",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr)
+                           fn);
     }
     else
     {
@@ -11413,10 +11414,10 @@ static int32_t parsegroupfiles(scriptfile *script)
                 int32_t j = initgroupfile(fn);
 
                 if (j == -1)
-                    initprintf("Could not find group file \"%s\".\n",fn);
+                    LOG_F(WARNING, "Could not find group file \"%s\".",fn);
                 else
                 {
-                    initprintf("Using group file \"%s\".\n",fn);
+                    LOG_F(INFO, "Using group file \"%s\".",fn);
                     if (!NoAutoLoad)
                         G_DoAutoload(fn);
                 }
@@ -11521,8 +11522,9 @@ int32_t parsetilegroups(scriptfile *script)
                 included = scriptfile_fromfile(fn);
                 if (!included)
                 {
-                    initprintf("Warning: Failed including %s on line %s:%d\n",
-                               fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+                    LOG_F(WARNING, "%s:%d: warning: failed including %s",
+                                   script->filename, scriptfile_getlinum(script, cmdtokptr)
+                                   fn);
                 }
                 else
                 {
@@ -11540,8 +11542,9 @@ int32_t parsetilegroups(scriptfile *script)
             if (scriptfile_getstring(script,&name)) break;
             if (scriptfile_getsymbol(script,&number)) break;
             if (scriptfile_addsymbolvalue(name,number) < 0)
-                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
-                           name,number,script->filename,scriptfile_getlinum(script,cmdtokptr));
+                LOG_F(WARNING, "%s:%d: warning: symbol %s was NOT redefined to %d",
+                               script->filename, scriptfile_getlinum(script, cmdtokptr)
+                               name, number);
             break;
         }
         case T_TILEGROUP:
@@ -11848,7 +11851,7 @@ static void m32script_interrupt_handler(int signo)
 
 static void M32_HandleMemErr(int32_t line, const char *file, const char *func)
 {
-    initprintf("Out of memory in %s:%d (%s)\n", file, line, func);
+    LOG_F(ERROR, "Out of memory in %s:%d (%s)", file, line, func);
     osdcmd_quit(NULL);
 }
 
@@ -11869,10 +11872,10 @@ int32_t ExtInit(void)
 
 //#ifdef USE_OPENGL
     if (Bstrcmp(setupfilename, SETUPFILENAME))
-        initprintf("Using config file \"%s\".\n",setupfilename);
+        LOG_F(INFO, "Using config file \"%s\".",setupfilename);
 
     if (loadsetup(setupfilename) < 0)
-        initprintf("Configuration file not found, using defaults.\n"), rv = 1;
+        LOG_F(INFO, "Configuration file not found, using defaults."), rv = 1;
 //#endif
     Bmemcpy(buildkeys, default_buildkeys, NUMBUILDKEYS);   //Trick to make build use setup.dat keys
 
@@ -11965,7 +11968,7 @@ int32_t ExtPostStartupWindow(void)
     artLoadFiles("TILES%03i.ART", MAXCACHE1DSIZE);
     //if (engineInit())
     //{
-    //    initprintf("There was a problem initializing the engine.\n");
+    //    LOG_F(ERROR, "There was a problem initializing the engine.");
     //    return -1;
     //}
 
@@ -11988,7 +11991,7 @@ int32_t ExtPostStartupWindow(void)
         if (i != 0)
         {
             Em_DestroyState(&g_EmState);
-            initprintf("Lunatic: Error preparing global Lua state (code %d)\n", i);
+            LOG_F(ERROR, "Lunatic: Error preparing global Lua state (code %d)", i);
             return -1;
         }
     }

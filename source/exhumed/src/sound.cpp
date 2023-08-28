@@ -341,7 +341,7 @@ void InitFX(void)
     if (FX_Init(NumVoices, NumChannels, MixRate, initdata) != FX_Ok)
     {
         DebugOut("Error initializing sound card!\n");
-        initprintf("Error initializing sound card!\n");
+        LOG_F(ERROR, "Error initializing sound card!");
         DebugOut("ERROR: %s\n", FX_ErrorString(FX_Error));
         return;
     }
@@ -401,13 +401,13 @@ void InitMusic()
     mdi = AIL_install_MDI_INI();
     if (!mdi)
     {
-        initprintf("AIL_install midi failed\n");
+        LOG_F(ERROR, "AIL_install midi failed");
         return;
     }
     S = AIL_allocate_sequence_handle(mdi);
     if (!S)
     {
-        initprintf("Midi handle failed");
+        LOG_F(ERROR, "midi handle failed");
         return;
     }
 }
@@ -967,7 +967,7 @@ void PlaySound(int nSound)
 
     if (nSound < 0 || nSound >= kMaxSounds || !SoundBuf[nSound])
     {
-        initprintf("PlaySound: Invalid sound nSound == %i\n", nSound);
+        LOG_F(ERROR, "PlaySound: Invalid sound nSound == %i", nSound);
         return;
     }
 
@@ -1010,7 +1010,7 @@ void PlayLocalSound(int nSound, int nRate)
 
     if (nSound < 0 || nSound >= kMaxSounds || !SoundBuf[nSound])
     {
-        initprintf("PlayLocalSound: Invalid sound nSound == %i, nRate == %i\n", nSound, nRate);
+        LOG_F(ERROR, "PlayLocalSound: Invalid sound nSound == %i, nRate == %i", nSound, nRate);
         return;
     }
 
@@ -1088,7 +1088,7 @@ short PlayFX2(unsigned short nSound, short nSprite)
 
     if ((nSound&0x1ff) >= kMaxSounds || !SoundBuf[(nSound&0x1ff)])
     {
-        initprintf("PlayFX2: Invalid sound nSound == %i, nSprite == %i\n", nSound, nSprite);
+        LOG_F(ERROR, "PlayFX2: Invalid sound nSound == %i, nSprite == %i", nSound, nSprite);
         return -1;
     }
 

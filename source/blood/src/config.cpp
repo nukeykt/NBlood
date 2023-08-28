@@ -220,7 +220,7 @@ void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy/*=fal
         {
 #if 0 // defined(DEBUGGINGAIDS)
             if (key[0] != 0xff)
-                initprintf("Skipping %s bound to %s\n", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
+                LOG_F(INFO, "Skipping %s bound to %s", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
 #endif
             continue;
         }
@@ -759,7 +759,7 @@ int CONFIG_ReadSetup(void)
         {
             if ((st.st_mode & S_IFDIR) != S_IFDIR)
             {
-                initprintf("Invalid mod dir in cfg!\n");
+                LOG_F(ERROR, "Invalid mod dir in cfg!");
                 Bsprintf(g_modDir,"/");
             }
         }

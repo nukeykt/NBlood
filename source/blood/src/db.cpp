@@ -699,7 +699,7 @@ unsigned int dbReadMapCRC(const char *pPath)
 
     if (!pNode)
     {
-        initprintf("Error opening map file %s", pPath);
+        LOG_F(ERROR, "Error opening map file %s", pPath);
         pathsearchmode = bakpathsearchmode;
         return -1;
     }
@@ -785,7 +785,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 
     if (!pNode)
     {
-        initprintf("Error opening map file %s", pPath);
+        LOG_F(ERROR, "Error opening map file %s", pPath);
         pathsearchmode = bakpathsearchmode;
         return -1;
     }
@@ -800,7 +800,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 #endif
     if (memcmp(header.signature, "BLM\x1a", 4))
     {
-        initprintf("Map file corrupted");
+        LOG_F(ERROR, "Map file corrupted");
         gSysRes.Unlock(pNode);
         return -1;
     }
@@ -826,7 +826,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         #endif
 
     } else {
-        initprintf("Map file is wrong version");
+        LOG_F(ERROR, "Map file is wrong version");
         gSysRes.Unlock(pNode);
         return -1;
     }
@@ -876,14 +876,14 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         }
         else
         {
-            initprintf("Corrupted Map file");
+            LOG_F(ERROR, "Corrupted Map file");
             gSysRes.Unlock(pNode);
             return -1;
         }
     }
     else if (mapHeader.at16)
     {
-        initprintf("Corrupted Map file");
+        LOG_F(ERROR, "Corrupted Map file");
         gSysRes.Unlock(pNode);
         return -1;
     }
@@ -1266,7 +1266,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
     md4once((unsigned char*)pData, nSize, g_loadedMapHack.md4);
     if (Bcrc32(pData, nSize-4, 0) != nCRC)
     {
-        initprintf("Map File does not match CRC");
+        LOG_F(ERROR, "Map File does not match CRC");
         gSysRes.Unlock(pNode);
         return -1;
     }
@@ -1286,13 +1286,13 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         }
         else
         {
-            initprintf("Corrupted Map file");
+            LOG_F(ERROR, "Corrupted Map file");
             return -1;
         }
     }
     else if (gSongId != 0)
     {
-        initprintf("Corrupted Map file");
+        LOG_F(ERROR, "Corrupted Map file");
         return -1;
     }
 
@@ -1704,13 +1704,13 @@ int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSe
     int nHandle = Bopen(sMapExt, BO_BINARY|BO_TRUNC|BO_CREAT|BO_WRONLY, BS_IREAD|BS_IWRITE);
     if (nHandle == -1)
     {
-        initprintf("Couldn't open \"%s\" for writing: %s\n", sMapExt, strerror(errno));
+        LOG_F(ERROR, "Couldn't open \"%s\" for writing: %s", sMapExt, strerror(errno));
         Xfree(pData);
         return -1;
     }
     if (Bwrite(nHandle, pData, nSize) != nSize)
     {
-        initprintf("Couldn't write to \"%s\": %s\n", sMapExt, strerror(errno));
+        LOG_F(ERROR, "Couldn't write to \"%s\": %s", sMapExt, strerror(errno));
         Bclose(nHandle);
         Xfree(pData);
         return -1;

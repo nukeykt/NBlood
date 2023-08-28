@@ -173,7 +173,7 @@ int seq_ReadSequence(const char *seqName)
     int hFile = kopen4loadfrommod(buffer, 0);
     if (hFile == -1)
     {
-        initprintf("Unable to open '%s'!\n", buffer);
+        LOG_F(ERROR, "Unable to open '%s'!", buffer);
         kclose(hFile);
         return 0;
     }
@@ -185,7 +185,7 @@ int seq_ReadSequence(const char *seqName)
 #endif
     if (tag < 'HI' || tag > 'HI' && tag != 'SD')
     {
-        initprintf("Unsupported sequence version!\n");
+        LOG_F(ERROR, "Unsupported sequence version!");
         kclose(hFile);
         return 0;
     }
@@ -205,7 +205,7 @@ int seq_ReadSequence(const char *seqName)
     {
         if (nSeqs < 0)
         {
-            initprintf("Invalid sequence count!\n");
+            LOG_F(ERROR, "Invalid sequence count!");
             kclose(hFile);
             return 0;
         }
@@ -240,7 +240,7 @@ int seq_ReadSequence(const char *seqName)
     {
         if (nFrames < 0 )
         {
-            initprintf("Invalid frame count!\n");
+            LOG_F(ERROR, "Invalid frame count!");
             kclose(hFile);
             return 0;
         }
@@ -274,7 +274,7 @@ int seq_ReadSequence(const char *seqName)
     {
         if (nChunks < 0 )
         {
-            initprintf("Invalid chunk count!\n");
+            LOG_F(ERROR, "Invalid chunk count!");
             kclose(hFile);
             return 0;
         }
@@ -370,7 +370,7 @@ void seq_LoadSequences()
         SeqOffsets[i] = sequences;
 
         if (seq_ReadSequence(SeqNames[i]) == 0) {
-            initprintf("Error loading '%s'\n", SeqNames[i]);
+            LOG_F(ERROR, "Error loading '%s'", SeqNames[i]);
         }
     }
 

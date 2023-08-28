@@ -265,7 +265,7 @@ void RFS::ScriptError(const char *message)
 
     puts("^");
 
-    initprintf("Error in %s line %d: %s\n\n", _fileName, _curLine, message);
+    LOG_F(ERROR, "Error in %s line %d: %s\n", _fileName, _curLine, message);
 }
 
 uint8_t RFS::GetNextTag()

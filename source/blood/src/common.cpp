@@ -134,7 +134,7 @@ void G_ExtInit(void)
             i = addsearchpath(CommandPaths->str);
             if (i < 0)
             {
-                initprintf("Failed adding %s for game data: %s\n", CommandPaths->str,
+                LOG_F(ERROR, "Failed adding %s for game data: %s", CommandPaths->str,
                            i==-1 ? "not a directory" : "no such directory");
             }
 
@@ -182,9 +182,9 @@ static int32_t G_TryLoadingGrp(char const * const grpfile)
     int32_t i;
 
     if ((i = initgroupfile(grpfile)) == -1)
-        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
+        LOG_F(WARNING, "Could not find main data file \"%s\"!", grpfile);
     else
-        initprintf("Using \"%s\" as main game data file.\n", grpfile);
+        LOG_F(INFO, "Using \"%s\" as main game data file.", grpfile);
 
     return i;
 }
@@ -238,7 +238,7 @@ void G_LoadGroups(int32_t autoload)
         {
             clearDefNamePtr();
             g_defNamePtr = dup_filename(tmpptr);
-            initprintf("Using \"%s\" as definitions file\n", g_defNamePtr);
+            LOG_F(INFO, "Using \"%s\" as definitions file", g_defNamePtr);
         }
     }
 
@@ -257,11 +257,11 @@ void G_LoadGroups(int32_t autoload)
         s = CommandGrps->next;
 
         if ((j = initgroupfile(CommandGrps->str)) == -1)
-            initprintf("Could not find file \"%s\".\n", CommandGrps->str);
+            LOG_F(WARNING, "Could not find file \"%s\".", CommandGrps->str);
         else
         {
             g_groupFileHandle = j;
-            initprintf("Using file \"%s\" as game data.\n", CommandGrps->str);
+            LOG_F(INFO, "Using file \"%s\" as game data.", CommandGrps->str);
             if (autoload)
                 G_DoAutoload(CommandGrps->str);
         }
@@ -467,7 +467,7 @@ void G_LoadGroupsInDir(const char *dirname)
         for (rec=fnlist.findfiles; rec; rec=rec->next)
         {
             Bsnprintf(buf, sizeof(buf), "%s/%s", dirname, rec->name);
-            initprintf("Using group file \"%s\".\n", buf);
+            LOG_F(INFO, "Using group file \"%s\".", buf);
             initgroupfile(buf);
         }
 

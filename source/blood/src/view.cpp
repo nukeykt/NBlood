@@ -1909,7 +1909,7 @@ int dword_172CE0[16][3];
 
 void viewInit(void)
 {
-    initprintf("Initializing status bar\n");
+    LOG_F(INFO, "Initializing status bar");
     InitStatusBar();
     FontSet(0, 4096, 0);
     FontSet(1, 4192, 1);

@@ -301,7 +301,7 @@ bool SmackerDecoder::Open(const char *fileName)
 	file.Open(fileName);
 	if (!file.Is_Open())
 	{
-        buildprintf("SmackerDecoder::Open() - Can't open file %s\n", fileName);
+        LOG_F(ERROR, "SmackerDecoder::Open() - Can't open file %s", fileName);
 		return false;
 	}
 
@@ -310,7 +310,7 @@ bool SmackerDecoder::Open(const char *fileName)
 	if (memcmp(signature, kSMK2iD, 4) != 0
 		&& memcmp(signature, kSMK4iD, 4) != 0)
 	{
-        buildprintf("SmackerDecoder::Open() - Unknown Smacker signature\n");
+        LOG_F(ERROR, "SmackerDecoder::Open() - Unknown Smacker signature");
 		return false;
 	}
 
@@ -358,7 +358,7 @@ bool SmackerDecoder::Open(const char *fileName)
 
 	if (nFrames > 0xFFFFFF)
 	{
-        buildprintf("SmackerDecoder::Open() - Too many frames\n");
+        LOG_F(ERROR, "SmackerDecoder::Open() - Too many frames");
 		return false;
 	}
 
@@ -448,7 +448,7 @@ int SmackerDecoder::DecodeTree(SmackerCommon::BitReader &bits, HuffContext *hc, 
     if (!bits.GetBit()) // Leaf
 	{
         if (hc->current >= 256){
-            buildprintf("SmackerDecoder::DecodeTree() - Tree size exceeded\n");
+            LOG_F(ERROR, "SmackerDecoder::DecodeTree() - Tree size exceeded");
             return -1;
         }
         if (length){
@@ -487,7 +487,7 @@ int SmackerDecoder::DecodeBigTree(SmackerCommon::BitReader &bits, HuffContext *h
 		i2 = 0;
 
 		if (hc->current >= hc->length){
-            buildprintf("SmackerDecoder::DecodeBigTree() - Tree size exceeded");
+            LOG_F(ERROR, "SmackerDecoder::DecodeBigTree() - Tree size exceeded");
             return -1;
         }
 
@@ -549,7 +549,7 @@ int SmackerDecoder::DecodeHeaderTree(SmackerCommon::BitReader &bits, std::vector
 
 	if ((uint32_t)size >= UINT_MAX>>4)
 	{
-        buildprintf("SmackerDecoder::DecodeHeaderTree() - Size too large\n");
+        LOG_F(ERROR, "SmackerDecoder::DecodeHeaderTree() - Size too large");
 		return -1;
 	}
 
@@ -972,7 +972,7 @@ int SmackerDecoder::DecodeAudio(uint32_t size, SmackerAudioTrack &track)
 	int buf_size = track.bufferSize;
 
     if (buf_size <= 4) {
-        buildprintf("SmackerDecoder::DecodeAudio() - Packet is too small\n");
+        LOG_F(ERROR, "SmackerDecoder::DecodeAudio() - Packet is too small");
 		return -1;
     }
 
@@ -989,7 +989,7 @@ int SmackerDecoder::DecodeAudio(uint32_t size, SmackerAudioTrack &track)
     sampleBits = bits.GetBit();
 
     if (stereo ^ (track.nChannels != 1)) {
-        buildprintf("SmackerDecoder::DecodeAudio() - Channels mismatch\n");
+        LOG_F(ERROR, "SmackerDecoder::DecodeAudio() - Channels mismatch");
 		return -1;
     }
 
@@ -1113,7 +1113,7 @@ float SmackerDecoder::GetFrameRate()
 void SmackerDecoder::GotoFrame(uint32_t frameNum)
 {
 	if (frameNum > nFrames) {
-        buildprintf("SmackerDecoder::GotoFrame() - Invalid frame number\n");
+        LOG_F(ERROR, "SmackerDecoder::GotoFrame() - Invalid frame number");
 		return;
 	}
 

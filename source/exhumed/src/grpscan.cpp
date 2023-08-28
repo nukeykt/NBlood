@@ -365,7 +365,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch)
             }
             while (b == ReadSize);
             close(fh);
-            initprintf(" Done\n");
+            LOG_F(INFO, " Done");
 
             grpinfo_t const * const grptype = FindGrpInfo(crcval, st.st_size);
             if (grptype)
@@ -396,7 +396,7 @@ int32_t ScanGroups(void)
 #ifndef USE_PHYSFS
     struct grpcache *fg, *fgg;
 
-    initprintf("Searching for game data...\n");
+    LOG_F(INFO, "Searching for game data...");
 
     LoadGameList();
     LoadGroupsCache();
@@ -423,7 +423,7 @@ int32_t ScanGroups(void)
         {
             if (FindGroup(grp->type->dependency) == NULL) // couldn't find dependency
             {
-                //initprintf("removing %s\n", grp->name);
+                //LOG_F(INFO, "removing %s", grp->name);
                 RemoveGroup(grp);
                 grp = foundgrps;
                 // start from the beginning so we can remove anything that depended on this grp
@@ -447,12 +447,12 @@ int32_t ScanGroups(void)
             }
             buildvfs_fclose(fp);
         }
-//        initprintf("Found %d recognized GRP %s.\n",i,i>1?"files":"file");
+//        LOG_F(INFO, "Found %d recognized GRP %s.",i,i>1?"files":"file");
 
         return 0;
     }
 
-    initprintf("Found no recognized game data!\n");
+    LOG_F(WARNING, "Found no recognized game data!");
 #endif
 
     return 0;

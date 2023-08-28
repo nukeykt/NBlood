@@ -479,7 +479,7 @@ void InstallEngine()
     }
     if (videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, 0) < 0)
     {
-        initprintf("Failure setting video mode %dx%dx%d %s! Trying next mode...\n", gSetup.xdim, gSetup.ydim,
+        LOG_F(ERROR, "Failure setting video mode %dx%dx%d %s! Trying next mode...", gSetup.xdim, gSetup.ydim,
                     gSetup.bpp, gSetup.fullscreen ? "fullscreen" : "windowed");
 
         int resIdx = 0;
@@ -498,7 +498,7 @@ void InstallEngine()
 
         while (videoSetGameMode(0, validmode[resIdx].xdim, validmode[resIdx].ydim, bpp, 0) < 0)
         {
-            initprintf("Failure setting video mode %dx%dx%d windowed! Trying next mode...\n",
+            LOG_F(ERROR, "Failure setting video mode %dx%dx%d windowed! Trying next mode...",
                         validmode[resIdx].xdim, validmode[resIdx].ydim, bpp);
 
             if (++resIdx == validmodecnt)

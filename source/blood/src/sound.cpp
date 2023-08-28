@@ -452,7 +452,7 @@ void InitSoundDevice(void)
     nStatus = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (nStatus != 0)
     {
-        initprintf("InitSoundDevice: %s\n", FX_ErrorString(nStatus));
+        LOG_F(ERROR, "InitSoundDevice: %s", FX_ErrorString(nStatus));
         return;
     }
 #ifdef ASS_REVERSESTEREO
@@ -507,7 +507,7 @@ void InitMusicDevice(void)
     }
     else if ((nStatus = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
     {
-        initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
+        LOG_F(ERROR, "InitMusicDevice: %s", MUSIC_ErrorString(nStatus));
         return;
     }
     MUSIC_SetVolume(MusicVolume);

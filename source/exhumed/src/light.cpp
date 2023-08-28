@@ -73,7 +73,7 @@ void MyLoadPalette()
     //int hFile = kopen4load("PALETTE.DAT", 1);
     //if (hFile == -1)
     //{
-    //    initprintf("Error reading palette 'PALETTE.DAT'\n");
+    //    LOG_F(ERROR, "Error reading palette 'PALETTE.DAT'");
     //    return;
     //}
     //
@@ -93,7 +93,7 @@ int LoadPaletteLookups()
         int hFile = kopen4loadfrommod(GradList[i], 0);
         if (hFile == -1)
         {
-            initprintf("Error reading palette lookup '%s'\n", GradList[i]);
+            LOG_F(ERROR, "Error reading palette lookup '%s'", GradList[i]);
             return 0;
         }
 

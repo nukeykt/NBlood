@@ -524,7 +524,7 @@ int G_TryMapHack(const char* mhkfile)
     int const failure = engineLoadMHK(mhkfile);
 
     if (!failure)
-        initprintf("Loaded map hack file \"%s\"\n", mhkfile);
+        LOG_F(INFO, "Loaded map hack file \"%s\"", mhkfile);
 
     return failure;
 }
@@ -1241,7 +1241,7 @@ void PrintHelp(void)
     Bsnprintf(tempbuf, sizeof(tempbuf), APPNAME " %s", s_buildRev);
     wm_msgbox(tempbuf, s);
 #else
-    initprintf("%s\n", s);
+    LOG_F(INFO, "%s", s);
 #endif
 #if 0
     puts("Blood Command-line Options:");
@@ -1444,7 +1444,7 @@ void ParseOptions(void)
                 {
                     clearDefNamePtr();
                     g_defNamePtr = dup_filename(OptFull);
-                    initprintf("Using DEF file \"%s\".\n", g_defNamePtr);
+                    LOG_F(INFO, "Using DEF file \"%s\".", g_defNamePtr);
                     continue;
                 }
             }
@@ -1460,7 +1460,7 @@ void ParseOptions(void)
             //bNoCDAudio = 1;
             break;
         case 32:
-            initprintf("Autoload disabled\n");
+            LOG_F(INFO, "Autoload disabled");
             bNoAutoLoad = true;
             break;
         case 33:
@@ -1472,7 +1472,7 @@ void ParseOptions(void)
                 ThrowError("Missing argument");
             uint32_t j = strtoul(OptArgv[0], NULL, 0);
             MAXCACHE1DSIZE = j<<10;
-            initprintf("Cache size: %dkB\n", j);
+            LOG_F(INFO, "Cache size: %dkB", j);
             break;
         }
         case 35:
@@ -1598,7 +1598,7 @@ int app_main(int argc, char const * const * argv)
 
     wm_setapptitle(APPNAME);
 
-    initprintf(APPNAME " %s\n", s_buildRev);
+    LOG_F(INFO, APPNAME " %s", s_buildRev);
     PrintBuildInfo();
 
     memcpy(&gGameOptions, &gSingleGameOptions, sizeof(GAMEOPTIONS));
@@ -1639,7 +1639,7 @@ int app_main(int argc, char const * const * argv)
     }
 
     if (Bstrcmp(SetupFilename, SETUPFILENAME))
-        initprintf("Using config file \"%s\".\n", SetupFilename);
+        LOG_F(INFO, "Using config file \"%s\".", SetupFilename);
 
     ScanINIFiles();
 
@@ -1659,7 +1659,7 @@ int app_main(int argc, char const * const * argv)
     //if (!g_useCwd)
     //    G_CleanupSearchPaths();
 
-    initprintf("Initializing OSD...\n");
+    LOG_F(INFO, "Initializing OSD...");
 
     //Bsprintf(tempbuf, HEAD2 " %s", s_buildRev);
     OSD_SetVersion("Blood", 10, 0);
@@ -1682,13 +1682,13 @@ int app_main(int argc, char const * const * argv)
 
     HookReplaceFunctions();
 
-    initprintf("Initializing Build 3D engine\n");
+    LOG_F(INFO, "Initializing Build 3D engine");
     scrInit();
 
-    initprintf("Creating standard color lookups\n");
+    LOG_F(INFO, "Creating standard color lookups");
     scrCreateStdColors();
     
-    initprintf("Loading tiles\n");
+    LOG_F(INFO, "Loading tiles");
     if (pUserTiles)
     {
         strcpy(buffer,pUserTiles);
@@ -1712,28 +1712,29 @@ int app_main(int argc, char const * const * argv)
     loaddefinitionsfile(BLOODWIDESCREENDEF);
     loaddefinitions_game(BLOODWIDESCREENDEF, FALSE);
 
-    const char *defsfile = G_DefFile();
+    const char *deffile = G_DefFile();
     uint32_t stime = timerGetTicks();
-    if (!loaddefinitionsfile(defsfile))
+    if (!loaddefinitionsfile(deffile))
     {
         uint32_t etime = timerGetTicks();
-        initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
+        LOG_F(INFO, "Definitions file \"%s\" loaded in %d ms.", deffile, etime-stime);
     }
-    loaddefinitions_game(defsfile, FALSE);
+    loaddefinitions_game(deffile, FALSE);
+
     powerupInit();
-    initprintf("Loading cosine table\n");
+    LOG_F(INFO, "Loading cosine table");
     trigInit(gSysRes);
-    initprintf("Initializing view subsystem\n");
+    LOG_F(INFO, "Initializing view subsystem");
     viewInit();
-    initprintf("Initializing dynamic fire\n");
+    LOG_F(INFO, "Initializing dynamic fire");
     FireInit();
-    initprintf("Initializing weapon animations\n");
+    LOG_F(INFO, "Initializing weapon animations");
     WeaponInit();
     LoadSaveSetup();
     LoadSavedInfo();
     gDemo.LoadDemoInfo();
-    initprintf("There are %d demo(s) in the loop\n", gDemo.nDemosFound);
-    initprintf("Loading control setup\n");
+    LOG_F(INFO, "There are %d demo(s) in the loop", gDemo.nDemosFound);
+    LOG_F(INFO, "Loading control setup");
     ctrlInit();
     timerInit(CLOCKTICKSPERSECOND);
     timerSetCallback(ClockStrobe);
@@ -1770,13 +1771,13 @@ int app_main(int argc, char const * const * argv)
 
     // PORT-TODO: CD audio init
 
-    initprintf("Initializing network users\n");
+    LOG_F(INFO, "Initializing network users");
     netInitialize(true);
     scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
     scrSetGamma(gGamma);
     viewResizeView(gViewSize);
     vsync = videoSetVsync(vsync);
-    initprintf("Initializing sound system\n");
+    LOG_F(INFO, "Initializing sound system");
     sndInit();
     sfxInit();
     gChoke.Init(518, playerHandChoke);
@@ -1800,7 +1801,7 @@ RESTART:
     gViewIndex = myconnectindex;
     gMe = gView = &gPlayer[myconnectindex];
     netBroadcastPlayerInfo(myconnectindex);
-    initprintf("Waiting for network players!\n");
+    LOG_F(INFO, "Waiting for network players!");
     netWaitForEveryone(0);
     if (gRestartGame)
     {
@@ -2055,25 +2056,11 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
 
 static int parsedefinitions_game(scriptfile *, int);
 
-static void parsedefinitions_game_include(const char *fileName, scriptfile *pScript, const char *cmdtokptr, int const firstPass)
+static void parsedefinitions_game_include(const char * fileName, scriptfile * /*pScript*/, const char * /*cmdtokptr*/, int const firstPass)
 {
     scriptfile *included = scriptfile_fromfile(fileName);
 
-    if (!included)
-    {
-        if (!Bstrcasecmp(cmdtokptr,"null") || pScript == NULL) // this is a bit overboard to prevent unused parameter warnings
-            {
-           // initprintf("Warning: Failed including %s as module\n", fn);
-            }
-/*
-        else
-            {
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
-            }
-*/
-    }
-    else
+    if (included)
     {
         parsedefinitions_game(included, firstPass);
         scriptfile_close(included);
@@ -2117,16 +2104,15 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
         // frame numbers start at 1 for us
         if (frameNum <= 0)
         {
-            initprintf("Error: frame number must be greater zero on line %s:%d\n", pScript->filename,
-                       scriptfile_getlinum(pScript, pScript->ltextptr));
+            LOG_F(ERROR, "%s:%d: error: frame number must be greater than zero",
+                         pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
             break;
         }
 
         if (frameNum < lastFrameNum)
         {
-            initprintf("Error: frame numbers must be in (not necessarily strictly)"
-                       " ascending order (line %s:%d)\n",
-                       pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
+            LOG_F(ERROR, "%s:%d: error: frame numbers must be in (not necessarily strictly) ascending order",
+                         pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
             break;
         }
 
@@ -2134,8 +2120,9 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
 
         if ((unsigned)soundNum >= MAXSOUNDS && soundNum != -1)
         {
-            initprintf("Error: sound number #%d invalid on line %s:%d\n", soundNum, pScript->filename,
-                       scriptfile_getlinum(pScript, pScript->ltextptr));
+            LOG_F(ERROR, "%s:%d: error: sound number #%d invalid",
+                         pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr),
+                         soundNum);
             break;
         }
 
@@ -2157,13 +2144,13 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
     if (!defError)
     {
         animPtr->numsounds = numPairs;
-        // initprintf("Defined sound sequence for hi-anim \"%s\" with %d frame/sound pairs\n",
+        // LOG_F(ERROR, "Defined sound sequence for hi-anim \"%s\" with %d frame/sound pairs",
         //           hardcoded_anim_tokens[animnum].text, numpairs);
     }
     else
     {
         DO_FREE_AND_NULL(animPtr->sounds);
-        initprintf("Failed defining sound sequence for anim \"%s\".\n", fileName);
+        LOG_F(ERROR, "Failed defining sound sequence for anim \"%s\".", fileName);
     }
 }
 
@@ -2232,10 +2219,10 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             if (!scriptfile_getstring(pScript,&fileName) && firstPass)
             {
                 if (initgroupfile(fileName) == -1)
-                    initprintf("Could not find file \"%s\".\n", fileName);
+                    LOG_F(WARNING, "Could not find file \"%s\".", fileName);
                 else
                 {
-                    initprintf("Using file \"%s\" as game data.\n", fileName);
+                    LOG_F(INFO, "Using file \"%s\" as game data.", fileName);
                     if (!bNoAutoLoad && !gSetup.noautoload)
                         G_DoAutoload(fileName);
                 }
@@ -2296,8 +2283,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             {
                 if (musicID==NULL)
                 {
-                    initprintf("Error: missing ID for music definition near line %s:%d\n",
-                               pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: missing ID for music definition",
+                                 pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
                     break;
                 }
 
@@ -2305,7 +2292,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     break;
 
                 if (S_DefineMusic(musicID, fileName) == -1)
-                    initprintf("Error: invalid music ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: invalid music ID",
+                                 pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
             }
         }
         break;
@@ -2424,8 +2412,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             {
                 if (EDUKE32_PREDICT_FALSE((unsigned)tile >= MAXUSERTILES))
                 {
-                    initprintf("Error: missing or invalid 'tile number' for texture definition near line %s:%d\n",
-                               pScript->filename, scriptfile_getlinum(pScript,texturetokptr));
+                    LOG_F(ERROR, "%s:%d: error: missing or invalid 'tile number' for texture definition",
+                                 pScript->filename, scriptfile_getlinum(pScript, texturetokptr));
                     break;
                 }
 
@@ -2434,7 +2422,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     int32_t const orig_crc32 = tileGetCRC32(tile);
                     if (orig_crc32 != tile_crc32)
                     {
-                        // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
+                        // LOG_F(INFO, "CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d", tile, orig_crc32, tile_crc32);
                         break;
                     }
                 }
@@ -2444,7 +2432,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     vec2_16_t const orig_size = tileGetSize(tile);
                     if (orig_size.x != tile_size.x && orig_size.y != tile_size.y)
                     {
-                        // initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
+                        // LOG_F(INFO, "Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
                         break;
                     }
                 }
@@ -2551,8 +2539,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
             if (!animPtr)
             {
-                initprintf("Error: expected animation filename on line %s:%d\n",
-                    pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                LOG_F(ERROR, "%s:%d: error: expected animation filename",
+                             pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
                 break;
             }
 
@@ -2596,7 +2584,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             {
                 if (soundNum==-1)
                 {
-                    initprintf("Error: missing ID for sound definition near line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: missing ID for sound definition",
+                                 pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
                     break;
                 }
 
@@ -2605,7 +2594,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
                 // maybe I should have just packed this into a sound_t and passed a reference...
                 if (S_DefineSound(soundNum, fileName, minpitch, maxpitch, priority, type, distance, volume) == -1)
-                    initprintf("Error: invalid sound ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    LOG_F(ERROR, "%s:%d: error: invalid sound ID",
+                                 pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
             }
         }
         break;
@@ -2727,7 +2717,7 @@ bool LoadArtFile(const char *pzFile)
     int hFile = kopen4loadfrommod(pzFile, 0);
     if (hFile == -1)
     {
-        initprintf("Can't open extra art file:\"%s\"\n", pzFile);
+        LOG_F(ERROR, "Can't open extra art file:\"%s\"", pzFile);
         return false;
     }
     artheader_t artheader;
@@ -2735,7 +2725,7 @@ bool LoadArtFile(const char *pzFile)
     if (nStatus != 0)
     {
         kclose(hFile);
-        initprintf("Error reading extra art file:\"%s\"\n", pzFile);
+        LOG_F(ERROR, "Error reading extra art file:\"%s\"", pzFile);
         return false;
     }
     for (int i = artheader.tilestart; i <= artheader.tileend; i++)

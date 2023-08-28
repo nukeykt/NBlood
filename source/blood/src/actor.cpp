@@ -2462,10 +2462,10 @@ void actInit(bool bSaveLoad) {
 
     #ifdef NOONE_EXTENSIONS
     if (!gModernMap) {
-        initprintf("> This map *does not* provide modern features.\n");
+        LOG_F(INFO, "> This map *does not* provide modern features.");
         nnExtResetGlobals();
     } else {
-        initprintf("> This map provides modern features.\n");
+        LOG_F(INFO, "> This map provides modern features.");
         nnExtInitModernStuff(bSaveLoad);
     }
     #endif

@@ -59,7 +59,7 @@ void _ThrowError(const char *pzFormat, ...)
     va_list args;
     va_start(args, pzFormat);
     vsprintf(buffer, pzFormat, args);
-    initprintf("%s(%i): %s\n", _module, _line, buffer);
+    LOG_F(ERROR, "%s(%i): %s", _module, _line, buffer);
 
 #ifdef WM_MSGBOX_WINDOW
     char titlebuf[256];
@@ -84,7 +84,7 @@ void _consoleSysMsg(const char* pzFormat, ...) {
 
 void __dassert(const char * pzExpr, const char * pzFile, int nLine)
 {
-    initprintf("Assertion failed: %s in file %s at line %i\n", pzExpr, pzFile, nLine);
+    LOG_F(ERROR, "Assertion failed: %s in file %s at line %i", pzExpr, pzFile, nLine);
 
 #ifdef WM_MSGBOX_WINDOW
     char titlebuf[256];

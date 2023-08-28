@@ -152,7 +152,7 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
 
     if (videoSetGameMode(newfs,newwidth,newheight,newbpp,upscalefactor))
     {
-        initprintf("vidmode: Mode change failed!\n");
+        LOG_F(ERROR, "vidmode: Mode change failed!");
         if (videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, upscalefactor))
             bail2dos("vidmode: Reset failed!\n");
     }

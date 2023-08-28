@@ -502,25 +502,11 @@ int exhumed_globalflags;
 
 static int parsedefinitions_game(scriptfile *, int);
 
-static void parsedefinitions_game_include(const char *fileName, scriptfile *pScript, const char *cmdtokptr, int const firstPass)
+static void parsedefinitions_game_include(const char * fileName, scriptfile * /*pScript*/, const char * /*cmdtokptr*/, int const firstPass)
 {
     scriptfile *included = scriptfile_fromfile(fileName);
 
-    if (!included)
-    {
-        if (!Bstrcasecmp(cmdtokptr,"null") || pScript == NULL) // this is a bit overboard to prevent unused parameter warnings
-            {
-           // initprintf("Warning: Failed including %s as module\n", fn);
-            }
-/*
-        else
-            {
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
-            }
-*/
-    }
-    else
+    if (included)
     {
         parsedefinitions_game(included, firstPass);
         scriptfile_close(included);
@@ -560,10 +546,10 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             if (!scriptfile_getstring(pScript,&fileName) && firstPass)
             {
                 if (initgroupfile(fileName) == -1)
-                    initprintf("Could not find file \"%s\".\n", fileName);
+                    LOG_F(WARNING, "Could not find file \"%s\".", fileName);
                 else
                 {
-                    initprintf("Using file \"%s\" as game data.\n", fileName);
+                    LOG_F(INFO, "Using file \"%s\" as game data.", fileName);
                     if (!g_noAutoLoad && !gSetup.noautoload)
                         G_DoAutoload(fileName);
                 }
@@ -767,7 +753,7 @@ void DebugOut(const char *fmt, ...)
 
     vsprintf(debugBuffer, fmt, args);
 
-    initprintf("%s", debugBuffer);
+    LOG_F(INFO, "%s", debugBuffer);
     fflush(stdout);
 
     va_end(args);
@@ -802,7 +788,7 @@ void bail2dos(const char *fmt, ...)
     setvmode(3);
 #endif
 
-    initputs("bailed to dos\n");
+    LOG_F(INFO, "bailed to dos");
 
     va_list args;
     va_start(args, fmt);
@@ -811,10 +797,10 @@ void bail2dos(const char *fmt, ...)
 
     va_end(args);
 
-    initputs(buf);
-
     if (*buf != 0)
     {
+        LOG_F(INFO, "%s", buf);
+
         if (!(buf[0] == ' ' && buf[1] == 0))
         {
             char titlebuf[256];
@@ -1877,7 +1863,7 @@ int app_main(int argc, char const* const* argv)
 
     wm_setapptitle(APPNAME);
 
-    initprintf("Exhumed %s\n", s_buildRev);
+    LOG_F(INFO, "Exhumed %s", s_buildRev);
     PrintBuildInfo();
 
     int i;
@@ -1922,7 +1908,7 @@ int app_main(int argc, char const* const* argv)
                         bRecord = kTrue;
                     }
                     else {
-                        initprintf("Can't open demo file DATA.VCR for recording\n");
+                        LOG_F(ERROR, "Can't open demo file DATA.VCR for recording");
                     }
                 }
             }
@@ -1936,7 +1922,7 @@ int app_main(int argc, char const* const* argv)
                         doTitle = kFalse;
                     }
                     else {
-                        initprintf("Can't open demo file DATA.VCR for playback\n");
+                        LOG_F(ERROR, "Can't open demo file DATA.VCR for playback");
                     }
                 }
             }
@@ -2012,7 +1998,7 @@ int app_main(int argc, char const* const* argv)
             }
             else if (Bstrcasecmp(pChar, "noautoload") == 0)
             {
-                initprintf("Autoload disabled\n");
+                LOG_F(INFO, "Autoload disabled");
                 g_noAutoLoad = 1;
             }
             else if (Bstrcasecmp(pChar, "cachesize") == 0)
@@ -2021,7 +2007,7 @@ int app_main(int argc, char const* const* argv)
                 {
                     uint32_t j = Batol(argv[i + 1]);
                     MAXCACHE1DSIZE = j << 10;
-                    initprintf("Cache size: %dkB\n", j);
+                    LOG_F(INFO, "Cache size: %dkB", j);
                     i++;
                 }
             }
@@ -2081,7 +2067,7 @@ int app_main(int argc, char const* const* argv)
 
                             doTitle = kFalse;
 
-                            initprintf("Jumping to level %d...\n", levelnew);
+                            LOG_F(INFO, "Jumping to level %d...", levelnew);
                         }
                         break;
                     }
@@ -2102,7 +2088,7 @@ int app_main(int argc, char const* const* argv)
         G_AddSearchPaths();
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
-    if (forcegl) initprintf("GL driver blacklist disabled.\n");
+    if (forcegl) LOG_F(INFO, "GL driver blacklist disabled.");
 #endif
 
     // used with binds for fast function lookup
@@ -2129,7 +2115,7 @@ int app_main(int argc, char const* const* argv)
     }
 
     if (Bstrcmp(setupfilename, kSetupFilename))
-        initprintf("Using config file \"%s\".\n",setupfilename);
+        LOG_F(INFO, "Using config file \"%s\".",setupfilename);
 
     G_ScanGroups();
 
@@ -2211,7 +2197,7 @@ int app_main(int argc, char const* const* argv)
     CONFIG_WriteSetup(1);
     CONFIG_ReadSetup();
 
-    initprintf("Initializing OSD...\n");
+    LOG_F(INFO, "Initializing OSD...");
 
     Bsprintf(buffer, "Exhumed %s", s_buildRev);
     OSD_SetVersion(buffer, 10,0);
@@ -2271,7 +2257,7 @@ int app_main(int argc, char const* const* argv)
             {
                 AbortNetworkPlay();
                 DebugOut("Network play aborted\n");
-                initprintf("Network play aborted\n");
+                LOG_F(INFO, "Network play aborted");
                 nWaitTicks = 60;
             }
 
@@ -2283,14 +2269,14 @@ int app_main(int argc, char const* const* argv)
     // temp - moving InstallEngine(); before FadeOut as we use nextpage() in FadeOut
     InstallEngine();
 
-    const char *defsfile = G_DefFile();
+    const char *deffile = G_DefFile();
     uint32_t stime = timerGetTicks();
-    if (!loaddefinitionsfile(defsfile))
+    if (!loaddefinitionsfile(deffile))
     {
         uint32_t etime = timerGetTicks();
-        initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
+        LOG_F(INFO, "Definitions file \"%s\" loaded in %d ms.", deffile, etime-stime);
     }
-    loaddefinitions_game(defsfile, FALSE);
+    loaddefinitions_game(deffile, FALSE);
 
 
     if (enginePostInit())
@@ -3335,6 +3321,6 @@ void PrintHelp()
     Bsnprintf(tempbuf, sizeof(tempbuf), APPNAME " %s", s_buildRev);
     wm_msgbox(tempbuf, s);
 #else
-    initprintf("%s\n", s);
+    LOG_F(INFO, "%s", s);
 #endif
 }
