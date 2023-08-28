@@ -8231,9 +8231,9 @@ void polymost_drawsprite(int32_t snum)
 
     vec2f_t const ftsiz = { (float) tsiz.x, (float) tsiz.y };
 
-    switch ((globalorientation >> 4) & 3)
+    switch (globalorientation & CSTAT_SPRITE_ALIGNMENT)
     {
-        case 0:  // Face sprite
+        case CSTAT_SPRITE_ALIGNMENT_FACING:  // Face sprite
         {
             // Project 3D to 2D
             if (globalorientation & 4)
@@ -8356,7 +8356,7 @@ void polymost_drawsprite(int32_t snum)
         }
         break;
 
-        case 1:  // Wall sprite
+        case CSTAT_SPRITE_ALIGNMENT_WALL:  // Wall sprite
         {
             // Project 3D to 2D
             if (globalorientation & 4)
@@ -8586,7 +8586,7 @@ void polymost_drawsprite(int32_t snum)
         }
         break;
 
-        case 2:  // Floor sprite
+        case CSTAT_SPRITE_ALIGNMENT_FLOOR:  // Floor sprite
             globvis2 = globalhisibility2;
             if (sector[tspr->sectnum].visibility != 0)
                 globvis2 = mulscale4(globvis2, (uint8_t)(sector[tspr->sectnum].visibility + 16));
@@ -8830,9 +8830,6 @@ void polymost_drawsprite(int32_t snum)
                 drawpoly_trepeat = 0;
             }
 
-            break;
-
-        case 3:  // Voxel sprite
             break;
     }
 

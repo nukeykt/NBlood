@@ -327,15 +327,6 @@ static FORCE_INLINE void sprite_tracker_hook__(intptr_t address);
 //
 //  x86: http://en.wikipedia.org/wiki/Data_structure_alignment#Typical_alignment_of_C_structs_on_x86
 
-enum {
-    SPR_XFLIP = 4,
-    SPR_YFLIP = 8,
-
-    SPR_WALL = 16,
-    SPR_FLOOR = 32,
-    SPR_ALIGN_MASK = 32+16,
-};
-
 #define UNTRACKED_STRUCTS__
 #include "buildtypes.h"
 #undef UNTRACKED_STRUCTS__
