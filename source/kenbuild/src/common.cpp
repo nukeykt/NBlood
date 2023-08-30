@@ -1,6 +1,14 @@
 
 #include "compat.h"
 #include "build.h"
+#include "common.h"
+
+#ifdef _WIN32
+# include "windows_inc.h"
+# include "winbits.h"
+#elif defined __APPLE__
+# include "osxbits.h"
+#endif
 
 #include "names.h"
 #include "common_game.h"
@@ -26,6 +34,121 @@ const char *G_DefaultDefFile(void)
 const char *G_DefFile(void)
 {
     return defaultdeffilename;
+}
+
+void Ken_AddSearchPaths(void)
+{
+#ifndef EDUKE32_TOUCH_DEVICES
+#if defined __linux__ || defined EDUKE32_BSD
+    char buf[BMAX_PATH];
+    char *homepath = Bgethomedir();
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
+
+    if (xdg_config_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
+        addsearchpath(buf);
+    }
+
+    if (xdg_docs_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
+        addsearchpath(buf);
+    }
+    else {
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
+        addsearchpath(buf);
+    }
+
+    Xfree(homepath);
+
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
+    addsearchpath("/app/extensions/extra");
+#elif defined EDUKE32_OSX
+    char buf[BMAX_PATH];
+    int32_t i;
+    char *support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
+
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
+        addsearchpath(buf);
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        Xfree(support[i]);
+    }
+#elif defined (_WIN32)
+
+#endif
+#endif
+}
+
+static char g_rootDir[BMAX_PATH];
+
+void Ken_ExtPreInit(int32_t argc, char const * const * argv)
+{
+    g_useCwd = G_CheckCmdSwitch(argc, argv, "-usecwd");
+
+#ifdef _WIN32
+    GetModuleFileName(NULL,g_rootDir,BMAX_PATH);
+    Bcorrectfilename(g_rootDir,1);
+    //buildvfs_chdir(g_rootDir);
+#else
+    buildvfs_getcwd(g_rootDir,BMAX_PATH);
+    strcat(g_rootDir,"/");
+#endif
+}
+
+void Ken_ExtInit(void)
+{
+#ifdef EDUKE32_OSX
+    char *appdir = Bgetappdir();
+    addsearchpath(appdir);
+    Xfree(appdir);
+#endif
+
+    char cwd[BMAX_PATH];
+#ifdef USE_PHYSFS
+    strncpy(cwd, PHYSFS_getBaseDir(), ARRAY_SIZE(cwd));
+    cwd[ARRAY_SIZE(cwd)-1] = '\0';
+#else
+    if (buildvfs_getcwd(cwd, ARRAY_SIZE(cwd)) && Bstrcmp(cwd, "/") != 0)
+#endif
+        addsearchpath(cwd);
+
+#if defined(_WIN32) && !defined(EDUKE32_STANDALONE)
+    if (buildvfs_exists("user_profiles_enabled"))
+#else
+    if (g_useCwd == 0 && !buildvfs_exists("user_profiles_disabled"))
+#endif
+    {
+        char *homedir;
+        int32_t asperr;
+
+        if ((homedir = Bgethomedir()))
+        {
+            Bsnprintf(cwd, ARRAY_SIZE(cwd), "%s/"
+#if defined(_WIN32)
+                      APPNAME
+#elif defined(GEKKO)
+                      "apps/" APPBASENAME
+#else
+                      ".config/" APPBASENAME
+#endif
+                      ,homedir);
+            asperr = addsearchpath(cwd);
+            if (asperr == -2)
+            {
+                if (buildvfs_mkdir(cwd,S_IRWXU) == 0) asperr = addsearchpath(cwd);
+                else asperr = -1;
+            }
+            if (asperr == 0)
+                buildvfs_chdir(cwd);
+            Xfree(homedir);
+        }
+    }
 }
 
 static void Ken_InitMultiPsky()

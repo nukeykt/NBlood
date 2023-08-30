@@ -18,10 +18,10 @@
 
 #include "common_game.h"
 
-const char *AppProperName = "EKenBuild";
-const char *AppTechnicalName = "ekenbuild";
+const char *AppProperName = APPNAME;
+const char *AppTechnicalName = APPBASENAME;
 
-#define SETUPFILENAME "ekenbuild.cfg"
+#define SETUPFILENAME APPBASENAME ".cfg"
 char setupfilename[BMAX_PATH] = SETUPFILENAME;
 
 #define TIMERINTSPERSECOND 140 //280
@@ -450,13 +450,44 @@ static void Ken_FatalEngineError(void)
 
 int32_t app_main(int32_t argc, char const * const * argv)
 {
+#ifdef _WIN32
+#ifndef DEBUGGINGAIDS
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
+    {
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
+            return 3;
+    }
+#endif
+#endif
+
+    Ken_ExtPreInit(argc, argv);
+
 #if defined STARTUP_SETUP_WINDOW
     int cmdsetup = 0;
 #endif
     int i, j, k /*, l, fil*/, waitplayers, x1, y1, x2, y2;
     int other, /*packleng, */netparm;
 
-    OSD_SetLogFile("ekenbuild.log");
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
+    OSD_SetLogFile(APPBASENAME ".log");
 
     LOG_F(INFO, "%s %s", AppProperName, s_buildRev);
     PrintBuildInfo();
@@ -470,6 +501,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
             bytesWritten += Bsnprintf(tempbuf + bytesWritten, size - bytesWritten, " %s", argv[i]);
         LOG_F(INFO, "%s", tempbuf);
     }
+
+    Ken_ExtInit();
 
     if (enginePreInit())
     {

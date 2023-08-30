@@ -1570,11 +1570,12 @@ void gameDisplay3DRScreen()
 
             while (totalclock < (120 * 7) && !I_GeneralTrigger())
             {
+                gameHandleEvents();
+
                 if (engineFPSLimit(true))
                 {
                     videoClearScreen(0);
                     rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, DREALMS, 0, 0, 2 + 8 + 64 + BGSTRETCH);
-                    gameHandleEvents();
 
                     if (g_restorePalette)
                     {

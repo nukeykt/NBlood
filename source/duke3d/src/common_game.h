@@ -6,6 +6,7 @@
 
 #ifndef EDUKE32_COMMON_GAME_H_
 #define EDUKE32_COMMON_GAME_H_
+#pragma once
 
 #include "build.h"
 

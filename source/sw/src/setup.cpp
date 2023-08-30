@@ -132,8 +132,8 @@ void InitSetup(void)
 
     RTS_Init(RTSName);
 
-    OSD_Exec("voidsw_cvars.cfg");
-    OSD_Exec("voidsw_autoexec.cfg");
+    OSD_Exec(APPBASENAME "_cvars.cfg");
+    OSD_Exec(APPBASENAME "_autoexec.cfg");
 
     system_getcvars();
     FX_InitCvars();

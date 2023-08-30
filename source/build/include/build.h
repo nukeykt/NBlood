@@ -1045,7 +1045,9 @@ extern char g_haveVoxels;
 
 enum
 {
-    VF_NOTRANS = 1,
+    VF_NOTRANS = 1<<0,
+    // begin downstream
+    // end downstream
 };
 
 extern int32_t usehightile;

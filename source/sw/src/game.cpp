@@ -100,10 +100,10 @@ Things required to make savegames work:
 # include "winbits.h"
 #endif
 
-const char* AppProperName = "VoidSW";
-const char* AppTechnicalName = "voidsw";
+const char* AppProperName = APPNAME;
+const char* AppTechnicalName = APPBASENAME;
 
-#define SETUPFILENAME "voidsw.cfg"
+#define SETUPFILENAME APPBASENAME ".cfg"
 char setupfilename[BMAX_PATH] = SETUPFILENAME;
 
 #if DEBUG

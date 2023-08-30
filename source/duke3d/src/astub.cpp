@@ -68,8 +68,8 @@ const char* AppTechnicalName = "mapster32";
 #define DEFAULT_GAME_EXEC APPBASENAME ".exe"
 #define DEFAULT_GAME_LOCAL_EXEC APPBASENAME ".exe"
 #elif defined(__APPLE__)
-#define DEFAULT_GAME_EXEC "EDuke32.app/Contents/MacOS/" APPBASENAME
-#define DEFAULT_GAME_LOCAL_EXEC "EDuke32.app/Contents/MacOS/" APPBASENAME
+#define DEFAULT_GAME_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
 #else
 #define DEFAULT_GAME_EXEC APPBASENAME
 #define DEFAULT_GAME_LOCAL_EXEC "./" APPBASENAME
@@ -8023,16 +8023,10 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
         return;
     else
     {
-        tempbuf[0] = 0;
-
-        Bstrcpy(tempbuf, "Application parameters: ");
-
-        while (i < argc)
-        {
-            Bstrcat(tempbuf, argv[i++]);
-            Bstrcat(tempbuf, " ");
-        }
-
+        size_t constexpr size = ARRAY_SIZE(tempbuf);
+        size_t bytesWritten = Bsnprintf(tempbuf, size, "Application parameters:");
+        for (i = 1; i < argc; ++i)
+            bytesWritten += Bsnprintf(tempbuf + bytesWritten, size - bytesWritten, " %s", argv[i]);
         LOG_F(INFO, "%s", tempbuf);
     }
 

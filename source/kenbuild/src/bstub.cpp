@@ -23,11 +23,14 @@ const char *AppProperName = "EKenBuild-Editor";
 const char *AppTechnicalName = "ekenbuild-editor";
 
 #if defined(_WIN32)
-#define DEFAULT_GAME_EXEC "ekenbuild.exe"
-#define DEFAULT_GAME_LOCAL_EXEC "ekenbuild.exe"
+#define DEFAULT_GAME_EXEC APPBASENAME ".exe"
+#define DEFAULT_GAME_LOCAL_EXEC APPBASENAME ".exe"
+#elif defined(__APPLE__)
+#define DEFAULT_GAME_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
 #else
-#define DEFAULT_GAME_EXEC "ekenbuild"
-#define DEFAULT_GAME_LOCAL_EXEC "./ekenbuild"
+#define DEFAULT_GAME_EXEC APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC "./" APPBASENAME
 #endif
 
 const char *DefaultGameExec = DEFAULT_GAME_EXEC;
@@ -93,8 +96,7 @@ const char *ExtGetVer(void)
 
 int32_t ExtPreInit(int32_t argc,char const * const * argv)
 {
-    UNREFERENCED_PARAMETER(argc);
-    UNREFERENCED_PARAMETER(argv);
+    Ken_ExtPreInit(argc, argv);
 
     char tempbuf[256];
     snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
@@ -107,6 +109,8 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 
 int32_t ExtInit(void)
 {
+    Ken_ExtInit();
+
     int rv = 0;
 
     /*printf("------------------------------------------------------------------------------\n");

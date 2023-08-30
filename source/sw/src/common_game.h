@@ -32,8 +32,9 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 //
 //****************************************************************************
 
-#ifndef common_public_
-#define common_public_
+#ifndef SW_COMMON_GAME_H_
+#define SW_COMMON_GAME_H_
+#pragma once
 
 //****************************************************************************
 //
