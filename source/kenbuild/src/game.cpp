@@ -16,6 +16,10 @@
 
 #include "renderlayer.h"
 
+#ifdef _WIN32
+# include "winbits.h"
+#endif
+
 #include "common_game.h"
 
 const char *AppProperName = APPNAME;
