@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "config.h"
 
-#include <string>
+#include <string.h>
 //#include <io.h>
 #include <stdio.h>
 #include <time.h>
@@ -211,7 +211,8 @@ static const char* mousedigitaldefaults[MAXMOUSEDIGITAL] =
 
 ud_setup_t gSetup;
 
-char setupfilename[BMAX_PATH] = {kSetupFilename};
+#define kSetupFilename  APPBASENAME ".cfg"
+char setupfilename[BMAX_PATH] = kSetupFilename;
 
 int lMouseSens = 32;
 unsigned int dword_1B82E0 = 0;
@@ -817,7 +818,7 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
         Bsprintf(filename, "%s_settings.cfg", strtok(setupfilename, "."));
 	*/
 
-    Bsprintf(filename, "pcexhumed_cvars.cfg");
+    Bsprintf(filename, APPBASENAME "_cvars.cfg");
 
     buildvfs_FILE fp = buildvfs_fopen_write(filename);
 

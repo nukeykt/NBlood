@@ -4,8 +4,9 @@
 // for EDuke32 and Mapster32
 //
 
-#ifndef EDUKE32_COMMON_GAME_H_
-#define EDUKE32_COMMON_GAME_H_
+#ifndef TEKWAR_COMMON_GAME_H_
+#define TEKWAR_COMMON_GAME_H_
+#pragma once
 
 #include "build.h"
 
@@ -21,11 +22,11 @@ extern "C" {
     extern int g_useCwd;
 
 #ifndef APPNAME
-#define APPNAME             "TekWar"
+#define APPNAME             "ETekWar"
 #endif
 
 #ifndef APPBASENAME
-#define APPBASENAME         "tekwar"
+#define APPBASENAME         "etekwar"
 #endif
 
 #define GAMEFLAG_TEKWAR     0x00000001
@@ -100,6 +101,7 @@ extern void G_SetupGlobalPsky(void);
 
 extern char g_modDir[BMAX_PATH];
 extern buildvfs_kfd kopen4loadfrommod(const char* filename, char searchfirst);
+extern void G_AddSearchPaths(void);
 extern void G_CleanupSearchPaths(void);
 
 extern void G_ExtPreInit(int32_t argc, char const* const* argv);

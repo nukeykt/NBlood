@@ -390,17 +390,111 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
+#ifndef EDUKE32_TOUCH_DEVICES
+#if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
+static void WH_AddSteamPaths(const char *basepath)
+{
+    char buf[BMAX_PATH];
+
+    // Witchaven - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Witchaven/Enhanced/GAME/WHAVEN", basepath);
+    addsearchpath(buf);
+
+    // Witchaven II: Blood Vengeance - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Witchaven II Blood Vengeance/Enhanced/GAME/WHAVEN2", basepath);
+    addsearchpath(buf);
+}
+#endif
+#endif
+
 void G_AddSearchPaths(void)
 {
 #ifndef EDUKE32_TOUCH_DEVICES
 #if defined __linux__ || defined EDUKE32_BSD
+    char buf[BMAX_PATH];
+    char *homepath = Bgethomedir();
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
+    // Steam
+    Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
+    WH_AddSteamPaths(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, WH_AddSteamPaths);
+
+    // Steam Flatpak
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam", homepath);
+    WH_AddSteamPaths(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, WH_AddSteamPaths);
+
+    if (xdg_config_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
+        addsearchpath(buf);
+    }
+
+    if (xdg_docs_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
+        addsearchpath(buf);
+    }
+    else {
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
+        addsearchpath(buf);
+    }
+
+    Xfree(homepath);
+
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
+    addsearchpath("/app/extensions/extra");
 #elif defined EDUKE32_OSX
+    char buf[BMAX_PATH];
+    int32_t i;
+    char *support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
 
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Steam", support[i]);
+        WH_AddSteamPaths(buf);
+
+        Bsnprintf(buf, sizeof(buf), "%s/Steam/steamapps/libraryfolders.vdf", support[i]);
+        Paths_ParseSteamLibraryVDF(buf, WH_AddSteamPaths);
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
+        addsearchpath(buf);
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        Xfree(support[i]);
+    }
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
     DWORD bufsize;
     bool found = false;
+
+    // Witchaven - Steam
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1655410)", "InstallLocation", buf, &bufsize))
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN", buf);
+        addsearchpath(buf);
+        found = true;
+    }
+
+    // Witchaven II: Blood Vengeance - Steam
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1655430)", "InstallLocation", buf, &bufsize))
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN2", buf);
+        addsearchpath(buf);
+        found = true;
+    }
 
     // Witchaven - GOG.com
     bufsize = sizeof(buf);
@@ -411,7 +505,7 @@ void G_AddSearchPaths(void)
         found = true;
     }
 
-    // Witchaven 2 - GOG.com
+    // Witchaven II: Blood Vengeance - GOG.com
     bufsize = sizeof(buf);
     if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1073977251)", "path", buf, &bufsize))
     {

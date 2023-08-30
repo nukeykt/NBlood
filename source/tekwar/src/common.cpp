@@ -390,6 +390,55 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
+void G_AddSearchPaths(void)
+{
+#ifndef EDUKE32_TOUCH_DEVICES
+#if defined __linux__ || defined EDUKE32_BSD
+    char buf[BMAX_PATH];
+    char *homepath = Bgethomedir();
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
+
+    if (xdg_config_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
+        addsearchpath(buf);
+    }
+
+    if (xdg_docs_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
+        addsearchpath(buf);
+    }
+    else {
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
+        addsearchpath(buf);
+    }
+
+    Xfree(homepath);
+
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
+    addsearchpath("/app/extensions/extra");
+#elif defined EDUKE32_OSX
+    char buf[BMAX_PATH];
+    int32_t i;
+    char *support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
+
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
+        addsearchpath(buf);
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        Xfree(support[i]);
+    }
+#elif defined (_WIN32)
+
+#endif
+#endif
+}
+
 void G_CleanupSearchPaths(void)
 {
     removesearchpaths_withuser(SEARCHPATH_REMOVE);

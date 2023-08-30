@@ -676,6 +676,20 @@ int app_main(int argc, char const * const argv[])
 
      G_ExtPreInit(argc, argv);
 
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
      OSD_SetLogFile(APPBASENAME ".log");
 
      OSD_SetFunctions(NULL,
@@ -695,6 +709,9 @@ int app_main(int argc, char const * const argv[])
      // This needs to happen afterwards, as G_CheckCommandLine() is where we set
      // up the command-line-provided search paths (duh).
      G_ExtInit();
+
+     if (!g_useCwd)
+         G_AddSearchPaths();
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
      if (forcegl) initprintf("GL driver blacklist disabled.\n");
@@ -765,8 +782,8 @@ int app_main(int argc, char const * const argv[])
 
      Xfree(setupFileName);
 */
-     OSD_Exec("etekwar_cvars.cfg");
-     OSD_Exec("etekwar_autoexec.cfg");
+     OSD_Exec(APPBASENAME "_cvars.cfg");
+     OSD_Exec(APPBASENAME "_autoexec.cfg");
 
      CONFIG_SetDefaultKeys(keydefaults, true);
 
@@ -798,6 +815,9 @@ int app_main(int argc, char const * const argv[])
           fprintf(dbgfp,"== ====== === ==== ==== ===== ===== ===== ====== =========\n");
           dbgcolumn=0;
      }
+
+     if (!g_useCwd)
+         G_CleanupSearchPaths();
 
      const char* defsfile = G_DefFile();
      uint32_t stime = timerGetTicks();

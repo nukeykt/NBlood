@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "compat.h"
 
+#include "common_game.h"
+
 #define kMaxGameFuncLen     64
 
 // KEEPINSYNC mact/include/_control.h, build/src/sdlayer.cpp
@@ -111,7 +113,7 @@ typedef struct {
     int32_t noautoload;
 } ud_setup_t;
 
-#define kSetupFilename  "etekwar.cfg"
+#define kSetupFilename  APPBASENAME ".cfg"
 extern char setupfilename[BMAX_PATH];
 
 extern hashtable_t h_gamefuncs;

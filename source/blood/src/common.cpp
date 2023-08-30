@@ -52,7 +52,7 @@ void clearGrpNamePtr(void)
 
 const char *G_DefaultGrpFile(void)
 {
-    return "nblood.pk3";
+    return APPBASENAME ".pk3";
 }
 
 const char *G_DefaultDefFile(void)
@@ -306,11 +306,21 @@ void G_AddSearchPaths(void)
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
+    // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
     Blood_AddSteamPaths(buf);
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, Blood_AddSteamPaths);
+
+    // Steam Flatpak
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam", homepath);
+    Blood_AddSteamPaths(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam/steamapps/libraryfolders.vdf", homepath);
     Paths_ParseSteamLibraryVDF(buf, Blood_AddSteamPaths);
 
     // Blood: One Unit Whole Blood - GOG.com
@@ -318,10 +328,25 @@ void G_AddSearchPaths(void)
     Blood_Add_GOG_OUWB_Linux(buf);
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Blood_One_Unit_Whole_Blood", Blood_Add_GOG_OUWB_Linux);
 
+    if (xdg_config_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
+        addsearchpath(buf);
+    }
+
+    if (xdg_docs_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
+        addsearchpath(buf);
+    }
+    else {
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
+        addsearchpath(buf);
+    }
+
     Xfree(homepath);
 
-    addsearchpath("/usr/share/games/nblood");
-    addsearchpath("/usr/local/share/games/nblood");
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
+    addsearchpath("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
     int32_t i;
@@ -339,7 +364,7 @@ void G_AddSearchPaths(void)
 
     for (i = 0; i < 2; i++)
     {
-        Bsnprintf(buf, sizeof(buf), "%s/NBlood", support[i]);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
         addsearchpath(buf);
     }
 

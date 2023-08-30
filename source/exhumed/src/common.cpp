@@ -309,7 +309,10 @@ static void Exhumed_Add_GOG_Linux(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/game/data/MUSIC", path);
     addsearchpath(buf);
 }
-static void Exhumed_Add_Steam_Linux(const char *path)
+#endif
+
+#if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
+static void Exhumed_AddSteamPaths(const char *path)
 {
     char buf[BMAX_PATH];
 
@@ -330,29 +333,62 @@ void G_AddSearchPaths(void)
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
-    // PowerSlave (DOS Classic Edition) - Steam
+    // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
-    Exhumed_Add_Steam_Linux(buf);
+    Exhumed_AddSteamPaths(buf);
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
-    Paths_ParseSteamLibraryVDF(buf, Exhumed_Add_Steam_Linux);
+    Paths_ParseSteamLibraryVDF(buf, Exhumed_AddSteamPaths);
+
+    // Steam Flatpak
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam", homepath);
+    Exhumed_AddSteamPaths(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, Exhumed_AddSteamPaths);
 
     // Powerslave - GOG.com
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Powerslave English", homepath);
     Exhumed_Add_GOG_Linux(buf);
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Powerslave_English", Exhumed_Add_GOG_Linux);
 
+    if (xdg_config_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
+        addsearchpath(buf);
+    }
+
+    if (xdg_docs_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
+        addsearchpath(buf);
+    }
+    else {
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
+        addsearchpath(buf);
+    }
+
     Xfree(homepath);
 
-    addsearchpath("/usr/share/games/pcexhumed");
-    addsearchpath("/usr/local/share/games/pcexhumed");
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
+    addsearchpath("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
     int32_t i;
     char* applications[] = { osx_getapplicationsdir(0), osx_getapplicationsdir(1) };
     char* support[] = { osx_getsupportdir(0), osx_getsupportdir(1) };
     char* documents[] = { osx_getdocumentsdir(0), osx_getdocumentsdir(1) };
+
+    for (i = 0; i < 2; i++)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/Steam", support[i]);
+        Exhumed_AddSteamPaths(buf);
+
+        Bsnprintf(buf, sizeof(buf), "%s/Steam/steamapps/libraryfolders.vdf", support[i]);
+        Paths_ParseSteamLibraryVDF(buf, Exhumed_AddSteamPaths);
+    }
 
     for (i = 0; i < 2; i++)
     {
@@ -367,7 +403,7 @@ void G_AddSearchPaths(void)
 
     for (i = 0; i < 2; i++)
     {
-        Bsnprintf(buf, sizeof(buf), "%s/PCExhumed", support[i]);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
         addsearchpath(buf);
     }
 

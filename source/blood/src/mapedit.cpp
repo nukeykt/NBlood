@@ -78,14 +78,14 @@ const char* AppProperName = "NMapedit";
 const char* AppTechnicalName = "nmapedit";
 
 #if defined(_WIN32)
-#define DEFAULT_GAME_EXEC "nblood.exe"
-#define DEFAULT_GAME_LOCAL_EXEC "nblood.exe"
+#define DEFAULT_GAME_EXEC APPBASENAME ".exe"
+#define DEFAULT_GAME_LOCAL_EXEC APPBASENAME ".exe"
 #elif defined(__APPLE__)
-#define DEFAULT_GAME_EXEC "EDuke32.app/Contents/MacOS/eduke32"
-#define DEFAULT_GAME_LOCAL_EXEC "EDuke32.app/Contents/MacOS/eduke32"
+#define DEFAULT_GAME_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
 #else
-#define DEFAULT_GAME_EXEC "nblood"
-#define DEFAULT_GAME_LOCAL_EXEC "./nblood"
+#define DEFAULT_GAME_EXEC APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC "./" APPBASENAME
 #endif
 
 const char* DefaultGameExec = DEFAULT_GAME_EXEC;

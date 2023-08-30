@@ -4,8 +4,9 @@
 // for EDuke32 and Mapster32
 //
 
-#ifndef EDUKE32_COMMON_GAME_H_
-#define EDUKE32_COMMON_GAME_H_
+#ifndef EXHUMED_COMMON_GAME_H_
+#define EXHUMED_COMMON_GAME_H_
+#pragma once
 
 #include "build.h"
 

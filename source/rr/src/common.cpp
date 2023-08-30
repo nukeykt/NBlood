@@ -11,15 +11,8 @@
 #include "grpscan.h"
 
 #ifdef _WIN32
-# define NEED_SHLWAPI_H
 # include "windows_inc.h"
 # include "winbits.h"
-# ifndef KEY_WOW64_64KEY
-#  define KEY_WOW64_64KEY 0x0100
-# endif
-# ifndef KEY_WOW64_32KEY
-#  define KEY_WOW64_32KEY 0x0200
-# endif
 #elif defined __APPLE__
 # include "osxbits.h"
 #endif
@@ -597,11 +590,21 @@ void G_AddSearchPaths(void)
 #if defined __linux__ || defined EDUKE32_BSD
     char buf[BMAX_PATH];
     char *homepath = Bgethomedir();
+    const char *xdg_docs_path = getenv("XDG_DOCUMENTS_DIR");
+    const char *xdg_config_path = getenv("XDG_CONFIG_HOME");
 
+    // Steam
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
     Duke_AddSteamPaths(buf);
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
+    Paths_ParseSteamLibraryVDF(buf, Duke_AddSteamPaths);
+
+    // Steam Flatpak
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam", homepath);
+    Duke_AddSteamPaths(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/.var/app/com.valvesoftware.Steam/.steam/steam/steamapps/libraryfolders.vdf", homepath);
     Paths_ParseSteamLibraryVDF(buf, Duke_AddSteamPaths);
 
     // Duke Nukem 3D: Atomic Edition - GOG.com
@@ -609,12 +612,29 @@ void G_AddSearchPaths(void)
     Duke_Add_GOG_Atomic_Linux(buf);
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Duke_Nukem_3D_Atomic_Edition", Duke_Add_GOG_Atomic_Linux);
 
+    if (xdg_config_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
+        addsearchpath(buf);
+    }
+
+    if (xdg_docs_path) {
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
+        addsearchpath(buf);
+    }
+    else {
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
+        addsearchpath(buf);
+    }
+
     Xfree(homepath);
 
     addsearchpath("/usr/share/games/jfduke3d");
     addsearchpath("/usr/local/share/games/jfduke3d");
     addsearchpath("/usr/share/games/eduke32");
     addsearchpath("/usr/local/share/games/eduke32");
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
+    addsearchpath("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
     int32_t i;
@@ -680,6 +700,8 @@ void G_AddSearchPaths(void)
         Bsnprintf(buf, sizeof(buf), "%s/JFDuke3D", support[i]);
         addsearchpath(buf);
         Bsnprintf(buf, sizeof(buf), "%s/EDuke32", support[i]);
+        addsearchpath(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
         addsearchpath(buf);
     }
 

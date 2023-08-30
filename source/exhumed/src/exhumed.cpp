@@ -97,7 +97,7 @@ extern "C" {
 
 const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
-const char* defaultpk3filename = "pcexhumed.pk3";
+const char* defaultpk3filename = APPBASENAME ".pk3";
 
 void FinishLevel();
 void PrintHelp();
@@ -2218,8 +2218,8 @@ int app_main(int argc, char const* const* argv)
     Xfree(setupFileName);
 	*/
 
-    OSD_Exec("pcexhumed_cvars.cfg");
-    OSD_Exec("pcexhumed_autoexec.cfg");
+    OSD_Exec(APPBASENAME "_cvars.cfg");
+    OSD_Exec(APPBASENAME "_autoexec.cfg");
 
     CONFIG_SetDefaultKeys(keydefaults, true);
 

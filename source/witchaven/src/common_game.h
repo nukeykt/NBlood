@@ -4,8 +4,9 @@
 // for EDuke32 and Mapster32
 //
 
-#ifndef EDUKE32_COMMON_GAME_H_
-#define EDUKE32_COMMON_GAME_H_
+#ifndef WH_COMMON_GAME_H_
+#define WH_COMMON_GAME_H_
+#pragma once
 
 #include "build.h"
 
@@ -21,11 +22,11 @@ extern "C" {
     extern int g_useCwd;
 
 #ifndef APPNAME
-#define APPNAME             "Witchaven"
+#define APPNAME             "EWitchaven"
 #endif
 
 #ifndef APPBASENAME
-#define APPBASENAME         "witchaven"
+#define APPBASENAME         "ewitchaven"
 #endif
 
 #define GAMEFLAG_WH1        0x00000001

@@ -232,7 +232,11 @@ static unsigned char GetModsDirNames(GtkListStore *list)
 
     if ((homedir = Bgethomedir()))
     {
-        Bsnprintf(pdir, sizeof(pdir), "%s/" ".nblood", homedir);
+        if (buildvfs_exists("user_profiles_disabled"))
+            buildvfs_getcwd(pdir, sizeof(pdir));
+        else
+            Bsnprintf(pdir, sizeof(pdir), "%s/.config/" APPBASENAME, homedir);
+
         dirs = klistpath(pdir, "*", BUILDVFS_FIND_DIR);
         for (; dirs != NULL; dirs=dirs->next)
         {
