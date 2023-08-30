@@ -2677,7 +2677,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
 
             int const nVoxel = tiletovox[pTSprite->picnum];
 
-            if (nVoxel != -1 && (bitmap_test(voxrotate, nVoxel) || (picanm[nRootTile].extra&7) == 7))
+            if (nVoxel != -1 && ((voxflags[nVoxel] & VF_ROTATE) || (picanm[nRootTile].extra&7) == 7))
                 pTSprite->ang = (pTSprite->ang+((int)totalclock<<3))&2047;
         }
 

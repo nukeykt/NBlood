@@ -9171,7 +9171,6 @@ int32_t engineInit(void)
     for (i=0; i<MAXTILES; i++)
         tiletovox[i] = -1;
     clearbuf(voxscale, sizeof(voxscale)>>2, 65536);
-    clearbufbyte(voxrotate, sizeof(voxrotate), 0);
 
     paletteloaded = 0;
 
@@ -12254,7 +12253,6 @@ void vox_undefine(int32_t const tile)
         voxlock[voxindex][j] = CACHE1D_FREE;
         voxoff[voxindex][j] = 0;
     }
-    bitmap_clear(voxrotate, voxindex);
     voxscale[voxindex] = 65536;
     voxflags[voxindex] = 0;
     tiletovox[tile] = -1;
