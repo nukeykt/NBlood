@@ -108,7 +108,9 @@ jobs:
       run: git fetch --unshallow
 
     - name: build
-      run: ${{matrix.make}} -j2 duke3d sw blood rr exhumed kenbuild tools ${{matrix.opt}}
+      run: |
+        ${{matrix.make}} -j2 blood rr exhumed ${{matrix.opt}}
+        ${{matrix.make}} -j2 duke3d sw kenbuild tools ${{matrix.opt}}
 
     - name: prepare artifacts
       if: github.ref == 'refs/heads/master' && matrix.publish-as != ''
