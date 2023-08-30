@@ -198,16 +198,16 @@ static void SW_AddSearchPaths()
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Shadow_Warrior_Classic_Complete", SW_Add_GOG_SWCC_Linux);
 
     if (xdg_config_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/voidsw", xdg_config_path);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
         SW_AddPathAndMusic(buf);
     }
 
     if (xdg_docs_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/VoidSW", xdg_docs_path);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
         SW_AddPathAndMusic(buf);
     }
     else {
-        Bsnprintf(buf, sizeof(buf), "%s/Documents/VoidSW", homepath);
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
         SW_AddPathAndMusic(buf);
     }
 
@@ -215,8 +215,8 @@ static void SW_AddSearchPaths()
 
     SW_AddPathAndMusic("/usr/share/games/jfsw");
     SW_AddPathAndMusic("/usr/local/share/games/jfsw");
-    SW_AddPathAndMusic("/usr/share/games/voidsw");
-    SW_AddPathAndMusic("/usr/local/share/games/voidsw");
+    SW_AddPathAndMusic("/usr/share/games/" APPBASENAME);
+    SW_AddPathAndMusic("/usr/local/share/games/" APPBASENAME);
     SW_AddPathAndMusic("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
@@ -253,7 +253,7 @@ static void SW_AddSearchPaths()
     {
         Bsnprintf(buf, sizeof(buf), "%s/JFSW", support[i]);
         SW_AddPathAndMusic(buf);
-        Bsnprintf(buf, sizeof(buf), "%s/VoidSW", support[i]);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
         SW_AddPathAndMusic(buf);
     }
 

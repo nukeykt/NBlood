@@ -329,12 +329,12 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 #ifndef NETCODE_DISABLE
                 if (!Bstrcasecmp(c+1, "net"))
                 {
-                    G_GameExit("EDuke32 no longer supports legacy networking.\n\n"
-                        "If using YANG or other launchers that only support legacy netplay, download an older build of EDuke32. "
+                    G_GameExit(APPNAME " no longer supports legacy networking.\n\n"
+                        "If using YANG or other launchers that only support legacy netplay, download NetDuke32. "
                         "Otherwise, run the following:\n\n"
-                        "eduke32 -server\n\n"
+                        APPBASENAME " -server\n\n"
                         "Other clients can then connect by typing \"connect [host]\" in the console.\n\n"
-                        "EDuke32 will now close.");
+                        APPNAME " will now close.");
                 }
 #endif
                 if (!Bstrcasecmp(c+1, "port"))

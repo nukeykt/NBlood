@@ -625,16 +625,16 @@ void G_AddSearchPaths(void)
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "ION_Fury", Fury_Add_GOG_Linux);
 
     if (xdg_config_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/eduke32", xdg_config_path);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPBASENAME, xdg_config_path);
         addsearchpath(buf);
     }
 
     if (xdg_docs_path) {
-        Bsnprintf(buf, sizeof(buf), "%s/EDuke32", xdg_docs_path);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, xdg_docs_path);
         addsearchpath(buf);
     }
     else {
-        Bsnprintf(buf, sizeof(buf), "%s/Documents/EDuke32", homepath);
+        Bsnprintf(buf, sizeof(buf), "%s/Documents/" APPNAME, homepath);
         addsearchpath(buf);
     }
 
@@ -642,8 +642,8 @@ void G_AddSearchPaths(void)
 
     addsearchpath("/usr/share/games/jfduke3d");
     addsearchpath("/usr/local/share/games/jfduke3d");
-    addsearchpath("/usr/share/games/eduke32");
-    addsearchpath("/usr/local/share/games/eduke32");
+    addsearchpath("/usr/share/games/" APPBASENAME);
+    addsearchpath("/usr/local/share/games/" APPBASENAME);
     addsearchpath("/app/extensions/extra");
 #elif defined EDUKE32_OSX
     char buf[BMAX_PATH];
@@ -683,7 +683,7 @@ void G_AddSearchPaths(void)
     {
         Bsnprintf(buf, sizeof(buf), "%s/JFDuke3D", support[i]);
         addsearchpath(buf);
-        Bsnprintf(buf, sizeof(buf), "%s/EDuke32", support[i]);
+        Bsnprintf(buf, sizeof(buf), "%s/" APPNAME, support[i]);
         addsearchpath(buf);
     }
 

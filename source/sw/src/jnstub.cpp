@@ -46,11 +46,14 @@ const char* AppProperName = "Wangulator";
 const char* AppTechnicalName = "wangulator";
 
 #if defined(_WIN32)
-#define DEFAULT_GAME_EXEC "voidsw.exe"
-#define DEFAULT_GAME_LOCAL_EXEC "voidsw.exe"
+#define DEFAULT_GAME_EXEC APPBASENAME ".exe"
+#define DEFAULT_GAME_LOCAL_EXEC APPBASENAME ".exe"
+#elif defined(__APPLE__)
+#define DEFAULT_GAME_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC APPNAME ".app/Contents/MacOS/" APPBASENAME
 #else
-#define DEFAULT_GAME_EXEC "voidsw"
-#define DEFAULT_GAME_LOCAL_EXEC "./voidsw"
+#define DEFAULT_GAME_EXEC APPBASENAME
+#define DEFAULT_GAME_LOCAL_EXEC "./" APPBASENAME
 #endif
 
 const char *DefaultGameExec = DEFAULT_GAME_EXEC;
