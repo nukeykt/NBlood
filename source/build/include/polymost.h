@@ -148,7 +148,7 @@ static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_
 
 static FORCE_INLINE int polymost_useindexedtextures(void)
 {
-    return videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures && gltexfiltermode == 0;
+    return videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures && gltexfiltermode == 0 && !duke64;
 }
 
 static FORCE_INLINE int polymost_usetileshades(void)
