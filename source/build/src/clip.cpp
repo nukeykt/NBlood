@@ -1192,6 +1192,229 @@ void clipmove_compat(vec3_t* const pos, int16_t*sectnum)
     }
 }
 
+void clipmove_sprite(vec3_t * const pos, int32_t const spriteClipSector, int32_t const walldist, int32_t const ceildist, int32_t const flordist,
+                     int32_t const dasprclipmask, vec2_t const clipMin, vec2_t const clipMax, vec2_t const cent, vec2_t const diff, int32_t const rad)
+{
+    for (native_t j=headspritesect[spriteClipSector]; j>=0; j=nextspritesect[j])
+    {
+        auto const spr = (uspriteptr_t)&sprite[j];
+        const int32_t cstat = spr->cstat;
+
+        if ((cstat&dasprclipmask) == 0)
+            continue;
+
+#ifdef HAVE_CLIPSHAPE_FEATURE
+        if (clipsprite_try(spr, clipMin.x, clipMin.y, clipMax.x, clipMax.y))
+            continue;
+#endif
+        vec2_t p1 = spr->xy;
+
+        switch (cstat & CSTAT_SPRITE_ALIGNMENT_MASK)
+        {
+        case CSTAT_SPRITE_ALIGNMENT_FACING:
+            if (p1.x >= clipMin.x && p1.x <= clipMax.x && p1.y >= clipMin.y && p1.y <= clipMax.y)
+            {
+                int32_t height, daz = spr->z+spriteheightofs(j, &height, 1);
+
+                if (pos->z > daz-height-flordist && pos->z < daz+ceildist)
+                {
+                    int32_t bsz = (spr->clipdist << 2)+walldist;
+                    if (diff.x < 0) bsz = -bsz;
+                    addclipline(p1.x-bsz, p1.y-bsz, p1.x-bsz, p1.y+bsz, (int16_t)j+49152);
+                    bsz = (spr->clipdist << 2)+walldist;
+                    if (diff.y < 0) bsz = -bsz;
+                    addclipline(p1.x+bsz, p1.y-bsz, p1.x-bsz, p1.y-bsz, (int16_t)j+49152);
+                }
+            }
+            break;
+
+        case CSTAT_SPRITE_ALIGNMENT_WALL:
+        {
+            int32_t height, daz = spr->z+spriteheightofs(j, &height, 1);
+
+            if (pos->z > daz-height-flordist && pos->z < daz+ceildist)
+            {
+                vec2_t p2;
+
+                get_wallspr_points(spr, &p1.x, &p2.x, &p1.y, &p2.y);
+
+                if (clipinsideboxline(cent.x, cent.y, p1.x, p1.y, p2.x, p2.y, rad) != 0)
+                {
+                    vec2_t v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
+                                mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
+                    vec2_t const d = p2 - p1;
+                    vec2_t const vv = v;
+
+                    if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
+                    {
+                        DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                        v.x >>= 1, v.y >>= 1;
+                    }
+
+                    if ((p1.x-pos->x) * (p2.y-pos->y) >= (p2.x-pos->x) * (p1.y-pos->y))  // Front
+                        addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.y, p2.y-v.x, (int16_t)j+49152);
+                    else
+                    {
+                        if ((cstat & 64) != 0)
+                            continue;
+                        addclipline(p2.x-v.x, p2.y-v.y, p1.x-v.y, p1.y+v.x, (int16_t)j+49152);
+                    }
+
+                    v = vv;
+
+                    //Side blocker
+                    if ((p2.x-p1.x) * (pos->x-p1.x)+(p2.y-p1.y) * (pos->y-p1.y) < 0)
+                        addclipline(p1.x-v.y, p1.y+v.x, p1.x+v.x, p1.y+v.y, (int16_t)j+49152, true);
+                    else if ((p1.x-p2.x) * (pos->x-p2.x)+(p1.y-p2.y) * (pos->y-p2.y) < 0)
+                        addclipline(p2.x+v.y, p2.y-v.x, p2.x-v.x, p2.y-v.y, (int16_t)j+49152, true);
+                }
+            }
+            break;
+        }
+
+        case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+        case CSTAT_SPRITE_ALIGNMENT_SLOPE:
+        {
+            int32_t const heinum = spriteGetSlope(j);
+            int32_t const sz = spriteGetZOfSlope(j, pos->xy);
+
+            if (pos->z > sz-flordist && pos->z < sz+ceildist)
+            {
+                if ((cstat&64) != 0)
+                    if ((pos->z > sz) == ((cstat&8)==0))
+                        continue;
+
+                rxi[0] = p1.x;
+                ryi[0] = p1.y;
+
+                get_floorspr_points(spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
+                    &ryi[0], &ryi[1], &ryi[2], &ryi[3], heinum);
+
+                vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                            mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+
+                if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
+                {
+                    if (clipinsideboxline(cent.x, cent.y, rxi[1], ryi[1], rxi[0], ryi[0], rad) != 0)
+                    {
+                        vec2_t const d  = { rxi[1]-rxi[0], ryi[1]-ryi[0] };
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[0]-v.y) < (pos->x-rxi[0]-v.x) * d.y)
+                        {
+                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                            v.x >>= 1, v.y >>= 1;
+                        }
+
+                        addclipline(rxi[1]-v.y, ryi[1]+v.x, rxi[0]+v.x, ryi[0]+v.y, (int16_t)j+49152);
+                    }
+                }
+                else if ((rxi[2]-pos->x) * (ryi[3]-pos->y) < (rxi[3]-pos->x) * (ryi[2]-pos->y))
+                {
+                    if (clipinsideboxline(cent.x, cent.y, rxi[3], ryi[3], rxi[2], ryi[2], rad) != 0)
+                    {
+                        vec2_t const d  = { rxi[3]-rxi[2], ryi[3]-ryi[2] };
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[2]-v.y) < (pos->x-rxi[2]-v.x) * d.y)
+                        {
+                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                            v.x >>= 1, v.y >>= 1;
+                        }
+
+                        addclipline(rxi[3]+v.y, ryi[3]-v.x, rxi[2]-v.x, ryi[2]-v.y, (int16_t)j+49152);
+                    }
+                }
+
+                if ((rxi[1]-pos->x) * (ryi[2]-pos->y) < (rxi[2]-pos->x) * (ryi[1]-pos->y))
+                {
+                    if (clipinsideboxline(cent.x, cent.y, rxi[2], ryi[2], rxi[1], ryi[1], rad) != 0)
+                    {
+                        vec2_t const d  = { rxi[2]-rxi[1], ryi[2]-ryi[1] };
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[1]-v.y) < (pos->x-rxi[1]-v.x) * d.y)
+                        {
+                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                            v.x >>= 1, v.y >>= 1;
+                        }
+
+                        addclipline(rxi[2]-v.x, ryi[2]-v.y, rxi[1]-v.y, ryi[1]+v.x, (int16_t)j+49152);
+                    }
+                }
+                else if ((rxi[3]-pos->x) * (ryi[0]-pos->y) < (rxi[0]-pos->x) * (ryi[3]-pos->y))
+                {
+                    if (clipinsideboxline(cent.x, cent.y, rxi[0], ryi[0], rxi[3], ryi[3], rad) != 0)
+                    {
+                        vec2_t const d  = { rxi[0]-rxi[3], ryi[0]-ryi[3] };
+
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[3]-v.y) < (pos->x-rxi[3]-v.x) * d.y)
+                        {
+                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                            v.x >>= 1, v.y >>= 1;
+                        }
+
+                        addclipline(rxi[0]+v.x, ryi[0]+v.y, rxi[3]+v.y, ryi[3]-v.x, (int16_t)j+49152);
+                    }
+                }
+            }
+            if (heinum == 0)
+                continue;
+            const int32_t tilenum = spr->picnum;
+            const int32_t cosang = sintable[(spr->ang+512)&2047];
+            const int32_t sinang = sintable[spr->ang&2047];
+            vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
+            vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
+            vec2_t const adjofs = { picanm[tilenum].xofs * -((int)!!(spr->cstat & 4)),
+                                    picanm[tilenum].yofs * -((int)!!(spr->cstat & 8))};
+            vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x,
+                                    ((span.y >> 1) + adjofs.y) * repeat.y };
+            vec2_t const rspan = span * repeat;
+            int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
+            int32_t const zz[3] = { pos->z, pos->z + flordist, pos->z - ceildist };
+
+            for (int k = 0; k < 3; k++)
+            {
+                int32_t const jj = divscale18(spr->z - zz[k], heinum);
+                int32_t const jj2 = mulscale12(jj, ratio);
+
+                if (jj2 > (center.y<<8) || jj2 < ((center.y - rspan.y)<<8))
+                    continue;
+
+                vec2_t const v1 = { spr->x + mulscale16(sinang, center.x) + mulscale24(jj, cosang),
+                                    spr->y - mulscale16(cosang, center.x) + mulscale24(jj, sinang) };
+
+                vec2_t const v2 = { v1.x - mulscale16(sinang, rspan.x),
+                                    v1.y + mulscale16(cosang, rspan.x) };
+
+                vec2_t v = { mulscale14(sintable[(spr->ang+1024+256+512)&2047], walldist),
+                            mulscale14(sintable[(spr->ang+1024+256)&2047], walldist) };
+
+                if (clipinsideboxline(cent.x, cent.y, v1.x, v1.y, v2.x, v2.y, rad) != 0)
+                {
+                    vec2_t const d = v2 - v1;
+
+                    if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-v1.y-v.y) < (pos->x-v1.x-v.x) * d.y)
+                    {
+                        DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
+                        v.x >>= 1, v.y >>= 1;
+                    }
+
+                    if ((v1.x-pos->x) * (v2.y-pos->y) >= (v2.x-pos->x) * (v1.y-pos->y))
+                    {
+                        addclipline(v1.x+v.x, v1.y+v.y, v2.x+v.y, v2.y-v.x, (int16_t)j+49152);
+                    }
+                    else
+                    {
+                        if ((cstat & 64) != 0)
+                            continue;
+                        addclipline(v2.x-v.x, v2.y-v.y, v1.x-v.y, v1.y+v.x, (int16_t)j+49152);
+                    }
+                }
+            }
+            break;
+        }
+        }
+    }
+}
+
 //
 // clipmove
 //
@@ -1414,224 +1637,21 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         if (curspr)
             continue;  // next sector of this index
 #endif
-        for (native_t j=headspritesect[dasect]; j>=0; j=nextspritesect[j])
+
+#ifdef YAX_ENABLE
+        // Check adjacent TROR layers as well, in case the sprite is intersecting layers
+        if (numyaxbunches > 0)
         {
-            auto const spr = (uspriteptr_t)&sprite[j];
-            const int32_t cstat = spr->cstat;
+            int32_t yax_sect;
+            for (SECTORS_OF_BUNCH(yax_getbunch(dasect, YAX_CEILING), YAX_FLOOR, yax_sect))
+                clipmove_sprite(pos, yax_sect, walldist, ceildist, flordist, dasprclipmask, clipMin, clipMax, cent, diff, rad);
 
-            if ((cstat&dasprclipmask) == 0)
-                continue;
-
-#ifdef HAVE_CLIPSHAPE_FEATURE
-            if (clipsprite_try(spr, clipMin.x, clipMin.y, clipMax.x, clipMax.y))
-                continue;
-#endif
-            vec2_t p1 = spr->xy;
-
-            switch (cstat & CSTAT_SPRITE_ALIGNMENT_MASK)
-            {
-            case CSTAT_SPRITE_ALIGNMENT_FACING:
-                if (p1.x >= clipMin.x && p1.x <= clipMax.x && p1.y >= clipMin.y && p1.y <= clipMax.y)
-                {
-                    int32_t height, daz = spr->z+spriteheightofs(j, &height, 1);
-
-                    if (pos->z > daz-height-flordist && pos->z < daz+ceildist)
-                    {
-                        int32_t bsz = (spr->clipdist << 2)+walldist;
-                        if (diff.x < 0) bsz = -bsz;
-                        addclipline(p1.x-bsz, p1.y-bsz, p1.x-bsz, p1.y+bsz, (int16_t)j+49152);
-                        bsz = (spr->clipdist << 2)+walldist;
-                        if (diff.y < 0) bsz = -bsz;
-                        addclipline(p1.x+bsz, p1.y-bsz, p1.x-bsz, p1.y-bsz, (int16_t)j+49152);
-                    }
-                }
-                break;
-
-            case CSTAT_SPRITE_ALIGNMENT_WALL:
-            {
-                int32_t height, daz = spr->z+spriteheightofs(j, &height, 1);
-
-                if (pos->z > daz-height-flordist && pos->z < daz+ceildist)
-                {
-                    vec2_t p2;
-
-                    get_wallspr_points(spr, &p1.x, &p2.x, &p1.y, &p2.y);
-
-                    if (clipinsideboxline(cent.x, cent.y, p1.x, p1.y, p2.x, p2.y, rad) != 0)
-                    {
-                        vec2_t v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
-                                     mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
-                        vec2_t const d = p2 - p1;
-                        vec2_t const vv = v;
-
-                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
-                        {
-                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
-                            v.x >>= 1, v.y >>= 1;
-                        }
-
-                        if ((p1.x-pos->x) * (p2.y-pos->y) >= (p2.x-pos->x) * (p1.y-pos->y))  // Front
-                            addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.y, p2.y-v.x, (int16_t)j+49152);
-                        else
-                        {
-                            if ((cstat & 64) != 0)
-                                continue;
-                            addclipline(p2.x-v.x, p2.y-v.y, p1.x-v.y, p1.y+v.x, (int16_t)j+49152);
-                        }
-
-                        v = vv;
-
-                        //Side blocker
-                        if ((p2.x-p1.x) * (pos->x-p1.x)+(p2.y-p1.y) * (pos->y-p1.y) < 0)
-                            addclipline(p1.x-v.y, p1.y+v.x, p1.x+v.x, p1.y+v.y, (int16_t)j+49152, true);
-                        else if ((p1.x-p2.x) * (pos->x-p2.x)+(p1.y-p2.y) * (pos->y-p2.y) < 0)
-                            addclipline(p2.x+v.y, p2.y-v.x, p2.x-v.x, p2.y-v.y, (int16_t)j+49152, true);
-                    }
-                }
-                break;
-            }
-
-            case CSTAT_SPRITE_ALIGNMENT_FLOOR:
-            case CSTAT_SPRITE_ALIGNMENT_SLOPE:
-            {
-                int32_t const heinum = spriteGetSlope(j);
-                int32_t const sz = spriteGetZOfSlope(j, pos->xy);
-
-                if (pos->z > sz-flordist && pos->z < sz+ceildist)
-                {
-                    if ((cstat&64) != 0)
-                        if ((pos->z > sz) == ((cstat&8)==0))
-                            continue;
-
-                    rxi[0] = p1.x;
-                    ryi[0] = p1.y;
-
-                    get_floorspr_points(spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
-                        &ryi[0], &ryi[1], &ryi[2], &ryi[3], heinum);
-
-                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                 mulscale14(sintable[(spr->ang-256)&2047], walldist) };
-
-                    if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[1], ryi[1], rxi[0], ryi[0], rad) != 0)
-                        {
-                            vec2_t const d  = { rxi[1]-rxi[0], ryi[1]-ryi[0] };
-
-                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[0]-v.y) < (pos->x-rxi[0]-v.x) * d.y)
-                            {
-                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
-                                v.x >>= 1, v.y >>= 1;
-                            }
-
-                            addclipline(rxi[1]-v.y, ryi[1]+v.x, rxi[0]+v.x, ryi[0]+v.y, (int16_t)j+49152);
-                        }
-                    }
-                    else if ((rxi[2]-pos->x) * (ryi[3]-pos->y) < (rxi[3]-pos->x) * (ryi[2]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[3], ryi[3], rxi[2], ryi[2], rad) != 0)
-                        {
-                            vec2_t const d  = { rxi[3]-rxi[2], ryi[3]-ryi[2] };
-
-                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[2]-v.y) < (pos->x-rxi[2]-v.x) * d.y)
-                            {
-                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
-                                v.x >>= 1, v.y >>= 1;
-                            }
-
-                            addclipline(rxi[3]+v.y, ryi[3]-v.x, rxi[2]-v.x, ryi[2]-v.y, (int16_t)j+49152);
-                        }
-                    }
-
-                    if ((rxi[1]-pos->x) * (ryi[2]-pos->y) < (rxi[2]-pos->x) * (ryi[1]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[2], ryi[2], rxi[1], ryi[1], rad) != 0)
-                        {
-                            vec2_t const d  = { rxi[2]-rxi[1], ryi[2]-ryi[1] };
-
-                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[1]-v.y) < (pos->x-rxi[1]-v.x) * d.y)
-                            {
-                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
-                                v.x >>= 1, v.y >>= 1;
-                            }
-
-                            addclipline(rxi[2]-v.x, ryi[2]-v.y, rxi[1]-v.y, ryi[1]+v.x, (int16_t)j+49152);
-                        }
-                    }
-                    else if ((rxi[3]-pos->x) * (ryi[0]-pos->y) < (rxi[0]-pos->x) * (ryi[3]-pos->y))
-                    {
-                        if (clipinsideboxline(cent.x, cent.y, rxi[0], ryi[0], rxi[3], ryi[3], rad) != 0)
-                        {
-                            vec2_t const d  = { rxi[0]-rxi[3], ryi[0]-ryi[3] };
-
-                            if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-ryi[3]-v.y) < (pos->x-rxi[3]-v.x) * d.y)
-                            {
-                                DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
-                                v.x >>= 1, v.y >>= 1;
-                            }
-
-                            addclipline(rxi[0]+v.x, ryi[0]+v.y, rxi[3]+v.y, ryi[3]-v.x, (int16_t)j+49152);
-                        }
-                    }
-                }
-                if (heinum == 0)
-                    continue;
-                const int32_t tilenum = spr->picnum;
-                const int32_t cosang = sintable[(spr->ang+512)&2047];
-                const int32_t sinang = sintable[spr->ang&2047];
-                vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
-                vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
-                vec2_t const adjofs = { picanm[tilenum].xofs * -((int)!!(spr->cstat & 4)),
-                                        picanm[tilenum].yofs * -((int)!!(spr->cstat & 8))};
-                vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x,
-                                        ((span.y >> 1) + adjofs.y) * repeat.y };
-                vec2_t const rspan = span * repeat;
-                int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
-                int32_t const zz[3] = { pos->z, pos->z + flordist, pos->z - ceildist };
-
-                for (int k = 0; k < 3; k++)
-                {
-                    int32_t const jj = divscale18(spr->z - zz[k], heinum);
-                    int32_t const jj2 = mulscale12(jj, ratio);
-
-                    if (jj2 > (center.y<<8) || jj2 < ((center.y - rspan.y)<<8))
-                        continue;
-
-                    vec2_t const v1 = { spr->x + mulscale16(sinang, center.x) + mulscale24(jj, cosang),
-                                        spr->y - mulscale16(cosang, center.x) + mulscale24(jj, sinang) };
-
-                    vec2_t const v2 = { v1.x - mulscale16(sinang, rspan.x),
-                                        v1.y + mulscale16(cosang, rspan.x) };
-
-                    vec2_t v = { mulscale14(sintable[(spr->ang+1024+256+512)&2047], walldist),
-                                 mulscale14(sintable[(spr->ang+1024+256)&2047], walldist) };
-
-                    if (clipinsideboxline(cent.x, cent.y, v1.x, v1.y, v2.x, v2.y, rad) != 0)
-                    {
-                        vec2_t const d = v2 - v1;
-
-                        if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-v1.y-v.y) < (pos->x-v1.x-v.x) * d.y)
-                        {
-                            DVLOG_F(LOG_DEBUG, "v.x: %d, v.y: %d", v.x, v.y);
-                            v.x >>= 1, v.y >>= 1;
-                        }
-
-                        if ((v1.x-pos->x) * (v2.y-pos->y) >= (v2.x-pos->x) * (v1.y-pos->y))
-                        {
-                            addclipline(v1.x+v.x, v1.y+v.y, v2.x+v.y, v2.y-v.x, (int16_t)j+49152);
-                        }
-                        else
-                        {
-                            if ((cstat & 64) != 0)
-                                continue;
-                            addclipline(v2.x-v.x, v2.y-v.y, v1.x-v.y, v1.y+v.x, (int16_t)j+49152);
-                        }
-                    }
-                }
-                break;
-            }
-            }
+            for (SECTORS_OF_BUNCH(yax_getbunch(dasect, YAX_FLOOR), YAX_CEILING, yax_sect))
+                clipmove_sprite(pos, yax_sect, walldist, ceildist, flordist, dasprclipmask, clipMin, clipMax, cent, diff, rad);
         }
+#endif
+        clipmove_sprite(pos, dasect, walldist, ceildist, flordist, dasprclipmask, clipMin, clipMax, cent, diff, rad);
+
     } while (clipsectcnt < clipsectnum || clipspritecnt < clipspritenum);
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
