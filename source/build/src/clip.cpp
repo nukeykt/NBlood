@@ -2576,6 +2576,164 @@ static int32_t hitscan_trysector(const vec3_t *sv, usectorptr_t sec, hitdata_t *
     return 0;
 }
 
+void hitscan_sprite(const vec3_t *sv, int16_t spriteClipSector, int32_t vx, int32_t vy, int32_t vz,
+                    hitdata_t *hit, uint32_t cliptype, int32_t dasprclipmask, int32_t z)
+{
+    int32_t x1, y1=0, z1=0, x2, y2, intx, inty, intz;
+    int32_t i, k, daz;
+    for (z=headspritesect[spriteClipSector]; z>=0; z=nextspritesect[z])
+    {
+        auto const spr = (uspriteptr_t)&sprite[z];
+        uint32_t const cstat = spr->cstat;
+#ifdef USE_OPENGL
+        if (!hitallsprites)
+#endif
+            if ((cstat&dasprclipmask) == 0)
+                continue;
+
+#ifdef HAVE_CLIPSHAPE_FEATURE
+        // try and see whether this sprite's picnum has sector-like clipping data
+        i = pictoidx[spr->picnum];
+        // handle sector-like floor sprites separately
+        while (i>=0 && (cstat&32) != (clipmapinfo.sector[sectq[clipinfo[i].qbeg]].CM_CSTAT&32))
+            i = clipinfo[i].next;
+        if (i>=0 && clipspritenum<MAXCLIPNUM)
+        {
+            clipspritelist[clipspritenum++] = z;
+            continue;
+        }
+#endif
+        x1 = spr->x; y1 = spr->y; z1 = spr->z;
+        switch (cstat&CSTAT_SPRITE_ALIGNMENT)
+        {
+        case 0:
+        {
+            if (try_facespr_intersect(spr, *sv, vx, vy, vz, &hit->xyz, 0))
+            {
+                hit->sect = spriteClipSector;
+                hit->wall = -1;
+                hit->sprite = z;
+            }
+
+            break;
+        }
+
+        case CSTAT_SPRITE_ALIGNMENT_WALL:
+        {
+            int32_t ucoefup16;
+            int32_t tilenum = spr->picnum;
+
+            get_wallspr_points(spr, &x1, &x2, &y1, &y2);
+
+            if ((cstat&64) != 0)   //back side of 1-way sprite
+                if (compat_maybe_truncate_to_int32((coord_t)(x1-sv->x)*(y2-sv->y))
+                    < compat_maybe_truncate_to_int32((coord_t)(x2-sv->x)*(y1-sv->y))) continue;
+
+            ucoefup16 = rintersect(sv->x,sv->y,sv->z,vx,vy,vz,x1,y1,x2,y2,&intx,&inty,&intz);
+            if (ucoefup16 == -1) continue;
+
+            if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
+                continue;
+
+            daz = spr->z + spriteheightofs(z, &k, 1);
+            if (intz > daz-k && intz < daz)
+            {
+                if (picanm[tilenum].sf&PICANM_TEXHITSCAN_BIT)
+                {
+                    tileUpdatePicnum(&tilenum, 0);
+
+                    if (!waloff[tilenum])
+                        tileLoad(tilenum);
+
+                    if (waloff[tilenum])
+                    {
+                        // daz-intz > 0 && daz-intz < k
+                        int32_t xtex = mulscale16(ucoefup16, tilesiz[tilenum].x);
+                        int32_t vcoefup16 = 65536-divscale16(daz-intz, k);
+                        int32_t ytex = mulscale16(vcoefup16, tilesiz[tilenum].y);
+
+                        const char *texel = (char *)(waloff[tilenum] + tilesiz[tilenum].y*xtex + ytex);
+                        if (*texel == 255)
+                            continue;
+                    }
+                }
+
+                hit_set(hit, spriteClipSector, -1, z, intx, inty, intz);
+            }
+            break;
+        }
+
+        case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+        {
+            int32_t x3, y3, x4, y4, zz;
+            intz = z1;
+
+            if (vz == 0 || ((intz-sv->z)^vz) < 0) continue;
+
+            if ((cstat&64) != 0)
+                if ((sv->z > intz) == ((cstat&8)==0)) continue;
+            if (enginecompatibilitymode == ENGINE_EDUKE32)
+            {
+                // Abyss crash prevention code ((intz-sv->z)*zx overflowing a 8-bit word)
+                // PK: the reason for the crash is not the overflowing (even if it IS a problem;
+                // signed overflow is undefined behavior in C), but rather the idiv trap when
+                // the resulting quotient doesn't fit into a *signed* 32-bit integer.
+                zz = (uint32_t)(intz-sv->z) * vx;
+                intx = sv->x+scale(zz,1,vz);
+                zz = (uint32_t)(intz-sv->z) * vy;
+                inty = sv->y+scale(zz,1,vz);
+            }
+            else
+            {
+                intx = sv->x+scale(intz-sv->z,vx,vz);
+                inty = sv->y+scale(intz-sv->z,vy,vz);
+            }
+
+            if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
+                continue;
+
+            get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
+                                &y1, &y2, &y3, &y4, 0);
+
+            if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
+                hit_set(hit, spriteClipSector, -1, z, intx, inty, intz);
+
+            break;
+        }
+
+        case CSTAT_SPRITE_ALIGNMENT_SLOPE:
+        {
+            int32_t x3, y3, x4, y4;
+            int32_t const heinum = spriteGetSlope(z);
+            int32_t const dax = (heinum * sintable[(spr->ang+1024)&2047]) << 1;
+            int32_t const day = (heinum * sintable[(spr->ang+512)&2047]) << 1;
+            int32_t const j = (vz<<8)-dmulscale15(dax,vy,-day,vx);
+            if (j == 0) continue;
+            if ((cstat&64) != 0)
+                if ((j < 0) == ((cstat&8)==0)) continue;
+            int32_t i = ((spr->z-sv->z)<<8)+dmulscale15(dax,sv->y-spr->y,-day,sv->x-spr->x);
+            if ((i^j) < 0 || (klabs(i)>>1) >= klabs(j)) continue;
+
+            i = divscale30(i,j);
+            intx = sv->x + mulscale30(vx,i);
+            inty = sv->y + mulscale30(vy,i);
+            intz = sv->z + mulscale30(vz,i);
+
+            if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
+                continue;
+
+            get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
+                                &y1, &y2, &y3, &y4, spriteGetSlope(z));
+
+            if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
+                hit_set(hit, spriteClipSector, -1, z, intx, inty, intz);
+
+            break;
+        }
+        }
+    }
+}
+
 //
 // hitscan
 //
@@ -2771,157 +2929,21 @@ restart_grand:
         if (curspr)
             continue;
 #endif
-        for (z=headspritesect[dasector]; z>=0; z=nextspritesect[z])
+
+#ifdef YAX_ENABLE
+        // Check adjacent TROR layers as well, in case the sprite is intersecting layers
+        if (numyaxbunches > 0)
         {
-            auto const spr = (uspriteptr_t)&sprite[z];
-            uint32_t const cstat = spr->cstat;
-#ifdef USE_OPENGL
-            if (!hitallsprites)
-#endif
-                if ((cstat&dasprclipmask) == 0)
-                    continue;
+            int32_t yax_sect;
 
-#ifdef HAVE_CLIPSHAPE_FEATURE
-            // try and see whether this sprite's picnum has sector-like clipping data
-            i = pictoidx[spr->picnum];
-            // handle sector-like floor sprites separately
-            while (i>=0 && (cstat&32) != (clipmapinfo.sector[sectq[clipinfo[i].qbeg]].CM_CSTAT&32))
-                i = clipinfo[i].next;
-            if (i>=0 && clipspritenum<MAXCLIPNUM)
-            {
-                clipspritelist[clipspritenum++] = z;
-                continue;
-            }
-#endif
-            x1 = spr->x; y1 = spr->y; z1 = spr->z;
-            switch (cstat&CSTAT_SPRITE_ALIGNMENT)
-            {
-            case 0:
-            {
-                if (try_facespr_intersect(spr, *sv, vx, vy, vz, &hit->xyz, 0))
-                {
-                    hit->sect = dasector;
-                    hit->wall = -1;
-                    hit->sprite = z;
-                }
+            for (SECTORS_OF_BUNCH(yax_getbunch(dasector, YAX_CEILING), YAX_FLOOR, yax_sect))
+                hitscan_sprite(sv, yax_sect, vx, vy, vz, hit, cliptype, dasprclipmask, z);
 
-                break;
-            }
-
-            case CSTAT_SPRITE_ALIGNMENT_WALL:
-            {
-                int32_t ucoefup16;
-                int32_t tilenum = spr->picnum;
-
-                get_wallspr_points(spr, &x1, &x2, &y1, &y2);
-
-                if ((cstat&64) != 0)   //back side of 1-way sprite
-                    if (compat_maybe_truncate_to_int32((coord_t)(x1-sv->x)*(y2-sv->y))
-                        < compat_maybe_truncate_to_int32((coord_t)(x2-sv->x)*(y1-sv->y))) continue;
-
-                ucoefup16 = rintersect(sv->x,sv->y,sv->z,vx,vy,vz,x1,y1,x2,y2,&intx,&inty,&intz);
-                if (ucoefup16 == -1) continue;
-
-                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
-                    continue;
-
-                daz = spr->z + spriteheightofs(z, &k, 1);
-                if (intz > daz-k && intz < daz)
-                {
-                    if (picanm[tilenum].sf&PICANM_TEXHITSCAN_BIT)
-                    {
-                        tileUpdatePicnum(&tilenum, 0);
-
-                        if (!waloff[tilenum])
-                            tileLoad(tilenum);
-
-                        if (waloff[tilenum])
-                        {
-                            // daz-intz > 0 && daz-intz < k
-                            int32_t xtex = mulscale16(ucoefup16, tilesiz[tilenum].x);
-                            int32_t vcoefup16 = 65536-divscale16(daz-intz, k);
-                            int32_t ytex = mulscale16(vcoefup16, tilesiz[tilenum].y);
-
-                            const char *texel = (char *)(waloff[tilenum] + tilesiz[tilenum].y*xtex + ytex);
-                            if (*texel == 255)
-                                continue;
-                        }
-                    }
-
-                    hit_set(hit, dasector, -1, z, intx, inty, intz);
-                }
-                break;
-            }
-
-            case CSTAT_SPRITE_ALIGNMENT_FLOOR:
-            {
-                int32_t x3, y3, x4, y4, zz;
-                intz = z1;
-
-                if (vz == 0 || ((intz-sv->z)^vz) < 0) continue;
-
-                if ((cstat&64) != 0)
-                    if ((sv->z > intz) == ((cstat&8)==0)) continue;
-                if (enginecompatibilitymode == ENGINE_EDUKE32)
-                {
-                    // Abyss crash prevention code ((intz-sv->z)*zx overflowing a 8-bit word)
-                    // PK: the reason for the crash is not the overflowing (even if it IS a problem;
-                    // signed overflow is undefined behavior in C), but rather the idiv trap when
-                    // the resulting quotient doesn't fit into a *signed* 32-bit integer.
-                    zz = (uint32_t)(intz-sv->z) * vx;
-                    intx = sv->x+scale(zz,1,vz);
-                    zz = (uint32_t)(intz-sv->z) * vy;
-                    inty = sv->y+scale(zz,1,vz);
-                }
-                else
-                {
-                    intx = sv->x+scale(intz-sv->z,vx,vz);
-                    inty = sv->y+scale(intz-sv->z,vy,vz);
-                }
-
-                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
-                    continue;
-
-                get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
-                                    &y1, &y2, &y3, &y4, 0);
-
-                if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
-                    hit_set(hit, dasector, -1, z, intx, inty, intz);
-
-                break;
-            }
-
-            case CSTAT_SPRITE_ALIGNMENT_SLOPE:
-            {
-                int32_t x3, y3, x4, y4;
-                int32_t const heinum = spriteGetSlope(z);
-                int32_t const dax = (heinum * sintable[(spr->ang+1024)&2047]) << 1;
-                int32_t const day = (heinum * sintable[(spr->ang+512)&2047]) << 1;
-                int32_t const j = (vz<<8)-dmulscale15(dax,vy,-day,vx);
-                if (j == 0) continue;
-                if ((cstat&64) != 0)
-                    if ((j < 0) == ((cstat&8)==0)) continue;
-                int32_t i = ((spr->z-sv->z)<<8)+dmulscale15(dax,sv->y-spr->y,-day,sv->x-spr->x);
-                if ((i^j) < 0 || (klabs(i)>>1) >= klabs(j)) continue;
-
-                i = divscale30(i,j);
-                intx = sv->x + mulscale30(vx,i);
-                inty = sv->y + mulscale30(vy,i);
-                intz = sv->z + mulscale30(vz,i);
-
-                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->x)-sv->x)+klabs((hit->y)-sv->y))
-                    continue;
-
-                get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
-                                    &y1, &y2, &y3, &y4, spriteGetSlope(z));
-
-                if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
-                    hit_set(hit, dasector, -1, z, intx, inty, intz);
-
-                break;
-            }
-            }
+            for (SECTORS_OF_BUNCH(yax_getbunch(dasector, YAX_FLOOR), YAX_CEILING, yax_sect))
+                hitscan_sprite(sv, yax_sect, vx, vy, vz, hit, cliptype, dasprclipmask, z);
         }
+#endif
+        hitscan_sprite(sv, dasector, vx, vy, vz, hit, cliptype, dasprclipmask, z);
     }
     while (++tempshortcnt < tempshortnum || clipspritecnt < clipspritenum);
 
