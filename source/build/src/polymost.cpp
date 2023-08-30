@@ -2758,10 +2758,10 @@ int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall)
 
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr)
 {
-    if (polymost_spriteIsModernVoxel(tspr) && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS) == VF_NOTRANS)
+    if (polymost_spriteIsModernVoxel(tspr) && (voxflags[tiletovox[tspr->picnum]] & VF_NOTRANS))
         return false;
 
-    if (polymost_spriteIsLegacyVoxel(tspr) && (voxflags[tspr->picnum] & VF_NOTRANS) == VF_NOTRANS)
+    if (polymost_spriteIsLegacyVoxel(tspr) && (voxflags[tspr->picnum] & VF_NOTRANS))
         return false;
 
     if ((tspr->cstat & CSTAT_SPRITE_TRANSLUCENT) || (tspr->clipdist & TSPR_FLAGS_DRAW_LAST) ||

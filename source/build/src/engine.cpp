@@ -9137,6 +9137,7 @@ int32_t engineInit(void)
 
     Bmemset(voxoff, 0, sizeof(voxoff));
     Bmemset(voxlock, 0, sizeof(voxlock));
+    Bmemset(voxflags, 0, sizeof(voxflags));
 
     for (i=0; i<MAXTILES; i++)
         tiletovox[i] = -1;
