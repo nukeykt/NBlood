@@ -435,6 +435,7 @@ static int16_t yax_spritesortcnt[1 + 2*YAX_MAXDRAWS];
 static uint16_t yax_tsprite[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 static uint8_t yax_tsprfrombunch[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 static int16_t yax_updown[MAXSECTORS][2];
+static int16_t yax_layershift[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 
 // drawn sectors
 uint8_t yax_gotsector[bitmap_size(MAXSECTORS)];  // engine internal
@@ -912,11 +913,15 @@ static void yax_copytsprites()
 
             if (cf != -1)
             {
+#if 0
                 if ((yax_globallev-YAX_MAXDRAWS)*(-1 + 2*cf) > 0)
                     if (yax_getbunch(sectnum, cf) != yax_globalbunch)
                         continue;
+#endif
 
-                sectnum = yax_getneighborsect(spr->x, spr->y, sectnum, cf);
+                for (int k = 0; k < yax_layershift[yax_globallev][i] && (sectnum >= 0); k++)
+                    sectnum = yax_getneighborsect(spr->x, spr->y, sectnum, cf);
+
                 if (sectnum < 0)
                     continue;
             }
@@ -1637,33 +1642,53 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
             return 0;
 
-        int16_t cb, fb;
-
-        yax_getbunches(sectnum, &cb, &fb);
-        if (cb < 0 && fb < 0)
-            return 0;
-
-        int32_t spheight;
+        int32_t spheight, yax_nextlev, curSect;
         int16_t spzofs = spriteheightofs(z, &spheight, 1);
 
-        // TODO: get*zofslope?
-        if (cb>=0 && spr->z+spzofs-spheight < sector[sectnum].ceilingz)
+        // check sectors above
+        yax_nextlev = yax_globallev;
+        curSect = sectnum;
+        int32_t upperSect = yax_getneighborsect(sprite[z].x, sprite[z].y, sectnum, YAX_CEILING);
+        while (upperSect >= 0 && yax_nextlev > 0)
         {
-            sortcnt = &yax_spritesortcnt[yax_globallev-1];
+            // TODO: get*zofslope?
+            if (spr->z+spzofs-spheight >= sector[curSect].ceilingz)
+                break;
+
+            sortcnt = &yax_spritesortcnt[yax_nextlev-1];
             if (*sortcnt < MAXSPRITESONSCREEN)
             {
-                yax_tsprite[yax_globallev-1][*sortcnt] = z|MAXSPRITES;
+                yax_layershift[yax_nextlev-1][*sortcnt] = abs(yax_globallev-yax_nextlev)+1;
+                yax_tsprite[yax_nextlev-1][*sortcnt] = z|MAXSPRITES;
                 (*sortcnt)++;
             }
+
+            yax_nextlev--;
+            curSect = upperSect;
+            upperSect = yax_getneighborsect(sprite[z].x, sprite[z].y, curSect, YAX_CEILING);
         }
-        if (fb>=0 && spr->z+spzofs > sector[sectnum].floorz)
+
+        // check sectors below
+        yax_nextlev = yax_globallev;
+        curSect = sectnum;
+        int32_t lowerSect = yax_getneighborsect(sprite[z].x, sprite[z].y, sectnum, YAX_FLOOR);
+        while (lowerSect >= 0 && yax_nextlev < (2*YAX_MAXDRAWS + 1))
         {
-            sortcnt = &yax_spritesortcnt[yax_globallev+1];
+            // TODO: get*zofslope?
+            if (spr->z+spzofs <= sector[curSect].floorz)
+                break;
+
+            sortcnt = &yax_spritesortcnt[yax_nextlev+1];
             if (*sortcnt < MAXSPRITESONSCREEN)
             {
-                yax_tsprite[yax_globallev+1][*sortcnt] = z|(MAXSPRITES<<1);
+                yax_layershift[yax_nextlev+1][*sortcnt] = abs(yax_globallev-yax_nextlev)+1;
+                yax_tsprite[yax_nextlev+1][*sortcnt] = z|(MAXSPRITES<<1);
                 (*sortcnt)++;
             }
+
+            yax_nextlev++;
+            curSect = lowerSect;
+            lowerSect = yax_getneighborsect(sprite[z].x, sprite[z].y, curSect, YAX_FLOOR);
         }
     }
 #else
