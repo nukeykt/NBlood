@@ -1651,8 +1651,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         int32_t upperSect = yax_getneighborsect(sprite[z].x, sprite[z].y, sectnum, YAX_CEILING);
         while (upperSect >= 0 && yax_nextlev > 0)
         {
-            // TODO: get*zofslope?
-            if (spr->z+spzofs-spheight >= sector[curSect].ceilingz)
+            if (spr->z+spzofs-spheight >= getceilzofslope(curSect, sprite[z].x, sprite[z].y))
                 break;
 
             sortcnt = &yax_spritesortcnt[yax_nextlev-1];
@@ -1674,8 +1673,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         int32_t lowerSect = yax_getneighborsect(sprite[z].x, sprite[z].y, sectnum, YAX_FLOOR);
         while (lowerSect >= 0 && yax_nextlev < (2*YAX_MAXDRAWS + 1))
         {
-            // TODO: get*zofslope?
-            if (spr->z+spzofs <= sector[curSect].floorz)
+            if (spr->z+spzofs <= getflorzofslope(curSect, sprite[z].x, sprite[z].y))
                 break;
 
             sortcnt = &yax_spritesortcnt[yax_nextlev+1];
