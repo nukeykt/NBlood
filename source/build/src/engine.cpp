@@ -6114,18 +6114,18 @@ draw_as_face_sprite:
         vec2_16_t upscale = {};
         tileLoadScaled(tilenum, &upscale);
 
-        const int32_t topinc = -mulscale10(p1.y,xspan<<upscale.x);
-        int32_t top = mulscale3((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y)), xspan<<upscale.x);
-        const int32_t botinc = (p2.y-p1.y)>>8;
-        int32_t bot = mulscale11(p1.x-p2.x,xdimen) + mulscale2(sx1-halfxdimen,botinc);
+        const int64_t topinc = -((int64_t(p1.y) * int64_t(xspan<<upscale.x)) >> 10);
+        int64_t top = (int64_t(((int64_t(p1.x) * int64_t(xdimen)) >> 10) - ((int64_t(sx1-halfxdimen) * int64_t(p1.y)) >> 9)) * int64_t(xspan<<upscale.x)) >> 3;
+        const int64_t botinc = int64_t(p2.y-p1.y)>>8;
+        int64_t bot = ((int64_t(p1.x-p2.x) * int64_t(xdimen)) >> 11) + ((int64_t(sx1-halfxdimen) * int64_t(botinc)) >> 2);
 
         j = sx2+3;
-        z = divscale10(top,bot);
+        z = divscale64(top, bot, 10);
         lwall[sx1] = (z>>8);
         for (x=sx1+4; x<=j; x+=4)
         {
             top += topinc; bot += botinc;
-            zz = z; z = divscale10(top, bot);
+            zz = z; z = divscale64(top, bot, 10);
             i = ((z+zz)>>1);
             lwall[x-3] = ((i+zz)>>9);
             lwall[x-2] = (i>>8);
