@@ -11272,7 +11272,7 @@ void test_map(int32_t mode)
         // and a possible extra space not in testplay_addparam,
         // the length should be Bstrlen(game_executable)+Bstrlen(param)+(slen+1)+2+1.
 
-        char *fullparam = (char *)Xmalloc(Bstrlen(game_executable)+Bstrlen(param)+slen+4);
+        char *fullparam = (char *)Xmalloc(Bstrlen(game_executable)+Bstrlen(param)+slen+8);
         Bsprintf(fullparam,"\"%s\"",game_executable);
 
         if (testplay_addparam)
@@ -11304,9 +11304,9 @@ void test_map(int32_t mode)
 
             if (!CreateProcess(NULL,fullparam,NULL,NULL,0,0,NULL,NULL,&si,&pi))
                 message("Error launching the game!");
-            else WaitForSingleObject(pi.hProcess,INFINITE);
         }
 #else
+        Bstrcat(fullparam, " &");
         if (current_cwd[0] != '\0')
         {
             buildvfs_chdir(program_origcwd);
@@ -11314,9 +11314,9 @@ void test_map(int32_t mode)
                 message("Error launching the game!");
             buildvfs_chdir(current_cwd);
         }
-        else system(fullparam);
+        else if (system(fullparam))
+            message("Error launching the game!");
 #endif
-        printmessage16("Game process exited");
 //        mouseInit();
         clearkeys();
 
