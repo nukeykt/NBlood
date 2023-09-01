@@ -2313,7 +2313,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
                 else VLOG_F(LOG_ENGINE, "polymost_md3draw: detail skin %d has no skinmap", skinNum);
             }
 
-            if ((i = r_glowmapping ? mdloadskin((md2model_t *) m, skinNum, GLOWPAL, surfi) : 0))
+            if ((i = (r_glowmapping & !(tspr->clipdist & TSPR_FLAGS_NO_GLOW)) ? mdloadskin((md2model_t *) m, skinNum, GLOWPAL, surfi) : 0))
             {
                 auto sk = mdgetskinmap(m, GLOWPAL, skinNum, surfi);
 

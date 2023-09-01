@@ -4383,6 +4383,7 @@ skip:
 #ifdef USE_OPENGL
                         if (videoGetRenderMode() >= REND_POLYMOST)
                         {
+                            tsprShadow->clipdist |= TSPR_FLAGS_NO_GLOW;
                             if (tilehasmodelorvoxel(t->picnum,t->pal))
                             {
                                 tsprShadow->yrepeat = 0;

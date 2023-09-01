@@ -182,6 +182,7 @@ extern int32_t globvis2, globalvisibility2, globalhisibility2, globalpisibility2
 extern int32_t globvis, globalvisibility;
 extern int32_t xyaspect;
 extern int32_t globalshade;
+extern int32_t globalclipdist;
 extern int16_t globalpicnum;
 
 extern int32_t globalorientation;
