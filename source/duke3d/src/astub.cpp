@@ -6257,8 +6257,8 @@ static void Keys3d(void)
                         changedir *= -1;
                     while (updownunits--)
                         sprite[searchwall].xrepeat = changechar(sprite[searchwall].xrepeat, changedir, smooshyalign, 1);
-                    if (sprite[searchwall].xrepeat < 4)
-                        sprite[searchwall].xrepeat = 4;
+                    if (sprite[searchwall].xrepeat < 1)
+                        sprite[searchwall].xrepeat = 1;
                     silentmessage("Sprite %d repeat: %d, %d", searchwall,
                                   TrackerCast(sprite[searchwall].xrepeat),
                                   TrackerCast(sprite[searchwall].yrepeat));
@@ -6364,8 +6364,8 @@ static void Keys3d(void)
                     sumxvect = sumyvect = 0;
                     while (updownunits--)
                         sprite[searchwall].yrepeat = changechar(sprite[searchwall].yrepeat, changedir, smooshyalign, 1);
-                    if (sprite[searchwall].yrepeat < 4)
-                        sprite[searchwall].yrepeat = 4;
+                    if (sprite[searchwall].yrepeat < 1)
+                        sprite[searchwall].yrepeat = 1;
                     silentmessage("Sprite %d repeat: %d, %d", searchwall,
                                   TrackerCast(sprite[searchwall].xrepeat),
                                   TrackerCast(sprite[searchwall].yrepeat));
@@ -7575,7 +7575,7 @@ static void Keys2d(void)
                 if ((ppointhighlight&0xc000) == 16384 && (sprite[cursprite].cstat & CSTAT_SPRITE_ALIGNMENT))
                 {
                     uint8_t *repeat = (k==0) ? &sprite[cursprite].xrepeat : &sprite[cursprite].yrepeat;
-                    *repeat = max<uint8_t>(4, changechar(*repeat, changedir, smooshy, 1));
+                    *repeat = max<uint8_t>(1, changechar(*repeat, changedir, smooshy, 1));
                     silentmessage("Sprite %d repeat: %d, %d", cursprite,
                         TrackerCast(sprite[cursprite].xrepeat),
                         TrackerCast(sprite[cursprite].yrepeat));
