@@ -2899,6 +2899,8 @@ void SetFirstWall(int32_t sectnum, int32_t wallnum, int32_t alsoynw)
 {
 #ifdef YAX_ENABLE
     int32_t i, j, k=0;
+#else
+    UNREFERENCED_PARAMETER(alsoynw);
 #endif
     const sectortype *sec = &sector[sectnum];
 
@@ -3153,6 +3155,8 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
             return m|(j<<16);
     }
     else
+#else
+    UNREFERENCED_PARAMETER(onewnumwalls);
 #endif
     {
         insertpoint(thewall, dax,day, mapwallnum);
@@ -6704,8 +6708,8 @@ end_point_dragging:
                         joinsector[1] = i;
 
                         const int s1to0wall = find_nextwall(i, joinsector[0]);
-                        const int s0to1wall = s1to0wall == -1 ? -1 : wall[s1to0wall].nextwall;
 #ifdef YAX_ENABLE
+                        const int s0to1wall = s1to0wall == -1 ? -1 : wall[s1to0wall].nextwall;
                         int16_t jbn[2][2];  // [join index][c/f]
 
                         for (k=0; k<2; k++)
@@ -7770,7 +7774,11 @@ check_next_sector: ;
 
                     if (numwalls==expectedNumwalls)
                     {
+#ifdef YAX_ENABLE
                         if (doSectorSplit && cb<0 && fb<0)
+#else
+                        if (doSectorSplit)
+#endif
                         {
                             if (firstwallflag)
                             {
@@ -11287,7 +11295,7 @@ void test_map(int32_t mode)
         // and a possible extra space not in testplay_addparam,
         // the length should be Bstrlen(game_executable)+Bstrlen(param)+(slen+1)+2+1.
 
-        char *fullparam = (char *)Xmalloc(Bstrlen(game_executable)+Bstrlen(param)+slen+4);
+        char *fullparam = (char *)Xmalloc(Bstrlen(game_executable)+Bstrlen(param)+slen+8);
         Bsprintf(fullparam,"\"%s\"",game_executable);
 
         if (testplay_addparam)
@@ -11319,9 +11327,9 @@ void test_map(int32_t mode)
 
             if (!CreateProcess(NULL,fullparam,NULL,NULL,0,0,NULL,NULL,&si,&pi))
                 message("Error launching the game!");
-            else WaitForSingleObject(pi.hProcess,INFINITE);
         }
 #else
+        Bstrcat(fullparam, " &");
         if (current_cwd[0] != '\0')
         {
             buildvfs_chdir(program_origcwd);
@@ -11329,9 +11337,9 @@ void test_map(int32_t mode)
                 message("Error launching the game!");
             buildvfs_chdir(current_cwd);
         }
-        else system(fullparam);
+        else if (system(fullparam))
+            message("Error launching the game!");
 #endif
-        printmessage16("Game process exited");
 //        mouseInit();
         clearkeys();
 

@@ -3408,7 +3408,7 @@ static void polymost_drawpoly(vec2f_t const* const dpxy, int32_t const n, int32_
     }
 
     // glow texture
-    if (r_glowmapping)
+    if (r_glowmapping && !(globalclipdist & TSPR_FLAGS_NO_GLOW))
     {
         pthtyp *glowpth = NULL;
 
@@ -5223,6 +5223,8 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
     polymost_setClamp((npot || xpanning != 0) ? 0 : 2);
 
     int picnumbak = globalpicnum;
+    int32_t const ogclipdist = globalclipdist;
+    globalclipdist = 0;
     ti = globalpicnum;
     o.y = fviewingrange/(ghalfx*256.f); o.z = 1.f/o.y;
 
@@ -5354,6 +5356,7 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
     while (ti >= 0);
 
     globalpicnum = picnumbak;
+    globalclipdist = ogclipdist;
 
     polymost_setClamp(0);
 
@@ -5485,6 +5488,7 @@ static void polymost_drawalls(int32_t const bunch)
         globalshade = sec->floorshade;
         globalpal = sec->floorpal;
         globalorientation = sec->floorstat;
+        globalclipdist = 0;
         globvis = (sector[sectnum].visibility != 0) ?
                   mulscale4(globalcisibility, (uint8_t)(sector[sectnum].visibility + 16)) :
                   globalcisibility;
@@ -5913,6 +5917,7 @@ static void polymost_drawalls(int32_t const bunch)
         globalshade = sec->ceilingshade;
         globalpal = sec->ceilingpal;
         globalorientation = sec->ceilingstat;
+        globalclipdist = 0;
         globvis = (sector[sectnum].visibility != 0) ?
                   mulscale4(globalcisibility, (uint8_t)(sector[sectnum].visibility + 16)) :
                   globalcisibility;
@@ -6398,6 +6403,7 @@ static void polymost_drawalls(int32_t const bunch)
                     doeditorcheck = 1;
                 }
                 globalpicnum = wal->picnum; globalshade = wal->shade; globalpal = (int32_t)((uint8_t)wal->pal);
+                globalclipdist = 0;
                 globvis = globalvisibility;
                 if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
                 globvis2 = globalvisibility2;
@@ -6454,6 +6460,7 @@ static void polymost_drawalls(int32_t const bunch)
                     ytex.u += (float)(nwal->xpanning - wal->xpanning) * ytex.d;
                 }
                 globalpicnum = nwal->picnum; globalshade = nwal->shade; globalpal = (int32_t)((uint8_t)nwal->pal);
+                globalclipdist = 0;
                 globvis = globalvisibility;
                 if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
                 globvis2 = globalvisibility2;
@@ -6515,6 +6522,7 @@ static void polymost_drawalls(int32_t const bunch)
 
                 globalshade = wal->shade;
                 globalpal = wal->pal;
+                globalclipdist = 0;
                 globvis = (sector[sectnum].visibility != 0) ?
                           mulscale4(globalvisibility, (uint8_t)(sector[sectnum].visibility + 16)) :
                           globalvisibility;
@@ -7206,6 +7214,7 @@ static void polymost_drawmaskwallinternal(int32_t wallIndex)
 
     buildgl_outputDebugMessage(3, "polymost_drawmaskwallinternal(wallIndex:%d)", wallIndex);
 
+    globalclipdist = 0;
     globalpicnum = wal->overpicnum;
     if ((uint32_t)globalpicnum >= MAXTILES)
         globalpicnum = 0;
@@ -7596,6 +7605,7 @@ void polymost2_drawsprite(int32_t snum)
     globalshade = tspr->shade;
     globalpal = tspr->pal;
     globalorientation = tspr->cstat;
+    globalclipdist = tspr->clipdist;
     globvis = globalvisibility;
 
     if (sector[tspr->sectnum].visibility != 0)
@@ -8182,6 +8192,7 @@ void polymost_drawsprite(int32_t snum)
     globalshade = tspr->shade;
     globalpal = tspr->pal;
     globalorientation = tspr->cstat;
+    globalclipdist = tspr->clipdist;
     globvis = globalvisibility;
 
     if (sector[tspr->sectnum].visibility != 0)
@@ -9173,6 +9184,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalpicnum = picnum;
     int32_t const  ogshade = globalshade;
     globalshade = dashade;
+    int32_t const  ogclipdist = globalclipdist;
+    globalclipdist = 0;
     int32_t const  ogpal = globalpal;
     globalpal = (int32_t)((uint8_t)dapalnum);
     float const  oghalfx = ghalfx;
@@ -9414,6 +9427,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalpicnum = ogpicnum;
     globalshade  = ogshade;
     globalpal    = ogpal;
+    globalclipdist = ogclipdist;
     ghalfx       = oghalfx;
     ghalfy       = oghalfy;
     grhalfxdown10 = ogrhalfxdown10;

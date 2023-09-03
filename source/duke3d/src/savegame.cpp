@@ -135,6 +135,7 @@ void G_ResetInterpolations(void)
 savebrief_t g_lastautosave, g_lastusersave, g_freshload;
 int32_t g_lastAutoSaveArbitraryID = -1;
 bool g_saveRequested;
+bool g_skipReturnToCenter;
 savebrief_t * g_quickload;
 
 menusave_t * g_menusaves;

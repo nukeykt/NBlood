@@ -127,6 +127,7 @@ struct menusave_t
 extern savebrief_t g_lastautosave, g_lastusersave, g_freshload;
 extern int32_t g_lastAutoSaveArbitraryID;
 extern bool g_saveRequested;
+extern bool g_skipReturnToCenter; // workaround for return-to-center bug with CON_SAVE
 extern savebrief_t * g_quickload;
 
 extern menusave_t * g_menusaves;

@@ -21,7 +21,6 @@ static void *g_vm_data;
 // The tile file number (tilesXXX <- this) of each tile:
 // 0 <= . < MAXARTFILES_BASE: tile is in a "base" ART file
 // MAXARTFILES_BASE <= . < MAXARTFILES_TOTAL: tile is in a map-specific ART file
-uint8_t tilefilenum[MAXTILES];
 EDUKE32_STATIC_ASSERT(MAXARTFILES_TOTAL <= 256);
 
 static int32_t tilefileoffs[MAXTILES];

@@ -370,6 +370,7 @@ void yax_updategrays(int32_t posze)
 
     for (i=0; i<numsectors; i++)
     {
+        int32_t keep = true;
 #ifdef YAX_ENABLE
         int16_t cb, fb;
         yax_getbunches(i, &cb, &fb);
@@ -377,7 +378,7 @@ void yax_updategrays(int32_t posze)
         // Update grayouts due to TROR, has to be --v--       half-open      --v--
         // because only one level should ever be    v                          v
         // active.                                  v                          v
-        int32_t keep = ((cb<0 || sector[i].ceilingz < posze) && (fb<0 || posze <= sector[i].floorz));
+        keep = ((cb<0 || sector[i].ceilingz < posze) && (fb<0 || posze <= sector[i].floorz));
         if (autogray && (cb>=0 || fb>=0) && (sector[i].ceilingz <= posze && posze <= sector[i].floorz))
         {
             mingoodz = min(mingoodz, TrackerCast(sector[i].ceilingz));
@@ -438,6 +439,7 @@ static int16_t yax_spritesortcnt[1 + 2*YAX_MAXDRAWS];
 static uint16_t yax_tsprite[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 static uint8_t yax_tsprfrombunch[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 static int16_t yax_updown[MAXSECTORS][2];
+static int16_t yax_layershift[1 + 2*YAX_MAXDRAWS][MAXSPRITESONSCREEN];
 
 // drawn sectors
 uint8_t yax_gotsector[bitmap_size(MAXSECTORS)];  // engine internal
@@ -915,11 +917,15 @@ static void yax_copytsprites()
 
             if (cf != -1)
             {
+#if 0
                 if ((yax_globallev-YAX_MAXDRAWS)*(-1 + 2*cf) > 0)
                     if (yax_getbunch(sectnum, cf) != yax_globalbunch)
                         continue;
+#endif
 
-                sectnum = yax_getneighborsect(spr->x, spr->y, sectnum, cf);
+                for (int k = 0; k < yax_layershift[yax_globallev][i] && (sectnum >= 0); k++)
+                    sectnum = yax_getneighborsect(spr->x, spr->y, sectnum, cf);
+
                 if (sectnum < 0)
                     continue;
             }
@@ -1506,7 +1512,7 @@ static int32_t viewingrangerecip;
 
 static int8_t globalxshift, globalyshift;
 static int32_t globalxpanning, globalypanning;
-int32_t globalshade, globalorientation;
+int32_t globalshade, globalorientation, globalclipdist;
 static int16_t globalshiftval;
 #ifdef HIGH_PRECISION_SPRITE
 static int64_t globalzd;
@@ -1605,8 +1611,8 @@ char apptitle[256] = "Build Engine";
 //          1=break out of sprite collecting;
 int32_t renderAddTsprite(int16_t z, int16_t sectnum)
 {
-    auto const spr = (uspriteptr_t)&sprite[z];
 #ifdef YAX_ENABLE
+    auto const spr = (uspriteptr_t)&sprite[z];
     if (g_nodraw==0)
     {
         if (numyaxbunches==0)
@@ -1640,35 +1646,55 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
         if ((spr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_FLOOR)
             return 0;
 
-        int16_t cb, fb;
-
-        yax_getbunches(sectnum, &cb, &fb);
-        if (cb < 0 && fb < 0)
-            return 0;
-
-        int32_t spheight;
+        int32_t spheight, yax_nextlev, curSect;
         int16_t spzofs = spriteheightofs(z, &spheight, 1);
 
-        // TODO: get*zofslope?
-        if (cb>=0 && spr->z+spzofs-spheight < sector[sectnum].ceilingz)
+        // check sectors above
+        yax_nextlev = yax_globallev;
+        curSect = sectnum;
+        int32_t upperSect = yax_getneighborsect(sprite[z].x, sprite[z].y, sectnum, YAX_CEILING);
+        while (upperSect >= 0 && yax_nextlev > 0)
         {
-            sortcnt = &yax_spritesortcnt[yax_globallev-1];
+            if (spr->z+spzofs-spheight >= getceilzofslope(curSect, sprite[z].x, sprite[z].y))
+                break;
+
+            sortcnt = &yax_spritesortcnt[yax_nextlev-1];
             if (*sortcnt < MAXSPRITESONSCREEN)
             {
-                yax_tsprite[yax_globallev-1][*sortcnt] = z|MAXSPRITES;
+                yax_layershift[yax_nextlev-1][*sortcnt] = abs(yax_globallev-yax_nextlev)+1;
+                yax_tsprite[yax_nextlev-1][*sortcnt] = z|MAXSPRITES;
                 (*sortcnt)++;
             }
+
+            yax_nextlev--;
+            curSect = upperSect;
+            upperSect = yax_getneighborsect(sprite[z].x, sprite[z].y, curSect, YAX_CEILING);
         }
-        if (fb>=0 && spr->z+spzofs > sector[sectnum].floorz)
+
+        // check sectors below
+        yax_nextlev = yax_globallev;
+        curSect = sectnum;
+        int32_t lowerSect = yax_getneighborsect(sprite[z].x, sprite[z].y, sectnum, YAX_FLOOR);
+        while (lowerSect >= 0 && yax_nextlev < (2*YAX_MAXDRAWS + 1))
         {
-            sortcnt = &yax_spritesortcnt[yax_globallev+1];
+            if (spr->z+spzofs <= getflorzofslope(curSect, sprite[z].x, sprite[z].y))
+                break;
+
+            sortcnt = &yax_spritesortcnt[yax_nextlev+1];
             if (*sortcnt < MAXSPRITESONSCREEN)
             {
-                yax_tsprite[yax_globallev+1][*sortcnt] = z|(MAXSPRITES<<1);
+                yax_layershift[yax_nextlev+1][*sortcnt] = abs(yax_globallev-yax_nextlev)+1;
+                yax_tsprite[yax_nextlev+1][*sortcnt] = z|(MAXSPRITES<<1);
                 (*sortcnt)++;
             }
+
+            yax_nextlev++;
+            curSect = lowerSect;
+            lowerSect = yax_getneighborsect(sprite[z].x, sprite[z].y, curSect, YAX_FLOOR);
         }
     }
+#else
+    UNREFERENCED_PARAMETER(sectnum);
 #endif
 
     return 0;
@@ -6127,18 +6153,18 @@ draw_as_face_sprite:
         vec2_16_t upscale = {};
         tileLoadScaled(tilenum, &upscale);
 
-        const int32_t topinc = -mulscale10(p1.y,xspan<<upscale.x);
-        int32_t top = mulscale3((mulscale10(p1.x,xdimen) - mulscale9(sx1-halfxdimen,p1.y)), xspan<<upscale.x);
-        const int32_t botinc = (p2.y-p1.y)>>8;
-        int32_t bot = mulscale11(p1.x-p2.x,xdimen) + mulscale2(sx1-halfxdimen,botinc);
+        const int64_t topinc = -((int64_t(p1.y) * int64_t(xspan<<upscale.x)) >> 10);
+        int64_t top = (int64_t(((int64_t(p1.x) * int64_t(xdimen)) >> 10) - ((int64_t(sx1-halfxdimen) * int64_t(p1.y)) >> 9)) * int64_t(xspan<<upscale.x)) >> 3;
+        const int64_t botinc = int64_t(p2.y-p1.y)>>8;
+        int64_t bot = ((int64_t(p1.x-p2.x) * int64_t(xdimen)) >> 11) + ((int64_t(sx1-halfxdimen) * int64_t(botinc)) >> 2);
 
         j = sx2+3;
-        z = divscale10(top,bot);
+        z = divscale64(top, bot, 10);
         lwall[sx1] = (z>>8);
         for (x=sx1+4; x<=j; x+=4)
         {
             top += topinc; bot += botinc;
-            zz = z; z = divscale10(top, bot);
+            zz = z; z = divscale64(top, bot, 10);
             i = ((z+zz)>>1);
             lwall[x-3] = ((i+zz)>>9);
             lwall[x-2] = (i>>8);
@@ -10830,6 +10856,7 @@ void calc_sector_reachability(void)
 #endif
                 }
 
+#ifdef YAX_ENABLE
                 int upperSect = yax_vnextsec(j, YAX_CEILING);
                 if (upperSect >= 0 && !bitmap_test(sectbitmap, upperSect))
                 {
@@ -10847,6 +10874,7 @@ void calc_sector_reachability(void)
                     LOG_F(INFO, "sector %d reaches sector %d through TROR", sectnum, lowerSect);
 #endif
                 }
+#endif
             }
         }
     }
@@ -12773,7 +12801,9 @@ restart_grand:
             if (z <= cfz[0] || z >= cfz[1])
                 return 0;
 
+#ifdef YAX_ENABLE
 add_nextsector:
+#endif
             if (!bitmap_test(sectbitmap, nexts))
             {
                 bitmap_set(sectbitmap, nexts);
@@ -13002,6 +13032,8 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 {
     int16_t cnt, tempshort;
     int32_t thelastwall;
+
+    UNREFERENCED_PARAMETER(flags);
 
     tempshort = pointhighlight;    //search points CCW
     cnt = MAXWALLS;

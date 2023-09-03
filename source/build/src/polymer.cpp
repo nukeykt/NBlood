@@ -1808,8 +1808,10 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 {
     usectorptr_t      sec;
     int32_t         i;
+#ifdef YAX_ENABLE
     int16_t         bunchnum;
     int16_t         ns;
+#endif
     GLint           result;
     int16_t         doquery;
     int32_t         front;
@@ -3130,9 +3132,12 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     // Draw masks regardless; avoid all non-masks TROR links
     if (sec->floorstat & 384) {
         draw = domasks;
-    } else if (yax_getbunch(sectnum, YAX_FLOOR) >= 0) {
+    }
+#ifdef YAX_ENABLE
+    else if (yax_getbunch(sectnum, YAX_FLOOR) >= 0) {
         draw = FALSE;
     }
+#endif
 
     // Parallaxed
     if (sec->floorstat & 1) {
@@ -3176,9 +3181,12 @@ static void polymer_drawsector(int16_t sectnum, int32_t domasks)
     // Draw masks regardless; avoid all non-masks TROR links
     if (sec->ceilingstat & 384) {
         draw = domasks;
-    } else if (yax_getbunch(sectnum, YAX_CEILING) >= 0) {
+    }
+#ifdef YAX_ENABLE
+    else if (yax_getbunch(sectnum, YAX_CEILING) >= 0) {
         draw = FALSE;
     }
+#endif
 
     // Parallaxed
     if (sec->ceilingstat & 1) {
@@ -6097,7 +6105,9 @@ static int polymer_culllight(int16_t lighti)
 
     int32_t front = 0;
     int32_t back  = 1;
+#ifdef YAX_ENABLE
     int16_t bunchnum;
+#endif
 
     if (!sectorsareconnected(globalcursectnum, light.sector)) return 1;
 
@@ -6112,7 +6122,9 @@ static int polymer_culllight(int16_t lighti)
 
         polymer_pokesector(sectorqueue[front]);
 
+#ifdef YAX_ENABLE
         int checkror = FALSE;
+#endif
 
         if (!(sec->floorstat & 1))
         {
@@ -6124,11 +6136,15 @@ static int polymer_culllight(int16_t lighti)
             if (!light.radius) {
                 if (zdiff < light.range) {
                     polymer_addplanelight(&s->floor, lighti);
+#ifdef YAX_ENABLE
                     checkror = TRUE;
+#endif
                 }
             } else if (polymer_planeinlight(s->floor, light)) {
                 polymer_addplanelight(&s->floor, lighti);
+#ifdef YAX_ENABLE
                 checkror = TRUE;
+#endif
             }
         }
 
@@ -6147,8 +6163,8 @@ static int polymer_culllight(int16_t lighti)
                 }
             }
         }
-#endif
         checkror = FALSE;
+#endif
 
         if (!(sec->ceilingstat & 1))
         {
@@ -6160,11 +6176,15 @@ static int polymer_culllight(int16_t lighti)
             if (!light.radius) {
                 if (zdiff < light.range) {
                     polymer_addplanelight(&s->ceil, lighti);
+#ifdef YAX_ENABLE
                     checkror = TRUE;
+#endif
                 }
             } else if (polymer_planeinlight(s->ceil, light)) {
                 polymer_addplanelight(&s->ceil, lighti);
+#ifdef YAX_ENABLE
                 checkror = TRUE;
+#endif
             }
         }
 

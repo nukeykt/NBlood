@@ -237,7 +237,7 @@ void engineSetupLogging(int &argc, char **argv)
     });
     loguru::Options initopts;
     initopts.verbosity_flag = nullptr;
-    initopts.signal_options.unsafe_signal_handler = true;
+    initopts.signal_options.unsafe_signal_handler = false;
     loguru::init(argc, argv, initopts);
 }
 

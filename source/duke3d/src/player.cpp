@@ -2067,13 +2067,16 @@ static void P_FireWeapon(int playerNum)
 
     P_SetWeaponGamevars(playerNum, pPlayer);
     //        OSD_Printf("doing %d %d %d\n",PWEAPON(snum, p->curr_weapon, Shoots),p->curr_weapon,snum);
+
+    ud.returnvar[0] = 0;
     if (VM_OnEventWithReturn(EVENT_PREWEAPONSHOOT, pPlayer->i, playerNum, 0) == 0)
     {
         auto const retVal = A_Shoot(pPlayer->i, PWEAPON(playerNum, pPlayer->curr_weapon, Shoots));
+        ud.returnvar[0] = 0;
         VM_OnEventWithReturn(EVENT_POSTWEAPONSHOOT, pPlayer->i, playerNum, retVal);
     }
 
-    for (bssize_t burstFire = PWEAPON(playerNum, pPlayer->curr_weapon, ShotsPerBurst) - 1; burstFire > 0; --burstFire)
+    for (bssize_t burstFire = 1; burstFire < PWEAPON(playerNum, pPlayer->curr_weapon, ShotsPerBurst); burstFire++)
     {
         if (PWEAPON(playerNum, pPlayer->curr_weapon, Flags) & WEAPON_FIREEVERYOTHER)
         {
@@ -2091,9 +2094,11 @@ static void P_FireWeapon(int playerNum)
                     break;
             }
 
+            ud.returnvar[0] = burstFire;
             if (VM_OnEventWithReturn(EVENT_PREWEAPONSHOOT, pPlayer->i, playerNum, 0) == 0)
             {
                 auto const retVal = A_Shoot(pPlayer->i, PWEAPON(playerNum, pPlayer->curr_weapon, Shoots));
+                ud.returnvar[0] = burstFire;
                 VM_OnEventWithReturn(EVENT_POSTWEAPONSHOOT, pPlayer->i, playerNum, retVal);
             }
         }
@@ -3111,13 +3116,18 @@ void P_UpdateAngles(int const playerNum, input_t &input)
 
         if (currentSector >= 0)
         {
+#ifdef YAX_ENABLE
             int const slopeZ = yax_getflorzofslope(currentSector, adjustedPosition);
             int const floorZ = yax_getflorzofslope(pPlayer->cursectnum, pPlayer->pos.xy);
+#else
+            int const slopeZ = getflorzofslope(currentSector, adjustedPosition.x, adjustedPosition.y);
+            int const floorZ = getflorzofslope(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y);
+#endif
 
             if ((pPlayer->cursectnum == currentSector) || (klabs(floorZ - slopeZ) <= ZOFFSET6))
             {
                 pPlayer->q16horizoff = fix16_from_float(fix16_to_float(pPlayer->q16horizoff) + scaleToInterval((floorZ - slopeZ) * 160 * (1.f/65536.f)));
-                LOG_F(INFO, "%g", fix16_to_float(pPlayer->q16horizoff));
+                // LOG_F(INFO, "%g", fix16_to_float(pPlayer->q16horizoff));
             }
         }
     }
@@ -4284,9 +4294,11 @@ static void P_ProcessWeapon(int playerNum)
 
             if (actor[pPlayer->i].t_data[7] != 0)
             {
+                int const currentShot = ud.returnvar[0] = PWEAPON(playerNum, pPlayer->curr_weapon, ShotsPerBurst) - (actor[pPlayer->i].t_data[7] >> 1);
                 if (VM_OnEventWithReturn(EVENT_PREWEAPONSHOOT, pPlayer->i, playerNum, 0) == 0)
                 {
                     auto const retVal = A_Shoot(pPlayer->i, PWEAPON(playerNum, pPlayer->curr_weapon, Shoots));
+                    ud.returnvar[0] = currentShot;
                     VM_OnEventWithReturn(EVENT_POSTWEAPONSHOOT, pPlayer->i, playerNum, retVal);
                 }
             }

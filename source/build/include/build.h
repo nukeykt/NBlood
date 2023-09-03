@@ -589,6 +589,7 @@ enum
     TSPR_FLAGS_NO_SHADOW = 1u<<2u,
     TSPR_FLAGS_INVISIBLE_WITH_SHADOW = 1u<<3u,
     TSPR_FLAGS_SLAB = 1u<<4u,
+    TSPR_FLAGS_NO_GLOW = 1u<<5u,
 };
 
 EXTERN int32_t guniqhudid;
@@ -1018,6 +1019,8 @@ EXTERN char editorcolorsdef[256];
 EXTERN char faketile[bitmap_size(MAXTILES)];
 EXTERN char *faketiledata[MAXTILES];
 EXTERN int faketilesize[MAXTILES];
+
+EXTERN uint8_t tilefilenum[MAXTILES];
 
 EXTERN char spritecol2d[MAXTILES][2];
 EXTERN uint8_t tilecols[MAXTILES];

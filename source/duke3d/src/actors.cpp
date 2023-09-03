@@ -473,14 +473,14 @@ static int32_t Proj_MaybeDoTransport(int32_t spriteNum, uspriteptr_t const pSEff
     return 1;
 }
 
+#ifdef YAX_ENABLE
 // Check whether sprite <s> is on/in a non-SE7 water sector.
 // <othersectptr>: if not NULL, the sector on the other side.
 int A_CheckNoSE7Water(uspriteptr_t const pSprite, int sectNum, int sectLotag, int32_t *pOther)
 {
     if (sectLotag == ST_1_ABOVE_WATER || sectLotag == ST_2_UNDERWATER)
     {
-        int const otherSect =
-        yax_getneighborsect(pSprite->x, pSprite->y, sectNum, sectLotag == ST_1_ABOVE_WATER ? YAX_FLOOR : YAX_CEILING);
+        int const otherSect = yax_getneighborsect(pSprite->x, pSprite->y, sectNum, sectLotag == ST_1_ABOVE_WATER ? YAX_FLOOR : YAX_CEILING);
         int const otherLotag = (sectLotag == ST_1_ABOVE_WATER) ? ST_2_UNDERWATER : ST_1_ABOVE_WATER;
 
         // If submerging, the lower sector MUST have lotag 2.
@@ -497,6 +497,7 @@ int A_CheckNoSE7Water(uspriteptr_t const pSprite, int sectNum, int sectLotag, in
 
     return 0;
 }
+#endif
 
 // Check whether to do a z position update of sprite <spritenum>.
 // Returns:
@@ -837,7 +838,11 @@ void A_DoGuts(int spriteNum, int tileNum, int spawnCnt)
         repeat.x = repeat.y = 8;
 
     int gutZ   = pSprite->z - ZOFFSET3;
+#ifdef YAX_ENABLE
+    int floorz = yax_getflorzofslope(pSprite->sectnum, pSprite->xy);
+#else
     int floorz = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+#endif
 
     if (gutZ > (floorz-ZOFFSET3))
         gutZ = floorz-ZOFFSET3;
@@ -5619,7 +5624,11 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
             switchPic--;
 
         if ((pSprite->picnum == MONEY+1) || (pSprite->picnum == MAIL+1) || (pSprite->picnum == PAPER+1))
-            actor[spriteNum].floorz = pSprite->z = getflorzofslope(pSprite->sectnum,pSprite->x,pSprite->y);
+#ifdef YAX_ENABLE
+            actor[spriteNum].floorz = pSprite->z = yax_getflorzofslope(pSprite->sectnum, pSprite->xy);
+#else
+            actor[spriteNum].floorz = pSprite->z = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+#endif
         else
 #endif
         {
@@ -5842,7 +5851,11 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 if (pSprite->sectnum == -1)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
+#ifdef YAX_ENABLE
+                int const floorZ = yax_getflorzofslope(pSprite->sectnum, pSprite->xy);
+#else
                 int const floorZ = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+#endif
 
                 if (pSprite->z > floorZ)
                 {

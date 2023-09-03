@@ -696,13 +696,16 @@ void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz
 
             if (videoGetRenderMode() != REND_POLYMER)
             {
-                int32_t didmirror;
-
+#ifdef YAX_ENABLE
                 yax_preparedrawrooms();
-                didmirror = renderDrawRoomsQ16(tposx,tposy,z,tang,q16horiz,g_mirrorSector[i]+MAXSECTORS);
+                auto const didmirror =
+#endif
+                    renderDrawRoomsQ16(tposx,tposy,z,tang,q16horiz,g_mirrorSector[i]+MAXSECTORS);
+#ifdef YAX_ENABLE
                 //POGO: if didmirror == 0, we may simply wish to abort instead of rendering with yax_drawrooms (which may require cleaning yax state)
                 if (videoGetRenderMode() != REND_CLASSIC || didmirror)
                     yax_drawrooms(G_DoSpriteAnimations, g_mirrorSector[i], didmirror, smoothratio);
+#endif
             }
 #ifdef USE_OPENGL
             else
@@ -2752,7 +2755,11 @@ int A_Spawn(int spriteNum, int tileNum)
 
             if (spriteNum >= 0)
             {
+#ifdef YAX_ENABLE
+                int const floorZ = yax_getflorzofslope(pSprite->sectnum, pSprite->xy);
+#else
                 int const floorZ = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+#endif
 
                 if (pSprite->z > floorZ-ZOFFSET4)
                     pSprite->z = floorZ-ZOFFSET4;
@@ -4361,7 +4368,11 @@ skip:
                 {
                     int const shadowZ = ((sector[sect].lotag & 0xff) > 2 || pSprite->statnum == STAT_PROJECTILE ||
                                    pSprite->statnum == STAT_MISC || pSprite->picnum == DRONE || pSprite->picnum == COMMANDER)
-                                  ? sector[sect].floorz
+#ifdef YAX_ENABLE
+                                  ? yax_getflorzofslope(sect, pSprite->xy)
+#else
+                                  ? getflorzofslope(sect, pSprite->x, pSprite->y)
+#endif
                                   : actor[i].floorz;
 
                     if ((pSprite->z-shadowZ) < ZOFFSET3 && g_player[screenpeek].ps->pos.z < shadowZ)
@@ -4383,6 +4394,7 @@ skip:
 #ifdef USE_OPENGL
                         if (videoGetRenderMode() >= REND_POLYMOST)
                         {
+                            tsprShadow->clipdist |= TSPR_FLAGS_NO_GLOW;
                             if (tilehasmodelorvoxel(t->picnum,t->pal))
                             {
                                 tsprShadow->yrepeat = 0;

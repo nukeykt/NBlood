@@ -182,6 +182,7 @@ extern int32_t globvis2, globalvisibility2, globalhisibility2, globalpisibility2
 extern int32_t globvis, globalvisibility;
 extern int32_t xyaspect;
 extern int32_t globalshade;
+extern int32_t globalclipdist;
 extern int16_t globalpicnum;
 
 extern int32_t globalorientation;
@@ -195,7 +196,6 @@ extern int16_t searchbottomwall, searchisbottom;
 
 extern char inpreparemirror;
 
-extern uint8_t tilefilenum[MAXTILES];
 extern char picsiz[MAXTILES];
 extern int16_t sectorborder[256];
 extern int32_t qsetmode;
