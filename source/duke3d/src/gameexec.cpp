@@ -231,8 +231,12 @@ static int VM_CheckSquished(void)
 {
     auto const pSector = (usectorptr_t)&sector[vm.pSprite->sectnum];
 
-    if (pSector->lotag == ST_23_SWINGING_DOOR || (vm.pSprite->picnum == APLAYER && ud.noclip) ||
-        (pSector->lotag == ST_1_ABOVE_WATER && !A_CheckNoSE7Water(vm.pUSprite, vm.pSprite->sectnum, pSector->lotag, NULL)))
+    if (pSector->lotag == ST_23_SWINGING_DOOR || (vm.pSprite->picnum == APLAYER && ud.noclip)
+#ifdef YAX_ENABLE
+        // Note: This is actually a regression, see: https://voidpoint.io/terminx/eduke32/-/issues/283
+        || (pSector->lotag == ST_1_ABOVE_WATER && !A_CheckNoSE7Water(vm.pUSprite, vm.pSprite->sectnum, pSector->lotag, NULL))
+#endif
+        )
         return 0;
 
     int32_t floorZ = pSector->floorz;
@@ -694,13 +698,21 @@ static inline void VM_FacePlayer(int const shift)
 
 static inline int32_t VM_GetCeilZOfSlope(void)
 {
+#ifdef YAX_ENABLE
     return yax_getceilzofslope(vm.pSprite->sectnum, vm.pSprite->xy);
+#else
+    return getceilzofslope(vm.pSprite->sectnum, vm.pSprite->x, vm.pSprite->y);
+#endif
 }
 
 #ifndef EDUKE32_STANDALONE
 static inline int32_t VM_GetFlorZOfSlope(void)
 {
+#ifdef YAX_ENABLE
     return yax_getflorzofslope(vm.pSprite->sectnum, vm.pSprite->xy);
+#else
+    return getflorzofslope(vm.pSprite->sectnum, vm.pSprite->x, vm.pSprite->y);
+#endif
 }
 #endif
 
@@ -1119,7 +1131,13 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         }
     }
 
-    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->xy))
+    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER &&
+#ifdef YAX_ENABLE
+            actor[spriteNum].floorz == yax_getflorzofslope(pSprite->sectnum, pSprite->xy)
+#else
+            actor[spriteNum].floorz == getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y)
+#endif
+       )
     {
         pSprite->z = newZ + A_GetWaterZOffset(spriteNum);
         return;
@@ -5043,7 +5061,11 @@ breakfor:
 
                     VM_ABORT_IF((unsigned)v.sectNum >= MAXSECTORS, "invalid sector %d", v.sectNum);
 
+#ifdef YAX_ENABLE
                     Gv_SetVar(*insptr++, (VM_DECODE_INST(tw) == CON_GETFLORZOFSLOPE ? yax_getflorzofslope : yax_getceilzofslope)(v.sectNum, v.vect));
+#else
+                    Gv_SetVar(*insptr++, (VM_DECODE_INST(tw) == CON_GETFLORZOFSLOPE ? getflorzofslope : getceilzofslope)(v.sectNum, v.vect.x, v.vect.y));
+#endif
                     dispatch();
                 }
 

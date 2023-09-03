@@ -409,7 +409,9 @@ extern uint8_t      g_radiusDmgStatnums[bitmap_size(MAXSTATUS)];
 int dukeValidateSectorEffectorPlaysSound(int);
 int dukeValidateSectorPlaysSound(int);
 
+#ifdef YAX_ENABLE
 int  A_CheckNoSE7Water(uspriteptr_t pSprite, int sectNum, int sectLotag, int32_t *pOther);
+#endif
 int  A_CheckSwitchTile(int spriteNum);
 int A_IncurDamage(int spriteNum);
 void A_AddToDeleteQueue(int spriteNum);

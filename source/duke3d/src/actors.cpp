@@ -473,14 +473,14 @@ static int32_t Proj_MaybeDoTransport(int32_t spriteNum, uspriteptr_t const pSEff
     return 1;
 }
 
+#ifdef YAX_ENABLE
 // Check whether sprite <s> is on/in a non-SE7 water sector.
 // <othersectptr>: if not NULL, the sector on the other side.
 int A_CheckNoSE7Water(uspriteptr_t const pSprite, int sectNum, int sectLotag, int32_t *pOther)
 {
     if (sectLotag == ST_1_ABOVE_WATER || sectLotag == ST_2_UNDERWATER)
     {
-        int const otherSect =
-        yax_getneighborsect(pSprite->x, pSprite->y, sectNum, sectLotag == ST_1_ABOVE_WATER ? YAX_FLOOR : YAX_CEILING);
+        int const otherSect = yax_getneighborsect(pSprite->x, pSprite->y, sectNum, sectLotag == ST_1_ABOVE_WATER ? YAX_FLOOR : YAX_CEILING);
         int const otherLotag = (sectLotag == ST_1_ABOVE_WATER) ? ST_2_UNDERWATER : ST_1_ABOVE_WATER;
 
         // If submerging, the lower sector MUST have lotag 2.
@@ -497,6 +497,7 @@ int A_CheckNoSE7Water(uspriteptr_t const pSprite, int sectNum, int sectLotag, in
 
     return 0;
 }
+#endif
 
 // Check whether to do a z position update of sprite <spritenum>.
 // Returns:

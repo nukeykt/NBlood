@@ -1315,7 +1315,7 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
     if (!m32_sideview)
     {
 #ifndef YAX_ENABLE
-        for (i=numwalls-1; i>=0; i--)
+        for (int32_t i = numwalls-1; i >= 0; i--)
             editorDraw2dWall(i, posxe, posye, posze, zoome, 0);
 #else
         if (alwaysshowgray)
@@ -1390,11 +1390,15 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
 
         for (int32_t i = 0; i < m32_swcnt; i++)  // shouldn't it go the other way around?
         {
+            int32_t skipSector;
             int32_t j = m32_wallsprite[i];
             if (j<MAXWALLS)
             {
                 if (skipgraysectors)
-                    YAX_SKIPSECTOR(sectorofwall(j));
+                {
+                    skipSector = sectorofwall(j);
+                    YAX_SKIPSECTOR(skipSector);
+                }
 
                 if (alwaysshowgray || !bitmap_test(graybitmap, j))
                     editorDraw2dWall(j, posxe, posye, posze, zoome, !!bitmap_test(graybitmap, j));
@@ -1402,10 +1406,16 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
             else
             {
                 if (skipgraysectors)
-                    YAX_SKIPSECTOR(sectorofwall(sprite[j-MAXWALLS].sectnum));
+                {
+                    skipSector = sectorofwall(sprite[j-MAXWALLS].sectnum);
+                    YAX_SKIPSECTOR(skipSector);
+                }
 
                 if (!alwaysshowgray && sprite[j-MAXWALLS].sectnum>=0)
-                    YAX_SKIPSECTOR(sprite[j-MAXWALLS].sectnum);
+                {
+                    skipSector = sprite[j-MAXWALLS].sectnum;
+                    YAX_SKIPSECTOR(skipSector);
+                }
 
                 editorDraw2dSprite(j-MAXWALLS, posxe, posye, posze, zoome);
             }

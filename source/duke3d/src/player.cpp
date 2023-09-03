@@ -3111,13 +3111,18 @@ void P_UpdateAngles(int const playerNum, input_t &input)
 
         if (currentSector >= 0)
         {
+#ifdef YAX_ENABLE
             int const slopeZ = yax_getflorzofslope(currentSector, adjustedPosition);
             int const floorZ = yax_getflorzofslope(pPlayer->cursectnum, pPlayer->pos.xy);
+#else
+            int const slopeZ = getflorzofslope(currentSector, adjustedPosition.x, adjustedPosition.y);
+            int const floorZ = getflorzofslope(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y);
+#endif
 
             if ((pPlayer->cursectnum == currentSector) || (klabs(floorZ - slopeZ) <= ZOFFSET6))
             {
                 pPlayer->q16horizoff = fix16_from_float(fix16_to_float(pPlayer->q16horizoff) + scaleToInterval((floorZ - slopeZ) * 160 * (1.f/65536.f)));
-                LOG_F(INFO, "%g", fix16_to_float(pPlayer->q16horizoff));
+                // LOG_F(INFO, "%g", fix16_to_float(pPlayer->q16horizoff));
             }
         }
     }

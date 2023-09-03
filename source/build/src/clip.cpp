@@ -15,10 +15,9 @@
 
 static int16_t clipnum;
 static linetype clipit[MAXCLIPNUM];
-static int32_t clipsectnum, origclipsectnum, layerclipsectnum, clipspritenum;
+static int32_t clipsectnum, origclipsectnum, clipspritenum;
 int16_t clipsectorlist[MAXCLIPSECTORS];
 static int16_t origclipsectorlist[MAXCLIPSECTORS];
-static int16_t layerclipsectorlist[MAXCLIPSECTORS];
 static uint8_t clipsectormap[bitmap_size(MAXSECTORS)];
 static uint8_t origclipsectormap[bitmap_size(MAXSECTORS)];
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -26,6 +25,11 @@ static int16_t clipspritelist[MAXCLIPNUM];  // sector-like sprite clipping
 #endif
 static int16_t clipobjectval[MAXCLIPNUM];
 static uint8_t clipignore[bitmap_size(MAXCLIPNUM)];
+
+#ifdef YAX_ENABLE
+static int16_t layerclipsectorlist[MAXCLIPSECTORS];
+static int32_t layerclipsectnum;
+#endif
 
 ////// sector-like clipping for sprites //////
 #ifdef HAVE_CLIPSHAPE_FEATURE

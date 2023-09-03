@@ -2898,6 +2898,8 @@ void SetFirstWall(int32_t sectnum, int32_t wallnum, int32_t alsoynw)
 {
 #ifdef YAX_ENABLE
     int32_t i, j, k=0;
+#else
+    UNREFERENCED_PARAMETER(alsoynw);
 #endif
     const sectortype *sec = &sector[sectnum];
 
@@ -3152,6 +3154,8 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
             return m|(j<<16);
     }
     else
+#else
+    UNREFERENCED_PARAMETER(onewnumwalls);
 #endif
     {
         insertpoint(thewall, dax,day, mapwallnum);
@@ -6689,8 +6693,8 @@ end_point_dragging:
                         joinsector[1] = i;
 
                         const int s1to0wall = find_nextwall(i, joinsector[0]);
-                        const int s0to1wall = s1to0wall == -1 ? -1 : wall[s1to0wall].nextwall;
 #ifdef YAX_ENABLE
+                        const int s0to1wall = s1to0wall == -1 ? -1 : wall[s1to0wall].nextwall;
                         int16_t jbn[2][2];  // [join index][c/f]
 
                         for (k=0; k<2; k++)
@@ -7755,7 +7759,11 @@ check_next_sector: ;
 
                     if (numwalls==expectedNumwalls)
                     {
+#ifdef YAX_ENABLE
                         if (doSectorSplit && cb<0 && fb<0)
+#else
+                        if (doSectorSplit)
+#endif
                         {
                             if (firstwallflag)
                             {

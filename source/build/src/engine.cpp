@@ -366,6 +366,7 @@ void yax_updategrays(int32_t posze)
 
     for (i=0; i<numsectors; i++)
     {
+        int32_t keep;
 #ifdef YAX_ENABLE
         int16_t cb, fb;
         yax_getbunches(i, &cb, &fb);
@@ -373,7 +374,7 @@ void yax_updategrays(int32_t posze)
         // Update grayouts due to TROR, has to be --v--       half-open      --v--
         // because only one level should ever be    v                          v
         // active.                                  v                          v
-        int32_t keep = ((cb<0 || sector[i].ceilingz < posze) && (fb<0 || posze <= sector[i].floorz));
+        keep = ((cb<0 || sector[i].ceilingz < posze) && (fb<0 || posze <= sector[i].floorz));
         if (autogray && (cb>=0 || fb>=0) && (sector[i].ceilingz <= posze && posze <= sector[i].floorz))
         {
             mingoodz = min(mingoodz, TrackerCast(sector[i].ceilingz));
@@ -1601,8 +1602,8 @@ char apptitle[256] = "Build Engine";
 //          1=break out of sprite collecting;
 int32_t renderAddTsprite(int16_t z, int16_t sectnum)
 {
-    auto const spr = (uspriteptr_t)&sprite[z];
 #ifdef YAX_ENABLE
+    auto const spr = (uspriteptr_t)&sprite[z];
     if (g_nodraw==0)
     {
         if (numyaxbunches==0)
@@ -1665,6 +1666,8 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
             }
         }
     }
+#else
+    UNREFERENCED_PARAMETER(sectnum);
 #endif
 
     return 0;
@@ -10795,6 +10798,7 @@ void calc_sector_reachability(void)
 #endif
                 }
 
+#ifdef YAX_ENABLE
                 int upperSect = yax_vnextsec(j, YAX_CEILING);
                 if (upperSect >= 0 && !bitmap_test(sectbitmap, upperSect))
                 {
@@ -10812,6 +10816,7 @@ void calc_sector_reachability(void)
                     LOG_F(INFO, "sector %d reaches sector %d through TROR", sectnum, lowerSect);
 #endif
                 }
+#endif
             }
         }
     }
@@ -12728,7 +12733,9 @@ restart_grand:
             if (z <= cfz[0] || z >= cfz[1])
                 return 0;
 
+#ifdef YAX_ENABLE
 add_nextsector:
+#endif
             if (!bitmap_test(sectbitmap, nexts))
             {
                 bitmap_set(sectbitmap, nexts);
@@ -12957,6 +12964,8 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 {
     int16_t cnt, tempshort;
     int32_t thelastwall;
+
+    UNREFERENCED_PARAMETER(flags);
 
     tempshort = pointhighlight;    //search points CCW
     cnt = MAXWALLS;
