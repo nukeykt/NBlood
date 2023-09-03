@@ -2665,8 +2665,11 @@ void P_HandleSharedKeys(int playerNum)
         pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_CENTERING)&1)<<1;
         pPlayer->aim_mode |= ((extBits>>EK_GAMEPAD_AIM_ASSIST)&1)<<2;
 
-        if (pPlayer->aim_mode < (aimMode & 3))
+        // g_skipReturnToCenter workaround: playerBits and extBits are both briefly set to 0 after CON_SAVE
+        if (!g_skipReturnToCenter && (pPlayer->aim_mode < (aimMode & 3)))
             pPlayer->return_to_center = 9;
+        else
+            g_skipReturnToCenter = false;
     }
 
     if (TEST_SYNC_KEY(playerBits, SK_QUICK_KICK) && pPlayer->quick_kick == 0)
