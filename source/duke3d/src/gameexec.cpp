@@ -2985,8 +2985,8 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     auto const pNext = ++insptr;
 
                     struct controlflow {
-                        uint8_t doBreak;
-                        uint8_t doReturn;
+                        unsigned int doBreak  : 1;
+                        unsigned int doReturn : 1;
                     };
 
                     auto execute = [&](int const index) {
