@@ -4363,7 +4363,11 @@ skip:
                 {
                     int const shadowZ = ((sector[sect].lotag & 0xff) > 2 || pSprite->statnum == STAT_PROJECTILE ||
                                    pSprite->statnum == STAT_MISC || pSprite->picnum == DRONE || pSprite->picnum == COMMANDER)
-                                  ? sector[sect].floorz
+#ifdef YAX_ENABLE
+                                  ? yax_getflorzofslope(sect, pSprite->xy)
+#else
+                                  ? getflorzofslope(sect, pSprite->x, pSprite->y)
+#endif
                                   : actor[i].floorz;
 
                     if ((pSprite->z-shadowZ) < ZOFFSET3 && g_player[screenpeek].ps->pos.z < shadowZ)
