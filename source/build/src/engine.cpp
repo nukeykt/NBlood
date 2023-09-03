@@ -366,7 +366,7 @@ void yax_updategrays(int32_t posze)
 
     for (i=0; i<numsectors; i++)
     {
-        int32_t keep;
+        int32_t keep = true;
 #ifdef YAX_ENABLE
         int16_t cb, fb;
         yax_getbunches(i, &cb, &fb);

@@ -696,12 +696,13 @@ void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz
 
             if (videoGetRenderMode() != REND_POLYMER)
             {
-                int32_t didmirror;
-
-                yax_preparedrawrooms();
-                didmirror = renderDrawRoomsQ16(tposx,tposy,z,tang,q16horiz,g_mirrorSector[i]+MAXSECTORS);
-                //POGO: if didmirror == 0, we may simply wish to abort instead of rendering with yax_drawrooms (which may require cleaning yax state)
 #ifdef YAX_ENABLE
+                yax_preparedrawrooms();
+                auto const didmirror =
+#endif
+                    renderDrawRoomsQ16(tposx,tposy,z,tang,q16horiz,g_mirrorSector[i]+MAXSECTORS);
+#ifdef YAX_ENABLE
+                //POGO: if didmirror == 0, we may simply wish to abort instead of rendering with yax_drawrooms (which may require cleaning yax state)
                 if (videoGetRenderMode() != REND_CLASSIC || didmirror)
                     yax_drawrooms(G_DoSpriteAnimations, g_mirrorSector[i], didmirror, smoothratio);
 #endif
@@ -2754,7 +2755,11 @@ int A_Spawn(int spriteNum, int tileNum)
 
             if (spriteNum >= 0)
             {
+#ifdef YAX_ENABLE
                 int const floorZ = yax_getflorzofslope(pSprite->sectnum, pSprite->xy);
+#else
+                int const floorZ = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+#endif
 
                 if (pSprite->z > floorZ-ZOFFSET4)
                     pSprite->z = floorZ-ZOFFSET4;
