@@ -2754,7 +2754,7 @@ int A_Spawn(int spriteNum, int tileNum)
 
             if (spriteNum >= 0)
             {
-                int const floorZ = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+                int const floorZ = yax_getflorzofslope(pSprite->sectnum, pSprite->xy);
 
                 if (pSprite->z > floorZ-ZOFFSET4)
                     pSprite->z = floorZ-ZOFFSET4;
