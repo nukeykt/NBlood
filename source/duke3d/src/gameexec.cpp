@@ -226,17 +226,27 @@ int32_t VM_ExecuteEventWithValue(int const nEventID, int const spriteNum, int co
     return VM_EventInlineInternal__(nEventID, spriteNum, playerNum, -1, nReturn);
 }
 
+static bool VM_SectorHasSE7(int32_t sectNum)
+{
+    for (int32_t spriteNum = headspritesect[sectNum]; spriteNum >= 0; spriteNum = nextspritesect[spriteNum])
+    {
+        if ((sprite[spriteNum].picnum == SECTOREFFECTOR) && (sprite[spriteNum].lotag == SE_7_TELEPORT))
+            return true;
+    }
+    return false;
+}
 
 static int VM_CheckSquished(void)
 {
     auto const pSector = (usectorptr_t)&sector[vm.pSprite->sectnum];
 
-    if (pSector->lotag == ST_23_SWINGING_DOOR || (vm.pSprite->picnum == APLAYER && ud.noclip)
+    bool isTeleportWater = VM_SectorHasSE7(vm.pSprite->sectnum);
 #ifdef YAX_ENABLE
-        // Note: This is actually a regression, see: https://voidpoint.io/terminx/eduke32/-/issues/283
-        || (pSector->lotag == ST_1_ABOVE_WATER && !A_CheckNoSE7Water(vm.pUSprite, vm.pSprite->sectnum, pSector->lotag, NULL))
+    isTeleportWater = isTeleportWater || A_CheckNoSE7Water(vm.pUSprite, vm.pSprite->sectnum, pSector->lotag, NULL);
 #endif
-        )
+
+    if (pSector->lotag == ST_23_SWINGING_DOOR || (vm.pSprite->picnum == APLAYER && ud.noclip)
+        || (pSector->lotag == ST_1_ABOVE_WATER && isTeleportWater))
         return 0;
 
     int32_t floorZ = pSector->floorz;
