@@ -2938,17 +2938,18 @@ int32_t hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32
                     else
                     {
                         int32_t daz2;
+                        bool comparison;
                         if (enginecompatibilitymode == ENGINE_EDUKE32)
                         {
                             getzsofslope(dasector,intx,inty,&daz,&daz2);
+                            comparison = intz >= daz && intz <= daz2;
                         }
                         else
                         {
-                            daz = INT32_MIN;
-                            daz2 = INT32_MAX;
+                            comparison = true;
                         }
 
-                        if (intz >= daz && intz <= daz2)
+                        if (comparison)
                         {
                             if ((nextsector < 0) || (wal->cstat&dawalclipmask))
                             {

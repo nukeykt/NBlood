@@ -12601,25 +12601,28 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t orig_sect1, int32_t x
     int16_t sect1 = orig_sect1;
     int16_t sect2 = orig_sect2;
 
-    // Failsafe: Try to correct the input sectors if the corresponding coordinates aren't actually within the given sector.
-    if (!inside_z_p(x1, y1, z1, sect1))
+    if (enginecompatibilitymode == ENGINE_EDUKE32)
     {
-        // DLOG_F(WARNING, "cansee: Origin coordinates x=%d, y=%d, z=%d are outside sector %d", x1, y1, z1, sect1);
-        updatesectorz(x1, y1, z1, &sect1);
-        if (sect1 < 0)
+        // Failsafe: Try to correct the input sectors if the corresponding coordinates aren't actually within the given sector.
+        if (!inside_z_p(x1, y1, z1, sect1))
         {
-            DLOG_F(WARNING, "cansee: Failed to correct origin sector, falling back to original sector %d", orig_sect1);
-            sect1 = orig_sect1;
+            // DLOG_F(WARNING, "cansee: Origin coordinates x=%d, y=%d, z=%d are outside sector %d", x1, y1, z1, sect1);
+            updatesectorz(x1, y1, z1, &sect1);
+            if (sect1 < 0)
+            {
+                DLOG_F(WARNING, "cansee: Failed to correct origin sector, falling back to original sector %d", orig_sect1);
+                sect1 = orig_sect1;
+            }
         }
-    }
-    if (!inside_z_p(x2, y2, z2, sect2))
-    {
-        // DLOG_F(WARNING, "cansee: Destination coordinates x=%d, y=%d, z=%d are outside sector %d", x2, y2, z2, sect2);
-        updatesectorz(x2, y2, z2, &sect2);
-        if (sect2 < 0)
+        if (!inside_z_p(x2, y2, z2, sect2))
         {
-            DLOG_F(WARNING, "cansee: Failed to correct destination sector, falling back to original sector %d", orig_sect2);
-            sect2 = orig_sect2;
+            // DLOG_F(WARNING, "cansee: Destination coordinates x=%d, y=%d, z=%d are outside sector %d", x2, y2, z2, sect2);
+            updatesectorz(x2, y2, z2, &sect2);
+            if (sect2 < 0)
+            {
+                DLOG_F(WARNING, "cansee: Failed to correct destination sector, falling back to original sector %d", orig_sect2);
+                sect2 = orig_sect2;
+            }
         }
     }
 
