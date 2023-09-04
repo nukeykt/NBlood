@@ -1007,8 +1007,12 @@ static int clipupdatesector(vec3_t const pos, int16_t * const sectnum, int walld
     }
 
 #ifdef YAX_ENABLE
-    // TROR-aware update: Traverse TROR layers if x,y position is located in the sector.
+    int16_t cb = -1, fb = -1;
     if (numyaxbunches > 0)
+        yax_getbunches(*sectnum, &cb, &fb);
+
+    // TROR-aware update: Traverse TROR layers if x,y position is located in the sector.
+    if (cb >= 0 || fb >= 0)
     {
         // if inside the initial sector on z-axis, nothing needs to be done
         if (inside_z_p(pos.x, pos.y, pos.z, *sectnum) == 1)
@@ -1058,14 +1062,14 @@ static int clipupdatesector(vec3_t const pos, int16_t * const sectnum, int walld
                 }
             } while (hasNextSector);
 
-            // x,y position inbounds, but z position is completely out of bounds, don't update sectnum
-            return 1;
+            // need to return 0 here like in the non-TROR case, otherwise the actor will be stuck (e.g. in Duke3D while the player is shrunk)
+            return 0;
         }
     }
     else
 #endif
     {
-        // only check on x,y plane if no TROR layers exist
+        // only check on x,y plane if no TROR layers exist in the sector
         if (inside(pos.x, pos.y, *sectnum) == 1)
             return 0;
     }
