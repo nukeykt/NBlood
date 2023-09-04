@@ -296,7 +296,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
     }
 }
 
-#define MAXDAMAGESECTORS 128
+#define MAXDAMAGESECTORS 256
 
 void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, int const dmg2, int const dmg3, int const dmg4)
 {
@@ -306,9 +306,9 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
     auto const pSprite = (uspriteptr_t)&sprite[spriteNum];
 
-    int16_t numSectors, sectorList[MAXDAMAGESECTORS];
+    int16_t sectorListTotal, sectorList[MAXDAMAGESECTORS];
     uint8_t * const sectorMap = (uint8_t *)Balloca(bitmap_size(numsectors));
-    bfirst_search_init(sectorList, sectorMap, &numSectors, numsectors, pSprite->sectnum);
+    bfirst_search_init(sectorList, sectorMap, &sectorListTotal, numsectors, pSprite->sectnum);
 
 #ifndef EDUKE32_STANDALONE
     int wallDamage = true;
@@ -327,10 +327,33 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     auto wallCanSee = (uint8_t *)Balloca(bitmap_size(numwalls));
     Bmemset(wallCanSee, 0, bitmap_size(numwalls));
 
-    for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
+    for (int sectorCount=0; sectorCount < sectorListTotal; ++sectorCount)
     {
-        int const   sectorNum  = sectorList[sectorCount];
-        auto const &listSector = sector[sectorNum];
+        int const origSector  = sectorList[sectorCount];
+        auto const &listSector = sector[origSector];
+
+#ifdef YAX_ENABLE
+        if (numyaxbunches > 0 && sectorListTotal < MAXDAMAGESECTORS)
+        {
+            int32_t yax_sect;
+            for (SECTORS_OF_BUNCH(yax_getbunch(origSector, YAX_CEILING), YAX_FLOOR, yax_sect))
+            {
+                if (sectorListTotal < MAXDAMAGESECTORS)
+                    bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
+            }
+
+            for (SECTORS_OF_BUNCH(yax_getbunch(origSector, YAX_FLOOR), YAX_CEILING, yax_sect))
+            {
+                if (sectorListTotal < MAXDAMAGESECTORS)
+                    bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
+            }
+
+            if (sectorListTotal == MAXDAMAGESECTORS) {
+                LOG_F(WARNING, "A_RadiusDamage (yax): Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
+            }
+            Bassert(sectorListTotal <= MAXDAMAGESECTORS);
+        }
+#endif
 
         vec2_t  closest  = {};
         int32_t distance = INT32_MAX;
@@ -356,7 +379,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                     closest  = p;
                 }
 
-                int16_t aSector = sectorNum;
+                int16_t aSector = origSector;
                 vec3_t  vect    = { (((pWall->x + wall[pWall->point2].x) >> 1) + pSprite->x) >> 1,
                                     (((pWall->y + wall[pWall->point2].y) >> 1) + pSprite->y) >> 1, pSprite->z };
 
@@ -365,7 +388,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                 if (aSector == -1)
                 {
                     vect.xy = p;
-                    aSector   = sectorNum;
+                    aSector   = origSector;
                 }
 
                 bitmap_set(wallTouched, w);
@@ -386,15 +409,16 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                         A_DamageWall_Internal(spriteNum, w, { p.x, p.y, pSprite->z }, pSprite->picnum);
                 }
 
-                int const nextSector = pWall->nextsector;
-
-                if (nextSector >= 0)
-                    bfirst_search_try(sectorList, sectorMap, &numSectors, nextSector);
-
-                if (numSectors == MAXDAMAGESECTORS)
+                if (sectorListTotal < MAXDAMAGESECTORS)
                 {
-                    LOG_F(WARNING, "Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
-                    goto wallsfinished;
+                    int const nextSector = pWall->nextsector;
+
+                    if (nextSector >= 0)
+                        bfirst_search_try(sectorList, sectorMap, &sectorListTotal, nextSector);
+
+                    if (sectorListTotal == MAXDAMAGESECTORS)
+                        LOG_F(WARNING, "A_RadiusDamage: Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
+                    Bassert(sectorListTotal <= MAXDAMAGESECTORS);
                 }
             }
         }
@@ -402,20 +426,20 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
         if (distance >= blastRadius)
             continue;
 
+        // Intentionally does not use TROR-aware function, so that potentially solid TROR surfaces may be damaged.
         int32_t floorZ, ceilZ;
-        getzsofslope(sectorNum, closest.x, closest.y, &ceilZ, &floorZ);
+        getzsofslope(origSector, closest.x, closest.y, &ceilZ, &floorZ);
 
         if (((ceilZ - pSprite->z) >> 8) < blastRadius)
-            Sect_DamageCeiling_Internal(spriteNum, sectorNum);
+            Sect_DamageCeiling_Internal(spriteNum, origSector);
 
         if (((pSprite->z - floorZ) >> 8) < blastRadius)
-            Sect_DamageFloor_Internal(spriteNum, sectorNum);
+            Sect_DamageFloor_Internal(spriteNum, origSector);
     }
 
-wallsfinished:
     int const randomZOffset = -ZOFFSET2 + (krand()&(ZOFFSET5-1));
 
-    for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
+    for (int sectorCount=0; sectorCount < sectorListTotal; ++sectorCount)
     {
         int damageSprite = headspritesect[sectorList[sectorCount]];
 

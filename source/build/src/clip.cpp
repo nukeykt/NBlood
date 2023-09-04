@@ -1903,7 +1903,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         {
                             int16_t const os = *sectnum;
                             clipupdatesector(*vect, sectnum, walldist);
-                            if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0)
+                            if (*sectnum < 0)
                             {
                                 vect->xy = ov;
                                 *sectnum   = os;
@@ -2623,7 +2623,7 @@ static void hitscan_sprite(const vec3_t *sv, int16_t spriteClipSector, int32_t v
         x1 = spr->x; y1 = spr->y; z1 = spr->z;
         switch (cstat&CSTAT_SPRITE_ALIGNMENT)
         {
-        case 0:
+        case CSTAT_SPRITE_ALIGNMENT_FACING:
         {
             if (try_facespr_intersect(spr, *sv, vx, vy, vz, &hit->xyz, 0))
             {
@@ -2938,8 +2938,18 @@ int32_t hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32
                     else
                     {
                         int32_t daz2;
-                        getzsofslope(dasector,intx,inty,&daz,&daz2);
-                        if (intz >= daz && intz <= daz2)
+                        bool comparison;
+                        if (enginecompatibilitymode == ENGINE_EDUKE32)
+                        {
+                            getzsofslope(dasector,intx,inty,&daz,&daz2);
+                            comparison = intz >= daz && intz <= daz2;
+                        }
+                        else
+                        {
+                            comparison = true;
+                        }
+
+                        if (comparison)
                         {
                             if ((nextsector < 0) || (wal->cstat&dawalclipmask))
                             {
