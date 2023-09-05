@@ -998,7 +998,7 @@ static int get_floorspr_clipyou(vec2_t const v1, vec2_t const v2, vec2_t const v
     return clipyou;
 }
 
-static int clipupdatesector(vec3_t const pos, int16_t * const sectnum, int walldist)
+static int clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walldist)
 {
     if (enginecompatibilitymode != ENGINE_EDUKE32)
     {
@@ -1006,75 +1006,10 @@ static int clipupdatesector(vec3_t const pos, int16_t * const sectnum, int walld
         return 0;
     }
 
-#ifdef YAX_ENABLE
-    int16_t cb = -1, fb = -1;
-    if (numyaxbunches > 0)
-        yax_getbunches(*sectnum, &cb, &fb);
+    if (inside(pos.x, pos.y, *sectnum) == 1)
+        return 0;
 
-    // TROR-aware update: Traverse TROR layers if x,y position is located in the sector.
-    if (cb >= 0 || fb >= 0)
-    {
-        // if inside the initial sector on z-axis, nothing needs to be done
-        if (inside_z_p(pos.x, pos.y, pos.z, *sectnum) == 1)
-            return 0;
-
-        // if we are inside on x,y coordinates, check TROR layers
-        if (inside(pos.x, pos.y, *sectnum) == 1)
-        {
-            int32_t ceilingZ, floorZ;
-            int16_t nextSectNum = *sectnum;
-            int trorDirection = -1;
-            bool hasNextSector;
-            do
-            {
-                hasNextSector = false;
-                getzsofslope(nextSectNum, pos.x, pos.y, &ceilingZ, &floorZ);
-                if ((trorDirection == -1 || trorDirection == YAX_CEILING) && pos.z < ceilingZ)
-                {
-                    nextSectNum = yax_getneighborsect(pos.x, pos.y, nextSectNum, YAX_CEILING);
-                    if (nextSectNum >= 0)
-                    {
-                        trorDirection = YAX_CEILING;
-                        hasNextSector = true;
-                        if (pos.z >= getceilzofslope(nextSectNum, pos.x, pos.y))
-                        {
-                            addclipsect(nextSectNum);
-                            *sectnum = nextSectNum;
-                            return 0;
-                        }
-                    }
-                }
-
-                if ((trorDirection == -1 || trorDirection == YAX_FLOOR) && pos.z > floorZ)
-                {
-                    nextSectNum = yax_getneighborsect(pos.x, pos.y, nextSectNum, YAX_FLOOR);
-                    if (nextSectNum >= 0)
-                    {
-                        trorDirection = YAX_FLOOR;
-                        hasNextSector = true;
-                        if (pos.z <= getflorzofslope(nextSectNum, pos.x, pos.y))
-                        {
-                            addclipsect(nextSectNum);
-                            *sectnum = nextSectNum;
-                            return 0;
-                        }
-                    }
-                }
-            } while (hasNextSector);
-
-            // need to return 0 here like in the non-TROR case, otherwise the actor will be stuck (e.g. in Duke3D while the player is shrunk)
-            return 0;
-        }
-    }
-    else
-#endif
-    {
-        // only check on x,y plane if no TROR layers exist in the sector
-        if (inside(pos.x, pos.y, *sectnum) == 1)
-            return 0;
-    }
-
-    int16_t nsecs = min<int16_t>(getsectordist(pos.xy, *sectnum), INT16_MAX);
+    int16_t nsecs = min<int16_t>(getsectordist(pos, *sectnum), INT16_MAX);
 
     // if the actor's clip distance radius at the given position does not intersect with the initial sector, throw a warning here.
     if (nsecs > (walldist + 8))
@@ -1139,9 +1074,23 @@ static int clipupdatesector(vec3_t const pos, int16_t * const sectnum, int walld
         // check floor curbs here?
 
         for (int j = startwall; j < endwall; j++, uwal++)
-            if (uwal->nextsector >= 0 && getwalldist(pos.xy, j) <= (walldist + 8))
+            if (uwal->nextsector >= 0 && getwalldist(pos, j) <= (walldist + 8))
                 bfirst_search_try(sectlist, sectbitmap, &nsecs, uwal->nextsector);
     }
+
+#ifdef YAX_ENABLE
+    // Fallback for actors getting stuck on TROR sector boundaries
+    if ((numyaxbunches > 0) && ((unsigned)(*sectnum) < (unsigned)numsectors))
+    {
+        int16_t cb, fb;
+        yax_getbunches(*sectnum, &cb, &fb);
+        if (cb >= 0 || fb >= 0)
+        {
+            updatesector(pos.x, pos.y, sectnum);
+            return 0;
+        }
+    }
+#endif
 
     return 1;
 }
@@ -1778,7 +1727,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 if ((tempint ^ tempint2) < 0)
                 {
                     if (enginecompatibilitymode == ENGINE_EDUKE32)
-                        clipupdatesector(*pos, sectnum, rad);
+                        clipupdatesector(pos->xy, sectnum, rad);
                     else if (enginecompatibilitymode == ENGINE_19961112)
                         updatesector(pos->x, pos->y, sectnum);
 
@@ -1796,7 +1745,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         }
 
         if (enginecompatibilitymode == ENGINE_EDUKE32)
-            if (clipupdatesector({vec.x, vec.y, pos->z}, sectnum, rad))
+            if (clipupdatesector({vec.x, vec.y}, sectnum, rad))
             {
                 failsafe_cnt--;
                 continue;
@@ -1945,7 +1894,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         if (enginecompatibilitymode == ENGINE_EDUKE32)
                         {
                             int16_t const os = *sectnum;
-                            clipupdatesector(*vect, sectnum, walldist);
+                            clipupdatesector(vect->xy, sectnum, walldist);
                             if (*sectnum < 0)
                             {
                                 vect->xy = ov;
