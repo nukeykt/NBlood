@@ -228,6 +228,7 @@ static FORCE_INLINE void __fastcall VM_SetStruct(uint32_t const flags, intptr_t 
             case GAMEVAR_PERACTOR:                                                                     \
                 var.pValues[vm.spriteNum & (MAXSPRITES-1)] operator operand;                           \
                 break;                                                                                 \
+            case GAMEVAR_RAWQ16PTR:                                                                    \
             case GAMEVAR_INT32PTR: *(int32_t *)var.pValues operator(int32_t) operand; break;           \
             case GAMEVAR_INT16PTR: *(int16_t *)var.pValues operator(int16_t) operand; break;           \
             case GAMEVAR_Q16PTR:                                                                       \
