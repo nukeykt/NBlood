@@ -6779,6 +6779,7 @@ draw_as_face_sprite:
             //asm1 = -(globalzd>>(16-BITSOFPRECISION));
 #define LINTERPSIZ 4
             float const bzinc = -sgzd*(1.f/65536.f) * (1<<LINTERPSIZ);
+            float const bzinc2 = -sgzd*(1.f/65536.f);
             int32_t const vis = (sec->visibility != 0) ? mulscale4(globalhisibility, (uint8_t)(sec->visibility+16)) : globalhisibility;
             globvis = ((((int64_t)(vis*sdaz)) >> 13) * xdimscale) >> 16;
 
@@ -6854,10 +6855,22 @@ draw_as_face_sprite:
                         {
                             while (cnt > 0)
                             {
-                                bz += bzinc;
-                                int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
-                                int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
-                                int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                int cnt2;
+                                int u1, v1;
+                                if (cnt >= (1<<LINTERPSIZ))
+                                {
+                                    bz += bzinc;
+                                    u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                    v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
+                                    cnt2 = 1<<LINTERPSIZ;
+                                }
+                                else
+                                {
+                                    bz += bzinc2 * cnt;
+                                    u1 = ((int)(sg_f3.x/bz)-u0) / cnt;
+                                    v1 = ((int)(sg_f3.y/bz)-v0) / cnt;
+                                    cnt2 = cnt;
+                                }
                                 for (; cnt2>0; cnt2--)
                                 {
                                     uint16_t u = (sg1.x+u0)&0xffff;
@@ -6880,10 +6893,22 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc;
-                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
-                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
-                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    int cnt2;
+                                    int u1, v1;
+                                    if (cnt >= (1<<LINTERPSIZ))
+                                    {
+                                        bz += bzinc;
+                                        u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                        v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
+                                        cnt2 = 1<<LINTERPSIZ;
+                                    }
+                                    else
+                                    {
+                                        bz += bzinc2 * cnt;
+                                        u1 = ((int)(sg_f3.x/bz)-u0) / cnt;
+                                        v1 = ((int)(sg_f3.y/bz)-v0) / cnt;
+                                        cnt2 = cnt;
+                                    }
                                     for (; cnt2>0; cnt2--)
                                     {
                                         uint16_t u = (sg1.x+u0)&0xffff;
@@ -6906,10 +6931,22 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc;
-                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
-                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
-                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    int cnt2;
+                                    int u1, v1;
+                                    if (cnt >= (1<<LINTERPSIZ))
+                                    {
+                                        bz += bzinc;
+                                        u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                        v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
+                                        cnt2 = 1<<LINTERPSIZ;
+                                    }
+                                    else
+                                    {
+                                        bz += bzinc2 * cnt;
+                                        u1 = ((int)(sg_f3.x/bz)-u0) / cnt;
+                                        v1 = ((int)(sg_f3.y/bz)-v0) / cnt;
+                                        cnt2 = cnt;
+                                    }
                                     for (; cnt2>0; cnt2--)
                                     {
                                         uint16_t u = (sg1.x+u0)&0xffff;
@@ -6936,10 +6973,22 @@ draw_as_face_sprite:
                         {
                             while (cnt > 0)
                             {
-                                bz += bzinc;
-                                int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
-                                int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
-                                int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                int cnt2;
+                                int u1, v1;
+                                if (cnt >= (1<<LINTERPSIZ))
+                                {
+                                    bz += bzinc;
+                                    u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                    v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
+                                    cnt2 = 1<<LINTERPSIZ;
+                                }
+                                else
+                                {
+                                    bz += bzinc2 * cnt;
+                                    u1 = ((int)(sg_f3.x/bz)-u0) / cnt;
+                                    v1 = ((int)(sg_f3.y/bz)-v0) / cnt;
+                                    cnt2 = cnt;
+                                }
                                 for (; cnt2>0; cnt2--)
                                 {
                                     uint16_t u = (sg1.x+u0)&0xffff;
@@ -6962,10 +7011,22 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc;
-                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
-                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
-                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    int cnt2;
+                                    int u1, v1;
+                                    if (cnt >= (1<<LINTERPSIZ))
+                                    {
+                                        bz += bzinc;
+                                        u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                        v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
+                                        cnt2 = 1<<LINTERPSIZ;
+                                    }
+                                    else
+                                    {
+                                        bz += bzinc2 * cnt;
+                                        u1 = ((int)(sg_f3.x/bz)-u0) / cnt;
+                                        v1 = ((int)(sg_f3.y/bz)-v0) / cnt;
+                                        cnt2 = cnt;
+                                    }
                                     for (; cnt2>0; cnt2--)
                                     {
                                         uint16_t u = (sg1.x+u0)&0xffff;
@@ -6988,10 +7049,22 @@ draw_as_face_sprite:
                             {
                                 while (cnt > 0)
                                 {
-                                    bz += bzinc;
-                                    int const u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
-                                    int const v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
-                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    int cnt2;
+                                    int u1, v1;
+                                    if (cnt >= (1<<LINTERPSIZ))
+                                    {
+                                        bz += bzinc;
+                                        u1 = ((int)(sg_f3.x/bz)-u0)>>LINTERPSIZ;
+                                        v1 = ((int)(sg_f3.y/bz)-v0)>>LINTERPSIZ;
+                                        cnt2 = 1<<LINTERPSIZ;
+                                    }
+                                    else
+                                    {
+                                        bz += bzinc2 * cnt;
+                                        u1 = ((int)(sg_f3.x/bz)-u0) / cnt;
+                                        v1 = ((int)(sg_f3.y/bz)-v0) / cnt;
+                                        cnt2 = cnt;
+                                    }
                                     for (; cnt2>0; cnt2--)
                                     {
                                         uint16_t u = (sg1.x+u0)&0xffff;
