@@ -1946,7 +1946,7 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
         if (VanillaMode() || gGameOptions.nGameType != kGameTypeCoop)
         {
             pKiller->fragCount++;
-            pKiller->fragInfo[nKiller]++;
+            pKiller->fragInfo[nVictim]++;
         }
         if (gGameOptions.nGameType == kGameTypeTeams)
         {
