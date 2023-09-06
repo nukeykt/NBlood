@@ -1051,6 +1051,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
         return 0;
         case kItemFlagA: {
             if (gGameOptions.nGameType != kGameTypeTeams) return 0;
+            evKill(pItem->index, 3, kCallbackReturnFlag);
             gBlueFlagDropped = false;
             pPlayer->hasFlag |= 1;
             pPlayer->used2[0] = pItem->owner;
@@ -1065,6 +1066,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
         }
         case kItemFlagB: {
             if (gGameOptions.nGameType != kGameTypeTeams) return 0;
+            evKill(pItem->index, 3, kCallbackReturnFlag);
             gRedFlagDropped = false;
             pPlayer->hasFlag |= 2;
             pPlayer->used2[1] = pItem->owner;
