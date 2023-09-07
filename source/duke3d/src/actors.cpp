@@ -337,7 +337,10 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
         if (numyaxbunches > 0 && sectorListTotal < MAXDAMAGESECTORS)
         {
             int32_t yax_sect;
-            for (SECTORS_OF_BUNCH(yax_getbunch(origSector, YAX_CEILING), YAX_FLOOR, yax_sect))
+            int16_t yax_bunchnum = yax_getbunch(origSector, YAX_CEILING);
+
+            if (yax_bunchnum >= 0)
+            for (SECTORS_OF_BUNCH(yax_bunchnum, YAX_FLOOR, yax_sect))
             {
                 if ((unsigned)yax_sect >= (unsigned)numsectors)
                     continue;
@@ -346,7 +349,10 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                     bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
             }
 
-            for (SECTORS_OF_BUNCH(yax_getbunch(origSector, YAX_FLOOR), YAX_CEILING, yax_sect))
+            yax_bunchnum = yax_getbunch(origSector, YAX_FLOOR);
+
+            if (yax_bunchnum >= 0)
+            for (SECTORS_OF_BUNCH(yax_bunchnum, YAX_CEILING, yax_sect))
             {
                 if ((unsigned)yax_sect >= (unsigned)numsectors)
                     continue;
