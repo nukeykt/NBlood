@@ -129,6 +129,15 @@ CKillMgr::CKillMgr()
     Clear();
 }
 
+bool CKillMgr::AllowedType(spritetype *pSprite)
+{
+    if (!pSprite)
+        return false;
+    if (pSprite->statnum != kStatDude)
+        return false;
+    return pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent;
+}
+
 void CKillMgr::SetCount(int nCount)
 {
     at0 = nCount;
@@ -142,14 +151,14 @@ void CKillMgr::AddCount(int nCount)
 void CKillMgr::AddCount(spritetype* pSprite)
 {
     dassert(pSprite != NULL);
-    if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
+    if (VanillaMode() || AllowedType(pSprite))// check type before adding to enemy count
         at0++;
 }
 
 void CKillMgr::AddKill(spritetype* pSprite)
 {
     dassert(pSprite != NULL);
-    if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
+    if (VanillaMode() || AllowedType(pSprite)) // check type before adding to enemy kills
         at4++;
 }
 
@@ -158,7 +167,7 @@ void CKillMgr::RemoveKill(spritetype* pSprite)
     if (gKillMgr.at4 <= 0)
         return;
     dassert(pSprite != NULL);
-    if (pSprite->statnum == kStatDude && pSprite->type != kDudeBat && pSprite->type != kDudeRat && pSprite->type != kDudeInnocent && pSprite->type != kDudeBurningInnocent)
+    if (VanillaMode() || AllowedType(pSprite)) // check type before removing from enemy kills
         at4--;
 }
 
