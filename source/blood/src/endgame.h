@@ -39,6 +39,7 @@ class CKillMgr {
 public:
     int at0, at4;
     CKillMgr();
+    bool AllowedType(spritetype *pSprite);
     void SetCount(int);
     void AddCount(int);
     void AddCount(spritetype *pSprite);
