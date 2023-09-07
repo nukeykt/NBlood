@@ -1393,7 +1393,12 @@ void yax_clipmove_sprite(vec3_t * const pos, int32_t const initialSector, int32_
         int32_t yax_sectTotal = 1;
         do
         {
-            for (SECTORS_OF_BUNCH(yax_getbunch(yax_clipsectlist[yax_sectCurrent], trorDirection), abs(trorDirection-1), yax_sectnum))
+            int16_t yax_bunchnum = yax_getbunch(yax_clipsectlist[yax_sectCurrent], trorDirection);
+
+            if (yax_bunchnum == -1)
+                continue;
+
+            for (SECTORS_OF_BUNCH(yax_bunchnum, abs(trorDirection-1), yax_sectnum))
             {
                 if ((unsigned)yax_sectnum >= (unsigned)numsectors)
                     continue;
