@@ -780,6 +780,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     viewResizeView(gViewSize);
     if ((gGameOptions.nGameType == kGameTypeTeams) && VanillaMode())
         gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
+    if (!VanillaMode())
+        viewClearInterpolations();
     netWaitForEveryone(0);
     totalclock = 0;
     gPaused = 0;
