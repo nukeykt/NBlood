@@ -1231,7 +1231,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
             xsprite[sprite[i].extra].reference = i;
             xsprite[sprite[i].extra].busy = xsprite[sprite[i].extra].state << 16;
             if (!byte_1A76C8) {
-                xsprite[sprite[i].extra].lT |= xsprite[sprite[i].extra].lB;
+                xsprite[sprite[i].extra].lT = xsprite[sprite[i].extra].lB;
             }
 
             #ifdef NOONE_EXTENSIONS
