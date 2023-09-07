@@ -5392,9 +5392,10 @@ void actProcessSprites(void)
 
                             switch (pSprite->type) {
                                 case kThingDroppedLifeLeech:
-                                    if (!Chance(0x4000) && nNextSprite >= 0) continue;
-                                    if (pSprite2->cstat & CLIPMASK0) pXSprite->target = pSprite2->index;
-                                    else continue;
+                                    if ((Chance(0x4000) || nNextSprite < 0) && (pSprite2->cstat & CLIPMASK0))
+                                        pXSprite->target = pSprite2->index;
+                                    else
+                                        continue;
                                     break;
                                 #ifdef NOONE_EXTENSIONS
                                 case kModernThingTNTProx:
