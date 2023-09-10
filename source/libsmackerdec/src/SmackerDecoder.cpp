@@ -958,7 +958,7 @@ int SmackerDecoder::DecodeFrame(uint32_t frameSize)
  */
 int SmackerDecoder::DecodeAudio(uint32_t size, SmackerAudioTrack &track)
 {
-    HuffContext h[4];
+    HuffContext h[4]{};
 	SmackerCommon::VLCtable vlc[4];
     int val;
     int i, res;
@@ -992,8 +992,6 @@ int SmackerDecoder::DecodeAudio(uint32_t size, SmackerAudioTrack &track)
         LOG_F(ERROR, "SmackerDecoder::DecodeAudio() - Channels mismatch");
 		return -1;
     }
-
-    memset(h, 0, sizeof(HuffContext) * 4);
 
     // Initialize
     for (i = 0; i < (1 << (sampleBits + stereo)); i++) {
@@ -1122,7 +1120,7 @@ void SmackerDecoder::GotoFrame(uint32_t frameNum)
     currentFrame = 0;
     nextPos = firstFrameFilePos;
 
-    for (int i = 0; i < frameNum + 1; i++)
+    for (uint32_t i = 0; i < frameNum + 1; i++)
         GetNextFrame();
 }
 
