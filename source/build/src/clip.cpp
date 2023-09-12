@@ -1438,6 +1438,43 @@ void yax_clipmove_sprite(vec3_t * const pos, int32_t const initialSector, int32_
 }
 #endif
 
+void clipmove_errorlogger(vec3_t* const pos, int32_t xvect, int32_t yvect)
+{
+    if (clipmove_warned & 1)
+    {
+        int i = 0;
+
+        do
+        {
+            if (pos == &sprite[i].xyz)
+            {
+                LOG_F(ERROR, "clipmove: clipsectnum >= MAXCLIPSECTORS at (%d,%d,%d) for sprite %d (tile %d) with vector (%d,%d)!", pos->x, pos->y, pos->z, i, TrackerCast(sprite[i].picnum), xvect, yvect);
+                break;
+            }
+        } while (++i < MAXSPRITES);
+
+        if (i == MAXSPRITES)
+            LOG_F(ERROR, "clipmove: clipsectnum >= MAXCLIPSECTORS at (%d,%d,%d) with vector (%d,%d)!", pos->x, pos->y, pos->z, xvect, yvect);
+    }
+
+    if (clipmove_warned & 2)
+    {
+        int i = 0;
+
+        do
+        {
+            if (pos == &sprite[i].xyz)
+            {
+                LOG_F(ERROR, "clipmove: clipnum >= MAXCLIPNUM at (%d,%d,%d) for sprite %d (tile %d) with vector (%d,%d)!", pos->x, pos->y, pos->z, i, TrackerCast(sprite[i].picnum), xvect, yvect);
+                break;
+            }
+        } while (++i < MAXSPRITES);
+
+        if (i == MAXSPRITES)
+            LOG_F(ERROR, "clipmove: clipnum >= MAXCLIPNUM at (%d,%d,%d) with vector (%d,%d)!", pos->x, pos->y, pos->z, xvect, yvect);
+    }
+}
+
 //
 // clipmove
 //
@@ -1652,11 +1689,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             }
         }
 
-        if (clipmove_warned & 1)
-            LOG_F(ERROR, "clipmove: clipsectnum >= MAXCLIPSECTORS at (%d,%d,%d)!", pos->x, pos->y, pos->z);
-
-        if (clipmove_warned & 2)
-            LOG_F(ERROR, "clipmove: clipnum >= MAXCLIPNUM at (%d,%d,%d)!", pos->x, pos->y, pos->z);
+        if (clipmove_warned)
+            clipmove_errorlogger(pos, xvect, yvect);
 
         ////////// Sprites //////////
 
