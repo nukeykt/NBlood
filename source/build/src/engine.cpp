@@ -7894,7 +7894,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
         sm0 = { goal, goal, picnum, (int16_t)(dastat & ~RS_TRANS_MASK), clock };
 
-        bool const lerpWouldLookDerp = !(dastat & RS_LERP) || sm.clock == 0 || clock - sm.clock > 4
+        bool const lerpWouldLookDerp = !(dastat & RS_LERP) || sm.clock == 0 || (clock - sm.clock > 4) || (clock - sm.clock < 0)
                                        || (!(dastat & RS_FORCELERP) && (sm.flags != (dastat & ~RS_TRANS_MASK) || (tilesiz[picnum] != tilesiz[sm.picnum]
                                        && (unsigned)(picnum - sm.picnum)))) || klabs(a - sm.goal.a) == 1024;
 
