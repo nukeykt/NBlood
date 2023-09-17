@@ -296,7 +296,7 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
     }
 }
 
-#define MAXDAMAGESECTORS 256
+#define MAXDAMAGESECTORS 512
 
 void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, int const dmg2, int const dmg3, int const dmg4)
 {
@@ -332,41 +332,6 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
         int const origSector  = sectorList[sectorCount];
         Bassert((unsigned)origSector < (unsigned)numsectors);
         auto const &listSector = sector[origSector];
-
-#ifdef YAX_ENABLE
-        if (numyaxbunches > 0 && sectorListTotal < MAXDAMAGESECTORS)
-        {
-            int32_t yax_sect;
-            int16_t yax_bunchnum = yax_getbunch(origSector, YAX_CEILING);
-
-            if (yax_bunchnum >= 0)
-            for (SECTORS_OF_BUNCH(yax_bunchnum, YAX_FLOOR, yax_sect))
-            {
-                if ((unsigned)yax_sect >= (unsigned)numsectors)
-                    continue;
-
-                if (sectorListTotal < MAXDAMAGESECTORS)
-                    bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
-            }
-
-            yax_bunchnum = yax_getbunch(origSector, YAX_FLOOR);
-
-            if (yax_bunchnum >= 0)
-            for (SECTORS_OF_BUNCH(yax_bunchnum, YAX_CEILING, yax_sect))
-            {
-                if ((unsigned)yax_sect >= (unsigned)numsectors)
-                    continue;
-
-                if (sectorListTotal < MAXDAMAGESECTORS)
-                    bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
-            }
-
-            if (sectorListTotal == MAXDAMAGESECTORS) {
-                LOG_F(WARNING, "A_RadiusDamage (yax): Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
-            }
-            Bassert(sectorListTotal <= MAXDAMAGESECTORS);
-        }
-#endif
 
         vec2_t  closest  = {};
         int32_t distance = INT32_MAX;
@@ -429,8 +394,10 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                     if (nextSector >= 0)
                         bfirst_search_try(sectorList, sectorMap, &sectorListTotal, nextSector);
 
-                    if (sectorListTotal == MAXDAMAGESECTORS)
-                        LOG_F(WARNING, "A_RadiusDamage: Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
+#ifdef DEBUGGINGAIDS
+                    if (sectorListTotal >= MAXDAMAGESECTORS)
+                        DLOG_F(WARNING, "A_RadiusDamage: Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
+#endif
                     Bassert(sectorListTotal <= MAXDAMAGESECTORS);
                 }
             }
@@ -448,6 +415,42 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
         if (((pSprite->z - floorZ) >> 8) < blastRadius)
             Sect_DamageFloor_Internal(spriteNum, origSector);
+
+#ifdef YAX_ENABLE
+        // Note: Only add TROR sectors if not outside radius.
+        if (numyaxbunches > 0 && sectorListTotal < MAXDAMAGESECTORS)
+        {
+            int32_t yax_sect;
+            int16_t yax_bunchnum = yax_getbunch(origSector, YAX_CEILING);
+
+            if (yax_bunchnum >= 0)
+            for (SECTORS_OF_BUNCH(yax_bunchnum, YAX_FLOOR, yax_sect))
+            {
+                if ((unsigned)yax_sect >= (unsigned)numsectors)
+                    continue;
+
+                if (sectorListTotal < MAXDAMAGESECTORS)
+                    bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
+            }
+
+            yax_bunchnum = yax_getbunch(origSector, YAX_FLOOR);
+
+            if (yax_bunchnum >= 0)
+            for (SECTORS_OF_BUNCH(yax_bunchnum, YAX_CEILING, yax_sect))
+            {
+                if ((unsigned)yax_sect >= (unsigned)numsectors)
+                    continue;
+
+                if (sectorListTotal < MAXDAMAGESECTORS)
+                    bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
+            }
+
+            if (sectorListTotal == MAXDAMAGESECTORS) {
+                LOG_F(WARNING, "A_RadiusDamage (yax): Sprite %d tried to damage more than %d sectors!", spriteNum, MAXDAMAGESECTORS);
+            }
+            Bassert(sectorListTotal <= MAXDAMAGESECTORS);
+        }
+#endif
     }
 
     int const randomZOffset = -ZOFFSET2 + (krand()&(ZOFFSET5-1));
