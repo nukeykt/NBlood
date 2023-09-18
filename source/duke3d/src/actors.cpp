@@ -1884,9 +1884,9 @@ ACTOR_STATIC void G_MoveFallers(void)
                     A_SetSprite(spriteNum,CLIPMASK0);
                 }
 
-                if (EDUKE32_PREDICT_FALSE(G_CheckForSpaceFloor(pSprite->sectnum)))
+                if (G_CheckForSpaceFloor(pSprite->sectnum))
                     spriteGravity = 0;
-                else if (EDUKE32_PREDICT_FALSE(G_CheckForSpaceCeiling(pSprite->sectnum)))
+                else if (G_CheckForSpaceCeiling(pSprite->sectnum))
                     spriteGravity = g_spriteGravity / 6;
 
                 if (pSprite->z < (sector[sectNum].floorz - AC_FZOFFSET(spriteNum)))

@@ -938,7 +938,7 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
                 if (arrayIndexVar == g_thisActorVarID)
                     arrayIndex = vm.playerNum;
                 CHECK_INDEX(MAXPLAYERS);
-                arrayIndexVar = (EDUKE32_PREDICT_FALSE(PlayerLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++, spriteNum, playerNum) : 0;
+                arrayIndexVar = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++, spriteNum, playerNum) : 0;
                 returnValue = VM_GetPlayer(arrayIndex, labelNum, arrayIndexVar);
                 break;
 
@@ -981,7 +981,7 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
                 break;
 
             case STRUCT_USERDEF:
-                arrayIndexVar = (EDUKE32_PREDICT_FALSE(UserdefsLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++) : 0;
+                arrayIndexVar = (UserdefsLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
                 returnValue   = VM_GetUserdef(labelNum, arrayIndexVar);
                 break;
         }
