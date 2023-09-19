@@ -1336,12 +1336,12 @@ void Screen_Play(void)
         if (VM_OnEventWithReturn(EVENT_SCREEN, -1, myconnectindex, I_CheckAllInput()))
             running = false;
 
+        I_ClearAllInput();
         videoNextPage();
     } while (running);
 
     g_player[myconnectindex].ps->gm = gm;
 
-    I_ClearAllInput();
 }
 
 static inline void SetArray(int const arrayNum, int const arrayIndex, int const newValue)
