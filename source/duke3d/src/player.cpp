@@ -5035,6 +5035,12 @@ void P_ProcessInput(int playerNum)
 
     if (pPlayer->cursectnum == -1)
     {
+        pPlayer->cursectnum = pSprite->sectnum;
+        updatesector(pPlayer->pos.x, pPlayer->pos.y, &pPlayer->cursectnum);
+    }
+
+    if (pPlayer->cursectnum == -1)
+    {
         if (pSprite->extra > 0 && ud.noclip == 0)
         {
             LOG_F(WARNING, "%s: player killed by cursectnum == -1!", EDUKE32_FUNCTION);
