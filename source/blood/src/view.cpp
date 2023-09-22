@@ -3624,13 +3624,13 @@ void viewDrawScreen(void)
             g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->visibility, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
             int vc4, vc8;
             getzsofslope(vcc, vd8, vd4, &vc8, &vc4);
-            if ((vd0 > vc4-(1<<7)) && (gUpperLink[vcc] == -1)) // clamp to floor
+            if (VanillaMode() ? (vd0 >= vc4) : (vd0 > vc4-(8<<4)) && (gUpperLink[vcc] == -1)) // clamp to floor
             {
-                vd0 = vc4-(1<<7);
+                vd0 = vc4-(8<<4);
             }
-            if ((vd0 < vc8+(1<<7)) && (gLowerLink[vcc] == -1)) // clamp to ceiling
+            if (VanillaMode() ? (vd0 <= vc8) : (vd0 < vc8+(8<<4)) && (gLowerLink[vcc] == -1)) // clamp to ceiling
             {
-                vd0 = vc8+(1<<7);
+                vd0 = vc8+(8<<4);
             }
             v54 = ClipRange(v54, -200, 200);
             int nRORLimit = 32; // limit ROR rendering to 32 times
@@ -3707,13 +3707,13 @@ RORHACKOTHER:
         }
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
-        if ((cZ > vf8-(1<<7)) && (gUpperLink[nSectnum] == -1)) // clamp to floor
+        if (VanillaMode() ? (cZ >= vf8) : (cZ > vf8-(8<<4)) && (gUpperLink[nSectnum] == -1)) // clamp to floor
         {
-            cZ = vf8-(1<<7);
+            cZ = vf8-(8<<4);
         }
-        if ((cZ < vfc+(1<<7)) && (gLowerLink[nSectnum] == -1)) // clamp to ceiling
+        if (VanillaMode() ? (cZ <= vfc) : (cZ < vfc+(8<<4)) && (gLowerLink[nSectnum] == -1)) // clamp to ceiling
         {
-            cZ = vfc+(1<<7);
+            cZ = vfc+(8<<4);
         }
         q16horiz = ClipRange(q16horiz, F16(-200), F16(200));
         int nRORLimit = 32; // limit ROR rendering to 32 times
