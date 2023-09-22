@@ -2669,7 +2669,7 @@ DO_DEFSTATE:
 
             g_processingState = stateLabelNum;
             Bsprintf(g_szCurrentBlockName, "%s", LAST_LABEL);
-            LOG_F(INFO, "Processing State %s", g_szCurrentBlockName);
+            // LOG_F(INFO, "Processing State %s", g_szCurrentBlockName);
 
             if (tw == CON_PREPENDSTATE)
             {
