@@ -7,23 +7,22 @@ Blood port based on EDuke32
 ### Installing
 1. Extract NBlood to a new directory
 2. Copy the following files from Blood 1.21 to NBlood folder:
-
-   BLOOD.INI
-   BLOOD.RFF
-   BLOOD000.DEM, ..., BLOOD003.DEM (optional)
-   CP01.MAP, ..., CP09.MAP (optional, Cryptic Passage)
-   CPART07.AR_ (optional, Cryptic Passage)
-   CPART15.AR_ (optional, Cryptic Passage)
-   CPBB01.MAP, ..., CPBB04.MAP (optional, Cryptic Passage)
-   CPSL.MAP (optional, Cryptic Passage)
-   CRYPTIC.INI (optional, Cryptic Passage)
-   CRYPTIC.SMK (optional, Cryptic Passage)
-   CRYPTIC.WAV (optional, Cryptic Passage)
-   GUI.RFF
-   SOUNDS.RFF
-   SURFACE.DAT
-   TILES000.ART, ..., TILES017.ART
-   VOXEL.DAT
+   * BLOOD.INI
+   * BLOOD.RFF
+   * BLOOD000.DEM, ..., BLOOD003.DEM (optional)
+   * CP01.MAP, ..., CP09.MAP (optional, Cryptic Passage)
+   * CPART07.AR_ (optional, Cryptic Passage)
+   * CPART15.AR_ (optional, Cryptic Passage)
+   * CPBB01.MAP, ..., CPBB04.MAP (optional, Cryptic Passage)
+   * CPSL.MAP (optional, Cryptic Passage)
+   * CRYPTIC.INI (optional, Cryptic Passage)
+   * CRYPTIC.SMK (optional, Cryptic Passage)
+   * CRYPTIC.WAV (optional, Cryptic Passage)
+   * GUI.RFF
+   * SOUNDS.RFF
+   * SURFACE.DAT
+   * TILES000.ART, ..., TILES017.ART
+   * VOXEL.DAT
 
 3. Optionally, if you want to use CD audio tracks instead of MIDI, provide FLAC/OGG recordings in following format: bloodXX.flac/ogg, where XX is track number. Make sure to enable Redbook audio option in sound menu.
 4. Optionally, if you want cutscenes and you have the original CD, copy the `movie` folder into NBlood's folder (the folder itself too).
@@ -76,12 +75,12 @@ A port of BUILD engine games based on Duke Nukem 3D codebase using EDuke32 engin
 
 ### Installing
 1. Extract Rednukem to a new directory.
-2. Copy game data files
-* Duke Nukem 3D: DUKE3D.GRP, DUKE.RTS
-* Redneck Rampage: REDNECK.GRP, REDNECK.RTS, optionally CD audio tracks as OGG file in the format trackXX.ogg (where XX is the track number)
-* Duke Nukem 64: Duke 64 cartridge ROM dump, optionally MIDI tracks extracted from DUKE3D.GRP
-* NAM: NAM.GRP, NAM.RTS, CON files
-* World War II GI: WW2GI.GRP, WW2GI.RTS, CON files
+2. Copy game data files:
+    * Duke Nukem 3D: DUKE3D.GRP, DUKE.RTS
+    * Redneck Rampage: REDNECK.GRP, REDNECK.RTS, optionally CD audio tracks as OGG file in the format trackXX.ogg (where XX is the track number)
+    * Duke Nukem 64: Duke 64 cartridge ROM dump, optionally MIDI tracks extracted from DUKE3D.GRP
+    * NAM: NAM.GRP, NAM.RTS, CON files
+    * World War II GI: WW2GI.GRP, WW2GI.RTS, CON files
 3. Launch Rednukem
 
 ## Building from source
