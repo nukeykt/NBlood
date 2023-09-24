@@ -301,7 +301,7 @@ void SEQINST::Update(ACTIVE *pActive)
         if (!VanillaMode() && pSequence->frames[frameIndex].surfaceSound && zvel[pSprite->index] == 0 && xvel[pSprite->index] != 0) {
             
             if (gUpperLink[pSprite->sectnum] >= 0) break; // don't play surface sound for stacked sectors
-            int surf = tileGetSurfType(pSprite->sectnum + 0x4000); if (!surf) break;
+            int surf = tileGetSurfType(pSprite->sectnum, 0x4000); if (!surf) break;
             static int surfSfxMove[15][4] = {
                 /* {snd1, snd2, gameVolume, myVolume} */
                 {800,801,80,25},
