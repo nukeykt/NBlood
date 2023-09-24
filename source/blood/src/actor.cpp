@@ -3922,7 +3922,7 @@ void actTouchFloor(spritetype *pSprite, int nSector)
             nDamage = 1000;
         actDamageSprite(pSprite->index, pSprite, nDamageType, scale(4, nDamage, 120) << 4);
     }
-    if (tileGetSurfType(nSector + 0x4000) == kSurfLava)
+    if (tileGetSurfType(nSector, 0x4000) == kSurfLava)
     {
         actDamageSprite(pSprite->index, pSprite, kDamageBurn, 16);
         sfxPlay3DSound(pSprite, 352, 5, 2);

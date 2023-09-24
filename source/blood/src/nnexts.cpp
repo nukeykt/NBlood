@@ -1609,7 +1609,7 @@ int getSpriteMassBySize(spritetype* pSprite) {
     short xrepeat = pSprite->xrepeat; 	short yrepeat = pSprite->yrepeat;
 
     // take surface type into account
-    switch (tileGetSurfType(pSprite->index + 0xc000)) {
+    switch (tileGetSurfType(pSprite->index, 0xc000)) {
         case 1:  massDiv = 16; break; // stone
         case 2:  massDiv = 18; break; // metal
         case 3:  massDiv = 21; break; // wood
