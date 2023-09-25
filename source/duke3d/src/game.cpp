@@ -6570,14 +6570,6 @@ static const char* dukeVerbosityCallback(loguru::Verbosity verbosity)
 
 int app_main(int argc, char const* const* argv)
 {
-    engineSetLogFile(APPBASENAME ".log", LOG_GAME_MAX);
-    engineSetLogVerbosityCallback(dukeVerbosityCallback);
-
-#ifndef NETCODE_DISABLE
-    if (enet_initialize() != 0)
-        LOG_F(ERROR, "An error occurred while initializing ENet.");
-#endif
-
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
@@ -6598,6 +6590,9 @@ int app_main(int argc, char const* const* argv)
 
     G_ExtPreInit(argc, argv);
 
+    engineSetLogFile(APPBASENAME ".log", LOG_GAME_MAX);
+    engineSetLogVerbosityCallback(dukeVerbosityCallback);
+
 #ifdef __APPLE__
     if (!g_useCwd)
     {
@@ -6610,6 +6605,11 @@ int app_main(int argc, char const* const* argv)
         OSD_SetLogFile(cwd);
         Xfree(homedir);
     }
+#endif
+
+#ifndef NETCODE_DISABLE
+    if (enet_initialize() != 0)
+        LOG_F(ERROR, "An error occurred while initializing ENet.");
 #endif
 
     osdcallbacks_t callbacks = {};
