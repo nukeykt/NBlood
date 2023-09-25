@@ -157,11 +157,15 @@ static void PopulateForm(int32_t pgs)
 
         for (int i=0; i<validmodecnt; i++)
         {
+            if (settings.grp->type->game & GAMEFLAG_NOCLASSIC && validmode[i].bpp == 8) continue;
             if (validmode[i].fs != (settings.shared.fullscreen)) continue;
             if ((validmode[i].bpp < 15) && (settings.polymer)) continue;
-
+            
             // all modes get added to the 3D mode list
-            Bsprintf(buf, "%dx%d %s", validmode[i].xdim, validmode[i].ydim, validmode[i].bpp == 8 ? "software" : "OpenGL");
+            Bsprintf(buf, "%dx%d %s", validmode[i].xdim, validmode[i].ydim,
+                     validmode[i].bpp == 8                             ? "software"
+                     : (settings.grp->type->game & GAMEFLAG_NOCLASSIC) ? ""
+                                                                       : "OpenGL");
             int const j = ComboBox_AddString(hwnd, buf);
             (void)ComboBox_SetItemData(hwnd, j, i);
             if (i == mode)(void)ComboBox_SetCurSel(hwnd, j);
@@ -314,6 +318,8 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
             if (i != CB_ERR)
             {
                 settings.grp = (grpfile_t const *)i;
+                PopulateForm(POPULATE_VIDEO);
+                EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCPOLYMER), !(settings.grp->type->game & GAMEFLAG_NOPOLYMER));
             }
             return TRUE;
         }
@@ -678,7 +684,7 @@ int32_t startwin_run(void)
     settings.gamedir = g_modDir;
 
     PopulateForm(-1);
-
+    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCPOLYMER), !(settings.grp->type->game & GAMEFLAG_NOPOLYMER));
     do
     {
         MSG msg;
