@@ -2164,16 +2164,16 @@ badindex:
                 {
                 case CON_UPDATESECTORNEIGHBORZ:
                     updatesectorneighborz(x,y,z,&w,getsectordist({x, y}, w));
-                    continue;
+                    break;
                 case CON_UPDATESECTORZ:
                     updatesectorz(x,y,z,&w);
-                    continue;
+                    break;
                 case CON_UPDATESECTORNEIGHBOR:
                     updatesectorneighbor(x,y,&w,getsectordist({x, y}, w));
-                    continue;
+                    break;
                 default:
                     updatesector(x,y,&w);
-                    continue;
+                    break;
                 }
 
                 Gv_SetVar(var, w);
