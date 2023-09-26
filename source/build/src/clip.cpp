@@ -35,7 +35,7 @@ static int32_t layerclipsectnum;
 #define YAX_Z_MAXCLIPDIST 32768
 
 // maximum number of sectors to traverse in one TROR direction for hitscan() and clipmove()
-#define YAX_MAXCLIPSECTORS 64
+#define YAX_MAXCLIPSECTORS 256
 
 // Prevent iterating over the same sectors repeatedly in clipmove().
 static uint8_t yax_clipsectmap[bitmap_size(MAXSECTORS)];
