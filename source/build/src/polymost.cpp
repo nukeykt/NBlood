@@ -237,6 +237,8 @@ static inline float float_trans(uint32_t maskprops, uint8_t blend)
 
 char ptempbuf[MAXWALLSB<<1];
 
+uint8_t didwall[bitmap_size(MAXWALLS)];
+
 #define MIN_CACHETIME_PRINT 10
 
 // this was faster in MSVC but slower with GCC... currently unknown on ARM where both
@@ -5399,6 +5401,14 @@ static void polymost_drawalls(int32_t const bunch)
 
         if (x1 <= x0) continue;
 
+        if (bitmap_test(didwall, wallnum))
+        {
+            LOG_F(WARNING, "Tried to draw wall %d twice in a frame", wallnum);
+            continue;
+        }
+
+        bitmap_set(didwall, wallnum);
+
         ryp0 *= gyxscale; ryp1 *= gyxscale;
 
         float cz, fz;
@@ -6816,6 +6826,8 @@ void polymost_drawrooms()
     if (videoGetRenderMode() == REND_CLASSIC) return;
 
     buildgl_outputDebugMessage(3, "polymost_drawrooms()");
+
+    Bmemset(didwall, 0, sizeof(didwall));
 
     videoBeginDrawing();
     frameoffset = frameplace + windowxy1.y*bytesperline + windowxy1.x;
