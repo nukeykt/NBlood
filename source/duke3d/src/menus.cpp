@@ -8223,7 +8223,7 @@ void M_DisplayMenus(void)
     }
 
     // hack; need EVENT_DISPLAYMENUBACKGROUND above
-    if (FURY && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2 || m_parentMenu != NULL) && backgroundOK)
+    if (FURY && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2 || m_parentMenu != NULL || g_currentMenu == MENU_SKILL) && backgroundOK)
         videoFadeToBlack(1);
 
     // Display the menu, with a transition animation if applicable.
