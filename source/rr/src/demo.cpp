@@ -148,6 +148,16 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
             return 0;
         }
 
+        if (!RR && demoHeader.version == 117)
+            ;
+        else if (RR && demoHeader.version == 108)
+            ;
+        else
+        {
+            kclose(g_demo_recFilePtr); g_demo_recFilePtr = -1;
+            return 0;
+        }
+
         demoHeader.reccnt = B_LITTLE32(demoHeader.reccnt);
         demoHeader.multimode = B_LITTLE16(demoHeader.multimode);
         demoHeader.m_monsters_off = B_LITTLE16(demoHeader.m_monsters_off);
@@ -172,7 +182,7 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
             Bstrncpy(g_player[i].user_name, demoHeader.user_name[i], 32);
         }
 
-        if (!RR && demoHeader.version == 117)
+        if (!RR)
         {
             int32_t autoRun;
             kread(g_demo_recFilePtr, &autoRun, sizeof(int32_t));
@@ -183,15 +193,6 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
                 ud.m_level_number = 7;
                 ud.m_volume_number = 0;
             }
-        }
-        else if (RR && demoHeader.version == 108)
-        {
-            // no op
-        }
-        else
-        {
-            kclose(g_demo_recFilePtr); g_demo_recFilePtr = -1;
-            return 0;
         }
 
         for (bssize_t i = 0; i < ud.multimode; i++)
