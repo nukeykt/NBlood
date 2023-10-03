@@ -964,7 +964,7 @@ int S_PlaySound(int num)
     if ((sndnum == -1 && num != -1) || !ud.config.SoundToggle) // check that the user returned -1, but only if -1 wasn't playing already (in which case, warn)
         return -1;
 
-    if (g_sounds[sndnum]->ptr == nullptr && g_sounds[sndnum]->filename)
+    if ((unsigned)num < (unsigned)g_highestSoundIdx && g_sounds[sndnum]->ptr == nullptr && g_sounds[sndnum]->filename)
     {
         LOG_F(WARNING, "Sound #%d (%s) not precached!", sndnum, g_sounds[sndnum]->filename);
         S_LoadSound(sndnum);
