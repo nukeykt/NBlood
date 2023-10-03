@@ -94,8 +94,12 @@ void Gv_Clear(void)
     for (auto & gameVar : aGameVars)
         DO_FREE_AND_NULL(gameVar.szLabel);
 
+    Bmemset(aGameVars, 0, sizeof(aGameVars));
+
     for (auto & gameArray : aGameArrays)
         DO_FREE_AND_NULL(gameArray.szLabel);
+
+    Bmemset(aGameArrays, 0, sizeof(aGameArrays));
 
     for (auto i : vmStructHashTablePtrs)
         hash_free(i);
@@ -1548,8 +1552,11 @@ static void Gv_AddSystemVars(void)
 void Gv_Init(void)
 {
     // already initialized
-    if (aGameVars[0].flags)
-        return;
+    //if (aGameVars[0].flags)
+    //    return;
+
+    g_gameVarCount = 0;
+    g_gameArrayCount = 0;
 
     // Set up weapon defaults, g_playerWeapon[][].
     Gv_AddSystemVars();
