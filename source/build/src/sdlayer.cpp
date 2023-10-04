@@ -2096,6 +2096,7 @@ void videoShowFrame(int32_t w)
 
         MicroProfileFlip();
 
+#if 0
         if (glinfo.reset_notification)
         {
             static const auto glGetGraphicsReset = glGetGraphicsResetStatus ? glGetGraphicsResetStatus : glGetGraphicsResetStatusKHR;
@@ -2127,7 +2128,7 @@ void videoShowFrame(int32_t w)
                 }
             }
         }
-
+#endif
         // attached overlays and streaming hooks tend to change the GL state without setting it back
 
         if (w != -1)
