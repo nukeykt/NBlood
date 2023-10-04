@@ -692,7 +692,7 @@ void windowsHandleFocusChange(int const appactive)
     {
         if (win_boostpriority)
         {
-            SetPriorityClass(hProcess, win_boostpriority == 1 ? ABOVE_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
+            SetPriorityClass(hProcess, win_boostpriority == 2 ? HIGH_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
 
             if (!editorIsInitialized())
             {
@@ -730,7 +730,7 @@ void windowsHandleFocusChange(int const appactive)
     {
         if (win_boostpriority)
         {
-            if (!SetPriorityClass(hProcess, win_boostpriority == 1 || editorIsInitialized() ? IDLE_PRIORITY_CLASS : BELOW_NORMAL_PRIORITY_CLASS))
+            if (!SetPriorityClass(hProcess, (win_boostpriority == 2 || !editorIsInitialized()) ? BELOW_NORMAL_PRIORITY_CLASS: IDLE_PRIORITY_CLASS))
                 LOG_F(ERROR, "Error setting thread priority: %s.", windowsGetErrorMessage(GetLastError()));
 
             if (hAVRT && hMMTHREAD)
