@@ -1584,7 +1584,7 @@ void viewDrawCtfHud(ClockTicks arg)
     bool redFlagTaken = false;
     int blueFlagCarrierColor = 0;
     int redFlagCarrierColor = 0;
-    for (int i = 0, p = connecthead; p >= 0; i++, p = connectpoint2[p])
+    for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
         if ((gPlayer[p].hasFlag & 1) != 0)
         {
