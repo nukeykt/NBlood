@@ -46,7 +46,7 @@ public:
     virtual void Save(void);
     virtual void Load(void);
     void Read(void *, int);
-    void Write(void *, int);
+    void Write(void const *, int);
     static void LoadGame(char *);
     static void SaveGame(char *);
 };

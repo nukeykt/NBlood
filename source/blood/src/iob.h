@@ -29,6 +29,6 @@ public:
     int nRemain;
     char *pBuffer;
     void Read(void *, int);
-    void Write(void *, int);
+    void Write(void const *, int);
     void Skip(int);
 };

@@ -46,7 +46,7 @@ void IOBuffer::Read(void *pData, int nSize)
     }
 }
 
-void IOBuffer::Write(void *pData, int nSize)
+void IOBuffer::Write(void const *pData, int nSize)
 {
     if (nSize <= nRemain)
     {
