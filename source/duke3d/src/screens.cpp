@@ -771,10 +771,13 @@ static void G_ShowCacheLocks(void)
     {
         if (g_sounds[i]->playing > 0)
         {
-            for (int j = 0, n = g_sounds[i]->playing; j < n; j++)
+            for (int j = 0; j < MAXSOUNDINSTANCES; j++)
             {
                 if (k >= ydim-12)
                     return;
+
+                if (g_sounds[i]->voices[j].handle <= 0)
+                    continue;
 
                 Bsprintf(tempbuf, "snd %d_%d: voice %d, ow %d", i, j, g_sounds[i]->voices[j].handle, g_sounds[i]->voices[j].owner);
                 printext256(160, k, COLOR_WHITE, -1, tempbuf, 1);

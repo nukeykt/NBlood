@@ -59,6 +59,8 @@ static int osdfunc_cacheinfo(osdcmdptr_t UNUSED(parm))
     return OSDCMD_OK;
 }
 
+#define MAXCACHEOBJECTS 16384
+
 void cache1d::reset(void)
 {
     Bmemset(m_index, 0, m_maxBlocks * sizeof(cacheindex_t));
@@ -69,7 +71,7 @@ void cache1d::reset(void)
     m_numBlocks = 1;
 }
 
-void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t minsize /*= 0*/)
+void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t)
 {
     if (!g_cacheInit)
     {
@@ -87,9 +89,8 @@ void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t m
     m_baseAddress = ((uintptr_t)dacachestart + 15) & ~(uintptr_t)0xf;
     m_totalSize   = (dacachesize - (((uintptr_t)(dacachestart)) & 0xf)) & ~(uintptr_t)0xf;
 
-    m_maxBlocks = MINCACHEINDEXSIZE;
-    m_alignment = minsize >= MINCACHEBLOCKSIZE ? minsize : Bgetpagesize();
-    m_index     = (cacheindex_t *)Xaligned_alloc(m_alignment, m_maxBlocks * sizeof(cacheindex_t));
+    m_maxBlocks = MAXCACHEOBJECTS;
+    m_index     = (cacheindex_t *)Xaligned_alloc(16, m_maxBlocks * sizeof(cacheindex_t));
 
     reset();
 
@@ -111,25 +112,42 @@ void cache1d::inc_and_check_cacnum(void)
         m_index = new_index;
         m_maxBlocks += MINCACHEINDEXSIZE;
         DLOG_F(INFO, "Cache size increased by %d to new max of %d entries", MINCACHEINDEXSIZE, m_maxBlocks);
+
+
     }
 }
 
-int32_t cache1d::findBlock(int32_t const newbytes, int32_t * const besto, int32_t * const bestz)
+void cache1d::allocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr)
 {
-    int32_t bestval = INT32_MAX;
+    int i, z, zz, bestz=0, daval, bestval, besto=0, o1, o2, sucklen, suckz;
 
-    for (native_t z=m_numBlocks-1, o1=m_totalSize; z>=0; z--)
+    newbytes = ((newbytes+15)& ~15);
+
+    if (EDUKE32_PREDICT_FALSE((unsigned)newbytes > (unsigned)m_totalSize))
+    {
+        LOG_F(ERROR, "Cache size: %d", m_totalSize);
+        LOG_F(ERROR, "*Newhandle: 0x%08" PRIxPTR ", Newbytes: %d, *Newlock: %d", (intptr_t)newhandle, newbytes, *newlockptr);
+        report();
+        fatal_exit("BUFFER TOO BIG TO FIT IN CACHE!");
+    }
+
+    if (*newlockptr == 0)
+    {
+        report();
+        fatal_exit("ALLOCACHE CALLED WITH LOCK OF 0!");
+    }
+
+    //Find best place
+    bestval = INT32_MAX; o1 = m_totalSize;
+    for (z = m_numBlocks - 1; z >= 0; z--)
     {
         o1 -= m_index[z].leng;
-
-        int32_t const o2 = o1 + newbytes;
-
+        o2 = o1 + newbytes;
         if (o2 > m_totalSize)
             continue;
 
-        int32_t daval = 0;
-
-        for (native_t i=o1, zz=z; i<o2; i+=m_index[zz++].leng)
+        daval = 0;
+        for (i = o1, zz = z; i < o2; i += m_index[zz++].leng)
         {
             if (*m_index[zz].lock == 0)
                 continue;
@@ -147,101 +165,36 @@ int32_t cache1d::findBlock(int32_t const newbytes, int32_t * const besto, int32_
             if (daval >= bestval)
                 break;
         }
-
         if (daval < bestval)
         {
             bestval = daval;
-            *besto  = o1;
-            *bestz  = z;
-
+            besto   = o1;
+            bestz   = z;
             if (bestval == 0)
                 break;
         }
     }
 
-    return bestval;
-}
+    //printf("%ld %ld %ld\n",besto,newbytes,*newlockptr);
 
-void cache1d::tryHarder(int32_t const newbytes, int32_t *const besto, int32_t *const bestz)
-{
-    LOG_F(ERROR, "Request for %dKB block exhausted cache!", newbytes >> 10);
-    LOG_F(ERROR, "Attempting to make it fit...");
-
-    if (m_alignment > MINCACHEBLOCKSIZE)
-        m_alignment >>= 1;
-
-    int cnt = m_numBlocks - 1;
-
-    while (findBlock(newbytes, besto, bestz) == INT32_MAX)
-    {
-        ageBlocks();
-        if (EDUKE32_PREDICT_FALSE(!cnt--))
-        {
-            report();
-            fatal_exit("CACHE SPACE ALL LOCKED UP!");
-        }
-    }
-}
-
-void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlockptr)
-{
-    // Make all requests a multiple of the minimum block size
-    int const askedbytes = newbytes;
-
-    newbytes = (newbytes + m_alignment-1) & ~(m_alignment-1);
-
-    if (newbytes > nextPow2(askedbytes))
-        newbytes = nextPow2(askedbytes);
-
-#ifdef DEBUGGINGAIDS
-    if (EDUKE32_PREDICT_FALSE(!newlockptr || *newlockptr == 0))
+    if (bestval == INT32_MAX)
     {
         report();
-        fatal_exit("ALLOCACHE CALLED WITH LOCK OF 0!");
+        fatal_exit("CACHE SPACE ALL LOCKED UP!");
     }
-#endif
-
-    if (EDUKE32_PREDICT_FALSE((unsigned)newbytes > (unsigned)m_totalSize))
-    {
-        LOG_F(ERROR, "Cache size: %d", m_totalSize);
-        LOG_F(ERROR, "*Newhandle: 0x%08" PRIxPTR ", Newbytes: %d, *Newlock: %d", (intptr_t)newhandle, newbytes, *newlockptr);
-        report();
-        fatal_exit("BUFFER TOO BIG TO FIT IN CACHE!");
-    }
-
-    int32_t bestz = 0;
-    int32_t besto = 0;
-
-    // if we can't find a block, try to age the cache until we can
-    // it's better than the alternative of aborting the entire program
-
-    if (findBlock(newbytes, &besto, &bestz) == INT32_MAX)
-        tryHarder(newbytes, &besto, &bestz);
-
-    //printf("%d %d %d\n",besto,newbytes,*newlockptr);
 
     //Suck things out
-    int32_t sucklen = -newbytes;
-    int32_t suckz = bestz;
-
-    for (;sucklen<0; sucklen+=m_index[suckz++].leng)
-        if (*m_index[suckz].lock)
-            *m_index[suckz].hand = 0;
+    for(sucklen=-newbytes,suckz=bestz;sucklen<0;sucklen+=m_index[suckz++].leng)
+        if (*m_index[suckz].lock) *m_index[suckz].hand = 0;
 
     //Remove all blocks except 1
-    suckz -= bestz+1;
+    suckz -= (bestz+1);
     m_numBlocks -= suckz;
-
-    auto &found = m_index[bestz];
-
-    Bmemmove(&found, &m_index[bestz + suckz], (m_numBlocks - bestz) * sizeof(cacheindex_t));
-
-    found.hand  = newhandle;
-    found.leng  = newbytes;
-    found.lock  = newlockptr;
-    found.ovh   = newbytes-askedbytes;
-
-    *newhandle = m_baseAddress + besto;
+    // Bmemmove(&m_index[bestz], &m_index[bestz + suckz], (m_numBlocks - bestz) * sizeof(cacheindex_t));
+    copybufbyte(&m_index[bestz+suckz],&m_index[bestz],(m_numBlocks-bestz)*sizeof(cacheindex_t));
+    m_index[bestz].hand = newhandle; *newhandle = m_baseAddress+besto;
+    m_index[bestz].leng = newbytes;
+    m_index[bestz].lock = newlockptr;
 
     //Add new empty block if necessary
     if (sucklen <= 0)
@@ -250,27 +203,52 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
     if (++bestz == m_numBlocks)
     {
         inc_and_check_cacnum();
+
         m_index[bestz].leng = sucklen;
         m_index[bestz].lock = &zerochar;
         return;
     }
 
-    auto &rem = m_index[bestz];
-
-    if (*rem.lock == 0)
+    if (*m_index[bestz].lock == 0)
     {
-        rem.leng += sucklen;
+        m_index[bestz].leng += sucklen;
         return;
     }
 
     inc_and_check_cacnum();
 
-    for (native_t z=m_numBlocks-1; z>bestz; z--)
+    for(z=m_numBlocks-1;z>bestz;z--)
         m_index[z] = m_index[z-1];
 
-    rem.leng = sucklen;
-    rem.lock = &zerochar;
+    m_index[bestz].leng = sucklen;
+    m_index[bestz].lock = &zerochar;
 }
+
+//void cache1d::suckcache(intptr_t suckptr)
+//{
+//    int i;
+//
+//    //Can't exit early, because invalid pointer might be same even though lock = 0
+//    for(i=0;i<m_numBlocks;i++)
+//        if (*m_index[i].hand == suckptr)
+//        {
+//            if (*m_index[i].lock) *m_index[i].hand = 0;
+//            m_index[i].lock = &zerochar;
+//            m_index[i].hand = 0;
+//
+//            //Combine empty blocks
+//            if ((i > 0) && (*m_index[i-1].lock == 0))
+//            {
+//                m_index[i-1].leng += m_index[i].leng;
+//                m_numBlocks--; copybuf(&m_index[i+1],&m_index[i],(m_numBlocks-i)*sizeof(cactype));
+//            }
+//            else if ((i < m_numBlocks-1) && (*m_index[i+1].lock == 0))
+//            {
+//                m_index[i+1].leng += m_index[i].leng;
+//                m_numBlocks--; copybuf(&m_index[i+1],&m_index[i],(m_numBlocks-i)*sizeof(cactype));
+//            }
+//        }
+//}
 
 void cache1d::ageBlocks(void)
 {
@@ -279,28 +257,27 @@ void cache1d::ageBlocks(void)
     if (agecount >= m_numBlocks)
         agecount = m_numBlocks-1;
 
+    if (agecount < 0)
+        return;
+
     int cnt = min(m_maxBlocks >> 4, m_numBlocks-1);
+
+    unsigned char ch;
 
     while(cnt--)
     {
         // If we have pointer to lock char and it's in [2 .. 199], decrease.
-        if (m_index[agecount].lock)
-        {
-             if ((((*m_index[agecount].lock)-2)&255) < CACHE1D_UNLOCKED-1)
-                (*m_index[agecount].lock)--;
-             else if (*m_index[agecount].lock == CACHE1D_PERMANENT)
-                 cnt++;
-        }
+        ch = (*m_index[agecount].lock);
+        if (((ch-2)&255) < CACHE1D_UNLOCKED-1)
+            (*m_index[agecount].lock) = ch-1;
 
-        if (--agecount < 0)
-            agecount = m_numBlocks-1;
+        if (--agecount < 0) agecount = m_numBlocks-1;
     }
 }
 
 void cache1d::report(void)
 {
     int32_t usedSize = 0;
-    int32_t unusable = 0;
     inthashtable_t h_blocktotile = { nullptr, INTHASH_SIZE(m_maxBlocks) };
 
     inthash_init(&h_blocktotile);
@@ -326,12 +303,14 @@ void cache1d::report(void)
     int constexpr reportLineSize = 128;
     auto buf = (char*)Balloca(reportLineSize);
 
-    for (int i = 0; i < m_numBlocks-1; i++)
+    for (int i = 0; i < m_numBlocks; i++)
     {
         buf[0] = '\0';
         int len = Bsnprintf(buf, reportLineSize, "%4d ", i);
 
-        if (m_index[i].hand)
+        usedSize += m_index[i].leng;
+
+        if (m_index[i].hand && *m_index[i].hand)
         {
             len += Bsnprintf(buf+len, reportLineSize-len, "@ %x: ", (int32_t)(*m_index[i].hand - m_baseAddress));
         }
@@ -343,29 +322,15 @@ void cache1d::report(void)
         }
 
         len += Bsnprintf(buf+len, reportLineSize-len, "SIZ:%5d ", m_index[i].leng);
-        unusable += m_index[i].ovh;
-
-        len += Bsnprintf(buf+len, reportLineSize-len, "USE:%5d ", m_index[i].leng-m_index[i].ovh);
-
-        len += Bsnprintf(buf+len, reportLineSize-len, "DEAD:%4d ", m_index[i].ovh);
-
-        if (m_index[i].lock)
-        {
-            len += Bsnprintf(buf+len, reportLineSize-len, "LCK:%d ", *m_index[i].lock);
-
-            if (*m_index[i].lock)
-                usedSize += m_index[i].leng;
-        }
-        else
-            len += Bsnprintf(buf+len, reportLineSize-len, "LCK:NULL ");
+        len += Bsnprintf(buf+len, reportLineSize-len, "LCK:%d ", *m_index[i].lock);
 
         int const tile = inthash_find(&h_blocktotile, *m_index[i].hand);
 
         if (tile != -1)
         {
             auto typestr = *m_index[i].hand == waloff[tile] ? "ART:%4d " :
-                           *m_index[i].hand == classicht[tile].ptr ? "HI:%4d " :
-                           "VOX:%4d "; // needs to be last or else we have to loop through voxoff[tile][]
+                *m_index[i].hand == classicht[tile].ptr ? "HI:%4d " :
+                "VOX:%4d "; // needs to be last or else we have to loop through voxoff[tile][]
 
             len += Bsnprintf(buf + len, reportLineSize - len, typestr, tile);
         }
@@ -380,8 +345,6 @@ void cache1d::report(void)
     LOG_F(INFO, "Used:        %dKB", usedSize >> 10);
     LOG_F(INFO, "Remaining:   %dKB", (m_totalSize - usedSize) >> 10);
     LOG_F(INFO, "Block count: %d/%d",m_numBlocks, m_maxBlocks);
-
-    LOG_F(INFO, "%d KB (%.2f%%) space made unusable by block alignment.", unusable >> 10, (float)unusable / m_totalSize * 100.f);
 
     inthash_free(&h_blocktotile);
 }

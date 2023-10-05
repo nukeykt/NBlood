@@ -457,6 +457,8 @@ void G_CacheMapData(void)
     if (ud.recstat == 2 || !ud.config.useprecache)
         return;
 
+    cacheAllSounds();
+
     g_precacheCount = 0;
     Bmemset(gotpic, 0, sizeof(gotpic));
     Bmemset(precachehightile, 0, sizeof(precachehightile));

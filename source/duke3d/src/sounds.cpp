@@ -109,12 +109,13 @@ void S_SoundStartup(void)
         if (g_sounds[i] == &nullsound)
             continue;
 
-        g_sounds[i]->playing = 0;
-        g_sounds[i]->voices = &nullvoice;
+        auto &snd = g_sounds[i];
 
-#ifdef CACHING_DOESNT_SUCK
-        g_sounds[i]->lock = CACHE1D_UNLOCKED;
-#endif
+        snd->playing = 0;
+        snd->voices = &nullvoice;
+
+        if (snd->lock != CACHE1D_PERMANENT)
+            snd->lock = CACHE1D_UNLOCKED;
     }
 
     FX_SetVolume(ud.config.FXVolume);
@@ -478,11 +479,11 @@ void S_Cleanup(void)
         // for which there was no open slot to keep track of the voice
         if (num >= (MAXSOUNDS*MAXSOUNDINSTANCES))
         {
-            if (g_sounds[num-(MAXSOUNDS*MAXSOUNDINSTANCES)]->flags & SF_TALK)
+            auto &snd = g_sounds[num-(MAXSOUNDS*MAXSOUNDINSTANCES)];
+            if (snd->flags & SF_TALK)
                 g_dukeTalk = false;
-#ifdef CACHING_DOESNT_SUCK
-            --g_soundlocks[num-(MAXSOUNDS*MAXSOUNDINSTANCES)];
-#endif
+            if (!snd->playing && snd->lock != CACHE1D_PERMANENT)
+                snd->lock = CACHE1D_UNLOCKED;
             continue;
         }
 
@@ -506,17 +507,15 @@ void S_Cleanup(void)
             actor[spriteNum].t_data[0] = 0;
 
         S_FillVoiceInfo(&voice, -1, 0, UINT16_MAX);
-
-#ifdef CACHING_DOESNT_SUCK
-        --g_soundlocks[num];
-#endif
+        if (!snd->playing && snd->lock != CACHE1D_PERMANENT)
+            snd->lock = CACHE1D_UNLOCKED;
     }
 }
 
 // returns number of bytes read
 int32_t S_LoadSound(int num)
 {
-    if ((unsigned)num > (unsigned)g_highestSoundIdx || EDUKE32_PREDICT_FALSE(g_sounds[num] == &nullsound))
+    if ((unsigned)num > (unsigned)g_highestSoundIdx || g_sounds[num] == &nullsound)
         return 0;
 
     auto &snd = g_sounds[num];
@@ -530,7 +529,7 @@ int32_t S_LoadSound(int num)
     }
 
     int32_t l = kfilelength(fp);
-    g_sounds[num]->lock = CACHE1D_PERMANENT;
+    g_sounds[num]->lock = CACHE1D_UNLOCKED;
     snd->len = l;
     g_cache.allocateBlock((intptr_t *)&snd->ptr, l, (char *)&g_sounds[num]->lock);
     l = kread(fp, snd->ptr, l);
@@ -829,6 +828,12 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     if ((sndNum == -1 && num != -1) || !ud.config.SoundToggle || (unsigned)spriteNum >= MAXSPRITES) // check that the user returned -1, but only if -1 wasn't playing already (in which case, warn)
         return -1;
 
+    if (g_sounds[sndNum]->ptr == nullptr)
+    {
+        DLOG_F(WARNING, "Sound #%d not precached", sndNum);
+        S_LoadSound(sndNum);
+    }
+
     if (EDUKE32_PREDICT_FALSE(!S_SoundIsValid(sndNum)))
     {
         LOG_F(WARNING, "Invalid sound #%d", sndNum);
@@ -919,19 +924,16 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     if ((snd->flags & (SF_LOOP|SF_ONEINST_INTERNAL)) == (SF_LOOP|SF_ONEINST_INTERNAL) && snd->playing)
         return -1;
 
-#ifdef CACHING_DOESNT_SUCK
-    if (++g_soundlocks[sndNum] < CACHE1D_LOCKED)
-        g_soundlocks[sndNum] = CACHE1D_LOCKED;
-#endif
+    if (++snd->lock < CACHE1D_LOCKED)
+        snd->lock = CACHE1D_LOCKED;
+
     int const sndSlot = S_GetSlot(sndNum);
 
     // the only way this should return MAXSOUNDINSTANCES is if all slots are in use by voices that haven't actually started playing yet
     if (sndSlot == MAXSOUNDINSTANCES || !FX_VoiceAvailable(snd->priority))
     {
 error:
-#ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[sndNum]--;
-#endif
+        snd->lock--;
         return -1;
     }
 
@@ -962,6 +964,12 @@ int S_PlaySound(int num)
     if ((sndnum == -1 && num != -1) || !ud.config.SoundToggle) // check that the user returned -1, but only if -1 wasn't playing already (in which case, warn)
         return -1;
 
+    if (g_sounds[sndnum]->ptr == nullptr)
+    {
+        DLOG_F(WARNING, "Sound #%d not precached", sndnum);
+        S_LoadSound(sndnum);
+    }
+
     if (EDUKE32_PREDICT_FALSE(!S_SoundIsValid(sndnum)))
     {
         LOG_F(WARNING, "Invalid sound #%d", sndnum);
@@ -975,19 +983,15 @@ int S_PlaySound(int num)
 
     int const pitch = S_GetPitch(num);
 
-#ifdef CACHING_DOESNT_SUCK
-    if (++g_soundlocks[num] < CACHE1D_LOCKED)
-        g_soundlocks[num] = CACHE1D_LOCKED;
-#endif
+    if (++snd->lock < CACHE1D_LOCKED)
+        snd->lock = CACHE1D_LOCKED;
 
     sndnum = S_GetSlot(num);
 
     if (sndnum == MAXSOUNDINSTANCES || !FX_VoiceAvailable(snd->priority))
     {
 error:
-#ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[num]--;
-#endif
+        snd->lock--;
         return -1;
     }
 
@@ -1064,15 +1068,17 @@ void S_StopAllSounds(void)
         if (g_sounds[i] == &nullsound)
             continue;
 
-        g_sounds[i]->playing = 0;
+        auto &snd = g_sounds[i];
 
-        if (g_sounds[i]->voices != &nullvoice)
+        snd->playing = 0;
+
+        if (snd->voices != &nullvoice)
             for (int j = 0; j < MAXSOUNDINSTANCES; ++j)
-                g_sounds[i]->voices[j] = nullvoice;
+                snd->voices[j] = nullvoice;
 
-#ifdef CACHING_DOESNT_SUCK
-        g_sounds[i]->lock = CACHE1D_UNLOCKED;
-#endif
+
+        if (snd->lock != CACHE1D_PERMANENT)
+            snd->lock = CACHE1D_UNLOCKED;
     }
 
     g_dukeTalk = false;
@@ -1201,20 +1207,15 @@ void S_Callback(intptr_t num)
 
 void S_ClearSoundLocks(void)
 {
-#ifdef CACHING_DOESNT_SUCK
-    int32_t i;
-    int32_t const msp = g_highestSoundIdx;
-
     for (native_t i = 0; i < 11; ++i)
-        if (rts_lumplockbyte[i] >= CACHE1D_LOCKED)
+        if (rts_lumplockbyte[i] >= CACHE1D_LOCKED && rts_lumplockbyte[i] < CACHE1D_PERMANENT)
             rts_lumplockbyte[i] = CACHE1D_UNLOCKED;
 
     int32_t const msp = g_highestSoundIdx;
 
     for (native_t i = 0; i <= msp; ++i)
-        if (g_soundlocks[i] >= CACHE1D_LOCKED)
-            g_soundlocks[i] = CACHE1D_UNLOCKED;
-#endif
+        if (g_sounds[i]->lock >= CACHE1D_LOCKED && g_sounds[i]->lock < CACHE1D_PERMANENT)
+            g_sounds[i]->lock = CACHE1D_UNLOCKED;
 }
 
 int A_CheckSoundPlaying(int spriteNum, int soundNum)

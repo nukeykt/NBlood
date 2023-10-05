@@ -746,21 +746,13 @@ static void G_ReadGLFrame(void)
 
     // Save OpenGL screenshot with Duke3D palette
     // NOTE: maybe need to move this to the engine...
-
-    static char lock;
-    static palette_t *frame;
-
-    lock = CACHE1D_PERMANENT;
-
-    if (frame == nullptr)
-        g_cache.allocateBlock((intptr_t *)&frame, xdim * ydim * sizeof(palette_t), &lock);
-
+    auto frame = (palette_t *)Xaligned_alloc(16, xdim * ydim * sizeof(palette_t));
     char *const pic = (char *) waloff[TILE_SAVESHOT];
+
+    Bassert(waloff[TILE_SAVESHOT]);
 
     int const xf = divscale16(ydim*4/3, 320);
     int const yf = divscale16(ydim, 200);  // (ydim<<16)/200
-
-    tilesiz[TILE_SAVESHOT] = { 200, 320 };
 
     videoBeginDrawing();
     glReadPixels(0, 0, xdim, ydim, GL_RGBA, GL_UNSIGNED_BYTE, frame);
@@ -777,7 +769,7 @@ static void G_ReadGLFrame(void)
         }
     }
 
-    lock = CACHE1D_FREE;
+    Xaligned_free(frame);
 }
 #endif
 
@@ -837,7 +829,10 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         walock[TILE_SAVESHOT] = CACHE1D_PERMANENT;
 
         if (waloff[TILE_SAVESHOT] == 0)
+        {
             g_cache.allocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
+            tileSetSize(TILE_SAVESHOT, 200, 320);
+        }
 
         if (videoGetRenderMode() == REND_CLASSIC)
             renderSetTarget(TILE_SAVESHOT, 200, 320);
