@@ -1782,7 +1782,7 @@ static char Cmp(int val, int nArg1, int nArg2)
 static void Error(const char* pFormat, ...)
 {
     char buffer[512], buffer2[512], condType[32];
-    Bsprintf(condType, (pEntry) ? gCheckFuncInfo[pEntry->type].name : "Unknown");
+    strcpy(condType, (pEntry) ? gCheckFuncInfo[pEntry->type].name : "Unknown");
     Bstrupr(condType);
 
     va_list args;
