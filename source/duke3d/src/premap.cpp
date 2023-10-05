@@ -1712,6 +1712,11 @@ void G_ResetTimers(bool saveMoveCnt)
 
 void G_ClearFIFO(void)
 {
+    // [JM] Black-hole any leftover inputs.
+    // Prevents being spun around at map start if you move the mouse while loading.
+    ControlInfo blackHole;
+    CONTROL_GetInput(&blackHole);
+
     g_lastInputTicks = 0;
     localInput = {};
     Bmemset(&inputfifo, 0, sizeof(input_t) * MOVEFIFOSIZ * MAXPLAYERS);

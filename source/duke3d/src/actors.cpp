@@ -330,6 +330,7 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     for (int sectorCount=0; sectorCount < sectorListTotal; ++sectorCount)
     {
         int const origSector  = sectorList[sectorCount];
+        Bassert((unsigned)origSector < (unsigned)numsectors);
         auto const &listSector = sector[origSector];
 
 #ifdef YAX_ENABLE
@@ -338,12 +339,18 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
             int32_t yax_sect;
             for (SECTORS_OF_BUNCH(yax_getbunch(origSector, YAX_CEILING), YAX_FLOOR, yax_sect))
             {
+                if ((unsigned)yax_sect >= (unsigned)numsectors)
+                    continue;
+
                 if (sectorListTotal < MAXDAMAGESECTORS)
                     bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
             }
 
             for (SECTORS_OF_BUNCH(yax_getbunch(origSector, YAX_FLOOR), YAX_CEILING, yax_sect))
             {
+                if ((unsigned)yax_sect >= (unsigned)numsectors)
+                    continue;
+
                 if (sectorListTotal < MAXDAMAGESECTORS)
                     bfirst_search_try(sectorList, sectorMap, &sectorListTotal, yax_sect);
             }

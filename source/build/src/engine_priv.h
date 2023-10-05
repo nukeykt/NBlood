@@ -496,4 +496,6 @@ static inline void get_floorspr_points(void const * const ptr, int32_t px, int32
     *y3 = *y2 + ofs.y, *y4 = *y1 + ofs.y;
 }
 
+void getclosestpointonline(vec2_t const p, vec2_t w, vec2_t w2, vec2_t* const closest);
+
 #endif	/* ENGINE_PRIV_H */

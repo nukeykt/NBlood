@@ -463,6 +463,8 @@ void S_Update(void)
         for (k=0; k<g_sounds[j].num; k++)
         {
             i = g_sounds[j].SoundOwner[k].ow;
+            if (((unsigned) i) >= MAXSPRITES) // globalsound
+                continue;
 
             sx = sprite[i].x;
             sy = sprite[i].y;
@@ -471,7 +473,7 @@ void S_Update(void)
             sndang = 2048 + ca - getangle(cx-sx,cy-sy);
             sndang &= 2047;
             sndist = FindDistance3D((cx-sx),(cy-sy),(cz-sz));
-            if (i >= 0 && (g_sounds[j].m & SF_GLOBAL) == 0 && PN(i) == MUSICANDSFX && SLT(i) < 999 && (sector[SECT(i)].lotag&0xff) < 9)
+            if ((g_sounds[j].m & SF_GLOBAL) == 0 && PN(i) == MUSICANDSFX && SLT(i) < 999 && (sector[SECT(i)].lotag&0xff) < 9)
                 sndist = divscale14(sndist,(SHT(i)+1));
 
             sndist += g_sounds[j].vo;
@@ -482,22 +484,12 @@ void S_Update(void)
 
             if (PN(i) == MUSICANDSFX && SLT(i) < 999)
                 g_numEnvSoundsPlaying++;
-            /*
-                        switch (j)
-                        {
-                        case PIPEBOMB_EXPLODE:
-                        case LASERTRIP_EXPLODE:
-                        case RPG_EXPLODE:
-                            if (sndist > (6144)) sndist = (6144);
-                            break;
-                        default:
-            */
+
             if (sndist > 31444 && PN(i) != MUSICANDSFX)
             {
                 S_StopSound(j);
                 continue;
             }
-//            }
 
             if (g_sounds[j].ptr == 0 && S_LoadSound(j) == 0) continue;
             if (g_sounds[j].m & SF_GLOBAL) sndist = 0;

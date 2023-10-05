@@ -302,11 +302,9 @@ void initcrc16()
 }
 
 // adapted from build.c
-static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
+void getclosestpointonline(vec2_t const p, vec2_t w, vec2_t w2, vec2_t *const closest)
 {
-    vec2_t const w  = wall[dawall].xy;
-    vec2_t const w2 = wall[wall[dawall].point2].xy;
-    vec2_t const d  = { w2.x - w.x, w2.y - w.y };
+    vec2_t const d = w2 - w;
 
     int64_t i = d.x * ((int64_t)p.x - w.x) + d.y * ((int64_t)p.y - w.y);
 
@@ -327,6 +325,11 @@ static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall,
     i = tabledivide64((i << 15), j) << 15;
 
     *closest = { (int32_t)(w.x + ((d.x * i) >> 30)), (int32_t)(w.y + ((d.y * i) >> 30)) };
+}
+
+static FORCE_INLINE void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
+{
+    getclosestpointonline(p, wall[dawall].xy, wall[wall[dawall].point2].xy, closest);
 }
 
 ////////// YAX //////////
@@ -12639,6 +12642,40 @@ int32_t cansee_19950829(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, in
     return 0;
 }
 
+#ifdef YAX_ENABLE
+// Traverse TROR transitions at the given (x,y) coordinates until no longer possible.
+// If the z coordinate is below the floor or above the ceiling, return the closest vertical sectnum.
+static int16_t yax_cansee_fixsector(int32_t x, int32_t y, int32_t z, int16_t startSect)
+{
+    if ((unsigned) (startSect) >= MAXSECTORS)
+        return startSect;
+
+    int16_t cb, fb;
+    yax_getbunches(startSect, &cb, &fb);
+    if (cb || fb)
+    {
+        int16_t curSect = startSect;
+        while(z < getcorrectceilzofslope(curSect, x, y))
+        {
+            int16_t prevSect = curSect;
+            curSect = yax_getneighborsect(x, y, curSect, YAX_CEILING);
+            if (curSect < 0) return prevSect;
+        }
+
+        while(z > getcorrectflorzofslope(curSect, x, y))
+        {
+            int16_t prevSect = curSect;
+            curSect = yax_getneighborsect(x, y, curSect, YAX_FLOOR);
+            if (curSect < 0) return prevSect;
+        }
+
+        return curSect;
+    }
+
+    return startSect;
+}
+#endif
+
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t orig_sect1, int32_t x2, int32_t y2, int32_t z2, int16_t orig_sect2, int32_t wallmask)
 {
     MICROPROFILE_SCOPEI("Engine", EDUKE32_FUNCTION, MP_AUTO);
@@ -12646,30 +12683,14 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t orig_sect1, int32_t x
     int16_t sect1 = orig_sect1;
     int16_t sect2 = orig_sect2;
 
-    if (enginecompatibilitymode == ENGINE_EDUKE32)
+#ifdef YAX_ENABLE
+    // If the z coordinate is out of bounds in a TROR sector, try to traverse TROR transitions to reach its containing sector.
+    if (enginecompatibilitymode == ENGINE_EDUKE32 && numyaxbunches > 0)
     {
-        // Failsafe: Try to correct the input sectors if the corresponding coordinates aren't actually within the given sector.
-        if (!inside_z_p(x1, y1, z1, sect1))
-        {
-            // DLOG_F(WARNING, "cansee: Origin coordinates x=%d, y=%d, z=%d are outside sector %d", x1, y1, z1, sect1);
-            updatesectorz(x1, y1, z1, &sect1);
-            if (sect1 < 0)
-            {
-                DLOG_F(WARNING, "cansee: Failed to correct origin sector, falling back to original sector %d", orig_sect1);
-                sect1 = orig_sect1;
-            }
-        }
-        if (!inside_z_p(x2, y2, z2, sect2))
-        {
-            // DLOG_F(WARNING, "cansee: Destination coordinates x=%d, y=%d, z=%d are outside sector %d", x2, y2, z2, sect2);
-            updatesectorz(x2, y2, z2, &sect2);
-            if (sect2 < 0)
-            {
-                DLOG_F(WARNING, "cansee: Failed to correct destination sector, falling back to original sector %d", orig_sect2);
-                sect2 = orig_sect2;
-            }
-        }
+        sect1 = yax_cansee_fixsector(x1, y1, z1, orig_sect1);
+        sect2 = yax_cansee_fixsector(x2, y2, z2, orig_sect2);
     }
+#endif
 
     if (enginecompatibilitymode == ENGINE_19950829)
         return cansee_19950829(x1, y1, z1, sect1, x2, y2, z2, sect2);
