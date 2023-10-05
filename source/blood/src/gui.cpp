@@ -310,15 +310,11 @@ void TitleBar::HandleEvent(GEVENT *event)
     {
         if (event->at6.mouse.at4 == 0)
         {
-            switch (event->at0)
+            if (event->at0 == GEVENT_TYPE_MOUSE_8)
             {
-            case GEVENT_TYPE_MOUSE_8:
                 at18->at0 += event->at6.mouse.at10;
                 at18->at4 += event->at6.mouse.at14;
                 event->at0 = GEVENT_TYPE_NONE;
-                break;
-            case GEVENT_TYPE_MOUSE_2:
-                break;
             }
         }
     }
@@ -394,6 +390,8 @@ void Button::HandleEvent(GEVENT* event)
                     EndModal(at24);
             }
             at0 = GEVENT_TYPE_NONE;
+            break;
+        default:
             break;
         }
     }
@@ -503,6 +501,8 @@ void EditText::HandleEvent(GEVENT *event)
                 at128 = gfxFindTextPos(at24, pFont, event->at6.mouse.at8 - at0);
                 SetBlinkOn();
                 event->at0 = GEVENT_TYPE_NONE;
+                break;
+            default:
                 break;
             }
         }
@@ -643,6 +643,8 @@ void ThumbButton::HandleEvent(GEVENT* event)
             case GEVENT_TYPE_MOUSE_2:
                 at29 = 0;
                 break;
+            default:
+                break;
             }
         }
     }
@@ -670,6 +672,8 @@ void ScrollButton::HandleEvent(GEVENT* event)
                 break;
             case GEVENT_TYPE_MOUSE_2:
                 at29 = 0;
+                break;
+            default:
                 break;
             }
         }
