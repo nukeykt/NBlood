@@ -45,7 +45,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 GAMEOPTIONS gGameOptions;
 
 GAMEOPTIONS gSingleGameOptions = {
-    0, 2, 0, 0, "", "", 2, "", "", 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 3600, 1800, 1800, 7200
+    0, 2, 0, 0, "", "", 2, "", "", 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 3600, 1800, 1800, 7200,
+    0, 0, LOSTONDEATH, "",
 };
 
 EPISODEINFO gEpisodeInfo[kMaxEpisodes+1];
