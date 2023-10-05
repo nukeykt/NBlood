@@ -326,9 +326,7 @@ static int retval = -1;
 static struct
 {
     INICHAIN const * ini;
-    char *gamedir;
     ud_setup_t shared;
-    int polymer;
 }
 settings;
 
@@ -836,7 +834,6 @@ int startwin_run(void)
 
     settings.shared = gSetup;
     settings.ini = pINISelected;
-    settings.gamedir = g_modDir;
 
     [startwin setupRunMode];
 
@@ -853,9 +850,7 @@ int startwin_run(void)
 
     if (retval) {
         gSetup = settings.shared;
-        glrendmode = settings.polymer ? REND_POLYMER : REND_POLYMOST;
         pINISelected = settings.ini;
-        Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return retval;
