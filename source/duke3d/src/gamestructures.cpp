@@ -294,8 +294,24 @@ void __fastcall VM_SetSprite(int const spriteNum, int const labelNum, int const 
 
     switch (labelNum)
     {
-        case ACTOR_SECTNUM: changespritesect(spriteNum, newValue); break;
-        case ACTOR_STATNUM: changespritestat(spriteNum, newValue); break;
+        case ACTOR_SECTNUM:
+            if (((unsigned)spriteNum >= MAXSPRITES) | ((unsigned)newValue >= MAXSECTORS))
+            {
+                CON_ERRPRINTF("invalid sectnum %d for sprite %d\n", newValue, spriteNum);
+                // unset VM_RETURN so we don't break existing stuff that's wrong any worse than it already was
+                vm.flags &= ~VM_RETURN;
+            }
+            else changespritesect(spriteNum, newValue);
+            break;
+        case ACTOR_STATNUM: 
+            if (((unsigned)spriteNum >= MAXSPRITES) | ((unsigned)newValue >= MAXSTATUS))
+            {
+                CON_ERRPRINTF("invalid statnum %d for sprite %d\n", newValue, spriteNum);
+                // unset VM_RETURN so we don't break existing stuff that's wrong any worse than it already was
+                vm.flags &= ~VM_RETURN;
+            }
+            else changespritestat(spriteNum, newValue);
+            break;
         case ACTOR_HTG_T: a.t_data[lParm2] = newValue; break;
         case ACTOR_ALPHA: ext.alpha = (float)newValue * (1.f / 255.0f); break;
         default: EDUKE32_UNREACHABLE_SECTION(break);

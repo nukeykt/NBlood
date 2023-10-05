@@ -559,6 +559,8 @@ int32_t G_LoadPlayer(savebrief_t & sv)
                 sv_loadMhk(mhkInfo, currentboardfilename);
             }
 
+            Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
+
             // G_NewGame_EnterLevel();
         }
 
@@ -736,6 +738,7 @@ int32_t G_LoadPlayer(savebrief_t & sv)
     // NOTE: size arg is (unconventionally) that of the source, it being smaller.
     Bstrncpyz(boardfilename, h.boardfn, sizeof(h.boardfn) /*!*/);
     sv_update_filename(currentboardfilename, mapidx, BMAX_PATH);
+    DLOG_F(INFO, "Loading savegame with map filename \"%s\"", h.boardfn);
 
     if (currentboardfilename[0])
     {
@@ -746,6 +749,8 @@ int32_t G_LoadPlayer(savebrief_t & sv)
         sv_loadMapart(mhkInfo, currentboardfilename);
         sv_loadMhk(mhkInfo, currentboardfilename);
     }
+
+    Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
 
     if (status == 2)
         G_NewGame_EnterLevel();
@@ -1746,7 +1751,8 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
     h.skill      = ud.player_skill;
     h.health     = sprite[g_player[myconnectindex].ps->i].extra;
 
-    sv_update_filename(h.boardfn, h.volnum*MAXLEVELS + h.levnum, sizeof(h.boardfn));
+    Bstrncpyz(h.boardfn, currentboardfilename, sizeof(h.boardfn));
+    DLOG_F(INFO, "Creating a savegame with map filename \"%s\"", h.boardfn);
 
     if (spot >= 0)
     {

@@ -3194,7 +3194,7 @@ void P_GetInput(int const playerNum)
     auto const pPlayer    = thisPlayer.ps;
     ControlInfo info;
 
-    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)) || g_saveRequested)
+    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
     {
         if (!(pPlayer->gm&MODE_MENU))
             CONTROL_GetInput(&info);
@@ -3202,7 +3202,7 @@ void P_GetInput(int const playerNum)
         thisPlayer.lastViewUpdate = 0;
         localInput = {};
         localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
-        localInput.extbits |= BIT(EK_CHAT_MODE);
+        localInput.extbits = BIT(EK_CHAT_MODE);
 
         return;
     }
@@ -5007,6 +5007,8 @@ static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t
         pPlayer->pos.z = floorZ - PMINHEIGHT;
 }
 
+#define GETZRANGECLIPDISTOFFSET 4
+
 void P_ProcessInput(int playerNum)
 {
     auto &thisPlayer = g_player[playerNum];
@@ -5033,6 +5035,12 @@ void P_ProcessInput(int playerNum)
 
     if (pPlayer->cursectnum == -1)
     {
+        pPlayer->cursectnum = pSprite->sectnum;
+        updatesector(pPlayer->pos.x, pPlayer->pos.y, &pPlayer->cursectnum);
+    }
+
+    if (pPlayer->cursectnum == -1)
+    {
         if (pSprite->extra > 0 && ud.noclip == 0)
         {
             LOG_F(WARNING, "%s: player killed by cursectnum == -1!", EDUKE32_FUNCTION);
@@ -5048,7 +5056,7 @@ void P_ProcessInput(int playerNum)
 
     // sectorLotag can be set to 0 later on, but the same block sets spritebridge to 1
     int sectorLotag       = sector[pPlayer->cursectnum].lotag;
-    int getZRangeClipDist = pPlayer->clipdist >> 1;
+    int getZRangeClipDist = (pPlayer->clipdist >> 1) - GETZRANGECLIPDISTOFFSET;
     int const stepHeight  = (((TEST_SYNC_KEY(playerBits, SK_CROUCH) && sectorLotag != ST_2_UNDERWATER && ((pPlayer->on_ground && !pPlayer->jumping_toggle)))
                             || (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1)))
                             ? pPlayer->autostep_sbw
@@ -5068,13 +5076,16 @@ void P_ProcessInput(int playerNum)
         uint16_t const ocstat = pSprite->cstat;
         pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
 
-        int32_t cz[3], fz[3], hzhit[3], lzhit[3];
-        vec3_t pos[3] = { pPlayer->pos, pPlayer->pos, pPlayer->pos };
+        int32_t cz[4], fz[4], hzhit[4], lzhit[4];
+        vec3_t pos[4] = { pPlayer->pos, pPlayer->pos, pPlayer->pos, pPlayer->pos };
+        
+        int const thirdStep = pPlayer->autostep_sbw / 3;
 
-        pos[0].z += stepHeight;
-        pos[1].z += stepHeight>>1;
+        pos[0].z += pPlayer->autostep_sbw;
+        pos[1].z += thirdStep << 1;
+        pos[2].z += thirdStep;
 
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < 4; ++i)
             getzrange(&pos[i], pPlayer->cursectnum, &cz[i], &hzhit[i], &fz[i], &lzhit[i], getZRangeClipDist, CLIPMASK0);
 
         pSprite->cstat = ocstat;
@@ -5082,23 +5093,21 @@ void P_ProcessInput(int playerNum)
         ceilZ    = cz[2];
         highZhit = hzhit[2];
 
-        for (int i = 0; i < 2; ++i)
+        for (int i = 1; i < 3; ++i)
             if (hzhit[i] == hzhit[i+1])
             {
                 ceilZ    = cz[i];
                 highZhit = hzhit[i];
-                break;
             }
 
-        floorZ  = fz[0];
-        lowZhit = lzhit[0];
+        floorZ  = fz[1];
+        lowZhit = lzhit[1];
 
-        for (int i = 0; i < 2; ++i)
+        for (int i = 2; i >= 0; --i)
             if (lzhit[i] == lzhit[i+1])
             {
                 floorZ  = fz[i];
                 lowZhit = lzhit[i];
-                break;
             }
     }
 
@@ -5118,7 +5127,8 @@ void P_ProcessInput(int playerNum)
     if ((lowZhit & 49152) == 16384 && sectorLotag == 1 && trueFloorDist > pPlayer->spritezoffset + ZOFFSET2)
         sectorLotag = 0;
 
-    if ((highZhit & 49152) == 49152)
+#ifndef EDUKE32_STANDALONE
+    if (!FURY && (highZhit & 49152) == 49152)
     {
         int const spriteNum = highZhit & (MAXSPRITES-1);
 
@@ -5129,6 +5139,7 @@ void P_ProcessInput(int playerNum)
             ceilZ    = pPlayer->truecz;
         }
     }
+#endif
 
     actor[pPlayer->i].floorz   = floorZ;
     actor[pPlayer->i].ceilingz = ceilZ;

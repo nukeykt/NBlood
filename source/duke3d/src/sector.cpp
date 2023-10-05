@@ -413,20 +413,23 @@ void G_AnimateCamSprite(int smoothRatio)
 #ifdef DEBUG_VALGRIND_NO_SMC
     return;
 #endif
+    static int idx;
 
     int viewscreenOwners[MAX_ACTIVE_VIEWSCREENS];
     int viewscreenSizeX[MAX_ACTIVE_VIEWSCREENS];
     int viewscreenSizeY[MAX_ACTIVE_VIEWSCREENS];
 
     for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
+        if (g_activeVscrSprite[vscrIndex] < 0)
+            viewscreenOwners[vscrIndex] = -1;
+
+    for (int vscrInc = 0; vscrInc < MAX_ACTIVE_VIEWSCREENS; vscrInc++)
     {
+        int const vscrIndex = (idx + vscrInc) & (MAX_ACTIVE_VIEWSCREENS-1);
         int const spriteNum = g_activeVscrSprite[vscrIndex];
 
         if (spriteNum < 0)
-        {
-            viewscreenOwners[vscrIndex] = -1;
             continue;
-        }
 
         if (totalclock >= T1(spriteNum) + ud.camera_time)
         {
@@ -476,6 +479,8 @@ void G_AnimateCamSprite(int smoothRatio)
             }
 
             T1(spriteNum) = (int32_t) totalclock;
+            idx = vscrIndex;
+            return;
         }
     }
 }

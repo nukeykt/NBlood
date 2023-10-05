@@ -94,8 +94,12 @@ void Gv_Clear(void)
     for (auto & gameVar : aGameVars)
         DO_FREE_AND_NULL(gameVar.szLabel);
 
+    Bmemset(aGameVars, 0, sizeof(aGameVars));
+
     for (auto & gameArray : aGameArrays)
         DO_FREE_AND_NULL(gameArray.szLabel);
+
+    Bmemset(aGameArrays, 0, sizeof(aGameArrays));
 
     for (auto i : vmStructHashTablePtrs)
         hash_free(i);
@@ -938,7 +942,7 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
                 if (arrayIndexVar == g_thisActorVarID)
                     arrayIndex = vm.playerNum;
                 CHECK_INDEX(MAXPLAYERS);
-                arrayIndexVar = (EDUKE32_PREDICT_FALSE(PlayerLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++, spriteNum, playerNum) : 0;
+                arrayIndexVar = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++, spriteNum, playerNum) : 0;
                 returnValue = VM_GetPlayer(arrayIndex, labelNum, arrayIndexVar);
                 break;
 
@@ -981,7 +985,7 @@ static int __fastcall Gv_GetArrayOrStruct(int const gameVar, int const spriteNum
                 break;
 
             case STRUCT_USERDEF:
-                arrayIndexVar = (EDUKE32_PREDICT_FALSE(UserdefsLabels[labelNum].flags & LABEL_HASPARM2)) ? Gv_GetVar(*insptr++) : 0;
+                arrayIndexVar = (UserdefsLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
                 returnValue   = VM_GetUserdef(labelNum, arrayIndexVar);
                 break;
         }
@@ -1548,8 +1552,11 @@ static void Gv_AddSystemVars(void)
 void Gv_Init(void)
 {
     // already initialized
-    if (aGameVars[0].flags)
-        return;
+    //if (aGameVars[0].flags)
+    //    return;
+
+    g_gameVarCount = 0;
+    g_gameArrayCount = 0;
 
     // Set up weapon defaults, g_playerWeapon[][].
     Gv_AddSystemVars();

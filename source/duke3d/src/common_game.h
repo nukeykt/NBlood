@@ -38,7 +38,9 @@ extern int g_useCwd;
 #define GAMEFLAG_DUKEBETA   0x00000060 // includes 0x20 since it's a shareware beta
 #define GAMEFLAG_FURY       0x00000080
 #define GAMEFLAG_STANDALONE 0x00000100
-#define GAMEFLAGMASK        0x000000FF // flags allowed from grpinfo
+#define GAMEFLAG_NOCLASSIC  0x00000200
+#define GAMEFLAG_NOPOLYMER  0x00000400
+#define GAMEFLAGMASK        0x000007FF // flags allowed from grpinfo
 
 extern struct grpfile_t const *g_selectedGrp;
 

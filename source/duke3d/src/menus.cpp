@@ -555,18 +555,32 @@ static MenuEntry_t ME_VIDEOSETUP_DISPLAY = MAKE_MENUENTRY("Display:", &MF_Redfon
 
 
 #ifdef USE_OPENGL
-#ifdef POLYMER
-static char const *MEOSN_VIDEOSETUP_RENDERER[] = { "Classic", "Polymost", "Polymer", };
-static int32_t MEOSV_VIDEOSETUP_RENDERER[] = { REND_CLASSIC, REND_POLYMOST, REND_POLYMER, };
-#else
-static char const *MEOSN_VIDEOSETUP_RENDERER[] = { "Classic", "OpenGL", };
-static int32_t MEOSV_VIDEOSETUP_RENDERER[] = { REND_CLASSIC, REND_POLYMOST, };
-#endif
+# ifdef POLYMER
+static char const *MEOSN_VIDEOSETUP_RENDERER_ALL[] = { "Classic", "Polymost", "Polymer", };
+static int32_t MEOSV_VIDEOSETUP_RENDERER_ALL[] = { REND_CLASSIC, REND_POLYMOST, REND_POLYMER, };
+static char const *MEOSN_VIDEOSETUP_RENDERER_NOCLASSIC[] = { "Polymost", "Polymer", };
+static int32_t MEOSV_VIDEOSETUP_RENDERER_NOCLASSIC[] = { REND_POLYMOST, REND_POLYMER, };
+static char const *MEOSN_VIDEOSETUP_RENDERER_NOPOLYMER[] = { "Classic", "Polymost", };
+static int32_t MEOSV_VIDEOSETUP_RENDERER_NOPOLYMER[] = { REND_CLASSIC, REND_POLYMOST, };
 
-static MenuOptionSet_t MEOS_VIDEOSETUP_RENDERER = MAKE_MENUOPTIONSET( MEOSN_VIDEOSETUP_RENDERER, MEOSV_VIDEOSETUP_RENDERER, 0x2 );
+static MenuOptionSet_t MEOS_VIDEOSETUP_RENDERER_ALL = MAKE_MENUOPTIONSET( MEOSN_VIDEOSETUP_RENDERER_ALL, MEOSV_VIDEOSETUP_RENDERER_ALL, 0x2 );
+static MenuOption_t MEO_VIDEOSETUP_RENDERER_ALL = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RENDERER_ALL, &newrendermode );
+static MenuEntry_t ME_VIDEOSETUP_RENDERER_ALL = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER_ALL, Option );
 
-static MenuOption_t MEO_VIDEOSETUP_RENDERER = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RENDERER, &newrendermode );
-static MenuEntry_t ME_VIDEOSETUP_RENDERER = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER, Option );
+static MenuOptionSet_t MEOS_VIDEOSETUP_RENDERER_NOCLASSIC = MAKE_MENUOPTIONSET( MEOSN_VIDEOSETUP_RENDERER_NOCLASSIC, MEOSV_VIDEOSETUP_RENDERER_NOCLASSIC, 0x2 );
+static MenuOption_t MEO_VIDEOSETUP_RENDERER_NOCLASSIC = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RENDERER_NOCLASSIC, &newrendermode );
+static MenuEntry_t ME_VIDEOSETUP_RENDERER_NOCLASSIC = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER_NOCLASSIC, Option );
+
+static MenuOptionSet_t MEOS_VIDEOSETUP_RENDERER_NOPOLYMER = MAKE_MENUOPTIONSET( MEOSN_VIDEOSETUP_RENDERER_NOPOLYMER, MEOSV_VIDEOSETUP_RENDERER_NOPOLYMER, 0x2 );
+static MenuOption_t MEO_VIDEOSETUP_RENDERER_NOPOLYMER = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RENDERER_NOPOLYMER, &newrendermode );
+static MenuEntry_t ME_VIDEOSETUP_RENDERER_NOPOLYMER = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER_NOPOLYMER, Option );
+# else
+static char const *MEOSN_VIDEOSETUP_RENDERER_ALL[] = { "Classic", "OpenGL", };
+static int32_t MEOSV_VIDEOSETUP_RENDERER_ALL[] = { REND_CLASSIC, REND_POLYMOST, };
+static MenuOptionSet_t MEOS_VIDEOSETUP_RENDERER_ALL = MAKE_MENUOPTIONSET( MEOSN_VIDEOSETUP_RENDERER_ALL, MEOSV_VIDEOSETUP_RENDERER_ALL, 0x2 );
+static MenuOption_t MEO_VIDEOSETUP_RENDERER_ALL = MAKE_MENUOPTION( &MF_Redfont, &MEOS_VIDEOSETUP_RENDERER_ALL, &newrendermode );
+static MenuEntry_t ME_VIDEOSETUP_RENDERER_ALL = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER_ALL, Option );
+# endif
 #endif
 
 static MenuOption_t MEO_VIDEOSETUP_FULLSCREEN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &newfullscreen );
@@ -798,7 +812,11 @@ static MenuEntry_t *MEL_CHEATS[ARRAY_SIZE(ME_CheatCodes)+1] = {
 static MenuEntry_t *MEL_VIDEOSETUP[] = {
     &ME_VIDEOSETUP_RESOLUTION,
 #ifdef USE_OPENGL
-    &ME_VIDEOSETUP_RENDERER,
+    &ME_VIDEOSETUP_RENDERER_ALL,
+# ifdef POLYMER
+    &ME_VIDEOSETUP_RENDERER_NOCLASSIC,
+    &ME_VIDEOSETUP_RENDERER_NOPOLYMER,
+# endif
 #endif
     &ME_VIDEOSETUP_DISPLAY,
     &ME_VIDEOSETUP_FULLSCREEN,
@@ -2460,13 +2478,27 @@ static void Menu_PopulateVideoSetup()
         ++MEOS_VIDEOSETUP_DISPLAY.numOptions;
     }
 
+    int const rendermode = videoGetRenderMode();
+
     MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
         (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
-            videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
+            rendermode == newrendermode && fullscreen == newfullscreen
             && vsync == newvsync && r_borderless == newborderless && r_maxfps == newmaxfps && r_displayindex == newdisplayindex
             )
         || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
     MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
+
+#ifdef POLYMER
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER));
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOCLASSIC,
+                              rendermode != REND_POLYMER && ((g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)) == (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)
+                              || !(g_gameType & GAMEFLAG_NOCLASSIC)));
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOPOLYMER,
+                              rendermode != REND_CLASSIC && ((g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)) == (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)
+                              || !(g_gameType & GAMEFLAG_NOPOLYMER)));
+#else
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, rendermode != REND_CLASSIC && (g_gameType & GAMEFLAG_NOCLASSIC));
+#endif
 }
 
 static void Menu_PopulateLanguages()
@@ -8191,7 +8223,7 @@ void M_DisplayMenus(void)
     }
 
     // hack; need EVENT_DISPLAYMENUBACKGROUND above
-    if (FURY && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2 || m_parentMenu != NULL) && backgroundOK)
+    if (FURY && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2 || m_parentMenu != NULL || g_currentMenu == MENU_SKILL) && backgroundOK)
         videoFadeToBlack(1);
 
     // Display the menu, with a transition animation if applicable.

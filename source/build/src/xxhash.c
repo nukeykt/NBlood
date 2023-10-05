@@ -40,8 +40,4 @@
 #define XXH_STATIC_LINKING_ONLY   /* access advanced declarations */
 #define XXH_IMPLEMENTATION   /* access definitions */
 
-#ifndef NDEBUG
-#define XXH_NO_INLINE_HINTS 1
-#endif
-
 #include "xxhash.h"

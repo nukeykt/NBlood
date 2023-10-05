@@ -250,6 +250,47 @@ void G_ExtPreInit(int32_t argc,char const * const * argv)
     buildvfs_getcwd(g_rootDir,BMAX_PATH);
     strcat(g_rootDir,"/");
 #endif
+    char cwd[BMAX_PATH];
+
+#ifdef USE_PHYSFS
+    strncpy(cwd, PHYSFS_getBaseDir(), ARRAY_SIZE(cwd));
+    cwd[ARRAY_SIZE(cwd)-1] = '\0';
+#else
+    if (buildvfs_getcwd(cwd, ARRAY_SIZE(cwd)) && Bstrcmp(cwd, "/") != 0)
+#endif
+        addsearchpath(cwd);
+
+#if defined(_WIN32) && !defined(EDUKE32_STANDALONE)
+    if (buildvfs_exists("user_profiles_enabled"))
+#else
+    if (g_useCwd == 0 && !buildvfs_exists("user_profiles_disabled"))
+#endif
+    {
+        char *homedir;
+        int32_t asperr;
+
+        if ((homedir = Bgethomedir()))
+        {
+            Bsnprintf(cwd, ARRAY_SIZE(cwd), "%s/"
+#if defined(_WIN32)
+                APPNAME
+#elif defined(GEKKO)
+                "apps/" APPBASENAME
+#else
+                ".config/" APPBASENAME
+#endif
+                ,homedir);
+            asperr = addsearchpath(cwd);
+            if (asperr == -2)
+            {
+                if (buildvfs_mkdir(cwd,S_IRWXU) == 0) asperr = addsearchpath(cwd);
+                else asperr = -1;
+            }
+            if (asperr == 0)
+                buildvfs_chdir(cwd);
+            Xfree(homedir);
+        }
+    }
 }
 
 void G_ExtInit(void)
@@ -259,15 +300,6 @@ void G_ExtInit(void)
     addsearchpath(appdir);
     Xfree(appdir);
 #endif
-
-    char cwd[BMAX_PATH];
-#ifdef USE_PHYSFS
-    strncpy(cwd, PHYSFS_getBaseDir(), ARRAY_SIZE(cwd));
-    cwd[ARRAY_SIZE(cwd)-1] = '\0';
-#else
-    if (buildvfs_getcwd(cwd, ARRAY_SIZE(cwd)) && Bstrcmp(cwd, "/") != 0)
-#endif
-        addsearchpath(cwd);
 
     if (CommandPaths)
     {
@@ -286,38 +318,6 @@ void G_ExtInit(void)
             Xfree(CommandPaths->str);
             Xfree(CommandPaths);
             CommandPaths = s;
-        }
-    }
-
-#if defined(_WIN32) && !defined(EDUKE32_STANDALONE)
-    if (buildvfs_exists("user_profiles_enabled"))
-#else
-    if (g_useCwd == 0 && !buildvfs_exists("user_profiles_disabled"))
-#endif
-    {
-        char *homedir;
-        int32_t asperr;
-
-        if ((homedir = Bgethomedir()))
-        {
-            Bsnprintf(cwd, ARRAY_SIZE(cwd), "%s/"
-#if defined(_WIN32)
-                      APPNAME
-#elif defined(GEKKO)
-                      "apps/" APPBASENAME
-#else
-                      ".config/" APPBASENAME
-#endif
-                      ,homedir);
-            asperr = addsearchpath(cwd);
-            if (asperr == -2)
-            {
-                if (buildvfs_mkdir(cwd,S_IRWXU) == 0) asperr = addsearchpath(cwd);
-                else asperr = -1;
-            }
-            if (asperr == 0)
-                buildvfs_chdir(cwd);
-            Xfree(homedir);
         }
     }
 

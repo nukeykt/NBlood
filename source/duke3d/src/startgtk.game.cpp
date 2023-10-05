@@ -231,6 +231,10 @@ static void on_gamelist_selection_changed(GtkTreeSelection *selection, gpointer 
         grpfile_t const *fg;
         gtk_tree_model_get(model, &iter, 2, (gpointer)&fg, -1);
         settings.grp = fg;
+        PopulateForm(POPULATE_VIDEO);
+#ifdef POLYMER
+        gtk_widget_set_sensitive(stwidgets.polymercheck, !(settings.grp->type->game & GAMEFLAG_NOPOLYMER));
+#endif
     }
 }
 
@@ -336,10 +340,14 @@ static void PopulateForm(unsigned char pgs)
 
         for (i=0; i<validmodecnt; i++)
         {
+            if (settings.grp->type->game & GAMEFLAG_NOCLASSIC && validmode[i].bpp == 8) continue;
             if (validmode[i].fs != settings.shared.fullscreen) continue;
 
             // all modes get added to the 3D mode list
-            Bsprintf(buf, "%dx%d %s", validmode[i].xdim, validmode[i].ydim, validmode[i].bpp == 8 ? "software" : "OpenGL");
+            Bsprintf(buf, "%dx%d %s", validmode[i].xdim, validmode[i].ydim,
+                     validmode[i].bpp == 8                             ? "software"
+                     : (settings.grp->type->game & GAMEFLAG_NOCLASSIC) ? ""
+                                                                       : "OpenGL");
             gtk_list_store_append(modes3d, &iter);
             gtk_list_store_set(modes3d, &iter, 0,buf, 1,i, -1);
             if (i == mode3d)
@@ -878,7 +886,9 @@ int32_t startwin_run(void)
     settings.polymer = (glrendmode == REND_POLYMER) & (settings.shared.bpp != 8);
 #endif
     PopulateForm(ALL);
-
+#ifdef POLYMER
+    gtk_widget_set_sensitive(stwidgets.polymercheck, !(settings.grp->type->game & GAMEFLAG_NOPOLYMER));
+#endif
     gtk_main();
 
     SetPage(TAB_MESSAGES);

@@ -6479,6 +6479,12 @@ static void drawframe_entry(mco_coro *co)
             OSD_DispatchQueued();
             P_GetInput(myconnectindex);
         }
+        else
+        {
+            localInput = {};
+            localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
+            localInput.extbits = BIT(EK_CHAT_MODE);
+        }
 
         int const smoothratio = calc_smoothratio(totalclock, ototalclock);
 
@@ -6530,7 +6536,7 @@ void dukeFillInputForTic(void)
         input.svel += pPlayer->fric.y;
     }
 
-    localInput ={};
+    localInput = {};
 }
 
 void dukeCreateFrameRoutine(void)
@@ -6570,14 +6576,6 @@ static const char* dukeVerbosityCallback(loguru::Verbosity verbosity)
 
 int app_main(int argc, char const* const* argv)
 {
-    engineSetLogFile(APPBASENAME ".log", LOG_GAME_MAX);
-    engineSetLogVerbosityCallback(dukeVerbosityCallback);
-
-#ifndef NETCODE_DISABLE
-    if (enet_initialize() != 0)
-        LOG_F(ERROR, "An error occurred while initializing ENet.");
-#endif
-
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
@@ -6598,6 +6596,9 @@ int app_main(int argc, char const* const* argv)
 
     G_ExtPreInit(argc, argv);
 
+    engineSetLogFile(APPBASENAME ".log", LOG_GAME_MAX);
+    engineSetLogVerbosityCallback(dukeVerbosityCallback);
+
 #ifdef __APPLE__
     if (!g_useCwd)
     {
@@ -6610,6 +6611,11 @@ int app_main(int argc, char const* const* argv)
         OSD_SetLogFile(cwd);
         Xfree(homedir);
     }
+#endif
+
+#ifndef NETCODE_DISABLE
+    if (enet_initialize() != 0)
+        LOG_F(ERROR, "An error occurred while initializing ENet.");
 #endif
 
     osdcallbacks_t callbacks = {};
@@ -7125,7 +7131,7 @@ MAIN_LOOP_RESTART:
                         G_DoMoveThings();
                     }
                 }
-                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME);
+                while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME && !g_saveRequested);
 
                 gameUpdate = true;
                 g_gameUpdateTime = timerGetFractionalTicks() - gameUpdateStartTime;
