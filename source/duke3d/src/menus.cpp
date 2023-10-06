@@ -1251,8 +1251,12 @@ static MenuEntry_t ME_SOUND_MUSIC = MAKE_MENUENTRY( "Music:", &MF_Redfont, &MEF_
 
 static char const s_Volume[] = "Volume:";
 
+static MenuRangeInt32_t MEO_SOUND_VOLUME_MASTER = MAKE_MENURANGE( &ud.config.MasterVolume, &MF_Redfont, 0, 255, 0, 33, DisplayTypePercent );
+static MenuEntry_t ME_SOUND_VOLUME_MASTER = MAKE_MENUENTRY( "Master:", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SOUND_VOLUME_MASTER, RangeInt32 );
+
 static MenuRangeInt32_t MEO_SOUND_VOLUME_FX = MAKE_MENURANGE( &ud.config.FXVolume, &MF_Redfont, 0, 255, 0, 33, DisplayTypePercent );
-static MenuEntry_t ME_SOUND_VOLUME_FX = MAKE_MENUENTRY( s_Volume, &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SOUND_VOLUME_FX, RangeInt32 );
+static MenuEntry_t ME_SOUND_VOLUME_FX = MAKE_MENUENTRY( "SFX:", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SOUND_VOLUME_FX, RangeInt32 );
+
 
 static MenuRangeInt32_t MEO_SOUND_VOLUME_MUSIC = MAKE_MENURANGE( &ud.config.MusicVolume, &MF_Redfont, 0, 255, 0, 33, DisplayTypePercent );
 static MenuEntry_t ME_SOUND_VOLUME_MUSIC = MAKE_MENUENTRY( s_Volume, &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SOUND_VOLUME_MUSIC, RangeInt32 );
@@ -1264,6 +1268,9 @@ static MenuEntry_t ME_SOUND_DUKETALK = MAKE_MENUENTRY( "Duke talk:", &MF_Redfont
 static MenuOption_t MEO_SOUND_DUKETALK = MAKE_MENUOPTION(&MF_Redfont, &MEOS_YesNo, NULL);
 static MenuEntry_t ME_SOUND_DUKETALK = MAKE_MENUENTRY("Silent protagonist:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_DUKETALK, Option);
 #endif
+
+static MenuRangeInt32_t MEO_SOUND_VOLUME_VOICE = MAKE_MENURANGE( &ud.config.VoiceVolume, &MF_Redfont, 0, 255, 0, 33, DisplayTypePercent );
+static MenuEntry_t ME_SOUND_VOLUME_VOICE = MAKE_MENUENTRY( "Speech:", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SOUND_VOLUME_VOICE, RangeInt32 );
 
 static char const *MEOSN_SOUND_SAMPLINGRATE[] = { "22050Hz", "44100Hz", "48000Hz", };
 static int32_t MEOSV_SOUND_SAMPLINGRATE[] = { 22050, 44100, 48000, };
@@ -1330,7 +1337,9 @@ static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfo
 
 static MenuEntry_t *MEL_SOUND[] = {
     &ME_SOUND,
+    &ME_SOUND_VOLUME_MASTER,
     &ME_SOUND_VOLUME_FX,
+    &ME_SOUND_VOLUME_VOICE,
     &ME_SOUND_MUSIC,
     &ME_SOUND_VOLUME_MUSIC,
     &ME_SOUND_DUKETALK,
@@ -2319,6 +2328,11 @@ void Menu_Init(void)
         ME_SOUND_DUKETALK.name = "GI talk:";
     else if (NAM)
         ME_SOUND_DUKETALK.name = "Grunt talk:";
+    else if (FURY)
+    {
+        ME_SOUND_DUKETALK.name = "Silent protagonist:";
+        MEO_SOUND_DUKETALK.options = &MEOS_YesNo;
+    }
 #endif
 
     if (FURY)
@@ -2672,9 +2686,11 @@ static void Menu_Pre(MenuID_t cm)
     case MENU_SOUND:
     case MENU_SOUND_INGAME:
     case MENU_SOUND_DEVSETUP:
+        MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MASTER, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_FX, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MUSIC, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_DUKETALK, !ud.config.SoundToggle);
+        MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_VOICE, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
 #ifndef EDUKE32_RETAIL_MENU
         MenuEntry_DisableOnCondition(&ME_SOUND_MIDIDRIVER, !ud.config.MusicToggle);
@@ -4325,7 +4341,7 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
         G_SetViewportShrink((newValue - vpsize) * 4);
     else if (entry == &ME_SCREENSETUP_SBARSIZE)
         G_SetStatusBarScale(newValue);
-    else if (entry == &ME_SOUND_VOLUME_FX)
+    else if (entry == &ME_SOUND_VOLUME_MASTER)
         FX_SetVolume(newValue);
     else if (entry == &ME_SOUND_VOLUME_MUSIC)
         S_MusicVolume(newValue);

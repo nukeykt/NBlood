@@ -118,7 +118,7 @@ void S_SoundStartup(void)
             snd->lock = CACHE1D_UNLOCKED;
     }
 
-    FX_SetVolume(ud.config.FXVolume);
+    FX_SetVolume(ud.config.MasterVolume);
     //S_MusicVolume(ud.config.MusicVolume);
 
 #ifdef ASS_REVERSESTEREO
@@ -942,8 +942,9 @@ error:
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
-    int const voice = FX_Play3D(snd->ptr, snd->len, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
-                                                        snd->priority, snd->volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
+    float const volume = ((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? snd->volume * ((float)ud.config.VoiceVolume / 255.f) : snd->volume * ((float)ud.config.FXVolume / 255.f);
+    int const voice = FX_Play3D(snd->ptr, snd->len, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6, snd->priority,
+                                volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
 
     if (voice <= FX_Ok)
     {
@@ -998,9 +999,10 @@ error:
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
+    float const volume = ((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? snd->volume * ((float)ud.config.VoiceVolume / 255.f) : snd->volume * ((float)ud.config.FXVolume / 255.f);
     int const voice = (snd->flags & SF_LOOP) ? FX_Play(snd->ptr, snd->len, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
-                                                  LOUDESTVOLUME, snd->len, snd->volume, (num * MAXSOUNDINSTANCES) + sndnum)
-                                        : FX_Play3D(snd->ptr, snd->len, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd->priority, snd->volume,
+                                                  LOUDESTVOLUME, snd->len, volume, (num * MAXSOUNDINSTANCES) + sndnum)
+                                        : FX_Play3D(snd->ptr, snd->len, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd->priority, volume,
                                                     (num * MAXSOUNDINSTANCES) + sndnum);
 
     if (voice <= FX_Ok)
