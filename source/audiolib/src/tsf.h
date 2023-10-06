@@ -21,7 +21,7 @@
 
    LICENSE (MIT)
 
-   Copyright (C) 2017, 2018 Bernhard Schelling
+   Copyright (C) 2017-2023 Bernhard Schelling
    Based on SFZero, Copyright (C) 2012 Steve Folta (https://github.com/stevefolta/SFZero)
 
    Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -98,7 +98,7 @@ TSFDEF tsf* tsf_copy(tsf* f);
 // Free the memory related to this tsf instance
 TSFDEF void tsf_close(tsf* f);
 
-// Stop all playing notes immediatly and reset all channel parameters
+// Stop all playing notes immediately and reset all channel parameters
 TSFDEF void tsf_reset(tsf* f);
 
 // Returns the preset index from a bank and preset number, or -1 if it does not exist in the loaded SoundFont
@@ -121,7 +121,7 @@ enum TSFOutputMode
 	// Two channels with all samples for the left channel first then right
 	TSF_STEREO_UNWEAVED,
 	// A single channel (stereo instruments are mixed into center)
-	TSF_MONO,
+	TSF_MONO
 };
 
 // Thread safety:
@@ -226,7 +226,7 @@ TSFDEF int tsf_channel_set_tuning(tsf* f, int channel, float tuning);
 TSFDEF int tsf_channel_note_on(tsf* f, int channel, int key, float vel);
 TSFDEF void tsf_channel_note_off(tsf* f, int channel, int key);
 TSFDEF void tsf_channel_note_off_all(tsf* f, int channel); //end with sustain and release
-TSFDEF void tsf_channel_sounds_off_all(tsf* f, int channel); //end immediatly
+TSFDEF void tsf_channel_sounds_off_all(tsf* f, int channel); //end immediately
 
 // Apply a MIDI control change to the channel (not all controllers are supported!)
 //    (tsf_channel_midi_control returns 0 on allocation failure of new channel, otherwise 1)
@@ -544,7 +544,7 @@ static void tsf_region_operator(struct tsf_region* region, tsf_u16 genOper, unio
 		GEN_FLOAT_MAX1000    = 0xB0, //min 0, max 1000
 		GEN_FLOAT_MAX1440    = 0xC0, //min 0, max 1440
 
-		_GEN_MAX = 59,
+		_GEN_MAX = 59
 	};
 	#define _TSFREGIONOFFSET(TYPE, FIELD) (unsigned char)(((TYPE*)&((struct tsf_region*)0x1DEADF00L)->FIELD) - (TYPE*)0x1DEADF00L)
 	#define _TSFREGIONENVOFFSET(TYPE, ENV, FIELD) (unsigned char)(((TYPE*)&((&(((struct tsf_region*)0x1DEADF00L)->ENV))->FIELD)) - (TYPE*)0x1DEADF00L)
@@ -825,6 +825,7 @@ static int tsf_load_presets(tsf* res, struct tsf_hydra *hydra, unsigned int font
 								zoneRegion.loop_start += pshdr->startLoop;
 								zoneRegion.loop_end += pshdr->endLoop;
 								if (pshdr->endLoop > 0) zoneRegion.loop_end -= 1;
+								if (zoneRegion.loop_end > fontSampleCount) zoneRegion.loop_end = fontSampleCount;
 								if (zoneRegion.pitch_keycenter == -1) zoneRegion.pitch_keycenter = pshdr->originalPitch;
 								zoneRegion.tune += pshdr->pitchCorrection;
 								zoneRegion.sample_rate = pshdr->sampleRate;
@@ -861,25 +862,21 @@ static int tsf_load_presets(tsf* res, struct tsf_hydra *hydra, unsigned int font
 	return 1;
 }
 
-static int tsf_load_samples(float** fontSamples, unsigned int* fontSampleCount, struct tsf_riffchunk *chunkSmpl, struct tsf_stream* stream)
+static int tsf_load_samples(float** pFloatBuffer, unsigned int* pSmplCount, struct tsf_riffchunk *chunkSmpl, struct tsf_stream* stream)
 {
-	// Read sample data into float format buffer.
-	float* out; unsigned int samplesLeft, samplesToRead, samplesToConvert;
-	samplesLeft = *fontSampleCount = chunkSmpl->size / sizeof(short);
-	out = *fontSamples = (float*)TSF_MALLOC(samplesLeft * sizeof(float));
-	if (!out) return 0;
-	for (; samplesLeft; samplesLeft -= samplesToRead)
-	{
-		short sampleBuffer[1024], *in = sampleBuffer;;
-		samplesToRead = (samplesLeft > 1024 ? 1024 : samplesLeft);
-		stream->read(stream->data, sampleBuffer, samplesToRead * sizeof(short));
-
-		// Convert from signed 16-bit to float.
-		for (samplesToConvert = samplesToRead; samplesToConvert > 0; --samplesToConvert)
-			// If we ever need to compile for big-endian platforms, we'll need to byte-swap here.
-			*out++ = (float)(*in++ / 32767.0);
-	}
+	// Inline convert the samples from short to float
+	float *res, *out; const short *in;
+	*pSmplCount = chunkSmpl->size / (unsigned int)sizeof(short);
+	*pFloatBuffer = (float*)TSF_MALLOC(*pSmplCount * sizeof(float));
+	if (!*pFloatBuffer || !stream->read(stream->data, *pFloatBuffer, chunkSmpl->size)) return 0;
+	for (res = *pFloatBuffer, out = res + *pSmplCount, in = (short*)res + *pSmplCount; out != res;)
+		*(--out) = (float)(*(--in) / 32767.0);
 	return 1;
+}
+
+static int tsf_voice_envelope_release_samples(struct tsf_voice_envelope* e, float outSampleRate)
+{
+	return (int)((e->parameters.release <= 0 ? TSF_FASTRELEASETIME : e->parameters.release) * outSampleRate);
 }
 
 static void tsf_voice_envelope_nextsegment(struct tsf_voice_envelope* e, short active_segment, float outSampleRate)
@@ -964,7 +961,7 @@ static void tsf_voice_envelope_nextsegment(struct tsf_voice_envelope* e, short a
 			return;
 		case TSF_SEGMENT_SUSTAIN:
 			e->segment = TSF_SEGMENT_RELEASE;
-			e->samplesUntilNextSegment = (int)((e->parameters.release <= 0 ? TSF_FASTRELEASETIME : e->parameters.release) * outSampleRate);
+			e->samplesUntilNextSegment = tsf_voice_envelope_release_samples(e, outSampleRate);
 			if (e->isAmpEnv)
 			{
 				// I don't truly understand this; just following what LinuxSampler does.
@@ -1054,7 +1051,7 @@ static void tsf_voice_kill(struct tsf_voice* v)
 
 static void tsf_voice_end(tsf* f, struct tsf_voice* v)
 {
-	// if maxVoiceNum is set, assume that voice rendering and note queuing are on sparate threads
+	// if maxVoiceNum is set, assume that voice rendering and note queuing are on separate threads
 	// so to minimize the chance that voice rendering would advance the segment at the same time
 	// we just do it twice here and hope that it sticks
 	int repeats = (f->maxVoiceNum ? 2 : 1);
@@ -1072,7 +1069,7 @@ static void tsf_voice_end(tsf* f, struct tsf_voice* v)
 
 static void tsf_voice_endquick(tsf* f, struct tsf_voice* v)
 {
-	// if maxVoiceNum is set, assume that voice rendering and note queuing are on sparate threads
+	// if maxVoiceNum is set, assume that voice rendering and note queuing are on separate threads
 	// so to minimize the chance that voice rendering would advance the segment at the same time
 	// we just do it twice here and hope that it sticks
 	int repeats = (f->maxVoiceNum ? 2 : 1);
@@ -1239,8 +1236,8 @@ TSFDEF tsf* tsf_load(struct tsf_stream* stream)
 	struct tsf_riffchunk chunkHead;
 	struct tsf_riffchunk chunkList;
 	struct tsf_hydra hydra;
-	float* fontSamples = TSF_NULL;
-	unsigned int fontSampleCount = 0;
+	float* floatBuffer = TSF_NULL;
+	tsf_u32 smplCount = 0;
 
 	if (!tsf_riffchunk_read(TSF_NULL, &chunkHead, stream) || !TSF_FourCCEquals(chunkHead.id, "sfbk"))
 	{
@@ -1282,9 +1279,9 @@ TSFDEF tsf* tsf_load(struct tsf_stream* stream)
 		{
 			while (tsf_riffchunk_read(&chunkList, &chunk, stream))
 			{
-				if (TSF_FourCCEquals(chunk.id, "smpl") && !fontSamples && chunk.size >= sizeof(short))
+				if (TSF_FourCCEquals(chunk.id, "smpl") && !floatBuffer && chunk.size >= sizeof(short))
 				{
-					if (!tsf_load_samples(&fontSamples, &fontSampleCount, &chunk, stream)) goto out_of_memory;
+					if (!tsf_load_samples(&floatBuffer, &smplCount, &chunk, stream)) goto out_of_memory;
 				}
 				else stream->skip(stream->data, chunk.size);
 			}
@@ -1295,19 +1292,18 @@ TSFDEF tsf* tsf_load(struct tsf_stream* stream)
 	{
 		//if (e) *e = TSF_INVALID_INCOMPLETE;
 	}
-	else if (fontSamples == TSF_NULL)
+	else if (floatBuffer == TSF_NULL)
 	{
 		//if (e) *e = TSF_INVALID_NOSAMPLEDATA;
 	}
 	else
 	{
 		res = (tsf*)TSF_MALLOC(sizeof(tsf));
-		if (!res) goto out_of_memory;
-		TSF_MEMSET(res, 0, sizeof(tsf));
-		if (!tsf_load_presets(res, &hydra, fontSampleCount)) goto out_of_memory;
-		res->fontSamples = fontSamples;
-		fontSamples = TSF_NULL; //don't free below
+		if (res) TSF_MEMSET(res, 0, sizeof(tsf));
+		if (!res || !tsf_load_presets(res, &hydra, smplCount)) goto out_of_memory;
 		res->outSampleRate = 44100.0f;
+		res->fontSamples = floatBuffer;
+		floatBuffer = TSF_NULL; // don't free below
 	}
 	if (0)
 	{
@@ -1319,7 +1315,7 @@ TSFDEF tsf* tsf_load(struct tsf_stream* stream)
 	TSF_FREE(hydra.phdrs); TSF_FREE(hydra.pbags); TSF_FREE(hydra.pmods);
 	TSF_FREE(hydra.pgens); TSF_FREE(hydra.insts); TSF_FREE(hydra.ibags);
 	TSF_FREE(hydra.imods); TSF_FREE(hydra.igens); TSF_FREE(hydra.shdrs);
-	TSF_FREE(fontSamples);
+	TSF_FREE(floatBuffer);
 	return res;
 }
 
@@ -1445,18 +1441,38 @@ TSFDEF int tsf_note_on(tsf* f, int preset_index, int key, float vel)
 
 		if (!voice)
 		{
-			struct tsf_voice* newVoices;
 			if (f->maxVoiceNum)
 			{
-				// voices have been pre-allocated and limited to a maximum, unable to start playing this voice
-				continue;
+				// Voices have been pre-allocated and limited to a maximum, try to kill a voice off in its release envelope
+				int bestKillReleaseSamplePos = -999999999;
+				for (v = f->voices; v != vEnd; v++)
+				{
+					if (v->ampenv.segment == TSF_SEGMENT_RELEASE)
+					{
+						// We're looking for the voice furthest into its release
+						int releaseSamplesDone = tsf_voice_envelope_release_samples(&v->ampenv, f->outSampleRate) - v->ampenv.samplesUntilNextSegment;
+						if (releaseSamplesDone > bestKillReleaseSamplePos)
+						{
+							bestKillReleaseSamplePos = releaseSamplesDone;
+							voice = v;
+						}
+					}
+				}
+				if (!voice)
+					continue;
+				tsf_voice_kill(voice);
 			}
-			f->voiceNum += 4;
-			newVoices = (struct tsf_voice*)TSF_REALLOC(f->voices, f->voiceNum * sizeof(struct tsf_voice));
-			if (!newVoices) return 0;
-			f->voices = newVoices;
-			voice = &f->voices[f->voiceNum - 4];
-			voice[1].playingPreset = voice[2].playingPreset = voice[3].playingPreset = -1;
+			else
+			{
+				// Allocate more voices so we don't need to kill one off.
+				struct tsf_voice* newVoices;
+				f->voiceNum += 4;
+				newVoices = (struct tsf_voice*)TSF_REALLOC(f->voices, f->voiceNum * sizeof(struct tsf_voice));
+				if (!newVoices) return 0;
+				f->voices = newVoices;
+				voice = &f->voices[f->voiceNum - 4];
+				voice[1].playingPreset = voice[2].playingPreset = voice[3].playingPreset = -1;
+			}
 		}
 
 		voice->region = region;
@@ -1610,7 +1626,7 @@ static struct tsf_channel* tsf_channel_init(tsf* f, int channel)
 	if (!f->channels)
 	{
 		f->channels = (struct tsf_channels*)TSF_MALLOC(sizeof(struct tsf_channels) + sizeof(struct tsf_channel) * channel);
-		if (!f->channels) return NULL;
+		if (!f->channels) return TSF_NULL;
 		f->channels->setupVoice = &tsf_channel_setup_voice;
 		f->channels->channelNum = 0;
 		f->channels->activeChannel = 0;
@@ -1618,7 +1634,7 @@ static struct tsf_channel* tsf_channel_init(tsf* f, int channel)
 	else
 	{
 		struct tsf_channels *newChannels = (struct tsf_channels*)TSF_REALLOC(f->channels, sizeof(struct tsf_channels) + sizeof(struct tsf_channel) * channel);
-		if (!newChannels) return NULL;
+		if (!newChannels) return TSF_NULL;
 		f->channels = newChannels;
 	}
 	i = f->channels->channelNum;
