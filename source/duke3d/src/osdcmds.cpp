@@ -1681,8 +1681,8 @@ int32_t registerosdcommands(void)
             (void *)&ud.config.JoystickAimAssist, CVAR_BOOL, 0, 1
         },
 
-        { "in_joystick","use joystick or controller input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
-        { "in_mouse","use mouse input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usemouse, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+        { "in_joystick","use joystick or controller input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR|CVAR_NOSAVE, 0, 1 },
+        { "in_mouse","use mouse input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usemouse, CVAR_BOOL|CVAR_FUNCPTR|CVAR_NOSAVE, 0, 1 },
 
         { "in_aimmode", "DEPRECATED: hold button for mouse aim" CVAR_BOOL_OPTSTR, (void *)&ud.mouseaiming, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "DEPRECATED: vertical mouse aiming" CVAR_BOOL_OPTSTR, (void *)&g_myAimMode, CVAR_BOOL, 0, 1 },
