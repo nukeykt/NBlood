@@ -846,7 +846,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP[] = {
 };
 
 
-static char const MenuKeyNone[] = "  -";
+static char const MenuKeyNone[] = "  --";
 static char const *MEOSN_Keys[NUMKEYS];
 
 static MenuCustom2Col_t MEO_KEYBOARDSETUPFUNCS_TEMPLATE = { { NULL, NULL, }, MEOSN_Keys, &MF_Minifont, NUMKEYS, 54<<16, 0, -1 };
