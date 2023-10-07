@@ -313,8 +313,16 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 #if defined RENDERTYPEWIN
                 if (!Bstrcasecmp(c+1, "nodinput"))
                 {
-                    LOG_F(INFO, "DirectInput (joystick) support disabled");
+                    VLOG_F(LOG_INPUT, "DirectInput (joystick) support disabled");
                     di_disabled = 1;
+                    i++;
+                    continue;
+                }
+#else
+                if (!Bstrcasecmp(c+1, "nocontroller"))
+                {
+                    VLOG_F(LOG_INPUT, "Controller support disabled.");
+                    g_controllerSupportDisabled = 1;
                     i++;
                     continue;
                 }

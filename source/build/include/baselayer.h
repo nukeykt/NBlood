@@ -288,7 +288,7 @@ extern void (*keypresscallback)(int32_t,int32_t);
 extern void (*g_mouseCallback)(int32_t,int32_t);
 extern void (*g_controllerHotplugCallback)(void);
 extern void (*g_fileDropCallback)(const char*);
-
+extern char g_controllerSupportDisabled;
 int32_t initinput(void(*hotplugCallback)(void) = NULL);
 void uninitinput(void);
 void keySetCallback(void (*callback)(int32_t,int32_t));

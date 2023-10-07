@@ -103,6 +103,7 @@ char modechange=1;
 char offscreenrendering=0;
 char videomodereset = 0;
 int32_t nofog=0;
+char g_controllerSupportDisabled;
 #ifndef EDUKE32_GLES
 static uint16_t sysgamma[3][256];
 #endif
@@ -1080,27 +1081,30 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
         Bstrncpyz(g_keyNameTable[keytranslation[i]], SDL_GetKeyName(SDL_SCANCODE_TO_KEYCODE(i)), sizeof(g_keyNameTable[0]));
     }
 
+    if (!g_controllerSupportDisabled)
+    {
 #if SDL_MAJOR_VERSION >= 2
-    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
+        if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
 #else
-    if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
+        if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
 #endif
-        joyScanDevices();
+            joyScanDevices();
 
 #if SDL_VERSION_ATLEAST(2, 0, 9)
-    if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
-    {
-        if (joystick.flags & JOY_RUMBLE)
+        if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
         {
-            switch (joystick.flags & JOY_RUMBLE)
+            if (joystick.flags & JOY_RUMBLE)
             {
-            case JOY_RUMBLE:
-                VLOG_F(LOG_INPUT, "Controller supports rumble.");
-                break;
+                switch (joystick.flags & JOY_RUMBLE)
+                {
+                case JOY_RUMBLE:
+                    VLOG_F(LOG_INPUT, "Controller supports rumble.");
+                    break;
+                }
             }
         }
-    }
 #endif
+    }
 
     return 0;
 }
