@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#ifndef EDUKE32_STANDALONE
 #define CPPHTTPLIB_NO_EXCEPTIONS
 #include "httplib.h"
 #include "loguru.hpp"
@@ -48,3 +49,4 @@ int32_t windowsCheckForUpdates(char *buffer)
 
     return 0;
 }
+#endif
