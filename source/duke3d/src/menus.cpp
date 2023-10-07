@@ -2502,6 +2502,7 @@ static void Menu_PopulateVideoSetup()
         || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
     MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
 
+#ifdef USE_OPENGL
 #ifdef POLYMER
     MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER));
     MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOCLASSIC,
@@ -2512,6 +2513,7 @@ static void Menu_PopulateVideoSetup()
                               || !(g_gameType & GAMEFLAG_NOPOLYMER)));
 #else
     MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, rendermode != REND_CLASSIC && (g_gameType & GAMEFLAG_NOCLASSIC));
+#endif
 #endif
 }
 
