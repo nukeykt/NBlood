@@ -173,6 +173,7 @@ memberlabel_t const WallLabels[]=
     { "uhitag", WALL_UHITAG, sizeof(wall[0].hitag) | LABEL_UNSIGNED, 0, offsetof(uwalltype, hitag) },
 
     { "blend", WALL_BLEND, 0, 0, -1 },
+    { "ang",   WALL_ANG,   0, 0, -1 },
 };
 
 int32_t __fastcall VM_GetWall(int const wallNum, int32_t labelNum)
@@ -186,7 +187,8 @@ int32_t __fastcall VM_GetWall(int const wallNum, int32_t labelNum)
             labelNum = wallext[wallNum].blend;
 #endif
             break;
-
+        case WALL_ANG: labelNum = (getangle(wall[wall[wallNum].point2].x - wall[wallNum].x,
+                                            wall[wall[wallNum].point2].y - wall[wallNum].y) + 512) & 2047; break;
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
 

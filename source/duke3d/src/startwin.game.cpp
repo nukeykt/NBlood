@@ -204,6 +204,9 @@ static void PopulateForm(int32_t pgs)
             case INPUT_ALL:
                 if (settings.shared.usemouse && settings.shared.usejoystick)(void)ComboBox_SetCurSel(hwnd, i);
                 break;
+            case INPUT_KB:
+                if (!settings.shared.usemouse && !settings.shared.usejoystick)(void)ComboBox_SetCurSel(hwnd, i);
+                break;
             }
         }
     }

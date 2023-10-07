@@ -264,7 +264,9 @@ void CONFIG_SetDefaults(void)
     ud.config.AmbienceToggle  = 1;
     ud.config.AutoAim         = 1;
     ud.config.CheckForUpdates = 1;
+    ud.config.MasterVolume    = 255;
     ud.config.FXVolume        = 255;
+    ud.config.VoiceVolume     = 255;
     ud.config.JoystickAimWeight = 4;
     ud.config.JoystickViewCentering = 4;
     ud.config.JoystickAimAssist = 1;
@@ -805,6 +807,9 @@ int CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(ud.config.scripthandle, "Updates", "LastUpdateCheck", &ud.config.LastUpdateCheck);
 #endif
 
+    SCRIPT_GetNumber(ud.config.scripthandle, "Controls", "UseJoystick", &ud.setup.usejoystick);
+    SCRIPT_GetNumber(ud.config.scripthandle, "Controls", "UseMouse", &ud.setup.usemouse);
+
     // restore localization
     char locale[64] = "en";
     SCRIPT_GetString(ud.config.scripthandle, "Misc", "Locale", &locale[0]);
@@ -1008,6 +1013,9 @@ void CONFIG_WriteSetup(uint32_t flags)
             SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueSaturate[dummy], FALSE, FALSE);
         }
     }
+
+    SCRIPT_PutNumber(ud.config.scripthandle, "Controls", "UseJoystick", ud.setup.usejoystick, FALSE, FALSE);
+    SCRIPT_PutNumber(ud.config.scripthandle, "Controls", "UseMouse", ud.setup.usemouse, FALSE, FALSE);
 
     if (!CommandName)
         SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","PlayerName",&szPlayerName[0]);

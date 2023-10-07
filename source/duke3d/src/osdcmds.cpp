@@ -1681,8 +1681,8 @@ int32_t registerosdcommands(void)
             (void *)&ud.config.JoystickAimAssist, CVAR_BOOL, 0, 1
         },
 
-        { "in_joystick","use joystick or controller input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
-        { "in_mouse","use mouse input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usemouse, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+        { "in_joystick","use joystick or controller input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR|CVAR_NOSAVE, 0, 1 },
+        { "in_mouse","use mouse input" CVAR_BOOL_OPTSTR,(void *)&ud.setup.usemouse, CVAR_BOOL|CVAR_FUNCPTR|CVAR_NOSAVE, 0, 1 },
 
         { "in_aimmode", "DEPRECATED: hold button for mouse aim" CVAR_BOOL_OPTSTR, (void *)&ud.mouseaiming, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "DEPRECATED: vertical mouse aiming" CVAR_BOOL_OPTSTR, (void *)&g_myAimMode, CVAR_BOOL, 0, 1 },
@@ -1723,6 +1723,7 @@ int32_t registerosdcommands(void)
 
         { "snd_ambience", "ambient sounds" CVAR_BOOL_OPTSTR, (void *)&ud.config.AmbienceToggle, CVAR_BOOL, 0, 1 },
         { "snd_enabled", "sound effects" CVAR_BOOL_OPTSTR, (void *)&ud.config.SoundToggle, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+        { "snd_volume", "master volume control", (void *)&ud.config.MasterVolume, CVAR_INT, 0, 255 },
         { "snd_fxvolume", "volume of sound effects", (void *)&ud.config.FXVolume, CVAR_INT, 0, 255 },
         { "snd_mixrate", "sound mixing rate", (void *)&ud.config.MixRate, CVAR_INT|CVAR_FUNCPTR, 0, 48000 },
         { "snd_numchannels", "the number of sound channels", (void *)&ud.config.NumChannels, CVAR_INT|CVAR_FUNCPTR, 0, 2 },
@@ -1731,6 +1732,7 @@ int32_t registerosdcommands(void)
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ud.config.ReverseStereo, CVAR_BOOL, 0, 1 },
 #endif
         { "snd_speech", "bitmask controlling player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
+        { "snd_speechvolume", "volume of in-game speech", (void *)&ud.config.VoiceVolume, CVAR_INT, 0, 255 },
 #ifdef FORMAT_UPGRADE_ELIGIBLE
         { "snd_tryformats", "discover and use replacement audio in .flac and .ogg formats if available" CVAR_BOOL_OPTSTR, (void *)&g_maybeUpgradeSoundFormats, CVAR_BOOL, 0, 1 },
         { "mus_tryformats", "discover and use replacement music in .flac and .ogg formats if available (requires snd_tryformats 1)" CVAR_BOOL_OPTSTR, (void *)&g_maybeUpgradeMusic,

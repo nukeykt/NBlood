@@ -118,7 +118,7 @@ void S_SoundStartup(void)
             snd->lock = CACHE1D_UNLOCKED;
     }
 
-    FX_SetVolume(ud.config.FXVolume);
+    FX_SetVolume(ud.config.MasterVolume);
     //S_MusicVolume(ud.config.MusicVolume);
 
 #ifdef ASS_REVERSESTEREO
@@ -529,7 +529,7 @@ int32_t S_LoadSound(int num)
     }
 
     int32_t l = kfilelength(fp);
-    g_sounds[num]->lock = CACHE1D_UNLOCKED;
+    g_sounds[num]->lock = CACHE1D_PERMANENT;
     snd->len = l;
     g_cache.allocateBlock((intptr_t *)&snd->ptr, l, (char *)&g_sounds[num]->lock);
     l = kread(fp, snd->ptr, l);
@@ -828,7 +828,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
     if ((sndNum == -1 && num != -1) || !ud.config.SoundToggle || (unsigned)spriteNum >= MAXSPRITES) // check that the user returned -1, but only if -1 wasn't playing already (in which case, warn)
         return -1;
 
-    if (g_sounds[sndNum]->ptr == nullptr && g_sounds[sndNum]->filename)
+    if ((unsigned)sndNum < (unsigned)g_highestSoundIdx && g_sounds[sndNum]->ptr == nullptr && g_sounds[sndNum]->filename)
     {
         LOG_F(WARNING, "Sound #%d (%s) not precached!", sndNum, g_sounds[sndNum]->filename);
         S_LoadSound(sndNum);
@@ -942,8 +942,9 @@ error:
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
-    int const voice = FX_Play3D(snd->ptr, snd->len, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
-                                                        snd->priority, snd->volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
+    float const volume = ((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? snd->volume * ((float)ud.config.VoiceVolume / 255.f) : snd->volume * ((float)ud.config.FXVolume / 255.f);
+    int const voice = FX_Play3D(snd->ptr, snd->len, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6, snd->priority,
+                                volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
 
     if (voice <= FX_Ok)
     {
@@ -964,7 +965,7 @@ int S_PlaySound(int num)
     if ((sndnum == -1 && num != -1) || !ud.config.SoundToggle) // check that the user returned -1, but only if -1 wasn't playing already (in which case, warn)
         return -1;
 
-    if ((unsigned)num < (unsigned)g_highestSoundIdx && g_sounds[sndnum]->ptr == nullptr && g_sounds[sndnum]->filename)
+    if ((unsigned)sndnum < (unsigned)g_highestSoundIdx && g_sounds[sndnum]->ptr == nullptr && g_sounds[sndnum]->filename)
     {
         LOG_F(WARNING, "Sound #%d (%s) not precached!", sndnum, g_sounds[sndnum]->filename);
         S_LoadSound(sndnum);
@@ -998,9 +999,10 @@ error:
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
+    float const volume = ((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? snd->volume * ((float)ud.config.VoiceVolume / 255.f) : snd->volume * ((float)ud.config.FXVolume / 255.f);
     int const voice = (snd->flags & SF_LOOP) ? FX_Play(snd->ptr, snd->len, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
-                                                  LOUDESTVOLUME, snd->len, snd->volume, (num * MAXSOUNDINSTANCES) + sndnum)
-                                        : FX_Play3D(snd->ptr, snd->len, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd->priority, snd->volume,
+                                                  LOUDESTVOLUME, snd->len, volume, (num * MAXSOUNDINSTANCES) + sndnum)
+                                        : FX_Play3D(snd->ptr, snd->len, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd->priority, volume,
                                                     (num * MAXSOUNDINSTANCES) + sndnum);
 
     if (voice <= FX_Ok)

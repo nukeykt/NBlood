@@ -6739,12 +6739,28 @@ void C_Compile(const char *fileName)
         {
             if (g_loadFromGroupOnly || (numgroupfiles == 0 && !kzfs.leng))
             {
+#ifndef EDUKE32_STANDALONE
+err:
+#endif
                 Bsprintf(buf, "Found %d warning(s), %d error(s) in CON files.", g_warningCnt, g_errorCnt);
                 G_GameExit(buf);
             }
 
-            wm_msgbox("Incompatible modifications detected", "Found %d warning(s), %d error(s) in CON files.\n\nStartup will continue with internal versions of all scripts.",
-                      g_warningCnt, g_errorCnt);
+#ifndef EDUKE32_STANDALONE
+            if (!FURY)
+            {
+                if (wm_ynbox("Incompatible modifications detected",
+                             "Found %d warning(s), %d error(s) in CON files.\n\nContinue with internal versions of all scripts?",
+                             g_warningCnt, g_errorCnt))
+                    g_loadFromGroupOnly = 2;
+                else
+                    goto err;
+            }
+            else
+#endif
+                wm_msgbox("Incompatible modifications detected",
+                          "Found %d warning(s), %d error(s) in CON files.\n\nStartup will continue with internal versions of all scripts.",
+                          g_warningCnt, g_errorCnt);
 
             g_loadFromGroupOnly = 2;
 
