@@ -1081,7 +1081,7 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
     }
 
 #if SDL_MAJOR_VERSION >= 2
-    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC))
+    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
 #else
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
 #endif
