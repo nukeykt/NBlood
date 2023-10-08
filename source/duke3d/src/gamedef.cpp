@@ -6085,6 +6085,13 @@ repeatcase:
 
             float volume = 1.0;
 
+            if (C_GetKeyword() == -1)
+            {
+                C_GetNextValue(LABEL_DEFINE);
+                volume = float(g_scriptPtr[-1]) * (1.f/255.f);
+                g_scriptPtr--;
+            }
+
             S_DefineSound(k, filename, minpitch, maxpitch, priority, type, distance, volume);
 
             if (k > g_highestSoundIdx)
