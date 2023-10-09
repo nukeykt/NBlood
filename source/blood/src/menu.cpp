@@ -476,13 +476,19 @@ const int nRendererValues[] = {
 const char *pzVSyncStrings[] = {
     "ADAPTIVE",
     "OFF",
-    "ON"
+    "ON",
+#if defined USE_OPENGL && defined _WIN32 && defined RENDERTYPESDL
+    "KMT"
+#endif
 };
 
 const int nVSyncValues[] = {
     -1,
     0,
-    1
+    1,
+#if defined USE_OPENGL && defined _WIN32 && defined RENDERTYPESDL
+    2
+#endif
 };
 
 const char *pzFrameLimitStrings[] = {
@@ -514,7 +520,7 @@ CGameMenuItemTitle itemOptionsDisplayModeTitle("VIDEO MODE", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 180, 0, NULL, NULL, 0, 0, true);
 CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 0, NULL, pzRendererStrings, 2, 0);
 CGameMenuItemZBool itemOptionsDisplayModeFullscreen("FULLSCREEN:", 3, 66, 80, 180, 0, NULL, NULL, NULL);
-CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, NULL, pzVSyncStrings, 3, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, NULL, pzVSyncStrings, ARRAY_SSIZE(pzVSyncStrings), 0);
 CGameMenuItemZCycle itemOptionsDisplayModeFrameLimit("FRAMERATE LIMIT:", 3, 66, 100, 180, 0, UpdateVideoModeMenuFrameLimit, pzFrameLimitStrings, 8, 0);
 // CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideoModeMenuFPSOffset, -1, -1, kMenuSliderValue);
 CGameMenuItemChain itemOptionsDisplayModeApply("APPLY CHANGES", 3, 66, 125, 180, 0, NULL, 0, SetVideoMode, 0);
@@ -1885,7 +1891,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
         }
     }
 #endif
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < itemOptionsDisplayModeVSync.m_nItems; i++)
     {
         if (vsync == nVSyncValues[i])
         {
