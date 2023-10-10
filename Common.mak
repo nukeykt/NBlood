@@ -556,7 +556,7 @@ ifndef OPTOPT
         else
             OPTOPT := -march=core2
         endif
-        OPTOPT += -mmmx -msse -msse2 -msse3 -mssse3 -mfpmath=sse
+        OPTOPT += -mmmx -msse -msse2 -msse3 -mfpmath=sse
     endif
     ifeq ($(findstring i386, $(IMPLICIT_ARCH)),i386)
         ifeq ($(PLATFORM),DARWIN)
