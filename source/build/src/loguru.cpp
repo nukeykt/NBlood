@@ -1174,6 +1174,8 @@ namespace loguru
 			#elif defined(__FreeBSD__)
 				long thread_id;
 				(void)thr_self(&thread_id);
+			#elif defined(__OpenBSD__)
+				pid_t thread_id = getthrid();
 			#elif LOGURU_PTHREADS
 				const auto native_id = pthread_self();
 				// Warning, even within POSIX, return types and sizes vary:
