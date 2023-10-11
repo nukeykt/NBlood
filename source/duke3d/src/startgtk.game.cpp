@@ -338,23 +338,26 @@ static void PopulateForm(unsigned char pgs)
         modes3d = GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(stwidgets.vmode3dcombo)));
         gtk_list_store_clear(modes3d);
 
-        for (i=0; i<validmodecnt; i++)
+        if (settings.grp != NULL)
         {
-            if (settings.grp->type->game & GAMEFLAG_NOCLASSIC && validmode[i].bpp == 8) continue;
-            if (validmode[i].fs != settings.shared.fullscreen) continue;
-
-            // all modes get added to the 3D mode list
-            Bsprintf(buf, "%dx%d %s", validmode[i].xdim, validmode[i].ydim,
-                     validmode[i].bpp == 8                             ? "software"
-                     : (settings.grp->type->game & GAMEFLAG_NOCLASSIC) ? ""
-                                                                       : "OpenGL");
-            gtk_list_store_append(modes3d, &iter);
-            gtk_list_store_set(modes3d, &iter, 0,buf, 1,i, -1);
-            if (i == mode3d)
+            for (i=0; i<validmodecnt; i++)
             {
-                g_signal_handlers_block_by_func(stwidgets.vmode3dcombo, (gpointer)on_vmode3dcombo_changed, NULL);
-                gtk_combo_box_set_active_iter(GTK_COMBO_BOX(stwidgets.vmode3dcombo), &iter);
-                g_signal_handlers_unblock_by_func(stwidgets.vmode3dcombo, (gpointer)on_vmode3dcombo_changed, NULL);
+                if (settings.grp->type->game & GAMEFLAG_NOCLASSIC && validmode[i].bpp == 8) continue;
+                if (validmode[i].fs != settings.shared.fullscreen) continue;
+
+                // all modes get added to the 3D mode list
+                Bsprintf(buf, "%dx%d %s", validmode[i].xdim, validmode[i].ydim,
+                         validmode[i].bpp == 8                             ? "software"
+                         : (settings.grp->type->game & GAMEFLAG_NOCLASSIC) ? ""
+                                                                           : "OpenGL");
+                gtk_list_store_append(modes3d, &iter);
+                gtk_list_store_set(modes3d, &iter, 0,buf, 1,i, -1);
+                if (i == mode3d)
+                {
+                    g_signal_handlers_block_by_func(stwidgets.vmode3dcombo, (gpointer)on_vmode3dcombo_changed, NULL);
+                    gtk_combo_box_set_active_iter(GTK_COMBO_BOX(stwidgets.vmode3dcombo), &iter);
+                    g_signal_handlers_unblock_by_func(stwidgets.vmode3dcombo, (gpointer)on_vmode3dcombo_changed, NULL);
+                }
             }
         }
     }
