@@ -21,32 +21,113 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 
 #ifndef EDUKE32_STANDALONE
-#define CPPHTTPLIB_NO_EXCEPTIONS
-#include "httplib.h"
-#include "loguru.hpp"
+#ifdef _WIN32
+
+#include "compat.h"
+
+#define NEED_SHELLAPI_H
+#define NEED_WINSOCK2_H
+#define NEED_WS2TCPIP_H
+#include "windows_inc.h"
+
+#include "renderlayer.h"
 
 int32_t windowsCheckForUpdates(char *buffer)
 {
-    char const *host = "http://www.eduke32.com";
+    static int32_t wsainitialized = 0;
+    int32_t i=0, j=0, r=0;
+    struct sockaddr_in dest_addr;
+    struct hostent *h;
+    char const *host = "www.eduke32.com";
+    char const *req = "GET http://www.eduke32.com/VERSION HTTP/1.0\r\n\r\n\r\n";
+    char *tok, *restBuf = NULL;
+    char tempbuf[2048],otherbuf[16],ver[16];
+    SOCKET mysock;
+    WSADATA ws;
 
-    LOG_F(INFO, "Connecting to %s", host);
-
-    httplib::Client cli(host);
-
-    if (auto res = cli.Get("/VERSION"))
+#ifdef _WIN32
+    if (wsainitialized == 0)
     {
-        if (res->status == 200)
+        if (WSAStartup(0x101, &ws) == SOCKET_ERROR)
+            return 0;
+
+        wsainitialized = 1;
+    }
+#endif
+
+    if ((h = gethostbyname(host)) == NULL)
+    {
+        LOG_F(WARNING, "Couldn't resolve %s!", host);
+        return 0;
+    }
+
+    dest_addr.sin_addr.s_addr = ((struct in_addr *)(h->h_addr))->s_addr;
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(80);
+
+    memset(&(dest_addr.sin_zero), '\0', 8);
+
+    mysock = socket(PF_INET, SOCK_STREAM, 0);
+
+    if (mysock == INVALID_SOCKET)
+    {
+        WSACleanup();
+        return 0;
+    }
+
+    LOG_F(INFO, "Connecting to http://%s", host);
+
+    if (connect(mysock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr)) == SOCKET_ERROR)
+        goto done;
+
+    i = send(mysock, req, strlen(req), 0);
+
+    if (i == SOCKET_ERROR)
+        goto done;
+
+    i = recv(mysock, (char *)&tempbuf, sizeof(tempbuf), 0);
+
+    if (i < 0)
+        goto done;
+
+    Bmemcpy(&otherbuf, &tempbuf, sizeof(otherbuf));
+
+    Bstrtoken(otherbuf, " ", &restBuf, 1);
+
+    if ((tok = Bstrtoken(NULL, " ", &restBuf, 1)) == NULL)
+        goto done;
+
+    if (Batol(tok) == 200)
+    {
+        for (i = 0; (unsigned)i < strlen(tempbuf); i++)  // HACK: all of this needs to die a fiery death; we just skip to the content
         {
-            strcpy(buffer, res->body.c_str());
-            return 1;
+            // instead of actually parsing any of the http headers
+            if (i > 4)
+                if (tempbuf[i-1] == '\n' && tempbuf[i-2] == '\r' && tempbuf[i-3] == '\n' && tempbuf[i-4] == '\r')
+                {
+                    while (j < 9)
+                    {
+                        ver[j] = tempbuf[i];
+                        i++, j++;
+                    }
+                    ver[j] = '\0';
+                    break;
+                }
+        }
+
+        if (j)
+        {
+            strcpy(buffer, ver);
+            r = 1;
+            goto done;
         }
     }
-    else
-    {
-        auto err = res.error();
-        LOG_F(WARNING, "HTTP error: %s", httplib::to_string(err).c_str());
-    }
 
-    return 0;
+done:
+    closesocket(mysock);
+    WSACleanup();
+
+    return r;
 }
+#endif
 #endif
