@@ -36,12 +36,12 @@ void sysReadCPUID()
 
     cpu.vendorIDString = g_cpuVendorIDString;
 
-    if (!Bstrcmp(g_cpuVendorIDString, "GenuineIntel"))
-        cpu.type = CPU_INTEL;
-    else if (!Bstrcmp(g_cpuVendorIDString, "AuthenticAMD"))
-        cpu.type = CPU_AMD;
-    else
-        cpu.type = CPU_UNKNOWN;
+    //if (!Bstrcmp(g_cpuVendorIDString, "GenuineIntel"))
+    //    cpu.type = CPU_INTEL;
+    //else if (!Bstrcmp(g_cpuVendorIDString, "AuthenticAMD"))
+    //    cpu.type = CPU_AMD;
+    //else
+    //    cpu.type = CPU_UNKNOWN;
 
 #ifdef _WIN32
     __cpuid(regs, 0x80000000);

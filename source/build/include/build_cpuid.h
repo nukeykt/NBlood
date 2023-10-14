@@ -14,7 +14,7 @@ enum cpuinfo_vendor_x86
 
 struct cpuinfo_t
 {
-    int type;
+    //int type;
     char *vendorIDString;
     char *brandString;
 
