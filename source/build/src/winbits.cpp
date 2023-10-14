@@ -35,7 +35,9 @@ static int32_t win_systemtimermode = 1;
 static int32_t win_performancemode;
 
 static OSVERSIONINFOEX osv;
+#if 0
 static FARPROC ntdll_wine_get_version;
+#endif
 static char const *enUSLayoutString = "00000409";
 
 DWM_TIMING_INFO timingInfo;
@@ -85,8 +87,10 @@ DWORD windowsConvertNTSTATUS(LONG ntstatus)
 
 void windowsSetupTimer(bool const appHasFocus)
 {
+#if 0
     if (ntdll_wine_get_version)
         return;
+#endif
 
     TIMECAPS timeCaps;
     MMRESULT result = timeGetDevCaps(&timeCaps, sizeof(TIMECAPS));
@@ -171,10 +175,12 @@ void windowsSetupTimer(bool const appHasFocus)
 //
 BOOL windowsGetVersion(void)
 {
+#if 0
     HMODULE hNTDLL = GetModuleHandle("ntdll.dll");
 
     if (hNTDLL)
         ntdll_wine_get_version = GetProcAddress(hNTDLL, "wine_get_version");
+#endif
 
     ZeroMemory(&osv, sizeof(osv));
     osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
@@ -237,9 +243,11 @@ static void windowsPrintVersion(void)
     char *buf = (char *)Xcalloc(1, 256);
     int len;
 
+#if 0
     if (ntdll_wine_get_version)
         len = Bsprintf(buf, "Wine %s, identifying as Windows %s", (char *)ntdll_wine_get_version(), ver);
     else
+#endif
     {
         len = Bsprintf(buf, "Windows %s", ver);
 
