@@ -488,7 +488,9 @@ LIBDIRS :=
 
 ASFORMAT := elf$(BITS)
 ifeq ($(PLATFORM),WINDOWS)
-    LINKERFLAGS += -static -Wl,-subsystem,windows
+    WINDOWS_MAJOR := 6
+    WINDOWS_MINOR := 1
+    LINKERFLAGS += -static -Wl,-subsystem,windows:$(WINDOWS_MAJOR).$(WINDOWS_MINOR),--major-os-version,$(WINDOWS_MAJOR),--minor-os-version,$(WINDOWS_MINOR)
     COMPILERFLAGS += -DUNDERSCORES
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
