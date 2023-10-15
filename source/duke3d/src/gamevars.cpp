@@ -213,9 +213,167 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                 A_(!Bstrcmp(&arrlabels[arrayLabelIndex * MAXARRAYLABEL], aGameArrays[index].szLabel));
             if (index < 0 || aGameArrays[index].flags & SAVEGAMEARRAYSKIPMASK || aGameArrays[index].flags != readArray.flags)
             {
-                DVLOG_F(LOG_DEBUG, "Gv_ReadSave(): skipping '%s'", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
-                if (readArray.size != 0)
-                    A_(!arrayAllocSize || !Gv_SkipLZ4Block(kFile, arrayAllocSize));
+                if (readArray.size == 0)
+                    continue;
+
+                if ((aGameArrays[index].flags&~(GAMEARRAY_TYPE_MASK|GAMEARRAY_RESTORE)) == (readArray.flags&~(GAMEARRAY_TYPE_MASK|GAMEARRAY_RESTORE)))
+                {
+                    auto &writeArray = aGameArrays[index];
+                    writeArray.size  = readArray.size;
+                    ALIGNED_FREE_AND_NULL(writeArray.pValues);
+
+                    intptr_t *temp = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, arrayAllocSize);
+                    A_(kdfread_LZ4(temp, arrayAllocSize, 1, kFile) == 1);
+
+                    writeArray.pValues = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSizeForCount(index, readArray.size));
+
+                    auto const siz = tabledivide32_branchfree(arrayAllocSize, readArray.size);
+
+                    switch (aGameArrays[index].flags & GAMEARRAY_TYPE_MASK)
+                    {            
+                        case 0:
+                        {
+                            if (siz == sizeof(int16_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int16 to intptr", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto temp2 = (int16_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    writeArray.pValues[k] = temp2[k];
+                            }
+                            else if (siz == sizeof(int8_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int8 to intptr", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto temp2 = (int8_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    writeArray.pValues[k] = temp2[k];
+                            }
+                            else if (arrayAllocSize < readArray.size)
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from bitfield to intptr_t", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto temp8 = (int8_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    writeArray.pValues[k] = bitmap_test(temp8, k);
+                            }
+                            break;
+                        }
+                        case GAMEARRAY_INT16:
+                        {
+                            auto array16 = (int16_t*)&writeArray.pValues[0];
+
+                            if (siz == sizeof(intptr_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                for (int k = 0; k < writeArray.size; k++)
+                                {
+                                    LOG_IF_F(INFO, ((temp[k] > INT16_MAX) | (temp[k] < INT16_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    array16[k] = temp[k];
+                                }
+                            }
+                            else if (siz == sizeof(int8_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int8 to int16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto temp8 = (int8_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    array16[k] = temp8[k];
+                            }
+                            break;
+                        }
+                        case GAMEARRAY_UINT16:
+                        {
+                            auto arrayu16 = (uint16_t*)&writeArray.pValues[0];
+
+                            if (siz == sizeof(intptr_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                for (int k = 0; k < writeArray.size; k++)
+                                {
+                                    LOG_IF_F(INFO, ((unsigned)temp[k] > UINT16_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    arrayu16[k] = temp[k];
+                                }
+                            }
+                            else if (siz == sizeof(uint8_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from uint8 to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto tempu8 = (uint8_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    arrayu16[k] = tempu8[k];
+                            }
+                            else if (arrayAllocSize < readArray.size)
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from bitfield to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto tempu8 = (uint8_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    arrayu16[k] = bitmap_test(tempu8, k);
+                            }
+                            break;
+                        }
+                        case GAMEARRAY_INT8:
+                        {
+                            auto array8 = (int8_t*)&writeArray.pValues[0];
+
+                            if (siz == sizeof(intptr_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                for (int k = 0; k < writeArray.size; k++)
+                                {
+                                    LOG_IF_F(INFO, ((temp[k] > INT8_MAX) | (temp[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    array8[k] = temp[k];
+                                }
+                            }
+                            else if (siz == sizeof(int16_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int16 to int8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto temp16 = (int16_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                {
+                                    LOG_IF_F(INFO, ((temp16[k] > INT8_MAX) | (temp16[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %d out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp16[k]);
+                                    array8[k] = temp16[k];
+                                }
+                            }
+                            break;
+                        }
+                        case GAMEARRAY_UINT8:
+                        {
+                            auto arrayu8 = (uint8_t*)&writeArray.pValues[0];
+
+                            if (siz == sizeof(intptr_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                for (int k = 0; k < writeArray.size; k++)
+                                {
+                                    LOG_IF_F(INFO, ((unsigned)temp[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    arrayu8[k] = temp[k];
+                                }
+                            }
+                            else if (siz == sizeof(int16_t))
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from uint16 to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto tempu16 = (uint16_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                {
+                                    LOG_IF_F(INFO, (tempu16[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %d out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, tempu16[k]);
+                                    arrayu8[k] = tempu16[k];
+                                }
+                            }
+                            else if (arrayAllocSize < readArray.size)
+                            {
+                                DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from bitfield to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                auto tempu8 = (uint8_t*)temp;
+                                for (int k = 0; k < writeArray.size; k++)
+                                    arrayu8[k] = bitmap_test(tempu8, k);
+                            }
+                            break;
+                        }
+                    }
+
+                    Xfree(temp);
+                    continue;
+                }
+
+                if (index >= 0)
+                    DLOG_F(INFO, "Gv_ReadSave(): skipping '%s'", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+
+                A_(!arrayAllocSize || !Gv_SkipLZ4Block(kFile, arrayAllocSize));
                 continue;
             }
 
@@ -290,7 +448,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                         if (readVar.flags == INT_MAX)
                             continue;
 
-                        DVLOG_F(LOG_DEBUG, "Gv_ReadSave(): skipping '%s'", &varlabels[varLabelIndex * MAXVARLABEL]);
+                        DLOG_F(INFO, "Gv_ReadSave(): skipping '%s'", &varlabels[varLabelIndex * MAXVARLABEL]);
 
                         if (readVar.flags & GAMEVAR_PERPLAYER)
                             A_(!Gv_SkipLZ4Block(kFile, MAXPLAYERS * sizeof(readVar.pValues[0])));
@@ -338,7 +496,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                         A_(!Bstrcmp(&arrlabels[arrayLabelIndex * MAXARRAYLABEL], aGameArrays[index].szLabel));
                     if (index < 0 || (aGameArrays[index].flags & (GAMEARRAY_RESTORE|SAVEGAMEARRAYSKIPMASK)) != GAMEARRAY_RESTORE)
                     {
-                        DVLOG_F(LOG_DEBUG, "Gv_ReadSave(): skipping '%s'", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                        DLOG_F(INFO, "Gv_ReadSave(): skipping '%s'", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                         A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
                         A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
                         A_(!arrayAllocSize || !Gv_SkipLZ4Block(kFile, arrayAllocSize));
@@ -347,9 +505,157 @@ int Gv_ReadSave(buildvfs_kfd kFile)
 
                     A_(!kread_and_test(kFile, &sv.arraysiz[index], sizeof(sv.arraysiz[0])));
                     A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
-                    A_((unsigned)arrayAllocSize == Gv_GetArrayAllocSizeForCount(index, sv.arraysiz[index]));
+                    if ((unsigned)arrayAllocSize != Gv_GetArrayAllocSizeForCount(index, sv.arraysiz[index]))
+                    {
+                        intptr_t *temp = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, arrayAllocSize);
+                        A_(kdfread_LZ4(temp, arrayAllocSize, 1, kFile) == 1);
+
+                        sv.arrays[index] = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSizeForCount(index, sv.arraysiz[index]));
+
+                        auto const siz = tabledivide32_branchfree(arrayAllocSize, sv.arraysiz[index]);
+
+                        switch ((aGameArrays[index].flags & GAMEARRAY_TYPE_MASK))
+                        {
+                            case 0:
+                                if (siz == sizeof(int16_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int16 to intptr", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto temp2 = (int16_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        sv.arrays[index][k] = temp2[k];
+                                }
+                                else if (siz == sizeof(int8_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int8 to intptr", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto temp2 = (int8_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        sv.arrays[index][k] = temp2[k];
+                                }
+                                else if (arrayAllocSize < sv.arraysiz[index])
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from bitfield to intptr", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto temp8 = (int8_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        sv.arrays[index][k] = bitmap_test(temp8, k);
+                                }
+                                break;
+                            case GAMEARRAY_INT16:
+                            {
+                                auto array16 = (int16_t*)&sv.arrays[index][0];
+
+                                if (siz == sizeof(intptr_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                    {
+                                        DLOG_IF_F(INFO, ((temp[k] > INT16_MAX) | (temp[k] < INT16_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        array16[k] = temp[k];
+                                    }
+                                }
+                                else if (siz == sizeof(int8_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int8 to int16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto temp8 = (int8_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        array16[k] = temp8[k];
+                                }
+                                break;
+                            }
+                            case GAMEARRAY_UINT16:
+                            {
+                                auto arrayu16 = (uint16_t*)&sv.arrays[index][0];
+
+                                if (siz == sizeof(intptr_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                    {
+                                        DLOG_IF_F(INFO, ((unsigned)temp[k] > UINT16_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        arrayu16[k] = temp[k];
+                                    }
+                                }
+                                else if (siz == sizeof(int8_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from uint8 to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto tempu8 = (uint8_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        arrayu16[k] = tempu8[k];
+                                }
+                                else if (arrayAllocSize < sv.arraysiz[index])
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from bitfield to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto tempu8 = (uint8_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        arrayu16[k] = bitmap_test(tempu8, k);
+                                }
+                                break;
+                            }
+                            case GAMEARRAY_INT8:
+                            {
+                                auto array8 = (int8_t*)&sv.arrays[index][0];
+
+                                if (siz == sizeof(intptr_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                    {
+                                        DLOG_IF_F(INFO, ((temp[k] > INT8_MAX) | (temp[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        array8[k] = temp[k];
+                                    }
+                                }
+                                else if (siz == sizeof(int16_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from int16 to int8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto temp16 = (int16_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                    {
+                                        DLOG_IF_F(INFO, ((temp16[k] > INT8_MAX) | (temp16[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %d out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp16[k]);
+                                        array8[k] = temp16[k];
+                                    }
+                                }
+                                break;
+                            }
+                            case GAMEARRAY_UINT8:
+                            {
+                                auto arrayu8 = (uint8_t*)&sv.arrays[index][0];
+
+                                if (siz == sizeof(intptr_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                    {
+                                        DLOG_IF_F(INFO, ((unsigned)temp[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        arrayu8[k] = temp[k];
+                                    }
+                                }
+                                else if (siz == sizeof(int16_t))
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from uint16 to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto tempu16 = (uint16_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                    {
+                                        DLOG_IF_F(INFO, (tempu16[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %d out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, tempu16[k]);
+                                        arrayu8[k] = tempu16[k];
+                                    }
+                                }
+                                else if (arrayAllocSize < sv.arraysiz[index])
+                                {
+                                    DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from bitfield to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                                    auto tempu8 = (uint8_t*)temp;
+                                    for (int k = 0; k < sv.arraysiz[index]; k++)
+                                        arrayu8[k] = bitmap_test(tempu8, k);
+                                }
+                                break;
+                            }
+                        }
+
+                        Xfree(temp);
+                        continue;
+                    }
+
                     if (arrayAllocSize)
                         sv.arrays[index] = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, arrayAllocSize);
+
                     A_(!arrayAllocSize || kdfread_LZ4(sv.arrays[index], arrayAllocSize, 1, kFile) == 1);
                 }
             }
