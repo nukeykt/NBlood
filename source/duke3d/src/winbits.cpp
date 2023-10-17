@@ -80,7 +80,7 @@ int32_t windowsCheckForUpdates(char *buffer)
     if (connect(mysock, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr)) == SOCKET_ERROR)
         goto done;
 
-    i = send(mysock, req, strlen(req), 0);
+    i = send(mysock, req, Bstrlen(req), 0);
 
     if (i == SOCKET_ERROR)
         goto done;
@@ -99,7 +99,8 @@ int32_t windowsCheckForUpdates(char *buffer)
 
     if (Batol(tok) == 200)
     {
-        for (i = 0; (unsigned)i < strlen(tempbuf); i++)  // HACK: all of this needs to die a fiery death; we just skip to the content
+        int const len = Bstrlen(tempbuf);
+        for (i = 0; i < len; i++)  // HACK: all of this needs to die a fiery death; we just skip to the content
         {
             // instead of actually parsing any of the http headers
             if (i > 4)
@@ -117,7 +118,7 @@ int32_t windowsCheckForUpdates(char *buffer)
 
         if (j)
         {
-            strcpy(buffer, ver);
+            Bstrcpy(buffer, ver);
             r = 1;
             goto done;
         }
