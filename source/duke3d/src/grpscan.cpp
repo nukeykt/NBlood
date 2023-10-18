@@ -397,12 +397,13 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
                 continue;
             } // failed to stat the file
             Xfree(fn);
-            if (fg->size == (int32_t)st.st_size && fg->mtime == (int32_t)st.st_mtime)
+            if (st.st_size && fg->size == (int32_t)st.st_size && fg->mtime == (int32_t)st.st_mtime)
             {
-                grpinfo_t const * const grptype = FindGrpInfo(fg->crcval, fg->size);
+                auto const grptype = FindGrpInfo(fg->crcval, fg->size);
+
                 if (grptype)
                 {
-                    grpfile_t * const grp = (grpfile_t *)Xcalloc(1, sizeof(grpfile_t));
+                    auto const grp = (grpfile_t *)Xcalloc(1, sizeof(grpfile_t));
                     grp->filename = Xstrdup(sidx->name);
                     grp->type = grptype;
                     grp->next = foundgrps;
@@ -427,7 +428,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
             fh = openfrompath(sidx->name, BO_RDONLY|BO_BINARY, BS_IREAD);
             if (fh < 0) continue;
             if (Bfstat(fh, &st)) continue;
-            if (st.st_size > maxsize) continue;
+            if (!st.st_size || st.st_size > maxsize) continue;
 
             DLOG_F(INFO, " Checksumming %s...", sidx->name);
             do
@@ -440,10 +441,11 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
 
             LOG_F(INFO, " %s has checksum 0x%08x", sidx->name, crcval);
 
-            grpinfo_t const * const grptype = FindGrpInfo(crcval, st.st_size);
+            auto const grptype = FindGrpInfo(crcval, st.st_size);
+
             if (grptype)
             {
-                grpfile_t * const grp = (grpfile_t *)Xcalloc(1, sizeof(grpfile_t));
+                auto const grp = (grpfile_t *)Xcalloc(1, sizeof(grpfile_t));
                 grp->filename = Xstrdup(sidx->name);
                 grp->type = grptype;
                 grp->next = foundgrps;
