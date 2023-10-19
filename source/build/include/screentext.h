@@ -98,6 +98,7 @@ static inline int screentextGlyphIsTab(ScreenTextGlyph_t g)
 #define TEXT_YJUSTIFY         (0x00000800)
 
 #define TEXT_VARHEIGHT        (0x00800000)
+#define TEXT_CENTERCONSTWIDTH (0x01000000)
 
 struct ScreenTextSize_t
 {
