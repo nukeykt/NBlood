@@ -1,6 +1,8 @@
 #ifndef LIBXMP_COMMON_H
 #define LIBXMP_COMMON_H
 
+#include "compat.h"
+
 #ifdef LIBXMP_CORE_PLAYER
 #ifndef LIBXMP_NO_PROWIZARD
 #define LIBXMP_NO_PROWIZARD
