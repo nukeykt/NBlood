@@ -935,6 +935,9 @@ ifeq ($(RENDERTYPE),SDL)
         endif
     else
         ifneq ($(SDLCONFIG),)
+            ifeq ($(PLATFORM),DARWIN)
+                override SDL_STATIC := 0
+            endif
             ifneq ($(SDL_STATIC),0)
                 override SDLCONFIG_LIBS := -Wl,-Bstatic -l$(SDLNAME) -Wl,-Bdynamic $(strip $(subst -l$(SDLNAME),,$(shell CC=$(CC) $(SDLCONFIG) --static-libs)))
                 # for some reason SteamRT has a GCC with --enable-default-pie but its SDL2 has it disabled. WTF?
