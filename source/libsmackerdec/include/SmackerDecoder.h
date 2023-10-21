@@ -48,7 +48,7 @@
 #include <stdint.h>
 #include "FileStream.h"
 #include "BitReader.h"
-#include <vector>
+#include "collections.h"
 
 // exportable interface
 struct SmackerHandle
@@ -140,25 +140,25 @@ class SmackerDecoder
 		uint32_t treeSize;
 		uint32_t mMapSize, MClrSize, fullSize, typeSize;
 
-		std::vector<int> mmap_tbl;
-		std::vector<int> mclr_tbl;
-		std::vector<int> full_tbl;
-		std::vector<int> type_tbl;
+		GrowArray<int> mmap_tbl;
+		GrowArray<int> mclr_tbl;
+		GrowArray<int> full_tbl;
+		GrowArray<int> type_tbl;
 
 		int mmap_last[3], mclr_last[3], full_last[3], type_last[3];
 
-		std::vector<uint32_t> frameSizes;
-		std::vector<uint8_t> frameFlags;
+		GrowArray<uint32_t> frameSizes;
+		GrowArray<uint8_t> frameFlags;
 
 		uint32_t currentFrame;
 		int32_t nextPos;
         int32_t firstFrameFilePos;
 
 		bool DecodeHeaderTrees();
-		int DecodeHeaderTree(SmackerCommon::BitReader &bits, std::vector<int> &recodes, int *last, int size);
+		int DecodeHeaderTree(SmackerCommon::BitReader &bits, GrowArray<int> &recodes, int *last, int size);
 		int DecodeTree(SmackerCommon::BitReader &bits, HuffContext *hc, uint32_t prefix, int length);
 		int DecodeBigTree(SmackerCommon::BitReader &bits, HuffContext *hc, DBCtx *ctx);
-		int GetCode(SmackerCommon::BitReader &bits, std::vector<int> &recode, int *last);
+		int GetCode(SmackerCommon::BitReader &bits, GrowArray<int> &recode, int *last);
 		int ReadPacket();
 		int DecodeFrame(uint32_t frameSize);
 		void GetFrameSize(uint32_t &width, uint32_t &height);

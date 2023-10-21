@@ -50,7 +50,7 @@
 #include "compat.h"
 #include "baselayer.h"
 
-std::vector<class SmackerDecoder*> classInstances;
+GrowArray<class SmackerDecoder*> classInstances;
 
 SmackerHandle Smacker_Open(const char* fileName)
 {
@@ -248,9 +248,9 @@ typedef struct HuffContext {
     int maxlength;
     int current;
 
-	std::vector<uint32_t> bits;
-	std::vector<int> lengths;
-	std::vector<int> values;
+	GrowArray<uint32_t> bits;
+	GrowArray<int> lengths;
+	GrowArray<int> values;
 
 } HuffContext;
 
@@ -258,19 +258,19 @@ typedef struct HuffContext {
 typedef struct DBCtx {
 	SmackerCommon::VLCtable v1;
 	SmackerCommon::VLCtable v2;
-	std::vector<int> recode1, recode2;
+	GrowArray<int> recode1, recode2;
     int escapes[3];
     int *last;
     int lcur;
 } DBCtx;
 
 
-static void last_reset(std::vector<int> &recode, int *last) {
+static void last_reset(GrowArray<int> &recode, int *last) {
     recode[last[0]] = recode[last[1]] = recode[last[2]] = 0;
 }
 
 /* get code and update history */
-int SmackerDecoder::GetCode(SmackerCommon::BitReader &bits, std::vector<int> &recode, int *last)
+int SmackerDecoder::GetCode(SmackerCommon::BitReader &bits, GrowArray<int> &recode, int *last)
 {
 	int *table = &recode[0];
 
@@ -540,7 +540,7 @@ int SmackerDecoder::DecodeBigTree(SmackerCommon::BitReader &bits, HuffContext *h
 /**
  * Store large tree as Libav's vlc codes
  */
-int SmackerDecoder::DecodeHeaderTree(SmackerCommon::BitReader &bits, std::vector<int> &recodes, int *last, int size)
+int SmackerDecoder::DecodeHeaderTree(SmackerCommon::BitReader &bits, GrowArray<int> &recodes, int *last, int size)
 {
 	HuffContext huff;
 	HuffContext tmp1, tmp2;
