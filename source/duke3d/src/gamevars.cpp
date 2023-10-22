@@ -265,7 +265,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                 DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                 for (int k = 0; k < writeArray.size; k++)
                                 {
-                                    LOG_IF_F(INFO, ((temp[k] > INT16_MAX) | (temp[k] < INT16_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    LOG_IF_F(INFO, ((temp[k] > INT16_MAX) | (temp[k] < INT16_MIN)), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                     array16[k] = temp[k];
                                 }
                             }
@@ -287,7 +287,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                 DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                 for (int k = 0; k < writeArray.size; k++)
                                 {
-                                    LOG_IF_F(INFO, ((unsigned)temp[k] > UINT16_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    LOG_IF_F(INFO, ((unsigned)temp[k] > UINT16_MAX), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                     arrayu16[k] = temp[k];
                                 }
                             }
@@ -316,7 +316,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                 DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                 for (int k = 0; k < writeArray.size; k++)
                                 {
-                                    LOG_IF_F(INFO, ((temp[k] > INT8_MAX) | (temp[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    LOG_IF_F(INFO, ((temp[k] > INT8_MAX) | (temp[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                     array8[k] = temp[k];
                                 }
                             }
@@ -341,7 +341,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                 DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                 for (int k = 0; k < writeArray.size; k++)
                                 {
-                                    LOG_IF_F(INFO, ((unsigned)temp[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                    LOG_IF_F(INFO, ((unsigned)temp[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                     arrayu8[k] = temp[k];
                                 }
                             }
@@ -548,7 +548,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                     DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                     for (int k = 0; k < sv.arraysiz[index]; k++)
                                     {
-                                        DLOG_IF_F(INFO, ((temp[k] > INT16_MAX) | (temp[k] < INT16_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        DLOG_IF_F(INFO, ((temp[k] > INT16_MAX) | (temp[k] < INT16_MIN)), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                         array16[k] = temp[k];
                                     }
                                 }
@@ -570,7 +570,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                     DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint16", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                     for (int k = 0; k < sv.arraysiz[index]; k++)
                                     {
-                                        DLOG_IF_F(INFO, ((unsigned)temp[k] > UINT16_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        DLOG_IF_F(INFO, ((unsigned)temp[k] > UINT16_MAX), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                         arrayu16[k] = temp[k];
                                     }
                                 }
@@ -599,7 +599,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                     DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to int8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                     for (int k = 0; k < sv.arraysiz[index]; k++)
                                     {
-                                        DLOG_IF_F(INFO, ((temp[k] > INT8_MAX) | (temp[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        DLOG_IF_F(INFO, ((temp[k] > INT8_MAX) | (temp[k] < INT8_MIN)), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                         array8[k] = temp[k];
                                     }
                                 }
@@ -624,7 +624,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                                     DLOG_F(INFO, "Gv_ReadSave(): converting '%s' from intptr to uint8", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
                                     for (int k = 0; k < sv.arraysiz[index]; k++)
                                     {
-                                        DLOG_IF_F(INFO, ((unsigned)temp[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %lld out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
+                                        DLOG_IF_F(INFO, ((unsigned)temp[k] > UINT8_MAX), "Gv_ReadSave(): %s[%d] value %" PRIiPTR " out of range for type", &arrlabels[arrayLabelIndex * MAXARRAYLABEL], k, temp[k]);
                                         arrayu8[k] = temp[k];
                                     }
                                 }
