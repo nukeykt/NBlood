@@ -2895,6 +2895,11 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     dispatch();
                 }
 
+            vInstruction(CON_YIELD):
+                insptr++;
+                dukeMaybeDrawFrame();
+                dispatch();
+
             vInstruction(CON_RETURN):
                 vm.flags |= VM_RETURN;
 #if !defined CON_USE_COMPUTED_GOTO
