@@ -1320,8 +1320,8 @@ static FORCE_INLINE void xalloc_set_location(int32_t const line, const char * co
 }
 #endif
 
-void set_memerr_handler(void (*handlerfunc)(int32_t, const char *, const char *));
-EDUKE32_NORETURN void handle_memerr(void);
+void set_memerr_handler(void (*handlerfunc)(int32_t, int32_t, const char *, const char *));
+EDUKE32_NORETURN void handle_memerr(int32_t bytes);
 
 #ifdef __cplusplus
 #include "smmalloc.h"
@@ -1357,7 +1357,7 @@ static FORCE_INLINE char *xstrdup(const char *s)
         ptr[len-1] = '\0';
         return ptr;
     }
-    handle_memerr();
+    handle_memerr(len);
     EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
@@ -1365,7 +1365,7 @@ static FORCE_INLINE void *xmalloc(bsize_t const size)
 {
     void *ptr = _sm_malloc(g_sm_heap, size, ALLOC_ALIGNMENT);
     if (EDUKE32_PREDICT_TRUE(ptr != nullptr)) return ptr;
-    handle_memerr();
+    handle_memerr(size);
     EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
@@ -1378,7 +1378,7 @@ static FORCE_INLINE void *xcalloc(bsize_t const nmemb, bsize_t const size)
         Bmemset(ptr, 0, siz);
         return ptr;
     }
-    handle_memerr();
+    handle_memerr(size);
     EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
@@ -1391,7 +1391,7 @@ static FORCE_INLINE void *xrealloc(void * const ptr, bsize_t const size)
     //  - size == 0 make it behave like free() if ptr != NULL
     // Since we want to catch an out-of-mem in the first case, this leaves:
     if (EDUKE32_PREDICT_TRUE(newptr != nullptr || size == 0)) return newptr;
-    handle_memerr();
+    handle_memerr(size);
     EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
@@ -1401,7 +1401,7 @@ static FORCE_INLINE void *xaligned_alloc(bsize_t const alignment, bsize_t const 
 {
     void *ptr = _sm_malloc(g_sm_heap, size, alignment);
     if (EDUKE32_PREDICT_TRUE(ptr != nullptr)) return ptr;
-    handle_memerr();
+    handle_memerr(size);
     EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
@@ -1414,7 +1414,7 @@ static FORCE_INLINE void *xaligned_calloc(bsize_t const alignment, bsize_t const
         Bmemset(ptr, 0, blocksize);
         return ptr;
     }
-    handle_memerr();
+    handle_memerr(size);
     EDUKE32_UNREACHABLE_SECTION(return nullptr);
 }
 
