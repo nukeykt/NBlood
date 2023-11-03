@@ -136,8 +136,11 @@ mimalloc_excl := \
 mimalloc_objs := $(call getfiltered,mimalloc,*.c)
 mimalloc_objs += prim/prim.c
 
-mimalloc_cflags := -D_WIN32_WINNT=0x0600 -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -fexceptions -Wno-cast-qual -Wno-class-memaccess -Wno-unknown-pragmas -Wno-array-bounds -Wno-null-dereference -Wno-missing-field-initializers
+mimalloc_cflags := -D_WIN32_WINNT=0x0600 -DMI_USE_RTLGENRANDOM -DMI_SHOW_ERRORS -fexceptions -Wno-cast-qual -Wno-unknown-pragmas -Wno-array-bounds -Wno-null-dereference -Wno-missing-field-initializers
 
+ifeq (,$(filter 1 2 3 4 5 6 7,$(GCC_MAJOR)))
+    mimalloc_cflags += -Wno-class-memaccess
+endif
 
 #### imgui
 
