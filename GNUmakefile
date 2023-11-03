@@ -560,12 +560,12 @@ ifeq ($(PLATFORM),BSD)
 endif
 
 ifeq ($(PLATFORM),DARWIN)
-    LIBS += -lFLAC -lm \
+    LIBS += -lFLAC \
             -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,OpenGL \
             -Wl,-framework,CoreMIDI -Wl,-framework,AudioUnit \
             -Wl,-framework,AudioToolbox -Wl,-framework,IOKit -Wl,-framework,AGL
     ifneq (00,$(DARWIN9)$(DARWIN10))
-        LIBS += -Wl,-framework,QuickTime -lm
+        LIBS += -Wl,-framework,QuickTime
     endif
 
     ifeq ($(STARTUP_WINDOW),1)
