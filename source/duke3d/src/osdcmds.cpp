@@ -1832,7 +1832,9 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("quit","quit: exits the game immediately", osdcmd_quit);
     OSD_RegisterFunction("exit","exit: exits the game immediately", osdcmd_quit);
 
-    OSD_RegisterFunction("restartmap", "restartmap: restarts the current map", osdcmd_restartmap);
+    if (!FURY)
+        OSD_RegisterFunction("restartmap", "restartmap: restarts the current map", osdcmd_restartmap);
+
     OSD_RegisterFunction("restartsound","restartsound: reinitializes the sound system",osdcmd_restartsound);
     OSD_RegisterFunction("restartvid","restartvid: reinitializes the video mode",osdcmd_restartvid);
     OSD_RegisterFunction("addlogvar","addlogvar <gamevar>: prints the value of a gamevar", osdcmd_addlogvar);

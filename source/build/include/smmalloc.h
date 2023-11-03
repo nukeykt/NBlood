@@ -766,7 +766,7 @@ template <bool useCacheL0> INLINE bool Allocator::ReleaseToCache(internal::TlsPo
 
 #ifdef SMMALLOC_CSTYLE_FUNCS
 
-#define SMMALLOC_DLL
+// #define SMMALLOC_DLL
 
 #if defined(_WIN32) && defined(SMMALLOC_DLL)
 #define SMMALLOC_API __declspec(dllexport)

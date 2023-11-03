@@ -942,7 +942,7 @@ error:
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
-    float const volume = ((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? snd->volume * ((float)ud.config.VoiceVolume / 255.f) : snd->volume * ((float)ud.config.FXVolume / 255.f);
+    fix16_t const volume = fix16_from_float(((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? fix16_to_float(snd->volume) * ((float)ud.config.VoiceVolume / 255.f) : fix16_to_float(snd->volume) * ((float)ud.config.FXVolume / 255.f));
     int const voice = FX_Play3D(snd->ptr, snd->len, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6, snd->priority,
                                 volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
 
@@ -999,7 +999,7 @@ error:
     if (snd->flags & SF_TALK)
         g_dukeTalk = true;
 
-    float const volume = ((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? snd->volume * ((float)ud.config.VoiceVolume / 255.f) : snd->volume * ((float)ud.config.FXVolume / 255.f);
+    fix16_t const volume = fix16_from_float(((snd->flags & SF_TALK) || ((snd->flags & SF_SPEECH) && ud.config.VoiceVolume > ud.config.FXVolume)) ? fix16_to_float(snd->volume) * ((float)ud.config.VoiceVolume / 255.f) : fix16_to_float(snd->volume) * ((float)ud.config.FXVolume / 255.f));
     int const voice = (snd->flags & SF_LOOP) ? FX_Play(snd->ptr, snd->len, 0, -1, pitch, LOUDESTVOLUME, LOUDESTVOLUME,
                                                   LOUDESTVOLUME, snd->len, volume, (num * MAXSOUNDINSTANCES) + sndnum)
                                         : FX_Play3D(snd->ptr, snd->len, FX_ONESHOT, pitch, 0, 255 - LOUDESTVOLUME, snd->priority, volume,

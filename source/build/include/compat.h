@@ -1498,7 +1498,12 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #include "clockticks.hpp"
 #endif
 
-#include "debugbreak.h"
+#ifdef NDEBUG
+# define debug_break() ((void)0)
+#else
+# include "debugbreak.h"
+#endif
+
 #include "rdtsc.h"
 
 /* End dependence on compat.o object. */

@@ -53,6 +53,21 @@ struct GrowArray
         DO_FREE_AND_NULL(data_);
     }
 
+    // std::vector polyfills
+
+    FORCE_INLINE T& at(size_t index) { return data_[index]; }
+    FORCE_INLINE const T& at(size_t index) const { return data_[index]; }
+
+    FORCE_INLINE void push_back(T item) { append(item); }
+
+    void resize(size_t const newcapacity)
+    {
+        size_t const oldcapacity = capacity_;
+        reallocate(newcapacity);
+        if (newcapacity > oldcapacity)
+            memset(data_ + oldcapacity, 0, (newcapacity - oldcapacity) * sizeof(T));
+    }
+
 protected:
     void reallocate(size_t newcapacity)
     {
