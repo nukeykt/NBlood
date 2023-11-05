@@ -2920,6 +2920,8 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                 vm.flags |= VM_TERMINATE;
                 return;
 
+            vInstruction(CON_YIELDJUMP) :  // this is used for event chaining
+                dukeMaybeDrawFrame();
             vInstruction(CON_JUMP):  // this is used for event chaining
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
