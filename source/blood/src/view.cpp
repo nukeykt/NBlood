@@ -1311,69 +1311,85 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
 
-struct POWERUPDISPLAY
-{
+#define kPowerUps 11
+
+const struct POWERUPDISPLAY {
     int nTile;
-    float nScaleRatio;
+    int nScaleRatio;
     int yOffset;
-    int remainingDuration;
+} gPowerups[kPowerUps] = {
+    {gPowerUpInfo[kPwUpShadowCloak].picnum, fix16_from_float(0.4f), 0}, // invisibility
+    {gPowerUpInfo[kPwUpReflectShots].picnum, fix16_from_float(0.4f), 5}, // reflects enemy shots
+    {gPowerUpInfo[kPwUpDeathMask].picnum, fix16_from_float(0.3f), 9}, // invulnerability
+    {gPowerUpInfo[kPwUpTwoGuns].picnum, fix16_from_float(0.25f), 4}, // guns akimbo
+    {gPowerUpInfo[kPwUpShadowCloakUseless].picnum, fix16_from_float(0.4f), 9}, // shadow cloak (does nothing, only appears at near the end of CP04)
+
+    // not in official maps
+    {gPowerUpInfo[kPwUpFeatherFall].picnum, fix16_from_float(0.3f), 7}, // feather fall
+    {gPowerUpInfo[kPwUpGasMask].picnum, fix16_from_float(0.4f), 4}, // gas mask
+    {gPowerUpInfo[kPwUpDoppleganger].picnum, fix16_from_float(0.5f), 5}, // doppelganger
+    {gPowerUpInfo[kPwUpAsbestArmor].picnum, fix16_from_float(0.3f), 9}, // asbestos armor
+    {gPowerUpInfo[kPwUpGrowShroom].picnum, fix16_from_float(0.4f), 4}, // grow shroom
+    {gPowerUpInfo[kPwUpShrinkShroom].picnum, fix16_from_float(0.4f), 4}, // shrink shroom
 };
-
-#define nPowerUps 11
-
-void sortPowerUps(POWERUPDISPLAY* powerups) {
-    for (int i = 1; i < nPowerUps; i++)
-    {
-        for (int j = 0; j < nPowerUps-i; j++)
-        {
-            if (powerups[j].remainingDuration > powerups[j+1].remainingDuration)
-            {
-                POWERUPDISPLAY temp = powerups[j];
-                powerups[j] = powerups[j+1];
-                powerups[j+1] = temp;
-            }
-        }
-    }
-}
 
 void viewDrawPowerUps(PLAYER* pPlayer)
 {
     if (!gPowerupDuration)
         return;
 
-    POWERUPDISPLAY powerups[nPowerUps];
-    powerups[0] = { gPowerUpInfo[kPwUpShadowCloak].picnum,  0.4f, 0, pPlayer->pwUpTime[kPwUpShadowCloak] }; // Invisibility
-    powerups[1] = { gPowerUpInfo[kPwUpReflectShots].picnum, 0.4f, 5, pPlayer->pwUpTime[kPwUpReflectShots] }; // Reflects enemy shots
-    powerups[2] = { gPowerUpInfo[kPwUpDeathMask].picnum, 0.3f, 9, pPlayer->pwUpTime[kPwUpDeathMask] }; // Invulnerability
-    powerups[3] = { gPowerUpInfo[kPwUpTwoGuns].picnum, 0.3f, 5, pPlayer->pwUpTime[kPwUpTwoGuns] }; // Guns Akimbo
-    powerups[4] = { gPowerUpInfo[kPwUpShadowCloakUseless].picnum, 0.4f, 9, pPlayer->pwUpTime[kPwUpShadowCloakUseless] }; // Does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
+    int nPowerActive[kPowerUps];
+    nPowerActive[0] = pPlayer->pwUpTime[kPwUpShadowCloak]; // invisibility
+    nPowerActive[1] = pPlayer->pwUpTime[kPwUpReflectShots]; // reflects enemy shots
+    nPowerActive[2] = pPlayer->pwUpTime[kPwUpDeathMask]; // invulnerability
+    nPowerActive[3] = pPlayer->pwUpTime[kPwUpTwoGuns];// guns akimbo
+    nPowerActive[4] = pPlayer->pwUpTime[kPwUpShadowCloakUseless]; // shadow cloak
 
-    // Not in official maps, but custom maps can use them
-    powerups[5] = { gPowerUpInfo[kPwUpFeatherFall].picnum, 0.3f, 7, pPlayer->pwUpTime[kPwUpFeatherFall] }; // Makes player immune to fall damage
-    powerups[6] = { gPowerUpInfo[kPwUpGasMask].picnum, 0.4f, 4, pPlayer->pwUpTime[kPwUpGasMask] }; // Makes player immune to choke damage
-    powerups[7] = { gPowerUpInfo[kPwUpDoppleganger].picnum, 0.5f, 5, pPlayer->pwUpTime[kPwUpDoppleganger] }; // Works in multiplayer, it swaps player's team colors, so enemy team player thinks it's a team mate
-    powerups[8] = { gPowerUpInfo[kPwUpAsbestArmor].picnum, 0.3f, 9, pPlayer->pwUpTime[kPwUpAsbestArmor] }; // Makes player immune to fire damage and draws HUD
-    powerups[9] = { gPowerUpInfo[kPwUpGrowShroom].picnum, 0.4f, 4, pPlayer->pwUpTime[kPwUpGrowShroom] }; // Grows player size, works only if gModernMap == true
-    powerups[10] = { gPowerUpInfo[kPwUpShrinkShroom].picnum, 0.4f, 4, pPlayer->pwUpTime[kPwUpShrinkShroom] }; // Shrinks player size, works only if gModernMap == true
+    // not in official maps
+    nPowerActive[5] = pPlayer->pwUpTime[kPwUpFeatherFall]; // feather fall
+    nPowerActive[6] = pPlayer->pwUpTime[kPwUpGasMask]; // gas mask
+    nPowerActive[7] = pPlayer->pwUpTime[kPwUpDoppleganger]; // doppelganger
+    nPowerActive[8] = pPlayer->pwUpTime[kPwUpAsbestArmor]; // asbestos armor
+    nPowerActive[9] = pPlayer->pwUpTime[kPwUpGrowShroom]; // grow shroom
+    nPowerActive[10] = pPlayer->pwUpTime[kPwUpShrinkShroom]; // shrink shroom
 
-    sortPowerUps(powerups);
+    int nSortPower[kPowerUps+1];
+    unsigned char nSortIndex[kPowerUps+1];
+    unsigned char nSortCount = 0;
+    for (int i = 0; i < kPowerUps; i++) // sort powerups
+    {
+        if (!nPowerActive[i])
+            continue;
+        nSortIndex[nSortCount] = i;
+        nSortPower[nSortCount] = nPowerActive[i];
+        nSortCount++;
+    }
+    for (int i = 1; i < nSortCount; i++)
+    {
+        for (int j = 0; j < nSortCount-i; j++)
+        {
+            if (nSortPower[j] <= nSortPower[j+1])
+                continue;
+            nSortPower[kPowerUps] = nSortPower[j];
+            nSortPower[j] = nSortPower[j+1];
+            nSortPower[j+1] = nSortPower[kPowerUps];
+            nSortIndex[kPowerUps] = nSortIndex[j];
+            nSortIndex[j] = nSortIndex[j+1];
+            nSortIndex[j+1] = nSortIndex[kPowerUps];
+        }
+    }
 
-    const int warningTime = 5;
+    const int nWarning = 5;
     const int x = 15;
     int y = 50;
-    for (int i = 0; i < nPowerUps; i++)
+    for (int i = 0; i < nSortCount; i++)
     {
-        if (powerups[i].remainingDuration)
-        {
-            int remainingSeconds = powerups[i].remainingDuration / 100;
-            if (remainingSeconds > warningTime || ((int)totalclock & 32))
-            {
-                DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
-            }
-
-            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, remainingSeconds > warningTime ? 0 : 2, 256, 65536 * 0.5);
-            y += 20;
-        }
+        const POWERUPDISPLAY *pPowerups = &gPowerups[nSortIndex[i]];
+        int nTime = nSortPower[i] / 100;
+        if (nTime > nWarning || ((int)totalclock & 32))
+            DrawStatMaskedSprite(pPowerups->nTile, x, y + pPowerups->yOffset, 0, 0, 256, pPowerups->nScaleRatio);
+        DrawStatNumber("%d", nTime, kSBarNumberInv, x + 15, y, 0, nTime > nWarning ? 0 : 2, 256, fix16_from_float(0.5f));
+        y += 20;
     }
 }
 
