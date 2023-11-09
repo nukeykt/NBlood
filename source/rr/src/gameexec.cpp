@@ -33,8 +33,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "scriplib.h"
 #include "cmdline.h"
 
-#include "debugbreak.h"
-
 #if KRANDDEBUG
 # define GAMEEXEC_INLINE
 # define GAMEEXEC_STATIC
