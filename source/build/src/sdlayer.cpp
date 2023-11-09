@@ -103,7 +103,7 @@ char modechange=1;
 char offscreenrendering=0;
 char videomodereset = 0;
 int32_t nofog=0;
-char g_controllerSupportDisabled;
+char g_controllerSupportFlags;
 #ifndef EDUKE32_GLES
 static uint16_t sysgamma[3][256];
 #endif
@@ -1081,9 +1081,17 @@ int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
         Bstrncpyz(g_keyNameTable[keytranslation[i]], SDL_GetKeyName(SDL_SCANCODE_TO_KEYCODE(i)), sizeof(g_keyNameTable[0]));
     }
 
-    if (!g_controllerSupportDisabled)
+    if ((g_controllerSupportFlags & CONTROLLER_DISABLED) == 0)
     {
 #if SDL_MAJOR_VERSION >= 2
+# if defined SDL_HINT_DIRECTINPUT_ENABLED
+        if (g_controllerSupportFlags & CONTROLLER_NO_DINPUT)
+            SDL_SetHint(SDL_HINT_DIRECTINPUT_ENABLED, "0");
+# endif
+# if defined SDL_HINT_XINPUT_ENABLED
+        if (g_controllerSupportFlags & CONTROLLER_NO_XINPUT)
+            SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+# endif
         if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
 #else
         if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))

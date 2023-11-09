@@ -4012,6 +4012,23 @@ int32_t app_main(int32_t argc, char const * const * argv)
             if (strlen(arg) > 2)
                 G_AddDefModule(arg+2);
         }
+#ifdef _WIN32
+        else if (Bstrncasecmp(arg, "nodinput", 8) == 0)
+        {
+            VLOG_F(LOG_INPUT, "DirectInput (controller) support disabled");
+            g_controllerSupportFlags |= CONTROLLER_NO_DINPUT;
+        }
+        else if (Bstrncasecmp(arg, "noxinput", 8) == 0)
+        {
+            VLOG_F(LOG_INPUT, "XInput (controller) support disabled");
+            g_controllerSupportFlags |= CONTROLLER_NO_XINPUT;
+        }
+#endif
+        else if (Bstrncasecmp(arg, "nocontroller", 12) == 0)
+        {
+            VLOG_F(LOG_INPUT, "Controller support disabled.");
+            g_controllerSupportFlags |= CONTROLLER_DISABLED;
+        }
     }
 
     Control(argc, argv);
