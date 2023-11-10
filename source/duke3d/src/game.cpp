@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "input.h"
 #include "menus.h"
 #include "microprofile.h"
-#include "minicoro.h"
+//#include "minicoro.h"
 #include "network.h"
 #include "osdcmds.h"
 #include "osdfuncs.h"
@@ -281,33 +281,33 @@ int32_t A_CheckInventorySprite(spritetype *s)
 
 EDUKE32_NORETURN void app_exit(int returnCode);
 
-static int g_programExitCode = INT_MIN;
+//static int g_programExitCode = INT_MIN;
 
-void g_switchRoutine(mco_coro *co)
-{
-    mco_result res = mco_resume(co);
-    Bassert(res == MCO_SUCCESS);
-
-    if (g_programExitCode != INT_MIN)
-    {
-        if (mco_running() == nullptr)
-            Bexit(g_programExitCode);
-
-        res = mco_yield(mco_running());
-        Bassert(res == MCO_SUCCESS);
-    }
-
-    if (res != MCO_SUCCESS)
-        fatal_exit(mco_result_description(res));
-}
+//void g_switchRoutine(mco_coro *co)
+//{
+//    mco_result res = mco_resume(co);
+//    Bassert(res == MCO_SUCCESS);
+//
+//    if (g_programExitCode != INT_MIN)
+//    {
+//        if (mco_running() == nullptr)
+//            Bexit(g_programExitCode);
+//
+//        res = mco_yield(mco_running());
+//        Bassert(res == MCO_SUCCESS);
+//    }
+//
+//    if (res != MCO_SUCCESS)
+//        fatal_exit(mco_result_description(res));
+//}
 
 void app_exit(int returnCode)
 {
-    if (mco_running())
-    {
-        g_programExitCode = returnCode;
-        mco_yield(mco_running());
-    }
+    //if (mco_running())
+    //{
+    //    g_programExitCode = returnCode;
+    //    mco_yield(mco_running());
+    //}
 
 #ifndef NETCODE_DISABLE
     enet_deinitialize();
@@ -6465,60 +6465,56 @@ void Net_DedicatedServerStdin(void)
 }
 #endif
 
-static void drawframe_entry(mco_coro *co)
+void drawframe_do(void)
 {
-    do
+    MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+
+    g_lastFrameStartTime = timerGetNanoTicks();
+
+    if (!g_saveRequested)
     {
-        MICROPROFILE_SCOPEI("Game", EDUKE32_FUNCTION, MP_YELLOWGREEN);
+        // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
+        CONTROL_BindsEnabled = !!(g_player[myconnectindex].ps->gm & (MODE_GAME | MODE_DEMO));
 
-        g_lastFrameStartTime = timerGetNanoTicks();
+        G_HandleLocalKeys();
+        OSD_DispatchQueued();
+        P_GetInput(myconnectindex);
+    }
+    else
+    {
+        localInput = {};
+        localInput.bits = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
+        localInput.extbits = BIT(EK_CHAT_MODE);
+    }
 
-        if (!g_saveRequested)
-        {
-            // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
-            CONTROL_BindsEnabled = !!(g_player[myconnectindex].ps->gm & (MODE_GAME|MODE_DEMO));
+    int const smoothratio = calc_smoothratio(totalclock, ototalclock);
 
-            G_HandleLocalKeys();
-            OSD_DispatchQueued();
-            P_GetInput(myconnectindex);
-        }
-        else
-        {
-            localInput = {};
-            localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
-            localInput.extbits = BIT(EK_CHAT_MODE);
-        }
+    G_DrawRooms(screenpeek, smoothratio);
 
-        int const smoothratio = calc_smoothratio(totalclock, ototalclock);
+    if (videoGetRenderMode() >= REND_POLYMOST)
+        G_DrawBackground();
 
-        G_DrawRooms(screenpeek, smoothratio);
+    G_DisplayRest(smoothratio);
 
-        if (videoGetRenderMode() >= REND_POLYMOST)
-            G_DrawBackground();
+    g_frameJustDrawn = true;
+    g_lastFrameEndTime = timerGetNanoTicks();
+    g_lastFrameDuration = g_lastFrameEndTime - g_lastFrameStartTime;
+    g_frameCounter++;
 
-        G_DisplayRest(smoothratio);
-
-#if MICROPROFILE_ENABLED != 0
-        for (auto &gv : aGameVars)
-        {
-            if ((gv.flags & (GAMEVAR_USER_MASK|GAMEVAR_PTR_MASK)) == 0)
-            {
-                MICROPROFILE_COUNTER_SET(gv.szLabel, gv.global);
-            }
-        }
-#endif
-        g_frameJustDrawn = true;
-        g_lastFrameEndTime = timerGetNanoTicks();
-        g_lastFrameDuration = g_lastFrameEndTime - g_lastFrameStartTime;
-        g_frameCounter++;
-
-        videoNextPage();
-        S_Update();
-        g_lastFrameEndTime2 = timerGetNanoTicks();
-        g_lastFrameDuration2 = g_lastFrameEndTime2 - g_lastFrameStartTime;
-        mco_yield(co);
-    } while (1);
+    videoNextPage();
+    S_Update();
+    g_lastFrameEndTime2 = timerGetNanoTicks();
+    g_lastFrameDuration2 = g_lastFrameEndTime2 - g_lastFrameStartTime;
 }
+
+//static void drawframe_entry(mco_coro *co)
+//{
+//    do
+//    {
+//        drawframe_do();
+//        mco_yield(co);
+//    } while (1);
+//}
 
 void dukeFillInputForTic(void)
 {
@@ -6542,30 +6538,30 @@ void dukeFillInputForTic(void)
     localInput = {};
 }
 
-void dukeCreateFrameRoutine(void)
-{
-    static mco_desc co_drawframe_desc;
-    mco_result res;
-
-    if (co_drawframe)
-    {
-        res = mco_destroy(co_drawframe);
-        Bassert(res == MCO_SUCCESS);
-        if (res != MCO_SUCCESS)
-            fatal_exit(mco_result_description(res));
-    }
-
-    co_drawframe_desc = mco_desc_init(drawframe_entry, g_frameStackSize);
-    co_drawframe_desc.user_data = NULL;
-
-    res = mco_create(&co_drawframe, &co_drawframe_desc);
-    Bassert(res == MCO_SUCCESS);
-    if (res != MCO_SUCCESS)
-        fatal_exit(mco_result_description(res));
-
-    if (g_frameStackSize != DRAWFRAME_DEFAULT_STACK_SIZE)
-        LOG_F(INFO, "Draw routine created with %d byte stack.", g_frameStackSize);
-}
+//void dukeCreateFrameRoutine(void)
+//{
+//    static mco_desc co_drawframe_desc;
+//    mco_result res;
+//
+//    if (co_drawframe)
+//    {
+//        res = mco_destroy(co_drawframe);
+//        Bassert(res == MCO_SUCCESS);
+//        if (res != MCO_SUCCESS)
+//            fatal_exit(mco_result_description(res));
+//    }
+//
+//    co_drawframe_desc = mco_desc_init(drawframe_entry, g_frameStackSize);
+//    co_drawframe_desc.user_data = NULL;
+//
+//    res = mco_create(&co_drawframe, &co_drawframe_desc);
+//    Bassert(res == MCO_SUCCESS);
+//    if (res != MCO_SUCCESS)
+//        fatal_exit(mco_result_description(res));
+//
+//    if (g_frameStackSize != DRAWFRAME_DEFAULT_STACK_SIZE)
+//        LOG_F(INFO, "Draw routine created with %d byte stack.", g_frameStackSize);
+//}
 
 static const char* dukeVerbosityCallback(loguru::Verbosity verbosity)
 {
@@ -6995,7 +6991,7 @@ int app_main(int argc, char const* const* argv)
     S_ClearSoundLocks();
 
     //    getpackets();
-    dukeCreateFrameRoutine();
+    //dukeCreateFrameRoutine();
 
     VM_OnEvent(EVENT_INITCOMPLETE);
 
@@ -7098,11 +7094,11 @@ MAIN_LOOP_RESTART:
             quitevent = 0;
         }
 
-        if (g_restartFrameRoutine)
-        {
-            dukeCreateFrameRoutine();
-            g_restartFrameRoutine = 0;
-        }
+        //if (g_restartFrameRoutine)
+        //{
+        //    dukeCreateFrameRoutine();
+        //    g_restartFrameRoutine = 0;
+        //}
 
         double gameUpdateStartTime = timerGetFractionalTicks();
         auto framecnt = g_frameCounter;
@@ -7177,7 +7173,8 @@ MAIN_LOOP_RESTART:
 #endif
             }
 
-            g_switchRoutine(co_drawframe);
+            //g_switchRoutine(co_drawframe);
+            drawframe_do();
         }
 
         // handle CON_SAVE and CON_SAVENN

@@ -9330,7 +9330,7 @@ static void G_DoEventGame(int const nEventID, bool const allowDrawing = true)
 
 void G_MoveWorld(void)
 {
-    Bassert(mco_running() != co_drawframe);
+    //Bassert(mco_running() != co_drawframe);
 
     double worldTime = timerGetFractionalTicks();
     auto framecnt = g_frameCounter;

@@ -15,7 +15,7 @@
 #define MCO_MALLOC Xmalloc
 #define MCO_FREE Xfree
 
-#include "minicoro.h"
+//#include "minicoro.h"
 
 #define LIBASYNC_IMPLEMENTATION
 #include "libasync_config.h"
