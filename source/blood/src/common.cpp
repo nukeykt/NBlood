@@ -284,14 +284,29 @@ static void Blood_Add_GOG_OUWB_Linux(const char * path)
 }
 #endif
 
+#if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD || defined _WIN32
+static int32_t Blood_Add_FS(char * const buf, size_t const size, size_t const charsWritten)
+{
+    Bsnprintf(buf + charsWritten, size - charsWritten, "/DOS/C/BLOOD");
+    if (addsearchpath(buf) == 0)
+        return 0;
+
+    buf[charsWritten] = '\0';
+    int32_t const addedmain = addsearchpath(buf);
+    Bsnprintf(buf + charsWritten, size - charsWritten, "/addons/Cryptic Passage");
+    addsearchpath(buf);
+    return addedmain;
+}
+#endif
+
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void Blood_AddSteamPaths(const char *basepath)
 {
     char buf[BMAX_PATH];
 
     // Blood: Fresh Supply - Steam
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Blood", basepath);
-    addsearchpath(buf);
+    size_t const charsWritten = Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Blood", basepath);
+    Blood_Add_FS(buf, sizeof(buf), charsWritten);
 
     // Blood: One Unit Whole Blood - Steam
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/One Unit Whole Blood", basepath);
@@ -403,13 +418,8 @@ void G_AddSearchPaths(void)
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1010750)", "InstallLocation", buf, &bufsize))
     {
-        char * const suffix = buf + bufsize - 1;
-        DWORD const remaining = sizeof(buf) - bufsize;
-
-        auto const addedmain = addsearchpath(buf);
-        strncpy(suffix, "/addons/Cryptic Passage", remaining);
-        addsearchpath(buf);
-        if (addedmain == 0)
+        size_t const charsWritten = bufsize - 1;
+        if (Blood_Add_FS(buf, sizeof(buf), charsWritten) == 0)
             return;
     }
 
@@ -417,13 +427,8 @@ void G_AddSearchPaths(void)
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1374469660)", "path", buf, &bufsize))
     {
-        char * const suffix = buf + bufsize - 1;
-        DWORD const remaining = sizeof(buf) - bufsize;
-
-        auto const addedmain = addsearchpath(buf);
-        strncpy(suffix, "/addons/Cryptic Passage", remaining);
-        addsearchpath(buf);
-        if (addedmain == 0)
+        size_t const charsWritten = bufsize - 1;
+        if (Blood_Add_FS(buf, sizeof(buf), charsWritten) == 0)
             return;
     }
 #endif
