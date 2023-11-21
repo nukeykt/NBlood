@@ -440,9 +440,9 @@ int texcache_loadoffsets(void)
 
     while (!scriptfile_eof(script))
     {
-        if (scriptfile_getstring(script, &fname)) break;	// hashed filename
-        if (scriptfile_getnumber(script, &foffset)) break;	// offset in cache
-        if (scriptfile_getnumber(script, &fsize)) break;	// size
+        if (scriptfile_getstring(script, &fname)) goto CLEAN_TEXCACHE;     // hashed filename
+        if (scriptfile_getnumber(script, &foffset)) goto CLEAN_TEXCACHE;   // offset in cache
+        if (scriptfile_getnumber(script, &fsize)) goto CLEAN_TEXCACHE;     // size
 
         int const i = hash_find(&texcache.hashes,fname);
 
@@ -475,6 +475,12 @@ int texcache_loadoffsets(void)
 
     scriptfile_close(script);
     return 0;
+
+CLEAN_TEXCACHE:
+    LOG_F(ERROR, "Corrupted texcache index detected, invalidating texcache files.");
+    scriptfile_close(script);
+    texcache_invalidate();
+    return -2;
 }
 
 // Read from on-disk texcache or its in-memory cache.
