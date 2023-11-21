@@ -296,7 +296,7 @@ static int32_t Blood_Add_FS(char * const buf, size_t const size, size_t const ch
     buf[charsWritten] = '\0';
     int32_t const addedmain = addsearchpath(buf);
     Bsnprintf(buf + charsWritten, size - charsWritten, "/addons/Cryptic Passage");
-    addsearchpath(buf);
+    addsearchpath_user(buf, SEARCHPATH_CRYPTIC);
     return addedmain;
 }
 #endif

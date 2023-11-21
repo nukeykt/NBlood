@@ -548,6 +548,7 @@ enum BLOOD_GLOBALFLAGS {
 
 enum searchpathtypes_t {
     SEARCHPATH_REMOVE = 1<<0,
+    SEARCHPATH_CRYPTIC = 1<<1,
 };
 
 extern char *g_grpNamePtr;
