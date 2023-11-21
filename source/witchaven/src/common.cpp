@@ -476,44 +476,42 @@ void G_AddSearchPaths(void)
 #elif defined (_WIN32)
     char buf[BMAX_PATH] = { 0 };
     DWORD bufsize;
-    bool found = false;
 
     // Witchaven - Steam
     bufsize = sizeof(buf);
-    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1655410)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1655410)", "InstallLocation", buf, &bufsize))
     {
         Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN", buf);
-        addsearchpath(buf);
-        found = true;
+        if (addsearchpath(buf) == 0)
+            return;
     }
 
     // Witchaven II: Blood Vengeance - Steam
     bufsize = sizeof(buf);
-    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1655430)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1655430)", "InstallLocation", buf, &bufsize))
     {
         Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN2", buf);
-        addsearchpath(buf);
-        found = true;
+        if (addsearchpath(buf) == 0)
+            return;
     }
 
     // Witchaven - GOG.com
     bufsize = sizeof(buf);
-    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1315510047)", "path", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1315510047)", "path", buf, &bufsize))
     {
         Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN", buf);
-        addsearchpath(buf);
-        found = true;
+        if (addsearchpath(buf) == 0)
+            return;
     }
 
     // Witchaven II: Blood Vengeance - GOG.com
     bufsize = sizeof(buf);
-    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1073977251)", "path", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1073977251)", "path", buf, &bufsize))
     {
         Bsnprintf(buf, sizeof(buf), "%s/Enhanced/GAME/WHAVEN2", buf);
-        addsearchpath(buf);
-        found = true;
+        if (addsearchpath(buf) == 0)
+            return;
     }
-
 #endif
 #endif
 }
