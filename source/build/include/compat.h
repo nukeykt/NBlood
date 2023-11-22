@@ -7,6 +7,15 @@
 
 #pragma once
 
+#include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef USE_MIMALLOC
+# include "mimalloc.h"
+# include "mimalloc-override.h"
+#endif
+
 #ifdef _WIN32
 # include "windows_inc.h"
 #endif
@@ -451,8 +460,6 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 #ifndef USE_PHYSFS
 #include <stdio.h>
 #endif
-#include <stdlib.h>
-#include <string.h>
 
 #if !(defined _WIN32 && defined __clang__)
 #include <float.h>

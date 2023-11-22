@@ -226,7 +226,7 @@ engine_obj := $(obj)/$(engine)
 
 engine_cflags :=
 
-engine_deps := mimalloc
+engine_deps :=
 
 ifneq (1,$(SDL_TARGET))
     engine_deps += imgui
@@ -234,6 +234,10 @@ endif
 
 ifneq (0,$(USE_PHYSFS))
     engine_deps += physfs
+endif
+
+ifneq (0,$(USE_MIMALLOC))
+    engine_deps += mimalloc
 endif
 
 engine_editor_objs := \

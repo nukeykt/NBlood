@@ -339,7 +339,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\duke3d\rsrc\gameres.rc">
-      <PreprocessorDefinitions >%(PreprocessorDefinitions);POLYMER=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);POLYMER=1</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>

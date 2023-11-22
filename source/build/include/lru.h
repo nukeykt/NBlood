@@ -12,7 +12,6 @@
 #define lru_h__
 
 #include "compat.h"
-#include "mimalloc-override.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -44,9 +43,13 @@ private:
     int m_count;
 
 public:
+#ifdef USE_MIMALLOC
     CircularQueue() { m_items = (T *)mi_calloc(Capacity, sizeof(T)); clear(); }
     ~CircularQueue() { mi_free(m_items); }
-
+#else
+    CircularQueue() { m_items = (T *)std::calloc(Capacity, sizeof(T)); clear(); }
+    ~CircularQueue() { std::free(m_items); }
+#endif
     void clear()
     {
         m_head  = -1;

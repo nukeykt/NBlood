@@ -224,14 +224,13 @@ extern "C" {
     typedef enet_uint32 ENetVersion;
 
     typedef struct _ENetCallbacks {
-        void *(ENET_CALLBACK *malloc) (size_t size);
-        void (ENET_CALLBACK *free) (void *memory);
+        void *(ENET_CALLBACK *enet_malloc) (size_t size);
+        void (ENET_CALLBACK *enet_free) (void *memory);
         void (ENET_CALLBACK *no_memory) (void);
     } ENetCallbacks;
 
     extern void *enet_malloc(size_t);
     extern void enet_free(void *);
-
 // =======================================================================//
 // !
 // ! List
@@ -1216,13 +1215,13 @@ extern "C" {
             return -1;
         }
 
-        if (inits->malloc != NULL || inits->free != NULL) {
-            if (inits->malloc == NULL || inits->free == NULL) {
+        if (inits->enet_malloc != NULL || inits->enet_free != NULL) {
+            if (inits->enet_malloc == NULL || inits->enet_free == NULL) {
                 return -1;
             }
 
-            callbacks.malloc = inits->malloc;
-            callbacks.free   = inits->free;
+            callbacks.enet_malloc = inits->enet_malloc;
+            callbacks.enet_free   = inits->enet_free;
         }
 
         if (inits->no_memory != NULL) {
@@ -1237,7 +1236,7 @@ extern "C" {
     }
 
     void * enet_malloc(size_t size) {
-        void *memory = callbacks.malloc(size);
+        void *memory = callbacks.enet_malloc(size);
 
         if (memory == NULL) {
             callbacks.no_memory();
@@ -1247,7 +1246,7 @@ extern "C" {
     }
 
     void enet_free(void *memory) {
-        callbacks.free(memory);
+        callbacks.enet_free(memory);
     }
 
 // =======================================================================//
