@@ -10128,7 +10128,7 @@ static vec2_t GetCenterPoint(tspriteptr_t tspr) {
 
 static int32_t GetCornerPoints(tspriteptr_t tspr, int32_t (&xx)[4], int32_t (&yy)[4])
 {
-    bool const isOnFloor = (tspr->cstat & 32) != 0;
+    bool const isOnFloor = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) != 0;
 
     if (isOnFloor)
     {
