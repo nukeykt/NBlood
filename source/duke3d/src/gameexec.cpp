@@ -4116,6 +4116,7 @@ breakfor:
 
                     static char const s_KeyboardFormat[] = "[%s]";
                     static char const s_JoystickFormat[] = "(%s)";
+                    static char const s_MouseFormat[] = "<%s>";
                     static char const s_Unbound[] = "UNBOUND";
 
                     auto getkeyname = [&](void)
@@ -4124,6 +4125,17 @@ breakfor:
                         if (keyname != nullptr && keyname[0] != '\0')
                         {
                             snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, keyname);
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    auto getmousename = [&](void)
+                    {
+                        char const *mbutname = CONFIG_GetGameFuncOnMouse(gameFunc);
+                        if (mbutname != nullptr && mbutname[0] != '\0')
+                        {
+                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_MouseFormat, mbutname);
                             return true;
                         }
                         return false;
@@ -4142,12 +4154,12 @@ breakfor:
 
                     if (CONTROL_LastSeenInput == LastSeenInput::Joystick)
                     {
-                        if (getjoyname() || getkeyname()) dispatch();
+                        if (getjoyname() || getmousename() || getkeyname()) dispatch();
                         snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, s_Unbound);
                     }
                     else
                     {
-                        if (getkeyname() || getjoyname()) dispatch();
+                        if (getmousename() || getkeyname() || getjoyname()) dispatch();
                         snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, s_Unbound);
                     }
 
