@@ -761,20 +761,6 @@ void eduke32_exit_return(int) ATTRIBUTE((noreturn));
 # define SCNx32 "x"
 #endif
 
-#if defined EDUKE32_OSX
-# if !defined __x86_64__ && defined __GNUC__
-// PK 20110617: is*() crashes for me in x86 code compiled from 64-bit, and gives link errors on ppc
-//              This hack patches all occurences.
-#  define isdigit(ch) ({ int32_t c__dontuse_=ch; c__dontuse_>='0' && c__dontuse_<='9'; })
-#  define isalpha(ch) ({ int32_t c__dontuse2_=ch; (c__dontuse2_>='A' && c__dontuse2_<='Z') || (c__dontuse2_>='a' && c__dontuse2_<='z'); })
-#  define isalnum(ch2)  ({ int32_t c2__dontuse_=ch2; isalpha(c2__dontuse_) || isdigit(c2__dontuse_); })
-#  if defined __BIG_ENDIAN__
-#   define isspace(ch)  ({ int32_t c__dontuse_=ch; (c__dontuse_==' ' || c__dontuse_=='\t' || c__dontuse_=='\n' || c__dontuse_=='\v' || c__dontuse_=='\f' || c__dontuse_=='\r'); })
-#   define isprint(ch)  ({ int32_t c__dontuse_=ch; (c__dontuse_>=0x20 && c__dontuse_<0x7f); })
-#  endif
-# endif
-#endif
-
 
 ////////// Metaprogramming structs //////////
 
