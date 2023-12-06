@@ -2503,16 +2503,16 @@ static void Menu_PopulateVideoSetup()
     MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
 
 #ifdef USE_OPENGL
+    auto const forbidClassic = (g_gameType & GAMEFLAG_NOCLASSIC) && rendermode != REND_CLASSIC;
 #ifdef POLYMER
-    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER));
-    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOCLASSIC,
-                              rendermode != REND_POLYMER && ((g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)) == (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)
-                              || !(g_gameType & GAMEFLAG_NOCLASSIC)));
-    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOPOLYMER,
-                              rendermode != REND_CLASSIC && ((g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)) == (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER)
-                              || !(g_gameType & GAMEFLAG_NOPOLYMER)));
+    auto const forbidPolymer = (g_gameType & GAMEFLAG_NOPOLYMER) && rendermode != REND_POLYMER;
+    auto const forbidNeither = !(g_gameType & (GAMEFLAG_NOCLASSIC|GAMEFLAG_NOPOLYMER));
+    auto const forbidBoth = forbidClassic && forbidPolymer;
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, forbidClassic || forbidPolymer);
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOCLASSIC, !forbidClassic || forbidNeither || forbidBoth);
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_NOPOLYMER, !forbidPolymer || forbidNeither || forbidBoth);
 #else
-    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, rendermode != REND_CLASSIC && (g_gameType & GAMEFLAG_NOCLASSIC));
+    MenuEntry_HideOnCondition(&ME_VIDEOSETUP_RENDERER_ALL, forbidClassic);
 #endif
 #endif
 }
