@@ -1050,17 +1050,25 @@ char const * CONFIG_GetGameFuncOnKeyboard(int gameFunc)
     return string0[0] == '\0' ? KB_ScanCodeToString(ud.config.KeyboardKeys[gameFunc][1]) : string0;
 }
 
+const char mbtn_to_name[MAXMOUSEBUTTONS][2][32] = {
+    {"Left Mouse",       "Double Left Mouse"},
+    {"Right Mouse",      "Double Right Mouse"},
+    {"Middle Mouse",     "Double Middle Mouse"},
+    {"Mouse 4",   "Double Mouse 4"},
+    {"Wheel Up",   ""},
+    {"Wheel Down", ""},
+    {"Mouse 5",   "Double Mouse 5"},
+    {"Mouse 6",   "Double Mouse 6"},
+    {"Mouse 7",   "Double Mouse 7"},
+    {"Mouse 8",   "Double Mouse 8"},
+};
+
 char const * CONFIG_GetGameFuncOnMouse(int gameFunc)
 {
     for (int j = 0; j < 2; ++j)
-        for (int i = 0; i < joystick.numButtons; ++i)
-            if (ud.config.JoystickFunctions[i][j] == gameFunc)
-                return joyGetName(1, i);
-
-    for (int i = 0; i < joystick.numAxes; ++i)
-        for (int j = 0; j < 2; ++j)
-            if (ud.config.JoystickDigitalFunctions[i][j] == gameFunc)
-                return joyGetName(0, i);
+        for (int i = 0; i < MAXMOUSEBUTTONS; ++i)
+            if (ud.config.MouseFunctions[i][j] == gameFunc)
+                return mbtn_to_name[i][j];
 
     return "";
 }

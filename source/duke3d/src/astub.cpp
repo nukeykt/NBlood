@@ -3894,7 +3894,7 @@ static void TextEntryMode(int16_t startspr)
         return;
     }
 
-    if ((sprite[startspr].cstat&16) == 0)
+    if ((sprite[startspr].cstat & CSTAT_SPRITE_ALIGNMENT) != CSTAT_SPRITE_ALIGNMENT_WALL)
     {
         message("Must point at a wall-aligned text sprite.");
         return;
@@ -10607,7 +10607,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
             if (tspr->sectnum<0)
                 continue;
 
-            const int32_t wallaligned = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT_WALL);
+            const int32_t wallaligned = (tspr->cstat & CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL;
             const int32_t fpal = sector[tspr->sectnum].floorpal;
 
             // 1st rule

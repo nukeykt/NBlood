@@ -4121,7 +4121,7 @@ void                polymer_updatesprite(int32_t snum)
         if (pr_billboardingmode && alignmask == CSTAT_SPRITE_ALIGNMENT_FACING)
         {
             // do surgery on the face tspr to make it look like a wall sprite
-            tspr->cstat |= 16;
+            tspr->cstat |= CSTAT_SPRITE_ALIGNMENT_WALL;
             tspr->ang = (fix16_to_int(viewangle) + 1024) & 2047;
         }
 
