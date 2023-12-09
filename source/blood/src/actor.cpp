@@ -4456,7 +4456,7 @@ void MoveDude(spritetype *pSprite)
             spritetype *pHitSprite = &sprite[nHitSprite];
             XSPRITE *pHitXSprite = NULL;
             // Should be pHitSprite here
-            if (pSprite->extra > 0)
+            if (pSprite->extra > 0 && (unsigned)pHitSprite->extra < kMaxXSprites)
                 pHitXSprite = &xsprite[pHitSprite->extra];
             int nOwner = actSpriteOwnerToSpriteId(pHitSprite);
 
