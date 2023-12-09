@@ -7987,8 +7987,12 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     }
                 }
 
-                dragpoint((int16_t)pData[1], wall[pData[1]].x + vect.x, wall[pData[1]].y + vect.y, 0);
-                dragpoint((int16_t)pData[2], wall[pData[2]].x + vect.x, wall[pData[2]].y + vect.y, 0);
+                size_t const w1 = pData[1];
+                if (w1 < MAXWALLS)
+                    dragpoint(w1, wall[w1].x + vect.x, wall[w1].y + vect.y, 0);
+                size_t const w2 = pData[2];
+                if (w2 < MAXWALLS)
+                    dragpoint(w2, wall[w2].x + vect.x, wall[w2].y + vect.y, 0);
 
                 for (bssize_t TRAVERSE_CONNECT(playerNum))
                 {
