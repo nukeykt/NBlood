@@ -193,6 +193,11 @@ char * levelGetTitle(void)
     char *pTitle = gEpisodeInfo[nEpisode].levelsInfo[nLevel].Title;
     if (*pTitle == 0)
         return NULL;
+    for (int i = Bstrlen(pTitle)-1; i > 0; i--)
+    {
+        if ((pTitle[i] == '/') || (pTitle[i] == '\\'))
+            return &pTitle[i+1];
+    }
     return pTitle;
 }
 
