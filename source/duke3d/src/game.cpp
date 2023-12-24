@@ -7104,7 +7104,6 @@ MAIN_LOOP_RESTART:
             g_restartFrameRoutine = 0;
         }
 
-        bool gameUpdate = false;
         double gameUpdateStartTime = timerGetFractionalTicks();
         auto framecnt = g_frameCounter;
 
@@ -7112,16 +7111,11 @@ MAIN_LOOP_RESTART:
         {
             do
             {
-                if (g_networkMode != NET_DEDICATED_SERVER && (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0)
-                {
-                    if (!g_frameJustDrawn)
-                        break;
-                    g_frameJustDrawn = false;
-                    dukeFillInputForTic();
-                }
-
                 do
                 {
+                    if (g_frameJustDrawn && g_networkMode != NET_DEDICATED_SERVER && (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0)
+                        dukeFillInputForTic();
+
                     if (ready2send == 0)
                         break;
 
@@ -7130,17 +7124,18 @@ MAIN_LOOP_RESTART:
                     if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1))
                         && (myplayer.gm & MODE_GAME))
                     {
+                        g_frameJustDrawn = false;
                         Net_GetPackets();
                         G_DoMoveThings();
                     }
+
                 }
                 while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int32_t)(totalclock - ototalclock) >= TICSPERFRAME && !g_saveRequested);
 
-                gameUpdate = true;
                 g_gameUpdateTime = timerGetFractionalTicks() - gameUpdateStartTime;
 
                 if (g_frameCounter != framecnt)
-                    g_gameUpdateTime -= (double)g_lastFrameDuration * 1000.0 / (double)timerGetNanoTickRate();
+                    g_gameUpdateTime -= (double)g_lastFrameDuration * (g_frameCounter - framecnt) * 1000.0 / (double)timerGetNanoTickRate();
 
                 if (g_gameUpdateAvgTime <= 0.0)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
@@ -7149,9 +7144,9 @@ MAIN_LOOP_RESTART:
                 = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
             } while (0);
 
-            if (gameUpdate)
-                g_gameUpdateAndDrawTime = g_gameUpdateTime + (double)g_lastFrameDuration * 1000.0 / (double)timerGetNanoTickRate();
         }
+
+        g_gameUpdateAndDrawTime = g_gameUpdateTime + (double)g_lastFrameDuration * 1000.0 / (double)timerGetNanoTickRate();
 
         G_DoCheats();
 

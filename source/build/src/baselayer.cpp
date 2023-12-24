@@ -885,26 +885,24 @@ void maybe_redirect_outputs(void)
 
 int engineFPSLimit(bool const throttle)
 {
-    static uint64_t nextFrameTicks;
-    static uint64_t savedFrameDelay;
+    static uint64_t lastFrameTicks;
+    static uint64_t lastDelay;
 
     if (r_maxfps == -2)
         return true;
 
     g_frameDelay = calcFrameDelay(!throttle || ((unsigned)(r_maxfps-1) < (unsigned)refreshfreq) ? r_maxfps : -1);
 
+    if (g_frameDelay != lastDelay)
+        lastFrameTicks = timerGetNanoTicks(), lastDelay = g_frameDelay;
+
     uint64_t frameTicks = timerGetNanoTicks();
 
-    if (g_frameDelay != savedFrameDelay)
+    if (frameTicks - lastFrameTicks >= g_frameDelay)
     {
-        savedFrameDelay = g_frameDelay;
-        nextFrameTicks  = frameTicks + g_frameDelay;
-    }
-
-    if (frameTicks >= nextFrameTicks)
-    {
-        while (frameTicks >= nextFrameTicks)
-            nextFrameTicks += g_frameDelay;
+        do
+            lastFrameTicks += g_frameDelay;
+        while (frameTicks - lastFrameTicks >= g_frameDelay);
 
         return true;
     }

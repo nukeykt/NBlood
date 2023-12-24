@@ -6434,6 +6434,8 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
         int        playerNum = A_FindPlayer(pSprite, &playerDist);
         auto const pPlayer   = g_player[playerNum].ps;
 
+        dukeMaybeDrawFrame();
+
         if (VM_OnEvent(EVENT_MOVEEFFECTORS, spriteNum, playerNum, playerDist, 0))
         {
             spriteNum = nextSprite;
@@ -9382,8 +9384,8 @@ void G_MoveWorld(void)
 
     actorsTime = timerGetFractionalTicks() - actorsTime;
 
-    if (framecnt2 != g_frameCounter)
-        actorsTime -= (double)g_lastFrameDuration2 * 1000.0 / (double)timerGetNanoTickRate();
+    if (g_frameCounter != framecnt2)
+        actorsTime -= (double)g_lastFrameDuration2 * (g_frameCounter - framecnt2) * 1000.0 / (double)timerGetNanoTickRate();
 
     g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*actorsTime;
 
@@ -9403,7 +9405,6 @@ void G_MoveWorld(void)
         G_MoveStandables();  //ST 6
     }
 
-
     VM_OnEvent(EVENT_WORLD);
 
     G_DoEventGame(EVENT_GAME);
@@ -9419,7 +9420,7 @@ void G_MoveWorld(void)
     worldTime = timerGetFractionalTicks() - worldTime;
 
     if (g_frameCounter != framecnt)
-        worldTime -= (double)g_lastFrameDuration2 * 1000.0 / (double)timerGetNanoTickRate();
+        worldTime -= (double)g_lastFrameDuration2 * (g_frameCounter - framecnt) * 1000.0 / (double)timerGetNanoTickRate();
 
     g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*worldTime;
 }

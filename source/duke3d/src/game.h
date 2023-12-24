@@ -311,7 +311,7 @@ extern int32_t r_pr_defaultlights;
 extern bool g_frameJustDrawn;
 extern uint64_t g_lastFrameStartTime;
 extern uint64_t g_lastFrameEndTime;
-extern uint64_t g_lastFrameDuration;
+extern uint64_t g_lastFrameDuration, g_lastFrameDuration2;
 extern uint32_t g_frameCounter;
 
 // minicoro.h says to make sure this isn't a multiple of 64K
@@ -327,9 +327,12 @@ static FORCE_INLINE int dukeMaybeDrawFrame(void)
 {
     // g_frameJustDrawn is set by G_DrawFrame() (and thus by the coroutine)
     // it isn't cleared until the next game tic is processed.
-
-    if (g_vm_preempt && !g_saveRequested && !g_frameJustDrawn && timerGetNanoTicks() >= g_lastFrameEndTime + (g_lastFrameEndTime - g_lastFrameStartTime - g_lastFrameDuration) && engineFPSLimit())
+    auto ticks = timerGetNanoTicks();
+    if (g_vm_preempt && !g_saveRequested && mco_running() != co_drawframe
+        && (ticks - g_lastFrameStartTime) >= g_frameDelay && ticks - g_lastFrameStartTime - g_lastFrameDuration2 < g_frameDelay
+        && !g_frameJustDrawn && engineFPSLimit())
     {
+        //LOG_F(INFO, "VM drawframe preemption");
         g_switchRoutine(co_drawframe);
         return 1;
     }
