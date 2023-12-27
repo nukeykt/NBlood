@@ -486,6 +486,11 @@ void ctrlGetInput(void)
     {
         input.strafe -= info.dx>>1;
         input.forward -= info.dz>>1;
+        if (!run) // when autorun is off/run is not held, reduce overall speed for controller
+        {
+            input.strafe = clamp(input.strafe, -256, 256);
+            input.forward = clamp(input.forward, -256, 256);
+        }
         if (info.mousey == 0)
         {
             if (gMouseAim)
