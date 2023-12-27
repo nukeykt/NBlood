@@ -742,7 +742,7 @@ int32_t initsystem(void)
 #endif
 
 #ifndef _WIN32
-        const char *drvname = SDL_GetVideoDriver(0);
+        const char *drvname = SDL_GetCurrentVideoDriver();
 
         if (drvname)
             LOG_F(INFO, "Using '%s' video driver.", drvname);
