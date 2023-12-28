@@ -889,6 +889,8 @@ void LocalKeys(void)
     if (gDoQuickSave)
     {
         keyFlushScans();
+        CONTROL_ClearButton(gamefunc_Quick_Save);
+        CONTROL_ClearButton(gamefunc_Quick_Load);
         switch (gDoQuickSave)
         {
         case 1:
@@ -900,6 +902,20 @@ void LocalKeys(void)
         }
         gDoQuickSave = 0;
         return;
+    }
+    if (BUTTON(gamefunc_Quick_Save))
+    {
+        keyFlushScans();
+        CONTROL_ClearButton(gamefunc_Quick_Save);
+        if (gGameOptions.nGameType == kGameTypeSinglePlayer)
+            return DoQuickSave();
+    }
+    if (BUTTON(gamefunc_Quick_Load))
+    {
+        keyFlushScans();
+        CONTROL_ClearButton(gamefunc_Quick_Load);
+        if (gGameOptions.nGameType == kGameTypeSinglePlayer)
+            return DoQuickLoad();
     }
     char key;
     if ((key = keyGetScan()) != 0)
