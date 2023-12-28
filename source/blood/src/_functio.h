@@ -94,6 +94,8 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "ProximityBombs",
    "RemoteBombs",
    "Show_Console",
+   "Quick_Save",
+   "Quick_Load",
    };
 
 #ifdef __SETUP__
@@ -155,6 +157,8 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "P", "",
    "R", "",
    "`", "",
+   "F6", "",
+   "F9", "",
    };
 
 const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
@@ -214,6 +218,8 @@ const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "P", "",
    "R", "",
    "`", "",
+   "F6", "",
+   "F9", "",
    };
 
 static const char * mousedefaults[MAXMOUSEBUTTONS] =
