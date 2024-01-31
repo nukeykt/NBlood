@@ -759,7 +759,7 @@ void WeaponLower(PLAYER *pPlayer)
         }
         break;
     case kWeaponShotgun:
-        if (powerupCheck(pPlayer, kPwUpTwoGuns))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && (VanillaMode() || (gInfiniteAmmo || CheckAmmo(pPlayer, 2, 4))))
             StartQAV(pPlayer, 63, -1, 0);
         else
             StartQAV(pPlayer, 58, -1, 0);
@@ -786,7 +786,7 @@ void WeaponLower(PLAYER *pPlayer)
             StartQAV(pPlayer, 81, -1, 0);
         break;
     case kWeaponNapalm:
-        if (powerupCheck(pPlayer, kPwUpTwoGuns))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && (VanillaMode() || (gInfiniteAmmo || CheckAmmo(pPlayer, 4, 2))))
             StartQAV(pPlayer, 124, -1, 0);
         else
             StartQAV(pPlayer, 92, -1, 0);
@@ -996,7 +996,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
         switch (vb)
         {
         case 3:
-            if (powerupCheck(pPlayer, kPwUpTwoGuns) && (gInfiniteAmmo || CheckAmmo(pPlayer,4, 4)))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && (gInfiniteAmmo || CheckAmmo(pPlayer, 4, VanillaMode() ? 4 : 2)))
                 pPlayer->weaponQav = 121;
             else
                 pPlayer->weaponQav = 90;
@@ -2406,7 +2406,7 @@ void WeaponProcess(PLAYER *pPlayer) {
             }
             break;
         case kWeaponNapalm:
-            if (powerupCheck(pPlayer, kPwUpTwoGuns))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && (VanillaMode() || (gInfiniteAmmo || CheckAmmo(pPlayer, 4, 2))))
                 StartQAV(pPlayer, 122, nClientFireNapalm, 0);
             else
                 StartQAV(pPlayer, 91, nClientFireNapalm, 0);
