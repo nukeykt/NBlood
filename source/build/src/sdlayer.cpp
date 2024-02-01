@@ -1846,6 +1846,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
               { SDL_GL_STENCIL_SIZE, 1 },
               { SDL_GL_ACCELERATED_VISUAL, 1 },
+              { SDL_GL_DEPTH_SIZE, 24 },
           };
 
         SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
