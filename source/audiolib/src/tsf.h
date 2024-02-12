@@ -124,6 +124,17 @@ enum TSFOutputMode
 	TSF_MONO
 };
 
+// Supported output modes by the render methods
+enum TSFInterpolateMode
+{
+	// Holds sample until next sample
+	TSF_INTERP_NEAREST,
+	// Linear interpolation
+	TSF_INTERP_LINEAR,
+	// Cubic interpolation
+	TSF_INTERP_CUBIC
+};
+
 // Thread safety:
 //
 // 1. Rendering / voices:
@@ -151,7 +162,7 @@ enum TSFOutputMode
 //   outputmode: if mono or stereo and how stereo channel data is ordered
 //   samplerate: the number of samples per second (output frequency)
 //   global_gain_db: volume gain in decibels (>0 means higher, <0 means lower)
-TSFDEF void tsf_set_output(tsf* f, enum TSFOutputMode outputmode, int samplerate, float global_gain_db CPP_DEFAULT0);
+TSFDEF void tsf_set_output(tsf* f, enum TSFOutputMode outputmode, enum TSFInterpolateMode interpolatemode, int samplerate, float global_gain_db CPP_DEFAULT0);
 
 // Set the global gain as a volume factor
 //   global_gain: the desired volume where 1.0 is 100%
@@ -338,6 +349,7 @@ struct tsf
 	unsigned int voicePlayIndex;
 
 	enum TSFOutputMode outputmode;
+	enum TSFInterpolateMode interpolatemode;
 	float outSampleRate;
 	float globalGainDB;
 	int* refCount;
@@ -1089,6 +1101,30 @@ static void tsf_voice_calcpitchratio(struct tsf_voice* v, float pitchShift, floa
 	v->pitchOutputFactor = v->region->sample_rate / (tsf_timecents2Secsd(v->region->pitch_keycenter * 100.0) * outSampleRate);
 }
 
+static float tsf_voice_interpolate(float* input, unsigned int *pos, float alpha, enum TSFInterpolateMode interpolatemode)
+{
+	// Interpolation methods based off https://paulbourke.net/miscellaneous/interpolation/
+	switch (interpolatemode)
+	{
+		case TSF_INTERP_NEAREST:
+			return input[pos[0]];
+		case TSF_INTERP_LINEAR:
+			return (input[pos[0]] * (1.f - alpha) + input[pos[1]] * alpha);
+		case TSF_INTERP_CUBIC:
+		{
+			const float pointa = input[pos[0]], pointb = input[pos[1]], pointc = input[pos[2]], pointd = input[pos[3]];
+			float a0, a1, a2, a3, alpha2;
+
+			alpha2 = alpha * alpha;
+			a0 = -0.5f * pointa + 1.5f * pointb - 1.5f * pointc + 0.5f * pointd;
+			a1 = pointa - 2.5f * pointb + 2.f * pointc - 0.5f * pointd;
+			a2 = -0.5f * pointa + 0.5f * pointc;
+			a3 = pointb;
+			return (a0 * alpha * alpha2 + a1 * alpha2 + a2 * alpha + a3);
+		}
+	}
+}
+
 static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, int numSamples)
 {
 	struct tsf_region* region = v->region;
@@ -1127,8 +1163,9 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 
 	while (numSamples)
 	{
-		float gainMono, gainLeft, gainRight;
+		float gainMono, gainLeft, gainRight, alpha;
 		int blockSamples = (numSamples > TSF_RENDER_EFFECTSAMPLEBLOCK ? TSF_RENDER_EFFECTSAMPLEBLOCK : numSamples);
+		unsigned int pos[4];
 		numSamples -= blockSamples;
 
 		if (dynamicLowpass)
@@ -1161,10 +1198,18 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 				gainLeft = gainMono * v->panFactorLeft, gainRight = gainMono * v->panFactorRight;
 				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
 				{
-					unsigned int pos = (unsigned int)tmpSourceSamplePosition, nextPos = (pos >= tmpLoopEnd && isLooping ? tmpLoopStart : pos + 1);
+					// Get samples.
+					pos[0] = (unsigned int)tmpSourceSamplePosition;
+					if (f->interpolatemode != TSF_INTERP_NEAREST)
+					{
+						alpha = (float)(tmpSourceSamplePosition - pos[0]);
+						pos[1] = (pos[0] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[0] + 1);
+						if (f->interpolatemode == TSF_INTERP_CUBIC)
+							pos[2] = (pos[1] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[1] + 1), pos[3] = (pos[2] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[2] + 1);
+					}
 
-					// Simple linear interpolation.
-					float alpha = (float)(tmpSourceSamplePosition - pos), val = (input[pos] * (1.0f - alpha) + input[nextPos] * alpha);
+					// Interpolation.
+					float val = tsf_voice_interpolate(input, pos, alpha, f->interpolatemode);
 
 					// Low-pass filter.
 					if (tmpLowpass.active) val = tsf_voice_lowpass_process(&tmpLowpass, val);
@@ -1182,10 +1227,18 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 				gainLeft = gainMono * v->panFactorLeft, gainRight = gainMono * v->panFactorRight;
 				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
 				{
-					unsigned int pos = (unsigned int)tmpSourceSamplePosition, nextPos = (pos >= tmpLoopEnd && isLooping ? tmpLoopStart : pos + 1);
+					// Get samples.
+					pos[0] = (unsigned int)tmpSourceSamplePosition;
+					if (f->interpolatemode != TSF_INTERP_NEAREST)
+					{
+						alpha = (float)(tmpSourceSamplePosition - pos[0]);
+						pos[1] = (pos[0] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[0] + 1);
+						if (f->interpolatemode == TSF_INTERP_CUBIC)
+							pos[2] = (pos[1] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[1] + 1), pos[3] = (pos[2] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[2] + 1);
+					}
 
-					// Simple linear interpolation.
-					float alpha = (float)(tmpSourceSamplePosition - pos), val = (input[pos] * (1.0f - alpha) + input[nextPos] * alpha);
+					// Interpolation.
+					float val = tsf_voice_interpolate(input, pos, alpha, f->interpolatemode);
 
 					// Low-pass filter.
 					if (tmpLowpass.active) val = tsf_voice_lowpass_process(&tmpLowpass, val);
@@ -1202,10 +1255,18 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 			case TSF_MONO:
 				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
 				{
-					unsigned int pos = (unsigned int)tmpSourceSamplePosition, nextPos = (pos >= tmpLoopEnd && isLooping ? tmpLoopStart : pos + 1);
+					// Get samples.
+					pos[0] = (unsigned int)tmpSourceSamplePosition;
+					if (f->interpolatemode != TSF_INTERP_NEAREST)
+					{
+						alpha = (float)(tmpSourceSamplePosition - pos[0]);
+						pos[1] = (pos[0] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[0] + 1);
+						if (f->interpolatemode == TSF_INTERP_CUBIC)
+							pos[2] = (pos[1] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[1] + 1), pos[3] = (pos[2] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[2] + 1);
+					}
 
-					// Simple linear interpolation.
-					float alpha = (float)(tmpSourceSamplePosition - pos), val = (input[pos] * (1.0f - alpha) + input[nextPos] * alpha);
+					// Interpolation.
+					float val = tsf_voice_interpolate(input, pos, alpha, f->interpolatemode);
 
 					// Low-pass filter.
 					if (tmpLowpass.active) val = tsf_voice_lowpass_process(&tmpLowpass, val);
@@ -1389,9 +1450,10 @@ TSFDEF const char* tsf_bank_get_presetname(const tsf* f, int bank, int preset_nu
 	return tsf_get_presetname(f, tsf_get_presetindex(f, bank, preset_number));
 }
 
-TSFDEF void tsf_set_output(tsf* f, enum TSFOutputMode outputmode, int samplerate, float global_gain_db)
+TSFDEF void tsf_set_output(tsf* f, enum TSFOutputMode outputmode, enum TSFInterpolateMode interpolatemode, int samplerate, float global_gain_db)
 {
 	f->outputmode = outputmode;
+	f->interpolatemode = interpolatemode;
 	f->outSampleRate = (float)(samplerate >= 1 ? samplerate : 44100.0f);
 	f->globalGainDB = global_gain_db;
 }
