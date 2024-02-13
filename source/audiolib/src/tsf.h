@@ -1107,9 +1107,9 @@ static float tsf_voice_interpolate(float* input, unsigned int *pos, float alpha,
 	switch (interpolatemode)
 	{
 		case TSF_INTERP_NEAREST:
-			return input[pos[0]];
+			return input[pos[1]];
 		case TSF_INTERP_LINEAR:
-			return (input[pos[0]] * (1.f - alpha) + input[pos[1]] * alpha);
+			return (input[pos[1]] * (1.f - alpha) + input[pos[2]] * alpha);
 		case TSF_INTERP_CUBIC:
 		{
 			const float pointa = input[pos[0]], pointb = input[pos[1]], pointc = input[pos[2]], pointd = input[pos[3]];
@@ -1199,13 +1199,13 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
 				{
 					// Get samples.
-					pos[0] = (unsigned int)tmpSourceSamplePosition;
+					pos[1] = (unsigned int)tmpSourceSamplePosition;
 					if (f->interpolatemode != TSF_INTERP_NEAREST)
 					{
-						alpha = (float)(tmpSourceSamplePosition - pos[0]);
-						pos[1] = (pos[0] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[0] + 1);
+						alpha = (float)(tmpSourceSamplePosition - pos[1]);
+						pos[2] = isLooping ? (pos[1] >= tmpLoopEnd ? tmpLoopStart : pos[1] + 1) : (pos[1] + 1 == region->end ? pos[1] : pos[1] + 1);
 						if (f->interpolatemode == TSF_INTERP_CUBIC)
-							pos[2] = (pos[1] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[1] + 1), pos[3] = (pos[2] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[2] + 1);
+							pos[0] = (pos[1] == tmpLoopStart && isLooping ? tmpLoopEnd : pos[1] == 0 ? 0 : pos[1] - 1), pos[3] = isLooping ? (pos[2] >= tmpLoopEnd ? tmpLoopStart : pos[2] + 1) : (pos[2] + 1 == region->end ? pos[2] : pos[2] + 1);
 					}
 
 					// Interpolation.
@@ -1228,13 +1228,13 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
 				{
 					// Get samples.
-					pos[0] = (unsigned int)tmpSourceSamplePosition;
+					pos[1] = (unsigned int)tmpSourceSamplePosition;
 					if (f->interpolatemode != TSF_INTERP_NEAREST)
 					{
-						alpha = (float)(tmpSourceSamplePosition - pos[0]);
-						pos[1] = (pos[0] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[0] + 1);
+						alpha = (float)(tmpSourceSamplePosition - pos[1]);
+						pos[2] = isLooping ? (pos[1] >= tmpLoopEnd ? tmpLoopStart : pos[1] + 1) : (pos[1] + 1 == region->end ? pos[1] : pos[1] + 1);
 						if (f->interpolatemode == TSF_INTERP_CUBIC)
-							pos[2] = (pos[1] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[1] + 1), pos[3] = (pos[2] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[2] + 1);
+							pos[0] = (pos[1] == tmpLoopStart && isLooping ? tmpLoopEnd : pos[1] == 0 ? 0 : pos[1] - 1), pos[3] = isLooping ? (pos[2] >= tmpLoopEnd ? tmpLoopStart : pos[2] + 1) : (pos[2] + 1 == region->end ? pos[2] : pos[2] + 1);
 					}
 
 					// Interpolation.
@@ -1256,13 +1256,13 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
 				{
 					// Get samples.
-					pos[0] = (unsigned int)tmpSourceSamplePosition;
+					pos[1] = (unsigned int)tmpSourceSamplePosition;
 					if (f->interpolatemode != TSF_INTERP_NEAREST)
 					{
-						alpha = (float)(tmpSourceSamplePosition - pos[0]);
-						pos[1] = (pos[0] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[0] + 1);
+						alpha = (float)(tmpSourceSamplePosition - pos[1]);
+						pos[2] = isLooping ? (pos[1] >= tmpLoopEnd ? tmpLoopStart : pos[1] + 1) : (pos[1] + 1 == region->end ? pos[1] : pos[1] + 1);
 						if (f->interpolatemode == TSF_INTERP_CUBIC)
-							pos[2] = (pos[1] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[1] + 1), pos[3] = (pos[2] >= tmpLoopEnd && isLooping ? tmpLoopStart : pos[2] + 1);
+							pos[0] = (pos[1] == tmpLoopStart && isLooping ? tmpLoopEnd : pos[1] == 0 ? 0 : pos[1] - 1), pos[3] = isLooping ? (pos[2] >= tmpLoopEnd ? tmpLoopStart : pos[2] + 1) : (pos[2] + 1 == region->end ? pos[2] : pos[2] + 1);
 					}
 
 					// Interpolation.
