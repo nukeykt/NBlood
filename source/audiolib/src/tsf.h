@@ -1106,8 +1106,6 @@ static float tsf_voice_interpolate(float* input, unsigned int *pos, float alpha,
 	// Interpolation methods based off https://paulbourke.net/miscellaneous/interpolation/
 	switch (interpolatemode)
 	{
-		case TSF_INTERP_NEAREST:
-			return input[pos[1]];
 		case TSF_INTERP_LINEAR:
 			return (input[pos[1]] * (1.f - alpha) + input[pos[2]] * alpha);
 		case TSF_INTERP_CUBIC:
@@ -1122,6 +1120,9 @@ static float tsf_voice_interpolate(float* input, unsigned int *pos, float alpha,
 			a3 = pointb;
 			return (a0 * alpha * alpha2 + a1 * alpha2 + a2 * alpha + a3);
 		}
+		case TSF_INTERP_NEAREST:
+		default:
+			return input[pos[1]];
 	}
 }
 
