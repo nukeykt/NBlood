@@ -1138,9 +1138,10 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 	TSF_BOOL updateModLFO = (v->modlfo.delta && (region->modLfoToPitch || region->modLfoToFilterFc || region->modLfoToVolume));
 	TSF_BOOL updateVibLFO = (v->viblfo.delta && (region->vibLfoToPitch));
 	TSF_BOOL isLooping    = (v->loopStart < v->loopEnd);
-	unsigned int tmpLoopStart = v->loopStart, tmpLoopEnd = v->loopEnd;
+	unsigned int tmpLoopStart = v->loopStart, tmpLoopEnd = v->loopEnd, pos[4] = {0};
 	double tmpSampleEndDbl = (double)region->end, tmpLoopEndDbl = (double)tmpLoopEnd + 1.0;
 	double tmpSourceSamplePosition = v->sourceSamplePosition;
+	float alpha           = 0;
 	struct tsf_voice_lowpass tmpLowpass = v->lowpass;
 
 	TSF_BOOL dynamicLowpass = (region->modLfoToFilterFc || region->modEnvToFilterFc);
@@ -1164,9 +1165,8 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
 
 	while (numSamples)
 	{
-		float gainMono, gainLeft, gainRight, alpha;
+		float gainMono, gainLeft, gainRight;
 		int blockSamples = (numSamples > TSF_RENDER_EFFECTSAMPLEBLOCK ? TSF_RENDER_EFFECTSAMPLEBLOCK : numSamples);
-		unsigned int pos[4];
 		numSamples -= blockSamples;
 
 		if (dynamicLowpass)
