@@ -447,16 +447,19 @@ void CGameMessageMgr::Display(void)
 
 void CGameMessageMgr::Clear(void)
 {
+#if 0 // we have the CPU cycles with current-day hardware to delete every message now, don't use this old method
     if (VanillaMode())
     {
         messagesIndex = nextMessagesIndex = numberOfDisplayedMessages = 0;
     }
     else
+#endif
     {
         for (int i = 0; i < kMessageLogSize; i++)
         {
             messageStruct* pMessage = &messages[i];
             pMessage->deleted = true;
+            pMessage->lastTickWhenVisible = 0;
         }
     }
 }
