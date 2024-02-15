@@ -246,7 +246,7 @@ struct DAMAGEINFO {
     int at10[3];
 };
 
-DAMAGEINFO damageInfo[7] = {
+DAMAGEINFO damageInfo[kDamageMax] = {
     { -1, 731, 732, 733, 710, 710, 710 },
     { 1, 742, 743, 744, 711, 711, 711 },
     { 0, 731, 732, 733, 712, 712, 712 },
