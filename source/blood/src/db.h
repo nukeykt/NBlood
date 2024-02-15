@@ -32,7 +32,7 @@ extern uint8_t gModernMap;
 
 
 
-// by NoOne: functions to quckly check range of specifical arrays
+// by NoOne: functions to quickly check range of specific arrays
 inline bool xspriRangeIsFine(int nXindex) {
     return (nXindex > 0 && nXindex < kMaxXSprites);
 }
