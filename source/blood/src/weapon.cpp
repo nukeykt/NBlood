@@ -1789,7 +1789,7 @@ char WeaponFindLoaded(PLAYER *pPlayer, int *a2)
     if (weapon == kWeaponPitchfork)
     {
         int vc = 0;
-        for (int i = 0; i < 14; i++)
+        for (int i = 0; i < kWeaponMax; i++)
         {
             int weapon = pPlayer->weaponOrder[vc][i];
             if (pPlayer->hasWeapon[weapon])
