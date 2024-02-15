@@ -712,10 +712,10 @@ void WeaponLower(PLAYER *pPlayer)
         switch (prevState)
         {
         case 1:
-            if (!VanillaMode() && (pPlayer->input.newWeapon == kWeaponSprayCan)) // do not put away lighter after TNT is thrown if while throwing the weapon was switched already to spray
+            if (!VanillaMode() && (pPlayer->input.newWeapon == kWeaponSprayCan)) // do not put away lighter if switched to spray can
             {
                 pPlayer->weaponState = 2;
-                StartQAV(pPlayer, 17, -1, 0);
+                StartQAV(pPlayer, 11, -1, 0);
                 WeaponRaise(pPlayer);
                 return;
             }
