@@ -673,7 +673,7 @@ void playerStart(int nPlayer, int bNewLevel)
     ZONE* pStartZone = NULL;
 
     // normal start position
-    if (gGameOptions.nGameType <= 1)
+    if (gGameOptions.nGameType <= kGameTypeCoop)
         pStartZone = &gStartZone[nPlayer];
 
     #ifdef NOONE_EXTENSIONS
