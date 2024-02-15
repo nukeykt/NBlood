@@ -4058,7 +4058,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                 case kDudeBurningZombieAxe:
                 case kDudeBurningZombieButcher:
                     // This does not make sense
-                    pXSprite->burnTime = ClipLow(pXSprite->burnTime-4, 0);
+                    pXSprite->burnTime = ClipLow(pXSprite->burnTime-kTicsPerFrame, 0);
                     actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, kDamageBurn, 8);
                     break;
             }
@@ -5338,7 +5338,7 @@ void actProcessSprites(void)
 
             if (pXSprite->burnTime > 0)
             {
-                pXSprite->burnTime = ClipLow(pXSprite->burnTime-4,0);
+                pXSprite->burnTime = ClipLow(pXSprite->burnTime-kTicsPerFrame,0);
                 actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, kDamageBurn, 8);
             }
                                        
@@ -5716,14 +5716,14 @@ void actProcessSprites(void)
             // do not remove explosion.
             // can be useful when designer wants put explosion
             // generator in map manually via sprite statnum 2.
-            pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
-            pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
-            pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
+            pXSprite->data1 = ClipLow(pXSprite->data1 - kTicsPerFrame, 0);
+            pXSprite->data2 = ClipLow(pXSprite->data2 - kTicsPerFrame, 0);
+            pXSprite->data3 = ClipLow(pXSprite->data3 - kTicsPerFrame, 0);
         }
         #else
-        pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
-        pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
-        pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
+        pXSprite->data1 = ClipLow(pXSprite->data1 - kTicsPerFrame, 0);
+        pXSprite->data2 = ClipLow(pXSprite->data2 - kTicsPerFrame, 0);
+        pXSprite->data3 = ClipLow(pXSprite->data3 - kTicsPerFrame, 0);
         #endif
 
         if (pXSprite->data1 == 0 && pXSprite->data2 == 0 && pXSprite->data3 == 0 && seqGetStatus(3, nXSprite) < 0)
@@ -5742,7 +5742,7 @@ void actProcessSprites(void)
         XSPRITE *pXSprite = &xsprite[nXSprite];
         switch (pSprite->type) {
         case kTrapSawCircular:
-            pXSprite->data2 = ClipLow(pXSprite->data2-4, 0);
+            pXSprite->data2 = ClipLow(pXSprite->data2-kTicsPerFrame, 0);
             break;
         case kTrapFlame:
             if (pXSprite->state && seqGetStatus(3, nXSprite) < 0) {
@@ -5799,7 +5799,7 @@ void actProcessSprites(void)
                     actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, kDamageBurn, 8);
                     break;
                 default:
-                    pXSprite->burnTime = ClipLow(pXSprite->burnTime-4, 0);
+                    pXSprite->burnTime = ClipLow(pXSprite->burnTime-kTicsPerFrame, 0);
                     actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, kDamageBurn, 8);
                     break;
                 }
@@ -5845,7 +5845,7 @@ void actProcessSprites(void)
                     if (bDivingSuit || pPlayer->godMode)
                         pPlayer->underwaterTime = 1200;
                     else
-                        pPlayer->underwaterTime = ClipLow(pPlayer->underwaterTime-4, 0);
+                        pPlayer->underwaterTime = ClipLow(pPlayer->underwaterTime-kTicsPerFrame, 0);
                     if (pPlayer->underwaterTime < 1080 && packCheckItem(pPlayer, kPackDivingSuit) && !bDivingSuit)
                         packUseItem(pPlayer, kPackDivingSuit);
                     if (!pPlayer->underwaterTime)
@@ -5858,7 +5858,7 @@ void actProcessSprites(void)
                         pPlayer->chokeEffect = 0;
                     if (xvel[nSprite] || yvel[nSprite])
                         sfxPlay3DSound(pSprite, 709, 100, 2);
-                    pPlayer->bubbleTime = ClipLow(pPlayer->bubbleTime-4, 0);
+                    pPlayer->bubbleTime = ClipLow(pPlayer->bubbleTime-kTicsPerFrame, 0);
                 }
                 else if (gGameOptions.nGameType == kGameTypeSinglePlayer)
                 {

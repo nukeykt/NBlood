@@ -166,7 +166,7 @@ void fxZombieBloodSpurt(int nSprite) // 5
     if (pXSprite->data1 > 0)
     {
         evPost(nSprite, 3, 4, kCallbackFXZombieSpurt);
-        pXSprite->data1 -= 4;
+        pXSprite->data1 -= kTicsPerFrame;
     }
     else if (pXSprite->data2 > 0)
     {

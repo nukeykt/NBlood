@@ -1390,7 +1390,7 @@ void aiProcessDudes(void)
 
         int nXSprite = pSprite->extra;
         XSPRITE *pXSprite = &xsprite[nXSprite];
-        pXSprite->stateTimer = ClipLow(pXSprite->stateTimer-4, 0);
+        pXSprite->stateTimer = ClipLow(pXSprite->stateTimer-kTicsPerFrame, 0);
 
         switch (pSprite->type)
         {
