@@ -500,6 +500,8 @@ void WeaponRaise(PLAYER *pPlayer)
     case kWeaponTNT:
         if (gInfiniteAmmo || checkAmmo2(pPlayer, 5, 1))
         {
+            if ((pPlayer->weaponState == 2) && (prevWeapon == kWeaponNone) && !VanillaMode()) // if quickly switching from tnt to spray can and back, don't put away lighter
+                prevWeapon = kWeaponSprayCan;
             pPlayer->weaponState = 3;
             if (prevWeapon == kWeaponSprayCan)
                 StartQAV(pPlayer, 16, -1, 0);
