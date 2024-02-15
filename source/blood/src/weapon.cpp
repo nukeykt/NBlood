@@ -676,6 +676,13 @@ void WeaponLower(PLAYER *pPlayer)
                 WeaponLower(pPlayer);
             }
             break;
+        case 0:
+            if ((pPlayer->input.newWeapon == kWeaponTNT) && !VanillaMode()) // if switched to tnt before lighter is ignited, don't execute spray can equip qav
+            {
+                pPlayer->weaponState = 3;
+                StartQAV(pPlayer, 16, -1, 0);
+                WeaponRaise(pPlayer);
+                return;
             }
             break;
         case 3:
