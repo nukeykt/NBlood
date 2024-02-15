@@ -645,15 +645,12 @@ void WeaponLower(PLAYER *pPlayer)
             {
                 StartQAV(pPlayer, 7, -1, 0);
             }
-            else
+            else if (pPlayer->input.newWeapon == kWeaponTNT) // do not put away lighter if TNT was selected while throwing a spray can
             {
-                if (pPlayer->input.newWeapon == kWeaponTNT) // do not put away lighter if TNT was selected while throwing a spray can
-                {
-                    pPlayer->weaponState = 2;
-                    StartQAV(pPlayer, 11, -1, 0);
-                    WeaponRaise(pPlayer);
-                    return;
-                }
+                pPlayer->weaponState = 2;
+                StartQAV(pPlayer, 11, -1, 0);
+                WeaponRaise(pPlayer);
+                return;
             }
             break;
         case 2:
@@ -668,18 +665,17 @@ void WeaponLower(PLAYER *pPlayer)
                 pPlayer->input.newWeapon = kWeaponNone;
                 WeaponLower(pPlayer);
             }
+            else if (pPlayer->input.newWeapon == kWeaponTNT)
+            {
+                pPlayer->weaponState = 2;
+                StartQAV(pPlayer, 11, -1, 0);
+                return;
+            }
             else
             {
-                if (pPlayer->input.newWeapon == kWeaponTNT)
-                {
-                    pPlayer->weaponState = 2;
-                    StartQAV(pPlayer, 11, -1, 0);
-                    return;
-                }
-                else
-                {
-                    WeaponLower(pPlayer);
-                }
+                WeaponLower(pPlayer);
+            }
+            break;
             }
             break;
         case 3:
@@ -689,20 +685,15 @@ void WeaponLower(PLAYER *pPlayer)
                 StartQAV(pPlayer, 11, -1, 0);
                 return;
             }
-            else if (pPlayer->input.newWeapon == kWeaponSprayCan)
+            pPlayer->weaponState = 1;
+            StartQAV(pPlayer, 11, -1, 0);
+            if (pPlayer->input.newWeapon == kWeaponSprayCan)
             {
-                pPlayer->weaponState = 1;
-                StartQAV(pPlayer, 11, -1, 0);
                 pPlayer->input.newWeapon = kWeaponNone;
                 WeaponLower(pPlayer);
             }
-            else
-            {
-                pPlayer->weaponState = 1;
-                StartQAV(pPlayer, 11, -1, 0);
-            }
             break;
-        case 7: // throwing ignited alt fire spray
+        case 7: // throwing ignited alt fire spray (this happens when submerging underwater while holding down throw spray can)
             if (VanillaMode() || (pPlayer->input.newWeapon != kWeaponNone))
                 break;
             pPlayer->weaponState = 1;
