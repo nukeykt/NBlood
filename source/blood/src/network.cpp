@@ -645,7 +645,7 @@ void netSendEmptyPackets(void)
     {
         if (nClock <= totalclock)
         {
-            nClock = totalclock+4;
+            nClock = totalclock+kTicsPerFrame;
             netSendPacketAll(packet, pPacket-packet);
         }
     }

@@ -601,7 +601,7 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
 
     predict.at34 = predict.at40 - predict.at38 - (12<<8);
 
-    predict.at0 = ClipLow(predict.at0-4, 0);
+    predict.at0 = ClipLow(predict.at0-kTicsPerFrame, 0);
 
     nSpeed >>= 16;
     if (predict.at48 == 1)
@@ -3433,7 +3433,7 @@ void viewDrawScreen(void)
     lastUpdate = totalclock;
     if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != kGameTypeSinglePlayer))
     {
-        gInterpolate = ((totalclock-gNetFifoClock)+4).toScale16()/4;
+        gInterpolate = ((totalclock-gNetFifoClock)+kTicsPerFrame).toScale16()/kTicsPerFrame;
     }
     if (gInterpolate < 0 || gInterpolate > 65536)
     {

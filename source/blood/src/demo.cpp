@@ -437,7 +437,7 @@ _DEMOPLAYBACK:
                     }
                 }
             }
-            gNetFifoClock += 4;
+            gNetFifoClock += kTicsPerFrame;
             if (!gQuitGame)
                 ProcessFrame();
             ready2send = 0;

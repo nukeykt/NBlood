@@ -5998,7 +5998,7 @@ void playerQavSceneProcess(PLAYER* pPlayer, QAVSCENE* pQavScene) {
         } else {
             
             playerQavScenePlay(pPlayer);
-            pPlayer->weaponTimer = ClipLow(pPlayer->weaponTimer -= 4, 0);
+            pPlayer->weaponTimer = ClipLow(pPlayer->weaponTimer -= kTicsPerFrame, 0);
 
         }
     } else {
@@ -6060,7 +6060,7 @@ void playerQavScenePlay(PLAYER* pPlayer) {
         QAV* pQAV = pQavScene->qavResrc;
         pQAV->nSprite = pPlayer->pSprite->index;
         int nTicks = pQAV->at10 - pPlayer->weaponTimer;
-        pQAV->Play(nTicks - 4, nTicks, pPlayer->qavCallback, pPlayer);
+        pQAV->Play(nTicks - kTicsPerFrame, nTicks, pPlayer->qavCallback, pPlayer);
     }
 }
 
