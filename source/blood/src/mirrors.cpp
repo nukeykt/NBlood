@@ -418,7 +418,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int 
                 if (viewPlayer >= 0)
                 {
                     bakCstat = gPlayer[viewPlayer].pSprite->cstat;
-                    if (gViewPos == 0)
+                    if (gViewPos == VIEWPOS_0)
                     {
                         gPlayer[viewPlayer].pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     }
@@ -460,7 +460,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int 
                 if (viewPlayer >= 0)
                 {
                     bakCstat = gPlayer[viewPlayer].pSprite->cstat;
-                    if (gViewPos == 0)
+                    if (gViewPos == VIEWPOS_0)
                     {
                         gPlayer[viewPlayer].pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     }
