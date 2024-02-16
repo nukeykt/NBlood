@@ -1412,20 +1412,24 @@ void viewDrawMapTitle(void)
 
 void viewDrawAimedPlayerName(void)
 {
-    if (!gShowPlayerNames || (gView->aim.dx == 0 && gView->aim.dy == 0))
+    if (!gShowPlayerNames || (gGameOptions.nGameType == kGameTypeSinglePlayer) || !gView->pSprite)
         return;
+    const int nX = Cos(gView->pSprite->ang)>>16;
+    const int nY = Sin(gView->pSprite->ang)>>16;
+    if (nX == 0 && nY == 0)
+        return;
+    const int nZ = gView->slope;
 
-    int hit = HitScan(gView->pSprite, gView->zView, gView->aim.dx, gView->aim.dy, gView->aim.dz, CLIPMASK0, 512);
+    const int hit = HitScan(gView->pSprite, gView->zView, nX, nY, nZ, CLIPMASK0, 512);
     if (hit == 3)
     {
         spritetype* pSprite = &sprite[gHitInfo.hitsprite];
-        if (IsPlayerSprite(pSprite))
-        {
-            char nPlayer = pSprite->type-kDudePlayer1;
-            char* szName = gProfile[nPlayer].name;
-            int nPalette = (gPlayer[nPlayer].teamId&3)+11;
-            viewDrawText(4, szName, 160, 125, -128, nPalette, 1, 1);
-        }
+        if (!IsPlayerSprite(pSprite))
+            return;
+        char nPlayer = pSprite->type-kDudePlayer1;
+        char *szName = gProfile[nPlayer].name;
+        int nPalette = (gPlayer[nPlayer].teamId&3)+11;
+        viewDrawText(4, szName, 160, 125, -128, nPalette, 1, 1);
     }
 }
 
