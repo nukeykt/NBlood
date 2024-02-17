@@ -1032,7 +1032,7 @@ int32_t registerosdcommands(void)
         { "in_joystick","enables input from the joystick if it is present",(void *)&gSetup.usejoystick, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
         { "in_mouse","enables input from the mouse if it is present",(void *)&gSetup.usemouse, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
 
-        { "in_aimmode", "0:toggle, 1:hold to aim", (void *)&gMouseAiming, CVAR_BOOL, 0, 1 },
+        { "in_aimmode", "0: toggle, 1: hold to aim", (void *)&gMouseAiming, CVAR_BOOL, 0, 1 },
         {
             "in_mousebias", "emulates the original mouse code's weighting of input towards whichever axis is moving the most at any given time",
             (void *)&MouseBias, CVAR_INT, 0, 32
