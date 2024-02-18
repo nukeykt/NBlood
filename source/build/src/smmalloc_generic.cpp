@@ -21,7 +21,7 @@
 // 	THE SOFTWARE.
 
 
-#ifdef USE_MIMALLOC
+#if USE_MIMALLOC != 0
 # include "mimalloc-new-delete.h"
 #endif
 

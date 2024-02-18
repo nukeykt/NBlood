@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef USE_MIMALLOC
+#if USE_MIMALLOC != 0
 # include "mimalloc.h"
 # include "mimalloc-override.h"
 #endif
