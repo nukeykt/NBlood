@@ -163,7 +163,7 @@ int SF2Drv_MIDI_StartPlayback(void)
 {
     SF2Drv_MIDI_HaltPlayback();
 
-    tsf_set_output(sf2_synth, MV_Channels == 1 ? TSF_MONO : TSF_STEREO_INTERLEAVED, MV_MixRate, 0);
+    tsf_set_output(sf2_synth, MV_Channels == 1 ? TSF_MONO : TSF_STEREO_INTERLEAVED, TSF_INTERP_CUBIC, MV_MixRate, 0);
     tsf_channel_set_bank_preset(sf2_synth, 9, 128, 0);
     tsf_reset(sf2_synth);
 
