@@ -267,9 +267,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\animvpx.cpp" />
-    <ClCompile Include="..\..\source\build\src\asan_guarded_allocator.cpp">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\source\build\src\baselayer.cpp" />
     <ClCompile Include="..\..\source\build\src\cache1d.cpp" />
     <ClCompile Include="..\..\source\build\src\clip.cpp" />

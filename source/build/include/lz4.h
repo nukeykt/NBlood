@@ -36,6 +36,9 @@
 extern "C" {
 #endif
 
+#define LZ4_STATIC_LINKING_ONLY_DISABLE_MEMORY_ALLOCATION
+#define LZ4LIB_VISIBILITY
+
 #ifndef LZ4_H_2983827168210
 #define LZ4_H_2983827168210
 
@@ -82,9 +85,6 @@ extern "C" {
 *  LZ4LIB_VISIBILITY :
 *  Control library symbols visibility.
 */
-
-#define LZ4LIB_VISIBILITY
-
 #ifndef LZ4LIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
 #    define LZ4LIB_VISIBILITY __attribute__ ((visibility ("default")))
@@ -133,7 +133,7 @@ extern "C" {
 /*------   Version   ------*/
 #define LZ4_VERSION_MAJOR    1    /* for breaking interface changes  */
 #define LZ4_VERSION_MINOR    9    /* for new (non-breaking) interface capabilities */
-#define LZ4_VERSION_RELEASE  4    /* for tweaks, bug-fixes, or development */
+#define LZ4_VERSION_RELEASE  5    /* for tweaks, bug-fixes, or development */
 
 #define LZ4_VERSION_NUMBER (LZ4_VERSION_MAJOR *100*100 + LZ4_VERSION_MINOR *100 + LZ4_VERSION_RELEASE)
 

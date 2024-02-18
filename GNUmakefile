@@ -261,7 +261,7 @@ engine_obj := $(obj)/$(engine)
 
 engine_cflags :=
 
-engine_deps := mimalloc
+engine_deps :=
 
 ifneq (1,$(SDL_TARGET))
     engine_deps += imgui
@@ -269,6 +269,10 @@ endif
 
 ifneq (0,$(USE_PHYSFS))
     engine_deps += physfs
+endif
+
+ifneq (0,$(USE_MIMALLOC))
+    engine_deps += mimalloc
 endif
 
 engine_editor_objs := \
@@ -664,9 +668,9 @@ endif
 
 ifeq ($(PLATFORM),DARWIN)
     LIBS += -lFLAC \
-            -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,OpenGL \
+            -Wl,-framework,Cocoa -Wl,-framework,Carbon \
             -Wl,-framework,CoreMIDI -Wl,-framework,AudioUnit \
-            -Wl,-framework,AudioToolbox -Wl,-framework,IOKit -Wl,-framework,AGL
+            -Wl,-framework,AudioToolbox -Wl,-framework,IOKit
     ifneq (00,$(DARWIN9)$(DARWIN10))
         LIBS += -Wl,-framework,QuickTime
     endif

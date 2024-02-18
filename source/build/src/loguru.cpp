@@ -33,20 +33,11 @@
 #undef min
 #undef max
 
-#ifndef __STDC_FORMAT_MACROS
-  #define __STDC_FORMAT_MACROS
-#endif
-#ifndef __STDC_LIMIT_MACROS
-  #define __STDC_LIMIT_MACROS
-#endif
-
 #include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <chrono>
-#include <cinttypes>
 #include <cstdarg>
-#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1204,9 +1195,9 @@ namespace loguru
 			#endif
 
 			if (right_align_hex_id) {
-				snprintf(buffer, static_cast<size_t>(length), "%*" PRIX64, static_cast<int>(length - 1), static_cast<uint64_t>(thread_id));
+				snprintf(buffer, static_cast<size_t>(length), "%*X", static_cast<int>(length - 1), static_cast<unsigned>(thread_id));
 			} else {
-				snprintf(buffer, static_cast<size_t>(length), "%" PRIX64, static_cast<uint64_t>(thread_id));
+				snprintf(buffer, static_cast<size_t>(length), "%X", static_cast<unsigned>(thread_id));
 			}
 		}
 	}

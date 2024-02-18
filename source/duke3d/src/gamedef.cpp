@@ -3373,7 +3373,7 @@ DO_DEFSTATE:
             while (C_GetKeyword() == -1 && j < 32)
                 C_GetNextVar(), j++;
 
-            scriptWriteValue(CON_NULLOP | LINE_NUMBER);
+            scriptWriteValue(INT_MAX);
             continue;
 
         case CON_CSTAT:

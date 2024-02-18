@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Prepare files
       run: |
@@ -29,7 +29,7 @@ jobs:
         cp dn64widescreen.pk3 template/rednukem/
         cp pcexhumed.pk3 template/pcexhumed/
 
-    - uses: dawidd6/action-download-artifact@v2
+    - uses: dawidd6/action-download-artifact@v3
       with:
         workflow: build.yml
         workflow_conclusion: success

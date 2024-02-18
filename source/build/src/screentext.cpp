@@ -141,7 +141,7 @@ vec2_t screentextGetSize(ScreenTextSize_t const & data)
             vec2_16_t const siz = tilesiz[tile];
 
             // width
-            extent.x = constwidthactive ? constwidth + xbetween : siz.x * data.zoom;
+            extent.x = constwidthactive ? constwidth + (data.f & TEXT_CENTERCONSTWIDTH ? xbetween : 0) : siz.x * data.zoom;
 
             // height
             SetIfGreater(&extent.y, (siz.y * data.zoom));
@@ -392,7 +392,7 @@ vec2_t screentextRender(ScreenText_t const & data)
             rotatesprite_(location.x, location.y, data.zoom, angle, tile, data.shade, pal, o, alpha, blendidx, data.b1.x, data.b1.y, data.b2.x, data.b2.y);
 
             // width
-            extent.x = constwidthactive ? constwidth + xbetween : siz.x * data.zoom;
+            extent.x = constwidthactive ? constwidth + (data.f & TEXT_CENTERCONSTWIDTH ? xbetween : 0) : siz.x * data.zoom;
 
             // height
             SetIfGreater(&extent.y, (siz.y * data.zoom));

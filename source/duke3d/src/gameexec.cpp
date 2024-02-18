@@ -5544,7 +5544,7 @@ breakfor:
                     int outputPos = 0;
                     int argIdx    = 0;
 
-                    while (VM_DECODE_INST(*insptr) != CON_NULLOP && argIdx < 32)
+                    while (*insptr != INT_MAX && argIdx < 32)
                         arg[argIdx++] = Gv_GetVar(*insptr++);
 
                     int numArgs = argIdx;

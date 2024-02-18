@@ -19,12 +19,14 @@
 // 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
-#include "mimalloc-new-delete.h"
 
-#if __SANITIZE_ADDRESS__ != 1
+
+#ifdef USE_MIMALLOC
+# include "mimalloc-new-delete.h"
+#endif
 
 #include "compat.h"
-#include "mimalloc-override.h"
+
 #include "smmalloc.h"
 #include <stdlib.h>
 
@@ -131,5 +133,3 @@ size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance inst
     return h->size;
 #endif
 }
-
-#endif // __SANITIZE_ADDRESS__

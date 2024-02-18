@@ -239,7 +239,11 @@ uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * 
             else if (c == ' ')
                 *text++ = SCREENTEXT_SPACE;
             else
-                *text++ = G_GetStringTileASCII(tilefontPtr, font, c, flags);
+            {
+                if (auto tile = G_GetStringTileASCII(tilefontPtr, font, c, flags))
+                    *text++ = tile;
+                else *text++ = SCREENTEXT_CONSTWIDTH;
+            }
 
             ++str;
         }

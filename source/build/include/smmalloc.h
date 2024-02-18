@@ -229,6 +229,10 @@ class Allocator
 
                 // get head pointer
                 p = (pData + headValue.p.offset);
+                
+#if __SANITIZE_ADDRESS__ == 1
+                ASAN_UNPOISON_MEMORY_REGION(p, sizeof(TaggedIndex));
+#endif
                 // read head->next value
                 TaggedIndex nextValue = *((TaggedIndex*)(p));
 
@@ -393,7 +397,7 @@ class Allocator
                 }
 #endif
 #if __SANITIZE_ADDRESS__ == 1
-                    ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
+                ASAN_UNPOISON_MEMORY_REGION(pRes, bytesCount);
 #endif
                 return pRes;
             }
@@ -411,7 +415,7 @@ class Allocator
                 }
 #endif
 #if __SANITIZE_ADDRESS__ == 1
-                    ASAN_UNPOISON_MEMORY_REGION(pRes, Align(_bytesCount, 8));
+                ASAN_UNPOISON_MEMORY_REGION(pRes, bytesCount);
 #endif
                 return pRes;
             }
@@ -468,8 +472,8 @@ class Allocator
 
             PoolBucket* bucket = &buckets[bucketIndex];
             bucket->FreeInterval(p, p);
-#if 0 //__SANITIZE_ADDRESS__ == 1
-                ASAN_POISON_MEMORY_REGION(p, GetBucketElementSize(bucketIndex));
+#if __SANITIZE_ADDRESS__ == 1
+            //ASAN_POISON_MEMORY_REGION(p, GetBucketElementSize(bucketIndex));
 #endif
             return;
         }
@@ -500,7 +504,7 @@ class Allocator
             {
                 // reuse existing memory
 #if __SANITIZE_ADDRESS__ == 1
-                    ASAN_UNPOISON_MEMORY_REGION(p, Align(bytesCount, 8));
+                ASAN_UNPOISON_MEMORY_REGION(p, bytesCount);
 #endif
                 return p;
             }
@@ -512,6 +516,9 @@ class Allocator
             if (IsReadable(p))
             {
                 // move the memory block to the new location
+#if __SANITIZE_ADDRESS__ == 1
+                ASAN_UNPOISON_MEMORY_REGION(p, elementSize);
+#endif
                 std::memmove(p2, p, elementSize);
             }
 
