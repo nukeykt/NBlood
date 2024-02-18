@@ -11849,11 +11849,20 @@ static void m32script_interrupt_handler(int signo)
     }
 }
 
-static void M32_HandleMemErr(int32_t line, const char *file, const char *func)
+static void M32_HandleMemErr(int32_t bytes, int32_t lineNum, const char *fileName, const char *funcName)
 {
-    LOG_F(ERROR, "Out of memory in %s:%d (%s)", file, line, func);
-    osdcmd_quit(NULL);
+#ifdef DEBUGGINGAIDS
+    debug_break();
+    Bsprintf(tempbuf, "Out of memory: failed allocating %d bytes at %s:%d (%s)!", bytes, fileName, lineNum, funcName);
+#else
+    UNREFERENCED_PARAMETER(lineNum);
+    UNREFERENCED_PARAMETER(fileName);
+    UNREFERENCED_PARAMETER(funcName);
+    Bsprintf(tempbuf, "Out of memory: failed allocating %d bytes!", bytes);
+#endif
+    fatal_exit(tempbuf);
 }
+
 
 int32_t ExtInit(void)
 {

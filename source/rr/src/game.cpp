@@ -7791,14 +7791,18 @@ void G_PostCreateGameState(void)
     A_InitEnemyFlags();
 }
 
-static void G_HandleMemErr(int32_t lineNum, const char *fileName, const char *funcName)
+static void G_HandleMemErr(int32_t bytes, int32_t lineNum, const char *fileName, const char *funcName)
 {
-    static char msg[128];
-    Bsnprintf(msg, sizeof(msg), "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);
 #ifdef DEBUGGINGAIDS
-    Bassert(0);
+    debug_break();
+    Bsprintf(tempbuf, "Out of memory: failed allocating %d bytes at %s:%d (%s)!", bytes, fileName, lineNum, funcName);
+#else
+    UNREFERENCED_PARAMETER(lineNum);
+    UNREFERENCED_PARAMETER(fileName);
+    UNREFERENCED_PARAMETER(funcName);
+    Bsprintf(tempbuf, "Out of memory: failed allocating %d bytes!", bytes);
 #endif
-    G_GameExit(msg);
+    fatal_exit(tempbuf);
 }
 
 static void G_FatalEngineError(void)
