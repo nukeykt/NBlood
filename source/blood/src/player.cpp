@@ -664,6 +664,8 @@ void playerResetPosture(PLAYER* pPlayer) {
         pPlayer->swayHeight = 0;
         pPlayer->swayWidth = 0;
     }
+    if (pPlayer == gMe) // only reset crouch toggle state if resetting our own posture
+        gCrouchToggleState = 0; // reset crouch toggle state
 }
 
 void playerStart(int nPlayer, int bNewLevel)
@@ -2364,6 +2366,7 @@ void PlayerLoadSave::Load(void)
     #endif
 
     }
+    gCrouchToggleState = 0; // reset crouch toggle state
 }
 
 void PlayerLoadSave::Save(void)
