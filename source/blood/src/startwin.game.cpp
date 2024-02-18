@@ -184,10 +184,6 @@ static void PopulateForm(int32_t pgs)
 
         int j = 4;
 
-#ifdef RENDERTYPEWIN
-        if (di_disabled) j = 2;
-#endif
-
         for (int i=0; i<j; i++)
         {
             (void)ComboBox_InsertString(hwnd, i, controlstrings[i]);

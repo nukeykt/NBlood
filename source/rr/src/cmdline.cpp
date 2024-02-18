@@ -294,15 +294,29 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     i++;
                     continue;
                 }
-#if defined RENDERTYPEWIN
+#ifdef _WIN32
                 if (!Bstrcasecmp(c+1, "nodinput"))
                 {
-                    initprintf("DirectInput (joystick) support disabled\n");
-                    di_disabled = 1;
+                    VLOG_F(LOG_INPUT, "DirectInput (controller) support disabled");
+                    g_controllerSupportFlags |= CONTROLLER_NO_DINPUT;
+                    i++;
+                    continue;
+                }
+                if (!Bstrcasecmp(c+1, "noxinput"))
+                {
+                    VLOG_F(LOG_INPUT, "XInput (controller) support disabled");
+                    g_controllerSupportFlags |= CONTROLLER_NO_XINPUT;
                     i++;
                     continue;
                 }
 #endif
+                if (!Bstrcasecmp(c+1, "nocontroller"))
+                {
+                    VLOG_F(LOG_INPUT, "Controller support disabled.");
+                    g_controllerSupportFlags |= CONTROLLER_DISABLED;
+                    i++;
+                    continue;
+                }
                 if (!Bstrcasecmp(c+1, "noautoload"))
                 {
                     initprintf("Autoload disabled\n");
