@@ -144,6 +144,7 @@ fix16_t gViewLook, gViewAngle;
 float gViewAngleAdjust;
 float gViewLookAdjust;
 int gViewLookRecenter;
+int gCrouchToggleState = 0;
 
 void ctrlGetInput(void)
 {
@@ -307,7 +308,24 @@ void ctrlGetInput(void)
         gInput.buttonFlags.jump = 1;
 
     if (BUTTON(gamefunc_Crouch))
+        gInput.buttonFlags.crouch = 1, gCrouchToggleState = 0;
+
+    if (BUTTON(gamefunc_Crouch_Toggle) && !gInput.buttonFlags.jump && gMe && !gMe->isUnderwater)
+    {
+        if (gCrouchToggleState <= 1) // start crouching
+            gCrouchToggleState = 1, gInput.buttonFlags.crouch = 1;
+        else if (gCrouchToggleState == 2) // stop crouching
+            gCrouchToggleState = 3;
+    }
+    else if ((gCrouchToggleState > 0) && (gCrouchToggleState < 3) && !gInput.buttonFlags.jump && gMe && !gMe->isUnderwater)
+    {
+        gCrouchToggleState = 2;
         gInput.buttonFlags.crouch = 1;
+    }
+    else
+    {
+        gCrouchToggleState = 0;
+    }
 
     if (BUTTON(gamefunc_Weapon_Fire))
         gInput.buttonFlags.shoot = 1;

@@ -109,6 +109,7 @@ extern fix16_t gViewLook, gViewAngle;
 extern float gViewAngleAdjust;
 extern float gViewLookAdjust;
 extern int gViewLookRecenter;
+extern int gCrouchToggleState;
 
 int32_t ctrlCheckAllInput(void);
 void ctrlClearAllInput(void);
