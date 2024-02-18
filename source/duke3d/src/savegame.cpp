@@ -2101,7 +2101,7 @@ static int sv_findlabelindex(int32_t const val, int const type)
 
 static inline int sv_checkoffset(int const scriptoffs, int const val, int const endoffs)
 {
-    return ((unsigned)scriptoffs > 0 && (unsigned)scriptoffs + endoffs < (unsigned)g_scriptSize
+    return (scriptoffs > 0 && (unsigned)scriptoffs + endoffs < (unsigned)g_scriptSize
             && apScript[scriptoffs - 1] == val
             && apScript[scriptoffs + endoffs] == CON_END);
 }

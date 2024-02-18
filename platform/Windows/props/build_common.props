@@ -5,7 +5,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;RENDERTYPESDL=1;MIXERTYPESDL=1;SDL_USEFOLDER;SDL_TARGET=2;USE_OPENGL=1;POLYMER=1;STARTUP_WINDOW;USE_LIBVPX;HAVE_VORBIS;HAVE_XMP;MI_USE_RTLGENRANDOM;MI_SHOW_ERRORS;NOONE_EXTENSIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;RENDERTYPESDL=1;MIXERTYPESDL=1;SDL_USEFOLDER;SDL_TARGET=2;USE_OPENGL=1;POLYMER=1;STARTUP_WINDOW;USE_LIBVPX;HAVE_VORBIS;HAVE_XMP;USE_MIMALLOC;MI_USE_RTLGENRANDOM;MI_SHOW_ERRORS;MI_TRACK_ASAN;NOONE_EXTENSIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(VC_CRT_SourcePath);./include;./include/vpx/;./include/sdl2/;../../source/build/include;../../source/mact/include;../../source/audiolib/include;../../source/glad/include;../../source/libxmp-lite/include;../../source/libxmp-lite/include/libxmp-lite;../../source/voidwrap/include;../../source/mimalloc/include;../../source/imgui/include;../../source/libsmackerdec/include;../../source/hmpplay/include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4244;4018;4267</DisableSpecificWarnings>
       <AdditionalOptions>/J %(AdditionalOptions)</AdditionalOptions>

@@ -365,7 +365,7 @@ public:
      * handle (which is closed when the object destructs or `unmap` is called), which is
      * then used to memory map the requested region. Upon failure, `error` is set to
      * indicate the reason and the object remains in an unmapped state.
-     *
+     * 
      * The entire file is mapped.
      */
     template<typename String>
@@ -404,7 +404,7 @@ public:
      * `handle`, which must be a valid file handle, which is used to memory map the
      * requested region. Upon failure, `error` is set to indicate the reason and the
      * object remains in an unmapped state.
-     *
+     * 
      * The entire file is mapped.
      */
     void map(const handle_type handle, std::error_code& error)
@@ -768,7 +768,6 @@ template<
 
 
 #include <algorithm>
-#include <vector>
 
 #ifndef _WIN32
 # include <unistd.h>
@@ -797,12 +796,15 @@ inline DWORD int64_low(int64_t n) noexcept
 
 inline std::wstring s_2_ws(const std::string& s)
 {
-    if (s.empty())
-        return{};
-    const auto s_length = static_cast<int>(s.length());
-    auto buf = std::vector<wchar_t>(s_length);
-    const auto wide_char_count = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), s_length, buf.data(), s_length);
-    return std::wstring(buf.data(), wide_char_count);
+    std::wstring ret;
+    if (!s.empty())
+    {
+        ret.resize(s.size());
+        int wide_char_count = MultiByteToWideChar(CP_UTF8, 0, s.c_str(),
+            static_cast<int>(s.size()), &ret[0], static_cast<int>(s.size()));
+        ret.resize(wide_char_count);
+    }
+    return ret;
 }
 
 template<

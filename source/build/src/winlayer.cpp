@@ -124,7 +124,6 @@ static LPDIRECTINPUTDEVICE7A lpDID = NULL;
 #define INPUT_BUFFER_SIZE	32
 static GUID                  guidDevs;
 
-char di_disabled = 0;
 static char di_devacquired;
 static HANDLE di_inputevt = 0;
 //static int32_t joyblast=0;
@@ -889,7 +888,7 @@ static BOOL InitDirectInput(void)
     LPDIRECTINPUTDEVICE7A dev2;
     DIDEVCAPS didc;
 
-    if (hDInputDLL || di_disabled) return FALSE;
+    if (hDInputDLL || g_controllerSupportFlags & (CONTROLLER_DISABLED|CONTROLLER_NO_DINPUT)) return FALSE;
 
     LOG_F(INFO, "Initializing DirectInput...");
 

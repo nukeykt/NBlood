@@ -89,7 +89,7 @@ enum rendmode_t {
 
 //define NEW_MAP_FORMAT
 
-#define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
+#define MAXWALLSB (MAXWALLS>>1)
 
 #define MAXTILES 30720
 #define MAXUSERTILES (MAXTILES-256)  // reserve 256 tiles at the end
