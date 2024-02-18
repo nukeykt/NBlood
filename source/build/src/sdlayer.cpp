@@ -103,7 +103,6 @@ char modechange=1;
 char offscreenrendering=0;
 char videomodereset = 0;
 int32_t nofog=0;
-char g_controllerSupportFlags;
 #ifndef EDUKE32_GLES
 static uint16_t sysgamma[3][256];
 #endif
