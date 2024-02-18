@@ -80,7 +80,7 @@ jobs:
       run:
         shell: ${{matrix.shell}}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: install-prerequisites-windows-msys2
       if: matrix.shell == 'msys2 {0}'
