@@ -148,7 +148,7 @@ static int osdfunc_bucketlist(osdcmdptr_t UNUSED(parm))
     return OSDCMD_OK;
 }
 
-#ifdef USE_MIMALLOC
+#if USE_MIMALLOC != 0
 static int osdfunc_heapinfo(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
@@ -164,7 +164,7 @@ void engineSetupAllocator(void)
 #ifdef SMMALLOC_STATS_SUPPORT
     OSD_RegisterFunction("bucketlist", "bucketlist: list bucket statistics", osdfunc_bucketlist);
 #endif
-#ifdef USE_MIMALLOC
+#if USE_MIMALLOC != 0
     OSD_RegisterFunction("heapinfo", "heapinfo: memory usage statistics", osdfunc_heapinfo);
 #endif
 }
