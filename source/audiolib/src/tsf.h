@@ -161,6 +161,7 @@ enum TSFInterpolateMode
 // Setup the parameters for the voice render methods
 //   outputmode: if mono or stereo and how stereo channel data is ordered
 //   samplerate: the number of samples per second (output frequency)
+//   interpolatemode: set the resampling interpolation method
 //   global_gain_db: volume gain in decibels (>0 means higher, <0 means lower)
 TSFDEF void tsf_set_output(tsf* f, enum TSFOutputMode outputmode, enum TSFInterpolateMode interpolatemode, int samplerate, float global_gain_db CPP_DEFAULT0);
 
