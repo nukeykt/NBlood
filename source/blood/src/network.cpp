@@ -547,11 +547,11 @@ void netBroadcastPlayerInfo(int nPlayer)
 {
     PROFILE *pProfile = &gProfile[nPlayer];
     Bstrncpyz(pProfile->name, szPlayerName, sizeof(szPlayerName));
-    pProfile->skill = gSkill;
     pProfile->nAutoAim = gAutoAim;
     pProfile->nWeaponSwitch = gWeaponSwitch;
     if (numplayers < 2)
         return;
+    pProfile->skill = gSkill;
     char *pPacket = packet;
     PutPacketByte(pPacket, 251);
     PutPacketBuffer(pPacket, pProfile, sizeof(PROFILE));

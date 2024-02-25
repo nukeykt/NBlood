@@ -45,6 +45,7 @@ void SaveGame(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
 void SaveGameProcess(CGameMenuItemChain *);
 void ShowDifficulties();
 void SetDifficultyAndStart(CGameMenuItemChain *);
+void SetDifficultyCustomAndStart(CGameMenuItemChain *);
 void SetDetail(CGameMenuItemSlider *);
 void SetGamma(CGameMenuItemSlider *);
 void SetMusicVol(CGameMenuItemSlider *);
@@ -187,6 +188,7 @@ CGameMenu menuNetMain;
 CGameMenu menuNetStart;
 CGameMenu menuEpisode;
 CGameMenu menuDifficulty;
+CGameMenu menuDifficultyCustom;
 CGameMenu menuOptionsOld;
 CGameMenu menuControls;
 CGameMenu menuMessages;
@@ -244,11 +246,19 @@ CGameMenuItemTitle itemUserMapTitle("USER MAP", 1, 160, 20, 2038);
 CGameMenuFileSelect itemUserMapList("", 3, 0, 0, 0, "./", "*.map", gGameOptions.szUserMap, ShowDifficulties, 0);
 
 CGameMenuItemTitle itemDifficultyTitle("DIFFICULTY", 1, 160, 20, 2038);
-CGameMenuItemChain itemDifficulty1("STILL KICKING", 1, 0, 60, 320, 1, NULL, -1, SetDifficultyAndStart, 0);
-CGameMenuItemChain itemDifficulty2("PINK ON THE INSIDE", 1, 0, 80, 320, 1, NULL, -1, SetDifficultyAndStart, 1);
-CGameMenuItemChain itemDifficulty3("LIGHTLY BROILED", 1, 0, 100, 320, 1, NULL, -1, SetDifficultyAndStart, 2);
-CGameMenuItemChain itemDifficulty4("WELL DONE", 1, 0, 120, 320, 1, NULL, -1, SetDifficultyAndStart, 3);
-CGameMenuItemChain itemDifficulty5("EXTRA CRISPY", 1, 0, 140, 320, 1, 0, -1, SetDifficultyAndStart, 4);
+CGameMenuItemChain itemDifficulty1("STILL KICKING", 1, 0, 50, 320, 1, NULL, -1, SetDifficultyAndStart, 0);
+CGameMenuItemChain itemDifficulty2("PINK ON THE INSIDE", 1, 0, 70, 320, 1, NULL, -1, SetDifficultyAndStart, 1);
+CGameMenuItemChain itemDifficulty3("LIGHTLY BROILED", 1, 0, 90, 320, 1, NULL, -1, SetDifficultyAndStart, 2);
+CGameMenuItemChain itemDifficulty4("WELL DONE", 1, 0, 110, 320, 1, NULL, -1, SetDifficultyAndStart, 3);
+CGameMenuItemChain itemDifficulty5("EXTRA CRISPY", 1, 0, 130, 320, 1, 0, -1, SetDifficultyAndStart, 4);
+CGameMenuItemChain menuDifficulty6("CUSTOM", 1, 0, 150, 320, 1, &menuDifficultyCustom, -1, NULL, 0);
+
+CGameMenuItemTitle itemDifficultyCustomTitle("CUSTOM", 1, 160, 20, 2038);
+CGameMenuItemSlider sliderDifficultyCustomQuantity("ENEMIES QUANTITY:", 3, 66, 50, 180, 2, 0, 4, 1, NULL, -1, -1);
+CGameMenuItemSlider sliderDifficultyCustomHealth("ENEMIES HEALTH:", 3, 66, 60, 180, 2, 0, 4, 1, NULL, -1, -1);
+CGameMenuItemSlider sliderDifficultyCustomDifficulty("ENEMIES DIFFICULTY:", 3, 66, 70, 180, 2, 0, 4, 1, NULL, -1, -1);
+CGameMenuItemSlider sliderDifficultyCustomDamage("PLAYER DAMAGE SCALE:", 3, 66, 80, 180, 2, 0, 4, 1, NULL, -1, -1);
+CGameMenuItemChain itemDifficultyCustomStart("START GAME", 1, 0, 150, 320, 1, NULL, -1, SetDifficultyCustomAndStart, 0);
 
 CGameMenuItemTitle itemOptionsOldTitle("OPTIONS", 1, 160, 20, 2038);
 CGameMenuItemChain itemOption1("CONTROLS...", 3, 0, 40, 320, 1, &menuControls, -1, NULL, 0);
@@ -892,7 +902,16 @@ void SetupDifficultyMenu(void)
     menuDifficulty.Add(&itemDifficulty3, true);
     menuDifficulty.Add(&itemDifficulty4, false);
     menuDifficulty.Add(&itemDifficulty5, false);
+    menuDifficulty.Add(&menuDifficulty6, false);
     menuDifficulty.Add(&itemBloodQAV, false);
+
+    menuDifficultyCustom.Add(&itemDifficultyCustomTitle, false);
+    menuDifficultyCustom.Add(&sliderDifficultyCustomQuantity, true);
+    menuDifficultyCustom.Add(&sliderDifficultyCustomHealth, false);
+    menuDifficultyCustom.Add(&sliderDifficultyCustomDifficulty, false);
+    menuDifficultyCustom.Add(&sliderDifficultyCustomDamage, false);
+    menuDifficultyCustom.Add(&itemDifficultyCustomStart, false);
+    menuDifficultyCustom.Add(&itemBloodQAV, false);
 }
 
 void SetupEpisodeMenu(void)
@@ -1786,7 +1805,32 @@ void ShowDifficulties()
 void SetDifficultyAndStart(CGameMenuItemChain *pItem)
 {
     gGameOptions.nDifficulty = pItem->at30;
+    gGameOptions.nDifficultyQuantity = pItem->at30;
+    gGameOptions.nDifficultyHealth = pItem->at30;
     gSkill = pItem->at30;
+    gGameOptions.nLevel = 0;
+    gGameOptions.uGameFlags = kGameFlagNone;
+    if (gDemo.at1)
+        gDemo.StopPlayback();
+    gStartNewGame = true;
+    gCheatMgr.ResetCheats();
+    if (Bstrlen(gGameOptions.szUserMap))
+    {
+        levelAddUserMap(gGameOptions.szUserMap);
+        levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+        StartLevel(&gGameOptions);
+        viewResizeView(gViewSize);
+    }
+    gGameMenuMgr.Deactivate();
+}
+
+void SetDifficultyCustomAndStart(CGameMenuItemChain *pItem)
+{
+    UNREFERENCED_PARAMETER(pItem);
+    gGameOptions.nDifficulty = ClipRange(sliderDifficultyCustomDifficulty.nValue, 0, 4);
+    gGameOptions.nDifficultyQuantity = ClipRange(sliderDifficultyCustomQuantity.nValue, 0, 4);
+    gGameOptions.nDifficultyHealth = ClipRange(sliderDifficultyCustomHealth.nValue, 0, 4);
+    gSkill = sliderDifficultyCustomDamage.nValue;
     gGameOptions.nLevel = 0;
     gGameOptions.uGameFlags = kGameFlagNone;
     if (gDemo.at1)
