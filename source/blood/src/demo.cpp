@@ -51,6 +51,8 @@ void ReadGameOptionsLegacy(GAMEOPTIONS &gameOptions, GAMEOPTIONSLEGACY &gameOpti
 {
     gameOptions.nGameType = gameOptionsLegacy.nGameType;
     gameOptions.nDifficulty = gameOptionsLegacy.nDifficulty;
+    gameOptions.nDifficultyQuantity = gameOptionsLegacy.nDifficulty;
+    gameOptions.nDifficultyHealth = gameOptionsLegacy.nDifficulty;
     gameOptions.nEpisode = gameOptionsLegacy.nEpisode;
     gameOptions.nLevel = gameOptionsLegacy.nLevel;
     strcpy(gameOptions.zLevelName, gameOptionsLegacy.zLevelName);
@@ -391,6 +393,8 @@ _DEMOPLAYBACK:
                 gNetFifoTail = 0;
                 //memcpy(connectpoint2, aimHeight.connectPoints, sizeof(aimHeight.connectPoints));
                 memcpy(&gGameOptions, &m_gameOptions, sizeof(GAMEOPTIONS));
+                gGameOptions.nDifficultyQuantity = gGameOptions.nDifficulty;
+                gGameOptions.nDifficultyHealth = gGameOptions.nDifficulty;
                 gSkill = gGameOptions.nDifficulty;
                 for (int i = 0; i < 8; i++)
                     playerInit(i, 0);

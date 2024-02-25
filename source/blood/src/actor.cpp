@@ -2547,14 +2547,14 @@ void actInit(bool bSaveLoad) {
             DeleteSprite(nSprite);
             nSprite = headspritestat[kStatDude]; // start all over again until only player sprites are left
         }
-        }
+    }
     else
     {
         gKillMgr.CountTotalKills();
 
         for (int i = 0; i < kDudeMax - kDudeBase; i++)
             for (int j = 0; j < kDamageMax; j++)
-                dudeInfo[i].curDamage[j] = mulscale8(DudeDifficulty[gGameOptions.nDifficulty], dudeInfo[i].startDamage[j]);
+                dudeInfo[i].curDamage[j] = mulscale8(DudeDifficulty[gGameOptions.nDifficultyHealth], dudeInfo[i].startDamage[j]);
 
         for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite])
         {

@@ -613,6 +613,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gGameOptions.nLevel = gPacketStartGame.levelId;
         gGameOptions.nGameType = gPacketStartGame.gameType;
         gGameOptions.nDifficulty = gPacketStartGame.difficulty;
+        gGameOptions.nDifficultyQuantity = gPacketStartGame.difficulty;
+        gGameOptions.nDifficultyHealth = gPacketStartGame.difficulty;
         gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
         gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
@@ -665,7 +667,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         if (pSprite->statnum < kMaxStatus && pSprite->extra > 0) {
             
             XSPRITE *pXSprite = &xsprite[pSprite->extra];
-            if ((pXSprite->lSkill & (1 << gameOptions->nDifficulty)) || (pXSprite->lS && gameOptions->nGameType == kGameTypeSinglePlayer)
+            if ((pXSprite->lSkill & (1 << gameOptions->nDifficultyQuantity)) || (pXSprite->lS && gameOptions->nGameType == kGameTypeSinglePlayer)
                 || (pXSprite->lB && gameOptions->nGameType == kGameTypeBloodBath) || (pXSprite->lT && gameOptions->nGameType == kGameTypeTeams)
                 || (pXSprite->lC && gameOptions->nGameType == kGameTypeCoop)) {
                 
@@ -799,6 +801,8 @@ void StartNetworkLevel(void)
         gGameOptions.nLevel = gPacketStartGame.levelId;
         gGameOptions.nGameType = gPacketStartGame.gameType;
         gGameOptions.nDifficulty = gPacketStartGame.difficulty;
+        gGameOptions.nDifficultyQuantity = gPacketStartGame.difficulty;
+        gGameOptions.nDifficultyHealth = gPacketStartGame.difficulty;
         gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
         gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;

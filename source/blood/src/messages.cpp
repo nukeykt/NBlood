@@ -301,6 +301,9 @@ void LevelWarpAndRecord(int nEpisode, int nLevel)
     gCheatMgr.ResetCheats();
     strcpy(buffer, levelGetFilename(nEpisode, nLevel));
     ChangeExtension(buffer, ".DEM");
+    gGameOptions.nDifficultyQuantity = gGameOptions.nDifficulty;
+    gGameOptions.nDifficultyHealth = gGameOptions.nDifficulty;
+    gSkill = gGameOptions.nDifficulty;
     gDemo.Create(buffer);
     StartLevel(&gGameOptions);
     viewResizeView(gViewSize);

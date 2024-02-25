@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 struct GAMEOPTIONS {
     char nGameType;
     char nDifficulty;
+    char nDifficultyQuantity;
+    char nDifficultyHealth;
     int nEpisode;
     int nLevel;
     char zLevelName[BMAX_PATH];
