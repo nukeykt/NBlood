@@ -251,7 +251,7 @@ CGameMenuItemChain itemDifficulty2("PINK ON THE INSIDE", 1, 0, 70, 320, 1, NULL,
 CGameMenuItemChain itemDifficulty3("LIGHTLY BROILED", 1, 0, 90, 320, 1, NULL, -1, SetDifficultyAndStart, 2);
 CGameMenuItemChain itemDifficulty4("WELL DONE", 1, 0, 110, 320, 1, NULL, -1, SetDifficultyAndStart, 3);
 CGameMenuItemChain itemDifficulty5("EXTRA CRISPY", 1, 0, 130, 320, 1, 0, -1, SetDifficultyAndStart, 4);
-CGameMenuItemChain menuDifficulty6("CUSTOM", 1, 0, 150, 320, 1, &menuDifficultyCustom, -1, NULL, 0);
+CGameMenuItemChain itemDifficulty6("CUSTOM", 1, 0, 150, 320, 1, &menuDifficultyCustom, -1, NULL, 0);
 
 CGameMenuItemTitle itemDifficultyCustomTitle("CUSTOM", 1, 160, 20, 2038);
 CGameMenuItemSlider sliderDifficultyCustomQuantity("ENEMIES QUANTITY:", 3, 66, 50, 180, 2, 0, 4, 1, NULL, -1, -1);
@@ -902,7 +902,7 @@ void SetupDifficultyMenu(void)
     menuDifficulty.Add(&itemDifficulty3, true);
     menuDifficulty.Add(&itemDifficulty4, false);
     menuDifficulty.Add(&itemDifficulty5, false);
-    menuDifficulty.Add(&menuDifficulty6, false);
+    menuDifficulty.Add(&itemDifficulty6, false);
     menuDifficulty.Add(&itemBloodQAV, false);
 
     menuDifficultyCustom.Add(&itemDifficultyCustomTitle, false);
