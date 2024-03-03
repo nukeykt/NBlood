@@ -7344,6 +7344,7 @@ void G_RestoreMapState(void)
 
         G_ClearFIFO();
         G_ResetTimers(0);
+        G_ResetViewScreenData();
     }
 }
 
