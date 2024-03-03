@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "premap.h"
 
 int osdhightile = 1;
-int osdshown = 0;
 
 #ifdef EDUKE32_TOUCH_DEVICES
 float osdscale = 2.f, osdrscale = 0.5f;
@@ -133,8 +132,6 @@ void dukeConsoleOnShowCallback(int shown)
         lock |= 2;
 
     mouseLockToWindow(lock);
-
-    osdshown = shown;
 
     // XXX: it's weird to fake a keypress like this.
 //    if (numplayers == 1 && ((shown && !ud.pause_on) || (!shown && ud.pause_on)))
