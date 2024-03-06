@@ -400,7 +400,11 @@ tools_obj := $(obj)/$(tools)
 
 tools_cflags := $(engine_cflags) -I$(engine_src)
 
-tools_deps := engine_tools mimalloc
+tools_deps := engine_tools
+
+ifneq (0,$(USE_MIMALLOC))
+    tools_deps += mimalloc
+endif
 
 tools_targets := \
     arttool \
@@ -669,14 +673,17 @@ endif
 #### Includes
 
 COMPILERFLAGS += \
+    -MP -MMD \
     -I$(engine_inc) \
     -I$(mact_inc) \
     -I$(audiolib_inc) \
     -I$(glad_inc) \
     -I$(voidwrap_inc) \
-    -I$(mimalloc_inc) \
     -I$(imgui_inc) \
-    -MP -MMD \
+
+ifneq (0,$(USE_MIMALLOC))
+    COMPILERFLAGS += -I$(mimalloc_inc)
+endif
 
 ifneq (0,$(USE_PHYSFS))
     COMPILERFLAGS += -I$(physfs_inc) -DUSE_PHYSFS
@@ -699,9 +706,12 @@ libraries := \
     glad \
     imgui \
     libxmplite \
-    mimalloc \
     mact \
     voidwrap \
+
+ifneq (0,$(USE_MIMALLOC))
+    libraries += mimalloc
+endif
 
 ifneq (0,$(USE_PHYSFS))
     libraries += physfs
