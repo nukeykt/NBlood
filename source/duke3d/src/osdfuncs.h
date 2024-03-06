@@ -31,5 +31,4 @@ void dukeConsoleOnShowCallback(int shown);
 void dukeConsoleClearBackground(int numcols, int numrows);
 
 extern int osdhightile;
-extern int osdshown;
 extern float osdscale, osdrscale;

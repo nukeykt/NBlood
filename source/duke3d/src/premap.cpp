@@ -1701,7 +1701,10 @@ void G_ResetTimers(bool saveMoveCnt)
 
     if (!saveMoveCnt)
         g_moveThingsCount = 0;
+}
 
+void G_ResetViewScreenData(void)
+{
     for (int vscrIndex = 0; vscrIndex < MAX_ACTIVE_VIEWSCREENS; vscrIndex++)
     {
         if (g_activeVscrSprite[vscrIndex] >= 0)
@@ -2074,6 +2077,7 @@ int G_EnterLevel(int gameMode)
     for (int i=g_interpolationCnt-1; i>=0; i--) bakipos[i] = *curipos[i];
 
     G_ResetTimers(0);  // Here we go
+    G_ResetViewScreenData();
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
 

@@ -230,7 +230,7 @@ int Gv_ReadSave(buildvfs_kfd kFile)
                     auto const siz = tabledivide32_branchfree(arrayAllocSize, readArray.size);
 
                     switch (aGameArrays[index].flags & GAMEARRAY_TYPE_MASK)
-                    {            
+                    {
                         case 0:
                         {
                             if (siz == sizeof(int16_t))
@@ -1990,6 +1990,9 @@ void Gv_RefreshPointers(void)
 #endif
 
     aGameArrays[Gv_GetArrayIndex("gotpic")].pValues = (intptr_t *)&gotpic[0];
+    aGameArrays[Gv_GetArrayIndex("gotsector")].pValues = (intptr_t *)&gotsector[0];
+    aGameArrays[Gv_GetArrayIndex("radiusdmgstatnums")].pValues = (intptr_t *)&g_radiusDmgStatnums[0];
+    aGameArrays[Gv_GetArrayIndex("show2dsector")].pValues = (intptr_t *)&show2dsector[0];
     aGameArrays[Gv_GetArrayIndex("tilesizx")].pValues = (intptr_t *)&tilesiz[0].x;
     aGameArrays[Gv_GetArrayIndex("tilesizy")].pValues = (intptr_t *)&tilesiz[0].y;
 }
