@@ -10809,7 +10809,7 @@ static FORCE_INLINE int32_t have_maptext(void)
 static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
 {
     initspritelists();
-#if USE_MIMALLOC != 0
+#ifdef USE_MIMALLOC
     mi_collect(true);
 #endif
     DO_FREE_AND_NULL(reachablesectors);

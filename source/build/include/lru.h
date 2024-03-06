@@ -43,7 +43,7 @@ private:
     int m_count;
 
 public:
-#if USE_MIMALLOC != 0
+#ifdef USE_MIMALLOC
     CircularQueue() { m_items = (T *)mi_calloc(Capacity, sizeof(T)); clear(); }
     ~CircularQueue() { mi_free(m_items); }
 #else
