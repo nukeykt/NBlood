@@ -991,6 +991,7 @@ void LocalKeys(void)
             return;
         case sc_F6:
             keyFlushScans();
+            CONTROL_ClearButton(gamefunc_Quick_Save);
             if (gGameOptions.nGameType == kGameTypeSinglePlayer)
                 DoQuickSave();
             break;
@@ -1001,6 +1002,7 @@ void LocalKeys(void)
             return;
         case sc_F9:
             keyFlushScans();
+            CONTROL_ClearButton(gamefunc_Quick_Load);
             if (gGameOptions.nGameType == kGameTypeSinglePlayer)
                 DoQuickLoad();
             break;
