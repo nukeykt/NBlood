@@ -326,7 +326,7 @@ void scrSetGameMode(int vidMode, int XRes, int YRes, int nBits)
 {
     videoResetMode();
     //videoSetGameMode(vidMode, XRes, YRes, nBits, 0);
-    if (videoSetGameMode(vidMode, XRes, YRes, nBits, 0) < 0)
+    if (videoSetGameMode(vidMode, XRes, YRes, nBits, gUpscaleFactor) < 0)
     {
         LOG_F(ERROR, "Failure setting video mode %dx%dx%d %s! Trying next mode...", XRes, YRes,
                     nBits, vidMode ? "fullscreen" : "windowed");
@@ -345,7 +345,7 @@ void scrSetGameMode(int vidMode, int XRes, int YRes, int nBits)
         int const savedIdx = resIdx;
         int bpp = nBits;
 
-        while (videoSetGameMode(0, validmode[resIdx].xdim, validmode[resIdx].ydim, bpp, 0) < 0)
+        while (videoSetGameMode(0, validmode[resIdx].xdim, validmode[resIdx].ydim, bpp, gUpscaleFactor) < 0)
         {
             LOG_F(ERROR, "Failure setting video mode %dx%dx%d windowed! Trying next mode...",
                         validmode[resIdx].xdim, validmode[resIdx].ydim, bpp);
