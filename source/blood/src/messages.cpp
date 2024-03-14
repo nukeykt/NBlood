@@ -450,20 +450,16 @@ void CGameMessageMgr::Display(void)
 
 void CGameMessageMgr::Clear(void)
 {
+    messagesIndex = nextMessagesIndex = numberOfDisplayedMessages = 0;
 #if 0 // we have the CPU cycles with current-day hardware to delete every message now, don't use this old method
     if (VanillaMode())
-    {
-        messagesIndex = nextMessagesIndex = numberOfDisplayedMessages = 0;
-    }
-    else
+        return;
 #endif
+    for (int i = 0; i < kMessageLogSize; i++)
     {
-        for (int i = 0; i < kMessageLogSize; i++)
-        {
-            messageStruct* pMessage = &messages[i];
-            pMessage->deleted = true;
-            pMessage->lastTickWhenVisible = 0;
-        }
+        messageStruct* pMessage = &messages[i];
+        pMessage->deleted = true;
+        pMessage->lastTickWhenVisible = 0;
     }
 }
 
