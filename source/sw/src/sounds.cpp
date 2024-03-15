@@ -1329,6 +1329,7 @@ void COVER_SetReverb(int amt)
     else
     {
         FX_SetReverb(amt);
+        FX_SetReverbDelay(768);
     }
 }
 
