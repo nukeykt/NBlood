@@ -969,6 +969,8 @@ void viewBackupView(int nPlayer)
     pView->at30 = pPlayer->q16ang;
     pView->at50 = pPlayer->pSprite->x;
     pView->at54 = pPlayer->pSprite->y;
+    if (!VanillaMode())
+        pView->at58 = pPlayer->pSprite->z;
     pView->at38 = pPlayer->zView;
     pView->at34 = pPlayer->zWeapon-pPlayer->zView-0xc00;
     pView->at24 = pPlayer->q16horiz;
@@ -986,6 +988,8 @@ void viewCorrectViewOffsets(int nPlayer, vec3_t const *oldpos)
     VIEW *pView = &gPrevView[nPlayer];
     pView->at50 += pPlayer->pSprite->x-oldpos->x;
     pView->at54 += pPlayer->pSprite->y-oldpos->y;
+    if (!VanillaMode())
+        pView->at58 += pPlayer->pSprite->z-oldpos->z;
     pView->at38 += pPlayer->pSprite->z-oldpos->z;
 }
 
@@ -2529,6 +2533,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
 }
 
 LOCATION gPrevSpriteLoc[kMaxSprites];
+static LOCATION gViewSpritePredictLoc;
 
 static void viewApplyDefaultPal(tspritetype *pTSprite, sectortype const *pSector)
 {
@@ -2570,7 +2575,14 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
 
         auto const tsprflags = pTSprite->clipdist;
 
-        if (gViewInterpolate && TestBitString(gInterpolateSprite, nSprite) && !(pTSprite->flags&512))
+        if (!VanillaMode() && gViewInterpolate && IsPlayerSprite(pTSprite) && gView && (gView->pSprite == &sprite[nSprite])) // improve network player prediction while in third person/co-op view
+        {
+            pTSprite->x = gViewSpritePredictLoc.x;
+            pTSprite->y = gViewSpritePredictLoc.y;
+            pTSprite->z = gViewSpritePredictLoc.z;
+            pTSprite->ang = fix16_to_int(gViewSpritePredictLoc.ang);
+        }
+        else if (gViewInterpolate && TestBitString(gInterpolateSprite, nSprite) && !(pTSprite->flags&512))
         {
             LOCATION *pPrevLoc = &gPrevSpriteLoc[nSprite];
             pTSprite->x = interpolate(pPrevLoc->x, pTSprite->x, gInterpolate);
@@ -3470,6 +3482,7 @@ void viewDrawScreen(void)
         renderSetAspect(viewingRange_fov, yxaspect);
         int cX = gView->pSprite->x;
         int cY = gView->pSprite->y;
+        gViewSpritePredictLoc.z = gView->pSprite->z;
         int cZ = gView->zView;
         int zDelta = gView->zWeapon-gView->zView-(12<<8);
         fix16_t cA = gView->q16ang;
@@ -3496,6 +3509,7 @@ void viewDrawScreen(void)
                 v8c = interpolate(predictOld.at8, predict.at8, gInterpolate);
                 v4c = interpolate(predictOld.at1c, predict.at1c, gInterpolate);
                 v48 = interpolate(predictOld.at18, predict.at18, gInterpolate);
+                gViewSpritePredictLoc.z = interpolate(predictOld.at58, predict.at58, gInterpolate);
             }
             else
             {
@@ -3511,6 +3525,7 @@ void viewDrawScreen(void)
                 v8c = interpolate(pView->at8, v8c, gInterpolate);
                 v4c = interpolate(pView->at1c, v4c, gInterpolate);
                 v48 = interpolate(pView->at18, v48, gInterpolate);
+                gViewSpritePredictLoc.z = interpolate(pView->at58, gViewSpritePredictLoc.z, gInterpolate);
             }
         }
         if (gView == gMe && (numplayers <= 1 || gPrediction) && gView->pXSprite->health != 0 && !VanillaMode())
@@ -3520,6 +3535,7 @@ void viewDrawScreen(void)
             q16look = gViewLook;
             q16horiz = fix16_from_float(100.f * tanf(fix16_to_float(q16look) * fPI / 1024.f));
         }
+        gViewSpritePredictLoc.x = cX, gViewSpritePredictLoc.y = cY, gViewSpritePredictLoc.ang = cA;
         viewUpdateShake();
         q16horiz += fix16_from_int(shakeHoriz);
         cA += fix16_from_int(shakeAngle);
