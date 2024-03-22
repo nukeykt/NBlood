@@ -28,7 +28,7 @@
 
 #define FLAC__NO_DLL
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
 #include <FLAC/all.h>
 #else
 #include "FLAC/all.h"
