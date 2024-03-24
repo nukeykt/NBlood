@@ -1804,6 +1804,7 @@ int app_main(int argc, char const * const * argv)
     netInitialize(true);
     scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
     scrSetGamma(gGamma);
+    gGameMessageMgr.SetState(gMessageState);
     viewResizeView(gViewSize);
     vsync = videoSetVsync(vsync);
     LOG_F(INFO, "Initializing sound system");
