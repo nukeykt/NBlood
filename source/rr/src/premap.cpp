@@ -2176,10 +2176,7 @@ static void resetpspritevars(char gameMode)
             s->yrepeat = RR ? 17 : 36;
             //s->xrepeat = 42;
             //s->yrepeat = 36;
-            if (!g_fakeMultiMode)
-                s->cstat = j < numplayers ? 1+256 : 32768;
-            else
-                s->cstat = j < ud.multimode ? 1+256 : 32768;
+            s->cstat = j < ud.multimode ? 1+256 : 32768;
             s->xoffset = 0;
             s->clipdist = 64;
 
