@@ -688,6 +688,12 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         || (pPlayer->timebeforeexit > 0 && pPlayer->timebeforeexit <= GAMETICSPERSEC * 3))
         return -1;
 
+    if (snd.m & SF_DTAG)  // Duke-Tag sound
+    {
+        S_PlaySound(sndNum);
+        return 0;
+    }
+
     // Duke talk
     if (snd.m & SF_TALK)
     {
@@ -703,29 +709,6 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         for (j = 0; j <= g_highestSoundIdx; ++j)
             if ((g_sounds[j].m & SF_TALK) && g_sounds[j].num > 0)
                 return -1;
-    }
-    else if (snd.m & SF_DTAG)  // Duke-Tag sound
-    {
-        int const voice = S_PlaySound(sndNum);
-
-        if (voice <= FX_Ok)
-            return -1;
-
-        j = 0;
-        while (j < MAXSOUNDINSTANCES && snd.voices[j].id != voice)
-            j++;
-
-#ifdef DEBUGGINGAIDS
-        if (EDUKE32_PREDICT_FALSE(j >= MAXSOUNDINSTANCES))
-        {
-            OSD_Printf(OSD_ERROR "%s %d: WTF?\n", __FILE__, __LINE__);
-            return -1;
-        }
-#endif
-
-        snd.voices[j].owner = spriteNum;
-
-        return voice;
     }
 
     int32_t    sndist, sndang;
