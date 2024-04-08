@@ -630,7 +630,8 @@ void WeaponLower(PLAYER *pPlayer)
     if (checkLitSprayOrTNT(pPlayer))
         return;
     pPlayer->throwPower = 0;
-    int prevState = pPlayer->weaponState;
+    const int prevState = pPlayer->weaponState;
+    const int prevWeapon = pPlayer->curWeapon;
     switch (pPlayer->curWeapon)
     {
     case kWeaponPitchfork:
@@ -800,6 +801,9 @@ void WeaponLower(PLAYER *pPlayer)
     }
     pPlayer->curWeapon = kWeaponNone;
     pPlayer->qavLoop = 0;
+
+    if ((prevWeapon != kWeaponTNT && prevWeapon != kWeaponSprayCan) && !VanillaMode()) // reset weapon state after switching weapon (except when switching from tnt/spray)
+        pPlayer->weaponState = 0;
 }
 
 void WeaponUpdateState(PLAYER *pPlayer)
