@@ -3,9 +3,9 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "Build EDuke32 and Mapster32 Debug",
+            "label": "Build Rednukem Debug",
             "linux": {
-                "command": "make RELEASE=0",
+                "command": "make rr RELEASE=0",
                 "details": "GNU Make for Linux"
             },
             "windows": {
@@ -17,13 +17,13 @@
         },
         {
             "type": "shell",
-            "label": "Build VoidSW and Wangulator Debug",
+            "label": "Build NBlood Debug",
             "linux": {
-                "command": "make sw RELEASE=0",
+                "command": "make blood RELEASE=0",
                 "details": "GNU Make for Linux"
             },
             "windows": {
-                "command": "mingw32-make.exe sw RELEASE=0",
+                "command": "mingw32-make.exe blood RELEASE=0",
                 "detail": "GNU Make with mingw32 for Windows"
             },
             "group": "build",
@@ -31,13 +31,13 @@
         },
         {
             "type": "shell",
-            "label": "Build EKenbuild and EKenbuild-Editor Debug",
+            "label": "Build PCExhumed Debug",
             "linux": {
-                "command": "make kenbuild RELEASE=0",
+                "command": "make exhumed RELEASE=0",
                 "details": "GNU Make for Linux"
             },
             "windows": {
-                "command": "mingw32-make.exe kenbuild RELEASE=0",
+                "command": "mingw32-make.exe exhumed RELEASE=0",
                 "detail": "GNU Make with mingw32 for Windows"
             },
             "group": "build",
