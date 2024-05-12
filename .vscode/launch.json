@@ -37,5 +37,29 @@
             },
             "cwd": "${workspaceRoot}",
         }
+        {
+            "name": "Debug ETekwar",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/etekwar",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/etekwar.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "Debug EWitchaven",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/ewitchaven",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/ewitchaven.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        }
     ]
 }
