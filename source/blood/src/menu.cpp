@@ -58,6 +58,7 @@ void SetShowPlayerNames(CGameMenuItemZBool *);
 void SetShowWeapons(CGameMenuItemZCycle *);
 
 void SetWeaponsV10X(CGameMenuItemZBool*);
+void SetVanillaMode(CGameMenuItemZBool *pItem);
 
 void SetSlopeTilting(CGameMenuItemZBool *);
 void SetViewBobbing(CGameMenuItemZBool *);
@@ -445,10 +446,6 @@ void SetWeaponSwitch(CGameMenuItemZCycle *pItem);
 
 CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
 
-///////////////
-CGameMenuItemZBool itemOptionsGameBoolWeaponsV10X("V1.0x WEAPONS BALANCE:", 3, 66, 130, 180, gWeaponsV10x, SetWeaponsV10X, NULL, NULL);
-///////////////////
-
 CGameMenuItemZBool itemOptionsGameBoolShowPlayerNames("SHOW PLAYER NAMES:", 3, 66, 60, 180, gShowPlayerNames, SetShowPlayerNames, NULL, NULL);
 CGameMenuItemZCycle itemOptionsGameShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
 CGameMenuItemZBool itemOptionsGameBoolSlopeTilting("SLOPE TILTING:", 3, 66, 80, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
@@ -456,7 +453,12 @@ CGameMenuItemZBool itemOptionsGameBoolViewBobbing("VIEW BOBBING:", 3, 66, 90, 18
 CGameMenuItemZBool itemOptionsGameBoolViewSwaying("VIEW SWAYING:", 3, 66, 100, 180, gViewHBobbing, SetViewSwaying, NULL, NULL);
 CGameMenuItemZCycle itemOptionsGameBoolAutoAim("AUTO AIM:", 3, 66, 110, 180, 0, SetAutoAim, pzAutoAimStrings, ARRAY_SSIZE(pzAutoAimStrings), 0);
 CGameMenuItemZCycle itemOptionsGameWeaponSwitch("EQUIP PICKUPS:", 3, 66, 120, 180, 0, SetWeaponSwitch, pzWeaponSwitchStrings, ARRAY_SSIZE(pzWeaponSwitchStrings), 0);
-CGameMenuItemChain itemOptionsGameChainParentalLock("PARENTAL LOCK", 3, 0, 120, 320, 1, &menuParentalLock, -1, NULL, 0);
+CGameMenuItemChain itemOptionsGameChainParentalLock("PARENTAL LOCK", 3, 0, 130, 320, 1, &menuParentalLock, -1, NULL, 0);
+
+///////////////
+CGameMenuItemZBool itemOptionsGameBoolWeaponsV10X("V1.0x WEAPONS BALANCE:", 3, 66, 130, 180, gWeaponsV10x, SetWeaponsV10X, NULL, NULL);
+CGameMenuItemZBool itemOptionsGameBoolVanillaMode("VANILLA MODE:", 3, 66, 140, 180, gVanilla, SetVanillaMode, NULL, NULL);
+///////////////////
 
 CGameMenuItemTitle itemOptionsDisplayTitle("DISPLAY SETUP", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0, &menuOptionsDisplayColor, -1, NULL, 0);
@@ -1254,9 +1256,8 @@ void SetupOptionsMenu(void)
     menuOptionsGame.Add(&itemOptionsGameWeaponSwitch, false);
 
     //////////////////////
-    if (gGameOptions.nGameType == kGameTypeSinglePlayer) {
-        menuOptionsGame.Add(&itemOptionsGameBoolWeaponsV10X, false);
-    }
+    menuOptionsGame.Add(&itemOptionsGameBoolWeaponsV10X, false);
+    menuOptionsGame.Add(&itemOptionsGameBoolVanillaMode, false);
     /////////////////////
 
     //menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
@@ -1271,6 +1272,7 @@ void SetupOptionsMenu(void)
 
     ///////
     itemOptionsGameBoolWeaponsV10X.at20 = gWeaponsV10x;
+    itemOptionsGameBoolVanillaMode.at20 = gVanilla;
     ///////
 
     menuOptionsDisplay.Add(&itemOptionsDisplayTitle, false);
@@ -1672,6 +1674,20 @@ void SetWeaponsV10X(CGameMenuItemZBool* pItem)
         gWeaponsV10x = pItem->at20;
         gGameOptions.weaponsV10x = pItem->at20;
     }
+}
+
+void SetVanillaMode(CGameMenuItemZBool* pItem)
+{
+    gVanilla = pItem->at20;
+    if ((gGameOptions.nGameType == kGameTypeSinglePlayer) && (numplayers == 1))
+    {
+        VanillaModeUpdate();
+        viewClearInterpolations();
+        viewResizeView(gViewSize);
+        gGameMessageMgr.Clear();
+    }
+    else
+        viewSetMessage("Vanilla mode is disabled for multiplayer");
 }
 ////
 

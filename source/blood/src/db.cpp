@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 #ifdef NOONE_EXTENSIONS
 #include "nnexts.h"
+#include "view.h"
 #endif
 
 #ifdef NOONE_EXTENSIONS
@@ -275,7 +276,7 @@ void qinitspritelists(void) // Replace
     {
         headspritestat[i] = -1;
     }
-    int const nMaxSprites = bVanilla ? 4096 : kMaxSprites;
+    int const nMaxSprites = VanillaMode() ? 4096 : kMaxSprites;
     for (short i = 0; i < nMaxSprites; i++)
     {
         sprite[i].sectnum = -1;
@@ -407,7 +408,7 @@ unsigned short dbInsertXSprite(int nSprite)
         ThrowError("Out of free XSprites");
     }
     memset(&xsprite[nXSprite], 0, sizeof(XSPRITE));
-    if (!bVanilla)
+    if (!VanillaMode())
         memset(&gSpriteHit[nXSprite], 0, sizeof(SPRITEHIT));
     xsprite[nXSprite].reference = nSprite;
     sprite[nSprite].extra = nXSprite;
@@ -1295,6 +1296,14 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         LOG_F(ERROR, "Corrupted Map file");
         return -1;
     }
+
+#ifdef NOONE_EXTENSIONS
+    if (VanillaMode() && gModernMap)
+    {
+        viewSetMessage("Warning: Modern levels are not compatible with vanilla mode");
+        viewSetMessage("Please disable vanilla mode and restart level");
+    }
+#endif
 
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER)

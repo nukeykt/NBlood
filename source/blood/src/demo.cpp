@@ -236,6 +236,7 @@ void CDemo::Close(void)
     }
     at0 = 0;
     at1 = 0;
+    m_bLegacy = false;
 }
 
 bool CDemo::SetupPlayback(const char *pzFile)

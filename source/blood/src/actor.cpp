@@ -4609,7 +4609,7 @@ void MoveDude(spritetype *pSprite)
         GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, CLIPMASK0, PARALLAXCLIP_CEILING|PARALLAXCLIP_FLOOR);
         if (pPlayer)
         {
-            if (bVanilla)
+            if (VanillaMode())
                 playerResetInertia(pPlayer);
             else
                 playerCorrectInertia(pPlayer, &oldpos);
@@ -6542,7 +6542,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                 // shoting in TNT makes it explode, so type changes to range of 0-8
                 // however statnum changes to 2 (explosion) later in actPostSprite()...
                 // this is why this type range check is required here
-                if (bVanilla || (pSprite->type >= kThingBase && pSprite->type < kThingMax))
+                if (VanillaMode() || (pSprite->type >= kThingBase && pSprite->type < kThingMax))
                 {
                     int t = thingInfo[pSprite->type - kThingBase].mass;
                     if (t > 0 && pVectorData->impulse)

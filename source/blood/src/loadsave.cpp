@@ -177,9 +177,7 @@ void LoadSave::LoadGame(char *pzFile)
     gFrameRate = 0;
     totalclock = 0;
     gPaused = 0;
-    gGameStarted = 1;
-    bVanilla = false;
-    
+    gGameStarted = 1;    
 
 #ifdef USE_STRUCT_TRACKERS
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));
