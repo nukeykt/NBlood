@@ -9,7 +9,7 @@
                 "details": "GNU Make for Linux"
             },
             "windows": {
-                "command": "mingw32-make.exe RELEASE=0",
+                "command": "mingw32-make.exe rr RELEASE=0",
                 "detail": "GNU Make with mingw32 for Windows"
             },
             "group": "build",
