@@ -45,6 +45,34 @@
         },
         {
             "type": "shell",
+            "label": "Build ETekwar Debug",
+            "linux": {
+                "command": "make tekwar RELEASE=0",
+                "details": "GNU Make for Linux"
+            },
+            "windows": {
+                "command": "mingw32-make.exe tekwar RELEASE=0",
+                "detail": "GNU Make with mingw32 for Windows"
+            },
+            "group": "build",
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
+            "label": "Build EWitchaven Debug",
+            "linux": {
+                "command": "make witchaven RELEASE=0",
+                "details": "GNU Make for Linux"
+            },
+            "windows": {
+                "command": "mingw32-make.exe witchaven RELEASE=0",
+                "detail": "GNU Make with mingw32 for Windows"
+            },
+            "group": "build",
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
             "label": "Clean all",
             "linux": {
                 "command": "make clean",
