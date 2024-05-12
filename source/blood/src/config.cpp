@@ -116,6 +116,7 @@ int32_t gFMPianoFix;
 
 //////////
 int gWeaponsV10x;
+int gVanilla;
 /////////
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
@@ -407,6 +408,9 @@ void CONFIG_SetDefaults(void)
     gMouseAim = 1;
     gAutoAim = 1;
     gWeaponSwitch = 1;
+
+    gWeaponsV10x = 0;
+    gVanilla = 0;
 
     Bstrcpy(szPlayerName, "Player");
 
@@ -718,6 +722,7 @@ int CONFIG_ReadSetup(void)
     // Nuke: make cvar
     ///////
     SCRIPT_GetNumber(scripthandle, "Game Options", "WeaponsV10x", &gWeaponsV10x);
+    SCRIPT_GetNumber(scripthandle, "Game Options", "VanillaMode", &gVanilla);
     ///////
 
     char commmacro[] = "CommbatMacro# ";
@@ -991,6 +996,7 @@ void CONFIG_WriteSetup(uint32_t flags)
 
     ///////
     SCRIPT_PutNumber(scripthandle, "Game Options", "WeaponsV10x", gWeaponsV10x, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Game Options", "VanillaMode", gVanilla, FALSE, FALSE);
     ///////
     
     SCRIPT_Save(scripthandle, SetupFilename);

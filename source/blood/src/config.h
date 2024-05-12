@@ -97,6 +97,7 @@ extern int32_t gFMPianoFix;
 
 ///////
 extern int gWeaponsV10x;
+extern int gVanilla;
 //////
 
 int  CONFIG_ReadSetup(void);

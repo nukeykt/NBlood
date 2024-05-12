@@ -593,6 +593,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
+    VanillaModeUpdate();
     if (gGameOptions.nGameType == kGameTypeSinglePlayer)
     {
         if (!(gGameOptions.uGameFlags&kGameFlagContinuing))
@@ -645,7 +646,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             gHealthTemp[i] = xsprite[gPlayer[i].pSprite->extra].health;
         }
     }
-    bVanilla = gDemo.at1 && gDemo.m_bLegacy;
     drawLoadingScreen();
     if (dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC))
     {
@@ -795,6 +795,7 @@ void StartNetworkLevel(void)
 {
     if (gDemo.at0)
         gDemo.Close();
+    VanillaModeUpdate();
     if (!(gGameOptions.uGameFlags&kGameFlagContinuing))
     {
         gGameOptions.nEpisode = gPacketStartGame.episodeId;
@@ -1046,6 +1047,7 @@ bool gRestartGame = false;
 void ProcessFrame(void)
 {
     char buffer[128];
+    VanillaModeUpdate();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
         gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
@@ -1848,6 +1850,7 @@ RESTART:
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     gQuitGame = 0;
     gRestartGame = 0;
+    VanillaModeUpdate();
     if (gGameOptions.nGameType != kGameTypeSinglePlayer)
     {
         KB_ClearKeysDown();
@@ -2012,6 +2015,7 @@ RESTART:
         gQuitRequest = 0;
         gRestartGame = 0;
         gGameStarted = 0;
+        VanillaModeUpdate();
         levelSetupOptions(0,0);
         while (gGameMenuMgr.m_bActive)
         {
@@ -2778,12 +2782,18 @@ void LoadExtraArts(void)
     }
 }
 
-bool DemoRecordStatus(void) {
-    return gDemo.at0;
+bool VanillaModeDemo(void) {
+    return gDemo.m_bLegacy && gDemo.at1;
 }
 
-bool VanillaMode() {
-    return gDemo.m_bLegacy && gDemo.at1;
+static bool bVanilla = 0;
+
+void VanillaModeUpdate(void) {
+    bVanilla = VanillaModeDemo() || (gVanilla && !gDemo.at0 && gGameOptions.nGameType == kGameTypeSinglePlayer && numplayers == 1);
+}
+
+bool VanillaMode(void) {
+    return bVanilla;
 }
 
 bool fileExistsRFF(int id, const char *ext) {

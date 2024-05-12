@@ -43,7 +43,6 @@ extern int gFrame;
 //extern ClockTicks gGameClock;
 extern int gFrameRate;
 extern int gGamma;
-extern bool bVanilla;
 
 extern Resource gSysRes;
 

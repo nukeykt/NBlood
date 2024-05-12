@@ -424,7 +424,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     }
     if (pInput->q16turn)
     {
-        if (bVanilla)
+        if (VanillaMode())
             predict.at30 = ((predict.at30&0x7ff0000)+(pInput->q16turn&0x7ff0000))&0x7ffffff;
         else
             predict.at30 = (predict.at30+pInput->q16turn)&0x7ffffff;
