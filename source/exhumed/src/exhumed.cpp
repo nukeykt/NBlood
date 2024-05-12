@@ -2035,6 +2035,14 @@ int app_main(int argc, char const* const* argv)
                     i++;
                 }
             }
+            else if (Bstrcasecmp(pChar, "mh") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddDefModule(argv[i + 1]);
+                    i++;
+                }
+            }
             else
             {
                 char c = tolower(*pChar);
