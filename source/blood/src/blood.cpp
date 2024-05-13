@@ -777,7 +777,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (!gDemo.at1)
         gGameMenuMgr.Deactivate();
     levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
-    // viewSetMessage("");
+    viewSetMessage("");
     viewSetErrorMessage("");
     viewResizeView(gViewSize);
     if ((gGameOptions.nGameType == kGameTypeTeams) && VanillaMode())
