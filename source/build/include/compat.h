@@ -14,6 +14,10 @@
 #include <string.h>
 
 #ifdef USE_MIMALLOC
+# if defined __cplusplus && defined __APPLE__
+// avoid compilation failure due to use of std::realloc in this header
+#  include <locale>
+# endif
 # include "mimalloc.h"
 # include "mimalloc-override.h"
 #endif

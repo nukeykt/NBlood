@@ -848,6 +848,13 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
         || (pPlayer->timebeforeexit > 0 && pPlayer->timebeforeexit <= GAMETICSPERSEC * 3))
         return -1;
 
+    // Duke-Tag sound
+    if ((snd->flags & (SF_DTAG|SF_GLOBAL)) == SF_DTAG)
+    {
+        S_PlaySound(sndNum);
+        return 0;
+    }
+
     // Duke talk
     if (snd->flags & SF_TALK)
     {
@@ -859,27 +866,6 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t& pos)
         // don't play if any Duke talk sounds are already playing
         else if (g_dukeTalk || !(ud.config.VoiceToggle & 1))
             return -1;
-    }
-    else if ((snd->flags & (SF_DTAG|SF_GLOBAL)) == SF_DTAG)  // Duke-Tag sound
-    {
-        int const voice = S_PlaySound(sndNum);
-
-        if (voice <= FX_Ok)
-            return -1;
-
-        int slot = 0;
-        while (slot < MAXSOUNDINSTANCES && snd->voices[slot].handle != voice)
-            slot++;
-
-        if (/*EDUKE32_PREDICT_FALSE*/(slot >= MAXSOUNDINSTANCES))
-        {
-            LOG_F(WARNING, "S_PlaySound3D: slot >= MAXSOUNDINSTANCES!");
-            return -1;
-        }
-
-        snd->voices[slot].owner = spriteNum;
-
-        return voice;
     }
 
     int32_t    sndist, sndang;

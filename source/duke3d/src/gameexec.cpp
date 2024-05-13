@@ -3566,13 +3566,27 @@ breakfor:
                 insptr++;
 
                 tw = (*insptr++ - vm.pSprite->xrepeat) << 1;
-                vm.pSprite->xrepeat += ksgn(tw);
 
-                if ((vm.pSprite->picnum == APLAYER && vm.pSprite->yrepeat < 36) || *insptr < vm.pSprite->yrepeat
-                    || ((vm.pSprite->yrepeat * (tilesiz[vm.pSprite->picnum].y + 8)) << 2) < (vm.pActor->floorz - vm.pActor->ceilingz))
+                if (PLUTOPAK)
                 {
+                    vm.pSprite->xrepeat += ksgn(tw);
+
+                    if ((vm.pSprite->picnum == APLAYER && vm.pSprite->yrepeat < 36) || *insptr < vm.pSprite->yrepeat
+                        || ((vm.pSprite->yrepeat * (tilesiz[vm.pSprite->picnum].y + 8)) << 2) < (vm.pActor->floorz - vm.pActor->ceilingz))
+                    {
+                        tw = ((*insptr) - vm.pSprite->yrepeat) << 1;
+                        if (klabs(tw))
+                            vm.pSprite->yrepeat += ksgn(tw);
+                    }
+                }
+                else
+                {
+                    if (klabs(tw) > 2)
+                        vm.pSprite->xrepeat += ksgn(tw);
+
                     tw = ((*insptr) - vm.pSprite->yrepeat) << 1;
-                    if (klabs(tw))
+
+                    if (klabs(tw) > 2)
                         vm.pSprite->yrepeat += ksgn(tw);
                 }
 
