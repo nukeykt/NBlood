@@ -2782,14 +2782,10 @@ void LoadExtraArts(void)
     }
 }
 
-bool VanillaModeDemo(void) {
-    return gDemo.m_bLegacy && gDemo.at1;
-}
-
 static bool bVanilla = 0;
 
 void VanillaModeUpdate(void) {
-    bVanilla = VanillaModeDemo() || (gVanilla && !gDemo.at0 && gGameOptions.nGameType == kGameTypeSinglePlayer && numplayers == 1);
+    bVanilla = gDemo.VanillaDemo() || (gVanilla && !gDemo.at0 && gGameOptions.nGameType == kGameTypeSinglePlayer && numplayers == 1);
 }
 
 bool VanillaMode(void) {
