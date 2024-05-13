@@ -2031,7 +2031,22 @@ void viewResizeView(int size)
         gViewY1S = divscale16(gViewY1, yscale);
     }
     videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
-    gGameMessageMgr.SetCoordinates(gViewX0S + 1, gViewY0S + 1);
+    if (gViewMode == 4) // 2D map view
+    {
+        int nOffset = bDrawFragsBg ? tilesiz[2229].y*((gNetPlayers+3)/4) : 0;
+        nOffset = divscale16(nOffset, yscale);
+        nOffset += gGameOptions.nGameType == kGameTypeSinglePlayer && !VanillaMode() ? 6 : 1;
+        gGameMessageMgr.SetCoordinates(1, nOffset);
+    }
+    else
+    {
+        int nOffset = 1;
+        if ((gGameOptions.nGameType == kGameTypeTeams) && VanillaMode()) // lower text for vanilla CTF hud (v1.21 did not do this)
+            nOffset = 15;
+        else if ((gGameOptions.nGameType == kGameTypeSinglePlayer) && (gViewSize < 4) && !VanillaMode()) // lower message position for single-player
+            nOffset = 6;
+        gGameMessageMgr.SetCoordinates(gViewX0S + 1, gViewY0S + nOffset);
+    }
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     viewUpdatePages();
 }
