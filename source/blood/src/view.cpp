@@ -368,8 +368,11 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         gViewLookAdjust = 0.f;
     }
 
-    predict.at70 = pInput->syncFlags.run;
+#if 0 // syncFlags.run is not passed to input packet on ProcessFrame(), so don't apply this logic here
+    predict.at70 = VanillaMode() ? pInput->syncFlags.run : 0;
+#else
     predict.at70 = 0;
+#endif
     predict.at71 = pInput->buttonFlags.jump;
     if (predict.at48 == 1)
     {
