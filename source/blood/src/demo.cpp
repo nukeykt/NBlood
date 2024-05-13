@@ -511,6 +511,11 @@ void CDemo::LoadDemoInfo(void)
     pCurrentDemo = pFirstDemo;
 }
 
+bool CDemo::VanillaDemo(void)
+{
+    return at1 && m_bLegacy;
+}
+
 void CDemo::NextDemo(void)
 {
     pCurrentDemo = pCurrentDemo->pNext ? pCurrentDemo->pNext : pFirstDemo;

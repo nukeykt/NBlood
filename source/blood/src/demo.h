@@ -87,6 +87,7 @@ public:
     void Playback(void);
     void StopPlayback(void);
     void LoadDemoInfo(void);
+    bool VanillaDemo(void);
     void NextDemo(void);
     void FlushInput(int nCount);
     void ReadInput(int nCount);
