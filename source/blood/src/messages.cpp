@@ -424,7 +424,7 @@ void CGameMessageMgr::Display(void)
 
             int shade = ClipHigh(messagesToDisplayCount*8, 48);
             int x = gViewMode == 3 ? gViewX0S : 0;
-            int y = (gViewMode == 3 ? this->y : 0) + (int)at9;
+            int y = this->y + (int)at9;
             for (int i = 0; i < messagesToDisplayCount; i++)
             {
                 messageStruct* pMessage = messagesToDisplay[i];
