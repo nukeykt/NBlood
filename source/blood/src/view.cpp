@@ -1984,6 +1984,7 @@ void viewInit(void)
 
 void viewResizeView(int size)
 {
+    const char bDrawFragsBg = (gGameOptions.nGameType != kGameTypeSinglePlayer) && (!VanillaMode() || gGameOptions.nGameType != kGameTypeTeams);
     int xdimcorrect = ClipHigh(scale(ydim, 4, 3), xdim);
     gViewXCenter = xdim-xdim/2;
     gViewYCenter = ydim-ydim/2;
@@ -1999,7 +2000,7 @@ void viewResizeView(int size)
         gViewX1 = xdim-1;
         gViewY0 = 0;
         gViewY1 = ydim-1;
-        if (gGameOptions.nGameType != kGameTypeSinglePlayer)
+        if (bDrawFragsBg)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
@@ -2014,7 +2015,7 @@ void viewResizeView(int size)
         gViewY0 = 0;
         gViewX1 = xdim-1;
         gViewY1 = ydim-1-(25*ydim)/200;
-        if (gGameOptions.nGameType != kGameTypeSinglePlayer)
+        if (bDrawFragsBg)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
