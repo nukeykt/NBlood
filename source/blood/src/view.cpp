@@ -2033,7 +2033,7 @@ void viewResizeView(int size)
     videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
     if (gViewMode == 4) // 2D map view
     {
-        int nOffset = bDrawFragsBg ? tilesiz[2229].y*((gNetPlayers+3)/4) : 0;
+        int nOffset = bDrawFragsBg && !VanillaMode() ? (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200 : 0;
         nOffset = divscale16(nOffset, yscale);
         nOffset += gGameOptions.nGameType == kGameTypeSinglePlayer && !VanillaMode() ? 6 : 1;
         gGameMessageMgr.SetCoordinates(1, nOffset);
