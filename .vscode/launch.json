@@ -2,74 +2,62 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug EDuke32",
+            "name": "Debug Rednukem",
             "type": "cppdbg",
             "request": "launch",
             "linux": {
-                "program": "${workspaceRoot}/eduke32",
+                "program": "${workspaceRoot}/rednukem",
             },
             "windows": {
-                "program": "${workspaceRoot}/eduke32.exe",
+                "program": "${workspaceRoot}/rednukem.exe",
             },
             "cwd": "${workspaceRoot}",
         },
         {
-            "name": "Debug Mapster32",
+            "name": "Debug NBlood",
             "type": "cppdbg",
             "request": "launch",
             "linux": {
-                "program": "${workspaceRoot}/mapster32",
+                "program": "${workspaceRoot}/nblood",
             },
             "windows": {
-                "program": "${workspaceRoot}/mapster32.exe",
+                "program": "${workspaceRoot}/nblood.exe",
             },
             "cwd": "${workspaceRoot}",
         },
         {
-            "name": "Debug VoidSW",
+            "name": "Debug PCExhumed",
             "type": "cppdbg",
             "request": "launch",
             "linux": {
-                "program": "${workspaceRoot}/voidsw",
+                "program": "${workspaceRoot}/pcexhumed",
             },
             "windows": {
-                "program": "${workspaceRoot}/voidsw.exe",
+                "program": "${workspaceRoot}/pcexhumed.exe",
+            },
+            "cwd": "${workspaceRoot}",
+        }
+        {
+            "name": "Debug ETekwar",
+            "type": "cppdbg",
+            "request": "launch",
+            "linux": {
+                "program": "${workspaceRoot}/etekwar",
+            },
+            "windows": {
+                "program": "${workspaceRoot}/etekwar.exe",
             },
             "cwd": "${workspaceRoot}",
         },
         {
-            "name": "Debug Wangulator",
+            "name": "Debug EWitchaven",
             "type": "cppdbg",
             "request": "launch",
             "linux": {
-                "program": "${workspaceRoot}/wangulator",
+                "program": "${workspaceRoot}/ewitchaven",
             },
             "windows": {
-                "program": "${workspaceRoot}/wangulator.exe",
-            },
-            "cwd": "${workspaceRoot}",
-        },
-        {
-            "name": "Debug EKenBuild",
-            "type": "cppdbg",
-            "request": "launch",
-            "linux": {
-                "program": "${workspaceRoot}/ekenbuild",
-            },
-            "windows": {
-                "program": "${workspaceRoot}/ekenbuild.exe",
-            },
-            "cwd": "${workspaceRoot}",
-        },
-        {
-            "name": "Debug EKenBuild-Editor",
-            "type": "cppdbg",
-            "request": "launch",
-            "linux": {
-                "program": "${workspaceRoot}/ekenbuild-editor",
-            },
-            "windows": {
-                "program": "${workspaceRoot}/ekenbuild-editor.exe",
+                "program": "${workspaceRoot}/ewitchaven.exe",
             },
             "cwd": "${workspaceRoot}",
         }
