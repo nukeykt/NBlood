@@ -295,10 +295,16 @@ static void G_DrawWeapAmounts(const DukePlayer_t *p, int32_t x, int32_t y, int32
     {
         if (u != -1) G_PatchStatusBar(158, 190, 162+29, 190+6); //original code: (166,190,166+8,190+6);
 
-        G_DrawWeapNum(-1, x+70, y+12,
-            p->ammo_amount[FREEZE_WEAPON], p->max_ammo_amount[FREEZE_WEAPON],
-            (((p->gotweapon & (1<<FREEZE_WEAPON)) == 0)*9)+12-18*
-            (cw == FREEZE_WEAPON));
+        if (p->subweapon&(1<<FLAMETHROWER_WEAPON))
+            G_DrawWeapNum(-1, x+70, y+12,
+                p->ammo_amount[FLAMETHROWER_WEAPON], p->max_ammo_amount[FLAMETHROWER_WEAPON],
+                (((p->gotweapon & (1<<FLAMETHROWER_WEAPON)) == 0)*9)+12-18*
+                (cw == FLAMETHROWER_WEAPON));
+        else
+            G_DrawWeapNum(-1, x+70, y+12,
+                p->ammo_amount[FREEZE_WEAPON], p->max_ammo_amount[FREEZE_WEAPON],
+                (((p->gotweapon & (1<<FREEZE_WEAPON)) == 0)*9)+12-18*
+                (cw == FREEZE_WEAPON));
     }
 }
 
