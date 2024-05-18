@@ -127,6 +127,8 @@ bool gSaveGameActive;
 int gCacheMiss;
 int gMenuPicnum = 2518; // default menu picnum
 
+bool bVanilla = 0;
+
 enum gametokens
 {
     T_INCLUDE = 0,
@@ -2782,14 +2784,8 @@ void LoadExtraArts(void)
     }
 }
 
-static bool bVanilla = 0;
-
 void VanillaModeUpdate(void) {
     bVanilla = gDemo.VanillaDemo() || (gVanilla && !gDemo.at0 && gGameOptions.nGameType == kGameTypeSinglePlayer && numplayers == 1);
-}
-
-bool VanillaMode(void) {
-    return bVanilla;
 }
 
 bool fileExistsRFF(int id, const char *ext) {
