@@ -147,9 +147,6 @@ def _setup_environment():
     cflags = common_flags + ' -I' + root_path + os.sep + 'include'
     ldflags = common_flags + ' -L' + root_path + os.sep + 'lib'
 
-    # Workaround for undefined symbol _AudioUnitSetParameter linker error with playwave from libSDL2_mixer
-    ldflags += ' -framework AudioUnit'
-
     Package.environment['CPPFLAGS'] = cflags
     Package.environment['CFLAGS'] = cflags
     Package.environment['CXXFLAGS'] = cflags
@@ -159,16 +156,6 @@ def _setup_environment():
 
 
 _packages = (
-    Package(
-        name='libogg',
-        source='https://downloads.xiph.org/releases/ogg/libogg-1.3.3.tar.xz',
-        checksum='4f3fc6178a533d392064f14776b23c397ed4b9f48f5de297aba73b643f955c08',
-    ),
-    Package(
-        name='libvorbis',
-        source='https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.6.tar.xz',
-        checksum='af00bb5a784e7c9e69f56823de4637c350643deedaf333d0fa86ecdba6fcb415',
-    ),
     Package(
         name='FLAC',
         source='https://downloads.xiph.org/releases/flac/flac-1.3.2.tar.xz',
@@ -191,12 +178,6 @@ _packages = (
         source='https://www.libsdl.org/release/SDL2-2.0.9.tar.gz',
         checksum='255186dc676ecd0c1dbf10ec8a2cc5d6869b5079d8a38194c2aecdff54b324b1',
         arguments=('--without-x',)
-    ),
-    Package(
-        name='SDL2_mixer',
-        source='https://www.libsdl.org/projects/SDL_mixer/release/SDL2_mixer-2.0.4.tar.gz',
-        checksum='b4cf5a382c061cd75081cf246c2aa2f9df8db04bdda8dcdc6b6cca55bede2419',
-        arguments=('--disable-music-ogg-shared', '--disable-music-flac-shared')
     ),
 )
 

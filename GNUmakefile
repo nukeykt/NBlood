@@ -953,10 +953,6 @@ ifeq ($(PLATFORM),WINDOWS)
     endif
 endif
 
-ifeq ($(PLATFORM),WII)
-    LIBS += -lvorbisidec
-endif
-
 ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     rr_game_objs += startgtk.game.cpp
     rr_game_gen_objs += game_banner.c
