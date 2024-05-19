@@ -72,6 +72,8 @@ extern int gCacheMiss;
 extern int gDoQuickSave;
 extern int gMenuPicnum;
 
+extern bool bVanilla;
+
 void QuitGame(void);
 void PreloadCache(void);
 void StartLevel(GAMEOPTIONS *gameOptions);
@@ -80,7 +82,7 @@ void ScanINIFiles(void);
 bool LoadArtFile(const char *pzFile);
 void LoadExtraArts(void);
 void VanillaModeUpdate(void);
-bool VanillaMode(void);
+inline bool VanillaMode(void) {return bVanilla;}
 bool fileExistsRFF(int id, const char* ext);
 int sndTryPlaySpecialMusic(int nMusic);
 void sndPlaySpecialMusicOrNothing(int nMusic);
