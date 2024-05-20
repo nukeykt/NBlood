@@ -25,6 +25,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "controls.h"
 
+#ifndef kMaxPlayers // copy define from common_game.h
+#define kMaxPlayers 8
+#endif
+
 enum PACKETMODE {
     PACKETMODE_0 = 0,
     PACKETMODE_1,
@@ -51,21 +55,21 @@ extern bool gStartNewGame;
 extern PACKETMODE gPacketMode;
 extern ClockTicks gNetFifoClock;
 extern int gNetFifoTail;
-extern int gNetFifoHead[8];
+extern int gNetFifoHead[kMaxPlayers];
 extern int gPredictTail;
 extern int gNetFifoMasterTail;
-extern GINPUT gFifoInput[256][8];
-extern int myMinLag[8];
+extern GINPUT gFifoInput[256][kMaxPlayers];
+extern int myMinLag[kMaxPlayers];
 extern int otherMinLag;
 extern int myMaxLag;
 extern unsigned int gChecksum[4];
-extern unsigned int gCheckFifo[256][8][4];
-extern int gCheckHead[8];
+extern unsigned int gCheckFifo[256][kMaxPlayers][4];
+extern int gCheckHead[kMaxPlayers];
 extern int gSendCheckTail;
 extern int gCheckTail;
 extern int gInitialNetPlayers;
 extern int gBufferJitter;
-extern int gPlayerReady[8];
+extern int gPlayerReady[kMaxPlayers];
 extern bool bNoResend;
 extern bool gRobust;
 extern bool bOutOfSync;
