@@ -43,43 +43,6 @@ However, Git HEAD is highly recommended.
   * libraries: libFLAC.a
 
 
-zlib
-----
-### Download ###
-Download: zlib-<version>.tar.xz
-  * Stable: http://zlib.net/
-  * Git: git://github.com/madler/zlib.git
-### Modifications ###
-  * Modify win32/Makefile.gcc as follows:
-      * CFLAGS: change -O3 to -O2 for stability and possibly performance benefits.
-### Build ###
-    make -f win32/Makefile.gcc
-    ar rcs libz_mini.a crc32.o deflate.o adler32.o zutil.o trees.o
-### Desired Results ###
-  * headers: (none)
-  * libraries: libz_mini.a
-
-libpng
-------
-### Prerequisites ###
-Copy *.h from zlib to your compiler's include directory.
-### Download ###
-Download libpng-<version>.tar.xz
-  * Stable: http://www.libpng.org/pub/png/libpng.html
-  * Git: git://git.code.sf.net/p/libpng/code
-### Modifications ###
-  * Modify scripts/Makefile.gcc as follows:
-      * Ensure ZLIBINC and ZLIBLIB point to the directory of zlib from above, or, rename your zlib directory so that, relative to the libpng directory, it is "../zlib". You will get a compile-time error if this is omitted or done incorrectly.
-  * Copy the file "minipng.dfa" to the root of the libpng data.
-### Build ###
-    make -f scripts/pnglibconf.mak DFA_XTRA=./minipng.dfa CPP="gcc -E"
-    make -f scripts/makefile.gcc libpng.a
-    ren libpng.a libpng_mini.a
-### Desired Results ###
-  * headers: png.h pngconf.h pnglibconf.h
-  * libraries: libpng_mini.a
-
-
 libvpx
 ------
 ### Prerequisites ###

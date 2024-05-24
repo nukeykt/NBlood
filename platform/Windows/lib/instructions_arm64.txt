@@ -7,7 +7,7 @@ Dependencies
 ------------
 Install vcpkg from https://github.com/microsoft/vcpkg. Using MinGW is currently problematic with ARM64, so vcpkg is the best option. For convenience, add the vcpkg directory to your PATH.
 
-Build the dependencies: vcpkg install libogg:arm64-windows-static libvorbis:arm64-windows-static libflac:arm64-windows-static libvpx:arm64-windows-static sdl2:arm64-windows-static sdl2-mixer:arm64-windows-static
+Build the dependencies: vcpkg install libflac:arm64-windows-static libvpx:arm64-windows-static sdl2:arm64-windows-static
 
 Next, you must copy the built libraries from [vcpkg]\installed\arm64-windows-static\lib into platform\Windows\lib\ARM64, and rename them as follows:
 FLAC.lib -> libFLAC.a

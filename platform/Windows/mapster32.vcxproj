@@ -159,7 +159,7 @@
       <SubSystem>Windows</SubSystem>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalLibraryDirectories>.\lib\ARM64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Shlwapi.lib;Comctl32.lib;version.lib;Imm32.lib;libogg.a;libvorbis.a;libvorbisfile.a;libvpx.a;dxguid.lib;dsound.lib;winmm.lib;ws2_32.lib;libSDL2main.a;libSDL2.a;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;SetupAPI.Lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalDependencies>Shlwapi.lib;Comctl32.lib;version.lib;Imm32.lib;libvpx.a;dxguid.lib;dsound.lib;winmm.lib;ws2_32.lib;libSDL2main.a;libSDL2.a;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;SetupAPI.Lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -227,7 +227,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>.\lib\ARM64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Shlwapi.lib;Comctl32.lib;version.lib;Imm32.lib;libogg.a;libvorbis.a;libvorbisfile.a;libvpx.a;dxguid.lib;dsound.lib;winmm.lib;ws2_32.lib;libSDL2main.a;libSDL2.a;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;SetupAPI.Lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
+      <AdditionalDependencies>Shlwapi.lib;Comctl32.lib;version.lib;Imm32.lib;libvpx.a;dxguid.lib;dsound.lib;winmm.lib;ws2_32.lib;libSDL2main.a;libSDL2.a;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;SetupAPI.Lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -109,7 +109,7 @@ LIBXMPLITE_CFLAGS=/I$(LIBXMPLITE_INC) /I$(LIBXMPLITE_INC)/libxmp-lite /I$(LIBXMP
 AUDIOLIB_CFLAGS=/I$(AUDIOLIB_INC) /I$(AUDIOLIB_SRC)
 
 LIBS=user32.lib gdi32.lib shell32.lib winmm.lib ws2_32.lib comctl32.lib shlwapi.lib oleaut32.lib ole32.lib imm32.lib SetupAPI.Lib version.lib \
-     libogg.a libvorbis.a libvorbisfile.a libvpx.a dxguid.lib dsound.lib advapi32.lib libcompat-to-msvc.a
+     libvpx.a dxguid.lib dsound.lib advapi32.lib libcompat-to-msvc.a
 
 !if ("$(RENDERTYPE)"=="SDL")
 LIBS=libSDL2main.a libSDL2.a $(LIBS)

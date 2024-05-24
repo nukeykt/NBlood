@@ -315,14 +315,8 @@
 		0013832719F366440007DA6C /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0013832619F366440007DA6C /* CoreMotion.framework */; };
 		00970E2319F2076B00873EB9 /* libFLAC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E1B19F2076B00873EB9 /* libFLAC.a */; };
 		00970E2419F2076B00873EB9 /* libFLAC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E1B19F2076B00873EB9 /* libFLAC.a */; };
-		00970E2519F2076B00873EB9 /* libogg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E1C19F2076B00873EB9 /* libogg.a */; };
-		00970E2619F2076B00873EB9 /* libogg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E1C19F2076B00873EB9 /* libogg.a */; };
 		00970E2B19F2076B00873EB9 /* libSDL2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E1F19F2076B00873EB9 /* libSDL2.a */; };
 		00970E2C19F2076B00873EB9 /* libSDL2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E1F19F2076B00873EB9 /* libSDL2.a */; };
-		00970E2D19F2076B00873EB9 /* libvorbis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E2019F2076B00873EB9 /* libvorbis.a */; };
-		00970E2E19F2076B00873EB9 /* libvorbis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E2019F2076B00873EB9 /* libvorbis.a */; };
-		00970E2F19F2076B00873EB9 /* libvorbisfile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E2119F2076B00873EB9 /* libvorbisfile.a */; };
-		00970E3019F2076B00873EB9 /* libvorbisfile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E2119F2076B00873EB9 /* libvorbisfile.a */; };
 		00970E3119F2076B00873EB9 /* libvpx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E2219F2076B00873EB9 /* libvpx.a */; };
 		00970E3219F2076B00873EB9 /* libvpx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00970E2219F2076B00873EB9 /* libvpx.a */; };
 		00970E3419F207F000873EB9 /* a-c.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00970E3319F207F000873EB9 /* a-c.cpp */; };
@@ -931,10 +925,7 @@
 		0013832619F366440007DA6C /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
 		0013832819F366720007DA6C /* libc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libc++.dylib"; path = "usr/lib/libc++.dylib"; sourceTree = SDKROOT; };
 		00970E1B19F2076B00873EB9 /* libFLAC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libFLAC.a; path = /usr/local/lib/libFLAC.a; sourceTree = "<absolute>"; };
-		00970E1C19F2076B00873EB9 /* libogg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libogg.a; path = /usr/local/lib/libogg.a; sourceTree = "<absolute>"; };
 		00970E1F19F2076B00873EB9 /* libSDL2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSDL2.a; path = /usr/local/lib/libSDL2.a; sourceTree = "<absolute>"; };
-		00970E2019F2076B00873EB9 /* libvorbis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbis.a; path = /usr/local/lib/libvorbis.a; sourceTree = "<absolute>"; };
-		00970E2119F2076B00873EB9 /* libvorbisfile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisfile.a; path = /usr/local/lib/libvorbisfile.a; sourceTree = "<absolute>"; };
 		00970E2219F2076B00873EB9 /* libvpx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvpx.a; path = /usr/local/lib/libvpx.a; sourceTree = "<absolute>"; };
 		00970E3319F207F000873EB9 /* a-c.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = "a-c.cpp"; sourceTree = "<group>"; };
 		00970E5A19F2139500873EB9 /* ForceFeedback.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ForceFeedback.framework; path = System/Library/Frameworks/ForceFeedback.framework; sourceTree = SDKROOT; };
@@ -1109,11 +1100,8 @@
 				00970E4B19F20F7E00873EB9 /* libMACT.a in Frameworks */,
 				0008EA8219F1B1E20091588D /* AudioToolbox.framework in Frameworks */,
 				00970E2319F2076B00873EB9 /* libFLAC.a in Frameworks */,
-				00970E2519F2076B00873EB9 /* libogg.a in Frameworks */,
-				00970E2D19F2076B00873EB9 /* libvorbis.a in Frameworks */,
 				000C48E619F35DA9006E6B52 /* CoreGraphics.framework in Frameworks */,
 				0008EA8019F1B1D30091588D /* AGL.framework in Frameworks */,
-				00970E2F19F2076B00873EB9 /* libvorbisfile.a in Frameworks */,
 				0008EA7E19F1B1CE0091588D /* AudioUnit.framework in Frameworks */,
 				00970E5C19F2139C00873EB9 /* ForceFeedback.framework in Frameworks */,
 				00970E2B19F2076B00873EB9 /* libSDL2.a in Frameworks */,
@@ -1137,12 +1125,9 @@
 				00970E4719F20F7E00873EB9 /* libMACT.a in Frameworks */,
 				0008EA8919F1B2400091588D /* AudioUnit.framework in Frameworks */,
 				00970E2419F2076B00873EB9 /* libFLAC.a in Frameworks */,
-				00970E2619F2076B00873EB9 /* libogg.a in Frameworks */,
-				00970E2E19F2076B00873EB9 /* libvorbis.a in Frameworks */,
 				00970E5F19F2140E00873EB9 /* libiconv.dylib in Frameworks */,
 				000C48E319F35DA8006E6B52 /* CoreGraphics.framework in Frameworks */,
 				0008EA8A19F1B2400091588D /* IOKit.framework in Frameworks */,
-				00970E3019F2076B00873EB9 /* libvorbisfile.a in Frameworks */,
 				0008EA8519F1B22E0091588D /* AGL.framework in Frameworks */,
 				00970E2C19F2076B00873EB9 /* libSDL2.a in Frameworks */,
 				0008EA8619F1B22E0091588D /* Carbon.framework in Frameworks */,
@@ -1558,9 +1543,6 @@
 			children = (
 				00970E1F19F2076B00873EB9 /* libSDL2.a */,
 				00970E1B19F2076B00873EB9 /* libFLAC.a */,
-				00970E2019F2076B00873EB9 /* libvorbis.a */,
-				00970E2119F2076B00873EB9 /* libvorbisfile.a */,
-				00970E1C19F2076B00873EB9 /* libogg.a */,
 				00970E2219F2076B00873EB9 /* libvpx.a */,
 			);
 			name = Libraries;
