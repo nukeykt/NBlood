@@ -318,6 +318,80 @@ static int32_t Defs_ImportTileFromTexture(char const * const fn, int32_t const t
     return 0;
 }
 
+class TileMatchChecker
+{
+    int32_t tile_crc32{};
+    vec2_t  tile_size{};
+    bool    have_crc32{};
+    bool    have_size{};
+
+public:
+    void parse_ifcrc(scriptfile * script)
+    {
+        scriptfile_getsymbol(script, &tile_crc32);
+        have_crc32 = true;
+    }
+
+    void parse_ifmatch(scriptfile * script)
+    {
+        char *ifmatchend;
+
+        static const tokenlist ifmatchtokens[] =
+        {
+            { "crc32",           T_CRC32 },
+            { "size",            T_SIZE },
+        };
+
+        if (scriptfile_getbraces(script, &ifmatchend)) return;
+        while (script->textptr < ifmatchend)
+        {
+            int32_t token = getatoken(script, ifmatchtokens, ARRAY_SIZE(ifmatchtokens));
+            switch (token)
+            {
+            case T_CRC32:
+                scriptfile_getsymbol(script, &tile_crc32);
+                have_crc32 = true;
+                break;
+            case T_SIZE:
+                scriptfile_getsymbol(script, &tile_size.x);
+                scriptfile_getsymbol(script, &tile_size.y);
+                have_size = true;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    bool is_different(const char * tokenname, int32_t tile) const
+    {
+        bool different_crc32 = have_crc32;
+        bool different_size = have_size;
+
+        if (have_crc32)
+        {
+            int32_t const orig_crc32 = tileGetCRC32(tile);
+            if (orig_crc32 == tile_crc32)
+                different_crc32 = false;
+            else
+                DLOG_F(WARNING, "%s: CRC32 of tile %d doesn't match! CRC32: 0x%08X, Expected: 0x%08X",
+                       tokenname, tile, orig_crc32, tile_crc32);
+        }
+
+        if (have_size)
+        {
+            vec2_16_t const orig_size = tileGetSize(tile);
+            if (orig_size.x == tile_size.x && orig_size.y == tile_size.y)
+                different_size = false;
+            else
+                DLOG_F(WARNING, "%s: size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)",
+                       tokenname, tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
+        }
+
+        return different_crc32 || different_size;
+    }
+};
+
 #undef USE_DEF_PROGRESS
 #if defined _WIN32 || defined HAVE_GTK2
 # define USE_DEF_PROGRESS
@@ -812,10 +886,7 @@ static int32_t defsparser(scriptfile *script)
             int32_t havexoffset = 0, haveyoffset = 0;
             int32_t xoffset = 0, yoffset = 0;
             int32_t istexture = 0;
-            int32_t tile_crc32 = 0;
-            vec2_t  tile_size{};
-            uint8_t have_crc32 = 0;
-            uint8_t have_size = 0;
+            TileMatchChecker matcher;
             uint8_t tile_flags = 0;
             // begin downstream
             // end downstream
@@ -864,40 +935,11 @@ static int32_t defsparser(scriptfile *script)
                     yoffset = clamp(yoffset, -128, 127);
                     break;
                 case T_IFCRC:
-                    scriptfile_getsymbol(script, &tile_crc32);
-                    have_crc32 = 1;
+                    matcher.parse_ifcrc(script);
                     break;
                 case T_IFMATCH:
-                {
-                    char *ifmatchend;
-
-                    static const tokenlist ifmatchtokens[] =
-                    {
-                        { "crc32",           T_CRC32 },
-                        { "size",            T_SIZE },
-                    };
-
-                    if (scriptfile_getbraces(script,&ifmatchend)) break;
-                    while (script->textptr < ifmatchend)
-                    {
-                        int32_t token = getatoken(script,ifmatchtokens,ARRAY_SIZE(ifmatchtokens));
-                        switch (token)
-                        {
-                        case T_CRC32:
-                            scriptfile_getsymbol(script, &tile_crc32);
-                            have_crc32 = 1;
-                            break;
-                        case T_SIZE:
-                            scriptfile_getsymbol(script, &tile_size.x);
-                            scriptfile_getsymbol(script, &tile_size.y);
-                            have_size = 1;
-                            break;
-                        default:
-                            break;
-                        }
-                    }
+                    matcher.parse_ifmatch(script);
                     break;
-                }
                 case T_TEXHITSCAN:
                     flags |= PICANM_TEXHITSCAN_BIT;
                     break;
@@ -924,33 +966,8 @@ static int32_t defsparser(scriptfile *script)
                 break;
             }
 
-            int32_t orig_crc32{};
-            if (have_crc32)
-            {
-                orig_crc32 = tileGetCRC32(tile);
-                if (orig_crc32 == tile_crc32)
-                    have_crc32 = 0;
-                else
-                    DLOG_F(WARNING, "tilefromtexture: CRC32 of tile %d doesn't match! CRC32: 0x%08X, Expected: 0x%08X", tile, orig_crc32, tile_crc32);
-            }
-
-            vec2_16_t orig_size{};
-            if (have_size)
-            {
-                orig_size = tileGetSize(tile);
-                if (orig_size.x == tile_size.x && orig_size.y == tile_size.y)
-                    have_size = 0;
-                else
-                    DLOG_F(WARNING, "tilefromtexture: size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
-            }
-
-            if (have_crc32 || have_size)
-            {
-#if 0
-                DLOG_F(INFO, "tilefromtexture %d { ifmatch { size %d %d crc32 0x%08X } }", tile, orig_size.x, orig_size.y, orig_crc32);
-#endif
+            if (matcher.is_different("tilefromtexture", tile))
                 break;
-            }
 
             if (!fn)
             {
