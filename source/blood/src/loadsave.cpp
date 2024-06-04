@@ -166,6 +166,7 @@ void LoadSave::LoadGame(char *pzFile)
         gGameMessageMgr.Clear();
     viewSetErrorMessage("");
     viewResizeView(gViewSize);
+    viewUpdatePages();
     if (!gGameStarted)
     {
         netWaitForEveryone(0);
