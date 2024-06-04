@@ -1941,9 +1941,11 @@ static int32_t defsparser(scriptfile *script)
             char *voxeltokptr = script->ltextptr;
             char *fn, *voxelend;
             int32_t tile0 = MAXTILES, tile1 = -1, tilex = -1;
+            TileMatchChecker matcher;
 
             static const tokenlist voxeltokens[] =
             {
+                { "ifmatch", T_IFMATCH },
                 { "tile",    T_TILE    },
                 { "tile0",   T_TILE0   },
                 { "tile1",   T_TILE1   },
@@ -1981,10 +1983,17 @@ static int32_t defsparser(scriptfile *script)
             {
                 switch (getatoken(script, voxeltokens, ARRAY_SIZE(voxeltokens)))
                 {
+                case T_IFMATCH:
+                    matcher.parse_ifmatch(script);
+                    break;
+
                 case T_TILE:
                     scriptfile_getsymbol(script,&tilex);
 
                     if (check_tile("voxel", tilex, script, voxeltokptr))
+                        break;
+
+                    if (matcher.is_different("voxel", tilex))
                         break;
 
                     tiletovox[tilex] = lastvoxid;
@@ -2002,7 +2011,12 @@ static int32_t defsparser(scriptfile *script)
                         break;
 
                     for (tilex=tile0; tilex<=tile1; tilex++)
+                    {
+                        if (matcher.is_different("voxel", tilex))
+                            continue;
+
                         tiletovox[tilex] = lastvoxid;
+                    }
 
                     break;
 
