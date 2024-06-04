@@ -1229,6 +1229,7 @@ SWITCH switches[] = {
     { "c", 43, 1 },
     { "conf", 43, 1 },
     { "noconsole", 43, 0 },
+    { "s", 44, 1 },
     { NULL, 0, 0 }
 };
 
@@ -1257,6 +1258,7 @@ void PrintHelp(void)
         "-pname\t\tOverride player name setting from config file\n"
         "-record\t\tRecord demo\n"
         "-rff\t\tSpecify an RFF file for Blood game resources\n"
+        "-s\t\tStart game on difficulty level; Range:0..4; Default:2;\n\n"
         "-server [players]\tStart a multiplayer server\n"
 #ifdef STARTUP_SETUP_WINDOW
         "-setup/nosetup\tEnable or disable startup window\n"
@@ -1445,11 +1447,7 @@ void ParseOptions(void)
         case 10:
             if (OptArgc < 1)
                 ThrowError("Missing argument");
-            gSkill = strtoul(OptArgv[0], NULL, 0);
-            if (gSkill < 0)
-                gSkill = 0;
-            else if (gSkill > 4)
-                gSkill = 4;
+            gSkill = ClipRange(strtoul(OptArgv[0], NULL, 0), 0, 4);
             break;
         case 15:
             break;
@@ -1542,6 +1540,14 @@ void ParseOptions(void)
             G_AddPath(OptArgv[0]);
             break;
         case 43: // conf, noconsole
+            break;
+        case 44:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            gSkill = ClipRange(strtoul(OptArgv[0], NULL, 0), 0, 4);
+            gGameOptions.nDifficulty = gSkill;
+            gGameOptions.nDifficultyQuantity = gSkill;
+            gGameOptions.nDifficultyHealth = gSkill;
             break;
         }
     }
