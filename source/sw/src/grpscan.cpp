@@ -164,6 +164,10 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
     char *fn;
     struct Bstat st;
 
+    static constexpr int ReadSize = 65536;
+
+    auto buf = (uint8_t *)Xmalloc(ReadSize);
+
     for (sidx = srch; sidx; sidx = sidx->next)
     {
         for (fg = grpcache; fg; fg = fg->next)
@@ -173,15 +177,20 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
 
         if (fg)
         {
-            if (findfrompath(sidx->name, &fn)) continue;    // failed to resolve the filename
-            if (Bstat(fn, &st)) { Xfree(fn); continue; } // failed to stat the file
-            Xfree(fn);
-            if (fg->size == st.st_size && fg->mtime == st.st_mtime)
+            if (findfrompath(sidx->name, &fn)) continue; // failed to resolve the filename
+            if (Bstat(fn, &st))
             {
-                struct internalgrpfile const * const grptype = FindGrpInfo(fg->crcval, fg->size);
+                Xfree(fn);
+                continue;
+            } // failed to stat the file
+            Xfree(fn);
+            if (st.st_size && fg->size == (int32_t)st.st_size && fg->mtime == (int32_t)st.st_mtime)
+            {
+                auto const grptype = FindGrpInfo(fg->crcval, fg->size);
+
                 if (grptype)
                 {
-                    auto grp = (struct grpfile *)Xcalloc(1, sizeof(struct grpfile));
+                    auto const grp = (struct grpfile *)Xcalloc(1, sizeof(struct grpfile));
                     grp->filename = Xstrdup(sidx->name);
                     grp->type = grptype;
                     grp->next = foundgrps;
@@ -200,29 +209,30 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
         }
 
         {
-            int b, fh;
-            unsigned int crcval = 0;
-            unsigned char buf[16*512];
+            int32_t b, fh;
+            int32_t crcval = 0;
 
             fh = openfrompath(sidx->name, BO_RDONLY|BO_BINARY, BS_IREAD);
             if (fh < 0) continue;
-            if (fstat(fh, &st)) continue;
-            if (st.st_size > maxsize) continue;
+            if (Bfstat(fh, &st)) continue;
+            if (!st.st_size || st.st_size > maxsize) continue;
 
-            buildprintf(" Checksumming %s...", sidx->name);
+            DLOG_F(INFO, " Checksumming %s...", sidx->name);
             do
             {
-                b = read(fh, buf, sizeof(buf));
+                b = read(fh, buf, ReadSize);
                 if (b > 0) crcval = Bcrc32(buf, b, crcval);
             }
-            while (b == sizeof(buf));
+            while (b == ReadSize);
             close(fh);
-            buildputs(" Done\n");
 
-            struct internalgrpfile const * const grptype = FindGrpInfo(crcval, st.st_size);
+            LOG_F(INFO, " %s has checksum 0x%08x", sidx->name, crcval);
+
+            auto const grptype = FindGrpInfo(crcval, st.st_size);
+
             if (grptype)
             {
-                auto grp = (struct grpfile *)Xcalloc(1, sizeof(struct grpfile));
+                auto const grp = (struct grpfile *)Xcalloc(1, sizeof(struct grpfile));
                 grp->filename = Xstrdup(sidx->name);
                 grp->type = grptype;
                 grp->next = foundgrps;
@@ -230,7 +240,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
             }
 
             fgg = (struct grpcache *)Xcalloc(1, sizeof(struct grpcache));
-            strncpy(fgg->name, sidx->name, BMAX_PATH);
+            Bstrncpyz(fgg->name, sidx->name, BMAX_PATH);
             fgg->size = st.st_size;
             fgg->mtime = st.st_mtime;
             fgg->crcval = crcval;
@@ -238,6 +248,8 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
             usedgrpcache = fgg;
         }
     }
+
+    Xfree(buf);
 }
 
 int ScanGroups(void)
@@ -288,8 +300,7 @@ int ScanGroups(void)
 
     if (usedgrpcache)
     {
-        FILE *fp;
-        fp = fopen(GRPCACHEFILE, "wt");
+        buildvfs_FILE fp = buildvfs_fopen_write(GRPCACHEFILE);
         if (fp)
         {
             for (fg = usedgrpcache; fg; fg=fgg)
@@ -298,7 +309,7 @@ int ScanGroups(void)
                 fprintf(fp, "\"%s\" %d %d %d\n", fg->name, fg->size, fg->mtime, fg->crcval);
                 Xfree(fg);
             }
-            fclose(fp);
+            buildvfs_fclose(fp);
         }
     }
 
