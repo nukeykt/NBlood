@@ -1290,10 +1290,9 @@ WEAPONICON gWeaponIconVoxel[] = {
     { -1, 0 },
 };
 
-int dword_14C508;
-
 void viewDrawStats(PLAYER *pPlayer, int x, int y)
 {
+    static int gLastPageTimeStats = 0;
     const int nFont = 3;
     char buffer[128];
     if (!gLevelStats)
@@ -1316,6 +1315,9 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     y += nHeight+1;
     sprintf(buffer, "S:%d/%d", gSecretMgr.nNormalSecretsFound, max(gSecretMgr.nNormalSecretsFound, gSecretMgr.nAllSecrets)); // if we found more than there are, increase the total - some levels have a bugged counter
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
+    if (gViewMode == 3 && gViewSize > 3 && gLastPageTimeStats != gLevelTime) // redraw borders
+        viewUpdatePages();
+    gLastPageTimeStats = gLevelTime;
 }
 
 #define kPowerUps 11
@@ -1398,6 +1400,15 @@ void viewDrawPowerUps(PLAYER* pPlayer)
         DrawStatNumber("%d", nTime, kSBarNumberInv, x + 15, y, 0, nTime > nWarning ? 0 : 2, 256, fix16_from_float(0.5f));
         y += 20;
     }
+    static int gLastPageTimePowerup = 0;
+    static int gLastPageTimePowerupCount = 0;
+    if (gViewMode == 3 && gViewSize > 3) // redraw borders
+    {
+        if (gLastPageTimePowerup != gLevelTime && nSortCount || gLastPageTimePowerupCount != nSortCount)
+            viewUpdatePages();
+    }
+    gLastPageTimePowerup = gLevelTime;
+    gLastPageTimePowerupCount = nSortCount;
 }
 
 void viewDrawMapTitle(void)
@@ -1474,11 +1485,10 @@ void viewDrawPack(PLAYER *pPlayer, int x, int y)
             x += tilesiz[gPackIcons[nPack]].x + 1;
         }
     }
-    if (pPlayer->packItemTime != dword_14C508)
-    {
+    static int gLastPageTimePack = 0;
+    if (pPlayer->packItemTime != gLastPageTimePack) // redraw borders
         viewUpdatePages();
-    }
-    dword_14C508 = pPlayer->packItemTime;
+    gLastPageTimePack = pPlayer->packItemTime;
 }
 
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat)
@@ -1640,6 +1650,11 @@ void viewDrawCtfHud(ClockTicks arg)
     else if (redFlagTaken)
         DrawStatMaskedSprite(4097, 307, 111, 0, redFlagCarrierColor ? 2 : 10, 512, 65536);
     flashTeamScore(arg, 1, true);
+
+    static int gLastPageTimeFlag = 0;
+    if (gViewMode == 3 && gViewSize > 3 && (gLastPageTimeFlag != gLevelTime)) // redraw borders
+        viewUpdatePages();
+    gLastPageTimeFlag = gLevelTime;
 }
 
 void UpdateStatusBar(ClockTicks arg)
@@ -2068,7 +2083,8 @@ void UpdateFrame(void)
 
 void viewDrawInterface(ClockTicks arg)
 {
-    if (gViewMode == 3/* && gViewSize >= 3*/ && (pcBackground != 0 || videoGetRenderMode() >= REND_POLYMOST))
+    const char bDrawFragsBg = (gGameOptions.nGameType != kGameTypeSinglePlayer) && (!VanillaMode() || gGameOptions.nGameType != kGameTypeTeams);
+    if (gViewMode == 3 && (gViewSize >= 3 || bDrawFragsBg) && (pcBackground != 0 || videoGetRenderMode() >= REND_POLYMOST))
     {
         UpdateFrame();
         pcBackground--;
