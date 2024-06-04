@@ -12167,7 +12167,7 @@ uint8_t maxvoxcol;
 
 void getVoxelColorMap(char* davoxptr, uint8_t *bitmap)
 {
-    Bmemset(bitmap, -1, 32);
+    Bmemset(bitmap, -1, bitmap_size(256));
     maxvoxcol = 0;
 
     int32_t *longptr = (int32_t *)davoxptr;
@@ -12289,7 +12289,7 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
 
     klseek(fil, 0, SEEK_SET);
 
-    auto bitmap = (uint8_t*)Balloca(32);
+    uint8_t bitmap[bitmap_size(256)];
     int32_t lastsiz=0;
 
     for (int i=0; i<MAXVOXMIPS; i++)
@@ -12338,10 +12338,9 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
     return 0;
 }
 
-void vox_undefine(int32_t const tile)
+void vox_clearid(int32_t const voxindex)
 {
-    ssize_t voxindex = tiletovox[tile];
-    if (voxindex < 0)
+    if ((unsigned)voxindex >= MAXVOXELS)
         return;
 
 #ifdef USE_OPENGL
@@ -12361,9 +12360,14 @@ void vox_undefine(int32_t const tile)
     }
     voxscale[voxindex] = 65536;
     voxflags[voxindex] = 0;
-    tiletovox[tile] = -1;
 
     // TODO: nextvoxid
+}
+
+void vox_undefine(int32_t const tile)
+{
+    vox_clearid(tiletovox[tile]);
+    tiletovox[tile] = -1;
 }
 
 //
