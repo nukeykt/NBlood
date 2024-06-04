@@ -697,7 +697,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     break;
                 case 's':
                     c++;
-                    ud.m_player_skill = ud.player_skill = (Batoi(c)%5);
+                    ud.m_player_skill = ud.player_skill = clamp(Batoi(c), 0, g_maxDefinedSkill);
                     if (ud.m_player_skill == 4)
                         ud.m_respawn_monsters = ud.respawn_monsters = 1;
                     break;
