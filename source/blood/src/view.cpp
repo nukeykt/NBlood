@@ -2002,7 +2002,7 @@ void viewUpdateSkyRatio(void)
     psky_t *pSky = tileSetupSky(0);
     if (!pSky)
         return;
-    if (gFov > 75) // using a math curve, calculate the scale using the FOV
+    if (gFov > 75 && !VanillaMode()) // using a math curve, calculate the scale using the FOV
     {
         pSky->yscale = divscale16(fix16_from_int(gFov * gFov), fix16_from_float(1 / 0.000177989));
         pSky->yscale -= divscale16(fix16_from_int(gFov), fix16_from_float(1 / 0.0241556));
