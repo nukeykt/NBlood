@@ -74,6 +74,19 @@ static void BiteSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     spritetype *pSprite = &sprite[pXSprite->reference];
+    /*
+     * workaround for
+     * pXSprite->target >= 0 && pXSprite->target < kMaxSprites in file NBlood/source/blood/src/aibat.cpp at line 85
+     * The value of pXSprite->target is -1.
+     * copied from thinkPonder()
+     * resolves this case, but may cause other issues?
+     */
+    if (pXSprite->target == -1)
+    {
+        aiNewState(pSprite, pXSprite, &batSearch);
+        return;
+    }
+
     spritetype *pTarget = &sprite[pXSprite->target];
     int dx = Cos(pSprite->ang) >> 16;
     int dy = Sin(pSprite->ang) >> 16;
