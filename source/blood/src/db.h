@@ -122,6 +122,8 @@ struct XSPRITE {
     #endif
     signed int scale;                   // used for scaling SEQ size on sprites
 
+    // Calculates checksum for multiplayer games. Certain bits might be skipped.
+    uint32_t CalcChecksum(void);
 };
 
 struct XSECTOR {

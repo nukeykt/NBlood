@@ -259,14 +259,8 @@ void CalcGameChecksum(void)
             sum += *pBuffer++;
         }
         gChecksum[2] ^= sum;
-        pBuffer = (int*)gPlayer[p].pXSprite;
-        sum = 0;
-        length = sizeof(XSPRITE)/4;
-        while (length--)
-        {
-            sum += *pBuffer++;
-        }
-        gChecksum[3] ^= sum;
+
+        gChecksum[3] ^= gPlayer[p].pXSprite->CalcChecksum();
     }
 }
 

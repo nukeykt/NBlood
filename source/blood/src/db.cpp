@@ -156,6 +156,44 @@ const char *gWeaponText[] = {
 
 
 
+uint32_t XSPRITE::CalcChecksum(void)
+{
+    // This was originally written to calculate the checksum
+    // the way OUWB v1.21 does. Therefore, certain bits may
+    // be skipped or calculated in a different order.
+    uint32_t sum = 0;
+    sum += (reference&16383) | ((state&1)<<14) | ((busy&131071)<<15);
+    sum += (txID&1023) | ((rxID&1023)<<10) | ((command&255)<<20) |
+           ((triggerOn&1)<<28) | ((triggerOff&1)<<29) | ((wave&3)<<30);
+    sum += (busyTime&4095) | ((waitTime&4095)<<12) |
+           ((restState&1)<<24) | ((Interrutable&1)<<25) |
+           ((unused1&3)<<26) | ((respawnPending&3)<<28) |
+           ((unused2&1)<<30) | ((lT&1)<<31);
+    sum += (dropMsg&255) | ((Decoupled&1)<<8) |
+           ((triggerOnce&1)<<9) | ((isTriggered&1)<<10) |
+           ((key&7)<<11) | ((Push&1)<<14) | ((Vector&1)<<15) |
+           ((Impact&1)<<16) | ((Pickup&1)<<17) | ((Touch&1)<<18) |
+           ((Sight&1)<<19) | ((Proximity&1)<<20) |
+           ((unused3&3)<<21) | ((lSkill&31)<<23) |
+           ((lS&1)<<28) | ((lB&1)<<29) | ((lC&1)<<30) | ((DudeLockout&1)<<31);
+    sum += (data1&65535) | ((data2&65535)<<16);
+    sum += (data3&65535) | ((goalAng&2047)<<16) | ((dodgeDir&3)<<27) |
+           ((locked&1)<<29) | ((medium&3)<<30);
+    sum += (respawn&3) | ((data4&65535)<<2) |
+           ((unused4&63)<<18) | ((lockMsg&255)<<24);
+    sum += (health&4095) | ((dudeDeaf&1)<<12) | ((dudeAmbush&1)<<13) |
+           ((dudeGuard&1)<<14) | ((dudeFlag4&1)<<15) | ((target&65535)<<16);
+    sum += targetX&0xFFFFFFFF;
+    sum += targetY&0xFFFFFFFF;
+    sum += targetZ&0xFFFFFFFF;
+    sum += (burnTime&65535) | ((burnSource&65535)<<16);
+    sum += (height&65535) | ((stateTimer&65535)<<16);
+    // aiState is a state pointer. Exact pointer values depend on exe layout.
+    // For player sprites, it is apparently always set to 0.
+    sum += aiState ? (((uintptr_t)aiState)&0xFFFFFFFF) : 0;
+    return sum;
+}
+
 void dbCrypt(char *pPtr, int nLength, int nKey)
 {
     for (int i = 0; i < nLength; i++)
