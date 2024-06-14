@@ -148,8 +148,8 @@ struct PLAYER
     int                 zWeapon;
     int                 zWeaponVel;
     fix16_t             q16look;
-    int                 q16horiz;       // horiz
-    int                 q16slopehoriz;  // horizoff
+    fix16_t             q16horiz;       // horiz
+    fix16_t             q16slopehoriz;  // horizoff
     int                 slope;
     bool                isUnderwater;
     bool                hasKey[8];
@@ -217,7 +217,7 @@ struct PLAYER
     int                 handTime;
     bool                hand;  // if true, there is hand start choking the player
     int                 pickupEffect;
-    bool                flashEffect;  // if true, reduce pPlayer->visibility counter
+    bool                flashEffect;  // if true, reduce pPlayer->visibility counter; originally 32-bit
     int                 quakeEffect;
     fix16_t             q16ang;
     int                 angold;
