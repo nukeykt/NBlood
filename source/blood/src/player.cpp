@@ -256,6 +256,142 @@ DAMAGEINFO damageInfo[kDamageMax] = {
     { 0, 0, 0, 0, 0, 0, 0 }
 };
 
+uint32_t PLAYER::CalcNonSpriteChecksum(void)
+{
+    // This was originally written to calculate the checksum
+    // the way OUWB v1.21 does. Therefore, certain bits may
+    // be skipped or calculated in a different order.
+    int i;
+    uint32_t sum = 0;
+    sum += used1&0xFFFFFFFF;
+    sum += weaponQav&0xFFFFFFFF;
+    sum += qavCallback&0xFFFFFFFF;
+    sum += (!!isRunning) | ((posture&0xFFFFFF)<<8);
+    sum += ((posture>>24)&255) | ((sceneQav&0xFFFFFF)<<8);
+    sum += ((sceneQav>>24)&255) | ((bobPhase&0xFFFFFF)<<8);
+    sum += ((bobPhase>>24)&255) | ((bobAmp&0xFFFFFF)<<8);
+    sum += ((bobAmp>>24)&255) | ((bobHeight&0xFFFFFF)<<8);
+    sum += ((bobHeight>>24)&255) | ((bobWidth&0xFFFFFF)<<8);
+    sum += ((bobWidth>>24)&255) | ((swayPhase&0xFFFFFF)<<8);
+    sum += ((swayPhase>>24)&255) | ((swayAmp&0xFFFFFF)<<8);
+    sum += ((swayAmp>>24)&255) | ((swayHeight&0xFFFFFF)<<8);
+    sum += ((swayHeight>>24)&255) | ((swayWidth&0xFFFFFF)<<8);
+    sum += ((swayWidth>>24)&255) | ((nPlayer&0xFFFFFF)<<8);
+    sum += ((nPlayer>>24)&255) | ((nSprite&0xFFFFFF)<<8);
+    sum += ((nSprite>>24)&255) | ((lifeMode&0xFFFFFF)<<8);
+    sum += ((lifeMode>>24)&255) | ((bloodlust&0xFFFFFF)<<8);
+    sum += ((bloodlust>>24)&255) | ((zView&0xFFFFFF)<<8);
+    sum += ((zView>>24)&255) | ((zViewVel&0xFFFFFF)<<8);
+    sum += ((zViewVel>>24)&255) | ((zWeapon&0xFFFFFF)<<8);
+    sum += ((zWeapon>>24)&255) | ((zWeaponVel&0xFFFFFF)<<8);
+
+    int32_t look = fix16_to_int(q16look), horiz = fix16_to_int(q16horiz),
+            slopehoriz = fix16_to_int(q16slopehoriz);
+
+    sum += ((zWeaponVel>>24)&255) | ((look&0xFFFFFF)<<8);
+    sum += ((look>>24)&255) | ((horiz&0xFFFFFF)<<8);
+    sum += ((horiz>>24)&255) | ((slopehoriz&0xFFFFFF)<<8);
+    sum += ((slopehoriz>>24)&255) | ((slope&0xFFFFFF)<<8);
+    sum += ((slope>>24)&255) | ((!!isUnderwater)<<8) |
+           ((!!hasKey[0])<<16) | ((!!hasKey[1])<<24);
+    sum += (!!hasKey[2]) | ((!!hasKey[3])<<8) |
+           ((!!hasKey[4])<<16) | ((!!hasKey[5])<<24);
+    sum += (!!hasKey[6]) | ((!!hasKey[7])<<8) |
+           ((hasFlag&255)<<16) | ((used2[0]&255)<<24);
+    sum += ((used2[0]>>8)&255) | ((used2[1]&65535)<<16) | ((used2[2]&255)<<24);
+    sum += ((used2[2]>>8)&255) | ((used2[3]&65535)<<16) | ((used2[4]&255)<<24);
+    sum += ((used2[4]>>8)&255) | ((used2[5]&65535)<<16) | ((used2[6]&255)<<24);
+    sum += ((used2[6]>>8)&255) | ((used2[7]&65535)<<16) |
+            ((damageControl[0]&255)<<24);
+    for (i = 0; i < 7; ++i)
+        sum += ((damageControl[i]>>8)&0xFFFFFF) | ((damageControl[i+1]&255)<<24);
+    sum += ((damageControl[7]>>8)&0xFFFFFF) | ((curWeapon&255)<<24);
+    sum += (nextWeapon&255) | ((weaponTimer&0xFFFFFF)<<8);
+    sum += ((weaponTimer>>24)&255) | ((weaponState&0xFFFFFF)<<8);
+    sum += ((weaponState>>24)&255) | ((weaponAmmo&0xFFFFFF)<<8);
+    sum += ((weaponAmmo>>24)&255) | (!!hasWeapon[0]<<8) |
+           (!!hasWeapon[1]<<16) | (!!hasWeapon[2]<<24);
+    sum += (!!hasWeapon[3]) | (!!hasWeapon[4]<<8) |
+           (!!hasWeapon[5]<<16) | (!!hasWeapon[6]<<24);
+    sum += (!!hasWeapon[7]) | (!!hasWeapon[8]<<8) |
+           (!!hasWeapon[9]<<16) | (!!hasWeapon[10]<<24);
+    sum += (!!hasWeapon[11]) | (!!hasWeapon[12]<<8) |
+           (!!hasWeapon[13]<<16) | ((weaponMode[0]&255)<<24);
+    for (i = 0; i < 13; ++i)
+        sum += ((weaponMode[i]>>8)&0xFFFFFF) | ((weaponMode[i+1]&255)<<24);
+    sum += ((weaponMode[13]>>8)&0xFFFFFF) | ((weaponOrder[0][0]&255)<<24);
+    for (i = 0; i < 13; ++i)
+        sum += ((weaponOrder[0][i]>>8)&0xFFFFFF) | ((weaponOrder[0][i+1]&255)<<24);
+    sum += ((weaponOrder[0][13]>>8)&0xFFFFFF) | ((weaponOrder[1][0]&255)<<24);
+    for (i = 0; i < 13; ++i)
+        sum += ((weaponOrder[1][i]>>8)&0xFFFFFF) | ((weaponOrder[1][i+1]&255)<<24);
+    sum += ((weaponOrder[1][13]>>8)&0xFFFFFF) | ((ammoCount[0]&255)<<24);
+    for (i = 0; i < 11; ++i)
+        sum += ((ammoCount[i]>>8)&0xFFFFFF) | ((ammoCount[i+1]&255)<<24);
+    sum += ((ammoCount[11]>>8)&0xFFFFFF) | ((!!qavLoop)<<24);
+    sum += fuseTime&0xFFFFFFFF;
+    sum += throwTime&0xFFFFFFFF;
+    sum += throwPower&0xFFFFFFFF;
+    sum += aim.dx&0xFFFFFFFF;
+    sum += aim.dy&0xFFFFFFFF;
+    sum += aim.dz&0xFFFFFFFF;
+    sum += relAim.dx&0xFFFFFFFF;
+    sum += relAim.dy&0xFFFFFFFF;
+    sum += relAim.dz&0xFFFFFFFF;
+    sum += aimTarget&0xFFFFFFFF;
+    sum += aimTargetsCount&0xFFFFFFFF;
+    for (i = 0; i < 16; i += 2)
+        sum += (aimTargets[i]&65535) | ((aimTargets[i+1]&65535) << 16);
+    sum += deathTime&0xFFFFFFFF;
+    for (i = 0; i < 49; ++i)
+        sum += pwUpTime[i]&0xFFFFFFFF;
+    sum += fragCount&0xFFFFFFFF;
+    for (i = 0; i < 8; ++i)
+        sum += fragInfo[i]&0xFFFFFFFF;
+    sum += teamId&0xFFFFFFFF;
+    sum += fraggerId&0xFFFFFFFF;
+    sum += underwaterTime&0xFFFFFFFF;
+    sum += bloodTime&0xFFFFFFFF;
+    sum += gooTime&0xFFFFFFFF;
+    sum += wetTime&0xFFFFFFFF;
+    sum += bubbleTime&0xFFFFFFFF;
+    sum += at306&0xFFFFFFFF;
+    sum += restTime&0xFFFFFFFF;
+    sum += kickPower&0xFFFFFFFF;
+    sum += laughCount&0xFFFFFFFF;
+    sum += spin&0xFFFFFFFF;
+    sum += (!!godMode) | ((!!fallScream)<<8) |
+           ((!!cantJump)<<16) | ((packItemTime&255)<<24);
+    sum += ((packItemTime>>8)&0xFFFFFF) | ((packItemId&255)<<24);
+    sum += ((packItemId>>8)&0xFFFFFF) | ((!!packSlots[0].isActive)<<24);
+    sum += packSlots[0].curAmount&0xFFFFFFFF;
+    sum += (!!packSlots[1].isActive) | ((packSlots[1].curAmount&0xFFFFFF)<<8);
+    sum += ((packSlots[1].curAmount>>24)&255) |
+           ((!!packSlots[2].isActive)<<8) | ((packSlots[2].curAmount&65535)<<16);
+    sum += ((packSlots[2].curAmount>>16)&65535) |
+           ((!!packSlots[3].isActive)<<16) | ((packSlots[3].curAmount&255)<<8);
+    sum += ((packSlots[3].curAmount>>8)&0xFFFFFF) |
+           ((!!packSlots[4].isActive)<<24);
+    sum += packSlots[4].curAmount&0xFFFFFFFF;
+    for (i = 0; i < 3; ++i)
+        sum += armor[i]&0xFFFFFFFF;
+    sum += voodooTarget&0xFFFFFFFF;
+    sum += voodooTargets&0xFFFFFFFF;
+    sum += voodooVar1&0xFFFFFFFF;
+    sum += vodooVar2&0xFFFFFFFF;
+    sum += flickerEffect&0xFFFFFFFF;
+    sum += tiltEffect&0xFFFFFFFF;
+    sum += visibility&0xFFFFFFFF;
+    sum += painEffect&0xFFFFFFFF;
+    sum += blindEffect&0xFFFFFFFF;
+    sum += chokeEffect&0xFFFFFFFF;
+    sum += handTime&0xFFFFFFFF;
+    sum += (!!hand) | ((pickupEffect&0xFFFFFF)<<8);
+    sum += ((pickupEffect>>24)&255) | ((flashEffect&0xFFFFFF)<<8);
+    sum += ((flashEffect>>24)&255) | ((quakeEffect&0xFFFFFF)<<8);
+    return sum;
+}
+
 int powerupCheck(PLAYER *pPlayer, int nPowerUp)
 {
     dassert(pPlayer != NULL);

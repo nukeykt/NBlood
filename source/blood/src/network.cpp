@@ -243,17 +243,11 @@ void CalcGameChecksum(void)
     gChecksum[0] = wrand();
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        int *pBuffer = &gPlayer[p].used1;
+        gChecksum[1] ^= gPlayer[p].CalcNonSpriteChecksum();
+
+        int *pBuffer = (int*)gPlayer[p].pSprite;
         int sum = 0;
-        int length = ((char*)&gPlayer[p+1]-(char*)pBuffer)/4;
-        while (length--)
-        {
-            sum += *pBuffer++;
-        }
-        gChecksum[1] ^= sum;
-        pBuffer = (int*)gPlayer[p].pSprite;
-        sum = 0;
-        length = sizeof(spritetype)/4;
+        int length = sizeof(spritetype)/4;
         while (length--)
         {
             sum += *pBuffer++;

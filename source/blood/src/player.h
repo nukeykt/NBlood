@@ -224,6 +224,10 @@ struct PLAYER
     int                 player_par;
     int                 nWaterPal;
     POSTURE             pPosture[kModeMax][kPostureMax];
+
+    // Calculates checksum for multiplayer games. Skips data referenced
+    // by pointers, like XSPRITE structs. Other bits might further be skipped.
+    uint32_t CalcNonSpriteChecksum(void);
 };
 
 struct PROFILE
