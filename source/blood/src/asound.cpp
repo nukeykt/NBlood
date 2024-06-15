@@ -42,6 +42,7 @@ struct AMB_CHANNEL
     char *at10;
     int at14;
     int at18;
+    char bActive;
 };
 
 AMB_CHANNEL ambChannels[kMaxAmbChannel];
@@ -70,13 +71,17 @@ void ambProcess(void)
                 dz >>= 8;
                 int nDist = ksqrt(dx*dx+dy*dy+dz*dz);
                 int vs = ClipHigh(mulscale16(pXSprite->data4, pXSprite->busy), 127);
-                ambChannels[pSprite->owner].at4 += ClipRange(scale(nDist, pXSprite->data1, pXSprite->data2, vs, 0), 0, vs);
+                int t = ClipRange(scale(nDist, pXSprite->data1, pXSprite->data2, vs, 0), 0, vs);
+                ambChannels[pSprite->owner].at4 += t;
+                ambChannels[pSprite->owner].bActive |= !!t;
             }
         }
     }
     AMB_CHANNEL *pChannel = ambChannels;
     for (int i = 0; i < nAmbChannels; i++, pChannel++)
     {
+        if (!pChannel->bActive)
+            continue;
         if (pChannel->at0 > 0)
             FX_SetPan(pChannel->at0, pChannel->at4, pChannel->at4, pChannel->at4);
         else
