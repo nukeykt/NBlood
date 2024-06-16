@@ -177,6 +177,11 @@ static void thinkPonder(spritetype *pSprite, XSPRITE *pXSprite)
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
+    if (!VanillaMode() && !xspriRangeIsFine(pTarget->extra))
+    {
+        aiNewState(pSprite, pXSprite, &zombieASearch);
+        return;
+    }
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
