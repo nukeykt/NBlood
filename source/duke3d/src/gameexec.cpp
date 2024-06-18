@@ -2895,6 +2895,11 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                     dispatch();
                 }
 
+            vInstruction(CON_YIELD):
+                insptr++;
+                dukeMaybeDrawFrame();
+                dispatch();
+
             vInstruction(CON_RETURN):
                 vm.flags |= VM_RETURN;
 #if !defined CON_USE_COMPUTED_GOTO
@@ -2915,6 +2920,8 @@ GAMEEXEC_STATIC void VM_Execute(int vm_execution_depth /*= false*/)
                 vm.flags |= VM_TERMINATE;
                 return;
 
+            vInstruction(CON_YIELDJUMP) :  // this is used for event chaining
+                dukeMaybeDrawFrame();
             vInstruction(CON_JUMP):  // this is used for event chaining
                 insptr++;
                 tw = Gv_GetVar(*insptr++);

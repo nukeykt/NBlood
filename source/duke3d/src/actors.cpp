@@ -1924,7 +1924,7 @@ ACTOR_STATIC void G_MoveStandables(void)
         auto const pSprite    = &sprite[spriteNum];
         int const  sectNum    = pSprite->sectnum;
 
-        if (sectNum < 0)
+        if ((unsigned)sectNum >= MAXSECTORS)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
 #ifndef EDUKE32_STANDALONE
@@ -3249,7 +3249,7 @@ ACTOR_STATIC void Proj_MoveCustom(int const spriteNum)
 
             actor[spriteNum].movflag = otherSprite;
 
-            if (pSprite->sectnum < 0)
+            if ((unsigned)pSprite->sectnum >= MAXSECTORS)
             {
                 A_DeleteSprite(spriteNum);
                 return;
@@ -3436,7 +3436,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
         int const  nextSprite = nextspritestat[spriteNum];
         auto const pSprite    = &sprite[spriteNum];
 
-        if (pSprite->sectnum < 0)
+        if ((unsigned)pSprite->sectnum >= MAXSECTORS)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
         /* Custom projectiles */
@@ -3570,7 +3570,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                 actor[spriteNum].movflag = moveSprite;
 
-                if (pSprite->sectnum < 0)
+                if ((unsigned)pSprite->sectnum >= MAXSECTORS)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
                 if ((moveSprite & 49152) != 49152 && pSprite->picnum != FREEZEBLAST)
@@ -4243,7 +4243,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
         int switchPic;
 
-        if (pSprite->xrepeat == 0 || sectNum < 0 || sectNum >= MAXSECTORS)
+        if (pSprite->xrepeat == 0 || (unsigned)sectNum >= MAXSECTORS)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
         switchPic = pSprite->picnum;
@@ -4352,7 +4352,7 @@ ACTOR_STATIC void G_MoveActors(void)
 
             actor[spriteNum].movflag = moveSprite;
 
-            if (pSprite->sectnum < 0)
+            if ((unsigned)pSprite->sectnum >= MAXSECTORS)
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
             if ((moveSprite & 49152) != 49152 && pSprite->picnum != FREEZEBLAST)
@@ -5648,7 +5648,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
         int        sectNum = pSprite->sectnum;  // XXX: not const
         int        switchPic;
 
-        if (sectNum < 0 || pSprite->xrepeat == 0)
+        if ((unsigned)sectNum >= MAXSECTORS || pSprite->xrepeat == 0)
             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
         switchPic = pSprite->picnum;
@@ -5888,7 +5888,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 if ((krand()&3) == 0)
                     setsprite(spriteNum, &pSprite->xyz);
 
-                if (pSprite->sectnum == -1)
+                if ((unsigned)pSprite->sectnum >= MAXSECTORS)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
 #ifdef YAX_ENABLE
@@ -5943,10 +5943,13 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     sectNum = pSprite->sectnum;
                 }
 
+                if ((unsigned)sectNum >= MAXSECTORS)
+                    DELETE_SPRITE_AND_CONTINUE(spriteNum);
+
                 int32_t floorZ, ceilZ;
                 getzsofslope(sectNum, pSprite->x, pSprite->y, &ceilZ, &floorZ);
 
-                if (ceilZ == floorZ || sectNum < 0 || sectNum >= MAXSECTORS)
+                if (ceilZ == floorZ)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
                 if (pSprite->z < floorZ-(2<<8))
@@ -5985,7 +5988,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 {
                     if (pData[2] == 0)
                     {
-                        if (pSprite->sectnum == -1)
+                        if ((unsigned)pSprite->sectnum >= MAXSECTORS)
                             DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
                         if ((sector[pSprite->sectnum].floorstat&2))
@@ -6102,7 +6105,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
 
                 A_SetSprite(spriteNum,CLIPMASK0);
 
-                if (sectNum < 0 || (sector[sectNum].floorz + 256) < pSprite->z)
+                if ((unsigned)sectNum >= MAXSECTORS || (sector[sectNum].floorz + 256) < pSprite->z)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
                 if (sector[sectNum].lotag == ST_2_UNDERWATER)
@@ -6144,7 +6147,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 A_Fall(spriteNum);
 
                 if (pSprite->zvel > 4096) pSprite->zvel = 4096;
-                if (sectNum < 0)
+                if ((unsigned)sectNum >= MAXSECTORS)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
 
                 if (pSprite->z == actor[spriteNum].floorz-AC_FZOFFSET(spriteNum) && pData[0] < 3)
@@ -6433,6 +6436,8 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
         int32_t    playerDist;
         int        playerNum = A_FindPlayer(pSprite, &playerDist);
         auto const pPlayer   = g_player[playerNum].ps;
+
+        dukeMaybeDrawFrame();
 
         if (VM_OnEvent(EVENT_MOVEEFFECTORS, spriteNum, playerNum, playerDist, 0))
         {
@@ -6750,7 +6755,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         auto const pPlayer = g_player[playerNum].ps;
 
                         // might happen when squished into void space
-                        if (pPlayer->cursectnum < 0)
+                        if ((unsigned)pPlayer->cursectnum >= MAXSECTORS)
                             break;
 
                         if (pSprite->sectnum == pPlayer->cursectnum
@@ -9328,7 +9333,7 @@ static void G_DoEventGame(int const nEventID, bool const allowDrawing = true)
 
 void G_MoveWorld(void)
 {
-    Bassert(mco_running() != co_drawframe);
+    //Bassert(mco_running() != co_drawframe);
 
     double worldTime = timerGetFractionalTicks();
     auto framecnt = g_frameCounter;
@@ -9382,8 +9387,8 @@ void G_MoveWorld(void)
 
     actorsTime = timerGetFractionalTicks() - actorsTime;
 
-    if (framecnt2 != g_frameCounter)
-        actorsTime -= (double)g_lastFrameDuration2 * 1000.0 / (double)timerGetNanoTickRate();
+    if (g_frameCounter != framecnt2)
+        actorsTime -= (double)g_lastFrameDuration2 * (g_frameCounter - framecnt2) * 1000.0 / (double)timerGetNanoTickRate();
 
     g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*actorsTime;
 
@@ -9403,7 +9408,6 @@ void G_MoveWorld(void)
         G_MoveStandables();  //ST 6
     }
 
-
     VM_OnEvent(EVENT_WORLD);
 
     G_DoEventGame(EVENT_GAME);
@@ -9419,7 +9423,7 @@ void G_MoveWorld(void)
     worldTime = timerGetFractionalTicks() - worldTime;
 
     if (g_frameCounter != framecnt)
-        worldTime -= (double)g_lastFrameDuration2 * 1000.0 / (double)timerGetNanoTickRate();
+        worldTime -= (double)g_lastFrameDuration2 * (g_frameCounter - framecnt) * 1000.0 / (double)timerGetNanoTickRate();
 
     g_moveWorldTime = (1-0.033)*g_moveWorldTime + 0.033*worldTime;
 }

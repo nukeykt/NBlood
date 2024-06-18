@@ -167,7 +167,7 @@ G_EXTERN double g_gameUpdateTime;
 G_EXTERN double g_gameUpdateAndDrawTime;
 #define GAMEUPDATEAVGTIMENUMSAMPLES 100
 G_EXTERN double g_gameUpdateAvgTime;
-G_EXTERN mco_coro *co_drawframe;
+//G_EXTERN mco_coro *co_drawframe;
 G_EXTERN bool     g_frameJustDrawn;
 G_EXTERN uint64_t g_lastFrameStartTime, g_lastFrameEndTime, g_lastFrameDuration;
 G_EXTERN uint64_t g_lastFrameEndTime2, g_lastFrameDuration2;
