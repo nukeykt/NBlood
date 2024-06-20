@@ -974,10 +974,10 @@ void joyScanDevices()
 
                 inputdevices |= DEV_JOYSTICK;
 
-#if SDL_VERSION_ATLEAST(2, 0, 9)
-                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
+#if SDL_VERSION_ATLEAST(2, 0, 18)
+                if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 18))
                 {
-                    if (!SDL_GameControllerRumble(controller, 0xc000, 0xc000, 10))
+                    if (SDL_GameControllerHasRumble(controller))
                         joystick.hasRumble = 1;
                     else DVLOG_F(LOG_INPUT, "Couldn't init controller rumble: %s.", SDL_GetError());
                 }
