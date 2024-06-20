@@ -748,6 +748,8 @@ int CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(scripthandle, "Setup", "ConfigVersion", &configversion);
     SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup", &gSetup.forcesetup);
     SCRIPT_GetNumber(scripthandle, "Setup", "NoAutoLoad", &gSetup.noautoload);
+    SCRIPT_GetNumber(scripthandle, "Setup", "InputJoystick", &gSetup.usejoystick);
+    SCRIPT_GetNumber(scripthandle, "Setup", "InputMouse", &gSetup.usemouse);
 
     int32_t cachesize;
     SCRIPT_GetNumber(scripthandle, "Setup", "CacheSize", &cachesize);
@@ -881,6 +883,8 @@ void CONFIG_WriteSetup(uint32_t flags)
     SCRIPT_PutNumber(scripthandle, "Setup", "ConfigVersion", BYTEVERSION, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup", gSetup.forcesetup, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Setup", "NoAutoLoad", gSetup.noautoload, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Setup", "InputJoystick", gSetup.usejoystick, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Setup", "InputMouse", gSetup.usemouse, FALSE, FALSE);
 
 #ifdef POLYMER
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "Polymer", glrendmode == REND_POLYMER, FALSE, FALSE);
