@@ -88,9 +88,9 @@ const char *gamefunctions[] =
     "Show_Menu",
     "Show_Console",
     "Alt_Weapon_Mode",
+    "Quick_Save",
+    "Quick_Load",
 };
-
-#define NUMKEYENTRIES 50
 
 static const char *keydefaults[] =
 {
@@ -145,6 +145,9 @@ static const char *keydefaults[] =
     "Previous_Weapon", ";", "",
     "Show_Menu", "", "",
     "Show_Console", "NumLck", "",
+    "Alt_Weapon_Mode", "", "",
+    "Quick_Save", "F6", "",
+    "Quick_Load", "F9", "",
 };
 
 static const char *keydefaults_modern[] =
@@ -200,6 +203,9 @@ static const char *keydefaults_modern[] =
     "Previous_Weapon", ";", "",
     "Show_Menu", "", "",
     "Show_Console", "`", "",
+    "Alt_Weapon_Mode", "", "",
+    "Quick_Save", "F6", "",
+    "Quick_Load", "F9", "",
 };
 
 
