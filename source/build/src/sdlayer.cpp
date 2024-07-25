@@ -1034,7 +1034,9 @@ void joyScanDevices()
                         joystick.hasRumble = 1;
                     else DVLOG_F(LOG_INPUT, "Couldn't init joystick rumble: %s.", SDL_GetError());
                 }
-#elif SDL_VERSION_ATLEAST(2, 0, 9)
+                else
+#endif
+#if SDL_VERSION_ATLEAST(2, 0, 9)
                 if (EDUKE32_SDL_LINKED_PREREQ(linked, 2, 0, 9))
                 {
                     if (!SDL_JoystickRumble(joydev, 1, 1, 1))
