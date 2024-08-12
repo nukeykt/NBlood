@@ -1895,6 +1895,16 @@ int app_main(int argc, char const* const* argv)
             else if (Bstrcasecmp(pChar, "nocreatures") == 0) {
                 bNoCreatures = kTrue;
             }
+            else if (Bstrcasecmp(pChar, "exhumed") == 0)
+            {
+                LOG_F(ERROR, "-exhumed used to force EXHUMED.DAT");
+                g_grpNamePtr = dup_filename("exhumed.dat");
+            }
+            else if (Bstrcasecmp(pChar, "ps") == 0)
+            {
+                LOG_F(ERROR, "-ps used to force POWERSLAVE.DAT");
+                g_grpNamePtr = dup_filename("powerslave.dat");
+            }
             else if (Bstrcasecmp(pChar, "nosound") == 0) {
                 bNoSound = kTrue;
             }
@@ -3309,6 +3319,8 @@ void PrintHelp()
         "-g [file.grp]\tLoad additional game data\n"
         "-h [file.def]\tLoad an alternate definitions file\n"
         "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
+        "-exhumed\t\tForce to use EXHUMED.DAT"
+        "-ps\t\tForce to use POWERSLAVE.DAT"
         "-map [file.map]\tLoad an external map file\n"
         "-mh [file.def]\tInclude an additional definitions module\n"
         "-noautoload\tDisable loading from autoload directory\n"
