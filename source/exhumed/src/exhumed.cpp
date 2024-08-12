@@ -693,6 +693,7 @@ short lastfps;
 
 short nMapMode = 0;
 short bNoCreatures = kFalse;
+short bNoMovie     = kFalse;
 
 short nTotalPlayers = 1;
 // TODO: Rename this (or make it static) so it doesn't conflict with library function
@@ -1895,6 +1896,10 @@ int app_main(int argc, char const* const* argv)
             else if (Bstrcasecmp(pChar, "nocreatures") == 0) {
                 bNoCreatures = kTrue;
             }
+            else if (Bstrcasecmp(pChar, "nomovie") == 0)
+            {
+                bNoMovie = kTrue;
+            }
             else if (Bstrcasecmp(pChar, "exhumed") == 0)
             {
                 LOG_F(ERROR, "-exhumed used to force EXHUMED.DAT");
@@ -2990,7 +2995,8 @@ void DoTitle()
 
     ClearAllKeys();
 
-    PlayMovie("book.mov");
+    if (bNoMovie)
+        PlayMovie("book.mov");
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
@@ -3324,6 +3330,7 @@ void PrintHelp()
         "-map [file.map]\tLoad an external map file\n"
         "-mh [file.def]\tInclude an additional definitions module\n"
         "-noautoload\tDisable loading from autoload directory\n"
+        "-nomovie\t\tDisable movie on startup"
         //"-nodemo\t\tNo Demos\n"
         "-nocreatures\tNo enemy creatures\n"
         "-nosound\tNo sound\n"
