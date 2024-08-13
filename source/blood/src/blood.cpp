@@ -1694,7 +1694,7 @@ int app_main(int argc, char const * const * argv)
     {
         G_CleanupSearchPaths();
 
-        if (strcmp(pINISelected->zName, "CRYPTIC.INI"))
+        if (pINISelected && strcmp(pINISelected->zName, "CRYPTIC.INI"))
             removesearchpaths_withuser(SEARCHPATH_CRYPTIC);
     }
 
