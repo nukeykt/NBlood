@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "md4.h"
 
 //#include "actor.h"
+#include "blood.h"
 #include "globals.h"
 #include "db.h"
 #include "iob.h"
