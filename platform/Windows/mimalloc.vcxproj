@@ -59,7 +59,7 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\mimalloc\src\page.c" />
-    <ClCompile Include="..\..\source\mimalloc\src\prim\windows\prim.c" />
+    <ClCompile Include="..\..\source\mimalloc\src\prim\prim.c" />
     <ClCompile Include="..\..\source\mimalloc\src\random.c" />
     <ClCompile Include="..\..\source\mimalloc\src\segment-map.c" />
     <ClCompile Include="..\..\source\mimalloc\src\segment.c" />

@@ -53,11 +53,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_externc
 #endif
 
-// pthreads
-#if !defined(_WIN32) && !defined(__wasi__)
-#define  MI_USE_PTHREADS
-#include <pthread.h>
-#endif
 
 // "options.c"
 void       _mi_fputs(mi_output_fun* out, void* arg, const char* prefix, const char* message);
@@ -66,6 +61,7 @@ void       _mi_warning_message(const char* fmt, ...);
 void       _mi_verbose_message(const char* fmt, ...);
 void       _mi_trace_message(const char* fmt, ...);
 void       _mi_options_init(void);
+long       _mi_option_get_fast(mi_option_t option);
 void       _mi_error_message(int err, const char* fmt, ...);
 
 // random.c
@@ -81,14 +77,20 @@ static inline uintptr_t _mi_random_shuffle(uintptr_t x);
 // init.c
 extern mi_decl_cache_align mi_stats_t       _mi_stats_main;
 extern mi_decl_cache_align const mi_page_t  _mi_page_empty;
+void       _mi_process_load(void);
+void mi_cdecl _mi_process_done(void);
+bool       _mi_is_redirected(void);
+bool       _mi_allocator_init(const char** message);
+void       _mi_allocator_done(void);
 bool       _mi_is_main_thread(void);
 size_t     _mi_current_thread_count(void);
 bool       _mi_preloading(void);           // true while the C runtime is not initialized yet
-mi_threadid_t _mi_thread_id(void) mi_attr_noexcept;
-mi_heap_t*    _mi_heap_main_get(void);     // statically allocated main backing heap
 void       _mi_thread_done(mi_heap_t* heap);
 void       _mi_thread_data_collect(void);
 void       _mi_tld_init(mi_tld_t* tld, mi_heap_t* bheap);
+mi_threadid_t _mi_thread_id(void) mi_attr_noexcept;
+mi_heap_t*    _mi_heap_main_get(void);     // statically allocated main backing heap
+mi_subproc_t* _mi_subproc_from_id(mi_subproc_id_t subproc_id);
 
 // os.c
 void       _mi_os_init(void);                                            // called from process init
@@ -130,15 +132,22 @@ void       _mi_arena_unsafe_destroy_all(mi_stats_t* stats);
 
 bool       _mi_arena_segment_clear_abandoned(mi_segment_t* segment);
 void       _mi_arena_segment_mark_abandoned(mi_segment_t* segment);
-size_t     _mi_arena_segment_abandoned_count(void);
 
-typedef struct mi_arena_field_cursor_s { // abstract
-  mi_arena_id_t  start;
-  int            count;
-  size_t         bitmap_idx;
+void*      _mi_arena_meta_zalloc(size_t size, mi_memid_t* memid);
+void       _mi_arena_meta_free(void* p, mi_memid_t memid, size_t size);
+
+typedef struct mi_arena_field_cursor_s { // abstract struct
+  size_t         os_list_count;           // max entries to visit in the OS abandoned list
+  size_t         start;                   // start arena idx (may need to be wrapped)
+  size_t         end;                     // end arena idx (exclusive, may need to be wrapped)
+  size_t         bitmap_idx;              // current bit idx for an arena
+  mi_subproc_t*  subproc;                 // only visit blocks in this sub-process
+  bool           visit_all;               // ensure all abandoned blocks are seen (blocking)
+  bool           hold_visit_lock;         // if the subproc->abandoned_os_visit_lock is held
 } mi_arena_field_cursor_t;
-void          _mi_arena_field_cursor_init(mi_heap_t* heap, mi_arena_field_cursor_t* current);
+void          _mi_arena_field_cursor_init(mi_heap_t* heap, mi_subproc_t* subproc, bool visit_all, mi_arena_field_cursor_t* current);
 mi_segment_t* _mi_arena_segment_clear_abandoned_next(mi_arena_field_cursor_t* previous);
+void          _mi_arena_field_cursor_done(mi_arena_field_cursor_t* current);
 
 // "segment-map.c"
 void       _mi_segment_map_allocated_at(const mi_segment_t* segment);
@@ -158,8 +167,8 @@ void       _mi_segment_huge_page_reset(mi_segment_t* segment, mi_page_t* page, m
 
 void       _mi_segments_collect(bool force, mi_segments_tld_t* tld);
 void       _mi_abandoned_reclaim_all(mi_heap_t* heap, mi_segments_tld_t* tld);
-void       _mi_abandoned_await_readers(void);
 bool       _mi_segment_attempt_reclaim(mi_heap_t* heap, mi_segment_t* segment);
+bool       _mi_segment_visit_blocks(mi_segment_t* segment, int heap_tag, bool visit_blocks, mi_block_visit_fun* visitor, void* arg);
 
 // "page.c"
 void*      _mi_malloc_generic(mi_heap_t* heap, size_t size, bool zero, size_t huge_alignment)  mi_attr_noexcept mi_attr_malloc;
@@ -191,6 +200,8 @@ void       _mi_heap_set_default_direct(mi_heap_t* heap);
 bool       _mi_heap_memid_is_suitable(mi_heap_t* heap, mi_memid_t memid);
 void       _mi_heap_unsafe_destroy_all(void);
 mi_heap_t* _mi_heap_by_tag(mi_heap_t* heap, uint8_t tag);
+void       _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page);
+bool       _mi_heap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t* page, mi_block_visit_fun* visitor, void* arg);
 
 // "stats.c"
 void       _mi_stats_done(mi_stats_t* stats);
@@ -317,6 +328,7 @@ static inline uintptr_t _mi_align_up(uintptr_t sz, size_t alignment) {
   }
 }
 
+
 // Align a pointer upwards
 static inline void* mi_align_up_ptr(void* p, size_t alignment) {
   return (void*)_mi_align_up((uintptr_t)p, alignment);
@@ -327,6 +339,14 @@ static inline void* mi_align_up_ptr(void* p, size_t alignment) {
 static inline uintptr_t _mi_divide_up(uintptr_t size, size_t divider) {
   mi_assert_internal(divider != 0);
   return (divider == 0 ? size : ((size + divider - 1) / divider));
+}
+
+
+// clamp an integer
+static inline size_t _mi_clamp(size_t sz, size_t min, size_t max) {
+  if (sz < min) return min;
+  else if (sz > max) return max;
+  else return sz;
 }
 
 // Is memory zero initialized?
@@ -580,6 +600,15 @@ static inline void mi_page_set_has_aligned(mi_page_t* page, bool has_aligned) {
   page->flags.x.has_aligned = has_aligned;
 }
 
+#if MI_DEBUG_GUARDED
+static inline bool mi_page_has_guarded(const mi_page_t* page) {
+  return page->flags.x.has_guarded;
+}
+
+static inline void mi_page_set_has_guarded(mi_page_t* page, bool has_guarded) {
+  page->flags.x.has_guarded = has_guarded;
+}
+#endif
 
 /* -------------------------------------------------------------------
 Encoding/Decoding the free list next pointers
@@ -636,6 +665,16 @@ static inline void* mi_ptr_decode(const void* null, const mi_encoded_t x, const 
 static inline mi_encoded_t mi_ptr_encode(const void* null, const void* p, const uintptr_t* keys) {
   uintptr_t x = (uintptr_t)(p==NULL ? null : p);
   return mi_rotl(x ^ keys[1], keys[0]) + keys[0];
+}
+
+static inline uint32_t mi_ptr_encode_canary(const void* null, const void* p, const uintptr_t* keys) {
+  const uint32_t x = (uint32_t)(mi_ptr_encode(null,p,keys));
+  // make the lowest byte 0 to prevent spurious read overflows which could be a security issue (issue #951)
+  #ifdef MI_BIG_ENDIAN
+  return (x & 0x00FFFFFF);
+  #else
+  return (x & 0xFFFFFF00);
+  #endif
 }
 
 static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* block, const uintptr_t* keys ) {
@@ -718,7 +757,7 @@ static inline mi_memid_t _mi_memid_create_os(bool committed, bool is_zero, bool 
 
 static inline uintptr_t _mi_random_shuffle(uintptr_t x) {
   if (x==0) { x = 17; }   // ensure we don't get stuck in generating zeros
-#if (MI_INTPTR_SIZE==8)
+#if (MI_INTPTR_SIZE>=8)
   // by Sebastiano Vigna, see: <http://xoshiro.di.unimi.it/splitmix64.c>
   x ^= x >> 30;
   x *= 0xbf58476d1ce4e5b9UL;
