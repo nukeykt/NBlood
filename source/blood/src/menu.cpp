@@ -437,8 +437,14 @@ const char *pzWeaponSwitchStrings[] = {
     "BY RATING"
 };
 
+const char *pzLevelStatsStrings[] = {
+    "OFF",
+    "ON",
+    "AUTOMAP ONLY"
+};
+
 void SetAutoAim(CGameMenuItemZCycle *);
-void SetLevelStats(CGameMenuItemZBool *);
+void SetLevelStats(CGameMenuItemZCycle *);
 void SetPowerupDuration(CGameMenuItemZBool *);
 void SetShowMapTitle(CGameMenuItemZBool*);
 void SetWeaponSwitch(CGameMenuItemZCycle *pItem);
@@ -464,7 +470,7 @@ CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0
 CGameMenuItemChain itemOptionsDisplayMode("VIDEO MODE", 3, 66, 70, 180, 0, &menuOptionsDisplayMode, -1, SetupVideoModeMenu, 0);
 CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, gAimReticle, SetCrosshair, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolCenterHoriz("CENTER HORIZON LINE:", 3, 66, 90, 180, gCenterHoriz, SetCenterHoriz, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 100, 180, gLevelStats, SetLevelStats, NULL, NULL);
+CGameMenuItemZCycle itemOptionsDisplayCycleLevelStats("LEVEL STATS:", 3, 66, 100, 180, gLevelStats, SetLevelStats, pzLevelStatsStrings, ARRAY_SSIZE(pzLevelStatsStrings), 0);
 CGameMenuItemZBool itemOptionsDisplayBoolPowerupDuration("POWERUP DURATION:", 3, 66, 110, 180, gPowerupDuration, SetPowerupDuration, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolShowMapTitle("MAP TITLE:", 3, 66, 120, 180, gShowMapTitle, SetShowMapTitle, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 130, 180, gMessageState, SetMessages, NULL, NULL);
@@ -1278,7 +1284,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemOptionsDisplayMode, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolCrosshair, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolCenterHoriz, false);
-    menuOptionsDisplay.Add(&itemOptionsDisplayBoolLevelStats, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayCycleLevelStats, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolPowerupDuration, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolShowMapTitle, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
@@ -1290,7 +1296,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemBloodQAV, false);
     itemOptionsDisplayBoolCrosshair.at20 = gAimReticle;
     itemOptionsDisplayBoolCenterHoriz.at20 = gCenterHoriz;
-    itemOptionsDisplayBoolLevelStats.at20 = gLevelStats;
+    itemOptionsDisplayCycleLevelStats.m_nFocus = gLevelStats;
     itemOptionsDisplayBoolPowerupDuration.at20 = gPowerupDuration;
     itemOptionsDisplayBoolShowMapTitle.at20 = gShowMapTitle;
     itemOptionsDisplayBoolMessages.at20 = gMessageState;
@@ -1770,9 +1776,9 @@ void SetAutoAim(CGameMenuItemZCycle *pItem)
     }
 }
 
-void SetLevelStats(CGameMenuItemZBool *pItem)
+void SetLevelStats(CGameMenuItemZCycle *pItem)
 {
-    gLevelStats = pItem->at20;
+    gLevelStats = pItem->m_nFocus;
 }
 
 void SetPowerupDuration(CGameMenuItemZBool* pItem)
