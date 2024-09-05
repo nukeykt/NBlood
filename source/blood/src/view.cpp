@@ -1295,7 +1295,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     static int gLastPageTimeStats = 0;
     const int nFont = 3;
     char buffer[128];
-    if (!gLevelStats)
+    if (!gLevelStats || ((gLevelStats == 2) && (gViewMode == 3)))
         return;
 
     int nHeight;
