@@ -1404,7 +1404,7 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     static int gLastPageTimePowerupCount = 0;
     if (gViewMode == 3 && gViewSize > 3) // redraw borders
     {
-        if (gLastPageTimePowerup != gLevelTime && nSortCount || gLastPageTimePowerupCount != nSortCount)
+        if ((gLastPageTimePowerup != gLevelTime && nSortCount) || (gLastPageTimePowerupCount != nSortCount))
             viewUpdatePages();
     }
     gLastPageTimePowerup = gLevelTime;
