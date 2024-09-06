@@ -865,7 +865,7 @@ void SetupMessagesMenu(void)
     menuMessages.Add(&itemBloodQAV, false);
 }
 
-void SetupControlsMenu(void)
+void SetupControlsOldMenu(void)
 {
     sliderMouseSpeed.fValue = ClipRangeF(CONTROL_MouseSensitivity, sliderMouseSpeed.fRangeLow, sliderMouseSpeed.fRangeHigh);
     sliderTurnSpeed.nValue = ClipRange(gTurnSpeed, sliderTurnSpeed.nRangeLow, sliderTurnSpeed.nRangeHigh);
@@ -1417,7 +1417,10 @@ void SetupOptionsMenu(void)
     menuOptionsPlayer.Add(&itemOptionsPlayerTitle, false);
     menuOptionsPlayer.Add(&itemOptionsPlayerName, true);
     menuOptionsPlayer.Add(&itemBloodQAV, false);
+}
 
+void SetupControlsMenu(void)
+{
     menuOptionsControl.Add(&itemOptionsControlTitle, false);
     menuOptionsControl.Add(&itemOptionsControlKeyboard, true);
     menuOptionsControl.Add(&itemOptionsControlMouse, false);
@@ -1449,9 +1452,7 @@ void SetupOptionsMenu(void)
     itemOptionsControlMouseVerticalAim.pPreDrawCallback = PreDrawControlMouse;
 
     menuOptionsControlMouseButtonAssignment.Add(&itemOptionsControlMouseTitle, false);
-    int i;
-    int y = 60;
-    for (i = 0; i < MENUMOUSEFUNCTIONS; i++)
+    for (int i = 0, y = 60; i < MENUMOUSEFUNCTIONS; i++)
     {
         pItemOptionsControlMouseButton[i] = new CGameMenuItemZCycle(MenuMouseNames[i], 3, 66, y, 180, 0, SetMouseButton, pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0, true);
         dassert(pItemOptionsControlMouseButton[i] != NULL);
@@ -1459,7 +1460,10 @@ void SetupOptionsMenu(void)
         y += 10;
     }
     menuOptionsControlMouseButtonAssignment.Add(&itemBloodQAV, false);
+}
 
+void SetupJoystickMenu(void)
+{
     if (!CONTROL_JoystickEnabled) // joystick disabled, don't bother populating joystick menus
     {
         itemOptionsControlJoystickButtons.bEnable = 0;
@@ -1467,7 +1471,7 @@ void SetupOptionsMenu(void)
         return;
     }
 
-    i = 0;
+    int i = 0, y = 0;
     for (int nButton = 0; nButton < joystick.numButtons; nButton++) // store every joystick button/hat name for button list at launch
     {
         const char *pzButtonName = joyGetName(1, nButton);
@@ -1616,7 +1620,7 @@ void SetupMenus(void)
     SetupLoadingScreen();
     SetupKeyListMenu();
     SetupMessagesMenu();
-    SetupControlsMenu();
+    SetupControlsOldMenu();
     SetupSaveGameMenu();
     SetupLoadGameMenu();
     SetupOptionsOldMenu();
@@ -1635,6 +1639,8 @@ void SetupMenus(void)
     SetupSorry3Menu();
 
     SetupOptionsMenu();
+    SetupControlsMenu();
+    SetupJoystickMenu();
     SetupNetworkMenu();
 }
 
