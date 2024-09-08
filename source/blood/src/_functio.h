@@ -259,12 +259,12 @@ static const char * joystickdefaults[MAXJOYBUTTONSANDHATS] =
    "Next_Weapon", // +
    "", // Home
    "Jump", // Z
-   "Crouch", // C
+   "Crouch_Toggle", // C
    "Map", // X
    "Run", // Y
    "Jump", // L
    "Quick_Kick", // R
-   "Crouch", // ZL
+   "Crouch_Toggle", // ZL
    "Fire", // ZR
    "Quick_Kick", // D-Pad Up
    "Inventory_Right", // D-Pad Right
@@ -306,21 +306,21 @@ static const char * joystickdigitaldefaults[MAXJOYDIGITAL] =
 #else
 static const char * joystickdefaults[MAXJOYBUTTONSANDHATS] =
    {
-    "Jump",
-    "Crouch",
-    "Open",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "Turn_Around",
-    "Previous_Weapon",
-    "Next_Weapon",
-    "",
-    "Inventory_Use",
-    "Inventory_Left",
-    "Inventory_Right"
+   "Jump",
+   "Crouch_Toggle",
+   "Open",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "Turn_Around",
+   "Previous_Weapon",
+   "Next_Weapon",
+   "",
+   "Inventory_Use",
+   "Inventory_Left",
+   "Inventory_Right",
    };
 
 
@@ -340,10 +340,10 @@ static const char * joystickanalogdefaults[MAXJOYAXES] =
 
 static const int32_t joystickanalogscaledefaults[MAXJOYAXES] =
    {
-   DEFAULTJOYSTICKANALOGUESCALE,
-   DEFAULTJOYSTICKANALOGUESCALE,
    DEFAULTJOYSTICKANALOGUESCALE/2,
-   DEFAULTJOYSTICKANALOGUESCALE/4
+   DEFAULTJOYSTICKANALOGUESCALE,
+   DEFAULTJOYSTICKANALOGUESCALE/3*2,
+   DEFAULTJOYSTICKANALOGUESCALE/4,
    };
 
 
@@ -352,7 +352,7 @@ static const int32_t joystickanalogdeaddefaults[MAXJOYAXES] =
    DEFAULTJOYSTICKANALOGUEDEAD*5,
    DEFAULTJOYSTICKANALOGUEDEAD*4,
    DEFAULTJOYSTICKANALOGUEDEAD*2,
-   DEFAULTJOYSTICKANALOGUEDEAD*2
+   DEFAULTJOYSTICKANALOGUEDEAD*2,
    };
 
 
@@ -361,24 +361,24 @@ static const int32_t joystickanalogsaturatedefaults[MAXJOYAXES] =
    DEFAULTJOYSTICKANALOGUESATURATE*3,
    DEFAULTJOYSTICKANALOGUESATURATE*3,
    DEFAULTJOYSTICKANALOGUESATURATE*2,
-   DEFAULTJOYSTICKANALOGUESATURATE*2
+   DEFAULTJOYSTICKANALOGUESATURATE*2,
    };
 
 
 static const char * joystickdigitaldefaults[MAXJOYDIGITAL] =
    {
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "Weapon_Special_Fire",
-    "",
-    "Weapon_Fire",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "Weapon_Special_Fire",
+   "",
+   "Weapon_Fire",
    };
 #endif
 
