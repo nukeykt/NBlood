@@ -483,26 +483,26 @@ void CONFIG_SetDefaults(void)
 #else
     for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
     {
-        JoystickFunctions[i][0] = -1;
-        JoystickFunctions[i][1] = -1;
+        JoystickFunctions[i][0] = CONFIG_FunctionNameToNum(joystickdefaults[i]);
+        JoystickFunctions[i][1] = CONFIG_FunctionNameToNum(joystickclickeddefaults[i]);
         CONTROL_MapButton(JoystickFunctions[i][0], i, 0, controldevice_joystick);
         CONTROL_MapButton(JoystickFunctions[i][1], i, 1, controldevice_joystick);
     }
 
     for (int i=0; i<MAXJOYAXES; i++)
     {
-        JoystickAnalogueScale[i] = DEFAULTJOYSTICKANALOGUESCALE;
-        JoystickAnalogueDead[i] = DEFAULTJOYSTICKANALOGUEDEAD;
-        JoystickAnalogueSaturate[i] = DEFAULTJOYSTICKANALOGUESATURATE;
+        JoystickAnalogueScale[i] = joystickanalogscaledefaults[i];
+        JoystickAnalogueDead[i] = joystickanalogdeaddefaults[i];
+        JoystickAnalogueSaturate[i] = joystickanalogsaturatedefaults[i];
         CONTROL_SetAnalogAxisScale(i, JoystickAnalogueScale[i], controldevice_joystick);
         JOYSTICK_SetDeadZone(i, JoystickAnalogueDead[i], JoystickAnalogueSaturate[i]);
 
-        JoystickDigitalFunctions[i][0] = -1;
-        JoystickDigitalFunctions[i][1] = -1;
+        JoystickDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(joystickdigitaldefaults[i*2]);
+        JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(joystickdigitaldefaults[i*2+1]);
         CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][0], 0);
         CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][1], 1);
 
-        JoystickAnalogueAxes[i] = -1;
+        JoystickAnalogueAxes[i] = CONFIG_AnalogNameToNum(joystickanalogdefaults[i]);
         CONTROL_MapAnalogAxis(i, JoystickAnalogueAxes[i]);
 
         JoystickAnalogueInvert[i] = 0;
