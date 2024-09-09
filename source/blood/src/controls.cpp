@@ -487,7 +487,7 @@ void ctrlGetInput(void)
     if (turnRight)
         input.q16turn = fix16_sadd(input.q16turn, fix16_from_float(scaleAdjustmentToInterval(ClipHigh(12 * turnHeldTime, gTurnSpeed)>>2)));
 
-    if ((run2 || run) && turnHeldTime > 24)
+    if (!gTurnAcceleration || (((gTurnAcceleration == 2) || run2 || run) && (turnHeldTime > 24)))
         input.q16turn <<= 1;
 
     if (BUTTON(gamefunc_Strafe))
