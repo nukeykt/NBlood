@@ -2379,6 +2379,7 @@ void SetupJoystickAxesMenu(CGameMenuItemChain *pItem)
             pItemOptionsControlJoystickAxisAnalogue[nAxis]->m_nFocus = 0;
             break;
         }
+        pItemOptionsControlJoystickAxisAnalogueInvert[nAxis]->at20 = JoystickAnalogueInvert[nAxis];
         pItemOptionsControlJoystickAxisDigitalPos[nAxis]->m_nFocus = 0;
         for (int j = 0; j < NUMGAMEFUNCTIONS+1; j++)
         {
