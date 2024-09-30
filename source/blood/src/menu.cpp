@@ -2741,14 +2741,20 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     int nSlot = pItem->at28;
     if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         return;
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     if (!testkopen(strLoadGameName, 0))
+    {
+        pathsearchmode = bakpathsearchmode;
         return;
+    }
     viewLoadingScreen(gMenuPicnum, "Loading", "Loading Saved Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
     gGameMenuMgr.Deactivate();
     gQuickLoadSlot = nSlot;
+    pathsearchmode = bakpathsearchmode;
 }
 
 void QuickLoadGame(void)
@@ -2756,13 +2762,19 @@ void QuickLoadGame(void)
     char strLoadGameName[BMAX_PATH];
     if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         return;
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", gQuickLoadSlot);
     if (!testkopen(strLoadGameName, 0))
+    {
+        pathsearchmode = bakpathsearchmode;
         return;
+    }
     viewLoadingScreen(gMenuPicnum, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
     videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
     gGameMenuMgr.Deactivate();
+    pathsearchmode = bakpathsearchmode;
 }
 
 void ClearUserMapNameOnLevelChange(CGameMenuItemZCycle *pItem)
