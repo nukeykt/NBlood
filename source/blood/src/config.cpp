@@ -738,7 +738,7 @@ int CONFIG_ReadSetup(void)
 
     char nameBuf[64];
 
-    while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) > 10)
+    while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) >= MAXPLAYERNAME)
         tempbuf[Bstrlen(tempbuf) - 1] = '\0';
 
     Bstrncpyz(szPlayerName, tempbuf, sizeof(szPlayerName));
