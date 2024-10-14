@@ -416,9 +416,10 @@ void fxBloodBits(int nSprite) // 14
     gFX.fxSpawn(FX_48, pSprite->sectnum, x, y, pSprite->z);
     if (pSprite->ang == 1024)
     {
-        int nChannel = 28+(pSprite->index&2);
+        const int nChannel = 28+(pSprite->index&2);
+        const int nFlags = !VanillaMode() ? 1|4 : 1; // don't cut off if channel is already occupied
         dassert(nChannel < 32);
-        sfxPlay3DSound(pSprite, 385, nChannel, 1);
+        sfxPlay3DSound(pSprite, 385, nChannel, nFlags);
     }
     if (Chance(0x5000))
     {
