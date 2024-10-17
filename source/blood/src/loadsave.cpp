@@ -553,7 +553,19 @@ void LoadSaveSetup(void)
     void nnExtLoadSaveConstruct(void);
 #endif
     myLoadSave = new MyLoadSave();
+    
+    // NoOne: Seq must be in top of AI because of AISTATE callbacks (and seq callbacks in general).
+    // Ex: cultist throwing TNT - if you saved the game while it plays animation
+    // before fire trigger seq flag, you will get assertion fail on load since
+    // target == -1 after aiInitSprite() call.
 
+    // Another reason is that it just spawns the wrong animation.
+    // Ex: save the game when some dude moves, load it and quckly
+    // use ONERING cheat. You will see that dude plays moving
+    // animation, but have idle AISTATE after aiInitSprite()
+    // call. In vanilla they just stand still.
+
+    SeqLoadSaveConstruct();
     ActorLoadSaveConstruct();
     AILoadSaveConstruct();
     EndGameLoadSaveConstruct();
@@ -562,7 +574,6 @@ void LoadSaveSetup(void)
     MessagesLoadSaveConstruct();
     MirrorLoadSaveConstruct();
     PlayerLoadSaveConstruct();
-    SeqLoadSaveConstruct();
     TriggersLoadSaveConstruct();
     ViewLoadSaveConstruct();
     WarpLoadSaveConstruct();

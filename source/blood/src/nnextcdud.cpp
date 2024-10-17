@@ -1507,13 +1507,16 @@ void CUSTOMDUDE_SETUP::SetupLeech()
         spritetype* pSpr2 = &sprite[i];
         if (pSpr2->owner == pSpr->index && xspriRangeIsFine(pSpr2->extra))
         {
-            XSPRITE* pXSpr2 = &xsprite[pSpr2->extra];
-            if (pXSpr2->locked)
-                pDude->LeechKill(false); // repeat fake killing to set 0 ammo
+            if (pSpr2->type == kModernThingEnemyLifeLeech)
+            {
+                XSPRITE *pXSpr2 = &xsprite[pSpr2->extra];
+                if (pXSpr2->locked)
+                    pDude->LeechKill(false);  // repeat fake killing to set 0 ammo
 
-            // found!
-            pDude->pXLeech = pXSpr2;
-            break;
+                // found!
+                pDude->pXLeech = pXSpr2;
+                break;
+            }
         }
     }
 }
