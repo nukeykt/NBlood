@@ -490,7 +490,9 @@ void MyLoadSave::Save(void)
 
 void LoadSavedInfo(void)
 {
-    auto pList = klistpath("./", "game*.sav", BUILDVFS_FIND_FILE);
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
+    auto pList = klistpath((g_modDir[0] != '/') ? g_modDir : "./", "game*.sav", BUILDVFS_FIND_FILE);
     int nCount = 0;
     for (auto pIterator = pList; pIterator != NULL && nCount < 10; pIterator = pIterator->next, nCount++)
     {
@@ -523,6 +525,7 @@ void LoadSavedInfo(void)
         kclose(hFile);
     }
     klistfree(pList);
+    pathsearchmode = bakpathsearchmode;
 }
 
 void UpdateSavedInfo(int nSlot)

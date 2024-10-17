@@ -66,6 +66,7 @@ void SetViewSwaying(CGameMenuItemZBool *);
 void SetMouseSensitivity(CGameMenuItemSliderFloat *);
 void SetMouseAimFlipped(CGameMenuItemZBool *);
 void SetTurnSpeed(CGameMenuItemSlider *);
+void SetTurnAcceleration(CGameMenuItemZCycle *);
 void ResetKeys(CGameMenuItemChain *);
 void ResetKeysClassic(CGameMenuItemChain *);
 void SetMessages(CGameMenuItemZBool *);
@@ -706,6 +707,12 @@ void SetJoystickDigitalNeg(CGameMenuItemZCycle* pItem);
 void SetJoystickDeadzone(CGameMenuItemSlider* pItem);
 void SetJoystickSaturate(CGameMenuItemSlider* pItem);
 
+const char *pzTurnAccelerationStrings[] = {
+    "OFF",
+    "ON RUNNING",
+    "ALWAYS ON",
+};
+
 CGameMenuItemTitle itemOptionsControlTitle("CONTROL SETUP", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsControlKeyboard("KEYBOARD SETUP", 1, 0, 60, 320, 1, &menuOptionsControlKeyboard, -1, NULL, 0);
 CGameMenuItemChain itemOptionsControlMouse("MOUSE SETUP", 1, 0, 80, 320, 1, &menuOptionsControlMouse, -1, SetupMouseMenu, 0);
@@ -713,9 +720,11 @@ CGameMenuItemChain itemOptionsControlJoystickButtons("JOYSTICK BUTTONS SETUP", 1
 CGameMenuItemChain itemOptionsControlJoystickAxes("JOYSTICK AXES SETUP", 1, 0, 140, 320, 1, &menuOptionsControlJoystickListAxes, -1, SetupJoystickAxesMenu, 0);
 
 CGameMenuItemTitle itemOptionsControlKeyboardTitle("KEYBOARD SETUP", 1, 160, 20, 2038);
-CGameMenuItemChain itemOptionsControlKeyboardList("Configure Keys...", 1, 0, 60, 320, 1, &menuKeys, -1, NULL, 0);
-CGameMenuItemChain itemOptionsControlKeyboardReset("Reset Keys (default)...", 1, 0, 80, 320, 1, &menuKeys, -1, ResetKeys, 0);
-CGameMenuItemChain itemOptionsControlKeyboardResetClassic("Reset Keys (classic)...", 1, 0, 100, 320, 1, &menuKeys, -1, ResetKeysClassic, 0);
+CGameMenuItemSlider itemOptionsControlKeyboardSliderTurnSpeed("Key Turn Speed:", 1, 18, 50, 280, &gTurnSpeed, 64, 128, 4, SetTurnSpeed, -1, -1);
+CGameMenuItemZCycle itemOptionsControlKeyboardCycleTurnAcceleration("Key Turn Acceleration:", 1, 18, 70, 280, 0, SetTurnAcceleration, pzTurnAccelerationStrings, ARRAY_SIZE(pzTurnAccelerationStrings), 0);
+CGameMenuItemChain itemOptionsControlKeyboardList("Configure Keys...", 1, 0, 110, 320, 1, &menuKeys, -1, NULL, 0);
+CGameMenuItemChain itemOptionsControlKeyboardReset("Reset Keys (default)...", 1, 0, 135, 320, 1, &menuKeys, -1, ResetKeys, 0);
+CGameMenuItemChain itemOptionsControlKeyboardResetClassic("Reset Keys (classic)...", 1, 0, 155, 320, 1, &menuKeys, -1, ResetKeysClassic, 0);
 
 void SetMouseAimMode(CGameMenuItemZBool *pItem);
 void SetMouseVerticalAim(CGameMenuItemZBool *pItem);
@@ -1417,10 +1426,15 @@ void SetupOptionsMenu(void)
     menuOptionsControl.Add(&itemBloodQAV, false);
 
     menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardTitle, false);
-    menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardList, true);
+    menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardSliderTurnSpeed, true);
+    menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardCycleTurnAcceleration, false);
+    menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardList, false);
     menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardReset, false);
     menuOptionsControlKeyboard.Add(&itemOptionsControlKeyboardResetClassic, false);
     menuOptionsControlKeyboard.Add(&itemBloodQAV, false);
+
+    itemOptionsControlKeyboardSliderTurnSpeed.nValue = gTurnSpeed;
+    itemOptionsControlKeyboardCycleTurnAcceleration.m_nFocus = gTurnAcceleration;
 
     menuOptionsControlMouse.Add(&itemOptionsControlMouseTitle, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseButton, true);
@@ -1768,6 +1782,11 @@ void SetMouseAimFlipped(CGameMenuItemZBool *pItem)
 void SetTurnSpeed(CGameMenuItemSlider *pItem)
 {
     gTurnSpeed = pItem->nValue;
+}
+
+void SetTurnAcceleration(CGameMenuItemZCycle *pItem)
+{
+    gTurnAcceleration = pItem->m_nFocus;
 }
 
 void SetAutoAim(CGameMenuItemZCycle *pItem)
