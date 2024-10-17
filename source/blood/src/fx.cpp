@@ -284,6 +284,8 @@ void fxSpawnBlood(spritetype *pSprite, int a2)
     if (pBlood)
     {
         pBlood->ang = 1024;
+        if (!VanillaMode()) // used to check when it is safe to trigger sfx to prevent enemy sfx cutoff
+            pBlood->owner = pSprite->index;
         xvel[pBlood->index] = Random2(0x6aaaa);
         yvel[pBlood->index] = Random2(0x6aaaa);
         zvel[pBlood->index] = -((int)Random(0x10aaaa))-100;
