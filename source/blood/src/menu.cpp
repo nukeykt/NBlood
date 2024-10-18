@@ -39,6 +39,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "screen.h"
 #include "sound.h"
 #include "view.h"
+#ifdef _WIN32 // required for MME midi device selection
+#include "driver_winmm.h"
+#include "midi.h"
+#endif
 
 void SaveGame(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
 
@@ -631,6 +635,9 @@ void UpdateMusicVolume(CGameMenuItemSlider *pItem);
 void UpdateSoundRate(CGameMenuItemZCycle *pItem);
 void UpdateNumVoices(CGameMenuItemSlider *pItem);
 void UpdateMusicDevice(CGameMenuItemZCycle *pItem);
+#ifdef _WIN32
+void UpdateMidiDevice(CGameMenuItemSlider *pItem);
+#endif
 void SetSound(CGameMenuItemChain *pItem);
 void PreDrawSound(CGameMenuItem *pItem);
 const char *pzSoundRateStrings[] = {
@@ -678,6 +685,9 @@ CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoi
 CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 130, 180, false, UpdateCDToggle, NULL, NULL);
 CGameMenuItemZCycle itemOptionsSoundMusicDevice("MIDI DRIVER:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, ARRAY_SIZE(pzMusicDeviceStrings), 0);
 CGameMenuItemChain itemOptionsSoundSF2Bank("SF2 BANK", 3, 66, 150, 180, 0, &menuOptionsSoundSF2, 0, NULL, 0);
+#ifdef _WIN32
+CGameMenuItemSlider itemOptionsSoundMIDIDevice("MIDI DEVICE:", 3, 66, 150, 180, 0, 0, 255, 1, UpdateMidiDevice, -1, -1, kMenuSliderValue);
+#endif
 CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 160, 180, 0, NULL, 0, SetSound, 0);
 
 
@@ -865,7 +875,7 @@ void SetupMessagesMenu(void)
     menuMessages.Add(&itemBloodQAV, false);
 }
 
-void SetupControlsMenu(void)
+void SetupControlsOldMenu(void)
 {
     sliderMouseSpeed.fValue = ClipRangeF(CONTROL_MouseSensitivity, sliderMouseSpeed.fRangeLow, sliderMouseSpeed.fRangeHigh);
     sliderTurnSpeed.nValue = ClipRange(gTurnSpeed, sliderTurnSpeed.nRangeLow, sliderTurnSpeed.nRangeHigh);
@@ -1407,6 +1417,10 @@ void SetupOptionsMenu(void)
     menuOptionsSound.Add(&itemOptionsSoundCDToggle, false);
     menuOptionsSound.Add(&itemOptionsSoundMusicDevice, false);
     menuOptionsSound.Add(&itemOptionsSoundSF2Bank, false);
+#ifdef _WIN32
+    if (WinMMDrv_MIDI_GetNumDevices() > 0) // do not add this item if only 1 midi device is detected
+        menuOptionsSound.Add(&itemOptionsSoundMIDIDevice, false);
+#endif
 
     menuOptionsSound.Add(&itemOptionsSoundApplyChanges, false);
     menuOptionsSound.Add(&itemBloodQAV, false);
@@ -1417,7 +1431,10 @@ void SetupOptionsMenu(void)
     menuOptionsPlayer.Add(&itemOptionsPlayerTitle, false);
     menuOptionsPlayer.Add(&itemOptionsPlayerName, true);
     menuOptionsPlayer.Add(&itemBloodQAV, false);
+}
 
+void SetupControlsMenu(void)
+{
     menuOptionsControl.Add(&itemOptionsControlTitle, false);
     menuOptionsControl.Add(&itemOptionsControlKeyboard, true);
     menuOptionsControl.Add(&itemOptionsControlMouse, false);
@@ -1449,9 +1466,7 @@ void SetupOptionsMenu(void)
     itemOptionsControlMouseVerticalAim.pPreDrawCallback = PreDrawControlMouse;
 
     menuOptionsControlMouseButtonAssignment.Add(&itemOptionsControlMouseTitle, false);
-    int i;
-    int y = 60;
-    for (i = 0; i < MENUMOUSEFUNCTIONS; i++)
+    for (int i = 0, y = 60; i < MENUMOUSEFUNCTIONS; i++)
     {
         pItemOptionsControlMouseButton[i] = new CGameMenuItemZCycle(MenuMouseNames[i], 3, 66, y, 180, 0, SetMouseButton, pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0, true);
         dassert(pItemOptionsControlMouseButton[i] != NULL);
@@ -1459,7 +1474,10 @@ void SetupOptionsMenu(void)
         y += 10;
     }
     menuOptionsControlMouseButtonAssignment.Add(&itemBloodQAV, false);
+}
 
+void SetupJoystickMenu(void)
+{
     if (!CONTROL_JoystickEnabled) // joystick disabled, don't bother populating joystick menus
     {
         itemOptionsControlJoystickButtons.bEnable = 0;
@@ -1467,7 +1485,7 @@ void SetupOptionsMenu(void)
         return;
     }
 
-    i = 0;
+    int i = 0, y = 0;
     for (int nButton = 0; nButton < joystick.numButtons; nButton++) // store every joystick button/hat name for button list at launch
     {
         const char *pzButtonName = joyGetName(1, nButton);
@@ -1616,7 +1634,7 @@ void SetupMenus(void)
     SetupLoadingScreen();
     SetupKeyListMenu();
     SetupMessagesMenu();
-    SetupControlsMenu();
+    SetupControlsOldMenu();
     SetupSaveGameMenu();
     SetupLoadGameMenu();
     SetupOptionsOldMenu();
@@ -1635,6 +1653,8 @@ void SetupMenus(void)
     SetupSorry3Menu();
 
     SetupOptionsMenu();
+    SetupControlsMenu();
+    SetupJoystickMenu();
     SetupNetworkMenu();
 }
 
@@ -2221,14 +2241,32 @@ void UpdateMusicDevice(CGameMenuItemZCycle *pItem)
     UNREFERENCED_PARAMETER(pItem);
     itemOptionsSoundSF2Bank.bEnable = 0;
     itemOptionsSoundSF2Bank.bNoDraw = 1;
+#ifdef _WIN32
+    itemOptionsSoundMIDIDevice.bEnable = 0;
+    itemOptionsSoundMIDIDevice.bNoDraw = 1;
+#endif
     switch (nMusicDeviceValues[itemOptionsSoundMusicDevice.m_nFocus])
     {
     case ASS_SF2:
         itemOptionsSoundSF2Bank.bEnable = 1;
         itemOptionsSoundSF2Bank.bNoDraw = 0;
         break;
+#ifdef _WIN32
+    case ASS_WinMM:
+        itemOptionsSoundMIDIDevice.bEnable = 1;
+        itemOptionsSoundMIDIDevice.bNoDraw = 0;
+        break;
+#endif
     }
 }
+
+#ifdef _WIN32
+void UpdateMidiDevice(CGameMenuItemSlider *pItem)
+{
+    WinMM_DeviceID = (unsigned int)pItem->nValue-1;
+    MIDI_Restart();
+}
+#endif
 
 void SetSound(CGameMenuItemChain *pItem)
 {
@@ -2278,6 +2316,10 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
             break;
         }
     }
+#ifdef _WIN32
+    itemOptionsSoundMIDIDevice.nValue = int(WinMM_DeviceID+1);
+    itemOptionsSoundMIDIDevice.nRangeHigh = WinMMDrv_MIDI_GetNumDevices();
+#endif
 
     UpdateMusicDevice(NULL);
 }
@@ -2373,6 +2415,7 @@ void SetupJoystickAxesMenu(CGameMenuItemChain *pItem)
             pItemOptionsControlJoystickAxisAnalogue[nAxis]->m_nFocus = 0;
             break;
         }
+        pItemOptionsControlJoystickAxisAnalogueInvert[nAxis]->at20 = JoystickAnalogueInvert[nAxis];
         pItemOptionsControlJoystickAxisDigitalPos[nAxis]->m_nFocus = 0;
         for (int j = 0; j < NUMGAMEFUNCTIONS+1; j++)
         {
