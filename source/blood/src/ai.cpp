@@ -1685,7 +1685,7 @@ void aiInitSprite(spritetype *pSprite)
                 
                 // start new patrol
                 pXSprite->target = -1;
-                aiPatrolSetMarker(pSprite, pXSprite);
+                patrol = (aiPatrolSetMarker(pSprite, pXSprite) > 0);
             }
             else if (rngok(target, 1, kMaxSprites))
             {

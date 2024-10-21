@@ -490,7 +490,9 @@ void MyLoadSave::Save(void)
 
 void LoadSavedInfo(void)
 {
-    auto pList = klistpath("./", "game*.sav", BUILDVFS_FIND_FILE);
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
+    auto pList = klistpath((g_modDir[0] != '/') ? g_modDir : "./", "game*.sav", BUILDVFS_FIND_FILE);
     int nCount = 0;
     for (auto pIterator = pList; pIterator != NULL && nCount < 10; pIterator = pIterator->next, nCount++)
     {
@@ -523,6 +525,7 @@ void LoadSavedInfo(void)
         kclose(hFile);
     }
     klistfree(pList);
+    pathsearchmode = bakpathsearchmode;
 }
 
 void UpdateSavedInfo(int nSlot)
@@ -553,7 +556,19 @@ void LoadSaveSetup(void)
     void nnExtLoadSaveConstruct(void);
 #endif
     myLoadSave = new MyLoadSave();
+    
+    // NoOne: Seq must be in top of AI because of AISTATE callbacks (and seq callbacks in general).
+    // Ex: cultist throwing TNT - if you saved the game while it plays animation
+    // before fire trigger seq flag, you will get assertion fail on load since
+    // target == -1 after aiInitSprite() call.
 
+    // Another reason is that it just spawns the wrong animation.
+    // Ex: save the game when some dude moves, load it and quckly
+    // use ONERING cheat. You will see that dude plays moving
+    // animation, but have idle AISTATE after aiInitSprite()
+    // call. In vanilla they just stand still.
+
+    SeqLoadSaveConstruct();
     ActorLoadSaveConstruct();
     AILoadSaveConstruct();
     EndGameLoadSaveConstruct();
@@ -562,7 +577,6 @@ void LoadSaveSetup(void)
     MessagesLoadSaveConstruct();
     MirrorLoadSaveConstruct();
     PlayerLoadSaveConstruct();
-    SeqLoadSaveConstruct();
     TriggersLoadSaveConstruct();
     ViewLoadSaveConstruct();
     WarpLoadSaveConstruct();

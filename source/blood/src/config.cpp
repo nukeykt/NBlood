@@ -77,6 +77,7 @@ int32_t useprecache;
 char CommbatMacro[MAXRIDECULE][MAXRIDECULELENGTH];
 char szPlayerName[MAXPLAYERNAME];
 int32_t gTurnSpeed;
+int32_t gTurnAcceleration;
 int32_t gDetail;
 int32_t gMouseAim;
 int32_t gAutoAim;
@@ -385,6 +386,7 @@ void CONFIG_SetDefaults(void)
     gDeliriumBlur = 1;
     gViewSize = 2;
     gTurnSpeed = 92;
+    gTurnAcceleration = 1;
     gDetail = 4;
     gAutoRun = 0;
     gViewInterpolate = 1;
@@ -751,7 +753,7 @@ int CONFIG_ReadSetup(void)
 
     char nameBuf[64];
 
-    while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) > 10)
+    while (Bstrlen(OSD_StripColors(nameBuf, tempbuf)) >= MAXPLAYERNAME)
         tempbuf[Bstrlen(tempbuf) - 1] = '\0';
 
     Bstrncpyz(szPlayerName, tempbuf, sizeof(szPlayerName));

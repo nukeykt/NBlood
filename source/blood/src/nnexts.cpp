@@ -6538,7 +6538,80 @@ bool markerIsNode(XSPRITE* pXMark, bool back) {
 
 }
 
-void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
+int32_t cansee_NOTROR(int32_t x1, int32_t y1, int32_t z1, int16_t orig_sect1, int32_t x2, int32_t y2, int32_t z2, int16_t orig_sect2, int32_t wallmask = CSTAT_WALL_1WAY)
+{
+    int16_t sect1 = orig_sect1;
+    int16_t sect2 = orig_sect2;
+    int32_t dacnt, danum;
+    const int32_t x21 = x2-x1, y21 = y2-y1, z21 = z2-z1;
+
+    static uint8_t sectbitmap[bitmap_size(MAXSECTORS)];
+    Bmemset(sectbitmap, 0, sizeof(sectbitmap));
+    if (x1 == x2 && y1 == y2)
+        return (sect1 == sect2);
+
+
+    bitmap_set(sectbitmap, sect1);
+    clipsectorlist[0] = sect1; danum = 1;
+
+    for (dacnt=0; dacnt<danum; dacnt++)
+    {
+        const int32_t dasectnum = clipsectorlist[dacnt];
+        auto const sec = (usectorptr_t)&sector[dasectnum];
+        uwallptr_t wal;
+        bssize_t cnt;
+
+        for (cnt=sec->wallnum,wal=(uwallptr_t)&wall[sec->wallptr]; cnt>0; cnt--,wal++)
+        {
+            auto const wal2 = (uwallptr_t)&wall[wal->point2];
+            const int32_t x31 = wal->x-x1, x34 = wal->x-wal2->x;
+            const int32_t y31 = wal->y-y1, y34 = wal->y-wal2->y;
+
+            int32_t x, y, z, nexts, t, bot;
+            int32_t cfz[2];
+
+            bot = y21*x34-x21*y34; if (bot <= 0) continue;
+            // XXX: OVERFLOW
+            t = y21*x31-x21*y31; if ((unsigned)t >= (unsigned)bot) continue;
+            t = y31*x34-x31*y34;
+            if ((unsigned)t >= (unsigned)bot)
+            {
+                continue;
+            }
+
+            nexts = wal->nextsector;
+            if (nexts < 0 || wal->cstat & wallmask)
+                return 0;
+
+            t = divscale24(t,bot);
+            x = x1 + mulscale24(x21,t);
+            y = y1 + mulscale24(y21,t);
+            z = z1 + mulscale24(z21,t);
+
+            getzsofslope(dasectnum, x,y, &cfz[0],&cfz[1]);
+            if (z <= cfz[0] || z >= cfz[1])
+                return 0;
+
+            getzsofslope(nexts, x,y, &cfz[0],&cfz[1]);
+            if (z <= cfz[0] || z >= cfz[1])
+                return 0;
+
+            if (!bitmap_test(sectbitmap, nexts))
+            {
+                bitmap_set(sectbitmap, nexts);
+                clipsectorlist[danum++] = nexts;
+            }
+        }
+    }
+
+    if (bitmap_test(sectbitmap, sect2))
+        return 1;
+
+    return 0;
+}
+
+
+char aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
         
     spritetype* pNext = NULL;   XSPRITE* pXNext = NULL;
     spritetype* pCur = NULL;    XSPRITE* pXCur = NULL;
@@ -6568,7 +6641,7 @@ void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
                 continue;
 
             GetSpriteExtents(pNext, &zt1, &zb1); GetSpriteExtents(pSprite, &zt2, &zb2);
-            if (cansee(pNext->x, pNext->y, zt1, pNext->sectnum, pSprite->x, pSprite->y, zt2, pSprite->sectnum))
+            if (cansee_NOTROR(pSprite->x, pSprite->y, zt2, pSprite->sectnum, pNext->x, pNext->y, zt1, pNext->sectnum))
             {
                 closest = dist;
                 path = pNext->index;
@@ -6614,8 +6687,8 @@ void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
 
         if (firstFinePath == -1)
         {
-            viewSetSystemMessage("No markers with id #%d found for dude #%d! (back = %d)", next, pSprite->index, back);
-            return;
+            consoleSysMsg("No markers with id #%d found for dude #%d! (back = %d)", next, pSprite->index, back);
+            return 0;
         }
 
         if (path == -1)
@@ -6623,11 +6696,12 @@ void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite) {
     }
 
     if (!spriRangeIsFine(path))
-        return;
+        return 0;
 
     pXSprite->target = path;
     pXSprite->targetX = prev; // keep previous marker index here, use actual sprite coords when selecting direction
     sprite[path].owner = pSprite->index;
+    return 1;
 
 }
 
@@ -6944,8 +7018,9 @@ int aiPatrolSearchTargets(spritetype* pSprite, XSPRITE* pXSprite) {
     
     nnExResetPatrolBonkles();
     int i, j, f, mod, x, y, z, dx, dy, nDist, eyeAboveZ, target = -1, sndCnt = 0, seeDist, hearDist, feelDist, seeChance, hearChance;
-    bool stealth = (pXSprite->unused1 & kDudeFlagStealth); bool blind = (pXSprite->dudeGuard); bool deaf = (pXSprite->dudeDeaf);
-    int nRandomSkill = Random(gGameOptions.nDifficulty);
+    bool stealth = ((pXSprite->unused1 & kDudeFlagStealth) && gGameOptions.nGameType == kGameTypeSinglePlayer);
+    bool blind = (pXSprite->dudeGuard); bool deaf = (pXSprite->dudeDeaf);
+    int nRandomSkill = QRandom(gGameOptions.nDifficulty);
 
     // search for player targets
     for (i = connecthead; i != -1; i = connectpoint2[i]) {
@@ -7290,10 +7365,16 @@ void aiPatrolFlagsMgr(spritetype* pSource, XSPRITE* pXSource, spritetype* pDest,
             pXDest->target = -1; // reset the target
             pXDest->stateTimer = 0;
 
-            aiPatrolSetMarker(pDest, pXDest);
-            if (spriteIsUnderwater(pDest)) aiPatrolState(pDest, kAiStatePatrolWaitW);
-            else aiPatrolState(pDest, kAiStatePatrolWaitL);
-            pXDest->data3 = 0; // reset the spot progress
+            if (aiPatrolSetMarker(pDest, pXDest))
+            {
+                if (spriteIsUnderwater(pDest))
+                    aiPatrolState(pDest, kAiStatePatrolWaitW);
+                else
+                    aiPatrolState(pDest, kAiStatePatrolWaitL);
+                pXDest->data3 = 0;  // reset the spot progress
+            }
+            else
+                aiPatrolStop(pDest, -1);
         }
     }
 
@@ -7393,14 +7474,12 @@ void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite) {
 
         }
 
-        // release the enemy
-        if (isFinal) {
+        // release the enemy or move the next marker
+        if (isFinal || !aiPatrolSetMarker(pSprite, pXSprite))
+        {
             aiPatrolStop(pSprite, -1);
             return;
         }
-
-        // move next marker
-        aiPatrolSetMarker(pSprite, pXSprite);
 
     } else if (aiPatrolTurning(pXSprite->aiState)) {
 
@@ -7507,15 +7586,12 @@ void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite) {
                 }
             }
 
-            // release the enemy
-            if (isFinal) {
+            // release the enemy or move the next marker
+            if (isFinal || !aiPatrolSetMarker(pSprite, pXSprite))
+            {
                 aiPatrolStop(pSprite, -1);
                 return;
             }
-
-            // move the next marker
-            aiPatrolSetMarker(pSprite, pXSprite);
-
         }
 
     }

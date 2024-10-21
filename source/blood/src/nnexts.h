@@ -625,7 +625,7 @@ void killEvents(int nRx, int nCmd);
 void changeSpriteAngle(spritetype* pSpr, int nAng);
 int getVelocityAngle(spritetype* pSpr);
 //  -------------------------------------------------------------------------   //
-void aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite);
+char aiPatrolSetMarker(spritetype* pSprite, XSPRITE* pXSprite);
 void aiPatrolThink(spritetype* pSprite, XSPRITE* pXSprite);
 void aiPatrolStop(spritetype* pSprite, int target, bool alarm = false);
 void aiPatrolAlarmFull(spritetype* pSprite, XSPRITE* pXTarget, bool chain);

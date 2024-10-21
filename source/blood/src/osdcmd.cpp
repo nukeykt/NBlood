@@ -1030,6 +1030,8 @@ int32_t registerosdcommands(void)
         { "in_mousedeadzone", "amount of mouse movement to filter out", (void *)&MouseDeadZone, CVAR_INT, 0, 512 },
         { "in_mouseflip", "invert vertical mouse movement", (void *)&gMouseAimingFlipped, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "toggles vertical mouse view", (void *)&gMouseAim, CVAR_BOOL, 0, 1 },
+        { "in_turnaccelmode", "set keyboard turning acceleration mode (0: off, 1: only when running, 2: always on)", (void *)&gTurnAcceleration, CVAR_INT, 0, 2 },
+        { "in_turnspeed", "keyboard turning speed", (void *)&gTurnSpeed, CVAR_INT, 64, 124 },
 //
         { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
         { "mus_restartonload", "restart the music when loading a saved game with the same map or not", (void *)&MusicRestartsOnLoadToggle, CVAR_BOOL, 0, 1 },
