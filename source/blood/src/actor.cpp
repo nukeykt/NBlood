@@ -5845,7 +5845,7 @@ void actProcessSprites(void)
                 {
                     const char bDivingSuit = packItemActive(pPlayer, kPackDivingSuit);
                     if (bDivingSuit || pPlayer->godMode)
-                        pPlayer->underwaterTime = 1200;
+                        pPlayer->underwaterTime = kTicRate*10;
                     else
                         pPlayer->underwaterTime = ClipLow(pPlayer->underwaterTime-kTicsPerFrame, 0);
                     if (pPlayer->underwaterTime < 1080 && packCheckItem(pPlayer, kPackDivingSuit) && !bDivingSuit)
