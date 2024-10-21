@@ -3137,6 +3137,8 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     case kDudeCultistShotgun:
     case kDudeCultistTesla:
     case kDudeCultistTNT:
+        if (!VanillaMode()) // mute all cultist alerts sfx on death
+            sfxKill3DSound(pSprite, kMaxSprites+pSprite->index, -1); // cultist alert sfx use kMaxSprites+sprite index as channel
         sfxPlay3DSound(pSprite, 1018+Random(2), -1, 0);
         if (nSeq == 3)
             seqSpawn(dudeInfo[nType].seqStartID+nSeq, 3, nXSprite, nDudeToGibClient2);
