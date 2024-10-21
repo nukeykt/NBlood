@@ -97,7 +97,7 @@ void aiPlay3DSound(spritetype *pSprite, int soundId, AI_SFX_PRIORITY nPriority, 
         sfxKill3DSound(pSprite, -1, -1);
         sfxPlay3DSound(pSprite, soundId, chanId, 0);
         pDudeExtra->sfx_priority = nPriority;
-        pDudeExtra->clock = (int)gFrameClock+120;
+        pDudeExtra->clock = (int)gFrameClock+kTicRate;
     }
 }
 
