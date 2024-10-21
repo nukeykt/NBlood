@@ -87,16 +87,16 @@ bool dudeIsPlayingSeq(spritetype *pSprite, int nSeq)
     return false;
 }
 
-void aiPlay3DSound(spritetype *pSprite, int a2, AI_SFX_PRIORITY a3, int a4)
+void aiPlay3DSound(spritetype *pSprite, int soundId, AI_SFX_PRIORITY nPriority, int chanId)
 {
     DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
-    if (a3 == AI_SFX_PRIORITY_0)
-        sfxPlay3DSound(pSprite, a2, a4, 2);
-    else if (a3 > pDudeExtra->sfx_priority || pDudeExtra->clock <= (int)gFrameClock)
+    if (nPriority == AI_SFX_PRIORITY_0)
+        sfxPlay3DSound(pSprite, soundId, chanId, 2);
+    else if (nPriority > pDudeExtra->sfx_priority || pDudeExtra->clock <= (int)gFrameClock)
     {
         sfxKill3DSound(pSprite, -1, -1);
-        sfxPlay3DSound(pSprite, a2, a4, 0);
-        pDudeExtra->sfx_priority = a3;
+        sfxPlay3DSound(pSprite, soundId, chanId, 0);
+        pDudeExtra->sfx_priority = nPriority;
         pDudeExtra->clock = (int)gFrameClock+120;
     }
 }
