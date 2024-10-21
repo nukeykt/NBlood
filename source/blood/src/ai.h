@@ -79,7 +79,7 @@ extern int gDudeSlope[];
 extern int cumulDamage[];
 
 bool dudeIsPlayingSeq(spritetype *pSprite, int nSeq);
-void aiPlay3DSound(spritetype *pSprite, int a2, AI_SFX_PRIORITY a3, int a4);
+void aiPlay3DSound(spritetype *pSprite, int soundId, AI_SFX_PRIORITY nPriority, int chanId);
 void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState);
 void aiChooseDirection(spritetype *pSprite, XSPRITE *pXSprite, int a3);
 void aiMoveForward(spritetype *pSprite, XSPRITE *pXSprite);
