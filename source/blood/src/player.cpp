@@ -402,6 +402,21 @@ int powerupCheck(PLAYER *pPlayer, int nPowerUp)
     return pPlayer->pwUpTime[nPowerUp];
 }
 
+char powerupAkimboWeapons(int nWeapon)
+{
+    switch (nWeapon)
+    {
+    case kWeaponFlare:
+    case kWeaponShotgun:
+    case kWeaponTommy:
+    case kWeaponNapalm:
+    case kWeaponTesla:
+        return 1;
+    default:
+        break;
+    }
+    return 0;
+}
 
 char powerupActivate(PLAYER *pPlayer, int nPowerUp)
 {
@@ -462,6 +477,8 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
             pPlayer->damageControl[kDamageBurn]++;
             break;
         case kItemTwoGuns:
+            if (!VanillaMode() && !powerupAkimboWeapons(pPlayer->curWeapon)) // if weapon doesn't have a akimbo state, don't raise weapon
+                break;
             pPlayer->input.newWeapon = pPlayer->curWeapon;
             WeaponRaise(pPlayer);
             break;
@@ -513,6 +530,8 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
             pPlayer->damageControl[kDamageBurn]--;
             break;
         case kItemTwoGuns:
+            if (!VanillaMode() && !powerupAkimboWeapons(pPlayer->curWeapon)) // if weapon doesn't have a akimbo state, don't raise weapon
+                break;
             pPlayer->input.newWeapon = pPlayer->curWeapon;
             WeaponRaise(pPlayer);
             break;
