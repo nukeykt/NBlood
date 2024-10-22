@@ -4730,7 +4730,6 @@ void MoveDude(spritetype *pSprite)
                     evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
                     sfxPlay3DSound(pSprite, 720, -1, 0);
                     aiNewState(pSprite, pXSprite, &gillBeastSwimGoto);
-
                     pSprite->flags &= ~6;
                     break;
                 case kDudeGargoyleFlesh:
@@ -4767,77 +4766,6 @@ void MoveDude(spritetype *pSprite)
             }
             break;
         }
-        /*case 13:
-            pXSprite->medium = kMediumGoo;
-            if (pPlayer)
-            {
-                pPlayer->changeTargetKin = 1;
-                pXSprite->burnTime = 0;
-                pPlayer->bubbleTime = klabs(zvel[nSprite])>>12;
-                evPost(nSprite, 3, 0, kCallbackPlayerBubble);
-                sfxPlay3DSound(pSprite, 720, -1, 0);
-            }
-            else
-            {
-                switch (pSprite->type)
-                {
-                case kDudeCultistTommy:
-                case kDudeCultistShotgun:
-                    pXSprite->burnTime = 0;
-                    evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
-                    sfxPlay3DSound(pSprite, 720, -1, 0);
-                    aiNewState(pSprite, pXSprite, &cultistSwimGoto);
-                    break;
-                case kDudeBurningCultist:
-                    if (Chance(0x400))
-                    {
-                        pSprite->type = kDudeCultistTommy;
-                        pXSprite->burnTime = 0;
-                        evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
-                        sfxPlay3DSound(pSprite, 720, -1, 0);
-                        aiNewState(pSprite, pXSprite, &cultistSwimGoto);
-                    }
-                    else
-                    {
-                        pSprite->type = kDudeCultistShotgun;
-                        pXSprite->burnTime = 0;
-                        evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
-                        sfxPlay3DSound(pSprite, 720, -1, 0);
-                        aiNewState(pSprite, pXSprite, &cultistSwimGoto);
-                    }
-                    break;
-                case kDudeZombieAxeNormal:
-                    pXSprite->burnTime = 0;
-                    evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
-                    sfxPlay3DSound(pSprite, 720, -1, 0);
-                    aiNewState(pSprite, pXSprite, &zombieAGoto);
-                    break;
-                case kDudeZombieButcher:
-                    pXSprite->burnTime = 0;
-                    evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
-                    sfxPlay3DSound(pSprite, 720, -1, 0);
-                    aiNewState(pSprite, pXSprite, &zombieFGoto);
-                    break;
-                case kDudeGillBeast:
-                    pXSprite->burnTime = 0;
-                    evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
-                    sfxPlay3DSound(pSprite, 720, -1, 0);
-                    aiNewState(pSprite, pXSprite, &gillBeastSwimGoto);
-                    pSprite->flags &= ~6;
-                    break;
-                case kDudeGargoyleFlesh:
-                case kDudeHellHound:
-                case kDudeSpiderBrown:
-                case kDudeSpiderRed:
-                case kDudeSpiderBlack:
-                case kDudeBat:
-                case kDudeRat:
-                case kDudeBurningInnocent:
-                    actKillDude(pSprite->index, pSprite, kDamageFall, 1000<<4);
-                    break;
-                }
-            }
-            break;*/
         }
     }
     GetSpriteExtents(pSprite, &top, &bottom);
