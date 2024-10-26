@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gui.h"
 #include "inifile.h"
 #include "levels.h"
+#include "loadsave.h"
 #include "menu.h"
 #include "qav.h"
 #include "resource.h"
@@ -2057,10 +2058,17 @@ void CGameMenuItemZEditBitmap::Draw(void)
     if (m_pzText)
         gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, pal, false);
     int x = m_nX+m_nWidth-1-(at24+1)*width;
-    if (at20 && *at20)
+    if (at20 && (at20[0] != '\0' || strlen(gSaveGameOptions[at28].zLevelName)))
     {
         int width;
-        gMenuTextMgr.GetFontInfo(m_nFont, at20, &width, NULL);
+        char strEmptySave[16];
+        char *strSave = at20;
+        if ((at20[0] == '\0') && !bScan) // if save game name is blank, use level's name instead
+        {
+            snprintf(strEmptySave, sizeof(strEmptySave), "%s", gSaveGameOptions[at28].zLevelName);
+            strSave = strEmptySave;
+        }
+        gMenuTextMgr.GetFontInfo(m_nFont, strSave, &width, NULL);
         int shade2;
         if (at36)
         {
@@ -2076,7 +2084,7 @@ void CGameMenuItemZEditBitmap::Draw(void)
             else
                 shade2 = 32;
         }
-        gMenuTextMgr.DrawText(at20, m_nFont, x, m_nY, shade2, 0, false);
+        gMenuTextMgr.DrawText(strSave, m_nFont, x, m_nY, shade2, 0, false);
         x += width;
     }
     if (bScan && ((int)totalclock & 32))
