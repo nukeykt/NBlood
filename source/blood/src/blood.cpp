@@ -1567,11 +1567,6 @@ void ParseOptions(void)
 #endif
 }
 
-void ClockStrobe()
-{
-    //gGameClock++;
-}
-
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
 // See FILENAME_CASE_CHECK in cache1d.c
 static int32_t check_filename_casing(void)
@@ -1778,7 +1773,6 @@ int app_main(int argc, char const * const * argv)
     LOG_F(INFO, "Loading control setup");
     ctrlInit();
     timerInit(CLOCKTICKSPERSECOND);
-    timerSetCallback(ClockStrobe);
     enginecompatibilitymode = ENGINE_19960925;
 
     if (!hasSetupFilename)

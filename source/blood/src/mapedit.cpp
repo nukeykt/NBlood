@@ -12014,7 +12014,6 @@ static void (*keytimerstuff)(void) = NULL;
 static void timerCallback()
 {
     keytimerstuff();
-    //gGameClock = totalclock;
 }
 
 void ExtPostInit(void)
