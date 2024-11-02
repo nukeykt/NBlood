@@ -3904,8 +3904,16 @@ RORHACK:
             {
                 rotatesprite(160<<16, defaultHoriz<<16, 65536, 0, kCrosshairTile, 0, g_isAlterDefaultCrosshair ? CROSSHAIR_PAL : 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
             }
-            cX = (v4c<<8)+(160<<16);
-            cY = (v48<<8)+(220<<16)+(zDelta<<9);
+            if (!VanillaMode()) // smooth motion
+            {
+                cX = (v4c<<8)+(160<<16);
+                cY = (v48<<8)+(220<<16)+(zDelta<<9);
+            }
+            else // quantize like vanilla v1.21
+            {
+                cX = ((v4c>>8)+160)<<16;
+                cY = ((v48>>8)+220+(zDelta>>7))<<16;
+            }
             int nShade = sector[nSectnum].floorshade; int nPalette = 0;
             if (sector[gView->pSprite->sectnum].extra > 0) {
                 sectortype *pSector = &sector[gView->pSprite->sectnum];
