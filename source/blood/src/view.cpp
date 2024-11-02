@@ -3665,7 +3665,6 @@ void viewDrawScreen(void)
                 tmp--;
             }
             PLAYER *pOther = &gPlayer[i];
-            //othercameraclock = gGameClock;
             if (!waloff[CRYSTALBALLBUFFER])
             {
                 tileAllocTile(CRYSTALBALLBUFFER, 128, 128, 0, 0);
@@ -4026,13 +4025,7 @@ RORHACK:
     PLAYER *pPSprite = &gPlayer[gMe->pSprite->type-kDudePlayer1];
     if (IsPlayerSprite(gMe->pSprite) && pPSprite->hand == 1)
     {
-        //static int lastClock;
         gChoke.Draw(160, zn);
-        //if ((gGameClock % 5) == 0 && gGameClock != lastClock)
-        //{
-        //    gChoke.swayV(pPSprite);
-        //}
-        //lastClock = gGameClock;
     }
     if (byte_1A76C6)
     {

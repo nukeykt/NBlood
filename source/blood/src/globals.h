@@ -40,7 +40,6 @@ extern ud_setup_t gSetup;
 extern ClockTicks gFrameClock;
 extern ClockTicks gFrameTicks;
 extern int gFrame;
-//extern ClockTicks gGameClock;
 extern int gFrameRate;
 extern int gGamma;
 

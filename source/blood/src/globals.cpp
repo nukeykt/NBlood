@@ -34,7 +34,6 @@ ud_setup_t gSetup;
 ClockTicks gFrameClock;
 ClockTicks gFrameTicks;
 int gFrame;
-//int volatile gGameClock;
 int gFrameRate;
 int gGamma;
 
