@@ -2460,12 +2460,24 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->z = getflorzofslope(pTSprite->sectnum, pNSprite->x, pNSprite->y);
         if (!VanillaMode()) // support better floor detection for shadows (detect fake floors/allows ROR traversal)
         {
-            int ceilZ, ceilHit, floorZ, floorHit;
-            GetZRangeAtXYZ(pTSprite->x, pTSprite->y, pTSprite->z, pTSprite->sectnum, &ceilZ, &ceilHit, &floorZ, &floorHit, pTSprite->clipdist<<2, CLIPMASK0, PARALLAXCLIP_CEILING|PARALLAXCLIP_FLOOR);
-            if (((floorHit&0xc000) == 0xc000) && spriRangeIsFine(floorHit&0x3fff) && ((sprite[floorHit&0x3fff].cstat & (CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_ALIGNMENT_FLOOR|CSTAT_SPRITE_INVISIBLE)) == (CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_ALIGNMENT_FLOOR))) // if there is a fake floor under us, use fake floor as the shadow position
+            char bHitFakeFloor = 0;
+            short nFakeFloorSprite;
+            if (spriRangeIsFine(pTSprite->owner) && !gMirrorDrawing) // don't attempt to check for fake floors if we're rendering a mirror due to getzrange mirrorsector crash
+            {
+                spritetype *pSprite = &sprite[pTSprite->owner];
+                int bakCstat = pSprite->cstat;
+                pSprite->cstat &= ~257;
+                int ceilZ, ceilHit, floorZ, floorHit;
+                GetZRangeAtXYZ(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, CLIPMASK0, PARALLAXCLIP_CEILING|PARALLAXCLIP_FLOOR);
+                nFakeFloorSprite = floorHit&0x3fff;
+                if ((floorHit&0xc000) == 0xc000)
+                    bHitFakeFloor = (sprite[nFakeFloorSprite].cstat & (CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_ALIGNMENT_FLOOR|CSTAT_SPRITE_INVISIBLE)) == (CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_ALIGNMENT_FLOOR);
+                pSprite->cstat = bakCstat;
+            }
+            if (bHitFakeFloor) // if there is a fake floor under us, use fake floor as the shadow position
             {
                 int top, bottom;
-                GetSpriteExtents(&sprite[floorHit&0x3fff], &top, &bottom);
+                GetSpriteExtents(&sprite[nFakeFloorSprite], &top, &bottom);
                 pNSprite->z = top;
                 pNSprite->z--; // offset from fake floor so it isn't z-fighting when being rendered
             }

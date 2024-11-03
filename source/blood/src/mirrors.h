@@ -26,3 +26,5 @@ void InitMirrors(void);
 void sub_5571C(char mode);
 void sub_557C4(int x, int y, int interpolation);
 void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int viewPlayer);
+
+extern bool gMirrorDrawing;
