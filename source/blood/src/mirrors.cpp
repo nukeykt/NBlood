@@ -35,6 +35,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "warp.h"
 
+bool gMirrorDrawing;
+
 int mirrorcnt, mirrorsector, mirrorwall[4];
 
 typedef struct
@@ -85,6 +87,7 @@ void InitMirrors(void)
 #endif //  POLYMER
 
 #endif
+    gMirrorDrawing = false;
     mirrorcnt = 0;
     tilesiz[504].x = 0;
     tilesiz[504].y = 0;
@@ -360,6 +363,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int 
             {
             case 0:
             {
+                gMirrorDrawing = true;
                 int nWall = mirror[i].at4;
                 int nSector = sectorofwall(nWall);
                 walltype *pWall = &wall[nWall];
@@ -406,6 +410,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth, int 
                     TranslateMirrorColors(wall[nWall].shade, wall[nWall].pal);
                 pWall->nextwall = nNextWall;
                 pWall->nextsector = nNextSector;
+                gMirrorDrawing = false;
                 return;
             }
             case 1:
@@ -519,6 +524,7 @@ void MirrorLoadSave::Load(void)
     Read(&mirrorsector,sizeof(mirrorsector));
     Read(mirror, sizeof(mirror));
     Read(mirrorwall, sizeof(mirrorwall));
+    gMirrorDrawing = false;
     tilesiz[504].x = 0;
     tilesiz[504].y = 0;
 
