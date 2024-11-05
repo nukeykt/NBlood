@@ -3000,7 +3000,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 }
             }
             
-            if (nSprite != gView->pSprite->index || gViewPos != VIEWPOS_0) {
+            if (nSprite != gView->pSprite->index || gViewPos != VIEWPOS_0 || (gMirrorDrawing && !VanillaMode())) {
                 if (getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) >= cZ)
                 {
                     viewAddEffect(nTSprite, kViewEffectShadow);
