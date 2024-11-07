@@ -252,7 +252,9 @@ void WeaponDraw(PLAYER *pPlayer, int a2, int x, int y, int a5)
         v4 = pQAV->at10 - pPlayer->weaponTimer;
     pQAV->x = x;
     pQAV->y = y;
-    int flags = 2 | kQavOrientationQ16 | RS_LERP;
+    int flags = 2 | kQavOrientationQ16;
+    if (!VanillaMode())
+        flags |= RS_LERP;
     int nInv = powerupCheck(pPlayer, kPwUpShadowCloak);
     if (nInv >= 120 * 8 || (nInv != 0 && ((int)totalclock & 32)))
     {
