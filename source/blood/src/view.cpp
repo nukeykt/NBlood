@@ -4033,10 +4033,9 @@ RORHACK:
         gViewMap.Process(cX, cY, nAng);
     }
     viewDrawInterface(delta);
-    int zn = ((gView->zWeapon-gView->zView-(12<<8))>>7)+220;
-    PLAYER *pPSprite = &gPlayer[gMe->pSprite->type-kDudePlayer1];
-    if (IsPlayerSprite(gMe->pSprite) && pPSprite->hand == 1)
+    if (IsPlayerSprite(gView->pSprite) && (gView->hand == 1))
     {
+        int zn = ((gView->zWeapon-gView->zView-(12<<8))>>7)+220;
         gChoke.Draw(160, zn);
     }
     if (byte_1A76C6)

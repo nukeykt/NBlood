@@ -2009,10 +2009,12 @@ void playerProcess(PLAYER *pPlayer)
     pPlayer->painEffect = ClipLow(pPlayer->painEffect-kTicsPerFrame, 0);
     pPlayer->blindEffect = ClipLow(pPlayer->blindEffect-kTicsPerFrame, 0);
     pPlayer->pickupEffect = ClipLow(pPlayer->pickupEffect-kTicsPerFrame, 0);
-    if (pPlayer == gMe && gMe->pXSprite->health == 0)
-        pPlayer->hand = 0;
     if (!pXSprite->health)
+    {
+        if (!VanillaMode() || pPlayer == gMe)
+            pPlayer->hand = 0;
         return;
+    }
     pPlayer->isUnderwater = 0;
     if (pPlayer->posture == kPostureSwim)
     {
