@@ -126,7 +126,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
-                if (nDist < 0x233 && klabs(nDeltaAngle) < 85 && gGameOptions.nGameType == kGameTypeSinglePlayer)
+                if (nDist < 0x233 && klabs(nDeltaAngle) < 85 && (!VanillaMode() || gGameOptions.nGameType == kGameTypeSinglePlayer))
                     aiNewState(pSprite, pXSprite, &handJump);
                 return;
             }

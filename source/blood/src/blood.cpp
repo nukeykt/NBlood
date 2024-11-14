@@ -114,8 +114,6 @@ char *pUserTiles = NULL;
 char *pUserSoundRFF = NULL;
 char *pUserRFF = NULL;
 
-int gChokeCounter = 0;
-
 double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 double g_gameUpdateAvgTime = 0.001;
 
@@ -582,6 +580,7 @@ void G_Polymer_UnInit(void)
 
 PLAYER gPlayerTemp[kMaxPlayers];
 int gHealthTemp[kMaxPlayers];
+int gChokeCounter[kMaxPlayers];
 
 vec3_t startpos;
 int16_t startang, startsectnum;
@@ -739,6 +738,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
         else if ((gGameOptions.nGameType == kGameTypeTeams) && !VanillaMode()) // if ctf mode and went to next level, reset scores
             playerResetScores(i);
+        gChokeCounter[i] = 0;
         playerStart(i, 1);
     }
     if (gameOptions->uGameFlags&kGameFlagContinuing) // if episode is in progress, restore player stats
@@ -777,7 +777,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     netResetState();
     gCacheMiss = 0;
     gFrame = 0;
-    gChokeCounter = 0;
     if (!gDemo.at1)
         gGameMenuMgr.Deactivate();
     levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
@@ -1114,8 +1113,18 @@ void ProcessFrame(void)
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
+        PLAYER *pPlayer = &gPlayer[i];
         viewBackupView(i);
-        playerProcess(&gPlayer[i]);
+        playerProcess(pPlayer);
+        if (pPlayer->hand == 1)
+        {
+            gChokeCounter[i] += (kTicsPerFrame<<1);
+            while (gChokeCounter[i] >= kTicsPerSec)
+            {
+                gChoke.Process(pPlayer);
+                gChokeCounter[i] -= kTicsPerSec;
+            }
+        }
     }
     trProcessBusy();
     evProcess((int)gFrameClock);
@@ -1132,15 +1141,6 @@ void ProcessFrame(void)
     viewUpdateDelirium();
     viewUpdateShake();
     sfxUpdate3DSounds();
-    if (gMe->hand == 1)
-    {
-        gChokeCounter += (kTicsPerFrame<<1);
-        while (gChokeCounter >= kTicsPerSec)
-        {
-            gChoke.Process(gMe);
-            gChokeCounter -= kTicsPerSec;
-        }
-    }
     gLevelTime++;
     gFrame++;
     gFrameClock += kTicsPerFrame;
