@@ -12,8 +12,7 @@
 #include "scancodes.h"
 #include "atomiclist.h"
 
-#define XXH_STATIC_LINKING_ONLY
-#include "xxhash.h"
+#include "xxhash_config.h"
 
 #include "vfs.h"
 

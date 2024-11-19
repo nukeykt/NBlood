@@ -13,7 +13,7 @@
 
 #include "cache1d.h"
 #include "vfs.h"
-#include "xxhash.h"
+#include "xxhash_config.h"
 
 #ifdef __cplusplus
 extern "C" {
