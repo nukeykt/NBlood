@@ -417,13 +417,14 @@ CGameMenu menuOptionsPlayer;
 CGameMenu menuOptionsControl;
 
 void SetupOptionsSound(CGameMenuItemChain *pItem);
+void SetupPollJoystick(CGameMenuItemChain *pItem);
 
 CGameMenuItemTitle itemOptionsTitle("OPTIONS", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsChainGame("GAME SETUP", 1, 0, 50, 320, 1, &menuOptionsGame, -1, NULL, 0);
 CGameMenuItemChain itemOptionsChainDisplay("DISPLAY SETUP", 1, 0, 70, 320, 1, &menuOptionsDisplay, -1, NULL, 0);
 CGameMenuItemChain itemOptionsChainSound("SOUND SETUP", 1, 0, 90, 320, 1, &menuOptionsSound, -1, SetupOptionsSound, 0);
 CGameMenuItemChain itemOptionsChainPlayer("PLAYER SETUP", 1, 0, 110, 320, 1, &menuOptionsPlayer, -1, NULL, 0);
-CGameMenuItemChain itemOptionsChainControl("CONTROL SETUP", 1, 0, 130, 320, 1, &menuOptionsControl, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainControl("CONTROL SETUP", 1, 0, 130, 320, 1, &menuOptionsControl, -1, SetupPollJoystick, 0);
 CGameMenuItemChain itemOptionsChainOld("OLD MENU", 1, 0, 170, 320, 1, &menuOptionsOld, -1, NULL, 0);
 
 const char *pzAutoAimStrings[] = {
@@ -2286,6 +2287,17 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
     }
 
     UpdateMusicDevice(NULL);
+}
+
+void SetupPollJoystick(CGameMenuItemChain *pItem)
+{
+    UNREFERENCED_PARAMETER(pItem);
+    if (CONTROL_JoyPresent && CONTROL_JoystickEnabled && !itemOptionsControlJoystickButtons.bEnable) // if joysticks menu was never initialized, and a controller is now detected, setup the menu
+    {
+        itemOptionsControlJoystickButtons.bEnable = 1;
+        itemOptionsControlJoystickAxes.bEnable = 1;
+        SetupJoystickMenu();
+    }
 }
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)
