@@ -260,8 +260,20 @@ void PrecacheDude(spritetype *pSprite)
     case kDudeSpiderBrown:
     case kDudeSpiderRed:
     case kDudeSpiderBlack:
-    case kDudeSpiderMother:
     case kDudeTchernobog:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        break;
+    case kDudeSpiderMother:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        pDudeInfo = getDudeInfo(kDudeSpiderBrown);
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        pDudeInfo = getDudeInfo(kDudeSpiderRed);
         seqPrecacheId(pDudeInfo->seqStartID+6);
         seqPrecacheId(pDudeInfo->seqStartID+7);
         seqPrecacheId(pDudeInfo->seqStartID+8);
