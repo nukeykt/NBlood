@@ -559,7 +559,7 @@ ifndef OPTOPT
             OPTOPT := -march=haswell -msse4.1 -msse4.2 -mpopcnt -mpclmul -mavx -mrdrnd -mf16c -mfsgsbase -mavx2 -maes -mfma -mbmi -mbmi2
             # -mcrc32 -mmovbe
         else
-            OPTOPT := -march=core2
+            OPTOPT := -march=core2 -mno-ssse3
         endif
         OPTOPT += -mmmx -msse -msse2 -msse3 -mfpmath=sse
     endif
