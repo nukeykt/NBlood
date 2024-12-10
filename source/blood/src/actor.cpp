@@ -3973,26 +3973,26 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                     xvel[pSprite2->index] += mulscale2(4, pSprite2->x-sprite[nSprite].x);
                     yvel[pSprite2->index] += mulscale2(4, pSprite2->y-sprite[nSprite].y);
                     
-                    #ifdef NOONE_EXTENSIONS
+ //                   #ifdef NOONE_EXTENSIONS
                     // add size shroom abilities
-                    if ((IsPlayerSprite(pSprite) && isShrinked(pSprite)) || (IsPlayerSprite(pSprite2) && isGrown(pSprite2))) {
-
-                        int mass1 = getDudeInfo(pSprite2->type)->mass;
-                        int mass2 = (IsCustomDude(pSprite)) ? cdudeGet(pSprite)->mass : getDudeInfo(pSprite->type)->mass;
-
-                        if (mass1 > mass2)
-                        {
-                            int dmg = abs((mass1 - mass2) * (pSprite2->clipdist - pSprite->clipdist));
-                            if (IsDudeSprite(pSprite2)) {
-                                if (dmg > 0)
-                                    actDamageSprite(pSprite2->index, pSprite, (Chance(0x2000)) ? kDamageFall : (Chance(0x4000)) ? kDamageExplode : kDamageBullet, dmg);
-
-                                if (Chance(0x0200))
-                                    actKickObject(pSprite2, pSprite);
-                            }
-                        }
-                    }
-                    #endif
+ //                   if ((IsPlayerSprite(pSprite) && isShrinked(pSprite)) || (IsPlayerSprite(pSprite2) && isGrown(pSprite2))) {
+//
+//                        int mass1 = getDudeInfo(pSprite2->type)->mass;
+//                        int mass2 = (IsCustomDude(pSprite)) ? cdudeGet(pSprite)->mass : getDudeInfo(pSprite->type)->mass;
+//
+//                        if (mass1 > mass2)
+ //                       {
+//                            int dmg = abs((mass1 - mass2) * (pSprite2->clipdist - pSprite->clipdist));
+//                            if (IsDudeSprite(pSprite2)) {
+ //                               if (dmg > 0)
+//                                    actDamageSprite(pSprite2->index, pSprite, (Chance(0x2000)) ? kDamageFall : (Chance(0x4000)) ? kDamageExplode : kDamageBullet, dmg);
+//
+//                                if (Chance(0x0200))
+//                                    actKickObject(pSprite2, pSprite);
+//                            }
+//                        }
+//                    }
+//                    #endif
                     if (!IsPlayerSprite(pSprite) || gPlayer[pSprite->type - kDudePlayer1].godMode == 0) {
                         switch (pSprite2->type) {
                             case kDudeTchernobog:
@@ -4026,26 +4026,26 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         {
             spritetype *pSprite2 = &sprite[nHitSprite];
 
-            #ifdef NOONE_EXTENSIONS
+ //           #ifdef NOONE_EXTENSIONS
             // add size shroom abilities
-            if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
-            {
-                if (xvel[pSprite->xvel] != 0 && IsDudeSprite(pSprite2))
-                {
-                    int mass1 = getDudeInfo(pSprite->type)->mass;
-                    int mass2 = (IsCustomDude(pSprite2)) ? cdudeGet(pSprite2)->mass : getDudeInfo(pSprite2->type)->mass;
-
-                    if (mass1 > mass2)
-                    {
-                        actKickObject(pSprite, pSprite2);
-                        sfxPlay3DSound(pSprite, 357, -1, 1);
-                        int dmg = (mass1 - mass2) + abs(xvel[pSprite->index] >> 16);
-                        if (dmg > 0)
-                            actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? kDamageFall : kDamageBullet, dmg);
-                    }
-                }
-            }
-            #endif
+ //           if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
+ //           {
+ //               if (xvel[pSprite->xvel] != 0 && IsDudeSprite(pSprite2))
+ //               {
+ //                   int mass1 = getDudeInfo(pSprite->type)->mass;
+ //                   int mass2 = (IsCustomDude(pSprite2)) ? cdudeGet(pSprite2)->mass : getDudeInfo(pSprite2->type)->mass;
+//
+ //                   if (mass1 > mass2)
+ //                   {
+ //                       actKickObject(pSprite, pSprite2);
+ //                       sfxPlay3DSound(pSprite, 357, -1, 1);
+ //                       int dmg = (mass1 - mass2) + abs(xvel[pSprite->index] >> 16);
+ //                       if (dmg > 0)
+ //                           actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? kDamageFall : kDamageBullet, dmg);
+ //                   }
+ //               }
+ //           }
+ //           #endif
             
             switch (pSprite2->type) {
                 case kThingKickablePail:
@@ -4081,24 +4081,24 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             spritetype *pSprite2 = &sprite[nHitSprite];
             XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
             
-            #ifdef NOONE_EXTENSIONS
+ //           #ifdef NOONE_EXTENSIONS
             // add size shroom abilities
-            if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
-            {
-                int mass1 = getDudeInfo(pSprite->type)->mass;
-                int mass2 = (IsCustomDude(pSprite2)) ? cdudeGet(pSprite2)->mass : getDudeInfo(pSprite2->type)->mass;
-
-                if (mass1 > mass2 && IsDudeSprite(pSprite2))
-                {
-                    if ((IsPlayerSprite(pSprite2) && Chance(0x500)) || !IsPlayerSprite(pSprite2))
-                        actKickObject(pSprite, pSprite2);
-
-                    int dmg = (mass1 - mass2) + pSprite->clipdist;
-                    if (dmg > 0)
-                        actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? kDamageFall : kDamageBullet, dmg);
-                }
-            }
-            #endif
+ //           if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
+ //           {
+ //               int mass1 = getDudeInfo(pSprite->type)->mass;
+ //               int mass2 = (IsCustomDude(pSprite2)) ? cdudeGet(pSprite2)->mass : getDudeInfo(pSprite2->type)->mass;
+//
+ //               if (mass1 > mass2 && IsDudeSprite(pSprite2))
+//                {
+ //                   if ((IsPlayerSprite(pSprite2) && Chance(0x500)) || !IsPlayerSprite(pSprite2))
+ //                       actKickObject(pSprite, pSprite2);
+//
+ //                   int dmg = (mass1 - mass2) + pSprite->clipdist;
+ //                   if (dmg > 0)
+ //                       actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? kDamageFall : kDamageBullet, dmg);
+ //               }
+ //           }
+//            #endif
 
             switch (pSprite2->type) {
             case kThingKickablePail:

@@ -6071,13 +6071,13 @@ void playerQavSceneReset(PLAYER* pPlayer) {
 }
 
 bool playerSizeShrink(PLAYER* pPlayer, int divider) {
-    pPlayer->pXSprite->scale = 256 / divider;
+    pPlayer->pXSprite->scale = 0 / divider;
     playerSetRace(pPlayer, kModeHumanShrink);
     return true;
 }
 
 bool playerSizeGrow(PLAYER* pPlayer, int multiplier) {
-    pPlayer->pXSprite->scale = 256 * multiplier;
+    pPlayer->pXSprite->scale = 0 * multiplier;
     playerSetRace(pPlayer, kModeHumanGrown);
     return true;
 }

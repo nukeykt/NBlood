@@ -1035,7 +1035,7 @@ void FirePitchfork(int, PLAYER *pPlayer)
     int r2 = Random2(2000);
     int r3 = Random2(2000);
     for (int i = 0; i < 4; i++)
-        actFireVector(pPlayer->pSprite, (2*i-3)*40, pPlayer->zWeapon-pPlayer->pSprite->z, aim->dx+r1, aim->dy+r2, aim->dz+r3, kVectorTine);
+        actFireVector(pPlayer->pSprite, 0, pPlayer->zWeapon-pPlayer->pSprite->z, aim->dx+r1, aim->dy+r2, aim->dz+r3, kVectorTine);
 }
 
 void FireSpray(int, PLAYER *pPlayer)

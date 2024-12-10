@@ -1373,7 +1373,7 @@ void viewBurnTime(int gScale)
     }
 }
 
-#define kPowerUps 11
+#define kPowerUps 4
 
 const struct POWERUPDISPLAY {
     int nTile;
@@ -1384,15 +1384,15 @@ const struct POWERUPDISPLAY {
     {gPowerUpInfo[kPwUpReflectShots].picnum, fix16_from_float(0.4f), 5}, // reflects enemy shots
     {gPowerUpInfo[kPwUpDeathMask].picnum, fix16_from_float(0.3f), 9}, // invulnerability
     {gPowerUpInfo[kPwUpTwoGuns].picnum, fix16_from_float(0.25f), 4}, // guns akimbo
-    {gPowerUpInfo[kPwUpShadowCloakUseless].picnum, fix16_from_float(0.4f), 9}, // shadow cloak (does nothing, only appears at near the end of CP04)
+    //{gPowerUpInfo[kPwUpShadowCloakUseless].picnum, fix16_from_float(0.4f), 9}, // shadow cloak (does nothing, only appears at near the end of CP04)
 
     // not in official maps
-    {gPowerUpInfo[kPwUpFeatherFall].picnum, fix16_from_float(0.3f), 7}, // feather fall
-    {gPowerUpInfo[kPwUpGasMask].picnum, fix16_from_float(0.4f), 4}, // gas mask
-    {gPowerUpInfo[kPwUpDoppleganger].picnum, fix16_from_float(0.5f), 5}, // doppelganger
-    {gPowerUpInfo[kPwUpAsbestArmor].picnum, fix16_from_float(0.3f), 9}, // asbestos armor
-    {gPowerUpInfo[kPwUpGrowShroom].picnum, fix16_from_float(0.4f), 4}, // grow shroom
-    {gPowerUpInfo[kPwUpShrinkShroom].picnum, fix16_from_float(0.4f), 4}, // shrink shroom
+    //{gPowerUpInfo[kPwUpFeatherFall].picnum, fix16_from_float(0.3f), 7}, // feather fall
+    //{gPowerUpInfo[kPwUpGasMask].picnum, fix16_from_float(0.4f), 4}, // gas mask
+    //{gPowerUpInfo[kPwUpDoppleganger].picnum, fix16_from_float(0.5f), 5}, // doppelganger
+    //{gPowerUpInfo[kPwUpAsbestArmor].picnum, fix16_from_float(0.3f), 9}, // asbestos armor
+    //{gPowerUpInfo[kPwUpGrowShroom].picnum, fix16_from_float(0.4f), 4}, // grow shroom
+    //{gPowerUpInfo[kPwUpShrinkShroom].picnum, fix16_from_float(0.4f), 4}, // shrink shroom
 };
 
 void viewDrawPowerUps(PLAYER* pPlayer)
@@ -1405,15 +1405,15 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     nPowerActive[1] = pPlayer->pwUpTime[kPwUpReflectShots]; // reflects enemy shots
     nPowerActive[2] = pPlayer->pwUpTime[kPwUpDeathMask]; // invulnerability
     nPowerActive[3] = pPlayer->pwUpTime[kPwUpTwoGuns];// guns akimbo
-    nPowerActive[4] = pPlayer->pwUpTime[kPwUpShadowCloakUseless]; // shadow cloak
+    //nPowerActive[4] = pPlayer->pwUpTime[kPwUpShadowCloakUseless]; // shadow cloak
 
     // not in official maps
-    nPowerActive[5] = pPlayer->pwUpTime[kPwUpFeatherFall]; // feather fall
-    nPowerActive[6] = pPlayer->pwUpTime[kPwUpGasMask]; // gas mask
-    nPowerActive[7] = pPlayer->pwUpTime[kPwUpDoppleganger]; // doppelganger
-    nPowerActive[8] = pPlayer->pwUpTime[kPwUpAsbestArmor]; // asbestos armor
-    nPowerActive[9] = pPlayer->pwUpTime[kPwUpGrowShroom]; // grow shroom
-    nPowerActive[10] = pPlayer->pwUpTime[kPwUpShrinkShroom]; // shrink shroom
+    //nPowerActive[5] = pPlayer->pwUpTime[kPwUpFeatherFall]; // feather fall
+    //nPowerActive[6] = pPlayer->pwUpTime[kPwUpGasMask]; // gas mask
+   // nPowerActive[7] = pPlayer->pwUpTime[kPwUpDoppleganger]; // doppelganger
+    //nPowerActive[8] = pPlayer->pwUpTime[kPwUpAsbestArmor]; // asbestos armor
+   // nPowerActive[9] = pPlayer->pwUpTime[kPwUpGrowShroom]; // grow shroom
+   // nPowerActive[10] = pPlayer->pwUpTime[kPwUpShrinkShroom]; // shrink shroom
 
     int nSortPower[kPowerUps+1];
     unsigned char nSortIndex[kPowerUps+1];

@@ -429,30 +429,30 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         pPlayer->packSlots[nPack].isActive = 1;
     
     switch (nPowerUp + kItemBase) {
-        #ifdef NOONE_EXTENSIONS
-        case kItemModernMapLevel:
-            if (gModernMap) gFullMap = true;
-            break;
-        case kItemShroomShrink:
-            if (!gModernMap) break;
-            else if (isGrown(pPlayer->pSprite)) playerDeactivateShrooms(pPlayer);
-            else playerSizeShrink(pPlayer, 2);
-            break;
-        case kItemShroomGrow:
-            if (!gModernMap) break;
-            else if (isShrinked(pPlayer->pSprite)) playerDeactivateShrooms(pPlayer);
-            else {
-                playerSizeGrow(pPlayer, 2);
-                if (powerupCheck(&gPlayer[pPlayer->pSprite->type - kDudePlayer1], kPwUpShadowCloak) > 0) {
-                    powerupDeactivate(pPlayer, kPwUpShadowCloak);
-                    pPlayer->pwUpTime[kPwUpShadowCloak] = 0;
-                }
-
-                if (ceilIsTooLow(pPlayer->pSprite))
-                    actDamageSprite(pPlayer->pSprite->index, pPlayer->pSprite, kDamageExplode, 65535);
-            }
-            break;
-        #endif
+    //    #ifdef NOONE_EXTENSIONS
+    //    case kItemModernMapLevel:
+    //       if (gModernMap) gFullMap = true;
+    //        break;
+    //    case kItemShroomShrink:
+    //        if (!gModernMap) break;
+    //        else if (isGrown(pPlayer->pSprite)) playerDeactivateShrooms(pPlayer);
+    //        else playerSizeShrink(pPlayer, 2);
+    //        break;
+    //    case kItemShroomGrow:
+    //        if (!gModernMap) break;
+    //        else if (isShrinked(pPlayer->pSprite)) playerDeactivateShrooms(pPlayer);
+    //        else {
+    //            playerSizeGrow(pPlayer, 2);
+    //            if (powerupCheck(&gPlayer[pPlayer->pSprite->type - kDudePlayer1], kPwUpShadowCloak) > 0) {
+    //                powerupDeactivate(pPlayer, kPwUpShadowCloak);
+    //                pPlayer->pwUpTime[kPwUpShadowCloak] = 0;
+    //            }
+        //
+    //           if (ceilIsTooLow(pPlayer->pSprite))
+    //                actDamageSprite(pPlayer->pSprite->index, pPlayer->pSprite, kDamageExplode, 65535);
+    //        }
+    //        break;
+    //    #endif
         case kItemFeatherFall:
         case kItemJumpBoots:
             pPlayer->damageControl[kDamageFall]++;
