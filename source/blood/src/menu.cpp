@@ -175,7 +175,7 @@ const char *zPlayerKeysStrings[] = {
 
 char zUserMapName[BMAX_PATH];
 const char *zEpisodeNames[6];
-const char *zLevelNames[6][16];
+const char *zLevelNames[6][kMaxLevels];
 
 static char MenuGameFuncs[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 static char const *MenuGameFuncNone = "  -None-";
@@ -2920,7 +2920,7 @@ void MenuSetupEpisodeInfo(void)
         {
             EPISODEINFO *pEpisode = &gEpisodeInfo[i];
             zEpisodeNames[i] = pEpisode->title;
-            for (int j = 0; j < 16; j++)
+            for (int j = 0; j < kMaxLevels; j++)
             {
                 if (j < pEpisode->nLevels)
                 {
