@@ -240,10 +240,13 @@ public:
     int nTopDelta;
     int nFocus;
     int nGameFuncs;
+    int nConflictKeys[3];
+    bool bCheckConflict;
     bool bScan;
     CGameMenuItemKeyList();
     CGameMenuItemKeyList(const char * a1, int a2, int a3, int a4, int a5, int a6, int a7, void(*a8)(CGameMenuItemKeyList *));
     void Scan(void);
+    void CheckKeyConflict(void);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
     virtual bool MouseEvent(CGameMenuEvent &);
