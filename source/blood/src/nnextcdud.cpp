@@ -2989,7 +2989,7 @@ char CUSTOMDUDEV2_SETUP::ParseSkill(const char* str)
             if (nSkill != range[0]) return false;
             break;
         case 2:
-            if (!rngok(nSkill, range[0], range[1])) return false;
+            if (!irngok(nSkill, range[0], range[1])) return false;
             break;
         default:
             return false;
