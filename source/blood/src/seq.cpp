@@ -537,15 +537,15 @@ class SeqLoadSave : public LoadSave {
     virtual void Save(void);
 };
 
-void SeqLoadSave::Load(void)
+void SeqLoad(LoadSave* ls)
 {
-    Read(&siWall, sizeof(siWall));
-    Read(&siMasked, sizeof(siMasked));
-    Read(&siCeiling, sizeof(siCeiling));
-    Read(&siFloor, sizeof(siFloor));
-    Read(&siSprite, sizeof(siSprite));
-    Read(&activeList, sizeof(activeList));
-    Read(&activeCount, sizeof(activeCount));
+    ls->Read(&siWall, sizeof(siWall));
+    ls->Read(&siMasked, sizeof(siMasked));
+    ls->Read(&siCeiling, sizeof(siCeiling));
+    ls->Read(&siFloor, sizeof(siFloor));
+    ls->Read(&siSprite, sizeof(siSprite));
+    ls->Read(&activeList, sizeof(activeList));
+    ls->Read(&activeCount, sizeof(activeCount));
     for (int i = 0; i < kMaxXWalls; i++)
     {
         siWall[i].hSeq = NULL;
@@ -585,6 +585,15 @@ void SeqLoadSave::Load(void)
             pInst->pSequence = pSeq;
         }
     }
+}
+
+void SeqLoadSave::Load(void)
+{
+    if (myLoadVersion == BYTEVERSION) {
+        SeqLoad(this);
+    }
+    // else, for savegames of the older version 105, SeqLoad() is called later at the end of
+    // PlayerLoadSave::Load(), at the same time SeqLoadSave::Load() was called in older versions
 }
 
 void SeqLoadSave::Save(void)

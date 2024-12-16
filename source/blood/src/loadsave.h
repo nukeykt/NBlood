@@ -51,6 +51,8 @@ public:
     static void SaveGame(char *);
 };
 
+extern short myLoadVersion; // DG: version of currently loaded savegame, to support old savegames
+
 extern unsigned int gSavedOffset;
 extern GAMEOPTIONS gSaveGameOptions[];
 extern char *gSaveGamePic[10];

@@ -295,6 +295,8 @@ public:
     virtual void Save(void);
 };
 
+short myLoadVersion; // DG: to support BYTEVERSION 105 savegames
+
 void MyLoadSave::Load(void)
 {
     psky_t *pSky = tileSetupSky(0);
@@ -302,10 +304,12 @@ void MyLoadSave::Load(void)
     Read(&id, sizeof(id));
     if (id != 0x5653424e/*'VSBN'*/)
         ThrowError("Old saved game found");
-    short version;
-    Read(&version, sizeof(version));
-    if (version != BYTEVERSION)
+
+    // DG: accept version 105 as well for backwards-compat
+    Read(&myLoadVersion, sizeof(myLoadVersion));
+    if (myLoadVersion != BYTEVERSION && myLoadVersion != 105)
         ThrowError("Incompatible version of saved game found!");
+
     Read(&gGameOptions, sizeof(gGameOptions));
     Read(&numsectors, sizeof(numsectors));
     Read(&numwalls, sizeof(numwalls));
@@ -550,7 +554,7 @@ void LoadSavedInfo(void)
             continue;
         }
         kread(hFile, &v4, sizeof(v4));
-        if (v4 != BYTEVERSION)
+        if (v4 != BYTEVERSION && v4 != 105) // DG: support savegames from previous version
         {
             kclose(hFile);
             continue;
