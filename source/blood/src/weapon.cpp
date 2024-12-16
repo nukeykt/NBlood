@@ -247,7 +247,12 @@ void WeaponDraw(PLAYER *pPlayer, int a2, int x, int y, int a5)
     QAV * pQAV = weaponQAV[pPlayer->weaponQav];
     int v4;
     if (pPlayer->weaponTimer == 0)
-        v4 = (int)totalclock % pQAV->at10;
+    {
+        if (((pPlayer->weaponState == -1) || (pPlayer->curWeapon == kWeaponShotgun && pPlayer->weaponState == 7)) && !VanillaMode()) // if shotgun with guns akimbo, or ran out of ammo, set to last seq frame
+            v4 = pQAV->at10-1;
+        else
+            v4 = (int)totalclock % pQAV->at10;
+    }
     else
         v4 = pQAV->at10 - pPlayer->weaponTimer;
     pQAV->x = x;
