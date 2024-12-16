@@ -340,6 +340,11 @@ SDL_STATIC ?= 0
 
 NOONE_EXTENSIONS ?= 1
 
+# modifications for the What Lies Beneath mod
+# currently incompatible with the base game or other mods!
+# (NOTE: WLB requires NOONE_EXTENSIONS to be enabled)
+BLOOD_WLB ?= 0
+
 # Library toggles
 HAVE_GTK2 := 1
 USE_LIBVPX ?= 1
@@ -852,6 +857,9 @@ ifneq (0,$(POLYMER))
 endif
 ifneq (0,$(NOONE_EXTENSIONS))
     COMPILERFLAGS += -DNOONE_EXTENSIONS
+endif
+ifneq (0,$(BLOOD_WLB))
+    COMPILERFLAGS += -DBLOOD_WLB
 endif
 
 

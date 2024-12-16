@@ -1601,7 +1601,7 @@ DUDEINFO gPlayerTemplate[4] =
         0,
         0
     },
-
+  #ifdef BLOOD_WLB // What Lies Beneath mod
     // normal beast
     {
         0x2f00,
@@ -1691,6 +1691,97 @@ DUDEINFO gPlayerTemplate[4] =
         0,
         0
      },
+  #else // regular Blood
+    // normal beast
+    {
+        0x2900,
+        100,
+        70,
+        1200,
+        0x30,
+        0,
+        0x14,
+        0x800,
+        0xc800,
+        0x155,
+        0,
+        10,
+        10,
+        0x100,
+        0x10,
+        0x8000,
+        0x1,
+        0,
+        0,
+        0,
+        0x40,
+        7, -1, -1,
+        0x100, 0x100, 0x100, 0x100, 0x100, 0x100, 0x120,
+        0, 0, 0, 0, 0, 0, 0,
+        0,
+        0
+    },
+
+    // shrink human
+    {
+        12032,
+        100,
+        10, // mass
+        1200,
+        16, // clipdist
+        0,
+        0x10,
+        0x800,
+        0xc800,
+        0x155,
+        0,
+        10,
+        10,
+        0x100,
+        0x10,
+        0x8000,
+        0x1,
+        0,
+        0,
+        0,
+        0x40,
+        15, -1, -1, // gib type
+        1024, 1024, 1024, 1024, 256, 1024, 1024, //damage shift
+        0, 0, 0, 0, 0, 0, 0,
+        0,
+        0
+    },
+
+     // grown human
+     {
+         12032,
+         100,
+         1100, // mass
+         1200,
+         100, // clipdist
+         0,
+         0x10,
+         0x800,
+         0xc800,
+         0x155,
+         0,
+         10,
+         10,
+         0x100,
+         0x10,
+         0x8000,
+         0x1,
+         0,
+         0,
+         0,
+         0x40,
+         15, 7, 7, // gib type
+         64, 64, 64, 64, 256, 64, 64, // damage shift
+         0, 0, 0, 0, 0, 0, 0,
+         0,
+         0
+     },
+  #endif
 };
 
 DUDEINFO fakeDudeInfo = {};
