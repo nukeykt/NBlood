@@ -345,6 +345,11 @@ NOONE_EXTENSIONS ?= 1
 # (NOTE: WLB requires NOONE_EXTENSIONS to be enabled)
 BLOOD_WLB ?= 0
 
+ifneq (0,$(BLOOD_WLB))
+    # WLB requires the NOONE_EXTENSIONS
+    NOONE_EXTENSIONS := 1
+endif
+
 # Library toggles
 HAVE_GTK2 := 1
 USE_LIBVPX ?= 1
