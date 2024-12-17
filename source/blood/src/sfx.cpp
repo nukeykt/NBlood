@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "trig.h"
 
+#define kEarDist (int)((32<<4) * 0.17) // distance between ears (17cm)
+
 static POINT2D earL, earR, earL0, earR0; // Ear position
 static VECTOR2D earVL, earVR; // Ear velocity
 static int lPhase, rPhase, lVol, rVol, lPitch, rPitch;
@@ -440,9 +442,9 @@ void sfxKillSpriteSounds(spritetype *pSprite)
 
 void sfxUpdate3DSounds(void)
 {
-    int dx = mulscale30(Cos(gMe->pSprite->ang + 512), 43);
+    const int dx = mulscale30(Cos(gMe->pSprite->ang + kAng90), kEarDist>>1);
+    const int dy = mulscale30(Sin(gMe->pSprite->ang + kAng90), kEarDist>>1);
     earL0 = earL;
-    int dy = mulscale30(Sin(gMe->pSprite->ang + 512), 43);
     earR0 = earR;
     earL.x = gMe->pSprite->x - dx;
     earL.y = gMe->pSprite->y - dy;
