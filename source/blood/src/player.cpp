@@ -988,6 +988,8 @@ void playerStart(int nPlayer, int bNewLevel)
         gViewMap.x = pPlayer->pSprite->x;
         gViewMap.y = pPlayer->pSprite->y;
         gViewMap.angle = pPlayer->pSprite->ang;
+        if (!VanillaMode())
+            sfxResetListener(); // player is listener, update ear position/reset ear velocity so audio pitch of surrounding sfx does not freak out when respawning player
     }
     if (IsUnderwaterSector(pSprite->sectnum))
     {
