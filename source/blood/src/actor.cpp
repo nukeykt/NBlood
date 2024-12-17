@@ -4615,7 +4615,11 @@ void MoveDude(spritetype *pSprite)
             if (VanillaMode())
                 playerResetInertia(pPlayer);
             else
+            {
                 playerCorrectInertia(pPlayer, &oldpos);
+                if (pPlayer == gMe) // if player is listener, update ear position so audio pitch of surrounding sfx does not freak out when transitioning between ror sectors
+                    sfxCorrectListenerPos();
+            }
         }
         switch (nLink) {
         case kMarkerLowStack:

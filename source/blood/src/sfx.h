@@ -51,6 +51,7 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int chanId = -1, int nFl
 void sfxKill3DSound(spritetype *pSprite, int chanId = -1, int soundId = -1);
 void sfxKillAllSounds(void);
 void sfxKillSpriteSounds(spritetype *pSprite);
+void sfxCorrectListenerPos(void);
 void sfxResetListener(void);
 void sfxUpdate3DSounds(void);
 void sfxSetReverb(bool toggle);
