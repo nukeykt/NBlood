@@ -34,9 +34,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "trig.h"
 
-POINT2D earL, earR, earL0, earR0; // Ear position
-VECTOR2D earVL, earVR; // Ear velocity ?
-int lPhase, rPhase, lVol, rVol, lPitch, rPitch;
+static POINT2D earL, earR, earL0, earR0; // Ear position
+static VECTOR2D earVL, earVR; // Ear velocity
+static int lPhase, rPhase, lVol, rVol, lPitch, rPitch;
 
 BONKLE Bonkle[256];
 BONKLE *BonkleCache[256];
