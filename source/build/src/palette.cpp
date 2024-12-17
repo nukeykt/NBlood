@@ -14,7 +14,7 @@
 #include "cache1d.h"
 #include "palette.h"
 #include "a.h"
-#include "xxhash.h"
+#include "xxhash_config.h"
 
 #include "vfs.h"
 

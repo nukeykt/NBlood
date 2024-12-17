@@ -9,7 +9,7 @@
 #include "texcache.h"
 #include "dxtfilter.h"
 #include "scriptfile.h"
-#include "xxhash.h"
+#include "xxhash_config.h"
 #include "kplib.h"
 
 #include "vfs.h"

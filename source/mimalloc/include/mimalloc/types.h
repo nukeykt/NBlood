@@ -72,6 +72,13 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 #endif
 
+// Use guard pages behind objects of a certain size (set by the MIMALLOC_DEBUG_GUARDED_MIN/MAX options)
+// Padding should be disabled when using guard pages
+// #define MI_DEBUG_GUARDED 1
+#if defined(MI_DEBUG_GUARDED)
+#define MI_PADDING  0
+#endif
+
 // Reserve extra padding at the end of each block to be more resilient against heap block overflows.
 // The padding can detect buffer overflow on free.
 #if !defined(MI_PADDING) && (MI_SECURE>=3 || MI_DEBUG>=1 || (MI_TRACK_VALGRIND || MI_TRACK_ASAN || MI_TRACK_ETW))
@@ -243,15 +250,17 @@ typedef union mi_page_flags_s {
   struct {
     uint8_t in_full : 1;
     uint8_t has_aligned : 1;
+    uint8_t has_guarded : 1;  // only used with MI_DEBUG_GUARDED
   } x;
 } mi_page_flags_t;
 #else
 // under thread sanitizer, use a byte for each flag to suppress warning, issue #130
 typedef union mi_page_flags_s {
-  uint16_t full_aligned;
+  uint32_t full_aligned;
   struct {
     uint8_t in_full;
     uint8_t has_aligned;
+    uint8_t has_guarded; // only used with MI_DEBUG_GUARDED
   } x;
 } mi_page_flags_t;
 #endif
@@ -307,7 +316,7 @@ typedef struct mi_page_s {
   mi_block_t*           local_free;        // list of deferred free blocks by this thread (migrates to `free`)
   uint16_t              used;              // number of blocks in use (including blocks in `thread_free`)
   uint8_t               block_size_shift;  // if not zero, then `(1 << block_size_shift) == block_size` (only used for fast path in `free.c:_mi_page_ptr_unalign`)
-  uint8_t               heap_tag;          // tag of the owning heap, used for separated heaps by object type
+  uint8_t               heap_tag;          // tag of the owning heap, used to separate heaps by object type
                                            // padding
   size_t                block_size;        // size available in each block (always `>0`)
   uint8_t*              page_start;        // start of the page area containing the blocks
@@ -387,6 +396,7 @@ typedef struct mi_memid_s {
 // ---------------------------------------------------------------
 // Segments contain mimalloc pages
 // ---------------------------------------------------------------
+typedef struct mi_subproc_s mi_subproc_t;
 
 // Segments are large allocated memory blocks (2MiB on 64 bit) from the OS.
 // Inside segments we allocated fixed size _pages_ that contain blocks.
@@ -396,19 +406,23 @@ typedef struct mi_segment_s {
   bool                 allow_decommit;
   bool                 allow_purge;
   size_t               segment_size;     // for huge pages this may be different from `MI_SEGMENT_SIZE`
+  mi_subproc_t*        subproc;          // segment belongs to sub process
 
   // segment fields
-  struct mi_segment_s* next;             // must be the first segment field after abandoned_next -- see `segment.c:segment_init`
+  struct mi_segment_s* next;             // must be the first (non-constant) segment field  -- see `segment.c:segment_init`
   struct mi_segment_s* prev;
   bool                 was_reclaimed;    // true if it was reclaimed (used to limit on-free reclamation)
 
   size_t               abandoned;        // abandoned pages (i.e. the original owning thread stopped) (`abandoned <= used`)
-  size_t               abandoned_visits; // count how often this segment is visited in the abandoned list (to force reclaim if it is too long)
+  size_t               abandoned_visits; // count how often this segment is visited for reclaiming (to force reclaim if it is too long)
 
   size_t               used;             // count of pages in use (`used <= capacity`)
   size_t               capacity;         // count of available pages (`#free + used`)
   size_t               segment_info_size;// space we are using from the first page for segment meta-data and possible guard pages.
   uintptr_t            cookie;           // verify addresses in secure mode: `_mi_ptr_cookie(segment) == segment->cookie`
+
+  struct mi_segment_s* abandoned_os_next; // only used for abandoned segments outside arena's, and only if `mi_option_visit_abandoned` is enabled
+  struct mi_segment_s* abandoned_os_prev;
 
   // layout like this to optimize access in `mi_free`
   _Atomic(mi_threadid_t) thread_id;      // unique id of the thread owning this segment
@@ -601,9 +615,25 @@ void _mi_stat_counter_increase(mi_stat_counter_t* stat, size_t amount);
 
 
 // ------------------------------------------------------
+// Sub processes do not reclaim or visit segments
+// from other sub processes
+// ------------------------------------------------------
+
+struct mi_subproc_s {
+  _Atomic(size_t)    abandoned_count;         // count of abandoned segments for this sub-process
+  _Atomic(size_t)    abandoned_os_list_count; // count of abandoned segments in the os-list
+  mi_lock_t          abandoned_os_lock;       // lock for the abandoned os segment list (outside of arena's) (this lock protect list operations)
+  mi_lock_t          abandoned_os_visit_lock; // ensure only one thread per subproc visits the abandoned os list
+  mi_segment_t*      abandoned_os_list;       // doubly-linked list of abandoned segments outside of arena's (in OS allocated memory)
+  mi_segment_t*      abandoned_os_list_tail;  // the tail-end of the list
+  mi_memid_t         memid;                   // provenance of this memory block
+};
+
+// ------------------------------------------------------
 // Thread Local data
 // ------------------------------------------------------
 
+// Milliseconds as in `int64_t` to avoid overflows
 typedef int64_t  mi_msecs_t;
 
 // Queue of segments
@@ -628,8 +658,9 @@ typedef struct mi_segments_tld_s {
   size_t              current_size; // current size of all segments
   size_t              peak_size;    // peak size of all segments
   size_t              reclaim_count;// number of reclaimed (abandoned) segments
+  mi_subproc_t*       subproc;      // sub-process this thread belongs to.
   mi_stats_t*         stats;        // points to tld stats
-  mi_os_tld_t*        os;           // points to os stats
+  mi_os_tld_t*        os;           // points to os tld
 } mi_segments_tld_t;
 
 // Thread local data

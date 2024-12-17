@@ -130,6 +130,7 @@ mimalloc_obj := $(obj)/$(mimalloc)
 
 mimalloc_excl := \
     alloc-override.c \
+    arena-abandon.c \
     free.c \
     page-queue.c \
     static.c \

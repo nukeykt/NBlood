@@ -8,7 +8,7 @@
 #define POLYMER_C
 #include "polymer.h"
 #include "engine_priv.h"
-#include "xxhash.h"
+#include "xxhash_config.h"
 #include "texcache.h"
 
 #define LIBTESS2_IMPLEMENTATION
