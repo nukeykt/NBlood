@@ -1127,7 +1127,13 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
 {
     int i;
     spritetype* pSpr = &sprite[nSpr];
-    if ((pSpr->flags & kHitagFree))
+    // FIXME: the extra < 0 check prevents crashes when loading some savegames, for example
+    //        due to `XSPRITE* pXSpr = &xsprite[pSpr->extra]` accessing invalid memory,
+    //        or due to that memory containing a value != 0 at pXspr->physAddr and then
+    //        getSpriteMassBySize() throwing an error because pSpr->extra < 0..
+    //        However, it maybe hides real issues that should be investigated, like
+    //        when/why is extra -1 here?!
+    if ((pSpr->flags & kHitagFree) || pSpr->extra < 0)
         return;
 
     XSPRITE* pXSpr = &xsprite[pSpr->extra];
@@ -6073,13 +6079,21 @@ void playerQavSceneReset(PLAYER* pPlayer) {
 }
 
 bool playerSizeShrink(PLAYER* pPlayer, int divider) {
+  #ifdef BLOOD_WLB // the What Lies Beneath mod uses scale 0 here - TODO: why?
+    pPlayer->pXSprite->scale = 0;
+  #else
     pPlayer->pXSprite->scale = 256 / divider;
+  #endif
     playerSetRace(pPlayer, kModeHumanShrink);
     return true;
 }
 
 bool playerSizeGrow(PLAYER* pPlayer, int multiplier) {
+  #ifdef BLOOD_WLB // the What Lies Beneath mod uses scale 0 here - TODO: why?
+    pPlayer->pXSprite->scale = 0;
+  #else
     pPlayer->pXSprite->scale = 256 * multiplier;
+  #endif
     playerSetRace(pPlayer, kModeHumanGrown);
     return true;
 }

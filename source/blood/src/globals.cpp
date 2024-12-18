@@ -59,6 +59,10 @@ void _ThrowError(const char *pzFormat, ...)
     vsprintf(buffer, pzFormat, args);
     LOG_F(ERROR, "%s(%i): %s", _module, _line, buffer);
 
+    // break into debugger, so the error can be investigated
+    // (unless NDEBUG is defined; this is handled in build/include/compat.h)
+    debug_break();
+
 #ifdef WM_MSGBOX_WINDOW
     char titlebuf[256];
     Bsprintf(titlebuf, APPNAME " %s", s_buildRev);
@@ -79,10 +83,13 @@ void _consoleSysMsg(const char* pzFormat, ...) {
     OSD_Printf(OSDTEXT_RED "%s(%i): %s\n", _module, _line, buffer);
 }
 
-
 void __dassert(const char * pzExpr, const char * pzFile, int nLine)
 {
     LOG_F(ERROR, "Assertion failed: %s in file %s at line %i", pzExpr, pzFile, nLine);
+
+    // break into debugger, as one would expect from an assertion
+    // (unless NDEBUG is defined; this is handled in build/include/compat.h)
+    debug_break();
 
 #ifdef WM_MSGBOX_WINDOW
     char titlebuf[256];

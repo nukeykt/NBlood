@@ -2724,7 +2724,7 @@ bool CGameMenuItemZCycle::Event(CGameMenuEvent &event)
 
 void CGameMenuItemZCycle::Add(const char *pItem, bool active)
 {
-    dassert(pItem != NULL);
+    dassert(pItem != NULL); // FIXME: WLB comments this out - why?
     dassert(m_nItems < kMaxGameCycleItems);
     m_pzStrings[m_nItems] = pItem;
     if (active)

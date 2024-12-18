@@ -26,7 +26,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kMaxMessages 32
 #define kMaxEpisodes 7
-#define kMaxLevels 16
+#ifdef NOONE_EXTENSIONS
+  // allow advanced mods to use more than 16 levels.
+  // for example, Blood: What Lies Beneath has 43 (as of version 1.1)
+  #define kMaxLevels 64
+#else // original blood only allowed 16 levels per episode
+  #define kMaxLevels 16
+#endif
 
 #pragma pack(push, 1)
 

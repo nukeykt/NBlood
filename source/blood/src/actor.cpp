@@ -3973,7 +3973,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                     xvel[pSprite2->index] += mulscale2(4, pSprite2->x-sprite[nSprite].x);
                     yvel[pSprite2->index] += mulscale2(4, pSprite2->y-sprite[nSprite].y);
                     
-                    #ifdef NOONE_EXTENSIONS
+                    #if defined(NOONE_EXTENSIONS) && !defined(BLOOD_WLB)
                     // add size shroom abilities
                     if ((IsPlayerSprite(pSprite) && isShrinked(pSprite)) || (IsPlayerSprite(pSprite2) && isGrown(pSprite2))) {
 
@@ -4026,7 +4026,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         {
             spritetype *pSprite2 = &sprite[nHitSprite];
 
-            #ifdef NOONE_EXTENSIONS
+            #if defined(NOONE_EXTENSIONS) && !defined(BLOOD_WLB)
             // add size shroom abilities
             if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
             {
@@ -4081,7 +4081,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             spritetype *pSprite2 = &sprite[nHitSprite];
             XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
             
-            #ifdef NOONE_EXTENSIONS
+            #if defined(NOONE_EXTENSIONS) && !defined(BLOOD_WLB)
             // add size shroom abilities
             if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite)))
             {

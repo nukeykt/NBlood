@@ -429,7 +429,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         pPlayer->packSlots[nPack].isActive = 1;
     
     switch (nPowerUp + kItemBase) {
-        #ifdef NOONE_EXTENSIONS
+        #if defined(NOONE_EXTENSIONS) && !defined(BLOOD_WLB)
         case kItemModernMapLevel:
             if (gModernMap) gFullMap = true;
             break;
@@ -2492,6 +2492,8 @@ public:
     virtual void Save(void);
 };
 
+extern void SeqLoad(LoadSave* ls); // DG: for loading BYTEVERSION 105 savegames
+
 void PlayerLoadSave::Load(void)
 {
 
@@ -2526,6 +2528,12 @@ void PlayerLoadSave::Load(void)
 
     }
     gCrouchToggleState = 0; // reset crouch toggle state
+
+    // DG: Hack to support savegames with BYTEVERSION 105, when NBlood saved/loaded
+    //     the Seq state after this player state (now it's saved/loaded first)
+    if (myLoadVersion == 105) {
+        SeqLoad(this);
+    }
 }
 
 void PlayerLoadSave::Save(void)

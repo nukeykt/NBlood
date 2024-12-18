@@ -232,9 +232,33 @@ void LoadSave::LoadGame(char *pzFile)
     //sndPlaySong(gGameOptions.zLevelSong, 1);
 }
 
+// TODO: when starting to use buildvfs in SaveGame(), remove this function and use buildvfs_exists() instead
+static int file_exists(char const* path)
+{
+#ifdef _WIN32
+    return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
+#else
+    struct Bstat st;
+    return !Bstat(path, &st);
+#endif
+}
+
 void LoadSave::SaveGame(char *pzFile)
 {
-    hSFile = fopen(pzFile, "wb");
+    // TODO: use buildvfs_open_write() etc (probably in the whole file?)
+    char fileNameTmp[BMAX_PATH+4];
+    const char* saveFileName = pzFile;
+    bool saveFileExists = file_exists(saveFileName);
+    if (saveFileExists)
+    {
+        // write to a different file first, so in case the game crashes while saving
+        // (which would result in a corrupted savegame) at least the old savegame is preserved
+        strcpy(fileNameTmp, pzFile);
+        strcat(fileNameTmp, "_tmp");
+        saveFileName = fileNameTmp;
+    }
+
+    hSFile = fopen(saveFileName, "wb");
     if (hSFile == NULL)
         ThrowError("File error #%d creating save file.", errno);
     dword_27AA38 = 0;
@@ -250,6 +274,18 @@ void LoadSave::SaveGame(char *pzFile)
     }
     fclose(hSFile);
     hSFile = NULL;
+    if (saveFileExists)
+    {
+        // I'd like to have a backup of the old savegame, just in case I regret the last save :-p
+        char fileNameBk[BMAX_PATH+3];
+        strcpy(fileNameBk, pzFile);
+        strcat(fileNameBk, "_bk");
+        rename(pzFile, fileNameBk);
+
+        // the savegame was written successfully, so we can rename the saved file
+        // to the requested name (from gameXXX.sav_tmp to gameXXX.sav)
+        rename(saveFileName, pzFile);
+    }
 }
 
 class MyLoadSave : public LoadSave
@@ -259,6 +295,8 @@ public:
     virtual void Save(void);
 };
 
+short myLoadVersion; // DG: to support BYTEVERSION 105 savegames
+
 void MyLoadSave::Load(void)
 {
     psky_t *pSky = tileSetupSky(0);
@@ -266,10 +304,12 @@ void MyLoadSave::Load(void)
     Read(&id, sizeof(id));
     if (id != 0x5653424e/*'VSBN'*/)
         ThrowError("Old saved game found");
-    short version;
-    Read(&version, sizeof(version));
-    if (version != BYTEVERSION)
+
+    // DG: accept version 105 as well for backwards-compat
+    Read(&myLoadVersion, sizeof(myLoadVersion));
+    if (myLoadVersion != BYTEVERSION && myLoadVersion != 105)
         ThrowError("Incompatible version of saved game found!");
+
     Read(&gGameOptions, sizeof(gGameOptions));
     Read(&numsectors, sizeof(numsectors));
     Read(&numwalls, sizeof(numwalls));
@@ -514,7 +554,7 @@ void LoadSavedInfo(void)
             continue;
         }
         kread(hFile, &v4, sizeof(v4));
-        if (v4 != BYTEVERSION)
+        if (v4 != BYTEVERSION && v4 != 105) // DG: support savegames from previous version
         {
             kclose(hFile);
             continue;
