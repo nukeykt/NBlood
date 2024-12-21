@@ -1525,6 +1525,19 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
     return -1;
 }
 
+inline void playerDropHand(PLAYER *pPlayer)
+{
+    spritetype *pSprite2 = actSpawnDude(pPlayer->pSprite, kDudeHand, pPlayer->pSprite->clipdist<<1, 0);
+    pSprite2->ang = (pPlayer->pSprite->ang+1024)&2047;
+    int nSprite = pPlayer->pSprite->index;
+    int x = Cos(pPlayer->pSprite->ang)>>16;
+    int y = Sin(pPlayer->pSprite->ang)>>16;
+    xvel[pSprite2->index] = xvel[nSprite] + mulscale14(0x155555, x);
+    yvel[pSprite2->index] = yvel[nSprite] + mulscale14(0x155555, y);
+    zvel[pSprite2->index] = zvel[nSprite];
+    pPlayer->hand = 0;
+}
+
 void ProcessInput(PLAYER *pPlayer)
 {
     spritetype *pSprite = pPlayer->pSprite;
@@ -1768,18 +1781,8 @@ void ProcessInput(PLAYER *pPlayer)
         }
         if (pPlayer->handTime > 0)
             pPlayer->handTime = ClipLow(pPlayer->handTime-kTicsPerFrame*(6-gGameOptions.nDifficulty), 0);
-        if (pPlayer->handTime <= 0 && pPlayer->hand)
-        {
-            spritetype *pSprite2 = actSpawnDude(pPlayer->pSprite, kDudeHand, pPlayer->pSprite->clipdist<<1, 0);
-            pSprite2->ang = (pPlayer->pSprite->ang+1024)&2047;
-            int nSprite = pPlayer->pSprite->index;
-            int x = Cos(pPlayer->pSprite->ang)>>16;
-            int y = Sin(pPlayer->pSprite->ang)>>16;
-            xvel[pSprite2->index] = xvel[nSprite] + mulscale14(0x155555, x);
-            yvel[pSprite2->index] = yvel[nSprite] + mulscale14(0x155555, y);
-            zvel[pSprite2->index] = zvel[nSprite];
-            pPlayer->hand = 0;
-        }
+        if (pPlayer->handTime <= 0 && pPlayer->hand) // if hand enemy successfully thrown off
+            playerDropHand(pPlayer);
         pInput->keyFlags.action = 0;
     }
     if (gDemo.VanillaDemo())
@@ -2013,7 +2016,9 @@ void playerProcess(PLAYER *pPlayer)
     pPlayer->pickupEffect = ClipLow(pPlayer->pickupEffect-kTicsPerFrame, 0);
     if (!pXSprite->health)
     {
-        if (!VanillaMode() || pPlayer == gMe)
+        if (pPlayer->hand && gGameOptions.nGameType != kGameTypeSinglePlayer && !VanillaMode())
+            playerDropHand(pPlayer);
+        else if (!VanillaMode() || pPlayer == gMe)
             pPlayer->hand = 0;
         return;
     }

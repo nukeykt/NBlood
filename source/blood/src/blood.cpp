@@ -750,8 +750,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
         else if ((gGameOptions.nGameType == kGameTypeTeams) && !VanillaMode()) // if ctf mode and went to next level, reset scores
             playerResetScores(i);
-        gChokeCounter[i] = 0;
         playerStart(i, 1);
+        gChokeCounter[i] = 0;
     }
     if (gameOptions->uGameFlags&kGameFlagContinuing) // if episode is in progress, restore player stats
     {
