@@ -303,9 +303,9 @@ uint32_t PLAYER::CalcNonSpriteChecksum(void)
     sum += ((used2[4]>>8)&255) | ((used2[5]&65535)<<16) | ((used2[6]&255)<<24);
     sum += ((used2[6]>>8)&255) | ((used2[7]&65535)<<16) |
             ((damageControl[0]&255)<<24);
-    for (i = 0; i < 7; ++i)
+    for (i = 0; i < kDamageMax-1; ++i)
         sum += ((damageControl[i]>>8)&0xFFFFFF) | ((damageControl[i+1]&255)<<24);
-    sum += ((damageControl[7]>>8)&0xFFFFFF) | ((curWeapon&255)<<24);
+    sum += ((damageControl[kDamageMax-1]>>8)&0xFFFFFF) | ((curWeapon&255)<<24);
     sum += (nextWeapon&255) | ((weaponTimer&0xFFFFFF)<<8);
     sum += ((weaponTimer>>24)&255) | ((weaponState&0xFFFFFF)<<8);
     sum += ((weaponState>>24)&255) | ((weaponAmmo&0xFFFFFF)<<8);
