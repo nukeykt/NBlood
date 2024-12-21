@@ -1127,7 +1127,13 @@ void nnExtInitSprite(int nSpr, bool bSaveLoad)
 {
     int i;
     spritetype* pSpr = &sprite[nSpr];
-    if ((pSpr->flags & kHitagFree))
+    // FIXME: the extra < 0 check prevents crashes when loading some savegames, for example
+    //        due to `XSPRITE* pXSpr = &xsprite[pSpr->extra]` accessing invalid memory,
+    //        or due to that memory containing a value != 0 at pXspr->physAddr and then
+    //        getSpriteMassBySize() throwing an error because pSpr->extra < 0..
+    //        However, it maybe hides real issues that should be investigated, like
+    //        when/why is extra -1 here?!
+    if ((pSpr->flags & kHitagFree) || pSpr->extra < 0)
         return;
 
     XSPRITE* pXSpr = &xsprite[pSpr->extra];

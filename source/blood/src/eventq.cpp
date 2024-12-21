@@ -642,27 +642,35 @@ void EventQLoadSave::Load()
     Read(bucketHead, sizeof(bucketHead));
 }
 
+struct EventWithTime {
+	EVENT event;
+	unsigned int evTime;
+};
+
 void EventQLoadSave::Save()
 {
-    EVENT events[1024];
-    unsigned int eventstime[1024];
-    Write(&eventQ, sizeof(eventQ));
-    int nEvents = eventQ.PQueue->Size();
+    uint32_t nEvents = eventQ.PQueue->Size();
+    // DG: support arbitrary number of events instead of just 1024 (fix crashes when saving in WLB)
+    EventWithTime* events = new EventWithTime[nEvents];
+
+    Write(&eventQ, sizeof(eventQ)); // FIXME: what's the point of saving this? this only writes a pointer that is invalid on load anyway
     Write(&nEvents, sizeof(nEvents));
-    for (int i = 0; i < nEvents; i++)
+    for (uint32_t i = 0; i < nEvents; i++)
     {
-        eventstime[i] = eventQ.PQueue->LowestPriority();
-        events[i] = eventQ.ERemove();
-        Write(&eventstime[i], sizeof(eventstime[i]));
-        Write(&events[i], sizeof(events[i]));
+        EventWithTime& evt = events[i];
+        evt.evTime = eventQ.PQueue->LowestPriority();
+        evt.event = eventQ.ERemove();
+        Write(&evt.evTime, sizeof(evt.evTime));
+        Write(&evt.event, sizeof(evt.event));
     }
     dassert(eventQ.PQueue->Size() == 0);
-    for (int i = 0; i < nEvents; i++)
+    for (uint32_t i = 0; i < nEvents; i++)
     {
-        eventQ.PQueue->Insert(eventstime[i], events[i]);
+        eventQ.PQueue->Insert(events[i].evTime, events[i].event);
     }
     Write(rxBucket, sizeof(rxBucket));
     Write(bucketHead, sizeof(bucketHead));
+    delete[] events;
 }
 
 static EventQLoadSave *myLoadSave;

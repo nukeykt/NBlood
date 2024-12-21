@@ -629,13 +629,13 @@ static void weaponShot(int, int nXIndex)
 
     int nShots, nTime, nCode;
     int dx1, dy1, dz1;
-    int dx2, dy2, dz2;
-    int dx3, dy3, dz3;
+    int dx2, dy2, dz2=0;
+    int dx3=0, dy3=0, dz3;
     int i, j;
 
-    int txof; char hxof;
-    int sang; int  hsht;
-    int tang; char styled;
+    int txof; char hxof=0;
+    int sang=0; int  hsht;
+    int tang=0; char styled;
     
 
     nnExtCoSin(pSpr->ang, &dx1, &dy1);
