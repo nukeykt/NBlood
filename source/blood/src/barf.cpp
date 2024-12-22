@@ -539,6 +539,7 @@ void ParseScript(const char *scriptFileName)
                         rfs.SkipBeyondValue('\n');
                     }
                 }
+                break;
             }
             case kTagResource: // really light blue..
             {
