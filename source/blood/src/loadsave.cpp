@@ -399,7 +399,8 @@ void MyLoadSave::Load(void)
     Read(yvel, nNumSprites*sizeof(yvel[0]));
     Read(zvel, nNumSprites*sizeof(zvel[0]));
     Read(&gMapRev, sizeof(gMapRev));
-    Read(&gSongId, sizeof(gSkyCount));
+    Read(&gSongId, sizeof(gSongId));
+    Read(&gSkyCount, sizeof(gSkyCount));
     Read(&gFogMode, sizeof(gFogMode));
 #ifdef NOONE_EXTENSIONS
     Read(&gModernMap, sizeof(gModernMap));
@@ -512,7 +513,8 @@ void MyLoadSave::Save(void)
     Write(yvel, nNumSprites*sizeof(yvel[0]));
     Write(zvel, nNumSprites*sizeof(zvel[0]));
     Write(&gMapRev, sizeof(gMapRev));
-    Write(&gSongId, sizeof(gSkyCount));
+    Write(&gSongId, sizeof(gSongId));
+    Write(&gSkyCount, sizeof(gSkyCount));
     Write(&gFogMode, sizeof(gFogMode));
 #ifdef NOONE_EXTENSIONS
     Write(&gModernMap, sizeof(gModernMap));
