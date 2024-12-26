@@ -60,7 +60,7 @@ enum rendmode_t {
 # define MAXWALLS MAXWALLSV8
 # define MAXSPRITES MAXSPRITESV8
 
-# define MAXXDIM 7680
+# define MAXXDIM 10240
 # define MAXYDIM 4320
 # define MINXDIM 640
 # define MINYDIM 480
