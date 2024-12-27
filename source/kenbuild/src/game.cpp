@@ -238,8 +238,8 @@ static int *curipos[MAXINTERPOLATIONS];
 static char playerreadyflag[MAXPLAYERS];
 
 //Miscellaneous variables
-static unsigned char packbuf[MAXXDIM];
-static char tempbuf[MAXXDIM];
+static unsigned char packbuf[2048];
+static char tempbuf[2048];
 static char boardfilename[BMAX_PATH];
 static short tempshort[MAXSECTORS];
 static short screenpeek = 0, oldmousebstatus = 0;

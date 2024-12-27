@@ -284,7 +284,7 @@ int ScanGroups(void)
 
     FreeGroupsCache();
 
-    for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
+    for (grpfile_t *grp = foundgrps; grp; )
     {
         if (grp->type->flags & GRP_HAS_DEPENDENCY)
         {
@@ -296,6 +296,8 @@ int ScanGroups(void)
                 continue;
             }
         }
+
+        grp = grp->next;
     }
 
     if (usedgrpcache)

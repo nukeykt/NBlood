@@ -500,7 +500,7 @@ int32_t ScanGroups(void)
 
     FreeGroupsCache();
 
-    for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
+    for (grpfile_t *grp = foundgrps; grp; )
     {
         if (grp->type->dependency)
         {
@@ -513,6 +513,8 @@ int32_t ScanGroups(void)
                 continue;
             }
         }
+
+        grp = grp->next;
     }
 
     if (usedgrpcache)

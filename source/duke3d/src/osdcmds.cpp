@@ -1529,29 +1529,34 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
                 {
                     int j = 0;
 
-                    while (*c && j < 10)
+                    // Only accept numbers from 0 to 9
+                    while ((*c >= '0') && (*c <= '9') && j < min<int>(MAX_WEAPONS, 10))
                     {
                         g_player[myconnectindex].wchoice[j] = *c - '0';
                         c++;
                         j++;
                     }
 
-                    while (j < 10)
+                    // Apply weapon priority if a valid value is given
+                    if (j > 0)
                     {
-                        if (j == 9)
-                            g_player[myconnectindex].wchoice[9] = 1;
-                        else
-                            g_player[myconnectindex].wchoice[j] = 2;
+                        // Pad value when not all weapons are given
+                        while (j < 10)
+                        {
+                            if (j == 9)
+                                g_player[myconnectindex].wchoice[9] = 1;
+                            else
+                                g_player[myconnectindex].wchoice[j] = 2;
 
-                        j++;
+                            j++;
+                        }
+
+                        // Net_SendClientInfo();
                     }
                 }
             }
-
             g_forceWeaponChoice = 0;
         }
-
-        /*    Net_SendClientInfo();*/
     }
 
     return r;
