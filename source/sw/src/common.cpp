@@ -129,6 +129,8 @@ static void SW_AddSteamPaths(const char *basepath)
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/%s/addons", basepath, s_SWCR_Steam);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    Bsnprintf(buf, sizeof(buf), "%s/%s/classic", basepath, s_SWCR_Steam);
+    addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/%s/classic/MUSIC", basepath, s_SWCR_Steam);
     if (addsearchpath(buf) == 0)
         return;
@@ -276,6 +278,8 @@ static void SW_AddSearchPaths()
         Bstrncpy(suffix, "/gameroot", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         Bstrncpy(suffix, "/gameroot/addons", remaining);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        Bstrncpy(suffix, "/gameroot/classic", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         Bstrncpy(suffix, "/gameroot/classic/MUSIC", remaining);
         if (addsearchpath(buf) == 0)
