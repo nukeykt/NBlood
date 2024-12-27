@@ -33,7 +33,7 @@ jobs:
       with:
         workflow: build.yml
         workflow_conclusion: success
-        path: upload/
+        path: ./upload
 
     - name: Package
       id: create-7z-packages
@@ -55,4 +55,4 @@ jobs:
         prerelease: false
         title: "${{ steps.create-7z-packages.outputs.revision }}"
         files: |
-            upload/*.7z
+            ./upload/*.7z
