@@ -283,9 +283,8 @@ void LoadKVXFromScript(const char *filename)
 
     // Load the file
     if (!LoadScriptFile(filename))
-        ASSERT(TRUE==FALSE);
-
-    do
+        debug_break();
+    else do
     {
         GetToken(TRUE);     // Crossing a line boundary on the end of line to first token
         // of a new line is permitted (and expected)
@@ -340,9 +339,8 @@ void LoadPLockFromScript(const char *filename)
 
     // Load the file
     if (!LoadScriptFile(filename))
-        ASSERT(TRUE==FALSE);
-
-    do
+        debug_break();
+    else do
     {
         GetToken(TRUE);     // Crossing a line boundary on the end of line to first token
         // of a new line is permitted (and expected)
