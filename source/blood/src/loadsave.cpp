@@ -276,15 +276,6 @@ void LoadSave::SaveGame(char *pzFile)
     hSFile = NULL;
     if (saveFileExists)
     {
-        // I'd like to have a backup of the old savegame, just in case I regret the last save :-p
-        char fileNameBk[BMAX_PATH+3];
-        strcpy(fileNameBk, pzFile);
-        strcat(fileNameBk, "_bk");
-#ifdef _WIN32
-        _unlink(fileNameBk);
-#endif
-        rename(pzFile, fileNameBk);
-
         // the savegame was written successfully, so we can rename the saved file
         // to the requested name (from gameXXX.sav_tmp to gameXXX.sav)
 #ifdef _WIN32
