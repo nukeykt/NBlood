@@ -2735,7 +2735,8 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
         gGameMenuMgr.Deactivate();
         return;
     }
-    G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot);
+    if (G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot))
+        return;
     memset(gGameOptions.szUserGameName, 0, sizeof(gGameOptions.szSaveGameName));
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
     memset(gGameOptions.szSaveGameName, 0, sizeof(gGameOptions.szSaveGameName));
@@ -2765,7 +2766,8 @@ void QuickSaveGame(void)
         gGameMenuMgr.Deactivate();
         return;
     }*/
-    G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot);
+    if (G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot))
+        return;
     memset(gGameOptions.szUserGameName, 0, sizeof(gGameOptions.szSaveGameName));
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
     memset(gGameOptions.szSaveGameName, 0, sizeof(gGameOptions.szSaveGameName));
@@ -2790,9 +2792,10 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     int nSlot = pItem->at28;
     if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         return;
+    if (G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot))
+        return;
     int const bakpathsearchmode = pathsearchmode;
     pathsearchmode = 1;
-    G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     if (!testkopen(strLoadGameName, 0))
     {
         pathsearchmode = bakpathsearchmode;
@@ -2811,9 +2814,10 @@ void QuickLoadGame(void)
     char strLoadGameName[BMAX_PATH];
     if (gGameOptions.nGameType != kGameTypeSinglePlayer)
         return;
+    if (G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", gQuickLoadSlot))
+        return;
     int const bakpathsearchmode = pathsearchmode;
     pathsearchmode = 1;
-    G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", gQuickLoadSlot);
     if (!testkopen(strLoadGameName, 0))
     {
         pathsearchmode = bakpathsearchmode;

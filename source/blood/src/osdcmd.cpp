@@ -531,7 +531,7 @@ const char *const ConsoleButtons[] =
 
 static int osdcmd_bind(osdcmdptr_t parm)
 {
-    char buffer[256];
+    char buffer[2048];
     if (parm->numparms==1 && !Bstrcasecmp(parm->parms[0],"showkeys"))
     {
         for (auto & s : sctokeylut)
