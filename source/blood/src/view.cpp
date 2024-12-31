@@ -2636,6 +2636,13 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
 LOCATION gPrevSpriteLoc[kMaxSprites];
 static LOCATION gViewSpritePredictLoc;
 
+inline void viewApplyFloorPal(tspritetype *pTSprite, uint8_t nPal)
+{
+    if (nPal == 0 && !VanillaMode()) // keep original sprite's palette when floors are using default palette (fixes tommy gun cultists in E3M2)
+        return;
+    pTSprite->pal = nPal;
+}
+
 void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t smooth)
 {
     UNREFERENCED_PARAMETER(smooth);
@@ -2899,7 +2906,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     break;
                 default:
                     if (pXSector && pXSector->color)
-                        pTSprite->pal = pSector->floorpal;
+                        viewApplyFloorPal(pTSprite, pSector->floorpal);
                     break;
             }
         }
@@ -2930,7 +2937,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     if (pTSprite->type >= kItemKeySkull && pTSprite->type < kItemKeyMax)
                         pTSprite->shade = -128;
                     if (pXSector && pXSector->color)
-                        pTSprite->pal = pSector->floorpal;
+                        viewApplyFloorPal(pTSprite, pSector->floorpal);
                     break;
             }
         }
@@ -2987,7 +2994,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 }
             }
 
-            if (pXSector && pXSector->color) pTSprite->pal = pSector->floorpal;
+            if (pXSector && pXSector->color) viewApplyFloorPal(pTSprite, pSector->floorpal);
             if (powerupCheck(gView, kPwUpBeastVision) > 0) pTSprite->shade = -128;
 
             if (IsPlayerSprite(pTSprite)) {
@@ -3073,7 +3080,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         case kStatThing: {
             if (pXSector && pXSector->color)
-                pTSprite->pal = pSector->floorpal;
+                viewApplyFloorPal(pTSprite, pSector->floorpal);
 
             if (pTSprite->type < kThingBase || pTSprite->type >= kThingMax || !gSpriteHit[nXSprite].florhit) {
                 if ((pTSprite->flags & kPhysMove) && getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) >= cZ)
