@@ -335,7 +335,8 @@ void UpdateAimVector(PLAYER * pPlayer)
     WEAPONTRACK *pWeaponTrack = &gWeaponTrack[pPlayer->curWeapon];
     int nTarget = -1;
     pPlayer->aimTargetsCount = 0;
-    if (gProfile[pPlayer->nPlayer].nAutoAim == 1 || (gProfile[pPlayer->nPlayer].nAutoAim == 2 && !pWeaponTrack->bIsProjectile) || pPlayer->curWeapon == kWeaponVoodoo || pPlayer->curWeapon == kWeaponLifeLeech)
+    const char bAutoAimWeapon = pPlayer->curWeapon == kWeaponVoodoo || pPlayer->curWeapon == kWeaponLifeLeech || (gProfile[pPlayer->nPlayer].nAutoAim == 3 && pPlayer->curWeapon == kWeaponPitchfork); // always autoaim for these weapons
+    if (gProfile[pPlayer->nPlayer].nAutoAim == 1 || (gProfile[pPlayer->nPlayer].nAutoAim == 2 && !pWeaponTrack->bIsProjectile) || bAutoAimWeapon)
     {
         int nClosest = 0x7fffffff;
         for (nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite])

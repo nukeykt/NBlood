@@ -431,7 +431,8 @@ CGameMenuItemChain itemOptionsChainOld("OLD MENU", 1, 0, 170, 320, 1, &menuOptio
 const char *pzAutoAimStrings[] = {
     "NEVER",
     "ALWAYS",
-    "HITSCAN ONLY"
+    "HITSCAN ONLY",
+    "PITCHFORK ONLY"
 };
 
 const char *pzWeaponSwitchStrings[] = {
