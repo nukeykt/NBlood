@@ -512,21 +512,20 @@ void LoadSavedInfo(void)
         int hFile = kopen4loadfrommod(pIterator->name, 0);
         if (hFile == -1)
             ThrowError("Error loading save file header.");
-        int vc;
-        short v4 = 0;
-        vc = 0;
-        if ((uint32_t)kread(hFile, &vc, sizeof(vc)) != sizeof(vc))
+        int id = 0;
+        short version = 0;
+        if ((uint32_t)kread(hFile, &id, sizeof(id)) != sizeof(id))
         {
             kclose(hFile);
             continue;
         }
-        if (vc != 0x5653424e/*'VSBN'*/)
+        if (id != 0x5653424e/*'VSBN'*/)
         {
             kclose(hFile);
             continue;
         }
-        kread(hFile, &v4, sizeof(v4));
-        if (v4 != BYTEVERSION)
+        kread(hFile, &version, sizeof(version));
+        if (version != BYTEVERSION)
         {
             kclose(hFile);
             continue;
