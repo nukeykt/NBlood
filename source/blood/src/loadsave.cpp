@@ -83,7 +83,7 @@ void LoadSave::LoadGame(char *pzFile)
 {
     const char bDemoWasPlayed = gDemo.at1;
     const char bGameWasStarted = gGameStarted;
-    if (gDemo.at1)
+    if (gDemo.at1 || gDemo.at0)
         gDemo.Close();
 
     gViewPos = VIEWPOS_0;
