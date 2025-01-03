@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include "build.h"
 #include "compat.h"
+#include "lz4.h"
 #include "mmulti.h"
 #include "common_game.h"
 #include "config.h"
@@ -47,6 +48,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 #endif
 
+#define LZ4_THRESHOLD_SIZE (0x8000)
+
 GAMEOPTIONS gSaveGameOptions[10];
 char *gSaveGamePic[10];
 unsigned int gSavedOffset = 0;
@@ -68,6 +71,29 @@ void LoadSave::Load(void)
 void LoadSave::Read(void *pData, int nSize)
 {
     dassert(hLFile != -1);
+    while (nSize >= LZ4_THRESHOLD_SIZE)
+    {
+        int nCompSize;
+        if (kread(hLFile, (void *)&nCompSize, sizeof(nCompSize)) != sizeof(nCompSize))
+            ThrowError("Error reading save file.");
+        nCompSize = B_LITTLE32(nCompSize);
+        if (nCompSize >= nSize)
+            ThrowError("Error reading size file compress offset.");
+        if (nCompSize == 0) // uncompressed data
+            break;
+
+        void *pIn = Xaligned_alloc(16, nCompSize);
+        if (!pIn)
+        {
+            ThrowError("Error could not allocate %d bytes for save file.", nCompSize);
+            return;
+        }
+        if (kread(hLFile, pIn, nCompSize) != nCompSize)
+            ThrowError("Error reading save file.");
+        LZ4_decompress_safe((const char *)pIn, (char *)pData, nCompSize, nSize);
+        Xaligned_free(pIn);
+        return;
+    }
     if (kread(hLFile, pData, nSize) != nSize)
         ThrowError("Error reading save file.");
 }
@@ -75,6 +101,36 @@ void LoadSave::Read(void *pData, int nSize)
 void LoadSave::Write(void const *pData, int nSize)
 {
     dassert(hSFile != NULL);
+    while (nSize >= LZ4_THRESHOLD_SIZE)
+    {
+        int nCompSize = LZ4_compressBound(nSize);
+        void *pOut = Xaligned_alloc(16, nCompSize);
+        if (!pOut)
+        {
+            nCompSize = 0;
+            if (fwrite((void *)&nCompSize, 1, sizeof(nCompSize), hSFile) != sizeof(nCompSize))
+                ThrowError("File error #%d writing save file.", errno);
+            break;
+        }
+        nCompSize = LZ4_compress_fast((const char *)pData, (char *)pOut, nSize, nCompSize, lz4CompressionLevel);
+        const char bBadRatio = nCompSize >= nSize; // compressed size is bigger than uncompressed, store as uncompressed data
+        if (bBadRatio)
+        {
+            nCompSize = 0;
+            if (fwrite((void *)&nCompSize, 1, sizeof(nCompSize), hSFile) != sizeof(nCompSize))
+                ThrowError("File error #%d writing save file.", errno);
+            Xaligned_free(pOut);
+            break;
+        }
+
+        int nCompSizeBSwap = B_LITTLE32(nCompSize);
+        if (fwrite((void *)&nCompSizeBSwap, 1, sizeof(nCompSizeBSwap), hSFile) != sizeof(nCompSizeBSwap))
+            ThrowError("File error #%d writing save file.", errno);
+        if (fwrite(pOut, 1, nCompSize, hSFile) != (size_t)nCompSize)
+            ThrowError("File error #%d writing save file.", errno);
+        Xaligned_free(pOut);
+        return;
+    }
     if (fwrite(pData, 1, nSize, hSFile) != (size_t)nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
