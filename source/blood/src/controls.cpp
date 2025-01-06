@@ -520,6 +520,11 @@ void ctrlGetInput(void)
         }
         if (input.q16turn == 0)
             input.q16turn = fix16_sadd(input.q16mlook, fix16_sdiv(fix16_from_int(info.dyaw>>4), F16(32)));
+        if (gCenterViewOnDrop == 2)
+        {
+            gInput.keyFlags.lookCenter = 1;
+            gCenterViewOnDrop = 1;
+        }
     }
     if (!gMouseAimingFlipped)
         input.q16mlook = -input.q16mlook;

@@ -68,6 +68,7 @@ void SetMouseSensitivity(CGameMenuItemSliderFloat *);
 void SetMouseAimFlipped(CGameMenuItemZBool *);
 void SetTurnSpeed(CGameMenuItemSlider *);
 void SetTurnAcceleration(CGameMenuItemZCycle *);
+void SetCenterView(CGameMenuItemZBool *);
 void SetJoystickRumble(CGameMenuItemZBool *pItem);
 void ResetKeys(CGameMenuItemChain *);
 void ResetKeysClassic(CGameMenuItemChain *);
@@ -847,7 +848,8 @@ CGameMenuItemSlider *pItemOptionsControlJoystickAxisDeadzone[MAXJOYAXES];
 CGameMenuItemSlider *pItemOptionsControlJoystickAxisSaturate[MAXJOYAXES];
 
 CGameMenuItemTitle itemOptionsControlJoystickMiscTitle("JOYSTICK MISC", 1, 160, 20, 2038);
-CGameMenuItemZBool itemOptionsControlJoystickMiscRumble("RUMBLE CONTROLLER:", 1, 18, 70, 280, 0, SetJoystickRumble, NULL, NULL);
+CGameMenuItemZBool itemOptionsControlJoystickMiscCenterView("CENTER VIEW ON DROP:", 1, 18, 60, 280, gCenterViewOnDrop, SetCenterView, NULL, NULL);
+CGameMenuItemZBool itemOptionsControlJoystickMiscRumble("RUMBLE CONTROLLER:", 1, 18, 80, 280, 0, SetJoystickRumble, NULL, NULL);
 
 void SetupLoadingScreen(void)
 {
@@ -1487,9 +1489,11 @@ void SetupJoystickMenu(void)
     }
 
     menuOptionsControlJoystickMisc.Add(&itemOptionsControlJoystickMiscTitle, false);
-    menuOptionsControlJoystickMisc.Add(&itemOptionsControlJoystickMiscRumble, true);
+    menuOptionsControlJoystickMisc.Add(&itemOptionsControlJoystickMiscCenterView, true);
+    menuOptionsControlJoystickMisc.Add(&itemOptionsControlJoystickMiscRumble, false);
     menuOptionsControlJoystickMisc.Add(&itemBloodQAV, false);
 
+    itemOptionsControlJoystickMiscCenterView.at20 = gCenterViewOnDrop;
     itemOptionsControlJoystickMiscRumble.at20 = gSetup.joystickrumble;
 
     int i = 0, y = 0;
@@ -1819,6 +1823,11 @@ void SetTurnSpeed(CGameMenuItemSlider *pItem)
 void SetTurnAcceleration(CGameMenuItemZCycle *pItem)
 {
     gTurnAcceleration = pItem->m_nFocus;
+}
+
+void SetCenterView(CGameMenuItemZBool *pItem)
+{
+    gCenterViewOnDrop = pItem->at20;
 }
 
 void SetJoystickRumble(CGameMenuItemZBool *pItem)

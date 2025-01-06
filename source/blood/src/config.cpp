@@ -77,6 +77,7 @@ char CommbatMacro[MAXRIDECULE][MAXRIDECULELENGTH];
 char szPlayerName[MAXPLAYERNAME];
 int32_t gTurnSpeed;
 int32_t gTurnAcceleration;
+int32_t gCenterViewOnDrop;
 int32_t gDetail;
 int32_t gMouseAim;
 int32_t gAutoAim;
@@ -387,6 +388,7 @@ void CONFIG_SetDefaults(void)
     gViewSize = 2;
     gTurnSpeed = 92;
     gTurnAcceleration = 1;
+    gCenterViewOnDrop = 0;
     gDetail = 4;
     gAutoRun = 0;
     gViewInterpolate = 1;

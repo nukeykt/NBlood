@@ -2436,6 +2436,8 @@ void playerLandingSound(PLAYER *pPlayer)
     SPRITEHIT *pHit = &gSpriteHit[pSprite->extra];
     if (pHit->florhit)
     {
+        if ((pPlayer == gMe) && gCenterViewOnDrop)
+            gCenterViewOnDrop = 2;
         if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, &sprite[pHit->florhit & 0x3fff]))
             return;
         char nSurf = tileGetSurfType(pHit->florhit);
