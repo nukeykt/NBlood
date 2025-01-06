@@ -1212,6 +1212,8 @@ void FireShotgun(int nTrigger, PLAYER *pPlayer)
     }
     UseAmmo(pPlayer, pPlayer->weaponAmmo, nTrigger);
     pPlayer->flashEffect = 1;
+    if (pPlayer == gMe && powerupCheck(pPlayer, kPwUpTwoGuns))
+        ctrlJoystickRumble(n>>2);
 }
 
 void EjectShell(int, PLAYER *pPlayer)
@@ -1254,6 +1256,8 @@ void FireTommy(int nTrigger, PLAYER *pPlayer)
     }
     UseAmmo(pPlayer, pPlayer->weaponAmmo, nTrigger);
     pPlayer->flashEffect = 1;
+    if (pPlayer == gMe && powerupCheck(pPlayer, kPwUpTwoGuns))
+        ctrlJoystickRumble(nTrigger<<3);
 }
 
 #define kMaxSpread 14
@@ -1357,6 +1361,8 @@ void AltFireSpread2(int nTrigger, PLAYER *pPlayer)
         WeaponLower(pPlayer);
         pPlayer->weaponState = -1;
     }
+    if (pPlayer == gMe && powerupCheck(pPlayer, kPwUpTwoGuns))
+        ctrlJoystickRumble(nTrigger<<3);
 }
 
 void FireFlare(int nTrigger, PLAYER *pPlayer)

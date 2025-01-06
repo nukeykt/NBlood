@@ -307,6 +307,7 @@ void CONFIG_SetDefaults(void)
 #else
     gSetup.usejoystick = 0;
 #endif
+    gSetup.joystickrumble = 0;
 
     gSetup.forcesetup       = 1;
     gSetup.noautoload       = 1;
@@ -751,6 +752,7 @@ int CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup", &gSetup.forcesetup);
     SCRIPT_GetNumber(scripthandle, "Setup", "NoAutoLoad", &gSetup.noautoload);
     SCRIPT_GetNumber(scripthandle, "Setup", "InputJoystick", &gSetup.usejoystick);
+    SCRIPT_GetNumber(scripthandle, "Setup", "UseJoystickRumble", &gSetup.joystickrumble);
     SCRIPT_GetNumber(scripthandle, "Setup", "InputMouse", &gSetup.usemouse);
 
     int32_t cachesize;
@@ -886,6 +888,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup", gSetup.forcesetup, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Setup", "NoAutoLoad", gSetup.noautoload, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Setup", "InputJoystick", gSetup.usejoystick, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Setup", "UseJoystickRumble", gSetup.joystickrumble, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Setup", "InputMouse", gSetup.usemouse, FALSE, FALSE);
 
 #ifdef POLYMER
