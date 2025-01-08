@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include "build.h"
 #include "compat.h"
+#include "lz4.h"
 #include "mmulti.h"
 #include "common_game.h"
 #include "config.h"
@@ -47,26 +48,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 #endif
 
+#define LZ4_THRESHOLD_SIZE (0x8000)
+
 GAMEOPTIONS gSaveGameOptions[10];
 char *gSaveGamePic[10];
 unsigned int gSavedOffset = 0;
 
-unsigned int dword_27AA38 = 0;
-unsigned int dword_27AA3C = 0;
-unsigned int dword_27AA40 = 0;
-void *dword_27AA44 = NULL;
-
 LoadSave LoadSave::head(123);
 FILE *LoadSave::hSFile = NULL;
 int LoadSave::hLFile = -1;
-
-short word_27AA54 = 0;
-
-void sub_76FD4(void)
-{
-    if (!dword_27AA44)
-        dword_27AA44 = Resource::Alloc(0x186a0);
-}
 
 void LoadSave::Save(void)
 {
@@ -80,17 +70,67 @@ void LoadSave::Load(void)
 
 void LoadSave::Read(void *pData, int nSize)
 {
-    dword_27AA38 += nSize;
     dassert(hLFile != -1);
+    while (nSize >= LZ4_THRESHOLD_SIZE)
+    {
+        int nCompSize;
+        if (kread(hLFile, (void *)&nCompSize, sizeof(nCompSize)) != sizeof(nCompSize))
+            ThrowError("Error reading save file.");
+        nCompSize = B_LITTLE32(nCompSize);
+        if (nCompSize >= nSize)
+            ThrowError("Error reading size file compress offset.");
+        if (nCompSize == 0) // uncompressed data
+            break;
+
+        void *pIn = Xaligned_alloc(16, nCompSize);
+        if (!pIn)
+        {
+            ThrowError("Error could not allocate %d bytes for save file.", nCompSize);
+            return;
+        }
+        if (kread(hLFile, pIn, nCompSize) != nCompSize)
+            ThrowError("Error reading save file.");
+        LZ4_decompress_safe((const char *)pIn, (char *)pData, nCompSize, nSize);
+        Xaligned_free(pIn);
+        return;
+    }
     if (kread(hLFile, pData, nSize) != nSize)
         ThrowError("Error reading save file.");
 }
 
 void LoadSave::Write(void const *pData, int nSize)
 {
-    dword_27AA38 += nSize;
-    dword_27AA3C += nSize;
     dassert(hSFile != NULL);
+    while (nSize >= LZ4_THRESHOLD_SIZE)
+    {
+        int nCompSize = LZ4_compressBound(nSize);
+        void *pOut = Xaligned_alloc(16, nCompSize);
+        if (!pOut)
+        {
+            nCompSize = 0;
+            if (fwrite((void *)&nCompSize, 1, sizeof(nCompSize), hSFile) != sizeof(nCompSize))
+                ThrowError("File error #%d writing save file.", errno);
+            break;
+        }
+        nCompSize = LZ4_compress_fast((const char *)pData, (char *)pOut, nSize, nCompSize, lz4CompressionLevel);
+        const char bBadRatio = nCompSize >= nSize; // compressed size is bigger than uncompressed, store as uncompressed data
+        if (bBadRatio)
+        {
+            nCompSize = 0;
+            if (fwrite((void *)&nCompSize, 1, sizeof(nCompSize), hSFile) != sizeof(nCompSize))
+                ThrowError("File error #%d writing save file.", errno);
+            Xaligned_free(pOut);
+            break;
+        }
+
+        int nCompSizeBSwap = B_LITTLE32(nCompSize);
+        if (fwrite((void *)&nCompSizeBSwap, 1, sizeof(nCompSizeBSwap), hSFile) != sizeof(nCompSizeBSwap))
+            ThrowError("File error #%d writing save file.", errno);
+        if (fwrite(pOut, 1, nCompSize, hSFile) != (size_t)nCompSize)
+            ThrowError("File error #%d writing save file.", errno);
+        Xaligned_free(pOut);
+        return;
+    }
     if (fwrite(pData, 1, nSize, hSFile) != (size_t)nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
@@ -99,7 +139,7 @@ void LoadSave::LoadGame(char *pzFile)
 {
     const char bDemoWasPlayed = gDemo.at1;
     const char bGameWasStarted = gGameStarted;
-    if (gDemo.at1)
+    if (gDemo.at1 || gDemo.at0)
         gDemo.Close();
 
     gViewPos = VIEWPOS_0;
@@ -261,15 +301,10 @@ void LoadSave::SaveGame(char *pzFile)
     hSFile = fopen(saveFileName, "wb");
     if (hSFile == NULL)
         ThrowError("File error #%d creating save file.", errno);
-    dword_27AA38 = 0;
-    dword_27AA40 = 0;
     LoadSave *rover = head.next;
     while (rover != &head)
     {
         rover->Save();
-        if (dword_27AA38 > dword_27AA40)
-            dword_27AA40 = dword_27AA38;
-        dword_27AA38 = 0;
         rover = rover->next;
     }
     fclose(hSFile);
@@ -426,7 +461,6 @@ void MyLoadSave::Save(void)
         if (sprite[nSprite].statnum < kMaxStatus && nSprite > nNumSprites)
             nNumSprites = nSprite;
     }
-    //nNumSprites += 2;
     nNumSprites++;
     Write(&gGameOptions, sizeof(gGameOptions));
     Write(&numsectors, sizeof(numsectors));
@@ -534,22 +568,20 @@ void LoadSavedInfo(void)
         int hFile = kopen4loadfrommod(pIterator->name, 0);
         if (hFile == -1)
             ThrowError("Error loading save file header.");
-        int vc;
-        short v4;
-        vc = 0;
-        v4 = word_27AA54;
-        if ((uint32_t)kread(hFile, &vc, sizeof(vc)) != sizeof(vc))
+        int id = 0;
+        short version = 0;
+        if ((uint32_t)kread(hFile, &id, sizeof(id)) != sizeof(id))
         {
             kclose(hFile);
             continue;
         }
-        if (vc != 0x5653424e/*'VSBN'*/)
+        if (id != 0x5653424e/*'VSBN'*/)
         {
             kclose(hFile);
             continue;
         }
-        kread(hFile, &v4, sizeof(v4));
-        if (v4 != BYTEVERSION)
+        kread(hFile, &version, sizeof(version));
+        if (version != BYTEVERSION)
         {
             kclose(hFile);
             continue;
