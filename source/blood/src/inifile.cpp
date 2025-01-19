@@ -78,14 +78,14 @@ IniFile::~IniFile()
 IniFile::IniFile(const char* fileName, char flags)
 {
 	int nLength, hFil;
-	BYTE* pRaw;
+	unsigned char* pRaw;
 	Init();
 	
 	if (!isempty(fileName))
 	{
 		if ((hFil = kopen4loadfrommod(fileName, 0)) >= 0)
 		{
-			if ((nLength = kfilelength(hFil)) > 0 && (pRaw = (BYTE*)Xcalloc(1, nLength + 1)) != NULL)
+			if ((nLength = kfilelength(hFil)) > 0 && (pRaw = (unsigned char*)Xcalloc(1, nLength + 1)) != NULL)
 			{
 				kread(hFil, pRaw, nLength); pRaw[nLength] = '\0';
 				Load(pRaw, nLength+1, flags);
@@ -101,10 +101,10 @@ IniFile::IniFile(const char* fileName, char flags)
 
 IniFile::IniFile(unsigned char* pBytes, int nLength, char flags)
 {
-	BYTE* pRaw;
+	unsigned char* pRaw;
 	Init();
 	
-	if (nLength > 0 && (pRaw = (BYTE*)malloc(nLength+1)) != NULL)
+	if (nLength > 0 && (pRaw = (unsigned char*)malloc(nLength+1)) != NULL)
 	{
 		memcpy(pRaw, pBytes, nLength);
 		pRaw[nLength] = '\0';
@@ -116,8 +116,9 @@ IniFile::IniFile(unsigned char* pBytes, int nLength, char flags)
 void IniFile::Load(unsigned char* pRaw, int nLength, char flags)
 {
 	char *ss, *se, *hi, *lo;
+	unsigned char c;
 	ININODE newNode;
-	BYTE c; int n;
+	int n;
 
 	if (!pRaw || nLength <= 0)
 		return;
