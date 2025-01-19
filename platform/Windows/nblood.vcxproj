@@ -206,6 +206,7 @@
     <ClCompile Include="..\..\source\blood\src\misc.cpp" />
     <ClCompile Include="..\..\source\blood\src\network.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnextcdud.cpp" />
+    <ClCompile Include="..\..\source\blood\src\nnextcitem.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnexts.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnextsif.cpp" />
     <ClCompile Include="..\..\source\blood\src\nnextstr.cpp" />
@@ -311,6 +312,7 @@
     <ClInclude Include="..\..\source\blood\src\messages.h" />
     <ClInclude Include="..\..\source\blood\src\mirrors.h" />
     <ClInclude Include="..\..\source\blood\src\nnextcdud.h" />
+    <ClInclude Include="..\..\source\blood\src\nnextcitem.h" />
     <ClInclude Include="..\..\source\blood\src\nnexts.h" />
     <ClInclude Include="..\..\source\blood\src\nnextsif.h" />
     <ClInclude Include="..\..\source\blood\src\nnextstr.h" />

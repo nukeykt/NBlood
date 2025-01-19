@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "seq.h"
 #include "nnextstr.h"
 #include "gib.h"
+#include "nnextcitem.h"
 
 // CONSTANTS
 #define LENGTH(x) 					        (int)(sizeof(x) / sizeof(x[0]))
@@ -260,9 +261,6 @@ struct EXTERNAL_FILES_LIST
     const char* ext;
 };
 
-
-inline bool rngok(int val, int rngA, int rngB) { return (val >= rngA && val < rngB); }
-inline bool irngok(int val, int rngA, int rngB) { return (val >= rngA && val <= rngB); }
 inline bool mapRev1() { return (gModernMap == 1); }
 inline bool mapRev2() { return (gModernMap == 2); }
 

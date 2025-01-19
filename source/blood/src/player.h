@@ -65,6 +65,22 @@ enum
     kPackMax         = 5,
 };
 
+// screen effects
+enum
+{
+    kPlayerEffectPickup             = 0,
+    kPlayerEffectPain,
+    kPlayerEffectChoke,
+    kPlayerEffectBlind,
+    kPlayerEffectTilt,
+    kPlayerEffectQuake,
+    kPlayerEffectBright,
+    kPlayerEffectDelirium,
+    kPlayerEffectFlicker,
+    kPlayerEffectFlash,
+    kPlayerEffectMax,
+};
+
 struct PACKINFO
 {
     bool isActive;       // is active (0/1)
@@ -338,6 +354,8 @@ spritetype *playerDropFlag(PLAYER *pPlayer, int a2);
 int         playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, int nDamage);
 int         UseAmmo(PLAYER *pPlayer, int nAmmoType, int nDec);
 void        voodooTarget(PLAYER *pPlayer);
+int         playerEffectGet(PLAYER* pPlayer, int nEffect);
+void        playerEffectSet(PLAYER* pPlayer, int nEffect, int nTime);
 void        playerLandingSound(PLAYER *pPlayer);
 void        PlayerSurvive(int, int nXSprite);
 void        PlayerKneelsOver(int, int nXSprite);
