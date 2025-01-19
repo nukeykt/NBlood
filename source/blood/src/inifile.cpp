@@ -299,14 +299,14 @@ char IniFile::GetNextString(char* out, const char** pKey, const char** pVal, int
 	{
 		if (pKey)
 		{
-			*pKey = &out[i]; i+=sprintf(&out[i], pNode->hiWord)+1;
+			*pKey = &out[i]; i+=sprintf(&out[i], "%s", pNode->hiWord)+1;
 		}
 		
 		if (pVal)
 		{
 			if (pNode->loWord)
 			{
-				*pVal = &out[i]; i+=sprintf(&out[i], pNode->loWord)+1;
+				*pVal = &out[i]; i+=sprintf(&out[i], "%s", pNode->loWord)+1;
 			}
 			else
 			{
