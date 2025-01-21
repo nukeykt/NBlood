@@ -508,9 +508,10 @@ void userItemsUninit()
     while (--i >= 0)
     {
         if (gItems[i])
+        {
             CUSTOMITEM_SETUP::ClearItem(gItems[i]);
-
-        gItems[i] = NULL;
+            free(gItems[i]),  gItems[i] = NULL;
+        }
     }
 }
 
