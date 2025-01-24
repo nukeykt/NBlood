@@ -877,7 +877,7 @@ bool CGameMenuItem7EA1C::Event(CGameMenuEvent &event)
         DICTNODE *pRes = gGuiRes.Lookup(at38, "MNU");
         if (pRes)
         {
-            at34 = new IniFile(gGuiRes.Load(pRes));
+            at34 = new IniFile((unsigned char*)gGuiRes.Load(pRes), pRes->size);
             Setup();
         }
         if (at24)

@@ -36,5 +36,4 @@ char isarray(const char* str, int* nLen = NULL);
 char isbool(const char* str);
 char isperc(const char* str);
 int btoi(const char* str);
-char isempty(const char* str);
 #endif

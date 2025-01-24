@@ -1389,44 +1389,7 @@ char CUSTOMDUDE_SETUP::DescriptLoad(int nID)
 
         if (hIni && (pRawIni = (unsigned char*)gSysRes.Load(hIni)) != NULL)
         {
-            int nBytes = hIni->size;
-            unsigned char* pRawNew = (unsigned char*)Bmalloc(nBytes + 1);
-            dassert(pRawNew != NULL);
-            int i, j, c, nLineLen = 0;
-
-            // Fix for ResReadLine() function which used inside IniFile:
-            // Replaces line endings to UNIX style
-            // Sets NULL byte in the end
-            // Skips empty lines
-
-            Bmemset(pRawNew, 0, nBytes + 1);
-            for (i = 0, j = 0; i < nBytes; i++)
-            {
-                c = pRawIni[i];
-                if (c == '\r' || c == '\n')
-                {
-                    if (nLineLen > 0)
-                    {
-                        pRawNew[j++] = '\n';
-
-                        if (c == '\r')
-                        {
-                            if (i + 1 < nBytes && pRawIni[i + 1] == '\n')
-                               i++;
-                        }
-                    }
-
-                    nLineLen = 0;
-                }
-                else
-                {
-                    pRawNew[j++] = c;
-                    nLineLen++;
-                }
-            }
-
-            pIni = new IniFile((unsigned char*)pRawNew);
-            Bfree(pRawNew);
+            pIni = new IniFile((unsigned char*)pRawIni, gSysRes.Size(hIni));
             return true;
         }
     }
@@ -3000,7 +2963,7 @@ char CUSTOMDUDEV2_SETUP::ParseSkill(const char* str)
 
 char CUSTOMDUDEV2_SETUP::ParseDropItem(const char* str, unsigned char out[2])
 {
-    int nPar, nVal, i = 0;
+    int nPar, i = 0;
     unsigned char nItem = 0;
     unsigned char nPerc = 100;
 
@@ -3021,7 +2984,9 @@ char CUSTOMDUDEV2_SETUP::ParseDropItem(const char* str, unsigned char out[2])
                     nPerc = CheckValue(val, kValPerc, 0, 100, 100);
                     break;
                 case kParDropItemType:
-                    nItem = CheckValue(val, kValUfix, kItemWeaponBase, kItemMax - 1, 0);
+                    nItem = CheckValue(val, kValUfix, kItemWeaponBase, kDudeBase - 1, 0);
+                    if (!IsUserItem(nItem) && !rngok(nItem, kItemWeaponBase, kItemMax))
+                        nItem = 0;
                     break;
             }
         }
@@ -3035,10 +3000,13 @@ char CUSTOMDUDEV2_SETUP::ParseDropItem(const char* str, unsigned char out[2])
     }
     else if (!isempty(str))
     {
-        nVal = CheckValue(str, kValUfix, kItemWeaponBase, kItemMax - 1, 0);
-        if (nVal)
+        nItem = CheckValue(str, kValUfix, kItemWeaponBase, kItemMax - 1, 0);
+        if (!IsUserItem(nItem) && !rngok(nItem, kItemWeaponBase, kItemMax))
+            nItem = 0;
+
+        if (nItem)
         {
-            out[0] = nVal;
+            out[0] = nItem;
             out[1] = 100;
             return true;
         }
