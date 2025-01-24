@@ -183,7 +183,7 @@ kItemActionKey,
 kItemActionPack,
 kItemActionEffect,
 kItemActionAirTime,
-kItemActionDmgControl,
+kItemActionDmgIgnore,
 };
 static const char* gParItemActType[] =
 {
@@ -196,7 +196,7 @@ static const char* gParItemActType[] =
     "Inventory",
     "ScreenEffect",
     "AirTime",
-    "DamageControl",
+    "IgnoreDamage",
     NULL,
 };
 
@@ -248,7 +248,7 @@ static char ACTION_ChangePackItem(PLAYER* pPlayer, ACTIONARG* a);
 static char ACTION_ChangePowerupTime(PLAYER* pPlayer, ACTIONARG* a);
 static char ACTION_ChangeEffect(PLAYER* pPlayer, ACTIONARG* a);
 static char ACTION_ChangeAirTime(PLAYER* pPlayer, ACTIONARG* a);
-static char ACTION_ChangeDmgControl(PLAYER* pPlayer, ACTIONARG* a);
+static char ACTION_ChangeIgnoreDmg(PLAYER* pPlayer, ACTIONARG* a);
 
 
 ITEMACTIONPROC gItemActFunc[] =
@@ -262,7 +262,7 @@ ITEMACTIONPROC gItemActFunc[] =
     ACTION_ChangePackItem,
     ACTION_ChangeEffect,
     ACTION_ChangeAirTime,
-    ACTION_ChangeDmgControl,
+    ACTION_ChangeIgnoreDmg,
 };
 
 
@@ -869,7 +869,7 @@ static char ACTION_ChangeAirTime(PLAYER* pPlayer, ACTIONARG* a)
     return 1;
 }
 
-static char ACTION_ChangeDmgControl(PLAYER* pPlayer, ACTIONARG* a)
+static char ACTION_ChangeIgnoreDmg(PLAYER* pPlayer, ACTIONARG* a)
 {
     int nSlot = a->act->slot;
     int nCur = pPlayer->damageControl[nSlot];
@@ -1265,7 +1265,7 @@ char CUSTOMITEM_SETUP::SetupActionLimits(ITEM::ACTION* pAct, char extLimits)
             pAct->amount[1] *= 100;
             pAct->amount[2] *= 100;
             break;
-        case kItemActionDmgControl:
+        case kItemActionDmgIgnore:
             if (pAct->slot < kDamageMax)
             {
                 // Can only iterate by 1
