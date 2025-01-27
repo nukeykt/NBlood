@@ -2469,22 +2469,12 @@ void actInit(bool bSaveLoad) {
         nnExtInitModernStuff(bSaveLoad);
     }
 
-    if (VanillaMode())
+    if (!gUserItemsInitialized)
     {
-        if (gUserItemsInitialized)
-        {
-            userItemsUninit();
-            gUserItemsInitialized = 0;
-        }
+        userItemsInit(1);
+        gUserItemsInitialized = 1;
     }
-    else
-    {
-        if (!gUserItemsInitialized)
-        {
-            userItemsInit(1);
-            gUserItemsInitialized = 1;
-        }
-    }
+
     #endif
     
     for (int nSprite = headspritestat[kStatItem]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
@@ -2621,7 +2611,6 @@ void actInit(bool bSaveLoad) {
         }
 
         #ifdef NOONE_EXTENSIONS
-        if (!VanillaMode())
             userItemsInitSprites();
         #endif
 
@@ -2915,7 +2904,7 @@ spritetype *actDropObject(spritetype *pSprite, int nType) {
     spritetype *pSprite2 = NULL;
     
 #ifdef NOONE_EXTENSIONS
-    if (!VanillaMode() && IsUserItem(nType))
+    if (/*!VanillaMode() &&*/ IsUserItem(nType))
     {
         pSprite2 = userItemDrop(pSprite, nType);
     }
@@ -6303,7 +6292,7 @@ int actGetRespawnTime(spritetype *pSprite) {
     }
 
 #ifdef NOONE_EXTENSIONS
-    if (!VanillaMode() && IsUserItemSprite(pSprite))
+    if (/*!VanillaMode() &&*/ IsUserItemSprite(pSprite))
         return userItemGetRespawnTime(pSprite);
 #endif
 

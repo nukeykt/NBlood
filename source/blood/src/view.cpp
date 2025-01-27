@@ -2187,8 +2187,8 @@ int effectDetail[kViewEffectMax] = {
 char viewUseItemRespawnMarkers(spritetype* pSpr)
 {
 #ifdef NOONE_EXTENSIONS
-    if (!VanillaMode() && userItemViewUseRespawnMarkers(pSpr))
-        return 1;
+    if (IsUserItemSprite(pSpr))
+        return userItemViewUseRespawnMarkers(userItemGet(pSpr->type));
 #endif
 
     if ((IsItemSprite(pSpr) || IsAmmoSprite(pSpr))

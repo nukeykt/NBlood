@@ -90,11 +90,11 @@ class IniFile
 		char  PutKeyInt(const char* section, const char* hiWord, const int nVal);
 		char  PutKeyHex(const char* section, const char* hiWord, const int nVal);
 		//---------------------------------------------------------------
-		inline char PutKeyString(const char* section, const char* hiWord, const char* loWord = NULL)	{ return (KeyAdd(section, hiWord, loWord) >= 0); }
-		inline char GetKeyBool(const char *section, const char *key, int nRetn)							{ return (GetKeyInt(section, key, nRetn) != 0); }
-		inline int  GetKeyHex(const char *section, const char *key, int nRetn)							{ return GetKeyInt(section, key, nRetn); }
-		inline char KeyExists(const char* section, const char* key)										{ return (KeyFind(section, key) >= 0); }
-		inline char SectionExists(const char* name)														{ return (SectionFind(name) >= 0); }
-		inline char FindSection(const char* name)														{ return (SectionFind(name) >= 0); }
-		inline void RemoveSection(const char* name)														{ SectionRemove(name); }
+        inline char PutKeyString(const char* section, const char* hiWord, const char* loWord = NULL)    { return (KeyAdd(section, hiWord, loWord) >= 0); }
+        inline char GetKeyBool(const char *section, const char *key, int nRetn)                         { return (GetKeyInt(section, key, nRetn) != 0); }
+        inline int  GetKeyHex(const char *section, const char *key, int nRetn)                          { return GetKeyInt(section, key, nRetn); }
+        inline char KeyExists(const char* section, const char* key)                                     { return (KeyFind(section, key) >= 0); }
+        inline char SectionExists(const char* name)                                                     { return (SectionFind(name) >= 0); }
+        inline char FindSection(const char* name)                                                       { return (SectionFind(name) >= 0); }
+        inline void RemoveSection(const char* name)                                                     { SectionRemove(name); }
 };

@@ -67,7 +67,7 @@ extern char gUserItemsInitialized;
 struct ITEM
 {
     char *name, *message;
-	uint8_t  group, type;
+    uint8_t  group, type;
     uint8_t  droplivetime;
     uint8_t  respawntime;
     uint8_t  numactions;
@@ -117,7 +117,7 @@ class CUSTOMITEM_SETUP
         static char  SetupActionLimits(ITEM::ACTION* pAct, char extLimits);
         static char  SetupAction(const char* str, int nOperator, int nAction);
         static char  SetupFlags(const char* str);
-		static char  SetupRespawn(const char* str);
+        static char  SetupRespawn(const char* str);
         static char  SetupLiveTime(const char* str);
         static char  SetupMessage(const char* str);
         static char  SetupGameMode(const char* str);
@@ -138,7 +138,7 @@ class CUSTOMITEM_SETUP
         static char showLog;
 //-------------------------------------------------------------------------------
         static int  Setup(IniFile* pFile);
-		static void ClearItem(ITEM* pItem);
+        static void ClearItem(ITEM* pItem);
         static void Message(const char* pFormat, ...);
 
 };
@@ -147,7 +147,7 @@ int userItemGetRespawnTime(spritetype* pSpr);
 char userItemPickup(PLAYER* pPlayer, spritetype* pISpr, ITEM* pItem);
 spritetype* userItemDrop(spritetype* pSpr, int nType);
 ITEM* userItemGet(int nType);
-char userItemViewUseRespawnMarkers(spritetype* pSpr);
+char userItemViewUseRespawnMarkers(ITEM* pItem);
 void userItemsUninit();
 int userItemsInit(char showLog);
 void userItemsInitSprites();

@@ -86,14 +86,14 @@ static const char* gParItemMain[] =
 
 enum enum_ITEM_GROUP
 {
-kItemGroupItem             = 0,
-kItemGroupWeapon,
-kItemGroupAmmo,
-kItemGroupArmor,
-kItemGroupHealth,
-kItemGroupPowerup,
-kItemGroupKey,
-kItemGroupMax,
+    kItemGroupItem             = 0,
+    kItemGroupWeapon,
+    kItemGroupAmmo,
+    kItemGroupArmor,
+    kItemGroupHealth,
+    kItemGroupPowerup,
+    kItemGroupKey,
+    kItemGroupMax,
 };
 static const char* gParItemGroup[] =
 {
@@ -109,12 +109,12 @@ static const char* gParItemGroup[] =
 
 enum enum_PAR_APPEARANCE
 {
-kParItemAppearTile              = 0,
-kParItemAppearSeq,
-kParItemAppearSize,
-kParItemAppearPal,
-kParItemAppearShade,
-kParItemAppearSnd,
+    kParItemAppearTile              = 0,
+    kParItemAppearSeq,
+    kParItemAppearSize,
+    kParItemAppearPal,
+    kParItemAppearShade,
+    kParItemAppearSnd,
 };
 static const char* gParItemAppearEntry[] =
 {
@@ -129,10 +129,10 @@ static const char* gParItemAppearEntry[] =
 
 enum enum_PAR_FLAGS
 {
-kParItemFlagsNoEff              = 0,
-kParItemFlagsNoMsg,
-kParItemFlagsShared,
-kParItemFlagsExtLimits,
+    kParItemFlagsNoEff              = 0,
+    kParItemFlagsNoMsg,
+    kParItemFlagsShared,
+    kParItemFlagsExtLimits,
 };
 static const char* gParItemFlags[] =
 {
@@ -145,8 +145,8 @@ static const char* gParItemFlags[] =
 
 enum enum_PAR_RESPAWNTIME
 {
-kRespawnTimeSpecial1         = 0,
-kRespawnTimeSpecial2,
+    kRespawnTimeSpecial1         = 0,
+    kRespawnTimeSpecial2,
 };
 
 const char* gParRespawnTime[] =
@@ -158,10 +158,10 @@ const char* gParRespawnTime[] =
 
 enum enum_PAR_ITEM_GAMETYPE_FLAGS
 {
-kParItemGameS              = 0,
-kParItemGameB,
-kParItemGameC,
-kParItemGameT,
+    kParItemGameS              = 0,
+    kParItemGameB,
+    kParItemGameC,
+    kParItemGameT,
 };
 static const char* gParItemGametype[] =
 {
@@ -174,16 +174,16 @@ static const char* gParItemGametype[] =
 
 enum enum_ACTION_DEST
 {
-kItemActionHealth				= 0,
-kItemActionArmor,
-kItemActionAmmo,
-kItemActionWeapon,
-kItemActionPowerTime,
-kItemActionKey,
-kItemActionPack,
-kItemActionEffect,
-kItemActionAirTime,
-kItemActionDmgIgnore,
+    kItemActionHealth				= 0,
+    kItemActionArmor,
+    kItemActionAmmo,
+    kItemActionWeapon,
+    kItemActionPowerTime,
+    kItemActionKey,
+    kItemActionPack,
+    kItemActionEffect,
+    kItemActionAirTime,
+    kItemActionDmgIgnore,
 };
 static const char* gParItemActType[] =
 {
@@ -202,12 +202,12 @@ static const char* gParItemActType[] =
 
 enum enum_PAR_ACTION_ENTRY
 {
-kParActionAmount            = 0,
-kParActionAmountMin,
-kParActionAmountMax,
-kParActionSlot,
-kParActionReq,
-kParActionCompat,
+    kParActionAmount            = 0,
+    kParActionAmountMin,
+    kParActionAmountMax,
+    kParActionSlot,
+    kParActionReq,
+    kParActionCompat,
 };
 static const char* gParItemActEntry[] =
 {
@@ -223,9 +223,9 @@ static const char* gParItemActEntry[] =
 
 enum enum_PAR_ACTION_TYPE
 {
-kParItemActionSet            = 0,
-kParItemActionAdd,
-kParItemActionSub,
+    kParItemActionSet            = 0,
+    kParItemActionAdd,
+    kParItemActionSub,
 };
 static const char* gParItemActOperator[] =
 {
@@ -482,21 +482,14 @@ int userItemGetRespawnTime(spritetype* pSpr)
     return nTime;
 }
 
-char userItemViewUseRespawnMarkers(spritetype* pSpr)
+char userItemViewUseRespawnMarkers(ITEM* pItem)
 {
-    ITEM* pItem;
-    if ((pItem = userItemGet(pSpr->type)) != NULL)
+    if (pItem)
     {
         if (pItem->group == kItemGroupWeapon)
-        {
-            if (gGameOptions.nWeaponSettings == 3)
-                return 1;
+            return (gGameOptions.nWeaponSettings == 3);
 
-            return 0;
-        }
-
-        if (gGameOptions.nItemSettings == 2)
-            return 1;
+        return (gGameOptions.nItemSettings == 2);
     }
 
     return 0;
