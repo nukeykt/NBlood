@@ -487,9 +487,9 @@ char userItemViewUseRespawnMarkers(ITEM* pItem)
     if (pItem)
     {
         if (pItem->group == kItemGroupWeapon)
-            return (gGameOptions.nWeaponSettings == 3);
+            return gGameOptions.nWeaponSettings == 3;
 
-        return (gGameOptions.nItemSettings == 2);
+        return gGameOptions.nItemSettings == 2;
     }
 
     return 0;

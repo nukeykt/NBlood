@@ -2611,7 +2611,7 @@ void actInit(bool bSaveLoad) {
         }
 
         #ifdef NOONE_EXTENSIONS
-            userItemsInitSprites();
+        userItemsInitSprites();
         #endif
 
         aiInit();
@@ -2904,7 +2904,7 @@ spritetype *actDropObject(spritetype *pSprite, int nType) {
     spritetype *pSprite2 = NULL;
     
 #ifdef NOONE_EXTENSIONS
-    if (/*!VanillaMode() &&*/ IsUserItem(nType))
+    if (IsUserItem(nType))
     {
         pSprite2 = userItemDrop(pSprite, nType);
     }
@@ -6292,7 +6292,7 @@ int actGetRespawnTime(spritetype *pSprite) {
     }
 
 #ifdef NOONE_EXTENSIONS
-    if (/*!VanillaMode() &&*/ IsUserItemSprite(pSprite))
+    if (IsUserItemSprite(pSprite))
         return userItemGetRespawnTime(pSprite);
 #endif
 

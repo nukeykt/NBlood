@@ -1379,7 +1379,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
             customMsg = pXSprite->lockMsg;
     }
 
-    if (/*!VanillaMode() &&*/ IsUserItem(nType))
+    if (IsUserItem(nType))
     {
         ITEM* pItem = userItemGet(nType);
         if (pItem && (pickedUp = userItemPickup(pPlayer, pSprite, pItem)) != 0)
