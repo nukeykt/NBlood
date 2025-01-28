@@ -1370,7 +1370,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
 {
     char buffer[256], pickedUp = 0, showMsg = 1, showEff = 1;
     int nType = pSprite->type, customMsg = -1;
- 
+
 #ifdef NOONE_EXTENSIONS
     if (gModernMap) // allow custom INI message instead "Picked up"
     {

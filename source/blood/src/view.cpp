@@ -2198,7 +2198,7 @@ char viewUseItemRespawnMarkers(spritetype* pSpr)
     if (IsWeaponSprite(pSpr)
         && gGameOptions.nWeaponSettings == 3)
             return 1;
-   
+
     return 0;
 }
 

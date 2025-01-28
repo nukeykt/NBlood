@@ -36,7 +36,7 @@ void strTrim(char* str, char side = 0x03)
 {
 	int l = strlen(str);
 	int c;
-	
+
 	if (side & 0x01)
 	{
 		c = 0;
@@ -44,8 +44,8 @@ void strTrim(char* str, char side = 0x03)
 		if (c)
 			memcpy(str, &str[c], l - c + 1), l-=c;
 	}
-	
-	
+
+
 	if (side & 0x02)
 	{
 		while(--l >= 0 && isspace(str[l]));
@@ -70,7 +70,7 @@ IniFile::~IniFile()
 		if (pNode->hiWord) free(pNode->hiWord);
 		if (pNode->loWord) free(pNode->loWord);
 	}
-	
+
 	if (node)
 		free(node);
 }
@@ -80,7 +80,7 @@ IniFile::IniFile(const char* fileName, char flags)
 	int nLength, hFil;
 	unsigned char* pRaw;
 	Init();
-	
+
 	if (!isempty(fileName))
 	{
 		if ((hFil = kopen4loadfrommod(fileName, 0)) >= 0)
@@ -91,7 +91,7 @@ IniFile::IniFile(const char* fileName, char flags)
 				Load(pRaw, nLength+1, flags);
 				Xfree(pRaw);
 			}
-			
+
 			kclose(hFil);
 		}
 
@@ -103,7 +103,7 @@ IniFile::IniFile(unsigned char* pBytes, int nLength, char flags)
 {
 	unsigned char* pRaw;
 	Init();
-	
+
 	if (nLength > 0 && (pRaw = (unsigned char*)malloc(nLength+1)) != NULL)
 	{
 		memcpy(pRaw, pBytes, nLength);
@@ -122,7 +122,7 @@ void IniFile::Load(unsigned char* pRaw, int nLength, char flags)
 
 	if (!pRaw || nLength <= 0)
 		return;
-	
+
 	n = 0;
 	while(n < nLength)
 	{
@@ -137,13 +137,13 @@ void IniFile::Load(unsigned char* pRaw, int nLength, char flags)
 					nLength--;
 				}
 			}
-			
+
 			pRaw[n] = '\0';
 		}
-		
+
 		n++;
 	}
-	
+
 	n = 0;
 	while(n < nLength)
 	{
@@ -191,12 +191,12 @@ void IniFile::Load(unsigned char* pRaw, int nLength, char flags)
 				}
 				break;
 		}
-		
+
 		if (hi) NodeSetWord(&newNode.hiWord, hi);
 		if (lo) NodeSetWord(&newNode.loWord, lo);
 		NodeAdd(&newNode, -1);
 	}
-	
+
 }
 
 char IniFile::Save(const char* saveName)
@@ -207,7 +207,7 @@ char IniFile::Save(const char* saveName)
 
 	if (isempty(pSaveName))
 		pSaveName = "inifile.ini";
-	
+
 	if ((hFil = open(pSaveName, O_CREAT|O_WRONLY|O_TEXT|O_TRUNC, S_IREAD|S_IWRITE)) >= 0)
 	{
 		if (numnodes > 0)
@@ -241,13 +241,13 @@ char IniFile::Save(const char* saveName)
 				c[0] = '\n';	t += write(hFil, c, 1);
 			}
 		}
-		
+
 		close(hFil);
 		return 1;
 	}
-	
+
 	return 0;
-	
+
 }
 
 const char* IniFile::GetKeyString(const char* section, const char *key, const char* defValue)
@@ -258,7 +258,7 @@ const char* IniFile::GetKeyString(const char* section, const char *key, const ch
 		ININODE* pNode = &node[nID];
 		return (pNode->type == kIniNodeKeySep) ? pNode->loWord : pNode->hiWord;
 	}
-	
+
 	return defValue;
 }
 
@@ -275,20 +275,20 @@ char IniFile::GetNextString(char* out, const char** pKey, const char** pVal, int
 {
 	ININODE* pNode;
 	int i = 0;
-	
+
 	if (*prevNode < 0 && section)
 	{
 		*prevNode = SectionFind(section);
 		if (!rngok(*prevNode, 0, numnodes))
 			return 0;
 	}
-	
+
 	while( 1 )
 	{
 		*prevNode = *prevNode + 1;
 		if (!rngok(*prevNode, 0, numnodes))
 			return 0;
-		
+
 		pNode = &node[*prevNode];
 		if (section && pNode->type == kIniNodeSection) return 0;
 		else if (pNode->type == kIniNodeEmpty) continue;
@@ -301,7 +301,7 @@ char IniFile::GetNextString(char* out, const char** pKey, const char** pVal, int
 		{
 			*pKey = &out[i]; i+=sprintf(&out[i], "%s", pNode->hiWord)+1;
 		}
-		
+
 		if (pVal)
 		{
 			if (pNode->loWord)
@@ -319,7 +319,7 @@ char IniFile::GetNextString(char* out, const char** pKey, const char** pVal, int
 		if (pKey) *pKey = pNode->hiWord;
 		if (pVal) *pVal = pNode->loWord;
 	}
-	
+
 	return 1;
 }
 
@@ -353,11 +353,11 @@ void IniFile::NodeSetWord(char** wordPtr, const char* string)
 {
 	if (*wordPtr)
 		free(*wordPtr);
-	
+
 	*wordPtr = NULL;
 	if (!string)
 		return;
-	
+
 	// empty strings allowed!
 	*wordPtr = (char*)malloc(strlen(string)+1);
 	dassert(*wordPtr != NULL);
@@ -368,10 +368,10 @@ int IniFile::NodeAdd(ININODE* pNode, int nPos)
 {
 	node = (ININODE*)realloc(node, sizeof(ININODE)*(numnodes + 1));
 	dassert(node != NULL);
-	
+
 	if (!rngok(nPos, 0, numnodes)) nPos = numnodes;
 	else memcpy(&node[nPos+1], &node[nPos], sizeof(ININODE)*(numnodes-nPos));
-	
+
 	memcpy(&node[nPos], pNode, sizeof(ININODE));
 	numnodes++;
 	return nPos;
@@ -389,7 +389,7 @@ void IniFile::NodeRemove(int nID)
 {
 	if (nID < numnodes - 1)
 		memcpy(&node[nID], &node[nID+1], sizeof(ININODE)*(numnodes-nID));
-	
+
 	numnodes--;
 	node = (ININODE*)realloc(node, sizeof(ININODE)*numnodes);
 	if (numnodes > 0)
@@ -402,7 +402,7 @@ char IniFile::NodeComment(int nID, char hashChr)
 	ININODE* pNode = &node[nID];
 	char* buf;
 	int n;
-	
+
 	n = 1;
 	if (pNode->hiWord)
 	{
@@ -413,13 +413,13 @@ char IniFile::NodeComment(int nID, char hashChr)
 				*pNode->hiWord = c;
 				return 1;
 		}
-	
+
 		n += strlen(pNode->hiWord);
 	}
-	
+
 	if (pNode->loWord)
 		n += strlen(pNode->loWord);
-	
+
 	if ((buf = (char*)malloc(n+8)) != NULL)
 	{
 		buf[0] = c;
@@ -438,14 +438,14 @@ char IniFile::NodeComment(int nID, char hashChr)
 				sprintf(&buf[1], "%s", pNode->hiWord);
 				break;
 		}
-		
+
 		NodeSetWord(&pNode->hiWord, buf);
 		NodeSetWord(&pNode->loWord, NULL);
 		pNode->type = kIniNodeComment;
 		free(buf);
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -458,7 +458,7 @@ int IniFile::SectionFind(const char* name)
 		if (pNode->type == kIniNodeSection && Bstrcasecmp(pNode->hiWord, name) == 0)
 			break;
 	}
-	
+
 	return i;
 }
 
@@ -467,11 +467,11 @@ int IniFile::SectionAdd(const char* section)
 	int nID;
 	if ((nID = SectionFind(section)) >= 0)
 		return nID;
-	
+
 	if (numnodes > 0
 		&& node[numnodes-1].type != kIniNodeEmpty)
 			NodeAddEmpty(-1);
-	
+
 	ININODE newNode;
 	memset(&newNode, 0, sizeof(newNode));
 	NodeSetWord(&newNode.hiWord, section);
@@ -509,7 +509,7 @@ int IniFile::KeyFind(const char* section, const char* key)
 			}
 		}
 	}
-	
+
 	return -1;
 }
 
@@ -517,7 +517,7 @@ int IniFile::KeyAddNew(const char* section, const char* hiWord, const char* loWo
 {
 	ININODE newNode;
 	int nID;
-	
+
 	memset(&newNode, 0, sizeof(newNode));
 	NodeSetWord(&newNode.hiWord, hiWord);
 	NodeSetWord(&newNode.loWord, loWord);
@@ -531,7 +531,7 @@ int IniFile::KeyAddNew(const char* section, const char* hiWord, const char* loWo
 	{
 		SectionAdd(section);
 	}
-	
+
 	return NodeAdd(&newNode, nID);
 }
 
@@ -539,7 +539,7 @@ int IniFile::KeyAdd(const char* section, const char* hiWord, const char* loWord)
 {
 	ININODE *pNode;
 	int nID;
-	
+
 	if ((nID = KeyFind(section, hiWord)) >= 0)
 	{
 		pNode = &node[nID];
@@ -548,7 +548,7 @@ int IniFile::KeyAdd(const char* section, const char* hiWord, const char* loWord)
 		pNode->type = (pNode->loWord) ? kIniNodeKeySep : kIniNodeKeyStr;
 		return nID;
 	}
-	
+
 	return KeyAddNew(section, hiWord, loWord);
 }
 
@@ -564,7 +564,7 @@ char IniFile::PutKeyInt(const char* section, const char* key, const int nVal)
 	char buf[32]; sprintf(buf, "%d", nVal);
 	if (!key)
 		return (KeyAdd(section, buf, NULL) >= 0);
-	
+
 	return (KeyAdd(section, key, buf) >= 0);
 }
 
@@ -573,8 +573,6 @@ char IniFile::PutKeyHex(const char* section, const char* key, const int nVal)
 	char buf[32]; sprintf(buf, "0x%d", nVal);
 	if (!key)
 		return (KeyAdd(section, buf, NULL) >= 0);
-	
+
 	return (KeyAdd(section, key, buf) >= 0);
 }
-
-

@@ -320,7 +320,7 @@ char userItemPickup(PLAYER* pPlayer, spritetype* pISpr, ITEM* pItem)
 
     int nGame = pOpt->nGameType;
     int i, r = 1, testReq = 0;
-    
+
     memset(&data, 0, sizeof(data));
     if (pItem->flags & kFlagItemNoPickup)
     {
@@ -346,7 +346,7 @@ char userItemPickup(PLAYER* pPlayer, spritetype* pISpr, ITEM* pItem)
     if (pItem->action != NULL)
     {
         testReq = ((pItem->flags & kFlagItemHasReqActions) != 0);
-        
+
         // Test required actions (if any) for
         // success on first pass, do actions
         // on second.
@@ -424,7 +424,7 @@ spritetype* userItemDrop(spritetype* pSpr, int nType)
     {
         if (pISpr->extra <= 0)
             dbInsertXSprite(pISpr->index);
-        
+
         seqSpawn(pItem->appearance.seq, OBJ_SPRITE, pISpr->extra);
     }
 
@@ -439,7 +439,7 @@ int userItemGetRespawnTime(spritetype* pSpr)
     GAMEOPTIONS* pOpt = &gGameOptions;
     XSPRITE* pXSpr; ITEM* pItem;
     int nTime = -1;
-    
+
     if (pSpr->extra <= 0
         || (pItem = userItemGet(pSpr->type)) == NULL)
             return -1;
@@ -470,7 +470,7 @@ int userItemGetRespawnTime(spritetype* pSpr)
                if (pItem->flags & kFlagItemRespawnSpec1)        nTime = pOpt->nSpecialRespawnTime;
                else if (pItem->flags & kFlagItemRespawnSpec2)   nTime = pOpt->nSpecialRespawnTime<<1;
                else                                             nTime = pOpt->nItemRespawnTime;
-               
+
                break;
             }
             return -1;
@@ -613,7 +613,7 @@ static char ACTION_ChangeArmor(PLAYER* pPlayer, ACTIONARG* a)
     {
         if (!a->isCompat)
             return 0;
-        
+
         i = LENGTH(PLAYER::armor);
         while (--i >= 0)
         {
@@ -640,7 +640,7 @@ static char ACTION_ChangeHealth(PLAYER* pPlayer, ACTIONARG* a)
     if (nCur == nOld)
         return 0;
 
-    
+
     if (!a->isTest)
     {
         if (nCur > nOld)
@@ -662,11 +662,11 @@ static char ACTION_ChangeKey(PLAYER* pPlayer, ACTIONARG* a)
 {
     int nSlot = a->act->slot;
     int nCur = pPlayer->hasKey[nSlot];
-      
+
     nCur = helperChangeValue(nCur, a->act);
     if (nCur == (int)pPlayer->hasKey[nSlot])
         return 0;
-    
+
     if (!a->isTest)
         pPlayer->hasKey[nSlot] = nCur;
 
@@ -739,7 +739,7 @@ static char ACTION_ChangeWeapon(PLAYER* pPlayer, ACTIONARG* a)
         {
             if (pPlayer->ammoCount[aSlot] >= a->act->amount[2])
                 return 0;
-            
+
             if (pOpt->nWeaponSettings != 2
                 && pOpt->nWeaponSettings != 3)
                     return 0;
@@ -779,7 +779,7 @@ static char ACTION_ChangePackItem(PLAYER* pPlayer, ACTIONARG* a)
     nCur = helperChangeValue(nCur, a->act);
     if (nCur == pSlot->curAmount)
         return 0;
-    
+
     if (!a->isTest)
     {
         pSlot->curAmount = nCur;
@@ -809,11 +809,11 @@ static char ACTION_ChangePowerupTime(PLAYER* pPlayer, ACTIONARG* a)
     nCur = helperChangeValue(nCur, a->act);
     if (nCur == pPlayer->pwUpTime[nSlot])
         return 0;
-    
+
     if (!a->isTest)
     {
         if (nCur)
-        {            
+        {
             if (t <= 0)
             {
                 powerupActivate(pPlayer, nSlot);
@@ -825,7 +825,7 @@ static char ACTION_ChangePowerupTime(PLAYER* pPlayer, ACTIONARG* a)
             if (t > 0)
                 powerupDeactivate(pPlayer, nSlot);
         }
-        
+
         pPlayer->pwUpTime[nSlot] = nCur;
     }
 
@@ -841,7 +841,7 @@ static char ACTION_ChangeEffect(PLAYER* pPlayer, ACTIONARG* a)
     nCur = helperChangeValue(nCur, a->act);
     if (nCur == nOld)
         return 0;
-    
+
     if (!a->isTest)
         playerEffectSet(pPlayer, nSlot, nCur);
 
@@ -855,7 +855,7 @@ static char ACTION_ChangeAirTime(PLAYER* pPlayer, ACTIONARG* a)
     nCur = helperChangeValue(nCur, a->act);
     if (nCur == pPlayer->underwaterTime)
         return 0;
-    
+
     if (!a->isTest)
         pPlayer->underwaterTime = nCur;
 
@@ -870,7 +870,7 @@ static char ACTION_ChangeIgnoreDmg(PLAYER* pPlayer, ACTIONARG* a)
     nCur = helperChangeValue(nCur, a->act);
     if (nCur == pPlayer->damageControl[nSlot])
         return 0;
-    
+
     if (!a->isTest)
         pPlayer->damageControl[nSlot] = nCur;
 
@@ -916,7 +916,7 @@ char CUSTOMITEM_SETUP::showLog              = 0;
 void CUSTOMITEM_SETUP::Message(const char* pFormat, ...)
 {
     char buffer[512], *pBuf = buffer;
-    
+
     if (showLog)
     {
         pBuf += Bsprintf(pBuf, "ITEM SETUP:");
@@ -993,13 +993,13 @@ ITEM* CUSTOMITEM_SETUP::Setup(char* pGroup)
     char key[256], gotit = 0;
 
     memset(&buffer, 0, sizeof(buffer));
-    
+
     /** ITEM DEFAULTS **/
     buffer.group                = kItemGroupItem;
     buffer.appearance.xrepeat   = 64;
     buffer.appearance.yrepeat   = 64;
     buffer.appearance.shade     = -8;
-    
+
     /* Get type and group before everything else. */
     /*******************/
 
@@ -1080,7 +1080,7 @@ ITEM* CUSTOMITEM_SETUP::Setup(char* pGroup)
         // Show no *default* pickup effect,
         // but allow to show user
         // ones.
-        
+
         buffer.flags |= kFlagItemNoEffect;
     }
     else if (buffer.numactions > 1 && buffer.numeffects > 0)
@@ -1118,7 +1118,7 @@ char CUSTOMITEM_SETUP::SetupAppearance(const char* str)
                             if (c == 0)     pAppear->xrepeat = nVal;
                             else            pAppear->yrepeat = nVal;
                         }
-                        
+
                         c++;
                     }
                 }
@@ -1275,7 +1275,7 @@ char CUSTOMITEM_SETUP::SetupActionLimits(ITEM::ACTION* pAct, char extLimits)
         pAct->amount[2] = pAct->amount[1];
         pAct->amount[1] = t;
     }
-    
+
     switch (pAct->operation)
     {
         case kParItemActionAdd:
@@ -1300,9 +1300,9 @@ char CUSTOMITEM_SETUP::SetupAction(const char* str, int nOperator, int nAction)
 {
     int nPar, nVal, i = 0; ITEM::ACTION action;
     char isEffect, key[256], val[256];
-    
+
     memset(&action, 0, sizeof(action));
-    
+
     action.amount[0] = 1;
     action.amount[1] = INT32_MIN + 1;
     action.amount[2] = INT32_MAX - 1;
@@ -1319,7 +1319,7 @@ char CUSTOMITEM_SETUP::SetupAction(const char* str, int nOperator, int nAction)
                 if (isfix(val))
                 {
                     nVal = atoi(val);
-                    
+
                     switch (nPar)
                     {
                         case kParActionAmount:       action.amount[0] = nVal;     break;
@@ -1352,7 +1352,7 @@ char CUSTOMITEM_SETUP::SetupAction(const char* str, int nOperator, int nAction)
     if (SetupActionLimits(&action, (buffer.flags & kFlagItemExtLimits) != 0))
     {
         isEffect = (action.type == kItemActionEffect);
-        
+
         if (isEffect && (buffer.flags & kFlagItemNoEffect))
             return 1;
 
@@ -1363,10 +1363,10 @@ char CUSTOMITEM_SETUP::SetupAction(const char* str, int nOperator, int nAction)
 
             buffer.action = (ITEM::ACTION*)realloc(buffer.action, sizeof(action) * (i + 1)); dassert(buffer.action != NULL);
             memcpy(&buffer.action[i], &action, sizeof(action));
-        
+
             if (isEffect) buffer.numeffects++;
             else buffer.numactions++;
-        
+
             return 1;
         }
     }
@@ -1386,7 +1386,7 @@ char CUSTOMITEM_SETUP::SetupType(const char* str)
             if ((nPar = FindParam(val, gParItemGroup)) >= 0)
                 buffer.group = nPar, t--;
         }
-        
+
         if ((i = enumStr(i, str, val)) != 0)
         {
             if (isufix(val))
@@ -1408,7 +1408,7 @@ char CUSTOMITEM_SETUP::SetupType(const char* str)
 char CUSTOMITEM_SETUP::SetupRespawn(const char* str)
 {
     int nPar;
-    
+
     if (isufix(str))
     {
         buffer.respawntime = (uint8_t)ClipHigh(atoi(str), 255);
@@ -1439,7 +1439,7 @@ char CUSTOMITEM_SETUP::SetupLiveTime(const char* str)
         buffer.droplivetime = (uint8_t)ClipHigh(atoi(str), 255);
         return 1;
     }
-    
+
     return 0;
 }
 
@@ -1447,7 +1447,7 @@ char CUSTOMITEM_SETUP::SetupName(const char* str)
 {
     const char* p; char tmp[32];
     int l;
-    
+
     l = ((p = strchr(str, '_')) != NULL) ? (p - str) : strlen(str);
 
     if (l <= 0)
@@ -1467,7 +1467,7 @@ char CUSTOMITEM_SETUP::SetupMessage(const char* str)
     const char* p = str;
     int n = strlen(str);
     int i = 0;
-    
+
 
     if ((buffer.flags & kFlagItemNoMessage) == 0)
     {
@@ -1495,10 +1495,10 @@ char CUSTOMITEM_SETUP::SetupMessage(const char* str)
                 n += strlen(buffer.name);
 
             buffer.message = (char*)malloc(n + 1); dassert(buffer.message != NULL);
-            
+
             if (i)  sprintf(buffer.message, str, buffer.name);
             else    strcpy(buffer.message, str);
-            
+
             return 1;
         }
 
@@ -1514,7 +1514,7 @@ char CUSTOMITEM_SETUP::SetupGameMode(const char* str)
     int16_t nFlags;
 
     nFlags = (kFlagItemNoPickupS | kFlagItemNoPickupB | kFlagItemNoPickupC | kFlagItemNoPickupT);
-    
+
     while ((i = enumStr(i, str, val)) != 0)
     {
         switch (nPar = FindParam(val, gParItemGametype))
@@ -1559,7 +1559,7 @@ int CUSTOMITEM_SETUP::CheckVersion(void)
             Message("Section \"General\" not found!");
             return nRetn;
         }
-        
+
         pValue = pDesc->GetKeyString("General", "Version");
         if (pValue && rngok(Bstrlen(pValue), 0, 5))
         {
@@ -1592,7 +1592,7 @@ int CUSTOMITEM_SETUP::QsortActions(ITEM::ACTION* ref1, ITEM::ACTION* ref2)
     UNREFERENCED_PARAMETER(ref2);
     if (ref1->type == kItemActionEffect)
         return 1;
-    
+
     return 0;
 }
 
@@ -1610,7 +1610,7 @@ int CUSTOMITEM_SETUP::SetMaxAmount(int nAmount, int nMax)
 {
     //if (nAmount)
         return ClipHigh(nAmount, nMax);
-    
+
     //return nMax;
 }
 
@@ -1618,7 +1618,7 @@ int CUSTOMITEM_SETUP::SetMinAmount(int nAmount, int nMin)
 {
     //if (nAmount)
         return ClipLow(nAmount, nMin);
-    
+
     //return nMin;
 }
 
