@@ -814,6 +814,7 @@ ifeq ($(NOONE_EXTENSIONS),1)
     blood_game_objs += nnextsif.cpp
     blood_game_objs += nnexts.cpp
     blood_game_objs += nnextstr.cpp
+    blood_game_objs += nnextcitem.cpp
     blood_game_objs += nnextcdud.cpp
     blood_game_objs += aicdud.cpp
 endif

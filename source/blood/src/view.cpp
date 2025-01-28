@@ -2184,6 +2184,24 @@ int effectDetail[kViewEffectMax] = {
     4, 4, 4, 4, 0, 0, 0, 0, 0, 1, 4, 4, 0, 0, 0, 1, 0, 0, 0
 };
 
+char viewUseItemRespawnMarkers(spritetype* pSpr)
+{
+#ifdef NOONE_EXTENSIONS
+    if (IsUserItemSprite(pSpr))
+        return userItemViewUseRespawnMarkers(userItemGet(pSpr->type));
+#endif
+
+    if ((IsItemSprite(pSpr) || IsAmmoSprite(pSpr))
+        && gGameOptions.nItemSettings == 2)
+            return 1;
+
+    if (IsWeaponSprite(pSpr)
+        && gGameOptions.nWeaponSettings == 3)
+            return 1;
+
+    return 0;
+}
+
 tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
 {
     dassert(nViewEffect >= 0 && nViewEffect < kViewEffectMax);
@@ -2858,8 +2876,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             pTSprite->shade = -128;
             pTSprite->picnum = 2272 + 2*pTXSprite->respawnPending;
             pTSprite->cstat &= ~514;
-            if (((IsItemSprite(pTSprite) || IsAmmoSprite(pTSprite)) && gGameOptions.nItemSettings == 2)
-                || (IsWeaponSprite(pTSprite) && gGameOptions.nWeaponSettings == 3))
+            if (viewUseItemRespawnMarkers(&sprite[nSprite]))
             {
                 pTSprite->xrepeat = pTSprite->yrepeat = 48;
             }

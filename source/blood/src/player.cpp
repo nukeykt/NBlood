@@ -1368,18 +1368,38 @@ char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon) {
 
 void PickUp(PLAYER *pPlayer, spritetype *pSprite)
 {
-    char buffer[80];
-    int nType = pSprite->type;
-    char pickedUp = 0;
-    int customMsg = -1;
-    #ifdef NOONE_EXTENSIONS
-        if (gModernMap) { // allow custom INI message instead "Picked up"
-            XSPRITE* pXSprite = (pSprite->extra >= 0) ? &xsprite[pSprite->extra] : NULL;
-            if (pXSprite != NULL && pXSprite->txID != 3 && pXSprite->lockMsg > 0)
-                customMsg = pXSprite->lockMsg;
-        }
-    #endif
+    char buffer[256], pickedUp = 0, showMsg = 1, showEff = 1;
+    int nType = pSprite->type, customMsg = -1;
 
+#ifdef NOONE_EXTENSIONS
+    if (gModernMap) // allow custom INI message instead "Picked up"
+    {
+        XSPRITE* pXSprite = (pSprite->extra >= 0) ? &xsprite[pSprite->extra] : NULL;
+        if (pXSprite != NULL && pXSprite->txID != 3 && pXSprite->lockMsg > 0)
+            customMsg = pXSprite->lockMsg;
+    }
+
+    if (IsUserItem(nType))
+    {
+        ITEM* pItem = userItemGet(nType);
+        if (pItem && (pickedUp = userItemPickup(pPlayer, pSprite, pItem)) != 0)
+        {
+            if (customMsg < 0)
+            {
+                showMsg = !(pItem->flags & kFlagItemNoMessage);
+
+                if (showMsg)
+                {
+                    if (!pItem->message)                            sprintf(buffer, "Picked up %s", pItem->name);
+                    else                                            strcpy(buffer, pItem->message);
+                }
+            }
+
+            showEff = (!(pItem->flags & kFlagItemNoEffect) && !pItem->numeffects);
+        }
+    }
+    else
+#endif
     if (nType >= kItemBase && nType <= kItemMax) {
         pickedUp = PickupItem(pPlayer, pSprite);
         if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gItemText[nType - kItemBase]);
@@ -1403,8 +1423,11 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     if (!actCheckRespawn(pSprite)) 
         actPostSprite(pSprite->index, kStatFree);
 
-    pPlayer->pickupEffect = 30;
-    if (pPlayer == gMe) {
+    if (showEff)
+        pPlayer->pickupEffect = 30;
+
+    if (pPlayer == gMe && showMsg)
+    {
         if (customMsg > 0) trTextOver(customMsg - 1);
         else viewSetMessage(buffer, 0, MESSAGE_PRIORITY_PICKUP);
     }
@@ -2409,6 +2432,43 @@ void voodooTarget(PLAYER *pPlayer)
         actFireVector(pPlayer->pSprite, 0, dz, Cos(ang2)>>16, Sin(ang2)>>16, v4, kVectorVoodoo10);
     }
     pPlayer->voodooTargets = ClipLow(pPlayer->voodooTargets-1, 0);
+}
+
+int playerEffectGet(PLAYER* pPlayer, int nEffect)
+{
+    switch (nEffect)
+    {
+        case kPlayerEffectTilt:     return pPlayer->tiltEffect;
+        case kPlayerEffectPain:     return pPlayer->painEffect;
+        case kPlayerEffectBlind:    return pPlayer->blindEffect;
+        case kPlayerEffectPickup:   return pPlayer->pickupEffect;
+        case kPlayerEffectQuake:    return pPlayer->quakeEffect;
+        case kPlayerEffectBright:   return pPlayer->visibility;
+        case kPlayerEffectDelirium: return pPlayer->pwUpTime[kPwUpDeliriumShroom];
+        case kPlayerEffectFlicker:  return pPlayer->flickerEffect;
+        case kPlayerEffectFlash:    return (pPlayer->flashEffect) ? pPlayer->visibility : 0;
+    }
+
+    return 0;
+}
+
+void playerEffectSet(PLAYER* pPlayer, int nEffect, int nTime)
+{
+    switch (nEffect)
+    {
+        case kPlayerEffectTilt:     pPlayer->tiltEffect = nTime;                        break;
+        case kPlayerEffectPain:     pPlayer->painEffect = nTime;                        break;
+        case kPlayerEffectBlind:    pPlayer->blindEffect = nTime;                       break;
+        case kPlayerEffectPickup:   pPlayer->pickupEffect = nTime;                      break;
+        case kPlayerEffectQuake:    pPlayer->quakeEffect = nTime;                       break;
+        case kPlayerEffectBright:   pPlayer->visibility = nTime;                        break;
+        case kPlayerEffectDelirium: pPlayer->pwUpTime[kPwUpDeliriumShroom] = nTime;     break;
+        case kPlayerEffectFlicker:  pPlayer->flickerEffect = nTime;                     break;
+        case kPlayerEffectFlash:
+            pPlayer->visibility  = nTime;
+            pPlayer->flashEffect = 1;
+            break;
+    }
 }
 
 void playerLandingSound(PLAYER *pPlayer)

@@ -288,9 +288,4 @@ char isufix(const char* str)
 {
     return isfix(str, 0);
 }
-
-char isempty(const char* str)
-{
-    return (!str || str[0] == '\0');
-}
 #endif
